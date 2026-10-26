@@ -15,7 +15,9 @@
     "test": "npm run test:unit",
     "test:unit": "node tests/unit/names.test.js && node tests/unit/proxy-ua.test.js && node tests/unit/editor.test.js && node tests/unit/library.test.js",
     "test:relay": "node tests/unit/proxy.test.js",
-    "version:bump": "bash scripts/bump-version.sh"
+    "version:bump": "bash scripts/bump-version.sh",
+    "release": "bash scripts/release.sh",
+    "manifest": "node scripts/gen-manifest.js"
   },
   "devDependencies": {
     "@webos-tools/cli": "3.2.6"

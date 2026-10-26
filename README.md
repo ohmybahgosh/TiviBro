@@ -116,9 +116,13 @@ docs/             Architecture, decisions, roadmap, simulator guide, TiviMate pa
 
 ### Releasing
 
-1. `bash scripts/bump-version.sh X.Y.Z` and add a [`CHANGELOG.md`](CHANGELOG.md) entry.
-2. `npm run lint && npm test && npm run build`
-3. Publish the IPK from `dist/` as a GitHub release.
+Releases are built by GitHub Actions.  Every push and pull request also runs lint, tests and a test build ([CI](.github/workflows/ci.yml)).
+
+1. `bash scripts/bump-version.sh X.Y.Z`
+2. In [`CHANGELOG.md`](CHANGELOG.md), rename `## Unreleased` to `## X.Y.Z (date)`, then commit.
+3. `npm run release`.  It checks everything locally, then tags `vX.Y.Z` and pushes the tag.
+
+The [Release workflow](.github/workflows/release.yml) then runs the tests, builds the IPK, writes the Homebrew Channel manifest and `repo.json`, and publishes a GitHub release with the CHANGELOG section as its notes.  Tags with a dash (`v0.6.0-beta.1`) become pre-releases.
 
 ## Privacy and security
 
