@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920, initial-scale=1">
+<title>TiviBro</title>
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<!-- One persistent <video>.  It is moved between the preview slot and fullscreen
+     with a class change only, so switching views never re-creates the decoder. -->
+<div id="stage" class="stage preview">
+  <video id="video" playsinline muted></video>
+  <div id="spinner" class="spinner hidden"><i></i><span id="spinnerText">Buffering</span></div>
+  <div id="vidError" class="vid-error hidden"></div>
+</div>
+
+<!-- Side menu: icons only while browsing, labels when opened (◀ from the first column), hidden in the guide grid. -->
+<nav id="sidenav" class="sidenav">
+  <div class="brand"><img class="mark" src="img/mark.png" alt=""><span class="lbl">TiviBro</span></div>
+  <div class="tabs"></div>
+</nav>
+<span id="clock" class="clock"></span>
+<div id="app">
+
+  <!-- LIVE: groups | channels | preview -->
+  <section id="viewLive" class="view">
+    <div class="col groups"><div class="col-title">Groups</div><div id="groupList" class="vlist"></div></div>
+    <div class="col channels"><div class="col-title" id="chanTitle">Channels</div><div id="chanList" class="vlist"></div></div>
+    <div class="col info">
+      <div id="previewSlot" class="preview-slot"></div>
+      <div id="infoNow" class="info-now"></div>
+      <div id="infoNext" class="info-next"></div>
+    </div>
+  </section>
+
+  <!-- GUIDE -->
+  <!-- GUIDE (home): preview top left, programme details top right, groups panel over the left of the grid -->
+  <section id="viewGuide" class="view hidden">
+    <div class="guide-top">
+      <div id="guidePreview" class="guide-preview"><span>OK on a channel plays it here.<br>OK again for fullscreen.</span></div>
+      <div id="guideDetail" class="guide-detail"></div>
+    </div>
+    <div class="guide-head"><div class="guide-group" id="guideGroup"></div><div id="guideTimes" class="guide-times"></div></div>
+    <div class="guide-wrap">
+      <div id="guideBody" class="guide-body"></div>
+      <div id="guideGroups" class="guide-groups"><div class="col-title">Groups</div><div id="guideGroupList" class="vlist"></div></div>
+    </div>
+  </section>
+
+  <!-- MOVIES / SHOWS -->
+  <section id="viewVod" class="view hidden">
+    <div class="col groups"><div class="col-title">Categories</div><div id="vodCats" class="vlist"></div></div>
+    <div class="col channels"><div class="col-title" id="vodTitle">Movies</div><div id="vodItems" class="vlist vod-items"></div></div>
+    <div class="col info"><div id="vodInfo" class="vod-info"></div></div>
+  </section>
+
+  <!-- SEARCH -->
+  <section id="viewSearch" class="view hidden"></section>
+
+  <!-- SETTINGS -->
+  <section id="viewSettings" class="view hidden">
+    <div id="setNav" class="set-nav"></div>
+    <div id="setBody" class="set-body"></div>
+  </section>
+
+  <footer class="hints" id="hints"></footer>
+</div>
+
+<!-- Channel list over fullscreen video -->
+<div id="overlay" class="overlay hidden"><div id="ovTitle" class="ov-title"></div><div id="ovList" class="vlist"></div></div>
+<!-- Multiview tiles -->
+<div id="multi" class="multi hidden"></div>
+
+<!-- Quick panel in fullscreen (OK): actions and recent channels, like TiviMate -->
+<div id="qpanel" class="qpanel hidden"></div>
+
+<!-- Fullscreen OSD -->
+<div id="osd" class="osd hidden">
+  <div class="osd-top"><span id="osdNum" class="osd-num"></span><span id="osdName" class="osd-name"></span><span id="osdGroup" class="osd-group"></span></div>
+  <div class="osd-prog"><div id="osdNow" class="osd-now"></div><div class="bar"><i id="osdBar"></i></div><div id="osdNext" class="osd-next"></div></div>
+  <div id="osdKeys" class="osd-keys"></div>
+</div>
+<div id="meter" class="meter hidden"><span class="meter-label">Buffer</span><div class="meter-track"><i id="meterFill"></i></div><span id="meterText"></span></div>
+<div id="zapNum" class="zapnum hidden"></div>
+
+<!-- Setup -->
+<section id="viewSetup" class="setup hidden"></section>
+
+<!-- Modal menu / dialogs -->
+<div id="modal" class="modal hidden"><div class="modal-box"><div id="modalTitle" class="modal-title"></div><div id="modalBody" class="modal-body"></div></div></div>
+<div id="toast" class="toast hidden"></div>
+<div id="epgProg" class="epgprog hidden"></div>
+
+<script src="vendor/hls.light.min.js"></script>
+<script src="vendor/mpegts.js"></script>
+<script src="js/util.js"></script>
+<script src="js/log.js"></script>
+<script src="js/net.js"></script>
+<script src="js/keymap.js"></script>
+<script src="js/store.js"></script>
+<script src="js/names.js"></script>
+<script src="js/source.js"></script>
+<script src="js/library.js"></script>
+<script src="js/parental.js"></script>
+<script src="js/epg.js"></script>
+<script src="js/player.js"></script>
+<script src="js/vlist.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/views.js"></script>
+<script src="js/multiview.js"></script>
+<script src="js/search.js"></script>
+<script src="js/vod.js"></script>
+<script src="js/webedit.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/diag.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

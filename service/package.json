@@ -1,0 +1,6 @@
+{
+  "name": "app.tivibro.tv.service",
+  "version": "0.5.0",
+  "description": "TiviBro network helper",
+  "main": "service.js"
+}

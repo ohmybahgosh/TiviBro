@@ -1,0 +1,7 @@
+{
+  "id": "app.tivibro.tv.service",
+  "description": "TiviBro network helper",
+  "services": [
+    { "name": "app.tivibro.tv.service", "description": "Relays provider requests on localhost so the app is not blocked by CORS" }
+  ]
+}

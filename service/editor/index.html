@@ -1,0 +1,2265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TiviBro Editor</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+:root{/* Midnight Electric */--ink:#0b0e1a;--side:#080b16;--panel:#141a2e;--panel2:#18203a;--raised:#1d2540;--line:#2a3352;--text:#e8ecf8;--muted:#8f9bbf;--dim:#5e6886;
+  --accent:#5b8cff;--accent-ink:#0b0e1a;--accent2:#33e1ff;--accbg:#16224a;--accline:#2c3f7a;--warn:#f2b33d;--air:#e5484d;--ok:#3ddc97;--okbg:#12352a;--warnbg:#2a2412;--badbg:#3a1d20;--info:#33e1ff;--infobg:#0d2233;--r:12px}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--ink);color:var(--text);font:15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+a{color:var(--accent)}
+button{background:var(--raised);border:1px solid var(--line);border-radius:9px;padding:7px 13px;cursor:pointer;white-space:nowrap;position:relative}
+button:hover{border-color:#3a4a7a}
+button.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.primary:hover{filter:brightness(1.07)}
+button.danger{color:#ff9a9d}
+button.ghost{background:none;border-color:transparent;padding:5px 7px}
+button.ghost:hover{background:var(--raised)}
+button.small{padding:4px 10px;font-size:13px}
+button:disabled{opacity:.45;cursor:default}
+button.spin{color:transparent!important}
+button.spin::after{content:'';position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-9px 0 0 -9px;border-radius:50%;border:2px solid rgba(255,255,255,.25);border-top-color:var(--text)}
+button.primary.spin::after{border-color:rgba(0,0,0,.2);border-top-color:var(--accent-ink)}
+button.spin::after,.spinner{animation:rot .8s linear infinite}
+@keyframes rot{to{transform:rotate(360deg)}}
+.spinner{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.2);border-top-color:var(--accent);vertical-align:-3px;flex:none}
+input[type=text],input[type=password],input[type=search],input[type=url],input[type=number],textarea{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;outline:none;min-width:0}
+input:focus,textarea:focus{border-color:var(--accent)}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--muted)}
+label.f input,label.f .dd{font-size:15px;color:var(--text)}
+.hidden{display:none!important}
+body.setup nav.side button:not([data-page=playlists]):not([data-page=backup]):not([data-page=help]):not([data-page=welcome]){display:none}
+body.setup nav.side button[data-page=welcome]{display:flex!important}
+body.setup #changebar,body.setup .plpill{display:none!important}
+.muted{color:var(--muted)} .dim{color:var(--dim)} .small{font-size:13px} .tiny{font-size:12px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.col{display:flex;flex-direction:column;gap:8px}
+.grow{flex:1}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:999px;font-size:12px;background:var(--raised);color:var(--muted);white-space:nowrap}
+.chip.ok{background:var(--okbg);color:#7fe0ae} .chip.warn{background:var(--warnbg);color:var(--warn)} .chip.bad{background:var(--badbg);color:#ff9a9d} .chip.acc{background:var(--accent);color:var(--accent-ink)} .chip.info{background:var(--infobg);color:var(--info)}
+.dot{width:11px;height:11px;border-radius:50%;background:var(--accent);display:inline-block;flex:none}
+kbd{font:12px ui-monospace,Menlo,monospace;background:var(--raised);border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px}
+/* switch */
+.sw{appearance:none;-webkit-appearance:none;width:36px;height:21px;border-radius:11px;background:var(--line);position:relative;cursor:pointer;flex:none;margin:0}
+.sw::after{content:'';position:absolute;top:3px;left:3px;width:15px;height:15px;border-radius:50%;background:var(--muted);transition:left .12s}
+.sw:checked{background:#2b4aa8}.sw:checked::after{left:18px;background:#cfe0ff}
+/* dropdown (custom: a click opens it, a second click picks; nothing is picked by the opening click) */
+.dd{display:inline-flex;min-width:0}
+.dd > button{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:var(--panel2);padding:8px 11px}
+.dd > button span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.dd > button svg{width:14px;height:14px;flex:none;fill:none;stroke:var(--muted);stroke-width:2}
+.dd.open > button{border-color:var(--accent)}
+.ddm{position:fixed;z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;min-width:220px;box-shadow:0 14px 40px rgba(0,0,0,.55);display:flex;flex-direction:column;max-height:min(60vh,460px)}
+.ddm input{margin:2px 2px 6px;flex:none}
+.ddm .opts{overflow:auto}
+.ddm .o{padding:8px 11px;border-radius:7px;cursor:pointer;display:flex;gap:10px;align-items:center}
+.ddm .o.act{background:var(--raised)}
+.ddm .o.cur{color:var(--accent)}
+.ddm .o .s{margin-left:auto;color:var(--dim);font-size:12px}
+.ddm .h{padding:8px 11px 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.ddm .none{padding:10px;color:var(--muted)}
+/* login */
+.login{max-width:430px;margin:12vh auto;padding:34px;background:var(--panel);border:1px solid var(--line);border-radius:18px}
+.login h1{margin:0 0 6px;font-size:26px;display:flex;align-items:center;gap:10px}
+.login p{color:var(--muted);margin:0 0 20px}
+.login input{width:100%;font-size:24px;letter-spacing:4px;text-transform:uppercase;text-align:center;margin-bottom:12px}
+.login button{width:100%;padding:11px}
+.err{color:#ff9a9d;min-height:22px;margin-top:10px}
+.loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;gap:14px;font-size:17px;color:var(--muted);background:var(--ink);z-index:50}
+.loading .spinner{width:26px;height:26px;border-width:3px}
+/* shell */
+.shell{display:flex;height:100%}
+aside{width:250px;flex:none;background:var(--side);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:18px 12px;overflow:auto}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:19px;padding:0 10px 4px}
+.plpill{margin:12px 6px 16px;padding:10px 12px;border-radius:var(--r);background:var(--panel);border:1px solid var(--line);font-size:13px}
+.plpill b{display:block;font-size:15px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+nav.side{display:flex;flex-direction:column;gap:3px}
+nav.side button{display:flex;align-items:center;gap:12px;text-align:left;background:none;border:none;padding:10px 12px;border-radius:10px;color:var(--muted)}
+nav.side button svg{width:19px;height:19px;flex:none;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+nav.side button:hover{background:var(--panel);color:var(--text)}
+nav.side button.on{background:var(--raised);color:var(--text)}
+nav.side button.on svg{stroke:var(--accent)}
+nav.side .badge{margin-left:auto;background:var(--accent);color:var(--accent-ink);border-radius:999px;font-size:11px;font-weight:700;padding:0 7px}
+.sidefoot{margin-top:auto;display:flex;flex-direction:column;gap:10px;padding:14px 6px 0;border-top:1px solid var(--line)}
+.status{font-size:13px;color:var(--muted);display:flex;align-items:flex-start;gap:8px}
+.status i{width:9px;height:9px;border-radius:50%;background:var(--dim);display:inline-block;flex:none;margin-top:5px}
+.status.ok i{background:var(--ok)} .status.busy i{background:var(--accent2)} .status.bad i{background:var(--air)} .status.draft i{background:var(--accent)}
+main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;position:relative}
+#busy{position:absolute;left:0;right:0;top:0;height:3px;overflow:hidden;z-index:5}
+#busy i{position:absolute;top:0;height:3px;width:28%;background:linear-gradient(90deg,var(--accent),var(--accent2));animation:ind 1.3s ease-in-out infinite}
+@keyframes ind{0%{left:-28%}100%{left:100%}}
+.page{flex:1;min-height:0;display:flex;flex-direction:column}
+.phead{padding:22px 28px 12px;display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;flex:none}
+.phead h1{margin:0;font-size:24px}
+.phead p{margin:4px 0 0;color:var(--muted)}
+.scroll{flex:1;overflow:auto;padding:0 28px 40px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
+.card h3{margin:0 0 4px;font-size:16px}
+.card > p{margin:0 0 14px;color:var(--muted);font-size:14px}
+.card + .card{margin-top:16px}
+.grid > .card + .card{margin-top:0}
+.grid{display:grid;gap:16px}
+.stats{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+.stat{padding:16px 18px}
+.stat .v{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums}
+.stat .l{color:var(--muted);font-size:13px}
+.bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin-top:8px;position:relative}.bar i{display:block;height:100%;background:var(--ok);transition:width .4s}
+.bar.acc i{background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.bar.indet i{position:absolute;width:30%;animation:ind2 1.4s ease-in-out infinite}
+@keyframes ind2{0%{left:-30%}100%{left:100%}}
+.step{display:flex;gap:14px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.step:first-of-type{border-top:none}
+.step .n{width:30px;height:30px;border-radius:50%;background:var(--raised);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.step.done .n{background:var(--okbg);color:#7fe0ae}
+/* help notes */
+.note{position:relative;display:block;background:var(--infobg);border:1px solid #17445c;color:#c8f3ff;border-radius:12px;padding:11px 14px 11px 44px;font-size:14px;margin:0 0 16px}
+.note::before{content:'i';position:absolute;left:14px;top:12px;width:20px;height:20px;border-radius:50%;background:var(--info);color:#04202b;font:700 13px/20px Georgia,serif;text-align:center}
+.note a{color:var(--info);white-space:nowrap}
+.note.warn{background:var(--warnbg);border-color:#5a4a1c;color:#f5dca0}.note.warn::before{content:'!';background:var(--warn);font-family:inherit}
+.note .x{position:absolute;right:10px;top:7px}
+.note[data-tip]{padding-right:96px}
+.phead .note{margin:10px 0 0;max-width:900px}
+/* groups + channels */
+.gc{flex:1;min-height:0;display:flex;border-top:1px solid var(--line)}
+.groups{width:350px;flex:none;border-right:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+.ph{padding:12px 14px;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:8px;flex:none}
+.glist{flex:1;overflow:auto;padding:6px 0 30px}
+.sec{padding:12px 16px 4px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim)}
+.g{display:flex;align-items:center;gap:8px;padding:6px 10px 6px 6px;margin:0 6px;border-radius:9px;cursor:pointer;user-select:none}
+.g:hover{background:var(--panel)} .g.sel{background:var(--raised)}
+.g.off .gname{color:var(--dim)}
+.g .grip{cursor:grab;color:var(--dim);padding:0 3px}
+.g .gname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.g .gname em{font-style:normal;color:var(--accent);font-size:11px;margin-left:6px}
+.g .gname em.e{color:var(--info)}
+.g .cnt{color:var(--dim);font-size:12px;font-variant-numeric:tabular-nums}
+.g .acts{display:none;gap:1px} .g:hover .acts{display:flex}
+.g.drop-before{box-shadow:0 -2px 0 var(--accent)} .g.drop-after{box-shadow:0 2px 0 var(--accent)}
+.seg{display:inline-flex;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:3px;flex-wrap:wrap}
+.seg button{border:none;background:none;padding:5px 12px;border-radius:7px;color:var(--muted)}
+.seg button.on{background:var(--raised);color:var(--text)}
+.seg button b{font-weight:600;color:var(--dim);margin-left:4px;font-size:12px}
+.seg button.on b{color:var(--accent)}
+.seg.sm button{padding:3px 9px;font-size:13px}
+.chans{flex:1;min-width:0;display:flex;flex-direction:column}
+.bulk{display:flex;gap:6px;align-items:center;flex-wrap:wrap;background:var(--accbg);border:1px solid var(--accline);border-radius:10px;padding:6px 10px}
+.clist{flex:1;overflow:auto;position:relative}
+.cspacer{position:relative}
+.c{position:absolute;left:0;right:0;height:54px;display:flex;align-items:center;gap:10px;padding:0 14px;border-bottom:1px solid #1a2532}
+.c:hover{background:var(--panel)}
+.c.off .cname{color:var(--dim);text-decoration:line-through}
+.c .num{width:42px;text-align:right;color:var(--dim);font-variant-numeric:tabular-nums;flex:none;font-size:13px}
+.c img,.c .noimg{width:58px;height:34px;object-fit:contain;flex:none}
+.c .names{flex:1;min-width:0;display:flex;flex-direction:column}
+.c .cname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.c .raw{font-size:12px;color:var(--dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.c .grp{font-size:12px;color:var(--muted);width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
+.c .tools{display:flex;gap:1px;flex:none}
+.star{color:var(--dim)} .star.on{color:var(--accent)}
+.c input.rename{flex:1}
+.empty{padding:48px 20px;text-align:center;color:var(--muted)}
+.gnote{font-size:13px;color:var(--muted)}
+/* names */
+.two{display:grid;grid-template-columns:minmax(360px,520px) 1fr;gap:20px;align-items:start}
+.rule{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+.rule .ex{font-size:13px;color:var(--dim)}
+textarea{width:100%;min-height:68px;resize:vertical;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px}
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+table.t td,table.t th{padding:8px 9px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+table.t th{color:var(--dim);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+table.t tr.same td{color:var(--dim)}
+table.t tr.dim td{opacity:.5}
+td.r,th.r{text-align:right!important;white-space:nowrap}
+/* guide */
+.choices{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.choice{border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;background:var(--panel2);display:flex;flex-direction:column;gap:6px;text-align:left;white-space:normal}
+.choice:hover{border-color:#3a4a7a}
+.choice.on{border-color:var(--accent);background:var(--accbg)}
+.choice h4{margin:0;font-size:15px;display:flex;align-items:center;gap:8px}
+.choice p{margin:0;color:var(--muted);font-size:13px}
+.choice .pros{font-size:12px;color:var(--dim)}
+.prog{margin-top:14px;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--panel2)}
+.prog .top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
+.prog .nums{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.prog.ok{border-color:#1f6049} .prog.bad{border-color:#6b2a2e}
+.mrow .logo{width:44px;height:26px;object-fit:contain;vertical-align:middle;margin-right:8px}
+.conf{font-variant-numeric:tabular-nums}
+.pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:10px;font-size:13px;color:var(--muted)}
+.cat td:first-child{width:46%}
+.yn{display:inline-flex;gap:4px}
+.yn button{padding:4px 10px}
+.yn button.yes.on{background:var(--okbg);border-color:#2f6b50;color:#7fe0ae}
+.yn button.no.on{background:var(--badbg);border-color:#6b2a2e;color:#ff9a9d}
+/* playlists */
+.plgrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.pl h3{display:flex;align-items:center;gap:10px}
+.pl .meta{color:var(--muted);font-size:13px;margin:6px 0 14px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form .full{grid-column:1 / -1}
+.msg{margin-top:12px;padding:10px 14px;border-radius:10px;font-size:14px;display:flex;gap:10px;align-items:center}
+.msg.ok{background:var(--okbg);color:#9be8c0} .msg.bad{background:var(--badbg);color:#ffb3b5} .msg.busy{background:var(--accbg);color:#b9ceff}
+.drop{border:2px dashed var(--line);border-radius:14px;padding:28px;text-align:center;color:var(--muted);cursor:pointer;display:block}
+.drop.over{border-color:var(--accent);color:var(--text)}
+/* overlays */
+.menu{position:fixed;z-index:40;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:6px;min-width:230px;max-height:60vh;overflow:auto;box-shadow:0 14px 40px rgba(0,0,0,.55)}
+.modal{position:fixed;inset:0;z-index:30;background:rgba(5,8,12,.66);display:flex;align-items:flex-start;justify-content:center;padding:6vh 16px}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:18px;width:min(680px,100%);max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.modal.wide .box{width:min(1100px,100%)}
+.modal .bh{padding:18px 20px 10px;display:flex;align-items:center;gap:12px}
+.modal .bh h2{margin:0;font-size:18px;flex:1}
+.modal .bb{padding:0 20px 18px;overflow:auto}
+.modal .bf{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pick{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;cursor:pointer}
+.pick:hover{background:var(--raised)}
+.pick .id{color:var(--dim);font-size:12px;margin-left:auto;max-width:40%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.opt{display:flex;gap:12px;align-items:flex-start;border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.opt.on{border-color:var(--accent)}
+.opt input{margin-top:4px}
+.opt.dis{opacity:.45;cursor:default}
+.toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:var(--raised);border:1px solid var(--line);padding:10px 18px;border-radius:10px;z-index:45;box-shadow:0 8px 30px rgba(0,0,0,.5);display:flex;gap:12px;align-items:center}
+.toast button{padding:3px 10px}
+/* change bar */
+.changebar{flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 20px;border-top:1px solid var(--accline);background:#0f1733}
+.changebar .lbl{display:flex;align-items:center;gap:10px;font-weight:600}
+.changebar .lbl i{width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.changebar.sent{background:#0e2a22;border-color:#1f6049}.changebar.sent .lbl i{background:var(--ok)}
+.changebar label{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted)}
+/* history / help */
+.hist{display:flex;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.hist:first-child{border-top:none}
+.hist .when{color:var(--dim);font-size:12px;width:70px;flex:none;font-variant-numeric:tabular-nums}
+.help{max-width:860px}
+.help h2{margin:30px 0 8px;font-size:20px;scroll-margin-top:10px}
+.help h3{margin:18px 0 6px;font-size:16px}
+.help p,.help li{color:#c3ccd8}
+.help .toc{columns:2;padding-left:18px}
+.help .toc li{margin:3px 0}
+.help code{background:var(--raised);padding:1px 6px;border-radius:5px;font-size:13px}
+@media (max-width:900px){
+  .shell{flex-direction:column} aside{width:auto;flex-direction:row;align-items:center;gap:10px;padding:10px;overflow-x:auto}
+  nav.side{flex-direction:row} nav.side button span{display:none} .plpill,.sidefoot{display:none}
+  .groups{width:44%} .two{grid-template-columns:1fr} .c .grp{display:none} .help .toc{columns:1}
+}
+</style>
+</head>
+<body>
+
+<div id="login" class="login hidden">
+  <h1><img src="wordmark.png" alt="TiviBro" style="height:44px"><span class="muted" style="font-weight:500;font-size:20px">editor</span></h1>
+  <p>Enter the password shown on your TV under Settings, Edit on a computer.</p>
+  <form id="loginForm"><input id="pw" type="text" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX" autofocus><button class="primary" id="loginBtn">Open the editor</button></form>
+  <div id="loginErr" class="err"></div>
+</div>
+<div id="loadingScreen" class="loading hidden"><span class="spinner"></span><span id="loadingText">Loading the channel list from the TV…</span></div>
+
+<div id="app" class="shell hidden">
+  <aside>
+    <div class="brand"><img src="wordmark.png" alt="TiviBro" style="height:30px"><span class="muted" style="font-weight:500;font-size:14px;margin-top:6px">editor</span></div>
+    <div class="plpill"><span class="muted">Editing</span><b id="plName"></b><span id="plMeta" class="muted"></span></div>
+    <nav class="side" id="nav">
+      <button data-page="welcome" class="hidden"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9H6v-9H3z"/></svg><span>Welcome</span></button>
+      <button data-page="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Overview</span></button>
+      <button data-page="gc"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Groups and channels</span></button>
+      <button data-page="guide"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg><span>Guide</span></button>
+      <button data-page="names"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg><span>Channel names</span></button>
+      <button data-page="tools"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg><span>Smart clean-up</span><em class="badge hidden" id="toolsBadge"></em></button>
+      <button data-page="playlists"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>Playlists</span></button>
+      <button data-page="history"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>Changes and restore points</span><em class="badge hidden" id="histBadge"></em></button>
+      <button data-page="backup"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg><span>Backup and restore</span></button>
+      <button data-page="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>Help</span></button>
+    </nav>
+    <div class="sidefoot">
+      <div id="status" class="status"><i></i><span>Connected</span></div>
+      <div class="tiny dim"><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo · <kbd>/</kbd> search</div>
+      <button class="ghost" id="logout" style="text-align:left">Log out</button>
+    </div>
+  </aside>
+
+  <main>
+    <div id="busy" class="hidden"><i></i></div>
+
+    <!-- OVERVIEW -->
+    <section class="page" id="p-home">
+      <div class="phead"><div><h1>Overview</h1><p>Tidy up what the TV shows, from your computer.</p></div></div>
+      <div class="scroll">
+        <div class="note">Changes you make here are drafts until you press <b>Send to TV</b> in the bar at the bottom.  Every change can be undone, and the TV keeps restore points.  <a href="#help/saving">Learn more</a></div>
+        <div class="grid stats" id="stats"></div>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(380px,1fr));margin-top:16px">
+          <div class="card"><h3>Smart suggestions</h3><p>Things TiviBro noticed in your playlist.</p><div id="sugg"></div></div>
+          <div class="card"><h3>Clean up your guide in five steps</h3><p>Work down the list.  Done steps get a tick.</p><div id="steps"></div></div>
+        </div>
+        <div class="card" style="margin-top:16px"><h3>Quick actions</h3><p>One click each, and each one can be undone.</p>
+          <div class="row">
+            <button id="qaHideAll">Hide every group, then pick the ones you watch</button>
+            <button id="qaNames">Turn on the recommended name clean-up</button>
+            <button id="qaHideEmpty">Hide groups with no channels</button>
+            <button id="qaShowAll">Show every group again</button>
+          </div></div>
+      </div>
+    </section>
+
+    <!-- GROUPS + CHANNELS -->
+    <section class="page hidden" id="p-gc">
+      <div class="phead"><div><h1>Groups and channels</h1><p>Switch groups on or off, drag to reorder, rename, sort, and copy or move channels between any groups.</p>
+        <div class="note" data-tip="gc">Click a group to see its channels.  The switch shows or hides it on the TV.  Tick channels to act on many at once.  <a href="#help/groups">Learn more</a> <button class="ghost small x" data-hidetip="gc">Got it</button></div></div></div>
+      <div class="gc">
+        <section class="groups">
+          <div class="ph">
+            <input id="gSearch" type="search" placeholder="Filter groups">
+            <div class="seg sm" id="gFilter"><button data-f="all" class="on">All</button><button data-f="shown">Shown</button><button data-f="hidden">Hidden</button><button data-f="empty">Empty</button><button data-f="edited">Edited</button></div>
+            <div class="row"><button id="showAll" class="small">Show all</button><button id="hideAll" class="small">Hide all</button><span class="grow"></span><button id="newGroup" class="primary small">＋ New group</button></div>
+          </div>
+          <div id="glist" class="glist"></div>
+        </section>
+        <section class="chans">
+          <div class="ph">
+            <div class="row"><h2 id="cTitle" style="margin:0;font-size:18px"></h2><span id="cCount" class="muted small"></span><span class="grow"></span>
+              <input id="cSearch" type="search" placeholder="Search all channels  ( / )" style="width:260px"></div>
+            <div id="gNote" class="gnote hidden"></div>
+            <div class="row">
+              <label class="muted small"><input type="checkbox" id="selAll"> Select all</label>
+              <div class="dd" id="cFilter" style="width:190px"></div>
+              <div class="dd" id="cSort" style="width:240px" title="How this group is sorted on the TV"></div>
+              <button id="findRep" title="Find and replace in channel names">Find and replace…</button>
+            </div>
+            <div id="bulk" class="bulk hidden">
+              <b id="selCount" class="small"></b>
+              <button data-bulk="show">Show</button><button data-bulk="hide">Hide</button>
+              <button data-bulk="fav">★ Favorite</button><button data-bulk="unfav">Remove ★</button>
+              <button data-bulk="copy" class="primary">Copy or move to group…</button>
+              <button data-bulk="remove" id="bulkRemove">Take out of this group</button>
+              <button data-bulk="clear" class="ghost">Clear</button>
+            </div>
+          </div>
+          <div id="clist" class="clist"><div id="cspacer" class="cspacer"></div></div>
+        </section>
+      </div>
+    </section>
+
+    <!-- GUIDE -->
+    <section class="page hidden" id="p-guide">
+      <div class="phead"><div><h1>Guide</h1><p>Where the TV gets programme information, and which guide channel belongs to which channel.</p></div></div>
+      <div class="scroll">
+        <div class="note">Three steps: pick where the guide comes from, add free guide sources if your provider's guide is thin, then match channels that show "No guide information".  <b>Smart match</b> does most of the matching for you; you approve each guess.  <a href="#help/guide">Learn more</a></div>
+        <div class="card">
+          <div class="row"><h3 class="grow" style="margin:0">1.  Your provider's guide</h3><button id="gReload" class="small">Reload the guide on the TV</button></div>
+          <p style="margin-top:6px" id="provIntro"></p>
+          <div class="choices" id="provChoices"></div>
+          <div id="gProg"></div>
+          <div id="provMsg"></div>
+        </div>
+        <div class="card">
+          <h3>2.  Extra guide sources</h3>
+          <p>XMLTV guide addresses (.xml or .xml.gz).  Used in this order; your provider's full guide comes last.  Each source can have its own time offset if its times are off.  <a href="#help/sources">Learn more</a></p>
+          <div id="srcList"></div>
+          <form id="srcForm" class="row" style="margin-top:12px"><input id="srcUrl" type="url" class="grow" placeholder="https://example.com/guide.xml.gz" style="min-width:260px">
+            <label class="small muted row" style="gap:6px">Offset <input id="srcOff" type="number" value="0" style="width:80px" title="Time offset in minutes"> min</label>
+            <button type="button" id="srcTest">Test</button><button class="primary" id="srcAdd">Add guide source</button></form>
+          <div id="srcMsg"></div>
+          <details id="catBox" style="margin-top:16px"><summary style="cursor:pointer"><b>Recommended free guides</b> <span class="muted small">community-run XMLTV guides that were working when this version was made</span></summary>
+            <div class="row" style="margin:12px 0"><div class="dd" id="catRegion" style="width:220px"></div><span class="muted small grow">Pick the region your channels are from.  Smaller files load faster on the TV.  Free services can change or go offline; <b>Test</b> checks one before you add it.</span></div>
+            <table class="t cat" id="catList"></table></details>
+        </div>
+        <div class="card">
+          <div class="row"><h3 class="grow" style="margin:0">3.  Match channels to the guide</h3><span id="gCover" class="chip"></span></div>
+          <p style="margin-top:6px">Most channels match on their own.  The ones that don't show "No guide information" on the TV.  Pick the right guide channel for each, or let Smart match suggest them.</p>
+          <div id="mBody">
+            <div class="row" style="margin-bottom:10px">
+              <div class="seg" id="mTabs"></div>
+              <span class="grow"></span>
+              <button class="primary" id="smartBtn">✦ Smart match</button>
+            </div>
+            <div class="row" style="margin-bottom:10px"><div class="dd" id="mGroup" style="width:260px"></div><input id="mSearch" type="search" placeholder="Search channels" class="grow"></div>
+            <div id="mList"></div>
+          </div>
+          <div id="mEmpty"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NAMES -->
+    <section class="page hidden" id="p-names">
+      <div class="phead"><div><h1>Channel names</h1><p>Strip clutter like "USA | " or " FHD" from every name at once.  Channels you renamed keep your names.</p></div></div>
+      <div class="scroll">
+        <div class="note">Rules change how names look on the TV; the provider's names are never touched, so turning a rule off brings the old name back.  The preview on the right updates as you type.  <a href="#help/names">Learn more</a></div>
+        <div class="two">
+        <div>
+          <div class="card">
+            <label class="rule"><input type="checkbox" class="sw" id="nEnabled"><div><b>Clean up channel names</b><div class="ex">The master switch for everything on this page.</div></div></label>
+            <label class="rule"><input type="checkbox" class="sw" id="nGroups"><div><b>Clean group names too</b></div></label>
+            <div id="rules"></div>
+            <div class="row" style="margin-top:10px"><button id="nDefaults">Recommended defaults</button><button id="nNone" class="ghost">Turn all rules off</button></div>
+          </div>
+          <div class="card">
+            <h3>Your own prefixes and suffixes</h3>
+            <p>Comma separated, like TiviMate.  Spaces count: " HD" will not touch "WHD".  Upper and lower case do not matter.</p>
+            <label class="f">Remove at the start of names<textarea id="nPre" spellcheck="false" placeholder="NOW: ,XX "></textarea></label>
+            <label class="f" style="margin-top:10px">Remove at the end of names<textarea id="nSuf" spellcheck="false" placeholder=" HD,| FHD, (Backup)"></textarea></label>
+          </div>
+        </div>
+        <div class="card"><div class="row"><h3 class="grow" style="margin:0">Preview</h3><label class="muted small"><input type="checkbox" id="onlyChanged" checked> Only names that change</label></div>
+          <table class="t" id="prev" style="margin-top:10px"></table></div>
+      </div></div>
+    </section>
+
+    <!-- SMART CLEAN-UP -->
+    <section class="page hidden" id="p-tools">
+      <div class="phead"><div><h1>Smart clean-up</h1><p>Bulk tools that find clutter for you.  Each shows what it will do before it does it, and each can be undone.</p></div></div>
+      <div class="scroll">
+        <div class="note">Hiding never deletes anything.  Hidden groups and channels can be switched back on any time in Groups and channels.  <a href="#help/tools">Learn more</a></div>
+        <div class="card" id="tCountry"></div>
+        <div class="card" id="tDupes"></div>
+        <div class="card" id="tKeyword"></div>
+        <div class="card" id="tEmpty"></div>
+      </div>
+    </section>
+
+    <!-- PLAYLISTS -->
+    <section class="page hidden" id="p-playlists">
+      <div class="phead"><div><h1>Playlists</h1><p>Your provider accounts.  Each playlist keeps its own groups, favorites, names and guide settings.</p></div></div>
+      <div class="scroll">
+        <div class="note">Logins never reach this page: playlists show only their server name.  The TV tests a new login before it saves it.  <a href="#help/playlists">Learn more</a></div>
+        <div class="grid plgrid" id="plList"></div>
+        <div class="card" style="margin-top:18px;max-width:760px">
+          <div class="row"><h3 class="grow" style="margin:0">Add a playlist</h3><div class="seg" id="addSeg"><button data-t="xtream" class="on">Xtream Codes</button><button data-t="m3u">M3U</button></div></div>
+          <p style="margin-top:8px">The TV logs in and loads the channel list before saving, so you know it works.</p>
+          <form id="addForm" class="form">
+            <label class="f full">Name (optional)<input id="aName" type="text" placeholder="e.g. Living room provider"></label>
+            <label class="f full xc">Server<input id="aServer" type="text" placeholder="http://provider.com:8080 or just provider.com"></label>
+            <label class="f xc">Username<input id="aUser" type="text" autocomplete="off"></label>
+            <label class="f xc">Password<input id="aPass" type="password" autocomplete="new-password"></label>
+            <label class="f full m3u hidden">Playlist address<input id="aM3u" type="url" placeholder="http://provider.com/get.php?username=…&type=m3u_plus"></label>
+            <label class="f full">Guide address (optional)<input id="aEpg" type="url" placeholder="XMLTV link, .xml or .xml.gz"></label>
+            <label class="muted small full"><input type="checkbox" id="aUse"> Switch the TV to this playlist when it is added</label>
+            <div class="full row"><button class="primary" id="aGo">Add and test</button></div>
+          </form>
+          <div id="addMsg"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HISTORY -->
+    <section class="page hidden" id="p-history">
+      <div class="phead"><div><h1>Changes and restore points</h1><p>What is waiting to go to the TV, everything you did in this session, and saved points you can go back to.</p></div></div>
+      <div class="scroll">
+        <div class="note">Undo works on this page's session.  Restore points live on the TV and survive restarts; the TV makes one by itself each time you send changes.  <a href="#help/saving">Learn more</a></div>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(400px,1fr))">
+          <div class="card"><div class="row"><h3 class="grow" style="margin:0">Not on the TV yet</h3><button id="hDiscard" class="ghost danger small">Discard all</button><button id="hSend" class="primary small">Send to TV</button></div><div id="hDiff" style="margin-top:10px"></div></div>
+          <div class="card"><div class="row"><h3 class="grow" style="margin:0">This session</h3><button id="hUndo" class="small">Undo</button><button id="hRedo" class="small">Redo</button></div><p style="margin-top:6px">Newest first.  "Go back" returns to just before that change (and can itself be undone).</p><div id="hList"></div></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="row"><h3 class="grow" style="margin:0">Restore points on the TV</h3><button id="sRefresh" class="small">Refresh</button></div>
+          <p style="margin-top:6px">Snapshots of this playlist's groups, channels, names and guide matches.  Make one before a big clean-up.</p>
+          <form id="snapForm" class="row" style="margin-bottom:12px"><input id="snapName" type="text" class="grow" placeholder="Name, e.g. Before removing sports" maxlength="80"><button class="primary" id="snapGo">Create restore point</button></form>
+          <div id="snapList"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BACKUP -->
+    <section class="page hidden" id="p-backup">
+      <div class="phead"><div><h1>Backup and restore</h1><p>Save everything you set up, and put it back on this TV or a new one.</p></div></div>
+      <div class="scroll">
+        <div class="note">A backup holds everything: settings, every playlist <b>with its login</b>, groups, favorites, names, guide matches and restore points.  It is locked with a passphrase you choose, so the file is useless to anyone without it.  To undo recent edits instead, use <a href="#history">Changes and restore points</a>.  <a href="#help/backup">Learn more</a></div>
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(360px,1fr))">
+        <div class="card" id="bCard"><h3>Download a backup</h3>
+          <p>Choose a passphrase to lock the file.  You need it again to restore.  Write it down or keep it in a password manager: nobody, us included, can open the file without it.</p>
+          <form id="bForm" class="col">
+            <label class="f">Passphrase<div class="row" style="gap:8px"><input id="bPass" type="password" class="grow" autocomplete="new-password" minlength="8" placeholder="At least 8 characters"><button type="button" id="bShow" class="small">Show</button><button type="button" id="bGen" class="small">Suggest one</button></div></label>
+            <label class="f">Type it again<input id="bPass2" type="password" autocomplete="new-password"></label>
+            <div id="bStrength" class="small muted"></div>
+            <div class="row" style="margin-top:6px"><button class="primary" id="bDown">Download locked backup</button></div>
+          </form>
+          <div id="bMsg"></div></div>
+        <div class="card"><h3>Restore a backup</h3>
+          <p>Replaces the TV's settings and playlists with the ones in the file, logins included, and restarts TiviBro on the TV.  Works on a brand-new TV too.</p>
+          <label class="drop" id="drop"><input type="file" id="bFile" accept=".tivibro,.json,application/json" class="hidden">Drop a backup file here, or click to choose one</label>
+          <div id="rInfo"></div></div>
+      </div></div>
+    </section>
+
+    <!-- WELCOME (fresh TV) -->
+    <section class="page hidden" id="p-welcome">
+      <div class="phead"><div><h1>Welcome to TiviBro</h1><p>This TV has no playlist yet.  Pick how you want to start.</p></div></div>
+      <div class="scroll">
+        <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(340px,1fr))">
+          <div class="card"><h3>Restore a backup</h3><p>Moving from another TV, or reinstalled TiviBro?  Load your backup file and its passphrase.  Logins, groups, favorites and settings all come back.</p><button class="primary" data-go="backup">Restore a backup</button></div>
+          <div class="card"><h3>Add your playlist</h3><p>Starting fresh?  Enter your Xtream Codes login or M3U address here with a real keyboard.  The TV tests it before saving.</p><button class="primary" data-go="playlists">Add a playlist</button></div>
+        </div>
+        <div class="note" style="margin-top:16px">Keep TiviBro open on the TV while you do this.  The TV moves on by itself when you finish.</div>
+      </div>
+    </section>
+
+    <!-- HELP -->
+    <section class="page hidden" id="p-help">
+      <div class="phead"><div><h1>Help</h1><p>How the editor works, page by page.</p></div></div>
+      <div class="scroll"><div class="help" id="helpBody"></div></div>
+    </section>
+
+    <div id="changebar" class="changebar hidden">
+      <span class="lbl"><i></i><span id="cbText"></span></span>
+      <button class="ghost small" id="cbReview">Review</button>
+      <span class="grow"></span>
+      <label title="Send each change to the TV as soon as you make it"><input type="checkbox" class="sw" id="autoSend"> Send automatically</label>
+      <button id="cbUndo" class="small" title="Undo (Ctrl+Z)">↶ Undo</button>
+      <button id="cbDiscard" class="ghost danger small">Discard</button>
+      <button id="cbSend" class="primary">Send to TV</button>
+    </div>
+  </main>
+</div>
+<div id="toast" class="toast hidden"></div>
+
+<script src="names.js"></script>
+<script>
+'use strict';
+/* TiviBro web editor.
+   The browser keeps a working copy of the TV's edits (E) and name rules (N).  Every change goes
+   through mut(), which records an undo step and marks the copy as a draft.  Nothing reaches the
+   TV until "Send to TV" (or "Send automatically").  Drafts survive a page reload in this browser.
+   Actions the TV must carry out (playlists, guide sources, restore points, backup) go as
+   commands and are polled for a result. */
+var $ = function (id) { return document.getElementById(id); };
+var LS = { get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set: function (k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }, del: function (k) { try { localStorage.removeItem(k); } catch (e) {} } };
+var token = '';
+try { token = sessionStorage.getItem('tivibro.editor.token') || ''; } catch (e) {}
+var D = null, E = null, N = null, BASE = null;            // snapshot, working edits, working names, what the TV has
+var rev = 0, sentRev = 0, sending = false, inflight = 0, sel = new Set(), curGroup = null, query = '', page = 'home';
+var hist = [], redo = [], lastProgress = null, tvLost = false;
+var FAV = 'c_fav', ALL = '__all';
+var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort'];
+var byKey = new Map(), byGroup = new Map(), guideName = new Map();
+
+/* ---------- small helpers ---------- */
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function plural(n, a, b) { return n + ' ' + (n === 1 ? a : (b || a + 's')); }
+function fmtMB(n) { return n >= 1048576 ? (n / 1048576).toFixed(n < 10485760 ? 1 : 0) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
+function fmtTime(ms) { var s = Math.max(0, Math.round(ms / 1000)); return s < 60 ? s + ' s' : Math.floor(s / 60) + ' min ' + (s % 60 ? (s % 60) + ' s' : ''); }
+function ago(t) { var s = (Date.now() - t) / 1000; return s < 60 ? 'just now' : s < 3600 ? Math.floor(s / 60) + ' min ago' : s < 86400 ? Math.floor(s / 3600) + ' h ago' : new Date(t).toLocaleDateString(); }
+function clock(t) { var d = new Date(t); return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+function clone(x) { return JSON.parse(JSON.stringify(x)); }
+var toastT = 0;
+function toast(m, action) {
+  var t = $('toast'); t.innerHTML = '<span>' + esc(m) + '</span>';
+  if (action) { var b = document.createElement('button'); b.textContent = action[0]; b.onclick = function () { t.classList.add('hidden'); action[1](); }; t.appendChild(b); }
+  t.classList.remove('hidden'); clearTimeout(toastT); toastT = setTimeout(function () { t.classList.add('hidden'); }, action ? 6000 : 2800);
+}
+// Messages are remembered for a minute so a redraw (a fresh snapshot from the TV) does not wipe them.
+var msgs = {};
+function msg(el, kind, text) { var h = text ? '<div class="msg ' + kind + '">' + (kind === 'busy' ? '<span class="spinner"></span>' : '') + '<span>' + esc(text) + '</span></div>' : ''; msgs[el] = { h: h, at: Date.now() }; var n = $(el); if (n) n.innerHTML = h; }
+function restoreMsgs() { Object.keys(msgs).forEach(function (id) { var m = msgs[id], n = $(id); if (Date.now() - m.at > 60000) { delete msgs[id]; return; } if (n && !n.innerHTML) n.innerHTML = m.h; }); }
+function busy(d) { inflight = Math.max(0, inflight + d); $('busy').classList.toggle('hidden', !inflight); }
+// Spinner on a button while a promise runs.
+function busyBtn(b, p) { if (!b) return p; b.classList.add('spin'); b.disabled = true; return p.then(function (r) { b.classList.remove('spin'); b.disabled = false; return r; }, function (e) { b.classList.remove('spin'); b.disabled = false; throw e; }); }
+
+function api(path, opts) {
+  opts = opts || {};
+  var h = { 'Content-Type': 'application/json' };
+  if (token) h['X-Token'] = token;
+  return fetch(path, { method: opts.method || 'GET', headers: h, body: opts.body ? JSON.stringify(opts.body) : undefined }).then(function (r) {
+    return r.json().catch(function () { return {}; }).then(function (j) {
+      if (r.status === 401 && path !== '/api/login') { showLogin('Your session ended.  Log in again.'); throw new Error('auth'); }
+      if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
+      return j;
+    });
+  });
+}
+// Ask the TV to do something and wait for its answer.  onTick(seconds) lets callers show elapsed time.
+function command(type, args, timeoutMs, onTick) {
+  busy(1);
+  return api('/api/command', { method: 'POST', body: { type: type, args: args || {} } }).then(function (j) {
+    var id = j.id, t0 = Date.now();
+    return new Promise(function (res, rej) {
+      (function poll() {
+        api('/api/result?id=' + id).then(function (r) {
+          if (r.done) return r.ok ? res(r) : rej(new Error(r.msg || 'The TV could not do that.'));
+          var waited = Date.now() - t0;
+          if (onTick) onTick(Math.round(waited / 1000));
+          if (waited > (timeoutMs || 60000)) return rej(new Error('The TV did not answer.  Is TiviBro still open on the TV?'));
+          setTimeout(poll, 600);
+        }).catch(rej);
+      })();
+    });
+  }).then(function (r) { busy(-1); return r; }, function (e) { busy(-1); throw e; });
+}
+// Message box that counts seconds while the TV works.
+function cmdMsg(box, text) { var t0 = Date.now(); msg(box, 'busy', text); return function (s) { msg(box, 'busy', text + '  ' + s + ' s'); }; }
+
+/* ---------- dropdown ----------
+   Opens on click, picks on a later click.  Clicks that land within 250 ms of opening are ignored,
+   so the click that opens the list can never pick the option under the pointer. */
+var openDD = null;
+function dd(el, cfg) {
+  el.classList.add('dd');
+  el.innerHTML = '<button type="button"><span></span><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>';
+  var btn = el.firstChild, st = { value: cfg.value, options: cfg.options || [] };
+  function label() { var o = st.options.filter(function (x) { return !x.hdr && x.v === st.value; })[0]; btn.firstChild.textContent = o ? (cfg.prefix || '') + o.l : (cfg.placeholder || 'Choose…'); btn.title = o ? o.l : ''; }
+  function close() { if (openDD && openDD.el === el) { openDD.menu.remove(); openDD = null; el.classList.remove('open'); } }
+  function open() {
+    closeDD();
+    var m = document.createElement('div'); m.className = 'ddm';
+    var many = cfg.search || st.options.length > 12;
+    m.innerHTML = (many ? '<input type="search" placeholder="Type to filter">' : '') + '<div class="opts"></div>';
+    document.body.appendChild(m);
+    var q = '', act = -1, items = [], t0 = performance.now();
+    function draw() {
+      var lq = q.toLowerCase(), html = [], lastHdr = null;
+      items = [];
+      st.options.forEach(function (o) {
+        if (o.hdr) { lastHdr = o.l; return; }
+        if (lq && (o.l + ' ' + (o.s || '') + ' ' + (o.k || '')).toLowerCase().indexOf(lq) < 0) return;
+        if (lastHdr) { html.push('<div class="h">' + esc(lastHdr) + '</div>'); lastHdr = null; }
+        items.push(o);
+        html.push('<div class="o' + (o.v === st.value ? ' cur' : '') + '" data-i="' + (items.length - 1) + '"' + (o.style ? ' style="' + o.style + '"' : '') + '>' + esc(o.l) + (o.s != null ? '<span class="s">' + esc(o.s) + '</span>' : '') + '</div>');
+      });
+      m.lastChild.innerHTML = html.join('') || '<div class="none">Nothing matches.</div>';
+      if (act >= items.length) act = items.length - 1;
+      mark();
+    }
+    function mark() { m.querySelectorAll('.o').forEach(function (d) { d.classList.toggle('act', +d.dataset.i === act); }); var a = m.querySelector('.o.act'); if (a) a.scrollIntoView({ block: 'nearest' }); }
+    function pick(i) { var o = items[i]; if (!o) return; close(); var old = st.value; st.value = o.v; label(); if (cfg.onChange && (o.v !== old || o.always)) cfg.onChange(o.v, o); }
+    m.addEventListener('click', function (e) { if (performance.now() - t0 < 250) return; var d = e.target.closest('.o'); if (d) pick(+d.dataset.i); });
+    m.addEventListener('mousemove', function (e) { var d = e.target.closest('.o'); if (d && +d.dataset.i !== act) { act = +d.dataset.i; mark(); } });
+    var inp = m.querySelector('input');
+    if (inp) inp.addEventListener('input', function () { q = inp.value; act = 0; draw(); });
+    m.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown') { act = Math.min(items.length - 1, act + 1); mark(); e.preventDefault(); }
+      else if (e.key === 'ArrowUp') { act = Math.max(0, act - 1); mark(); e.preventDefault(); }
+      else if (e.key === 'Enter') { pick(act); e.preventDefault(); }
+      else if (e.key === 'Escape') { close(); btn.focus(); e.preventDefault(); e.stopPropagation(); }
+    });
+    draw();
+    act = items.findIndex(function (o) { return o.v === st.value; }); mark();
+    var b = btn.getBoundingClientRect(), w = Math.max(b.width, cfg.menuWidth || 0, 220);
+    m.style.width = w + 'px';
+    m.style.left = Math.max(8, Math.min(b.left, innerWidth - w - 8)) + 'px';
+    var below = innerHeight - b.bottom - 12, mh = m.offsetHeight;
+    if (below < Math.min(mh, 260) && b.top > below) m.style.top = Math.max(8, b.top - mh - 4) + 'px'; else { m.style.top = (b.bottom + 4) + 'px'; m.style.maxHeight = Math.max(160, below) + 'px'; }
+    openDD = { el: el, menu: m, close: close };
+    el.classList.add('open');
+    (inp || m).setAttribute('tabindex', '-1'); (inp || m).focus();
+  }
+  btn.addEventListener('click', function () { if (openDD && openDD.el === el) close(); else open(); });
+  btn.addEventListener('keydown', function (e) { if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+  label();
+  el._dd = {
+    get value() { return st.value; },
+    set: function (v) { st.value = v; label(); },
+    options: function (o, v) { st.options = o; if (v !== undefined) st.value = v; if (!st.options.some(function (x) { return x.v === st.value; })) { var f = st.options.filter(function (x) { return !x.hdr; })[0]; st.value = f ? f.v : null; } label(); }
+  };
+  return el._dd;
+}
+function closeDD() { if (openDD) openDD.close(); }
+document.addEventListener('mousedown', function (e) { if (openDD && !openDD.menu.contains(e.target) && !openDD.el.contains(e.target)) closeDD(); }, true);
+window.addEventListener('resize', closeDD);
+document.addEventListener('scroll', function (e) { if (openDD && !openDD.menu.contains(e.target)) closeDD(); }, true);
+
+/* ---------- login and loading ---------- */
+function showLogin(m) {
+  token = ''; try { sessionStorage.removeItem('tivibro.editor.token'); } catch (e) {}
+  $('app').classList.add('hidden'); $('loadingScreen').classList.add('hidden'); $('login').classList.remove('hidden'); $('loginErr').textContent = m || ''; $('pw').focus();
+}
+$('loginForm').addEventListener('submit', function (e) {
+  e.preventDefault(); $('loginErr').textContent = '';
+  busyBtn($('loginBtn'), api('/api/login', { method: 'POST', body: { password: $('pw').value } })).then(function (j) {
+    token = j.token; try { sessionStorage.setItem('tivibro.editor.token', token); } catch (e) {}
+    $('pw').value = ''; boot();
+  }).catch(function (err) { $('loginErr').textContent = err.message; });
+});
+$('logout').addEventListener('click', function () {
+  if (pendingCount() && !confirm('You have changes that are not on the TV yet.  They stay saved in this browser.  Log out anyway?')) return;
+  api('/api/logout', { method: 'POST' }).catch(function () {}); showLogin('');
+});
+function boot() {
+  $('login').classList.add('hidden'); $('loadingScreen').classList.remove('hidden');
+  var tries = 0;
+  (function attempt() {
+    load(true).then(function () {
+      $('loadingScreen').classList.add('hidden');
+      route();
+      offerDraft();
+    }).catch(function (err) {
+      if (err.message === 'auth') return;
+      tries++;
+      $('loadingText').textContent = err.message + '  Trying again…';
+      setTimeout(attempt, Math.min(8000, 1500 * tries));
+    });
+  })();
+}
+
+/* ---------- data ---------- */
+function pickE(src) {
+  var o = {};
+  FIELDS.forEach(function (f) { o[f] = clone(src && src[f] != null ? src[f] : (f === 'custom' || f === 'groupOrder' ? [] : {})); });
+  if (!o.custom.some(function (g) { return g.id === FAV; })) o.custom.unshift({ id: FAV, name: 'Favorites', items: [] });
+  return o;
+}
+function stateStr() { return JSON.stringify({ E: E, N: N }); }
+function setState(s) { var o = JSON.parse(s); E = o.E; N = o.N; }
+function load(first) {
+  busy(1);
+  return api('/api/state').then(function (j) {
+    busy(-1);
+    D = j.data; rev = j.rev;
+    BASE = { E: pickE(D.edits), N: clone(D.names || Names.defaults()) };
+    BASE.N.rules = BASE.N.rules || {};
+    var keep = !first && pendingCount() > 0;
+    if (!keep) { E = clone(BASE.E); N = clone(BASE.N); }
+    index();
+    var wasSetup = document.body.classList.contains('setup');
+    document.body.classList.toggle('setup', !!D.setup);
+    var jump = D.setup && ['playlists', 'backup', 'help', 'welcome'].indexOf(page) < 0 ? 'welcome' : wasSetup && !D.setup ? 'home' : null;
+    $('app').classList.remove('hidden');
+    $('plName').textContent = D.playlist ? D.playlist.name : '';
+    $('plMeta').textContent = D.channels.length.toLocaleString() + ' channels  ·  ' + D.groups.length + ' groups';
+    if (first || !curGroup || !groupExists(curGroup)) curGroup = ALL;
+    setupDropdowns();
+    renderAll();
+    updateBar();
+    if (jump && !first) show(jump);
+  }, function (e) { busy(-1); throw e; });
+}
+function index() {
+  byKey = new Map(); byGroup = new Map(); guideName = new Map();
+  D.channels.forEach(function (c) { byKey.set(c.k, c); if (!byGroup.has(c.g)) byGroup.set(c.g, []); byGroup.get(c.g).push(c); });
+  ((D.guide && D.guide.channels) || []).forEach(function (x) { guideName.set(x[0], x[1]); });
+  matcherIndex = null; dupeCache = null;
+}
+function renderAll() { renderHome(); renderGroups(); renderChannels(true); renderGuide(); renderNames(); renderPlaylists(); renderTools(); renderHistory(); restoreMsgs(); }
+// After an edit: redraw what depends on edits, cheaply.
+function rerender() {
+  dupeCache = null;
+  renderGroups(); renderChannels(); renderHome();
+  if (page === 'guide') renderMatchList();
+  if (page === 'names') renderPreview();
+  if (page === 'tools') renderTools();
+  if (page === 'history') renderHistory();
+}
+function groupExists(id) { return id === ALL || (isCustom(id) && !!customOf(id)) || byGroup.has(id); }
+function isCustom(id) { return String(id).indexOf('c_') === 0; }
+function isProv(id) { return id !== ALL && !isCustom(id); }
+function cleanName(n) { return N && N.enabled !== false ? Names.cleanWith(N, n) : n; }
+function cleanGroup(n) { return N && N.enabled !== false && N.groups !== false ? Names.cleanWith(N, n) : n; }
+function chName(c) { return E.renames[c.k] || cleanName(c.n); }
+function customOf(id) { return E.custom.filter(function (g) { return g.id === id; })[0]; }
+function provOf(id) { return D.groups.filter(function (x) { return x.id === id; })[0]; }
+function isFav(k) { var f = customOf(FAV); return !!(f && f.items.indexOf(k) >= 0); }
+function provName(g) { return E.groupRenames[g.id] || cleanGroup(g.name); }
+function providerGroups() {
+  var pos = {}; E.groupOrder.forEach(function (id, i) { pos[id] = i; });
+  return D.groups.map(function (g, i) { return { id: g.id, name: provName(g), raw: g.name, i: i, renamed: !!E.groupRenames[g.id] }; })
+    .sort(function (a, b) { var x = pos[a.id] != null ? pos[a.id] : 1e6 + a.i, y = pos[b.id] != null ? pos[b.id] : 1e6 + b.i; return x - y; });
+}
+function sortList(l, mode) {
+  if (!mode || mode === 'provider' || mode === 'custom') return l;
+  l = l.slice();
+  var cmp = function (a, b) { return chName(a).localeCompare(chName(b), undefined, { numeric: true }); };
+  if (mode === 'az') l.sort(cmp);
+  if (mode === 'za') l.sort(function (a, b) { return cmp(b, a); });
+  if (mode === 'number') l.sort(function (a, b) { return (+a.num || 0) - (+b.num || 0); });
+  return l;
+}
+// Channels in a group as the TV shows them (hidden channels included; the TV filters those).
+function channelsOf(id, raw) {
+  var l;
+  if (id === ALL) return D.channels.filter(function (c) { return !E.hiddenGroups[c.g]; });
+  if (isCustom(id)) { var g = customOf(id); l = g ? g.items.map(function (k) { return byKey.get(k); }).filter(Boolean) : []; }
+  else {
+    var out = E.groupRemove[id] || {}, add = E.groupAdd[id] || [], seen = {};
+    l = (byGroup.get(id) || []).filter(function (c) { return !out[c.k]; });
+    l.forEach(function (c) { seen[c.k] = 1; });
+    add.forEach(function (k) { var c = byKey.get(k); if (c && !seen[k] && !out[k]) { l.push(c); seen[k] = 1; } });
+  }
+  return raw ? l : sortList(l, E.groupSort[id]);
+}
+function groupLabel(id) { if (id === ALL) return 'All channels'; var g = customOf(id); if (g) return g.name; var p = provOf(id); return p ? provName(p) : id; }
+function groupEdited(id) { return !!((E.groupAdd[id] && E.groupAdd[id].length) || (E.groupRemove[id] && Object.keys(E.groupRemove[id]).length)); }
+function guideOf(c) { return E.epgMap[c.k] || c.epg || ''; }
+// Only known with an XMLTV guide; with the provider's per-channel guide every channel counts as covered.
+function guideKnown() { return guideName.size > 0; }
+function perChannel() { var pl = activePl(); return D.playlist && D.playlist.type !== 'm3u' && (pl.providerEpg || 'short') === 'short'; }
+function guideState(c) {
+  if (!guideKnown()) return 'prov';
+  var m = E.epgMap[c.k];
+  if (m) return guideName.has(m) ? 'mine' : 'pending';
+  if (c.has) return 'auto';
+  return perChannel() ? 'prov' : 'none';
+}
+function hasGuide(c) { var s = guideState(c); return s !== 'none'; }
+function activePl() { return (D.playlists || []).filter(function (p) { return p.active; })[0] || {}; }
+
+/* ---------- edits, undo and drafts ---------- */
+var mergeKey = '', mergeAt = 0;
+// Every change goes through here: records an undo step, marks a draft, redraws.
+function mut(label, fn, opts) {
+  opts = opts || {};
+  var before = stateStr();
+  fn();
+  if (stateStr() === before) return false;
+  var now = Date.now();
+  if (opts.merge && opts.merge === mergeKey && now - mergeAt < 4000 && hist.length) { hist[hist.length - 1].label = label; hist[hist.length - 1].at = now; }
+  else { hist.push({ label: label, at: now, s: before }); if (hist.length > 120) hist.shift(); }
+  mergeKey = opts.merge || ''; mergeAt = now;
+  redo = [];
+  changed();
+  if (!opts.noRender) rerender();
+  return true;
+}
+function undo() {
+  var h = hist.pop(); if (!h) { toast('Nothing to undo'); return; }
+  redo.push({ label: h.label, at: h.at, s: stateStr() }); setState(h.s); mergeKey = '';
+  changed(); afterJump(); toast('Undid: ' + h.label, ['Redo', redoIt]);
+}
+function redoIt() {
+  var h = redo.pop(); if (!h) { toast('Nothing to redo'); return; }
+  hist.push({ label: h.label, at: h.at, s: stateStr() }); setState(h.s); mergeKey = '';
+  changed(); afterJump(); toast('Redid: ' + h.label);
+}
+function goBack(i) {
+  var h = hist[i]; if (!h) return;
+  var cur = stateStr(), n = hist.length - i;
+  hist = hist.slice(0, i);
+  hist.push({ label: 'Went back ' + plural(n, 'step'), at: Date.now(), s: cur });
+  setState(h.s); redo = []; changed(); afterJump(); toast('Went back to before "' + h.label + '"', ['Undo', undo]);
+}
+function afterJump() { if (!groupExists(curGroup)) curGroup = ALL; renderNames(); renderAll(); }
+function draftKey() { return 'tivibro.editor.draft.' + (D && D.playlist ? D.playlist.id : 'x'); }
+var autoT = 0;
+function changed() {
+  var d = { at: Date.now(), base: JSON.stringify(BASE), state: stateStr(), hist: hist.slice(-40) };
+  if (!LS.set(draftKey(), d)) { d.hist = hist.slice(-3); if (!LS.set(draftKey(), d)) { d.hist = []; LS.set(draftKey(), d); } }
+  updateBar();
+  if ($('autoSend').checked) { clearTimeout(autoT); autoT = setTimeout(send, 800); }
+}
+// Draft from an earlier visit in this browser: offer it back.
+function offerDraft() {
+  var d = LS.get(draftKey(), null);
+  if (!d || !d.state) return;
+  var o = JSON.parse(d.state), diff = diffs(BASE, { E: pickE(o.E), N: o.N });
+  if (!diff.length) { LS.del(draftKey()); return; }
+  var moved = d.base !== JSON.stringify(BASE);
+  modal('Unsent changes from earlier', '<p>You have <b>' + plural(diff.length, 'change') + '</b> from ' + esc(ago(d.at)) + ' that never reached the TV.</p>' +
+    (moved ? '<div class="note warn">The TV\'s setup changed since then (on the TV or from another computer).  Keeping your draft will replace those changes when you send it.</div>' : '') +
+    '<div style="max-height:220px;overflow:auto">' + diff.slice(0, 40).map(function (x) { return '<div class="small">• ' + esc(x) + '</div>'; }).join('') + (diff.length > 40 ? '<div class="small muted">and ' + (diff.length - 40) + ' more</div>' : '') + '</div>',
+    null, [['Throw them away', 'ghost danger', function () { LS.del(draftKey()); closeModal(); }], ['Keep working on them', 'primary', function () {
+      setState(JSON.stringify({ E: pickE(o.E), N: o.N })); hist = d.hist || []; changed(); afterJump(); closeModal(); toast('Draft restored.  Send it when you are ready.');
+    }]]);
+}
+function sameJ(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+// Plain-language list of what differs between two states.
+function diffs(A, B) {
+  var out = [], a = A.E, b = B.E;
+  function nm(k) { var c = byKey.get(k); return c ? (b.renames[k] || cleanName(c.n)) : k; }
+  function gn(id) { var g = b.custom.filter(function (x) { return x.id === id; })[0] || a.custom.filter(function (x) { return x.id === id; })[0]; if (g) return g.name; var p = provOf(id); return p ? (b.groupRenames[id] || cleanGroup(p.name)) : id; }
+  function keys(x, y) { var s = {}; Object.keys(x).forEach(function (k) { s[k] = 1; }); Object.keys(y).forEach(function (k) { s[k] = 1; }); return Object.keys(s); }
+  keys(a.hiddenGroups, b.hiddenGroups).forEach(function (id) { if (!!a.hiddenGroups[id] !== !!b.hiddenGroups[id]) out.push((b.hiddenGroups[id] ? 'Hide group ' : 'Show group ') + gn(id)); });
+  keys(a.hiddenChannels, b.hiddenChannels).forEach(function (k) { if (!!a.hiddenChannels[k] !== !!b.hiddenChannels[k]) out.push((b.hiddenChannels[k] ? 'Hide ' : 'Show ') + nm(k)); });
+  keys(a.renames, b.renames).forEach(function (k) { if (a.renames[k] !== b.renames[k]) out.push(b.renames[k] ? 'Rename channel to "' + b.renames[k] + '"' : 'Back to the provider name: ' + nm(k)); });
+  keys(a.groupRenames, b.groupRenames).forEach(function (id) { if (a.groupRenames[id] !== b.groupRenames[id]) out.push(b.groupRenames[id] ? 'Rename group to "' + b.groupRenames[id] + '"' : 'Back to the provider\'s group name: ' + gn(id)); });
+  var ac = {}, bc = {}; a.custom.forEach(function (g) { ac[g.id] = g; }); b.custom.forEach(function (g) { bc[g.id] = g; });
+  keys(ac, bc).forEach(function (id) {
+    var x = ac[id], y = bc[id];
+    if (!x) out.push('New group "' + y.name + '"' + (y.items.length ? ' with ' + plural(y.items.length, 'channel') : ''));
+    else if (!y) out.push('Delete group "' + x.name + '"');
+    else {
+      if (x.name !== y.name) out.push('Rename group "' + x.name + '" to "' + y.name + '"');
+      if (!sameJ(x.items, y.items)) {
+        var xs = new Set(x.items), ys = new Set(y.items), add = y.items.filter(function (k) { return !xs.has(k); }).length, rm = x.items.filter(function (k) { return !ys.has(k); }).length;
+        out.push(y.name + ': ' + [add ? plural(add, 'channel') + ' added' : '', rm ? plural(rm, 'channel') + ' removed' : '', !add && !rm ? 'new order' : ''].filter(Boolean).join(', '));
+      }
+    }
+  });
+  if (!sameJ(a.custom.map(function (g) { return g.id; }).filter(function (id) { return bc[id]; }), b.custom.map(function (g) { return g.id; }).filter(function (id) { return ac[id]; }))) out.push('New order of your groups');
+  if (!sameJ(a.groupOrder, b.groupOrder)) out.push('New order of provider groups');
+  keys(a.groupAdd, b.groupAdd).concat(keys(a.groupRemove, b.groupRemove)).filter(function (v, i, s) { return s.indexOf(v) === i; }).forEach(function (id) {
+    if (!sameJ(a.groupAdd[id] || [], b.groupAdd[id] || []) || !sameJ(a.groupRemove[id] || {}, b.groupRemove[id] || {})) out.push('Channels copied, moved or taken out: ' + gn(id));
+  });
+  keys(a.groupSort, b.groupSort).forEach(function (id) { if (a.groupSort[id] !== b.groupSort[id]) out.push('Sort ' + gn(id) + ': ' + (SORT_LABEL[b.groupSort[id] || 'provider'] || '')); });
+  var em = keys(a.epgMap, b.epgMap).filter(function (k) { return a.epgMap[k] !== b.epgMap[k]; });
+  if (em.length) out.push(em.length > 3 ? 'Guide matches for ' + plural(em.length, 'channel') : em.map(function (k) { return 'Guide match for ' + nm(k); }).join(', '));
+  if (!sameJ(A.N, B.N)) out.push('Name clean-up rules');
+  return out;
+}
+function pendingList() { return D && BASE ? diffs(BASE, { E: E, N: N }) : []; }
+function pendingCount() { return E && BASE ? pendingList().length : 0; }
+
+/* ---------- sending ---------- */
+function send() {
+  if (sending) { clearTimeout(autoT); autoT = setTimeout(send, 500); return Promise.resolve(); }
+  var n = pendingCount(); if (!n) { updateBar(); return Promise.resolve(); }
+  sending = true; updateBar(); busy(1);
+  var sentState = { E: clone(E), N: clone(N) };
+  var body = { edits: {}, names: N };
+  FIELDS.forEach(function (f) { body.edits[f] = E[f]; });
+  return api('/api/save', { method: 'POST', body: body }).then(function (j) {
+    sentRev = j.pendingRev; BASE = sentState;
+    LS.del(draftKey());
+    var t0 = Date.now();
+    return new Promise(function (res) {
+      (function wait() {
+        api('/api/rev').then(function (r) {
+          if (r.appliedRev >= sentRev) return res(true);
+          if (Date.now() - t0 > 20000) return res(false);
+          setTimeout(wait, 700);
+        }).catch(function () { res(false); });
+      })();
+    }).then(function (ok) {
+      sending = false; busy(-1);
+      if (ok) { flash('On the TV'); toast(plural(n, 'change') + ' are on the TV', ['Undo', undo]); }
+      else setStatus('bad', 'Sent, but the TV has not confirmed.  Is TiviBro open on the TV?');
+      updateBar();
+    });
+  }).catch(function (err) { sending = false; busy(-1); updateBar(); if (err.message !== 'auth') { setStatus('bad', 'Not sent: ' + err.message); toast('Not sent: ' + err.message); } });
+}
+function discard() {
+  var n = pendingCount(); if (!n) return;
+  if (!confirm('Throw away ' + plural(n, 'change') + ' that are not on the TV?  (You can undo this.)')) return;
+  mut('Discarded unsent changes', function () { E = clone(BASE.E); N = clone(BASE.N); }, { noRender: true });
+  afterJump();
+}
+var flashT = 0;
+function flash(text) { var b = $('changebar'); b.classList.remove('hidden'); b.classList.add('sent'); $('cbText').textContent = text; clearTimeout(flashT); flashT = setTimeout(function () { b.classList.remove('sent'); updateBar(); }, 2200); }
+function setStatus(kind, text) { var s = $('status'); s.className = 'status ' + kind; s.lastChild.textContent = text; }
+function updateBar() {
+  if (!D) return;
+  var n = pendingCount(), bar = $('changebar');
+  $('histBadge').textContent = n; $('histBadge').classList.toggle('hidden', !n);
+  if (bar.classList.contains('sent')) return;
+  bar.classList.toggle('hidden', !n && !sending);
+  $('cbText').textContent = sending ? 'Sending to the TV…' : plural(n, 'change') + ' not on the TV yet';
+  $('cbSend').disabled = sending || !n; $('cbUndo').disabled = !hist.length;
+  $('cbSend').classList.toggle('spin', sending);
+  if (tvLost) setStatus('bad', 'Can\'t reach TiviBro on the TV.  Is it still open?');
+  else if (sending) setStatus('busy', 'Sending to the TV…');
+  else if (n) setStatus('draft', plural(n, 'change') + ' waiting.  Press Send to TV.');
+  else setStatus('ok', 'Everything is on the TV');
+  if (page === 'history') renderDiff();
+}
+$('cbSend').onclick = send; $('hSend').onclick = send;
+$('cbUndo').onclick = undo; $('hUndo').onclick = undo; $('hRedo').onclick = redoIt;
+$('cbDiscard').onclick = discard; $('hDiscard').onclick = discard;
+$('cbReview').onclick = function () { show('history'); };
+$('autoSend').checked = !!LS.get('tivibro.editor.auto', false);
+$('autoSend').addEventListener('change', function () { LS.set('tivibro.editor.auto', this.checked); if (this.checked) { toast('Changes now go to the TV as you make them'); send(); } });
+window.addEventListener('beforeunload', function (e) { if (pendingCount() && !$('autoSend').checked) { e.preventDefault(); e.returnValue = ''; } });
+
+// Poll: TV still there, new snapshot from the TV, guide progress.
+setInterval(function () {
+  if (!token || !D) return;
+  api('/api/rev').then(function (j) {
+    var lost = j.tvSeen && j.now - j.tvSeen > 9000;
+    if (lost !== tvLost) { tvLost = lost; updateBar(); }
+    if (j.progress) onProgress(j.progress);
+    if (j.rev > rev && !sending && !inflight && j.pendingRev <= j.appliedRev) load(false).catch(function () {});
+  }).catch(function (err) { if (err.message !== 'auth') { tvLost = true; setStatus('bad', 'Lost the connection to the TV.'); } });
+}, 2000);
+
+/* ---------- pages and routing ---------- */
+function show(p, sub) {
+  closeDD(); closeMenu();
+  page = p;
+  document.querySelectorAll('#nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.page === p); });
+  document.querySelectorAll('.page').forEach(function (s) { s.classList.toggle('hidden', s.id !== 'p-' + p); });
+  if (p === 'gc') renderChannels(); if (p === 'guide') renderGuide(); if (p === 'names') renderPreview(); if (p === 'home') renderHome();
+  if (p === 'tools') renderTools(); if (p === 'history') { renderHistory(); loadSnaps(); } if (p === 'help') renderHelp(sub);
+  var h = '#' + p + (sub ? '/' + sub : '');
+  if (location.hash !== h) history.replaceState(null, '', h);
+}
+function route() {
+  var h = (location.hash || '#home').slice(1).split('/'), p = document.getElementById('p-' + h[0]) ? h[0] : 'home';
+  if (D && D.setup && ['playlists', 'backup', 'help', 'welcome'].indexOf(p) < 0) p = 'welcome';
+  if (D && !D.setup && p === 'welcome') p = 'home';
+  show(p, h[1]);
+}
+window.addEventListener('hashchange', function () { if (D) route(); });
+$('nav').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) show(b.dataset.page); });
+
+/* ---------- modal ---------- */
+// buttons: [[label, className, onClick], …] shown in a footer.
+function modal(title, bodyHtml, onOpen, buttons, wide) {
+  closeModal();
+  var m = document.createElement('div'); m.className = 'modal' + (wide ? ' wide' : ''); m.id = 'modal';
+  m.innerHTML = '<div class="box"><div class="bh"><h2>' + esc(title) + '</h2><button class="ghost" data-x title="Close (Esc)">✕</button></div><div class="bb">' + bodyHtml + '</div>' + (buttons ? '<div class="bf"><span class="grow"></span></div>' : '') + '</div>';
+  m.addEventListener('mousedown', function (e) { m._down = e.target; });
+  m.addEventListener('click', function (e) { if ((e.target === m && m._down === m) || e.target.hasAttribute('data-x')) closeModal(); });
+  if (buttons) buttons.forEach(function (b) { var x = document.createElement('button'); x.textContent = b[0]; x.className = b[1] || ''; if (b[3]) x.id = b[3]; x.onclick = b[2]; m.querySelector('.bf').appendChild(x); });
+  document.body.appendChild(m);
+  if (onOpen) onOpen(m);
+  return m;
+}
+function closeModal() { closeDD(); var m = $('modal'); if (m) m.remove(); }
+function closeMenu() { var m = $('menu'); if (m) m.remove(); }
+function ask(title, text, okLabel, onOk, danger) { modal(title, '<p style="margin-top:0">' + text + '</p>', null, [['Cancel', 'ghost', closeModal], [okLabel, danger ? 'danger' : 'primary', function () { closeModal(); onOk(); }]]); }
+function promptBox(title, label, value, okLabel, onOk, hint) {
+  modal(title, '<label class="f">' + esc(label) + '<input id="pbIn" type="text" maxlength="80" value="' + esc(value || '') + '"></label>' + (hint ? '<p class="muted small">' + hint + '</p>' : ''), function () {
+    var i = $('pbIn'); i.focus(); i.select();
+    i.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('pbOk').click(); } });
+  }, [['Cancel', 'ghost', closeModal], [okLabel || 'Save', 'primary', function () { var v = $('pbIn').value; closeModal(); onOk(v); }, 'pbOk']]);
+}
+
+/* ---------- keyboard ---------- */
+document.addEventListener('keydown', function (e) {
+  var typing = /^(INPUT|TEXTAREA)$/.test(e.target.tagName) && e.target.type !== 'checkbox';
+  var mod = e.ctrlKey || e.metaKey;
+  if (e.key === 'Escape') { if (openDD) return; if ($('modal')) { closeModal(); return; } closeMenu(); }
+  if (!D || $('app').classList.contains('hidden')) return;
+  if (mod && (e.key === 's' || e.key === 'S')) { e.preventDefault(); send(); return; }
+  if (typing || $('modal')) return;
+  if (mod && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) { e.preventDefault(); undo(); }
+  else if (mod && ((e.shiftKey && (e.key === 'z' || e.key === 'Z')) || e.key === 'y')) { e.preventDefault(); redoIt(); }
+  else if (e.key === '/') {
+    var box = { gc: 'cSearch', guide: 'mSearch' }[page];
+    if (box) { e.preventDefault(); $(box).focus(); }
+  }
+});
+
+/* ---------- dropdowns that live in the page ---------- */
+var SORT_LABEL = { provider: 'Provider order', az: 'A to Z', za: 'Z to A', number: 'Channel number', custom: 'Your order (drag)' };
+var ddReady = false;
+function setupDropdowns() {
+  if (ddReady) return; ddReady = true;
+  dd($('cFilter'), { prefix: 'Show: ', value: 'all', options: [{ v: 'all', l: 'All channels' }, { v: 'shown', l: 'Shown only' }, { v: 'hidden', l: 'Hidden only' }, { v: 'noguide', l: 'Without guide data' }, { v: 'added', l: 'Copied or moved in' }],
+    onChange: function () { renderChannels(true); } });
+  dd($('cSort'), { prefix: 'Order: ', value: 'provider', options: [], onChange: function (v) {
+    var id = curGroup, def = isCustom(id) ? 'custom' : 'provider';
+    mut('Sort ' + groupLabel(id) + ': ' + SORT_LABEL[v], function () { if (v === def) delete E.groupSort[id]; else E.groupSort[id] = v; });
+    toast(groupLabel(id) + ' is sorted ' + SORT_LABEL[v].toLowerCase() + ' on the TV');
+  } });
+  dd($('mGroup'), { value: ALL, options: [], search: true, menuWidth: 300, onChange: function () { mPage = 0; renderMatchList(); } });
+  dd($('catRegion'), { value: LS.get('tivibro.editor.region', 'us'), options: CAT_REGIONS.map(function (r) { return { v: r[0], l: r[1] }; }), onChange: function (v) { LS.set('tivibro.editor.region', v); renderCatalog(); } });
+}
+
+/* ---------- overview ---------- */
+function renderHome() {
+  if (!D || page !== 'home') return;
+  var groupsShown = D.groups.filter(function (g) { return !E.hiddenGroups[g.id]; }).length;
+  var visible = channelsOf(ALL).filter(function (c) { return !E.hiddenChannels[c.k]; });
+  var cov = visible.filter(hasGuide).length, pct = visible.length ? Math.round(100 * cov / visible.length) : 0;
+  var own = E.custom.filter(function (g) { return g.id !== FAV; }).length, fav = (customOf(FAV) || { items: [] }).items.length;
+  var cu = D.channels.filter(function (c) { return c.arch; }).length;
+  function st(v, l, extra) { return '<div class="card stat"><div class="v">' + v + '</div><div class="l">' + l + '</div>' + (extra || '') + '</div>'; }
+  $('stats').innerHTML = st(visible.length.toLocaleString(), 'channels shown on the TV') + st(groupsShown + ' / ' + D.groups.length, 'provider groups shown') +
+    st(Object.keys(E.hiddenChannels).length, 'channels hidden') + st(fav, 'favorites') + st(own, 'groups of your own') +
+    (guideKnown() ? st(pct + '%', 'shown channels with a guide', '<div class="bar"><i style="width:' + pct + '%"></i></div>') : st('Per channel', 'guide straight from your provider')) + st(cu, 'channels with catch-up');
+  var steps = [
+    [groupsShown < D.groups.length, 'Hide the groups you never watch', 'Providers send hundreds.  Smart clean-up can keep just your countries.', 'gc'],
+    [N.enabled !== false && Object.keys(N.rules).some(function (k) { return N.rules[k]; }), 'Clean up channel names', 'Remove "US |", "FHD" and similar clutter everywhere at once.', 'names'],
+    [fav > 0 || own > 0, 'Make favorites and your own groups', 'Tick channels, then Copy or move to group.  Drag to put them in order.', 'gc'],
+    [guideKnown() ? pct >= 90 : activePl().providerEpg !== 'off', 'Get a guide for every channel', guideKnown() ? cov + ' of ' + visible.length + ' shown channels have a guide.' : 'Your provider sends it per channel.  Add a free guide if some channels are blank.', 'guide'],
+    [false, 'Download a backup', 'Keep your setup safe, or move it to another TV.', 'backup']
+  ];
+  $('steps').innerHTML = steps.map(function (s, i) { return '<div class="step' + (s[0] ? ' done' : '') + '"><span class="n">' + (s[0] ? '✓' : i + 1) + '</span><div class="grow"><b>' + s[1] + '</b><div class="muted small">' + esc(s[2]) + '</div></div><button data-go="' + s[3] + '" class="small">Open</button></div>'; }).join('');
+  var sg = suggestions();
+  $('sugg').innerHTML = sg.length ? sg.map(function (s) { return '<div class="step"><span class="n" style="background:var(--accbg);color:var(--accent2)">✦</span><div class="grow"><b>' + esc(s[0]) + '</b><div class="muted small">' + esc(s[1]) + '</div></div><button data-go="' + s[2] + '" class="small">' + esc(s[3] || 'Show me') + '</button></div>'; }).join('')
+    : '<div class="muted">Nothing stands out.  Your setup looks tidy.</div>';
+  var nt = sg.filter(function (s) { return s[2] === 'tools'; }).length;
+  $('toolsBadge').textContent = nt; $('toolsBadge').classList.toggle('hidden', !nt);
+}
+function suggestions() {
+  var out = [];
+  var cs = countryStats().filter(function (x) { return x.shown > 0; });
+  if (cs.length > 2) out.push(['Groups from ' + cs.length + ' countries are shown', 'Keep only the countries you watch, in one step.', 'tools', 'Pick countries']);
+  var dp = dupeSets().length;
+  if (dp) out.push([plural(dp, 'channel') + ' appear more than once', 'Same channel in different qualities (HD, FHD, SD).  Keep the best one, hide the rest.', 'tools', 'Review']);
+  var empty = emptyGroups().length;
+  if (empty) out.push([plural(empty, 'empty group') + ' still shown', 'They have no channels, or every channel in them is hidden.', 'tools', 'Hide them']);
+  if (guideKnown()) { var miss = channelsOf(ALL).filter(function (c) { return !E.hiddenChannels[c.k] && guideState(c) === 'none'; }).length; if (miss) out.push([plural(miss, 'shown channel') + ' without a guide', 'Smart match suggests the right guide channel for each; you approve.', 'guide', 'Match']); }
+  if (N.enabled === false || !Object.keys(N.rules).some(function (k) { return N.rules[k]; })) {
+    var d = Names.defaults(), n = 0; for (var i = 0; i < D.channels.length && i < 4000; i++) if (Names.cleanWith(d, D.channels[i].n) !== D.channels[i].n) n++;
+    if (n > 10) out.push(['Channel names have clutter', 'The recommended clean-up would tidy ' + n + '+ names.', 'names', 'Preview']);
+  }
+  return out;
+}
+['steps', 'sugg'].forEach(function (id) { $(id).addEventListener('click', function (e) { var g = e.target.dataset.go; if (g) show(g); }); });
+$('qaHideAll').onclick = function () { hideAll(); show('gc'); };
+$('qaShowAll').onclick = function () { mut('Showed every group', function () { E.hiddenGroups = {}; }); toast('Every group is shown', ['Undo', undo]); };
+$('qaNames').onclick = function () { mut('Turned on the recommended name clean-up', function () { var d = Names.defaults(); N.enabled = true; N.rules = d.rules; }); renderNames(); toast('Recommended name clean-up is on', ['Undo', undo]); show('names'); };
+$('qaHideEmpty').onclick = function () { hideEmpty(); };
+
+/* ---------- groups ---------- */
+var dragId = null, gFilter = 'all';
+function renderGroups() {
+  if (!D) return;
+  var q = $('gSearch').value.trim().toLowerCase(), html = [], shown = 0;
+  function row(id, name, n, kind, badge, raw) {
+    if (q && name.toLowerCase().indexOf(q) < 0) return;
+    var off = !!E.hiddenGroups[id];
+    if (id !== ALL) {
+      if (gFilter === 'shown' && off) return; if (gFilter === 'hidden' && !off) return; if (gFilter === 'empty' && n) return;
+      if (gFilter === 'edited' && !badge) return;
+    } else if (gFilter !== 'all') return;
+    shown++;
+    html.push('<div class="g' + (id === curGroup ? ' sel' : '') + (off ? ' off' : '') + '" data-id="' + esc(id) + '" draggable="' + (id !== ALL) + '">' +
+      (id !== ALL ? '<span class="grip" title="Drag to reorder">⠿</span><input type="checkbox" class="sw" data-vis="' + esc(id) + '"' + (off ? '' : ' checked') + ' title="' + (off ? 'Hidden on the TV.  Click to show.' : 'Shown on the TV.  Click to hide.') + '">' : '<span class="grip"> </span>') +
+      '<span class="gname" title="' + esc(raw && raw !== name ? name + '  (provider: ' + raw + ')' : name) + '">' + esc(name) + (raw && raw !== name && raw.indexOf(name) < 0 ? '' : '') + (badge || '') + (raw && raw !== name ? ' <span class="dim tiny">' + esc(raw) + '</span>' : '') + '</span>' +
+      (id !== ALL && id !== FAV ? '<span class="acts"><button class="ghost" data-ren="' + esc(id) + '" title="Rename">✎</button>' + (kind === 'custom' ? '<button class="ghost" data-del="' + esc(id) + '" title="Delete this group">✕</button>' : '') + '</span>' : '') +
+      '<span class="cnt">' + n + '</span></div>');
+  }
+  row(ALL, 'All channels', channelsOf(ALL).length, 'all');
+  html.push('<div class="sec">Your groups</div>');
+  E.custom.forEach(function (g) { row(g.id, g.name, g.items.length, 'custom', g.orig && g.orig !== g.name ? '<em title="Was: ' + esc(g.orig) + '">renamed</em>' : ''); });
+  html.push('<div class="sec">Provider groups</div>');
+  providerGroups().forEach(function (g) {
+    var b = (g.renamed ? '<em title="Provider name: ' + esc(cleanGroup(g.raw)) + '">renamed</em>' : '') + (groupEdited(g.id) ? '<em class="e" title="Channels were copied, moved or taken out">edited</em>' : '') + (E.groupSort[g.id] ? '<em class="e">' + esc(SORT_LABEL[E.groupSort[g.id]]) + '</em>' : '');
+    row(g.id, g.name, channelsOf(g.id, true).length, 'prov', b, g.raw);
+  });
+  if (!shown) html.push('<div class="empty small">No groups match this filter.</div>');
+  $('glist').innerHTML = html.join('');
+}
+$('gSearch').addEventListener('input', renderGroups);
+$('gFilter').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; gFilter = b.dataset.f; this.querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); }); renderGroups(); });
+function renameGroup(id) {
+  var g = customOf(id);
+  if (g) {
+    promptBox('Rename group', 'Group name', g.name, 'Rename', function (v) {
+      v = v.trim(); if (!v || v === g.name) return;
+      mut('Renamed group "' + g.name + '" to "' + v + '"', function () { var x = customOf(id); if (!x.orig) x.orig = x.name; x.name = v; if (x.orig === v) delete x.orig; });
+    });
+    return;
+  }
+  var p = provOf(id), def = cleanGroup(p.name);
+  promptBox('Rename provider group', 'Name on the TV', E.groupRenames[id] || def, 'Rename', function (v) {
+    v = v.trim();
+    mut(!v || v === def ? 'Group back to the provider\'s name: ' + def : 'Renamed group "' + def + '" to "' + v + '"', function () { if (!v || v === def) delete E.groupRenames[id]; else E.groupRenames[id] = v; });
+  }, 'Provider name: <b>' + esc(def) + '</b>.  Leave it empty to go back to it.');
+}
+$('glist').addEventListener('click', function (e) {
+  var t = e.target;
+  if (t.dataset.vis) { var id = t.dataset.vis, on = t.checked; mut((on ? 'Showed' : 'Hid') + ' group ' + groupLabel(id), function () { if (on) delete E.hiddenGroups[id]; else E.hiddenGroups[id] = 1; }); return; }
+  if (t.dataset.ren) { renameGroup(t.dataset.ren); return; }
+  if (t.dataset.del) {
+    var d = customOf(t.dataset.del);
+    ask('Delete "' + d.name + '"?', 'The group goes away; its ' + plural(d.items.length, 'channel') + ' stay in their provider groups.  You can undo this.', 'Delete group', function () {
+      mut('Deleted group "' + d.name + '"', function () { E.custom = E.custom.filter(function (x) { return x.id !== d.id; }); delete E.hiddenGroups[d.id]; delete E.groupSort[d.id]; if (curGroup === d.id) curGroup = ALL; });
+      toast('Deleted "' + d.name + '"', ['Undo', undo]);
+    }, true);
+    return;
+  }
+  var r = t.closest('.g'); if (!r) return;
+  curGroup = r.dataset.id; sel.clear(); $('cSearch').value = ''; query = '';
+  renderGroups(); renderChannels(true);
+});
+$('glist').addEventListener('dragstart', function (e) { var r = e.target.closest('.g'); if (!r || r.dataset.id === ALL) return e.preventDefault(); dragId = r.dataset.id; e.dataTransfer.effectAllowed = 'move'; });
+$('glist').addEventListener('dragover', function (e) {
+  var r = e.target.closest('.g'); if (!r || !dragId || r.dataset.id === ALL || isCustom(r.dataset.id) !== isCustom(dragId)) return;
+  e.preventDefault(); clearDrops();
+  var b = r.getBoundingClientRect(); r.classList.add(e.clientY < b.top + b.height / 2 ? 'drop-before' : 'drop-after');
+});
+$('glist').addEventListener('dragend', clearDrops);
+function clearDrops() { document.querySelectorAll('.drop-before,.drop-after').forEach(function (x) { x.classList.remove('drop-before', 'drop-after'); }); }
+$('glist').addEventListener('drop', function (e) {
+  var r = e.target.closest('.g'); if (!r || !dragId) return;
+  e.preventDefault();
+  var before = r.classList.contains('drop-before'), target = r.dataset.id, id = dragId; clearDrops(); dragId = null;
+  if (target === id) return;
+  mut('Moved group ' + groupLabel(id), function () {
+    if (isCustom(id)) {
+      var a = E.custom, from = a.findIndex(function (g) { return g.id === id; }), it = a.splice(from, 1)[0];
+      var to = a.findIndex(function (g) { return g.id === target; }); a.splice(before ? to : to + 1, 0, it);
+    } else {
+      var ids = providerGroups().map(function (g) { return g.id; }).filter(function (x) { return x !== id; });
+      var t = ids.indexOf(target); ids.splice(before ? t : t + 1, 0, id); E.groupOrder = ids;
+    }
+  });
+});
+function hideAll() { mut('Hid every group', function () { D.groups.forEach(function (g) { E.hiddenGroups[g.id] = 1; }); E.custom.forEach(function (g) { if (g.id !== FAV) E.hiddenGroups[g.id] = 1; }); }); toast('All groups hidden.  Switch on the ones you watch.', ['Undo', undo]); }
+$('showAll').onclick = function () { mut('Showed every group', function () { E.hiddenGroups = {}; }); toast('Every group is shown', ['Undo', undo]); };
+$('hideAll').onclick = function () { ask('Hide every group?', 'Then switch on just the ones you watch.  You can undo this.', 'Hide all', hideAll); };
+$('newGroup').onclick = function () { newGroup(function (g) { curGroup = g.id; renderGroups(); renderChannels(true); }); };
+function newGroup(then) {
+  promptBox('New group', 'Group name', '', 'Create', function (n) {
+    n = (n || '').trim(); if (!n) return;
+    var g = { id: 'c_' + Date.now().toString(36), name: n, items: [] };
+    mut('New group "' + n + '"', function () { E.custom.push(g); });
+    if (then) then(g);
+  });
+}
+
+/* ---------- channels (windowed: fine with 20,000) ---------- */
+var ROW = 54, list = [], renaming = null;
+function realGroup() { return !query && curGroup !== ALL ? curGroup : null; }
+function currentList() {
+  var f = $('cFilter')._dd ? $('cFilter')._dd.value : 'all', q = query.toLowerCase();
+  var l = q ? D.channels.filter(function (c) { return chName(c).toLowerCase().indexOf(q) >= 0 || c.n.toLowerCase().indexOf(q) >= 0; }) : channelsOf(curGroup);
+  if (f === 'shown') l = l.filter(function (c) { return !E.hiddenChannels[c.k]; });
+  if (f === 'hidden') l = l.filter(function (c) { return E.hiddenChannels[c.k]; });
+  if (f === 'noguide') l = l.filter(function (c) { return guideState(c) === 'none'; });
+  if (f === 'added') { var g = realGroup(); l = l.filter(function (c) { return g && isProv(g) ? c.g !== g : false; }); }
+  return l;
+}
+function canDrag() { var g = realGroup(); return !!(g && isCustom(g) && (!E.groupSort[g] || E.groupSort[g] === 'custom')); }
+function renderChannels(reset) {
+  if (!D) return;
+  list = currentList();
+  var g = realGroup();
+  $('cTitle').textContent = query ? 'Search: "' + query + '"' : groupLabel(curGroup);
+  $('cCount').textContent = plural(list.length, 'channel') + (canDrag() ? '  ·  drag ⠿ to reorder' : '');
+  var sd = $('cSort')._dd;
+  if (sd) {
+    $('cSort').classList.toggle('hidden', !g);
+    if (g) {
+      var opts = isCustom(g) ? ['custom', 'az', 'za', 'number'] : ['provider', 'az', 'za', 'number'];
+      sd.options(opts.map(function (v) { return { v: v, l: SORT_LABEL[v] }; }), E.groupSort[g] || (isCustom(g) ? 'custom' : 'provider'));
+    }
+  }
+  // What has been done to this group, with a way back.
+  var note = '';
+  if (g && isProv(g)) {
+    var out = Object.keys(E.groupRemove[g] || {}).length, add = (E.groupAdd[g] || []).length;
+    if (out || add) note = [add ? plural(add, 'channel') + ' copied or moved in' : '', out ? plural(out, 'channel') + ' taken out' : ''].filter(Boolean).join('  ·  ') + '  <button class="ghost small" id="gReset">Put this group back the way the provider has it</button>';
+  }
+  if (g && isCustom(g) && E.groupSort[g] && E.groupSort[g] !== 'custom') note = 'Sorted ' + SORT_LABEL[E.groupSort[g]].toLowerCase() + '.  Set the order to "Your order" to drag channels.';
+  $('gNote').innerHTML = note; $('gNote').classList.toggle('hidden', !note);
+  $('cspacer').style.height = (list.length * ROW) + 'px';
+  if (reset) $('clist').scrollTop = 0;
+  $('selAll').checked = list.length > 0 && list.every(function (c) { return sel.has(c.k); });
+  drawRows(); bulkBar();
+}
+$('gNote').addEventListener('click', function (e) {
+  if (e.target.id !== 'gReset') return;
+  var g = curGroup;
+  mut('Put ' + groupLabel(g) + ' back the way the provider has it', function () { delete E.groupAdd[g]; delete E.groupRemove[g]; });
+  toast(groupLabel(g) + ' is back to the provider\'s channels', ['Undo', undo]);
+});
+function drawRows() {
+  var box = $('clist'), sp = $('cspacer'), top = box.scrollTop, h = box.clientHeight || 600;
+  var a = Math.max(0, Math.floor(top / ROW) - 5), b = Math.min(list.length, Math.ceil((top + h) / ROW) + 5);
+  var g = realGroup(), drag = canDrag(), html = [];
+  if (!list.length) { sp.innerHTML = '<div class="empty">' + (query ? 'No channels match.' : isCustom(curGroup) ? 'This group is empty.<br>Search for channels above, tick them, and choose "Copy or move to group".' : 'No channels here.') + '</div>'; return; }
+  for (var i = a; i < b; i++) {
+    var c = list[i], nm = chName(c), off = !!E.hiddenChannels[c.k], renamed = !!E.renames[c.k], added = g && isProv(g) && c.g !== g;
+    html.push('<div class="c' + (off ? ' off' : '') + '" style="top:' + (i * ROW) + 'px" data-k="' + esc(c.k) + '"' + (drag ? ' draggable="true"' : '') + '>' +
+      '<input type="checkbox" data-sel' + (sel.has(c.k) ? ' checked' : '') + '>' +
+      (drag ? '<span class="grip" title="Drag to reorder" style="cursor:grab;color:var(--dim)">⠿</span>' : '') +
+      '<span class="num">' + esc(c.num || '') + '</span>' +
+      (c.logo ? '<img loading="lazy" src="' + esc(c.logo) + '" onerror="this.style.visibility=\'hidden\'">' : '<span class="noimg"></span>') +
+      (renaming === c.k ? '<input class="rename" type="text" value="' + esc(nm) + '" data-renbox>' :
+        '<span class="names"><span class="cname">' + esc(nm) + (c.arch ? ' <span class="chip ok" title="Catch-up">↺ ' + c.arch + 'd</span>' : '') + (added ? ' <span class="chip info" title="From ' + esc(groupLabel(c.g)) + '">added</span>' : '') + '</span>' + (nm !== c.n ? '<span class="raw">' + (renamed ? 'renamed · was ' : 'provider name: ') + esc(c.n) + '</span>' : '') + '</span>') +
+      (query || curGroup === ALL || isCustom(curGroup) || added ? '<span class="grp">' + esc(groupLabel(c.g)) + '</span>' : '') +
+      '<span class="tools">' +
+        '<button class="ghost star' + (isFav(c.k) ? ' on' : '') + '" data-fav title="Favorite">★</button>' +
+        '<button class="ghost" data-ren title="Rename">✎</button>' +
+        '<button class="ghost" data-vis title="' + (off ? 'Hidden.  Click to show on the TV.' : 'Shown.  Click to hide on the TV.') + '">' + (off ? '🚫' : '👁') + '</button>' +
+        '<button class="ghost" data-add title="Copy or move to a group">＋</button>' +
+        (g ? '<button class="ghost" data-rm title="Take out of this group">✕</button>' : '') +
+      '</span></div>');
+  }
+  sp.innerHTML = html.join('');
+  var rb = sp.querySelector('[data-renbox]'); if (rb) { rb.focus(); rb.select(); }
+}
+$('clist').addEventListener('scroll', function () { if (!drawRows.raf) drawRows.raf = requestAnimationFrame(function () { drawRows.raf = 0; drawRows(); }); });
+var searchT = 0;
+$('cSearch').addEventListener('input', function () { var v = this.value.trim(); clearTimeout(searchT); searchT = setTimeout(function () { query = v; sel.clear(); renderChannels(true); }, 120); });
+$('selAll').addEventListener('change', function () { var on = this.checked; list.forEach(function (c) { if (on) sel.add(c.k); else sel.delete(c.k); }); drawRows(); bulkBar(); });
+$('cspacer').addEventListener('click', function (e) {
+  var t = e.target, r = t.closest('.c'); if (!r) return;
+  var k = r.dataset.k, c = byKey.get(k);
+  if (t.hasAttribute('data-sel')) { if (t.checked) sel.add(k); else sel.delete(k); bulkBar(); return; }
+  if (t.hasAttribute('data-fav')) { setFav([k], !isFav(k)); return; }
+  if (t.hasAttribute('data-vis')) { var on = !E.hiddenChannels[k]; mut((on ? 'Hid ' : 'Showed ') + chName(c), function () { if (on) E.hiddenChannels[k] = 1; else delete E.hiddenChannels[k]; }); return; }
+  if (t.hasAttribute('data-ren')) { renaming = k; drawRows(); return; }
+  if (t.hasAttribute('data-rm')) { takeOut(realGroup(), [k]); return; }
+  if (t.hasAttribute('data-add')) { copyMoveDialog([k]); return; }
+});
+$('cspacer').addEventListener('keydown', function (e) { if (!e.target.hasAttribute('data-renbox')) return; if (e.key === 'Enter') finishRename(e.target.value); if (e.key === 'Escape') { renaming = null; drawRows(); } });
+$('cspacer').addEventListener('focusout', function (e) { if (e.target.hasAttribute('data-renbox')) finishRename(e.target.value); });
+function setRename(k, v) { var c = byKey.get(k); v = (v || '').trim(); if (!v || v === cleanName(c.n)) delete E.renames[k]; else E.renames[k] = v; }
+function finishRename(v) { var k = renaming; if (!k) return; renaming = null; var c = byKey.get(k); if (!mut('Renamed ' + cleanName(c.n) + (v.trim() ? ' to "' + v.trim() + '"' : ''), function () { setRename(k, v); })) drawRows(); }
+var dragK = null;
+$('cspacer').addEventListener('dragstart', function (e) { var r = e.target.closest('.c'); if (!r) return; dragK = r.dataset.k; e.dataTransfer.effectAllowed = 'move'; });
+$('cspacer').addEventListener('dragover', function (e) { if (dragK && e.target.closest('.c')) e.preventDefault(); });
+$('cspacer').addEventListener('drop', function (e) {
+  var r = e.target.closest('.c'), g = customOf(curGroup); if (!r || !dragK || !g) return;
+  e.preventDefault();
+  var b = r.getBoundingClientRect(), after = e.clientY > b.top + b.height / 2, k = dragK; dragK = null;
+  mut('Reordered ' + g.name, function () {
+    var items = g.items.filter(function (x) { return x !== k; }), t = items.indexOf(r.dataset.k);
+    items.splice(after ? t + 1 : t, 0, k); customOf(g.id).items = items;
+  });
+});
+function bulkBar() {
+  var n = sel.size; $('bulk').classList.toggle('hidden', !n); $('selCount').textContent = n + ' selected';
+  var g = realGroup(); $('bulkRemove').classList.toggle('hidden', !g);
+}
+$('bulk').addEventListener('click', function (e) {
+  var b = e.target.dataset.bulk; if (!b) return;
+  var keys = Array.from(sel);
+  if (b === 'show') mut('Showed ' + plural(keys.length, 'channel'), function () { keys.forEach(function (k) { delete E.hiddenChannels[k]; }); });
+  if (b === 'hide') { mut('Hid ' + plural(keys.length, 'channel'), function () { keys.forEach(function (k) { E.hiddenChannels[k] = 1; }); }); toast(plural(keys.length, 'channel') + ' hidden', ['Undo', undo]); }
+  if (b === 'fav') setFav(keys, true);
+  if (b === 'unfav') setFav(keys, false);
+  if (b === 'copy') copyMoveDialog(keys);
+  if (b === 'remove') takeOut(realGroup(), keys);
+  if (b === 'clear') { sel.clear(); renderChannels(); }
+});
+function setFav(keys, on) {
+  var label = keys.length === 1 ? (on ? 'Added ' + chName(byKey.get(keys[0])) + ' to Favorites' : 'Removed ' + chName(byKey.get(keys[0])) + ' from Favorites') : (on ? 'Added ' + keys.length + ' to Favorites' : 'Removed ' + keys.length + ' from Favorites');
+  mut(label, function () { var f = customOf(FAV); keys.forEach(function (k) { var i = f.items.indexOf(k); if (on && i < 0) f.items.push(k); if (!on && i >= 0) f.items.splice(i, 1); }); });
+  if (keys.length > 1) toast(label, ['Undo', undo]);
+}
+
+/* ---------- copy, move, take out: works with any group ---------- */
+function addInto(gid, keys) {
+  var n = 0;
+  if (isCustom(gid)) { var g = customOf(gid), have = new Set(g.items); keys.forEach(function (k) { if (!have.has(k)) { g.items.push(k); have.add(k); n++; } }); return n; }
+  var add = E.groupAdd[gid] || [], out = E.groupRemove[gid] || {}, inList = new Set(channelsOf(gid, true).map(function (c) { return c.k; }));
+  keys.forEach(function (k) {
+    if (inList.has(k)) return;
+    var c = byKey.get(k); if (!c) return;
+    if (out[k]) delete out[k];
+    if (c.g !== gid && add.indexOf(k) < 0) add.push(k);
+    inList.add(k); n++;
+  });
+  if (add.length) E.groupAdd[gid] = add; else delete E.groupAdd[gid];
+  if (Object.keys(out).length) E.groupRemove[gid] = out; else delete E.groupRemove[gid];
+  return n;
+}
+function removeFrom(gid, keys) {
+  if (isCustom(gid)) { var g = customOf(gid), drop = new Set(keys); g.items = g.items.filter(function (k) { return !drop.has(k); }); return; }
+  var add = (E.groupAdd[gid] || []).filter(function (k) { return keys.indexOf(k) < 0; }), out = E.groupRemove[gid] || {};
+  keys.forEach(function (k) { var c = byKey.get(k); if (c && c.g === gid) out[k] = 1; });
+  if (add.length) E.groupAdd[gid] = add; else delete E.groupAdd[gid];
+  if (Object.keys(out).length) E.groupRemove[gid] = out; else delete E.groupRemove[gid];
+}
+function takeOut(gid, keys) {
+  if (!gid) return;
+  mut('Took ' + plural(keys.length, 'channel') + ' out of ' + groupLabel(gid), function () { removeFrom(gid, keys); });
+  keys.forEach(function (k) { sel.delete(k); }); bulkBar();
+  toast(plural(keys.length, 'channel') + ' taken out of ' + groupLabel(gid) + (isProv(gid) ? '.  They are still in All channels.' : ''), ['Undo', undo]);
+}
+function groupOptions(extra) {
+  var o = (extra || []).concat([{ hdr: 1, l: 'Your groups' }]);
+  E.custom.forEach(function (g) { o.push({ v: g.id, l: g.name, s: g.items.length }); });
+  o.push({ hdr: 1, l: 'Provider groups' });
+  providerGroups().forEach(function (g) { o.push({ v: g.id, l: g.name, k: g.raw, s: (g.raw !== g.name ? g.raw + ' · ' : '') + (E.hiddenGroups[g.id] ? 'hidden · ' : '') + channelsOf(g.id, true).length }); });
+  return o;
+}
+function copyMoveDialog(keys) {
+  var src = realGroup(), single = keys.length === 1 ? chName(byKey.get(keys[0])) : plural(keys.length, 'channel');
+  var srcLabel = src ? '"' + groupLabel(src) + '"' : 'the groups they are in now';
+  modal('Copy or move ' + single, '<label class="f">To this group<div class="dd" id="cmTo" style="width:100%"></div></label>' +
+    '<div id="cmNew" class="hidden" style="margin-top:10px"><label class="f">Name of the new group<input id="cmNewName" type="text" maxlength="80" placeholder="e.g. Sports"></label></div>' +
+    '<div class="col" style="margin-top:14px">' +
+    '<label class="opt on" data-m="copy"><input type="radio" name="cm" value="copy" checked><div><b>Copy</b><div class="muted small">The ' + (keys.length === 1 ? 'channel stays' : 'channels stay') + ' in ' + esc(srcLabel) + ' too.</div></div></label>' +
+    '<label class="opt" data-m="move"><input type="radio" name="cm" value="move"><div><b>Move</b><div class="muted small">Take ' + (keys.length === 1 ? 'it' : 'them') + ' out of ' + esc(srcLabel) + '.' + (src === ALL || !src ? '  They stay findable in All channels and search.' : '') + '</div></div></label></div>' +
+    '<p class="muted small" id="cmInfo"></p>', function () {
+      var last = LS.get('tivibro.editor.lastGroup', ''), opts = groupOptions([{ v: '__new', l: '＋ New group…', style: 'color:var(--accent)' }]);
+      var to = dd($('cmTo'), { value: groupExists(last) && last !== src ? last : '__new', options: opts, search: true, menuWidth: 360, onChange: upd });
+      document.querySelectorAll('#modal .opt').forEach(function (o) { o.addEventListener('click', function () { if (o.classList.contains('dis')) return; o.querySelector('input').checked = true; document.querySelectorAll('#modal .opt').forEach(function (x) { x.classList.toggle('on', x === o); }); upd(); }); });
+      function upd() {
+        var v = to.value, isNew = v === '__new', move = document.querySelector('#modal input[name=cm]:checked').value === 'move';
+        $('cmNew').classList.toggle('hidden', !isNew);
+        var already = isNew ? 0 : keys.filter(function (k) { return channelsOf(v, true).some(function (c) { return c.k === k; }); }).length;
+        $('cmInfo').textContent = !isNew && v === src ? 'That is the group they are in.' : already ? already + ' of them ' + (already === 1 ? 'is' : 'are') + ' already there.' : '';
+        $('cmGo').textContent = (move ? 'Move ' : 'Copy ') + single;
+        $('cmGo').disabled = !isNew && v === src;
+        if (isNew) $('cmNewName').focus();
+      }
+      $('cmNewName').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('cmGo').click(); } });
+      upd();
+    }, [['Cancel', 'ghost', closeModal], ['Copy', 'primary', function () {
+      var v = $('cmTo')._dd.value, move = document.querySelector('#modal input[name=cm]:checked').value === 'move', name;
+      if (v === '__new') { name = $('cmNewName').value.trim(); if (!name) { $('cmNewName').focus(); return; } }
+      closeModal();
+      var gid = v, n = 0;
+      mut((move ? 'Moved ' : 'Copied ') + single + ' to ' + (name || groupLabel(v)), function () {
+        if (v === '__new') { gid = 'c_' + Date.now().toString(36); E.custom.push({ id: gid, name: name, items: [] }); }
+        n = addInto(gid, keys);
+        if (move) {
+          var by = {}; keys.forEach(function (k) { var from = src || byKey.get(k).g; if (from === gid) return; (by[from] = by[from] || []).push(k); });
+          Object.keys(by).forEach(function (from) { removeFrom(from, by[from]); });
+        }
+      });
+      LS.set('tivibro.editor.lastGroup', gid);
+      sel.clear(); bulkBar(); renderChannels();
+      toast((move ? 'Moved ' : 'Copied ') + plural(n, 'channel') + ' to ' + groupLabel(gid), ['Undo', undo]);
+    }, 'cmGo']]);
+}
+
+/* ---------- find and replace in names ---------- */
+$('findRep').onclick = function () {
+  modal('Find and replace in channel names',
+    '<div class="form"><label class="f">Find<input id="frF" type="text"></label><label class="f">Replace with<input id="frR" type="text" placeholder="(nothing)"></label>' +
+    '<label class="f full">Apply to<div class="dd" id="frS" style="width:100%"></div></label>' +
+    '<label class="muted small"><input type="checkbox" id="frC"> Match upper and lower case</label><label class="muted small"><input type="checkbox" id="frX"> Regular expression</label></div>' +
+    '<p class="muted small" id="frN" style="margin:14px 0 6px"></p><table class="t" id="frP"></table>',
+    function () {
+      var plan = [];
+      dd($('frS'), { value: sel.size ? 'sel' : 'group', options: [{ v: 'sel', l: 'Selected channels', s: sel.size }, { v: 'group', l: query ? 'Search results' : groupLabel(curGroup), s: list.length }, { v: 'all', l: 'All channels', s: D.channels.length }], onChange: compute });
+      function compute() {
+        var f = $('frF').value, r = $('frR').value, scope = $('frS')._dd.value, rx;
+        plan = [];
+        if (!f) { $('frN').textContent = 'Type what to find.  The preview shows every name it changes before anything happens.'; $('frP').innerHTML = ''; $('frGo').disabled = true; return; }
+        try { rx = $('frX').checked ? new RegExp(f, $('frC').checked ? 'g' : 'gi') : new RegExp(f.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), $('frC').checked ? 'g' : 'gi'); }
+        catch (e) { $('frN').textContent = 'That expression has an error: ' + e.message; $('frGo').disabled = true; return; }
+        var pool = scope === 'sel' ? Array.from(sel).map(function (k) { return byKey.get(k); }).filter(Boolean) : scope === 'group' ? list : D.channels;
+        pool.forEach(function (c) { var a = chName(c), b = a.replace(rx, r).replace(/\s{2,}/g, ' ').trim(); if (b !== a && b) plan.push([c.k, a, b]); });
+        $('frN').textContent = plural(plan.length, 'channel name') + ' will change' + (plan.length > 12 ? '.  First 12:' : plan.length ? ':' : '.');
+        $('frP').innerHTML = plan.slice(0, 12).map(function (x) { return '<tr><td>' + esc(x[1]) + '</td><td>→ ' + esc(x[2]) + '</td></tr>'; }).join('');
+        $('frGo').disabled = !plan.length; $('frGo').textContent = plan.length ? 'Rename ' + plural(plan.length, 'channel') : 'Rename';
+      }
+      ['frF', 'frR', 'frC', 'frX'].forEach(function (id) { $(id).addEventListener('input', compute); $(id).addEventListener('change', compute); });
+      $('frGo').onclick = function () { var p = plan; closeModal(); mut('Find and replace: ' + plural(p.length, 'name'), function () { p.forEach(function (x) { setRename(x[0], x[2]); }); }); toast(plural(p.length, 'channel') + ' renamed', ['Undo', undo]); };
+      compute(); $('frF').focus();
+    }, [['Cancel', 'ghost', closeModal], ['Rename', 'primary', function () {}, 'frGo']]);
+};
+
+/* ---------- guide: where it comes from ---------- */
+var PROV_XC = [
+  ['short', 'Per channel', 'Recommended for most', 'The TV asks your provider for each channel\'s next few shows when you look at it.  Fast, light, nothing to download.',
+    'You can\'t match channels by hand in this mode, and some providers only send a few hours.'],
+  ['xmltv', 'Full XMLTV file', 'Most complete', 'The TV downloads your provider\'s whole guide file and keeps it.  You see days ahead, and you can match channels by hand.',
+    'Often 20 to 200 MB.  The first load can take a few minutes; progress shows here and on the TV.'],
+  ['off', 'Off', 'Use only your own sources', 'Nothing from the provider.  Only the guide sources you add below are used.',
+    'Pick this if your provider\'s guide is wrong or empty and a free guide covers your channels.']
+];
+var PROV_M3U = [
+  ['xmltv', 'Playlist\'s guide', 'From the M3U', 'Uses the guide address written inside your M3U playlist (url-tvg), if it has one.', 'Size depends on your provider.'],
+  ['off', 'Off', 'Use only your own sources', 'Ignore the playlist\'s guide address.  Only the guide sources you add below are used.', '']
+];
+function renderGuide() {
+  if (!D) return;
+  var pl = activePl(), m3u = D.playlist && D.playlist.type === 'm3u', mode = pl.providerEpg || (m3u ? 'xmltv' : 'short');
+  $('provIntro').textContent = m3u ? 'Your playlist may carry its own guide address.' : 'Xtream providers offer their guide two ways.  Pick one; you can change it any time.';
+  $('provChoices').innerHTML = (m3u ? PROV_M3U : PROV_XC).map(function (c) {
+    return '<button type="button" class="choice' + (c[0] === mode ? ' on' : '') + '" data-mode="' + c[0] + '"><h4>' + esc(c[1]) + (c[0] === mode ? ' <span class="chip acc">In use</span>' : ' <span class="chip">' + esc(c[2]) + '</span>') + '</h4><p>' + esc(c[3]) + '</p>' + (c[4] ? '<div class="pros">' + esc(c[4]) + '</div>' : '') + '</button>';
+  }).join('');
+  renderSources();
+  renderCatalog();
+  var vis = channelsOf(ALL).filter(function (c) { return !E.hiddenChannels[c.k]; }), w = vis.filter(hasGuide).length;
+  $('gCover').textContent = guideKnown() ? w + ' of ' + vis.length + ' shown channels have a guide' : perChannel() ? 'Per-channel guide from your provider' : 'No guide loaded';
+  $('gCover').className = 'chip ' + (!guideKnown() ? '' : vis.length && w / vis.length > 0.9 ? 'ok' : 'warn');
+  var gd = $('mGroup')._dd;
+  if (gd) gd.options([{ v: ALL, l: 'All shown channels' }].concat(groupOptions().filter(function (o) { return o.hdr || !E.hiddenGroups[o.v]; })), gd.value);
+  renderMatchList();
+  if (lastProgress) drawProgress(lastProgress);
+}
+$('provChoices').addEventListener('click', function (e) {
+  var b = e.target.closest('.choice'); if (!b) return;
+  var m = b.dataset.mode, pl = activePl(), cur = pl.providerEpg || (D.playlist.type === 'm3u' ? 'xmltv' : 'short');
+  if (m === cur) return;
+  function go() {
+    var tick = cmdMsg('provMsg', 'Telling the TV…');
+    command('setProviderGuide', { mode: m }, 30000, tick).then(function (r) {
+      msg('provMsg', 'ok', r.msg + (r.data && r.data.loading ? '  Watch the progress above.' : ''));
+      pl.providerEpg = m; renderGuide();
+    }).catch(function (err) { msg('provMsg', 'bad', err.message); });
+  }
+  if (m === 'xmltv' && D.playlist.type !== 'm3u') ask('Download the full guide?', 'The TV will download your provider\'s whole guide file.  These are often 20 to 200 MB and the first load can take a few minutes.  You can keep using the TV meanwhile; progress shows here and in the corner of the TV screen.', 'Download the full guide', go);
+  else go();
+});
+$('gReload').onclick = function () {
+  var b = this, tick = cmdMsg('provMsg', 'Asking the TV to reload…');
+  busyBtn(b, command('reloadGuide', {}, 30000, tick)).then(function (r) { msg('provMsg', 'ok', r.msg); }).catch(function (err) { msg('provMsg', 'bad', err.message); });
+};
+
+/* live progress of a guide download (sent by the TV through the helper) */
+function onProgress(p) {
+  var was = lastProgress; lastProgress = p;
+  if (page === 'guide') drawProgress(p);
+  if (was && was.active && !p.active && p.phase === 'done') toast('Guide loaded on the TV: ' + (p.programmes || 0).toLocaleString() + ' programmes');
+}
+function drawProgress(p) {
+  var box = $('gProg');
+  var fresh = p.active || (p.at && Date.now() - p.at < 5 * 60000);
+  if (!fresh || !p.phase) { box.innerHTML = ''; return; }
+  if (!p.active) {
+    var ok = p.phase === 'done';
+    box.innerHTML = '<div class="prog ' + (ok ? 'ok' : 'bad') + '"><div class="top"><b>' + (ok ? '✓ Guide loaded' : '✕ The guide did not load') + '</b><span class="nums">' +
+      (ok ? (p.programmes || 0).toLocaleString() + ' programmes for ' + (p.channels || 0).toLocaleString() + ' guide channels' + (p.took ? ' in ' + fmtTime(p.took) : '') : esc(p.error || '')) + '  ·  ' + ago(p.at) + '</span></div>' +
+      (p.report && p.report.length > 1 ? '<div class="nums" style="margin-top:6px">' + p.report.map(function (r) { return esc(r.host) + ': ' + (r.ok ? r.programmes.toLocaleString() + ' programmes' : 'failed (' + esc(r.error) + ')'); }).join('  ·  ') + '</div>' : '') + '</div>';
+    return;
+  }
+  var pct = p.total ? Math.min(99, Math.floor(100 * p.bytes / p.total)) : -1, el = Date.now() - (p.started || Date.now()), eta = '';
+  if (pct > 3 && el > 3000) eta = 'about ' + fmtTime(el / (p.bytes / p.total) - el) + ' left';
+  var speed = el > 1500 && p.bytes ? fmtMB(p.bytes / (el / 1000)) + '/s' : '';
+  box.innerHTML = '<div class="prog"><div class="top"><span class="spinner"></span><b>' + (p.phase === 'save' ? 'Saving the guide on the TV…' : 'Downloading the guide') + '</b>' +
+    '<span class="muted small">' + esc(p.host || '') + (p.of > 1 ? '  (source ' + p.src + ' of ' + p.of + ')' : '') + '</span><span class="grow"></span><b>' + (pct >= 0 ? pct + '%' : '') + '</b></div>' +
+    '<div class="bar acc' + (pct < 0 ? ' indet' : '') + '" style="height:8px;margin:10px 0 8px"><i style="width:' + (pct >= 0 ? pct : 30) + '%"></i></div>' +
+    '<div class="nums">' + fmtMB(p.bytes || 0) + (p.total ? ' of ' + fmtMB(p.total) : ' so far (the server did not say how big it is)') + (speed ? '  ·  ' + speed : '') + (eta ? '  ·  ' + eta : '') +
+    '  ·  ' + Math.round(p.programmes || 0).toLocaleString() + ' programmes read  ·  running ' + fmtTime(el) + '</div>' +
+    '<div class="muted small" style="margin-top:6px">You can keep editing.  The TV keeps working if you close this page.</div></div>';
+}
+setInterval(function () { if (page === 'guide' && lastProgress && lastProgress.active) drawProgress(lastProgress); }, 1000);
+
+/* ---------- guide sources ---------- */
+function renderSources() {
+  var pl = activePl(), l = pl.epgSources || [];
+  $('srcList').innerHTML = l.length ? '<table class="t"><tr><th>Order</th><th>Source</th><th>Offset</th><th></th></tr>' + l.map(function (s, i) {
+    return '<tr><td style="width:80px"><button class="ghost small" data-mv="' + i + ':-1"' + (i ? '' : ' disabled') + ' title="Earlier">↑</button><button class="ghost small" data-mv="' + i + ':1"' + (i < l.length - 1 ? '' : ' disabled') + ' title="Later">↓</button></td>' +
+      '<td>' + esc(s.host) + '</td><td>' + (s.offset || 0) + ' min</td><td class="r"><button class="ghost danger small" data-rmsrc="' + i + '">Remove</button></td></tr>';
+  }).join('') + '</table>' : '<p class="muted small">No extra guide sources yet.  Add one below, or pick a recommended free guide.</p>';
+}
+function addSource(url, offset, btn, box) {
+  box = box || 'srcMsg';
+  var tick = cmdMsg(box, 'Adding the source on the TV…');
+  return busyBtn(btn, command('addEpgSource', { url: url, offset: offset || 0 }, 30000, tick)).then(function (r) {
+    msg(box, 'ok', r.msg + '  Progress shows in step 1.');
+    var pl = activePl(); pl.epgSources = (pl.epgSources || []).concat([{ host: (/^https?:\/\/([^/:?#]+)/i.exec(url) || [])[1] || url, offset: offset || 0 }]); renderSources(); renderCatalog();
+    return true;
+  }).catch(function (err) { msg(box, 'bad', err.message); return false; });
+}
+function testSource(url, btn, box) {
+  var tick = cmdMsg(box, 'The TV is trying the address…');
+  return busyBtn(btn, command('testEpgSource', { url: url }, 60000, tick)).then(function (r) { msg(box, r.data && r.data.noGz ? 'busy' : 'ok', r.msg); }).catch(function (err) { msg(box, 'bad', err.message); });
+}
+$('srcForm').addEventListener('submit', function (e) {
+  e.preventDefault(); var url = $('srcUrl').value.trim(); if (!url) { $('srcUrl').focus(); return; }
+  addSource(url, +$('srcOff').value || 0, $('srcAdd')).then(function (ok) { if (ok) $('srcUrl').value = ''; });
+});
+$('srcTest').onclick = function () { var url = $('srcUrl').value.trim(); if (!url) { $('srcUrl').focus(); return; } testSource(url, this, 'srcMsg'); };
+$('srcList').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.mv) {
+    var p = b.dataset.mv.split(':');
+    busyBtn(b, command('moveEpgSource', { index: +p[0], dir: +p[1] }, 30000)).then(function (r) { msg('srcMsg', 'ok', r.msg); var l = activePl().epgSources, i = +p[0], j = i + (+p[1]), t = l[i]; l[i] = l[j]; l[j] = t; renderSources(); }).catch(function (err) { msg('srcMsg', 'bad', err.message); });
+  }
+  if (b.dataset.rmsrc != null) {
+    var i = +b.dataset.rmsrc, s = activePl().epgSources[i];
+    ask('Remove ' + s.host + '?', 'The TV reloads the guide without it.', 'Remove', function () {
+      busyBtn(b, command('removeEpgSource', { index: i }, 30000)).then(function (r) { msg('srcMsg', 'ok', r.msg); activePl().epgSources.splice(i, 1); renderSources(); renderCatalog(); }).catch(function (err) { msg('srcMsg', 'bad', err.message); });
+    }, true);
+  }
+});
+
+/* Free, community-run XMLTV guides.  Checked October 2026; sizes are the zipped download.
+   [region, name, url, size MB, note] */
+var CAT_REGIONS = [['us', 'United States'], ['ca', 'Canada'], ['uk', 'United Kingdom and Ireland'], ['au', 'Australia and New Zealand'], ['eu', 'Europe'], ['latam', 'Latin America'], ['fast', 'Free streaming channels (Pluto, Samsung, Plex, Roku)'], ['world', 'Other countries']];
+var CATALOG = [
+  ['us', 'US cable and satellite networks (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz', 6.6, 'Most popular US networks.  A good first pick.'],
+  ['us', 'US sports networks (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_US_SPORTS1.xml.gz', 0.8, 'ESPN, regional sports and more.'],
+  ['us', 'US local stations (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_US_LOCALS1.xml.gz', 58, 'Every local affiliate.  Large: only if you watch locals.'],
+  ['us', 'United States (iptv-epg.org)', 'https://iptv-epg.org/files/epg-us.xml.gz', 0, 'Very large (12,000+ channels).  Better on newer TVs.'],
+  ['ca', 'Canada (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_CA2.xml.gz', 6.6, ''],
+  ['ca', 'Canada (iptv-epg.org)', 'https://iptv-epg.org/files/epg-ca.xml.gz', 0, ''],
+  ['uk', 'United Kingdom (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_UK1.xml.gz', 2.9, ''],
+  ['uk', 'UK Freeview (dp247 on GitHub)', 'https://raw.githubusercontent.com/dp247/Freeview-EPG/master/epg.xml', 21, 'Free-to-air UK channels.  Plain XML, so it works on any TV.'],
+  ['uk', 'Ireland (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_IE1.xml.gz', 2.5, ''],
+  ['au', 'Australia (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_AU1.xml.gz', 3.6, ''],
+  ['au', 'New Zealand (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_NZ1.xml.gz', 0.4, ''],
+  ['eu', 'Germany (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_DE1.xml.gz', 3.6, ''],
+  ['eu', 'France (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_FR1.xml.gz', 5.5, ''],
+  ['eu', 'Spain (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_ES1.xml.gz', 3.2, ''],
+  ['eu', 'Italy (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_IT1.xml.gz', 1.5, ''],
+  ['eu', 'Netherlands (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_NL1.xml.gz', 1.9, ''],
+  ['eu', 'Portugal (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_PT1.xml.gz', 1.6, ''],
+  ['eu', 'Poland (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_PL1.xml.gz', 9, ''],
+  ['eu', 'Sweden (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_SE1.xml.gz', 1.4, ''],
+  ['eu', 'Other European countries (iptv-epg.org)', 'https://iptv-epg.org/guides', -1, 'Pick your country there and paste its address above.'],
+  ['latam', 'Mexico (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_MX1.xml.gz', 0.4, ''],
+  ['latam', 'Brazil (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_BR1.xml.gz', 0.7, ''],
+  ['latam', 'Argentina (iptv-epg.org)', 'https://iptv-epg.org/files/epg-ar.xml.gz', 0, ''],
+  ['latam', 'Colombia (iptv-epg.org)', 'https://iptv-epg.org/files/epg-co.xml.gz', 0, ''],
+  ['fast', 'Pluto TV US (i.mjh.nz)', 'https://i.mjh.nz/PlutoTV/us.xml.gz', 1, 'For Pluto channels in your playlist.'],
+  ['fast', 'Samsung TV Plus US (i.mjh.nz)', 'https://i.mjh.nz/SamsungTVPlus/us.xml.gz', 0.5, ''],
+  ['fast', 'Plex live TV US (i.mjh.nz)', 'https://i.mjh.nz/Plex/us.xml.gz', 2.5, ''],
+  ['fast', 'Roku Channel (i.mjh.nz)', 'https://i.mjh.nz/Roku/all.xml.gz', 3.3, ''],
+  ['world', 'India (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_IN1.xml.gz', 3.8, ''],
+  ['world', 'Arab world, beIN (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_BEIN1.xml.gz', 0.1, ''],
+  ['world', 'United Arab Emirates (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_AE1.xml.gz', 2.5, ''],
+  ['world', 'Philippines (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_PH2.xml.gz', 0.1, ''],
+  ['world', 'South Africa (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_ZA1.xml.gz', 0.2, ''],
+  ['world', 'Every country (iptv-epg.org list)', 'https://iptv-epg.org/guides', -1, 'Pick your country there and paste its address above.'],
+  ['world', 'Every site, build your own (iptv-org/epg on GitHub)', 'https://github.com/iptv-org/epg', -1, 'For tinkerers: grab exactly the channels you want.']
+];
+function renderCatalog() {
+  var r = $('catRegion')._dd ? $('catRegion')._dd.value : 'us', have = {};
+  (activePl().epgSources || []).forEach(function (s) { have[s.host] = (have[s.host] || 0) + 1; });
+  var gzOk = D.gz !== false;
+  $('catList').innerHTML = '<tr><th>Guide</th><th>Size</th><th></th></tr>' + CATALOG.filter(function (c) { return c[0] === r; }).map(function (c, i) {
+    var link = c[3] < 0, size = link ? 'web page' : c[3] ? (c[3] < 1 ? 'under 1 MB' : '~' + Math.round(c[3]) + ' MB') : 'not listed';
+    var warn = !gzOk && /\.gz$/.test(c[2]) ? '<div class="small" style="color:#ff9a9d">This TV cannot unzip .gz guides.</div>' : '';
+    return '<tr><td><b>' + esc(c[1]) + '</b>' + (c[4] ? '<div class="muted small">' + esc(c[4]) + '</div>' : '') + warn + '<div class="tiny dim" style="word-break:break-all">' + esc(c[2]) + '</div><div id="catMsg' + i + '"></div></td><td class="small muted">' + size + '</td>' +
+      '<td class="r">' + (link ? '<a href="' + esc(c[2]) + '" target="_blank" rel="noopener">Open ↗</a>' : '<button class="small" data-cattest="' + esc(c[2]) + '" data-i="' + i + '">Test</button> <button class="small primary" data-catadd="' + esc(c[2]) + '" data-i="' + i + '">Add</button>') + '</td></tr>';
+  }).join('');
+}
+$('catList').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  var box = 'catMsg' + b.dataset.i;
+  if (b.dataset.cattest) testSource(b.dataset.cattest, b, box);
+  if (b.dataset.catadd) { var url = b.dataset.catadd; ask('Add this guide?', 'The TV adds <b>' + esc(url.replace(/^https?:\/\//, '').split('/')[0]) + '</b> as a guide source and downloads it.  Progress shows in step 1.', 'Add guide source', function () { addSource(url, 0, b, box); }); }
+});
+
+/* ---------- matching channels to the guide ---------- */
+var mTab = 'none', mPage = 0, PAGE = 100;
+var TAB_LABEL = { none: 'Needs a guide', prov: 'Provider only', mine: 'Matched by you', auto: 'Matched on its own', pending: 'Waiting for the TV', all: 'All' };
+function matchPool() {
+  var g = $('mGroup')._dd ? $('mGroup')._dd.value : ALL;
+  return channelsOf(g || ALL).filter(function (c) { return !E.hiddenChannels[c.k] && (g !== ALL || !E.hiddenGroups[c.g]); });
+}
+function renderMatchList() {
+  if (!D) return;
+  if (!guideKnown()) {
+    $('mBody').classList.add('hidden');
+    $('mEmpty').innerHTML = '<div class="empty" style="padding:24px 10px"><b>There is no full guide on the TV to match against yet.</b><br><br>' +
+      (perChannel() ? 'Your provider sends the guide per channel, which can\'t be matched by hand.  If channels show "No guide information", switch step 1 to <b>Full XMLTV file</b>, or add a free guide in step 2.  Then come back here.' : 'Add a guide in step 2, or wait for the one loading now to finish.') +
+      (lastProgress && lastProgress.active ? '<br><br><span class="spinner"></span> A guide is loading now.' : '') + '</div>';
+    return;
+  }
+  $('mBody').classList.remove('hidden'); $('mEmpty').innerHTML = '';
+  var pool = matchPool(), counts = { none: 0, prov: 0, mine: 0, auto: 0, pending: 0, all: pool.length };
+  pool.forEach(function (c) { counts[guideState(c)]++; });
+  var tabs = ['none', 'prov', 'mine', 'auto', 'pending', 'all'].filter(function (t) { return t === 'none' || t === 'all' || counts[t]; });
+  if (tabs.indexOf(mTab) < 0) mTab = 'none';
+  $('mTabs').innerHTML = tabs.map(function (t) { return '<button data-t="' + t + '"' + (t === mTab ? ' class="on"' : '') + ' title="' + esc(TAB_HELP[t]) + '">' + TAB_LABEL[t] + '<b>' + counts[t] + '</b></button>'; }).join('');
+  var q = $('mSearch').value.trim().toLowerCase();
+  var l = pool.filter(function (c) { return (mTab === 'all' || guideState(c) === mTab) && (!q || chName(c).toLowerCase().indexOf(q) >= 0); });
+  $('smartBtn').textContent = '✦ Smart match' + (counts.none + counts.prov ? ' (' + (counts.none + counts.prov) + ')' : '');
+  if (!l.length) { $('mList').innerHTML = '<div class="empty">' + (mTab === 'none' && !q ? '✓ Every channel here has a guide.  Nice.' : 'No channels match.') + '</div>'; return; }
+  var pages = Math.ceil(l.length / PAGE); if (mPage >= pages) mPage = pages - 1;
+  var part = l.slice(mPage * PAGE, mPage * PAGE + PAGE);
+  $('mList').innerHTML = '<table class="t mrow"><tr><th>Channel</th><th>Guide channel</th><th>Status</th><th></th></tr>' + part.map(function (c) {
+    var id = guideOf(c), st = guideState(c), mine = !!E.epgMap[c.k];
+    var chip = { mine: '<span class="chip ok">matched by you</span>', auto: '<span class="chip ok">matched on its own</span>', prov: '<span class="chip info" title="' + esc(TAB_HELP.prov) + '">provider per-channel</span>', none: '<span class="chip bad">no guide</span>', pending: '<span class="chip warn" title="' + esc(TAB_HELP.pending) + '">waiting for the TV</span>' }[st];
+    return '<tr><td>' + (c.logo ? '<img class="logo" loading="lazy" src="' + esc(c.logo) + '" onerror="this.style.visibility=\'hidden\'">' : '') + '<b>' + esc(chName(c)) + '</b><div class="dim small">' + esc(groupLabel(c.g)) + '</div></td>' +
+      '<td>' + (id && (guideName.has(id) || mine) ? esc(guideName.get(id) || id) + '<div class="dim small">' + esc(id) + '</div>' : '<span class="dim">none</span>') + '</td>' +
+      '<td>' + chip + '</td><td class="r"><button data-match="' + esc(c.k) + '" class="small' + (st === 'none' ? ' primary' : '') + '">' + (st === 'none' ? 'Find guide…' : 'Change…') + '</button>' + (mine ? ' <button class="ghost small" data-unmatch="' + esc(c.k) + '" title="Go back to the automatic match">Clear</button>' : '') + '</td></tr>';
+  }).join('') + '</table>' +
+    (pages > 1 ? '<div class="pager">' + (mPage * PAGE + 1) + '–' + Math.min(l.length, (mPage + 1) * PAGE) + ' of ' + l.length + '<button class="small" data-pg="-1"' + (mPage ? '' : ' disabled') + '>‹ Previous</button><button class="small" data-pg="1"' + (mPage < pages - 1 ? '' : ' disabled') + '>Next ›</button></div>' : '');
+}
+var TAB_HELP = {
+  none: 'No guide data found for these channels.  They show "No guide information" on the TV.',
+  prov: 'No match in the XMLTV guides, so the TV asks your provider per channel.  That often works; match these if the TV shows nothing.',
+  mine: 'Channels you pointed at a guide channel yourself.',
+  auto: 'Matched by the provider\'s guide id or by name, with nothing for you to do.',
+  pending: 'Matched by you, but the TV has not loaded that guide channel yet.  It will after you send your changes.',
+  all: 'Every shown channel in this group.'
+};
+$('mTabs').addEventListener('click', function (e) { var b = e.target.closest('button'); if (!b) return; mTab = b.dataset.t; mPage = 0; renderMatchList(); });
+$('mSearch').addEventListener('input', function () { mPage = 0; renderMatchList(); });
+$('mList').addEventListener('click', function (e) {
+  var t = e.target;
+  if (t.dataset.match) openMatcher(t.dataset.match);
+  if (t.dataset.unmatch) { var c = byKey.get(t.dataset.unmatch); mut('Cleared the guide match for ' + chName(c), function () { delete E.epgMap[c.k]; }); }
+  if (t.dataset.pg) { mPage += +t.dataset.pg; renderMatchList(); $('mList').scrollIntoView({ block: 'start' }); }
+});
+
+/* ---------- smart matching ---------- */
+var STOP = { hd: 1, fhd: 1, uhd: 1, sd: 1, '4k': 1, '8k': 1, hevc: 1, h264: 1, h265: 1, raw: 1, backup: 1, bk: 1, vip: 1, hq: 1, lq: 1, fps: 1, '50fps': 1, '60fps': 1, '1080p': 1, '720p': 1, '1080': 1, '720': 1, live: 1, channel: 1, the: 1, tv: 1 };
+var COUNTRY = { us: 'us', usa: 'us', uk: 'uk', gb: 'uk', ca: 'ca', can: 'ca', au: 'au', nz: 'nz', ie: 'ie', de: 'de', ger: 'de', fr: 'fr', es: 'es', it: 'it', pt: 'pt', nl: 'nl', be: 'be', ch: 'ch', at: 'at', se: 'se', no: 'no', dk: 'dk', fi: 'fi', pl: 'pl', br: 'br', mx: 'mx', ar: 'ar', in: 'in', ind: 'in', za: 'za', tr: 'tr', gr: 'gr', ro: 'ro', ru: 'ru', ae: 'ae', ph: 'ph', latino: 'mx' };
+function prep(name) {
+  var s = String(name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(), country = '', flags = {};
+  var m = /^\s*[\[(]?([a-z]{2,3})[\])]?\s*(?:[|:\-–»]+|\s)\s*/.exec(s);
+  if (m && COUNTRY[m[1]]) { country = COUNTRY[m[1]]; s = s.slice(m[0].length); }
+  s = s.replace(/[\[(]([^\])]*)[\])]/g, function (a, inner) { inner.split(/\W+/).forEach(function (w) { if (w === 'east' || w === 'west' || w === 'pacific') flags[w === 'pacific' ? 'west' : w] = 1; else if (COUNTRY[w] && !country) country = COUNTRY[w]; }); return ' '; });
+  s = s.replace(/&/g, ' and ').replace(/\+/g, ' plus ');
+  var toks = s.split(/[^a-z0-9]+/).filter(Boolean), out = [];
+  toks.forEach(function (w, i) {
+    if (w === 'east' || w === 'west' || w === 'pacific') { flags[w === 'pacific' ? 'west' : w] = 1; return; }
+    if (COUNTRY[w] && (i === toks.length - 1 || i === 0) && toks.length > 1) { if (!country) country = COUNTRY[w]; return; }
+    if (STOP[w]) return;
+    out.push(w);
+  });
+  var call = out.filter(function (w) { return /^[kw][a-z]{2,3}$/.test(w) && !/[aeiou]{2}/.test(w); })[0] || '';
+  return { t: out, c: out.join(''), country: country, east: !!flags.east, west: !!flags.west, call: call, nums: out.filter(function (w) { return /^\d+$/.test(w); }).join(',') };
+}
+function guideEntry(x) {
+  var id = x[0], name = x[1], p = prep(name), sfx = /\.([a-z]{2,3})$/i.exec(id);
+  var base = id.replace(/\.[a-z]{2,3}$/i, '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[._-]+/g, ' ');
+  var q = prep(base);
+  if (sfx && COUNTRY[sfx[1].toLowerCase()]) { var cc = COUNTRY[sfx[1].toLowerCase()]; p.country = p.country || cc; q.country = q.country || cc; }
+  return { id: id, name: name, p: p, q: /^[a-z0-9 ]+$/i.test(base) && q.c.length > 1 ? q : null };
+}
+var matcherIndex = null;
+function buildIndex() {
+  if (matcherIndex) return matcherIndex;
+  var entries = (D.guide.channels || []).map(guideEntry), tok = new Map(), comp = new Map();
+  entries.forEach(function (e, i) {
+    [e.p, e.q].forEach(function (p) {
+      if (!p) return;
+      p.t.forEach(function (w) { if (w.length < 2 && !/\d/.test(w)) return; var a = tok.get(w); if (!a) tok.set(w, a = []); if (a[a.length - 1] !== i) a.push(i); });
+      var k = p.c.slice(0, 4); if (k) { var b = comp.get(k); if (!b) comp.set(k, b = []); if (b[b.length - 1] !== i) b.push(i); }
+    });
+  });
+  matcherIndex = { entries: entries, tok: tok, comp: comp };
+  return matcherIndex;
+}
+function bigrams(s) { var m = new Map(); for (var i = 0; i < s.length - 1; i++) { var b = s.substr(i, 2); m.set(b, (m.get(b) || 0) + 1); } return m; }
+function dice(a, b) {
+  if (a === b) return 1; if (a.length < 2 || b.length < 2) return 0;
+  var A = bigrams(a), B = bigrams(b), n = 0;
+  A.forEach(function (v, k) { var w = B.get(k); if (w) n += Math.min(v, w); });
+  return 2 * n / (a.length - 1 + b.length - 1);
+}
+function score1(a, b) {
+  if (!b || !b.c) return 0;
+  var s;
+  if (a.c === b.c) s = 100;
+  else if (a.call && b.t.indexOf(a.call) >= 0) s = 96;
+  else {
+    var set = new Set(b.t), inter = a.t.filter(function (w) { return set.has(w); }).length, uni = new Set(a.t.concat(b.t)).size;
+    var j = uni ? inter / uni : 0, d = dice(a.c, b.c);
+    s = 100 * (0.62 * d + 0.38 * j);
+    if (a.c.length > 3 && (b.c.indexOf(a.c) === 0 || a.c.indexOf(b.c) === 0)) s = Math.max(s, 80 - Math.abs(a.c.length - b.c.length) * 2);
+  }
+  if (a.nums !== b.nums) s *= 0.6;
+  if ((a.east && b.west) || (a.west && b.east)) s -= 18; else if (!a.west && b.west) s -= 6; else if (a.west && !b.west) s -= 8;
+  if (a.country && b.country) s += a.country === b.country ? 5 : -25;
+  return Math.max(0, Math.min(100, s));
+}
+// Best guide channels for one of our channels: [{id, name, score}], best first.
+function suggest(c, max) {
+  var ix = buildIndex(), a = prep(chName(c)), b = chName(c) !== c.n ? prep(c.n) : null, cand = new Set();
+  // The cleaned name loses "US:" and "(East)"; take those hints from the provider name or the group name.
+  var pg = provOf(c.g), gcc = pg ? (COUNTRY[(prefixOf(pg.name) || '').toLowerCase()] || '') : '';
+  [a, b].forEach(function (p) { if (!p) return; if (!p.country) p.country = (b && b.country) || gcc; if (b) { p.east = p.east || b.east; p.west = p.west || b.west; } });
+  [a, b].forEach(function (p) {
+    if (!p) return;
+    p.t.forEach(function (w) { var l = ix.tok.get(w); if (l && l.length < 2500) l.forEach(function (i) { cand.add(i); }); });
+    var l2 = ix.comp.get(p.c.slice(0, 4)); if (l2) l2.forEach(function (i) { cand.add(i); });
+  });
+  if (c.epg) ix.entries.forEach(function (e, i) { if (e.id.toLowerCase() === c.epg.toLowerCase()) cand.add(i); });
+  var out = [];
+  cand.forEach(function (i) {
+    var e = ix.entries[i], s = Math.max(score1(a, e.p), score1(a, e.q), b ? score1(b, e.p) : 0, b ? score1(b, e.q) : 0);
+    if (c.epg && e.id.toLowerCase() === c.epg.toLowerCase()) s = Math.max(s, 95);
+    if (s >= 45) out.push({ id: e.id, name: e.name, score: Math.round(s) });
+  });
+  out.sort(function (x, y) { return y.score - x.score || x.name.length - y.name.length; });
+  return out.slice(0, max || 5);
+}
+function confidence(list) {
+  if (!list.length) return 'none';
+  var t = list[0].score, gap = t - (list[1] ? list[1].score : 0);
+  return t >= 92 && (gap >= 4 || t === 100) ? 'high' : t >= 74 ? 'medium' : t >= 58 ? 'low' : 'none';
+}
+var CONF = { high: ['ok', 'Very likely'], medium: ['warn', 'Likely'], low: ['bad', 'Unsure'] };
+
+$('smartBtn').onclick = function () {
+  var pool = matchPool().filter(function (c) { var s = guideState(c); return s === 'none' || s === 'prov'; });
+  if (!pool.length) { toast('Every channel here already has a guide'); return; }
+  modal('Smart match', '<div id="smHead"><p class="muted" style="margin-top:0">Looking at ' + plural(pool.length, 'channel') + ' without a guide and comparing names with ' + guideName.size.toLocaleString() + ' guide channels…</p><div class="bar acc" style="height:8px"><i id="smBar" style="width:0%"></i></div></div><div id="smBody"></div>',
+    function () { runSmart(pool); }, [['Cancel', 'ghost', closeModal], ['Apply', 'primary', function () {}, 'smGo']], true);
+  $('smGo').disabled = true;
+};
+function runSmart(pool) {
+  var res = [], i = 0, t0 = Date.now();
+  (function chunk() {
+    if (!$('modal')) return;
+    var end = Date.now() + 40;
+    while (i < pool.length && Date.now() < end) { var c = pool[i++], s = suggest(c, 4), cf = confidence(s); res.push({ c: c, s: s, conf: cf, pick: s[0] ? s[0].id : '', ok: cf === 'high' ? true : null }); }
+    $('smBar').style.width = Math.round(100 * i / pool.length) + '%';
+    if (i < pool.length) return setTimeout(chunk, 0);
+    showSmart(res, Date.now() - t0);
+  })();
+}
+function showSmart(res, took) {
+  var showWeak = false, page2 = 0, PG = 60;
+  var found = res.filter(function (r) { return r.conf !== 'none'; });
+  function counts() { var n = { high: 0, medium: 0, low: 0, yes: 0 }; found.forEach(function (r) { n[r.conf]++; if (r.ok) n.yes++; }); return n; }
+  function draw() {
+    var n = counts(), rows = found.filter(function (r) { return showWeak || r.conf !== 'low'; });
+    $('smHead').innerHTML = '<div class="row"><span class="chip ok">' + n.high + ' very likely</span><span class="chip warn">' + n.medium + ' likely</span><span class="chip bad">' + n.low + ' unsure</span><span class="chip">' + (res.length - found.length) + ' no idea</span><span class="grow"></span>' +
+      '<button class="small" id="smAllHigh">Approve all very likely</button><button class="small" id="smAll">Approve everything shown</button><button class="small ghost" id="smNone">Decline all</button></div>' +
+      '<p class="muted small" style="margin:10px 0">Approve the guesses that look right.  "Very likely" ones start approved.  Use the list in each row to pick a different guide channel.  Nothing changes until you press Apply.  <label style="margin-left:10px"><input type="checkbox" id="smWeak"' + (showWeak ? ' checked' : '') + '> Show unsure guesses</label></p>';
+    var pages = Math.max(1, Math.ceil(rows.length / PG)); if (page2 >= pages) page2 = pages - 1;
+    var part = rows.slice(page2 * PG, page2 * PG + PG);
+    $('smBody').innerHTML = rows.length ? '<table class="t"><tr><th>Your channel</th><th>Guide channel</th><th>Confidence</th><th class="r">Approve?</th></tr>' + part.map(function (r) {
+      var idx = found.indexOf(r), cur = r.s.filter(function (x) { return x.id === r.pick; })[0] || r.s[0];
+      return '<tr' + (r.ok === false ? ' class="dim"' : '') + '><td><b>' + esc(chName(r.c)) + '</b><div class="dim small">' + esc(groupLabel(r.c.g)) + '</div></td>' +
+        '<td><div class="dd" data-alt="' + idx + '" style="width:100%;max-width:380px"></div></td>' +
+        '<td><span class="chip ' + CONF[r.conf][0] + ' conf">' + CONF[r.conf][1] + ' · ' + cur.score + '%</span></td>' +
+        '<td class="r"><span class="yn"><button class="yes' + (r.ok ? ' on' : '') + '" data-yes="' + idx + '" title="Approve">✓</button><button class="no' + (r.ok === false ? ' on' : '') + '" data-no="' + idx + '" title="Decline">✕</button></span></td></tr>';
+    }).join('') + '</table>' + (pages > 1 ? '<div class="pager">' + (page2 * PG + 1) + '–' + Math.min(rows.length, (page2 + 1) * PG) + ' of ' + rows.length + '<button class="small" data-pg2="-1"' + (page2 ? '' : ' disabled') + '>‹ Previous</button><button class="small" data-pg2="1"' + (page2 < pages - 1 ? '' : ' disabled') + '>Next ›</button></div>' : '')
+      : '<div class="empty">No confident guesses.  ' + (n.low ? 'Tick "Show unsure guesses" to see ' + n.low + ' weaker ones, or ' : '') + 'try adding a guide source that covers these channels (step 2).</div>';
+    $('smBody').querySelectorAll('[data-alt]').forEach(function (el) {
+      var r = found[+el.dataset.alt];
+      dd(el, { value: r.pick, menuWidth: 420, search: true, options: r.s.map(function (x) { return { v: x.id, l: x.name, s: x.score + '%  ·  ' + x.id }; }).concat([{ v: '__find', l: 'Search the whole guide…', style: 'color:var(--accent)', always: true }]),
+        onChange: function (v) { if (v === '__find') { el._dd.set(r.pick); openMatcherFor(r); return; } r.pick = v; r.ok = true; draw(); } });
+    });
+    $('smWeak').onchange = function () { showWeak = this.checked; draw(); };
+    $('smAllHigh').onclick = function () { found.forEach(function (r) { if (r.conf === 'high') r.ok = true; }); draw(); };
+    $('smAll').onclick = function () { rows.forEach(function (r) { r.ok = true; }); draw(); };
+    $('smNone').onclick = function () { found.forEach(function (r) { r.ok = false; }); draw(); };
+    var yes = found.filter(function (r) { return r.ok && r.pick; }).length;
+    $('smGo').disabled = !yes; $('smGo').textContent = yes ? 'Apply ' + plural(yes, 'match', 'matches') : 'Apply';
+  }
+  function openMatcherFor(r) {
+    // A nested search: reuse the matcher's list in a small inline panel.
+    var q = prompt('Search the guide for', chName(r.c)); if (!q) return;
+    var hits = searchGuide(q, 20);
+    if (!hits.length) { toast('Nothing in the guide matches "' + q + '"'); return; }
+    hits.forEach(function (h) { if (!r.s.some(function (x) { return x.id === h.id; })) r.s.push({ id: h.id, name: h.name, score: h.score }); });
+    r.pick = hits[0].id; r.ok = true; draw();
+  }
+  $('smBody').addEventListener('click', function (e) {
+    var t = e.target.closest('button'); if (!t) return;
+    if (t.dataset.yes) { var r = found[+t.dataset.yes]; r.ok = r.ok === true ? null : true; draw(); }
+    if (t.dataset.no) { var r2 = found[+t.dataset.no]; r2.ok = r2.ok === false ? null : false; draw(); }
+    if (t.dataset.pg2) { page2 += +t.dataset.pg2; draw(); $('smBody').scrollIntoView({ block: 'start' }); }
+  });
+  $('smGo').onclick = function () {
+    var yes = found.filter(function (r) { return r.ok && r.pick; });
+    closeModal();
+    mut('Smart match: ' + plural(yes.length, 'channel'), function () { yes.forEach(function (r) { E.epgMap[r.c.k] = r.pick; }); });
+    toast(plural(yes.length, 'channel') + ' matched.  Send to TV to load their guide.', ['Undo', undo]);
+  };
+  draw();
+}
+// Free-text search of the whole guide, best first.
+function searchGuide(q, max) {
+  var p = prep(q), lq = q.toLowerCase().trim(), ix = buildIndex(), out = [];
+  ix.entries.forEach(function (e) {
+    var s = Math.max(score1(p, e.p), score1(p, e.q));
+    if (lq && (e.name.toLowerCase().indexOf(lq) >= 0 || e.id.toLowerCase().indexOf(lq) >= 0)) s = Math.max(s, 70 + Math.min(20, 20 * lq.length / Math.max(1, e.name.length)));
+    if (s >= 40) out.push({ id: e.id, name: e.name, score: Math.round(s) });
+  });
+  out.sort(function (a, b) { return b.score - a.score || a.name.length - b.name.length; });
+  return out.slice(0, max || 80);
+}
+function openMatcher(k) {
+  var c = byKey.get(k), cur = E.epgMap[k] || c.epg || '';
+  modal('Guide for ' + chName(c), '<p class="muted small" style="margin-top:0">Best guesses first.  Search to find any guide channel.  The percentage is how closely the names match.</p>' +
+    '<input id="mq" type="search" style="width:100%" placeholder="Search ' + guideName.size.toLocaleString() + ' guide channels"><p class="muted small" id="mqn" style="margin:10px 0"></p><div id="mres"></div>', function () {
+    var sug = suggest(c, 8);
+    function row(h) { return '<div class="pick" data-id="' + esc(h.id) + '">' + (h.id === cur ? '<span class="chip acc">current</span>' : '') + '<b>' + esc(h.name) + '</b>' + (h.score != null ? '<span class="chip ' + (h.score >= 90 ? 'ok' : h.score >= 72 ? 'warn' : '') + '">' + h.score + '%</span>' : '') + '<span class="id">' + esc(h.id) + '</span></div>'; }
+    function run() {
+      var q = $('mq').value.trim();
+      var hits = q ? searchGuide(q, 80) : sug;
+      $('mqn').textContent = q ? (hits.length ? hits.length + ' found.  Click the right one.' : 'No guide channels match.  Try a shorter part of the name.') : sug.length ? 'Suggestions for this channel:' : 'No good guesses.  Type part of the name to search.';
+      $('mres').innerHTML = hits.map(row).join('');
+    }
+    var t = 0;
+    $('mq').addEventListener('input', function () { clearTimeout(t); t = setTimeout(run, 120); });
+    $('mres').addEventListener('click', function (e) {
+      var p = e.target.closest('.pick'); if (!p) return;
+      var id = p.dataset.id; closeModal();
+      mut('Matched ' + chName(c) + ' to ' + (guideName.get(id) || id), function () { if (id === c.epg && c.has) delete E.epgMap[k]; else E.epgMap[k] = id; });
+      toast('Matched.  Send to TV to load its guide.', ['Undo', undo]);
+    });
+    run(); $('mq').focus();
+  }, E.epgMap[k] ? [['Clear my match (back to automatic)', 'ghost', function () { closeModal(); mut('Cleared the guide match for ' + chName(c), function () { delete E.epgMap[k]; }); }], ['Close', '', closeModal]] : null);
+}
+
+/* ---------- help ---------- */
+var HELP = [
+  ['start', 'Getting started', '<p>This editor changes what TiviBro shows on your TV: which groups and channels appear, their names and order, your own groups, and the programme guide.  It talks to TiviBro on the TV over your home network, so <b>keep TiviBro open on the TV</b> while you work.</p>' +
+    '<p>A good order for a first clean-up:</p><ol><li><b>Smart clean-up</b>: keep only your countries, hide duplicates and empty groups.</li><li><b>Groups and channels</b>: switch on the groups you watch, drag them into order, make favorites.</li><li><b>Channel names</b>: turn on the recommended clean-up.</li><li><b>Guide</b>: get a guide for every channel.</li><li>Press <b>Send to TV</b>, then download a <b>backup</b>.</li></ol>'],
+  ['saving', 'Saving, undo and restore points', '<h3>Drafts</h3><p>Every change is a <b>draft</b> first.  A bar at the bottom counts them: "5 changes not on the TV yet".  Press <b>Send to TV</b> (or <kbd>Ctrl</kbd>+<kbd>S</kbd>) and the TV applies them within a few seconds; the bar turns green when the TV confirms.  <b>Review</b> lists every change in plain words before you send.</p>' +
+    '<p>Prefer changes to go out as you make them?  Switch on <b>Send automatically</b> in the bar.</p><p>Drafts are kept in this browser.  Close the page by accident and the editor offers them back next time.</p>' +
+    '<h3>Undo</h3><p><kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes the last change, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redoes it.  <b>Changes and restore points</b> lists everything you did in this session; <b>Go back</b> returns to just before any of them.  Undo works even after sending: undo, then send again.</p>' +
+    '<h3>Restore points</h3><p>Restore points live <b>on the TV</b>, per playlist, and survive restarts.  The TV makes one automatically just before applying changes from this editor (it keeps the last 15), and you can make named ones before a big clean-up (up to 30).  Restoring one makes another automatic point first, so a restore can itself be undone.</p>' +
+    '<p>Restore points cover groups, channels, names and guide matches.  For settings and playlists too, use <a href="#help/backup">Backup and restore</a>.</p>'],
+  ['groups', 'Groups and channels', '<h3>Show, hide, order</h3><p>The switch next to a group shows or hides it on the TV.  Drag the ⠿ handle to reorder.  Your own groups always come first, then the provider\'s.  Filters above the list find hidden, empty, or edited groups fast.</p>' +
+    '<h3>Rename</h3><p>Hover a group and press ✎.  Renamed groups show a <em style="color:var(--accent);font-style:normal">renamed</em> tag; hover it to see the original name.  For provider groups, leave the name empty to go back to the provider\'s.</p>' +
+    '<h3>Copy or move channels</h3><p>Tick channels (or use ＋ on one), then <b>Copy or move to group</b>.  Any group works as the destination, your own or the provider\'s.  <b>Copy</b> keeps the channel where it is too; <b>Move</b> takes it out of the group you are looking at.  Moving from All channels or a search takes each channel out of its own provider group.</p>' +
+    '<p>Provider groups you changed show an <em style="color:var(--info);font-style:normal">edited</em> tag, and the channel list shows what was added or taken out, with a button to put the group back the way the provider has it.  Your changes survive playlist refreshes.</p>' +
+    '<h3>Sort</h3><p>The <b>Order</b> list sorts the open group on the TV: provider order, A to Z, Z to A, or channel number.  Your own groups also have <b>Your order</b>, where you drag channels by hand.</p>' +
+    '<h3>Hide and favorite</h3><p>👁 hides one channel everywhere.  ★ adds it to Favorites.  Both work on many ticked channels at once.</p>'],
+  ['guide', 'The guide: where it comes from', '<p>TiviBro can take the guide from your provider and from extra XMLTV guides you add.  For Xtream providers there are two provider options:</p>' +
+    '<ul><li><b>Per channel</b> (default).  The TV asks the provider for each channel\'s next few shows as you browse.  Nothing to download, so it is fast and light on the TV.  The catch: there is no full list, so channels can\'t be matched by hand, and some providers only send a few hours.</li>' +
+    '<li><b>Full XMLTV file</b>.  The TV downloads the provider\'s complete guide and keeps it, refreshing on the schedule set in Playlists.  You see days ahead, and you can match channels by hand.  These files are often 20 to 200 MB, so the first load can take a few minutes.  A progress bar shows in the editor and in the corner of the TV; the editor keeps working meanwhile.</li>' +
+    '<li><b>Off</b>.  Ignore the provider\'s guide and use only your own sources.</li></ul>' +
+    '<p>M3U playlists may carry their own guide address (url-tvg); "Playlist\'s guide" uses it.</p><p>When several guides cover the same channel, the first one wins: your extra sources in their order, then the provider\'s full guide.  Channels no XMLTV covers still get the per-channel guide when that mode is on.</p>'],
+  ['sources', 'Extra guide sources', '<p>Add any XMLTV address ending in <code>.xml</code> or <code>.xml.gz</code>.  <b>Test</b> lets the TV try the address first and reports its size.  Use the arrows to change the order; the first source wins when two cover the same channel.</p>' +
+    '<p><b>Offset</b> shifts one source\'s times, in minutes, for guides that are an hour off.</p>' +
+    '<p><b>Recommended free guides</b> lists community-run guides by region, such as epgshare01, iptv-epg.org, i.mjh.nz (Pluto, Samsung TV Plus, Plex, Roku) and projects on GitHub.  They were working when this version was made, but free services can change or go offline, so <b>Test</b> before adding.  Smaller files load faster; add only the regions you watch.  Older TVs cannot unzip <code>.gz</code> files; the editor warns when that is the case.</p>'],
+  ['matching', 'Matching channels and Smart match', '<p>Most channels match the guide by themselves, through the guide id the provider sends or by name.  The rest show "No guide information" on the TV.  The tabs sort channels by state:</p>' +
+    '<ul><li><b>Needs a guide</b>: nothing found.  These are the ones to fix.</li><li><b>Provider only</b>: no XMLTV match, but the per-channel provider guide is used.  Often fine.</li><li><b>Matched by you</b> and <b>Matched on its own</b>: done.</li><li><b>Waiting for the TV</b>: you matched it, and the TV loads that guide channel after you send.</li></ul>' +
+    '<h3>Smart match</h3><p>Smart match compares every unmatched channel with every guide channel.  It ignores clutter (HD, FHD, "US |"), understands country codes, East and West feeds, numbered channels (ESPN vs ESPN 2) and US station call signs (KABC), then shows its best guess with a confidence score.</p>' +
+    '<p>You decide: ✓ approves a guess, ✕ declines it, and the list in each row offers the next best guesses or a search of the whole guide.  "Very likely" guesses start approved.  Nothing changes until you press <b>Apply</b>, and the whole batch is one undo step.</p>' +
+    '<h3>By hand</h3><p><b>Find guide…</b> opens suggestions for that one channel plus a search box.  <b>Clear</b> returns a channel to its automatic match.</p>'],
+  ['names', 'Channel names', '<p>Rules remove clutter from every name at once: country prefixes, quality tags, brackets and so on.  Add your own prefixes and suffixes too.  The preview shows each name before and after.  Rules only change how names look; the provider\'s names are untouched, so turning a rule off brings the old name back.  Channels you renamed by hand keep your names.</p>'],
+  ['tools', 'Smart clean-up', '<ul><li><b>Keep only your countries</b> reads country codes at the start of group names (US, UK, FR…) and shows only the ones you tick.</li>' +
+    '<li><b>Same channel, more than once</b> finds the same channel in several qualities and keeps one.  Pick which quality to prefer; Full HD first is a good balance.  You can override the pick in any set.</li>' +
+    '<li><b>Hide by keyword</b> hides groups or channels whose names contain words like PPV or 24/7, with a preview first.</li>' +
+    '<li><b>Empty groups</b> hides groups with nothing left to watch.</li></ul><p>Everything here only hides, never deletes, and every action is one undo step.</p>'],
+  ['playlists', 'Playlists', '<p>Add Xtream Codes or M3U playlists, switch which one the TV uses, change reload schedules and the User-Agent, or change a login.  The TV tests a new login before saving it.  Logins never reach this editor; you only see server names.  Each playlist has its own groups, names and guide setup.</p>'],
+  ['backup', 'Backup and restore', '<p>A backup is one file with everything: settings, every playlist <b>with its login</b>, each playlist\'s groups, favorites, names and guide matches, and its restore points.  Channel lists and guides are not in it; they reload from your provider.</p>' +
+    '<h3>Locked with your passphrase</h3><p>Because it holds logins, the backup is always locked.  You pick a passphrase when you download it (or press <b>Suggest one</b>).  The TV makes the backup and locks it with AES-256 before it leaves the TV, so the file that reaches your computer is unreadable without the passphrase.  Nobody can recover a forgotten passphrase, us included, so keep it in a password manager or with the file.</p>' +
+    '<h3>Restoring, even on a brand-new TV</h3><ol><li>Install TiviBro and open it.  On the first screen choose <b>Set up or restore from a computer</b>.  (On a TV already set up: Settings, Edit on a computer.)</li><li>Open the address shown on the TV in a browser and type the password shown there.</li><li>Choose <b>Restore a backup</b>, drop the file, type its passphrase and press <b>Unlock</b>.  The editor lists the playlists inside so you know it is the right file.</li><li>Press <b>Restore to the TV</b>.  TiviBro restarts with all your playlists, logins and settings, and this page reconnects by itself.</li></ol>' +
+    '<p>Older backups made before locking existed still restore; download a new locked one afterwards and delete the old file.</p>'],
+  ['keys', 'Keyboard shortcuts', '<ul><li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> or <kbd>Ctrl</kbd>+<kbd>Y</kbd> redo</li><li><kbd>Ctrl</kbd>+<kbd>S</kbd> send to TV</li><li><kbd>/</kbd> jump to the search box</li><li><kbd>Esc</kbd> close a window or list</li><li>In lists: <kbd>↑</kbd> <kbd>↓</kbd> and <kbd>Enter</kbd>, or type to filter</li></ul><p>On a Mac use <kbd>⌘</kbd> instead of <kbd>Ctrl</kbd>.</p>'],
+  ['trouble', 'Troubleshooting', '<ul><li><b>"Can\'t reach TiviBro on the TV"</b>: TiviBro was closed, or the TV went to sleep.  Open TiviBro; the editor reconnects by itself.  Your drafts are safe in this browser.</li>' +
+    '<li><b>Changes don\'t show on the TV</b>: check the bar at the bottom.  If it still counts changes, press Send to TV.</li>' +
+    '<li><b>The guide seems stuck</b>: look at the progress bar on the Guide page.  Big files take minutes on a TV.  If it stays at 0, Test the address; the server may be down.</li>' +
+    '<li><b>Wrong password</b>: it is shown on the TV under Settings, Edit on a computer.  After five wrong tries, wait a minute.</li>' +
+    '<li><b>Times are off by an hour</b>: give that guide source an offset (60 or -60).</li></ul>']
+];
+function renderHelp(sub) {
+  if (!renderHelp.done) {
+    renderHelp.done = true;
+    $('helpBody').innerHTML = '<div class="card"><b>Contents</b><ul class="toc">' + HELP.map(function (h) { return '<li><a href="#help/' + h[0] + '">' + esc(h[1]) + '</a></li>'; }).join('') + '</ul></div>' +
+      HELP.map(function (h) { return '<h2 id="help-' + h[0] + '">' + esc(h[1]) + '</h2>' + h[2]; }).join('') + '<p class="muted small" style="margin-top:40px">TiviBro is free.  Made by OhMyBahGosh.</p>';
+  }
+  var t = sub && $('help-' + sub);
+  if (t) setTimeout(function () { t.scrollIntoView({ block: 'start' }); }, 0); else $('helpBody').parentNode.scrollTop = 0;
+}
+
+/* ---------- names ---------- */
+function renderNames() {
+  if (!N) return;
+  $('nEnabled').checked = N.enabled !== false; $('nGroups').checked = N.groups !== false;
+  $('rules').innerHTML = Names.RULES.map(function (r) {
+    return '<label class="rule"><input type="checkbox" class="sw" data-rule="' + r.id + '"' + (N.rules[r.id] ? ' checked' : '') + '><div><b>' + esc(r.label) + '</b>' +
+      '<div class="ex">' + r.ex.map(function (x) { return esc(x[0]) + ' → ' + esc(x[1]); }).join('   ·   ') + '</div>' + (r.note ? '<div class="ex">' + esc(r.note) + '</div>' : '') + '</div></label>';
+  }).join('');
+  if (document.activeElement !== $('nPre')) $('nPre').value = Names.joinList(N.prefixes || []);
+  if (document.activeElement !== $('nSuf')) $('nSuf').value = Names.joinList(N.suffixes || []);
+  renderPreview();
+}
+function renderPreview() {
+  if (!D || page !== 'names') return;
+  var only = $('onlyChanged').checked, rows = [], n = 0, changedCount = 0;
+  D.channels.forEach(function (c) { if (cleanName(c.n) !== c.n) changedCount++; });
+  for (var i = 0; i < D.channels.length && n < 300; i++) {
+    var c = D.channels[i], out = cleanName(c.n), same = out === c.n;
+    if (only && same) continue;
+    rows.push('<tr class="' + (same ? 'same' : '') + '"><td>' + esc(c.n) + '</td><td>' + esc(out) + '</td></tr>'); n++;
+  }
+  $('prev').innerHTML = '<tr><th>From the provider</th><th>On the TV (' + changedCount.toLocaleString() + ' cleaned)</th></tr>' + (rows.join('') || '<tr><td colspan="2">No names change with these rules.</td></tr>');
+}
+function ruleLabel(id) { var r = Names.RULES.filter(function (x) { return x.id === id; })[0]; return r ? r.label : id; }
+$('rules').addEventListener('change', function (e) { var id = e.target.dataset.rule, on = e.target.checked; if (!id) return; mut((on ? 'Turned on: ' : 'Turned off: ') + ruleLabel(id), function () { N.rules[id] = on; }); });
+$('nEnabled').addEventListener('change', function () { var on = this.checked; mut(on ? 'Turned on name clean-up' : 'Turned off name clean-up', function () { N.enabled = on; }); });
+$('nGroups').addEventListener('change', function () { var on = this.checked; mut(on ? 'Clean group names too' : 'Leave group names alone', function () { N.groups = on; }); });
+$('nPre').addEventListener('input', function () { var v = this.value; mut('Edited prefixes to remove', function () { N.prefixes = Names.parseList(v); }, { merge: 'pre' }); });
+$('nSuf').addEventListener('input', function () { var v = this.value; mut('Edited suffixes to remove', function () { N.suffixes = Names.parseList(v); }, { merge: 'suf' }); });
+$('nDefaults').onclick = function () { mut('Recommended name rules', function () { N.enabled = true; N.rules = Names.defaults().rules; }); renderNames(); };
+$('nNone').onclick = function () { mut('Turned all name rules off', function () { Object.keys(N.rules).forEach(function (k) { N.rules[k] = false; }); }); renderNames(); };
+$('onlyChanged').addEventListener('change', renderPreview);
+
+/* ---------- smart clean-up ---------- */
+// Country or language prefix of a provider group name: "US| News", "[UK] Sports", "FR - Cinema".
+function prefixOf(name) { var m = /^\s*[\[(]?([A-Z]{2,3}|[A-Z]{2}-[A-Z]{2})[\])]?\s*(?:[|:\-–»•]+|\s(?=[A-Z0-9]))/.exec(name || ''); return m ? m[1] : ''; }
+function countryStats() {
+  var by = {};
+  D.groups.forEach(function (g) { var p = prefixOf(g.name); if (!p) return; var x = by[p] || (by[p] = { p: p, groups: [], shown: 0, chans: 0 }); x.groups.push(g.id); if (!E.hiddenGroups[g.id]) x.shown++; x.chans += (byGroup.get(g.id) || []).length; });
+  return Object.keys(by).map(function (k) { return by[k]; }).filter(function (x) { return x.groups.length >= 2; }).sort(function (a, b) { return b.chans - a.chans; });
+}
+function emptyGroups() {
+  return providerGroups().filter(function (g) { if (E.hiddenGroups[g.id]) return false; var l = channelsOf(g.id, true); return !l.length || l.every(function (c) { return E.hiddenChannels[c.k]; }); });
+}
+function hideEmpty() {
+  var l = emptyGroups(); if (!l.length) { toast('No empty groups are shown'); return; }
+  mut('Hid ' + plural(l.length, 'empty group'), function () { l.forEach(function (g) { E.hiddenGroups[g.id] = 1; }); });
+  toast(plural(l.length, 'empty group') + ' hidden', ['Undo', undo]);
+}
+var QUAL = [[/\b(8k|4k|uhd|2160p?)\b/i, 4], [/\b(fhd|1080[pi]?|full ?hd)\b/i, 3], [/\b(hd|720p?)\b/i, 2], [/\b(sd|480p?|576p?|lq)\b/i, 1]];
+function quality(n) { for (var i = 0; i < QUAL.length; i++) if (QUAL[i][0].test(n)) return QUAL[i][1]; return 2.5; }
+var QNAME = { 4: '4K', 3: 'FHD', 2: 'HD', 1: 'SD', 2.5: 'unmarked' };
+var dupeCache = null, dupeOpts = { same: true, prefer: 'fhd' };
+function dupeSets() {
+  if (dupeCache) return dupeCache;
+  var by = new Map();
+  channelsOf(ALL).forEach(function (c) {
+    if (E.hiddenChannels[c.k]) return;
+    var p = prep(chName(c)); if (!p.c || p.c.length < 2) return;
+    var key = (dupeOpts.same ? c.g + '|' : '') + p.c + (p.west ? '|w' : '') + (p.country ? '|' + p.country : '');
+    var a = by.get(key); if (!a) by.set(key, a = []); a.push(c);
+  });
+  var rank = { best: function (q) { return q; }, fhd: function (q) { return q === 3 ? 9 : q === 2 ? 8 : q === 2.5 ? 7 : q === 4 ? 6 : q; }, hd: function (q) { return q === 2 ? 9 : q === 2.5 ? 8 : q === 3 ? 7 : q === 1 ? 6 : q; }, sd: function (q) { return q === 1 ? 9 : q === 2 ? 8 : q === 2.5 ? 7 : q; } }[dupeOpts.prefer];
+  var sets = [];
+  by.forEach(function (a) {
+    if (a.length < 2) return;
+    a = a.slice().sort(function (x, y) { return rank(quality(y.n)) - rank(quality(x.n)) || (y.arch || 0) - (x.arch || 0) || (+x.num || 0) - (+y.num || 0); });
+    sets.push({ keep: a[0].k, items: a });
+  });
+  sets.sort(function (x, y) { return chName(x.items[0]).localeCompare(chName(y.items[0])); });
+  return (dupeCache = sets);
+}
+var dPage = 0;
+function renderTools() {
+  if (!D || page !== 'tools') return;
+  /* countries */
+  var cs = countryStats(), ck = renderTools.ck || (renderTools.ck = {});
+  $('tCountry').innerHTML = '<h3>Keep only the countries you watch</h3><p>Group names that start with a country or language code, like "US | News" or "[UK] Sports".  Tick the ones to keep, then hide the rest in one go.</p>' +
+    (cs.length ? '<div class="row" id="ccList" style="gap:8px">' + cs.map(function (x) {
+      var on = ck[x.p] != null ? ck[x.p] : x.shown > 0;
+      return '<label class="chip' + (on ? ' acc' : '') + '" style="cursor:pointer;padding:6px 12px;font-size:13px"><input type="checkbox" data-cc="' + esc(x.p) + '"' + (on ? ' checked' : '') + ' style="display:none"><b>' + esc(x.p) + '</b> ' + plural(x.groups.length, 'group') + ' · ' + x.shown + ' shown</label>';
+    }).join('') + '</div><div class="row" style="margin-top:12px"><label class="muted small"><input type="checkbox" id="ccNoPrefix"> Also hide groups with no country code</label><span class="grow"></span><button class="primary" id="ccGo">Show only the ticked countries</button></div><div class="muted small" id="ccInfo" style="margin-top:8px"></div>'
+      : '<div class="muted">No country codes found in your group names.</div>');
+  if (cs.length) ccInfo();
+  /* duplicates */
+  var sets = dupeSets(), extra = sets.reduce(function (n, s) { return n + s.items.length - 1; }, 0), PG = 25;
+  var pages = Math.max(1, Math.ceil(sets.length / PG)); if (dPage >= pages) dPage = pages - 1;
+  $('tDupes').innerHTML = '<h3>Same channel, more than once</h3><p>The same channel in several qualities (4K, FHD, HD, SD) or copies.  Pick the one to keep; the others are hidden.</p>' +
+    '<div class="row" style="margin-bottom:10px"><div class="dd" id="dPrefer" style="width:250px"></div><label class="muted small"><input type="checkbox" id="dSame"' + (dupeOpts.same ? ' checked' : '') + '> Only within the same group</label><span class="grow"></span>' +
+    (sets.length ? '<button class="primary" id="dAll">Hide ' + plural(extra, 'extra copy', 'extra copies') + ' in all ' + sets.length + ' sets</button>' : '') + '</div>' +
+    (sets.length ? '<table class="t">' + sets.slice(dPage * PG, dPage * PG + PG).map(function (s, i) {
+      var si = dPage * PG + i;
+      return '<tr><td style="width:30%"><b>' + esc(chName(s.items[0])) + '</b><div class="dim small">' + esc(groupLabel(s.items[0].g)) + '</div></td><td>' + s.items.map(function (c) {
+        return '<label class="row" style="gap:6px;margin:2px 0"><input type="radio" name="dk' + si + '" data-set="' + si + '" value="' + esc(c.k) + '"' + (c.k === s.keep ? ' checked' : '') + '><span>' + esc(c.n) + '</span><span class="chip">' + QNAME[quality(c.n)] + '</span>' + (c.arch ? '<span class="chip ok">↺</span>' : '') + (dupeOpts.same ? '' : '<span class="dim small">' + esc(groupLabel(c.g)) + '</span>') + '</label>';
+      }).join('') + '</td><td class="r"><button class="small" data-dset="' + si + '">Hide ' + (s.items.length - 1 === 1 ? 'the other' : 'the other ' + (s.items.length - 1)) + '</button></td></tr>';
+    }).join('') + '</table>' + (pages > 1 ? '<div class="pager">Sets ' + (dPage * PG + 1) + '–' + Math.min(sets.length, (dPage + 1) * PG) + ' of ' + sets.length + '<button class="small" data-dpg="-1"' + (dPage ? '' : ' disabled') + '>‹ Previous</button><button class="small" data-dpg="1"' + (dPage < pages - 1 ? '' : ' disabled') + '>Next ›</button></div>' : '')
+      : '<div class="muted">No duplicates among the shown channels.  Nice.</div>');
+  dd($('dPrefer'), { prefix: 'Keep: ', value: dupeOpts.prefer, options: [{ v: 'fhd', l: 'Full HD first (recommended)' }, { v: 'best', l: 'Highest quality (4K first)' }, { v: 'hd', l: 'HD first (lighter)' }, { v: 'sd', l: 'SD first (slow internet)' }], onChange: function (v) { dupeOpts.prefer = v; dupeCache = null; renderTools(); } });
+  /* keywords */
+  var kw = renderTools.kw || { text: '', target: 'groups' };
+  $('tKeyword').innerHTML = '<h3>Hide by keyword</h3><p>Hide every group or channel whose name contains any of these words.  Comma separated, upper and lower case do not matter.  Handy for "PPV, 24/7, Adult, Radio".</p>' +
+    '<div class="row"><input id="kwText" type="text" class="grow" placeholder="PPV, 24/7, Radio" value="' + esc(kw.text) + '"><div class="seg" id="kwTarget"><button data-t="groups"' + (kw.target === 'groups' ? ' class="on"' : '') + '>Groups</button><button data-t="channels"' + (kw.target === 'channels' ? ' class="on"' : '') + '>Channels</button></div><button class="primary" id="kwGo" disabled>Hide</button></div><div id="kwPrev" class="small muted" style="margin-top:10px"></div>';
+  kwPreview();
+  /* empty */
+  var em = emptyGroups();
+  $('tEmpty').innerHTML = '<h3>Empty groups</h3><p>Shown groups with no channels left, or whose channels are all hidden.  They only clutter the group list on the TV.</p>' +
+    (em.length ? '<div class="small" style="margin-bottom:10px">' + em.slice(0, 30).map(function (g) { return esc(g.name); }).join(', ') + (em.length > 30 ? ' and ' + (em.length - 30) + ' more' : '') + '</div><button class="primary" id="emGo">Hide ' + plural(em.length, 'empty group') + '</button>' : '<div class="muted">No empty groups are shown.</div>');
+}
+function ccInfo() {
+  var keep = {}, none = $('ccNoPrefix').checked, n = 0, s = 0;
+  document.querySelectorAll('[data-cc]').forEach(function (i) { keep[i.dataset.cc] = i.checked; });
+  D.groups.forEach(function (g) { var p = prefixOf(g.name), show = p ? (keep[p] != null ? keep[p] : true) : !none; if (show) s++; else n++; });
+  $('ccInfo').textContent = 'This shows ' + plural(s, 'group') + ' and hides ' + plural(n, 'group') + '.';
+}
+$('tCountry').addEventListener('change', function (e) {
+  var i = e.target; if (i.dataset.cc) { renderTools.ck[i.dataset.cc] = i.checked; i.parentNode.classList.toggle('acc', i.checked); }
+  ccInfo();
+});
+$('tCountry').addEventListener('click', function (e) {
+  if (e.target.id !== 'ccGo') return;
+  var keep = {}, none = $('ccNoPrefix').checked, names = [];
+  document.querySelectorAll('[data-cc]').forEach(function (i) { keep[i.dataset.cc] = i.checked; if (i.checked) names.push(i.dataset.cc); });
+  mut('Showed only ' + (names.join(', ') || 'no countries'), function () {
+    D.groups.forEach(function (g) { var p = prefixOf(g.name), show = p ? (keep[p] != null ? keep[p] : true) : !none; if (show) { if (p) delete E.hiddenGroups[g.id]; } else E.hiddenGroups[g.id] = 1; });
+  });
+  toast('Done.  Groups for ' + (names.join(', ') || 'no countries') + ' are shown.', ['Undo', undo]);
+});
+$('tDupes').addEventListener('change', function (e) {
+  var t = e.target;
+  if (t.id === 'dSame') { dupeOpts.same = t.checked; dupeCache = null; dPage = 0; renderTools(); }
+  if (t.dataset.set) dupeSets()[+t.dataset.set].keep = t.value;
+});
+$('tDupes').addEventListener('click', function (e) {
+  var t = e.target.closest('button'); if (!t) return;
+  function hideSet(s) { s.items.forEach(function (c) { if (c.k !== s.keep) E.hiddenChannels[c.k] = 1; }); }
+  if (t.dataset.dset) { var s = dupeSets()[+t.dataset.dset]; mut('Hid duplicates of ' + chName(s.items[0]), function () { hideSet(s); }); }
+  if (t.id === 'dAll') { var sets = dupeSets(), n = sets.reduce(function (a, s) { return a + s.items.length - 1; }, 0); ask('Hide ' + plural(n, 'duplicate') + '?', 'Keeps one channel from each of ' + sets.length + ' sets (your picks, or the preferred quality) and hides the rest.  You can undo this.', 'Hide duplicates', function () { mut('Hid ' + plural(n, 'duplicate'), function () { sets.forEach(hideSet); }); toast(plural(n, 'duplicate') + ' hidden', ['Undo', undo]); }); }
+  if (t.dataset.dpg) { dPage += +t.dataset.dpg; renderTools(); }
+});
+function kwMatches() {
+  var kw = renderTools.kw || { text: '', target: 'groups' }, words = kw.text.split(',').map(function (w) { return w.trim().toLowerCase(); }).filter(Boolean);
+  if (!words.length) return [];
+  function hit(n) { n = n.toLowerCase(); return words.some(function (w) { return n.indexOf(w) >= 0; }); }
+  if (kw.target === 'groups') return providerGroups().concat(E.custom.filter(function (g) { return g.id !== FAV; })).filter(function (g) { return !E.hiddenGroups[g.id] && (hit(g.name) || (g.raw && hit(g.raw))); });
+  return D.channels.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g] && (hit(chName(c)) || hit(c.n)); });
+}
+function kwPreview() {
+  var kw = renderTools.kw || { text: '', target: 'groups' }, m = kwMatches(), g = kw.target === 'groups';
+  $('kwPrev').innerHTML = !kw.text.trim() ? 'Type one or more words.' : m.length ? '<b>' + plural(m.length, g ? 'shown group' : 'shown channel') + ' match:</b> ' + m.slice(0, 25).map(function (x) { return esc(g ? x.name : chName(x)); }).join(', ') + (m.length > 25 ? ' and ' + (m.length - 25) + ' more' : '') : 'Nothing shown matches.';
+  $('kwGo').disabled = !m.length; $('kwGo').textContent = m.length ? 'Hide ' + plural(m.length, g ? 'group' : 'channel') : 'Hide';
+}
+$('tKeyword').addEventListener('input', function (e) { if (e.target.id === 'kwText') { renderTools.kw = renderTools.kw || { target: 'groups' }; renderTools.kw.text = e.target.value; kwPreview(); } });
+$('tKeyword').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  renderTools.kw = renderTools.kw || { text: '', target: 'groups' };
+  if (b.dataset.t) { renderTools.kw.target = b.dataset.t; $('kwTarget').querySelectorAll('button').forEach(function (x) { x.classList.toggle('on', x === b); }); kwPreview(); }
+  if (b.id === 'kwGo') {
+    var m = kwMatches(), g = renderTools.kw.target === 'groups';
+    mut('Hid ' + plural(m.length, g ? 'group' : 'channel') + ' matching "' + renderTools.kw.text + '"', function () { m.forEach(function (x) { if (g) E.hiddenGroups[x.id] = 1; else E.hiddenChannels[x.k] = 1; }); });
+    toast(plural(m.length, g ? 'group' : 'channel') + ' hidden', ['Undo', undo]);
+  }
+});
+$('tEmpty').addEventListener('click', function (e) { if (e.target.id === 'emGo') hideEmpty(); });
+
+/* ---------- playlists ---------- */
+var REF = [[-1, 'Every app start'], [6, 'Every 6 hours'], [12, 'Every 12 hours'], [24, 'Every day'], [48, 'Every 2 days'], [168, 'Every week'], [0, 'Only when I ask']];
+function refLabel(v) { var r = REF.filter(function (x) { return x[0] === +v; })[0]; return r ? r[1] : v + ' h'; }
+function renderPlaylists() {
+  var pls = D.playlists || [];
+  $('plList').innerHTML = pls.map(function (p) {
+    return '<div class="card pl"><h3>' + esc(p.name) + (p.active ? ' <span class="chip acc">On the TV</span>' : '') + '</h3>' +
+      '<div class="meta">' + (p.type === 'm3u' ? 'M3U playlist' : 'Xtream Codes') + '  ·  ' + esc(p.host || 'no address') + '<br>Channels reload: ' + esc(refLabel(p.plRefresh)) + '  ·  Guide reload: ' + esc(refLabel(p.epgRefresh)) + (p.ua ? '<br>User-Agent: ' + esc(p.ua) : '') + '</div>' +
+      '<div class="row">' + (p.active ? '<button data-pl="refresh" data-id="' + p.id + '">Reload channels</button>' : '<button class="primary" data-pl="use" data-id="' + p.id + '">Use on the TV</button>') +
+      '<button data-pl="edit" data-id="' + p.id + '">Edit</button>' + (pls.length > 1 ? '<button class="ghost danger" data-pl="del" data-id="' + p.id + '">Delete</button>' : '') + '</div><div id="plmsg-' + p.id + '"></div></div>';
+  }).join('');
+}
+$('plList').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  var a = b.dataset.pl, id = b.dataset.id; if (!a) return;
+  var p = (D.playlists || []).filter(function (x) { return x.id === id; })[0]; if (!p) return;
+  var box = 'plmsg-' + id;
+  function sw() { busyBtn(b, command('usePlaylist', { id: id }, 60000, cmdMsg(box, 'Switching the TV…'))).then(function (r) { msg(box, 'ok', r.msg + '  Loading its channels…'); setTimeout(function () { load(true).catch(function () {}); }, 3000); }).catch(function (err) { msg(box, 'bad', err.message); }); }
+  if (a === 'use') { if (pendingCount()) ask('Switch playlists?', 'You have ' + plural(pendingCount(), 'change') + ' for this playlist that are not on the TV.  Send them first, or they stay as a draft in this browser.', 'Switch anyway', sw); else sw(); }
+  if (a === 'refresh') busyBtn(b, command('refreshPlaylist', {}, 300000, cmdMsg(box, 'The TV is reloading from the provider…'))).then(function (r) { msg(box, 'ok', r.msg); }).catch(function (err) { msg(box, 'bad', err.message); });
+  if (a === 'del') ask('Delete "' + p.name + '"?', 'Its groups, favorites and renames go with it.  This cannot be undone here, so download a backup first if unsure.', 'Delete playlist', function () {
+    busyBtn(b, command('deletePlaylist', { id: id }, 60000, cmdMsg(box, 'Deleting…'))).then(function (r) { toast(r.msg); setTimeout(function () { load(true).catch(function () {}); }, 2500); }).catch(function (err) { msg(box, 'bad', err.message); });
+  }, true);
+  if (a === 'edit') editPlaylist(p);
+});
+function editPlaylist(p) {
+  modal('Edit ' + p.name, '<form id="epf" class="form">' +
+    '<label class="f full">Name<input id="eName" type="text" value="' + esc(p.name) + '"></label>' +
+    '<label class="f">Reload channel list<div class="dd" id="eRef" style="width:100%"></div></label><label class="f">Reload guide<div class="dd" id="eGRef" style="width:100%"></div></label>' +
+    '<label class="f full">User-Agent (only if your provider asks for one)<input id="eUa" type="text" value="' + esc(p.ua) + '" placeholder="Default"></label>' +
+    '<div class="full muted small" style="margin-top:6px"><b>Change the login</b>.  Leave these empty to keep the current one.  A new login is tested before it is saved.</div>' +
+    (p.type === 'm3u' ? '<label class="f full">Playlist address<input id="eM3u" type="url"></label>' :
+      '<label class="f full">Server<input id="eServer" type="text" placeholder="' + esc(p.host) + '"></label><label class="f">Username<input id="eUser" type="text" autocomplete="off"></label><label class="f">Password<input id="ePass" type="password" autocomplete="new-password"></label>') +
+    '<button class="hidden"></button></form><div id="eMsg"></div>', function () {
+    var ro = REF.map(function (x) { return { v: x[0], l: x[1] }; });
+    dd($('eRef'), { value: +p.plRefresh, options: ro }); dd($('eGRef'), { value: +p.epgRefresh, options: ro });
+    $('epf').addEventListener('submit', function (e) { e.preventDefault(); $('eGo').click(); });
+  }, [['Cancel', 'ghost', closeModal], ['Save', 'primary', function () {
+    var args = { id: p.id, name: $('eName').value, ua: $('eUa').value, plRefresh: $('eRef')._dd.value, epgRefresh: $('eGRef')._dd.value };
+    if ($('eM3u')) args.m3u = $('eM3u').value; else { args.server = $('eServer').value; args.user = $('eUser').value; args.pass = $('ePass').value; }
+    busyBtn($('eGo'), command('updatePlaylist', args, 300000, cmdMsg('eMsg', 'Saving on the TV…'))).then(function (r) { msg('eMsg', 'ok', r.msg); setTimeout(function () { closeModal(); load(false).catch(function () {}); }, 1200); }).catch(function (err) { msg('eMsg', 'bad', err.message); });
+  }, 'eGo']]);
+}
+var addType = 'xtream';
+$('addSeg').addEventListener('click', function (e) {
+  var t = e.target.dataset.t; if (!t) return; addType = t;
+  document.querySelectorAll('#addSeg button').forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+  document.querySelectorAll('#addForm .xc').forEach(function (x) { x.classList.toggle('hidden', t !== 'xtream'); });
+  document.querySelectorAll('#addForm .m3u').forEach(function (x) { x.classList.toggle('hidden', t !== 'm3u'); });
+});
+$('addForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var args = { type: addType, name: $('aName').value, server: $('aServer').value, user: $('aUser').value, pass: $('aPass').value, m3u: $('aM3u').value, epg: $('aEpg').value, use: $('aUse').checked };
+  busyBtn($('aGo'), command('addPlaylist', args, 300000, cmdMsg('addMsg', 'The TV is logging in and loading the channel list.  This can take a minute…'))).then(function (r) {
+    msg('addMsg', 'ok', r.msg); $('addForm').reset(); setTimeout(function () { load(!!args.use).catch(function () {}); }, 2500);
+  }).catch(function (err) { msg('addMsg', 'bad', err.message); });
+});
+
+/* ---------- changes and restore points ---------- */
+function renderDiff() {
+  var l = pendingList();
+  $('hDiff').innerHTML = l.length ? l.slice(0, 200).map(function (x) { return '<div class="hist"><span>' + esc(x) + '</span></div>'; }).join('') + (l.length > 200 ? '<div class="muted small">and ' + (l.length - 200) + ' more</div>' : '')
+    : '<div class="muted" style="padding:10px 0">Nothing waiting.  Everything you changed is on the TV.</div>';
+  $('hSend').disabled = !l.length || sending; $('hDiscard').disabled = !l.length;
+}
+function renderHistory() {
+  if (!D || page !== 'history') return;
+  renderDiff();
+  $('hUndo').disabled = !hist.length; $('hRedo').disabled = !redo.length;
+  $('hList').innerHTML = hist.length ? hist.map(function (h, i) { return { h: h, i: i }; }).reverse().slice(0, 100).map(function (x) {
+    return '<div class="hist"><span class="when">' + clock(x.h.at) + '</span><span class="grow">' + esc(x.h.label) + '</span><button class="ghost small" data-back="' + x.i + '">Go back</button></div>';
+  }).join('') : '<div class="muted" style="padding:10px 0">No changes yet in this session.</div>';
+}
+$('hList').addEventListener('click', function (e) { var i = e.target.dataset.back; if (i != null) goBack(+i); });
+var snapsCache = null;
+function loadSnaps() {
+  $('snapList').innerHTML = snapsCache ? $('snapList').innerHTML : '<div class="muted"><span class="spinner"></span> Asking the TV…</div>';
+  return busyBtn($('sRefresh'), command('listSnaps', {}, 30000)).then(function (r) { snapsCache = r.data || []; drawSnaps(); }).catch(function (err) { $('snapList').innerHTML = '<div class="msg bad">' + esc(err.message) + '</div>'; });
+}
+function drawSnaps() {
+  var l = snapsCache || [];
+  $('snapList').innerHTML = l.length ? '<table class="t"><tr><th>Restore point</th><th>When</th><th>What it holds</th><th></th></tr>' + l.map(function (s) {
+    var st = s.stats || {};
+    return '<tr><td><b>' + esc(s.name) + '</b> ' + (s.kind === 'auto' ? '<span class="chip">automatic</span>' : '<span class="chip acc">yours</span>') + '</td><td class="small muted">' + esc(new Date(s.at).toLocaleString()) + '<div class="tiny dim">' + ago(s.at) + '</div></td>' +
+      '<td class="small muted">' + plural(st.hiddenGroups || 0, 'hidden group') + ', ' + plural(st.hiddenChannels || 0, 'hidden channel') + ', ' + plural(st.groups || 0, 'own group') + ', ' + plural(st.renames || 0, 'rename') + '</td>' +
+      '<td class="r"><button class="small" data-srestore="' + esc(s.id) + '">Restore</button> <button class="ghost small danger" data-sdel="' + esc(s.id) + '">Delete</button></td></tr>';
+  }).join('') + '</table>' : '<div class="muted">No restore points yet.  The TV makes one each time you send changes, or create one above.</div>';
+}
+$('sRefresh').onclick = loadSnaps;
+$('snapForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var name = $('snapName').value.trim() || 'Restore point ' + new Date().toLocaleString();
+  function go() { busyBtn($('snapGo'), command('makeSnap', { name: name }, 30000)).then(function (r) { toast(r.msg); $('snapName').value = ''; loadSnaps(); }).catch(function (err) { toast(err.message); }); }
+  if (pendingCount()) ask('Save the TV\'s current setup?', 'A restore point holds what is <b>on the TV</b>.  Your ' + plural(pendingCount(), 'unsent change') + ' are not in it.  Send them first if you want them included.', 'Create it anyway', go); else go();
+});
+$('snapList').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  var s = (snapsCache || []).filter(function (x) { return x.id === (b.dataset.srestore || b.dataset.sdel); })[0]; if (!s) return;
+  if (b.dataset.srestore) ask('Restore "' + s.name + '"?', 'The TV goes back to this setup now.  ' + (pendingCount() ? 'Your ' + plural(pendingCount(), 'unsent change') + ' will be dropped.  ' : '') + 'The TV saves its current setup as a restore point first, so this can be undone.', 'Restore', function () {
+    busyBtn(b, command('restoreSnap', { id: s.id }, 60000)).then(function (r) { toast(r.msg); LS.del(draftKey()); return load(true); }).then(function () { hist = []; redo = []; updateBar(); loadSnaps(); renderHistory(); }).catch(function (err) { toast(err.message); });
+  });
+  if (b.dataset.sdel) ask('Delete "' + s.name + '"?', 'This restore point is removed from the TV.', 'Delete', function () { busyBtn(b, command('deleteSnap', { id: s.id }, 30000)).then(function () { loadSnaps(); }).catch(function (err) { toast(err.message); }); }, true);
+});
+
+/* ---------- backup and restore ----------
+   The TV makes the backup and the helper locks it with the passphrase (AES-256-GCM) before this
+   page ever sees it.  Restoring sends the locked file and the passphrase; the helper unlocks it
+   and hands it to the TV.  Logins never sit in this page in readable form. */
+function genPass() {
+  var A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', b = new Uint8Array(20), o = '';
+  crypto.getRandomValues(b);
+  for (var i = 0; i < 20; i++) o += (i && i % 5 === 0 ? '-' : '') + A[b[i] % A.length];
+  return o;
+}
+function strength(p) {
+  if (!p) return '';
+  if (p.length < 8) return 'Too short.  Use at least 8 characters.';
+  var kinds = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter(function (r) { return r.test(p); }).length;
+  return p.length >= 16 || (p.length >= 12 && kinds >= 3) ? '✓ Strong' : p.length >= 10 && kinds >= 2 ? 'OK.  Longer is stronger.' : 'Weak.  Try "Suggest one", or a longer phrase.';
+}
+function bCheck() {
+  var a = $('bPass').value, b = $('bPass2').value;
+  $('bStrength').textContent = b && a !== b ? 'The two passphrases differ.' : strength(a);
+  $('bDown').disabled = a.length < 8 || a !== b;
+}
+$('bPass').addEventListener('input', bCheck); $('bPass2').addEventListener('input', bCheck);
+$('bShow').onclick = function () { var t = $('bPass').type === 'password' ? 'text' : 'password'; $('bPass').type = t; $('bPass2').type = t; this.textContent = t === 'text' ? 'Hide' : 'Show'; };
+$('bGen').onclick = function () { var p = genPass(); $('bPass').value = p; $('bPass2').value = p; $('bPass').type = 'text'; $('bPass2').type = 'text'; $('bShow').textContent = 'Hide'; bCheck(); toast('Copy this passphrase somewhere safe before you download.'); };
+bCheck();
+$('bForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var pass = $('bPass').value;
+  busyBtn($('bDown'), command('backup', { passphrase: pass }, 90000, cmdMsg('bMsg', 'The TV is making the backup and locking it…'))).then(function (r) {
+    var blob = new Blob([JSON.stringify(r.data, null, 1)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'tivibro-backup-' + new Date().toISOString().slice(0, 10) + '.tivibro'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 5000);
+    msg('bMsg', 'ok', 'Locked backup downloaded (' + plural(r.data.playlists || 0, 'playlist') + ').  Keep the passphrase with it; the file cannot be opened without it.');
+    $('bPass').value = ''; $('bPass2').value = ''; bCheck();
+  }).catch(function (err) { msg('bMsg', 'bad', err.message); });
+});
+var drop = $('drop');
+drop.addEventListener('click', function (e) { if (e.target !== $('bFile')) { e.preventDefault(); $('bFile').click(); } });
+drop.addEventListener('dragover', function (e) { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', function () { drop.classList.remove('over'); });
+drop.addEventListener('drop', function (e) { e.preventDefault(); drop.classList.remove('over'); if (e.dataTransfer.files[0]) readBackup(e.dataTransfer.files[0]); });
+$('bFile').addEventListener('change', function () { if (this.files[0]) readBackup(this.files[0]); this.value = ''; });
+function waitResult(id, ms, onTick) {
+  var t0 = Date.now(); busy(1);
+  return new Promise(function (res, rej) {
+    (function poll() {
+      api('/api/result?id=' + id).then(function (r) {
+        if (r.done) return r.ok ? res(r) : rej(new Error(r.msg || 'The TV could not do that.'));
+        if (onTick) onTick(Math.round((Date.now() - t0) / 1000));
+        if (Date.now() - t0 > ms) return rej(new Error('The TV did not answer.  Is TiviBro still open on the TV?'));
+        setTimeout(poll, 600);
+      }).catch(rej);
+    })();
+  }).then(function (r) { busy(-1); return r; }, function (e) { busy(-1); throw e; });
+}
+function readBackup(file) {
+  var r = new FileReader();
+  r.onload = function () {
+    var f;
+    try { f = JSON.parse(r.result); } catch (e) { $('rInfo').innerHTML = '<div class="msg bad">That file is not a TiviBro backup.</div>'; return; }
+    if (!f || f.app !== 'TiviBro' || (f.kind !== 'backup' && f.kind !== 'backup-encrypted')) { $('rInfo').innerHTML = '<div class="msg bad">That is not a TiviBro backup file.</div>'; return; }
+    var locked = f.kind === 'backup-encrypted';
+    $('rInfo').innerHTML = '<div class="msg busy" style="display:block"><b>' + esc(file.name) + '</b><br>Made ' + esc(new Date(f.created).toLocaleString()) + (f.version ? ' with TiviBro ' + esc(f.version) : '') + '</div>' +
+      (locked ? '<form id="rForm" class="row" style="margin-top:12px"><input id="rPass" type="password" class="grow" placeholder="Passphrase for this backup" autocomplete="off"><button class="primary" id="rUnlock">Unlock</button></form>'
+        : '<div class="note warn" style="margin-top:12px">This is an older backup without a passphrase.  It still restores; download a new locked backup afterwards and delete this file.</div><button class="primary" id="rUnlock">Check it</button>') +
+      '<div id="rSum"></div><div id="rMsg"></div>';
+    function unlock(e) {
+      if (e) e.preventDefault();
+      var pass = locked ? $('rPass').value : '';
+      if (locked && !pass) { $('rPass').focus(); return; }
+      busyBtn($('rUnlock'), api('/api/restore', { method: 'POST', body: { file: f, passphrase: pass, check: true } })).then(function (j) {
+        var sm = j.summary;
+        msg('rMsg', '', '');
+        $('rSum').innerHTML = '<div class="msg ok" style="display:block">✓ ' + (locked ? 'Unlocked.  ' : '') + 'This backup holds ' + plural(sm.playlists.length, 'playlist') + ':<br>' +
+          sm.playlists.map(function (p) { return '• ' + esc(p.name) + ' <span class="dim">(' + (p.type === 'm3u' ? 'M3U' : 'Xtream') + (p.host ? ', ' + esc(p.host) : '') + ')</span>'; }).join('<br>') +
+          (sm.restorePoints ? '<br>plus ' + plural(sm.restorePoints, 'restore point') : '') + '</div>' +
+          '<div class="row" style="margin-top:12px"><button class="primary" id="rGo">Restore to the TV</button></div>';
+        $('rGo').onclick = function () {
+          ask('Restore this backup?', 'The TV\'s settings and playlists are replaced with the ones in the file, logins included, and TiviBro restarts on the TV.', 'Restore backup', function () {
+            busyBtn($('rGo'), api('/api/restore', { method: 'POST', body: { file: f, passphrase: pass } }).then(function (q) { return waitResult(q.id, 60000, cmdMsg('rMsg', 'Restoring on the TV…')); })).then(function (res) {
+              msg('rMsg', 'busy', res.msg + '  This page reconnects by itself.');
+              LS.del(draftKey());
+              var tries = 0;
+              (function again() { setTimeout(function () { load(true).then(function () { msg('rMsg', 'ok', 'Restored and reconnected.'); hist = []; redo = []; if (!D.setup) show('home'); }).catch(function () { if (++tries < 10) again(); }); }, 6000); })();
+            }).catch(function (err) { msg('rMsg', 'bad', err.message); });
+          }, true);
+        };
+      }).catch(function (err) { msg('rMsg', 'bad', err.message); if (locked) { $('rPass').select(); } });
+    }
+    if (locked) { $('rForm').addEventListener('submit', unlock); $('rPass').focus(); } else $('rUnlock').onclick = unlock;
+  };
+  r.readAsText(file);
+}
+$('p-welcome').addEventListener('click', function (e) { var g = e.target.dataset.go; if (g) show(g); });
+
+/* ---------- tips that can be dismissed ---------- */
+document.querySelectorAll('[data-tip]').forEach(function (n) { if (LS.get('tivibro.editor.tip.' + n.dataset.tip, false)) n.classList.add('hidden'); });
+document.addEventListener('click', function (e) { var t = e.target.dataset && e.target.dataset.hidetip; if (t) { LS.set('tivibro.editor.tip.' + t, true); e.target.closest('[data-tip]').classList.add('hidden'); } });
+
+window.addEventListener('resize', drawRows);
+if (token) boot(); else showLogin('');
+</script>
+</body>
+</html>

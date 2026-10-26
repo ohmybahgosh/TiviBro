@@ -1,0 +1,25 @@
+# dependencies and local tools
+node_modules/
+tools/
+_unpack/
+
+# build output and local releases
+dist/
+releases/
+*.ipk
+
+# logs and test output
+logs/
+*.log
+tests/.shots/
+
+# private or third-party material that must never be pushed
+archive/
+docs/chat-history-*.md
+*.tgz
+*.tivibro
+Claude outputs/
+
+# OS clutter
+.DS_Store
+Thumbs.db

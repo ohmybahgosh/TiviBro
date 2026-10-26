@@ -1,0 +1,17 @@
+{
+  "id": "app.tivibro.tv",
+  "version": "0.5.0",
+  "vendor": "OhMyBahGosh",
+  "type": "web",
+  "main": "index.html",
+  "title": "TiviBro",
+  "icon": "img/icon.png",
+  "largeIcon": "img/largeIcon.png",
+  "bgColor": "#0b0e1a",
+  "resolution": "1920x1080",
+  "disableBackHistoryAPI": true,
+  "handlesRelaunch": false,
+  "transparent": false,
+  "requiredMemory": 220,
+  "splashBackground": "img/splash.png"
+}

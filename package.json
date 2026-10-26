@@ -1,0 +1,23 @@
+{
+  "name": "tivibro",
+  "version": "0.5.0",
+  "private": true,
+  "description": "TiviBro: a free TiviMate-class IPTV player for LG webOS",
+  "scripts": {
+    "build": "bash scripts/build.sh",
+    "install:tv": "bash scripts/install.sh",
+    "launch": "bash scripts/launch.sh",
+    "sim": "bash scripts/sim.sh",
+    "sim:open": "bash scripts/sim.sh --open",
+    "inspect": "bash scripts/inspect.sh",
+    "serve": "bash scripts/serve.sh",
+    "lint": "bash scripts/lint.sh",
+    "test": "npm run test:unit",
+    "test:unit": "node tests/unit/names.test.js && node tests/unit/proxy-ua.test.js && node tests/unit/editor.test.js && node tests/unit/library.test.js",
+    "test:relay": "node tests/unit/proxy.test.js",
+    "version:bump": "bash scripts/bump-version.sh"
+  },
+  "devDependencies": {
+    "@webos-tools/cli": "3.2.6"
+  }
+}
