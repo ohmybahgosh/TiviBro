@@ -1,0 +1,86 @@
+name: Release
+
+# Push a tag like v0.6.0 (bash scripts/release.sh does it) to publish a release.
+# Tags with a dash, like v0.6.0-beta.1, are marked as pre-releases.
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to (re)build, for example v0.6.0
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install the webOS CLI
+        run: npm ci
+
+      - name: Check the tag matches the app version
+        run: |
+          APP_VERSION="$(node -p "require('./app/appinfo.json').version")"
+          if [ "${TAG#v}" != "$APP_VERSION" ] && [ "${TAG#v}" != "${APP_VERSION}-${TAG#*-}" ]; then
+            echo "::error::Tag $TAG does not match app/appinfo.json version $APP_VERSION"
+            exit 1
+          fi
+          echo "APP_VERSION=$APP_VERSION" >> "$GITHUB_ENV"
+
+      - name: Lint
+        run: bash scripts/lint.sh
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build the IPK
+        run: bash scripts/build.sh
+
+      - name: Homebrew Channel manifest and repository file
+        run: node scripts/gen-manifest.js "dist/app.tivibro.tv_${APP_VERSION}_all.ipk" dist "$GITHUB_REPOSITORY"
+
+      - name: Release notes from CHANGELOG.md
+        run: |
+          node scripts/release-notes.js "$APP_VERSION" > dist/notes.md
+          {
+            echo
+            echo '### Install'
+            echo
+            echo '- **Homebrew Channel:** add this repository URL in the Homebrew Channel settings: `https://github.com/'"$GITHUB_REPOSITORY"'/releases/latest/download/repo.json`'
+            echo '- **Developer Mode:** `ares-install app.tivibro.tv_'"$APP_VERSION"'_all.ipk`'
+            echo
+            echo "SHA-256 of the IPK: \`$(sha256sum dist/*.ipk | cut -d' ' -f1)\`"
+          } >> dist/notes.md
+          cat dist/notes.md
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PRE=""; case "$TAG" in *-*) PRE="--prerelease";; esac
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/*.ipk dist/*.manifest.json dist/repo.json --clobber
+            gh release edit "$TAG" --notes-file dist/notes.md $PRE
+          else
+            gh release create "$TAG" dist/*.ipk dist/*.manifest.json dist/repo.json \
+              --title "TiviBro $APP_VERSION" --notes-file dist/notes.md --verify-tag $PRE
+          fi

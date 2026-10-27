@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Lint, test and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install the webOS CLI
+        run: npm ci
+
+      - name: Lint
+        run: bash scripts/lint.sh
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Build the IPK
+        run: bash scripts/build.sh
+
+      - name: Keep the test build
+        uses: actions/upload-artifact@v4
+        with:
+          name: tivibro-ipk-${{ github.sha }}
+          path: dist/*.ipk
+          retention-days: 14
