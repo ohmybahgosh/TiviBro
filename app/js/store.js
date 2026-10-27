@@ -46,7 +46,11 @@ var Store = (function () {
     keymap: null,               // remote remapping, see keymap.js (null = defaults)
     keyAliases: {},             // learned keyCode -> button name
     // Added after the TiviMate menu review (all off/neutral by default unless noted).
-    theme: 'dark',              // dark (Midnight Electric) | black | slate | classic
+    theme: 'dark',              // dark (Midnight Electric) | black | slate | ocean | forest | plum | mocha | contrast | classic
+    accentMode: '',             // '' (one of the presets) | custom (accentHue + accentLight)
+    accentHue: 210, accentLight: 62,
+    focusStyle: 'fill',         // fill | ring (white outline as well)
+    hdrRoute: 'auto',           // auto (Dolby Vision on the TV player) | tv (all HDR on the TV player) | builtin
     textSize: 'm',              // s | m | l
     clockDate: false,           // show the date next to the clock
     overlay: 'm',               // l | m | h  transparency of panels over video

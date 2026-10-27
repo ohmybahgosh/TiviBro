@@ -78,10 +78,14 @@ VList.prototype.draw = function (force) {
   }
   for (i = 0; i < P; i++) if (!used[i] && !this.pool[i].hidden) { this.pool[i].el.style.display = 'none'; this.pool[i].hidden = true; this.pool[i].idx = -1; }
 };
-VList.prototype.move = function (d) {
+// wrap: one press past either end goes round to the other end, like a TV channel list.  Never
+// while an arrow is held down, so holding Down stops at the bottom instead of racing round.
+VList.prototype.move = function (d, wrap) {
   var n = this.items.length;
   if (!n) return false;
-  var s = U.clamp(this.sel + d, 0, n - 1);
+  var s = this.sel + d;
+  if (wrap && n > 2 && Math.abs(d) === 1 && !UI.repeating && (s < 0 || s >= n)) s = s < 0 ? n - 1 : 0;
+  s = U.clamp(s, 0, n - 1);
   if (s === this.sel) return false;
   this.sel = s;
   this.ensure(false);

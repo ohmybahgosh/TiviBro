@@ -129,6 +129,7 @@ var Views = (function () {
     Player.bind(video);
     Player.on('state', onPlayerState);
     Player.on('stats', onStats);
+    Player.on('notice', function (m) { if (m) U.toast(m, m.length > 40 ? 6000 : 0); });
     // Magic Remote in fullscreen: moving the pointer shows the info panel and its button legend,
     // clicking the picture shows or hides it.
     stage.addEventListener('click', function () { if (!full) { if (playing && mode === 'live') goFull(); return; } var o = $('osd'); if (o.classList.contains('hidden')) osd(true); else o.classList.add('hidden'); });
@@ -159,12 +160,19 @@ var Views = (function () {
   }
 
   function applyLook() {
-    document.documentElement.style.setProperty('--accent', Store.settings.accent || '#5b8cff');
+    var acc = Store.settings.accent || '#5b8cff', on = U.onColor(acc), root = document.documentElement.style;
+    root.setProperty('--accent', acc);
+    root.setProperty('--on-accent', on.fg);
+    root.setProperty('--on-accent-dim', on.dim);
+    // Accent used as text on the dark background: lift very dark accents so they stay readable.
+    root.setProperty('--accent-text', U.luminance(acc) < 0.12 ? U.mix(acc, '#ffffff', 0.45) : acc);
     document.body.classList.toggle('dimpast', !!Store.settings.dimPast);
     document.body.classList.toggle('guide1', Store.settings.guideLines === 1);
     var s = Store.settings, b = document.body.classList;
-    ['theme-black', 'theme-slate', 'theme-classic', 'ts-s', 'ts-l', 'ov-l', 'ov-h', 'now-color', 'now-off'].forEach(function (c) { b.remove(c); });
-    if (s.theme === 'black' || s.theme === 'slate' || s.theme === 'classic') b.add('theme-' + s.theme);
+    document.body.className.split(/\s+/).forEach(function (c) { if (/^theme-/.test(c)) b.remove(c); });
+    ['ts-s', 'ts-l', 'ov-l', 'ov-h', 'now-color', 'now-off'].forEach(function (c) { b.remove(c); });
+    if (s.theme && s.theme !== 'dark') b.add('theme-' + s.theme);
+    b.toggle('focus-ring', s.focusStyle === 'ring' || s.theme === 'contrast');
     if (s.textSize === 's' || s.textSize === 'l') b.add('ts-' + s.textSize);
     if (s.overlay === 'l' || s.overlay === 'h') b.add('ov-' + s.overlay);
     if (s.nowStyle === 'color' || s.nowStyle === 'off') b.add('now-' + s.nowStyle);
@@ -392,7 +400,7 @@ var Views = (function () {
     var mapped = listMapped(a);
     if (mapped) { runAction(mapped, 'list'); return true; }
     if (zone === 'groups') {
-      if (a === 'up') { if (!groupsVL.move(-1)) openNav(); }
+      if (a === 'up') groupsVL.move(-1);
       else if (a === 'down') groupsVL.move(1);
       else if (a === 'left') openNav();
       else if (a === 'chup') groupsVL.page(-1);
@@ -408,8 +416,8 @@ var Views = (function () {
       else if (a === 'back') openNav();
       return true;
     }
-    if (a === 'up') { if (!chansVL.move(-1)) openNav(); }
-    else if (a === 'down') chansVL.move(1);
+    if (a === 'up') chansVL.move(-1, true);
+    else if (a === 'down') chansVL.move(1, true);
     else if (a === 'chup') chansVL.page(-1);
     else if (a === 'chdown') chansVL.page(1);
     else if (a === 'left') setZone('groups');
@@ -449,7 +457,7 @@ var Views = (function () {
         else if (full) lastChannel();
         return;
       case 'restart': if (c && c.arch) watchFromStart(c); else U.toast('No catch-up on this channel'); return;
-      case 'playpause': Player.togglePause(); return;
+      case 'playpause': playPause(); return;
       case 'guide': leaveTo('guide'); return;
       case 'search': leaveTo('search'); return;
       case 'settings': leaveTo('settings'); return;
@@ -466,6 +474,12 @@ var Views = (function () {
       case 'sleep': sleepMenu(); return;
       case 'reconnect': Player.retryNow(); return;
     }
+  }
+  // Play resumes, Pause pauses, a combined button toggles: Play on a playing stream never pauses it.
+  function playPause() {
+    var k = UI.playKey;
+    if (k === 'play') Player.setPaused(false); else if (k === 'pause') Player.setPaused(true); else Player.togglePause();
+    if (full) osd(true);
   }
   var DM = { contain: 'Normal', fill: 'Stretch', cover: 'Zoom' };
   function cyclePicture() {
@@ -492,8 +506,8 @@ var Views = (function () {
     chansVL.refresh(); hintsFor();
   }
   function pickKeys(a) {
-    if (a === 'up') chansVL.move(-1);
-    else if (a === 'down') chansVL.move(1);
+    if (a === 'up') chansVL.move(-1, true);
+    else if (a === 'down') chansVL.move(1, true);
     else if (a === 'chup') chansVL.page(-1);
     else if (a === 'chdown') chansVL.page(1);
     else if (a === 'ok') {
@@ -543,6 +557,7 @@ var Views = (function () {
     $('osd').classList.add('hidden');
     if (mode === 'vod') {
       var v = vod;
+      vodSeekCommit();
       Vod.stopped();
       vod = null; mode = 'live'; Player.stop(); playing = null; stage.classList.add('off');
       if (v && v.onExit) v.onExit();
@@ -571,10 +586,10 @@ var Views = (function () {
     if (mode === 'vod' && vod) {
       var m = vod.meta;
       $('osdNum').textContent = ''; $('osdName').textContent = m.title; $('osdGroup').textContent = m.sub || '';
-      var d = Player.duration, pos = Player.position;
-      $('osdNow').textContent = fmtDur(pos) + ' / ' + (d ? fmtDur(d) : '--:--') + (Player.paused ? '   paused' : '');
+      var d = Player.duration, pos = vs.pending != null ? vs.pending : Player.position, jump = vs.pending != null ? vs.pending - Player.position : 0;
+      $('osdNow').textContent = fmtDur(pos) + ' / ' + (d ? fmtDur(d) : '--:--') + (vs.pending != null ? '   (' + (jump < 0 ? '−' : '+') + fmtDur(Math.abs(jump)) + ')' : Player.paused ? '   paused' : '') + (d ? '   ends ' + U.hhmm(Date.now() + (d - pos) * 1000) : '');
       $('osdBar').style.width = d ? Math.round(100 * pos / d) + '%' : '0';
-      $('osdNext').textContent = 'Left and right skip ' + Store.settings.skip + 's    Up and down skip 10 min    OK pause';
+      $('osdNext').textContent = [Player.media, 'Keep pressing ◀ ▶ to jump further'].filter(Boolean).join('    ');
     } else if (mode === 'catchup' && cu) {
       var c0 = cu.c, dur = (cu.p.e - cu.p.s) / 1000, at = cu.pending != null ? cu.pending : cu.off + Player.position;
       $('osdNum').textContent = Store.settings.showNumbers ? c0.num : ''; $('osdName').textContent = L.name(c0); $('osdGroup').textContent = 'Catch-up';
@@ -587,7 +602,7 @@ var Views = (function () {
       $('osdNum').textContent = Store.settings.showNumbers ? c.num : '';
       $('osdName').textContent = L.name(c);
       var st = Player.stats, media = '';
-      if (Store.settings.osdMedia !== false && c === playing && video.videoHeight) media = '   ·   ' + video.videoHeight + 'p' + (st && st.engine ? '  ' + st.engine : '') + (c.arch ? '   ·   ↺ catch-up' : '');
+      if (Store.settings.osdMedia !== false && c === playing && video.videoHeight) media = '   ·   ' + (Player.mediaInfo ? Caps.label(Object.assign({}, Player.mediaInfo, { height: video.videoHeight })) : video.videoHeight + 'p') + (st && st.engine ? '  ' + st.engine : '') + (c.arch ? '   ·   ↺ catch-up' : '');
       $('osdGroup').textContent = L.groupName(c.g) + (L.isFav(c.k) ? '   ★' : '') + media;
       var nn = Epg.nowNext(c);
       if (nn && nn.now) {
@@ -661,31 +676,63 @@ var Views = (function () {
     lastCommit();
   }
 
+  /* Seeking in movies and shows.  Presses add up on screen and the player jumps once you stop
+     (one seek instead of five), and pressing the same way again and again goes further each
+     time, so a long jump doesn't take thirty presses. */
+  var vs = { pending: null, t: 0, n: 0, dir: 0, last: 0 };
+  function seekAccel(dir) {
+    var now = Date.now();
+    vs.n = vs.dir === dir && now - vs.last < 900 ? vs.n + 1 : 0;
+    vs.dir = dir; vs.last = now;
+    return vs.n < 3 ? 1 : vs.n < 6 ? 2 : vs.n < 10 ? 4 : 8;
+  }
+  function vodSeek(delta, accel) {
+    if (accel) delta *= seekAccel(delta > 0 ? 1 : -1);
+    var d = Player.duration, base = vs.pending != null ? vs.pending : Player.position, t = base + delta;
+    t = d ? U.clamp(t, 0, Math.max(0, d - 3)) : Math.max(0, t);
+    vs.pending = t;
+    clearTimeout(vs.t); vs.t = setTimeout(vodSeekCommit, 650);
+    osd(true);
+  }
+  function vodSeekCommit() { clearTimeout(vs.t); if (vs.pending == null) return; var t = vs.pending; vs.pending = null; Player.seekTo(t); osd(true); }
+  function vodSeekCancel() { clearTimeout(vs.t); vs.pending = null; vs.n = 0; osd(true); }
+  // Magic Remote: click anywhere on the progress bar to jump there.
+  $('osdBar').parentNode.addEventListener('click', function (e) {
+    e.stopPropagation();
+    var r = this.getBoundingClientRect(), f = U.clamp((e.clientX - r.left) / r.width, 0, 1);
+    if (mode === 'vod' && Player.duration) { vs.pending = f * Player.duration; vodSeekCommit(); }
+    else if (mode === 'catchup' && cu) { var dur = (cu.p.e - cu.p.s) / 1000, base = cu.pending != null ? cu.pending : cu.off + Player.position; cuSeek(f * dur - base); }
+  });
+
   function fullKeys(a) {
     if (overlay) return overlayKeys(a);
+    // The error message says "Press OK to try again", so OK does exactly that.
+    if (a === 'ok' && !verr.classList.contains('hidden')) { Player.retryNow(); U.toast('Trying again'); return true; }
     var hidden = $('osd').classList.contains('hidden');
     if (mode === 'vod') {
-      if (a === 'back') { if (!hidden) { $('osd').classList.add('hidden'); return true; } exitFull(); }
-      else if (a === 'left') { Player.seek(-Store.settings.skip); osd(true); }
-      else if (a === 'right') { Player.seek(+Store.settings.skip); osd(true); }
-      else if (a === 'down' || a === 'chdown') { Player.seek(-600); osd(true); }
-      else if (a === 'rew') { Player.seek(-(+Store.settings.ffStep || 120)); osd(true); }
-      else if (a === 'ff') { Player.seek(+Store.settings.ffStep || 120); osd(true); }
-      else if (a === 'up' || a === 'chup') { Player.seek(600); osd(true); }
-      else if (a === 'ok' || a === 'playpause') { Player.togglePause(); osd(true); }
+      if (a === 'back') { if (vs.pending != null) { vodSeekCancel(); return true; } if (!hidden) { $('osd').classList.add('hidden'); return true; } exitFull(); }
+      else if (a === 'left') vodSeek(-Store.settings.skip, true);
+      else if (a === 'right') vodSeek(+Store.settings.skip, true);
+      else if (a === 'down' || a === 'chdown') vodSeek(-600);
+      else if (a === 'rew') vodSeek(-(+Store.settings.ffStep || 120), true);
+      else if (a === 'ff') vodSeek(+Store.settings.ffStep || 120, true);
+      else if (a === 'up' || a === 'chup') vodSeek(600);
+      else if (a === 'ok') { Player.togglePause(); osd(true); }
+      else if (a === 'playpause') playPause();
       else if (a === 'red' || a === 'hold') playerMenu();
       else if (a === 'info') osd(true);
       return true;
     }
     if (mode === 'catchup') {
       if (a === 'back') { if (!hidden) { $('osd').classList.add('hidden'); return true; } backToLive(); }
-      else if (a === 'left') cuSeek(-Store.settings.skip);
-      else if (a === 'right') cuSeek(+Store.settings.skip);
+      else if (a === 'left') cuSeek(-Store.settings.skip * seekAccel(-1));
+      else if (a === 'right') cuSeek(+Store.settings.skip * seekAccel(1));
       else if (a === 'down' || a === 'chdown') cuSeek(-300);
-      else if (a === 'rew') cuSeek(-(+Store.settings.ffStep || 120));
-      else if (a === 'ff') cuSeek(+Store.settings.ffStep || 120);
+      else if (a === 'rew') cuSeek(-(+Store.settings.ffStep || 120) * seekAccel(-1));
+      else if (a === 'ff') cuSeek((+Store.settings.ffStep || 120) * seekAccel(1));
       else if (a === 'up' || a === 'chup') cuSeek(300);
-      else if (a === 'ok' || a === 'playpause') { Player.togglePause(); osd(true); }
+      else if (a === 'ok') { Player.togglePause(); osd(true); }
+      else if (a === 'playpause') playPause();
       else if (a === 'red' || a === 'hold') playerMenu();
       else if (a === 'yellow') backToLive();
       else if (a === 'info') osd(true);
@@ -709,12 +756,12 @@ var Views = (function () {
   function fillOverlay(selKey) {
     var list = L.channels(ovGroup);
     var i = selKey ? list.findIndex(function (c) { return c.k === selKey; }) : 0;
-    $('ovTitle').textContent = '‹  ' + L.groupName(ovGroup) + '  ›';
+    $('ovTitle').textContent = '◀  ' + L.groupName(ovGroup) + '  ▶';
     ovVL.setItems(list, Math.max(0, i));
   }
   function overlayKeys(a) {
-    if (a === 'up') ovVL.move(-1);
-    else if (a === 'down') ovVL.move(1);
+    if (a === 'up') ovVL.move(-1, true);
+    else if (a === 'down') ovVL.move(1, true);
     else if (a === 'chup') ovVL.page(-1);
     else if (a === 'chdown') ovVL.page(1);
     else if (a === 'left' || a === 'right') {
@@ -724,18 +771,23 @@ var Views = (function () {
       ovGroup = gs[gi].id; fillOverlay(null);
     }
     else if (a === 'ok') {
+      // Like TiviMate: OK switches to the channel and keeps the list up so you can keep
+      // surfing; OK on the channel that is already playing closes the list.
       var c = ovVL.current();
       if (!c) return true;
       var idx = ovVL.sel;
+      if (playing && playing.k === c.k && mode === 'live') { closeOverlay(); osd(true); return true; }
       startChannel(c, false, function () {
         curGroup = ovGroup; zapIdx = idx;
-        overlay = false; $('overlay').classList.add('hidden'); osd(true);
+        ovVL.refresh();
       });
     }
-    else if (a === 'red' || a === 'hold') chanMenu(ovVL.current(), ovGroup);
-    else if (a === 'back') { overlay = false; $('overlay').classList.add('hidden'); }
+    else if (a === 'red' || a === 'hold' || a === 'info') chanMenu(ovVL.current(), ovGroup);
+    else if (a === 'back') closeOverlay();
+    else if (a === 'playpause') playPause();
     return true;
   }
+  function closeOverlay() { overlay = false; $('overlay').classList.add('hidden'); }
 
   /* ---------- catch-up ---------- */
   function playCatchup(c, p, offSec) {
@@ -807,6 +859,7 @@ var Views = (function () {
 
   /* ---------- VOD playback (called by Vod) ---------- */
   function playVod(meta, url, startAt, onExit) {
+    vodSeekCancel();
     vod = { meta: meta, onExit: onExit };
     mode = 'vod'; cu = null; playing = null;
     stage.classList.remove('off');
@@ -1523,7 +1576,7 @@ var Guide = (function () {
     else if (a === 'right' || a === 'ok') enterGrid();
     else if (a === 'left') backToMenu();
     else if (a === 'back') backToMenu();
-    else if (a === 'hold' || a === 'red') { var g = groupsVL.current(); if (g) Views.groupMenu(g); }
+    else if (a === 'hold' || a === 'red' || a === 'info') { var g = groupsVL.current(); if (g) Views.groupMenu(g); }
     else if (a === 'playpause') watchPreview();
     else if (a.indexOf('num') === 0) numJump(a.slice(3));
     return true;
@@ -1539,7 +1592,7 @@ var Guide = (function () {
     else if (a === 'rew') moveTime(-1);
     else if (a === 'ff') moveTime(1);
     else if (a === 'ok') activate();
-    else if (a === 'hold' || a === 'red') menu();
+    else if (a === 'hold' || a === 'red' || a === 'info') menu();
     else if (a === 'yellow') setZone('groups');
     else if (a === 'green') Views.switchTab('live');
     else if (a === 'blue') Views.switchTab('settings');

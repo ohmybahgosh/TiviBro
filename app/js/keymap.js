@@ -43,7 +43,7 @@ var Keymap = (function () {
       left: 'rewind', right: 'osd', red: 'menu', green: 'guide', yellow: 'last', blue: 'multiview',
       playpause: 'playpause', stop: 'exit', rew: 'rewind', ff: 'none', info: 'osd'
     },
-    list: { 'long:ok': 'menu', red: 'menu', green: 'guide', yellow: 'last', blue: 'settings', playpause: 'none', info: 'none', stop: 'none', rew: 'none', ff: 'none' }
+    list: { 'long:ok': 'menu', red: 'menu', green: 'guide', yellow: 'last', blue: 'settings', playpause: 'none', info: 'menu', stop: 'none', rew: 'none', ff: 'none' }
   };
 
   var ctx = 'list';
@@ -53,6 +53,8 @@ var Keymap = (function () {
     if (!m) { m = JSON.parse(JSON.stringify(DEFAULTS)); }
     // v2: OK in fullscreen opens the quick menu (was the channel list), unless you changed it.
     else if (!m.v2) { if (m.player && m.player.ok === 'list' && m.player['long:ok'] === 'menu') { m.player.ok = 'panel'; m.player['long:ok'] = 'list'; } m.v2 = 1; }
+    // v3: Info in the channel list opens the channel's options (it did nothing before).
+    if (m && !m.v3) { if (m.list && m.list.info === 'none') m.list.info = 'menu'; m.v3 = 1; }
     return m;
   }
   function get(context, btn) {

@@ -47,7 +47,9 @@ TiviBro plays your own IPTV subscription (Xtream Codes or M3U with XMLTV) on LG 
 | 🧩 **Multiview** | Two channels side by side (four on TVs that can take it). |
 | 🖥️ **A real editor** | Hide, sort, rename, copy and match guides for hundreds of channels from any browser.  Drafts, undo and restore points. |
 | 🔒 **Locked backups** | Everything in one AES-256-GCM file.  Restore onto a brand-new TV straight from the first screen. |
-| 🎨 **Midnight Electric** | A dark, calm look with accent colours and backgrounds to choose from, including true black for OLED. |
+| 🛟 **Streams that don't quit** | Reconnects with backoff, waits out Wi-Fi drops, tries every player before giving up, and keeps a dropped channel coming back by itself.  Movies and catch-up resume where they dropped. |
+| 🌈 **HDR, Dolby Vision and Atmos** | Reads each stream's format before the picture starts and sends Dolby Vision to the TV's own player, HDR10 and HLG to the steadier built-in one.  The info panel shows *4K  HEVC  Dolby Vision  E-AC-3 5.1 Atmos*. |
+| 🎨 **Midnight Electric** | A dark, calm look with nine backgrounds (true black for OLED, high contrast), twelve accents or your own, and an outline focus style for across the room. |
 | 💸 **Free and open** | MIT licensed, no accounts, no ads, no tracking. |
 
 ## See it in action
@@ -139,7 +141,7 @@ Channels, programmes now and later, catch-up, movies and shows, as you type.  OK
 
 ### Make it yours
 
-Accent colours, four backgrounds (Midnight, Black OLED, Slate, Classic), text size, panel transparency, clock, logos and more, all live.
+Twelve accent colours or your own from a hue and brightness, nine backgrounds (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), a white focus outline for distance viewing, text size, panel transparency, clock, logos and more, all live.
 
 Plus remote remapping, parental controls, reminders, buffering profiles and on-TV diagnostics.
 
@@ -264,7 +266,7 @@ app/              The webOS web app (what runs on the TV)
   appinfo.json    App manifest (id, version, icons, splash)
   js/             App modules (see docs/ARCHITECTURE.md)
   css/  img/      Styles, icons, splash and logo
-  vendor/         hls.js (light) and mpegts.js, unmodified
+  vendor/         hls.js and mpegts.js, unmodified
 service/          webOS JS service: localhost relay + LAN web editor (service/editor/)
 tests/            Unit tests (Node), Playwright suites, dev relay
 scripts/          build, install, launch, sim, inspect, serve, lint, bump-version

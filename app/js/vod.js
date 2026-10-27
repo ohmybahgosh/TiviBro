@@ -105,11 +105,12 @@ var Vod = (function () {
     info.set(it.id, null);
     Source.vodInfo(it.id).then(function (r) {
       var i = (r && r.info) || {};
-      info.set(it.id, { plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '' });
+      info.set(it.id, { plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', media: Caps.fromXtream(i) });
       if (itemsVL.current() === it) showInfo();
     }).catch(function () {});
   }
 
+  function mediaOf(it) { var m = it.ep ? null : (kind === 'movie' ? info.get(it.id) : null); return it.ep ? it.media : m && m.media; }
   function showInfo() {
     var it = itemsVL.current(), box = $('vodInfo');
     box.innerHTML = '';
@@ -120,6 +121,14 @@ var Vod = (function () {
     box.appendChild(U.el('h2', '', it.ep ? it.label : it.name));
     var meta = [m && m.year || it.year, m && m.dur || it.dur, m && m.genre, it.rating ? '★ ' + it.rating : ''].filter(Boolean).join('   ');
     if (meta) box.appendChild(U.el('div', 'vod-meta', meta));
+    // What the file is, from the provider's own scan of it: 4K, HDR or Dolby Vision, sound format.
+    var md = mediaOf(it);
+    if (md) {
+      var lbl = Caps.label(md);
+      if (lbl) box.appendChild(U.el('div', 'vod-media', lbl));
+      var w = Caps.route(md, Store.settings.hdrRoute || 'auto').warn;
+      if (w) box.appendChild(U.el('div', 'vod-meta warn', w));
+    }
     var plot = (m && m.plot) || it.plot || (it.ep && it.plotEp) || '';
     if (plot) box.appendChild(U.el('p', 'vod-plot', plot));
     if (m && m.cast) box.appendChild(U.el('div', 'vod-meta', 'Cast: ' + m.cast));
@@ -136,7 +145,7 @@ var Vod = (function () {
       Object.keys(byS).sort(function (a, b) { return +a - +b; }).forEach(function (sn) {
         (byS[sn] || []).forEach(function (e) {
           var inf = e.info || {};
-          eps.push({ ep: true, id: e.id, ext: e.container_extension || 'mp4', season: +sn, num: +e.episode_num || 0,
+          eps.push({ ep: true, id: e.id, ext: e.container_extension || 'mp4', season: +sn, num: +e.episode_num || 0, media: Caps.fromXtream(inf),
             label: 'S' + sn + ' E' + (e.episode_num || '?') + '   ' + (e.title || '').replace(/^.*? - S\d+E\d+ - /i, ''),
             dur: inf.duration || '', plotEp: inf.plot || '', cover: inf.movie_image || s.cover });
         });
@@ -165,8 +174,14 @@ var Vod = (function () {
     var id = it.ep ? 'e' + it.id : key(it);
     var r = resumeOf(id), startAt = !fromStart && r && r.pos > 30 && r.pos < r.dur - 60 ? r.pos - 5 : 0;
     var url = it.ep ? Source.episodeUrl(it.id, it.ext) : Source.movieUrl(it.id, it.ext);
-    playingMeta = { id: id, title: it.ep ? (series ? series.name : '') + '   ' + it.label : it.name, sub: it.ep ? '' : it.year || '', item: it, seriesKey: series ? 's' + series.id : null };
+    playingMeta = { id: id, media: mediaOf(it), title: it.ep ? (series ? series.name : '') + '   ' + it.label : it.name, sub: it.ep ? '' : it.year || '', item: it, seriesKey: series ? 's' + series.id : null };
     Views.playVod(playingMeta, url, startAt, function () { open(kind, true); });
+  }
+  // Save where playback is without stopping (the app going to the background).
+  function checkpoint() {
+    if (!playingMeta) return;
+    var pos = Player.position, dur = Player.duration;
+    if (dur > 60 && pos > 30 && pos < dur - 60) { E().resume[playingMeta.id] = { pos: pos, dur: dur, at: Date.now() }; Store.saveEdits(); }
   }
   function stopped() {
     if (!playingMeta) return;
@@ -217,16 +232,18 @@ var Vod = (function () {
 
   function keys(a) {
     if (zone === 'cats') {
-      if (a === 'up') { if (!catsVL.move(-1)) Views.tabBar(restore); }
+      if (a === 'up') catsVL.move(-1);
       else if (a === 'down') catsVL.move(1);
+      else if (a === 'chup') catsVL.page(-1);
+      else if (a === 'chdown') catsVL.page(1);
       else if (a === 'right' || a === 'ok') { catDeb.cancel(); var c = catsVL.current(); if (c) { itemsVL.setItems(itemsFor(c.id), 0); showInfo(); } setZone('items'); }
       else if (a === 'back' || a === 'left') Views.tabBar(restore);
       else if (a === 'green') Views.switchTab('guide');
       else if (a === 'blue') Views.switchTab('settings');
       return true;
     }
-    if (a === 'up') { if (!itemsVL.move(-1)) Views.tabBar(restore); }
-    else if (a === 'down') itemsVL.move(1);
+    if (a === 'up') itemsVL.move(-1, true);
+    else if (a === 'down') itemsVL.move(1, true);
     else if (a === 'chup') itemsVL.page(-1);
     else if (a === 'chdown') itemsVL.page(1);
     else if (a === 'left') { if (episodes) closeSeries(); else setZone('cats'); }
@@ -235,7 +252,7 @@ var Vod = (function () {
       if (!it) return true;
       if (kind === 'series' && !it.ep) openSeries(it); else play(it, false);
     }
-    else if (a === 'red' || a === 'hold') itemMenu(itemsVL.current());
+    else if (a === 'red' || a === 'hold' || a === 'info') itemMenu(itemsVL.current());
     else if (a === 'back') { if (episodes) closeSeries(); else setZone('cats'); }
     else if (a === 'green') Views.switchTab('guide');
     else if (a === 'blue') Views.switchTab('settings');
@@ -266,5 +283,5 @@ var Vod = (function () {
     }).catch(function (e) { itemsVL.empty = 'Could not load ' + (k === 'series' ? 'shows' : 'movies') + ': ' + (e.message || e); itemsVL.setItems([], 0); });
   }
 
-  return { open: open, stopped: stopped, ended: ended, reset: function () { data = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
+  return { open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, reset: function () { data = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
 })();

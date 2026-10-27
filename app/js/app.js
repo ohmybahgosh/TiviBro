@@ -5,7 +5,7 @@
 var App = (function () {
   'use strict';
   var $ = U.$, setupEl = $('viewSetup');
-  var ready = false, wasPlaying = null;
+  var ready = false, wasPlaying = false;
 
   function cacheKey(p) { return 'playlist:' + (p.id || 'none'); }
   // The loader may have found that the other scheme works, or pulled credentials out of a
@@ -294,6 +294,7 @@ var App = (function () {
   function boot() {
     loading('Starting…');
     Log.info('app', 'TiviBro ' + TIVIBRO_VERSION + ' starting.  ' + navigator.userAgent);
+    Caps.loadSystemInfo();
     Net.start(6000).then(function () {
       WebEdit.resume();
       if (!Store.settings.playlists.length) return setup();
@@ -304,8 +305,10 @@ var App = (function () {
   // Free the decoder when the TV sends the app to the background; resume on return.
   document.addEventListener('visibilitychange', function () {
     if (!ready || Multiview.isOpen) return;
-    if (document.hidden) { wasPlaying = Player.live ? Player.current : null; Player.stop(); }
-    else if (wasPlaying) { Player.play(wasPlaying, { preview: !document.body.classList.contains('full') }); wasPlaying = null; }
+    // Movies and catch-up come back where they were, and the spot is saved first in case the TV
+    // closes the app while it is in the background.
+    if (document.hidden) { if (Vod.checkpoint) Vod.checkpoint(); wasPlaying = Player.suspend(); }
+    else if (wasPlaying) { wasPlaying = false; Player.resume(); }
   });
 
   return { boot: boot, setup: setup, refresh: refresh, switchPlaylist: switchPlaylist };

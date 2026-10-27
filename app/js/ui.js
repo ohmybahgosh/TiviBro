@@ -6,6 +6,7 @@ var UI = (function () {
   var K = U.KEY;
   var handler = null, modalH = null, capture = null;
   var held = null;            // { btn, timer, fired } for the button currently down with a long action
+  var playKey = 'toggle';     // which media button sent the last 'playpause': play | pause | toggle
 
   /* Magic Remote pointer.  "pointer" is true while the user is aiming; any remote key switches
      back to key mode (webOS hides the cursor then too).  Hover only moves focus in pointer mode,
@@ -37,7 +38,10 @@ var UI = (function () {
       case K.BACK: case K.ESC: case K.BKSP: return 'back';
       case K.CH_UP: return 'chup'; case K.CH_DOWN: return 'chdown';
       case K.RED: return 'red'; case K.GREEN: return 'green'; case K.YELLOW: return 'yellow'; case K.BLUE: return 'blue';
-      case K.PLAY: case K.PAUSE: case K.PLAYPAUSE: return 'playpause';
+      // Play and Pause are separate buttons on LG remotes: remember which one so Play never pauses.
+      case K.PLAY: playKey = 'play'; return 'playpause';
+      case K.PAUSE: playKey = 'pause'; return 'playpause';
+      case K.PLAYPAUSE: playKey = 'toggle'; return 'playpause';
       case K.STOP: return 'stop';
       case 412: return 'rew'; case 417: return 'ff';
       case K.INFO: return 'info';
@@ -63,8 +67,8 @@ var UI = (function () {
 
   // Key repeat on webOS fires ~30/s.  Coalesce arrows to one move per animation frame so a
   // held arrow scrolls smoothly instead of queueing hundreds of renders.
-  var pending = null, raf = 0;
-  function flush() { raf = 0; if (pending) { var p = pending; pending = null; dispatch(p, null); } }
+  var pending = null, raf = 0, repeating = false;
+  function flush() { raf = 0; if (pending) { var p = pending; pending = null; repeating = true; try { dispatch(p, null); } finally { repeating = false; } } }
 
   function resetHeld() { if (held) { clearTimeout(held.timer); held = null; } }
   window.addEventListener('blur', resetHeld);
@@ -80,6 +84,7 @@ var UI = (function () {
       else if (e.keyCode === K.UP || e.keyCode === K.DOWN) { t.blur(); dispatch(e.keyCode === K.UP ? 'up' : 'down', e); e.preventDefault(); }
       return;
     }
+    playKey = 'toggle';
     var a = e.keyCode === K.OK ? 'ok' : action(e);
     if (!a) return;
     e.preventDefault();
@@ -114,6 +119,8 @@ var UI = (function () {
   /* ---------- modal list ---------- */
   var modal = U.$('modal'), mTitle = U.$('modalTitle'), mBody = U.$('modalBody');
   var mItems = [], mSel = 0, mTop = 0, M_VIS = 9;
+  // Magic Remote: clicking outside the box is the same as Back.
+  modal.addEventListener('click', function (e) { if (e.target === modal && modalH) dispatch('back', null); });
 
   function close() { modal.classList.add('hidden'); modalH = null; mBody.innerHTML = ''; }
 
@@ -199,8 +206,9 @@ var UI = (function () {
     };
   }
 
+  // Focus starts on Cancel, so a second press of OK by mistake never deletes or restores anything.
   function confirm(title, yesLabel, yes) {
-    menu(title, [{ label: yesLabel, action: yes }, { label: 'Cancel' }]);
+    menu(title, [{ label: yesLabel, action: yes }, { label: 'Cancel', current: true }]);
   }
 
   /* ---------- chrome ---------- */
@@ -229,6 +237,8 @@ var UI = (function () {
     getHandler: function () { return handler; },
     get modalOpen() { return !!modalH; },
     get pointer() { return pointer; },
+    get repeating() { return repeating; },     // true while a held arrow is auto-repeating
+    get playKey() { return playKey; },
     press: function (a) { dispatch(a, null); },
     menu: menu, prompt: prompt, confirm: confirm, pin: pin, clock: clock,
     captureNext: function (fn) { capture = fn; }, close: close, hints: hints

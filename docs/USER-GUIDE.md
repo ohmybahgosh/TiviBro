@@ -38,17 +38,24 @@ TiviBro works with the standard LG remote and the Magic Remote.  With the Magic 
 | Button | In the guide | Watching fullscreen |
 |---|---|---|
 | **OK** | First OK previews in the window, second goes fullscreen | Quick menu |
-| **Hold OK** or **Red** | Programme and channel options | Options |
+| **Hold OK**, **Red** or **Info** | Programme and channel options | Options (**Info** shows the programme details) |
 | **▲ ▼** | Move between channels | Channel up and down |
 | **◀ ▶** | Move through time (◀ on "now" opens the groups) | ◀ rewind or last channel, ▶ info |
 | **CH + / CH −** | Page up and down | Channel up and down |
 | **⏪ ⏩** | Jump through time, into the past on catch-up channels | Skip in catch-up and movies |
-| **▶ Play** | Watch the previewed channel fullscreen | Pause and play in catch-up and movies |
+| **▶ Play** / **❙❙ Pause** | Watch the previewed channel fullscreen | Play only plays and Pause only pauses; a single Play/Pause button switches between them.  Live TV can be paused too. |
 | **Green** | Channel list | Guide over the video |
 | **Yellow** | Groups | Last channel |
 | **Blue** | Settings | Multiview |
 | **Back** | Back to now, then the groups | Back to the guide |
 | **0 to 9** | Jump to a channel number | Jump to a channel number |
+
+A few things work the way you would guess from other TV apps:
+
+- Channel lists wrap around: **▲** on the first channel goes to the last.  Holding an arrow stops at the end instead of flying past it.  Group lists don't wrap.
+- **▲** at the top of a list never opens the menu by surprise.  **◀** or **Back** does.
+- In a confirmation ("Delete this playlist?"), **Cancel** is selected first, so a stray **OK** never deletes anything.
+- With the Magic Remote, clicking outside a pop-up closes it, clicking the progress bar in a movie or catch-up jumps there, and on Settings rows you can click the **‹ ›** arrows to change a value.
 
 Buttons can be remapped under **Settings > Remote control**, including keys TiviBro does not know yet (**Learn a button**).  **Button tester** shows what the TV sends for each key.
 
@@ -98,6 +105,7 @@ The **Channels** screen is the same list in TiviMate's classic layout: groups on
 
 - **▲ ▼** or **CH + / CH −** change channel.  An info bar shows the channel, what's on now and next, and how far into the programme you are.
 - **▶** shows the full programme info.  **Yellow** jumps back to the last channel.  **Green** lays the guide over the video.
+- **Green** (or **OK > Channel list**) lays the channel list over the video.  **OK** on another channel switches to it and keeps the list open so you can keep browsing; **OK** on the channel that's already playing closes the list.  **◀ ▶** change group.
 - **OK** opens the **quick menu**: Channel list, From start (catch-up channels), Favorite, TV guide, Picture size, Multiview, Sleep timer, Stream info and Reconnect.  Pick which buttons appear under **Settings > Remote control > Quick menu buttons**.
 - **Red** or **Hold OK** opens options: audio track, subtitles, picture size for this channel, and more.
 
@@ -114,7 +122,23 @@ The **Channels** screen is the same list in TiviMate's classic layout: groups on
 </p>
 </details>
 
-**Smooth playback.**  TiviBro picks a player per stream (MPEG-TS, the TV's own player, or HLS) and falls back automatically if one struggles.  It watches for frozen pictures and reconnects on its own.  If a provider is slow or your Wi-Fi is weak, try **Settings > Playback and buffering > Buffer profile**, or switch the **Stream format** between MPEG-TS and HLS.
+**Smooth playback.**  TiviBro picks a player per stream (MPEG-TS, the TV's own player, or HLS) and falls back automatically if one struggles.  It watches for frozen pictures and reconnects on its own, with a short wait that grows between tries.  If a provider is slow or your Wi-Fi is weak, try **Settings > Playback and buffering > Buffer profile**, or switch the **Stream format** between MPEG-TS and HLS.
+
+It tries hard never to just stop:
+
+- **Wi-Fi drops:** it waits for the network ("No network.  Waiting for it to come back") without using up its retries, and reconnects the moment the TV is back online.
+- **A channel keeps failing:** it tries the TV's own player and the provider's HLS version of the channel, then keeps retrying every 15 seconds for up to 20 minutes with a message on screen, so a channel that comes back after a provider hiccup recovers by itself.
+- **A channel never starts:** after a couple of quick retries it says plainly whether the provider is refusing it or the TV can't decode it.  **OK** tries again.
+- **Paused live TV:** a short pause carries on where you left off.  After a long pause TiviBro lets the connection go (the provider would drop it anyway) and **Play** brings you back to live.
+- **Movies and catch-up** pick up from the same spot after a dropped connection, and when you leave TiviBro (Home button, another input) and come back.
+
+**HDR, Dolby Vision and sound formats.**  TiviBro reads what each stream is before the picture starts: from the HLS playlist, from the MPEG-TS stream, or for movies from your provider's details.  The info panel shows it, for example *4K  HEVC  Dolby Vision 8  E-AC-3 5.1*, and movie details show it before you press play.
+
+- **Dolby Vision** plays through the TV's own player, which switches the screen into Dolby Vision itself.
+- **HDR10 and HLG** stay on TiviBro's built-in player by default, for its steadier buffering.  If HDR pictures look grey or washed out, set **Settings > Playback and buffering > HDR and Dolby Vision** to *TV player for all HDR*.
+- **HEVC, AV1, AAC, Dolby Digital (AC-3) and Dolby Digital Plus (E-AC-3, Atmos)** play on webOS 6 and later TVs.  Anything the built-in player can't decode moves to the TV's player automatically.
+- **DTS:** LG TVs from 2020, 2021 and 2022 (including the C1 and C2) can't play DTS sound.  TiviBro warns you when a movie only has DTS, so pick another audio track under **Options** if there is one.
+- **Settings > Diagnostics > What this TV can play** lists every format and which player handles it on your TV.
 
 ### Catch-up
 
@@ -122,7 +146,7 @@ Channels marked **↺** keep recent programmes on your provider's servers.
 
 1. In the guide, press **⏪** (or **◀** past "now") to go back in time.
 2. **OK** on a past programme replays it from the start.  **Hold OK** for more choices, including **Earlier programmes…** for a list by day.
-3. While replaying: **◀ ▶** skip 30 seconds, **▲ ▼** skip 5 minutes, **⏪ ⏩** jump further, **▶ Play** pauses, and **Yellow** or **Back** returns to live.
+3. While replaying: **◀ ▶** skip 30 seconds (keep pressing and each press jumps further), **▲ ▼** skip 5 minutes, **⏪ ⏩** jump further, **❙❙** pauses, and **Yellow** or **Back** returns to live.
 
 From live TV, **From start** in the quick menu restarts the current programme.  Step sizes are under **Settings > Playback and buffering > Catch-up, movies and shows**.
 
@@ -144,6 +168,8 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 
 - Categories on the left (**Continue watching**, **My list**, **All movies**, then your provider's), titles in the middle, details and poster on the right.
 - **OK** plays a movie or opens a show's seasons and episodes.  **Hold OK** adds a title to **My list**.
+- **Info** or **Hold OK** opens a title's options.  **CH + / CH −** page through long category lists.
+- While watching, **◀ ▶** skip 30 seconds.  Keep pressing and each press jumps further (twice, four, then eight times as far); the info panel shows where you'll land and when the movie will end, and playback jumps there once you stop pressing.  **Back** cancels a jump you haven't landed yet.  **▲ ▼** skip 10 minutes.
 - TiviBro remembers where you stopped and offers to resume.  The next episode can start by itself (**Play next episode automatically**).
 
 <p align="center"><a href="media/vod.mp4"><img src="media/vod.gif" width="100%" alt="Movies and shows"></a></p>
@@ -195,19 +221,19 @@ Many webOS TVs can decode only two streams at once, and some providers limit con
 
 ### Settings
 
-**Blue** in the guide, or **Settings** in the menu.  The sections:
+**Blue** in the guide, or **Settings** in the menu.  On a row with a choice, the focused row shows **‹ ›**: **◀ ▶** change it.  Colour rows show a swatch of the colour.  The sections:
 
 | Section | What's in it |
 |---|---|
-| **Playback and buffering** | Buffer profile, player engine, MPEG-TS or HLS, network helper, picture size, catch-up skip steps, info panel when switching, subtitles, next episode, multiview screens |
+| **Playback and buffering** | Buffer profile, player engine, MPEG-TS or HLS, network helper, HDR and Dolby Vision, picture size, catch-up skip steps, info panel when switching, subtitles, next episode, multiview screens |
 | **Remote control** | Remap buttons in the player and lists, quick menu buttons, learn a button, button tester |
 | **Playlists and guide** | Add and switch playlists, reload schedules, User-Agent, provider guide mode and offset, extra guide sources, channel name editor, subscription expiry and connections |
 | **Groups, sorting, hidden** | Manage groups, sort orders, your groups first, Recent and Favorites, new groups, hidden groups and channels |
 | **Guide, start screen, reminders** | Start screen, OK in the guide, guide layout, catch-up marks, reminders |
-| **Appearance** | Accent color, background (Midnight, Black OLED, Slate, Classic), text size, panel transparency, logos, clock, channel numbers |
+| **Appearance** | Accent color (twelve presets or your own from a hue and brightness), background (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), focus style (add a white outline to whatever is selected), text size, panel transparency, logos, clock, channel numbers |
 | **Parental controls** | PIN, what it protects, blocked groups and channels |
 | **Edit on a computer** | The web editor switch, its address and password |
-| **Diagnostics** | Connection test, app and helper logs, detailed logging, status |
+| **Diagnostics** | Connection test, app and helper logs, detailed logging, what this TV can play, what's playing now, status |
 
 <p align="center"><a href="media/settings.mp4"><img src="media/settings.gif" width="100%" alt="Settings and appearance"></a></p>
 <p align="center"><sub><a href="media/settings.mp4">Watch the MP4</a></sub></p>
@@ -325,7 +351,7 @@ A backup is one file with everything: settings, every playlist **with its login*
 
 | Problem | Try this |
 |---|---|
-| A channel won't start or keeps buffering | **Reconnect** in the quick menu.  Then try **Stream format** HLS instead of MPEG-TS, or a bigger **Buffer profile**. |
+| A channel won't start or keeps buffering | **OK** on the error message, or **Reconnect** in the quick menu.  Then try **Stream format** HLS instead of MPEG-TS, or a bigger **Buffer profile**. |
 | Every channel fails | **Settings > Diagnostics > Run connection test**.  It checks the helper, your login, the channel list, a stream and the guide, step by step. |
 | "No guide information" | Use **Smart match** in the web editor, or **Hold OK > Assign guide** on the TV.  Add an extra guide source for your region. |
 | Guide times are off by an hour | **Provider guide time offset** in Settings, or **Offset** on an extra source in the editor. |
@@ -333,5 +359,8 @@ A backup is one file with everything: settings, every playlist **with its login*
 | The web editor says it can't reach the TV | TiviBro was closed or the TV went to sleep.  Open TiviBro; the editor reconnects and your drafts are safe. |
 | Changes don't show on the TV | Check the bar at the bottom of the editor.  If it still counts changes, press **Send to TV**. |
 | Wrong editor password | It's on the TV under **Settings > Edit on a computer**.  After five wrong tries, wait a minute. |
+| HDR looks grey or washed out | **Settings > Playback and buffering > HDR and Dolby Vision > TV player for all HDR**. |
+| A movie plays with no sound | It may only have DTS sound, which 2020 to 2022 LG TVs can't play.  The movie details warn about this; pick another audio track under **Options** if there is one. |
+| Dolby Vision shows odd green or purple colours | Make sure **HDR and Dolby Vision** isn't set to *Built-in player*. |
 | A remote button does nothing | **Settings > Remote control > Button tester**, then **Learn a button**. |
 | Something crashed | **Diagnostics > View app log with earlier sessions** shows what happened.  Logs mask usernames and passwords. |

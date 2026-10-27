@@ -7,17 +7,24 @@ TiviBro works with the standard LG remote and the Magic Remote.  With the Magic 
 | Button | In the guide | Watching fullscreen |
 |---|---|---|
 | **OK** | First OK previews in the window, second goes fullscreen | Quick menu |
-| **Hold OK** or **Red** | Programme and channel options | Options |
+| **Hold OK**, **Red** or **Info** | Programme and channel options | Options (**Info** shows the programme details) |
 | **▲ ▼** | Move between channels | Channel up and down |
 | **◀ ▶** | Move through time (◀ on "now" opens the groups) | ◀ rewind or last channel, ▶ info |
 | **CH + / CH −** | Page up and down | Channel up and down |
 | **⏪ ⏩** | Jump through time, into the past on catch-up channels | Skip in catch-up and movies |
-| **▶ Play** | Watch the previewed channel fullscreen | Pause and play in catch-up and movies |
+| **▶ Play** / **❙❙ Pause** | Watch the previewed channel fullscreen | Play only plays and Pause only pauses; a single Play/Pause button switches between them.  Live TV can be paused too. |
 | **Green** | Channel list | Guide over the video |
 | **Yellow** | Groups | Last channel |
 | **Blue** | Settings | Multiview |
 | **Back** | Back to now, then the groups | Back to the guide |
 | **0 to 9** | Jump to a channel number | Jump to a channel number |
+
+A few things work the way you would guess from other TV apps:
+
+- Channel lists wrap around: **▲** on the first channel goes to the last.  Holding an arrow stops at the end instead of flying past it.  Group lists don't wrap.
+- **▲** at the top of a list never opens the menu by surprise.  **◀** or **Back** does.
+- In a confirmation ("Delete this playlist?"), **Cancel** is selected first, so a stray **OK** never deletes anything.
+- With the Magic Remote, clicking outside a pop-up closes it, clicking the progress bar in a movie or catch-up jumps there, and on Settings rows you can click the **‹ ›** arrows to change a value.
 
 Buttons can be remapped under **Settings > Remote control**, including keys TiviBro does not know yet (**Learn a button**).  **Button tester** shows what the TV sends for each key.
 

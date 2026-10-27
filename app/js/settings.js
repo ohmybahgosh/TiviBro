@@ -58,6 +58,8 @@ var Settings = (function () {
     out.push(choice('Buffer meter', 'Shows how many seconds of video are banked, in fullscreen.', ['auto', 'always', 'off'], ['When low', 'Always', 'Off'], function () { return s.meter; }, function (v) { s.meter = v; save(); }));
     out.push(toggle('Preview in channel list', 'Plays the channel you rest on.  Turn off on very slow TVs for the snappiest list.', function () { return s.previewPlay; }, function (v) { s.previewPlay = v; save(); }));
     out.push(toggle('Turn on last channel at launch', '', function () { return s.resumeLast; }, function (v) { s.resumeLast = v; save(); }));
+    out.push(choice('HDR and Dolby Vision', 'Automatic plays Dolby Vision through the TV player, which switches the screen into Dolby Vision itself, and keeps HDR10 and HLG on the built-in player for its steadier buffering.  Choose TV player for all HDR if HDR pictures look washed out or grey.',
+      ['auto', 'tv', 'builtin'], ['Automatic', 'TV player for all HDR', 'Built-in player'], function () { return s.hdrRoute || 'auto'; }, function (v) { s.hdrRoute = v; save(); }));
     out.push(choice('Picture', '', ['contain', 'fill', 'cover'], ['Normal', 'Stretch', 'Zoom'], function () { return s.display; }, function (v) { s.display = v; Player.applyDisplay(); save(); }));
     out.push(head('Catch-up, movies and shows'));
     out.push(choice('Skip step', 'For Left and Right while watching catch-up or a movie.', [10, 15, 30, 60, 120], ['10s', '15s', '30s', '1 min', '2 min'], function () { return +s.skip; }, function (v) { s.skip = v; save(); }));
@@ -393,12 +395,40 @@ var Settings = (function () {
     return out;
   }
 
+  /* Colours.  Backgrounds are whole palettes in app.css (body.theme-*); the accent is one colour
+     that focus, progress and highlights share.  "Custom" builds an accent from a hue and a
+     brightness, both changed with ◀ ▶, so any colour is reachable from the remote. */
+  var ACCENTS = ['#5b8cff', '#33e1ff', '#8b5cf6', '#c084fc', '#ff5ca8', '#3ddc97', '#14b8a6', '#a3e635', '#f2b33d', '#ff6a3d', '#e5484d', '#e8ecf8', 'custom'];
+  var ACCENT_NAMES = ['Electric blue', 'Cyan', 'Violet', 'Lavender', 'Pink', 'Mint', 'Teal', 'Lime', 'Amber', 'Ember', 'Red', 'White', 'Custom'];
+  var THEMES = ['dark', 'black', 'slate', 'ocean', 'forest', 'plum', 'mocha', 'contrast', 'classic'];
+  var THEME_NAMES = ['Midnight', 'Black (OLED)', 'Slate', 'Ocean', 'Forest', 'Plum', 'Mocha', 'High contrast', 'Classic (1.0)'];
+  var THEME_INK = { dark: '#141a2e', black: '#000', slate: '#263342', ocean: '#0f2a3a', forest: '#14271d', plum: '#2a1830', mocha: '#2b2019', contrast: '#000', classic: '#18222e' };
   function look() {
     var s = S(), out = [];
-    var colors = ['#5b8cff', '#33e1ff', '#8b5cf6', '#3ddc97', '#14b8a6', '#f2b33d', '#ff6a3d', '#e5484d', '#e8ecf8'];
-    var names = ['Electric blue', 'Cyan', 'Violet', 'Mint', 'Teal', 'Amber', 'Ember', 'Red', 'White'];
-    out.push(choice('Accent color', '', colors, names, function () { return s.accent; }, function (v) { s.accent = v; Views.applyLook(); save(); }));
-    out.push(choice('Background', '', ['dark', 'black', 'slate', 'classic'], ['Midnight', 'Black (OLED)', 'Slate', 'Classic (1.0)'], function () { return s.theme || 'dark'; }, function (v) { s.theme = v; Views.applyLook(); save(); }));
+    var custom = s.accentMode === 'custom';
+    var acc = choice('Accent color', 'The colour of whatever is focused, and of progress bars.', ACCENTS, ACCENT_NAMES,
+      function () { return custom ? 'custom' : s.accent; },
+      function (v) {
+        if (v === 'custom') { s.accentMode = 'custom'; s.accent = U.hsl(s.accentHue == null ? 210 : s.accentHue, s.accentLight || 62); }
+        else { s.accentMode = ''; s.accent = v; }
+        Views.applyLook(); save(true);
+      });
+    acc.swatch = function () { return s.accent; };
+    out.push(acc);
+    if (custom) {
+      var hues = [], hueNames = [];
+      for (var h = 0; h < 360; h += 10) { hues.push(h); hueNames.push(h + '°'); }
+      var hu = choice('Custom hue', 'Around the colour wheel: red, yellow, green, cyan, blue, magenta.', hues, hueNames, function () { return s.accentHue == null ? 210 : s.accentHue; },
+        function (v) { s.accentHue = v; s.accent = U.hsl(v, s.accentLight || 62); Views.applyLook(); save(); });
+      hu.swatch = function () { return s.accent; };
+      out.push(hu);
+      out.push(choice('Custom brightness', '', [45, 55, 62, 72, 82], ['Deep', 'Rich', 'Normal', 'Light', 'Pastel'], function () { return s.accentLight || 62; },
+        function (v) { s.accentLight = v; s.accent = U.hsl(s.accentHue == null ? 210 : s.accentHue, v); Views.applyLook(); save(); }));
+    }
+    var bg = choice('Background', '', THEMES, THEME_NAMES, function () { return s.theme || 'dark'; }, function (v) { s.theme = v; Views.applyLook(); save(); });
+    bg.swatch = function () { return THEME_INK[s.theme || 'dark'] || THEME_INK.dark; };
+    out.push(bg);
+    out.push(choice('Focus style', 'How the selected item stands out.  Outline adds a white ring, easier to spot from across the room.', ['fill', 'ring'], ['Filled', 'Filled with outline'], function () { return s.focusStyle || 'fill'; }, function (v) { s.focusStyle = v; Views.applyLook(); save(); }));
     out.push(choice('Text size', 'Guide and channel lists.', ['s', 'm', 'l'], ['Small', 'Medium', 'Large'], function () { return s.textSize || 'm'; }, function (v) { s.textSize = v; Views.applyLook(); save(); }));
     out.push(choice('Panels over video', 'How see-through the info panel, quick menu and channel list are in fullscreen.', ['l', 'm', 'h'], ['Solid', 'Normal', 'See-through'], function () { return s.overlay || 'm'; }, function (v) { s.overlay = v; Views.applyLook(); save(); }));
     out.push(choice('Channel logos', 'Which logo to use when both the playlist and the guide have one.', ['playlist', 'guide'], ['From the playlist', 'From the guide'], function () { return s.logoPref === 'guide' ? 'guide' : 'playlist'; }, function (v) { s.logoPref = v; save(); relist(); }));
@@ -436,6 +466,12 @@ var Settings = (function () {
     out.push(action('View network helper log', 'Every request the helper made: status, time, size, and the network error if any.', function () { Diag.showHelperLog(); }));
     out.push(toggle('Detailed logging', 'Also logs every request and buffer event.  Turn on while chasing a problem.', function () { return Log.verbose; }, function (v) { Log.verbose = v; paint(); }));
     out.push(action('Clear log', '', function () { Log.clear(); U.toast('Log cleared'); }));
+    out.push(page('What this TV can play', 'Video, HDR and sound formats, for the built-in player and the TV player.', 'What this TV can play', function () {
+      var o = [info('From the TV\'s own answers plus what LG TVs are known to do.  Dolby Vision and DTS are not always reported correctly, so the known rules win.', '')];
+      Caps.report().forEach(function (r) { o.push(info(r[0], r[1])); });
+      return o;
+    }));
+    if (Player.current) out.push(info('Playing now', [Player.media, Player.engine].filter(Boolean).join('   ') || 'details not known yet'));
     out.push(head('Status'));
     out.push(info('Network helper', Net.status()));
     out.push(info('Network setting', (S().network || 'auto') === 'direct' ? 'Direct' : 'Automatic'));
@@ -486,7 +522,19 @@ var Settings = (function () {
       var l = U.el('div', 'ol', it.label);
       if (it.sub) l.appendChild(U.el('small', '', it.sub));
       d.appendChild(l);
-      if (!it.head) { d._v = U.el('div', 'ov'); d.appendChild(d._v); }
+      if (!it.head) {
+        d._v = U.el('div', 'ov'); d.appendChild(d._v);
+        // A value you change with ◀ ▶ shows the arrows on the focused row, and with the Magic
+        // Remote each arrow can be clicked.
+        if (it.cycle) {
+          d.classList.add('cyc');
+          var al = U.el('span', 'ar', '‹'), ar = U.el('span', 'ar', '›');
+          d._sw = U.el('i', 'sw hidden'); d._t = U.el('span', '');
+          [al, d._sw, d._t, ar].forEach(function (x) { d._v.appendChild(x); });
+          al.addEventListener('click', function (e) { e.stopPropagation(); zone = 'body'; sel = i; it.cycle(-1); });
+          ar.addEventListener('click', function (e) { e.stopPropagation(); zone = 'body'; sel = i; it.cycle(1); });
+        }
+      }
       // Magic Remote: hover focuses a row, click is OK (or changes the value).
       if (focusable(i)) {
         d.addEventListener('mousemove', function () { if (UI.pointer && (zone !== 'body' || sel !== i)) { zone = 'body'; sel = i; paint(); } });
@@ -508,7 +556,12 @@ var Settings = (function () {
     nav.classList.toggle('active', zone === 'nav');
     rowEls.forEach(function (e, i) {
       var it = items[i];
-      if (e._v) e._v.textContent = it.value ? it.value() : '';
+      if (e._t) {
+        e._t.textContent = it.value ? it.value() : '';
+        var sw = it.swatch && it.swatch();
+        e._sw.classList.toggle('hidden', !sw);
+        if (sw) e._sw.style.background = sw;
+      } else if (e._v) e._v.textContent = it.value ? it.value() : '';
       e.classList.toggle('focus', zone === 'body' && i === sel);
     });
     var f = rowEls[sel];
@@ -538,7 +591,6 @@ var Settings = (function () {
       var d = a === 'up' ? -1 : 1, i = sel + d;
       while (i >= 0 && i < items.length && !focusable(i)) i += d;
       if (i >= 0 && i < items.length) { sel = i; paint(); }
-      else if (a === 'up' && !stack.length) { zone = 'nav'; paint(); }
     }
     else if (a === 'chup') { for (var j = 0; j < 8; j++) keys('up'); }
     else if (a === 'chdown') { for (var k = 0; k < 8; k++) keys('down'); }

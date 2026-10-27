@@ -13,7 +13,14 @@
      3. Gap jumping: hop over small holes in the buffer that freeze live TS streams.
      4. Watchdog:    if the clock stops, recover in steps (nudge, decoder recover,
                      reconnect with backoff), then fall back to another engine.
-     5. Memory:      back buffer trimmed so long sessions don't starve the TV. */
+     5. Memory:      back buffer trimmed so long sessions don't starve the TV.
+     6. Never silent: offline waits for the network, a channel that keeps failing tries every
+                     other pipeline, then keeps retrying slowly with a message on screen
+                     instead of dying.  Movies and catch-up resume where they dropped.
+
+   Routing: HDR and codec facts (Caps) decide the pipeline before the first frame.  Dolby
+   Vision goes to the TV player; HDR10/HLG stays on the built-in player unless Settings say
+   otherwise; codecs MSE can't take go to the TV player. */
 var Player = (function () {
   'use strict';
 
@@ -25,7 +32,7 @@ var Player = (function () {
   };
 
   var video = null, eng = null, cur = null, token = 0;
-  var listeners = { state: [], stats: [] };
+  var listeners = { state: [], stats: [], notice: [] };
   var wd = 0, st = null;
   var lastStats = null;
   var fallbackHosts = {};        // host -> 'native' after MSE could not fetch it
@@ -73,7 +80,8 @@ var Player = (function () {
   }
 
   /* ---------- engines ---------- */
-  function hlsEngine(url, p, preview, fail) {
+  function hlsEngine(url, p, preview, fail, media) {
+    var live = cur.live && !cur.timeshift;
     url = Net.wrap(url);
     var h = new Hls({
       // Every playlist, key and segment request goes through the relay when it is in use.
@@ -85,17 +93,27 @@ var Player = (function () {
       maxBufferSize: 80 * 1000 * 1000, maxBufferHole: 0.5, nudgeMaxRetry: 6, highBufferWatchdogPeriod: 2,
       capLevelToPlayerSize: preview, capLevelOnFPSDrop: true,
       manifestLoadingMaxRetry: 4, levelLoadingMaxRetry: 6, fragLoadingMaxRetry: 8, fragLoadingRetryDelay: 400,
-      manifestLoadingTimeOut: 12000, fragLoadingTimeOut: 20000
+      manifestLoadingTimeOut: 12000, levelLoadingTimeOut: 10000, fragLoadingTimeOut: 20000,
+      liveDurationInfinity: live, enableWebVTT: true, enableCEA708Captions: true, renderTextTracksNatively: true
     });
-    var mediaErrs = 0;
+    // Media errors: recover, then recover with the audio codec swapped.  The count resets once
+    // playback has run clean for a while, so one bad patch an hour in still gets recovered.
+    var mediaErrs = 0, lastMediaErr = 0;
+    h.on(Hls.Events.MANIFEST_PARSED, function (e, d) { media(Caps.bestHlsLevel(d && d.levels)); });
     h.on(Hls.Events.ERROR, function (e, d) {
       if (!d.fatal) return;
-      if (d.type === Hls.ErrorTypes.MEDIA_ERROR && mediaErrs < 2) {
-        if (mediaErrs++ === 1) h.swapAudioCodec();
-        h.recoverMediaError();
-        return;
+      if (d.type === Hls.ErrorTypes.MEDIA_ERROR) {
+        if (Date.now() - lastMediaErr > 20000) mediaErrs = 0;
+        lastMediaErr = Date.now();
+        if (mediaErrs < 2) {
+          if (mediaErrs++ === 1) h.swapAudioCodec();
+          h.recoverMediaError();
+          return;
+        }
       }
-      fail(d.type === Hls.ErrorTypes.NETWORK_ERROR ? 'net' : 'media', d.details, !!(d.response && d.response.code === 0));
+      // A response code of 0 is a request the browser blocked (CORS), not the provider failing.
+      var code = d.response && d.response.code;
+      fail(d.type === Hls.ErrorTypes.NETWORK_ERROR ? 'net' : 'media', d.details + (code ? ' (HTTP ' + code + ')' : ''), code === 0, false, code >= 400 ? code : 0);
     });
     h.loadSource(url);
     h.attachMedia(video);
@@ -109,11 +127,13 @@ var Player = (function () {
       levels: function () { return (h.levels || []).map(function (l, i) { return { id: i, label: (l.height ? l.height + 'p' : 'Level ' + (i + 1)) + (l.bitrate ? '  ' + (l.bitrate / 1e6).toFixed(1) + ' Mbps' : ''), on: !h.autoLevelEnabled && i === h.currentLevel }; }); },
       auto: function () { return h.autoLevelEnabled; },
       setLevel: function (i) { h.currentLevel = i; },
+      // After a long refill a live stream can sit far behind the edge; go back to it.
+      edge: function () { var e = h.liveSyncPosition; if (e && video.currentTime < e - 30) video.currentTime = e; },
       destroy: function () { try { h.destroy(); } catch (e) {} }
     };
   }
 
-  function tsEngine(url, p, preview, fail) {
+  function tsEngine(url, p, preview, fail, media) {
     var live = cur.live || !!cur.timeshift;
     url = Net.wrap(url);
     var m = mpegts.createPlayer({ type: 'mpegts', isLive: live, url: url, hasAudio: true, hasVideo: true }, {
@@ -124,9 +144,13 @@ var Player = (function () {
       fixAudioTimestampGap: true, reuseRedirectedURL: true
     });
     var gotData = false;
-    m.on(mpegts.Events.MEDIA_INFO, function (mi) { gotData = true; if (mi && mi.mimeType) Log.debug('player', 'Stream codecs: ' + mi.mimeType); });
+    m.on(mpegts.Events.MEDIA_INFO, function (mi) { gotData = true; if (mi && mi.mimeType) Log.debug('player', 'Stream codecs: ' + mi.mimeType); media(Caps.fromMpegts(mi)); });
     m.on(mpegts.Events.ERROR, function (type, detail, info) {
-      fail(type === mpegts.ErrorTypes.NETWORK_ERROR ? 'net' : 'media', detail + (info && info.msg ? ' (' + info.msg + ')' : ''), !gotData && type === mpegts.ErrorTypes.NETWORK_ERROR);
+      // Only a fetch the browser refused outright ("Exception": CORS, TLS) says the host needs the
+      // TV player.  An HTTP error before data is usually the provider's connection limit while
+      // the last channel hangs up, and a reconnect a moment later fixes it.
+      var net = type === mpegts.ErrorTypes.NETWORK_ERROR;
+      fail(net ? 'net' : 'media', detail + (info && info.code ? ' (HTTP ' + info.code + ')' : '') + (info && info.msg ? ' (' + info.msg + ')' : ''), !gotData && net && detail === 'Exception', false, !gotData && info && info.code >= 400 ? info.code : 0);
     });
     // Live TS that "completes" means the server hung up.  Reconnect right away.
     if (live) m.on(mpegts.Events.LOADING_COMPLETE, function () { fail('net', 'server closed stream', false, true); });
@@ -177,25 +201,45 @@ var Player = (function () {
   }
 
   function state(s, msg) { if (st) st.state = s; emit('state', s, msg); }
+  function notice(msg) { emit('notice', msg); }
+  function isFile() { return cur && !cur.live && !cur.timeshift; }
+  function hdrPolicy() { return Store.settings.hdrRoute || 'auto'; }
 
   function start(myToken) {
     if (myToken !== token || !cur) return;
     clearTimeout(cur.timer);
     teardown();
-    if (cur.urlFn) cur.url = cur.urlFn();       // catch-up: every reconnect resumes where playback got to
+    if (cur.urlFn) { cur.url = cur.urlFn(); cur.pos = 0; }  // catch-up: every reconnect resumes where playback got to
     var url = cur.url, p = cur.p;
     var kind = cur.forceKind || (cur.forceNative ? 'native' : pickEngine(url));
-    Log.info('player', 'Start ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '" ' : '') + 'with ' + kind + ' engine' + (kind !== 'native' && Net.active ? ' via helper' : '') + ', profile ' + p.label + ' (prebuffer ' + p.prebuffer + 's)' + (cur.retries ? ', attempt ' + (cur.retries + 1) : '') + '  ' + url);
+    // Known codecs up front (a movie's details): route before anything loads.
+    if (!cur.forceKind && !cur.forceNative && kind !== 'native' && cur.media && !cur.routed) {
+      var r0 = Caps.route(cur.media, hdrPolicy());
+      if (r0.engine === 'native') { cur.routed = true; Log.info('player', r0.reason); useEngine('native'); kind = 'native'; }
+    }
+    Log.info('player', 'Start ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '" ' : '') + 'with ' + kind + ' engine' + (kind !== 'native' && Net.active ? ' via helper' : '') + ', profile ' + p.label + ' (prebuffer ' + p.prebuffer + 's)' + (cur.retries ? ', attempt ' + (cur.retries + 1) : '') + (cur.startAt ? ', from ' + Math.round(cur.startAt) + 's' : '') + '  ' + url);
+    var gen = cur.gen = (cur.gen || 0) + 1;     // a torn-down engine's late events are ignored
     st = { state: 'loading', started: false, lastT: -1, lastMove: Date.now(), refilling: false, refillSince: 0,
-      kind: kind, at: Date.now(), healthySince: 0 };
-    state('loading');
+      kind: kind, at: Date.now(), healthySince: 0, userPaused: isFile() && !!cur.userPaused };
+    state(cur.slow ? 'buffering' : 'loading', cur.slow ? cur.slow : undefined);
 
-    var fail = function (type, detail, earlyNet, ended) {
-      if (myToken !== token) return;
+    var fail = function (type, detail, earlyNet, ended, http) {
+      if (myToken !== token || gen !== cur.gen) return;
       Log.warn('player', kind + ' engine ' + type + ' error: ' + (detail && detail.message ? detail.message : detail) + (st.started ? '' : ' (before first frame)') + '  ' + cur.url);
-      // Before the first frame, a failure in the built-in demuxer (unsupported codec such as
-      // AC-3 audio, or a fetch the relay could not make) goes straight to the TV's own player,
-      // which decodes AC-3/E-AC-3 and raw TS natively.  No retry loop first.
+      // The server answered with an error before any video.  Twice is worth a quick retry (a
+      // connection limit while the last channel hangs up clears in a second or two); after that
+      // the next pipeline gets a go rather than a minute of retries on a dead link.
+      if (http && !st.started && kind !== 'native') {
+        cur.httpFails = (cur.httpFails || 0) + 1;
+        cur.lastHttp = http;
+        if (cur.httpFails > 2) {
+          var nx = nextEngine(kind);
+          if (nx) { Log.info('player', 'Trying the ' + ENGINE_NAMES[nx] + ' after HTTP ' + http); useEngine(nx); return start(myToken); }
+          return giveUp(myToken);
+        }
+      }
+      // Before the first frame, a failure in the built-in demuxer (unsupported codec, or a fetch
+      // the browser refused) goes straight to the next pipeline.  No retry loop first.
       if ((earlyNet || type === 'media') && kind !== 'native' && !st.started) {
         // A fetch the demuxer could not make is about the host (CORS etc.), so remember it for
         // the host.  A codec problem is about this one channel only.
@@ -209,10 +253,24 @@ var Player = (function () {
       if (ended && st.started && bufferedAhead() > 4) { st.pendingReconnect = true; Log.info('player', 'Provider closed the stream; playing the remaining ' + bufferedAhead().toFixed(1) + 's then reconnecting'); return; }
       reconnect(myToken, ended ? 'Stream ended, reconnecting' : 'Connection dropped, reconnecting');
     };
+    // Codec facts from the stream itself, before the first frame: the HLS master playlist or the
+    // TS demuxer's media info.  Switch pipeline once if the stream belongs on the TV player.
+    var media = function (m) {
+      if (myToken !== token || gen !== cur.gen || !m) return;
+      cur.media = merge(cur.media, m);
+      var r = Caps.route(cur.media, hdrPolicy());
+      if (r.warn && !cur.warned) { cur.warned = true; Log.warn('player', r.warn); notice(r.warn); }
+      if (r.engine === 'native' && kind !== 'native' && !st.started && !cur.routed && !(cur.tried && cur.tried.native)) {
+        cur.routed = true;
+        Log.info('player', r.reason + '; switching to the TV player');
+        useEngine('native');
+        setTimeout(function () { start(myToken); }, 0);   // not from inside the engine's own event
+      }
+    };
 
     try {
-      if (kind === 'hls') eng = hlsEngine(url, p, cur.preview, fail);
-      else if (kind === 'ts') eng = tsEngine(url, p, cur.preview, fail);
+      if (kind === 'hls') eng = hlsEngine(url, p, cur.preview, fail, media);
+      else if (kind === 'ts') eng = tsEngine(url, p, cur.preview, fail, media);
       else eng = nativeEngine(url);
     } catch (e) {
       Log.warn('player', kind + ' engine could not start: ' + e.message);
@@ -220,7 +278,16 @@ var Player = (function () {
       useEngine('native');
       return start(myToken);
     }
+    if (kind === 'native' && cur.media) { var rn = Caps.route(cur.media, hdrPolicy()); if (rn.warn && !cur.warned) { cur.warned = true; notice(rn.warn); } }
     wd = setInterval(function () { tick(myToken); }, 400);
+  }
+  // Stream facts arrive in pieces (movie details, then the stream); later, more specific wins.
+  function merge(a, b) {
+    if (!a) return b; if (!b) return a;
+    var o = {}, k;
+    for (k in a) o[k] = a[k];
+    for (k in b) if (b[k] != null && b[k] !== '' && !(Array.isArray(b[k]) && !b[k].length) && !(k === 'range' && (b[k] === 'SDR' || b[k] === 'HDR?') && a.range && a.range !== 'SDR')) o[k] = b[k];
+    return o;
   }
 
   /* Before the first frame each pipeline gets one try: built-in demuxer (ts), the TV player
@@ -250,24 +317,76 @@ var Player = (function () {
   }
   function giveUp(myToken) {
     if (myToken !== token) return;
+    // A live channel that has played here before is not a format problem: keep it coming back.
+    if (cur.live && !cur.timeshift && cur.everPlayed) { cur.tried = null; return reconnect(myToken, 'Channel not responding, reconnecting'); }
     Log.error('player', 'No player could open this channel (tried ' + Object.keys(cur.tried || {}).join(', ') + ')  ' + (cur.origUrl || cur.url));
     teardown();
-    state('error', 'This channel will not play on this TV.  It may use a format the TV cannot decode, or the provider may be having trouble with it.');
+    cur.failed = true;
+    if (cur.lastHttp) return state('error', 'The provider is not sending this ' + (isFile() ? 'video' : 'channel') + ' right now (error ' + cur.lastHttp + ').  Press OK to try again, or try ' + (isFile() ? 'again later.' : 'another channel.'));
+    state('error', isFile() ? 'This video will not play on this TV.  It may use a format the TV cannot decode.' : 'This channel will not play on this TV.  It may use a format the TV cannot decode, or the provider may be having trouble with it.');
+  }
+
+  /* After the reconnect budget is spent: another pipeline first (each gets half a budget), then
+     for a live channel that has played before, a slow retry every 15s for up to 20 minutes with
+     a message on screen.  Providers do come back, and a TV left on a channel should recover by
+     itself rather than sit on an error. */
+  var SLOW_EVERY = 15000, SLOW_FOR = 20 * 60000;
+  function lateEngine(failed) {
+    if (isFile() && !/\.m3u8(\?|$)/i.test(cur.origUrl || cur.url)) return null;   // a movie file has one pipeline
+    cur.late = cur.late || {};
+    cur.late[failed] = 1;
+    var isHlsUrl = /\.m3u8(\?|$)/i.test(cur.origUrl || cur.url);
+    var order = isHlsUrl ? ['hls', 'native'] : ['ts', 'native', 'hls'];
+    for (var i = 0; i < order.length; i++) {
+      var k = order[i];
+      if (cur.late[k] || (cur.tried && cur.tried[k])) continue;
+      if (k === 'ts' && !(window.mpegts && mse())) continue;
+      if (k === 'hls' && !(window.Hls && Hls.isSupported() && (isHlsUrl || hlsVariant(cur.origUrl || cur.url)))) continue;
+      return k;
+    }
+    return null;
   }
 
   function reconnect(myToken, why) {
     if (myToken !== token || !cur) return;
+    var now = Date.now();
+    // Movies and catch-up continue from where they got to, not from the start.
+    if (!cur.live && !cur.timeshift && cur.pos > 5) cur.startAt = cur.pos;
+    teardown();
+    clearTimeout(cur.timer);              // several error events for one failure = one reconnect
+    // No network: don't spend the budget.  Wait for it to come back, checking every few seconds.
+    if (navigator.onLine === false) {
+      Log.warn('player', 'Network is down; waiting for it before reconnecting');
+      cur.offline = true;
+      state('buffering', 'No network.  Waiting for it to come back');
+      cur.timer = setTimeout(function () { if (myToken === token && cur) { if (navigator.onLine === false) reconnect(myToken, why); else { cur.offline = false; start(myToken); } } }, 3000);
+      return;
+    }
+    cur.offline = false;
     cur.retries++;
     Log.warn('player', 'Reconnect ' + cur.retries + '/' + cur.p.retries + ': ' + why);
+    var delay;
     if (cur.retries > cur.p.retries) {
-      // Last resort: try the other pipeline once before giving up.
-      if (!cur.triedNative && st && st.kind !== 'native') { cur.triedNative = true; useEngine('native'); cur.retries = Math.floor(cur.p.retries / 2); }
-      else { Log.error('player', 'Gave up after ' + cur.p.retries + ' reconnects  ' + cur.url); teardown(); state('error', 'This channel stopped responding.  Try another channel, or switch the stream format in Settings.'); return; }
+      var alt = cur.slow ? null : lateEngine(st ? st.kind : '');
+      if (alt) {
+        Log.info('player', 'Still failing; trying the ' + ENGINE_NAMES[alt]);
+        useEngine(alt); cur.retries = Math.floor(cur.p.retries / 2);
+      } else if (cur.live && !cur.timeshift && cur.everPlayed && now - (cur.slowSince || now) < SLOW_FOR) {
+        if (!cur.slowSince) { cur.slowSince = now; Log.warn('player', 'Channel keeps failing; retrying every ' + SLOW_EVERY / 1000 + 's'); }
+        cur.slow = 'The channel stopped.  Still trying to get it back';
+        state('buffering', cur.slow);
+        cur.timer = setTimeout(function () { start(myToken); }, SLOW_EVERY);
+        return;
+      } else {
+        Log.error('player', 'Gave up after ' + cur.p.retries + ' reconnects' + (cur.slowSince ? ' and ' + Math.round((now - cur.slowSince) / 60000) + ' minutes of retrying' : '') + '  ' + cur.url);
+        state('error', isFile() ? 'This video stopped loading.  Press OK to try again.' : 'This channel stopped responding.  Press OK to try again, or try another channel.');
+        cur.failed = true;
+        return;
+      }
     }
     state('buffering', why);
-    teardown();
-    var delay = Math.min(8000, 300 * Math.pow(2, cur.retries - 1));
-    clearTimeout(cur.timer);              // several error events for one failure = one reconnect
+    // Exponential backoff with jitter, so a TV and its neighbours don't all hit the provider at once.
+    delay = Math.min(8000, 300 * Math.pow(2, Math.max(0, cur.retries - 1))) * (0.8 + Math.random() * 0.4);
     cur.timer = setTimeout(function () { start(myToken); }, delay);
   }
 
@@ -275,6 +394,7 @@ var Player = (function () {
     if (myToken !== token || !st || !video) return;
     var now = Date.now(), ahead = bufferedAhead(), t = video.currentTime;
     var p = cur.p;
+    if (st.started && video.readyState > 0 && !video.seeking) cur.pos = t;
     emit('stats', lastStats = { ahead: ahead, target: st.started ? p.refill : p.prebuffer, engine: eng ? eng.name : '', info: eng ? eng.info() : '',
       res: video.videoHeight ? video.videoHeight + 'p' : '', state: st.state });
 
@@ -285,11 +405,16 @@ var Player = (function () {
       var bf = video.buffered, first = bf.length ? bf.start(0) : 0;
       if (bf.length && video.currentTime < first) ahead = bf.end(0) - first;
       var ready = video.readyState >= 2 && (ahead >= p.prebuffer || now - st.at > 4000 + p.prebuffer * 1000);
+      // A movie resuming part way through: the TV player buffers at the new spot after the seek.
+      if (cur.startAt && isFile() && video.readyState >= 1) ready = true;
       if (ready) {
         st.started = true; st.lastMove = now;
+        if (cur.slow) { Log.info('player', 'Channel is back after ' + Math.round((now - cur.slowSince) / 1000) + 's'); notice('Back on air'); }
+        cur.slow = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0;
         Log.info('player', 'Playing after ' + (now - st.at) + 'ms with ' + ahead.toFixed(1) + 's buffered' + (ahead < p.prebuffer ? ' (prebuffer timed out)' : '') + (video.videoHeight ? ', ' + video.videoWidth + 'x' + video.videoHeight : ''));
         if (bf.length && video.currentTime < first && !cur.startAt) { try { video.currentTime = first + 0.05; } catch (e) {} }
-        if (cur.startAt && !cur.live) { try { video.currentTime = cur.startAt; } catch (e) {} cur.startAt = 0; }
+        if (cur.startAt && !cur.live) { try { video.currentTime = cur.startAt; } catch (e) {} cur.pos = cur.startAt; cur.startAt = 0; }
+        if (st.userPaused) return;
         var pr = video.play();
         if (pr && pr.catch) pr.catch(function () {});
       } else if (now - st.at > 15000 + p.prebuffer * 1000) {
@@ -299,10 +424,26 @@ var Player = (function () {
       return;
     }
 
+    // Seeking a movie: the TV player is fetching the new spot, which is not a stall.
+    if (video.seeking) {
+      if (!st.seekSince) st.seekSince = now;
+      if (now - st.seekSince < 15000) { st.lastMove = now; return; }
+    } else st.seekSince = 0;
+
+    // Live TV paused longer than the buffer can hold: let the connection go rather than have it
+    // time out or overflow, and come back at the live edge on play.
+    if (st.userPaused && cur.live && !cur.timeshift && !st.parked && now - st.pausedAt > Math.max(30, p.ahead) * 1000) {
+      Log.info('player', 'Live TV paused for ' + Math.round((now - st.pausedAt) / 1000) + 's; closing the stream until play');
+      st.parked = true;
+      teardown();
+      return;
+    }
+
     // 2. Refill goal: once dry, stay paused until there's a real cushion.
     if (st.refilling) {
       if (ahead >= p.refill || now - st.refillSince > 6000 + p.refill * 1000) {
         st.refilling = false; st.lastMove = now;
+        if (eng && eng.edge && cur.live && !cur.timeshift) eng.edge();
         var pr2 = video.play(); if (pr2 && pr2.catch) pr2.catch(function () {});
         state('playing');
       } else if (now - st.refillSince > p.stall * 1000 && ahead < 0.2) {
@@ -313,13 +454,18 @@ var Player = (function () {
     }
 
     if (st.pendingReconnect && ahead < Math.max(2, p.prebuffer)) { st.pendingReconnect = false; reconnect(myToken, 'Reconnecting'); return; }
-    if (!cur.live && !cur.timeshift && video.ended) { clearInterval(wd); wd = 0; state('ended'); return; }
+    if (isFile() && video.ended) {
+      // The TV player sometimes reports "ended" when the connection drops mid-film.
+      var d = video.duration;
+      if (isFinite(d) && d > 120 && t < d - 30) { Log.warn('player', 'Video ended at ' + Math.round(t) + 's of ' + Math.round(d) + 's; treating it as a dropped connection'); cur.pos = t; reconnect(myToken, 'Connection dropped, reconnecting'); return; }
+      clearInterval(wd); wd = 0; state('ended'); return;
+    }
     if (t !== st.lastT && !video.paused) {
       st.lastT = t; st.lastMove = now;
       if (st.state !== 'playing') state('playing');
       if (!st.healthySince) st.healthySince = now;
       // 30s of clean playback earns the retry budget back.
-      if (now - st.healthySince > 30000 && cur.retries) { cur.retries = 0; cur.triedNative = false; }
+      if (now - st.healthySince > 30000 && (cur.retries || cur.slowSince)) { cur.retries = 0; cur.triedNative = false; cur.slowSince = 0; cur.late = null; }
       return;
     }
     if (video.paused && !st.refilling) {
@@ -328,7 +474,7 @@ var Player = (function () {
         st.kicked = now;
         var pk = video.play(); if (pk && pk.catch) pk.catch(function () {});
       }
-      if (st.userPaused) return;
+      if (st.userPaused) { st.lastMove = now; return; }
     }
 
     var stuck = now - st.lastMove;
@@ -362,7 +508,7 @@ var Player = (function () {
     video.removeAttribute('muted');
     video.addEventListener('error', function () {
       // MSE engines report their own errors; this listener is for the native pipeline.
-      if (!cur || !st || st.kind !== 'native' || !video.error) return;
+      if (!cur || !st || st.kind !== 'native' || !video.error || !video.getAttribute('src')) return;
       Log.warn('player', 'TV player error code ' + video.error.code + (video.error.message ? ': ' + video.error.message : '') + '  ' + cur.url);
       var my = token;
       if (st.kind === 'native' && !st.started) {
@@ -374,9 +520,21 @@ var Player = (function () {
       }
       reconnect(my, 'Playback error, reconnecting');
     });
+    // The network coming back is the best moment to retry: don't wait out a backoff timer, and
+    // pick a channel that gave up back up by itself.
+    window.addEventListener('online', function () {
+      if (!cur) return;
+      if (cur.offline || cur.failed || cur.slow) {
+        Log.info('player', 'Network is back; reconnecting now');
+        cur.offline = false; cur.failed = false; cur.retries = 0; cur.slowSince = 0; cur.slow = '';
+        start(token);
+      }
+    });
+    window.addEventListener('offline', function () { if (cur) Log.warn('player', 'Network went down'); });
   }
 
-  // opts: preview, url (override: catch-up / VOD), live (default true), startAt (seconds, VOD resume)
+  // opts: preview, url (override: catch-up / VOD), live (default true), startAt (seconds, VOD resume),
+  //       media (codec facts known up front, Caps shape), urlFn (catch-up: a new URL per connect)
   function play(ch, opts) {
     opts = opts || {};
     token++;
@@ -384,7 +542,8 @@ var Player = (function () {
     var fmt = Store.settings.format;
     cur = { ch: ch, url: opts.url || Source.streamUrl(ch, fmt), p: cfg(opts.preview), preview: !!opts.preview, retries: 0,
       forceNative: false, triedNative: false, live: opts.live !== false, startAt: opts.startAt || 0, meta: opts.meta || null,
-      timeshift: !!opts.timeshift, urlFn: opts.urlFn || null };
+      timeshift: !!opts.timeshift, urlFn: opts.urlFn || null, pos: opts.startAt || 0,
+      media: opts.media || (opts.meta && opts.meta.media) || null, opts: opts };
     applyDisplay();
     if (video) video.playbackRate = 1;
     start(token);
@@ -392,30 +551,85 @@ var Player = (function () {
   // Picture size: this channel's own choice if it has one, otherwise the global setting.
   function displayFor(ch) { var d = ch && Store.edits.display && Store.edits.display[ch.k]; return d || Store.settings.display || 'contain'; }
   function applyDisplay() { if (video) video.style.objectFit = displayFor(cur && cur.ch); }
-  function seek(delta) {
+  function playing() { return !!(st && st.started && video && video.readyState > 0); }
+  function seekTo(t) {
     if (!video || !cur || cur.live) return;
     var d = video.duration;
-    var t = video.currentTime + delta;
-    if (isFinite(d)) t = U.clamp(t, 0, Math.max(0, d - 2));
-    video.currentTime = Math.max(0, t);
+    if (isFinite(d) && d > 0) t = U.clamp(t, 0, Math.max(0, d - 2));
+    t = Math.max(0, t);
+    cur.pos = t;
+    if (!playing()) { cur.startAt = t; return; }        // reconnecting: the new connection starts there
+    if (st) st.lastMove = Date.now();
+    video.currentTime = t;
   }
+  function seek(delta) { if (cur && !cur.live) seekTo(position() + delta); }
   // Same channel, new mode (preview -> fullscreen): keep the stream, just widen the policy.
   function upgrade(preview) {
     if (!cur) return;
     cur.preview = preview;
     cur.p = cfg(preview);
   }
-  function stop() { token++; if (cur) clearTimeout(cur.timer); cur = null; teardown(); state('idle'); }
-  function togglePause() {
-    if (!video || !st) return;
-    if (video.paused) { st.userPaused = false; st.lastMove = Date.now(); var r = video.play(); if (r && r.catch) r.catch(function () {}); }
-    else { st.userPaused = true; video.pause(); }
+  function stop() { token++; if (cur) clearTimeout(cur.timer); cur = null; held = null; teardown(); state('idle'); }
+
+  function setPaused(want) {
+    if (!video || !st || !cur) return;
+    cur.userPaused = want;
+    if (!want) {
+      st.userPaused = false; st.lastMove = Date.now();
+      if (st.parked) {
+        // Paused live TV whose connection was let go: back to the live edge.
+        cur.retries = 0;
+        notice('Back to live');
+        start(token);
+        return;
+      }
+      var r = video.play(); if (r && r.catch) r.catch(function () {});
+    } else {
+      st.userPaused = true; st.pausedAt = Date.now();
+      video.pause();
+    }
   }
-  function retryNow() { if (cur) { cur.retries = 0; cur.triedNative = false; start(token); } }
+  function togglePause() { if (video && st) setPaused(!st.userPaused); }
+  // A fresh go from the top: every pipeline gets another chance.
+  function retryNow() {
+    if (!cur) return;
+    if (cur.origUrl) cur.url = cur.origUrl;
+    cur.retries = 0; cur.triedNative = false; cur.failed = false; cur.slowSince = 0; cur.slow = '';
+    cur.tried = null; cur.late = null; cur.forceKind = null; cur.forceNative = false; cur.routed = false; cur.httpFails = 0; cur.lastHttp = 0;
+    start(token);
+  }
+
+  /* The app going to the background (Home, another input): let the stream go so the decoder and
+     the provider connection are free, and pick up where it was on return. */
+  var held = null;
+  function suspend() {
+    if (!cur) return false;
+    held = cur;
+    held.pos = position();
+    token++;
+    clearTimeout(cur.timer);
+    teardown();
+    Log.info('player', 'App hidden; stream closed' + (isFile() ? ' at ' + Math.round(held.pos) + 's' : ''));
+    return true;
+  }
+  function resume() {
+    if (!held || cur !== held) { held = null; return false; }
+    held = null;
+    if (!cur.live && !cur.timeshift && cur.pos > 5) cur.startAt = cur.pos;
+    cur.retries = 0; cur.failed = false; cur.slowSince = 0; cur.slow = '';
+    if (st) st.parked = false;
+    token++;
+    start(token);
+    return true;
+  }
+  function position() {
+    if (playing()) return video.seeking && cur && cur.pos != null ? cur.pos : video.currentTime;
+    return cur ? cur.pos || 0 : 0;
+  }
 
   return {
-    PRESETS: PRESETS, bind: bind, play: play, stop: stop, upgrade: upgrade, togglePause: togglePause, retryNow: retryNow, on: on,
-    seek: seek, applyDisplay: applyDisplay,
+    PRESETS: PRESETS, bind: bind, play: play, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, on: on,
+    seek: seek, seekTo: seekTo, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; },
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },
     qualityAuto: function () { return !!(eng && eng.auto && eng.auto()); },
@@ -428,9 +642,14 @@ var Player = (function () {
     get current() { return cur && cur.ch; },
     get live() { return !cur || cur.live; },
     get meta() { return cur && cur.meta; },
-    get position() { return video ? video.currentTime : 0; },
+    // What the stream is: "4K  HEVC  Dolby Vision 8  E-AC-3 5.1", once known.
+    get media() { return cur && cur.media ? Caps.label(cur.media) : ''; },
+    get mediaInfo() { return cur && cur.media; },
+    get engine() { return st ? ENGINE_NAMES[st.kind] || st.kind : ''; },
+    get position() { return position(); },
     get duration() { return video && isFinite(video.duration) ? video.duration : 0; },
     get paused() { return !video || video.paused; },
+    get userPaused() { return !!(st && st.userPaused); },
     get playing() { return !!(st && st.state === 'playing'); }
   };
 })();

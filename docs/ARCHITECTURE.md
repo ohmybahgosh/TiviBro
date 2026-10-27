@@ -14,7 +14,8 @@ Plain scripts loaded in order by `app/index.html` (no modules, no bundler: webOS
 | library.js | `Library` | Provider data + user overlays (hide, rename, custom groups, favorites, sorting) |
 | parental.js | `Parental` | 4-digit PIN for channels/groups/settings |
 | epg.js | `Epg` | XMLTV per playlist (worker parsed), short EPG fallback, name matching, assignment |
-| player.js | `Player` | mpegts.js / hls.js / TV player engines, buffer profiles, watchdog, reconnect |
+| caps.js | `Caps` | What the TV decodes (MSE vs TV player, plus known LG rules such as no DTS on 2020-2022 models), stream descriptions from HLS / mpegts.js / Xtream, and pipeline routing for HDR, Dolby Vision and codecs |
+| player.js | `Player` | mpegts.js / hls.js / TV player engines, buffer profiles, watchdog, reconnect ladder (backoff with jitter, offline wait, other pipelines, slow retry), resume, live pause, suspend/resume |
 | vlist.js | `VList` | Virtual list with pooled rows |
 | ui.js | `UI` | Key routing, long-press, modal menus, prompts |
 | views.js | `Views` | Live list, fullscreen + OSD, guide grid, menus |

@@ -130,7 +130,30 @@ var U = (function () {
     var e = /^\s/.test(v) ? ', starts with space' : ''; e += /\s$/.test(v) ? ', ends with space' : '';
     return v.length + ' chars: ' + k.join(', ') + e;
   }
+  // Colours: an accent from hue (0-359) and lightness (%), and which text colour reads on it.
+  function hsl(h, l, sat) {
+    var S = (sat == null ? 85 : sat) / 100, L = l / 100, a = S * Math.min(L, 1 - L);
+    var f = function (n) { var k = (n + h / 30) % 12, c = L - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); return ('0' + Math.round(c * 255).toString(16)).slice(-2); };
+    return '#' + f(0) + f(8) + f(4);
+  }
+  function luminance(hex) {
+    var m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex || ''); if (!m) return 0.5;
+    var x = m[1].length === 3 ? m[1].replace(/./g, '$&$&') : m[1];
+    var ch = [0, 2, 4].map(function (i) { var c = parseInt(x.substr(i, 2), 16) / 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); });
+    return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
+  }
+  // Dark text on light accents, white on dark ones: whichever has more contrast.
+  function onColor(hex) {
+    var L = luminance(hex), dark = (L + 0.05) / (0.0047 + 0.05), light = 1.05 / (L + 0.05);
+    return dark >= light ? { fg: '#0b0e1a', dim: 'rgba(11,14,26,.7)' } : { fg: '#ffffff', dim: 'rgba(255,255,255,.78)' };
+  }
+  function mix(a, b, t) {
+    var h = function (x) { x = x.replace('#', ''); if (x.length === 3) x = x.replace(/./g, '$&$&'); return [0, 2, 4].map(function (i) { return parseInt(x.substr(i, 2), 16); }); };
+    var A = h(a), B = h(b);
+    return '#' + A.map(function (v, i) { return ('0' + Math.round(v + (B[i] - v) * t).toString(16)).slice(-2); }).join('');
+  }
   return {
+    hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
     secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, hash: hash,
     b64utf8: b64utf8, request: request, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad };
 })();

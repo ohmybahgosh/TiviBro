@@ -6,7 +6,7 @@ Channels marked **↺** keep recent programmes on your provider's servers.
 
 1. In the guide, press **⏪** (or **◀** past "now") to go back in time.
 2. **OK** on a past programme replays it from the start.  **Hold OK** for more choices, including **Earlier programmes…** for a list by day.
-3. While replaying: **◀ ▶** skip 30 seconds, **▲ ▼** skip 5 minutes, **⏪ ⏩** jump further, **▶ Play** pauses, and **Yellow** or **Back** returns to live.
+3. While replaying: **◀ ▶** skip 30 seconds (keep pressing and each press jumps further), **▲ ▼** skip 5 minutes, **⏪ ⏩** jump further, **❙❙** pauses, and **Yellow** or **Back** returns to live.
 
 From live TV, **From start** in the quick menu restarts the current programme.  Step sizes are under **Settings > Playback and buffering > Catch-up, movies and shows**.
 
