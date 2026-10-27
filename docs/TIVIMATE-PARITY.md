@@ -60,7 +60,7 @@ Legend: **Have** = already in TiviBro.  **Added** = added in this pass.  **Later
 | Show newly added groups | **Added:** "Groups your provider adds later: show / hide" |
 | Show channels from hidden groups | **Added:** "All channels includes hidden groups" |
 | Hide / block channel and group, Manage visibility | Have |
-| Copy channels / create group | Have |
+| Copy channels / create group | Have.  The web editor can also copy or move channels into provider groups |
 | Channels sorting / Groups sorting | Have |
 | Reorder channels manually inside provider groups | Later |
 | Recent channels, count | Have |
@@ -70,8 +70,8 @@ Legend: **Have** = already in TiviBro.  **Added** = added in this pass.  **Later
 ## Appearance
 | TiviMate | TiviBro |
 |---|---|
-| Accent / selection color | Have |
-| Color theme / background color | **Added:** Dark blue, Black (OLED), Slate |
+| Accent / selection color | Have: Electric blue, Cyan, Violet, Mint, Teal, Amber, Ember, Red, White |
+| Color theme / background color | **Added:** Midnight (default), Black (OLED), Slate, Classic (1.0) |
 | Font size | **Added:** Text size |
 | User interface transparency | **Added:** Panels over video (solid / normal / see-through) |
 | Clock, show date on clock | Have.  **Added:** date |
@@ -106,7 +106,7 @@ Legend: **Have** = already in TiviBro.  **Added** = added in this pass.  **Later
 | Xtream Codes / M3U, several playlists | Have |
 | User-Agent | **Added:** per playlist, sent by the network helper |
 | Max connections, expiration date | Have |
-| Back up / restore data | Later (on the roadmap) |
+| Back up / restore data | Have: full backup locked with a passphrase, made and restored in the web editor (Settings > Edit on a computer) |
 | "All playlists" category | Later |
 | Stalker Portal | Later (deferred) |
 | UDP proxy, SMB, local playlist files | No |
