@@ -4,7 +4,7 @@ var Settings = (function () {
   var $ = U.$, S = function () { return Store.settings; }, L = Library;
   var nav = $('setNav'), body = $('setBody');
   var SECTIONS = [['playback', 'Playback and buffering'], ['remote', 'Remote control'], ['playlists', 'Playlists and guide'],
-    ['groups', 'Groups, sorting, hidden'], ['reminders', 'Guide, start screen, reminders'], ['look', 'Appearance'], ['parental', 'Parental controls'], ['editor', 'Edit on a computer'], ['diag', 'Diagnostics']];
+    ['groups', 'Groups, sorting, hidden'], ['reminders', 'Guide, start screen, reminders'], ['look', 'Appearance'], ['parental', 'Parental controls'], ['editor', 'Edit on a computer'], ['updates', 'Updates and about'], ['diag', 'Diagnostics']];
   var sec = 0, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
   var stack = [];               // sub-pages: [{ title, fn, sel }]
 
@@ -506,7 +506,43 @@ var Settings = (function () {
     return out;
   }
 
-  var FNS = [playback, remote, playlists, groups, reminders, look, parental, editor, diag];
+  /* ---------- updates and about ---------- */
+  var lastUpd = '';
+  Update.onChange(function (st) {
+    if (Views.tab !== 'settings' || SECTIONS[sec][0] !== 'updates' || stack.length) return;
+    var k = st.state + '|' + st.installer;
+    if (k !== lastUpd) { lastUpd = k; build(); } else paint();
+  });
+  function updates() {
+    var s = S(), out = [], st = Update.state, r = st.latest, cur = Update.current;
+    Update.installer();          // finds out once whether this TV can install by itself
+    out.push(info('TiviBro', cur + (Update.isPre(cur) ? '   (test version)' : '')));
+    var stat = info('Status', ''); stat.value = function () { return Update.describe(); }; out.push(stat);
+    if (st.state !== 'installing' && st.state !== 'installed') out.push(action('Check for updates', 'Looks for a newer release on GitHub.', function () { Update.check(false); }));
+    if ((st.state === 'available' || st.state === 'installing') && r) {
+      out.push(head('TiviBro ' + r.version + (r.pre ? '  (test version)' : '')));
+      out.push(info('Released', (r.published ? when(Date.parse(r.published)) : '') + (r.size ? '   ' + (r.size / 1048576).toFixed(1) + ' MB' : '')));
+      if (st.state === 'available') {
+        if (st.installer === 'hbchannel') out.push(action('Install ' + r.version + ' now', 'Downloads it, checks its fingerprint and installs it through the Homebrew Channel.  TiviBro then restarts by itself, with all your settings.', function () {
+          UI.confirm('Install TiviBro ' + r.version + '?', 'Install and restart', function () { Update.install().catch(function (e) { U.toast(e.message, 6000); }); });
+        }));
+        else if (st.installer === '') out.push(info('Install it from a computer or the Homebrew Channel', 'This TV can\'t install updates by itself (that needs a rooted TV with the Homebrew Channel).  The release page has the IPK and instructions: github.com/' + Update.REPO + '/releases'));
+      }
+      out.push(page('What\'s new', '', 'What\'s new in ' + r.version, function () {
+        return (r.notes && r.notes.length ? r.notes : ['No notes for this release.']).map(function (n) { return info(n, ''); });
+      }));
+    }
+    out.push(head('Options'));
+    out.push(toggle('Check automatically', 'Once a day when TiviBro starts.  Nothing is installed without asking you.', function () { return s.updateAuto !== false; }, function (v) { s.updateAuto = v; save(); }));
+    out.push(toggle('Include test versions', 'Alpha and beta builds: new features first, and some rough edges.', function () { return Update.wantPre; }, function (v) { s.updatePre = v; save(); }));
+    var how = info('Installing on this TV', ''); how.value = function () { var i = Update.state.installer; return i === 'hbchannel' ? 'Yes, through the Homebrew Channel' : i === '' ? 'From a computer only (not rooted)' : 'Checking…'; }; out.push(how);
+    out.push(head('About'));
+    out.push(info('Made by OhMyBahGosh', 'github.com/' + Update.REPO));
+    out.push(info('Playback libraries', 'hls.js ' + (window.Hls ? Hls.version : '') + '   mpegts.js'));
+    return out;
+  }
+
+  var FNS = [playback, remote, playlists, groups, reminders, look, parental, editor, updates, diag];
   function build() {
     var top = stack[stack.length - 1];
     items = top ? [head(stack.map(function (x) { return x.title; }).join('  ›  '))].concat(top.fn()) : FNS[sec]();

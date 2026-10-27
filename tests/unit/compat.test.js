@@ -96,8 +96,10 @@ Promise.resolve(5).finally(() => order.push('f')).then(v => order.push(v))
     const all = files('app/js').concat(files('service')).map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
     Object.keys(needs).forEach(k => { if (all.indexOf(k) >= 0) ok('requiredACG has ' + needs[k] + ' (for ' + k.replace(/\.$/, '') + ')', (info.requiredACG || []).indexOf(needs[k]) >= 0); });
     const luna = all.match(/luna:\/\/[\w.]+/g) || [];
-    const known = ['luna://com.webos.service.tv.systemproperty', 'luna://' + info.id + '.service'];
-    luna.forEach(u => ok('Luna call has a known ACG: ' + u, known.indexOf(u) >= 0));
+    // org.webosbrew.hbchannel.service (in-app updates) only exists on rooted TVs and has no ACG group;
+    // update.js treats a refused call as "can't install from the TV".
+    const known = ['luna://com.webos.service.tv.systemproperty', 'luna://' + info.id + '.service', 'luna://org.webosbrew.hbchannel'];
+    luna.forEach(u => ok('Luna call has a known ACG: ' + u, known.some(k => u.indexOf(k) === 0)));
 
     console.log(fail ? fail + ' failures' : 'all compatibility tests passed');
     process.exit(fail ? 1 : 0);

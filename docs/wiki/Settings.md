@@ -14,6 +14,7 @@
 | **Appearance** | Accent color (twelve presets or your own from a hue and brightness), background (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), focus style (add a white outline to whatever is selected), text size, panel transparency, logos, clock, channel numbers |
 | **Parental controls** | PIN, what it protects, blocked groups and channels |
 | **Edit on a computer** | The web editor switch, its address and password |
+| **Updates and about** | Your version, check for updates, install an update (rooted TVs), what's new, automatic checks, test versions |
 | **Diagnostics** | Connection test, app and helper logs, detailed logging, what this TV can play, what's playing now, status |
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/settings.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/settings.gif" width="100%" alt="Settings and appearance"></a></p>
@@ -29,4 +30,4 @@
 
 ---
 
-← [Reminders](Reminders)  ·  [Home](Home)  ·  [Parental controls](Parental-controls) →
+← [Reminders](Reminders)  ·  [Home](Home)  ·  [Updates](Updates) →

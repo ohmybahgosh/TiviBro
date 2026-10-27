@@ -24,6 +24,7 @@ TiviBro is built and tested first on **webOS TV 25**, and runs the same code on 
 - **Zipped guides on every TV.**  Guide downloads go through the helper with the `/unz/<id>` prefix, and `service/unzip.js` unzips them with Node's zlib: `.gz` files, `Content-Encoding: gzip` or `deflate`, gzip sent without a label, and files zipped twice.  `/xfer/<id>` reports the zipped bytes so progress stays accurate.  With Network set to Direct, the app falls back to `DecompressionStream` (Chromium 80, webOS 22 and later).
 - **`service/compat.js`** fills in `Object.assign`, `Buffer.from` and `crypto.timingSafeEqual` on Node versions that lack them.  `proxy.js` and `editor.js` load it first.
 - **Codecs per TV.**  `app/js/caps.js` asks the TV what it decodes and applies known LG rules (for example no DTS on 2020 to 2022 models), then routes each stream to the player that can play it.
+- **In-app updates** call `luna://org.webosbrew.hbchannel.service/install`, which exists only on rooted TVs with the Homebrew Channel and has no ACG group.  When the call is missing or refused, the app says it can't install by itself and points to the release page.
 - **Access Control Groups.**  `appinfo.json` lists every Luna permission the app and its helper use: `systemconfig.query` (TV model and webOS version, `caps.js`) and `activity.operation` (keeps the helper running, `service.js`).  webOS 25 and older ignore the list; 26 checks it when present, and 27 requires it.
 
 ## Checked on every test run

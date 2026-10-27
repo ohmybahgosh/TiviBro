@@ -297,6 +297,7 @@ var App = (function () {
     Caps.loadSystemInfo();
     Net.start(6000).then(function () {
       WebEdit.resume();
+      Update.autoCheck();
       if (!Store.settings.playlists.length) return setup();
       open(Store.playlist);
     });

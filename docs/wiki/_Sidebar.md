@@ -16,6 +16,7 @@
 - [Favorites, hiding and your own groups](Favorites-hiding-and-your-own-groups)
 - [Reminders](Reminders)
 - [Settings](Settings)
+- [Updates](Updates)
 - [Parental controls](Parental-controls)
 
 **Web editor**

@@ -6,4 +6,4 @@ Set a PIN under **Settings > Parental controls**, then **Hold OK** on any channe
 
 ---
 
-← [Settings](Settings)  ·  [Home](Home)  ·  [Turning on the web editor](Turning-on-the-web-editor) →
+← [Updates](Updates)  ·  [Home](Home)  ·  [Turning on the web editor](Turning-on-the-web-editor) →

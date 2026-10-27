@@ -233,6 +233,7 @@ Many webOS TVs can decode only two streams at once, and some providers limit con
 | **Appearance** | Accent color (twelve presets or your own from a hue and brightness), background (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), focus style (add a white outline to whatever is selected), text size, panel transparency, logos, clock, channel numbers |
 | **Parental controls** | PIN, what it protects, blocked groups and channels |
 | **Edit on a computer** | The web editor switch, its address and password |
+| **Updates and about** | Your version, check for updates, install an update (rooted TVs), what's new, automatic checks, test versions |
 | **Diagnostics** | Connection test, app and helper logs, detailed logging, what this TV can play, what's playing now, status |
 
 <p align="center"><a href="media/settings.mp4"><img src="media/settings.gif" width="100%" alt="Settings and appearance"></a></p>
@@ -245,6 +246,15 @@ Many webOS TVs can decode only two streams at once, and some providers limit con
   <a href="screenshots/tv-settings-look.png"><img src="screenshots/tv-settings-look.png" width="49%" alt="Appearance"></a>
 </p>
 </details>
+
+### Updates
+
+**Settings > Updates and about** shows your version and checks GitHub for a newer one.  TiviBro also checks by itself once a day and shows a short note when there is an update; nothing is installed without you.
+
+- **Install** (rooted TVs with the Homebrew Channel): downloads the new version, checks its fingerprint, installs it, and restarts TiviBro with all your settings.
+- **What's new** lists the changes in that version.
+- **Include test versions** also offers alpha and beta builds.  It is on when you are running one.
+- On TVs that aren't rooted, the page tells you the new version is out; install it from a computer as before.
 
 ### Parental controls
 

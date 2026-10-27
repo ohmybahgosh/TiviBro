@@ -2,11 +2,17 @@
 
 ## Unreleased
 
-## 0.6.0 (alpha 3, 2026-10-27)
+## 0.6.0 (alpha 4, 2026-10-27)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 3
+### New in alpha 4
+
+- Updates from the TV.  New **Settings > Updates and about** (`app/js/update.js`): shows the version, checks GitHub releases (once a day by itself, or on demand), lists what's new, and on rooted TVs with the Homebrew Channel installs the update through `luna://org.webosbrew.hbchannel.service/install` with the SHA-256 from the release manifest, then restarts into the new version.  "Include test versions" offers alpha and beta builds (on by default when running one).  Other TVs see the update and how to install it.  Tests: `tests/unit/update.test.js`.
+- One-line installer for rooted TVs: `scripts/tv/install.sh`, published with every release as `install.sh`.  `curl -fsSL …/releases/latest/download/install.sh | sh` downloads the newest release, checks its SHA-256 against the manifest, installs it with the TV's installer and starts TiviBro; `--pre`, `--tag`, `--ipk`, `--sha256`, `--no-launch`.  POSIX sh for BusyBox, ES5 node for webOS 4.  Tests: `tests/unit/tv-install.test.js` (fake GitHub and installer).
+- Release builds stamp the full version (for example `0.6.0-alpha.4`) into the app, so updates compare test versions correctly; `appinfo.json` stays `X.Y.Z`.  Release notes include the one-line install command.
+
+### In alpha 3
 
 - Zipped guides on every TV.  The network helper now unzips guide downloads (`service/unzip.js`, relay prefix `/unz/<id>`), so `.xml.gz` sources work on webOS 4, 5 and 6 too, where the browser has no `DecompressionStream`.  It also handles `Content-Encoding: gzip` and `deflate`, provider guides that are gzipped without saying so, and files zipped twice, and asks servers for compressed transfers.  Progress counts the zipped bytes (`/xfer/<id>`), so percent and time left stay right.  With Network set to Direct, older TVs get a clear message instead of a guide that silently fails.  Tests: `tests/unit/unzip.test.js`.
 
