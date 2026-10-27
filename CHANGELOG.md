@@ -1,6 +1,12 @@
 # Changelog
 
 ## Unreleased
+
+- README rebuilt around recordings of the real app: animated walkthroughs of the guide, zapping, catch-up, groups, movies and shows, search, multiview and settings, plus the web editor and a fresh-TV restore shown side by side with the TV.  Every image opens full size, with a full-quality MP4 beside each animation.
+- New [user guide](docs/USER-GUIDE.md) covering every remote button, screen and setting on the TV, every page of the web editor, backups and troubleshooting.
+- GitHub wiki pages in `docs/wiki/`, built from the user guide (`npm run wiki`) and published with `npm run wiki:publish`.
+- Demo tooling: a fictional Xtream provider with guide, catch-up, movies and shows (`tests/mock/mock_provider.js`), synthetic demo streams, and scripts that record and encode every clip and screenshot (`scripts/demo/`).
+- Movies and shows: the details panel no longer sits under the clock.
 - GitHub Actions: CI (lint, tests, test build) on every push and pull request, and a Release workflow on `vX.Y.Z` tags that builds the IPK, writes the Homebrew Channel manifest and `repo.json`, and publishes a GitHub release with notes from this file.  `npm run release` tags and pushes after checking everything locally.
 - Renamed to **TiviBro**.  App ID `app.tivibro.tv`, helper `app.tivibro.tv.service`, storage keys `tivibro.*`.  On a TV this installs as a new app; remove the old one after restoring your backup.
 - New logo: glossy blue "V" app icon (80 and 130 px), "tVb" splash screen, "tiviBro" wordmark on the first-run and loading screens and in the web editor, V mark in the side menu, editor favicon.  Cleaned artwork (speckles removed, light-background versions) lives in `logos/clean/`.

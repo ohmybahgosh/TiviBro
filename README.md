@@ -18,7 +18,18 @@
   <img alt="No bundler" src="https://img.shields.io/badge/plain-HTML%20%2F%20JS-141A2E?style=flat-square">
 </p>
 
----
+<p align="center">
+  <a href="#see-it-in-action">See it in action</a> ·
+  <a href="#the-web-editor">Web editor</a> ·
+  <a href="#gallery">Gallery</a> ·
+  <a href="#install">Install</a> ·
+  <a href="docs/USER-GUIDE.md"><b>User guide</b></a> ·
+  <a href="../../wiki">Wiki</a> ·
+  <a href="#develop">Develop</a>
+</p>
+
+<p align="center"><a href="docs/media/guide.mp4"><img src="docs/media/guide.gif" width="100%" alt="The TiviBro guide, preview and fullscreen"></a></p>
+<p align="center"><sub>The guide is home: browse, preview in the window, OK again for fullscreen.  <a href="docs/media/guide.mp4">Watch the full-quality MP4</a>.  Every picture here is clickable.</sub></p>
 
 TiviBro plays your own IPTV subscription (Xtream Codes or M3U with XMLTV) on LG webOS TVs.  The guide is the home screen, the Magic Remote works everywhere, and a companion web editor lets you clean up hundreds of groups from your computer instead of with a TV remote.
 
@@ -26,21 +37,122 @@ TiviBro plays your own IPTV subscription (Xtream Codes or M3U with XMLTV) on LG 
 
 > **Status: beta.**  Everything here runs in the webOS 25 Simulator and in desktop test harnesses.  Real-TV testing is under way, so expect rough edges.
 
-## Highlights
+## Why TiviBro
 
-### On the TV
+| | |
+|---|---|
+| 📺 **Guide first** | Live preview top left, details top right, groups one press away.  OK previews, OK again goes fullscreen, just like TiviMate. |
+| ⏪ **Catch-up done right** | Rewind the guide into the past and replay what you missed, or restart the show you just tuned into. |
+| 🎬 **Movies and shows** | Your provider's VOD with posters, seasons, episodes, My list and resume. |
+| 🧩 **Multiview** | Two channels side by side (four on TVs that can take it). |
+| 🖥️ **A real editor** | Hide, sort, rename, copy and match guides for hundreds of channels from any browser.  Drafts, undo and restore points. |
+| 🔒 **Locked backups** | Everything in one AES-256-GCM file.  Restore onto a brand-new TV straight from the first screen. |
+| 🎨 **Midnight Electric** | A dark, calm look with accent colours and backgrounds to choose from, including true black for OLED. |
+| 💸 **Free and open** | MIT licensed, no accounts, no ads, no tracking. |
 
-- **Guide-first home screen.**  A live preview sits top left with programme details top right.  OK previews a channel, OK again (or Play) goes fullscreen.  Group switching sits right beside the guide.
-- **TiviMate-style quick menu.**  OK during playback opens actions and recent channels; you pick which buttons it shows.
-- **Catch-up where your provider supports it,** with markers in the guide and on channels, plus restart-from-start and rewind.
-- **Smart playback.**  Engines are picked per stream (MPEG-TS, native, HLS) with automatic fallback, adaptive buffering, quality, speed, subtitles, picture size per channel, and multiview.
-- **Magic Remote everywhere.**  Point, click and scroll work on every screen, and a colour-button legend shows what each key does.
-- **Hours of TiviMate parity.**  A channel-name cleaner, custom groups, favorites, hide and restore, reminders, parental controls, a sleep timer, remote remapping and on-TV diagnostics.  See [`docs/TIVIMATE-PARITY.md`](docs/TIVIMATE-PARITY.md).
-- **Midnight Electric look,** with other backgrounds and accent colours to choose from.
+## See it in action
 
-### From your computer: the web editor
+<sub>All recordings use a made-up demo provider.  The pill in the top right shows which remote button was pressed.</sub>
 
-Turn on **Settings > Edit on a computer**.  The TV shows an address and a one-time password.  Open the address in any browser on your network.
+<table>
+<tr>
+<td width="58%"><a href="docs/media/zap.mp4"><img src="docs/media/zap.gif" width="100%" alt="Changing channels and the quick menu"></a><br><sub><a href="docs/media/zap.mp4">▶ MP4</a></sub></td>
+<td width="42%" valign="top">
+
+### Zap like cable TV
+
+**▲ ▼** or **CH +/−** to change channel, **▶** for programme info, **Yellow** for the last channel, **Green** for the guide over the video.
+
+**OK** opens the quick menu: channel list, start over, favorite, picture size, multiview, sleep timer, stream info, reconnect.  You choose which buttons it shows.
+
+</td>
+</tr>
+</table>
+<table>
+<tr>
+<td width="42%" valign="top">
+
+### Catch-up
+
+Press **⏪** in the guide to travel back in time.  Programmes marked **↺** replay from the start with one press.
+
+**Hold OK** on any programme for more: watch fullscreen, earlier programmes by day, reminders, channel options.
+
+</td>
+<td width="58%"><a href="docs/media/catchup.mp4"><img src="docs/media/catchup.gif" width="100%" alt="Replaying a programme with catch-up"></a><br><sub><a href="docs/media/catchup.mp4">▶ MP4</a></sub></td>
+</tr>
+</table>
+<table>
+<tr>
+<td width="58%"><a href="docs/media/groups.mp4"><img src="docs/media/groups.gif" width="100%" alt="Groups and the menu"></a><br><sub><a href="docs/media/groups.mp4">▶ MP4</a></sub></td>
+<td width="42%" valign="top">
+
+### Groups beside the guide
+
+Favorites and your own groups come first, then your provider's.  Moving through the list updates the guide behind it.
+
+**◀** once more opens the menu: Guide, Channels, Movies, Shows, Search, Settings.
+
+</td>
+</tr>
+</table>
+<table>
+<tr>
+<td width="42%" valign="top">
+
+### Movies and shows
+
+Categories, posters, ratings and plots.  Shows open into seasons and episodes, and TiviBro remembers where you stopped.
+
+</td>
+<td width="58%"><a href="docs/media/vod.mp4"><img src="docs/media/vod.gif" width="100%" alt="Movies and shows"></a><br><sub><a href="docs/media/vod.mp4">▶ MP4</a></sub></td>
+</tr>
+</table>
+<table>
+<tr>
+<td width="58%"><a href="docs/media/search.mp4"><img src="docs/media/search.gif" width="100%" alt="Search"></a><br><sub><a href="docs/media/search.mp4">▶ MP4</a></sub></td>
+<td width="42%" valign="top">
+
+### Search everything
+
+Channels, programmes now and later, catch-up, movies and shows, as you type.  OK watches, replays or sets a reminder.
+
+</td>
+</tr>
+</table>
+<table>
+<tr>
+<td width="42%" valign="top">
+
+### Multiview
+
+**Blue** puts a second channel beside the first.  The focused screen has the sound; **OK** takes it fullscreen.
+
+</td>
+<td width="58%"><a href="docs/media/multiview.mp4"><img src="docs/media/multiview.gif" width="100%" alt="Multiview"></a><br><sub><a href="docs/media/multiview.mp4">▶ MP4</a></sub></td>
+</tr>
+</table>
+<table>
+<tr>
+<td width="58%"><a href="docs/media/settings.mp4"><img src="docs/media/settings.gif" width="100%" alt="Settings and appearance"></a><br><sub><a href="docs/media/settings.mp4">▶ MP4</a></sub></td>
+<td width="42%" valign="top">
+
+### Make it yours
+
+Accent colours, four backgrounds (Midnight, Black OLED, Slate, Classic), text size, panel transparency, clock, logos and more, all live.
+
+Plus remote remapping, parental controls, reminders, buffering profiles and on-TV diagnostics.
+
+</td>
+</tr>
+</table>
+
+## The web editor
+
+Turn on **Settings > Edit on a computer**.  The TV shows an address and a password; open it in any browser on your network.  Changes are drafts until you press **Send to TV**, and the TV picks them up in seconds.
+
+<p align="center"><a href="docs/media/live-edit.mp4"><img src="docs/media/live-edit.gif" width="100%" alt="Hiding groups in the editor while the TV follows"></a></p>
+<p align="center"><sub>Switching off the UK, FR and DE groups on the computer, then sending: the TV's group list updates by itself.  <a href="docs/media/live-edit.mp4">MP4</a></sub></p>
 
 - **Drafts, undo and restore points.**  Nothing reaches the TV until you press **Send to TV**.  Every change can be undone, and the TV keeps restore points.
 - **Copy or move channels into any group,** including your provider's groups.  Each group can have its own sort order.
@@ -48,18 +160,77 @@ Turn on **Settings > Edit on a computer**.  The TV shows an address and a one-ti
 - **Smart match** finds the right guide channel for channels showing "No guide information".  You approve or decline each guess.
 - **Live guide download progress** on big XMLTV files: speed, percent and time left, on the computer and on the TV.
 - **Recommended free guide sources** by region, each with a one-click **Test**.
-- **Full, encrypted backups.**  Playlists, logins, groups, favorites and settings go into one file, locked with your passphrase (AES-256-GCM) before it leaves the TV.  Restore it onto a brand-new TV straight from the first-run screen.
+- **Logins never leave the TV.**  The editor only ever sees server names.
 
 <p align="center">
-  <img alt="Web editor overview" src="docs/screenshots/editor-overview.png" width="49%">
-  <img alt="Copy or move channels into any group" src="docs/screenshots/editor-copy-move.png" width="49%">
-  <img alt="Smart match for the guide" src="docs/screenshots/editor-smart-match.png" width="49%">
-  <img alt="Live guide download progress" src="docs/screenshots/editor-guide-progress.png" width="49%">
-  <img alt="Smart clean-up" src="docs/screenshots/editor-smart-cleanup.png" width="49%">
-  <img alt="Encrypted backups" src="docs/screenshots/editor-backup.png" width="49%">
+  <a href="docs/screenshots/editor-overview.png"><img src="docs/screenshots/editor-overview.png" width="49%" alt="Editor overview"></a>
+  <a href="docs/screenshots/editor-copy-move.png"><img src="docs/screenshots/editor-copy-move.png" width="49%" alt="Copy or move channels"></a>
+  <a href="docs/screenshots/editor-smart-match.png"><img src="docs/screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
+  <a href="docs/screenshots/editor-smart-cleanup.png"><img src="docs/screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
 </p>
 
-<sub>Screenshots use a made-up test playlist.</sub>
+### New TV?  Restore everything in a minute
+
+A backup holds every playlist with its login, your groups, favorites, names, guide matches and settings, locked with your passphrase (AES-256-GCM) before it leaves the TV.  On a brand-new install, choose **Set up or restore from a computer** on the very first screen:
+
+<p align="center"><a href="docs/media/restore.mp4"><img src="docs/media/restore.gif" width="100%" alt="Restoring a locked backup onto a brand-new TV"></a></p>
+<p align="center"><sub>Fresh install, password from the TV, drop the file, unlock, restore.  TiviBro restarts with everything back.  <a href="docs/media/restore.mp4">MP4</a></sub></p>
+
+## Gallery
+
+<sub>Click any screenshot to open it full size.</sub>
+
+<details open>
+<summary><b>Guide and live TV</b></summary>
+<p align="center">
+  <a href="docs/screenshots/tv-guide.png"><img src="docs/screenshots/tv-guide.png" width="32%" alt="Guide"></a>
+  <a href="docs/screenshots/tv-guide-preview.png"><img src="docs/screenshots/tv-guide-preview.png" width="32%" alt="Preview in the window"></a>
+  <a href="docs/screenshots/tv-groups.png"><img src="docs/screenshots/tv-groups.png" width="32%" alt="Groups beside the guide"></a>
+  <a href="docs/screenshots/tv-fullscreen.png"><img src="docs/screenshots/tv-fullscreen.png" width="32%" alt="Fullscreen with the info bar"></a>
+  <a href="docs/screenshots/tv-quick-menu.png"><img src="docs/screenshots/tv-quick-menu.png" width="32%" alt="Quick menu"></a>
+  <a href="docs/screenshots/tv-mini-guide.png"><img src="docs/screenshots/tv-mini-guide.png" width="32%" alt="Guide over the video"></a>
+</p>
+</details>
+
+<details>
+<summary><b>Catch-up, search and multiview</b></summary>
+<p align="center">
+  <a href="docs/screenshots/tv-catchup-guide.png"><img src="docs/screenshots/tv-catchup-guide.png" width="32%" alt="Past programmes in the guide"></a>
+  <a href="docs/screenshots/tv-hold-menu.png"><img src="docs/screenshots/tv-hold-menu.png" width="32%" alt="Programme options"></a>
+  <a href="docs/screenshots/tv-catchup-play.png"><img src="docs/screenshots/tv-catchup-play.png" width="32%" alt="Catch-up playing"></a>
+  <a href="docs/screenshots/tv-search.png"><img src="docs/screenshots/tv-search.png" width="32%" alt="Search"></a>
+  <a href="docs/screenshots/tv-multiview.png"><img src="docs/screenshots/tv-multiview.png" width="32%" alt="Multiview"></a>
+  <a href="docs/screenshots/tv-menu.png"><img src="docs/screenshots/tv-menu.png" width="32%" alt="Menu"></a>
+</p>
+</details>
+
+<details>
+<summary><b>Movies, shows and settings</b></summary>
+<p align="center">
+  <a href="docs/screenshots/tv-movies.png"><img src="docs/screenshots/tv-movies.png" width="32%" alt="Movies"></a>
+  <a href="docs/screenshots/tv-episodes.png"><img src="docs/screenshots/tv-episodes.png" width="32%" alt="Episodes"></a>
+  <a href="docs/screenshots/tv-settings.png"><img src="docs/screenshots/tv-settings.png" width="32%" alt="Settings"></a>
+  <a href="docs/screenshots/tv-settings-look.png"><img src="docs/screenshots/tv-settings-look.png" width="32%" alt="Appearance"></a>
+  <a href="docs/screenshots/tv-first-run.png"><img src="docs/screenshots/tv-first-run.png" width="32%" alt="First start"></a>
+  <a href="docs/screenshots/tv-first-run-remote.png"><img src="docs/screenshots/tv-first-run-remote.png" width="32%" alt="Set up from a computer"></a>
+</p>
+</details>
+
+<details>
+<summary><b>Web editor</b></summary>
+<p align="center">
+  <a href="docs/screenshots/editor-overview.png"><img src="docs/screenshots/editor-overview.png" width="49%" alt="Overview"></a>
+  <a href="docs/screenshots/editor-copy-move.png"><img src="docs/screenshots/editor-copy-move.png" width="49%" alt="Copy or move"></a>
+  <a href="docs/screenshots/editor-guide-progress.png"><img src="docs/screenshots/editor-guide-progress.png" width="49%" alt="Guide download progress"></a>
+  <a href="docs/screenshots/editor-smart-match.png"><img src="docs/screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
+  <a href="docs/screenshots/editor-smart-cleanup.png"><img src="docs/screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
+  <a href="docs/screenshots/editor-backup.png"><img src="docs/screenshots/editor-backup.png" width="49%" alt="Backup and restore"></a>
+</p>
+</details>
+
+## Help
+
+The **[user guide](docs/USER-GUIDE.md)** (also on the [wiki](../../wiki)) covers everything: every remote button, the guide, catch-up, movies and shows, multiview, every settings section, parental controls, each page of the web editor, backups, and troubleshooting.
 
 ## Install
 
@@ -113,6 +284,18 @@ docs/             Architecture, decisions, roadmap, simulator guide, TiviMate pa
 | `npm run lint` | Syntax-check every JS and JSON file |
 | `npm test` | Unit tests: name cleaner, relay, web editor (including encrypted backups), library |
 | `bash scripts/bump-version.sh X.Y.Z` | Set the version everywhere it appears |
+
+### Demo media
+
+Every GIF, video and TV screenshot in this README and the [user guide](docs/USER-GUIDE.md) is recorded from the real app against a made-up provider, so they can be refreshed after any UI change:
+
+```bash
+bash scripts/demo/make-media.sh          # once: synthetic demo streams (needs ffmpeg)
+node tests/mock/mock_provider.js &       # fictional Xtream provider on :8077
+npm run serve                            # app on :8078 plus the dev relay
+node scripts/demo/record.js              # record every scene (or name some: guide zap)
+bash scripts/demo/encode.sh              # GIFs and MP4s into docs/media/
+```
 
 ### Releasing
 

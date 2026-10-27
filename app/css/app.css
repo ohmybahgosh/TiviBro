@@ -227,7 +227,7 @@ body.dimpast .gp.past{color:var(--dim)}
 
 /* vod */
 .vod-items .row .poster{width:48px;height:68px;object-fit:cover;border-radius:4px;flex:none}
-.vod-info{color:var(--text)}
+.vod-info{color:var(--text);padding-top:44px}
 .vod-poster{width:240px;height:356px;object-fit:cover;border-radius:10px;float:right;margin:0 0 16px 24px}
 .vod-info h2{font-size:34px;margin-bottom:10px}
 .vod-meta{color:var(--muted);font-size:22px;margin-bottom:8px}

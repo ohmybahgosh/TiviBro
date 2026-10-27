@@ -17,7 +17,12 @@
     "test:relay": "node tests/unit/proxy.test.js",
     "version:bump": "bash scripts/bump-version.sh",
     "release": "bash scripts/release.sh",
-    "manifest": "node scripts/gen-manifest.js"
+    "manifest": "node scripts/gen-manifest.js",
+    "demo:provider": "node tests/mock/mock_provider.js",
+    "demo:record": "node scripts/demo/record.js",
+    "demo:encode": "bash scripts/demo/encode.sh",
+    "wiki": "node scripts/wiki/build.js",
+    "wiki:publish": "node scripts/wiki/build.js && bash scripts/wiki/publish.sh"
   },
   "devDependencies": {
     "@webos-tools/cli": "3.2.6"

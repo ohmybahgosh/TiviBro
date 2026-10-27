@@ -1,0 +1,1 @@
+<sub>TiviBro by [OhMyBahGosh](https://github.com/ohmybahgosh) · MIT licensed · Not affiliated with LG Electronics or TiviMate · Found a mistake?  [Open an issue](https://github.com/ohmybahgosh/TiviBro/issues).</sub>
