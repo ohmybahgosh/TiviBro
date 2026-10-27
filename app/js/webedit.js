@@ -66,7 +66,7 @@ var WebEdit = (function () {
       groups: d.groups.map(function (g) { return { id: g.id, name: g.name }; }),
       channels: d.channels.map(function (c) { return { k: c.k, n: c.n, g: c.g, num: c.num, logo: c.logo || '', arch: c.arch || 0, epg: Epg.epgId(c) || '', has: !!Epg.hasData(c) }; }),
       guide: { channels: gc.slice(0, 30000).map(function (x) { return [x[0], x[1]]; }), mode: p.providerEpg, sources: (p.epgSources || []).length, xml: !!Epg.xml, loading: !!Epg.loading, status: Epg.status ? { at: Epg.status.at } : null, nameMatch: !!p.nameMatch },
-      gz: typeof DecompressionStream !== 'undefined',
+      gz: Net.canUnzip,
       edits: editsOf(),
       names: p.names || null,
       appliedRev: appliedRev
@@ -215,11 +215,14 @@ var WebEdit = (function () {
       var url = clean(a.url);
       if (!/^https?:\/\//i.test(url)) throw new Error('Enter a full http:// or https:// address.');
       var t0 = Date.now();
-      return fetch(Net.wrap(url), { cache: 'no-store' }).then(function (r) {
+      // Through the helper the guide arrives unzipped, whatever its compression.
+      var viaHelper = Net.active;
+      return fetch(Net.wrap(url, viaHelper ? { unzip: 't' + Date.now().toString(36) } : null), { cache: 'no-store' }).then(function (r) {
         if (!r.ok) throw new Error('The server answered ' + r.status + '.  Check the address.');
-        var size = +r.headers.get('content-length') || 0, gz = /\.gz($|\?)/.test(url);
-        if (gz && typeof DecompressionStream === 'undefined') { try { r.body.cancel(); } catch (e) {} return { msg: 'Reachable, but this TV cannot unzip .gz guides.  Use the plain .xml address if there is one.', data: { ok: true, size: size, gz: true, noGz: true } }; }
-        var body = gz ? r.body.pipeThrough(new DecompressionStream('gzip')) : r.body, rd = body.getReader(), dec = new TextDecoder(), txt = '';
+        var how = r.headers.get('x-unzipped') || '';
+        var size = +(r.headers.get('x-raw-length') || r.headers.get('content-length')) || 0, gz = !!how || /\.gz($|\?)/.test(url);
+        if (!viaHelper && gz && typeof DecompressionStream === 'undefined') { try { r.body.cancel(); } catch (e) {} return { msg: 'Reachable, but this TV can only unzip .gz guides through the network helper.  Set Settings > Playback > Network to Automatic, or use the plain .xml address.', data: { ok: true, size: size, gz: true, noGz: true } }; }
+        var body = !viaHelper && gz ? r.body.pipeThrough(new DecompressionStream('gzip')) : r.body, rd = body.getReader(), dec = new TextDecoder(), txt = '';
         function step() {
           return rd.read().then(function (x) {
             if (!x.done) txt += dec.decode(x.value, { stream: true });

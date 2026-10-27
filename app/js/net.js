@@ -72,14 +72,17 @@ var Net = (function () {
   }
 
   // http://host:81/a/b.m3u8?x -> http://127.0.0.1:PORT/x/http/host:81/a/b.m3u8?x
-  function wrap(url) {
+  // opts.unzip: an id; the helper then unzips gzip/deflate answers (guides) and counts the
+  // compressed bytes at xfer(id).  See service/unzip.js.
+  function wrap(url, opts) {
     if (!url || !useRelay()) return url;
     var m = /^(https?):\/\/([^/?#]+)([^#]*)/i.exec(url);
     if (!m) return url;
     if (m[2] === '127.0.0.1:' + port || m[2] === 'localhost:' + port) return url;   // already relayed
     var rest = m[3] || '/';
     if (rest.charAt(0) !== '/') rest = '/' + rest;
-    return 'http://127.0.0.1:' + port + uaPrefix() + '/x/' + m[1].toLowerCase() + '/' + m[2] + rest;
+    var unz = opts && opts.unzip ? '/unz/' + String(opts.unzip).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) : '';
+    return 'http://127.0.0.1:' + port + uaPrefix() + unz + '/x/' + m[1].toLowerCase() + '/' + m[2] + rest;
   }
   // Playlist User-Agent (Settings > Playlists > the playlist): sent by the helper to the provider.
   var uaCache = { ua: null, p: '' };
@@ -90,12 +93,15 @@ var Net = (function () {
     return uaCache.p;
   }
   function unwrap(url) {
-    var m = /^http:\/\/127\.0\.0\.1:\d+(?:\/ua\/[A-Za-z0-9_-]+)?\/x\/(https?)\/(.*)$/.exec(url || '');
+    var m = /^http:\/\/127\.0\.0\.1:\d+(?:\/ua\/[A-Za-z0-9_-]+)?(?:\/unz\/[A-Za-z0-9_-]+)?\/x\/(https?)\/(.*)$/.exec(url || '');
     return m ? m[1] + '://' + m[2] : url;
   }
 
   return {
     start: start, wrap: wrap, unwrap: unwrap, get ua() { return ua(); },
+    // Guides: the helper unzips .gz on every TV.  Without it, only browsers with DecompressionStream can.
+    get canUnzip() { return !!useRelay() || typeof DecompressionStream !== 'undefined'; },
+    xfer: function (id) { return port ? 'http://127.0.0.1:' + port + '/xfer/' + id : ''; },
     get port() { return port; }, get active() { return !!useRelay(); }, get state() { return state; }, get lastError() { return lastError; },
     status: function () { return port ? 'running on port ' + port : 'not running' + (lastError ? ': ' + lastError : ''); },
     // Recent requests as the helper saw them (status, time, bytes, upstream error codes).

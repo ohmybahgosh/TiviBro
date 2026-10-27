@@ -174,29 +174,36 @@ var Epg = (function () {
           buf = final ? '' : buf.slice(last);
           if (buf.length > 4e6) buf = buf.slice(-1e6);
         }
+        var poll = 0;
         return fetch(src.url, { cache: 'no-store' }).then(function (r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
-          var gz = /\.gz($|\?)/.test(src.url) && typeof DecompressionStream !== 'undefined';
-          var size = +r.headers.get('content-length') || 0, bytes = 0, raw = r.body;
+          var unzipped = !!r.headers.get('x-unzipped');                 // the helper did it
+          var gz = !src.xfer && /\.gz($|\?)/.test(src.url);              // direct connection: unzip here
+          if (gz && typeof DecompressionStream === 'undefined') { try { r.body.cancel(); } catch (e) {} throw new Error('This TV can only read .gz guides through the network helper.  Set Settings > Playback > Network to Automatic, or use the plain .xml address.'); }
+          var size = +(r.headers.get('x-raw-length') || r.headers.get('content-length')) || 0, bytes = 0, raw = r.body;
+          // Unzipped by the helper: progress counts the zipped bytes it has downloaded, not the XML.
+          if (unzipped) poll = setInterval(function () {
+            fetch(src.xfer, { cache: 'no-store' }).then(function (x) { return x.json(); }).then(function (x) { if (x && x.raw) { if (x.total) size = x.total; tell(i, src, x.raw, size); } }, function () {});
+          }, 500);
           // Count bytes as they arrive (before unzipping) so the TV and the editor can show real progress.
           try {
-            raw = r.body.pipeThrough(new TransformStream({ transform: function (chunk, ctl) { bytes += chunk.length; tell(i, src, bytes, size); ctl.enqueue(chunk); } }));
+            if (!unzipped) raw = r.body.pipeThrough(new TransformStream({ transform: function (chunk, ctl) { bytes += chunk.length; tell(i, src, bytes, size); ctl.enqueue(chunk); } }));
           } catch (e) { raw = r.body; }
           tell(i, src, 0, size, true);
           var body = gz ? raw.pipeThrough(new DecompressionStream('gzip')) : raw;
           var reader = body.getReader(), dec = new TextDecoder('utf-8');
           function step() {
             return reader.read().then(function (x) {
-              if (x.done) { buf += dec.decode(); eat(true); return; }
-              if (raw === r.body) { bytes += x.value.length; tell(i, src, bytes, size); }
+              if (x.done) { buf += dec.decode(); eat(true); if (unzipped && size) tell(i, src, size, size, true); return; }
+              if (raw === r.body && !unzipped) { bytes += x.value.length; tell(i, src, bytes, size); }
               buf += dec.decode(x.value, { stream: true });
               if (buf.length > 512 * 1024) eat(false);
               return step();
             });
           }
           return step();
-        }).then(function () { report.push({ url: src.label || src.url, ok: true, programmes: n, channels: Object.keys(got).length }); },
-          function (e) { report.push({ url: src.label || src.url, ok: false, error: String(e && e.message || e) }); });
+        }).then(function () { if (poll) { clearInterval(poll); poll = 0; } report.push({ url: src.label || src.url, ok: true, programmes: n, channels: Object.keys(got).length }); },
+          function (e) { clearInterval(poll); report.push({ url: src.label || src.url, ok: false, error: String(e && e.message || e) }); });
       }
       var chain = Promise.resolve();
       d.sources.forEach(function (src, i) { chain = chain.then(function () { return one(src, i); }); });
@@ -271,7 +278,12 @@ var Epg = (function () {
     delete names[''];
     var days = +P().epgDays || 1;
     var now = Date.now();
-    var msg = { sources: srcs.map(function (s) { return { url: Net.wrap(s.url), label: s.provider ? 'provider guide' : s.url, host: s.provider ? 'provider guide' : hostOf(s.url), offset: s.offset }; }),
+    var run = Date.now().toString(36);
+    var msg = { sources: srcs.map(function (s, i) {
+      // Through the helper, guides arrive already unzipped (.gz, gzip-encoded, or gzipped without saying so).
+      var id = Net.active ? 'g' + run + i : '';
+      return { url: Net.wrap(s.url, id ? { unzip: id } : null), xfer: id ? Net.xfer(id) : '', label: s.provider ? 'provider guide' : s.url, host: s.provider ? 'provider guide' : hostOf(s.url), offset: s.offset };
+    }),
       ids: Object.keys(ids), names: names, from: now - days * 86400e3, to: now + 2 * 86400e3 };
     var code = '(' + workerMain.toString().replace('/* NORM */', norm.toString()) + ')()';
     var started = Date.now();

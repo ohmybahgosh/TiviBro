@@ -2,11 +2,15 @@
 
 ## Unreleased
 
-## 0.6.0 (alpha 2, 2026-10-27)
+## 0.6.0 (alpha 3, 2026-10-27)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 2
+### New in alpha 3
+
+- Zipped guides on every TV.  The network helper now unzips guide downloads (`service/unzip.js`, relay prefix `/unz/<id>`), so `.xml.gz` sources work on webOS 4, 5 and 6 too, where the browser has no `DecompressionStream`.  It also handles `Content-Encoding: gzip` and `deflate`, provider guides that are gzipped without saying so, and files zipped twice, and asks servers for compressed transfers.  Progress counts the zipped bytes (`/xfer/<id>`), so percent and time left stay right.  With Network set to Direct, older TVs get a clear message instead of a guide that silently fails.  Tests: `tests/unit/unzip.test.js`.
+
+### In alpha 2
 
 - webOS compatibility, one IPK from webOS 4 to 26 with webOS 25 as the main target ([`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md)):
   - `requiredACG` in `appinfo.json` (`systemconfig.query`, `activity.operation`), checked by webOS 26 and required from 27.
