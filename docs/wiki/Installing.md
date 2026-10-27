@@ -1,4 +1,4 @@
-TiviBro runs on LG TVs with webOS 6 or newer.
+TiviBro is built for **webOS 25** and runs on LG TVs from webOS 4 (2018) to webOS 26.  Older TVs get the same features, with a few fallbacks; see [webOS compatibility](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/COMPATIBILITY.md).
 
 ## Homebrew Channel (coming soon)
 
@@ -22,6 +22,20 @@ npm run launch
 Or download the `.ipk` from the latest [release](https://github.com/ohmybahgosh/TiviBro/releases) and install it with `npx ares-install -d <tv> app.tivibro.tv_<version>_all.ipk`.
 
 > Developer Mode sessions expire after a while unless you extend them in the Developer Mode app.  TiviBro keeps working while the session is active.
+
+## Rooted TV over SSH
+
+On a rooted TV with SSH switched on in the Homebrew Channel (user `root`, port 22), copy the IPK from a [release](https://github.com/ohmybahgosh/TiviBro/releases) to the TV and install it with the TV's own installer:
+
+```bash
+scp -O app.tivibro.tv_0.6.0_all.ipk root@TV_IP:/tmp/tivibro.ipk     # -O: the TV's SSH has no SFTP
+ssh root@TV_IP
+luna-send-pub -i 'luna://com.webos.appInstallService/dev/install' '{"id":"com.ares.defaultName","ipkUrl":"/tmp/tivibro.ipk","subscribe":true}'
+```
+
+Wait for `"state": "installed"`, press <kbd>Ctrl</kbd>+<kbd>C</kbd>, then `rm /tmp/tivibro.ipk`.  Installing a newer IPK the same way updates TiviBro and keeps your settings.  To start it from the shell: `luna-send-pub -n 1 'luna://com.webos.applicationManager/launch' '{"id":"app.tivibro.tv"}'`.
+
+If `scp` fails, pipe the file instead: `cat app.tivibro.tv_0.6.0_all.ipk | ssh root@TV_IP 'cat > /tmp/tivibro.ipk'`.
 
 ## Next
 

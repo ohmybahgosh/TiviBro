@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img alt="Platform: LG webOS" src="https://img.shields.io/badge/platform-LG%20webOS%206%2B-5B8CFF?style=flat-square">
+  <img alt="Platform: LG webOS" src="https://img.shields.io/badge/platform-LG%20webOS%204%2B%20%C2%B7%20built%20for%2025-5B8CFF?style=flat-square">
   <img alt="Version" src="https://img.shields.io/badge/version-0.6.0%20alpha-33E1FF?style=flat-square">
   <img alt="Price: free" src="https://img.shields.io/badge/price-free-3DDC97?style=flat-square">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-8F9BBF?style=flat-square">
@@ -253,13 +253,27 @@ npm run install:tv             # install on the TV
 npm run launch
 ```
 
+### Rooted TV over SSH
+
+On a rooted TV with SSH switched on in the Homebrew Channel (user `root`, port 22), copy the IPK from a [release](https://github.com/ohmybahgosh/TiviBro/releases) to the TV and install it with the TV's own installer:
+
+```bash
+scp -O app.tivibro.tv_0.6.0_all.ipk root@TV_IP:/tmp/tivibro.ipk     # -O: the TV's SSH has no SFTP
+ssh root@TV_IP
+luna-send-pub -i 'luna://com.webos.appInstallService/dev/install' '{"id":"com.ares.defaultName","ipkUrl":"/tmp/tivibro.ipk","subscribe":true}'
+```
+
+Wait for `"state": "installed"`, press <kbd>Ctrl</kbd>+<kbd>C</kbd>, then `rm /tmp/tivibro.ipk`.  Installing a newer IPK the same way updates TiviBro and keeps your settings.  To start it from the shell: `luna-send-pub -n 1 'luna://com.webos.applicationManager/launch' '{"id":"app.tivibro.tv"}'`.
+
+If `scp` fails, pipe the file instead: `cat app.tivibro.tv_0.6.0_all.ipk | ssh root@TV_IP 'cat > /tmp/tivibro.ipk'`.
+
 ### Moving from another TV
 
 On the old TV, open the web editor, then **Backup and restore > Download locked backup**.  On the new TV, choose **Set up or restore from a computer** on the first screen and restore the file with its passphrase.
 
 ## Develop
 
-TiviBro is plain HTML, CSS and JavaScript (ES2018 for Chromium 79+), with no bundler and no build step beyond packaging.  A small webOS JS service acts as a localhost relay (CORS, custom User-Agent) and hosts the LAN web editor.
+TiviBro is plain HTML, CSS and JavaScript, with no bundler and no build step beyond packaging.  The same IPK runs from webOS 4 (Chromium 53) to webOS 26, with webOS 25 as the main target; see [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).  A small webOS JS service acts as a localhost relay (CORS, custom User-Agent) and hosts the LAN web editor.
 
 ```
 app/              The webOS web app (what runs on the TV)

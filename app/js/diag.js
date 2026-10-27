@@ -95,18 +95,20 @@ var Diag = (function () {
 
   // Read the first bytes of a stream to prove it really flows, then hang up.
   function probeStream(url, seconds) {
-    var real = Net.wrap(url), t0 = Date.now(), got = 0, first = null, ctl = new AbortController(), firstMs = 0;
-    var timer = setTimeout(function () { ctl.abort(); }, (seconds || 4) * 1000);
-    return fetch(real, { signal: ctl.signal, cache: 'no-store' }).then(function (r) {
+    var real = Net.wrap(url), t0 = Date.now(), got = 0, first = null, ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, firstMs = 0, reader = null;
+    // Older TVs have no AbortController: cancelling the reader hangs up instead.
+    function hangUp() { if (ctl) ctl.abort(); else if (reader) { try { reader.cancel(); } catch (e) {} } }
+    var timer = setTimeout(hangUp, (seconds || 4) * 1000);
+    return fetch(real, ctl ? { signal: ctl.signal, cache: 'no-store' } : { cache: 'no-store' }).then(function (r) {
       var info = { status: r.status, ctype: r.headers.get('content-type') || '', final: Net.unwrap(r.url) };
-      if (!r.ok) { clearTimeout(timer); ctl.abort(); return r.text().then(function (t) { throw Object.assign(new Error('HTTP ' + r.status), { kind: 'http', status: r.status, body: t.slice(0, 200), via: real !== url ? 'helper' : 'direct' }); }); }
-      var reader = r.body.getReader();
+      if (!r.ok) { clearTimeout(timer); hangUp(); return r.text().then(function (t) { throw Object.assign(new Error('HTTP ' + r.status), { kind: 'http', status: r.status, body: t.slice(0, 200), via: real !== url ? 'helper' : 'direct' }); }); }
+      reader = r.body.getReader();
       function pump() {
         return reader.read().then(function (x) {
           if (x.done) return;
           if (!first) { first = x.value.slice(0, 400); firstMs = Date.now() - t0; }
           got += x.value.length;
-          if (got > 3e6) { ctl.abort(); return; }
+          if (got > 3e6) { hangUp(); return; }
           return pump();
         });
       }

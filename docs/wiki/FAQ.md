@@ -5,7 +5,7 @@ No.  TiviBro is a player.  You need your own subscription: an Xtream Codes login
 Yes.  No accounts, no ads, no tracking, MIT licensed.
 
 **Which TVs work?**
-LG TVs with webOS 6 or newer.  It is tested in the webOS 25 Simulator and on real TVs as testing goes on.
+LG TVs from webOS 4 (2018) to webOS 26.  webOS 25 is the main target and is tested in the webOS 25 Simulator; older versions share the same code with fallbacks.  See [webOS compatibility](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/COMPATIBILITY.md).
 
 **Is it a TiviMate port?**
 No.  It is built from scratch for webOS, with the TiviMate way of working in mind: guide first, preview then fullscreen, quick menu, groups beside the guide.  See [TiviMate parity](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/TIVIMATE-PARITY.md) for a feature-by-feature list.

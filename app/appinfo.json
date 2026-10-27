@@ -13,5 +13,9 @@
   "handlesRelaunch": false,
   "transparent": false,
   "requiredMemory": 220,
-  "splashBackground": "img/splash.png"
+  "splashBackground": "img/splash.png",
+  "requiredACG": [
+    "systemconfig.query",
+    "activity.operation"
+  ]
 }

@@ -13,7 +13,7 @@
     "serve": "bash scripts/serve.sh",
     "lint": "bash scripts/lint.sh",
     "test": "npm run test:unit",
-    "test:unit": "node tests/unit/caps.test.js && node tests/unit/player.test.js && node tests/unit/look.test.js && node tests/unit/names.test.js && node tests/unit/proxy-ua.test.js && node tests/unit/editor.test.js && node tests/unit/library.test.js",
+    "test:unit": "node tests/unit/compat.test.js && node tests/unit/caps.test.js && node tests/unit/player.test.js && node tests/unit/look.test.js && node tests/unit/names.test.js && node tests/unit/proxy-ua.test.js && node tests/unit/editor.test.js && node tests/unit/library.test.js",
     "test:relay": "node tests/unit/proxy.test.js",
     "version:bump": "bash scripts/bump-version.sh",
     "release": "bash scripts/release.sh",
@@ -22,9 +22,11 @@
     "demo:record": "node scripts/demo/record.js",
     "demo:encode": "bash scripts/demo/encode.sh",
     "wiki": "node scripts/wiki/build.js",
-    "wiki:publish": "node scripts/wiki/build.js && bash scripts/wiki/publish.sh"
+    "wiki:publish": "node scripts/wiki/build.js && bash scripts/wiki/publish.sh",
+    "nogap": "node scripts/gen-nogap.js"
   },
   "devDependencies": {
-    "@webos-tools/cli": "3.2.6"
+    "@webos-tools/cli": "3.2.6",
+    "acorn": "^8.19.0"
   }
 }

@@ -1,4 +1,4 @@
-TiviBro is plain HTML, CSS and JavaScript (ES2018 for Chromium 79+), with no bundler and no build step beyond packaging.  A small webOS JS service acts as a localhost relay (CORS, custom User-Agent) and hosts the LAN web editor.
+TiviBro is plain HTML, CSS and JavaScript, with no bundler and no build step beyond packaging.  The same IPK runs from webOS 4 (Chromium 53) to webOS 26, with webOS 25 as the main target; see [compatibility](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/COMPATIBILITY.md).  A small webOS JS service acts as a localhost relay (CORS, custom User-Agent) and hosts the LAN web editor.
 
 ## Layout
 
@@ -43,5 +43,6 @@ npm run serve                            # then add the playlist in the app
 
 - [Architecture](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/ARCHITECTURE.md) and [decisions](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/DECISIONS.md)
 - [Simulator guide](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/SIMULATOR.md)
+- [webOS compatibility](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/COMPATIBILITY.md)
 - [Roadmap](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/ROADMAP.md)
 - [Recording the demo media](Recording-the-demo-media) and [Releasing](Releasing)

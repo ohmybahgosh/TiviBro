@@ -9,8 +9,9 @@
    The prefix sits in front, so relative links inside HLS playlists keep it automatically.
    Upstream redirects are returned as redirects to the relayed form of the new address, so the
    browser always knows the real location.  Bodies are streamed, never buffered, and Range
-   requests pass through for seeking.  Plain ES2015 for the old Node versions on webOS. */
+   requests pass through for seeking.  Plain ES5 for the old Node versions on webOS (see compat.js). */
 'use strict';
+require('./compat');                 // older Node on older webOS: fill in what is missing
 var http = require('http');
 var https = require('https');
 var URL_ = require('url');

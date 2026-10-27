@@ -4,7 +4,7 @@ Plain scripts loaded in order by `app/index.html` (no modules, no bundler: webOS
 
 | File | Global | Role |
 |---|---|---|
-| util.js | `U` | DOM helpers, keys, fetch with timeout.  ES2018 only |
+| util.js | `U` | DOM helpers, keys, fetch with timeout |
 | log.js | `Log`, `TIVIBRO_VERSION` | Ring-buffer log, persisted, credentials redacted.  **Version constant lives here** |
 | net.js | `Net` | Starts the helper service, rewrites provider URLs through it (Automatic/Direct) |
 | keymap.js | `Keymap` | Remote remapping: player/list contexts, short/long press, learned keys |

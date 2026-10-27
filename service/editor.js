@@ -15,8 +15,9 @@
    the one thing that contains logins, and only when the user asks to download it.
 
    The LAN server only runs while the user has switched it on in the app, and stops with the
-   app.  Logins are rate limited per address.  Plain ES2015 for the old Node on webOS TVs. */
+   app.  Logins are rate limited per address.  Plain ES5 for the old Node on webOS TVs (see compat.js). */
 'use strict';
+require('./compat');                 // older Node on older webOS: fill in what is missing
 var http = require('http');
 var fs = require('fs');
 var path = require('path');
