@@ -1,7 +1,7 @@
 # Roadmap and status
 
 ## Now: first install on the TV (the app already runs in the webOS 25 Simulator, `npm run sim`, see SIMULATOR.md)
-- [ ] Install `dist/app.tivibro.tv_0.5.0_all.ipk` with `npm run install:tv` (it builds the IPK first if `dist/` is empty).
+- [ ] Install `dist/app.tivibro.tv_<version>_all.ipk` with `npm run install:tv` (it builds the IPK first if `dist/` is empty).
 - [ ] Confirm Settings > Playback > Network helper says "running on port 47811".
 - [ ] Run Test connection against the real XC provider; photo the result if anything fails.
 - [ ] Check multiview decode limit (2 vs 4 tiles) on real hardware.

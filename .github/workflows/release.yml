@@ -62,6 +62,7 @@ jobs:
         run: |
           node scripts/release-notes.js "$APP_VERSION" > dist/notes.md
           {
+            case "$TAG" in *-*) echo; echo "> **Pre-release.**  The Homebrew Channel repository below always installs the newest full release, so this build is installed from the IPK here.";; esac
             echo
             echo '### Install'
             echo
@@ -82,5 +83,5 @@ jobs:
             gh release edit "$TAG" --notes-file dist/notes.md $PRE
           else
             gh release create "$TAG" dist/*.ipk dist/*.manifest.json dist/repo.json \
-              --title "TiviBro $APP_VERSION" --notes-file dist/notes.md --verify-tag $PRE
+              --title "TiviBro ${TAG#v}" --notes-file dist/notes.md --verify-tag $PRE
           fi

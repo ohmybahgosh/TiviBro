@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.6.0 (alpha 1, 2026-10-27)
+
+First alpha of 0.6.0.  Pre-release: expect rough edges, and keep a backup before installing.
+
 - Streams that don't quit.  Reconnects wait a little longer each time (with jitter), a dropped Wi-Fi is waited out without spending retries and reconnects the moment the TV is online, and a channel that keeps failing tries the TV player and the provider's HLS version, then retries every 15 seconds for up to 20 minutes with a message on screen.  An HTTP error before the first frame gets two quick retries (a provider's connection limit while the last channel hangs up) before the next player, instead of marking the whole server for the TV player.  Movies and catch-up resume at the same spot after a drop, after leaving the app and coming back, and when the TV player reports "ended" mid-film.  Long-paused live TV lets the connection go and Play returns to live.  Error messages say what happened, and OK on them tries again from the top.
 - HDR, Dolby Vision and codecs.  New `caps.js` reads what each stream is (HLS master playlist, mpegts.js media info, Xtream movie details) and routes it before the first frame: Dolby Vision to the TV player, HDR10 and HLG to the built-in player by default (**Settings > Playback > HDR and Dolby Vision** can send all HDR to the TV player), codecs MSE refuses to the TV player.  Known LG rules on top of what the TV reports: HEVC, AC-3 and E-AC-3 on webOS 4+, AV1 on webOS 5+, Dolby Vision 5/8 on the TV player, and no DTS on 2020 to 2022 models (C1, C2).  DTS-only and surround FLAC movies warn about sound.  The info panel and movie details show the format ("4K  HEVC  Dolby Vision 8  E-AC-3 5.1 Atmos").  **Diagnostics > What this TV can play** lists everything.
 - hls.js full build instead of the light one, for separate audio tracks and subtitles in HLS.

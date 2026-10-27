@@ -4,7 +4,7 @@ Releases are built by GitHub Actions.  Every push and pull request also runs lin
 2. In `CHANGELOG.md`, rename `## Unreleased` to `## X.Y.Z (date)`, then commit.
 3. `npm run release`.  It checks everything locally (clean tree on `main`, notes present, lint, tests, build), then tags `vX.Y.Z` and pushes the tag.
 
-The Release workflow then runs the tests again, builds the IPK, writes the Homebrew Channel manifest and `repo.json`, and publishes a GitHub release with the CHANGELOG section as its notes.  Tags with a dash (`v0.6.0-beta.1`) become pre-releases.
+The Release workflow then runs the tests again, builds the IPK, writes the Homebrew Channel manifest and `repo.json`, and publishes a GitHub release with the CHANGELOG section as its notes.  For a pre-release, `npm run release -- alpha.1` tags `vX.Y.Z-alpha.1`; tags with a dash become pre-releases and are not what the Homebrew Channel repository installs.
 
 ## Homebrew Channel
 

@@ -12,7 +12,7 @@
 
 <p align="center">
   <img alt="Platform: LG webOS" src="https://img.shields.io/badge/platform-LG%20webOS%206%2B-5B8CFF?style=flat-square">
-  <img alt="Version" src="https://img.shields.io/badge/version-0.5.0%20beta-33E1FF?style=flat-square">
+  <img alt="Version" src="https://img.shields.io/badge/version-0.6.0%20alpha-33E1FF?style=flat-square">
   <img alt="Price: free" src="https://img.shields.io/badge/price-free-3DDC97?style=flat-square">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-8F9BBF?style=flat-square">
   <img alt="No bundler" src="https://img.shields.io/badge/plain-HTML%20%2F%20JS-141A2E?style=flat-square">
@@ -307,7 +307,7 @@ Releases are built by GitHub Actions.  Every push and pull request also runs lin
 2. In [`CHANGELOG.md`](CHANGELOG.md), rename `## Unreleased` to `## X.Y.Z (date)`, then commit.
 3. `npm run release`.  It checks everything locally, then tags `vX.Y.Z` and pushes the tag.
 
-The [Release workflow](.github/workflows/release.yml) then runs the tests, builds the IPK, writes the Homebrew Channel manifest and `repo.json`, and publishes a GitHub release with the CHANGELOG section as its notes.  Tags with a dash (`v0.6.0-beta.1`) become pre-releases.
+The [Release workflow](.github/workflows/release.yml) then runs the tests, builds the IPK, writes the Homebrew Channel manifest and `repo.json`, and publishes a GitHub release with the CHANGELOG section as its notes.  For a pre-release, `npm run release -- alpha.1` tags `vX.Y.Z-alpha.1`; tags with a dash become pre-releases.
 
 ## Privacy and security
 

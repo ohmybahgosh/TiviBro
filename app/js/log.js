@@ -6,7 +6,7 @@
    - Shown in Settings > Diagnostics (and from the setup screen), and mirrored to the
      console for `ares-inspect`.
    - Credentials are masked before anything is stored or shown. */
-var TIVIBRO_VERSION = '0.5.0';
+var TIVIBRO_VERSION = '0.6.0';
 var Log = (function () {
   'use strict';
   var buf = [], MAX = 800, KEEP = 300, saved = [];
