@@ -95,6 +95,11 @@ function req(url, method, body, token) {
   await req(C + '/editor/stop', 'POST', {});
   a = await req(L + '/').catch(() => ({ status: 0 }));
   ok('stops when switched off', a.status === 0);
+  // Nothing from a stopped session may reach a TiviBro that starts counting from zero again.
+  a = await req(C + '/editor/pending?since=0&csince=0');
+  ok('stopping drops unapplied saves and actions', a.json.none === true && !(a.json.commands || []).length, JSON.stringify(a.json).slice(0, 120));
+  a = await req(C + '/editor/status');
+  ok('and reports them as applied, so a new start skips them', a.json.appliedRev === a.json.pendingRev, a.json.appliedRev + ' / ' + a.json.pendingRev);
   r.server.close();
   console.log(fail ? fail + ' failures' : 'all web editor tests passed');
   process.exit(fail ? 1 : 0);

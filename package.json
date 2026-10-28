@@ -19,6 +19,7 @@
     "soak:monkey": "node tests/soak/monkey.js",
     "soak:zap": "node tests/soak/zap.js",
     "soak:speed": "node tests/soak/speed.js",
+    "soak:editor": "node tests/soak/editor.js",
     "test:engines": "bash tests/engines/run.sh",
     "soak:backup": "node tests/soak/backup.js",
     "soak:boot": "node tests/soak/boot.js",

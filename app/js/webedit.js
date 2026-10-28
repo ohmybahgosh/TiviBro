@@ -318,6 +318,8 @@ var WebEdit = (function () {
   function start() {
     return call('/editor/start', { port: port(), password: password() }).then(function (s) {
       Log.info('webedit', 'Web editor on port ' + s.port + ' at ' + (s.ips || []).join(', '));
+      // Saves from an earlier editor session are not ours to apply.
+      appliedRev = Math.max(appliedRev, s.pendingRev || 0);
       return begin(s);
     });
   }

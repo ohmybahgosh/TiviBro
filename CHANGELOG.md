@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Web editor audit (`npm run soak:editor`, `tests/soak/editor.js`): every page driven in a real browser against the TV, checking what reaches it.  Login and lockout, groups, renames, your own groups, copying channels, favorites and hiding, name rules, guide sources, smart clean-up, restore points and undo, adding a playlist, backup and unlock, help and log out all work.
+- Web editor fix: switching the editor off now drops changes and actions the TV hadn't picked up yet, and starting it again skips saves from an earlier session.  Before, a TiviBro that restarted (after switching playlist or a restore) could apply a stale save to the wrong playlist, or run a queued restore again.  Test: `tests/unit/editor.test.js`.
 - Web editor fixed: since alpha 3 it opened as a blank page (a stray apostrophe in its help text stopped the page's script), so setup from a computer, editing and backup and restore didn't work.  Lint now checks the scripts inside HTML pages, so this can't slip through again.
 - Parental controls: blocking the channel that's playing (the preview, say) now stops it, so OK can't take it fullscreen without the PIN.
 - Documentation: every setting explained with its choices and default, one page per Settings section ([user guide](docs/USER-GUIDE.md#every-setting) and wiki), and pictures for everything.  New videos: the Channels screen and channel options, other versions of a channel, reminders, parental controls, and the fullscreen options.  New screenshots: every Settings section and the pages inside them, a channel switching to another version by itself, and every page of the web editor.  All media re-recorded from the current app.

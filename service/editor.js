@@ -228,6 +228,9 @@ function create(log) {
   function stop() {
     if (st.server) { try { st.server.close(); } catch (e) {} log({ lv: 'info', event: 'editor stopped' }); }
     st.server = null; st.port = 0; st.tokens = {}; st.seen = {};
+    // Nothing from this session may reach the TV later: a TiviBro that restarts (switching playlist,
+    // a restore) starts counting from zero and would otherwise apply a stale save to the wrong list.
+    st.pending = null; st.appliedRev = st.pendingRev; st.commands = []; st.results = {}; st.seal = {}; st.progress = null;
   }
 
   /* ---------- control from the app (localhost relay only) ---------- */
