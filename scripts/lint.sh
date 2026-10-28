@@ -2,7 +2,7 @@
 # Syntax-check every JS file (app, service, tests).
 source "$(dirname "$0")/_common.sh"
 fail=0
-for f in "$ROOT"/app/js/*.js "$ROOT"/service/*.js "$ROOT"/scripts/*.js "$ROOT"/tests/unit/*.js "$ROOT"/tests/mock/*.js; do
+for f in "$ROOT"/app/js/*.js "$ROOT"/service/*.js "$ROOT"/scripts/*.js "$ROOT"/tests/unit/*.js "$ROOT"/tests/mock/*.js "$ROOT"/tests/engines/*.js "$ROOT"/tests/engines/browser/*.js; do
   node --check "$f" || { echo "syntax error: $f"; fail=1; }
 done
 for f in "$ROOT"/app/appinfo.json "$ROOT"/service/*.json; do node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" || { echo "bad JSON: $f"; fail=1; }; done

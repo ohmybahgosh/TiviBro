@@ -19,6 +19,7 @@ var Editor = require('./editor');
 var Unzip = require('./unzip');
 var TsSync = require('./tssync').TsSync;
 var dns = require('dns');
+var RawHttp = require('./rawhttp');
 
 /* DNS answers kept for a minute.  Node asks the system for every new connection, and each channel
    start (and each redirect to a provider's streaming server) is a new connection; on a TV with a
@@ -110,14 +111,17 @@ function create(opts) {
       rec.ms = Date.now() - t0; rec.b = bytes; if (aborted) rec.aborted = true;
       log(rec);
     }
-    var up = lib.request({
+    var reqOpts = {
       protocol: u.protocol, hostname: u.hostname, port: u.port, path: u.path, method: req.method === 'HEAD' ? 'HEAD' : 'GET',
       headers: headers, agent: u.protocol === 'https:' ? agentHttps : agentHttp, rejectUnauthorized: false,
-      // Node 12 and newer (webOS 22 on) reject sloppy replies that older TVs accepted: stray control
-      // characters in headers, bare LF line endings, Content-Length twice.  Cheap IPTV panels send
-      // all of these.  Older Node ignores the option (its parser was lenient anyway).
+      // Node 12.15 and newer (webOS 22 on) reject sloppy replies unless asked for the lenient parser:
+      // stray control characters in headers, bare LF line endings.  Older Node ignores the option.
+      // What even that refuses (Content-Length twice; control characters on Node 8) goes through
+      // the forgiving reader in rawhttp.js instead, see onUpError.
       insecureHTTPParser: true, lookup: cachedLookup
-    }, function (ur) {
+    };
+    var up = lib.request(reqOpts, onResponse), triedRaw = false;
+    function onResponse(ur) {
       var code = ur.statusCode || 502;
       rec.s = code; rec.ct = ur.headers['content-type'];
       rec.firstByteMs = Date.now() - t0;
@@ -170,15 +174,25 @@ function create(opts) {
         body.on('end', function () { if (xfer) xfer.done = true; finish(); });
         body.pipe(res);
       });
-    });
-    up.setTimeout(opts.timeout || 30000, function () { up.destroy(new Error('upstream timeout')); });
-    up.on('error', function (e) {
+    }
+    function onTimeout() { up.destroy(new Error('upstream timeout')); }
+    function onUpError(e) {
+      // Node's parser refused the reply: ask again with the forgiving reader.
+      if (!aborted && !triedRaw && !res.headersSent && /^HPE_/.test(e.code || '')) {
+        triedRaw = true; rec.lenient = e.code;
+        up = RawHttp.request(reqOpts, onResponse);
+        up.setTimeout(opts.timeout || 30000, onTimeout);
+        up.on('error', onUpError);
+        return;
+      }
       if (!aborted) { stats.errors++; rec.e = (e.code ? e.code + ' ' : '') + e.message; }
       if (!aborted && /^(ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|ECONNRESET)$/.test(e.code || '')) forgetHost(u.hostname);
       finish();
       if (!res.headersSent) { res.writeHead(502, Object.assign({ 'Content-Type': 'text/plain' }, ALLOW)); res.end('relay error: ' + e.message); }
       else res.destroy();
-    });
+    }
+    up.setTimeout(opts.timeout || 30000, onTimeout);
+    up.on('error', onUpError);
     // Viewer zapped away: stop pulling the stream from the provider at once.
     req.on('close', function () { if (!res.writableEnded && !res.finished) { aborted = true; up.destroy(); } finish(); });
     up.end();

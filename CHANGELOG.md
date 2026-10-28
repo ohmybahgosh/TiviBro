@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Run on the real engines of older TVs (`npm run test:engines`, [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) "Run on the real engines"):
+  - The helper on Node 0.12, 8.12, 12, 16 and 20 (webOS 4 to 26): 40 checks covering relaying, Range, redirects, User-Agent, zipped guides, MPEG-TS realignment, sloppy replies, the DNS cache, errors, timeouts, zapping away, the web editor with encrypted backups, and the service wrapper.  All pass on every version.  `tests/engines/helper.js`, also part of the unit tests.
+  - The app in Chromium 53, 69, 78 and 87 (Electron 1.4, 4.2, 7.3 and 11.5; webOS 4, 5, 6 and 22): start-up, channels, guide, remote keys, a playing preview, Settings, a zipped XMLTV guide, no page errors.  All pass, with screenshots.  `tests/engines/browser/`, `tests/engines/run.sh`.
+- Sloppy providers on webOS 5 and 6, and `Content-Length` twice on webOS 22 and later: Node 8 refused replies with a stray control character in a header, and Node 12 and newer refused a repeated `Content-Length` even in lenient mode.  When Node refuses a reply, the helper now asks again with its own forgiving reader (`service/rawhttp.js`: CRLF or bare LF, control characters dropped, matching repeated lengths kept, chunked replies undone).  Tests: `tests/unit/proxy-lenient.test.js`, `tests/engines/helper.js`.
+- Mock provider: `/guide.xml.gz`, a zipped guide labelled the way many guide hosts do.
+
 ## 0.6.0 (alpha 6, 2026-10-28)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -1,8 +1,9 @@
-// Sloppy provider responses through the helper.  Node 12 and newer (webOS 22 and later) parse HTTP
-// strictly and reject replies that older TVs' Node accepted: a stray control character in a
-// header, or bare LF line endings.  Cheap IPTV panels send both, so the helper asks Node for its
-// lenient parser.  (Content-Length sent twice is refused even by the lenient parser on current
-// Node; that one still fails on webOS 22 and later.)
+// Sloppy provider responses through the helper.  Cheap IPTV panels send replies that Node's HTTP
+// parser refuses: a stray control character in a header (Node 8 on webOS 5 and 6, and Node 12 and
+// newer without the lenient parser), bare LF line endings, and Content-Length sent twice (refused
+// by Node 12 and newer even in lenient mode).  The helper asks for the lenient parser and, when
+// that still refuses, reads the reply with its own forgiving reader (service/rawhttp.js).
+// tests/engines/helper.js runs the same cases on every webOS Node version.
 // Self-contained: a raw TCP "provider" writes the broken replies byte for byte.
 const net = require('net'), http = require('http'), path = require('path');
 const proxy = require(path.join(__dirname, '../../service/proxy.js'));
@@ -12,6 +13,7 @@ const get = (url) => new Promise((res) => http.get(url, (r) => { let b = ''; r.o
 const REPLIES = {
   '/ctrl': 'HTTP/1.1 200 OK\r\nContent-Type: video/mp2t\r\nX-Panel: a\x01b\r\nContent-Length: 5\r\nConnection: close\r\n\r\nhello',
   '/lf': 'HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 5\nConnection: close\n\nhello',
+  '/dupcl': 'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\nContent-Length: 5\r\nConnection: close\r\n\r\nhello',
   '/clean': 'HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\nConnection: close\r\n\r\nhello'
 };
 (async () => {
@@ -29,7 +31,7 @@ const REPLIES = {
   const U = '127.0.0.1:' + up.address().port;
   const r = proxy.create({}); await new Promise(f => r.server.listen(0, '127.0.0.1', f));
   const B = 'http://127.0.0.1:' + r.server.address().port;
-  for (const [p, what] of [['/clean', 'a clean reply'], ['/ctrl', 'a control character in a header'], ['/lf', 'bare LF line endings']]) {
+  for (const [p, what] of [['/clean', 'a clean reply'], ['/ctrl', 'a control character in a header'], ['/lf', 'bare LF line endings'], ['/dupcl', 'Content-Length sent twice']]) {
     const a = await get(B + '/x/http/' + U + p);
     ok('relays ' + what, a.status === 200 && a.body === 'hello', a.status + ' ' + a.body.slice(0, 60));
   }

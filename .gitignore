@@ -27,3 +27,6 @@ Thumbs.db
 # Demo recordings: raw captures and the synthetic streams (regenerate with scripts/demo)
 docs/media/raw/
 tests/mock/media/
+
+# old Node and Chromium builds for tests/engines/run.sh
+.engines/

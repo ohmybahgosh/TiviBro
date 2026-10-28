@@ -202,6 +202,8 @@ const server = http.createServer((req, res) => {
     return send(res, 200, []);
   }
   if (p === '/xmltv.php' || p === '/guide.xml') return send(res, 200, BIG ? (xmlCache = xmlCache || xmltv()) : xmltv(), 'application/xml');
+  // A zipped guide file, labelled the way many guide hosts do (no Content-Encoding): the helper unzips it.
+  if (p === '/guide.xml.gz') return send(res, 200, require('zlib').gzipSync(BIG ? (xmlCache = xmlCache || xmltv()) : xmltv()), 'application/octet-stream');
   let m;
   if ((m = /^\/logo\/(\d+)\.svg$/.exec(p))) { const s = streams.find(x => x.stream_id === +m[1]); return s ? send(res, 200, logo(s), 'image/svg+xml') : send(res, 404, ''); }
   if ((m = /^\/poster\/([ms])(\d+)\.svg$/.exec(p))) { const t = m[1] === 'm' ? (MOVIES[+m[2]] || [''])[0] : (SERIES[+m[2]] || [''])[0]; return send(res, 200, poster(t, +m[2] + (m[1] === 's' ? 5 : 0)), 'image/svg+xml'); }
