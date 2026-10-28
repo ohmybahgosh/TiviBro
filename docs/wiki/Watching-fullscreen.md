@@ -5,7 +5,7 @@
 - **▲ ▼** or **CH + / CH −** change channel.  An info bar shows the channel, what's on now and next, and how far into the programme you are.
 - **▶** shows the full programme info.  **Yellow** jumps back to the last channel.  **Green** lays the guide over the video.
 - **Green** (or **OK > Channel list**) lays the channel list over the video.  **OK** on another channel switches to it and keeps the list open so you can keep browsing; **OK** on the channel that's already playing closes the list.  **◀ ▶** change group.
-- **OK** opens the **quick menu**: Channel list, From start (catch-up channels), Favorite, TV guide, Picture size, Multiview, Sleep timer, Stream info and Reconnect.  Pick which buttons appear under **Settings > Remote control > Quick menu buttons**.
+- **OK** opens the **quick menu**: Channel list, From start (catch-up channels), Favorite, TV guide, Other versions (when the channel has them), Picture size, Multiview, Sleep timer, Stream info and Reconnect.  Pick which buttons appear under **Settings > Remote control > Quick menu buttons**.
 - **Red** or **Hold OK** opens options: audio track, subtitles, picture size for this channel, and more.
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/zap.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/zap.gif" width="100%" alt="Changing channels, info and the quick menu"></a></p>
@@ -26,7 +26,10 @@
 It tries hard never to just stop:
 
 - **Wi-Fi drops:** it waits for the network ("No network.  Waiting for it to come back") without using up its retries, and reconnects the moment the TV is back online.
-- **A channel keeps failing:** it tries the TV's own player and the provider's HLS version of the channel, then keeps retrying every 15 seconds for up to 20 minutes with a message on screen, so a channel that comes back after a provider hiccup recovers by itself.
+- **A channel keeps failing:** it tries the TV's own player and the provider's HLS version of the channel, then keeps retrying with a message on screen (every 6 seconds for the first few minutes, then every 15, for up to 20 minutes), so a channel that comes back after a provider hiccup recovers by itself.
+- **A channel stops working for good:** if your playlist has the same channel more than once (in another quality, another group, or a copy you hid), TiviBro switches to the next version and tells you, steadiest quality first: Full HD, HD, unmarked, 4K, then SD.  If every version fails, the provider itself is probably down, so it goes back to the channel you chose and keeps retrying.  Set this under **Settings > Playback and buffering > When a channel stops working**: switch by itself, ask you, or just keep retrying.
+
+Where the same channel appears more than once, lists and the guide show a small quality tag (**FHD**, **HD**, **SD**, **4K**) beside the name, so the copies can be told apart.
 - **A channel never starts:** after a couple of quick retries it says plainly whether the provider is refusing it or the TV can't decode it.  **OK** tries again.
 - **Paused live TV:** a short pause carries on where you left off.  After a long pause TiviBro lets the connection go (the provider would drop it anyway) and **Play** brings you back to live.
 - **Movies and catch-up** pick up from the same spot after a dropped connection, and when you leave TiviBro (Home button, another input) and come back.

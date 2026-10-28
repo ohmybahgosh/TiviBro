@@ -60,6 +60,7 @@ var Store = (function () {
     showCatchupMark: true,      // ↺ marks for catch-up channels and programmes
     logoPref: 'playlist',       // playlist | guide
     blackSwitch: false,         // hide the old picture while the next channel tunes
+    backups: 'auto',            // a channel that stops: auto (switch to another version) | ask | off
     osdOnZap: true,             // info panel when switching channels
     osdMedia: true,             // resolution and player in the info panel
     autoSubs: false,            // turn subtitles on when a stream has them

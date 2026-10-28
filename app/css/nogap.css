@@ -24,3 +24,4 @@
 .nogap .qp-act > * + *{margin-top:6px}
 .nogap .qp-recent > * + *{margin-left:14px}
 .nogap .qp-ch > * + *{margin-top:6px}
+.nogap .gchips > * + *{margin-top:5px}

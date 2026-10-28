@@ -31,6 +31,7 @@ Legend: **Have** = already in TiviBro.  **Added** = added in this pass.  **Later
 | Picture-in-picture, switch to PiP on Home | No: webOS has no app PiP (Multiview covers watching two) |
 | Use external player | No |
 | Select surround audio track by default | Later |
+| (not in TiviMate) | **Added:** when a channel stops working, switch to another version of it (other quality, group or hidden copy), or ask, or keep retrying.  "Other versions…" in channel options and the quick menu |
 
 ## Guide (EPG)
 | TiviMate | TiviBro |

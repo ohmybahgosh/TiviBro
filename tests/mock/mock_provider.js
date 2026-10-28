@@ -87,7 +87,23 @@ if (CHAOS) {
   cats.push({ category_id: String(ci + 1), category_name: 'TEST | Chaos', parent_id: 0 });
   CHAOS.MODES.forEach(([id, name]) => streams.push({ num: id, name, stream_type: 'live', stream_id: id, stream_icon: '', epg_channel_id: '', added: '1761000000', category_id: String(ci + 1), tv_archive: 0, tv_archive_duration: 0, clip: 'news', base: name, ci }));
 }
-const sched = new Map(streams.map(s => [s.stream_id, schedule(s)]));
+// MOCK_BIG=15000: a provider-sized playlist for speed tests (tests/soak/speed.js): that many extra
+// channels in 25-channel groups named like real ones ("US | Sports 12"), MOCK_BIG_EPG of them
+// (default 3000) with a guide, the rest without.  Logos are the same few SVGs, as real logos repeat.
+const BIG = +process.env.MOCK_BIG || 0, BIG_EPG = process.env.MOCK_BIG_EPG != null ? +process.env.MOCK_BIG_EPG : 3000;
+if (BIG) {
+  const regions = ['US', 'UK', 'CA', 'DE', 'FR', 'ES', 'IT', 'NL', 'PT', 'AR', 'IN', 'AU'], kinds = ['News', 'Sports', 'Movies', 'Entertainment', 'Kids', 'Documentary', 'Music', 'Local'];
+  const clips = { News: 'news', Sports: 'sports', Movies: 'movies', Entertainment: 'ent', Kids: 'kids', Documentary: 'docs', Music: 'music', Local: 'local' };
+  const q = ['FHD', 'HD', 'SD', ''];
+  for (let i = 0; i < BIG; i++) {
+    const g = Math.floor(i / 25), r = regions[g % regions.length], k = kinds[Math.floor(g / regions.length) % kinds.length], n = Math.floor(g / (regions.length * kinds.length)) + 1;
+    if (i % 25 === 0) cats.push({ category_id: String(1000 + g), category_name: r + ' | ' + k + ' ' + n, parent_id: 0 });
+    const id = 100000 + i, base = r + ' ' + k + ' ' + (i % 25 + 1) + (n > 1 ? ' ' + String.fromCharCode(64 + n) : '');
+    streams.push({ num: 1000 + i, name: r + ': ' + base + (q[i % 4] ? ' ' + q[i % 4] : ''), stream_type: 'live', stream_id: id, stream_icon: `http://127.0.0.1:${PORT}/logo/${1 + i % 60}.svg`,
+      epg_channel_id: i < BIG_EPG ? 'big.' + i : '', added: '1761000000', category_id: String(1000 + g), tv_archive: i % 5 === 0 ? 1 : 0, tv_archive_duration: i % 5 === 0 ? 3 : 0, clip: clips[k], base, ci: g });
+  }
+}
+const sched = new Map(streams.filter(s => s.stream_id < 100000 || s.epg_channel_id).map(s => [s.stream_id, schedule(s)]));
 
 /* ---------- artwork ---------- */
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -118,9 +134,10 @@ function xmltv() {
   const seen = new Set();
   streams.forEach(s => { if (s.epg_channel_id && !seen.has(s.epg_channel_id)) { seen.add(s.epg_channel_id); o += `<channel id="${esc(s.epg_channel_id)}"><display-name>${esc(s.base)}</display-name><icon src="${esc(s.stream_icon)}"/></channel>\n`; } });
   // Guide-only channels so matching has something to find for the channels without an id.
-  streams.filter(s => !s.epg_channel_id).forEach(s => o += `<channel id="${esc(s.base.replace(/\W+/g, ''))}.guide"><display-name>${esc(s.base)}</display-name></channel>\n`);
+  streams.filter(s => !s.epg_channel_id && sched.has(s.stream_id)).forEach(s => o += `<channel id="${esc(s.base.replace(/\W+/g, ''))}.guide"><display-name>${esc(s.base)}</display-name></channel>\n`);
   const done = new Set();
   streams.forEach(s => {
+    if (!sched.has(s.stream_id)) return;
     const id = s.epg_channel_id || s.base.replace(/\W+/g, '') + '.guide';
     if (done.has(id)) return; done.add(id);
     sched.get(s.stream_id).forEach(p => o += `<programme start="${xd(p.s)}" stop="${xd(p.e)}" channel="${esc(id)}"><title>${esc(p.t)}</title><desc>${esc(p.d)}</desc></programme>\n`);
@@ -158,6 +175,7 @@ function live(res, f, size) {
   rs.on('end', () => res.end());
   res.on('close', () => { clearTimeout(timer); rs.destroy(); });
 }
+let xmlCache = null;           // the big guide is built once (tens of MB)
 const b64 = s => Buffer.from(s, 'utf8').toString('base64');
 const server = http.createServer((req, res) => {
   const u = url.parse(req.url, true), p = u.pathname, q = u.query;
@@ -183,11 +201,11 @@ const server = http.createServer((req, res) => {
     }
     return send(res, 200, []);
   }
-  if (p === '/xmltv.php' || p === '/guide.xml') return send(res, 200, xmltv(), 'application/xml');
+  if (p === '/xmltv.php' || p === '/guide.xml') return send(res, 200, BIG ? (xmlCache = xmlCache || xmltv()) : xmltv(), 'application/xml');
   let m;
   if ((m = /^\/logo\/(\d+)\.svg$/.exec(p))) { const s = streams.find(x => x.stream_id === +m[1]); return s ? send(res, 200, logo(s), 'image/svg+xml') : send(res, 404, ''); }
   if ((m = /^\/poster\/([ms])(\d+)\.svg$/.exec(p))) { const t = m[1] === 'm' ? (MOVIES[+m[2]] || [''])[0] : (SERIES[+m[2]] || [''])[0]; return send(res, 200, poster(t, +m[2] + (m[1] === 's' ? 5 : 0)), 'image/svg+xml'); }
-  if (CHAOS && (m = /^\/live\/.*?(9\d\d)\.(ts|m3u8)$/.exec(p)) && +m[1] >= 901) return CHAOS.serve(m[1], req, res, MEDIA);
+  if (CHAOS && (m = /^\/live\/(?:.*\/)?(9\d\d)\.(ts|m3u8)$/.exec(p)) && +m[1] >= 901) return CHAOS.serve(m[1], req, res, MEDIA);
   if ((m = /^\/(live|timeshift)\/.*?(\d+)\.(ts|m3u8)$/.exec(p))) { const s = streams.find(x => x.stream_id === +m[2]); return stream(res, req, (s ? s.clip : 'news') + '.ts', 'video/mp2t'); }
   if (/^\/(movie|series)\//.test(p)) return stream(res, req, 'movie.mp4', 'video/mp4');
   send(res, 404, 'not found', 'text/plain');

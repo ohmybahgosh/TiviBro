@@ -36,7 +36,7 @@ var Player = (function () {
   };
 
   var video = null, eng = null, cur = null, token = 0;
-  var listeners = { state: [], stats: [], notice: [] };
+  var listeners = { state: [], stats: [], notice: [], trouble: [] };
   var wd = 0, st = null;
   var lastStats = null;
   var fallbackHosts = {};        // host -> 'native' after MSE could not fetch it
@@ -231,7 +231,7 @@ var Player = (function () {
     }
   }
 
-  function state(s, msg) { if (st) st.state = s; emit('state', s, msg); }
+  function state(s, msg) { if (st) st.state = s; if (lastStats) lastStats.state = s; emit('state', s, msg); }
   function notice(msg) { emit('notice', msg); }
   function isFile() { return cur && !cur.live && !cur.timeshift; }
   function hdrPolicy() { return Store.settings.hdrRoute || 'auto'; }
@@ -412,7 +412,7 @@ var Player = (function () {
         Log.info('player', 'Still failing; trying the ' + ENGINE_NAMES[alt]);
         useEngine(alt); cur.retries = Math.floor(cur.p.retries / 2);
       } else if (cur.live && !cur.timeshift && cur.everPlayed && now - (cur.slowSince || now) < SLOW_FOR) {
-        if (!cur.slowSince) { cur.slowSince = now; Log.warn('player', 'Channel keeps failing; retrying every ' + SLOW_EVERY / 1000 + 's'); }
+        if (!cur.slowSince) { cur.slowSince = now; Log.warn('player', 'Channel keeps failing; retrying every ' + SLOW_EVERY / 1000 + 's'); emit('trouble', 'stopped'); }
         cur.slow = 'The channel stopped.  Still trying to get it back';
         state('buffering', cur.slow);
         cur.timer = setTimeout(function () { start(myToken); }, now - cur.slowSince < SLOW_FAST_FOR ? SLOW_FAST : SLOW_EVERY);
@@ -621,11 +621,15 @@ var Player = (function () {
     opts = opts || {};
     token++;
     if (cur) clearTimeout(cur.timer);
+    lastStats = null;                       // no stale numbers from the last channel in Stream info
     var fmt = Store.settings.format;
     cur = { ch: ch, url: opts.url || Source.streamUrl(ch, fmt), p: cfg(opts.preview), preview: !!opts.preview, retries: 0,
       forceNative: false, triedNative: false, live: opts.live !== false, startAt: opts.startAt || 0, meta: opts.meta || null,
       timeshift: !!opts.timeshift, urlFn: opts.urlFn || null, pos: opts.startAt || 0,
       media: opts.media || (opts.meta && opts.meta.media) || null, opts: opts };
+    // keepTrying: a channel known to work here (back from its backups during an outage) retries
+    // like one that has played, instead of giving up after the first round.
+    if (opts.keepTrying) cur.everPlayed = true;
     applyDisplay();
     if (video) video.playbackRate = 1;
     start(token);

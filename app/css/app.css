@@ -345,7 +345,17 @@ body:not(.nav-hidden) #viewGuide .guide-groups{left:96px}
 .guide-groups .row .tag{color:var(--muted)}
 .guide-groups .row.hid .name{color:var(--dim)}
 body.nav-hidden .hints{padding-left:56px}
-.qp-act .i{font-size:26px;line-height:1}
+.qp-act .i{display:flex;height:32px;align-items:center}
+.qico{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.qico .fill{fill:currentColor}
+.qtag{flex:none;font-size:15px;font-weight:700;letter-spacing:.04em;line-height:1;padding:4px 7px;border:1.5px solid rgba(255,255,255,.28);border-radius:6px;color:var(--muted)}
+.row.sel .qtag,.grow.sel .qtag{border-color:currentColor;color:inherit;opacity:.75}
+.gch{gap:12px}
+.gch .n{flex:1;min-width:0}
+.gchips{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.gchips .cu{margin-left:0;font-size:16px;line-height:1.3}
+.gchips .qtag{font-size:13px;padding:2px 5px}
+.qp-actions{overflow:hidden;padding:2px}
 /* layout fixes for the side menu */
 .channels{width:700px}
 .preview-slot{width:100%;height:324px}

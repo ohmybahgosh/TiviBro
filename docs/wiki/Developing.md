@@ -31,6 +31,8 @@ docs/             User guide, architecture, decisions, roadmap, simulator guide,
 | `npm run soak:chaos` | Plays every sloppy test stream in the real app and reports freezes, reconnects and time moving |
 | `npm run soak:zap` | 300 fast channel changes, then checks playback, memory and that menus still open |
 | `npm run soak:monkey` | Minutes of random remote presses across every screen, looking for errors and dead ends |
+| `npm run soak:speed` | Key-press-to-screen times and held-arrow scrolling on a 15,000-channel playlist, CPU slowed to TV speed |
+| `npm run soak:backup` | A channel that never starts, one that dies, and a provider outage: backup versions and recovery |
 
 ## Trying it without a provider
 
@@ -67,7 +69,14 @@ npm run serve &
 npm run soak:chaos -- --secs 150         # or pick channels: npm run soak:chaos -- 906 909
 ```
 
-Headless Chromium decodes in software, so compare runs with each other rather than with a TV.  `soak:zap` and `soak:monkey` use the same setup; the monkey is seeded (`--seeds 1,2,3`) so a failing run can be replayed.
+Headless Chromium decodes in software, so compare runs with each other rather than with a TV.
+
+For speed, `MOCK_BIG=15000` makes the mock a provider-sized playlist: 15,000 extra channels in 600 groups, 3,000 of them with a guide (`MOCK_BIG_EPG`), and a 43 MB XMLTV file.
+
+```bash
+MOCK_PORT=8088 MOCK_BIG=15000 node tests/mock/mock_provider.js &
+SERVER=http://127.0.0.1:8088 npm run soak:speed -- --cpu 4     # --cpu 4 is roughly a recent LG TV
+```  `soak:zap` and `soak:monkey` use the same setup; the monkey is seeded (`--seeds 1,2,3`) so a failing run can be replayed.
 
 ## More
 

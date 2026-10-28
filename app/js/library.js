@@ -25,6 +25,7 @@ var Library = (function () {
     d.groups.forEach(function (g) { groupNames[g.id] = g.name; });
     trackNewGroups(d.groups);
     Names.invalidate();
+    versionIndex = null;
     dirty();
   }
   // Groups the provider adds later can arrive hidden (Settings > Groups > Newly added groups),
@@ -42,6 +43,51 @@ var Library = (function () {
     } catch (err) { Log.warn('library', 'Could not track new groups: ' + err.message); }
   }
   function dirty() { groupCache.clear(); }
+
+  /* ---------- other versions of a channel ----------
+     The same channel in another quality, group or copy ("ESPN FHD", "ESPN HD", "US| ESPN (Backup)"),
+     used when one stops working.  Matched on the provider's name with quality and format tags
+     removed, keeping the country and East/West feed apart, so "UK: Sky News" never stands in for a
+     US channel.  Hidden copies count: they are often exactly the spares people hid. */
+  var versionIndex = null;
+  var V_TAGS = /\b(8k|4k|uhd|fhd|qhd|full ?hd|hd|sd|hq|lq|hevc|h\.?26[45]|hdr(10)?\+?|dolby ?vision|dv|raw|backup|alt|alternative|bk|vip|2160p?|1080[pi]?|720p?|576[pi]?|480p?|50 ?fps|60 ?fps)\b/g;
+  var V_FEED = /\b(east|west|pacific|mountain|central)\b|\((e|w)\)/i;
+  var V_COUNTRY = /^\s*[\[(]\s*([a-z]{2,3})\s*[\])]\s*|^\s*([a-z]{2,3})\s*[:|]\s*/i;
+  var V_QUAL = [[/\b(8k|4k|uhd|2160p?)\b/i, 4], [/\b(fhd|1080[pi]?|full ?hd)\b/i, 3], [/\b(hd|720p?)\b/i, 2], [/\b(sd|480p?|576[pi]?|lq)\b/i, 1]];
+  function versionKey(c) {
+    if (c._vk != null) return c._vk;
+    return (c._vk = makeVersionKey(c));
+  }
+  function makeVersionKey(c) {
+    var n = String(c.n || ''), m = V_COUNTRY.exec(n), country = '';
+    if (m) { country = (m[1] || m[2]).toUpperCase(); n = n.slice(m[0].length); }
+    else { var gm = V_COUNTRY.exec(groupNames[c.g] || ''); if (gm) country = (gm[1] || gm[2]).toUpperCase(); }
+    var f = V_FEED.exec(n), feed = f ? (f[1] || f[2]).charAt(0).toLowerCase() : '';
+    var base = n.toLowerCase().replace(V_FEED, ' ').replace(/\[[^\]]*\]|\([^)]*\)/g, ' ').replace(V_TAGS, ' ').replace(/[^a-z0-9\u00c0-\uffff]+/g, '');
+    return base.length < 2 ? '' : country + '|' + base + '|' + feed;
+  }
+  function quality(n) { for (var i = 0; i < V_QUAL.length; i++) if (V_QUAL[i][0].test(n)) return V_QUAL[i][1]; return 2.5; }
+  // Steadiest first: Full HD, HD, unmarked, then 4K (the most bandwidth), then SD.
+  var Q_ORDER = { 3: 5, 2: 4, 2.5: 3, 4: 2, 1: 1 };
+  function versions(c) {
+    if (!c) return [];
+    if (!versionIndex) {
+      versionIndex = new Map();
+      for (var i = 0; i < data.channels.length; i++) {
+        var x = data.channels[i], k = versionKey(x); if (!k) continue;
+        var a = versionIndex.get(k); if (a) a.push(x); else versionIndex.set(k, [x]);
+      }
+    }
+    var list = versionIndex.get(versionKey(c)) || [], e = E();
+    return list.filter(function (x) { return x.k !== c.k && !e.blockedChannels[x.k] && !e.blockedGroups[x.g]; })
+      .sort(function (a, b) {
+        return (Q_ORDER[quality(b.n)] - Q_ORDER[quality(a.n)]) || ((a.g === c.g ? 0 : 1) - (b.g === c.g ? 0 : 1)) ||
+          ((e.hiddenChannels[a.k] ? 1 : 0) - (e.hiddenChannels[b.k] ? 1 : 0)) || ((+a.num || 0) - (+b.num || 0));
+      });
+  }
+  function qualityLabel(c) { return { 4: '4K', 3: 'FHD', 2: 'HD', 1: 'SD' }[quality(c.n)] || ''; }
+  // The quality tag lists show next to a name, only where the same channel is there more than once.
+  function versionTag(c) { return versions(c).length ? qualityLabel(c) : ''; }
 
   function name(c) { return (c && (E().renames[c.k] || Names.clean(c.n))) || ''; }
   function isCustom(gid) { return gid && gid.indexOf('c_') === 0; }
@@ -230,6 +276,6 @@ var Library = (function () {
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,
     createGroup: createGroup, renameGroup: renameGroup, deleteGroup: deleteGroup,
     copyTo: copyTo, removeFrom: removeFrom, moveInGroup: moveInGroup, moveGroup: moveGroup,
-    hiddenItems: hiddenItems, allGroups: allGroups, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
+    hiddenItems: hiddenItems, allGroups: allGroups, versions: versions, versionKey: versionKey, qualityLabel: qualityLabel, versionTag: versionTag, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
   };
 })();

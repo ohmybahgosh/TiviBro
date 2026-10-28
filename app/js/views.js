@@ -87,8 +87,8 @@ var Views = (function () {
       row._n = U.el('span', 'name'); row._s = U.el('span', 'sub'); row._p = U.el('div', 'pbar'); row._pi = U.el('i');
       row._p.appendChild(row._pi);
       box.appendChild(row._n); box.appendChild(row._s); box.appendChild(row._p);
-      row._t = U.el('span', 'tag');
-      row.appendChild(row._num); row.appendChild(row._img); row.appendChild(box); row.appendChild(row._t);
+      row._t = U.el('span', 'tag'); row._q = U.el('span', 'qtag');
+      row.appendChild(row._num); row.appendChild(row._img); row.appendChild(box); row.appendChild(row._q); row.appendChild(row._t);
     }
     var showNum = Store.settings.showNumbers;
     row._num.textContent = showNum ? c.num : '';
@@ -108,6 +108,8 @@ var Views = (function () {
       row._pi.style.width = Math.round(100 * (Date.now() - nn.now.s) / (nn.now.e - nn.now.s)) + '%';
       row._p.style.display = '';
     } else { row._s.textContent = nn ? '' : ' '; row._p.style.display = 'none'; }
+    var qt = L.versionTag(c);
+    if (row._qt !== qt) { row._qt = qt; row._q.textContent = qt; row._q.style.display = qt ? '' : 'none'; }
     var tags = [];
     if (L.isFav(c.k)) tags.push('★');
     if (c.arch && Store.settings.showCatchupMark !== false) tags.push('↺');
@@ -130,6 +132,7 @@ var Views = (function () {
     Player.on('state', onPlayerState);
     Player.on('stats', onStats);
     Player.on('notice', function (m) { if (m) U.toast(m, m.length > 40 ? 6000 : 0); });
+    Player.on('trouble', function () { downSoon(); });
     // Magic Remote in fullscreen: moving the pointer shows the info panel and its button legend,
     // clicking the picture shows or hides it.
     stage.addEventListener('click', function () { if (!full) { if (playing && mode === 'live') goFull(); return; } var o = $('osd'); if (o.classList.contains('hidden')) osd(true); else o.classList.add('hidden'); });
@@ -256,7 +259,13 @@ var Views = (function () {
     if (!Parental.blockedOk(c)) return;
     if (Store.settings.previewPlay && (!playing || playing.k !== c.k || mode !== 'live')) startChannel(c, true);
   }, 450);
-  function onChanSel() { updateInfo(); previewDeb(); }
+  // While an arrow is held the info panel waits until the remote rests, so the list keeps up.
+  var infoT = 0;
+  function onChanSel() {
+    clearTimeout(infoT);
+    if (UI.repeating) infoT = setTimeout(updateInfo, 120); else updateInfo();
+    previewDeb();
+  }
 
   function updateInfo() {
     var c = chansVL && chansVL.current();
@@ -282,6 +291,7 @@ var Views = (function () {
   // Every way of starting a live channel goes through here, so the PIN check can't be skipped.
   function startChannel(c, preview, then) {
     Parental.gate('channels', c, function () {
+      if (!foSwitching) fo = null;            // picking a channel yourself ends a backup chain
       if (playing && playing.k !== c.k) lastPlayed = playing;
       playing = c; mode = 'live'; cu = null; vod = null;
       playStart = Date.now(); recentDone = false;
@@ -289,7 +299,7 @@ var Views = (function () {
       stage.classList.remove('off');
       if (Store.settings.blackSwitch) stage.classList.add('blank');
       Multiview.close(true);
-      Player.play(c, { preview: preview });
+      Player.play(c, { preview: preview, keepTrying: foSwitching === 'back' });
       chansVL.refreshWhere(function (x) { return x && (x.k === c.k || (lastPlayed && x.k === lastPlayed.k)); });
       if (then) then();
     });
@@ -893,6 +903,70 @@ var Views = (function () {
     }, 1400);
   }
 
+  /* ---------- backup versions ----------
+     A live channel that has run out of retries switches to another version of the same channel
+     (Library.versions: other qualities, groups and hidden copies), each tried once.  Settings >
+     Playback > When a channel stops working: switch, ask, or keep retrying. */
+  var fo = null, foSwitching = false, foFailed = {};
+  // The player reports from inside its own retry code: act once it has finished with this channel.
+  function downSoon() { var c = playing; setTimeout(function () { if (playing === c) channelDown(); }, 0); }
+  function channelDown() {
+    var how = Store.settings.backups || 'auto', c = playing, now = Date.now();
+    if (how === 'off' || mode !== 'live' || !c || document.body.classList.contains('mv')) return;
+    foFailed[c.k] = now;
+    if (!fo) fo = { from: c, tried: {} };
+    fo.tried[c.k] = 1;
+    var next = L.versions(fo.from).concat([fo.from]).filter(function (x) { return !fo.tried[x.k] && !(now - (foFailed[x.k] || 0) < 10 * 60e3); });
+    if (!next.length) {
+      // Every version failed: most likely the provider itself is down.  Go back to the channel you
+      // chose and keep retrying it, so the picture returns by itself when the provider does.
+      if (fo.exhausted || Object.keys(fo.tried).length < 2) return;
+      fo.exhausted = true;
+      Log.warn('player', 'No version of ' + fo.from.n + ' is working; back to it, retrying');
+      U.toast('No version of ' + L.name(fo.from) + ' is working right now.  Still trying.', 6000);
+      if (c.k !== fo.from.k) {
+        var lp0 = lastPlayed;
+        foSwitching = 'back';
+        try { startChannel(fo.from, !full, function () { if (full) osd(true); else placePreview(); }); }
+        finally { foSwitching = false; }
+        lastPlayed = lp0;
+      }
+      return;
+    }
+    if (how === 'ask' && !UI.modalOpen) {
+      UI.menu(L.name(c) + ' stopped working', next.slice(0, 5).map(function (x) {
+        return { label: 'Switch to ' + L.name(x), sub: versionSub(x), action: function () { switchVersion(x, c); } };
+      }).concat([{ label: 'Keep trying ' + L.name(c), action: function () {} }]));
+      return;
+    }
+    if (how === 'auto') switchVersion(next[0], c);
+  }
+  function versionSub(x) {
+    var q = L.qualityLabel(x);
+    return [q, L.groupName(x.g), Store.edits.hiddenChannels[x.k] ? 'hidden' : ''].filter(Boolean).join('  ·  ');
+  }
+  function switchVersion(x, from) {
+    if (!fo) fo = { from: from, tried: {} };
+    fo.tried[x.k] = 1;
+    var lp = lastPlayed, q = L.qualityLabel(x);
+    Log.info('player', L.name(from) + ' stopped working; switching to ' + x.n);
+    U.toast(L.name(from) + ' isn\'t working.  Switched to ' + L.name(x) + (q ? ' (' + q + ')' : ''), 6000);
+    foSwitching = true;
+    try { startChannel(x, !full, function () { if (full) osd(true); else placePreview(); }); }
+    finally { foSwitching = false; }
+    lastPlayed = lp;                          // "last channel" stays the one you chose before
+  }
+  function versionsSummary(c) {
+    var v = L.versions(c), q = v.map(function (x) { return L.qualityLabel(x) || 'copy'; });
+    return q.filter(function (x, i) { return q.indexOf(x) === i; }).join(', ');
+  }
+  function versionsMenu(c) {
+    var v = L.versions(c);
+    UI.menu('Other versions of ' + L.name(c), v.map(function (x) {
+      return { label: L.name(x), sub: versionSub(x), action: function () { startChannel(x, false, function () { if (!full) goFull(); else osd(true); }); } };
+    }));
+  }
+
   /* ---------- player feedback ---------- */
   var spin = $('spinner'), spinText = $('spinnerText'), verr = $('vidError');
   function onPlayerState(s, msg) {
@@ -903,6 +977,9 @@ var Views = (function () {
     verr.classList.toggle('hidden', s !== 'error');
     if (s === 'error') verr.textContent = msg;
     if (s === 'ended' && mode === 'vod') Vod.ended();
+    if (s === 'error' && mode === 'live') downSoon();
+    // Playing again: a later failure is a new incident (recent failures are still skipped for 10 min).
+    if (s === 'playing' && fo && playing) { foFailed[playing.k] = 0; fo.tried = {}; fo.exhausted = false; }
   }
   var meter = $('meter'), mFill = $('meterFill'), mText = $('meterText'), goodSince = 0, spinPlain = false;
   function onStats(x) {
@@ -954,6 +1031,7 @@ var Views = (function () {
       { label: fav ? 'Remove from Favorites' : 'Add to Favorites', action: function () { var on = L.toggleFav(c.k); U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); } },
       { label: 'Copy to group…', action: function () { copyMenu([c.k], L.name(c)); } },
       !full && tab === 'live' && { label: 'Select multiple…', sub: 'copy, favorite or hide several', action: function () { startPick(c.k); } },
+      L.versions(c).length && { label: 'Other versions…', sub: versionsSummary(c), action: function () { versionsMenu(c); } },
       c.arch && { label: 'Watch from start', action: function () { watchFromStart(c); } },
       c.arch && { label: 'Catch-up…', sub: c.arch + ' days', action: function () { catchupList(c); } },
       inCustom && gid !== L.FAV && { label: 'Remove from ' + L.groupName(gid), action: function () { L.removeFrom(gid, c.k); refreshLists(true); } },
@@ -983,27 +1061,45 @@ var Views = (function () {
      ◀ ▶ move along a row, ▲ ▼ switch rows, OK picks, Back closes.  Clickable with the pointer. */
   var qp = null;                  // { row, col, rows: [[items]], timer }
   // Quick menu buttons.  Each can be switched off in Settings > Remote control > Quick menu buttons.
-  var QP_BUTTONS = [['list', 'Channel list'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['audio', 'Audio track'],
+  var QP_BUTTONS = [['list', 'Channel list'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['audio', 'Audio track'],
     ['subs', 'Subtitles'], ['quality', 'Video quality'], ['picture', 'Picture size'], ['multiview', 'Multiview'], ['sleep', 'Sleep timer'],
     ['info', 'Stream info'], ['reconnect', 'Reconnect']];
+  // Line icons for the quick actions, drawn like the side menu's (24 x 24, stroked).
+  var QP_ICONS = {
+    list: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    start: '<path d="M6 5v14M19 5l-9 7 9 7z"/>',
+    fav: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.5 9.7l5.9-.9z"/>',
+    faved: '<path class="fill" d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.5 9.7l5.9-.9z"/>',
+    guide: '<path d="M3 5h18M3 12h18M3 19h18M9 3v18"/>',
+    versions: '<rect x="3" y="7" width="13" height="10" rx="2"/><path d="M19 9v8a2 2 0 0 1-2 2H8"/><path d="M21 11v6"/>',
+    audio: '<path d="M9 18V6l11-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    subs: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15h4M13 15h4M7 11h2M11 11h6"/>',
+    quality: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v6M11 9v6M7 12h4M14 9h2a3 3 0 0 1 0 6h-2z"/>',
+    picture: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 9H6v2M16 9h2v2M8 15H6v-2M16 15h2v-2"/>',
+    multiview: '<rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/>',
+    sleep: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+    info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+    reconnect: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>'
+  };
   function qpActions() {
     var c = playing, a = [], nn = c && Epg.nowNext(c), now = Date.now(), off = Store.settings.qpHidden || {};
     function add(id, it) { if (!off[id]) { it.id = id; a.push(it); } }
-    add('list', { label: 'Channel list', icon: '☰', run: function () { closePanel(); openOverlay(); } });
-    if (c && c.arch && nn && nn.now && nn.now.s <= now) add('start', { label: 'From start', icon: '⏮', v: 'catch-up', run: function () { closePanel(); watchFromStart(c); } });
-    if (c) add('fav', { label: L.isFav(c.k) ? 'Favorite' : 'Add favorite', icon: L.isFav(c.k) ? '★' : '☆', run: function () { var on = L.toggleFav(c.k); U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); renderPanel(); } });
-    add('guide', { label: 'TV guide', icon: '▦', run: function () { closePanel(); leaveTo('guide'); } });
+    add('list', { label: 'Channel list', icon: 'list', run: function () { closePanel(); openOverlay(); } });
+    if (c && c.arch && nn && nn.now && nn.now.s <= now) add('start', { label: 'From start', icon: 'start', v: 'catch-up', run: function () { closePanel(); watchFromStart(c); } });
+    if (c) add('fav', { label: L.isFav(c.k) ? 'Favorite' : 'Add favorite', icon: L.isFav(c.k) ? 'faved' : 'fav', run: function () { var on = L.toggleFav(c.k); U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); renderPanel(); } });
+    add('guide', { label: 'TV guide', icon: 'guide', run: function () { closePanel(); leaveTo('guide'); } });
+    if (c && L.versions(c).length) add('versions', { label: 'Other versions', icon: 'versions', v: versionsSummary(c), run: function () { closePanel(); versionsMenu(c); } });
     var tracks = Player.audioTracks();
-    if (tracks.length > 1) add('audio', { label: 'Audio', icon: '♪', v: (tracks.filter(function (t) { return t.on; })[0] || {}).label || '', run: function () { closePanel(); audioMenu(); } });
+    if (tracks.length > 1) add('audio', { label: 'Audio', icon: 'audio', v: (tracks.filter(function (t) { return t.on; })[0] || {}).label || '', run: function () { closePanel(); audioMenu(); } });
     var subs = subtitleTracks();
-    if (subs.length) add('subs', { label: 'Subtitles', icon: 'CC', v: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || 'off', run: function () { closePanel(); subtitleMenu(); } });
-    if (Player.qualities().length > 1) add('quality', { label: 'Quality', icon: 'HD', v: qualityLabel(), run: function () { closePanel(); qualityMenu(); } });
-    add('picture', { label: 'Picture', icon: '▭', v: DM[Player.displayFor(c)] || 'Normal', run: function () { closePanel(); pictureMenu(); } });
-    if (c) add('multiview', { label: 'Multiview', icon: '⊞', run: function () { closePanel(); Multiview.open(c); } });
-    add('sleep', { label: 'Sleep timer', icon: '◔', v: sleepAt ? U.hhmm(sleepAt) : 'off', run: function () { closePanel(); sleepMenu(); } });
-    add('info', { label: 'Stream info', icon: 'ⓘ', run: function () { closePanel(); streamInfo(); } });
-    add('reconnect', { label: 'Reconnect', icon: '↻', run: function () { closePanel(); Player.retryNow(); U.toast('Reconnecting'); } });
-    if (!a.length) a.push({ id: 'list', label: 'Channel list', icon: '☰', run: function () { closePanel(); openOverlay(); } });
+    if (subs.length) add('subs', { label: 'Subtitles', icon: 'subs', v: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || 'off', run: function () { closePanel(); subtitleMenu(); } });
+    if (Player.qualities().length > 1) add('quality', { label: 'Quality', icon: 'quality', v: qualityLabel(), run: function () { closePanel(); qualityMenu(); } });
+    add('picture', { label: 'Picture', icon: 'picture', v: DM[Player.displayFor(c)] || 'Normal', run: function () { closePanel(); pictureMenu(); } });
+    if (c) add('multiview', { label: 'Multiview', icon: 'multiview', run: function () { closePanel(); Multiview.open(c); } });
+    add('sleep', { label: 'Sleep timer', icon: 'sleep', v: sleepAt ? U.hhmm(sleepAt) : 'off', run: function () { closePanel(); sleepMenu(); } });
+    add('info', { label: 'Stream info', icon: 'info', run: function () { closePanel(); streamInfo(); } });
+    add('reconnect', { label: 'Reconnect', icon: 'reconnect', run: function () { closePanel(); Player.retryNow(); U.toast('Reconnecting'); } });
+    if (!a.length) a.push({ id: 'list', label: 'Channel list', icon: 'list', run: function () { closePanel(); openOverlay(); } });
     return a;
   }
   function qualityLabel() { if (Player.qualityAuto()) return 'Auto'; var q = Player.qualities().filter(function (x) { return x.on; })[0]; return q ? q.label.split(' ')[0] : 'Auto'; }
@@ -1068,7 +1164,7 @@ var Views = (function () {
     var r0 = U.el('div', 'qp-actions');
     qp.rows[0].forEach(function (it, i) {
       var b = U.el('div', 'qp-act' + (qp.row === 0 && qp.col === i ? ' focus' : ''));
-      b.appendChild(U.el('span', 'i', it.icon || ''));
+      var ic = U.el('span', 'i'); ic.innerHTML = '<svg viewBox="0 0 24 24" class="qico">' + (QP_ICONS[it.icon] || '') + '</svg>'; b.appendChild(ic);
       b.appendChild(U.el('span', '', it.label));
       if (it.v) b.appendChild(U.el('span', 'v', it.v));
       hook(b, 0, i);
@@ -1089,9 +1185,10 @@ var Views = (function () {
       el.appendChild(r1);
     }
     el.appendChild(U.el('div', 'qp-row-title', '◀ ▶  move      ▲ ▼  switch row      OK  choose      Back  close'));
+    focusPanel();
   }
   function hook(b, row, col) {
-    b.addEventListener('mousemove', function () { if (UI.pointer && qp && (qp.row !== row || qp.col !== col)) { qp.row = row; qp.col = col; renderPanel(); armPanel(); } });
+    b.addEventListener('mousemove', function () { if (UI.pointer && qp && (qp.row !== row || qp.col !== col)) { qp.row = row; qp.col = col; focusPanel(); armPanel(); } });
     b.addEventListener('click', function () { if (!qp) return; qp.row = row; qp.col = col; panelKeys('ok'); });
   }
   function panelKeys(a) {
@@ -1105,8 +1202,20 @@ var Views = (function () {
     else if (a === 'ok') { var it = rowItems[qp.col]; if (it) it.run(); return true; }
     else if (a === 'back' || a === 'info') { closePanel(); return true; }
     else if (a === 'chup' || a === 'chdown') { closePanel(); fullKeys(a); return true; }
-    renderPanel();
+    focusPanel();
     return true;
+  }
+  // Moving along the panel only moves the highlight; the panel is built once per opening.
+  function focusPanel() {
+    var el = $('qpanel'), rs = [el.querySelectorAll('.qp-act'), el.querySelectorAll('.qp-ch')];
+    for (var r = 0; r < 2; r++) for (var i = 0; i < rs[r].length; i++) rs[r][i].classList.toggle('focus', qp.row === r && qp.col === i);
+    // More buttons than fit across: the row slides to keep the highlighted one in view.
+    var f = rs[qp.row][qp.col], box = f && f.parentNode;
+    if (box && box.scrollWidth > box.clientWidth) {
+      var l = f.offsetLeft - box.offsetLeft, w = f.offsetWidth;
+      if (l - box.scrollLeft < 0) box.scrollLeft = Math.max(0, l - 40);
+      else if (l + w - box.scrollLeft > box.clientWidth) box.scrollLeft = l + w - box.clientWidth + 40;
+    }
   }
   function subtitleTracks() {
     var t = video && video.textTracks, out = [];
@@ -1202,7 +1311,9 @@ var Views = (function () {
     QP_BUTTONS: QP_BUTTONS, logoOf: logoOf, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; },
-    restoreKeys: function () { UI.setHandler(full ? fullKeys : liveKeys); }
+    restoreKeys: function () { UI.setHandler(full ? fullKeys : liveKeys); },
+    // Read-only state for the speed tests (tests/soak/speed.js).
+    __sel: function () { return chansVL ? chansVL.sel : 0; }, __gsel: function () { return groupsVL ? groupsVL.sel : 0; }
   };
 })();
 
@@ -1232,13 +1343,15 @@ var Guide = (function () {
     for (var i = 0; i < VIS; i++) {
       var r = U.el('div', 'grow'), ch = U.el('div', 'gch'), pr = U.el('div', 'gprogs');
       ch.appendChild(U.el('span', 'num'));
-      var img = U.el('img', 'logo'); img.onerror = function () { this.style.visibility = 'hidden'; }; ch.appendChild(img);
-      ch.appendChild(U.el('span', 'n')); ch.appendChild(U.el('span', 'cu'));
+      var img = U.el('img', 'logo'); img.decoding = 'async'; img.onerror = function () { this.style.visibility = 'hidden'; }; ch.appendChild(img);
+      ch.appendChild(U.el('span', 'n'));
+      var chips = U.el('span', 'gchips'), cuEl = U.el('span', 'cu'), qEl = U.el('span', 'qtag');
+      chips.appendChild(cuEl); chips.appendChild(qEl); ch.appendChild(chips);
       r.appendChild(ch); r.appendChild(pr);
       r.style.transform = 'translateY(' + (i * ROW) + 'px)';
       r.setAttribute('data-slot', i);
       body.appendChild(r);
-      rows.push({ el: r, ch: ch, pr: pr, img: img, k: null });
+      rows.push({ el: r, ch: ch, pr: pr, img: img, k: null, slot: i, cells: [], cuEl: cuEl, qEl: qEl });
     }
     var nowLine = U.el('div', 'gnow'); nowLine.id = 'gnow'; body.appendChild(nowLine);
     groupsVL = new VList($('guideGroupList'), { render: renderGroupRow, onSel: onGroupSel, empty: 'No groups', visible: 7, rowH: ROW,
@@ -1371,38 +1484,52 @@ var Guide = (function () {
     r.k = Epg.keyOf(c);
     r.el.classList.toggle('sel', focus);
     r.el.classList.toggle('playing', isPlaying(c));
-    r.ch.children[0].textContent = Store.settings.showNumbers ? c.num : '';
     var lg = Views.logoOf(c), cuMark = c.arch && Store.settings.showCatchupMark !== false;
+    var qt = L.versionTag(c);
+    var head = (Store.settings.showNumbers ? c.num : '') + '|' + L.name(c) + '|' + (cuMark ? c.arch : '') + '|' + qt;
+    if (r.head !== head) {
+      r.head = head;
+      r.ch.children[0].textContent = Store.settings.showNumbers ? c.num : '';
+      r.ch.children[2].textContent = L.name(c);
+      // Catch-up is just the mark here; the days are in the details above the guide.
+      r.cuEl.textContent = cuMark ? '↺' : '';
+      r.cuEl.style.display = cuMark ? '' : 'none';
+      r.qEl.textContent = qt;
+      r.qEl.style.display = qt ? '' : 'none';
+    }
     if (r.img._src !== lg) { r.img._src = lg; r.img.style.visibility = lg ? 'visible' : 'hidden'; if (lg) r.img.src = lg; }
-    r.ch.children[2].textContent = L.name(c);
-    r.ch.children[3].textContent = cuMark ? '↺ ' + c.arch + 'd' : '';
-    r.ch.children[3].style.display = cuMark ? '' : 'none';
-    r.pr.innerHTML = '';
     var locked = !Parental.blockedOk(c);
-    var l = locked ? [] : Epg.request(c), t1 = t0 + WIN, any = false, nowT = Date.now();
+    var l = locked ? [] : Epg.request(c), t1 = t0 + WIN, n = 0, nowT = Date.now();
     if (l) for (var i = 0; i < l.length; i++) {
       var p = l[i];
       if (p.e <= t0 || p.s >= t1) continue;
-      any = true;
-      var a = Math.max(0, x(p.s)), b = Math.min(PXW, x(p.e)), w = Math.max(4, b - a);
-      var d = U.el('div', 'gp');
+      var a = Math.max(0, x(p.s)), b = Math.min(PXW, x(p.e));
       var past = p.e <= nowT, now = p.s <= nowT && p.e > nowT;
       // How much of what's on now has aired, shown inside its cell.
-      if (now) { var f = U.el('i', 'gfill'); f.style.width = U.clamp(x(nowT) - a, 0, w) + 'px'; d.appendChild(f); }
-      d.appendChild(U.el('span', 'gt' + (past && cuMark ? ' gcu' : ''), (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t));
-      d.appendChild(U.el('small', 'gs', U.hhmm(p.s) + ' – ' + U.hhmm(p.e)));
-      d.setAttribute('data-s', p.s);
-      d.style.left = a + 'px'; d.style.width = w + 'px';
-      if (now) d.classList.add('now'); else if (past) d.classList.add('past');
-      if (focus && p.s <= focusT && p.e > focusT) d.classList.add('focus');
-      r.pr.appendChild(d);
+      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : ''), a, Math.max(4, b - a),
+        (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(x(nowT) - a, 0, Math.max(4, b - a)) : -1, p.s);
     }
-    if (!any) {
-      var e = U.el('div', 'gp none' + (focus ? ' focus' : ''));
-      e.appendChild(U.el('span', 'gt', locked ? 'Locked' : l ? 'No guide information' : 'Loading…'));
-      e.style.left = '0'; e.style.width = PXW + 'px';
-      r.pr.appendChild(e);
+    if (!n) cell(r, n++, 'gp none' + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : l ? 'No guide information' : 'Loading…', false, null, -1, '');
+    for (var j = n; j < r.cells.length; j++) if (!r.cells[j].off) { r.cells[j].d.style.display = 'none'; r.cells[j].off = true; }
+  }
+  // Programme cells are kept per row and reused, so scrolling the guide creates no new elements.
+  function cell(r, i, cls, left, w, title, cu, time, fill, start) {
+    var c = r.cells[i];
+    if (!c) {
+      c = { d: U.el('div', 'gp'), f: U.el('i', 'gfill'), t: U.el('span', 'gt'), s: U.el('small', 'gs') };
+      c.d.appendChild(c.f); c.d.appendChild(c.t); c.d.appendChild(c.s);
+      r.pr.appendChild(c.d); r.cells[i] = c;
     }
+    var d = c.d;
+    if (c.off) { d.style.display = ''; c.off = false; }
+    if (c.cls !== cls) { d.className = cls; c.cls = cls; }
+    if (c.l !== left) { d.style.left = left + 'px'; c.l = left; }
+    if (c.w !== w) { d.style.width = w + 'px'; c.w = w; }
+    if (c.tt !== title) { c.t.textContent = title; c.tt = title; }
+    if (c.cu !== cu) { c.t.className = cu ? 'gt gcu' : 'gt'; c.cu = cu; }
+    if (c.ts !== time) { c.s.textContent = time || ''; c.s.style.display = time == null ? 'none' : ''; c.ts = time; }
+    if (c.fw !== fill) { c.f.style.display = fill < 0 ? 'none' : ''; if (fill >= 0) c.f.style.width = fill + 'px'; c.fw = fill; }
+    if (c.st !== start) { if (start === '') d.removeAttribute('data-s'); else d.setAttribute('data-s', start); c.st = start; }
   }
 
   function draw() {
@@ -1410,15 +1537,19 @@ var Guide = (function () {
     var want = document.body.classList.contains('noguidenames') ? 260 : 470;
     if (want !== CHW || !PXW) { CHW = want; PXW = (body.clientWidth || 1808) - CHW; }
     for (var i = 0; i < rows.length; i++) drawRow(rows[i], top + i);
-    timesEl.innerHTML = '';
-    for (var t = t0; t < t0 + WIN; t += 30 * 60e3) {
-      var s = U.el('span', '', U.hhmm(t)); s.style.left = (x(t) + 16) + 'px'; timesEl.appendChild(s);
+    if (timesKey !== t0 + '|' + CHW) {
+      timesKey = t0 + '|' + CHW;
+      timesEl.innerHTML = '';
+      for (var t = t0; t < t0 + WIN; t += 30 * 60e3) {
+        var s = U.el('span', '', U.hhmm(t)); s.style.left = (x(t) + 16) + 'px'; timesEl.appendChild(s);
+      }
     }
     var nl = $('gnow'), nx = x(Date.now());
     if (nl) { nl.style.display = nx >= 0 && nx <= PXW ? '' : 'none'; nl.style.transform = 'translateX(' + (CHW + nx) + 'px)'; }
     drawDetail();
   }
 
+  var timesKey = '';
   function mins(ms) { var m = Math.max(1, Math.round(ms / 60000)); return m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min'; }
 
   // What OK will do for the focused cell, in plain words.
@@ -1452,7 +1583,8 @@ var Guide = (function () {
     } else meta.appendChild(document.createTextNode(Epg.request(c) ? 'No guide information for this time' : 'Loading guide…'));
     detail.appendChild(meta);
     var meta2 = U.el('div', 'gd-meta');
-    meta2.textContent = (Store.settings.showNumbers ? c.num + '  ' : '') + L.name(c) + '   ·   ' + L.groupName(c.g) + (c.arch ? '   ·   ↺ catch-up ' + c.arch + ' days' : '');
+    var dq = L.versionTag(c);
+    meta2.textContent = (Store.settings.showNumbers ? c.num + '  ' : '') + L.name(c) + (dq ? ' ' + dq : '') + '   ·   ' + L.groupName(c.g) + (c.arch ? '   ·   ↺ catch-up ' + c.arch + ' days' : '');
     detail.appendChild(meta2);
     if (h.p && h.p.s <= now && h.p.e > now) {
       var bar = U.el('div', 'gd-prog'), fill = U.el('i'); fill.style.width = Math.round(100 * (now - h.p.s) / (h.p.e - h.p.s)) + '%'; bar.appendChild(fill); detail.appendChild(bar);
@@ -1490,9 +1622,32 @@ var Guide = (function () {
     if (sel < top + 1) top = sel - 1;
     if (sel > top + VIS - 2) top = sel - VIS + 2;
     top = U.clamp(top, 0, Math.max(0, n - VIS));
-    if (top !== oldTop) draw();
-    else { drawRow(rows[old - top], old); drawRow(rows[sel - top], sel); drawDetail(); }
+    var d = top - oldTop;
+    if (d && Math.abs(d) < VIS) shift(d);
+    else if (d) { draw(); return s !== old; }
+    if (old >= top && old < top + VIS) drawRow(rows[old - top], old);
+    drawRow(rows[sel - top], sel);
+    detailSoon();
     return s !== old;
+  }
+  // Scrolling by a few rows: the rows that left the screen move to the other end and only they are
+  // drawn again.  The rest just move (each row is its own layer, so moving costs no repaint).
+  function shift(d) {
+    var i;
+    if (d > 0) for (i = 0; i < d; i++) rows.push(rows.shift());
+    else for (i = 0; i < -d; i++) rows.unshift(rows.pop());
+    for (i = 0; i < rows.length; i++) if (rows[i].slot !== i) {
+      rows[i].slot = i; rows[i].el.style.transform = 'translateY(' + (i * ROW) + 'px)'; rows[i].el.setAttribute('data-slot', i);
+    }
+    if (d > 0) for (i = VIS - d; i < VIS; i++) drawRow(rows[i], top + i);
+    else for (i = 0; i < -d; i++) drawRow(rows[i], top + i);
+  }
+  // While an arrow is held the details wait until the remote rests: the rows keep up instead.
+  var detailT = 0;
+  function detailSoon() {
+    clearTimeout(detailT);
+    if (UI.repeating) detailT = setTimeout(drawDetail, 120);
+    else drawDetail();
   }
   function moveSel(d) { var s2 = sel + d; if (s2 < 0 || s2 >= list.length) return false; return selectIdx(s2); }
 
@@ -1618,5 +1773,6 @@ var Guide = (function () {
     for (var i = 0; i < rows.length; i++) if (rows[i].k === k) { drawRow(rows[i], top + i); if (top + i === sel) drawDetail(); }
   }
 
-  return { open: open, resume: resume, refresh: refresh, draw: draw, rowUpdated: rowUpdated, leave: leave };
+  return { open: open, resume: resume, refresh: refresh, draw: draw, rowUpdated: rowUpdated, leave: leave,
+    __sel: function () { return sel; }, __gsel: function () { return groupsVL ? groupsVL.sel : 0; } };
 })();

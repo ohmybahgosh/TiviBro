@@ -18,6 +18,8 @@
     "soak:chaos": "node tests/soak/chaos.js",
     "soak:monkey": "node tests/soak/monkey.js",
     "soak:zap": "node tests/soak/zap.js",
+    "soak:speed": "node tests/soak/speed.js",
+    "soak:backup": "node tests/soak/backup.js",
     "version:bump": "bash scripts/bump-version.sh",
     "release": "bash scripts/release.sh",
     "manifest": "node scripts/gen-manifest.js",

@@ -30,5 +30,25 @@ edits.custom.push({ id: 'c_x', name: 'Mine', items: ['4', '1', '3'] }); edits.gr
 ok('your own group can be sorted too', keys('c_x') === '4,1,3', keys('c_x'));
 edits.groupSort = {}; L.dirty();
 ok('your own group keeps your order', keys('c_x') === '4,1,3');
+
+// Other versions of a channel (backups when one stops working).
+L.set({ groups: [{ id: 'us', name: 'US | News' }, { id: 'uk', name: 'UK | News' }, { id: 'x', name: 'Backup' }], channels: [
+  { k: 'a', n: 'US| CNN FHD', g: 'us', num: 1 }, { k: 'b', n: 'US| CNN HD', g: 'us', num: 2 }, { k: 'c', n: 'US| CNN SD', g: 'us', num: 3 },
+  { k: 'd', n: 'US| CNN 4K', g: 'us', num: 4 }, { k: 'e', n: 'CNN (Backup)', g: 'us', num: 5 }, { k: 'f', n: 'UK: CNN HD', g: 'uk', num: 6 },
+  { k: 'g', n: 'US| CNN International', g: 'us', num: 7 }, { k: 'h', n: 'US| HBO East', g: 'us', num: 8 }, { k: 'i', n: 'US| HBO West', g: 'us', num: 9 },
+  { k: 'j', n: 'US| HBO (E) HD', g: 'us', num: 10 }, { k: 'k', n: 'US| CNN [1080p]', g: 'x', num: 11 }, { k: 'l', n: 'US| Sky Sports 1', g: 'us', num: 12 },
+  { k: 'm', n: 'US| Sky Sports 2', g: 'us', num: 13 }] });
+const ver = k => L.versions(L.find(k)).map(c => c.k).join(',');
+ok('versions: other qualities and copies, steadiest first', ver('c') === 'a,k,b,e,d', ver('c'));
+ok('versions: never another country', !/f/.test(ver('a')));
+ok('versions: a different channel with a longer name is not a version', !/g/.test(ver('a')));
+ok('versions: East and West feeds stay apart', ver('h') === 'j' && ver('i') === '', ver('h') + ' / ' + ver('i'));
+ok('versions: numbered channels stay apart', ver('l') === '' && ver('m') === '');
+edits.hiddenChannels = { b: 1 };
+ok('versions: hidden copies count (often the spares)', /b/.test(ver('a')));
+edits.blockedChannels = { b: 1 };
+ok('versions: never a channel locked with the PIN', !/b/.test(ver('a')));
+edits.blockedChannels = {}; edits.hiddenChannels = {};
+ok('quality labels', L.qualityLabel(L.find('a')) === 'FHD' && L.qualityLabel(L.find('d')) === '4K' && L.qualityLabel(L.find('e')) === '');
 console.log(fail ? fail + ' failures' : 'all library tests passed');
 process.exit(fail ? 1 : 0);
