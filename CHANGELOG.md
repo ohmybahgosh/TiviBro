@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 6, 2026-10-28)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 6
 
 - Quicker starts, same stability (buffer profiles unchanged):
   - CH+ / CH− and Last channel: a lone press starts the channel at once instead of after 300 ms; presses in quick succession still wait until you stop, so surfing opens one stream rather than many.  A single press to a moving picture went from about 0.72 s to 0.15 s against the mock provider (and 0.42 s to 0.15 s with a provider that allows one connection).
@@ -27,11 +31,7 @@
 - Stream info no longer shows the previous channel's numbers while a channel is connecting.
 - Speed and backup tooling: `npm run soak:speed` (key-to-screen times and held-arrow scrolling, CPU slowed to TV speed), `MOCK_BIG=15000` for a provider-sized mock playlist, `npm run soak:backup`.
 
-## 0.6.0 (alpha 5, 2026-10-28)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 5
+### In alpha 5
 
 - Homebrew Channel repository.  In the Homebrew Channel, **Settings > Add repository** with `https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/repo.json` (releases; until the first one, the newest test build) or `…/repo-testing.json` (every build).  The Release workflow keeps both on the `homebrew` branch, with the manifest inside each entry, since the Homebrew Channel can't read GitHub release links from the TV.  `scripts/update-homebrew-repo.js`, tests: `tests/unit/homebrew.test.js`.
 - Every build has its own package version, so the Homebrew Channel sees updates between test builds: test builds sort below their release (`0.6.0-alpha.5` installs as `0.5.10005`, `scripts/pkg-version.js`).  TiviBro still shows the full name.  IPK links in manifests are absolute and pinned to their tag.
