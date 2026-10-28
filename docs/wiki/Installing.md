@@ -1,8 +1,16 @@
 TiviBro is built for **webOS 25** and runs on LG TVs from webOS 4 (2018) to webOS 26.  Older TVs get the same features, with a few fallbacks; see [webOS compatibility](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/COMPATIBILITY.md).
 
-## Homebrew Channel (coming soon)
+## Homebrew Channel (rooted TVs)
 
-TiviBro will be published as a custom repository for the [webOS Homebrew Channel](https://www.webosbrew.org/), and later submitted to the official store.  The repository address will appear here with the first public release.  Each GitHub release already carries the Homebrew manifest and `repo.json` it needs.
+The easiest way on a rooted TV, with updates from the TV itself:
+
+1. Open the **Homebrew Channel**, go to **Settings**, and choose **Add repository**.
+2. Enter `https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/repo.json`
+3. TiviBro appears in the Homebrew Channel's app list.  Open it and choose **Install**.  New versions show up there as **Update** (and inside TiviBro under **Settings > Updates and about**).
+
+Want every test build as soon as it's out?  Add `https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/repo-testing.json` instead.  Until the first full release, both addresses give you the newest test build.
+
+> Test builds show a plain-number version in the Homebrew Channel, such as `0.5.10005` for 0.6.0 alpha 5.  webOS only accepts numbers, and test builds have to sort below the release they lead up to.  TiviBro itself shows the real name.
 
 ## Developer Mode (works today)
 
@@ -28,15 +36,15 @@ Or download the `.ipk` from the latest [release](https://github.com/ohmybahgosh/
 On a rooted TV, one line does it all.  Switch on SSH (or Telnet) in the Homebrew Channel, log in as `root`, and run:
 
 ```bash
-curl -fsSL https://github.com/ohmybahgosh/TiviBro/releases/latest/download/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/install.sh | sh
 ```
 
-It downloads the newest release, checks its SHA-256, installs it and starts TiviBro.  Run it again any time to update; settings are kept.  Options go after `sh -s --`:
+It downloads the newest release (or, until the first full release, the newest test build), checks its SHA-256, installs it and starts TiviBro.  Run it again any time to update; settings are kept.  Options go after `sh -s --`:
 
 ```bash
-curl -fsSL https://github.com/ohmybahgosh/TiviBro/releases/latest/download/install.sh | sh -s -- --pre              # newest test version (alpha, beta)
-curl -fsSL https://github.com/ohmybahgosh/TiviBro/releases/latest/download/install.sh | sh -s -- --tag v0.6.0        # a specific release
-curl -fsSL https://github.com/ohmybahgosh/TiviBro/releases/latest/download/install.sh | sh -s -- --ipk /tmp/app.ipk   # an IPK you copied over
+curl -fsSL https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/install.sh | sh -s -- --pre              # newest test version (alpha, beta)
+curl -fsSL https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/install.sh | sh -s -- --tag v0.6.0        # a specific release
+curl -fsSL https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/install.sh | sh -s -- --ipk /tmp/app.ipk   # an IPK you copied over
 ```
 
 ### Or copy the IPK yourself

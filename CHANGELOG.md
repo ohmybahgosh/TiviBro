@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+## 0.6.0 (alpha 5, 2026-10-28)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 5
+
+- Homebrew Channel repository.  In the Homebrew Channel, **Settings > Add repository** with `https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/repo.json` (releases; until the first one, the newest test build) or `…/repo-testing.json` (every build).  The Release workflow keeps both on the `homebrew` branch, with the manifest inside each entry, since the Homebrew Channel can't read GitHub release links from the TV.  `scripts/update-homebrew-repo.js`, tests: `tests/unit/homebrew.test.js`.
+- Every build has its own package version, so the Homebrew Channel sees updates between test builds: test builds sort below their release (`0.6.0-alpha.5` installs as `0.5.10005`, `scripts/pkg-version.js`).  TiviBro still shows the full name.  IPK links in manifests are absolute and pinned to their tag.
+- One-line installer: now at `https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/install.sh`, installs the newest test build while there is no full release yet, and prints the release name instead of the package version.
+- The repository is public, with an active-development notice at the top of the README.
 - Playback on sloppy streams, tuned against a new set of deliberately broken test channels (see below):
   - A cushion that grows: when a live channel keeps running dry, TiviBro waits for a bigger buffer before playing again, up to 20 seconds depending on the buffer profile, and lets it shrink back after three clean minutes.  The refill shows as *Buffering NN%*, and never waits more than about 4 seconds once the base buffer is there.
   - Timestamp jumps: when a provider's stream jumps back or ahead (an upstream restart), playback follows the stream instead of freezing on the old position.
@@ -14,11 +24,7 @@
 - The guide opens in the grid on the last channel the first time, instead of on the group list.
 - Soak tests (Playwright): `npm run soak:chaos` plays eleven broken test channels (`MOCK_CHAOS=1`, `tests/mock/chaos.js`) and reports freezes, reconnects and time moving; `npm run soak:zap` makes 300 fast channel changes and checks playback, memory and menus afterwards; `npm run soak:monkey` presses random remote keys across every screen looking for errors and dead ends.  `make-media.sh` now also writes the 10-minute `chaos.ts` clip.  See the Developing wiki page.
 
-## 0.6.0 (alpha 4, 2026-10-27)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 4
+### In alpha 4
 
 - Updates from the TV.  New **Settings > Updates and about** (`app/js/update.js`): shows the version, checks GitHub releases (once a day by itself, or on demand), lists what's new, and on rooted TVs with the Homebrew Channel installs the update through `luna://org.webosbrew.hbchannel.service/install` with the SHA-256 from the release manifest, then restarts into the new version.  "Include test versions" offers alpha and beta builds (on by default when running one).  Other TVs see the update and how to install it.  Tests: `tests/unit/update.test.js`.
 - One-line installer for rooted TVs: `scripts/tv/install.sh`, published with every release as `install.sh`.  `curl -fsSL …/releases/latest/download/install.sh | sh` downloads the newest release, checks its SHA-256 against the manifest, installs it with the TV's installer and starts TiviBro; `--pre`, `--tag`, `--ipk`, `--sha256`, `--no-launch`.  POSIX sh for BusyBox, ES5 node for webOS 4.  Tests: `tests/unit/tv-install.test.js` (fake GitHub and installer).

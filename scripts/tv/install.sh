@@ -1,9 +1,10 @@
 #!/bin/sh
 # TiviBro installer for rooted LG webOS TVs.  Run it on the TV, over SSH or Telnet:
 #
-#   curl -fsSL https://github.com/ohmybahgosh/TiviBro/releases/latest/download/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/install.sh | sh
 #
 # Options (after "sh -s --" when piped, or directly when run from a file):
+#   (no option)        newest full release; until there is one, the newest test version
 #   --pre              newest release, test versions (alpha, beta) included
 #   --tag vX.Y.Z       that release
 #   --ipk FILE|URL     this IPK: a file already on the TV, or a download link
@@ -14,7 +15,7 @@
 # Downloads the release's Homebrew Channel manifest and IPK, checks the IPK's SHA-256, installs it
 # with the TV's own installer (com.webos.appInstallService) and starts TiviBro.  Updating keeps all
 # settings.  Plain POSIX sh for the TV's BusyBox; JSON is read with the TV's own node, in ES5 so
-# webOS 4 (Node 0.12) can run it.  Source: scripts/tv/install.sh (published as a release asset).
+# webOS 4 (Node 0.12) can run it.  Source: scripts/tv/install.sh (published with every release, and on the homebrew branch).
 set -e
 
 REPO="${TIVIBRO_REPO:-ohmybahgosh/TiviBro}"
@@ -64,6 +65,10 @@ if [ -n "$SRC" ]; then
   esac
   VERSION="from $(basename "$SRC")"
 else
+  if [ "$PRE" = 0 ] && [ -z "$TAG" ] && ! fetch "$BASE/latest/download/$MANIFEST_NAME" "$WORK/latest.json" 2>/dev/null; then
+    say "No full release yet; using the newest test version"
+    PRE=1
+  fi
   if [ "$PRE" = 1 ] && [ -z "$TAG" ]; then
     say "Looking up the newest release, test versions included"
     fetch "$API" "$WORK/releases.json" || die "Could not reach GitHub.  Is the repository public?"
@@ -73,7 +78,8 @@ else
   if [ -n "$TAG" ]; then MURL="$BASE/download/$TAG/$MANIFEST_NAME"; else MURL="$BASE/latest/download/$MANIFEST_NAME"; fi
   say "Reading ${TAG:-the latest release}"
   fetch "$MURL" "$WORK/manifest.json" || die "Could not download $MURL  (is the repository public?)"
-  VERSION="$(json "$WORK/manifest.json" "j.version")"
+  # Test builds have a numeric package version (0.5.10005); the tag says what it is (0.6.0-alpha.5).
+  if [ -n "$TAG" ]; then VERSION="${TAG#v}"; else VERSION="$(json "$WORK/manifest.json" "j.version")"; fi
   IPK_URL="$(json "$WORK/manifest.json" "require('url').resolve(process.argv[2], j.ipkUrl)" "$MURL")"
   SUM="$(json "$WORK/manifest.json" "j.ipkHash && j.ipkHash.sha256")"
   [ -n "$IPK_URL" ] && [ -n "$SUM" ] || die "The manifest is missing the IPK link or its SHA-256."

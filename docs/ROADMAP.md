@@ -11,7 +11,7 @@
 - tests/e2e were written before the Back/Left navigation changes and will need updating when the mock provider is rebuilt.
 
 ## Before public launch
-- Make the repo public: release files of a private repo need a GitHub login, so the Homebrew Channel can't fetch `repo.json` yet.  Then put its address in the README.
+- ~~Make the repo public~~ (done; Homebrew Channel repository on the `homebrew` branch, address in the README).
 - "All playlists" combined view.
 - Decide on `requiredACG` once webOS 26 enforcement applies (deliberately omitted for 25 and below).
 

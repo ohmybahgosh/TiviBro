@@ -61,11 +61,11 @@ function req(url, method, body, token) {
   const bid = a.json.id;
   a = await req(C + '/editor/pending?since=1&csince=1');
   ok('the app never sees the passphrase', a.json.commands[0].type === 'backup' && !JSON.stringify(a.json.commands).includes('horse'));
-  const backup = { app: 'TiviBro', kind: 'backup', format: 2, version: '0.6.0', created: new Date().toISOString(), settings: { playlists: [{ id: 'p1', name: 'Home', type: 'xtream', server: 'http://prov.example:8080', user: 'bob', pass: 'SECRETPASS' }] }, edits: {}, snaps: { p1: [{ id: 's1' }] } };
+  const backup = { app: 'TiviBro', kind: 'backup', format: 2, version: '0.6.0', created: new Date().toISOString(), settings: { playlists: [{ id: 'p1', name: 'Home', type: 'xtream', server: 'http://prov.example:8080', user: 'viewer42', pass: 'SECRETPASS' }] }, edits: {}, snaps: { p1: [{ id: 's1' }] } };
   await req(C + '/editor/result', 'POST', { id: bid, ok: true, msg: 'Backup ready', data: backup });
   for (let i = 0; i < 40; i++) { a = await req(L + '/api/result?id=' + bid, 'GET', null, T); if (a.json.done) break; await new Promise(f => setTimeout(f, 100)); }
   ok('browser gets a locked file', a.json.done && a.json.ok && a.json.data.kind === 'backup-encrypted');
-  ok('the locked file holds no readable login', !/SECRETPASS|bob|prov\.example/.test(JSON.stringify(a.json.data)));
+  ok('the locked file holds no readable login', !/SECRETPASS|viewer42|prov\.example/.test(JSON.stringify(a.json.data)));
   const file = a.json.data;
   a = await req(L + '/api/restore', 'POST', { file, passphrase: 'wrong passphrase', check: true }, T);
   ok('wrong passphrase is refused', a.status === 400 && /passphrase/i.test(a.json.error));
@@ -74,7 +74,7 @@ function req(url, method, body, token) {
   ok('a changed file is refused', a.status === 400);
   a = await req(L + '/api/restore', 'POST', { file, passphrase: 'correct horse battery', check: true }, T);
   ok('right passphrase unlocks and describes it', a.status === 200 && a.json.summary.playlists[0].host === 'prov.example' && a.json.summary.restorePoints === 1);
-  ok('the description holds no login', !/SECRETPASS|"bob"/.test(JSON.stringify(a.json)));
+  ok('the description holds no login', !/SECRETPASS|"viewer42"/.test(JSON.stringify(a.json)));
   a = await req(L + '/api/restore', 'POST', { file, passphrase: 'correct horse battery' }, T);
   const rid = a.json.id;
   a = await req(C + '/editor/pending?since=1&csince=' + bid);

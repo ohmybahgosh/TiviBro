@@ -15,7 +15,7 @@ LG lists Ubuntu 16.04 to 22.04 for this version; it is a generic AppImage and no
 ## Run it (on the desktop, not over SSH: it opens a window)
 
 ```bash
-cd /STORAGE/WEBOS/TiviBro
+cd TiviBro           # your clone of this repository
 npm run sim          # opens app/ in the simulator; edits to app/ auto-reload
                      # (runs the AppImage directly: ares-launch 3.2.6 only finds lowercase .appimage files)
 npm run sim:open     # just open the simulator

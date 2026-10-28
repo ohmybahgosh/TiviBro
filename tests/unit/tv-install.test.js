@@ -27,9 +27,10 @@ fs.writeFileSync(path.join(bin, 'id'), '#!/bin/sh\necho 0\n', { mode: 0o755 });
 const IPK_A = Buffer.from('stable ipk ' + 'x'.repeat(5000)), IPK_B = Buffer.from('alpha ipk ' + 'y'.repeat(5000));
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
 const man = (v, ipk, sum) => JSON.stringify({ id: 'app.tivibro.tv', version: v, ipkUrl: 'app.tivibro.tv_' + v + '_all.ipk', ipkHash: { sha256: sum || sha(ipk) } });
-let badSum = false;
+let badSum = false, noStable = false;
 const server = http.createServer((req, res) => {
   const u = req.url;
+  if (noStable && u.indexOf('/rel/latest/') === 0) { res.writeHead(404); return res.end(); }   // only pre-releases so far
   if (u === '/rel/latest/download/app.tivibro.tv.manifest.json') { res.writeHead(302, { Location: '/rel/download/v0.6.0/app.tivibro.tv.manifest.json' }); return res.end(); }
   if (u === '/rel/download/v0.6.0/app.tivibro.tv.manifest.json') return res.end(man('0.6.0', IPK_A, badSum ? 'f'.repeat(64) : null));
   if (u === '/rel/download/v0.7.0-alpha.1/app.tivibro.tv.manifest.json') return res.end(man('0.7.0', IPK_B));
@@ -75,6 +76,10 @@ server.listen(0, '127.0.0.1', async () => {
 
   r = await run(['--pre']);
   ok('--pre installs the newest test version, skipping drafts', r.code === 0 && r.installed && r.installed.equals(IPK_B) && /0\.7\.0/.test(r.out), r.out.trim().split('\n').pop());
+  noStable = true;
+  r = await run([]);
+  noStable = false;
+  ok('with no full release yet, installs the newest test version', r.code === 0 && r.installed && r.installed.equals(IPK_B) && /No full release yet/.test(r.out) && /TiviBro 0\.7\.0-alpha\.1 installed/.test(r.out), r.out.trim().split('\n').pop());
   r = await run(['--tag', 'v0.6.0', '--no-launch']);
   ok('--tag installs that release', r.code === 0 && r.installed && r.installed.equals(IPK_A));
   ok('--no-launch does not start it', !/launch/.test(r.log));

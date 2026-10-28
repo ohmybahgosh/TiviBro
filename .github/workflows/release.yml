@@ -52,9 +52,15 @@ jobs:
       - name: Unit tests
         run: npm test
 
-      - name: Stamp the full version into the app
-        # appinfo.json must stay X.Y.Z; the app shows and compares the full tag (0.6.0-alpha.3) for updates.
-        run: sed -i "s/^var TIVIBRO_VERSION = .*/var TIVIBRO_VERSION = '${TAG#v}';/" app/js/log.js && grep -n "TIVIBRO_VERSION = " app/js/log.js
+      - name: Stamp the version into the app
+        # The app shows and compares the full tag (0.6.0-alpha.5).  webOS needs three numbers, unique per
+        # build so the Homebrew Channel sees updates: test builds sort below their release (0.5.10005).
+        run: |
+          sed -i "s/^var TIVIBRO_VERSION = .*/var TIVIBRO_VERSION = '${TAG#v}';/" app/js/log.js && grep -n "TIVIBRO_VERSION = " app/js/log.js
+          PKG_VERSION="$(node scripts/pkg-version.js "${TAG#v}")"
+          node -e 'for (const f of ["app/appinfo.json", "service/package.json"]) { const j = require("./" + f); j.version = process.argv[1]; require("fs").writeFileSync(f, JSON.stringify(j, null, 2) + "\n"); }' "$PKG_VERSION"
+          echo "PKG_VERSION=$PKG_VERSION" >> "$GITHUB_ENV"
+          echo "Package version $PKG_VERSION"
 
       - name: Build the IPK
         run: bash scripts/build.sh
@@ -62,19 +68,20 @@ jobs:
       - name: On-TV installer
         run: cp scripts/tv/install.sh dist/install.sh
 
-      - name: Homebrew Channel manifest and repository file
-        run: node scripts/gen-manifest.js "dist/app.tivibro.tv_${APP_VERSION}_all.ipk" dist "$GITHUB_REPOSITORY"
+      - name: Homebrew Channel manifest
+        run: node scripts/gen-manifest.js "dist/app.tivibro.tv_${PKG_VERSION}_all.ipk" dist "$GITHUB_REPOSITORY" "$TAG"
 
       - name: Release notes from CHANGELOG.md
         run: |
           node scripts/release-notes.js "$APP_VERSION" > dist/notes.md
           {
-            case "$TAG" in *-*) echo; echo "> **Pre-release.**  The Homebrew Channel repository below always installs the newest full release, so this build is installed from the IPK here.";; esac
+            RAW="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/homebrew"
+            case "$TAG" in *-*) echo; echo "> **Test build.**  Expect rough edges, and keep a backup.  The Homebrew Channel shows it as version $PKG_VERSION.";; esac
             echo
             echo '### Install'
             echo
-            echo '- **Homebrew Channel:** add this repository URL in the Homebrew Channel settings: `https://github.com/'"$GITHUB_REPOSITORY"'/releases/latest/download/repo.json`'
-            echo '- **Developer Mode:** `ares-install app.tivibro.tv_'"$APP_VERSION"'_all.ipk`'
+            echo '- **Homebrew Channel:** in its Settings, add the repository `'"$RAW"'/repo.json` (or `'"$RAW"'/repo-testing.json` for test builds as they come out)'
+            echo '- **Developer Mode:** `ares-install app.tivibro.tv_'"$PKG_VERSION"'_all.ipk`'
             echo '- **Rooted TV, over SSH or Telnet:** `curl -fsSL https://github.com/'"$GITHUB_REPOSITORY"'/releases/download/'"$TAG"'/install.sh | sh -s -- --tag '"$TAG"'`'
             echo '- **From inside TiviBro (rooted TV with the Homebrew Channel):** Settings > Updates and about > Check for updates'
             echo
@@ -88,9 +95,23 @@ jobs:
         run: |
           PRE=""; case "$TAG" in *-*) PRE="--prerelease";; esac
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" dist/*.ipk dist/*.manifest.json dist/repo.json dist/install.sh --clobber
+            gh release upload "$TAG" dist/*.ipk dist/*.manifest.json dist/install.sh --clobber
             gh release edit "$TAG" --notes-file dist/notes.md $PRE
           else
-            gh release create "$TAG" dist/*.ipk dist/*.manifest.json dist/repo.json dist/install.sh \
+            gh release create "$TAG" dist/*.ipk dist/*.manifest.json dist/install.sh \
               --title "TiviBro ${TAG#v}" --notes-file dist/notes.md --verify-tag $PRE
           fi
+
+      - name: Update the Homebrew Channel repository (homebrew branch)
+        # Served as https://raw.githubusercontent.com/<repo>/homebrew/repo.json, which TVs can fetch.
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          URL="https://x-access-token:${{ github.token }}@github.com/$GITHUB_REPOSITORY.git"
+          if git clone -q --depth 1 --branch homebrew "$URL" hb 2>/dev/null; then :; else
+            git init -q hb && git -C hb checkout -q --orphan homebrew && git -C hb remote add origin "$URL"
+            printf '# TiviBro for the Homebrew Channel\n\nAdd one of these in the Homebrew Channel settings:\n\n- `https://raw.githubusercontent.com/%s/homebrew/repo.json`: releases\n- `https://raw.githubusercontent.com/%s/homebrew/repo-testing.json`: every build, including test builds\n\nOn a rooted TV, over SSH: `curl -fsSL https://raw.githubusercontent.com/%s/homebrew/install.sh | sh`\n\nWritten by the Release workflow; do not edit by hand.\n' "$GITHUB_REPOSITORY" "$GITHUB_REPOSITORY" "$GITHUB_REPOSITORY" > hb/README.md
+          fi
+          node scripts/update-homebrew-repo.js dist/homebrew-entry.json hb dist/install.sh
+          cd hb && git add -A
+          if git diff --cached --quiet; then echo "Repository files unchanged"; else git commit -q -m "Homebrew repository: $TAG" && git push -q origin homebrew; fi
