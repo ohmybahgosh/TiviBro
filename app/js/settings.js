@@ -65,7 +65,7 @@ var Settings = (function () {
     out.push(choice('Picture', '', ['contain', 'fill', 'cover'], ['Normal', 'Stretch', 'Zoom'], function () { return s.display; }, function (v) { s.display = v; Player.applyDisplay(); save(); }));
     out.push(head('Catch-up, movies and shows'));
     out.push(choice('Skip step', 'For Left and Right while watching catch-up or a movie.', [10, 15, 30, 60, 120], ['10s', '15s', '30s', '1 min', '2 min'], function () { return +s.skip; }, function (v) { s.skip = v; save(); }));
-    out.push(choice('Rewind / fast forward step', 'For the ⏪ and ⏩ buttons while watching catch-up or a movie.', [30, 60, 120, 300, 600], ['30s', '1 min', '2 min', '5 min', '10 min'], function () { return +s.ffStep || 120; }, function (v) { s.ffStep = v; save(); }));
+    out.push(choice('Rewind / fast forward step', 'For the ◀◀ and ▶▶ buttons while watching catch-up or a movie.', [30, 60, 120, 300, 600], ['30s', '1 min', '2 min', '5 min', '10 min'], function () { return +s.ffStep || 120; }, function (v) { s.ffStep = v; save(); }));
     out.push(choice('◀ on a live channel with catch-up', 'Without catch-up, ◀ always goes to the last channel.', ['rewind', 'last'], ['Rewind', 'Last channel'], function () { return s.rewindLeft === false ? 'last' : 'rewind'; }, function (v) { s.rewindLeft = v === 'rewind'; save(); }));
     out.push(head('Switching channels'));
     out.push(toggle('Info panel when switching channels', 'Off shows just the number and name.', function () { return s.osdOnZap !== false; }, function (v) { s.osdOnZap = v; save(); }));

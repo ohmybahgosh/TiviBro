@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Compatibility pass across webOS 4 to 26 ([`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md)):
+  - HEVC channels on webOS 4: mpegts.js uses `padStart` (Chromium 57) when it reads an HEVC stream, and hls.js uses `Object.entries` (Chromium 54).  `compat.js` now polyfills both, plus `Object.values` and `padEnd`.
+  - Never a black screen: on webOS 3 and older the app says the TV is too old (needs webOS 4, 2018 or newer); if part of the app fails to load or start, it says so with the details and OK tries again.
+  - Logos and posters on older TVs: an https image that fails (2018 to 2020 TVs without updates don't trust today's Let's Encrypt certificates) gets one more try through the helper.
+  - Symbols (↺ ★ ▶ ✓ ⚠) on every TV: a 4 KB fallback font (subset of DejaVu Sans) for TVs whose fonts lack them; the Settings text no longer uses the emoji-only ⏪ ⏩.
+  - Less memory for big guides: past programmes are kept only for catch-up channels, the rest keep the last three hours (on a 15,000-channel, 211 MB guide: 128 instead of 163 MB).  webOS 4 and 5 keep shorter programme descriptions.
+  - Sloppy providers on webOS 22 and later: the helper uses Node's lenient HTTP parser, so replies with stray control characters in headers or bare LF line endings work as they did on older TVs.  Tests: `tests/unit/proxy-lenient.test.js`.
+  - webOS 26 (Chromium 132) is recognised as 26.
+  - A full storage no longer loses changes silently (one message, and it's logged), and an aborted guide-cache write no longer leaves anything waiting.
+  - `compat.test.js` now also checks the bundled players, the stylesheets (CSS Chromium 53 ignores), the polyfills, the "too old" screen, version detection, the symbol font and `appinfo.json`; `npm run soak:boot` checks the start-up screens in a browser.
 - Backup versions of a channel.  When a live channel stops working for good, TiviBro switches to another version of the same channel (another quality, group, or a copy you hid) and says so, steadiest first: Full HD, HD, unmarked, 4K, SD.  If every version fails (the provider is down), it goes back to the channel you chose and keeps retrying, so the picture still returns by itself.  **Settings > Playback and buffering > When a channel stops working**: switch, ask me, or keep retrying.  **Other versions…** in channel options and the quick menu.  Matching keeps countries, East/West feeds and numbered channels apart (`Library.versions`).  Tests: `tests/unit/library.test.js`, `npm run soak:backup`.
 - Quality tags (FHD, HD, SD, 4K) beside channel names in lists and the guide, where the same channel appears more than once.
 - Faster guide on big playlists.  Scrolling moves rows instead of redrawing them and reuses programme cells, the time header is rebuilt only when the time window moves, and the details panel waits until the remote rests while an arrow is held.  Measured on 15,000 channels with the CPU slowed to TV speed: a step down 56 to 33 ms, holding Down 18 to 24 rows a second with no long tasks (was 15), page down 150 to 114 ms, and a fifth of the DOM churn.  The channel list's info panel also waits while an arrow is held.

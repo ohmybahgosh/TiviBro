@@ -130,8 +130,11 @@ var Epg = (function () {
         .replace(/&#(\d+);/g, function (a, n) { return String.fromCharCode(+n); }).replace(/&amp;/g, '&');
     }
     self.onmessage = function (ev) {
-      var d = ev.data, want = {}, names = d.names || {}, from = d.from, to = d.to;
+      var d = ev.data, want = {}, names = d.names || {}, from = d.from, to = d.to, past = d.past || {}, recent = d.recent || from, descMax = d.descMax || 400;
       d.ids.forEach(function (i) { want[i] = 1; });
+      // Earliest programme end worth keeping for a guide id: its catch-up days, or the last few hours.
+      var since = {};
+      function sinceOf(id) { var v = since[id]; if (v === undefined) v = since[id] = past[id] ? Math.max(from, Date.now() - past[id] * 86400e3) : recent; return v; }
       var out = {}, icons = {}, chans = [], matches = {}, report = [], total = 0, lastPost = 0;
       function tell(i, src, bytes, size, force) {
         var t = Date.now();
@@ -153,7 +156,7 @@ var Epg = (function () {
             var name = dn ? unesc(dn[1]).trim() : id;
             if (chans.length < 30000) chans.push([id, name]);
             var nk = norm(name);
-            if (!want[id] && nk && names[nk] && !matches[nk]) { matches[nk] = id; want[id] = 1; }
+            if (!want[id] && nk && names[nk] != null && !matches[nk]) { matches[nk] = id; want[id] = 1; if (!(id in past) || past[id] < names[nk]) past[id] = names[nk]; }
             if (want[id] && !icons[id]) { var ic = /<icon[^>]*src="([^"]*)"/.exec(c[2]); if (ic) icons[id] = unesc(ic[1]); }
           }
           RE.lastIndex = 0;
@@ -164,11 +167,11 @@ var Epg = (function () {
             var ch = /channel="([^"]*)"/.exec(a); ch = ch && unesc(ch[1]);
             if (!ch || !want[ch] || (out[ch] && !got[ch])) continue;     // a higher-priority source already has this channel
             var s = ts((/start="([^"]*)"/.exec(a) || [])[1]) + off, e = ts((/stop="([^"]*)"/.exec(a) || [])[1]) + off;
-            if (!s || !e || e < from || s > to) continue;
+            if (!s || !e || e < sinceOf(ch) || s > to) continue;
             var t = /<title[^>]*>([\s\S]*?)<\/title>/.exec(m[2]);
             var de = /<desc[^>]*>([\s\S]*?)<\/desc>/.exec(m[2]);
             got[ch] = 1;
-            (out[ch] || (out[ch] = [])).push({ s: s, e: e, t: t ? unesc(t[1]) : '', d: de ? unesc(de[1]).slice(0, 400) : '' });
+            (out[ch] || (out[ch] = [])).push({ s: s, e: e, t: t ? unesc(t[1]) : '', d: de ? unesc(de[1]).slice(0, descMax) : '' });
             n++; total++;
           }
           buf = final ? '' : buf.slice(last);
@@ -268,15 +271,19 @@ var Epg = (function () {
   }
 
   function work(srcs) {
+    // Past programmes are only reachable on catch-up channels, so only those keep past days
+    // (up to their catch-up length); the rest keep the last few hours.  On big playlists, where
+    // most channels have no catch-up, this saves a large share of the TV's memory.
+    var days = +P().epgDays || 1;
     var ids = {}, names = {};
+    function keep(map, k, c) { var p = c.arch ? Math.min(days, +c.arch || days) : 0; if (!(k in map) || map[k] < p) map[k] = p; }
     Library.data.channels.forEach(function (c) {
       var m = Store.edits.epgMap[c.k];
-      if (m) ids[m] = 1;
-      if (c.epg) ids[c.epg] = 1;
-      if (P().nameMatch) { names[norm(Library.name(c))] = 1; names[norm(c.n)] = 1; }
+      if (m) keep(ids, m, c);
+      if (c.epg) keep(ids, c.epg, c);
+      if (P().nameMatch) { keep(names, norm(Library.name(c)), c); keep(names, norm(c.n), c); }
     });
     delete names[''];
-    var days = +P().epgDays || 1;
     var now = Date.now();
     var run = Date.now().toString(36);
     var msg = { sources: srcs.map(function (s, i) {
@@ -284,7 +291,9 @@ var Epg = (function () {
       var id = Net.active ? 'g' + run + i : '';
       return { url: Net.wrap(s.url, id ? { unzip: id } : null), xfer: id ? Net.xfer(id) : '', label: s.provider ? 'provider guide' : s.url, host: s.provider ? 'provider guide' : hostOf(s.url), offset: s.offset };
     }),
-      ids: Object.keys(ids), names: names, from: now - days * 86400e3, to: now + 2 * 86400e3 };
+      ids: Object.keys(ids), past: ids, names: names, from: now - days * 86400e3, recent: now - 3 * 3600e3, to: now + 2 * 86400e3,
+      // webOS 4 and 5 TVs (2018 to 2020) have the least memory: shorter programme descriptions there.
+      descMax: (function () { var v = Caps.probe().webos; return v && v <= 5 ? 250 : 400; })() };
     var code = '(' + workerMain.toString().replace('/* NORM */', norm.toString()) + ')()';
     var started = Date.now();
     function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; setProgress(p); }

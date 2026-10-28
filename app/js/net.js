@@ -74,6 +74,18 @@ var Net = (function () {
   // http://host:81/a/b.m3u8?x -> http://127.0.0.1:PORT/x/http/host:81/a/b.m3u8?x
   // opts.unzip: an id; the helper then unzips gzip/deflate answers (guides) and counts the
   // compressed bytes at xfer(id).  See service/unzip.js.
+  // A logo or poster that won't load over https gets one more try through the helper.  Older TVs
+  // (2018 to 2020 models without recent updates) don't trust today's Let's Encrypt certificates,
+  // which many providers' image hosts use; the helper doesn't depend on the TV's certificate list.
+  // The relayed address is plain http on localhost, so this can't loop.
+  function retryImage(img) {
+    var s = img && img.src;
+    if (!s || !/^https:/i.test(s)) return false;
+    var w = wrap(s);
+    if (w === s) return false;
+    img.src = w;
+    return true;
+  }
   function wrap(url, opts) {
     if (!url || !useRelay()) return url;
     var m = /^(https?):\/\/([^/?#]+)([^#]*)/i.exec(url);
@@ -98,7 +110,7 @@ var Net = (function () {
   }
 
   return {
-    start: start, wrap: wrap, unwrap: unwrap, get ua() { return ua(); },
+    start: start, wrap: wrap, unwrap: unwrap, retryImage: retryImage, get ua() { return ua(); },
     // Guides: the helper unzips .gz on every TV.  Without it, only browsers with DecompressionStream can.
     get canUnzip() { return !!useRelay() || typeof DecompressionStream !== 'undefined'; },
     xfer: function (id) { return port ? 'http://127.0.0.1:' + port + '/xfer/' + id : ''; },

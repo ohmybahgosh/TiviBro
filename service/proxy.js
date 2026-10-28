@@ -91,7 +91,11 @@ function create(opts) {
     }
     var up = lib.request({
       protocol: u.protocol, hostname: u.hostname, port: u.port, path: u.path, method: req.method === 'HEAD' ? 'HEAD' : 'GET',
-      headers: headers, agent: u.protocol === 'https:' ? agentHttps : agentHttp, rejectUnauthorized: false
+      headers: headers, agent: u.protocol === 'https:' ? agentHttps : agentHttp, rejectUnauthorized: false,
+      // Node 12 and newer (webOS 22 on) reject sloppy replies that older TVs accepted: stray control
+      // characters in headers, bare LF line endings, Content-Length twice.  Cheap IPTV panels send
+      // all of these.  Older Node ignores the option (its parser was lenient anyway).
+      insecureHTTPParser: true
     }, function (ur) {
       var code = ur.statusCode || 502;
       rec.s = code; rec.ct = ur.headers['content-type'];

@@ -22,6 +22,7 @@ var App = (function () {
   /* ---------- setup screen ----------
      target: undefined (first run), 'new' (add another), or a playlist id (edit). */
   function setup(target) {
+    window.__tbBooted = true;              // the setup screen counts as started
     var editing = target && target !== 'new';
     var existing = editing ? Store.settings.playlists.filter(function (x) { return x.id === target; })[0] : null;
     var p = existing ? JSON.parse(JSON.stringify(existing)) : { id: '', name: '', type: 'xtream', server: '', user: '', pass: '', m3u: '', guide: '' };
@@ -205,6 +206,7 @@ var App = (function () {
     Library.set(data);
     Vod.reset();
     if (!ready) { Views.init(); ready = true; }
+    window.__tbBooted = true;              // compat.js shows an error screen if errors stop the start
     Views.stopAll();
     Views.reload(false);
     Views.switchTab(Views.home());

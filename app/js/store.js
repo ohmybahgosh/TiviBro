@@ -115,7 +115,7 @@ var Store = (function () {
     p0.name = p0.type === 'm3u' ? 'M3U playlist' : (p0.user || 'Xtream');
     settings.playlists = [p0]; settings.active = p0.id;
     var oldEdits = read('tivibro.edits');
-    if (oldEdits) localStorage.setItem('tivibro.edits.' + p0.id, JSON.stringify(oldEdits));
+    if (oldEdits) lsSet('tivibro.edits.' + p0.id, JSON.stringify(oldEdits));
   }
   delete settings.playlist;
 
@@ -128,8 +128,18 @@ var Store = (function () {
 
   // After a restore has written new data, nothing in this page may save over it before the reload.
   var frozen = false;
-  var saveSettings = U.debounce(function () { if (!frozen) localStorage.setItem('tivibro.settings', JSON.stringify(settings)); }, 300);
-  var saveEdits = U.debounce(function () { if (!frozen) localStorage.setItem(editsKey, JSON.stringify(edits)); }, 400);
+  // Saves can fail when the TV's storage is full: say so once instead of losing changes silently.
+  var fullWarned = false;
+  function lsSet(k, v) {
+    try { localStorage.setItem(k, v); return true; }
+    catch (e) {
+      if (window.Log) Log.error('store', 'Could not save ' + k + ' (' + v.length + ' bytes): ' + (e && e.name || e));
+      if (!fullWarned && window.U && U.toast) { fullWarned = true; U.toast('The TV\'s storage for TiviBro is full, so recent changes could not be saved.  Try clearing old reminders or watch history.', 8000); }
+      return false;
+    }
+  }
+  var saveSettings = U.debounce(function () { if (!frozen) lsSet('tivibro.settings', JSON.stringify(settings)); }, 300);
+  var saveEdits = U.debounce(function () { if (!frozen) lsSet(editsKey, JSON.stringify(edits)); }, 400);
 
   // Fill in every per-playlist option, and carry older single-value settings forward.
   function normalize(p) {
@@ -165,7 +175,7 @@ var Store = (function () {
     return normalize(settings.playlists[0]) || { id: '', type: 'xtream', server: '', user: '', pass: '', m3u: '', epgSources: [], providerEpg: 'short', epgOffset: 0, plRefresh: 12, epgRefresh: 12, epgDays: 2, nameMatch: true, names: null, name: '' };
   }
   function usePlaylist(id) {
-    localStorage.setItem(editsKey, JSON.stringify(edits));     // flush current
+    lsSet(editsKey, JSON.stringify(edits));     // flush current
     settings.active = id;
     saveSettings();
     loadEdits();
@@ -214,6 +224,8 @@ var Store = (function () {
         if (v === null) tx.objectStore('kv').delete(k); else tx.objectStore('kv').put(v, k);
         tx.oncomplete = function () { res(true); };
         tx.onerror = function () { res(false); };
+        // A full TV (quota exceeded) aborts the transaction without an error event on it.
+        tx.onabort = function () { if (window.Log) Log.warn('store', 'Could not save ' + k + ' (' + (tx.error && tx.error.name || 'aborted') + ')'); res(false); };
       });
     }).catch(function () { return false; });
   }

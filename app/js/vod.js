@@ -45,7 +45,7 @@ var Vod = (function () {
   }
   function renderItem(row, it) {
     if (!row._n) {
-      row._img = U.el('img', 'poster'); row._img.decoding = 'async'; row._img.onerror = function () { this.style.visibility = 'hidden'; };
+      row._img = U.el('img', 'poster'); row._img.decoding = 'async'; row._img.onerror = function () { if (!Net.retryImage(this)) this.style.visibility = 'hidden'; };
       var b = U.el('div', 'txt'); row._n = U.el('span', 'name'); row._s = U.el('span', 'sub'); row._p = U.el('div', 'pbar'); row._pi = U.el('i'); row._p.appendChild(row._pi);
       b.appendChild(row._n); b.appendChild(row._s); b.appendChild(row._p);
       row._t = U.el('span', 'tag');
@@ -117,7 +117,7 @@ var Vod = (function () {
     if (!it) return;
     var m = it.ep ? null : (kind === 'movie' ? info.get(it.id) : null);
     var poster = (m && m.poster) || it.cover || (series && series.cover);
-    if (poster) { var img = U.el('img', 'vod-poster'); img.src = poster; img.onerror = function () { this.remove(); }; box.appendChild(img); }
+    if (poster) { var img = U.el('img', 'vod-poster'); img.src = poster; img.onerror = function () { if (!Net.retryImage(this)) this.remove(); }; box.appendChild(img); }
     box.appendChild(U.el('h2', '', it.ep ? it.label : it.name));
     var meta = [m && m.year || it.year, m && m.dur || it.dur, m && m.genre, it.rating ? '★ ' + it.rating : ''].filter(Boolean).join('   ');
     if (meta) box.appendChild(U.el('div', 'vod-meta', meta));

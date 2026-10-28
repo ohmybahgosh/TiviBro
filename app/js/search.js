@@ -6,7 +6,7 @@ var Search = (function () {
 
   function render(row, it) {
     if (!row._n) {
-      row._img = U.el('img', 'logo'); row._img.onerror = function () { this.style.visibility = 'hidden'; };
+      row._img = U.el('img', 'logo'); row._img.onerror = function () { if (!Net.retryImage(this)) this.style.visibility = 'hidden'; };
       var box = U.el('div', 'txt'); row._n = U.el('span', 'name'); row._s = U.el('span', 'sub');
       box.appendChild(row._n); box.appendChild(row._s);
       row._t = U.el('span', 'tag');

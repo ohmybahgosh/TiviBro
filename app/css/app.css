@@ -12,7 +12,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:1920px;height:1080px;overflow:hidden;background:var(--ink);color:var(--text);
-  font-family:"LG Smart UI","LG Smart_UI","Museo Sans",Roboto,"Segoe UI",sans-serif;font-size:26px;line-height:1.3}
+  font-family:"LG Smart UI","LG Smart_UI","Museo Sans","TiviBro Symbols",Roboto,"Segoe UI",sans-serif;font-size:26px;line-height:1.3}
 .hidden{display:none!important}
 #app{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column}
 body.full #app{visibility:hidden}
@@ -30,6 +30,9 @@ body.full #app{visibility:hidden}
 .groups{width:380px;margin-right:24px}
 .channels{width:760px;margin-right:32px}
 .info{flex:1;min-width:0}
+
+/* Symbols (↺ ★ ▶ ✓ …) for TVs whose fonts lack them; only these characters ever use it. */
+@font-face{font-family:"TiviBro Symbols";src:url(../fonts/symbols.woff) format("woff");unicode-range:U+2022,U+2039-203A,U+2190-21FF,U+2212,U+2500-25FF,U+2600-27BF}
 
 /* virtual list */
 .vlist{position:relative;flex:1;overflow:hidden;contain:strict}

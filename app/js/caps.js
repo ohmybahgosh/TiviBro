@@ -45,7 +45,7 @@ var Caps = (function () {
 
   /* ---------- the platform ---------- */
   // webOS version from the browser engine.  webOS 22 and later number by year.
-  var CHROME_TO_WEBOS = [[120, 25], [108, 24], [94, 23], [87, 22], [79, 6], [68, 5], [53, 4], [38, 3]];
+  var CHROME_TO_WEBOS = [[132, 26], [120, 25], [108, 24], [94, 23], [87, 22], [79, 6], [68, 5], [53, 4], [38, 3]];
   function webosVersion(ua) {
     if (!/Web0S|webOS/i.test(ua || '')) return 0;
     var m = /Chrome\/(\d+)/.exec(ua || ''), c = m ? +m[1] : 0;

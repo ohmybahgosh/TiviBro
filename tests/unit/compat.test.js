@@ -41,6 +41,30 @@ files('app/js').filter(f => !/compat\.js$/.test(f)).forEach(f => {
     });
   });
 });
+// Bundled players (hls.js, mpegts.js): plain ES5, and nothing Chromium 53 lacks unless compat.js
+// polyfills it (Object.entries/values, padStart/padEnd) or the library checks for it first.
+['app/vendor/hls.min.js', 'app/vendor/mpegts.js'].forEach(f => {
+  const e = parses(f, 5); ok('Chromium 53 can parse ' + f, !e, e);
+  const src = fs.readFileSync(path.join(ROOT, f), 'utf8');
+  const VENDOR_BANNED = /Object\.(fromEntries|hasOwn)\(|\.(flat|flatMap|matchAll|replaceAll|trimStart|trimEnd|toggleAttribute|replaceChildren)\(|\b(queueMicrotask|structuredClone|WeakRef)\b|Promise\.(allSettled|any)\(/g;
+  const hits = (src.match(VENDOR_BANNED) || []);
+  ok(f + ' uses no unpolyfilled API missing on Chromium 53', !hits.length, hits.slice(0, 5).join(' '));
+  const gt = (src.match(/globalThis/g) || []).length, gtGuarded = (src.match(/typeof globalThis/g) || []).length;
+  ok(f + ' only touches globalThis behind a typeof check', gt === 0 || gtGuarded > 0, gt + ' uses');
+});
+
+// Stylesheets: Chromium 53 ignores what it doesn't know, so a newer feature fails silently.
+// (Flex gap is allowed: css/nogap.css covers it.)
+const CSS_BANNED = [[/#[0-9a-fA-F]{8}\b|#[0-9a-fA-F]{4}\b(?![0-9a-fA-F])/, '8 or 4 digit hex colours (Chromium 62)'], [/\binset\s*:/, 'inset (87)'], [/aspect-ratio/, 'aspect-ratio (88)'],
+  [/:(is|where|has)\(/, ':is/:where/:has (88+)'], [/:focus-visible|:focus-within/, ':focus-visible/:focus-within (60+)'], [/backdrop-filter/, 'backdrop-filter (76)'],
+  [/position\s*:\s*sticky/, 'position: sticky (56)'], [/[:\s,(](clamp|min|max)\(/, 'CSS clamp/min/max (79)'], [/overflow\s*:\s*clip/, 'overflow: clip (90)'],
+  [/\b(translate|scale|rotate)\s*:/, 'individual transform properties (104)'], [/color-mix|conic-gradient/, 'color-mix/conic-gradient'], [/display\s*:\s*(grid|contents)/, 'grid/contents (57/65)'],
+  [/:not\([^)]*[\s,][^)]*\)/, ':not() with a list or a complex selector (88)']];
+fs.readdirSync(path.join(ROOT, 'app/css')).filter(f => f.endsWith('.css')).forEach(f => {
+  const css = fs.readFileSync(path.join(ROOT, 'app/css', f), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  CSS_BANNED.forEach(([re, what]) => { const m = re.exec(css); ok('app/css/' + f + ' avoids ' + what, !m, m && css.slice(Math.max(0, m.index - 40), m.index + 30).replace(/\s+/g, ' ')); });
+});
+
 const SVC_BANNED = /\.(includes|startsWith|endsWith|repeat|padStart|find|findIndex|fill|flat|writableEnded)\b|Array\.from|new (Map|Set|WeakMap|Proxy|URL)\b|Symbol\.|Object\.(values|entries)|fs\.promises|\bpipeline\(|\bBuffer\.alloc/;
 files('service').filter(f => !/compat\.js$/.test(f)).forEach(f => {
   strip(fs.readFileSync(path.join(ROOT, f), 'utf8')).split('\n').forEach((line, i) => {
@@ -68,13 +92,70 @@ ok('timingSafeEqual shim', r.eq === true && r.ne === false);
 
 // App shims: Promise.prototype.finally.
 const vm = require('vm');
-const sandbox = { Promise: Promise, document: { documentElement: { className: '', appendChild() {}, removeChild() {} }, createElement() { return { style: {}, appendChild(x) { return x; }, scrollHeight: 2 }; } } };
+const fakeDoc = () => ({ documentElement: { className: '', appendChild() {}, removeChild() {} }, createElement() { return { style: {}, appendChild(x) { return x; }, scrollHeight: 2 }; } });
+const fakeWin = () => { const l = {}; return { l, addEventListener(t, f) { (l[t] = l[t] || []).push(f); } }; };
+const win0 = fakeWin();
+const sandbox = { Promise: Promise, document: fakeDoc(), setTimeout() {} };
+sandbox.window = Object.assign(win0, { document: sandbox.document });
+sandbox.addEventListener = win0.addEventListener;
 const saved = Promise.prototype.finally;
 delete Promise.prototype.finally;
 vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'app/js/compat.js'), 'utf8'), sandbox);
 const polyfilled = typeof Promise.prototype.finally === 'function' && Promise.prototype.finally !== saved;
 ok('compat.js adds Promise.prototype.finally when missing', polyfilled);
 ok('compat.js marks <html class="nogap"> when flex gap does not work', /\bnogap\b/.test(sandbox.document.documentElement.className));
+
+// Polyfills the bundled players need on Chromium 53 to 56, in a fresh context without them.
+{
+  const ctx = vm.createContext({ document: fakeDoc(), setTimeout() {} });
+  ctx.window = fakeWin(); ctx.addEventListener = ctx.window.addEventListener;
+  vm.runInContext('delete Object.entries; delete Object.values; delete String.prototype.padStart; delete String.prototype.padEnd;', ctx);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'app/js/compat.js'), 'utf8'), ctx);
+  const r = JSON.parse(vm.runInContext(`JSON.stringify({ e: Object.entries({ a: 1, b: 'x' }), v: Object.values({ a: 1, b: 2 }),
+    p: ['5'.padStart(2, '0'), '7'.padStart(3), 'abc'.padStart(2, '0'), 'x'.padEnd(4, 'ab'), 'x'.padStart(5, '')] })`, ctx));
+  ok('Object.entries / Object.values polyfills', JSON.stringify(r.e) === '[["a",1],["b","x"]]' && r.v.join() === '1,2', JSON.stringify(r));
+  ok('padStart / padEnd polyfills (used by mpegts.js for HEVC)', r.p.join('|') === '05|  7|abc|xaba|x', r.p.join('|'));
+}
+// webOS 3 and older can't run the app: a plain message instead of a black screen.
+{
+  const shown = [], body = { appendChild(x) { shown.push(x); } };
+  const doc = Object.assign(fakeDoc(), { body, addEventListener() {}, createElement() { const e = { style: {}, children: [], appendChild(x) { this.children.push(x); return x; } }; Object.defineProperty(e, 'textContent', { set(v) { this.text = v; }, get() { return this.text; } }); return e; } });
+  const w = fakeWin(), ctx = vm.createContext({ document: doc, setTimeout() {}, navigator: { userAgent: 'old' } });
+  ctx.window = w; ctx.addEventListener = w.addEventListener;
+  vm.runInContext('Function = function () { throw new SyntaxError("Unexpected token let"); };', ctx);
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'app/js/compat.js'), 'utf8'), ctx);
+  (w.l.load || []).forEach(f => f());
+  const txt = shown.length ? shown[0].children.map(c => c.text).join(' / ') : '';
+  ok('a TV too old for TiviBro gets a message, not a black screen', /too old/.test(txt) && /webOS 4/.test(txt), txt.slice(0, 90));
+}
+// The app's version detection, from the browser engine in the user agent.
+{
+  const ctx = vm.createContext({ navigator: { userAgent: '' } });
+  vm.runInContext(fs.readFileSync(path.join(ROOT, 'app/js/caps.js'), 'utf8') + '\nthis.Caps = Caps;', ctx);
+  const ua = c => 'Mozilla/5.0 (Web0S; Linux/SmartTV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/' + c + '.0.0.0 Safari/537.36 WebAppManager';
+  const got = [53, 68, 79, 87, 94, 108, 120, 132, 140].map(c => ctx.Caps.webosVersion(ua(c)));
+  ok('webOS version from the engine: 4, 5, 6, 22, 23, 24, 25, 26, and newer engines count as 26', got.join() === '4,5,6,22,23,24,25,26,26', got.join());
+  ok('a desktop browser is not mistaken for webOS', ctx.Caps.webosVersion('Mozilla/5.0 (X11; Linux x86_64) Chrome/130.0.0.0 Safari/537.36') === 0);
+}
+// Symbols (↺ ★ ▶ ✓) for TVs whose fonts lack them, and no emoji-only symbols in what the app shows.
+{
+  const css = fs.readFileSync(path.join(ROOT, 'app/css/app.css'), 'utf8');
+  ok('symbol fallback font is bundled with its licence', fs.existsSync(path.join(ROOT, 'app/fonts/symbols.woff')) && /Bitstream Vera/.test(fs.readFileSync(path.join(ROOT, 'app/fonts/LICENSE.txt'), 'utf8')));
+  ok('app.css loads it for symbols only, in the main font list', /@font-face\{font-family:"TiviBro Symbols";src:url\(\.\.\/fonts\/symbols\.woff\)[^}]*unicode-range/.test(css) && /font-family:[^;]*"TiviBro Symbols"/.test(css));
+  const shown = files('app/js').map(f => strip(fs.readFileSync(path.join(ROOT, f), 'utf8'))).join('\n') + fs.readFileSync(path.join(ROOT, 'app/index.html'), 'utf8');
+  const emoji = shown.match(/[\u23e9-\u23fa\u2b50\u2705\u274c]|\ud83c[\udc00-\udfff]|\ud83d[\udc00-\udfff]/g) || [];
+  ok('no emoji-only symbols on screen (old TVs show boxes)', !emoji.length, emoji.slice(0, 5).join(' '));
+}
+// The helper accepts sloppy provider replies on Node 12+ (tests/unit/proxy-lenient.test.js checks it works).
+ok('helper asks Node for its lenient HTTP parser', /insecureHTTPParser:\s*true/.test(proxySrc));
+
+// appinfo.json settings every webOS version relies on.
+{
+  const info = JSON.parse(fs.readFileSync(path.join(ROOT, 'app/appinfo.json'), 'utf8'));
+  ok('appinfo: full HD layout on every TV', info.resolution === '1920x1080');
+  ok('appinfo: the app handles Back itself (webOS 4+ would otherwise go back in history)', info.disableBackHistoryAPI === true);
+  ok('appinfo: version is three numbers (webOS refuses anything else)', /^\d+\.\d+\.\d+$/.test(info.version), info.version);
+}
 let order = [];
 Promise.resolve(5).finally(() => order.push('f')).then(v => order.push(v))
   .then(() => Promise.reject(new Error('x')).finally(() => order.push('g')))

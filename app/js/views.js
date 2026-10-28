@@ -82,7 +82,7 @@ var Views = (function () {
     if (!row._n) {
       row._num = U.el('span', 'num'); row._img = U.el('img', 'logo');
       row._img.decoding = 'async';
-      row._img.onerror = function () { this.style.visibility = 'hidden'; };
+      row._img.onerror = function () { if (!Net.retryImage(this)) this.style.visibility = 'hidden'; };
       var box = U.el('div', 'txt');
       row._n = U.el('span', 'name'); row._s = U.el('span', 'sub'); row._p = U.el('div', 'pbar'); row._pi = U.el('i');
       row._p.appendChild(row._pi);
@@ -1176,7 +1176,7 @@ var Views = (function () {
       var r1 = U.el('div', 'qp-recent');
       qp.rows[1].forEach(function (it, i) {
         var x = it.ch, b = U.el('div', 'qp-ch' + (qp.row === 1 && qp.col === i ? ' focus' : '') + (x.k === c.k ? ' on' : ''));
-        var lg = logoOf(x); if (lg) { var im = U.el('img'); im.src = lg; im.onerror = function () { this.remove(); }; b.appendChild(im); }
+        var lg = logoOf(x); if (lg) { var im = U.el('img'); im.src = lg; im.onerror = function () { if (!Net.retryImage(this)) this.remove(); }; b.appendChild(im); }
         b.appendChild(U.el('span', 'nm', L.name(x)));
         var n2 = Epg.nowNext(x); b.appendChild(U.el('span', 'pg', n2 && n2.now ? n2.now.t : L.groupName(x.g)));
         hook(b, 1, i);
@@ -1343,7 +1343,7 @@ var Guide = (function () {
     for (var i = 0; i < VIS; i++) {
       var r = U.el('div', 'grow'), ch = U.el('div', 'gch'), pr = U.el('div', 'gprogs');
       ch.appendChild(U.el('span', 'num'));
-      var img = U.el('img', 'logo'); img.decoding = 'async'; img.onerror = function () { this.style.visibility = 'hidden'; }; ch.appendChild(img);
+      var img = U.el('img', 'logo'); img.decoding = 'async'; img.onerror = function () { if (!Net.retryImage(this)) this.style.visibility = 'hidden'; }; ch.appendChild(img);
       ch.appendChild(U.el('span', 'n'));
       var chips = U.el('span', 'gchips'), cuEl = U.el('span', 'cu'), qEl = U.el('span', 'qtag');
       chips.appendChild(cuEl); chips.appendChild(qEl); ch.appendChild(chips);
