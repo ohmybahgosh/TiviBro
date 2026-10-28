@@ -37,7 +37,7 @@ var Player = (function () {
 
   var video = null, eng = null, cur = null, token = 0;
   var listeners = { state: [], stats: [], notice: [], trouble: [] };
-  var wd = 0, st = null;
+  var wd = 0, fastWd = 0, st = null;
   var lastStats = null;
   var fallbackHosts = {};        // host -> 'native' after MSE could not fetch it
 
@@ -223,6 +223,7 @@ var Player = (function () {
   /* ---------- lifecycle ---------- */
   function teardown() {
     clearInterval(wd); wd = 0;
+    clearInterval(fastWd); fastWd = 0;
     if (eng) { eng.destroy(); eng = null; }
     if (video) {
       video.pause();
@@ -318,6 +319,12 @@ var Player = (function () {
     }
     if (kind === 'native' && cur.media) { var rn = Caps.route(cur.media, hdrPolicy()); if (rn.warn && !cur.warned) { cur.warned = true; notice(rn.warn); } }
     wd = setInterval(function () { tick(myToken); }, 400);
+    // Until the first frame, check every 50ms: the video is often ready to play within 100-200ms
+    // of a channel change, and waiting for the 400ms watchdog added up to a third of a second.
+    fastWd = setInterval(function () {
+      if (myToken !== token || !st || st.started) { clearInterval(fastWd); fastWd = 0; return; }
+      tick(myToken);
+    }, 50);
   }
   // Stream facts arrive in pieces (movie details, then the stream); later, more specific wins.
   function merge(a, b) {

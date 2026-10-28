@@ -14,7 +14,7 @@ const opt = (k, d) => { const i = argv.indexOf('--' + k); return i >= 0 ? argv[i
 const SECS = +opt('secs', 150), PROFILE = opt('profile', 'balanced'), PAR = +opt('parallel', 3), OUT = opt('json', '');
 const APP = process.env.APP || 'http://127.0.0.1:8078/index.html';
 const RELAY = process.env.RELAY || '47811';
-const ALL = [901, 902, 903, 904, 905, 906, 907, 908, 909, 910, 911];
+const ALL = [901, 902, 903, 904, 905, 906, 907, 908, 909, 910, 911, 912];
 const modes = argv.filter(a => /^9\d\d$/.test(a)).map(Number);
 const run = modes.length ? modes : ALL;
 

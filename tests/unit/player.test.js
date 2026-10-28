@@ -95,6 +95,13 @@ const before = t.made.length;
 t.run(1000);
 ok('and reconnects by itself', t.made.length === before + 1 && t.last().kind === 'ts');
 
+// ---- a channel change starts as soon as enough is buffered, not on the next 400ms watchdog tick ----
+t = setup();
+t.P.play({ n: 'Quick', url: 'http://p/live/u/p/9.ts' });
+t.feed(0, 4); t.run(100);
+const pl = t.logs.filter(l => /Playing after/.test(l))[0] || '';
+ok('starts within 100ms when the provider sends a head start', !t.video.paused && /Playing after (\d+)ms/.test(pl) && +/after (\d+)ms/.exec(pl)[1] <= 100, pl);
+
 // ---- an HTTP error before data is the provider, not CORS: retry, don't switch the host ----
 t = setup();
 t.P.play({ n: 'A', url: 'http://p/live/u/p/2.ts' });

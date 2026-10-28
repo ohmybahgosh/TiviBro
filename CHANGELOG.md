@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Faster channel changes.  Until the first frame, the player checks every 50 ms whether enough is buffered, instead of on its 400 ms watchdog.  Video is usually ready 100 to 200 ms after a change, so pictures now appear about 300 ms sooner: 0.42 to 0.12 s in a desktop browser, and 0.86 to 0.47 s with the CPU slowed to TV speed (median of 10 changes).  Test: `player.test.js`.
+- Player audit (`docs/COMPATIBILITY.md`, "Video decoding and hardware"): every stream already uses the TV's hardware decoder, demuxing runs in a background worker, and steady playback costs about 1% of a core.  Measured and left as they are: the demux worker (no measurable cost to channel changes) and the MPEG-TS stash buffer (resizes itself after the first second).
+- Test channel "Chaos Real Time" (912): no head start, data at exactly real time from the first byte.
 - Compatibility pass across webOS 4 to 26 ([`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md)):
   - HEVC channels on webOS 4: mpegts.js uses `padStart` (Chromium 57) when it reads an HEVC stream, and hls.js uses `Object.entries` (Chromium 54).  `compat.js` now polyfills both, plus `Object.values` and `padEnd`.
   - Never a black screen: on webOS 3 and older the app says the TV is too old (needs webOS 4, 2018 or newer); if part of the app fails to load or start, it says so with the details and OK tries again.

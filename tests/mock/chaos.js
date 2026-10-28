@@ -21,7 +21,8 @@ const MODES = [
   [908, 'Chaos Storm', 'slow patches, garbage, a 12s stall and a dropped connection'],
   [909, 'Chaos Outage', 'plays 30s, then the provider answers 404 for 60s, then comes back'],
   [910, 'Chaos Trickle', 'never faster than 92% of real time: the buffer always slowly drains'],
-  [911, 'Chaos Restart', 'switches to a differently encoded stream every 40s (new codec settings)']
+  [911, 'Chaos Restart', 'switches to a differently encoded stream every 40s (new codec settings)'],
+  [912, 'Chaos Real Time', 'no head start: data arrives at exactly real time from the first byte (how long until a picture?)']
 ];
 
 const conns = {};          // mode -> connections so far
@@ -56,7 +57,7 @@ function serve(id, req, res, media) {
   if (files[0].endsWith('chaos.ts')) pos = Math.floor((Math.floor(since) * 150000) % Math.max(1, size - 50e6) / 188) * 188;
   // Real-time byte rate of the clip (chaos.ts is 600s long, the category clips 120s).
   const byteRate = size / (files[0].endsWith('chaos.ts') ? 600 : 120);
-  const head = byteRate * 3;                   // providers send a few seconds up front
+  const head = mode === 912 ? 0 : byteRate * 3;   // providers send a few seconds up front (912: none)
   const dropAt = mode === 903 ? 25 + (n * 7) % 20 : mode === 908 ? 60 : mode === 909 && n === 1 ? 30 : 0;
   const t0 = Date.now();
   let owed = head, last = t0, timer = null, closed = false, nextJunk = 15, nextJump = 30;

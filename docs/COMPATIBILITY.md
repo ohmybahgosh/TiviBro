@@ -34,6 +34,17 @@ TiviBro is built and tested first on **webOS TV 25**, and runs the same code on 
 - **In-app updates** call `luna://org.webosbrew.hbchannel.service/install`, which exists only on rooted TVs with the Homebrew Channel and has no ACG group.  When the call is missing or refused, the app says it can't install by itself and points to the release page.
 - **Access Control Groups.**  `appinfo.json` lists every Luna permission the app and its helper use: `systemconfig.query` (TV model and webOS version, `caps.js`) and `activity.operation` (keeps the helper running, `service.js`).  webOS 25 and older ignore the list; 26 checks it when present, and 27 requires it.
 
+## Video decoding and hardware
+
+Every stream is decoded by the TV's hardware decoder, whichever player TiviBro uses:
+
+- **Built-in demuxer (MPEG-TS) and HLS:** mpegts.js and hls.js only unpack the stream (in a background worker, off the UI thread) and hand the compressed video to the browser's Media Source Extensions, which on webOS feed the TV's own decoder.
+- **TV player:** the TV's media pipeline does everything, including unpacking.  It uses the least CPU but gives TiviBro no control over buffering, so Automatic uses it only where it is needed (Dolby Vision, codecs the browser refuses, servers that block the built-in path).
+
+webOS doesn't let apps change decoder settings, switch the display's refresh rate or resolution, or pass audio through untouched, so there is nothing more to switch on.  The video sits on the TV's video plane behind the page; TiviBro keeps the page opaque around it and puts no transforms or filters on the video element, which keeps it there.
+
+Measured in a desktop browser with the CPU slowed to TV speed: steady fullscreen playback uses about 11 ms of main-thread time per second (around 1% of a core), and a channel change reaches a moving picture in about half a second (0.12 s at full speed) when the provider sends a few seconds up front.
+
 ## Checked on every test run
 
 `tests/unit/compat.test.js` (part of `npm test` and CI):
