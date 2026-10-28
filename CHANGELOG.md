@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 7, 2026-10-28)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 7
 
 - Web editor audit (`npm run soak:editor`, `tests/soak/editor.js`): every page driven in a real browser against the TV, checking what reaches it.  Login and lockout, groups, renames, your own groups, copying channels, favorites and hiding, name rules, guide sources, smart clean-up, restore points and undo, adding a playlist, backup and unlock, help and log out all work.
 - Web editor fix: switching the editor off now drops changes and actions the TV hadn't picked up yet, and starting it again skips saves from an earlier session.  Before, a TiviBro that restarted (after switching playlist or a restore) could apply a stale save to the wrong playlist, or run a queued restore again.  Test: `tests/unit/editor.test.js`.
@@ -14,11 +18,7 @@
 - Sloppy providers on webOS 5 and 6, and `Content-Length` twice on webOS 22 and later: Node 8 refused replies with a stray control character in a header, and Node 12 and newer refused a repeated `Content-Length` even in lenient mode.  When Node refuses a reply, the helper now asks again with its own forgiving reader (`service/rawhttp.js`: CRLF or bare LF, control characters dropped, matching repeated lengths kept, chunked replies undone).  Tests: `tests/unit/proxy-lenient.test.js`, `tests/engines/helper.js`.
 - Mock provider: `/guide.xml.gz`, a zipped guide labelled the way many guide hosts do.
 
-## 0.6.0 (alpha 6, 2026-10-28)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 6
+### In alpha 6
 
 - Quicker starts, same stability (buffer profiles unchanged):
   - CH+ / CH− and Last channel: a lone press starts the channel at once instead of after 300 ms; presses in quick succession still wait until you stop, so surfing opens one stream rather than many.  A single press to a moving picture went from about 0.72 s to 0.15 s against the mock provider (and 0.42 s to 0.15 s with a provider that allows one connection).
