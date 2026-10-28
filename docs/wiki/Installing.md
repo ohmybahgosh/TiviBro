@@ -68,3 +68,8 @@ TiviBro checks for a new release once a day (**Settings > Updates and about**). 
 ## Next
 
 [First start](First-start): add your playlist, or restore a backup from another TV.
+
+<p align="center">
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-first-run.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-first-run.png" width="49%" alt="The first screen after installing"></a>
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png" width="49%" alt="Settings, Updates and about"></a>
+</p>

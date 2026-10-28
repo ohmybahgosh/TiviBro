@@ -16,10 +16,11 @@ trim() {  # trim <webm> -> "-ss S -t D" from the .start/.end files beside it
 }
 
 # Full-screen video scenes have big moving gradients, which GIF stores badly: smaller and slower for those.
-HEAVY=" guide zap catchup multiview "
+HEAVY=" guide zap catchup multiview options versions parental reminders channels "
 gif() {  # gif <in.mp4> <out.gif> <width>
   local w=$3 fps=$GIF_FPS colors=128 bayer=4
   case "$HEAVY" in *" $(basename "$2" .gif) "*) w=720; fps=8; colors=96; bayer=5 ;; esac
+  case " zap options " in *" $(basename "$2" .gif) "*) fps=6 ;; esac      # the longest fullscreen clips
   ffmpeg -v error -y -i "$1" -vf "fps=$fps,scale=$w:-2:flags=lanczos,split[a][b];[a]palettegen=max_colors=$colors:stats_mode=diff[p];[b][p]paletteuse=dither=bayer:bayer_scale=$bayer:diff_mode=rectangle" "$2"
 }
 

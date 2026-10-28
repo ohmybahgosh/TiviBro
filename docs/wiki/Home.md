@@ -4,7 +4,7 @@
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/guide.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/guide.gif" width="100%" alt="The TiviBro guide"></a></p>
 
-Welcome to the TiviBro wiki.  It explains every screen and setting on the TV, every page of the web editor, and how to get help when something is off.
+Welcome to the TiviBro wiki.  It explains every screen and every setting on the TV, with screenshots, every page of the web editor, and how to get help when something is off.
 
 > TiviBro does not provide any channels, streams or playlists.  You bring your own legal subscription (Xtream Codes, or M3U with XMLTV).
 
@@ -19,6 +19,9 @@ Welcome to the TiviBro wiki.  It explains every screen and setting on the TV, ev
 | 🧹 **Too many groups?** | [Turning on the web editor](Turning-on-the-web-editor) · [Smart clean-up](Smart-clean-up) · [Groups and channels](Groups-and-channels) |
 | 🗓️ **Missing guide data?** | [The programme guide](The-programme-guide) |
 | 💾 **New TV or reinstall?** | [Backup and restore](Backup-and-restore) |
+| ⚙️ **What does this setting do?** | [Every setting](Settings-Playback-and-buffering), one page per section of Settings |
+| 🔁 **A channel keeps dying** | [Other versions of a channel](Other-versions-of-a-channel) |
+| ⏰ **Reminders and PINs** | [Reminders](Reminders) · [Parental controls](Parental-controls) |
 | 🛠️ **Something's wrong** | [Troubleshooting](Troubleshooting) · [FAQ](FAQ) |
 
 ## What it looks like

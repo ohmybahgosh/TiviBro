@@ -8,6 +8,11 @@ Every change is a **draft** until you press **Send to TV** (or <kbd>Ctrl</kbd>+<
 - <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redoes, even after sending.
 - Drafts are kept in the browser, so closing the page by accident loses nothing.
 - **Restore points** live on the TV.  It makes one before applying each batch (keeps the last 15), and you can make named ones before big changes.  Restoring one is itself undoable.
+- **Changes and restore points** lists what hasn't reached the TV yet, this session's changes (each with **Go back**), and the restore points.
+
+<p align="center">
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-history.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-history.png" width="100%" alt="Changes and restore points"></a>
+</p>
 
 ---
 

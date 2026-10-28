@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Web editor fixed: since alpha 3 it opened as a blank page (a stray apostrophe in its help text stopped the page's script), so setup from a computer, editing and backup and restore didn't work.  Lint now checks the scripts inside HTML pages, so this can't slip through again.
+- Parental controls: blocking the channel that's playing (the preview, say) now stops it, so OK can't take it fullscreen without the PIN.
+- Documentation: every setting explained with its choices and default, one page per Settings section ([user guide](docs/USER-GUIDE.md#every-setting) and wiki), and pictures for everything.  New videos: the Channels screen and channel options, other versions of a channel, reminders, parental controls, and the fullscreen options.  New screenshots: every Settings section and the pages inside them, a channel switching to another version by itself, and every page of the web editor.  All media re-recorded from the current app.
+- `scripts/demo/record.js` finds its way by watching where the focus is instead of counting key presses, and records the Settings pages and editor pages too.  The engine test picks a free port for the web editor.
 - Run on the real engines of older TVs (`npm run test:engines`, [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md) "Run on the real engines"):
   - The helper on Node 0.12, 8.12, 12, 16 and 20 (webOS 4 to 26): 40 checks covering relaying, Range, redirects, User-Agent, zipped guides, MPEG-TS realignment, sloppy replies, the DNS cache, errors, timeouts, zapping away, the web editor with encrypted backups, and the service wrapper.  All pass on every version.  `tests/engines/helper.js`, also part of the unit tests.
   - The app in Chromium 53, 69, 78 and 87 (Electron 1.4, 4.2, 7.3 and 11.5; webOS 4, 5, 6 and 22): start-up, channels, guide, remote keys, a playing preview, Settings, a zipped XMLTV guide, no page errors.  All pass, with screenshots.  `tests/engines/browser/`, `tests/engines/run.sh`.

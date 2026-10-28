@@ -1056,7 +1056,7 @@ var Views = (function () {
       renamed && { label: 'Restore original name', action: function () { L.renameChannel(c.k, ''); refreshLists(true); } },
       { label: 'Assign guide…', sub: Store.edits.epgMap[c.k] ? 'assigned' : Epg.hasData(c) ? '' : 'no guide yet', action: function () { Settings.assignGuide(c); } },
       Parental.enabled() && { label: blocked ? 'Unblock channel' : 'Block channel', sub: 'needs the PIN to watch', action: function () {
-        var go = function () { L.block('channel', c.k, !blocked); U.toast(blocked ? 'Unblocked' : 'Blocked'); refreshLists(true); };
+        var go = function () { L.block('channel', c.k, !blocked); U.toast(blocked ? 'Unblocked' : 'Blocked'); refreshLists(true); stopIfBlocked(); };
         if (blocked) Parental.gate('channels', c, go); else go();
       } },
       hidden ? { label: 'Show channel', action: function () { L.hideChannel(c.k, false); U.toast('Channel restored'); refreshLists(true); } }
@@ -1284,7 +1284,7 @@ var Views = (function () {
       !virtual && { label: 'Move down', action: function () { L.moveGroup(g.id, 1); refreshLists(true); groupsVL.move(1); } },
       g.id === L.RECENT && { label: 'Clear recent channels', action: function () { Store.edits.recent = []; Store.saveEdits(); L.dirty(); refreshLists(); } },
       !virtual && Parental.enabled() && { label: blocked ? 'Unblock group' : 'Block group', action: function () {
-        var go = function () { L.block('group', g.id, !blocked); refreshLists(true); };
+        var go = function () { L.block('group', g.id, !blocked); refreshLists(true); stopIfBlocked(); };
         if (blocked) Parental.gate('channels', { k: '', g: g.id }, go); else go();
       } },
       !virtual && (hidden ? { label: 'Show group', action: function () { L.hideGroup(g.id, false); U.toast('Group restored'); refreshLists(true); } }
@@ -1316,6 +1316,8 @@ var Views = (function () {
     }
   }
 
+  // Blocking what is playing (the preview, say) stops it, so OK can't take it fullscreen without the PIN.
+  function stopIfBlocked() { if (playing && mode === 'live' && !Parental.blockedOk(playing)) stopAll(); }
   function stopAll() { if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off'); }
 
   return {

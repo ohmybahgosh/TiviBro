@@ -9,6 +9,10 @@
 - **Include test versions** also offers alpha and beta builds.  It is on when you are running one.
 - On TVs that aren't rooted, the page tells you the new version is out; install it from a computer as before.
 
+<p align="center">
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png" width="60%" alt="Updates and about"></a>
+</p>
+
 ---
 
 ← [Settings](Settings)  ·  [Home](Home)  ·  [Parental controls](Parental-controls) →

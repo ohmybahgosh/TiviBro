@@ -21,7 +21,7 @@ The guide is the home screen.  The channel you are on plays in the window at the
 </p>
 </details>
 
-Guide options under **Settings > Guide, start screen, reminders**: two-line programmes, dimming past programmes, how "now" is marked, logos only or names too, and catch-up marks.
+Guide options are under [Settings: Guide, start screen, reminders](Settings-Guide-start-screen-reminders): two-line programmes, dimming past programmes, how "now" is marked, logos only or names too, and catch-up marks.  Where your playlist has the same channel more than once, a small quality tag (**FHD**, **HD**, **SD**, **4K**) tells the copies apart.
 
 ---
 

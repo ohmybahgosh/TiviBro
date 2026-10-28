@@ -9,6 +9,10 @@
 
 Everything here only hides, never deletes, and each action is one undo step.
 
+<p align="center">
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-smart-cleanup.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-smart-cleanup.png" width="100%" alt="Smart clean-up"></a>
+</p>
+
 ---
 
 ← [Groups and channels](Groups-and-channels)  ·  [Home](Home)  ·  [Channel names](Channel-names) →

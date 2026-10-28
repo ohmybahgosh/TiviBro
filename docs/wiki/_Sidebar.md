@@ -9,6 +9,7 @@
 - [The guide](The-guide)
 - [Groups and the menu](Groups-and-the-menu)
 - [Watching fullscreen](Watching-fullscreen)
+- [Other versions of a channel](Other-versions-of-a-channel)
 - [Catch-up](Catch-up)
 - [Movies and shows](Movies-and-shows)
 - [Search](Search)
@@ -18,6 +19,18 @@
 - [Settings](Settings)
 - [Updates](Updates)
 - [Parental controls](Parental-controls)
+
+**Every setting**
+- [Settings: Playback and buffering](Settings-Playback-and-buffering)
+- [Settings: Remote control](Settings-Remote-control)
+- [Settings: Playlists and guide](Settings-Playlists-and-guide)
+- [Settings: Groups, sorting, hidden](Settings-Groups-sorting-hidden)
+- [Settings: Guide, start screen, reminders](Settings-Guide-start-screen-reminders)
+- [Settings: Appearance](Settings-Appearance)
+- [Settings: Parental controls](Settings-Parental-controls)
+- [Settings: Edit on a computer](Settings-Edit-on-a-computer)
+- [Settings: Updates and about](Settings-Updates-and-about)
+- [Settings: Diagnostics](Settings-Diagnostics)
 
 **Web editor**
 - [Turning on the web editor](Turning-on-the-web-editor)

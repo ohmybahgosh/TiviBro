@@ -11,7 +11,16 @@
 - **Rename…** and **Assign guide…** fix a name or a missing guide for that one channel.
 - **Other versions…** lists the same channel in its other qualities and copies, hidden ones included, to switch to one directly.
 
-**Manage groups** in Settings shows every group in one list to switch on or off, like TiviMate.  For hundreds of groups the [web editor](Groups-and-channels) is much faster.
+**Manage groups** in Settings shows every group in one list to switch on or off, like TiviMate.  For hundreds of groups the [web editor](Groups-and-channels) is much faster.  Sorting, the Recent and Favorites groups, and getting hidden items back are in [Settings: Groups, sorting, hidden](Settings-Groups-sorting-hidden).
+
+<p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/channels.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/channels.gif" width="100%" alt="Channel options, copy to a group and Favorites"></a></p>
+<p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/channels.mp4">Watch the MP4</a></sub></p>
+
+<p align="center">
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-channel-options.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-channel-options.png" width="32%" alt="Channel options"></a>
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-copy-to-group.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-copy-to-group.png" width="32%" alt="Copy to group"></a>
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-manage-groups.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-manage-groups.png" width="32%" alt="Manage groups"></a>
+</p>
 
 ---
 

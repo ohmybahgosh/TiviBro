@@ -258,9 +258,10 @@ step(function stats(next) {
 });
 step(function editor(next) {
   var E = 'http://127.0.0.1:' + R.server.address().port, L, tok;
-  request('POST', E + '/editor/start', { body: { port: 0, password: 'ABCD-2345' } }, function (e, r, b) {
+  // A free port for the editor, so a running TiviBro or another test can't get in the way.
+  var probe = net.createServer(); probe.listen(0, '127.0.0.1', function () { var free = probe.address().port; probe.close(function () {
+  request('POST', E + '/editor/start', { body: { port: free, password: 'ABCD-2345' } }, function (e, r, b) {
     var s = b && json(b);
-    // port 0 means 8787 to the helper; use a free one instead
     if (!s || !s.running) { ok('web editor starts', false, b && String(b)); return next(); }
     L = 'http://127.0.0.1:' + s.port;
     ok('web editor starts', s.running, 'port ' + s.port);
@@ -292,6 +293,7 @@ step(function editor(next) {
       });
     });
   });
+  }); });
 });
 function backup(E, L, H, done) {
   request('POST', L + '/api/command', { headers: H, body: { type: 'backup', args: { passphrase: 'correct horse' } } }, function (e, r, b) {

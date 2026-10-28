@@ -7,6 +7,10 @@
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/search.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/search.gif" width="100%" alt="Search"></a></p>
 <p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/search.mp4">Watch the MP4</a></sub></p>
 
+<p align="center">
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-search.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-search.png" width="100%" alt="Search results"></a>
+</p>
+
 ---
 
 ← [Movies and shows](Movies-and-shows)  ·  [Home](Home)  ·  [Multiview](Multiview) →

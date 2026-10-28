@@ -14,10 +14,14 @@ Cleaning up hundreds of groups with a TV remote is painful.  The web editor does
 
 The editor switches off every time TiviBro closes.  After five wrong passwords it locks for a minute.
 
+<p align="center">
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor-on.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor-on.png" width="60%" alt="The address and password on the TV"></a>
+</p>
+
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-overview.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-overview.png" width="100%" alt="Web editor overview"></a></p>
 
-The **Overview** shows how many channels and groups are on the TV, guide coverage, and a short checklist for a first clean-up: Smart clean-up, then groups and favorites, channel names, the guide, then **Send to TV** and a backup.
+The **Overview** shows how many channels and groups are on the TV, guide coverage, smart suggestions, and a short checklist for a first clean-up: Smart clean-up, then groups and favorites, channel names, the guide, then **Send to TV** and a backup.  **Help** in the editor explains every page.
 
 ---
 
-← [Parental controls](Parental-controls)  ·  [Home](Home)  ·  [Drafts and Send to TV](Drafts-and-Send-to-TV) →
+← [Settings: Diagnostics](Settings-Diagnostics)  ·  [Home](Home)  ·  [Drafts and Send to TV](Drafts-and-Send-to-TV) →

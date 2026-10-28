@@ -1,0 +1,61 @@
+<!-- Generated from docs/USER-GUIDE.md by scripts/wiki/build.js.  Edit the guide, not this page. -->
+
+*Every setting*
+
+Your playlists, how often they reload, and where the programme guide comes from.  **OK** on a playlist opens its page.
+
+<p align="center">
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlists.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlists.png" width="32%" alt="Playlists"></a>
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlist.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlist.png" width="32%" alt="A playlist's page"></a>
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlist-2.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlist-2.png" width="32%" alt="A playlist's guide settings"></a>
+</p>
+
+| Setting | Choices | What it does |
+|---|---|---|
+| *(each playlist)* | | Its name and type, and for the one in use, how many channels it has.  **OK** opens its page (below). |
+| **Add playlist…** | | Opens the setup screen for another Xtream Codes or M3U playlist.  Each playlist keeps its own groups, favorites, hidden items, guide and name rules. |
+
+On a playlist's page:
+
+| Setting | Choices | What it does |
+|---|---|---|
+| **Use this playlist** | | Switches the TV to this playlist (shown when it isn't the one in use). |
+| **Name** | | The name shown in Settings and the web editor. |
+| **Connection** | | Server, username and password (or the M3U address).  Opens the setup screen, which tests the login before saving. |
+| **User-Agent** | **Default** or your own | Only if your provider asks for a specific one (TiviMate's "User-Agent" setting).  The network helper sends it for this playlist. |
+| **Reload channel list** | Every app start · Every 6 hours · **Every 12 hours** · Every day · Every 2 days · Every week · Only when I ask | How often the channel list is fetched again.  Your groups, renames and hidden items are always kept. |
+| **Reload channels now** | | Fetches the channel list right away. |
+| **Last reloaded**, **Subscription expires**, **Connections allowed** | (information) | From your provider, when it reports them. |
+| **Provider guide** | Xtream: **Per channel** · Full XMLTV file · Off.  M3U: **From playlist** · Off | *Per channel* asks for each channel's programmes as you browse: light and fast.  *Full XMLTV file* downloads the provider's whole guide: days ahead, guide search and manual matching, but often 20 to 200 MB.  *Off* uses only your own guide sources. |
+| **Provider guide time offset** | −12:00 to +12:00 in half hours, **0:00** | Use it when every programme from the provider guide is too early or too late. |
+| **Guide sources ›** | | Extra XMLTV guides (`.xml` or `.xml.gz`), checked before the provider guide.  **OK** on one to edit its address, give it its own time offset, move it up or down (the first one wins when two cover a channel) or remove it.  **Add guide source…** adds one.  The [web editor](The-programme-guide) has a list of free guides by region. |
+| **Reload guide** | Same choices as the channel list, **Every 12 hours** | How often the guide is downloaded again. |
+| **Keep past days** | 1 · **2** · 3 · 5 · 7 days | How far back the guide keeps programmes, for catch-up browsing.  More days use more TV memory. |
+| **Match guide by channel name** | **On** · Off | Links channels that have no guide id to a guide channel with the same name. |
+| **Reload guide now** | | Downloads the guide right away. |
+| **Guide last loaded**, each source, **Channels with guide data** | (information) | When the guide loaded, how many channels and programmes each source gave, and how many of your channels have a guide. |
+| **Assign guide to channels without one** | | Lists channels with no guide; pick one and search the guide for the right channel.  Also on any channel: **Hold OK > Assign guide…**. |
+| **Channel name editor ›** | | Cleans up channel names (below). |
+| **Delete this playlist** | | Removes the playlist with its groups, favorites, hidden items and cached data.  Shown when you have more than one. |
+
+**Channel name editor.**  Rules that strip clutter from every name at once.  Your provider's names are never changed: switch a rule off and the original comes back.  Names you set by hand stay.
+
+<p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-names.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-names.png" width="60%" alt="Channel name editor"></a></p>
+
+| Setting | Default | What it does |
+|---|---|---|
+| **Clean up channel names** | **On** | The master switch.  Off shows the original names. |
+| **Clean group names too** | **On** | Turns "USA \| Sports" into "Sports" in the group list. |
+| **Enable recommended defaults** / **Turn all default rules off** | | Set every built-in rule at once.  Your own lists are kept. |
+| **Country and region prefixes** | **On** | "USA \| ESPN" → "ESPN", "\|UK\| BBC One" → "BBC One", "CA: TSN 1" → "TSN 1". |
+| **Category and package prefixes** | **On** | "VIP \| AMC" → "AMC", "24/7 - Friends" → "Friends", "SPORTS: TNT" → "TNT". |
+| **Quality and format tags at the end** | **On** | "CNN FHD" → "CNN", "Nat Geo (1080p)" → "Nat Geo", "AMC \| RAW" → "AMC". |
+| **Decorative symbols** | **On** | "Fox News ᴴᴰ" → "Fox News", "TNT ★" → "TNT". |
+| **Time zone feeds** | Off | "HBO (East)" → "HBO", "Starz West" → "Starz".  Off by default because East and West feeds would end up with the same name. |
+| **Any short bracketed tag at the ends** | Off | "[EN] Sky News" → "Sky News", "AMC (Backup)" → "AMC".  Off by default because it can remove useful text like "(Sports)". |
+| **Your prefixes** / **Your suffixes** | empty | Your own text to remove from the start or end of names, any capitalisation.  Spaces count (shown as ·), so " HD" won't touch "WHD".  **Paste a comma separated list…** takes TiviMate's format, for example `US: , UK: , NOW \| `. |
+| **Preview** | | Names from your channels before and after, the ones that change first. |
+
+---
+
+← [Settings: Remote control](Settings-Remote-control)  ·  [Home](Home)  ·  [Settings: Groups, sorting, hidden](Settings-Groups-sorting-hidden) →

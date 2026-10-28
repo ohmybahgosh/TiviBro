@@ -15,6 +15,7 @@ M3U playlists can use the guide address inside the playlist.
 **Smart match** fixes channels showing "No guide information".  It ignores clutter, understands country codes, East and West feeds, numbered channels and US call signs, then shows its best guess with a confidence score.  You approve or decline each one, and nothing changes until you press **Apply**.
 
 <p align="center">
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-guide.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-guide.png" width="100%" alt="The guide page"></a>
   <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-guide-progress.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-guide-progress.png" width="49%" alt="Guide download progress"></a>
   <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-smart-match.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
 </p>

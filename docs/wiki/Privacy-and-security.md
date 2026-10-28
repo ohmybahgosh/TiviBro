@@ -11,11 +11,15 @@
 - Locks for a minute after five wrong passwords.
 - Every request needs the session it got from the password; nothing is open without it.
 
+<p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor-on.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor-on.png" width="60%" alt="The editor address and password, shown only on the TV"></a></p>
+
 ## Backups
 
 - Always locked with a passphrase you choose, using PBKDF2-SHA256 (200,000 rounds) and AES-256-GCM.
 - The TV makes the backup and the helper locks it before it reaches the browser, so the file on your computer is unreadable without the passphrase.
 - The passphrase is never stored or sent to the app.  Nobody can recover a forgotten one, so keep it in a password manager.
+
+<p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-backup.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-backup.png" width="100%" alt="Backup and restore in the web editor"></a></p>
 
 ## Network
 

@@ -24,4 +24,4 @@ From live TV, **From start** in the quick menu restarts the current programme.  
 
 ---
 
-← [Watching fullscreen](Watching-fullscreen)  ·  [Home](Home)  ·  [Movies and shows](Movies-and-shows) →
+← [Other versions of a channel](Other-versions-of-a-channel)  ·  [Home](Home)  ·  [Movies and shows](Movies-and-shows) →

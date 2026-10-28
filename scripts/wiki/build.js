@@ -32,8 +32,14 @@ const intro = /## From your computer: the web editor\n([\s\S]*?)\n### /.exec(gui
 const turnOn = pages.find(p => p.title === 'Turning on the web editor');
 if (intro && turnOn) turnOn.lines = intro[1].trim().split('\n').concat([''], turnOn.lines);
 
+// "Every setting" opens with how Settings works: put that at the top of its first page.
+const every = /## Every setting\n([\s\S]*?)\n### /.exec(guide);
+const firstSetting = pages.find(p => p.part === 'Every setting');
+if (every && firstSetting) firstSetting.lines = every[1].trim().split('\n').concat([''], firstSetting.lines);
+
 const anchors = {};
 pages.forEach(p => { anchors[slug(p.title)] = p.name; });
+if (firstSetting) anchors['every-setting'] = firstSetting.name;
 
 function fix(md) {
   return md
@@ -55,7 +61,7 @@ pages.forEach((p, i) => {
 // The sidebar lists every page, grouped like the guide.
 const groups = {};
 pages.forEach(p => { (groups[p.part] = groups[p.part] || []).push(p); });
-const label = { 'On the TV': 'On the TV', 'From your computer: the web editor': 'Web editor', 'Troubleshooting': 'Help' };
+const label = { 'On the TV': 'On the TV', 'Every setting': 'Every setting', 'From your computer: the web editor': 'Web editor', 'Troubleshooting': 'Help' };
 let side = '**[Home](Home)**\n\n**Getting started**\n- [Installing](Installing)\n- [First start](First-start)\n';
 Object.keys(groups).forEach(g => {
   side += '\n**' + (label[g] || g) + '**\n' + groups[g].filter(p => p.name !== 'First-start').map(p => '- [' + p.title + '](' + p.name + ')').join('\n') + '\n';

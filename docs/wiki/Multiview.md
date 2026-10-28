@@ -13,6 +13,10 @@ Many webOS TVs can decode only two streams at once, and some providers limit con
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/multiview.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/multiview.gif" width="100%" alt="Multiview"></a></p>
 <p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/multiview.mp4">Watch the MP4</a></sub></p>
 
+<p align="center">
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-multiview.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-multiview.png" width="100%" alt="Two channels side by side"></a>
+</p>
+
 ---
 
 ← [Search](Search)  ·  [Home](Home)  ·  [Favorites, hiding and your own groups](Favorites-hiding-and-your-own-groups) →

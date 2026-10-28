@@ -13,8 +13,17 @@ No.  It is built from scratch for webOS, with the TiviMate way of working in min
 **Does it play 4K, HDR and Dolby Vision?**
 Yes, as far as your TV and provider do.  Dolby Vision goes through the TV's own player, which switches the screen into Dolby Vision; HDR10 and HLG play in TiviBro's built-in player unless you choose otherwise under **Settings > Playback and buffering > HDR and Dolby Vision**.  **Settings > Diagnostics > What this TV can play** lists what your TV handles.  See [Watching fullscreen](Watching-fullscreen).
 
+<p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-caps.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-caps.png" width="60%" alt="What this TV can play"></a></p>
+
+
 **Why is there no sound on some movies?**
 LG TVs from 2020, 2021 and 2022 (the C1 and C2 among them) can't decode DTS.  TiviBro warns you in the movie details; pick another audio track under **Options** if the movie has one.
+
+**What does each setting do?**
+Every option, with its choices and default, is in the [Every setting](Settings-Playback-and-buffering) pages, one per section of Settings.
+
+**A channel I watch keeps dying.  Can TiviBro use the HD copy instead?**
+Yes, by itself.  When your playlist has the same channel more than once, TiviBro switches to another version once the player gives up.  See [Other versions of a channel](Other-versions-of-a-channel).
 
 **Can I use more than one playlist?**
 Yes.  **Settings > Playlists and guide > Add playlist…**.  Each playlist keeps its own groups, favorites, hidden items, names and guide setup.

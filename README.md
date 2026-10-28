@@ -50,6 +50,8 @@ TiviBro plays your own IPTV subscription (Xtream Codes or M3U with XMLTV) on LG 
 | 🧩 **Multiview** | Two channels side by side (four on TVs that can take it). |
 | 🖥️ **A real editor** | Hide, sort, rename, copy and match guides for hundreds of channels from any browser.  Drafts, undo and restore points. |
 | 🔒 **Locked backups** | Everything in one AES-256-GCM file.  Restore onto a brand-new TV straight from the first screen. |
+| 🔁 **Backup versions** | Playlists often carry a channel in FHD, HD and SD.  TiviBro tags each copy, lets you switch between them, and if one dies it moves to the next by itself and tells you. |
+| ⏰ **Reminders and parental controls** | A reminder on any future programme, and a PIN for channels, groups or Settings. |
 | 🛟 **Streams that don't quit** | Reconnects with backoff, waits out Wi-Fi drops, tries every player before giving up, and keeps a dropped channel coming back by itself.  Movies and catch-up resume where they dropped. |
 | 🌈 **HDR, Dolby Vision and Atmos** | Reads each stream's format before the picture starts and sends Dolby Vision to the TV's own player, HDR10 and HLG to the steadier built-in one.  The info panel shows *4K  HEVC  Dolby Vision  E-AC-3 5.1 Atmos*. |
 | 🎨 **Midnight Electric** | A dark, calm look with nine backgrounds (true black for OLED, high contrast), twelve accents or your own, and an outline focus style for across the room. |
@@ -152,6 +154,43 @@ Plus remote remapping, parental controls, reminders, buffering profiles and on-T
 </tr>
 </table>
 
+<table>
+<tr>
+<td width="42%" valign="top">
+
+### Never stuck on a dead channel
+
+Same channel in FHD, HD and SD?  **Other versions** switches between them, and when one stops working TiviBro moves to the next version by itself and tells you.
+
+</td>
+<td width="58%"><a href="docs/media/versions.mp4"><img src="docs/media/versions.gif" width="100%" alt="Other versions of a channel"></a><br><sub><a href="docs/media/versions.mp4">▶ MP4</a></sub></td>
+</tr>
+</table>
+<table>
+<tr>
+<td width="58%"><a href="docs/media/channels.mp4"><img src="docs/media/channels.gif" width="100%" alt="The Channels screen and channel options"></a><br><sub><a href="docs/media/channels.mp4">▶ MP4</a></sub></td>
+<td width="42%" valign="top">
+
+### The classic channel list
+
+TiviMate's Channels layout: groups, channels with what's on, and a live preview.  **Hold OK** on any channel to favorite it, copy it into your own group, rename it, assign a guide, block or hide it.
+
+</td>
+</tr>
+</table>
+<table>
+<tr>
+<td width="42%" valign="top">
+
+### Reminders
+
+**OK** on a programme later tonight.  When it starts, TiviBro asks whether to switch, or switches by itself.
+
+</td>
+<td width="58%"><a href="docs/media/reminders.mp4"><img src="docs/media/reminders.gif" width="100%" alt="Reminders"></a><br><sub><a href="docs/media/reminders.mp4">▶ MP4</a></sub></td>
+</tr>
+</table>
+
 ## The web editor
 
 Turn on **Settings > Edit on a computer**.  The TV shows an address and a password; open it in any browser on your network.  Changes are drafts until you press **Send to TV**, and the TV picks them up in seconds.
@@ -194,6 +233,24 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
   <a href="docs/screenshots/tv-fullscreen.png"><img src="docs/screenshots/tv-fullscreen.png" width="32%" alt="Fullscreen with the info bar"></a>
   <a href="docs/screenshots/tv-quick-menu.png"><img src="docs/screenshots/tv-quick-menu.png" width="32%" alt="Quick menu"></a>
   <a href="docs/screenshots/tv-mini-guide.png"><img src="docs/screenshots/tv-mini-guide.png" width="32%" alt="Guide over the video"></a>
+  <a href="docs/screenshots/tv-channels.png"><img src="docs/screenshots/tv-channels.png" width="32%" alt="The Channels screen"></a>
+  <a href="docs/screenshots/tv-channel-options.png"><img src="docs/screenshots/tv-channel-options.png" width="32%" alt="Channel options"></a>
+  <a href="docs/screenshots/tv-info.png"><img src="docs/screenshots/tv-info.png" width="32%" alt="Programme info"></a>
+  <a href="docs/screenshots/tv-options.png"><img src="docs/screenshots/tv-options.png" width="32%" alt="Options"></a>
+  <a href="docs/screenshots/tv-stream-info.png"><img src="docs/screenshots/tv-stream-info.png" width="32%" alt="Stream info"></a>
+  <a href="docs/screenshots/tv-sleep.png"><img src="docs/screenshots/tv-sleep.png" width="32%" alt="Sleep timer"></a>
+</p>
+</details>
+
+<details>
+<summary><b>Other versions, reminders and parental controls</b></summary>
+<p align="center">
+  <a href="docs/screenshots/tv-versions.png"><img src="docs/screenshots/tv-versions.png" width="32%" alt="Other versions of a channel"></a>
+  <a href="docs/screenshots/tv-quick-versions.png"><img src="docs/screenshots/tv-quick-versions.png" width="32%" alt="Other versions in the quick menu"></a>
+  <a href="docs/screenshots/tv-failover.png"><img src="docs/screenshots/tv-failover.png" width="32%" alt="Switched to another version by itself"></a>
+  <a href="docs/screenshots/tv-reminder-set.png"><img src="docs/screenshots/tv-reminder-set.png" width="32%" alt="A reminder set"></a>
+  <a href="docs/screenshots/tv-reminder.png"><img src="docs/screenshots/tv-reminder.png" width="32%" alt="The reminder when it starts"></a>
+  <a href="docs/screenshots/tv-pin.png"><img src="docs/screenshots/tv-pin.png" width="32%" alt="A blocked channel asks for the PIN"></a>
 </p>
 </details>
 
@@ -222,6 +279,24 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
 </details>
 
 <details>
+<summary><b>Every Settings section</b></summary>
+<p align="center">
+  <a href="docs/screenshots/tv-set-playback.png"><img src="docs/screenshots/tv-set-playback.png" width="32%" alt="Playback and buffering"></a>
+  <a href="docs/screenshots/tv-set-remote-player.png"><img src="docs/screenshots/tv-set-remote-player.png" width="32%" alt="Buttons in the player"></a>
+  <a href="docs/screenshots/tv-set-playlist.png"><img src="docs/screenshots/tv-set-playlist.png" width="32%" alt="A playlist"></a>
+  <a href="docs/screenshots/tv-set-names.png"><img src="docs/screenshots/tv-set-names.png" width="32%" alt="Channel name editor"></a>
+  <a href="docs/screenshots/tv-set-groups.png"><img src="docs/screenshots/tv-set-groups.png" width="32%" alt="Groups, sorting, hidden"></a>
+  <a href="docs/screenshots/tv-set-guide.png"><img src="docs/screenshots/tv-set-guide.png" width="32%" alt="Guide, start screen, reminders"></a>
+  <a href="docs/screenshots/tv-set-look.png"><img src="docs/screenshots/tv-set-look.png" width="32%" alt="Appearance"></a>
+  <a href="docs/screenshots/tv-settings-parental.png"><img src="docs/screenshots/tv-settings-parental.png" width="32%" alt="Parental controls"></a>
+  <a href="docs/screenshots/tv-set-editor-on.png"><img src="docs/screenshots/tv-set-editor-on.png" width="32%" alt="Edit on a computer"></a>
+  <a href="docs/screenshots/tv-set-updates.png"><img src="docs/screenshots/tv-set-updates.png" width="32%" alt="Updates and about"></a>
+  <a href="docs/screenshots/tv-set-diag-test.png"><img src="docs/screenshots/tv-set-diag-test.png" width="32%" alt="Connection test"></a>
+  <a href="docs/screenshots/tv-set-caps.png"><img src="docs/screenshots/tv-set-caps.png" width="32%" alt="What this TV can play"></a>
+</p>
+</details>
+
+<details>
 <summary><b>Web editor</b></summary>
 <p align="center">
   <a href="docs/screenshots/editor-overview.png"><img src="docs/screenshots/editor-overview.png" width="49%" alt="Overview"></a>
@@ -230,12 +305,18 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
   <a href="docs/screenshots/editor-smart-match.png"><img src="docs/screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
   <a href="docs/screenshots/editor-smart-cleanup.png"><img src="docs/screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
   <a href="docs/screenshots/editor-backup.png"><img src="docs/screenshots/editor-backup.png" width="49%" alt="Backup and restore"></a>
+  <a href="docs/screenshots/editor-groups.png"><img src="docs/screenshots/editor-groups.png" width="49%" alt="Groups and channels"></a>
+  <a href="docs/screenshots/editor-names.png"><img src="docs/screenshots/editor-names.png" width="49%" alt="Channel names"></a>
+  <a href="docs/screenshots/editor-guide.png"><img src="docs/screenshots/editor-guide.png" width="49%" alt="The guide"></a>
+  <a href="docs/screenshots/editor-playlists.png"><img src="docs/screenshots/editor-playlists.png" width="49%" alt="Playlists"></a>
+  <a href="docs/screenshots/editor-history.png"><img src="docs/screenshots/editor-history.png" width="49%" alt="Changes and restore points"></a>
+  <a href="docs/screenshots/editor-help.png"><img src="docs/screenshots/editor-help.png" width="49%" alt="Help"></a>
 </p>
 </details>
 
 ## Help
 
-The **[user guide](docs/USER-GUIDE.md)** (also on the [wiki](../../wiki)) covers everything: every remote button, the guide, catch-up, movies and shows, multiview, every settings section, parental controls, each page of the web editor, backups, and troubleshooting.
+The **[user guide](docs/USER-GUIDE.md)** (also on the [wiki](../../wiki)) covers everything: every remote button, the guide, catch-up, movies and shows, multiview, other versions of a channel, reminders, parental controls, each page of the web editor, backups, and troubleshooting.  **[Every setting](docs/USER-GUIDE.md#every-setting)** explains each option in Settings, with its choices and default.
 
 ## Install
 
@@ -341,6 +422,7 @@ bash scripts/demo/make-media.sh          # once: synthetic demo streams (needs f
 node tests/mock/mock_provider.js &       # fictional Xtream provider on :8077
 npm run serve                            # app on :8078 plus the dev relay
 node scripts/demo/record.js              # record every scene (or name some: guide zap)
+                                         # plus every Settings page and editor page as screenshots
 bash scripts/demo/encode.sh              # GIFs and MP4s into docs/media/
 ```
 

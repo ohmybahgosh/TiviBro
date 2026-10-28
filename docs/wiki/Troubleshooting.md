@@ -1,5 +1,11 @@
 <!-- Generated from docs/USER-GUIDE.md by scripts/wiki/build.js.  Edit the guide, not this page. -->
 
+**Settings > Diagnostics > Run connection test** is the best first step when something doesn't work: it checks each part in turn and says what failed.
+
+<p align="center">
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-diag-test.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-diag-test.png" width="60%" alt="Connection test"></a>
+</p>
+
 | Problem | Try this |
 |---|---|
 | A channel won't start or keeps buffering | **OK** on the error message, or **Reconnect** in the quick menu.  Then try **Stream format** HLS instead of MPEG-TS, or a bigger **Buffer profile**. |
