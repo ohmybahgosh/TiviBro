@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Quicker starts, same stability (buffer profiles unchanged):
+  - CH+ / CH− and Last channel: a lone press starts the channel at once instead of after 300 ms; presses in quick succession still wait until you stop, so surfing opens one stream rather than many.  A single press to a moving picture went from about 0.72 s to 0.15 s against the mock provider (and 0.42 s to 0.15 s with a provider that allows one connection).
+  - Channel numbers: switch as soon as the number can't get any longer (typing 12 when there is no 120 or longer), instead of waiting 1.4 s for another digit.  Same in the guide.
+  - The helper keeps DNS answers for a minute (dropped when connecting fails), so channel changes and redirects don't wait on the TV's resolver.  Node 20's list form is supported; Node 0.12 ignores it.  Test: `tests/unit/proxy-dns.test.js`.
 - Faster channel changes.  Until the first frame, the player checks every 50 ms whether enough is buffered, instead of on its 400 ms watchdog.  Video is usually ready 100 to 200 ms after a change, so pictures now appear about 300 ms sooner: 0.42 to 0.12 s in a desktop browser, and 0.86 to 0.47 s with the CPU slowed to TV speed (median of 10 changes).  Test: `player.test.js`.
 - Player audit (`docs/COMPATIBILITY.md`, "Video decoding and hardware"): every stream already uses the TV's hardware decoder, demuxing runs in a background worker, and steady playback costs about 1% of a core.  Measured and left as they are: the demux worker (no measurable cost to channel changes) and the MPEG-TS stash buffer (resizes itself after the first second).
 - Test channel "Chaos Real Time" (912): no head start, data at exactly real time from the first byte.

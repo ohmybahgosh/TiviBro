@@ -548,7 +548,18 @@ var Views = (function () {
   function endPick() { pick = null; refreshLists(true); hintsFor(); }
 
   /* ---------- fullscreen ---------- */
-  var zapIdx = -1, zapCommit = U.debounce(function () {
+  // A lone press acts at once; presses in quick succession (surfing, holding the button) wait until
+  // the remote rests, so a burst opens one stream instead of many.  Busy answers from providers
+  // that allow one connection are retried by the player if surfing still trips them.
+  function burstCommit(fn, wait) {
+    var last = 0, deb = U.debounce(fn, wait);
+    return function () {
+      var now = Date.now(), lone = now - last > 700;
+      last = now;
+      if (lone) { deb.cancel(); fn(); } else deb();
+    };
+  }
+  var zapIdx = -1, zapCommit = burstCommit(function () {
     var list = L.channels(curGroup), c = list[zapIdx];
     if (c && (!playing || playing.k !== c.k || mode !== 'live')) startChannel(c, false);
   }, 300);
@@ -680,7 +691,7 @@ var Views = (function () {
     zapCommit();
   }
   // Pressing Last repeatedly flips between two channels on screen; only the one you stop on starts.
-  var lastTarget = null, lastCommit = U.debounce(function () {
+  var lastTarget = null, lastCommit = burstCommit(function () {
     var c = lastTarget; lastTarget = null;
     if (!c || (playing && playing.k === c.k && mode === 'live')) return;
     startChannel(c, false, function () { zapIdx = L.channels(curGroup).findIndex(function (x) { return x.k === playing.k; }); osd(true); });
@@ -890,8 +901,10 @@ var Views = (function () {
     zapBuf = (zapBuf + d).slice(-5);
     var z = $('zapNum'); z.textContent = zapBuf; z.classList.remove('hidden');
     clearTimeout(zapT);
+    // Switch the moment the number can't get any longer; otherwise wait for another digit.
+    var done = !L.numberCanGrow(zapBuf);
     zapT = setTimeout(function () {
-      z.classList.add('hidden');
+      if (done) setTimeout(function () { z.classList.add('hidden'); }, 700); else z.classList.add('hidden');
       var n = +zapBuf; zapBuf = '';
       var all = L.data.channels, c = null;
       for (var i = 0; i < all.length; i++) if (all[i].num === n && !Store.edits.hiddenChannels[all[i].k]) { c = all[i]; break; }
@@ -900,7 +913,7 @@ var Views = (function () {
         if (!L.channels(curGroup).some(function (x) { return x.k === c.k; })) { curGroup = L.ALL; showGroup(L.ALL); }
         if (!full) goFull(); else { zapIdx = L.channels(curGroup).findIndex(function (x) { return x.k === c.k; }); osd(true); }
       });
-    }, 1400);
+    }, done ? 0 : 1400);
   }
 
   /* ---------- backup versions ----------
@@ -1730,7 +1743,7 @@ var Guide = (function () {
       }
       if (zone !== 'grid') setZone('grid');
       selectIdx(i);
-    }, 1200);
+    }, L.numberCanGrow(numBuf) ? 1200 : 0);
   }
 
   function backToMenu() { Views.tabBar(function () { UI.setHandler(keys); setZone('groups'); }); }

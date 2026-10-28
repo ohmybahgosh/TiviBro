@@ -18,6 +18,27 @@ var URL_ = require('url');
 var Editor = require('./editor');
 var Unzip = require('./unzip');
 var TsSync = require('./tssync').TsSync;
+var dns = require('dns');
+
+/* DNS answers kept for a minute.  Node asks the system for every new connection, and each channel
+   start (and each redirect to a provider's streaming server) is a new connection; on a TV with a
+   slow resolver that is up to a few hundred milliseconds per channel change.  An answer is
+   dropped when a connection to it fails, so a provider that moves is followed at once.  Node 20
+   (webOS 26) asks with all: true and wants a list back; older Node asks for one address.  Node
+   0.12 ignores custom lookups and keeps asking the system. */
+var dnsCache = {};
+function cachedLookup(host, opts, cb) {
+  if (typeof opts === 'function') { cb = opts; opts = {}; }
+  if (typeof opts === 'number') opts = { family: opts };
+  opts = opts || {};
+  var key = host + '|' + (opts.family || 0) + '|' + (opts.all ? 1 : 0), hit = dnsCache[key];
+  if (hit && Date.now() - hit.t < 60000) return process.nextTick(function () { cb.apply(null, [null].concat(hit.r)); });
+  dns.lookup(host, opts, function (err, a, f) {
+    if (!err && a) dnsCache[key] = { t: Date.now(), r: opts.all ? [a] : [a, f] };
+    cb(err, a, f);
+  });
+}
+function forgetHost(host) { for (var k in dnsCache) if (k.indexOf(host + '|') === 0) delete dnsCache[k]; }
 
 var ALLOW = {
   'Access-Control-Allow-Origin': '*',
@@ -95,7 +116,7 @@ function create(opts) {
       // Node 12 and newer (webOS 22 on) reject sloppy replies that older TVs accepted: stray control
       // characters in headers, bare LF line endings, Content-Length twice.  Cheap IPTV panels send
       // all of these.  Older Node ignores the option (its parser was lenient anyway).
-      insecureHTTPParser: true
+      insecureHTTPParser: true, lookup: cachedLookup
     }, function (ur) {
       var code = ur.statusCode || 502;
       rec.s = code; rec.ct = ur.headers['content-type'];
@@ -153,6 +174,7 @@ function create(opts) {
     up.setTimeout(opts.timeout || 30000, function () { up.destroy(new Error('upstream timeout')); });
     up.on('error', function (e) {
       if (!aborted) { stats.errors++; rec.e = (e.code ? e.code + ' ' : '') + e.message; }
+      if (!aborted && /^(ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|ECONNRESET)$/.test(e.code || '')) forgetHost(u.hostname);
       finish();
       if (!res.headersSent) { res.writeHead(502, Object.assign({ 'Content-Type': 'text/plain' }, ALLOW)); res.end('relay error: ' + e.message); }
       else res.destroy();

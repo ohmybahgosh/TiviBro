@@ -43,6 +43,8 @@ Every stream is decoded by the TV's hardware decoder, whichever player TiviBro u
 
 webOS doesn't let apps change decoder settings, switch the display's refresh rate or resolution, or pass audio through untouched, so there is nothing more to switch on.  The video sits on the TV's video plane behind the page; TiviBro keeps the page opaque around it and puts no transforms or filters on the video element, which keeps it there.
 
+Start time: a lone CH+ or CH− starts the next channel at once (a quick run of presses waits until you stop, so it opens one stream rather than many), a channel number starts as soon as it can't get any longer, the helper reuses connections and DNS answers, and the player checks every 50 ms until the first frame.  How much buffer a stream needs before it starts is still set by the buffer profile, so start speed never comes out of stability.
+
 Measured in a desktop browser with the CPU slowed to TV speed: steady fullscreen playback uses about 11 ms of main-thread time per second (around 1% of a core), and a channel change reaches a moving picture in about half a second (0.12 s at full speed) when the provider sends a few seconds up front.
 
 ## Checked on every test run

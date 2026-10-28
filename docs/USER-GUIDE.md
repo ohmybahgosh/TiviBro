@@ -48,7 +48,7 @@ TiviBro works with the standard LG remote and the Magic Remote.  With the Magic 
 | **Yellow** | Groups | Last channel |
 | **Blue** | Settings | Multiview |
 | **Back** | Back to now, then the groups | Back to the guide |
-| **0 to 9** | Jump to a channel number | Jump to a channel number |
+| **0 to 9** | Jump to a channel number (at once when no longer number starts with what you typed, otherwise after a short pause) | Jump to a channel number, the same way |
 
 A few things work the way you would guess from other TV apps:
 

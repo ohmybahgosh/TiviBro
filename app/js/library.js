@@ -26,7 +26,21 @@ var Library = (function () {
     trackNewGroups(d.groups);
     Names.invalidate();
     versionIndex = null;
+    growable = null;
     dirty();
+  }
+  // Number keys: can more digits still lead to a channel?  "12" can't when there is no 120-129 or
+  // longer number starting 12, so the remote can switch at once instead of waiting for a digit.
+  var growable = null;
+  function numberCanGrow(prefix) {
+    if (!growable) {
+      growable = {};
+      for (var i = 0; i < data.channels.length; i++) {
+        var s = String(data.channels[i].num || '');
+        for (var j = 1; j < s.length; j++) growable[s.slice(0, j)] = 1;
+      }
+    }
+    return !!growable[String(prefix)];
   }
   // Groups the provider adds later can arrive hidden (Settings > Groups > Newly added groups),
   // so a tidy "hide all, show a few" setup stays tidy after refreshes.
@@ -276,6 +290,6 @@ var Library = (function () {
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,
     createGroup: createGroup, renameGroup: renameGroup, deleteGroup: deleteGroup,
     copyTo: copyTo, removeFrom: removeFrom, moveInGroup: moveInGroup, moveGroup: moveGroup,
-    hiddenItems: hiddenItems, allGroups: allGroups, versions: versions, versionKey: versionKey, qualityLabel: qualityLabel, versionTag: versionTag, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
+    hiddenItems: hiddenItems, allGroups: allGroups, versions: versions, versionKey: versionKey, numberCanGrow: numberCanGrow, qualityLabel: qualityLabel, versionTag: versionTag, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
   };
 })();
