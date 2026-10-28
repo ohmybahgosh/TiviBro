@@ -315,6 +315,7 @@ var Views = (function () {
     }
   }
 
+  var guideSeen = false;
   function switchTab(t) {
     if (tabs.indexOf(t) < 0) t = 'live';
     if (t === 'settings' && tab !== 'settings') return Parental.gate('settings', null, function () { doSwitch(t); });
@@ -339,7 +340,13 @@ var Views = (function () {
       // Both keep the picture going: Channels shows it beside the list, the guide in its corner.
       if (playing && mode === 'live') stage.classList.remove('off'); else stage.classList.add('off');
       if (t === 'live') { placePreview(); UI.setHandler(liveKeys); setZone(liveZone); }
-      else { Guide.open(curGroup, playing && mode === 'live' ? playing.k : null); placePreview(); }
+      else {
+        // First visit after start-up: straight into the grid, on the last channel watched (like
+        // TiviMate), so OK previews at once.  Later visits from the menu land on the groups.
+        var startKey = playing && mode === 'live' ? playing.k : !guideSeen ? (Store.edits.last || '-') : null;
+        guideSeen = true;
+        Guide.open(curGroup, startKey); placePreview();
+      }
     } else {
       // Other screens get the whole CPU: no preview decoding behind them.
       stage.classList.add('off');
@@ -766,6 +773,7 @@ var Views = (function () {
     else if (a === 'chdown') ovVL.page(1);
     else if (a === 'left' || a === 'right') {
       var gs = L.groups().filter(function (g) { return !groupLocked(g); });
+      if (!gs.length) return true;
       var gi = gs.findIndex(function (g) { return g.id === ovGroup; });
       gi = (gi + (a === 'left' ? -1 : 1) + gs.length) % gs.length;
       ovGroup = gs[gi].id; fillOverlay(null);
@@ -891,12 +899,15 @@ var Views = (function () {
     if (s === 'playing' || s === 'error' || s === 'idle') stage.classList.remove('blank');
     spin.classList.toggle('hidden', !(s === 'loading' || s === 'buffering'));
     spinText.textContent = s === 'loading' ? 'Tuning' : (msg || 'Buffering');
+    spinPlain = s === 'buffering' && (!msg || msg === 'Buffering');
     verr.classList.toggle('hidden', s !== 'error');
     if (s === 'error') verr.textContent = msg;
     if (s === 'ended' && mode === 'vod') Vod.ended();
   }
-  var meter = $('meter'), mFill = $('meterFill'), mText = $('meterText'), goodSince = 0;
+  var meter = $('meter'), mFill = $('meterFill'), mText = $('meterText'), goodSince = 0, spinPlain = false;
   function onStats(x) {
+    // A plain refill shows how far along it is, so a long one doesn't look stuck.
+    if (spinPlain && x.state === 'buffering' && x.target) spinText.textContent = 'Buffering  ' + Math.min(99, Math.round(100 * x.ahead / x.target)) + '%';
     var m = Store.settings.meter;
     if (m === 'off' || (!full && m !== 'always')) { meter.classList.add('hidden'); return; }
     var ratio = x.target ? x.ahead / Math.max(x.target * 2, 4) : 0;

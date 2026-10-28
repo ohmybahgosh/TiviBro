@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Playback on sloppy streams, tuned against a new set of deliberately broken test channels (see below):
+  - A cushion that grows: when a live channel keeps running dry, TiviBro waits for a bigger buffer before playing again, up to 20 seconds depending on the buffer profile, and lets it shrink back after three clean minutes.  The refill shows as *Buffering NN%*, and never waits more than about 4 seconds once the base buffer is there.
+  - Timestamp jumps: when a provider's stream jumps back or ahead (an upstream restart), playback follows the stream instead of freezing on the old position.
+  - Starvation: a refill that gets no new data for 4 seconds reconnects instead of waiting for the watchdog.
+  - HTTP errors after a channel has played (a provider at its connection limit, a brief 404) reconnect on the same player instead of switching players.  Busy answers (403, 429, 503 and similar) get five tries before the next player.  Retries back off to at most 5 seconds, and the slow-retry phase tries every 6 seconds for the first 3 minutes before easing to every 15.
+  - HLS recovers from network errors mid-stream by reloading, before reconnecting.
+  - Corrupted MPEG-TS: the network helper keeps packets aligned (`service/tssync.js`), dropping stray bytes instead of passing them to the demuxer, which used to stall until the channel was reconnected.  Anything that isn't TS passes through untouched.  Tests: `tests/unit/tssync.test.js`.
+  - mpegts.js: null guards for callbacks that arrive after the player was destroyed (fast zapping); documented in `app/vendor/PATCHES.md`.
+  - Results in headless Chromium, percent of time the picture moved: corrupted data 68 to 100, mixed trouble 68 to 86, a 60-second provider outage 26 to 58 (back about 3 seconds after the provider returns), stalls 86 to 88.
+- The guide opens in the grid on the last channel the first time, instead of on the group list.
+- Soak tests (Playwright): `npm run soak:chaos` plays eleven broken test channels (`MOCK_CHAOS=1`, `tests/mock/chaos.js`) and reports freezes, reconnects and time moving; `npm run soak:zap` makes 300 fast channel changes and checks playback, memory and menus afterwards; `npm run soak:monkey` presses random remote keys across every screen looking for errors and dead ends.  `make-media.sh` now also writes the 10-minute `chaos.ts` clip.  See the Developing wiki page.
+
 ## 0.6.0 (alpha 4, 2026-10-27)
 
 Pre-release: expect rough edges, and keep a backup before installing.

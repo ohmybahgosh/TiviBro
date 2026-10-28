@@ -122,7 +122,7 @@ The **Channels** screen is the same list in TiviMate's classic layout: groups on
 </p>
 </details>
 
-**Smooth playback.**  TiviBro picks a player per stream (MPEG-TS, the TV's own player, or HLS) and falls back automatically if one struggles.  It watches for frozen pictures and reconnects on its own, with a short wait that grows between tries.  If a provider is slow or your Wi-Fi is weak, try **Settings > Playback and buffering > Buffer profile**, or switch the **Stream format** between MPEG-TS and HLS.
+**Smooth playback.**  TiviBro picks a player per stream (MPEG-TS, the TV's own player, or HLS) and falls back automatically if one struggles.  It watches for frozen pictures and reconnects on its own, with a short wait that grows between tries.  On a channel that keeps running dry it holds a bigger cushion before playing again (shown as *Buffering NN%*), and lets it shrink back once the stream settles.  It also rides out providers that jump their timestamps, briefly refuse connections, or send corrupted data.  If a provider is slow or your Wi-Fi is weak, try **Settings > Playback and buffering > Buffer profile**, or switch the **Stream format** between MPEG-TS and HLS.
 
 It tries hard never to just stop:
 

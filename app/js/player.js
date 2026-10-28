@@ -10,7 +10,11 @@
      1. Prebuffer:   don't start until N seconds are buffered.
      2. Refill goal: when the buffer runs dry, pause and refill to a target instead of
                      the browser's default of resuming at ~0.1s and stuttering again.
-     3. Gap jumping: hop over small holes in the buffer that freeze live TS streams.
+     3. Gap jumping: hop over small holes in the buffer that freeze live TS streams, and follow
+                     the stream when its timestamps jump (an encoder restart upstream).
+     3b. Growing cushion: every time a channel runs dry, the next refill aims higher, so a
+                     sloppy channel settles a few seconds further behind live and stops
+                     stuttering.  It shrinks again after a long clean run.
      4. Watchdog:    if the clock stops, recover in steps (nudge, decoder recover,
                      reconnect with backoff), then fall back to another engine.
      5. Memory:      back buffer trimmed so long sessions don't starve the TV.
@@ -65,6 +69,26 @@ var Player = (function () {
     for (var i = 0; i < b.length; i++) if (b.start(i) > t && b.start(i) - t < 6) return b.start(i);
     return -1;
   }
+  function bufferEnd() {
+    if (!video) return 0;
+    var b = video.buffered, e = 0;
+    for (var i = 0; i < b.length; i++) if (b.end(i) > e) e = b.end(i);
+    return e;
+  }
+  /* Timestamp jumps: when the provider's encoder restarts, new video arrives at a completely
+     different time position (often back near zero, or far ahead), as a separate buffered range.
+     Find a range the playhead is not in that is growing: that is where the stream went. */
+  function jumpTarget(t) {
+    var b = video.buffered, best = null, other = 0;
+    for (var i = 0; i < b.length; i++) {
+      var s0 = b.start(i), e0 = b.end(i);
+      if (t >= s0 - 0.3 && t <= e0 + 0.3) continue;
+      if (e0 > other) other = e0;
+      if (e0 - s0 >= 0.4 && st.otherEnd && e0 > st.otherEnd + 0.05 && (!best || e0 > best.end)) best = { start: s0, end: e0 };
+    }
+    st.otherEnd = other;
+    return best;
+  }
   function hostOf(url) { var m = /^https?:\/\/([^/]+)/i.exec(url); return m ? m[1] : ''; }
   function mse() { return !!(window.MediaSource && MediaSource.isTypeSupported && MediaSource.isTypeSupported('video/mp4; codecs="avc1.42E01E,mp4a.40.2"')); }
 
@@ -98,7 +122,7 @@ var Player = (function () {
     });
     // Media errors: recover, then recover with the audio codec swapped.  The count resets once
     // playback has run clean for a while, so one bad patch an hour in still gets recovered.
-    var mediaErrs = 0, lastMediaErr = 0;
+    var mediaErrs = 0, lastMediaErr = 0, netRecovers = 0, lastNetErr = 0;
     h.on(Hls.Events.MANIFEST_PARSED, function (e, d) { media(Caps.bestHlsLevel(d && d.levels)); });
     h.on(Hls.Events.ERROR, function (e, d) {
       if (!d.fatal) return;
@@ -110,6 +134,13 @@ var Player = (function () {
           h.recoverMediaError();
           return;
         }
+      }
+      // A segment or playlist that kept failing mid-stream: ask hls.js to carry on loading before
+      // throwing away what is buffered.  Twice per 30s, and only once it has played.
+      if (d.type === Hls.ErrorTypes.NETWORK_ERROR && st && st.started) {
+        if (Date.now() - lastNetErr > 30000) netRecovers = 0;
+        lastNetErr = Date.now();
+        if (netRecovers++ < 2) { Log.warn('player', 'HLS ' + d.details + '; resuming loading'); try { h.startLoad(); } catch (e) {} return; }
       }
       // A response code of 0 is a request the browser blocked (CORS), not the provider failing.
       var code = d.response && d.response.code;
@@ -229,10 +260,17 @@ var Player = (function () {
       // The server answered with an error before any video.  Twice is worth a quick retry (a
       // connection limit while the last channel hangs up clears in a second or two); after that
       // the next pipeline gets a go rather than a minute of retries on a dead link.
+      cur.lastFailHttp = !!http;
+      // A channel that has played here before and now gets an HTTP error is the provider having
+      // trouble (outage, connection limit), not the pipeline: keep retrying the same way.
+      if (http && cur.everPlayed) { cur.lastHttp = http; return reconnect(myToken, 'The provider answered ' + http + ', retrying'); }
       if (http && !st.started && kind !== 'native') {
         cur.httpFails = (cur.httpFails || 0) + 1;
         cur.lastHttp = http;
-        if (cur.httpFails > 2) {
+        // "Busy" answers (connection limit, rate limit, overloaded) clear once the last channel's
+        // connection is let go, which can take a few seconds: give those more tries than a 404.
+        var busy = [403, 429, 456, 458, 502, 503, 504, 509, 551].indexOf(http) >= 0;
+        if (cur.httpFails > (busy ? 5 : 2)) {
           var nx = nextEngine(kind);
           if (nx) { Log.info('player', 'Trying the ' + ENGINE_NAMES[nx] + ' after HTTP ' + http); useEngine(nx); return start(myToken); }
           return giveUp(myToken);
@@ -330,7 +368,9 @@ var Player = (function () {
      for a live channel that has played before, a slow retry every 15s for up to 20 minutes with
      a message on screen.  Providers do come back, and a TV left on a channel should recover by
      itself rather than sit on an error. */
-  var SLOW_EVERY = 15000, SLOW_FOR = 20 * 60000;
+  // Slow retries: every 6s for the first 3 minutes (most outages are short, and the picture should
+  // be back within seconds of the provider), then every 15s.
+  var SLOW_EVERY = 15000, SLOW_FAST = 6000, SLOW_FAST_FOR = 3 * 60000, SLOW_FOR = 20 * 60000;
   function lateEngine(failed) {
     if (isFile() && !/\.m3u8(\?|$)/i.test(cur.origUrl || cur.url)) return null;   // a movie file has one pipeline
     cur.late = cur.late || {};
@@ -367,7 +407,7 @@ var Player = (function () {
     Log.warn('player', 'Reconnect ' + cur.retries + '/' + cur.p.retries + ': ' + why);
     var delay;
     if (cur.retries > cur.p.retries) {
-      var alt = cur.slow ? null : lateEngine(st ? st.kind : '');
+      var alt = cur.slow || cur.lastFailHttp ? null : lateEngine(st ? st.kind : '');
       if (alt) {
         Log.info('player', 'Still failing; trying the ' + ENGINE_NAMES[alt]);
         useEngine(alt); cur.retries = Math.floor(cur.p.retries / 2);
@@ -375,7 +415,7 @@ var Player = (function () {
         if (!cur.slowSince) { cur.slowSince = now; Log.warn('player', 'Channel keeps failing; retrying every ' + SLOW_EVERY / 1000 + 's'); }
         cur.slow = 'The channel stopped.  Still trying to get it back';
         state('buffering', cur.slow);
-        cur.timer = setTimeout(function () { start(myToken); }, SLOW_EVERY);
+        cur.timer = setTimeout(function () { start(myToken); }, now - cur.slowSince < SLOW_FAST_FOR ? SLOW_FAST : SLOW_EVERY);
         return;
       } else {
         Log.error('player', 'Gave up after ' + cur.p.retries + ' reconnects' + (cur.slowSince ? ' and ' + Math.round((now - cur.slowSince) / 60000) + ' minutes of retrying' : '') + '  ' + cur.url);
@@ -386,8 +426,20 @@ var Player = (function () {
     }
     state('buffering', why);
     // Exponential backoff with jitter, so a TV and its neighbours don't all hit the provider at once.
-    delay = Math.min(8000, 300 * Math.pow(2, Math.max(0, cur.retries - 1))) * (0.8 + Math.random() * 0.4);
+    delay = Math.min(5000, 300 * Math.pow(2, Math.max(0, cur.retries - 1))) * (0.8 + Math.random() * 0.4);
     cur.timer = setTimeout(function () { start(myToken); }, delay);
+  }
+
+  /* The cushion a refill aims for: the profile's refill target plus what this channel has earned
+     by running dry before (kept across reconnects of the same channel). */
+  function capFor(p) { return Math.max(p.refill, Math.min(p.ahead * 0.6, 20)); }
+  function refillGoal() { var p = cur.p; return Math.min(capFor(p), p.refill + (cur.boost || 0)); }
+  function grow(p) {
+    if (cur.preview) return;
+    var before = cur.boost || 0;
+    cur.boost = Math.min(capFor(p) - p.refill, before + Math.max(1.5, p.refill * 0.75));
+    cur.boostAt = Date.now();
+    if (cur.boost > before) Log.info('player', 'This channel keeps running dry; cushion raised to ' + refillGoal().toFixed(1) + 's');
   }
 
   function tick(myToken) {
@@ -395,7 +447,10 @@ var Player = (function () {
     var now = Date.now(), ahead = bufferedAhead(), t = video.currentTime;
     var p = cur.p;
     if (st.started && video.readyState > 0 && !video.seeking) cur.pos = t;
-    emit('stats', lastStats = { ahead: ahead, target: st.started ? p.refill : p.prebuffer, engine: eng ? eng.name : '', info: eng ? eng.info() : '',
+    var goal = refillGoal();
+    var endNow = bufferEnd();
+    if (endNow > (st.growEnd || 0) + 0.05) { st.growEnd = endNow; st.growAt = now; } else if (endNow < (st.growEnd || 0) - 1) { st.growEnd = endNow; st.growAt = now; }
+    emit('stats', lastStats = { ahead: ahead, target: st.started ? goal : p.prebuffer, cushion: cur.boost || 0, engine: eng ? eng.name : '', info: eng ? eng.info() : '',
       res: video.videoHeight ? video.videoHeight + 'p' : '', state: st.state });
 
     // 1. Prebuffer before the first frame.
@@ -404,20 +459,24 @@ var Player = (function () {
       // what is buffered, and move the playhead there before playing.
       var bf = video.buffered, first = bf.length ? bf.start(0) : 0;
       if (bf.length && video.currentTime < first) ahead = bf.end(0) - first;
-      var ready = video.readyState >= 2 && (ahead >= p.prebuffer || now - st.at > 4000 + p.prebuffer * 1000);
+      // After this channel has run dry, reconnects wait for the bigger cushion too (capped so a
+      // reconnect never sits for long).
+      var need = cur.boost && cur.everPlayed && cur.starved ? Math.min(Math.max(p.prebuffer, refillGoal()), p.prebuffer + 2) : p.prebuffer;
+      var ready = video.readyState >= 2 && (ahead >= need || now - st.at > 4000 + need * 1000);
       // A movie resuming part way through: the TV player buffers at the new spot after the seek.
       if (cur.startAt && isFile() && video.readyState >= 1) ready = true;
       if (ready) {
         st.started = true; st.lastMove = now;
         if (cur.slow) { Log.info('player', 'Channel is back after ' + Math.round((now - cur.slowSince) / 1000) + 's'); notice('Back on air'); }
-        cur.slow = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0;
+        cur.slow = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0; cur.starved = false; cur.lastFailHttp = false;
         Log.info('player', 'Playing after ' + (now - st.at) + 'ms with ' + ahead.toFixed(1) + 's buffered' + (ahead < p.prebuffer ? ' (prebuffer timed out)' : '') + (video.videoHeight ? ', ' + video.videoWidth + 'x' + video.videoHeight : ''));
         if (bf.length && video.currentTime < first && !cur.startAt) { try { video.currentTime = first + 0.05; } catch (e) {} }
+        st.growAt = now;
         if (cur.startAt && !cur.live) { try { video.currentTime = cur.startAt; } catch (e) {} cur.pos = cur.startAt; cur.startAt = 0; }
         if (st.userPaused) return;
         var pr = video.play();
         if (pr && pr.catch) pr.catch(function () {});
-      } else if (now - st.at > 15000 + p.prebuffer * 1000) {
+      } else if (now - st.at > 15000 + need * 1000) {
         Log.warn('player', 'No playable video after ' + (now - st.at) + 'ms (readyState ' + video.readyState + ', buffered ' + ahead.toFixed(1) + 's)');
         reconnect(myToken, 'No video yet, retrying');
       }
@@ -430,6 +489,18 @@ var Player = (function () {
       if (now - st.seekSince < 15000) { st.lastMove = now; return; }
     } else st.seekSince = 0;
 
+    // 3. Timestamp jump: new video is arriving somewhere else on the timeline.  Follow it.
+    if (!isFile() && !st.userPaused && (now - st.lastMove > 500 || ahead < 0.5)) {
+      var jt = jumpTarget(t);
+      if (jt) {
+        Log.info('player', 'Stream timestamps jumped by ' + (jt.start - t).toFixed(1) + 's; following the stream');
+        try { video.currentTime = jt.start + 0.05; } catch (e) {}
+        st.lastMove = now; st.lastT = -1; st.jumps = (st.jumps || 0) + 1;
+        if (st.refilling) { st.refillSince = now; }
+        return;
+      }
+    } else if (!isFile() && video.buffered.length > 1) jumpTarget(t);    // keep the growth baseline current
+
     // Live TV paused longer than the buffer can hold: let the connection go rather than have it
     // time out or overflow, and come back at the live edge on play.
     if (st.userPaused && cur.live && !cur.timeshift && !st.parked && now - st.pausedAt > Math.max(30, p.ahead) * 1000) {
@@ -441,13 +512,22 @@ var Player = (function () {
 
     // 2. Refill goal: once dry, stay paused until there's a real cushion.
     if (st.refilling) {
-      if (ahead >= p.refill || now - st.refillSince > 6000 + p.refill * 1000) {
+      // Resume at the full goal, or after 4s once the profile's own target is there: a refill
+      // should never become a long wait just because the cushion grew.
+      if (ahead >= goal || (ahead >= p.refill && now - st.refillSince > 4000) || now - st.refillSince > 6000 + goal * 1000) {
         st.refilling = false; st.lastMove = now;
         if (eng && eng.edge && cur.live && !cur.timeshift) eng.edge();
         var pr2 = video.play(); if (pr2 && pr2.catch) pr2.catch(function () {});
         state('playing');
+      } else if (now - st.refillSince > 3000 && now - (st.growAt || st.refillSince) > 4000) {
+        // Nothing has arrived for 4s: the provider stopped sending.  A fresh connection usually
+        // comes with a burst, so reconnect rather than wait it out.
+        st.refilling = false;
+        cur.starved = true;
+        reconnect(myToken, 'No data from the provider, reconnecting');
       } else if (now - st.refillSince > p.stall * 1000 && ahead < 0.2) {
         st.refilling = false;
+        cur.starved = true;
         reconnect(myToken, 'Stream stalled, reconnecting');
       }
       return;
@@ -464,8 +544,9 @@ var Player = (function () {
       st.lastT = t; st.lastMove = now;
       if (st.state !== 'playing') state('playing');
       if (!st.healthySince) st.healthySince = now;
-      // 30s of clean playback earns the retry budget back.
+      // 30s of clean playback earns the retry budget back; 3 clean minutes halve the extra cushion.
       if (now - st.healthySince > 30000 && (cur.retries || cur.slowSince)) { cur.retries = 0; cur.triedNative = false; cur.slowSince = 0; cur.late = null; }
+      if (cur.boost && now - st.healthySince > 180000 && now - (cur.boostAt || 0) > 180000) { cur.boost = Math.round(cur.boost * 5) / 10; cur.boostAt = now; if (cur.boost < 0.5) cur.boost = 0; Log.info('player', 'Clean for 3 minutes; extra cushion now ' + cur.boost + 's'); }
       return;
     }
     if (video.paused && !st.refilling) {
@@ -487,7 +568,8 @@ var Player = (function () {
     // Ran dry: start a proper refill instead of stutter-playing.
     if (stuck > 600 && ahead < 0.3) {
       st.refilling = true; st.refillSince = now; st.refills = (st.refills || 0) + 1;
-      Log.info('player', 'Buffer ran dry (' + st.refills + ' times this stream); refilling to ' + p.refill + 's');
+      grow(p);
+      Log.info('player', 'Buffer ran dry (' + st.refills + ' times this stream); refilling to ' + refillGoal().toFixed(1) + 's');
       video.pause();
       state('buffering', 'Buffering');
       return;

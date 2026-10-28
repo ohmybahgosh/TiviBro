@@ -17,6 +17,7 @@ var https = require('https');
 var URL_ = require('url');
 var Editor = require('./editor');
 var Unzip = require('./unzip');
+var TsSync = require('./tssync').TsSync;
 
 var ALLOW = {
   'Access-Control-Allow-Origin': '*',
@@ -107,6 +108,19 @@ function create(opts) {
       var xfer = unz ? Unzip.track(unz, +ur.headers['content-length'] || 0) : null;
       ur.on('data', function (d) { bytes += d.length; if (xfer) xfer.raw = bytes; });
       ur.on('error', function (e) { if (!aborted) { stats.errors++; rec.e = 'response: ' + (e.code || e.message); } finish(); res.destroy(); });
+      // Live MPEG-TS: keep it aligned if stray bytes get in (see tssync.js).  Whole-file and Range
+      // requests (movies, seeking) are left alone.
+      var ts = !unz && code === 200 && req.method !== 'HEAD' && !req.headers.range &&
+        (/mp2t|mpegts|mpeg-ts/i.test(ur.headers['content-type'] || '') || /\.ts$/i.test((u.pathname || '')));
+      if (ts) {
+        delete h['content-length'];
+        var sync = new TsSync(function (n) { rec.tsDropped = (rec.tsDropped || 0) + n; if (!rec.lv) rec.lv = 'warn'; });
+        res.writeHead(code, h);
+        sync.on('error', function () { res.destroy(); });
+        ur.pipe(sync).pipe(res);
+        ur.on('end', function () { if (xfer) xfer.done = true; finish(); });
+        return;
+      }
       if (!unz || code >= 300 || req.method === 'HEAD') {
         res.writeHead(code, h);
         ur.pipe(res);

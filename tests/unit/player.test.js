@@ -66,8 +66,9 @@ function setup(opts) {
     while (now < end) {
       now += 100;
       if (!video.paused && video.readyState >= 2) {
-        const r = video._ranges, e = r.length ? r[r.length - 1][1] : 0;
-        video.currentTime = Math.min(video.currentTime + 0.1 * video.playbackRate, e);
+        // Like a real element: play through the buffered range the playhead is in, stop at its end.
+        const r = video._ranges, ct = video.currentTime, cur = r.find(x => ct >= x[0] - 0.01 && ct <= x[1] + 0.01);
+        if (cur) video.currentTime = Math.min(ct + 0.1 * video.playbackRate, cur[1]);
       }
       let due;
       while ((due = timers.filter(t => t.at <= now).sort((a, b) => a.at - b.at)[0])) {
@@ -222,6 +223,46 @@ t.feed(0, 60); t.run(20000);
 t.last().h.err('NetworkError', 'EarlyEof', {});
 t.run(1000);
 ok('catch-up reconnect asks for the right offset', /timeshift\/(1[89]|20)\.ts$/.test(t.last().src.url), t.last().src.url);
+
+// ---- sloppy streams: a growing cushion, quick reconnect when data stops, timestamp jumps ----
+t = setup();
+t.P.play({ n: 'Sloppy', url: 'http://p/live/u/p/20.ts' });
+t.feed(0, 4); t.run(2500);
+ok('sloppy: playing', t.P.playing);
+t.run(4000);                                   // plays through the 4s it has: runs dry
+ok('running dry starts a refill', /buffering/.test(t.states[t.states.length - 1]) && t.logs.some(l => /Buffer ran dry/.test(l)));
+const goal1 = t.P.stats.target;
+ok('the first dry spell already raises the cushion', goal1 > 3 && t.logs.some(l => /cushion raised/.test(l)), goal1);
+t.video._ranges = [[0, 4 + 2.6]]; t.run(500);
+ok('a refill does not wait forever for the bigger cushion: back after 4s at the profile target', t.P.playing === false);
+t.video._ranges = [[0, 4 + 3.2]]; t.run(4000);
+ok('…resumes once 4s have passed with the profile target buffered', /playing/.test(t.states[t.states.length - 1]), t.states[t.states.length - 1]);
+t.run(5000);                                   // dry again, and nothing more arrives
+const m0 = t.made.length;
+t.run(8000);
+ok('no data for 4s during a refill reconnects', t.made.length > m0 && t.logs.some(l => /No data from the provider/.test(l)));
+
+t = setup();
+t.P.play({ n: 'Jumpy', url: 'http://p/live/u/p/21.ts' });
+t.feed(0, 20); t.run(2500);
+t.video.currentTime = 19.9; t.run(300);
+for (let k = 1; k <= 8; k++) { t.video._ranges = [[0, 20], [500, 500 + k * 0.5]]; t.run(400); }   // new video keeps arriving at 500s
+ok('timestamps jumping ahead: follows the stream', t.video.currentTime >= 500 && t.logs.some(l => /timestamps jumped/.test(l)), t.video.currentTime);
+t.video._ranges = [[500, 506]]; t.video.currentTime = 505.9; t.run(400);
+for (let k = 1; k <= 8; k++) { t.video._ranges = [[2, 2 + k * 0.5], [500, 506]]; t.run(400); }
+ok('timestamps jumping back: follows the stream too', t.video.currentTime >= 2 && t.video.currentTime < 5, t.video.currentTime);
+
+t = setup();
+t.P.play({ n: 'Outage', url: 'http://p/live/u/p/22.ts' });
+t.feed(0, 30); t.run(2500);
+t.last().h.err('NetworkError', 'EarlyEof', {}); t.run(1500);
+for (let i = 0; i < 6; i++) { t.last().h.err('NetworkError', 'HttpStatusCodeInvalid', { code: 404 }); t.run(6000); }
+ok('a channel that played and now gets HTTP errors keeps the same pipeline', t.made.every(e => e.kind === 'ts') && t.video._src === '' && !t.logs.some(l => /Trying the/.test(l)));
+
+t = setup();
+t.P.play({ n: 'Busy', url: 'http://p/live/u/p/23.ts' });
+for (let i = 0; i < 4; i++) { t.last().h.err('NetworkError', 'HttpStatusCodeInvalid', { code: 503 }); t.run(3000); }
+ok('busy answers (503) get more tries on the same pipeline before anything else', t.last().kind === 'ts' && !t.states.some(x => /^error/.test(x)));
 
 if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }
 console.log('all player tests passed');

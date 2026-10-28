@@ -80,6 +80,13 @@ function schedule(ch) {
   }
   return out;
 }
+// MOCK_CHAOS=1: a "TEST | Chaos" group of deliberately sloppy streams (tests/mock/chaos.js).
+const CHAOS = process.env.MOCK_CHAOS ? require('./chaos') : null;
+if (CHAOS) {
+  const ci = cats.length;
+  cats.push({ category_id: String(ci + 1), category_name: 'TEST | Chaos', parent_id: 0 });
+  CHAOS.MODES.forEach(([id, name]) => streams.push({ num: id, name, stream_type: 'live', stream_id: id, stream_icon: '', epg_channel_id: '', added: '1761000000', category_id: String(ci + 1), tv_archive: 0, tv_archive_duration: 0, clip: 'news', base: name, ci }));
+}
 const sched = new Map(streams.map(s => [s.stream_id, schedule(s)]));
 
 /* ---------- artwork ---------- */
@@ -180,6 +187,7 @@ const server = http.createServer((req, res) => {
   let m;
   if ((m = /^\/logo\/(\d+)\.svg$/.exec(p))) { const s = streams.find(x => x.stream_id === +m[1]); return s ? send(res, 200, logo(s), 'image/svg+xml') : send(res, 404, ''); }
   if ((m = /^\/poster\/([ms])(\d+)\.svg$/.exec(p))) { const t = m[1] === 'm' ? (MOVIES[+m[2]] || [''])[0] : (SERIES[+m[2]] || [''])[0]; return send(res, 200, poster(t, +m[2] + (m[1] === 's' ? 5 : 0)), 'image/svg+xml'); }
+  if (CHAOS && (m = /^\/live\/.*?(9\d\d)\.(ts|m3u8)$/.exec(p)) && +m[1] >= 901) return CHAOS.serve(m[1], req, res, MEDIA);
   if ((m = /^\/(live|timeshift)\/.*?(\d+)\.(ts|m3u8)$/.exec(p))) { const s = streams.find(x => x.stream_id === +m[2]); return stream(res, req, (s ? s.clip : 'news') + '.ts', 'video/mp2t'); }
   if (/^\/(movie|series)\//.test(p)) return stream(res, req, 'movie.mp4', 'video/mp4');
   send(res, 404, 'not found', 'text/plain');

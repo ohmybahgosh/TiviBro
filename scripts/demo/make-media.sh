@@ -33,6 +33,15 @@ drawtext=fontfile=$FONT:text='DEMO STREAM':fontcolor=white@0.55:fontsize=22:x=(w
 drawbox=x=(w-14)/2+cos(t*1.3)*220:y=h*0.30+sin(t*1.3)*30:w=12:h=12:color=white@0.6:t=fill" \
     -c:v libx264 -preset ultrafast -profile:v main -pix_fmt yuv420p -g 50 -b:v 1200k -c:a aac -b:a 64k -shortest -f mpegts "$f"
 done
+# Long busy clip for the sloppy-stream soak test (MOCK_CHAOS=1, tests/soak/chaos.js): ten minutes of
+# moving test pattern with a clock, so freezes and jumps are easy to see.
+if [ ! -s "$OUT/chaos.ts" ]; then
+  echo "making chaos.ts"
+  ffmpeg -hide_banner -loglevel error -y -f lavfi -i "testsrc2=s=960x540:r=25:d=600" \
+    -f lavfi -i "sine=f=440:r=48000" -t 600 \
+    -vf "drawtext=fontfile=$FONT:text='%{pts\\:hms}':fontcolor=white:fontsize=48:x=40:y=40:box=1:boxcolor=black@0.6" \
+    -c:v libx264 -preset ultrafast -profile:v main -pix_fmt yuv420p -g 50 -b:v 1200k -c:a aac -b:a 64k -shortest -f mpegts "$OUT/chaos.ts"
+fi
 if [ ! -s "$OUT/movie.mp4" ]; then
   echo "making movie.mp4"
   ffmpeg -hide_banner -loglevel error -y -f lavfi -i "gradients=s=960x540:r=25:d=$DUR:c0=0x1a0b3d:c1=0x5b8cff:c2=0x33e1ff:speed=0.01" \
