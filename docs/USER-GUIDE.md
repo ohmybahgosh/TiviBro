@@ -20,12 +20,12 @@ Everything TiviBro does, on the TV and from your computer.  Every picture here c
 
 A brand-new TiviBro opens on **Add your playlist**.  You have two ways in:
 
+- **Scan the QR code with your phone.**  It sits beside the form and opens the web editor on your phone, already signed in: type your login there with a real keyboard, or restore a backup from another TV.  The address and password are under the code, for a computer on the same network.  The TV moves on by itself when you finish, then shows the [set-up tour](#the-set-up-tour).  (**Set up or restore from a phone or computer** shows the same code on a screen of its own.)
 - **Type it on the TV.**  Pick Xtream Codes or M3U, then fill in the server, username and password (or the M3U address).  A guide address is optional.  **Test connection** checks everything before you save; **Connect** saves and loads your channels.
-- **Set up or restore from a computer.**  The TV shows an address and a password.  Open the address in any browser on the same network and either add your playlist with a real keyboard or restore a backup from another TV.  The TV moves on by itself when you finish.
 
 <p align="center">
   <a href="screenshots/tv-first-run.png"><img src="screenshots/tv-first-run.png" width="49%" alt="First-run screen"></a>
-  <a href="screenshots/tv-first-run-remote.png"><img src="screenshots/tv-first-run-remote.png" width="49%" alt="Set up from a computer"></a>
+  <a href="screenshots/tv-first-run-remote.png"><img src="screenshots/tv-first-run-remote.png" width="49%" alt="Set up from a phone or computer"></a>
 </p>
 
 <p align="center"><a href="media/firstrun.mp4"><img src="media/firstrun.gif" width="100%" alt="The first screen, and setting up from a computer"></a></p>
@@ -770,7 +770,7 @@ Cleaning up hundreds of groups with a TV remote is painful.  The web editor does
 2. The TV shows an address like `http://192.168.1.20:8787` and a password.
 3. Open the address on your computer or phone and type the password.  Dashes and capitals don't matter.
 
-The editor switches off every time TiviBro closes.  After five wrong passwords it locks for a minute.
+The editor switches off every time TiviBro closes.  On a brand-new TV with no playlist it starts by itself, for the QR code on the first screen.  After five wrong passwords it locks for a minute.
 
 **On a phone.**  The [set-up tour](#the-set-up-tour)'s QR code opens the editor signed in; any phone browser works with the address and password too.  On a phone the page name sits in the top bar (tap it for the list of pages), **Groups and channels** shows the groups first and a group's channels on their own screen (**‹ Groups** goes back), and **⋯** on a channel has Rename, Copy or move and Take out.  Dragging to reorder needs a computer.
 

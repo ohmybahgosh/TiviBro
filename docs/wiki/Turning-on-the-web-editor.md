@@ -12,7 +12,7 @@ Cleaning up hundreds of groups with a TV remote is painful.  The web editor does
 2. The TV shows an address like `http://192.168.1.20:8787` and a password.
 3. Open the address on your computer or phone and type the password.  Dashes and capitals don't matter.
 
-The editor switches off every time TiviBro closes.  After five wrong passwords it locks for a minute.
+The editor switches off every time TiviBro closes.  On a brand-new TV with no playlist it starts by itself, for the QR code on the first screen.  After five wrong passwords it locks for a minute.
 
 **On a phone.**  The [set-up tour](The-set-up-tour)'s QR code opens the editor signed in; any phone browser works with the address and password too.  On a phone the page name sits in the top bar (tap it for the list of pages), **Groups and channels** shows the groups first and a group's channels on their own screen (**‹ Groups** goes back), and **⋯** on a channel has Rename, Copy or move and Take out.  Dragging to reorder needs a computer.
 

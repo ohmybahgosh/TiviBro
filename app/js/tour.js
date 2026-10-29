@@ -307,21 +307,7 @@ var Tour = (function () {
     function paintB() { back.classList.toggle('focus', f === 0); done.classList.toggle('focus', f === 1); }
     back.addEventListener('click', function () { f = 0; UI.press('ok'); });
     done.addEventListener('click', function () { f = 1; UI.press('ok'); });
-    function show(s) {
-      qr.innerHTML = ''; txt.innerHTML = '';
-      var addrs = WebEdit.addresses();
-      if (!addrs.length) { txt.appendChild(U.el('div', 'msg err', 'No network address found.  Check that the TV is connected to your network.')); return; }
-      var url = addrs[0] + '/#k=' + WebEdit.password() + '/tools';
-      try {
-        var q = qrcode(0, 'M'); q.addData(url); q.make();
-        qr.innerHTML = q.createSvgTag({ cellSize: 9, margin: 2, scalable: true });
-      } catch (e) { Log.warn('tour', 'QR code: ' + e.message); }
-      txt.appendChild(U.el('div', 'remote-l', 'Address'));
-      addrs.forEach(function (a) { txt.appendChild(U.el('div', 'remote-v', a.replace(/^http:\/\//, ''))); });
-      txt.appendChild(U.el('div', 'remote-l', 'Password'));
-      txt.appendChild(U.el('div', 'remote-v', WebEdit.password()));
-      txt.appendChild(U.el('div', 'remote-s', s && s.clients ? 'Connected.  Send your changes there, then press Done.' : 'Waiting for a phone or computer…'));
-    }
+    function show(s) { WebEdit.drawJoin(qr, txt, 'tools', s, 'Waiting for a phone or computer…', 'Connected.  Send your changes there, then press Done.'); }
     txt.appendChild(U.el('div', 'remote-s', 'Starting the editor…'));
     WebEdit.onStatus = function (s) { if (st && st.remote) show(s); };
     (WebEdit.on ? Promise.resolve(WebEdit.status) : WebEdit.start()).then(show, function (e) { txt.innerHTML = ''; txt.appendChild(U.el('div', 'msg err', e.message)); });

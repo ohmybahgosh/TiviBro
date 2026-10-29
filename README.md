@@ -552,7 +552,7 @@ The [Release workflow](.github/workflows/release.yml) then runs the tests, build
 ## Privacy and security
 
 - Provider logins stay on the TV.  The web editor only ever sees server names, never usernames, passwords or stream links.
-- The web editor is off at every start, needs the password shown on the TV, and locks out after repeated wrong tries.
+- The web editor is off at every start (except on a brand-new TV with no playlist, for the setup QR code), needs the password shown on the TV, and locks out after repeated wrong tries.
 - Backups are always encrypted with a passphrase you choose.  Without it the file cannot be opened.
 - Logs mask usernames and passwords.
 - The logo library, when you turn it on, downloads lists of logo addresses from tivibro.app, one per country in your playlist, then each logo from its project.  Only the country is in the request: no channel names, logins or anything else from your playlist.

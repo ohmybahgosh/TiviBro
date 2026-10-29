@@ -213,7 +213,7 @@ var WebEdit = (function () {
       if (clean(a.epg)) p.epgSources = [{ url: clean(a.epg), offset: 0 }];
       p.id = 'p' + Date.now().toString(36);
       return loadAndSave(p).then(function (data) {
-        if (!a.use && Store.settings.playlists.length === 1) a.use = true;   // first playlist on a fresh TV
+        if (!a.use && Store.settings.playlists.length === 1) { a.use = true; App.tourNext(); }   // first playlist on a fresh TV: then the set-up tour
         if (a.use) App.switchPlaylist(p.id);
         return { msg: 'Added "' + p.name + '" with ' + data.channels.length + ' channels' + (a.use ? '.  The TV switched to it.' : '.') };
       });
@@ -431,7 +431,26 @@ var WebEdit = (function () {
   function restart() { return on ? stop().then(start) : Promise.resolve(status); }
   function newPassword() { Store.settings.editorPass = generate(); Store.saveSettings(); return restart(); }
 
+  /* The QR code and address for a phone or computer (first screen, setup from a computer, the set-up
+     tour).  The code opens the editor already signed in, on page (Smart clean-up: 'tools'; empty for
+     the start page, which on a fresh TV is the welcome page for adding a playlist or restoring). */
+  function drawJoin(qr, txt, page, s, waiting, connected) {
+    qr.innerHTML = ''; txt.innerHTML = '';
+    var addrs = status && status.ips && status.ips.length ? status.ips.map(function (ip) { return 'http://' + ip + ':' + status.port; }) : [];
+    if (!addrs.length) { txt.appendChild(U.el('div', 'msg err', 'No network address found.  Check that the TV is connected to your network.')); return; }
+    try {
+      var q = qrcode(0, 'M'); q.addData(addrs[0] + '/#k=' + password() + (page ? '/' + page : '')); q.make();
+      qr.innerHTML = q.createSvgTag({ cellSize: 9, margin: 2, scalable: true });
+    } catch (e) { Log.warn('webedit', 'QR code: ' + e.message); }
+    txt.appendChild(U.el('div', 'remote-l', 'Address'));
+    addrs.forEach(function (a) { txt.appendChild(U.el('div', 'remote-v', a.replace(/^http:\/\//, ''))); });
+    txt.appendChild(U.el('div', 'remote-l', 'Password'));
+    txt.appendChild(U.el('div', 'remote-v', password()));
+    txt.appendChild(U.el('div', 'remote-s', s && s.clients ? connected : waiting));
+  }
+
   return {
+    drawJoin: drawJoin,
     start: start, stop: stop, restart: restart, resume: resume, newPassword: newPassword, password: password, port: port, PORTS: PORTS,
     snap: function (name) { return snap('named', name); },
     get on() { return on; }, get status() { return status; },

@@ -32,7 +32,8 @@ var App = (function () {
 
     function render() {
       setupEl.innerHTML = '';
-      if (!target) { var wb = U.el('img', 'setupbrand'); wb.src = 'img/wordmark.png'; wb.alt = 'TiviBro'; setupEl.appendChild(wb); }
+      setupEl.classList.toggle('withjoin', !target);
+      if (!target) { var wb = U.el('img', 'setupbrand'); wb.src = 'img/wordmark.png'; wb.alt = 'TiviBro'; setupEl.appendChild(wb); joinPanel(); }
       setupEl.appendChild(U.el('h1', '', editing ? 'Edit playlist' : target === 'new' ? 'Add a playlist' : 'Add your playlist'));
       setupEl.appendChild(U.el('p', 'lead', 'Use your provider\'s Xtream Codes login or an M3U playlist address.  A Dispatcharr or other proxy address works with either.'));
       fields = [];
@@ -77,7 +78,7 @@ var App = (function () {
       fields.push({ el: go, kind: 'go' });
       var test = U.el('div', 'btn', 'Test connection'); setupEl.appendChild(test); fields.push({ el: test, kind: 'test' });
       var lg = U.el('div', 'btn', 'View log'); setupEl.appendChild(lg); fields.push({ el: lg, kind: 'log' });
-      if (!editing) { var rm = U.el('div', 'btn', 'Set up or restore from a computer'); setupEl.appendChild(rm); fields.push({ el: rm, kind: 'remote' }); }
+      if (!editing) { var rm = U.el('div', 'btn', 'Set up or restore from a phone or computer'); setupEl.appendChild(rm); fields.push({ el: rm, kind: 'remote' }); }
       if (canCancel) { var cancel = U.el('div', 'btn', 'Cancel'); setupEl.appendChild(cancel); fields.push({ el: cancel, kind: 'cancel' }); }
       msg = U.el('div', 'msg'); setupEl.appendChild(msg);
       // Magic Remote: click a field or button to use it.
@@ -86,7 +87,28 @@ var App = (function () {
       });
       paint();
     }
-    function paint() { fields.forEach(function (x, i) { x.el.classList.toggle('focus', i === f); }); }
+    function paint() {
+      fields.forEach(function (x, i) { x.el.classList.toggle('focus', i === f); });
+      // The buttons sit below the fold on a 1080 screen: keep the focused row in view.
+      var el = fields[f] && fields[f].el;
+      if (el && !setupEl.classList.contains('kb')) {
+        var bottom = el.offsetTop + el.offsetHeight + 60, view = setupEl.clientHeight;
+        setupEl.scrollTop = bottom > view ? bottom - view : 0;
+      }
+    }
+    /* A brand-new TV: a QR code beside the form, so the playlist can be typed on a phone (or a backup
+       restored) instead of with the remote.  The web editor starts only here, on a TV with no playlist. */
+    function joinPanel() {
+      var card = U.el('div', 'join'), qr = U.el('div', 'join-qr'), txt = U.el('div', 'join-txt');
+      card.appendChild(U.el('div', 'join-h', 'Easier on your phone'));
+      card.appendChild(U.el('div', 'join-p', 'Scan with your phone\'s camera to type your login there, or restore a backup.'));
+      card.appendChild(qr); card.appendChild(txt);
+      setupEl.appendChild(card);
+      function show(s) { if (setupEl.contains(card)) WebEdit.drawJoin(qr, txt, '', s, 'Or open the address on a computer.', 'A phone or computer is connected.  Finish there; this screen moves on by itself.'); }
+      txt.appendChild(U.el('div', 'remote-s', 'Starting…'));
+      WebEdit.onStatus = show;
+      (WebEdit.on ? Promise.resolve(WebEdit.status) : WebEdit.start()).then(show, function (e) { txt.innerHTML = ''; txt.appendChild(U.el('div', 'remote-s', 'The phone option is not available: ' + e.message)); });
+    }
     function kbFocus(row) {
       setupEl.classList.add('kb');
       // Scroll so the row sits near the top, well clear of the keyboard.
@@ -102,26 +124,18 @@ var App = (function () {
     // Fresh TV: start the web editor so a computer can restore a backup (logins included) or add a playlist.
     function remote() {
       setupEl.innerHTML = '';
-      setupEl.appendChild(U.el('h1', '', 'Set up from a computer'));
-      setupEl.appendChild(U.el('p', 'lead', 'On a computer or phone on the same network, open the address below and type the password.  Restore a backup file there, or add your playlist with a real keyboard.'));
-      var box = U.el('div', 'remote-box'); setupEl.appendChild(box);
+      setupEl.classList.remove('withjoin');
+      setupEl.appendChild(U.el('h1', '', 'Set up from a phone or computer'));
+      setupEl.appendChild(U.el('p', 'lead', 'Scan the code with your phone\'s camera, or open the address on a computer on the same network and type the password.  Add your playlist there with a real keyboard, or restore a backup file.'));
+      var box = U.el('div', 'remote-box withqr'), qrEl = U.el('div', 'join-qr'), info = U.el('div', ''); box.appendChild(qrEl); box.appendChild(info); setupEl.appendChild(box);
       var back = U.el('div', 'btn focus', 'Back'); setupEl.appendChild(back);
       back.addEventListener('click', function () { UI.press('back'); });
-      function show(s) {
-        box.innerHTML = '';
-        var addrs = WebEdit.addresses();
-        if (!addrs.length) { box.appendChild(U.el('div', 'msg err', 'No network address found.  Check that the TV is connected to your network.')); return; }
-        box.appendChild(U.el('div', 'remote-l', 'Address'));
-        addrs.forEach(function (a) { box.appendChild(U.el('div', 'remote-v', a.replace(/^http:\/\//, ''))); });
-        box.appendChild(U.el('div', 'remote-l', 'Password'));
-        box.appendChild(U.el('div', 'remote-v', WebEdit.password()));
-        box.appendChild(U.el('div', 'remote-s', s && s.clients ? 'A computer is connected.  Finish there; this screen moves on by itself.' : 'Waiting for a computer…'));
-      }
-      box.appendChild(U.el('div', 'remote-s', 'Starting the editor…'));
+      function show(s) { WebEdit.drawJoin(qrEl, info, '', s, 'Waiting for a phone or computer…', 'Connected.  Finish there; this screen moves on by itself.'); }
+      info.appendChild(U.el('div', 'remote-s', 'Starting the editor…'));
       WebEdit.onStatus = function (s) { if (setupEl.contains(box)) show(s); };
       (WebEdit.on ? Promise.resolve(WebEdit.status) : WebEdit.start()).then(show, function (e) { box.innerHTML = ''; box.appendChild(U.el('div', 'msg err', e.message)); });
       UI.setHandler(function (a) {
-        if (a === 'back' || a === 'ok') { WebEdit.onStatus = null; if (!Store.settings.playlists.length) WebEdit.stop(); setup(target); }
+        if (a === 'back' || a === 'ok') { WebEdit.onStatus = null; setup(target); }
         return true;
       });
     }
@@ -203,6 +217,7 @@ var App = (function () {
   }
 
   /* ---------- start ---------- */
+  var tourNext = false;     // the first playlist came from a phone or computer: show the set-up tour once it loads
   function start(data, fromCache) {
     Source.setTz(data.tz); Events.setProviderTz(data.tz);
     Library.set(data);
@@ -219,6 +234,7 @@ var App = (function () {
     // Guide loads after first paint so it never delays the channel list.
     setTimeout(function () { Epg.init(Library); }, fromCache ? 1500 : 300);
     Views.resume();
+    if (tourNext) { tourNext = false; setTimeout(function () { if (!Tour.isOpen) Tour.open({ first: true }); }, 400); }
   }
 
   /* Movies and Shows only appear when the provider actually offers them.  Small requests in the
@@ -337,7 +353,7 @@ var App = (function () {
     else if (wasPlaying) { wasPlaying = false; Player.resume(); }
   });
 
-  return { boot: boot, setup: setup, refresh: refresh, switchPlaylist: switchPlaylist };
+  return { boot: boot, setup: setup, refresh: refresh, switchPlaylist: switchPlaylist, tourNext: function () { tourNext = true; } };
 })();
 
 window.addEventListener('load', function () { App.boot(); });

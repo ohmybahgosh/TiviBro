@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **First screen: a QR code for your phone.**  A brand-new TV shows a QR code beside **Add your playlist**.  Scan it and the web editor opens on your phone, signed in, to type the login with a real keyboard or restore a backup; the TV switches to the playlist and opens the set-up tour.  **Set up or restore from a phone or computer** shows the same code full size.  The web editor starts by itself only on a TV with no playlist yet.
+- First screen: the Connect, Test connection and other buttons were below the bottom of a 1080 screen; the screen now scrolls to whatever is focused.
 - The Homebrew Channel listing has screenshots and a formatted description (features, what to know, links), from `site/hb/description.html` on the website, and says it needs webOS 4 or newer.
 
 ## 0.6.0 (alpha 11, 2026-10-29)
