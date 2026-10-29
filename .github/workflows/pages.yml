@@ -1,0 +1,38 @@
+# tivibro.app: the website in site/, plus the demo videos from docs/media, published with GitHub Pages.
+name: Website
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', 'docs/media/guide.mp4', 'docs/media/live-edit.mp4', '.github/workflows/pages.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assemble the site
+        run: |
+          mkdir -p _site/media
+          cp -r site/. _site/
+          cp docs/media/guide.mp4 docs/media/live-edit.mp4 _site/media/
+          ls -R _site | head -50
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

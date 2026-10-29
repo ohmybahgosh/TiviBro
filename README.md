@@ -19,6 +19,7 @@
 </p>
 
 <p align="center">
+  <a href="https://tivibro.app"><b>tivibro.app</b></a> ·
   <a href="#see-it-in-action">See it in action</a> ·
   <a href="#the-web-editor">Web editor</a> ·
   <a href="#gallery">Gallery</a> ·
@@ -51,6 +52,8 @@ TiviBro plays your own IPTV subscription (Xtream Codes or M3U with XMLTV) on LG 
 | 🖥️ **A real editor** | Hide, sort, rename, copy and match guides for hundreds of channels from any browser.  Drafts, undo and restore points. |
 | 🔒 **Locked backups** | Everything in one AES-256-GCM file.  Restore onto a brand-new TV straight from the first screen. |
 | 🔁 **Backup versions** | Playlists often carry a channel in FHD, HD and SD.  TiviBro tags each copy, lets you switch between them, and if one dies it moves to the next by itself and tells you. |
+| 🏟️ **Event channels** | Pay-per-view and sports passes that cram the whole listing into the channel name ("NCAAB 001 \| NORTH FLORIDA @ CHARLESTON SOUTHERN (M) \| 12.18 11:00 AM") show as **NCAAB 001**, with the game in the guide at its real time, in your time zone.  **Events by time** lists what's on next across all of them. |
+| 🧹 **Clean names, tidy lists** | Strips "USA \|", "FHD", "⚽", "ᴴᴰ" and hundreds of other tags.  Hides divider groups and keeps channels that say "Off Air" or "No Event Scheduled" out of the way until something is on. |
 | ⏰ **Reminders and parental controls** | A reminder on any future programme, and a PIN for channels, groups or Settings. |
 | 🛟 **Streams that don't quit** | Reconnects with backoff, waits out Wi-Fi drops, tries every player before giving up, and keeps a dropped channel coming back by itself.  Movies and catch-up resume where they dropped. |
 | 🌈 **HDR, Dolby Vision and Atmos** | Reads each stream's format before the picture starts and sends Dolby Vision to the TV's own player, HDR10 and HLG to the steadier built-in one.  The info panel shows *4K  HEVC  Dolby Vision  E-AC-3 5.1 Atmos*. |
@@ -191,6 +194,19 @@ TiviMate's Channels layout: groups, channels with what's on, and a live preview.
 </tr>
 </table>
 
+<table>
+<tr>
+<td width="58%"><a href="docs/screenshots/tv-events-guide.png"><img src="docs/screenshots/tv-events-guide.png" width="100%" alt="Event channels in the guide"></a></td>
+<td width="42%" valign="top">
+
+### Pay-per-view and sports passes, readable
+
+Providers often write the whole event into the channel name and leave the guide empty.  TiviBro reads it: a short channel name (**PPV 03**, **NCAAB 001**), **Starts 7:30 PM: Kings vs Pelicans** in the guide until it begins, then the matchup at its real time, converted to your time zone.  **Events by time** puts every upcoming game and fight in one list, soonest first.
+
+</td>
+</tr>
+</table>
+
 ## The web editor
 
 Turn on **Settings > Edit on a computer**.  The TV shows an address and a password; open it in any browser on your network.  Changes are drafts until you press **Send to TV**, and the TV picks them up in seconds.
@@ -201,7 +217,8 @@ Turn on **Settings > Edit on a computer**.  The TV shows an address and a passwo
 - **Drafts, undo and restore points.**  Nothing reaches the TV until you press **Send to TV**.  Every change can be undone, and the TV keeps restore points.
 - **Never lose an hour of clean-up.**  Unsent work is autosaved in the browser and on the TV within seconds, with a draft history of versions.  A refresh, a closed tab or another computer picks up right where you left off.
 - **Copy or move channels into any group,** including your provider's groups.  Each group can have its own sort order.
-- **Smart clean-up.**  Keep only the countries you watch, hide duplicate channels in different qualities, hide by keyword, and hide empty groups.
+- **Smart clean-up.**  Keep only the countries you watch (read from codes, country words, channel prefixes or the provider's divider groups), hide duplicate channels in different qualities, hide by keyword, empty groups and divider groups, and keep "Off Air" event channels out of the way.
+- **Channel name rules** for about 250 country codes, quality tags, symbols and emoji, plus optional ones for streaming-service prefixes, country codes at the end and status notes.
 - **Smart match** finds the right guide channel for channels showing "No guide information".  You approve or decline each guess.
 - **Live guide download progress** on big XMLTV files: speed, percent and time left, on the computer and on the TV.
 - **Recommended free guide sources** by region, each with a one-click **Test**.
@@ -244,8 +261,11 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
 </details>
 
 <details>
-<summary><b>Other versions, reminders and parental controls</b></summary>
+<summary><b>Event channels, other versions, reminders and parental controls</b></summary>
 <p align="center">
+  <a href="docs/screenshots/tv-events-guide.png"><img src="docs/screenshots/tv-events-guide.png" width="32%" alt="Event channels in the guide"></a>
+  <a href="docs/screenshots/tv-events-list.png"><img src="docs/screenshots/tv-events-list.png" width="32%" alt="Events by time"></a>
+  <a href="docs/screenshots/tv-set-events.png"><img src="docs/screenshots/tv-set-events.png" width="32%" alt="Event channels settings"></a>
   <a href="docs/screenshots/tv-versions.png"><img src="docs/screenshots/tv-versions.png" width="32%" alt="Other versions of a channel"></a>
   <a href="docs/screenshots/tv-quick-versions.png"><img src="docs/screenshots/tv-quick-versions.png" width="32%" alt="Other versions in the quick menu"></a>
   <a href="docs/screenshots/tv-failover.png"><img src="docs/screenshots/tv-failover.png" width="32%" alt="Switched to another version by itself"></a>
@@ -317,7 +337,7 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
 
 ## Help
 
-The **[user guide](docs/USER-GUIDE.md)** (also on the [wiki](../../wiki)) covers everything: every remote button, the guide, catch-up, movies and shows, multiview, other versions of a channel, reminders, parental controls, each page of the web editor, backups, and troubleshooting.  **[Every setting](docs/USER-GUIDE.md#every-setting)** explains each option in Settings, with its choices and default.
+The **[user guide](docs/USER-GUIDE.md)** (also on the [wiki](../../wiki)) covers everything: every remote button, the guide, catch-up, movies and shows, multiview, other versions of a channel, event channels, reminders, parental controls, each page of the web editor, backups, and troubleshooting.  **[Every setting](docs/USER-GUIDE.md#every-setting)** explains each option in Settings, with its choices and default.
 
 ## Install
 

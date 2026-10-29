@@ -30,3 +30,4 @@ tests/mock/media/
 
 # old Node and Chromium builds for tests/engines/run.sh
 .engines/
+site/media/
