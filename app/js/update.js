@@ -7,7 +7,7 @@
 var Update = (function () {
   'use strict';
   var REPO = 'ohmybahgosh/TiviBro', APP_ID = 'app.tivibro.tv';
-  var API = 'https://api.github.com/repos/' + REPO + '/releases?per_page=15';
+  var API = 'https://api.github.com/repos/' + REPO + '/releases?per_page=100';   // listed by tag name, not date, so ask for all of them
   var HBC = 'luna://org.webosbrew.hbchannel.service';
   var KEY = 'tivibro.update';
   var DAY = 24 * 3600e3;

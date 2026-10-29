@@ -5,7 +5,7 @@ name: Website
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'docs/media/guide.mp4', 'docs/media/live-edit.mp4', '.github/workflows/pages.yml', 'scripts/logos/**', 'app/js/tidy.js', 'app/js/names.js']
+    paths: ['site/**', 'docs/media/guide.mp4', 'docs/media/live-edit.mp4', '.github/workflows/pages.yml', 'scripts/logos/**', 'scripts/tv/install.sh', 'app/js/tidy.js', 'app/js/names.js']
   workflow_run:                 # after a release, so tivibro.app/repo has the new version
     workflows: [Release]
     types: [completed]

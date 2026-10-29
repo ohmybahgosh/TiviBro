@@ -33,14 +33,16 @@ const server = http.createServer((req, res) => {
   if (noStable && u.indexOf('/rel/latest/') === 0) { res.writeHead(404); return res.end(); }   // only pre-releases so far
   if (u === '/rel/latest/download/app.tivibro.tv.manifest.json') { res.writeHead(302, { Location: '/rel/download/v0.6.0/app.tivibro.tv.manifest.json' }); return res.end(); }
   if (u === '/rel/download/v0.6.0/app.tivibro.tv.manifest.json') return res.end(man('0.6.0', IPK_A, badSum ? 'f'.repeat(64) : null));
-  if (u === '/rel/download/v0.7.0-alpha.1/app.tivibro.tv.manifest.json') return res.end(man('0.7.0', IPK_B));
+  if (u === '/rel/download/v0.7.0-alpha.10/app.tivibro.tv.manifest.json') return res.end(man('0.7.0', IPK_B));
   // Like GitHub: assets resolve under latest/download/ as well as under the tag.
   if (u === '/rel/download/v0.6.0/app.tivibro.tv_0.6.0_all.ipk' || u === '/rel/latest/download/app.tivibro.tv_0.6.0_all.ipk') return res.end(IPK_A);
-  if (u === '/rel/download/v0.7.0-alpha.1/app.tivibro.tv_0.7.0_all.ipk') return res.end(IPK_B);
+  if (u === '/rel/download/v0.7.0-alpha.10/app.tivibro.tv_0.7.0_all.ipk') return res.end(IPK_B);
   if (u.indexOf('/api') === 0) return res.end(JSON.stringify([
     { tag_name: 'v0.8.0-draft', draft: true, assets: [{ name: 'app.tivibro.tv.manifest.json' }] },
-    { tag_name: 'v0.7.0-alpha.1', prerelease: true, assets: [{ name: 'app.tivibro.tv.manifest.json' }] },
-    { tag_name: 'v0.6.0', assets: [{ name: 'app.tivibro.tv.manifest.json' }] }]));
+    // GitHub's order: by tag name, so alpha.9 is listed before the newer alpha.10.
+    { tag_name: 'v0.7.0-alpha.9', prerelease: true, published_at: '2026-10-28T10:00:00Z', assets: [{ name: 'app.tivibro.tv.manifest.json' }] },
+    { tag_name: 'v0.7.0-alpha.10', prerelease: true, published_at: '2026-10-29T10:00:00Z', assets: [{ name: 'app.tivibro.tv.manifest.json' }] },
+    { tag_name: 'v0.6.0', published_at: '2026-10-01T10:00:00Z', assets: [{ name: 'app.tivibro.tv.manifest.json' }] }]));
   res.writeHead(404); res.end();
 });
 
@@ -75,11 +77,11 @@ server.listen(0, '127.0.0.1', async () => {
   ok('cleans up its temporary files', fs.readdirSync(tmp).filter(f => /^tivibro-install/.test(f)).length === 0);
 
   r = await run(['--pre']);
-  ok('--pre installs the newest test version, skipping drafts', r.code === 0 && r.installed && r.installed.equals(IPK_B) && /0\.7\.0/.test(r.out), r.out.trim().split('\n').pop());
+  ok('--pre installs the newest test version by date (alpha.10 over alpha.9, though GitHub lists alpha.9 first), skipping drafts', r.code === 0 && r.installed && r.installed.equals(IPK_B) && /0\.7\.0/.test(r.out), r.out.trim().split('\n').pop());
   noStable = true;
   r = await run([]);
   noStable = false;
-  ok('with no full release yet, installs the newest test version', r.code === 0 && r.installed && r.installed.equals(IPK_B) && /No full release yet/.test(r.out) && /TiviBro 0\.7\.0-alpha\.1 installed/.test(r.out), r.out.trim().split('\n').pop());
+  ok('with no full release yet, installs the newest test version', r.code === 0 && r.installed && r.installed.equals(IPK_B) && /No full release yet/.test(r.out) && /TiviBro 0\.7\.0-alpha\.10 installed/.test(r.out), r.out.trim().split('\n').pop());
   r = await run(['--tag', 'v0.6.0', '--no-launch']);
   ok('--tag installs that release', r.code === 0 && r.installed && r.installed.equals(IPK_A));
   ok('--no-launch does not start it', !/launch/.test(r.log));

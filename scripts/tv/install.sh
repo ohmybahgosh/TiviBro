@@ -20,7 +20,7 @@ set -e
 
 REPO="${TIVIBRO_REPO:-ohmybahgosh/TiviBro}"
 BASE="${TIVIBRO_BASE:-https://github.com/$REPO/releases}"
-API="${TIVIBRO_API:-https://api.github.com/repos/$REPO/releases?per_page=15}"
+API="${TIVIBRO_API:-https://api.github.com/repos/$REPO/releases?per_page=100}"
 APP_ID=app.tivibro.tv
 MANIFEST_NAME="$APP_ID.manifest.json"
 WORK="${TMPDIR:-/tmp}/tivibro-install.$$"
@@ -72,7 +72,8 @@ else
   if [ "$PRE" = 1 ] && [ -z "$TAG" ]; then
     say "Looking up the newest release, test versions included"
     fetch "$API" "$WORK/releases.json" || die "Could not reach GitHub.  Is the repository public?"
-    TAG="$(json "$WORK/releases.json" "(j.filter(function (r) { return !r.draft && (r.assets || []).some(function (a) { return a.name === process.argv[2]; }); })[0] || {}).tag_name" "$MANIFEST_NAME")"
+    # Newest by date: GitHub lists releases by tag name, so v0.6.0-alpha.9 comes before v0.6.0-alpha.10.
+    TAG="$(json "$WORK/releases.json" "(j.filter(function (r) { return !r.draft && (r.assets || []).some(function (a) { return a.name === process.argv[2]; }); }).sort(function (a, b) { var x = a.published_at || a.created_at || '', y = b.published_at || b.created_at || ''; return x < y ? 1 : x > y ? -1 : 0; })[0] || {}).tag_name" "$MANIFEST_NAME")"
     [ -n "$TAG" ] || die "No release with a TiviBro manifest found."
   fi
   if [ -n "$TAG" ]; then MURL="$BASE/download/$TAG/$MANIFEST_NAME"; else MURL="$BASE/latest/download/$MANIFEST_NAME"; fi

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The newest release is picked by date everywhere.  GitHub lists releases by tag name, so v0.6.0-alpha.9 came before v0.6.0-alpha.10: the website showed "Newest: 0.6.0 alpha 9" and the one-line installer (`tivibro.app/install`) installed alpha 9.  The website, the installer and the in-app updater now read all releases and take the newest (the updater already compared versions, but only read 15).  Test: `tests/unit/tv-install.test.js` lists alpha.9 before alpha.10 the way GitHub does.
+
 ## 0.6.0 (alpha 10, 2026-10-29)
 
 Pre-release: expect rough edges, and keep a backup before installing.
