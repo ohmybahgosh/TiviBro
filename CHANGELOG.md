@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- The newest release is picked by date everywhere.  GitHub lists releases by tag name, so v0.6.0-alpha.9 came before v0.6.0-alpha.10: the website showed "Newest: 0.6.0 alpha 9" and the one-line installer (`tivibro.app/install`) installed alpha 9.  The website, the installer and the in-app updater now read all releases and take the newest (the updater already compared versions, but only read 15).  Test: `tests/unit/tv-install.test.js` lists alpha.9 before alpha.10 the way GitHub does.
-
-## 0.6.0 (alpha 10, 2026-10-29)
+## 0.6.0 (alpha 11, 2026-10-29)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 10
+### New in alpha 11
+
+- The newest release is picked by date everywhere.  GitHub lists releases by tag name, so v0.6.0-alpha.9 came before v0.6.0-alpha.10: the website showed "Newest: 0.6.0 alpha 9" and the one-line installer (`tivibro.app/install`) installed alpha 9.  The website, the installer and the in-app updater now read all releases and take the newest (the updater already compared versions, but only read 15).  Test: `tests/unit/tv-install.test.js` lists alpha.9 before alpha.10 the way GitHub does.
+
+### In alpha 10
 
 - **Short addresses on tivibro.app.**  In the Homebrew Channel, add the repository `https://tivibro.app/repo` (or `https://tivibro.app/testing` for every test build).  On a rooted TV: `curl -fsSL https://tivibro.app/install | sh`.  The website serves the files from the `homebrew` branch as they are, refreshed after every release, so the long raw.githubusercontent.com addresses keep working too.  Also `tivibro.app/guide`, `/wiki`, `/download`, `/changelog`, `/issues` and `/github`.
 - **The set-up tour.**  Right after a new playlist connects, TiviBro shows what it holds (channels, groups, countries, event channels, East and West copies, local cities, extra copies, movies and shows) and walks through making it yours, one screen at a time with the remote:
