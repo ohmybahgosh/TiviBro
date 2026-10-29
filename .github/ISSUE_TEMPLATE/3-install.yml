@@ -1,0 +1,52 @@
+name: Installing or updating
+description: TiviBro won't install, won't update, or doesn't show up in the Homebrew Channel.
+title: "[Install]: "
+labels: [install, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The [Installing](https://github.com/ohmybahgosh/TiviBro/wiki/Installing) page covers every way in.  Homebrew Channel repository: `https://tivibro.app/repo` (releases) or `https://tivibro.app/testing` (every test build).  Rooted TV: `curl -fsSL https://tivibro.app/install | sh`.
+  - type: dropdown
+    id: how
+    attributes:
+      label: How are you installing?
+      options:
+        - Homebrew Channel, tivibro.app/repo
+        - Homebrew Channel, tivibro.app/testing
+        - Homebrew Channel, a raw.githubusercontent.com address
+        - One-line installer on a rooted TV
+        - Developer Mode with ares-install
+        - Updating from inside TiviBro (Settings > Updates and about)
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: Any message, word for word.  For the one-line installer, paste everything it printed.
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: tv
+    attributes:
+      label: TV model and webOS version
+      placeholder: OLED65C3 (2023), webOS 23
+    validations:
+      required: true
+  - type: dropdown
+    id: root
+    attributes:
+      label: Is the TV rooted?
+      options:
+        - Yes (Homebrew Channel shows root status ok)
+        - "No"
+        - Not sure
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version you're installing, and the one installed now (if any)
+      placeholder: 0.6.0-alpha.11 over 0.6.0-alpha.9

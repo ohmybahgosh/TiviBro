@@ -1,0 +1,119 @@
+name: Something doesn't work
+description: A bug in TiviBro on the TV or in the web editor.
+title: "[Bug]: "
+labels: [bug, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time.  **Never paste your provider's address, username, password or a stream link**, here or in a log or screenshot.  TiviBro masks logins in its own log, but check before you post.
+
+        Channel won't play or the guide is empty?  The **Channels, streams or guide** form asks the right questions for that.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Where is the problem?
+      options:
+        - The guide
+        - Channels list or groups
+        - Watching fullscreen (quick menu, info panel, zapping)
+        - Catch-up
+        - Movies and shows
+        - Search
+        - Multiview
+        - Set-up tour
+        - Settings
+        - Channel logos
+        - Reminders or parental controls
+        - Web editor on a computer
+        - Web editor on a phone or tablet
+        - Backup and restore
+        - Updates
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you saw, and any message on screen, word for word if you can.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: How do you get there?
+      description: The buttons you pressed or the clicks, one per line.
+      placeholder: |
+        1. Open the guide
+        2. Press Right twice, then OK
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+    validations:
+      required: true
+  - type: dropdown
+    id: often
+    attributes:
+      label: How often?
+      options:
+        - Every time
+        - Sometimes
+        - Once
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: TiviBro version
+      description: Settings > Updates and about.
+      placeholder: 0.6.0-alpha.11
+    validations:
+      required: true
+  - type: input
+    id: tv
+    attributes:
+      label: TV model and webOS version
+      description: On the TV, Settings > General > About this TV (the menu names vary a little by year).
+      placeholder: OLED65C3 (2023), webOS 23
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install TiviBro?
+      options:
+        - Homebrew Channel (tivibro.app/repo or /testing)
+        - One-line installer on a rooted TV
+        - Developer Mode with ares-install
+        - Something else
+  - type: input
+    id: browser
+    attributes:
+      label: Web editor problems only - browser and device
+      placeholder: Chrome 131 on Windows, Safari on iPhone 15
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: |
+        Settings > Diagnostics > **View app log** (or **with earlier sessions** after a crash).  Copy the lines around the problem, or attach a photo of the screen.  Turning on **Detailed logging** first and doing it again helps a lot.  Check that no login or stream link is in it.
+      render: text
+  - type: textarea
+    id: shots
+    attributes:
+      label: Screenshots or a video
+      description: A phone photo of the TV is fine.  Drag files here.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send it
+      options:
+        - label: There are no logins, server addresses or stream links in this report.
+          required: true
+        - label: I searched the open issues and this isn't one of them.
+          required: true

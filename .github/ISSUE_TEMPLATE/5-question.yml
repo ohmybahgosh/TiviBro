@@ -1,0 +1,20 @@
+name: Question
+description: How do I...?  Not sure if it's a bug?  Ask here.
+title: "[Question]: "
+labels: [question]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The [user guide](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/USER-GUIDE.md) and the [FAQ](https://github.com/ohmybahgosh/TiviBro/wiki/FAQ) answer most questions.  **Never paste logins or stream links.**
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: TiviBro version and TV, if it matters
+      placeholder: 0.6.0-alpha.11 on an OLED65C3 (webOS 23)

@@ -493,6 +493,8 @@ On the old TV, open the web editor, then **Backup and restore > Download locked 
 
 ## Develop
 
+Want to help?  [CONTRIBUTING.md](CONTRIBUTING.md) has the ground rules and how to report problems; security problems go through [SECURITY.md](SECURITY.md).
+
 TiviBro is plain HTML, CSS and JavaScript, with no bundler and no build step beyond packaging.  The same IPK runs from webOS 4 (Chromium 53) to webOS 26, with webOS 25 as the main target; see [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).  A small webOS JS service acts as a localhost relay (CORS, custom User-Agent) and hosts the LAN web editor.
 
 ```

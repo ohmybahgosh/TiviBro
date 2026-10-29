@@ -1,0 +1,98 @@
+name: Channels, streams or guide
+description: A channel won't start, keeps buffering, has no sound or picture, or the guide is wrong or empty.
+title: "[Playback]: "
+labels: [playback, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **First, run Settings > Diagnostics > Run connection test** on the TV.  It checks the helper, your login, the channel list, a stream and the guide, step by step, and often says exactly what's wrong.
+
+        **Never paste your provider's address, username, password or a stream link.**  Describe the channel instead ("a US sports channel in HEVC 4K").  TiviBro doesn't provide channels: if every app fails on a channel, the problem is the provider.
+  - type: dropdown
+    id: what
+    attributes:
+      label: What's wrong?
+      options:
+        - A channel won't start
+        - A channel starts, then freezes or buffers
+        - Picture but no sound, or sound but no picture
+        - Every channel fails
+        - Catch-up or a movie won't play
+        - The guide is empty or wrong for some channels
+        - The guide is wrong for every channel (times off, nothing loads)
+        - Event channels (PPV, sports passes) read wrong
+        - Something else
+    validations:
+      required: true
+  - type: textarea
+    id: details
+    attributes:
+      label: What happens?
+      description: What you see, any message on screen, and how long it takes.
+    validations:
+      required: true
+  - type: textarea
+    id: test
+    attributes:
+      label: Connection test result
+      description: Settings > Diagnostics > Run connection test.  Type the result or attach a photo.
+  - type: dropdown
+    id: source
+    attributes:
+      label: Playlist type
+      options:
+        - Xtream Codes
+        - M3U playlist
+        - Xtream Codes or M3U through a proxy (Dispatcharr, Threadfin, xTeVe...)
+    validations:
+      required: true
+  - type: textarea
+    id: stream
+    attributes:
+      label: About the channel
+      description: |
+        Without names or links: what kind of channel, its quality (4K, FHD, HD, SD), and what the info panel or Stream info in the quick menu shows (resolution, HEVC or H.264, HDR, Dolby Vision, audio).  For event channels, the channel name with the team names changed is perfect.
+  - type: textarea
+    id: tried
+    attributes:
+      label: What did you try?
+      description: For example Stream format HLS instead of MPEG-TS, a bigger Buffer profile, Player engine TV player, another version of the channel, or the same channel in another app.
+  - type: dropdown
+    id: elsewhere
+    attributes:
+      label: Does the same channel play in another app or device?
+      options:
+        - "Yes"
+        - "No"
+        - Didn't try
+  - type: input
+    id: version
+    attributes:
+      label: TiviBro version
+      description: Settings > Updates and about.
+      placeholder: 0.6.0-alpha.11
+    validations:
+      required: true
+  - type: input
+    id: tv
+    attributes:
+      label: TV model and webOS version
+      placeholder: OLED65C3 (2023), webOS 23
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Log
+      description: Settings > Diagnostics > turn on **Detailed logging**, play the channel again, then **View app log** and **View network helper log**.  Copy the lines around the problem or attach photos.  Check that no login or stream link is in it.
+      render: text
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send it
+      options:
+        - label: There are no logins, server addresses or stream links in this report.
+          required: true
+        - label: I ran the connection test.
+          required: false

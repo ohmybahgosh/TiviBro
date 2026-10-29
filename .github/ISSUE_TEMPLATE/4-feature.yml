@@ -1,0 +1,47 @@
+name: Idea or feature request
+description: Something TiviBro should do, or do better.
+title: "[Idea]: "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [roadmap](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/ROADMAP.md) and the [TiviMate comparison](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/TIVIMATE-PARITY.md) first; it may already be planned.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: The situation, not the solution yet.  "I watch the same five channels and scrolling to them takes ages."
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help?
+      description: How you'd like it to work, with the remote.  Which button, which screen.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - TV app
+        - Web editor
+        - Guide and EPG
+        - Playback
+        - Installing and updates
+        - Website or docs
+        - Something else
+  - type: textarea
+    id: elsewhere
+    attributes:
+      label: Seen it somewhere else?
+      description: TiviMate, another IPTV player, a cable box.  Screenshots help.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before you send it
+      options:
+        - label: I searched the open issues and this isn't one of them.
+          required: true

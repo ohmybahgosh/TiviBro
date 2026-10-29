@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: User guide
+    url: https://github.com/ohmybahgosh/TiviBro/blob/main/docs/USER-GUIDE.md
+    about: Every remote button, screen and setting explained, plus troubleshooting.  Most answers are here.
+  - name: Wiki
+    url: https://github.com/ohmybahgosh/TiviBro/wiki
+    about: The same guide, one page per topic, with installing and an FAQ.
+  - name: Security problem
+    url: https://github.com/ohmybahgosh/TiviBro/security/advisories/new
+    about: Please report security problems privately, not as a public issue.
