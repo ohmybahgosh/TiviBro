@@ -218,22 +218,41 @@ var App = (function () {
     Views.resume();
   }
 
-  /* Movies and Shows only appear when the provider actually offers them.  Two small category
-     requests in the background; the menu updates when they answer.  Not offered = hidden. */
+  /* Movies and Shows only appear when the provider actually offers them.  Small requests in the
+     background; the menu updates when they answer.  Not offered = hidden.  Some panels list
+     categories with nothing in them (a real provider had 41 show categories and no shows), so a
+     kind with categories also needs at least one title: up to three categories are asked on
+     their own (small answers), and only if all are empty is the whole list asked for, which is
+     then small too. */
   function checkVod() {
     var p = Store.playlist;
     if (p.type !== 'xtream') return;
-    var count = function (action) {
-      return U.getJSON(Source.api(p, action), 20000).then(function (j) { return Array.isArray(j) ? j.length : 0; }, function () { return null; });
+    var list = function (action, extra) {
+      return U.getJSON(Source.api(p, action, extra || ''), extra ? 20000 : 90000).then(function (j) { return Array.isArray(j) ? j : []; }, function () { return null; });
     };
-    Promise.all([count('get_vod_categories'), count('get_series_categories')]).then(function (r) {
-      if (r[0] === null && r[1] === null) return;               // could not tell: keep what we knew
-      var v = { movies: !!r[0], series: !!r[1], at: Date.now() };
-      var old = p.vod || {};
-      Log.info('app', 'Provider offers movies: ' + (v.movies ? 'yes (' + r[0] + ' categories)' : 'no') + ', shows: ' + (v.series ? 'yes (' + r[1] + ' categories)' : 'no'));
-      if (old.movies === v.movies && old.series === v.series) return;
-      p.vod = v; Store.upsertPlaylist(p);
-      Views.buildTabs();
+    function offered(cats, listAction) {
+      if (cats === null) return Promise.resolve(null);
+      if (!cats.length) return Promise.resolve(0);
+      var picks = [cats[0], cats[Math.floor(cats.length / 2)], cats[cats.length - 1]].filter(function (c, i, a) { return c && a.indexOf(c) === i; });
+      var i = 0;
+      function next() {
+        if (i >= picks.length) return list(listAction).then(function (all) { return all === null ? null : all.length; });
+        var c = picks[i++];
+        return list(listAction, '&category_id=' + encodeURIComponent(c.category_id)).then(function (items) { return items && items.length ? items.length : next(); });
+      }
+      return next();
+    }
+    Promise.all([list('get_vod_categories'), list('get_series_categories')]).then(function (c) {
+      if (c[0] === null && c[1] === null) return;               // could not tell: keep what we knew
+      return Promise.all([offered(c[0], 'get_vod_streams'), offered(c[1], 'get_series')]).then(function (r) {
+        var old = p.vod || {};
+        var v = { movies: r[0] === null ? !!old.movies : !!r[0], series: r[1] === null ? !!old.series : !!r[1], at: Date.now() };
+        var say = function (cats, n) { return cats === null ? 'could not tell' : !cats.length ? 'no' : n ? 'yes (' + cats.length + ' categories)' : n === 0 ? 'no (' + cats.length + ' categories, all empty)' : 'could not tell'; };
+        Log.info('app', 'Provider offers movies: ' + say(c[0], r[0]) + ', shows: ' + say(c[1], r[1]));
+        if (old.movies === v.movies && old.series === v.series) return;
+        p.vod = v; Store.upsertPlaylist(p);
+        Views.buildTabs();
+      });
     });
   }
 

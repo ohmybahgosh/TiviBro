@@ -72,6 +72,36 @@ function relayed(base, abs) {
   return base + '/x/' + u.protocol.replace(':', '') + '/' + u.host + (u.path || '/');
 }
 
+/* HLS playlists: links that start with "/" or carry their own host would leave the relay (a
+   root-relative "/hlsr/..." resolves to 127.0.0.1/hlsr/... and fails with 404; a full address
+   skips the helper and meets CORS).  Many Xtream panels answer .m3u8 with a redirect to a
+   tokenized edge server whose segments are exactly such links, so the helper rewrites them to
+   their relayed form.  Plain relative links already resolve through the relay and are left alone. */
+var HLS_MAX = 2 * 1024 * 1024;
+function isHlsRequest(path, ctype) { return /mpegurl/i.test(ctype || '') || /\.m3u8$/i.test(path || ''); }
+function rewriteHls(text, src, base) {
+  if (!/#EXT-X-(TARGETDURATION|STREAM-INF|MEDIA-SEQUENCE|MEDIA:|I-FRAME-STREAM-INF)/.test(text)) return null;
+  function fix(link) {
+    if (!/^(\/[^/]|https?:\/\/)/i.test(link)) return link;
+    var abs = URL_.resolve(src, link);
+    return /^https?:/i.test(abs) ? relayed(base, abs) : link;
+  }
+  var changed = false;
+  var out = text.split(/\r?\n/).map(function (line) {
+    var l = line.trim(), n;
+    if (!l) return line;
+    if (l.charAt(0) === '#') {
+      n = line.replace(/URI="([^"]+)"/g, function (m, u) { return 'URI="' + fix(u) + '"'; });
+      if (n !== line) changed = true;
+      return n;
+    }
+    n = fix(l);
+    if (n !== l) changed = true;
+    return n;
+  }).join('\n');
+  return changed ? out : null;
+}
+
 function create(opts) {
   opts = opts || {};
   var stats = { requests: 0, errors: 0, active: 0 };
@@ -102,7 +132,8 @@ function create(opts) {
     if (unz) headers['Accept-Encoding'] = 'gzip, deflate';      // the helper unzips, so ask for the smallest transfer
     else {
       if (req.headers.range) headers.Range = req.headers.range;
-      if (req.headers['accept-encoding']) headers['Accept-Encoding'] = req.headers['accept-encoding'];
+      // HLS playlists are read here (see rewriteHls), so ask for them unzipped.
+      if (req.headers['accept-encoding'] && !/\.m3u8$/i.test(path.split('?')[0])) headers['Accept-Encoding'] = req.headers['accept-encoding'];
     }
     var done = false, aborted = false, t0 = Date.now(), bytes = 0, rec = { m: req.method, u: redact(t), range: req.headers.range || undefined };
     function finish() {
@@ -148,6 +179,29 @@ function create(opts) {
         sync.on('error', function () { res.destroy(); });
         ur.pipe(sync).pipe(res);
         ur.on('end', function () { if (xfer) xfer.done = true; finish(); });
+        return;
+      }
+      if (!unz && code === 200 && req.method !== 'HEAD' && !req.headers.range && isHlsRequest(u.pathname, ur.headers['content-type']) &&
+          !(ur.headers['content-encoding'] && ur.headers['content-encoding'] !== 'identity') && !(+ur.headers['content-length'] > HLS_MAX)) {
+        var parts = [], size = 0, passed = false;
+        ur.on('data', function (d) {
+          if (passed) return;
+          parts.push(d); size += d.length;
+          if (size > HLS_MAX) {              // not a playlist after all: hand over what we have and stream the rest
+            passed = true; res.writeHead(code, h);
+            parts.forEach(function (p) { res.write(p); }); parts = null;
+            ur.pipe(res);
+          }
+        });
+        ur.on('end', function () {
+          if (!passed) {
+            var body = Buffer.concat(parts).toString('utf8'), fixed = rewriteHls(body, t, base);
+            if (fixed !== null) { rec.hlsRewritten = true; delete h['content-length']; h['content-type'] = h['content-type'] || 'application/vnd.apple.mpegurl'; }
+            res.writeHead(code, h);
+            res.end(fixed !== null ? fixed : Buffer.concat(parts));
+          }
+          finish();
+        });
         return;
       }
       if (!unz || code >= 300 || req.method === 'HEAD') {
@@ -202,4 +256,4 @@ function create(opts) {
   return { server: server, stats: stats, editor: editor };
 }
 
-module.exports = { create: create, target: target, relayed: relayed, log: log, redact: redact, LOG: LOG };
+module.exports = { create: create, target: target, relayed: relayed, rewriteHls: rewriteHls, log: log, redact: redact, LOG: LOG };

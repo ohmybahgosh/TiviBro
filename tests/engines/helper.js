@@ -84,6 +84,10 @@ var provider = http.createServer(function (req, res) {
     res.on('close', function () { clearInterval(iv); closedEarly = true; });
     return;
   }
+  if (p === '/ch.m3u8') {           // a panel's HLS playlist with root-relative and absolute links
+    res.writeHead(200, { 'Content-Type': 'application/vnd.apple.mpegurl' });
+    return res.end('#EXTM3U\n#EXT-X-TARGETDURATION:6\n#EXTINF:6.0,\n/hlsr/a.ts?t=1\n#EXTINF:6.0,\nb.ts\n#EXTINF:6.0,\nhttp://127.0.0.1:' + provider.address().port + '/abs/c.ts\n');
+  }
   if (p === '/hang') return;        // never answers
   res.writeHead(404); res.end('nope');
 });
@@ -149,6 +153,13 @@ step(function redirects(next) {
       ok('301 becomes 307', !e2 && r2.statusCode === 307 && r2.headers.location === B + '/x/http/' + P + '/plain', r2 && r2.statusCode + ' ' + r2.headers.location);
       next();
     });
+  });
+});
+step(function hlsLinks(next) {
+  request('GET', B + '/x/http/' + P + '/ch.m3u8', function (e, r, b) {
+    var l = String(b || '').split('\n');
+    ok('HLS playlist links are kept on the helper', !e && r.statusCode === 200 && l.indexOf(B + '/x/http/' + P + '/hlsr/a.ts?t=1') >= 0 && l.indexOf('b.ts') >= 0 && l.indexOf(B + '/x/http/' + P + '/abs/c.ts') >= 0, e ? e.message : l.slice(3).join(' '));
+    next();
   });
 });
 step(function userAgent(next) {

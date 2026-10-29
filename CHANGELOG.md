@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Tested against a real Xtream Codes provider (about 9,800 channels, 152 groups): the channel list loads in about 3 seconds, the provider's full XMLTV guide (84,000 programmes) in about 7 seconds, and channels start in 1 to 3.5 seconds with no page errors.  The test is `tests/real/xc.js`: it reads the login from a private file outside the repository and writes its report and screenshots there, with the username and password masked.
+- HLS fixed for providers that redirect to a streaming server: many Xtream panels answer a channel's .m3u8 with a redirect to a tokenized server whose playlist lists the video pieces as `/hlsr/...` links.  Through the helper those pointed at the TV itself and failed with 404, so the HLS stream format, and the HLS fallback when a channel won't play, never worked on such providers.  The helper now rewrites those links (and full addresses on other servers) to go through it.  Channels whose MPEG-TS version the player can't decode (Dolby audio or HEVC on some TVs) now fall back to HLS and play.  Tests: `tests/unit/proxy-hls.test.js`, and `tests/engines/helper.js` on Node 0.12 to 22.
+- Movies and Shows only show up when the provider has something in them.  A provider that lists show categories with no shows in them used to get an empty Shows tab; TiviBro now asks a few of the categories (small requests) and hides the tab when they are all empty.  An empty list says "This provider has no shows right now" instead of "Nothing here".
+
 ## 0.6.0 (alpha 8, 2026-10-29)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -276,7 +276,7 @@ var Vod = (function () {
       var cats = catList();
       var first = Math.max(0, cats.findIndex(function (c) { return c.count > 0; }));   // skip an empty My list
       catsVL.setItems(cats, first);
-      itemsVL.empty = 'Nothing here';
+      itemsVL.empty = data[k].items.length ? 'Nothing here' : 'This provider has no ' + (k === 'series' ? 'shows' : 'movies') + ' right now';
       itemsVL.setItems(itemsFor(cats[first].id), 0);
       setZone('items');
       showInfo();
