@@ -248,7 +248,84 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
   .shell{flex-direction:column} aside{width:auto;flex-direction:row;align-items:center;gap:10px;padding:10px;overflow-x:auto}
   nav.side{flex-direction:row} nav.side button span{display:none} .plpill,.sidefoot{display:none}
   .groups{width:44%} .two{grid-template-columns:1fr} .c .grp{display:none} .help .toc{columns:1}
+  .c .num{display:none} .c img,.c .noimg{width:44px} .c{gap:8px;padding:0 10px}
 }
+#navToggle,#gcBack,.c .tools [data-more],nav.side .mobonly,.asshort{display:none}
+/* Phones: a top bar with the page name that opens the page list, one pane at a time in Groups and
+   channels, bigger tap targets, and nothing wider than the screen. */
+@media (max-width:700px){
+  input[type=text],input[type=password],input[type=search],input[type=url],input[type=number],textarea,.dd > button{font-size:16px}
+  .login{margin:6vh 12px;padding:24px 20px}
+  aside{position:relative;padding:8px 10px;gap:8px;overflow:visible;border-bottom:1px solid var(--line)}
+  aside .brand{padding:0 4px;flex:1;min-width:0} aside .brand img{height:24px!important}
+  #navToggle{display:flex;align-items:center;gap:8px;max-width:62%;padding:8px 12px;background:var(--panel);border-color:var(--line)}
+  #navToggle span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #navToggle svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+  nav.side{display:none;position:absolute;top:100%;left:0;right:0;z-index:35;flex-direction:column!important;gap:2px;background:var(--side);border-bottom:1px solid var(--line);padding:8px;box-shadow:0 18px 40px rgba(0,0,0,.6);max-height:calc(100vh - 56px);overflow:auto}
+  body.navopen nav.side{display:flex}
+  nav.side button{padding:13px 12px}
+  nav.side button span{display:inline!important}
+  nav.side .mobonly{display:flex}
+  .phead{padding:14px 14px 10px} .phead h1{font-size:21px}
+  .scroll{padding:0 12px 28px}
+  .card{padding:14px;overflow-x:auto}
+  .grid{grid-template-columns:1fr!important}
+  .grid.stats{grid-template-columns:1fr 1fr!important;gap:10px}
+  .stat{padding:12px 14px} .stat .v{font-size:22px}
+  .note[data-tip]{padding-right:14px} .note .x{position:static;display:inline-block;margin:6px 0 0 -6px}
+  .gc .groups{width:auto;flex:1;border-right:none}
+  .gc .chans{display:none}
+  body.gc-chans .gc .groups{display:none}
+  body.gc-chans .gc .chans{display:flex}
+  #gcBack{display:inline-flex}
+  .ph{padding:10px 12px}
+  .g{padding:9px 8px 9px 4px} .g .grip{display:none}
+  .c{padding:0 8px;gap:6px} .c .num{display:none} .c img,.c .noimg{width:40px}
+  .c .tools [data-ren],.c .tools [data-add],.c .tools [data-rm]{display:none}
+  .c .tools [data-more]{display:inline-block}
+  .c .tools button{padding:8px 9px}
+  #cSearch{width:100%!important}
+  #cFilter,#cSort{width:auto!important;flex:1 1 140px}
+  .bulk button{padding:6px 10px}
+  .form{grid-template-columns:1fr}
+  .modal{padding:2vh 8px}
+  .modal .bh,.modal .bb{padding-left:14px;padding-right:14px}
+  .changebar{padding:8px 12px;gap:8px}
+  .changebar button{padding:9px 14px}
+  table.t{font-size:13px} table.t td,table.t th{padding:7px 6px}
+  .lclist{grid-template-columns:1fr;max-height:none}
+  .choices{grid-template-columns:1fr}
+  .toast{left:10px;right:10px;transform:none;bottom:90px;flex-wrap:wrap}
+  .help .toc{columns:1}
+  .brand .muted{display:none}
+  /* Pages scroll as a whole, so the title scrolls away instead of taking a third of the screen. */
+  .page:not(#p-gc){overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .page:not(#p-gc) .scroll{flex:none;overflow:visible}
+  #p-gc .phead p,#p-gc .phead .note{display:none}
+  body.gc-chans #p-gc .phead{display:none}
+  .gc .groups{min-width:0;width:100%} #gSearch{width:100%}
+  .c .grip{display:none}
+  .card button,.card .row > button{white-space:normal;text-align:left}
+  #kwText{flex:1 1 100%}
+  /* Lists that are tables on a computer become stacked rows. */
+  #mList table.t tr,#tDupes table.t tr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  #mList table.t th,#tDupes table.t th{display:none}
+  #mList table.t td,#tDupes table.t td{display:block;border:none;padding:0}
+  #mList table.t td:first-child,#tDupes table.t td:first-child{flex:1 1 100%;width:auto!important}
+  #mList table.t td:nth-child(2){flex:1 1 auto;min-width:0}
+  #tDupes table.t td:nth-child(2){flex:1 1 100%}
+  /* The change bar: what is waiting and Send automatically on one line, the buttons on the next. */
+  .changebar .lbl{flex:1 1 calc(100% - 120px);min-width:0;font-size:14px}
+  .changebar .cbdraft{display:none}
+  .changebar label{order:1;font-size:12px}
+  .changebar .aslong{display:none} .changebar .asshort{display:inline}
+  .changebar button{order:2;padding:8px 12px}
+  .changebar .grow{order:2}
+  #cbSend{margin-left:auto}
+}
+@media (max-width:360px){ .changebar{gap:6px} .changebar button{padding:6px 8px;font-size:13px} .changebar .lbl{font-size:13px} }
+/* Touch screens have no hover: show the row actions that otherwise appear under the mouse. */
+@media (hover:none){ .g .acts{display:flex} }
 </style>
 </head>
 <body>
@@ -265,6 +342,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
   <aside>
     <div class="brand"><img src="wordmark.png" alt="TiviBro" style="height:30px"><span class="muted" style="font-weight:500;font-size:14px;margin-top:6px">editor</span></div>
     <div class="plpill"><span class="muted">Editing</span><b id="plName"></b><span id="plMeta" class="muted"></span></div>
+    <button id="navToggle" type="button" aria-label="Pages" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span id="navCur">Overview</span></button>
     <nav class="side" id="nav">
       <button data-page="welcome" class="hidden"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9H6v-9H3z"/></svg><span>Welcome</span></button>
       <button data-page="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Overview</span></button>
@@ -276,6 +354,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
       <button data-page="history"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>Changes and restore points</span><em class="badge hidden" id="histBadge"></em></button>
       <button data-page="backup"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg><span>Backup and restore</span></button>
       <button data-page="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>Help</span></button>
+      <button class="mobonly" data-act="logout"><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg><span>Log out</span></button>
     </nav>
     <div class="sidefoot">
       <div id="status" class="status"><i></i><span>Connected</span></div>
@@ -289,7 +368,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 
     <!-- OVERVIEW -->
     <section class="page" id="p-home">
-      <div class="phead"><div><h1>Overview</h1><p>Tidy up what the TV shows, from your computer.</p></div></div>
+      <div class="phead"><div><h1>Overview</h1><p>Tidy up what the TV shows, from your computer or phone.</p></div></div>
       <div class="scroll">
         <div class="note">Changes you make here are drafts until you press <b>Send to TV</b> in the bar at the bottom.  Every change can be undone, and the TV keeps restore points.  <a href="#help/saving">Learn more</a></div>
         <div class="grid stats" id="stats"></div>
@@ -322,7 +401,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
         </section>
         <section class="chans">
           <div class="ph">
-            <div class="row"><h2 id="cTitle" style="margin:0;font-size:18px"></h2><span id="cCount" class="muted small"></span><span class="grow"></span>
+            <div class="row"><button id="gcBack" class="ghost small" type="button">‹ Groups</button><h2 id="cTitle" style="margin:0;font-size:18px"></h2><span id="cCount" class="muted small"></span><span class="grow"></span>
               <input id="cSearch" type="search" placeholder="Search all channels  ( / )" style="width:260px"></div>
             <div id="gNote" class="gnote hidden"></div>
             <div class="row">
@@ -519,7 +598,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
       <span class="lbl"><i></i><span id="cbText"></span><span id="cbDraft" class="cbdraft"></span></span>
       <button class="ghost small" id="cbReview">Review</button>
       <span class="grow"></span>
-      <label title="Send each change to the TV as soon as you make it"><input type="checkbox" class="sw" id="autoSend"> Send automatically</label>
+      <label title="Send each change to the TV as soon as you make it"><input type="checkbox" class="sw" id="autoSend"> <span class="aslong">Send automatically</span><span class="asshort">Auto-send</span></label>
       <button id="cbUndo" class="small" title="Undo (Ctrl+Z)">↶ Undo</button>
       <button id="cbDiscard" class="ghost danger small">Discard</button>
       <button id="cbSend" class="primary">Send to TV</button>
@@ -552,6 +631,7 @@ var dT = 0, dFirst = 0, dLast = '', dSeq = 0, dAck = 0, dAt = 0, draftsCache = n
 var FAV = 'c_fav', ALL = '__all';
 var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort'];
 var byKey = new Map(), byGroup = new Map(), guideName = new Map();
+var TOUCH = !!(window.matchMedia && matchMedia('(hover: none)').matches);   // phones and tablets: no hover, no drag and drop
 
 /* ---------- small helpers ---------- */
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
@@ -653,7 +733,7 @@ function dd(el, cfg) {
     });
     draw();
     act = items.findIndex(function (o) { return o.v === st.value; }); mark();
-    var b = btn.getBoundingClientRect(), w = Math.max(b.width, cfg.menuWidth || 0, 220);
+    var b = btn.getBoundingClientRect(), w = Math.min(Math.max(b.width, cfg.menuWidth || 0, 220), innerWidth - 16);
     m.style.width = w + 'px';
     m.style.left = Math.max(8, Math.min(b.left, innerWidth - w - 8)) + 'px';
     var below = innerHeight - b.bottom - 12, mh = m.offsetHeight;
@@ -1026,6 +1106,8 @@ function show(p, sub) {
   closeDD(); closeMenu();
   page = p;
   document.querySelectorAll('#nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.page === p); });
+  var nb = document.querySelector('#nav button[data-page="' + p + '"] span'); if (nb) $('navCur').textContent = nb.textContent;
+  if (typeof navOpen === 'function') navOpen(false);
   document.querySelectorAll('.page').forEach(function (s) { s.classList.toggle('hidden', s.id !== 'p-' + p); });
   if (p === 'gc') renderChannels(); if (p === 'guide') renderGuide(); if (p === 'names') renderPreview(); if (p === 'home') renderHome();
   if (p === 'tools') renderTools(); if (p === 'history') { renderHistory(); loadSnaps(); loadDrafts(); } if (p === 'help') renderHelp(sub);
@@ -1038,8 +1120,18 @@ function route() {
   if (D && !D.setup && p === 'welcome') p = 'home';
   show(p, h[1]);
 }
-window.addEventListener('hashchange', function () { if (D) route(); });
-$('nav').addEventListener('click', function (e) { var b = e.target.closest('button'); if (b) show(b.dataset.page); });
+window.addEventListener('hashchange', function () { if (D && !/^#k=/.test(location.hash)) route(); });
+$('nav').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.act === 'logout') { document.body.classList.remove('navopen'); $('logout').click(); return; }
+  show(b.dataset.page);
+});
+// Tablets show the pages as icons only: the name comes up as a tooltip and for screen readers.
+document.querySelectorAll('#nav button').forEach(function (b) { var t = b.querySelector('span'); if (t) { b.title = t.textContent; b.setAttribute('aria-label', t.textContent); } });
+// Phones: the page name in the top bar opens the list of pages.
+function navOpen(on) { document.body.classList.toggle('navopen', on); $('navToggle').setAttribute('aria-expanded', on ? 'true' : 'false'); }
+$('navToggle').addEventListener('click', function () { navOpen(!document.body.classList.contains('navopen')); });
+document.addEventListener('mousedown', function (e) { if (document.body.classList.contains('navopen') && !e.target.closest('#nav,#navToggle')) navOpen(false); }, true);
 
 /* ---------- modal ---------- */
 // buttons: [[label, className, onClick], …] shown in a footer.
@@ -1211,8 +1303,10 @@ $('glist').addEventListener('click', function (e) {
   }
   var r = t.closest('.g'); if (!r) return;
   curGroup = r.dataset.id; sel.clear(); $('cSearch').value = ''; query = '';
+  document.body.classList.add('gc-chans');            // phones: the channels take the screen
   renderGroups(); renderChannels(true);
 });
+$('gcBack').addEventListener('click', function () { document.body.classList.remove('gc-chans'); });
 $('glist').addEventListener('dragstart', function (e) { var r = e.target.closest('.g'); if (!r || r.dataset.id === ALL) return e.preventDefault(); dragId = r.dataset.id; e.dataTransfer.effectAllowed = 'move'; });
 $('glist').addEventListener('dragover', function (e) {
   var r = e.target.closest('.g'); if (!r || !dragId || r.dataset.id === ALL || isCustom(r.dataset.id) !== isCustom(dragId)) return;
@@ -1267,7 +1361,7 @@ function renderChannels(reset) {
   list = currentList();
   var g = realGroup();
   $('cTitle').textContent = query ? 'Search: "' + query + '"' : groupLabel(curGroup);
-  $('cCount').textContent = plural(list.length, 'channel') + (canDrag() ? '  ·  drag ⠿ to reorder' : '');
+  $('cCount').textContent = plural(list.length, 'channel') + (canDrag() && !TOUCH ? '  ·  drag ⠿ to reorder' : '');
   var sd = $('cSort')._dd;
   if (sd) {
     $('cSort').classList.toggle('hidden', !g);
@@ -1316,6 +1410,7 @@ function drawRows() {
         '<button class="ghost" data-vis title="' + (off ? 'Hidden.  Click to show on the TV.' : 'Shown.  Click to hide on the TV.') + '">' + (off ? '🚫' : '👁') + '</button>' +
         '<button class="ghost" data-add title="Copy or move to a group">＋</button>' +
         (g ? '<button class="ghost" data-rm title="Take out of this group">✕</button>' : '') +
+        '<button class="ghost" data-more title="More">⋯</button>' +
       '</span></div>');
   }
   sp.innerHTML = html.join('');
@@ -1334,7 +1429,27 @@ $('cspacer').addEventListener('click', function (e) {
   if (t.hasAttribute('data-ren')) { renaming = k; drawRows(); return; }
   if (t.hasAttribute('data-rm')) { takeOut(realGroup(), [k]); return; }
   if (t.hasAttribute('data-add')) { copyMoveDialog([k]); return; }
+  if (t.hasAttribute('data-more')) {
+    var g = realGroup();
+    popMenu(t, [['Rename', function () { renaming = k; drawRows(); }], ['Copy or move to a group…', function () { copyMoveDialog([k]); }],
+      g ? ['Take out of this group', function () { takeOut(g, [k]); }] : null]);
+  }
 });
+/* A small menu under a button (phones: the channel row's ⋯). */
+function popMenu(anchor, items) {
+  closeMenu();
+  var m = document.createElement('div'); m.className = 'menu'; m.id = 'menu';
+  items.filter(Boolean).forEach(function (it) {
+    var o = document.createElement('div'); o.className = 'pick'; o.textContent = it[0];
+    o.addEventListener('click', function () { closeMenu(); it[1](); });
+    m.appendChild(o);
+  });
+  document.body.appendChild(m);
+  var r = anchor.getBoundingClientRect(), w = m.offsetWidth, h = m.offsetHeight;
+  m.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + 'px';
+  m.style.top = (r.bottom + h + 8 > innerHeight ? Math.max(8, r.top - h - 4) : r.bottom + 4) + 'px';
+}
+document.addEventListener('mousedown', function (e) { var m = $('menu'); if (m && !m.contains(e.target)) closeMenu(); }, true);
 $('cspacer').addEventListener('keydown', function (e) { if (!e.target.hasAttribute('data-renbox')) return; if (e.key === 'Enter') finishRename(e.target.value); if (e.key === 'Escape') { renaming = null; drawRows(); } });
 $('cspacer').addEventListener('focusout', function (e) { if (e.target.hasAttribute('data-renbox')) finishRename(e.target.value); });
 function setRename(k, v) { var c = byKey.get(k); v = (v || '').trim(); if (!v || v === cleanName(c.n)) delete E.renames[k]; else E.renames[k] = v; }
@@ -2451,14 +2566,19 @@ document.addEventListener('click', function (e) { var t = e.target.dataset && e.
 window.addEventListener('resize', drawRows);
 /* The QR code on the TV (first-run tour) opens the editor already signed in: http://tv:port/#k=PASSWORD/tools.
    The password leaves the address bar at once. */
-var qrLogin = /^#k=([A-Za-z0-9-]{4,40})(?:\/(\w+))?$/.exec(location.hash);
-if (qrLogin) {
-  history.replaceState(null, '', '#' + (qrLogin[2] || 'home'));
-  api('/api/login', { method: 'POST', body: { password: qrLogin[1] } }).then(function (j) {
+function qrLogin() {
+  var m = /^#k=([A-Za-z0-9-]{4,40})(?:\/(\w+))?$/.exec(location.hash);
+  if (!m) return false;
+  history.replaceState(null, '', '#' + (m[2] || 'home'));
+  api('/api/login', { method: 'POST', body: { password: m[1] } }).then(function (j) {
     token = j.token; try { sessionStorage.setItem('tivibro.editor.token', token); } catch (e) {}
     boot();
   }).catch(function (err) { showLogin(err.message); });
-} else if (token) boot(); else showLogin('');
+  return true;
+}
+// Scanning the code again while the page is open only changes the address after the #.
+window.addEventListener('hashchange', qrLogin);
+if (!qrLogin()) { if (token) boot(); else showLogin(''); }
 </script>
 </body>
 </html>

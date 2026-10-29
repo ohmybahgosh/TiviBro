@@ -275,7 +275,7 @@ The logo library matches your channels to [iptv-org](https://github.com/iptv-org
 
 ## The web editor
 
-Turn on **Settings > Edit on a computer**.  The TV shows an address and a password; open it in any browser on your network.  Changes are drafts until you press **Send to TV**, and the TV picks them up in seconds.
+Turn on **Settings > Edit on a computer**.  The TV shows an address and a password; open it in any browser on your network, on a computer or a phone.  Changes are drafts until you press **Send to TV**, and the TV picks them up in seconds.
 
 <p align="center"><a href="docs/media/live-edit.mp4"><img src="docs/media/live-edit.gif" width="100%" alt="Hiding groups in the editor while the TV follows"></a></p>
 <p align="center"><sub>Switching off the UK, FR and DE groups on the computer, then sending: the TV's group list updates by itself.  <a href="docs/media/live-edit.mp4">MP4</a></sub></p>
@@ -288,6 +288,7 @@ Turn on **Settings > Edit on a computer**.  The TV shows an address and a passwo
 - **Smart match** finds the right guide channel for channels showing "No guide information".  You approve or decline each guess.
 - **Live guide download progress** on big XMLTV files: speed, percent and time left, on the computer and on the TV.
 - **Recommended free guide sources** by region, each with a one-click **Test**.
+- **Works on your phone.**  Scan the QR code in the TV's set-up tour, or open the address in any phone browser: a top bar for the pages, one pane at a time, and touch-sized controls.
 - **Logins never leave the TV.**  The editor only ever sees server names.
 
 <p align="center">
@@ -518,6 +519,7 @@ docs/             Architecture, decisions, roadmap, simulator guide, TiviMate pa
 | `npm test` | Unit tests: name cleaner, Smart clean-up engine, logo library and index, relay, web editor (including encrypted backups), library |
 | `npm run logos` | Build the channel logo index into `site/logos/` (the Website workflow does this on every deploy and every Monday) |
 | `npm run soak:tour` | The set-up tour driven with the remote in a real browser |
+| `npm run soak:editor-mobile` | The web editor on phones and tablets: every page fits, the page list, one pane at a time, menus and dialogs on screen |
 | `bash scripts/bump-version.sh X.Y.Z` | Set the version everywhere it appears |
 
 ### Demo media

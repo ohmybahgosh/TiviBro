@@ -14,6 +14,15 @@ Cleaning up hundreds of groups with a TV remote is painful.  The web editor does
 
 The editor switches off every time TiviBro closes.  After five wrong passwords it locks for a minute.
 
+**On a phone.**  The [set-up tour](The-set-up-tour)'s QR code opens the editor signed in; any phone browser works with the address and password too.  On a phone the page name sits in the top bar (tap it for the list of pages), **Groups and channels** shows the groups first and a group's channels on their own screen (**‹ Groups** goes back), and **⋯** on a channel has Rename, Copy or move and Take out.  Dragging to reorder needs a computer.
+
+<p align="center">
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-phone-tools.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-phone-tools.png" width="24%" alt="Smart clean-up on a phone"></a>
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-phone-channels.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-phone-channels.png" width="24%" alt="A group's channels on a phone"></a>
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-phone-channel-menu.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-phone-channel-menu.png" width="24%" alt="The ⋯ menu on a channel"></a>
+  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-phone-pages.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-phone-pages.png" width="24%" alt="The list of pages"></a>
+</p>
+
 <p align="center">
   <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor-on.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor-on.png" width="60%" alt="The address and password on the TV"></a>
 </p>

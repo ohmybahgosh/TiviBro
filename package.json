@@ -23,6 +23,7 @@
     "soak:drafts": "node tests/soak/drafts.js",
     "soak:events": "node tests/soak/events.js",
     "soak:tour": "node tests/soak/tour.js",
+    "soak:editor-mobile": "node tests/soak/editor-mobile.js",
     "logos": "node scripts/logos/build-index.js",
     "test:engines": "bash tests/engines/run.sh",
     "soak:backup": "node tests/soak/backup.js",
