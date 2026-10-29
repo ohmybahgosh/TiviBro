@@ -35,6 +35,7 @@ On a playlist's page:
 | **Reload guide now** | | Downloads the guide right away. |
 | **Guide last loaded**, each source, **Channels with guide data** | (information) | When the guide loaded, how many channels and programmes each source gave, and how many of your channels have a guide. |
 | **Assign guide to channels without one** | | Lists channels with no guide; pick one and search the guide for the right channel.  Also on any channel: **Hold OK > Assign guide…**. |
+| **Set-up tour** *(playlist in use)* | | Runs the [set-up tour](The-set-up-tour) again: countries, names, East or West, your city, event channels, clutter, logos and look.  Shows when you last applied it. |
 | **Channel name editor ›** | | Cleans up channel names (below). |
 | **Event channels ›** | | Reads pay-per-view and sports pass channels whose names carry the event and time (below). |
 | **Delete this playlist** | | Removes the playlist with its groups, favorites, hidden items and cached data.  Shown when you have more than one. |

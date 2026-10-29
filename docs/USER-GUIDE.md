@@ -2,7 +2,7 @@
 
 Everything TiviBro does, on the TV and from your computer.  Every picture here comes from a made-up demo provider, so the channel names are invented.
 
-**On the TV:** [First start](#first-start) · [The remote](#the-remote) · [The guide](#the-guide) · [Groups and the menu](#groups-and-the-menu) · [Watching fullscreen](#watching-fullscreen) · [Other versions of a channel](#other-versions-of-a-channel) · [Event channels](#event-channels-pay-per-view-and-sports-passes) · [Catch-up](#catch-up) · [Movies and shows](#movies-and-shows) · [Search](#search) · [Multiview](#multiview) · [Favorites, hiding and your own groups](#favorites-hiding-and-your-own-groups) · [Reminders](#reminders) · [Settings](#settings) · [Updates](#updates) · [Parental controls](#parental-controls)
+**On the TV:** [First start](#first-start) · [The set-up tour](#the-set-up-tour) · [Channel logos](#channel-logos) · [The remote](#the-remote) · [The guide](#the-guide) · [Groups and the menu](#groups-and-the-menu) · [Watching fullscreen](#watching-fullscreen) · [Other versions of a channel](#other-versions-of-a-channel) · [Event channels](#event-channels-pay-per-view-and-sports-passes) · [Catch-up](#catch-up) · [Movies and shows](#movies-and-shows) · [Search](#search) · [Multiview](#multiview) · [Favorites, hiding and your own groups](#favorites-hiding-and-your-own-groups) · [Reminders](#reminders) · [Settings](#settings) · [Updates](#updates) · [Parental controls](#parental-controls)
 
 **Every setting:** [Playback and buffering](#settings-playback-and-buffering) · [Remote control](#settings-remote-control) · [Playlists and guide](#settings-playlists-and-guide) · [Groups, sorting, hidden](#settings-groups-sorting-hidden) · [Guide, start screen, reminders](#settings-guide-start-screen-reminders) · [Appearance](#settings-appearance) · [Parental controls](#settings-parental-controls) · [Edit on a computer](#settings-edit-on-a-computer) · [Updates and about](#settings-updates-and-about) · [Diagnostics](#settings-diagnostics)
 
@@ -31,10 +31,76 @@ A brand-new TiviBro opens on **Add your playlist**.  You have two ways in:
 <p align="center"><a href="media/firstrun.mp4"><img src="media/firstrun.gif" width="100%" alt="The first screen, and setting up from a computer"></a></p>
 <p align="center"><sub><a href="media/firstrun.mp4">Watch the MP4</a></sub></p>
 
+Once your channels load, the [set-up tour](#the-set-up-tour) starts.
+
 Restoring a backup onto a fresh TV, start to finish:
 
 <p align="center"><a href="media/restore.mp4"><img src="media/restore.gif" width="100%" alt="Restoring a backup onto a brand-new TV"></a></p>
 <p align="center"><sub><a href="media/restore.mp4">Watch the MP4</a></sub></p>
+
+### The set-up tour
+
+Right after a new playlist connects, TiviBro shows what it has and walks you through making it yours, one screen at a time with the remote.  It only asks about what your playlist actually has, so a list with no local stations never shows the city step.  Nothing changes until the last screen, and a restore point is saved first, so the web editor can put everything back.
+
+<p align="center">
+  <a href="screenshots/tv-tour-welcome.png"><img src="screenshots/tv-tour-welcome.png" width="49%" alt="The tour's first screen: what the playlist has"></a>
+  <a href="screenshots/tv-tour-phone.png"><img src="screenshots/tv-tour-phone.png" width="49%" alt="Scan a code to tidy up on a phone"></a>
+</p>
+
+The first screen counts your channels, groups, countries, event channels, East and West copies, local cities, extra copies and whether there are movies and shows.  Then:
+
+- **Tidy up here, step by step** goes through the screens below.  The chip in the top corner keeps a running count ("Keeps 3,632 of 9,808 channels").
+- **Tidy up on a phone or computer** shows a QR code.  Scan it with your phone's camera and the web editor opens on [Smart clean-up](#smart-clean-up), already signed in.  The address and password are there too, for a computer.
+- **Skip, start watching** changes nothing.
+
+| Screen | What you pick |
+|---|---|
+| **Countries** | Each country and region in the list, biggest first, with how many channels it has.  The TV's own country is ticked; **Keep every country** and **Keep only** the biggest are one press.  Groups with no country (sports, events, 24/7) are kept unless you say otherwise. |
+| **Channel names** | Name clean-up on or off, group names too, and every rule, with your own channels shown before and after. |
+| **East or West?** | Keep East feeds, West feeds or both, and whether to hide groups named West (or East).  Examples from your list. |
+| **Your local channels** | Every city your provider's local groups carry, A to Z, with the networks in each.  **OK** ticks a city; ◀ ▶ jump between letters.  The other cities' stations are hidden in every local group. |
+| **Sports and pay-per-view** | [Event channels](#event-channels-pay-per-view-and-sports-passes): reading events from names, short names, Events by time, the time zone for names without one, and **Hide channels with nothing on**.  The next events are listed. |
+| **Clear the clutter** | Divider groups, empty groups, the same channel more than once (keep Full HD, the best, HD or SD), groups with words like PPV or Adult, and whether groups the provider adds later show up. |
+| **Channel logos** | The [logo library](#channel-logos), its style, and which logo wins when the playlist and the guide both have one, with logos it found for your channels. |
+| **Make it yours** | Accent colour, background, text size, start screen, turning on the last channel at launch, the preview in the list, and what happens when a channel stops working.  Colours change as you pick them. |
+| **All set** | How many channels and groups you keep and hide, **Apply and start watching**, and a few things worth knowing. |
+
+<p align="center">
+  <a href="screenshots/tv-tour-countries.png"><img src="screenshots/tv-tour-countries.png" width="32%" alt="Countries"></a>
+  <a href="screenshots/tv-tour-names.png"><img src="screenshots/tv-tour-names.png" width="32%" alt="Channel names"></a>
+  <a href="screenshots/tv-tour-feeds.png"><img src="screenshots/tv-tour-feeds.png" width="32%" alt="East or West"></a>
+</p>
+<p align="center">
+  <a href="screenshots/tv-tour-locals.png"><img src="screenshots/tv-tour-locals.png" width="32%" alt="Your local channels"></a>
+  <a href="screenshots/tv-tour-events.png"><img src="screenshots/tv-tour-events.png" width="32%" alt="Sports and pay-per-view"></a>
+  <a href="screenshots/tv-tour-clutter.png"><img src="screenshots/tv-tour-clutter.png" width="32%" alt="Clear the clutter"></a>
+</p>
+<p align="center">
+  <a href="screenshots/tv-tour-logos.png"><img src="screenshots/tv-tour-logos.png" width="32%" alt="Channel logos"></a>
+  <a href="screenshots/tv-tour-look.png"><img src="screenshots/tv-tour-look.png" width="32%" alt="Make it yours"></a>
+  <a href="screenshots/tv-tour-done.png"><img src="screenshots/tv-tour-done.png" width="32%" alt="All set"></a>
+</p>
+
+Everything the tour hides stays one press away: Settings > Groups, sorting, hidden, or hold **OK** on a channel.  Run it again any time from **Settings > Playlists and guide > your playlist > Set-up tour**.  It works on the same engine as the web editor's Smart clean-up, so both always agree.
+
+### Channel logos
+
+Providers often leave logos out, or send some that no longer load.  The **logo library** fills them in from two open projects:
+
+- **[iptv-org](https://github.com/iptv-org/database)**: each channel's own logo, for about 28,000 channels in 230 countries.
+- **[tv-logos](https://github.com/tv-logo/tv-logos)**: one matching style made for dark screens, for about 7,700 channels.
+
+TiviBro hosts no logo images.  It downloads a small list of where the logos are, only for the countries in your playlist, and each logo loads from its own project, the way your provider's logos do.  The list is kept on the TV for a week.
+
+Channels are matched by their guide id ("CNN.us"), then by their cleaned name in their own country, then by a local station's call sign ("WXYZ") or, for a local station with no logo of its own, its network.  Event channels are left alone, since their names are games.  A provider logo that fails to load is replaced by the library's.
+
+Turn it on in the set-up tour or in **Settings > Appearance > Logo library**:
+
+- **Off**: only the playlist's and the guide's logos.
+- **Fill in missing logos**: the library's logo for channels that have none.
+- **Use for every channel it knows**: the library's logo everywhere it has one, so the whole list matches.
+
+**Logo library style** picks **Matching set** (tv-logos) or **Original logos** (iptv-org); each falls back to the other.  On a real 9,800-channel playlist it found logos for about 3,600 channels.
 
 ### The remote
 
@@ -490,6 +556,7 @@ On a playlist's page:
 | **Reload guide now** | | Downloads the guide right away. |
 | **Guide last loaded**, each source, **Channels with guide data** | (information) | When the guide loaded, how many channels and programmes each source gave, and how many of your channels have a guide. |
 | **Assign guide to channels without one** | | Lists channels with no guide; pick one and search the guide for the right channel.  Also on any channel: **Hold OK > Assign guide…**. |
+| **Set-up tour** *(playlist in use)* | | Runs the [set-up tour](#the-set-up-tour) again: countries, names, East or West, your city, event channels, clutter, logos and look.  Shows when you last applied it. |
 | **Channel name editor ›** | | Cleans up channel names (below). |
 | **Event channels ›** | | Reads pay-per-view and sports pass channels whose names carry the event and time (below). |
 | **Delete this playlist** | | Removes the playlist with its groups, favorites, hidden items and cached data.  Shown when you have more than one. |
@@ -600,6 +667,9 @@ Colours, sizes and what's on screen.  Every change shows straight away.
 | **Text size** | Small · **Medium** · Large | In the guide and channel lists. |
 | **Panels over video** | Solid · **Normal** · See-through | How see-through the info panel, quick menu and channel list are in fullscreen. |
 | **Channel logos** | **From the playlist** · From the guide | Which logo to use when both have one. |
+| **Logo library** | **Off** · Fill in missing logos · Use for every channel it knows | Logos from iptv-org and tv-logos for channels with none, or for every channel.  See [Channel logos](#channel-logos).  The set-up tour offers *Fill in missing logos*. |
+| **Logo library style** *(library on)* | **Matching set** · Original logos | One style for dark screens (tv-logos), or each channel's own logo (iptv-org).  Each falls back to the other. |
+| **Logo library status** *(library on)* | | How many names it has, and for which countries. |
 | **Show clock** | **On** · Off | The clock in the top right corner. |
 | **Show the date with the clock** | On · **Off** | Adds the date beside the time. |
 | **Show channel numbers** | **On** · Off | Numbers beside channel names in lists and the guide. |
@@ -758,6 +828,8 @@ Reload the page, close the tab, or open the editor on another computer or your p
 </p>
 
 ### Smart clean-up
+
+The same engine as the TV's [set-up tour](#the-set-up-tour), with more room: pick per channel, see every group, undo any step.  The tour's QR code opens this page signed in.
 
 - **Keep only your countries** works out each group's country and keeps the ones you tick.  It reads codes at the start of group names ("US \| News", "[UK] Sports"), country words ("Canada Sports", "France Cinema", "Latino / Mexico"), the code most of a group's channels start with ("ARG \| ..."), and the divider group a group sits under ("⫘⫘⫘ CAN ⫘⫘⫘" then "TSN +").  Groups with no country, like sports and event groups, stay unless you tick **Also hide groups with no country**.
 - **Same channel, more than once** finds a channel in several qualities and keeps one (Full HD first is a good balance).  You can override any pick.

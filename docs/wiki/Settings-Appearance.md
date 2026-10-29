@@ -19,6 +19,9 @@ Colours, sizes and what's on screen.  Every change shows straight away.
 | **Text size** | Small · **Medium** · Large | In the guide and channel lists. |
 | **Panels over video** | Solid · **Normal** · See-through | How see-through the info panel, quick menu and channel list are in fullscreen. |
 | **Channel logos** | **From the playlist** · From the guide | Which logo to use when both have one. |
+| **Logo library** | **Off** · Fill in missing logos · Use for every channel it knows | Logos from iptv-org and tv-logos for channels with none, or for every channel.  See [Channel logos](Channel-logos).  The set-up tour offers *Fill in missing logos*. |
+| **Logo library style** *(library on)* | **Matching set** · Original logos | One style for dark screens (tv-logos), or each channel's own logo (iptv-org).  Each falls back to the other. |
+| **Logo library status** *(library on)* | | How many names it has, and for which countries. |
 | **Show clock** | **On** · Off | The clock in the top right corner. |
 | **Show the date with the clock** | On · **Off** | Adds the date beside the time. |
 | **Show channel numbers** | **On** · Off | Numbers beside channel names in lists and the guide. |

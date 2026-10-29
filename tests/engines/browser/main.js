@@ -105,6 +105,39 @@ var seq = [
         });
       }, 800);
     }));
+  },
+  // The first-run set-up tour: every step drawn and driven with the remote, the QR code drawn.
+  function tour(next) {
+    js('Tour.open({ first: true }); return Tour.step;', val(function (st) {
+      setTimeout(function () {
+        keys(['Down', 'Return'], function () {
+          setTimeout(function () {
+            js('return { qr: !!document.querySelector(".tour-qr svg"), w: document.querySelector(".tour-qr") ? document.querySelector(".tour-qr").offsetWidth : 0 };', val(function (q) {
+              step('set-up tour: the QR code for the phone is drawn', q && q.qr && q.w > 100, JSON.stringify(q));
+              shot('6-tour-phone', function () {
+                keys(['Escape', 'Up', 'Return'], function () {
+                  var seen = [];
+                  (function walk(n) {
+                    js('return Tour.step;', val(function (id) {
+                      if (seen.indexOf(id) < 0) seen.push(id);
+                      if (id === 'done' || n > 12) {
+                        js('var t = document.getElementById("viewSetup"); var r = t.querySelector(".tour-step.on"); return { steps: [].slice.call(t.querySelectorAll(".tour-step")).length, on: r && r.innerText, chip: (t.querySelector(".tour-chip") || {}).innerText };', val(function (v) {
+                          step('set-up tour: every step draws on this engine', id === 'done' && seen.length >= 6, seen.join(',') + ' ' + JSON.stringify(v));
+                          shot('7-tour-summary', function () { js('Tour.keys("back"); for (var i = 0; i < 12 && Tour.isOpen && Tour.step !== "welcome"; i++) Tour.go(-1); Tour.keys("back"); return Tour.isOpen;', val(function () { next(); })); });
+                        }));
+                        return;
+                      }
+                      if (id === 'countries') shot('6-tour-countries', function () {});
+                      js('Tour.go(1); return Tour.step;', val(function () { setTimeout(function () { walk(n + 1); }, 700); }));
+                    }));
+                  })(0);
+                });
+              });
+            }));
+          }, 2500);
+        });
+      }, 1500);
+    }));
   }
 ];
 

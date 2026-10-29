@@ -8,8 +8,9 @@ SVC_ID="$(node -p "require('$ROOT/service/services.json').id")"
 SVC_VER="$(node -p "require('$ROOT/service/package.json').version")"
 [ "$SVC_VER" = "$VERSION" ] || { echo "Version mismatch: app $VERSION, service $SVC_VER (run scripts/bump-version.sh)" >&2; exit 1; }
 case "$SVC_ID" in "$APP_ID".*) ;; *) echo "Service id $SVC_ID must start with $APP_ID." >&2; exit 1;; esac
-# The web editor (served by the helper) uses the same name clean-up engine as the app.
+# The web editor (served by the helper) uses the same name clean-up and Smart clean-up engines as the app.
 cp "$ROOT/app/js/names.js" "$ROOT/service/editor/names.js"
+cp "$ROOT/app/js/tidy.js" "$ROOT/service/editor/tidy.js"
 mkdir -p "$ROOT/dist"
 echo "Packaging $APP_ID $VERSION ${MIN:+(dev, unminified)}"
 ares ares-package $MIN -o "$ROOT/dist" "$ROOT/app" "$ROOT/service"

@@ -5,6 +5,8 @@
 - [First start](First-start)
 
 **On the TV**
+- [The set-up tour](The-set-up-tour)
+- [Channel logos](Channel-logos)
 - [The remote](The-remote)
 - [The guide](The-guide)
 - [Groups and the menu](Groups-and-the-menu)

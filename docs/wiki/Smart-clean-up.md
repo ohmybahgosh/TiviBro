@@ -2,6 +2,8 @@
 
 *Web editor: the web editor*
 
+The same engine as the TV's [set-up tour](The-set-up-tour), with more room: pick per channel, see every group, undo any step.  The tour's QR code opens this page signed in.
+
 - **Keep only your countries** works out each group's country and keeps the ones you tick.  It reads codes at the start of group names ("US \| News", "[UK] Sports"), country words ("Canada Sports", "France Cinema", "Latino / Mexico"), the code most of a group's channels start with ("ARG \| ..."), and the divider group a group sits under ("⫘⫘⫘ CAN ⫘⫘⫘" then "TSN +").  Groups with no country, like sports and event groups, stay unless you tick **Also hide groups with no country**.
 - **Same channel, more than once** finds a channel in several qualities and keeps one (Full HD first is a good balance).  You can override any pick.
 - **Hide by keyword** hides groups or channels with words like PPV or 24/7, with a preview.

@@ -157,6 +157,8 @@ var App = (function () {
         if (Store.settings.active !== test.id) Store.usePlaylist(test.id);
         Settings.reset();
         start(data, false);
+        // A new playlist: the set-up tour (countries, names, East or West, city, logos, look).
+        if (!editing) Tour.open({ first: true });
       }).catch(function (e) {
         msg.className = 'msg err';
         msg.textContent = (e.message || String(e)) + '   Press Test connection for details.';
@@ -204,6 +206,7 @@ var App = (function () {
   function start(data, fromCache) {
     Source.setTz(data.tz); Events.setProviderTz(data.tz);
     Library.set(data);
+    Logos.load(data);
     Vod.reset();
     if (!ready) { Views.init(); ready = true; }
     window.__tbBooted = true;              // compat.js shows an error screen if errors stop the start
@@ -264,6 +267,7 @@ var App = (function () {
       Store.idbSet(cacheKey(p), data);
       Source.setTz(data.tz); Events.setProviderTz(data.tz);
       Library.set(data);
+      Logos.load(data);
       Views.refreshLists(true);
       if (manual) U.toast(Library.count() + ' channels loaded');
     }).catch(function (e) { if (manual) U.toast(e.message || 'Reload failed', 4000); });

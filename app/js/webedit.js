@@ -433,6 +433,7 @@ var WebEdit = (function () {
 
   return {
     start: start, stop: stop, restart: restart, resume: resume, newPassword: newPassword, password: password, port: port, PORTS: PORTS,
+    snap: function (name) { return snap('named', name); },
     get on() { return on; }, get status() { return status; },
     set onStatus(fn) { onStatus = fn; },
     addresses: function () { return status && status.ips && status.ips.length ? status.ips.map(function (ip) { return 'http://' + ip + ':' + status.port; }) : []; }

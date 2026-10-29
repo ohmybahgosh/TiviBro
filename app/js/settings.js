@@ -189,6 +189,7 @@ var Settings = (function () {
       }
     }
     out.push(head('Channel names'));
+    if (active) out.push(action('Set-up tour', 'Countries, channel names, East or West, your city, event channels, clutter, logos and look, one screen at a time.', function () { Tour.open({ from: 'settings' }); }, function () { return p.tour > 0 ? 'done ' + when(p.tour) : '›'; }));
     out.push(page('Channel name editor', p.names && p.names.enabled ? 'On' : 'Off', 'Channel name editor', function () { return namesPage(p); }));
     out.push(page('Event channels', p.events && p.events.on === false ? 'Off' : 'On', 'Event channels', function () { return eventsPage(p); }));
     if (s.playlists.length > 1) {
@@ -461,6 +462,15 @@ var Settings = (function () {
     out.push(choice('Text size', 'Guide and channel lists.', ['s', 'm', 'l'], ['Small', 'Medium', 'Large'], function () { return s.textSize || 'm'; }, function (v) { s.textSize = v; Views.applyLook(); save(); }));
     out.push(choice('Panels over video', 'How see-through the info panel, quick menu and channel list are in fullscreen.', ['l', 'm', 'h'], ['Solid', 'Normal', 'See-through'], function () { return s.overlay || 'm'; }, function (v) { s.overlay = v; Views.applyLook(); save(); }));
     out.push(choice('Channel logos', 'Which logo to use when both the playlist and the guide have one.', ['playlist', 'guide'], ['From the playlist', 'From the guide'], function () { return s.logoPref === 'guide' ? 'guide' : 'playlist'; }, function (v) { s.logoPref = v; save(); relist(); }));
+    out.push(choice('Logo library', 'Logos from two open projects, iptv-org and tv-logos, matched to your channels by guide id, name and country.  TiviBro hosts no images: each logo loads from its project.',
+      ['off', 'fill', 'all'], ['Off', 'Fill in missing logos', 'Use for every channel it knows'], function () { return s.logoLib || 'off'; },
+      function (v) { s.logoLib = v; save(true); Logos.load(L.data).then(function () { build(); }); relist(); }));
+    if (s.logoLib && s.logoLib !== 'off') {
+      out.push(choice('Logo library style', 'Matching set: one clean style for dark screens (tv-logos).  Original: each channel\'s own logo (iptv-org).  Each falls back to the other.',
+        ['set', 'original'], ['Matching set', 'Original logos'], function () { return s.logoStyle === 'original' ? 'original' : 'set'; }, function (v) { s.logoStyle = v; save(); relist(); }));
+      var ls = Logos.status;
+      out.push(info('Logo library status', ls.state === 'ready' ? ls.entries + ' names for ' + ls.countries.join(', ') : ls.state === 'loading' ? 'loading' : ls.state === 'error' ? 'not reachable: ' + ls.error : 'off'));
+    }
     out.push(toggle('Show clock', '', function () { return s.showClock; }, function (v) { s.showClock = v; Views.applyLook(); save(); }));
     out.push(toggle('Show the date with the clock', '', function () { return !!s.clockDate; }, function (v) { s.clockDate = v; UI.clock(); save(); }));
     out.push(toggle('Show channel numbers', '', function () { return s.showNumbers; }, function (v) { s.showNumbers = v; Store.saveSettings(); relist(); build(); }));
@@ -673,5 +683,6 @@ var Settings = (function () {
     build();
   }
 
-  return { open: open, assignGuide: assignGuide, reset: function () { stack = []; sel = 0; } };
+  return { open: open, assignGuide: assignGuide, reset: function () { stack = []; sel = 0; },
+    LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

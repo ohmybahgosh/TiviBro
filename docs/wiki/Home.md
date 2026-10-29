@@ -12,7 +12,8 @@ Welcome to the TiviBro wiki.  It explains every screen and every setting on the 
 
 | | |
 |---|---|
-| 🚀 **New to TiviBro?** | [Installing](Installing), then [First start](First-start) |
+| 🚀 **New to TiviBro?** | [Installing](Installing), then [First start](First-start) and [The set-up tour](The-set-up-tour) |
+| 🖼️ **Channels without logos?** | [Channel logos](Channel-logos) |
 | 🎮 **Which button does what?** | [The remote](The-remote) |
 | 📺 **Watching TV** | [The guide](The-guide) · [Watching fullscreen](Watching-fullscreen) · [Catch-up](Catch-up) · [Multiview](Multiview) |
 | 🎬 **Movies and shows** | [Movies and shows](Movies-and-shows) · [Search](Search) |
@@ -31,6 +32,8 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 
 | | |
 |---|---|
+| 🧭 **A set-up tour built from your own playlist** | Right after you connect, TiviBro counts what your list has and asks only about that: the countries in it, East or West, the cities its local groups carry, its event channels, its duplicates.  A running count shows what you'll keep.  Scan the QR code instead and the web editor opens on your phone, signed in. |
+| 🖼️ **Fills in missing logos, without hosting a single one** | A small index points at iptv-org's and tv-logos' own logos.  Matched by guide id, cleaned name and country, and local call sign; a broken provider logo is swapped too.  Pick each channel's own logo or one matching style for dark screens. |
 | 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
 | 🖥️ **A full editor on your computer** | Clean up 10,000 channels with a keyboard and mouse instead of a remote: hide, sort, rename, copy and move, then **Send to TV**.  Unsent work is autosaved on the TV within seconds, with a version history, so a refresh never costs you an hour. |
 | 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
@@ -53,6 +56,9 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | Hide channels with nothing on | ✅ | ❌ |
 | Pick your city for every local channel group at once | ✅ | ❌ One group at a time |
 | Keep East or West feeds in one step | ✅ | ❌ |
+| Guided set-up built from your playlist | ✅ Countries, feeds, city, events, logos, look | ❌ |
+| Set up by scanning a QR code with your phone | ✅ | ❌ |
+| Fills in missing channel logos | ✅ Two open logo libraries, two styles | ❌ |
 | Recording | Not yet | ✅ Premium |
 
 <sub>TiviMate column from its own site and public guides, October 2026.  TiviMate is a great app; this is what TiviBro adds.</sub>

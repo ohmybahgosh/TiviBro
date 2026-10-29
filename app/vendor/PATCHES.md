@@ -8,3 +8,7 @@ throwing "Cannot read properties of null (reading 'notifyBufferedPositionChanged
 - `_onMSEUpdateEnd` (two copies): `this._config&&…`, `this._loading_controller&&…`
 
 Re-apply after upgrading mpegts.js.  `hls.min.js` (1.5.20) is unmodified.
+
+## qrcode.js
+
+qrcode-generator 2.0.4 by Kazuhiko Arase (MIT), `dist/qrcode.js` from npm, unchanged.  Draws the QR code on the TV's first-run tour that opens the web editor on a phone.

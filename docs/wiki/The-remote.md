@@ -37,4 +37,4 @@ Buttons can be remapped under **Settings > Remote control**, including keys Tivi
 
 ---
 
-← [First start](First-start)  ·  [Home](Home)  ·  [The guide](The-guide) →
+← [Channel logos](Channel-logos)  ·  [Home](Home)  ·  [The guide](The-guide) →

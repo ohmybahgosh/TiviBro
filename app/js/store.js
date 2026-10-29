@@ -59,6 +59,9 @@ var Store = (function () {
     twoLineNames: false,        // channel names may wrap to two lines
     showCatchupMark: true,      // ↺ marks for catch-up channels and programmes
     logoPref: 'playlist',       // playlist | guide
+    logoLib: 'off',             // off | fill | all  logos from the open logo projects (logos.js)
+    logoStyle: 'set',           // set (tv-logos, one style) | original (iptv-org)
+    logoBase: '',               // logo index address; empty = tivibro.app/logos/
     blackSwitch: false,         // hide the old picture while the next channel tunes
     backups: 'auto',            // a channel that stops: auto (switch to another version) | ask | off
     osdOnZap: true,             // info panel when switching channels

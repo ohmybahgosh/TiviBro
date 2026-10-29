@@ -50,6 +50,8 @@ TiviBro plays your own IPTV subscription (Xtream Codes or M3U with XMLTV) on LG 
 | ⏪ **Catch-up done right** | Rewind the guide into the past and replay what you missed, or restart the show you just tuned into. |
 | 🎬 **Movies and shows** | Your provider's VOD with posters, seasons, episodes, My list and resume. |
 | 🧩 **Multiview** | Two channels side by side (four on TVs that can take it). |
+| 🧭 **Set up in two minutes** | A new playlist starts a tour that shows what it has (countries, East and West copies, local cities, event channels, duplicates) and tidies it with the remote, or with your phone by scanning a code. |
+| 🖼️ **Logos for every channel** | Missing logos filled in from two open logo projects, matched by guide id, name, country and call sign.  Or one matching style for the whole list. |
 | 🖥️ **A real editor** | Hide, sort, rename, copy and match guides for hundreds of channels from any browser.  Drafts, undo and restore points. |
 | 🔒 **Locked backups** | Everything in one AES-256-GCM file.  Restore onto a brand-new TV straight from the first screen. |
 | 🔁 **Backup versions** | Playlists often carry a channel in FHD, HD and SD.  TiviBro tags each copy, lets you switch between them, and if one dies it moves to the next by itself and tells you. |
@@ -67,6 +69,8 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 
 | | |
 |---|---|
+| 🧭 **A set-up tour built from your own playlist** | Right after you connect, TiviBro counts what your list has and asks only about that: the countries in it, East or West, the cities its local groups carry, its event channels, its duplicates.  A running count shows what you'll keep.  Scan the QR code instead and the web editor opens on your phone, signed in. |
+| 🖼️ **Fills in missing logos, without hosting a single one** | A small index points at iptv-org's and tv-logos' own logos.  Matched by guide id, cleaned name and country, and local call sign; a broken provider logo is swapped too.  Pick each channel's own logo or one matching style for dark screens. |
 | 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
 | 🖥️ **A full editor on your computer** | Clean up 10,000 channels with a keyboard and mouse instead of a remote: hide, sort, rename, copy and move, then **Send to TV**.  Unsent work is autosaved on the TV within seconds, with a version history, so a refresh never costs you an hour. |
 | 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
@@ -89,6 +93,9 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | Hide channels with nothing on | ✅ | ❌ |
 | Pick your city for every local channel group at once | ✅ | ❌ One group at a time |
 | Keep East or West feeds in one step | ✅ | ❌ |
+| Guided set-up built from your playlist | ✅ Countries, feeds, city, events, logos, look | ❌ |
+| Set up by scanning a QR code with your phone | ✅ | ❌ |
+| Fills in missing channel logos | ✅ Two open logo libraries, two styles | ❌ |
 | Recording | Not yet | ✅ Premium |
 
 <sub>TiviMate column from its own site and public guides, October 2026.  TiviMate is a great app; this is what TiviBro adds.</sub>
@@ -240,6 +247,32 @@ Providers often write the whole event into the channel name and leave the guide 
 </tr>
 </table>
 
+<table>
+<tr>
+<td width="58%"><a href="docs/screenshots/tv-tour-welcome.png"><img src="docs/screenshots/tv-tour-welcome.png" width="100%" alt="The set-up tour"></a></td>
+<td width="42%" valign="top">
+
+### A set-up tour from your own playlist
+
+Connect, and TiviBro shows what your list holds, then walks you through it: the countries to keep, clean names, East or West, your city's local stations, sports and pay-per-view, the clutter, logos and colours.  It only asks about what your playlist has, keeps a running count, and changes nothing until **Apply**.  Or scan the code and finish on your phone.  [More](docs/USER-GUIDE.md#the-set-up-tour)
+
+</td>
+</tr>
+</table>
+
+<table>
+<tr>
+<td width="58%"><a href="docs/screenshots/tv-tour-logos.png"><img src="docs/screenshots/tv-tour-logos.png" width="100%" alt="Channel logos from the logo library"></a></td>
+<td width="42%" valign="top">
+
+### Logos for channels that have none
+
+The logo library matches your channels to [iptv-org](https://github.com/iptv-org/database) and [tv-logos](https://github.com/tv-logo/tv-logos) by guide id, name and country, and call sign for local stations.  Fill in only what's missing, or use one matching style for every channel.  TiviBro hosts no images: each logo loads from its project.  [More](docs/USER-GUIDE.md#channel-logos)
+
+</td>
+</tr>
+</table>
+
 ## The web editor
 
 Turn on **Settings > Edit on a computer**.  The TV shows an address and a password; open it in any browser on your network.  Changes are drafts until you press **Send to TV**, and the TV picks them up in seconds.
@@ -276,6 +309,23 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
 <sub>Click any screenshot to open it full size.</sub>
 
 <details open>
+<summary><b>The set-up tour</b></summary>
+<p align="center">
+  <a href="docs/screenshots/tv-tour-welcome.png"><img src="docs/screenshots/tv-tour-welcome.png" width="32%" alt="What your playlist has"></a>
+  <a href="docs/screenshots/tv-tour-countries.png"><img src="docs/screenshots/tv-tour-countries.png" width="32%" alt="Countries"></a>
+  <a href="docs/screenshots/tv-tour-names.png"><img src="docs/screenshots/tv-tour-names.png" width="32%" alt="Channel names"></a>
+  <a href="docs/screenshots/tv-tour-feeds.png"><img src="docs/screenshots/tv-tour-feeds.png" width="32%" alt="East or West"></a>
+  <a href="docs/screenshots/tv-tour-locals.png"><img src="docs/screenshots/tv-tour-locals.png" width="32%" alt="Your local channels"></a>
+  <a href="docs/screenshots/tv-tour-events.png"><img src="docs/screenshots/tv-tour-events.png" width="32%" alt="Sports and pay-per-view"></a>
+  <a href="docs/screenshots/tv-tour-clutter.png"><img src="docs/screenshots/tv-tour-clutter.png" width="32%" alt="Clear the clutter"></a>
+  <a href="docs/screenshots/tv-tour-logos.png"><img src="docs/screenshots/tv-tour-logos.png" width="32%" alt="Channel logos"></a>
+  <a href="docs/screenshots/tv-tour-look.png"><img src="docs/screenshots/tv-tour-look.png" width="32%" alt="Make it yours"></a>
+  <a href="docs/screenshots/tv-tour-done.png"><img src="docs/screenshots/tv-tour-done.png" width="32%" alt="All set"></a>
+  <a href="docs/screenshots/tv-tour-phone.png"><img src="docs/screenshots/tv-tour-phone.png" width="32%" alt="Scan to set up on your phone"></a>
+</p>
+</details>
+
+<details>
 <summary><b>Guide and live TV</b></summary>
 <p align="center">
   <a href="docs/screenshots/tv-guide.png"><img src="docs/screenshots/tv-guide.png" width="32%" alt="Guide"></a>
@@ -465,7 +515,9 @@ docs/             Architecture, decisions, roadmap, simulator guide, TiviMate pa
 | `npm run inspect` | DevTools for the app on the TV (`bash scripts/inspect.sh -s` for the service) |
 | `npm run serve` | Run the app in a desktop browser at http://localhost:8078 with the dev relay |
 | `npm run lint` | Syntax-check every JS and JSON file |
-| `npm test` | Unit tests: name cleaner, relay, web editor (including encrypted backups), library |
+| `npm test` | Unit tests: name cleaner, Smart clean-up engine, logo library and index, relay, web editor (including encrypted backups), library |
+| `npm run logos` | Build the channel logo index into `site/logos/` (the Website workflow does this on every deploy and every Monday) |
+| `npm run soak:tour` | The set-up tour driven with the remote in a real browser |
 | `bash scripts/bump-version.sh X.Y.Z` | Set the version everywhere it appears |
 
 ### Demo media
@@ -497,12 +549,13 @@ The [Release workflow](.github/workflows/release.yml) then runs the tests, build
 - The web editor is off at every start, needs the password shown on the TV, and locks out after repeated wrong tries.
 - Backups are always encrypted with a passphrase you choose.  Without it the file cannot be opened.
 - Logs mask usernames and passwords.
+- The logo library, when you turn it on, downloads lists of logo addresses from tivibro.app, one per country in your playlist, then each logo from its project.  Only the country is in the request: no channel names, logins or anything else from your playlist.
 
 ## Credits
 
 Made by **[OhMyBahGosh](https://github.com/ohmybahgosh)**.
 
-Playback uses [hls.js](https://github.com/video-dev/hls.js) and [mpegts.js](https://github.com/xqq/mpegts.js).  Thanks to the [webOS Homebrew](https://www.webosbrew.org/) community.
+Playback uses [hls.js](https://github.com/video-dev/hls.js) and [mpegts.js](https://github.com/xqq/mpegts.js).  QR codes by [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator).  Channel logos in the logo library come from [iptv-org/database](https://github.com/iptv-org/database) and [tv-logo/tv-logos](https://github.com/tv-logo/tv-logos), loaded from those projects; the logos belong to their channels.  Thanks to the [webOS Homebrew](https://www.webosbrew.org/) community.
 
 TiviBro is an independent project.  It is not affiliated with LG Electronics or with TiviMate; those names belong to their owners.
 

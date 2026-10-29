@@ -25,3 +25,10 @@
 .nogap .qp-recent > * + *{margin-left:14px}
 .nogap .qp-ch > * + *{margin-top:6px}
 .nogap .gchips > * + *{margin-top:5px}
+.nogap .tour-foot > * + *{margin-left:4px}
+.nogap .tour-stats > *{margin-right:18px;margin-bottom:18px}
+.nogap .tour-stats{margin-bottom:-18px}
+.nogap .tour-logo-row > *{margin-right:18px;margin-bottom:18px}
+.nogap .tour-logo-row{margin-bottom:-18px}
+.nogap .tour-logo > * + *{margin-top:10px}
+.nogap .tour-remote-box > * + *{margin-left:56px}

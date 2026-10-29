@@ -75,14 +75,27 @@ var Views = (function () {
     row.classList.toggle('hid', !!g.hidden);
   }
 
-  // Logo choice (Settings > Appearance): the playlist's logo or the guide's, falling back to the other.
-  function logoOf(c) { var g = Epg.icon(Epg.epgId(c)); return Store.settings.logoPref === 'guide' ? (g || c.logo) : (c.logo || g); }
+  // Logo choice (Settings > Appearance): the playlist's logo or the guide's, falling back to the other,
+  // and the logo library (logos.js) for channels with neither, or for every channel it knows.
+  function ownLogo(c) { var g = Epg.icon(Epg.epgId(c)); return Store.settings.logoPref === 'guide' ? (g || c.logo) : (c.logo || g); }
+  function logoOf(c) {
+    var lib = Logos.mode();
+    if (lib === 'all') return Logos.url(c) || ownLogo(c);
+    return ownLogo(c) || (lib === 'fill' ? Logos.url(c) : '');
+  }
+  // A logo that fails to load: try the helper, then the library's logo, then hide it.
+  function logoFailed(img, c) {
+    if (Net.retryImage(img)) return;
+    var alt = c && Logos.mode() !== 'off' ? Logos.url(c) : '';
+    if (alt && img._alt !== alt && img.src !== alt) { img._alt = alt; img.src = alt; return; }
+    img.style.visibility = 'hidden';
+  }
 
   function renderChan(row, c) {
     if (!row._n) {
       row._num = U.el('span', 'num'); row._img = U.el('img', 'logo');
       row._img.decoding = 'async';
-      row._img.onerror = function () { if (!Net.retryImage(this)) this.style.visibility = 'hidden'; };
+      row._img.onerror = function () { logoFailed(this, row._c); };
       var box = U.el('div', 'txt');
       row._n = U.el('span', 'name'); row._s = U.el('span', 'sub'); row._p = U.el('div', 'pbar'); row._pi = U.el('i');
       row._p.appendChild(row._pi);
@@ -93,6 +106,7 @@ var Views = (function () {
     var showNum = Store.settings.showNumbers;
     row._num.textContent = showNum ? c.num : '';
     row._num.style.display = showNum ? '' : 'none';
+    row._c = c;
     var lg = logoOf(c);
     if (row._logo !== lg) {
       row._logo = lg;
@@ -1189,7 +1203,7 @@ var Views = (function () {
       var r1 = U.el('div', 'qp-recent');
       qp.rows[1].forEach(function (it, i) {
         var x = it.ch, b = U.el('div', 'qp-ch' + (qp.row === 1 && qp.col === i ? ' focus' : '') + (x.k === c.k ? ' on' : ''));
-        var lg = logoOf(x); if (lg) { var im = U.el('img'); im.src = lg; im.onerror = function () { if (!Net.retryImage(this)) this.remove(); }; b.appendChild(im); }
+        var lg = logoOf(x); if (lg) { var im = U.el('img'); im.src = lg; im._c = x; im.onerror = function () { logoFailed(this, this._c); }; b.appendChild(im); }
         b.appendChild(U.el('span', 'nm', L.name(x)));
         var n2 = Epg.nowNext(x); b.appendChild(U.el('span', 'pg', n2 && n2.now ? n2.now.t : L.groupName(x.g)));
         hook(b, 1, i);
@@ -1326,7 +1340,7 @@ var Views = (function () {
   return {
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, playVod: playVod,
-    QP_BUTTONS: QP_BUTTONS, logoOf: logoOf, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    QP_BUTTONS: QP_BUTTONS, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; },
     restoreKeys: function () { UI.setHandler(full ? fullKeys : liveKeys); },
@@ -1361,7 +1375,7 @@ var Guide = (function () {
     for (var i = 0; i < VIS; i++) {
       var r = U.el('div', 'grow'), ch = U.el('div', 'gch'), pr = U.el('div', 'gprogs');
       ch.appendChild(U.el('span', 'num'));
-      var img = U.el('img', 'logo'); img.decoding = 'async'; img.onerror = function () { if (!Net.retryImage(this)) this.style.visibility = 'hidden'; }; ch.appendChild(img);
+      var img = U.el('img', 'logo'); img.decoding = 'async'; img.onerror = function () { Views.logoFailed(this, this._c); }; ch.appendChild(img);
       ch.appendChild(U.el('span', 'n'));
       var chips = U.el('span', 'gchips'), cuEl = U.el('span', 'cu'), qEl = U.el('span', 'qtag');
       chips.appendChild(cuEl); chips.appendChild(qEl); ch.appendChild(chips);
@@ -1515,6 +1529,7 @@ var Guide = (function () {
       r.qEl.textContent = qt;
       r.qEl.style.display = qt ? '' : 'none';
     }
+    r.img._c = c;
     if (r.img._src !== lg) { r.img._src = lg; r.img.style.visibility = lg ? 'visible' : 'hidden'; if (lg) r.img.src = lg; }
     var locked = !Parental.blockedOk(c);
     var l = locked ? [] : Epg.request(c), t1 = t0 + WIN, n = 0, nowT = Date.now();

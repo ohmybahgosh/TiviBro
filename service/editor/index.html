@@ -529,6 +529,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 <div id="toast" class="toast hidden"></div>
 
 <script src="names.js"></script>
+<script src="tidy.js"></script>
 <script>
 'use strict';
 /* TiviBro web editor.
@@ -1708,24 +1709,8 @@ $('mList').addEventListener('click', function (e) {
 });
 
 /* ---------- smart matching ---------- */
-var STOP = { hd: 1, fhd: 1, uhd: 1, sd: 1, '4k': 1, '8k': 1, hevc: 1, h264: 1, h265: 1, raw: 1, backup: 1, bk: 1, vip: 1, hq: 1, lq: 1, fps: 1, '50fps': 1, '60fps': 1, '1080p': 1, '720p': 1, '1080': 1, '720': 1, live: 1, channel: 1, the: 1, tv: 1 };
-var COUNTRY = { us: 'us', usa: 'us', uk: 'uk', gb: 'uk', ca: 'ca', can: 'ca', au: 'au', nz: 'nz', ie: 'ie', de: 'de', ger: 'de', fr: 'fr', es: 'es', it: 'it', pt: 'pt', nl: 'nl', be: 'be', ch: 'ch', at: 'at', se: 'se', no: 'no', dk: 'dk', fi: 'fi', pl: 'pl', br: 'br', mx: 'mx', ar: 'ar', in: 'in', ind: 'in', za: 'za', tr: 'tr', gr: 'gr', ro: 'ro', ru: 'ru', ae: 'ae', ph: 'ph', latino: 'mx' };
-function prep(name) {
-  var s = String(name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(), country = '', flags = {};
-  var m = /^\s*[\[(]?([a-z]{2,3})[\])]?\s*(?:[|:\-–»]+|\s)\s*/.exec(s);
-  if (m && COUNTRY[m[1]]) { country = COUNTRY[m[1]]; s = s.slice(m[0].length); }
-  s = s.replace(/[\[(]([^\])]*)[\])]/g, function (a, inner) { inner.split(/\W+/).forEach(function (w) { if (w === 'east' || w === 'west' || w === 'pacific') flags[w === 'pacific' ? 'west' : w] = 1; else if (COUNTRY[w] && !country) country = COUNTRY[w]; }); return ' '; });
-  s = s.replace(/&/g, ' and ').replace(/\+/g, ' plus ');
-  var toks = s.split(/[^a-z0-9]+/).filter(Boolean), out = [];
-  toks.forEach(function (w, i) {
-    if (w === 'east' || w === 'west' || w === 'pacific') { flags[w === 'pacific' ? 'west' : w] = 1; return; }
-    if (COUNTRY[w] && (i === toks.length - 1 || i === 0) && toks.length > 1) { if (!country) country = COUNTRY[w]; return; }
-    if (STOP[w]) return;
-    out.push(w);
-  });
-  var call = out.filter(function (w) { return /^[kw][a-z]{2,3}$/.test(w) && !/[aeiou]{2}/.test(w); })[0] || '';
-  return { t: out, c: out.join(''), country: country, east: !!flags.east, west: !!flags.west, call: call, nums: out.filter(function (w) { return /^\d+$/.test(w); }).join(',') };
-}
+// Names reduced to what identifies them, shared with the TV (tidy.js).
+var STOP = Tidy.STOP, COUNTRY = Tidy.COUNTRY, prep = Tidy.prep;
 function guideEntry(x) {
   var id = x[0], name = x[1], p = prep(name), sfx = /\.([a-z]{2,3})$/i.exec(id);
   var base = id.replace(/\.[a-z]{2,3}$/i, '').replace(/([a-z])([A-Z])/g, '$1 $2').replace(/[._-]+/g, ' ');
@@ -1999,168 +1984,33 @@ $('nNone').onclick = function () { mut('Turned all name rules off', function () 
 $('onlyChanged').addEventListener('change', renderPreview);
 
 /* ---------- smart clean-up ---------- */
-// Country or language prefix of a provider group name: "US| News", "[UK] Sports", "FR - Cinema".
-function prefixOf(name) { var m = /^\s*[\[(]?([A-Z]{2,3}|[A-Z]{2}-[A-Z]{2})[\])]?\s*(?:[|:\-–»•]+|\s(?=[A-Z0-9]))/.exec(name || ''); return m ? m[1] : ''; }
-/* Which country a provider group belongs to.  Providers say it in different ways, so in order:
-   a code at the start of the group name ("US| News", "[UK] Sports"); a country word ("Canada News",
-   "France Cinema", "Latino / Mexico"); a code most of its channels start with ("CAR | ...",
-   "ARG | ..."); and last, the divider group it sits under ("⫘⫘⫘ CAN ⫘⫘⫘" then "TSN +"). */
-var CC_ALIAS = { USA: 'US', CAN: 'CA', AUS: 'AU', GB: 'UK', GBR: 'UK', ENG: 'UK', ARG: 'AR', COL: 'CO', CAR: 'CARIB', MEX: 'MX', BRA: 'BR', AFG: 'AF', PAK: 'PK', IND: 'IN',
-  ESP: 'ES', ITA: 'IT', FRA: 'FR', GER: 'DE', DEU: 'DE', POR: 'PT', POL: 'PL', GRE: 'GR', NED: 'NL', SWE: 'SE', NOR: 'NO', DEN: 'DK', FIN: 'FI', BEL: 'BE', SUI: 'CH', AUT: 'AT',
-  LATAM: 'LAT', LATINO: 'LAT', HIS: 'LAT', HISP: 'LAT', IRL: 'IE', TUR: 'TR', ROM: 'RO', RUS: 'RU', UKR: 'UA', PHI: 'PH', 'CA-FR': 'CA', 'CA-EN': 'CA', 'FR-CA': 'CA', QC: 'CA',
-  'US-ES': 'US', 'US-EN': 'US', 'EX-YU': 'EXYU', KSA: 'SA', UAE: 'AE', RSA: 'ZA', CRI: 'CR', PRI: 'PR', DOM: 'DO', CHL: 'CL', PER: 'PE', VEN: 'VE', ECU: 'EC' };
-var CC_WORDS = { 'united states': 'US', america: 'US', usa: 'US', us: 'US', canada: 'CA', canadian: 'CA', can: 'CA', 'united kingdom': 'UK', uk: 'UK', britain: 'UK', british: 'UK', england: 'UK',
-  scotland: 'UK', ireland: 'IE', irish: 'IE', australia: 'AU', aus: 'AU', 'aus/nz': 'AU', 'new zealand': 'NZ', nz: 'NZ', france: 'FR', french: 'FR', italy: 'IT', italia: 'IT', italian: 'IT',
-  germany: 'DE', deutschland: 'DE', german: 'DE', spain: 'ES', espana: 'ES', 'españa': 'ES', spanish: 'ES', portugal: 'PT', portuguese: 'PT', brazil: 'BR', brasil: 'BR', mexico: 'MX', 'méxico': 'MX',
-  poland: 'PL', polska: 'PL', polish: 'PL', greece: 'GR', greek: 'GR', turkey: 'TR', turkish: 'TR', netherlands: 'NL', holland: 'NL', dutch: 'NL', belgium: 'BE', sweden: 'SE', swedish: 'SE',
-  norway: 'NO', denmark: 'DK', finland: 'FI', nordic: 'NORDIC', scandinavia: 'NORDIC', switzerland: 'CH', austria: 'AT', india: 'IN', indian: 'IN', pakistan: 'PK', afghanistan: 'AF',
-  bangladesh: 'BD', 'sri lanka': 'LK', nepal: 'NP', 'south asia': 'IN', philippines: 'PH', filipino: 'PH', pinoy: 'PH', argentina: 'AR', colombia: 'CO', columbia: 'CO', chile: 'CL', peru: 'PE',
-  venezuela: 'VE', ecuador: 'EC', 'costa rica': 'CR', 'puerto rico': 'PR', dominican: 'DO', caribbean: 'CARIB', jamaica: 'JM', latino: 'LAT', latin: 'LAT', latam: 'LAT', 'lat/his': 'LAT',
-  hispanic: 'LAT', arabic: 'ARAB', arab: 'ARAB', africa: 'AFRICA', african: 'AFRICA', 'south africa': 'ZA', nigeria: 'NG', israel: 'IL', iran: 'IR', persian: 'IR', russia: 'RU', russian: 'RU',
-  ukraine: 'UA', romania: 'RO', albania: 'AL', 'ex-yu': 'EXYU', exyu: 'EXYU', balkans: 'EXYU', balkan: 'EXYU', hungary: 'HU', czech: 'CZ', bulgaria: 'BG', croatia: 'HR', serbia: 'RS',
-  malaysia: 'MY', japan: 'JP', korea: 'KR', china: 'CN', chinese: 'CN', vietnam: 'VN', thailand: 'TH', indonesia: 'ID' };
-var CC_NAME = { US: 'USA', CA: 'Canada', UK: 'UK', IE: 'Ireland', AU: 'Australia', NZ: 'New Zealand', FR: 'France', IT: 'Italy', DE: 'Germany', ES: 'Spain', PT: 'Portugal', BR: 'Brazil',
-  MX: 'Mexico', PL: 'Poland', GR: 'Greece', TR: 'Turkey', NL: 'Netherlands', IN: 'India and South Asia', PK: 'Pakistan', AF: 'Afghanistan', PH: 'Philippines', AR: 'Argentina', CO: 'Colombia',
-  CR: 'Costa Rica', PR: 'Puerto Rico', CARIB: 'Caribbean', LAT: 'Latino', ARAB: 'Arabic', EXYU: 'Ex-Yu', NORDIC: 'Nordic', AFRICA: 'Africa', MY: 'Malaysia', CL: 'Chile', PE: 'Peru' };
-var CC_KNOWN = {};
-[CC_NAME, CC_ALIAS, CC_WORDS].forEach(function (m) { Object.keys(m).forEach(function (k) { CC_KNOWN[m === CC_NAME ? k : m[k]] = 1; }); });
-'AT BE BG CH CZ DK FI HR HU IE IL IR NL NO RO RS RU SE TR UA ZA'.split(' ').forEach(function (k) { CC_KNOWN[k] = 1; });
-// A code only counts when it is a country or region we know, so "NBC Locals" or "NFL Teams" are not countries.
-function ccNorm(code) { code = String(code || '').toUpperCase(); code = CC_ALIAS[code] || code; return CC_KNOWN[code] ? code : ''; }
-function ccWord(name) {
-  var w = String(name || '').toLowerCase().replace(/[^\p{L}\p{N}\s\/-]+/gu, ' ').replace(/\s+/g, ' ').trim();
-  if (CC_WORDS[w]) return CC_WORDS[w];
-  var t = w.split(' ');
-  if (t.length > 1 && CC_WORDS[t[0] + ' ' + t[1]]) return CC_WORDS[t[0] + ' ' + t[1]];
-  if (CC_WORDS[t[0]] && t[0].length > 2) return CC_WORDS[t[0]];
-  var last = t[t.length - 1];                                    // "Pluto USA", "Sky Sports UK"
-  if (t.length > 1 && CC_WORDS[last] && last.length > 1) return CC_WORDS[last];
-  return '';
-}
-function isDivider(name) { return /^\s*[^\p{L}\p{N}\s]{2,}.*[^\p{L}\p{N}\s]{2,}\s*$|^\s*[-=#*~_•·]{3,}/u.test(String(name || '')); }
-var ccCache = null;
-function countryMap() {
-  if (ccCache && ccCache.d === D) return ccCache.m;
-  var m = {}, section = '', sec = 0, secOf = {}, own = {};
-  D.groups.forEach(function (g) {
-    var plain = String(g.name || '').replace(/[^\p{L}\p{N}\s|:\[\]()\/&+-]+/gu, ' ').trim();
-    if (isDivider(g.name)) { section = ccNorm(prefixOf(plain + ' ')) || ccWord(plain); m[g.id] = section; sec++; return; }
-    secOf[g.id] = sec;
-    var code = ccNorm(prefixOf(plain)) || ccWord(plain);
-    if (!code) {
-      var by = {}, chans = byGroup.get(g.id) || [];
-      chans.forEach(function (c) { var x = /^\s*[\[(|]?\s*([A-Z]{2,4}(?:-[A-Z]{2})?)\s*[\])|]?\s*[|:\-–◈]/.exec(c.n || ''); if (x) { var k = ccNorm(x[1]); if (k) by[k] = (by[k] || 0) + 1; } });
-      var best = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; })[0];
-      if (best && chans.length >= 3 && by[best] >= chans.length * 0.6) code = best;
-    }
-    own[g.id] = code;
-    m[g.id] = code || section;
-  });
-  // A section without a country in its divider (or the groups before the first divider) takes the
-  // country most of its groups name, when that is clear: "ABC Locals" among "USA EAST", "USA News"...
-  var tally = {};
-  Object.keys(secOf).forEach(function (id) { var t = tally[secOf[id]] || (tally[secOf[id]] = { n: 0, by: {} }); t.n++; if (own[id]) t.by[own[id]] = (t.by[own[id]] || 0) + 1; });
-  Object.keys(secOf).forEach(function (id) {
-    if (m[id]) return;
-    var t = tally[secOf[id]], coded = 0, best = '';
-    Object.keys(t.by).forEach(function (k) { coded += t.by[k]; if (!best || t.by[k] > t.by[best]) best = k; });
-    if (best && t.by[best] >= 3 && t.by[best] >= coded * 0.6 && coded >= t.n * 0.4) m[id] = best;
-  });
-  ccCache = { d: D, m: m };
-  return m;
-}
-function groupCountry(g) { return countryMap()[g.id] || ''; }
-function countryStats() {
-  var by = {};
-  D.groups.forEach(function (g) { var p = groupCountry(g); if (!p) return; var x = by[p] || (by[p] = { p: p, groups: [], shown: 0, chans: 0 }); x.groups.push(g.id); if (!E.hiddenGroups[g.id]) x.shown++; x.chans += (byGroup.get(g.id) || []).length; });
-  return Object.keys(by).map(function (k) { return by[k]; }).filter(function (x) { return x.groups.length >= 2 || CC_NAME[x.p]; }).sort(function (a, b) { return b.chans - a.chans; });
-}
-/* Divider groups: "⫘⫘⫘ UK ⫘⫘⫘", "===== SPORTS =====".  They split the provider's list into sections
-   and hold a placeholder channel or none. */
+/* The answers (countries, dividers, East and West feeds, local stations, duplicates) come from tidy.js,
+   the same engine the TV's first-run tour uses, so both always agree. */
+var tctx = null;
+function T() { if (!tctx || tctx.data !== D) { tctx = Tidy.make(D); localCache = null; } return tctx; }
+var prefixOf = Tidy.prefixOf, ccNorm = Tidy.ccNorm, ccWord = Tidy.ccWord, isDivider = Tidy.isDivider, CC_NAME = Tidy.CC_NAME;
+var feedOf = Tidy.feedOf, parseLocal = Tidy.parseLocal, titleCase = Tidy.titleCase;
+function countryMap() { return T().countryMap(); }
+function groupCountry(g) { return T().groupCountry(g.id); }
+function countryStats() { return T().countries(E.hiddenGroups); }
 function dividerGroups() {
   return providerGroups().filter(function (g) { return !E.hiddenGroups[g.id] && isDivider(g.raw) && channelsOf(g.id, true).length <= 3; });
 }
 /* Channels with nothing on: "Off Air", "Offline", "No Event Scheduled".  Event channels are renamed by
    the provider when something is on, so this is a setting checked against the current name, not a hide. */
 function idleChannels() { return D.channels.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g] && Names.idle(c.n); }); }
-/* Time zone feeds: "HBO (EAST)" and "HBO (WEST)", "A&E" and "A&E (WEST)", groups like "USA WEST".
-   A channel's feed comes from its name (EAST, WEST or PACIFIC as a word or in brackets at the end;
-   "(E)" and "(W)" only when the other feed exists, since "(W)" is also women's sport), or else
-   from its group.  Unmarked channels count as East when a West copy exists. */
-var FEED_RE = /\s*(?:[\[(]\s*(east|west|pacific|e|w)\s*[\])]|[-|:]?\s+\b(east|west|pacific)\b)\s*$/i;
-function feedOf(name) {
-  var m = FEED_RE.exec(String(name || '')); if (!m) return null;
-  var f = (m[1] || m[2]).toLowerCase();
-  return { feed: f === 'east' || f === 'e' ? 'east' : 'west', short: f.length === 1, base: String(name).slice(0, m.index) };
-}
-function feedKey(name) { var p = prep(cleanName(name)); return p.c ? p.c + (p.country ? '|' + p.country : '') : ''; }
-function groupFeed(g) { var m = /\b(east|west|pacific)\b/i.exec(String((g && g.name) || '')); return m ? (m[1].toLowerCase() === 'east' ? 'east' : 'west') : ''; }
-var feedCache = null;
-function feedPairs() {
-  if (feedCache && feedCache.d === D && feedCache.e === E) return feedCache.r;
-  var byKey = new Map(), gf = {};
-  D.groups.forEach(function (g) { gf[g.id] = groupFeed(g); });
-  D.channels.forEach(function (c) {
-    var f = feedOf(c.n), feed = f ? f.feed : gf[c.g] || '', key = feedKey(f ? f.base : c.n);
-    if (!key) return;
-    var x = byKey.get(key); if (!x) byKey.set(key, x = { east: [], west: [], plain: [], short: [] });
-    if (f && f.short) x.short.push({ c: c, feed: feed }); else if (feed) x[feed].push(c); else x.plain.push(c);
-  });
-  var r = { east: [], west: [], pairs: 0 };
-  byKey.forEach(function (x) {
-    var sw = [], se = [];
-    x.short.forEach(function (o) { (o.feed === 'west' ? sw : se).push(o.c); });
-    var west = x.west.concat(sw), east = x.east.concat(x.plain, se);
-    if (!west.length || !east.length) return;                         // only one feed: nothing to choose
-    r.pairs++; r.west = r.west.concat(west); r.east = r.east.concat(east);
-  });
-  feedCache = { d: D, e: E, r: r };
-  return r;
-}
-function feedGroups(feed) { return providerGroups().filter(function (g) { return groupFeed({ name: g.raw }) === feed && channelsOf(g.id, true).length; }); }
-
-/* Local channels: "CBS | DENVER | KCNC", "US: PBS - CT - HARTFORD (WEDH)", "CW | BOSTON 56 WLVI",
-   "TELEMUNDO | CHICAGO", "CA | CTV 2 WINDSOR".  The city is what is left once the country tag,
-   the network, the state code, the call sign and channel numbers are taken out. */
-var LOCAL_NETS = ['ABC', 'CBS', 'NBC', 'FOX', 'CW', 'PBS', 'MYTV', 'MY TV', 'MYNETWORKTV', 'MNT', 'ION', 'TELEMUNDO', 'UNIVISION', 'UNIMAS', 'GALAVISION', 'ESTRELLA', 'AZTECA', 'TELEMUNDO LOCAL',
-  'CBC', 'CTV 2', 'CTV2', 'CTV', 'GLOBAL', 'CITYTV', 'CITY', 'OMNI', 'ROGERS TV', 'TVA', 'NOOVO', 'ICI RADIO-CANADA', 'RADIO-CANADA', 'ICI', 'INDEPENDENT', 'IND', 'METV', 'MeTV', 'ANTENNA TV', 'COZI', 'BOUNCE'];
-var LOCAL_NET_RE = new RegExp('^(' + LOCAL_NETS.slice().sort(function (a, b) { return b.length - a.length; }).map(function (n) { return n.replace(/[-]/g, '\\-'); }).join('|') + ')\\b\\s*', 'i');
-var CALL_RE = /\b[KW][A-Z]{2,3}(?:[-\s]?(?:TV|DT|LD|CD|LP))?\b/g;
-function parseLocal(name) {
-  var s = String(name || '').replace(/^\s*(?:[\[(|]?\s*(?:USA|US|CA|CAN)\s*[\])|]?\s*[|:\-]\s*)/i, '').trim();
-  var nm = LOCAL_NET_RE.exec(s); if (!nm) return null;
-  var net = nm[1].toUpperCase().replace(/\s+/g, ' ');
-  var rest = s.slice(nm[0].length).replace(/^[\s|:\-–]+/, '');
-  var call = (rest.match(CALL_RE) || [])[0] || '';
-  var st = '', m = /^([A-Z]{2})\s*-\s*(.+)$/.exec(rest);
-  if (m) { st = m[1]; rest = m[2]; }
-  var city = rest.replace(/\([^)]*\)/g, ' ').replace(CALL_RE, ' ').split(/\s*[|]\s*/)[0]
-    .replace(/\b(?:HD|FHD|SD|4K)\b/gi, ' ').replace(/\b\w*\d\w*\b/g, ' ').replace(new RegExp('\\b' + net + '\\b', 'i'), ' ')
-    .replace(/[^\p{L}\s.'&-]/gu, ' ').replace(/\s+/g, ' ').replace(/^[\s.\-]+|[\s.\-]+$/g, '').toUpperCase();
-  if (!city || city.length < 3 || /^(EAST|WEST|PACIFIC|NATIONAL|NETWORK|NEWS|NEWS NOW|NOW|LIVE|SPORTS|PLUS|HD|CHANNEL|KIDS|LOCAL|LOCALS)$/.test(city)) return { net: net, city: '', st: st, call: call };
-  city = city.replace(/^SAINT\b/, 'ST').replace(/^ST\.\s*/, 'ST ').replace(/^FT\.?\s/, 'FORT ');
-  return { net: net, city: city, st: st, call: call };
-}
-function isLocalGroup(g) { return /\blocals?\b|\baffiliates?\b|\bnetwork (?:locals|stations)\b/i.test(String(g.raw || g.name || '')); }
+function groupFeed(g) { return Tidy.groupFeed(g && g.name); }
+function feedPairs() { return T().feeds(); }
+function feedGroups(feed) { return providerGroups().filter(function (g) { return Tidy.groupFeed(g.raw) === feed && channelsOf(g.id, true).length; }); }
+function isLocalGroup(g) { return Tidy.isLocalGroup(g.raw || g.name); }
 var localCache = null;
 function localIndex() {
-  if (localCache && localCache.d === D) return localCache.r;
-  var groups = providerGroups().filter(isLocalGroup), cities = {}, chans = [];
-  groups.forEach(function (g) {
-    channelsOf(g.id, true).forEach(function (c) {
-      var p = parseLocal(c.n); if (!p) return;
-      chans.push({ c: c, p: p });
-      if (!p.city) return;
-      var x = cities[p.city] || (cities[p.city] = { city: p.city, nets: {}, n: 0, st: p.st });
-      x.nets[p.net] = 1; x.n++; if (!x.st && p.st) x.st = p.st;
-    });
-  });
-  groups = groups.filter(function (g) { return chans.some(function (x) { return x.c.g === g.id; }); });
-  var r = { groups: groups, chans: chans, cities: Object.keys(cities).map(function (k) { return cities[k]; }).sort(function (a, b) { return a.city.localeCompare(b.city); }) };
-  localCache = { d: D, r: r };
-  return r;
+  var r = T().locals();
+  if (localCache && localCache.r === r) return localCache.v;
+  var v = { groups: r.groups.map(function (g) { return { id: g.id, name: provName(g), raw: g.name }; }), chans: r.chans, cities: r.cities };
+  localCache = { r: r, v: v };
+  return v;
 }
-function titleCase(s) { return String(s).toLowerCase().replace(/(^|[\s\-'])\p{L}/gu, function (m) { return m.toUpperCase(); }); }
 function emptyGroups() {
   return providerGroups().filter(function (g) { if (E.hiddenGroups[g.id]) return false; var l = channelsOf(g.id, true); return !l.length || l.every(function (c) { return E.hiddenChannels[c.k]; }); });
 }
@@ -2169,28 +2019,11 @@ function hideEmpty() {
   mut('Hid ' + plural(l.length, 'empty group'), function () { l.forEach(function (g) { E.hiddenGroups[g.id] = 1; }); });
   toast(plural(l.length, 'empty group') + ' hidden', ['Undo', undo]);
 }
-var QUAL = [[/\b(8k|4k|uhd|2160p?)\b/i, 4], [/\b(fhd|1080[pi]?|full ?hd)\b/i, 3], [/\b(hd|720p?)\b/i, 2], [/\b(sd|480p?|576p?|lq)\b/i, 1]];
-function quality(n) { for (var i = 0; i < QUAL.length; i++) if (QUAL[i][0].test(n)) return QUAL[i][1]; return 2.5; }
-var QNAME = { 4: '4K', 3: 'FHD', 2: 'HD', 1: 'SD', 2.5: 'unmarked' };
+var quality = Tidy.quality, QNAME = Tidy.QNAME;
 var dupeCache = null, dupeOpts = { same: true, prefer: 'fhd' };
 function dupeSets() {
   if (dupeCache) return dupeCache;
-  var by = new Map();
-  channelsOf(ALL).forEach(function (c) {
-    if (E.hiddenChannels[c.k]) return;
-    var p = prep(chName(c)); if (!p.c || p.c.length < 2) return;
-    var key = (dupeOpts.same ? c.g + '|' : '') + p.c + (p.west ? '|w' : '') + (p.country ? '|' + p.country : '');
-    var a = by.get(key); if (!a) by.set(key, a = []); a.push(c);
-  });
-  var rank = { best: function (q) { return q; }, fhd: function (q) { return q === 3 ? 9 : q === 2 ? 8 : q === 2.5 ? 7 : q === 4 ? 6 : q; }, hd: function (q) { return q === 2 ? 9 : q === 2.5 ? 8 : q === 3 ? 7 : q === 1 ? 6 : q; }, sd: function (q) { return q === 1 ? 9 : q === 2 ? 8 : q === 2.5 ? 7 : q; } }[dupeOpts.prefer];
-  var sets = [];
-  by.forEach(function (a) {
-    if (a.length < 2) return;
-    a = a.slice().sort(function (x, y) { return rank(quality(y.n)) - rank(quality(x.n)) || (y.arch || 0) - (x.arch || 0) || (+x.num || 0) - (+y.num || 0); });
-    sets.push({ keep: a[0].k, items: a });
-  });
-  sets.sort(function (x, y) { return chName(x.items[0]).localeCompare(chName(y.items[0])); });
-  return (dupeCache = sets);
+  return (dupeCache = T().dupes({ same: dupeOpts.same, prefer: dupeOpts.prefer, name: chName, skip: function (c) { return E.hiddenGroups[c.g] || E.hiddenChannels[c.k]; } }));
 }
 var dPage = 0;
 function renderTools() {
@@ -2616,7 +2449,16 @@ document.querySelectorAll('[data-tip]').forEach(function (n) { if (LS.get('tivib
 document.addEventListener('click', function (e) { var t = e.target.dataset && e.target.dataset.hidetip; if (t) { LS.set('tivibro.editor.tip.' + t, true); e.target.closest('[data-tip]').classList.add('hidden'); } });
 
 window.addEventListener('resize', drawRows);
-if (token) boot(); else showLogin('');
+/* The QR code on the TV (first-run tour) opens the editor already signed in: http://tv:port/#k=PASSWORD/tools.
+   The password leaves the address bar at once. */
+var qrLogin = /^#k=([A-Za-z0-9-]{4,40})(?:\/(\w+))?$/.exec(location.hash);
+if (qrLogin) {
+  history.replaceState(null, '', '#' + (qrLogin[2] || 'home'));
+  api('/api/login', { method: 'POST', body: { password: qrLogin[1] } }).then(function (j) {
+    token = j.token; try { sessionStorage.setItem('tivibro.editor.token', token); } catch (e) {}
+    boot();
+  }).catch(function (err) { showLogin(err.message); });
+} else if (token) boot(); else showLogin('');
 </script>
 </body>
 </html>

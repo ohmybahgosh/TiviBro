@@ -1,23 +1,19 @@
-// Smart clean-up helpers from the web editor (service/editor/index.html): time zone feeds and local
-// channels by city.  The functions are read out of the page and run here against sample names
-// shaped like a real provider's.
+// Smart clean-up engine (app/js/tidy.js), shared by the TV's first-run tour and the web editor:
+// countries, divider groups, time zone feeds, local channels by city and duplicates, checked against
+// sample names shaped like a real provider's.  The editor's copy must be the same file.
 const fs = require('fs'), path = require('path');
 global.window = global;
 eval(fs.readFileSync(path.join(__dirname, '../../app/js/names.js'), 'utf8') + ';global.Names=Names;');
-const html = fs.readFileSync(path.join(__dirname, '../../service/editor/index.html'), 'utf8');
-const cut = (from, to) => { const a = html.indexOf(from), b = html.indexOf(to, a); if (a < 0 || b < 0) throw new Error('not found: ' + from); return html.slice(a, b); };
-const code = cut('var STOP = ', 'function prep(') + cut('function prep(', '\n}\n') + '\n}\n' + cut('var FEED_RE', 'function emptyGroups()');
-const N = Names.defaults();
-global.cleanName = n => Names.cleanWith(N, n);
+const Tidy = require('../../app/js/tidy.js');
 let fail = 0, n = 0;
 const ok = (name, c, x) => { n++; if (!c) { fail++; console.log('FAIL ' + name + (x !== undefined ? '  ' + x : '')); } };
-function load(groups, chans) {
-  global.D = { groups, channels: chans };
-  global.E = { hiddenGroups: {}, hiddenChannels: {}, groupRenames: {}, groupOrder: [] };
-  global.providerGroups = () => D.groups.map(g => ({ id: g.id, name: g.name, raw: g.name }));
-  global.channelsOf = id => D.channels.filter(c => c.g === id);
-}
-(0, eval)(code.replace(/^function (\w+)/gm, 'global.$1 = function $1').replace(/^var (\w+)/gm, 'global.$1'));
+let T;
+function load(groups, chans) { T = Tidy.make({ groups, channels: chans }); }
+const feedPairs = () => T.feeds(), feedGroups = f => T.feedGroups(f), localIndex = () => T.locals(), parseLocal = Tidy.parseLocal, titleCase = Tidy.titleCase;
+const html = fs.readFileSync(path.join(__dirname, '../../service/editor/index.html'), 'utf8');
+ok('the editor loads tidy.js', /<script src="tidy.js"><\/script>/.test(html));
+ok('the editor copy is current', fs.readFileSync(path.join(__dirname, '../../service/editor/tidy.js'), 'utf8') === fs.readFileSync(path.join(__dirname, '../../app/js/tidy.js'), 'utf8'));
+ok('no \\p{} in tidy.js (old TVs cannot parse it)', !/\\p\{/.test(fs.readFileSync(path.join(__dirname, '../../app/js/tidy.js'), 'utf8')));
 
 // Feeds
 load([{ id: 'e', name: 'USA EAST' }, { id: 'w', name: 'USA WEST' }, { id: 'p', name: 'USA Premium Movies EAST' }, { id: 's', name: 'BIG10' }], [
@@ -47,5 +43,33 @@ const li = localIndex();
 ok('local index: only local groups', li.groups.map(g => g.id).join() === 'a,c' && li.chans.length === 3);
 ok('local index: cities with networks', li.cities.map(c => c.city + ':' + Object.keys(c.nets).sort().join('+')).join() === 'DETROIT:ABC+CBS,LANSING:ABC', li.cities.map(c => c.city).join());
 ok('title case', titleCase('SALT LAKE CITY') === 'Salt Lake City' && titleCase("COEUR D'ALENE") === "Coeur D'Alene");
+
+// Countries
+load([{ id: 'd1', name: '⫘⫘⫘ USA ⫘⫘⫘' }, { id: 'n', name: 'USA | News' }, { id: 'l', name: 'ABC Locals' }, { id: 'd2', name: '⫘⫘⫘ CAN ⫘⫘⫘' }, { id: 't', name: 'TSN +' },
+  { id: 'f', name: 'France Cinema' }, { id: 'f2', name: 'FR | Sport' }, { id: 'a', name: 'Latin Sports' }, { id: 'ar', name: 'Futbol' }, { id: 'nfl', name: 'NFL Teams' }, { id: 'e', name: 'Empty one' }],
+  [{ k: '1', n: 'US: CNN', g: 'n' }, { k: '2', n: 'ABC | DETROIT | WXYZ', g: 'l' }, { k: '3', n: 'TSN 1', g: 't' }, { k: '4', n: 'TF1', g: 'f' }, { k: '5', n: 'Canal+ Sport', g: 'f2' },
+    { k: '6', n: 'ARG | TyC Sports', g: 'ar' }, { k: '7', n: 'ARG | ESPN 2', g: 'ar' }, { k: '8', n: 'ARG | Fox Sports', g: 'ar' }, { k: '9', n: 'Lions', g: 'nfl' }, { k: '10', n: 'placeholder', g: 'd1' }]);
+const cm = T.countryMap();
+ok('country: code in the group name', cm.n === 'US' && cm.f2 === 'FR');
+ok('country: country word', cm.f === 'FR' && cm.a === 'LAT', cm.f + ' ' + cm.a);
+ok('country: divider section', cm.l === 'US' && cm.t === 'CA', cm.l + ' ' + cm.t);
+ok('country: channel prefixes', cm.ar === 'AR', cm.ar);
+ok('country: NFL is not a country', Tidy.ccNorm('NFL') === '' && Tidy.ccNorm('nbc') === '');
+const cs = T.countries();
+ok('countries: biggest first, with names', cs[0].chans >= cs[1].chans && cs.some(x => x.p === 'AR') && cs.some(x => x.p === 'US' && x.name === 'USA'), cs.map(x => x.p + x.chans).join());
+ok('dividers', T.dividers().map(g => g.id).join() === 'd1,d2');
+ok('empty groups', T.empty().map(g => g.id).join() === 'd2,a,e', T.empty().map(g => g.id).join());
+ok('TV region', Tidy.ccOfLocale('en-US') === 'US' && Tidy.ccOfLocale('en-GB') === 'UK' && Tidy.ccOfLocale('fr-CA') === 'CA' && Tidy.ccOfLocale('en') === '');
+
+// Logo keys: a feed at the end goes, East and West inside a name stay.
+ok('logo keys', Tidy.logoKey('USA | HBO (WEST)') === 'hbo' && Tidy.logoKey('Wild West TV') === 'wildwest' && Tidy.logoKey('A&E') === 'aande', Tidy.logoKey('Wild West TV'));
+
+// Duplicates
+load([{ id: 'g', name: 'US | Movies' }], [{ k: '1', n: 'US | HBO FHD', g: 'g' }, { k: '2', n: 'US | HBO HD', g: 'g' }, { k: '3', n: 'US | HBO 4K', g: 'g' }, { k: '4', n: 'US | HBO WEST', g: 'g' }, { k: '5', n: 'US | Cinemax', g: 'g' }]);
+const ds = T.dupes();
+ok('dupes: one set, West kept apart', ds.length === 1 && ds[0].items.length === 3, ds.map(x => x.items.map(c => c.k).join('+')).join());
+ok('dupes: keeps Full HD first', ds[0].keep === '1');
+ok('dupes: highest quality', T.dupes({ prefer: 'best' })[0].keep === '3');
+ok('dupes: skip hidden', T.dupes({ skip: c => c.k === '1' || c.k === '2' }).length === 0);
 console.log(fail ? fail + ' failures' : 'all ' + n + ' clean-up tests passed');
 process.exit(fail ? 1 : 0);

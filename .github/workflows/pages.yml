@@ -1,9 +1,13 @@
-# tivibro.app: the website in site/, plus the demo videos from docs/media, published with GitHub Pages.
+# tivibro.app: the website in site/, plus the demo videos from docs/media, and the channel logo index
+# (tivibro.app/logos/, addresses only, no images: scripts/logos/build-index.js), published with GitHub Pages.
+# Runs every Monday too, so the logo index follows the logo projects.
 name: Website
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'docs/media/guide.mp4', 'docs/media/live-edit.mp4', '.github/workflows/pages.yml']
+    paths: ['site/**', 'docs/media/guide.mp4', 'docs/media/live-edit.mp4', '.github/workflows/pages.yml', 'scripts/logos/**', 'app/js/tidy.js', 'app/js/names.js']
+  schedule:
+    - cron: '17 6 * * 1'
   workflow_dispatch:
 permissions:
   contents: read
@@ -22,6 +26,16 @@ jobs:
           mkdir -p _site/media
           cp -r site/. _site/
           cp docs/media/guide.mp4 docs/media/live-edit.mp4 _site/media/
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Build the channel logo index
+        continue-on-error: true       # the site still goes out if a logo project is down; TVs keep last week's copy
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/logos/build-index.js _site/logos
+      - name: List the site
+        run: |
           ls -R _site | head -50
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
