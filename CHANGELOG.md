@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 8, 2026-10-29)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 8
 
 - Web editor: unsent work can't be lost.  Drafts were already kept in the browser; now they are also saved on the TV a few seconds after each change (at least every 30 seconds while you work), and the bar says when ("Draft saved on the TV at 8:41").  A reload, a closed tab or another computer offers the newest unsent work back, from this browser or the TV.  Browser storage that is full no longer fails silently.
 - Draft history (Changes and restore points): versions of your unsent work on the TV, one every 3 minutes or 20 changes, one before sending and before discarding, and any you name with **Save a version**.  **Open** returns to one (and can be undone); versions that reached the TV are marked as sent; throwing a draft away keeps it here.  Each version holds only the edits (about 200 KB for 12,000 changes on a 15,000-channel playlist); up to 8 MB per playlist, oldest automatic versions dropped first, removed with the playlist.  Tests: `tests/soak/drafts.js` (`npm run soak:drafts`), `tests/unit/editor.test.js`.
 
-## 0.6.0 (alpha 7, 2026-10-28)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 7
+### In alpha 7
 
 - Web editor audit (`npm run soak:editor`, `tests/soak/editor.js`): every page driven in a real browser against the TV, checking what reaches it.  Login and lockout, groups, renames, your own groups, copying channels, favorites and hiding, name rules, guide sources, smart clean-up, restore points and undo, adding a playlist, backup and unlock, help and log out all work.
 - Web editor fix: switching the editor off now drops changes and actions the TV hadn't picked up yet, and starting it again skips saves from an earlier session.  Before, a TiviBro that restarted (after switching playlist or a restore) could apply a stale save to the wrong playlist, or run a queued restore again.  Test: `tests/unit/editor.test.js`.
