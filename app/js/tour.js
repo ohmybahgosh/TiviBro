@@ -123,7 +123,7 @@ var Tour = (function () {
     st.sv.countries.forEach(function (x) {
       out.push(toggle(x.name, plural(x.chans, 'channel') + ' in ' + plural(x.groups.length, 'group'), function () { return ch.cc[x.p] !== false; }, function (v) { ch.cc[x.p] = v; draw(); }, 'Keep', 'Hide'));
     });
-    out.push(head(''));
+    out.push(head('Everything else'));
     out.push(toggle('Groups with no country', 'Sports, pay-per-view and event groups, 24/7 channels and the like.', function () { return ch.ccNone; }, function (v) { ch.ccNone = v; draw(); }, 'Keep', 'Hide'));
     return out;
   }
@@ -174,7 +174,7 @@ var Tour = (function () {
     if (n) out.push(action('Clear my cities', 'Keeps every city again.', function () { ch.cities = {}; draw(); }, function () { return plural(n, 'picked', 'picked'); }));
     out.push(head(n ? 'Keeping ' + Object.keys(ch.cities).map(Tidy.titleCase).join(', ') : 'No city picked: every city is kept'));
     li.cities.forEach(function (c) {
-      var r = toggle(Tidy.titleCase(c.city) + (c.st ? '  ' + c.st : ''), Object.keys(c.nets).sort().join(' · ') + '   ' + plural(c.n, 'station'), function () { return !!ch.cities[c.city]; },
+      var r = toggle(Tidy.titleCase(c.city) + (c.st ? '  ' + c.st : ''), Object.keys(c.nets).sort().join(' · ') + '  ·  ' + plural(c.n, 'station'), function () { return !!ch.cities[c.city]; },
         function (v) { if (v) ch.cities[c.city] = 1; else delete ch.cities[c.city]; draw(); });
       r.value = function () { return ch.cities[c.city] ? 'Keep' : n ? 'Hide' : ''; };
       r.letter = c.city.charAt(0);
@@ -277,7 +277,6 @@ var Tour = (function () {
     if (pl.hidC) card(fmt(pl.hidC), 'channels hidden');
     if (pl.hidG) card(fmt(pl.hidG), 'groups hidden');
     out.push(custom(cards));
-    out.push(action('Apply and start watching', '', apply, function () { return '›'; }));
     out.push(head('Good to know'));
     var tips = U.el('div', 'tour-tips');
     [['Hold OK on a channel', 'Favorites, other versions, reminders, hide, block, assign a guide.'],
@@ -345,6 +344,7 @@ var Tour = (function () {
     var foot = [];
     if (step.id !== 'welcome') foot.push({ btn: true, label: 'Back', action: function () { go(-1); } });
     if (step.id !== 'welcome' && step.id !== 'done') foot.push({ btn: true, label: 'Next', primary: true, action: function () { go(1); } });
+    if (step.id === 'done') foot.push({ btn: true, label: 'Apply and start watching', primary: true, action: apply });
     if (step.id !== 'welcome' && step.id !== 'done') foot.push({ btn: true, label: 'Skip to the summary', action: function () { st.step = steps().length - 1; st.sel = -1; draw(); } });
     st.foot = foot;
     st.all = st.items.concat(foot);
@@ -383,7 +383,8 @@ var Tour = (function () {
         if (it.swatch) { var sw = U.el('i', 'sw'); sw.style.background = it.swatch(); v.appendChild(sw); }
         if (it.cycle) v.appendChild(U.el('span', 'ar', '‹'));
         v.appendChild(document.createTextNode(it.value ? it.value() : ''));
-        if (it.cycle) v.appendChild(U.el('span', 'ar', '›'));
+        // Rows without ◀ ▶ keep the arrows' room too, so every value lines up.
+        var ra = U.el('span', 'ar', '›'); if (!it.cycle) ra.style.visibility = 'hidden'; v.appendChild(ra);
         d.appendChild(v);
       }
       if (focusable(it)) {
@@ -414,15 +415,27 @@ var Tour = (function () {
     st.footEls.forEach(function (e, i) { e.classList.toggle('focus', n + i === st.sel); });
     var f = st.rowEls[st.sel];
     var y = st.scroll._y || 0;
+    var h = st.view.clientHeight;
     if (f) {
-      var h = st.view.clientHeight, top = f.offsetTop;
-      if (top + y < 20) y = -top + 20;
-      if (top + f.offsetHeight + y > h - 20) y = h - 20 - top - f.offsetHeight;
-      if (st.sel <= 1) y = Math.min(0, y + 400);
+      var top = f.offsetTop, bottom = top + f.offsetHeight;
+      if (top + y < 0) y = -top;
+      var room = f === st.rowEls[st.rowEls.length - 1] ? h : h - 40;     // clear of the fade at the bottom
+      if (bottom + y > room) y = room - bottom;
+      // Near the top of the list, show it from the start when the focused row fits.
+      if (bottom <= room) y = 0;
+      // Never leave half a row cut off at the top: scroll on to the next whole row (never past the focused one).
+      if (y < 0) {
+        var snap = top;
+        st.rowEls.forEach(function (e) { var t = e.offsetTop; if (t >= -y && t < snap) snap = t; });
+        y = -snap;
+      }
     }
     y = Math.min(0, y);
     st.scroll._y = y;
     st.scroll.style.transform = 'translateY(' + y + 'px)';
+    // A fade at the edge tells you there is more to scroll to.
+    st.view.classList.toggle('more-below', st.scroll.offsetHeight + y > h + 2);
+    st.view.classList.toggle('more-above', y < 0);
   }
 
   function go(d) {
