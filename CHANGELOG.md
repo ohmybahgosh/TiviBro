@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 10, 2026-10-29)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 10
 
 - **Short addresses on tivibro.app.**  In the Homebrew Channel, add the repository `https://tivibro.app/repo` (or `https://tivibro.app/testing` for every test build).  On a rooted TV: `curl -fsSL https://tivibro.app/install | sh`.  The website serves the files from the `homebrew` branch as they are, refreshed after every release, so the long raw.githubusercontent.com addresses keep working too.  Also `tivibro.app/guide`, `/wiki`, `/download`, `/changelog`, `/issues` and `/github`.
 - **The set-up tour.**  Right after a new playlist connects, TiviBro shows what it holds (channels, groups, countries, event channels, East and West copies, local cities, extra copies, movies and shows) and walks through making it yours, one screen at a time with the remote:
@@ -18,11 +22,7 @@
 - Smart clean-up, **Local channels: pick your city**: reads the city out of every station in the local groups (ABC, CBS, NBC, FOX, CW, PBS, Telemundo, Univision, CBC, CTV, Global and more, in the "NET | CITY | CALL", "PBS | ST - CITY (CALL)" and "CW | CITY 56 CALL" styles).  Find your city, tick it or a few nearby, and every other city's stations are hidden in all the local groups at once.  On a real provider: 929 local stations in 321 cities, down to Detroit and Lansing in one click.  Test: `tests/unit/cleanup.test.js`.
 - The mock provider with `MOCK_EVENTS=1` also has East and West feeds and local groups, for the demo screenshots.
 
-## 0.6.0 (alpha 9, 2026-10-29)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 9
+### In alpha 9
 
 - **Event channels.**  Pay-per-view, league passes and one-off games often have no guide; the provider writes the whole listing into the channel name ("NCAAB 001 | NORTH FLORIDA @ CHARLESTON SOUTHERN (M) | 12.18 11:00 AM | ESPN+").  TiviBro now reads those names:
   - The channel list shows the short tag ("NCAAB 001", "PPV 03", "ESPN+ 20") with the event under it.
