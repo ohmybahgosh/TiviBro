@@ -40,6 +40,8 @@ ok(man.ipkHash.sha256 === require('crypto').createHash('sha256').update('fake ip
 ok(entry.manifest && entry.manifest.ipkUrl === man.ipkUrl, 'entry carries the manifest (one request for the TV)');
 ok(/Test build 0\.6\.0-alpha\.5/.test(entry.shortDescription) && entry.tivibro.prerelease === true, 'entry says it is a test build');
 ok(/^https:\/\/raw\.githubusercontent\.com\//.test(entry.iconUri), 'icon from a host TVs can load');
+ok(entry.fullDescriptionUrl === 'https://tivibro.app/hb/description.html' && fs.existsSync(path.join(ROOT, 'site/hb/description.html')), 'details page: screenshots and description from the website');
+ok(entry.requirements && entry.requirements.webosRelease === '>=4.0', 'requires webOS 4 or newer');
 
 // repo.json / repo-testing.json rules.
 const dir = path.join(tmp, 'hb'); fs.mkdirSync(dir);

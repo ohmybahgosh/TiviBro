@@ -44,6 +44,9 @@ const entry = {
   manifestUrl: dl + manifestName,
   manifest: manifest,
   shortDescription: (pre ? 'Test build ' + full + ': ' : '') + 'The IPTV player LG TVs never got',
+  // The Homebrew Channel's details page: screenshots and the formatted description (site/hb/description.html).
+  fullDescriptionUrl: 'https://tivibro.app/hb/description.html',
+  requirements: { webosRelease: '>=4.0' },
   tivibro: { tag: tag, version: full, prerelease: pre }
 };
 fs.mkdirSync(out, { recursive: true });

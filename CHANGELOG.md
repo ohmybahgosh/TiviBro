@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The Homebrew Channel listing has screenshots and a formatted description (features, what to know, links), from `site/hb/description.html` on the website, and says it needs webOS 4 or newer.
+
 ## 0.6.0 (alpha 11, 2026-10-29)
 
 Pre-release: expect rough edges, and keep a backup before installing.
