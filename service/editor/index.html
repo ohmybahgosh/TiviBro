@@ -164,6 +164,10 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;position
 .empty{padding:48px 20px;text-align:center;color:var(--muted)}
 .gnote{font-size:13px;color:var(--muted)}
 /* names */
+.lclist{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;margin-top:12px;max-height:340px;overflow:auto;padding:2px}
+.lc{display:flex;flex-direction:column;gap:2px;padding:8px 12px 8px 34px;border:1px solid var(--line);border-radius:10px;position:relative;cursor:pointer}
+.lc input{position:absolute;left:11px;top:11px}
+.lc.on{border-color:var(--accent);background:var(--accbg)}
 .two{display:grid;grid-template-columns:minmax(360px,520px) 1fr;gap:20px;align-items:start}
 .rule{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
 .rule .ex{font-size:13px;color:var(--dim)}
@@ -413,6 +417,8 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
       <div class="scroll">
         <div class="note">Hiding never deletes anything.  Hidden groups and channels can be switched back on any time in Groups and channels.  <a href="#help/tools">Learn more</a></div>
         <div class="card" id="tCountry"></div>
+        <div class="card" id="tFeeds"></div>
+        <div class="card" id="tLocal"></div>
         <div class="card" id="tDupes"></div>
         <div class="card" id="tKeyword"></div>
         <div class="card" id="tEmpty"></div>
@@ -1121,6 +1127,10 @@ function suggestions() {
   if (cs.length > 2) out.push(['Groups from ' + cs.length + ' countries are shown', 'Keep only the countries you watch, in one step.', 'tools', 'Pick countries']);
   var dp = dupeSets().length;
   if (dp) out.push([plural(dp, 'channel') + ' appear more than once', 'Same channel in different qualities (HD, FHD, SD).  Keep the best one, hide the rest.', 'tools', 'Review']);
+  var fpn = feedPairs(), fshown = fpn.west.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g]; }).length;
+  if (fpn.pairs && fshown && fpn.east.some(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g]; })) out.push([plural(fpn.pairs, 'channel') + ' shown in both East and West feeds', 'Keep the feed you watch and hide the other copies in one step.', 'tools', 'Pick a feed']);
+  var lci = localIndex();
+  if (lci.cities.length > 3 && lci.chans.filter(function (x) { return !E.hiddenChannels[x.c.k] && !E.hiddenGroups[x.c.g]; }).length > 30) out.push(['Local stations for ' + lci.cities.length + ' cities', 'Pick your city and hide the other local stations in every local group at once.', 'tools', 'Pick a city']);
   var dvn = dividerGroups().length;
   if (dvn) out.push([plural(dvn, 'divider group') + ' shown', 'Groups like "⫘⫘⫘ UK ⫘⫘⫘" that only split the list into sections.', 'tools', 'Hide them']);
   if (!N.hideIdle) { var idn = idleChannels().length; if (idn >= 10) out.push([plural(idn, 'channel') + ' with nothing on', 'Event channels named "Off Air" or "No Event Scheduled" between events.  Hide them while they say so.', 'tools', 'Show me']); }
@@ -1929,6 +1939,8 @@ var HELP = [
     '<li><b>Same channel, more than once</b> finds the same channel in several qualities and keeps one.  Pick which quality to prefer; Full HD first is a good balance.  You can override the pick in any set.</li>' +
     '<li><b>Hide by keyword</b> hides groups or channels whose names contain words like PPV or 24/7, with a preview first.</li>' +
     '<li><b>Empty groups</b> hides groups with nothing left to watch.</li>' +
+    '<li><b>East and West feeds</b> finds channels that come in both time zones (HBO East and HBO West, A&amp;E and A&amp;E West) and hides the feed you don\'t watch, plus groups named for it if you like.</li>' +
+    '<li><b>Local channels: pick your city</b> reads the city out of every station in your local groups (ABC, CBS, NBC, FOX, CW, PBS, Telemundo, Univision, CBC, CTV and more).  Tick your city, or a few nearby, and every other city\'s stations are hidden in one step.</li>' +
     '<li><b>Divider groups</b> hides groups like "⫘⫘⫘ UK ⫘⫘⫘" that only split the list into sections.</li>' +
     '<li><b>Channels with nothing on</b> keeps event channels named "Off Air", "Offline" or "No Event Scheduled" out of the lists while they say so; they come back by themselves when an event is named.</li></ul><p>Everything here only hides, never deletes, and every action is one undo step.</p>'],
   ['playlists', 'Playlists', '<p>Add Xtream Codes or M3U playlists, switch which one the TV uses, change reload schedules and the User-Agent, or change a login.  The TV tests a new login before saving it.  Logins never reach this editor; you only see server names.  Each playlist has its own groups, names and guide setup.</p>'],
@@ -2071,6 +2083,84 @@ function dividerGroups() {
 /* Channels with nothing on: "Off Air", "Offline", "No Event Scheduled".  Event channels are renamed by
    the provider when something is on, so this is a setting checked against the current name, not a hide. */
 function idleChannels() { return D.channels.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g] && Names.idle(c.n); }); }
+/* Time zone feeds: "HBO (EAST)" and "HBO (WEST)", "A&E" and "A&E (WEST)", groups like "USA WEST".
+   A channel's feed comes from its name (EAST, WEST or PACIFIC as a word or in brackets at the end;
+   "(E)" and "(W)" only when the other feed exists, since "(W)" is also women's sport), or else
+   from its group.  Unmarked channels count as East when a West copy exists. */
+var FEED_RE = /\s*(?:[\[(]\s*(east|west|pacific|e|w)\s*[\])]|[-|:]?\s+\b(east|west|pacific)\b)\s*$/i;
+function feedOf(name) {
+  var m = FEED_RE.exec(String(name || '')); if (!m) return null;
+  var f = (m[1] || m[2]).toLowerCase();
+  return { feed: f === 'east' || f === 'e' ? 'east' : 'west', short: f.length === 1, base: String(name).slice(0, m.index) };
+}
+function feedKey(name) { var p = prep(cleanName(name)); return p.c ? p.c + (p.country ? '|' + p.country : '') : ''; }
+function groupFeed(g) { var m = /\b(east|west|pacific)\b/i.exec(String((g && g.name) || '')); return m ? (m[1].toLowerCase() === 'east' ? 'east' : 'west') : ''; }
+var feedCache = null;
+function feedPairs() {
+  if (feedCache && feedCache.d === D && feedCache.e === E) return feedCache.r;
+  var byKey = new Map(), gf = {};
+  D.groups.forEach(function (g) { gf[g.id] = groupFeed(g); });
+  D.channels.forEach(function (c) {
+    var f = feedOf(c.n), feed = f ? f.feed : gf[c.g] || '', key = feedKey(f ? f.base : c.n);
+    if (!key) return;
+    var x = byKey.get(key); if (!x) byKey.set(key, x = { east: [], west: [], plain: [], short: [] });
+    if (f && f.short) x.short.push({ c: c, feed: feed }); else if (feed) x[feed].push(c); else x.plain.push(c);
+  });
+  var r = { east: [], west: [], pairs: 0 };
+  byKey.forEach(function (x) {
+    var sw = [], se = [];
+    x.short.forEach(function (o) { (o.feed === 'west' ? sw : se).push(o.c); });
+    var west = x.west.concat(sw), east = x.east.concat(x.plain, se);
+    if (!west.length || !east.length) return;                         // only one feed: nothing to choose
+    r.pairs++; r.west = r.west.concat(west); r.east = r.east.concat(east);
+  });
+  feedCache = { d: D, e: E, r: r };
+  return r;
+}
+function feedGroups(feed) { return providerGroups().filter(function (g) { return groupFeed({ name: g.raw }) === feed && channelsOf(g.id, true).length; }); }
+
+/* Local channels: "CBS | DENVER | KCNC", "US: PBS - CT - HARTFORD (WEDH)", "CW | BOSTON 56 WLVI",
+   "TELEMUNDO | CHICAGO", "CA | CTV 2 WINDSOR".  The city is what is left once the country tag,
+   the network, the state code, the call sign and channel numbers are taken out. */
+var LOCAL_NETS = ['ABC', 'CBS', 'NBC', 'FOX', 'CW', 'PBS', 'MYTV', 'MY TV', 'MYNETWORKTV', 'MNT', 'ION', 'TELEMUNDO', 'UNIVISION', 'UNIMAS', 'GALAVISION', 'ESTRELLA', 'AZTECA', 'TELEMUNDO LOCAL',
+  'CBC', 'CTV 2', 'CTV2', 'CTV', 'GLOBAL', 'CITYTV', 'CITY', 'OMNI', 'ROGERS TV', 'TVA', 'NOOVO', 'ICI RADIO-CANADA', 'RADIO-CANADA', 'ICI', 'INDEPENDENT', 'IND', 'METV', 'MeTV', 'ANTENNA TV', 'COZI', 'BOUNCE'];
+var LOCAL_NET_RE = new RegExp('^(' + LOCAL_NETS.slice().sort(function (a, b) { return b.length - a.length; }).map(function (n) { return n.replace(/[-]/g, '\\-'); }).join('|') + ')\\b\\s*', 'i');
+var CALL_RE = /\b[KW][A-Z]{2,3}(?:[-\s]?(?:TV|DT|LD|CD|LP))?\b/g;
+function parseLocal(name) {
+  var s = String(name || '').replace(/^\s*(?:[\[(|]?\s*(?:USA|US|CA|CAN)\s*[\])|]?\s*[|:\-]\s*)/i, '').trim();
+  var nm = LOCAL_NET_RE.exec(s); if (!nm) return null;
+  var net = nm[1].toUpperCase().replace(/\s+/g, ' ');
+  var rest = s.slice(nm[0].length).replace(/^[\s|:\-–]+/, '');
+  var call = (rest.match(CALL_RE) || [])[0] || '';
+  var st = '', m = /^([A-Z]{2})\s*-\s*(.+)$/.exec(rest);
+  if (m) { st = m[1]; rest = m[2]; }
+  var city = rest.replace(/\([^)]*\)/g, ' ').replace(CALL_RE, ' ').split(/\s*[|]\s*/)[0]
+    .replace(/\b(?:HD|FHD|SD|4K)\b/gi, ' ').replace(/\b\w*\d\w*\b/g, ' ').replace(new RegExp('\\b' + net + '\\b', 'i'), ' ')
+    .replace(/[^\p{L}\s.'&-]/gu, ' ').replace(/\s+/g, ' ').replace(/^[\s.\-]+|[\s.\-]+$/g, '').toUpperCase();
+  if (!city || city.length < 3 || /^(EAST|WEST|PACIFIC|NATIONAL|NETWORK|NEWS|NEWS NOW|NOW|LIVE|SPORTS|PLUS|HD|CHANNEL|KIDS|LOCAL|LOCALS)$/.test(city)) return { net: net, city: '', st: st, call: call };
+  city = city.replace(/^SAINT\b/, 'ST').replace(/^ST\.\s*/, 'ST ').replace(/^FT\.?\s/, 'FORT ');
+  return { net: net, city: city, st: st, call: call };
+}
+function isLocalGroup(g) { return /\blocals?\b|\baffiliates?\b|\bnetwork (?:locals|stations)\b/i.test(String(g.raw || g.name || '')); }
+var localCache = null;
+function localIndex() {
+  if (localCache && localCache.d === D) return localCache.r;
+  var groups = providerGroups().filter(isLocalGroup), cities = {}, chans = [];
+  groups.forEach(function (g) {
+    channelsOf(g.id, true).forEach(function (c) {
+      var p = parseLocal(c.n); if (!p) return;
+      chans.push({ c: c, p: p });
+      if (!p.city) return;
+      var x = cities[p.city] || (cities[p.city] = { city: p.city, nets: {}, n: 0, st: p.st });
+      x.nets[p.net] = 1; x.n++; if (!x.st && p.st) x.st = p.st;
+    });
+  });
+  groups = groups.filter(function (g) { return chans.some(function (x) { return x.c.g === g.id; }); });
+  var r = { groups: groups, chans: chans, cities: Object.keys(cities).map(function (k) { return cities[k]; }).sort(function (a, b) { return a.city.localeCompare(b.city); }) };
+  localCache = { d: D, r: r };
+  return r;
+}
+function titleCase(s) { return String(s).toLowerCase().replace(/(^|[\s\-'])\p{L}/gu, function (m) { return m.toUpperCase(); }); }
 function emptyGroups() {
   return providerGroups().filter(function (g) { if (E.hiddenGroups[g.id]) return false; var l = channelsOf(g.id, true); return !l.length || l.every(function (c) { return E.hiddenChannels[c.k]; }); });
 }
@@ -2146,7 +2236,51 @@ function renderTools() {
   $('tIdle').innerHTML = '<h3>Channels with nothing on</h3><p>Event channels the provider names "Off Air", "Offline" or "No Event Scheduled" between events.  This hides them only while they say so: as soon as the provider names an event on one, it shows again.  Favorites keep theirs.</p>' +
     (idl.length ? '<div class="small" style="margin-bottom:10px">' + plural(idl.length, 'shown channel') + ' say so right now, like ' + idl.slice(0, 6).map(function (c) { return esc(c.n); }).join(', ') + '</div>' : '<div class="muted small" style="margin-bottom:10px">No shown channel says so right now.</div>') +
     '<label class="rule" style="margin:0"><input type="checkbox" class="sw" id="idleOn"' + (N.hideIdle ? ' checked' : '') + '><div><b>Hide channels with nothing on</b><div class="ex">The same switch as Channel names on the TV (Settings, Playlists).</div></div></label>';
+  /* East and West feeds */
+  renderFeeds();
+  /* local channels */
+  renderLocal();
 }
+function renderFeeds() {
+  var fp = feedPairs(), fo = renderTools.feeds || (renderTools.feeds = { keep: 'east', groups: true });
+  var shown = function (l) { return l.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g]; }); };
+  var drop = fo.keep === 'east' ? 'west' : 'east', hideList = shown(fp[drop]), gs = fo.groups ? feedGroups(drop).filter(function (g) { return !E.hiddenGroups[g.id]; }) : [];
+  var ex = fp.west.slice(0, 4).map(function (c) { return esc(c.n); }).join(', ');
+  $('tFeeds').innerHTML = '<h3>East and West feeds</h3><p>Many US channels come twice, on East and West (or Pacific) time.  Keep the feed you watch and hide the other copy.  Channels that only come in one feed are left alone.</p>' +
+    (fp.pairs ? '<div class="small" style="margin-bottom:12px">' + plural(fp.pairs, 'channel') + ' come in both feeds, like ' + ex + '.</div>' +
+      '<div class="row" style="gap:16px;flex-wrap:wrap"><div class="seg" id="feedKeep"><button data-k="east"' + (fo.keep === 'east' ? ' class="on"' : '') + '>Keep East</button><button data-k="west"' + (fo.keep === 'west' ? ' class="on"' : '') + '>Keep West</button></div>' +
+      '<label class="muted small"><input type="checkbox" id="feedGroups"' + (fo.groups ? ' checked' : '') + '> Also hide groups named ' + (drop === 'west' ? 'West' : 'East') + (feedGroups(drop).length ? ' (' + feedGroups(drop).slice(0, 4).map(function (g) { return esc(g.raw); }).join(', ') + ')' : '') + '</label>' +
+      '<span class="grow"></span><button class="primary" id="feedGo"' + (hideList.length || gs.length ? '' : ' disabled') + '>' + (hideList.length || gs.length ? 'Hide ' + plural(hideList.length, drop === 'west' ? 'West copy' : 'East copy', drop === 'west' ? 'West copies' : 'East copies') + (gs.length ? ' and ' + plural(gs.length, 'group') : '') : 'Nothing left to hide') + '</button></div>'
+      : '<div class="muted">No channels come in both an East and a West feed.</div>');
+}
+function renderLocal() {
+  var li = localIndex(), lo = renderTools.local || (renderTools.local = { sel: {}, q: '', none: true });
+  if (!li.cities.length) { $('tLocal').innerHTML = '<h3>Local channels: pick your city</h3><div class="muted">No local channel groups found (groups named like "ABC Locals" or "CBS Locals").</div>'; return; }
+  var nets = {}; li.chans.forEach(function (x) { nets[x.p.net] = 1; });
+  $('tLocal').innerHTML = '<h3>Local channels: pick your city</h3><p>Your provider’s local groups (' + li.groups.slice(0, 6).map(function (g) { return esc(g.name); }).join(', ') + (li.groups.length > 6 ? '…' : '') + ') carry stations for ' + li.cities.length + ' cities.  Pick yours, and TiviBro keeps those and hides the rest in every local group at once.</p>' +
+    '<div class="row" style="gap:12px;flex-wrap:wrap"><input id="lcQ" type="text" class="grow" placeholder="Find a city: Detroit, Lansing, Boston…" value="' + esc(lo.q) + '" style="min-width:240px">' +
+    '<label class="muted small"><input type="checkbox" id="lcNone"' + (lo.none ? ' checked' : '') + '> Keep stations with no city (national feeds)</label></div>' +
+    '<div id="lcList" class="lclist"></div><div class="row" style="margin-top:12px"><span class="muted small grow" id="lcInfo"></span><button class="primary" id="lcGo" disabled>Keep only these cities</button></div>';
+  drawLocalList();
+}
+function drawLocalList() {
+  var li = localIndex(), lo = renderTools.local, q = lo.q.trim().toUpperCase();
+  var picked = li.cities.filter(function (c) { return lo.sel[c.city]; });
+  var rest = li.cities.filter(function (c) { return !lo.sel[c.city] && (!q || c.city.indexOf(q) >= 0 || (c.st && c.st === q)); });
+  var list = picked.concat(rest.slice(0, q ? 80 : 40));
+  $('lcList').innerHTML = list.map(function (c) {
+    var on = !!lo.sel[c.city];
+    return '<label class="lc' + (on ? ' on' : '') + '"><input type="checkbox" data-city="' + esc(c.city) + '"' + (on ? ' checked' : '') + '><b>' + esc(titleCase(c.city)) + (c.st ? ' <span class="dim">' + esc(c.st) + '</span>' : '') + '</b><span class="dim small">' + Object.keys(c.nets).sort().join(' · ') + '</span></label>';
+  }).join('') + (!q && rest.length > 40 ? '<div class="muted small" style="padding:6px 2px">and ' + (rest.length - 40) + ' more: type to find yours.</div>' : '') + (q && !rest.length ? '<div class="muted small" style="padding:6px 2px">No ' + (picked.length ? 'other ' : '') + 'city matches “' + esc(lo.q.trim()) + '”.</div>' : '');
+  var n = picked.length, hide = localHideList();
+  $('lcInfo').textContent = n ? 'Keeps ' + plural(li.chans.length - hide.length, 'local station') + ' in ' + plural(n, 'city', 'cities') + ', hides ' + hide.length + '.' : 'Tick one or more cities.';
+  $('lcGo').disabled = !n; $('lcGo').textContent = n ? 'Keep only ' + (n === 1 ? titleCase(picked[0].city) : n + ' cities') : 'Keep only these cities';
+}
+function localHideList() {
+  var li = localIndex(), lo = renderTools.local;
+  return li.chans.filter(function (x) { return x.p.city ? !lo.sel[x.p.city] : !lo.none; });
+}
+
 function ccInfo() {
   var keep = {}, none = $('ccNoPrefix').checked, n = 0, s = 0;
   document.querySelectorAll('[data-cc]').forEach(function (i) { keep[i.dataset.cc] = i.checked; });
@@ -2171,6 +2305,33 @@ $('tDivider').addEventListener('click', function (e) {
   var l = dividerGroups();
   mut('Hid ' + plural(l.length, 'divider group'), function () { l.forEach(function (g) { E.hiddenGroups[g.id] = 1; }); });
   toast(plural(l.length, 'divider group') + ' hidden', ['Undo', undo]);
+});
+$('tFeeds').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  var fo = renderTools.feeds;
+  if (b.dataset.k) { fo.keep = b.dataset.k; renderFeeds(); return; }
+  if (b.id !== 'feedGo') return;
+  var drop = fo.keep === 'east' ? 'west' : 'east', l = feedPairs()[drop].filter(function (c) { return !E.hiddenChannels[c.k]; }), gs = fo.groups ? feedGroups(drop) : [];
+  mut('Kept the ' + (fo.keep === 'east' ? 'East' : 'West') + ' feeds: hid ' + plural(l.length, drop === 'west' ? 'West copy' : 'East copy', drop === 'west' ? 'West copies' : 'East copies') + (gs.length ? ' and ' + plural(gs.length, 'group') : ''), function () {
+    l.forEach(function (c) { E.hiddenChannels[c.k] = 1; }); gs.forEach(function (g) { E.hiddenGroups[g.id] = 1; });
+  });
+  toast(plural(l.length, 'copy', 'copies') + ' hidden', ['Undo', undo]);
+});
+$('tFeeds').addEventListener('change', function (e) { if (e.target.id === 'feedGroups') { renderTools.feeds.groups = e.target.checked; renderFeeds(); } });
+$('tLocal').addEventListener('input', function (e) { if (e.target.id === 'lcQ') { renderTools.local.q = e.target.value; drawLocalList(); } });
+$('tLocal').addEventListener('change', function (e) {
+  var t = e.target, lo = renderTools.local;
+  if (t.dataset.city) { if (t.checked) lo.sel[t.dataset.city] = 1; else delete lo.sel[t.dataset.city]; drawLocalList(); }
+  if (t.id === 'lcNone') { lo.none = t.checked; drawLocalList(); }
+});
+$('tLocal').addEventListener('click', function (e) {
+  if (e.target.id !== 'lcGo') return;
+  var li = localIndex(), lo = renderTools.local, hide = localHideList(), keep = li.chans.filter(function (x) { return hide.indexOf(x) < 0; });
+  var names = Object.keys(lo.sel).map(titleCase);
+  mut('Kept local stations for ' + names.join(', '), function () {
+    hide.forEach(function (x) { E.hiddenChannels[x.c.k] = 1; }); keep.forEach(function (x) { delete E.hiddenChannels[x.c.k]; });
+  });
+  toast('Local stations for ' + names.join(', ') + ' kept, ' + plural(hide.length, 'other') + ' hidden', ['Undo', undo]);
 });
 $('tIdle').addEventListener('change', function (e) {
   if (e.target.id !== 'idleOn') return;

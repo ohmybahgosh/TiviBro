@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Smart clean-up, **East and West feeds**: finds channels that come in both time zones ("HBO (EAST)" and "HBO (WEST)", "A&E" and "A&E (WEST)", groups like "USA WEST") and keeps the one you pick, hiding the other copies (and the groups named for them) in one step.  On a real provider: 76 channels in both feeds.
+- Smart clean-up, **Local channels: pick your city**: reads the city out of every station in the local groups (ABC, CBS, NBC, FOX, CW, PBS, Telemundo, Univision, CBC, CTV, Global and more, in the "NET | CITY | CALL", "PBS | ST - CITY (CALL)" and "CW | CITY 56 CALL" styles).  Find your city, tick it or a few nearby, and every other city's stations are hidden in all the local groups at once.  On a real provider: 929 local stations in 321 cities, down to Detroit and Lansing in one click.  Test: `tests/unit/cleanup.test.js`.
+- The mock provider with `MOCK_EVENTS=1` also has East and West feeds and local groups, for the demo screenshots.
+
 ## 0.6.0 (alpha 9, 2026-10-29)
 
 Pre-release: expect rough edges, and keep a backup before installing.

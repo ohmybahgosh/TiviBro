@@ -124,6 +124,22 @@ if (process.env.MOCK_EVENTS) {
       [7, t => `NFL 2 | ${md(t)} ${hm(t)} | Prairie Bison @ Coastline Pilots`],
       [-30, t => `NFL 3 | ${md(t)} ${hm(t)} | Desert Hawks @ Summit Miners`]]]
   ];
+  // East and West feeds, and local stations by city (Smart clean-up).
+  const usEnt = streams.filter(x => /^US\| /.test(x.name)).slice(0, 6);
+  const CITIES = [['DETROIT', 'MI'], ['LANSING', 'MI'], ['CHICAGO', 'IL'], ['BOSTON', 'MA'], ['DENVER', 'CO'], ['SEATTLE', 'WA'], ['AUSTIN', 'TX'], ['TAMPA', 'FL']];
+  const call = (n, i) => (i % 2 ? 'K' : 'W') + n.slice(0, 1) + 'X' + String.fromCharCode(65 + i);
+  const extra = [
+    ['US | Entertainment WEST', usEnt.map(x => () => x.name + ' (WEST)')],
+    ['ABC Locals', CITIES.map(([c], i) => () => `ABC | ${c} | ${call('A', i)}`)],
+    ['CBS Locals', CITIES.slice(0, 6).map(([c], i) => () => `CBS | ${c} | ${call('C', i)}`)],
+    ['NBC Locals', CITIES.slice(1, 8).map(([c], i) => () => `NBC | ${c} | ${call('N', i)}`)],
+    ['PBS Locals', CITIES.map(([c, st], i) => () => `PBS | ${st} - ${c} (${call('P', i)})`)]
+  ];
+  extra.forEach(([cname, list]) => {
+    const ci = cats.length;
+    cats.push({ category_id: String(ci + 1), category_name: cname, parent_id: 0 });
+    list.forEach((f, i) => { const id = 210000 + ci * 20 + i; streams.push({ num: id, name: f(), stream_type: 'live', stream_id: id, stream_icon: '', epg_channel_id: '', added: '1761000000', category_id: String(ci + 1), tv_archive: 0, tv_archive_duration: 0, clip: 'local', base: cname, ci }); });
+  });
   EV.forEach(([cname, list]) => {
     const ci = cats.length;
     cats.push({ category_id: String(ci + 1), category_name: cname, parent_id: 0 });

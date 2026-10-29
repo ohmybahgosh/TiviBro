@@ -70,7 +70,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
 | 🖥️ **A full editor on your computer** | Clean up 10,000 channels with a keyboard and mouse instead of a remote: hide, sort, rename, copy and move, then **Send to TV**.  Unsent work is autosaved on the TV within seconds, with a version history, so a refresh never costs you an hour. |
 | 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
-| 🧹 **Clean-up that already knows IPTV** | Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from codes, words, channel prefixes or the provider's divider groups, duplicates in different qualities, and **Smart match** for channels without a guide. |
+| 🧹 **Clean-up that already knows IPTV** | Pick your city once and every local group (ABC, CBS, NBC, FOX, CW, PBS…) keeps only your stations.  Keep East or West feeds in one click.  Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from any naming style, duplicates in different qualities, and **Smart match** for channels without a guide. |
 | 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled" stay out of the way, and come back by themselves when an event is named. |
 | 🔐 **Locked backups, restored from the first screen** | One AES-256 file with every playlist, login, group and setting.  A brand-new TV restores it from a computer before you've touched a setting. |
 | 💸 **Everything free, nothing locked** | Catch-up, multiview, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking. |
@@ -87,6 +87,8 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | Switches to another version of a dead channel by itself | ✅ | ❌ |
 | Preloaded name clean-up rules | ✅ About 250 country codes, tags, symbols | Your own prefix and suffix lists |
 | Hide channels with nothing on | ✅ | ❌ |
+| Pick your city for every local channel group at once | ✅ | ❌ One group at a time |
+| Keep East or West feeds in one step | ✅ | ❌ |
 | Recording | Not yet | ✅ Premium |
 
 <sub>TiviMate column from its own site and public guides, October 2026.  TiviMate is a great app; this is what TiviBro adds.</sub>
@@ -248,7 +250,7 @@ Turn on **Settings > Edit on a computer**.  The TV shows an address and a passwo
 - **Drafts, undo and restore points.**  Nothing reaches the TV until you press **Send to TV**.  Every change can be undone, and the TV keeps restore points.
 - **Never lose an hour of clean-up.**  Unsent work is autosaved in the browser and on the TV within seconds, with a draft history of versions.  A refresh, a closed tab or another computer picks up right where you left off.
 - **Copy or move channels into any group,** including your provider's groups.  Each group can have its own sort order.
-- **Smart clean-up.**  Keep only the countries you watch (read from codes, country words, channel prefixes or the provider's divider groups), hide duplicate channels in different qualities, hide by keyword, empty groups and divider groups, and keep "Off Air" event channels out of the way.
+- **Smart clean-up.**  Keep only the countries you watch (read from codes, country words, channel prefixes or the provider's divider groups), pick your city for the local stations in every local group at once, keep East or West feeds, hide duplicate channels in different qualities, hide by keyword, empty groups and divider groups, and keep "Off Air" event channels out of the way.
 - **Channel name rules** for about 250 country codes, quality tags, symbols and emoji, plus optional ones for streaming-service prefixes, country codes at the end and status notes.
 - **Smart match** finds the right guide channel for channels showing "No guide information".  You approve or decline each guess.
 - **Live guide download progress** on big XMLTV files: speed, percent and time left, on the computer and on the TV.
@@ -356,6 +358,7 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
   <a href="docs/screenshots/editor-guide-progress.png"><img src="docs/screenshots/editor-guide-progress.png" width="49%" alt="Guide download progress"></a>
   <a href="docs/screenshots/editor-smart-match.png"><img src="docs/screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
   <a href="docs/screenshots/editor-smart-cleanup.png"><img src="docs/screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
+  <a href="docs/screenshots/editor-feeds-local.png"><img src="docs/screenshots/editor-feeds-local.png" width="49%" alt="East and West feeds, and local channels by city"></a>
   <a href="docs/screenshots/editor-backup.png"><img src="docs/screenshots/editor-backup.png" width="49%" alt="Backup and restore"></a>
   <a href="docs/screenshots/editor-groups.png"><img src="docs/screenshots/editor-groups.png" width="49%" alt="Groups and channels"></a>
   <a href="docs/screenshots/editor-names.png"><img src="docs/screenshots/editor-names.png" width="49%" alt="Channel names"></a>

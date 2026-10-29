@@ -530,6 +530,12 @@ async function editorShots(browser) {
   await go('guide'); await snap('editor-guide');
   await go('names'); await snap('editor-names');
   await go('tools'); await snap('editor-smart-cleanup');
+  // East and West feeds, and local stations by city (the mock has them with MOCK_EVENTS=1).
+  if (await ed.$('#lcQ')) {
+    await ed.fill('#lcQ', 'mi'); await ed.waitForTimeout(400);
+    await ed.click('#lcList input[data-city="DETROIT"]').catch(() => {}); await ed.click('#lcList input[data-city="LANSING"]').catch(() => {});
+    await ed.evaluate(() => document.getElementById('tFeeds').scrollIntoView({ block: 'start' })); await snap('editor-feeds-local');
+  }
   await go('playlists'); await snap('editor-playlists');
   // A couple of drafts, so Review and the history have something to show.
   await go('gc');
