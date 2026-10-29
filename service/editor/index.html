@@ -223,6 +223,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 .toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:var(--raised);border:1px solid var(--line);padding:10px 18px;border-radius:10px;z-index:45;box-shadow:0 8px 30px rgba(0,0,0,.5);display:flex;gap:12px;align-items:center}
 .toast button{padding:3px 10px}
 /* change bar */
+.cbdraft{margin-left:12px;font-size:12px;color:var(--dim,#8f9bbf);font-weight:400}
 .changebar{flex:none;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 20px;border-top:1px solid var(--accline);background:#0f1733}
 .changebar .lbl{display:flex;align-items:center;gap:10px;font-weight:600}
 .changebar .lbl i{width:10px;height:10px;border-radius:50%;background:var(--accent)}
@@ -446,10 +447,16 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
     <section class="page hidden" id="p-history">
       <div class="phead"><div><h1>Changes and restore points</h1><p>What is waiting to go to the TV, everything you did in this session, and saved points you can go back to.</p></div></div>
       <div class="scroll">
-        <div class="note">Undo works on this page's session.  Restore points live on the TV and survive restarts; the TV makes one by itself each time you send changes.  <a href="#help/saving">Learn more</a></div>
+        <div class="note">Undo works on this page's session.  Draft history keeps your unsent work on the TV.  Restore points hold what the TV is using; the TV makes one by itself each time you send changes.  <a href="#help/saving">Learn more</a></div>
         <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(400px,1fr))">
           <div class="card"><div class="row"><h3 class="grow" style="margin:0">Not on the TV yet</h3><button id="hDiscard" class="ghost danger small">Discard all</button><button id="hSend" class="primary small">Send to TV</button></div><div id="hDiff" style="margin-top:10px"></div></div>
           <div class="card"><div class="row"><h3 class="grow" style="margin:0">This session</h3><button id="hUndo" class="small">Undo</button><button id="hRedo" class="small">Redo</button></div><p style="margin-top:6px">Newest first.  "Go back" returns to just before that change (and can itself be undone).</p><div id="hList"></div></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="row"><h3 class="grow" style="margin:0">Draft history</h3><span id="dSize" class="small muted"></span><button id="dRefresh" class="small">Refresh</button></div>
+          <p style="margin-top:6px">Your unsent work is saved on the TV a few seconds after every change, with a version every few minutes, before you send and before you discard.  A reload, a closed tab or another computer never loses it.  <b>Open</b> a version to keep working from it (you can undo that too).</p>
+          <form id="dForm" class="row" style="margin-bottom:12px"><input id="dName" type="text" class="grow" placeholder="Name this version, e.g. Before hiding the sports groups" maxlength="80"><button class="primary" id="dSave">Save a version</button></form>
+          <div id="dList"></div>
         </div>
         <div class="card" style="margin-top:16px">
           <div class="row"><h3 class="grow" style="margin:0">Restore points on the TV</h3><button id="sRefresh" class="small">Refresh</button></div>
@@ -501,7 +508,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
     </section>
 
     <div id="changebar" class="changebar hidden">
-      <span class="lbl"><i></i><span id="cbText"></span></span>
+      <span class="lbl"><i></i><span id="cbText"></span><span id="cbDraft" class="cbdraft"></span></span>
       <button class="ghost small" id="cbReview">Review</button>
       <span class="grow"></span>
       <label title="Send each change to the TV as soon as you make it"><input type="checkbox" class="sw" id="autoSend"> Send automatically</label>
@@ -519,7 +526,9 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 /* TiviBro web editor.
    The browser keeps a working copy of the TV's edits (E) and name rules (N).  Every change goes
    through mut(), which records an undo step and marks the copy as a draft.  Nothing reaches the
-   TV until "Send to TV" (or "Send automatically").  Drafts survive a page reload in this browser.
+   TV until "Send to TV" (or "Send automatically").  Drafts are autosaved twice: in this browser at
+   once, and on the TV a few seconds later (with a version history), so a reload, a closed tab or
+   another browser never loses unsent work.
    Actions the TV must carry out (playlists, guide sources, restore points, backup) go as
    commands and are polled for a result. */
 var $ = function (id) { return document.getElementById(id); };
@@ -530,6 +539,7 @@ try { token = sessionStorage.getItem('tivibro.editor.token') || ''; } catch (e) 
 var D = null, E = null, N = null, BASE = null;            // snapshot, working edits, working names, what the TV has
 var rev = 0, sentRev = 0, sending = false, inflight = 0, sel = new Set(), curGroup = null, query = '', page = 'home';
 var hist = [], redo = [], lastProgress = null, tvLost = false;
+var dT = 0, dFirst = 0, dLast = '', dSeq = 0, dAck = 0, dAt = 0, draftsCache = null;   // draft autosave on the TV
 var FAV = 'c_fav', ALL = '__all';
 var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort'];
 var byKey = new Map(), byGroup = new Map(), guideName = new Map();
@@ -829,23 +839,63 @@ function goBack(i) {
 function afterJump() { if (!groupExists(curGroup)) curGroup = ALL; renderNames(); renderAll(); }
 function draftKey() { return 'tivibro.editor.draft.' + (D && D.playlist ? D.playlist.id : 'x'); }
 var autoT = 0;
+var lsFull = false;
 function changed() {
   var d = { at: Date.now(), base: JSON.stringify(BASE), state: stateStr(), hist: hist.slice(-40) };
-  if (!LS.set(draftKey(), d)) { d.hist = hist.slice(-3); if (!LS.set(draftKey(), d)) { d.hist = []; LS.set(draftKey(), d); } }
+  lsFull = false;
+  if (!LS.set(draftKey(), d)) { d.hist = hist.slice(-3); if (!LS.set(draftKey(), d)) { d.hist = []; lsFull = !LS.set(draftKey(), d); } }
+  scheduleDraft();
   updateBar();
   if ($('autoSend').checked) { clearTimeout(autoT); autoT = setTimeout(send, 800); }
 }
-// Draft from an earlier visit in this browser: offer it back.
+/* Draft autosave on the TV: a few seconds after the last change, and at least every 30 seconds
+   while you keep working.  The TV keeps versions (see the Changes page). */
+function lastLabel() { return hist.length ? hist[hist.length - 1].label : ''; }
+function saveDraftToTV(kind, name, state, changes) {
+  if (!D || D.setup || !token) return Promise.resolve();
+  state = state || stateStr();
+  if (kind === 'auto' && state === dLast) return Promise.resolve();
+  var body = { state: state, playlist: D.playlist ? D.playlist.id : '', changes: changes == null ? pendingCount() : changes, label: lastLabel(), kind: kind || 'auto', name: name || '' };
+  return api('/api/draft', { method: 'POST', body: body }).then(function (j) { if (kind === 'auto' || state === stateStr()) dLast = state; dSeq = j.seq; dAt = 0; updateBar(); return j; })
+    .catch(function () { dLast = ''; });
+}
+function scheduleDraft() {
+  clearTimeout(dT);
+  if (!dFirst) dFirst = Date.now();
+  dT = setTimeout(function () { dT = 0; dFirst = 0; saveDraftToTV('auto'); }, Math.max(0, Math.min(2500, 30000 - (Date.now() - dFirst))));
+}
+function draftNote() {
+  if (!pendingCount()) return '';
+  if (dSeq && dAck >= dSeq) return 'Draft saved on the TV' + (dAt ? ' at ' + clock(dAt) : '');
+  if (dT || (dSeq && dAck < dSeq)) return tvLost ? (lsFull ? 'Not saved: the TV is unreachable and this browser is full' : 'Saved in this browser; the TV is unreachable') : 'Saving draft…';
+  return lsFull ? '' : 'Saved in this browser';
+}
+// Unsent work from earlier: this browser's draft or the TV's, whichever is newer.
 function offerDraft() {
-  var d = LS.get(draftKey(), null);
-  if (!d || !d.state) return;
+  var d = LS.get(draftKey(), null), tv = D && D.drafts && D.drafts.latest;
+  var local = d && d.state ? d : null;
+  if (tv && !tv.sent && (!local || tv.at > local.at)) {
+    // The TV's copy of this very draft is a little newer than the browser's; prefer the browser's,
+    // which also has this session's undo steps.
+    return command('getDraft', { id: tv.id }, 20000).then(function (r) {
+      if (local && r.data.state === local.state) showOffer(local);
+      else showOffer({ at: r.data.at, state: r.data.state, hist: [], fromTV: true, base: null });
+    }).catch(function () { if (local) showOffer(local); });
+  }
+  if (local) showOffer(local);
+}
+function showOffer(d) {
   var o = JSON.parse(d.state), diff = diffs(BASE, { E: pickE(o.E), N: o.N });
-  if (!diff.length) { LS.del(draftKey()); return; }
-  var moved = d.base !== JSON.stringify(BASE);
-  modal('Unsent changes from earlier', '<p>You have <b>' + plural(diff.length, 'change') + '</b> from ' + esc(ago(d.at)) + ' that never reached the TV.</p>' +
+  if (!diff.length) { if (!d.fromTV) LS.del(draftKey()); return; }
+  var moved = !d.fromTV && d.base !== JSON.stringify(BASE);
+  modal('Unsent changes from earlier', '<p>You have <b>' + plural(diff.length, 'change') + '</b> from ' + esc(ago(d.at)) + ' that never reached the TV' + (d.fromTV ? ', saved on the TV (from this or another browser)' : '') + '.</p>' +
     (moved ? '<div class="note warn">The TV\'s setup changed since then (on the TV or from another computer).  Keeping your draft will replace those changes when you send it.</div>' : '') +
-    '<div style="max-height:220px;overflow:auto">' + diff.slice(0, 40).map(function (x) { return '<div class="small">• ' + esc(x) + '</div>'; }).join('') + (diff.length > 40 ? '<div class="small muted">and ' + (diff.length - 40) + ' more</div>' : '') + '</div>',
-    null, [['Throw them away', 'ghost danger', function () { LS.del(draftKey()); closeModal(); }], ['Keep working on them', 'primary', function () {
+    '<div style="max-height:220px;overflow:auto">' + diff.slice(0, 40).map(function (x) { return '<div class="small">• ' + esc(x) + '</div>'; }).join('') + (diff.length > 40 ? '<div class="small muted">and ' + (diff.length - 40) + ' more</div>' : '') + '</div>' +
+    '<p class="muted small">Not sure?  Every autosaved version stays in <b>Draft history</b> on the Changes page, even if you throw this one away.</p>',
+    null, [['Throw them away', 'ghost danger', function () {
+      if (!d.fromTV) saveDraftToTV('checkpoint', 'Thrown away', d.state, diff.length);
+      LS.del(draftKey()); closeModal(); toast('Thrown away.  It is still in Draft history.', ['Open history', function () { show('history'); }]);
+    }], ['Keep working on them', 'primary', function () {
       setState(JSON.stringify({ E: pickE(o.E), N: o.N })); hist = d.hist || []; changed(); afterJump(); closeModal(); toast('Draft restored.  Send it when you are ready.');
     }]]);
 }
@@ -892,6 +942,7 @@ function send() {
   if (sending) { clearTimeout(autoT); autoT = setTimeout(send, 500); return Promise.resolve(); }
   var n = pendingCount(); if (!n) { updateBar(); return Promise.resolve(); }
   sending = true; updateBar(); busy(1);
+  saveDraftToTV('checkpoint', 'Before sending', null, n);
   var sentState = { E: clone(E), N: clone(N) };
   var body = { edits: {}, names: N };
   FIELDS.forEach(function (f) { body.edits[f] = E[f]; });
@@ -917,7 +968,8 @@ function send() {
 }
 function discard() {
   var n = pendingCount(); if (!n) return;
-  if (!confirm('Throw away ' + plural(n, 'change') + ' that are not on the TV?  (You can undo this.)')) return;
+  if (!confirm('Throw away ' + plural(n, 'change') + ' that are not on the TV?  (You can undo this, and a copy stays in Draft history.)')) return;
+  saveDraftToTV('checkpoint', 'Before discarding', null, n);
   mut('Discarded unsent changes', function () { E = clone(BASE.E); N = clone(BASE.N); }, { noRender: true });
   afterJump();
 }
@@ -931,6 +983,7 @@ function updateBar() {
   if (bar.classList.contains('sent')) return;
   bar.classList.toggle('hidden', !n && !sending);
   $('cbText').textContent = sending ? 'Sending to the TV…' : plural(n, 'change') + ' not on the TV yet';
+  $('cbDraft').textContent = sending ? '' : draftNote();
   $('cbSend').disabled = sending || !n; $('cbUndo').disabled = !hist.length;
   $('cbSend').classList.toggle('spin', sending);
   if (tvLost) setStatus('bad', 'Can\'t reach TiviBro on the TV.  Is it still open?');
@@ -953,6 +1006,7 @@ setInterval(function () {
   api('/api/rev').then(function (j) {
     var lost = j.tvSeen && j.now - j.tvSeen > 9000;
     if (lost !== tvLost) { tvLost = lost; updateBar(); }
+    if (j.draftAck != null && j.draftAck !== dAck) { dAck = j.draftAck; if (dSeq && dAck >= dSeq && !dAt) dAt = Date.now(); updateBar(); if (page === 'history' && dAck >= dSeq) loadDrafts(true); }
     if (j.progress) onProgress(j.progress);
     if (j.rev > rev && !sending && !inflight && j.pendingRev <= j.appliedRev) load(false).catch(function () {});
   }).catch(function (err) { if (err.message !== 'auth') { tvLost = true; setStatus('bad', 'Lost the connection to the TV.'); } });
@@ -965,7 +1019,7 @@ function show(p, sub) {
   document.querySelectorAll('#nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.page === p); });
   document.querySelectorAll('.page').forEach(function (s) { s.classList.toggle('hidden', s.id !== 'p-' + p); });
   if (p === 'gc') renderChannels(); if (p === 'guide') renderGuide(); if (p === 'names') renderPreview(); if (p === 'home') renderHome();
-  if (p === 'tools') renderTools(); if (p === 'history') { renderHistory(); loadSnaps(); } if (p === 'help') renderHelp(sub);
+  if (p === 'tools') renderTools(); if (p === 'history') { renderHistory(); loadSnaps(); loadDrafts(); } if (p === 'help') renderHelp(sub);
   var h = '#' + p + (sub ? '/' + sub : '');
   if (location.hash !== h) history.replaceState(null, '', h);
 }
@@ -1840,7 +1894,9 @@ var HELP = [
   ['start', 'Getting started', '<p>This editor changes what TiviBro shows on your TV: which groups and channels appear, their names and order, your own groups, and the programme guide.  It talks to TiviBro on the TV over your home network, so <b>keep TiviBro open on the TV</b> while you work.</p>' +
     '<p>A good order for a first clean-up:</p><ol><li><b>Smart clean-up</b>: keep only your countries, hide duplicates and empty groups.</li><li><b>Groups and channels</b>: switch on the groups you watch, drag them into order, make favorites.</li><li><b>Channel names</b>: turn on the recommended clean-up.</li><li><b>Guide</b>: get a guide for every channel.</li><li>Press <b>Send to TV</b>, then download a <b>backup</b>.</li></ol>'],
   ['saving', 'Saving, undo and restore points', '<h3>Drafts</h3><p>Every change is a <b>draft</b> first.  A bar at the bottom counts them: "5 changes not on the TV yet".  Press <b>Send to TV</b> (or <kbd>Ctrl</kbd>+<kbd>S</kbd>) and the TV applies them within a few seconds; the bar turns green when the TV confirms.  <b>Review</b> lists every change in plain words before you send.</p>' +
-    '<p>Prefer changes to go out as you make them?  Switch on <b>Send automatically</b> in the bar.</p><p>Drafts are kept in this browser.  Close the page by accident and the editor offers them back next time.</p>' +
+    '<p>Prefer changes to go out as you make them?  Switch on <b>Send automatically</b> in the bar.</p><h3>Autosave and draft history</h3><p>You can\'t lose unsent work.  Every change is saved in this browser at once, and on the TV a few seconds later; the bar says when ("Draft saved on the TV at 8:41").  Reload the page, close the tab, or open the editor on another computer, and it offers your unsent changes back.</p>' +
+    '<p><b>Draft history</b> on the Changes page keeps versions of your unsent work on the TV: one every few minutes (or every 20 changes) while you work, one before you send, one before you discard, and any you name with <b>Save a version</b>.  <b>Open</b> one to keep working from it; that is a normal step you can undo.  Throwing away a draft from the "Unsent changes" question keeps it in the history too.</p>' +
+    '<p>Each version holds only your edits, not the channel list, so it is small (a few KB to a few hundred KB).  The TV keeps up to 8 MB of them per playlist and drops the oldest automatic ones first.</p>' +
     '<h3>Undo</h3><p><kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes the last change, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redoes it.  <b>Changes and restore points</b> lists everything you did in this session; <b>Go back</b> returns to just before any of them.  Undo works even after sending: undo, then send again.</p>' +
     '<h3>Restore points</h3><p>Restore points live <b>on the TV</b>, per playlist, and survive restarts.  The TV makes one automatically just before applying changes from this editor (it keeps the last 15), and you can make named ones before a big clean-up (up to 30).  Restoring one makes another automatic point first, so a restore can itself be undone.</p>' +
     '<p>Restore points cover groups, channels, names and guide matches.  For settings and playlists too, use <a href="#help/backup">Backup and restore</a>.</p>'],
@@ -2143,6 +2199,42 @@ function drawSnaps() {
   }).join('') + '</table>' : '<div class="muted">No restore points yet.  The TV makes one each time you send changes, or create one above.</div>';
 }
 $('sRefresh').onclick = loadSnaps;
+/* ---------- draft history ---------- */
+var DKIND = { auto: ['automatic', ''], checkpoint: ['', 'acc'], named: ['yours', 'acc'] };
+function loadDrafts(quiet) {
+  if (!quiet) $('dList').innerHTML = draftsCache ? $('dList').innerHTML : '<div class="muted"><span class="spinner"></span> Asking the TV…</div>';
+  return busyBtn(quiet ? null : $('dRefresh'), command('listDrafts', {}, 30000)).then(function (r) { draftsCache = r.data || { list: [] }; drawDrafts(); })
+    .catch(function (err) { if (!quiet) $('dList').innerHTML = '<div class="msg bad">' + esc(err.message) + '</div>'; });
+}
+function drawDrafts() {
+  var c = draftsCache || { list: [] }, l = c.list || [];
+  $('dSize').textContent = l.length ? plural(l.length, 'version') + ', ' + (c.bytes > 1048576 ? (c.bytes / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(c.bytes / 1024)) + ' KB') + ' on the TV' : '';
+  var html = l.length ? '<table class="t"><tr><th>Version</th><th>When</th><th>Unsent changes</th><th></th></tr>' + l.map(function (x) {
+    var k = DKIND[x.kind] || DKIND.auto, title = x.name || (x.kind === 'auto' ? (x.label ? 'Last change: ' + x.label : 'Autosave') : x.label || 'Version');
+    if (x.kind === 'checkpoint') title = x.name || 'Version';
+    return '<tr><td><b>' + esc(title) + '</b> ' + (k[0] ? '<span class="chip ' + k[1] + '">' + k[0] + '</span>' : '') + (x.sent ? ' <span class="chip">sent to the TV</span>' : '') + '</td>' +
+      '<td class="small muted">' + esc(new Date(x.at).toLocaleString()) + '<div class="tiny dim">' + ago(x.at) + '</div></td>' +
+      '<td class="small muted">' + plural(x.changes || 0, 'change') + '</td>' +
+      '<td class="r"><button class="small" data-dopen="' + esc(x.id) + '">Open</button> <button class="ghost small danger" data-ddel="' + esc(x.id) + '">Delete</button></td></tr>';
+  }).join('') + '</table>' : '<div class="muted">No drafts yet.  Your unsent changes appear here a few seconds after you make them.</div>';
+  // Redraw only when something changed, so a click never lands on a list being replaced.
+  if ($('dList').innerHTML !== html && $('dList')._html !== html) { $('dList').innerHTML = html; $('dList')._html = html; }
+}
+$('dRefresh').onclick = function () { loadDrafts(); };
+$('dForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var name = $('dName').value.trim() || 'Version ' + new Date().toLocaleString();
+  busyBtn($('dSave'), saveDraftToTV('named', name).then(function () { return new Promise(function (r) { setTimeout(r, 2600); }); })).then(function () { $('dName').value = ''; toast('Saved "' + name + '" on the TV'); loadDrafts(true); });
+});
+$('dList').addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.dopen) busyBtn(b, command('getDraft', { id: b.dataset.dopen }, 20000)).then(function (r) {
+    var o = JSON.parse(r.data.state);
+    mut('Opened the draft from ' + clock(r.data.at), function () { E = pickE(o.E); N = o.N; }, { noRender: true });
+    afterJump(); toast('Opened the draft from ' + clock(r.data.at) + '.  Undo goes back.', ['Undo', undo]);
+  }).catch(function (err) { toast(err.message); });
+  if (b.dataset.ddel) ask('Delete this draft version?', 'It is removed from the TV.  Your current work is not affected.', 'Delete', function () { busyBtn(b, command('deleteDraft', { id: b.dataset.ddel }, 20000)).then(function () { loadDrafts(true); }).catch(function (err) { toast(err.message); }); }, true);
+});
 $('snapForm').addEventListener('submit', function (e) {
   e.preventDefault();
   var name = $('snapName').value.trim() || 'Restore point ' + new Date().toLocaleString();

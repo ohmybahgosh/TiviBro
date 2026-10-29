@@ -78,7 +78,8 @@ function create(log) {
     fails: {}, seen: {},
     commands: [], cmdSeq: 0, results: {},  // browser -> app actions and their outcomes
     seal: {},                            // command id -> passphrase for a backup being made (never sent to the app)
-    progress: null                       // live guide download progress from the app
+    progress: null,                      // live guide download progress from the app
+    draft: null, draftSeq: 0, draftAck: 0 // newest autosaved draft from a browser, until the app has stored it
   };
   var dir = path.join(__dirname, 'editor');
 
@@ -95,7 +96,7 @@ function create(log) {
     return n;
   }
   function status() {
-    return { running: !!st.server, port: st.port, ips: ips(), clients: clients(), snapRev: st.snapRev, pendingRev: st.pendingRev, appliedRev: st.appliedRev };
+    return { running: !!st.server, port: st.port, ips: ips(), clients: clients(), snapRev: st.snapRev, pendingRev: st.pendingRev, appliedRev: st.appliedRev, draftSeq: st.draftSeq, draftAck: st.draftAck };
   }
 
   function send(res, code, obj, type) {
@@ -155,7 +156,18 @@ function create(log) {
       if (!st.snapshot) return send(res, 503, { error: 'The TV has not sent its channel list yet.  Keep TiviBro open on the TV.' });
       return send(res, 200, { rev: st.snapRev, appliedRev: st.appliedRev, data: st.snapshot });
     }
-    if (u === '/api/rev' && req.method === 'GET') return send(res, 200, { rev: st.snapRev, pendingRev: st.pendingRev, appliedRev: st.appliedRev, progress: st.progress, tvSeen: st.tvSeen || 0, now: Date.now() });
+    if (u === '/api/rev' && req.method === 'GET') return send(res, 200, { rev: st.snapRev, pendingRev: st.pendingRev, appliedRev: st.appliedRev, progress: st.progress, tvSeen: st.tvSeen || 0, now: Date.now(), draftSeq: st.draftSeq, draftAck: st.draftAck });
+    if (u === '/api/draft' && req.method === 'POST') {
+      // Autosaved work that hasn't been sent: the app keeps it on the TV, with a version history,
+      // so a reload, a closed tab or another browser never loses it.  Only the newest is held here.
+      return readJSON(req, function (err, j) {
+        if (err || !j || typeof j.state !== 'string' || !j.state) return send(res, 400, { error: 'bad draft' });
+        st.draftSeq++;
+        st.draft = { seq: st.draftSeq, at: Date.now(), state: j.state, playlist: String(j.playlist || ''), changes: Math.max(0, +j.changes || 0),
+          label: String(j.label || '').slice(0, 120), kind: ['auto', 'checkpoint', 'named'].indexOf(j.kind) >= 0 ? j.kind : 'auto', name: String(j.name || '').slice(0, 80) };
+        send(res, 200, { ok: true, seq: st.draftSeq });
+      });
+    }
     if (u === '/api/save' && req.method === 'POST') {
       return readJSON(req, function (err, j) {
         if (err || !j || !j.edits) return send(res, 400, { error: 'bad request' });
@@ -230,7 +242,7 @@ function create(log) {
     st.server = null; st.port = 0; st.tokens = {}; st.seen = {};
     // Nothing from this session may reach the TV later: a TiviBro that restarts (switching playlist,
     // a restore) starts counting from zero and would otherwise apply a stale save to the wrong list.
-    st.pending = null; st.appliedRev = st.pendingRev; st.commands = []; st.results = {}; st.seal = {}; st.progress = null;
+    st.pending = null; st.appliedRev = st.pendingRev; st.commands = []; st.results = {}; st.seal = {}; st.progress = null; st.draft = null;
   }
 
   /* ---------- control from the app (localhost relay only) ---------- */
@@ -260,10 +272,14 @@ function create(log) {
       });
     }
     if (u === '/editor/pending') {
-      var since = +((/since=(\d+)/.exec(req.url) || [])[1] || 0), csince = +((/csince=(\d+)/.exec(req.url) || [])[1] || 0);
+      var since = +((/[?&]since=(\d+)/.exec(req.url) || [])[1] || 0), csince = +((/csince=(\d+)/.exec(req.url) || [])[1] || 0), dsince = +((/dsince=(\d+)/.exec(req.url) || [])[1] || 0);
       var cmds = st.commands.filter(function (c) { return c.id > csince; });
-      if (st.pending && st.pending.rev > since) return send(res, 200, Object.assign({ commands: cmds }, st.pending));
-      return send(res, 200, { rev: st.pendingRev, none: true, commands: cmds });
+      // The app asks with the newest draft it has stored, which tells the browser it is safe on the TV.
+      st.draftAck = Math.max(st.draftAck, Math.min(dsince, st.draftSeq));
+      if (st.draft && st.draft.seq <= st.draftAck) st.draft = null;
+      var draft = st.draft && st.draft.seq > dsince ? st.draft : undefined;
+      if (st.pending && st.pending.rev > since) return send(res, 200, Object.assign({ commands: cmds, draft: draft }, st.pending));
+      return send(res, 200, { rev: st.pendingRev, none: true, commands: cmds, draft: draft });
     }
     if (u === '/editor/result' && req.method === 'POST') {
       return readJSON(req, function (err, j) {

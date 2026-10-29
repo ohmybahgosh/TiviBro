@@ -534,7 +534,14 @@ async function editorShots(browser) {
   // A couple of drafts, so Review and the history have something to show.
   await go('gc');
   for (const id of ['x9', 'x10']) await ed.click('input[data-vis="' + id + '"]').catch(() => {});
-  await go('history'); await snap('editor-history');
+  await ed.waitForTimeout(5000);                    // the draft autosave reaches the TV
+  await go('history'); await ed.waitForTimeout(3500); await snap('editor-history');
+  await ed.fill('#dName', 'Before hiding the sports groups'); await ed.click('#dSave'); await ed.waitForTimeout(4500);
+  await ed.evaluate(() => document.getElementById('dList').closest('.card').scrollIntoView({ block: 'center' })); await snap('editor-drafts');
+  // An accidental reload: the editor offers the unsent work back.
+  await ed.reload(); await ed.fill('#pw', pw).catch(() => {}); await ed.click('#loginBtn').catch(() => {}); await ed.waitForTimeout(4000);
+  await snap('editor-recover');
+  await ed.locator('#modal button', { hasText: 'Keep working' }).click().catch(() => {}); await ed.waitForTimeout(500);
   await go('backup'); await snap('editor-backup');
   await go('help'); await snap('editor-help');
   await tv.evaluate(() => WebEdit.stop());

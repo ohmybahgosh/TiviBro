@@ -192,6 +192,9 @@ var Store = (function () {
     settings.playlists = settings.playlists.filter(function (x) { return x.id !== id; });
     localStorage.removeItem('tivibro.edits.' + id);
     idbSet('playlist:' + id, null);
+    // Its restore points and draft history (see webedit.js) go with it.
+    idbSet('snaps:' + id, null);
+    idbGet('drafts:' + id).then(function (l) { (Array.isArray(l) ? l : []).forEach(function (x) { idbSet('draft:' + id + ':' + x.id, null); }); idbSet('drafts:' + id, null); });
     if (settings.active === id) { settings.active = settings.playlists[0] ? settings.playlists[0].id : ''; loadEdits(); }
     saveSettings();
   }

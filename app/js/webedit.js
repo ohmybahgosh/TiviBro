@@ -11,7 +11,7 @@
    reload while it runs (restore does that) picks the running editor back up. */
 var WebEdit = (function () {
   'use strict';
-  var on = false, timer = 0, appliedRev = 0, lastCmd = 0, lastSig = '', status = null, busy = false, onStatus = null;
+  var on = false, timer = 0, appliedRev = 0, lastCmd = 0, lastDraft = 0, lastSig = '', status = null, busy = false, onStatus = null;
   var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort'];
   var SORTS = ['provider', 'az', 'za', 'number', 'custom'];
   var SNAP_AUTO = 15, SNAP_NAMED = 30;
@@ -44,7 +44,7 @@ var WebEdit = (function () {
     FIELDS.forEach(function (f) { out[f] = e[f] || (f === 'custom' || f === 'groupOrder' ? [] : {}); });
     return out;
   }
-  function sig() { try { return JSON.stringify(editsOf()) + JSON.stringify(Store.playlist.names || null) + JSON.stringify(playlists()) + (Library.data ? Library.data.channels.length : 0) + ':' + (Epg.status && Epg.status.at); } catch (e) { return String(Date.now()); } }
+  function sig() { try { return JSON.stringify(draftInfo) + JSON.stringify(editsOf()) + JSON.stringify(Store.playlist.names || null) + JSON.stringify(playlists()) + (Library.data ? Library.data.channels.length : 0) + ':' + (Epg.status && Epg.status.at); } catch (e) { return String(Date.now()); } }
 
   // Playlists as the browser sees them: no username, password or full addresses.
   function playlists() {
@@ -69,6 +69,7 @@ var WebEdit = (function () {
       gz: Net.canUnzip,
       edits: editsOf(),
       names: p.names || null,
+      drafts: draftInfo,
       appliedRev: appliedRev
     };
   }
@@ -103,12 +104,75 @@ var WebEdit = (function () {
   function apply(j) {
     return snap('auto', 'Before changes sent from the computer').catch(function () {}).then(function () {
       writeEdits(j.edits || {}, j.names);
+      markSent(j.edits || {});
       appliedRev = j.rev;
       Log.info('webedit', 'Applied changes from the web editor (save ' + j.rev + ')');
       U.toast('Changes from the computer applied');
       return push(true);
     });
   }
+
+  /* ---------- draft history (IndexedDB, per playlist) ----------
+     The browser autosaves unsent work a few seconds after each change.  The newest automatic
+     version keeps being updated until it is 3 minutes old or 20 changes further along; then a
+     new one starts.  Versions you name, and the ones made before sending or discarding, are kept
+     apart.  Each version holds only the edits (not the channel list), and the history is capped
+     at 8 MB per playlist, oldest automatic versions first. */
+  var DRAFT_ROLL_MS = 3 * 60000, DRAFT_ROLL_CHANGES = 20, DRAFT_AUTO = 40, DRAFT_KEEP = 25, DRAFT_BYTES = 8 * 1048576;
+  var draftInfo = null, draftQ = Promise.resolve();
+  // An index per playlist (small) and each version's edits under its own key, so an autosave
+  // writes one version, not the whole history.
+  function draftKey(id) { return 'drafts:' + (id || Store.playlist.id); }
+  function stateKey(id, rid) { return 'draft:' + (id || Store.playlist.id) + ':' + rid; }
+  function drafts(id) { return Store.idbGet(draftKey(id)).then(function (l) { return Array.isArray(l) ? l : []; }, function () { return []; }); }
+  function bytes(l) { return l.reduce(function (n, x) { return n + (x.size || 0); }, 0); }
+  function editsHash(E) { return U.hash(JSON.stringify(FIELDS.map(function (f) { return E && E[f] != null ? E[f] : null; }))); }
+  function summarize(l) {
+    var t = l[0];
+    draftInfo = { count: l.length, bytes: bytes(l), latest: t ? { id: t.id, at: t.at, changes: t.changes, label: t.label, kind: t.kind, sent: !!t.sent } : null };
+    return draftInfo;
+  }
+  function pruneDrafts(l) {
+    var autos = 0, kept = 0;
+    l = l.filter(function (x) { return x.kind === 'auto' ? ++autos <= DRAFT_AUTO : ++kept <= DRAFT_KEEP; });
+    for (var i = l.length - 1; bytes(l) > DRAFT_BYTES && l.length > 3 && i > 0; i--) if (l[i].kind === 'auto') l.splice(i, 1);
+    while (bytes(l) > DRAFT_BYTES && l.length > 3) l.pop();
+    return l;
+  }
+  function saveDraft(d) {
+    var id = d.playlist && Store.settings.playlists.some(function (p) { return p.id === d.playlist; }) ? d.playlist : Store.playlist.id;
+    draftQ = draftQ.then(function () {
+      return drafts(id).then(function (l) {
+        var top = l[0], at = d.at || Date.now(), h = U.hash(d.state), eh = '';
+        try { eh = editsHash(JSON.parse(d.state).E); } catch (e) {}
+        var rec = { id: 'd' + at.toString(36) + Math.floor(Math.random() * 1296).toString(36), at: at, kind: d.kind || 'auto', name: d.name || '', label: d.label || '', changes: +d.changes || 0, size: d.state.length, h: h, eh: eh };
+        if (top && top.h === h && rec.kind === 'auto') return;                              // nothing new
+        var rolling = top && top.kind === 'auto' && rec.kind === 'auto' && !top.sent && at - (top.started || top.at) < DRAFT_ROLL_MS && Math.abs(rec.changes - (top.startChanges || 0)) < DRAFT_ROLL_CHANGES;
+        if (rolling) { rec.id = top.id; rec.started = top.started || top.at; rec.startChanges = top.startChanges || 0; l[0] = rec; }
+        else { rec.started = at; rec.startChanges = rec.changes; l.unshift(rec); }
+        var kept = pruneDrafts(l.slice()), gone = l.filter(function (x) { return kept.indexOf(x) < 0; });
+        return Store.idbSet(stateKey(id, rec.id), d.state).then(function (ok) {
+          if (!ok) throw new Error('the TV storage is full');
+          return Store.idbSet(draftKey(id), kept);
+        }).then(function () {
+          gone.forEach(function (x) { Store.idbSet(stateKey(id, x.id), null); });
+          if (id === Store.playlist.id) summarize(kept);
+        });
+      });
+    }).catch(function (e) { Log.warn('webedit', 'Could not keep a draft: ' + (e && e.message)); });
+    return draftQ;
+  }
+  // When a save reaches the TV, the newest version that holds exactly it is marked as sent.
+  function markSent(edits) {
+    var eh = editsHash(edits);
+    draftQ = draftQ.then(function () {
+      return drafts().then(function (l) {
+        var x = l.filter(function (y) { return y.eh === eh; })[0];
+        if (x && !x.sent) { x.sent = true; return Store.idbSet(draftKey(), l).then(function () { summarize(l); }); }
+      });
+    }).catch(function () {});
+  }
+  function loadDraftInfo() { return drafts().then(summarize); }
 
   /* ---------- restore points (IndexedDB, per playlist) ---------- */
   function snapKey() { return 'snaps:' + Store.playlist.id; }
@@ -237,6 +301,29 @@ var WebEdit = (function () {
         });
       });
     },
+    listDrafts: function () {
+      return draftQ.then(function () { return drafts(); }).then(function (l) {
+        summarize(l);
+        return { msg: l.length + ' draft versions', data: { bytes: bytes(l), list: l.map(function (x) { return { id: x.id, at: x.at, started: x.started, kind: x.kind, name: x.name, label: x.label, changes: x.changes, size: x.size, sent: !!x.sent }; }) } };
+      });
+    },
+    getDraft: function (a) {
+      return draftQ.then(function () { return drafts(); }).then(function (l) {
+        var x = l.filter(function (y) { return y.id === a.id; })[0];
+        if (!x) throw new Error('That draft version no longer exists.');
+        return Store.idbGet(stateKey(null, x.id)).then(function (state) {
+          if (typeof state !== 'string') throw new Error('That draft version could not be read.');
+          return { msg: 'Draft version', data: { id: x.id, at: x.at, state: state, changes: x.changes, label: x.label } };
+        });
+      });
+    },
+    deleteDraft: function (a) {
+      draftQ = draftQ.then(function () { return drafts(); }).then(function (l) {
+        l = l.filter(function (x) { return x.id !== a.id; });
+        return Store.idbSet(draftKey(), l).then(function () { Store.idbSet(stateKey(null, a.id), null); summarize(l); });
+      });
+      return draftQ.then(function () { return { msg: 'Draft version deleted' }; });
+    },
     listSnaps: function () { return snapList().then(function (l) { return { msg: l.length + ' restore points', data: l }; }); },
     makeSnap: function (a) { return snap('named', clean(a.name) || 'Restore point').then(function (s) { return { msg: 'Restore point "' + s.name + '" saved on the TV', data: { id: s.id } }; }); },
     deleteSnap: function (a) {
@@ -297,8 +384,9 @@ var WebEdit = (function () {
   function tick() {
     if (!on || busy) return;
     busy = true;
-    call('/editor/pending?since=' + appliedRev + '&csince=' + lastCmd).then(function (j) {
-      var next = !j.none && j.rev > appliedRev ? apply(j) : Promise.resolve();
+    call('/editor/pending?since=' + appliedRev + '&csince=' + lastCmd + '&dsince=' + lastDraft).then(function (j) {
+      var next = j.draft && j.draft.seq > lastDraft ? saveDraft(j.draft).then(function () { lastDraft = j.draft.seq; }) : Promise.resolve();
+      next = next.then(function () { return !j.none && j.rev > appliedRev ? apply(j) : null; });
       return next.then(function () { return runCommands(j.commands); }).then(function () { return push(false); });
     }).then(function () { return call('/editor/status'); }).then(function (s) {
       var before = status && status.clients;
@@ -311,9 +399,10 @@ var WebEdit = (function () {
 
   function begin(s) {
     status = s; on = true; lastSig = '';
+    lastDraft = Math.max(lastDraft, s.draftAck || 0);
     if (Epg.progress && Epg.progress.phase) sendProgress(Epg.progress, true);
     clearInterval(timer); timer = setInterval(tick, 2000);
-    return push(true).then(function () { return s; });
+    return loadDraftInfo().catch(function () {}).then(function () { return push(true); }).then(function () { return s; });
   }
   function start() {
     return call('/editor/start', { port: port(), password: password() }).then(function (s) {

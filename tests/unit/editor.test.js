@@ -42,6 +42,21 @@ function req(url, method, body, token) {
   await req(C + '/editor/snapshot', 'POST', { playlist: { name: 'P' }, groups: [], channels: [], edits: {}, appliedRev: 1 });
   a = await req(L + '/api/rev', 'GET', null, T);
   ok('browser sees the TV applied it', a.json.appliedRev === 1);
+  // draft autosave: the browser posts unsent work, the app stores it and says so with dsince
+  a = await req(L + '/api/draft', 'POST', { state: '{"E":{}}' }, null);
+  ok('drafts need a login', a.status === 401);
+  a = await req(L + '/api/draft', 'POST', { state: '{"E":{"hiddenGroups":{"g1":1}}}', playlist: 'p1', changes: 1, label: 'Hide News', kind: 'weird' }, T);
+  ok('draft accepted', a.status === 200 && a.json.seq === 1, a.text);
+  a = await req(C + '/editor/pending?since=1&csince=0&dsince=0');
+  ok('app receives the draft', a.json.draft && a.json.draft.seq === 1 && a.json.draft.kind === 'auto' && a.json.draft.label === 'Hide News' && a.json.draft.playlist === 'p1', JSON.stringify(a.json.draft));
+  a = await req(L + '/api/rev', 'GET', null, T);
+  ok('not yet stored on the TV', a.json.draftSeq === 1 && a.json.draftAck === 0);
+  a = await req(C + '/editor/pending?since=1&csince=0&dsince=1');
+  ok('once stored, it is not sent again', !a.json.draft);
+  a = await req(L + '/api/rev', 'GET', null, T);
+  ok('and the browser sees it is safe on the TV', a.json.draftAck === 1);
+  a = await req(L + '/api/draft', 'POST', { changes: 1 }, T);
+  ok('a draft needs its state', a.status === 400);
   // commands: browser asks, app picks up, app answers, browser reads the answer
   a = await req(L + '/api/command', 'POST', { type: 'refreshPlaylist', args: {} }, T);
   ok('browser can queue an action', a.status === 200 && a.json.id === 1);

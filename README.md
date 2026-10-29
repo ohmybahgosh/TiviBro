@@ -199,6 +199,7 @@ Turn on **Settings > Edit on a computer**.  The TV shows an address and a passwo
 <p align="center"><sub>Switching off the UK, FR and DE groups on the computer, then sending: the TV's group list updates by itself.  <a href="docs/media/live-edit.mp4">MP4</a></sub></p>
 
 - **Drafts, undo and restore points.**  Nothing reaches the TV until you press **Send to TV**.  Every change can be undone, and the TV keeps restore points.
+- **Never lose an hour of clean-up.**  Unsent work is autosaved in the browser and on the TV within seconds, with a draft history of versions.  A refresh, a closed tab or another computer picks up right where you left off.
 - **Copy or move channels into any group,** including your provider's groups.  Each group can have its own sort order.
 - **Smart clean-up.**  Keep only the countries you watch, hide duplicate channels in different qualities, hide by keyword, and hide empty groups.
 - **Smart match** finds the right guide channel for channels showing "No guide information".  You approve or decline each guess.

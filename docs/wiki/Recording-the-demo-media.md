@@ -48,6 +48,6 @@ Screenshot-only scenes (no video):
 |---|---|
 | `failover` | A channel that stops working switches to another version by itself (`tv-failover`) |
 | `settings-pages` | Every Settings section and the pages inside them (`tv-set-*`) |
-| `editor` | Every page of the web editor at 1440x860 (`editor-*`; `editor-smart-match` and `editor-guide-progress` need a provider whose guide is incomplete or slow, so they are kept from an earlier recording) |
+| `editor` | Every page of the web editor at 1440x860, plus the draft history and the offer after a reload (`editor-*`; `editor-smart-match` and `editor-guide-progress` need a provider whose guide is incomplete or slow, so they are kept from an earlier recording) |
 
 The scenes find their way by watching where the focus is (the menu, a Settings section, a row, a menu item) rather than counting key presses, so small layout changes don't break them.
