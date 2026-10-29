@@ -1,6 +1,6 @@
 <p align="center"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/logos/clean/tivibro-wordmark.png" width="380" alt="tiviBro"></p>
 
-<p align="center"><b>The IPTV player LG TVs never got.</b><br>A free, guide-first IPTV player for LG webOS, built to feel like TiviMate and go further.</p>
+<p align="center"><b>The IPTV player LG TVs never got.</b><br>A free, guide-first IPTV player for LG webOS, built to feel like TiviMate and go further.<br><a href="https://tivibro.app">tivibro.app</a></p>
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/guide.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/guide.gif" width="100%" alt="The TiviBro guide"></a></p>
 
@@ -16,13 +16,44 @@ Welcome to the TiviBro wiki.  It explains every screen and every setting on the 
 | 🎮 **Which button does what?** | [The remote](The-remote) |
 | 📺 **Watching TV** | [The guide](The-guide) · [Watching fullscreen](Watching-fullscreen) · [Catch-up](Catch-up) · [Multiview](Multiview) |
 | 🎬 **Movies and shows** | [Movies and shows](Movies-and-shows) · [Search](Search) |
-| 🧹 **Too many groups?** | [Turning on the web editor](Turning-on-the-web-editor) · [Smart clean-up](Smart-clean-up) · [Groups and channels](Groups-and-channels) |
+| 🧹 **Too many groups?** | [Turning on the web editor](Turning-on-the-web-editor) · [Smart clean-up](Smart-clean-up) · [Groups and channels](Groups-and-channels) · [Channel names](Channel-names) |
 | 🗓️ **Missing guide data?** | [The programme guide](The-programme-guide) |
 | 💾 **New TV or reinstall?** | [Backup and restore](Backup-and-restore) |
 | ⚙️ **What does this setting do?** | [Every setting](Settings-Playback-and-buffering), one page per section of Settings |
 | 🔁 **A channel keeps dying** | [Other versions of a channel](Other-versions-of-a-channel) |
+| 🏟️ **Sports and PPV channels with long names** | [Event channels](Event-channels-pay-per-view-and-sports-passes) |
 | ⏰ **Reminders and PINs** | [Reminders](Reminders) · [Parental controls](Parental-controls) |
 | 🛠️ **Something's wrong** | [Troubleshooting](Troubleshooting) · [FAQ](FAQ) |
+
+## What no other IPTV player does
+
+TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose.  These are the things we haven't found in TiviMate or any other IPTV player, on any platform:
+
+| | |
+|---|---|
+| 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
+| 🖥️ **A full editor on your computer** | Clean up 10,000 channels with a keyboard and mouse instead of a remote: hide, sort, rename, copy and move, then **Send to TV**.  Unsent work is autosaved on the TV within seconds, with a version history, so a refresh never costs you an hour. |
+| 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
+| 🧹 **Clean-up that already knows IPTV** | Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from codes, words, channel prefixes or the provider's divider groups, duplicates in different qualities, and **Smart match** for channels without a guide. |
+| 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled" stay out of the way, and come back by themselves when an event is named. |
+| 🔐 **Locked backups, restored from the first screen** | One AES-256 file with every playlist, login, group and setting.  A brand-new TV restores it from a computer before you've touched a setting. |
+| 💸 **Everything free, nothing locked** | Catch-up, multiview, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking. |
+| 📺 **Made for LG TVs** | Runs on the TV itself, webOS 4 and newer.  No Android box or Fire Stick needed. |
+
+| | TiviBro | TiviMate |
+|---|---|---|
+| Runs on LG webOS TVs | ✅ | ❌ Android TV and Fire TV |
+| Price | Free, every feature | Free version, Premium paid |
+| Catch-up, multiview, multiple playlists, backups | ✅ Free | Premium |
+| Open source | ✅ MIT | ❌ |
+| Sports and PPV events read from channel names | ✅ | ❌ |
+| Edit your playlist from a computer, with autosaved drafts | ✅ | ❌ On the TV only |
+| Switches to another version of a dead channel by itself | ✅ | ❌ |
+| Preloaded name clean-up rules | ✅ About 250 country codes, tags, symbols | Your own prefix and suffix lists |
+| Hide channels with nothing on | ✅ | ❌ |
+| Recording | Not yet | ✅ Premium |
+
+<sub>TiviMate column from its own site and public guides, October 2026.  TiviMate is a great app; this is what TiviBro adds.</sub>
 
 ## What it looks like
 

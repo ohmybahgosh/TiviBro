@@ -20,6 +20,7 @@
 
 <p align="center">
   <a href="https://tivibro.app"><b>tivibro.app</b></a> ·
+  <a href="#what-no-other-iptv-player-does">What's different</a> ·
   <a href="#see-it-in-action">See it in action</a> ·
   <a href="#the-web-editor">Web editor</a> ·
   <a href="#gallery">Gallery</a> ·
@@ -59,6 +60,36 @@ TiviBro plays your own IPTV subscription (Xtream Codes or M3U with XMLTV) on LG 
 | 🌈 **HDR, Dolby Vision and Atmos** | Reads each stream's format before the picture starts and sends Dolby Vision to the TV's own player, HDR10 and HLG to the steadier built-in one.  The info panel shows *4K  HEVC  Dolby Vision  E-AC-3 5.1 Atmos*. |
 | 🎨 **Midnight Electric** | A dark, calm look with nine backgrounds (true black for OLED, high contrast), twelve accents or your own, and an outline focus style for across the room. |
 | 💸 **Free and open** | MIT licensed, no accounts, no ads, no tracking. |
+
+## What no other IPTV player does
+
+TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose.  These are the things we haven't found in TiviMate or any other IPTV player, on any platform:
+
+| | |
+|---|---|
+| 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
+| 🖥️ **A full editor on your computer** | Clean up 10,000 channels with a keyboard and mouse instead of a remote: hide, sort, rename, copy and move, then **Send to TV**.  Unsent work is autosaved on the TV within seconds, with a version history, so a refresh never costs you an hour. |
+| 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
+| 🧹 **Clean-up that already knows IPTV** | Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from codes, words, channel prefixes or the provider's divider groups, duplicates in different qualities, and **Smart match** for channels without a guide. |
+| 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled" stay out of the way, and come back by themselves when an event is named. |
+| 🔐 **Locked backups, restored from the first screen** | One AES-256 file with every playlist, login, group and setting.  A brand-new TV restores it from a computer before you've touched a setting. |
+| 💸 **Everything free, nothing locked** | Catch-up, multiview, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking. |
+| 📺 **Made for LG TVs** | Runs on the TV itself, webOS 4 and newer.  No Android box or Fire Stick needed. |
+
+| | TiviBro | TiviMate |
+|---|---|---|
+| Runs on LG webOS TVs | ✅ | ❌ Android TV and Fire TV |
+| Price | Free, every feature | Free version, Premium paid |
+| Catch-up, multiview, multiple playlists, backups | ✅ Free | Premium |
+| Open source | ✅ MIT | ❌ |
+| Sports and PPV events read from channel names | ✅ | ❌ |
+| Edit your playlist from a computer, with autosaved drafts | ✅ | ❌ On the TV only |
+| Switches to another version of a dead channel by itself | ✅ | ❌ |
+| Preloaded name clean-up rules | ✅ About 250 country codes, tags, symbols | Your own prefix and suffix lists |
+| Hide channels with nothing on | ✅ | ❌ |
+| Recording | Not yet | ✅ Premium |
+
+<sub>TiviMate column from its own site and public guides, October 2026.  TiviMate is a great app; this is what TiviBro adds.</sub>
 
 ## See it in action
 
