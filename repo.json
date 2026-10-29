@@ -31,6 +31,10 @@
         "tag": "v0.6.0-alpha.11",
         "version": "0.6.0-alpha.11",
         "prerelease": true
+      },
+      "fullDescriptionUrl": "https://tivibro.app/hb/description.html",
+      "requirements": {
+        "webosRelease": ">=4.0"
       }
     }
   ]
