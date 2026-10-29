@@ -1,7 +1,7 @@
 #!/bin/sh
 # TiviBro installer for rooted LG webOS TVs.  Run it on the TV, over SSH or Telnet:
 #
-#   curl -fsSL https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/install.sh | sh
+#   curl -fsSL https://tivibro.app/install | sh       (or https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/install.sh)
 #
 # Options (after "sh -s --" when piped, or directly when run from a file):
 #   (no option)        newest full release; until there is one, the newest test version
