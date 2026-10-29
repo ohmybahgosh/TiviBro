@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 9, 2026-10-29)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 9
 
 - **Event channels.**  Pay-per-view, league passes and one-off games often have no guide; the provider writes the whole listing into the channel name ("NCAAB 001 | NORTH FLORIDA @ CHARLESTON SOUTHERN (M) | 12.18 11:00 AM | ESPN+").  TiviBro now reads those names:
   - The channel list shows the short tag ("NCAAB 001", "PPV 03", "ESPN+ 20") with the event under it.
@@ -24,11 +28,9 @@
   - **Divider groups** hides groups like "⫘⫘⫘ UK ⫘⫘⫘" that only split the list into sections.
   - Overview suggests both when they apply.
 
-## 0.6.0 (alpha 8, 2026-10-29)
+- A website at [tivibro.app](https://tivibro.app) (`site/`, published by the Website workflow with GitHub Pages), and the README covers event channels and the new clean-up tools.
 
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 8
+### In alpha 8
 
 - Web editor: unsent work can't be lost.  Drafts were already kept in the browser; now they are also saved on the TV a few seconds after each change (at least every 30 seconds while you work), and the bar says when ("Draft saved on the TV at 8:41").  A reload, a closed tab or another computer offers the newest unsent work back, from this browser or the TV.  Browser storage that is full no longer fails silently.
 - Draft history (Changes and restore points): versions of your unsent work on the TV, one every 3 minutes or 20 changes, one before sending and before discarding, and any you name with **Save a version**.  **Open** returns to one (and can be undone); versions that reached the TV are marked as sent; throwing a draft away keeps it here.  Each version holds only the edits (about 200 KB for 12,000 changes on a 15,000-channel playlist); up to 8 MB per playlist, oldest automatic versions dropped first, removed with the playlist.  Tests: `tests/soak/drafts.js` (`npm run soak:drafts`), `tests/unit/editor.test.js`.
