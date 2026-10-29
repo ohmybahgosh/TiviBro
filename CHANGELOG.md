@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Short addresses on tivibro.app.**  In the Homebrew Channel, add the repository `https://tivibro.app/repo` (or `https://tivibro.app/testing` for every test build).  On a rooted TV: `curl -fsSL https://tivibro.app/install | sh`.  The website serves the files from the `homebrew` branch as they are, refreshed after every release, so the long raw.githubusercontent.com addresses keep working too.  Also `tivibro.app/guide`, `/wiki`, `/download`, `/changelog`, `/issues` and `/github`.
 - **The set-up tour.**  Right after a new playlist connects, TiviBro shows what it holds (channels, groups, countries, event channels, East and West copies, local cities, extra copies, movies and shows) and walks through making it yours, one screen at a time with the remote:
   - **Countries**, biggest first, with the TV's own country ticked.  **Channel names**, every rule, with your own channels before and after.  **East or West**.  **Your local channels**, every city A to Z (◀ ▶ jump letters).  **Sports and pay-per-view**.  **Clear the clutter**: divider groups, empty groups, duplicates (keep Full HD, the best, HD or SD), groups with words like PPV, and groups the provider adds later.  **Channel logos**.  **Make it yours**: accent, background, text size, start screen and more, live.  **All set**: what you keep and hide, and tips.
   - It only asks about what the playlist has, keeps a running count ("Keeps 3,632 of 9,808 channels"), and changes nothing until **Apply**.  A restore point is saved first, so the web editor can undo it.

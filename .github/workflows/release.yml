@@ -80,7 +80,7 @@ jobs:
             echo
             echo '### Install'
             echo
-            echo '- **Homebrew Channel:** in its Settings, add the repository `'"$RAW"'/repo.json` (or `'"$RAW"'/repo-testing.json` for test builds as they come out)'
+            echo '- **Homebrew Channel:** in its Settings, add the repository `https://tivibro.app/repo` (or `https://tivibro.app/testing` for test builds as they come out).  The long form, `'"$RAW"'/repo.json`, works too'
             echo '- **Developer Mode:** `ares-install app.tivibro.tv_'"$PKG_VERSION"'_all.ipk`'
             echo '- **Rooted TV, over SSH or Telnet:** `curl -fsSL https://github.com/'"$GITHUB_REPOSITORY"'/releases/download/'"$TAG"'/install.sh | sh -s -- --tag '"$TAG"'`'
             echo '- **From inside TiviBro (rooted TV with the Homebrew Channel):** Settings > Updates and about > Check for updates'

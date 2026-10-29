@@ -5,10 +5,12 @@ TiviBro is built for **webOS 25** and runs on LG TVs from webOS 4 (2018) to webO
 The easiest way on a rooted TV, with updates from the TV itself:
 
 1. Open the **Homebrew Channel**, go to **Settings**, and choose **Add repository**.
-2. Enter `https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/repo.json`
+2. Enter `https://tivibro.app/repo`
 3. TiviBro appears in the Homebrew Channel's app list.  Open it and choose **Install**.  New versions show up there as **Update** (and inside TiviBro under **Settings > Updates and about**).
 
-Want every test build as soon as it's out?  Add `https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/repo-testing.json` instead.  Until the first full release, both addresses give you the newest test build.
+Want every test build as soon as it's out?  Add `https://tivibro.app/testing` instead.  Until the first full release, both addresses give you the newest test build.
+
+> The long addresses still work: `https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/repo.json`, `repo-testing.json` and `install.sh`.
 
 > Test builds show a plain-number version in the Homebrew Channel, such as `0.5.10005` for 0.6.0 alpha 5.  webOS only accepts numbers, and test builds have to sort below the release they lead up to.  TiviBro itself shows the real name.
 
@@ -36,15 +38,15 @@ Or download the `.ipk` from the latest [release](https://github.com/ohmybahgosh/
 On a rooted TV, one line does it all.  Switch on SSH (or Telnet) in the Homebrew Channel, log in as `root`, and run:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/install.sh | sh
+curl -fsSL https://tivibro.app/install | sh
 ```
 
 It downloads the newest release (or, until the first full release, the newest test build), checks its SHA-256, installs it and starts TiviBro.  Run it again any time to update; settings are kept.  Options go after `sh -s --`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/install.sh | sh -s -- --pre              # newest test version (alpha, beta)
-curl -fsSL https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/install.sh | sh -s -- --tag v0.6.0        # a specific release
-curl -fsSL https://raw.githubusercontent.com/ohmybahgosh/TiviBro/homebrew/install.sh | sh -s -- --ipk /tmp/app.ipk   # an IPK you copied over
+curl -fsSL https://tivibro.app/install | sh -s -- --pre              # newest test version (alpha, beta)
+curl -fsSL https://tivibro.app/install | sh -s -- --tag v0.6.0        # a specific release
+curl -fsSL https://tivibro.app/install | sh -s -- --ipk /tmp/app.ipk   # an IPK you copied over
 ```
 
 ### Or copy the IPK yourself

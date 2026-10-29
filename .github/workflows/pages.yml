@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
     paths: ['site/**', 'docs/media/guide.mp4', 'docs/media/live-edit.mp4', '.github/workflows/pages.yml', 'scripts/logos/**', 'app/js/tidy.js', 'app/js/names.js']
+  workflow_run:                 # after a release, so tivibro.app/repo has the new version
+    workflows: [Release]
+    types: [completed]
   schedule:
     - cron: '17 6 * * 1'
   workflow_dispatch:
@@ -26,6 +29,17 @@ jobs:
           mkdir -p _site/media
           cp -r site/. _site/
           cp docs/media/guide.mp4 docs/media/live-edit.mp4 _site/media/
+      - name: Short addresses for the Homebrew Channel and the installer
+        # tivibro.app/repo, /testing and /install serve the files on the homebrew branch as they are
+        # (no redirect: the Homebrew Channel and curl read them straight).  .json and .sh copies too.
+        continue-on-error: true
+        run: |
+          git fetch -q --depth 1 origin homebrew
+          git show origin/homebrew:repo.json > _site/repo
+          git show origin/homebrew:repo-testing.json > _site/testing
+          git show origin/homebrew:install.sh > _site/install
+          cp _site/repo _site/repo.json; cp _site/testing _site/repo-testing.json; cp _site/install _site/install.sh
+          head -c 300 _site/repo; echo
       - uses: actions/setup-node@v4
         with:
           node-version: 20
