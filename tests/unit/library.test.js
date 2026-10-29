@@ -6,7 +6,7 @@ const edits = { hiddenGroups: {}, hiddenChannels: {}, renames: {}, groupRenames:
 const ctx = { console, Log: { info() {}, warn() {} }, Store: { edits, settings: { sortChannels: 'playlist', showHidden: false, newGroups: 'show' }, playlist: { names: { enabled: false } }, saveEdits() {} } };
 vm.createContext(ctx);
 const load = f => vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js', f), 'utf8') + '\nthis.' + f.replace('.js', '').replace(/^./, c => c.toUpperCase()) + ' = ' + f.replace('.js', '').replace(/^./, c => c.toUpperCase()) + ';', ctx);
-load('names.js'); load('library.js');
+vm.runInContext('var U = { hhmm: function () { return ""; } };', ctx); load('names.js'); load('events.js'); load('library.js');
 const L = ctx.Library;
 L.set({ groups: [{ id: 'a', name: 'News' }, { id: 'b', name: 'Sports' }], channels: [
   { k: '1', n: 'CNN', g: 'a', num: 3 }, { k: '2', n: 'BBC', g: 'a', num: 1 }, { k: '3', n: 'ESPN', g: 'b', num: 2 }, { k: '4', n: 'Abc', g: 'a', num: 4 }] });
@@ -63,5 +63,21 @@ ok('nothing on: a favorite keeps it', keys('c_fav') === 'p3', keys('c_fav'));
 L.set({ groups: [{ id: 'ev', name: 'Events' }], channels: [{ k: 'p1', n: 'PPV 01 | UFC 330', g: 'ev', num: 1 }, { k: 'p2', n: 'PPV 02 | Boxing', g: 'ev', num: 2 }] });
 ok('nothing on: back once the provider names an event', keys('ev') === 'p1,p2', keys('ev'));
 ctx.Store.playlist.names = { enabled: false };
+
+// Event channels: short names and Events by time (soonest first, over ones left out).
+const t = h => { const d = new Date(Date.now() + h * 3600e3); return d.toLocaleString('en-US', { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit' }); };
+ctx.Store.playlist.events = { tz: 'local' };
+L.set({ groups: [{ id: 'pp', name: 'PPV' }], channels: [{ k: 'e1', n: 'PPV 01 | Late Show | ' + t(5), g: 'pp', num: 1 }, { k: 'e2', n: 'PPV 02 | Early Show | ' + t(1), g: 'pp', num: 2 },
+  { k: 'e3', n: 'PPV 03 | Old Show | ' + t(-30), g: 'pp', num: 3 }, { k: 'e4', n: 'Plain Channel', g: 'pp', num: 4 }] });
+ok('events: short names', L.name(L.find('e1')) === 'PPV 01' && L.name(L.find('e4')) === 'Plain Channel', L.name(L.find('e1')));
+ok('events: Events by time, soonest first, over ones left out', keys(L.EVENTS) === 'e2,e1', keys(L.EVENTS));
+ok('events: listed among the groups', L.groups().some(g => g.id === L.EVENTS && g.count === 2));
+ok('events: not in Manage groups', !L.allGroups().some(g => g.id === L.EVENTS));
+edits.renames = { e1: 'My PPV' };
+ok('events: your own name wins', L.name(L.find('e1')) === 'My PPV');
+edits.renames = {};
+ctx.Store.playlist.events = { short: false, group: false }; L.dirty();
+ok('events: short names and the group can be turned off', /Late Show/.test(L.name(L.find('e1'))) && !L.groups().some(g => g.id === L.EVENTS));
+ctx.Store.playlist.events = {};
 console.log(fail ? fail + ' failures' : 'all library tests passed');
 process.exit(fail ? 1 : 0);

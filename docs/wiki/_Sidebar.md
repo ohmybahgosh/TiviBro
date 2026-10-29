@@ -10,6 +10,7 @@
 - [Groups and the menu](Groups-and-the-menu)
 - [Watching fullscreen](Watching-fullscreen)
 - [Other versions of a channel](Other-versions-of-a-channel)
+- [Event channels: pay-per-view and sports passes](Event-channels-pay-per-view-and-sports-passes)
 - [Catch-up](Catch-up)
 - [Movies and shows](Movies-and-shows)
 - [Search](Search)

@@ -190,6 +190,7 @@ var Settings = (function () {
     }
     out.push(head('Channel names'));
     out.push(page('Channel name editor', p.names && p.names.enabled ? 'On' : 'Off', 'Channel name editor', function () { return namesPage(p); }));
+    out.push(page('Event channels', p.events && p.events.on === false ? 'Off' : 'On', 'Event channels', function () { return eventsPage(p); }));
     if (s.playlists.length > 1) {
       out.push(head(''));
       out.push(action('Delete this playlist', 'Removes its groups, favorites, hidden items and cached data.', function () {
@@ -264,6 +265,30 @@ var Settings = (function () {
     listSection(out, 'Your prefixes', 'prefix', n.prefixes, changed, 'Removed from the start of a name, any capitalisation.  Example: NOW: ');
     listSection(out, 'Your suffixes', 'suffix', n.suffixes, changed, 'Removed from the end.  A leading space counts, so " HD" will not touch "WHD".');
     out.push(preview(n, active));
+    return out;
+  }
+  /* ---------- event channels ---------- */
+  function eventsPage(p) {
+    var ev = p.events || (p.events = {}), out = [], active = p.id === S().active;
+    function changed(rebuild) { persist(p); Events.reset(); if (active) relist(); if (rebuild) build(); else paint(); }
+    out.push(toggle('Read events from channel names', 'For pay-per-view, league passes and one-off games whose name carries the matchup, date and time.  The guide shows the event at its time, with "Starts 7:30 PM" before it.  A real guide for the channel always wins.',
+      function () { return ev.on !== false; }, function (v) { ev.on = v; changed(true); }));
+    if (ev.on === false) return out;
+    out.push(toggle('Short channel names', '"NCAAB 001 | NORTH FLORIDA @ CHARLESTON SOUTHERN (M) | 12.18 11:00 AM" shows as "NCAAB 001"; the game is in the guide line under it.',
+      function () { return ev.short !== false; }, function (v) { ev.short = v; changed(); }));
+    out.push(toggle('Events by time', 'A group with every event channel that is on now or starts in the next two weeks, soonest first.',
+      function () { return ev.group !== false; }, function (v) { ev.group = v; changed(); }));
+    var labels = Events.ZONE_LABELS.slice();
+    if (active) labels[0] += ' (' + ({ ET: 'US Eastern', CT: 'US Central', MT: 'US Mountain', PT: 'US Pacific', UK: 'UK', CET: 'Central Europe', UTC: 'UTC', local: 'this TV' })[Events.zone()] + ')';
+    out.push(choice('Times with no time zone are in', 'Names that say ET, PT or UK are read that way.  This is for the rest.  Shown in this TV\'s own time.',
+      Events.ZONE_CHOICES, labels, function () { return ev.tz || 'auto'; }, function (v) { ev.tz = v; changed(true); }));
+    if (active) {
+      var now = Date.now(), list = L.data.channels.map(function (c) { return { c: c, e: Events.parse(c.n, now) }; }).filter(function (x) { return x.e; });
+      out.push(head(list.length ? list.length + ' event channels in this playlist' : 'No event channels found in this playlist'));
+      list.filter(function (x) { return x.e.end > now; }).sort(function (a, b) { return a.e.start - b.e.start; }).slice(0, 8).forEach(function (x) {
+        out.push(info(Events.when(x.e.start) + '   ' + x.e.title, x.e.short || ''));
+      });
+    }
     return out;
   }
   function show(e) { return '"' + e.replace(/ /g, '·') + '"'; }    // make meaningful spaces visible

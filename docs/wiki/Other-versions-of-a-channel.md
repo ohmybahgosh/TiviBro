@@ -20,4 +20,4 @@ Many playlists carry the same channel several times: in Full HD, HD and SD, in t
 
 ---
 
-← [Watching fullscreen](Watching-fullscreen)  ·  [Home](Home)  ·  [Catch-up](Catch-up) →
+← [Watching fullscreen](Watching-fullscreen)  ·  [Home](Home)  ·  [Event channels: pay-per-view and sports passes](Event-channels-pay-per-view-and-sports-passes) →

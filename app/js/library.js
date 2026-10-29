@@ -8,7 +8,7 @@ var Library = (function () {
   var byKey = new Map();
   var groupCache = new Map();     // groupId -> channel array (built on demand)
   var groupNames = {};
-  var ALL = 'all', RECENT = 'recent', FAV = 'c_fav';
+  var ALL = 'all', RECENT = 'recent', FAV = 'c_fav', EVENTS = 'events';
 
   function E() { return Store.edits; }
   function S() { return Store.settings; }
@@ -56,7 +56,7 @@ var Library = (function () {
       Store.saveEdits();
     } catch (err) { Log.warn('library', 'Could not track new groups: ' + err.message); }
   }
-  function dirty() { groupCache.clear(); }
+  function dirty() { groupCache.clear(); evCache = null; }
 
   /* ---------- other versions of a channel ----------
      The same channel in another quality, group or copy ("ESPN FHD", "ESPN HD", "US| ESPN (Backup)"),
@@ -103,13 +103,38 @@ var Library = (function () {
   // The quality tag lists show next to a name, only where the same channel is there more than once.
   function versionTag(c) { return versions(c).length ? qualityLabel(c) : ''; }
 
-  function name(c) { return (c && (E().renames[c.k] || Names.clean(c.n))) || ''; }
+  function name(c) {
+    if (!c) return '';
+    if (E().renames[c.k]) return E().renames[c.k];
+    // Event channels: the short tag ("PPV 03", "NCAAB 001"); the event itself is in the guide.
+    var ev = Events.shortNames() ? Events.of(c) : null;
+    if (ev) return ev.short || ev.title;
+    return Names.clean(c.n) || '';
+  }
+  /* Events by time: every shown event channel whose event is on now or in the next two weeks, soonest first.
+     Kept for a few minutes, since it reads every channel name. */
+  var evCache = null;
+  function eventList() {
+    var now = Date.now();
+    if (evCache && now - evCache.at < 300000) return evCache.list;
+    var e = E(), showHidden = S().showHidden, idle = Names.hideIdle(), out = [];
+    if (Events.groupOn()) data.channels.forEach(function (c) {
+      if (!showHidden && (e.hiddenChannels[c.k] || e.hiddenGroups[c.g])) return;
+      if (idle && Names.idle(c.n)) return;
+      var ev = Events.of(c);
+      if (ev && ev.end > now && ev.start < now + 14 * 86400e3) out.push({ c: c, s: ev.start });
+    });
+    out.sort(function (a, b) { return a.s - b.s || a.c.num - b.c.num; });
+    evCache = { at: now, list: out.map(function (x) { return x.c; }) };
+    return evCache.list;
+  }
   function isCustom(gid) { return gid && gid.indexOf('c_') === 0; }
   function custom(gid) { return E().custom.filter(function (g) { return g.id === gid; })[0]; }
   function cleanGroup(n) { return Names.groupsOn() ? Names.clean(n) : n; }
   function groupName(gid) {
     if (gid === ALL) return 'All channels';
     if (gid === RECENT) return 'Recent';
+    if (gid === EVENTS) return 'Events by time';
     var c = custom(gid);
     return c ? c.name : (E().groupRenames && E().groupRenames[gid]) || cleanGroup(groupNames[gid] || '');
   }
@@ -124,6 +149,8 @@ var Library = (function () {
     if (s.showFav === false) customs = customs.filter(function (g) { return g.id !== FAV; });
     if (s.favFirst) out = out.concat(customs);
     if (s.showRecent && e.recent.length) out.push({ id: RECENT, name: 'Recent', count: e.recent.length });
+    var evs = Events.groupOn() ? eventList().length : 0;
+    if (evs) out.push({ id: EVENTS, name: 'Events by time', count: evs });
     if (!s.favFirst) out = out.concat(customs);
     if (s.showAll) out.push({ id: ALL, name: 'All channels', count: data.channels.length });
     var prov = data.groups.slice();
@@ -144,11 +171,12 @@ var Library = (function () {
   function allGroups() {
     var e = E(), keep = S().showHidden;
     S().showHidden = true;
-    try { return groups().filter(function (g) { return g.id !== ALL && g.id !== RECENT; }); }
+    try { return groups().filter(function (g) { return g.id !== ALL && g.id !== RECENT && g.id !== EVENTS; }); }
     finally { S().showHidden = keep; }
   }
 
   function channels(gid) {
+    if (gid === EVENTS) return eventList();
     var hit = groupCache.get(gid);
     if (hit) return hit;
     var e = E(), showHidden = S().showHidden, list;
@@ -287,7 +315,7 @@ var Library = (function () {
   }
 
   return {
-    ALL: ALL, RECENT: RECENT, FAV: FAV, set: set, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
+    ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, set: set, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
     isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
     isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,

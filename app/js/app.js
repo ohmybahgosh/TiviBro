@@ -202,7 +202,7 @@ var App = (function () {
 
   /* ---------- start ---------- */
   function start(data, fromCache) {
-    Source.setTz(data.tz);
+    Source.setTz(data.tz); Events.setProviderTz(data.tz);
     Library.set(data);
     Vod.reset();
     if (!ready) { Views.init(); ready = true; }
@@ -262,7 +262,7 @@ var App = (function () {
     return Source.load(p).then(function (data) {
       if (data.fixed) Store.upsertPlaylist(adopt(p, data));
       Store.idbSet(cacheKey(p), data);
-      Source.setTz(data.tz);
+      Source.setTz(data.tz); Events.setProviderTz(data.tz);
       Library.set(data);
       Views.refreshLists(true);
       if (manual) U.toast(Library.count() + ' channels loaded');

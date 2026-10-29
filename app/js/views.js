@@ -106,7 +106,7 @@ var Views = (function () {
     else if (nn && nn.now) {
       row._s.textContent = nn.now.t;
       row._pi.style.width = Math.round(100 * (Date.now() - nn.now.s) / (nn.now.e - nn.now.s)) + '%';
-      row._p.style.display = '';
+      row._p.style.display = nn.now.up || nn.now.ended ? 'none' : '';
     } else { row._s.textContent = nn ? '' : ' '; row._p.style.display = 'none'; }
     var qt = L.versionTag(c);
     if (row._qt !== qt) { row._qt = qt; row._q.textContent = qt; row._q.style.display = qt ? '' : 'none'; }
@@ -276,7 +276,7 @@ var Views = (function () {
     var nn = Epg.nowNext(c);
     now.appendChild(U.el('div', '', nn && nn.now ? nn.now.t : L.name(c)));
     if (nn && nn.now) {
-      now.appendChild(U.el('small', '', U.hhmm(nn.now.s) + ' to ' + U.hhmm(nn.now.e) + '   ' + L.name(c) + (c.arch ? '   catch-up ' + c.arch + ' days' : '')));
+      now.appendChild(U.el('small', '', (nn.now.up ? 'Starts ' + Events.when(nn.now.e) : nn.now.ended ? 'Ended ' + Events.when(nn.now.s) : U.hhmm(nn.now.s) + ' to ' + U.hhmm(nn.now.e)) + '   ' + L.name(c) + (c.arch ? '   catch-up ' + c.arch + ' days' : '')));
       if (nn.now.d) now.appendChild(U.el('p', '', nn.now.d));
     } else now.appendChild(U.el('small', '', nn ? 'No guide information' : 'Loading guide'));
     if (nn && nn.next) next.textContent = 'Next  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t;
@@ -634,8 +634,8 @@ var Views = (function () {
       $('osdGroup').textContent = L.groupName(c.g) + (L.isFav(c.k) ? '   ★' : '') + media;
       var nn = Epg.nowNext(c);
       if (nn && nn.now) {
-        $('osdNow').textContent = U.hhmm(nn.now.s) + ' to ' + U.hhmm(nn.now.e) + '   ' + nn.now.t;
-        $('osdBar').style.width = Math.round(100 * (Date.now() - nn.now.s) / (nn.now.e - nn.now.s)) + '%';
+        $('osdNow').textContent = (nn.now.up || nn.now.ended ? '' : U.hhmm(nn.now.s) + ' to ' + U.hhmm(nn.now.e) + '   ') + nn.now.t;
+        $('osdBar').style.width = nn.now.up || nn.now.ended ? '0' : Math.round(100 * (Date.now() - nn.now.s) / (nn.now.e - nn.now.s)) + '%';
       } else { $('osdNow').textContent = nn ? 'No guide information' : ''; $('osdBar').style.width = '0'; }
       $('osdNext').textContent = nn && nn.next ? 'Next  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t : '';
     }
@@ -1168,7 +1168,7 @@ var Views = (function () {
     el.innerHTML = '';
     var head = U.el('div', 'qp-head');
     head.appendChild(U.el('span', 'n', (Store.settings.showNumbers ? c.num + '  ' : '') + L.name(c)));
-    head.appendChild(U.el('span', 't', nn && nn.now ? U.hhmm(nn.now.s) + ' – ' + U.hhmm(nn.now.e) + '   ' + nn.now.t : L.groupName(c.g)));
+    head.appendChild(U.el('span', 't', nn && nn.now ? (nn.now.up || nn.now.ended ? '' : U.hhmm(nn.now.s) + ' – ' + U.hhmm(nn.now.e) + '   ') + nn.now.t : L.groupName(c.g)));
     el.appendChild(head);
     var bar = U.el('div', 'qp-bar'), fill = U.el('i');
     fill.style.width = nn && nn.now ? Math.round(100 * (now - nn.now.s) / (nn.now.e - nn.now.s)) + '%' : '0';
@@ -1272,7 +1272,7 @@ var Views = (function () {
 
   function groupMenu(g) {
     if (!g) return;
-    var custom = L.isCustom(g.id), virtual = g.id === L.ALL || g.id === L.RECENT;
+    var custom = L.isCustom(g.id), virtual = g.id === L.ALL || g.id === L.RECENT || g.id === L.EVENTS;
     var hidden = !!Store.edits.hiddenGroups[g.id], blocked = !!Store.edits.blockedGroups[g.id];
     UI.menu(g.name, [
       !virtual && { label: 'Copy all channels to group…', action: function () { copyMenu(L.channels(g.id).map(function (c) { return c.k; }), g.name); } },
@@ -1282,6 +1282,9 @@ var Views = (function () {
       custom && { label: 'Rename group…', action: function () { UI.prompt('Rename group', g.name, function (n) { L.renameGroup(g.id, n); refreshLists(true); }); } },
       !virtual && { label: 'Move up', action: function () { L.moveGroup(g.id, -1); refreshLists(true); groupsVL.move(-1); } },
       !virtual && { label: 'Move down', action: function () { L.moveGroup(g.id, 1); refreshLists(true); groupsVL.move(1); } },
+      g.id === L.EVENTS && { label: 'Turn off Events by time', sub: 'back on in Settings, the playlist, Event channels', action: function () {
+        var p = Store.playlist; p.events = Object.assign({}, p.events, { group: false }); Store.upsertPlaylist(p); refreshLists(); U.toast('Events by time is off');
+      } },
       g.id === L.RECENT && { label: 'Clear recent channels', action: function () { Store.edits.recent = []; Store.saveEdits(); L.dirty(); refreshLists(); } },
       !virtual && Parental.enabled() && { label: blocked ? 'Unblock group' : 'Block group', action: function () {
         var go = function () { L.block('group', g.id, !blocked); refreshLists(true); stopIfBlocked(); };
@@ -1522,7 +1525,7 @@ var Guide = (function () {
       var past = p.e <= nowT, now = p.s <= nowT && p.e > nowT;
       // How much of what's on now has aired, shown inside its cell.
       cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : ''), a, Math.max(4, b - a),
-        (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(x(nowT) - a, 0, Math.max(4, b - a)) : -1, p.s);
+        (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(x(nowT) - a, 0, Math.max(4, b - a)) : -1, p.s);
     }
     if (!n) cell(r, n++, 'gp none' + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : l ? 'No guide information' : 'Loading…', false, null, -1, '');
     for (var j = n; j < r.cells.length; j++) if (!r.cells[j].off) { r.cells[j].d.style.display = 'none'; r.cells[j].off = true; }
@@ -1588,7 +1591,12 @@ var Guide = (function () {
     detail.appendChild(U.el('b', '', h.p ? h.p.t : L.name(c)));
     var meta = U.el('div', 'gd-meta');
     function part(t) { meta.appendChild(U.el('span', 'sep', '·')); meta.appendChild(document.createTextNode(t)); }
-    if (h.p) {
+    if (h.p && (h.p.up || h.p.ended)) {
+      // Event channels (events.js): the wait before an event, or the time after it
+      meta.appendChild(U.el('span', 'gd-badge', h.p.up ? 'UPCOMING' : 'ENDED'));
+      meta.appendChild(document.createTextNode(h.p.up ? 'Starts ' + Events.when(h.p.e) : 'Ended ' + Events.when(h.p.s)));
+      if (h.p.up && h.p.e > now) part('in ' + (h.p.e - now > 48 * 3600e3 ? Math.round((h.p.e - now) / 86400e3) + ' days' : mins(h.p.e - now)));
+    } else if (h.p) {
       var live = h.p.s <= now && h.p.e > now, past = h.p.e <= now;
       meta.appendChild(U.el('span', 'gd-badge' + (live ? ' live' : past && c.arch ? ' cu' : ''), live ? 'LIVE' : past ? (c.arch ? 'CATCH-UP' : 'AIRED') : 'UPCOMING'));
       meta.appendChild(document.createTextNode(new Date(h.p.s).toLocaleDateString(undefined, { weekday: 'short' }) + '  ' + U.hhmm(h.p.s) + ' – ' + U.hhmm(h.p.e)));
@@ -1601,7 +1609,7 @@ var Guide = (function () {
     var dq = L.versionTag(c);
     meta2.textContent = (Store.settings.showNumbers ? c.num + '  ' : '') + L.name(c) + (dq ? ' ' + dq : '') + '   ·   ' + L.groupName(c.g) + (c.arch ? '   ·   ↺ catch-up ' + c.arch + ' days' : '');
     detail.appendChild(meta2);
-    if (h.p && h.p.s <= now && h.p.e > now) {
+    if (h.p && h.p.s <= now && h.p.e > now && !h.p.up && !h.p.ended) {
       var bar = U.el('div', 'gd-prog'), fill = U.el('i'); fill.style.width = Math.round(100 * (now - h.p.s) / (h.p.e - h.p.s)) + '%'; bar.appendChild(fill); detail.appendChild(bar);
     }
     detail.appendChild(U.el('p', 'gd-desc', h.p && h.p.d ? h.p.d : ''));

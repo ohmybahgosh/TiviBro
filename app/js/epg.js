@@ -84,7 +84,15 @@ var Epg = (function () {
     }).catch(function () { cache.set(k, { at: Date.now() - TTL + 60000, list: [] }); });
   }
 
+  /* Event channels (events.js): when the guide has nothing for a channel whose name carries the
+     event and its time, the guide shows that event at its time instead. */
   function request(ch) {
+    var list = guideFor(ch);
+    if (list && list.length) return list;
+    var ev = ch && typeof Events !== 'undefined' ? Events.of(ch) : null;
+    return ev ? Events.programmes(ev) : list;
+  }
+  function guideFor(ch) {
     if (!ch) return null;
     if (xmlMode) {
       var id = epgId(ch);
@@ -347,7 +355,7 @@ var Epg = (function () {
     init: init, request: request, nowNext: nowNext, search: search, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm,
     icon: function (id) { return icons[id] || ''; },
     guideChannels: function () { return chList; },
-    hasData: function (ch) { var id = epgId(ch); return !!(id && cache.has(id)); },
+    hasData: function (ch) { var id = epgId(ch); return !!(id && cache.has(id)) || !!(typeof Events !== 'undefined' && Events.of(ch)); },
     onUpdate: function (fn) { listeners.push(fn); },
     refresh: function (lib, force) { return init(lib || Library, force); },
     get status() { return status; },

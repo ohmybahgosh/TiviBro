@@ -103,6 +103,33 @@ if (BIG) {
       epg_channel_id: i < BIG_EPG ? 'big.' + i : '', added: '1761000000', category_id: String(1000 + g), tv_archive: i % 5 === 0 ? 1 : 0, tv_archive_duration: i % 5 === 0 ? 3 : 0, clip: clips[k], base, ci: g });
   }
 }
+// MOCK_EVENTS=1: event channels that carry the matchup and time in their names, the way league
+// passes and pay-per-view are listed (see app/js/events.js), with times around now in US Eastern.
+if (process.env.MOCK_EVENTS) {
+  const et = (ms, o) => new Date(ms).toLocaleString('en-US', Object.assign({ timeZone: 'America/New_York' }, o));
+  const md = ms => et(ms, { month: 'short', day: 'numeric' }), hm = ms => et(ms, { hour: 'numeric', minute: '2-digit' });
+  const base = Math.floor(Date.now() / 1800000) * 1800000, H = 3600000;
+  const EV = [
+    ['Pay-Per-View Events', [
+      [-1, t => `PPV 01 | UFC | Prelims | ${et(t, { weekday: 'short' })} ${md(t)} ${hm(t)} ET`],
+      [1, t => `PPV 02 | UFC | Main Card: Rivera v Okafor | ${et(t, { weekday: 'short' })} ${md(t)} ${hm(t)} ET`],
+      [26, t => `PPV 03 | BOXING | Hart v Mendez | ${et(t, { weekday: 'short' })} ${md(t)} ${hm(t)} ET`],
+      [3, t => `PPV 04 | WWE Saturday Showdown @ ${hm(t)} EDT`]]],
+    ['NCAA Basketball', [
+      [-0.5, t => `NCAAB 001 | NORTH RIVER @ LAKESIDE STATE (M) | ${et(t, { month: 'numeric', day: 'numeric' }).replace('/', '.')} ${hm(t)} | ESPN+`],
+      [2, t => `NCAAB 002 | PINE VALLEY @ EASTPORT (W) | ${et(t, { month: 'numeric', day: 'numeric' }).replace('/', '.')} ${hm(t)} | ESPN+`],
+      [5, t => `NCAAB 003 | COASTAL TECH @ MIDLAND (M) | ${et(t, { month: 'numeric', day: 'numeric' }).replace('/', '.')} ${hm(t)} | ESPN+`]]],
+    ['NFL Sunday Pass', [
+      [4, t => `NFL 1 | ${md(t)} ${hm(t)} | Harbor City Gulls @ Ridgeback Rams`],
+      [7, t => `NFL 2 | ${md(t)} ${hm(t)} | Prairie Bison @ Coastline Pilots`],
+      [-30, t => `NFL 3 | ${md(t)} ${hm(t)} | Desert Hawks @ Summit Miners`]]]
+  ];
+  EV.forEach(([cname, list]) => {
+    const ci = cats.length;
+    cats.push({ category_id: String(ci + 1), category_name: cname, parent_id: 0 });
+    list.forEach(([h, f], i) => { const id = 200000 + ci * 10 + i; streams.push({ num: id, name: f(base + h * H), stream_type: 'live', stream_id: id, stream_icon: '', epg_channel_id: '', added: '1761000000', category_id: String(ci + 1), tv_archive: 0, tv_archive_duration: 0, clip: 'sports', base: cname, ci }); });
+  });
+}
 const sched = new Map(streams.filter(s => s.stream_id < 100000 || s.epg_channel_id).map(s => [s.stream_id, schedule(s)]));
 
 /* ---------- artwork ---------- */
@@ -182,7 +209,7 @@ const server = http.createServer((req, res) => {
   if (p === '/player_api.php') {
     const a = q.action || '';
     if (!a) return send(res, 200, { user_info: { username: q.username, auth: 1, status: 'Active', exp_date: String(Math.floor(Date.now() / 1000) + 300 * 86400), max_connections: '2', active_cons: '0', allowed_output_formats: ['ts', 'm3u8'] },
-      server_info: { url: '127.0.0.1', port: String(PORT), server_protocol: 'http', timezone: 'UTC', timestamp_now: Math.floor(Date.now() / 1000) } });
+      server_info: { url: '127.0.0.1', port: String(PORT), server_protocol: 'http', timezone: process.env.MOCK_EVENTS ? 'America/New_York' : 'UTC', timestamp_now: Math.floor(Date.now() / 1000) } });
     if (a === 'get_live_categories') return send(res, 200, cats);
     if (a === 'get_live_streams') return send(res, 200, streams.map(({ clip, base, ci, ...s }) => s));
     if (a === 'get_short_epg') {

@@ -36,6 +36,7 @@ On a playlist's page:
 | **Guide last loaded**, each source, **Channels with guide data** | (information) | When the guide loaded, how many channels and programmes each source gave, and how many of your channels have a guide. |
 | **Assign guide to channels without one** | | Lists channels with no guide; pick one and search the guide for the right channel.  Also on any channel: **Hold OK > Assign guide…**. |
 | **Channel name editor ›** | | Cleans up channel names (below). |
+| **Event channels ›** | | Reads pay-per-view and sports pass channels whose names carry the event and time (below). |
 | **Delete this playlist** | | Removes the playlist with its groups, favorites, hidden items and cached data.  Shown when you have more than one. |
 
 **Channel name editor.**  Rules that strip clutter from every name at once.  Your provider's names are never changed: switch a rule off and the original comes back.  Names you set by hand stay.
@@ -59,6 +60,18 @@ On a playlist's page:
 | **Status notes at the end** | Off | "FloHockey 39 - Off Air" → "FloHockey 39", "PPV 07 \| OFFLINE" → "PPV 07".  Off by default because the note tells you nothing is on; **Hide channels with nothing on** hides those channels instead. |
 | **Your prefixes** / **Your suffixes** | empty | Your own text to remove from the start or end of names, any capitalisation.  Spaces count (shown as ·), so " HD" won't touch "WHD".  **Paste a comma separated list…** takes TiviMate's format, for example `US: , UK: , NOW \| `. |
 | **Preview** | | Names from your channels before and after, the ones that change first. |
+
+**Event channels.**  For pay-per-view, league passes and one-off games whose name carries the matchup, date and time (see [Event channels](Event-channels-pay-per-view-and-sports-passes)).
+
+<p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-events.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-events.png" width="60%" alt="Event channels"></a></p>
+
+| Setting | Default | What it does |
+|---|---|---|
+| **Read events from channel names** | **On** | Shows the event from the name in the guide at its time, with "Starts 7:30 PM" before it and "Ended" after.  A real guide for the channel always wins. |
+| **Short channel names** | **On** | "NCAAB 001 \| NORTH FLORIDA @ CHARLESTON SOUTHERN (M) \| 12.18 11:00 AM" shows as "NCAAB 001", with the game on the line under it. |
+| **Events by time** | **On** | A group with every event channel that is on now or starts in the next two weeks, soonest first. |
+| **Times with no time zone are in** | **The provider's time zone** | For names without ET, PT, UK and so on.  US Eastern, Central, Mountain or Pacific, UK, Central Europe, UTC, or this TV's time.  Times always show in the TV's own time. |
+| *(list)* | | How many event channels the playlist has, and the next few events. |
 
 ---
 
