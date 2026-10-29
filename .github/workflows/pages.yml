@@ -11,7 +11,7 @@ permissions:
   id-token: write
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false      # let a running deploy finish; the next one waits its turn
 jobs:
   build:
     runs-on: ubuntu-latest
