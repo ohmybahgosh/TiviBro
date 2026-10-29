@@ -50,5 +50,18 @@ edits.blockedChannels = { b: 1 };
 ok('versions: never a channel locked with the PIN', !/b/.test(ver('a')));
 edits.blockedChannels = {}; edits.hiddenChannels = {};
 ok('quality labels', L.qualityLabel(L.find('a')) === 'FHD' && L.qualityLabel(L.find('d')) === '4K' && L.qualityLabel(L.find('e')) === '');
+
+// Hide channels with nothing on: by the current name, favorites keep theirs, it comes back when renamed.
+L.set({ groups: [{ id: 'ev', name: 'Events' }], channels: [{ k: 'p1', n: 'PPV 01 | UFC 330', g: 'ev', num: 1 }, { k: 'p2', n: 'PPV 02 | OFFLINE', g: 'ev', num: 2 },
+  { k: 'p3', n: 'FloHockey 39 - Off Air', g: 'ev', num: 3 }, { k: 'p4', n: 'BigTen 76 | No Event Scheduled', g: 'ev', num: 4 }] });
+edits.custom[0].items = ['p3'];
+ctx.Store.playlist.names = { enabled: false, hideIdle: false }; L.dirty();
+ok('nothing on: off by default', keys('ev') === 'p1,p2,p3,p4', keys('ev'));
+ctx.Store.playlist.names.hideIdle = true; L.dirty();
+ok('nothing on: hidden while they say so', keys('ev') === 'p1', keys('ev'));
+ok('nothing on: a favorite keeps it', keys('c_fav') === 'p3', keys('c_fav'));
+L.set({ groups: [{ id: 'ev', name: 'Events' }], channels: [{ k: 'p1', n: 'PPV 01 | UFC 330', g: 'ev', num: 1 }, { k: 'p2', n: 'PPV 02 | Boxing', g: 'ev', num: 2 }] });
+ok('nothing on: back once the provider names an event', keys('ev') === 'p1,p2', keys('ev'));
+ctx.Store.playlist.names = { enabled: false };
 console.log(fail ? fail + ' failures' : 'all library tests passed');
 process.exit(fail ? 1 : 0);

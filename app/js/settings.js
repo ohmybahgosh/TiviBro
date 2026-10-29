@@ -246,6 +246,8 @@ var Settings = (function () {
     var n = p.names || (p.names = Names.defaults()), out = [], active = p.id === S().active;
     function changed(rebuild) { persist(p); Names.invalidate(); if (active) relist(); if (rebuild) build(); else paint(); }
     out.push(toggle('Clean up channel names', 'Your playlist is not changed.  Turn off to see the original names.', function () { return n.enabled; }, function (v) { n.enabled = v; changed(true); }));
+    out.push(toggle('Hide channels with nothing on', 'Channels named "Off Air", "Offline" or "No Event Scheduled" stay out of the lists until the provider names an event on them.  Favorites keep theirs.',
+      function () { return !!n.hideIdle; }, function (v) { n.hideIdle = v; changed(); }));
     if (!n.enabled) return out.concat([preview(n, active)]);
     out.push(toggle('Clean group names too', 'Turns "USA | Sports" into "Sports" in the group list.', function () { return n.groups; }, function (v) { n.groups = v; changed(); }));
     out.push(head('Default rules, preloaded'));
@@ -253,11 +255,11 @@ var Settings = (function () {
       var d = Names.defaults().rules; n.rules = d; changed(true); U.toast('Recommended defaults on');
     }));
     out.push(action('Turn all default rules off', 'Only your own lists will apply.', function () {
-      Object.keys(n.rules).forEach(function (k) { n.rules[k] = false; }); changed(true);
+      Names.RULES.forEach(function (r) { n.rules[r.id] = false; }); changed(true);
     }));
     Names.RULES.forEach(function (r) {
       var ex = r.ex.map(function (e) { return '"' + e[0] + '" → "' + e[1] + '"'; }).join(',  ');
-      out.push(toggle(r.label, ex + (r.note ? '.  ' + r.note : ''), function () { return !!n.rules[r.id]; }, function (v) { n.rules[r.id] = v; changed(); }));
+      out.push(toggle(r.label, ex + (r.note ? '.  ' + r.note : ''), function () { return n.rules[r.id] != null ? !!n.rules[r.id] : r.on; }, function (v) { n.rules[r.id] = v; changed(); }));
     });
     listSection(out, 'Your prefixes', 'prefix', n.prefixes, changed, 'Removed from the start of a name, any capitalisation.  Example: NOW: ');
     listSection(out, 'Your suffixes', 'suffix', n.suffixes, changed, 'Removed from the end.  A leading space counts, so " HD" will not touch "WHD".');

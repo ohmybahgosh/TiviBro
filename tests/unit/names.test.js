@@ -28,5 +28,34 @@ const C = JSON.parse(JSON.stringify(D)); C.rules = {}; C.prefixes = Names.parseL
 if (Names.cleanWith({ enabled: false }, 'USA | ESPN') !== 'USA | ESPN') { fail++; console.log('FAIL disabled'); }
 // round trip of list format
 if (Names.joinList(Names.parseList('a, b ,c')) !== 'a, b ,c') { fail++; console.log('FAIL roundtrip'); }
-console.log(fail ? fail + ' failures' : 'all ' + (cases.length + 16) + ' name tests passed');
+// Shapes seen on a real provider (about 9,800 channels), with the recommended defaults.
+const real = [
+  ['CAR | METRO TV HND', 'METRO TV HND'], ['ARG | TN HD', 'TN'], ['CO | Caracol FHD', 'Caracol'], ['CR | Repretel 6 FHD', 'Repretel 6'],
+  ['AFG | ATN TV', 'ATN TV'], ['MY | ASTRO ARENA', 'ASTRO ARENA'], ['PR | WAPA', 'WAPA'], ['CA-FR | RDS', 'RDS'], ['DEP | TUDN 01', 'TUDN 01'],
+  ['DEP |  BEIN LA LIGA FHD ES', 'BEIN LA LIGA FHD ES'], ['UK◈ Sky Store Premiere 3 ᴴᴰ', 'Sky Store Premiere 3'], ['ARG | EL NUEVE SD *', 'EL NUEVE'],
+  ['⫘⫘⫘ CAN ⫘⫘⫘', 'CAN'], ['⚽ EPL 1', 'EPL 1'], ['⛹ NBA TEAMS', 'NBA TEAMS'], ['⬬ NFL PASS 1', 'NFL PASS 1'],
+  ['EFL04ⓧ| Charlton Athletic 15:00 Derby County (CH) 15/08', 'EFL04 | Charlton Athletic 15:00 Derby County (CH) 15/08'],
+  ['FIFA U-15 World Cup 2026™: Pitch 1A', 'FIFA U-15 World Cup 2026: Pitch 1A'],
+  ['Pluto US | CNN HEADLINES', 'Pluto US | CNN HEADLINES'], ['TUBI | ION', 'TUBI | ION'], ['FloHockey 39 - Off Air', 'FloHockey 39 - Off Air'],
+  ['CBS | DENVER | KCNC', 'CBS | DENVER | KCNC'], ['NHL | Boston Bruins', 'NHL | Boston Bruins'], ['SC: Top 50 Goals of All-Time', 'SC: Top 50 Goals of All-Time'],
+  ['USA | A&E', 'A&E'], ['GR | Mega HD', 'Mega'], ['US: PBS - CT - HARTFORD (WEDH)', 'PBS - CT - HARTFORD (WEDH)']
+];
+real.forEach(([i, o]) => { const r = Names.cleanWith(D, i); if (r !== o) { fail++; console.log('FAIL real', JSON.stringify(i), '->', JSON.stringify(r), 'want', JSON.stringify(o)); } });
+// The optional rules
+const O = JSON.parse(JSON.stringify(D)); O.rules.services = true; O.rules.countryEnd = true; O.rules.idle = true;
+const opt = [
+  ['Pluto US | CNN HEADLINES', 'CNN HEADLINES'], ['TUBI | ION', 'ION'], ['Pluto TV | Anime', 'Anime'], ['Samsung TV Plus: Bob Ross', 'Bob Ross'], ['Plex | Docurama', 'Docurama'],
+  ['CAR | METRO TV HND', 'METRO TV'], ['CAR | CANAL 4 PAN', 'CANAL 4'], ['DEP | BEIN SPORTS 05 (USA)', 'BEIN SPORTS 05'], ['ARG | TN (Argentina)', 'TN'],
+  ['DEP |  BEIN SPORTS N (LATINO AMERICA)', 'BEIN SPORTS N'], ['ESPN Deportes', 'ESPN Deportes'],
+  ['FloHockey 39 - Off Air', 'FloHockey 39'], ['PPV 07 | OFFLINE', 'PPV 07'], ['NBA 07 : Offline', 'NBA 07'], ['BigTen 76 | No Event Scheduled', 'BigTen 76'],
+  ['GR | PAOK TV HD OFFLINE', 'PAOK TV'], ['Victory+ | No Event Scheduled', 'Victory+'], ['Offline TV', 'Offline TV'], ['Off Air', 'Off Air']
+];
+opt.forEach(([i, o]) => { const r = Names.cleanWith(O, i); if (r !== o) { fail++; console.log('FAIL optional', JSON.stringify(i), '->', JSON.stringify(r), 'want', JSON.stringify(o)); } });
+// Rules added later start at their default for settings saved before them.
+if (Names.cleanWith({ enabled: true, rules: { country: true }, prefixes: [], suffixes: [] }, 'UK◈ Sky Store ᴴᴰ') !== 'Sky Store') { fail++; console.log('FAIL old settings get new defaults'); }
+// Channels with nothing on
+const idle = [['FloHockey 39 - Off Air', true], ['PPV 07 | OFFLINE', true], ['BigTen 76 | No Event Scheduled', true], ['Victory+ | No Event Scheduled', true],
+  ['GR | BCI 24 News OFFLINE', true], ['NBA 07 : Offline', true], ['ESPN', false], ['Offline TV', false], ['Liveline', false], ['NFL 01: Bills vs Jets 1:00 PM ET', false]];
+idle.forEach(([n, w]) => { if (Names.idle(n) !== w) { fail++; console.log('FAIL idle', n); } });
+console.log(fail ? fail + ' failures' : 'all ' + (cases.length + 16 + real.length + opt.length + 1 + idle.length) + ' name tests passed');
 process.exit(fail ? 1 : 0);

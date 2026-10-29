@@ -174,6 +174,9 @@ var Library = (function () {
       }
     }
     if (!showHidden) list = list.filter(function (c) { return !e.hiddenChannels[c.k]; });
+    // Hide channels with nothing on (Settings > Channel names): judged on the name the provider sends
+    // now, so a channel comes back by itself once an event is named on it.  Favorites keep theirs.
+    if (!showHidden && gid !== FAV && Names.hideIdle()) list = list.filter(function (c) { return !Names.idle(c.n); });
     // A sort picked for this one group (web editor) wins over the global channel order.
     var own = e.groupSort && e.groupSort[gid];
     var mode = own ? { az: 'name', za: 'za', number: 'number', provider: 'playlist', custom: 'playlist' }[own] || 'playlist' : S().sortChannels;

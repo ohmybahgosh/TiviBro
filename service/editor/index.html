@@ -416,6 +416,8 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
         <div class="card" id="tDupes"></div>
         <div class="card" id="tKeyword"></div>
         <div class="card" id="tEmpty"></div>
+        <div class="card" id="tDivider"></div>
+        <div class="card" id="tIdle"></div>
       </div>
     </section>
 
@@ -1119,6 +1121,9 @@ function suggestions() {
   if (cs.length > 2) out.push(['Groups from ' + cs.length + ' countries are shown', 'Keep only the countries you watch, in one step.', 'tools', 'Pick countries']);
   var dp = dupeSets().length;
   if (dp) out.push([plural(dp, 'channel') + ' appear more than once', 'Same channel in different qualities (HD, FHD, SD).  Keep the best one, hide the rest.', 'tools', 'Review']);
+  var dvn = dividerGroups().length;
+  if (dvn) out.push([plural(dvn, 'divider group') + ' shown', 'Groups like "⫘⫘⫘ UK ⫘⫘⫘" that only split the list into sections.', 'tools', 'Hide them']);
+  if (!N.hideIdle) { var idn = idleChannels().length; if (idn >= 10) out.push([plural(idn, 'channel') + ' with nothing on', 'Event channels named "Off Air" or "No Event Scheduled" between events.  Hide them while they say so.', 'tools', 'Show me']); }
   var empty = emptyGroups().length;
   if (empty) out.push([plural(empty, 'empty group') + ' still shown', 'They have no channels, or every channel in them is hidden.', 'tools', 'Hide them']);
   if (guideKnown()) { var miss = channelsOf(ALL).filter(function (c) { return !E.hiddenChannels[c.k] && guideState(c) === 'none'; }).length; if (miss) out.push([plural(miss, 'shown channel') + ' without a guide', 'Smart match suggests the right guide channel for each; you approve.', 'guide', 'Match']); }
@@ -1920,10 +1925,12 @@ var HELP = [
     '<p>You decide: ✓ approves a guess, ✕ declines it, and the list in each row offers the next best guesses or a search of the whole guide.  "Very likely" guesses start approved.  Nothing changes until you press <b>Apply</b>, and the whole batch is one undo step.</p>' +
     '<h3>By hand</h3><p><b>Find guide…</b> opens suggestions for that one channel plus a search box.  <b>Clear</b> returns a channel to its automatic match.</p>'],
   ['names', 'Channel names', '<p>Rules remove clutter from every name at once: country prefixes, quality tags, brackets and so on.  Add your own prefixes and suffixes too.  The preview shows each name before and after.  Rules only change how names look; the provider\'s names are untouched, so turning a rule off brings the old name back.  Channels you renamed by hand keep your names.</p>'],
-  ['tools', 'Smart clean-up', '<ul><li><b>Keep only your countries</b> reads country codes at the start of group names (US, UK, FR…) and shows only the ones you tick.</li>' +
+  ['tools', 'Smart clean-up', '<ul><li><b>Keep only your countries</b> works out the country of each group from its name (a code like US or UK, or a word like Canada or France), from the code most of its channels start with, or from the divider group it sits under, and shows only the ones you tick.</li>' +
     '<li><b>Same channel, more than once</b> finds the same channel in several qualities and keeps one.  Pick which quality to prefer; Full HD first is a good balance.  You can override the pick in any set.</li>' +
     '<li><b>Hide by keyword</b> hides groups or channels whose names contain words like PPV or 24/7, with a preview first.</li>' +
-    '<li><b>Empty groups</b> hides groups with nothing left to watch.</li></ul><p>Everything here only hides, never deletes, and every action is one undo step.</p>'],
+    '<li><b>Empty groups</b> hides groups with nothing left to watch.</li>' +
+    '<li><b>Divider groups</b> hides groups like "⫘⫘⫘ UK ⫘⫘⫘" that only split the list into sections.</li>' +
+    '<li><b>Channels with nothing on</b> keeps event channels named "Off Air", "Offline" or "No Event Scheduled" out of the lists while they say so; they come back by themselves when an event is named.</li></ul><p>Everything here only hides, never deletes, and every action is one undo step.</p>'],
   ['playlists', 'Playlists', '<p>Add Xtream Codes or M3U playlists, switch which one the TV uses, change reload schedules and the User-Agent, or change a login.  The TV tests a new login before saving it.  Logins never reach this editor; you only see server names.  Each playlist has its own groups, names and guide setup.</p>'],
   ['backup', 'Backup and restore', '<p>A backup is one file with everything: settings, every playlist <b>with its login</b>, each playlist\'s groups, favorites, names and guide matches, and its restore points.  Channel lists and guides are not in it; they reload from your provider.</p>' +
     '<h3>Locked with your passphrase</h3><p>Because it holds logins, the backup is always locked.  You pick a passphrase when you download it (or press <b>Suggest one</b>).  The TV makes the backup and locks it with AES-256 before it leaves the TV, so the file that reaches your computer is unreadable without the passphrase.  Nobody can recover a forgotten passphrase, us included, so keep it in a password manager or with the file.</p>' +
@@ -1951,7 +1958,7 @@ function renderNames() {
   if (!N) return;
   $('nEnabled').checked = N.enabled !== false; $('nGroups').checked = N.groups !== false;
   $('rules').innerHTML = Names.RULES.map(function (r) {
-    return '<label class="rule"><input type="checkbox" class="sw" data-rule="' + r.id + '"' + (N.rules[r.id] ? ' checked' : '') + '><div><b>' + esc(r.label) + '</b>' +
+    return '<label class="rule"><input type="checkbox" class="sw" data-rule="' + r.id + '"' + ((N.rules[r.id] != null ? N.rules[r.id] : r.on) ? ' checked' : '') + '><div><b>' + esc(r.label) + '</b>' +
       '<div class="ex">' + r.ex.map(function (x) { return esc(x[0]) + ' → ' + esc(x[1]); }).join('   ·   ') + '</div>' + (r.note ? '<div class="ex">' + esc(r.note) + '</div>' : '') + '</div></label>';
   }).join('');
   if (document.activeElement !== $('nPre')) $('nPre').value = Names.joinList(N.prefixes || []);
@@ -1976,17 +1983,94 @@ $('nGroups').addEventListener('change', function () { var on = this.checked; mut
 $('nPre').addEventListener('input', function () { var v = this.value; mut('Edited prefixes to remove', function () { N.prefixes = Names.parseList(v); }, { merge: 'pre' }); });
 $('nSuf').addEventListener('input', function () { var v = this.value; mut('Edited suffixes to remove', function () { N.suffixes = Names.parseList(v); }, { merge: 'suf' }); });
 $('nDefaults').onclick = function () { mut('Recommended name rules', function () { N.enabled = true; N.rules = Names.defaults().rules; }); renderNames(); };
-$('nNone').onclick = function () { mut('Turned all name rules off', function () { Object.keys(N.rules).forEach(function (k) { N.rules[k] = false; }); }); renderNames(); };
+$('nNone').onclick = function () { mut('Turned all name rules off', function () { Names.RULES.forEach(function (r) { N.rules[r.id] = false; }); }); renderNames(); };
 $('onlyChanged').addEventListener('change', renderPreview);
 
 /* ---------- smart clean-up ---------- */
 // Country or language prefix of a provider group name: "US| News", "[UK] Sports", "FR - Cinema".
 function prefixOf(name) { var m = /^\s*[\[(]?([A-Z]{2,3}|[A-Z]{2}-[A-Z]{2})[\])]?\s*(?:[|:\-–»•]+|\s(?=[A-Z0-9]))/.exec(name || ''); return m ? m[1] : ''; }
+/* Which country a provider group belongs to.  Providers say it in different ways, so in order:
+   a code at the start of the group name ("US| News", "[UK] Sports"); a country word ("Canada News",
+   "France Cinema", "Latino / Mexico"); a code most of its channels start with ("CAR | ...",
+   "ARG | ..."); and last, the divider group it sits under ("⫘⫘⫘ CAN ⫘⫘⫘" then "TSN +"). */
+var CC_ALIAS = { USA: 'US', CAN: 'CA', AUS: 'AU', GB: 'UK', GBR: 'UK', ENG: 'UK', ARG: 'AR', COL: 'CO', CAR: 'CARIB', MEX: 'MX', BRA: 'BR', AFG: 'AF', PAK: 'PK', IND: 'IN',
+  ESP: 'ES', ITA: 'IT', FRA: 'FR', GER: 'DE', DEU: 'DE', POR: 'PT', POL: 'PL', GRE: 'GR', NED: 'NL', SWE: 'SE', NOR: 'NO', DEN: 'DK', FIN: 'FI', BEL: 'BE', SUI: 'CH', AUT: 'AT',
+  LATAM: 'LAT', LATINO: 'LAT', HIS: 'LAT', HISP: 'LAT', IRL: 'IE', TUR: 'TR', ROM: 'RO', RUS: 'RU', UKR: 'UA', PHI: 'PH', 'CA-FR': 'CA', 'CA-EN': 'CA', 'FR-CA': 'CA', QC: 'CA',
+  'US-ES': 'US', 'US-EN': 'US', 'EX-YU': 'EXYU', KSA: 'SA', UAE: 'AE', RSA: 'ZA', CRI: 'CR', PRI: 'PR', DOM: 'DO', CHL: 'CL', PER: 'PE', VEN: 'VE', ECU: 'EC' };
+var CC_WORDS = { 'united states': 'US', america: 'US', usa: 'US', us: 'US', canada: 'CA', canadian: 'CA', can: 'CA', 'united kingdom': 'UK', uk: 'UK', britain: 'UK', british: 'UK', england: 'UK',
+  scotland: 'UK', ireland: 'IE', irish: 'IE', australia: 'AU', aus: 'AU', 'aus/nz': 'AU', 'new zealand': 'NZ', nz: 'NZ', france: 'FR', french: 'FR', italy: 'IT', italia: 'IT', italian: 'IT',
+  germany: 'DE', deutschland: 'DE', german: 'DE', spain: 'ES', espana: 'ES', 'españa': 'ES', spanish: 'ES', portugal: 'PT', portuguese: 'PT', brazil: 'BR', brasil: 'BR', mexico: 'MX', 'méxico': 'MX',
+  poland: 'PL', polska: 'PL', polish: 'PL', greece: 'GR', greek: 'GR', turkey: 'TR', turkish: 'TR', netherlands: 'NL', holland: 'NL', dutch: 'NL', belgium: 'BE', sweden: 'SE', swedish: 'SE',
+  norway: 'NO', denmark: 'DK', finland: 'FI', nordic: 'NORDIC', scandinavia: 'NORDIC', switzerland: 'CH', austria: 'AT', india: 'IN', indian: 'IN', pakistan: 'PK', afghanistan: 'AF',
+  bangladesh: 'BD', 'sri lanka': 'LK', nepal: 'NP', 'south asia': 'IN', philippines: 'PH', filipino: 'PH', pinoy: 'PH', argentina: 'AR', colombia: 'CO', columbia: 'CO', chile: 'CL', peru: 'PE',
+  venezuela: 'VE', ecuador: 'EC', 'costa rica': 'CR', 'puerto rico': 'PR', dominican: 'DO', caribbean: 'CARIB', jamaica: 'JM', latino: 'LAT', latin: 'LAT', latam: 'LAT', 'lat/his': 'LAT',
+  hispanic: 'LAT', arabic: 'ARAB', arab: 'ARAB', africa: 'AFRICA', african: 'AFRICA', 'south africa': 'ZA', nigeria: 'NG', israel: 'IL', iran: 'IR', persian: 'IR', russia: 'RU', russian: 'RU',
+  ukraine: 'UA', romania: 'RO', albania: 'AL', 'ex-yu': 'EXYU', exyu: 'EXYU', balkans: 'EXYU', balkan: 'EXYU', hungary: 'HU', czech: 'CZ', bulgaria: 'BG', croatia: 'HR', serbia: 'RS',
+  malaysia: 'MY', japan: 'JP', korea: 'KR', china: 'CN', chinese: 'CN', vietnam: 'VN', thailand: 'TH', indonesia: 'ID' };
+var CC_NAME = { US: 'USA', CA: 'Canada', UK: 'UK', IE: 'Ireland', AU: 'Australia', NZ: 'New Zealand', FR: 'France', IT: 'Italy', DE: 'Germany', ES: 'Spain', PT: 'Portugal', BR: 'Brazil',
+  MX: 'Mexico', PL: 'Poland', GR: 'Greece', TR: 'Turkey', NL: 'Netherlands', IN: 'India and South Asia', PK: 'Pakistan', AF: 'Afghanistan', PH: 'Philippines', AR: 'Argentina', CO: 'Colombia',
+  CR: 'Costa Rica', PR: 'Puerto Rico', CARIB: 'Caribbean', LAT: 'Latino', ARAB: 'Arabic', EXYU: 'Ex-Yu', NORDIC: 'Nordic', AFRICA: 'Africa', MY: 'Malaysia', CL: 'Chile', PE: 'Peru' };
+var CC_KNOWN = {};
+[CC_NAME, CC_ALIAS, CC_WORDS].forEach(function (m) { Object.keys(m).forEach(function (k) { CC_KNOWN[m === CC_NAME ? k : m[k]] = 1; }); });
+'AT BE BG CH CZ DK FI HR HU IE IL IR NL NO RO RS RU SE TR UA ZA'.split(' ').forEach(function (k) { CC_KNOWN[k] = 1; });
+// A code only counts when it is a country or region we know, so "NBC Locals" or "NFL Teams" are not countries.
+function ccNorm(code) { code = String(code || '').toUpperCase(); code = CC_ALIAS[code] || code; return CC_KNOWN[code] ? code : ''; }
+function ccWord(name) {
+  var w = String(name || '').toLowerCase().replace(/[^\p{L}\p{N}\s\/-]+/gu, ' ').replace(/\s+/g, ' ').trim();
+  if (CC_WORDS[w]) return CC_WORDS[w];
+  var t = w.split(' ');
+  if (t.length > 1 && CC_WORDS[t[0] + ' ' + t[1]]) return CC_WORDS[t[0] + ' ' + t[1]];
+  if (CC_WORDS[t[0]] && t[0].length > 2) return CC_WORDS[t[0]];
+  var last = t[t.length - 1];                                    // "Pluto USA", "Sky Sports UK"
+  if (t.length > 1 && CC_WORDS[last] && last.length > 1) return CC_WORDS[last];
+  return '';
+}
+function isDivider(name) { return /^\s*[^\p{L}\p{N}\s]{2,}.*[^\p{L}\p{N}\s]{2,}\s*$|^\s*[-=#*~_•·]{3,}/u.test(String(name || '')); }
+var ccCache = null;
+function countryMap() {
+  if (ccCache && ccCache.d === D) return ccCache.m;
+  var m = {}, section = '', sec = 0, secOf = {}, own = {};
+  D.groups.forEach(function (g) {
+    var plain = String(g.name || '').replace(/[^\p{L}\p{N}\s|:\[\]()\/&+-]+/gu, ' ').trim();
+    if (isDivider(g.name)) { section = ccNorm(prefixOf(plain + ' ')) || ccWord(plain); m[g.id] = section; sec++; return; }
+    secOf[g.id] = sec;
+    var code = ccNorm(prefixOf(plain)) || ccWord(plain);
+    if (!code) {
+      var by = {}, chans = byGroup.get(g.id) || [];
+      chans.forEach(function (c) { var x = /^\s*[\[(|]?\s*([A-Z]{2,4}(?:-[A-Z]{2})?)\s*[\])|]?\s*[|:\-–◈]/.exec(c.n || ''); if (x) { var k = ccNorm(x[1]); if (k) by[k] = (by[k] || 0) + 1; } });
+      var best = Object.keys(by).sort(function (a, b) { return by[b] - by[a]; })[0];
+      if (best && chans.length >= 3 && by[best] >= chans.length * 0.6) code = best;
+    }
+    own[g.id] = code;
+    m[g.id] = code || section;
+  });
+  // A section without a country in its divider (or the groups before the first divider) takes the
+  // country most of its groups name, when that is clear: "ABC Locals" among "USA EAST", "USA News"...
+  var tally = {};
+  Object.keys(secOf).forEach(function (id) { var t = tally[secOf[id]] || (tally[secOf[id]] = { n: 0, by: {} }); t.n++; if (own[id]) t.by[own[id]] = (t.by[own[id]] || 0) + 1; });
+  Object.keys(secOf).forEach(function (id) {
+    if (m[id]) return;
+    var t = tally[secOf[id]], coded = 0, best = '';
+    Object.keys(t.by).forEach(function (k) { coded += t.by[k]; if (!best || t.by[k] > t.by[best]) best = k; });
+    if (best && t.by[best] >= 3 && t.by[best] >= coded * 0.6 && coded >= t.n * 0.4) m[id] = best;
+  });
+  ccCache = { d: D, m: m };
+  return m;
+}
+function groupCountry(g) { return countryMap()[g.id] || ''; }
 function countryStats() {
   var by = {};
-  D.groups.forEach(function (g) { var p = prefixOf(g.name); if (!p) return; var x = by[p] || (by[p] = { p: p, groups: [], shown: 0, chans: 0 }); x.groups.push(g.id); if (!E.hiddenGroups[g.id]) x.shown++; x.chans += (byGroup.get(g.id) || []).length; });
-  return Object.keys(by).map(function (k) { return by[k]; }).filter(function (x) { return x.groups.length >= 2; }).sort(function (a, b) { return b.chans - a.chans; });
+  D.groups.forEach(function (g) { var p = groupCountry(g); if (!p) return; var x = by[p] || (by[p] = { p: p, groups: [], shown: 0, chans: 0 }); x.groups.push(g.id); if (!E.hiddenGroups[g.id]) x.shown++; x.chans += (byGroup.get(g.id) || []).length; });
+  return Object.keys(by).map(function (k) { return by[k]; }).filter(function (x) { return x.groups.length >= 2 || CC_NAME[x.p]; }).sort(function (a, b) { return b.chans - a.chans; });
 }
+/* Divider groups: "⫘⫘⫘ UK ⫘⫘⫘", "===== SPORTS =====".  They split the provider's list into sections
+   and hold a placeholder channel or none. */
+function dividerGroups() {
+  return providerGroups().filter(function (g) { return !E.hiddenGroups[g.id] && isDivider(g.raw) && channelsOf(g.id, true).length <= 3; });
+}
+/* Channels with nothing on: "Off Air", "Offline", "No Event Scheduled".  Event channels are renamed by
+   the provider when something is on, so this is a setting checked against the current name, not a hide. */
+function idleChannels() { return D.channels.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g] && Names.idle(c.n); }); }
 function emptyGroups() {
   return providerGroups().filter(function (g) { if (E.hiddenGroups[g.id]) return false; var l = channelsOf(g.id, true); return !l.length || l.every(function (c) { return E.hiddenChannels[c.k]; }); });
 }
@@ -2023,11 +2107,11 @@ function renderTools() {
   if (!D || page !== 'tools') return;
   /* countries */
   var cs = countryStats(), ck = renderTools.ck || (renderTools.ck = {});
-  $('tCountry').innerHTML = '<h3>Keep only the countries you watch</h3><p>Group names that start with a country or language code, like "US | News" or "[UK] Sports".  Tick the ones to keep, then hide the rest in one go.</p>' +
+  $('tCountry').innerHTML = '<h3>Keep only the countries you watch</h3><p>Groups by country, read from group names ("US | News", "Canada Sports", "France Cinema"), from the codes their channels start with ("ARG | ..."), and from the divider group they sit under.  Tick the ones to keep, then hide the rest in one go.</p>' +
     (cs.length ? '<div class="row" id="ccList" style="gap:8px">' + cs.map(function (x) {
       var on = ck[x.p] != null ? ck[x.p] : x.shown > 0;
-      return '<label class="chip' + (on ? ' acc' : '') + '" style="cursor:pointer;padding:6px 12px;font-size:13px"><input type="checkbox" data-cc="' + esc(x.p) + '"' + (on ? ' checked' : '') + ' style="display:none"><b>' + esc(x.p) + '</b> ' + plural(x.groups.length, 'group') + ' · ' + x.shown + ' shown</label>';
-    }).join('') + '</div><div class="row" style="margin-top:12px"><label class="muted small"><input type="checkbox" id="ccNoPrefix"> Also hide groups with no country code</label><span class="grow"></span><button class="primary" id="ccGo">Show only the ticked countries</button></div><div class="muted small" id="ccInfo" style="margin-top:8px"></div>'
+      return '<label class="chip' + (on ? ' acc' : '') + '" style="cursor:pointer;padding:6px 12px;font-size:13px"><input type="checkbox" data-cc="' + esc(x.p) + '"' + (on ? ' checked' : '') + ' style="display:none"><b>' + esc(CC_NAME[x.p] || x.p) + '</b> ' + plural(x.groups.length, 'group') + ' · ' + x.shown + ' shown</label>';
+    }).join('') + '</div><div class="row" style="margin-top:12px"><label class="muted small"><input type="checkbox" id="ccNoPrefix"> Also hide groups with no country (sports and event groups, for example)</label><span class="grow"></span><button class="primary" id="ccGo">Show only the ticked countries</button></div><div class="muted small" id="ccInfo" style="margin-top:8px"></div>'
       : '<div class="muted">No country codes found in your group names.</div>');
   if (cs.length) ccInfo();
   /* duplicates */
@@ -2053,11 +2137,20 @@ function renderTools() {
   var em = emptyGroups();
   $('tEmpty').innerHTML = '<h3>Empty groups</h3><p>Shown groups with no channels left, or whose channels are all hidden.  They only clutter the group list on the TV.</p>' +
     (em.length ? '<div class="small" style="margin-bottom:10px">' + em.slice(0, 30).map(function (g) { return esc(g.name); }).join(', ') + (em.length > 30 ? ' and ' + (em.length - 30) + ' more' : '') + '</div><button class="primary" id="emGo">Hide ' + plural(em.length, 'empty group') + '</button>' : '<div class="muted">No empty groups are shown.</div>');
+  /* dividers */
+  var dv = dividerGroups();
+  $('tDivider').innerHTML = '<h3>Divider groups</h3><p>Groups like "⫘⫘⫘ UK ⫘⫘⫘" or "===== SPORTS =====" that only split the provider list into sections.  They hold a placeholder channel or nothing.</p>' +
+    (dv.length ? '<div class="small" style="margin-bottom:10px">' + dv.slice(0, 30).map(function (g) { return esc(g.raw); }).join(', ') + (dv.length > 30 ? ' and ' + (dv.length - 30) + ' more' : '') + '</div><button class="primary" id="dvGo">Hide ' + plural(dv.length, 'divider group') + '</button>' : '<div class="muted">No divider groups are shown.</div>');
+  /* nothing on */
+  var idl = idleChannels();
+  $('tIdle').innerHTML = '<h3>Channels with nothing on</h3><p>Event channels the provider names "Off Air", "Offline" or "No Event Scheduled" between events.  This hides them only while they say so: as soon as the provider names an event on one, it shows again.  Favorites keep theirs.</p>' +
+    (idl.length ? '<div class="small" style="margin-bottom:10px">' + plural(idl.length, 'shown channel') + ' say so right now, like ' + idl.slice(0, 6).map(function (c) { return esc(c.n); }).join(', ') + '</div>' : '<div class="muted small" style="margin-bottom:10px">No shown channel says so right now.</div>') +
+    '<label class="rule" style="margin:0"><input type="checkbox" class="sw" id="idleOn"' + (N.hideIdle ? ' checked' : '') + '><div><b>Hide channels with nothing on</b><div class="ex">The same switch as Channel names on the TV (Settings, Playlists).</div></div></label>';
 }
 function ccInfo() {
   var keep = {}, none = $('ccNoPrefix').checked, n = 0, s = 0;
   document.querySelectorAll('[data-cc]').forEach(function (i) { keep[i.dataset.cc] = i.checked; });
-  D.groups.forEach(function (g) { var p = prefixOf(g.name), show = p ? (keep[p] != null ? keep[p] : true) : !none; if (show) s++; else n++; });
+  D.groups.forEach(function (g) { var p = groupCountry(g), show = p ? (keep[p] != null ? keep[p] : true) : !none; if (show) s++; else n++; });
   $('ccInfo').textContent = 'This shows ' + plural(s, 'group') + ' and hides ' + plural(n, 'group') + '.';
 }
 $('tCountry').addEventListener('change', function (e) {
@@ -2069,9 +2162,20 @@ $('tCountry').addEventListener('click', function (e) {
   var keep = {}, none = $('ccNoPrefix').checked, names = [];
   document.querySelectorAll('[data-cc]').forEach(function (i) { keep[i.dataset.cc] = i.checked; if (i.checked) names.push(i.dataset.cc); });
   mut('Showed only ' + (names.join(', ') || 'no countries'), function () {
-    D.groups.forEach(function (g) { var p = prefixOf(g.name), show = p ? (keep[p] != null ? keep[p] : true) : !none; if (show) { if (p) delete E.hiddenGroups[g.id]; } else E.hiddenGroups[g.id] = 1; });
+    D.groups.forEach(function (g) { var p = groupCountry(g), show = p ? (keep[p] != null ? keep[p] : true) : !none; if (show) { if (p) delete E.hiddenGroups[g.id]; } else E.hiddenGroups[g.id] = 1; });
   });
   toast('Done.  Groups for ' + (names.join(', ') || 'no countries') + ' are shown.', ['Undo', undo]);
+});
+$('tDivider').addEventListener('click', function (e) {
+  if (e.target.id !== 'dvGo') return;
+  var l = dividerGroups();
+  mut('Hid ' + plural(l.length, 'divider group'), function () { l.forEach(function (g) { E.hiddenGroups[g.id] = 1; }); });
+  toast(plural(l.length, 'divider group') + ' hidden', ['Undo', undo]);
+});
+$('tIdle').addEventListener('change', function (e) {
+  if (e.target.id !== 'idleOn') return;
+  var on = e.target.checked;
+  mut(on ? 'Hide channels with nothing on' : 'Show channels with nothing on', function () { N.hideIdle = on; });
 });
 $('tDupes').addEventListener('change', function (e) {
   var t = e.target;

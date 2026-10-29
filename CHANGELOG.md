@@ -5,6 +5,17 @@
 - Tested against a real Xtream Codes provider (about 9,800 channels, 152 groups): the channel list loads in about 3 seconds, the provider's full XMLTV guide (84,000 programmes) in about 7 seconds, and channels start in 1 to 3.5 seconds with no page errors.  The test is `tests/real/xc.js`: it reads the login from a private file outside the repository and writes its report and screenshots there, with the username and password masked.
 - HLS fixed for providers that redirect to a streaming server: many Xtream panels answer a channel's .m3u8 with a redirect to a tokenized server whose playlist lists the video pieces as `/hlsr/...` links.  Through the helper those pointed at the TV itself and failed with 404, so the HLS stream format, and the HLS fallback when a channel won't play, never worked on such providers.  The helper now rewrites those links (and full addresses on other servers) to go through it.  Channels whose MPEG-TS version the player can't decode (Dolby audio or HEVC on some TVs) now fall back to HLS and play.  Tests: `tests/unit/proxy-hls.test.js`, and `tests/engines/helper.js` on Node 0.12 to 22.
 - Movies and Shows only show up when the provider has something in them.  A provider that lists show categories with no shows in them used to get an empty Shows tab; TiviBro now asks a few of the categories (small requests) and hides the tab when they are all empty.  An empty list says "This provider has no shows right now" instead of "Nothing here".
+- Channel names, checked against a real provider's 9,800 channels (the recommended rules now tidy about 5,200 of them, up from 4,400):
+  - Country and region prefixes know about 250 codes (CAR, ARG, CO, CR, PR, AFG, MY, CA-FR and so on) and decorative separators like "UK◈ Sky Store".
+  - Category prefixes include Spanish ones ("DEP | TUDN 01") and package words.
+  - Decorative symbols cover emoji, sport symbols, circled letters, arrows, shapes and ™, so "⚽ EPL 1" and "⫘⫘⫘ UK ⫘⫘⫘" come out clean, and a trailing "*" goes.
+  - Three new optional rules, off by default: **Free streaming service prefixes** ("Pluto US | CNN Headlines", "TUBI | ION"), **Country codes and names at the end** ("CANAL 4 PAN", "BEIN SPORTS 5 (USA)"), and **Status notes at the end** ("FloHockey 39 - Off Air").
+  - Rules added in a later version start at their default for playlists set up before them.
+- **Hide channels with nothing on** (Channel name editor on the TV, Smart clean-up in the web editor): event channels named "Off Air", "Offline" or "No Event Scheduled" stay out of the lists while they say so and come back by themselves when an event is named on them.  Favorites keep theirs.  543 such channels on the real provider.
+- Smart clean-up:
+  - **Keep only your countries** now also reads country words ("Canada Sports", "France Cinema", "Latino / Mexico"), the code most of a group's channels start with, and the divider group a group sits under.  On the real provider it went from 2 countries to 22, and no longer offers NBC, NFL or NHL as countries.
+  - **Divider groups** hides groups like "⫘⫘⫘ UK ⫘⫘⫘" that only split the list into sections.
+  - Overview suggests both when they apply.
 
 ## 0.6.0 (alpha 8, 2026-10-29)
 
