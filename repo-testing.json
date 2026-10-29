@@ -10,26 +10,26 @@
       "id": "app.tivibro.tv",
       "title": "TiviBro",
       "iconUri": "https://raw.githubusercontent.com/ohmybahgosh/TiviBro/main/logos/clean/tivibro-icon-512.png",
-      "manifestUrl": "https://github.com/ohmybahgosh/TiviBro/releases/download/v0.6.0-alpha.8/app.tivibro.tv.manifest.json",
+      "manifestUrl": "https://github.com/ohmybahgosh/TiviBro/releases/download/v0.6.0-alpha.9/app.tivibro.tv.manifest.json",
       "manifest": {
         "id": "app.tivibro.tv",
-        "version": "0.5.10008",
+        "version": "0.5.10009",
         "type": "web",
         "title": "TiviBro",
-        "appDescription": "Test build 0.6.0-alpha.8.  Free, guide-first IPTV player for your own Xtream Codes or M3U subscription",
+        "appDescription": "Test build 0.6.0-alpha.9.  Free, guide-first IPTV player for your own Xtream Codes or M3U subscription",
         "iconUri": "https://raw.githubusercontent.com/ohmybahgosh/TiviBro/main/logos/clean/tivibro-icon-512.png",
         "sourceUrl": "https://github.com/ohmybahgosh/TiviBro",
         "rootRequired": false,
-        "ipkUrl": "https://github.com/ohmybahgosh/TiviBro/releases/download/v0.6.0-alpha.8/app.tivibro.tv_0.5.10008_all.ipk",
-        "ipkSize": 667422,
+        "ipkUrl": "https://github.com/ohmybahgosh/TiviBro/releases/download/v0.6.0-alpha.9/app.tivibro.tv_0.5.10009_all.ipk",
+        "ipkSize": 681318,
         "ipkHash": {
-          "sha256": "deaf2bbdee8d67c64cf205da1d35920a664003b04a2f1569409456c97fdaf2ed"
+          "sha256": "9a20d653a9bbd6732773da902038ef3cdb07b800d5b853f4b80a925e7f34f3e6"
         }
       },
-      "shortDescription": "Test build 0.6.0-alpha.8: The IPTV player LG TVs never got",
+      "shortDescription": "Test build 0.6.0-alpha.9: The IPTV player LG TVs never got",
       "tivibro": {
-        "tag": "v0.6.0-alpha.8",
-        "version": "0.6.0-alpha.8",
+        "tag": "v0.6.0-alpha.9",
+        "version": "0.6.0-alpha.9",
         "prerelease": true
       }
     }
