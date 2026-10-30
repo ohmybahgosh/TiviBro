@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- The rooted-TV installer (`curl -fsSL https://tivibro.app/install | sh`) starts TiviBro again on webOS 25, where the TV refuses app launches over `luna-send-pub`: it now uses the private bus as root.  It also shows the version that was installed before, which was missing for the same reason, and says so plainly when the TV won't start the app instead of claiming it did.
-
-## 0.6.0 (alpha 21, 2026-10-30)
+## 0.6.0 (alpha 22, 2026-10-30)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 21
+### New in alpha 22
+
+- The rooted-TV installer (`curl -fsSL https://tivibro.app/install | sh`) starts TiviBro again on webOS 25, where the TV refuses app launches over `luna-send-pub`: it now uses the private bus as root.  It also shows the version that was installed before, which was missing for the same reason, and says so plainly when the TV won't start the app instead of claiming it did.
+
+### In alpha 21
 
 - Reminders also wait while **LG Gallery+** or **Line View** is on screen (found on a real 2022 C2 on webOS 25, where they are called `com.webos.app.lifeonscreen` and `com.webos.app.atelier`), as they already did for the screensaver, homebrew screensavers such as Aerial, and Always Ready.
 
