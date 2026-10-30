@@ -94,6 +94,27 @@ var Vod = (function () {
     return d.items.filter(function (it) { return it.cat === cid; });
   }
 
+  // Already-loaded movies/shows for Search (loaded lazily whenever Movies or Shows has
+  // been opened this session). No provider fetch here on purpose, Search just needs
+  // whatever is cached already.
+  function allItems() {
+    var out = [];
+    ['movie', 'series'].forEach(function (k) {
+      var d = data[k];
+      if (d) d.items.forEach(function (it) { out.push({ it: it, kind: k }); });
+    });
+    return out;
+  }
+  // Jump straight into a movie or show found in Search: open its episode list (shows)
+  // or start playback (movies), same as pressing OK on it from the Movies/Shows list.
+  function openItem(x) {
+    kind = x.kind;
+    if (!built) build();
+    UI.setHandler(keys);
+    $('vodTitle').textContent = kind === 'series' ? 'Shows' : 'Movies';
+    if (kind === 'series' && !x.it.ep) openSeries(x.it); else play(x.it, false);
+  }
+
   var catDeb = U.debounce(function (c) { if (c && !episodes) { itemsVL.setItems(itemsFor(c.id), 0); showInfo(); } }, 200);
   function onCat(i, c) { catDeb(c); }
   var infoDeb = U.debounce(fetchInfo, 400);
@@ -283,5 +304,5 @@ var Vod = (function () {
     }).catch(function (e) { itemsVL.empty = 'Could not load ' + (k === 'series' ? 'shows' : 'movies') + ': ' + (e.message || e); itemsVL.setItems([], 0); });
   }
 
-  return { open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, reset: function () { data = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
+  return { open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, reset: function () { data = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
 })();

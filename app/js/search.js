@@ -4,7 +4,7 @@ var Search = (function () {
   'use strict';
   var $ = U.$, L = Library;
   var input, vl, chipBox, zone = 'input', built = false, filter = 'all';
-  var FILTERS = [['all', 'Everything'], ['now', 'On now'], ['later', 'Coming up'], ['replay', 'Replays'], ['channels', 'Channels']];
+  var FILTERS = [['all', 'Everything'], ['now', 'On now'], ['later', 'Coming up'], ['replay', 'Replays'], ['channels', 'Channels'], ['movies', 'Movies & Shows']];
 
   function esc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
   // Whole words for the watchlist ("Cars" is not "Oscars"), anywhere for typed searches.
@@ -63,6 +63,15 @@ var Search = (function () {
       row.appendChild(row._img); row.appendChild(box); row.appendChild(row._t);
     }
     if (it.hist) { row._img.style.visibility = 'hidden'; row._n.textContent = it.hist; row._s.textContent = 'Recent search'; row._t.textContent = ''; return; }
+    if (it.v) {
+      var v = it.v, img = v.cover || '';
+      row._img.style.visibility = img ? 'visible' : 'hidden';
+      if (img && row._img.getAttribute('src') !== img) row._img.src = img;
+      row._n.textContent = v.name;
+      row._s.textContent = [v.year, v.rating ? '★ ' + v.rating : ''].filter(Boolean).join('   ');
+      row._t.textContent = it.vkind === 'series' ? 'show' : 'movie';
+      return;
+    }
     var c = it.c, lg = c.logo || Epg.icon(Epg.epgId(c));
     row._img.style.visibility = lg ? 'visible' : 'hidden';
     if (lg && row._img.getAttribute('src') !== lg) row._img.src = lg;
@@ -83,7 +92,7 @@ var Search = (function () {
     v.innerHTML = '';
     var wrap = U.el('div', 'search-wrap');
     input = U.el('input', 'search-input');
-    input.type = 'text'; input.placeholder = 'Channel, show, team or name'; input.spellcheck = false;
+    input.type = 'text'; input.placeholder = 'Channel, movie, show, team or name'; input.spellcheck = false;
     wrap.appendChild(input);
     chipBox = U.el('div', 'search-chips');
     FILTERS.forEach(function (f) {
@@ -95,7 +104,7 @@ var Search = (function () {
     var list = U.el('div', 'vlist search-list');
     wrap.appendChild(list);
     v.appendChild(wrap);
-    vl = new VList(list, { render: render, empty: 'Type a channel or programme name.', visible: 9,
+    vl = new VList(list, { render: render, empty: 'Type a channel, movie or show name.', visible: 9,
       onHover: function () { if (zone !== 'list') { zone = 'list'; paint(); } }, onClick: function () { UI.press('ok'); } });
     input.addEventListener('input', U.debounce(run, 300));
     built = true;
@@ -103,7 +112,7 @@ var Search = (function () {
 
   function history() {
     var h = Store.settings.searchHistory || [];
-    vl.empty = 'Type a channel or programme name.';
+    vl.empty = 'Type a channel, movie or show name.';
     vl.setItems(h.map(function (x) { return { hist: x }; }), 0);
   }
 
@@ -121,7 +130,7 @@ var Search = (function () {
         if (L.name(c).toLowerCase().indexOf(q) >= 0 || c.n.toLowerCase().indexOf(q) >= 0) out.push({ c: c });
       }
     }
-    if (filter !== 'channels') {
+    if (filter !== 'channels' && filter !== 'movies') {
       find(q).forEach(function (r) {
         var p = r.p, on = p.s <= now && p.e > now;
         if (filter === 'now' && !on) return;
@@ -130,8 +139,17 @@ var Search = (function () {
         out.push(r);
       });
     }
+    var vodReady = false;
+    if (filter === 'all' || filter === 'movies') {
+      Vod.allItems().forEach(function (x) {
+        vodReady = true;
+        if (out.length >= 400) return;
+        if (x.it.name && x.it.name.toLowerCase().indexOf(q) >= 0) out.push({ v: x.it, vkind: x.kind });
+      });
+    }
     if (out.length > 400) out.length = 400;
     vl.empty = filter === 'channels' ? 'No channel has that name.' :
+      filter === 'movies' ? (vodReady ? 'No movie or show has that name.' : 'Nothing loaded yet. Open Movies or Shows once this session so Search can look inside them.') :
       'Nothing found.  Programmes are searchable once the guide has loaded them' + (Epg.xml ? '.' : ' (add an XMLTV guide in Settings > Playlists to search every channel).');
     vl.setItems(out, 0);
     if (zone === 'list' && !out.length) { zone = 'chips'; paint(); }
@@ -148,6 +166,7 @@ var Search = (function () {
   function activate(it) {
     if (it.hist) { input.value = it.hist; run(); return; }
     remember(input.value.trim());
+    if (it.v) { Vod.openItem({ it: it.v, kind: it.vkind }); return; }
     var c = it.c, p = it.p, now = Date.now();
     if (!p || (p.s <= now && p.e > now)) { Views.startChannel(c, false, Views.goFull); return; }
     if (p.e <= now) { Views.playCatchup(c, p, 0); return; }
