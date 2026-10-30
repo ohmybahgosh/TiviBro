@@ -106,6 +106,8 @@ var Log = (function () {
     clear: function () { buf = []; saved = []; try { localStorage.removeItem('tivibro.log'); } catch (e) {} },
     get verbose() { return verbose; },
     set verbose(v) { verbose = !!v; localStorage.setItem('tivibro.logVerbose', v ? '1' : '0'); },
-    get count() { return buf.length; }
+    get count() { return buf.length; },
+    // The last earlier session's uncaught error, if it had one: { s: session, m: message }.
+    get lastCrash() { var last = saved.length ? saved[saved.length - 1].s : null, hit = null; saved.forEach(function (e) { if (e.s === last && e.lv === 'error' && /^(Uncaught|Unhandled)/.test(e.m)) hit = e; }); return hit; }
   };
 })();

@@ -499,6 +499,9 @@ var Settings = (function () {
 
   function diag() {
     var out = [];
+    out.push(action('Report a problem', 'Scan a QR code: your phone fills in a GitHub issue with this TV\'s details and log, logins and server names taken out.', function () {
+      WebEdit.showJoin('report', null, { title: 'Report a problem', lead: 'Scan the code with your phone\'s camera (or open the address on a computer).  Describe what happened there; the TV adds its version, model and log, with logins and server names taken out, and your phone opens a GitHub issue ready to send.' });
+    }, function () { return '›'; }));
     out.push(action('Run connection test', 'Checks the helper, login, channel list, a stream and the guide, step by step.', function () { Diag.run(); }));
     out.push(action('View app log', 'This session.', function () { Diag.showLog(false); }));
     out.push(action('View app log with earlier sessions', 'Useful after a crash or restart.', function () { Diag.showLog(true); }));

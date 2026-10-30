@@ -346,6 +346,12 @@ var App = (function () {
     Net.start(6000).then(function () {
       WebEdit.resume();
       Update.autoCheck();
+      // Something broke last time: say once where to report it.
+      var crash = Log.lastCrash;
+      if (crash && localStorage.getItem('tivibro.crashSeen') !== crash.s) {
+        try { localStorage.setItem('tivibro.crashSeen', crash.s); } catch (e) {}
+        setTimeout(function () { U.toast('TiviBro hit an error last time.  Settings > Diagnostics > Report a problem sends it to us.', 8000); }, 4000);
+      }
       if (!Store.settings.playlists.length) return setup();
       open(Store.playlist);
     });

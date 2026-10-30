@@ -66,6 +66,57 @@ var Diag = (function () {
     }).catch(function (e) { show('Helper log', ['Could not read the helper log: ' + e.message]); });
   }
 
+  /* ---------- problem report ----------
+     What "Report a problem" (in the web editor) shares: versions, the TV, a few settings, and the
+     app and helper logs.  Never logins: the log already masks them, and here every provider and
+     guide server's name becomes <provider> or <guide>, and tokens in links become ***. */
+  function scrubber() {
+    var hosts = [];
+    function hostOf(u) { var m = /^(?:[a-z]+:\/\/)?(?:[^@/]*@)?([^/:?#\s]+)/i.exec(String(u || '').trim()); return m ? m[1].toLowerCase() : ''; }
+    (Store.settings.playlists || []).forEach(function (p) {
+      [p.server, p.m3u].forEach(function (u) { var h = hostOf(u); if (h) hosts.push([h, '<provider>']); });
+      // The login itself, wherever it turns up (a link the log did not recognise, a message).
+      [p.user, p.pass].forEach(function (x) { x = String(x || '').trim(); if (x.length >= 3) hosts.push([x, '***']); });
+      (p.epgSources || []).forEach(function (x) { var h = hostOf(x.url); if (h) hosts.push([h, '<guide>']); });
+    });
+    hosts.sort(function (a, b) { return b[0].length - a[0].length; });
+    return function (s) {
+      s = Log.redact(s);
+      hosts.forEach(function (h) { s = s.split(h[0]).join(h[1]); s = s.split(h[0].toUpperCase()).join(h[1]); });
+      return s
+        .replace(/((?:token|key|auth|sig|signature|hash|session|sid|user|username|u|p)=)[^&\s"']+/gi, '$1***')
+        .replace(/\/\/([^/\s:@]+):([^/\s@]+)@/g, '//***:***@');
+    };
+  }
+  function report() {
+    var scrub = scrubber(), s = Store.settings, p = Store.playlist || {}, c = Caps.probe();
+    var tv = (c.model || 'unknown model') + (c.year ? ' (' + c.year + ')' : '') + ', webOS ' + (c.webos || '?');
+    var engine = (/Chrome\/([\d.]+)/.exec(navigator.userAgent) || [])[1];
+    var facts = [
+      ['TiviBro', TIVIBRO_VERSION], ['TV', tv], ['Browser engine', engine ? 'Chromium ' + engine : navigator.userAgent.slice(0, 80)],
+      ['Network', (s.network || 'auto') === 'direct' ? 'Direct' : 'Automatic (' + Net.status() + ')'],
+      ['Playlist', (p.type === 'm3u' ? 'M3U' : 'Xtream Codes') + ', ' + Library.count() + ' channels, ' + (Store.settings.playlists || []).length + ' playlist(s)'],
+      ['Guide', (p.epgSources || []).length + ' extra source(s), provider guide ' + (p.providerEpg || 'auto')],
+      ['Player', s.engine || 'auto'], ['Start screen', s.startTab || 'guide'],
+      ['Detailed logging', Log.verbose ? 'on' : 'off']
+    ];
+    if (window.Player && Player.current) facts.push(['Playing', scrub([Player.media, Player.engine].filter(Boolean).join('  '))]);
+    var app = Log.lines(true).map(scrub);
+    var trouble = app.filter(function (l) { return /^\d\d:\d\d:\d\d  (ERROR|WARN)/.test(l); }).slice(-25);
+    return Net.helperLog().then(function (j) {
+      if (!j) return ['(the network helper is not running: ' + Net.status() + ')'];
+      return ['Node ' + j.node + '   requests ' + j.stats.requests + '   errors ' + j.stats.errors].concat(j.log.slice(-150).map(function (e) {
+        var d = new Date(e.t), ts = U.pad(d.getHours()) + ':' + U.pad(d.getMinutes()) + ':' + U.pad(d.getSeconds());
+        return scrub(ts + '  ' + (e.event ? e.event + (e.e ? '  ' + e.e : '') : (e.s || '---') + '  ' + e.ms + 'ms  ' + e.u + (e.e ? '  ' + e.e : '')));
+      }));
+    }, function (e) { return ['(could not read the helper log: ' + e.message + ')']; }).then(function (helper) {
+      var text = '# TiviBro problem report, ' + new Date().toISOString() + '\n\n' + facts.map(function (f) { return f[0] + ': ' + f[1]; }).join('\n') +
+        '\n\n## App log (this and earlier sessions)\n' + app.join('\n') + '\n\n## Network helper log (last requests)\n' + helper.join('\n') + '\n';
+      Log.info('diag', 'Problem report made for the web editor (' + app.length + ' log lines)');
+      return { repo: Update.REPO, version: TIVIBRO_VERSION, tv: tv, facts: facts, trouble: trouble, text: text };
+    });
+  }
+
   /* ---------- connection test ---------- */
   function ms(t0) { return (Date.now() - t0) + 'ms'; }
   function step(name, fn) {
@@ -274,5 +325,5 @@ var Diag = (function () {
     });
   }
 
-  return { run: run, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
+  return { report: report, run: run, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
 })();

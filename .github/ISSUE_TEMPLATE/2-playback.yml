@@ -85,7 +85,7 @@ body:
     id: log
     attributes:
       label: Log
-      description: Settings > Diagnostics > turn on **Detailed logging**, play the channel again, then **View app log** and **View network helper log**.  Copy the lines around the problem or attach photos.  Check that no login or stream link is in it.
+      description: Settings > Diagnostics > turn on **Detailed logging** and play the channel again.  Then **Report a problem** on the same screen saves the whole log on your phone to attach here (logins and servers taken out), or use **View app log** and **View network helper log**.  Copy the lines around the problem or attach photos.  Check that no login or stream link is in it.
       render: text
   - type: checkboxes
     id: checks

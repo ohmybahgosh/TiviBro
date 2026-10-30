@@ -267,6 +267,11 @@ h3 { letter-spacing: -0.01em; }
 @keyframes fade { from { opacity: 0; } }
 
 /* ---------- responsive ---------- */
+/* ---------- analytics consent ---------- */
+.consent { position: fixed; left: 20px; bottom: 20px; z-index: 60; max-width: 440px; padding: 18px 20px; border-radius: 18px; background: rgba(17, 22, 43, .96); border: 1px solid var(--line2); box-shadow: 0 24px 60px rgba(0, 0, 0, .55); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); animation: fade .3s; }
+.consent p { margin: 0 0 14px; font-size: 14px; color: var(--mute); }
+.consent p b { color: var(--text); }
+.consent div { display: flex; gap: 10px; }
 @media (max-width: 1080px) {
   .bento { grid-template-columns: repeat(2, 1fr); }
   .tile.wide { grid-template-columns: 1fr; }
@@ -324,6 +329,7 @@ h3 { letter-spacing: -0.01em; }
   .vs-group { padding: 22px 18px 6px; }
   .vs .fine { padding: 16px 18px; }
   .tabs { width: auto; }
+  .consent { left: 12px; right: 12px; bottom: 12px; max-width: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

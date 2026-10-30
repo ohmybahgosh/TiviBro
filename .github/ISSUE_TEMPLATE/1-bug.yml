@@ -101,7 +101,7 @@ body:
     attributes:
       label: Log
       description: |
-        Settings > Diagnostics > **View app log** (or **with earlier sessions** after a crash).  Copy the lines around the problem, or attach a photo of the screen.  Turning on **Detailed logging** first and doing it again helps a lot.  Check that no login or stream link is in it.
+        Easiest: on the TV, Settings > Diagnostics > **Report a problem**, scan the code, and this form opens filled in; drag in the log file it saves.  Or Settings > Diagnostics > **View app log** (or **with earlier sessions** after a crash).  Copy the lines around the problem, or attach a photo of the screen.  Turning on **Detailed logging** first and doing it again helps a lot.  Check that no login or stream link is in it.
       render: text
   - type: textarea
     id: shots

@@ -11,7 +11,7 @@ const R = require('../../scripts/demo/record.js');
 const APP = process.env.APP || 'http://127.0.0.1:8078/index.html';
 const i = process.argv.indexOf('--shots'), SHOTS = i > 0 ? process.argv[i + 1] : '';
 const DEVICES = ['iPhone SE', 'iPhone 13', 'Pixel 7', 'iPad Mini'];
-const PAGES = ['home', 'gc', 'guide', 'names', 'tools', 'playlists', 'history', 'backup', 'help'];
+const PAGES = ['home', 'gc', 'guide', 'names', 'tools', 'playlists', 'history', 'backup', 'report', 'help'];
 let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  ' + String(x).slice(0, 220) : '')); if (!c) fails++; };
 

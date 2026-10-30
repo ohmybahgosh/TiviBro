@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Report a problem.**  Settings > Diagnostics > **Report a problem** shows a QR code.  Your phone opens a new **Report a problem** page in the web editor: say what happened, read everything the TV adds (version, TV model, a few settings, the app and network helper logs), save the log file, and **Open the GitHub form** opens a bug report already filled in.  Logins, tokens and every provider and guide server's name are taken out first.
+- After a crash, TiviBro says so once at the next start and points to Report a problem.
+- tivibro.app: Google Analytics 4, ready to switch on with a measurement ID.  Nothing loads until a visitor presses **Allow**; **Cookie settings** in the footer asks again.  It counts install-step copies, install tabs, GitHub links and full-screen videos.  The TV app still has no analytics.
+
 ## 0.6.0 (alpha 14, 2026-10-29)
 
 Pre-release: expect rough edges, and keep a backup before installing.

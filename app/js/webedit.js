@@ -204,6 +204,7 @@ var WebEdit = (function () {
     });
   }
   var RUN = {
+    report: function () { return Diag.report().then(function (r) { return { msg: 'ok', data: r }; }); },
     addPlaylist: function (a) {
       var xc = a.type !== 'm3u';
       var p = { id: '', name: clean(a.name), type: xc ? 'xtream' : 'm3u', server: clean(a.server), user: clean(a.user), pass: clean(a.pass), m3u: clean(a.m3u) };
@@ -451,15 +452,16 @@ var WebEdit = (function () {
 
   /* "Edit on a phone or computer" from anywhere (side menu, hold OK on a group, a remote button):
      starts the editor if it is off and shows its QR code.  It keeps running after Done. */
-  function showJoin(page, after) {
+  function showJoin(page, after, opts) {
+    opts = opts || {};
     Parental.gate('settings', null, function () {
       var body = U.el('div', 'edit-join'), qr = U.el('div', 'join-qr'), txt = U.el('div', 'join-txt'), wasOn = on;
       body.appendChild(qr); body.appendChild(txt);
       txt.appendChild(U.el('div', 'remote-s', 'Starting the editor…'));
-      var lead = U.el('p', 'edit-join-lead', 'Scan the code with your phone\'s camera, or open the address on a computer on the same network.  Rename, hide, sort and clean up with a real keyboard; changes show up here as you send them.');
+      var lead = U.el('p', 'edit-join-lead', opts.lead || 'Scan the code with your phone\'s camera, or open the address on a computer on the same network.  Rename, hide, sort and clean up with a real keyboard; changes show up here as you send them.');
       var wrap = U.el('div'); wrap.appendChild(lead); wrap.appendChild(body);
       function show(s) { if (!wrap.parentNode) return; drawJoin(qr, txt, page || '', s, 'Waiting for a phone or computer…', 'Connected.  The editor keeps running until you turn it off or close TiviBro.'); }
-      UI.panel('Edit on a phone or computer', wrap, [
+      UI.panel(opts.title || 'Edit on a phone or computer', wrap, [
         { label: 'Done' },
         { label: 'Turn the editor off', action: function () { stop().then(function () { U.toast('Web editor is off'); if (after) after(); }); } }
       ]);

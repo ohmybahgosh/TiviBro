@@ -101,6 +101,15 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;position
 .card h3{margin:0 0 4px;font-size:16px}
 .card > p{margin:0 0 14px;color:var(--muted);font-size:14px}
 .card + .card{margin-top:16px}
+.rpform .full{grid-column:1 / -1}
+.rpform input,.rpform select,.rpform textarea{width:100%;box-sizing:border-box;min-width:0}
+.rpform label{min-width:0}
+.rpform select{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-size:15px;color:var(--text)}
+.rpform textarea{font-family:inherit;font-size:15px;min-height:80px}
+.rpfacts{display:grid;grid-template-columns:max-content 1fr;gap:4px 18px;font-size:14px;margin:6px 0 10px}
+.rpfacts b{color:var(--muted);font-weight:500}
+.rppre{max-height:340px;overflow:auto;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:12px;white-space:pre-wrap;word-break:break-all}
+.rpsteps{margin:4px 0 14px 20px;line-height:1.6}
 .grid > .card + .card{margin-top:0}
 .grid{display:grid;gap:16px}
 .stats{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
@@ -366,6 +375,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
       <button data-page="playlists"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>Playlists</span></button>
       <button data-page="history"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>Changes and restore points</span><em class="badge hidden" id="histBadge"></em></button>
       <button data-page="backup"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg><span>Backup and restore</span></button>
+      <button data-page="report"><svg viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.01"/></svg><span>Report a problem</span></button>
       <button data-page="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>Help</span></button>
       <button class="mobonly" data-act="logout"><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg><span>Log out</span></button>
     </nav>
@@ -601,6 +611,33 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
       </div>
     </section>
 
+    <!-- REPORT A PROBLEM -->
+    <section class="page hidden" id="p-report">
+      <div class="phead"><div><h1>Report a problem</h1><p>Tell us what went wrong, and your phone or computer opens a GitHub issue ready to send.</p></div></div>
+      <div class="scroll">
+        <div class="note">The TV adds its version, model and log.  Logins are never in it, and every provider and guide server's name is replaced with &lt;provider&gt; or &lt;guide&gt;.  You can read all of it below before you send anything.</div>
+        <div class="card" style="margin-top:16px"><h3>What went wrong?</h3>
+          <div class="form rpform">
+            <label class="f">Where is the problem?<select id="rpArea"><option>The guide</option><option>Channels list or groups</option><option>Watching fullscreen (quick menu, info panel, zapping)</option><option>Catch-up</option><option>Movies and shows</option><option>Search</option><option>Multiview</option><option>Set-up tour</option><option>Settings</option><option>Channel logos</option><option>Reminders or parental controls</option><option>Web editor on a computer</option><option>Web editor on a phone or tablet</option><option>Backup and restore</option><option>Updates</option><option>Something else</option></select></label>
+            <label class="f">How often?<select id="rpOften"><option>Every time</option><option>Sometimes</option><option>Once</option></select></label>
+            <label class="f full">A short title<input id="rpTitle" type="text" placeholder="The guide freezes when I open Sports"></label>
+            <label class="f full">What happened?<textarea id="rpWhat" placeholder="What you saw, and any message on screen."></textarea></label>
+            <label class="f full">How do you get there?<textarea id="rpSteps" placeholder="1. Open the guide&#10;2. Press Right twice, then OK"></textarea></label>
+            <label class="f full">What did you expect?<textarea id="rpExp"></textarea></label>
+          </div>
+        </div>
+        <div class="card"><h3>From your TV</h3><div id="rpMsg"></div><div id="rpFacts" class="rpfacts"></div>
+          <details id="rpAll" class="hidden"><summary>See everything that will be shared</summary><pre id="rpPre" class="rppre"></pre></details>
+          <div class="row" style="margin-top:12px"><button class="small" id="rpReload">Read it again</button><span class="muted small">Do the thing that went wrong first, then read it again, so the log has it.</span></div>
+        </div>
+        <div class="card"><h3>Send it</h3>
+          <ol class="rpsteps"><li><b>Save the log file</b> (or copy it).</li><li><b>Open the GitHub form</b>: it is filled in with what you typed and the TV's details.  You need a free GitHub account.</li><li>Drag the log file into the <b>Screenshots or a video</b> box, tick the two boxes at the bottom and press <b>Create</b>.</li></ol>
+          <div class="row" style="gap:10px;flex-wrap:wrap"><button id="rpSave" disabled>Save the log file</button><button id="rpCopy" disabled>Copy the report</button><button class="primary" id="rpGo" disabled>Open the GitHub form</button></div>
+          <div id="rpGoMsg" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- HELP -->
     <section class="page hidden" id="p-help">
       <div class="phead"><div><h1>Help</h1><p>How the editor works, page by page.</p></div></div>
@@ -824,7 +861,7 @@ function load(first) {
     index();
     var wasSetup = document.body.classList.contains('setup');
     document.body.classList.toggle('setup', !!D.setup);
-    var jump = D.setup && ['playlists', 'backup', 'help', 'welcome'].indexOf(page) < 0 ? 'welcome' : wasSetup && !D.setup ? 'home' : null;
+    var jump = D.setup && ['playlists', 'backup', 'help', 'welcome', 'report'].indexOf(page) < 0 ? 'welcome' : wasSetup && !D.setup ? 'home' : null;
     $('app').classList.remove('hidden');
     $('plName').textContent = D.playlist ? D.playlist.name : '';
     $('plMeta').textContent = D.channels.length.toLocaleString() + ' channels  ·  ' + D.groups.length + ' groups';
@@ -1123,13 +1160,13 @@ function show(p, sub) {
   if (typeof navOpen === 'function') navOpen(false);
   document.querySelectorAll('.page').forEach(function (s) { s.classList.toggle('hidden', s.id !== 'p-' + p); });
   if (p === 'gc') renderChannels(); if (p === 'guide') renderGuide(); if (p === 'names') renderPreview(); if (p === 'home') renderHome();
-  if (p === 'tools') renderTools(); if (p === 'history') { renderHistory(); loadSnaps(); loadDrafts(); } if (p === 'help') renderHelp(sub);
+  if (p === 'tools') renderTools(); if (p === 'history') { renderHistory(); loadSnaps(); loadDrafts(); } if (p === 'help') renderHelp(sub); if (p === 'report') loadReport(false);
   var h = '#' + p + (sub ? '/' + sub : '');
   if (location.hash !== h) history.replaceState(null, '', h);
 }
 function route() {
   var h = (location.hash || '#home').slice(1).split('/'), p = document.getElementById('p-' + h[0]) ? h[0] : 'home';
-  if (D && D.setup && ['playlists', 'backup', 'help', 'welcome'].indexOf(p) < 0) p = 'welcome';
+  if (D && D.setup && ['playlists', 'backup', 'help', 'welcome', 'report'].indexOf(p) < 0) p = 'welcome';
   if (D && !D.setup && p === 'welcome') p = 'home';
   show(p, h[1]);
 }
@@ -1145,6 +1182,57 @@ document.querySelectorAll('#nav button').forEach(function (b) { var t = b.queryS
 function navOpen(on) { document.body.classList.toggle('navopen', on); $('navToggle').setAttribute('aria-expanded', on ? 'true' : 'false'); }
 $('navToggle').addEventListener('click', function () { navOpen(!document.body.classList.contains('navopen')); });
 document.addEventListener('mousedown', function (e) { if (document.body.classList.contains('navopen') && !e.target.closest('#nav,#navToggle')) navOpen(false); }, true);
+
+/* ---------- report a problem ----------
+   The TV makes the report (Diag.report: versions, model, a few settings, app and helper logs with
+   logins and server names taken out); this page shows it, saves it as a file and opens GitHub's
+   bug form with the fields filled in.  The form takes the fields from the address, so only the
+   recent errors and warnings go there; the whole log goes in as the attached file. */
+var RP = null, rpLoading = false;
+function loadReport(force) {
+  if (rpLoading || (RP && !force)) return;
+  rpLoading = true; $('rpReload').disabled = true;
+  var tick = cmdMsg('rpMsg', 'Asking the TV for its details and log…');
+  command('report', {}, 45000, tick).then(function (r) {
+    RP = r.data; msg('rpMsg', '', '');
+    $('rpFacts').innerHTML = RP.facts.map(function (f) { return '<b>' + esc(f[0]) + '</b><span>' + esc(f[1]) + '</span>'; }).join('') +
+      '<b>Recent errors</b><span>' + (RP.trouble.length ? RP.trouble.length + ' in the log' : 'none') + '</span>';
+    $('rpPre').textContent = RP.text; $('rpAll').classList.remove('hidden');
+    ['rpSave', 'rpCopy', 'rpGo'].forEach(function (id) { $(id).disabled = false; });
+  }, function (e) { msg('rpMsg', 'err', e.message); }).then(function () { rpLoading = false; $('rpReload').disabled = false; });
+}
+function rpFile() { return 'tivibro-report-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.txt'; }
+function rpUrl() {
+  var base = 'https://github.com/' + (RP.repo || 'ohmybahgosh/TiviBro') + '/issues/new?template=1-bug.yml';
+  var f = { title: '[Bug]: ' + ($('rpTitle').value.trim() || $('rpArea').value), area: $('rpArea').value, often: $('rpOften').value,
+    what: $('rpWhat').value.trim(), steps: $('rpSteps').value.trim(), expected: $('rpExp').value.trim(), version: RP.version, tv: RP.tv };
+  if (/Web editor/.test(f.area)) f.browser = navigator.userAgent.slice(0, 160);
+  var lines = RP.trouble.slice(), url;
+  function build() {
+    var q = Object.keys(f).map(function (k) { return '&' + k + '=' + encodeURIComponent(f[k]); }).join('');
+    var log = 'The whole log is in the attached file.' + (lines.length ? '\n\nRecent errors and warnings:\n' + lines.join('\n') : '');
+    return base + q + '&log=' + encodeURIComponent(log);
+  }
+  // GitHub refuses very long addresses: drop the oldest lines until it fits.
+  while ((url = build()).length > 7000 && lines.length) lines.shift();
+  if (url.length > 7000) { f.what = f.what.slice(0, 1500); f.steps = f.steps.slice(0, 800); url = build(); }
+  return url;
+}
+$('rpReload').onclick = function () { loadReport(true); };
+$('rpSave').onclick = function () {
+  var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([RP.text], { type: 'text/plain' })); a.download = rpFile();
+  document.body.appendChild(a); a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  msg('rpGoMsg', 'ok', 'Saved as ' + a.download + '.  Next: Open the GitHub form, and drag this file into it.');
+};
+$('rpCopy').onclick = function () {
+  var t = RP.text, done = function () { msg('rpGoMsg', 'ok', 'Copied.  Paste it into the Log box on GitHub if you can\'t attach the file.'); };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { msg('rpGoMsg', 'err', 'Your browser would not copy it.  Save the file instead.'); });
+  else { var x = document.createElement('textarea'); x.value = t; document.body.appendChild(x); x.select(); try { document.execCommand('copy'); done(); } catch (e) {} x.remove(); }
+};
+$('rpGo').onclick = function () {
+  if (!$('rpWhat').value.trim()) { $('rpWhat').focus(); msg('rpGoMsg', 'err', 'Say what happened first.'); return; }
+  window.open(rpUrl(), '_blank', 'noopener');
+};
 
 /* ---------- modal ---------- */
 // buttons: [[label, className, onClick], …] shown in a footer.
