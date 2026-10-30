@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Set-up tour: your choices on the summary.**  The last screen lists one line per step ("Keep USA", "Keep East, other feed's groups hidden", "Detroit in Local channels, network groups hidden"…); OK on one goes back to that step, and **Skip to the summary** returns.  The summary now starts on **Apply and start watching**.
+- Set-up tour: duplicates default to keeping the Full HD copy (the others stay under hold OK > Other versions, and TiviBro switches to one if yours stops working); the sports step is called **Sports and PPV** in the step list; the welcome card reads "channels in East + West"; and a logo library that can't be reached says so in plain words instead of a network error.
 - **Guide: a slimmer groups panel.**  The groups list now covers the channel column and no more, instead of a wide panel over the programmes (with logos only, it stays narrow too), and channel numbers no longer peek out beside it.  A group name too long to fit scrolls across while it's focused.
 - **Local channels in one group.**  Smart clean-up's **Local channels: pick your city** can also copy the stations you keep into one group, "Local channels" or a name of your own, by city and network, and then hide the network groups (ABC Locals, CBS Locals and the rest) so each station shows up once.  The set-up tour does the same, both on by default.
 - **Duplicates without the endless scrolling.**  **Same channel, more than once** opens on **To check**: only the channels where TiviBro couldn't tell which copy to keep.  **All** lists every set on one line, with a button per copy (FHD, HD, SD) to click the one to keep; **Find a channel** narrows the list, and **Hide extra copies** works on what was found.

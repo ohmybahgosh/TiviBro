@@ -38,7 +38,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => Tour.open({ first: true })); await page.waitForTimeout(1200);
   ok('opens on the welcome step', await step() === 'welcome');
   const w = await text();
-  ok('welcome shows what the playlist has', /channels/.test(w) && /countries/.test(w) && /event channels/.test(w) && /in East and West/.test(w) && /local cities/.test(w), w.replace(/\s+/g, ' ').slice(0, 300));
+  ok('welcome shows what the playlist has', /channels/.test(w) && /countries/.test(w) && /event channels/.test(w) && /in East \+ West/.test(w) && /local cities/.test(w), w.replace(/\s+/g, ' ').slice(0, 300));
   await shot('tv-tour-welcome');
 
   // Phone or computer: QR code, address and password, then back.
@@ -123,6 +123,15 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const promised = await ev(() => Tour.plan().chans);
   ok('summary: tips', /Hold OK on a channel/.test(await text()) && /Multiview/.test(await text()));
   await shot('tv-tour-done');
+  const t = await text();
+  ok('summary: your choices, one per step', /Your choices/.test(t) && /Detroit in Local channels, network groups hidden/.test(t) && /Keep East/.test(t) && /extra copies \(Full HD kept\)/.test(t), t.replace(/\s+/g, ' ').slice(0, 400));
+  ok('summary: Apply is focused first', await focused() === 'Apply and start watching', await focused());
+  for (let n = 0; n < 20 && !/^Local channels$/.test(await focused()); n++) await key('ArrowUp', 120);
+  ok('summary: OK on a choice opens its step', /^Local channels$/.test(await focused()) && (await key('Enter', 600), await step()) === 'locals', await step());
+  for (let n = 0; n < 80 && !/^Next$/.test(await focused()); n++) await key('ArrowDown', 60);
+  for (let n = 0; n < 4 && !/^Skip to the summary$/.test(await focused()); n++) await key('ArrowRight', 100);
+  await key('Enter', 600);
+  ok('summary: Skip to the summary comes back', await step() === 'done', await step());
   await focus('Apply and start watching'); await key('Enter', 2500);
   ok('closed', await ev(() => !Tour.isOpen && document.getElementById('viewSetup').classList.contains('hidden')));
   // Shown: every channel in All channels, plus the stations in Local channels (their network groups are hidden).

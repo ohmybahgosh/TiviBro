@@ -94,8 +94,8 @@ var Tour = (function () {
     { id: 'countries', title: 'Keep the countries you watch', rail: 'Countries', lead: 'Read from group names, the codes channels start with and the divider sections in the list.  Hide the ones you never watch.', when: function () { return st.sv.countries.length > 1; }, rows: countryRows },
     { id: 'names', title: 'Clean channel names', rail: 'Channel names', lead: 'Providers pack names with tags: "USA | ESPN FHD ◉".  TiviBro shows "ESPN" and leaves your playlist alone.', rows: nameRows },
     { id: 'feeds', title: 'East or West?', rail: 'East and West', lead: function () { return plural(st.sv.feeds.pairs, 'channel') + ' come twice, on East and on West (Pacific) time.  Keep the feed you watch.  Channels that only come in one feed are left alone.'; }, when: function () { return st.sv.feeds.pairs > 0; }, rows: feedRows },
-    { id: 'locals', title: 'Your local channels', rail: 'Local channels', lead: function () { return 'Your provider carries ' + plural(st.sv.locals.chans.length, 'local station') + ' for ' + plural(st.sv.locals.cities.length, 'city', 'cities') + '.  Tick yours, or a few nearby, and the others are hidden in every local group.  ◀ ▶ jump between letters.'; }, when: function () { return st.sv.locals.cities.length > 1; }, rows: localRows },
-    { id: 'events', title: 'Sports and pay-per-view', rail: 'Event channels', lead: function () { return 'Pay-per-view and sports passes put the game and its time in the channel name.  TiviBro reads it and builds the guide from it.  ' + plural(st.sv.events, 'event channel') + ' here.'; }, when: function () { return st.sv.events > 0; }, rows: eventRows },
+    { id: 'locals', title: 'Your local channels', rail: 'Local channels', lead: function () { return 'Your provider carries ' + plural(st.sv.locals.chans.length, 'local station') + ' for ' + plural(st.sv.locals.cities.length, 'city', 'cities') + '.  Tick yours, or a few nearby: the other cities are hidden, and yours can go together in one Local channels group.  ◀ ▶ jump between letters.'; }, when: function () { return st.sv.locals.cities.length > 1; }, rows: localRows },
+    { id: 'events', title: 'Sports and pay-per-view', rail: 'Sports and PPV', lead: function () { return 'Pay-per-view and sports passes put the game and its time in the channel name.  TiviBro reads it and builds the guide from it.  ' + plural(st.sv.events, 'event channel') + ' here.'; }, when: function () { return st.sv.events > 0; }, rows: eventRows },
     { id: 'clutter', title: 'Clear the clutter', rail: 'Clutter', lead: 'Everything hidden stays one click away: Settings > Groups, sorting, hidden, or hold OK on a channel.', rows: clutterRows },
     { id: 'logos', title: 'Channel logos', rail: 'Logos', lead: 'For channels with no logo, from two open projects, iptv-org and tv-logos, matched by guide id, name and country, and a local station\'s call sign.  TiviBro hosts no images: each logo loads from its project.', rows: logoRows },
     { id: 'look', title: 'Make it yours', rail: 'Look and start', lead: 'Colours, text size and what TiviBro opens on.  Buffering, buttons and parental controls are in Settings.', rows: lookRows },
@@ -110,7 +110,7 @@ var Tour = (function () {
     card(fmt(sv.groups), 'groups');
     if (sv.countries.length) card(fmt(sv.countries.length), sv.countries.length === 1 ? 'country' : 'countries');
     if (sv.events) card(fmt(sv.events), 'event channels');
-    if (sv.feeds.pairs) card(fmt(sv.feeds.pairs), 'in East and West');
+    if (sv.feeds.pairs) card(fmt(sv.feeds.pairs), 'channels in East + West');
     if (sv.locals.cities.length) card(fmt(sv.locals.cities.length), 'local cities');
     if (sv.dupeExtra) card(fmt(sv.dupeExtra), 'extra copies');
     if (p.vod && (p.vod.movies || p.vod.series)) card(p.vod.movies && p.vod.series ? 'Movies + Shows' : p.vod.movies ? 'Movies' : 'Shows', 'on demand');
@@ -213,7 +213,7 @@ var Tour = (function () {
     var sv = st.sv, ch = st.ch, out = [], S_ = S();
     if (sv.dividers.length) out.push(toggle('Hide divider groups', plural(sv.dividers.length, 'group') + ' like "' + sv.dividers[0].name + '" that only split the list into sections.', function () { return ch.dividers; }, function (v) { ch.dividers = v; draw(); }, 'Hide', 'Keep'));
     out.push(toggle('Hide empty groups', 'Groups with no channels, or none left after the steps before.', function () { return ch.empty; }, function (v) { ch.empty = v; draw(); }, 'Hide', 'Keep'));
-    if (sv.dupeSets) out.push(choice('Same channel more than once', plural(sv.dupeSets, 'channel') + ' come in several qualities or copies (' + fmt(sv.dupeExtra) + ' extra).  Pick which one to keep in each group.  The others stay reachable from Other versions.',
+    if (sv.dupeSets) out.push(choice('Same channel more than once', plural(sv.dupeSets, 'channel') + ' come in several qualities or copies (' + fmt(sv.dupeExtra) + ' extra).  Pick which copy to keep; the others are hidden, still one press away with hold OK > Other versions, and TiviBro switches to one by itself if yours stops working.',
       DUPES, DUPE_L, function () { return ch.dupes; }, function (v) { ch.dupes = v; draw(); }));
     out.push(action('Hide groups with these words…', 'Comma separated, like PPV, 24/7, Radio, Adult.', function () {
       UI.prompt('Hide groups whose name contains', ch.words, function (v) { ch.words = v; draw(); }, 'Comma separated.  Upper and lower case do not matter.');
@@ -227,7 +227,11 @@ var Tour = (function () {
     var box = U.el('div', 'tour-logos'), st_ = Logos.status;
     if (Logos.mode() === 'off') { box.appendChild(U.el('div', 'tour-note', 'Off: channels show the playlist\'s and the guide\'s logos only.')); return box; }
     if (st_.state === 'loading') { box.appendChild(U.el('div', 'tour-note', 'Looking up logos for your channels…')); return box; }
-    if (st_.state === 'error') { box.appendChild(U.el('div', 'tour-note err', 'The logo library could not be reached: ' + st_.error)); return box; }
+    if (st_.state === 'error') {
+      if (!st.logoWarned) { st.logoWarned = true; Log.warn('tour', 'Logo library: ' + st_.error); }
+      box.appendChild(U.el('div', 'tour-note err', 'The logo library could not be reached just now, so channels keep the logos they have.  Check the TV\'s internet; TiviBro tries again each time it starts.'));
+      return box;
+    }
     var chans = Library.data.channels, own = function (c) { return Views.ownLogo(c); };
     var cov = st.cov || (st.cov = Logos.coverage(chans, own));
     box.appendChild(U.el('div', 'tour-note', 'Found ' + plural(cov.found, 'logo') + ' for your ' + fmt(cov.total) + ' channels, ' + fmt(cov.filled) + ' of them for channels with none.'));
@@ -285,6 +289,8 @@ var Tour = (function () {
     if (pl.hidC) card(fmt(pl.hidC), 'channels hidden');
     if (pl.hidG) card(fmt(pl.hidG), 'groups hidden');
     out.push(custom(cards));
+    out.push(head('Your choices: OK on one to change it'));
+    choices().forEach(function (x) { out.push(action(x[1], '', function () { jump(x[0]); }, function () { return x[2]; })); });
     out.push(head('Good to know'));
     var tips = U.el('div', 'tour-tips');
     [['Hold OK on a channel', 'Favorites, other versions, reminders, hide, block, assign a guide.'],
@@ -297,6 +303,38 @@ var Tour = (function () {
     });
     out.push(custom(tips));
     return out;
+  }
+
+  // One line per step for the summary: [step id, label, what it will do].
+  function choices() {
+    var ch = st.ch, sv = st.sv, s = S(), out = [], ids = steps().map(function (x) { return x.id; });
+    function has(id) { return ids.indexOf(id) >= 0; }
+    if (has('countries')) {
+      var keep = sv.countries.filter(function (x) { return ch.cc[x.p] !== false; }).map(function (x) { return x.name; });
+      out.push(['countries', 'Countries', (keep.length === sv.countries.length ? 'Every country' : keep.length ? 'Keep ' + (keep.length > 3 ? plural(keep.length, 'country', 'countries') : keep.join(', ')) : 'None') + (ch.ccNone ? '' : ', no-country groups hidden')]);
+    }
+    var nr = Names.RULES.filter(function (r) { return ch.names.rules[r.id] != null ? !!ch.names.rules[r.id] : r.on; }).length;
+    out.push(['names', 'Channel names', ch.names.enabled ? 'Cleaned, ' + nr + ' of ' + Names.RULES.length + ' rules' + (ch.names.groups ? ', groups too' : '') : 'As the provider sends them']);
+    if (has('feeds')) out.push(['feeds', 'East and West', ch.feed === 'both' ? 'Keep both' : 'Keep ' + (ch.feed === 'east' ? 'East' : 'West') + (ch.feedGroups ? ', other feed\'s groups hidden' : '')]);
+    if (has('locals')) {
+      var cs = Object.keys(ch.cities).map(Tidy.titleCase);
+      out.push(['locals', 'Local channels', !cs.length ? 'Every city' : (cs.length > 3 ? plural(cs.length, 'city', 'cities') : cs.join(', ')) + (ch.cityGroup ? ' in Local channels' + (ch.cityHideNets ? ', network groups hidden' : '') : '')]);
+    }
+    if (has('events')) out.push(['events', 'Sports and PPV', st.ch.events.on === false ? 'Off' : 'Read from names' + (st.ch.events.group !== false ? ', Events by time' : '') + (ch.names.hideIdle ? ', nothing-on hidden' : '')]);
+    var cl = [];
+    if (sv.dividers.length && ch.dividers) cl.push('dividers');
+    if (ch.empty) cl.push('empty groups');
+    if (sv.dupeSets && ch.dupes !== 'off') cl.push('extra copies (' + DUPE_L[DUPES.indexOf(ch.dupes)].replace(/^Keep /, '').replace(/ \(.*\)$/, '') + ' kept)');
+    if (ch.words.trim()) cl.push('"' + ch.words.trim() + '"');
+    out.push(['clutter', 'Clutter', cl.length ? 'Hide ' + cl.join(', ') : 'Nothing hidden']);
+    out.push(['logos', 'Logos', !s.logoLib || s.logoLib === 'off' ? 'Playlist and guide logos only' : (s.logoLib === 'all' ? 'Library for every channel' : 'Fill in missing') + ', ' + (s.logoStyle === 'original' ? 'original logos' : 'matching set')]);
+    var K = Settings.LOOK, ai = K.ACCENTS.indexOf(s.accent), ti = K.THEMES.indexOf(s.theme || 'dark');
+    out.push(['look', 'Look and start', (ai >= 0 ? K.ACCENT_NAMES[ai] : 'Custom colour') + ' on ' + (ti >= 0 ? K.THEME_NAMES[ti] : 'Midnight') + ', opens on ' + (s.startTab === 'live' ? 'Channels' : 'Guide')]);
+    return out;
+  }
+  function jump(id) {
+    var list = steps(), i = list.map(function (x) { return x.id; }).indexOf(id);
+    if (i >= 0) go(i - st.step);
   }
 
   /* ---------- phone or computer ---------- */
@@ -343,7 +381,7 @@ var Tour = (function () {
     st.foot = foot;
     st.all = st.items.concat(foot);
     if (st.sel < 0 || st.sel >= st.all.length || !focusable(st.all[st.sel])) {
-      var want = st.sel === -2 ? 'end' : 'start';
+      var want = st.sel === -2 || step.id === 'done' ? 'end' : 'start';
       st.sel = -1;
       if (want === 'start') { for (var i = 0; i < st.all.length; i++) if (focusable(st.all[i]) && !st.all[i].btn) { st.sel = i; break; } }
       if (st.sel < 0) for (var j = 0; j < st.all.length; j++) if (st.all[j].primary) st.sel = j;
@@ -517,7 +555,7 @@ var Tour = (function () {
     // Pre-ticked: the TV's own country when the playlist has it, otherwise every country.
     st.sv.countries.forEach(function (x) { cc[x.p] = inList ? x.p === region : true; });
     st.ch = { cc: cc, ccNone: true, names: clone(p.names || Names.defaults()), events: clone(p.events || {}), feed: st.sv.feeds.pairs ? 'east' : 'both', feedGroups: true,
-      cities: {}, cityNone: true, cityGroup: true, cityHideNets: true, dividers: true, empty: true, dupes: 'off', words: '' };
+      cities: {}, cityNone: true, cityGroup: true, cityHideNets: true, dividers: true, empty: true, dupes: st.sv.dupeSets ? 'fhd' : 'off', words: '' };
     if (st.ch.names.enabled === false && opts.first) st.ch.names.enabled = true;
     if (opts.first && st.sv.idle) st.ch.names.hideIdle = true;
     Logos.load(Library.data).then(function () { if (st && cur().id === 'logos') { st.cov = null; draw(); } });

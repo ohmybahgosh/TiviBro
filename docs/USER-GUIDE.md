@@ -60,10 +60,10 @@ The first screen counts your channels, groups, countries, event channels, East a
 | **East or West?** | Keep East feeds, West feeds or both, and whether to hide groups named West (or East).  Examples from your list. |
 | **Your local channels** | Every city your provider's local groups carry, A to Z, with the networks in each.  **OK** ticks a city; ◀ ▶ jump between letters.  The other cities' stations are hidden in every local group.  **Put them together in "Local channels"** (on) makes one group with your stations, by city and network, and **Then hide the network groups** (on) puts ABC Locals, CBS Locals and the rest out of the way so each station shows up once. |
 | **Sports and pay-per-view** | [Event channels](#event-channels-pay-per-view-and-sports-passes): reading events from names, short names, Events by time, the time zone for names without one, and **Hide channels with nothing on**.  The next events are listed. |
-| **Clear the clutter** | Divider groups, empty groups, the same channel more than once (keep Full HD, the best, HD or SD), groups with words like PPV or Adult, and whether groups the provider adds later show up. |
+| **Clear the clutter** | Divider groups, empty groups, the same channel more than once (keep Full HD, the default, or the best, HD, SD or every copy; hidden copies stay under hold OK > Other versions), groups with words like PPV or Adult, and whether groups the provider adds later show up. |
 | **Channel logos** | The [logo library](#channel-logos), its style, and which logo wins when the playlist and the guide both have one, with logos it found for your channels. |
 | **Make it yours** | Accent colour, background, text size, start screen, turning on the last channel at launch, the preview in the list, and what happens when a channel stops working.  Colours change as you pick them. |
-| **All set** | How many channels and groups you keep and hide, **Apply and start watching**, and a few things worth knowing. |
+| **All set** | How many channels and groups you keep and hide, **Your choices** (one line per screen, like "Detroit in Local channels, network groups hidden": **OK** on one goes back to that screen, and **Skip to the summary** comes back), **Apply and start watching**, and a few things worth knowing. |
 
 <p align="center">
   <a href="screenshots/tv-tour-countries.png"><img src="screenshots/tv-tour-countries.png" width="32%" alt="Countries"></a>
