@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 12, 2026-10-29)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 12
 
 - **The network helper, explained.**  The first screen's Network row is now **Connection: Automatic (recommended)**, with a line saying what the network helper is (the part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams) instead of "running on port 47811"; it only turns red with the reason when the helper isn't running.  Settings > Playback says the same; the user guide and FAQ have "What is the network helper?".
 - README and tivibro.app lead with setting up from your phone: a "Set it up from your phone" section with the first screen and phone screenshots, a line in the hero, and the step in the install instructions.  The editor's welcome page on a fresh TV offers **Add your playlist** first, then **Restore a backup**.
@@ -9,11 +13,7 @@
 - First screen: the Connect, Test connection and other buttons were below the bottom of a 1080 screen; the screen now scrolls to whatever is focused.
 - The Homebrew Channel listing has screenshots and a formatted description (features, what to know, links), from `site/hb/description.html` on the website, and says it needs webOS 4 or newer.
 
-## 0.6.0 (alpha 11, 2026-10-29)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 11
+### In alpha 11
 
 - The newest release is picked by date everywhere.  GitHub lists releases by tag name, so v0.6.0-alpha.9 came before v0.6.0-alpha.10: the website showed "Newest: 0.6.0 alpha 9" and the one-line installer (`tivibro.app/install`) installed alpha 9.  The website, the installer and the in-app updater now read all releases and take the newest (the updater already compared versions, but only read 15).  Test: `tests/unit/tv-install.test.js` lists alpha.9 before alpha.10 the way GitHub does.
 
