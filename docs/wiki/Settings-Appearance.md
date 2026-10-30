@@ -5,8 +5,8 @@
 Colours, sizes and what's on screen.  Every change shows straight away.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-look.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-look.png" width="49%" alt="Appearance"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings-look.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings-look.png" width="49%" alt="Changing the accent colour"></a>
+  <a href="https://tivibro.app/view/#tv-set-look"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-look.png" width="49%" alt="Appearance"></a>
+  <a href="https://tivibro.app/view/#tv-settings-look"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings-look.png" width="49%" alt="Changing the accent colour"></a>
 </p>
 
 | Setting | Choices | What it does |

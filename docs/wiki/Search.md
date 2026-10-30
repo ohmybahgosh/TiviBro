@@ -8,7 +8,7 @@
 <p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/search.mp4">Watch the MP4</a></sub></p>
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-search.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-search.png" width="100%" alt="Search results"></a>
+  <a href="https://tivibro.app/view/#tv-search"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-search.png" width="100%" alt="Search results"></a>
 </p>
 
 ---

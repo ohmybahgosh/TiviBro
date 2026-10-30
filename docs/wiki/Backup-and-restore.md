@@ -13,9 +13,9 @@ A backup is one file with everything: settings, every playlist **with its login*
 3. **Restore a backup**, drop the file, type the passphrase and press **Unlock**.  The editor lists the playlists inside so you know it's the right file.
 4. **Restore to the TV.**  TiviBro restarts with everything back, and the editor reconnects by itself.
 
-<p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-restored.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-restored.png" width="60%" alt="The TV right after a restore"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#tv-restored"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-restored.png" width="60%" alt="The TV right after a restore"></a></p>
 
-<p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-backup.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-backup.png" width="100%" alt="Backup and restore"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#editor-backup"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-backup.png" width="100%" alt="Backup and restore"></a></p>
 
 ---
 

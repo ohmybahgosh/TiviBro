@@ -32,8 +32,8 @@ A few things work the way you would guess from other TV apps:
 Buttons can be remapped under **Settings > Remote control**, including keys TiviBro does not know yet (**Learn a button**).  **Button tester** shows what the TV sends for each key.  Every button, its default and the actions you can give it are listed in [Settings: Remote control](Settings-Remote-control).
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-remote-player.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-remote-player.png" width="49%" alt="Buttons in the player"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-quick-menu.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-quick-menu.png" width="49%" alt="Quick menu buttons"></a>
+  <a href="https://tivibro.app/view/#tv-set-remote-player"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-remote-player.png" width="49%" alt="Buttons in the player"></a>
+  <a href="https://tivibro.app/view/#tv-set-quick-menu"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-quick-menu.png" width="49%" alt="Quick menu buttons"></a>
 </p>
 
 ---

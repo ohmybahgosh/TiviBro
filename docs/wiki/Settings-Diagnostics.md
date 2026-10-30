@@ -5,10 +5,10 @@
 Finding out what's wrong, and what this TV can play.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-diag.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-diag.png" width="49%" alt="Diagnostics"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-diag-test.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-diag-test.png" width="49%" alt="Connection test"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-caps.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-caps.png" width="49%" alt="What this TV can play"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-diag-log.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-diag-log.png" width="49%" alt="App log"></a>
+  <a href="https://tivibro.app/view/#tv-set-diag"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-diag.png" width="49%" alt="Diagnostics"></a>
+  <a href="https://tivibro.app/view/#tv-set-diag-test"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-diag-test.png" width="49%" alt="Connection test"></a>
+  <a href="https://tivibro.app/view/#tv-set-caps"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-caps.png" width="49%" alt="What this TV can play"></a>
+  <a href="https://tivibro.app/view/#tv-set-diag-log"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-diag-log.png" width="49%" alt="App log"></a>
 </p>
 
 | Setting | Choices | What it does |

@@ -5,9 +5,9 @@
 Which groups show, in what order, and getting hidden things back.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-groups.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-groups.png" width="32%" alt="Groups, sorting, hidden"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-groups-2.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-groups-2.png" width="32%" alt="Your groups and hidden items"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-manage-groups.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-manage-groups.png" width="32%" alt="Manage groups"></a>
+  <a href="https://tivibro.app/view/#tv-set-groups"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-groups.png" width="32%" alt="Groups, sorting, hidden"></a>
+  <a href="https://tivibro.app/view/#tv-set-groups-2"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-groups-2.png" width="32%" alt="Your groups and hidden items"></a>
+  <a href="https://tivibro.app/view/#tv-set-manage-groups"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-manage-groups.png" width="32%" alt="Manage groups"></a>
 </p>
 
 | Setting | Choices | What it does |

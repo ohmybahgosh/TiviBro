@@ -15,10 +15,10 @@
 <details>
 <summary><b>Screenshots</b></summary>
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-fullscreen.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-fullscreen.png" width="49%" alt="Fullscreen with the info bar"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-quick-menu.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-quick-menu.png" width="49%" alt="Quick menu"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-info.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-info.png" width="49%" alt="Programme info"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-mini-guide.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-mini-guide.png" width="49%" alt="Guide over the video"></a>
+  <a href="https://tivibro.app/view/#tv-fullscreen"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-fullscreen.png" width="49%" alt="Fullscreen with the info bar"></a>
+  <a href="https://tivibro.app/view/#tv-quick-menu"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-quick-menu.png" width="49%" alt="Quick menu"></a>
+  <a href="https://tivibro.app/view/#tv-info"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-info.png" width="49%" alt="Programme info"></a>
+  <a href="https://tivibro.app/view/#tv-mini-guide"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-mini-guide.png" width="49%" alt="Guide over the video"></a>
 </p>
 </details>
 
@@ -30,10 +30,10 @@ The options menu, stream info, sleep timer and picture size:
 <details>
 <summary><b>Screenshots</b></summary>
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-options.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-options.png" width="49%" alt="Options (Red)"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-stream-info.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-stream-info.png" width="49%" alt="Stream info"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-sleep.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-sleep.png" width="49%" alt="Sleep timer"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-picture.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-picture.png" width="49%" alt="Picture size"></a>
+  <a href="https://tivibro.app/view/#tv-options"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-options.png" width="49%" alt="Options (Red)"></a>
+  <a href="https://tivibro.app/view/#tv-stream-info"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-stream-info.png" width="49%" alt="Stream info"></a>
+  <a href="https://tivibro.app/view/#tv-sleep"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-sleep.png" width="49%" alt="Sleep timer"></a>
+  <a href="https://tivibro.app/view/#tv-picture"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-picture.png" width="49%" alt="Picture size"></a>
 </p>
 </details>
 

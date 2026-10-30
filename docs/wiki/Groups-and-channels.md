@@ -10,8 +10,8 @@
 - Your changes survive playlist refreshes.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-groups.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-groups.png" width="49%" alt="Groups and channels"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-copy-move.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-copy-move.png" width="49%" alt="Copy or move channels"></a>
+  <a href="https://tivibro.app/view/#editor-groups"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-groups.png" width="49%" alt="Groups and channels"></a>
+  <a href="https://tivibro.app/view/#editor-copy-move"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-copy-move.png" width="49%" alt="Copy or move channels"></a>
 </p>
 
 ---

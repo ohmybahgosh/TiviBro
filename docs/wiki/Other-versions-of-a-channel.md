@@ -7,15 +7,17 @@ Many playlists carry the same channel several times: in Full HD, HD and SD, in t
 - Lists and the guide show a quality tag (**FHD**, **HD**, **SD**, **4K**) beside each copy.
 - **Other versions…** (**Hold OK** on a channel, or the **Red** options while watching) lists the other copies with their quality and group, hidden copies included.  The quick menu has an **Other versions** button too.  **OK** switches to one.
 - **When a channel stops working,** TiviBro switches to the next version by itself and says so ("Nova News 24 isn't working.  Switched to Nova News 24 (HD)"), steadiest quality first: Full HD, HD, unmarked, 4K, then SD.  This only happens once the player has run out of retries, so a short hiccup never moves you.  If every version fails, the provider itself is probably down: TiviBro goes back to the channel you chose and keeps retrying until it returns.
+- **Hidden copies count.**  Hiding the extra copies (in the set-up tour, Smart clean-up or by hand) only takes them out of your lists: they are still used as backups and listed under Other versions.  Only a copy you **block** with the parental PIN is never switched to.
+- **East and West feeds are not versions of each other.**  They run hours apart, so TiviBro never switches from one to the other by itself.
 - **Settings > Playback and buffering > When a channel stops working** chooses between switching by itself, asking you first, or just retrying.
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/versions.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/versions.gif" width="100%" alt="Other versions of a channel"></a></p>
 <p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/versions.mp4">Watch the MP4</a></sub></p>
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-versions.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-versions.png" width="32%" alt="Other versions of a channel"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-quick-versions.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-quick-versions.png" width="32%" alt="Other versions in the quick menu"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-failover.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-failover.png" width="32%" alt="Switched to another version by itself"></a>
+  <a href="https://tivibro.app/view/#tv-versions"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-versions.png" width="32%" alt="Other versions of a channel"></a>
+  <a href="https://tivibro.app/view/#tv-quick-versions"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-quick-versions.png" width="32%" alt="Other versions in the quick menu"></a>
+  <a href="https://tivibro.app/view/#tv-failover"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-failover.png" width="32%" alt="Switched to another version by itself"></a>
 </p>
 
 ---

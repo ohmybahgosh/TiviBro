@@ -16,8 +16,8 @@ The same engine as the TV's [set-up tour](The-set-up-tour), with more room: pick
 Everything here only hides, never deletes, and each action is one undo step.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-smart-cleanup.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-feeds-local.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-feeds-local.png" width="49%" alt="East and West feeds, and local channels by city"></a>
+  <a href="https://tivibro.app/view/#editor-smart-cleanup"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
+  <a href="https://tivibro.app/view/#editor-feeds-local"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-feeds-local.png" width="49%" alt="East and West feeds, and local channels by city"></a>
 </p>
 
 ---

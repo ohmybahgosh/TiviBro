@@ -5,9 +5,9 @@
 Your playlists, how often they reload, and where the programme guide comes from.  **OK** on a playlist opens its page.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlists.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlists.png" width="32%" alt="Playlists"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlist.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlist.png" width="32%" alt="A playlist's page"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlist-2.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlist-2.png" width="32%" alt="A playlist's guide settings"></a>
+  <a href="https://tivibro.app/view/#tv-set-playlists"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlists.png" width="32%" alt="Playlists"></a>
+  <a href="https://tivibro.app/view/#tv-set-playlist"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlist.png" width="32%" alt="A playlist's page"></a>
+  <a href="https://tivibro.app/view/#tv-set-playlist-2"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playlist-2.png" width="32%" alt="A playlist's guide settings"></a>
 </p>
 
 | Setting | Choices | What it does |
@@ -42,7 +42,7 @@ On a playlist's page:
 
 **Channel name editor.**  Rules that strip clutter from every name at once.  Your provider's names are never changed: switch a rule off and the original comes back.  Names you set by hand stay.
 
-<p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-names.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-names.png" width="60%" alt="Channel name editor"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#tv-set-names"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-names.png" width="60%" alt="Channel name editor"></a></p>
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -64,7 +64,7 @@ On a playlist's page:
 
 **Event channels.**  For pay-per-view, league passes and one-off games whose name carries the matchup, date and time (see [Event channels](Event-channels-pay-per-view-and-sports-passes)).
 
-<p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-events.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-events.png" width="60%" alt="Event channels"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#tv-set-events"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-events.png" width="60%" alt="Event channels"></a></p>
 
 | Setting | Default | What it does |
 |---|---|---|

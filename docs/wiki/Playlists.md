@@ -5,7 +5,7 @@
 Add Xtream Codes or M3U playlists, switch which one the TV uses, set reload schedules and the User-Agent, or change a login.  The TV tests every new login before saving.  **Logins never reach the editor**: it only ever sees server names.  Each playlist keeps its own groups, names and guide setup.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-playlists.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-playlists.png" width="100%" alt="Playlists in the editor"></a>
+  <a href="https://tivibro.app/view/#editor-playlists"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-playlists.png" width="100%" alt="Playlists in the editor"></a>
 </p>
 
 ---

@@ -10,7 +10,7 @@
 - On TVs that aren't rooted, the page tells you the new version is out; install it from a computer as before.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png" width="60%" alt="Updates and about"></a>
+  <a href="https://tivibro.app/view/#tv-set-updates"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png" width="60%" alt="Updates and about"></a>
 </p>
 
 ---

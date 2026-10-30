@@ -5,8 +5,8 @@
 The [web editor](Turning-on-the-web-editor): organise groups and channels from a browser on your computer, phone or tablet.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor.png" width="49%" alt="Edit on a phone or computer, off"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor-on.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor-on.png" width="49%" alt="Edit on a phone or computer, on"></a>
+  <a href="https://tivibro.app/view/#tv-set-editor"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor.png" width="49%" alt="Edit on a phone or computer, off"></a>
+  <a href="https://tivibro.app/view/#tv-set-editor-on"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor-on.png" width="49%" alt="Edit on a phone or computer, on"></a>
 </p>
 
 | Setting | Choices | What it does |

@@ -5,8 +5,8 @@
 How the guide looks and behaves, which screen TiviBro opens on, and reminders.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-guide.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-guide.png" width="49%" alt="Guide, start screen, reminders"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-guide-2.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-guide-2.png" width="49%" alt="Reminders"></a>
+  <a href="https://tivibro.app/view/#tv-set-guide"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-guide.png" width="49%" alt="Guide, start screen, reminders"></a>
+  <a href="https://tivibro.app/view/#tv-set-guide-2"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-guide-2.png" width="49%" alt="Reminders"></a>
 </p>
 
 | Setting | Choices | What it does |

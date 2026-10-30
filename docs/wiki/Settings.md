@@ -23,8 +23,8 @@
 <details>
 <summary><b>Screenshots</b></summary>
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings.png" width="49%" alt="Settings"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings-look.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings-look.png" width="49%" alt="Appearance"></a>
+  <a href="https://tivibro.app/view/#tv-settings"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings.png" width="49%" alt="Settings"></a>
+  <a href="https://tivibro.app/view/#tv-settings-look"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings-look.png" width="49%" alt="Appearance"></a>
 </p>
 </details>
 

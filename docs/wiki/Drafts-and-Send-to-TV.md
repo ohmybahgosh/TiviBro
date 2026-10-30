@@ -10,7 +10,7 @@ Every change is a **draft** until you press **Send to TV** (or <kbd>Ctrl</kbd>+<
 - **Changes and restore points** lists what hasn't reached the TV yet, this session's changes (each with **Go back**), your draft history, and the restore points.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-history.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-history.png" width="100%" alt="Changes and restore points"></a>
+  <a href="https://tivibro.app/view/#editor-history"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-history.png" width="100%" alt="Changes and restore points"></a>
 </p>
 
 **You can't lose unsent work.**  An hour of clean-up shouldn't vanish because of a stray click, a refresh or a closed tab, so the editor saves your drafts twice:
@@ -21,8 +21,8 @@ Every change is a **draft** until you press **Send to TV** (or <kbd>Ctrl</kbd>+<
 Reload the page, close the tab, or open the editor on another computer or your phone, and it asks whether to pick up your unsent changes, whichever copy is newer.  **Keep working on them** brings everything back; **Throw them away** clears them, but a copy stays in the draft history.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-recover.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-recover.png" width="49%" alt="Unsent changes offered back after a reload"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-drafts.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-drafts.png" width="49%" alt="Draft history"></a>
+  <a href="https://tivibro.app/view/#editor-recover"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-recover.png" width="49%" alt="Unsent changes offered back after a reload"></a>
+  <a href="https://tivibro.app/view/#editor-drafts"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-drafts.png" width="49%" alt="Draft history"></a>
 </p>
 
 **Draft history** (on **Changes and restore points**) keeps versions of your unsent work on the TV:

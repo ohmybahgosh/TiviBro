@@ -8,8 +8,8 @@ Set a PIN under **Settings > Parental controls**, then **Hold OK** on any channe
 <p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/parental.mp4">Watch the MP4</a></sub></p>
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings-parental.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings-parental.png" width="49%" alt="Parental controls with a PIN"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-pin.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-pin.png" width="49%" alt="A blocked channel asks for the PIN"></a>
+  <a href="https://tivibro.app/view/#tv-settings-parental"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings-parental.png" width="49%" alt="Parental controls with a PIN"></a>
+  <a href="https://tivibro.app/view/#tv-pin"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-pin.png" width="49%" alt="A blocked channel asks for the PIN"></a>
 </p>
 
 ---

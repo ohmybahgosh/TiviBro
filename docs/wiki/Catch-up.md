@@ -16,9 +16,9 @@ From live TV, **From start** in the quick menu restarts the current programme.  
 <details>
 <summary><b>Screenshots</b></summary>
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-catchup-guide.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-catchup-guide.png" width="49%" alt="Past programmes in the guide"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-hold-menu.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-hold-menu.png" width="49%" alt="Programme options"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-catchup-play.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-catchup-play.png" width="49%" alt="Catch-up playing"></a>
+  <a href="https://tivibro.app/view/#tv-catchup-guide"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-catchup-guide.png" width="49%" alt="Past programmes in the guide"></a>
+  <a href="https://tivibro.app/view/#tv-hold-menu"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-hold-menu.png" width="49%" alt="Programme options"></a>
+  <a href="https://tivibro.app/view/#tv-catchup-play"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-catchup-play.png" width="49%" alt="Catch-up playing"></a>
 </p>
 </details>
 

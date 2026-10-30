@@ -16,8 +16,8 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 <details>
 <summary><b>Screenshots</b></summary>
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-movies.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-movies.png" width="49%" alt="Movies"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-episodes.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-episodes.png" width="49%" alt="Episodes"></a>
+  <a href="https://tivibro.app/view/#tv-movies"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-movies.png" width="49%" alt="Movies"></a>
+  <a href="https://tivibro.app/view/#tv-episodes"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-episodes.png" width="49%" alt="Episodes"></a>
 </p>
 </details>
 

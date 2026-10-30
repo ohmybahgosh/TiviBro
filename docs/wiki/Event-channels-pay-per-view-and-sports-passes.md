@@ -14,8 +14,8 @@ TiviBro reads those names:
 It understands the usual ways providers write these: "Oct 29 7:30 PM", "Sat 15th Aug 8:00PM", "Saturday, 31 October 2026 12:30", "12.18 11:00 AM", "14/08", "2026-02-08 10:40", a time on its own for today, and a time between two teams ("Stoke City 15:00 Swansea City").  On a real provider it read 1,250 event channels this way.  Your own channel names (**Rename**) always win.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-events-list.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-events-list.png" width="49%" alt="Events by time"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-events-guide.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-events-guide.png" width="49%" alt="Events in the guide"></a>
+  <a href="https://tivibro.app/view/#tv-events-list"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-events-list.png" width="49%" alt="Events by time"></a>
+  <a href="https://tivibro.app/view/#tv-events-guide"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-events-guide.png" width="49%" alt="Events in the guide"></a>
 </p>
 
 ---

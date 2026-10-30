@@ -8,8 +8,8 @@ A brand-new TiviBro opens on **Add your playlist**.  You have two ways in:
 - **Type it on the TV.**  Pick Xtream Codes or M3U, then fill in the server, username and password (or the M3U address).  A guide address is optional.  **Test connection** checks everything before you save; **Connect** saves and loads your channels.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-first-run.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-first-run.png" width="49%" alt="First-run screen"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-first-run-remote.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-first-run-remote.png" width="49%" alt="Set up from a phone or computer"></a>
+  <a href="https://tivibro.app/view/#tv-first-run"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-first-run.png" width="49%" alt="First-run screen"></a>
+  <a href="https://tivibro.app/view/#tv-first-run-remote"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-first-run-remote.png" width="49%" alt="Set up from a phone or computer"></a>
 </p>
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/firstrun.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/firstrun.gif" width="100%" alt="The first screen, and setting up from a computer"></a></p>

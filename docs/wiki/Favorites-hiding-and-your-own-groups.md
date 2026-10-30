@@ -18,9 +18,9 @@
 <p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/channels.mp4">Watch the MP4</a></sub></p>
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-channel-options.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-channel-options.png" width="32%" alt="Channel options"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-copy-to-group.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-copy-to-group.png" width="32%" alt="Copy to group"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-manage-groups.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-manage-groups.png" width="32%" alt="Manage groups"></a>
+  <a href="https://tivibro.app/view/#tv-channel-options"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-channel-options.png" width="32%" alt="Channel options"></a>
+  <a href="https://tivibro.app/view/#tv-copy-to-group"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-copy-to-group.png" width="32%" alt="Copy to group"></a>
+  <a href="https://tivibro.app/view/#tv-set-manage-groups"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-manage-groups.png" width="32%" alt="Manage groups"></a>
 </p>
 
 ---

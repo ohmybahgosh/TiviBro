@@ -5,9 +5,9 @@
 Remap any button, choose the quick menu's buttons, and teach TiviBro keys it doesn't know.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-remote.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-remote.png" width="32%" alt="Remote control"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-remote-player.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-remote-player.png" width="32%" alt="Buttons in the player"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-quick-menu.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-quick-menu.png" width="32%" alt="Quick menu buttons"></a>
+  <a href="https://tivibro.app/view/#tv-set-remote"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-remote.png" width="32%" alt="Remote control"></a>
+  <a href="https://tivibro.app/view/#tv-set-remote-player"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-remote-player.png" width="32%" alt="Buttons in the player"></a>
+  <a href="https://tivibro.app/view/#tv-set-quick-menu"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-quick-menu.png" width="32%" alt="Quick menu buttons"></a>
 </p>
 
 | Setting | What it does |

@@ -4,7 +4,7 @@
 
 Your version, and new versions from GitHub.  See [Updates](Updates).
 
-<p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png" width="60%" alt="Updates and about"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#tv-set-updates"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-updates.png" width="60%" alt="Updates and about"></a></p>
 
 | Setting | Choices | What it does |
 |---|---|---|

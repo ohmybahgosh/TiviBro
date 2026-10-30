@@ -12,8 +12,8 @@ The watchlist needs the guide to know what's on: with an XMLTV guide it sees eve
 <p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/reminders.mp4">Watch the MP4</a></sub></p>
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-reminder-set.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-reminder-set.png" width="49%" alt="A reminder set in the guide"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-reminder.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-reminder.png" width="49%" alt="The reminder when the programme starts"></a>
+  <a href="https://tivibro.app/view/#tv-reminder-set"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-reminder-set.png" width="49%" alt="A reminder set in the guide"></a>
+  <a href="https://tivibro.app/view/#tv-reminder"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-reminder.png" width="49%" alt="The reminder when the programme starts"></a>
 </p>
 
 ---

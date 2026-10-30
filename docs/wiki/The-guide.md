@@ -16,8 +16,8 @@ The guide is the home screen.  The channel you are on plays in the window at the
 <details>
 <summary><b>More guide screenshots</b></summary>
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-guide.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-guide.png" width="49%" alt="Guide"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-guide-preview.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-guide-preview.png" width="49%" alt="Preview in the window"></a>
+  <a href="https://tivibro.app/view/#tv-guide"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-guide.png" width="49%" alt="Guide"></a>
+  <a href="https://tivibro.app/view/#tv-guide-preview"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-guide-preview.png" width="49%" alt="Preview in the window"></a>
 </p>
 </details>
 

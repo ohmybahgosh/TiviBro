@@ -5,8 +5,8 @@
 A 4-digit PIN for blocked channels and groups, and optionally for Settings.  See [Parental controls](Parental-controls) for blocking.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-parental.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-parental.png" width="49%" alt="Parental controls before a PIN"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings-parental.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings-parental.png" width="49%" alt="Parental controls with a PIN"></a>
+  <a href="https://tivibro.app/view/#tv-set-parental"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-parental.png" width="49%" alt="Parental controls before a PIN"></a>
+  <a href="https://tivibro.app/view/#tv-settings-parental"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-settings-parental.png" width="49%" alt="Parental controls with a PIN"></a>
 </p>
 
 | Setting | Choices | What it does |

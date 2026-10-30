@@ -10,8 +10,8 @@ On a row with a choice, **◀ ▶** change it (with the Magic Remote, click the 
 How channels start, how much video TiviBro holds, which player it uses, and what it does when a stream struggles.
 
 <p align="center">
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playback.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playback.png" width="49%" alt="Playback and buffering, top"></a>
-  <a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playback-2.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playback-2.png" width="49%" alt="Playback and buffering, bottom"></a>
+  <a href="https://tivibro.app/view/#tv-set-playback"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playback.png" width="49%" alt="Playback and buffering, top"></a>
+  <a href="https://tivibro.app/view/#tv-set-playback-2"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-playback-2.png" width="49%" alt="Playback and buffering, bottom"></a>
 </p>
 
 | Setting | Choices | What it does |
