@@ -1,16 +1,17 @@
 # Changelog
 
-## Unreleased
-
-- **Report a problem.**  Settings > Diagnostics > **Report a problem** shows a QR code.  Your phone opens a new **Report a problem** page in the web editor: say what happened, read everything the TV adds (version, TV model, a few settings, the app and network helper logs), save the log file, and **Open the GitHub form** opens a bug report already filled in.  Logins, tokens and every provider and guide server's name are taken out first.
-- After a crash, TiviBro says so once at the next start and points to Report a problem.
-- tivibro.app: Google Analytics 4, ready to switch on with a measurement ID.  Nothing loads until a visitor presses **Allow**; **Cookie settings** in the footer asks again.  It counts install-step copies, install tabs, GitHub links and full-screen videos.  The TV app still has no analytics.
-
-## 0.6.0 (alpha 14, 2026-10-29)
+## 0.6.0 (alpha 15, 2026-10-30)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 14
+### New in alpha 15
+
+- **Report a problem.**  Settings > Diagnostics > **Report a problem** shows a QR code.  Your phone opens a new **Report a problem** page in the web editor: say what happened, read everything the TV adds (version, TV model, a few settings, the app and network helper logs), save the log file, and **Open the GitHub form** opens a bug report already filled in.  Logins, tokens and every provider and guide server's name are taken out first.
+- **Report a problem from the first screen** too, for when the login won't work: a **Report a problem** button beside View log shows the QR code (without a Turn off button there, since the first screen needs the editor), and the editor's Report a problem page is open before a playlist is added.  Any server address in the report that TiviBro doesn't know yet, like one typed but not saved, is replaced with <server>.
+- After a crash, TiviBro says so once at the next start and points to Report a problem.
+- tivibro.app now counts visits with Google Analytics 4, only after a visitor presses **Allow**; **Cookie settings** in the footer asks again.  It records install buttons, install tabs, copied install steps, GitHub links, demo videos, FAQ questions and which sections people read.  The TV app still has no analytics.
+
+### In alpha 14
 
 - **Edit on phone, one press away.**  The side menu has **Edit on phone** (between Search and Settings): it turns the web editor on and shows its QR code, address and password over whatever you're on.  **Done** leaves it running; **Turn the editor off** stops it.  The same panel is under hold OK on any group, at the top of **Settings > Edit on a phone or computer** (renamed from Edit on a computer, and moved up under Playlists), and can go on any remote button in Settings > Remote control.
 

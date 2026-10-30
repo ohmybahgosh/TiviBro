@@ -461,11 +461,12 @@ var WebEdit = (function () {
       var lead = U.el('p', 'edit-join-lead', opts.lead || 'Scan the code with your phone\'s camera, or open the address on a computer on the same network.  Rename, hide, sort and clean up with a real keyboard; changes show up here as you send them.');
       var wrap = U.el('div'); wrap.appendChild(lead); wrap.appendChild(body);
       function show(s) { if (!wrap.parentNode) return; drawJoin(qr, txt, page || '', s, 'Waiting for a phone or computer…', 'Connected.  The editor keeps running until you turn it off or close TiviBro.'); }
-      UI.panel(opts.title || 'Edit on a phone or computer', wrap, [
-        { label: 'Done' },
-        { label: 'Turn the editor off', action: function () { stop().then(function () { U.toast('Web editor is off'); if (after) after(); }); } }
-      ]);
-      UI.onClose = function () { if (onStatus === show) onStatus = null; if (after) after(); };
+      // keepOn: the screen underneath needs the editor (the first screen's own QR code), so no Turn off.
+      var btns = [{ label: 'Done' }];
+      if (!opts.keepOn) btns.push({ label: 'Turn the editor off', action: function () { stop().then(function () { U.toast('Web editor is off'); if (after) after(); }); } });
+      UI.panel(opts.title || 'Edit on a phone or computer', wrap, btns);
+      var prev = onStatus;
+      UI.onClose = function () { if (onStatus === show) onStatus = prev; if (after) after(); };
       onStatus = show;
       (on ? Promise.resolve(status) : start()).then(function (s) { show(s); if (!wasOn) Log.info('webedit', 'Started from the shortcut'); }, function (e) { txt.innerHTML = ''; txt.appendChild(U.el('div', 'msg err', e.message)); });
     });

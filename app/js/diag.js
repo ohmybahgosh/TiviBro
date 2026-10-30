@@ -80,9 +80,13 @@ var Diag = (function () {
       (p.epgSources || []).forEach(function (x) { var h = hostOf(x.url); if (h) hosts.push([h, '<guide>']); });
     });
     hosts.sort(function (a, b) { return b[0].length - a[0].length; });
+    // Any other server in a link, say one typed on the first screen and not saved yet, becomes <server>.
+    // Kept: TiviBro's own sites, the logo projects, and addresses on this TV or the home network.
+    var KEEP = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|(.*\.)?(tivibro\.app|github\.com|githubusercontent\.com|jsdelivr\.net|iptv-org\.github\.io)$)/i;
     return function (s) {
       s = Log.redact(s);
       hosts.forEach(function (h) { s = s.split(h[0]).join(h[1]); s = s.split(h[0].toUpperCase()).join(h[1]); });
+      s = s.replace(/(\b[a-z][a-z0-9+.-]*:\/\/)(?:[^\/\s@]*@)?([^\/\s:'"?#<>]+)/gi, function (m, scheme, host) { return KEEP.test(host) ? m : scheme + '<server>'; });
       return s
         .replace(/((?:token|key|auth|sig|signature|hash|session|sid|user|username|u|p)=)[^&\s"']+/gi, '$1***')
         .replace(/\/\/([^/\s:@]+):([^/\s@]+)@/g, '//***:***@');

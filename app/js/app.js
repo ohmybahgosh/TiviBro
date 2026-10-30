@@ -84,6 +84,7 @@ var App = (function () {
       fields.push({ el: go, kind: 'go' });
       var test = U.el('div', 'btn', 'Test connection'); setupEl.appendChild(test); fields.push({ el: test, kind: 'test' });
       var lg = U.el('div', 'btn', 'View log'); setupEl.appendChild(lg); fields.push({ el: lg, kind: 'log' });
+      var rp = U.el('div', 'btn', 'Report a problem'); setupEl.appendChild(rp); fields.push({ el: rp, kind: 'report' });
       if (!editing) { var rm = U.el('div', 'btn', 'Set up or restore from a phone or computer'); setupEl.appendChild(rm); fields.push({ el: rm, kind: 'remote' }); }
       if (canCancel) { var cancel = U.el('div', 'btn', 'Cancel'); setupEl.appendChild(cancel); fields.push({ el: cancel, kind: 'cancel' }); }
       msg = U.el('div', 'msg'); setupEl.appendChild(msg);
@@ -196,8 +197,8 @@ var App = (function () {
         if (cur.kind === 'net') toggleNet();
         else if (cur.toggle && document.activeElement !== cur.input) cur.toggle();
         else if (cur.kind === 'type') { p.type = p.type === 'xtream' ? 'm3u' : 'xtream'; render(); }
-        else if ((cur.kind === 'go' || cur.kind === 'test' || cur.kind === 'log') && a === 'right' && fields[f + 1]) { f++; paint(); }
-        else if ((cur.kind === 'test' || cur.kind === 'log' || cur.kind === 'cancel') && a === 'left') { f--; paint(); }
+        else if ((cur.kind === 'go' || cur.kind === 'test' || cur.kind === 'log' || cur.kind === 'report') && a === 'right' && fields[f + 1]) { f++; paint(); }
+        else if ((cur.kind === 'test' || cur.kind === 'log' || cur.kind === 'report' || cur.kind === 'cancel') && a === 'left') { f--; paint(); }
       }
       else if (a === 'ok') {
         if (cur.kind === 'input') cur.input.focus();
@@ -206,6 +207,7 @@ var App = (function () {
         else if (cur.kind === 'net') toggleNet();
         else if (cur.kind === 'test') Diag.run(current());
         else if (cur.kind === 'log') Diag.showLog(true);
+        else if (cur.kind === 'report') WebEdit.showJoin('report', null, { keepOn: true, title: 'Report a problem', lead: 'Scan the code with your phone\'s camera (or open the address on a computer).  Describe what happened there; the TV adds its version, model and log, with logins and server names taken out, and your phone opens a GitHub issue ready to send.' });
         else if (cur.kind === 'remote') remote();
         else if (cur.kind === 'cancel') leave();
       }

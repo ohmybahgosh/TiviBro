@@ -14,7 +14,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await tv.addInitScript(R.init({ time: R.primeTime() })[0]);
   await tv.goto(APP); await tv.waitForTimeout(6000);
   // Something in the log that must not leave the TV.
-  const pl = await tv.evaluate(() => { const p = Store.playlist; Log.warn('test', 'Request to ' + (p.server || p.m3u) + '/player_api.php?username=secretuser&password=secretpass failed'); Log.error('test', 'Stream http://' + String(p.server || p.m3u).replace(/^https?:\/\//, '') + '/live/secretuser/secretpass/12.ts?token=abc123 stalled'); return { server: p.server || p.m3u, user: p.user || '' }; });
+  const pl = await tv.evaluate(() => { const p = Store.playlist; Log.warn('test', 'Request to ' + (p.server || p.m3u) + '/player_api.php?username=secretuser&password=secretpass failed'); Log.warn('test', 'Typed on the first screen: http://unsaved-server.example:8080/get.php?username=x'); Log.error('test', 'Stream http://' + String(p.server || p.m3u).replace(/^https?:\/\//, '') + '/live/secretuser/secretpass/12.ts?token=abc123 stalled'); return { server: p.server || p.m3u, user: p.user || '' }; });
   await tv.evaluate(() => WebEdit.stop()); await tv.waitForTimeout(300);
   await tv.evaluate(() => WebEdit.showJoin('report', null, { title: 'Report a problem', lead: 'x' })); await tv.waitForTimeout(2500);
   const panel = await tv.evaluate(() => ({ title: document.getElementById('modalTitle').textContent, qr: !!document.querySelector('.edit-join svg') }));
@@ -28,7 +28,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const rp = await ed.evaluate(() => RP);
   ok('the page reads the report from the TV', rp && /TiviBro/.test(rp.text) && rp.facts.length > 5, rp && rp.facts.map(f => f.join(': ')).join(' | '));
   const host = pl.server.replace(/^https?:\/\//, '').split(/[:/]/)[0];
-  const leaks = ['secretuser', 'secretpass', 'abc123', host].filter(x => x && rp.text.indexOf(x) >= 0);
+  const leaks = ['secretuser', 'secretpass', 'abc123', 'unsaved-server.example', host].filter(x => x && rp.text.indexOf(x) >= 0);
   if (pl.user) { if (rp.text.indexOf(pl.user) >= 0) leaks.push('the playlist username'); }
   ok('no logins, tokens or provider server in the report', !leaks.length, leaks.join(', '));
   ok('recent errors are picked out', rp.trouble.some(l => /stalled/.test(l)), rp.trouble.join(' / '));
