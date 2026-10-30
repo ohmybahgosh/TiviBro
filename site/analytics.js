@@ -45,6 +45,7 @@
        click_github           link_target: repo | releases | issues | wiki | profile | other, link_location: the section
        open_video_fullscreen  video_name: guide | web_editor
        open_faq               faq_question
+       view_install_steps     (no parameters) the install section was seen: step 2 of the install funnel
        view_section           section_name (once per page view, after a second with half of it, or half the screen, showing) */
   var METHOD = { hbc: 'homebrew', root: 'rooted', dev: 'devmode' };
   function track(name, params) { if (loaded) gtag('event', name, params || {}); }
@@ -79,7 +80,7 @@
         if (!(x.isIntersecting && (x.intersectionRatio >= 0.5 || x.intersectionRect.height >= innerHeight * 0.5))) { clearTimeout(wait[id]); return; }
         if (seen[id]) return;
         clearTimeout(wait[id]);
-        wait[id] = setTimeout(function () { if (!seen[id]) { seen[id] = 1; track('view_section', { section_name: id }); } }, 1000);
+        wait[id] = setTimeout(function () { if (!seen[id]) { seen[id] = 1; track('view_section', { section_name: id }); if (id === 'install') track('view_install_steps'); } }, 1000);
       });
     }, { threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1] });
     document.querySelectorAll('section[id]').forEach(function (s) { io.observe(s); });
