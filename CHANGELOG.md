@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 17, 2026-10-30)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 17
 
 - **Reminders while TiviBro is closed.**  The network helper schedules each reminder with the TV, so at reminder time the TV shows an alert (**Watch** / **Dismiss**) over whatever is on, another app or an HDMI input included.  **Watch** opens TiviBro straight on the channel; if the programme started a while ago and the channel has catch-up, it offers to start from the beginning.  TVs that refuse alerts get a toast that opens the channel when selected.  The TV has to be on: nothing shows from standby.  While TiviBro is on screen it still asks itself, and the TV stays quiet.
 - Reminders no longer disappear unseen.  One that came due while TiviBro was in the background, or behind a menu, waits and asks when you're back ("Started at 8:00 pm", with **Watch from the start** on catch-up channels), and one that ended meanwhile is offered from catch-up ("You missed it").
@@ -13,11 +17,7 @@
 - **Faster long lists.**  Holding ▲ or ▼ speeds up the longer it's held, and the channel list shows **CH +/− page** when a group is longer than the screen.
 - **Fix:** since alpha 14, Settings sections below Playlists opened the wrong page (Guide, start screen, reminders showed Appearance, and so on).  Each section opens its own page again.
 
-## 0.6.0 (alpha 16, 2026-10-30)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 16
+### In alpha 16
 
 - **Send a report without a GitHub account.**  The web editor's **Report a problem** page has **Send report**: one tap and it becomes an issue on TiviBro's GitHub page (labelled from-tv), with the log folded underneath and a link to follow it.  It goes through a small relay (relay/ in the repo, a Cloudflare Worker) that masks logins and server names again and limits how many reports one network can send.  The GitHub form is still there for people who want replies by email.
 - README and tivibro.app explain **Report a problem**: a README section with the steps and what gets masked, a row in "What no other IPTV player does", an FAQ answer and feature cards on the website, and the footer's Report a bug link opens GitHub's issue forms.
