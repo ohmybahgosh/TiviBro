@@ -9,6 +9,11 @@ var service = new Service('app.tivibro.tv.service');
 process.on('uncaughtException', function (e) { proxy.log({ lv: 'error', event: 'uncaught exception', e: e && (e.stack || e.message) }); });
 var relay = null, port = 0, subs = 0, activity = null, idleTimer = null;
 var PORTS = [47811, 47812, 47813, 47814, 47815];
+// Reminders while TiviBro is closed (remind.js): the activity manager calls "fire" at reminder time.
+var reminders = require('./remind').create({
+  call: function (uri, params, cb) { try { service.call(uri, params, function (m) { cb(m && m.payload || {}); }); } catch (e) { cb({ returnValue: false, errorText: e.message }); } },
+  log: function (o) { proxy.log(o); }
+});
 
 proxy.log({ lv: 'info', event: 'service loaded', node: process.version });
 
@@ -43,6 +48,7 @@ service.register('start', function (message) {
 }, function cancel() {
   subs = Math.max(0, subs - 1);
   proxy.log({ lv: 'info', event: 'subscriber left', subscribers: subs });
+  if (!subs) reminders.setVisible(false);       // the app closed
   if (!subs) idleTimer = setTimeout(function () {
     if (relay) { relay.server.close(); relay = null; port = 0; }
     release();
@@ -51,4 +57,18 @@ service.register('start', function (message) {
 
 service.register('status', function (message) {
   message.respond({ returnValue: true, port: port, subscribers: subs, node: process.version, stats: relay ? relay.stats : null, log: proxy.LOG.slice(-50) });
+});
+
+// The app's reminders for one playlist, and whether TiviBro is on screen right now.
+service.register('reminders', function (message) {
+  try { message.respond(Object.assign({ returnValue: true }, reminders.set(message.payload || {}))); }
+  catch (e) { proxy.log({ lv: 'error', event: 'reminders failed', e: e.message }); message.respond({ returnValue: false, errorText: e.message }); }
+});
+service.register('visible', function (message) {
+  reminders.setVisible(!!(message.payload && message.payload.visible));
+  message.respond({ returnValue: true });
+});
+// Called by the activity manager at reminder time, also when nothing of TiviBro was running.
+service.register('fire', function (message) {
+  reminders.fire(message.payload || {}, function (what) { message.respond({ returnValue: true, result: what }); });
 });

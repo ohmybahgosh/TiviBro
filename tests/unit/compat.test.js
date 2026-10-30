@@ -173,13 +173,17 @@ Promise.resolve(5).finally(() => order.push('f')).then(v => order.push(v))
     // webOS 26 checks Access Control Groups when requiredACG is present, and 27 requires it.
     const info = JSON.parse(fs.readFileSync(path.join(ROOT, 'app/appinfo.json'), 'utf8'));
     ok('appinfo.json declares requiredACG', Array.isArray(info.requiredACG));
-    const needs = { 'com.webos.service.tv.systemproperty/getSystemInfo': 'systemconfig.query', 'activityManager.': 'activity.operation' };
+    // Reminders (service/remind.js): the activity manager (LG's ACG list), the alert's Watch button
+    // launching the app (application.launcher), and createAlert / createToast (notification.operation,
+    // the group com.webos.notification provides; LG's public list does not cover notifications).
+    const needs = { 'com.webos.service.tv.systemproperty/getSystemInfo': 'systemconfig.query', 'activityManager.': 'activity.operation', 'com.palm.activitymanager': 'activity.operation',
+      'com.webos.applicationManager/launch': 'application.launcher', 'com.webos.notification/': 'notification.operation' };
     const all = files('app/js').concat(files('service')).map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
     Object.keys(needs).forEach(k => { if (all.indexOf(k) >= 0) ok('requiredACG has ' + needs[k] + ' (for ' + k.replace(/\.$/, '') + ')', (info.requiredACG || []).indexOf(needs[k]) >= 0); });
     const luna = all.match(/luna:\/\/[\w.]+/g) || [];
     // org.webosbrew.hbchannel.service (in-app updates) only exists on rooted TVs and has no ACG group;
     // update.js treats a refused call as "can't install from the TV".
-    const known = ['luna://com.webos.service.tv.systemproperty', 'luna://' + info.id + '.service', 'luna://org.webosbrew.hbchannel'];
+    const known = ['luna://com.webos.service.tv.systemproperty', 'luna://' + info.id + '.service', 'luna://org.webosbrew.hbchannel', 'luna://com.palm.activitymanager', 'luna://com.webos.applicationManager', 'luna://com.webos.notification'];
     luna.forEach(u => ok('Luna call has a known ACG: ' + u, known.some(k => u.indexOf(k) === 0)));
 
     console.log(fail ? fail + ' failures' : 'all compatibility tests passed');

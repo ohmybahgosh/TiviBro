@@ -1,0 +1,122 @@
+/* Reminders that work while TiviBro is closed.
+   The app sends its reminders (per playlist) whenever they change.  For each one the helper asks
+   webOS's activity manager to call it back at reminder time ("fire"), which starts the helper even
+   when nothing of TiviBro is running.  At that moment it shows a webOS alert (Watch / Dismiss)
+   over whatever is on screen, or a toast if the TV refuses alerts; Watch or the toast opens
+   TiviBro straight on the channel.  If TiviBro is open and on screen, it shows its own question
+   instead and the helper stays quiet.
+   The list is also kept in a small file, so a reminder removed in the app never fires; the
+   callback carries everything needed in case that file can't be written. */
+'use strict';
+var fs = require('fs'), path = require('path'), os = require('os');
+
+var APP = 'app.tivibro.tv', SELF = 'luna://app.tivibro.tv.service';
+var AM = 'luna://com.palm.activitymanager';
+
+function create(opts) {
+  var call = opts.call, log = opts.log || function () {}, now = opts.now || Date.now;
+  var files = (opts.files || [path.join(__dirname, 'reminders.json'), path.join(os.tmpdir(), 'tivibro-reminders.json')]);
+  var state = { lists: {}, names: {} };      // lists: pid -> [reminder]; names: activity name -> 1
+  var visible = false;
+
+  function load() {
+    for (var i = 0; i < files.length; i++) {
+      try { var j = JSON.parse(fs.readFileSync(files[i], 'utf8')); if (j && j.lists) { state = j; state.names = state.names || {}; return files[i]; } } catch (e) {}
+    }
+    return null;
+  }
+  function save() {
+    for (var i = 0; i < files.length; i++) { try { fs.writeFileSync(files[i], JSON.stringify(state)); return true; } catch (e) {} }
+    log({ lv: 'warn', event: 'reminders not saved', e: 'no writable place' });
+    return false;
+  }
+  load();
+
+  function idOf(pid, r) { return String(pid) + '|' + r.k + '|' + r.s; }
+  // Activity names: letters, digits, dots and dashes, short enough for any webOS.
+  function nameOf(id) { var h = 0; for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0; return 'tivibro-rem-' + h.toString(36) + '-' + String(id.split('|')[2] || '').slice(-9); }
+  function utc(ms) { return new Date(ms).toISOString().replace('T', ' ').slice(0, 19) + 'Z'; }
+  // Titles go into the TV's alert, which reads HTML: no tags, and & < > shown as text.
+  function clean(s, n) { return String(s == null ? '' : s).replace(/<[^>]*>/g, '').replace(/[<>]/g, '').slice(0, n || 120); }
+  function html(s) { return String(s).replace(/&/g, '&amp;'); }
+
+  // The app's whole list for one playlist: schedule new ones, cancel ones that went away.
+  function set(p) {
+    var pid = clean(p.pid, 40), before = Math.max(0, Math.min(60, +p.before || 0)) * 60000, t = now();
+    if (typeof p.visible === 'boolean') visible = p.visible;
+    var list = (Array.isArray(p.list) ? p.list : []).filter(function (r) { return r && r.k && +r.s && +r.e > t; }).slice(0, 200).map(function (r) {
+      return { k: clean(r.k, 80), s: +r.s, e: +r.e, t: clean(r.t), ch: clean(r.ch, 80), at: +r.s - before };
+    });
+    var want = {};
+    Object.keys(state.lists).forEach(function (q) { if (q !== pid) (state.lists[q] || []).forEach(function (r) { if (r.e > t) want[nameOf(idOf(q, r))] = 1; }); });
+    list.forEach(function (r) { want[nameOf(idOf(pid, r))] = 1; });
+    var gone = Object.keys(state.names).filter(function (n) { return !want[n]; });
+    var old = {}; (state.lists[pid] || []).forEach(function (r) { old[nameOf(idOf(pid, r))] = r.at; });
+    state.lists[pid] = list;
+    var made = 0;
+    list.forEach(function (r) {
+      var id = idOf(pid, r), name = nameOf(id);
+      if (state.names[name] && old[name] === r.at) return;          // already scheduled for this time
+      made++;
+      call(AM + '/create', {
+        activity: {
+          name: name, description: 'TiviBro reminder: ' + r.t,
+          type: { foreground: true, persist: true },
+          schedule: { start: utc(Math.max(r.at, t + 5000)) },
+          callback: { method: SELF + '/fire', params: { id: id, pid: pid, k: r.k, s: r.s, e: r.e, t: r.t, ch: r.ch } }
+        },
+        start: true, replace: true
+      }, function (res) {
+        if (res && res.returnValue === false) log({ lv: 'error', event: 'reminder not scheduled', e: res.errorText || res.errorCode, t: r.t });
+      });
+      state.names[name] = 1;
+    });
+    gone.forEach(function (n) { delete state.names[n]; call(AM + '/cancel', { activityName: n }, function () {}); });
+    // Lists of playlists whose reminders have all passed.
+    Object.keys(state.lists).forEach(function (q) { state.lists[q] = state.lists[q].filter(function (r) { return r.e > t; }); if (!state.lists[q].length && q !== pid) delete state.lists[q]; });
+    save();
+    log({ lv: 'info', event: 'reminders', pid: pid, count: list.length, scheduled: made, cancelled: gone.length, visible: visible });
+    return { count: list.length, scheduled: made, cancelled: gone.length };
+  }
+
+  function still(p) {
+    var l = state.lists[p.pid];
+    if (!l) return !Object.keys(state.lists).length;      // nothing known (file lost): trust the callback
+    return l.some(function (r) { return r.k === p.k && r.s === +p.s; });
+  }
+  function when(ms) { var d = new Date(ms), h = d.getHours(), m = d.getMinutes(); return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + (h >= 12 ? 'pm' : 'am'); }
+
+  // Called by the activity manager at reminder time.
+  function fire(p, done) {
+    var t = now(), act = p && p.$activity && p.$activity.activityId;
+    function finish(what) {
+      if (act) call(AM + '/complete', { activityId: act }, function () {});
+      var name = nameOf(String(p.id || idOf(p.pid, p))); delete state.names[name]; save();
+      log({ lv: 'info', event: 'reminder ' + what, t: p.t });
+      if (done) done(what);
+    }
+    if (!p || !p.k) return finish('ignored (no channel)');
+    if (!still(p)) return finish('skipped (removed in the app)');
+    if (+p.e <= t) return finish('skipped (already over)');
+    if (visible) return finish('left to the app (it is on screen)');
+    var started = +p.s <= t - 60000;
+    var title = started ? 'Started at ' + when(+p.s) : +p.s > t + 30000 ? 'Starts at ' + when(+p.s) : 'Starting now';
+    var msg = '<h3>' + title + ': ' + html(clean(p.t)) + '</h3>' + (p.ch ? 'On ' + html(clean(p.ch, 80)) + ' in TiviBro' : 'In TiviBro');
+    var launch = { id: APP, params: { reminder: { pid: p.pid, k: p.k, s: +p.s } } };
+    call('luna://com.webos.notification/createAlert', {
+      sourceId: APP, message: msg,
+      buttons: [{ label: 'Watch', onclick: 'luna://com.webos.applicationManager/launch', params: launch }, { label: 'Dismiss' }]
+    }, function (res) {
+      if (res && res.returnValue !== false) return finish('shown');
+      log({ lv: 'warn', event: 'alert refused, using a toast', e: res && (res.errorText || res.errorCode) });
+      call('luna://com.webos.notification/createToast', { sourceId: APP, message: msg + '<br>Select to watch', onclick: { appId: APP, params: launch.params }, noaction: false, persistent: true }, function (r2) {
+        if (r2 && r2.returnValue === false) log({ lv: 'error', event: 'toast refused', e: r2.errorText || r2.errorCode });
+        finish(r2 && r2.returnValue === false ? 'not shown' : 'shown as a toast');
+      });
+    });
+  }
+
+  return { set: set, fire: fire, setVisible: function (v) { visible = !!v; }, get visible() { return visible; }, get state() { return state; }, nameOf: nameOf, idOf: idOf };
+}
+
+module.exports = { create: create };

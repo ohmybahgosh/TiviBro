@@ -334,7 +334,9 @@ function backup(E, L, H, done) {
 step(function service(next) {
   // service.js with a stand-in for webOS's webos-service module
   var handlers = {}, origResolve = Module._resolveFilename;
+  var lunaCalls = [];
   function Stub() { this.activityManager = { create: function (n, cb) { cb({ id: 1 }); }, complete: function () {} }; }
+  Stub.prototype.call = function (uri, params, cb) { lunaCalls.push({ uri: uri, params: params }); setTimeout(function () { cb({ payload: { returnValue: true } }); }, 1); };
   Stub.prototype.register = function (name, fn, cancel) { handlers[name] = { fn: fn, cancel: cancel }; };
   require.cache['webos-service-stub'] = { id: 'webos-service-stub', filename: 'webos-service-stub', loaded: true, exports: Stub };
   Module._resolveFilename = function (req) { if (req === 'webos-service') return 'webos-service-stub'; return origResolve.apply(this, arguments); };
@@ -347,7 +349,17 @@ step(function service(next) {
       ok('and answers', !e && r.statusCode === 200);
       handlers.status.fn({ respond: function (s) {
         ok('status reports Node and subscribers', s.node === process.version && s.subscribers === 1);
-        next();
+        // Reminders while TiviBro is closed (remind.js): scheduled with the activity manager, then an alert.
+        var t = Date.now() + 3600e3;
+        handlers.reminders.fn({ payload: { pid: 'p1', before: 2, visible: false, list: [{ k: 'k1', s: t, e: t + 3600e3, t: 'Show', ch: 'Chan' }] }, respond: function (r) {
+          var made = lunaCalls.filter(function (c) { return /activitymanager\/create$/.test(c.uri); })[0];
+          ok('reminders: scheduled with the activity manager', r.returnValue && r.scheduled === 1 && made && made.params.activity.callback.method === 'luna://app.tivibro.tv.service/fire', JSON.stringify(r));
+          handlers.fire.fn({ payload: made.params.activity.callback.params, respond: function (f) {
+            ok('reminders: at reminder time the TV shows an alert', f.result === 'shown' && lunaCalls.some(function (c) { return /createAlert$/.test(c.uri); }), JSON.stringify(f));
+            try { require('fs').unlinkSync(path.join(SVC, 'reminders.json')); } catch (e) {}
+            next();
+          } });
+        } });
       } });
     });
   } });

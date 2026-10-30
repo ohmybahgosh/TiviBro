@@ -212,31 +212,62 @@ var Views = (function () {
       L.addWatch(playing.k, 5);
       if (!recentDone && now - playStart > 8000) { recentDone = true; L.touchRecent(playing.k); }
     }
-    var rem = Store.edits.reminders, before = (+Store.settings.remindBefore || 0) * 60000;
-    for (var i = 0; i < rem.length; i++) {
-      var r = rem[i];
-      if (r.s - before <= now) {
-        rem.splice(i, 1); Store.saveEdits();
-        var c = L.find(r.k);
-        if (c && r.e > now && !UI.modalOpen) {
-          var watchIt = function () { startChannel(c, false, function () { if (!full) goFull(); else osd(true); }); };
-          if (Store.settings.remindAction === 'switch') { U.toast('Reminder: switching to ' + L.name(c) + ' for ' + r.t, 4000); watchIt(); }
-          else {
-            UI.menu('Starting ' + (r.s > now ? 'at ' + U.hhmm(r.s) : 'now') + ':  ' + r.t, [
-              { label: 'Watch ' + L.name(c), action: watchIt },
-              { label: 'Dismiss' }
-            ]);
-            var closeAfter = (+Store.settings.remindTimeout || 20) * 1000;
-            setTimeout(function () { if (UI.modalOpen && document.getElementById('modalTitle').textContent.indexOf(r.t) >= 0) UI.close(); }, closeAfter);
-          }
-        }
-        break;
-      }
-    }
+    // Reminders wait while TiviBro is in the background (the TV's own alert covers that time, see
+    // remind.js) and while a menu is open, so none is used up unseen.
+    if (!document.hidden && !UI.modalOpen) dueReminder(now);
     if (sleepAt) {
       if (now >= sleepAt) { sleepAt = 0; if (full) exitFull(); Player.stop(); playing = null; stage.classList.add('off'); U.toast('Sleep timer: playback stopped'); }
       else if (sleepAt - now < 60000 && !sleepWarned) { sleepWarned = true; U.toast('Sleep timer: stopping in 1 minute'); }
     }
+  }
+
+  function dueReminder(now) {
+    var rem = Store.edits.reminders, before = (+Store.settings.remindBefore || 0) * 60000;
+    for (var i = 0; i < rem.length; i++) {
+      var r = rem[i];
+      if (r.s - before > now) continue;
+      rem.splice(i, 1); Store.saveEdits();
+      var c = L.find(r.k), p = { s: r.s, e: r.e, t: r.t };
+      if (!c) return;
+      var late = r.s < now - 120000;
+      // Over while TiviBro was away: offer it from catch-up, otherwise let it go.
+      if (r.e <= now) {
+        if (c.arch && r.s > now - c.arch * 86400e3) UI.menu('You missed it:  ' + r.t, [
+          { label: 'Watch it from the start', sub: 'catch-up on ' + L.name(c) + ', aired ' + U.hhmm(r.s), action: function () { playCatchup(c, p, 0); } },
+          { label: 'Dismiss' }
+        ]);
+        return;
+      }
+      var watchIt = function () { startChannel(c, false, function () { if (!full) goFull(); else osd(true); }); };
+      if (Store.settings.remindAction === 'switch' && !late) { U.toast('Reminder: switching to ' + L.name(c) + ' for ' + r.t, 4000); watchIt(); return; }
+      UI.menu((late ? 'Started at ' + U.hhmm(r.s) : 'Starting ' + (r.s > now ? 'at ' + U.hhmm(r.s) : 'now')) + ':  ' + r.t, [
+        { label: 'Watch ' + L.name(c), sub: late ? 'live' : '', action: watchIt },
+        late && c.arch && { label: 'Watch from the start', sub: 'catch-up', action: function () { playCatchup(c, p, 0); } },
+        { label: 'Dismiss' }
+      ]);
+      var closeAfter = (+Store.settings.remindTimeout || 20) * 1000;
+      setTimeout(function () { if (UI.modalOpen && document.getElementById('modalTitle').textContent.indexOf(r.t) >= 0) UI.close(); }, closeAfter);
+      return;
+    }
+  }
+  /* Watch pressed on the TV's reminder alert (TiviBro opened or brought forward with launch params). */
+  function openReminder(q) {
+    var now = Date.now(), rem = Store.edits.reminders;
+    var i = rem.findIndex(function (r) { return r.k === q.k && r.s === +q.s; });
+    var r = i >= 0 ? rem.splice(i, 1)[0] : null;
+    if (r) Store.saveEdits();
+    var c = L.find(q.k);
+    if (!c) { U.toast('That channel is not in this playlist any more'); return; }
+    Log.info('views', 'Opened from a reminder: ' + (r ? r.t : q.k));
+    var p = r ? { s: r.s, e: r.e, t: r.t } : null;
+    if (UI.modalOpen) UI.close();
+    if (p && p.e <= now && c.arch) return playCatchup(c, p, 0);
+    if (p && p.s < now - 120000 && c.arch) {
+      startChannel(c, false, goFull);
+      UI.menu('Started at ' + U.hhmm(p.s) + ':  ' + p.t, [{ label: 'Keep watching live' }, { label: 'Watch from the start', sub: 'catch-up', action: function () { playCatchup(c, p, 0); } }]);
+      return;
+    }
+    startChannel(c, false, goFull);
   }
 
   function reload(keepGroup) {
@@ -1392,7 +1423,7 @@ var Views = (function () {
   return {
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, playVod: playVod,
-    QP_BUTTONS: QP_BUTTONS, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; },
     restoreKeys: function () { UI.setHandler(full ? fullKeys : liveKeys); },

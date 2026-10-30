@@ -255,7 +255,7 @@ var App = (function () {
     Library.set(data);
     Logos.load(data);
     Vod.reset();
-    if (!ready) { Views.init(); Watch.start(); ready = true; }
+    if (!ready) { Views.init(); Watch.start(); Remind.start(); ready = true; }
     window.__tbBooted = true;              // compat.js shows an error screen if errors stop the start
     Views.stopAll();
     Views.reload(false);
@@ -266,6 +266,7 @@ var App = (function () {
     // Guide loads after first paint so it never delays the channel list.
     setTimeout(function () { Epg.init(Library); }, fromCache ? 1500 : 300);
     Views.resume();
+    if (pendingRem) { var pr = pendingRem; pendingRem = null; setTimeout(function () { openReminder(pr); }, 600); }
     if (tourNext) { tourNext = false; setTimeout(function () { if (!Tour.isOpen) Tour.open({ first: true }); }, 400); }
   }
 
@@ -356,6 +357,22 @@ var App = (function () {
     var eh = +p.epgRefresh;
     if (Epg.xml && !Epg.loading && eh > 0 && Date.now() - (Epg.status.at || 0) > eh * 3600e3) Epg.refresh(Library, true);
   }, 30 * 60e3);
+
+  /* Watch on the TV's reminder alert: TiviBro starts with launch params, or (already running)
+     gets them in webOSRelaunch.  A reminder for another playlist switches to it first. */
+  var pendingRem = Remind.launchParams();
+  function openReminder(r) {
+    if (r.pid && r.pid !== Store.settings.active && Store.settings.playlists.some(function (p) { return p.id === r.pid; })) { pendingRem = r; switchPlaylist(r.pid); return; }
+    Views.openReminder(r);
+  }
+  document.addEventListener('webOSRelaunch', function (e) {
+    var sys = window.webOSSystem || window.PalmSystem;
+    try { if (sys && sys.activate) sys.activate(); } catch (err) {}
+    var r = Remind.params(e && e.detail);
+    if (!r) return;
+    Log.info('app', 'Brought forward by a reminder');
+    if (ready && Library.count()) openReminder(r); else pendingRem = r;
+  });
 
   function switchPlaylist(id) {
     if (ready) Views.stopAll();

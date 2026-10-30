@@ -10,12 +10,14 @@
   "bgColor": "#0b0e1a",
   "resolution": "1920x1080",
   "disableBackHistoryAPI": true,
-  "handlesRelaunch": false,
+  "handlesRelaunch": true,
   "transparent": false,
   "requiredMemory": 220,
   "splashBackground": "img/splash.png",
   "requiredACG": [
     "systemconfig.query",
-    "activity.operation"
+    "activity.operation",
+    "application.launcher",
+    "notification.operation"
   ]
 }
