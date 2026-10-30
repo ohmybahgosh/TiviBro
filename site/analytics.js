@@ -10,10 +10,19 @@
   window.dataLayer = window.dataLayer || [];
   function gtag() { window.dataLayer.push(arguments); }
   window.gtag = window.gtag || gtag;
+  function internal() {
+    var m = /[?&]internal=([01])/.exec(location.search);
+    if (m) { try { if (m[1] === '1') localStorage.setItem('tivibro.internal', '1'); else localStorage.removeItem('tivibro.internal'); } catch (e) {} }
+    try { return localStorage.getItem('tivibro.internal') === '1'; } catch (e) { return false; }
+  }
   function load() {
     if (loaded || !ID) return; loaded = true;
     gtag('js', new Date());
-    gtag('config', ID, { anonymize_ip: true, allow_google_signals: false, allow_ad_personalization_signals: false });
+    var cfg = { anonymize_ip: true, allow_google_signals: false, allow_ad_personalization_signals: false };
+    // Your own visits: open tivibro.app/?internal=1 once in each browser (?internal=0 undoes it).  GA4's
+    // Internal traffic data filter drops them from the reports.
+    if (internal()) cfg.traffic_type = 'internal';
+    gtag('config', ID, cfg);
     var s = document.createElement('script'); s.async = true; s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(ID);
     document.head.appendChild(s);
   }
