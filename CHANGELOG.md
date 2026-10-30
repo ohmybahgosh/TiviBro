@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 16, 2026-10-30)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 16
 
 - **Send a report without a GitHub account.**  The web editor's **Report a problem** page has **Send report**: one tap and it becomes an issue on TiviBro's GitHub page (labelled from-tv), with the log folded underneath and a link to follow it.  It goes through a small relay (relay/ in the repo, a Cloudflare Worker) that masks logins and server names again and limits how many reports one network can send.  The GitHub form is still there for people who want replies by email.
 - README and tivibro.app explain **Report a problem**: a README section with the steps and what gets masked, a row in "What no other IPTV player does", an FAQ answer and feature cards on the website, and the footer's Report a bug link opens GitHub's issue forms.
 
-## 0.6.0 (alpha 15, 2026-10-30)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 15
+### In alpha 15
 
 - **Report a problem.**  Settings > Diagnostics > **Report a problem** shows a QR code.  Your phone opens a new **Report a problem** page in the web editor: say what happened, read everything the TV adds (version, TV model, a few settings, the app and network helper logs), save the log file, and **Open the GitHub form** opens a bug report already filled in.  Logins, tokens and every provider and guide server's name are taken out first.
 - **Report a problem from the first screen** too, for when the login won't work: a **Report a problem** button beside View log shows the QR code (without a Turn off button there, since the first screen needs the editor), and the editor's Report a problem page is open before a playlist is added.  Any server address in the report that TiviBro doesn't know yet, like one typed but not saved, is replaced with <server>.
