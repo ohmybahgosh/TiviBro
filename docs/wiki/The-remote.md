@@ -25,6 +25,7 @@ A few things work the way you would guess from other TV apps:
 
 - Channel lists wrap around: **▲** on the first channel goes to the last.  Holding an arrow stops at the end instead of flying past it.  Group lists don't wrap.
 - **▲** at the top of a list never opens the menu by surprise.  **◀** or **Back** does.
+- **Leaving TiviBro:** press **Back** until the groups show on the home screen; it says **Press Back again to exit**, and one more **Back** closes the app.  The first screen works the same way.
 - In a confirmation ("Delete this playlist?"), **Cancel** is selected first, so a stray **OK** never deletes anything.
 - With the Magic Remote, clicking outside a pop-up closes it, clicking the progress bar in a movie or catch-up jumps there, and on Settings rows you can click the **‹ ›** arrows to change a value.
 

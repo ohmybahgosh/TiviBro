@@ -386,8 +386,11 @@ var Views = (function () {
      onBack restores the screen's own keys. */
   var navOnBack = null;
   function closeNav() { document.body.classList.remove('nav-open', 'nav-peek'); document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('focus'); }); }
-  function tabBar(onBack) {
+  /* armExit: opened with Back from the home screen's top level.  Then "Press Back again to exit" shows
+     at once, and the next Back on the menu bar closes TiviBro (two presses, like TiviMate). */
+  function tabBar(onBack, armExit) {
     navOnBack = onBack;
+    if (armExit && tab === home() && Store.settings.exitTwice !== false) { backT = Date.now(); U.toast('Press Back again to exit', 2500); }
     tabSel = Math.max(0, tabs.indexOf(tab));
     var tabEls = function () { return document.querySelectorAll('.tab'); };
     var paint = function () { tabEls().forEach(function (t, i) { t.classList.toggle('focus', i === tabSel); }); };
@@ -401,20 +404,31 @@ var Views = (function () {
       if (a === 'up') { tabSel = Math.max(0, tabSel - 1); paint(); }
       else if (a === 'down') { tabSel = Math.min(tabs.length - 1, tabSel + 1); paint(); }
       else if (a === 'ok' || a === 'right') { done(); if (tabs[tabSel] === tab) onBack(); else switchTab(tabs[tabSel]); }
-      else if (a === 'back') { done(); backFromBar(onBack); }
+      else if (a === 'back') {
+        if (tab !== home()) { done(); switchTab(home()); }
+        else if (Store.settings.exitTwice !== false && Date.now() - backT > 2500) { backT = Date.now(); U.toast('Press Back again to exit', 2500); }
+        else { done(); exitNow(); }
+      }
       return true;
     });
   }
 
-  // Back on the menu bar: other screens go home; on the home screen, back to the picture or exit.
-  function backFromBar(onBack) {
-    if (tab !== home()) return switchTab(home());
-    if (onBack) onBack();
-    exitApp(true);
-  }
+  // Back to the top of the home screen arms the exit: one more Back closes TiviBro.
+  function armExit() { if (tab === home() && Store.settings.exitTwice !== false) { backT = Date.now(); U.toast('Press Back again to exit', 2500); } }
+  function exitArmed() { return tab === home() && Date.now() - backT < 2500; }
   function exitApp(confirmFirst) {
-    if ((confirmFirst || Store.settings.exitTwice) && Date.now() - backT > 2500) { backT = Date.now(); U.toast('Press Back again to exit', 2000); return; }
-    if (window.webOS && webOS.platformBack) webOS.platformBack(); else window.close();
+    if ((confirmFirst || Store.settings.exitTwice) && Date.now() - backT > 2500) { backT = Date.now(); U.toast('Press Back again to exit', 2500); return; }
+    exitNow();
+  }
+  /* Close TiviBro.  window.close() is how a webOS web app quits; if the TV ignores it, hand Back to the
+     system (PalmSystem.platformBack), which leaves the app. */
+  function exitNow() {
+    Log.info('views', 'Exit from the remote');
+    try { stopAll(); } catch (e) {}
+    try { window.close(); } catch (e) {}
+    setTimeout(function () {
+      try { if (window.webOS && webOS.platformBack) webOS.platformBack(); else if (window.PalmSystem && PalmSystem.platformBack) PalmSystem.platformBack(); } catch (e) {}
+    }, 300);
   }
 
   // Buttons that follow the remote map in the channel list.  Arrows, OK and Back stay fixed.
@@ -444,7 +458,7 @@ var Views = (function () {
         if (groupLocked(g)) Parental.gate('channels', { k: '', g: g.id }, go);
         else { if (g.id !== curGroup) showGroup(g.id); setZone('channels'); }
       }
-      else if (a === 'back') openNav();
+      else if (a === 'back') { if (exitArmed()) exitApp(true); else tabBar(function () { UI.setHandler(liveKeys); setZone(liveZone); }, true); }
       return true;
     }
     if (a === 'up') chansVL.move(-1, true);
@@ -459,7 +473,7 @@ var Views = (function () {
       if (!playing || playing.k !== c.k || mode !== 'live') startChannel(c, false, goFull);
       else goFull();
     }
-    else if (a === 'back') setZone('groups');
+    else if (a === 'back') { setZone('groups'); armExit(); }
     return true;
   }
 
@@ -1340,7 +1354,7 @@ var Views = (function () {
   return {
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, playVod: playVod,
-    QP_BUTTONS: QP_BUTTONS, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    QP_BUTTONS: QP_BUTTONS, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; },
     restoreKeys: function () { UI.setHandler(full ? fullKeys : liveKeys); },
@@ -1771,7 +1785,7 @@ var Guide = (function () {
     }, L.numberCanGrow(numBuf) ? 1200 : 0);
   }
 
-  function backToMenu() { Views.tabBar(function () { UI.setHandler(keys); setZone('groups'); }); }
+  function backToMenu() { Views.tabBar(function () { UI.setHandler(keys); setZone('groups'); }, true); }
   function groupKeys(a) {
     if (a === 'up') groupsVL.move(-1);
     else if (a === 'down') groupsVL.move(1);
@@ -1779,7 +1793,7 @@ var Guide = (function () {
     else if (a === 'chdown') groupsVL.page(1);
     else if (a === 'right' || a === 'ok') enterGrid();
     else if (a === 'left') backToMenu();
-    else if (a === 'back') backToMenu();
+    else if (a === 'back') { if (Views.exitArmed()) Views.exitApp(true); else backToMenu(); }
     else if (a === 'hold' || a === 'red' || a === 'info') { var g = groupsVL.current(); if (g) Views.groupMenu(g); }
     else if (a === 'playpause') watchPreview();
     else if (a.indexOf('num') === 0) numJump(a.slice(3));
@@ -1802,7 +1816,7 @@ var Guide = (function () {
     else if (a === 'blue') Views.switchTab('settings');
     else if (a === 'playpause') { if (!watchPreview()) activate(); }
     else if (a === 'stop') { if (previewing()) { Views.stopAll(); draw(); hints(); } }
-    else if (a === 'back') { if (when() !== 'now') jumpNow(); else setZone('groups'); }
+    else if (a === 'back') { if (when() !== 'now') jumpNow(); else { setZone('groups'); Views.armExit(); } }
     else if (a.indexOf('num') === 0) numJump(a.slice(3));
     return true;
   }

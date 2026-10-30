@@ -34,6 +34,7 @@ function init(opts) {
     const OFF = ${opts.time} - Date.now(), RD = Date;
     class D extends RD { constructor(...a) { if (!a.length) super(RD.now() + OFF); else super(...a); } static now() { return RD.now() + OFF; } }
     window.Date = D;
+    window.close = function () { window.__exitTried = (window.__exitTried || 0) + 1; };   // Back twice must not end a recording
     ${opts.fresh ? `if (!sessionStorage.getItem('demoInit')) { localStorage.clear(); sessionStorage.setItem('demoInit', '1'); }` : `if (!sessionStorage.getItem('demoInit')) { localStorage.clear();
       localStorage.setItem('tivibro.settings', ${JSON.stringify(JSON.stringify(Object.assign({}, SETTINGS, opts.settings || {})))});
       localStorage.setItem('tivibro.edits.p1', ${JSON.stringify(JSON.stringify(EDITS))});

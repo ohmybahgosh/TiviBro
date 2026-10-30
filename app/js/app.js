@@ -204,6 +204,7 @@ var App = (function () {
         else if (cur.kind === 'cancel') leave();
       }
       else if (a === 'back' && canCancel) leave();
+      else if (a === 'back' && !target) Views.exitApp(true);      // first screen: Back twice closes TiviBro
       return true;
     });
     render();

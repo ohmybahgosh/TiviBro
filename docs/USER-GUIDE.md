@@ -127,6 +127,7 @@ A few things work the way you would guess from other TV apps:
 
 - Channel lists wrap around: **▲** on the first channel goes to the last.  Holding an arrow stops at the end instead of flying past it.  Group lists don't wrap.
 - **▲** at the top of a list never opens the menu by surprise.  **◀** or **Back** does.
+- **Leaving TiviBro:** press **Back** until the groups show on the home screen; it says **Press Back again to exit**, and one more **Back** closes the app.  The first screen works the same way.
 - In a confirmation ("Delete this playlist?"), **Cancel** is selected first, so a stray **OK** never deletes anything.
 - With the Magic Remote, clicking outside a pop-up closes it, clicking the progress bar in a movie or catch-up jumps there, and on Settings rows you can click the **‹ ›** arrows to change a value.
 
@@ -674,7 +675,7 @@ Colours, sizes and what's on screen.  Every change shows straight away.
 | **Show the date with the clock** | On · **Off** | Adds the date beside the time. |
 | **Show channel numbers** | **On** · Off | Numbers beside channel names in lists and the guide. |
 | **Info panel stays for** | 3 s · **5 s** · 8 s · 12 s | How long the info panel stays up in fullscreen. |
-| **Press Back twice to exit** | **On** · Off | Asks for a second **Back** before leaving TiviBro, so a stray press doesn't close it. |
+| **Press Back twice to exit** | **On** · Off | Back to the groups on the home screen (or the first screen) shows **Press Back again to exit**; a second **Back** closes TiviBro.  Off: Back on the menu bar closes it at once. |
 
 ### Settings: Parental controls
 

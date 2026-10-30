@@ -26,7 +26,7 @@ Colours, sizes and what's on screen.  Every change shows straight away.
 | **Show the date with the clock** | On · **Off** | Adds the date beside the time. |
 | **Show channel numbers** | **On** · Off | Numbers beside channel names in lists and the guide. |
 | **Info panel stays for** | 3 s · **5 s** · 8 s · 12 s | How long the info panel stays up in fullscreen. |
-| **Press Back twice to exit** | **On** · Off | Asks for a second **Back** before leaving TiviBro, so a stray press doesn't close it. |
+| **Press Back twice to exit** | **On** · Off | Back to the groups on the home screen (or the first screen) shows **Press Back again to exit**; a second **Back** closes TiviBro.  Off: Back on the menu bar closes it at once. |
 
 ---
 
