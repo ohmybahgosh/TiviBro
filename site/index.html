@@ -47,6 +47,9 @@
     <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 6.1A9.9 9.9 0 0 1 12 6c5 0 8.5 4.5 9.5 6a17 17 0 0 1-2.7 3.2M6.6 7.6C4.6 9 3.2 10.9 2.5 12c1 1.5 4.5 6 9.5 6 1.6 0 3-.4 4.2-1.1M9.9 10.1a3 3 0 0 0 4 4"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></symbol>
+    <symbol id="i-part" viewBox="0 0 24 24"><path d="M7 12h10"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
     <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" stroke="none" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></symbol>
   </defs>
@@ -93,16 +96,13 @@
       </ul>
     </div>
     <div class="hero-stage" aria-label="TiviBro on a TV, set up from a phone">
-      <div class="tv" data-depth="0.06">
-        <div class="tv-screen"><video src="media/guide.mp4" poster="img/guide-poster.webp" autoplay muted loop playsinline preload="metadata" aria-label="The TiviBro guide: browsing, previewing and going fullscreen"></video><i class="glare"></i></div>
+      <div class="tv">
+        <div class="tv-screen"><button class="expand" type="button" aria-label="Watch full screen"><svg class="i"><use href="#i-expand"/></svg></button><video class="bigvid" src="media/guide.mp4" poster="img/guide-poster.webp" autoplay muted loop playsinline preload="metadata" aria-label="The TiviBro guide: browsing, previewing and going fullscreen"></video><i class="glare"></i></div>
         <div class="tv-stand"></div>
       </div>
-      <div class="phone hero-phone" data-depth="0.16">
+      <div class="phone hero-phone" data-depth="0.08">
         <div class="phone-screen"><img src="img/shots/editor-phone-welcome.webp" alt="TiviBro's editor on a phone, opened by scanning the QR code" width="390" height="844"></div>
       </div>
-      <span class="float-chip c1" data-depth="0.28"><svg class="i"><use href="#i-catchup"/></svg>Catch-up</span>
-      <span class="float-chip c2" data-depth="0.36"><svg class="i"><use href="#i-hdr"/></svg>4K · Dolby Vision · Atmos</span>
-      <span class="float-chip c3" data-depth="0.22"><svg class="i"><use href="#i-phone"/></svg>Scan to set up</span>
     </div>
   </div>
   <a class="scroll-cue" href="#features" aria-label="Scroll down"><span></span></a>
@@ -202,27 +202,26 @@
       <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-lock"/></svg></span><h3>Restore from the first screen</h3><p>One AES-256 locked file with every playlist, login, group and setting, restored from your phone before you touch a setting.</p></article>
     </div>
 
-    <div class="compare reveal">
-      <table>
-        <thead><tr><th></th><th>TiviBro</th><th>TiviMate</th></tr></thead>
-        <tbody>
-          <tr><td>Runs on LG webOS TVs</td><td class="yes">Yes</td><td class="no">No, Android TV and Fire TV</td></tr>
-          <tr><td>Price</td><td class="yes">Free, every feature</td><td>Free version, Premium paid</td></tr>
-          <tr><td>Catch-up, multiview, multiple playlists, backups</td><td class="yes">Included</td><td>Premium</td></tr>
-          <tr><td>Open source</td><td class="yes">Yes, MIT</td><td class="no">No</td></tr>
-          <tr><td>Set up by scanning a QR code with your phone</td><td class="yes">Yes, from the first screen</td><td class="no">No, type it with the remote</td></tr>
-          <tr><td>Guided set-up built from your playlist</td><td class="yes">Countries, feeds, city, events, logos, look</td><td class="no">No</td></tr>
-          <tr><td>Sports and PPV events read from channel names</td><td class="yes">Yes</td><td class="no">No</td></tr>
-          <tr><td>Edit your playlist from a phone or computer, with autosaved drafts</td><td class="yes">Yes</td><td class="no">On the TV only</td></tr>
-          <tr><td>Switches to another version of a dead channel by itself</td><td class="yes">Yes</td><td class="no">No</td></tr>
-          <tr><td>Name clean-up</td><td class="yes">Preloaded rules for about 250 country codes, tags and symbols</td><td>Your own prefix and suffix lists</td></tr>
-          <tr><td>Hide channels with nothing on</td><td class="yes">Yes</td><td class="no">No</td></tr>
-          <tr><td>Pick your city for every local channel group at once</td><td class="yes">Yes</td><td class="no">One group at a time</td></tr>
-          <tr><td>Keep East or West feeds in one step</td><td class="yes">Yes</td><td class="no">No</td></tr>
-          <tr><td>Fills in missing channel logos</td><td class="yes">Two open logo libraries, two styles</td><td class="no">No</td></tr>
-          <tr><td>Recording</td><td>Not yet</td><td class="yes">Premium</td></tr>
-        </tbody>
-      </table>
+    <div class="vs reveal">
+      <div class="vs-head"><div class="vs-f"><span class="kicker">Side by side</span></div><div class="vs-col me"><b>TiviBro</b><span>Free, every feature</span></div><div class="vs-col"><b>TiviMate</b><span>Free, Premium paid</span></div></div>
+      <div class="vs-group">Getting started</div>
+      <div class="vs-row"><div class="vs-f">Runs on LG webOS TVs</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Yes, webOS 4 to 26</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>No, Android TV and Fire TV</span></div></div>
+      <div class="vs-row"><div class="vs-f">Price</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Free, every feature</span></div><div class="vs-c part" data-l="TiviMate"><svg class="i"><use href="#i-part"/></svg><span>Premium for the good parts</span></div></div>
+      <div class="vs-row"><div class="vs-f">Open source</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Yes, MIT</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>No</span></div></div>
+      <div class="vs-row"><div class="vs-f">Set up by scanning a QR code with your phone</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>From the first screen</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>Type it with the remote</span></div></div>
+      <div class="vs-row"><div class="vs-f">Guided set-up built from your playlist</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Countries, feeds, city, events, logos, look</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>No</span></div></div>
+      <div class="vs-group">Taming the channel list</div>
+      <div class="vs-row"><div class="vs-f">Edit from a phone or computer, with autosaved drafts</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Yes</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>On the TV only</span></div></div>
+      <div class="vs-row"><div class="vs-f">Name clean-up</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>About 250 country codes, tags and symbols preloaded</span></div><div class="vs-c part" data-l="TiviMate"><svg class="i"><use href="#i-part"/></svg><span>Your own prefix and suffix lists</span></div></div>
+      <div class="vs-row"><div class="vs-f">Pick your city for every local group at once</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Yes, into one Local channels group</span></div><div class="vs-c part" data-l="TiviMate"><svg class="i"><use href="#i-part"/></svg><span>One group at a time</span></div></div>
+      <div class="vs-row"><div class="vs-f">Keep East or West feeds in one step</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Yes</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>No</span></div></div>
+      <div class="vs-row"><div class="vs-f">Sports and PPV events read from channel names</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Yes, with Events by time</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>No</span></div></div>
+      <div class="vs-row"><div class="vs-f">Hide channels with nothing on</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Yes, back when an event is named</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>No</span></div></div>
+      <div class="vs-row"><div class="vs-f">Fills in missing channel logos</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Two open libraries, two styles</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>No</span></div></div>
+      <div class="vs-group">Watching</div>
+      <div class="vs-row"><div class="vs-f">Catch-up, multiview, multiple playlists, backups</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Included</span></div><div class="vs-c part" data-l="TiviMate"><svg class="i"><use href="#i-part"/></svg><span>Premium</span></div></div>
+      <div class="vs-row"><div class="vs-f">Switches to another version of a dead channel</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Yes, by itself</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>No</span></div></div>
+      <div class="vs-row"><div class="vs-f">Recording</div><div class="vs-c me no" data-l="TiviBro"><svg class="i"><use href="#i-x"/></svg><span>Not yet</span></div><div class="vs-c part" data-l="TiviMate"><svg class="i"><use href="#i-part"/></svg><span>Premium</span></div></div>
       <p class="fine">TiviMate column from its own site and public guides, October 2026.  TiviMate is a great app; this is what TiviBro adds.</p>
     </div>
   </div>
@@ -267,8 +266,8 @@
       </ul>
     </div>
     <div class="layers" data-tilt>
-      <img class="layer l-back" data-speed="-0.05" loading="lazy" src="img/shots/tv-tour-locals.webp" alt="" width="1280" height="720">
-      <img class="layer l-front zoomable" data-speed="0.07" loading="lazy" src="img/shots/tv-tour-welcome.webp" alt="The set-up tour: what your playlist has" width="1280" height="720">
+      <img class="layer l-back" loading="lazy" src="img/shots/tv-tour-locals.webp" alt="" width="1280" height="720">
+      <img class="layer l-front zoomable" loading="lazy" src="img/shots/tv-tour-welcome.webp" alt="The set-up tour: what your playlist has" width="1280" height="720">
     </div>
   </div>
 </section>
@@ -287,7 +286,7 @@
       </ul>
     </div>
     <div class="layers">
-      <img class="layer l-solo zoomable" data-speed="0.06" loading="lazy" src="img/shots/tv-tour-logos.webp" alt="Channel logos from the logo library" width="1280" height="720">
+      <img class="layer l-solo zoomable" loading="lazy" src="img/shots/tv-tour-logos.webp" alt="Channel logos from the logo library" width="1280" height="720">
     </div>
   </div>
 </section>
@@ -306,8 +305,8 @@
       </ul>
     </div>
     <div class="layers">
-      <img class="layer l-back" data-speed="-0.05" loading="lazy" src="img/shots/tv-events-list.webp" alt="" width="1280" height="720">
-      <img class="layer l-front zoomable" data-speed="0.07" loading="lazy" src="img/shots/tv-events-guide.webp" alt="Event channels in the guide" width="1280" height="720">
+      <img class="layer l-back" loading="lazy" src="img/shots/tv-events-list.webp" alt="" width="1280" height="720">
+      <img class="layer l-front zoomable" loading="lazy" src="img/shots/tv-events-guide.webp" alt="Event channels in the guide" width="1280" height="720">
     </div>
   </div>
 </section>
@@ -327,8 +326,8 @@
       </ul>
     </div>
     <div class="layers">
-      <figure class="laptop" data-speed="0.05"><video src="media/live-edit.mp4" poster="img/live-edit-poster.webp" autoplay muted loop playsinline preload="none" aria-label="Hiding groups in the web editor while the TV follows"></video></figure>
-      <div class="phone layer-phone" data-speed="0.14"><div class="phone-screen"><img loading="lazy" src="img/shots/editor-phone-tools.webp" alt="Smart clean-up on a phone" width="390" height="844"></div></div>
+      <figure class="laptop"><button class="expand" type="button" aria-label="Watch full screen"><svg class="i"><use href="#i-expand"/></svg></button><video class="bigvid" src="media/live-edit.mp4" poster="img/live-edit-poster.webp" autoplay muted loop playsinline preload="none" aria-label="Hiding groups in the web editor while the TV follows"></video></figure>
+      <div class="phone layer-phone" data-speed="0.06"><div class="phone-screen"><img loading="lazy" src="img/shots/editor-phone-tools.webp" alt="Smart clean-up on a phone" width="390" height="844"></div></div>
     </div>
   </div>
   <div class="wrap thumbs reveal">
@@ -346,7 +345,7 @@
       <h2>New TV?  Everything back in a minute.</h2>
       <p>One file holds every playlist with its login, your groups, favorites, names, guide matches and settings, locked with your passphrase (AES-256-GCM) before it leaves the TV.  On a brand-new install, scan the QR code on the very first screen and restore it from your phone.</p>
     </div>
-    <div class="layers"><img class="layer l-solo zoomable" data-speed="0.06" loading="lazy" src="img/shots/tv-first-run.webp" alt="First start, with the QR code" width="1280" height="720"></div>
+    <div class="layers"><img class="layer l-solo zoomable" loading="lazy" src="img/shots/tv-first-run.webp" alt="First start, with the QR code" width="1280" height="720"></div>
   </div>
 </section>
 
@@ -486,13 +485,13 @@
 
   // Header, progress bar and parallax, in one animation frame per scroll
   var bar = $('#top-bar'), prog = $('#progress'), par = $$('[data-speed]'), hero = $('#hero'), depth = $$('[data-depth]');
-  var ticking = false;
+  var ticking = false, narrow = matchMedia('(max-width: 960px)');
   function frame() {
     ticking = false;
     var y = window.scrollY, h = document.documentElement.scrollHeight - innerHeight;
     bar.classList.toggle('scrolled', y > 10);
     prog.style.transform = 'scaleX(' + (h > 0 ? y / h : 0) + ')';
-    if (reduce) return;
+    if (reduce || narrow.matches) return;
     var vh = innerHeight;
     par.forEach(function (el) {
       var r = el.getBoundingClientRect(); if (r.bottom < -200 || r.top > vh + 200) return;
@@ -513,6 +512,18 @@
     // Cards: a soft light follows the pointer
     $$('.spot').forEach(function (c) { c.addEventListener('pointermove', function (e) { var r = c.getBoundingClientRect(); c.style.setProperty('--sx', (e.clientX - r.left) + 'px'); c.style.setProperty('--sy2', (e.clientY - r.top) + 'px'); }); });
   }
+
+  // Videos: full screen on a tap (on phones the picture is too small to read otherwise)
+  $$('.bigvid').forEach(function (v) {
+    function big() {
+      if (v.webkitEnterFullscreen && !v.requestFullscreen) { v.webkitEnterFullscreen(); return; }
+      var f = v.requestFullscreen || v.webkitRequestFullscreen; if (f) { var r = f.call(v); v.controls = true; if (r && r.then && screen.orientation && screen.orientation.lock) r.then(function () { return screen.orientation.lock('landscape'); }).catch(function () {}); }
+      else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
+    }
+    v.addEventListener('click', big);
+    var b = v.parentNode.querySelector('.expand'); if (b) b.addEventListener('click', big);
+  });
+  document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement) $$('.bigvid').forEach(function (v) { v.controls = false; v.play(); }); });
 
   // Gallery carousel buttons
   var car = $('#gallery');

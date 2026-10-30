@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- tivibro.app: the floating badges over the hero are gone, and only the phone moves (gently); pictures stay put.  The guide and web editor videos open full screen with a tap (and a full-screen button), so they're readable on a phone, where the phone mock-ups no longer cover them.  The TiviBro and TiviMate comparison is redesigned: grouped rows, a highlighted TiviBro column with check, cross and partial marks, a header that stays on screen, and one card per row on phones.
 - **Set-up tour: your choices on the summary.**  The last screen lists one line per step ("Keep USA", "Keep East, other feed's groups hidden", "Detroit in Local channels, network groups hidden"…); OK on one goes back to that step, and **Skip to the summary** returns.  The summary now starts on **Apply and start watching**.
 - Set-up tour: duplicates default to keeping the Full HD copy (the others stay under hold OK > Other versions, and TiviBro switches to one if yours stops working); the sports step is called **Sports and PPV** in the step list; the welcome card reads "channels in East + West"; and a logo library that can't be reached says so in plain words instead of a network error.
 - **Guide: a slimmer groups panel.**  The groups list now covers the channel column and no more, instead of a wide panel over the programmes (with logos only, it stays narrow too), and channel numbers no longer peek out beside it.  A group name too long to fit scrolls across while it's focused.
