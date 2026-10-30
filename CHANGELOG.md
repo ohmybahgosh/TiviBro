@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- Reminders also wait while **LG Gallery+** or **Line View** is on screen (found on a real 2022 C2 on webOS 25, where they are called `com.webos.app.lifeonscreen` and `com.webos.app.atelier`), as they already did for the screensaver, homebrew screensavers such as Aerial, and Always Ready.
-
-## 0.6.0 (alpha 20, 2026-10-30)
+## 0.6.0 (alpha 21, 2026-10-30)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 20
+### New in alpha 21
+
+- Reminders also wait while **LG Gallery+** or **Line View** is on screen (found on a real 2022 C2 on webOS 25, where they are called `com.webos.app.lifeonscreen` and `com.webos.app.atelier`), as they already did for the screensaver, homebrew screensavers such as Aerial, and Always Ready.
+
+### In alpha 20
 
 - **A guide for channels your provider leaves blank.**  After your guide sources and your provider's guide load, TiviBro looks up the channels that still have nothing in two free, community-run guides: epg.pw (20 countries, lighter files, tried first) and iptv-epg.org (70 countries, bigger and more complete).  Channels match by guide id, a US local station's call sign ("ABC (WXYZ) Detroit", "WXYZ-DT") or the name, East and West feeds kept apart, and only in their own country's guide when the country is known.  It never replaces a guide you have.  On by default; Settings > Playlists and guide > the playlist > **Public guide fill-in** turns it off, picks countries (automatic, or up to eight) and shows how many channels each guide filled in.  The TV downloads the files itself, at most twice a day, after your own guide is on screen, and keeps them; a file is skipped when every channel it could match is already filled in.  Programmes from it say "public guide", its channels can be picked in **Assign guide** and Smart match, guide search and the watchlist see them, and the web editor's Guide page has a card for it.  The set-up tour has a Guide step, and the connection test checks the public guides can be reached.  On a real playlist of 7,000 channels with no provider guide, the US files filled in 1,800 channels in about 10 seconds on a computer.
 - **Hidden, not gone: said where it matters.**  The set-up tour, Smart clean-up, the user guide, the README and tivibro.app now say plainly that the extra copies you hide are still backups (when the copy you keep stops working, TiviBro switches to one by itself), that the other East or West feed is not a backup, that hiding the network groups keeps your stations in Local channels, and that hidden groups leave the guide, All channels and Search but are never deleted.  The tour shows these as short notes under the choice they explain, and its summary says "Full HD shown, the rest kept as backups".
