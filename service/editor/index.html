@@ -631,8 +631,13 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
           <div class="row" style="margin-top:12px"><button class="small" id="rpReload">Read it again</button><span class="muted small">Do the thing that went wrong first, then read it again, so the log has it.</span></div>
         </div>
         <div class="card"><h3>Send it</h3>
-          <ol class="rpsteps"><li><b>Save the log file</b> (or copy it).</li><li><b>Open the GitHub form</b>: it is filled in with what you typed and the TV's details.  You need a free GitHub account.</li><li>Drag the log file into the <b>Screenshots or a video</b> box, tick the two boxes at the bottom and press <b>Create</b>.</li></ol>
-          <div class="row" style="gap:10px;flex-wrap:wrap"><button id="rpSave" disabled>Save the log file</button><button id="rpCopy" disabled>Copy the report</button><button class="primary" id="rpGo" disabled>Open the GitHub form</button></div>
+          <p>One tap, no account needed: it becomes a public issue on TiviBro's GitHub page, with the log folded underneath.  You get a link to follow it.</p>
+          <div class="row" style="gap:10px;flex-wrap:wrap"><button class="primary" id="rpSend" disabled>Send report</button></div>
+          <div id="rpSendMsg" style="margin-top:10px"></div>
+          <h3 style="margin-top:22px">Or with your own GitHub account</h3>
+          <p class="muted small">So GitHub tells you when someone answers.</p>
+          <ol class="rpsteps"><li><b>Save the log file</b> (or copy it).</li><li><b>Open the GitHub form</b>: it is filled in with what you typed and the TV's details.</li><li>Drag the log file into the <b>Screenshots or a video</b> box, tick the two boxes at the bottom and press <b>Create</b>.</li></ol>
+          <div class="row" style="gap:10px;flex-wrap:wrap"><button id="rpSave" disabled>Save the log file</button><button id="rpCopy" disabled>Copy the report</button><button id="rpGo" disabled>Open the GitHub form</button></div>
           <div id="rpGoMsg" style="margin-top:10px"></div>
         </div>
       </div>
@@ -1194,11 +1199,11 @@ function loadReport(force) {
   rpLoading = true; $('rpReload').disabled = true;
   var tick = cmdMsg('rpMsg', 'Asking the TV for its details and log…');
   command('report', {}, 45000, tick).then(function (r) {
-    RP = r.data; msg('rpMsg', '', '');
+    RP = r.data; msg('rpMsg', '', ''); rpSent = null; $('rpSend').textContent = 'Send report'; msg('rpSendMsg', '', '');
     $('rpFacts').innerHTML = RP.facts.map(function (f) { return '<b>' + esc(f[0]) + '</b><span>' + esc(f[1]) + '</span>'; }).join('') +
       '<b>Recent errors</b><span>' + (RP.trouble.length ? RP.trouble.length + ' in the log' : 'none') + '</span>';
     $('rpPre').textContent = RP.text; $('rpAll').classList.remove('hidden');
-    ['rpSave', 'rpCopy', 'rpGo'].forEach(function (id) { $(id).disabled = false; });
+    ['rpSave', 'rpCopy', 'rpGo', 'rpSend'].forEach(function (id) { $(id).disabled = false; });
   }, function (e) { msg('rpMsg', 'err', e.message); }).then(function () { rpLoading = false; $('rpReload').disabled = false; });
 }
 function rpFile() { return 'tivibro-report-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.txt'; }
@@ -1228,6 +1233,35 @@ $('rpCopy').onclick = function () {
   var t = RP.text, done = function () { msg('rpGoMsg', 'ok', 'Copied.  Paste it into the Log box on GitHub if you can\'t attach the file.'); };
   if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done, function () { msg('rpGoMsg', 'err', 'Your browser would not copy it.  Save the file instead.'); });
   else { var x = document.createElement('textarea'); x.value = t; document.body.appendChild(x); x.select(); try { document.execCommand('copy'); done(); } catch (e) {} x.remove(); }
+};
+/* Send report: through TiviBro's report relay (relay/worker.js, a Cloudflare Worker), which opens the
+   issue for people without a GitHub account.  Its address comes from tivibro.app/relay.json, so it can
+   move without a new release; if that or the relay can't be reached, the GitHub form still works. */
+var RELAY_CONFIG = 'https://tivibro.app/relay.json', rpSent = null;
+function rpFields() {
+  var f = { title: $('rpTitle').value.trim(), area: $('rpArea').value, often: $('rpOften').value, what: $('rpWhat').value.trim(),
+    steps: $('rpSteps').value.trim(), expected: $('rpExp').value.trim(), version: RP.version, tv: RP.tv, log: RP.text };
+  if (/Web editor/.test(f.area)) f.browser = navigator.userAgent.slice(0, 160);
+  return f;
+}
+$('rpSend').onclick = function () {
+  if (rpSent) { window.open(rpSent, '_blank', 'noopener'); return; }
+  if (!$('rpWhat').value.trim()) { $('rpWhat').focus(); msg('rpSendMsg', 'err', 'Say what happened first.'); return; }
+  var b = $('rpSend');
+  msg('rpSendMsg', 'busy', 'Sending…');
+  busyBtn(b, fetch(RELAY_CONFIG, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('The report service could not be found.'); return r.json(); })
+    .then(function (c) {
+      if (!c || !c.url) throw new Error('The report service is not available right now.');
+      return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rpFields()) });
+    })
+    .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok || !j.ok) throw new Error(j.error || 'The report could not be sent (' + r.status + ').'); return j; }); }))
+    .then(function (j) {
+      rpSent = j.url;
+      $('rpSend').textContent = 'Open issue #' + j.number;
+      msg('rpSendMsg', 'ok', 'Sent.  Thanks!  It is issue #' + j.number + ' on GitHub; the button opens it.');
+    }, function (e) {
+      msg('rpSendMsg', 'err', (e && e.message && !/Failed to fetch|NetworkError|Load failed/i.test(e.message) ? e.message : 'This phone or computer could not reach the report service.') + '  You can still send it with the GitHub form below.');
+    });
 };
 $('rpGo').onclick = function () {
   if (!$('rpWhat').value.trim()) { $('rpWhat').focus(); msg('rpGoMsg', 'err', 'Say what happened first.'); return; }

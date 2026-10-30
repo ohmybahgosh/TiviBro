@@ -22,7 +22,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await tv.keyboard.press('Enter'); await tv.waitForTimeout(400);
   const st = await tv.evaluate(() => WebEdit.status), pw = await tv.evaluate(() => WebEdit.password());
   const ctx = await b.newContext({ viewport: { width: 1300, height: 900 } }); const ed = await ctx.newPage(); ed.on('pageerror', e => errs.push('editor: ' + e.message));
-  let opened = null; ctx.on('page', p => { opened = p.url(); });
+  let opened = null; ctx.on('page', p => { if (!opened) opened = p.url(); });
   await ed.goto('http://127.0.0.1:' + st.port + '/#k=' + pw + '/report'); await ed.waitForTimeout(3000);
   await ed.waitForFunction(() => window.RP || document.querySelector('#rpMsg .err'), null, { timeout: 30000 });
   const rp = await ed.evaluate(() => RP);
@@ -35,6 +35,13 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ed.fill('#rpTitle', 'Guide froze'); await ed.fill('#rpWhat', 'It froze on Sports.'); await ed.fill('#rpSteps', '1. Open the guide'); await ed.fill('#rpExp', 'No freeze');
   const url = await ed.evaluate(() => rpUrl());
   ok('the GitHub address is the bug form, filled in, and short enough', /issues\/new\?template=1-bug\.yml/.test(url) && /what=It%20froze/.test(url) && /version=/.test(url) && url.length <= 7000 && url.indexOf('secretpass') < 0, url.length + ' ' + url.slice(0, 200));
+  // Send report goes through the relay named in tivibro.app/relay.json (both stubbed here).
+  let posted = null;
+  await ctx.route('https://tivibro.app/relay.json', r => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ url: 'https://relay.test/report' }) }));
+  await ctx.route('https://relay.test/report', r => { if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'POST' } }); posted = JSON.parse(r.request().postData()); r.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, url: 'https://github.com/ohmybahgosh/TiviBro/issues/7', number: 7 }) }); });
+  await ed.click('#rpSend'); await ed.waitForTimeout(1500);
+  const sent = await ed.evaluate(() => ({ btn: document.getElementById('rpSend').textContent, msg: document.getElementById('rpSendMsg').textContent }));
+  ok('Send report posts to the relay and links the new issue', posted && posted.what === 'It froze on Sports.' && /^# TiviBro problem report/.test(posted.log) && posted.log.indexOf('secretpass') < 0 && /issue #7/.test(sent.msg) && /#7/.test(sent.btn), JSON.stringify(sent));
   await ed.click('#rpGo'); await ed.waitForTimeout(1000);
   ok('the button opens GitHub', !!opened && /github\.com/.test(opened), opened);
   const dl = ed.waitForEvent('download'); await ed.click('#rpSave'); const d = await dl;

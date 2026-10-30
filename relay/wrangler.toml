@@ -1,0 +1,17 @@
+# TiviBro report relay (see worker.js).  Deploy: npx wrangler deploy  (from this folder)
+# The GitHub token is a secret, never in this file:  npx wrangler secret put GITHUB_TOKEN
+name = "tivibro-report"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+workers_dev = true
+
+[vars]
+REPO = "ohmybahgosh/TiviBro"
+
+[[kv_namespaces]]
+binding = "RATE"
+id = "2f76b8ab389f45519c6fa4d7edc86506"
+
+[observability.logs]
+enabled = true
+invocation_logs = false
