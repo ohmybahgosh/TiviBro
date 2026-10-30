@@ -64,7 +64,12 @@ var Tour = (function () {
       st.sv.feeds[drop].forEach(function (x) { c[x.k] = 1; });
       if (ch.feedGroups) t.feedGroups(drop).forEach(function (gr) { g[gr.id] = 1; });
     }
-    if (Object.keys(ch.cities).length) t.localHide(ch.cities, ch.cityNone).forEach(function (x) { c[x.c.k] = 1; });
+    var cityKeep = [];
+    if (Object.keys(ch.cities).length) {
+      t.localHide(ch.cities, ch.cityNone).forEach(function (x) { c[x.c.k] = 1; });
+      // Your stations together in one group, and the network groups (ABC Locals, CBS Locals...) out of the way.
+      if (ch.cityGroup) { cityKeep = t.localKeep(ch.cities, ch.cityNone).map(function (x) { return x.c.k; }); if (ch.cityHideNets) st.sv.locals.groups.forEach(function (gr) { g[gr.id] = 1; }); }
+    }
     var words = ch.words.split(',').map(function (w) { return w.trim().toLowerCase(); }).filter(Boolean);
     if (words.length) data.groups.forEach(function (gr) { var n = String(gr.name).toLowerCase(), cn = Names.cleanWith(ch.names, gr.name).toLowerCase(); if (words.some(function (w) { return n.indexOf(w) >= 0 || cn.indexOf(w) >= 0; })) g[gr.id] = 1; });
     if (ch.dupes !== 'off') {
@@ -79,7 +84,8 @@ var Tour = (function () {
     var chans = 0, groups = 0, gs = {}, idle = ch.names.hideIdle, fav = Library.isFav;
     data.groups.forEach(function (gr) { if (!E.hiddenGroups[gr.id] && !g[gr.id]) { gs[gr.id] = 1; groups++; } });
     data.channels.forEach(function (x) { if (gs[x.g] && !E.hiddenChannels[x.k] && !c[x.k] && !(idle && Names.idle(x.n) && !fav(x.k))) chans++; });
-    return { g: g, c: c, chans: chans, groups: groups, hidG: Object.keys(g).filter(function (id) { return !E.hiddenGroups[id]; }).length, hidC: Object.keys(c).filter(function (k) { return !E.hiddenChannels[k]; }).length };
+    if (cityKeep.length) { groups++; if (ch.cityHideNets) chans += cityKeep.length; }
+    return { g: g, c: c, chans: chans, groups: groups, cityKeep: cityKeep, hidG: Object.keys(g).filter(function (id) { return !E.hiddenGroups[id]; }).length, hidC: Object.keys(c).filter(function (k) { return !E.hiddenChannels[k]; }).length };
   }
 
   /* ---------- steps ---------- */
@@ -171,6 +177,8 @@ var Tour = (function () {
   function localRows() {
     var li = st.sv.locals, ch = st.ch, out = [], n = Object.keys(ch.cities).length;
     out.push(toggle('Keep stations with no city', 'National feeds in the local groups.', function () { return ch.cityNone; }, function (v) { ch.cityNone = v; draw(); }, 'Keep', 'Hide'));
+    out.push(toggle('Put them together in "Local channels"', 'One group with your stations, by city and network.', function () { return ch.cityGroup; }, function (v) { ch.cityGroup = v; draw(); }));
+    if (ch.cityGroup) out.push(toggle('Then hide the network groups', li.groups.slice(0, 4).map(function (g) { return g.name; }).join(', ') + (li.groups.length > 4 ? '…' : '') + ': your stations show up once.', function () { return ch.cityHideNets; }, function (v) { ch.cityHideNets = v; draw(); }));
     if (n) out.push(action('Clear my cities', 'Keeps every city again.', function () { ch.cities = {}; draw(); }, function () { return plural(n, 'picked', 'picked'); }));
     out.push(head(n ? 'Keeping ' + Object.keys(ch.cities).map(Tidy.titleCase).join(', ') : 'No city picked: every city is kept'));
     li.cities.forEach(function (c) {
@@ -474,6 +482,11 @@ var Tour = (function () {
     save.then(function () {
       Object.keys(pl.g).forEach(function (id) { E.hiddenGroups[id] = 1; });
       Object.keys(pl.c).forEach(function (k) { E.hiddenChannels[k] = 1; });
+      if (pl.cityKeep.length) {
+        var lg = E.custom.filter(function (x) { return x.name === 'Local channels'; })[0];
+        if (!lg) { lg = { id: 'c_' + Date.now().toString(36), name: 'Local channels', items: [] }; E.custom.push(lg); }
+        pl.cityKeep.forEach(function (k) { if (lg.items.indexOf(k) < 0) lg.items.push(k); });
+      }
       p.names = st.ch.names; p.events = st.ch.events; p.tour = Date.now();
       Store.upsertPlaylist(p); Store.saveEdits();
       Names.invalidate(); Events.reset(); Library.dirty();
@@ -504,7 +517,7 @@ var Tour = (function () {
     // Pre-ticked: the TV's own country when the playlist has it, otherwise every country.
     st.sv.countries.forEach(function (x) { cc[x.p] = inList ? x.p === region : true; });
     st.ch = { cc: cc, ccNone: true, names: clone(p.names || Names.defaults()), events: clone(p.events || {}), feed: st.sv.feeds.pairs ? 'east' : 'both', feedGroups: true,
-      cities: {}, cityNone: true, dividers: true, empty: true, dupes: 'off', words: '' };
+      cities: {}, cityNone: true, cityGroup: true, cityHideNets: true, dividers: true, empty: true, dupes: 'off', words: '' };
     if (st.ch.names.enabled === false && opts.first) st.ch.names.enabled = true;
     if (opts.first && st.sv.idle) st.ch.names.hideIdle = true;
     Logos.load(Library.data).then(function () { if (st && cur().id === 'logos') { st.cov = null; draw(); } });

@@ -168,6 +168,19 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;position
 .lc{display:flex;flex-direction:column;gap:2px;padding:8px 12px 8px 34px;border:1px solid var(--line);border-radius:10px;position:relative;cursor:pointer}
 .lc input{position:absolute;left:11px;top:11px}
 .lc.on{border-color:var(--accent);background:var(--accbg)}
+.dsum{margin:-4px 0 12px;font-size:14px}
+.dsets{border-top:1px solid var(--line)}
+.dset{display:flex;align-items:center;gap:8px 14px;padding:8px 2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.dset .dn{flex:0 0 240px;min-width:0;display:flex;flex-direction:column}
+.dset .dn b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dset .dc{flex:1;display:flex;flex-wrap:wrap;gap:6px}
+.dset.unsure{box-shadow:inset 3px 0 0 var(--warn);padding-left:10px}
+.dcopy{padding:4px 11px;border-radius:999px;font-size:12.5px;background:var(--raised);color:var(--muted);border:1px solid var(--line);text-decoration:line-through;text-decoration-color:rgba(255,255,255,.25)}
+.dcopy.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);text-decoration:none;font-weight:600}
+.dcopy .dnm{font-weight:400;opacity:.8;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom}
+.lcopts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:10px}
+.lcopts #lcName{width:200px}
+.lcopts .lcsub{flex:1 1 100%;color:var(--muted)}
 .two{display:grid;grid-template-columns:minmax(360px,520px) 1fr;gap:20px;align-items:start}
 .rule{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
 .rule .ex{font-size:13px;color:var(--dim)}
@@ -308,12 +321,12 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
   .card button,.card .row > button{white-space:normal;text-align:left}
   #kwText{flex:1 1 100%}
   /* Lists that are tables on a computer become stacked rows. */
-  #mList table.t tr,#tDupes table.t tr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
-  #mList table.t th,#tDupes table.t th{display:none}
-  #mList table.t td,#tDupes table.t td{display:block;border:none;padding:0}
-  #mList table.t td:first-child,#tDupes table.t td:first-child{flex:1 1 100%;width:auto!important}
+  #mList table.t tr{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:10px 0;border-bottom:1px solid var(--line)}
+  #mList table.t th{display:none}
+  #mList table.t td{display:block;border:none;padding:0}
+  #mList table.t td:first-child{flex:1 1 100%;width:auto!important}
   #mList table.t td:nth-child(2){flex:1 1 auto;min-width:0}
-  #tDupes table.t td:nth-child(2){flex:1 1 100%}
+  .dset .dn{flex:1 1 100%}
   /* The change bar: what is waiting and Send automatically on one line, the buttons on the next. */
   .changebar .lbl{flex:1 1 calc(100% - 120px);min-width:0;font-size:14px}
   .changebar .cbdraft{display:none}
@@ -2135,12 +2148,39 @@ function hideEmpty() {
   toast(plural(l.length, 'empty group') + ' hidden', ['Undo', undo]);
 }
 var quality = Tidy.quality, QNAME = Tidy.QNAME;
-var dupeCache = null, dupeOpts = { same: true, prefer: 'fhd' };
+var dupeCache = null, dupeOpts = { same: true, prefer: 'fhd', q: '', show: 'look' };
 function dupeSets() {
   if (dupeCache) return dupeCache;
   return (dupeCache = T().dupes({ same: dupeOpts.same, prefer: dupeOpts.prefer, name: chName, skip: function (c) { return E.hiddenGroups[c.g] || E.hiddenChannels[c.k]; } }));
 }
 var dPage = 0;
+// A set needs a look when more than one copy has the quality TiviBro would keep.
+function dupeUnsure(s) { var q = quality(byKey.get(s.keep) ? byKey.get(s.keep).n : ''); return s.items.filter(function (c) { return quality(c.n) === q; }).length > 1 && !s.picked; }
+function dupeShown() {
+  var q = (dupeOpts.q || '').trim().toLowerCase();
+  return dupeSets().map(function (s, i) { return { s: s, i: i }; }).filter(function (x) {
+    if (q && chName(x.s.items[0]).toLowerCase().indexOf(q) < 0 && !x.s.items.some(function (c) { return c.n.toLowerCase().indexOf(q) >= 0; })) return false;
+    return dupeOpts.show === 'all' || q || dupeUnsure(x.s) || x.s.picked;
+  });
+}
+function drawDupes() {
+  var list = dupeShown(), PG = 50, pages = Math.max(1, Math.ceil(list.length / PG));
+  if (dPage >= pages) dPage = pages - 1;
+  $('dList').innerHTML = list.length ? '<div class="dsets">' + list.slice(dPage * PG, dPage * PG + PG).map(function (x) {
+    var s = x.s, qs = {}; s.items.forEach(function (c) { var q = quality(c.n); qs[q] = (qs[q] || 0) + 1; });
+    return '<div class="dset' + (dupeUnsure(s) ? ' unsure' : '') + '"><div class="dn"><b>' + esc(chName(s.items[0])) + '</b><span class="dim small">' + esc(groupLabel(s.items[0].g)) + '</span></div><div class="dc">' + s.items.map(function (c) {
+      var q = quality(c.n), on = c.k === s.keep;
+      return '<button class="dcopy' + (on ? ' on' : '') + '" data-set="' + x.i + '" data-k="' + esc(c.k) + '" title="' + esc(c.n) + (dupeOpts.same ? '' : ' · ' + esc(groupLabel(c.g))) + '">' + (on ? '✓ ' : '') + QNAME[q] + (qs[q] > 1 ? ' <span class="dnm">' + esc(c.n) + '</span>' : '') + (c.arch ? ' ↺' : '') + (dupeOpts.same ? '' : ' <span class="dnm">' + esc(groupLabel(c.g)) + '</span>') + '</button>';
+    }).join('') + '</div></div>';
+  }).join('') + '</div>' + (pages > 1 ? '<div class="pager">' + (dPage * PG + 1) + '–' + Math.min(list.length, (dPage + 1) * PG) + ' of ' + list.length + '<button class="small" data-dpg="-1"' + (dPage ? '' : ' disabled') + '>‹ Previous</button><button class="small" data-dpg="1"' + (dPage < pages - 1 ? '' : ' disabled') + '>Next ›</button></div>' : '')
+    : '<div class="muted small" style="padding:8px 2px">' + (dupeOpts.q.trim() ? 'No set matches “' + esc(dupeOpts.q.trim()) + '”.' : 'Nothing to check: every set has one clear pick.  “All” shows them anyway.') + '</div>';
+  var target = dupeTarget(), n = target.reduce(function (a, s) { return a + s.items.length - 1; }, 0);
+  $('dAll').textContent = 'Hide ' + plural(n, 'extra copy', 'extra copies') + (dupeOpts.q.trim() ? ' in the ' + plural(target.length, 'set') + ' found' : '');
+  $('dAll').disabled = !n;
+  $('dInfo').textContent = dupeOpts.q.trim() ? 'Only the sets that match the search.' : 'Every set, using your picks and the preferred quality for the rest.';
+}
+// What the main button hides: every set, or the ones the search found.
+function dupeTarget() { return dupeOpts.q.trim() ? dupeShown().map(function (x) { return x.s; }) : dupeSets(); }
 function renderTools() {
   if (!D || page !== 'tools') return;
   /* countries */
@@ -2153,18 +2193,16 @@ function renderTools() {
       : '<div class="muted">No country codes found in your group names.</div>');
   if (cs.length) ccInfo();
   /* duplicates */
-  var sets = dupeSets(), extra = sets.reduce(function (n, s) { return n + s.items.length - 1; }, 0), PG = 25;
-  var pages = Math.max(1, Math.ceil(sets.length / PG)); if (dPage >= pages) dPage = pages - 1;
-  $('tDupes').innerHTML = '<h3>Same channel, more than once</h3><p>The same channel in several qualities (4K, FHD, HD, SD) or copies.  Pick the one to keep; the others are hidden.</p>' +
-    '<div class="row" style="margin-bottom:10px"><div class="dd" id="dPrefer" style="width:250px"></div><label class="muted small"><input type="checkbox" id="dSame"' + (dupeOpts.same ? ' checked' : '') + '> Only within the same group</label><span class="grow"></span>' +
-    (sets.length ? '<button class="primary" id="dAll">Hide ' + plural(extra, 'extra copy', 'extra copies') + ' in all ' + sets.length + ' sets</button>' : '') + '</div>' +
-    (sets.length ? '<table class="t">' + sets.slice(dPage * PG, dPage * PG + PG).map(function (s, i) {
-      var si = dPage * PG + i;
-      return '<tr><td style="width:30%"><b>' + esc(chName(s.items[0])) + '</b><div class="dim small">' + esc(groupLabel(s.items[0].g)) + '</div></td><td>' + s.items.map(function (c) {
-        return '<label class="row" style="gap:6px;margin:2px 0"><input type="radio" name="dk' + si + '" data-set="' + si + '" value="' + esc(c.k) + '"' + (c.k === s.keep ? ' checked' : '') + '><span>' + esc(c.n) + '</span><span class="chip">' + QNAME[quality(c.n)] + '</span>' + (c.arch ? '<span class="chip ok">↺</span>' : '') + (dupeOpts.same ? '' : '<span class="dim small">' + esc(groupLabel(c.g)) + '</span>') + '</label>';
-      }).join('') + '</td><td class="r"><button class="small" data-dset="' + si + '">Hide ' + (s.items.length - 1 === 1 ? 'the other' : 'the other ' + (s.items.length - 1)) + '</button></td></tr>';
-    }).join('') + '</table>' + (pages > 1 ? '<div class="pager">Sets ' + (dPage * PG + 1) + '–' + Math.min(sets.length, (dPage + 1) * PG) + ' of ' + sets.length + '<button class="small" data-dpg="-1"' + (dPage ? '' : ' disabled') + '>‹ Previous</button><button class="small" data-dpg="1"' + (dPage < pages - 1 ? '' : ' disabled') + '>Next ›</button></div>' : '')
+  var sets = dupeSets(), extra = sets.reduce(function (n, s) { return n + s.items.length - 1; }, 0), look = sets.filter(dupeUnsure).length;
+  if (!look && dupeOpts.show === 'look') dupeOpts.show = 'all';
+  $('tDupes').innerHTML = '<h3>Same channel, more than once</h3><p>The same channel in several qualities (4K, FHD, HD, SD) or copies.  TiviBro already picked one in each set by the quality you prefer; you only need to look at the sets it could not tell apart.  Click a copy to keep that one instead.</p>' +
+    (sets.length ? '<div class="dsum"><b>' + plural(sets.length, 'channel') + '</b> come more than once: <b>' + plural(extra, 'extra copy', 'extra copies') + '</b>.' + (look ? '  <span class="chip warn">' + look + ' to check</span>' : '  <span class="chip ok">All picked</span>') + '</div>' : '') +
+    '<div class="row" style="margin-bottom:10px;flex-wrap:wrap;gap:10px"><div class="dd" id="dPrefer" style="width:250px"></div><label class="muted small"><input type="checkbox" id="dSame"' + (dupeOpts.same ? ' checked' : '') + '> Only within the same group</label></div>' +
+    (sets.length ? '<div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:6px"><input id="dQ" type="text" class="grow" placeholder="Find a channel: ESPN, CNN…" value="' + esc(dupeOpts.q) + '" style="min-width:200px">' +
+      '<div class="seg" id="dShow"><button data-show="look"' + (dupeOpts.show === 'look' ? ' class="on"' : '') + '>To check (' + look + ')</button><button data-show="all"' + (dupeOpts.show === 'all' ? ' class="on"' : '') + '>All (' + sets.length + ')</button></div></div>' +
+      '<div id="dList"></div><div class="row" style="margin-top:12px"><span class="muted small grow" id="dInfo"></span><button class="primary" id="dAll"></button></div>'
       : '<div class="muted">No duplicates among the shown channels.  Nice.</div>');
+  if (sets.length) drawDupes();
   dd($('dPrefer'), { prefix: 'Keep: ', value: dupeOpts.prefer, options: [{ v: 'fhd', l: 'Full HD first (recommended)' }, { v: 'best', l: 'Highest quality (4K first)' }, { v: 'hd', l: 'HD first (lighter)' }, { v: 'sd', l: 'SD first (slow internet)' }], onChange: function (v) { dupeOpts.prefer = v; dupeCache = null; renderTools(); } });
   /* keywords */
   var kw = renderTools.kw || { text: '', target: 'groups' };
@@ -2202,13 +2240,16 @@ function renderFeeds() {
       : '<div class="muted">No channels come in both an East and a West feed.</div>');
 }
 function renderLocal() {
-  var li = localIndex(), lo = renderTools.local || (renderTools.local = { sel: {}, q: '', none: true });
+  var li = localIndex(), lo = renderTools.local || (renderTools.local = { sel: {}, q: '', none: true, copy: true, name: 'Local channels', hideNets: true });
   if (!li.cities.length) { $('tLocal').innerHTML = '<h3>Local channels: pick your city</h3><div class="muted">No local channel groups found (groups named like "ABC Locals" or "CBS Locals").</div>'; return; }
   var nets = {}; li.chans.forEach(function (x) { nets[x.p.net] = 1; });
   $('tLocal').innerHTML = '<h3>Local channels: pick your city</h3><p>Your provider’s local groups (' + li.groups.slice(0, 6).map(function (g) { return esc(g.name); }).join(', ') + (li.groups.length > 6 ? '…' : '') + ') carry stations for ' + li.cities.length + ' cities.  Pick yours, and TiviBro keeps those and hides the rest in every local group at once.</p>' +
     '<div class="row" style="gap:12px;flex-wrap:wrap"><input id="lcQ" type="text" class="grow" placeholder="Find a city: Detroit, Lansing, Boston…" value="' + esc(lo.q) + '" style="min-width:240px">' +
     '<label class="muted small"><input type="checkbox" id="lcNone"' + (lo.none ? ' checked' : '') + '> Keep stations with no city (national feeds)</label></div>' +
-    '<div id="lcList" class="lclist"></div><div class="row" style="margin-top:12px"><span class="muted small grow" id="lcInfo"></span><button class="primary" id="lcGo" disabled>Keep only these cities</button></div>';
+    '<div id="lcList" class="lclist"></div>' +
+    '<div class="lcopts"><label class="small"><input type="checkbox" id="lcCopy"' + (lo.copy ? ' checked' : '') + '> Also put them together in one group called</label><input id="lcName" type="text" value="' + esc(lo.name) + '"' + (lo.copy ? '' : ' disabled') + '>' +
+    '<label class="small lcsub"><input type="checkbox" id="lcHideNets"' + (lo.hideNets ? ' checked' : '') + (lo.copy ? '' : ' disabled') + '> Then hide the ' + plural(li.groups.length, 'network group') + ' (' + li.groups.slice(0, 4).map(function (g) { return esc(g.name); }).join(', ') + (li.groups.length > 4 ? '…' : '') + '), so your stations show up once</label></div>' +
+    '<div class="row" style="margin-top:12px"><span class="muted small grow" id="lcInfo"></span><button class="primary" id="lcGo" disabled>Keep only these cities</button></div>';
   drawLocalList();
 }
 function drawLocalList() {
@@ -2221,7 +2262,8 @@ function drawLocalList() {
     return '<label class="lc' + (on ? ' on' : '') + '"><input type="checkbox" data-city="' + esc(c.city) + '"' + (on ? ' checked' : '') + '><b>' + esc(titleCase(c.city)) + (c.st ? ' <span class="dim">' + esc(c.st) + '</span>' : '') + '</b><span class="dim small">' + Object.keys(c.nets).sort().join(' · ') + '</span></label>';
   }).join('') + (!q && rest.length > 40 ? '<div class="muted small" style="padding:6px 2px">and ' + (rest.length - 40) + ' more: type to find yours.</div>' : '') + (q && !rest.length ? '<div class="muted small" style="padding:6px 2px">No ' + (picked.length ? 'other ' : '') + 'city matches “' + esc(lo.q.trim()) + '”.</div>' : '');
   var n = picked.length, hide = localHideList();
-  $('lcInfo').textContent = n ? 'Keeps ' + plural(li.chans.length - hide.length, 'local station') + ' in ' + plural(n, 'city', 'cities') + ', hides ' + hide.length + '.' : 'Tick one or more cities.';
+  var nk = li.chans.length - hide.length, into = lo.copy && lo.name.trim();
+  $('lcInfo').textContent = n ? 'Keeps ' + plural(nk, 'local station') + ' in ' + plural(n, 'city', 'cities') + ', hides ' + hide.length + (into ? '.  Puts them in “' + lo.name.trim() + '”' + (lo.hideNets ? ' and hides ' + plural(li.groups.length, 'network group') : '') : '') + '.' : 'Tick one or more cities.';
   $('lcGo').disabled = !n; $('lcGo').textContent = n ? 'Keep only ' + (n === 1 ? titleCase(picked[0].city) : n + ' cities') : 'Keep only these cities';
 }
 function localHideList() {
@@ -2266,20 +2308,33 @@ $('tFeeds').addEventListener('click', function (e) {
   toast(plural(l.length, 'copy', 'copies') + ' hidden', ['Undo', undo]);
 });
 $('tFeeds').addEventListener('change', function (e) { if (e.target.id === 'feedGroups') { renderTools.feeds.groups = e.target.checked; renderFeeds(); } });
-$('tLocal').addEventListener('input', function (e) { if (e.target.id === 'lcQ') { renderTools.local.q = e.target.value; drawLocalList(); } });
+$('tLocal').addEventListener('input', function (e) {
+  if (e.target.id === 'lcQ') { renderTools.local.q = e.target.value; drawLocalList(); }
+  if (e.target.id === 'lcName') { renderTools.local.name = e.target.value; drawLocalList(); }
+});
 $('tLocal').addEventListener('change', function (e) {
   var t = e.target, lo = renderTools.local;
   if (t.dataset.city) { if (t.checked) lo.sel[t.dataset.city] = 1; else delete lo.sel[t.dataset.city]; drawLocalList(); }
   if (t.id === 'lcNone') { lo.none = t.checked; drawLocalList(); }
+  if (t.id === 'lcCopy') { lo.copy = t.checked; $('lcName').disabled = !t.checked; $('lcHideNets').disabled = !t.checked; drawLocalList(); }
+  if (t.id === 'lcHideNets') { lo.hideNets = t.checked; drawLocalList(); }
 });
 $('tLocal').addEventListener('click', function (e) {
   if (e.target.id !== 'lcGo') return;
   var li = localIndex(), lo = renderTools.local, hide = localHideList(), keep = li.chans.filter(function (x) { return hide.indexOf(x) < 0; });
-  var names = Object.keys(lo.sel).map(titleCase);
-  mut('Kept local stations for ' + names.join(', '), function () {
+  var names = Object.keys(lo.sel).map(titleCase), gname = lo.copy ? lo.name.trim() : '', gid = null;
+  if (lo.copy && !gname) { $('lcName').focus(); return; }
+  var keys = T().localKeep(lo.sel, lo.none).map(function (x) { return x.c.k; });
+  mut('Kept local stations for ' + names.join(', ') + (gname ? ' in ' + gname : ''), function () {
     hide.forEach(function (x) { E.hiddenChannels[x.c.k] = 1; }); keep.forEach(function (x) { delete E.hiddenChannels[x.c.k]; });
+    if (!gname) return;
+    var g = E.custom.filter(function (x) { return x.id !== FAV && x.name.toLowerCase() === gname.toLowerCase(); })[0];
+    if (!g) { g = { id: 'c_' + Date.now().toString(36), name: gname, items: [] }; E.custom.push(g); }
+    gid = g.id; delete E.hiddenGroups[gid];
+    addInto(gid, keys);
+    if (lo.hideNets) li.groups.forEach(function (x) { E.hiddenGroups[x.id] = 1; });
   });
-  toast('Local stations for ' + names.join(', ') + ' kept, ' + plural(hide.length, 'other') + ' hidden', ['Undo', undo]);
+  toast('Local stations for ' + names.join(', ') + ' kept' + (gname ? ' in ' + gname : '') + ', ' + plural(hide.length, 'other') + ' hidden' + (gname && lo.hideNets ? ', network groups hidden' : ''), ['Undo', undo]);
 });
 $('tIdle').addEventListener('change', function (e) {
   if (e.target.id !== 'idleOn') return;
@@ -2287,16 +2342,16 @@ $('tIdle').addEventListener('change', function (e) {
   mut(on ? 'Hide channels with nothing on' : 'Show channels with nothing on', function () { N.hideIdle = on; });
 });
 $('tDupes').addEventListener('change', function (e) {
-  var t = e.target;
-  if (t.id === 'dSame') { dupeOpts.same = t.checked; dupeCache = null; dPage = 0; renderTools(); }
-  if (t.dataset.set) dupeSets()[+t.dataset.set].keep = t.value;
+  if (e.target.id === 'dSame') { dupeOpts.same = e.target.checked; dupeCache = null; dPage = 0; renderTools(); }
 });
+$('tDupes').addEventListener('input', function (e) { if (e.target.id === 'dQ') { dupeOpts.q = e.target.value; dPage = 0; drawDupes(); } });
 $('tDupes').addEventListener('click', function (e) {
   var t = e.target.closest('button'); if (!t) return;
   function hideSet(s) { s.items.forEach(function (c) { if (c.k !== s.keep) E.hiddenChannels[c.k] = 1; }); }
-  if (t.dataset.dset) { var s = dupeSets()[+t.dataset.dset]; mut('Hid duplicates of ' + chName(s.items[0]), function () { hideSet(s); }); }
-  if (t.id === 'dAll') { var sets = dupeSets(), n = sets.reduce(function (a, s) { return a + s.items.length - 1; }, 0); ask('Hide ' + plural(n, 'duplicate') + '?', 'Keeps one channel from each of ' + sets.length + ' sets (your picks, or the preferred quality) and hides the rest.  You can undo this.', 'Hide duplicates', function () { mut('Hid ' + plural(n, 'duplicate'), function () { sets.forEach(hideSet); }); toast(plural(n, 'duplicate') + ' hidden', ['Undo', undo]); }); }
-  if (t.dataset.dpg) { dPage += +t.dataset.dpg; renderTools(); }
+  if (t.dataset.k) { var st = dupeSets()[+t.dataset.set]; st.keep = t.dataset.k; st.picked = true; drawDupes(); return; }
+  if (t.dataset.show) { dupeOpts.show = t.dataset.show; dPage = 0; [].forEach.call(t.parentNode.children, function (b) { b.classList.toggle('on', b === t); }); drawDupes(); return; }
+  if (t.id === 'dAll') { var sets = dupeTarget(), n = sets.reduce(function (a, s) { return a + s.items.length - 1; }, 0); ask('Hide ' + plural(n, 'extra copy', 'extra copies') + '?', 'Keeps one copy of each of ' + plural(sets.length, 'channel') + ' (your picks, or the preferred quality) and hides the rest.  You can undo this.', 'Hide them', function () { mut('Hid ' + plural(n, 'duplicate'), function () { sets.forEach(hideSet); }); toast(plural(n, 'duplicate') + ' hidden', ['Undo', undo]); }); }
+  if (t.dataset.dpg) { dPage += +t.dataset.dpg; drawDupes(); }
 });
 function kwMatches() {
   var kw = renderTools.kw || { text: '', target: 'groups' }, words = kw.text.split(',').map(function (w) { return w.trim().toLowerCase(); }).filter(Boolean);

@@ -1412,7 +1412,11 @@ var Guide = (function () {
     zone = z;
     view.classList.toggle('groups-open', z === 'groups');
     document.body.classList.toggle('nav-hidden', z === 'grid');
+    marquee();
     if (z === 'groups') {
+      // The panel covers the channel column and no more than it has to of the programmes.
+      var want = document.body.classList.contains('noguidenames') ? 260 : 470;
+      $('guideGroupList').parentNode.style.width = Math.max(want, 420) + 'px';
       var gs = L.groups(), i = gs.findIndex(function (g) { return g.id === gid; });
       groupsVL.setItems(gs, Math.max(0, i));
       groupsVL.setActive(true);
@@ -1426,14 +1430,37 @@ var Guide = (function () {
   function leave() { document.body.classList.remove('nav-hidden'); view.classList.remove('groups-open'); }
 
   function renderGroupRow(row, g) {
-    if (!row._n) { row._n = U.el('span', 'name'); row._t = U.el('span', 'tag'); var b = U.el('div', 'txt'); b.appendChild(row._n); row.appendChild(b); row.appendChild(row._t); }
+    if (!row._n) { var nm = U.el('span', 'name'); row._n = U.el('i'); nm.appendChild(row._n); row._t = U.el('span', 'tag'); var b = U.el('div', 'txt'); b.appendChild(nm); row.appendChild(b); row.appendChild(row._t); }
     row._n.textContent = g.name;
     var n = L.channels(g.id).length;
     row._t.textContent = g.blocked ? 'locked' : String(n);
     row.classList.toggle('hid', !n);
   }
   var groupDeb = U.debounce(function () { if (loaded !== gid) { load(gid, null); draw(); } }, 240);
+  // A group name too long for the panel scrolls across while its row is focused.
+  var mqT = 0, mqEl = null;
+  function marquee() {
+    clearTimeout(mqT);
+    if (mqEl) { mqEl.style.transition = 'none'; mqEl.style.transform = ''; mqEl.classList.remove('mq'); mqEl = null; }
+    if (zone !== 'groups') return;
+    mqT = setTimeout(function () {
+      var el = $('guideGroupList').querySelector('.row.sel .name i');
+      if (!el) return;
+      var over = el.scrollWidth - el.clientWidth;
+      if (over <= 2) return;
+      mqEl = el; el.classList.add('mq');
+      var secs = Math.max(2, over / 80);
+      (function go() {
+        el.style.transition = 'transform ' + secs + 's linear'; el.style.transform = 'translateX(-' + over + 'px)';
+        mqT = setTimeout(function () {
+          el.style.transition = 'none'; el.style.transform = '';
+          mqT = setTimeout(go, 1600);
+        }, secs * 1000 + 1600);
+      })();
+    }, 900);
+  }
   function onGroupSel(i, g) {
+    marquee();
     if (!g || g.id === gid) return;
     gid = g.id; remember();
     ghead.textContent = L.groupName(gid);

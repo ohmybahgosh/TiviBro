@@ -244,6 +244,12 @@ var Tidy = (function () {
     }
     // Local stations to hide when keeping only these cities.  keepNoCity: keep stations with no city (national feeds).
     function localHide(sel, keepNoCity) { return locals().chans.filter(function (x) { return x.p.city ? !sel[x.p.city] : !keepNoCity; }); }
+    // The stations kept for the picked cities, by city, network and channel number: what goes in a "Local channels" group.
+    function localKeep(sel, keepNoCity) {
+      function cmp(a, b) { return a < b ? -1 : a > b ? 1 : 0; }
+      return locals().chans.filter(function (x) { return x.p.city ? !!sel[x.p.city] : keepNoCity; })
+        .sort(function (a, b) { return cmp(a.p.city || '~', b.p.city || '~') || cmp(String(a.p.net), String(b.p.net)) || (a.c.num || 0) - (b.c.num || 0); });
+    }
 
     /* The same channel more than once.  opts: { same: only within one group, prefer: fhd|best|hd|sd,
        name(c): the name shown, skip(c): leave out (hidden ones) }. */
@@ -266,7 +272,7 @@ var Tidy = (function () {
     }
 
     return { data: data, chansOf: chansOf, countryMap: countryMap, groupCountry: groupCountry, countries: countries, dividers: dividers, empty: empty,
-      feeds: feeds, feedGroups: feedGroups, feedKey: feedKey, locals: locals, localHide: localHide, dupes: dupes };
+      feeds: feeds, feedGroups: feedGroups, feedKey: feedKey, locals: locals, localHide: localHide, localKeep: localKeep, dupes: dupes };
   }
 
   return { make: make, prep: prep, prefixOf: prefixOf, ccNorm: ccNorm, ccWord: ccWord, ccOfLocale: ccOfLocale, countryName: countryName, isDivider: isDivider,

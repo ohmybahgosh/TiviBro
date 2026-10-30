@@ -125,7 +125,10 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await shot('tv-tour-done');
   await focus('Apply and start watching'); await key('Enter', 2500);
   ok('closed', await ev(() => !Tour.isOpen && document.getElementById('viewSetup').classList.contains('hidden')));
-  const after = await ev(() => Library.channels(Library.ALL).length);
+  // Shown: every channel in All channels, plus the stations in Local channels (their network groups are hidden).
+  const after = await ev(() => { const s = new Set(Library.channels(Library.ALL).map(c => c.k)); const lg = Store.edits.custom.filter(g => g.name === 'Local channels')[0]; if (lg) Library.channels(lg.id).forEach(c => s.add(c.k)); return s.size; });
+  const lc = await ev(() => { const lg = Store.edits.custom.filter(g => g.name === 'Local channels')[0]; if (!lg) return null; const ch = Library.channels(lg.id); return { n: ch.length, detroit: ch.filter(c => /DETROIT/i.test(c.n)).length, netsHidden: ch.filter(c => !Store.edits.hiddenGroups[c.g]).map(c => c.g).join() }; });
+  ok('Local channels holds the Detroit stations, network groups hidden', lc && lc.n > 0 && lc.detroit === lc.n - (lc.n - lc.detroit) && lc.detroit > 0 && lc.netsHidden === '', JSON.stringify(lc));
   ok('the lists show what the tour promised', after === promised, 'promised ' + promised + ', shown ' + after + ' (was ' + before.shown + ')');
   ok('hid something', after < before.shown);
   const snap = await ev(() => Store.idbGet('snaps:' + Store.playlist.id).then(l => (l || []).map(x => x.name)));

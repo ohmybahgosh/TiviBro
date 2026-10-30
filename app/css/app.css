@@ -364,7 +364,10 @@ body.nav-hidden .hints{padding-left:56px}
 /* layout fixes for the side menu */
 .channels{width:700px}
 .preview-slot{width:100%;height:324px}
-body:not(.nav-hidden) #viewGuide .guide-groups{left:48px;width:540px}
+body:not(.nav-hidden) #viewGuide .guide-groups{left:0;width:470px;padding-left:48px;box-shadow:14px 0 28px rgba(0,0,0,.45)}
+.guide-groups .row .name{display:block;white-space:nowrap;overflow:hidden}
+.guide-groups .row .name i{font-style:normal;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.guide-groups .row .name i.mq{display:inline-block;overflow:visible;text-overflow:initial}
 #viewGuide.groups-open .guide-group{visibility:hidden}
 body.nav-open .hints{padding-left:400px}
 .gp .gfill{background:rgba(255,255,255,.09);border-bottom:3px solid var(--air)}
