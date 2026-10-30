@@ -1,20 +1,20 @@
 # Changelog
 
-## Unreleased
-
-- tivibro.app: the floating badges over the hero are gone, and only the phone moves (gently); pictures stay put.  The guide and web editor videos open full screen with a tap (and a full-screen button), so they're readable on a phone, where the phone mock-ups no longer cover them.  The TiviBro and TiviMate comparison is redesigned: grouped rows, a highlighted TiviBro column with check, cross and partial marks, a header that stays on screen, and one card per row on phones.
-- **Set-up tour: your choices on the summary.**  The last screen lists one line per step ("Keep USA", "Keep East, other feed's groups hidden", "Detroit in Local channels, network groups hidden"…); OK on one goes back to that step, and **Skip to the summary** returns.  The summary now starts on **Apply and start watching**.
-- Set-up tour: duplicates default to keeping the Full HD copy (the others stay under hold OK > Other versions, and TiviBro switches to one if yours stops working); the sports step is called **Sports and PPV** in the step list; the welcome card reads "channels in East + West"; and a logo library that can't be reached says so in plain words instead of a network error.
-- **Guide: a slimmer groups panel.**  The groups list now covers the channel column and no more, instead of a wide panel over the programmes (with logos only, it stays narrow too), and channel numbers no longer peek out beside it.  A group name too long to fit scrolls across while it's focused.
-- **Local channels in one group.**  Smart clean-up's **Local channels: pick your city** can also copy the stations you keep into one group, "Local channels" or a name of your own, by city and network, and then hide the network groups (ABC Locals, CBS Locals and the rest) so each station shows up once.  The set-up tour does the same, both on by default.
-- **Duplicates without the endless scrolling.**  **Same channel, more than once** opens on **To check**: only the channels where TiviBro couldn't tell which copy to keep.  **All** lists every set on one line, with a button per copy (FHD, HD, SD) to click the one to keep; **Find a channel** narrows the list, and **Hide extra copies** works on what was found.
-- **tivibro.app, redesigned.**  A full-screen hero with the guide playing on a TV and the phone editor beside it, a feature grid, a scroll-through "set it up from your phone" story, a screenshot carousel with a full-size viewer, parallax sections for the tour, logos, sports and the web editor, and an install section with tabs.  Works on phones, and keeps still for people who turn off motion.
-
-## 0.6.0 (alpha 12, 2026-10-29)
+## 0.6.0 (alpha 13, 2026-10-29)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 12
+### New in alpha 13
+
+- **Guide: a slimmer groups panel.**  The groups list now covers the channel column and no more, instead of a wide panel over the programmes (with logos only, it stays narrow too), and channel numbers no longer peek out beside it.  A group name too long to fit scrolls across while it's focused.
+- **Local channels in one group.**  Smart clean-up's **Local channels: pick your city** can also copy the stations you keep into one group, "Local channels" or a name of your own, by city and network, and then hide the network groups (ABC Locals, CBS Locals and the rest) so each station shows up once.  The set-up tour does the same, both on by default.
+- **Duplicates without the endless scrolling.**  **Same channel, more than once** opens on **To check**: only the channels where TiviBro couldn't tell which copy to keep.  **All** lists every set on one line, with a button per copy (FHD, HD, SD) to click the one to keep; **Find a channel** narrows the list, and **Hide extra copies** works on what was found.
+- **Set-up tour: your choices on the summary.**  The last screen lists one line per step ("Keep USA", "Keep East, other feed's groups hidden", "Detroit in Local channels, network groups hidden"…); OK on one goes back to that step, and **Skip to the summary** returns.  The summary now starts on **Apply and start watching**.
+- Set-up tour: duplicates default to keeping the Full HD copy (the others stay under hold OK > Other versions, and TiviBro switches to one if yours stops working); the sports step is called **Sports and PPV** in the step list; the welcome card reads "channels in East + West"; and a logo library that can't be reached says so in plain words instead of a network error.
+- tivibro.app: the floating badges over the hero are gone, and only the phone moves (gently); pictures stay put.  The guide and web editor videos open full screen with a tap (and a full-screen button), so they're readable on a phone, where the phone mock-ups no longer cover them.  The TiviBro and TiviMate comparison is redesigned: grouped rows, a highlighted TiviBro column with check, cross and partial marks, a header that stays on screen, and one card per row on phones.
+- **tivibro.app, redesigned.**  A full-screen hero with the guide playing on a TV and the phone editor beside it, a feature grid, a scroll-through "set it up from your phone" story, a screenshot carousel with a full-size viewer, parallax sections for the tour, logos, sports and the web editor, and an install section with tabs.  Works on phones, and keeps still for people who turn off motion.
+
+### In alpha 12
 
 - **The network helper, explained.**  The first screen's Network row is now **Connection: Automatic (recommended)**, with a line saying what the network helper is (the part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams) instead of "running on port 47811"; it only turns red with the reason when the helper isn't running.  Settings > Playback says the same; the user guide and FAQ have "What is the network helper?".
 - README and tivibro.app lead with setting up from your phone: a "Set it up from your phone" section with the first screen and phone screenshots, a line in the hero, and the step in the install instructions.  The editor's welcome page on a fresh TV offers **Add your playlist** first, then **Restore a backup**.
