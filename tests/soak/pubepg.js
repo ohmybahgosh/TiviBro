@@ -47,6 +47,24 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await page.waitForFunction(() => window.Library && Library.count() > 0 && Epg.pubStatus && Epg.pubStatus.at && !Epg.loading, null, { timeout: 60000 });
   ok('after a restart it comes from the TV, not a new download', await ev(a => Epg.pubStatus.at === a && Epg.pubStatus.filled > 10, at));
 
+  // Reloading your own guide doesn't download the public ones again.
+  await ev(() => Epg.refresh(Library, true));
+  await page.waitForFunction(() => !Epg.loading && Epg.pubStatus && Epg.pubStatus.at, null, { timeout: 60000 });
+  ok('"Reload guide now" leaves the public guides alone', await ev(a => Epg.pubStatus.at === a, at));
+
+  // The sites are down: what the TV had stays.
+  await ev(() => { Store.settings.pubEpgBase = 'http://127.0.0.1:9/pubepg/'; return Epg.pubAgain(); });
+  await page.waitForFunction(() => !Epg.loading && Epg.pubStatus && Epg.pubStatus.at, null, { timeout: 60000 });
+  ok('every file failing keeps the last public guide', await ev(() => Epg.pubStatus.filled > 10 && Library.data.channels.some(c => Epg.pubSource(c))), await ev(() => JSON.stringify(Epg.pubStatus)));
+  await ev(m => { Store.settings.pubEpgBase = m + '/pubepg/'; }, MOCK);
+
+  // Turned off while it runs: nothing turns up afterwards.
+  await ev(() => { Epg.pubAgain(); PubEpg.set(Store.playlist, { on: false }); return Epg.refresh(Library, false); });
+  await page.waitForTimeout(3000);
+  ok('switching off mid-run wins', await ev(() => !Library.data.channels.some(c => Epg.pubSource(c))));
+  await ev(() => { PubEpg.set(Store.playlist, { on: true }); return Epg.refresh(Library, false); });
+  await page.waitForFunction(() => !Epg.loading && Epg.pubStatus && Epg.pubStatus.filled > 10, null, { timeout: 60000 });
+
   // Off: back to no guide for them.
   await ev(() => { PubEpg.set(Store.playlist, { on: false }); Store.saveSettings && Store.saveSettings(); return Epg.refresh(Library, false); });
   await page.waitForFunction(() => !Epg.loading, null, { timeout: 30000 });

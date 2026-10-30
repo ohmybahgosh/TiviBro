@@ -51,7 +51,7 @@ var PubEpg = (function () {
      cs:WOTV (a local station's call sign, :2 for a subchannel), n:<name> (|w for a West feed).
      "US - A&E Network West" and "A&E (West) US" both give n:aande|w.  country is a "XX - " prefix. */
   function keys(name, id) {
-    var out = [], raw = String(name || '').replace(/&amp;/g, '&'), up = raw.toUpperCase(), country = '';
+    var out = [], whole = String(name || '').replace(/&amp;/g, '&'), raw = whole, up = raw.toUpperCase(), country = '';
     var full = up, pre = /^\s*([A-Z0-9+]{1,10})\s*(?:-|:|\||»)\s+/.exec(up);
     if (pre) { country = pre[1]; raw = raw.slice(pre[0].length); up = raw.toUpperCase(); }
     var west = /\b(WEST|PACIFIC)\b/.test(up) ? '|w' : '';
@@ -66,6 +66,8 @@ var PubEpg = (function () {
     var t = s.replace(/\b(hd|fhd|uhd|4k|sd|hevc|h265|raw|east|eastern|west|pacific|backup|us|usa|uk|ca|network|channel|tv|the)\b/g, ' ').replace(/[^a-z0-9]+/g, '');
     // "USA Network" is all stop words: keep it whole.
     if (t.length < 2) t = s.replace(/\b(hd|fhd|uhd|4k|sd|east|eastern|west|pacific)\b/g, ' ').replace(/[^a-z0-9]+/g, '');
+    // "CNN - HD": what looked like a prefix was the name.
+    if (t.length < 2 && pre) { country = ''; t = whole.toLowerCase().replace(/\b(hd|fhd|uhd|4k|sd|east|eastern|west|pacific)\b/g, ' ').replace(/[^a-z0-9]+/g, ''); }
     if (t.length >= 2) out.push(['n:' + t + west, 2]);
     return { keys: out, country: country };
   }

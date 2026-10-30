@@ -18,7 +18,7 @@ var Epg = (function () {
   var queue = [], inflight = 0, MAX = 3, TTL = 20 * 60 * 1000;
   var xmlMode = false, xmlReady = false, icons = {}, matched = {}, chList = [], status = { at: 0, sources: [] };
   // Public guide fill-in: channel key -> guide id ("epgpw:US/464745"), its guide channels, how it went.
-  var pubMatched = {}, pubList = [], pubStatus = null, pubForce = false, PUB_ID = /^\w+:[A-Z]{2}\//;
+  var pubMatched = {}, pubList = [], pubStatus = null, pubForce = false, pubGen = 0, PUB_ID = /^\w+:[A-Z]{2}\//;
   var loading = null;
   // Live progress of a full guide download, for the TV chip and the web editor.
   var progress = { active: false }, progListeners = [];
@@ -390,14 +390,14 @@ var Epg = (function () {
 
   function init(lib, force) {
     cache.clear(); queue.length = 0; matched = {}; icons = {}; chList = []; status = { at: 0, sources: [] };
-    pubMatched = {}; pubList = []; pubStatus = null;
-    var srcs = sources(), pub = pubOn();
+    pubMatched = {}; pubList = []; pubStatus = null; pubGen++;
+    var srcs = sources(), pub = pubOn(), gen = pubGen;
     xmlMode = srcs.length > 0 || pub; xmlReady = false;
     if (!xmlMode) { status.at = Date.now(); emit(null); return Promise.resolve(); }
     var first;
     if (srcs.length) first = loadXml(force).catch(function () {});
     else { xmlReady = true; status.at = Date.now(); emit(null); first = Promise.resolve(); }
-    loading = first.then(function () { return pub ? loadPub(force).catch(function (e) { Log.warn('epg', 'Public guide failed: ' + (e && e.message || e)); }) : null; })
+    loading = first.then(function () { return pub && gen === pubGen ? loadPub(gen).catch(function (e) { Log.warn('epg', 'Public guide failed: ' + (e && e.message || e)); }) : null; })
       .then(function () { loading = null; });
     return loading;
   }
@@ -425,7 +425,7 @@ var Epg = (function () {
     pubList = c.channels || [];
     pubStatus = { at: c.at || 0, countries: c.countries || [], filled: Object.keys(pubMatched).length, asked: c.asked || 0, sources: c.report || [], took: c.took || 0 };
   }
-  function loadPub(force) {
+  function loadPub(gen) {
     var p = P(), miss = missing(), map = Store.edits.epgMap || {};
     var ccs = PubEpg.countriesFor(p, miss, Library.data);
     var gz = !!Net.active || typeof DecompressionStream !== 'undefined';
@@ -433,18 +433,21 @@ var Epg = (function () {
     var want = Object.keys(map).map(function (k) { return map[k]; }).filter(function (v) { return PUB_ID.test(v); });
     var ckey = 'epgpub:' + p.id, sig = U.hash(ccs.join() + '|' + p.epgDays);
     return Store.idbGet(ckey).then(function (c) {
+      if (gen !== pubGen) return;                                      // reloaded or switched off meanwhile
       if (c && c.sig === sig) { ingestPub(c); emit(null); }
       if (!files.length || !miss.length) {
         pubStatus = { at: Date.now(), countries: ccs, filled: 0, asked: miss.length, sources: [], none: !miss.length ? 'every channel has a guide' : 'no public guide for this playlist\'s countries' };
         return;
       }
-      // Free services: at most twice a day, however often your own guide reloads.  Sooner when the
-      // playlist gained channels with no guide, or a channel was pointed at a public guide channel.
+      // Free services: at most twice a day, however often your own guide reloads ("Reload guide now"
+      // included; "Look again now" is the way to ask).  Sooner when the playlist gained channels with
+      // no guide, a channel was pointed at a public guide channel, or a file failed (after an hour).
       var age = c ? Date.now() - c.at : Infinity, hours = +p.epgRefresh, every = hours === 0 ? Infinity : Math.max(12, hours > 0 ? hours : 12) * 3600e3;
       var need = want.some(function (w) { return !cache.has(w); });
-      var stale = !c || c.sig !== sig || age > every || miss.length > (c.asked || 0) + 20 || need;
+      var failed = c && (c.report || []).some(function (r) { return !r.ok; });
+      var stale = !c || c.sig !== sig || age > every || miss.length > (c.asked || 0) + 20 || need || (failed && age > 3600e3) || (c.retry && Date.now() > c.retry);
       if (pubForce) { pubForce = false; stale = true; }
-      if (!stale && !(force && age > 3600e3)) return;
+      if (!stale) return;
       var pk = {}, days = +p.epgDays || 1, ctx = Tidy.make(Library.data);
       miss.forEach(function (ch) {
         // A channel with a known country only matches in that country's guides ("Mega" in a Greek
@@ -458,6 +461,14 @@ var Epg = (function () {
       });
       var started = Date.now();
       return work(files, { pk: pk, want: want }).then(function (res) {
+        if (gen !== pubGen) return;
+        // Every file failed (offline, a site down): keep what the TV had rather than an empty result.
+        if (c && c.sig === sig && res.report.length && res.report.every(function (r) { return !r.ok; })) {
+          c.retry = Date.now() + 3600e3;                                  // try again in an hour
+          Store.idbSet(ckey, c);
+          Log.warn('epg', 'Public guide: every file failed (' + res.report[0].error + '), keeping the last one');
+          return;
+        }
         res.at = Date.now(); res.sig = sig; res.asked = miss.length; res.countries = ccs; res.took = res.at - started;
         res.report = res.report.map(function (r) { return { url: r.url, ok: r.ok, programmes: r.programmes || 0, filled: r.filled || 0, error: r.error || '', skipped: !!r.skipped }; });
         ingestPub(res);

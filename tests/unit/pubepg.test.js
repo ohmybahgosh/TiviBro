@@ -29,6 +29,10 @@ t('names match across the projects\' styles, keeping East and West apart', () =>
   assert.strictEqual(K('Heroes & Icons Network').pop(), K('Heroes and Icons').pop());
   assert.ok(K('USA Network (East)').length, 'all-stop-word names still get a key');
 });
+t('a "prefix" that was the whole name still gives a key', () => {
+  assert.deepStrictEqual(K('CNN - HD'), ['n:cnn']);
+  assert.strictEqual(P.keys('CNN - HD').country, '');
+});
 t('a service prefix is read as the country', () => {
   assert.strictEqual(P.keys('US - CNN').country, 'US');
   assert.strictEqual(P.keys('PLUTO - CNN Headlines').country, 'PLUTO');
