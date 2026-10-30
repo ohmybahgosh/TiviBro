@@ -18,6 +18,7 @@
     "systemconfig.query",
     "activity.operation",
     "application.launcher",
+    "application.query",
     "notification.operation"
   ]
 }

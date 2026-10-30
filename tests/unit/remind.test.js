@@ -51,6 +51,26 @@ const fire = p => new Promise(res => R.fire(p, res));
   now = list[1].s + 20 * 60000; calls = [];
   w = await fire(Object.assign({ pid: 'p1' }, list[1]));
   ok('a late one says when it started', /Started at/.test((calls.find(c => /createAlert$/.test(c.uri)) || { params: {} }).params.message || ''), w);
+  // Only for someone using the TV: screensaver, Gallery, Always Ready or a dark screen wait.
+  now = list[1].s; R.setVisible(false);
+  answer.getPowerState = { returnValue: true, state: 'Screen Saver' }; calls = [];
+  w = await fire(Object.assign({ pid: 'p1', $activity: { activityId: 9 } }, list[1]));
+  const again = calls.find(c => /create$/.test(c.uri));
+  ok('screensaver: nothing shown, looked at again in 2 minutes', /waiting/.test(w) && !calls.some(c => /notification/.test(c.uri)) && again && again.params.activity.schedule.start === new Date(now + 120000).toISOString().replace('T', ' ').slice(0, 19) + 'Z', w);
+  ok('and the running activity is completed first', calls.findIndex(c => /complete$/.test(c.uri)) < calls.findIndex(c => /create$/.test(c.uri)));
+  answer.getPowerState = { returnValue: true, state: 'Active Standby' }; calls = [];
+  w = await fire(Object.assign({ pid: 'p1' }, list[1]));
+  ok('Always Ready (Active Standby): waits', /waiting/.test(w) && /Active Standby/.test(w), w);
+  answer.getPowerState = { returnValue: true, state: 'Active' }; answer.getForegroundAppInfo = { returnValue: true, appId: 'com.webos.app.gallery' }; calls = [];
+  w = await fire(Object.assign({ pid: 'p1' }, list[1]));
+  ok('Gallery in front: waits', /waiting/.test(w) && /gallery/.test(w), w);
+  answer.getForegroundAppInfo = { returnValue: true, appId: 'netflix' }; calls = [];
+  w = await fire(Object.assign({ pid: 'p1' }, list[1]));
+  ok('someone watching another app: the alert shows', w === 'shown' && calls.some(c => /createAlert$/.test(c.uri)), w);
+  answer.getForegroundAppInfo = { returnValue: true, appId: 'com.webos.app.screensaver' }; now = list[1].e - 90000; calls = [];
+  w = await fire(Object.assign({ pid: 'p1' }, list[1]));
+  ok('nearly over and still nobody there: gives up (the app asks next time)', /not shown/.test(w) && !calls.some(c => /create$/.test(c.uri)), w);
+  answer = {};
   // A restarted helper reads the list back.
   R = make();
   ok('the list survives a helper restart', R.state.lists.p1 && R.state.lists.p1.length === 1 && R.state.lists.p2.length === 1);

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Reminders only for someone using the TV.**  When the screensaver, the Gallery or art screen, Always Ready or a dark screen is up, the TV's reminder alert waits instead of popping up over it, and looks again every couple of minutes while the programme is on; once someone is back on another app or input, it shows (saying when it started).  Inside TiviBro, a reminder waits when nobody has touched the remote for 10 minutes and nothing is playing, and the next press brings it, with **Watch from the start** on catch-up channels.  The helper log records what was on screen each time, for TVs that name their screensaver differently.
+
 ## 0.6.0 (alpha 17, 2026-10-30)
 
 Pre-release: expect rough edges, and keep a backup before installing.

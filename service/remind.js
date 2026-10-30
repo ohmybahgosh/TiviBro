@@ -12,6 +12,10 @@ var fs = require('fs'), path = require('path'), os = require('os');
 
 var APP = 'app.tivibro.tv', SELF = 'luna://app.tivibro.tv.service';
 var AM = 'luna://com.palm.activitymanager';
+var RETRY = 2 * 60000;
+// What's in front when nobody is watching: the screensaver, Gallery / art and Always Ready.  The ids
+// differ by model and year, so names are matched loosely; the helper log records the real one.
+var AMBIENT = /screensaver|screen\.saver|gallery|ambient|always\.?ready|artmode|art\.mode|\.art$|standby|clock/i;
 
 function create(opts) {
   var call = opts.call, log = opts.log || function () {}, now = opts.now || Date.now;
@@ -40,6 +44,23 @@ function create(opts) {
   function clean(s, n) { return String(s == null ? '' : s).replace(/<[^>]*>/g, '').replace(/[<>]/g, '').slice(0, n || 120); }
   function html(s) { return String(s).replace(/&/g, '&amp;'); }
 
+  // One activity per reminder: the activity manager calls "fire" with these details at that time.
+  function schedule(p, at) {
+    var id = p.id || idOf(p.pid, p), name = nameOf(id);
+    call(AM + '/create', {
+      activity: {
+        name: name, description: 'TiviBro reminder: ' + p.t,
+        type: { foreground: true, persist: true },
+        schedule: { start: utc(at) },
+        callback: { method: SELF + '/fire', params: { id: id, pid: p.pid, k: p.k, s: +p.s, e: +p.e, t: p.t, ch: p.ch } }
+      },
+      start: true, replace: true
+    }, function (res) {
+      if (res && res.returnValue === false) log({ lv: 'error', event: 'reminder not scheduled', e: res.errorText || res.errorCode, t: p.t });
+    });
+    state.names[name] = 1;
+  }
+
   // The app's whole list for one playlist: schedule new ones, cancel ones that went away.
   function set(p) {
     var pid = clean(p.pid, 40), before = Math.max(0, Math.min(60, +p.before || 0)) * 60000, t = now();
@@ -58,18 +79,7 @@ function create(opts) {
       var id = idOf(pid, r), name = nameOf(id);
       if (state.names[name] && old[name] === r.at) return;          // already scheduled for this time
       made++;
-      call(AM + '/create', {
-        activity: {
-          name: name, description: 'TiviBro reminder: ' + r.t,
-          type: { foreground: true, persist: true },
-          schedule: { start: utc(Math.max(r.at, t + 5000)) },
-          callback: { method: SELF + '/fire', params: { id: id, pid: pid, k: r.k, s: r.s, e: r.e, t: r.t, ch: r.ch } }
-        },
-        start: true, replace: true
-      }, function (res) {
-        if (res && res.returnValue === false) log({ lv: 'error', event: 'reminder not scheduled', e: res.errorText || res.errorCode, t: r.t });
-      });
-      state.names[name] = 1;
+      schedule({ id: id, pid: pid, k: r.k, s: r.s, e: r.e, t: r.t, ch: r.ch }, Math.max(r.at, t + 5000));
     });
     gone.forEach(function (n) { delete state.names[n]; call(AM + '/cancel', { activityName: n }, function () {}); });
     // Lists of playlists whose reminders have all passed.
@@ -99,6 +109,21 @@ function create(opts) {
     if (!still(p)) return finish('skipped (removed in the app)');
     if (+p.e <= t) return finish('skipped (already over)');
     if (visible) return finish('left to the app (it is on screen)');
+    // Only for someone using the TV.  Screensaver, Gallery, Always Ready or a dark screen: look again
+    // in a couple of minutes while the programme is still on; the app asks when it is next opened.
+    inUse(function (yes, why) {
+      if (yes) return show();
+      if (t + RETRY < +p.e - 60000) {
+        if (act) call(AM + '/complete', { activityId: act }, function () {});
+        act = 0;
+        schedule(p, t + RETRY);
+        log({ lv: 'info', event: 'reminder waiting: TV not in use (' + why + ')', t: p.t });
+        if (done) done('waiting (' + why + ')');
+        return;
+      }
+      finish('not shown: TV not in use (' + why + ')');
+    });
+    function show() {
     var started = +p.s <= t - 60000;
     var title = started ? 'Started at ' + when(+p.s) : +p.s > t + 30000 ? 'Starts at ' + when(+p.s) : 'Starting now';
     var msg = '<h3>' + title + ': ' + html(clean(p.t)) + '</h3>' + (p.ch ? 'On ' + html(clean(p.ch, 80)) + ' in TiviBro' : 'In TiviBro');
@@ -112,6 +137,22 @@ function create(opts) {
       call('luna://com.webos.notification/createToast', { sourceId: APP, message: msg + '<br>Select to watch', onclick: { appId: APP, params: launch.params }, noaction: false, persistent: true }, function (r2) {
         if (r2 && r2.returnValue === false) log({ lv: 'error', event: 'toast refused', e: r2.errorText || r2.errorCode });
         finish(r2 && r2.returnValue === false ? 'not shown' : 'shown as a toast');
+      });
+    });
+    }
+  }
+
+  /* Is someone using the TV?  The screen must be on (not the screensaver, Always Ready or off) and
+     the app in front not an ambient one.  If the TV won't say, assume yes. */
+  function inUse(cb) {
+    call('luna://com.webos.service.tvpower/power/getPowerState', {}, function (ps) {
+      var st = ps && ps.returnValue !== false ? String(ps.state || '') : '';
+      if (st && !/^active$/i.test(st)) return cb(false, 'power state ' + st + (ps.processing ? ', ' + ps.processing : ''));
+      call('luna://com.webos.applicationManager/getForegroundAppInfo', {}, function (fg) {
+        var id = fg && fg.returnValue !== false ? String(fg.appId || '') : '';
+        log({ lv: 'info', event: 'reminder check', power: st || 'unknown', foreground: id || 'unknown' });
+        if (id && AMBIENT.test(id)) return cb(false, id + ' in front');
+        cb(true, id);
       });
     });
   }

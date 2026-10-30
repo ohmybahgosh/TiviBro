@@ -11,12 +11,12 @@ var UI = (function () {
   /* Magic Remote pointer.  "pointer" is true while the user is aiming; any remote key switches
      back to key mode (webOS hides the cursor then too).  Hover only moves focus in pointer mode,
      so a list scrolled with the arrows never jumps under a resting cursor. */
-  var pointer = false, lastXY = '';
+  var pointer = false, lastXY = '', lastInput = Date.now();     // lastInput: someone is using the TV (reminders.js, views.js)
   document.addEventListener('mousemove', function (e) {
     var xy = e.screenX + ',' + e.screenY;
-    if (xy !== lastXY) { lastXY = xy; if (!pointer) { pointer = true; document.body.classList.add('pointer'); } }
+    if (xy !== lastXY) { lastXY = xy; lastInput = Date.now(); if (!pointer) { pointer = true; document.body.classList.add('pointer'); } }
   }, true);
-  function keyMode() { if (pointer) { pointer = false; document.body.classList.remove('pointer'); } }
+  function keyMode() { lastInput = Date.now(); if (pointer) { pointer = false; document.body.classList.remove('pointer'); } }
   // Wheel on the Magic Remote scrolls whatever has focus.
   var wheelT = 0;
   document.addEventListener('wheel', function (e) {
@@ -264,6 +264,7 @@ var UI = (function () {
     getHandler: function () { return handler; },
     get modalOpen() { return !!modalH; },
     get pointer() { return pointer; },
+    get lastInput() { return lastInput; },
     get repeating() { return repeating; },     // true while a held arrow is auto-repeating
     get playKey() { return playKey; },
     press: function (a) { dispatch(a, null); },

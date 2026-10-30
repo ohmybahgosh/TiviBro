@@ -212,15 +212,19 @@ var Views = (function () {
       L.addWatch(playing.k, 5);
       if (!recentDone && now - playStart > 8000) { recentDone = true; L.touchRecent(playing.k); }
     }
-    // Reminders wait while TiviBro is in the background (the TV's own alert covers that time, see
-    // remind.js) and while a menu is open, so none is used up unseen.
-    if (!document.hidden && !UI.modalOpen) dueReminder(now);
+    // Reminders are for someone using the TV: they wait while TiviBro is in the background (the TV's
+    // own alert covers that, see remind.js), while a menu is open, and when nobody has touched the
+    // remote for a while with nothing playing (the TV's screensaver is likely up).  The next press
+    // brings the question, with Watch from the start if it began meanwhile.
+    var idle = now - UI.lastInput > IDLE && !(playing && Player.playing);
+    if (!document.hidden && !UI.modalOpen && !idle) dueReminder(now);
     if (sleepAt) {
       if (now >= sleepAt) { sleepAt = 0; if (full) exitFull(); Player.stop(); playing = null; stage.classList.add('off'); U.toast('Sleep timer: playback stopped'); }
       else if (sleepAt - now < 60000 && !sleepWarned) { sleepWarned = true; U.toast('Sleep timer: stopping in 1 minute'); }
     }
   }
 
+  var IDLE = 10 * 60000;
   function dueReminder(now) {
     var rem = Store.edits.reminders, before = (+Store.settings.remindBefore || 0) * 60000;
     for (var i = 0; i < rem.length; i++) {

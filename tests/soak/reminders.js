@@ -49,6 +49,16 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('back on screen: it asks, saying when it started, with Watch from the start', late && /Started at/.test(late) && /Late Show/.test(late) && /Watch from the start/.test(late), late);
   await ev(() => UI.close());
 
+  // 2b. Nobody has touched the remote for a while and nothing plays (screensaver time): it waits too.
+  await ev(() => { Views.stopAll(); window.__li = Object.getOwnPropertyDescriptor(UI, 'lastInput'); Object.defineProperty(UI, 'lastInput', { configurable: true, get: function () { return 0; } }); });
+  await ev(([k, H]) => { Store.edits.reminders = [{ k: k, s: Date.now() - 60000, e: Date.now() + H, t: 'Idle Show' }]; Store.saveEdits(); }, [live, H]);
+  await page.waitForTimeout(5600);
+  ok('nobody using the TV: the reminder waits', await ev(() => Store.edits.reminders.length === 1 && !UI.modalOpen));
+  await ev(() => { Object.defineProperty(UI, 'lastInput', window.__li); });
+  await page.keyboard.press('ArrowDown'); await page.waitForTimeout(5600);
+  ok('the next press brings it', await ev(() => UI.modalOpen && /Idle Show/.test(document.getElementById('modal').innerText)));
+  await ev(() => UI.close());
+
   // 3. Over while away, on a catch-up channel.
   await ev(([k, H]) => { Store.edits.reminders = [{ k: k, s: Date.now() - 2 * H, e: Date.now() - H, t: 'Missed Show' }]; Store.saveEdits(); }, [live, H]);
   await page.waitForTimeout(5600);
