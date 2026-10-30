@@ -4,8 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TiviBro: the IPTV player LG TVs never got</title>
-<meta name="description" content="TiviBro is a free, guide-first IPTV player for LG webOS TVs.  Xtream Codes and M3U with XMLTV, catch-up, movies and shows, multiview, a web editor for your playlist, and locked backups.  Built to feel like TiviMate and go further.">
+<meta name="description" content="TiviBro is a free, guide-first IPTV player for LG webOS TVs.  Set it up from your phone, then get a real TV guide, catch-up, movies and shows, multiview, sports and PPV read from channel names, and a web editor for thousands of channels.  Built to feel like TiviMate and go further.">
 <meta name="theme-color" content="#0B0E1A">
+<meta name="color-scheme" content="dark">
 <link rel="canonical" href="https://tivibro.app/">
 <link rel="icon" type="image/png" sizes="32x32" href="img/icon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="img/icon-192.png">
@@ -13,116 +14,195 @@
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://tivibro.app/">
 <meta property="og:title" content="TiviBro: the IPTV player LG TVs never got">
-<meta property="og:description" content="A free, guide-first IPTV player for LG webOS TVs.  Built to feel like TiviMate and go further.">
+<meta property="og:description" content="A free, guide-first IPTV player for LG webOS TVs.  Set it up from your phone.  Built to feel like TiviMate and go further.">
 <meta property="og:image" content="https://tivibro.app/img/shots/tv-guide-preview.webp">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="img/guide-poster.webp">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<header class="top">
+<!-- Line icons, used with <svg class="i"><use href="#i-..."/></svg> -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-guide" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M3 9h18M8.5 9v11M3 14.5h18"/></symbol>
+    <symbol id="i-catchup" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5"/><path d="M3.5 3.5v5h5M12 7.5V12l3 2"/></symbol>
+    <symbol id="i-movie" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7.5 4v16M16.5 4v16M3 9h4.5M3 15h4.5M16.5 9H21M16.5 15H21"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5a3 3 0 0 0 3.5 4M16 6h3.5a3 3 0 0 1-3.5 4M12 13v4M8.5 20h7M10 17h4"/></symbol>
+    <symbol id="i-multi" viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/></symbol>
+    <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.5-3.2 8-7.5 9.5-4.3-1.5-7.5-5-7.5-9.5V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-hdr" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></symbol>
+    <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="9.5" r="1.8"/><path d="M21 15.5l-5-5L5 20"/></symbol>
+    <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4zM18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15zM10 20.5a2.2 2.2 0 0 0 4 0"/></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.2 0 1.8-.9 1.8-1.8 0-1.4-1.3-1.6-1.3-2.8 0-1 .8-1.6 1.8-1.6H16a5 5 0 0 0 5-5C21 6.2 17 3 12 3z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7" r="1.2"/><circle cx="15.5" cy="7.5" r="1.2"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z"/></symbol>
+    <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8.5 20h7M12 16v4"/></symbol>
+    <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 6.1A9.9 9.9 0 0 1 12 6c5 0 8.5 4.5 9.5 6a17 17 0 0 1-2.7 3.2M6.6 7.6C4.6 9 3.2 10.9 2.5 12c1 1.5 4.5 6 9.5 6 1.6 0 3-.4 4.2-1.1M9.9 10.1a3 3 0 0 0 4 4"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" stroke="none" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></symbol>
+  </defs>
+</svg>
+
+<div class="progress" aria-hidden="true"><i id="progress"></i></div>
+
+<header class="top" id="top-bar">
   <div class="wrap bar">
     <a class="brand" href="#top" aria-label="TiviBro home"><img src="img/wordmark.webp" alt="tiviBro" width="140" height="36"></a>
-    <nav class="links" aria-label="Main">
+    <nav class="links" id="links" aria-label="Main">
       <a href="#features">Features</a>
       <a href="#phone">Phone setup</a>
       <a href="#different">Only in TiviBro</a>
       <a href="#events">Sports and PPV</a>
       <a href="#editor">Web editor</a>
-      <a href="#install">Install</a>
       <a href="https://github.com/ohmybahgosh/TiviBro/wiki">Guide</a>
-      <a class="gh" href="https://github.com/ohmybahgosh/TiviBro" aria-label="TiviBro on GitHub"><svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg></a>
+      <a class="gh" href="https://github.com/ohmybahgosh/TiviBro" aria-label="TiviBro on GitHub"><svg class="i" width="20" height="20"><use href="#i-github"/></svg></a>
+      <a class="btn sm primary" href="#install">Install</a>
     </nav>
+    <button class="menu-btn" id="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="links"><span></span><span></span><span></span></button>
   </div>
 </header>
 
 <main id="top">
 
-<section class="hero">
+<!-- ========== HERO ========== -->
+<section class="hero" id="hero">
+  <div class="aurora" aria-hidden="true"><i class="a1" data-depth="0.15"></i><i class="a2" data-depth="0.3"></i><i class="a3" data-depth="0.22"></i></div>
+  <div class="floor" aria-hidden="true"></div>
   <div class="wrap hero-grid">
-    <div class="hero-copy">
-      <p class="pill"><span class="dot"></span><span id="ver">0.6.0 test builds</span> · free and open source</p>
-      <h1>The IPTV player LG TVs never got.</h1>
-      <p class="lead">A free, guide-first IPTV player for LG webOS.  Bring your own Xtream Codes or M3U subscription; TiviBro gives it a real TV guide, catch-up, movies and shows, and a web editor to tame thousands of channels.  Built to feel like TiviMate, and go further.</p>
-      <p class="lead phone-lead"><b>Set it up from your phone:</b> scan the code on the first screen and type your login there, not with the remote.</p>
+    <div class="hero-copy reveal">
+      <p class="pill"><span class="dot"></span><span id="ver">0.6.0 test builds</span><span class="sep">·</span>free and open source</p>
+      <h1>The IPTV player <span class="grad">LG TVs never got.</span></h1>
+      <p class="lead">A free, guide-first IPTV player for LG webOS.  Bring your own Xtream Codes or M3U subscription; TiviBro gives it a real TV guide, catch-up, movies and shows, and an editor to tame thousands of channels.  Built to feel like TiviMate, and go further.</p>
       <div class="cta">
-        <a class="btn primary" href="#install">Install on your LG TV</a>
-        <a class="btn" href="https://github.com/ohmybahgosh/TiviBro">View on GitHub</a>
+        <a class="btn primary lg" href="#install">Install on your LG TV <svg class="i" width="18" height="18"><use href="#i-arrow"/></svg></a>
+        <a class="btn ghost lg" href="#phone"><svg class="i" width="18" height="18"><use href="#i-phone"/></svg> See phone setup</a>
       </div>
-      <p class="fine">For LG webOS 4 and newer, built for webOS 25.  No accounts, no ads, no tracking.  TiviBro provides no channels or streams.</p>
-    </div>
-    <figure class="hero-media">
-      <video src="media/guide.mp4" poster="img/guide-poster.webp" autoplay muted loop playsinline preload="metadata" aria-label="The TiviBro guide: browsing, previewing and going fullscreen"></video>
-    </figure>
-  </div>
-</section>
-
-<section id="features" class="section">
-  <div class="wrap">
-    <h2>Everything you expect from a great IPTV player</h2>
-    <p class="sub">And a few things you won't find anywhere else on a TV.</p>
-    <div class="grid features">
-      <article><span class="ico">📺</span><h3>Guide first</h3><p>Live preview top left, details top right, groups one press away.  OK previews, OK again goes fullscreen.  The Magic Remote works everywhere.</p></article>
-      <article><span class="ico">⏪</span><h3>Catch-up done right</h3><p>Rewind the guide into the past and replay what you missed, or restart the show you just tuned into.</p></article>
-      <article><span class="ico">🎬</span><h3>Movies and shows</h3><p>Your provider's movies and series with posters, seasons, episodes, My list and resume where you stopped.</p></article>
-      <article><span class="ico">🏟️</span><h3>Sports and PPV, readable</h3><p>Event channels that cram the whole listing into their name get a short name and the game in the guide at its real time.</p></article>
-      <article><span class="ico">🧩</span><h3>Multiview</h3><p>Two channels side by side, four on TVs that can take it.  The focused one has the sound.</p></article>
-      <article><span class="ico">🔁</span><h3>Never stuck on a dead channel</h3><p>Same channel in FHD, HD and SD?  When one stops working, TiviBro moves to the next version by itself and tells you.</p></article>
-      <article><span class="ico">🛟</span><h3>Streams that don't quit</h3><p>Reconnects with backoff, waits out Wi-Fi drops, tries every player, and keeps a dropped channel coming back by itself.</p></article>
-      <article><span class="ico">🌈</span><h3>HDR, Dolby Vision, Atmos</h3><p>Reads each stream's format before the picture starts and hands it to the player that suits it best.</p></article>
-      <article><span class="ico">📱</span><h3>Set up from your phone</h3><p>Scan the QR code on the first screen.  Type your login on your phone, or restore a backup; the TV loads your channels by itself.</p></article>
-      <article><span class="ico">🧭</span><h3>Set up in two minutes</h3><p>A new playlist starts a tour built from what it has: countries, East or West, your city, sports, clutter, logos and colours.  Or scan a code and finish on your phone.</p></article>
-      <article><span class="ico">🖼️</span><h3>Logos for every channel</h3><p>Missing logos filled in from two open logo projects, matched by guide id, name, country and call sign.  Or one matching style for the whole list.</p></article>
-      <article><span class="ico">🧹</span><h3>Clean names, tidy lists</h3><p>Strips "USA |", "FHD", "⚽" and hundreds of other tags, keeps only your countries, and hides "Off Air" channels until something is on.</p></article>
-      <article><span class="ico">⏰</span><h3>Reminders and parental controls</h3><p>A reminder on any future programme, and a PIN for channels, groups or Settings.</p></article>
-      <article><span class="ico">🎨</span><h3>Make it yours</h3><p>Nine backgrounds including true black for OLED, twelve accents or your own, an outline focus for across the room, remote remapping.</p></article>
-      <article><span class="ico">💸</span><h3>Free and open</h3><p>MIT licensed and built in the open.  No accounts, no ads, no tracking.  Your logins never leave the TV.</p></article>
-    </div>
-  </div>
-</section>
-
-<section id="phone" class="section alt">
-  <div class="wrap split">
-    <div>
-      <p class="kicker">Setup</p>
-      <h2>Put the remote down.  Set it up from your phone.</h2>
-      <p>Typing a server address, username and password with arrow keys is nobody's idea of fun.  TiviBro's first screen shows a QR code instead.</p>
-      <ul class="ticks">
-        <li>Scan it with your phone's camera: TiviBro's editor opens, already signed in.</li>
-        <li>Paste your Xtream Codes login or M3U address, or restore a backup from another TV.</li>
-        <li>The TV tests it, loads your channels and starts the set-up tour on its own.</li>
-        <li>Later, the same editor on your phone or computer renames, hides, sorts and cleans up thousands of channels.</li>
+      <ul class="hero-facts">
+        <li><b>webOS 4 to 26</b><span>2018 TVs and newer</span></li>
+        <li><b>$0</b><span>every feature, MIT</span></li>
+        <li><b>~3 s</b><span>to load 9,800 channels</span></li>
       </ul>
     </div>
-    <figure class="shot"><img loading="lazy" src="img/shots/tv-first-run.webp" alt="The first screen with its QR code" width="1280" height="720"></figure>
+    <div class="hero-stage" aria-label="TiviBro on a TV, set up from a phone">
+      <div class="tv" data-depth="0.06">
+        <div class="tv-screen"><video src="media/guide.mp4" poster="img/guide-poster.webp" autoplay muted loop playsinline preload="metadata" aria-label="The TiviBro guide: browsing, previewing and going fullscreen"></video><i class="glare"></i></div>
+        <div class="tv-stand"></div>
+      </div>
+      <div class="phone hero-phone" data-depth="0.16">
+        <div class="phone-screen"><img src="img/shots/editor-phone-welcome.webp" alt="TiviBro's editor on a phone, opened by scanning the QR code" width="390" height="844"></div>
+      </div>
+      <span class="float-chip c1" data-depth="0.28"><svg class="i"><use href="#i-catchup"/></svg>Catch-up</span>
+      <span class="float-chip c2" data-depth="0.36"><svg class="i"><use href="#i-hdr"/></svg>4K · Dolby Vision · Atmos</span>
+      <span class="float-chip c3" data-depth="0.22"><svg class="i"><use href="#i-phone"/></svg>Scan to set up</span>
+    </div>
   </div>
-  <div class="wrap phones">
-    <img loading="lazy" src="img/shots/editor-phone-welcome.webp" alt="The editor on a phone, right after scanning" width="390" height="844">
-    <img loading="lazy" src="img/shots/editor-phone-add.webp" alt="Typing the login on the phone" width="390" height="844">
-    <img loading="lazy" src="img/shots/editor-phone-tools.webp" alt="Smart clean-up on the phone" width="390" height="844">
+  <a class="scroll-cue" href="#features" aria-label="Scroll down"><span></span></a>
+</section>
+
+<!-- ========== TICKER ========== -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track">
+    <span>Guide first</span><span>Catch-up</span><span>Movies and shows</span><span>Multiview</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
+    <span>Guide first</span><span>Catch-up</span><span>Movies and shows</span><span>Multiview</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
+  </div>
+</div>
+
+<!-- ========== FEATURES (bento) ========== -->
+<section id="features" class="section">
+  <div class="wrap">
+    <div class="head reveal">
+      <p class="kicker">Features</p>
+      <h2>Everything you expect from a great IPTV player.</h2>
+      <p class="sub">And a few things you won't find anywhere else on a TV.</p>
+    </div>
+    <div class="bento">
+      <article class="tile big reveal spot">
+        <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-guide"/></svg></span><h3>Guide first</h3><p>Live preview top left, details top right, groups one press away.  OK previews, OK again goes fullscreen.  The Magic Remote works everywhere.</p></div>
+        <img loading="lazy" src="img/shots/tv-guide-preview.webp" alt="The guide with a live preview" width="1280" height="720">
+      </article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-catchup"/></svg></span><h3>Catch-up done right</h3><p>Rewind the guide into the past and replay what you missed, or restart the show you just tuned into.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-movie"/></svg></span><h3>Movies and shows</h3><p>Posters, seasons, episodes, My list and resume where you stopped.</p></article>
+      <article class="tile tall reveal spot">
+        <span class="ico"><svg class="i"><use href="#i-phone"/></svg></span><h3>Set up from your phone</h3><p>Scan the QR code on the first screen and type your login on your phone.  The TV takes it from there.</p>
+        <div class="mini-phone"><img loading="lazy" src="img/shots/editor-phone-add.webp" alt="Typing the login on a phone" width="390" height="844"></div>
+      </article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-trophy"/></svg></span><h3>Sports and PPV, readable</h3><p>Event channels that cram the listing into their name get a short name, and the game lands in the guide at its real time.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-multi"/></svg></span><h3>Multiview</h3><p>Two channels side by side, four on TVs that can take it.</p></article>
+      <article class="tile wide reveal spot">
+        <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-compass"/></svg></span><h3>A set-up tour from your own playlist</h3><p>Countries, clean names, East or West, your city's locals, sports, clutter, logos and colours: it only asks about what your list has, with a running count of what you keep.</p></div>
+        <img loading="lazy" src="img/shots/tv-tour-countries.webp" alt="The set-up tour: countries" width="1280" height="720">
+      </article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-swap"/></svg></span><h3>Never stuck on a dead channel</h3><p>Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next by itself.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-shield"/></svg></span><h3>Streams that don't quit</h3><p>Reconnects, waits out Wi-Fi drops and tries every player before giving up.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-hdr"/></svg></span><h3>HDR, Dolby Vision, Atmos</h3><p>Each stream goes to the player that suits its format best.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-image"/></svg></span><h3>Logos for every channel</h3><p>Missing logos filled in from two open logo projects.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-sparkle"/></svg></span><h3>Clean names, tidy lists</h3><p>"USA | ESPN FHD ◉" shows as "ESPN".  Hundreds of tags handled.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-bell"/></svg></span><h3>Reminders and PINs</h3><p>A reminder on any future programme, and a PIN for channels, groups or Settings.</p></article>
+      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-palette"/></svg></span><h3>Make it yours</h3><p>Nine backgrounds including true black for OLED, twelve accents or your own.</p></article>
+      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-heart"/></svg></span><h3>Free and open</h3><p>MIT licensed.  No accounts, no ads, no tracking.  Logins never leave the TV.</p></article>
+    </div>
   </div>
 </section>
 
+<!-- ========== PHONE SETUP (scroll story) ========== -->
+<section id="phone" class="section alt">
+  <div class="wrap">
+    <div class="head reveal">
+      <p class="kicker">Phone setup</p>
+      <h2>Put the remote down.  <span class="grad">Set it up from your phone.</span></h2>
+      <p class="sub">Typing a server address, username and password with arrow keys is nobody's idea of fun.  TiviBro's first screen shows a QR code instead.</p>
+    </div>
+    <div class="story">
+      <ol class="story-steps">
+        <li class="step reveal" data-shot="tv"><span class="num">1</span><div><h3>Open TiviBro</h3><p>A QR code waits beside the login form.  The address and password are under it, for a computer.</p></div></li>
+        <li class="step reveal" data-shot="welcome"><span class="num">2</span><div><h3>Scan it with your phone's camera</h3><p>TiviBro's editor opens on your phone, already signed in.  Add your playlist, or restore a backup from another TV.</p></div></li>
+        <li class="step reveal" data-shot="add"><span class="num">3</span><div><h3>Paste your login</h3><p>Xtream Codes or M3U, with a real keyboard.  The TV tests it before saving, loads your channels and starts the set-up tour on its own.</p></div></li>
+        <li class="step reveal" data-shot="tools"><span class="num">4</span><div><h3>Keep tidying, any time</h3><p>The same editor, on your phone or computer, renames, hides, sorts and cleans up thousands of channels while the TV follows.</p></div></li>
+      </ol>
+      <div class="story-stage">
+        <div class="story-tv tv small" id="story-tv"><div class="tv-screen"><img loading="lazy" src="img/shots/tv-first-run.webp" alt="The first screen with its QR code" width="1280" height="720"><i class="glare"></i></div><div class="tv-stand"></div></div>
+        <div class="phone story-phone" id="story-phone">
+          <div class="phone-screen">
+            <img class="on" data-shot="welcome" loading="lazy" src="img/shots/editor-phone-welcome.webp" alt="The editor right after scanning" width="390" height="844">
+            <img data-shot="add" loading="lazy" src="img/shots/editor-phone-add.webp" alt="Typing the login on the phone" width="390" height="844">
+            <img data-shot="tools" loading="lazy" src="img/shots/editor-phone-tools.webp" alt="Smart clean-up on the phone" width="390" height="844">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========== ONLY IN TIVIBRO ========== -->
 <section id="different" class="section">
   <div class="wrap">
-    <p class="kicker">Only in TiviBro</p>
-    <h2>What no other IPTV player does</h2>
-    <p class="sub">TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose.  These are the things we haven't found in TiviMate or any other IPTV player, on any platform.</p>
-    <div class="grid features only">
-      <article><span class="ico">📱</span><h3>Set up from your phone, from the first screen</h3><p>A QR code waits beside the login form.  Scan it and TiviBro's editor opens on your phone, signed in.  No other IPTV app on a TV starts this way.</p></article>
-      <article><span class="ico">🧭</span><h3>A set-up tour built from your playlist</h3><p>TiviBro counts what your list holds and asks only about that: its countries, East or West, the cities its local groups carry, its event channels and duplicates.  A running count shows what you'll keep.  Scan the QR code to finish on your phone.</p></article>
-      <article><span class="ico">🖼️</span><h3>Missing logos, filled in</h3><p>A small index points at iptv-org's and tv-logos' own logos, matched by guide id, name and country, and call sign for local stations.  TiviBro hosts no images.</p></article>
-      <article><span class="ico">🏟️</span><h3>Sports and PPV, read from the name</h3><p>When a provider writes the event into the channel name instead of the guide, TiviBro turns it into a short name, a guide entry at the real time in your time zone, and an Events by time list across all your passes.</p></article>
-      <article><span class="ico">🖥️</span><h3>A full editor on your computer</h3><p>Clean up 10,000 channels with a keyboard and mouse, then Send to TV.  Unsent work is autosaved on the TV within seconds, with a version history.</p></article>
-      <article><span class="ico">🔁</span><h3>Switches to a working copy by itself</h3><p>Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you.</p></article>
-      <article><span class="ico">🧹</span><h3>Clean-up that already knows IPTV</h3><p>Pick your city once and every local group keeps only your stations.  Keep East or West feeds in one click.  Name rules for about 250 country codes, tags and emoji, duplicates found, and Smart match for missing guides.</p></article>
-      <article><span class="ico">🙈</span><h3>Hides channels with nothing on</h3><p>"Off Air" and "No Event Scheduled" channels stay out of the way, and come back by themselves when an event is named.</p></article>
-      <article><span class="ico">🔐</span><h3>Restore from the first screen</h3><p>One AES-256 locked file with every playlist, login, group and setting.  A brand-new TV restores it from a computer before you touch a setting.</p></article>
+    <div class="head reveal">
+      <p class="kicker">Only in TiviBro</p>
+      <h2>What no other IPTV player does.</h2>
+      <p class="sub">TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose.  These are the things we haven't found in TiviMate or any other IPTV player, on any platform.</p>
     </div>
-    <div class="compare">
+    <div class="cards">
+      <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-phone"/></svg></span><h3>Set up from your phone, from the first screen</h3><p>A QR code waits beside the login form.  Scan it and TiviBro's editor opens on your phone, signed in.</p></article>
+      <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-compass"/></svg></span><h3>A set-up tour built from your playlist</h3><p>It counts what your list holds and asks only about that: countries, East or West, the cities its local groups carry, event channels, duplicates.</p></article>
+      <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-trophy"/></svg></span><h3>Sports and PPV, read from the name</h3><p>A short name, a guide entry at the real time in your time zone, and an Events by time list across all your passes.</p></article>
+      <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-image"/></svg></span><h3>Missing logos, filled in</h3><p>Matched by guide id, name and country, and call sign for local stations.  TiviBro hosts no images.</p></article>
+      <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-monitor"/></svg></span><h3>A full editor on your phone or computer</h3><p>Clean up 10,000 channels with a real keyboard, then Send to TV.  Unsent work is autosaved on the TV within seconds.</p></article>
+      <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-swap"/></svg></span><h3>Switches to a working copy by itself</h3><p>When a channel dies, TiviBro moves to another version of it on its own and tells you.</p></article>
+      <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-sparkle"/></svg></span><h3>Clean-up that already knows IPTV</h3><p>Pick your city once for every local group, keep East or West in one click, about 250 country codes preloaded.</p></article>
+      <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-eyeoff"/></svg></span><h3>Hides channels with nothing on</h3><p>"Off Air" channels stay out of the way and come back by themselves when an event is named.</p></article>
+      <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-lock"/></svg></span><h3>Restore from the first screen</h3><p>One AES-256 locked file with every playlist, login, group and setting, restored from your phone before you touch a setting.</p></article>
+    </div>
+
+    <div class="compare reveal">
       <table>
         <thead><tr><th></th><th>TiviBro</th><th>TiviMate</th></tr></thead>
         <tbody>
@@ -130,15 +210,15 @@
           <tr><td>Price</td><td class="yes">Free, every feature</td><td>Free version, Premium paid</td></tr>
           <tr><td>Catch-up, multiview, multiple playlists, backups</td><td class="yes">Included</td><td>Premium</td></tr>
           <tr><td>Open source</td><td class="yes">Yes, MIT</td><td class="no">No</td></tr>
+          <tr><td>Set up by scanning a QR code with your phone</td><td class="yes">Yes, from the first screen</td><td class="no">No, type it with the remote</td></tr>
+          <tr><td>Guided set-up built from your playlist</td><td class="yes">Countries, feeds, city, events, logos, look</td><td class="no">No</td></tr>
           <tr><td>Sports and PPV events read from channel names</td><td class="yes">Yes</td><td class="no">No</td></tr>
-          <tr><td>Edit your playlist from a computer, with autosaved drafts</td><td class="yes">Yes</td><td class="no">On the TV only</td></tr>
+          <tr><td>Edit your playlist from a phone or computer, with autosaved drafts</td><td class="yes">Yes</td><td class="no">On the TV only</td></tr>
           <tr><td>Switches to another version of a dead channel by itself</td><td class="yes">Yes</td><td class="no">No</td></tr>
           <tr><td>Name clean-up</td><td class="yes">Preloaded rules for about 250 country codes, tags and symbols</td><td>Your own prefix and suffix lists</td></tr>
           <tr><td>Hide channels with nothing on</td><td class="yes">Yes</td><td class="no">No</td></tr>
           <tr><td>Pick your city for every local channel group at once</td><td class="yes">Yes</td><td class="no">One group at a time</td></tr>
           <tr><td>Keep East or West feeds in one step</td><td class="yes">Yes</td><td class="no">No</td></tr>
-          <tr><td>Guided set-up built from your playlist</td><td class="yes">Countries, feeds, city, events, logos, look</td><td class="no">No</td></tr>
-          <tr><td>Set up by scanning a QR code with your phone</td><td class="yes">Yes, from the first screen</td><td class="no">No, type it with the remote</td></tr>
           <tr><td>Fills in missing channel logos</td><td class="yes">Two open logo libraries, two styles</td><td class="no">No</td></tr>
           <tr><td>Recording</td><td>Not yet</td><td class="yes">Premium</td></tr>
         </tbody>
@@ -148,31 +228,34 @@
   </div>
 </section>
 
-<section class="section alt">
+<!-- ========== GALLERY (carousel) ========== -->
+<section class="section alt" id="screens">
   <div class="wrap">
-    <h2>See it on the big screen</h2>
-    <p class="sub">Every picture is the real app, playing a made-up demo provider.</p>
-    <div class="gallery" id="gallery">
-      <figure><img loading="lazy" src="img/shots/tv-guide-preview.webp" alt="The guide with a live preview" width="1280" height="720"><figcaption>The guide is home, with a live preview</figcaption></figure>
-      <figure><img loading="lazy" src="img/shots/tv-fullscreen.webp" alt="Fullscreen with the info bar" width="1280" height="720"><figcaption>Fullscreen with the info bar</figcaption></figure>
-      <figure><img loading="lazy" src="img/shots/tv-quick-menu.webp" alt="The quick menu" width="1280" height="720"><figcaption>OK opens the quick menu</figcaption></figure>
-      <figure><img loading="lazy" src="img/shots/tv-channels.webp" alt="The Channels screen" width="1280" height="720"><figcaption>The classic channel list</figcaption></figure>
-      <figure><img loading="lazy" src="img/shots/tv-catchup-guide.webp" alt="Catch-up in the guide" width="1280" height="720"><figcaption>Catch-up: travel back in the guide</figcaption></figure>
-      <figure><img loading="lazy" src="img/shots/tv-movies.webp" alt="Movies" width="1280" height="720"><figcaption>Movies with posters and ratings</figcaption></figure>
-      <figure><img loading="lazy" src="img/shots/tv-episodes.webp" alt="Episodes" width="1280" height="720"><figcaption>Shows, seasons and episodes</figcaption></figure>
-      <figure><img loading="lazy" src="img/shots/tv-multiview.webp" alt="Multiview" width="1280" height="720"><figcaption>Multiview</figcaption></figure>
-      <figure><img loading="lazy" src="img/shots/tv-search.webp" alt="Search" width="1280" height="720"><figcaption>Search channels and programmes</figcaption></figure>
-      <figure><img loading="lazy" src="img/shots/tv-versions.webp" alt="Other versions of a channel" width="1280" height="720"><figcaption>Other versions of a channel</figcaption></figure>
-      <figure><img loading="lazy" src="img/shots/tv-reminder.webp" alt="A reminder" width="1280" height="720"><figcaption>Reminders</figcaption></figure>
-      <figure><img loading="lazy" src="img/shots/tv-settings-look.webp" alt="Appearance settings" width="1280" height="720"><figcaption>Make it yours</figcaption></figure>
+    <div class="head row-head reveal">
+      <div><p class="kicker">On the big screen</p><h2>See it in action.</h2><p class="sub">Every picture is the real app, playing a made-up demo provider.</p></div>
+      <div class="car-btns"><button class="round" data-car="-1" aria-label="Previous"><svg class="i" style="transform:scaleX(-1)"><use href="#i-arrow"/></svg></button><button class="round" data-car="1" aria-label="Next"><svg class="i"><use href="#i-arrow"/></svg></button></div>
     </div>
+  </div>
+  <div class="carousel" id="gallery">
+    <figure><img loading="lazy" src="img/shots/tv-guide-preview.webp" alt="The guide with a live preview" width="1280" height="720"><figcaption>The guide is home, with a live preview</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-fullscreen.webp" alt="Fullscreen with the info bar" width="1280" height="720"><figcaption>Fullscreen with the info bar</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-quick-menu.webp" alt="The quick menu" width="1280" height="720"><figcaption>OK opens the quick menu</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-channels.webp" alt="The Channels screen" width="1280" height="720"><figcaption>The classic channel list</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-catchup-guide.webp" alt="Catch-up in the guide" width="1280" height="720"><figcaption>Catch-up: travel back in the guide</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-movies.webp" alt="Movies" width="1280" height="720"><figcaption>Movies with posters and ratings</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-episodes.webp" alt="Episodes" width="1280" height="720"><figcaption>Shows, seasons and episodes</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-multiview.webp" alt="Multiview" width="1280" height="720"><figcaption>Multiview</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-search.webp" alt="Search" width="1280" height="720"><figcaption>Search channels and programmes</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-versions.webp" alt="Other versions of a channel" width="1280" height="720"><figcaption>Other versions of a channel</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-reminder.webp" alt="A reminder" width="1280" height="720"><figcaption>Reminders</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-settings-look.webp" alt="Appearance settings" width="1280" height="720"><figcaption>Make it yours</figcaption></figure>
   </div>
 </section>
 
+<!-- ========== SPOTLIGHTS ========== -->
 <section id="tour" class="section">
-  <div class="wrap split rev">
-    <figure class="shot"><img loading="lazy" src="img/shots/tv-tour-welcome.webp" alt="The set-up tour: what your playlist has" width="1280" height="720"></figure>
-    <div>
+  <div class="wrap split">
+    <div class="reveal">
       <p class="kicker">First start</p>
       <h2>Your playlist, tidied before the first show.</h2>
       <p>Connect, and TiviBro shows what your list holds, then walks you through it with the remote.  It only asks about what your playlist has, keeps a running count, and changes nothing until <b>Apply</b>.</p>
@@ -181,21 +264,18 @@
         <li>Clean names, with your own channels shown before and after.</li>
         <li>East or West feeds, and your city's local stations in every local group.</li>
         <li>Sports and pay-per-view, duplicates, divider groups, logos and colours.</li>
-        <li>Or scan the QR code: the web editor opens on your phone, signed in.</li>
       </ul>
     </div>
-  </div>
-  <div class="wrap thumbs">
-    <img loading="lazy" src="img/shots/tv-tour-countries.webp" alt="Countries" width="1280" height="720">
-    <img loading="lazy" src="img/shots/tv-tour-locals.webp" alt="Your local channels" width="1280" height="720">
-    <img loading="lazy" src="img/shots/tv-tour-phone.webp" alt="Scan to set up on your phone" width="1280" height="720">
-    <img loading="lazy" src="img/shots/tv-tour-done.webp" alt="All set" width="1280" height="720">
+    <div class="layers" data-tilt>
+      <img class="layer l-back" data-speed="-0.05" loading="lazy" src="img/shots/tv-tour-locals.webp" alt="" width="1280" height="720">
+      <img class="layer l-front zoomable" data-speed="0.07" loading="lazy" src="img/shots/tv-tour-welcome.webp" alt="The set-up tour: what your playlist has" width="1280" height="720">
+    </div>
   </div>
 </section>
 
 <section id="logos" class="section alt">
-  <div class="wrap split">
-    <div>
+  <div class="wrap split rev">
+    <div class="reveal">
       <p class="kicker">Channel logos</p>
       <h2>Every channel gets its logo.</h2>
       <p>Providers leave logos out, or send ones that no longer load.  The logo library fills them in from two open projects, <a href="https://github.com/iptv-org/database">iptv-org</a> and <a href="https://github.com/tv-logo/tv-logos">tv-logos</a>.</p>
@@ -206,74 +286,86 @@
         <li>TiviBro hosts no images: each logo loads from its own project.</li>
       </ul>
     </div>
-    <figure class="shot"><img loading="lazy" src="img/shots/tv-tour-logos.webp" alt="Channel logos from the logo library" width="1280" height="720"></figure>
+    <div class="layers">
+      <img class="layer l-solo zoomable" data-speed="0.06" loading="lazy" src="img/shots/tv-tour-logos.webp" alt="Channel logos from the logo library" width="1280" height="720">
+    </div>
   </div>
 </section>
 
 <section id="events" class="section">
   <div class="wrap split">
-    <div>
+    <div class="reveal">
       <p class="kicker">Pay-per-view and sports passes</p>
-      <h2>The game is in the name.  Now it's in the guide.</h2>
-      <p>Providers often skip the guide for pay-per-view, NFL, NBA, NHL and college passes, and write the whole listing into the channel name instead: <code>NCAAB 001 | NORTH FLORIDA @ CHARLESTON SOUTHERN (M) | 12.18 11:00 AM | ESPN+</code>.</p>
+      <h2>The game is in the name.  <span class="grad">Now it's in the guide.</span></h2>
+      <p>Providers often skip the guide for pay-per-view, NFL, NBA, NHL and college passes, and write the whole listing into the channel name instead:</p>
+      <p class="name-demo"><code>NCAAB 001 | NORTH FLORIDA @ CHARLESTON SOUTHERN (M) | 12.18 11:00 AM | ESPN+</code><span class="becomes"><svg class="i"><use href="#i-arrow"/></svg><b>NCAAB 001</b> · North Florida @ Charleston Southern, 11:00 AM</span></p>
       <ul class="ticks">
-        <li>The channel shows as <b>NCAAB 001</b>, with the matchup under it.</li>
         <li>The guide says <b>Starts 7:30 PM: Kings vs Pelicans</b>, then shows the game at its real time.</li>
         <li><b>Events by time</b> lists every upcoming game and fight, soonest first.</li>
         <li>ET, PT, UK and CET times are converted to your TV's time, daylight saving included.</li>
       </ul>
     </div>
-    <figure class="shot"><img loading="lazy" src="img/shots/tv-events-guide.webp" alt="Event channels in the guide" width="1280" height="720"></figure>
+    <div class="layers">
+      <img class="layer l-back" data-speed="-0.05" loading="lazy" src="img/shots/tv-events-list.webp" alt="" width="1280" height="720">
+      <img class="layer l-front zoomable" data-speed="0.07" loading="lazy" src="img/shots/tv-events-guide.webp" alt="Event channels in the guide" width="1280" height="720">
+    </div>
   </div>
 </section>
 
 <section id="editor" class="section alt">
   <div class="wrap split rev">
-    <figure class="shot"><video src="media/live-edit.mp4" poster="img/live-edit-poster.webp" autoplay muted loop playsinline preload="none" aria-label="Hiding groups in the web editor while the TV follows"></video></figure>
-    <div>
+    <div class="reveal">
       <p class="kicker">The web editor</p>
-      <h2>Clean up 10,000 channels from your computer, not the remote.</h2>
-      <p>Turn on <b>Edit on a computer</b> and open the address the TV shows in any browser on your network.  Changes are drafts until you press <b>Send to TV</b>.</p>
+      <h2>Clean up 10,000 channels from your phone or computer.</h2>
+      <p>Scan the QR code, or turn on <b>Edit on a computer</b> and open the address the TV shows.  Changes are drafts until you press <b>Send to TV</b>.</p>
       <ul class="ticks">
         <li>Hide, sort, rename, copy and move channels into any group.</li>
-        <li>Smart clean-up: keep only your countries, pick your city for local stations, keep East or West feeds, hide duplicates, divider groups and empty groups.</li>
+        <li>Smart clean-up: your countries, your city's locals, East or West feeds, duplicates, divider and empty groups.</li>
         <li>Smart match finds the right guide for channels without one.</li>
-        <li>Drafts are saved on the TV within seconds, with a version history.  A stray refresh never costs you an hour of work.</li>
+        <li>Drafts are saved on the TV within seconds, with a version history.</li>
         <li>Logins never leave the TV; the editor only sees server names.</li>
       </ul>
     </div>
+    <div class="layers">
+      <figure class="laptop" data-speed="0.05"><video src="media/live-edit.mp4" poster="img/live-edit-poster.webp" autoplay muted loop playsinline preload="none" aria-label="Hiding groups in the web editor while the TV follows"></video></figure>
+      <div class="phone layer-phone" data-speed="0.14"><div class="phone-screen"><img loading="lazy" src="img/shots/editor-phone-tools.webp" alt="Smart clean-up on a phone" width="390" height="844"></div></div>
+    </div>
   </div>
-  <div class="wrap thumbs">
-    <img loading="lazy" src="img/shots/editor-overview.webp" alt="Editor overview" width="1280" height="720">
-    <img loading="lazy" src="img/shots/editor-feeds-local.webp" alt="East and West feeds, and local channels by city" width="1280" height="764">
-    <img loading="lazy" src="img/shots/editor-groups.webp" alt="Groups and channels" width="1280" height="720">
-    <img loading="lazy" src="img/shots/editor-backup.webp" alt="Backup and restore" width="1280" height="720">
+  <div class="wrap thumbs reveal">
+    <img class="zoomable" loading="lazy" src="img/shots/editor-overview.webp" alt="Editor overview" width="1280" height="720">
+    <img class="zoomable" loading="lazy" src="img/shots/editor-feeds-local.webp" alt="East and West feeds, and local channels by city" width="1280" height="764">
+    <img class="zoomable" loading="lazy" src="img/shots/editor-groups.webp" alt="Groups and channels" width="1280" height="720">
+    <img class="zoomable" loading="lazy" src="img/shots/editor-backup.webp" alt="Backup and restore" width="1280" height="720">
   </div>
 </section>
 
 <section class="section">
   <div class="wrap split">
-    <div>
+    <div class="reveal">
       <p class="kicker">Backups</p>
       <h2>New TV?  Everything back in a minute.</h2>
-      <p>One file holds every playlist with its login, your groups, favorites, names, guide matches and settings, locked with your passphrase (AES-256-GCM) before it leaves the TV.  On a brand-new install, scan the QR code on the very first screen and restore it from your phone, or open the address on a computer.</p>
+      <p>One file holds every playlist with its login, your groups, favorites, names, guide matches and settings, locked with your passphrase (AES-256-GCM) before it leaves the TV.  On a brand-new install, scan the QR code on the very first screen and restore it from your phone.</p>
     </div>
-    <figure class="shot"><img loading="lazy" src="img/shots/tv-first-run.webp" alt="First start" width="1280" height="720"></figure>
+    <div class="layers"><img class="layer l-solo zoomable" data-speed="0.06" loading="lazy" src="img/shots/tv-first-run.webp" alt="First start, with the QR code" width="1280" height="720"></div>
   </div>
 </section>
 
+<!-- ========== INSTALL ========== -->
 <section id="install" class="section alt">
-  <div class="wrap">
-    <h2>Install</h2>
-    <p class="sub">TiviBro installs like any homebrew app.  Pick the way that suits your TV.</p>
-    <div class="tabs" role="tablist">
+  <div class="wrap narrow">
+    <div class="head center reveal">
+      <p class="kicker">Install</p>
+      <h2>On your TV in a few minutes.</h2>
+      <p class="sub">TiviBro installs like any homebrew app.  Pick the way that suits your TV.</p>
+    </div>
+    <div class="tabs reveal" role="tablist">
       <button role="tab" aria-selected="true" data-tab="hbc">Homebrew Channel</button>
       <button role="tab" aria-selected="false" data-tab="root">Rooted TV, one line</button>
       <button role="tab" aria-selected="false" data-tab="dev">Developer Mode</button>
     </div>
-    <div class="panel" data-panel="hbc">
+    <div class="panel reveal" data-panel="hbc">
       <p><b>The easiest way on a rooted TV, with updates from the TV itself.</b></p>
-      <ol>
+      <ol class="steps">
         <li>Open the <b>Homebrew Channel</b>, go to <b>Settings</b>, and choose <b>Add repository</b>.</li>
         <li>Enter this address:
           <div class="copy"><code>https://tivibro.app/repo</code><button type="button">Copy</button></div></li>
@@ -289,24 +381,39 @@
     </div>
     <div class="panel" data-panel="dev" hidden>
       <p><b>No root?  Use LG's Developer Mode and the webOS CLI.</b></p>
-      <ol>
+      <ol class="steps">
         <li>Put your TV in <a href="https://webostv.developer.lge.com/develop/getting-started/developer-mode-app">Developer Mode</a>.</li>
         <li>Download the <code>.ipk</code> from the <a href="https://github.com/ohmybahgosh/TiviBro/releases">latest release</a>.</li>
         <li>Install it with <code>ares-install -d yourTV app.tivibro.tv_*.ipk</code>, or build from source with <code>npm run build</code> and <code>npm run install:tv</code>.</li>
       </ol>
     </div>
-    <p class="note">TiviBro is in active development: these are test builds.  Keep a backup before updating, and report bugs in <a href="https://github.com/ohmybahgosh/TiviBro/issues">Issues</a>.</p>
+    <p class="note center">TiviBro is in active development: these are test builds.  Keep a backup before updating, and report bugs in <a href="https://github.com/ohmybahgosh/TiviBro/issues">Issues</a>.</p>
   </div>
 </section>
 
+<!-- ========== FAQ ========== -->
 <section class="section">
-  <div class="wrap faq">
-    <h2>Questions</h2>
-    <details><summary>Does TiviBro come with channels?</summary><p>No.  TiviBro is a player.  It plays your own subscription from your provider, as an Xtream Codes login or an M3U playlist with an XMLTV guide.</p></details>
-    <details><summary>Which TVs does it run on?</summary><p>LG TVs with webOS 4 (2018) and newer.  It is built and tuned for webOS 25 and tested on the browser and Node engines of older webOS versions.</p></details>
-    <details><summary>Is it really free?</summary><p>Yes.  It's MIT licensed open source, with no accounts, ads, tracking or paid tiers.</p></details>
-    <details><summary>Are my logins safe?</summary><p>Logins stay on the TV.  The web editor only ever sees server names, it needs the password shown on the TV, and backups are always encrypted with a passphrase you choose.</p></details>
-    <details><summary>Where's the full manual?</summary><p>The <a href="https://github.com/ohmybahgosh/TiviBro/wiki">user guide</a> covers every remote button, every screen and every setting, with videos and screenshots.</p></details>
+  <div class="wrap narrow faq">
+    <div class="head center reveal"><p class="kicker">Questions</p><h2>Good to know.</h2></div>
+    <details class="reveal"><summary>Does TiviBro come with channels?</summary><p>No.  TiviBro is a player.  It plays your own subscription from your provider, as an Xtream Codes login or an M3U playlist with an XMLTV guide.</p></details>
+    <details class="reveal"><summary>Which TVs does it run on?</summary><p>LG TVs with webOS 4 (2018) and newer.  It is built and tuned for webOS 25 and tested on the browser and Node engines of older webOS versions.</p></details>
+    <details class="reveal"><summary>Do I have to type my login with the remote?</summary><p>No.  Scan the QR code on the first screen with your phone and type it there, or restore a backup from another TV.</p></details>
+    <details class="reveal"><summary>What's the "network helper"?</summary><p>A part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams for the app, because webOS won't let an app talk to most IPTV servers directly.  It only talks to your own provider.  Leave Connection on Automatic.</p></details>
+    <details class="reveal"><summary>Is it really free?</summary><p>Yes.  It's MIT licensed open source, with no accounts, ads, tracking or paid tiers.</p></details>
+    <details class="reveal"><summary>Are my logins safe?</summary><p>Logins stay on the TV.  The web editor only ever sees server names, it needs the password shown on the TV, and backups are always encrypted with a passphrase you choose.</p></details>
+    <details class="reveal"><summary>Where's the full manual?</summary><p>The <a href="https://github.com/ohmybahgosh/TiviBro/wiki">user guide</a> covers every remote button, every screen and every setting, with videos and screenshots.</p></details>
+  </div>
+</section>
+
+<!-- ========== CTA BAND ========== -->
+<section class="cta-band">
+  <div class="wrap reveal">
+    <h2>Give your LG TV the IPTV player it deserves.</h2>
+    <p>Free, open source, and set up from your phone in minutes.</p>
+    <div class="cta center">
+      <a class="btn primary lg" href="#install">Install TiviBro <svg class="i" width="18" height="18"><use href="#i-arrow"/></svg></a>
+      <a class="btn ghost lg" href="https://github.com/ohmybahgosh/TiviBro"><svg class="i" width="18" height="18"><use href="#i-github"/></svg> Star it on GitHub</a>
+    </div>
   </div>
 </section>
 
@@ -327,35 +434,101 @@
 
 <script>
 (function () {
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var $ = function (s, r) { return (r || document).querySelector(s); }, $$ = function (s, r) { return [].slice.call((r || document).querySelectorAll(s)); };
+
+  // Mobile menu
+  var mb = $('#menu-btn'), links = $('#links');
+  mb.addEventListener('click', function () { var on = !document.body.classList.contains('menu-open'); document.body.classList.toggle('menu-open', on); mb.setAttribute('aria-expanded', on); });
+  $$('#links a').forEach(function (a) { a.addEventListener('click', function () { document.body.classList.remove('menu-open'); mb.setAttribute('aria-expanded', 'false'); }); });
+
   // Install tabs
-  var tabs = document.querySelectorAll('[role=tab]'), panels = document.querySelectorAll('.panel');
+  var tabs = $$('[role=tab]'), panels = $$('.panel');
   tabs.forEach(function (t) {
     t.addEventListener('click', function () {
       tabs.forEach(function (x) { x.setAttribute('aria-selected', x === t ? 'true' : 'false'); });
-      panels.forEach(function (p) { p.hidden = p.getAttribute('data-panel') !== t.getAttribute('data-tab'); });
+      panels.forEach(function (p) { p.hidden = p.getAttribute('data-panel') !== t.getAttribute('data-tab'); if (!p.hidden) p.classList.add('in'); });
     });
   });
   // Copy buttons
-  document.querySelectorAll('.copy button').forEach(function (b) {
+  $$('.copy button').forEach(function (b) {
     b.addEventListener('click', function () {
       var text = b.previousElementSibling.textContent;
       (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { b.textContent = 'Copied'; }, function () { b.textContent = 'Select and copy'; });
       setTimeout(function () { b.textContent = 'Copy'; }, 1800);
     });
   });
-  // Newest build, straight from GitHub
-  // GitHub lists releases by tag name (alpha.9 before alpha.10), so take the newest by date.
+  // Newest build, straight from GitHub.  GitHub lists releases by tag name (alpha.9 before alpha.10), so take the newest by date.
   fetch('https://api.github.com/repos/ohmybahgosh/TiviBro/releases?per_page=100').then(function (r) { return r.ok ? r.json() : []; }).then(function (l) {
     l = (l || []).filter(function (r) { return !r.draft && r.tag_name; }).sort(function (a, b) { return (b.published_at || '') > (a.published_at || '') ? 1 : (b.published_at || '') < (a.published_at || '') ? -1 : 0; });
-    if (l && l[0] && l[0].tag_name) document.getElementById('ver').textContent = 'Newest: ' + l[0].tag_name.replace(/^v/, '').replace(/-alpha\./, ' alpha ').replace(/-beta\./, ' beta ');
+    if (l && l[0] && l[0].tag_name) $('#ver').textContent = 'Newest: ' + l[0].tag_name.replace(/^v/, '').replace(/-alpha\./, ' alpha ').replace(/-beta\./, ' beta ');
   }).catch(function () {});
-  // Click a screenshot for full size
-  document.querySelectorAll('.gallery img, .thumbs img, .shot img, .phones img').forEach(function (img) {
+
+  // Reveal on scroll
+  if ('IntersectionObserver' in window && !reduce) {
+    var io = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }); }, { rootMargin: '0px 0px -8% 0px', threshold: 0.08 });
+    $$('.reveal').forEach(function (el, i) { el.style.setProperty('--d', (i % 4) * 70 + 'ms'); io.observe(el); });
+  } else $$('.reveal').forEach(function (el) { el.classList.add('in'); });
+
+  // Phone setup story: the phone shows the step in the middle of the screen
+  var phoneImgs = $$('#story-phone img'), steps = $$('.story-steps .step');
+  function showShot(name) {
+    steps.forEach(function (s) { s.classList.toggle('active', s.getAttribute('data-shot') === name); });
+    document.querySelector('.story-stage').classList.toggle('tv-on', name === 'tv');
+    if (name !== 'tv') phoneImgs.forEach(function (im) { im.classList.toggle('on', im.getAttribute('data-shot') === name); });
+  }
+  if ('IntersectionObserver' in window) {
+    var so = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) showShot(e.target.getAttribute('data-shot')); }); }, { rootMargin: '-45% 0px -45% 0px' });
+    steps.forEach(function (s) { so.observe(s); });
+  }
+  steps.forEach(function (s) { s.addEventListener('mouseenter', function () { showShot(s.getAttribute('data-shot')); }); });
+  showShot('tv');
+
+  // Header, progress bar and parallax, in one animation frame per scroll
+  var bar = $('#top-bar'), prog = $('#progress'), par = $$('[data-speed]'), hero = $('#hero'), depth = $$('[data-depth]');
+  var ticking = false;
+  function frame() {
+    ticking = false;
+    var y = window.scrollY, h = document.documentElement.scrollHeight - innerHeight;
+    bar.classList.toggle('scrolled', y > 10);
+    prog.style.transform = 'scaleX(' + (h > 0 ? y / h : 0) + ')';
+    if (reduce) return;
+    var vh = innerHeight;
+    par.forEach(function (el) {
+      var r = el.getBoundingClientRect(); if (r.bottom < -200 || r.top > vh + 200) return;
+      var off = (r.top + r.height / 2 - vh / 2) * parseFloat(el.getAttribute('data-speed'));
+      el.style.setProperty('--py', off.toFixed(1) + 'px');
+    });
+    if (y < vh * 1.2) depth.forEach(function (el) { el.style.setProperty('--sy', (y * parseFloat(el.getAttribute('data-depth'))).toFixed(1) + 'px'); });
+  }
+  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(frame); } }
+  window.addEventListener('scroll', onScroll, { passive: true }); window.addEventListener('resize', onScroll); frame();
+
+  // Hero follows the pointer a little (desktop only)
+  if (!reduce && matchMedia('(pointer: fine)').matches) {
+    hero.addEventListener('pointermove', function (e) {
+      var r = hero.getBoundingClientRect(), x = (e.clientX - r.left) / r.width - 0.5, yy = (e.clientY - r.top) / r.height - 0.5;
+      depth.forEach(function (el) { var d = parseFloat(el.getAttribute('data-depth')) * 60; el.style.setProperty('--mx', (x * d).toFixed(1) + 'px'); el.style.setProperty('--my', (yy * d).toFixed(1) + 'px'); });
+    });
+    // Cards: a soft light follows the pointer
+    $$('.spot').forEach(function (c) { c.addEventListener('pointermove', function (e) { var r = c.getBoundingClientRect(); c.style.setProperty('--sx', (e.clientX - r.left) + 'px'); c.style.setProperty('--sy2', (e.clientY - r.top) + 'px'); }); });
+  }
+
+  // Gallery carousel buttons
+  var car = $('#gallery');
+  $$('[data-car]').forEach(function (b) { b.addEventListener('click', function () { var f = car.querySelector('figure'); car.scrollBy({ left: (+b.getAttribute('data-car')) * (f ? f.offsetWidth + 20 : 600), behavior: reduce ? 'auto' : 'smooth' }); }); });
+
+  // Lightbox with ← → between pictures
+  var zoom = $$('#gallery img, .thumbs img, .zoomable, .bento img');
+  zoom.forEach(function (img, i) {
     img.addEventListener('click', function () {
-      var box = document.createElement('div'); box.className = 'lightbox';
-      var big = document.createElement('img'); big.src = img.src; big.alt = img.alt; box.appendChild(big);
-      box.addEventListener('click', function () { box.remove(); });
-      document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { box.remove(); document.removeEventListener('keydown', esc); } });
+      var at = i, box = document.createElement('div'); box.className = 'lightbox'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Picture');
+      var big = document.createElement('img'), cap = document.createElement('p');
+      function set() { big.src = zoom[at].src; big.alt = zoom[at].alt; cap.textContent = zoom[at].alt; }
+      set(); box.appendChild(big); box.appendChild(cap);
+      function close() { box.remove(); document.removeEventListener('keydown', key); }
+      function key(e) { if (e.key === 'Escape') close(); if (e.key === 'ArrowRight') { at = (at + 1) % zoom.length; set(); } if (e.key === 'ArrowLeft') { at = (at - 1 + zoom.length) % zoom.length; set(); } }
+      box.addEventListener('click', close); document.addEventListener('keydown', key);
       document.body.appendChild(box);
     });
   });

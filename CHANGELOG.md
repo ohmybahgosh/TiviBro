@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **tivibro.app, redesigned.**  A full-screen hero with the guide playing on a TV and the phone editor beside it, a feature grid, a scroll-through "set it up from your phone" story, a screenshot carousel with a full-size viewer, parallax sections for the tour, logos, sports and the web editor, and an install section with tabs.  Works on phones, and keeps still for people who turn off motion.
+
 ## 0.6.0 (alpha 12, 2026-10-29)
 
 Pre-release: expect rough edges, and keep a backup before installing.
