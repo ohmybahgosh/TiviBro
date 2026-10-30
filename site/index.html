@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="img/guide-poster.webp">
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=7">
 </head>
 <body>
 
@@ -52,6 +52,8 @@
     <symbol id="i-bug" viewBox="0 0 24 24"><rect x="7" y="8" width="10" height="12" rx="5"/><path d="M9 8a3 3 0 0 1 6 0M12 12v8M7 12H3M21 12h-4M7 17H4M20 17h-3M8 5L6 3M16 5l2-2"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></symbol>
     <symbol id="i-part" viewBox="0 0 24 24"><path d="M7 12h10"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.8l2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z"/></symbol>
     <symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
     <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" stroke="none" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></symbol>
@@ -140,18 +142,20 @@
       </article>
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-trophy"/></svg></span><h3>Sports and PPV, readable</h3><p>Event channels that cram the listing into their name get a short name, and the game lands in the guide at its real time.</p></article>
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-multi"/></svg></span><h3>Multiview</h3><p>Two channels side by side, four on TVs that can take it.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-swap"/></svg></span><h3>Never stuck on a dead channel</h3><p>Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next by itself.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-shield"/></svg></span><h3>Streams that don't quit</h3><p>Reconnects, waits out Wi-Fi drops and tries every player before giving up.</p></article>
       <article class="tile wide reveal spot">
         <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-compass"/></svg></span><h3>A set-up tour from your own playlist</h3><p>Countries, clean names, East or West, your city's locals, sports, clutter, logos and colours: it only asks about what your list has, with a running count of what you keep.</p></div>
         <img loading="lazy" src="img/shots/tv-tour-countries.webp" alt="The set-up tour: countries" width="1280" height="720">
       </article>
-      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-swap"/></svg></span><h3>Never stuck on a dead channel</h3><p>Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next by itself.</p></article>
-      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-shield"/></svg></span><h3>Streams that don't quit</h3><p>Reconnects, waits out Wi-Fi drops and tries every player before giving up.</p></article>
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-hdr"/></svg></span><h3>HDR, Dolby Vision, Atmos</h3><p>Each stream goes to the player that suits its format best.</p></article>
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-image"/></svg></span><h3>Logos for every channel</h3><p>Missing logos filled in from two open logo projects.</p></article>
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-sparkle"/></svg></span><h3>Clean names, tidy lists</h3><p>"USA | ESPN FHD ◉" shows as "ESPN".  Hundreds of tags handled.</p></article>
-      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-bell"/></svg></span><h3>Reminders and PINs</h3><p>A reminder on any future programme, and a PIN for channels, groups or Settings.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-bell"/></svg></span><h3>Reminders that find you</h3><p>Even with TiviBro closed, on another app or input.  Never over the screensaver.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-search"/></svg></span><h3>Search the whole guide</h3><p>Every showing of a show, today and the days ahead, with On now, Coming up and Replays.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-star"/></svg></span><h3>A watchlist</h3><p>Add "Yankees" or "Bluey" once.  TiviBro reminds you whenever it's on.</p></article>
       <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-palette"/></svg></span><h3>Make it yours</h3><p>Nine backgrounds including true black for OLED, twelve accents or your own.</p></article>
-      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-heart"/></svg></span><h3>Free and open</h3><p>MIT licensed.  No accounts, no ads, no tracking.  Logins never leave the TV.</p></article>
+      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-heart"/></svg></span><h3>Free and open</h3><p>MIT licensed.  No accounts, no ads, no tracking.  Logins never leave the TV, and a PIN locks channels, groups or Settings.</p></article>
     </div>
   </div>
 </section>
@@ -303,7 +307,7 @@
       <p class="kicker">Pay-per-view and sports passes</p>
       <h2>The game is in the name.  <span class="grad">Now it's in the guide.</span></h2>
       <p>Providers often skip the guide for pay-per-view, NFL, NBA, NHL and college passes, and write the whole listing into the channel name instead:</p>
-      <p class="name-demo"><code>NCAAB 001 | NORTH FLORIDA @ CHARLESTON SOUTHERN (M) | 12.18 11:00 AM | ESPN+</code><span class="becomes"><svg class="i"><use href="#i-arrow"/></svg><b>NCAAB 001</b> · North Florida @ Charleston Southern, 11:00 AM</span></p>
+      <p class="name-demo"><code>NCAAB 001 | NORTH FLORIDA @ CHARLESTON SOUTHERN (M) | 12.18 11:00 AM | ESPN+</code><span class="becomes"><svg class="i"><use href="#i-arrow"/></svg><span><b>NCAAB 001</b>  ·  North Florida @ Charleston Southern, 11:00 AM</span></span></p>
       <ul class="ticks">
         <li>The guide says <b>Starts 7:30 PM: Kings vs Pelicans</b>, then shows the game at its real time.</li>
         <li><b>Events by time</b> lists every upcoming game and fight, soonest first.</li>
@@ -538,20 +542,96 @@
   var car = $('#gallery');
   $$('[data-car]').forEach(function (b) { b.addEventListener('click', function () { var f = car.querySelector('figure'); car.scrollBy({ left: (+b.getAttribute('data-car')) * (f ? f.offsetWidth + 20 : 600), behavior: reduce ? 'auto' : 'smooth' }); }); });
 
-  // Lightbox with ← → between pictures
+  // Pictures that open: each gets a badge ("Enlarge" on hover), which pulses once when it first
+  // scrolls into view, and opens in a lightbox that grows out of the picture.
   var zoom = $$('#gallery img, .thumbs img, .zoomable, .bento img');
-  zoom.forEach(function (img, i) {
-    img.addEventListener('click', function () {
-      var at = i, box = document.createElement('div'); box.className = 'lightbox'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-label', 'Picture');
-      var big = document.createElement('img'), cap = document.createElement('p');
-      function set() { big.src = zoom[at].src; big.alt = zoom[at].alt; cap.textContent = zoom[at].alt; }
-      set(); box.appendChild(big); box.appendChild(cap);
-      function close() { box.remove(); document.removeEventListener('keydown', key); }
-      function key(e) { if (e.key === 'Escape') close(); if (e.key === 'ArrowRight') { at = (at + 1) % zoom.length; set(); } if (e.key === 'ArrowLeft') { at = (at - 1 + zoom.length) % zoom.length; set(); } }
-      box.addEventListener('click', close); document.addEventListener('keydown', key);
-      document.body.appendChild(box);
-    });
+  zoom.forEach(function (img) {
+    var w = document.createElement('span'); w.className = 'zw';
+    // Layered pictures are positioned by their classes: those move to the wrapper.
+    if (img.classList.contains('layer')) { w.className = 'zw ' + img.className.replace(/\bzoomable\b/, '').trim(); img.className = ''; }
+    img.parentNode.insertBefore(w, img); w.appendChild(img);
+    w.setAttribute('role', 'button'); w.setAttribute('tabindex', '0'); w.setAttribute('aria-label', 'Enlarge: ' + (img.alt || 'picture'));
+    var b = document.createElement('span'); b.className = 'zbadge'; b.setAttribute('aria-hidden', 'true');
+    b.innerHTML = '<svg class="i"><use href="#i-expand"/></svg><b>Enlarge</b>';
+    w.appendChild(b);
+    w.addEventListener('click', function (e) { e.preventDefault(); open(img); });
+    w.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(img); } });
   });
+  if ('IntersectionObserver' in window && !reduce) {
+    var nio = new IntersectionObserver(function (es) { es.forEach(function (en) { if (en.isIntersecting) { var bd = en.target.querySelector('.zbadge'); if (bd) { bd.classList.add('nudge'); setTimeout(function () { bd.classList.remove('nudge'); }, 3400); } nio.unobserve(en.target); } }); }, { threshold: 0.6 });
+    $$('.zw').forEach(function (w) { nio.observe(w); });
+  }
+
+  function open(img) {
+    // Arrows move between the pictures of the same section.
+    var sec = img.closest('section') || document.body;
+    var set = zoom.filter(function (x) { return sec.contains(x); }), at = Math.max(0, set.indexOf(img));
+    var box = document.createElement('div'); box.className = 'lightbox'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-label', 'Picture');
+    box.innerHTML = '<img class="lb-img" alt=""><div class="lb-bar"><span class="lb-cap"></span><span class="lb-count"></span></div>' +
+      '<button class="lb-btn lb-close" aria-label="Close"><svg class="i"><use href="#i-x"/></svg></button>' +
+      (set.length > 1 ? '<button class="lb-btn lb-prev" aria-label="Previous picture"><svg class="i"><use href="#i-arrow"/></svg></button><button class="lb-btn lb-next" aria-label="Next picture"><svg class="i"><use href="#i-arrow"/></svg></button>' : '');
+    var big = box.querySelector('.lb-img'), cap = box.querySelector('.lb-cap'), cnt = box.querySelector('.lb-count'), last = document.activeElement;
+    function fill() {
+      var x = set[at];
+      big.src = x.currentSrc || x.src; big.alt = x.alt;
+      var fc = x.closest('figure'), f = fc && fc.querySelector('figcaption');
+      cap.textContent = f ? f.textContent : x.alt;
+      cnt.textContent = set.length > 1 ? (at + 1) + ' / ' + set.length : '';
+      cnt.style.display = set.length > 1 ? '' : 'none';
+      [at - 1, at + 1].forEach(function (j) { var y = set[(j + set.length) % set.length]; if (y) { var pre = new Image(); pre.src = y.currentSrc || y.src; } });
+    }
+    // Grow from (and shrink back to) the picture on the page.
+    function fromThumb(x) {
+      var r = x.getBoundingClientRect(), f = big.getBoundingClientRect();
+      if (!r.width || !f.width || reduce) return '';
+      return 'translate(' + (r.left - f.left) + 'px,' + (r.top - f.top) + 'px) scale(' + (r.width / f.width) + ',' + (r.height / f.height) + ')';
+    }
+    function go(d) {
+      at = (at + d + set.length) % set.length;
+      big.classList.add('swap');
+      setTimeout(function () { fill(); big.onload = function () { big.classList.remove('swap'); }; if (big.complete) big.classList.remove('swap'); }, reduce ? 0 : 160);
+    }
+    var closing = false;
+    function close() {
+      if (closing) return; closing = true;
+      document.removeEventListener('keydown', key);
+      var t = fromThumb(set[at]);
+      box.classList.remove('on');
+      if (t) { big.style.transform = t; }
+      setTimeout(function () { box.remove(); document.documentElement.style.overflow = ''; if (last && last.focus) last.focus(); }, reduce ? 0 : 380);
+    }
+    function key(e) {
+      if (e.key === 'Escape') close();
+      else if (e.key === 'ArrowRight' && set.length > 1) go(1);
+      else if (e.key === 'ArrowLeft' && set.length > 1) go(-1);
+      else if (e.key === 'Tab') { e.preventDefault(); box.querySelector('.lb-close').focus(); }
+    }
+    box.addEventListener('click', function (e) {
+      var t = e.target.closest('button');
+      if (t && t.classList.contains('lb-prev')) return go(-1);
+      if (t && t.classList.contains('lb-next')) return go(1);
+      close();
+    });
+    // Swipe on phones.
+    var sx = 0, sy = 0;
+    box.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    box.addEventListener('touchend', function (e) {
+      var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) && set.length > 1) { e.preventDefault(); go(dx < 0 ? 1 : -1); }
+      else if (dy > 90 && Math.abs(dy) > Math.abs(dx)) { e.preventDefault(); close(); }
+    });
+    document.addEventListener('keydown', key);
+    document.documentElement.style.overflow = 'hidden';
+    fill();
+    document.body.appendChild(box);
+    function show() {
+      var t = fromThumb(img);
+      if (t) { big.style.transition = 'none'; big.style.transform = t; void big.offsetWidth; big.style.transition = ''; }
+      requestAnimationFrame(function () { box.classList.add('on'); big.style.transform = ''; });
+      box.querySelector('.lb-close').focus({ preventScroll: true });
+    }
+    if (big.complete && big.naturalWidth) show(); else { big.onload = show; big.onerror = show; }
+  }
 })();
 </script>
 </body>
