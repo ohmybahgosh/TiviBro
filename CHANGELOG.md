@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **Edit on phone, one press away.**  The side menu has **Edit on phone** (between Search and Settings): it turns the web editor on and shows its QR code, address and password over whatever you're on.  **Done** leaves it running; **Turn the editor off** stops it.  The same panel is under hold OK on any group, at the top of **Settings > Edit on a phone or computer** (renamed from Edit on a computer, and moved up under Playlists), and can go on any remote button in Settings > Remote control.
-
-## 0.6.0 (alpha 13, 2026-10-29)
+## 0.6.0 (alpha 14, 2026-10-29)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 13
+### New in alpha 14
+
+- **Edit on phone, one press away.**  The side menu has **Edit on phone** (between Search and Settings): it turns the web editor on and shows its QR code, address and password over whatever you're on.  **Done** leaves it running; **Turn the editor off** stops it.  The same panel is under hold OK on any group, at the top of **Settings > Edit on a phone or computer** (renamed from Edit on a computer, and moved up under Playlists), and can go on any remote button in Settings > Remote control.
+
+### In alpha 13
 
 - **Guide: a slimmer groups panel.**  The groups list now covers the channel column and no more, instead of a wide panel over the programmes (with logos only, it stays narrow too), and channel numbers no longer peek out beside it.  A group name too long to fit scrolls across while it's focused.
 - **Local channels in one group.**  Smart clean-up's **Local channels: pick your city** can also copy the stations you keep into one group, "Local channels" or a name of your own, by city and network, and then hide the network groups (ABC Locals, CBS Locals and the rest) so each station shows up once.  The set-up tour does the same, both on by default.
