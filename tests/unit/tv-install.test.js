@@ -13,6 +13,9 @@ const calls = path.join(tmp, 'calls.log');
 fs.writeFileSync(path.join(bin, 'luna-send-pub'), `#!/bin/sh
 echo "$*" >> "${calls}"
 case "$*" in
+  *getAppInfo*|*launch*) if [ -n "$FAKE_PUB_DENIED" ]; then echo '{"returnValue":false,"errorCode":-1,"errorText":"Denied method call"}'; exit 0; fi ;;
+esac
+case "$*" in
   *getAppInfo*) echo '{"returnValue":true,"appInfo":{"version":"0.5.0"}}' ;;
   *launch*) echo '{"returnValue":true}' ;;
   *dev/install*)
@@ -20,6 +23,16 @@ case "$*" in
     echo '{"returnValue":true,"subscribed":true}'
     if [ -n "$FAKE_FAIL" ]; then echo '{"details":{"state":"install failed","reason":"disk full"}}'; else echo '{"details":{"state":"installing"}}'; echo '{"details":{"state":"installed"}}'; fi
     sleep 5 ;;
+esac
+`, { mode: 0o755 });
+// Fake private-bus luna-send, only where a test asks for it (FAKE_PRIV): root on the TV has it.
+fs.writeFileSync(path.join(bin, 'luna-send'), `#!/bin/sh
+[ -n "$FAKE_PRIV" ] || exit 127
+echo "priv $*" >> "${calls}"
+case "$*" in
+  *getAppInfo*) echo '{"returnValue":true,"appInfo":{"version":"0.5.1"}}' ;;
+  *launch*) echo '{"returnValue":true}' ;;
+  *) echo '{"returnValue":false}' ;;
 esac
 `, { mode: 0o755 });
 fs.writeFileSync(path.join(bin, 'id'), '#!/bin/sh\necho 0\n', { mode: 0o755 });
@@ -96,6 +109,13 @@ server.listen(0, '127.0.0.1', async () => {
   ok('--ipk installs a file already on the TV', r.code === 0 && r.installed && r.installed.equals(IPK_B));
   r = await run(['--ipk', local, '--sha256', 'a'.repeat(64)]);
   ok('--ipk with a wrong --sha256 is refused', r.code !== 0 && !r.installed);
+
+  // webOS 25 as root: the public bus is refused for the application manager, the private one works.
+  r = await run(['--tag', 'v0.6.0'], { FAKE_PUB_DENIED: '1', FAKE_PRIV: '1' });
+  ok('root on webOS 25: reads the version and starts TiviBro over the private bus', r.code === 0 && /Installed now: 0\.5\.1/.test(r.out) && /priv .*applicationManager\/launch/.test(r.log) && /Starting TiviBro/.test(r.out), r.out.trim().split('\n').pop());
+  // No private bus and the public one refused: say so instead of claiming it started.
+  r = await run(['--tag', 'v0.6.0'], { FAKE_PUB_DENIED: '1' });
+  ok('when the TV refuses to start it, it says so', r.code === 0 && r.installed && !/Starting TiviBro/.test(r.out) && /Open TiviBro from the app list/.test(r.out), r.out.trim().split('\n').pop());
 
   r = await run([], { FAKE_FAIL: '1' });
   ok('an installer failure is reported and exits non-zero', r.code !== 0 && /Install failed/.test(r.out), r.out.trim().split('\n').pop());

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The rooted-TV installer (`curl -fsSL https://tivibro.app/install | sh`) starts TiviBro again on webOS 25, where the TV refuses app launches over `luna-send-pub`: it now uses the private bus as root.  It also shows the version that was installed before, which was missing for the same reason, and says so plainly when the TV won't start the app instead of claiming it did.
+
 ## 0.6.0 (alpha 21, 2026-10-30)
 
 Pre-release: expect rough edges, and keep a backup before installing.

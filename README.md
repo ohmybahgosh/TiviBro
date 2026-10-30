@@ -507,7 +507,7 @@ ssh root@TV_IP
 luna-send-pub -i 'luna://com.webos.appInstallService/dev/install' '{"id":"com.ares.defaultName","ipkUrl":"/tmp/tivibro.ipk","subscribe":true}'
 ```
 
-Wait for `"state": "installed"`, press <kbd>Ctrl</kbd>+<kbd>C</kbd>, then `rm /tmp/tivibro.ipk`.  Installing a newer IPK the same way updates TiviBro and keeps your settings.  To start it from the shell: `luna-send-pub -n 1 'luna://com.webos.applicationManager/launch' '{"id":"app.tivibro.tv"}'`.
+Wait for `"state": "installed"`, press <kbd>Ctrl</kbd>+<kbd>C</kbd>, then `rm /tmp/tivibro.ipk`.  Installing a newer IPK the same way updates TiviBro and keeps your settings.  To start it from the shell as root: `luna-send -n 1 'luna://com.webos.applicationManager/launch' '{"id":"app.tivibro.tv"}'` (newer TVs refuse this over `luna-send-pub`).
 
 If `scp` fails, pipe the file instead: `cat app.tivibro.tv_0.6.0_all.ipk | ssh root@TV_IP 'cat > /tmp/tivibro.ipk'`.
 
