@@ -1,10 +1,14 @@
 # Changelog
 
-## 0.6.0 (alpha 18, 2026-10-30)
+## 0.6.0 (alpha 19, 2026-10-30)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 18
+### New in alpha 19
+
+- **New icon.**  A full navy square with a soft blue glow and a bigger glossy V, so TiviBro stands out in the TV's app list and the Homebrew Channel instead of a near-black tile.  The website and web editor icons match.
+
+### In alpha 18
 
 - **Reminders only for someone using the TV.**  When the screensaver, the Gallery or art screen, Always Ready or a dark screen is up, the TV's reminder alert waits instead of popping up over it, and looks again every couple of minutes while the programme is on; once someone is back on another app or input, it shows (saying when it started).  Inside TiviBro, a reminder waits when nobody has touched the remote for 10 minutes and nothing is playing, and the next press brings it, with **Watch from the start** on catch-up channels.  The helper log records what was on screen each time, for TVs that name their screensaver differently.
 
