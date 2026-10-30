@@ -31,7 +31,7 @@
 </p>
 
 > [!WARNING]
-> **TiviBro is under active development.**  These are early test builds: expect bugs and rough edges, and settings or features may change between versions.  Keep a backup before updating (**Backup and restore** in the [web editor](#the-web-editor)).  Bug reports are welcome in [Issues](https://github.com/ohmybahgosh/TiviBro/issues).
+> **TiviBro is under active development.**  These are early test builds: expect bugs and rough edges, and settings or features may change between versions.  Keep a backup before updating (**Backup and restore** in the [web editor](#the-web-editor)).  Found a bug?  On the TV, **Settings > Diagnostics > Report a problem** (also on the first screen) fills in a [GitHub issue](https://github.com/ohmybahgosh/TiviBro/issues) for you from your phone: see [Report a problem](#report-a-problem).
 
 <p align="center"><a href="docs/media/guide.mp4"><img src="docs/media/guide.gif" width="100%" alt="The TiviBro guide, preview and fullscreen"></a></p>
 <p align="center"><sub>The guide is home: browse, preview in the window, OK again for fullscreen.  <a href="docs/media/guide.mp4">Watch the full-quality MP4</a>.  Every picture here is clickable.</sub></p>
@@ -89,6 +89,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🧹 **Clean-up that already knows IPTV** | Pick your city once and every local group (ABC, CBS, NBC, FOX, CW, PBS…) keeps only your stations.  Keep East or West feeds in one click.  Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from any naming style, duplicates in different qualities, and **Smart match** for channels without a guide. |
 | 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled" stay out of the way, and come back by themselves when an event is named. |
 | 🔐 **Locked backups, restored from the first screen** | One AES-256 file with every playlist, login, group and setting.  A brand-new TV restores it from a computer before you've touched a setting. |
+| 🐞 **Report a problem from the couch** | **Report a problem** shows a QR code.  Your phone opens a short form, the TV adds its version, model and log with logins and server names taken out, and GitHub's bug form opens filled in.  No copying logs off the TV. |
 | 💸 **Everything free, nothing locked** | Catch-up, multiview, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking. |
 | 📺 **Made for LG TVs** | Runs on the TV itself, webOS 4 and newer.  No Android box or Fire Stick needed. |
 
@@ -436,6 +437,17 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
 
 The **[user guide](docs/USER-GUIDE.md)** (also on the [wiki](../../wiki)) covers everything: every remote button, the guide, catch-up, movies and shows, multiview, other versions of a channel, event channels, reminders, parental controls, each page of the web editor, backups, and troubleshooting.  **[Every setting](docs/USER-GUIDE.md#every-setting)** explains each option in Settings, with its choices and default.
 
+### Report a problem
+
+Something broke?  Report it from the TV, no cables or log copying:
+
+1. On the TV: **Settings > Diagnostics > Report a problem**.  On the first screen, when the login won't work, **Report a problem** sits beside **View log**.
+2. Scan the QR code with your phone (or open the address on a computer).  The web editor opens on **Report a problem**, signed in.
+3. Say where the problem is and what happened.  The TV adds its TiviBro version, TV model and webOS, a few settings, and the app and network helper logs.  Everything that will be shared is shown on the page first.
+4. **Save the log file**, then **Open the GitHub form**: it is filled in with what you typed, the TV's details and the recent errors.  Drag the log file in and press **Create**.  You need a free GitHub account.
+
+Before the report leaves the TV, usernames, passwords and tokens are masked and every provider, guide and unknown server name becomes `<provider>`, `<guide>` or `<server>`.  After a crash, TiviBro says so the next time it starts and points you here.
+
 ## Install
 
 ### Homebrew Channel (rooted TVs)
@@ -567,7 +579,7 @@ The [Release workflow](.github/workflows/release.yml) then runs the tests, build
 - Provider logins stay on the TV.  The web editor only ever sees server names, never usernames, passwords or stream links.
 - The web editor is off at every start (except on a brand-new TV with no playlist, for the setup QR code), needs the password shown on the TV, and locks out after repeated wrong tries.
 - Backups are always encrypted with a passphrase you choose.  Without it the file cannot be opened.
-- Logs mask usernames and passwords.
+- Logs mask usernames and passwords.  **Report a problem** also replaces every provider, guide and unknown server name before anything leaves the TV, and nothing is sent until you press the button on GitHub yourself.
 - The logo library, when you turn it on, downloads lists of logo addresses from tivibro.app, one per country in your playlist, then each logo from its project.  Only the country is in the request: no channel names, logins or anything else from your playlist.
 
 ## Credits

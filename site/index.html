@@ -49,6 +49,7 @@
     <symbol id="i-eyeoff" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 6.1A9.9 9.9 0 0 1 12 6c5 0 8.5 4.5 9.5 6a17 17 0 0 1-2.7 3.2M6.6 7.6C4.6 9 3.2 10.9 2.5 12c1 1.5 4.5 6 9.5 6 1.6 0 3-.4 4.2-1.1M9.9 10.1a3 3 0 0 0 4 4"/></symbol>
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-bug" viewBox="0 0 24 24"><rect x="7" y="8" width="10" height="12" rx="5"/><path d="M9 8a3 3 0 0 1 6 0M12 12v8M7 12H3M21 12h-4M7 17H4M20 17h-3M8 5L6 3M16 5l2-2"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></symbol>
     <symbol id="i-part" viewBox="0 0 24 24"><path d="M7 12h10"/></symbol>
     <symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
@@ -202,6 +203,9 @@
       <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-sparkle"/></svg></span><h3>Clean-up that already knows IPTV</h3><p>Pick your city once for every local group, keep East or West in one click, about 250 country codes preloaded.</p></article>
       <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-eyeoff"/></svg></span><h3>Hides channels with nothing on</h3><p>"Off Air" channels stay out of the way and come back by themselves when an event is named.</p></article>
       <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-lock"/></svg></span><h3>Restore from the first screen</h3><p>One AES-256 locked file with every playlist, login, group and setting, restored from your phone before you touch a setting.</p></article>
+      <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-phone"/></svg></span><h3>The editor, one press away</h3><p>Edit on phone in the side menu shows a QR code over whatever you're watching.  Scan it and keep tidying with a real keyboard.</p></article>
+      <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-bug"/></svg></span><h3>Report a problem from the couch</h3><p>Scan a code and your phone fills in a GitHub bug report with the TV's version, model and log, logins and server names taken out.</p></article>
+      <article class="card reveal spot"><span class="ico"><svg class="i"><use href="#i-shield"/></svg></span><h3>Tells you after a crash</h3><p>If something went wrong last time, TiviBro says so when it starts and points you to Report a problem, so bugs get fixed instead of forgotten.</p></article>
     </div>
 
     <div class="vs reveal">
@@ -402,6 +406,7 @@
     <details class="reveal"><summary>What's the "network helper"?</summary><p>A part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams for the app, because webOS won't let an app talk to most IPTV servers directly.  It only talks to your own provider.  Leave Connection on Automatic.</p></details>
     <details class="reveal"><summary>Is it really free?</summary><p>Yes.  It's MIT licensed open source, with no accounts, ads or paid tiers, and the app on your TV never tracks you.</p></details>
     <details class="reveal"><summary>Are my logins safe?</summary><p>Logins stay on the TV.  The web editor only ever sees server names, it needs the password shown on the TV, and backups are always encrypted with a passphrase you choose.</p></details>
+    <details class="reveal"><summary>Something isn't working.  How do I report it?</summary><p>On the TV, open <b>Settings &gt; Diagnostics &gt; Report a problem</b> (or <b>Report a problem</b> on the first screen) and scan the QR code.  Your phone opens a short form; the TV adds its version, model and log with logins and server names taken out, and GitHub's bug form opens filled in.  Attach the log file it saves and send.</p></details>
     <details class="reveal"><summary>Where's the full manual?</summary><p>The <a href="https://github.com/ohmybahgosh/TiviBro/wiki">user guide</a> covers every remote button, every screen and every setting, with videos and screenshots.</p></details>
   </div>
 </section>
@@ -427,13 +432,13 @@
       <a href="https://github.com/ohmybahgosh/TiviBro">GitHub</a>
       <a href="https://github.com/ohmybahgosh/TiviBro/releases">Releases</a>
       <a href="https://github.com/ohmybahgosh/TiviBro/wiki">User guide</a>
-      <a href="https://github.com/ohmybahgosh/TiviBro/issues">Report a bug</a>
+      <a href="https://github.com/ohmybahgosh/TiviBro/issues/new/choose">Report a bug</a>
       <a href="#" id="consentLink" hidden>Cookie settings</a>
     </nav>
     <p class="legal">TiviBro is an independent project.  It is not affiliated with LG Electronics or TiviMate, and it provides no channels, streams or playlists.</p>
   </div>
 </footer>
-<script src="analytics.js?v=4" defer></script>
+<script src="analytics.js?v=5" defer></script>
 
 <script>
 (function () {

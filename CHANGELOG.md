@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- README and tivibro.app explain **Report a problem**: a README section with the steps and what gets masked, a row in "What no other IPTV player does", an FAQ answer and feature cards on the website, and the footer's Report a bug link opens GitHub's issue forms.
+
 ## 0.6.0 (alpha 15, 2026-10-30)
 
 Pre-release: expect rough edges, and keep a backup before installing.
