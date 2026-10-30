@@ -8,9 +8,9 @@ Cleaning up hundreds of groups with a TV remote is painful.  The web editor does
 <p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/live-edit.mp4">Watch the MP4</a></sub></p>
 
 
-1. On the TV: **Settings > Edit on a computer**, switch on **Web editor**.  (On a brand-new TV: **Set up or restore from a computer** on the first screen.)
-2. The TV shows an address like `http://192.168.1.20:8787` and a password.
-3. Open the address on your computer or phone and type the password.  Dashes and capitals don't matter.
+1. On the TV, open **Edit on phone** in the side menu (◀ from the groups).  It turns the editor on and shows a QR code, the address and the password.  The same panel is under hold OK on any group (**Edit on a phone or computer…**), in **Settings > Edit on a phone or computer**, and on any remote button you like (Settings > Remote control).  (On a brand-new TV: the first screen already shows the code.)
+2. On a phone, scan the code with the camera: the editor opens signed in.  On a computer, open the address, like `http://192.168.1.20:8787`, and type the password.  Dashes and capitals don't matter.
+3. **Done** closes the panel and leaves the editor running; **Turn the editor off** stops it.
 
 The editor switches off every time TiviBro closes.  On a brand-new TV with no playlist it starts by itself, for the QR code on the first screen.  After five wrong passwords it locks for a minute.
 

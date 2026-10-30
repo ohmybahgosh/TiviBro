@@ -4,7 +4,7 @@
 
 Your groups sit right beside the guide: **Favorites** and your own groups first, then **All channels**, then your provider's groups.  Moving through the list updates the guide behind it.  **OK** or **▶** opens a group; **Hold OK** gives group options (rename, hide, sort, block).
 
-**◀** or **Back** from the groups opens the menu: **Guide, Channels, Movies, Shows, Search, Settings**.  Movies and Shows appear only when your provider has them.
+**◀** or **Back** from the groups opens the menu: **Guide, Channels, Movies, Shows, Search, Edit on phone, Settings**.  Movies and Shows appear only when your provider has them.  **Edit on phone** isn't a screen: it turns on the [web editor](Turning-on-the-web-editor) and shows its QR code over whatever you're watching.
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/groups.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/groups.gif" width="100%" alt="Groups and the menu"></a></p>
 <p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/groups.mp4">Watch the MP4</a></sub></p>

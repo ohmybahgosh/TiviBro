@@ -22,4 +22,4 @@ Five wrong PINs in a row lock the PIN for 30 seconds.
 
 ---
 
-← [Settings: Appearance](Settings-Appearance)  ·  [Home](Home)  ·  [Settings: Edit on a computer](Settings-Edit-on-a-computer) →
+← [Settings: Appearance](Settings-Appearance)  ·  [Home](Home)  ·  [Settings: Edit on a phone or computer](Settings-Edit-on-a-phone-or-computer) →

@@ -31,7 +31,7 @@
 - [Settings: Guide, start screen, reminders](Settings-Guide-start-screen-reminders)
 - [Settings: Appearance](Settings-Appearance)
 - [Settings: Parental controls](Settings-Parental-controls)
-- [Settings: Edit on a computer](Settings-Edit-on-a-computer)
+- [Settings: Edit on a phone or computer](Settings-Edit-on-a-phone-or-computer)
 - [Settings: Updates and about](Settings-Updates-and-about)
 - [Settings: Diagnostics](Settings-Diagnostics)
 
