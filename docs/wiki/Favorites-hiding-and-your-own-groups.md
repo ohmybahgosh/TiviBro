@@ -10,6 +10,7 @@
 - **Hide channel** removes it from the lists.  Hidden items come back from **Settings > Groups, sorting, hidden**, or show them dimmed with **Show hidden items in lists**.
 - **Rename…** and **Assign guide…** fix a name or a missing guide for that one channel.
 - **Other versions…** lists the same channel in its other qualities and copies, hidden ones included, to switch to one directly.
+- **Move…** (in the channel list) changes the channel's place in its group, yours or the provider's: **▲ ▼** carry it, **CH + / −** a page at a time, **OK** puts it down.  A provider group you reorder keeps your order after playlist refreshes, and channels the provider adds later go to the end.  **Hold OK** on the group > **Back to the provider's channel order** undoes it.
 
 **Manage groups** in Settings shows every group in one list to switch on or off, like TiviMate.  For hundreds of groups the [web editor](Groups-and-channels) is much faster.  Sorting, the Recent and Favorites groups, and getting hidden items back are in [Settings: Groups, sorting, hidden](Settings-Groups-sorting-hidden).
 

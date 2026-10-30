@@ -19,6 +19,7 @@
 - [Multiview](Multiview)
 - [Favorites, hiding and your own groups](Favorites-hiding-and-your-own-groups)
 - [Reminders](Reminders)
+- [Watchlist](Watchlist)
 - [Settings](Settings)
 - [Updates](Updates)
 - [Parental controls](Parental-controls)

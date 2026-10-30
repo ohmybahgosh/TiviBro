@@ -4,6 +4,10 @@
 
 Your groups sit right beside the guide: **Favorites** and your own groups first, then **All channels**, then your provider's groups.  Moving through the list updates the guide behind it.  **OK** or **▶** opens a group; **Hold OK** gives group options (rename, hide, sort, block).
 
+**Recently added** lists channels that are new in your playlist since it last loaded, newest first, and they carry a **NEW** tag in the lists for a week (change it, or turn it off, under **Settings > Groups, sorting, hidden > Recently added channels**).
+
+Long lists: **CH + / −** moves a page at a time everywhere, and holding **▲** or **▼** speeds up the longer you hold it, so the end of a 5,000 channel group is a few seconds away.
+
 **◀** or **Back** from the groups opens the menu: **Guide, Channels, Movies, Shows, Search, Edit on phone, Settings**.  Movies and Shows appear only when your provider has them.  **Edit on phone** isn't a screen: it turns on the [web editor](Turning-on-the-web-editor) and shows its QR code over whatever you're watching.
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/groups.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/groups.gif" width="100%" alt="Groups and the menu"></a></p>

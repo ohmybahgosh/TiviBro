@@ -39,7 +39,9 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Info panel when switching channels** | **On** · Off | Off shows just the channel number and name when you change channel. |
 | **Show stream details in the info panel** | **On** · Off | Adds the resolution, codecs and which player is in use. |
 | **Black screen while switching** | On · **Off** | Hides the last picture until the next channel starts, instead of leaving it frozen. |
-| **Subtitles on automatically** | On · **Off** | Turns subtitles on when a stream has them.  You can still switch them from the quick menu. |
+| **Audio language** | **The stream's own choice** · English · Spanish · French · German · and more | When a channel or movie has more than one audio track, plays this one.  Audio description tracks are skipped unless nothing else is in that language.  A track you pick from the quick menu wins until you change channel. |
+| **Prefer surround sound** | On · **Off** | Picks the 5.1 or Dolby track in that language when there is one.  Your TV or soundbar needs to support it. |
+| **Subtitles automatically** | **Off** · Any language · English only · Spanish only · … | Turns subtitles on when a stream has them; with a language, only subtitles in that language.  You can still switch them from the quick menu. |
 | **Play next episode automatically** | **On** · Off | When an episode ends, the next one starts. |
 | **Screens** *(Multiview)* | **Up to 2** · Up to 4 | How many channels multiview can show.  Many webOS TVs decode only two streams at once, and providers often limit connections. |
 

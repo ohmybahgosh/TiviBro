@@ -19,6 +19,7 @@ How the guide looks and behaves, which screen TiviBro opens on, and reminders.
 | **Channel names in the guide** | **On** · Off | Off shows logos only, leaving more room for programmes. |
 | **Two-line channel names** | On · **Off** | Long channel names wrap instead of being cut off. |
 | **Mark catch-up channels** | **On** · Off | Shows **↺** on channels and programmes you can replay. |
+| **Watchlist ›** | | Shows, teams and names to look for in the guide; see [Watchlist](Watchlist).  Inside: **Add a show, team or name…**, **Look ahead** (6 hours · 12 hours · **24 hours** · 2 days), **When something is found** (**Set a reminder** · Just tell me), your words, and everything coming up. |
 | **Remind me before start** | At start · 1 min · **2 min** · 5 min · 10 min | How early a reminder comes up. |
 | **When a reminder starts** | **Ask me** · Switch to the channel | *Ask me* shows **Watch** or **Dismiss**; *Switch* changes channel by itself. |
 | **Reminder question stays for** | 10 s · **20 s** · 30 s · 1 min | How long the reminder waits for an answer. |

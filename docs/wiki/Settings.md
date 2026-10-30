@@ -30,4 +30,4 @@
 
 ---
 
-← [Reminders](Reminders)  ·  [Home](Home)  ·  [Updates](Updates) →
+← [Watchlist](Watchlist)  ·  [Home](Home)  ·  [Updates](Updates) →

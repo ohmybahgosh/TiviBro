@@ -21,6 +21,7 @@ Which groups show, in what order, and getting hidden things back.
 | **Show Recent channels** | **On** · Off | A group with the channels you watched lately. |
 | **Recent channels kept** | 10 · **20** · 30 · 50 | How many channels Recent remembers. |
 | **Show Favorites group** | **On** · Off | The Favorites group. |
+| **Recently added channels** | Off · 3 days · **7 days** · 14 days | A **Recently added** group with the channels that are new in your playlist since it last loaded, newest first, and a **NEW** tag in the lists. |
 | **Groups your provider adds later** | **Show them** · Hide them | *Hide them* keeps a tidy list tidy after **Hide all groups**: new provider groups arrive hidden. |
 | **All channels includes hidden groups** | On · **Off** | Channels from groups you hid still appear in All channels. |
 | **Reset watch time** | | Clears the statistics behind *Most watched*. |

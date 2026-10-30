@@ -5,7 +5,7 @@
 - The switch beside a group shows or hides it on the TV.  Drag **⠿** to reorder; your groups always come first.
 - **✎** renames a group.  Renamed and edited groups are tagged so you can see what you changed.
 - Tick channels, then **Copy or move to group**.  Any group works as the destination, yours or the provider's.  Copy keeps the channel where it was; Move takes it out.
-- **Order** sorts the open group on the TV: provider order, A to Z, Z to A, channel number, or your own drag order for your groups.
+- **Order** sorts the open group on the TV: provider order, A to Z, Z to A, channel number, or **Your order**, for your groups and the provider's.  In Your order, drag **⠿** to move a channel, or use **⋯ > Move to the top, Move up one, Move down one, Move to the bottom** or **Move to position…** (on a phone, ⋯ is the only way).  Channels the provider adds to a group later go to the end.
 - **👁** hides a channel everywhere; **★** adds it to Favorites.  Both work on many ticked channels at once.
 - Your changes survive playlist refreshes.
 
