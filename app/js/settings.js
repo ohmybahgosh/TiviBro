@@ -183,6 +183,7 @@ var Settings = (function () {
     out.push(choice('Reload guide', '', REFRESH, REFRESH_L, function () { return +p.epgRefresh; }, function (v) { p.epgRefresh = v; persist(p); paint(); }));
     out.push(choice('Keep past days', 'For catch-up browsing.  More days use more TV memory.', [1, 2, 3, 5, 7], ['1 day', '2 days', '3 days', '5 days', '7 days'], function () { return +p.epgDays; }, function (v) { p.epgDays = v; persist(p, true); paint(); }));
     out.push(toggle('Match guide by channel name', 'Links channels that have no guide id to a guide channel with the same name.', function () { return p.nameMatch; }, function (v) { p.nameMatch = v; persist(p, true); paint(); }));
+    out.push(page('Public guide fill-in', 'Free guides from epg.pw and iptv-epg.org, only for channels nothing else covers', 'Public guide fill-in', function () { return pubPage(p); }, function () { return PubEpg.conf(p).on ? 'On' : 'Off'; }));
     if (active) {
       out.push(action('Reload guide now', '', function () { Epg.refresh(L, true); U.toast('Reloading guide'); }));
       var st = Epg.status;
@@ -212,6 +213,42 @@ var Settings = (function () {
       }));
     }
     return out;
+  }
+
+  /* Public guide fill-in (pubepg.js): on or off, which countries, and how the last look went. */
+  function pubPage(p) {
+    var out = [], active = p.id === S().active, cf = PubEpg.conf(p), st = active ? Epg.pubStatus : null;
+    function apply(patch) { PubEpg.set(p, patch); Store.upsertPlaylist(p); if (active) Epg.refresh(L, false); build(); }
+    out.push(toggle('Fill in from public guides', 'For channels with no guide from your sources or your provider.  Those always come first.', function () { return PubEpg.conf(p).on; }, function (v) { apply({ on: v }); }));
+    if (cf.on) {
+      var auto = st && st.countries && st.countries.length && !cf.cc.length ? st.countries.map(PubEpg.name).join(', ') : '';
+      out.push(action('Countries', cf.cc.length ? 'Your choice' : 'Automatic: the countries of the channels that need a guide' + (auto ? ' (' + auto + ')' : ''), function () { countryMenu(p); },
+        function () { return cf.cc.length ? cf.cc.map(PubEpg.name).join(', ') : 'Automatic'; }));
+      if (active) {
+        if (Epg.loading && (!st || !st.at)) out.push(info('Looking', 'after your own guide loads'));
+        else if (st && st.none) out.push(info('Last look', st.none));
+        else if (st && st.at) {
+          out.push(info('Channels filled in', st.filled + ' of ' + st.asked + ' with no other guide'));
+          out.push(info('Last looked', when(st.at) + (st.took ? ', took ' + Math.max(1, Math.round(st.took / 1000)) + ' s' : '')));
+          (st.sources || []).forEach(function (r) { out.push(info(r.url, r.skipped ? 'not needed' : r.ok ? r.filled + ' channels' : 'failed: ' + r.error)); });
+          if (!Net.active) out.push(info('iptv-epg.org', 'needs Settings > Playback > Network set to Automatic'));
+        }
+        out.push(action('Look again now', 'Downloads the public guides again.', function () { Epg.pubAgain(); U.toast('Looking in the public guides'); }));
+      }
+    }
+    out.push(action('About these guides', 'Free, community-run guides.  TiviBro hosts nothing and sends no logins: the TV downloads the files straight from them, at most twice a day.  A wrong match?  Hold OK on the channel and choose Assign guide.', function () {}));
+    return out;
+  }
+  function countryMenu(p) {
+    var cf = PubEpg.conf(p), pick = {};
+    cf.cc.forEach(function (c) { pick[c] = 1; });
+    function save() { PubEpg.set(p, { cc: Object.keys(pick) }); Store.upsertPlaylist(p); if (p.id === S().active) Epg.refresh(L, false); build(); }
+    var items = [{ label: 'Automatic', sub: cf.cc.length ? '' : 'current', action: function () { pick = {}; save(); } }];
+    PubEpg.all().forEach(function (c) {
+      items.push({ label: (pick[c] ? '✓ ' : '') + PubEpg.name(c), sub: PubEpg.SOURCES.filter(function (s) { return s.cc.indexOf(c) >= 0; }).map(function (s) { return s.name; }).join(', '),
+        action: function () { if (pick[c]) delete pick[c]; else if (Object.keys(pick).length < 8) pick[c] = 1; else { U.toast('Up to 8 countries'); return; } save(); countryMenu(p); } });
+    });
+    UI.menu('Public guide countries', items);
   }
 
   function sourcesPage(p) {
@@ -245,7 +282,7 @@ var Settings = (function () {
     UI.prompt('Search guide channels', L.name(c), function (q) {
       var nq = Epg.norm(q), raw = q.toLowerCase().trim();
       var hits = Epg.guideChannels().filter(function (x) { return Epg.norm(x[1]).indexOf(nq) >= 0 || x[0].toLowerCase().indexOf(raw) >= 0; }).slice(0, 200);
-      var items = hits.map(function (x) { return { label: x[1], sub: x[0], action: function () { Epg.assign(c, x[0]); U.toast('Guide assigned'); Views.refreshLists(true); } }; });
+      var items = hits.map(function (x) { var ps = PubEpg.sourceOf(x[0]); return { label: x[1], sub: ps ? 'public guide, ' + ps.name + ' ' + x[0].split(':')[1].slice(0, 2) : x[0], action: function () { Epg.assign(c, x[0]); U.toast('Guide assigned'); Views.refreshLists(true); } }; });
       if (cur) items.unshift({ label: 'Remove assignment', sub: cur, action: function () { Epg.assign(c, ''); Views.refreshLists(true); } });
       if (!items.length) { U.toast('No guide channels match "' + q + '"'); return; }
       UI.menu('Guide for ' + L.name(c), items);

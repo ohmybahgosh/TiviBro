@@ -101,6 +101,13 @@ var Diag = (function () {
       ['Network', (s.network || 'auto') === 'direct' ? 'Direct' : 'Automatic (' + Net.status() + ')'],
       ['Playlist', (p.type === 'm3u' ? 'M3U' : 'Xtream Codes') + ', ' + Library.count() + ' channels, ' + (Store.settings.playlists || []).length + ' playlist(s)'],
       ['Guide', (p.epgSources || []).length + ' extra source(s), provider guide ' + (p.providerEpg || 'auto')],
+      ['Public guide', (function () {
+        var cf = PubEpg.conf(p), ps = Epg.pubStatus;
+        if (!cf.on) return 'off';
+        if (!ps || !ps.at) return 'on, not looked yet';
+        if (ps.none) return 'on, ' + ps.none;
+        return 'on, filled ' + ps.filled + ' of ' + ps.asked + ' (' + (ps.countries.join(', ') || 'no country') + ', ' + Math.round((ps.took || 0) / 1000) + ' s): ' + (ps.sources || []).map(function (r) { return r.url + ' ' + (r.ok ? r.filled : 'failed ' + r.error); }).join('; ');
+      })()],
       ['Player', s.engine || 'auto'], ['Start screen', s.startTab || 'guide'],
       ['Detailed logging', Log.verbose ? 'on' : 'off']
     ];
@@ -319,6 +326,25 @@ var Diag = (function () {
           }).catch(function () {});
         });
       });
+      return c;
+    });
+
+    // Public guides: can the TV reach the files it would use?
+    chain = chain.then(function () {
+      if (!PubEpg.conf(p).on) return;
+      var ps = Epg.pubStatus, ccs = ps && ps.countries && ps.countries.length ? ps.countries : [PubEpg.code(Tidy.ccOfLocale(navigator.language)) || 'US'];
+      var c = Promise.resolve();
+      PubEpg.files(ccs.slice(0, 1), !!Net.active, true).forEach(function (f) {
+        c = c.then(function () {
+          return step('Public guide ' + f.name + ' ' + f.cc, function () {
+            return probeStream(f.url, 4).then(function (r) {
+              var b = r.first || new Uint8Array(0), gz = b[0] === 0x1f && b[1] === 0x8b;
+              return { warn: r.status !== 200, msg: r.status === 200 ? 'reachable' + (gz ? ' (.gz)' : '') : 'HTTP ' + r.status, detail: ['HTTP ' + r.status + ', ' + Math.round(r.bytes / 1024) + ' KB read in ' + r.secs.toFixed(1) + 's', f.url] };
+            });
+          }).catch(function () {});
+        });
+      });
+      if (!Net.active) c = c.then(function () { push('Public guide iptv-epg.org: skipped, it needs Settings > Playback > Network set to Automatic.'); });
       return c;
     });
 

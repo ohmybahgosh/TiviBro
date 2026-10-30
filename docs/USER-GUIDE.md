@@ -583,6 +583,7 @@ On a playlist's page:
 | **Reload guide** | Same choices as the channel list, **Every 12 hours** | How often the guide is downloaded again. |
 | **Keep past days** | 1 · **2** · 3 · 5 · 7 days | How far back the guide keeps programmes, for catch-up browsing.  More days use more TV memory. |
 | **Match guide by channel name** | **On** · Off | Links channels that have no guide id to a guide channel with the same name. |
+| **Public guide fill-in ›** | **On** · Off | For channels with no guide from your sources or your provider: free guides from epg.pw and iptv-epg.org, matched by guide id, a local station's call sign or the name.  **Countries**: **Automatic** (the countries of the channels that need a guide) or up to eight you choose.  Shows how many channels each guide filled in and when it last looked; **Look again now** downloads them again.  TiviBro hosts nothing and sends no logins.  See [Public guide fill-in](#the-programme-guide). |
 | **Reload guide now** | | Downloads the guide right away. |
 | **Guide last loaded**, each source, **Channels with guide data** | (information) | When the guide loaded, how many channels and programmes each source gave, and how many of your channels have a guide. |
 | **Assign guide to channels without one** | | Lists channels with no guide; pick one and search the guide for the right channel.  Also on any channel: **Hold OK > Assign guide…**. |
@@ -777,7 +778,7 @@ Finding out what's wrong, and what this TV can play.
 |---|---|---|
 | **Report a problem** | | Shows a QR code.  Scan it and your phone opens the web editor's **Report a problem** page: say what happened, read everything the TV adds (version, TV model, a few settings, the app and network helper logs, with logins and server names taken out), save the log file, and **Open the GitHub form** opens a bug report filled in for you.  Drag the log file into it and send.  You need a free GitHub account. |
 | **Speed test** | | Your internet speed (a download from Cloudflare's speed test service) and your provider's (part of a movie, or a live channel when there are no movies), and what that's enough for: 4K needs about 25 Mbps, Full HD 8 to 10, HD about 5.  It says whether your internet or the provider is the slow part.  Playback stops while it runs, since many providers allow one stream at a time. |
-| **Run connection test** | | Checks, step by step: the network helper, your login, the channel categories and list, a real stream, and each guide source.  Each step says what worked or what failed and why. |
+| **Run connection test** | | Checks, step by step: the network helper, your login, the channel categories and list, a real stream, each guide source and the public guides.  Each step says what worked or what failed and why. |
 | **View app log** | | What TiviBro did this session.  **▲ ▼** scroll, **CH + / −** page. |
 | **View app log with earlier sessions** | | Includes the sessions before, useful after a crash or restart. |
 | **View network helper log** | | Every request the helper made: status, time, size, and the network error if any. |
@@ -912,7 +913,9 @@ M3U playlists can use the guide address inside the playlist.
 
 **Extra sources.**  Add any `.xml` or `.xml.gz` guide.  Zipped guides work on every TV: the network helper unzips them as they download, and it also unzips provider guides that arrive gzipped.  **Recommended free guides** lists community guides by region (epgshare01, iptv-epg.org, i.mjh.nz for Pluto, Samsung TV Plus, Plex and Roku, and more), each with a one-click **Test**.  The first source in the list wins when two cover the same channel, and **Offset** fixes a guide that is an hour off.
 
-**Watchlist.**  Card 4 on the Guide page: type a show, team or name and **Add**; **✕** removes one.  The TV looks for them in the guide and sets reminders (see [Watchlist](#watchlist)).
+**Public guide fill-in.**  Card 3 on the Guide page (on by default).  After your sources and your provider's guide have loaded, the TV lists the channels that still have nothing and looks them up in two free, community-run guides: **epg.pw** (20 countries, lighter files, tried first) and **iptv-epg.org** (70 countries, bigger and more complete).  Channels match by guide id, a US local station's call sign or the name, and only in their own country's guide when TiviBro can tell the country.  What it finds never replaces a guide you already have.  The card shows how many channels were filled in from each, lets you turn it off, and lets you pick up to eight countries instead of **Automatic** (the countries of the channels that need a guide, up to four).  The TV fetches the files itself, at most twice a day, in the background once your own guide is on screen; iptv-epg.org needs the network helper (Settings > Playback > Network: Automatic).  Programmes from a public guide say "public guide" on the TV, and a wrong match is fixed like any other: Smart match or **Hold OK > Assign guide**.
+
+**Watchlist.**  Card 5 on the Guide page: type a show, team or name and **Add**; **✕** removes one.  The TV looks for them in the guide and sets reminders (see [Watchlist](#watchlist)).
 
 **Smart match** fixes channels showing "No guide information".  It ignores clutter, understands country codes, East and West feeds, numbered channels and US call signs, then shows its best guess with a confidence score.  You approve or decline each one, and nothing changes until you press **Apply**.
 
@@ -965,7 +968,7 @@ You'll see it in three places: **Connection** on the first screen and in **Setti
 |---|---|
 | A channel won't start or keeps buffering | **OK** on the error message, or **Reconnect** in the quick menu.  Then try **Stream format** HLS instead of MPEG-TS, or a bigger **Buffer profile**. |
 | Every channel fails | **Settings > Diagnostics > Run connection test**.  It checks the [network helper](#what-is-the-network-helper), your login, the channel list, a stream and the guide, step by step. |
-| "No guide information" | Use **Smart match** in the web editor, or **Hold OK > Assign guide** on the TV.  Add an extra guide source for your region. |
+| "No guide information" | Check that **Public guide fill-in** is on (Settings > Playlists and guide > the playlist), and that its countries include the channel's.  Then use **Smart match** in the web editor, or **Hold OK > Assign guide** on the TV.  Or add an extra guide source for your region. |
 | Guide times are off by an hour | **Provider guide time offset** in Settings, or **Offset** on an extra source in the editor. |
 | The guide seems stuck loading | Big XMLTV files take minutes on a TV; watch the progress bar.  If it stays at 0, **Test** the address. |
 | The web editor says it can't reach the TV | TiviBro was closed or the TV went to sleep.  Open TiviBro; the editor reconnects and your drafts are safe. |

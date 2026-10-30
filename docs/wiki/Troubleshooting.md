@@ -14,7 +14,7 @@ You'll see it in three places: **Connection** on the first screen and in **Setti
 |---|---|
 | A channel won't start or keeps buffering | **OK** on the error message, or **Reconnect** in the quick menu.  Then try **Stream format** HLS instead of MPEG-TS, or a bigger **Buffer profile**. |
 | Every channel fails | **Settings > Diagnostics > Run connection test**.  It checks the [network helper](Troubleshooting#what-is-the-network-helper), your login, the channel list, a stream and the guide, step by step. |
-| "No guide information" | Use **Smart match** in the web editor, or **Hold OK > Assign guide** on the TV.  Add an extra guide source for your region. |
+| "No guide information" | Check that **Public guide fill-in** is on (Settings > Playlists and guide > the playlist), and that its countries include the channel's.  Then use **Smart match** in the web editor, or **Hold OK > Assign guide** on the TV.  Or add an extra guide source for your region. |
 | Guide times are off by an hour | **Provider guide time offset** in Settings, or **Offset** on an extra source in the editor. |
 | The guide seems stuck loading | Big XMLTV files take minutes on a TV; watch the progress bar.  If it stays at 0, **Test** the address. |
 | The web editor says it can't reach the TV | TiviBro was closed or the TV went to sleep.  Open TiviBro; the editor reconnects and your drafts are safe. |

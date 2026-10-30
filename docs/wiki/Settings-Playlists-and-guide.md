@@ -32,6 +32,7 @@ On a playlist's page:
 | **Reload guide** | Same choices as the channel list, **Every 12 hours** | How often the guide is downloaded again. |
 | **Keep past days** | 1 · **2** · 3 · 5 · 7 days | How far back the guide keeps programmes, for catch-up browsing.  More days use more TV memory. |
 | **Match guide by channel name** | **On** · Off | Links channels that have no guide id to a guide channel with the same name. |
+| **Public guide fill-in ›** | **On** · Off | For channels with no guide from your sources or your provider: free guides from epg.pw and iptv-epg.org, matched by guide id, a local station's call sign or the name.  **Countries**: **Automatic** (the countries of the channels that need a guide) or up to eight you choose.  Shows how many channels each guide filled in and when it last looked; **Look again now** downloads them again.  TiviBro hosts nothing and sends no logins.  See [Public guide fill-in](The-programme-guide). |
 | **Reload guide now** | | Downloads the guide right away. |
 | **Guide last loaded**, each source, **Channels with guide data** | (information) | When the guide loaded, how many channels and programmes each source gave, and how many of your channels have a guide. |
 | **Assign guide to channels without one** | | Lists channels with no guide; pick one and search the guide for the right channel.  Also on any channel: **Hold OK > Assign guide…**. |

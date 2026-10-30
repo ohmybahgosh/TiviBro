@@ -188,6 +188,26 @@ function xmltv() {
   return o + '</tv>\n';
 }
 
+/* ---------- public guides (pubepg.js), in the two projects' styles ---------- */
+// epg.pw: numeric ids, call-sign names.  iptv-epg.org: "US - " names and a decoy from another service.
+function pubGuide(kind) {
+  const loc = streams.filter(s => s.clip === 'local' && !/WEST/.test(s.name)), now = Date.now(), H = 3600e3, t0 = now - now % H - 2 * H;
+  let o = '<?xml version="1.0" encoding="UTF-8"?>\n<tv generator-info-name="mock ' + kind + '">\n', progs = '', n = 0;
+  loc.forEach((s, i) => {
+    const call = (/\b([KW][A-Z]{3})\b/.exec(s.name) || [])[1], net = s.name.split(' |')[0].split(' ')[0];
+    if (!call || (kind === 'epgpw') !== (i % 2 === 0)) return;           // half each, so both are needed
+    const id = kind === 'epgpw' ? String(464000 + i) : net + call + '.us';
+    if (kind === 'iptvepg' && n === 0) {
+      o += `<channel id="decoy.pluto"><display-name>PLUTO - ${esc(net + ' ' + call)}</display-name></channel>\n`;
+      progs += `<programme start="${xd(t0)}" stop="${xd(t0 + 30 * H)}" channel="decoy.pluto"><title>WRONG MATCH</title></programme>\n`;
+    }
+    o += `<channel id="${esc(id)}"><display-name>${esc(kind === 'epgpw' ? call + '-DT' : 'US - ' + net + ' ' + call + ' Somewhere')}</display-name><icon src=""/></channel>\n`;
+    for (let h = 0; h < 30; h++) progs += `<programme start="${xd(t0 + h * H)}" stop="${xd(t0 + (h + 1) * H)}" channel="${esc(id)}"><title>${esc(call + ' Public ' + (h % 3 ? 'Local News' : 'Late Movie'))}</title><desc>From the ${kind} public guide.</desc></programme>\n`;
+    n++;
+  });
+  return o + progs + '</tv>\n';
+}
+
 /* ---------- server ---------- */
 function send(res, code, body, type) { res.writeHead(code, { 'Content-Type': type || 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }); res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body)); }
 function stream(res, req, file, type) {
@@ -248,6 +268,13 @@ const server = http.createServer((req, res) => {
   // A zipped guide file, labelled the way many guide hosts do (no Content-Encoding): the helper unzips it.
   if (p === '/guide.xml.gz') return send(res, 200, require('zlib').gzipSync(BIG ? (xmlCache = xmlCache || xmltv()) : xmltv()), 'application/octet-stream');
   let m;
+  if ((m = /^\/pubepg\/(epgpw|iptvepg)\/(epg[_-]us\.xml(?:\.gz)?)$/i.exec(p))) {
+    const body = pubGuide(m[1]), gz = /\.gz$/.test(m[2]);
+    // iptv-epg.org sends no CORS headers: only the helper can read it.
+    const h = { 'Content-Type': gz ? 'application/gzip' : 'application/xml', 'Cache-Control': 'no-store' };
+    if (m[1] === 'epgpw') h['Access-Control-Allow-Origin'] = '*';
+    res.writeHead(200, h); return res.end(gz ? require('zlib').gzipSync(body) : body);
+  }
   if ((m = /^\/logo\/(\d+)\.svg$/.exec(p))) { const s = streams.find(x => x.stream_id === +m[1]); return s ? send(res, 200, logo(s), 'image/svg+xml') : send(res, 404, ''); }
   if ((m = /^\/poster\/([ms])(\d+)\.svg$/.exec(p))) { const t = m[1] === 'm' ? (MOVIES[+m[2]] || [''])[0] : (SERIES[+m[2]] || [''])[0]; return send(res, 200, poster(t, +m[2] + (m[1] === 's' ? 5 : 0)), 'image/svg+xml'); }
   if (CHAOS && (m = /^\/live\/(?:.*\/)?(9\d\d)\.(ts|m3u8)$/.exec(p)) && +m[1] >= 901) return CHAOS.serve(m[1], req, res, MEDIA);

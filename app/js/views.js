@@ -331,7 +331,8 @@ var Views = (function () {
     var nn = Epg.nowNext(c);
     now.appendChild(U.el('div', '', nn && nn.now ? nn.now.t : L.name(c)));
     if (nn && nn.now) {
-      now.appendChild(U.el('small', '', (nn.now.up ? 'Starts ' + Events.when(nn.now.e) : nn.now.ended ? 'Ended ' + Events.when(nn.now.s) : U.hhmm(nn.now.s) + ' to ' + U.hhmm(nn.now.e)) + '   ' + L.name(c) + (c.arch ? '   catch-up ' + c.arch + ' days' : '')));
+      var pg = Epg.pubSource(c);
+      now.appendChild(U.el('small', '', (nn.now.up ? 'Starts ' + Events.when(nn.now.e) : nn.now.ended ? 'Ended ' + Events.when(nn.now.s) : U.hhmm(nn.now.s) + ' to ' + U.hhmm(nn.now.e)) + '   ' + L.name(c) + (c.arch ? '   catch-up ' + c.arch + ' days' : '') + (pg ? '   public guide, ' + pg.name : '')));
       if (nn.now.d) now.appendChild(U.el('p', '', nn.now.d));
     } else now.appendChild(U.el('small', '', nn ? 'No guide information' : 'Loading guide'));
     if (nn && nn.next) next.textContent = 'Next  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t;
@@ -1153,7 +1154,7 @@ var Views = (function () {
         UI.prompt('Rename channel', L.name(c), function (v) { L.renameChannel(c.k, v); refreshLists(true); }, 'Original: ' + c.n);
       } },
       renamed && { label: 'Restore original name', action: function () { L.renameChannel(c.k, ''); refreshLists(true); } },
-      { label: 'Assign guide…', sub: Store.edits.epgMap[c.k] ? 'assigned' : Epg.hasData(c) ? '' : 'no guide yet', action: function () { Settings.assignGuide(c); } },
+      { label: 'Assign guide…', sub: Store.edits.epgMap[c.k] ? 'assigned' : Epg.pubSource(c) ? 'from the public guide (' + Epg.pubSource(c).name + ')' : Epg.hasData(c) ? '' : 'no guide yet', action: function () { Settings.assignGuide(c); } },
       Parental.enabled() && { label: blocked ? 'Unblock channel' : 'Block channel', sub: 'needs the PIN to watch', action: function () {
         var go = function () { L.block('channel', c.k, !blocked); U.toast(blocked ? 'Unblocked' : 'Blocked'); refreshLists(true); stopIfBlocked(); };
         if (blocked) Parental.gate('channels', c, go); else go();
@@ -1732,6 +1733,8 @@ var Guide = (function () {
       part(mins(h.p.e - h.p.s));
       if (live) part(mins(h.p.e - now) + ' left');
       else if (!past) part('starts in ' + mins(h.p.s - now));
+      var ps = Epg.pubSource(c);
+      if (ps) part('public guide, ' + ps.name);
     } else meta.appendChild(document.createTextNode(Epg.request(c) ? 'No guide information for this time' : 'Loading guide…'));
     detail.appendChild(meta);
     var meta2 = U.el('div', 'gd-meta');

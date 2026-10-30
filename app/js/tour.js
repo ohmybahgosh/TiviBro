@@ -100,6 +100,7 @@ var Tour = (function () {
     { id: 'events', title: 'Sports and pay-per-view', rail: 'Sports and PPV', lead: function () { return 'Pay-per-view and sports passes put the game and its time in the channel name.  TiviBro reads it and builds the guide from it.  ' + plural(st.sv.events, 'event channel') + ' here.'; }, when: function () { return st.sv.events > 0; }, rows: eventRows },
     { id: 'clutter', title: 'Clear the clutter', rail: 'Clutter', lead: 'Everything hidden stays one click away: Settings > Groups, sorting, hidden, or hold OK on a channel.', rows: clutterRows },
     { id: 'logos', title: 'Channel logos', rail: 'Logos', lead: 'For channels with no logo, from two open projects, iptv-org and tv-logos, matched by guide id, name and country, and a local station\'s call sign.  TiviBro hosts no images: each logo loads from its project.', rows: logoRows },
+    { id: 'guide', title: 'A guide for every channel', rail: 'Guide', lead: 'Channels your provider sends no guide for can get one from two free public guides, epg.pw and iptv-epg.org, matched by guide id, a local station\'s call sign or the name.  Your provider\'s guide always comes first.  TiviBro hosts nothing: the TV downloads the files from them.', rows: guideRows },
     { id: 'look', title: 'Make it yours', rail: 'Look and start', lead: 'Colours, text size and what TiviBro opens on.  Buffering, buttons and parental controls are in Settings.', rows: lookRows },
     { id: 'done', title: 'All set', rail: 'Summary', lead: 'Here is what Apply does.  Hidden never means deleted: everything stays one press away in Settings > Groups, sorting, hidden, and a restore point is saved first so the web editor can undo it all.', rows: doneRows }
   ];
@@ -275,6 +276,18 @@ var Tour = (function () {
     return out;
   }
 
+  function guideRows() {
+    var p = Store.playlist, out = [], cf = PubEpg.conf(p), ps = Epg.pubStatus;
+    out.push(toggle('Fill in from public guides', 'Only for channels with no other guide.', function () { return PubEpg.conf(p).on; }, function (v) { PubEpg.set(p, { on: v }); Store.upsertPlaylist(p); Epg.refresh(Library, false); draw(); }));
+    if (cf.on) {
+      if (ps && ps.at && !ps.none) out.push(info('Filled in so far', plural(ps.filled, 'channel') + ' of ' + ps.asked + ' with no other guide' + (ps.countries.length ? ', from the guides for ' + ps.countries.map(PubEpg.name).join(', ') : '')));
+      else if (ps && ps.none) out.push(info('Nothing to fill in', ps.none));
+      else out.push(info('Looking', 'TiviBro looks once your own guide has loaded.  It keeps going in the background.'));
+      out.push(note('Countries are picked from your channels.  Change them, or turn this off, in Settings > Playlists and guide > ' + (p.name || 'the playlist') + ' > Public guide fill-in.  A wrong match: hold OK on the channel > Assign guide.'));
+    }
+    return out;
+  }
+
   function lookRows() {
     var s = S(), out = [], K = Settings.LOOK;
     out.push(choice('Accent color', 'The colour of whatever is focused.', K.ACCENTS.slice(0, -1), K.ACCENT_NAMES.slice(0, -1), function () { return s.accent; },
@@ -336,6 +349,7 @@ var Tour = (function () {
     if (ch.words.trim()) cl.push('"' + ch.words.trim() + '"');
     out.push(['clutter', 'Clutter', cl.length ? 'Hide ' + cl.join(', ') : 'Nothing hidden']);
     out.push(['logos', 'Logos', !s.logoLib || s.logoLib === 'off' ? 'Playlist and guide logos only' : (s.logoLib === 'all' ? 'Library for every channel' : 'Fill in missing') + ', ' + (s.logoStyle === 'original' ? 'original logos' : 'matching set')]);
+    out.push(['guide', 'Guide', PubEpg.conf(Store.playlist).on ? 'Public guides fill in channels with no guide' : 'Your sources and the provider\'s guide only']);
     var K = Settings.LOOK, ai = K.ACCENTS.indexOf(s.accent), ti = K.THEMES.indexOf(s.theme || 'dark');
     out.push(['look', 'Look and start', (ai >= 0 ? K.ACCENT_NAMES[ai] : 'Custom colour') + ' on ' + (ti >= 0 ? K.THEME_NAMES[ti] : 'Midnight') + ', opens on ' + (s.startTab === 'live' ? 'Channels' : 'Guide')]);
     return out;

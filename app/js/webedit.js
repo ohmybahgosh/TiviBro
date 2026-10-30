@@ -44,7 +44,7 @@ var WebEdit = (function () {
     FIELDS.forEach(function (f) { out[f] = e[f] || (f === 'custom' || f === 'groupOrder' || f === 'watchlist' ? [] : {}); });
     return out;
   }
-  function sig() { try { return JSON.stringify(draftInfo) + JSON.stringify(editsOf()) + JSON.stringify(Store.playlist.names || null) + JSON.stringify(playlists()) + (Library.data ? Library.data.channels.length : 0) + ':' + (Epg.status && Epg.status.at); } catch (e) { return String(Date.now()); } }
+  function sig() { try { return JSON.stringify(draftInfo) + JSON.stringify(editsOf()) + JSON.stringify(Store.playlist.names || null) + JSON.stringify(playlists()) + (Library.data ? Library.data.channels.length : 0) + ':' + (Epg.status && Epg.status.at) + ':' + (Epg.pubStatus && Epg.pubStatus.at); } catch (e) { return String(Date.now()); } }
 
   // Playlists as the browser sees them: no username, password or full addresses.
   function playlists() {
@@ -65,7 +65,9 @@ var WebEdit = (function () {
       playlists: playlists(),
       groups: d.groups.map(function (g) { return { id: g.id, name: g.name }; }),
       channels: d.channels.map(function (c) { return { k: c.k, n: c.n, g: c.g, num: c.num, logo: c.logo || '', arch: c.arch || 0, epg: Epg.epgId(c) || '', has: !!Epg.hasData(c) }; }),
-      guide: { channels: gc.slice(0, 30000).map(function (x) { return [x[0], x[1]]; }), mode: p.providerEpg, sources: (p.epgSources || []).length, xml: !!Epg.xml, loading: !!Epg.loading, status: Epg.status ? { at: Epg.status.at } : null, nameMatch: !!p.nameMatch },
+      guide: { channels: gc.slice(0, 30000).map(function (x) { return [x[0], x[1]]; }), mode: p.providerEpg, sources: (p.epgSources || []).length, xml: !!Epg.xml, loading: !!Epg.loading, status: Epg.status ? { at: Epg.status.at } : null, nameMatch: !!p.nameMatch,
+        pub: (function () { var cf = PubEpg.conf(p), ps = Epg.pubStatus; return { on: cf.on, cc: cf.cc, helper: !!Net.active, all: PubEpg.all().map(function (c) { return [c, PubEpg.name(c)]; }),
+          status: ps ? { at: ps.at, countries: ps.countries, filled: ps.filled, asked: ps.asked, took: ps.took, none: ps.none || '', sources: ps.sources } : null }; })() },
       gz: Net.canUnzip,
       edits: editsOf(),
       names: p.names || null,
@@ -284,6 +286,16 @@ var WebEdit = (function () {
       return bgGuide({ short: 'Provider guide set to per channel.', xmltv: 'Provider guide set to the full XMLTV file.', off: 'Provider guide switched off.' }[a.mode]);
     },
     reloadGuide: function () { return bgGuide('Reloading the guide.'); },
+    setPublicGuide: function (a) {
+      var p = Store.playlist, patch = {};
+      if (typeof a.on === 'boolean') patch.on = a.on;
+      if (Array.isArray(a.cc)) patch.cc = a.cc.map(PubEpg.code).filter(PubEpg.supported).slice(0, 8);
+      PubEpg.set(p, patch); Store.upsertPlaylist(p);
+      if (a.again) Epg.pubAgain(); else Epg.refresh(Library, false);
+      lastSig = '';
+      var cf = PubEpg.conf(p);
+      return { msg: !cf.on ? 'Public guide fill-in is off.' : a.again ? 'Looking in the public guides again.' : 'Public guide fill-in is on' + (cf.cc.length ? ' for ' + cf.cc.map(PubEpg.name).join(', ') : ', countries picked automatically') + '.' };
+    },
     testEpgSource: function (a) {
       var url = clean(a.url);
       if (!/^https?:\/\//i.test(url)) throw new Error('Enter a full http:// or https:// address.');

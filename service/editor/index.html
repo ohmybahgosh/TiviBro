@@ -451,7 +451,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
     <section class="page hidden" id="p-guide">
       <div class="phead"><div><h1>Guide</h1><p>Where the TV gets programme information, and which guide channel belongs to which channel.</p></div></div>
       <div class="scroll">
-        <div class="note">Three steps: pick where the guide comes from, add free guide sources if your provider's guide is thin, then match channels that show "No guide information".  <b>Smart match</b> does most of the matching for you; you approve each guess.  <a href="#help/guide">Learn more</a></div>
+        <div class="note">Four steps: pick where the guide comes from, add guide sources if your provider's guide is thin, let the public guides fill in what is still missing, then match channels that show "No guide information".  <b>Smart match</b> does most of the matching for you; you approve each guess.  <a href="#help/guide">Learn more</a></div>
         <div class="card">
           <div class="row"><h3 class="grow" style="margin:0">1.  Your provider's guide</h3><button id="gReload" class="small">Reload the guide on the TV</button></div>
           <p style="margin-top:6px" id="provIntro"></p>
@@ -471,8 +471,20 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
             <div class="row" style="margin:12px 0"><div class="dd" id="catRegion" style="width:220px"></div><span class="muted small grow">Pick the region your channels are from.  Smaller files load faster on the TV.  Free services can change or go offline; <b>Test</b> checks one before you add it.</span></div>
             <table class="t cat" id="catList"></table></details>
         </div>
+        <div class="card" id="pubCard">
+          <div class="row"><h3 class="grow" style="margin:0">3.  Public guide fill-in</h3><span id="pubChip" class="chip"></span></div>
+          <p style="margin-top:6px">Channels that steps 1 and 2 don't cover can get a guide from two free, community-run guides: <a href="https://epg.pw" target="_blank" rel="noopener">epg.pw</a> and <a href="https://iptv-epg.org" target="_blank" rel="noopener">iptv-epg.org</a>.  Matched by guide id, a local station's call sign or the name.  Your sources and your provider always come first.  TiviBro hosts nothing and sends no logins: the TV downloads the files from them, at most twice a day.  <a href="#help/public">Learn more</a></p>
+          <div class="row" style="gap:12px;margin:12px 0"><label class="row" style="gap:8px;cursor:pointer"><input type="checkbox" id="pubOn"> <b>Fill in from public guides</b></label><span class="grow"></span><button class="small" id="pubAgain">Look again now</button></div>
+          <div id="pubBody">
+            <div id="pubStat" class="small"></div>
+            <details id="pubCcBox" style="margin-top:12px"><summary style="cursor:pointer"><b>Countries</b> <span class="muted small" id="pubCcSum"></span></summary>
+              <p class="muted small" style="margin:10px 0">Automatic picks the countries of the channels that need a guide (up to four).  Or choose up to eight yourself.</p>
+              <div id="pubCc" class="row" style="gap:6px;flex-wrap:wrap"></div></details>
+          </div>
+          <div id="pubMsg"></div>
+        </div>
         <div class="card">
-          <div class="row"><h3 class="grow" style="margin:0">3.  Match channels to the guide</h3><span id="gCover" class="chip"></span></div>
+          <div class="row"><h3 class="grow" style="margin:0">4.  Match channels to the guide</h3><span id="gCover" class="chip"></span></div>
           <p style="margin-top:6px">Most channels match on their own.  The ones that don't show "No guide information" on the TV.  Pick the right guide channel for each, or let Smart match suggest them.</p>
           <div id="mBody">
             <div class="row" style="margin-bottom:10px">
@@ -486,7 +498,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
           <div id="mEmpty"></div>
         </div>
         <div class="card">
-          <h3>4.  Watchlist</h3>
+          <h3>5.  Watchlist</h3>
           <p>Shows, teams and names the TV looks for in the guide.  When one is coming up, it sets a reminder.  Matched as whole words in programme titles, so "Cars" does not find "Oscars".</p>
           <div id="wList" class="row" style="flex-wrap:wrap;gap:8px;margin:10px 0"></div>
           <form id="wForm" class="row"><input id="wText" type="text" class="grow" maxlength="60" placeholder="For example Yankees, Bluey, Premier League or Gordon Ramsay" style="min-width:220px"><button class="primary" id="wAdd">Add</button></form>
@@ -1815,6 +1827,7 @@ function renderGuide() {
   }).join('');
   renderSources();
   renderCatalog();
+  renderPub();
   var vis = channelsOf(ALL).filter(function (c) { return !E.hiddenChannels[c.k]; }), w = vis.filter(hasGuide).length;
   $('gCover').textContent = guideKnown() ? w + ' of ' + vis.length + ' shown channels have a guide' : perChannel() ? 'Per-channel guide from your provider' : 'No guide loaded';
   $('gCover').className = 'chip ' + (!guideKnown() ? '' : vis.length && w / vis.length > 0.9 ? 'ok' : 'warn');
@@ -1870,6 +1883,55 @@ function drawProgress(p) {
     '<div class="muted small" style="margin-top:6px">You can keep editing.  The TV keeps working if you close this page.</div></div>';
 }
 setInterval(function () { if (page === 'guide' && lastProgress && lastProgress.active) drawProgress(lastProgress); }, 1000);
+
+/* ---------- public guide fill-in (pubepg.js on the TV) ---------- */
+function pubData() { return (D && D.guide && D.guide.pub) || null; }
+function renderPub() {
+  var g = pubData(), card = $('pubCard');
+  if (!g) { card.classList.add('hidden'); return; }
+  card.classList.remove('hidden');
+  $('pubOn').checked = !!g.on;
+  $('pubBody').classList.toggle('hidden', !g.on); $('pubAgain').classList.toggle('hidden', !g.on);
+  var st = g.status, chip = $('pubChip');
+  if (!g.on) { chip.textContent = 'Off'; chip.className = 'chip'; }
+  else if (!st || !st.at) { chip.textContent = 'Waiting for your guide to load'; chip.className = 'chip info'; }
+  else if (st.none) { chip.textContent = st.none; chip.className = 'chip ok'; }
+  else { chip.textContent = st.filled + ' of ' + st.asked + ' filled in'; chip.className = 'chip ' + (st.filled ? 'ok' : 'warn'); }
+  var h = '';
+  if (g.on && st && st.at && !st.none) {
+    h = '<div>Last looked ' + ago(st.at) + (st.took >= 1000 ? ', took ' + fmtTime(st.took) : '') + (st.countries.length ? ', in the guides for ' + st.countries.map(function (c) { return esc(ccName(c)); }).join(', ') : '') + '.</div>' +
+      '<table class="t" style="margin-top:8px"><tr><th>Guide</th><th>Result</th></tr>' + (st.sources || []).map(function (r) {
+        return '<tr><td>' + esc(r.url) + '</td><td>' + (r.skipped ? '<span class="muted">not needed: everything it could match was already filled in</span>' : r.ok ? r.filled + ' channel' + (r.filled === 1 ? '' : 's') + ' filled in, ' + (r.programmes || 0).toLocaleString() + ' programmes' : '<span style="color:#ff9a9d">failed: ' + esc(r.error) + '</span>') + '</td></tr>';
+      }).join('') + '</table>';
+    if (st.asked - st.filled > 0) h += '<p class="muted small" style="margin-top:8px">The ' + (st.asked - st.filled) + ' still without a guide are in step 4 under <b>Needs a guide</b>.</p>';
+  }
+  if (g.on && !g.helper) h += '<p class="small" style="color:#ff9a9d">iptv-epg.org needs the network helper: on the TV, Settings > Playback > Network: Automatic.</p>';
+  $('pubStat').innerHTML = h;
+  $('pubCcSum').textContent = g.cc.length ? g.cc.map(ccName).join(', ') : 'Automatic' + (st && st.countries && st.countries.length ? ' (' + st.countries.map(ccName).join(', ') + ')' : '');
+  $('pubCc').innerHTML = '<button type="button" class="chip' + (g.cc.length ? '' : ' acc') + '" data-pcc="">Automatic</button>' + g.all.map(function (x) {
+    return '<button type="button" class="chip' + (g.cc.indexOf(x[0]) >= 0 ? ' acc' : '') + '" data-pcc="' + x[0] + '">' + esc(x[1]) + '</button>';
+  }).join('');
+}
+function ccName(c) { var g = pubData(), m = g && g.all.filter(function (x) { return x[0] === c; })[0]; return m ? m[1] : c; }
+function pubSend(a, label) {
+  var tick = cmdMsg('pubMsg', label || 'Telling the TV…');
+  return command('setPublicGuide', a, 30000, tick).then(function (r) {
+    msg('pubMsg', 'ok', r.msg);
+    var g = pubData(); if (g) { if (typeof a.on === 'boolean') g.on = a.on; if (a.cc) g.cc = a.cc; }
+    renderPub();
+  }).catch(function (err) { msg('pubMsg', 'bad', err.message); renderPub(); });
+}
+$('pubOn').addEventListener('change', function () { pubSend({ on: this.checked }); });
+$('pubAgain').onclick = function () { busyBtn(this, pubSend({ again: true }, 'Asking the TV to look again…')); };
+$('pubCc').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-pcc]'), g = pubData(); if (!b || !g) return;
+  var c = b.dataset.pcc, cc = g.cc.slice();
+  if (!c) cc = [];
+  else if (cc.indexOf(c) >= 0) cc.splice(cc.indexOf(c), 1);
+  else if (cc.length >= 8) { msg('pubMsg', 'bad', 'Up to eight countries.'); return; }
+  else cc.push(c);
+  pubSend({ cc: cc });
+});
 
 /* ---------- guide sources ---------- */
 function renderSources() {
@@ -2229,6 +2291,9 @@ var HELP = [
   ['sources', 'Extra guide sources', '<p>Add any XMLTV address ending in <code>.xml</code> or <code>.xml.gz</code>.  <b>Test</b> lets the TV try the address first and reports its size.  Use the arrows to change the order; the first source wins when two cover the same channel.</p>' +
     '<p><b>Offset</b> shifts one source\'s times, in minutes, for guides that are an hour off.</p>' +
     '<p><b>Recommended free guides</b> lists community-run guides by region, such as epgshare01, iptv-epg.org, i.mjh.nz (Pluto, Samsung TV Plus, Plex, Roku) and projects on GitHub.  They were working when this version was made, but free services can change or go offline, so <b>Test</b> before adding.  Smaller files load faster; add only the regions you watch.  Zipped <code>.gz</code> guides work on every TV: the network helper unzips them, which is also quicker than the browser on the TV.  Only with Network set to Direct can older TVs (webOS 6 and before) not read them; the editor warns when that is the case.</p>'],
+  ['public', 'Public guide fill-in', '<p>After the TV has loaded your guide sources and your provider\'s guide, it lists the channels that still have nothing and looks them up in two free, community-run guides: <b>epg.pw</b> (20 countries, lighter files, tried first) and <b>iptv-epg.org</b> (70 countries, bigger and more complete).  A channel matches by its guide id, a US local station\'s call sign (WXYZ), or its name, and only in its own country\'s guide when its country is known.  What the public guides find never replaces a guide you already have.</p>' +
+    '<p>The countries are picked automatically from the channels that need a guide, up to four.  You can choose up to eight yourself instead.  The files are big (the US one from iptv-epg.org is about 60 MB zipped), so the TV fetches them at most twice a day, in the background, after your own guide is on screen.  iptv-epg.org can only be reached through the network helper (Settings > Playback > Network: Automatic).</p>' +
+    '<p>A wrong match?  Match that channel yourself in step 4, or on the TV hold OK on it and choose <b>Assign guide</b>.  Public guide channels are in the list too.  The TV shows "public guide" next to programmes that came from one.  These are free services that can change or go offline; TiviBro just reads what they publish.</p>'],
   ['matching', 'Matching channels and Smart match', '<p>Most channels match the guide by themselves, through the guide id the provider sends or by name.  The rest show "No guide information" on the TV.  The tabs sort channels by state:</p>' +
     '<ul><li><b>Needs a guide</b>: nothing found.  These are the ones to fix.</li><li><b>Provider only</b>: no XMLTV match, but the per-channel provider guide is used.  Often fine.</li><li><b>Matched by you</b> and <b>Matched on its own</b>: done.</li><li><b>Waiting for the TV</b>: you matched it, and the TV loads that guide channel after you send.</li></ul>' +
     '<h3>Smart match</h3><p>Smart match compares every unmatched channel with every guide channel.  It ignores clutter (HD, FHD, "US |"), understands country codes, East and West feeds, numbered channels (ESPN vs ESPN 2) and US station call signs (KABC), then shows its best guess with a confidence score.</p>' +

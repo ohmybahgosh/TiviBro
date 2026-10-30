@@ -40,6 +40,7 @@ Legend: **Have** = already in TiviBro.  **Added** = added in this pass.  **Later
 | Update interval / update on app start | Have |
 | Past days to keep EPG | Have |
 | Assign EPG to a channel | Have |
+| (none) | **Beyond TiviMate:** public guide fill-in for channels with no guide (epg.pw, iptv-epg.org), matched by id, call sign or name |
 | Dim past programs | Have |
 | Highlight current programs (in color / progress only) | **Added:** Mark what's on now (progress fill / colour / off) |
 | Two-line program titles | Have: Two-line programmes |

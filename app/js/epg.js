@@ -7,7 +7,9 @@
    XMLTV is streamed and parsed in a Web Worker, trimmed to a time window and to channels
    that exist in the playlist, then cached in IndexedDB.  Channels are linked to guide data
    by their guide id, by a manual assignment, or (optionally) by matching names.
-   Xtream channels the XMLTV doesn't cover still get the per-channel guide. */
+   Xtream channels the XMLTV doesn't cover still get the per-channel guide.
+   Channels still without a guide after all that are looked up in a free public guide (pubepg.js),
+   in a second, separate pass, so your own guide is on screen first. */
 var Epg = (function () {
   'use strict';
 
@@ -15,6 +17,8 @@ var Epg = (function () {
   var listeners = [];
   var queue = [], inflight = 0, MAX = 3, TTL = 20 * 60 * 1000;
   var xmlMode = false, xmlReady = false, icons = {}, matched = {}, chList = [], status = { at: 0, sources: [] };
+  // Public guide fill-in: channel key -> guide id ("epgpw:US/464745"), its guide channels, how it went.
+  var pubMatched = {}, pubList = [], pubStatus = null, pubForce = false, PUB_ID = /^\w+:[A-Z]{2}\//;
   var loading = null;
   // Live progress of a full guide download, for the TV chip and the web editor.
   var progress = { active: false }, progListeners = [];
@@ -51,7 +55,14 @@ var Epg = (function () {
   }
 
   function P() { return Store.playlist; }
-  function epgId(ch) { return (Store.edits.epgMap && Store.edits.epgMap[ch.k]) || matched[ch.k] || ch.epg || ''; }
+  function epgId(ch) {
+    var m = Store.edits.epgMap && Store.edits.epgMap[ch.k];
+    if (m) return m;
+    var id = matched[ch.k] || ch.epg || '';
+    // The public guide only stands in where your sources and the provider's have nothing.
+    if (pubMatched[ch.k] && !(id && cache.has(id))) return pubMatched[ch.k];
+    return id;
+  }
   // Guide data for a channel lives under its XMLTV id when the XMLTV has it, otherwise under the channel key.
   function keyOf(ch) {
     if (xmlMode) { var id = epgId(ch); if (id && cache.has(id)) return id; }
@@ -125,6 +136,7 @@ var Epg = (function () {
   /* ---------- XMLTV worker ---------- */
   function workerMain() {
     /* NORM */
+    /* PUBKEYS */
     function ts(s) {
       var m = /^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)?\s*([+-]\d{4})?/.exec(s || '');
       if (!m) return 0;
@@ -144,6 +156,11 @@ var Epg = (function () {
       var since = {};
       function sinceOf(id) { var v = since[id]; if (v === undefined) v = since[id] = past[id] ? Math.max(from, Date.now() - past[id] * 86400e3) : recent; return v; }
       var out = {}, icons = {}, chans = [], matches = {}, report = [], total = 0, lastPost = 0;
+      // Public guide pass: pk maps matching keys to [channel key, past days] for the channels with no
+      // guide.  Each guide channel's keys are looked up there; a channel takes its best-ranked match
+      // within a source, and a channel matched by one source is not looked up in the next.
+      var pk = d.pk || {}, best = {}, claimed = {}, pubMatch = {}, pubWant = {};
+      (d.pubWant || []).forEach(function (i) { pubWant[i] = 1; });
       function tell(i, src, bytes, size, force) {
         var t = Date.now();
         if (!force && t - lastPost < 400) return;
@@ -151,7 +168,7 @@ var Epg = (function () {
         self.postMessage({ progress: { src: i + 1, of: d.sources.length, host: src.host, bytes: bytes, total: size, programmes: total, channels: chans.length } });
       }
       function one(src, i) {
-        var got = {}, buf = '', n = 0, off = (+src.offset || 0) * 60000;
+        var got = {}, buf = '', n = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {};
         var RE = /<programme\b([^>]*)>([\s\S]*?)<\/programme>/g;
         var CH = /<channel\b[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/channel>/g;
         function eat(final) {
@@ -163,6 +180,26 @@ var Epg = (function () {
             var dn = /<display-name[^>]*>([\s\S]*?)<\/display-name>/.exec(c[2]);
             var name = dn ? unesc(dn[1]).trim() : id;
             if (chans.length < 30000) chans.push([id, name]);
+            if (P) {
+              var pid = P.prefix + id;
+              if (chans.length < 30000) chans.push([pid, name]);
+              if (pubWant[pid]) wantP[id] = 1;
+              var kk = pubKeys(name, id), pc = kk.country === 'UK' ? 'GB' : kk.country;
+              kk.keys.push(['id:' + id, 0]);
+              for (var q = 0; q < kk.keys.length; q++) {
+                var cs = pk[kk.keys[q][0]];
+                if (!cs) continue;
+                var r = kk.keys[q][1] * 10 + (pc && pc !== P.cc ? 5 : 0);          // "PLUTO - CNN" loses to "US - CNN"
+                for (var z = 0; z < cs.length; z++) {
+                  var ck = cs[z][0], b = best[ck];
+                  if (claimed[ck] || (b && b.r <= r) || (cs[z][2] && cs[z][2] !== P.cc)) continue;
+                  best[ck] = { id: id, r: r }; wantP[id] = 1;
+                  if (!(pid in past) || past[pid] < cs[z][1]) past[pid] = cs[z][1];
+                }
+              }
+              if (wantP[id] && !icons[pid]) { var pi = /<icon[^>]*src="([^"]+)"/.exec(c[2]); if (pi) icons[pid] = unesc(pi[1]); }
+              continue;
+            }
             var nk = norm(name);
             if (!want[id] && nk && names[nk] != null && !matches[nk]) { matches[nk] = id; want[id] = 1; if (!(id in past) || past[id] < names[nk]) past[id] = names[nk]; }
             if (want[id] && !icons[id]) { var ic = /<icon[^>]*src="([^"]*)"/.exec(c[2]); if (ic) icons[id] = unesc(ic[1]); }
@@ -173,7 +210,9 @@ var Epg = (function () {
             last = RE.lastIndex;
             var a = m[1];
             var ch = /channel="([^"]*)"/.exec(a); ch = ch && unesc(ch[1]);
-            if (!ch || !want[ch] || (out[ch] && !got[ch])) continue;     // a higher-priority source already has this channel
+            if (!ch) continue;
+            if (P) { if (!wantP[ch]) continue; ch = P.prefix + ch; } else if (!want[ch]) continue;
+            if (out[ch] && !got[ch]) continue;                            // a higher-priority source already has this channel
             var s = ts((/start="([^"]*)"/.exec(a) || [])[1]) + off, e = ts((/stop="([^"]*)"/.exec(a) || [])[1]) + off;
             if (!s || !e || e < sinceOf(ch) || s > to) continue;
             var t = /<title[^>]*>([\s\S]*?)<\/title>/.exec(m[2]);
@@ -213,14 +252,36 @@ var Epg = (function () {
             });
           }
           return step();
-        }).then(function () { if (poll) { clearInterval(poll); poll = 0; } report.push({ url: src.label || src.url, ok: true, programmes: n, channels: Object.keys(got).length }); },
-          function (e) { clearInterval(poll); report.push({ url: src.label || src.url, ok: false, error: String(e && e.message || e) }); });
+        }).then(function () { if (poll) { clearInterval(poll); poll = 0; } report.push({ url: src.label || src.url, ok: true, programmes: n, channels: Object.keys(got).length, filled: settle() }); },
+          function (e) { clearInterval(poll); report.push({ url: src.label || src.url, ok: false, error: String(e && e.message || e), filled: settle() }); });
+        // Public pass: fix this source's matches (only those with programmes count).
+        function settle() {
+          if (!P) return undefined;
+          var f = 0;
+          for (var ck in best) { if (claimed[ck]) continue; var sid = P.prefix + best[ck].id; if (out[sid]) { pubMatch[ck] = sid; claimed[ck] = 1; f++; } }
+          best = {};
+          return f;
+        }
       }
       var chain = Promise.resolve();
-      d.sources.forEach(function (src, i) { chain = chain.then(function () { return one(src, i); }); });
+      // Public pass: a file is only worth downloading while some channel it could match is still open.
+      function worth(src) {
+        if (!src.pub) return true;
+        for (var key in pk) for (var j = 0; j < pk[key].length; j++) { var e = pk[key][j]; if (!claimed[e[0]] && (!e[2] || e[2] === src.pub.cc)) return true; }
+        for (var w in pubWant) if (w.indexOf(src.pub.prefix) === 0) return true;
+        return false;
+      }
+      d.sources.forEach(function (src, i) { chain = chain.then(function () { if (!worth(src)) { report.push({ url: src.label || src.url, ok: true, programmes: 0, channels: 0, filled: 0, skipped: true }); return; } return one(src, i); }); });
       chain.then(function () {
+        if (d.pub) {
+          // Programmes kept for guide channels that lost to a better match: not needed.
+          var used = {}, u;
+          for (u in pubMatch) used[pubMatch[u]] = 1;
+          for (u in pubWant) used[u] = 1;
+          for (u in out) if (!used[u]) { delete out[u]; delete icons[u]; }
+        }
         for (var k in out) out[k].sort(function (a, b) { return a.s - b.s; });
-        self.postMessage({ map: out, icons: icons, channels: chans, matches: matches, report: report });
+        self.postMessage({ map: out, icons: icons, channels: chans, matches: matches, report: report, pubMatch: pubMatch });
       });
     };
   }
@@ -278,14 +339,14 @@ var Epg = (function () {
     });
   }
 
-  function work(srcs) {
+  function work(srcs, pub) {
     // Past programmes are only reachable on catch-up channels, so only those keep past days
     // (up to their catch-up length); the rest keep the last few hours.  On big playlists, where
     // most channels have no catch-up, this saves a large share of the TV's memory.
     var days = +P().epgDays || 1;
     var ids = {}, names = {};
     function keep(map, k, c) { var p = c.arch ? Math.min(days, +c.arch || days) : 0; if (!(k in map) || map[k] < p) map[k] = p; }
-    Library.data.channels.forEach(function (c) {
+    if (!pub) Library.data.channels.forEach(function (c) {
       var m = Store.edits.epgMap[c.k];
       if (m) keep(ids, m, c);
       if (c.epg) keep(ids, c.epg, c);
@@ -297,12 +358,16 @@ var Epg = (function () {
     var msg = { sources: srcs.map(function (s, i) {
       // Through the helper, guides arrive already unzipped (.gz, gzip-encoded, or gzipped without saying so).
       var id = Net.active ? 'g' + run + i : '';
-      return { url: Net.wrap(s.url, id ? { unzip: id } : null), xfer: id ? Net.xfer(id) : '', label: s.provider ? 'provider guide' : s.url, host: s.provider ? 'provider guide' : hostOf(s.url), offset: s.offset };
+      var label = s.provider ? 'provider guide' : s.prefix ? s.name + ' ' + s.cc : s.url;
+      return { url: Net.wrap(s.url, id ? { unzip: id } : null), xfer: id ? Net.xfer(id) : '', label: label, host: s.provider ? label : s.prefix ? 'public guide, ' + label : hostOf(s.url), offset: s.offset || 0,
+        pub: s.prefix ? { prefix: s.prefix, cc: s.cc, name: s.name } : null };
     }),
       ids: Object.keys(ids), past: ids, names: names, from: now - days * 86400e3, recent: now - 3 * 3600e3, to: now + 2 * 86400e3,
       // webOS 4 and 5 TVs (2018 to 2020) have the least memory: shorter programme descriptions there.
       descMax: (function () { var v = Caps.probe().webos; return v && v <= 5 ? 250 : 400; })() };
-    var code = '(' + workerMain.toString().replace('/* NORM */', norm.toString()) + ')()';
+    if (pub) { msg.pub = true; msg.pk = pub.pk; msg.pubWant = pub.want; }
+    var keysSrc = typeof PubEpg !== 'undefined' ? 'var pubKeys = ' + PubEpg.keys.toString() + ';' : 'function pubKeys() { return { keys: [], country: \'\' }; }';
+    var code = '(' + workerMain.toString().replace('/* NORM */', function () { return norm.toString(); }).replace('/* PUBKEYS */', function () { return keysSrc; }) + ')()';
     var started = Date.now();
     function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; setProgress(p); }
     setProgress({ active: true, phase: 'download', src: 1, of: srcs.length, host: msg.sources[0] ? msg.sources[0].host : '', bytes: 0, total: 0, programmes: 0, channels: 0, started: started });
@@ -325,11 +390,85 @@ var Epg = (function () {
 
   function init(lib, force) {
     cache.clear(); queue.length = 0; matched = {}; icons = {}; chList = []; status = { at: 0, sources: [] };
-    var srcs = sources();
-    xmlMode = srcs.length > 0; xmlReady = false;
+    pubMatched = {}; pubList = []; pubStatus = null;
+    var srcs = sources(), pub = pubOn();
+    xmlMode = srcs.length > 0 || pub; xmlReady = false;
     if (!xmlMode) { status.at = Date.now(); emit(null); return Promise.resolve(); }
-    loading = loadXml(force).catch(function () {}).then(function () { loading = null; });
+    var first;
+    if (srcs.length) first = loadXml(force).catch(function () {});
+    else { xmlReady = true; status.at = Date.now(); emit(null); first = Promise.resolve(); }
+    loading = first.then(function () { return pub ? loadPub(force).catch(function (e) { Log.warn('epg', 'Public guide failed: ' + (e && e.message || e)); }) : null; })
+      .then(function () { loading = null; });
     return loading;
+  }
+
+  /* ---------- public guide fill-in (pubepg.js) ---------- */
+  function pubOn() { return typeof PubEpg !== 'undefined' && PubEpg.conf(P()).on && !!(Library.data && Library.data.channels.length); }
+  // Channels nothing else has a guide for.  Per-channel provider guides can't be checked ahead, so
+  // a channel the provider gives a guide id to counts as covered there.
+  function missing() {
+    var map = Store.edits.epgMap || {}, short = shortAllowed(), ev = typeof Events !== 'undefined';
+    return Library.data.channels.filter(function (ch) {
+      if (map[ch.k] && !PUB_ID.test(map[ch.k])) return false;
+      var id = matched[ch.k] || ch.epg || '';
+      if (id && cache.has(id)) return false;
+      if (short && ch.epg) return false;
+      if (ev && Events.of(ch)) return false;
+      return true;
+    });
+  }
+  function ingestPub(c) {
+    var t = Date.now();
+    for (var k in c.map) cache.set(k, { at: t + 1e12, list: c.map[k] });
+    for (var i in c.icons) if (!icons[i]) icons[i] = c.icons[i];
+    pubMatched = c.pubMatch || {};
+    pubList = c.channels || [];
+    pubStatus = { at: c.at || 0, countries: c.countries || [], filled: Object.keys(pubMatched).length, asked: c.asked || 0, sources: c.report || [], took: c.took || 0 };
+  }
+  function loadPub(force) {
+    var p = P(), miss = missing(), map = Store.edits.epgMap || {};
+    var ccs = PubEpg.countriesFor(p, miss, Library.data);
+    var gz = !!Net.active || typeof DecompressionStream !== 'undefined';
+    var files = PubEpg.files(ccs, !!Net.active, gz);
+    var want = Object.keys(map).map(function (k) { return map[k]; }).filter(function (v) { return PUB_ID.test(v); });
+    var ckey = 'epgpub:' + p.id, sig = U.hash(ccs.join() + '|' + p.epgDays);
+    return Store.idbGet(ckey).then(function (c) {
+      if (c && c.sig === sig) { ingestPub(c); emit(null); }
+      if (!files.length || !miss.length) {
+        pubStatus = { at: Date.now(), countries: ccs, filled: 0, asked: miss.length, sources: [], none: !miss.length ? 'every channel has a guide' : 'no public guide for this playlist\'s countries' };
+        return;
+      }
+      // Free services: at most twice a day, however often your own guide reloads.  Sooner when the
+      // playlist gained channels with no guide, or a channel was pointed at a public guide channel.
+      var age = c ? Date.now() - c.at : Infinity, hours = +p.epgRefresh, every = hours === 0 ? Infinity : Math.max(12, hours > 0 ? hours : 12) * 3600e3;
+      var need = want.some(function (w) { return !cache.has(w); });
+      var stale = !c || c.sig !== sig || age > every || miss.length > (c.asked || 0) + 20 || need;
+      if (pubForce) { pubForce = false; stale = true; }
+      if (!stale && !(force && age > 3600e3)) return;
+      var pk = {}, days = +p.epgDays || 1, ctx = Tidy.make(Library.data);
+      miss.forEach(function (ch) {
+        // A channel with a known country only matches in that country's guides ("Mega" in a Greek
+        // group is not the US Mega TV).  Regions (Latino, Ex-Yu) match anywhere.
+        var pd = ch.arch ? Math.min(days, +ch.arch || days) : 0, seen = {}, cc = PubEpg.code(PubEpg.countryOf(ctx, ch));
+        if (!PubEpg.supported(cc)) cc = '';
+        function add(k) { if (seen[k]) return; seen[k] = 1; (pk[k] || (pk[k] = [])).push([ch.k, pd, cc]); }
+        PubEpg.keys(Library.name(ch)).keys.forEach(function (x) { add(x[0]); });
+        PubEpg.keys(ch.n).keys.forEach(function (x) { add(x[0]); });
+        if (ch.epg) add('id:' + ch.epg);
+      });
+      var started = Date.now();
+      return work(files, { pk: pk, want: want }).then(function (res) {
+        res.at = Date.now(); res.sig = sig; res.asked = miss.length; res.countries = ccs; res.took = res.at - started;
+        res.report = res.report.map(function (r) { return { url: r.url, ok: r.ok, programmes: r.programmes || 0, filled: r.filled || 0, error: r.error || '', skipped: !!r.skipped }; });
+        ingestPub(res);
+        Store.idbSet(ckey, res);
+        emit(null);
+        var filled = Object.keys(res.pubMatch || {}).length;
+        Log.info('epg', 'Public guide filled ' + filled + ' of ' + miss.length + ' channels with no guide (' + ccs.join(', ') + ', ' + Math.round(res.took / 1000) + ' s)');
+        setProgress({ active: false, phase: res.report.every(function (r) { return !r.ok; }) ? 'error' : 'done', at: Date.now(), programmes: res.report.reduce(function (a, r) { return a + r.programmes; }, 0),
+          channels: filled, took: res.took, report: res.report.map(function (r) { return { host: 'public guide, ' + r.url, ok: r.ok, programmes: r.programmes, channels: r.filled, error: r.error }; }) });
+      });
+    });
   }
 
   /* Programmes whose title matches, for search and the watchlist.  q is text or a test function.
@@ -353,14 +492,18 @@ var Epg = (function () {
     var m = Store.edits.epgMap;
     if (id) m[ch.k] = id; else delete m[ch.k];
     Store.saveEdits();
-    if (id && !cache.has(id) && xmlMode) { U.toast('Loading guide for this channel'); return init(Library, true); }
+    if (id && !cache.has(id) && xmlMode) { U.toast('Loading guide for this channel'); return init(Library, !PUB_ID.test(id)); }
     emit(null);
   }
 
   return {
     init: init, request: request, nowNext: nowNext, search: search, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm,
     icon: function (id) { return icons[id] || ''; },
-    guideChannels: function () { return chList; },
+    guideChannels: function () { return pubList.length ? chList.concat(pubList) : chList; },
+    // Where a channel's guide comes from when it's the public one: { name, site } or null.
+    pubSource: function (ch) { var id = ch && epgId(ch); return id && PUB_ID.test(id) && typeof PubEpg !== 'undefined' ? PubEpg.sourceOf(id) : null; },
+    get pubStatus() { return pubStatus; },
+    pubAgain: function () { pubForce = true; return init(Library, false); },
     hasData: function (ch) { var id = epgId(ch); return !!(id && cache.has(id)) || !!(typeof Events !== 'undefined' && Events.of(ch)); },
     onUpdate: function (fn) { listeners.push(fn); },
     refresh: function (lib, force) { return init(lib || Library, force); },

@@ -303,6 +303,7 @@ Open **Edit on phone** in the TV's side menu (or hold OK on any group).  It turn
 - **Smart match** finds the right guide channel for channels showing "No guide information".  You approve or decline each guess.
 - **Live guide download progress** on big XMLTV files: speed, percent and time left, on the computer and on the TV.
 - **Recommended free guide sources** by region, each with a one-click **Test**.
+- **Public guide fill-in.**  Channels your provider sends no guide for get one from the free epg.pw and iptv-epg.org guides, matched by guide id, local call sign or name.  On by default, never over a guide you already have, and the TV downloads the files itself.
 - **Works on your phone.**  Scan the QR code in the TV's set-up tour, or open the address in any phone browser: a top bar for the pages, one pane at a time, and touch-sized controls.
 - **Logins never leave the TV.**  The editor only ever sees server names.
 

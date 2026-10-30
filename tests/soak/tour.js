@@ -111,6 +111,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await shot('tv-tour-logos');
   await next();
 
+  ok('guide step', await step() === 'guide', await step());
+  ok('guide: public fill-in is offered, on by default', /Fill in from public guides/.test(await text()) && /epg\.pw and iptv-epg\.org/.test(await text()) && await ev(() => PubEpg.conf(Store.playlist).on));
+  await shot('tv-tour-guide');
+  await next();
+
   ok('look step', await step() === 'look', await step());
   const acc0 = await ev(() => Store.settings.accent);
   await key('ArrowRight', 400);

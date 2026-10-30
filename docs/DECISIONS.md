@@ -9,3 +9,4 @@
 - **HTTPS:** accept self-signed certs in the helper; auto-detect scheme when omitted; portless servers are normal.
 - **requiredACG omitted** on purpose: enforced only from webOS 26, and adding it on 25 and below switches permission checks on.
 - **Credentials** are masked in every log and on screen.
+- **Public guide fill-in:** on by default, but only for channels with no guide from the user's sources or the provider, and never over one.  epg.pw first (smaller files, CORS), then iptv-epg.org (more complete, needs the helper).  The TV fetches the files itself, at most twice a day, after the user's own guide; nothing is hosted or proxied by TiviBro.  Matching is by guide id, US call sign, then a looser name key, within the channel's own country when known.
