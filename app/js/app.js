@@ -19,6 +19,29 @@ var App = (function () {
     return p;
   }
 
+  /* Recently added channels: a fresh channel list is compared with the one it replaces, and keys that
+     were not there before get today's date.  Kept in the cached data, so it survives restarts, for
+     two weeks at most.  A list that changed almost completely (another server, a provider rebuild)
+     marks nothing: every channel would be "new". */
+  function carryAdded(prev, data) {
+    var old = prev && prev.channels, now = Date.now(), keep = {}, a = (prev && prev.added) || {};
+    var limit = now - 14 * 86400e3, have = {};
+    if (!old || !old.length) { data.added = {}; return data; }
+    for (var i = 0; i < data.channels.length; i++) have[data.channels[i].k] = 1;
+    Object.keys(a).forEach(function (k) { if (a[k] >= limit && have[k]) keep[k] = a[k]; });
+    var was = {}, fresh = [];
+    for (var j = 0; j < old.length; j++) was[old[j].k] = 1;
+    for (var n = 0; n < data.channels.length; n++) { var k = data.channels[n].k; if (!was[k]) fresh.push(k); }
+    if (fresh.length > 300 && fresh.length > data.channels.length * 0.4) {
+      Log.info('app', fresh.length + ' of ' + data.channels.length + ' channels changed; not marking them as recently added');
+    } else {
+      fresh.forEach(function (k) { if (!keep[k]) keep[k] = now; });
+      if (fresh.length) Log.info('app', fresh.length + ' channel(s) new since the last load');
+    }
+    data.added = keep;
+    return data;
+  }
+
   /* ---------- setup screen ----------
      target: undefined (first run), 'new' (add another), or a playlist id (edit). */
   function setup(target) {
@@ -232,7 +255,7 @@ var App = (function () {
     Library.set(data);
     Logos.load(data);
     Vod.reset();
-    if (!ready) { Views.init(); ready = true; }
+    if (!ready) { Views.init(); Watch.start(); ready = true; }
     window.__tbBooted = true;              // compat.js shows an error screen if errors stop the start
     Views.stopAll();
     Views.reload(false);
@@ -289,6 +312,7 @@ var App = (function () {
     if (manual) U.toast('Reloading channels');
     return Source.load(p).then(function (data) {
       if (data.fixed) Store.upsertPlaylist(adopt(p, data));
+      carryAdded(Library.data, data);
       Store.idbSet(cacheKey(p), data);
       Source.setTz(data.tz); Events.setProviderTz(data.tz);
       Library.set(data);

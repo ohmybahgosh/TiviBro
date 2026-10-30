@@ -272,7 +272,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
   .groups{width:44%} .two{grid-template-columns:1fr} .c .grp{display:none} .help .toc{columns:1}
   .c .num{display:none} .c img,.c .noimg{width:44px} .c{gap:8px;padding:0 10px}
 }
-#navToggle,#gcBack,.c .tools [data-more],nav.side .mobonly,.asshort{display:none}
+#navToggle,#gcBack,nav.side .mobonly,.asshort{display:none}
 /* Phones: a top bar with the page name that opens the page list, one pane at a time in Groups and
    channels, bigger tap targets, and nothing wider than the screen. */
 @media (max-width:700px){
@@ -485,6 +485,12 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
           </div>
           <div id="mEmpty"></div>
         </div>
+        <div class="card">
+          <h3>4.  Watchlist</h3>
+          <p>Shows, teams and names the TV looks for in the guide.  When one is coming up, it sets a reminder.  Matched as whole words in programme titles, so "Cars" does not find "Oscars".</p>
+          <div id="wList" class="row" style="flex-wrap:wrap;gap:8px;margin:10px 0"></div>
+          <form id="wForm" class="row"><input id="wText" type="text" class="grow" maxlength="60" placeholder="For example Yankees, Bluey, Premier League or Gordon Ramsay" style="min-width:220px"><button class="primary" id="wAdd">Add</button></form>
+        </div>
       </div>
     </section>
 
@@ -684,7 +690,7 @@ var rev = 0, sentRev = 0, sending = false, inflight = 0, sel = new Set(), curGro
 var hist = [], redo = [], lastProgress = null, tvLost = false;
 var dT = 0, dFirst = 0, dLast = '', dSeq = 0, dAck = 0, dAt = 0, draftsCache = null;   // draft autosave on the TV
 var FAV = 'c_fav', ALL = '__all';
-var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort'];
+var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist'];
 var byKey = new Map(), byGroup = new Map(), guideName = new Map();
 var TOUCH = !!(window.matchMedia && matchMedia('(hover: none)').matches);   // phones and tablets: no hover, no drag and drop
 
@@ -848,7 +854,7 @@ function boot() {
 /* ---------- data ---------- */
 function pickE(src) {
   var o = {};
-  FIELDS.forEach(function (f) { o[f] = clone(src && src[f] != null ? src[f] : (f === 'custom' || f === 'groupOrder' ? [] : {})); });
+  FIELDS.forEach(function (f) { o[f] = clone(src && src[f] != null ? src[f] : (f === 'custom' || f === 'groupOrder' || f === 'watchlist' ? [] : {})); });
   if (!o.custom.some(function (g) { return g.id === FAV; })) o.custom.unshift({ id: FAV, name: 'Favorites', items: [] });
   return o;
 }
@@ -908,7 +914,14 @@ function providerGroups() {
   return D.groups.map(function (g, i) { return { id: g.id, name: provName(g), raw: g.name, i: i, renamed: !!E.groupRenames[g.id] }; })
     .sort(function (a, b) { var x = pos[a.id] != null ? pos[a.id] : 1e6 + a.i, y = pos[b.id] != null ? pos[b.id] : 1e6 + b.i; return x - y; });
 }
-function sortList(l, mode) {
+function sortList(l, mode, id) {
+  // A provider group in "Your order": the channels you placed, then any the provider added since.
+  if (mode === 'custom' && id && isProv(id) && E.chanOrder[id]) {
+    var pos = {}; E.chanOrder[id].forEach(function (k, i) { pos[k] = i; });
+    return l.map(function (c, i) { return { c: c, i: i }; })
+      .sort(function (x, y) { var a = pos[x.c.k], b = pos[y.c.k]; return (a != null ? a : 1e9 + x.i) - (b != null ? b : 1e9 + y.i); })
+      .map(function (x) { return x.c; });
+  }
   if (!mode || mode === 'provider' || mode === 'custom') return l;
   l = l.slice();
   var cmp = function (a, b) { return chName(a).localeCompare(chName(b), undefined, { numeric: true }); };
@@ -928,7 +941,7 @@ function channelsOf(id, raw) {
     l.forEach(function (c) { seen[c.k] = 1; });
     add.forEach(function (k) { var c = byKey.get(k); if (c && !seen[k] && !out[k]) { l.push(c); seen[k] = 1; } });
   }
-  return raw ? l : sortList(l, E.groupSort[id]);
+  return raw ? l : sortList(l, E.groupSort[id], id);
 }
 function groupLabel(id) { if (id === ALL) return 'All channels'; var g = customOf(id); if (g) return g.name; var p = provOf(id); return p ? provName(p) : id; }
 function groupEdited(id) { return !!((E.groupAdd[id] && E.groupAdd[id].length) || (E.groupRemove[id] && Object.keys(E.groupRemove[id]).length)); }
@@ -1073,6 +1086,8 @@ function diffs(A, B) {
     if (!sameJ(a.groupAdd[id] || [], b.groupAdd[id] || []) || !sameJ(a.groupRemove[id] || {}, b.groupRemove[id] || {})) out.push('Channels copied, moved or taken out: ' + gn(id));
   });
   keys(a.groupSort, b.groupSort).forEach(function (id) { if (a.groupSort[id] !== b.groupSort[id]) out.push('Sort ' + gn(id) + ': ' + (SORT_LABEL[b.groupSort[id] || 'provider'] || '')); });
+  if (!sameJ((a.watchlist || []).map(function (w) { return w.q; }), (b.watchlist || []).map(function (w) { return w.q; }))) out.push('Watchlist');
+  keys(a.chanOrder || {}, b.chanOrder || {}).forEach(function (id) { if (!sameJ((a.chanOrder || {})[id] || [], (b.chanOrder || {})[id] || [])) out.push('New channel order in ' + gn(id)); });
   var em = keys(a.epgMap, b.epgMap).filter(function (k) { return a.epgMap[k] !== b.epgMap[k]; });
   if (em.length) out.push(em.length > 3 ? 'Guide matches for ' + plural(em.length, 'channel') : em.map(function (k) { return 'Guide match for ' + nm(k); }).join(', '));
   if (!sameJ(A.N, B.N)) out.push('Name clean-up rules');
@@ -1316,7 +1331,11 @@ function setupDropdowns() {
     onChange: function () { renderChannels(true); } });
   dd($('cSort'), { prefix: 'Order: ', value: 'provider', options: [], onChange: function (v) {
     var id = curGroup, def = isCustom(id) ? 'custom' : 'provider';
-    mut('Sort ' + groupLabel(id) + ': ' + SORT_LABEL[v], function () { if (v === def) delete E.groupSort[id]; else E.groupSort[id] = v; });
+    mut('Sort ' + groupLabel(id) + ': ' + SORT_LABEL[v], function () {
+      // "Your order" for a provider group starts from the order it shows now.
+      if (v === 'custom' && isProv(id) && !E.chanOrder[id]) E.chanOrder[id] = channelsOf(id).map(function (c) { return c.k; });
+      if (v === def) delete E.groupSort[id]; else E.groupSort[id] = v;
+    });
     toast(groupLabel(id) + ' is sorted ' + SORT_LABEL[v].toLowerCase() + ' on the TV');
   } });
   dd($('mGroup'), { value: ALL, options: [], search: true, menuWidth: 300, onChange: function () { mPage = 0; renderMatchList(); } });
@@ -1490,7 +1509,26 @@ function currentList() {
   if (f === 'added') { var g = realGroup(); l = l.filter(function (c) { return g && isProv(g) ? c.g !== g : false; }); }
   return l;
 }
-function canDrag() { var g = realGroup(); return !!(g && isCustom(g) && (!E.groupSort[g] || E.groupSort[g] === 'custom')); }
+function canDrag() { var g = realGroup(); return !!(g && (isCustom(g) ? !E.groupSort[g] || E.groupSort[g] === 'custom' : E.groupSort[g] === 'custom')); }
+/* Put channel k at index t of the group as it shows now.  Your groups change their item list; a
+   provider group switches to "Your order" (chanOrder) starting from how it shows now. */
+function placeIn(g, k, t) {
+  var now = channelsOf(g).map(function (c) { return c.k; }), i = now.indexOf(k);
+  if (i < 0) return false;
+  t = Math.max(0, Math.min(now.length - 1, t));
+  if (t === i) return false;
+  now.splice(i, 1); now.splice(t, 0, k);
+  if (isCustom(g)) { var cg = customOf(g); var rest = cg.items.filter(function (x) { return now.indexOf(x) < 0; }); cg.items = now.filter(function (x) { return cg.items.indexOf(x) >= 0; }).concat(rest); delete E.groupSort[g]; }
+  else { E.chanOrder[g] = now; E.groupSort[g] = 'custom'; }
+  return true;
+}
+function moveCh(g, k, where) {
+  var now = channelsOf(g).map(function (c) { return c.k; }), i = now.indexOf(k), c = byKey.get(k);
+  var t = where === 'top' ? 0 : where === 'bottom' ? now.length - 1 : where === 'up' ? i - 1 : where === 'down' ? i + 1 : +where;
+  if (i < 0 || t === i || t < 0 || t >= now.length) return;
+  mut('Moved ' + chName(c) + ' in ' + groupLabel(g), function () { placeIn(g, k, t); });
+  if (!isCustom(g)) toast(groupLabel(g) + ' now uses your order on the TV.  New channels from the provider go to the end.');
+}
 function renderChannels(reset) {
   if (!D) return;
   list = currentList();
@@ -1501,7 +1539,7 @@ function renderChannels(reset) {
   if (sd) {
     $('cSort').classList.toggle('hidden', !g);
     if (g) {
-      var opts = isCustom(g) ? ['custom', 'az', 'za', 'number'] : ['provider', 'az', 'za', 'number'];
+      var opts = isCustom(g) ? ['custom', 'az', 'za', 'number'] : ['provider', 'custom', 'az', 'za', 'number'];
       sd.options(opts.map(function (v) { return { v: v, l: SORT_LABEL[v] }; }), E.groupSort[g] || (isCustom(g) ? 'custom' : 'provider'));
     }
   }
@@ -1512,6 +1550,7 @@ function renderChannels(reset) {
     if (out || add) note = [add ? plural(add, 'channel') + ' copied or moved in' : '', out ? plural(out, 'channel') + ' taken out' : ''].filter(Boolean).join('  ·  ') + '  <button class="ghost small" id="gReset">Put this group back the way the provider has it</button>';
   }
   if (g && isCustom(g) && E.groupSort[g] && E.groupSort[g] !== 'custom') note = 'Sorted ' + SORT_LABEL[E.groupSort[g]].toLowerCase() + '.  Set the order to "Your order" to drag channels.';
+  if (g && isProv(g) && E.groupSort[g] === 'custom') note = (note ? note + '<br>' : '') + 'Your order: ' + (TOUCH ? 'use ⋯ on a channel to move it.' : 'drag ⠿ or use ⋯ on a channel.') + '  Channels the provider adds later go to the end.';
   $('gNote').innerHTML = note; $('gNote').classList.toggle('hidden', !note);
   $('cspacer').style.height = (list.length * ROW) + 'px';
   if (reset) $('clist').scrollTop = 0;
@@ -1566,7 +1605,13 @@ $('cspacer').addEventListener('click', function (e) {
   if (t.hasAttribute('data-add')) { copyMoveDialog([k]); return; }
   if (t.hasAttribute('data-more')) {
     var g = realGroup();
+    var pos = g ? channelsOf(g).map(function (x) { return x.k; }).indexOf(k) : -1, n = g ? channelsOf(g).length : 0;
     popMenu(t, [['Rename', function () { renaming = k; drawRows(); }], ['Copy or move to a group…', function () { copyMoveDialog([k]); }],
+      g && pos > 0 ? ['Move to the top', function () { moveCh(g, k, 'top'); }] : null,
+      g && pos > 0 ? ['Move up one', function () { moveCh(g, k, 'up'); }] : null,
+      g && pos >= 0 && pos < n - 1 ? ['Move down one', function () { moveCh(g, k, 'down'); }] : null,
+      g && pos >= 0 && pos < n - 1 ? ['Move to the bottom', function () { moveCh(g, k, 'bottom'); }] : null,
+      g && n > 2 ? ['Move to position…', function () { var v = prompt('New position for ' + chName(c) + ' (1 to ' + n + ')', String(pos + 1)); if (v && +v >= 1) moveCh(g, k, Math.min(n, Math.round(+v)) - 1); }] : null,
       g ? ['Take out of this group', function () { takeOut(g, [k]); }] : null]);
   }
 });
@@ -1593,12 +1638,13 @@ var dragK = null;
 $('cspacer').addEventListener('dragstart', function (e) { var r = e.target.closest('.c'); if (!r) return; dragK = r.dataset.k; e.dataTransfer.effectAllowed = 'move'; });
 $('cspacer').addEventListener('dragover', function (e) { if (dragK && e.target.closest('.c')) e.preventDefault(); });
 $('cspacer').addEventListener('drop', function (e) {
-  var r = e.target.closest('.c'), g = customOf(curGroup); if (!r || !dragK || !g) return;
+  var r = e.target.closest('.c'), g = realGroup(); if (!r || !dragK || !g || !canDrag()) return;
   e.preventDefault();
   var b = r.getBoundingClientRect(), after = e.clientY > b.top + b.height / 2, k = dragK; dragK = null;
-  mut('Reordered ' + g.name, function () {
-    var items = g.items.filter(function (x) { return x !== k; }), t = items.indexOf(r.dataset.k);
-    items.splice(after ? t + 1 : t, 0, k); customOf(g.id).items = items;
+  if (r.dataset.k === k) return;
+  mut('Reordered ' + groupLabel(g), function () {
+    var now = channelsOf(g).map(function (c) { return c.k; }).filter(function (x) { return x !== k; }), t = now.indexOf(r.dataset.k);
+    placeIn(g, k, Math.min(after ? t + 1 : t, now.length));
   });
 });
 function bulkBar() {
@@ -1741,8 +1787,27 @@ var PROV_M3U = [
   ['xmltv', 'Playlist\'s guide', 'From the M3U', 'Uses the guide address written inside your M3U playlist (url-tvg), if it has one.', 'Size depends on your provider.'],
   ['off', 'Off', 'Use only your own sources', 'Ignore the playlist\'s guide address.  Only the guide sources you add below are used.', '']
 ];
+function renderWatch() {
+  var l = E.watchlist || [];
+  $('wList').innerHTML = l.length ? l.map(function (w, i) { return '<span class="chip acc" style="font-size:14px;padding:4px 6px 4px 12px">' + esc(w.q) + ' <button class="ghost small" data-wrm="' + i + '" title="Remove" style="padding:0 6px;color:inherit">✕</button></span>'; }).join('') : '<span class="muted small">Nothing on the watchlist yet.</span>';
+}
+$('wForm').addEventListener('submit', function (e) {
+  e.preventDefault();
+  var q = $('wText').value.replace(/\s+/g, ' ').trim().slice(0, 60);
+  if (q.length < 2) return;
+  if ((E.watchlist || []).some(function (w) { return w.q.toLowerCase() === q.toLowerCase(); })) { toast('"' + q + '" is already on the watchlist'); return; }
+  mut('Watchlist: added "' + q + '"', function () { if (!E.watchlist) E.watchlist = []; E.watchlist.push({ q: q, at: Date.now() }); });
+  $('wText').value = ''; renderWatch();
+});
+$('wList').addEventListener('click', function (e) {
+  var i = e.target.getAttribute('data-wrm'); if (i == null) return;
+  var w = E.watchlist[+i]; if (!w) return;
+  mut('Watchlist: removed "' + w.q + '"', function () { E.watchlist.splice(+i, 1); });
+  renderWatch();
+});
 function renderGuide() {
   if (!D) return;
+  renderWatch();
   var pl = activePl(), m3u = D.playlist && D.playlist.type === 'm3u', mode = pl.providerEpg || (m3u ? 'xmltv' : 'short');
   $('provIntro').textContent = m3u ? 'Your playlist may carry its own guide address.' : 'Xtream providers offer their guide two ways.  Pick one; you can change it any time.';
   $('provChoices').innerHTML = (m3u ? PROV_M3U : PROV_XC).map(function (c) {

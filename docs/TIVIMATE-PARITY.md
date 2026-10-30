@@ -30,7 +30,7 @@ Legend: **Have** = already in TiviBro.  **Added** = added in this pass.  **Later
 | Auto frame rate, switch refresh rate / resolution | No: LG doesn't let apps change the display mode |
 | Picture-in-picture, switch to PiP on Home | No: webOS has no app PiP (Multiview covers watching two) |
 | Use external player | No |
-| Select surround audio track by default | Later |
+| Select surround audio track by default | **Added:** "Prefer surround sound", with "Audio language" and subtitles in one language |
 | (not in TiviMate) | **Added:** when a channel stops working, switch to another version of it (other quality, group or hidden copy), or ask, or keep retrying.  "Other versions…" in channel options and the quick menu |
 
 ## Guide (EPG)
@@ -63,7 +63,7 @@ Legend: **Have** = already in TiviBro.  **Added** = added in this pass.  **Later
 | Hide / block channel and group, Manage visibility | Have |
 | Copy channels / create group | Have.  The web editor can also copy or move channels into provider groups |
 | Channels sorting / Groups sorting | Have |
-| Reorder channels manually inside provider groups | Later |
+| Reorder channels manually inside provider groups | **Added:** Hold OK > Move… on the TV, and "Your order" with drag or ⋯ > Move in the web editor |
 | Recent channels, count | Have |
 | Reset watch time | Have |
 | Restore channel name | Have |

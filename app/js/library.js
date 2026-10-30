@@ -8,7 +8,7 @@ var Library = (function () {
   var byKey = new Map();
   var groupCache = new Map();     // groupId -> channel array (built on demand)
   var groupNames = {};
-  var ALL = 'all', RECENT = 'recent', FAV = 'c_fav', EVENTS = 'events';
+  var ALL = 'all', RECENT = 'recent', FAV = 'c_fav', EVENTS = 'events', NEW = 'new';
 
   function E() { return Store.edits; }
   function S() { return Store.settings; }
@@ -56,7 +56,7 @@ var Library = (function () {
       Store.saveEdits();
     } catch (err) { Log.warn('library', 'Could not track new groups: ' + err.message); }
   }
-  function dirty() { groupCache.clear(); evCache = null; }
+  function dirty() { groupCache.clear(); evCache = null; newCache = null; }
 
   /* ---------- other versions of a channel ----------
      The same channel in another quality, group or copy ("ESPN FHD", "ESPN HD", "US| ESPN (Backup)"),
@@ -128,12 +128,33 @@ var Library = (function () {
     evCache = { at: now, list: out.map(function (x) { return x.c; }) };
     return evCache.list;
   }
+  /* Recently added: channels that were not in the playlist the last time it loaded (app.js keeps
+     data.added = { key: first seen } across reloads).  Newest first, for Settings > Groups days. */
+  function newDays() { var d = S().newDays; return d == null ? 7 : +d || 0; }
+  function isNew(c) { var a = data.added, d = newDays(); return !!(d && a && c && a[c.k] && Date.now() - a[c.k] < d * 86400e3); }
+  var newCache = null;
+  function newList() {
+    var a = data.added, d = newDays();
+    if (!a || !d) return [];
+    if (newCache) return newCache;
+    var e = E(), showHidden = S().showHidden, since = Date.now() - d * 86400e3, out = [];
+    Object.keys(a).forEach(function (k) {
+      if (a[k] < since) return;
+      var c = byKey.get(k);
+      if (!c || (!showHidden && (e.hiddenChannels[k] || e.hiddenGroups[c.g]))) return;
+      out.push(c);
+    });
+    out.sort(function (x, y) { return a[y.k] - a[x.k] || x.num - y.num; });
+    return (newCache = out);
+  }
+  function isVirtual(gid) { return gid === ALL || gid === RECENT || gid === EVENTS || gid === NEW; }
   function isCustom(gid) { return gid && gid.indexOf('c_') === 0; }
   function custom(gid) { return E().custom.filter(function (g) { return g.id === gid; })[0]; }
   function cleanGroup(n) { return Names.groupsOn() ? Names.clean(n) : n; }
   function groupName(gid) {
     if (gid === ALL) return 'All channels';
     if (gid === RECENT) return 'Recent';
+    if (gid === NEW) return 'Recently added';
     if (gid === EVENTS) return 'Events by time';
     var c = custom(gid);
     return c ? c.name : (E().groupRenames && E().groupRenames[gid]) || cleanGroup(groupNames[gid] || '');
@@ -149,6 +170,8 @@ var Library = (function () {
     if (s.showFav === false) customs = customs.filter(function (g) { return g.id !== FAV; });
     if (s.favFirst) out = out.concat(customs);
     if (s.showRecent && e.recent.length) out.push({ id: RECENT, name: 'Recent', count: e.recent.length });
+    var fresh = newList().length;
+    if (fresh) out.push({ id: NEW, name: 'Recently added', count: fresh });
     var evs = Events.groupOn() ? eventList().length : 0;
     if (evs) out.push({ id: EVENTS, name: 'Events by time', count: evs });
     if (!s.favFirst) out = out.concat(customs);
@@ -171,12 +194,13 @@ var Library = (function () {
   function allGroups() {
     var e = E(), keep = S().showHidden;
     S().showHidden = true;
-    try { return groups().filter(function (g) { return g.id !== ALL && g.id !== RECENT && g.id !== EVENTS; }); }
+    try { return groups().filter(function (g) { return !isVirtual(g.id); }); }
     finally { S().showHidden = keep; }
   }
 
   function channels(gid) {
     if (gid === EVENTS) return eventList();
+    if (gid === NEW) return newList();
     var hit = groupCache.get(gid);
     if (hit) return hit;
     var e = E(), showHidden = S().showHidden, list;
@@ -205,8 +229,15 @@ var Library = (function () {
     // Hide channels with nothing on (Settings > Channel names): judged on the name the provider sends
     // now, so a channel comes back by itself once an event is named on it.  Favorites keep theirs.
     if (!showHidden && gid !== FAV && Names.hideIdle()) list = list.filter(function (c) { return !Names.idle(c.n); });
-    // A sort picked for this one group (web editor) wins over the global channel order.
+    // Your own order for a provider group (moved on the TV or dragged in the web editor): the
+    // channels you placed first, in your order, then any the provider added since, in its order.
     var own = e.groupSort && e.groupSort[gid];
+    if (own === 'custom' && !isCustom(gid) && gid !== ALL && e.chanOrder && e.chanOrder[gid]) {
+      var pos = {}; e.chanOrder[gid].forEach(function (k, i) { pos[k] = i; });
+      list = list.map(function (c, i) { return { c: c, i: i }; })
+        .sort(function (x, y) { var a = pos[x.c.k], b = pos[y.c.k]; return (a != null ? a : 1e9 + x.i) - (b != null ? b : 1e9 + y.i); })
+        .map(function (x) { return x.c; });
+    }
     var mode = own ? { az: 'name', za: 'za', number: 'number', provider: 'playlist', custom: 'playlist' }[own] || 'playlist' : S().sortChannels;
     if ((sortable || own) && mode !== 'playlist') {
       list = list.slice();
@@ -250,12 +281,37 @@ var Library = (function () {
     return added;
   }
   function removeFrom(gid, k) { var g = custom(gid); if (g) { g.items = g.items.filter(function (x) { return x !== k; }); commit(); } }
+  // Move a channel up or down inside a group (dir -1 / +1, or more for a page).  Your own groups keep
+  // their item list; a provider group gets "Your order" (chanOrder), starting from how it shows now.
+  function canReorder(gid) { return !!gid && !isVirtual(gid); }
   function moveInGroup(gid, k, dir) {
-    var g = custom(gid); if (!g) return;
-    var i = g.items.indexOf(k), j = i + dir;
-    if (i < 0 || j < 0 || j >= g.items.length) return;
-    g.items[i] = g.items[j]; g.items[j] = k; commit();
+    var g = custom(gid), e = E();
+    if (!canReorder(gid)) return false;
+    // Start from the full group as it shows now, hidden channels included, so they keep their place.
+    var keep = S().showHidden; S().showHidden = true; groupCache.delete(gid);
+    var now; try { now = channels(gid).map(function (c) { return c.k; }); } finally { S().showHidden = keep; groupCache.delete(gid); }
+    var a = now.indexOf(k), b = Math.max(0, Math.min(now.length - 1, a + dir));
+    if (a < 0 || a === b) return false;
+    now.splice(a, 1); now.splice(b, 0, k);
+    if (g) {
+      // Your group: its item list becomes what you see (a sort it had becomes your order), plus
+      // any channels the playlist no longer has, kept at the end in case they come back.
+      var shown = {}; now.forEach(function (x) { shown[x] = 1; });
+      g.items = now.concat(g.items.filter(function (x) { return !shown[x]; }));
+      if (e.groupSort && e.groupSort[gid]) delete e.groupSort[gid];
+      commit();
+      return true;
+    }
+    if (!e.chanOrder) e.chanOrder = {};
+    e.chanOrder[gid] = now;
+    if (!e.groupSort) e.groupSort = {};
+    e.groupSort[gid] = 'custom';
+    commit();
+    return true;
   }
+  // Back to the provider's order (or the sort chosen for all groups).
+  function resetOrder(gid) { var e = E(); if (e.chanOrder) delete e.chanOrder[gid]; if (e.groupSort && e.groupSort[gid] === 'custom') delete e.groupSort[gid]; commit(); }
+  function hasOwnOrder(gid) { var e = E(); return !isCustom(gid) && !!(e.groupSort && e.groupSort[gid] === 'custom' && e.chanOrder && e.chanOrder[gid]); }
   function moveGroup(id, dir) {
     var e = E();
     if (isCustom(id)) {
@@ -315,7 +371,7 @@ var Library = (function () {
   }
 
   return {
-    ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, set: set, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
+    ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
     isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
     isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,

@@ -79,5 +79,44 @@ edits.renames = {};
 ctx.Store.playlist.events = { short: false, group: false }; L.dirty();
 ok('events: short names and the group can be turned off', /Late Show/.test(L.name(L.find('e1'))) && !L.groups().some(g => g.id === L.EVENTS));
 ctx.Store.playlist.events = {};
+
+// Recently added: channels new since the last load (app.js marks them in data.added).
+const day = 86400e3, now = Date.now();
+L.set({ groups: [{ id: 'a', name: 'News' }, { id: 'b', name: 'Sports' }], channels: [
+  { k: '1', n: 'CNN', g: 'a', num: 1 }, { k: '2', n: 'BBC', g: 'a', num: 2 }, { k: '3', n: 'ESPN', g: 'b', num: 3 }, { k: '4', n: 'Fox', g: 'b', num: 4 }],
+  added: { 3: now - day, 2: now - 2 * day, 4: now - 20 * day } });
+ok('new: newest first, old ones left out', keys(L.NEW) === '3,2', keys(L.NEW));
+ok('new: a group of its own', L.groups().some(g => g.id === L.NEW && g.count === 2 && g.name === 'Recently added'));
+ok('new: tagged', L.isNew(L.find('3')) && !L.isNew(L.find('4')) && !L.isNew(L.find('1')));
+edits.hiddenChannels = { 3: 1 }; L.dirty();
+ok('new: hidden channels stay hidden', keys(L.NEW) === '2', keys(L.NEW));
+edits.hiddenChannels = {};
+ctx.Store.settings.newDays = 0; L.dirty();
+ok('new: can be turned off', !L.groups().some(g => g.id === L.NEW) && keys(L.NEW) === '');
+ctx.Store.settings.newDays = 7; L.dirty();
+ok('new: not in Manage groups and not reorderable', !L.allGroups().some(g => g.id === L.NEW) && !L.canReorder(L.NEW));
+
+const customOf = id => edits.custom.filter(g => g.id === id)[0];
+// Your order inside a provider group.
+edits.groupSort = {}; edits.chanOrder = {}; L.dirty();
+ok('order: provider order to start', keys('b') === '3,4');
+ok('order: move down in a provider group', L.moveInGroup('b', '3', 1) && keys('b') === '4,3', keys('b'));
+ok('order: stored as your order', edits.groupSort.b === 'custom' && edits.chanOrder.b.join() === '4,3' && L.hasOwnOrder('b'));
+L.set({ groups: [{ id: 'a', name: 'News' }, { id: 'b', name: 'Sports' }], channels: [
+  { k: '5', n: 'NFL', g: 'b', num: 5 }, { k: '1', n: 'CNN', g: 'a', num: 1 }, { k: '3', n: 'ESPN', g: 'b', num: 3 }, { k: '4', n: 'Fox', g: 'b', num: 4 }] });
+ok('order: a channel the provider adds goes to the end', keys('b') === '4,3,5', keys('b'));
+ok('order: a page at a time stops at the ends', L.moveInGroup('b', '5', -20) && keys('b') === '5,4,3', keys('b'));
+ok('order: not past the top', !L.moveInGroup('b', '5', -1));
+edits.hiddenChannels = { 4: 1 }; L.dirty();
+ok('order: hidden channels keep their place', L.moveInGroup('b', '3', -1) && edits.chanOrder.b.join() === '5,3,4', edits.chanOrder.b.join());
+edits.hiddenChannels = {}; L.dirty();
+L.resetOrder('b');
+ok('order: back to the provider\'s order', keys('b') === '5,3,4' && !L.hasOwnOrder('b'), keys('b'));
+edits.custom.push({ id: 'c_y', name: 'Mine2', items: ['4', '3', '9', '1'] }); edits.groupSort = { c_y: 'az' }; L.dirty();
+ok('order: your sorted group shows A to Z', keys('c_y') === '1,3,4', keys('c_y'));
+ok('order: moving in it starts from what you see', L.moveInGroup('c_y', '4', -1) && keys('c_y') === '1,4,3' && !edits.groupSort.c_y, keys('c_y'));
+ok('order: a missing channel is kept for later', customOf('c_y').items.join() === '1,4,3,9', customOf('c_y').items.join());
+ok('order: virtual groups cannot be reordered', !L.moveInGroup(L.ALL, '1', 1) && !L.moveInGroup(L.RECENT, '1', 1));
+
 console.log(fail ? fail + ' failures' : 'all library tests passed');
 process.exit(fail ? 1 : 0);

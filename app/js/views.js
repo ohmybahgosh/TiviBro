@@ -129,10 +129,12 @@ var Views = (function () {
     if (L.isFav(c.k)) tags.push('★');
     if (c.arch && Store.settings.showCatchupMark !== false) tags.push('↺');
     if (L.isBlocked(c)) tags.push('lock');
+    if (L.isNew(c)) tags.push('NEW');
     row._t.textContent = tags.join(' ');
     row.classList.toggle('playing', !!(playing && playing.k === c.k));
     row.classList.toggle('hid', !!Store.edits.hiddenChannels[c.k]);
     row.classList.toggle('picked', !!(pick && pick.has(c.k)));
+    row.classList.toggle('moving', moving === c.k);
   }
 
   /* ---------- live view ---------- */
@@ -155,7 +157,10 @@ var Views = (function () {
     // Subtitles on automatically when a stream brings them (Settings > Playback).
     if (video.textTracks && video.textTracks.addEventListener) video.textTracks.addEventListener('addtrack', function (e) {
       var t = e.track;
-      if (Store.settings.autoSubs && t && (t.kind === 'subtitles' || t.kind === 'captions')) setTimeout(function () { if (subtitleTracks().every(function (x) { return x.mode !== 'showing'; })) t.mode = 'showing'; }, 0);
+      // With a language chosen (Settings > Playback), only a track in that language.
+      var want = Store.settings.subsLang || '';
+      if (Store.settings.autoSubs && t && (t.kind === 'subtitles' || t.kind === 'captions') && (!want || U.lang(t.language || t.label) === want))
+        setTimeout(function () { if (subtitleTracks().every(function (x) { return x.mode !== 'showing'; })) t.mode = 'showing'; }, 0);
     });
     Epg.onUpdate(function (k) {
       if (!k) { chansVL.refresh(); if (overlay) ovVL.refresh(); if (tab === 'guide') Guide.draw(); updateInfo(); return; }
@@ -332,6 +337,8 @@ var Views = (function () {
     if (pick) UI.hints([['', 'OK  select or unselect'], ['red', 'Actions (' + pick.size + ' selected)'], ['', 'Back  done']]);
     else {
       var h = [['', zone === 'groups' ? 'OK  open group' : 'OK  watch fullscreen', 'ok'], ['', 'Hold OK  options', 'hold'], ['', zone === 'groups' ? 'Back or ◀  menu bar' : 'Back or ◀  groups', 'back']];
+      var vlz = zone === 'groups' ? groupsVL : chansVL;
+      if (vlz && vlz.items.length > vlz.visible) h.push(['', 'CH +/−  page', 'chup']);
       ['red', 'green', 'yellow', 'blue'].forEach(function (b) {
         var act = Keymap.get('list', b);
         if (act && act !== 'none') h.push([b, Keymap.ACTIONS[act]]);
@@ -446,6 +453,7 @@ var Views = (function () {
   function openNav() { tabBar(function () { UI.setHandler(liveKeys); setZone(liveZone); }); }
   function liveKeys(a) {
     if (pick) return pickKeys(a);
+    if (moving) return moveKeys(a);
     if (a.indexOf('num') === 0) return zapDigit(a.slice(3)), true;
     var mapped = listMapped(a);
     if (mapped) { runAction(mapped, 'list'); return true; }
@@ -555,6 +563,29 @@ var Views = (function () {
   function startPick(first) {
     pick = new Set(first ? [first] : []);
     chansVL.refresh(); hintsFor();
+  }
+  /* ---------- moving a channel inside its group ----------
+     Up and down carry the channel, Channel +/− a page at a time, OK or Back puts it down.
+     Works in your groups and in the provider's (Settings keep "Your order" for that group). */
+  var moving = null;
+  function startMove(c) {
+    if (!c || !L.canReorder(curGroup)) return;
+    moving = c.k;
+    chansVL.refresh();
+    UI.hints([['', '▲ ▼  move    CH +/−  a page'], ['', 'OK or Back  done']]);
+    U.toast('Moving ' + L.name(c) + '.  ▲ ▼ to move, OK when done.', 4000);
+  }
+  function endMove() { moving = null; chansVL.refresh(); hintsFor(); U.toast('Channel order saved'); }
+  function moveKeys(a) {
+    var step = a === 'up' ? -1 : a === 'down' ? 1 : a === 'chup' ? -(chansVL.visible - 1) : a === 'chdown' ? chansVL.visible - 1 : 0;
+    if (step) {
+      if (L.moveInGroup(curGroup, moving, step)) {
+        var list = L.channels(curGroup), i = list.findIndex(function (x) { return x.k === moving; });
+        chansVL.setItems(list, Math.max(0, i));
+      }
+    }
+    else if (a === 'ok' || a === 'back' || a === 'hold') endMove();
+    return true;
   }
   function pickKeys(a) {
     if (a === 'up') chansVL.move(-1, true);
@@ -1082,8 +1113,7 @@ var Views = (function () {
       c.arch && { label: 'Watch from start', action: function () { watchFromStart(c); } },
       c.arch && { label: 'Catch-up…', sub: c.arch + ' days', action: function () { catchupList(c); } },
       inCustom && gid !== L.FAV && { label: 'Remove from ' + L.groupName(gid), action: function () { L.removeFrom(gid, c.k); refreshLists(true); } },
-      inCustom && { label: 'Move up', action: function () { L.moveInGroup(gid, c.k, -1); refreshLists(true); chansVL.move(-1); } },
-      inCustom && { label: 'Move down', action: function () { L.moveInGroup(gid, c.k, 1); refreshLists(true); chansVL.move(1); } },
+      !full && tab === 'live' && gid === curGroup && L.canReorder(gid) && { label: 'Move…', sub: 'change its place in ' + L.groupName(gid), action: function () { startMove(c); } },
       { label: 'Rename…', sub: renamed ? 'renamed' : '', action: function () {
         UI.prompt('Rename channel', L.name(c), function (v) { L.renameChannel(c.k, v); refreshLists(true); }, 'Original: ' + c.n);
       } },
@@ -1306,7 +1336,7 @@ var Views = (function () {
 
   function groupMenu(g) {
     if (!g) return;
-    var custom = L.isCustom(g.id), virtual = g.id === L.ALL || g.id === L.RECENT || g.id === L.EVENTS;
+    var custom = L.isCustom(g.id), virtual = L.isVirtual(g.id);
     var hidden = !!Store.edits.hiddenGroups[g.id], blocked = !!Store.edits.blockedGroups[g.id];
     UI.menu(g.name, [
       !virtual && { label: 'Copy all channels to group…', action: function () { copyMenu(L.channels(g.id).map(function (c) { return c.k; }), g.name); } },
@@ -1316,6 +1346,7 @@ var Views = (function () {
       custom && { label: 'Rename group…', action: function () { UI.prompt('Rename group', g.name, function (n) { L.renameGroup(g.id, n); refreshLists(true); }); } },
       !virtual && { label: 'Move up', action: function () { L.moveGroup(g.id, -1); refreshLists(true); groupsVL.move(-1); } },
       !virtual && { label: 'Move down', action: function () { L.moveGroup(g.id, 1); refreshLists(true); groupsVL.move(1); } },
+      L.hasOwnOrder(g.id) && { label: 'Back to the provider\'s channel order', sub: 'undo the channels you moved here', action: function () { L.resetOrder(g.id); refreshLists(true); U.toast('Provider order restored'); } },
       g.id === L.EVENTS && { label: 'Turn off Events by time', sub: 'back on in Settings, the playlist, Event channels', action: function () {
         var p = Store.playlist; p.events = Object.assign({}, p.events, { group: false }); Store.upsertPlaylist(p); refreshLists(); U.toast('Events by time is off');
       } },
@@ -1794,6 +1825,11 @@ var Guide = (function () {
     if (h.p && h.p.s <= now && h.p.e > now && c.arch) items.push({ label: 'Watch from the start', sub: 'catch-up', action: function () { Views.playCatchup(c, h.p, 0); } });
     if (c.arch) items.push({ label: 'Earlier programmes…', sub: 'catch-up ' + c.arch + ' days', action: function () { Views.catchupList(c); } });
     if (h.p && h.p.s > now) items.push({ label: hasReminder(c, h.p) ? 'Cancel reminder' : 'Remind me', action: function () { toggleReminder(c, h.p); } });
+    if (h.p && h.p.t && !h.p.up && !h.p.ended) {
+      var title = h.p.t;
+      items.push({ label: 'Other showings…', sub: 'search the guide for "' + title + '"', action: function () { Views.switchTab('search'); Search.open(title); } });
+      if (!Watch.has(title)) items.push({ label: 'Add to watchlist', sub: 'remind me whenever it is on', action: function () { Watch.add(title); } });
+    }
     if (Math.abs(focusT - now) > 60e3) items.push({ label: 'Jump to now', action: jumpNow });
     if (previewing()) items.push({ label: 'Stop the window', sub: L.name(previewing()), action: function () { Views.stopAll(); draw(); hints(); } });
     items.push({ label: 'Channel options…', sub: 'favorite, copy to group, hide, rename', action: function () { Views.chanMenu(c, gid); } });

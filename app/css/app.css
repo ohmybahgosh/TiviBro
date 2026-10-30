@@ -201,6 +201,9 @@ body.guide1 .gp .gs{display:none}
 /* ---------- v0.2 additions ---------- */
 .row .tag{min-width:20px;text-align:right}
 .row.picked{box-shadow:inset 6px 0 0 var(--accent)}
+.row.moving{box-shadow:inset 0 0 0 3px var(--accent)}
+.row.moving .name::before{content:"⇅  ";color:var(--accent-text)}
+.vlist.active .row.sel.moving .name::before{color:inherit}
 .row.picked .name::after{content:"  selected";font-size:19px;color:var(--accent-text)}
 .vlist.active .row.sel.picked .name::after{color:var(--on-accent)}
 
@@ -234,6 +237,11 @@ body.dimpast .gp.past{color:var(--dim)}
 .search-input{background:var(--panel);border:3px solid var(--line);color:var(--text);font:inherit;font-size:32px;padding:16px 24px;border-radius:12px;outline:none;margin-bottom:24px}
 .search-input.focus{border-color:var(--accent)}
 .search-list{flex:1}
+.search-input{margin-bottom:16px}
+.search-chips{display:flex;flex-wrap:wrap;margin-bottom:18px}
+.schip{font-size:24px;padding:8px 20px;border-radius:999px;background:var(--panel);color:var(--muted);border:2px solid var(--line);margin-right:12px}
+.schip.on{color:var(--text);border-color:var(--accent-text)}
+.schip.focus{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
 
 /* vod */
 .vod-items .row .poster{width:48px;height:68px;object-fit:cover;border-radius:4px;flex:none}

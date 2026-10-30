@@ -80,9 +80,18 @@ VList.prototype.draw = function (force) {
 };
 // wrap: one press past either end goes round to the other end, like a TV channel list.  Never
 // while an arrow is held down, so holding Down stops at the bottom instead of racing round.
+// Holding Up or Down speeds up the longer it is held: 2 rows a step after a second, 5 after
+// two and a half, 15 after four, so the bottom of a 5,000 channel group is a few seconds away.
 VList.prototype.move = function (d, wrap) {
   var n = this.items.length;
   if (!n) return false;
+  if (Math.abs(d) === 1 && UI.repeating) {
+    var now = Date.now();
+    if (!this._held || now - this._lastRep > 400) this._held = now;
+    this._lastRep = now;
+    var t = now - this._held;
+    d *= t > 4000 ? 15 : t > 2500 ? 5 : t > 1000 ? 2 : 1;
+  } else this._held = 0;
   var s = this.sel + d;
   if (wrap && n > 2 && Math.abs(d) === 1 && !UI.repeating && (s < 0 || s >= n)) s = s < 0 ? n - 1 : 0;
   s = U.clamp(s, 0, n - 1);

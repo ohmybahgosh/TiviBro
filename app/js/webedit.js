@@ -12,7 +12,7 @@
 var WebEdit = (function () {
   'use strict';
   var on = false, timer = 0, appliedRev = 0, lastCmd = 0, lastDraft = 0, lastSig = '', status = null, busy = false, onStatus = null;
-  var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort'];
+  var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist'];
   var SORTS = ['provider', 'az', 'za', 'number', 'custom'];
   var SNAP_AUTO = 15, SNAP_NAMED = 30;
   var PORTS = [8787, 8080, 8000, 9090];
@@ -41,7 +41,7 @@ var WebEdit = (function () {
 
   function editsOf() {
     var e = Store.edits, out = {};
-    FIELDS.forEach(function (f) { out[f] = e[f] || (f === 'custom' || f === 'groupOrder' ? [] : {}); });
+    FIELDS.forEach(function (f) { out[f] = e[f] || (f === 'custom' || f === 'groupOrder' || f === 'watchlist' ? [] : {}); });
     return out;
   }
   function sig() { try { return JSON.stringify(draftInfo) + JSON.stringify(editsOf()) + JSON.stringify(Store.playlist.names || null) + JSON.stringify(playlists()) + (Library.data ? Library.data.channels.length : 0) + ':' + (Epg.status && Epg.status.at); } catch (e) { return String(Date.now()); } }
@@ -93,6 +93,14 @@ var WebEdit = (function () {
     if (Array.isArray(ed.groupOrder)) e.groupOrder = strs(ed.groupOrder);
     if (obj(ed.groupAdd)) { e.groupAdd = {}; Object.keys(ed.groupAdd).forEach(function (g) { var l = strs(ed.groupAdd[g]); if (l.length) e.groupAdd[g] = l; }); }
     if (obj(ed.groupRemove)) { e.groupRemove = {}; Object.keys(ed.groupRemove).forEach(function (g) { if (obj(ed.groupRemove[g]) && Object.keys(ed.groupRemove[g]).length) e.groupRemove[g] = ed.groupRemove[g]; }); }
+    if (Array.isArray(ed.watchlist)) {
+      e.watchlist = ed.watchlist.filter(function (w) { return w && typeof w.q === 'string' && w.q.trim().length >= 2; }).slice(0, 100)
+        .map(function (w) { return { q: w.q.replace(/\s+/g, ' ').trim().slice(0, 60), at: +w.at || Date.now() }; });
+      var words = {}; e.watchlist.forEach(function (w) { words[w.q] = 1; });
+      e.reminders = (e.reminders || []).filter(function (r) { return !r.w || words[r.w]; });
+      setTimeout(function () { Watch.scan(false); }, 500);
+    }
+    if (obj(ed.chanOrder)) { e.chanOrder = {}; Object.keys(ed.chanOrder).forEach(function (g) { var l = strs(ed.chanOrder[g]); if (l.length) e.chanOrder[g] = l; }); }
     if (obj(ed.groupSort)) { e.groupSort = {}; Object.keys(ed.groupSort).forEach(function (g) { if (SORTS.indexOf(ed.groupSort[g]) >= 0) e.groupSort[g] = ed.groupSort[g]; }); }
     if (obj(ed.epgMap) && JSON.stringify(ed.epgMap) !== JSON.stringify(e.epgMap || {})) { e.epgMap = ed.epgMap; guideChanged = true; }
     if (obj(names)) { p.names = names; Store.upsertPlaylist(p); Names.invalidate(); }

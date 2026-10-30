@@ -165,6 +165,10 @@ Guide options are under [Settings: Guide, start screen, reminders](#settings-gui
 
 Your groups sit right beside the guide: **Favorites** and your own groups first, then **All channels**, then your provider's groups.  Moving through the list updates the guide behind it.  **OK** or **▶** opens a group; **Hold OK** gives group options (rename, hide, sort, block).
 
+**Recently added** lists channels that are new in your playlist since it last loaded, newest first, and they carry a **NEW** tag in the lists for a week (change it, or turn it off, under **Settings > Groups, sorting, hidden > Recently added channels**).
+
+Long lists: **CH + / −** moves a page at a time everywhere, and holding **▲** or **▼** speeds up the longer you hold it, so the end of a 5,000 channel group is a few seconds away.
+
 **◀** or **Back** from the groups opens the menu: **Guide, Channels, Movies, Shows, Search, Edit on phone, Settings**.  Movies and Shows appear only when your provider has them.  **Edit on phone** isn't a screen: it turns on the [web editor](#turning-on-the-web-editor) and shows its QR code over whatever you're watching.
 
 <p align="center"><a href="media/groups.mp4"><img src="media/groups.gif" width="100%" alt="Groups and the menu"></a></p>
@@ -321,7 +325,7 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 
 ### Search
 
-**Search** in the menu finds channels, programmes in the guide (now, later and on catch-up), movies and shows as you type.  **OK** watches, replays or sets a reminder depending on the result; **Hold OK** gives channel options.
+**Search** in the menu finds channels and programmes in the guide (now, later today, the coming days and on catch-up) as you type.  Below the box, **Everything**, **On now**, **Coming up**, **Replays** and **Channels** narrow the results (**◀ ▶** on that row).  Each programme shows once, even when several copies of the channel carry it, with **Today**, **Tomorrow** or the day and its time.  **OK** watches, replays, or sets a reminder (**OK** again cancels it); **Hold OK** gives channel options.  **Yellow** adds what you typed to your [watchlist](#watchlist).
 
 <p align="center"><a href="media/search.mp4"><img src="media/search.gif" width="100%" alt="Search"></a></p>
 <p align="center"><sub><a href="media/search.mp4">Watch the MP4</a></sub></p>
@@ -357,6 +361,7 @@ Many webOS TVs can decode only two streams at once, and some providers limit con
 - **Hide channel** removes it from the lists.  Hidden items come back from **Settings > Groups, sorting, hidden**, or show them dimmed with **Show hidden items in lists**.
 - **Rename…** and **Assign guide…** fix a name or a missing guide for that one channel.
 - **Other versions…** lists the same channel in its other qualities and copies, hidden ones included, to switch to one directly.
+- **Move…** (in the channel list) changes the channel's place in its group, yours or the provider's: **▲ ▼** carry it, **CH + / −** a page at a time, **OK** puts it down.  A provider group you reorder keeps your order after playlist refreshes, and channels the provider adds later go to the end.  **Hold OK** on the group > **Back to the provider's channel order** undoes it.
 
 **Manage groups** in Settings shows every group in one list to switch on or off, like TiviMate.  For hundreds of groups the [web editor](#groups-and-channels) is much faster.  Sorting, the Recent and Favorites groups, and getting hidden items back are in [Settings: Groups, sorting, hidden](#settings-groups-sorting-hidden).
 
@@ -372,6 +377,14 @@ Many webOS TVs can decode only two streams at once, and some providers limit con
 ### Reminders
 
 **OK** (or **Hold OK > Remind me**) on a future programme in the guide or in search.  When it starts, TiviBro asks **Watch** or **Dismiss**, or switches by itself if you set **When a reminder starts** that way.  You can be reminded a few minutes early.  Timing and behaviour are under [Settings: Guide, start screen, reminders](#settings-guide-start-screen-reminders), which also lists your reminders (**OK** removes one).
+
+### Watchlist
+
+The watchlist looks for shows, teams and names in the guide for you: "Yankees", "Bluey", "Premier League", "Gordon Ramsay".  When one is coming up in the next 24 hours (or 6, 12 or 48), TiviBro sets a reminder, and says so.  Matching is by whole words in programme titles, so "Cars" never finds "Oscars".  A reminder you cancel doesn't come back, and a busy word keeps at most five reminders waiting at a time.
+
+Add to it three ways: **Yellow** in Search (adds what you typed), **Hold OK > Add to watchlist** on a programme in the guide, or **Settings > Guide, start screen, reminders > Watchlist > Add a show, team or name…**.  That page lists your words, everything coming up (**OK** sets or cancels each reminder), and removes a word with the reminders it set.  The [web editor's](#the-programme-guide) Guide page has the watchlist too, with a real keyboard.
+
+The watchlist needs the guide to know what's on: with an XMLTV guide it sees every channel; with only the provider's per-channel guide, it sees the channels you've looked at.
 
 <p align="center"><a href="media/reminders.mp4"><img src="media/reminders.gif" width="100%" alt="Setting a reminder, and the question when it starts"></a></p>
 <p align="center"><sub><a href="media/reminders.mp4">Watch the MP4</a></sub></p>
@@ -476,7 +489,9 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Info panel when switching channels** | **On** · Off | Off shows just the channel number and name when you change channel. |
 | **Show stream details in the info panel** | **On** · Off | Adds the resolution, codecs and which player is in use. |
 | **Black screen while switching** | On · **Off** | Hides the last picture until the next channel starts, instead of leaving it frozen. |
-| **Subtitles on automatically** | On · **Off** | Turns subtitles on when a stream has them.  You can still switch them from the quick menu. |
+| **Audio language** | **The stream's own choice** · English · Spanish · French · German · and more | When a channel or movie has more than one audio track, plays this one.  Audio description tracks are skipped unless nothing else is in that language.  A track you pick from the quick menu wins until you change channel. |
+| **Prefer surround sound** | On · **Off** | Picks the 5.1 or Dolby track in that language when there is one.  Your TV or soundbar needs to support it. |
+| **Subtitles automatically** | **Off** · Any language · English only · Spanish only · … | Turns subtitles on when a stream has them; with a language, only subtitles in that language.  You can still switch them from the quick menu. |
 | **Play next episode automatically** | **On** · Off | When an episode ends, the next one starts. |
 | **Screens** *(Multiview)* | **Up to 2** · Up to 4 | How many channels multiview can show.  Many webOS TVs decode only two streams at once, and providers often limit connections. |
 
@@ -617,6 +632,7 @@ Which groups show, in what order, and getting hidden things back.
 | **Show Recent channels** | **On** · Off | A group with the channels you watched lately. |
 | **Recent channels kept** | 10 · **20** · 30 · 50 | How many channels Recent remembers. |
 | **Show Favorites group** | **On** · Off | The Favorites group. |
+| **Recently added channels** | Off · 3 days · **7 days** · 14 days | A **Recently added** group with the channels that are new in your playlist since it last loaded, newest first, and a **NEW** tag in the lists. |
 | **Groups your provider adds later** | **Show them** · Hide them | *Hide them* keeps a tidy list tidy after **Hide all groups**: new provider groups arrive hidden. |
 | **All channels includes hidden groups** | On · **Off** | Channels from groups you hid still appear in All channels. |
 | **Reset watch time** | | Clears the statistics behind *Most watched*. |
@@ -644,6 +660,7 @@ How the guide looks and behaves, which screen TiviBro opens on, and reminders.
 | **Channel names in the guide** | **On** · Off | Off shows logos only, leaving more room for programmes. |
 | **Two-line channel names** | On · **Off** | Long channel names wrap instead of being cut off. |
 | **Mark catch-up channels** | **On** · Off | Shows **↺** on channels and programmes you can replay. |
+| **Watchlist ›** | | Shows, teams and names to look for in the guide; see [Watchlist](#watchlist).  Inside: **Add a show, team or name…**, **Look ahead** (6 hours · 12 hours · **24 hours** · 2 days), **When something is found** (**Set a reminder** · Just tell me), your words, and everything coming up. |
 | **Remind me before start** | At start · 1 min · **2 min** · 5 min · 10 min | How early a reminder comes up. |
 | **When a reminder starts** | **Ask me** · Switch to the channel | *Ask me* shows **Watch** or **Dismiss**; *Switch* changes channel by itself. |
 | **Reminder question stays for** | 10 s · **20 s** · 30 s · 1 min | How long the reminder waits for an answer. |
@@ -745,6 +762,7 @@ Finding out what's wrong, and what this TV can play.
 | Setting | Choices | What it does |
 |---|---|---|
 | **Report a problem** | | Shows a QR code.  Scan it and your phone opens the web editor's **Report a problem** page: say what happened, read everything the TV adds (version, TV model, a few settings, the app and network helper logs, with logins and server names taken out), save the log file, and **Open the GitHub form** opens a bug report filled in for you.  Drag the log file into it and send.  You need a free GitHub account. |
+| **Speed test** | | Your internet speed (a download from Cloudflare's speed test service) and your provider's (part of a movie, or a live channel when there are no movies), and what that's enough for: 4K needs about 25 Mbps, Full HD 8 to 10, HD about 5.  It says whether your internet or the provider is the slow part.  Playback stops while it runs, since many providers allow one stream at a time. |
 | **Run connection test** | | Checks, step by step: the network helper, your login, the channel categories and list, a real stream, and each guide source.  Each step says what worked or what failed and why. |
 | **View app log** | | What TiviBro did this session.  **▲ ▼** scroll, **CH + / −** page. |
 | **View app log with earlier sessions** | | Includes the sessions before, useful after a crash or restart. |
@@ -830,7 +848,7 @@ Reload the page, close the tab, or open the editor on another computer or your p
 - The switch beside a group shows or hides it on the TV.  Drag **⠿** to reorder; your groups always come first.
 - **✎** renames a group.  Renamed and edited groups are tagged so you can see what you changed.
 - Tick channels, then **Copy or move to group**.  Any group works as the destination, yours or the provider's.  Copy keeps the channel where it was; Move takes it out.
-- **Order** sorts the open group on the TV: provider order, A to Z, Z to A, channel number, or your own drag order for your groups.
+- **Order** sorts the open group on the TV: provider order, A to Z, Z to A, channel number, or **Your order**, for your groups and the provider's.  In Your order, drag **⠿** to move a channel, or use **⋯ > Move to the top, Move up one, Move down one, Move to the bottom** or **Move to position…** (on a phone, ⋯ is the only way).  Channels the provider adds to a group later go to the end.
 - **👁** hides a channel everywhere; **★** adds it to Favorites.  Both work on many ticked channels at once.
 - Your changes survive playlist refreshes.
 
@@ -879,6 +897,8 @@ Rules strip clutter from every name at once: country prefixes like `US |`, quali
 M3U playlists can use the guide address inside the playlist.
 
 **Extra sources.**  Add any `.xml` or `.xml.gz` guide.  Zipped guides work on every TV: the network helper unzips them as they download, and it also unzips provider guides that arrive gzipped.  **Recommended free guides** lists community guides by region (epgshare01, iptv-epg.org, i.mjh.nz for Pluto, Samsung TV Plus, Plex and Roku, and more), each with a one-click **Test**.  The first source in the list wins when two cover the same channel, and **Offset** fixes a guide that is an hour off.
+
+**Watchlist.**  Card 4 on the Guide page: type a show, team or name and **Add**; **✕** removes one.  The TV looks for them in the guide and sets reminders (see [Watchlist](#watchlist)).
 
 **Smart match** fixes channels showing "No guide information".  It ignores clutter, understands country codes, East and West feeds, numbered channels and US call signs, then shows its best guess with a confidence score.  You approve or decline each one, and nothing changes until you press **Apply**.
 

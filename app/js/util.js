@@ -34,6 +34,30 @@ var U = (function () {
     h = h % 12 || 12;
     return h + ':' + pad(m) + ampm;
   }
+  // "Today", "Tomorrow" or the weekday, for programme times in lists.
+  function day(ts) {
+    var d = new Date(ts), t = new Date(), y = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
+    var n = Math.floor((new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - y) / 86400e3 + 0.5);
+    return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n === -1 ? 'Yesterday' : d.toLocaleDateString(undefined, { weekday: 'short', month: n > 6 || n < -6 ? 'short' : undefined, day: n > 6 || n < -6 ? 'numeric' : undefined });
+  }
+  /* Languages for audio and subtitle choices.  Streams name tracks every way ("eng", "en-US",
+     "English", "ENG 5.1"), so lang() reads any of them as a two-letter code. */
+  var LANGS = [['en', 'English', 'eng'], ['es', 'Spanish', 'spa', 'español', 'espanol', 'castellano', 'latino'], ['fr', 'French', 'fra', 'fre', 'français', 'francais'],
+    ['de', 'German', 'deu', 'ger', 'deutsch'], ['pt', 'Portuguese', 'por', 'português', 'portugues'], ['it', 'Italian', 'ita', 'italiano'], ['nl', 'Dutch', 'nld', 'dut', 'nederlands'],
+    ['pl', 'Polish', 'pol', 'polski'], ['ar', 'Arabic', 'ara', 'عربي'], ['tr', 'Turkish', 'tur', 'türkçe', 'turkce'], ['hi', 'Hindi', 'hin'], ['ru', 'Russian', 'rus', 'русский'],
+    ['el', 'Greek', 'ell', 'gre'], ['sv', 'Swedish', 'swe', 'svenska'], ['ro', 'Romanian', 'ron', 'rum'], ['uk', 'Ukrainian', 'ukr'], ['he', 'Hebrew', 'heb'],
+    ['ja', 'Japanese', 'jpn'], ['ko', 'Korean', 'kor'], ['zh', 'Chinese', 'zho', 'chi', 'mandarin', 'cantonese']];
+  function lang(s) {
+    s = String(s || '').toLowerCase().replace(/[_\s]+/g, ' ').trim();
+    if (!s) return '';
+    var head = s.split(/[- (.,|/]/)[0];
+    for (var i = 0; i < LANGS.length; i++) {
+      var L = LANGS[i];
+      if (head === L[0]) return L[0];
+      for (var j = 1; j < L.length; j++) { var w = L[j].toLowerCase(); if (head === w || (w.length > 3 && s.indexOf(w) >= 0)) return L[0]; }
+    }
+    return '';
+  }
   // Small, fast string hash for stable keys (FNV-1a).
   function hash(s) {
     var h = 0x811c9dc5;
@@ -154,6 +178,6 @@ var U = (function () {
   }
   return {
     hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
-    secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, hash: hash,
+    secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, day: day, LANGS: LANGS, lang: lang, hash: hash,
     b64utf8: b64utf8, request: request, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad };
 })();

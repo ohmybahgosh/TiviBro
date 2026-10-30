@@ -60,8 +60,15 @@ const OVER = () => {
     let o = await ed.evaluate(OVER); ok(dev + ': channel rows fit', !o.length, o.join(', '));
     if (phone) {
       await ed.tap('.c [data-more]'); await ed.waitForTimeout(300);
-      const m = await ed.evaluate(() => { const m = document.getElementById('menu'); if (!m) return null; const r = m.getBoundingClientRect(); return { n: m.children.length, l: r.left, r: r.right, W: innerWidth }; });
-      ok(dev + ': ⋯ on a channel opens Rename, Copy or move and Take out, on screen', m && m.n === 3 && m.l >= 0 && m.r <= m.W, JSON.stringify(m));
+      const m = await ed.evaluate(() => { const m = document.getElementById('menu'); if (!m) return null; const r = m.getBoundingClientRect(); return { n: m.children.length, t: m.innerText.replace(/\n+/g, ' | '), l: r.left, r: r.right, b: r.bottom, H: innerHeight, W: innerWidth }; });
+      ok(dev + ': ⋯ on a channel opens Rename, Copy or move, the moves and Take out, on screen', m && /Rename/.test(m.t) && /Move down one/.test(m.t) && /Move to position/.test(m.t) && /Take out/.test(m.t) && m.l >= 0 && m.r <= m.W && m.b <= m.H, JSON.stringify(m));
+      // Phones cannot drag: "Move down one" reorders the group (a provider group gets your order).
+      const first = await ed.evaluate(() => document.querySelector('.c').dataset.k);
+      await ed.tap('#menu .pick:has-text("Move down one")'); await ed.waitForTimeout(400);
+      const second = await ed.evaluate(() => document.querySelectorAll('.c')[1].dataset.k);
+      ok(dev + ': Move down one moves the channel', second === first, first + ' / ' + second);
+      await ed.evaluate(() => { if (typeof undo === 'function') undo(); }); await ed.waitForTimeout(300);
+      await ed.tap('.c [data-more]'); await ed.waitForTimeout(300);
       if (SHOTS && dev === 'iPhone 13') await ed.screenshot({ path: path.join(SHOTS, 'editor-phone-channel-menu.png') });
       await ed.tap('#menu .pick:nth-child(2)'); await ed.waitForTimeout(600);
     } else { await ed.tap('.c [data-add]'); await ed.waitForTimeout(600); }

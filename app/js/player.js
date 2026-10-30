@@ -104,7 +104,7 @@ var Player = (function () {
   }
 
   /* ---------- engines ---------- */
-  function hlsEngine(url, p, preview, fail, media) {
+  function hlsEngine(url, p, preview, fail, media, tracks) {
     var live = cur.live && !cur.timeshift;
     url = Net.wrap(url);
     var h = new Hls({
@@ -124,6 +124,7 @@ var Player = (function () {
     // playback has run clean for a while, so one bad patch an hour in still gets recovered.
     var mediaErrs = 0, lastMediaErr = 0, netRecovers = 0, lastNetErr = 0;
     h.on(Hls.Events.MANIFEST_PARSED, function (e, d) { media(Caps.bestHlsLevel(d && d.levels)); });
+    h.on(Hls.Events.AUDIO_TRACKS_UPDATED, function () { tracks(); });
     h.on(Hls.Events.ERROR, function (e, d) {
       if (!d.fatal) return;
       if (d.type === Hls.ErrorTypes.MEDIA_ERROR) {
@@ -152,7 +153,7 @@ var Player = (function () {
       name: 'HLS',
       recover: function () { h.recoverMediaError(); },
       info: function () { var l = h.levels && h.levels[h.currentLevel]; return l ? Math.round((l.bitrate || 0) / 1000) + ' kbps' : ''; },
-      audio: function () { return (h.audioTracks || []).map(function (t, i) { return { id: i, label: t.name || t.lang || ('Track ' + (i + 1)), on: i === h.audioTrack }; }); },
+      audio: function () { return (h.audioTracks || []).map(function (t, i) { return { id: i, label: t.name || t.lang || ('Track ' + (i + 1)), lang: t.lang || '', ch: +(t.attrs && t.attrs.CHANNELS || '').split('/')[0] || 0, on: i === h.audioTrack }; }); },
       setAudio: function (i) { h.audioTrack = i; },
       // Video quality (TiviMate's "Video tracks"): the HLS variants, or Automatic.
       levels: function () { return (h.levels || []).map(function (l, i) { return { id: i, label: (l.height ? l.height + 'p' : 'Level ' + (i + 1)) + (l.bitrate ? '  ' + (l.bitrate / 1e6).toFixed(1) + ' Mbps' : ''), on: !h.autoLevelEnabled && i === h.currentLevel }; }); },
@@ -205,16 +206,19 @@ var Player = (function () {
     catch (e) { return false; }
   })();
 
-  function nativeEngine(url) {
+  function nativeEngine(url, tracks) {
     // HTTPS on the TV's own player can fail on self-signed or unusual certificates, which IPTV
     // panels often have.  The helper accepts them and passes Range requests through for seeking.
     if ((/^https:/i.test(url) || Net.ua) && Net.active) { url = Net.wrap(url); Log.info('player', 'TV player using the helper' + (Net.ua ? ' (custom User-Agent)' : ' for HTTPS')); }
     video.src = url;
     video.load();
-    return { name: 'Native', recover: function () {}, info: function () { return ''; }, destroy: function () {},
+    var at0 = video.audioTracks, onAdd = at0 && at0.addEventListener ? U.debounce(tracks, 300) : null;
+    if (onAdd) at0.addEventListener('addtrack', onAdd);
+    return { name: 'Native', recover: function () {}, info: function () { return ''; },
+      destroy: function () { if (onAdd) { onAdd.cancel(); at0.removeEventListener('addtrack', onAdd); } },
       audio: function () {
         var at = video.audioTracks, out = [];
-        if (at) for (var i = 0; i < at.length; i++) out.push({ id: i, label: at[i].label || at[i].language || ('Track ' + (i + 1)), on: at[i].enabled });
+        if (at) for (var i = 0; i < at.length; i++) out.push({ id: i, label: at[i].label || at[i].language || ('Track ' + (i + 1)), lang: at[i].language || '', kind: at[i].kind || '', on: at[i].enabled });
         return out;
       },
       setAudio: function (i) { var at = video.audioTracks; if (at) for (var j = 0; j < at.length; j++) at[j].enabled = j === i; } };
@@ -307,10 +311,12 @@ var Player = (function () {
       }
     };
 
+    // Audio tracks known: pick the preferred language (Settings > Playback).
+    var tracks = function () { if (myToken === token && cur && gen === cur.gen) preferAudio(); };
     try {
-      if (kind === 'hls') eng = hlsEngine(url, p, cur.preview, fail, media);
+      if (kind === 'hls') eng = hlsEngine(url, p, cur.preview, fail, media, tracks);
       else if (kind === 'ts') eng = tsEngine(url, p, cur.preview, fail, media);
-      else eng = nativeEngine(url);
+      else eng = nativeEngine(url, tracks);
     } catch (e) {
       Log.warn('player', kind + ' engine could not start: ' + e.message);
       if (kind === 'native') return giveUp(myToken);
@@ -326,6 +332,32 @@ var Player = (function () {
       tick(myToken);
     }, 50);
   }
+  /* Preferred audio: the language chosen in Settings > Playback, and with "Prefer surround sound"
+     a 5.1 or Dolby track in it.  Audio description tracks only when nothing else matches.  A
+     track picked by hand from the quick menu wins until the channel changes. */
+  var SURROUND = /5\.1|7\.1|\b[68] ?ch\b|\bac-?3\b|e-?ac-?3|\bdd\+?|dolby|atmos|surround|dts/i;
+  var DESCRIBED = /\b(ad|audio ?desc\w*|descriptive|description|visually impaired|vi)\b/i;
+  function describeTrack(t) {
+    var text = (t.label || '') + ' ' + (t.lang || '');
+    return { lang: U.lang(t.lang) || U.lang(t.label), surround: t.ch > 2 || SURROUND.test(text), ad: /desc/i.test(t.kind || '') || DESCRIBED.test(text) };
+  }
+  function bestAudio(list, want, surround) {
+    if (!want && !surround) return null;
+    var best = null, bestScore = -1e9;
+    list.forEach(function (t) {
+      var d = describeTrack(t), sc = (want && d.lang === want ? 100 : 0) + (surround && d.surround ? 10 : 0) - (d.ad ? 50 : 0) + (t.on ? 1 : 0);
+      if (sc > bestScore) { best = t; bestScore = sc; }
+    });
+    return best;
+  }
+  function preferAudio() {
+    if (!eng || !eng.audio || !cur || cur.userAudio) return;
+    var list = eng.audio(), s = Store.settings;
+    if (list.length < 2) return;
+    var b = bestAudio(list, s.audioLang || '', !!s.audioSurround);
+    if (b && !b.on) { Log.info('player', 'Audio: "' + b.label + '" (preferred language' + (s.audioSurround ? ', surround' : '') + ')'); eng.setAudio(b.id); }
+  }
+
   // Stream facts arrive in pieces (movie details, then the stream); later, more specific wins.
   function merge(a, b) {
     if (!a) return b; if (!b) return a;
@@ -474,6 +506,7 @@ var Player = (function () {
       if (cur.startAt && isFile() && video.readyState >= 1) ready = true;
       if (ready) {
         st.started = true; st.lastMove = now;
+        if (!cur.audioPicked) { cur.audioPicked = true; preferAudio(); }
         if (cur.slow) { Log.info('player', 'Channel is back after ' + Math.round((now - cur.slowSince) / 1000) + 's'); notice('Back on air'); }
         cur.slow = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0; cur.starved = false; cur.lastFailHttp = false;
         Log.info('player', 'Playing after ' + (now - st.at) + 'ms with ' + ahead.toFixed(1) + 's buffered' + (ahead < p.prebuffer ? ' (prebuffer timed out)' : '') + (video.videoHeight ? ', ' + video.videoWidth + 'x' + video.videoHeight : ''));
@@ -730,7 +763,8 @@ var Player = (function () {
     setRate: function (r) { if (video) video.playbackRate = r; },
     get rate() { return video ? video.playbackRate : 1; },
     displayFor: displayFor,
-    setAudio: function (i) { if (eng && eng.setAudio) eng.setAudio(i); },
+    setAudio: function (i) { if (eng && eng.setAudio) { if (cur) cur.userAudio = true; eng.setAudio(i); } },
+    bestAudio: bestAudio, describeTrack: describeTrack,
     get stats() { return lastStats; },
     get current() { return cur && cur.ch; },
     get live() { return !cur || cur.live; },

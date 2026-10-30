@@ -73,7 +73,13 @@ var Store = (function () {
     allHidden: false,           // All channels includes channels from hidden groups
     remindAction: 'ask',        // ask | switch
     remindTimeout: 20,          // seconds the reminder question stays up
-    qpHidden: {}                // quick menu buttons switched off
+    qpHidden: {},               // quick menu buttons switched off
+    newDays: 7,                 // days a channel stays in Recently added (0 = no such group)
+    audioLang: '',              // preferred audio language ('' = the stream's own choice), see U.lang
+    audioSurround: false,       // prefer a 5.1 / Dolby track in that language
+    subsLang: '',               // with autoSubs: only subtitles in this language ('' = any)
+    watchAhead: 24,             // hours ahead the watchlist looks in the guide
+    watchAction: 'remind'       // remind (set a reminder) | tell (just a message)
   };
 
   var EDIT_DEFAULTS = {
@@ -90,6 +96,9 @@ var Store = (function () {
     groupAdd: {},            // provider group id -> [chanKeys] copied or moved into it
     groupRemove: {},         // provider group id -> { chanKey: 1 } taken out of it
     groupSort: {},           // group id -> provider | az | za | number | custom
+    chanOrder: {},           // provider group id -> [chanKeys] in your order (groupSort 'custom')
+    watchlist: [],           // [{ q, at }] words and names to look for in the guide (watch.js)
+    watchSeen: {},           // 'title|start' -> end, programmes the watchlist already reminded about
     lastPlUpdate: 0, lastEpgUpdate: 0
   };
 

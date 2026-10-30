@@ -329,5 +329,96 @@ var Diag = (function () {
     });
   }
 
-  return { report: report, run: run, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
+  /* ---------- speed test ----------
+     1. Your internet: a download from Cloudflare's speed test service (only when you run this).
+     2. Your provider: a movie downloads as fast as the line allows, so it shows the real speed to
+        the provider's server; without movies, a live channel, which only arrives about as fast as
+        it plays, so it shows whether the channel keeps up.
+     Playback stops while it runs: many providers allow one connection at a time. */
+  function measure(url, seconds, cap) {
+    var real = Net.wrap(url), t0 = Date.now(), first = 0, got = 0, ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, reader = null;
+    function hangUp() { if (ctl) ctl.abort(); else if (reader) { try { reader.cancel(); } catch (e) {} } }
+    var timer = setTimeout(hangUp, seconds * 1000);
+    return fetch(real, ctl ? { signal: ctl.signal, cache: 'no-store' } : { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) { clearTimeout(timer); hangUp(); throw new Error('HTTP ' + r.status); }
+      reader = r.body.getReader();
+      function pump() {
+        return reader.read().then(function (x) {
+          if (x.done) return;
+          if (!first) first = Date.now();
+          got += x.value.length;
+          if (got >= cap) { hangUp(); return; }
+          return pump();
+        });
+      }
+      return pump().catch(function () {}).then(function () {
+        clearTimeout(timer);
+        var end = Date.now(), secs = Math.max(0.2, (end - (first || end)) / 1000);
+        if (!got) throw new Error('no data within ' + seconds + 's');
+        return { bytes: got, secs: secs, mbps: got * 8 / secs / 1e6, firstMs: (first || end) - t0 };
+      });
+    }, function (e) { clearTimeout(timer); throw new Error(e && e.name === 'AbortError' ? 'no answer within ' + seconds + 's' : 'could not connect'); });
+  }
+  function verdict(m) {
+    return m >= 25 ? 'enough for 4K' : m >= 10 ? 'enough for Full HD, maybe not 4K' : m >= 5 ? 'enough for HD; Full HD may buffer' : 'slow: expect buffering';
+  }
+  function speedTest() {
+    if (busy) return;
+    busy = true;
+    var p = Store.playlist, xc = p.type === 'xtream', rows = [];
+    show('Speed test', [], speedTest);
+    if (Player.current) { try { Views.stopAll(); } catch (e) {} push('Playback stopped for the test (many providers allow one stream at a time).'); push(''); }
+    push('What streams need:  4K about 25 Mbps,  Full HD 8 to 10,  HD about 5.');
+    push('');
+    push('… Your internet (Cloudflare speed test, about 8 seconds)');
+    var chain = measure('https://speed.cloudflare.com/__down?bytes=50000000', 9, 50e6).then(function (r) {
+      rows.push(['internet', r.mbps]);
+      push((r.mbps >= 10 ? '✓ ' : '⚠ ') + 'Internet: ' + r.mbps.toFixed(1) + ' Mbps, ' + verdict(r.mbps) + '   (' + (r.bytes / 1e6).toFixed(1) + ' MB in ' + r.secs.toFixed(1) + 's)');
+    }, function (e) { push('⚠ Internet: could not test (' + e.message + ').  Your network or the helper may block it; the provider test below still counts.'); });
+    chain = chain.then(function () {
+      push('');
+      // A movie: the first category that has one.
+      var movie = !xc || !(p.vod && p.vod.movies) ? Promise.resolve(null) : Source.vodCats('movie').then(function (cats) {
+        cats = Array.isArray(cats) ? cats.slice(0, 3) : [];
+        var i = 0;
+        function next() {
+          if (i >= cats.length) return null;
+          return U.getJSON(Source.api(p, 'get_vod_streams', '&category_id=' + encodeURIComponent(cats[i++].category_id)), 20000).then(function (l) {
+            return Array.isArray(l) && l.length ? l[0] : next();
+          }, next);
+        }
+        return next();
+      }).catch(function () { return null; });
+      return movie.then(function (m) {
+        if (m) {
+          push('… Your provider: downloading part of a movie (about 10 seconds)');
+          return measure(Source.movieUrl(m.stream_id, m.container_extension), 11, 80e6).then(function (r) {
+            rows.push(['provider', r.mbps]);
+            push((r.mbps >= 10 ? '✓ ' : '⚠ ') + 'Provider: ' + r.mbps.toFixed(1) + ' Mbps, ' + verdict(r.mbps) + '   (first data after ' + r.firstMs + 'ms)');
+          });
+        }
+        var c = Store.edits.last && Library.find(Store.edits.last) || Library.channels(Library.ALL)[0] || Library.data.channels[0];
+        if (!c) { push('⚠ Provider: no channel to test with.'); return; }
+        push('… Your provider: playing ' + Library.name(c) + ' for 8 seconds');
+        return measure(Source.streamUrl(c), 8, 40e6).then(function (r) {
+          rows.push(['live', r.mbps]);
+          push('✓ Live channel: ' + r.mbps.toFixed(1) + ' Mbps, first data after ' + r.firstMs + 'ms.');
+          push('   A live channel arrives about as fast as it plays, so this is the channel\'s own rate, not your full speed.');
+          push('   ' + (r.mbps >= 4 ? 'It keeps up.' : 'Low: this channel may be SD, or the provider is busy right now.'));
+        });
+      }).catch(function (e) { push('✗ Provider: ' + e.message + '.  The connection test (Settings > Diagnostics) shows why.'); });
+    }).then(function () {
+      var net = rows.filter(function (r) { return r[0] === 'internet'; })[0], prov = rows.filter(function (r) { return r[0] === 'provider'; })[0];
+      push('');
+      if (net && prov && prov[1] < net[1] * 0.4 && prov[1] < 15) push('⚠ Your internet is fast but the provider is slow to you.  That is the provider\'s server or its route; a bigger buffer profile (Settings > Playback) helps.');
+      else if (net && net[1] < 10) push('⚠ Your internet is the limit.  Wired Ethernet, or moving the router closer, usually helps more than any setting.');
+      else if (rows.length) push('If channels still buffer, try Settings > Playback > Buffer profile: Smooth or Rock solid.');
+      Log.info('diag', 'Speed test: ' + rows.map(function (r) { return r[0] + ' ' + r[1].toFixed(1) + ' Mbps'; }).join(', '));
+      push('');
+      push('Done.  OK or Red runs it again.');
+      busy = false;
+    });
+  }
+
+  return { report: report, run: run, speedTest: speedTest, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
 })();

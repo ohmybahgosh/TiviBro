@@ -332,14 +332,20 @@ var Epg = (function () {
     return loading;
   }
 
-  // Programmes whose title matches, for search.
+  /* Programmes whose title matches, for search and the watchlist.  q is text or a test function.
+     Every match is gathered first (up to a safety cap) and then the useful ones kept: on now, the
+     soonest to come, the latest replays.  Stopping at the first matches found would miss tonight's
+     showing on a channel that happens to come late in the guide. */
   function search(q, limit) {
-    q = q.toLowerCase();
-    var out = [];
+    var test = typeof q === 'function' ? q : (function (s) { s = String(s).toLowerCase(); return function (t) { return t.toLowerCase().indexOf(s) >= 0; }; })(q);
+    var out = [], CAP = 20000;
     cache.forEach(function (v, k) {
-      for (var i = 0; i < v.list.length && out.length < (limit || 60); i++) if (v.list[i].t && v.list[i].t.toLowerCase().indexOf(q) >= 0) out.push({ key: k, p: v.list[i] });
+      if (out.length >= CAP || !v.list) return;
+      for (var i = 0; i < v.list.length; i++) { var p = v.list[i]; if (p.t && test(p.t)) out.push({ key: k, p: p }); }
     });
-    return out;
+    var now = Date.now(), rank = function (x) { return x.p.s <= now && x.p.e > now ? 0 : x.p.s > now ? 1 : 2; };
+    out.sort(function (a, b) { var d = rank(a) - rank(b); return d || (rank(a) === 2 ? b.p.s - a.p.s : a.p.s - b.p.s); });
+    return out.slice(0, limit || 60);
   }
 
   // Manual assignment: point a channel at any guide channel from the loaded sources.

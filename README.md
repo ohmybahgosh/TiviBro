@@ -68,7 +68,7 @@ No typing logins with a remote.  The first screen shows a QR code: scan it with 
 | 🔁 **Backup versions** | Playlists often carry a channel in FHD, HD and SD.  TiviBro tags each copy, lets you switch between them, and if one dies it moves to the next by itself and tells you. |
 | 🏟️ **Event channels** | Pay-per-view and sports passes that cram the whole listing into the channel name ("NCAAB 001 \| NORTH FLORIDA @ CHARLESTON SOUTHERN (M) \| 12.18 11:00 AM") show as **NCAAB 001**, with the game in the guide at its real time, in your time zone.  **Events by time** lists what's on next across all of them. |
 | 🧹 **Clean names, tidy lists** | Strips "USA \|", "FHD", "⚽", "ᴴᴰ" and hundreds of other tags.  Hides divider groups and keeps channels that say "Off Air" or "No Event Scheduled" out of the way until something is on. |
-| ⏰ **Reminders and parental controls** | A reminder on any future programme, and a PIN for channels, groups or Settings. |
+| ⏰ **Reminders, a watchlist and parental controls** | A reminder on any future programme, a watchlist that finds your teams and shows in the guide and reminds you, and a PIN for channels, groups or Settings. |
 | 🛟 **Streams that don't quit** | Reconnects with backoff, waits out Wi-Fi drops, tries every player before giving up, and keeps a dropped channel coming back by itself.  Movies and catch-up resume where they dropped. |
 | 🌈 **HDR, Dolby Vision and Atmos** | Reads each stream's format before the picture starts and sends Dolby Vision to the TV's own player, HDR10 and HLG to the steadier built-in one.  The info panel shows *4K  HEVC  Dolby Vision  E-AC-3 5.1 Atmos*. |
 | 🎨 **Midnight Electric** | A dark, calm look with nine backgrounds (true black for OLED, high contrast), twelve accents or your own, and an outline focus style for across the room. |
@@ -178,7 +178,7 @@ Categories, posters, ratings and plots.  Shows open into seasons and episodes, a
 
 ### Search everything
 
-Channels, programmes now and later, catch-up, movies and shows, as you type.  OK watches, replays or sets a reminder.
+Channels and programmes now, later and on catch-up, as you type, with filters for On now, Coming up and Replays.  OK watches, replays or sets a reminder.  Yellow adds the search to your watchlist.
 
 </td>
 </tr>
@@ -241,6 +241,8 @@ TiviMate's Channels layout: groups, channels with what's on, and a live preview.
 ### Reminders
 
 **OK** on a programme later tonight.  When it starts, TiviBro asks whether to switch, or switches by itself.
+
+The **watchlist** does it for you: add "Yankees" or "Bluey" once, and TiviBro sets a reminder whenever one is coming up in the guide.
 
 </td>
 <td width="58%"><a href="docs/media/reminders.mp4"><img src="docs/media/reminders.gif" width="100%" alt="Reminders"></a><br><sub><a href="docs/media/reminders.mp4">▶ MP4</a></sub></td>

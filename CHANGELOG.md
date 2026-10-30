@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **Search the whole guide, now and to come.**  Search finds every showing of a programme in the loaded guide, soonest first, with **Today**, **Tomorrow** or the day.  Filters under the box: **Everything**, **On now**, **Coming up**, **Replays**, **Channels**.  A programme carried by several copies of a channel shows once.  OK on an upcoming one sets a reminder, and OK again cancels it.  Before, a common word could stop at the first 120 matches the guide happened to hold and miss tonight's showing; pay-per-view and event channels are searchable too.
+- **Watchlist.**  Shows, teams and names to look for in the guide ("Yankees", "Bluey", "Gordon Ramsay").  When one is coming up, TiviBro sets a reminder and says so.  Whole words only, a cancelled reminder stays cancelled, and a busy word keeps at most five reminders waiting.  Add from **Yellow** in Search, **Hold OK > Add to watchlist** in the guide (which also has **Other showings…**), Settings > Guide, start screen, reminders > **Watchlist**, or the web editor's Guide page.
+- **Preferred audio and subtitle language.**  Settings > Playback > **Audio language** picks that track when a stream has several (skipping audio description), **Prefer surround sound** picks the 5.1 or Dolby one, and **Subtitles automatically** can be limited to one language.
+- **Recently added channels.**  Channels that are new in the playlist since it last loaded get a **Recently added** group and a **NEW** tag for a week (3, 7 or 14 days, or off, in Settings > Groups, sorting, hidden).  A reload where almost everything changed, like a new server, marks nothing.
+- **Your own channel order in provider groups.**  **Hold OK > Move…** on a channel carries it with ▲ ▼ (CH +/− a page) in any group, the provider's included; the order survives playlist refreshes and new channels go to the end.  **Back to the provider's channel order** on the group undoes it.  In the web editor, **Order: Your order** works for provider groups, and every channel's **⋯** has Move to the top, up one, down one, to the bottom and to a position, so phones can reorder too.
+- **Speed test.**  Settings > Diagnostics > **Speed test** measures your internet and your provider (part of a movie, or a live channel), says what that's enough for (4K, Full HD, HD) and which side is slow.
+- **Faster long lists.**  Holding ▲ or ▼ speeds up the longer it's held, and the channel list shows **CH +/− page** when a group is longer than the screen.
+- **Fix:** since alpha 14, Settings sections below Playlists opened the wrong page (Guide, start screen, reminders showed Appearance, and so on).  Each section opens its own page again.
+
 ## 0.6.0 (alpha 16, 2026-10-30)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -71,7 +71,16 @@ var Settings = (function () {
     out.push(toggle('Info panel when switching channels', 'Off shows just the number and name.', function () { return s.osdOnZap !== false; }, function (v) { s.osdOnZap = v; save(); }));
     out.push(toggle('Show stream details in the info panel', 'Resolution and which player is in use.', function () { return s.osdMedia !== false; }, function (v) { s.osdMedia = v; save(); }));
     out.push(toggle('Black screen while switching', 'Hides the last picture until the next channel starts.', function () { return !!s.blackSwitch; }, function (v) { s.blackSwitch = v; save(); }));
-    out.push(toggle('Subtitles on automatically', 'When a stream includes them.  You can still switch them from OK in fullscreen.', function () { return !!s.autoSubs; }, function (v) { s.autoSubs = v; save(); }));
+    out.push(head('Audio and subtitles'));
+    out.push(action('Audio language', 'When a channel or movie has more than one audio track, play this one.  Audio description tracks are skipped.', function () {
+      langMenu('Audio language', 'The stream\'s own choice', s.audioLang, function (v) { s.audioLang = v; save(); });
+    }, function () { return langName(s.audioLang, 'Stream\'s choice'); }));
+    out.push(toggle('Prefer surround sound', 'Picks the 5.1 or Dolby track when there is one in that language.  Your soundbar or TV needs to support it.', function () { return !!s.audioSurround; }, function (v) { s.audioSurround = v; save(); }));
+    out.push(action('Subtitles automatically', 'Turns subtitles on when a stream includes them.  You can still switch them from OK in fullscreen.', function () {
+      UI.menu('Subtitles automatically', [{ label: 'Off', sub: !s.autoSubs ? 'on' : '', action: function () { s.autoSubs = false; save(); } },
+        { label: 'Any language', sub: s.autoSubs && !s.subsLang ? 'on' : '', action: function () { s.autoSubs = true; s.subsLang = ''; save(); } }]
+        .concat(U.LANGS.map(function (l) { return { label: l[1] + ' only', sub: s.autoSubs && s.subsLang === l[0] ? 'on' : '', action: function () { s.autoSubs = true; s.subsLang = l[0]; save(); } }; })));
+    }, function () { return !s.autoSubs ? 'Off' : s.subsLang ? langName(s.subsLang) : 'Any language'; }));
     out.push(toggle('Play next episode automatically', '', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); }));
     out.push(head('Multiview'));
     out.push(choice('Screens', 'Many webOS TVs decode only two streams at once.  Your provider may also limit connections.', [2, 4], ['Up to 2', 'Up to 4'], function () { return +s.multiMax; }, function (v) { s.multiMax = v; save(); }));
@@ -360,6 +369,7 @@ var Settings = (function () {
     out.push(toggle('Show Recent channels', '', function () { return s.showRecent; }, function (v) { s.showRecent = v; apply(); }));
     out.push(choice('Recent channels kept', '', [10, 20, 30, 50], ['10', '20', '30', '50'], function () { return +s.recentCount; }, function (v) { s.recentCount = v; save(); }));
     out.push(toggle('Show Favorites group', '', function () { return s.showFav !== false; }, function (v) { s.showFav = v; apply(); }));
+    out.push(choice('Recently added channels', 'A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.', [0, 3, 7, 14], ['Off', '3 days', '7 days', '14 days'], function () { return s.newDays == null ? 7 : +s.newDays; }, function (v) { s.newDays = v; L.dirty(); apply(); }));
     out.push(choice('Groups your provider adds later', 'Hide keeps a tidy list tidy after "Hide all groups".', ['show', 'hide'], ['Show them', 'Hide them'], function () { return s.newGroups === 'hide' ? 'hide' : 'show'; }, function (v) { s.newGroups = v; save(); }));
     out.push(toggle('All channels includes hidden groups', 'Channels from groups you hid still appear in All channels.', function () { return !!s.allHidden; }, function (v) { s.allHidden = v; apply(); }));
     out.push(action('Reset watch time', 'Clears the "Most watched" statistics.', function () { UI.confirm('Reset watch time for every channel?', 'Reset', function () { Store.edits.watch = {}; Store.saveEdits(); relist(); U.toast('Watch time reset'); }); }));
@@ -410,6 +420,8 @@ var Settings = (function () {
     out.push(toggle('Channel names in the guide', 'Off shows logos only, leaving more room.', function () { return s.guideNames !== false; }, function (v) { s.guideNames = v; Views.applyLook(); save(); }));
     out.push(toggle('Two-line channel names', 'Long names wrap instead of being cut off.', function () { return !!s.twoLineNames; }, function (v) { s.twoLineNames = v; Views.applyLook(); save(); }));
     out.push(toggle('Mark catch-up channels', 'Shows ↺ on channels and programmes you can replay.', function () { return s.showCatchupMark !== false; }, function (v) { s.showCatchupMark = v; save(); relist(); }));
+    out.push(head('Watchlist'));
+    out.push(page('Watchlist', 'Shows, teams and names to look for in the guide.  TiviBro sets a reminder when one is coming up.', 'Watchlist', watchlist, function () { var n = Watch.list().length; return n ? n + ' ›' : '›'; }));
     out.push(head('Reminders'));
     out.push(choice('Remind me before start', '', [0, 1, 2, 5, 10], ['At start', '1 min', '2 min', '5 min', '10 min'], function () { return +s.remindBefore; }, function (v) { s.remindBefore = v; save(); }));
     out.push(choice('When a reminder starts', '', ['ask', 'switch'], ['Ask me', 'Switch to the channel'], function () { return s.remindAction === 'switch' ? 'switch' : 'ask'; }, function (v) { s.remindAction = v; save(); }));
@@ -422,6 +434,45 @@ var Settings = (function () {
         Store.edits.reminders = Store.edits.reminders.filter(function (x) { return x !== r; }); Store.saveEdits(); U.toast('Reminder removed'); build();
       }, function () { return 'Remove'; }));
     });
+    return out;
+  }
+
+  function langName(code, none) { for (var i = 0; i < U.LANGS.length; i++) if (U.LANGS[i][0] === code) return U.LANGS[i][1]; return none || code || ''; }
+  function langMenu(title, noneLabel, cur, set) {
+    UI.menu(title, [{ label: noneLabel, sub: !cur ? 'on' : '', action: function () { set(''); } }]
+      .concat(U.LANGS.map(function (l) { return { label: l[1], sub: cur === l[0] ? 'on' : '', action: function () { set(l[0]); } }; })));
+  }
+  function watchlist() {
+    var s = S(), out = [], words = Watch.list();
+    out.push(action('Add a show, team or name…', 'Matched as whole words in programme titles: "Cars" does not find "Oscars".  Yellow in Search adds what you typed.', function () {
+      UI.prompt('Look for', '', function (v) { if (Watch.add(v)) build(); }, 'For example Yankees, Bluey, Premier League or Gordon Ramsay');
+    }));
+    out.push(choice('Look ahead', 'How far into the guide to look.', [6, 12, 24, 48], ['6 hours', '12 hours', '24 hours', '2 days'], function () { return +s.watchAhead || 24; }, function (v) { s.watchAhead = v; save(); Watch.scan(true); build(); }));
+    out.push(choice('When something is found', '', ['remind', 'tell'], ['Set a reminder', 'Just tell me'], function () { return s.watchAction === 'tell' ? 'tell' : 'remind'; }, function (v) { s.watchAction = v; save(); }));
+    if (!Epg.xml) out.push(info('Tip: with only the provider\'s per-channel guide, TiviBro only knows programmes on channels you have looked at.  An XMLTV guide (Settings > Playlists) lets the watchlist see every channel.', ''));
+    if (!words.length) { out.push(info('Nothing on your watchlist yet.', '')); return out; }
+    out.push(head('Your watchlist'));
+    words.forEach(function (w) {
+      var n = Watch.upcoming(w.q).length;
+      out.push(action(w.q, n ? n + ' coming up' : 'nothing coming up yet', function () {
+        UI.menu(w.q, [
+          { label: 'Show in Search', action: function () { Views.switchTab('search'); Search.open(w.q); } },
+          { label: 'Remove from watchlist', sub: 'and the reminders it set', action: function () { Watch.remove(w.q); U.toast('Removed "' + w.q + '"'); build(); } }
+        ]);
+      }, function () { return '›'; }));
+    });
+    var up = Watch.upcoming().slice(0, 30);
+    if (up.length) {
+      out.push(head('Coming up'));
+      up.forEach(function (r) {
+        var set = Store.edits.reminders.some(function (x) { return x.k === r.c.k && x.s === r.p.s; });
+        out.push(action(r.p.t, U.day(r.p.s) + ' ' + U.hhmm(r.p.s) + '   ' + L.name(r.c), function () {
+          var rem = Store.edits.reminders, i = rem.findIndex(function (x) { return x.k === r.c.k && x.s === r.p.s; });
+          if (i >= 0) { rem.splice(i, 1); Store.edits.watchSeen = Store.edits.watchSeen || {}; Store.edits.watchSeen[r.p.t.toLowerCase() + '|' + r.p.s] = r.p.e; U.toast('Reminder cancelled'); } else { rem.push({ k: r.c.k, s: r.p.s, e: r.p.e, t: r.p.t, w: r.w }); U.toast('Reminder set'); }
+          Store.saveEdits(); build();
+        }, function () { return set ? 'Reminder set' : 'Remind me'; }));
+      });
+    }
     return out;
   }
 
@@ -503,6 +554,7 @@ var Settings = (function () {
       WebEdit.showJoin('report', null, { title: 'Report a problem', lead: 'Scan the code with your phone\'s camera (or open the address on a computer).  Describe what happened there; the TV adds its version, model and log, with logins and server names taken out, and your phone opens a GitHub issue ready to send.' });
     }, function () { return '›'; }));
     out.push(action('Run connection test', 'Checks the helper, login, channel list, a stream and the guide, step by step.', function () { Diag.run(); }));
+    out.push(action('Speed test', 'Your internet speed and your provider\'s, and what that is enough for.  Stops playback while it runs.', function () { Diag.speedTest(); }));
     out.push(action('View app log', 'This session.', function () { Diag.showLog(false); }));
     out.push(action('View app log with earlier sessions', 'Useful after a crash or restart.', function () { Diag.showLog(true); }));
     out.push(action('View network helper log', 'Every request the helper made: status, time, size, and the network error if any.', function () { Diag.showHelperLog(); }));
@@ -585,7 +637,9 @@ var Settings = (function () {
     return out;
   }
 
-  var FNS = [playback, remote, playlists, groups, reminders, look, parental, editor, updates, diag];
+  // Each section's page, by id, so reordering SECTIONS can never show one section under another's name.
+  var BY_ID = { playback: playback, remote: remote, playlists: playlists, editor: editor, groups: groups, reminders: reminders, look: look, parental: parental, updates: updates, diag: diag };
+  var FNS = SECTIONS.map(function (x) { return BY_ID[x[0]]; });
   function build() {
     var top = stack[stack.length - 1];
     items = top ? [head(stack.map(function (x) { return x.title; }).join('  ›  '))].concat(top.fn()) : FNS[sec]();
