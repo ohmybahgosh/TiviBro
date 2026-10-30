@@ -35,3 +35,4 @@ site/media/
 # the channel logo index (npm run logos); the Website workflow builds it on deploy
 site/logos/
 service/reminders.json
+site/view/shots.json

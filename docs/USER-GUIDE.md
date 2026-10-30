@@ -24,8 +24,8 @@ A brand-new TiviBro opens on **Add your playlist**.  You have two ways in:
 - **Type it on the TV.**  Pick Xtream Codes or M3U, then fill in the server, username and password (or the M3U address).  A guide address is optional.  **Test connection** checks everything before you save; **Connect** saves and loads your channels.
 
 <p align="center">
-  <a href="screenshots/tv-first-run.png"><img src="screenshots/tv-first-run.png" width="49%" alt="First-run screen"></a>
-  <a href="screenshots/tv-first-run-remote.png"><img src="screenshots/tv-first-run-remote.png" width="49%" alt="Set up from a phone or computer"></a>
+  <a href="https://tivibro.app/view/#tv-first-run"><img src="screenshots/tv-first-run.png" width="49%" alt="First-run screen"></a>
+  <a href="https://tivibro.app/view/#tv-first-run-remote"><img src="screenshots/tv-first-run-remote.png" width="49%" alt="Set up from a phone or computer"></a>
 </p>
 
 <p align="center"><a href="media/firstrun.mp4"><img src="media/firstrun.gif" width="100%" alt="The first screen, and setting up from a computer"></a></p>
@@ -43,8 +43,8 @@ Restoring a backup onto a fresh TV, start to finish:
 Right after a new playlist connects, TiviBro shows what it has and walks you through making it yours, one screen at a time with the remote.  It only asks about what your playlist actually has, so a list with no local stations never shows the city step.  Nothing changes until the last screen, and a restore point is saved first, so the web editor can put everything back.
 
 <p align="center">
-  <a href="screenshots/tv-tour-welcome.png"><img src="screenshots/tv-tour-welcome.png" width="49%" alt="The tour's first screen: what the playlist has"></a>
-  <a href="screenshots/tv-tour-phone.png"><img src="screenshots/tv-tour-phone.png" width="49%" alt="Scan a code to tidy up on a phone"></a>
+  <a href="https://tivibro.app/view/#tv-tour-welcome"><img src="screenshots/tv-tour-welcome.png" width="49%" alt="The tour's first screen: what the playlist has"></a>
+  <a href="https://tivibro.app/view/#tv-tour-phone"><img src="screenshots/tv-tour-phone.png" width="49%" alt="Scan a code to tidy up on a phone"></a>
 </p>
 
 The first screen counts your channels, groups, countries, event channels, East and West copies, local cities, extra copies and whether there are movies and shows.  Then:
@@ -60,25 +60,33 @@ The first screen counts your channels, groups, countries, event channels, East a
 | **East or West?** | Keep East feeds, West feeds or both, and whether to hide groups named West (or East).  Examples from your list. |
 | **Your local channels** | Every city your provider's local groups carry, A to Z, with the networks in each.  **OK** ticks a city; ◀ ▶ jump between letters.  The other cities' stations are hidden in every local group.  **Put them together in "Local channels"** (on) makes one group with your stations, by city and network, and **Then hide the network groups** (on) puts ABC Locals, CBS Locals and the rest out of the way so each station shows up once. |
 | **Sports and pay-per-view** | [Event channels](#event-channels-pay-per-view-and-sports-passes): reading events from names, short names, Events by time, the time zone for names without one, and **Hide channels with nothing on**.  The next events are listed. |
-| **Clear the clutter** | Divider groups, empty groups, the same channel more than once (keep Full HD, the default, or the best, HD, SD or every copy; hidden copies stay under hold OK > Other versions), groups with words like PPV or Adult, and whether groups the provider adds later show up. |
+| **Clear the clutter** | Divider groups, empty groups, the same channel more than once (keep Full HD, the default, or the best, HD, SD or every copy; the copies you hide are still backups: TiviBro switches to one by itself if yours stops working, and they stay under hold OK > Other versions), groups with words like PPV or Adult, and whether groups the provider adds later show up. |
 | **Channel logos** | The [logo library](#channel-logos), its style, and which logo wins when the playlist and the guide both have one, with logos it found for your channels. |
 | **Make it yours** | Accent colour, background, text size, start screen, turning on the last channel at launch, the preview in the list, and what happens when a channel stops working.  Colours change as you pick them. |
 | **All set** | How many channels and groups you keep and hide, **Your choices** (one line per screen, like "Detroit in Local channels, network groups hidden": **OK** on one goes back to that screen, and **Skip to the summary** comes back), **Apply and start watching**, and a few things worth knowing. |
 
+**Hidden, not gone.**  Everything the tour hides stays one press away in **Settings > Groups, sorting, hidden**, and Apply saves a restore point first.  Good to know about what hiding does:
+
+- **Extra copies** you hide are still backups: if the copy you keep stops working, TiviBro switches to one of them by itself.  See [Other versions of a channel](#other-versions-of-a-channel).
+- **The other East or West feed** is not a backup, because it runs hours apart.
+- **Network groups** hidden after **Put them together in "Local channels"** don't take your stations with them: they stay in Local channels.
+- **Hidden groups and channels** leave the guide, All channels, Search and the watchlist (unless **All channels includes hidden groups** is on).
+- **Channels with nothing on** come back by themselves when an event is named.
+
 <p align="center">
-  <a href="screenshots/tv-tour-countries.png"><img src="screenshots/tv-tour-countries.png" width="32%" alt="Countries"></a>
-  <a href="screenshots/tv-tour-names.png"><img src="screenshots/tv-tour-names.png" width="32%" alt="Channel names"></a>
-  <a href="screenshots/tv-tour-feeds.png"><img src="screenshots/tv-tour-feeds.png" width="32%" alt="East or West"></a>
+  <a href="https://tivibro.app/view/#tv-tour-countries"><img src="screenshots/tv-tour-countries.png" width="32%" alt="Countries"></a>
+  <a href="https://tivibro.app/view/#tv-tour-names"><img src="screenshots/tv-tour-names.png" width="32%" alt="Channel names"></a>
+  <a href="https://tivibro.app/view/#tv-tour-feeds"><img src="screenshots/tv-tour-feeds.png" width="32%" alt="East or West"></a>
 </p>
 <p align="center">
-  <a href="screenshots/tv-tour-locals.png"><img src="screenshots/tv-tour-locals.png" width="32%" alt="Your local channels"></a>
-  <a href="screenshots/tv-tour-events.png"><img src="screenshots/tv-tour-events.png" width="32%" alt="Sports and pay-per-view"></a>
-  <a href="screenshots/tv-tour-clutter.png"><img src="screenshots/tv-tour-clutter.png" width="32%" alt="Clear the clutter"></a>
+  <a href="https://tivibro.app/view/#tv-tour-locals"><img src="screenshots/tv-tour-locals.png" width="32%" alt="Your local channels"></a>
+  <a href="https://tivibro.app/view/#tv-tour-events"><img src="screenshots/tv-tour-events.png" width="32%" alt="Sports and pay-per-view"></a>
+  <a href="https://tivibro.app/view/#tv-tour-clutter"><img src="screenshots/tv-tour-clutter.png" width="32%" alt="Clear the clutter"></a>
 </p>
 <p align="center">
-  <a href="screenshots/tv-tour-logos.png"><img src="screenshots/tv-tour-logos.png" width="32%" alt="Channel logos"></a>
-  <a href="screenshots/tv-tour-look.png"><img src="screenshots/tv-tour-look.png" width="32%" alt="Make it yours"></a>
-  <a href="screenshots/tv-tour-done.png"><img src="screenshots/tv-tour-done.png" width="32%" alt="All set"></a>
+  <a href="https://tivibro.app/view/#tv-tour-logos"><img src="screenshots/tv-tour-logos.png" width="32%" alt="Channel logos"></a>
+  <a href="https://tivibro.app/view/#tv-tour-look"><img src="screenshots/tv-tour-look.png" width="32%" alt="Make it yours"></a>
+  <a href="https://tivibro.app/view/#tv-tour-done"><img src="screenshots/tv-tour-done.png" width="32%" alt="All set"></a>
 </p>
 
 Everything the tour hides stays one press away: Settings > Groups, sorting, hidden, or hold **OK** on a channel.  Run it again any time from **Settings > Playlists and guide > your playlist > Set-up tour**.  It works on the same engine as the web editor's Smart clean-up, so both always agree.
@@ -134,8 +142,8 @@ A few things work the way you would guess from other TV apps:
 Buttons can be remapped under **Settings > Remote control**, including keys TiviBro does not know yet (**Learn a button**).  **Button tester** shows what the TV sends for each key.  Every button, its default and the actions you can give it are listed in [Settings: Remote control](#settings-remote-control).
 
 <p align="center">
-  <a href="screenshots/tv-set-remote-player.png"><img src="screenshots/tv-set-remote-player.png" width="49%" alt="Buttons in the player"></a>
-  <a href="screenshots/tv-set-quick-menu.png"><img src="screenshots/tv-set-quick-menu.png" width="49%" alt="Quick menu buttons"></a>
+  <a href="https://tivibro.app/view/#tv-set-remote-player"><img src="screenshots/tv-set-remote-player.png" width="49%" alt="Buttons in the player"></a>
+  <a href="https://tivibro.app/view/#tv-set-quick-menu"><img src="screenshots/tv-set-quick-menu.png" width="49%" alt="Quick menu buttons"></a>
 </p>
 
 ### The guide
@@ -154,8 +162,8 @@ The guide is the home screen.  The channel you are on plays in the window at the
 <details>
 <summary><b>More guide screenshots</b></summary>
 <p align="center">
-  <a href="screenshots/tv-guide.png"><img src="screenshots/tv-guide.png" width="49%" alt="Guide"></a>
-  <a href="screenshots/tv-guide-preview.png"><img src="screenshots/tv-guide-preview.png" width="49%" alt="Preview in the window"></a>
+  <a href="https://tivibro.app/view/#tv-guide"><img src="screenshots/tv-guide.png" width="49%" alt="Guide"></a>
+  <a href="https://tivibro.app/view/#tv-guide-preview"><img src="screenshots/tv-guide-preview.png" width="49%" alt="Preview in the window"></a>
 </p>
 </details>
 
@@ -177,15 +185,15 @@ Long lists: **CH + / −** moves a page at a time everywhere, and holding **▲*
 <details>
 <summary><b>Screenshots</b></summary>
 <p align="center">
-  <a href="screenshots/tv-groups.png"><img src="screenshots/tv-groups.png" width="49%" alt="Groups"></a>
-  <a href="screenshots/tv-menu.png"><img src="screenshots/tv-menu.png" width="49%" alt="Menu"></a>
+  <a href="https://tivibro.app/view/#tv-groups"><img src="screenshots/tv-groups.png" width="49%" alt="Groups"></a>
+  <a href="https://tivibro.app/view/#tv-menu"><img src="screenshots/tv-menu.png" width="49%" alt="Menu"></a>
 </p>
 </details>
 
 The **Channels** screen is the same list in TiviMate's classic layout: groups on the left, channels in the middle, the preview and details on the right.  Resting on a channel plays it in the preview (**Preview in channel list**); **OK** goes fullscreen.  Pick which screen opens first with **Start screen**.
 
 <p align="center">
-  <a href="screenshots/tv-channels.png"><img src="screenshots/tv-channels.png" width="100%" alt="The Channels screen"></a>
+  <a href="https://tivibro.app/view/#tv-channels"><img src="screenshots/tv-channels.png" width="100%" alt="The Channels screen"></a>
 </p>
 
 ### Watching fullscreen
@@ -203,10 +211,10 @@ The **Channels** screen is the same list in TiviMate's classic layout: groups on
 <details>
 <summary><b>Screenshots</b></summary>
 <p align="center">
-  <a href="screenshots/tv-fullscreen.png"><img src="screenshots/tv-fullscreen.png" width="49%" alt="Fullscreen with the info bar"></a>
-  <a href="screenshots/tv-quick-menu.png"><img src="screenshots/tv-quick-menu.png" width="49%" alt="Quick menu"></a>
-  <a href="screenshots/tv-info.png"><img src="screenshots/tv-info.png" width="49%" alt="Programme info"></a>
-  <a href="screenshots/tv-mini-guide.png"><img src="screenshots/tv-mini-guide.png" width="49%" alt="Guide over the video"></a>
+  <a href="https://tivibro.app/view/#tv-fullscreen"><img src="screenshots/tv-fullscreen.png" width="49%" alt="Fullscreen with the info bar"></a>
+  <a href="https://tivibro.app/view/#tv-quick-menu"><img src="screenshots/tv-quick-menu.png" width="49%" alt="Quick menu"></a>
+  <a href="https://tivibro.app/view/#tv-info"><img src="screenshots/tv-info.png" width="49%" alt="Programme info"></a>
+  <a href="https://tivibro.app/view/#tv-mini-guide"><img src="screenshots/tv-mini-guide.png" width="49%" alt="Guide over the video"></a>
 </p>
 </details>
 
@@ -218,10 +226,10 @@ The options menu, stream info, sleep timer and picture size:
 <details>
 <summary><b>Screenshots</b></summary>
 <p align="center">
-  <a href="screenshots/tv-options.png"><img src="screenshots/tv-options.png" width="49%" alt="Options (Red)"></a>
-  <a href="screenshots/tv-stream-info.png"><img src="screenshots/tv-stream-info.png" width="49%" alt="Stream info"></a>
-  <a href="screenshots/tv-sleep.png"><img src="screenshots/tv-sleep.png" width="49%" alt="Sleep timer"></a>
-  <a href="screenshots/tv-picture.png"><img src="screenshots/tv-picture.png" width="49%" alt="Picture size"></a>
+  <a href="https://tivibro.app/view/#tv-options"><img src="screenshots/tv-options.png" width="49%" alt="Options (Red)"></a>
+  <a href="https://tivibro.app/view/#tv-stream-info"><img src="screenshots/tv-stream-info.png" width="49%" alt="Stream info"></a>
+  <a href="https://tivibro.app/view/#tv-sleep"><img src="screenshots/tv-sleep.png" width="49%" alt="Sleep timer"></a>
+  <a href="https://tivibro.app/view/#tv-picture"><img src="screenshots/tv-picture.png" width="49%" alt="Picture size"></a>
 </p>
 </details>
 
@@ -251,15 +259,17 @@ Many playlists carry the same channel several times: in Full HD, HD and SD, in t
 - Lists and the guide show a quality tag (**FHD**, **HD**, **SD**, **4K**) beside each copy.
 - **Other versions…** (**Hold OK** on a channel, or the **Red** options while watching) lists the other copies with their quality and group, hidden copies included.  The quick menu has an **Other versions** button too.  **OK** switches to one.
 - **When a channel stops working,** TiviBro switches to the next version by itself and says so ("Nova News 24 isn't working.  Switched to Nova News 24 (HD)"), steadiest quality first: Full HD, HD, unmarked, 4K, then SD.  This only happens once the player has run out of retries, so a short hiccup never moves you.  If every version fails, the provider itself is probably down: TiviBro goes back to the channel you chose and keeps retrying until it returns.
+- **Hidden copies count.**  Hiding the extra copies (in the set-up tour, Smart clean-up or by hand) only takes them out of your lists: they are still used as backups and listed under Other versions.  Only a copy you **block** with the parental PIN is never switched to.
+- **East and West feeds are not versions of each other.**  They run hours apart, so TiviBro never switches from one to the other by itself.
 - **Settings > Playback and buffering > When a channel stops working** chooses between switching by itself, asking you first, or just retrying.
 
 <p align="center"><a href="media/versions.mp4"><img src="media/versions.gif" width="100%" alt="Other versions of a channel"></a></p>
 <p align="center"><sub><a href="media/versions.mp4">Watch the MP4</a></sub></p>
 
 <p align="center">
-  <a href="screenshots/tv-versions.png"><img src="screenshots/tv-versions.png" width="32%" alt="Other versions of a channel"></a>
-  <a href="screenshots/tv-quick-versions.png"><img src="screenshots/tv-quick-versions.png" width="32%" alt="Other versions in the quick menu"></a>
-  <a href="screenshots/tv-failover.png"><img src="screenshots/tv-failover.png" width="32%" alt="Switched to another version by itself"></a>
+  <a href="https://tivibro.app/view/#tv-versions"><img src="screenshots/tv-versions.png" width="32%" alt="Other versions of a channel"></a>
+  <a href="https://tivibro.app/view/#tv-quick-versions"><img src="screenshots/tv-quick-versions.png" width="32%" alt="Other versions in the quick menu"></a>
+  <a href="https://tivibro.app/view/#tv-failover"><img src="screenshots/tv-failover.png" width="32%" alt="Switched to another version by itself"></a>
 </p>
 
 ### Event channels: pay-per-view and sports passes
@@ -276,8 +286,8 @@ TiviBro reads those names:
 It understands the usual ways providers write these: "Oct 29 7:30 PM", "Sat 15th Aug 8:00PM", "Saturday, 31 October 2026 12:30", "12.18 11:00 AM", "14/08", "2026-02-08 10:40", a time on its own for today, and a time between two teams ("Stoke City 15:00 Swansea City").  On a real provider it read 1,250 event channels this way.  Your own channel names (**Rename**) always win.
 
 <p align="center">
-  <a href="screenshots/tv-events-list.png"><img src="screenshots/tv-events-list.png" width="49%" alt="Events by time"></a>
-  <a href="screenshots/tv-events-guide.png"><img src="screenshots/tv-events-guide.png" width="49%" alt="Events in the guide"></a>
+  <a href="https://tivibro.app/view/#tv-events-list"><img src="screenshots/tv-events-list.png" width="49%" alt="Events by time"></a>
+  <a href="https://tivibro.app/view/#tv-events-guide"><img src="screenshots/tv-events-guide.png" width="49%" alt="Events in the guide"></a>
 </p>
 
 ### Catch-up
@@ -296,9 +306,9 @@ From live TV, **From start** in the quick menu restarts the current programme.  
 <details>
 <summary><b>Screenshots</b></summary>
 <p align="center">
-  <a href="screenshots/tv-catchup-guide.png"><img src="screenshots/tv-catchup-guide.png" width="49%" alt="Past programmes in the guide"></a>
-  <a href="screenshots/tv-hold-menu.png"><img src="screenshots/tv-hold-menu.png" width="49%" alt="Programme options"></a>
-  <a href="screenshots/tv-catchup-play.png"><img src="screenshots/tv-catchup-play.png" width="49%" alt="Catch-up playing"></a>
+  <a href="https://tivibro.app/view/#tv-catchup-guide"><img src="screenshots/tv-catchup-guide.png" width="49%" alt="Past programmes in the guide"></a>
+  <a href="https://tivibro.app/view/#tv-hold-menu"><img src="screenshots/tv-hold-menu.png" width="49%" alt="Programme options"></a>
+  <a href="https://tivibro.app/view/#tv-catchup-play"><img src="screenshots/tv-catchup-play.png" width="49%" alt="Catch-up playing"></a>
 </p>
 </details>
 
@@ -318,8 +328,8 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 <details>
 <summary><b>Screenshots</b></summary>
 <p align="center">
-  <a href="screenshots/tv-movies.png"><img src="screenshots/tv-movies.png" width="49%" alt="Movies"></a>
-  <a href="screenshots/tv-episodes.png"><img src="screenshots/tv-episodes.png" width="49%" alt="Episodes"></a>
+  <a href="https://tivibro.app/view/#tv-movies"><img src="screenshots/tv-movies.png" width="49%" alt="Movies"></a>
+  <a href="https://tivibro.app/view/#tv-episodes"><img src="screenshots/tv-episodes.png" width="49%" alt="Episodes"></a>
 </p>
 </details>
 
@@ -331,7 +341,7 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 <p align="center"><sub><a href="media/search.mp4">Watch the MP4</a></sub></p>
 
 <p align="center">
-  <a href="screenshots/tv-search.png"><img src="screenshots/tv-search.png" width="100%" alt="Search results"></a>
+  <a href="https://tivibro.app/view/#tv-search"><img src="screenshots/tv-search.png" width="100%" alt="Search results"></a>
 </p>
 
 ### Multiview
@@ -348,7 +358,7 @@ Many webOS TVs can decode only two streams at once, and some providers limit con
 <p align="center"><sub><a href="media/multiview.mp4">Watch the MP4</a></sub></p>
 
 <p align="center">
-  <a href="screenshots/tv-multiview.png"><img src="screenshots/tv-multiview.png" width="100%" alt="Two channels side by side"></a>
+  <a href="https://tivibro.app/view/#tv-multiview"><img src="screenshots/tv-multiview.png" width="100%" alt="Two channels side by side"></a>
 </p>
 
 ### Favorites, hiding and your own groups
@@ -369,9 +379,9 @@ Many webOS TVs can decode only two streams at once, and some providers limit con
 <p align="center"><sub><a href="media/channels.mp4">Watch the MP4</a></sub></p>
 
 <p align="center">
-  <a href="screenshots/tv-channel-options.png"><img src="screenshots/tv-channel-options.png" width="32%" alt="Channel options"></a>
-  <a href="screenshots/tv-copy-to-group.png"><img src="screenshots/tv-copy-to-group.png" width="32%" alt="Copy to group"></a>
-  <a href="screenshots/tv-set-manage-groups.png"><img src="screenshots/tv-set-manage-groups.png" width="32%" alt="Manage groups"></a>
+  <a href="https://tivibro.app/view/#tv-channel-options"><img src="screenshots/tv-channel-options.png" width="32%" alt="Channel options"></a>
+  <a href="https://tivibro.app/view/#tv-copy-to-group"><img src="screenshots/tv-copy-to-group.png" width="32%" alt="Copy to group"></a>
+  <a href="https://tivibro.app/view/#tv-set-manage-groups"><img src="screenshots/tv-set-manage-groups.png" width="32%" alt="Manage groups"></a>
 </p>
 
 ### Reminders
@@ -394,8 +404,8 @@ The watchlist needs the guide to know what's on: with an XMLTV guide it sees eve
 <p align="center"><sub><a href="media/reminders.mp4">Watch the MP4</a></sub></p>
 
 <p align="center">
-  <a href="screenshots/tv-reminder-set.png"><img src="screenshots/tv-reminder-set.png" width="49%" alt="A reminder set in the guide"></a>
-  <a href="screenshots/tv-reminder.png"><img src="screenshots/tv-reminder.png" width="49%" alt="The reminder when the programme starts"></a>
+  <a href="https://tivibro.app/view/#tv-reminder-set"><img src="screenshots/tv-reminder-set.png" width="49%" alt="A reminder set in the guide"></a>
+  <a href="https://tivibro.app/view/#tv-reminder"><img src="screenshots/tv-reminder.png" width="49%" alt="The reminder when the programme starts"></a>
 </p>
 
 ### Settings
@@ -421,8 +431,8 @@ The watchlist needs the guide to know what's on: with an XMLTV guide it sees eve
 <details>
 <summary><b>Screenshots</b></summary>
 <p align="center">
-  <a href="screenshots/tv-settings.png"><img src="screenshots/tv-settings.png" width="49%" alt="Settings"></a>
-  <a href="screenshots/tv-settings-look.png"><img src="screenshots/tv-settings-look.png" width="49%" alt="Appearance"></a>
+  <a href="https://tivibro.app/view/#tv-settings"><img src="screenshots/tv-settings.png" width="49%" alt="Settings"></a>
+  <a href="https://tivibro.app/view/#tv-settings-look"><img src="screenshots/tv-settings-look.png" width="49%" alt="Appearance"></a>
 </p>
 </details>
 
@@ -436,7 +446,7 @@ The watchlist needs the guide to know what's on: with an XMLTV guide it sees eve
 - On TVs that aren't rooted, the page tells you the new version is out; install it from a computer as before.
 
 <p align="center">
-  <a href="screenshots/tv-set-updates.png"><img src="screenshots/tv-set-updates.png" width="60%" alt="Updates and about"></a>
+  <a href="https://tivibro.app/view/#tv-set-updates"><img src="screenshots/tv-set-updates.png" width="60%" alt="Updates and about"></a>
 </p>
 
 ### Parental controls
@@ -447,8 +457,8 @@ Set a PIN under **Settings > Parental controls**, then **Hold OK** on any channe
 <p align="center"><sub><a href="media/parental.mp4">Watch the MP4</a></sub></p>
 
 <p align="center">
-  <a href="screenshots/tv-settings-parental.png"><img src="screenshots/tv-settings-parental.png" width="49%" alt="Parental controls with a PIN"></a>
-  <a href="screenshots/tv-pin.png"><img src="screenshots/tv-pin.png" width="49%" alt="A blocked channel asks for the PIN"></a>
+  <a href="https://tivibro.app/view/#tv-settings-parental"><img src="screenshots/tv-settings-parental.png" width="49%" alt="Parental controls with a PIN"></a>
+  <a href="https://tivibro.app/view/#tv-pin"><img src="screenshots/tv-pin.png" width="49%" alt="A blocked channel asks for the PIN"></a>
 </p>
 
 ---
@@ -464,8 +474,8 @@ On a row with a choice, **◀ ▶** change it (with the Magic Remote, click the 
 How channels start, how much video TiviBro holds, which player it uses, and what it does when a stream struggles.
 
 <p align="center">
-  <a href="screenshots/tv-set-playback.png"><img src="screenshots/tv-set-playback.png" width="49%" alt="Playback and buffering, top"></a>
-  <a href="screenshots/tv-set-playback-2.png"><img src="screenshots/tv-set-playback-2.png" width="49%" alt="Playback and buffering, bottom"></a>
+  <a href="https://tivibro.app/view/#tv-set-playback"><img src="screenshots/tv-set-playback.png" width="49%" alt="Playback and buffering, top"></a>
+  <a href="https://tivibro.app/view/#tv-set-playback-2"><img src="screenshots/tv-set-playback-2.png" width="49%" alt="Playback and buffering, bottom"></a>
 </p>
 
 | Setting | Choices | What it does |
@@ -504,9 +514,9 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 Remap any button, choose the quick menu's buttons, and teach TiviBro keys it doesn't know.
 
 <p align="center">
-  <a href="screenshots/tv-set-remote.png"><img src="screenshots/tv-set-remote.png" width="32%" alt="Remote control"></a>
-  <a href="screenshots/tv-set-remote-player.png"><img src="screenshots/tv-set-remote-player.png" width="32%" alt="Buttons in the player"></a>
-  <a href="screenshots/tv-set-quick-menu.png"><img src="screenshots/tv-set-quick-menu.png" width="32%" alt="Quick menu buttons"></a>
+  <a href="https://tivibro.app/view/#tv-set-remote"><img src="screenshots/tv-set-remote.png" width="32%" alt="Remote control"></a>
+  <a href="https://tivibro.app/view/#tv-set-remote-player"><img src="screenshots/tv-set-remote-player.png" width="32%" alt="Buttons in the player"></a>
+  <a href="https://tivibro.app/view/#tv-set-quick-menu"><img src="screenshots/tv-set-quick-menu.png" width="32%" alt="Quick menu buttons"></a>
 </p>
 
 | Setting | What it does |
@@ -546,9 +556,9 @@ Actions you can give a button in the player: nothing, quick menu, channel list o
 Your playlists, how often they reload, and where the programme guide comes from.  **OK** on a playlist opens its page.
 
 <p align="center">
-  <a href="screenshots/tv-set-playlists.png"><img src="screenshots/tv-set-playlists.png" width="32%" alt="Playlists"></a>
-  <a href="screenshots/tv-set-playlist.png"><img src="screenshots/tv-set-playlist.png" width="32%" alt="A playlist's page"></a>
-  <a href="screenshots/tv-set-playlist-2.png"><img src="screenshots/tv-set-playlist-2.png" width="32%" alt="A playlist's guide settings"></a>
+  <a href="https://tivibro.app/view/#tv-set-playlists"><img src="screenshots/tv-set-playlists.png" width="32%" alt="Playlists"></a>
+  <a href="https://tivibro.app/view/#tv-set-playlist"><img src="screenshots/tv-set-playlist.png" width="32%" alt="A playlist's page"></a>
+  <a href="https://tivibro.app/view/#tv-set-playlist-2"><img src="screenshots/tv-set-playlist-2.png" width="32%" alt="A playlist's guide settings"></a>
 </p>
 
 | Setting | Choices | What it does |
@@ -583,7 +593,7 @@ On a playlist's page:
 
 **Channel name editor.**  Rules that strip clutter from every name at once.  Your provider's names are never changed: switch a rule off and the original comes back.  Names you set by hand stay.
 
-<p align="center"><a href="screenshots/tv-set-names.png"><img src="screenshots/tv-set-names.png" width="60%" alt="Channel name editor"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#tv-set-names"><img src="screenshots/tv-set-names.png" width="60%" alt="Channel name editor"></a></p>
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -605,7 +615,7 @@ On a playlist's page:
 
 **Event channels.**  For pay-per-view, league passes and one-off games whose name carries the matchup, date and time (see [Event channels](#event-channels-pay-per-view-and-sports-passes)).
 
-<p align="center"><a href="screenshots/tv-set-events.png"><img src="screenshots/tv-set-events.png" width="60%" alt="Event channels"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#tv-set-events"><img src="screenshots/tv-set-events.png" width="60%" alt="Event channels"></a></p>
 
 | Setting | Default | What it does |
 |---|---|---|
@@ -620,9 +630,9 @@ On a playlist's page:
 Which groups show, in what order, and getting hidden things back.
 
 <p align="center">
-  <a href="screenshots/tv-set-groups.png"><img src="screenshots/tv-set-groups.png" width="32%" alt="Groups, sorting, hidden"></a>
-  <a href="screenshots/tv-set-groups-2.png"><img src="screenshots/tv-set-groups-2.png" width="32%" alt="Your groups and hidden items"></a>
-  <a href="screenshots/tv-set-manage-groups.png"><img src="screenshots/tv-set-manage-groups.png" width="32%" alt="Manage groups"></a>
+  <a href="https://tivibro.app/view/#tv-set-groups"><img src="screenshots/tv-set-groups.png" width="32%" alt="Groups, sorting, hidden"></a>
+  <a href="https://tivibro.app/view/#tv-set-groups-2"><img src="screenshots/tv-set-groups-2.png" width="32%" alt="Your groups and hidden items"></a>
+  <a href="https://tivibro.app/view/#tv-set-manage-groups"><img src="screenshots/tv-set-manage-groups.png" width="32%" alt="Manage groups"></a>
 </p>
 
 | Setting | Choices | What it does |
@@ -650,8 +660,8 @@ Which groups show, in what order, and getting hidden things back.
 How the guide looks and behaves, which screen TiviBro opens on, and reminders.
 
 <p align="center">
-  <a href="screenshots/tv-set-guide.png"><img src="screenshots/tv-set-guide.png" width="49%" alt="Guide, start screen, reminders"></a>
-  <a href="screenshots/tv-set-guide-2.png"><img src="screenshots/tv-set-guide-2.png" width="49%" alt="Reminders"></a>
+  <a href="https://tivibro.app/view/#tv-set-guide"><img src="screenshots/tv-set-guide.png" width="49%" alt="Guide, start screen, reminders"></a>
+  <a href="https://tivibro.app/view/#tv-set-guide-2"><img src="screenshots/tv-set-guide-2.png" width="49%" alt="Reminders"></a>
 </p>
 
 | Setting | Choices | What it does |
@@ -675,8 +685,8 @@ How the guide looks and behaves, which screen TiviBro opens on, and reminders.
 Colours, sizes and what's on screen.  Every change shows straight away.
 
 <p align="center">
-  <a href="screenshots/tv-set-look.png"><img src="screenshots/tv-set-look.png" width="49%" alt="Appearance"></a>
-  <a href="screenshots/tv-settings-look.png"><img src="screenshots/tv-settings-look.png" width="49%" alt="Changing the accent colour"></a>
+  <a href="https://tivibro.app/view/#tv-set-look"><img src="screenshots/tv-set-look.png" width="49%" alt="Appearance"></a>
+  <a href="https://tivibro.app/view/#tv-settings-look"><img src="screenshots/tv-settings-look.png" width="49%" alt="Changing the accent colour"></a>
 </p>
 
 | Setting | Choices | What it does |
@@ -703,8 +713,8 @@ Colours, sizes and what's on screen.  Every change shows straight away.
 A 4-digit PIN for blocked channels and groups, and optionally for Settings.  See [Parental controls](#parental-controls) for blocking.
 
 <p align="center">
-  <a href="screenshots/tv-set-parental.png"><img src="screenshots/tv-set-parental.png" width="49%" alt="Parental controls before a PIN"></a>
-  <a href="screenshots/tv-settings-parental.png"><img src="screenshots/tv-settings-parental.png" width="49%" alt="Parental controls with a PIN"></a>
+  <a href="https://tivibro.app/view/#tv-set-parental"><img src="screenshots/tv-set-parental.png" width="49%" alt="Parental controls before a PIN"></a>
+  <a href="https://tivibro.app/view/#tv-settings-parental"><img src="screenshots/tv-settings-parental.png" width="49%" alt="Parental controls with a PIN"></a>
 </p>
 
 | Setting | Choices | What it does |
@@ -723,8 +733,8 @@ Five wrong PINs in a row lock the PIN for 30 seconds.
 The [web editor](#turning-on-the-web-editor): organise groups and channels from a browser on your computer, phone or tablet.
 
 <p align="center">
-  <a href="screenshots/tv-set-editor.png"><img src="screenshots/tv-set-editor.png" width="49%" alt="Edit on a phone or computer, off"></a>
-  <a href="screenshots/tv-set-editor-on.png"><img src="screenshots/tv-set-editor-on.png" width="49%" alt="Edit on a phone or computer, on"></a>
+  <a href="https://tivibro.app/view/#tv-set-editor"><img src="screenshots/tv-set-editor.png" width="49%" alt="Edit on a phone or computer, off"></a>
+  <a href="https://tivibro.app/view/#tv-set-editor-on"><img src="screenshots/tv-set-editor-on.png" width="49%" alt="Edit on a phone or computer, on"></a>
 </p>
 
 | Setting | Choices | What it does |
@@ -740,7 +750,7 @@ The [web editor](#turning-on-the-web-editor): organise groups and channels from 
 
 Your version, and new versions from GitHub.  See [Updates](#updates).
 
-<p align="center"><a href="screenshots/tv-set-updates.png"><img src="screenshots/tv-set-updates.png" width="60%" alt="Updates and about"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#tv-set-updates"><img src="screenshots/tv-set-updates.png" width="60%" alt="Updates and about"></a></p>
 
 | Setting | Choices | What it does |
 |---|---|---|
@@ -757,10 +767,10 @@ Your version, and new versions from GitHub.  See [Updates](#updates).
 Finding out what's wrong, and what this TV can play.
 
 <p align="center">
-  <a href="screenshots/tv-set-diag.png"><img src="screenshots/tv-set-diag.png" width="49%" alt="Diagnostics"></a>
-  <a href="screenshots/tv-set-diag-test.png"><img src="screenshots/tv-set-diag-test.png" width="49%" alt="Connection test"></a>
-  <a href="screenshots/tv-set-caps.png"><img src="screenshots/tv-set-caps.png" width="49%" alt="What this TV can play"></a>
-  <a href="screenshots/tv-set-diag-log.png"><img src="screenshots/tv-set-diag-log.png" width="49%" alt="App log"></a>
+  <a href="https://tivibro.app/view/#tv-set-diag"><img src="screenshots/tv-set-diag.png" width="49%" alt="Diagnostics"></a>
+  <a href="https://tivibro.app/view/#tv-set-diag-test"><img src="screenshots/tv-set-diag-test.png" width="49%" alt="Connection test"></a>
+  <a href="https://tivibro.app/view/#tv-set-caps"><img src="screenshots/tv-set-caps.png" width="49%" alt="What this TV can play"></a>
+  <a href="https://tivibro.app/view/#tv-set-diag-log"><img src="screenshots/tv-set-diag-log.png" width="49%" alt="App log"></a>
 </p>
 
 | Setting | Choices | What it does |
@@ -800,17 +810,17 @@ The editor switches off every time TiviBro closes.  On a brand-new TV with no pl
 **On a phone.**  The [set-up tour](#the-set-up-tour)'s QR code opens the editor signed in; any phone browser works with the address and password too.  On a phone the page name sits in the top bar (tap it for the list of pages), **Groups and channels** shows the groups first and a group's channels on their own screen (**‹ Groups** goes back), and **⋯** on a channel has Rename, Copy or move and Take out.  Dragging to reorder needs a computer.
 
 <p align="center">
-  <a href="screenshots/editor-phone-tools.png"><img src="screenshots/editor-phone-tools.png" width="24%" alt="Smart clean-up on a phone"></a>
-  <a href="screenshots/editor-phone-channels.png"><img src="screenshots/editor-phone-channels.png" width="24%" alt="A group's channels on a phone"></a>
-  <a href="screenshots/editor-phone-channel-menu.png"><img src="screenshots/editor-phone-channel-menu.png" width="24%" alt="The ⋯ menu on a channel"></a>
-  <a href="screenshots/editor-phone-pages.png"><img src="screenshots/editor-phone-pages.png" width="24%" alt="The list of pages"></a>
+  <a href="https://tivibro.app/view/#editor-phone-tools"><img src="screenshots/editor-phone-tools.png" width="24%" alt="Smart clean-up on a phone"></a>
+  <a href="https://tivibro.app/view/#editor-phone-channels"><img src="screenshots/editor-phone-channels.png" width="24%" alt="A group's channels on a phone"></a>
+  <a href="https://tivibro.app/view/#editor-phone-channel-menu"><img src="screenshots/editor-phone-channel-menu.png" width="24%" alt="The ⋯ menu on a channel"></a>
+  <a href="https://tivibro.app/view/#editor-phone-pages"><img src="screenshots/editor-phone-pages.png" width="24%" alt="The list of pages"></a>
 </p>
 
 <p align="center">
-  <a href="screenshots/tv-set-editor-on.png"><img src="screenshots/tv-set-editor-on.png" width="60%" alt="The address and password on the TV"></a>
+  <a href="https://tivibro.app/view/#tv-set-editor-on"><img src="screenshots/tv-set-editor-on.png" width="60%" alt="The address and password on the TV"></a>
 </p>
 
-<p align="center"><a href="screenshots/editor-overview.png"><img src="screenshots/editor-overview.png" width="100%" alt="Web editor overview"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#editor-overview"><img src="screenshots/editor-overview.png" width="100%" alt="Web editor overview"></a></p>
 
 The **Overview** shows how many channels and groups are on the TV, guide coverage, smart suggestions, and a short checklist for a first clean-up: Smart clean-up, then groups and favorites, channel names, the guide, then **Send to TV** and a backup.  **Help** in the editor explains every page.
 
@@ -824,7 +834,7 @@ Every change is a **draft** until you press **Send to TV** (or <kbd>Ctrl</kbd>+<
 - **Changes and restore points** lists what hasn't reached the TV yet, this session's changes (each with **Go back**), your draft history, and the restore points.
 
 <p align="center">
-  <a href="screenshots/editor-history.png"><img src="screenshots/editor-history.png" width="100%" alt="Changes and restore points"></a>
+  <a href="https://tivibro.app/view/#editor-history"><img src="screenshots/editor-history.png" width="100%" alt="Changes and restore points"></a>
 </p>
 
 **You can't lose unsent work.**  An hour of clean-up shouldn't vanish because of a stray click, a refresh or a closed tab, so the editor saves your drafts twice:
@@ -835,8 +845,8 @@ Every change is a **draft** until you press **Send to TV** (or <kbd>Ctrl</kbd>+<
 Reload the page, close the tab, or open the editor on another computer or your phone, and it asks whether to pick up your unsent changes, whichever copy is newer.  **Keep working on them** brings everything back; **Throw them away** clears them, but a copy stays in the draft history.
 
 <p align="center">
-  <a href="screenshots/editor-recover.png"><img src="screenshots/editor-recover.png" width="49%" alt="Unsent changes offered back after a reload"></a>
-  <a href="screenshots/editor-drafts.png"><img src="screenshots/editor-drafts.png" width="49%" alt="Draft history"></a>
+  <a href="https://tivibro.app/view/#editor-recover"><img src="screenshots/editor-recover.png" width="49%" alt="Unsent changes offered back after a reload"></a>
+  <a href="https://tivibro.app/view/#editor-drafts"><img src="screenshots/editor-drafts.png" width="49%" alt="Draft history"></a>
 </p>
 
 **Draft history** (on **Changes and restore points**) keeps versions of your unsent work on the TV:
@@ -857,8 +867,8 @@ Reload the page, close the tab, or open the editor on another computer or your p
 - Your changes survive playlist refreshes.
 
 <p align="center">
-  <a href="screenshots/editor-groups.png"><img src="screenshots/editor-groups.png" width="49%" alt="Groups and channels"></a>
-  <a href="screenshots/editor-copy-move.png"><img src="screenshots/editor-copy-move.png" width="49%" alt="Copy or move channels"></a>
+  <a href="https://tivibro.app/view/#editor-groups"><img src="screenshots/editor-groups.png" width="49%" alt="Groups and channels"></a>
+  <a href="https://tivibro.app/view/#editor-copy-move"><img src="screenshots/editor-copy-move.png" width="49%" alt="Copy or move channels"></a>
 </p>
 
 ### Smart clean-up
@@ -877,8 +887,8 @@ The same engine as the TV's [set-up tour](#the-set-up-tour), with more room: pic
 Everything here only hides, never deletes, and each action is one undo step.
 
 <p align="center">
-  <a href="screenshots/editor-smart-cleanup.png"><img src="screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
-  <a href="screenshots/editor-feeds-local.png"><img src="screenshots/editor-feeds-local.png" width="49%" alt="East and West feeds, and local channels by city"></a>
+  <a href="https://tivibro.app/view/#editor-smart-cleanup"><img src="screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
+  <a href="https://tivibro.app/view/#editor-feeds-local"><img src="screenshots/editor-feeds-local.png" width="49%" alt="East and West feeds, and local channels by city"></a>
 </p>
 
 ### Channel names
@@ -886,8 +896,8 @@ Everything here only hides, never deletes, and each action is one undo step.
 Rules strip clutter from every name at once: country prefixes like `US |`, quality tags like `FHD`, brackets and more.  Add your own prefixes and suffixes, and preview each name before and after.  Your provider's names are untouched, so switching a rule off brings the original back.  Names you set by hand stay.  The same rules are on the TV under **Settings > Playlists and guide > (your playlist) > Channel name editor** ([details](#settings-playlists-and-guide)).
 
 <p align="center">
-  <a href="screenshots/editor-names.png"><img src="screenshots/editor-names.png" width="49%" alt="Channel names in the editor"></a>
-  <a href="screenshots/tv-set-names.png"><img src="screenshots/tv-set-names.png" width="49%" alt="Channel name editor on the TV"></a>
+  <a href="https://tivibro.app/view/#editor-names"><img src="screenshots/editor-names.png" width="49%" alt="Channel names in the editor"></a>
+  <a href="https://tivibro.app/view/#tv-set-names"><img src="screenshots/tv-set-names.png" width="49%" alt="Channel name editor on the TV"></a>
 </p>
 
 ### The programme guide
@@ -907,9 +917,9 @@ M3U playlists can use the guide address inside the playlist.
 **Smart match** fixes channels showing "No guide information".  It ignores clutter, understands country codes, East and West feeds, numbered channels and US call signs, then shows its best guess with a confidence score.  You approve or decline each one, and nothing changes until you press **Apply**.
 
 <p align="center">
-  <a href="screenshots/editor-guide.png"><img src="screenshots/editor-guide.png" width="100%" alt="The guide page"></a>
-  <a href="screenshots/editor-guide-progress.png"><img src="screenshots/editor-guide-progress.png" width="49%" alt="Guide download progress"></a>
-  <a href="screenshots/editor-smart-match.png"><img src="screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
+  <a href="https://tivibro.app/view/#editor-guide"><img src="screenshots/editor-guide.png" width="100%" alt="The guide page"></a>
+  <a href="https://tivibro.app/view/#editor-guide-progress"><img src="screenshots/editor-guide-progress.png" width="49%" alt="Guide download progress"></a>
+  <a href="https://tivibro.app/view/#editor-smart-match"><img src="screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
 </p>
 
 ### Playlists
@@ -917,7 +927,7 @@ M3U playlists can use the guide address inside the playlist.
 Add Xtream Codes or M3U playlists, switch which one the TV uses, set reload schedules and the User-Agent, or change a login.  The TV tests every new login before saving.  **Logins never reach the editor**: it only ever sees server names.  Each playlist keeps its own groups, names and guide setup.
 
 <p align="center">
-  <a href="screenshots/editor-playlists.png"><img src="screenshots/editor-playlists.png" width="100%" alt="Playlists in the editor"></a>
+  <a href="https://tivibro.app/view/#editor-playlists"><img src="screenshots/editor-playlists.png" width="100%" alt="Playlists in the editor"></a>
 </p>
 
 ### Backup and restore
@@ -933,9 +943,9 @@ A backup is one file with everything: settings, every playlist **with its login*
 3. **Restore a backup**, drop the file, type the passphrase and press **Unlock**.  The editor lists the playlists inside so you know it's the right file.
 4. **Restore to the TV.**  TiviBro restarts with everything back, and the editor reconnects by itself.
 
-<p align="center"><a href="screenshots/tv-restored.png"><img src="screenshots/tv-restored.png" width="60%" alt="The TV right after a restore"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#tv-restored"><img src="screenshots/tv-restored.png" width="60%" alt="The TV right after a restore"></a></p>
 
-<p align="center"><a href="screenshots/editor-backup.png"><img src="screenshots/editor-backup.png" width="100%" alt="Backup and restore"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#editor-backup"><img src="screenshots/editor-backup.png" width="100%" alt="Backup and restore"></a></p>
 
 ---
 
@@ -944,7 +954,7 @@ A backup is one file with everything: settings, every playlist **with its login*
 **Settings > Diagnostics > Run connection test** is the best first step when something doesn't work: it checks each part in turn and says what failed.
 
 <p align="center">
-  <a href="screenshots/tv-set-diag-test.png"><img src="screenshots/tv-set-diag-test.png" width="60%" alt="Connection test"></a>
+  <a href="https://tivibro.app/view/#tv-set-diag-test"><img src="screenshots/tv-set-diag-test.png" width="60%" alt="Connection test"></a>
 </p>
 
 <a name="what-is-the-network-helper"></a>**What is the network helper?**  The **network helper** is a part of TiviBro that runs in the background on the TV.  It talks to your provider for the app: it fetches the channel list, the guide and the streams, sends the User-Agent your provider wants, unzips guides, and copes with servers that don't follow the rules.  webOS won't let an app talk to most IPTV servers directly, so TiviBro needs it.  It starts with TiviBro, runs only on the TV, and only ever contacts your own provider (and, if you turn them on, the logo projects).

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TiviBro screenshots</title>
+<meta name="description" content="TiviBro screenshots, full size.">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#07091a">
+<link rel="icon" type="image/png" sizes="32x32" href="../img/icon-32.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #07091a; --panel: #11162b; --line: #222a47; --line2: #2d3760; --text: #e8ecf8; --mute: #9aa4c4; --dim: #6c7699; --acc: #5b8cff; --ease: cubic-bezier(.2, .8, .2, 1); }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: radial-gradient(1200px 700px at 50% 40%, #121a3a 0%, var(--bg) 60%) fixed, var(--bg); color: var(--text); font: 15px/1.5 Inter, system-ui, sans-serif; overflow: hidden; }
+  a { color: inherit; }
+  .bar { position: fixed; inset: 0 0 auto 0; z-index: 3; display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: linear-gradient(rgba(7, 9, 26, .85), rgba(7, 9, 26, 0)); }
+  .bar img { height: 28px; width: auto; display: block; }
+  .bar .sp { flex: 1; }
+  .pill { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid rgba(255, 255, 255, .14); background: rgba(16, 20, 42, .7); color: var(--text); text-decoration: none; font-weight: 600; font-size: 14px; cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: background .2s, border-color .2s; }
+  .pill:hover, .pill:focus-visible { background: var(--acc); border-color: transparent; outline: none; }
+  .pill svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .stage { position: fixed; inset: 72px 84px 86px; display: grid; place-items: center; }
+  .stage img { max-width: 100%; max-height: 100%; border-radius: 14px; box-shadow: 0 40px 120px rgba(0, 0, 0, .7), 0 0 0 1px rgba(255, 255, 255, .08); transition: opacity .2s, transform .35s var(--ease); cursor: zoom-in; user-select: none; -webkit-user-drag: none; }
+  .stage img.swap { opacity: 0; transform: scale(.985); }
+  .stage img.full { cursor: zoom-out; }
+  .stage.zoomed { inset: 0; overflow: auto; display: block; padding: 72px 20px 90px; z-index: 2; }
+  .stage.zoomed img { max-width: none; max-height: none; margin: 0 auto; display: block; }
+  .nav { position: fixed; top: 50%; z-index: 3; width: 54px; height: 54px; margin-top: -27px; border-radius: 50%; border: 1px solid rgba(255, 255, 255, .14); background: rgba(16, 20, 42, .75); color: #fff; display: grid; place-items: center; cursor: pointer; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); transition: background .2s, transform .2s; }
+  .nav:hover, .nav:focus-visible { background: var(--acc); transform: scale(1.06); outline: none; }
+  .nav svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .prev { left: 18px; } .next { right: 18px; }
+  .cap { position: fixed; left: 0; right: 0; bottom: 0; z-index: 3; display: flex; align-items: center; justify-content: center; gap: 14px; padding: 18px 20px 24px; color: var(--mute); background: linear-gradient(rgba(7, 9, 26, 0), rgba(7, 9, 26, .85)); text-align: center; }
+  .count { font: 600 12px Inter, system-ui, sans-serif; letter-spacing: .08em; color: var(--dim); padding: 4px 9px; border: 1px solid var(--line2); border-radius: 999px; white-space: nowrap; }
+  .msg { color: var(--mute); }
+  .hide { display: none !important; }
+  @media (max-width: 700px) {
+    .stage { inset: 64px 10px 96px; }
+    .nav { top: auto; bottom: 18px; margin: 0; width: 46px; height: 46px; }
+    .cap { padding: 14px 70px 26px; font-size: 14px; }
+    .pill .lbl { display: none; }
+    .pill { padding: 0 11px; }
+  }
+  @media (prefers-reduced-motion: reduce) { .stage img { transition: none; } }
+</style>
+</head>
+<body>
+<div class="bar">
+  <a href="https://tivibro.app/" aria-label="tivibro.app"><img src="../img/wordmark.webp" alt="tiviBro" width="140" height="36"></a>
+  <span class="sp"></span>
+  <a class="pill" id="raw" href="#" target="_blank" rel="noopener" title="The original file"><svg viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></svg><span class="lbl">Original</span></a>
+  <a class="pill" id="back" href="https://github.com/ohmybahgosh/TiviBro"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg><span class="lbl">Back</span></a>
+</div>
+<div class="stage" id="stage"><img id="pic" alt=""><p class="msg hide" id="msg">That picture isn't here any more.</p></div>
+<button class="nav prev" id="prev" aria-label="Previous picture"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+<button class="nav next" id="next" aria-label="Next picture"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+<div class="cap"><span id="caption"></span><span class="count" id="count"></span></div>
+<script>
+/* Screenshots from the README and the user guide, large.  #name picks one; ← → (or swipe) move
+   through the rest in page order; click zooms to 100%; Back returns to GitHub.  The list comes
+   from shots.json (scripts/gen-viewer.js, built with the site); the files load from the repo. */
+(function () {
+  'use strict';
+  var RAW = 'https://raw.githubusercontent.com/ohmybahgosh/TiviBro/main/docs/screenshots/';
+  var $ = function (id) { return document.getElementById(id); };
+  var pic = $('pic'), stage = $('stage'), list = [], at = -1, reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Back: to the page that sent you here (GitHub, the wiki), or the repository.
+  var ref = document.referrer || '';
+  $('back').addEventListener('click', function (e) {
+    if (ref && history.length > 1) { e.preventDefault(); history.back(); }
+  });
+  if (/github\.com\/[^/]+\/TiviBro\/wiki/i.test(ref)) $('back').href = ref;
+
+  function name() { return decodeURIComponent(location.hash.replace(/^#/, '')).replace(/[^\w.-]/g, ''); }
+  function show(n, push) {
+    var i = list.findIndex(function (s) { return s.n === n; });
+    if (i < 0 && n) { list.unshift({ n: n, alt: n.replace(/[-_]/g, ' ') }); i = 0; }   // not in the list yet (new picture): show it anyway
+    if (i < 0) { i = 0; }
+    if (!list.length) { pic.classList.add('hide'); $('msg').classList.remove('hide'); return; }
+    at = i;
+    var s = list[at];
+    pic.classList.add('swap');
+    setTimeout(function () {
+      unzoom();
+      pic.onload = function () { pic.classList.remove('swap'); };
+      pic.onerror = function () { pic.classList.add('hide'); $('msg').classList.remove('hide'); };
+      pic.classList.remove('hide'); $('msg').classList.add('hide');
+      pic.src = RAW + s.n + '.png'; pic.alt = s.alt;
+      $('caption').textContent = s.alt;
+      $('count').textContent = (at + 1) + ' / ' + list.length;
+      $('raw').href = RAW + s.n + '.png';
+      document.title = s.alt + ' | TiviBro';
+      [at - 1, at + 1].forEach(function (j) { var t = list[(j + list.length) % list.length]; if (t) { var im = new Image(); im.src = RAW + t.n + '.png'; } });
+    }, reduce || !pic.src ? 0 : 140);
+    // Moving through pictures replaces the address, so one Back returns to GitHub.
+    if (push !== false) history.replaceState(null, '', '#' + s.n);
+    var many = list.length > 1;
+    $('prev').classList.toggle('hide', !many); $('next').classList.toggle('hide', !many); $('count').classList.toggle('hide', !many);
+  }
+  function go(d) { if (list.length > 1) show(list[(at + d + list.length) % list.length].n); }
+  function unzoom() { stage.classList.remove('zoomed'); pic.classList.remove('full'); }
+  pic.addEventListener('click', function () {
+    if (stage.classList.contains('zoomed')) return unzoom();
+    if (pic.naturalWidth > pic.clientWidth + 40) { stage.classList.add('zoomed'); pic.classList.add('full'); }
+  });
+  $('prev').addEventListener('click', function () { go(-1); });
+  $('next').addEventListener('click', function () { go(1); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight') go(1);
+    else if (e.key === 'ArrowLeft') go(-1);
+    else if (e.key === 'Escape') { if (stage.classList.contains('zoomed')) unzoom(); else $('back').click(); }
+  });
+  var sx = 0, sy = 0;
+  stage.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+  stage.addEventListener('touchend', function (e) {
+    if (stage.classList.contains('zoomed')) return;
+    var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) go(dx < 0 ? 1 : -1);
+  });
+  window.addEventListener('hashchange', function () { show(name(), false); });
+
+  fetch('shots.json', { cache: 'no-cache' }).then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; })
+    .then(function (l) { list = Array.isArray(l) ? l : []; show(name()); });
+})();
+</script>
+</body>
+</html>

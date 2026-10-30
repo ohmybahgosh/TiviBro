@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Hidden, not gone: said where it matters.**  The set-up tour, Smart clean-up, the user guide, the README and tivibro.app now say plainly that the extra copies you hide are still backups (when the copy you keep stops working, TiviBro switches to one by itself), that the other East or West feed is not a backup, that hiding the network groups keeps your stations in Local channels, and that hidden groups leave the guide, All channels and Search but are never deleted.  The tour shows these as short notes under the choice they explain, and its summary says "Full HD shown, the rest kept as backups".
+- **Screenshots open large from GitHub.**  Pictures in the README and the user guide open in a viewer on tivibro.app (tivibro.app/view): full size, ← → or swipe through the rest, click to zoom to 100%, and Back returns to GitHub.
+- The website's FAQ answers "If I hide the other qualities of a channel, can TiviBro still switch to them?".
+
 ## 0.6.0 (alpha 19, 2026-10-30)
 
 Pre-release: expect rough edges, and keep a backup before installing.

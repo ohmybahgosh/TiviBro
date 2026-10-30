@@ -5,7 +5,7 @@ name: Website
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'docs/media/guide.mp4', 'docs/media/live-edit.mp4', '.github/workflows/pages.yml', 'scripts/logos/**', 'scripts/tv/install.sh', 'app/js/tidy.js', 'app/js/names.js']
+    paths: ['site/**', 'README.md', 'docs/USER-GUIDE.md', 'scripts/gen-viewer.js', 'docs/media/guide.mp4', 'docs/media/live-edit.mp4', '.github/workflows/pages.yml', 'scripts/logos/**', 'scripts/tv/install.sh', 'app/js/tidy.js', 'app/js/names.js']
   workflow_run:                 # after a release, so tivibro.app/repo has the new version
     workflows: [Release]
     types: [completed]
@@ -43,6 +43,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Screenshot viewer list (tivibro.app/view)
+        run: node scripts/gen-viewer.js _site/view/shots.json
       - name: Build the channel logo index
         continue-on-error: true       # the site still goes out if a logo project is down; TVs keep last week's copy
         env:

@@ -124,7 +124,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('summary: tips', /Hold OK on a channel/.test(await text()) && /Multiview/.test(await text()));
   await shot('tv-tour-done');
   const t = await text();
-  ok('summary: your choices, one per step', /Your choices/.test(t) && /Detroit in Local channels, network groups hidden/.test(t) && /Keep East/.test(t) && /extra copies \(Full HD kept\)/.test(t), t.replace(/\s+/g, ' ').slice(0, 400));
+  ok('summary: your choices, one per step', /Your choices/.test(t) && /Detroit in Local channels, network groups hidden/.test(t) && /Keep East/.test(t) && /extra copies \(Full HD shown, the rest kept as backups\)/.test(t), t.replace(/\s+/g, ' ').slice(0, 400));
   ok('summary: Apply is focused first', await focused() === 'Apply and start watching', await focused());
   for (let n = 0; n < 20 && !/^Local channels$/.test(await focused()); n++) await key('ArrowUp', 120);
   ok('summary: OK on a choice opens its step', /^Local channels$/.test(await focused()) && (await key('Enter', 600), await step()) === 'locals', await step());

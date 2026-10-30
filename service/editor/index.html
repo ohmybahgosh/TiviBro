@@ -2236,10 +2236,10 @@ var HELP = [
     '<h3>By hand</h3><p><b>Find guide…</b> opens suggestions for that one channel plus a search box.  <b>Clear</b> returns a channel to its automatic match.</p>'],
   ['names', 'Channel names', '<p>Rules remove clutter from every name at once: country prefixes, quality tags, brackets and so on.  Add your own prefixes and suffixes too.  The preview shows each name before and after.  Rules only change how names look; the provider\'s names are untouched, so turning a rule off brings the old name back.  Channels you renamed by hand keep your names.</p>'],
   ['tools', 'Smart clean-up', '<ul><li><b>Keep only your countries</b> works out the country of each group from its name (a code like US or UK, or a word like Canada or France), from the code most of its channels start with, or from the divider group it sits under, and shows only the ones you tick.</li>' +
-    '<li><b>Same channel, more than once</b> finds the same channel in several qualities and keeps one.  Pick which quality to prefer; Full HD first is a good balance.  You can override the pick in any set.</li>' +
+    '<li><b>Same channel, more than once</b> finds the same channel in several qualities and keeps one.  Pick which quality to prefer; Full HD first is a good balance.  You can override the pick in any set.  The copies it hides still stand in by themselves when the one you keep stops working.</li>' +
     '<li><b>Hide by keyword</b> hides groups or channels whose names contain words like PPV or 24/7, with a preview first.</li>' +
     '<li><b>Empty groups</b> hides groups with nothing left to watch.</li>' +
-    '<li><b>East and West feeds</b> finds channels that come in both time zones (HBO East and HBO West, A&amp;E and A&amp;E West) and hides the feed you don\'t watch, plus groups named for it if you like.</li>' +
+    '<li><b>East and West feeds</b> finds channels that come in both time zones (HBO East and HBO West, A&amp;E and A&amp;E West) and hides the feed you don\'t watch, plus groups named for it if you like.  The hidden feed is never a backup for the one you keep, since it runs hours apart.</li>' +
     '<li><b>Local channels: pick your city</b> reads the city out of every station in your local groups (ABC, CBS, NBC, FOX, CW, PBS, Telemundo, Univision, CBC, CTV and more).  Tick your city, or a few nearby, and every other city\'s stations are hidden in one step.</li>' +
     '<li><b>Divider groups</b> hides groups like "⫘⫘⫘ UK ⫘⫘⫘" that only split the list into sections.</li>' +
     '<li><b>Channels with nothing on</b> keeps event channels named "Off Air", "Offline" or "No Event Scheduled" out of the lists while they say so; they come back by themselves when an event is named.</li></ul><p>Everything here only hides, never deletes, and every action is one undo step.</p>'],
@@ -2382,7 +2382,7 @@ function renderTools() {
   /* duplicates */
   var sets = dupeSets(), extra = sets.reduce(function (n, s) { return n + s.items.length - 1; }, 0), look = sets.filter(dupeUnsure).length;
   if (!look && dupeOpts.show === 'look') dupeOpts.show = 'all';
-  $('tDupes').innerHTML = '<h3>Same channel, more than once</h3><p>The same channel in several qualities (4K, FHD, HD, SD) or copies.  TiviBro already picked one in each set by the quality you prefer; you only need to look at the sets it could not tell apart.  Click a copy to keep that one instead.</p>' +
+  $('tDupes').innerHTML = '<h3>Same channel, more than once</h3><p>The same channel in several qualities (4K, FHD, HD, SD) or copies.  TiviBro already picked one in each set by the quality you prefer; you only need to look at the sets it could not tell apart.  Click a copy to keep that one instead.</p><p class="muted small">The copies you hide are still backups: if the one you keep stops working, the TV switches to another copy by itself, and hold OK &gt; Other versions on the TV lists them all.</p>' +
     (sets.length ? '<div class="dsum"><b>' + plural(sets.length, 'channel') + '</b> come more than once: <b>' + plural(extra, 'extra copy', 'extra copies') + '</b>.' + (look ? '  <span class="chip warn">' + look + ' to check</span>' : '  <span class="chip ok">All picked</span>') + '</div>' : '') +
     '<div class="row" style="margin-bottom:10px;flex-wrap:wrap;gap:10px"><div class="dd" id="dPrefer" style="width:250px"></div><label class="muted small"><input type="checkbox" id="dSame"' + (dupeOpts.same ? ' checked' : '') + '> Only within the same group</label></div>' +
     (sets.length ? '<div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:6px"><input id="dQ" type="text" class="grow" placeholder="Find a channel: ESPN, CNN…" value="' + esc(dupeOpts.q) + '" style="min-width:200px">' +
@@ -2419,7 +2419,7 @@ function renderFeeds() {
   var shown = function (l) { return l.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g]; }); };
   var drop = fo.keep === 'east' ? 'west' : 'east', hideList = shown(fp[drop]), gs = fo.groups ? feedGroups(drop).filter(function (g) { return !E.hiddenGroups[g.id]; }) : [];
   var ex = fp.west.slice(0, 4).map(function (c) { return esc(c.n); }).join(', ');
-  $('tFeeds').innerHTML = '<h3>East and West feeds</h3><p>Many US channels come twice, on East and West (or Pacific) time.  Keep the feed you watch and hide the other copy.  Channels that only come in one feed are left alone.</p>' +
+  $('tFeeds').innerHTML = '<h3>East and West feeds</h3><p>Many US channels come twice, on East and West (or Pacific) time.  Keep the feed you watch and hide the other copy.  Channels that only come in one feed are left alone.  The hidden feed is not used as a backup: it runs hours apart, so the TV never switches to it by itself.</p>' +
     (fp.pairs ? '<div class="small" style="margin-bottom:12px">' + plural(fp.pairs, 'channel') + ' come in both feeds, like ' + ex + '.</div>' +
       '<div class="row" style="gap:16px;flex-wrap:wrap"><div class="seg" id="feedKeep"><button data-k="east"' + (fo.keep === 'east' ? ' class="on"' : '') + '>Keep East</button><button data-k="west"' + (fo.keep === 'west' ? ' class="on"' : '') + '>Keep West</button></div>' +
       '<label class="muted small"><input type="checkbox" id="feedGroups"' + (fo.groups ? ' checked' : '') + '> Also hide groups named ' + (drop === 'west' ? 'West' : 'East') + (feedGroups(drop).length ? ' (' + feedGroups(drop).slice(0, 4).map(function (g) { return esc(g.raw); }).join(', ') + ')' : '') + '</label>' +
@@ -2435,7 +2435,7 @@ function renderLocal() {
     '<label class="muted small"><input type="checkbox" id="lcNone"' + (lo.none ? ' checked' : '') + '> Keep stations with no city (national feeds)</label></div>' +
     '<div id="lcList" class="lclist"></div>' +
     '<div class="lcopts"><label class="small"><input type="checkbox" id="lcCopy"' + (lo.copy ? ' checked' : '') + '> Also put them together in one group called</label><input id="lcName" type="text" value="' + esc(lo.name) + '"' + (lo.copy ? '' : ' disabled') + '>' +
-    '<label class="small lcsub"><input type="checkbox" id="lcHideNets"' + (lo.hideNets ? ' checked' : '') + (lo.copy ? '' : ' disabled') + '> Then hide the ' + plural(li.groups.length, 'network group') + ' (' + li.groups.slice(0, 4).map(function (g) { return esc(g.name); }).join(', ') + (li.groups.length > 4 ? '…' : '') + '), so your stations show up once</label></div>' +
+    '<label class="small lcsub"><input type="checkbox" id="lcHideNets"' + (lo.hideNets ? ' checked' : '') + (lo.copy ? '' : ' disabled') + '> Then hide the ' + plural(li.groups.length, 'network group') + ' (' + li.groups.slice(0, 4).map(function (g) { return esc(g.name); }).join(', ') + (li.groups.length > 4 ? '…' : '') + '), so your stations show up once.  Your stations stay in Local channels.</label></div>' +
     '<div class="row" style="margin-top:12px"><span class="muted small grow" id="lcInfo"></span><button class="primary" id="lcGo" disabled>Keep only these cities</button></div>';
   drawLocalList();
 }

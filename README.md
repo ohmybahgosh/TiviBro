@@ -43,9 +43,9 @@ TiviBro plays your own IPTV subscription (Xtream Codes or M3U with XMLTV) on LG 
 No typing logins with a remote.  The first screen shows a QR code: scan it with your phone's camera and TiviBro's editor opens there, already signed in.  Paste your login (or restore a backup), and the TV loads your channels on its own and walks you through tidying them up.  Afterwards the same editor, on your phone or computer, renames, hides, sorts and cleans up thousands of channels.
 
 <p align="center">
-  <a href="docs/screenshots/tv-first-run.png"><img src="docs/screenshots/tv-first-run.png" width="58%" alt="The first screen with its QR code"></a>
-  <a href="docs/screenshots/editor-phone-welcome.png"><img src="docs/screenshots/editor-phone-welcome.png" width="19%" alt="The editor on a phone, right after scanning"></a>
-  <a href="docs/screenshots/editor-phone-add.png"><img src="docs/screenshots/editor-phone-add.png" width="19%" alt="Typing the login on the phone"></a>
+  <a href="https://tivibro.app/view/#tv-first-run"><img src="docs/screenshots/tv-first-run.png" width="58%" alt="The first screen with its QR code"></a>
+  <a href="https://tivibro.app/view/#editor-phone-welcome"><img src="docs/screenshots/editor-phone-welcome.png" width="19%" alt="The editor on a phone, right after scanning"></a>
+  <a href="https://tivibro.app/view/#editor-phone-add"><img src="docs/screenshots/editor-phone-add.png" width="19%" alt="Typing the login on the phone"></a>
 </p>
 
 > **TiviBro does not provide any channels, streams or playlists.**  You bring your own legal subscription.
@@ -65,7 +65,7 @@ No typing logins with a remote.  The first screen shows a QR code: scan it with 
 | 🖼️ **Logos for every channel** | Missing logos filled in from two open logo projects, matched by guide id, name, country and call sign.  Or one matching style for the whole list. |
 | 🖥️ **A real editor** | Hide, sort, rename, copy and match guides for hundreds of channels from any browser.  Drafts, undo and restore points. |
 | 🔒 **Locked backups** | Everything in one AES-256-GCM file.  Restore onto a brand-new TV straight from the first screen. |
-| 🔁 **Backup versions** | Playlists often carry a channel in FHD, HD and SD.  TiviBro tags each copy, lets you switch between them, and if one dies it moves to the next by itself and tells you. |
+| 🔁 **Backup versions** | Playlists often carry a channel in FHD, HD and SD.  TiviBro tags each copy, lets you switch between them, and if one dies it moves to the next by itself and tells you, even to copies you hid to tidy your lists. |
 | 🏟️ **Event channels** | Pay-per-view and sports passes that cram the whole listing into the channel name ("NCAAB 001 \| NORTH FLORIDA @ CHARLESTON SOUTHERN (M) \| 12.18 11:00 AM") show as **NCAAB 001**, with the game in the guide at its real time, in your time zone.  **Events by time** lists what's on next across all of them. |
 | 🧹 **Clean names, tidy lists** | Strips "USA \|", "FHD", "⚽", "ᴴᴰ" and hundreds of other tags.  Hides divider groups and keeps channels that say "Off Air" or "No Event Scheduled" out of the way until something is on. |
 | ⏰ **Reminders, a watchlist and parental controls** | A reminder on any future programme, a watchlist that finds your teams and shows in the guide and reminds you, and a PIN for channels, groups or Settings. |
@@ -216,7 +216,7 @@ Plus remote remapping, parental controls, reminders, buffering profiles and on-T
 
 ### Never stuck on a dead channel
 
-Same channel in FHD, HD and SD?  **Other versions** switches between them, and when one stops working TiviBro moves to the next version by itself and tells you.
+Same channel in FHD, HD and SD?  **Other versions** switches between them, and when one stops working TiviBro moves to the next version by itself and tells you.  Hiding the extra copies to tidy your lists (the set-up tour does it for you) keeps them as backups: hidden isn't gone.
 
 </td>
 <td width="58%"><a href="docs/media/versions.mp4"><img src="docs/media/versions.gif" width="100%" alt="Other versions of a channel"></a><br><sub><a href="docs/media/versions.mp4">▶ MP4</a></sub></td>
@@ -251,7 +251,7 @@ The **watchlist** does it for you: add "Yankees" or "Bluey" once, and TiviBro se
 
 <table>
 <tr>
-<td width="58%"><a href="docs/screenshots/tv-events-guide.png"><img src="docs/screenshots/tv-events-guide.png" width="100%" alt="Event channels in the guide"></a></td>
+<td width="58%"><a href="https://tivibro.app/view/#tv-events-guide"><img src="docs/screenshots/tv-events-guide.png" width="100%" alt="Event channels in the guide"></a></td>
 <td width="42%" valign="top">
 
 ### Pay-per-view and sports passes, readable
@@ -264,7 +264,7 @@ Providers often write the whole event into the channel name and leave the guide 
 
 <table>
 <tr>
-<td width="58%"><a href="docs/screenshots/tv-tour-welcome.png"><img src="docs/screenshots/tv-tour-welcome.png" width="100%" alt="The set-up tour"></a></td>
+<td width="58%"><a href="https://tivibro.app/view/#tv-tour-welcome"><img src="docs/screenshots/tv-tour-welcome.png" width="100%" alt="The set-up tour"></a></td>
 <td width="42%" valign="top">
 
 ### A set-up tour from your own playlist
@@ -277,7 +277,7 @@ Connect, and TiviBro shows what your list holds, then walks you through it: the 
 
 <table>
 <tr>
-<td width="58%"><a href="docs/screenshots/tv-tour-logos.png"><img src="docs/screenshots/tv-tour-logos.png" width="100%" alt="Channel logos from the logo library"></a></td>
+<td width="58%"><a href="https://tivibro.app/view/#tv-tour-logos"><img src="docs/screenshots/tv-tour-logos.png" width="100%" alt="Channel logos from the logo library"></a></td>
 <td width="42%" valign="top">
 
 ### Logos for channels that have none
@@ -307,10 +307,10 @@ Open **Edit on phone** in the TV's side menu (or hold OK on any group).  It turn
 - **Logins never leave the TV.**  The editor only ever sees server names.
 
 <p align="center">
-  <a href="docs/screenshots/editor-overview.png"><img src="docs/screenshots/editor-overview.png" width="49%" alt="Editor overview"></a>
-  <a href="docs/screenshots/editor-copy-move.png"><img src="docs/screenshots/editor-copy-move.png" width="49%" alt="Copy or move channels"></a>
-  <a href="docs/screenshots/editor-smart-match.png"><img src="docs/screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
-  <a href="docs/screenshots/editor-smart-cleanup.png"><img src="docs/screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
+  <a href="https://tivibro.app/view/#editor-overview"><img src="docs/screenshots/editor-overview.png" width="49%" alt="Editor overview"></a>
+  <a href="https://tivibro.app/view/#editor-copy-move"><img src="docs/screenshots/editor-copy-move.png" width="49%" alt="Copy or move channels"></a>
+  <a href="https://tivibro.app/view/#editor-smart-match"><img src="docs/screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
+  <a href="https://tivibro.app/view/#editor-smart-cleanup"><img src="docs/screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
 </p>
 
 ### New TV?  Restore everything in a minute
@@ -327,111 +327,111 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
 <details open>
 <summary><b>The set-up tour</b></summary>
 <p align="center">
-  <a href="docs/screenshots/tv-tour-welcome.png"><img src="docs/screenshots/tv-tour-welcome.png" width="32%" alt="What your playlist has"></a>
-  <a href="docs/screenshots/tv-tour-countries.png"><img src="docs/screenshots/tv-tour-countries.png" width="32%" alt="Countries"></a>
-  <a href="docs/screenshots/tv-tour-names.png"><img src="docs/screenshots/tv-tour-names.png" width="32%" alt="Channel names"></a>
-  <a href="docs/screenshots/tv-tour-feeds.png"><img src="docs/screenshots/tv-tour-feeds.png" width="32%" alt="East or West"></a>
-  <a href="docs/screenshots/tv-tour-locals.png"><img src="docs/screenshots/tv-tour-locals.png" width="32%" alt="Your local channels"></a>
-  <a href="docs/screenshots/tv-tour-events.png"><img src="docs/screenshots/tv-tour-events.png" width="32%" alt="Sports and pay-per-view"></a>
-  <a href="docs/screenshots/tv-tour-clutter.png"><img src="docs/screenshots/tv-tour-clutter.png" width="32%" alt="Clear the clutter"></a>
-  <a href="docs/screenshots/tv-tour-logos.png"><img src="docs/screenshots/tv-tour-logos.png" width="32%" alt="Channel logos"></a>
-  <a href="docs/screenshots/tv-tour-look.png"><img src="docs/screenshots/tv-tour-look.png" width="32%" alt="Make it yours"></a>
-  <a href="docs/screenshots/tv-tour-done.png"><img src="docs/screenshots/tv-tour-done.png" width="32%" alt="All set"></a>
-  <a href="docs/screenshots/tv-tour-phone.png"><img src="docs/screenshots/tv-tour-phone.png" width="32%" alt="Scan to set up on your phone"></a>
+  <a href="https://tivibro.app/view/#tv-tour-welcome"><img src="docs/screenshots/tv-tour-welcome.png" width="32%" alt="What your playlist has"></a>
+  <a href="https://tivibro.app/view/#tv-tour-countries"><img src="docs/screenshots/tv-tour-countries.png" width="32%" alt="Countries"></a>
+  <a href="https://tivibro.app/view/#tv-tour-names"><img src="docs/screenshots/tv-tour-names.png" width="32%" alt="Channel names"></a>
+  <a href="https://tivibro.app/view/#tv-tour-feeds"><img src="docs/screenshots/tv-tour-feeds.png" width="32%" alt="East or West"></a>
+  <a href="https://tivibro.app/view/#tv-tour-locals"><img src="docs/screenshots/tv-tour-locals.png" width="32%" alt="Your local channels"></a>
+  <a href="https://tivibro.app/view/#tv-tour-events"><img src="docs/screenshots/tv-tour-events.png" width="32%" alt="Sports and pay-per-view"></a>
+  <a href="https://tivibro.app/view/#tv-tour-clutter"><img src="docs/screenshots/tv-tour-clutter.png" width="32%" alt="Clear the clutter"></a>
+  <a href="https://tivibro.app/view/#tv-tour-logos"><img src="docs/screenshots/tv-tour-logos.png" width="32%" alt="Channel logos"></a>
+  <a href="https://tivibro.app/view/#tv-tour-look"><img src="docs/screenshots/tv-tour-look.png" width="32%" alt="Make it yours"></a>
+  <a href="https://tivibro.app/view/#tv-tour-done"><img src="docs/screenshots/tv-tour-done.png" width="32%" alt="All set"></a>
+  <a href="https://tivibro.app/view/#tv-tour-phone"><img src="docs/screenshots/tv-tour-phone.png" width="32%" alt="Scan to set up on your phone"></a>
 </p>
 </details>
 
 <details>
 <summary><b>Guide and live TV</b></summary>
 <p align="center">
-  <a href="docs/screenshots/tv-guide.png"><img src="docs/screenshots/tv-guide.png" width="32%" alt="Guide"></a>
-  <a href="docs/screenshots/tv-guide-preview.png"><img src="docs/screenshots/tv-guide-preview.png" width="32%" alt="Preview in the window"></a>
-  <a href="docs/screenshots/tv-groups.png"><img src="docs/screenshots/tv-groups.png" width="32%" alt="Groups beside the guide"></a>
-  <a href="docs/screenshots/tv-fullscreen.png"><img src="docs/screenshots/tv-fullscreen.png" width="32%" alt="Fullscreen with the info bar"></a>
-  <a href="docs/screenshots/tv-quick-menu.png"><img src="docs/screenshots/tv-quick-menu.png" width="32%" alt="Quick menu"></a>
-  <a href="docs/screenshots/tv-mini-guide.png"><img src="docs/screenshots/tv-mini-guide.png" width="32%" alt="Guide over the video"></a>
-  <a href="docs/screenshots/tv-channels.png"><img src="docs/screenshots/tv-channels.png" width="32%" alt="The Channels screen"></a>
-  <a href="docs/screenshots/tv-channel-options.png"><img src="docs/screenshots/tv-channel-options.png" width="32%" alt="Channel options"></a>
-  <a href="docs/screenshots/tv-info.png"><img src="docs/screenshots/tv-info.png" width="32%" alt="Programme info"></a>
-  <a href="docs/screenshots/tv-options.png"><img src="docs/screenshots/tv-options.png" width="32%" alt="Options"></a>
-  <a href="docs/screenshots/tv-stream-info.png"><img src="docs/screenshots/tv-stream-info.png" width="32%" alt="Stream info"></a>
-  <a href="docs/screenshots/tv-sleep.png"><img src="docs/screenshots/tv-sleep.png" width="32%" alt="Sleep timer"></a>
+  <a href="https://tivibro.app/view/#tv-guide"><img src="docs/screenshots/tv-guide.png" width="32%" alt="Guide"></a>
+  <a href="https://tivibro.app/view/#tv-guide-preview"><img src="docs/screenshots/tv-guide-preview.png" width="32%" alt="Preview in the window"></a>
+  <a href="https://tivibro.app/view/#tv-groups"><img src="docs/screenshots/tv-groups.png" width="32%" alt="Groups beside the guide"></a>
+  <a href="https://tivibro.app/view/#tv-fullscreen"><img src="docs/screenshots/tv-fullscreen.png" width="32%" alt="Fullscreen with the info bar"></a>
+  <a href="https://tivibro.app/view/#tv-quick-menu"><img src="docs/screenshots/tv-quick-menu.png" width="32%" alt="Quick menu"></a>
+  <a href="https://tivibro.app/view/#tv-mini-guide"><img src="docs/screenshots/tv-mini-guide.png" width="32%" alt="Guide over the video"></a>
+  <a href="https://tivibro.app/view/#tv-channels"><img src="docs/screenshots/tv-channels.png" width="32%" alt="The Channels screen"></a>
+  <a href="https://tivibro.app/view/#tv-channel-options"><img src="docs/screenshots/tv-channel-options.png" width="32%" alt="Channel options"></a>
+  <a href="https://tivibro.app/view/#tv-info"><img src="docs/screenshots/tv-info.png" width="32%" alt="Programme info"></a>
+  <a href="https://tivibro.app/view/#tv-options"><img src="docs/screenshots/tv-options.png" width="32%" alt="Options"></a>
+  <a href="https://tivibro.app/view/#tv-stream-info"><img src="docs/screenshots/tv-stream-info.png" width="32%" alt="Stream info"></a>
+  <a href="https://tivibro.app/view/#tv-sleep"><img src="docs/screenshots/tv-sleep.png" width="32%" alt="Sleep timer"></a>
 </p>
 </details>
 
 <details>
 <summary><b>Event channels, other versions, reminders and parental controls</b></summary>
 <p align="center">
-  <a href="docs/screenshots/tv-events-guide.png"><img src="docs/screenshots/tv-events-guide.png" width="32%" alt="Event channels in the guide"></a>
-  <a href="docs/screenshots/tv-events-list.png"><img src="docs/screenshots/tv-events-list.png" width="32%" alt="Events by time"></a>
-  <a href="docs/screenshots/tv-set-events.png"><img src="docs/screenshots/tv-set-events.png" width="32%" alt="Event channels settings"></a>
-  <a href="docs/screenshots/tv-versions.png"><img src="docs/screenshots/tv-versions.png" width="32%" alt="Other versions of a channel"></a>
-  <a href="docs/screenshots/tv-quick-versions.png"><img src="docs/screenshots/tv-quick-versions.png" width="32%" alt="Other versions in the quick menu"></a>
-  <a href="docs/screenshots/tv-failover.png"><img src="docs/screenshots/tv-failover.png" width="32%" alt="Switched to another version by itself"></a>
-  <a href="docs/screenshots/tv-reminder-set.png"><img src="docs/screenshots/tv-reminder-set.png" width="32%" alt="A reminder set"></a>
-  <a href="docs/screenshots/tv-reminder.png"><img src="docs/screenshots/tv-reminder.png" width="32%" alt="The reminder when it starts"></a>
-  <a href="docs/screenshots/tv-pin.png"><img src="docs/screenshots/tv-pin.png" width="32%" alt="A blocked channel asks for the PIN"></a>
+  <a href="https://tivibro.app/view/#tv-events-guide"><img src="docs/screenshots/tv-events-guide.png" width="32%" alt="Event channels in the guide"></a>
+  <a href="https://tivibro.app/view/#tv-events-list"><img src="docs/screenshots/tv-events-list.png" width="32%" alt="Events by time"></a>
+  <a href="https://tivibro.app/view/#tv-set-events"><img src="docs/screenshots/tv-set-events.png" width="32%" alt="Event channels settings"></a>
+  <a href="https://tivibro.app/view/#tv-versions"><img src="docs/screenshots/tv-versions.png" width="32%" alt="Other versions of a channel"></a>
+  <a href="https://tivibro.app/view/#tv-quick-versions"><img src="docs/screenshots/tv-quick-versions.png" width="32%" alt="Other versions in the quick menu"></a>
+  <a href="https://tivibro.app/view/#tv-failover"><img src="docs/screenshots/tv-failover.png" width="32%" alt="Switched to another version by itself"></a>
+  <a href="https://tivibro.app/view/#tv-reminder-set"><img src="docs/screenshots/tv-reminder-set.png" width="32%" alt="A reminder set"></a>
+  <a href="https://tivibro.app/view/#tv-reminder"><img src="docs/screenshots/tv-reminder.png" width="32%" alt="The reminder when it starts"></a>
+  <a href="https://tivibro.app/view/#tv-pin"><img src="docs/screenshots/tv-pin.png" width="32%" alt="A blocked channel asks for the PIN"></a>
 </p>
 </details>
 
 <details>
 <summary><b>Catch-up, search and multiview</b></summary>
 <p align="center">
-  <a href="docs/screenshots/tv-catchup-guide.png"><img src="docs/screenshots/tv-catchup-guide.png" width="32%" alt="Past programmes in the guide"></a>
-  <a href="docs/screenshots/tv-hold-menu.png"><img src="docs/screenshots/tv-hold-menu.png" width="32%" alt="Programme options"></a>
-  <a href="docs/screenshots/tv-catchup-play.png"><img src="docs/screenshots/tv-catchup-play.png" width="32%" alt="Catch-up playing"></a>
-  <a href="docs/screenshots/tv-search.png"><img src="docs/screenshots/tv-search.png" width="32%" alt="Search"></a>
-  <a href="docs/screenshots/tv-multiview.png"><img src="docs/screenshots/tv-multiview.png" width="32%" alt="Multiview"></a>
-  <a href="docs/screenshots/tv-menu.png"><img src="docs/screenshots/tv-menu.png" width="32%" alt="Menu"></a>
+  <a href="https://tivibro.app/view/#tv-catchup-guide"><img src="docs/screenshots/tv-catchup-guide.png" width="32%" alt="Past programmes in the guide"></a>
+  <a href="https://tivibro.app/view/#tv-hold-menu"><img src="docs/screenshots/tv-hold-menu.png" width="32%" alt="Programme options"></a>
+  <a href="https://tivibro.app/view/#tv-catchup-play"><img src="docs/screenshots/tv-catchup-play.png" width="32%" alt="Catch-up playing"></a>
+  <a href="https://tivibro.app/view/#tv-search"><img src="docs/screenshots/tv-search.png" width="32%" alt="Search"></a>
+  <a href="https://tivibro.app/view/#tv-multiview"><img src="docs/screenshots/tv-multiview.png" width="32%" alt="Multiview"></a>
+  <a href="https://tivibro.app/view/#tv-menu"><img src="docs/screenshots/tv-menu.png" width="32%" alt="Menu"></a>
 </p>
 </details>
 
 <details>
 <summary><b>Movies, shows and settings</b></summary>
 <p align="center">
-  <a href="docs/screenshots/tv-movies.png"><img src="docs/screenshots/tv-movies.png" width="32%" alt="Movies"></a>
-  <a href="docs/screenshots/tv-episodes.png"><img src="docs/screenshots/tv-episodes.png" width="32%" alt="Episodes"></a>
-  <a href="docs/screenshots/tv-settings.png"><img src="docs/screenshots/tv-settings.png" width="32%" alt="Settings"></a>
-  <a href="docs/screenshots/tv-settings-look.png"><img src="docs/screenshots/tv-settings-look.png" width="32%" alt="Appearance"></a>
-  <a href="docs/screenshots/tv-first-run.png"><img src="docs/screenshots/tv-first-run.png" width="32%" alt="First start"></a>
-  <a href="docs/screenshots/tv-first-run-remote.png"><img src="docs/screenshots/tv-first-run-remote.png" width="32%" alt="Set up from a computer"></a>
+  <a href="https://tivibro.app/view/#tv-movies"><img src="docs/screenshots/tv-movies.png" width="32%" alt="Movies"></a>
+  <a href="https://tivibro.app/view/#tv-episodes"><img src="docs/screenshots/tv-episodes.png" width="32%" alt="Episodes"></a>
+  <a href="https://tivibro.app/view/#tv-settings"><img src="docs/screenshots/tv-settings.png" width="32%" alt="Settings"></a>
+  <a href="https://tivibro.app/view/#tv-settings-look"><img src="docs/screenshots/tv-settings-look.png" width="32%" alt="Appearance"></a>
+  <a href="https://tivibro.app/view/#tv-first-run"><img src="docs/screenshots/tv-first-run.png" width="32%" alt="First start"></a>
+  <a href="https://tivibro.app/view/#tv-first-run-remote"><img src="docs/screenshots/tv-first-run-remote.png" width="32%" alt="Set up from a computer"></a>
 </p>
 </details>
 
 <details>
 <summary><b>Every Settings section</b></summary>
 <p align="center">
-  <a href="docs/screenshots/tv-set-playback.png"><img src="docs/screenshots/tv-set-playback.png" width="32%" alt="Playback and buffering"></a>
-  <a href="docs/screenshots/tv-set-remote-player.png"><img src="docs/screenshots/tv-set-remote-player.png" width="32%" alt="Buttons in the player"></a>
-  <a href="docs/screenshots/tv-set-playlist.png"><img src="docs/screenshots/tv-set-playlist.png" width="32%" alt="A playlist"></a>
-  <a href="docs/screenshots/tv-set-names.png"><img src="docs/screenshots/tv-set-names.png" width="32%" alt="Channel name editor"></a>
-  <a href="docs/screenshots/tv-set-groups.png"><img src="docs/screenshots/tv-set-groups.png" width="32%" alt="Groups, sorting, hidden"></a>
-  <a href="docs/screenshots/tv-set-guide.png"><img src="docs/screenshots/tv-set-guide.png" width="32%" alt="Guide, start screen, reminders"></a>
-  <a href="docs/screenshots/tv-set-look.png"><img src="docs/screenshots/tv-set-look.png" width="32%" alt="Appearance"></a>
-  <a href="docs/screenshots/tv-settings-parental.png"><img src="docs/screenshots/tv-settings-parental.png" width="32%" alt="Parental controls"></a>
-  <a href="docs/screenshots/tv-set-editor-on.png"><img src="docs/screenshots/tv-set-editor-on.png" width="32%" alt="Edit on a phone or computer"></a>
-  <a href="docs/screenshots/tv-set-updates.png"><img src="docs/screenshots/tv-set-updates.png" width="32%" alt="Updates and about"></a>
-  <a href="docs/screenshots/tv-set-diag-test.png"><img src="docs/screenshots/tv-set-diag-test.png" width="32%" alt="Connection test"></a>
-  <a href="docs/screenshots/tv-set-caps.png"><img src="docs/screenshots/tv-set-caps.png" width="32%" alt="What this TV can play"></a>
+  <a href="https://tivibro.app/view/#tv-set-playback"><img src="docs/screenshots/tv-set-playback.png" width="32%" alt="Playback and buffering"></a>
+  <a href="https://tivibro.app/view/#tv-set-remote-player"><img src="docs/screenshots/tv-set-remote-player.png" width="32%" alt="Buttons in the player"></a>
+  <a href="https://tivibro.app/view/#tv-set-playlist"><img src="docs/screenshots/tv-set-playlist.png" width="32%" alt="A playlist"></a>
+  <a href="https://tivibro.app/view/#tv-set-names"><img src="docs/screenshots/tv-set-names.png" width="32%" alt="Channel name editor"></a>
+  <a href="https://tivibro.app/view/#tv-set-groups"><img src="docs/screenshots/tv-set-groups.png" width="32%" alt="Groups, sorting, hidden"></a>
+  <a href="https://tivibro.app/view/#tv-set-guide"><img src="docs/screenshots/tv-set-guide.png" width="32%" alt="Guide, start screen, reminders"></a>
+  <a href="https://tivibro.app/view/#tv-set-look"><img src="docs/screenshots/tv-set-look.png" width="32%" alt="Appearance"></a>
+  <a href="https://tivibro.app/view/#tv-settings-parental"><img src="docs/screenshots/tv-settings-parental.png" width="32%" alt="Parental controls"></a>
+  <a href="https://tivibro.app/view/#tv-set-editor-on"><img src="docs/screenshots/tv-set-editor-on.png" width="32%" alt="Edit on a phone or computer"></a>
+  <a href="https://tivibro.app/view/#tv-set-updates"><img src="docs/screenshots/tv-set-updates.png" width="32%" alt="Updates and about"></a>
+  <a href="https://tivibro.app/view/#tv-set-diag-test"><img src="docs/screenshots/tv-set-diag-test.png" width="32%" alt="Connection test"></a>
+  <a href="https://tivibro.app/view/#tv-set-caps"><img src="docs/screenshots/tv-set-caps.png" width="32%" alt="What this TV can play"></a>
 </p>
 </details>
 
 <details>
 <summary><b>Web editor</b></summary>
 <p align="center">
-  <a href="docs/screenshots/editor-overview.png"><img src="docs/screenshots/editor-overview.png" width="49%" alt="Overview"></a>
-  <a href="docs/screenshots/editor-copy-move.png"><img src="docs/screenshots/editor-copy-move.png" width="49%" alt="Copy or move"></a>
-  <a href="docs/screenshots/editor-guide-progress.png"><img src="docs/screenshots/editor-guide-progress.png" width="49%" alt="Guide download progress"></a>
-  <a href="docs/screenshots/editor-smart-match.png"><img src="docs/screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
-  <a href="docs/screenshots/editor-smart-cleanup.png"><img src="docs/screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
-  <a href="docs/screenshots/editor-feeds-local.png"><img src="docs/screenshots/editor-feeds-local.png" width="49%" alt="East and West feeds, and local channels by city"></a>
-  <a href="docs/screenshots/editor-backup.png"><img src="docs/screenshots/editor-backup.png" width="49%" alt="Backup and restore"></a>
-  <a href="docs/screenshots/editor-groups.png"><img src="docs/screenshots/editor-groups.png" width="49%" alt="Groups and channels"></a>
-  <a href="docs/screenshots/editor-names.png"><img src="docs/screenshots/editor-names.png" width="49%" alt="Channel names"></a>
-  <a href="docs/screenshots/editor-guide.png"><img src="docs/screenshots/editor-guide.png" width="49%" alt="The guide"></a>
-  <a href="docs/screenshots/editor-playlists.png"><img src="docs/screenshots/editor-playlists.png" width="49%" alt="Playlists"></a>
-  <a href="docs/screenshots/editor-history.png"><img src="docs/screenshots/editor-history.png" width="49%" alt="Changes and restore points"></a>
-  <a href="docs/screenshots/editor-help.png"><img src="docs/screenshots/editor-help.png" width="49%" alt="Help"></a>
+  <a href="https://tivibro.app/view/#editor-overview"><img src="docs/screenshots/editor-overview.png" width="49%" alt="Overview"></a>
+  <a href="https://tivibro.app/view/#editor-copy-move"><img src="docs/screenshots/editor-copy-move.png" width="49%" alt="Copy or move"></a>
+  <a href="https://tivibro.app/view/#editor-guide-progress"><img src="docs/screenshots/editor-guide-progress.png" width="49%" alt="Guide download progress"></a>
+  <a href="https://tivibro.app/view/#editor-smart-match"><img src="docs/screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
+  <a href="https://tivibro.app/view/#editor-smart-cleanup"><img src="docs/screenshots/editor-smart-cleanup.png" width="49%" alt="Smart clean-up"></a>
+  <a href="https://tivibro.app/view/#editor-feeds-local"><img src="docs/screenshots/editor-feeds-local.png" width="49%" alt="East and West feeds, and local channels by city"></a>
+  <a href="https://tivibro.app/view/#editor-backup"><img src="docs/screenshots/editor-backup.png" width="49%" alt="Backup and restore"></a>
+  <a href="https://tivibro.app/view/#editor-groups"><img src="docs/screenshots/editor-groups.png" width="49%" alt="Groups and channels"></a>
+  <a href="https://tivibro.app/view/#editor-names"><img src="docs/screenshots/editor-names.png" width="49%" alt="Channel names"></a>
+  <a href="https://tivibro.app/view/#editor-guide"><img src="docs/screenshots/editor-guide.png" width="49%" alt="The guide"></a>
+  <a href="https://tivibro.app/view/#editor-playlists"><img src="docs/screenshots/editor-playlists.png" width="49%" alt="Playlists"></a>
+  <a href="https://tivibro.app/view/#editor-history"><img src="docs/screenshots/editor-history.png" width="49%" alt="Changes and restore points"></a>
+  <a href="https://tivibro.app/view/#editor-help"><img src="docs/screenshots/editor-help.png" width="49%" alt="Help"></a>
 </p>
 </details>
 

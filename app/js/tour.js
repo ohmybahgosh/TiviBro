@@ -26,6 +26,8 @@ var Tour = (function () {
   function action(label, sub, fn, value) { return { label: label, sub: sub, action: fn, value: value || function () { return ''; } }; }
   function head(t) { return { head: true, label: t }; }
   function info(label, value) { return { label: label, info: true, value: function () { return value || ''; } }; }
+  // A short explanation under a choice (what hiding does, what stays a backup).
+  function note(text) { var r = info(text, ''); r.note = true; return r; }
   function custom(el) { return { custom: true, el: el }; }
 
   /* ---------- what the playlist has ---------- */
@@ -99,7 +101,7 @@ var Tour = (function () {
     { id: 'clutter', title: 'Clear the clutter', rail: 'Clutter', lead: 'Everything hidden stays one click away: Settings > Groups, sorting, hidden, or hold OK on a channel.', rows: clutterRows },
     { id: 'logos', title: 'Channel logos', rail: 'Logos', lead: 'For channels with no logo, from two open projects, iptv-org and tv-logos, matched by guide id, name and country, and a local station\'s call sign.  TiviBro hosts no images: each logo loads from its project.', rows: logoRows },
     { id: 'look', title: 'Make it yours', rail: 'Look and start', lead: 'Colours, text size and what TiviBro opens on.  Buffering, buttons and parental controls are in Settings.', rows: lookRows },
-    { id: 'done', title: 'All set', rail: 'Summary', lead: 'Here is what Apply does.  A restore point is saved first, so the web editor can undo it.', rows: doneRows }
+    { id: 'done', title: 'All set', rail: 'Summary', lead: 'Here is what Apply does.  Hidden never means deleted: everything stays one press away in Settings > Groups, sorting, hidden, and a restore point is saved first so the web editor can undo it all.', rows: doneRows }
   ];
   function steps() { return STEPS.filter(function (s) { return !s.when || s.when(); }); }
 
@@ -131,6 +133,7 @@ var Tour = (function () {
     });
     out.push(head('Everything else'));
     out.push(toggle('Groups with no country', 'Sports, pay-per-view and event groups, 24/7 channels and the like.', function () { return ch.ccNone; }, function (v) { ch.ccNone = v; draw(); }, 'Keep', 'Hide'));
+    out.push(note('Hidden groups leave the guide, All channels and Search, and nothing is deleted: bring any back in Settings > Groups, sorting, hidden.'));
     return out;
   }
 
@@ -169,6 +172,7 @@ var Tour = (function () {
       function () { return ch.feed; }, function (v) { ch.feed = v; draw(); }));
     var drop = ch.feed === 'east' ? 'west' : 'east', gs = st.sv.t.feedGroups(drop);
     if (ch.feed !== 'both' && gs.length) out.push(toggle('Also hide groups named ' + (drop === 'west' ? 'West' : 'East'), gs.slice(0, 4).map(function (g) { return g.name; }).join(', '), function () { return ch.feedGroups; }, function (v) { ch.feedGroups = v; draw(); }));
+    if (ch.feed !== 'both') out.push(note('The ' + (drop === 'west' ? 'West' : 'East') + ' feed is not a backup: it runs hours apart, so TiviBro never switches to it by itself.  Your other qualities of the same feed still are.'));
     out.push(head(plural(fp.pairs, 'channel') + ' come in both feeds, for example'));
     fp.examples.forEach(function (x) { out.push(info(x.east.n + '    ⇄    ' + x.west.n, '')); });
     return out;
@@ -179,6 +183,7 @@ var Tour = (function () {
     out.push(toggle('Keep stations with no city', 'National feeds in the local groups.', function () { return ch.cityNone; }, function (v) { ch.cityNone = v; draw(); }, 'Keep', 'Hide'));
     out.push(toggle('Put them together in "Local channels"', 'One group with your stations, by city and network.', function () { return ch.cityGroup; }, function (v) { ch.cityGroup = v; draw(); }));
     if (ch.cityGroup) out.push(toggle('Then hide the network groups', li.groups.slice(0, 4).map(function (g) { return g.name; }).join(', ') + (li.groups.length > 4 ? '…' : '') + ': your stations show up once.', function () { return ch.cityHideNets; }, function (v) { ch.cityHideNets = v; draw(); }));
+    if (ch.cityGroup && ch.cityHideNets) out.push(note('Hiding the network groups does not hide your stations: they stay in Local channels.'));
     if (n) out.push(action('Clear my cities', 'Keeps every city again.', function () { ch.cities = {}; draw(); }, function () { return plural(n, 'picked', 'picked'); }));
     out.push(head(n ? 'Keeping ' + Object.keys(ch.cities).map(Tidy.titleCase).join(', ') : 'No city picked: every city is kept'));
     li.cities.forEach(function (c) {
@@ -213,8 +218,11 @@ var Tour = (function () {
     var sv = st.sv, ch = st.ch, out = [], S_ = S();
     if (sv.dividers.length) out.push(toggle('Hide divider groups', plural(sv.dividers.length, 'group') + ' like "' + sv.dividers[0].name + '" that only split the list into sections.', function () { return ch.dividers; }, function (v) { ch.dividers = v; draw(); }, 'Hide', 'Keep'));
     out.push(toggle('Hide empty groups', 'Groups with no channels, or none left after the steps before.', function () { return ch.empty; }, function (v) { ch.empty = v; draw(); }, 'Hide', 'Keep'));
-    if (sv.dupeSets) out.push(choice('Same channel more than once', plural(sv.dupeSets, 'channel') + ' come in several qualities or copies (' + fmt(sv.dupeExtra) + ' extra).  Pick which copy to keep; the others are hidden, still one press away with hold OK > Other versions, and TiviBro switches to one by itself if yours stops working.',
-      DUPES, DUPE_L, function () { return ch.dupes; }, function (v) { ch.dupes = v; draw(); }));
+    if (sv.dupeSets) {
+      out.push(choice('Same channel more than once', plural(sv.dupeSets, 'channel') + ' come in several qualities or copies (' + fmt(sv.dupeExtra) + ' extra).  Pick which copy shows in your lists.',
+        DUPES, DUPE_L, function () { return ch.dupes; }, function (v) { ch.dupes = v; draw(); }));
+      if (ch.dupes !== 'off') out.push(note('Hidden copies are still your backups.  If the copy you keep stops working, TiviBro switches to another one by itself, and hold OK > Other versions lists them all.'));
+    }
     out.push(action('Hide groups with these words…', 'Comma separated, like PPV, 24/7, Radio, Adult.', function () {
       UI.prompt('Hide groups whose name contains', ch.words, function (v) { ch.words = v; draw(); }, 'Comma separated.  Upper and lower case do not matter.');
     }, function () { return ch.words.trim() || 'None'; }));
@@ -324,7 +332,7 @@ var Tour = (function () {
     var cl = [];
     if (sv.dividers.length && ch.dividers) cl.push('dividers');
     if (ch.empty) cl.push('empty groups');
-    if (sv.dupeSets && ch.dupes !== 'off') cl.push('extra copies (' + DUPE_L[DUPES.indexOf(ch.dupes)].replace(/^Keep /, '').replace(/ \(.*\)$/, '') + ' kept)');
+    if (sv.dupeSets && ch.dupes !== 'off') cl.push('extra copies (' + DUPE_L[DUPES.indexOf(ch.dupes)].replace(/^Keep /, '').replace(/ \(.*\)$/, '') + ' shown, the rest kept as backups)');
     if (ch.words.trim()) cl.push('"' + ch.words.trim() + '"');
     out.push(['clutter', 'Clutter', cl.length ? 'Hide ' + cl.join(', ') : 'Nothing hidden']);
     out.push(['logos', 'Logos', !s.logoLib || s.logoLib === 'off' ? 'Playlist and guide logos only' : (s.logoLib === 'all' ? 'Library for every channel' : 'Fill in missing') + ', ' + (s.logoStyle === 'original' ? 'original logos' : 'matching set')]);
@@ -406,7 +414,7 @@ var Tour = (function () {
     var view = U.el('div', 'tour-view'), scroll = U.el('div', 'tour-scroll');
     st.rowEls = st.items.map(function (it, i) {
       if (it.custom) return it.el;
-      var d = U.el('div', 'opt' + (it.head ? ' head' : '') + (it.info ? ' dim' : ''));
+      var d = U.el('div', 'opt' + (it.head ? ' head' : '') + (it.info ? ' dim' : '') + (it.note ? ' note' : ''));
       var l = U.el('div', 'ol', it.label);
       if (it.sub) l.appendChild(U.el('small', '', it.sub));
       d.appendChild(l);
