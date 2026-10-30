@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **Reminders only for someone using the TV.**  When the screensaver, the Gallery or art screen, Always Ready or a dark screen is up, the TV's reminder alert waits instead of popping up over it, and looks again every couple of minutes while the programme is on; once someone is back on another app or input, it shows (saying when it started).  Inside TiviBro, a reminder waits when nobody has touched the remote for 10 minutes and nothing is playing, and the next press brings it, with **Watch from the start** on catch-up channels.  The helper log records what was on screen each time, for TVs that name their screensaver differently.
-
-## 0.6.0 (alpha 17, 2026-10-30)
+## 0.6.0 (alpha 18, 2026-10-30)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 17
+### New in alpha 18
+
+- **Reminders only for someone using the TV.**  When the screensaver, the Gallery or art screen, Always Ready or a dark screen is up, the TV's reminder alert waits instead of popping up over it, and looks again every couple of minutes while the programme is on; once someone is back on another app or input, it shows (saying when it started).  Inside TiviBro, a reminder waits when nobody has touched the remote for 10 minutes and nothing is playing, and the next press brings it, with **Watch from the start** on catch-up channels.  The helper log records what was on screen each time, for TVs that name their screensaver differently.
+
+### In alpha 17
 
 - **Reminders while TiviBro is closed.**  The network helper schedules each reminder with the TV, so at reminder time the TV shows an alert (**Watch** / **Dismiss**) over whatever is on, another app or an HDMI input included.  **Watch** opens TiviBro straight on the channel; if the programme started a while ago and the channel has catch-up, it offers to start from the beginning.  TVs that refuse alerts get a toast that opens the channel when selected.  The TV has to be on: nothing shows from standby.  While TiviBro is on screen it still asks itself, and the TV stays quiet.
 - Reminders no longer disappear unseen.  One that came due while TiviBro was in the background, or behind a menu, waits and asks when you're back ("Started at 8:00 pm", with **Watch from the start** on catch-up channels), and one that ended meanwhile is offered from catch-up ("You missed it").
