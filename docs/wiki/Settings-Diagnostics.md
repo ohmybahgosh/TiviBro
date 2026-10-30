@@ -13,6 +13,7 @@ Finding out what's wrong, and what this TV can play.
 
 | Setting | Choices | What it does |
 |---|---|---|
+| **Report a problem** | | Shows a QR code.  Scan it and your phone opens the web editor's **Report a problem** page: say what happened, read everything the TV adds (version, TV model, a few settings, the app and network helper logs, with logins and server names taken out), save the log file, and **Open the GitHub form** opens a bug report filled in for you.  Drag the log file into it and send.  You need a free GitHub account. |
 | **Run connection test** | | Checks, step by step: the network helper, your login, the channel categories and list, a real stream, and each guide source.  Each step says what worked or what failed and why. |
 | **View app log** | | What TiviBro did this session.  **▲ ▼** scroll, **CH + / −** page. |
 | **View app log with earlier sessions** | | Includes the sessions before, useful after a crash or restart. |

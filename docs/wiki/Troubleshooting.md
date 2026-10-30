@@ -24,7 +24,7 @@ You'll see it in three places: **Connection** on the first screen and in **Setti
 | A movie plays with no sound | It may only have DTS sound, which 2020 to 2022 LG TVs can't play.  The movie details warn about this; pick another audio track under **Options** if there is one. |
 | Dolby Vision shows odd green or purple colours | Make sure **HDR and Dolby Vision** isn't set to *Built-in player*. |
 | A remote button does nothing | **Settings > Remote control > Button tester**, then **Learn a button**. |
-| Something crashed | **Diagnostics > View app log with earlier sessions** shows what happened.  Logs mask usernames and passwords. |
+| Something crashed | TiviBro says so the next time it starts.  **Diagnostics > Report a problem** sends the details to us; **View app log with earlier sessions** shows them on the TV.  Logs mask usernames and passwords. |
 
 ---
 
