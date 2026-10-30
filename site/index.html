@@ -28,6 +28,7 @@
     <a class="brand" href="#top" aria-label="TiviBro home"><img src="img/wordmark.webp" alt="tiviBro" width="140" height="36"></a>
     <nav class="links" aria-label="Main">
       <a href="#features">Features</a>
+      <a href="#phone">Phone setup</a>
       <a href="#different">Only in TiviBro</a>
       <a href="#events">Sports and PPV</a>
       <a href="#editor">Web editor</a>
@@ -46,6 +47,7 @@
       <p class="pill"><span class="dot"></span><span id="ver">0.6.0 test builds</span> · free and open source</p>
       <h1>The IPTV player LG TVs never got.</h1>
       <p class="lead">A free, guide-first IPTV player for LG webOS.  Bring your own Xtream Codes or M3U subscription; TiviBro gives it a real TV guide, catch-up, movies and shows, and a web editor to tame thousands of channels.  Built to feel like TiviMate, and go further.</p>
+      <p class="lead phone-lead"><b>Set it up from your phone:</b> scan the code on the first screen and type your login there, not with the remote.</p>
       <div class="cta">
         <a class="btn primary" href="#install">Install on your LG TV</a>
         <a class="btn" href="https://github.com/ohmybahgosh/TiviBro">View on GitHub</a>
@@ -71,6 +73,7 @@
       <article><span class="ico">🔁</span><h3>Never stuck on a dead channel</h3><p>Same channel in FHD, HD and SD?  When one stops working, TiviBro moves to the next version by itself and tells you.</p></article>
       <article><span class="ico">🛟</span><h3>Streams that don't quit</h3><p>Reconnects with backoff, waits out Wi-Fi drops, tries every player, and keeps a dropped channel coming back by itself.</p></article>
       <article><span class="ico">🌈</span><h3>HDR, Dolby Vision, Atmos</h3><p>Reads each stream's format before the picture starts and hands it to the player that suits it best.</p></article>
+      <article><span class="ico">📱</span><h3>Set up from your phone</h3><p>Scan the QR code on the first screen.  Type your login on your phone, or restore a backup; the TV loads your channels by itself.</p></article>
       <article><span class="ico">🧭</span><h3>Set up in two minutes</h3><p>A new playlist starts a tour built from what it has: countries, East or West, your city, sports, clutter, logos and colours.  Or scan a code and finish on your phone.</p></article>
       <article><span class="ico">🖼️</span><h3>Logos for every channel</h3><p>Missing logos filled in from two open logo projects, matched by guide id, name, country and call sign.  Or one matching style for the whole list.</p></article>
       <article><span class="ico">🧹</span><h3>Clean names, tidy lists</h3><p>Strips "USA |", "FHD", "⚽" and hundreds of other tags, keeps only your countries, and hides "Off Air" channels until something is on.</p></article>
@@ -81,12 +84,35 @@
   </div>
 </section>
 
-<section id="different" class="section alt">
+<section id="phone" class="section alt">
+  <div class="wrap split">
+    <div>
+      <p class="kicker">Setup</p>
+      <h2>Put the remote down.  Set it up from your phone.</h2>
+      <p>Typing a server address, username and password with arrow keys is nobody's idea of fun.  TiviBro's first screen shows a QR code instead.</p>
+      <ul class="ticks">
+        <li>Scan it with your phone's camera: TiviBro's editor opens, already signed in.</li>
+        <li>Paste your Xtream Codes login or M3U address, or restore a backup from another TV.</li>
+        <li>The TV tests it, loads your channels and starts the set-up tour on its own.</li>
+        <li>Later, the same editor on your phone or computer renames, hides, sorts and cleans up thousands of channels.</li>
+      </ul>
+    </div>
+    <figure class="shot"><img loading="lazy" src="img/shots/tv-first-run.webp" alt="The first screen with its QR code" width="1280" height="720"></figure>
+  </div>
+  <div class="wrap phones">
+    <img loading="lazy" src="img/shots/editor-phone-welcome.webp" alt="The editor on a phone, right after scanning" width="390" height="844">
+    <img loading="lazy" src="img/shots/editor-phone-add.webp" alt="Typing the login on the phone" width="390" height="844">
+    <img loading="lazy" src="img/shots/editor-phone-tools.webp" alt="Smart clean-up on the phone" width="390" height="844">
+  </div>
+</section>
+
+<section id="different" class="section">
   <div class="wrap">
     <p class="kicker">Only in TiviBro</p>
     <h2>What no other IPTV player does</h2>
     <p class="sub">TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose.  These are the things we haven't found in TiviMate or any other IPTV player, on any platform.</p>
     <div class="grid features only">
+      <article><span class="ico">📱</span><h3>Set up from your phone, from the first screen</h3><p>A QR code waits beside the login form.  Scan it and TiviBro's editor opens on your phone, signed in.  No other IPTV app on a TV starts this way.</p></article>
       <article><span class="ico">🧭</span><h3>A set-up tour built from your playlist</h3><p>TiviBro counts what your list holds and asks only about that: its countries, East or West, the cities its local groups carry, its event channels and duplicates.  A running count shows what you'll keep.  Scan the QR code to finish on your phone.</p></article>
       <article><span class="ico">🖼️</span><h3>Missing logos, filled in</h3><p>A small index points at iptv-org's and tv-logos' own logos, matched by guide id, name and country, and call sign for local stations.  TiviBro hosts no images.</p></article>
       <article><span class="ico">🏟️</span><h3>Sports and PPV, read from the name</h3><p>When a provider writes the event into the channel name instead of the guide, TiviBro turns it into a short name, a guide entry at the real time in your time zone, and an Events by time list across all your passes.</p></article>
@@ -112,7 +138,7 @@
           <tr><td>Pick your city for every local channel group at once</td><td class="yes">Yes</td><td class="no">One group at a time</td></tr>
           <tr><td>Keep East or West feeds in one step</td><td class="yes">Yes</td><td class="no">No</td></tr>
           <tr><td>Guided set-up built from your playlist</td><td class="yes">Countries, feeds, city, events, logos, look</td><td class="no">No</td></tr>
-          <tr><td>Set up by scanning a QR code with your phone</td><td class="yes">Yes</td><td class="no">No</td></tr>
+          <tr><td>Set up by scanning a QR code with your phone</td><td class="yes">Yes, from the first screen</td><td class="no">No, type it with the remote</td></tr>
           <tr><td>Fills in missing channel logos</td><td class="yes">Two open logo libraries, two styles</td><td class="no">No</td></tr>
           <tr><td>Recording</td><td>Not yet</td><td class="yes">Premium</td></tr>
         </tbody>
@@ -122,7 +148,7 @@
   </div>
 </section>
 
-<section class="section">
+<section class="section alt">
   <div class="wrap">
     <h2>See it on the big screen</h2>
     <p class="sub">Every picture is the real app, playing a made-up demo provider.</p>
@@ -143,7 +169,7 @@
   </div>
 </section>
 
-<section id="tour" class="section alt">
+<section id="tour" class="section">
   <div class="wrap split rev">
     <figure class="shot"><img loading="lazy" src="img/shots/tv-tour-welcome.webp" alt="The set-up tour: what your playlist has" width="1280" height="720"></figure>
     <div>
@@ -167,7 +193,7 @@
   </div>
 </section>
 
-<section id="logos" class="section">
+<section id="logos" class="section alt">
   <div class="wrap split">
     <div>
       <p class="kicker">Channel logos</p>
@@ -184,7 +210,7 @@
   </div>
 </section>
 
-<section id="events" class="section alt">
+<section id="events" class="section">
   <div class="wrap split">
     <div>
       <p class="kicker">Pay-per-view and sports passes</p>
@@ -201,7 +227,7 @@
   </div>
 </section>
 
-<section id="editor" class="section">
+<section id="editor" class="section alt">
   <div class="wrap split rev">
     <figure class="shot"><video src="media/live-edit.mp4" poster="img/live-edit-poster.webp" autoplay muted loop playsinline preload="none" aria-label="Hiding groups in the web editor while the TV follows"></video></figure>
     <div>
@@ -225,18 +251,18 @@
   </div>
 </section>
 
-<section class="section alt">
+<section class="section">
   <div class="wrap split">
     <div>
       <p class="kicker">Backups</p>
       <h2>New TV?  Everything back in a minute.</h2>
-      <p>One file holds every playlist with its login, your groups, favorites, names, guide matches and settings, locked with your passphrase (AES-256-GCM) before it leaves the TV.  On a brand-new install, choose <b>Set up or restore from a computer</b> on the very first screen.</p>
+      <p>One file holds every playlist with its login, your groups, favorites, names, guide matches and settings, locked with your passphrase (AES-256-GCM) before it leaves the TV.  On a brand-new install, scan the QR code on the very first screen and restore it from your phone, or open the address on a computer.</p>
     </div>
     <figure class="shot"><img loading="lazy" src="img/shots/tv-first-run.webp" alt="First start" width="1280" height="720"></figure>
   </div>
 </section>
 
-<section id="install" class="section">
+<section id="install" class="section alt">
   <div class="wrap">
     <h2>Install</h2>
     <p class="sub">TiviBro installs like any homebrew app.  Pick the way that suits your TV.</p>
@@ -252,6 +278,7 @@
         <li>Enter this address:
           <div class="copy"><code>https://tivibro.app/repo</code><button type="button">Copy</button></div></li>
         <li>TiviBro appears in the app list.  Choose <b>Install</b>.  New versions show up as <b>Update</b>, and inside TiviBro under <b>Settings, Updates and about</b>.</li>
+        <li>Open TiviBro and scan the QR code on the first screen with your phone to add your playlist there.</li>
       </ol>
       <p class="note">Want every test build as soon as it's out?  Add <code>https://tivibro.app/testing</code> instead.</p>
     </div>
@@ -272,7 +299,7 @@
   </div>
 </section>
 
-<section class="section alt">
+<section class="section">
   <div class="wrap faq">
     <h2>Questions</h2>
     <details><summary>Does TiviBro come with channels?</summary><p>No.  TiviBro is a player.  It plays your own subscription from your provider, as an Xtream Codes login or an M3U playlist with an XMLTV guide.</p></details>
@@ -323,7 +350,7 @@
     if (l && l[0] && l[0].tag_name) document.getElementById('ver').textContent = 'Newest: ' + l[0].tag_name.replace(/^v/, '').replace(/-alpha\./, ' alpha ').replace(/-beta\./, ' beta ');
   }).catch(function () {});
   // Click a screenshot for full size
-  document.querySelectorAll('.gallery img, .thumbs img, .shot img').forEach(function (img) {
+  document.querySelectorAll('.gallery img, .thumbs img, .shot img, .phones img').forEach(function (img) {
     img.addEventListener('click', function () {
       var box = document.createElement('div'); box.className = 'lightbox';
       var big = document.createElement('img'); big.src = img.src; big.alt = img.alt; box.appendChild(big);

@@ -250,7 +250,9 @@ body.dimpast .gp.past{color:var(--dim)}
 .diag-body .dl{white-space:pre-wrap;word-break:break-all;color:var(--text)}
 .diag-body .dl.good{color:var(--ok)} .diag-body .dl.bad{color:var(--air)} .diag-body .dl.warn{color:var(--warn)} .diag-body .dl.sep{color:var(--dim)}
 .diag-hint{color:var(--dim);font-size:20px;margin-top:12px;white-space:pre}
-.setup .net{margin:8px 24px 0;color:var(--muted);font-size:22px}
+.setup .net{margin:8px 24px 0;color:var(--muted);font-size:22px;max-width:1260px}
+.setup.withjoin .net{max-width:960px}
+.setup .net.err{color:var(--air)}
 
 .guide-body.empty::after{content:attr(data-empty);position:absolute;top:120px;left:0;right:0;text-align:center;color:var(--muted);font-size:30px}
 

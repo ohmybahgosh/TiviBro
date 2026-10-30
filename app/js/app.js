@@ -69,10 +69,16 @@ var App = (function () {
       else row('Playlist URL', 'm3u', 'url');
       if (!editing) row('Guide URL (optional)', 'guide', 'url');
       // Network: reachable here so a helper problem can never lock you out of the app.
-      var nd = U.el('div', 'field'); nd.appendChild(U.el('label', '', 'Network'));
-      nd.appendChild(U.el('div', 'val', (Store.settings.network === 'direct' ? 'Direct' : 'Automatic (through the helper)')));
+      // "Network helper": the part of TiviBro that runs in the background on the TV and talks to the
+      // provider for the app.  Most people never need to touch it, so it is explained here in plain words.
+      var direct = Store.settings.network === 'direct';
+      var nd = U.el('div', 'field'); nd.appendChild(U.el('label', '', 'Connection'));
+      nd.appendChild(U.el('div', 'val', direct ? 'Direct (without the network helper)' : 'Automatic (recommended)'));
       setupEl.appendChild(nd); fields.push({ el: nd, kind: 'net' });
-      setupEl.appendChild(U.el('div', 'net', 'Network helper: ' + Net.status()));
+      setupEl.appendChild(U.el('div', 'net' + (Net.port || direct ? '' : ' err'),
+        direct ? 'Direct asks your provider straight from the app.  Most providers block that on webOS; switch back to Automatic if Connect fails.'
+          : Net.port ? 'Automatic uses the network helper, a part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams for the app.  Leave it on.'
+          : 'The network helper (the part of TiviBro that talks to your provider) is not running: ' + (Net.lastError || 'no reason given') + '.  Restart TiviBro; if it keeps happening, press View log.'));
       var go = U.el('div', 'btn', 'Connect');
       setupEl.appendChild(go);
       fields.push({ el: go, kind: 'go' });

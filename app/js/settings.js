@@ -52,9 +52,9 @@ var Settings = (function () {
       ['auto', 'mse', 'native'], ['Automatic', 'Built-in demuxer', 'TV player'], function () { return s.engine; }, function (v) { s.engine = v; save(); }));
     if (Store.playlist.type === 'xtream') out.push(choice('Stream format', 'MPEG-TS usually switches channels faster.  HLS copes better with a weak connection.',
       ['ts', 'm3u8'], ['MPEG-TS', 'HLS'], function () { return s.format; }, function (v) { s.format = v; save(); }));
-    out.push(choice('Network', 'Automatic sends provider requests through the built-in helper, which webOS needs for most providers.  Direct only works with servers that allow app requests.',
-      ['auto', 'direct'], ['Automatic', 'Direct'], function () { return s.network || 'auto'; }, function (v) { s.network = v; save(); }));
-    out.push(info('Network helper', Net.port ? 'running on port ' + Net.port : 'not running'));
+    out.push(choice('Connection', 'Automatic uses the network helper: a part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams for the app.  webOS needs it for most providers.  Direct asks the provider straight from the app, which only works with servers that allow it.',
+      ['auto', 'direct'], ['Automatic (recommended)', 'Direct'], function () { return s.network || 'auto'; }, function (v) { s.network = v; save(); }));
+    out.push(info('Network helper', Net.port ? 'running' : 'not running'));
     out.push(choice('Buffer meter', 'Shows how many seconds of video are banked, in fullscreen.', ['auto', 'always', 'off'], ['When low', 'Always', 'Off'], function () { return s.meter; }, function (v) { s.meter = v; save(); }));
     out.push(toggle('Preview in channel list', 'Plays the channel you rest on.  Turn off on very slow TVs for the snappiest list.', function () { return s.previewPlay; }, function (v) { s.previewPlay = v; save(); }));
     out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',

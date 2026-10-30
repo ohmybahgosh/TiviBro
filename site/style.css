@@ -123,3 +123,10 @@ h2 { margin: 0 0 10px; font-size: clamp(28px, 3.4vw, 40px); line-height: 1.15; l
 .compare td.yes { color: #3DDC97; font-weight: 600; }
 .compare td.no { color: var(--mute); }
 .grid.features.only { grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); }
+
+/* Set up from your phone */
+.lead.phone-lead { font-size: 17px; margin-top: -14px; }
+.lead.phone-lead b { color: var(--acc2); }
+.phones { display: flex; justify-content: center; gap: 22px; margin-top: 44px; flex-wrap: wrap; }
+.phones img { width: 220px; height: auto; border-radius: 22px; border: 1px solid var(--line); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45); cursor: zoom-in; }
+@media (max-width: 520px) { .phones img { width: calc(50% - 12px); } }

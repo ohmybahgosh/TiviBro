@@ -462,8 +462,8 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Reconnect attempts** *(Custom only)* | 3 to 50, **8** | Tries before the player gives up on a channel.  The count starts again after 30 seconds of clean playback. |
 | **Player engine** | **Automatic** · Built-in demuxer · TV player | *Automatic* uses TiviBro's built-in player (fine buffer control, steady on sloppy streams) and moves to the TV's own player when a server blocks it or the stream needs it.  *TV player* uses the least CPU but ignores the buffer settings.  Every choice decodes in the TV's hardware. |
 | **Stream format** *(Xtream playlists)* | **MPEG-TS** · HLS | MPEG-TS usually switches channels faster.  HLS copes better with a weak connection and some providers prefer it. |
-| **Network** | **Automatic** · Direct | *Automatic* sends provider requests through the built-in network helper, which webOS needs for most providers (it adds the headers the TV insists on, unzips guides, and works around sloppy servers).  *Direct* only works with servers that allow app requests. |
-| **Network helper** | (information) | Whether the helper is running, and on which port. |
+| **Connection** | **Automatic (recommended)** · Direct | *Automatic* sends provider requests through the [network helper](#what-is-the-network-helper), which webOS needs for most providers (it adds the headers the TV insists on, unzips guides, and works around sloppy servers).  *Direct* only works with servers that allow app requests. |
+| **Network helper** | (information) | Whether the helper is running.  **Settings > Diagnostics** shows its port and its log. |
 | **Buffer meter** | **When low** · Always · Off | A small gauge in fullscreen showing how many seconds of video are banked. |
 | **Preview in channel list** | **On** · Off | Plays the channel you rest on in the Channels screen.  Turn it off on very slow TVs for the snappiest list. |
 | **When a channel stops working** | **Switch to another version** · Ask me · Keep retrying | When a channel has run out of retries and your playlist has it more than once (another quality, another group, or a copy you hid), TiviBro switches to the next version, steadiest first: Full HD, HD, unmarked, 4K, then SD.  *Ask me* asks before switching.  See [Other versions of a channel](#other-versions-of-a-channel). |
@@ -921,10 +921,14 @@ A backup is one file with everything: settings, every playlist **with its login*
   <a href="screenshots/tv-set-diag-test.png"><img src="screenshots/tv-set-diag-test.png" width="60%" alt="Connection test"></a>
 </p>
 
+<a name="what-is-the-network-helper"></a>**What is the network helper?**  The **network helper** is a part of TiviBro that runs in the background on the TV.  It talks to your provider for the app: it fetches the channel list, the guide and the streams, sends the User-Agent your provider wants, unzips guides, and copes with servers that don't follow the rules.  webOS won't let an app talk to most IPTV servers directly, so TiviBro needs it.  It starts with TiviBro, runs only on the TV, and only ever contacts your own provider (and, if you turn them on, the logo projects).
+
+You'll see it in three places: **Connection** on the first screen and in **Settings > Playback and buffering** (leave it on **Automatic**), **Network helper** in Settings and Diagnostics (it should say *running*), and the connection test.  If it says *not running*, restart TiviBro; if that doesn't help, **Settings > Diagnostics > View network helper log** shows why.
+
 | Problem | Try this |
 |---|---|
 | A channel won't start or keeps buffering | **OK** on the error message, or **Reconnect** in the quick menu.  Then try **Stream format** HLS instead of MPEG-TS, or a bigger **Buffer profile**. |
-| Every channel fails | **Settings > Diagnostics > Run connection test**.  It checks the helper, your login, the channel list, a stream and the guide, step by step. |
+| Every channel fails | **Settings > Diagnostics > Run connection test**.  It checks the [network helper](#what-is-the-network-helper), your login, the channel list, a stream and the guide, step by step. |
 | "No guide information" | Use **Smart match** in the web editor, or **Hold OK > Assign guide** on the TV.  Add an extra guide source for your region. |
 | Guide times are off by an hour | **Provider guide time offset** in Settings, or **Offset** on an extra source in the editor. |
 | The guide seems stuck loading | Big XMLTV files take minutes on a TV; watch the progress bar.  If it stays at 0, **Test** the address. |

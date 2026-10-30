@@ -31,8 +31,8 @@ Yes.  **Settings > Playlists and guide > Add playlist…**.  Each playlist keeps
 **Does it work with Dispatcharr or other proxies?**
 Yes.  Use the proxy's address as the server (Xtream) or playlist address (M3U).
 
-**Why does TiviBro need a "network helper"?**
-webOS apps can't talk to most IPTV servers directly because of browser security rules.  A small helper service inside the app relays those requests on the TV itself, and can send a custom User-Agent when your provider asks for one.  Nothing leaves your TV except the requests to your own provider.
+**What is the "network helper", and why does TiviBro need it?**
+It's a part of TiviBro that runs in the background on the TV and talks to your provider for the app: the channel list, the guide and the streams.  webOS won't let an app talk to most IPTV servers directly, so the helper does it on the TV itself, and sends a custom User-Agent when your provider asks for one.  Leave **Connection** on **Automatic**.  It only contacts your own provider (and the logo projects, if you turn them on); nothing else leaves your TV.  If Settings says it's *not running*, restart TiviBro.  More: [What is the network helper?](Troubleshooting#what-is-the-network-helper)
 
 **My provider has a guide, but some channels say "No guide information".**
 See [The programme guide](The-programme-guide).  Smart match in the web editor usually fixes most of them in one go.

@@ -40,6 +40,8 @@ if (every && firstSetting) firstSetting.lines = every[1].trim().split('\n').conc
 const anchors = {};
 pages.forEach(p => { anchors[slug(p.title)] = p.name; });
 if (firstSetting) anchors['every-setting'] = firstSetting.name;
+// Anchors inside a page (<a name="x"></a>) point at that page's own section.
+pages.forEach(p => { (p.lines.join('\n').match(/<a name="([\w-]+)"><\/a>/g) || []).forEach(t => { anchors[/name="([\w-]+)"/.exec(t)[1]] = p.name + '#' + /name="([\w-]+)"/.exec(t)[1]; }); });
 
 function fix(md) {
   return md

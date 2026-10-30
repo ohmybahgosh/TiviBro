@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **The network helper, explained.**  The first screen's Network row is now **Connection: Automatic (recommended)**, with a line saying what the network helper is (the part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams) instead of "running on port 47811"; it only turns red with the reason when the helper isn't running.  Settings > Playback says the same; the user guide and FAQ have "What is the network helper?".
+- README and tivibro.app lead with setting up from your phone: a "Set it up from your phone" section with the first screen and phone screenshots, a line in the hero, and the step in the install instructions.  The editor's welcome page on a fresh TV offers **Add your playlist** first, then **Restore a backup**.
 - **Back twice exits.**  Back to the groups on the home screen now says "Press Back again to exit", and the next Back closes TiviBro.  Before, the message showed but the second Back opened the menu again, so there was no way out with the remote; the first screen ignored Back altogether.  Closing also tries the system's own exit if the TV ignores the first one.
 - **First screen: a QR code for your phone.**  A brand-new TV shows a QR code beside **Add your playlist**.  Scan it and the web editor opens on your phone, signed in, to type the login with a real keyboard or restore a backup; the TV switches to the playlist and opens the set-up tour.  **Set up or restore from a phone or computer** shows the same code full size.  The web editor starts by itself only on a TV with no playlist yet.
 - First screen: the Connect, Test connection and other buttons were below the bottom of a 1080 screen; the screen now scrolls to whatever is focused.

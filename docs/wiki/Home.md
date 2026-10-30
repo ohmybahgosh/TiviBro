@@ -32,6 +32,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 
 | | |
 |---|---|
+| 📱 **Set up from your phone, from the very first screen** | A QR code waits beside the login form.  Scan it and TiviBro's editor opens on your phone, signed in: type your login with a real keyboard or restore a backup, and the TV moves on by itself. |
 | 🧭 **A set-up tour built from your own playlist** | Right after you connect, TiviBro counts what your list has and asks only about that: the countries in it, East or West, the cities its local groups carry, its event channels, its duplicates.  A running count shows what you'll keep.  Scan the QR code instead and the web editor opens on your phone, signed in. |
 | 🖼️ **Fills in missing logos, without hosting a single one** | A small index points at iptv-org's and tv-logos' own logos.  Matched by guide id, cleaned name and country, and local call sign; a broken provider logo is swapped too.  Pick each channel's own logo or one matching style for dark screens. |
 | 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
@@ -57,7 +58,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | Pick your city for every local channel group at once | ✅ | ❌ One group at a time |
 | Keep East or West feeds in one step | ✅ | ❌ |
 | Guided set-up built from your playlist | ✅ Countries, feeds, city, events, logos, look | ❌ |
-| Set up by scanning a QR code with your phone | ✅ | ❌ |
+| Set up by scanning a QR code with your phone | ✅ From the first screen | ❌ Type it with the remote |
 | Fills in missing channel logos | ✅ Two open logo libraries, two styles | ❌ |
 | Recording | Not yet | ✅ Premium |
 

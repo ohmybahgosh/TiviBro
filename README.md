@@ -36,7 +36,17 @@
 <p align="center"><a href="docs/media/guide.mp4"><img src="docs/media/guide.gif" width="100%" alt="The TiviBro guide, preview and fullscreen"></a></p>
 <p align="center"><sub>The guide is home: browse, preview in the window, OK again for fullscreen.  <a href="docs/media/guide.mp4">Watch the full-quality MP4</a>.  Every picture here is clickable.</sub></p>
 
-TiviBro plays your own IPTV subscription (Xtream Codes or M3U with XMLTV) on LG webOS TVs.  The guide is the home screen, the Magic Remote works everywhere, and a companion web editor lets you clean up hundreds of groups from your computer instead of with a TV remote.
+TiviBro plays your own IPTV subscription (Xtream Codes or M3U with XMLTV) on LG webOS TVs.  The guide is the home screen, the Magic Remote works everywhere, and a companion web editor lets you clean up hundreds of groups from your phone or computer instead of with a TV remote.
+
+### 📱 Set it up from your phone
+
+No typing logins with a remote.  The first screen shows a QR code: scan it with your phone's camera and TiviBro's editor opens there, already signed in.  Paste your login (or restore a backup), and the TV loads your channels on its own and walks you through tidying them up.  Afterwards the same editor, on your phone or computer, renames, hides, sorts and cleans up thousands of channels.
+
+<p align="center">
+  <a href="docs/screenshots/tv-first-run.png"><img src="docs/screenshots/tv-first-run.png" width="58%" alt="The first screen with its QR code"></a>
+  <a href="docs/screenshots/editor-phone-welcome.png"><img src="docs/screenshots/editor-phone-welcome.png" width="19%" alt="The editor on a phone, right after scanning"></a>
+  <a href="docs/screenshots/editor-phone-add.png"><img src="docs/screenshots/editor-phone-add.png" width="19%" alt="Typing the login on the phone"></a>
+</p>
 
 > **TiviBro does not provide any channels, streams or playlists.**  You bring your own legal subscription.
 
@@ -46,6 +56,7 @@ TiviBro plays your own IPTV subscription (Xtream Codes or M3U with XMLTV) on LG 
 
 | | |
 |---|---|
+| 📱 **Set up from your phone** | Scan the QR code on the first screen and type your login on your phone, not with the remote.  The TV takes it from there. |
 | 📺 **Guide first** | Live preview top left, details top right, groups one press away.  OK previews, OK again goes fullscreen, just like TiviMate. |
 | ⏪ **Catch-up done right** | Rewind the guide into the past and replay what you missed, or restart the show you just tuned into. |
 | 🎬 **Movies and shows** | Your provider's VOD with posters, seasons, episodes, My list and resume. |
@@ -69,7 +80,8 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 
 | | |
 |---|---|
-| 🧭 **A set-up tour built from your own playlist** | Right after you connect, TiviBro counts what your list has and asks only about that: the countries in it, East or West, the cities its local groups carry, its event channels, its duplicates.  A running count shows what you'll keep.  Scan the QR code instead and the web editor opens on your phone, signed in. |
+| 📱 **Set up from your phone, from the very first screen** | A QR code waits beside the login form.  Scan it and TiviBro's editor opens on your phone, signed in: type your login with a real keyboard or restore a backup, and the TV moves on by itself.  No other IPTV app on a TV starts this way. |
+| 🧭 **A set-up tour built from your own playlist** | Right after you connect, TiviBro counts what your list has and asks only about that: the countries in it, East or West, the cities its local groups carry, its event channels, its duplicates.  A running count shows what you'll keep, and the same QR code lets you do it on your phone instead. |
 | 🖼️ **Fills in missing logos, without hosting a single one** | A small index points at iptv-org's and tv-logos' own logos.  Matched by guide id, cleaned name and country, and local call sign; a broken provider logo is swapped too.  Pick each channel's own logo or one matching style for dark screens. |
 | 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
 | 🖥️ **A full editor on your computer** | Clean up 10,000 channels with a keyboard and mouse instead of a remote: hide, sort, rename, copy and move, then **Send to TV**.  Unsent work is autosaved on the TV within seconds, with a version history, so a refresh never costs you an hour. |
@@ -94,7 +106,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | Pick your city for every local channel group at once | ✅ | ❌ One group at a time |
 | Keep East or West feeds in one step | ✅ | ❌ |
 | Guided set-up built from your playlist | ✅ Countries, feeds, city, events, logos, look | ❌ |
-| Set up by scanning a QR code with your phone | ✅ | ❌ |
+| Set up by scanning a QR code with your phone | ✅ From the first screen | ❌ Type it with the remote |
 | Fills in missing channel logos | ✅ Two open logo libraries, two styles | ❌ |
 | Recording | Not yet | ✅ Premium |
 
@@ -433,6 +445,7 @@ The easiest way on a rooted TV, with updates from the TV itself:
 1. Open the **Homebrew Channel**, go to **Settings**, and choose **Add repository**.
 2. Enter `https://tivibro.app/repo`
 3. TiviBro appears in the Homebrew Channel's app list.  Open it and choose **Install**.  New versions show up there as **Update** (and inside TiviBro under **Settings > Updates and about**).
+4. Open TiviBro and scan the QR code on the first screen with your phone to add your playlist there.
 
 Want every test build as soon as it's out?  Add `https://tivibro.app/testing` instead.  Until the first full release, both addresses give you the newest test build.
 
