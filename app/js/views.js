@@ -19,7 +19,7 @@ var Views = (function () {
   var overlay = false, ovGroup = null;
   var backT = 0, sleepAt = 0, sleepWarned = false, playStart = 0, recentDone = false;
 
-  var TAB_LABELS = { live: 'Channels', guide: 'Guide', movies: 'Movies', shows: 'Shows', search: 'Search', settings: 'Settings' };
+  var TAB_LABELS = { live: 'Channels', guide: 'Guide', movies: 'Movies', shows: 'Shows', search: 'Search', editor: 'Edit on phone', settings: 'Settings' };
   // The guide is home: the app opens on it and Back from any other screen comes back to it.
   function home() { return Store.settings.startTab === 'live' ? 'live' : 'guide'; }
   var fullFrom = 'guide';
@@ -30,6 +30,7 @@ var Views = (function () {
     movies: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     shows: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3l4 4 4-4"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+    editor: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>'
   };
   // Movies and Shows appear only when this playlist actually has them (checked in the background).
@@ -38,14 +39,14 @@ var Views = (function () {
     var pl = Store.playlist, v = pl.vod || {};
     if (pl.type === 'xtream' && v.movies) tabs.push('movies');
     if (pl.type === 'xtream' && v.series) tabs.push('shows');
-    tabs.push('search', 'settings');
+    tabs.push('search', 'editor', 'settings');
     var nav = document.querySelector('.tabs');
     nav.innerHTML = '';
     tabs.forEach(function (t) {
       var s = U.el('div', 'tab' + (t === tab ? ' on' : '')); s.setAttribute('data-tab', t);
       s.innerHTML = '<svg viewBox="0 0 24 24" class="ico">' + ICONS[t] + '</svg>';
       s.appendChild(U.el('span', 'lbl', TAB_LABELS[t]));
-      s.addEventListener('click', function () { closeNav(); if (full) exitFull(); UI.close(); switchTab(t); });
+      s.addEventListener('click', function () { closeNav(); if (full) exitFull(); UI.close(); if (t === 'editor') WebEdit.showJoin(); else switchTab(t); });
       s.addEventListener('mousemove', function () { if (UI.pointer && !document.body.classList.contains('nav-open') && !full) openNavFromPointer(); });
       nav.appendChild(s);
     });
@@ -403,7 +404,11 @@ var Views = (function () {
     UI.setHandler(function (a) {
       if (a === 'up') { tabSel = Math.max(0, tabSel - 1); paint(); }
       else if (a === 'down') { tabSel = Math.min(tabs.length - 1, tabSel + 1); paint(); }
-      else if (a === 'ok' || a === 'right') { done(); if (tabs[tabSel] === tab) onBack(); else switchTab(tabs[tabSel]); }
+      else if (a === 'ok' || a === 'right') {
+        // Edit on phone is a shortcut, not a screen: it shows the editor's QR code over the screen you are on.
+        if (tabs[tabSel] === 'editor') { if (a === 'ok') { done(); onBack(); WebEdit.showJoin(); } }
+        else { done(); if (tabs[tabSel] === tab) onBack(); else switchTab(tabs[tabSel]); }
+      }
       else if (a === 'back') {
         if (tab !== home()) { done(); switchTab(home()); }
         else if (Store.settings.exitTwice !== false && Date.now() - backT > 2500) { backT = Date.now(); U.toast('Press Back again to exit', 2500); }
@@ -506,6 +511,7 @@ var Views = (function () {
       case 'guide': leaveTo('guide'); return;
       case 'search': leaveTo('search'); return;
       case 'settings': leaveTo('settings'); return;
+      case 'editor': WebEdit.showJoin(); return;
       case 'movies': if (tabs.indexOf('movies') >= 0) leaveTo('movies'); return;
       case 'shows': if (tabs.indexOf('shows') >= 0) leaveTo('shows'); return;
       case 'live': if (full) exitFull(); else switchTab('live'); return;
@@ -1320,7 +1326,8 @@ var Views = (function () {
       } },
       !virtual && (hidden ? { label: 'Show group', action: function () { L.hideGroup(g.id, false); U.toast('Group restored'); refreshLists(true); } }
                           : { label: 'Hide group', sub: 'restore from Settings', action: function () { L.hideGroup(g.id, true); U.toast('Hidden.  Restore it in Settings, Groups and hidden items.'); refreshLists(); } }),
-      custom && { label: 'Delete group', action: function () { UI.confirm('Delete ' + g.name + '?', 'Delete', function () { L.deleteGroup(g.id); refreshLists(); }); } }
+      custom && { label: 'Delete group', action: function () { UI.confirm('Delete ' + g.name + '?', 'Delete', function () { L.deleteGroup(g.id); refreshLists(); }); } },
+      { label: 'Edit on a phone or computer…', sub: 'scan a QR code: rename, hide and sort with a real keyboard', action: function () { WebEdit.showJoin(); } }
     ]);
   }
 

@@ -122,7 +122,8 @@ var UI = (function () {
   // Magic Remote: clicking outside the box is the same as Back.
   modal.addEventListener('click', function (e) { if (e.target === modal && modalH) dispatch('back', null); });
 
-  function close() { modal.classList.add('hidden'); modalH = null; mBody.innerHTML = ''; }
+  function close() { modal.classList.add('hidden'); modal.querySelector('.modal-box').classList.remove('wide'); modalH = null; mBody.innerHTML = ''; if (onClose) { var f = onClose; onClose = null; f(); } }
+  var onClose = null;
 
   function drawMenu() {
     mTop = U.clamp(mTop, Math.max(0, mSel - M_VIS + 1), mSel);
@@ -206,6 +207,32 @@ var UI = (function () {
     };
   }
 
+  /* A box with your own content and a row of buttons (◀ ▶ between them, OK presses one).
+     buttons: [{ label, action }]; the first is focused.  Back closes it and calls onBack. */
+  var mBox = modal.querySelector('.modal-box');
+  function panel(title, body, buttons, onBack) {
+    mTitle.textContent = title;
+    mBody.innerHTML = '';
+    mBox.classList.add('wide');
+    mBody.appendChild(body);
+    var row = U.el('div', 'mbtns'), els = [], f = 0;
+    buttons.forEach(function (b, i) {
+      var d = U.el('div', 'btn', b.label); els.push(d); row.appendChild(d);
+      d.addEventListener('click', function () { f = i; dispatch('ok', null); });
+    });
+    mBody.appendChild(row);
+    function paint() { els.forEach(function (d, i) { d.classList.toggle('focus', i === f); }); }
+    paint();
+    modal.classList.remove('hidden');
+    modalH = function (a) {
+      if (a === 'left' || a === 'up') { f = Math.max(0, f - 1); paint(); }
+      else if (a === 'right' || a === 'down') { f = Math.min(els.length - 1, f + 1); paint(); }
+      else if (a === 'ok') { var b = buttons[f]; close(); if (b.action) b.action(); }
+      else if (a === 'back') { close(); if (onBack) onBack(); }
+      return true;
+    };
+  }
+
   // Focus starts on Cancel, so a second press of OK by mistake never deletes or restores anything.
   function confirm(title, yesLabel, yes) {
     menu(title, [{ label: yesLabel, action: yes }, { label: 'Cancel', current: true }]);
@@ -240,7 +267,7 @@ var UI = (function () {
     get repeating() { return repeating; },     // true while a held arrow is auto-repeating
     get playKey() { return playKey; },
     press: function (a) { dispatch(a, null); },
-    menu: menu, prompt: prompt, confirm: confirm, pin: pin, clock: clock,
+    menu: menu, prompt: prompt, confirm: confirm, pin: pin, clock: clock, panel: panel, set onClose(f) { onClose = f; },
     captureNext: function (fn) { capture = fn; }, close: close, hints: hints
   };
 })();

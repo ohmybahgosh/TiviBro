@@ -153,7 +153,7 @@ Press **⏪** in the guide to travel back in time.  Programmes marked **↺** re
 
 Favorites and your own groups come first, then your provider's.  Moving through the list updates the guide behind it.
 
-**◀** once more opens the menu: Guide, Channels, Movies, Shows, Search, Settings.
+**◀** once more opens the menu: Guide, Channels, Movies, Shows, Search, Edit on phone, Settings.
 
 </td>
 </tr>
@@ -287,7 +287,7 @@ The logo library matches your channels to [iptv-org](https://github.com/iptv-org
 
 ## The web editor
 
-Turn on **Settings > Edit on a computer**.  The TV shows an address and a password; open it in any browser on your network, on a computer or a phone.  Changes are drafts until you press **Send to TV**, and the TV picks them up in seconds.
+Open **Edit on phone** in the TV's side menu (or hold OK on any group).  It turns the editor on and shows a QR code to scan with your phone, plus an address and a password; open it in any browser on your network, on a computer or a phone.  Changes are drafts until you press **Send to TV**, and the TV picks them up in seconds.
 
 <p align="center"><a href="docs/media/live-edit.mp4"><img src="docs/media/live-edit.gif" width="100%" alt="Hiding groups in the editor while the TV follows"></a></p>
 <p align="center"><sub>Switching off the UK, FR and DE groups on the computer, then sending: the TV's group list updates by itself.  <a href="docs/media/live-edit.mp4">MP4</a></sub></p>
@@ -406,7 +406,7 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
   <a href="docs/screenshots/tv-set-guide.png"><img src="docs/screenshots/tv-set-guide.png" width="32%" alt="Guide, start screen, reminders"></a>
   <a href="docs/screenshots/tv-set-look.png"><img src="docs/screenshots/tv-set-look.png" width="32%" alt="Appearance"></a>
   <a href="docs/screenshots/tv-settings-parental.png"><img src="docs/screenshots/tv-settings-parental.png" width="32%" alt="Parental controls"></a>
-  <a href="docs/screenshots/tv-set-editor-on.png"><img src="docs/screenshots/tv-set-editor-on.png" width="32%" alt="Edit on a computer"></a>
+  <a href="docs/screenshots/tv-set-editor-on.png"><img src="docs/screenshots/tv-set-editor-on.png" width="32%" alt="Edit on a phone or computer"></a>
   <a href="docs/screenshots/tv-set-updates.png"><img src="docs/screenshots/tv-set-updates.png" width="32%" alt="Updates and about"></a>
   <a href="docs/screenshots/tv-set-diag-test.png"><img src="docs/screenshots/tv-set-diag-test.png" width="32%" alt="Connection test"></a>
   <a href="docs/screenshots/tv-set-caps.png"><img src="docs/screenshots/tv-set-caps.png" width="32%" alt="What this TV can play"></a>

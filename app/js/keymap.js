@@ -19,7 +19,7 @@ var Keymap = (function () {
     panel: 'Quick menu (actions and recent channels)', list: 'Channel list over the video', osd: 'Show info panel', menu: 'Options menu',
     chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
     rewind: 'Rewind (catch-up), else last channel', restart: 'Watch from start', playpause: 'Play / pause',
-    guide: 'TV guide', search: 'Search', settings: 'Settings', live: 'Channels screen', exit: 'Leave fullscreen',
+    guide: 'TV guide', search: 'Search', settings: 'Settings', editor: 'Edit on a phone or computer (QR code)', live: 'Channels screen', exit: 'Leave fullscreen',
     fav: 'Add or remove favorite', favorites: 'Open Favorites', recents: 'Open Recent channels',
     multiview: 'Multiview', picture: 'Change picture mode', audio: 'Audio track', sleep: 'Sleep timer',
     movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect stream'
@@ -27,14 +27,14 @@ var Keymap = (function () {
   // Short names for the on-screen button legend.
   var SHORT = {
     panel: 'Quick menu', list: 'Channel list', osd: 'Info', menu: 'Options', chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
-    rewind: 'Rewind', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings',
+    rewind: 'Rewind', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings', editor: 'Phone editor',
     live: 'Channels', exit: 'Exit fullscreen', fav: 'Favorite', favorites: 'Favorites', recents: 'Recent', multiview: 'Multiview',
     picture: 'Picture size', audio: 'Audio track', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect'
   };
   var CONTEXT_ACTIONS = {
-    player: ['none', 'panel', 'list', 'osd', 'menu', 'chnext', 'chprev', 'last', 'rewind', 'restart', 'playpause', 'guide', 'search', 'settings', 'exit',
+    player: ['none', 'panel', 'list', 'osd', 'menu', 'chnext', 'chprev', 'last', 'rewind', 'restart', 'playpause', 'guide', 'search', 'settings', 'editor', 'exit',
       'fav', 'favorites', 'recents', 'multiview', 'picture', 'audio', 'sleep', 'reconnect'],
-    list: ['none', 'menu', 'last', 'guide', 'search', 'settings', 'fav', 'favorites', 'recents', 'movies', 'shows', 'playpause']
+    list: ['none', 'menu', 'last', 'guide', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'playpause']
   };
 
   var DEFAULTS = {

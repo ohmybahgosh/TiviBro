@@ -3,8 +3,8 @@ var Settings = (function () {
   'use strict';
   var $ = U.$, S = function () { return Store.settings; }, L = Library;
   var nav = $('setNav'), body = $('setBody');
-  var SECTIONS = [['playback', 'Playback and buffering'], ['remote', 'Remote control'], ['playlists', 'Playlists and guide'],
-    ['groups', 'Groups, sorting, hidden'], ['reminders', 'Guide, start screen, reminders'], ['look', 'Appearance'], ['parental', 'Parental controls'], ['editor', 'Edit on a computer'], ['updates', 'Updates and about'], ['diag', 'Diagnostics']];
+  var SECTIONS = [['playback', 'Playback and buffering'], ['remote', 'Remote control'], ['playlists', 'Playlists and guide'], ['editor', 'Edit on a phone or computer'],
+    ['groups', 'Groups, sorting, hidden'], ['reminders', 'Guide, start screen, reminders'], ['look', 'Appearance'], ['parental', 'Parental controls'], ['updates', 'Updates and about'], ['diag', 'Diagnostics']];
   var sec = 0, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
   var stack = [];               // sub-pages: [{ title, fn, sel }]
 
@@ -527,6 +527,7 @@ var Settings = (function () {
     var s = S(), out = [], on = WebEdit.on, st = WebEdit.status;
     WebEdit.onStatus = function () { if (Views.tab === 'settings' && SECTIONS[sec][0] === 'editor' && !stack.length) build(); };
     out.push(info('Organise groups and channels from a browser on your computer, phone or tablet: show and hide, reorder, rename, favorites, your own groups and name clean-up.', ''));
+    out.push(action('Scan a QR code with your phone', 'Turns the editor on and opens it on your phone, signed in.  Also in the side menu: Edit on phone.', function () { WebEdit.showJoin('', build); }, function () { return '›'; }));
     out.push(toggle('Web editor', on ? 'Running.  Changes appear on the TV within a few seconds.' : 'Off.  It also switches off whenever TiviBro closes.', function () { return WebEdit.on; }, function (v) {
       (v ? WebEdit.start() : WebEdit.stop()).then(function () { build(); if (v) U.toast('Web editor is on'); }, function (e) { U.toast(e.message, 5000); build(); });
     }));

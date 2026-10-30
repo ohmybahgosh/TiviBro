@@ -297,7 +297,7 @@ var Tour = (function () {
       ['OK while watching', 'The quick menu: audio, subtitles, quality, picture, multiview, sleep timer, from start.'],
       ['Multiview', 'Up to four channels at once, from the quick menu.'],
       ['Catch-up', 'Channels marked ↺ replay the last days: go back in the guide and press OK.'],
-      ['The web editor', 'Settings > Edit on a computer: Smart clean-up, renaming, your own groups, guide matching, backups.'],
+      ['The web editor', 'Edit on phone in the side menu: Smart clean-up, renaming, your own groups, guide matching, backups.'],
       ['Run this again', 'Settings > Playlists and guide > ' + (Store.playlist.name || 'the playlist') + ' > Set-up tour.']].forEach(function (x) {
       var d = U.el('div', 'tour-tip'); d.appendChild(U.el('b', '', x[0])); d.appendChild(U.el('span', '', x[1])); tips.appendChild(d);
     });

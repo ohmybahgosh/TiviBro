@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Edit on phone, one press away.**  The side menu has **Edit on phone** (between Search and Settings): it turns the web editor on and shows its QR code, address and password over whatever you're on.  **Done** leaves it running; **Turn the editor off** stops it.  The same panel is under hold OK on any group, at the top of **Settings > Edit on a phone or computer** (renamed from Edit on a computer, and moved up under Playlists), and can go on any remote button in Settings > Remote control.
+
 ## 0.6.0 (alpha 13, 2026-10-29)
 
 Pre-release: expect rough edges, and keep a backup before installing.

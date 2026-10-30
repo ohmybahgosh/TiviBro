@@ -107,7 +107,7 @@ Legend: **Have** = already in TiviBro.  **Added** = added in this pass.  **Later
 | Xtream Codes / M3U, several playlists | Have |
 | User-Agent | **Added:** per playlist, sent by the network helper |
 | Max connections, expiration date | Have |
-| Back up / restore data | Have: full backup locked with a passphrase, made and restored in the web editor (Settings > Edit on a computer) |
+| Back up / restore data | Have: full backup locked with a passphrase, made and restored in the web editor (Settings > Edit on a phone or computer) |
 | "All playlists" category | Later |
 | Stalker Portal | Later (deferred) |
 | UDP proxy, SMB, local playlist files | No |

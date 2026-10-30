@@ -139,7 +139,7 @@ function create(log) {
           fl.n++; if (fl.n >= 5) { fl.until = Date.now() + 60000; fl.n = 0; }
           st.fails[who] = fl;
           log({ lv: 'warn', event: 'editor login failed', from: who });
-          return send(res, 401, { error: 'Wrong password.  It is shown on the TV under Settings, Edit on a computer.' });
+          return send(res, 401, { error: 'Wrong password.  It is shown on the TV under Settings, Edit on a phone or computer.' });
         }
         delete st.fails[who];
         var token = crypto.randomBytes(24).toString('hex');

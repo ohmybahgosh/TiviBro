@@ -513,3 +513,14 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 .join .remote-s{font-size:20px;margin-top:12px}
 .remote-box.withqr{display:flex;align-items:center;max-width:1350px}
 .remote-box.withqr .join-qr{flex:none;width:340px;height:340px;margin-right:48px}
+
+/* Edit on a phone or computer, from anywhere */
+.modal-box.wide{width:1180px}
+.edit-join-lead{font-size:24px;color:var(--muted);margin:0 0 26px;line-height:1.4}
+.edit-join{display:flex;align-items:center}
+.edit-join .join-qr{flex:none;margin-right:48px}
+.edit-join .remote-l{font-size:22px;margin-top:12px}
+.edit-join .remote-v{font-size:40px;letter-spacing:1px}
+.edit-join .remote-s{font-size:22px;margin-top:14px}
+.mbtns{margin-top:10px}
+.mbtns .btn{margin:24px 18px 0 0}

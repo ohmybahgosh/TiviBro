@@ -32,7 +32,7 @@ Video handed to the TV's native player goes direct for http, through the helper 
 ## Storage keys
 `tivibro.settings`, `tivibro.edits.<playlistId>`, `tivibro.devRelay` (desktop testing only), IndexedDB `tivibro`.
 
-## Web editor ("Edit on a computer")
+## Web editor ("Edit on a phone or computer")
 - `service/editor.js`: LAN HTTP server (0.0.0.0:<port>, only while switched on) serving `service/editor/index.html` + `names.js` (copied from `app/js/names.js` by the build; lint checks it is current).  Browser API: `POST /api/login`, `GET /api/state`, `GET /api/rev`, `POST /api/save`, `POST /api/logout`, token in `X-Token`.
 - Control from the app over the localhost relay: `POST /editor/start {port,password}`, `/editor/stop`, `GET /editor/status`, `POST /editor/snapshot`, `GET /editor/pending?since=N`.
 - `app/js/webedit.js`: starts/stops it, sends snapshots (group/channel names, logos, edits, name rules; never credentials or stream URLs), polls every 2 s and applies browser saves to `hiddenGroups`, `hiddenChannels`, `renames`, `custom`, `groupOrder` and the playlist's name rules.

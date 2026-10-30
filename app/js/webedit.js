@@ -1,4 +1,4 @@
-/* Edit on a computer.
+/* Edit on a phone or computer.
    Starts the web editor inside the network helper (service/editor.js) on the TV's network
    address, protected by a random password shown on the TV.  While it runs, the app:
    - sends the helper a snapshot of the channel list, guide matching and the user's edits
@@ -449,7 +449,28 @@ var WebEdit = (function () {
     txt.appendChild(U.el('div', 'remote-s', s && s.clients ? connected : waiting));
   }
 
-  return {
+  /* "Edit on a phone or computer" from anywhere (side menu, hold OK on a group, a remote button):
+     starts the editor if it is off and shows its QR code.  It keeps running after Done. */
+  function showJoin(page, after) {
+    Parental.gate('settings', null, function () {
+      var body = U.el('div', 'edit-join'), qr = U.el('div', 'join-qr'), txt = U.el('div', 'join-txt'), wasOn = on;
+      body.appendChild(qr); body.appendChild(txt);
+      txt.appendChild(U.el('div', 'remote-s', 'Starting the editor…'));
+      var lead = U.el('p', 'edit-join-lead', 'Scan the code with your phone\'s camera, or open the address on a computer on the same network.  Rename, hide, sort and clean up with a real keyboard; changes show up here as you send them.');
+      var wrap = U.el('div'); wrap.appendChild(lead); wrap.appendChild(body);
+      function show(s) { if (!wrap.parentNode) return; drawJoin(qr, txt, page || '', s, 'Waiting for a phone or computer…', 'Connected.  The editor keeps running until you turn it off or close TiviBro.'); }
+      UI.panel('Edit on a phone or computer', wrap, [
+        { label: 'Done' },
+        { label: 'Turn the editor off', action: function () { stop().then(function () { U.toast('Web editor is off'); if (after) after(); }); } }
+      ]);
+      UI.onClose = function () { if (onStatus === show) onStatus = null; if (after) after(); };
+      onStatus = show;
+      (on ? Promise.resolve(status) : start()).then(function (s) { show(s); if (!wasOn) Log.info('webedit', 'Started from the shortcut'); }, function (e) { txt.innerHTML = ''; txt.appendChild(U.el('div', 'msg err', e.message)); });
+    });
+  }
+
+  var exports = {
+    showJoin: showJoin,
     drawJoin: drawJoin,
     start: start, stop: stop, restart: restart, resume: resume, newPassword: newPassword, password: password, port: port, PORTS: PORTS,
     snap: function (name) { return snap('named', name); },
@@ -457,6 +478,8 @@ var WebEdit = (function () {
     set onStatus(fn) { onStatus = fn; },
     addresses: function () { return status && status.ips && status.ips.length ? status.ips.map(function (ip) { return 'http://' + ip + ':' + status.port; }) : []; }
   };
+  return exports;
+
 })();
 
 /* Backup and restore of everything TiviBro keeps: settings, every playlist (with its login),

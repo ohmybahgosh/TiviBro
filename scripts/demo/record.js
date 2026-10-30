@@ -355,7 +355,7 @@ if (require.main === module) (async () => {
     await page.evaluate(() => WebEdit.stop());
     await open('Settings', 2400);
     const S = [['Playback and buffering', 'playback'], ['Remote control', 'remote'], ['Playlists and guide', 'playlists'], ['Groups, sorting, hidden', 'groups'],
-      ['Guide, start screen, reminders', 'guide'], ['Appearance', 'look'], ['Parental controls', 'parental'], ['Edit on a computer', 'editor'], ['Updates and about', 'updates'], ['Diagnostics', 'diag']];
+      ['Guide, start screen, reminders', 'guide'], ['Appearance', 'look'], ['Parental controls', 'parental'], ['Edit on a phone or computer', 'editor'], ['Updates and about', 'updates'], ['Diagnostics', 'diag']];
     for (const [name, id] of S) {
       await section(name, true, true);
       await shot('tv-set-' + id);
@@ -372,7 +372,7 @@ if (require.main === module) (async () => {
     await section('Diagnostics', true, true); await row('Run connection test'); await quiet('Enter', 200); await page.waitForTimeout(7000); await shot('tv-set-diag-test'); await quiet('Escape', 600);
     await section('Diagnostics', true, true); await row('View app log'); await quiet('Enter', 1200); await shot('tv-set-diag-log'); await quiet('Escape', 600);
     await page.evaluate(() => WebEdit.start()); await page.waitForTimeout(1500);
-    await section('Edit on a computer', true, true); await page.waitForTimeout(800); await shot('tv-set-editor-on');
+    await section('Edit on a phone or computer', true, true); await page.waitForTimeout(800); await shot('tv-set-editor-on');
     await page.evaluate(() => WebEdit.stop()); await page.waitForTimeout(500);
   });
 
