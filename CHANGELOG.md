@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Search now finds Movies and Shows.**  A new **Movies & Shows** filter sits beside Everything, On now, Coming up, Replays and Channels.  Matches whatever catalog is already loaded this session (open Movies or Shows once first); **OK** plays a movie or opens a show's episodes, same as picking it from the list.
+
 ## 0.6.0 (alpha 22, 2026-10-30)
 
 Pre-release: expect rough edges, and keep a backup before installing.
