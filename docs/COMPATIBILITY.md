@@ -5,7 +5,7 @@ TiviBro is built and tested first on **webOS TV 25**, and runs the same code on 
 | webOS TV | Years | Browser engine | Node (helper) | Status |
 |---|---|---|---|---|
 | 26 | 2026 | Chromium 132 | 20.12 | Supported.  Access Control Groups (`requiredACG`) are declared, so the stricter permission checks pass. |
-| **25** | 2025 | Chromium 120 | 16.20 | **Main target.**  Developed and tested in the webOS 25 Simulator. |
+| **25** | 2025 | Chromium 120 | 16.20 | **Main target.**  Developed and tested in the webOS 25 Simulator, and running on a real LG C2 (2022, OLED65C2PUA) upgraded to webOS 25 (10.3.1). |
 | 24 | 2024 | Chromium 108 | 16.19 | Supported, same engine family as 25. |
 | 22, 23 | 2022 to 2023 | Chromium 87, 94 | 12.x | Supported.  Run in Chromium 87 and Node 12 (see below). |
 | 6.x | 2021 | Chromium 79 | 8.12 | Supported.  Run in Chromium 78 and Node 8.12.  Flex spacing comes from the fallback stylesheet.  `.gz` guides are unzipped by the helper. |

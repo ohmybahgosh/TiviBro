@@ -64,6 +64,11 @@ const fire = p => new Promise(res => R.fire(p, res));
   answer.getPowerState = { returnValue: true, state: 'Active' }; answer.getForegroundAppInfo = { returnValue: true, appId: 'com.webos.app.gallery' }; calls = [];
   w = await fire(Object.assign({ pid: 'p1' }, list[1]));
   ok('Gallery in front: waits', /waiting/.test(w) && /gallery/.test(w), w);
+  for (const id of ['com.webos.app.lifeonscreen', 'com.webos.app.atelier', 'org.aabytt.webos.custom-screensaver-aerial']) {
+    answer.getForegroundAppInfo = { returnValue: true, appId: id }; calls = [];
+    w = await fire(Object.assign({ pid: 'p1' }, list[1]));
+    ok(id + ' in front (LG Gallery+, Line View, Aerial): waits', /waiting/.test(w), w);
+  }
   answer.getForegroundAppInfo = { returnValue: true, appId: 'netflix' }; calls = [];
   w = await fire(Object.assign({ pid: 'p1' }, list[1]));
   ok('someone watching another app: the alert shows', w === 'shown' && calls.some(c => /createAlert$/.test(c.uri)), w);

@@ -15,7 +15,10 @@ var AM = 'luna://com.palm.activitymanager';
 var RETRY = 2 * 60000;
 // What's in front when nobody is watching: the screensaver, Gallery / art and Always Ready.  The ids
 // differ by model and year, so names are matched loosely; the helper log records the real one.
-var AMBIENT = /screensaver|screen\.saver|gallery|ambient|always\.?ready|artmode|art\.mode|\.art$|standby|clock/i;
+// Seen on a 2022 C2 (webOS 10.3): com.webos.app.screensaver, com.webos.app.lifeonscreen ("LG
+// Gallery+"), com.webos.app.atelier ("Line View"), and homebrew screensavers such as
+// org.aabytt.webos.custom-screensaver-aerial.
+var AMBIENT = /screensaver|screen\.saver|gallery|lifeonscreen|atelier|ambient|always\.?ready|artmode|art\.mode|\.art$|standby|clock/i;
 
 function create(opts) {
   var call = opts.call, log = opts.log || function () {}, now = opts.now || Date.now;
