@@ -12,7 +12,16 @@
      RATE          KV namespace: counters for the rate limits below
    The TV already masks logins and server names before a report leaves it; this masks them again,
    caps every field, and keeps reports to a few an hour from one network and 60 a day in all.
-   Nothing is stored except the counters (a hash of the address, kept for an hour or a day). */
+   Nothing is stored except the counters (a hash of the address, kept for an hour or a day).
+
+   Install numbers (also here, so there is one small service to look after):
+     POST /count  JSON { e: 'install' | 'update' | 'active', v: '0.6.0-alpha.31', w: '25' }
+       install.sh counts an install or an update; TiviBro counts itself once a day ("active"),
+       unless switched off in Settings, Updates.  Each network is counted once a day per kind; only
+       the day's totals are kept (by kind, version and webOS version), never an address or an id.
+     POST /stats/github  (the Stats workflow, with X-Stats-Key)  the day's GitHub numbers
+     GET  /stats?days=N  (X-Stats-Key, or ?k= from tivibro.app/stats)  everything, for the dashboard
+   STATS: KV namespace for those totals.  STATS_KEY: secret shared with the workflow and dashboard. */
 
 const PER_HOUR = 5, PER_DAY = 60, MAX_BODY = 400000, ISSUE_MAX = 62000;
 const AREAS = ['The guide', 'Channels list or groups', 'Watching fullscreen (quick menu, info panel, zapping)', 'Catch-up', 'Movies and shows', 'Search',
@@ -21,7 +30,7 @@ const AREAS = ['The guide', 'Channels list or groups', 'Watching fullscreen (qui
 const OFTEN = ['Every time', 'Sometimes', 'Once'];
 const KEEP = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|(.*\.)?(tivibro\.app|github\.com|githubusercontent\.com|jsdelivr\.net|iptv-org\.github\.io)$)/i;
 
-const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '86400' };
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-Stats-Key', 'Access-Control-Max-Age': '86400' };
 function json(obj, status) { return new Response(JSON.stringify(obj), { status: status || 200, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS) }); }
 
 // Logins and servers, once more: query logins and tokens, user:pass@, Xtream stream paths, and any server we don't know.
@@ -100,11 +109,67 @@ async function report(request, env) {
   return json({ ok: true, url: issue.html_url, number: issue.number });
 }
 
+/* ---------- install numbers ---------- */
+const KINDS = ['install', 'update', 'active'];
+const VER = /^\d+\.\d+\.\d+(-[a-z]+\.\d+)?$/;
+function day(d) { return (d || new Date()).toISOString().slice(0, 10); }
+async function count(request, env) {
+  if (!env.STATS) return json({ ok: false }, 503);
+  let j;
+  try { j = JSON.parse((await request.text()).slice(0, 2000)); } catch (e) { return json({ error: 'bad' }, 400); }
+  const e = KINDS.indexOf(j.e) >= 0 ? j.e : null, v = VER.test(String(j.v || '')) ? String(j.v) : null, w = /^\d{1,2}$/.test(String(j.w || '')) ? String(j.w) : '?';
+  if (!e || !v) return json({ error: 'bad' }, 400);
+  // Once a day per network and kind: a hash of the address, forgotten after two days.
+  const d = day(), seen = 's:' + d + ':' + e + ':' + await hash((request.headers.get('cf-connecting-ip') || '?') + '|' + d);
+  if (await env.STATS.get(seen)) return json({ ok: true, counted: false });
+  await env.STATS.put(seen, '1', { expirationTtl: 172800 });
+  const key = 'n:' + d, cur = JSON.parse(await env.STATS.get(key) || '{}');
+  cur[e] = cur[e] || {}; cur[e][v] = (cur[e][v] || 0) + 1;
+  if (e === 'active') { cur.webos = cur.webos || {}; cur.webos[w] = (cur.webos[w] || 0) + 1; }
+  await env.STATS.put(key, JSON.stringify(cur));
+  return json({ ok: true, counted: true });
+}
+function keyOk(request, env, url) {
+  const k = request.headers.get('x-stats-key') || url.searchParams.get('k') || '';
+  if (!env.STATS_KEY || k.length !== env.STATS_KEY.length) return false;
+  let diff = 0;
+  for (let i = 0; i < k.length; i++) diff |= k.charCodeAt(i) ^ env.STATS_KEY.charCodeAt(i);
+  return diff === 0;
+}
+async function putGithub(request, env) {
+  const t = await request.text();
+  if (t.length > 2000000) return json({ error: 'too big' }, 413);
+  const j = JSON.parse(t), d = /^\d{4}-\d\d-\d\d$/.test(j.date || '') ? j.date : day();
+  await env.STATS.put('gh:' + d, t);
+  return json({ ok: true, date: d });
+}
+async function getStats(env, url) {
+  const days = Math.min(730, Math.max(1, +url.searchParams.get('days') || 365)), out = [];
+  const end = new Date();
+  const keys = [];
+  for (let i = days - 1; i >= 0; i--) { const d = day(new Date(end.getTime() - i * 86400000)); keys.push(d); }
+  // KV reads in parallel, a few dozen at a time.
+  for (let i = 0; i < keys.length; i += 50) {
+    const part = keys.slice(i, i + 50);
+    const got = await Promise.all(part.map(async d => {
+      const [n, g] = await Promise.all([env.STATS.get('n:' + d), env.STATS.get('gh:' + d)]);
+      return n || g ? { date: d, counts: n ? JSON.parse(n) : null, github: g ? JSON.parse(g) : null } : null;
+    }));
+    got.forEach(x => { if (x) out.push(x); });
+  }
+  return json({ ok: true, days: out });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
     if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) return json({ ok: true, service: 'tivibro-report', ready: !!(env.GITHUB_TOKEN && env.REPO) });
+    if (request.method === 'POST' && url.pathname === '/count') {
+      try { return await count(request, env); } catch (e) { console.log('count error: ' + (e && e.message)); return json({ ok: false }, 500); }
+    }
+    if (url.pathname === '/stats/github' && request.method === 'POST') { if (!keyOk(request, env, url)) return json({ error: 'not allowed' }, 403); return await putGithub(request, env); }
+    if (url.pathname === '/stats' && request.method === 'GET') { if (!keyOk(request, env, url)) return json({ error: 'not allowed' }, 403); return await getStats(env, url); }
     if (request.method === 'POST' && url.pathname === '/report') {
       try { return await report(request, env); } catch (e) { console.log('relay error: ' + (e && e.stack || e)); return json({ error: 'The report relay had a problem.  Please use the GitHub form.' }, 500); }
     }

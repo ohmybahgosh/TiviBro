@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Install numbers, anonymous, and a stats page for the project.**  Once a day TiviBro says which version it is and which webOS the TV has (nothing else: no address kept, no ID, nothing about channels), and the install script says whether it installed or updated.  Off in **Settings > Updates and about > Count this TV in the install numbers**, or with `TIVIBRO_NO_COUNT=1` for the script.  A daily workflow also keeps GitHub's traffic (views, clones, where visitors come from), stars, forks and release downloads past GitHub's 14 days, for a private dashboard at tivibro.app/stats.
+
 ## 0.6.0 (alpha 31, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.

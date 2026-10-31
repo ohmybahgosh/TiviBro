@@ -30,4 +30,8 @@
 
 ## Network
 
-TiviBro only talks to your provider, to guide sources you add, to your own computer when the web editor is on, and to phones you paired when the phone app connection is on.  No analytics, no telemetry, no ads.
+TiviBro only talks to your provider, to guide sources you add, to your own computer when the web editor is on, and to phones you paired when the phone app connection is on.  No ads.
+
+## Install numbers
+
+Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has, so we know how many TVs run each version.  Nothing else: no address is kept (each network is counted once a day with a hash that is forgotten after two days), no ID, nothing about your channels or playlists.  The install script says whether it installed or updated, and which version.  Switch it off in **Settings > Updates and about > Count this TV in the install numbers**, or run the install script with `TIVIBRO_NO_COUNT=1`.

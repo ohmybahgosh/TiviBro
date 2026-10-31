@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TiviBro stats</title><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<link rel="icon" href="/img/icon-32.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--ink:#0B0E1A;--panel:#141A2E;--panel2:#1B2340;--line:#263052;--accent:#5B8CFF;--accent2:#33E1FF;--text:#E8ECF8;--muted:#8E97B5;--good:#3DDC97}
+*{box-sizing:border-box}html,body{margin:0;background:var(--ink);color:var(--text);font:15px/1.45 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
+header{display:flex;align-items:center;gap:14px;padding:22px 24px 6px;max-width:1240px;margin:0 auto}
+header img{height:34px}header h1{font-size:18px;font-weight:600;color:var(--muted);margin:0}
+header .sp{flex:1}header small{color:var(--muted)}
+main{max-width:1240px;margin:0 auto;padding:12px 24px 60px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin:10px 0 18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px 16px}
+.card b{display:block;font-size:28px;font-weight:700;letter-spacing:-.5px}.card span{color:var(--muted);font-size:13px}.card i{font-style:normal;color:var(--accent2);font-size:12px;display:block;margin-top:2px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px 18px;min-width:0}
+.box h2{font-size:14px;font-weight:600;color:var(--muted);margin:0 0 10px;text-transform:uppercase;letter-spacing:.6px}
+.box canvas{width:100%!important;height:240px!important}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:7px 4px;border-bottom:1px solid var(--line);text-align:left}th{color:var(--muted);font-weight:500}td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.wide{grid-column:1/-1}
+.key{max-width:440px;margin:80px auto;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px}
+.key input{width:100%;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--ink);color:var(--text);font:inherit;margin:12px 0}
+.key button{background:var(--accent);color:#fff;border:0;border-radius:12px;padding:12px 18px;font:inherit;font-weight:600;cursor:pointer}
+.msg{color:var(--muted);text-align:center;margin:60px 0}.err{color:#ff8a95}
+.note{color:var(--muted);font-size:13px;margin-top:22px}
+</style></head><body>
+<header><img src="/img/wordmark.png" alt="tiviBro"><h1>Stats</h1><span class="sp"></span><small id="upd"></small></header>
+<main id="main"><p class="msg">Loading…</p></main>
+<script>
+(function () {
+  'use strict';
+  var RELAY = 'https://tivibro-report.theboxmod.workers.dev';
+  var main = document.getElementById('main');
+  var m = /[#&]k=([A-Za-z0-9_-]{16,128})/.exec(location.hash), key = m ? m[1] : '';
+  if (m) { try { localStorage.setItem('tb.stats.key', key); } catch (e) {} history.replaceState(null, '', location.pathname); }
+  if (!key) { try { key = localStorage.getItem('tb.stats.key') || ''; } catch (e) {} }
+  if (!key) return askKey('');
+  load();
+
+  function askKey(why) {
+    main.innerHTML = '<div class="key"><h2 style="margin:0">TiviBro stats</h2><p style="color:var(--muted)">These numbers are private.  Open the link with the key, or paste the key.</p>' +
+      (why ? '<p class="err">' + why + '</p>' : '') + '<input id="k" type="password" placeholder="Stats key" autocomplete="off"><button id="go">Show the stats</button></div>';
+    document.getElementById('go').onclick = function () { key = document.getElementById('k').value.trim(); try { localStorage.setItem('tb.stats.key', key); } catch (e) {} load(); };
+  }
+  function load() {
+    main.innerHTML = '<p class="msg">Loading…</p>';
+    fetch(RELAY + '/stats?days=365', { headers: { 'X-Stats-Key': key }, cache: 'no-store' }).then(function (r) {
+      if (r.status === 403) { try { localStorage.removeItem('tb.stats.key'); } catch (e) {} throw new Error('key'); }
+      return r.json();
+    }).then(draw, function (e) { if (e.message === 'key') askKey('That key is not right.'); else main.innerHTML = '<p class="msg err">Could not load the stats: ' + e.message + '</p>'; });
+  }
+
+  var fmt = function (n) { return (n || 0).toLocaleString(); };
+  var sum = function (o) { return Object.keys(o || {}).reduce(function (a, k) { return a + (+o[k] || 0); }, 0); };
+  var d10 = function (t) { return String(t).slice(0, 10); };
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function draw(data) {
+    var days = data.days || [], snaps = days.filter(function (d) { return d.github; }), last = snaps.length ? snaps[snaps.length - 1].github : null;
+    // Traffic: each day's numbers from the newest snapshot that has that day (GitHub keeps 14 days).
+    var views = {}, clones = {};
+    snaps.forEach(function (s) {
+      (s.github.views || []).forEach(function (v) { views[d10(v.timestamp)] = v; });
+      (s.github.clones || []).forEach(function (v) { clones[d10(v.timestamp)] = v; });
+    });
+    var vDays = Object.keys(views).sort(), cDays = Object.keys(clones).sort();
+    var lastN = function (o, keys, n, f) { return keys.slice(-n).reduce(function (a, k) { return a + o[k][f]; }, 0); };
+    // Downloads by kind, from the newest snapshot; and new downloads per day from the change between snapshots.
+    function dl(g) {
+      var t = { tv: 0, phone: 0, other: 0 };
+      (g && g.releases || []).forEach(function (r) { r.assets.forEach(function (a) { var k = /\.ipk$/.test(a.name) ? 'tv' : /\.apk$/.test(a.name) ? 'phone' : 'other'; t[k] += a.downloads; }); });
+      return t;
+    }
+    var dlNow = dl(last), dlDaily = [], prev = null;
+    snaps.forEach(function (s) { var t = dl(s.github); if (prev) dlDaily.push({ date: s.date, tv: Math.max(0, t.tv - prev.tv), phone: Math.max(0, t.phone - prev.phone) }); prev = t; });
+    // TVs: active per day, installs and updates.
+    var act = days.map(function (d) { return { date: d.date, active: sum(d.counts && d.counts.active), install: sum(d.counts && d.counts.install), update: sum(d.counts && d.counts.update) }; });
+    var latestActive = act.filter(function (a) { return a.active; }).slice(-1)[0];
+    var since = function (n) { var t = Date.now() - n * 86400000; return function (d) { return Date.parse(d.date) >= t; }; };
+    var inst30 = act.filter(since(30)).reduce(function (a, d) { return a + d.install; }, 0), upd30 = act.filter(since(30)).reduce(function (a, d) { return a + d.update; }, 0);
+    var versions = {}, webos = {};
+    days.filter(since(7)).forEach(function (d) {
+      Object.keys(d.counts && d.counts.active || {}).forEach(function (v) { versions[v] = (versions[v] || 0) + d.counts.active[v]; });
+      Object.keys(d.counts && d.counts.webos || {}).forEach(function (w) { webos[w] = (webos[w] || 0) + d.counts.webos[w]; });
+    });
+
+    document.getElementById('upd').textContent = last ? 'GitHub numbers from ' + new Date(last.at).toLocaleString() : 'No GitHub numbers yet';
+    var cards = [
+      ['Views, 14 days', fmt(lastN(views, vDays, 14, 'count')), fmt(lastN(views, vDays, 14, 'uniques')) + ' unique visitors'],
+      ['Views, all kept', fmt(vDays.reduce(function (a, k) { return a + views[k].count; }, 0)), 'since ' + (vDays[0] || 'now')],
+      ['Clones, 14 days', fmt(lastN(clones, cDays, 14, 'count')), fmt(lastN(clones, cDays, 14, 'uniques')) + ' unique (mostly bots)'],
+      ['Stars', fmt(last && last.repo.stars), fmt(last && last.repo.watchers) + ' watching'],
+      ['Forks', fmt(last && last.repo.forks), fmt(last && last.repo.issues) + ' open issues'],
+      ['TV downloads', fmt(dlNow.tv), 'every IPK, all releases'],
+      ['Phone app downloads', fmt(dlNow.phone), 'every APK'],
+      ['TVs running TiviBro', fmt(latestActive && latestActive.active), latestActive ? 'on ' + latestActive.date : 'none counted yet'],
+      ['Installs, 30 days', fmt(inst30), fmt(upd30) + ' updates']
+    ];
+    var h = '<div class="cards">' + cards.map(function (c) { return '<div class="card"><span>' + c[0] + '</span><b>' + c[1] + '</b><i>' + c[2] + '</i></div>'; }).join('') + '</div><div class="grid">' +
+      box('Views and unique visitors', '<canvas id="cViews"></canvas>') + box('Clones', '<canvas id="cClones"></canvas>') +
+      box('TVs running TiviBro, per day', '<canvas id="cActive"></canvas>') + box('Installs and updates, per day', '<canvas id="cInst"></canvas>') +
+      box('Stars and forks', '<canvas id="cStars"></canvas>') + box('Downloads per day (new)', '<canvas id="cDl"></canvas>') +
+      box('Versions in use (last 7 days)', table(['Version', 'TV-days'], obj(versions))) + box('webOS versions (last 7 days)', table(['webOS', 'TV-days'], obj(webos).map(function (r) { return [r[0] === '?' ? 'unknown' : 'webOS ' + r[0], r[1]]; }))) +
+      box('Where visitors come from (14 days)', table(['Site', 'Views', 'Unique'], (last && last.referrers || []).map(function (r) { return [r.referrer, r.count, r.uniques]; }))) +
+      box('Most visited (14 days)', table(['Page', 'Views', 'Unique'], (last && last.paths || []).map(function (p) { return [p.path.replace(/^\/ohmybahgosh\/TiviBro/, '') || '/', p.count, p.uniques]; }))) +
+      box('Downloads by release', table(['Release', 'TV', 'Phone', 'Installer'], (last && last.releases || []).map(function (r) { var t = dl({ releases: [r] }); return [r.tag, t.tv, t.phone, t.other]; })), 'wide') +
+      '</div><p class="note">GitHub keeps traffic for 14 days; the Stats workflow saves it every morning, so this history grows from the day it started.  TVs count themselves once a day (version and webOS only, no address or ID, off in Settings, Updates and about); installs are counted by the install script.</p>';
+    main.innerHTML = h;
+    if (!window.Chart) return;
+    Chart.defaults.color = '#8E97B5'; Chart.defaults.borderColor = 'rgba(38,48,82,.7)'; Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+    var opt = function (stack) { return { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { boxWidth: 10 } } }, scales: { x: { stacked: !!stack, grid: { display: false } }, y: { stacked: !!stack, beginAtZero: true, ticks: { precision: 0 } } } }; };
+    var line = function (label, data, color, fill) { return { label: label, data: data, borderColor: color, backgroundColor: fill ? color + '33' : color, fill: !!fill, tension: .3, pointRadius: 0, borderWidth: 2 }; };
+    var bar = function (label, data, color) { return { label: label, data: data, backgroundColor: color, borderRadius: 4 }; };
+    new Chart(el('cViews'), { type: 'line', data: { labels: vDays, datasets: [line('Views', vDays.map(function (k) { return views[k].count; }), '#5B8CFF', true), line('Unique', vDays.map(function (k) { return views[k].uniques; }), '#33E1FF')] }, options: opt() });
+    new Chart(el('cClones'), { type: 'line', data: { labels: cDays, datasets: [line('Clones', cDays.map(function (k) { return clones[k].count; }), '#5B8CFF', true), line('Unique', cDays.map(function (k) { return clones[k].uniques; }), '#33E1FF')] }, options: opt() });
+    var a2 = act.filter(function (a) { return a.active || a.install || a.update; });
+    new Chart(el('cActive'), { type: 'bar', data: { labels: a2.map(function (a) { return a.date; }), datasets: [bar('TVs', a2.map(function (a) { return a.active; }), '#3DDC97')] }, options: opt() });
+    new Chart(el('cInst'), { type: 'bar', data: { labels: a2.map(function (a) { return a.date; }), datasets: [bar('Installs', a2.map(function (a) { return a.install; }), '#5B8CFF'), bar('Updates', a2.map(function (a) { return a.update; }), '#33E1FF')] }, options: opt(true) });
+    var cum = function (dates) { var s = dates.map(d10).sort(), out = {}; s.forEach(function (d, i) { out[d] = i + 1; }); return out; };
+    var st = cum(last && last.stars || []), fk = cum(last && last.forks || []), sd = Object.keys(Object.assign({}, st, fk)).sort(), cs = 0, cf = 0;
+    new Chart(el('cStars'), { type: 'line', data: { labels: sd, datasets: [line('Stars', sd.map(function (d) { cs = st[d] || cs; return cs; }), '#F5C451'), line('Forks', sd.map(function (d) { cf = fk[d] || cf; return cf; }), '#5B8CFF')] }, options: opt() });
+    new Chart(el('cDl'), { type: 'bar', data: { labels: dlDaily.map(function (d) { return d.date; }), datasets: [bar('TV', dlDaily.map(function (d) { return d.tv; }), '#5B8CFF'), bar('Phone', dlDaily.map(function (d) { return d.phone; }), '#33E1FF')] }, options: opt(true) });
+  }
+  function el(id) { return document.getElementById(id); }
+  function box(title, inner, cls) { return '<div class="box ' + (cls || '') + '"><h2>' + title + '</h2>' + inner + '</div>'; }
+  function obj(o) { return Object.keys(o).map(function (k) { return [k, o[k]]; }).sort(function (a, b) { return b[1] - a[1]; }); }
+  function table(head, rows) {
+    if (!rows.length) return '<p style="color:var(--muted)">Nothing yet.</p>';
+    return '<table><tr>' + head.map(function (h, i) { return '<th' + (i ? ' class="n"' : '') + '>' + h + '</th>'; }).join('') + '</tr>' +
+      rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td' + (i ? ' class="n"' : '') + '>' + esc(i ? fmt(c) : c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</table>';
+  }
+})();
+</script>
+</body></html>

@@ -65,7 +65,7 @@ function run(args, extra, piped) {
   try { fs.unlinkSync(calls); } catch (e) {}
   try { fs.unlinkSync(path.join(tmp, 'installed.ipk')); } catch (e) {}
   const B = 'http://127.0.0.1:' + server.address().port;
-  const env = Object.assign({}, process.env, { PATH: bin + ':' + process.env.PATH, TMPDIR: tmp, TIVIBRO_BASE: B + '/rel', TIVIBRO_API: B + '/api',
+  const env = Object.assign({}, process.env, { PATH: bin + ':' + process.env.PATH, TMPDIR: tmp, TIVIBRO_BASE: B + '/rel', TIVIBRO_NO_COUNT: '1', TIVIBRO_API: B + '/api',
     NO_PROXY: '127.0.0.1,localhost', no_proxy: '127.0.0.1,localhost', HTTP_PROXY: '', http_proxy: '' }, extra || {});
   // Async: the fake GitHub runs in this process, so a blocking spawn would deadlock.
   return new Promise(res => {

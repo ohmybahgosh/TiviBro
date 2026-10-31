@@ -759,6 +759,7 @@ Your version, and new versions from GitHub.  See [Updates](#updates).
 | **What's new** | | The changes in the new version. |
 | **Check automatically** | **On** · Off | Once a day when TiviBro starts.  Nothing is installed without asking you. |
 | **Include test versions** | On · Off (**On** when you are running one) | Also offers alpha and beta builds: new features first, and some rough edges. |
+| **Count this TV in the install numbers** | **On** · Off | Once a day TiviBro says which version it is and which webOS the TV has.  Nothing else: no address is kept, no ID, nothing about your channels. |
 | **Installing on this TV** | (information) | Whether this TV can install updates by itself. |
 
 ### Settings: Diagnostics

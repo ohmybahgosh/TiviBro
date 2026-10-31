@@ -414,6 +414,7 @@ var App = (function () {
       Phone.start();
       Phone.launched(launchParams());
       Update.autoCheck();
+      Update.countMe();
       // Something broke last time (an error, or TiviBro closed on its own): offer to report it, once.
       var crash = Log.lastCrash, gone = Log.settle(Net.info && Net.info.sys), key = gone ? 'u' + gone.s : crash ? crash.s : '';
       if (key && localStorage.getItem('tivibro.crashSeen') !== key) {

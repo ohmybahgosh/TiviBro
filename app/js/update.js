@@ -114,6 +114,27 @@ var Update = (function () {
     });
   }
   // At start: once a day at most, quietly, well after the guide has loaded.
+  /* Install numbers (relay/worker.js, tivibro.app/stats): once a day TiviBro says which version runs on
+     which webOS version, nothing else (no address kept, no ID, nothing about channels).  Off in
+     Settings, Updates and about. */
+  function countMe() {
+    if (Store.settings.countMe === false) return;
+    // Real TVs only: not the simulator, tests or a desktop browser.
+    if (typeof PalmServiceBridge === 'undefined' || !/Web0S|webOS/i.test(navigator.userAgent) || /HeadlessChrome|Electron/i.test(navigator.userAgent)) return;
+    var today = new Date().toISOString().slice(0, 10);
+    try { if (localStorage.getItem('tivibro.counted') === today) return; } catch (e) { return; }
+    setTimeout(function () {
+      fetch((Store.settings.relayConfig || 'https://tivibro.app/relay.json'), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (cfg) {
+        var url = String(cfg && cfg.url || '').replace(/\/report$/, '/count');
+        if (!/^https:\/\//.test(url) && !/^http:\/\/127\.0\.0\.1/.test(url)) return;
+        var w = typeof Caps !== 'undefined' ? Caps.webosVersion(navigator.userAgent) : 0;
+        return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ e: 'active', v: current(), w: w ? String(w) : '' }) }).then(function (r) {
+          if (r.ok) { try { localStorage.setItem('tivibro.counted', today); } catch (e) {} }
+        });
+      }).catch(function () {});
+    }, 60000);
+  }
+
   function autoCheck() {
     var c = load();
     if (c && c.latest && compare(c.latest.version, current()) > 0 && c.latest.sha256) set({ state: 'available', latest: c.latest, checked: c.checked });
@@ -192,7 +213,7 @@ var Update = (function () {
   }
 
   return {
-    check: check, autoCheck: autoCheck, install: install, installer: installer, describe: describe,
+    check: check, autoCheck: autoCheck, countMe: countMe, install: install, installer: installer, describe: describe,
     onChange: function (f) { listeners.push(f); }, get state() { return st; }, get current() { return current(); },
     get wantPre() { return wantPre(); }, REPO: REPO, isPre: isPre,
     _test: { parse: parse, compare: compare, pick: pick, notes: notes, isPre: isPre }
