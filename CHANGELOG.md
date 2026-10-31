@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 27, 2026-10-31)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 27
 
 - **Search now finds Movies and Shows.**  A new **Movies & Shows** filter sits beside Everything, On now, Coming up, Replays and Channels.  No need to open Movies or Shows first: the lists load in the background when Search opens, and titles that start with what you typed come first.  **OK** opens the movie in Movies and plays it, or a show's episodes, same as picking it from the list.  Thanks to moritzm784 for the idea and the code (#2, #3).
 - **The guide looks more like TiviMate.**  Rows have more room.  What's on now has the part already aired tinted in your accent colour, under the text, instead of a bar; the time line is a thin line in the accent colour with a marker in the time bar; and the programme details show a short bar with the time left, as in TiviMate.
 - **The web editor's guide Test connection gives up after 20 seconds** on a server that accepts the connection and then goes silent, instead of spinning forever.  Thanks to moritzm784 (#4).
 
-## 0.6.0 (alpha 26, 2026-10-31)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 26
+### In alpha 26
 
 - **Reorder groups from a phone.**  In the web editor, **⋯** on a group has Move to the top, Move up one, Move down one, Move to the bottom and Move to position…, like channels.  Phones and tablets can't drag, so the drag handle is hidden there.
 - **Big guides of any size, with days of programmes.**  The network helper now downloads and reads XMLTV guides and keeps them on the TV's storage; TiviBro itself holds only programme times and titles and fetches a channel's descriptions when it shows them.  A 300 MB test guide (4,000 channels, 3 days) loads in seconds with TiviBro using about 110 MB, where a 64 MB guide used to close it.  A restart shows the guide from storage without downloading again, and the guide now reaches three days ahead.  TVs without the helper keep reading the guide in the app, within its memory limit.
