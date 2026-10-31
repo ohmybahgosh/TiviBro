@@ -19,6 +19,7 @@
 - A phone pairs only with the code shown on the TV, for 10 minutes.  The code never crosses the network, and five wrong codes end it.
 - Each phone gets its own key.  Everything it sends is signed with it, can't be replayed, and the TV signs its answers back.
 - Remove a phone in **Settings > Phone app** and its key stops working at once.
+- The Android app only talks to your TVs on your home network.  It sends nothing to us or anyone else, and has no analytics.
 
 ## Backups
 
@@ -30,8 +31,21 @@
 
 ## Network
 
-TiviBro only talks to your provider, to guide sources you add, to your own computer when the web editor is on, and to phones you paired when the phone app connection is on.  No ads.
+TiviBro talks to:
+
+- Your provider, and guide sources you add.
+- The public guide sources (epg.pw and iptv-epg.org), to fill in channels your provider has no guide for.  On by default; switch it off per playlist under **Settings > Playlists and guide > (your playlist) > Public guide fill-in**.  They see a request from your network for a country's guide, nothing from your playlist.
+- GitHub (api.github.com), to check for updates.
+- tivibro.app, for the daily install count below, the logo library when you turn it on, and problem reports only when you choose to send one.
+- Cloudflare's speed test, only when you run **Speed test**.
+- Your own computer when the web editor is on, and phones you paired when the phone app connection is on.
+
+No ads, no accounts, no tracking IDs.
 
 ## Install numbers
 
-Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has, so we know how many TVs run each version.  Nothing else: no address is kept (each network is counted once a day with a hash that is forgotten after two days), no ID, nothing about your channels or playlists.  The install script says whether it installed or updated, and which version.  Switch it off in **Settings > Updates and about > Count this TV in the install numbers**, or run the install script with `TIVIBRO_NO_COUNT=1`.
+Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has, so we know how many TVs run each version.  Nothing else: no address is kept (each network is counted once a day with a hash that is forgotten after two days), no ID, nothing about your channels or playlists.  The install script says whether it installed or updated, and which version.  Switch it off in **Settings > Updates and about > Count this TV in the install numbers**, or run the install script with `TIVIBRO_NO_COUNT=1`.  Only the totals are kept, on tivibro.app's Cloudflare server.
+
+## The website
+
+tivibro.app uses Google Analytics only if you choose **Allow** on its banner (change it any time with **Cookie settings** at the bottom of the page).  IP addresses are anonymized and ad features are off.  See [tivibro.app/privacy](https://tivibro.app/privacy/).

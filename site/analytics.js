@@ -1,7 +1,7 @@
 /* Visit counts for tivibro.app with Google Analytics 4, only after the visitor says yes.
    Switched on by the measurement ID in <meta name="ga-id" content="G-XXXXXXXXXX"> in index.html;
    while that is empty nothing loads and no banner shows.  The choice is kept in this browser
-   (localStorage), and "Cookie settings" in the footer asks again.  The TV app has no analytics. */
+   (localStorage), and "Cookie settings" in the footer asks again.  The TV app has no analytics (only the anonymous daily count in app/js/update.js). */
 (function () {
   var meta = document.querySelector('meta[name="ga-id"]'), ID = meta && meta.content.trim();
   var KEY = 'tivibro.analytics', loaded = false;
@@ -29,7 +29,7 @@
   function banner() {
     var old = document.getElementById('consent'); if (old) old.remove();
     var b = document.createElement('div'); b.id = 'consent'; b.className = 'consent'; b.setAttribute('role', 'dialog'); b.setAttribute('aria-label', 'Analytics');
-    b.innerHTML = '<p><b>Can we count your visit?</b>  tivibro.app uses Google Analytics to see which pages help people.  The TiviBro app on your TV never tracks you.</p>' +
+    b.innerHTML = '<p><b>Can we count your visit?</b>  tivibro.app uses Google Analytics to see which pages help people.  The TiviBro app on your TV doesn\'t track you.  <a href="/privacy/">Privacy</a></p>' +
       '<div><button type="button" class="btn sm primary" data-c="yes">Allow</button><button type="button" class="btn sm ghost" data-c="no">No thanks</button></div>';
     b.addEventListener('click', function (e) {
       var c = e.target.getAttribute && e.target.getAttribute('data-c'); if (!c) return;

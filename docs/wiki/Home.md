@@ -41,7 +41,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🧹 **Clean-up that already knows IPTV** | Pick your city once and every local group (ABC, CBS, NBC, FOX, CW, PBS…) keeps only your stations.  Keep East or West feeds in one click.  Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from any naming style, duplicates in different qualities, and **Smart match** for channels without a guide. |
 | 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled" stay out of the way, and come back by themselves when an event is named. |
 | 🔐 **Locked backups, restored from the first screen** | One AES-256 file with every playlist, login, group and setting.  A brand-new TV restores it from a computer before you've touched a setting. |
-| 💸 **Everything free, nothing locked** | Catch-up, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking. |
+| 💸 **Everything free, nothing locked** | Catch-up, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking, just an anonymous daily count of installs by version, which you can switch off. |
 | 📺 **Made for LG TVs** | Runs on the TV itself, webOS 4 and newer.  No Android box or Fire Stick needed. |
 
 | | TiviBro | TiviMate |

@@ -2,7 +2,7 @@
 No.  TiviBro is a player.  You need your own subscription: an Xtream Codes login or an M3U playlist address.
 
 **Is it really free?**
-Yes.  No accounts, no ads, no tracking, MIT licensed.
+Yes.  No accounts, no ads, no tracking, MIT licensed.  The only thing TiviBro sends about itself is an anonymous daily count of TVs by version, which you can switch off ([details](Privacy-and-security#install-numbers)).
 
 **Which TVs work?**
 LG TVs from webOS 4 (2018) to webOS 26.  webOS 25 is the main target and is tested in the webOS 25 Simulator; older versions share the same code with fallbacks.  See [webOS compatibility](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/COMPATIBILITY.md).

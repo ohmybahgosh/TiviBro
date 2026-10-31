@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Privacy · TiviBro</title>
+<meta name="description" content="What TiviBro, its phone app and tivibro.app send, and what they keep.">
+<link rel="canonical" href="https://tivibro.app/privacy/">
+<link rel="icon" href="/img/icon-32.png">
+<style>
+html,body{margin:0;min-height:100%;background:#0b0e1a;color:#e8ecf8;font:17px/1.6 Inter,system-ui,sans-serif}
+main{max-width:720px;margin:0 auto;padding:48px 22px 64px}
+header{display:flex;align-items:center;gap:14px;margin-bottom:8px}
+header img{height:30px}
+h1{font-size:30px;margin:22px 0 4px}
+h2{font-size:20px;margin:34px 0 8px;color:#33e1ff}
+p,li{color:#c3c9dc}
+ul{padding-left:22px}
+li{margin:6px 0}
+b{color:#e8ecf8}
+a{color:#5b8cff}
+code{font:15px ui-monospace,Menlo,monospace;background:#141a2e;padding:1px 6px;border-radius:6px}
+small{color:#7c85a3}
+</style>
+</head><body><main>
+<header><a href="/"><img src="/img/wordmark.webp" alt="tiviBro"></a></header>
+<h1>Privacy</h1>
+<p><small>Updated October 31, 2026</small></p>
+<p>TiviBro is free and open source, with no accounts and no ads.  This page says everything the TV app, the phone app and this website send, and what is kept.  The code is all public on <a href="https://github.com/ohmybahgosh/TiviBro">GitHub</a> if you want to check.</p>
+
+<h2>The TV app</h2>
+<ul>
+<li><b>Your provider logins, playlists, channels and settings stay on your TV.</b>  There are no TiviBro accounts or servers holding them.</li>
+<li><b>Install numbers.</b>  Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has.  The install script says whether it installed or updated, and which version.  No ID is sent and no address is kept: each network is counted once a day using a hash that is forgotten after two days.  Only the daily totals are kept.  Switch it off in <b>Settings &gt; Updates and about &gt; Count this TV in the install numbers</b>, or run the install script with <code>TIVIBRO_NO_COUNT=1</code>.</li>
+<li><b>Update checks</b> go to GitHub (api.github.com).</li>
+<li><b>Public guide fill-in</b> (on by default) downloads country guides from epg.pw and iptv-epg.org for channels nothing else covers.  Nothing from your playlist is sent.  Switch it off per playlist under <b>Settings &gt; Playlists and guide</b>.</li>
+<li><b>The logo library</b>, if you turn it on, asks tivibro.app for logo lists by country only.</li>
+<li><b>Problem reports</b> are sent only when you choose to.  Provider, guide and server names are replaced before anything leaves the TV, and the report becomes a public GitHub issue.</li>
+<li><b>Speed test</b> uses Cloudflare's speed test, only when you run it.</li>
+</ul>
+
+<h2>The phone app</h2>
+<ul>
+<li>The Android app talks only to your TVs on your home network.  It sends nothing to us or anyone else and has no analytics.</li>
+<li>Pairing keys are kept in the phone's secure key storage.  Remove a phone on the TV and its key stops working at once.</li>
+</ul>
+
+<h2>This website</h2>
+<ul>
+<li>tivibro.app counts visits with Google Analytics <b>only if you choose Allow</b> on its banner.  IP addresses are anonymized, and Google signals and ad personalization are off.  Change your choice any time with <b>Cookie settings</b> at the bottom of the home page.</li>
+<li>The site is hosted on GitHub Pages, and the install counter and report relay run on Cloudflare.  Like any web host, they handle your IP address to answer requests.</li>
+</ul>
+
+<h2>Questions</h2>
+<p>Open an issue on <a href="https://github.com/ohmybahgosh/TiviBro/issues">GitHub</a>.  More detail is in the <a href="https://github.com/ohmybahgosh/TiviBro/wiki/Privacy-and-security">Privacy and security</a> guide.</p>
+</main></body></html>

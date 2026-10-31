@@ -89,7 +89,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled" stay out of the way, and come back by themselves when an event is named. |
 | 🔐 **Locked backups, restored from the first screen** | One AES-256 file with every playlist, login, group and setting.  A brand-new TV restores it from a computer before you've touched a setting. |
 | 🐞 **Report a problem from the couch** | **Report a problem** shows a QR code.  Your phone opens a short form, the TV adds its version, model and log with logins and server names taken out, and GitHub's bug form opens filled in.  No copying logs off the TV. |
-| 💸 **Everything free, nothing locked** | Catch-up, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking. |
+| 💸 **Everything free, nothing locked** | Catch-up, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking: just an anonymous daily count of installs by version, which you can switch off. |
 | 📺 **Made for LG TVs** | Runs on the TV itself, webOS 4 and newer.  No Android box or Fire Stick needed. |
 
 | | TiviBro | TiviMate |

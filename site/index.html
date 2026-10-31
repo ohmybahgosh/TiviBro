@@ -411,7 +411,7 @@
     <details class="reveal"><summary>What's the "network helper"?</summary><p>A part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams for the app, because webOS won't let an app talk to most IPTV servers directly.  It talks to your own provider, and to the free public guides when it fills in channels your provider leaves blank.  It never sends your logins anywhere else.  Leave Connection on Automatic.</p></details>
     <details class="reveal"><summary>Where does the guide come from if my provider doesn't send one?</summary><p>From your provider first, then any guide addresses you add.  Channels still blank get listings from two free, community-run guides, epg.pw and iptv-epg.org, matched by guide id, a local station's call sign or the name.  That never replaces a guide you already have, and you can turn it off or pick the countries in Settings.</p></details>
     <details class="reveal"><summary>If I hide the other qualities of a channel, can TiviBro still switch to them?</summary><p>Yes.  Hiding only takes a copy out of your lists.  When the copy you watch stops working, TiviBro still moves to another quality or copy by itself, hidden ones included, and tells you.  Only a copy you lock with the parental PIN is skipped.  The other East or West feed isn't used, since it runs hours apart.</p></details>
-    <details class="reveal"><summary>Is it really free?</summary><p>Yes.  It's MIT licensed open source, with no accounts, ads or paid tiers, and the app on your TV never tracks you.</p></details>
+    <details class="reveal"><summary>Is it really free?</summary><p>Yes.  It's MIT licensed open source, with no accounts, ads or paid tiers, and the app on your TV doesn't track you.  It only sends an anonymous daily count of TVs by version, which you can switch off.</p></details>
     <details class="reveal"><summary>Are my logins safe?</summary><p>Logins stay on the TV.  The web editor only ever sees server names, it needs the password shown on the TV, and backups are always encrypted with a passphrase you choose.</p></details>
     <details class="reveal"><summary>Something isn't working.  How do I report it?</summary><p>On the TV, open <b>Report a problem</b> (at the bottom of the menu in test builds, in <b>Settings &gt; Diagnostics</b>, and on the first screen) and scan the QR code.  Your phone opens a short form; the TV adds its version, model and log with logins and server names taken out, and the report goes to GitHub with one press, no account needed.  If TiviBro closed by itself, the next start asks right away and can send the report straight from the TV.</p></details>
     <details class="reveal"><summary>Where's the full manual?</summary><p>The <a href="https://github.com/ohmybahgosh/TiviBro/wiki">user guide</a> covers every remote button, every screen and every setting, with videos and screenshots.</p></details>
@@ -458,12 +458,13 @@
       <a href="https://github.com/ohmybahgosh/TiviBro/releases">Releases</a>
       <a href="https://github.com/ohmybahgosh/TiviBro/wiki">User guide</a>
       <a href="https://github.com/ohmybahgosh/TiviBro/issues/new/choose">Report a bug</a>
+      <a href="privacy/">Privacy</a>
       <a href="#" id="consentLink" hidden>Cookie settings</a>
     </nav>
     <p class="legal">TiviBro is an independent project.  It is not affiliated with LG Electronics or TiviMate, and it provides no channels, streams or playlists.</p>
   </div>
 </footer>
-<script src="analytics.js?v=5" defer></script>
+<script src="analytics.js?v=6" defer></script>
 
 <script>
 (function () {
