@@ -308,24 +308,47 @@ var WebEdit = (function () {
       var t0 = Date.now();
       // Through the helper the guide arrives unzipped, whatever its compression.
       var viaHelper = Net.active;
-      return fetch(Net.wrap(url, viaHelper ? { unzip: 't' + Date.now().toString(36) } : null), { cache: 'no-store' }).then(function (r) {
+      // A server that accepts the connection and then goes silent can leave read() pending
+      // forever on some TVs' older browser engines.  race() is what actually guarantees giving
+      // up -- cancel()/abort() are only best-effort cleanup, since some TVs' 2016-era Streams
+      // implementation may not honor either on a pending read.
+      var IDLE_MS = 20000, ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, rd = null, idle, giveUp, timedOut = false;
+      function hangUp() {
+        timedOut = true;
+        if (ctl) { try { ctl.abort(); } catch (e) {} } else if (rd) { try { rd.cancel(); } catch (e) {} }
+        if (giveUp) giveUp(new Error('No data for ' + (IDLE_MS / 1000) + 's.  Check the address and that the server is reachable.'));
+      }
+      function race(p) {
+        clearTimeout(idle);
+        var waited = new Promise(function (_, rej) { giveUp = rej; idle = setTimeout(hangUp, IDLE_MS); });
+        return Promise.race([p, waited]);
+      }
+      var size = 0, gz = false, noGzMsg = null;
+      return race(fetch(Net.wrap(url, viaHelper ? { unzip: 't' + Date.now().toString(36) } : null), Object.assign({ cache: 'no-store' }, ctl ? { signal: ctl.signal } : null))).then(function (r) {
         if (!r.ok) throw new Error('The server answered ' + r.status + '.  Check the address.');
         var how = r.headers.get('x-unzipped') || '';
-        var size = +(r.headers.get('x-raw-length') || r.headers.get('content-length')) || 0, gz = !!how || /\.gz($|\?)/.test(url);
-        if (!viaHelper && gz && typeof DecompressionStream === 'undefined') { try { r.body.cancel(); } catch (e) {} return { msg: 'Reachable, but this TV can only unzip .gz guides through the network helper.  Set Settings > Playback > Network to Automatic, or use the plain .xml address.', data: { ok: true, size: size, gz: true, noGz: true } }; }
-        var body = !viaHelper && gz ? r.body.pipeThrough(new DecompressionStream('gzip')) : r.body, rd = body.getReader(), dec = new TextDecoder(), txt = '';
+        size = +(r.headers.get('x-raw-length') || r.headers.get('content-length')) || 0; gz = !!how || /\.gz($|\?)/.test(url);
+        if (!viaHelper && gz && typeof DecompressionStream === 'undefined') { clearTimeout(idle); try { r.body.cancel(); } catch (e) {} noGzMsg = true; return ''; }
+        var body = !viaHelper && gz ? r.body.pipeThrough(new DecompressionStream('gzip')) : r.body, dec = new TextDecoder(), txt = '';
+        rd = body.getReader();
         function step() {
-          return rd.read().then(function (x) {
-            if (!x.done) txt += dec.decode(x.value, { stream: true });
-            if (x.done || txt.length > 400000) { try { rd.cancel(); } catch (e) {} return; }
+          return race(rd.read()).then(function (x) {
+            if (x.done) { if (timedOut) throw new Error('No data for ' + (IDLE_MS / 1000) + 's.  Check the address and that the server is reachable.'); return txt; }
+            txt += dec.decode(x.value, { stream: true });
+            if (txt.length > 400000) { try { rd.cancel(); } catch (e) {} return txt; }
             return step();
           });
         }
-        return step().then(function () {
-          if (!/<tv[\s>]/.test(txt) && !/<channel\b/.test(txt)) throw new Error('That address does not return an XMLTV guide.');
-          var ch = (txt.match(/<channel\b/g) || []).length, ms = Date.now() - t0;
-          return { msg: 'Works.  ' + (size ? (size / 1048576).toFixed(1) + ' MB' + (gz ? ' zipped' : '') + ', ' : '') + 'answered in ' + (ms / 1000).toFixed(1) + ' s.', data: { ok: true, size: size, gz: gz, channelsSeen: ch } };
-        });
+        return step();
+      }).then(function (txt) {
+        clearTimeout(idle);
+        if (noGzMsg) return { msg: 'Reachable, but this TV can only unzip .gz guides through the network helper.  Set Settings > Playback > Network to Automatic, or use the plain .xml address.', data: { ok: true, size: size, gz: true, noGz: true } };
+        if (!/<tv[\s>]/.test(txt) && !/<channel\b/.test(txt)) throw new Error('That address does not return an XMLTV guide.');
+        var ch = (txt.match(/<channel\b/g) || []).length, ms = Date.now() - t0;
+        return { msg: 'Works.  ' + (size ? (size / 1048576).toFixed(1) + ' MB' + (gz ? ' zipped' : '') + ', ' : '') + 'answered in ' + (ms / 1000).toFixed(1) + ' s.', data: { ok: true, size: size, gz: gz, channelsSeen: ch } };
+      }, function (e) {
+        clearTimeout(idle);
+        throw timedOut ? new Error('No data for ' + (IDLE_MS / 1000) + 's.  Check the address and that the server is reachable.') : e;
       });
     },
     listDrafts: function () {
@@ -506,7 +529,8 @@ var WebEdit = (function () {
     snap: function (name) { return snap('named', name); },
     get on() { return on; }, get status() { return status; },
     set onStatus(fn) { onStatus = fn; },
-    addresses: function () { return status && status.ips && status.ips.length ? status.ips.map(function (ip) { return 'http://' + ip + ':' + status.port; }) : []; }
+    addresses: function () { return status && status.ips && status.ips.length ? status.ips.map(function (ip) { return 'http://' + ip + ':' + status.port; }) : []; },
+    _testEpgSource: function (a) { return RUN.testEpgSource(a); }   // test hook only
   };
   return exports;
 
