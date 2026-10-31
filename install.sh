@@ -55,6 +55,17 @@ json() {   # json FILE 'expression of j' [extra argument, as process.argv[2]]
   node -e "var j = JSON.parse(require('fs').readFileSync(process.argv[1], 'utf8')); var r = ($2); if (r != null && r !== '') console.log(r);" "$1" "${3:-}"
 }
 
+# One Luna call; prints the reply.  Root can use the private bus (luna-send), which newer TVs need
+# for the application manager: there luna-send-pub gets "Denied method call" (seen on webOS 25).
+# Falls back to the public bus when there is no luna-send or it refuses.
+luna() {   # luna URI JSON
+  if command -v luna-send >/dev/null 2>&1; then
+    R="$(luna-send -n 1 "$1" "$2" 2>/dev/null || true)"
+    case "$R" in *'"returnValue":true'*|*'"returnValue": true'*) echo "$R"; return 0 ;; esac
+  fi
+  luna-send-pub -n 1 "$1" "$2" 2>/dev/null || true
+}
+
 rm -rf "$WORK"; mkdir -p "$WORK"
 trap 'rm -rf "$WORK"' EXIT INT TERM
 
@@ -95,7 +106,7 @@ if [ -n "$SUM" ]; then
   say "Checksum OK"
 fi
 
-OLD="$(luna-send-pub -n 1 'luna://com.webos.applicationManager/getAppInfo' "{\"id\":\"$APP_ID\"}" 2>/dev/null \
+OLD="$(luna 'luna://com.webos.applicationManager/getAppInfo' "{\"id\":\"$APP_ID\"}" \
   | node -e "var s = ''; process.stdin.on('data', function (d) { s += d; }); process.stdin.on('end', function () { try { console.log(JSON.parse(s).appInfo.version || ''); } catch (e) {} });" 2>/dev/null || true)"
 [ -z "$OLD" ] || say "Installed now: $OLD"
 
@@ -117,5 +128,9 @@ esac
 echo
 echo "[*] TiviBro $VERSION installed.${OLD:+  (was $OLD)}"
 if [ "$LAUNCH" = 1 ]; then
-  luna-send-pub -n 1 'luna://com.webos.applicationManager/launch' "{\"id\":\"$APP_ID\"}" >/dev/null 2>&1 && echo "[*] Starting TiviBro." || true
+  # The reply says whether it worked; the command's exit code does not.
+  case "$(luna 'luna://com.webos.applicationManager/launch' "{\"id\":\"$APP_ID\"}")" in
+    *'"returnValue":true'*|*'"returnValue": true'*) echo "[*] Starting TiviBro." ;;
+    *) echo "[*] The TV would not start it from here.  Open TiviBro from the app list." ;;
+  esac
 fi
