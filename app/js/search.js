@@ -52,6 +52,20 @@ var Search = (function () {
     return opts.limit ? out.slice(0, opts.limit) : out;
   }
 
+  /* What the provider's own channel name says beyond the name TiviBro shows: the game or show that
+     providers write into names ("BIG10 10: Michigan vs Ohio State 12:00 PM").  Empty when the raw
+     name only adds a country, a quality tag or a number. */
+  var TAGS = /^(us|usa|uk|ca|au|de|fr|es|it|hd|fhd|uhd|sd|4k|hevc|h265|raw|live|backup|east|west|ppv|vip|plus|tv|the|and)$/;
+  function extra(c) {
+    if (!c || !c.n) return '';
+    var shown = {}, raw = String(c.n);
+    L.name(c).toLowerCase().split(/[^a-z0-9]+/).forEach(function (w) { if (w) shown[w] = 1; });
+    var more = raw.toLowerCase().split(/[^a-z0-9]+/).filter(function (w) { return w.length >= 3 && !shown[w] && !TAGS.test(w) && !/^\d+$/.test(w); });
+    if (!more.length) return '';
+    var m = /\s*[:|\u2013\u2014]\s*(.{3,})$|\s+-\s+(.{3,})$/.exec(raw);
+    return (m ? m[1] || m[2] : raw).replace(/\s+/g, ' ').trim();
+  }
+
   function hasReminder(c, p) { return Store.edits.reminders.some(function (x) { return x.k === c.k && x.s === p.s; }); }
 
   function render(row, it) {
@@ -75,7 +89,11 @@ var Search = (function () {
     var c = it.c, lg = c.logo || Epg.icon(Epg.epgId(c));
     row._img.style.visibility = lg ? 'visible' : 'hidden';
     if (lg && row._img.getAttribute('src') !== lg) row._img.src = lg;
-    if (it.p) {
+    if (it.raw) {
+      row._n.textContent = it.raw;
+      row._s.textContent = L.name(c) + '   ' + L.groupName(c.g);
+      row._t.textContent = 'in the name';
+    } else if (it.p) {
       var now = Date.now(), p = it.p;
       row._n.textContent = p.t;
       row._s.textContent = U.day(p.s) + ' ' + U.hhmm(p.s) + '   ' + L.name(c);
@@ -122,16 +140,27 @@ var Search = (function () {
     var q = input.value.trim().toLowerCase();
     if (q.length < 2) return history();
     var out = [], now = Date.now();
+    /* Channels by the name shown, then channels whose provider name carries what you typed (a game in
+       "BIG10 10: Michigan vs Ohio State"): those show that text, and its time when the name has one,
+       so it is clear why they matched. */
+    var inName = [], seenEv = {};
     if (filter === 'all' || filter === 'channels') {
       var all = L.data.channels;
-      for (var i = 0; i < all.length && out.length < 150; i++) {
+      for (var i = 0; i < all.length && out.length + inName.length < 300; i++) {
         var c = all[i];
         if (Store.edits.hiddenChannels[c.k] && !Store.settings.showHidden) continue;
-        if (L.name(c).toLowerCase().indexOf(q) >= 0 || c.n.toLowerCase().indexOf(q) >= 0) out.push({ c: c });
+        if (L.name(c).toLowerCase().indexOf(q) >= 0) { if (out.length < 150) out.push({ c: c }); continue; }
+        if (c.n.toLowerCase().indexOf(q) < 0) continue;
+        var ev = Events.of(c), x = extra(c);
+        if (ev && ev.title && ev.start) { seenEv[ev.title.toLowerCase() + '|' + ev.start] = 1; inName.push({ c: c, p: { s: ev.start, e: ev.end, t: ev.title, ev: 1 } }); }
+        else inName.push({ c: c, raw: x || c.n });
       }
     }
+    var timed = inName.filter(function (x) { return x.p; }).sort(function (a, b) { return a.p.s - b.p.s; });
+    out = out.concat(timed, inName.filter(function (x) { return !x.p; }));
     if (filter !== 'channels' && filter !== 'movies') {
       find(q).forEach(function (r) {
+        if (r.p.ev && seenEv[r.p.t.toLowerCase() + '|' + r.p.s]) return;
         var p = r.p, on = p.s <= now && p.e > now;
         if (filter === 'now' && !on) return;
         if (filter === 'later' && p.s <= now) return;
@@ -257,5 +286,5 @@ var Search = (function () {
     Vod.prepare().then(function (got) { if (got && input.value.trim().length >= 2) run(); });
   }
 
-  return { open: open, find: find, matcher: matcher };
+  return { open: open, find: find, matcher: matcher, extra: extra };
 })();

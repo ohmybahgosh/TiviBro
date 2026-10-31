@@ -340,7 +340,12 @@ var Views = (function () {
       var pg = Epg.pubSource(c);
       now.appendChild(U.el('small', '', (nn.now.up ? 'Starts ' + Events.when(nn.now.e) : nn.now.ended ? 'Ended ' + Events.when(nn.now.s) : U.hhmm(nn.now.s) + ' to ' + U.hhmm(nn.now.e)) + '   ' + L.name(c) + (c.arch ? '   catch-up ' + c.arch + ' days' : '') + (pg ? '   public guide, ' + pg.name : '')));
       var nd = Epg.desc(c, nn.now); if (nd) now.appendChild(U.el('p', '', nd));
-    } else now.appendChild(U.el('small', '', nn ? 'No guide information' : 'Loading guide'));
+    } else {
+      // No guide: what the provider wrote in the channel name (often the game or show) is the next best thing.
+      var ex = Search.extra(c);
+      if (ex) { now.firstChild.textContent = ex; now.appendChild(U.el('small', '', L.name(c) + '   from the channel name, no guide information')); }
+      else now.appendChild(U.el('small', '', nn ? 'No guide information' : 'Loading guide'));
+    }
     if (nn && nn.next) next.textContent = 'Next  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t;
   }
 
@@ -743,7 +748,7 @@ var Views = (function () {
       if (nn && nn.now) {
         $('osdNow').textContent = (nn.now.up || nn.now.ended ? '' : U.hhmm(nn.now.s) + ' to ' + U.hhmm(nn.now.e) + '   ') + nn.now.t;
         $('osdBar').style.width = nn.now.up || nn.now.ended ? '0' : Math.round(100 * (Date.now() - nn.now.s) / (nn.now.e - nn.now.s)) + '%';
-      } else { $('osdNow').textContent = nn ? 'No guide information' : ''; $('osdBar').style.width = '0'; }
+      } else { $('osdNow').textContent = Search.extra(c) || (nn ? 'No guide information' : ''); $('osdBar').style.width = '0'; }
       $('osdNext').textContent = nn && nn.next ? 'Next  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t : '';
     }
     osdLegend();
