@@ -44,6 +44,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('the public guide channels can be picked by hand', await ev(() => Epg.guideChannels().some(x => /^iptvepg:US\//.test(x[0]))));
   ok('guide search sees public programmes', await ev(() => Epg.search('Public Local News', 5).length > 0));
 
+  // These servers send no size: the TV remembers each file's size for the next download's progress.
+  const sz = await ev(() => JSON.parse(localStorage.getItem('tivibro.guideSizes') || '{}'));
+  ok('the size of each public guide file is remembered', Object.keys(sz).length >= 3 && Object.values(sz).every(v => v > 1000), JSON.stringify(sz));
   // Cached: a restart reads it back without downloading again.
   const at = st.at;
   await page.reload();
@@ -65,8 +68,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => { Epg.pubAgain(); PubEpg.set(Store.playlist, { on: false }); return Epg.refresh(Library, false); });
   await page.waitForTimeout(3000);
   ok('switching off mid-run wins', await ev(() => !Library.data.channels.some(c => Epg.pubSource(c))));
+  await ev(() => { window.__prog = []; Epg.onProgress(p => window.__prog.push(p)); });
   await ev(() => { PubEpg.set(Store.playlist, { on: true }); return Epg.refresh(Library, false); });
   await page.waitForFunction(() => !Epg.loading && Epg.pubStatus && Epg.pubStatus.filled > 10, null, { timeout: 60000 });
+  const pr = await ev(() => window.__prog.filter(p => p.active && /public guide/.test(p.host || '') && p.total));
+  ok('the next download shows progress against the remembered size', pr.length && pr.every(p => p.est && p.total > 1000), JSON.stringify(pr.slice(0, 2)));
 
   // Off: back to no guide for them.
   await ev(() => { PubEpg.set(Store.playlist, { on: false }); Store.saveSettings && Store.saveSettings(); return Epg.refresh(Library, false); });

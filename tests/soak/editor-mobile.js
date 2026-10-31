@@ -42,8 +42,11 @@ const OVER = () => {
     const d = devices[dev], phone = d.viewport.width <= 700, tag = dev.replace(/\W+/g, '-').toLowerCase();
     const ctx = await b.newContext(Object.assign({}, d, { deviceScaleFactor: 1 }));
     const ed = await ctx.newPage(); const errs = []; ed.on('pageerror', e => errs.push(e.message));
+    ed.on('dialog', d => d.accept());            // Discard asks first
     // The QR code's address: signed in and on Smart clean-up.
     await ed.goto('http://127.0.0.1:' + st.port + '/#k=' + pw + '/tools'); await ed.waitForTimeout(3500);
+    // The last device's test changes, autosaved on the TV: throw them away.
+    await ed.evaluate(() => { const b = [].slice.call(document.querySelectorAll('#modal button')).filter(x => /Throw them away/.test(x.textContent))[0]; if (b) b.click(); }); await ed.waitForTimeout(300);
     const where = await ed.evaluate(() => ({ hash: location.hash, app: !document.getElementById('app').classList.contains('hidden') }));
     ok(dev + ': the QR address signs in and opens Smart clean-up, password gone from the address', where.app && where.hash === '#tools', JSON.stringify(where));
     for (const p of PAGES) {
@@ -96,6 +99,33 @@ const OVER = () => {
       const after = await ed.evaluate(() => ({ open: document.body.classList.contains('navopen'), cur: document.getElementById('navCur').textContent, page: page }));
       ok(dev + ': picking a page closes the list and names it in the top bar', !after.open && after.cur === 'Channel names' && after.page === 'names', JSON.stringify(after));
     }
+    // Smart match: long channel names must not push the confidence and approve buttons off screen.
+    await ed.evaluate(() => { location.hash = '#guide'; }); await ed.waitForTimeout(800);
+    await ed.evaluate(() => document.getElementById('smartBtn').click());
+    await ed.waitForSelector('#smBody table, #smBody .empty', { timeout: 30000 });
+    const sm = await ed.evaluate(() => {
+      const row = document.querySelector('#smBody table tr:nth-child(2)'); if (!row) return { rows: 0 };
+      const box = el => { const r = el.getBoundingClientRect(); return { l: Math.round(r.left), r: Math.round(r.right) }; };
+      return { rows: document.querySelectorAll('#smBody table tr').length - 1, conf: box(row.querySelector('.conf')), yes: box(row.querySelector('[data-yes]')), W: innerWidth };
+    });
+    o = await ed.evaluate(OVER);
+    ok(dev + ': Smart match shows confidence and approve without scrolling sideways', sm.rows > 0 && sm.conf.r <= sm.W && sm.yes.r <= sm.W && sm.conf.l >= 0 && !o.length, JSON.stringify(sm) + ' ' + o.join(', '));
+    if (SHOTS && dev === 'iPhone 13') await ed.screenshot({ path: path.join(SHOTS, 'editor-phone-smart-match.png') });
+    // Tapping ✓ on a row that is already approved keeps it approved (it used to quietly un-approve it).
+    const ap = await ed.evaluate(() => {
+      const b = document.querySelector('#smBody button.yes.on'); if (!b) return null;
+      const k = b.dataset.yes; b.click();
+      const again = document.querySelector('#smBody button[data-yes="' + k + '"]');
+      return { still: again.classList.contains('on'), label: again.textContent, go: document.getElementById('smGo').textContent };
+    });
+    ok(dev + ': tapping ✓ again keeps the row approved', ap && ap.still && /Approved/.test(ap.label) && /Apply \d/.test(ap.go), JSON.stringify(ap));
+    const before = await ed.evaluate(() => matchPool().filter(c => guideState(c) === 'none' || guideState(c) === 'prov').length);
+    await ed.evaluate(() => document.getElementById('smGo').click()); await ed.waitForTimeout(500);
+    const after2 = await ed.evaluate(() => matchPool().filter(c => guideState(c) === 'none' || guideState(c) === 'prov').length);
+    ok(dev + ': applied matches leave Needs a guide', after2 < before, before + ' -> ' + after2);
+    // Throw the test's changes away so the next device starts clean (drafts are kept on the TV).
+    await ed.evaluate(() => { const d = document.getElementById('cbDiscard'); if (d) d.click(); }); await ed.waitForTimeout(3500);
+    await ed.evaluate(() => { const b = [].slice.call(document.querySelectorAll('#modal button')).filter(x => /discard/i.test(x.textContent))[0]; if (b) b.click(); }); await ed.waitForTimeout(300);
     ok(dev + ': no page errors', !errs.length, errs.join(' | '));
     await ctx.close();
   }

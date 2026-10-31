@@ -166,7 +166,9 @@ var Epg = (function () {
         var t = Date.now();
         if (!force && t - lastPost < 400) return;
         lastPost = t;
-        self.postMessage({ progress: { src: i + 1, of: d.sources.length, host: src.host, bytes: bytes, total: size, programmes: total, channels: chans.length } });
+        // No size from the server: the size of the last full download of this guide, as an estimate.
+        var est = !size && src.known > 0;
+        self.postMessage({ progress: { src: i + 1, of: d.sources.length, host: src.host, bytes: bytes, total: est ? Math.max(src.known, bytes) : size, est: est, programmes: total, channels: chans.length } });
       }
       function one(src, i) {
         var got = {}, buf = '', n = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {};
@@ -225,7 +227,7 @@ var Epg = (function () {
           buf = final ? '' : buf.slice(last);
           if (buf.length > 4e6) buf = buf.slice(-1e6);
         }
-        var poll = 0, rd = null;
+        var poll = 0, rd = null, seen = 0, done = 0;
         return fetch(src.url, { cache: 'no-store' }).then(function (r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           var unzipped = !!r.headers.get('x-unzipped');                 // the helper did it
@@ -234,7 +236,7 @@ var Epg = (function () {
           var size = +(r.headers.get('x-raw-length') || r.headers.get('content-length')) || 0, bytes = 0, raw = r.body;
           // Unzipped by the helper: progress counts the zipped bytes it has downloaded, not the XML.
           if (unzipped) poll = setInterval(function () {
-            fetch(src.xfer, { cache: 'no-store' }).then(function (x) { return x.json(); }).then(function (x) { if (x && x.raw) { if (x.total) size = x.total; tell(i, src, x.raw, size); } }, function () {});
+            fetch(src.xfer, { cache: 'no-store' }).then(function (x) { return x.json(); }).then(function (x) { if (x && x.raw) { if (x.total) size = x.total; seen = x.raw; tell(i, src, x.raw, size); } }, function () {});
           }, 500);
           // Count bytes as they arrive (before unzipping) so the TV and the editor can show real progress.
           try {
@@ -245,7 +247,13 @@ var Epg = (function () {
           var reader = rd = body.getReader(), dec = new TextDecoder('utf-8');
           function step() {
             return reader.read().then(function (x) {
-              if (x.done) { buf += dec.decode(); eat(true); if (unzipped && size) tell(i, src, size, size, true); return; }
+              if (x.done) {
+                buf += dec.decode(); eat(true); done = unzipped ? size || seen : bytes;
+                if (unzipped && size) tell(i, src, size, size, true);
+                // A small file can finish before the helper's byte count was read: ask once more.
+                if (unzipped && !size) return fetch(src.xfer, { cache: 'no-store' }).then(function (y) { return y.json(); }).then(function (y) { if (y && y.raw) done = y.total || y.raw; }, function () {});
+                return;
+              }
               if (raw === r.body && !unzipped) { bytes += x.value.length; tell(i, src, bytes, size); }
               buf += dec.decode(x.value, { stream: true });
               if (buf.length > 512 * 1024) eat(false);
@@ -253,7 +261,7 @@ var Epg = (function () {
             });
           }
           return step();
-        }).then(function () { if (poll) { clearInterval(poll); poll = 0; } report.push({ url: src.label || src.url, ok: true, programmes: n, channels: Object.keys(got).length, filled: settle() }); },
+        }).then(function () { if (poll) { clearInterval(poll); poll = 0; } report.push({ url: src.label || src.url, key: src.key, bytes: done, ok: true, programmes: n, channels: Object.keys(got).length, filled: settle() }); },
           function (e) { clearInterval(poll); if (rd) { try { rd.cancel(); } catch (x) {} }      // stop the download too
             report.push({ url: src.label || src.url, ok: false, error: String(e && e.message || e), filled: settle() }); });
         // Public pass: fix this source's matches (only those with programmes count).
@@ -315,6 +323,14 @@ var Epg = (function () {
     }
   }
 
+  // Guide files whose server sends no size: remember how big each was last time, for progress.
+  function sizes() { try { return JSON.parse(localStorage.getItem('tivibro.guideSizes') || '{}') || {}; } catch (e) { return {}; } }
+  function rememberSizes(report) {
+    var m = sizes(), n = 0;
+    (report || []).forEach(function (r) { if (r.ok && r.key && r.bytes > 0) { m[r.key] = r.bytes; n++; } });
+    var keys = Object.keys(m); if (keys.length > 40) keys.slice(0, keys.length - 40).forEach(function (k) { delete m[k]; });
+    if (n) try { localStorage.setItem('tivibro.guideSizes', JSON.stringify(m)); } catch (e) {}
+  }
   function loadXml(force) {
     var p = P(), srcs = sources();
     var ckey = 'epg:' + p.id;
@@ -331,6 +347,7 @@ var Epg = (function () {
         ingest(res); xmlReady = true;
         Store.idbSet(ckey, res);
         emit(null);
+        rememberSizes(res.report);
         var bad = res.report.filter(function (r) { return !r.ok; });
         if (bad.length) U.toast('Guide source failed: ' + bad[0].error, 4000);
         var progs = res.report.reduce(function (a, r) { return a + (r.programmes || 0); }, 0);
@@ -361,7 +378,7 @@ var Epg = (function () {
       // Through the helper, guides arrive already unzipped (.gz, gzip-encoded, or gzipped without saying so).
       var id = Net.active ? 'g' + run + i : '';
       var label = s.provider ? 'provider guide' : s.prefix ? s.name + ' ' + s.cc : s.url;
-      return { url: Net.wrap(s.url, id ? { unzip: id } : null), xfer: id ? Net.xfer(id) : '', label: label, host: s.provider ? label : s.prefix ? 'public guide, ' + label : hostOf(s.url), offset: s.offset || 0,
+      return { url: Net.wrap(s.url, id ? { unzip: id } : null), xfer: id ? Net.xfer(id) : '', label: label, key: U.hash(s.url), known: sizes()[U.hash(s.url)] || 0, host: s.provider ? label : s.prefix ? 'public guide, ' + label : hostOf(s.url), offset: s.offset || 0,
         pub: s.prefix ? { prefix: s.prefix, cc: s.cc, name: s.name } : null };
     }),
       ids: Object.keys(ids), past: ids, names: names, from: now - days * 86400e3, recent: now - 3 * 3600e3, to: now + 2 * 86400e3,
@@ -463,6 +480,7 @@ var Epg = (function () {
       });
       var started = Date.now();
       return work(files, { pk: pk, want: want }).then(function (res) {
+        rememberSizes(res.report);
         if (gen !== pubGen) {
           // Superseded (turned off, looked again): don't leave its download showing as still running.
           if (progress.active && /^public guide/.test(progress.host || '')) setProgress({ active: false, phase: 'done', at: Date.now(), programmes: 0, channels: 0 });

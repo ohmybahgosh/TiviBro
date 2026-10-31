@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Smart match applies what you approve.**  On a short list the matching finished before the dialog was ready and left **Apply** greyed out, so nothing was applied and the channels stayed under "Needs a guide".  Approving is also clearer: rows say **✓ Approved** in solid green, tapping ✓ again no longer quietly un-approves a row (✕ skips it), and Apply says "Nothing approved yet" when that's the case.
+- **Smart match on phones:** each row stacks the channel, the guide channel, then the confidence and Approve, so nothing hides off the right edge.
+- **Smart match no longer suggests a channel's own empty guide.**  Channels whose guide id has no programmes are looked at too; suggesting that same id again changed nothing.
+- **Guide download progress when the server gives no size:** the TV remembers each guide file's size from its last download and shows "12 MB of about 64 MB" next time.  (Only a fingerprint of the address is kept, never the address with its login.)
+
 ## 0.6.0 (alpha 24, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -226,7 +226,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 .cat td:first-child{width:46%}
 .yn{display:inline-flex;gap:4px}
 .yn button{padding:4px 10px}
-.yn button.yes.on{background:var(--okbg);border-color:#2f6b50;color:#7fe0ae}
+.yn button.yes.on{background:#1f7a4f;border-color:#2fa36b;color:#fff;font-weight:600}
 .yn button.no.on{background:var(--badbg);border-color:#6b2a2e;color:#ff9a9d}
 /* playlists */
 .plgrid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
@@ -351,6 +351,13 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
   #mList table.t td{display:block;border:none;padding:0}
   #mList table.t td:first-child{flex:1 1 100%;width:auto!important}
   #mList table.t td:nth-child(2){flex:1 1 auto;min-width:0}
+  /* Smart match: name, then the guide channel full width, then confidence and approve on one line, so nothing hides off the side. */
+  #smBody table.t tr{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:12px 0;border-bottom:1px solid var(--line)}
+  #smBody table.t th{display:none}
+  #smBody table.t td{display:block;border:none;padding:0}
+  #smBody table.t td:nth-child(1),#smBody table.t td:nth-child(2){flex:1 1 100%;min-width:0}
+  #smBody table.t td:nth-child(2) .dd{max-width:none!important}
+  #smBody table.t td.r{margin-left:auto}
   .dset .dn{flex:1 1 100%}
   /* The change bar: what is waiting and Send automatically on one line, the buttons on the next. */
   .changebar .lbl{flex:1 1 calc(100% - 120px);min-width:0;font-size:14px}
@@ -1933,7 +1940,7 @@ function drawProgress(p) {
   box.innerHTML = '<div class="prog"><div class="top"><span class="spinner"></span><b>' + (p.phase === 'save' ? 'Saving the guide on the TV…' : 'Downloading the guide') + '</b>' +
     '<span class="muted small">' + esc(p.host || '') + (p.of > 1 ? '  (source ' + p.src + ' of ' + p.of + ')' : '') + '</span><span class="grow"></span><b>' + (pct >= 0 ? pct + '%' : '') + '</b></div>' +
     '<div class="bar acc' + (pct < 0 ? ' indet' : '') + '" style="height:8px;margin:10px 0 8px"><i style="width:' + (pct >= 0 ? pct : 30) + '%"></i></div>' +
-    '<div class="nums">' + fmtMB(p.bytes || 0) + (p.total ? ' of ' + fmtMB(p.total) : ' so far (the server did not say how big it is)') + (speed ? '  ·  ' + speed : '') + (eta ? '  ·  ' + eta : '') +
+    '<div class="nums">' + fmtMB(p.bytes || 0) + (p.total ? ' of ' + (p.est ? 'about ' : '') + fmtMB(p.total) : ' so far (first download of this guide: its server doesn\'t say how big it is, so the TV will remember for next time)') + (speed ? '  ·  ' + speed : '') + (eta ? '  ·  ' + eta : '') +
     '  ·  ' + Math.round(p.programmes || 0).toLocaleString() + ' programmes read  ·  running ' + fmtTime(el) + '</div>' +
     '<div class="muted small" style="margin-top:6px">You can keep editing.  The TV keeps working if you close this page.</div></div>';
 }
@@ -2214,7 +2221,8 @@ function suggest(c, max) {
   var out = [];
   cand.forEach(function (i) {
     var e = ix.entries[i], s = Math.max(score1(a, e.p), score1(a, e.q), b ? score1(b, e.p) : 0, b ? score1(b, e.q) : 0);
-    if (c.epg && e.id.toLowerCase() === c.epg.toLowerCase()) s = Math.max(s, 95);
+    if (c.has && c.epg && e.id.toLowerCase() === c.epg.toLowerCase()) s = Math.max(s, 95);
+    if (!c.has && c.epg && e.id.toLowerCase() === c.epg.toLowerCase()) return;      // its own guide id is empty: no help
     if (s >= 45) out.push({ id: e.id, name: e.name, score: Math.round(s) });
   });
   out.sort(function (x, y) { return y.score - x.score || x.name.length - y.name.length; });
@@ -2231,8 +2239,8 @@ $('smartBtn').onclick = function () {
   var pool = matchPool().filter(function (c) { var s = guideState(c); return s === 'none' || s === 'prov'; });
   if (!pool.length) { toast('Every channel here already has a guide'); return; }
   modal('Smart match', '<div id="smHead"><p class="muted" style="margin-top:0">Looking at ' + plural(pool.length, 'channel') + ' without a guide and comparing names with ' + guideName.size.toLocaleString() + ' guide channels…</p><div class="bar acc" style="height:8px"><i id="smBar" style="width:0%"></i></div></div><div id="smBody"></div>',
-    function () { runSmart(pool); }, [['Cancel', 'ghost', closeModal], ['Apply', 'primary', function () {}, 'smGo']], true);
-  $('smGo').disabled = true;
+    // Disabled before matching starts: a short list finishes at once and enables Apply itself.
+    function () { $('smGo').disabled = true; runSmart(pool); }, [['Cancel', 'ghost', closeModal], ['Apply', 'primary', function () {}, 'smGo']], true);
 };
 function runSmart(pool) {
   var res = [], i = 0, t0 = Date.now();
@@ -2253,7 +2261,7 @@ function showSmart(res, took) {
     var n = counts(), rows = found.filter(function (r) { return showWeak || r.conf !== 'low'; });
     $('smHead').innerHTML = '<div class="row"><span class="chip ok">' + n.high + ' very likely</span><span class="chip warn">' + n.medium + ' likely</span><span class="chip bad">' + n.low + ' unsure</span><span class="chip">' + (res.length - found.length) + ' no idea</span><span class="grow"></span>' +
       '<button class="small" id="smAllHigh">Approve all very likely</button><button class="small" id="smAll">Approve everything shown</button><button class="small ghost" id="smNone">Decline all</button></div>' +
-      '<p class="muted small" style="margin:10px 0">Approve the guesses that look right.  "Very likely" ones start approved.  Use the list in each row to pick a different guide channel.  Nothing changes until you press Apply.  <label style="margin-left:10px"><input type="checkbox" id="smWeak"' + (showWeak ? ' checked' : '') + '> Show unsure guesses</label></p>';
+      '<p class="muted small" style="margin:10px 0">Rows marked <b>✓ Approved</b> are matched when you press Apply; ✕ skips one.  "Very likely" ones start approved.  Use the list in each row to pick a different guide channel.  Nothing changes until you press Apply.  <label style="margin-left:10px"><input type="checkbox" id="smWeak"' + (showWeak ? ' checked' : '') + '> Show unsure guesses</label></p>';
     var pages = Math.max(1, Math.ceil(rows.length / PG)); if (page2 >= pages) page2 = pages - 1;
     var part = rows.slice(page2 * PG, page2 * PG + PG);
     $('smBody').innerHTML = rows.length ? '<table class="t"><tr><th>Your channel</th><th>Guide channel</th><th>Confidence</th><th class="r">Approve?</th></tr>' + part.map(function (r) {
@@ -2261,7 +2269,7 @@ function showSmart(res, took) {
       return '<tr' + (r.ok === false ? ' class="dim"' : '') + '><td><b>' + esc(chName(r.c)) + '</b><div class="dim small">' + esc(groupLabel(r.c.g)) + '</div></td>' +
         '<td><div class="dd" data-alt="' + idx + '" style="width:100%;max-width:380px"></div></td>' +
         '<td><span class="chip ' + CONF[r.conf][0] + ' conf">' + CONF[r.conf][1] + ' · ' + cur.score + '%</span></td>' +
-        '<td class="r"><span class="yn"><button class="yes' + (r.ok ? ' on' : '') + '" data-yes="' + idx + '" title="Approve">✓</button><button class="no' + (r.ok === false ? ' on' : '') + '" data-no="' + idx + '" title="Decline">✕</button></span></td></tr>';
+        '<td class="r"><span class="yn"><button class="yes' + (r.ok ? ' on' : '') + '" data-yes="' + idx + '" aria-pressed="' + !!r.ok + '">' + (r.ok ? '✓ Approved' : '✓ Approve') + '</button><button class="no' + (r.ok === false ? ' on' : '') + '" data-no="' + idx + '" aria-pressed="' + (r.ok === false) + '">✕</button></span></td></tr>';
     }).join('') + '</table>' + (pages > 1 ? '<div class="pager">' + (page2 * PG + 1) + '–' + Math.min(rows.length, (page2 + 1) * PG) + ' of ' + rows.length + '<button class="small" data-pg2="-1"' + (page2 ? '' : ' disabled') + '>‹ Previous</button><button class="small" data-pg2="1"' + (page2 < pages - 1 ? '' : ' disabled') + '>Next ›</button></div>' : '')
       : '<div class="empty">No confident guesses.  ' + (n.low ? 'Tick "Show unsure guesses" to see ' + n.low + ' weaker ones, or ' : '') + 'try adding a guide source that covers these channels (step 2).</div>';
     $('smBody').querySelectorAll('[data-alt]').forEach(function (el) {
@@ -2274,7 +2282,7 @@ function showSmart(res, took) {
     $('smAll').onclick = function () { rows.forEach(function (r) { r.ok = true; }); draw(); };
     $('smNone').onclick = function () { found.forEach(function (r) { r.ok = false; }); draw(); };
     var yes = found.filter(function (r) { return r.ok && r.pick; }).length;
-    $('smGo').disabled = !yes; $('smGo').textContent = yes ? 'Apply ' + plural(yes, 'match', 'matches') : 'Apply';
+    $('smGo').disabled = !yes; $('smGo').textContent = yes ? 'Apply ' + plural(yes, 'match', 'matches') : 'Nothing approved yet';
   }
   function openMatcherFor(r) {
     // A nested search: reuse the matcher's list in a small inline panel.
@@ -2286,7 +2294,7 @@ function showSmart(res, took) {
   }
   $('smBody').addEventListener('click', function (e) {
     var t = e.target.closest('button'); if (!t) return;
-    if (t.dataset.yes) { var r = found[+t.dataset.yes]; r.ok = r.ok === true ? null : true; draw(); }
+    if (t.dataset.yes) { var r = found[+t.dataset.yes]; if (r.ok === true) return; r.ok = true; draw(); }
     if (t.dataset.no) { var r2 = found[+t.dataset.no]; r2.ok = r2.ok === false ? null : false; draw(); }
     if (t.dataset.pg2) { page2 += +t.dataset.pg2; draw(); $('smBody').scrollIntoView({ block: 'start' }); }
   });
