@@ -94,9 +94,7 @@ var Vod = (function () {
     return d.items.filter(function (it) { return it.cat === cid; });
   }
 
-  // Already-loaded movies/shows for Search (loaded lazily whenever Movies or Shows has
-  // been opened this session). No provider fetch here on purpose, Search just needs
-  // whatever is cached already.
+  // Movies and shows for Search: whatever is loaded (prepare() loads them when Search opens).
   function allItems() {
     var out = [];
     ['movie', 'series'].forEach(function (k) {
@@ -105,14 +103,37 @@ var Vod = (function () {
     });
     return out;
   }
-  // Jump straight into a movie or show found in Search: open its episode list (shows)
-  // or start playback (movies), same as pressing OK on it from the Movies/Shows list.
+  /* Search looks inside Movies and Shows without opening them first: the lists load from the TV's
+     cache (or the provider, once) when Search opens.  Only the kinds the provider offers. */
+  var preparing = null;
+  function offered() { var p = Store.playlist || {}, v = p.vod || {}; return p.type === 'xtream' ? ['movie', 'series'].filter(function (k) { return k === 'movie' ? v.movies : v.series; }) : []; }
+  function prepare() {
+    var want = offered().filter(function (k) { return !data[k]; });
+    if (!want.length) return Promise.resolve(false);
+    if (preparing) return preparing;
+    preparing = Promise.all(want.map(function (k) { return load(k).catch(function (e) { Log.warn('vod', 'Search could not load ' + k + ': ' + (e && e.message || e)); }); }))
+      .then(function () { preparing = null; return true; });
+    return preparing;
+  }
+  // For Search's empty message: 'none' (the provider has no movies or shows), 'loading' or 'ready'.
+  function searchState() { var o = offered(); return !o.length ? 'none' : o.some(function (k) { return !data[k]; }) ? (preparing ? 'loading' : 'none') : 'ready'; }
+  /* Open a movie or show found in Search the way the Movies or Shows screen would: that screen opens on
+     All, on the title, then a movie plays (Back returns to it there) or a show lists its episodes. */
+  var pending = null;
   function openItem(x) {
-    kind = x.kind;
-    if (!built) build();
-    UI.setHandler(keys);
-    $('vodTitle').textContent = kind === 'series' ? 'Shows' : 'Movies';
-    if (kind === 'series' && !x.it.ep) openSeries(x.it); else play(x.it, false);
+    pending = x;
+    Views.switchTab(x.kind === 'series' ? 'shows' : 'movies');
+  }
+  function openPending(k) {
+    var x = pending;
+    if (!x || x.kind !== k) return;
+    pending = null;
+    var cats = catsVL.items, ai = cats.findIndex(function (c) { return c.id === ALL; });
+    if (ai >= 0) { catsVL.setItems(cats, ai); itemsVL.setItems(itemsFor(ALL), 0); }
+    var at = itemsVL.items.findIndex(function (it) { return it.id === x.it.id; });
+    if (at >= 0) itemsVL.setItems(itemsVL.items, at);
+    setZone('items'); showInfo();
+    if (k === 'series') openSeries(x.it); else play(x.it, false);
   }
 
   var catDeb = U.debounce(function (c) { if (c && !episodes) { itemsVL.setItems(itemsFor(c.id), 0); showInfo(); } }, 200);
@@ -288,7 +309,7 @@ var Vod = (function () {
     UI.setHandler(keys);
     if (changed) { episodes = null; series = null; }
     $('vodTitle').textContent = episodes && series ? series.name : (k === 'series' ? 'Shows' : 'Movies');
-    if (keepState && data[k] && !changed) { catsVL.setItems(catList(), catsVL.sel); itemsVL.refresh(); showInfo(); setZone(zone); return; }
+    if (keepState && data[k] && !changed && !pending) { catsVL.setItems(catList(), catsVL.sel); itemsVL.refresh(); showInfo(); setZone(zone); return; }
     catsVL.setItems([], 0); itemsVL.setItems([], 0);
     itemsVL.empty = 'Loading…'; itemsVL.refresh();
     setZone('cats');
@@ -301,8 +322,9 @@ var Vod = (function () {
       itemsVL.setItems(itemsFor(cats[first].id), 0);
       setZone('items');
       showInfo();
+      openPending(k);
     }).catch(function (e) { itemsVL.empty = 'Could not load ' + (k === 'series' ? 'shows' : 'movies') + ': ' + (e.message || e); itemsVL.setItems([], 0); });
   }
 
-  return { open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, reset: function () { data = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
+  return { open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, reset: function () { data = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
 })();

@@ -139,17 +139,21 @@ var Search = (function () {
         out.push(r);
       });
     }
-    var vodReady = false;
     if (filter === 'all' || filter === 'movies') {
+      // Titles that start with what you typed (or have a word that does) come first.
+      var vs = [], word = new RegExp('(^|[^a-z0-9])' + esc(q));
       Vod.allItems().forEach(function (x) {
-        vodReady = true;
-        if (out.length >= 400) return;
-        if (x.it.name && x.it.name.toLowerCase().indexOf(q) >= 0) out.push({ v: x.it, vkind: x.kind });
+        var n = x.it.name ? x.it.name.toLowerCase() : '', at = n.indexOf(q);
+        if (at < 0) return;
+        vs.push({ v: x.it, vkind: x.kind, r: at === 0 ? 0 : word.test(n) ? 1 : 2 });
       });
+      vs.sort(function (a, b) { return a.r - b.r || a.v.name.length - b.v.name.length; });
+      for (var j = 0; j < vs.length && out.length < 400; j++) out.push({ v: vs[j].v, vkind: vs[j].vkind });
     }
     if (out.length > 400) out.length = 400;
+    var vst = Vod.searchState;
     vl.empty = filter === 'channels' ? 'No channel has that name.' :
-      filter === 'movies' ? (vodReady ? 'No movie or show has that name.' : 'Nothing loaded yet. Open Movies or Shows once this session so Search can look inside them.') :
+      filter === 'movies' ? (vst === 'loading' ? 'Loading your movies and shows…' : vst === 'none' ? 'This provider has no movies or shows.' : 'No movie or show has that name.') :
       'Nothing found.  Programmes are searchable once the guide has loaded them' + (Epg.xml ? '.' : ' (add an XMLTV guide in Settings > Playlists to search every channel).');
     vl.setItems(out, 0);
     if (zone === 'list' && !out.length) { zone = 'chips'; paint(); }
@@ -249,6 +253,8 @@ var Search = (function () {
     if (!input.value) history(); else run();
     if (zone === 'list' && !vl.items.length) zone = 'chips';
     paint();
+    // Movies and shows load in the background; results update when they arrive.
+    Vod.prepare().then(function (got) { if (got && input.value.trim().length >= 2) run(); });
   }
 
   return { open: open, find: find, matcher: matcher };

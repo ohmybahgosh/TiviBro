@@ -337,7 +337,7 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 
 **Search** in the menu finds channels and programmes in the guide (now, later today, the coming days and on catch-up) as you type, and also your Movies and Shows.  Below the box, **Everything**, **On now**, **Coming up**, **Replays**, **Channels** and **Movies & Shows** narrow the results (**◀ ▶** on that row).  Each programme shows once, even when several copies of the channel carry it, with **Today**, **Tomorrow** or the day and its time.  **OK** watches, replays, opens a show's episodes, or sets a reminder (**OK** again cancels it); **Hold OK** gives channel options.  **Yellow** adds what you typed to your [watchlist](#watchlist).
 
-A movie or show only shows up in Search once you have opened **Movies** or **Shows** that session — Search looks inside whatever is already loaded, it does not fetch your whole catalog just to search it.
+Movies and shows are searchable without opening **Movies** or **Shows** first: Search reads the lists the TV keeps (or loads them once).  Titles that start with what you typed come first.  **OK** on a movie opens it in **Movies** and plays it, so **Back** lands on it there; on a show it opens its episodes.
 
 <p align="center"><a href="media/search.mp4"><img src="media/search.gif" width="100%" alt="Search"></a></p>
 <p align="center"><sub><a href="media/search.mp4">Watch the MP4</a></sub></p>
@@ -655,7 +655,7 @@ How the guide looks and behaves, which screen TiviBro opens on, and reminders.
 | **OK on a channel in the Guide** | **Preview first, then fullscreen** · Fullscreen right away | Like TiviMate: the first **OK** plays the channel in the window, the second goes fullscreen.  Or go straight to fullscreen. |
 | **Two-line programmes** | **On** · Off | Each programme's time under its title in the grid. |
 | **Dim past programmes** | **On** · Off | Programmes that already ended look dimmer. |
-| **Mark what's on now** | **Progress bar** · Colour and progress bar · Off | How the guide shows programmes airing right now: a slim bar under the times showing how far along they are, that bar on a coloured cell, or nothing.  The time of day is a small marker in the time bar and a thin line between programmes. |
+| **Mark what's on now** | **Tint what has aired** · Colour and tint · Off | How the guide shows programmes airing right now: the part already aired tinted in your accent colour, a coloured cell with that tint, or nothing.  The time of day is a thin line in the accent colour with a marker in the time bar. |
 | **Channel names in the guide** | **On** · Off | Off shows logos only, leaving more room for programmes. |
 | **Two-line channel names** | On · **Off** | Long channel names wrap instead of being cut off. |
 | **Mark catch-up channels** | **On** · Off | Shows **↺** on channels and programmes you can replay. |
