@@ -73,12 +73,12 @@ jobs:
 
       - name: Release notes from CHANGELOG.md
         run: |
-          node scripts/release-notes.js "$APP_VERSION" > dist/notes.md
+          node scripts/release-notes.js "${TAG#v}" > dist/notes.md
           {
             RAW="https://raw.githubusercontent.com/$GITHUB_REPOSITORY/homebrew"
             case "$TAG" in *-*) echo; echo "> **Test build.**  Expect rough edges, and keep a backup.  The Homebrew Channel shows it as version $PKG_VERSION.";; esac
             echo
-            echo '### Install'
+            echo '<details><summary>Install</summary>'
             echo
             echo '- **Homebrew Channel:** in its Settings, add the repository `https://tivibro.app/repo` (or `https://tivibro.app/testing` for test builds as they come out).  The long form, `'"$RAW"'/repo.json`, works too'
             echo '- **Developer Mode:** `ares-install app.tivibro.tv_'"$PKG_VERSION"'_all.ipk`'
@@ -86,6 +86,8 @@ jobs:
             echo '- **From inside TiviBro (rooted TV with the Homebrew Channel):** Settings > Updates and about > Check for updates'
             echo
             echo "SHA-256 of the IPK: \`$(sha256sum dist/*.ipk | cut -d' ' -f1)\`"
+            echo
+            echo '</details>'
           } >> dist/notes.md
           cat dist/notes.md
 

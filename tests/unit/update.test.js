@@ -67,6 +67,7 @@ const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), re
   ok('pick: newest full release when test versions are off', T.pick(RELEASES, false).version === '0.6.0');
   ok('pick: newest overall when test versions are on, drafts and releases without a manifest skipped', T.pick(RELEASES, true).version === '0.7.0-alpha.1');
   const n = T.notes(RELEASES[0].body);
+  ok('release notes stop at the folded install section too', T.notes('**New in alpha 33**\n\n- One\n\n> **Test build.**\n\n<details><summary>Install</summary>\n\n- Homebrew').join('|') === 'New in alpha 33|One', T.notes('**New in alpha 33**\n\n- One\n\n<details><summary>Install</summary>\n- Homebrew').join('|'));
   ok('release notes become plain lines and stop at the install section', n.join('|') === 'New|Faster guides with gz|See docs', n.join('|'));
 
   // Running an alpha: test versions are on by default, so 0.7.0-alpha.1 is offered.

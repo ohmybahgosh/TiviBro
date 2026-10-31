@@ -82,7 +82,8 @@ var Search = (function () {
       row._img.style.visibility = img ? 'visible' : 'hidden';
       if (img && row._img.getAttribute('src') !== img) row._img.src = img;
       row._n.textContent = v.name;
-      row._s.textContent = [v.year, v.rating ? '★ ' + v.rating : ''].filter(Boolean).join('   ');
+      var rt = Math.round(parseFloat(v.rating) * 10) / 10;
+      row._s.textContent = [v.year, rt > 0 ? '★ ' + rt : '', v.q].filter(Boolean).join('   ');
       row._t.textContent = it.vkind === 'series' ? 'show' : 'movie';
       return;
     }
@@ -136,50 +137,72 @@ var Search = (function () {
 
   function setFilter(f) { filter = f; paintChips(); if (input.value.trim().length >= 2) run(); }
 
+  /* How well a title matches what was typed: 0 the whole title (a year or 4K after it doesn't count),
+     1 it starts with it, 2 a word starts with it, 3 somewhere inside. */
+  function quality(name, q, word) {
+    var n = String(name || '').toLowerCase().trim(), at = n.indexOf(q);
+    if (at < 0) return -1;
+    var core = n.replace(/(\s*(\(\d{4}\)|\[\d{4}\]|\d{4}|4k|uhd|hd))+\s*$/, '').replace(/^(the|a|an)\s+/, '');
+    if (core === q || n === q) return 0;
+    if (at === 0 || core.indexOf(q) === 0) return 1;
+    return word.test(n) ? 2 : 3;
+  }
+  /* Everything, ranked by how well each title matches, then by what you most likely want: something on
+     now, a movie or show you can start, a channel, something coming up, a channel whose provider name
+     carries it, a replay.  So "batman" shows Batman films before "24/7 Batman" channels, and "CNN"
+     still shows the channel first. */
+  var TYPE = { now: 0, vod: 1, channel: 2, later: 3, inname: 4, replay: 5 };
   function run() {
     var q = input.value.trim().toLowerCase();
     if (q.length < 2) return history();
-    var out = [], now = Date.now();
+    var now = Date.now(), word = new RegExp('(^|[^a-z0-9À-￿])' + esc(q), 'i'), cand = [], n = 0;
+    function add(item, title, type, sub) {
+      var m = quality(title, q, word);
+      if (m < 0) m = 3;                         // matched on the provider's name or a cleaned word: weakest
+      cand.push({ it: item, m: m, t: TYPE[type], sub: sub || 0, i: n++ });
+    }
     /* Channels by the name shown, then channels whose provider name carries what you typed (a game in
        "BIG10 10: Michigan vs Ohio State"): those show that text, and its time when the name has one,
        so it is clear why they matched. */
-    var inName = [], seenEv = {};
+    var seenEv = {}, nCh = 0, nIn = 0;
     if (filter === 'all' || filter === 'channels') {
       var all = L.data.channels;
-      for (var i = 0; i < all.length && out.length + inName.length < 300; i++) {
+      for (var i = 0; i < all.length && nCh + nIn < 300; i++) {
         var c = all[i];
         if (Store.edits.hiddenChannels[c.k] && !Store.settings.showHidden) continue;
-        if (L.name(c).toLowerCase().indexOf(q) >= 0) { if (out.length < 150) out.push({ c: c }); continue; }
+        var nm = L.name(c);
+        if (nm.toLowerCase().indexOf(q) >= 0) { if (nCh < 150) { nCh++; add({ c: c }, nm, 'channel'); } continue; }
         if (c.n.toLowerCase().indexOf(q) < 0) continue;
         var ev = Events.of(c), x = extra(c);
-        if (ev && ev.title && ev.start) { seenEv[ev.title.toLowerCase() + '|' + ev.start] = 1; inName.push({ c: c, p: { s: ev.start, e: ev.end, t: ev.title, ev: 1 } }); }
-        else inName.push({ c: c, raw: x || c.n });
+        nIn++;
+        if (ev && ev.title && ev.start) {
+          seenEv[ev.title.toLowerCase() + '|' + ev.start] = 1;
+          add({ c: c, p: { s: ev.start, e: ev.end, t: ev.title, ev: 1 } }, ev.title, ev.start <= now && ev.end > now ? 'now' : 'inname', ev.start);
+        } else add({ c: c, raw: x || c.n }, x || c.n, 'inname');
       }
     }
-    var timed = inName.filter(function (x) { return x.p; }).sort(function (a, b) { return a.p.s - b.p.s; });
-    out = out.concat(timed, inName.filter(function (x) { return !x.p; }));
     if (filter !== 'channels' && filter !== 'movies') {
-      find(q).forEach(function (r) {
+      find(q).slice(0, 300).forEach(function (r) {
         if (r.p.ev && seenEv[r.p.t.toLowerCase() + '|' + r.p.s]) return;
         var p = r.p, on = p.s <= now && p.e > now;
         if (filter === 'now' && !on) return;
         if (filter === 'later' && p.s <= now) return;
         if (filter === 'replay' && p.e > now) return;
-        out.push(r);
+        add(r, p.t, on ? 'now' : p.s > now ? 'later' : 'replay', p.e <= now ? -p.s : p.s);
       });
     }
     if (filter === 'all' || filter === 'movies') {
-      // Titles that start with what you typed (or have a word that does) come first.
-      var vs = [], word = new RegExp('(^|[^a-z0-9])' + esc(q));
+      var vs = [];
       Vod.allItems().forEach(function (x) {
-        var n = x.it.name ? x.it.name.toLowerCase() : '', at = n.indexOf(q);
-        if (at < 0) return;
-        vs.push({ v: x.it, vkind: x.kind, r: at === 0 ? 0 : word.test(n) ? 1 : 2 });
+        var t = x.it.name || '', m = quality(t, q, word);
+        if (m >= 0) vs.push({ x: x, m: m, len: t.length });
       });
-      vs.sort(function (a, b) { return a.r - b.r || a.v.name.length - b.v.name.length; });
-      for (var j = 0; j < vs.length && out.length < 400; j++) out.push({ v: vs[j].v, vkind: vs[j].vkind });
+      // The best 200: closest match, then the shortest title (the film itself before its sequels and specials).
+      vs.sort(function (a, b) { return a.m - b.m || a.len - b.len; });
+      vs.slice(0, 200).forEach(function (v) { add({ v: v.x.it, vkind: v.x.kind }, v.x.it.name, 'vod', v.len); });
     }
-    if (out.length > 400) out.length = 400;
+    cand.sort(function (a, b) { return a.m - b.m || a.t - b.t || a.sub - b.sub || a.i - b.i; });
+    var out = cand.slice(0, 400).map(function (x) { return x.it; });
     var vst = Vod.searchState;
     vl.empty = filter === 'channels' ? 'No channel has that name.' :
       filter === 'movies' ? (vst === 'loading' ? 'Loading your movies and shows…' : vst === 'none' ? 'This provider has no movies or shows.' : 'No movie or show has that name.') :

@@ -1,13 +1,23 @@
 # Changelog
 
-## 0.6.0 (alpha 32, 2026-10-31)
+## 0.6.0 (alpha 34, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 32
+### New in alpha 34
+
+- **Shorter release notes.**  Each release page lists only what's new in that build, one line per change, with a link to the full changelog; install steps fold away.  Before, every test build repeated the whole 0.6.0 history.
+- **Search puts the best match first, movies and shows included.**  Results are ranked by how closely the title matches (the whole title, then the start, then a word), and then by what you can watch: on now, a movie or show, a channel, coming up, a replay.  Searching batman now lists the Batman films before the 24/7 Batman channels, and CNN still finds the channel first.  Before, movies and shows came after every channel and programme.
+
+### In alpha 33
+
+- **Movies and Shows by language, and lighter on the TV.**  Many providers put a language code in front of every title ("SE - ", "EN - ", "[SE]") or on the category ("|TR| DIZI").  TiviBro now takes it off the name, and a **Languages** row at the top of Movies and Shows picks which languages show.  By default that's your TV's language plus titles with no tag; a library with one language shows everything.  A 4K tag becomes a 4K label.  Hold OK (or Red) on a category to hide it, its titles leave All and Search too.  Only what shows is kept in memory, and on the TV the helper now downloads and slims the provider's list, so a 160,000-title library no longer has to be parsed by the app itself.
+- **Adult categories stay out of the way.**  Movie and show categories named for adults (Adults, XXX, 18+) are listed last, and their titles stay out of All movies, All shows and Search.  With a PIN for blocked channels, they ask for it.
+
+### In alpha 32
 
 - **Movies and Shows, checked against a provider with 54,000 movies and 13,000 shows.**  Details (plot, cast, director) now show for the first title of every list, not only after moving.  Running times read 1 h 25 min instead of 01:25:00, empty 00:00:00 times are hidden, and ratings show one decimal (★ 7.6, not ★ 7.634).  Coming back from a movie keeps you in the same category when Continue watching appears.
-- **Install numbers, anonymous, and a stats page for the project.**  Once a day TiviBro says which version it is and which webOS the TV has (nothing else: no address kept, no ID, nothing about channels), and the install script says whether it installed or updated.  Off in **Settings > Updates and about > Count this TV in the install numbers**, or with `TIVIBRO_NO_COUNT=1` for the script.  A daily workflow also keeps GitHub's traffic (views, clones, where visitors come from), stars, forks and release downloads past GitHub's 14 days, for a private dashboard at tivibro.app/stats.
+- **Install numbers, anonymous.**  Once a day TiviBro says which version it is and which webOS the TV has (nothing else: no address kept, no ID, nothing about channels), and the install script says whether it installed or updated.  Off in **Settings > Updates and about > Count this TV in the install numbers**, or with `TIVIBRO_NO_COUNT=1` for the script.
 - **A privacy page** at [tivibro.app/privacy](https://tivibro.app/privacy/), linked from the site's footer, lists everything the TV app, the phone app and the site send.  The Privacy and security guide now names every server TiviBro talks to.
 
 ### In alpha 31

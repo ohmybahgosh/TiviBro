@@ -66,7 +66,7 @@ var Update = (function () {
   function notes(md) {
     var out = [], stop = false;
     String(md || '').split(/\r?\n/).forEach(function (l) {
-      if (/^#{1,4}\s*Install/i.test(l)) stop = true;          // the release workflow's install footer
+      if (/^#{1,4}\s*Install|^<details/i.test(l)) stop = true;          // the release workflow's install footer
       if (stop || out.length >= 14) return;
       var t = l.replace(/^\s*[-*]\s+/, '').replace(/\*\*|__|`/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/^#+\s*/, '').trim();
       if (!t || /^>/.test(t) || /^SHA-256/i.test(t)) return;
@@ -119,8 +119,10 @@ var Update = (function () {
      Settings, Updates and about. */
   function countMe() {
     if (Store.settings.countMe === false) return;
-    // Real TVs only: not the simulator, tests or a desktop browser.
+    // Real TVs only: not the simulator, tests or a desktop browser.  An installed app runs from the
+    // TV's storage (file:); test pages are served over http and may pretend to be a TV.
     if (typeof PalmServiceBridge === 'undefined' || !/Web0S|webOS/i.test(navigator.userAgent) || /HeadlessChrome|Electron/i.test(navigator.userAgent)) return;
+    if (location.protocol !== 'file:') return;
     var today = new Date().toISOString().slice(0, 10);
     try { if (localStorage.getItem('tivibro.counted') === today) return; } catch (e) { return; }
     setTimeout(function () {

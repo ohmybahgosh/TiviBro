@@ -21,6 +21,7 @@ var TsSync = require('./tssync').TsSync;
 var dns = require('dns');
 var RawHttp = require('./rawhttp');
 var Guide = require('./guide');
+var Vod = require('./vod');
 
 /* DNS answers kept for a minute.  Node asks the system for every new connection, and each channel
    start (and each redirect to a provider's streaming server) is a new connection; on a TV with a
@@ -130,7 +131,7 @@ function create(opts) {
 
   var server = http.createServer(function (req, res) {
     if (req.method === 'OPTIONS') { res.writeHead(204, ALLOW); return res.end(); }
-    if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, node: process.version, stats: stats, guide: 1, sys: sys() })); }
+    if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, node: process.version, stats: stats, guide: 1, vod: 1, sys: sys() })); }
     /* The web editor and the phone app connection are switched on and off from TiviBro only.  On the
        TV the helper hands TiviBro a secret with its start reply (service.js, over luna, which only
        TiviBro may call); without it, a web page in the TV's browser could reach these over localhost. */
@@ -143,6 +144,7 @@ function create(opts) {
       return opts.companion.control(req, res, req.url.split('?')[0]);
     }
     if (req.url.indexOf('/guide/') === 0) return Guide.handle(req, res, ALLOW, log);
+    if (req.url.indexOf('/vod/') === 0) return Vod.handle(req, res, ALLOW, log, server.address().port);
     if (req.url === '/log') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ node: process.version, stats: stats, log: LOG, earlier: EARLIER })); }
     var xm = /^\/xfer\/([A-Za-z0-9_-]{1,40})$/.exec(req.url);
     if (xm) { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, ALLOW)); return res.end(JSON.stringify(Unzip.progress(xm[1]) || { raw: 0, total: 0, done: false, unknown: true })); }
