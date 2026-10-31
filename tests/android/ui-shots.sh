@@ -29,6 +29,7 @@ shot 2-paired 8
 tap "Edit channels"
 shot 3-editor 10
 adb shell input keyevent KEYCODE_BACK
+sleep 3
 tap "Add a TV"
 shot 4-add 6
 if adb logcat -d | grep -E "FATAL EXCEPTION|AndroidRuntime: Process: $PKG" ; then echo "The app crashed"; adb logcat -d | grep -A30 "FATAL EXCEPTION" | head -60; exit 1; fi

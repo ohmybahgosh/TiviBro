@@ -114,6 +114,7 @@ jobs:
           api-level: 34
           arch: x86_64
           target: google_apis
+          profile: pixel_6
           disable-animations: true
           script: bash tests/android/ui-shots.sh "$(ls apk/*.apk | grep -v debug | head -1)" shots "$TV"
 

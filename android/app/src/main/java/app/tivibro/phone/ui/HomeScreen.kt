@@ -186,18 +186,18 @@ private fun TvCard(
             Spacer(Modifier.height(16.dp))
             when (u.power) {
                 Power.UNPAIRED -> Button(onClick = { onRepair(tv.id) }, modifier = Modifier.fillMaxWidth()) { Text("Pair again") }
-                Power.OFF -> Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (tv.mac.isNotBlank()) Button(onClick = { onWake(tv.id) }, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Rounded.PowerSettingsNew, null); Spacer(Modifier.width(8.dp)); Text("Turn on")
+                Power.OFF -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (tv.mac.isNotBlank()) Button(onClick = { onWake(tv.id) }, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                        Icon(Icons.Rounded.PowerSettingsNew, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Turn on")
                     }
-                    OutlinedButton(onClick = { onEditor(tv.id) }, modifier = Modifier.weight(1f)) { Text("Try anyway") }
+                    OutlinedButton(onClick = { onEditor(tv.id) }, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("Edit channels anyway") }
                 }
-                else -> Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Button(onClick = { onEditor(tv.id) }, enabled = u.power == Power.ON, modifier = Modifier.weight(1f)) {
+                else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(onClick = { onEditor(tv.id) }, enabled = u.power == Power.ON, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                         Icon(Icons.Rounded.Edit, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Edit channels", maxLines = 1)
                     }
-                    FilledTonalButton(onClick = { onOpen(tv.id) }, enabled = u.power == Power.ON && u.busy == null, modifier = Modifier.weight(1f)) {
-                        Icon(Icons.Rounded.PlayArrow, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(if (u.tivibroOpen) "Bring to front" else "Open TiviBro", maxLines = 1)
+                    FilledTonalButton(onClick = { onOpen(tv.id) }, enabled = u.power == Power.ON && u.busy == null, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                        Icon(Icons.Rounded.PlayArrow, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(if (u.tivibroOpen) "Show TiviBro on the TV" else "Open TiviBro on the TV", maxLines = 1)
                     }
                 }
             }
