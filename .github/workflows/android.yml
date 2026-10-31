@@ -1,0 +1,81 @@
+name: Android app
+
+# The TiviBro phone app (android/).  Tests it against the TV's real helper code (tests/android/fake-tv.js
+# runs service/companion.js), builds the APKs, and on a TiviBro release adds the APK to that release.
+on:
+  push:
+    branches: [main]
+    paths: ['android/**', 'service/companion.js', 'tests/android/**', '.github/workflows/android.yml']
+    tags: ['v*']
+  pull_request:
+    paths: ['android/**', 'service/companion.js', 'tests/android/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: Test and build the APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.11.1'
+
+      - name: Version
+        id: v
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then n="${GITHUB_REF_NAME#v}"; else n="0.1.0-dev.${GITHUB_RUN_NUMBER}"; fi
+          echo "name=$n" >> "$GITHUB_OUTPUT"
+
+      - name: Unit tests, and pairing with the TV's real helper
+        working-directory: android
+        run: |
+          node ../tests/android/fake-tv.js > /tmp/fake-tv.txt &
+          for i in $(seq 1 20); do [ -s /tmp/fake-tv.txt ] && break; sleep 0.5; done
+          echo "Stand-in TV: $(cut -d: -f1,2 /tmp/fake-tv.txt)"
+          TB_FAKE_TV="$(head -1 /tmp/fake-tv.txt)" gradle --no-daemon --stacktrace testDebugUnitTest
+          grep -h -o 'tests="[0-9]*" skipped="[0-9]*" failures="[0-9]*" errors="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml
+
+      - name: Build
+        working-directory: android
+        env:
+          TB_VERSION_NAME: ${{ steps.v.outputs.name }}
+          TB_VERSION_CODE: ${{ github.run_number }}
+        run: |
+          gradle --no-daemon assembleRelease assembleDebug
+          mkdir -p ../dist-apk
+          cp app/build/outputs/apk/release/app-release.apk "../dist-apk/tivibro-phone-${{ steps.v.outputs.name }}.apk"
+          cp app/build/outputs/apk/debug/app-debug.apk "../dist-apk/tivibro-phone-${{ steps.v.outputs.name }}-debug.apk"
+          ls -la ../dist-apk
+
+      - name: Keep the APKs
+        uses: actions/upload-artifact@v7
+        with:
+          name: tivibro-phone-${{ steps.v.outputs.name }}
+          path: dist-apk/*.apk
+          retention-days: 30
+
+      - name: Add the APK to the release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for i in $(seq 1 30); do gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && break; sleep 20; done
+          gh release upload "$GITHUB_REF_NAME" "dist-apk/tivibro-phone-${{ steps.v.outputs.name }}.apk" --clobber

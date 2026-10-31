@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The TV answers plain HTTP on the home network (there are no certificates for a TV's address).
+     The app signs every request and checks every answer itself; see docs/wiki/Phone-app-protocol.md. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>
