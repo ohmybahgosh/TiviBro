@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Search puts the best match first, movies and shows included.**  Results are ranked by how closely the title matches (the whole title, then the start, then a word), and then by what you can watch: on now, a movie or show, a channel, coming up, a replay.  Searching batman now lists the Batman films before the 24/7 Batman channels, and CNN still finds the channel first.  Before, movies and shows came after every channel and programme.
+
 ## 0.6.0 (alpha 33, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.
