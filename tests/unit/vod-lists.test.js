@@ -93,6 +93,10 @@ const SERIES = [{ series_id: 9, name: '[SE] Nocturne', cover: 'c.jpg', plot: 'p'
   v = T.view('movie', { at: 1, cats: [{ id: 'a', name: 'FOR ADULTS' }, { id: 'b', name: 'Drama' }], items: ad });
   ok('adult category marks its titles', ad[0].adult === 1 && !ad[1].adult && v.adultCat.a === 1);
 
+  const ct = []; for (let i = 0; i < 20; i++) ct.push({ id: i, name: 'Dizi ' + i, cat: 't' }, { id: 100 + i, name: 'EN - Film ' + i, cat: 'e' });
+  v = T.view('movie', { at: 1, cats: [{ id: 't', name: '|TR| DIZI' }, { id: 'e', name: 'Movies' }], items: ct });
+  ok('untagged titles take their category language', ct[0].lang === 'TR' && v.langs.TR === 20 && v.items.every(x => x.lang !== 'TR'), JSON.stringify(v.langs));
+
   console.log(fail ? fail + ' failures' : 'all movie and show list tests passed');
   process.exit(fail ? 1 : 0);
 })();

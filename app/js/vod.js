@@ -78,7 +78,7 @@ var Vod = (function () {
   var NOTLANG = { '4K': 'q', UHD: 'q', FHD: 1, HD: 1, SD: 1, HEVC: 1, NF: 1, 'A+': 1, TOP: 1, CAM: 1, SPT: 1, WC: 1, X: 1, MULTI: 1, SUB: 1, SUBS: 1, DUB: 1, NEW: 1, VIP: 1 };
   // A code counts as a language only when the provider uses it this often; fewer, and it was part of the title.
   var MIN_KNOWN = 10, MIN_UNKNOWN = 20;
-  var ALIAS = { ENG: 'EN', SWE: 'SE', GER: 'DE', DEU: 'DE', FRA: 'FR', ESP: 'ES', ITA: 'IT', NED: 'NL', POR: 'PT', POL: 'PL', TUR: 'TR', NOR: 'NO', DEN: 'DK', FIN: 'FI',
+  var ALIAS = { ENG: 'EN', SCA: 'SC', SWE: 'SE', GER: 'DE', DEU: 'DE', FRA: 'FR', ESP: 'ES', ITA: 'IT', NED: 'NL', POR: 'PT', POL: 'PL', TUR: 'TR', NOR: 'NO', DEN: 'DK', FIN: 'FI',
     ARAB: 'AR', ARA: 'AR', RUS: 'RU', IND: 'IN', USA: 'US', GB: 'UK', BRA: 'BR', MEX: 'MX', GRE: 'GR', ROM: 'RO', HUN: 'HU', CZE: 'CZ', KOR: 'KR', JPN: 'JP', CHN: 'CN' };
   var LABEL = { EN: 'English', US: 'English (US)', UK: 'English (UK)', CA: 'Canada', AU: 'Australia', SE: 'Swedish', NO: 'Norwegian', DK: 'Danish', FI: 'Finnish', NL: 'Dutch',
     BE: 'Belgian', DE: 'German', AT: 'Austrian', CH: 'Swiss', FR: 'French', ES: 'Spanish', LAT: 'Latino', MX: 'Mexican', IT: 'Italian', PT: 'Portuguese', BR: 'Brazilian',
@@ -135,7 +135,18 @@ var Vod = (function () {
   var ADULT = /\b(adults?|xxx|porn|erotic|18\s?\+|\+\s?18)(?![a-z])/i;
   function view(k, d) {
     var counts = {}, items = d.items, i, it;
-    for (i = 0; i < items.length; i++) { it = items[i]; if (it.lang === undefined) tag(it); counts[it.lang] = (counts[it.lang] || 0) + 1; }
+    // A title with no code takes its category's: "|TR| DIZI", "|SCA| NORDIC FILMS", "EN - MOVIES".
+    var catLang = {};
+    d.cats.forEach(function (c) {
+      var m = /^\s*[|\[]\s*([A-Za-z]{2,4})\s*[|\]]/.exec(c.name) || /^\s*([A-Z]{2,3})\s*(?:[|:]|\s[-–])\s/.exec(c.name);
+      var code = m && m[1].toUpperCase(); code = code && (ALIAS[code] || code);
+      if (code && !NOTLANG[code] && known(code)) catLang[c.id] = code;
+    });
+    for (i = 0; i < items.length; i++) {
+      it = items[i];
+      if (it.lang === undefined) { tag(it); if (!it.lang && catLang[it.cat]) it.lang = catLang[it.cat]; }
+      counts[it.lang] = (counts[it.lang] || 0) + 1;
+    }
     // Codes used only a few times were part of the title ("AVP - Alien vs Predator", one "US - " film).
     var undo = {};
     Object.keys(counts).forEach(function (c) { if (c && counts[c] < (known(c) ? MIN_KNOWN : MIN_UNKNOWN)) { undo[c] = 1; counts[''] = (counts[''] || 0) + counts[c]; delete counts[c]; } });
