@@ -231,20 +231,6 @@ if (require.main === module) (async () => {
     await press('ArrowDown', '', 800); await press('ArrowDown', '', 1200);
   });
 
-  // Multiview: two channels side by side.
-  await scene(browser, 'multiview', {}, async ({ press, shot, mark, full }) => {
-    await full('x4');
-    mark();
-    await press('blue', 'Multiview', 2500);
-    await press('ArrowRight', '', 700);
-    await press('Enter', 'Pick a channel', 1200);
-    await press('ArrowDown', '', 600);
-    await press('Enter', '', 3500);
-    await shot('tv-multiview');
-    await press('ArrowLeft', 'Sound follows the focus', 2200);
-    await press('Enter', 'Fullscreen', 2500);
-  });
-
   // Settings: the sections, and a live look change.
   await scene(browser, 'settings', {}, async ({ press, shot, stop, quiet, open, section }) => {
     await open('Settings', 1400);

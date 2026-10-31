@@ -31,7 +31,6 @@ node scripts/wiki/build.js               # refresh the wiki pages from the user 
 | `catchup` | Rewinding the guide and replaying a programme |
 | `search` | Search as you type |
 | `vod` | Movies, categories, shows, episodes |
-| `multiview` | Two channels side by side |
 | `settings` | Settings sections, live accent and background changes |
 | `channels` | The Channels screen, channel options, copy to a group, Favorites |
 | `versions` | Other versions of a channel, chosen by hand and in the quick menu |

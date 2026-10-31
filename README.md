@@ -60,7 +60,6 @@ No typing logins with a remote.  The first screen shows a QR code: scan it with 
 | 📺 **Guide first** | Live preview top left, details top right, groups one press away.  OK previews, OK again goes fullscreen, just like TiviMate. |
 | ⏪ **Catch-up done right** | Rewind the guide into the past and replay what you missed, or restart the show you just tuned into. |
 | 🎬 **Movies and shows** | Your provider's VOD with posters, seasons, episodes, My list and resume. |
-| 🧩 **Multiview** | Two channels side by side (four on TVs that can take it). |
 | 🧭 **Set up in two minutes** | A new playlist starts a tour that shows what it has (countries, East and West copies, local cities, event channels, duplicates) and tidies it with the remote, or with your phone by scanning a code. |
 | 🖼️ **Logos for every channel** | Missing logos filled in from two open logo projects, matched by guide id, name, country and call sign.  Or one matching style for the whole list. |
 | 🖥️ **A real editor** | Hide, sort, rename, copy and match guides for hundreds of channels from any browser.  Drafts, undo and restore points. |
@@ -90,14 +89,14 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled" stay out of the way, and come back by themselves when an event is named. |
 | 🔐 **Locked backups, restored from the first screen** | One AES-256 file with every playlist, login, group and setting.  A brand-new TV restores it from a computer before you've touched a setting. |
 | 🐞 **Report a problem from the couch** | **Report a problem** shows a QR code.  Your phone opens a short form, the TV adds its version, model and log with logins and server names taken out, and GitHub's bug form opens filled in.  No copying logs off the TV. |
-| 💸 **Everything free, nothing locked** | Catch-up, multiview, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking. |
+| 💸 **Everything free, nothing locked** | Catch-up, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking. |
 | 📺 **Made for LG TVs** | Runs on the TV itself, webOS 4 and newer.  No Android box or Fire Stick needed. |
 
 | | TiviBro | TiviMate |
 |---|---|---|
 | Runs on LG webOS TVs | ✅ | ❌ Android TV and Fire TV |
 | Price | Free, every feature | Free version, Premium paid |
-| Catch-up, multiview, multiple playlists, backups | ✅ Free | Premium |
+| Catch-up, multiple playlists, backups | ✅ Free | Premium |
 | Open source | ✅ MIT | ❌ |
 | Sports and PPV events read from channel names | ✅ | ❌ |
 | Edit your playlist from a computer, with autosaved drafts | ✅ | ❌ On the TV only |
@@ -126,7 +125,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 
 **▲ ▼** or **CH +/−** to change channel, **▶** for programme info, **Yellow** for the last channel, **Green** for the guide over the video.
 
-**OK** opens the quick menu: channel list, start over, favorite, picture size, multiview, sleep timer, stream info, reconnect.  You choose which buttons it shows.
+**OK** opens the quick menu: channel list, start over, favorite, picture size, sleep timer, stream info, reconnect.  You choose which buttons it shows.
 
 </td>
 </tr>
@@ -181,18 +180,6 @@ Categories, posters, ratings and plots.  Shows open into seasons and episodes, a
 Channels and programmes now, later and on catch-up, as you type, with filters for On now, Coming up and Replays.  OK watches, replays or sets a reminder.  Yellow adds the search to your watchlist.
 
 </td>
-</tr>
-</table>
-<table>
-<tr>
-<td width="42%" valign="top">
-
-### Multiview
-
-**Blue** puts a second channel beside the first.  The focused screen has the sound; **OK** takes it fullscreen.
-
-</td>
-<td width="58%"><a href="docs/media/multiview.mp4"><img src="docs/media/multiview.gif" width="100%" alt="Multiview"></a><br><sub><a href="docs/media/multiview.mp4">▶ MP4</a></sub></td>
 </tr>
 </table>
 <table>
@@ -376,13 +363,12 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
 </details>
 
 <details>
-<summary><b>Catch-up, search and multiview</b></summary>
+<summary><b>Catch-up and search</b></summary>
 <p align="center">
   <a href="https://tivibro.app/view/#tv-catchup-guide"><img src="docs/screenshots/tv-catchup-guide.png" width="32%" alt="Past programmes in the guide"></a>
   <a href="https://tivibro.app/view/#tv-hold-menu"><img src="docs/screenshots/tv-hold-menu.png" width="32%" alt="Programme options"></a>
   <a href="https://tivibro.app/view/#tv-catchup-play"><img src="docs/screenshots/tv-catchup-play.png" width="32%" alt="Catch-up playing"></a>
   <a href="https://tivibro.app/view/#tv-search"><img src="docs/screenshots/tv-search.png" width="32%" alt="Search"></a>
-  <a href="https://tivibro.app/view/#tv-multiview"><img src="docs/screenshots/tv-multiview.png" width="32%" alt="Multiview"></a>
   <a href="https://tivibro.app/view/#tv-menu"><img src="docs/screenshots/tv-menu.png" width="32%" alt="Menu"></a>
 </p>
 </details>
@@ -438,7 +424,7 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
 
 ## Help
 
-The **[user guide](docs/USER-GUIDE.md)** (also on the [wiki](../../wiki)) covers everything: every remote button, the guide, catch-up, movies and shows, multiview, other versions of a channel, event channels, reminders, parental controls, each page of the web editor, backups, and troubleshooting.  **[Every setting](docs/USER-GUIDE.md#every-setting)** explains each option in Settings, with its choices and default.
+The **[user guide](docs/USER-GUIDE.md)** (also on the [wiki](../../wiki)) covers everything: every remote button, the guide, catch-up, movies and shows, other versions of a channel, event channels, reminders, parental controls, each page of the web editor, backups, and troubleshooting.  **[Every setting](docs/USER-GUIDE.md#every-setting)** explains each option in Settings, with its choices and default.
 
 ### Report a problem
 

@@ -5,7 +5,7 @@
 - **▲ ▼** or **CH + / CH −** change channel.  An info bar shows the channel, what's on now and next, and how far into the programme you are.
 - **▶** shows the full programme info.  **Yellow** jumps back to the last channel.  **Green** lays the guide over the video.
 - **Green** (or **OK > Channel list**) lays the channel list over the video.  **OK** on another channel switches to it and keeps the list open so you can keep browsing; **OK** on the channel that's already playing closes the list.  **◀ ▶** change group.
-- **OK** opens the **quick menu**: Channel list, From start (catch-up channels), Favorite, TV guide, Other versions (when the channel has them), Picture size, Multiview, Sleep timer, Stream info and Reconnect.  Pick which buttons appear under **Settings > Remote control > Quick menu buttons**.
+- **OK** opens the **quick menu**: Channel list, From start (catch-up channels), Favorite, TV guide, Other versions (when the channel has them), Picture size, Sleep timer, Stream info and Reconnect.  Pick which buttons appear under **Settings > Remote control > Quick menu buttons**.
 - **Red** opens options for the channel: favorite, copy to group, other versions, watch from start, catch-up, rename, assign guide, hide, picture size and sleep timer.  **Hold OK** opens the channel list over the video.
 - **Stream info** (quick menu) shows the channel, the player in use, the picture size, how much is buffered, the bitrate and catch-up.  **Sleep timer** stops playback after 15 minutes to 2 hours.  **Picture** sets Normal, Stretch or Zoom for this channel, or for all of them.
 

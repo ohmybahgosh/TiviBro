@@ -21,26 +21,26 @@ var Keymap = (function () {
     rewind: 'Rewind (catch-up), else last channel', restart: 'Watch from start', playpause: 'Play / pause',
     guide: 'TV guide', search: 'Search', settings: 'Settings', editor: 'Edit on a phone or computer (QR code)', live: 'Channels screen', exit: 'Leave fullscreen',
     fav: 'Add or remove favorite', favorites: 'Open Favorites', recents: 'Open Recent channels',
-    multiview: 'Multiview', picture: 'Change picture mode', audio: 'Audio track', sleep: 'Sleep timer',
+    picture: 'Change picture mode', audio: 'Audio track', sleep: 'Sleep timer',
     movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect stream'
   };
   // Short names for the on-screen button legend.
   var SHORT = {
     panel: 'Quick menu', list: 'Channel list', osd: 'Info', menu: 'Options', chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
     rewind: 'Rewind', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings', editor: 'Phone editor',
-    live: 'Channels', exit: 'Exit fullscreen', fav: 'Favorite', favorites: 'Favorites', recents: 'Recent', multiview: 'Multiview',
+    live: 'Channels', exit: 'Exit fullscreen', fav: 'Favorite', favorites: 'Favorites', recents: 'Recent',
     picture: 'Picture size', audio: 'Audio track', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect'
   };
   var CONTEXT_ACTIONS = {
     player: ['none', 'panel', 'list', 'osd', 'menu', 'chnext', 'chprev', 'last', 'rewind', 'restart', 'playpause', 'guide', 'search', 'settings', 'editor', 'exit',
-      'fav', 'favorites', 'recents', 'multiview', 'picture', 'audio', 'sleep', 'reconnect'],
+      'fav', 'favorites', 'recents', 'picture', 'audio', 'sleep', 'reconnect'],
     list: ['none', 'menu', 'last', 'guide', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'playpause']
   };
 
   var DEFAULTS = {
     player: {
       ok: 'panel', 'long:ok': 'list', up: 'chprev', down: 'chnext', chup: 'chnext', chdown: 'chprev',
-      left: 'rewind', right: 'osd', red: 'menu', green: 'guide', yellow: 'last', blue: 'multiview',
+      left: 'rewind', right: 'osd', red: 'menu', green: 'guide', yellow: 'last', blue: 'audio',
       playpause: 'playpause', stop: 'exit', rew: 'rewind', ff: 'none', info: 'osd'
     },
     list: { 'long:ok': 'menu', red: 'menu', green: 'guide', yellow: 'last', blue: 'settings', playpause: 'none', info: 'menu', stop: 'none', rew: 'none', ff: 'none' }
@@ -55,6 +55,9 @@ var Keymap = (function () {
     else if (!m.v2) { if (m.player && m.player.ok === 'list' && m.player['long:ok'] === 'menu') { m.player.ok = 'panel'; m.player['long:ok'] = 'list'; } m.v2 = 1; }
     // v3: Info in the channel list opens the channel's options (it did nothing before).
     if (m && !m.v3) { if (m.list && m.list.info === 'none') m.list.info = 'menu'; m.v3 = 1; }
+    // v4: multiview is gone (webOS apps can play one video at a time).  A button set to it plays the
+    // audio track choice instead, the new default for Blue.
+    if (m && !m.v4) { ['player', 'list'].forEach(function (c) { var x = m[c]; if (x) Object.keys(x).forEach(function (b) { if (x[b] === 'multiview') x[b] = c === 'player' ? 'audio' : 'none'; }); }); m.v4 = 1; }
     return m;
   }
   function get(context, btn) {

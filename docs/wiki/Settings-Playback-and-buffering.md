@@ -43,7 +43,6 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Prefer surround sound** | On · **Off** | Picks the 5.1 or Dolby track in that language when there is one.  Your TV or soundbar needs to support it. |
 | **Subtitles automatically** | **Off** · Any language · English only · Spanish only · … | Turns subtitles on when a stream has them; with a language, only subtitles in that language.  You can still switch them from the quick menu. |
 | **Play next episode automatically** | **On** · Off | When an episode ends, the next one starts. |
-| **Screens** *(Multiview)* | **Up to 2** · Up to 4 | How many channels multiview can show.  Many webOS TVs decode only two streams at once, and providers often limit connections. |
 
 ---
 

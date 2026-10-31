@@ -16,7 +16,7 @@
 
 const PER_HOUR = 5, PER_DAY = 60, MAX_BODY = 400000, ISSUE_MAX = 62000;
 const AREAS = ['The guide', 'Channels list or groups', 'Watching fullscreen (quick menu, info panel, zapping)', 'Catch-up', 'Movies and shows', 'Search',
-  'Multiview', 'Set-up tour', 'Settings', 'Channel logos', 'Reminders or parental controls', 'Web editor on a computer', 'Web editor on a phone or tablet',
+  'Set-up tour', 'Settings', 'Channel logos', 'Reminders or parental controls', 'Web editor on a computer', 'Web editor on a phone or tablet',
   'Backup and restore', 'Updates', 'Something else'];
 const OFTEN = ['Every time', 'Sometimes', 'Once'];
 const KEEP = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|(.*\.)?(tivibro\.app|github\.com|githubusercontent\.com|jsdelivr\.net|iptv-org\.github\.io)$)/i;

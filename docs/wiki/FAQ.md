@@ -40,8 +40,8 @@ See [The programme guide](The-programme-guide).  Smart match in the web editor u
 **Can my backup be read by someone else?**
 Not without your passphrase.  See [Backup and restore](Backup-and-restore) and [Privacy and security](Privacy-and-security).
 
-**Multiview shows one channel and a black screen.**
-Many TVs can only decode two streams at once, and some providers allow one connection.  Try two screens, and check your provider's connection limit (shown under **Settings > Playlists and guide**).
+**Why is there no multiview?**
+webOS lets an app play only one video at a time, so a second channel always stops the first.  An earlier test build tried it and it didn't work on real TVs, so it was taken out.
 
 **Something else?**
 Try [Troubleshooting](Troubleshooting), or open an [issue](https://github.com/ohmybahgosh/TiviBro/issues) with a copy of **Settings > Diagnostics > View app log** (it hides usernames and passwords).

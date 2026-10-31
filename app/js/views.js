@@ -354,7 +354,6 @@ var Views = (function () {
       Store.edits.last = c.k; Store.saveEdits();
       stage.classList.remove('off');
       if (Store.settings.blackSwitch) stage.classList.add('blank');
-      Multiview.close(true);
       Player.play(c, { preview: preview, keepTrying: foSwitching === 'back' });
       chansVL.refreshWhere(function (x) { return x && (x.k === c.k || (lastPlayed && x.k === lastPlayed.k)); });
       if (then) then();
@@ -563,7 +562,6 @@ var Views = (function () {
       case 'fav': if (c) { var on = L.toggleFav(c.k); U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); if (full) osd(true); } return;
       case 'favorites': openGroup(L.FAV); return;
       case 'recents': openGroup(L.RECENT); return;
-      case 'multiview': if (playing && mode === 'live') Multiview.open(playing); return;
       case 'picture': cyclePicture(); return;
       case 'audio': audioMenu(); return;
       case 'sleep': sleepMenu(); return;
@@ -928,7 +926,6 @@ var Views = (function () {
       playing = c; mode = 'catchup';
       cu = { c: c, p: p, off: Math.max(0, offSec || 0), first: true, pending: null };
       stage.classList.remove('off');
-      Multiview.close(true);
       Player.play(c, { live: false, timeshift: true, urlFn: function () {
         if (!cu) return '';
         if (!cu.first) cu.off += Player.position;     // a reconnect continues from where playback reached
@@ -993,7 +990,6 @@ var Views = (function () {
     vod = { meta: meta, onExit: onExit };
     mode = 'vod'; cu = null; playing = null;
     stage.classList.remove('off');
-    Multiview.close(true);
     Player.play({ k: 'vod:' + meta.id, n: meta.title, num: '' }, { url: url, live: false, startAt: startAt || 0, meta: meta });
     goFull();
   }
@@ -1175,7 +1171,7 @@ var Views = (function () {
   var qp = null;                  // { row, col, rows: [[items]], timer }
   // Quick menu buttons.  Each can be switched off in Settings > Remote control > Quick menu buttons.
   var QP_BUTTONS = [['list', 'Channel list'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['audio', 'Audio track'],
-    ['subs', 'Subtitles'], ['quality', 'Video quality'], ['picture', 'Picture size'], ['multiview', 'Multiview'], ['sleep', 'Sleep timer'],
+    ['subs', 'Subtitles'], ['quality', 'Video quality'], ['picture', 'Picture size'], ['sleep', 'Sleep timer'],
     ['info', 'Stream info'], ['reconnect', 'Reconnect']];
   // Line icons for the quick actions, drawn like the side menu's (24 x 24, stroked).
   var QP_ICONS = {
@@ -1189,7 +1185,6 @@ var Views = (function () {
     subs: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15h4M13 15h4M7 11h2M11 11h6"/>',
     quality: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v6M11 9v6M7 12h4M14 9h2a3 3 0 0 1 0 6h-2z"/>',
     picture: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 9H6v2M16 9h2v2M8 15H6v-2M16 15h2v-2"/>',
-    multiview: '<rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/>',
     sleep: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
     reconnect: '<path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v5h-5"/>'
@@ -1208,7 +1203,6 @@ var Views = (function () {
     if (subs.length) add('subs', { label: 'Subtitles', icon: 'subs', v: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || 'off', run: function () { closePanel(); subtitleMenu(); } });
     if (Player.qualities().length > 1) add('quality', { label: 'Quality', icon: 'quality', v: qualityLabel(), run: function () { closePanel(); qualityMenu(); } });
     add('picture', { label: 'Picture', icon: 'picture', v: DM[Player.displayFor(c)] || 'Normal', run: function () { closePanel(); pictureMenu(); } });
-    if (c) add('multiview', { label: 'Multiview', icon: 'multiview', run: function () { closePanel(); Multiview.open(c); } });
     add('sleep', { label: 'Sleep timer', icon: 'sleep', v: sleepAt ? U.hhmm(sleepAt) : 'off', run: function () { closePanel(); sleepMenu(); } });
     add('info', { label: 'Stream info', icon: 'info', run: function () { closePanel(); streamInfo(); } });
     add('reconnect', { label: 'Reconnect', icon: 'reconnect', run: function () { closePanel(); Player.retryNow(); U.toast('Reconnecting'); } });
@@ -1365,7 +1359,6 @@ var Views = (function () {
     if (mode === 'vod' || mode === 'catchup') items.push({ label: 'Playback speed', sub: Player.rate === 1 ? 'Normal' : Player.rate + '×', action: speedMenu });
     if (subtitleTracks().length) items.push({ label: 'Subtitles', action: subtitleMenu });
     items.push({ label: 'Sleep timer', sub: sleepAt ? 'stops at ' + U.hhmm(sleepAt) : 'off', action: sleepMenu });
-    if (mode === 'live' && playing) items.push({ label: 'Multiview', sub: 'blue button', action: function () { Multiview.open(playing); } });
     items.push({ label: 'Reconnect stream', action: function () { Player.retryNow(); } });
     UI.menu(mode === 'vod' && vod ? vod.meta.title : playing ? L.name(playing) : 'Player', items);
   }

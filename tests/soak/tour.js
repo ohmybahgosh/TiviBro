@@ -126,7 +126,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
   ok('summary step', await step() === 'done', await step());
   const promised = await ev(() => Tour.plan().chans);
-  ok('summary: tips', /Hold OK on a channel/.test(await text()) && /Multiview/.test(await text()));
+  ok('summary: tips', /Hold OK on a channel/.test(await text()) && /Catch-up/.test(await text()));
   await shot('tv-tour-done');
   const t = await text();
   ok('summary: your choices, one per step', /Your choices/.test(t) && /Detroit in Local channels, network groups hidden/.test(t) && /Keep East/.test(t) && /extra copies \(Full HD shown, the rest kept as backups\)/.test(t), t.replace(/\s+/g, ' ').slice(0, 400));

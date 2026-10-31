@@ -40,7 +40,7 @@ Remove it later with `localStorage.removeItem('tivibro.devRelay')`.
 
 ## What it does and doesn't prove
 - Good for: webOS 25 Chromium compatibility, layout at 1920x1080, remote navigation (on-screen remote), settings, name editor, login and diagnostics, guide.
-- Not proof of: real decoding and buffering smoothness, AC-3 audio, multiview decoder limits, DRM/mediaOption.  LG says the simulator's video and audio differ from a TV.
+- Not proof of: real decoding and buffering smoothness, AC-3 audio, DRM/mediaOption.  LG says the simulator's video and audio differ from a TV.
 
 ## Uninstall
 Delete `tools/webOS_TV_25_Simulator_1.4.4/` and `tools/downloads/`.  Extract-and-run mode may leave a temp copy under /tmp that clears on reboot.

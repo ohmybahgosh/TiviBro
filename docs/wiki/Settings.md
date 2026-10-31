@@ -6,7 +6,7 @@
 
 | Section | What's in it |
 |---|---|
-| [**Playback and buffering**](Settings-Playback-and-buffering) | Buffer profile, player engine, MPEG-TS or HLS, network helper, HDR and Dolby Vision, picture size, catch-up skip steps, info panel when switching, subtitles, next episode, multiview screens |
+| [**Playback and buffering**](Settings-Playback-and-buffering) | Buffer profile, player engine, MPEG-TS or HLS, network helper, HDR and Dolby Vision, picture size, catch-up skip steps, info panel when switching, subtitles, next episode |
 | [**Remote control**](Settings-Remote-control) | Remap buttons in the player and lists, quick menu buttons, learn a button, button tester |
 | [**Playlists and guide**](Settings-Playlists-and-guide) | Add and switch playlists, reload schedules, User-Agent, provider guide mode and offset, extra guide sources, channel name editor, subscription expiry and connections |
 | [**Groups, sorting, hidden**](Settings-Groups-sorting-hidden) | Manage groups, sort orders, your groups first, Recent and Favorites, new groups, hidden groups and channels |

@@ -23,12 +23,12 @@ Legend: **Have** = already in TiviBro.  **Added** = added in this pass.  **Later
 | Show info panel at the bottom when switching channels | **Added** (off shows just number and name) |
 | Show media properties / video resolution | **Added:** stream details in the info panel |
 | Sleep timer | Have |
-| Multiview | Have |
+| Multiview | No: webOS apps can play one video at a time |
 | Restart current program / Watch from start | Have (catch-up channels only) |
 | Audio offset | No: browsers can't delay audio against video |
 | Audio / video decoder (hardware / software), Tunneled playback, Amlogic fix, Audio passthrough | No: Android player options |
 | Auto frame rate, switch refresh rate / resolution | No: LG doesn't let apps change the display mode |
-| Picture-in-picture, switch to PiP on Home | No: webOS has no app PiP (Multiview covers watching two) |
+| Picture-in-picture, switch to PiP on Home | No: webOS has no app PiP, and an app can play one video at a time |
 | Use external player | No |
 | Select surround audio track by default | **Added:** "Prefer surround sound", with "Audio language" and subtitles in one language |
 | (not in TiviMate) | **Added:** when a channel stops working, switch to another version of it (other quality, group or hidden copy), or ask, or keep retrying.  "Other versions…" in channel options and the quick menu |

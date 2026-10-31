@@ -402,7 +402,7 @@ var App = (function () {
 
   // Free the decoder when the TV sends the app to the background; resume on return.
   document.addEventListener('visibilitychange', function () {
-    if (!ready || Multiview.isOpen) return;
+    if (!ready) return;
     // Movies and catch-up come back where they were, and the spot is saved first in case the TV
     // closes the app while it is in the background.
     if (document.hidden) { if (Vod.checkpoint) Vod.checkpoint(); wasPlaying = Player.suspend(); }

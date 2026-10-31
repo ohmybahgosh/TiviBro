@@ -20,7 +20,7 @@ Plain scripts loaded in order by `app/index.html` (no modules, no bundler: webOS
 | vlist.js | `VList` | Virtual list with pooled rows |
 | ui.js | `UI` | Key routing, long-press, modal menus, prompts |
 | views.js | `Views` | Live list, fullscreen + OSD, guide grid, menus |
-| multiview.js / search.js / vod.js | | Multiview tiles, search, Movies/Shows |
+| search.js / vod.js | | Search, Movies/Shows |
 | settings.js | `Settings` | All settings pages |
 | diag.js | `Diag` | Test connection + log viewer |
 | app.js | `App` | Boot: paint cache, resume, background refresh |

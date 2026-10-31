@@ -1,5 +1,5 @@
 /* Remote-control monkey: thousands of random key presses across the whole app (guide, lists,
-   fullscreen, menus, settings, search, movies, multiview), looking for crashes and dead ends.
+   fullscreen, menus, settings, search, movies), looking for crashes and dead ends.
      node tests/soak/monkey.js [--minutes 4] [--seeds 1,2,3] [--rate 8]
    Needs the mock provider and the app being served (see tests/soak/chaos.js).  Reports page
    errors, "Key handler error" log lines, and moments where 40 key presses in a row changed

@@ -82,8 +82,6 @@ var Settings = (function () {
         .concat(U.LANGS.map(function (l) { return { label: l[1] + ' only', sub: s.autoSubs && s.subsLang === l[0] ? 'on' : '', action: function () { s.autoSubs = true; s.subsLang = l[0]; save(); } }; })));
     }, function () { return !s.autoSubs ? 'Off' : s.subsLang ? langName(s.subsLang) : 'Any language'; }));
     out.push(toggle('Play next episode automatically', '', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); }));
-    out.push(head('Multiview'));
-    out.push(choice('Screens', 'Many webOS TVs decode only two streams at once.  Your provider may also limit connections.', [2, 4], ['Up to 2', 'Up to 4'], function () { return +s.multiMax; }, function (v) { s.multiMax = v; save(); }));
     return out;
   }
 

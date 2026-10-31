@@ -25,4 +25,4 @@
 
 ---
 
-← [Multiview](Multiview)  ·  [Home](Home)  ·  [Reminders](Reminders) →
+← [Search](Search)  ·  [Home](Home)  ·  [Reminders](Reminders) →

@@ -17,7 +17,7 @@ TiviBro works with the standard LG remote and the Magic Remote.  With the Magic 
 | **▶ Play** / **❙❙ Pause** | Watch the previewed channel fullscreen | Play only plays and Pause only pauses; a single Play/Pause button switches between them.  Live TV can be paused too. |
 | **Green** | Channel list | Guide over the video |
 | **Yellow** | Groups | Last channel |
-| **Blue** | Settings | Multiview |
+| **Blue** | Settings | Audio track |
 | **Back** | Back to now, then the groups | Back to the guide |
 | **0 to 9** | Jump to a channel number (at once when no longer number starts with what you typed, otherwise after a short pause) | Jump to a channel number, the same way |
 

@@ -214,15 +214,6 @@ body.guide1 .gp .gs{display:none}
 .ov-title{height:56px;color:var(--muted);font-size:26px;padding-left:20px}
 .overlay .vlist{flex:1}
 
-/* multiview */
-.multi{position:absolute;top:0;left:0;width:1920px;height:1080px;z-index:12;background:#000;display:flex;flex-wrap:wrap}
-.mtile{position:relative;width:960px;height:540px;border:4px solid transparent}
-.multi.n2{align-content:center}
-.mtile.focus{border-color:var(--accent)}
-.mtile video{width:100%;height:100%;background:#000;display:block}
-.mlabel{position:absolute;left:16px;bottom:14px;background:rgba(7,9,18,.75);padding:6px 16px;border-radius:20px;font-size:22px}
-.mmsg{position:absolute;top:16px;left:16px;font-size:22px;color:var(--muted)}
-body.mv #app{visibility:hidden}
 
 /* PIN pad */
 .pinrow{display:flex;gap:24px;justify-content:center;padding:20px 0 28px}

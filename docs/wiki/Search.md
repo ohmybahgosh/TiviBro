@@ -13,4 +13,4 @@
 
 ---
 
-← [Movies and shows](Movies-and-shows)  ·  [Home](Home)  ·  [Multiview](Multiview) →
+← [Movies and shows](Movies-and-shows)  ·  [Home](Home)  ·  [Favorites, hiding and your own groups](Favorites-hiding-and-your-own-groups) →

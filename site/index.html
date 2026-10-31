@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TiviBro: the IPTV player LG TVs never got</title>
-<meta name="description" content="TiviBro is a free, guide-first IPTV player for LG webOS TVs.  Set it up from your phone, then get a real TV guide, catch-up, movies and shows, multiview, sports and PPV read from channel names, and a web editor for thousands of channels.  Built to feel like TiviMate and go further.">
+<meta name="description" content="TiviBro is a free, guide-first IPTV player for LG webOS TVs.  Set it up from your phone, then get a real TV guide, catch-up, movies and shows, sports and PPV read from channel names, and a web editor for thousands of channels.  Built to feel like TiviMate and go further.">
 <meta name="theme-color" content="#0B0E1A">
 <meta name="color-scheme" content="dark">
 <!-- Google Analytics 4: put the measurement ID here (G-XXXXXXXXXX) to turn it on.  See site/analytics.js. -->
@@ -34,7 +34,6 @@
     <symbol id="i-catchup" viewBox="0 0 24 24"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5"/><path d="M3.5 3.5v5h5M12 7.5V12l3 2"/></symbol>
     <symbol id="i-movie" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M7.5 4v16M16.5 4v16M3 9h4.5M3 15h4.5M16.5 9H21M16.5 15H21"/></symbol>
     <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M8 4h8v5a4 4 0 0 1-8 0zM8 6H4.5a3 3 0 0 0 3.5 4M16 6h3.5a3 3 0 0 1-3.5 4M12 13v4M8.5 20h7M10 17h4"/></symbol>
-    <symbol id="i-multi" viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="7" rx="1.5"/><rect x="13" y="4" width="8" height="7" rx="1.5"/><rect x="3" y="13" width="8" height="7" rx="1.5"/><rect x="13" y="13" width="8" height="7" rx="1.5"/></symbol>
     <symbol id="i-swap" viewBox="0 0 24 24"><path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5"/></symbol>
     <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.5c0 4.5-3.2 8-7.5 9.5-4.3-1.5-7.5-5-7.5-9.5V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></symbol>
     <symbol id="i-hdr" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></symbol>
@@ -116,8 +115,8 @@
 <!-- ========== TICKER ========== -->
 <div class="ticker" aria-hidden="true">
   <div class="ticker-track">
-    <span>Guide first</span><span>Catch-up</span><span>Movies and shows</span><span>Multiview</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
-    <span>Guide first</span><span>Catch-up</span><span>Movies and shows</span><span>Multiview</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
+    <span>Guide first</span><span>Catch-up</span><span>Movies and shows</span><span>A guide for every channel</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
+    <span>Guide first</span><span>Catch-up</span><span>Movies and shows</span><span>A guide for every channel</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
   </div>
 </div>
 
@@ -141,7 +140,7 @@
         <div class="mini-phone"><img loading="lazy" src="img/shots/editor-phone-add.webp" alt="Typing the login on a phone" width="390" height="844"></div>
       </article>
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-trophy"/></svg></span><h3>Sports and PPV, readable</h3><p>Event channels that cram the listing into their name get a short name, and the game lands in the guide at its real time.</p></article>
-      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-multi"/></svg></span><h3>Multiview</h3><p>Two channels side by side, four on TVs that can take it.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-guide"/></svg></span><h3>A guide for every channel</h3><p>Channels your provider sends no guide for get one from free public guides, matched by call sign and name.</p></article>
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-swap"/></svg></span><h3>Never stuck on a dead channel</h3><p>Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next by itself.</p></article>
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-shield"/></svg></span><h3>Streams that don't quit</h3><p>Reconnects, waits out Wi-Fi drops and tries every player before giving up.</p></article>
       <article class="tile wide reveal spot">
@@ -229,7 +228,7 @@
       <div class="vs-row"><div class="vs-f">Hide channels with nothing on</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Yes, back when an event is named</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>No</span></div></div>
       <div class="vs-row"><div class="vs-f">Fills in missing channel logos</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Two open libraries, two styles</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>No</span></div></div>
       <div class="vs-group">Watching</div>
-      <div class="vs-row"><div class="vs-f">Catch-up, multiview, multiple playlists, backups</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Included</span></div><div class="vs-c part" data-l="TiviMate"><svg class="i"><use href="#i-part"/></svg><span>Premium</span></div></div>
+      <div class="vs-row"><div class="vs-f">Catch-up, multiple playlists, backups</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Included</span></div><div class="vs-c part" data-l="TiviMate"><svg class="i"><use href="#i-part"/></svg><span>Premium</span></div></div>
       <div class="vs-row"><div class="vs-f">Switches to another version of a dead channel</div><div class="vs-c me yes" data-l="TiviBro"><svg class="i"><use href="#i-check"/></svg><span>Yes, by itself</span></div><div class="vs-c no" data-l="TiviMate"><svg class="i"><use href="#i-x"/></svg><span>No</span></div></div>
       <div class="vs-row"><div class="vs-f">Recording</div><div class="vs-c me no" data-l="TiviBro"><svg class="i"><use href="#i-x"/></svg><span>Not yet</span></div><div class="vs-c part" data-l="TiviMate"><svg class="i"><use href="#i-part"/></svg><span>Premium</span></div></div>
       <p class="fine">TiviMate column from its own site and public guides, October 2026.  TiviMate is a great app; this is what TiviBro adds.</p>
@@ -253,7 +252,6 @@
     <figure><img loading="lazy" src="img/shots/tv-catchup-guide.webp" alt="Catch-up in the guide" width="1280" height="720"><figcaption>Catch-up: travel back in the guide</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-movies.webp" alt="Movies" width="1280" height="720"><figcaption>Movies with posters and ratings</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-episodes.webp" alt="Episodes" width="1280" height="720"><figcaption>Shows, seasons and episodes</figcaption></figure>
-    <figure><img loading="lazy" src="img/shots/tv-multiview.webp" alt="Multiview" width="1280" height="720"><figcaption>Multiview</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-search.webp" alt="Search" width="1280" height="720"><figcaption>Search channels and programmes</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-versions.webp" alt="Other versions of a channel" width="1280" height="720"><figcaption>Other versions of a channel</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-reminder.webp" alt="A reminder" width="1280" height="720"><figcaption>Reminders</figcaption></figure>

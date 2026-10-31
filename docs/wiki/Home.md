@@ -15,7 +15,7 @@ Welcome to the TiviBro wiki.  It explains every screen and every setting on the 
 | 🚀 **New to TiviBro?** | [Installing](Installing), then [First start](First-start) and [The set-up tour](The-set-up-tour) |
 | 🖼️ **Channels without logos?** | [Channel logos](Channel-logos) |
 | 🎮 **Which button does what?** | [The remote](The-remote) |
-| 📺 **Watching TV** | [The guide](The-guide) · [Watching fullscreen](Watching-fullscreen) · [Catch-up](Catch-up) · [Multiview](Multiview) |
+| 📺 **Watching TV** | [The guide](The-guide) · [Watching fullscreen](Watching-fullscreen) · [Catch-up](Catch-up) |
 | 🎬 **Movies and shows** | [Movies and shows](Movies-and-shows) · [Search](Search) |
 | 🧹 **Too many groups?** | [Turning on the web editor](Turning-on-the-web-editor) · [Smart clean-up](Smart-clean-up) · [Groups and channels](Groups-and-channels) · [Channel names](Channel-names) |
 | 🗓️ **Missing guide data?** | [The programme guide](The-programme-guide) |
@@ -41,14 +41,14 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🧹 **Clean-up that already knows IPTV** | Pick your city once and every local group (ABC, CBS, NBC, FOX, CW, PBS…) keeps only your stations.  Keep East or West feeds in one click.  Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from any naming style, duplicates in different qualities, and **Smart match** for channels without a guide. |
 | 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled" stay out of the way, and come back by themselves when an event is named. |
 | 🔐 **Locked backups, restored from the first screen** | One AES-256 file with every playlist, login, group and setting.  A brand-new TV restores it from a computer before you've touched a setting. |
-| 💸 **Everything free, nothing locked** | Catch-up, multiview, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking. |
+| 💸 **Everything free, nothing locked** | Catch-up, multiple playlists, backups, reminders and parental controls are all included.  Open source, no account, no ads, no tracking. |
 | 📺 **Made for LG TVs** | Runs on the TV itself, webOS 4 and newer.  No Android box or Fire Stick needed. |
 
 | | TiviBro | TiviMate |
 |---|---|---|
 | Runs on LG webOS TVs | ✅ | ❌ Android TV and Fire TV |
 | Price | Free, every feature | Free version, Premium paid |
-| Catch-up, multiview, multiple playlists, backups | ✅ Free | Premium |
+| Catch-up, multiple playlists, backups | ✅ Free | Premium |
 | Open source | ✅ MIT | ❌ |
 | Sports and PPV events read from channel names | ✅ | ❌ |
 | Edit your playlist from a computer, with autosaved drafts | ✅ | ❌ On the TV only |

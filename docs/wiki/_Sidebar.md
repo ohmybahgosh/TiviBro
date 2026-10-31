@@ -16,7 +16,6 @@
 - [Catch-up](Catch-up)
 - [Movies and shows](Movies-and-shows)
 - [Search](Search)
-- [Multiview](Multiview)
 - [Favorites, hiding and your own groups](Favorites-hiding-and-your-own-groups)
 - [Reminders](Reminders)
 - [Watchlist](Watchlist)

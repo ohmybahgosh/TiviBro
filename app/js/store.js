@@ -42,7 +42,6 @@ var Store = (function () {
     pin: '',                    // hashed parental PIN
     pinScope: 'channels',       // channels | settings | both
     pinStay: true,              // stay unlocked until the app restarts
-    multiMax: 2,                // multiview tiles (webOS TVs often decode only 2 streams)
     keymap: null,               // remote remapping, see keymap.js (null = defaults)
     keyAliases: {},             // learned keyCode -> button name
     // Added after the TiviMate menu review (all off/neutral by default unless noted).
