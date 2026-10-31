@@ -66,6 +66,11 @@ var Diag = (function () {
     }).catch(function (e) { show('Helper log', ['Could not read the helper log: ' + e.message]); });
   }
 
+  // The QR code to the web editor's Report a problem page (Settings > Diagnostics, the menu, after a crash).
+  function openReport(keepOn) {
+    WebEdit.showJoin('report', null, { keepOn: !!keepOn, title: 'Report a problem', lead: 'Scan the code with your phone\'s camera (or open the address on a computer).  Describe what happened there; the TV adds its version, model and log, with logins and server names taken out, and your phone opens a GitHub issue ready to send.' });
+  }
+
   /* ---------- problem report ----------
      What "Report a problem" (in the web editor) shares: versions, the TV, a few settings, and the
      app and helper logs.  Never logins: the log already masks them, and here every provider and
@@ -109,7 +114,9 @@ var Diag = (function () {
         return 'on, filled ' + ps.filled + ' of ' + ps.asked + ' (' + (ps.countries.join(', ') || 'no country') + ', ' + Math.round((ps.took || 0) / 1000) + ' s): ' + (ps.sources || []).map(function (r) { return r.url + ' ' + (r.ok ? r.filled : 'failed ' + r.error); }).join('; ');
       })()],
       ['Player', s.engine || 'auto'], ['Start screen', s.startTab || 'guide'],
-      ['Detailed logging', Log.verbose ? 'on' : 'off']
+      ['Detailed logging', Log.verbose ? 'on' : 'off'],
+      ['Last session', Log.unclean ? 'closed unexpectedly, ' + scrub(Log.unclean.text) + (Log.unclean.recent > 1 ? ' (' + Log.unclean.recent + ' times in the last hour)' : '') : 'ended normally'],
+      ['Memory now', (function () { try { return performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + ' MB used' : 'unknown'; } catch (e) { return 'unknown'; } })()]
     ];
     if (window.Player && Player.current) facts.push(['Playing', scrub([Player.media, Player.engine].filter(Boolean).join('  '))]);
     var app = Log.lines(true).map(scrub);
@@ -446,5 +453,5 @@ var Diag = (function () {
     });
   }
 
-  return { report: report, run: run, speedTest: speedTest, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
+  return { report: report, openReport: openReport, run: run, speedTest: speedTest, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
 })();

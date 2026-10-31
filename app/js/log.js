@@ -28,9 +28,32 @@ var Log = (function () {
     return String(d);
   }
 
-  var persist = U.debounce(function () {
-    try { localStorage.setItem('tivibro.log', JSON.stringify(saved.concat(buf).slice(-KEEP))); } catch (e) {}
-  }, 1500);
+  function persistNow() { try { localStorage.setItem('tivibro.log', JSON.stringify(saved.concat(buf).slice(-KEEP))); } catch (e) {} }
+  var persist = U.debounce(persistNow, 1500);
+
+  /* Did TiviBro close on its own?  webOS ends an app that runs out of memory without a word, so no
+     error is ever logged.  A marker in storage says the app is open and what it is doing (state():
+     loading the guide from where, playing what) and how much memory it uses, updated as that
+     changes and every 15 s; going to the background or exiting marks it closed.  If the next start
+     finds it still open, the last session ended unexpectedly, and the marker says while doing what. */
+  var MARK = 'tivibro.alive', doing = {}, lastMark = 0, started = Date.now(), prevRun = null, unclean = null;
+  try { prevRun = JSON.parse(localStorage.getItem(MARK) || 'null'); } catch (e) {}
+  function heapMB() { try { return performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : 0; } catch (e) { return 0; } }
+  function mark(open) {
+    lastMark = Date.now();
+    try { localStorage.setItem(MARK, JSON.stringify({ s: session, v: TIVIBRO_VERSION, t0: started, t: lastMark, open: open !== false, doing: doing, heap: heapMB() })); } catch (e) {}
+  }
+  function state(key, text) {
+    text = text ? redact(String(text)).slice(0, 160) : '';
+    if ((doing[key] || '') === text) return;
+    if (text) doing[key] = text; else delete doing[key];
+    if (Date.now() - lastMark > 2000 || !text) mark(); else { clearTimeout(state.t); state.t = setTimeout(mark, 2000); }
+  }
+  function describe(run) {
+    var d = run.doing || {}, what = Object.keys(d).map(function (k) { return d[k]; }).join('; ');
+    return (what ? 'while ' + what : 'doing nothing in particular') + (run.heap ? ', using ' + run.heap + ' MB' : '') +
+      ', ' + Math.round((run.t - run.t0) / 1000) + ' s after it started (' + (run.v || '?') + ')';
+  }
 
   /* Development log sink: when a log receiver answers on 127.0.0.1:47812 (scripts/logsink.js,
      started by `npm run sim` / `npm run serve`), every line, including debug lines and key
@@ -65,11 +88,25 @@ var Log = (function () {
     buf.push(e);
     if (buf.length > MAX) buf.splice(0, buf.length - MAX);
     if (window.console) (lv === 'error' ? console.error : lv === 'warn' ? console.warn : console.log)('[tivibro:' + cat + '] ' + e.m);
-    if (lv !== 'debug') persist();
+    // Warnings and errors are saved at once: the app may be closed a moment later.
+    if (lv === 'warn' || lv === 'error') persistNow(); else if (lv !== 'debug') persist();
   }
 
   // Previous sessions, read once at start.
   try { saved = (JSON.parse(localStorage.getItem('tivibro.log') || '[]') || []).filter(function (x) { return x && x.t; }); } catch (e) { saved = []; }
+  // The last session closed on its own: say so in this session's log (reports carry it) and keep a
+  // short history, so several in a row show up as a loop.
+  if (prevRun && prevRun.open && prevRun.s !== session) {
+    var hist = []; try { hist = JSON.parse(localStorage.getItem('tivibro.crashes') || '[]') || []; } catch (e) {}
+    hist = hist.filter(function (t) { return Date.now() - t < 3600e3; }); hist.push(prevRun.t || Date.now());
+    try { localStorage.setItem('tivibro.crashes', JSON.stringify(hist.slice(-10))); } catch (e) {}
+    unclean = { s: prevRun.s, at: prevRun.t, text: describe(prevRun), doing: prevRun.doing || {}, heap: prevRun.heap || 0, recent: hist.length };
+    add('error', 'app', 'TiviBro closed unexpectedly last time, ' + unclean.text + (hist.length > 1 ? '.  ' + hist.length + ' times in the last hour.' : '.'));
+  }
+  mark(true);
+  setInterval(function () { if (!document.hidden) mark(true); }, 15000);
+  document.addEventListener('visibilitychange', function () { mark(!document.hidden); persistNow(); });
+  window.addEventListener('pagehide', function () { mark(false); persistNow(); });
 
   window.addEventListener('error', function (ev) {
     add('error', 'app', 'Uncaught: ' + (ev.message || 'error') + ' at ' + (ev.filename || '').split('/').pop() + ':' + ev.lineno);
@@ -107,6 +144,12 @@ var Log = (function () {
     get verbose() { return verbose; },
     set verbose(v) { verbose = !!v; localStorage.setItem('tivibro.logVerbose', v ? '1' : '0'); },
     get count() { return buf.length; },
+    // What the app is doing, kept for the next start if TiviBro closes unexpectedly: state('guide', 'loading ...'), state('guide', '') when done.
+    state: state,
+    // Closing on purpose (Back twice, the update installer): not a crash.
+    closing: function () { mark(false); persistNow(); },
+    // The last session ended unexpectedly: { text, doing, heap, at, recent (how many in the last hour) } or null.
+    get unclean() { return unclean; },
     // The last earlier session's uncaught error, if it had one: { s: session, m: message }.
     get lastCrash() { var last = saved.length ? saved[saved.length - 1].s : null, hit = null; saved.forEach(function (e) { if (e.s === last && e.lv === 'error' && /^(Uncaught|Unhandled)/.test(e.m)) hit = e; }); return hit; }
   };

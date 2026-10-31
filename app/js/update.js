@@ -154,6 +154,7 @@ var Update = (function () {
       set({ state: 'installing', progress: 0, status: 'Starting…', error: '' });
       Log.info('update', 'Installing ' + r.version + ' from ' + r.ipkUrl);
       return new Promise(function (res, rej) {
+        Log.closing();                                                 // the install restarts TiviBro: not a crash
         job = luna(HBC + '/install', { ipkUrl: r.ipkUrl, ipkHash: r.sha256, subscribe: true }, function (m) {
           if (m.returnValue === false) {
             job = null;

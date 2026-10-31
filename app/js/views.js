@@ -19,7 +19,7 @@ var Views = (function () {
   var overlay = false, ovGroup = null;
   var backT = 0, sleepAt = 0, sleepWarned = false, playStart = 0, recentDone = false;
 
-  var TAB_LABELS = { live: 'Channels', guide: 'Guide', movies: 'Movies', shows: 'Shows', search: 'Search', editor: 'Edit on phone', settings: 'Settings' };
+  var TAB_LABELS = { live: 'Channels', guide: 'Guide', movies: 'Movies', shows: 'Shows', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
   // The guide is home: the app opens on it and Back from any other screen comes back to it.
   function home() { return Store.settings.startTab === 'live' ? 'live' : 'guide'; }
   var fullFrom = 'guide';
@@ -31,6 +31,7 @@ var Views = (function () {
     shows: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3l4 4 4-4"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
     editor: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+    report: '<rect x="7" y="8" width="10" height="12" rx="5"/><path d="M9 8a3 3 0 0 1 6 0M12 12v8M3 13h4M17 13h4M4 7l3 2M20 7l-3 2M4 19l3-2M20 19l-3-2"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>'
   };
   // Movies and Shows appear only when this playlist actually has them (checked in the background).
@@ -40,13 +41,15 @@ var Views = (function () {
     if (pl.type === 'xtream' && v.movies) tabs.push('movies');
     if (pl.type === 'xtream' && v.series) tabs.push('shows');
     tabs.push('search', 'editor', 'settings');
+    // Test builds: Report a problem one press away (it also stays in Settings > Diagnostics).
+    if (/alpha|beta/i.test(TIVIBRO_VERSION) || Store.settings.reportInMenu) tabs.push('report');
     var nav = document.querySelector('.tabs');
     nav.innerHTML = '';
     tabs.forEach(function (t) {
       var s = U.el('div', 'tab' + (t === tab ? ' on' : '')); s.setAttribute('data-tab', t);
       s.innerHTML = '<svg viewBox="0 0 24 24" class="ico">' + ICONS[t] + '</svg>';
       s.appendChild(U.el('span', 'lbl', TAB_LABELS[t]));
-      s.addEventListener('click', function () { closeNav(); if (full) exitFull(); UI.close(); if (t === 'editor') WebEdit.showJoin(); else switchTab(t); });
+      s.addEventListener('click', function () { closeNav(); if (full) exitFull(); UI.close(); if (t === 'editor') WebEdit.showJoin(); else if (t === 'report') Diag.openReport(); else switchTab(t); });
       s.addEventListener('mousemove', function () { if (UI.pointer && !document.body.classList.contains('nav-open') && !full) openNavFromPointer(); });
       nav.appendChild(s);
     });
@@ -452,6 +455,7 @@ var Views = (function () {
       else if (a === 'ok' || a === 'right') {
         // Edit on phone is a shortcut, not a screen: it shows the editor's QR code over the screen you are on.
         if (tabs[tabSel] === 'editor') { if (a === 'ok') { done(); onBack(); WebEdit.showJoin(); } }
+        else if (tabs[tabSel] === 'report') { if (a === 'ok') { done(); onBack(); Diag.openReport(); } }
         else { done(); if (tabs[tabSel] === tab) onBack(); else switchTab(tabs[tabSel]); }
       }
       else if (a === 'back') {
@@ -474,6 +478,7 @@ var Views = (function () {
      system (PalmSystem.platformBack), which leaves the app. */
   function exitNow() {
     Log.info('views', 'Exit from the remote');
+    Log.closing();
     try { stopAll(); } catch (e) {}
     try { window.close(); } catch (e) {}
     setTimeout(function () {

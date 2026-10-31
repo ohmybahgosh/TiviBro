@@ -230,7 +230,7 @@ var App = (function () {
         else if (cur.kind === 'net') toggleNet();
         else if (cur.kind === 'test') Diag.run(current());
         else if (cur.kind === 'log') Diag.showLog(true);
-        else if (cur.kind === 'report') WebEdit.showJoin('report', null, { keepOn: true, title: 'Report a problem', lead: 'Scan the code with your phone\'s camera (or open the address on a computer).  Describe what happened there; the TV adds its version, model and log, with logins and server names taken out, and your phone opens a GitHub issue ready to send.' });
+        else if (cur.kind === 'report') Diag.openReport(true);
         else if (cur.kind === 'remote') remote();
         else if (cur.kind === 'cancel') leave();
       }
@@ -382,6 +382,18 @@ var App = (function () {
     open(Store.playlist);
   }
 
+  /* After a crash: a question, not a toast that is easy to miss.  The report it opens carries the
+     log of the session that closed (Log.unclean says what it was doing). */
+  function offerReport(gone, crash) {
+    if (UI.modalOpen) return setTimeout(function () { offerReport(gone, crash); }, 5000);
+    var what = gone ? 'TiviBro closed unexpectedly last time' + (gone.recent > 1 ? ' (' + gone.recent + ' times in the last hour)' : '') : 'TiviBro hit an error last time';
+    var sub = gone ? gone.text : crash.m;
+    UI.menu(what, [
+      { label: 'Report it', sub: 'scan a code with your phone; the log goes with it, logins taken out', action: function () { Diag.openReport(); } },
+      { label: 'Not now', sub: sub.length > 90 ? sub.slice(0, 88) + '…' : sub }
+    ]);
+  }
+
   function boot() {
     loading('Starting…');
     Log.info('app', 'TiviBro ' + TIVIBRO_VERSION + ' starting.  ' + navigator.userAgent);
@@ -389,11 +401,11 @@ var App = (function () {
     Net.start(6000).then(function () {
       WebEdit.resume();
       Update.autoCheck();
-      // Something broke last time: say once where to report it.
-      var crash = Log.lastCrash;
-      if (crash && localStorage.getItem('tivibro.crashSeen') !== crash.s) {
-        try { localStorage.setItem('tivibro.crashSeen', crash.s); } catch (e) {}
-        setTimeout(function () { U.toast('TiviBro hit an error last time.  Settings > Diagnostics > Report a problem sends it to us.', 8000); }, 4000);
+      // Something broke last time (an error, or TiviBro closed on its own): offer to report it, once.
+      var crash = Log.lastCrash, gone = Log.unclean, key = gone ? 'u' + gone.s : crash ? crash.s : '';
+      if (key && localStorage.getItem('tivibro.crashSeen') !== key) {
+        try { localStorage.setItem('tivibro.crashSeen', key); } catch (e) {}
+        setTimeout(function () { offerReport(gone, crash); }, 3500);
       }
       if (!Store.settings.playlists.length) return setup();
       open(Store.playlist);

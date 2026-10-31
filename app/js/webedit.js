@@ -422,11 +422,12 @@ var WebEdit = (function () {
       lastCmd = c.id;
       chain = chain.then(function () {
         Log.info('webedit', 'Running "' + c.type + '" from the web editor');
+        Log.state('editor', 'running "' + c.type + '" from the web editor');
         var fn = RUN[c.type];
         return Promise.resolve().then(function () { if (!fn) throw new Error('Unknown action ' + c.type); return fn(c.args || {}); })
           .then(function (r) { return call('/editor/result', { id: c.id, ok: true, msg: r && r.msg, data: r && r.data }); },
             function (e) { Log.warn('webedit', '"' + c.type + '" failed: ' + (e && e.message)); return call('/editor/result', { id: c.id, ok: false, msg: (e && e.message) || 'failed' }); })
-          .then(function () { lastSig = ''; });
+          .then(function () { lastSig = ''; Log.state('editor', ''); });
       });
     });
     return chain;

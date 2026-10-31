@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **TiviBro notices when it closed by itself, and asks to report it.**  webOS ends an app that runs out of memory without any error, so the old "hit an error" notice never showed (the alpha 24 guide loop said nothing).  TiviBro now keeps a note of what it is doing (loading which guide and how far, playing which channel, its memory use); if a session ends with that note still open, the next start asks **Report it** or **Not now** and says what it was doing, and the report and the log carry it.  Warnings and errors are saved at once instead of a moment later, so the last lines before a close are kept.  Test builds have **Report a problem** at the bottom of the menu.
+
 ## 0.6.0 (alpha 28, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.
