@@ -181,6 +181,7 @@ var Names = (function () {
     invalidate: function () { cache.sig = ''; },
     defaults: defaults,
     RULES: RULES,
+    COUNTRY: COUNTRY,
     parseList: parseList, joinList: joinList,
     groupsOn: function () { var c = cfgOf(); return c.enabled && c.groups; },
     // "Hide channels with nothing on": a channel whose name says it is off air, offline or has no

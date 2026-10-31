@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Movies and Shows by language, and lighter on the TV.**  Many providers put a language code in front of every title ("SE - ", "EN - ", "[SE]").  TiviBro now takes it off the name, and a **Languages** row at the top of Movies and Shows picks which languages show.  By default that's your TV's language plus titles with no tag; a library with one language shows everything.  A 4K tag becomes a 4K label.  Hold OK (or Red) on a category to hide it, its titles leave All and Search too.  Only what shows is kept in memory, and on the TV the helper now downloads and slims the provider's list, so a 160,000-title library no longer has to be parsed by the app itself.
+
 ## 0.6.0 (alpha 32, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.
