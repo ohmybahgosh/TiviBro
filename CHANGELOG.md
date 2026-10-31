@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 25, 2026-10-31)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 25
 
 - **A guide too big for the TV no longer closes TiviBro over and over.**  On a 2 GB TV, a 64 MB extra guide (iptv-epg.org, all of the US) on top of the provider's ran the app out of memory, and because the load started again on every launch, TiviBro kept closing.  Now a guide load keeps to a memory budget (descriptions get shorter, then extra channels are left out, with a notice saying so).  If the app still closes during a load, the next start tries once more with half the memory; after a second time, guide loading pauses with a notice naming the guide it was loading, until you remove it and press **Reload guide now**.
 - **Smart match applies what you approve.**  On a short list the matching finished before the dialog was ready and left **Apply** greyed out, so nothing was applied and the channels stayed under "Needs a guide".  Approving is also clearer: rows say **✓ Approved** in solid green, tapping ✓ again no longer quietly un-approves a row (✕ skips it), and Apply says "Nothing approved yet" when that's the case.
@@ -8,11 +12,7 @@
 - **Smart match no longer suggests a channel's own empty guide.**  Channels whose guide id has no programmes are looked at too; suggesting that same id again changed nothing.
 - **Guide download progress when the server gives no size:** the TV remembers each guide file's size from its last download and shows "12 MB of about 64 MB" next time.  (Only a fingerprint of the address is kept, never the address with its login.)
 
-## 0.6.0 (alpha 24, 2026-10-31)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 24
+### In alpha 24
 
 - **Multiview is gone.**  webOS lets an app play only one video at a time (LG says so for web apps), so a second screen always stopped the first on real TVs.  It is taken out of the app, the quick menu, settings, the docs and the site rather than left half working.  Blue in the player now opens the audio track; a button you had set to multiview does the same.
 - **Every step opens on what's in effect now.**  Run again, the TV's set-up tour starts from your current setup (the countries shown, the feed you kept, the cities in your local group, hidden dividers and empty groups) and says so.  In the web editor, Smart clean-up steps re-read the current state after each change, undo, redo or reload: country chips show what is shown ("Shown now: ..."), East and West says which feed is kept, Local channels ticks your current cities, and Adult groups, Shorter group names and Divider groups list what they hid with **Show them again** or **Put it back**.
