@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **The phone as a remote, and Play on TV** (TiviBro for Android, with Settings > Phone app on the TV).  **Remote and channels** on a TV: what is playing now, with the programme and its progress, kept up to date as the TV changes; a remote (arrows round OK, hold OK for options, Back, Channels, Guide, Channel up and down, play and pause, rewind and fast forward, the colour buttons, Info, and the TV's own volume and mute); typing a search on the phone searches on the TV; and **Channels**: every channel as TiviBro shows it, by group, with what is on now, searchable, and a tap plays it on the TV.  A button with TiviBro closed opens it first.
-
-## 0.6.0 (alpha 30, 2026-10-31)
+## 0.6.0 (alpha 31, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 30
+### New in alpha 31
+
+- **The phone as a remote, and Play on TV** (TiviBro for Android, the APK is attached to this release, with Settings > Phone app on the TV).  **Remote and channels** on a TV: what is playing now, with the programme and its progress, kept up to date as the TV changes; a remote (arrows round OK, hold OK for options, Back, Channels, Guide, Channel up and down, play and pause, rewind and fast forward, the colour buttons, Info, and the TV's own volume and mute); typing a search on the phone searches on the TV; and **Channels**: every channel as TiviBro shows it, by group, with what is on now, searchable, and a tap plays it on the TV.  A button with TiviBro closed opens it first.
+
+### In alpha 30
 
 - **Search shows why a channel matched.**  Providers often write the game into the channel name ("BIG10 10: Michigan vs Ohio State"), while TiviBro shows the short name ("BigTen 10"), so searching "michigan" listed a column of BigTen channels with nothing about Michigan.  Those results now show the game as the title with the channel under it ("in the name"), or as an upcoming or on-now event with its time when the name has one, sorted by time.  And a channel with no guide shows what its name says in the channel details and the player bar, instead of just "No guide information".
 - **Settings pages update by themselves.**  **Reload guide now** used to leave **Guide last loaded** at the old time until you left the page; it now says "loading now", then the new time.  The same goes for **Last reloaded** after **Reload channels now**, each guide source's result, **Channels with guide data**, and the public guide's last look.
