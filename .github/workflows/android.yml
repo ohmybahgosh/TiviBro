@@ -133,4 +133,5 @@ jobs:
           path: |
             shots/*.png
             shots/ui.xml
+            shots/logcat.txt
           retention-days: 30

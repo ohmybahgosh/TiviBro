@@ -101,7 +101,7 @@ fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) ->
         try { url = load { status = it } } catch (e: TbException) { error = e.message } catch (e: Exception) { error = "$name didn't answer.  Is it on, and on the same network?" }
     }
     // Back leaves the editor (its pages are sections of one page, picked from its own menu).
-    BackHandler { onBack() }
+    BackHandler { android.util.Log.i("TiviBroBack", "Back in the editor: to the TV list"); onBack() }
 
     Scaffold(
         containerColor = Ink,

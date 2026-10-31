@@ -47,6 +47,8 @@ class MainActivity : ComponentActivity() {
         setContent { TbTheme { App(model, link) } }
     }
 
+    override fun onStop() { super.onStop(); android.util.Log.i("TiviBroBack", "stopped, finishing=$isFinishing") }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         handle(intent)

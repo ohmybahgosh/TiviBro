@@ -42,7 +42,7 @@ tap "Edit channels"
 shot 3-editor 10
 adb shell input keyevent KEYCODE_BACK
 sleep 3
-[ -n "$(find_text "Edit channels")" ] || { echo "Back did not return to the TV list"; adb exec-out screencap -p > "$OUT/fail.png"; adb logcat -d | grep -E -A25 "FATAL EXCEPTION|AndroidRuntime|$PKG" | tail -80; exit 1; }
+[ -n "$(find_text "Edit channels")" ] || { echo "Back did not return to the TV list"; adb exec-out screencap -p > "$OUT/fail.png"; adb logcat -d > "$OUT/logcat.txt"; grep -E "TiviBroBack|ActivityTaskManager|wm_|$PKG|FATAL" "$OUT/logcat.txt" | tail -60; exit 1; }
 echo "Back returns to the TV list"
 if adb logcat -d | grep -E "FATAL EXCEPTION|AndroidRuntime: Process: $PKG" ; then echo "The app crashed"; adb logcat -d | grep -A30 "FATAL EXCEPTION" | head -60; exit 1; fi
 echo "no crashes"
