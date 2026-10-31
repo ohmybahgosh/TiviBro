@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Big guides of any size, with days of programmes.**  The network helper now downloads and reads XMLTV guides and keeps them on the TV's storage; TiviBro itself holds only programme times and titles and fetches a channel's descriptions when it shows them.  A 300 MB test guide (4,000 channels, 3 days) loads in seconds with TiviBro using about 110 MB, where a 64 MB guide used to close it.  A restart shows the guide from storage without downloading again, and the guide now reaches three days ahead.  TVs without the helper keep reading the guide in the app, within its memory limit.
+- **Short shows are readable in the guide.**  A programme with only a few minutes left at the guide's start (or a short filler) was a sliver with its title cut to "J…"; it now borrows width from the next programme so the title fits.
+- **A sleeker "on now" in the guide.**  The red time line no longer runs across programme titles: it sits behind the programmes, with a small marker in the time bar.  What's on now gets a slim progress bar under its times instead of a shaded block.  **Colour** keeps the coloured cell and adds the bar.
+
 ## 0.6.0 (alpha 25, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.

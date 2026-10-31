@@ -333,7 +333,7 @@ var Views = (function () {
     if (nn && nn.now) {
       var pg = Epg.pubSource(c);
       now.appendChild(U.el('small', '', (nn.now.up ? 'Starts ' + Events.when(nn.now.e) : nn.now.ended ? 'Ended ' + Events.when(nn.now.s) : U.hhmm(nn.now.s) + ' to ' + U.hhmm(nn.now.e)) + '   ' + L.name(c) + (c.arch ? '   catch-up ' + c.arch + ' days' : '') + (pg ? '   public guide, ' + pg.name : '')));
-      if (nn.now.d) now.appendChild(U.el('p', '', nn.now.d));
+      var nd = Epg.desc(c, nn.now); if (nd) now.appendChild(U.el('p', '', nd));
     } else now.appendChild(U.el('small', '', nn ? 'No guide information' : 'Loading guide'));
     if (nn && nn.next) next.textContent = 'Next  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t;
   }
@@ -1445,7 +1445,7 @@ var Guide = (function () {
   'use strict';
   var $ = U.$, L = Library;
   var view = $('viewGuide'), body = $('guideBody'), timesEl = $('guideTimes'), detail = $('guideDetail'), ghead = $('guideGroup');
-  var ROW = 88, VIS = 0, WIN = 2.5 * 3600e3, PXW = 0, CHW = 470;
+  var ROW = 88, VIS = 0, WIN = 2.5 * 3600e3, PXW = 0, CHW = 470, MINCELL = 220;      // narrowest a programme is drawn (px)
   var list = [], gid = null, loaded = null, sel = 0, top = 0, t0 = 0, focusT = 0, rows = [], zone = 'groups', groupsVL = null;
 
   function build() {
@@ -1641,15 +1641,27 @@ var Guide = (function () {
     if (r.img._src !== lg) { r.img._src = lg; r.img.style.visibility = lg ? 'visible' : 'hidden'; if (lg) r.img.src = lg; }
     var locked = !Parental.blockedOk(c);
     var l = locked ? [] : Epg.request(c), t1 = t0 + WIN, n = 0, nowT = Date.now();
+    var segs = [];
     if (l) for (var i = 0; i < l.length; i++) {
       var p = l[i];
       if (p.e <= t0 || p.s >= t1) continue;
-      var a = Math.max(0, x(p.s)), b = Math.min(PXW, x(p.e));
-      var past = p.e <= nowT, now = p.s <= nowT && p.e > nowT;
-      // How much of what's on now has aired, shown inside its cell.
-      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : ''), a, Math.max(4, b - a),
-        (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(x(nowT) - a, 0, Math.max(4, b - a)) : -1, p.s);
+      segs.push({ p: p, a: Math.max(0, x(p.s)), b: Math.min(PXW, x(p.e)) });
     }
+    // A programme with only minutes showing (one ending just after the guide's start, a short filler)
+    // would be a sliver with its title cut to "J…": it borrows width from the next one, which has room.
+    for (var q = 0; q < segs.length; q++) {
+      var sg = segs[q], need = MINCELL - (sg.b - sg.a), nx2 = segs[q + 1];
+      if (need <= 0) continue;
+      if (nx2 && nx2.a <= sg.b + 1) { var give = Math.min(need, Math.max(0, nx2.b - nx2.a - MINCELL)); sg.b += give; nx2.a += give; }
+      else sg.b = Math.min(PXW, sg.b + need);
+    }
+    segs.forEach(function (sg) {
+      var p = sg.p, a = sg.a, w = Math.max(4, sg.b - sg.a);
+      var past = p.e <= nowT, now = p.s <= nowT && p.e > nowT, from = Math.max(p.s, t0);
+      // How much of what's on now has aired, shown inside its cell (by time, as the cell may be wider).
+      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : ''), a, w,
+        (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now && w > 70 ? U.clamp(Math.round((w - 32) * (nowT - from) / Math.max(1, p.e - from)), 0, w - 32) : -1, p.s);
+    });
     if (!n) cell(r, n++, 'gp none' + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : l ? 'No guide information' : 'Loading…', false, null, -1, '');
     for (var j = n; j < r.cells.length; j++) if (!r.cells[j].off) { r.cells[j].d.style.display = 'none'; r.cells[j].off = true; }
   }
@@ -1684,9 +1696,11 @@ var Guide = (function () {
       for (var t = t0; t < t0 + WIN; t += 30 * 60e3) {
         var s = U.el('span', '', U.hhmm(t)); s.style.left = (x(t) + 16) + 'px'; timesEl.appendChild(s);
       }
+      var mk = U.el('span', 'gnowh'); mk.id = 'gnowh'; timesEl.appendChild(mk);
     }
     var nl = $('gnow'), nx = x(Date.now());
     if (nl) { nl.style.display = nx >= 0 && nx <= PXW ? '' : 'none'; nl.style.transform = 'translateX(' + (CHW + nx) + 'px)'; }
+    var nh = $('gnowh'); if (nh) { nh.style.display = nx >= 0 && nx <= PXW ? '' : 'none'; nh.style.left = nx + 'px'; }
     drawDetail();
   }
 
@@ -1737,7 +1751,7 @@ var Guide = (function () {
     if (h.p && h.p.s <= now && h.p.e > now && !h.p.up && !h.p.ended) {
       var bar = U.el('div', 'gd-prog'), fill = U.el('i'); fill.style.width = Math.round(100 * (now - h.p.s) / (h.p.e - h.p.s)) + '%'; bar.appendChild(fill); detail.appendChild(bar);
     }
-    detail.appendChild(U.el('p', 'gd-desc', h.p && h.p.d ? h.p.d : ''));
+    detail.appendChild(U.el('p', 'gd-desc', h.p ? Epg.desc(c, h.p) : ''));
     if (zone === 'grid') detail.appendChild(U.el('div', 'gd-ok', okMeaning(c, h)));
     nowLine(pv);
   }

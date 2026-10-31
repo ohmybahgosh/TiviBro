@@ -264,6 +264,27 @@ const server = http.createServer((req, res) => {
     }
     return send(res, 200, []);
   }
+  // A big guide, streamed as it is made (tests/soak/guide-big.js): ?ch=N channels big.0 to big.N-1
+  // (the MOCK_BIG playlist's ids), ?days=D of half-hour programmes from 6 hours ago, ?desc=L characters
+  // of description.  ?ch=4000&days=3&desc=400 is about 300 MB of XML.
+  if (p === '/bigguide.xml') {
+    const q = new URL(req.url, 'http://x').searchParams, nCh = +q.get('ch') || 1000, days = +q.get('days') || 2, dl = +q.get('desc') || 300;
+    const H = 3600e3, t0 = Date.now() - Date.now() % H - 6 * H, per = Math.round(days * 48), filler = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(Math.ceil(dl / 57)).slice(0, dl);
+    res.writeHead(200, { 'Content-Type': 'application/xml', 'Access-Control-Allow-Origin': '*' });
+    res.write('<?xml version="1.0" encoding="UTF-8"?>\n<tv generator-info-name="TiviBro big mock">\n');
+    for (let c = 0; c < nCh; c++) res.write(`<channel id="big.${c}"><display-name>Big ${c}</display-name></channel>\n`);
+    let c = 0;
+    const more = () => {
+      while (c < nCh) {
+        let o = '';
+        for (let i = 0; i < per; i++) { const s0 = t0 + i * 1800e3; o += `<programme start="${xd(s0)}" stop="${xd(s0 + 1800e3)}" channel="big.${c}"><title>Big show ${c}-${i}</title><desc>${c}-${i} ${filler}</desc></programme>\n`; }
+        c++;
+        if (!res.write(o)) return res.once('drain', more);
+      }
+      res.end('</tv>\n');
+    };
+    return more();
+  }
   // A guide that starts and never finishes (tests/soak/guide-memory.js: the app closing mid-load).
   if (p === '/stall.xml') { res.writeHead(200, { 'Content-Type': 'application/xml', 'Access-Control-Allow-Origin': '*' }); res.write('<?xml version="1.0"?><tv>'); return; }
   if (p === '/xmltv.php' || p === '/guide.xml') return send(res, 200, BIG ? (xmlCache = xmlCache || xmltv()) : xmltv(), 'application/xml');

@@ -373,11 +373,105 @@ var Epg = (function () {
     runSet(kind, { sig: sig, tries: tries + 1, at: Date.now(), host: '' });
     return { safe: tries >= 1, host: function (h) { var x = runGet(kind); if (x && x.host !== h) { x.host = h; runSet(kind, x); } }, done: function () { runSet(kind, null); } };
   }
+  /* ---------- big guides kept by the helper (service/guide.js) ----------
+     With the network helper running, the helper downloads and reads XMLTV guides and keeps them on
+     the TV's storage.  The app holds only each programme's times and title (the grid, search, the
+     watchlist) and asks for a channel's descriptions when it shows them.  webOS closes an app at
+     about 500 MB, which a big guide read in the app could pass (alpha 24 on a C2).  Without the
+     helper, the worker above does it all in the app, within budget(). */
+  var hOk = null, hMode = false, descWait = {}, descLRU = [], DESC_KEEP = 80;
+  function hUrl(what, kind) { return 'http://127.0.0.1:' + Net.port + '/guide/' + what + '?pl=' + encodeURIComponent(P().id) + '&kind=' + kind; }
+  function useHelper() {
+    if (!Net.active || !Net.port || (Store.settings && Store.settings.guideInApp)) return Promise.resolve(false);
+    if (hOk !== null) return Promise.resolve(hOk);
+    return fetch('http://127.0.0.1:' + Net.port + '/ping', { cache: 'no-store' }).then(function (r) { return r.json(); })
+      .then(function (j) { hOk = !!(j && j.guide); return hOk; }, function () { return false; });
+  }
+  function hStatus(kind) { return fetch(hUrl('status', kind), { cache: 'no-store' }).then(function (r) { return r.json(); }); }
+  // A stored guide, shaped like the worker's result (times and titles, no descriptions).
+  function hRead(kind) {
+    function get(what, json) { return fetch(hUrl(what, kind), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('no stored guide'); return json ? r.json() : r.text(); }); }
+    return Promise.all([get('meta', true), get('titles', false)]).then(function (x) {
+      var meta = x[0], text = x[1], map = {}, seen = new Map(), i = 0, n = text.length;
+      while (i < n) {
+        var j = text.indexOf('\n', i); if (j < 0) j = n;
+        var a = text.indexOf('\t', i), b = text.indexOf('\t', a + 1), c = text.indexOf('\t', b + 1);
+        if (a > i && c > 0 && c < j) {
+          var id = text.slice(i, a), t = text.slice(c + 1, j), one = seen.get(t);
+          if (one === undefined) { seen.set(t, t); one = t; }              // a title repeated all week is kept once
+          (map[id] || (map[id] = [])).push({ s: +text.slice(a + 1, b), e: +text.slice(b + 1, c), t: one });
+        }
+        i = j + 1;
+      }
+      meta.map = map;
+      if (meta.extra) for (var k in meta.extra) if (!(k in meta)) meta[k] = meta.extra[k];
+      return meta;
+    });
+  }
+  // What the helper has stored: the full guide when its signature is sig, else just when it was made.
+  function hCached(kind, sig) {
+    return hStatus(kind).then(function (st) {
+      var at = st.stored;
+      if (!at) return null;
+      if (at.sig !== sig) return { sig: at.sig, at: at.at };
+      return hRead(kind);
+    }).catch(function () { return null; });
+  }
+  // Start a load in the helper (or follow the one already running for this guide) until it is stored.
+  function hRun(kind, sig, msg, onProg, extra) {
+    var body = JSON.stringify({ pl: P().id, kind: kind, sig: sig, msg: msg, extra: extra || null });
+    return hStatus(kind).catch(function () { return {}; }).then(function (st) {
+      if (st.job && (st.phase === 'download' || st.phase === 'save') && st.job.sig === sig) return;   // the app restarted mid-load
+      return fetch('http://127.0.0.1:' + Net.port + '/guide/load', { method: 'POST', body: body, headers: { 'Content-Type': 'application/json' } })
+        .then(function (r) { return r.json(); }).then(function (j) { if (!j.ok) throw new Error(j.error || 'the helper could not load the guide'); });
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        var misses = 0;
+        (function poll() {
+          hStatus(kind).then(function (st) {
+            misses = 0;
+            var jb = st.job || {};
+            if (st.phase === 'download' || st.phase === 'save') { onProg(jb, st.phase); return setTimeout(poll, 600); }
+            if (st.phase === 'stored' && st.stored && st.stored.sig === sig) return resolve(hRead(kind));
+            if (st.phase === 'failed') return resolve({ failed: jb.error || 'every guide file failed', report: jb.report || [], map: {}, icons: {}, channels: [], matches: {}, pubMatch: {} });
+            reject(new Error(jb.error || 'the guide did not load'));
+          }, function () { if (++misses > 8) reject(new Error('the network helper stopped')); else setTimeout(poll, 1000); });
+        })();
+      });
+    });
+  }
+  /* A programme's description.  From the worker it is already there; from the helper it is asked for
+     the first time a channel's description is shown (the grid's detail, the info panel), and the
+     last DESC_KEEP channels keep theirs. */
+  function desc(ch, p) {
+    if (!p) return '';
+    if (p.d != null || !hMode) return p.d || '';
+    var id = ch && epgId(ch), x = id && cache.get(id);
+    if (!x || descWait[id]) return '';
+    descWait[id] = 1;
+    fetch(hUrl('desc', PUB_ID.test(id) ? 'pub' : 'main') + '&id=' + encodeURIComponent(id), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (arr) {
+      var y = cache.get(id);
+      if (y && y.list === x.list && Array.isArray(arr)) {
+        for (var i = 0; i < x.list.length; i++) x.list[i].d = arr[i] || '';
+        descLRU.push(id);
+        while (descLRU.length > DESC_KEEP) { var old = cache.get(descLRU.shift()); if (old && old.list) old.list.forEach(function (q) { delete q.d; }); }
+      }
+      delete descWait[id];
+      emit(id);
+    }, function () { setTimeout(function () { delete descWait[id]; }, 30000); });
+    return '';
+  }
+
   function loadXml(force) {
     var p = P(), srcs = sources();
     var ckey = 'epg:' + p.id;
     var sig = U.hash(JSON.stringify(srcs) + '|' + p.epgDays + '|' + p.nameMatch);
-    return Store.idbGet(ckey).then(function (c) {
+    return useHelper().then(function (h) {
+      hMode = h;
+      if (!h) return Store.idbGet(ckey);
+      Store.idbSet(ckey, null);                                        // the helper keeps it now
+      return hCached('main', sig);
+    }).then(function (c) {
       var hours = +p.epgRefresh, age = c ? Date.now() - c.at : Infinity;
       var stale = !c || c.sig !== sig || (hours > 0 && age > hours * 3600e3) || (hours === -1 && !loadXml.didStart);
       loadXml.didStart = true;
@@ -385,16 +479,21 @@ var Epg = (function () {
       if (!stale && !force) { runSet('main', null); return; }     // a forced reload cut short: the cache is fine
       var g = guard('main', sig, force); if (!g) return;
       paused = null;
-      return work(srcs, null, g).then(function (res) {
+      return work(srcs, null, g, sig).then(function (res) {
         g.done();
+        if (res.failed) {                                              // the helper kept the guide it had
+          setProgress({ active: false, phase: 'error', error: res.failed, at: Date.now() });
+          U.toast('Guide source failed: ' + res.failed, 4000);
+          return;
+        }
         if (res.trimmed) {
           Log.warn('epg', 'Guide trimmed to fit this TV\'s memory: ' + res.trimmed + ' guide channels left out' + (g.safe ? ' (safe mode)' : ''));
           U.toast('The guide was too big for this TV: ' + res.trimmed + ' channels left out.  A big extra guide source is the usual cause.', 7000);
         }
         setProgress(Object.assign({}, progress, { active: true, phase: 'save' }));
-        res.at = Date.now(); res.sig = sig;
+        res.at = res.at || Date.now(); res.sig = sig;
         ingest(res); xmlReady = true;
-        Store.idbSet(ckey, res);
+        if (!hMode) Store.idbSet(ckey, res);
         emit(null);
         rememberSizes(res.report);
         var bad = res.report.filter(function (r) { return !r.ok; });
@@ -407,7 +506,7 @@ var Epg = (function () {
     });
   }
 
-  function work(srcs, pub, g) {
+  function work(srcs, pub, g, sig, extra) {
     // Past programmes are only reachable on catch-up channels, so only those keep past days
     // (up to their catch-up length); the rest keep the last few hours.  On big playlists, where
     // most channels have no catch-up, this saves a large share of the TV's memory.
@@ -438,7 +537,18 @@ var Epg = (function () {
     var code = 'self.norm = ' + norm.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\n(' + workerMain.toString() + ')();';
     var started = Date.now();
     function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; if (g) g.host(p.host); setProgress(p); }
-    setProgress({ active: true, phase: 'download', src: 1, of: srcs.length, host: msg.sources[0] ? msg.sources[0].host : '', bytes: 0, total: 0, programmes: 0, channels: 0, started: started });
+    var k0 = msg.sources[0] ? msg.sources[0].known : 0;
+    setProgress({ active: true, phase: 'download', src: 1, of: srcs.length, host: msg.sources[0] ? msg.sources[0].host : '', bytes: 0, total: k0 || 0, est: !!k0, programmes: 0, channels: 0, started: started });
+    if (hMode) {
+      // The helper reads it: relay addresses with /unz/<id>, so it unzips and counts as for the app.
+      msg.sources.forEach(function (s) { var m = /\/unz\/([A-Za-z0-9_-]+)\//.exec(s.url); s.unz = m ? m[1] : ''; });
+      msg.to = now + 3 * 86400e3;                                      // storage is cheap there: a day more ahead
+      return hRun(pub ? 'pub' : 'main', sig, msg, function (j, phase) {
+        var x = { src: j.src || 1, of: j.of || srcs.length, host: j.host || '', bytes: j.bytes || 0, total: j.total || 0, est: !!j.est, programmes: j.programmes || 0, channels: j.channels || 0 };
+        if (phase === 'save') { if (g) g.host(x.host); return setProgress(Object.assign(x, { active: true, phase: 'save', started: started })); }
+        onProg(x);
+      }, extra).catch(function (e) { var m = (e && e.message) || 'the guide did not load'; return { failed: m, map: {}, icons: {}, channels: [], matches: {}, pubMatch: {}, report: [{ ok: false, error: m }] }; });
+    }
     return new Promise(function (res) {
       var w, url;
       try {
@@ -493,6 +603,14 @@ var Epg = (function () {
     pubList = c.channels || [];
     pubStatus = { at: c.at || 0, countries: c.countries || [], filled: Object.keys(pubMatched).length, asked: c.asked || 0, sources: c.report || [], took: c.took || 0 };
   }
+  // When to look again after every public guide file failed, per playlist (the helper keeps the guide).
+  function pubRetry(id, at) {
+    var m = {}; try { m = JSON.parse(localStorage.getItem('tivibro.pubRetry') || '{}') || {}; } catch (e) {}
+    if (id === undefined) return m;
+    if (at) m[id] = at; else delete m[id];
+    try { localStorage.setItem('tivibro.pubRetry', JSON.stringify(m)); } catch (e) {}
+    return m;
+  }
   function loadPub(gen) {
     var p = P(), miss = missing(), map = Store.edits.epgMap || {};
     var ccs = PubEpg.countriesFor(p, miss, Library.data);
@@ -500,7 +618,12 @@ var Epg = (function () {
     var files = PubEpg.files(ccs, !!Net.active, gz);
     var want = Object.keys(map).map(function (k) { return map[k]; }).filter(function (v) { return PUB_ID.test(v); });
     var ckey = 'epgpub:' + p.id, sig = U.hash(ccs.join() + '|' + p.epgDays);
-    return Store.idbGet(ckey).then(function (c) {
+    return useHelper().then(function (h) {
+      hMode = h;
+      if (!h) return Store.idbGet(ckey);
+      Store.idbSet(ckey, null);
+      return hCached('pub', sig).then(function (c) { if (c) { var rt = pubRetry(); if (rt[p.id]) c.retry = rt[p.id]; } return c; });
+    }).then(function (c) {
       if (gen !== pubGen) return;                                      // reloaded or switched off meanwhile
       if (c && c.sig === sig) { ingestPub(c); emit(null); }
       if (!files.length || !miss.length) {
@@ -529,7 +652,7 @@ var Epg = (function () {
         if (ch.epg) add('id:' + ch.epg);
       });
       var started = Date.now(), g = guard('pub', sig, forced); if (!g) return;
-      return work(files, { pk: pk, want: want }, g).then(function (res) {
+      return work(files, { pk: pk, want: want }, g, sig, { asked: miss.length, countries: ccs }).then(function (res) {
         g.done();
         rememberSizes(res.report);
         if (gen !== pubGen) {
@@ -540,14 +663,14 @@ var Epg = (function () {
         // Every file failed (offline, a site down): keep what the TV had rather than an empty result.
         if (c && c.sig === sig && res.report.length && res.report.every(function (r) { return !r.ok; })) {
           c.retry = Date.now() + 3600e3;                                  // try again in an hour
-          Store.idbSet(ckey, c);
+          if (hMode) pubRetry(p.id, c.retry); else Store.idbSet(ckey, c);
           Log.warn('epg', 'Public guide: every file failed (' + res.report[0].error + '), keeping the last one');
           return;
         }
-        res.at = Date.now(); res.sig = sig; res.asked = miss.length; res.countries = ccs; res.took = res.at - started;
+        res.at = res.at || Date.now(); res.sig = sig; res.asked = miss.length; res.countries = ccs; res.took = Date.now() - started;
         res.report = res.report.map(function (r) { return { url: r.url, ok: r.ok, programmes: r.programmes || 0, filled: r.filled || 0, error: r.error || '', skipped: !!r.skipped }; });
         ingestPub(res);
-        Store.idbSet(ckey, res);
+        if (hMode) pubRetry(p.id, 0); else Store.idbSet(ckey, res);
         emit(null);
         var filled = Object.keys(res.pubMatch || {}).length;
         Log.info('epg', 'Public guide filled ' + filled + ' of ' + miss.length + ' channels with no guide (' + ccs.join(', ') + ', ' + Math.round(res.took / 1000) + ' s)');
@@ -583,7 +706,8 @@ var Epg = (function () {
   }
 
   return {
-    init: init, request: request, nowNext: nowNext, search: search, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm,
+    init: init, request: request, nowNext: nowNext, search: search, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc,
+    get inHelper() { return hMode; },
     icon: function (id) { return icons[id] || ''; },
     guideChannels: function () { return pubList.length ? chList.concat(pubList) : chList; },
     // Where a channel's guide comes from when it's the public one: { name, site } or null.

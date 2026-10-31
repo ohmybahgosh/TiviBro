@@ -17,5 +17,5 @@ for f in "$ROOT"/app/*.html "$ROOT"/service/editor/*.html; do
 done
 for f in "$ROOT"/app/appinfo.json "$ROOT"/service/*.json; do node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))" || { echo "bad JSON: $f"; fail=1; }; done
 node "$ROOT/scripts/gen-nogap.js" --check >/dev/null || { echo "app/css/nogap.css is out of date (run npm run nogap)"; fail=1; }
-for f in names.js tidy.js; do cmp -s "$ROOT/app/js/$f" "$ROOT/service/editor/$f" || { echo "service/editor/$f is out of date (run npm run build)"; fail=1; }; done
+for f in names.js tidy.js pubepg.js; do cmp -s "$ROOT/app/js/$f" "$ROOT/service/editor/$f" || { echo "service/editor/$f is out of date (run npm run build)"; fail=1; }; done
 [ $fail = 0 ] && echo "lint OK"; exit $fail

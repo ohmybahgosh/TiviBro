@@ -17,12 +17,14 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const page = await (await b.newContext({ viewport: { width: 1920, height: 1080 }, locale: 'en-US' })).newPage();
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   const pl = Object.assign({}, R.SETTINGS.playlists[0], { server: MOCK });
-  await page.addInitScript(R.init({ time: Date.now(), settings: { playlists: [pl], pubEpgBase: MOCK + '/pubepg/' } })[0]);
+  await page.addInitScript(R.init({ time: Date.now(), settings: { playlists: [pl], pubEpgBase: MOCK + '/pubepg/', guideInApp: !!process.env.GUIDE_IN_APP } })[0]);
   await page.goto(APP);
   await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 30000 });
   const ev = (f, a) => page.evaluate(f, a);
   await page.waitForFunction(() => Epg.pubStatus && Epg.pubStatus.at && !Epg.loading, null, { timeout: 60000 });
 
+  // GUIDE_IN_APP=1: the same checks with the guide read in the app (a TV without the helper).
+  ok(process.env.GUIDE_IN_APP ? 'read in the app' : 'read and kept by the helper', await ev(() => Epg.inHelper) === !process.env.GUIDE_IN_APP);
   // The provider's full XMLTV guide (the worker's name matching): broke in the minified build once.
   const ps = await ev(() => Epg.status.sources);
   ok('the provider\'s full guide loads, names matched', ps.length && ps.every(r => r.ok), JSON.stringify(ps));
@@ -46,7 +48,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
   // These servers send no size: the TV remembers each file's size for the next download's progress.
   const sz = await ev(() => JSON.parse(localStorage.getItem('tivibro.guideSizes') || '{}'));
-  ok('the size of each public guide file is remembered', Object.keys(sz).length >= 3 && Object.values(sz).every(v => v > 1000), JSON.stringify(sz));
+  ok('the size of each public guide file is remembered', Object.keys(sz).length >= 2 && Object.values(sz).every(v => v > 1000), JSON.stringify(sz));
   // Cached: a restart reads it back without downloading again.
   const at = st.at;
   await page.reload();

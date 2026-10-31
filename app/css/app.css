@@ -119,7 +119,11 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .gp.now{background:var(--raised)}
 .gp.focus{background:var(--accent);color:var(--on-accent)}
 .gp.none{color:var(--dim)}
-.gnow{position:absolute;top:0;bottom:0;width:3px;background:var(--air);z-index:2}
+/* Now: a thin line that runs behind the programmes (seen between them, never across their text), and a
+   small marker in the time bar. */
+.gnow{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--air);opacity:.6;z-index:-1}
+#guideBody{isolation:isolate}
+.gnowh{position:absolute;bottom:-2px;width:0;height:0;margin-left:-7px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--air);top:auto!important}
 /* guide top: details left, preview window right */
 .guide-top{display:flex;gap:40px;height:300px;flex:none;padding:6px 0 14px}
 .guide-detail{flex:1;min-width:0;padding:8px 20px;color:var(--muted);font-size:23px;overflow:hidden;display:flex;flex-direction:column}
@@ -311,8 +315,12 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .gch{gap:16px}
 .gch .cu{flex:none;font-size:18px;color:#7fe0ae;border:1px solid #2f6b50;border-radius:6px;padding:0 6px;margin-left:auto}
 /* live progress inside "now" programme cells */
-.gp .gfill{position:absolute;left:0;top:0;bottom:0;background:rgba(255,255,255,.07);pointer-events:none}
-.gp.focus .gfill{background:rgba(0,0,0,.14)}
+/* What's on now: a slim progress bar under the times, on a faint track. */
+.gp .gfill{position:absolute;left:16px;bottom:9px;height:3px;border-radius:2px;background:var(--accent);pointer-events:none;z-index:1}
+.gp.now::after{content:'';position:absolute;left:16px;right:16px;bottom:9px;height:3px;border-radius:2px;background:rgba(255,255,255,.13)}
+.gp.focus .gfill{background:var(--on-accent)}
+.gp.now.focus::after{background:rgba(0,0,0,.2)}
+body.now-off .gp.now::after{display:none}
 .gp .gt,.gp .gs{position:relative}
 .gp .gcu{color:#7fe0ae}
 .gp.focus .gcu{color:#1d5c3c}
@@ -375,8 +383,6 @@ body:not(.nav-hidden) #viewGuide .guide-groups{left:0;width:470px;padding-left:4
 .guide-groups .row .name i.mq{display:inline-block;overflow:visible;text-overflow:initial}
 #viewGuide.groups-open .guide-group{visibility:hidden}
 body.nav-open .hints{padding-left:400px}
-.gp .gfill{background:rgba(255,255,255,.09);border-bottom:3px solid var(--air)}
-.gp.focus .gfill{background:rgba(0,0,0,.16);border-bottom-color:#b3262b}
 
 /* ---------- settings added from the TiviMate review ---------- */
 /* clock: top right on every screen except fullscreen */
@@ -422,7 +428,7 @@ body.ov-l .overlay{background:rgba(7,9,18,.98)}
 body.ov-h .overlay{background:rgba(7,9,18,.72)}
 /* what's on now in the guide */
 body.now-color .gp.now{background:#1c2d5c}
-body.now-color .gp .gfill,body.now-off .gp .gfill{display:none}
+body.now-off .gp .gfill{display:none}
 /* guide channel names */
 body.noguidenames .gch .n{display:none}
 body.twolinenames .gch .n{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.15}

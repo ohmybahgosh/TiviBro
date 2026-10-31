@@ -75,6 +75,19 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   if (want.pairs) ok('a repeat tour starts on the feed kept now (West)', ch.feed === 'west', ch.feed);
   ok('it says the current setup is filled in', /filled in on every step/.test(await ev(() => document.body.textContent)));
 
+  // 4. A programme ending a few minutes after the guide's start is drawn wide enough to read.
+  await ev(() => { if (UI.modalOpen) UI.close(); Views.switchTab('guide'); }); await page.waitForTimeout(1200);
+  const sliver = await ev(() => {
+    const now = Date.now(), t0 = now - now % 1800e3, real = Epg.request, M = 60e3;
+    const list = [{ s: t0 - 60 * M, e: t0 + 7 * M, t: 'Jimmy Kimmel Live' }, { s: t0 + 7 * M, e: t0 + 36 * M, t: 'Nightline' }, { s: t0 + 36 * M, e: t0 + 96 * M, t: 'Later' }];
+    Epg.request = function () { return list; };
+    Guide.draw();
+    const row = document.querySelector('.gp').parentElement, cells = [].slice.call(row.querySelectorAll('.gp')).filter(e => e.style.display !== 'none');
+    Epg.request = real; Guide.draw();
+    return cells.map(e => ({ t: e.querySelector('.gt').textContent, l: parseFloat(e.style.left), w: parseFloat(e.style.width) }));
+  });
+  ok('a show ending just after the guide starts is wide enough to read', sliver[0] && sliver[0].w >= 200, JSON.stringify(sliver));
+  ok('the next show starts where it ends, no overlap', sliver[1] && Math.abs(sliver[1].l - (sliver[0].l + sliver[0].w)) <= 1 && sliver[1].w >= 200, JSON.stringify(sliver.slice(0, 2)));
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();
   console.log(fails ? fails + ' FAILED' : 'all TV fix checks passed');

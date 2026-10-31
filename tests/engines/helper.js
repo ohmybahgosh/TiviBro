@@ -67,6 +67,7 @@ var provider = http.createServer(function (req, res) {
   if (p === '/ce-gzip') { res.writeHead(200, { 'Content-Type': 'application/xml', 'Content-Encoding': 'gzip' }); return res.end(GZ); }
   if (p === '/file.xml.gz') { res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': GZ.length }); return res.end(GZ); }
   if (p === '/double.gz') { res.writeHead(200, { 'Content-Type': 'application/x-gzip', 'Content-Encoding': 'gzip' }); return res.end(GZ2); }
+  if (p === '/guide.xml.gz') { res.writeHead(200, { 'Content-Type': 'application/octet-stream' }); return res.end(zlib.gzipSync ? zlib.gzipSync(Buffer.from(GUIDE)) : GUIDE); }
   if (p === '/xml') { res.writeHead(200, { 'Content-Type': 'application/xml' }); return res.end(XML); }
   if (p === '/broken.gz') { res.writeHead(200, { 'Content-Type': 'application/octet-stream' }); return res.end(GZ.slice(0, 20)); }
   if (p === '/live.ts') {
@@ -189,6 +190,46 @@ step(function unzip(next) {
       one();
     });
   })();
+});
+// Big guides kept by the helper (guide.js): read through the relay, stored, read back.
+var GUIDE = (function () {
+  var t0 = Date.now() - Date.now() % 3600e3 - 3600e3, o = '<?xml version="1.0"?><tv>';
+  function xd(t) { var d = new Date(t), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + p(d.getUTCHours()) + p(d.getUTCMinutes()) + '00 +0000'; }
+  ['a', 'b', 'c'].forEach(function (id) { o += '<channel id="' + id + '.us"><display-name>Chan ' + id.toUpperCase() + '</display-name><icon src="http://x/' + id + '.png"/></channel>'; });
+  ['a', 'b', 'c'].forEach(function (id) { for (var i = 0; i < 6; i++) o += '<programme start="' + xd(t0 + i * 1800e3) + '" stop="' + xd(t0 + (i + 1) * 1800e3) + '" channel="' + id + '.us"><title>Show ' + id + i + ' &amp; more</title><desc>About ' + id + i + '</desc></programme>'; });
+  return o + '</tv>';
+})();
+step(function guide(next) {
+  var dir = path.join(require('os').tmpdir(), 'tivibro-guide-test-' + process.pid);
+  process.env.TIVIBRO_GUIDE_DIR = dir;
+  var now = Date.now();
+  var msg = { sources: [{ url: B + '/unz/gt1/x/http/' + P + '/guide.xml.gz', unz: 'gt1', label: 'test guide', host: P, offset: 0 }],
+    ids: ['a.us'], past: {}, names: { chanb: 0 }, from: now - 86400e3, recent: now - 3 * 3600e3, to: now + 2 * 86400e3 };
+  request('POST', B + '/guide/load', { body: { pl: 'p1', kind: 'main', sig: 's1', msg: msg } }, function (e, r, b) {
+    ok('guide: the helper takes a load', !e && json(b) && json(b).ok, b && String(b));
+    var tries = 0;
+    (function poll() {
+      request('GET', B + '/guide/status?pl=p1&kind=main', function (e2, r2, b2) {
+        var st = json(b2) || {};
+        if ((st.phase === 'download' || st.phase === 'save') && ++tries < 100) return setTimeout(poll, 100);
+        ok('guide: read and stored', st.phase === 'stored' && st.stored && st.stored.sig === 's1' && st.stored.kept === 2, String(b2));
+        request('GET', B + '/guide/titles?pl=p1&kind=main', function (e3, r3, b3) {
+          var lines = String(b3 || '').split('\n').filter(Boolean);
+          ok('guide: titles for the wanted id and the name match, not the others', lines.length >= 8 && lines.every(function (l) { return /^(a|b)\.us\t\d+\t\d+\tShow /.test(l); }) && lines.some(function (l) { return /Show a0 & more$/.test(l) || /Show a\d & more$/.test(l); }), lines.slice(0, 2).join(' | '));
+          request('GET', B + '/guide/desc?pl=p1&kind=main&id=a.us', function (e4, r4, b4) {
+            var d = json(b4);
+            ok('guide: one channel\'s descriptions, in order', Array.isArray(d) && d.length >= 4 && /^About a\d$/.test(d[0]), String(b4));
+            request('GET', B + '/guide/meta?pl=p1&kind=main', function (e5, r5, b5) {
+              var m = json(b5) || {};
+              ok('guide: name match and icon reported', m.matches && m.matches.chanb === 'b.us' && m.icons && m.icons['a.us'] === 'http://x/a.png', String(b5).slice(0, 200));
+              try { require('fs').readdirSync(dir).forEach(function (sub) { var d2 = path.join(dir, sub); require('fs').readdirSync(d2).forEach(function (f) { require('fs').unlinkSync(path.join(d2, f)); }); require('fs').rmdirSync(d2); }); require('fs').rmdirSync(dir); } catch (x) {}
+              next();
+            });
+          });
+        });
+      });
+    })();
+  });
 });
 step(function tsResync(next) {
   request('GET', B + '/x/http/' + P + '/live.ts', function (e, r, b) {

@@ -3,6 +3,7 @@
      MOCK_EVENTS=1 MOCK_PORT=8088 node tests/mock/mock_provider.js &
      npm run serve &
      node tests/soak/guide-memory.js
+   The in-app reader (no helper: Settings guideInApp stands in for a TV without one).
    - Over the memory budget the guide is trimmed (channels left out, a notice), not loaded whole.
    - A load cut short by the app closing is retried once with less memory; after a second one the
      guide is paused with a notice naming the source, and "Reload guide now" tries again. */
@@ -18,7 +19,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const page = await (await b.newContext({ viewport: { width: 1920, height: 1080 } })).newPage();
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   const pl = Object.assign({}, R.SETTINGS.playlists[0], { server: MOCK, pubEpg: { on: false } });
-  await page.addInitScript(R.init({ time: Date.now(), settings: { playlists: [pl] } })[0]);
+  await page.addInitScript(R.init({ time: Date.now(), settings: { playlists: [pl], guideInApp: true } })[0]);
   await page.goto(APP);
   const ev = (f, a) => page.evaluate(f, a);
   const ready = () => page.waitForFunction(() => window.Library && Library.count() > 0 && window.Epg && !Epg.loading && Epg.progress && !Epg.progress.active, null, { timeout: 60000 });

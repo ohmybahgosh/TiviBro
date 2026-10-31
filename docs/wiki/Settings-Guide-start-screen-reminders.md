@@ -15,7 +15,7 @@ How the guide looks and behaves, which screen TiviBro opens on, and reminders.
 | **OK on a channel in the Guide** | **Preview first, then fullscreen** · Fullscreen right away | Like TiviMate: the first **OK** plays the channel in the window, the second goes fullscreen.  Or go straight to fullscreen. |
 | **Two-line programmes** | **On** · Off | Each programme's time under its title in the grid. |
 | **Dim past programmes** | **On** · Off | Programmes that already ended look dimmer. |
-| **Mark what's on now** | **Progress fill** · Colour · Off | How the guide shows programmes airing right now: a fill showing how far along they are, a colour, or nothing. |
+| **Mark what's on now** | **Progress bar** · Colour and progress bar · Off | How the guide shows programmes airing right now: a slim bar under the times showing how far along they are, that bar on a coloured cell, or nothing.  The time of day is a small marker in the time bar and a thin line between programmes. |
 | **Channel names in the guide** | **On** · Off | Off shows logos only, leaving more room for programmes. |
 | **Two-line channel names** | On · **Off** | Long channel names wrap instead of being cut off. |
 | **Mark catch-up channels** | **On** · Off | Shows **↺** on channels and programmes you can replay. |

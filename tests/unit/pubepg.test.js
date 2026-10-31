@@ -60,4 +60,11 @@ t('files: lighter project first; iptv-epg.org only through the helper; plain fil
   assert.strictEqual(P.sourceOf('iptvepg:US/AMC.us').name, 'iptv-epg.org');
   assert.strictEqual(P.sourceOf('AMC.us'), null);
 });
+t('the helper\'s guide reader normalises names exactly like the app (service/guide.js and epg.js)', () => {
+  const src = require('fs').readFileSync(require('path').join(__dirname, '../../app/js/epg.js'), 'utf8');
+  const m = /function norm\(s\) \{[\s\S]*?\n  \}/.exec(src);
+  const appNorm = new Function('return ' + m[0].replace(/\n  /g, '\n'))();
+  const G = require('../../service/guide.js');
+  ['CNN HD', 'US: A&E (East) FHD', 'BBC One [UK]', 'ESPN 2 4K', 'Télé-Québec', ''].forEach(x => assert.strictEqual(G.norm(x), appNorm(x), x));
+});
 console.log(n + ' passed');

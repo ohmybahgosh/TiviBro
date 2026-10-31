@@ -20,6 +20,7 @@ var Unzip = require('./unzip');
 var TsSync = require('./tssync').TsSync;
 var dns = require('dns');
 var RawHttp = require('./rawhttp');
+var Guide = require('./guide');
 
 /* DNS answers kept for a minute.  Node asks the system for every new connection, and each channel
    start (and each redirect to a provider's streaming server) is a new connection; on a TV with a
@@ -111,8 +112,9 @@ function create(opts) {
 
   var server = http.createServer(function (req, res) {
     if (req.method === 'OPTIONS') { res.writeHead(204, ALLOW); return res.end(); }
-    if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, node: process.version, stats: stats })); }
+    if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, node: process.version, stats: stats, guide: 1 })); }
     if (req.url.indexOf('/editor/') === 0) { res.setHeader('Access-Control-Allow-Origin', '*'); return editor.control(req, res, req.url.split('?')[0]); }
+    if (req.url.indexOf('/guide/') === 0) return Guide.handle(req, res, ALLOW, log);
     if (req.url === '/log') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ node: process.version, stats: stats, log: LOG })); }
     var xm = /^\/xfer\/([A-Za-z0-9_-]{1,40})$/.exec(req.url);
     if (xm) { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, ALLOW)); return res.end(JSON.stringify(Unzip.progress(xm[1]) || { raw: 0, total: 0, done: false, unknown: true })); }
