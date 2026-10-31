@@ -51,6 +51,7 @@ function setup(opts) {
     Log: { info: (g, m) => logs.push(m), warn: (g, m) => logs.push(m), error: (g, m) => logs.push(m), debug() {}, state() {}, closing() {} },
     addEventListener: (t, f) => { winL[t] = f; }
   };
+  if (opts.mkvSubs) ctx.MkvSubs = opts.mkvSubs;
   ctx.window = ctx;
   vm.createContext(ctx);
   const load = (f, name) => vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js', f), 'utf8') + '\nthis.' + name + ' = ' + name + ';', ctx);
@@ -270,6 +271,16 @@ t = setup();
 t.P.play({ n: 'Busy', url: 'http://p/live/u/p/23.ts' });
 for (let i = 0; i < 4; i++) { t.last().h.err('NetworkError', 'HttpStatusCodeInvalid', { code: 503 }); t.run(3000); }
 ok('busy answers (503) get more tries on the same pipeline before anything else', t.last().kind === 'ts' && !t.states.some(x => /^error/.test(x)));
+
+// Native MKV playback must share the subtitle resolver's session URL.
+let resolveMkv, cancelledMkv = 0;
+t = setup({mkvSubs: {extract(url, video, resolved) { resolveMkv = resolved; return {cancel() {cancelledMkv++;}}; }}});
+t.P.play({n: 'MKV', url: 'http://provider/movie/u/p/1.mkv'}, {live: false});
+ok('MKV native playback waits for the shared URL instead of opening the provider twice', t.video.src === '' && typeof resolveMkv === 'function');
+resolveMkv('http://relay/session/one');
+ok('native video uses the exact URL resolved by subtitle discovery', t.video.src === 'http://relay/session/one');
+t.P.stop();
+ok('stopping native MKV playback cancels subtitle discovery', cancelledMkv === 1);
 
 if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }
 console.log('all player tests passed');

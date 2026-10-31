@@ -1213,7 +1213,7 @@ var Views = (function () {
     var tracks = Player.audioTracks();
     if (tracks.length > 1) add('audio', { label: 'Audio', icon: 'audio', v: (tracks.filter(function (t) { return t.on; })[0] || {}).label || '', run: function () { closePanel(); audioMenu(); } });
     var subs = subtitleTracks();
-    if (subs.length) add('subs', { label: 'Subtitles', icon: 'subs', v: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || 'off', run: function () { closePanel(); subtitleMenu(); } });
+    if (subs.length || mode === 'vod') add('subs', { label: 'Subtitles', icon: 'subs', v: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || subtitleStatus(), run: function () { closePanel(); subtitleMenu(); } });
     if (Player.qualities().length > 1) add('quality', { label: 'Quality', icon: 'quality', v: qualityLabel(), run: function () { closePanel(); qualityMenu(); } });
     add('picture', { label: 'Picture', icon: 'picture', v: DM[Player.displayFor(c)] || 'Normal', run: function () { closePanel(); pictureMenu(); } });
     add('sleep', { label: 'Sleep timer', icon: 'sleep', v: sleepAt ? U.hhmm(sleepAt) : 'off', run: function () { closePanel(); sleepMenu(); } });
@@ -1342,8 +1342,24 @@ var Views = (function () {
     for (var i = 0; t && i < t.length; i++) if (t[i].kind === 'subtitles' || t[i].kind === 'captions') out.push(t[i]);
     return out;
   }
+  function subtitleStatus() {
+    var state = video && video._mkvSubsState;
+    return state === 'discovering' ? 'Finding subtitles…' : state === 'error' ? 'Subtitles unavailable' : state === 'unavailable' ? 'No supported subtitles' : 'Off';
+  }
   function subtitleMenu() {
     var tr = subtitleTracks();
+    if (!tr.length) {
+      UI.menu('Subtitles', [{ label: subtitleStatus() === 'Off' ? 'No subtitles available' : subtitleStatus() }]);
+      if (video._mkvSubsState === 'discovering') {
+        var refresh = setInterval(function () {
+          if (subtitleTracks().length || video._mkvSubsState !== 'discovering') {
+            clearInterval(refresh); UI.onClose = null; subtitleMenu();
+          }
+        }, 250);
+        UI.onClose = function () { clearInterval(refresh); };
+      }
+      return;
+    }
     UI.menu('Subtitles', [{ label: 'Off', sub: tr.every(function (t) { return t.mode !== 'showing'; }) ? 'on' : '', action: function () { tr.forEach(function (t) { t.mode = 'disabled'; }); } }]
       .concat(tr.map(function (t, i) { return { label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', action: function () { tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); } }; })));
   }
@@ -1370,7 +1386,8 @@ var Views = (function () {
     items.push({ label: 'Picture size', sub: DM[Player.displayFor(mode === 'live' ? playing : null)], action: pictureMenu });
     if (Player.qualities().length > 1) items.push({ label: 'Video quality', sub: qualityLabel(), action: qualityMenu });
     if (mode === 'vod' || mode === 'catchup') items.push({ label: 'Playback speed', sub: Player.rate === 1 ? 'Normal' : Player.rate + '×', action: speedMenu });
-    if (subtitleTracks().length) items.push({ label: 'Subtitles', action: subtitleMenu });
+    var subs = subtitleTracks();
+    if (subs.length || mode === 'vod') items.push({ label: 'Subtitles', sub: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || subtitleStatus(), action: subtitleMenu });
     items.push({ label: 'Sleep timer', sub: sleepAt ? 'stops at ' + U.hhmm(sleepAt) : 'off', action: sleepMenu });
     items.push({ label: 'Reconnect stream', action: function () { Player.retryNow(); } });
     UI.menu(mode === 'vod' && vod ? vod.meta.title : playing ? L.name(playing) : 'Player', items);

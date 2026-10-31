@@ -3,6 +3,9 @@ node_modules/
 tools/
 _unpack/
 
+# scratch workspace for superpowers plan execution (ledgers, briefs, review packages)
+.superpowers/
+
 # build output and local releases
 dist/
 releases/

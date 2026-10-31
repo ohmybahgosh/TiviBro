@@ -493,6 +493,8 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Subtitles automatically** | **Off** · Any language · English only · Spanish only · … | Turns subtitles on when a stream has them; with a language, only subtitles in that language.  You can still switch them from the quick menu. |
 | **Play next episode automatically** | **On** · Off | When an episode ends, the next one starts. |
 
+**Subtitles in MKV movies and episodes.** Open **Subtitles** from the player menu to choose a language or **Off**. The menu is available as soon as playback starts and shows **Finding subtitles…** while tracks are discovered. The automatic subtitle language setting above also applies. Supported embedded SRT tracks appear with their language names, and your selection survives seeking and reconnects. Files without supported tracks show an unavailable message; styled ASS/SSA and bitmap subtitles are not supported. Some MKV files do not index their subtitle tracks and cannot expose them here.
+
 ### Settings: Remote control
 
 Remap any button, choose the quick menu's buttons, and teach TiviBro keys it doesn't know.
