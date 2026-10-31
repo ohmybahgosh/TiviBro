@@ -130,7 +130,7 @@ async function services() {
     // Search across live, movies and shows.
     for (const q of ['batman', 'office']) {
       t0 = Date.now();
-      await ev(q => Search.query(q), q); await page.waitForTimeout(3000);
+      await ev(q => { Views.switchTab('search'); Search.query(q); }, q); await page.waitForTimeout(3000);
       report['search_' + q] = { secs: (Date.now() - t0) / 1000, text: await ev(() => (document.getElementById('viewSearch') || document.body).innerText.slice(0, 500)) };
       await shot('search-' + q);
     }

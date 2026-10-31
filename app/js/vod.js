@@ -37,6 +37,14 @@ var Vod = (function () {
     });
   }
 
+  // Providers send 01:25:00, 85 (minutes) or 0; show 1 h 25 min, 43 min, or nothing.
+  function niceDur(d) {
+    if (!d) return '';
+    var p = String(d).split(':').map(Number), secs = p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p.length === 2 ? p[0] * 60 + p[1] : +d * 60;
+    if (!(secs >= 60)) return '';
+    var h = Math.floor(secs / 3600), m = Math.round(secs % 3600 / 60);
+    return h ? h + ' h' + (m ? ' ' + m + ' min' : '') : m + ' min';
+  }
   function cleanCat(n) { return Names.groupsOn() ? Names.clean(n) : n; }
 
   function renderCat(row, c) {
@@ -54,7 +62,7 @@ var Vod = (function () {
     var img = it.cover || '';
     if (row._src !== img) { row._src = img; row._img.style.visibility = img ? 'visible' : 'hidden'; if (img) row._img.src = img; else row._img.removeAttribute('src'); }
     row._n.textContent = it.ep ? it.label : it.name;
-    row._s.textContent = it.ep ? (it.dur || '') : [it.year, it.rating ? '★ ' + it.rating : ''].filter(Boolean).join('   ');
+    row._s.textContent = it.ep ? niceDur(it.dur) : [it.year, it.rating ? '★ ' + it.rating : ''].filter(Boolean).join('   ');
     var r = resumeOf(it.ep ? 'e' + it.id : key(it));
     if (r && r.dur) { row._p.style.display = ''; row._pi.style.width = Math.round(100 * r.pos / r.dur) + '%'; } else row._p.style.display = 'none';
     row._t.textContent = E().myList.indexOf(key(it)) >= 0 && !it.ep ? '★' : '';
@@ -132,11 +140,11 @@ var Vod = (function () {
     if (ai >= 0) { catsVL.setItems(cats, ai); itemsVL.setItems(itemsFor(ALL), 0); }
     var at = itemsVL.items.findIndex(function (it) { return it.id === x.it.id; });
     if (at >= 0) itemsVL.setItems(itemsVL.items, at);
-    setZone('items'); showInfo();
+    setZone('items'); onItem();
     if (k === 'series') openSeries(x.it); else play(x.it, false);
   }
 
-  var catDeb = U.debounce(function (c) { if (c && !episodes) { itemsVL.setItems(itemsFor(c.id), 0); showInfo(); } }, 200);
+  var catDeb = U.debounce(function (c) { if (c && !episodes) { itemsVL.setItems(itemsFor(c.id), 0); onItem(); } }, 200);
   function onCat(i, c) { catDeb(c); }
   var infoDeb = U.debounce(fetchInfo, 400);
   function onItem() { showInfo(); infoDeb(); }
@@ -161,7 +169,7 @@ var Vod = (function () {
     var poster = (m && m.poster) || it.cover || (series && series.cover);
     if (poster) { var img = U.el('img', 'vod-poster'); img.src = poster; img.onerror = function () { if (!Net.retryImage(this)) this.remove(); }; box.appendChild(img); }
     box.appendChild(U.el('h2', '', it.ep ? it.label : it.name));
-    var meta = [m && m.year || it.year, m && m.dur || it.dur, m && m.genre, it.rating ? '★ ' + it.rating : ''].filter(Boolean).join('   ');
+    var meta = [m && m.year || it.year, niceDur(m && m.dur || it.dur), m && m.genre, it.rating ? '★ ' + it.rating : ''].filter(Boolean).join('   ');
     if (meta) box.appendChild(U.el('div', 'vod-meta', meta));
     // What the file is, from the provider's own scan of it: 4K, HDR or Dolby Vision, sound format.
     var md = mediaOf(it);
@@ -198,7 +206,7 @@ var Vod = (function () {
       var res = E().resume, start = 0;
       for (var i = eps.length - 1; i >= 0; i--) if (res['e' + eps[i].id]) { var x = res['e' + eps[i].id]; start = x.pos < x.dur - 120 ? i : Math.min(i + 1, eps.length - 1); break; }
       itemsVL.setItems(eps, start);
-      showInfo();
+      onItem();
       hints();
     }).catch(function () { U.toast('Could not load that show'); $('vodTitle').textContent = s.name; });
   }
@@ -208,7 +216,7 @@ var Vod = (function () {
     var list = itemsFor(c ? c.id : ALL);
     itemsVL.setItems(list, Math.max(0, list.findIndex(function (x) { return x.id === s.id; })));
     $('vodTitle').textContent = kind === 'series' ? 'Shows' : 'Movies';
-    showInfo(); hints();
+    onItem(); hints();
   }
 
   /* ---------- playback ---------- */
@@ -278,7 +286,7 @@ var Vod = (function () {
       else if (a === 'down') catsVL.move(1);
       else if (a === 'chup') catsVL.page(-1);
       else if (a === 'chdown') catsVL.page(1);
-      else if (a === 'right' || a === 'ok') { catDeb.cancel(); var c = catsVL.current(); if (c) { itemsVL.setItems(itemsFor(c.id), 0); showInfo(); } setZone('items'); }
+      else if (a === 'right' || a === 'ok') { catDeb.cancel(); var c = catsVL.current(); if (c) { itemsVL.setItems(itemsFor(c.id), 0); onItem(); } setZone('items'); }
       else if (a === 'back' || a === 'left') Views.tabBar(restore);
       else if (a === 'green') Views.switchTab('guide');
       else if (a === 'blue') Views.switchTab('settings');
@@ -309,7 +317,7 @@ var Vod = (function () {
     UI.setHandler(keys);
     if (changed) { episodes = null; series = null; }
     $('vodTitle').textContent = episodes && series ? series.name : (k === 'series' ? 'Shows' : 'Movies');
-    if (keepState && data[k] && !changed && !pending) { catsVL.setItems(catList(), catsVL.sel); itemsVL.refresh(); showInfo(); setZone(zone); return; }
+    if (keepState && data[k] && !changed && !pending) { var was = catsVL.current(), cl = catList(); catsVL.setItems(cl, Math.max(0, cl.findIndex(function (c) { return was && c.id === was.id; }))); itemsVL.refresh(); showInfo(); setZone(zone); return; }
     catsVL.setItems([], 0); itemsVL.setItems([], 0);
     itemsVL.empty = 'Loading…'; itemsVL.refresh();
     setZone('cats');
@@ -321,7 +329,7 @@ var Vod = (function () {
       itemsVL.empty = data[k].items.length ? 'Nothing here' : 'This provider has no ' + (k === 'series' ? 'shows' : 'movies') + ' right now';
       itemsVL.setItems(itemsFor(cats[first].id), 0);
       setZone('items');
-      showInfo();
+      onItem();
       openPending(k);
     }).catch(function (e) { itemsVL.empty = 'Could not load ' + (k === 'series' ? 'shows' : 'movies') + ': ' + (e.message || e); itemsVL.setItems([], 0); });
   }
