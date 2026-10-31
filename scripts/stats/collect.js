@@ -11,8 +11,6 @@ const dry = process.argv.includes('--dry');
 
 async function gh(path, token, accept) {
   const r = await fetch('https://api.github.com' + path, { headers: { Accept: accept || 'application/vnd.github+json', 'User-Agent': 'tivibro-stats', 'X-GitHub-Api-Version': '2022-11-28', ...(token ? { Authorization: 'Bearer ' + token } : {}) } });
-  // Some public lists (stargazers) refuse repo-scoped tokens, so ask again without one.
-  if (r.status === 403 && token) return gh(path, null, accept);
   if (!r.ok) throw new Error(path + ': ' + r.status + ' ' + (await r.text()).slice(0, 200));
   return { body: await r.json(), link: r.headers.get('link') || '' };
 }
@@ -34,8 +32,14 @@ async function all(path, token, accept) {
     repo: { stars: repo.stargazers_count, forks: repo.forks_count, watchers: repo.subscribers_count, issues: repo.open_issues_count, size: repo.size },
   };
   // Who starred and forked, and when (for the growth curves): dates only.
-  try { out.stars = (await all('/repos/' + REPO + '/stargazers', pub, 'application/vnd.github.star+json')).map((s) => s.starred_at).filter(Boolean); }
-  catch (e) { out.stars = []; out.starsError = e.message.slice(0, 200); }
+  // Star dates: GitHub refuses repo-scoped tokens on this list, so try each token we have.  Without dates
+  // the dashboard still charts the daily star count.
+  out.stars = [];
+  for (const t of [process.env.TB_STATS_TOKEN, process.env.GITHUB_TOKEN]) {
+    if (!t) continue;
+    try { out.stars = (await all('/repos/' + REPO + '/stargazers', t, 'application/vnd.github.star+json')).map((s) => s.starred_at).filter(Boolean); delete out.starsError; break; }
+    catch (e) { out.starsError = e.message.slice(0, 200); }
+  }
   out.forks = (await all('/repos/' + REPO + '/forks?sort=oldest', pub)).map((f) => f.created_at);
   // Downloads of every release file: the TV package, the phone app, the installer.
   out.releases = (await all('/repos/' + REPO + '/releases', pub)).map((r) => ({
@@ -53,8 +57,6 @@ async function all(path, token, accept) {
     (out.views ? `${out.views.reduce((a, v) => a + v.count, 0)} views and ${out.clones.reduce((a, v) => a + v.count, 0)} clones in 14 days` : 'no traffic (' + out.trafficError + ')');
   if (dry) { console.log(JSON.stringify(out, null, 2).slice(0, 3000)); return console.log(summary); }
   const r = await fetch(RELAY + '/stats/github', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Stats-Key': process.env.TB_STATS_KEY || '' }, body: JSON.stringify(out) });
-  // Some public lists (stargazers) refuse repo-scoped tokens, so ask again without one.
-  if (r.status === 403 && token) return gh(path, null, accept);
   if (!r.ok) throw new Error('The relay said ' + r.status + ': ' + (await r.text()).slice(0, 200));
   console.log(summary + '.  Stored.');
 })().catch((e) => { console.error(e.message || e); process.exit(1); });

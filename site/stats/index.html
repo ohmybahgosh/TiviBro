@@ -25,6 +25,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:7px 4px;b
 .key button{background:var(--accent);color:#fff;border:0;border-radius:12px;padding:12px 18px;font:inherit;font-weight:600;cursor:pointer}
 .msg{color:var(--muted);text-align:center;margin:60px 0}.err{color:#ff8a95}
 .note{color:var(--muted);font-size:13px;margin-top:22px}
+.empty{color:var(--muted);height:240px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 24px;margin:0;border:1px dashed var(--line);border-radius:10px}
 </style></head><body>
 <header><img src="/img/wordmark.png" alt="tiviBro"><h1>Stats</h1><span class="sp"></span><small id="upd"></small></header>
 <main id="main"><p class="msg">Loading…</p></main>
@@ -111,17 +112,29 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:7px 4px;b
     if (!window.Chart) return;
     Chart.defaults.color = '#8E97B5'; Chart.defaults.borderColor = 'rgba(38,48,82,.7)'; Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
     var opt = function (stack) { return { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { labels: { boxWidth: 10 } } }, scales: { x: { stacked: !!stack, grid: { display: false } }, y: { stacked: !!stack, beginAtZero: true, ticks: { precision: 0 } } } }; };
-    var line = function (label, data, color, fill) { return { label: label, data: data, borderColor: color, backgroundColor: fill ? color + '33' : color, fill: !!fill, tension: .3, pointRadius: 0, borderWidth: 2 }; };
+    var line = function (label, data, color, fill) { return { label: label, data: data, borderColor: color, backgroundColor: fill ? color + '33' : color, fill: !!fill, tension: .3, pointRadius: 0, borderWidth: 2, spanGaps: true }; };
     var bar = function (label, data, color) { return { label: label, data: data, backgroundColor: color, borderRadius: 4 }; };
     new Chart(el('cViews'), { type: 'line', data: { labels: vDays, datasets: [line('Views', vDays.map(function (k) { return views[k].count; }), '#5B8CFF', true), line('Unique', vDays.map(function (k) { return views[k].uniques; }), '#33E1FF')] }, options: opt() });
     new Chart(el('cClones'), { type: 'line', data: { labels: cDays, datasets: [line('Clones', cDays.map(function (k) { return clones[k].count; }), '#5B8CFF', true), line('Unique', cDays.map(function (k) { return clones[k].uniques; }), '#33E1FF')] }, options: opt() });
     var a2 = act.filter(function (a) { return a.active || a.install || a.update; });
-    new Chart(el('cActive'), { type: 'bar', data: { labels: a2.map(function (a) { return a.date; }), datasets: [bar('TVs', a2.map(function (a) { return a.active; }), '#3DDC97')] }, options: opt() });
-    new Chart(el('cInst'), { type: 'bar', data: { labels: a2.map(function (a) { return a.date; }), datasets: [bar('Installs', a2.map(function (a) { return a.install; }), '#5B8CFF'), bar('Updates', a2.map(function (a) { return a.update; }), '#33E1FF')] }, options: opt(true) });
+    var noTv = 'No TVs counted yet.  Counting starts with the first release after alpha 31.';
+    chart('cActive', a2.map(function (a) { return a.date; }), 'bar', [bar('TVs', a2.map(function (a) { return a.active; }), '#3DDC97')], false, noTv);
+    chart('cInst', a2.map(function (a) { return a.date; }), 'bar', [bar('Installs', a2.map(function (a) { return a.install; }), '#5B8CFF'), bar('Updates', a2.map(function (a) { return a.update; }), '#33E1FF')], true, 'No installs counted yet.  The install script counts them from the first release after alpha 31.');
+    // An empty chart says why instead of drawing bare axes; a line with only a few days shows its points.
+    function chart(id, labels, type, sets, stack, empty) {
+      var c = el(id);
+      if (!labels.length) { c.outerHTML = '<p class="empty">' + (empty || 'Nothing yet.') + '</p>'; return; }
+      if (type === 'line' && labels.length < 4) sets.forEach(function (d) { d.pointRadius = 4; d.spanGaps = true; });
+      new Chart(c, { type: type, data: { labels: labels, datasets: sets }, options: opt(stack === true) });
+    }
+    // Stars and forks: dated history when GitHub gave it, plus each stored day's own count.
     var cum = function (dates) { var s = dates.map(d10).sort(), out = {}; s.forEach(function (d, i) { out[d] = i + 1; }); return out; };
-    var st = cum(last && last.stars || []), fk = cum(last && last.forks || []), sd = Object.keys(Object.assign({}, st, fk)).sort(), cs = 0, cf = 0;
-    new Chart(el('cStars'), { type: 'line', data: { labels: sd, datasets: [line('Stars', sd.map(function (d) { cs = st[d] || cs; return cs; }), '#F5C451'), line('Forks', sd.map(function (d) { cf = fk[d] || cf; return cf; }), '#5B8CFF')] }, options: opt() });
-    new Chart(el('cDl'), { type: 'bar', data: { labels: dlDaily.map(function (d) { return d.date; }), datasets: [bar('TV', dlDaily.map(function (d) { return d.tv; }), '#5B8CFF'), bar('Phone', dlDaily.map(function (d) { return d.phone; }), '#33E1FF')] }, options: opt(true) });
+    var st = cum(last && last.stars || []), fk = cum(last && last.forks || []);
+    snaps.forEach(function (s) { var r = s.github.repo || {}; if (r.stars != null) st[s.date] = Math.max(st[s.date] || 0, r.stars); if (r.forks != null) fk[s.date] = Math.max(fk[s.date] || 0, r.forks); });
+    var sd = Object.keys(Object.assign({}, st, fk)).sort(), cs = null, cf = null;  // null until known, so no false zero
+    chart('cStars', sd, 'line', [line('Stars', sd.map(function (d) { cs = st[d] || cs; return cs; }), '#F5C451'), line('Forks', sd.map(function (d) { cf = fk[d] || cf; return cf; }), '#5B8CFF')], false);
+    chart('cDl', dlDaily.map(function (d) { return d.date; }), 'bar', [bar('TV', dlDaily.map(function (d) { return d.tv; }), '#5B8CFF'), bar('Phone', dlDaily.map(function (d) { return d.phone; }), '#33E1FF')], true,
+      'Starts after the second daily run: each bar is the downloads added since the day before.');
   }
   function el(id) { return document.getElementById(id); }
   function box(title, inner, cls) { return '<div class="box ' + (cls || '') + '"><h2>' + title + '</h2>' + inner + '</div>'; }
