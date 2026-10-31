@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 28, 2026-10-31)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 28
 
 - **The public guide reads iptv-epg.org again.**  The site now answers its files with a redirect to a new address, which the helper's guide reader didn't follow, so iptv-epg.org quietly added nothing.  Redirects are followed now, and an answer that isn't the guide counts as a failed file.
 - **Older TVs (webOS 6 and earlier): the preview window has square corners.**  Those TVs show video on a layer behind the page, and the rounded clip around the preview can leave it black (reported on a 2019 C9).  Newer TVs keep the rounded corners.
 - **A sleeker LIVE chip** in the programme details: your accent colour with a small dot, instead of a red that looked like a warning.
 
-## 0.6.0 (alpha 27, 2026-10-31)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 27
+### In alpha 27
 
 - **Search now finds Movies and Shows.**  A new **Movies & Shows** filter sits beside Everything, On now, Coming up, Replays and Channels.  No need to open Movies or Shows first: the lists load in the background when Search opens, and titles that start with what you typed come first.  **OK** opens the movie in Movies and plays it, or a show's episodes, same as picking it from the list.  Thanks to moritzm784 for the idea and the code (#2, #3).
 - **The guide looks more like TiviMate.**  Rows have more room.  What's on now has the part already aired tinted in your accent colour, under the text, instead of a bar; the time line is a thin line in the accent colour with a marker in the time bar; and the programme details show a short bar with the time left, as in TiviMate.
