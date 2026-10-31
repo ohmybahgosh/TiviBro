@@ -74,6 +74,23 @@ var companion = require('./companion').create({
     });
   },
   app: function () { return { open: subs > 0, visible: reminders.visible }; },
+  // The TV's own volume, for the phone's remote (works whether TiviBro is open or not).
+  volume: function (dir, cb) {
+    var A = 'luna://com.webos.service.audio/master/';
+    function read() {
+      lcall(A + 'getVolume', {}, function (v) {
+        var s = v.volumeStatus || v;
+        cb(null, v.returnValue === false ? null : { level: +(s.volume != null ? s.volume : -1), muted: !!(s.muteStatus != null ? s.muteStatus : s.muted) });
+      });
+    }
+    if (dir === 'mute') {
+      return lcall(A + 'getVolume', {}, function (v) {
+        var s = v.volumeStatus || v, muted = !!(s.muteStatus != null ? s.muteStatus : s.muted);
+        lcall(A + 'muteVolume', { muteVolume: !muted }, function (r) { if (r.returnValue === false) return cb(new Error(r.errorText || 'refused')); read(); });
+      });
+    }
+    lcall(A + (dir === 'up' ? 'volumeUp' : 'volumeDown'), {}, function (r) { if (r.returnValue === false) return cb(new Error(r.errorText || 'refused')); read(); });
+  },
   editor: function () { return relay ? relay.editor : null; },
   onSwitch: function (on) { if (on) { hold(); wake(true); } else { wake(false); if (!subs) release(); } }
 });
@@ -116,7 +133,7 @@ service.register('start', function (message) {
 }, function cancel() {
   subs = Math.max(0, subs - 1);
   proxy.log({ lv: 'info', event: 'subscriber left', subscribers: subs });
-  if (!subs) { reminders.setVisible(false); companion.closePairing(); }      // the app closed
+  if (!subs) { reminders.setVisible(false); companion.closePairing(); companion.appGone(); }      // the app closed
   if (!subs) idleTimer = setTimeout(function () {
     if (relay) { relay.server.close(); relay = null; port = 0; }
     if (!companion.on) release();

@@ -37,7 +37,7 @@ var Phone = (function () {
   function start() {
     if (!base()) return;
     call('/companion/set', { version: TIVIBRO_VERSION }).then(set).then(function (s) {
-      if (s.on) Log.info('phone', 'Phone app connection is on, port ' + s.port + ', ' + s.phones.length + ' phone(s) paired');
+      if (s.on) { Log.info('phone', 'Phone app connection is on, port ' + s.port + ', ' + s.phones.length + ' phone(s) paired'); loop(); }
     }).catch(function (e) { Log.warn('phone', 'Phone app connection: ' + (e && e.message)); });
     poll();
   }
@@ -49,9 +49,101 @@ var Phone = (function () {
     return true;
   }
 
+  /* ---------- the remote and Play on TV ---------- */
+  // Waits with the helper for commands from phones, and carries them out.
+  var polling = false, lastSeq = 0, lineupAt = 0;
+  function loop() {
+    if (polling || !base() || !(st && st.on)) return;
+    polling = true;
+    fetch(base() + '/companion/next?since=' + lastSeq, { cache: 'no-store', headers: Net.ctlHeaders({}) })
+      .then(function (r) { return r.json(); })
+      .then(function (j) {
+        polling = false;
+        if (j.seq != null) lastSeq = Math.max(lastSeq, +j.seq || 0);
+        (j.cmds || []).forEach(function (c) { lastSeq = Math.max(lastSeq, c.id); run(c); });
+        if (j.wantLineup) sendLineup();
+        if (j.on === false) { if (st) st.on = false; return; }
+        loop();
+      }, function () { polling = false; setTimeout(loop, 3000); });
+  }
+  // Commands wait until TiviBro has its channels (a phone may have opened it a moment ago).
+  function ready() { return typeof Library !== 'undefined' && Library.count() > 0 && Views.tab; }
+  function run(c, tries) {
+    if (!ready()) { if ((tries || 0) < 60) setTimeout(function () { run(c, (tries || 0) + 1); }, 500); return; }
+    try {
+      Log.info('phone', 'From ' + (c.from || 'a phone') + ': ' + c.type + ' ' + (c.key || c.action || c.k || c.text || ''));
+      if (c.type === 'key') { UI.press(c.key); }
+      else if (c.type === 'action') { if (UI.modalOpen) UI.close(); Views.runAction(c.action, Views.full ? 'player' : 'list'); }
+      else if (c.type === 'play') {
+        var ch = Library.find(c.k);
+        if (!ch) { U.toast('That channel isn\'t in this playlist'); return; }
+        if (!Parental.blockedOk(ch)) { U.toast(Library.name(ch) + ' is locked.  Open it on the TV with the PIN.'); return; }
+        if (UI.modalOpen) UI.close();
+        Views.startChannel(ch, false, Views.goFull);
+        U.toast('Playing ' + Library.name(ch) + (c.from ? ', from ' + c.from : ''));
+      }
+      else if (c.type === 'text') { if (UI.modalOpen) UI.close(); if (Views.full) Views.runAction('exit', 'player'); Views.switchTab('search'); Search.query(c.text); }
+      pushState(true);
+    } catch (e) { Log.warn('phone', 'Could not carry out ' + c.type + ': ' + (e && e.message)); }
+  }
+
+  /* What TiviBro is showing, for the phone's Now playing.  Sent when it changes (checked every second
+     and a half, and right after a phone's command). */
+  var lastState = '';
+  function snapshot() {
+    var c = Views.playing, v = Views.vod, video = document.querySelector('video'), out = { tab: Views.tab, full: !!Views.full, mode: Views.mode || '' };
+    if (Views.mode === 'vod' && v && v.meta) {
+      out.vod = { title: String(v.meta.title || ''), pos: video ? Math.round(video.currentTime) : 0, dur: video && isFinite(video.duration) ? Math.round(video.duration) : 0 };
+      out.paused = !!Player.paused;
+    } else if (c) {
+      var nn = Epg.peek(c), now = nn && nn.now, next = nn && nn.next;
+      out.playing = { k: c.k, name: Library.name(c), num: c.num || '', logo: Views.logoOf(c) || '', group: Library.groupName(c.g) };
+      if (now) out.now = { t: now.t, s: now.s, e: now.e };
+      else { var ex = Search.extra(c); if (ex) out.now = { t: ex }; }
+      if (next) out.next = { t: next.t, s: next.s };
+      out.paused = !!Player.paused;
+    }
+    return out;
+  }
+  function pushState(soon) {
+    if (!base() || !(st && st.on) || !ready()) return;
+    var s = snapshot(), k = JSON.stringify(s);
+    if (k === lastState) return;
+    lastState = k;
+    var go = function () { call('/companion/state', { state: s }).catch(function () { lastState = ''; }); };
+    if (soon) setTimeout(go, 300); else go();
+  }
+  setInterval(function () { if (st && st.on) pushState(false); }, 1500);
+
+  /* The channel list for the phone: the groups as shown on the TV and every shown channel, with
+     what is on now from what the guide already has.  At most once a minute. */
+  function sendLineup() {
+    if (!ready()) { setTimeout(sendLineup, 1000); return; }
+    if (Date.now() - lineupAt < 60000 && lineupAt) return;
+    lineupAt = Date.now();
+    var groups = [], seen = {}, chans = [];
+    Library.groups().forEach(function (g) {
+      if (g.id === Library.ALL) return;
+      var keys = Library.channels(g.id).map(function (c) { return c.k; });
+      if (!keys.length) return;
+      groups.push({ id: g.id, name: g.name, keys: keys });
+    });
+    Library.channels(Library.ALL).forEach(function (c) {
+      if (seen[c.k]) return; seen[c.k] = 1;
+      var nn = Epg.peek(c), now = nn && nn.now, x = { k: c.k, n: Library.name(c), num: c.num || '', logo: Views.logoOf(c) || '', fav: Library.isFav(c.k) ? 1 : 0 };
+      if (now) x.now = { t: now.t, s: now.s, e: now.e };
+      else { var ex = Search.extra(c); if (ex) x.now = { t: ex }; }
+      chans.push(x);
+    });
+    call('/companion/lineup', { groups: groups, channels: chans }).then(function (r) {
+      Log.info('phone', 'Sent the channel list to the phone app: ' + chans.length + ' channels, ' + groups.length + ' groups');
+    }, function (e) { lineupAt = 0; Log.warn('phone', 'Could not send the channel list: ' + (e && e.message)); });
+  }
+
   function turn(on) {
     return call('/companion/set', { on: !!on }).then(set).then(function (s) {
       Log.info('phone', 'Phone app connection turned ' + (on ? 'on' : 'off'));
+      if (on) loop();
       return s;
     });
   }
@@ -128,7 +220,7 @@ var Phone = (function () {
   }
 
   return {
-    start: start, refresh: refresh, launched: launched, turn: turn, rename: rename, forget: forget, showPair: showPair, ago: ago,
+    start: start, refresh: refresh, sendLineup: function () { lineupAt = 0; sendLineup(); }, launched: launched, turn: turn, rename: rename, forget: forget, showPair: showPair, ago: ago,
     get status() { return st; },
     set onChange(fn) { onChange = fn; }
   };

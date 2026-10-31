@@ -30,6 +30,7 @@ import app.tivibro.phone.ui.CodeScreen
 import app.tivibro.phone.ui.EditorScreen
 import app.tivibro.phone.ui.HomeScreen
 import app.tivibro.phone.ui.TbTheme
+import app.tivibro.phone.ui.TvScreen
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
@@ -103,6 +104,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>) {
                 onScan = { scan() },
                 onFind = { nav.navigate("add") },
                 onEditor = { id -> nav.navigate("editor/$id") },
+                onRemote = { id -> nav.navigate("tv/$id") },
                 onOpen = { model.openTiviBro(it) },
                 onWake = { model.wake(it) },
                 onForget = { model.forget(it) },
@@ -137,6 +139,26 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>) {
                 name = a?.getString("name") ?: "TV", busy = pairing.busy, error = pairing.error,
                 onBack = { nav.popBackStack() },
                 onPair = { code -> model.pair(host, port, code, id) },
+            )
+        }
+        composable("tv/{id}") { e ->
+            val id = e.arguments?.getString("id").orEmpty()
+            val tv = model.tv(id)
+            if (tv == null) { LaunchedEffect(Unit) { nav.popBackStack() }; return@composable }
+            val now by model.nowState.collectAsStateWithLifecycle()
+            val lineup by model.lineup.collectAsStateWithLifecycle()
+            val note by model.lineupNote.collectAsStateWithLifecycle()
+            val vol by model.volume.collectAsStateWithLifecycle()
+            // What the TV shows, followed while this screen is on screen.
+            LaunchedEffect(id, lifecycle) { lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) { model.watchState(id) } }
+            TvScreen(
+                name = tv.name, state = now, lineup = lineup, lineupNote = note, volume = vol, snack = snack,
+                onBack = { nav.popBackStack() },
+                onKey = { model.key(id, it) }, onAction = { model.action(id, it) }, onText = { model.text(id, it) },
+                onVolume = { model.volume(id, it) },
+                onPlay = { c -> model.playOnTv(id, c.k, c.name) },
+                onOpen = { model.openTiviBro(id) },
+                onLoadLineup = { force -> model.loadLineup(id, force) },
             )
         }
         composable("editor/{id}") { e ->

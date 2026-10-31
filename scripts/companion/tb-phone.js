@@ -4,7 +4,8 @@
    trying a real TV from a computer.
      node scripts/companion/tb-phone.js discover
      node scripts/companion/tb-phone.js pair 192.168.1.20 ABCD-EFGH-JKMN     (code from the TV)
-     node scripts/companion/tb-phone.js info | open | editor | forget
+     node scripts/companion/tb-phone.js info | open | editor | state | lineup | forget
+     node scripts/companion/tb-phone.js key ok | action guide | play <key> | text michigan | volume up
    The pairing (TV address, ids and this "phone"'s key) is kept in ~/.tivibro-phone.json (mode 600),
    or TB_PHONE_FILE. */
 'use strict';
@@ -109,7 +110,17 @@ if (require.main === module) {
       for (let i = 0; i < 20; i++) { const r = await call(cred, 'POST', '/v1/editor', {}); if (r.state !== 'starting') return console.log(r.url || JSON.stringify(r)); console.log(r.message); await new Promise((x) => setTimeout(x, 2000)); }
       return console.log('The editor did not start.');
     }
+    if (cmd === 'key') return console.log(JSON.stringify(await call(cred, 'POST', '/v1/key', { key: a })));
+    if (cmd === 'action') return console.log(JSON.stringify(await call(cred, 'POST', '/v1/action', { action: a })));
+    if (cmd === 'play') return console.log(JSON.stringify(await call(cred, 'POST', '/v1/play', { k: a })));
+    if (cmd === 'text') return console.log(JSON.stringify(await call(cred, 'POST', '/v1/text', { text: a })));
+    if (cmd === 'volume') return console.log(JSON.stringify(await call(cred, 'POST', '/v1/volume', { dir: a })));
+    if (cmd === 'state') return console.log(JSON.stringify(await call(cred, 'GET', '/v1/state'), null, 2));
+    if (cmd === 'lineup') {
+      for (let i = 0; i < 10; i++) { const l = await call(cred, 'GET', '/v1/lineup'); if (l.channels) { l.channels.slice(0, +a || 20).forEach((x) => console.log((x.num + '').padStart(5) + '  ' + x.n + (x.now ? '   ' + x.now.t : '') + '   ' + x.k)); return console.log(l.channels.length + ' channels, ' + l.groups.length + ' groups'); } if (l.closed) return console.log('TiviBro is closed on the TV.'); await new Promise((r) => setTimeout(r, 1500)); }
+      return console.log('TiviBro did not send its channel list.');
+    }
     if (cmd === 'forget') { await call(cred, 'POST', '/v1/forget', {}); fs.unlinkSync(FILE); return console.log('Removed from the TV.'); }
-    console.log('Commands: discover, pair <tv[:port]> <code>, info, open, editor, forget');
+    console.log('Commands: discover, pair <tv[:port]> <code>, info, open, editor, key <ok|up|...>, action <guide|...>, play <channel key>, text <search>, volume <up|down|mute>, state, lineup [n], forget');
   })().catch((e) => { console.error(e.message); process.exit(1); });
 }

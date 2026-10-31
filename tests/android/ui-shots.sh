@@ -44,5 +44,17 @@ adb shell input keyevent KEYCODE_BACK
 sleep 3
 [ -n "$(find_text "Edit channels")" ] || { echo "Back did not return to the TV list"; adb exec-out screencap -p > "$OUT/fail.png"; adb logcat -d > "$OUT/logcat.txt"; grep -E "TiviBroBack|ActivityTaskManager|wm_|$PKG|FATAL" "$OUT/logcat.txt" | tail -60; exit 1; }
 echo "Back returns to the TV list"
+# The remote, Play on TV, and Now playing following the TV.
+tap "Remote and channels"
+shot 4-remote 5
+tap "Channels"
+shot 5-channels 5
+tap "Big Ten 10"
+shot 6-playing 5
+[ -n "$(find_text "5  Big Ten 10")" ] || { echo "Now playing did not follow the TV"; adb exec-out screencap -p > "$OUT/fail.png"; exit 1; }
+echo "Play on TV works, and Now playing follows the TV"
+tap "Remote"
+tap "OK"
+shot 7-remote-after 3
 if adb logcat -d | grep -E "FATAL EXCEPTION|AndroidRuntime: Process: $PKG" ; then echo "The app crashed"; adb logcat -d | grep -A30 "FATAL EXCEPTION" | head -60; exit 1; fi
 echo "no crashes"

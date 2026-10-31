@@ -39,9 +39,25 @@ class LiveTvTest {
         val ed = c.editor()
         assertTrue("the editor is ready, for this TV", ed is EditorState.Ready && app.tivibro.phone.proto.editorUrlOk(ed.url, tv))
 
+        // The remote and Play on TV, against the stand-in TiviBro.
+        var lineup: app.tivibro.phone.proto.Lineup? = null
+        for (i in 0 until 20) { lineup = app.tivibro.phone.proto.Lineup.from(c.lineup(0)); if (lineup != null) break; Thread.sleep(300) }
+        assertTrue("the channel list arrives", lineup != null && lineup.channels.size == 40 && lineup.groups.any { it.name == "Sports" })
+        val st0 = c.state(0, false)
+        c.play("fake|5")
+        val st1 = c.state(st0.rev, true)
+        assertEquals("Big Ten 10", st1.channel)
+        assertEquals("Michigan vs Ohio State", st1.now?.title)
+        c.key("chup")
+        assertEquals("fake|6", c.state(st1.rev, true).channelKey)
+        val v = c.volume("up")
+        assertTrue("volume answers", v != null && v.level == 13)
+        val bad = runCatching { c.key("power") }.exceptionOrNull() as TbException
+        assertEquals("bad", bad.code)
+
         // A wrong key: refused, and the answer is not trusted.
-        val bad = TvClient(tv.copy(key = ByteArray(32)))
-        val e = runCatching { bad.info() }.exceptionOrNull() as TbException
+        val wrongKey = TvClient(tv.copy(key = ByteArray(32)))
+        val e = runCatching { wrongKey.info() }.exceptionOrNull() as TbException
         assertTrue(e.unsigned)
 
         // An old clock: the TV says so, signed.

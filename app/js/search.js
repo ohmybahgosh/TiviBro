@@ -286,5 +286,8 @@ var Search = (function () {
     Vod.prepare().then(function (got) { if (got && input.value.trim().length >= 2) run(); });
   }
 
-  return { open: open, find: find, matcher: matcher, extra: extra };
+  // Text typed on the phone: searches everything for it.
+  function query(q) { open(); input.value = String(q || ''); filter = 'all'; paintChips(); run(); zone = vl.items.length ? 'list' : 'input'; paint(); }
+
+  return { open: open, query: query, find: find, matcher: matcher, extra: extra };
 })();

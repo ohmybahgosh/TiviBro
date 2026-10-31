@@ -1436,7 +1436,7 @@ var Views = (function () {
     chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, playVod: playVod,
     QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
-    get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; },
+    get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; }, get vod() { return vod; }, runAction: runAction,
     restoreKeys: function () { UI.setHandler(full ? fullKeys : liveKeys); },
     // Read-only state for the speed tests (tests/soak/speed.js).
     __sel: function () { return chansVL ? chansVL.sel : 0; }, __gsel: function () { return groupsVL ? groupsVL.sel : 0; }

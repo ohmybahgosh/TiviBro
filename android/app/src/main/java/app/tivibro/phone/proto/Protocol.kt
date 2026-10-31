@@ -224,6 +224,14 @@ class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
     }
 
     fun info(): JSONObject = call("GET", "/v1/info")
+    fun key(k: String) { call("POST", "/v1/key", JSONObject().put("key", k)) }
+    fun action(a: String) { call("POST", "/v1/action", JSONObject().put("action", a)) }
+    fun play(k: String) { call("POST", "/v1/play", JSONObject().put("k", k)) }
+    fun text(t: String) { call("POST", "/v1/text", JSONObject().put("text", t)) }
+    fun volume(dir: String): Volume? = call("POST", "/v1/volume", JSONObject().put("dir", dir)).optJSONObject("volume")?.let { Volume(it.optInt("level", -1), it.optBoolean("muted")) }
+    /** What TiviBro shows.  With [wait], the TV answers when it changes (or after 20 seconds). */
+    fun state(since: Int, wait: Boolean): NowState = NowState.from(call("GET", "/v1/state?since=$since" + if (wait) "&wait=1" else ""))
+    fun lineup(rev: Int): JSONObject = call("GET", "/v1/lineup?rev=$rev")
     fun open() { call("POST", "/v1/open", JSONObject()) }
     fun forget() { call("POST", "/v1/forget", JSONObject()) }
     fun editor(): EditorState {
@@ -241,3 +249,53 @@ fun editorUrlOk(url: String, tv: Tv): Boolean = runCatching {
     val u = URI(url)
     u.scheme == "http" && u.host == tv.host && Regex("^t=[0-9a-f]{48}(/\\w+)?$").matches(u.rawFragment ?: "")
 }.getOrDefault(false)
+
+data class Volume(val level: Int, val muted: Boolean)
+
+data class Prog(val title: String, val start: Long, val end: Long) {
+    companion object { fun from(j: JSONObject?) = j?.optString("t")?.takeIf { it.isNotBlank() }?.let { Prog(it, j.optLong("s"), j.optLong("e")) } }
+}
+
+/** What TiviBro on the TV is showing (GET /v1/state). */
+data class NowState(
+    val rev: Int, val open: Boolean, val tab: String = "", val full: Boolean = false,
+    val channelKey: String = "", val channel: String = "", val number: String = "", val logo: String = "", val group: String = "",
+    val now: Prog? = null, val next: Prog? = null, val paused: Boolean = false,
+    val vodTitle: String = "", val vodPos: Int = 0, val vodDur: Int = 0,
+) {
+    companion object {
+        fun from(j: JSONObject): NowState {
+            val s = j.optJSONObject("state")
+            val p = s?.optJSONObject("playing")
+            val v = s?.optJSONObject("vod")
+            return NowState(
+                rev = j.optInt("rev"), open = j.optBoolean("open"), tab = s?.optString("tab").orEmpty(), full = s?.optBoolean("full") == true,
+                channelKey = p?.optString("k").orEmpty(), channel = p?.optString("name").orEmpty(), number = p?.opt("num")?.toString().orEmpty(),
+                logo = p?.optString("logo").orEmpty(), group = p?.optString("group").orEmpty(),
+                now = Prog.from(s?.optJSONObject("now")), next = Prog.from(s?.optJSONObject("next")), paused = s?.optBoolean("paused") == true,
+                vodTitle = v?.optString("title").orEmpty(), vodPos = v?.optInt("pos") ?: 0, vodDur = v?.optInt("dur") ?: 0,
+            )
+        }
+    }
+}
+
+data class Chan(val k: String, val name: String, val number: String, val logo: String, val fav: Boolean, val now: Prog?)
+data class Group(val id: String, val name: String, val keys: List<String>)
+data class Lineup(val rev: Int, val channels: List<Chan>, val groups: List<Group>) {
+    val byKey: Map<String, Chan> by lazy { channels.associateBy { it.k } }
+    companion object {
+        fun from(j: JSONObject): Lineup? {
+            val cs = j.optJSONArray("channels") ?: return null
+            val gs = j.optJSONArray("groups")
+            val chans = (0 until cs.length()).map { i ->
+                val c = cs.getJSONObject(i)
+                Chan(c.getString("k"), c.optString("n"), c.opt("num")?.toString().orEmpty(), c.optString("logo"), c.optInt("fav") == 1, Prog.from(c.optJSONObject("now")))
+            }
+            val groups = if (gs == null) emptyList() else (0 until gs.length()).map { i ->
+                val g = gs.getJSONObject(i); val ks = g.optJSONArray("keys")
+                Group(g.optString("id"), g.optString("name"), if (ks == null) emptyList() else (0 until ks.length()).map { ks.getString(it) })
+            }
+            return Lineup(j.optInt("rev"), chans, groups)
+        }
+    }
+}

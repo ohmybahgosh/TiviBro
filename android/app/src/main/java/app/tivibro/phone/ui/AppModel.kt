@@ -17,6 +17,11 @@ import app.tivibro.phone.proto.Tv
 import app.tivibro.phone.proto.TvClient
 import app.tivibro.phone.proto.Wol
 import app.tivibro.phone.proto.editorUrlOk
+import app.tivibro.phone.proto.Lineup
+import app.tivibro.phone.proto.NowState
+import app.tivibro.phone.proto.Volume
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -180,6 +185,79 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             }
         }
         url!!
+    }
+
+    /* ---------- the remote and Play on TV ---------- */
+
+    private val _now = MutableStateFlow<NowState?>(null)
+    val nowState: StateFlow<NowState?> = _now.asStateFlow()
+    private val _lineup = MutableStateFlow<Lineup?>(null)
+    val lineup: StateFlow<Lineup?> = _lineup.asStateFlow()
+    /** "" while there is a list or it is loading, "closed" when TiviBro is closed, "none" when the TV didn't send one. */
+    private val _lineupNote = MutableStateFlow("")
+    val lineupNote: StateFlow<String> = _lineupNote.asStateFlow()
+    private val _volume = MutableStateFlow<Volume?>(null)
+    val volume: StateFlow<Volume?> = _volume.asStateFlow()
+    private var lineupFor = ""
+
+    // Presses go out one at a time, in order, however fast they are tapped.
+    private val presses = Channel<suspend () -> Unit>(64)
+    init {
+        viewModelScope.launch(Dispatchers.IO) {
+            for (p in presses) {
+                try { p() }
+                catch (e: TbException) { say(e.message ?: "The TV said no") }
+                catch (e: Exception) { say("The TV didn't answer.  Is it on, and on the same network?") }
+            }
+        }
+    }
+    private fun press(id: String, block: TvClient.() -> Unit) {
+        val tv = tv(id) ?: return
+        presses.trySend { TvClient(tv, 5000).block() }
+    }
+    fun key(id: String, k: String) = press(id) { key(k) }
+    fun action(id: String, a: String) = press(id) { action(a) }
+    fun text(id: String, t: String) = press(id) { text(t) }
+    fun playOnTv(id: String, k: String, name: String) {
+        val tv = tv(id) ?: return
+        presses.trySend { TvClient(tv, 5000).play(k); say("Playing $name on ${tv.name}") }
+    }
+    fun volume(id: String, dir: String) {
+        val tv = tv(id) ?: return
+        presses.trySend { _volume.value = TvClient(tv, 5000).volume(dir) }
+    }
+
+    /** Follows what the TV shows while the remote screen is open (the TV answers when it changes). */
+    suspend fun watchState(id: String) = withContext(Dispatchers.IO) {
+        _now.value = null
+        var rev = -1
+        while (isActive) {
+            val tv = tv(id) ?: break
+            try {
+                val st = TvClient(tv, 26_000).state(maxOf(rev, 0), rev >= 0)
+                _now.value = st; rev = st.rev
+            } catch (e: Exception) {
+                rev = -1
+                delay(3000)
+            }
+        }
+    }
+
+    /** The TV's channel list, for Play on TV.  TiviBro sends it when asked; this waits a few seconds for it. */
+    fun loadLineup(id: String, force: Boolean = false) = viewModelScope.launch(Dispatchers.IO) {
+        val tv = tv(id) ?: return@launch
+        if (lineupFor != id) { _lineup.value = null; lineupFor = id }
+        _lineupNote.value = ""
+        for (i in 0 until 25) {
+            try {
+                val j = TvClient(tv, 15_000).lineup(if (force) 0 else _lineup.value?.rev ?: 0)
+                Lineup.from(j)?.let { _lineup.value = it }
+                if (j.optBoolean("closed") && _lineup.value == null) { _lineupNote.value = "closed"; return@launch }
+                if (!j.optBoolean("pending") && (_lineup.value != null || j.optBoolean("same"))) return@launch
+            } catch (e: Exception) { }
+            delay(1200)
+        }
+        if (_lineup.value == null) _lineupNote.value = "none"
     }
 
     /* ---------- adding a TV ---------- */

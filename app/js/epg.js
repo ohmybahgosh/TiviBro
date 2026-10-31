@@ -125,6 +125,23 @@ var Epg = (function () {
     return hit ? hit.list : null;
   }
 
+  /* What is on now and next from what the guide already has, without asking for more (the phone
+     app's channel list asks for every channel at once). */
+  function peek(ch) {
+    if (!ch) return null;
+    var list = null;
+    if (xmlMode) { var id = epgId(ch), x = id && cache.get(id); if (x) list = x.list; }
+    if (!list) { var hit = cache.get(ch.k); if (hit) list = hit.list; }
+    if (!list || !list.length) { var ev = typeof Events !== 'undefined' ? Events.of(ch) : null; list = ev ? Events.programmes(ev) : null; }
+    if (!list) return null;
+    var t = Date.now();
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].s <= t && list[i].e > t) return { now: list[i], next: list[i + 1] || null };
+      if (list[i].s > t) return { now: null, next: list[i] };
+    }
+    return null;
+  }
+
   function nowNext(ch) {
     var list = request(ch);
     if (!list) return null;
@@ -726,6 +743,7 @@ var Epg = (function () {
     get loading() { return !!loading; },
     get progress() { return progress; },
     onProgress: function (fn) { progListeners.push(fn); },
+    peek: peek,
     get xml() { return xmlMode; }
   };
 })();

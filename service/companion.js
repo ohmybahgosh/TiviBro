@@ -79,6 +79,11 @@ function create(opts) {
   var FILE = path.join(opts.dir || __dirname, 'companion.json');
   var st = load();
   var server = null, udp = null, port = 0, pairing = null, nonces = {}, fails = {}, sys = null, wantEditor = 0, udpCount = { t: 0, n: 0 };
+  /* The remote and Play on TV (phase 2).  Phones queue commands, which TiviBro on the TV picks up with
+     a long poll (/companion/next) and carries out; TiviBro sends what it is playing (/companion/state)
+     and, when a phone asks, its channel list (/companion/lineup).  Phones wait for changes with a
+     long poll too (/v1/state).  Volume goes straight to the TV, with or without TiviBro. */
+  var cmds = [], cmdSeq = 0, appWait = [], phoneWait = [], tvState = { rev: 0, data: null, at: 0 }, lineup = null, lineupRev = 0, wantLineup = false, launchedAt = 0;
 
   function load() {
     var s = null;
@@ -127,11 +132,12 @@ function create(opts) {
     res.writeHead(code, h);
     res.end(body);
   }
-  function readBody(req, cb) {
+  function readBody(req, cb, max) {
     var chunks = [], size = 0, done = false;
+    max = max || MAX_BODY;
     req.on('data', function (d) {
       size += d.length;
-      if (size > MAX_BODY && !done) { done = true; cb(new Error('too large')); req.destroy(); return; }
+      if (size > max && !done) { done = true; cb(new Error('too large')); req.destroy(); return; }
       chunks.push(d);
     });
     req.on('end', function () { if (!done) { done = true; cb(null, Buffer.concat(chunks)); } });
@@ -242,6 +248,74 @@ function create(opts) {
     });
   }
 
+
+  /* ---------- remote and Play on TV ---------- */
+  var KEYS = ['ok', 'hold', 'up', 'down', 'left', 'right', 'back', 'chup', 'chdown', 'playpause', 'stop', 'rew', 'ff', 'info', 'red', 'green', 'yellow', 'blue',
+    'num0', 'num1', 'num2', 'num3', 'num4', 'num5', 'num6', 'num7', 'num8', 'num9'];
+  var ACTIONS = ['guide', 'search', 'settings', 'live', 'movies', 'shows', 'last', 'fav', 'favorites', 'recents', 'audio', 'picture', 'exit', 'restart', 'reconnect', 'list', 'panel', 'osd', 'menu'];
+  var CMD_TTL = 40000, HOLD = 20000;
+
+  function appOpen() { var a = opts.app ? opts.app() : {}; return !!a.open; }
+  function flushApp() {
+    var w = appWait; appWait = [];
+    w.forEach(function (x) { clearTimeout(x.timer); x.go(); });
+  }
+  function flushPhones() {
+    var w = phoneWait; phoneWait = [];
+    w.forEach(function (x) { clearTimeout(x.timer); x.go(); });
+  }
+  // A command for TiviBro.  If TiviBro is closed, it is opened first and finds the command waiting.
+  function queue(cmd, from) {
+    var t = Date.now();
+    cmds = cmds.filter(function (c) { return t - c.at < CMD_TTL; });
+    cmdSeq++;
+    cmd.id = cmdSeq; cmd.at = t; cmd.from = from;
+    cmds.push(cmd);
+    if (cmds.length > 50) cmds.splice(0, cmds.length - 50);
+    flushApp();
+    if (!appOpen() && t - launchedAt > 15000) {
+      launchedAt = t;
+      openApp({ companion: { open: true } }, function (e) { if (e) log({ lv: 'warn', event: 'companion: could not open TiviBro', e: e.message }); });
+      return 'opening';
+    }
+    return appOpen() ? 'sent' : 'opening';
+  }
+  function stateView() {
+    return { ok: true, rev: tvState.rev, open: appOpen(), state: tvState.data, lineupRev: lineup ? lineup.rev : 0, now: Date.now() };
+  }
+  function phoneState(res, u, reply) {
+    var since = +((/[?&]since=(\d+)/.exec(u) || [])[1] || 0), waitOk = /[?&]wait=1/.test(u);
+    if (!waitOk || since !== tvState.rev) return reply(200, stateView());
+    var x = { go: function () { reply(200, stateView()); } };
+    x.timer = setTimeout(function () { phoneWait = phoneWait.filter(function (y) { return y !== x; }); x.go(); }, HOLD);
+    phoneWait.push(x);
+    res.on('close', function () { clearTimeout(x.timer); phoneWait = phoneWait.filter(function (y) { return y !== x; }); });
+  }
+  function phoneLineup(u, reply) {
+    var have = +((/[?&]rev=(\d+)/.exec(u) || [])[1] || 0), fresh = lineup && Date.now() - lineup.at < 120000;
+    if (!fresh && appOpen()) { wantLineup = true; flushApp(); }
+    if (!lineup) return reply(200, { ok: true, pending: appOpen(), closed: !appOpen() });
+    if (lineup.rev === have) return reply(200, { ok: true, rev: lineup.rev, same: true, pending: !fresh && appOpen() });
+    reply(200, { ok: true, rev: lineup.rev, at: lineup.at, groups: lineup.data.groups || [], channels: lineup.data.channels || [], pending: !fresh && appOpen() });
+  }
+  function phoneCommand(path, buf, p, reply) {
+    var j = parse(buf) || {}, cmd = null;
+    if (path === '/v1/key') { if (KEYS.indexOf(j.key) < 0) return reply(400, { error: 'unknown key', code: 'bad' }); cmd = { type: 'key', key: j.key }; }
+    else if (path === '/v1/action') { if (ACTIONS.indexOf(j.action) < 0) return reply(400, { error: 'unknown action', code: 'bad' }); cmd = { type: 'action', action: j.action }; }
+    else if (path === '/v1/play') { if (typeof j.k !== 'string' || !j.k || j.k.length > 300) return reply(400, { error: 'bad channel', code: 'bad' }); cmd = { type: 'play', k: j.k }; }
+    else if (path === '/v1/text') { if (typeof j.text !== 'string') return reply(400, { error: 'bad text', code: 'bad' }); cmd = { type: 'text', text: cleanText(j.text, 100) }; }
+    var how = queue(cmd, p.name);
+    reply(200, { ok: true, id: cmd.id, state: how });
+  }
+  function volume(dir, reply) {
+    if (['up', 'down', 'mute'].indexOf(dir) < 0) return reply(400, { error: 'bad volume', code: 'bad' });
+    if (!opts.volume) return reply(501, { error: 'The TV\'s volume can\'t be changed from here.', code: 'volume' });
+    opts.volume(dir, function (e, v) {
+      if (e) return reply(502, { error: 'The TV refused: ' + e.message, code: 'volume' });
+      reply(200, { ok: true, volume: v || null });
+    });
+  }
+
   function lan(req, res) {
     var u = req.url.split('#')[0], pathOnly = u.split('?')[0], who = String(req.socket.remoteAddress || '?').replace(/^::ffff:/, '');
     if (req.method === 'OPTIONS') return send(res, 204, {});
@@ -257,6 +331,10 @@ function create(opts) {
           return openApp({ companion: { open: true } }, function (e) { if (e) return reply(502, { error: 'Could not open TiviBro on the TV: ' + e.message, code: 'launch' }); reply(200, { ok: true }); });
         }
         if (pathOnly === '/v1/editor' && req.method === 'POST') return editor(req, p, function (e, r) { reply(r.ok ? 200 : 502, r); });
+        if (pathOnly === '/v1/state' && req.method === 'GET') return phoneState(res, u, reply);
+        if (pathOnly === '/v1/lineup' && req.method === 'GET') return phoneLineup(u, reply);
+        if (/^\/v1\/(key|action|play|text)$/.test(pathOnly) && req.method === 'POST') return phoneCommand(pathOnly, buf, p, reply);
+        if (pathOnly === '/v1/volume' && req.method === 'POST') return volume((parse(buf) || {}).dir, reply);
         if (pathOnly === '/v1/forget' && req.method === 'POST') {
           st.phones = st.phones.filter(function (x) { return x.id !== p.id; }); save(); changed();
           log({ lv: 'info', event: 'companion: phone removed itself', phone: p.name });
@@ -318,6 +396,25 @@ function create(opts) {
     var reply = function (code, obj) { res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); };
     var done = function (e) { if (e) return reply(409, { error: e.message }); reply(200, status()); };
     if (u === '/companion/status') return reply(200, status());
+    // TiviBro waits here for commands from phones (and for a phone wanting the channel list).
+    if (u === '/companion/next') {
+      var since = +((/[?&]since=(\d+)/.exec(req.url) || [])[1] || 0);
+      var answer = function () {
+        var t = Date.now(), list = cmds.filter(function (c) { return c.id > since && t - c.at < CMD_TTL; });
+        cmds = cmds.filter(function (c) { return list.indexOf(c) < 0; });      // each command is carried out once
+        reply(200, { cmds: list, seq: cmdSeq, wantLineup: wantLineup, on: st.on });
+      };
+      if (cmds.length || wantLineup || !st.on || since > cmdSeq) return answer();
+      // One TiviBro waits at a time: an older poll (from before a reload) is answered empty, so a
+      // command can never go to a page that is gone.
+      var old = appWait; appWait = [];
+      old.forEach(function (y) { clearTimeout(y.timer); y.empty(); });
+      var x = { go: answer, empty: function () { reply(200, { cmds: [], seq: cmdSeq, wantLineup: false, on: st.on }); } };
+      x.timer = setTimeout(function () { appWait = appWait.filter(function (y) { return y !== x; }); answer(); }, HOLD);
+      appWait.push(x);
+      res.on('close', function () { clearTimeout(x.timer); appWait = appWait.filter(function (y) { return y !== x; }); });
+      return;
+    }
     readBody(req, function (err, buf) {
       var j = !err && parse(buf);
       if (!j) return reply(400, { error: 'bad request' });
@@ -350,13 +447,26 @@ function create(opts) {
         return done();
       }
       if (u === '/companion/editor-done' && req.method === 'POST') { wantEditor = 0; return done(); }
+      if (u === '/companion/state' && req.method === 'POST') {
+        var was = JSON.stringify(tvState.data), now = JSON.stringify(j.state || null);
+        if (was !== now) { tvState = { rev: tvState.rev + 1, data: j.state || null, at: Date.now() }; flushPhones(); }
+        return reply(200, { ok: true, rev: tvState.rev });
+      }
+      if (u === '/companion/lineup' && req.method === 'POST') {
+        lineupRev++;
+        lineup = { rev: lineupRev, at: Date.now(), data: { groups: Array.isArray(j.groups) ? j.groups : [], channels: Array.isArray(j.channels) ? j.channels : [] } };
+        wantLineup = false;
+        return reply(200, { ok: true, rev: lineupRev });
+      }
       reply(404, { error: 'not found' });
-    });
+    }, 16 * 1024 * 1024);      // the channel list can be large
   }
 
   return {
     control: control, start: start, stop: stop, status: status,
     closePairing: function () { pairing = null; },
+    // TiviBro closed: phones see it at once; its long polls are over.
+    appGone: function () { tvState = { rev: tvState.rev + 1, data: null, at: Date.now() }; flushPhones(); appWait.forEach(function (x) { clearTimeout(x.timer); }); appWait = []; },
     get on() { return st.on; }, get running() { return !!server; }, get port() { return port; }, get id() { return st.id; }
   };
 }

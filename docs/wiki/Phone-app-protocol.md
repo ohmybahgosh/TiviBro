@@ -57,6 +57,20 @@ The TV refuses a time more than 5 minutes off (`clock`, with its `now`), a nonce
 | `POST /v1/editor` | `{ "state": "ready", "url" }`: the web editor, signed in for this phone (open it in a WebView).  `starting`: TiviBro is opening or starting it; ask again every two seconds. |
 | `POST /v1/forget` | removes this phone from the TV |
 
+## Remote and Play on TV
+
+All signed like the calls above.  TiviBro carries out each command once; if TiviBro is closed, a command opens it and waits for it (up to 40 seconds).
+
+| Call | Body | What it does |
+|---|---|---|
+| `POST /v1/key` | `{ "key": "ok" }` | A remote button: `ok`, `hold` (OK held), `up`, `down`, `left`, `right`, `back`, `chup`, `chdown`, `playpause`, `stop`, `rew`, `ff`, `info`, `red`, `green`, `yellow`, `blue`, `num0` to `num9`. |
+| `POST /v1/action` | `{ "action": "guide" }` | Straight to: `guide`, `search`, `settings`, `live`, `movies`, `shows`, `last`, `fav`, `favorites`, `recents`, `audio`, `picture`, `exit`, `restart`, `reconnect`, `list`, `panel`, `osd`, `menu`. |
+| `POST /v1/play` | `{ "k": "<channel key>" }` | Plays that channel full screen. |
+| `POST /v1/text` | `{ "text": "michigan" }` | Searches for it on the TV. |
+| `POST /v1/volume` | `{ "dir": "up" }` | The TV's own volume: `up`, `down`, `mute`.  Works with TiviBro closed.  Answers `{ "volume": { "level", "muted" } }`. |
+| `GET /v1/state?since=<rev>&wait=1` | | What TiviBro shows: `{ rev, open, state: { tab, full, playing: { k, name, num, logo, group }, now: { t, s, e }, next, paused, vod } }`.  With `wait=1` and the current `rev`, the TV answers when it changes, or after 20 seconds. |
+| `GET /v1/lineup?rev=<rev>` | | The channel list as TiviBro shows it: `{ rev, groups: [{ id, name, keys }], channels: [{ k, n, num, logo, fav, now }] }`.  `pending: true` while TiviBro is making it (ask again in a second), `same: true` when `rev` is current, `closed: true` when TiviBro is closed. |
+
 ## Waking the TV
 
 When the TV is off nothing answers.  Send Wake-on-LAN magic packets to the `mac` from info (broadcast, UDP 9), every few seconds until hello answers.  The TV needs **Turn on via Wi-Fi** (or **Mobile TV On**) switched on.

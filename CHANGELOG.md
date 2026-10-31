@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The phone as a remote, and Play on TV** (TiviBro for Android, with Settings > Phone app on the TV).  **Remote and channels** on a TV: what is playing now, with the programme and its progress, kept up to date as the TV changes; a remote (arrows round OK, hold OK for options, Back, Channels, Guide, Channel up and down, play and pause, rewind and fast forward, the colour buttons, Info, and the TV's own volume and mute); typing a search on the phone searches on the TV; and **Channels**: every channel as TiviBro shows it, by group, with what is on now, searchable, and a tap plays it on the TV.  A button with TiviBro closed opens it first.
+
 ## 0.6.0 (alpha 30, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.

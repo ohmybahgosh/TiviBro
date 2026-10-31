@@ -26,6 +26,7 @@ import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SettingsRemote
 import androidx.compose.material.icons.rounded.Tv
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -78,6 +79,7 @@ fun HomeScreen(
     onScan: () -> Unit,
     onFind: () -> Unit,
     onEditor: (String) -> Unit,
+    onRemote: (String) -> Unit,
     onOpen: (String) -> Unit,
     onWake: (String) -> Unit,
     onForget: (String) -> Unit,
@@ -110,7 +112,7 @@ fun HomeScreen(
         ) {
             LazyColumn(contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxSize()) {
                 items(tvs, key = { it.tv.id }) { u ->
-                    TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onOpen, onWake, onForget, onTile, onRepair)
+                    TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onRemote, onOpen, onWake, onForget, onTile, onRepair)
                 }
             }
         }
@@ -144,7 +146,7 @@ private fun Empty(modifier: Modifier, onScan: () -> Unit, onFind: () -> Unit) {
 @Composable
 private fun TvCard(
     u: TvUi, isTile: Boolean,
-    onEditor: (String) -> Unit, onOpen: (String) -> Unit, onWake: (String) -> Unit,
+    onEditor: (String) -> Unit, onRemote: (String) -> Unit, onOpen: (String) -> Unit, onWake: (String) -> Unit,
     onForget: (String) -> Unit, onTile: (String) -> Unit, onRepair: (String) -> Unit,
 ) {
     val tv = u.tv
@@ -178,6 +180,7 @@ private fun TvCard(
                     IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, "More") }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         if (tv.mac.isNotBlank()) DropdownMenuItem(text = { Text("Turn on") }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) }, onClick = { menu = false; onWake(tv.id) })
+                        if (u.power == Power.ON) DropdownMenuItem(text = { Text(if (u.tivibroOpen) "Show TiviBro on the TV" else "Open TiviBro on the TV") }, leadingIcon = { Icon(Icons.Rounded.PlayArrow, null) }, onClick = { menu = false; onOpen(tv.id) })
                         DropdownMenuItem(text = { Text("Use for the Quick Settings tile") }, leadingIcon = { Icon(Icons.Rounded.Tv, null) }, onClick = { menu = false; onTile(tv.id) })
                         DropdownMenuItem(text = { Text("Forget this TV") }, leadingIcon = { Icon(Icons.Rounded.LinkOff, null) }, onClick = { menu = false; confirm = true })
                     }
@@ -193,11 +196,11 @@ private fun TvCard(
                     OutlinedButton(onClick = { onEditor(tv.id) }, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("Edit channels anyway") }
                 }
                 else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Button(onClick = { onEditor(tv.id) }, enabled = u.power == Power.ON, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                        Icon(Icons.Rounded.Edit, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Edit channels", maxLines = 1)
+                    Button(onClick = { onRemote(tv.id) }, enabled = u.power == Power.ON, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                        Icon(Icons.Rounded.SettingsRemote, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Remote and channels", maxLines = 1)
                     }
-                    FilledTonalButton(onClick = { onOpen(tv.id) }, enabled = u.power == Power.ON && u.busy == null, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                        Icon(Icons.Rounded.PlayArrow, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text(if (u.tivibroOpen) "Show TiviBro on the TV" else "Open TiviBro on the TV", maxLines = 1)
+                    FilledTonalButton(onClick = { onEditor(tv.id) }, enabled = u.power == Power.ON, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                        Icon(Icons.Rounded.Edit, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Edit channels", maxLines = 1)
                     }
                 }
             }
