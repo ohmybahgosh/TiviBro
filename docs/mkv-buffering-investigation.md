@@ -1,47 +1,55 @@
-# Subtitle extraction and buffering
+# MKV subtitles: on-device investigation and fix
 
-The provider-only diagnosis in the original handoff is not established. Bare curl
-failures demonstrate provider instability but do not exclude additional contention
-from the app. A single competing request does not model continuous extraction.
+## Findings (2026-11-01, LG C9 / webOS 4.5)
 
-Confirmed code defects in 1df8b4a:
+The provider-only diagnosis in the original handoff was premature. The TV showed
+network-error reconnects roughly every 36 seconds despite about 30 seconds of
+buffered video. Reducing cluster downloads alone did not resolve that behavior.
 
-- Every indexed cluster was downloaded in full, including its video/audio payload,
-  back-to-back across the entire file. Sorting by distance did not limit extraction.
-- Cancellation only ignored responses; it did not stop the network transfer.
-- HTTP 200 was accepted for Range requests, allowing a full-file download when a
-  server ignored Range.
-- The Cues read requested 1 MB irrespective of the index's actual size.
+Stopping subtitle network requests left playback running smoothly for about two
+minutes. A single request through the original movie entry URL was then followed
+by another video error about 34 seconds later. That URL redirects to a tokenized
+stream endpoint. Opening the entry repeatedly creates conflicting provider
+sessions; the observed delay is consistent with provider session enforcement.
+The exact server-side enforcement implementation is not observable here.
 
-The change uses abortable XHR (compatible with Chromium 53), validates status,
-Content-Range and response length, reads the exact Cues size, and skips media
-payloads using EBML sizes. CueRelativePosition is used when available to jump
-straight to indexed blocks; otherwise it walks element headers in small windows.
-Only S_TEXT/UTF8 tracks are extracted.
+Reusing a separately resolved subtitle URL was insufficient: that session itself
+became invalid. Sharing the *same* resolved URL between native video playback and
+subtitle requests eliminated the observed recurring errors during testing.
 
-Extraction selects clusters indexed within 30 seconds behind / 60 seconds ahead
-of the current playhead and follows timeupdate. Each request waits for eight
-seconds of playback buffer (with an end-of-file exception); a waiting event aborts
-an active request and waits for buffer recovery before retrying. Seeking/destroying
-cancels pending work. The cue cache still survives reconnects.
+A separate rendering problem was confirmed: the extracted Dutch track was in
+`showing` mode and contained a cue spanning the current video time, but activeCues
+was empty and its source-less HTML track element had readyState 3 (ERROR). A DOM
+overlay rendering the same cue was immediately visible to the user.
 
-Verification:
+## Implementation
 
-- 32 subtitle tests pass, including cancellation, buffer recovery, ignored/mismatched
-  Range responses, relative positions, moving playback window, and cache replay.
-- A synthetic cluster with a 2 MB video block transfers 4,139 bytes instead of
-  2,097,200 bytes and produces the same subtitle timing/text. This measures the
-  cluster reader, excluding the initial file header and Cues metadata reads.
-- Player tests pass; lint passes; minified IPK build passes.
-- Full unit suite reaches the relay tests then fails with listen EPERM on
-  127.0.0.1 in this sandbox. It has NOT been verified as fully passing here.
-- TV debugging endpoint 192.168.178.65:9998 was unreachable in this session.
-  The package has NOT been installed or verified on-device.
+- Native MKV startup obtains the header and final redirected URL once, then gives
+  that URL to the native player and all subtitle requests. Metadata failure falls
+  back to normal native playback. A cancelled extractor cannot start old playback.
+- Track/index discovery starts immediately; only ongoing cue reads wait for two seconds of buffer.
+  Discovery on the installed build took **881 ms** in the observed session.
+- The movie subtitle menu is always present, shows discovery/unavailable status,
+  and refreshes an open discovery menu when tracks arrive.
+- Extracted cues render through a DOM overlay keyed to playback time and selected
+  text tracks, avoiding the broken native renderer. Track selection survives seek
+  and engine teardown. Changing the selection also updates paused captions.
+- The earlier sparse reads, strict Range checks, cancellation and cue cache remain.
+  A synthetic 2 MB media cluster requires 4,139 bytes to extract its subtitle.
 
-Remaining validation: install dist/app.tivibro.tv_0.6.0_all.ipk on device `tv`,
-check subtitles during startup/resume/seek/reconnect, and observe a sustained
-playback session alongside buffer levels and request traffic. In particular,
-confirm this TV reports enough buffer for the eight-second gate. Header-only
-walking still requires multiple requests on files without CueRelativePosition;
-this change cannot guarantee compatibility with a provider that rejects all
-concurrent requests. Do not label the observed TV buffering fixed before testing.
+## Verification
+
+- Full unit suite passed outside the sandbox (the sandbox rejected OS uptime in
+  a helper test). Additional subtitle and native-player integration tests pass.
+- Lint and minified package build pass.
+- Installed on device `tv`; resumed the user's movie. Captions rendered in the
+  DOM and provider entry request count remained one during ongoing extraction.
+- Final installed build: 95 seconds observed, 994 ms track discovery, 70 subtitle
+  requests, one provider entry request, no failed requests or video errors.
+- User confirmed: **"subtitle visible, playback smooth"**.
+- Sustained playback and seeking were observed without the recurring video-error
+  loop. Seek-related waiting events and cancelled cue requests are expected.
+
+The diagnosis is based on this provider/title/device. It does not establish that
+all provider outages or every MKV subtitle format are fixed. Only indexed UTF-8
+subtitle tracks are supported; no scan of unindexed subtitle streams is added.

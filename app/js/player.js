@@ -210,9 +210,13 @@ var Player = (function () {
     // HTTPS on the TV's own player can fail on self-signed or unusual certificates, which IPTV
     // panels often have.  The helper accepts them and passes Range requests through for seeking.
     if ((/^https:/i.test(url) || Net.ua) && Net.active) { url = Net.wrap(url); Log.info('player', 'TV player using the helper' + (Net.ua ? ' (custom User-Agent)' : ' for HTTPS')); }
-    video.src = url;
-    video.load();
-    var subs = (!cur.live && typeof MkvSubs !== 'undefined') ? MkvSubs.extract(url, video) : null;
+    function loadNative(resolved) { video.src = resolved; video.load(); }
+    // Resolve the provider entry URL once. Both playback and subtitle ranges use
+    // the same resulting session URL; opening the entry separately can evict video.
+    var subs = null;
+    if (!cur.live && /\.mkv(\?|#|$)/i.test(url) && typeof MkvSubs !== 'undefined')
+      subs = MkvSubs.extract(url, video, loadNative);
+    else loadNative(url);
     var at0 = video.audioTracks, onAdd = at0 && at0.addEventListener ? U.debounce(tracks, 300) : null;
     if (onAdd) at0.addEventListener('addtrack', onAdd);
     return { name: 'Native', recover: function () {}, info: function () { return ''; },

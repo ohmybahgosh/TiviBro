@@ -105,15 +105,16 @@ function fakeFetch(url, options) {
   const slice = data.slice(start, end + 1);
   return Promise.resolve({ ok: true, status: 206, contentRange: 'bytes ' + start + '-' + end + '/' + data.length, arrayBuffer: () => Promise.resolve(slice.buffer.slice(slice.byteOffset, slice.byteOffset + slice.byteLength)) });
 }
-let abortedRequests = 0, responseMode = '', bodyReads = 0;
+let abortedRequests = 0, responseMode = '', bodyReads = 0, redirectTarget = '', requestUrls = [];
 class FakeXHR {
-  open(method, url) { this.url = url; }
+  open(method, url) { this.url = url; requestUrls.push(url); }
   setRequestHeader(k, v) { this.headers = this.headers || {}; this.headers[k] = v; }
   getResponseHeader() { return this.contentRange; }
   send() {
     if (responseMode === 'pending') return;
     fakeFetch(this.url, {headers: this.headers}).then(r => {
       if (this.aborted) return;
+      this.responseURL = redirectTarget || this.url;
       this.status = responseMode === 'ignoreRange' ? 200 : r.status;
       this.contentRange = responseMode === 'wrongRange' ? 'bytes 1-20/100' : r.contentRange;
       this.readyState = 2;
@@ -142,7 +143,7 @@ const ctx = {
   fetch: (...a) => fakeFetch(...a),
   Net: { wrap: u => u },
   Log: { debug() {}, warn() {}, info() {} },
-  document: { createElement: tag => (tag === 'track' ? makeFakeTrackElement() : {}) },
+  document: { createElement: tag => (tag === 'track' ? makeFakeTrackElement() : {textContent: ''}) },
   VTTCue: function (start, end, text) { this.startTime = start; this.endTime = end; this.text = text; }
 };
 ctx.window = ctx;
@@ -395,12 +396,13 @@ ok('orders clusters by proximity to current playback position, nearest first, de
     return abortedRequests === before + 1;
   })());
 
-  ok('low playback buffer prevents extraction requests', await (async () => {
+  ok('low playback buffer allows discovery but prevents cluster requests', await (async () => {
+    mkvFixtures['lowbuffer.mkv'] = mkvFixtures['1.mkv'];
     fetchCallCount = 0;
-    const video = {currentTime: 0, readyState: 2, buffered: {length: 1, start() {return 0;}, end() {return 2;}}};
+    const video = {children: [], appendChild(el) {this.children.push(el);}, removeChild() {}, currentTime: 0, readyState: 2, buffered: {length: 1, start() {return 0;}, end() {return 2;}}};
     const h = MkvSubs.extract('http://p/lowbuffer.mkv', video);
     await flush(); h.cancel();
-    return fetchCallCount === 0;
+    return fetchCallCount === 3 && video.children.length === 1;
   })());
 
   ok('only fetches near the playhead, then follows timeupdate', await (async () => {
@@ -416,6 +418,66 @@ ok('orders clusters by proximity to current playback position, nearest first, de
     const loaded = video.children[0].track.cues.length === 1;
     h.cancel();
     return empty && loaded && !events.timeupdate;
+  })());
+
+  ok('reuses redirected URL instead of reopening the provider entry URL per range', await (async () => {
+    mkvFixtures['redirect.mkv'] = mkvFixtures['1.mkv'];
+    mkvFixtures['edge.mkv'] = mkvFixtures['1.mkv'];
+    redirectTarget = 'http://edge/edge.mkv'; requestUrls = [];
+    const v = {children: [], appendChild(el) {this.children.push(el);}, removeChild() {}};
+    const h = MkvSubs.extract('http://provider/redirect.mkv', v);
+    await flush(); h.cancel(); redirectTarget = '';
+    return v.children[0].track.cues.length === 1 && requestUrls[0] === 'http://provider/redirect.mkv' && requestUrls.slice(1).every(u => u === 'http://edge/edge.mkv');
+  })());
+
+  ok('DOM captions follow time and selected track even when native activeCues is empty', await (async () => {
+    mkvFixtures['overlay.mkv'] = mkvFixtures['1.mkv'];
+    const events = {}, classes = {};
+    const parent = {children: [], appendChild(el) {this.children.push(el);el.parentNode=this;}, removeChild(el) {this.children.splice(this.children.indexOf(el),1);}};
+    const v = {currentTime: 1.5, style: {}, parentNode: parent, children: [],
+      classList: {toggle(k,val) {classes[k]=val;}, remove(k) {delete classes[k];}},
+      appendChild(el) {this.children.push(el);}, removeChild(el) {this.children.splice(this.children.indexOf(el),1);},
+      addEventListener(n,f) {events[n]=f;}, removeEventListener(n) {delete events[n];}};
+    const h = MkvSubs.extract('http://p/overlay.mkv', v);
+    await flush();
+    const t = v.children[0].track; t.mode = 'showing'; t.activeCues = [];
+    events.timeupdate();
+    const visible = parent.children[0].textContent === 'Hi there' && classes['mkv-captions-active'];
+    t.mode = 'disabled'; events.timeupdate();
+    const off = parent.children[0].textContent === '' && !classes['mkv-captions-active'];
+    t.mode = 'showing'; v.currentTime = 5; events.timeupdate();
+    const expired = parent.children[0].textContent === '';
+    h.cancel();
+    const h2 = MkvSubs.extract('http://p/overlay.mkv', v);
+    const preserved = v.children[0].track.mode === 'showing'; h2.cancel();
+    return visible && off && expired && preserved && parent.children.length === 0;
+  })());
+
+  ok('playback and subtitles share the first resolved session URL', await (async () => {
+    mkvFixtures['shared.mkv'] = mkvFixtures['1.mkv'];
+    redirectTarget = 'http://edge/edge.mkv'; requestUrls = [];
+    let playbackUrl = '', starts = 0;
+    const v = {children: [], appendChild(el) {this.children.push(el);}, removeChild() {}};
+    const h = MkvSubs.extract('http://provider/shared.mkv', v, u => {playbackUrl=u;starts++;});
+    await flush(); h.cancel(); redirectTarget = '';
+    return starts === 1 && playbackUrl === 'http://edge/edge.mkv' && requestUrls.filter(u=>u==='http://provider/shared.mkv').length===1 && v.children[0].track.cues.length===1;
+  })());
+
+  ok('metadata failure still starts native playback once', await (async () => {
+    let starts = 0, playbackUrl = '';
+    const h = MkvSubs.extract('http://p/dropsconnection.mkv', {}, u => {starts++;playbackUrl=u;});
+    await flush(); h.cancel();
+    return starts === 1 && playbackUrl === 'http://p/dropsconnection.mkv';
+  })());
+
+  ok('a healthy native stream with five seconds buffered still loads subtitles', await (async () => {
+    mkvFixtures['smallbuffer.mkv'] = mkvFixtures['1.mkv'];
+    const v = {currentTime: 0, readyState: 4, buffered: {length:1,start(){return 0;},end(){return 5;}},
+      children:[], appendChild(el){this.children.push(el);}, removeChild(){}};
+    const h = MkvSubs.extract('http://p/smallbuffer.mkv',v);
+    await flush();
+    const loaded = v.children.length===1 && v.children[0].track.cues.length===1;
+    h.cancel(); return loaded;
   })());
 
   if (fail) { console.log(fail + ' mkvsubs test(s) failed'); process.exit(1); }

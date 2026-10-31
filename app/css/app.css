@@ -550,3 +550,7 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 .pair-stat.err{color:#e57373}
 .mbtns{margin-top:10px}
 .mbtns .btn{margin:24px 18px 0 0}
+
+/* Embedded MKV cues render in the DOM: old webOS errors on source-less tracks. */
+.mkv-captions{position:absolute;left:6%;right:6%;bottom:7%;text-align:center;color:#fff;font:42px sans-serif;white-space:pre-line;text-shadow:2px 2px 3px #000,-2px -2px 3px #000;z-index:10;pointer-events:none}
+video.mkv-captions-active::cue{color:transparent;background:transparent;text-shadow:none}

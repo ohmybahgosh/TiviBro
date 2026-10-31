@@ -377,10 +377,9 @@ var MkvSubs = (function () {
     });
   }
 
-  // Right after a (re)connect is the worst moment for extraction to start its own
-  // requests to the same host: the video's own connection is still establishing and
-  // has no cushion yet.  Give it a head start before competing for the connection pool.
-  var startupDelayMs = 3000;
+  // Discover the small track/index metadata immediately; only cue reads wait for
+  // playback buffer. Keep the delay override for tests and diagnostics.
+  var startupDelayMs = 0;
 
   // Extracted cues live longer than one playback instance. Reconnects tear down the
   // engine and call extract() afresh; retain cues so they do not disappear and get
@@ -391,9 +390,33 @@ var MkvSubs = (function () {
   // restarting, and the provider sees far fewer requests overall.
   var subCache = {};
 
-  function extract(url, video) {
-    if (!/\.mkv(\?|#|$)/i.test(url)) return { cancel: function () {} };
-    var cancelled = false;
+  function extract(url, video, onResolved) {
+    if (!/\.mkv(\?|#|$)/i.test(url)) { if (onResolved) onResolved(url); return { cancel: function () {} }; }
+    var cancelled = false, started = false;
+    function startVideo(resolved) { if (!cancelled && !started && onResolved) { started = true; onResolved(resolved); } }
+    video._mkvSubsState = 'discovering';
+    var overlay = null, lastText = '';
+    if (video.parentNode && video.style) {
+      overlay = document.createElement('div');
+      overlay.className = 'mkv-captions';
+      video.parentNode.appendChild(overlay);
+    }
+    function paint() {
+      if (!overlay || cancelled) return;
+      var lines = [], selected = false;
+      for (var a = 0; a < liveTracks.length; a++) {
+        if (liveTracks[a].mode !== 'showing') continue;
+        selected = true;
+        var list = rec && rec.cues[a] || [];
+        for (var b = 0; b < list.length; b++) {
+          if (list[b].s <= video.currentTime && list[b].e > video.currentTime)
+            lines.push(list[b].text.replace(/<\/?(?:b|i|u|font)(?:\s[^>]*)?>/gi, ''));
+        }
+      }
+      if (video.classList) video.classList.toggle('mkv-captions-active', selected);
+      var text = lines.join('\n');
+      if (text !== lastText) { overlay.textContent = text; lastText = text; }
+    }
     var addedEls = [];        // <track> elements this call appended, so cancel() can undo them
     var liveTracks = [];      // the live TextTrack per track index, parallel to a rec's tracks/cues
     var wrapped = Net.wrap(url);
@@ -402,9 +425,9 @@ var MkvSubs = (function () {
       if (!video.buffered) return true; // non-media test hosts
       if (video.seeking || video.readyState < 3) return false;
       for (var b = 0; b < video.buffered.length; b++) {
-        if (video.buffered.start(b) <= video.currentTime && video.buffered.end(b) - video.currentTime >= 8) return true;
+        if (video.buffered.start(b) <= video.currentTime && video.buffered.end(b) - video.currentTime >= 2) return true;
       }
-      return video.ended || (isFinite(video.duration) && video.duration - video.currentTime < 8 && video.readyState >= 3);
+      return video.ended || (isFinite(video.duration) && video.duration - video.currentTime < 2 && video.readyState >= 3);
     }
     function waitForBuffer() {
       return new Promise(function (resolve, reject) {
@@ -419,8 +442,8 @@ var MkvSubs = (function () {
     }
     // XHR can abort on Chromium 53, where fetch's AbortController is unavailable.
     // Reject a server ignoring Range before it downloads the whole movie.
-    function fetchRange(unused, start, end) {
-      return waitForBuffer().then(function () {
+    function fetchRange(unused, start, end, metadata) {
+      return (metadata ? Promise.resolve() : waitForBuffer()).then(function () {
         if (cancelled) throw new Error('cancelled');
         return new Promise(function (resolve, reject) {
           var xhr = new XMLHttpRequest(), settled = false, expected = 0;
@@ -444,23 +467,25 @@ var MkvSubs = (function () {
           xhr.onload = function () {
             var data = xhr.response && new Uint8Array(xhr.response);
             if (!data || !expected || data.length !== expected) finish(new Error('invalid range length'));
-            else finish(null, data);
+            else { if (xhr.responseURL) wrapped = xhr.responseURL; finish(null, data); }
           };
           xhr.onerror = xhr.ontimeout = function () { finish(new Error('range request failed')); };
           xhr.onabort = function () { finish(new Error(xhr.yieldToPlayback ? 'buffer low' : 'cancelled')); };
           xhr.send();
         });
       }).catch(function (e) {
-        if (!cancelled && e.message === 'buffer low') return fetchRange(unused, start, end);
+        if (!cancelled && e.message === 'buffer low') return waitForBuffer().then(function () { return fetchRange(unused, start, end, metadata); });
         throw e;
       });
     }
     function onWaiting() {
       if (activeRequest) { activeRequest.yieldToPlayback = true; activeRequest.abort(); }
     }
-    function onTime() { if (pump) pump(); }
+    function onTime() { paint(); if (pump) pump(); }
     if (video.addEventListener) { video.addEventListener('timeupdate', onTime); video.addEventListener('waiting', onWaiting); }
+    if (video.textTracks && video.textTracks.addEventListener) video.textTracks.addEventListener('change', paint);
     var rec = subCache[url];
+    if (!onResolved && rec && rec.resolved) wrapped = rec.resolved;
 
     function ensureTracks(trackMeta) {
       if (liveTracks.length) return;              // already attached (from cache or a prior call in this instance)
@@ -472,6 +497,7 @@ var MkvSubs = (function () {
         video.appendChild(trackEl);
         addedEls.push(trackEl);
         liveTracks.push(trackEl.track);
+        if (rec && rec.modes && rec.modes[k]) trackEl.track.mode = rec.modes[k];
       }
     }
     function replayCached(r) {
@@ -485,13 +511,17 @@ var MkvSubs = (function () {
     // and replay its cues synchronously -- no network, no await -- so a reconnect shows
     // subtitles instantly instead of blanking them.
     if (rec && rec.tracks.length) { ensureTracks(rec.tracks); replayCached(rec); }
-    if (rec && rec.done) return cancelHandle();   // fully cached: nothing left to fetch
+    if (rec && rec.tracks.length) { video._mkvSubsState = 'ready'; paint(); }
+    if (rec && rec.done && !onResolved) return cancelHandle();   // fully cached: nothing left to fetch
 
     var timer = setTimeout(function () { if (!cancelled) runExtraction(); }, startupDelayMs);
 
     function runExtraction() {
-    fetchRange(wrapped, 0, 262143).then(function (head) {
+    fetchRange(wrapped, 0, 262143, true).then(function (head) {
       if (cancelled) return;
+      startVideo(wrapped);
+      if (rec) rec.resolved = wrapped;
+      if (rec && rec.done) return;
       if (head.length < 4 || head[0] !== 0x1A || head[1] !== 0x45 || head[2] !== 0xDF || head[3] !== 0xA3) return;
       var seg = findChild(head, 0, head.length, SEGMENT);
       if (!seg) return;
@@ -515,10 +545,10 @@ var MkvSubs = (function () {
       }
       if (cancelled) return;
       var cuesAbs = segmentDataStart + cuesRel;
-      return fetchRange(wrapped, cuesAbs, cuesAbs + 15).then(function (peek) {
+      return fetchRange(wrapped, cuesAbs, cuesAbs + 15, true).then(function (peek) {
         var id = readId(peek, 0), size = readVint(peek, id.next);
         if (id.value !== 0x1C53BB6B || size.value === null || size.value > 1048576) throw new Error('invalid Cues');
-        return fetchRange(wrapped, cuesAbs, cuesAbs + size.next + size.value - 1);
+        return fetchRange(wrapped, cuesAbs, cuesAbs + size.next + size.value - 1, true);
       }).then(function (cuesBuf) {
         if (cancelled) return;
         // The fetched range starts exactly at the Cues element itself; peel its own
@@ -546,7 +576,9 @@ var MkvSubs = (function () {
           }
           rec = subCache[url] = { tracks: meta, cues: meta.map(function () { return []; }), fetched: {}, done: false };
         }
+        rec.resolved = wrapped;
         ensureTracks(rec.tracks);
+        video._mkvSubsState = 'ready';
         if (cancelled) return;
 
         var busy = false;
@@ -580,26 +612,34 @@ var MkvSubs = (function () {
             }
             rec.fetched[off] = true;
             busy = false;
+            paint();
             pump();
-          }).catch(function () { busy = false; pump = null; });
+          }).catch(function (e) { busy = false; pump = null; if (!cancelled) { video._mkvSubsState = 'error'; Log.warn('mkvsubs', 'Subtitle read failed: ' + e.message); } });
         };
         pump();
       });
-    }).catch(function (e) {
+    }).then(function () { startVideo(wrapped); if (!cancelled && video._mkvSubsState === 'discovering') video._mkvSubsState = 'unavailable'; }).catch(function (e) {
+      startVideo(url);
+      if (!cancelled) video._mkvSubsState = 'error';
       if (typeof Log !== 'undefined' && Log.debug) Log.debug('mkvsubs', 'giving up: ' + (e && e.message));
     });
     }
 
     function cancelHandle() {
       return { cancel: function () {
+        if (rec && liveTracks.length) rec.modes = liveTracks.map(function (t) { return t.mode; });
         cancelled = true;
         clearTimeout(timer);
         clearTimeout(gateTimer);
         if (rejectGate) { rejectGate(new Error('cancelled')); rejectGate = null; }
         if (activeRequest) activeRequest.abort();
         if (video.removeEventListener) { video.removeEventListener('timeupdate', onTime); video.removeEventListener('waiting', onWaiting); }
+        if (video.textTracks && video.textTracks.removeEventListener) video.textTracks.removeEventListener('change', paint);
         for (var i = 0; i < addedEls.length; i++) { try { video.removeChild(addedEls[i]); } catch (e) {} }
         addedEls.length = 0;
+        if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+        if (video.classList) video.classList.remove('mkv-captions-active');
+        video._mkvSubsState = '';
       } };
     }
     return cancelHandle();
