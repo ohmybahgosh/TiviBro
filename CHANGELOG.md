@@ -4,6 +4,7 @@
 
 - **Search now finds Movies and Shows.**  A new **Movies & Shows** filter sits beside Everything, On now, Coming up, Replays and Channels.  No need to open Movies or Shows first: the lists load in the background when Search opens, and titles that start with what you typed come first.  **OK** opens the movie in Movies and plays it, or a show's episodes, same as picking it from the list.  Thanks to moritzm784 for the idea and the code (#2, #3).
 - **The guide looks more like TiviMate.**  Rows have more room.  What's on now has the part already aired tinted in your accent colour, under the text, instead of a bar; the time line is a thin line in the accent colour with a marker in the time bar; and the programme details show a short bar with the time left, as in TiviMate.
+- **The web editor's guide Test connection gives up after 20 seconds** on a server that accepts the connection and then goes silent, instead of spinning forever.  Thanks to moritzm784 (#4).
 
 ## 0.6.0 (alpha 26, 2026-10-31)
 
