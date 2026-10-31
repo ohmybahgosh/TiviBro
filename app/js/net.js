@@ -8,12 +8,12 @@
    or Direct (for providers or proxies like Dispatcharr that already send CORS headers). */
 var Net = (function () {
   'use strict';
-  var port = 0, bridge = null, state = 'off', waiters = [], lastError = '', t0 = 0;
+  var port = 0, bridge = null, state = 'off', waiters = [], lastError = '', t0 = 0, info = null;
 
   // Before trusting the helper, prove it answers.  A port with nothing behind it is worse than none.
   function verify(p) {
     return fetch('http://127.0.0.1:' + p + '/ping', { cache: 'no-store' }).then(function (r) { return r.json(); })
-      .then(function (j) { Log.info('net', 'Helper answered ping on port ' + p + ' (' + (Date.now() - t0) + 'ms after start)', j && j.node ? 'node ' + j.node : ''); return true; })
+      .then(function (j) { info = j || null; Log.info('net', 'Helper answered ping on port ' + p + ' (' + (Date.now() - t0) + 'ms after start)', j && j.node ? 'node ' + j.node : ''); return true; })
       .catch(function (e) { lastError = 'helper started but does not answer on port ' + p + ': ' + (e && e.message); Log.error('net', lastError); return false; });
   }
   function settle() {
@@ -23,7 +23,7 @@ var Net = (function () {
       // computer (tests/mock/relay_dev.js).  Use it if it answers; on a TV nothing listens there.
       var devPort = 47811;
       return fetch('http://127.0.0.1:' + devPort + '/ping', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
-        if (j && j.ok) { port = devPort; state = 'on'; Log.info('net', 'Using the development helper on port ' + devPort + ' (webOS service: ' + (lastError || 'not available') + ')'); }
+        if (j && j.ok) { port = devPort; state = 'on'; info = j; Log.info('net', 'Using the development helper on port ' + devPort + ' (webOS service: ' + (lastError || 'not available') + ')'); }
       }).catch(function () {}).then(function () {
         if (!port) Log.warn('net', 'Network helper not available (' + (lastError || 'unknown reason') + ').  Requests go direct.');
         finish();
@@ -114,6 +114,8 @@ var Net = (function () {
     // Guides: the helper unzips .gz on every TV.  Without it, only browsers with DecompressionStream can.
     get canUnzip() { return !!useRelay() || typeof DecompressionStream !== 'undefined'; },
     xfer: function (id) { return port ? 'http://127.0.0.1:' + port + '/xfer/' + id : ''; },
+    // The helper's /ping answer: Node version, and sys { bootAt, power } (see service/proxy.js).
+    get info() { return info; },
     get port() { return port; }, get active() { return !!useRelay(); }, get state() { return state; }, get lastError() { return lastError; },
     status: function () { return port ? 'running on port ' + port : 'not running' + (lastError ? ': ' + lastError : ''); },
     // Recent requests as the helper saw them (status, time, bytes, upstream error codes).

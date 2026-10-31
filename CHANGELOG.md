@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **TiviBro notices when it closed by itself, and asks to report it.**  webOS ends an app that runs out of memory without any error, so the old "hit an error" notice never showed (the alpha 24 guide loop said nothing).  TiviBro now keeps a note of what it is doing (loading which guide and how far, playing which channel, its memory use); if a session ends with that note still open, the next start asks **Report it** or **Not now** and says what it was doing, and the report and the log carry it.  Warnings and errors are saved at once instead of a moment later, so the last lines before a close are kept.  Test builds have **Report a problem** at the bottom of the menu.
+- **TiviBro notices when it closed by itself, and asks to report it.**  webOS ends an app that runs out of memory without any error, so the old "hit an error" notice never showed (the alpha 24 guide loop said nothing).  TiviBro now keeps a note of what it is doing (loading which guide and how far, playing which channel, its memory use); if a session ends with that note still open, the next start asks right away and says what it was doing: **Send a report now** sends it straight from the TV (no phone, so it works even when TiviBro keeps closing), **Report with my phone** adds details, or **Not now**.  The report and the log carry it.  The TV turning off or restarting, and updates, don't count (the network helper says when the TV started and when it went to standby), and the helper keeps its own errors on the TV so a report made after it restarted still has them.  Warnings and errors are saved at once instead of a moment later, so the last lines before a close are kept.  Test builds have **Report a problem** at the bottom of the menu.
 
 ## 0.6.0 (alpha 28, 2026-10-31)
 

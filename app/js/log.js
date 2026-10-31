@@ -36,12 +36,12 @@ var Log = (function () {
      loading the guide from where, playing what) and how much memory it uses, updated as that
      changes and every 15 s; going to the background or exiting marks it closed.  If the next start
      finds it still open, the last session ended unexpectedly, and the marker says while doing what. */
-  var MARK = 'tivibro.alive', doing = {}, lastMark = 0, started = Date.now(), prevRun = null, unclean = null;
+  var MARK = 'tivibro.alive', doing = {}, lastMark = 0, started = Date.now(), prevRun = null, unclean = null, bootAt = 0, settled = false;
   try { prevRun = JSON.parse(localStorage.getItem(MARK) || 'null'); } catch (e) {}
   function heapMB() { try { return performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : 0; } catch (e) { return 0; } }
   function mark(open) {
     lastMark = Date.now();
-    try { localStorage.setItem(MARK, JSON.stringify({ s: session, v: TIVIBRO_VERSION, t0: started, t: lastMark, open: open !== false, doing: doing, heap: heapMB() })); } catch (e) {}
+    try { localStorage.setItem(MARK, JSON.stringify({ s: session, v: TIVIBRO_VERSION, t0: started, t: lastMark, open: open !== false, doing: doing, heap: heapMB(), boot: bootAt })); } catch (e) {}
   }
   function state(key, text) {
     text = text ? redact(String(text)).slice(0, 160) : '';
@@ -94,14 +94,28 @@ var Log = (function () {
 
   // Previous sessions, read once at start.
   try { saved = (JSON.parse(localStorage.getItem('tivibro.log') || '[]') || []).filter(function (x) { return x && x.t; }); } catch (e) { saved = []; }
-  // The last session closed on its own: say so in this session's log (reports carry it) and keep a
-  // short history, so several in a row show up as a loop.
-  if (prevRun && prevRun.open && prevRun.s !== session) {
+  /* The last session was still open when it ended.  Before calling that a crash, rule out the TV
+     going off or restarting, and an update (settle(), once the helper has said when the TV started and
+     whether it went to standby).  Then say so in this session's log (reports carry it) and keep a
+     short history, so several in a row show up as a loop. */
+  function settle(sys) {
+    if (settled) return unclean;
+    settled = true;
+    if (sys && sys.bootAt) bootAt = sys.bootAt;
+    mark(!document.hidden);
+    var run = prevRun;
+    if (!run || !run.open || run.s === session) return null;
+    var why = '';
+    if (run.v && run.v !== TIVIBRO_VERSION) why = 'TiviBro was updated';
+    else if (sys && run.boot && Math.abs(sys.bootAt - run.boot) > 120000) why = 'the TV restarted';
+    else if (sys && (sys.power || []).some(function (p) { return p.t >= (run.t || 0) - 20000; })) why = 'the TV was turned off';
+    if (why) { add('info', 'app', 'The last session ended when ' + why + ', ' + describe(run)); return null; }
     var hist = []; try { hist = JSON.parse(localStorage.getItem('tivibro.crashes') || '[]') || []; } catch (e) {}
-    hist = hist.filter(function (t) { return Date.now() - t < 3600e3; }); hist.push(prevRun.t || Date.now());
+    hist = hist.filter(function (t) { return Date.now() - t < 3600e3; }); hist.push(run.t || Date.now());
     try { localStorage.setItem('tivibro.crashes', JSON.stringify(hist.slice(-10))); } catch (e) {}
-    unclean = { s: prevRun.s, at: prevRun.t, text: describe(prevRun), doing: prevRun.doing || {}, heap: prevRun.heap || 0, recent: hist.length };
+    unclean = { s: run.s, at: run.t, text: describe(run), doing: run.doing || {}, heap: run.heap || 0, recent: hist.length, checked: !!sys };
     add('error', 'app', 'TiviBro closed unexpectedly last time, ' + unclean.text + (hist.length > 1 ? '.  ' + hist.length + ' times in the last hour.' : '.'));
+    return unclean;
   }
   mark(true);
   setInterval(function () { if (!document.hidden) mark(true); }, 15000);
@@ -150,6 +164,8 @@ var Log = (function () {
     closing: function () { mark(false); persistNow(); },
     // The last session ended unexpectedly: { text, doing, heap, at, recent (how many in the last hour) } or null.
     get unclean() { return unclean; },
+    // Decide about the last session once the helper answered (sys: its /ping sys, or null without it).
+    settle: settle,
     // The last earlier session's uncaught error, if it had one: { s: session, m: message }.
     get lastCrash() { var last = saved.length ? saved[saved.length - 1].s : null, hit = null; saved.forEach(function (e) { if (e.s === last && e.lv === 'error' && /^(Uncaught|Unhandled)/.test(e.m)) hit = e; }); return hit; }
   };

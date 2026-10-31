@@ -380,6 +380,12 @@ step(function service(next) {
   function Stub() { this.activityManager = { create: function (n, cb) { cb({ id: 1 }); }, complete: function () {} }; }
   Stub.prototype.call = function (uri, params, cb) { lunaCalls.push({ uri: uri, params: params }); setTimeout(function () { cb({ payload: { returnValue: true } }); }, 1); };
   Stub.prototype.register = function (name, fn, cancel) { handlers[name] = { fn: fn, cancel: cancel }; };
+  // The TV's power state: goes to standby once (the app then knows a closed session was the TV going off).
+  Stub.prototype.subscribe = function (uri) {
+    var em = new (require('events').EventEmitter)();
+    if (/getPowerState/.test(uri)) setTimeout(function () { em.emit('response', { payload: { state: 'Active' } }); em.emit('response', { payload: { state: 'Active Standby' } }); }, 5);
+    return em;
+  };
   require.cache['webos-service-stub'] = { id: 'webos-service-stub', filename: 'webos-service-stub', loaded: true, exports: Stub };
   Module._resolveFilename = function (req) { if (req === 'webos-service') return 'webos-service-stub'; return origResolve.apply(this, arguments); };
   try { require(path.join(SVC, 'service.js')); } catch (e) { ok('service wrapper loads', false, e.message); Module._resolveFilename = origResolve; return next(); }
@@ -387,8 +393,11 @@ step(function service(next) {
   ok('service wrapper loads', !!handlers.start && !!handlers.status);
   handlers.start.fn({ isSubscription: true, respond: function (m) {
     ok('start: the relay is listening', m.returnValue && m.port >= 47811 && m.port <= 47815, JSON.stringify(m));
-    request('GET', 'http://127.0.0.1:' + m.port + '/ping', function (e, r) {
+    setTimeout(function () { request('GET', 'http://127.0.0.1:' + m.port + '/ping', function (e, r, pb) {
       ok('and answers', !e && r.statusCode === 200);
+      var sy = (json(pb) || {}).sys || {};
+      ok('ping: when the TV started and its power changes', Math.abs(sy.bootAt - (Date.now() - require('os').uptime() * 1000)) < 5000 && sy.power && sy.power.length >= 1 && sy.power[sy.power.length - 1].state === 'Active Standby', JSON.stringify(sy));
+      try { require('fs').unlinkSync(path.join(SVC, 'power.json')); } catch (x) {}
       handlers.status.fn({ respond: function (s) {
         ok('status reports Node and subscribers', s.node === process.version && s.subscribers === 1);
         // Reminders while TiviBro is closed (remind.js): scheduled with the activity manager, then an alert.
@@ -403,7 +412,7 @@ step(function service(next) {
           } });
         } });
       } });
-    });
+    }); }, 50);
   } });
 });
 

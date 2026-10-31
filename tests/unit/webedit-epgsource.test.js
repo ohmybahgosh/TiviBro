@@ -49,7 +49,7 @@ function setup(opts) {
     setTimeout: setTimeoutFake, clearTimeout: clearTimeoutFake,
     fetch: fakeFetch, TextDecoder, TextEncoder, ReadableStream,
     Net: { active: false, wrap: (u) => u, port: 0, xfer: () => '' },
-    Log: { info() {}, warn() {}, error() {}, debug() {} },
+    Log: { info() {}, warn() {}, error() {}, debug() {}, state() {}, closing() {} },
     Store: { settings: {}, edits: { epgMap: {} }, playlist: {} },
     Library: { data: { channels: [] } },
     Epg: { xml: false, refresh: () => Promise.resolve(), pubStatus: null, pubSource: () => null, hasData: () => false, epgId: () => '' },

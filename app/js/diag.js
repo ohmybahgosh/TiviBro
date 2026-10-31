@@ -71,6 +71,26 @@ var Diag = (function () {
     WebEdit.showJoin('report', null, { keepOn: !!keepOn, title: 'Report a problem', lead: 'Scan the code with your phone\'s camera (or open the address on a computer).  Describe what happened there; the TV adds its version, model and log, with logins and server names taken out, and your phone opens a GitHub issue ready to send.' });
   }
 
+  /* Send a crash report straight from the TV, no phone needed: through the same relay as the web
+     editor's Send report (relay/worker.js, address in tivibro.app/relay.json), so a TV that keeps
+     closing can still say why in the few seconds it is up.  Resolves to { url, number }. */
+  var RELAY_CONFIG = 'https://tivibro.app/relay.json';
+  function sendNow(title, what) {
+    var d = Log.unclean && Log.unclean.doing || {};
+    var area = d.guide ? 'The guide' : d.player ? 'Watching fullscreen (quick menu, info panel, zapping)' : d.editor ? 'Web editor on a phone or tablet' : 'Something else';
+    var scrub = scrubber(); what = scrub(what);
+    var cfgUrl = (Store.settings && Store.settings.relayConfig) || RELAY_CONFIG;          // tests point it at the mock
+    return report().then(function (r) {
+      return fetch(Net.wrap(cfgUrl), { cache: 'no-store' }).then(function (x) { if (!x.ok) throw new Error('report service not found'); return x.json(); }).then(function (c) {
+        if (!c || !c.url) throw new Error('report service not available');
+        // The helper relays GET only; the report relay sends CORS headers, so this goes straight there.
+        return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+          title: title, area: area, often: Log.unclean && Log.unclean.recent > 1 ? 'Every time' : 'Once', what: what + '  (sent from the TV after it closed unexpectedly)',
+          steps: '', expected: '', version: r.version, tv: r.tv, log: r.text }) });
+      }).then(function (x) { return x.json().catch(function () { return {}; }).then(function (j) { if (!x.ok || !j.ok) throw new Error(j.error || 'HTTP ' + x.status); Log.info('diag', 'Crash report sent: issue #' + j.number); return j; }); });
+    });
+  }
+
   /* ---------- problem report ----------
      What "Report a problem" (in the web editor) shares: versions, the TV, a few settings, and the
      app and helper logs.  Never logins: the log already masks them, and here every provider and
@@ -123,7 +143,9 @@ var Diag = (function () {
     var trouble = app.filter(function (l) { return /^\d\d:\d\d:\d\d  (ERROR|WARN)/.test(l); }).slice(-25);
     return Net.helperLog().then(function (j) {
       if (!j) return ['(the network helper is not running: ' + Net.status() + ')'];
-      return ['Node ' + j.node + '   requests ' + j.stats.requests + '   errors ' + j.stats.errors].concat(j.log.slice(-150).map(function (e) {
+      var stamp = function (t) { var d = new Date(t); return (d.getMonth() + 1) + '/' + d.getDate() + ' ' + U.pad(d.getHours()) + ':' + U.pad(d.getMinutes()) + ':' + U.pad(d.getSeconds()); };
+      var earlier = (j.earlier || []).map(function (e) { return scrub(stamp(e.t) + '  ERROR  ' + e.event + (e.e ? '  ' + e.e : '')); });
+      return ['Node ' + j.node + '   requests ' + j.stats.requests + '   errors ' + j.stats.errors].concat(earlier.length ? ['Helper errors kept on the TV (latest ' + earlier.length + '):'].concat(earlier, ['Recent requests:']) : []).concat(j.log.slice(-150).map(function (e) {
         var d = new Date(e.t), ts = U.pad(d.getHours()) + ':' + U.pad(d.getMinutes()) + ':' + U.pad(d.getSeconds());
         return scrub(ts + '  ' + (e.event ? e.event + (e.e ? '  ' + e.e : '') : (e.s || '---') + '  ' + e.ms + 'ms  ' + e.u + (e.e ? '  ' + e.e : '')));
       }));
@@ -453,5 +475,5 @@ var Diag = (function () {
     });
   }
 
-  return { report: report, openReport: openReport, run: run, speedTest: speedTest, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
+  return { report: report, openReport: openReport, sendNow: sendNow, run: run, speedTest: speedTest, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
 })();

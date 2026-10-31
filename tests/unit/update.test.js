@@ -12,7 +12,7 @@ function sandbox(opts) {
   const sb = {
     TIVIBRO_VERSION: opts.version || '0.6.0-alpha.2',
     Store: { settings: Object.assign({}, opts.settings || {}) },
-    Log: { info() {}, warn() {}, error() {} },
+    Log: { info() {}, warn() {}, error() {}, state() {}, closing() {} },
     Net: { wrap: u => u },
     U: {
       toast: (m) => toasts.push(m),

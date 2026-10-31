@@ -37,3 +37,5 @@ site/logos/
 service/reminders.json
 site/view/shots.json
 service/guide-data/
+service/power.json
+service/helper-errors.json

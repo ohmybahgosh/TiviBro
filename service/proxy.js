@@ -52,15 +52,28 @@ var PASS = ['content-type', 'content-length', 'content-range', 'accept-ranges', 
 
 // Shared ring buffer: relay requests and service lifecycle events, readable at /log.
 var LOG = [], LOG_MAX = 300;
+/* What the app needs to tell a crash from the TV being turned off or restarted (app/js/log.js): when
+   the TV started (from Node's uptime), and the TV's recent power changes (service.js records them). */
+var SYS = { power: [] };
+function sys() { return { bootAt: Math.round(Date.now() - require('os').uptime() * 1000), power: SYS.power.slice(-10) }; }
 function redact(u) {
   return String(u).replace(/((?:password|pass|pwd)=)[^&\s]*/gi, '$1***').replace(/(username=)([^&\s]{0,2})[^&\s]*/gi, '$1$2***')
     .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/');
 }
+/* The helper's own errors (an uncaught exception, a failed guide load) are also kept on the TV's
+   storage, last 30, so a report made after the helper restarted still has them (/log "earlier"). */
+var ERRS = require('path').join(__dirname, 'helper-errors.json'), EARLIER = [];
+try { EARLIER = JSON.parse(require('fs').readFileSync(ERRS, 'utf8')) || []; } catch (e) {}
 function log(entry) {
   entry.t = Date.now();
   LOG.push(entry);
   if (LOG.length > LOG_MAX) LOG.splice(0, LOG.length - LOG_MAX);
   if (entry.e || entry.lv === 'error') console.error('[tivibro-helper]', JSON.stringify(entry));
+  if (entry.lv === 'error' && entry.event) {
+    EARLIER.push({ t: entry.t, event: entry.event, e: String(entry.e || '').slice(0, 600) });
+    EARLIER = EARLIER.slice(-30);
+    try { require('fs').writeFile(ERRS, JSON.stringify(EARLIER), function () {}); } catch (x) {}
+  }
 }
 
 function target(reqUrl) {
@@ -112,10 +125,10 @@ function create(opts) {
 
   var server = http.createServer(function (req, res) {
     if (req.method === 'OPTIONS') { res.writeHead(204, ALLOW); return res.end(); }
-    if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, node: process.version, stats: stats, guide: 1 })); }
+    if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, node: process.version, stats: stats, guide: 1, sys: sys() })); }
     if (req.url.indexOf('/editor/') === 0) { res.setHeader('Access-Control-Allow-Origin', '*'); return editor.control(req, res, req.url.split('?')[0]); }
     if (req.url.indexOf('/guide/') === 0) return Guide.handle(req, res, ALLOW, log);
-    if (req.url === '/log') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ node: process.version, stats: stats, log: LOG })); }
+    if (req.url === '/log') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ node: process.version, stats: stats, log: LOG, earlier: EARLIER })); }
     var xm = /^\/xfer\/([A-Za-z0-9_-]{1,40})$/.exec(req.url);
     if (xm) { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, ALLOW)); return res.end(JSON.stringify(Unzip.progress(xm[1]) || { raw: 0, total: 0, done: false, unknown: true })); }
     // Optional prefixes, in this order: /ua/<base64url user agent>, then /unz/<id> (unzip, see unzip.js).
@@ -258,4 +271,4 @@ function create(opts) {
   return { server: server, stats: stats, editor: editor };
 }
 
-module.exports = { create: create, target: target, relayed: relayed, rewriteHls: rewriteHls, log: log, redact: redact, LOG: LOG };
+module.exports = { SYS: SYS, sys: sys, create: create, target: target, relayed: relayed, rewriteHls: rewriteHls, log: log, redact: redact, LOG: LOG };

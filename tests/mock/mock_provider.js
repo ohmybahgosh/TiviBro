@@ -170,6 +170,7 @@ function poster(title, i) {
     `<text x="24" y="420" font-family="Inter,Arial,sans-serif" font-weight="600" font-size="16" fill="#fff" fill-opacity=".7">A TIVIBRO DEMO TITLE</text></svg>`;
 }
 
+let lastReport = null;
 /* ---------- XMLTV ---------- */
 const xd = t => { const d = new Date(t), p = n => String(n).padStart(2, '0'); return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}${p(d.getUTCHours())}${p(d.getUTCMinutes())}00 +0000`; };
 function xmltv() {
@@ -285,6 +286,14 @@ const server = http.createServer((req, res) => {
     };
     return more();
   }
+  // The report relay (relay/worker.js), for tests/soak/crash-report.js: its config, and POST /report.
+  if (p === '/relay.json') return send(res, 200, { url: `http://127.0.0.1:${PORT}/report` });
+  if (p === '/report' && req.method === 'OPTIONS') { res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'POST' }); return res.end(); }
+  if (p === '/report' && req.method === 'POST') {
+    let b = ''; req.on('data', d => { b += d; }); req.on('end', () => { try { lastReport = JSON.parse(b); } catch (e) { lastReport = { bad: true }; } send(res, 200, { ok: true, url: 'https://github.com/x/y/issues/42', number: 42 }); });
+    return;
+  }
+  if (p === '/last-report') return send(res, 200, lastReport || {});
   // A guide that starts and never finishes (tests/soak/guide-memory.js: the app closing mid-load).
   if (p === '/stall.xml') { res.writeHead(200, { 'Content-Type': 'application/xml', 'Access-Control-Allow-Origin': '*' }); res.write('<?xml version="1.0"?><tv>'); return; }
   if (p === '/xmltv.php' || p === '/guide.xml') return send(res, 200, BIG ? (xmlCache = xmlCache || xmltv()) : xmltv(), 'application/xml');

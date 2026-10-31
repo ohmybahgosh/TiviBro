@@ -17,6 +17,24 @@ var reminders = require('./remind').create({
 
 proxy.log({ lv: 'info', event: 'service loaded', node: process.version });
 
+/* The TV's power changes (turned off, standby), kept in power.json, so the app can tell that its last
+   session ended because the TV went off, not because it crashed.  Best effort: the call may be refused. */
+var fs = require('fs'), path = require('path'), POWER = path.join(__dirname, 'power.json'), powerSub = null;
+try { proxy.SYS.power = JSON.parse(fs.readFileSync(POWER, 'utf8')) || []; } catch (e) {}
+function watchPower() {
+  if (powerSub) return;
+  try {
+    powerSub = service.subscribe('luna://com.webos.service.tvpower/power/getPowerState', { subscribe: true });
+    powerSub.on('response', function (m) {
+      var st = m && m.payload && m.payload.state;
+      if (!st || st === 'Active' || st === 'Screen Off') return;
+      proxy.SYS.power.push({ t: Date.now(), state: String(st).slice(0, 40) });
+      proxy.SYS.power = proxy.SYS.power.slice(-10);
+      try { fs.writeFileSync(POWER, JSON.stringify(proxy.SYS.power)); } catch (e) {}
+    });
+  } catch (e) { proxy.log({ lv: 'warn', event: 'power state not available', e: e.message }); }
+}
+
 function listen(i, cb) {
   if (relay && port) return cb(null, port);
   if (i >= PORTS.length) { proxy.log({ lv: 'error', event: 'no free port', tried: PORTS }); return cb(new Error('no free port (tried ' + PORTS.join(', ') + ')')); }
@@ -41,7 +59,7 @@ service.register('start', function (message) {
   clearTimeout(idleTimer);
   listen(0, function (err, p) {
     if (err) return message.respond({ returnValue: false, errorText: err.message });
-    if (message.isSubscription) { subs++; hold(); }
+    if (message.isSubscription) { subs++; hold(); watchPower(); }
     proxy.log({ lv: 'info', event: 'start', subscribers: subs, port: p });
     message.respond({ returnValue: true, port: p, subscribed: !!message.isSubscription });
   });

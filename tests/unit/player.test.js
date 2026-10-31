@@ -48,7 +48,7 @@ function setup(opts) {
     Source: { streamUrl: ch => ch.url },
     Net: { wrap: u => u, active: false, ua: '' },
     U: { clamp: (v, a, b) => Math.max(a, Math.min(b, v)) },
-    Log: { info: (g, m) => logs.push(m), warn: (g, m) => logs.push(m), error: (g, m) => logs.push(m), debug() {} },
+    Log: { info: (g, m) => logs.push(m), warn: (g, m) => logs.push(m), error: (g, m) => logs.push(m), debug() {}, state() {}, closing() {} },
     addEventListener: (t, f) => { winL[t] = f; }
   };
   ctx.window = ctx;
