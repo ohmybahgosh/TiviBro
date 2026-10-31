@@ -20,6 +20,14 @@ function u8(arr) { return Uint8Array.from(arr); }
 function uintBytes(n) { if (n === 0) return [0]; const b = []; let v = n; while (v > 0) { b.unshift(v & 0xFF); v = Math.floor(v / 256); } return b; }
 function seek(idHex, pos) { return el('4DBB', [].concat(el('53AB', idBytes(idHex)), el('53AC', uintBytes(pos)))); }
 function cuePoint(time, track, clusterPos) { return el('BB', [].concat(el('B3', uintBytes(time)), el('B7', [].concat(el('F7', uintBytes(track)), el('F1', uintBytes(clusterPos)))))); }
+function trackVint(n) { return [0x80 | n]; }
+function i16be(n) { if (n < 0) n = 0x10000 + n; return [(n >> 8) & 0xFF, n & 0xFF]; }
+function blockHeader(track, relTimecode, flags) { return trackVint(track).concat(i16be(relTimecode), [flags]); }
+function blockGroupEl(track, relTimecode, duration, text) {
+  const blockContent = blockHeader(track, relTimecode, 0x00).concat(strBytes(text));
+  return el('A0', [].concat(el('A1', blockContent), el('9B', uintBytes(duration))));
+}
+function simpleBlockEl(track, relTimecode, flags, text) { return el('A3', blockHeader(track, relTimecode, flags).concat(strBytes(text))); }
 
 const ctx = { console };
 vm.createContext(ctx);
@@ -71,6 +79,29 @@ ok('readCuesForTrack returns only the requested track, in order, with correct ti
 
 ok('a track number with no cues in Cues returns an empty array, not throwing',
   MkvSubs.readCuesForTrack(cuesBuf, 0, cuesBuf.length, 99, 1000000).length === 0);
+
+// ---- readClusterBlocks ----
+const clusterBuf = u8([].concat(
+  el('E7', uintBytes(1000)),
+  blockGroupEl(3, 500, 1500, 'Hello, world!'),
+  blockGroupEl(1, 0, 1000, 'ignored'),
+  simpleBlockEl(3, 0, 0x02, 'laced-skip')
+));
+ok('reads one subtitle cue from a Cluster with correct absolute timing and text',
+  (() => {
+    const cues = MkvSubs.readClusterBlocks(clusterBuf, 0, clusterBuf.length, 3, 1000000);
+    const c = cues.find(c => c.text === 'Hello, world!');
+    return c && Math.abs(c.startSec - 1.5) < 0.001 && Math.abs(c.endSec - 3.0) < 0.001;
+  })());
+
+ok('ignores blocks belonging to other tracks',
+  MkvSubs.readClusterBlocks(clusterBuf, 0, clusterBuf.length, 1, 1000000).every(c => c.text !== 'Hello, world!'));
+
+ok('skips a laced block for the target track instead of misreading it',
+  MkvSubs.readClusterBlocks(clusterBuf, 0, clusterBuf.length, 3, 1000000).length === 1);
+
+ok('a truncated Cluster buffer does not throw',
+  (() => { try { MkvSubs.readClusterBlocks(clusterBuf.slice(0, 10), 0, 10, 3, 1000000); return true; } catch (e) { return false; } })());
 
 if (fail) { console.log(fail + ' mkvsubs test(s) failed'); process.exit(1); }
 console.log('all mkvsubs tests passed');

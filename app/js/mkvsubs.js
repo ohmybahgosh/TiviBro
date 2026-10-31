@@ -166,11 +166,78 @@ var MkvSubs = (function () {
     return s;
   }
 
+  var TIMECODE = 0xE7, BLOCKGROUP = 0xA0, BLOCK = 0xA1, SIMPLEBLOCK = 0xA3, BLOCKDURATION = 0x9B;
+  var decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8') : null;
+  function utf8Decode(buf, start, end) {
+    var slice = buf.subarray ? buf.subarray(start, end) : buf.slice(start, end);
+    if (decoder) return decoder.decode(slice);
+    var s = '';
+    for (var i = start; i < end; i++) s += String.fromCharCode(buf[i]);
+    return s;
+  }
+  // A Block/SimpleBlock's own content: track number as a size-style vint (marker bits
+  // stripped, same rule as an element size -- NOT an element ID), then a 2-byte signed
+  // big-endian relative timecode, then one flags byte.  Bits 1-2 (0x06) of the flags
+  // byte are the lacing type; 0 means unlaced.  Returns null for a laced block.
+  function readBlockHeader(buf, start, end) {
+    var tv = readVint(buf, start);
+    if (tv.value === null || tv.next + 3 > end) return null;
+    var hi = buf[tv.next], lo = buf[tv.next + 1];
+    var rel = (hi << 8) | lo;
+    if (rel & 0x8000) rel -= 0x10000;
+    var flags = buf[tv.next + 2];
+    if (flags & 0x06) return null; // laced; not supported
+    return { track: tv.value, relTimecode: rel, payloadStart: tv.next + 3 };
+  }
+
+  function readClusterBlocks(buf, offset, end, trackNumber, timecodeScale) {
+    var cues = [];
+    var clusterTimecode = 0;
+    var pos = offset;
+    while (pos < end) {
+      var idr = readId(buf, pos);
+      if (idr.value === null) break;
+      var sz = readVint(buf, idr.next);
+      if (sz.value === null) break;
+      var cstart = sz.next, cend = Math.min(cstart + sz.value, end);
+      if (idr.value === TIMECODE) {
+        clusterTimecode = bytesToUint(buf, cstart, cend);
+      } else if (idr.value === SIMPLEBLOCK) {
+        var hdr = readBlockHeader(buf, cstart, cend);
+        if (hdr && hdr.track === trackNumber) {
+          var startSec = (clusterTimecode + hdr.relTimecode) * timecodeScale / 1e9;
+          cues.push({ startSec: startSec, endSec: startSec + 2, text: utf8Decode(buf, hdr.payloadStart, cend) });
+        }
+      } else if (idr.value === BLOCKGROUP) {
+        var blockHdr = null, blockEnd = 0, duration = null;
+        var p = cstart;
+        while (p < cend) {
+          var cidr = readId(buf, p);
+          if (cidr.value === null) break;
+          var csz = readVint(buf, cidr.next);
+          if (csz.value === null) break;
+          var vstart = csz.next, vend = Math.min(vstart + csz.value, cend);
+          if (cidr.value === BLOCK) { blockHdr = readBlockHeader(buf, vstart, vend); blockEnd = vend; }
+          else if (cidr.value === BLOCKDURATION) duration = bytesToUint(buf, vstart, vend);
+          p = vend;
+        }
+        if (blockHdr && blockHdr.track === trackNumber) {
+          var bStart = (clusterTimecode + blockHdr.relTimecode) * timecodeScale / 1e9;
+          var bEnd = duration !== null ? bStart + duration * timecodeScale / 1e9 : bStart + 2;
+          cues.push({ startSec: bStart, endSec: bEnd, text: utf8Decode(buf, blockHdr.payloadStart, blockEnd) });
+        }
+      }
+      pos = cend;
+    }
+    return cues;
+  }
+
   return {
     readVint: readVint,
     readId: readId,
     readTracks: readTracks,
     readSeekHead: readSeekHead,
-    readCuesForTrack: readCuesForTrack
+    readCuesForTrack: readCuesForTrack,
+    readClusterBlocks: readClusterBlocks
   };
 })();
