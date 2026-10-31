@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Special thanks** in the README and on tivibro.app: everyone whose pull request was merged or who sent an idea or a bug report, kept up to date by itself (scripts/gen-thanks.js and the Thanks workflow).
+- Every screenshot, GIF and video re-recorded from the current app, the search video now finds a movie too, and tivibro.app's pictures follow (scripts/demo/site-shots.sh, scripts/demo/phone-shots.js).
+
 ## 0.6.0 (alpha 29, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -4,11 +4,16 @@ Every GIF, video and TV screenshot in the README, the user guide and this wiki i
 
 ```bash
 bash scripts/demo/make-media.sh          # once: synthetic demo streams in tests/mock/media/
-node tests/mock/mock_provider.js &       # fictional Xtream provider on :8077
+MOCK_EVENTS=1 node tests/mock/mock_provider.js &   # fictional Xtream provider on :8077, with event channels
 npm run serve                            # app on :8078 plus the dev relay (and the editor on :8787)
 node scripts/demo/record.js              # every scene, or name some: guide zap restore
                                          # (DEMO_APP=http://127.0.0.1:PORT/index.html for another app address)
 bash scripts/demo/encode.sh              # GIFs and MP4s into docs/media/
+node tests/soak/tour.js --shots docs/screenshots           # the set-up tour (tv-tour-*)
+node tests/soak/events.js --shots docs/screenshots         # event channels (tv-events-*, tv-set-events)
+node tests/soak/editor-mobile.js --shots docs/screenshots  # the editor's pages on a phone (editor-phone-*)
+node scripts/demo/phone-shots.js         # then the three phone shots at 2x: welcome, typing the login, Smart clean-up
+bash scripts/demo/site-shots.sh          # tivibro.app's pictures (site/img/shots/*.webp) from the screenshots
 node scripts/wiki/build.js               # refresh the wiki pages from the user guide
 ```
 
@@ -47,6 +52,6 @@ Screenshot-only scenes (no video):
 |---|---|
 | `failover` | A channel that stops working switches to another version by itself (`tv-failover`) |
 | `settings-pages` | Every Settings section and the pages inside them (`tv-set-*`) |
-| `editor` | Every page of the web editor at 1440x860, plus the draft history and the offer after a reload (`editor-*`; `editor-smart-match` and `editor-guide-progress` need a provider whose guide is incomplete or slow, so they are kept from an earlier recording) |
+| `editor` | Every page of the web editor at 1440x860, plus the draft history and the offer after a reload (`editor-*`; `editor-guide-progress` needs a guide that is still downloading, so it is kept from an earlier recording) |
 
 The scenes find their way by watching where the focus is (the menu, a Settings section, a row, a menu item) rather than counting key presses, so small layout changes don't break them.

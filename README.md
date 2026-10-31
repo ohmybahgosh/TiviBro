@@ -568,8 +568,20 @@ The [Release workflow](.github/workflows/release.yml) then runs the tests, build
 - Provider logins stay on the TV.  The web editor only ever sees server names, never usernames, passwords or stream links.
 - The web editor is off at every start (except on a brand-new TV with no playlist, for the setup QR code), needs the password shown on the TV, and locks out after repeated wrong tries.
 - Backups are always encrypted with a passphrase you choose.  Without it the file cannot be opened.
-- Logs mask usernames and passwords.  **Report a problem** also replaces every provider, guide and unknown server name before anything leaves the TV, and nothing is sent until you press the button on GitHub yourself.
+- Logs mask usernames and passwords.  **Report a problem** also replaces every provider, guide and unknown server name before anything leaves the TV, and nothing is sent until you choose to send it (on your phone, or **Send a report now** on the TV after a crash).
 - The logo library, when you turn it on, downloads lists of logo addresses from tivibro.app, one per country in your playlist, then each logo from its project.  Only the country is in the request: no channel names, logins or anything else from your playlist.
+
+## Special thanks
+
+Everyone who has helped build TiviBro with code, ideas or bug reports.  This list updates itself when a pull request is merged or an issue is opened.
+
+<!-- thanks:start -->
+<p>
+  <a href="https://github.com/moritzm784" title="moritzm784: 2 pull requests, 1 idea or bug report"><img src="https://avatars.githubusercontent.com/u/202101620?v=4&amp;s=96" width="48" height="48" alt="moritzm784"></a>
+</p>
+
+- **[moritzm784](https://github.com/moritzm784)**: 2 pull requests, 1 idea or bug report
+<!-- thanks:end -->
 
 ## Credits
 

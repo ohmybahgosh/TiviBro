@@ -1,0 +1,43 @@
+# Special thanks in README.md and on tivibro.app: everyone whose pull request was merged or who opened an
+# issue (scripts/gen-thanks.js).  Runs when that happens, and once a day.
+name: Thanks
+on:
+  pull_request_target:          # runs from main, never the pull request's code: only the list changes
+    types: [closed]
+  issues:
+    types: [opened]
+  schedule:
+    - cron: '41 7 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: write
+concurrency:
+  group: thanks
+  cancel-in-progress: false
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Update the list
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/gen-thanks.js
+      - name: Commit, and publish the site
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet; then echo "No change"; exit 0; fi
+          git config user.name "OhMyBahGosh"
+          git config user.email "77786782+ohmybahgosh@users.noreply.github.com"
+          GIT_COMMITTER_NAME="github-actions[bot]" GIT_COMMITTER_EMAIL="41898282+github-actions[bot]@users.noreply.github.com" \
+            git commit -am "Special thanks: update the list"
+          git push
+          # A push made with the workflow's own token starts no other workflow, so ask for the site.
+          gh workflow run pages.yml --ref main

@@ -216,6 +216,12 @@ if (require.main === module) (async () => {
     await page.keyboard.type('night', { delay: 230 }); await page.waitForTimeout(1800);
     await shot('tv-search');
     await press('ArrowDown', '', 700); await press('ArrowDown', '', 700); await press('ArrowDown', '', 1200);
+    // Movies and shows are searched too: the Movies & Shows filter keeps just those.
+    await page.evaluate(() => window.__key('⌨', 'A movie'));
+    await page.evaluate(() => { const i = document.querySelector('.search-input'); i.value = ''; i.focus(); });
+    await page.keyboard.type('lighthouse', { delay: 200 }); await page.waitForTimeout(1500);
+    await page.evaluate(() => [].slice.call(document.querySelectorAll('.schip')).find(c => /Movies/.test(c.textContent)).click());
+    await page.evaluate(() => window.__key('◀ ▶', 'Movies & Shows')); await page.waitForTimeout(2200);
   });
 
   // Movies and shows from the provider.
