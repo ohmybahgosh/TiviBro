@@ -123,5 +123,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: tivibro-phone-screens
-          path: shots/*.png
+          path: |
+            shots/*.png
+            shots/ui.xml
           retention-days: 30

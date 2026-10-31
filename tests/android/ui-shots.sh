@@ -28,7 +28,7 @@ tap() {   # tap the first element whose text is $1
     b=$(find_text "$1"); [ -n "$b" ] && break
     sleep 3
   done
-  [ -n "$b" ] || { echo "no \"$1\" on screen"; return 1; }
+  [ -n "$b" ] || { echo "no \"$1\" on screen"; adb exec-out screencap -p > "$OUT/fail.png"; adb shell dumpsys activity activities | grep -E "mResumedActivity|topResumedActivity" | head -3; return 1; }
   adb shell input tap $b
 }
 sleep 25; calm      # let the freshly booted emulator settle
