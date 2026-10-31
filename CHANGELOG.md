@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 24, 2026-10-31)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 24
 
 - **Multiview is gone.**  webOS lets an app play only one video at a time (LG says so for web apps), so a second screen always stopped the first on real TVs.  It is taken out of the app, the quick menu, settings, the docs and the site rather than left half working.  Blue in the player now opens the audio track; a button you had set to multiview does the same.
 - **Every step opens on what's in effect now.**  Run again, the TV's set-up tour starts from your current setup (the countries shown, the feed you kept, the cities in your local group, hidden dividers and empty groups) and says so.  In the web editor, Smart clean-up steps re-read the current state after each change, undo, redo or reload: country chips show what is shown ("Shown now: ..."), East and West says which feed is kept, Local channels ticks your current cities, and Adult groups, Shorter group names and Divider groups list what they hid with **Show them again** or **Put it back**.
@@ -14,11 +18,7 @@
 - **Guide page:** jump links to each step, the match list scrolls in its own box, and the **Watchlist** has its own page.  Guide sources show the free guide's name and size, or the server and file name (never a login), and recommended guides you added show **✓ Added** and **Remove**; a stale "added" message no longer stays after removing one.  Smart match says how many guesses were left unapproved.
 - The backup card explains Chrome's "can't be downloaded securely" warning (the editor comes from the TV over your home network) and that **Keep** is safe: the file is locked with your passphrase.
 - **On a phone:** dropdowns (like "All shown channels") no longer close as the keyboard comes up, and the menu button says **Menu** and pulses until first opened.  The checklist ticks **Download a backup** once one is made (it remembers when).
-## 0.6.0 (alpha 23, 2026-10-31)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 23
+### In alpha 23
 
 - **Fixed: full XMLTV guides and the public guide failed on the TV** ("S is not defined", "pubKeys is not defined").  The release build is minified, which renamed the guide reader's name matching and dropped the markers it was wired in by, so name matching for added guides and the provider's full guide, and the whole public guide fill-in, failed on real TVs while every test of the source passed.  The guide reader now gets those helpers in a way minifying can't break, a failed guide file stops downloading instead of showing as still running, and `scripts/test-build.sh` runs the guide tests against the minified build.
 - The rooted-TV installer now really starts TiviBro when run the usual way (`curl -fsSL https://tivibro.app/install | sh`).  Run like that, the script arrives on the TV's input, and the TV's `luna-send` answered nothing at all, so alpha 22's installer said it couldn't start the app.  Its TV calls now take their input from `/dev/null`, and a test runs the installer piped, as people do.
