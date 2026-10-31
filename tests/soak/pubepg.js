@@ -23,6 +23,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const ev = (f, a) => page.evaluate(f, a);
   await page.waitForFunction(() => Epg.pubStatus && Epg.pubStatus.at && !Epg.loading, null, { timeout: 60000 });
 
+  // The provider's full XMLTV guide (the worker's name matching): broke in the minified build once.
+  const ps = await ev(() => Epg.status.sources);
+  ok('the provider\'s full guide loads, names matched', ps.length && ps.every(r => r.ok), JSON.stringify(ps));
   const st = await ev(() => Epg.pubStatus);
   ok('it looked up the channels with no guide, in the US guides', st.asked > 0 && st.countries.join() === 'US', JSON.stringify(st));
   ok('both public guides were read', st.sources.length === 2 && st.sources.every(s => s.ok && s.filled > 0), JSON.stringify(st.sources));

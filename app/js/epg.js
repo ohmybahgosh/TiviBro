@@ -135,8 +135,9 @@ var Epg = (function () {
 
   /* ---------- XMLTV worker ---------- */
   function workerMain() {
-    /* NORM */
-    /* PUBKEYS */
+    // norm() and pubKeys() arrive as self.norm and self.pubKeys (see work()): the release build
+    // minifies this file, renaming functions and dropping comments, so nothing here may depend on
+    // either; property names survive.
     function ts(s) {
       var m = /^(\d{4})(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)?\s*([+-]\d{4})?/.exec(s || '');
       if (!m) return 0;
@@ -184,7 +185,7 @@ var Epg = (function () {
               var pid = P.prefix + id;
               if (chans.length < 30000) chans.push([pid, name]);
               if (pubWant[pid]) wantP[id] = 1;
-              var kk = pubKeys(name, id), pc = kk.country === 'UK' ? 'GB' : kk.country;
+              var kk = self.pubKeys(name, id), pc = kk.country === 'UK' ? 'GB' : kk.country;
               kk.keys.push(['id:' + id, 0]);
               for (var q = 0; q < kk.keys.length; q++) {
                 var cs = pk[kk.keys[q][0]];
@@ -200,7 +201,7 @@ var Epg = (function () {
               if (wantP[id] && !icons[pid]) { var pi = /<icon[^>]*src="([^"]+)"/.exec(c[2]); if (pi) icons[pid] = unesc(pi[1]); }
               continue;
             }
-            var nk = norm(name);
+            var nk = self.norm(name);
             if (!want[id] && nk && names[nk] != null && !matches[nk]) { matches[nk] = id; want[id] = 1; if (!(id in past) || past[id] < names[nk]) past[id] = names[nk]; }
             if (want[id] && !icons[id]) { var ic = /<icon[^>]*src="([^"]*)"/.exec(c[2]); if (ic) icons[id] = unesc(ic[1]); }
           }
@@ -224,7 +225,7 @@ var Epg = (function () {
           buf = final ? '' : buf.slice(last);
           if (buf.length > 4e6) buf = buf.slice(-1e6);
         }
-        var poll = 0;
+        var poll = 0, rd = null;
         return fetch(src.url, { cache: 'no-store' }).then(function (r) {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           var unzipped = !!r.headers.get('x-unzipped');                 // the helper did it
@@ -241,7 +242,7 @@ var Epg = (function () {
           } catch (e) { raw = r.body; }
           tell(i, src, 0, size, true);
           var body = gz ? raw.pipeThrough(new DecompressionStream('gzip')) : raw;
-          var reader = body.getReader(), dec = new TextDecoder('utf-8');
+          var reader = rd = body.getReader(), dec = new TextDecoder('utf-8');
           function step() {
             return reader.read().then(function (x) {
               if (x.done) { buf += dec.decode(); eat(true); if (unzipped && size) tell(i, src, size, size, true); return; }
@@ -253,7 +254,8 @@ var Epg = (function () {
           }
           return step();
         }).then(function () { if (poll) { clearInterval(poll); poll = 0; } report.push({ url: src.label || src.url, ok: true, programmes: n, channels: Object.keys(got).length, filled: settle() }); },
-          function (e) { clearInterval(poll); report.push({ url: src.label || src.url, ok: false, error: String(e && e.message || e), filled: settle() }); });
+          function (e) { clearInterval(poll); if (rd) { try { rd.cancel(); } catch (x) {} }      // stop the download too
+            report.push({ url: src.label || src.url, ok: false, error: String(e && e.message || e), filled: settle() }); });
         // Public pass: fix this source's matches (only those with programmes count).
         function settle() {
           if (!P) return undefined;
@@ -366,8 +368,8 @@ var Epg = (function () {
       // webOS 4 and 5 TVs (2018 to 2020) have the least memory: shorter programme descriptions there.
       descMax: (function () { var v = Caps.probe().webos; return v && v <= 5 ? 250 : 400; })() };
     if (pub) { msg.pub = true; msg.pk = pub.pk; msg.pubWant = pub.want; }
-    var keysSrc = typeof PubEpg !== 'undefined' ? 'var pubKeys = ' + PubEpg.keys.toString() + ';' : 'function pubKeys() { return { keys: [], country: \'\' }; }';
-    var code = '(' + workerMain.toString().replace('/* NORM */', function () { return norm.toString(); }).replace('/* PUBKEYS */', function () { return keysSrc; }) + ')()';
+    var keysFn = typeof PubEpg !== 'undefined' ? PubEpg.keys : function () { return { keys: [], country: '' }; };
+    var code = 'self.norm = ' + norm.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\n(' + workerMain.toString() + ')();';
     var started = Date.now();
     function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; setProgress(p); }
     setProgress({ active: true, phase: 'download', src: 1, of: srcs.length, host: msg.sources[0] ? msg.sources[0].host : '', bytes: 0, total: 0, programmes: 0, channels: 0, started: started });
@@ -379,7 +381,7 @@ var Epg = (function () {
       } catch (e) {
         // No workers available: run the same parser on the page.  Slower, but the guide still loads.
         var self_ = { postMessage: function (d) { if (d.progress) onProg(d.progress); else res(d); } };
-        new Function('self', code.replace(/^\(/, '').replace(/\)\(\)$/, '').replace(/^function workerMain\(\) \{/, '').replace(/\}$/, ''))(self_);
+        new Function('self', code)(self_);
         return self_.onmessage({ data: msg });
       }
       w.onmessage = function (ev) { if (ev.data && ev.data.progress) return onProg(ev.data.progress); w.terminate(); URL.revokeObjectURL(url); res(ev.data); };
@@ -461,7 +463,11 @@ var Epg = (function () {
       });
       var started = Date.now();
       return work(files, { pk: pk, want: want }).then(function (res) {
-        if (gen !== pubGen) return;
+        if (gen !== pubGen) {
+          // Superseded (turned off, looked again): don't leave its download showing as still running.
+          if (progress.active && /^public guide/.test(progress.host || '')) setProgress({ active: false, phase: 'done', at: Date.now(), programmes: 0, channels: 0 });
+          return;
+        }
         // Every file failed (offline, a site down): keep what the TV had rather than an empty result.
         if (c && c.sig === sig && res.report.length && res.report.every(function (r) { return !r.ok; })) {
           c.retry = Date.now() + 3600e3;                                  // try again in an hour
