@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 32, 2026-10-31)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 32
 
 - **Movies and Shows, checked against a provider with 54,000 movies and 13,000 shows.**  Details (plot, cast, director) now show for the first title of every list, not only after moving.  Running times read 1 h 25 min instead of 01:25:00, empty 00:00:00 times are hidden, and ratings show one decimal (★ 7.6, not ★ 7.634).  Coming back from a movie keeps you in the same category when Continue watching appears.
 - **Install numbers, anonymous, and a stats page for the project.**  Once a day TiviBro says which version it is and which webOS the TV has (nothing else: no address kept, no ID, nothing about channels), and the install script says whether it installed or updated.  Off in **Settings > Updates and about > Count this TV in the install numbers**, or with `TIVIBRO_NO_COUNT=1` for the script.  A daily workflow also keeps GitHub's traffic (views, clones, where visitors come from), stars, forks and release downloads past GitHub's 14 days, for a private dashboard at tivibro.app/stats.
 - **A privacy page** at [tivibro.app/privacy](https://tivibro.app/privacy/), linked from the site's footer, lists everything the TV app, the phone app and the site send.  The Privacy and security guide now names every server TiviBro talks to.
 
-## 0.6.0 (alpha 31, 2026-10-31)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 31
+### In alpha 31
 
 - **The phone as a remote, and Play on TV** (TiviBro for Android, the APK is attached to this release, with Settings > Phone app on the TV).  **Remote and channels** on a TV: what is playing now, with the programme and its progress, kept up to date as the TV changes; a remote (arrows round OK, hold OK for options, Back, Channels, Guide, Channel up and down, play and pause, rewind and fast forward, the colour buttons, Info, and the TV's own volume and mute); typing a search on the phone searches on the TV; and **Channels**: every channel as TiviBro shows it, by group, with what is on now, searchable, and a tap plays it on the TV.  A button with TiviBro closed opens it first.
 
