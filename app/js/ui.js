@@ -88,12 +88,20 @@ var UI = (function () {
     var a = e.keyCode === K.OK ? 'ok' : action(e);
     if (!a) return;
     e.preventDefault();
+    // Still holding the button that started a hold: every repeat belongs to that hold, even once the
+    // menu it opened is up (otherwise the repeats count as OK and pick the menu's first item).
+    // Some TVs don't flag repeats, so any keydown of the held button counts until it is let go.
+    // A keyup can get lost, though: a press well after the last repeat is a new press.
+    if (held && held.btn === a) {
+      var t0 = Date.now();
+      if (t0 - held.last < 1000) { held.last = t0; return; }   // repeats start within about half a second
+      resetHeld();
+    }
     // OK always supports hold (options menus everywhere); other buttons only when mapped.
     var longable = !modalH && (a === 'ok' || Keymap.hasLong(a));
     if (longable) {
-      if (held && held.btn === a && e.repeat) return;      // auto-repeat while held
       resetHeld();
-      var h = { btn: a, fired: false };
+      var h = { btn: a, fired: false, last: Date.now() };
       h.timer = setTimeout(function () { h.fired = true; dispatch(a === 'ok' ? 'hold' : 'long:' + a, null); }, 600);
       held = h;
       return;

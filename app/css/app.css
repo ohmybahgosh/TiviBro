@@ -150,6 +150,8 @@ body.guide1 .gp .gs{display:none}
 .set-nav div.on{color:var(--text);background:var(--panel)}
 .set-nav.active div.on{background:var(--accent);color:var(--on-accent)}
 .set-body{flex:1;overflow:hidden;position:relative}
+/* Room for the clock (top right): a focused row at the top must not cover it. */
+#viewSettings{padding-top:84px}
 .set-scroll{position:absolute;left:0;right:0;top:0;will-change:transform}
 .opt{display:flex;align-items:center;min-height:80px;padding:12px 24px;border-radius:10px;gap:24px}
 .opt .ol{flex:1;min-width:0}
@@ -326,6 +328,10 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 /* groups panel, over the channel column */
 .guide-groups{position:absolute;top:0;bottom:0;left:0;width:470px;background:var(--ink);z-index:3;display:none;flex-direction:column;padding-right:20px;border-right:1px solid var(--line)}
 #viewGuide.groups-open .guide-groups{display:flex}
+/* With the groups open, the panel reads as a layer on top: its own raised colour, an accent edge and
+   a shadow, and the programmes behind it dimmed. */
+#viewGuide.groups-open .guide-groups{background:var(--panel);border-right:3px solid var(--accent);box-shadow:18px 0 36px rgba(0,0,0,.55)}
+#viewGuide.groups-open #guideBody,#viewGuide.groups-open #guideTimes{opacity:.4;transition:opacity .15s}
 body:not(.nav-hidden) #viewGuide .guide-groups{left:96px}
 .guide-groups .vlist{flex:1;position:relative}
 .guide-group{color:var(--muted)}

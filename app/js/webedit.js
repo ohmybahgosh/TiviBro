@@ -12,7 +12,7 @@
 var WebEdit = (function () {
   'use strict';
   var on = false, timer = 0, appliedRev = 0, lastCmd = 0, lastDraft = 0, lastSig = '', status = null, busy = false, onStatus = null;
-  var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist'];
+  var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip'];
   var SORTS = ['provider', 'az', 'za', 'number', 'custom'];
   var SNAP_AUTO = 15, SNAP_NAMED = 30;
   var PORTS = [8787, 8080, 8000, 9090];
@@ -47,12 +47,15 @@ var WebEdit = (function () {
   function sig() { try { return JSON.stringify(draftInfo) + JSON.stringify(editsOf()) + JSON.stringify(Store.playlist.names || null) + JSON.stringify(playlists()) + (Library.data ? Library.data.channels.length : 0) + ':' + (Epg.status && Epg.status.at) + ':' + (Epg.pubStatus && Epg.pubStatus.at); } catch (e) { return String(Date.now()); } }
 
   // Playlists as the browser sees them: no username, password or full addresses.
+  function fileOf(u) { var m = /^[a-z]+:\/\/[^/]+\/(?:[^?#]*\/)?([^/?#]+)/i.exec(String(u || '')); return m && !/[=@]/.test(m[1]) ? decodeURIComponent(m[1]).slice(0, 60) : ''; }
   function playlists() {
     var s = Store.settings;
     return s.playlists.map(function (p) {
       return { id: p.id, name: p.name || (p.type === 'm3u' ? 'M3U playlist' : 'Xtream'), type: p.type, host: host(p.type === 'm3u' ? p.m3u : p.server),
         active: p.id === s.active, ua: p.ua || '', plRefresh: p.plRefresh, epgRefresh: p.epgRefresh, providerEpg: p.providerEpg,
-        epgSources: (p.epgSources || []).map(function (x) { return { host: host(x.url), offset: x.offset || 0 }; }) };
+        // Never the address itself (it can hold a login): the host, the file name, and a fingerprint the
+        // editor matches against its list of free guides.
+        epgSources: (p.epgSources || []).map(function (x) { return { host: host(x.url), file: fileOf(x.url), id: U.hash(String(x.url).trim()), offset: x.offset || 0 }; }) };
     });
   }
   function snapshot() {
@@ -69,6 +72,7 @@ var WebEdit = (function () {
         pub: (function () { var cf = PubEpg.conf(p), ps = Epg.pubStatus; return { on: cf.on, cc: cf.cc, helper: !!Net.active, all: PubEpg.all().map(function (c) { return [c, PubEpg.name(c)]; }),
           status: ps ? { at: ps.at, countries: ps.countries, filled: ps.filled, asked: ps.asked, took: ps.took, none: ps.none || '', sources: ps.sources } : null }; })() },
       gz: Net.canUnzip,
+      lastBackup: Store.settings.lastBackup || 0,
       edits: editsOf(),
       names: p.names || null,
       drafts: draftInfo,
@@ -102,6 +106,8 @@ var WebEdit = (function () {
       e.reminders = (e.reminders || []).filter(function (r) { return !r.w || words[r.w]; });
       setTimeout(function () { Watch.scan(false); }, 500);
     }
+    // Smart clean-up steps you chose to skip: { country: 1, dupes: 1, ... }.
+    if (obj(ed.toolSkip)) { e.toolSkip = {}; Object.keys(ed.toolSkip).forEach(function (k) { if (/^[a-z]{2,12}$/.test(k) && ed.toolSkip[k]) e.toolSkip[k] = 1; }); }
     if (obj(ed.chanOrder)) { e.chanOrder = {}; Object.keys(ed.chanOrder).forEach(function (g) { var l = strs(ed.chanOrder[g]); if (l.length) e.chanOrder[g] = l; }); }
     if (obj(ed.groupSort)) { e.groupSort = {}; Object.keys(ed.groupSort).forEach(function (g) { if (SORTS.indexOf(ed.groupSort[g]) >= 0) e.groupSort[g] = ed.groupSort[g]; }); }
     if (obj(ed.epgMap) && JSON.stringify(ed.epgMap) !== JSON.stringify(e.epgMap || {})) { e.epgMap = ed.epgMap; guideChanged = true; }
@@ -362,7 +368,8 @@ var WebEdit = (function () {
         });
       });
     },
-    backup: function () { return Backup.create().then(function (b) { return { msg: 'Backup ready', data: b }; }); },
+    // The editor's checklist ticks "Download a backup" from this (any phone or computer, any time).
+    backup: function () { return Backup.create().then(function (b) { Store.settings.lastBackup = Date.now(); Store.saveSettings(); lastSig = ''; return { msg: 'Backup ready', data: b }; }); },
     restore: function (a) {
       return Backup.restore(a.data).then(function (info) {
         setTimeout(function () { location.reload(); }, 1500);
@@ -510,7 +517,7 @@ var WebEdit = (function () {
    Channel lists and the guide are not included; they reload from the provider. */
 var Backup = (function () {
   'use strict';
-  var KEEP_LOCAL = ['editorPass', 'editorPort', 'keyAliases'];   // belong to this TV, not the backup
+  var KEEP_LOCAL = ['editorPass', 'editorPort', 'keyAliases', 'lastBackup'];   // belong to this TV, not the backup
 
   // Everything needed to rebuild this setup on a fresh TV: settings, every playlist with its login,
   // each playlist's edits, and each playlist's restore points.  The helper encrypts it before it

@@ -113,6 +113,8 @@ var Tidy = (function () {
     'CBC', 'CTV 2', 'CTV2', 'CTV', 'GLOBAL', 'CITYTV', 'CITY', 'OMNI', 'ROGERS TV', 'TVA', 'NOOVO', 'ICI RADIO-CANADA', 'RADIO-CANADA', 'ICI', 'INDEPENDENT', 'IND', 'METV', 'MeTV', 'ANTENNA TV', 'COZI', 'BOUNCE'];
   var LOCAL_NET_RE = new RegExp('^(' + LOCAL_NETS.slice().sort(function (a, b) { return b.length - a.length; }).map(function (n) { return n.replace(/[-]/g, '\\-'); }).join('|') + ')\\b\\s*', 'i');
   var CALL_RE = /\b[KW][A-Z]{2,3}(?:[-\s]?(?:TV|DT|LD|CD|LP))?\b/g;
+  // Short city names providers use, as the cities' own names.
+  var CITY_ALIAS = { PHILLY: 'PHILADELPHIA', NYC: 'NEW YORK', 'NEW YORK CITY': 'NEW YORK', SF: 'SAN FRANCISCO', 'SAN FRAN': 'SAN FRANCISCO', VEGAS: 'LAS VEGAS', NOLA: 'NEW ORLEANS', CHI: 'CHICAGO' };
   function parseLocal(name) {
     var s = String(name || '').replace(/^\s*(?:[\[(|]?\s*(?:USA|US|CA|CAN)\s*[\])|]?\s*[|:\-]\s*)/i, '').trim();
     var nm = LOCAL_NET_RE.exec(s); if (!nm) return null;
@@ -124,7 +126,14 @@ var Tidy = (function () {
     var city = rest.replace(/\([^)]*\)/g, ' ').replace(CALL_RE, ' ').split(/\s*[|]\s*/)[0]
       .replace(/\b(?:HD|FHD|SD|4K)\b/gi, ' ').replace(/\b\w*\d\w*\b/g, ' ').replace(new RegExp('\\b' + net + '\\b', 'i'), ' ')
       .replace(CITY_JUNK_RE, ' ').replace(/\s+/g, ' ').replace(/^[\s.\-]+|[\s.\-]+$/g, '').toUpperCase();
-    if (!city || city.length < 3 || /^(EAST|WEST|PACIFIC|NATIONAL|NETWORK|NEWS|NEWS NOW|NOW|LIVE|SPORTS|PLUS|HD|CHANNEL|KIDS|LOCAL|LOCALS)$/.test(city)) return { net: net, city: '', st: st, call: call };
+    var junk = /^(EAST|WEST|PACIFIC|NATIONAL|NETWORK|NEWS|NEWS NOW|NOW|LIVE|SPORTS|PLUS|HD|CHANNEL|KIDS|LOCAL|LOCALS)$/;
+    // "CW | EAST (PHILLY)": with nothing else left, the city is the one in brackets.
+    if (!city || city.length < 3 || junk.test(city)) {
+      var br = /\(([A-Za-z][A-Za-z .'\-]{1,24})\)/.exec(rest), b = br ? br[1].replace(/\s+/g, ' ').trim().toUpperCase() : '';
+      if (b && !/^[KW][A-Z]{2,3}(?:[-\s]?(?:TV|DT|LD|CD|LP))?$/.test(b) && !junk.test(b) && (b.length >= 3 || CITY_ALIAS[b])) city = b;
+      else return { net: net, city: '', st: st, call: call };
+    }
+    city = CITY_ALIAS[city] || city;
     city = city.replace(/^SAINT\b/, 'ST').replace(/^ST\.\s*/, 'ST ').replace(/^FT\.?\s/, 'FORT ');
     return { net: net, city: city, st: st, call: call };
   }
@@ -259,7 +268,11 @@ var Tidy = (function () {
       channels.forEach(function (c) {
         if (opts.skip && opts.skip(c)) return;
         var p = prep(name(c)); if (!p.c || p.c.length < 2) return;
-        var key = (opts.same !== false ? c.g + '|' : '') + p.c + (p.west ? '|w' : '') + (p.country ? '|' + p.country : '');
+        // Numbers anywhere in the name tell channels apart, brackets included: "US (Peacock 002) | Milan
+        // Cortina" and "US (Peacock 014) | Milan Cortina" are two event channels, not two copies.
+        // Quality and format numbers (4K, 1080p, 60fps, H.265) don't count.
+        var nums = (String(c.n).replace(/\b(?:[248]K|\d{3,4}[PI]|\d{2,3}\s?FPS|H\.?26[45]|X26[45])\b/gi, ' ').match(/\d+/g) || []).map(function (d) { return +d; }).join(',');
+        var key = (opts.same !== false ? c.g + '|' : '') + p.c + '#' + nums + (p.west ? '|w' : '') + (p.country ? '|' + p.country : '');
         (by[key] || (by[key] = [])).push(c);
       });
       var sets = [];

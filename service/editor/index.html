@@ -184,7 +184,14 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;position
 .dset .dn b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dset .dc{flex:1;display:flex;flex-wrap:wrap;gap:6px}
 .dset.unsure{box-shadow:inset 3px 0 0 var(--warn);padding-left:10px}
-.dcopy{padding:4px 11px;border-radius:999px;font-size:12.5px;background:var(--raised);color:var(--muted);border:1px solid var(--line);text-decoration:line-through;text-decoration-color:rgba(255,255,255,.25)}
+.dcopy{padding:4px 11px;border-radius:999px;font-size:12.5px;background:var(--raised);color:var(--muted);border:1px solid var(--line)}
+.dcopy .dact{font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;opacity:.75}
+.dcopy.on .dact{opacity:1}
+.card.tdone{opacity:.82}
+.card h3 .tskip{margin-left:6px;padding:2px 10px;font-size:12px}
+.tprog{padding:14px 18px}
+.dset .dskip{align-self:flex-start;margin-top:6px;padding:2px 10px}
+.dset.skipped{opacity:.7}
 .dcopy.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);text-decoration:none;font-weight:600}
 .dcopy .dnm{font-weight:400;opacity:.8;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:bottom}
 .lcopts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:10px}
@@ -212,6 +219,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 .prog .top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
 .prog .nums{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 .prog.ok{border-color:#1f6049} .prog.bad{border-color:#6b2a2e}
+#mList{max-height:min(70vh,900px);overflow:auto;overscroll-behavior:contain}
 .mrow .logo{width:44px;height:26px;object-fit:contain;vertical-align:middle;margin-right:8px}
 .conf{font-variant-numeric:tabular-nums}
 .pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:10px;font-size:13px;color:var(--muted)}
@@ -282,6 +290,14 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
   aside .brand{padding:0 4px;flex:1;min-width:0} aside .brand img{height:24px!important}
   #navToggle{display:flex;align-items:center;gap:8px;max-width:62%;padding:8px 12px;background:var(--panel);border-color:var(--line)}
   #navToggle span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  /* It is the way to every other page, so it looks like one: an accent edge, "Menu" above the page
+     name, and a gentle pulse until it has been opened once. */
+  #navToggle{border:1px solid var(--accent)}
+  #navToggle .navlbl{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1;min-width:0}
+  #navToggle .navlbl small{font-size:10.5px;color:var(--accent2);text-transform:uppercase;letter-spacing:.08em}
+  #navToggle .chev{width:16px!important;height:16px!important;opacity:.7}
+  body:not(.navseen) #navToggle{animation:navpulse 2.2s ease-in-out 3}
+  @keyframes navpulse{0%,100%{box-shadow:0 0 0 0 rgba(91,140,255,0)}50%{box-shadow:0 0 0 6px rgba(91,140,255,.35)}}
   #navToggle svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
   nav.side{display:none;position:absolute;top:100%;left:0;right:0;z-index:35;flex-direction:column!important;gap:2px;background:var(--side);border-bottom:1px solid var(--line);padding:8px;box-shadow:0 18px 40px rgba(0,0,0,.6);max-height:calc(100vh - 56px);overflow:auto}
   body.navopen nav.side{display:flex}
@@ -364,12 +380,13 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
   <aside>
     <div class="brand"><img src="wordmark.png" alt="TiviBro" style="height:30px"><span class="muted" style="font-weight:500;font-size:14px;margin-top:6px">editor</span></div>
     <div class="plpill"><span class="muted">Editing</span><b id="plName"></b><span id="plMeta" class="muted"></span></div>
-    <button id="navToggle" type="button" aria-label="Pages" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span id="navCur">Overview</span></button>
+    <button id="navToggle" type="button" aria-label="Pages" aria-expanded="false"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg><span class="navlbl"><small>Menu</small><span id="navCur">Overview</span></span><svg class="chev" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg></button>
     <nav class="side" id="nav">
       <button data-page="welcome" class="hidden"><svg viewBox="0 0 24 24"><path d="M12 3l9 8h-3v9H6v-9H3z"/></svg><span>Welcome</span></button>
       <button data-page="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg><span>Overview</span></button>
       <button data-page="gc"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Groups and channels</span></button>
       <button data-page="guide"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg><span>Guide</span></button>
+      <button data-page="watch"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><span>Watchlist</span></button>
       <button data-page="names"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg><span>Channel names</span></button>
       <button data-page="tools"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg><span>Smart clean-up</span><em class="badge hidden" id="toolsBadge"></em></button>
       <button data-page="playlists"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>Playlists</span></button>
@@ -451,6 +468,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
     <section class="page hidden" id="p-guide">
       <div class="phead"><div><h1>Guide</h1><p>Where the TV gets programme information, and which guide channel belongs to which channel.</p></div></div>
       <div class="scroll">
+        <div class="row jump" style="gap:8px;flex-wrap:wrap;margin-bottom:14px"><span class="muted small">Jump to</span><a class="chip" href="#" data-jump="provChoices">1. Provider guide</a><a class="chip" href="#" data-jump="srcList">2. Extra sources</a><a class="chip" href="#" data-jump="pubCard">3. Public guide</a><a class="chip" href="#" data-jump="mBody">4. Match channels</a><a class="chip" href="#watch">Watchlist ›</a></div>
         <div class="note">Four steps: pick where the guide comes from, add guide sources if your provider's guide is thin, let the public guides fill in what is still missing, then match channels that show "No guide information".  <b>Smart match</b> does most of the matching for you; you approve each guess.  <a href="#help/guide">Learn more</a></div>
         <div class="card">
           <div class="row"><h3 class="grow" style="margin:0">1.  Your provider's guide</h3><button id="gReload" class="small">Reload the guide on the TV</button></div>
@@ -497,9 +515,15 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
           </div>
           <div id="mEmpty"></div>
         </div>
+      </div>
+    </section>
+
+    <!-- WATCHLIST -->
+    <section class="page hidden" id="p-watch">
+      <div class="phead"><div><h1>Watchlist</h1><p>Shows, teams and names the TV looks for in the guide.  When one is coming up, it sets a reminder.</p></div></div>
+      <div class="scroll">
         <div class="card">
-          <h3>5.  Watchlist</h3>
-          <p>Shows, teams and names the TV looks for in the guide.  When one is coming up, it sets a reminder.  Matched as whole words in programme titles, so "Cars" does not find "Oscars".</p>
+          <p style="margin-top:0">Matched as whole words in programme titles, so "Cars" does not find "Oscars".  Reminders it sets show on the TV like any other, and only for someone using the TV.</p>
           <div id="wList" class="row" style="flex-wrap:wrap;gap:8px;margin:10px 0"></div>
           <form id="wForm" class="row"><input id="wText" type="text" class="grow" maxlength="60" placeholder="For example Yankees, Bluey, Premier League or Gordon Ramsay" style="min-width:220px"><button class="primary" id="wAdd">Add</button></form>
         </div>
@@ -536,7 +560,10 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
       <div class="phead"><div><h1>Smart clean-up</h1><p>Bulk tools that find clutter for you.  Each shows what it will do before it does it, and each can be undone.</p></div></div>
       <div class="scroll">
         <div class="note">Hiding never deletes anything.  Hidden groups and channels can be switched back on any time in Groups and channels.  <a href="#help/tools">Learn more</a></div>
+        <div class="card tprog" id="toolsProg"></div>
+        <div class="card" id="tAdult"></div>
         <div class="card" id="tCountry"></div>
+        <div class="card" id="tGnames"></div>
         <div class="card" id="tFeeds"></div>
         <div class="card" id="tLocal"></div>
         <div class="card" id="tDupes"></div>
@@ -578,7 +605,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
         <div class="note">Undo works on this page's session.  Draft history keeps your unsent work on the TV.  Restore points hold what the TV is using; the TV makes one by itself each time you send changes.  <a href="#help/saving">Learn more</a></div>
         <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(400px,1fr))">
           <div class="card"><div class="row"><h3 class="grow" style="margin:0">Not on the TV yet</h3><button id="hDiscard" class="ghost danger small">Discard all</button><button id="hSend" class="primary small">Send to TV</button></div><div id="hDiff" style="margin-top:10px"></div></div>
-          <div class="card"><div class="row"><h3 class="grow" style="margin:0">This session</h3><button id="hUndo" class="small">Undo</button><button id="hRedo" class="small">Redo</button></div><p style="margin-top:6px">Newest first.  "Go back" returns to just before that change (and can itself be undone).</p><div id="hList"></div></div>
+          <div class="card"><div class="row"><h3 class="grow" style="margin:0">This session</h3><button id="hUndo" class="small">Undo</button><button id="hRedo" class="small">Redo</button></div><p style="margin-top:6px">Newest first.  <b>Go back to before this</b> undoes that change and everything after it.  Changed your mind?  <b>Redo</b>, or <b>Undo the undo</b> to return to where you were.</p><div id="hList"></div></div>
         </div>
         <div class="card" style="margin-top:16px">
           <div class="row"><h3 class="grow" style="margin:0">Draft history</h3><span id="dSize" class="small muted"></span><button id="dRefresh" class="small">Refresh</button></div>
@@ -591,6 +618,10 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
           <p style="margin-top:6px">Snapshots of this playlist's groups, channels, names and guide matches.  Make one before a big clean-up.</p>
           <form id="snapForm" class="row" style="margin-bottom:12px"><input id="snapName" type="text" class="grow" placeholder="Name, e.g. Before removing sports" maxlength="80"><button class="primary" id="snapGo">Create restore point</button></form>
           <div id="snapList"></div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <div class="row"><h3 class="grow" style="margin:0">Start over</h3><button id="hReset" class="ghost danger small">Reset this playlist…</button></div>
+          <p style="margin-top:6px">Back to the list exactly as your provider sends it: every group and channel shown, no groups of your own, favorites, renames, custom order or guide matches, and the recommended name clean-up.  Like any change, it waits for <b>Send to TV</b> and can be undone, and the TV makes a restore point before it takes it.</p>
         </div>
       </div>
     </section>
@@ -702,7 +733,7 @@ var rev = 0, sentRev = 0, sending = false, inflight = 0, sel = new Set(), curGro
 var hist = [], redo = [], lastProgress = null, tvLost = false;
 var dT = 0, dFirst = 0, dLast = '', dSeq = 0, dAck = 0, dAt = 0, draftsCache = null;   // draft autosave on the TV
 var FAV = 'c_fav', ALL = '__all';
-var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist'];
+var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip'];
 var byKey = new Map(), byGroup = new Map(), guideName = new Map();
 var TOUCH = !!(window.matchMedia && matchMedia('(hover: none)').matches);   // phones and tablets: no hover, no drag and drop
 
@@ -811,9 +842,13 @@ function dd(el, cfg) {
     m.style.left = Math.max(8, Math.min(b.left, innerWidth - w - 8)) + 'px';
     var below = innerHeight - b.bottom - 12, mh = m.offsetHeight;
     if (below < Math.min(mh, 260) && b.top > below) m.style.top = Math.max(8, b.top - mh - 4) + 'px'; else { m.style.top = (b.bottom + 4) + 'px'; m.style.maxHeight = Math.max(160, below) + 'px'; }
-    openDD = { el: el, menu: m, close: close };
+    openDD = { el: el, menu: m, close: close, at: performance.now() };
     el.classList.add('open');
-    (inp || m).setAttribute('tabindex', '-1'); (inp || m).focus();
+    // Phones: focusing the filter box brings up the keyboard, which resizes and scrolls the page and
+    // used to close the list at once.  There the box waits for a tap.
+    var touch = window.matchMedia && matchMedia('(pointer: coarse)').matches;
+    var f = inp && !touch ? inp : m;
+    f.setAttribute('tabindex', '-1'); f.focus({ preventScroll: true });
   }
   btn.addEventListener('click', function () { if (openDD && openDD.el === el) close(); else open(); });
   btn.addEventListener('keydown', function (e) { if (e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
@@ -825,10 +860,16 @@ function dd(el, cfg) {
   };
   return el._dd;
 }
+// The TV's U.hash: guide sources arrive as fingerprints, never addresses (see webedit.js).
+function fp(u) { var h = 0x811c9dc5; u = String(u).trim(); for (var i = 0; i < u.length; i++) { h ^= u.charCodeAt(i); h = (h * 0x01000193) >>> 0; } return h.toString(36); }
+function catalogOf(src) { return src && src.id ? CATALOG.filter(function (c) { return c[3] >= 0 && fp(c[2]) === src.id; })[0] || null : null; }
 function closeDD() { if (openDD) openDD.close(); }
 document.addEventListener('mousedown', function (e) { if (openDD && !openDD.menu.contains(e.target) && !openDD.el.contains(e.target)) closeDD(); }, true);
-window.addEventListener('resize', closeDD);
-document.addEventListener('scroll', function (e) { if (openDD && !openDD.menu.contains(e.target)) closeDD(); }, true);
+// Only a change of width closes an open list: a phone keyboard coming up changes just the height.
+var ddW = innerWidth;
+window.addEventListener('resize', function () { if (innerWidth !== ddW) { ddW = innerWidth; closeDD(); } });
+// Scrolling the page closes it, but not the scroll that opening it (or the keyboard) causes.
+document.addEventListener('scroll', function (e) { if (openDD && !openDD.menu.contains(e.target) && performance.now() - openDD.at > 600) closeDD(); }, true);
 
 /* ---------- login and loading ---------- */
 function showLogin(m) {
@@ -910,6 +951,7 @@ function rerender() {
   if (page === 'names') renderPreview();
   if (page === 'tools') renderTools();
   if (page === 'history') renderHistory();
+  toolsBadge();
 }
 function groupExists(id) { return id === ALL || (isCustom(id) && !!customOf(id)) || byGroup.has(id); }
 function isCustom(id) { return String(id).indexOf('c_') === 0; }
@@ -1102,6 +1144,7 @@ function diffs(A, B) {
   keys(a.chanOrder || {}, b.chanOrder || {}).forEach(function (id) { if (!sameJ((a.chanOrder || {})[id] || [], (b.chanOrder || {})[id] || [])) out.push('New channel order in ' + gn(id)); });
   var em = keys(a.epgMap, b.epgMap).filter(function (k) { return a.epgMap[k] !== b.epgMap[k]; });
   if (em.length) out.push(em.length > 3 ? 'Guide matches for ' + plural(em.length, 'channel') : em.map(function (k) { return 'Guide match for ' + nm(k); }).join(', '));
+  if (!sameJ(a.toolSkip || {}, b.toolSkip || {})) out.push('Smart clean-up steps skipped');
   if (!sameJ(A.N, B.N)) out.push('Name clean-up rules');
   return out;
 }
@@ -1191,7 +1234,7 @@ function show(p, sub) {
   var nb = document.querySelector('#nav button[data-page="' + p + '"] span'); if (nb) $('navCur').textContent = nb.textContent;
   if (typeof navOpen === 'function') navOpen(false);
   document.querySelectorAll('.page').forEach(function (s) { s.classList.toggle('hidden', s.id !== 'p-' + p); });
-  if (p === 'gc') renderChannels(); if (p === 'guide') renderGuide(); if (p === 'names') renderPreview(); if (p === 'home') renderHome();
+  if (p === 'gc') renderChannels(); if (p === 'guide') renderGuide(); if (p === 'watch') renderWatch(); if (p === 'names') renderPreview(); if (p === 'home') renderHome();
   if (p === 'tools') renderTools(); if (p === 'history') { renderHistory(); loadSnaps(); loadDrafts(); } if (p === 'help') renderHelp(sub); if (p === 'report') loadReport(false);
   var h = '#' + p + (sub ? '/' + sub : '');
   if (location.hash !== h) history.replaceState(null, '', h);
@@ -1211,7 +1254,8 @@ $('nav').addEventListener('click', function (e) {
 // Tablets show the pages as icons only: the name comes up as a tooltip and for screen readers.
 document.querySelectorAll('#nav button').forEach(function (b) { var t = b.querySelector('span'); if (t) { b.title = t.textContent; b.setAttribute('aria-label', t.textContent); } });
 // Phones: the page name in the top bar opens the list of pages.
-function navOpen(on) { document.body.classList.toggle('navopen', on); $('navToggle').setAttribute('aria-expanded', on ? 'true' : 'false'); }
+try { if (localStorage.getItem('tivibro.editor.navseen')) document.body.classList.add('navseen'); } catch (e) {}
+function navOpen(on) { if (on) { document.body.classList.add('navseen'); try { localStorage.setItem('tivibro.editor.navseen', '1'); } catch (e) {} } document.body.classList.toggle('navopen', on); $('navToggle').setAttribute('aria-expanded', on ? 'true' : 'false'); }
 $('navToggle').addEventListener('click', function () { navOpen(!document.body.classList.contains('navopen')); });
 document.addEventListener('mousedown', function (e) { if (document.body.classList.contains('navopen') && !e.target.closest('#nav,#navToggle')) navOpen(false); }, true);
 
@@ -1371,14 +1415,14 @@ function renderHome() {
     [N.enabled !== false && Object.keys(N.rules).some(function (k) { return N.rules[k]; }), 'Clean up channel names', 'Remove "US |", "FHD" and similar clutter everywhere at once.', 'names'],
     [fav > 0 || own > 0, 'Make favorites and your own groups', 'Tick channels, then Copy or move to group.  Drag to put them in order.', 'gc'],
     [guideKnown() ? pct >= 90 : activePl().providerEpg !== 'off', 'Get a guide for every channel', guideKnown() ? cov + ' of ' + visible.length + ' shown channels have a guide.' : 'Your provider sends it per channel.  Add a free guide if some channels are blank.', 'guide'],
-    [false, 'Download a backup', 'Keep your setup safe, or move it to another TV.', 'backup']
+    [!!D.lastBackup, 'Download a backup', D.lastBackup ? 'Last one ' + ago(D.lastBackup) + '.  Make a new one after big changes.' : 'Keep your setup safe, or move it to another TV.', 'backup']
   ];
   $('steps').innerHTML = steps.map(function (s, i) { return '<div class="step' + (s[0] ? ' done' : '') + '"><span class="n">' + (s[0] ? '✓' : i + 1) + '</span><div class="grow"><b>' + s[1] + '</b><div class="muted small">' + esc(s[2]) + '</div></div><button data-go="' + s[3] + '" class="small">Open</button></div>'; }).join('');
   var sg = suggestions();
   $('sugg').innerHTML = sg.length ? sg.map(function (s) { return '<div class="step"><span class="n" style="background:var(--accbg);color:var(--accent2)">✦</span><div class="grow"><b>' + esc(s[0]) + '</b><div class="muted small">' + esc(s[1]) + '</div></div><button data-go="' + s[2] + '" class="small">' + esc(s[3] || 'Show me') + '</button></div>'; }).join('')
     : '<div class="muted">Nothing stands out.  Your setup looks tidy.</div>';
-  var nt = sg.filter(function (s) { return s[2] === 'tools'; }).length;
-  $('toolsBadge').textContent = nt; $('toolsBadge').classList.toggle('hidden', !nt);
+  // The badge counts the Smart clean-up steps still to do (not done, not skipped), as the page shows them.
+  toolsBadge();
 }
 function suggestions() {
   var out = [];
@@ -1390,6 +1434,8 @@ function suggestions() {
   if (fpn.pairs && fshown && fpn.east.some(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g]; })) out.push([plural(fpn.pairs, 'channel') + ' shown in both East and West feeds', 'Keep the feed you watch and hide the other copies in one step.', 'tools', 'Pick a feed']);
   var lci = localIndex();
   if (lci.cities.length > 3 && lci.chans.filter(function (x) { return !E.hiddenChannels[x.c.k] && !E.hiddenGroups[x.c.g]; }).length > 30) out.push(['Local stations for ' + lci.cities.length + ' cities', 'Pick your city and hide the other local stations in every local group at once.', 'tools', 'Pick a city']);
+  var adn = adultGroups().length;
+  if (adn) out.unshift([plural(adn, 'adult group') + ' shown', 'Groups named Adult or XXX.  Hide them in one press.', 'tools', 'Hide them']);
   var dvn = dividerGroups().length;
   if (dvn) out.push([plural(dvn, 'divider group') + ' shown', 'Groups like "⫘⫘⫘ UK ⫘⫘⫘" that only split the list into sections.', 'tools', 'Hide them']);
   if (!N.hideIdle) { var idn = idleChannels().length; if (idn >= 10) out.push([plural(idn, 'channel') + ' with nothing on', 'Event channels named "Off Air" or "No Event Scheduled" between events.  Hide them while they say so.', 'tools', 'Show me']); }
@@ -1836,6 +1882,10 @@ function renderGuide() {
   renderMatchList();
   if (lastProgress) drawProgress(lastProgress);
 }
+document.querySelector('#p-guide .jump').addEventListener('click', function (e) {
+  var a = e.target.closest('[data-jump]'); if (!a) return;
+  e.preventDefault(); var el = $(a.dataset.jump); if (el) (el.closest('.card') || el).scrollIntoView({ behavior: 'smooth', block: 'start' });
+});
 $('provChoices').addEventListener('click', function (e) {
   var b = e.target.closest('.choice'); if (!b) return;
   var m = b.dataset.mode, pl = activePl(), cur = pl.providerEpg || (D.playlist.type === 'm3u' ? 'xmltv' : 'short');
@@ -1938,17 +1988,30 @@ function renderSources() {
   var pl = activePl(), l = pl.epgSources || [];
   $('srcList').innerHTML = l.length ? '<table class="t"><tr><th>Order</th><th>Source</th><th>Offset</th><th></th></tr>' + l.map(function (s, i) {
     return '<tr><td style="width:80px"><button class="ghost small" data-mv="' + i + ':-1"' + (i ? '' : ' disabled') + ' title="Earlier">↑</button><button class="ghost small" data-mv="' + i + ':1"' + (i < l.length - 1 ? '' : ' disabled') + ' title="Later">↓</button></td>' +
-      '<td>' + esc(s.host) + '</td><td>' + (s.offset || 0) + ' min</td><td class="r"><button class="ghost danger small" data-rmsrc="' + i + '">Remove</button></td></tr>';
+      '<td>' + srcLabel(s) + '</td><td>' + (s.offset || 0) + ' min</td><td class="r"><button class="ghost danger small" data-rmsrc="' + i + '">Remove</button></td></tr>';
   }).join('') + '</table>' : '<p class="muted small">No extra guide sources yet.  Add one below, or pick a recommended free guide.</p>';
+}
+// A source as you'd recognise it: the free guide's name and size, or the server and file name.
+function srcLabel(s) {
+  var c = catalogOf(s);
+  if (c) return '<b>' + esc(c[1]) + '</b><div class="muted small">' + esc(s.host) + (c[3] ? '  ·  ' + (c[3] < 1 ? 'under 1 MB' : '~' + Math.round(c[3]) + ' MB') : '') + '</div>';
+  return '<b>' + esc(s.host) + '</b>' + (s.file ? '<div class="muted small">' + esc(s.file) + '</div>' : '');
 }
 function addSource(url, offset, btn, box) {
   box = box || 'srcMsg';
   var tick = cmdMsg(box, 'Adding the source on the TV…');
   return busyBtn(btn, command('addEpgSource', { url: url, offset: offset || 0 }, 30000, tick)).then(function (r) {
     msg(box, 'ok', r.msg + '  Progress shows in step 1.');
-    var pl = activePl(); pl.epgSources = (pl.epgSources || []).concat([{ host: (/^https?:\/\/([^/:?#]+)/i.exec(url) || [])[1] || url, offset: offset || 0 }]); renderSources(); renderCatalog();
+    var pl = activePl(); pl.epgSources = (pl.epgSources || []).concat([{ host: (/^https?:\/\/([^/:?#]+)/i.exec(url) || [])[1] || url, file: (/\/([^/?#]+)(?:[?#]|$)/.exec(url) || [])[1] || '', id: fp(url), offset: offset || 0 }]); renderSources(); renderCatalog();
     return true;
   }).catch(function (err) { msg(box, 'bad', err.message); return false; });
+}
+function removeSource(i, b, box) {
+  var s = activePl().epgSources[i]; if (!s) return;
+  var c = catalogOf(s);
+  ask('Remove ' + (c ? c[1] : s.host) + '?', 'The TV reloads the guide without it.', 'Remove', function () {
+    busyBtn(b, command('removeEpgSource', { index: i }, 30000)).then(function (r) { msg(box, 'ok', r.msg); activePl().epgSources.splice(i, 1); renderSources(); renderCatalog(); }).catch(function (err) { msg(box, 'bad', err.message); });
+  }, true);
 }
 function testSource(url, btn, box) {
   var tick = cmdMsg(box, 'The TV is trying the address…');
@@ -1965,12 +2028,7 @@ $('srcList').addEventListener('click', function (e) {
     var p = b.dataset.mv.split(':');
     busyBtn(b, command('moveEpgSource', { index: +p[0], dir: +p[1] }, 30000)).then(function (r) { msg('srcMsg', 'ok', r.msg); var l = activePl().epgSources, i = +p[0], j = i + (+p[1]), t = l[i]; l[i] = l[j]; l[j] = t; renderSources(); }).catch(function (err) { msg('srcMsg', 'bad', err.message); });
   }
-  if (b.dataset.rmsrc != null) {
-    var i = +b.dataset.rmsrc, s = activePl().epgSources[i];
-    ask('Remove ' + s.host + '?', 'The TV reloads the guide without it.', 'Remove', function () {
-      busyBtn(b, command('removeEpgSource', { index: i }, 30000)).then(function (r) { msg('srcMsg', 'ok', r.msg); activePl().epgSources.splice(i, 1); renderSources(); renderCatalog(); }).catch(function (err) { msg('srcMsg', 'bad', err.message); });
-    }, true);
-  }
+  if (b.dataset.rmsrc != null) removeSource(+b.dataset.rmsrc, b, 'srcMsg');
 });
 
 /* Free, community-run XMLTV guides.  Checked October 2026; sizes are the zipped download.
@@ -1980,9 +2038,9 @@ var CATALOG = [
   ['us', 'US cable and satellite networks (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz', 6.6, 'Most popular US networks.  A good first pick.'],
   ['us', 'US sports networks (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_US_SPORTS1.xml.gz', 0.8, 'ESPN, regional sports and more.'],
   ['us', 'US local stations (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_US_LOCALS1.xml.gz', 58, 'Every local affiliate.  Large: only if you watch locals.'],
-  ['us', 'United States (iptv-epg.org)', 'https://iptv-epg.org/files/epg-us.xml.gz', 0, 'Very large (12,000+ channels).  Better on newer TVs.'],
+  ['us', 'United States (iptv-epg.org)', 'https://iptv-epg.org/files/epg-us.xml.gz', 64, 'Very large (12,000+ channels).  Better on newer TVs.'],
   ['ca', 'Canada (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_CA2.xml.gz', 6.6, ''],
-  ['ca', 'Canada (iptv-epg.org)', 'https://iptv-epg.org/files/epg-ca.xml.gz', 0, ''],
+  ['ca', 'Canada (iptv-epg.org)', 'https://iptv-epg.org/files/epg-ca.xml.gz', 10, ''],
   ['uk', 'United Kingdom (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_UK1.xml.gz', 2.9, ''],
   ['uk', 'UK Freeview (dp247 on GitHub)', 'https://raw.githubusercontent.com/dp247/Freeview-EPG/master/epg.xml', 21, 'Free-to-air UK channels.  Plain XML, so it works on any TV.'],
   ['uk', 'Ireland (epgshare01)', 'https://epgshare01.online/epgshare01/epg_ripper_IE1.xml.gz', 2.5, ''],
@@ -2015,19 +2073,23 @@ var CATALOG = [
 ];
 function renderCatalog() {
   var r = $('catRegion')._dd ? $('catRegion')._dd.value : 'us', have = {};
-  (activePl().epgSources || []).forEach(function (s) { have[s.host] = (have[s.host] || 0) + 1; });
+  (activePl().epgSources || []).forEach(function (s, i) { if (s.id) have[s.id] = i; });
+  // Messages from a previous add or remove belong to rows that are being redrawn.
+  Object.keys(msgs).forEach(function (k) { if (/^catMsg/.test(k)) delete msgs[k]; });
   var gzOk = D.gz !== false;
   $('catList').innerHTML = '<tr><th>Guide</th><th>Size</th><th></th></tr>' + CATALOG.filter(function (c) { return c[0] === r; }).map(function (c, i) {
     var link = c[3] < 0, size = link ? 'web page' : c[3] ? (c[3] < 1 ? 'under 1 MB' : '~' + Math.round(c[3]) + ' MB') : 'not listed';
     var warn = !gzOk && /\.gz$/.test(c[2]) ? '<div class="small" style="color:#ff9a9d">This TV can only unzip .gz guides with Network set to Automatic.</div>' : '';
     return '<tr><td><b>' + esc(c[1]) + '</b>' + (c[4] ? '<div class="muted small">' + esc(c[4]) + '</div>' : '') + warn + '<div class="tiny dim" style="word-break:break-all">' + esc(c[2]) + '</div><div id="catMsg' + i + '"></div></td><td class="small muted">' + size + '</td>' +
-      '<td class="r">' + (link ? '<a href="' + esc(c[2]) + '" target="_blank" rel="noopener">Open ↗</a>' : '<button class="small" data-cattest="' + esc(c[2]) + '" data-i="' + i + '">Test</button> <button class="small primary" data-catadd="' + esc(c[2]) + '" data-i="' + i + '">Add</button>') + '</td></tr>';
+      '<td class="r">' + (link ? '<a href="' + esc(c[2]) + '" target="_blank" rel="noopener">Open ↗</a>' : (have[fp(c[2])] != null ? '<span class="chip ok">✓ Added</span> <button class="small ghost danger" data-catrm="' + have[fp(c[2])] + '" data-i="' + i + '">Remove</button>' :
+        '<button class="small" data-cattest="' + esc(c[2]) + '" data-i="' + i + '">Test</button> <button class="small primary" data-catadd="' + esc(c[2]) + '" data-i="' + i + '">Add</button>')) + '</td></tr>';
   }).join('');
 }
 $('catList').addEventListener('click', function (e) {
   var b = e.target.closest('button'); if (!b) return;
   var box = 'catMsg' + b.dataset.i;
   if (b.dataset.cattest) testSource(b.dataset.cattest, b, box);
+  if (b.dataset.catrm != null) removeSource(+b.dataset.catrm, b, 'srcMsg');
   if (b.dataset.catadd) { var url = b.dataset.catadd; ask('Add this guide?', 'The TV adds <b>' + esc(url.replace(/^https?:\/\//, '').split('/')[0]) + '</b> as a guide source and downloads it.  Progress shows in step 1.', 'Add guide source', function () { addSource(url, 0, b, box); }); }
 });
 
@@ -2227,7 +2289,9 @@ function showSmart(res, took) {
     var yes = found.filter(function (r) { return r.ok && r.pick; });
     closeModal();
     mut('Smart match: ' + plural(yes.length, 'channel'), function () { yes.forEach(function (r) { E.epgMap[r.c.k] = r.pick; }); });
-    toast(plural(yes.length, 'channel') + ' matched.  Send to TV to load their guide.', ['Undo', undo]);
+    // Guesses you did not approve stay under "Needs a guide": say so, so the list doesn't look stale.
+    var left = found.filter(function (r) { return !r.ok; }).length + (res.length - found.length);
+    toast(plural(yes.length, 'channel') + ' matched' + (left ? ', ' + left + ' not approved still need a guide' : '') + '.  Send to TV to load their guide.', ['Undo', undo]);
   };
   draw();
 }
@@ -2420,10 +2484,13 @@ function drawDupes() {
   if (dPage >= pages) dPage = pages - 1;
   $('dList').innerHTML = list.length ? '<div class="dsets">' + list.slice(dPage * PG, dPage * PG + PG).map(function (x) {
     var s = x.s, qs = {}; s.items.forEach(function (c) { var q = quality(c.n); qs[q] = (qs[q] || 0) + 1; });
-    return '<div class="dset' + (dupeUnsure(s) ? ' unsure' : '') + '"><div class="dn"><b>' + esc(chName(s.items[0])) + '</b><span class="dim small">' + esc(groupLabel(s.items[0].g)) + '</span></div><div class="dc">' + s.items.map(function (c) {
-      var q = quality(c.n), on = c.k === s.keep;
-      return '<button class="dcopy' + (on ? ' on' : '') + '" data-set="' + x.i + '" data-k="' + esc(c.k) + '" title="' + esc(c.n) + (dupeOpts.same ? '' : ' · ' + esc(groupLabel(c.g))) + '">' + (on ? '✓ ' : '') + QNAME[q] + (qs[q] > 1 ? ' <span class="dnm">' + esc(c.n) + '</span>' : '') + (c.arch ? ' ↺' : '') + (dupeOpts.same ? '' : ' <span class="dnm">' + esc(groupLabel(c.g)) + '</span>') + '</button>';
-    }).join('') + '</div></div>';
+    // Each copy says what happens to it: Keep (the highlighted one) or Hide (kept as a backup).  The
+    // quality shows only when the name has one; "Keep all" leaves the set alone.
+    return '<div class="dset' + (dupeUnsure(s) && !s.skip ? ' unsure' : '') + (s.skip ? ' skipped' : '') + '"><div class="dn"><b>' + esc(chName(s.items[0])) + '</b><span class="dim small">' + esc(groupLabel(s.items[0].g)) + '</span>' +
+      '<button class="small ghost dskip" data-skip="' + x.i + '">' + (s.skip ? 'Pick one again' : 'Keep all') + '</button></div><div class="dc">' + (s.skip ? '<span class="muted small">Keeping every copy of this one.</span>' : s.items.map(function (c) {
+      var q = quality(c.n), on = c.k === s.keep, tag = QNAME[q] && q !== 2.5 ? QNAME[q] + ' ' : '';
+      return '<button class="dcopy' + (on ? ' on' : '') + '" data-set="' + x.i + '" data-k="' + esc(c.k) + '" title="' + (on ? 'Kept' : 'Hidden, kept as a backup') + ': ' + esc(c.n) + (dupeOpts.same ? '' : ' · ' + esc(groupLabel(c.g))) + '"><span class="dact">' + (on ? '✓ Keep' : 'Hide') + '</span> ' + esc(tag) + '<span class="dnm">' + esc(c.n) + '</span>' + (c.arch ? ' ↺' : '') + (dupeOpts.same ? '' : ' <span class="dnm">' + esc(groupLabel(c.g)) + '</span>') + '</button>';
+    }).join('')) + '</div></div>';
   }).join('') + '</div>' + (pages > 1 ? '<div class="pager">' + (dPage * PG + 1) + '–' + Math.min(list.length, (dPage + 1) * PG) + ' of ' + list.length + '<button class="small" data-dpg="-1"' + (dPage ? '' : ' disabled') + '>‹ Previous</button><button class="small" data-dpg="1"' + (dPage < pages - 1 ? '' : ' disabled') + '>Next ›</button></div>' : '')
     : '<div class="muted small" style="padding:8px 2px">' + (dupeOpts.q.trim() ? 'No set matches “' + esc(dupeOpts.q.trim()) + '”.' : 'Nothing to check: every set has one clear pick.  “All” shows them anyway.') + '</div>';
   var target = dupeTarget(), n = target.reduce(function (a, s) { return a + s.items.length - 1; }, 0);
@@ -2432,13 +2499,13 @@ function drawDupes() {
   $('dInfo').textContent = dupeOpts.q.trim() ? 'Only the sets that match the search.' : 'Every set, using your picks and the preferred quality for the rest.';
 }
 // What the main button hides: every set, or the ones the search found.
-function dupeTarget() { return dupeOpts.q.trim() ? dupeShown().map(function (x) { return x.s; }) : dupeSets(); }
+function dupeTarget() { return (dupeOpts.q.trim() ? dupeShown().map(function (x) { return x.s; }) : dupeSets()).filter(function (s) { return !s.skip; }); }
 function renderTools() {
   if (!D || page !== 'tools') return;
   /* countries */
   var cs = countryStats(), ck = renderTools.ck || (renderTools.ck = {});
   $('tCountry').innerHTML = '<h3>Keep only the countries you watch</h3><p>Groups by country, read from group names ("US | News", "Canada Sports", "France Cinema"), from the codes their channels start with ("ARG | ..."), and from the divider group they sit under.  Tick the ones to keep, then hide the rest in one go.</p>' +
-    (cs.length ? '<div class="row" id="ccList" style="gap:8px">' + cs.map(function (x) {
+    (cs.length ? '<div class="row" style="gap:8px;margin-bottom:10px"><button class="small" data-ccset="1">Tick all</button><button class="small" data-ccset="0">Untick all</button><span class="muted small">then tick the few you watch</span></div><div class="row" id="ccList" style="gap:8px">' + cs.map(function (x) {
       var on = ck[x.p] != null ? ck[x.p] : x.shown > 0;
       return '<label class="chip' + (on ? ' acc' : '') + '" style="cursor:pointer;padding:6px 12px;font-size:13px"><input type="checkbox" data-cc="' + esc(x.p) + '"' + (on ? ' checked' : '') + ' style="display:none"><b>' + esc(CC_NAME[x.p] || x.p) + '</b> ' + plural(x.groups.length, 'group') + ' · ' + x.shown + ' shown</label>';
     }).join('') + '</div><div class="row" style="margin-top:12px"><label class="muted small"><input type="checkbox" id="ccNoPrefix"> Also hide groups with no country (sports and event groups, for example)</label><span class="grow"></span><button class="primary" id="ccGo">Show only the ticked countries</button></div><div class="muted small" id="ccInfo" style="margin-top:8px"></div>'
@@ -2447,7 +2514,7 @@ function renderTools() {
   /* duplicates */
   var sets = dupeSets(), extra = sets.reduce(function (n, s) { return n + s.items.length - 1; }, 0), look = sets.filter(dupeUnsure).length;
   if (!look && dupeOpts.show === 'look') dupeOpts.show = 'all';
-  $('tDupes').innerHTML = '<h3>Same channel, more than once</h3><p>The same channel in several qualities (4K, FHD, HD, SD) or copies.  TiviBro already picked one in each set by the quality you prefer; you only need to look at the sets it could not tell apart.  Click a copy to keep that one instead.</p><p class="muted small">The copies you hide are still backups: if the one you keep stops working, the TV switches to another copy by itself, and hold OK &gt; Other versions on the TV lists them all.</p>' +
+  $('tDupes').innerHTML = '<h3>Same channel, more than once</h3><p>The same channel in several qualities (4K, FHD, HD, SD) or copies.  TiviBro already picked one in each set by the quality you prefer; you only need to look at the sets it could not tell apart.  Each set shows <b>Keep</b> on the copy that stays and <b>Hide</b> on the rest.  Click a copy to keep that one instead, or <b>Keep all</b> to leave a set as it is.</p><p class="muted small">The copies you hide are still backups: if the one you keep stops working, the TV switches to another copy by itself, and hold OK &gt; Other versions on the TV lists them all.</p>' +
     (sets.length ? '<div class="dsum"><b>' + plural(sets.length, 'channel') + '</b> come more than once: <b>' + plural(extra, 'extra copy', 'extra copies') + '</b>.' + (look ? '  <span class="chip warn">' + look + ' to check</span>' : '  <span class="chip ok">All picked</span>') + '</div>' : '') +
     '<div class="row" style="margin-bottom:10px;flex-wrap:wrap;gap:10px"><div class="dd" id="dPrefer" style="width:250px"></div><label class="muted small"><input type="checkbox" id="dSame"' + (dupeOpts.same ? ' checked' : '') + '> Only within the same group</label></div>' +
     (sets.length ? '<div class="row" style="gap:10px;flex-wrap:wrap;margin-bottom:6px"><input id="dQ" type="text" class="grow" placeholder="Find a channel: ESPN, CNN…" value="' + esc(dupeOpts.q) + '" style="min-width:200px">' +
@@ -2478,7 +2545,77 @@ function renderTools() {
   renderFeeds();
   /* local channels */
   renderLocal();
+  /* group name prefixes */
+  var gp = groupPrefixes();
+  $('tGnames').innerHTML = '<h3>Shorter group names</h3><p>When most of your groups start with the same word ("USA News", "USA Sports", "USA Kids"), it says nothing.  Take it off the shown groups at once.  Your provider\'s list is not changed, and each group can be renamed back.</p>' +
+    (gp.length ? gp.map(function (x) { return '<div class="row" style="margin:8px 0;gap:10px;flex-wrap:wrap"><span class="grow small"><b>"' + esc(x.p) + '"</b> starts ' + plural(x.groups.length, 'shown group') + ', like ' + x.groups.slice(0, 3).map(function (g) { return esc(g.name) + ' → <b>' + esc(trimPrefix(g.name, x.p)) + '</b>'; }).join(', ') + '</span><button class="small primary" data-gpre="' + esc(x.p) + '">Take "' + esc(x.p) + '" off ' + x.groups.length + '</button></div>'; }).join('')
+      : '<div class="muted">No word starts most of your shown group names.</div>');
+  /* adult */
+  var ad = adultGroups();
+  $('tAdult').innerHTML = '<h3>Adult groups</h3><p>Groups whose names say Adult, XXX, 18+ or similar.  Hide them here; on the TV, Settings &gt; Parental controls can also lock any group behind a PIN.</p>' +
+    (ad.length ? '<div class="small" style="margin-bottom:10px">' + ad.map(function (g) { return esc(g.name) + ' (' + g.n + ')'; }).join(', ') + '</div><button class="primary" id="adGo">Hide ' + plural(ad.length, 'adult group') + '</button>' : '<div class="muted">No adult groups are shown.</div>');
+  decorateTools();
 }
+/* Smart clean-up as a checklist: each step says Done (nothing left for it to do), Skipped (you
+   chose to leave it) or To do, and can be skipped.  Skips are saved on the TV with your edits. */
+// Groups named for adults.  Whole words only, so "Adult Swim" (cartoons) is left alone.
+var ADULT_RE = /\b(?:adults?(?!\s*swim)|xxx|porn\w*|erotic\w*|playboy|hustler|brazzers)\b|\b18\s*\+/i;
+function adultGroups() {
+  return D.groups.filter(function (g) { return !E.hiddenGroups[g.id] && ADULT_RE.test(g.name); }).map(function (g) { return { id: g.id, name: groupLabel(g.id), n: (byGroup.get(g.id) || []).length }; });
+}
+document.addEventListener('click', function (e) {
+  if (e.target.id !== 'adGo') return;
+  var l = adultGroups();
+  mut('Hid ' + plural(l.length, 'adult group'), function () { l.forEach(function (g) { E.hiddenGroups[g.id] = 1; }); });
+  toast(plural(l.length, 'adult group') + ' hidden', ['Undo', undo]);
+});
+// Words that start several shown provider group names: "USA" in "USA News", "USA | Sports".
+function groupPrefixes() {
+  var by = {}, shown = providerGroups().filter(function (g) { return !E.hiddenGroups[g.id]; });
+  shown.forEach(function (g) {
+    var m = /^\s*([A-Za-z]{2,12})(?:\s*[|:\-]\s*|\s+)(?=\S)/.exec(g.name); if (!m) return;
+    var w = m[1].toUpperCase(); (by[w] || (by[w] = [])).push(g);
+  });
+  return Object.keys(by).filter(function (w) { return by[w].length >= 3; }).map(function (w) { return { p: w, groups: by[w] }; }).sort(function (a, b) { return b.groups.length - a.groups.length; }).slice(0, 4);
+}
+function trimPrefix(name, w) { var r = name.replace(new RegExp('^\\s*' + w + '(?:\\s*[|:\\-]\\s*|\\s+)', 'i'), ''); return r.charAt(0).toUpperCase() + r.slice(1); }
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-gpre]'); if (!b) return;
+  var w = b.dataset.gpre, x = groupPrefixes().filter(function (y) { return y.p === w; })[0]; if (!x) return;
+  mut('Took "' + w + '" off ' + plural(x.groups.length, 'group name'), function () { x.groups.forEach(function (g) { E.groupRenames[g.id] = trimPrefix(g.name, w); }); });
+  toast('"' + w + '" taken off ' + plural(x.groups.length, 'group name'), ['Undo', undo]);
+});
+var TOOLS = [['adult', 'tAdult'], ['country', 'tCountry'], ['dupes', 'tDupes'], ['feeds', 'tFeeds'], ['local', 'tLocal'], ['divider', 'tDivider'], ['idle', 'tIdle'], ['empty', 'tEmpty']];
+function toolDone(id) {
+  if (id === 'country') return countryStats().filter(function (x) { return x.shown > 0; }).length <= 2;
+  if (id === 'dupes') return !dupeSets().length;
+  if (id === 'feeds') { var f = feedPairs(), sh = function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g]; }; return !f.pairs || !f.west.some(sh) || !f.east.some(sh); }
+  if (id === 'local') { var l = localIndex(); return l.cities.length <= 3 || l.chans.filter(function (x) { return !E.hiddenChannels[x.c.k] && !E.hiddenGroups[x.c.g]; }).length <= 30; }
+  if (id === 'divider') return !dividerGroups().length;
+  if (id === 'adult') return !adultGroups().length;
+  if (id === 'idle') return !!N.hideIdle || idleChannels().length < 10;
+  if (id === 'empty') return !emptyGroups().length;
+  return true;
+}
+function toolsBadge() { var nt = toolsLeft(), b = $('toolsBadge'); b.textContent = nt; b.classList.toggle('hidden', !nt); b.title = plural(nt, 'step') + ' to do in Smart clean-up'; }
+function toolSkipped(id) { return !!(E.toolSkip && E.toolSkip[id]); }
+function toolsLeft() { return TOOLS.filter(function (t) { return !toolSkipped(t[0]) && !toolDone(t[0]); }).length; }
+function decorateTools() {
+  var done = 0, skipped = 0;
+  TOOLS.forEach(function (t) {
+    var card = $(t[1]), h = card && card.querySelector('h3'); if (!h) return;
+    var d = toolDone(t[0]), sk = toolSkipped(t[0]);
+    if (d) done++; else if (sk) skipped++;
+    card.classList.toggle('tdone', d || sk);
+    h.insertAdjacentHTML('beforeend', ' <span class="chip ' + (d ? 'ok">✓ Done' : sk ? '">Skipped' : 'warn">To do') + '</span>' + (d ? '' : ' <button class="small ghost tskip" data-tskip="' + t[0] + '">' + (sk ? 'Undo skip' : 'Skip') + '</button>'));
+  });
+  $('toolsProg').innerHTML = '<b>' + done + ' of ' + TOOLS.length + '</b> done' + (skipped ? ', ' + skipped + ' skipped' : '') + '.  ' + (done + skipped === TOOLS.length ? 'Nothing left to do here.' : 'Work through the ones marked <span class="chip warn">To do</span>, or skip the ones you want to leave as they are.');
+}
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-tskip]'); if (!b) return;
+  var id = b.dataset.tskip, on = !toolSkipped(id);
+  mut((on ? 'Skipped' : 'Un-skipped') + ' a Smart clean-up step', function () { if (!E.toolSkip) E.toolSkip = {}; if (on) E.toolSkip[id] = 1; else delete E.toolSkip[id]; });
+});
 function renderFeeds() {
   var fp = feedPairs(), fo = renderTools.feeds || (renderTools.feeds = { keep: 'east', groups: true });
   var shown = function (l) { return l.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g]; }); };
@@ -2492,17 +2629,33 @@ function renderFeeds() {
       : '<div class="muted">No channels come in both an East and a West feed.</div>');
 }
 function renderLocal() {
-  var li = localIndex(), lo = renderTools.local || (renderTools.local = { sel: {}, q: '', none: true, copy: true, name: 'Local channels', hideNets: true });
+  var li = localIndex(), lo = renderTools.local || (renderTools.local = localPicked(li));
   if (!li.cities.length) { $('tLocal').innerHTML = '<h3>Local channels: pick your city</h3><div class="muted">No local channel groups found (groups named like "ABC Locals" or "CBS Locals").</div>'; return; }
   var nets = {}; li.chans.forEach(function (x) { nets[x.p.net] = 1; });
   $('tLocal').innerHTML = '<h3>Local channels: pick your city</h3><p>Your provider’s local groups (' + li.groups.slice(0, 6).map(function (g) { return esc(g.name); }).join(', ') + (li.groups.length > 6 ? '…' : '') + ') carry stations for ' + li.cities.length + ' cities.  Pick yours, and TiviBro keeps those and hides the rest in every local group at once.</p>' +
-    '<div class="row" style="gap:12px;flex-wrap:wrap"><input id="lcQ" type="text" class="grow" placeholder="Find a city: Detroit, Lansing, Boston…" value="' + esc(lo.q) + '" style="min-width:240px">' +
-    '<label class="muted small"><input type="checkbox" id="lcNone"' + (lo.none ? ' checked' : '') + '> Keep stations with no city (national feeds)</label></div>' +
+    '<div class="row" style="gap:12px;flex-wrap:wrap"><input id="lcQ" type="text" class="grow" placeholder="Find a city: Chicago, Boston, Denver…" value="' + esc(lo.q) + '" style="min-width:240px">' +
+    '<label class="muted small" title="' + esc(noCityNames(li)) + '"><input type="checkbox" id="lcNone"' + (lo.none ? ' checked' : '') + '> Leave ' + plural(li.chans.filter(function (x) { return !x.p.city; }).length, 'station') + ' with no city shown (national feeds like ' + esc(noCityNames(li, 3)) + ').  They are not added to your group.</label></div>' +
+    (lo.was ? '<div class="msg ok" style="margin-top:10px"><span>Your earlier pick (' + Object.keys(lo.sel).map(titleCase).join(', ') + ') is ticked below.  Change it and press the button to update.</span></div>' : '') +
     '<div id="lcList" class="lclist"></div>' +
     '<div class="lcopts"><label class="small"><input type="checkbox" id="lcCopy"' + (lo.copy ? ' checked' : '') + '> Also put them together in one group called</label><input id="lcName" type="text" value="' + esc(lo.name) + '"' + (lo.copy ? '' : ' disabled') + '>' +
     '<label class="small lcsub"><input type="checkbox" id="lcHideNets"' + (lo.hideNets ? ' checked' : '') + (lo.copy ? '' : ' disabled') + '> Then hide the ' + plural(li.groups.length, 'network group') + ' (' + li.groups.slice(0, 4).map(function (g) { return esc(g.name); }).join(', ') + (li.groups.length > 4 ? '…' : '') + '), so your stations show up once.  Your stations stay in Local channels.</label></div>' +
     '<div class="row" style="margin-top:12px"><span class="muted small grow" id="lcInfo"></span><button class="primary" id="lcGo" disabled>Keep only these cities</button></div>';
   drawLocalList();
+}
+/* What you picked last time, read back from your edits: the cities whose stations are in your own
+   local group (a group of yours made up of local stations), so coming back is updating, not
+   starting over. */
+function localPicked(li) {
+  var lo = { sel: {}, q: '', none: true, copy: true, name: 'Local channels', hideNets: true }, byKey = {};
+  li.chans.forEach(function (x) { byKey[x.c.k] = x; });
+  var g = E.custom.filter(function (x) { return x.id !== FAV && x.items.length && x.items.every(function (k) { return byKey[k]; }); })[0];
+  if (!g) return lo;
+  lo.name = g.name;
+  g.items.forEach(function (k) { var c = byKey[k].p.city; if (c) lo.sel[c] = 1; });
+  lo.hideNets = li.groups.every(function (x) { return E.hiddenGroups[x.id]; });
+  lo.none = li.chans.some(function (x) { return !x.p.city && !E.hiddenChannels[x.c.k]; });
+  lo.was = Object.keys(lo.sel).length;
+  return lo;
 }
 function drawLocalList() {
   var li = localIndex(), lo = renderTools.local, q = lo.q.trim().toUpperCase();
@@ -2518,6 +2671,7 @@ function drawLocalList() {
   $('lcInfo').textContent = n ? 'Keeps ' + plural(nk, 'local station') + ' in ' + plural(n, 'city', 'cities') + ', hides ' + hide.length + (into ? '.  Puts them in “' + lo.name.trim() + '”' + (lo.hideNets ? ' and hides ' + plural(li.groups.length, 'network group') : '') : '') + '.' : 'Tick one or more cities.';
   $('lcGo').disabled = !n; $('lcGo').textContent = n ? 'Keep only ' + (n === 1 ? titleCase(picked[0].city) : n + ' cities') : 'Keep only these cities';
 }
+function noCityNames(li, n) { var seen = {}, out = []; li.chans.forEach(function (x) { var k = x.c.n.replace(/\s*\|.*$/, ''); if (!x.p.city && !seen[k]) { seen[k] = 1; out.push(x.c.n); } }); return (n ? out.slice(0, n) : out).join(', ') + (n && out.length > n ? '…' : ''); }
 function localHideList() {
   var li = localIndex(), lo = renderTools.local;
   return li.chans.filter(function (x) { return x.p.city ? !lo.sel[x.p.city] : !lo.none; });
@@ -2534,6 +2688,8 @@ $('tCountry').addEventListener('change', function (e) {
   ccInfo();
 });
 $('tCountry').addEventListener('click', function (e) {
+  var all = e.target.closest('[data-ccset]');
+  if (all) { var on = all.dataset.ccset === '1'; countryStats().forEach(function (x) { renderTools.ck[x.p] = on; }); renderTools(); return; }
   if (e.target.id !== 'ccGo') return;
   var keep = {}, none = $('ccNoPrefix').checked, names = [];
   document.querySelectorAll('[data-cc]').forEach(function (i) { keep[i.dataset.cc] = i.checked; if (i.checked) names.push(i.dataset.cc); });
@@ -2576,7 +2732,9 @@ $('tLocal').addEventListener('click', function (e) {
   var li = localIndex(), lo = renderTools.local, hide = localHideList(), keep = li.chans.filter(function (x) { return hide.indexOf(x) < 0; });
   var names = Object.keys(lo.sel).map(titleCase), gname = lo.copy ? lo.name.trim() : '', gid = null;
   if (lo.copy && !gname) { $('lcName').focus(); return; }
-  var keys = T().localKeep(lo.sel, lo.none).map(function (x) { return x.c.k; });
+  // Only the picked cities' stations go in the group.  National feeds with no city stay where they
+  // are (shown, if that box is ticked), and never land in "Local channels".
+  var keys = T().localKeep(lo.sel, false).map(function (x) { return x.c.k; });
   mut('Kept local stations for ' + names.join(', ') + (gname ? ' in ' + gname : ''), function () {
     hide.forEach(function (x) { E.hiddenChannels[x.c.k] = 1; }); keep.forEach(function (x) { delete E.hiddenChannels[x.c.k]; });
     if (!gname) return;
@@ -2601,6 +2759,7 @@ $('tDupes').addEventListener('click', function (e) {
   var t = e.target.closest('button'); if (!t) return;
   function hideSet(s) { s.items.forEach(function (c) { if (c.k !== s.keep) E.hiddenChannels[c.k] = 1; }); }
   if (t.dataset.k) { var st = dupeSets()[+t.dataset.set]; st.keep = t.dataset.k; st.picked = true; drawDupes(); return; }
+  if (t.dataset.skip != null) { var sk = dupeSets()[+t.dataset.skip]; sk.skip = !sk.skip; sk.picked = true; drawDupes(); return; }
   if (t.dataset.show) { dupeOpts.show = t.dataset.show; dPage = 0; [].forEach.call(t.parentNode.children, function (b) { b.classList.toggle('on', b === t); }); drawDupes(); return; }
   if (t.id === 'dAll') { var sets = dupeTarget(), n = sets.reduce(function (a, s) { return a + s.items.length - 1; }, 0); ask('Hide ' + plural(n, 'extra copy', 'extra copies') + '?', 'Keeps one copy of each of ' + plural(sets.length, 'channel') + ' (your picks, or the preferred quality) and hides the rest.  You can undo this.', 'Hide them', function () { mut('Hid ' + plural(n, 'duplicate'), function () { sets.forEach(hideSet); }); toast(plural(n, 'duplicate') + ' hidden', ['Undo', undo]); }); }
   if (t.dataset.dpg) { dPage += +t.dataset.dpg; drawDupes(); }
@@ -2699,11 +2858,20 @@ function renderHistory() {
   if (!D || page !== 'history') return;
   renderDiff();
   $('hUndo').disabled = !hist.length; $('hRedo').disabled = !redo.length;
-  $('hList').innerHTML = hist.length ? hist.map(function (h, i) { return { h: h, i: i }; }).reverse().slice(0, 100).map(function (x) {
-    return '<div class="hist"><span class="when">' + clock(x.h.at) + '</span><span class="grow">' + esc(x.h.label) + '</span><button class="ghost small" data-back="' + x.i + '">Go back</button></div>';
-  }).join('') : '<div class="muted" style="padding:10px 0">No changes yet in this session.</div>';
+  // After undoing or going back, say so, with one press to put everything back as it was.
+  var back = redo.length ? '<div class="msg busy" style="margin-bottom:10px"><span>You undid ' + plural(redo.length, 'change') + '.  <b>Redo</b> brings back the latest one, or <button class="small" id="hRedoAll">Undo the undo: return to where you were</button></span></div>' : '';
+  $('hList').innerHTML = back + (hist.length ? hist.map(function (h, i) { return { h: h, i: i }; }).reverse().slice(0, 100).map(function (x) {
+    return '<div class="hist"><span class="when">' + clock(x.h.at) + '</span><span class="grow">' + esc(x.h.label) + '</span><button class="ghost small" data-back="' + x.i + '" title="Undo this change and everything after it">Go back to before this</button></div>';
+  }).join('') : (redo.length ? '' : '<div class="muted" style="padding:10px 0">No changes yet in this session.</div>'));
 }
-$('hList').addEventListener('click', function (e) { var i = e.target.dataset.back; if (i != null) goBack(+i); });
+$('hReset').onclick = function () {
+  ask('Reset this playlist?', 'Shows every group and channel again and removes your groups, favorites, renames, custom order, guide matches and watchlist.  Nothing reaches the TV until you press Send to TV, and you can undo it.', 'Reset everything', function () {
+    mut('Reset this playlist to how the provider sends it', function () { E = pickE({}); N = Names.defaults(); });
+    renderTools.local = null; renderTools.ck = {};
+    toast('Reset.  Press Send to TV to apply it.', ['Undo', undo]);
+  }, true);
+};
+$('hList').addEventListener('click', function (e) { var i = e.target.dataset.back; if (i != null) goBack(+i); if (e.target.id === 'hRedoAll') { while (redo.length) redoIt(); toast('Back to where you were'); } });
 var snapsCache = null;
 function loadSnaps() {
   $('snapList').innerHTML = snapsCache ? $('snapList').innerHTML : '<div class="muted"><span class="spinner"></span> Asking the TV…</div>';
@@ -2713,14 +2881,14 @@ function drawSnaps() {
   var l = snapsCache || [];
   $('snapList').innerHTML = l.length ? '<table class="t"><tr><th>Restore point</th><th>When</th><th>What it holds</th><th></th></tr>' + l.map(function (s) {
     var st = s.stats || {};
-    return '<tr><td><b>' + esc(s.name) + '</b> ' + (s.kind === 'auto' ? '<span class="chip">automatic</span>' : '<span class="chip acc">yours</span>') + '</td><td class="small muted">' + esc(new Date(s.at).toLocaleString()) + '<div class="tiny dim">' + ago(s.at) + '</div></td>' +
+    return '<tr><td><b>' + esc(s.name) + '</b> ' + (s.kind === 'auto' ? '<span class="chip">automatic</span>' : '<span class="chip acc">Saved by you</span>') + '</td><td class="small muted">' + esc(new Date(s.at).toLocaleString()) + '<div class="tiny dim">' + ago(s.at) + '</div></td>' +
       '<td class="small muted">' + plural(st.hiddenGroups || 0, 'hidden group') + ', ' + plural(st.hiddenChannels || 0, 'hidden channel') + ', ' + plural(st.groups || 0, 'own group') + ', ' + plural(st.renames || 0, 'rename') + '</td>' +
       '<td class="r"><button class="small" data-srestore="' + esc(s.id) + '">Restore</button> <button class="ghost small danger" data-sdel="' + esc(s.id) + '">Delete</button></td></tr>';
   }).join('') + '</table>' : '<div class="muted">No restore points yet.  The TV makes one each time you send changes, or create one above.</div>';
 }
 $('sRefresh').onclick = loadSnaps;
 /* ---------- draft history ---------- */
-var DKIND = { auto: ['automatic', ''], checkpoint: ['', 'acc'], named: ['yours', 'acc'] };
+var DKIND = { auto: ['automatic', ''], checkpoint: ['', 'acc'], named: ['saved by you', 'acc'] };
 function loadDrafts(quiet) {
   if (!quiet) $('dList').innerHTML = draftsCache ? $('dList').innerHTML : '<div class="muted"><span class="spinner"></span> Asking the TV…</div>';
   return busyBtn(quiet ? null : $('dRefresh'), command('listDrafts', {}, 30000)).then(function (r) { draftsCache = r.data || { list: [] }; drawDrafts(); })

@@ -34,7 +34,7 @@ const loc = [
   ['PBS | MA - BOSTON (WGBH)', 'PBS', 'BOSTON'], ['US: PBS - CT - HARTFORD (WEDH)', 'PBS', 'HARTFORD'], ['CW | BOSTON 56 WLVI', 'CW', 'BOSTON'],
   ['CW | NEW YORK PIX11 WPIX', 'CW', 'NEW YORK'], ['CW | ACADIANA CW', 'CW', 'ACADIANA'], ['FOX | ST LOUIS | KTVI', 'FOX', 'ST LOUIS'],
   ['TELEMUNDO | CHICAGO', 'TELEMUNDO', 'CHICAGO'], ['CA | CTV 2 WINDSOR', 'CTV 2', 'WINDSOR'], ['CA | CBC ST.JOHNS', 'CBC', 'ST JOHNS'],
-  ['GALAVISION', 'GALAVISION', ''], ['GALAVISION | EAST', 'GALAVISION', ''], ['CW | EAST (PHILLY)', 'CW', ''], ['USA | FOX | DETROIT | WJBK', 'FOX', 'DETROIT']];
+  ['GALAVISION', 'GALAVISION', ''], ['GALAVISION | EAST', 'GALAVISION', ''], ['CW | EAST (PHILLY)', 'CW', 'PHILADELPHIA'], ['ABC | NYC | WABC', 'ABC', 'NEW YORK'], ['USA | FOX | DETROIT | WJBK', 'FOX', 'DETROIT']];
 loc.forEach(([name, net, city]) => { const p = parseLocal(name); ok('local: ' + name, p && p.net === net && p.city === city, p ? p.net + ' / ' + p.city : 'null'); });
 ok('local: not a local', parseLocal('USA | ESPN') === null && parseLocal('NBC SPORTS').city === '', JSON.stringify(parseLocal('NBC SPORTS')));
 load([{ id: 'a', name: 'ABC Locals' }, { id: 'c', name: 'CBS Locals' }, { id: 'x', name: 'USA EAST' }], [
@@ -71,5 +71,12 @@ ok('dupes: one set, West kept apart', ds.length === 1 && ds[0].items.length === 
 ok('dupes: keeps Full HD first', ds[0].keep === '1');
 ok('dupes: highest quality', T.dupes({ prefer: 'best' })[0].keep === '3');
 ok('dupes: skip hidden', T.dupes({ skip: c => c.k === '1' || c.k === '2' }).length === 0);
+{
+  const P = Tidy.make({ groups: [{ id: 'p', name: 'Peacock Events' }], channels: [
+    { k: 'a', n: 'US (Peacock 002) | Milan Cortina 2026 Coverage', g: 'p' }, { k: 'b', n: 'US (Peacock 014) | Milan Cortina 2026 Coverage', g: 'p' },
+    { k: 'c', n: 'ESPN HD', g: 'p' }, { k: 'd', n: 'ESPN 4K', g: 'p' }, { k: 'e', n: 'ESPN 2 HD', g: 'p' }] });
+  const d = P.dupes().map(s => s.items.map(c => c.k).sort().join(''));
+  ok('dupes: numbered event channels are not copies, quality numbers are', d.length === 1 && d[0] === 'cd', JSON.stringify(d));
+}
 console.log(fail ? fail + ' failures' : 'all ' + n + ' clean-up tests passed');
 process.exit(fail ? 1 : 0);

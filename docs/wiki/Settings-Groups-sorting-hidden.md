@@ -28,7 +28,7 @@ Which groups show, in what order, and getting hidden things back.
 | **New group…** | | Creates one of your own groups.  Then **Hold OK** on any channel and choose **Copy to group…**. |
 | *(each of your groups)* | | **OK** for Rename, Move up, Move down, Empty this group and Delete group (Favorites can't be renamed or deleted). |
 | **Hidden groups**, **Hidden channels** | | Everything you hid, with **Restore** on each and **Restore all**. |
-| **Clear all edits for this playlist** | | Removes your groups, renames, guide assignments and hidden items for this playlist.  It asks first. |
+| **Clear all edits for this playlist** | | Removes your groups, renames, guide assignments and hidden items for this playlist.  It asks first.  The web editor's **Changes and restore points > Start over** does the same, can be undone, and waits for **Send to TV**. |
 
 ---
 

@@ -70,7 +70,7 @@ var Tour = (function () {
     if (Object.keys(ch.cities).length) {
       t.localHide(ch.cities, ch.cityNone).forEach(function (x) { c[x.c.k] = 1; });
       // Your stations together in one group, and the network groups (ABC Locals, CBS Locals...) out of the way.
-      if (ch.cityGroup) { cityKeep = t.localKeep(ch.cities, ch.cityNone).map(function (x) { return x.c.k; }); if (ch.cityHideNets) st.sv.locals.groups.forEach(function (gr) { g[gr.id] = 1; }); }
+      if (ch.cityGroup) { cityKeep = t.localKeep(ch.cities, false).map(function (x) { return x.c.k; }); if (ch.cityHideNets) st.sv.locals.groups.forEach(function (gr) { g[gr.id] = 1; }); }
     }
     var words = ch.words.split(',').map(function (w) { return w.trim().toLowerCase(); }).filter(Boolean);
     if (words.length) data.groups.forEach(function (gr) { var n = String(gr.name).toLowerCase(), cn = Names.cleanWith(ch.names, gr.name).toLowerCase(); if (words.some(function (w) { return n.indexOf(w) >= 0 || cn.indexOf(w) >= 0; })) g[gr.id] = 1; });

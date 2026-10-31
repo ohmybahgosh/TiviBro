@@ -37,8 +37,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ed.evaluate(g => mut('move', function () { placeIn(g, channelsOf(g)[0].k, 2); }), g);
   const want = await ed.evaluate(g => channelsOf(g).map(c => c.k), g);
 
-  // Watchlist on the Guide page.
-  await ed.click('#nav button[data-page=guide]'); await ed.waitForTimeout(1200);
+  // Watchlist: its own page now (it used to be the last card on the Guide page).
+  await ed.click('#nav button[data-page=watch]'); await ed.waitForTimeout(800);
   await ed.fill('#wText', 'News'); await ed.click('#wAdd'); await ed.waitForTimeout(300);
   await ed.fill('#wText', 'news'); await ed.click('#wAdd'); await ed.waitForTimeout(300);
   ok('the watchlist card lists the word once', (await ed.evaluate(() => E.watchlist.map(w => w.q).join())) === 'News', await ed.evaluate(() => JSON.stringify(E.watchlist)));

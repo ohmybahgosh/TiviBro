@@ -732,7 +732,7 @@ var Settings = (function () {
         e._sw.classList.toggle('hidden', !sw);
         if (sw) e._sw.style.background = sw;
       } else if (e._v) e._v.textContent = it.value ? it.value() : '';
-      e.classList.toggle('focus', zone === 'body' && i === sel);
+      e.classList.toggle('focus', zone === 'body' && i === sel && focusable(i));
     });
     var f = rowEls[sel];
     if (f && scrollEl) {
@@ -740,18 +740,22 @@ var Settings = (function () {
       if (y + cur < 40) cur = -y + 40;
       if (y + f.offsetHeight + cur > h - 40) cur = h - 40 - y - f.offsetHeight;
       if (zone === 'nav' || sel <= 1) cur = 0;
-      cur = Math.min(0, cur);
-      scrollEl._y = cur;
-      scrollEl.style.transform = 'translateY(' + cur + 'px)';
+      // On the last row you can pick, show what comes after it too (notes, results): otherwise text
+      // under the last choice could never be scrolled into view.
+      if (zone === 'body' && lastFocusable() === sel) cur = Math.min(cur, scrollMin());
+      setScroll(cur);
     }
   }
+  function scrollMin() { return Math.min(0, body.clientHeight - 24 - scrollEl.scrollHeight); }
+  function setScroll(y) { y = Math.max(scrollMin(), Math.min(0, y)); scrollEl._y = y; scrollEl.style.transform = 'translateY(' + y + 'px)'; }
+  function lastFocusable() { for (var i = items.length - 1; i >= 0; i--) if (focusable(i)) return i; return -1; }
   function focusable(i) { var it = items[i]; return !!(it && !it.head && !it.info && !it.preview); }
 
   function keys(a) {
     if (zone === 'nav') {
       if (a === 'up') { if (sec > 0) { sec--; sel = 0; build(); } else Views.tabBar(function () { UI.setHandler(keys); paint(); }); }
       else if (a === 'down') { if (sec < SECTIONS.length - 1) { sec++; sel = 0; build(); } }
-      else if (a === 'right' || a === 'ok') { if (items.some(function (x, i) { return focusable(i); })) { zone = 'body'; paint(); } }
+      else if (a === 'right' || a === 'ok') { zone = 'body'; paint(); }      // pages of facts only scroll
       else if (a === 'left' || a === 'back') Views.tabBar(function () { UI.setHandler(keys); paint(); });
       else if (a === 'green') Views.switchTab('live');
       return true;
@@ -761,6 +765,8 @@ var Settings = (function () {
       var d = a === 'up' ? -1 : 1, i = sel + d;
       while (i >= 0 && i < items.length && !focusable(i)) i += d;
       if (i >= 0 && i < items.length) { sel = i; paint(); }
+      // Nothing more to pick that way (a page of facts, or notes under the last choice): scroll.
+      else if (scrollEl) setScroll((scrollEl._y || 0) - d * Math.round(body.clientHeight * 0.6));
     }
     else if (a === 'chup') { for (var j = 0; j < 8; j++) keys('up'); }
     else if (a === 'chdown') { for (var k = 0; k < 8; k++) keys('down'); }

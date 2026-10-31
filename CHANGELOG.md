@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **Holding OK no longer jumps to fullscreen.**  Holding OK on a channel opened its menu, and the TV's key repeats while OK was still down then picked the menu's first item.  Repeats now belong to the hold until OK is let go.
+- **Settings scroll to the end.**  Notes under the last choice (like the reminder list below "Reminder question stays for") were cut off under the button hints; now the last choice brings them into view.  Pages of facts only (Diagnostics > What this TV can play) scroll with ▲ ▼ and no longer show a heading as selected, and the top row no longer covers the clock.
+- **The guide's groups panel reads as a layer:** its own raised colour and accent edge, with the programmes behind it dimmed.
+- **Web editor, Smart clean-up as a checklist:** each step says Done, To do or Skipped, with **Skip** and a count at the top, and the menu badge counts the steps still to do.  New steps: **Adult groups** (Adult, XXX, 18+, not Adult Swim) and **Shorter group names** (take "USA" off "USA News", "USA Sports"...).  Countries get **Tick all** and **Untick all**.
+- **Duplicates make sense:** each copy says **Keep** or **Hide** (no more "unmarked"), **Keep all** skips a set, and channels with different numbers ("US (Peacock 002)", "US (Peacock 014)") are no longer taken for copies.
+- **Local channels:** stations with no city (Galavision, UniMás and other national feeds) no longer land in your "Local channels" group, a city in brackets counts ("CW | EAST (PHILLY)"), and coming back shows your earlier pick ticked.
+- **Start over** (Changes and restore points) resets the playlist to how the provider sends it, undoable, like the TV's Clear all edits.  The changes page offers **Undo the undo** after going back, and "yours" became "Saved by you".
+- **Guide page:** jump links to each step, the match list scrolls in its own box, and the **Watchlist** has its own page.  Guide sources show the free guide's name and size, or the server and file name (never a login), and recommended guides you added show **✓ Added** and **Remove**; a stale "added" message no longer stays after removing one.  Smart match says how many guesses were left unapproved.
+- **On a phone:** dropdowns (like "All shown channels") no longer close as the keyboard comes up, and the menu button says **Menu** and pulses until first opened.  The checklist ticks **Download a backup** once one is made (it remembers when).
 ## 0.6.0 (alpha 23, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.
