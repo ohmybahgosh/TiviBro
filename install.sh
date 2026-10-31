@@ -129,6 +129,12 @@ esac
 
 echo
 echo "[*] TiviBro $VERSION installed.${OLD:+  (was $OLD)}"
+# Install numbers (tivibro.app/stats): the version and whether it was a new install or an update, nothing
+# else.  TIVIBRO_NO_COUNT=1 skips it.
+if [ -z "${TIVIBRO_NO_COUNT:-}" ] && command -v curl >/dev/null 2>&1; then
+  KIND=install; [ -n "$OLD" ] && KIND=update
+  curl -fsS -m 5 -X POST -H 'Content-Type: application/json' -d "{\"e\":\"$KIND\",\"v\":\"$VERSION\"}" https://tivibro-report.theboxmod.workers.dev/count >/dev/null 2>&1 || true
+fi
 if [ "$LAUNCH" = 1 ]; then
   # The reply says whether it worked; the command's exit code does not.
   case "$(luna 'luna://com.webos.applicationManager/launch' "{\"id\":\"$APP_ID\"}")" in
