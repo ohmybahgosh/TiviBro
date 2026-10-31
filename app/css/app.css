@@ -66,6 +66,7 @@ body.full #app{visibility:hidden}
 .stage{position:absolute;z-index:1;background:#000;overflow:hidden}
 .stage video{width:100%;height:100%;display:block;background:#000}
 .stage.preview{border-radius:12px}
+body.old-video .stage.preview{border-radius:0}
 .stage.full{left:0!important;top:0!important;width:1920px!important;height:1080px!important;border-radius:0;z-index:5}
 .stage.off{visibility:hidden}
 .spinner{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;align-items:center;justify-content:center;gap:18px;color:var(--text);font-size:26px;pointer-events:none}

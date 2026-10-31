@@ -201,6 +201,9 @@ var Views = (function () {
     if (s.nowStyle === 'color' || s.nowStyle === 'off') b.add('now-' + s.nowStyle);
     b.toggle('noguidenames', s.guideNames === false);
     b.toggle('twolinenames', !!s.twoLineNames);
+    // webOS 6 and older put video on a plane behind the page, and a rounded clip around it can leave
+    // the preview window black (reported on a 2019 C9): square corners there.
+    var wv = Caps.probe().webos; b.toggle('old-video', !!wv && wv <= 6);
     if (window.Guide && Guide.draw) try { Guide.draw(); } catch (e) {}
     UI.clock();
   }
