@@ -20,7 +20,7 @@ var WebEdit = (function () {
   function base() { return Net.port ? 'http://127.0.0.1:' + Net.port : ''; }
   function call(path, body) {
     if (!base()) return Promise.reject(new Error('The network helper is not running, so the editor cannot start.  See Settings, Diagnostics.'));
-    return fetch(base() + path, { method: body ? 'POST' : 'GET', cache: 'no-store', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined })
+    return fetch(base() + path, { method: body ? 'POST' : 'GET', cache: 'no-store', headers: Net.ctlHeaders(body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'helper answered ' + r.status); return j; }); });
   }
 

@@ -3,7 +3,7 @@ var Settings = (function () {
   'use strict';
   var $ = U.$, S = function () { return Store.settings; }, L = Library;
   var nav = $('setNav'), body = $('setBody');
-  var SECTIONS = [['playback', 'Playback and buffering'], ['remote', 'Remote control'], ['playlists', 'Playlists and guide'], ['editor', 'Edit on a phone or computer'],
+  var SECTIONS = [['playback', 'Playback and buffering'], ['remote', 'Remote control'], ['playlists', 'Playlists and guide'], ['editor', 'Edit on a phone or computer'], ['phone', 'Phone app'],
     ['groups', 'Groups, sorting, hidden'], ['reminders', 'Guide, start screen, reminders'], ['look', 'Appearance'], ['parental', 'Parental controls'], ['updates', 'Updates and about'], ['diag', 'Diagnostics']];
   var sec = 0, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
   var stack = [];               // sub-pages: [{ title, fn, sel }]
@@ -636,6 +636,42 @@ var Settings = (function () {
     return out;
   }
 
+  /* ---------- the TiviBro phone app ---------- */
+  function phone() {
+    var out = [], ps = Phone.status, on = !!(ps && ps.on);
+    Phone.onChange = function () { if (Views.tab === 'settings' && SECTIONS[sec][0] === 'phone' && !stack.length) build(); };
+    if (!ps) { Phone.refresh().catch(function (e) { U.toast(e.message, 5000); }); out.push(info('Checking…', '')); return out; }
+    out.push(info('The TiviBro app for Android finds this TV, opens TiviBro and the web editor full screen, and wakes the TV.  Pair a phone once; it stays paired.', ''));
+    out.push(toggle('Phone app connection', on ? 'On.  Paired phones can reach this TV on your network, even when TiviBro is closed.' : 'Off.  Phones can\'t find or reach this TV.', function () { return !!(Phone.status && Phone.status.on); }, function (v) {
+      var go = function () { Phone.turn(v).then(function () { build(); U.toast(v ? 'Phone app connection is on' : 'Phone app connection is off'); }, function (e) { U.toast(e.message, 5000); build(); }); };
+      if (v || !ps.phones.length) return go();
+      UI.confirm('Turn off the phone app connection?  Paired phones stay paired, but can\'t reach this TV until you turn it back on.', 'Turn off', go);
+    }));
+    if (on) {
+      out.push(action('Pair a phone…', 'Shows a QR code and a code for the TiviBro app.', function () { Phone.showPair(build); }, function () { return '›'; }));
+      out.push(head('Paired phones'));
+      if (!ps.phones.length) out.push(info('None yet', ''));
+      ps.phones.forEach(function (p) {
+        out.push(action(p.name, (p.model ? p.model + '  ·  ' : '') + 'Added ' + when(p.added) + '  ·  Last seen ' + Phone.ago(p.seen), function () {
+          UI.menu(p.name, [
+            { label: 'Remove this phone', sub: 'it can no longer reach this TV, until you pair it again', action: function () {
+              Phone.forget(p.id).then(function () { build(); U.toast(p.name + ' removed'); }, function (e) { U.toast(e.message, 5000); });
+            } },
+            { label: 'Cancel', current: true }
+          ]);
+        }, function () { return '›'; }));
+      });
+      out.push(head('This TV'));
+      out.push(action('Name', 'How phones show this TV.', function () {
+        UI.prompt('Name this TV', ps.ownName || ps.name, function (n) { Phone.rename(n).then(build, function (e) { U.toast(e.message, 5000); }); });
+      }, function () { return Phone.status ? Phone.status.name : ''; }));
+      out.push(info('Address', (ps.ips && ps.ips.length ? ps.ips.join(', ') : 'no network address') + ', port ' + ps.port));
+      out.push(info('To turn this TV on from the phone, switch on Turn on via Wi-Fi in the TV\'s settings (General, Devices, External devices, or Connection, depending on the model).', ''));
+      out.push(info('Only phones you pair here can connect.  The pairing code never crosses the network, and everything a phone sends is signed with a key only that phone and this TV have.', ''));
+    }
+    return out;
+  }
+
   /* ---------- updates and about ---------- */
   var lastUpd = '';
   Update.onChange(function (st) {
@@ -673,7 +709,7 @@ var Settings = (function () {
   }
 
   // Each section's page, by id, so reordering SECTIONS can never show one section under another's name.
-  var BY_ID = { playback: playback, remote: remote, playlists: playlists, editor: editor, groups: groups, reminders: reminders, look: look, parental: parental, updates: updates, diag: diag };
+  var BY_ID = { playback: playback, remote: remote, playlists: playlists, editor: editor, phone: phone, groups: groups, reminders: reminders, look: look, parental: parental, updates: updates, diag: diag };
   var FNS = SECTIONS.map(function (x) { return BY_ID[x[0]]; });
   function build() {
     var top = stack[stack.length - 1];
@@ -782,6 +818,9 @@ var Settings = (function () {
     build();
   }
 
-  return { open: open, assignGuide: assignGuide, reset: function () { stack = []; sel = 0; },
+  // Straight to one section (the phone app's own shortcut, and tests).
+  function section(id) { for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return true; } return false; }
+
+  return { open: open, assignGuide: assignGuide, section: section, reset: function () { stack = []; sel = 0; },
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

@@ -19,6 +19,7 @@
     "activity.operation",
     "application.launcher",
     "application.query",
-    "notification.operation"
+    "notification.operation",
+    "settings.read"
   ]
 }

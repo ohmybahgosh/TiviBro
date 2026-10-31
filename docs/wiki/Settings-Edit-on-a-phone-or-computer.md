@@ -20,4 +20,4 @@ The [web editor](Turning-on-the-web-editor): organise groups and channels from a
 
 ---
 
-← [Settings: Parental controls](Settings-Parental-controls)  ·  [Home](Home)  ·  [Settings: Updates and about](Settings-Updates-and-about) →
+← [Settings: Parental controls](Settings-Parental-controls)  ·  [Home](Home)  ·  [Settings: Phone app](Settings-Phone-app) →

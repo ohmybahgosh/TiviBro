@@ -39,3 +39,5 @@ site/view/shots.json
 service/guide-data/
 service/power.json
 service/helper-errors.json
+service/companion.json
+service/companion.json.tmp

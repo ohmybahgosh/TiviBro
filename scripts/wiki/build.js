@@ -68,6 +68,6 @@ let side = '**[Home](Home)**\n\n**Getting started**\n- [Installing](Installing)\
 Object.keys(groups).forEach(g => {
   side += '\n**' + (label[g] || g) + '**\n' + groups[g].filter(p => p.name !== 'First-start').map(p => '- [' + p.title + '](' + p.name + ')').join('\n') + '\n';
 });
-side += '- [FAQ](FAQ)\n- [Privacy and security](Privacy-and-security)\n\n**Project**\n- [Developing](Developing)\n- [Recording the demo media](Recording-the-demo-media)\n- [Releasing](Releasing)\n';
+side += '- [FAQ](FAQ)\n- [Privacy and security](Privacy-and-security)\n\n**Project**\n- [Developing](Developing)\n- [Phone app protocol](Phone-app-protocol)\n- [Recording the demo media](Recording-the-demo-media)\n- [Releasing](Releasing)\n';
 fs.writeFileSync(path.join(OUT, '_Sidebar.md'), side);
 console.log('wiki: ' + n + ' pages from the user guide, plus the sidebar');

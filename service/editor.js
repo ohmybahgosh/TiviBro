@@ -304,7 +304,17 @@ function create(log) {
     send(res, 404, { error: 'not found' });
   }
 
-  return { control: control, start: start, stop: stop, status: status };
+  /* A session for the TiviBro phone app (companion.js), which has already proved who it is: the same
+     kind of token a password login gives, for the editor's address #t=TOKEN. */
+  function grant(label) {
+    if (!st.server) return '';
+    var token = crypto.randomBytes(24).toString('hex');
+    st.tokens[token] = Date.now();
+    log({ lv: 'info', event: 'editor session for ' + String(label || 'the phone app').slice(0, 60) });
+    return token;
+  }
+
+  return { control: control, start: start, stop: stop, status: status, grant: grant };
 }
 
 module.exports = { create: create, seal: seal, open: open_ };

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Phone app connection, ready for the TiviBro app for Android.**  New in **Settings > Phone app**: switch it on, then **Pair a phone** shows a QR code and a 12-character code for ten minutes.  Paired phones are listed (when added, last seen) and can be removed, and you can name the TV.  While on, the helper keeps a small server running on your network (port 47810), also when TiviBro is closed, so a phone can find the TV, open TiviBro, and open the web editor already signed in (TiviBro starts the editor by itself when a phone asks).  After the TV restarts it is back within 15 minutes.  The pairing code never crosses the network, five wrong codes end it, each phone gets its own key, and every request and answer is signed and can't be replayed.  The protocol is in the wiki (Phone app protocol), with a reference client in scripts/companion/tb-phone.js.  The app itself comes next.
+- Only TiviBro can switch the web editor and the phone app connection on or off: the helper now gives TiviBro a secret when it starts, so a web page in the TV's browser can't reach them over localhost.
 - **Special thanks** in the README and on tivibro.app: everyone whose pull request was merged or who sent an idea or a bug report, kept up to date by itself (scripts/gen-thanks.js and the Thanks workflow).
 - Every screenshot, GIF and video re-recorded from the current app, the search video now finds a movie too, and tivibro.app's pictures follow (scripts/demo/site-shots.sh, scripts/demo/phone-shots.js).
 

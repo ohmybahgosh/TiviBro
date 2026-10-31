@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pair with your TV · TiviBro</title><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
+<link rel="icon" href="/img/icon-32.png">
+<style>
+html,body{margin:0;min-height:100%;background:#0b0e1a;color:#e8ecf8;font:17px/1.5 Inter,system-ui,sans-serif}
+main{max-width:440px;margin:0 auto;padding:56px 22px}
+img{width:56px;height:56px;border-radius:14px}
+h1{font-size:26px;margin:18px 0 6px}
+p{color:#a9b1c9;margin:0 0 16px}
+.tv{font-weight:700;color:#e8ecf8}
+.btn{display:block;text-align:center;background:#33e1ff;color:#0b0e1a;font-weight:700;text-decoration:none;padding:15px;border-radius:14px;margin:24px 0 12px}
+.code{font:700 24px/1.2 ui-monospace,Menlo,monospace;letter-spacing:2px;color:#33e1ff}
+small{color:#7c85a3}
+</style>
+</head><body><main>
+<img src="/img/icon-192.png" alt="">
+<h1 id="h">Pair with your TV</h1>
+<p id="p">Scan the code in TiviBro on your TV, under Settings, Phone app, Pair a phone.</p>
+<div id="go" hidden>
+  <a class="btn" id="open" href="#">Open in the TiviBro app</a>
+  <p>No app yet?  The TiviBro app for Android is coming soon.  You can still edit your channels from this phone: on the TV choose <b>Edit on phone</b> in the menu and scan that code.</p>
+  <p><small>Pairing code, if the app asks: <span class="code" id="c"></span></small></p>
+</div>
+<p><small>The code stays on this phone.  It is after the # in the address, which browsers never send to a website.</small></p>
+</main>
+<script>
+(function () {
+  var h = location.hash.slice(1), q = {};
+  h.split('&').forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) q[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); });
+  if (!q.c || !q.h || !q.id) return;
+  // Out of the address bar and history: the code is only good for ten minutes anyway.
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  var name = String(q.n || 'your TV').slice(0, 40);
+  document.getElementById('h').textContent = 'Pair with ' + name;
+  document.getElementById('p').innerHTML = 'Your phone and <span class="tv"></span> must be on the same network.';
+  document.querySelector('#p .tv').textContent = name;
+  document.getElementById('c').textContent = q.c.replace(/(.{4})(?=.)/g, '$1-');
+  var qs = 'v=1&h=' + encodeURIComponent(q.h) + '&id=' + encodeURIComponent(q.id) + '&c=' + encodeURIComponent(q.c) + '&n=' + encodeURIComponent(name);
+  document.getElementById('open').href = 'intent://pair?' + qs + '#Intent;scheme=tivibro;package=app.tivibro.phone;end';
+  document.getElementById('go').hidden = false;
+})();
+</script>
+</body></html>

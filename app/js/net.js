@@ -8,7 +8,7 @@
    or Direct (for providers or proxies like Dispatcharr that already send CORS headers). */
 var Net = (function () {
   'use strict';
-  var port = 0, bridge = null, state = 'off', waiters = [], lastError = '', t0 = 0, info = null;
+  var port = 0, bridge = null, state = 'off', waiters = [], lastError = '', t0 = 0, info = null, ctl = '';
 
   // Before trusting the helper, prove it answers.  A port with nothing behind it is worse than none.
   function verify(p) {
@@ -51,7 +51,7 @@ var Net = (function () {
           var r = {};
           try { r = JSON.parse(msg); } catch (e) { Log.error('net', 'Helper sent something unreadable', String(msg).slice(0, 200)); }
           Log.info('net', 'Helper replied after ' + (Date.now() - t0) + 'ms', msg && String(msg).slice(0, 300));
-          if (r.returnValue && r.port) { if (state === 'starting') { port = r.port; state = 'on'; clearTimeout(timer); settle(); } }
+          if (r.returnValue && r.port) { if (r.ctl) ctl = String(r.ctl); if (state === 'starting') { port = r.port; state = 'on'; clearTimeout(timer); settle(); } }
           else if (r.returnValue === false) {
             // Typical texts: "Service does not exist", "Denied method call", "Unknown method".
             lastError = 'helper refused: ' + (r.errorText || r.errorCode || 'no reason given');
@@ -116,6 +116,8 @@ var Net = (function () {
     xfer: function (id) { return port ? 'http://127.0.0.1:' + port + '/xfer/' + id : ''; },
     // The helper's /ping answer: Node version, and sys { bootAt, power } (see service/proxy.js).
     get info() { return info; },
+    // Headers for the helper's control routes (web editor, phone app connection): see service/proxy.js.
+    ctlHeaders: function (h) { h = h || {}; if (ctl) h['X-TiviBro-Ctl'] = ctl; return h; },
     get port() { return port; }, get active() { return !!useRelay(); }, get state() { return state; }, get lastError() { return lastError; },
     status: function () { return port ? 'running on port ' + port : 'not running' + (lastError ? ': ' + lastError : ''); },
     // Recent requests as the helper saw them (status, time, bytes, upstream error codes).

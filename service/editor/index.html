@@ -1257,7 +1257,7 @@ function route() {
   if (D && !D.setup && p === 'welcome') p = 'home';
   show(p, h[1]);
 }
-window.addEventListener('hashchange', function () { if (D && !/^#k=/.test(location.hash)) route(); });
+window.addEventListener('hashchange', function () { if (D && !/^#[kt]=/.test(location.hash)) route(); });
 $('nav').addEventListener('click', function (e) {
   var b = e.target.closest('button'); if (!b) return;
   if (b.dataset.act === 'logout') { document.body.classList.remove('navopen'); $('logout').click(); return; }
@@ -3113,6 +3113,14 @@ window.addEventListener('resize', drawRows);
 /* The QR code on the TV (first-run tour) opens the editor already signed in: http://tv:port/#k=PASSWORD/tools.
    The password leaves the address bar at once. */
 function qrLogin() {
+  // The TiviBro phone app opens the editor with a session it was given: #t=TOKEN/page.
+  var t = /^#t=([0-9a-f]{48})(?:\/(\w+))?$/.exec(location.hash);
+  if (t) {
+    history.replaceState(null, '', '#' + (t[2] || 'home'));
+    token = t[1]; try { sessionStorage.setItem('tivibro.editor.token', token); } catch (e) {}
+    boot();
+    return true;
+  }
   var m = /^#k=([A-Za-z0-9-]{4,40})(?:\/(\w+))?$/.exec(location.hash);
   if (!m) return false;
   history.replaceState(null, '', '#' + (m[2] || 'home'));

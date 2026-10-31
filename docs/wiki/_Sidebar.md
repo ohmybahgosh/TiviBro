@@ -32,6 +32,7 @@
 - [Settings: Appearance](Settings-Appearance)
 - [Settings: Parental controls](Settings-Parental-controls)
 - [Settings: Edit on a phone or computer](Settings-Edit-on-a-phone-or-computer)
+- [Settings: Phone app](Settings-Phone-app)
 - [Settings: Updates and about](Settings-Updates-and-about)
 - [Settings: Diagnostics](Settings-Diagnostics)
 
@@ -52,5 +53,6 @@
 
 **Project**
 - [Developing](Developing)
+- [Phone app protocol](Phone-app-protocol)
 - [Recording the demo media](Recording-the-demo-media)
 - [Releasing](Releasing)

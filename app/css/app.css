@@ -536,5 +536,17 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 .edit-join .remote-l{font-size:22px;margin-top:12px}
 .edit-join .remote-v{font-size:40px;letter-spacing:1px}
 .edit-join .remote-s{font-size:22px;margin-top:14px}
+/* Pair a phone (Settings, Phone app) */
+.pair{display:flex;align-items:center}
+.pair .pair-qr{flex:none;width:340px;height:340px;margin-right:56px;transition:opacity .3s}
+.pair.ok .pair-qr{opacity:.25}
+.pair-steps{margin:0 0 6px;padding-left:34px;font-size:26px;line-height:1.55;color:var(--text)}
+.pair-steps li::marker{color:var(--accent-text);font-weight:700}
+.pair .remote-l{font-size:22px;margin-top:18px}
+.pair-code{font-size:58px;font-weight:700;letter-spacing:4px;color:var(--accent-text);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pair-left{font-size:22px;color:var(--muted);margin-top:4px;font-variant-numeric:tabular-nums}
+.pair-stat{font-size:24px;color:var(--muted);margin-top:22px}
+.pair-stat.ok{color:var(--accent-text);font-weight:700}
+.pair-stat.err{color:#e57373}
 .mbtns{margin-top:10px}
 .mbtns .btn{margin:24px 18px 0 0}

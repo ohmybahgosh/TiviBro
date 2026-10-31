@@ -177,13 +177,13 @@ Promise.resolve(5).finally(() => order.push('f')).then(v => order.push(v))
     // launching the app (application.launcher), and createAlert / createToast (notification.operation,
     // the group com.webos.notification provides; LG's public list does not cover notifications).
     const needs = { 'com.webos.service.tv.systemproperty/getSystemInfo': 'systemconfig.query', 'activityManager.': 'activity.operation', 'com.palm.activitymanager': 'activity.operation',
-      'com.webos.applicationManager/launch': 'application.launcher', 'com.webos.applicationManager/getForegroundAppInfo': 'application.query', 'com.webos.notification/': 'notification.operation' };
+      'com.webos.applicationManager/launch': 'application.launcher', 'com.webos.applicationManager/getForegroundAppInfo': 'application.query', 'com.webos.notification/': 'notification.operation', 'com.webos.settingsservice/getSystemSettings': 'settings.read' };
     const all = files('app/js').concat(files('service')).map(f => fs.readFileSync(path.join(ROOT, f), 'utf8')).join('\n');
     Object.keys(needs).forEach(k => { if (all.indexOf(k) >= 0) ok('requiredACG has ' + needs[k] + ' (for ' + k.replace(/\.$/, '') + ')', (info.requiredACG || []).indexOf(needs[k]) >= 0); });
     const luna = all.match(/luna:\/\/[\w.]+/g) || [];
     // org.webosbrew.hbchannel.service (in-app updates) only exists on rooted TVs and has no ACG group;
     // update.js treats a refused call as "can't install from the TV".
-    const known = ['luna://com.webos.service.tv.systemproperty', 'luna://' + info.id + '.service', 'luna://org.webosbrew.hbchannel', 'luna://com.palm.activitymanager', 'luna://com.webos.applicationManager', 'luna://com.webos.notification',
+    const known = ['luna://com.webos.service.tv.systemproperty', 'luna://' + info.id + '.service', 'luna://org.webosbrew.hbchannel', 'luna://com.palm.activitymanager', 'luna://com.webos.applicationManager', 'luna://com.webos.notification', 'luna://com.webos.settingsservice',
       // tvpower/getPowerState (is the screen on, or the screensaver / Always Ready?) has no public ACG group;
       // remind.js treats a refused call as "don't know" and still checks the app in front.
       'luna://com.webos.service.tvpower'];

@@ -373,6 +373,63 @@ function backup(E, L, H, done) {
     });
   });
 }
+step(function companion(next) {
+  // The phone app connection (companion.js): pairing and signed requests with this Node's crypto.
+  var Companion = require(path.join(SVC, 'companion.js')), crypto = require('crypto'), fs = require('fs'), os = require('os'), dgram = require('dgram');
+  var dir = path.join(os.tmpdir(), 'tb-comp-' + process.pid);
+  try { fs.mkdirSync(dir); } catch (e) {}
+  var launched = [];
+  var c = Companion.create({ dir: dir, version: 'engine', log: function () {}, launch: function (p, cb) { launched.push(p); cb(null); }, app: function () { return { open: false }; }, editor: function () { return null; } });
+  function ctl(u, body, cb) {
+    var res = { writeHead: function (code) { this.code = code; }, end: function (b) { cb(this.code, json(Buffer.from(b))); } };
+    var req = new (require('events').EventEmitter)();
+    req.method = body ? 'POST' : 'GET';
+    c.control(req, res, u);
+    setTimeout(function () { if (body) req.emit('data', Buffer.from(JSON.stringify(body))); req.emit('end'); }, 1);
+  }
+  function hm(k, t) { return crypto.createHmac('sha256', k).update(t, 'utf8').digest('hex'); }
+  function sh(b) { return crypto.createHash('sha256').update(b).digest('hex'); }
+  function finish(msg) { if (msg) ok(msg, false); c.stop(); try { fs.unlinkSync(path.join(dir, 'companion.json')); fs.rmdirSync(dir); } catch (e) {} next(); }
+  ctl('/companion/set', { on: true }, function (code, s) {
+    ok('companion: starts on ' + process.version, code === 200 && s.running && s.port >= 47810, JSON.stringify(s));
+    if (!s || !s.running) return finish();
+    var T = 'http://127.0.0.1:' + s.port;
+    // Discovery
+    var u = dgram.createSocket('udp4'), heard = null;
+    u.on('message', function (m) { heard = json(m); });
+    u.bind(0, function () {
+      var msg = Buffer.from(Companion.DISCOVER);
+      u.send(msg, 0, msg.length, 47810, '127.0.0.1');
+    });
+    setTimeout(function () {
+      try { u.close(); } catch (e) {}
+      ok('companion: answers discovery', heard && heard.app === 'TiviBro' && heard.id === s.id, JSON.stringify(heard));
+      ctl('/companion/pair', { open: true }, function (code2, s2) {
+        var codeTxt = s2.pairing && s2.pairing.code, nonce = crypto.randomBytes(18).toString('base64');
+        var kp = crypto.pbkdf2Sync(codeTxt.replace(/-/g, ''), 'tivibro-pair-v1:' + s.id, Companion.KDF_ITER, 32, 'sha256');
+        request('POST', T + '/v1/pair', { body: { nonce: nonce, phone: { name: 'Engine' }, proof: hm(kp, 'tivibro-pair-v1\n' + s.id + '\n' + nonce + '\nEngine') } }, function (err, res, b) {
+          var j = json(b) || {};
+          ok('companion: pairs', !err && res.statusCode === 200 && j.proof === hm(kp, 'tivibro-paired-v1\n' + j.phone + '\n' + nonce), err ? err.message : String(b));
+          if (err || res.statusCode !== 200) return finish();
+          var d = crypto.createDecipheriv('aes-256-gcm', kp, Buffer.from(j.key.iv, 'base64'));
+          d.setAAD(Buffer.from('tivibro-key-v1\n' + j.phone, 'utf8'));
+          d.setAuthTag(Buffer.from(j.key.tag, 'base64'));
+          var key = Buffer.concat([d.update(Buffer.from(j.key.data, 'base64')), d.final()]);
+          ok('companion: the phone key arrives encrypted', key.length === 32);
+          var t = Date.now(), n2 = crypto.randomBytes(18).toString('base64'), body = '{}';
+          var hdr = { 'Content-Type': 'application/json', 'X-TiviBro-Phone': j.phone, 'X-TiviBro-Time': String(t), 'X-TiviBro-Nonce': n2, 'X-TiviBro-Sig': hm(key, 'tivibro-req-v1\nPOST\n/v1/open\n' + t + '\n' + n2 + '\n' + sh(body)) };
+          request('POST', T + '/v1/open', { headers: hdr, body: body }, function (e3, r3, b3) {
+            ok('companion: a signed request works, and the answer is signed', !e3 && r3.statusCode === 200 && launched.length === 1 && r3.headers['x-tivibro-sig'] === hm(key, 'tivibro-res-v1\n' + n2 + '\n200\n' + sh(b3)), e3 ? e3.message : String(b3));
+            request('POST', T + '/v1/open', { headers: hdr, body: body }, function (e4, r4) {
+              ok('companion: a replayed request is refused', !e4 && r4.statusCode === 401 && launched.length === 1);
+              finish();
+            });
+          });
+        });
+      });
+    }, 300);
+  });
+});
 step(function service(next) {
   // service.js with a stand-in for webOS's webos-service module
   var handlers = {}, origResolve = Module._resolveFilename;
@@ -393,6 +450,7 @@ step(function service(next) {
   ok('service wrapper loads', !!handlers.start && !!handlers.status);
   handlers.start.fn({ isSubscription: true, respond: function (m) {
     ok('start: the relay is listening', m.returnValue && m.port >= 47811 && m.port <= 47815, JSON.stringify(m));
+    ok('start: hands TiviBro the control secret, and the relay wants it', /^[0-9a-f]{32}$/.test(m.ctl || '') && !!handlers.wake, JSON.stringify(m));
     setTimeout(function () { request('GET', 'http://127.0.0.1:' + m.port + '/ping', function (e, r, pb) {
       ok('and answers', !e && r.statusCode === 200);
       var sy = (json(pb) || {}).sys || {};

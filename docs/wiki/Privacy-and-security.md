@@ -13,6 +13,13 @@
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor-on.png"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-editor-on.png" width="60%" alt="The editor address and password, shown only on the TV"></a></p>
 
+## The phone app
+
+- Off until you switch it on under **Settings > Phone app**.
+- A phone pairs only with the code shown on the TV, for 10 minutes.  The code never crosses the network, and five wrong codes end it.
+- Each phone gets its own key.  Everything it sends is signed with it, can't be replayed, and the TV signs its answers back.
+- Remove a phone in **Settings > Phone app** and its key stops working at once.
+
 ## Backups
 
 - Always locked with a passphrase you choose, using PBKDF2-SHA256 (200,000 rounds) and AES-256-GCM.
@@ -23,4 +30,4 @@
 
 ## Network
 
-TiviBro only talks to your provider, to guide sources you add, and to your own computer when the web editor is on.  No analytics, no telemetry, no ads.
+TiviBro only talks to your provider, to guide sources you add, to your own computer when the web editor is on, and to phones you paired when the phone app connection is on.  No analytics, no telemetry, no ads.

@@ -18,4 +18,4 @@ Your version, and new versions from GitHub.  See [Updates](Updates).
 
 ---
 
-← [Settings: Edit on a phone or computer](Settings-Edit-on-a-phone-or-computer)  ·  [Home](Home)  ·  [Settings: Diagnostics](Settings-Diagnostics) →
+← [Settings: Phone app](Settings-Phone-app)  ·  [Home](Home)  ·  [Settings: Diagnostics](Settings-Diagnostics) →

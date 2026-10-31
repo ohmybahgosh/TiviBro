@@ -358,6 +358,10 @@ var App = (function () {
     if (Epg.xml && !Epg.loading && eh > 0 && Date.now() - (Epg.status.at || 0) > eh * 3600e3) Epg.refresh(Library, true);
   }, 30 * 60e3);
 
+  // Launch params as an object: webOS hands them over as an object or as JSON text.
+  function rawParams(p) { if (typeof p === 'string') { try { p = JSON.parse(p || '{}'); } catch (e) { p = {}; } } return p && typeof p === 'object' ? p : {}; }
+  function launchParams() { var sys = window.webOSSystem || window.PalmSystem; return rawParams(sys && sys.launchParams); }
+
   /* Watch on the TV's reminder alert: TiviBro starts with launch params, or (already running)
      gets them in webOSRelaunch.  A reminder for another playlist switches to it first. */
   var pendingRem = Remind.launchParams();
@@ -368,6 +372,7 @@ var App = (function () {
   document.addEventListener('webOSRelaunch', function (e) {
     var sys = window.webOSSystem || window.PalmSystem;
     try { if (sys && sys.activate) sys.activate(); } catch (err) {}
+    if (Phone.launched(rawParams(e && e.detail))) return;
     var r = Remind.params(e && e.detail);
     if (!r) return;
     Log.info('app', 'Brought forward by a reminder');
@@ -405,6 +410,8 @@ var App = (function () {
     Caps.loadSystemInfo();
     Net.start(6000).then(function () {
       WebEdit.resume();
+      Phone.start();
+      Phone.launched(launchParams());
       Update.autoCheck();
       // Something broke last time (an error, or TiviBro closed on its own): offer to report it, once.
       var crash = Log.lastCrash, gone = Log.settle(Net.info && Net.info.sys), key = gone ? 'u' + gone.s : crash ? crash.s : '';

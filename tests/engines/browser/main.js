@@ -106,6 +106,21 @@ var seq = [
       }, 800);
     }));
   },
+  // Settings, Phone app: switched on, and the pairing screen with its code and QR code.
+  function phone(next) {
+    js('Phone.turn(true).then(function () { Settings.section("phone"); }); return 1;', val(function () {
+      setTimeout(function () {
+        js('Phone.showPair(); return 1;', val(function () {
+          setTimeout(function () {
+            js('var m = document.getElementById("modal"); return { code: (m.querySelector(".pair-code") || {}).textContent, qr: !!m.querySelector(".pair-qr svg"), w: (m.querySelector(".pair-qr") || {}).offsetWidth, left: (m.querySelector(".pair-left") || {}).textContent };', val(function (v) {
+              step('phone app: the pairing screen shows its code and QR code', v && /^[A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(v.code) && v.qr && v.w > 200 && /Works for/.test(v.left), JSON.stringify(v));
+              shot('5-phone-pair', function () { js('UI.close(); Phone.turn(false); return 1;', val(function () { setTimeout(next, 600); })); });
+            }));
+          }, 2000);
+        }));
+      }, 1200);
+    }));
+  },
   // The first-run set-up tour: every step drawn and driven with the remote, the QR code drawn.
   function tour(next) {
     js('Tour.open({ first: true }); return Tour.step;', val(function (st) {
