@@ -188,8 +188,19 @@ function start(body, log) {
       return f;
     }
     job.src = si + 1; job.host = src.host || ''; job.bytes = 0; job.total = 0; job.est = false;
-    var req = current = http.get(src.url, function (res) {
-      if ((res.statusCode || 0) >= 400) { res.resume(); return finish(new Error('HTTP ' + res.statusCode)); }
+    // Redirects are followed (the relay hands them back as relay addresses): iptv-epg.org answers
+    // its files with a 302 to a tokenized address, and an unfollowed one read as an empty guide.
+    var hops = 0;
+    get(src.url);
+    function get(url) {
+    var req = current = http.get(url, function (res) {
+      var code = res.statusCode || 0;
+      if (code >= 300 && code < 400 && res.headers.location) {
+        res.resume();
+        if (++hops > 5) return finish(new Error('too many redirects'));
+        return get(require('url').resolve(url, res.headers.location));
+      }
+      if (code !== 200) { res.resume(); return finish(new Error('HTTP ' + code)); }
       var size = +(res.headers['x-raw-length'] || res.headers['content-length']) || 0, dec = new StringDecoder('utf8');
       job.est = !size && src.known > 0; job.total = job.est ? src.known : size;
       var tick = setInterval(function () {
@@ -212,6 +223,7 @@ function start(body, log) {
     });
     req.on('error', function (e) { finish(e); });
     req.setTimeout(120000, function () { try { req.abort(); } catch (e) {} finish(new Error('timed out')); });
+    }
   }
 
   // Public pass: a file is only worth downloading while some channel it could match is still open.

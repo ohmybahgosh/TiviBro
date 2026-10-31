@@ -301,7 +301,9 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .gd-meta .sep{color:var(--dim);margin:0 12px}
 .gd-badge{display:inline-block;padding:2px 12px;border-radius:8px;background:var(--raised);color:var(--text);font-size:20px;margin-right:10px}
 .gd-badge.cu{background:#1d3b2e;color:#7fe0ae}
-.gd-badge.live{background:#3a1d20;color:#ff8e93}
+/* Live: the accent colour with a small dot, not a warning red. */
+.gd-badge.live{background:transparent;color:var(--accent-text);box-shadow:inset 0 0 0 2px var(--accent);padding-left:30px;position:relative}
+.gd-badge.live::before{content:'';position:absolute;left:12px;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--accent)}
 .gd-mini{display:inline-block;vertical-align:middle;width:110px;height:4px;margin:0 14px 0 16px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}
 .gd-mini i{display:block;height:100%;background:var(--text)}
 .guide-detail p.gd-desc{-webkit-line-clamp:3}

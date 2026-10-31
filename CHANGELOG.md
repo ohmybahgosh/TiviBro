@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **The public guide reads iptv-epg.org again.**  The site now answers its files with a redirect to a new address, which the helper's guide reader didn't follow, so iptv-epg.org quietly added nothing.  Redirects are followed now, and an answer that isn't the guide counts as a failed file.
+- **A sleeker LIVE chip** in the programme details: your accent colour with a small dot, instead of a red that looked like a warning.
+
 ## 0.6.0 (alpha 27, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.

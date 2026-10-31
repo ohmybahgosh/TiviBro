@@ -67,7 +67,8 @@ var provider = http.createServer(function (req, res) {
   if (p === '/ce-gzip') { res.writeHead(200, { 'Content-Type': 'application/xml', 'Content-Encoding': 'gzip' }); return res.end(GZ); }
   if (p === '/file.xml.gz') { res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Content-Length': GZ.length }); return res.end(GZ); }
   if (p === '/double.gz') { res.writeHead(200, { 'Content-Type': 'application/x-gzip', 'Content-Encoding': 'gzip' }); return res.end(GZ2); }
-  if (p === '/guide.xml.gz') { res.writeHead(200, { 'Content-Type': 'application/octet-stream' }); return res.end(zlib.gzipSync ? zlib.gzipSync(Buffer.from(GUIDE)) : GUIDE); }
+  if (p === '/files/guide.xml.gz') { res.writeHead(302, { Location: '/files/t0k3n/guide.xml.gz' }); return res.end(); }     // as iptv-epg.org does
+  if (p === '/guide.xml.gz' || p === '/files/t0k3n/guide.xml.gz') { res.writeHead(200, { 'Content-Type': 'application/octet-stream' }); return res.end(zlib.gzipSync ? zlib.gzipSync(Buffer.from(GUIDE)) : GUIDE); }
   if (p === '/xml') { res.writeHead(200, { 'Content-Type': 'application/xml' }); return res.end(XML); }
   if (p === '/broken.gz') { res.writeHead(200, { 'Content-Type': 'application/octet-stream' }); return res.end(GZ.slice(0, 20)); }
   if (p === '/live.ts') {
@@ -203,7 +204,7 @@ step(function guide(next) {
   var dir = path.join(require('os').tmpdir(), 'tivibro-guide-test-' + process.pid);
   process.env.TIVIBRO_GUIDE_DIR = dir;
   var now = Date.now();
-  var msg = { sources: [{ url: B + '/unz/gt1/x/http/' + P + '/guide.xml.gz', unz: 'gt1', label: 'test guide', host: P, offset: 0 }],
+  var msg = { sources: [{ url: B + '/unz/gt1/x/http/' + P + '/files/guide.xml.gz', unz: 'gt1', label: 'test guide', host: P, offset: 0 }],
     ids: ['a.us'], past: {}, names: { chanb: 0 }, from: now - 86400e3, recent: now - 3 * 3600e3, to: now + 2 * 86400e3 };
   request('POST', B + '/guide/load', { body: { pl: 'p1', kind: 'main', sig: 's1', msg: msg } }, function (e, r, b) {
     ok('guide: the helper takes a load', !e && json(b) && json(b).ok, b && String(b));
@@ -212,7 +213,7 @@ step(function guide(next) {
       request('GET', B + '/guide/status?pl=p1&kind=main', function (e2, r2, b2) {
         var st = json(b2) || {};
         if ((st.phase === 'download' || st.phase === 'save') && ++tries < 100) return setTimeout(poll, 100);
-        ok('guide: read and stored', st.phase === 'stored' && st.stored && st.stored.sig === 's1' && st.stored.kept === 2, String(b2));
+        ok('guide: read and stored, through a redirect', st.phase === 'stored' && st.stored && st.stored.sig === 's1' && st.stored.kept === 2, String(b2));
         request('GET', B + '/guide/titles?pl=p1&kind=main', function (e3, r3, b3) {
           var lines = String(b3 || '').split('\n').filter(Boolean);
           ok('guide: titles for the wanted id and the name match, not the others', lines.length >= 8 && lines.every(function (l) { return /^(a|b)\.us\t\d+\t\d+\tShow /.test(l); }) && lines.some(function (l) { return /Show a0 & more$/.test(l) || /Show a\d & more$/.test(l); }), lines.slice(0, 2).join(' | '));
