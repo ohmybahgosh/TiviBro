@@ -45,6 +45,8 @@ var Vod = (function () {
     var h = Math.floor(secs / 3600), m = Math.round(secs % 3600 / 60);
     return h ? h + ' h' + (m ? ' ' + m + ' min' : '') : m + ' min';
   }
+  // 7.634 -> ★ 7.6; nothing for 0 or a missing rating.
+  function stars(r) { r = Math.round(parseFloat(r) * 10) / 10; return r > 0 ? '★ ' + r : ''; }
   function cleanCat(n) { return Names.groupsOn() ? Names.clean(n) : n; }
 
   function renderCat(row, c) {
@@ -62,7 +64,7 @@ var Vod = (function () {
     var img = it.cover || '';
     if (row._src !== img) { row._src = img; row._img.style.visibility = img ? 'visible' : 'hidden'; if (img) row._img.src = img; else row._img.removeAttribute('src'); }
     row._n.textContent = it.ep ? it.label : it.name;
-    row._s.textContent = it.ep ? niceDur(it.dur) : [it.year, it.rating ? '★ ' + it.rating : ''].filter(Boolean).join('   ');
+    row._s.textContent = it.ep ? niceDur(it.dur) : [it.year, stars(it.rating)].filter(Boolean).join('   ');
     var r = resumeOf(it.ep ? 'e' + it.id : key(it));
     if (r && r.dur) { row._p.style.display = ''; row._pi.style.width = Math.round(100 * r.pos / r.dur) + '%'; } else row._p.style.display = 'none';
     row._t.textContent = E().myList.indexOf(key(it)) >= 0 && !it.ep ? '★' : '';
@@ -169,7 +171,7 @@ var Vod = (function () {
     var poster = (m && m.poster) || it.cover || (series && series.cover);
     if (poster) { var img = U.el('img', 'vod-poster'); img.src = poster; img.onerror = function () { if (!Net.retryImage(this)) this.remove(); }; box.appendChild(img); }
     box.appendChild(U.el('h2', '', it.ep ? it.label : it.name));
-    var meta = [m && m.year || it.year, niceDur(m && m.dur || it.dur), m && m.genre, it.rating ? '★ ' + it.rating : ''].filter(Boolean).join('   ');
+    var meta = [m && m.year || it.year, niceDur(m && m.dur || it.dur), m && m.genre, stars(it.rating)].filter(Boolean).join('   ');
     if (meta) box.appendChild(U.el('div', 'vod-meta', meta));
     // What the file is, from the provider's own scan of it: 4K, HDR or Dolby Vision, sound format.
     var md = mediaOf(it);
