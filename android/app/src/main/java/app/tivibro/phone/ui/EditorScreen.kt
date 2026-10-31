@@ -38,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -103,7 +102,6 @@ fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) ->
     }
     // Back leaves the editor (its pages are sections of one page, picked from its own menu).
     BackHandler { onBack() }
-    DisposableEffect(Unit) { onDispose { web?.destroy() } }
 
     Scaffold(
         containerColor = Ink,
@@ -130,7 +128,13 @@ fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) ->
                     Text(status, color = Muted, textAlign = TextAlign.Center)
                 }
                 else -> {
-                    AndroidView(modifier = Modifier.fillMaxSize(), factory = { c ->
+                    AndroidView(modifier = Modifier.fillMaxSize(), onRelease = { w ->
+                        // Leaving the editor: let go of the page cleanly before the web view goes.
+                        web = null
+                        w.stopLoading(); w.webChromeClient = null; w.removeJavascriptInterface("TiviBroApp")
+                        (w.parent as? ViewGroup)?.removeView(w)
+                        w.destroy()
+                    }, factory = { c ->
                         WebView(c).apply {
                             layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                             setBackgroundColor(Ink.toArgb())
