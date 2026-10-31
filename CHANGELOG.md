@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **TiviBro notices when it closed by itself, and asks to report it.**  webOS ends an app that runs out of memory without any error, so the old "hit an error" notice never showed (the alpha 24 guide loop said nothing).  TiviBro now keeps a note of what it is doing (loading which guide and how far, playing which channel, its memory use); if a session ends with that note still open, the next start asks right away and says what it was doing: **Send a report now** sends it straight from the TV (no phone, so it works even when TiviBro keeps closing), **Report with my phone** adds details, or **Not now**.  The report and the log carry it.  The TV turning off or restarting, and updates, don't count (the network helper says when the TV started and when it went to standby), and the helper keeps its own errors on the TV so a report made after it restarted still has them.  Warnings and errors are saved at once instead of a moment later, so the last lines before a close are kept.  Test builds have **Report a problem** at the bottom of the menu.
-
-## 0.6.0 (alpha 28, 2026-10-31)
+## 0.6.0 (alpha 29, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 28
+### New in alpha 29
+
+- **TiviBro notices when it closed by itself, and asks to report it.**  webOS ends an app that runs out of memory without any error, so the old "hit an error" notice never showed (the alpha 24 guide loop said nothing).  TiviBro now keeps a note of what it is doing (loading which guide and how far, playing which channel, its memory use); if a session ends with that note still open, the next start asks right away and says what it was doing: **Send a report now** sends it straight from the TV (no phone, so it works even when TiviBro keeps closing), **Report with my phone** adds details, or **Not now**.  The report and the log carry it.  The TV turning off or restarting, and updates, don't count (the network helper says when the TV started and when it went to standby), and the helper keeps its own errors on the TV so a report made after it restarted still has them.  Warnings and errors are saved at once instead of a moment later, so the last lines before a close are kept.  Test builds have **Report a problem** at the bottom of the menu.
+
+### In alpha 28
 
 - **The public guide reads iptv-epg.org again.**  The site now answers its files with a redirect to a new address, which the helper's guide reader didn't follow, so iptv-epg.org quietly added nothing.  Redirects are followed now, and an answer that isn't the guide counts as a failed file.
 - **Older TVs (webOS 6 and earlier): the preview window has square corners.**  Those TVs show video on a layer behind the page, and the rounded clip around the preview can leave it black (reported on a 2019 C9).  Newer TVs keep the rounded corners.
