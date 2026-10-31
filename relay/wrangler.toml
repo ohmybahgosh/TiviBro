@@ -15,3 +15,9 @@ id = "2f76b8ab389f45519c6fa4d7edc86506"
 [observability.logs]
 enabled = true
 invocation_logs = false
+
+# Install numbers and the GitHub history for tivibro.app/stats (see worker.js).  The key is a secret:
+# npx wrangler secret put STATS_KEY
+[[kv_namespaces]]
+binding = "STATS"
+id = "0939c9221424485ab6af6be00b1ee886"
