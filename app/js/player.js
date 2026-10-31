@@ -212,10 +212,15 @@ var Player = (function () {
     if ((/^https:/i.test(url) || Net.ua) && Net.active) { url = Net.wrap(url); Log.info('player', 'TV player using the helper' + (Net.ua ? ' (custom User-Agent)' : ' for HTTPS')); }
     video.src = url;
     video.load();
+    var subs = (!cur.live && typeof MkvSubs !== 'undefined') ? MkvSubs.extract(url, video) : null;
     var at0 = video.audioTracks, onAdd = at0 && at0.addEventListener ? U.debounce(tracks, 300) : null;
     if (onAdd) at0.addEventListener('addtrack', onAdd);
     return { name: 'Native', recover: function () {}, info: function () { return ''; },
-      destroy: function () { if (onAdd) { onAdd.cancel(); at0.removeEventListener('addtrack', onAdd); } },
+      // A seek moves the playhead well outside whatever cluster range extraction already
+      // fetched (it's nearest-to-the-start-position-only, not the whole file) -- restart
+      // it anchored at the new position rather than leave subtitles stuck on the old one.
+      reanchor: function () { if (subs) { subs.cancel(); subs = (!cur.live && typeof MkvSubs !== 'undefined') ? MkvSubs.extract(url, video) : null; } },
+      destroy: function () { if (subs) subs.cancel(); if (onAdd) { onAdd.cancel(); at0.removeEventListener('addtrack', onAdd); } },
       audio: function () {
         var at = video.audioTracks, out = [];
         if (at) for (var i = 0; i < at.length; i++) out.push({ id: i, label: at[i].label || at[i].language || ('Track ' + (i + 1)), lang: at[i].language || '', kind: at[i].kind || '', on: at[i].enabled });
@@ -688,6 +693,7 @@ var Player = (function () {
     if (!playing()) { cur.startAt = t; return; }        // reconnecting: the new connection starts there
     if (st) st.lastMove = Date.now();
     video.currentTime = t;
+    if (eng && eng.reanchor) eng.reanchor();
   }
   function seek(delta) { if (cur && !cur.live) seekTo(position() + delta); }
   // Same channel, new mode (preview -> fullscreen): keep the stream, just widen the policy.

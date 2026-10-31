@@ -1370,7 +1370,8 @@ var Views = (function () {
     items.push({ label: 'Picture size', sub: DM[Player.displayFor(mode === 'live' ? playing : null)], action: pictureMenu });
     if (Player.qualities().length > 1) items.push({ label: 'Video quality', sub: qualityLabel(), action: qualityMenu });
     if (mode === 'vod' || mode === 'catchup') items.push({ label: 'Playback speed', sub: Player.rate === 1 ? 'Normal' : Player.rate + '×', action: speedMenu });
-    if (subtitleTracks().length) items.push({ label: 'Subtitles', action: subtitleMenu });
+    var subs = subtitleTracks();
+    if (subs.length) items.push({ label: 'Subtitles', sub: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || 'Off', action: subtitleMenu });
     items.push({ label: 'Sleep timer', sub: sleepAt ? 'stops at ' + U.hhmm(sleepAt) : 'off', action: sleepMenu });
     items.push({ label: 'Reconnect stream', action: function () { Player.retryNow(); } });
     UI.menu(mode === 'vod' && vod ? vod.meta.title : playing ? L.name(playing) : 'Player', items);

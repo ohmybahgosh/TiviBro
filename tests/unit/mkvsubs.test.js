@@ -79,7 +79,15 @@ function buildMkv(opts) {
 const mkvFixtures = {
   '1.mkv': buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true }),
   'novideosubs.mkv': buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: false }),
-  'novsubtracks.mkv': buildMkv({ subtitleTrack: null })
+  'novsubtracks.mkv': buildMkv({ subtitleTrack: null }),
+  // real files tag Language with the raw 3-letter metadata code (e.g. 'dut' for Dutch),
+  // not a display name -- the menu/UI should show "Dutch", not "dut".
+  'dutlabel.mkv': buildMkv({ subtitleTrack: { number: 7, lang: 'dut' }, cuesIndexesSubtitle: true }),
+  'cacheme.mkv': buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true }),
+  // fresh, single-use fixtures so the cross-reconnect cache doesn't make these tests
+  // hit the synchronous cached fast-path instead of the async path they exercise
+  'cancelearly.mkv': buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true }),
+  'delay.mkv': buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true })
 };
 let fetchCallCount = 0;
 function fakeFetch(url, options) {
@@ -110,16 +118,19 @@ function flush(rounds) {
 function waitForAsync(cond) { return flush().then(() => cond()); }
 
 const ctx = {
-  console, Promise,
+  console, Promise, setTimeout, clearTimeout,
   fetch: (...a) => fakeFetch(...a),
   Net: { wrap: u => u },
   Log: { debug() {}, warn() {}, info() {} },
   document: { createElement: tag => (tag === 'track' ? makeFakeTrackElement() : {}) },
   VTTCue: function (start, end, text) { this.startTime = start; this.endTime = end; this.text = text; }
 };
+ctx.window = ctx;
 vm.createContext(ctx);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/util.js'), 'utf8') + '\nthis.U = U;', ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/mkvsubs.js'), 'utf8') + '\nthis.MkvSubs = MkvSubs;', ctx);
 const MkvSubs = ctx.MkvSubs;
+MkvSubs.startupDelayMs = 0; // keep every other test fast/deterministic; the dedicated delay test below sets its own value and restores this
 
 // ---- readTracks ----
 const buf = u8([].concat(
@@ -190,6 +201,25 @@ ok('skips a laced block for the target track instead of misreading it',
 ok('a truncated Cluster buffer does not throw',
   (() => { try { MkvSubs.readClusterBlocks(clusterBuf.slice(0, 10), 0, 10, 3, 1000000); return true; } catch (e) { return false; } })());
 
+// Some releases tag their S_TEXT/UTF8 track as plain SRT but the text still carries ASS
+// override codes like {\an8} (position overrides) -- strip them, don't display them.
+const assTagCluster = u8([].concat(
+  el('E7', uintBytes(1000)),
+  blockGroupEl(3, 500, 1500, '{\\an8}Hello, world!')
+));
+ok('strips ASS override codes like {\\an8} from cue text instead of displaying them literally',
+  MkvSubs.readClusterBlocks(assTagCluster, 0, assTagCluster.length, 3, 1000000)[0].text === 'Hello, world!');
+
+// ---- clusterFetchOrder: prioritize clusters near current playback position, not file order ----
+ok('orders clusters by proximity to current playback position, nearest first, deduped', (() => {
+  const perTrackCues = [
+    { track: { number: 7 }, cues: [{ timeSec: 20, clusterPos: 100 }, { timeSec: 2300, clusterPos: 500 }] },
+    { track: { number: 7 }, cues: [{ timeSec: 2290, clusterPos: 500 }] } // same cluster as above -> must dedupe to one entry
+  ];
+  const order = MkvSubs.clusterFetchOrder(perTrackCues, 2295, 10);
+  return JSON.stringify(order) === JSON.stringify([510, 110]);
+})());
+
 // ---- extract() ----
 (async function () {
   ok('extracts a subtitle cue end to end and adds it to a <track> on the video', await (async () => {
@@ -216,7 +246,7 @@ ok('a truncated Cluster buffer does not throw',
 
   ok("cancel() before the async fetches resolve prevents any <track> from being added", await (async () => {
     const video = { children: [], appendChild(el) { this.children.push(el); } };
-    const h = MkvSubs.extract('http://p/movie/u/p/1.mkv', video);
+    const h = MkvSubs.extract('http://p/movie/u/p/cancelearly.mkv', video);
     h.cancel();
     return waitForAsync(() => video.children.length === 0);
   })());
@@ -230,6 +260,55 @@ ok('a truncated Cluster buffer does not throw',
     const video = { children: [], appendChild(el) { this.children.push(el); } };
     MkvSubs.extract('http://p/movie/u/p/novsubtracks.mkv', video);
     return waitForAsync(() => video.children.length === 0);
+  })());
+
+  ok('startupDelayMs defers the first fetch, so the video connection gets priority right after a (re)connect', await (async () => {
+    const video = { children: [], appendChild(el) { this.children.push(el); } };
+    MkvSubs.startupDelayMs = 50;
+    fetchCallCount = 0;
+    MkvSubs.extract('http://p/movie/u/p/delay.mkv', video);
+    const nothingYet = fetchCallCount === 0;
+    await new Promise(r => setTimeout(r, 120));
+    await flush();
+    MkvSubs.startupDelayMs = 0;
+    return nothingYet && fetchCallCount > 0 && video.children.length === 1;
+  })());
+
+  ok('uses a human-readable language name for the label, not the raw metadata code', await (async () => {
+    const video = { children: [], appendChild(el) { this.children.push(el); } };
+    MkvSubs.extract('http://p/movie/u/p/dutlabel.mkv', video);
+    return waitForAsync(() => video.children.length === 1 && video.children[0].label === 'Dutch' && video.children[0].srclang === 'nl');
+  })());
+
+  ok('cancel() after a <track> was already attached removes it from the video (a reconnect must not leave stale tracks behind)', await (async () => {
+    const video = { children: [], appendChild(el) { this.children.push(el); }, removeChild(el) { const i = this.children.indexOf(el); if (i >= 0) this.children.splice(i, 1); } };
+    const h = MkvSubs.extract('http://p/movie/u/p/1.mkv', video);
+    const attachedOk = await waitForAsync(() => video.children.length === 1);
+    h.cancel();
+    await flush();
+    return attachedOk && video.children.length === 0;
+  })());
+
+  ok('caches cues across extract() calls: a reconnect re-attaches cached cues without re-fetching the clusters', await (async () => {
+    // First extraction (populates the cache for this URL).
+    const v1 = { children: [], appendChild(el) { this.children.push(el); }, removeChild(el) { const i = this.children.indexOf(el); if (i >= 0) this.children.splice(i, 1); } };
+    MkvSubs.extract('http://p/movie/u/p/cacheme.mkv', v1);
+    await waitForAsync(() => v1.children.length === 1 && v1.children[0].track.cues.length === 1);
+    // Simulate a reconnect: fresh extract() for the SAME url, fresh video element.
+    const v2 = { children: [], appendChild(el) { this.children.push(el); }, removeChild(el) { const i = this.children.indexOf(el); if (i >= 0) this.children.splice(i, 1); } };
+    fetchCallCount = 0;
+    MkvSubs.extract('http://p/movie/u/p/cacheme.mkv', v2);
+    await flush();
+    // Cue present on the reconnect, and no per-cluster peek/full fetches happened (served from cache).
+    return v2.children.length === 1 && v2.children[0].track.cues.length === 1 && v2.children[0].track.cues[0].text === 'Hi there' && fetchCallCount === 0;
+  })());
+
+  ok('cached cues attach synchronously on reconnect (no await), so subtitles do not vanish on every provider cut', (() => {
+    // cacheme.mkv is already fully cached by the previous test.
+    const v = { children: [], appendChild(el) { this.children.push(el); }, removeChild(el) { const i = this.children.indexOf(el); if (i >= 0) this.children.splice(i, 1); } };
+    MkvSubs.extract('http://p/movie/u/p/cacheme.mkv', v);
+    // No flush/await: must already be attached from cache.
+    return v.children.length === 1 && v.children[0].track.cues.length === 1;
   })());
 
   if (fail) { console.log(fail + ' mkvsubs test(s) failed'); process.exit(1); }
