@@ -42,7 +42,7 @@ tap "Edit channels"
 shot 3-editor 10
 adb shell input keyevent KEYCODE_BACK
 sleep 3
-tap "Add a TV"
-shot 4-add 6
+[ -n "$(find_text "Edit channels")" ] || { echo "Back did not return to the TV list"; adb exec-out screencap -p > "$OUT/fail.png"; exit 1; }
+echo "Back returns to the TV list"
 if adb logcat -d | grep -E "FATAL EXCEPTION|AndroidRuntime: Process: $PKG" ; then echo "The app crashed"; adb logcat -d | grep -A30 "FATAL EXCEPTION" | head -60; exit 1; fi
 echo "no crashes"
