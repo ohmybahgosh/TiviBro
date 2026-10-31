@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Embedded MKV subtitles.** Movies and episodes with indexed SRT subtitles now show their tracks in the subtitle menu, including on older LG TVs. Playback and subtitle reads share one provider session to avoid reconnect loops, and subtitle selection survives seeking and reconnects.
+- **Embedded MKV subtitles.**  Movies and episodes with indexed SRT subtitles now show their tracks in the subtitle menu, including on older LG TVs.  Playback and subtitle reads share one provider session to avoid reconnect loops, and subtitle selection survives seeking and reconnects.
 
 ## 0.6.0 (alpha 34, 2026-10-31)
 

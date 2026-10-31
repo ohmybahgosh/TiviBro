@@ -485,6 +485,9 @@ var MkvSubs = (function () {
     if (video.addEventListener) { video.addEventListener('timeupdate', onTime); video.addEventListener('waiting', onWaiting); }
     if (video.textTracks && video.textTracks.addEventListener) video.textTracks.addEventListener('change', paint);
     var rec = subCache[url];
+    // A file found to have no usable subtitles is remembered for seeks and reconnects (no more
+    // header reads); a fresh start of the file looks again.
+    if (rec && rec.none && onResolved) rec = subCache[url] = null;
     if (!onResolved && rec && rec.resolved) wrapped = rec.resolved;
 
     function ensureTracks(trackMeta) {
@@ -512,6 +515,7 @@ var MkvSubs = (function () {
     // subtitles instantly instead of blanking them.
     if (rec && rec.tracks.length) { ensureTracks(rec.tracks); replayCached(rec); }
     if (rec && rec.tracks.length) { video._mkvSubsState = 'ready'; paint(); }
+    if (rec && rec.none) video._mkvSubsState = rec.none;
     if (rec && rec.done && !onResolved) return cancelHandle();   // fully cached: nothing left to fetch
 
     var timer = setTimeout(function () { if (!cancelled) runExtraction(); }, startupDelayMs);
@@ -640,13 +644,19 @@ var MkvSubs = (function () {
         };
         pump();
       });
-    }).then(function () { startVideo(wrapped); if (!cancelled && video._mkvSubsState === 'discovering') video._mkvSubsState = 'unavailable'; }).catch(function (e) {
+    }).then(function () {
+      startVideo(wrapped);
+      if (!cancelled && video._mkvSubsState === 'discovering') { video._mkvSubsState = 'unavailable'; remember('unavailable'); }
+    }).catch(function (e) {
       startVideo(url);
-      if (!cancelled) video._mkvSubsState = 'error';
+      if (!cancelled) { video._mkvSubsState = 'error'; remember('error'); }
       if (typeof Log !== 'undefined' && Log.debug) Log.debug('mkvsubs', 'giving up: ' + (e && e.message));
     });
     }
 
+    function remember(state) {
+      if (!subCache[url]) subCache[url] = { tracks: [], cues: [], fetched: {}, done: true, none: state, resolved: wrapped };
+    }
     function cancelHandle() {
       return { cancel: function () {
         if (rec && liveTracks.length) rec.modes = liveTracks.map(function (t) { return t.mode; });

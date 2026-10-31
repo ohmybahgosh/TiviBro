@@ -508,6 +508,20 @@ ok('orders clusters by proximity to current playback position, nearest first, de
     return recovering && fetchCallCount===count;
   })());
 
+  ok('a file without usable subtitles is not read again on every seek', await (async () => {
+    const v = { children: [], appendChild(el) { this.children.push(el); }, removeChild() {} };
+    const h1 = MkvSubs.extract('http://p/movie/u/p/novsubtracks.mkv', v, () => {});
+    await flush(); h1.cancel();
+    const before = fetchCallCount;
+    const h2 = MkvSubs.extract('http://p/movie/u/p/novsubtracks.mkv', v);   // a seek re-anchors without onResolved
+    await flush();
+    const quiet = fetchCallCount === before && v._mkvSubsState === 'unavailable';
+    h2.cancel();
+    const h3 = MkvSubs.extract('http://p/movie/u/p/novsubtracks.mkv', v, () => {});   // starting the file again looks again
+    await flush(); h3.cancel();
+    return quiet && fetchCallCount > before;
+  })());
+
   if (fail) { console.log(fail + ' mkvsubs test(s) failed'); process.exit(1); }
   console.log('all mkvsubs tests passed');
 })();
