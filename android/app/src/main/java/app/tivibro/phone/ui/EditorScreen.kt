@@ -101,7 +101,8 @@ fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) ->
         error = null; url = null; status = "Asking the TV for the editor…"
         try { url = load { status = it } } catch (e: TbException) { error = e.message } catch (e: Exception) { error = "$name didn't answer.  Is it on, and on the same network?" }
     }
-    BackHandler { val w = web; if (w != null && w.canGoBack()) w.goBack() else onBack() }
+    // Back leaves the editor (its pages are sections of one page, picked from its own menu).
+    BackHandler { onBack() }
     DisposableEffect(Unit) { onDispose { web?.destroy() } }
 
     Scaffold(
