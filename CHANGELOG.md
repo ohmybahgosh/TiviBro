@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The web editor's "Test connection" button could spin forever** on a guide address whose server accepts the connection and then goes silent.  Same bug class the guide worker was fixed for earlier, same give-up-after-20s approach, a sibling call site that still had it.
+
 ## 0.6.0 (alpha 26, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.
