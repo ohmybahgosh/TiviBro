@@ -942,6 +942,7 @@ function index() {
   D.channels.forEach(function (c) { byKey.set(c.k, c); if (!byGroup.has(c.g)) byGroup.set(c.g, []); byGroup.get(c.g).push(c); });
   ((D.guide && D.guide.channels) || []).forEach(function (x) { guideName.set(x[0], x[1]); });
   matcherIndex = null; dupeCache = null;
+  if (typeof renderTools === 'function') freshTools();
 }
 function renderAll() { renderHome(); renderGroups(); renderChannels(true); renderGuide(); renderNames(); renderPlaylists(); renderTools(); renderHistory(); restoreMsgs(); }
 // After an edit: redraw what depends on edits, cheaply.
@@ -1048,7 +1049,10 @@ function goBack(i) {
   hist.push({ label: 'Went back ' + plural(n, 'step'), at: Date.now(), s: cur });
   setState(h.s); redo = []; changed(); afterJump(); toast('Went back to before "' + h.label + '"', ['Undo', undo]);
 }
-function afterJump() { if (!groupExists(curGroup)) curGroup = ALL; renderNames(); renderAll(); }
+// Steps keep choices you're still making (ticks, the feed, cities); after an undo, a redo or a new
+// copy from the TV they start again from what is in effect.
+function freshTools() { renderTools.ck = {}; renderTools.feeds = null; renderTools.local = null; }
+function afterJump() { freshTools(); if (!groupExists(curGroup)) curGroup = ALL; renderNames(); renderAll(); }
 function draftKey() { return 'tivibro.editor.draft.' + (D && D.playlist ? D.playlist.id : 'x'); }
 var autoT = 0;
 var lsFull = false;
@@ -2438,8 +2442,8 @@ var feedOf = Tidy.feedOf, parseLocal = Tidy.parseLocal, titleCase = Tidy.titleCa
 function countryMap() { return T().countryMap(); }
 function groupCountry(g) { return T().groupCountry(g.id); }
 function countryStats() { return T().countries(E.hiddenGroups); }
-function dividerGroups() {
-  return providerGroups().filter(function (g) { return !E.hiddenGroups[g.id] && isDivider(g.raw) && channelsOf(g.id, true).length <= 3; });
+function dividerGroups(hidden) {
+  return providerGroups().filter(function (g) { return !!E.hiddenGroups[g.id] === !!hidden && isDivider(g.raw) && channelsOf(g.id, true).length <= 3; });
 }
 /* Channels with nothing on: "Off Air", "Offline", "No Event Scheduled".  Event channels are renamed by
    the provider when something is on, so this is a setting checked against the current name, not a hide. */
@@ -2509,7 +2513,7 @@ function renderTools() {
     (cs.length ? '<div class="row" style="gap:8px;margin-bottom:10px"><button class="small" data-ccset="1">Tick all</button><button class="small" data-ccset="0">Untick all</button><span class="muted small">then tick the few you watch</span></div><div class="row" id="ccList" style="gap:8px">' + cs.map(function (x) {
       var on = ck[x.p] != null ? ck[x.p] : x.shown > 0;
       return '<label class="chip' + (on ? ' acc' : '') + '" style="cursor:pointer;padding:6px 12px;font-size:13px"><input type="checkbox" data-cc="' + esc(x.p) + '"' + (on ? ' checked' : '') + ' style="display:none"><b>' + esc(CC_NAME[x.p] || x.p) + '</b> ' + plural(x.groups.length, 'group') + ' · ' + x.shown + ' shown</label>';
-    }).join('') + '</div><div class="row" style="margin-top:12px"><label class="muted small"><input type="checkbox" id="ccNoPrefix"> Also hide groups with no country (sports and event groups, for example)</label><span class="grow"></span><button class="primary" id="ccGo">Show only the ticked countries</button></div><div class="muted small" id="ccInfo" style="margin-top:8px"></div>'
+    }).join('') + '</div><div class="small" style="margin-top:10px">Shown now: <b>' + (cs.filter(function (x) { return x.shown > 0; }).map(function (x) { return esc(CC_NAME[x.p] || x.p); }).join(', ') || 'none') + '</b>' + (Object.keys(ck).length ? '  <span class="muted">(your ticks above are not applied yet)</span>' : '') + '</div><div class="row" style="margin-top:12px"><label class="muted small"><input type="checkbox" id="ccNoPrefix"' + (D.groups.some(function (g) { return !groupCountry(g); }) && D.groups.filter(function (g) { return !groupCountry(g); }).every(function (g) { return E.hiddenGroups[g.id]; }) ? ' checked' : '') + '> Also hide groups with no country (sports and event groups, for example)</label><span class="grow"></span><button class="primary" id="ccGo">Show only the ticked countries</button></div><div class="muted small" id="ccInfo" style="margin-top:8px"></div>'
       : '<div class="muted">No country codes found in your group names.</div>');
   if (cs.length) ccInfo();
   /* duplicates */
@@ -2536,7 +2540,8 @@ function renderTools() {
   /* dividers */
   var dv = dividerGroups();
   $('tDivider').innerHTML = '<h3>Divider groups</h3><p>Groups like "⫘⫘⫘ UK ⫘⫘⫘" or "===== SPORTS =====" that only split the provider list into sections.  They hold a placeholder channel or nothing.</p>' +
-    (dv.length ? '<div class="small" style="margin-bottom:10px">' + dv.slice(0, 30).map(function (g) { return esc(g.raw); }).join(', ') + (dv.length > 30 ? ' and ' + (dv.length - 30) + ' more' : '') + '</div><button class="primary" id="dvGo">Hide ' + plural(dv.length, 'divider group') + '</button>' : '<div class="muted">No divider groups are shown.</div>');
+    (dv.length ? '<div class="small" style="margin-bottom:10px">' + dv.slice(0, 30).map(function (g) { return esc(g.raw); }).join(', ') + (dv.length > 30 ? ' and ' + (dv.length - 30) + ' more' : '') + '</div><button class="primary" id="dvGo">Hide ' + plural(dv.length, 'divider group') + '</button>' : '<div class="muted">No divider groups are shown.</div>') +
+    (dividerGroups(true).length ? '<div class="small" style="margin-top:10px">Hidden now: ' + plural(dividerGroups(true).length, 'divider group') + '  <button class="small ghost" id="dvBack">Show them again</button></div>' : '');
   /* nothing on */
   var idl = idleChannels();
   $('tIdle').innerHTML = '<h3>Channels with nothing on</h3><p>Event channels the provider names "Off Air", "Offline" or "No Event Scheduled" between events.  This hides them only while they say so: as soon as the provider names an event on one, it shows again.  Favorites keep theirs.</p>' +
@@ -2550,21 +2555,23 @@ function renderTools() {
   var gp = groupPrefixes();
   $('tGnames').innerHTML = '<h3>Shorter group names</h3><p>When most of your groups start with the same word ("USA News", "USA Sports", "USA Kids"), it says nothing.  Take it off the shown groups at once.  Your provider\'s list is not changed, and each group can be renamed back.</p>' +
     (gp.length ? gp.map(function (x) { return '<div class="row" style="margin:8px 0;gap:10px;flex-wrap:wrap"><span class="grow small"><b>"' + esc(x.p) + '"</b> starts ' + plural(x.groups.length, 'shown group') + ', like ' + x.groups.slice(0, 3).map(function (g) { return esc(g.name) + ' → <b>' + esc(trimPrefix(g.name, x.p)) + '</b>'; }).join(', ') + '</span><button class="small primary" data-gpre="' + esc(x.p) + '">Take "' + esc(x.p) + '" off ' + x.groups.length + '</button></div>'; }).join('')
-      : '<div class="muted">No word starts most of your shown group names.</div>');
+      : '<div class="muted">No word starts most of your shown group names.</div>') + prefixDone();
   /* adult */
   var ad = adultGroups();
   $('tAdult').innerHTML = '<h3>Adult groups</h3><p>Groups whose names say Adult, XXX, 18+ or similar.  Hide them here; on the TV, Settings &gt; Parental controls can also lock any group behind a PIN.</p>' +
-    (ad.length ? '<div class="small" style="margin-bottom:10px">' + ad.map(function (g) { return esc(g.name) + ' (' + g.n + ')'; }).join(', ') + '</div><button class="primary" id="adGo">Hide ' + plural(ad.length, 'adult group') + '</button>' : '<div class="muted">No adult groups are shown.</div>');
+    (ad.length ? '<div class="small" style="margin-bottom:10px">' + ad.map(function (g) { return esc(g.name) + ' (' + g.n + ')'; }).join(', ') + '</div><button class="primary" id="adGo">Hide ' + plural(ad.length, 'adult group') + '</button>' : '<div class="muted">No adult groups are shown.</div>') +
+    (adultGroups(true).length ? '<div class="small" style="margin-top:10px">Hidden now: ' + adultGroups(true).map(function (g) { return esc(g.name); }).join(', ') + '  <button class="small ghost" id="adBack">Show them again</button></div>' : '');
   decorateTools();
 }
 /* Smart clean-up as a checklist: each step says Done (nothing left for it to do), Skipped (you
    chose to leave it) or To do, and can be skipped.  Skips are saved on the TV with your edits. */
 // Groups named for adults.  Whole words only, so "Adult Swim" (cartoons) is left alone.
 var ADULT_RE = /\b(?:adults?(?!\s*swim)|xxx|porn\w*|erotic\w*|playboy|hustler|brazzers)\b|\b18\s*\+/i;
-function adultGroups() {
-  return D.groups.filter(function (g) { return !E.hiddenGroups[g.id] && ADULT_RE.test(g.name); }).map(function (g) { return { id: g.id, name: groupLabel(g.id), n: (byGroup.get(g.id) || []).length }; });
+function adultGroups(hidden) {
+  return D.groups.filter(function (g) { return !!E.hiddenGroups[g.id] === !!hidden && ADULT_RE.test(g.name); }).map(function (g) { return { id: g.id, name: groupLabel(g.id), n: (byGroup.get(g.id) || []).length }; });
 }
 document.addEventListener('click', function (e) {
+  if (e.target.id === 'adBack') { var h = adultGroups(true); mut('Showed ' + plural(h.length, 'adult group') + ' again', function () { h.forEach(function (g) { delete E.hiddenGroups[g.id]; }); }); return; }
   if (e.target.id !== 'adGo') return;
   var l = adultGroups();
   mut('Hid ' + plural(l.length, 'adult group'), function () { l.forEach(function (g) { E.hiddenGroups[g.id] = 1; }); });
@@ -2579,8 +2586,23 @@ function groupPrefixes() {
   });
   return Object.keys(by).filter(function (w) { return by[w].length >= 3; }).map(function (w) { return { p: w, groups: by[w] }; }).sort(function (a, b) { return b.groups.length - a.groups.length; }).slice(0, 4);
 }
+// Prefixes already taken off (your renames that are the provider's name minus a first word).
+function prefixDone() {
+  var by = {};
+  D.groups.forEach(function (g) {
+    var r = E.groupRenames[g.id], n = cleanGroup(g.name), m = /^\s*([A-Za-z]{2,12})(?:\s*[|:\-]\s*|\s+)(?=\S)/.exec(n);
+    if (r && m && trimPrefix(n, m[1]) === r) (by[m[1].toUpperCase()] || (by[m[1].toUpperCase()] = [])).push(g.id);
+  });
+  return Object.keys(by).map(function (w) { return '<div class="small" style="margin-top:10px">Taken off now: <b>"' + esc(w) + '"</b> from ' + plural(by[w].length, 'group name') + '  <button class="small ghost" data-gback="' + esc(w) + '">Put it back</button></div>'; }).join('');
+}
 function trimPrefix(name, w) { var r = name.replace(new RegExp('^\\s*' + w + '(?:\\s*[|:\\-]\\s*|\\s+)', 'i'), ''); return r.charAt(0).toUpperCase() + r.slice(1); }
 document.addEventListener('click', function (e) {
+  var gb = e.target.closest('[data-gback]');
+  if (gb) {
+    var w0 = gb.dataset.gback, ids = D.groups.filter(function (g) { var r = E.groupRenames[g.id], n = cleanGroup(g.name); return r && new RegExp('^\\s*' + w0 + '\\b', 'i').test(n) && trimPrefix(n, w0) === r; }).map(function (g) { return g.id; });
+    mut('Put "' + w0 + '" back on ' + plural(ids.length, 'group name'), function () { ids.forEach(function (id) { delete E.groupRenames[id]; }); });
+    return;
+  }
   var b = e.target.closest('[data-gpre]'); if (!b) return;
   var w = b.dataset.gpre, x = groupPrefixes().filter(function (y) { return y.p === w; })[0]; if (!x) return;
   mut('Took "' + w + '" off ' + plural(x.groups.length, 'group name'), function () { x.groups.forEach(function (g) { E.groupRenames[g.id] = trimPrefix(g.name, w); }); });
@@ -2618,16 +2640,21 @@ document.addEventListener('click', function (e) {
   mut((on ? 'Skipped' : 'Un-skipped') + ' a Smart clean-up step', function () { if (!E.toolSkip) E.toolSkip = {}; if (on) E.toolSkip[id] = 1; else delete E.toolSkip[id]; });
 });
 function renderFeeds() {
-  var fp = feedPairs(), fo = renderTools.feeds || (renderTools.feeds = { keep: 'east', groups: true });
+  var fp = feedPairs(), fo = renderTools.feeds || (renderTools.feeds = feedsNow(fp));
   var shown = function (l) { return l.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g]; }); };
   var drop = fo.keep === 'east' ? 'west' : 'east', hideList = shown(fp[drop]), gs = fo.groups ? feedGroups(drop).filter(function (g) { return !E.hiddenGroups[g.id]; }) : [];
   var ex = fp.west.slice(0, 4).map(function (c) { return esc(c.n); }).join(', ');
   $('tFeeds').innerHTML = '<h3>East and West feeds</h3><p>Many US channels come twice, on East and West (or Pacific) time.  Keep the feed you watch and hide the other copy.  Channels that only come in one feed are left alone.  The hidden feed is not used as a backup: it runs hours apart, so the TV never switches to it by itself.</p>' +
-    (fp.pairs ? '<div class="small" style="margin-bottom:12px">' + plural(fp.pairs, 'channel') + ' come in both feeds, like ' + ex + '.</div>' +
+    (fp.pairs ? '<div class="small" style="margin-bottom:12px">' + plural(fp.pairs, 'channel') + ' come in both feeds, like ' + ex + '.' + (fo.now ? '  <b>Keeping ' + (fo.now === 'east' ? 'East' : 'West') + ' now.</b>' : '  Both feeds are shown now.') + '</div>' +
       '<div class="row" style="gap:16px;flex-wrap:wrap"><div class="seg" id="feedKeep"><button data-k="east"' + (fo.keep === 'east' ? ' class="on"' : '') + '>Keep East</button><button data-k="west"' + (fo.keep === 'west' ? ' class="on"' : '') + '>Keep West</button></div>' +
       '<label class="muted small"><input type="checkbox" id="feedGroups"' + (fo.groups ? ' checked' : '') + '> Also hide groups named ' + (drop === 'west' ? 'West' : 'East') + (feedGroups(drop).length ? ' (' + feedGroups(drop).slice(0, 4).map(function (g) { return esc(g.raw); }).join(', ') + ')' : '') + '</label>' +
       '<span class="grow"></span><button class="primary" id="feedGo"' + (hideList.length || gs.length ? '' : ' disabled') + '>' + (hideList.length || gs.length ? 'Hide ' + plural(hideList.length, drop === 'west' ? 'West copy' : 'East copy', drop === 'west' ? 'West copies' : 'East copies') + (gs.length ? ' and ' + plural(gs.length, 'group') : '') : 'Nothing left to hide') + '</button></div>'
       : '<div class="muted">No channels come in both an East and a West feed.</div>');
+}
+// The feed in effect: the one still shown when the other is hidden.
+function feedsNow(fp) {
+  var sh = function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g]; }, w = fp.west.some(sh), e = fp.east.some(sh);
+  return { keep: !e && w ? 'west' : 'east', groups: true, now: w && e ? '' : w ? 'west' : e ? 'east' : '' };
 }
 function renderLocal() {
   var li = localIndex(), lo = renderTools.local || (renderTools.local = localPicked(li));
@@ -2694,12 +2721,14 @@ $('tCountry').addEventListener('click', function (e) {
   if (e.target.id !== 'ccGo') return;
   var keep = {}, none = $('ccNoPrefix').checked, names = [];
   document.querySelectorAll('[data-cc]').forEach(function (i) { keep[i.dataset.cc] = i.checked; if (i.checked) names.push(i.dataset.cc); });
+  renderTools.ck = {};            // the redraw that follows shows what is in effect, not pending ticks
   mut('Showed only ' + (names.join(', ') || 'no countries'), function () {
     D.groups.forEach(function (g) { var p = groupCountry(g), show = p ? (keep[p] != null ? keep[p] : true) : !none; if (show) { if (p) delete E.hiddenGroups[g.id]; } else E.hiddenGroups[g.id] = 1; });
   });
   toast('Done.  Groups for ' + (names.join(', ') || 'no countries') + ' are shown.', ['Undo', undo]);
 });
 $('tDivider').addEventListener('click', function (e) {
+  if (e.target.id === 'dvBack') { var h = dividerGroups(true); mut('Showed ' + plural(h.length, 'divider group') + ' again', function () { h.forEach(function (g) { delete E.hiddenGroups[g.id]; }); }); return; }
   if (e.target.id !== 'dvGo') return;
   var l = dividerGroups();
   mut('Hid ' + plural(l.length, 'divider group'), function () { l.forEach(function (g) { E.hiddenGroups[g.id] = 1; }); });
@@ -2711,6 +2740,7 @@ $('tFeeds').addEventListener('click', function (e) {
   if (b.dataset.k) { fo.keep = b.dataset.k; renderFeeds(); return; }
   if (b.id !== 'feedGo') return;
   var drop = fo.keep === 'east' ? 'west' : 'east', l = feedPairs()[drop].filter(function (c) { return !E.hiddenChannels[c.k]; }), gs = fo.groups ? feedGroups(drop) : [];
+  renderTools.feeds = null;       // re-read after the change: the feed kept now
   mut('Kept the ' + (fo.keep === 'east' ? 'East' : 'West') + ' feeds: hid ' + plural(l.length, drop === 'west' ? 'West copy' : 'East copy', drop === 'west' ? 'West copies' : 'East copies') + (gs.length ? ' and ' + plural(gs.length, 'group') : ''), function () {
     l.forEach(function (c) { E.hiddenChannels[c.k] = 1; }); gs.forEach(function (g) { E.hiddenGroups[g.id] = 1; });
   });
@@ -2736,6 +2766,7 @@ $('tLocal').addEventListener('click', function (e) {
   // Only the picked cities' stations go in the group.  National feeds with no city stay where they
   // are (shown, if that box is ticked), and never land in "Local channels".
   var keys = T().localKeep(lo.sel, false).map(function (x) { return x.c.k; });
+  renderTools.local = null;        // re-read from your edits after the change: your pick shows as current
   mut('Kept local stations for ' + names.join(', ') + (gname ? ' in ' + gname : ''), function () {
     hide.forEach(function (x) { E.hiddenChannels[x.c.k] = 1; }); keep.forEach(function (x) { delete E.hiddenChannels[x.c.k]; });
     if (!gname) return;

@@ -876,7 +876,7 @@ Reload the page, close the tab, or open the editor on another computer or your p
 
 The same engine as the TV's [set-up tour](#the-set-up-tour), with more room: pick per channel, see every group, undo any step.  The tour's QR code opens this page signed in.
 
-It works as a checklist.  Each step says **✓ Done** (nothing left for it to do), **To do**, or **Skipped**, and the line at the top counts them.  **Skip** leaves a step as it is, and **Undo skip** brings it back.  Skips are saved on the TV, so another phone or computer sees them too.  The number on **Smart clean-up** in the menu is the steps still to do.
+Every step shows what is in effect now, and re-reads it after each change, undo or redo, so coming back is updating your setup, not starting over.  Steps that hide things list what they hid, with a way to show it again.  It works as a checklist.  Each step says **✓ Done** (nothing left for it to do), **To do**, or **Skipped**, and the line at the top counts them.  **Skip** leaves a step as it is, and **Undo skip** brings it back.  Skips are saved on the TV, so another phone or computer sees them too.  The number on **Smart clean-up** in the menu is the steps still to do.
 
 - **Adult groups** finds groups named Adult, XXX, 18+ and similar (not Adult Swim) and hides them in one press.  On the TV, Settings > Parental controls can also lock any group behind a PIN.
 - **Shorter group names** spots a word most of your groups start with ("USA News", "USA Sports", "USA Kids") and takes it off all of them at once.  Your provider's list is not changed, and any group can be renamed back.

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Every step opens on what's in effect now.**  Run again, the TV's set-up tour starts from your current setup (the countries shown, the feed you kept, the cities in your local group, hidden dividers and empty groups) and says so.  In the web editor, Smart clean-up steps re-read the current state after each change, undo, redo or reload: country chips show what is shown ("Shown now: ..."), East and West says which feed is kept, Local channels ticks your current cities, and Adult groups, Shorter group names and Divider groups list what they hid with **Show them again** or **Put it back**.
 - **Holding OK no longer jumps to fullscreen.**  Holding OK on a channel opened its menu, and the TV's key repeats while OK was still down then picked the menu's first item.  Repeats now belong to the hold until OK is let go.
 - **Settings scroll to the end.**  Notes under the last choice (like the reminder list below "Reminder question stays for") were cut off under the button hints; now the last choice brings them into view.  Pages of facts only (Diagnostics > What this TV can play) scroll with ▲ ▼ and no longer show a heading as selected, and the top row no longer covers the clock.
 - **The guide's groups panel reads as a layer:** its own raised colour and accent edge, with the programmes behind it dimmed.

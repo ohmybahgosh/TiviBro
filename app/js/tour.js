@@ -424,7 +424,8 @@ var Tour = (function () {
     main.appendChild(U.el('h1', '', step.id === 'welcome' ? (st.first ? 'Your playlist is in' : 'Set-up tour') : step.title));
     var lead = typeof step.lead === 'function' ? step.lead() : step.lead;
     if (lead) main.appendChild(U.el('p', 'lead', lead));
-    if (step.id === 'welcome') main.appendChild(U.el('p', 'lead', (Store.playlist.name || 'Your playlist') + ' loaded.  Here is what it has, and a quick way to make it yours: keep the countries you watch, clean the names, pick East or West and your city, and choose logos and colours.'));
+    if (step.id === 'welcome') main.appendChild(U.el('p', 'lead', st.current ? 'Your setup as it is now is filled in on every step: the countries you kept, your feed, your cities.  Change what you like, then Apply.' :
+      (Store.playlist.name || 'Your playlist') + ' loaded.  Here is what it has, and a quick way to make it yours: keep the countries you watch, clean the names, pick East or West and your city, and choose logos and colours.'));
     var view = U.el('div', 'tour-view'), scroll = U.el('div', 'tour-scroll');
     st.rowEls = st.items.map(function (it, i) {
       if (it.custom) return it.el;
@@ -567,6 +568,30 @@ var Tour = (function () {
     if (done) done(applied);
   }
 
+  /* Run again later, the tour opens on what is in effect now, not on first-run defaults: the
+     countries whose groups are shown, the feed you kept, the cities in your local group, whether
+     dividers and empty groups are hidden.  Then it reads as updating your setup. */
+  function fromCurrent() {
+    var E = Store.edits, hg = E.hiddenGroups || {}, hc = E.hiddenChannels || {}, sv = st.sv, ch = st.ch;
+    if (!Object.keys(hg).length && !Object.keys(hc).length && !(E.custom || []).some(function (g) { return g.items && g.items.length; })) return;    // nothing done yet
+    sv.countries.forEach(function (x) { ch.cc[x.p] = x.groups.some(function (id) { return !hg[id]; }); });
+    var cm = sv.t.countryMap(), none = Library.data.groups.filter(function (g) { return !cm[g.id]; });
+    ch.ccNone = !none.length || none.some(function (g) { return !hg[g.id]; });
+    var vis = function (c) { return !hc[c.k] && !hg[c.g]; };
+    if (sv.feeds.pairs) {
+      var w = sv.feeds.west.some(vis), e = sv.feeds.east.some(vis);
+      ch.feed = w && e ? 'both' : w ? 'west' : 'east';
+      ch.feedGroups = sv.t.feedGroups(ch.feed === 'east' ? 'west' : 'east').some(function (g) { return hg[g.id]; });
+    }
+    var byKey = {}; sv.locals.chans.forEach(function (x) { byKey[x.c.k] = x; });
+    var lg = (E.custom || []).filter(function (g) { return g.items && g.items.length && g.items.every(function (k) { return byKey[k]; }); })[0];
+    if (lg) { ch.cities = {}; lg.items.forEach(function (k) { var c = byKey[k].p.city; if (c) ch.cities[c] = 1; }); ch.cityGroup = true; ch.cityHideNets = sv.locals.groups.every(function (g) { return hg[g.id]; }); }
+    ch.cityNone = sv.locals.chans.some(function (x) { return !x.p.city && vis(x.c); }) || !sv.locals.chans.some(function (x) { return !x.p.city; });
+    if (sv.dividers.length) ch.dividers = sv.dividers.every(function (g) { return hg[g.id]; });
+    if (sv.empty.length) ch.empty = sv.empty.every(function (g) { return hg[g.id]; });
+    st.current = true;
+  }
+
   /* opts: { first: true right after connecting, done(applied) } */
   function open(opts) {
     opts = opts || {};
@@ -578,6 +603,7 @@ var Tour = (function () {
     st.sv.countries.forEach(function (x) { cc[x.p] = inList ? x.p === region : true; });
     st.ch = { cc: cc, ccNone: true, names: clone(p.names || Names.defaults()), events: clone(p.events || {}), feed: st.sv.feeds.pairs ? 'east' : 'both', feedGroups: true,
       cities: {}, cityNone: true, cityGroup: true, cityHideNets: true, dividers: true, empty: true, dupes: st.sv.dupeSets ? 'fhd' : 'off', words: '' };
+    if (!opts.first) fromCurrent();
     if (st.ch.names.enabled === false && opts.first) st.ch.names.enabled = true;
     if (opts.first && st.sv.idle) st.ch.names.hideIdle = true;
     Logos.load(Library.data).then(function () { if (st && cur().id === 'logos') { st.cov = null; draw(); } });
@@ -588,5 +614,5 @@ var Tour = (function () {
     draw();
   }
 
-  return { open: open, get isOpen() { return !!st; }, keys: function (a) { return keys(a); }, plan: function () { return st && plan(); }, go: function (d) { go(d); }, get step() { return st && cur().id; } };
+  return { open: open, get isOpen() { return !!st; }, get choices() { return st && st.ch; }, keys: function (a) { return keys(a); }, plan: function () { return st && plan(); }, go: function (d) { go(d); }, get step() { return st && cur().id; } };
 })();

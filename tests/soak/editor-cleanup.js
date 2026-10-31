@@ -52,11 +52,28 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('Keep all leaves that set out of the hide button', await ev(() => dupeTarget().length) === before - 1);
   }
 
+  // Every step shows what is in effect after a change, not its first defaults.
+  await ev(() => { renderTools.feeds = null; renderTools(); });
+  if (await ev(() => feedPairs().pairs)) {
+    await ed.click('#feedKeep [data-k="west"]'); await ed.waitForTimeout(200); await ed.click('#feedGo'); await ed.waitForTimeout(300);
+    ok('after keeping West, the feeds step says so and starts on West', await ev(() => /Keeping West now/.test(document.getElementById('tFeeds').textContent) && document.querySelector('#feedKeep [data-k="west"]').classList.contains('on')));
+    await ev(() => undo());
+  }
+  await ed.click('[data-ccset="0"]'); await ed.waitForTimeout(200);
+  await ev(() => { const i = document.querySelector('[data-cc]'); i.checked = true; i.dispatchEvent(new Event('change', { bubbles: true })); });
+  await ed.click('#ccGo'); await ed.waitForTimeout(300);
+  const cc = await ev(() => ({ chips: [...document.querySelectorAll('[data-cc]')].filter(i => i.checked).length, shown: countryStats().filter(x => x.shown > 0).length, text: document.getElementById('tCountry').textContent }));
+  ok('after applying, the country chips are what is shown now', cc.chips === cc.shown && /Shown now/.test(cc.text) && !/not applied yet/.test(cc.text), JSON.stringify(cc).slice(0, 200));
+  await ev(() => undo());
+
   // Adult groups and shorter group names (an adult group added the way a provider would send it).
   await ev(() => { D.groups.push({ id: 'xx1', name: 'XXX Adult' }); byGroup.set('xx1', []); renderTools(); });
   ok('an adult group is found', /XXX Adult/.test(await ev(() => document.getElementById('tAdult').textContent)));
   await ed.click('#adGo'); await ed.waitForTimeout(300);
   ok('Hide hides it', await ev(() => !!E.hiddenGroups.xx1));
+  ok('the step then lists it as hidden now, with a way back', /Hidden now: XXX Adult/.test(await ev(() => document.getElementById('tAdult').textContent)));
+  await ed.click('#adBack'); await ed.waitForTimeout(200);
+  ok('Show them again brings it back', await ev(() => !E.hiddenGroups.xx1));
   await ev(() => { D.groups.pop(); byGroup.delete('xx1'); delete E.hiddenGroups.xx1; renderTools(); });
   // Names the way some providers send them, with no separator ("USA News"): the clean-up leaves those.
   await ev(() => { ['USA News', 'USA Kids', 'USA Sports'].forEach((n, i) => { D.groups.push({ id: 'ux' + i, name: n }); byGroup.set('ux' + i, []); }); renderTools(); });
@@ -64,6 +81,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('a word most group names start with is offered', pre.indexOf('USA') >= 0, pre.join());
   await ed.click('[data-gpre="USA"]'); await ed.waitForTimeout(300);
   ok('taking it off renames those groups', await ev(() => E.groupRenames.ux0 === 'News' && E.groupRenames.ux2 === 'Sports'), await ev(() => JSON.stringify(E.groupRenames)));
+  ok('the step then shows it as taken off, with Put it back', /Taken off now: "USA"/.test(await ev(() => document.getElementById('tGnames').textContent)));
+  await ed.click('[data-gback="USA"]'); await ed.waitForTimeout(200);
+  ok('Put it back restores the names', await ev(() => !E.groupRenames.ux0 && !E.groupRenames.ux2));
   await ev(() => { [0, 1, 2].forEach(i => { D.groups.pop(); byGroup.delete('ux' + i); delete E.groupRenames['ux' + i]; }); renderTools(); });
 
   // Local channels: national feeds stay out of the group; the pick is remembered.

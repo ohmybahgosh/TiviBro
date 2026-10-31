@@ -61,6 +61,20 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await key('ArrowUp', 4);
   ok('▲ scrolls it back to the top', await ev(() => (document.querySelector('.set-scroll')._y || 0) === 0));
 
+  // 3. The set-up tour, run again, opens on the setup in effect, not on first-run defaults.
+  const want = await ev(() => {
+    const t = Tidy.make(Library.data), cs = t.countries(), keep = cs[0].p, f = t.feeds();
+    cs.forEach(x => { if (x.p !== keep) x.groups.forEach(id => { Store.edits.hiddenGroups[id] = 1; }); });
+    f.east.forEach(c => { Store.edits.hiddenChannels[c.k] = 1; });            // kept West
+    Store.saveEdits(); Library.dirty();
+    return { keep: keep, others: cs.filter(x => x.p !== keep).map(x => x.p), pairs: f.pairs };
+  });
+  await ev(() => { if (UI.modalOpen) UI.close(); Tour.open({ from: 'settings' }); }); await page.waitForTimeout(800);
+  const ch = await ev(() => Tour.choices);
+  ok('a repeat tour ticks the countries shown now', ch.cc[want.keep] === true && want.others.every(p => ch.cc[p] === false), JSON.stringify(ch.cc));
+  if (want.pairs) ok('a repeat tour starts on the feed kept now (West)', ch.feed === 'west', ch.feed);
+  ok('it says the current setup is filled in', /filled in on every step/.test(await ev(() => document.body.textContent)));
+
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();
   console.log(fails ? fails + ' FAILED' : 'all TV fix checks passed');
