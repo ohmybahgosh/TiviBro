@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 23, 2026-10-31)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 23
 
 - **Fixed: full XMLTV guides and the public guide failed on the TV** ("S is not defined", "pubKeys is not defined").  The release build is minified, which renamed the guide reader's name matching and dropped the markers it was wired in by, so name matching for added guides and the provider's full guide, and the whole public guide fill-in, failed on real TVs while every test of the source passed.  The guide reader now gets those helpers in a way minifying can't break, a failed guide file stops downloading instead of showing as still running, and `scripts/test-build.sh` runs the guide tests against the minified build.
 - The rooted-TV installer now really starts TiviBro when run the usual way (`curl -fsSL https://tivibro.app/install | sh`).  Run like that, the script arrives on the TV's input, and the TV's `luna-send` answered nothing at all, so alpha 22's installer said it couldn't start the app.  Its TV calls now take their input from `/dev/null`, and a test runs the installer piped, as people do.
 
-## 0.6.0 (alpha 22, 2026-10-30)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 22
+### In alpha 22
 
 - The rooted-TV installer (`curl -fsSL https://tivibro.app/install | sh`) starts TiviBro again on webOS 25, where the TV refuses app launches over `luna-send-pub`: it now uses the private bus as root.  It also shows the version that was installed before, which was missing for the same reason, and says so plainly when the TV won't start the app instead of claiming it did.
 
