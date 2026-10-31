@@ -58,8 +58,15 @@ jobs:
         env:
           TB_VERSION_NAME: ${{ steps.v.outputs.name }}
           TB_VERSION_CODE: ${{ github.run_number }}
+          # The release key (only on this repository's own builds; pull requests from forks get the test key).
+          TB_KEYSTORE_B64: ${{ secrets.TB_KEYSTORE_B64 }}
+          TB_KEYSTORE_PASS: ${{ secrets.TB_KEYSTORE_PASS }}
+          TB_KEY_ALIAS: ${{ secrets.TB_KEY_ALIAS }}
+          TB_KEY_PASS: ${{ secrets.TB_KEY_PASS }}
         run: |
+          if [ -n "$TB_KEYSTORE_B64" ]; then printf '%s' "$TB_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"; export TB_KEYSTORE="$RUNNER_TEMP/release.jks"; echo "Signing with the release key"; else echo "No release key: signing with the test key"; fi
           gradle --no-daemon assembleRelease assembleDebug
+          if [ -n "${TB_KEYSTORE:-}" ]; then "$(ls -d "$ANDROID_HOME"/build-tools/* | tail -1)/apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk 2>/dev/null | grep -i "SHA-256" | head -1 || true; rm -f "$TB_KEYSTORE"; fi
           mkdir -p ../dist-apk
           cp app/build/outputs/apk/release/app-release.apk "../dist-apk/tivibro-phone-${{ steps.v.outputs.name }}.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "../dist-apk/tivibro-phone-${{ steps.v.outputs.name }}-debug.apk"

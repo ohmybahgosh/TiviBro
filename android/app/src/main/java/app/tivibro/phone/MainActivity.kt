@@ -52,10 +52,10 @@ class MainActivity : ComponentActivity() {
         handle(intent)
     }
 
-    // Opened from tivibro.app/pair (the TV's QR code scanned with the camera): tivibro://pair?...
+    // Opened by the TV's QR code scanned with the camera (https://tivibro.app/pair#...), or the button on that page (tivibro://pair?...).
     private fun handle(i: Intent?) {
         val d = i?.data ?: return
-        if (d.scheme == "tivibro" && d.host == "pair") link.value = d.toString()
+        if ((d.scheme == "tivibro" && d.host == "pair") || (d.scheme == "https" && d.host == "tivibro.app" && d.path == "/pair")) link.value = d.toString()
     }
 }
 

@@ -18,4 +18,4 @@ gradle assembleDebug                         # app/build/outputs/apk/debug/
 node ../tests/android/fake-tv.js > /tmp/tv.txt &  TB_FAKE_TV=$(cat /tmp/tv.txt) gradle testDebugUnitTest
 ```
 
-The debug key in `app/debug.keystore` is public on purpose, like Android's own: it only lets one test build install over another.  Store releases are signed with a separate key from the environment (`TB_KEYSTORE`, `TB_KEYSTORE_PASS`, `TB_KEY_ALIAS`, `TB_KEY_PASS`).
+The debug key in `app/debug.keystore` is public on purpose, like Android's own: it only lets one test build install over another.  Release builds from this repository are signed with TiviBro's own key, from the repository's secrets (`TB_KEYSTORE_B64`, `TB_KEYSTORE_PASS`, `TB_KEY_ALIAS`, `TB_KEY_PASS`); its fingerprint is in `site/.well-known/assetlinks.json`, which lets the TV's QR code open the app.  Builds without the secrets (pull requests from forks) use the test key.

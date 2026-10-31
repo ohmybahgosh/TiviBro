@@ -25,7 +25,15 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- tivibro.app/pair opens the app with the TV's pairing details. -->
+            <!-- The TV's QR code is a tivibro.app/pair link: scanned with the camera, it opens the app straight
+                 away (verified with tivibro.app/.well-known/assetlinks.json). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="tivibro.app" android:path="/pair" />
+            </intent-filter>
+            <!-- The button on tivibro.app/pair, for phones where the link opened the browser. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />

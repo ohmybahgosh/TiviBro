@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.tivibro.phone",
+    "sha256_cert_fingerprints": ["C9:C5:33:5D:06:A8:CD:C8:D8:F2:84:6D:04:5C:AE:00:3B:47:90:2C:BC:EF:74:80:6F:05:3A:38:BF:2F:E3:60"]
+  }
+}]
