@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **Embedded MKV subtitles.**  Movies and episodes with indexed SRT subtitles now show their tracks in the subtitle menu, including on older LG TVs.  Playback and subtitle reads share one provider session to avoid reconnect loops, and subtitle selection survives seeking and reconnects.
-
-## 0.6.0 (alpha 34, 2026-10-31)
+## 0.6.0 (alpha 35, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 34
+### New in alpha 35
+
+- **Embedded MKV subtitles.**  Movies and episodes with indexed SRT subtitles now show their tracks in the subtitle menu, including on older LG TVs.  Playback and subtitle reads share one provider session to avoid reconnect loops, and subtitle selection survives seeking and reconnects.
+
+### In alpha 34
 
 - **Shorter release notes.**  Each release page lists only what's new in that build, one line per change, with a link to the full changelog; install steps fold away.  Before, every test build repeated the whole 0.6.0 history.
 - **Search puts the best match first, movies and shows included.**  Results are ranked by how closely the title matches (the whole title, then the start, then a word), and then by what you can watch: on now, a movie or show, a channel, coming up, a replay.  Searching batman now lists the Batman films before the 24/7 Batman channels, and CNN still finds the channel first.  Before, movies and shows came after every channel and programme.
