@@ -76,7 +76,8 @@ var Vod = (function () {
   var PRE = /^\s*(?:\[([A-Za-z]{1,3})\]\s*|([A-Z0-9+]{1,4}(?:-[A-Z0-9+]{1,4})*)\s*(?:[|:]|-\s|\s[-–])\s*)(?=\S)/;
   // Parts of a code that are not a language: quality, services (Netflix, Apple TV+), sport, cam copies.
   var NOTLANG = { '4K': 'q', UHD: 'q', FHD: 1, HD: 1, SD: 1, HEVC: 1, NF: 1, 'A+': 1, TOP: 1, CAM: 1, SPT: 1, WC: 1, X: 1, MULTI: 1, SUB: 1, SUBS: 1, DUB: 1, NEW: 1, VIP: 1 };
-  var MIN_UNKNOWN = 20;   // a code TiviBro doesn't know counts as a language only when the provider uses it this often
+  // A code counts as a language only when the provider uses it this often; fewer, and it was part of the title.
+  var MIN_KNOWN = 10, MIN_UNKNOWN = 20;
   var ALIAS = { ENG: 'EN', SWE: 'SE', GER: 'DE', DEU: 'DE', FRA: 'FR', ESP: 'ES', ITA: 'IT', NED: 'NL', POR: 'PT', POL: 'PL', TUR: 'TR', NOR: 'NO', DEN: 'DK', FIN: 'FI',
     ARAB: 'AR', ARA: 'AR', RUS: 'RU', IND: 'IN', USA: 'US', GB: 'UK', BRA: 'BR', MEX: 'MX', GRE: 'GR', ROM: 'RO', HUN: 'HU', CZE: 'CZ', KOR: 'KR', JPN: 'JP', CHN: 'CN' };
   var LABEL = { EN: 'English', US: 'English (US)', UK: 'English (UK)', CA: 'Canada', AU: 'Australia', SE: 'Swedish', NO: 'Norwegian', DK: 'Danish', FI: 'Finnish', NL: 'Dutch',
@@ -135,9 +136,9 @@ var Vod = (function () {
   function view(k, d) {
     var counts = {}, items = d.items, i, it;
     for (i = 0; i < items.length; i++) { it = items[i]; if (it.lang === undefined) tag(it); counts[it.lang] = (counts[it.lang] || 0) + 1; }
-    // Codes TiviBro doesn't know, used only a few times, were part of the title ("AVP - Alien vs Predator").
+    // Codes used only a few times were part of the title ("AVP - Alien vs Predator", one "US - " film).
     var undo = {};
-    Object.keys(counts).forEach(function (c) { if (c && !known(c) && counts[c] < MIN_UNKNOWN) { undo[c] = 1; counts[''] = (counts[''] || 0) + counts[c]; delete counts[c]; } });
+    Object.keys(counts).forEach(function (c) { if (c && counts[c] < (known(c) ? MIN_KNOWN : MIN_UNKNOWN)) { undo[c] = 1; counts[''] = (counts[''] || 0) + counts[c]; delete counts[c]; } });
     var adultCat = {};
     d.cats.forEach(function (c) { if (ADULT.test(c.name)) adultCat[c.id] = 1; });
     for (i = 0; i < items.length; i++) {
