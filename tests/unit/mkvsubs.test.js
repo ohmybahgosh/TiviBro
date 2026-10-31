@@ -7,7 +7,18 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
 // ---- tiny EBML byte builders, for constructing fixtures only ----
 function idBytes(hex) { const b = []; for (let i = 0; i < hex.length; i += 2) b.push(parseInt(hex.slice(i, i + 2), 16)); return b; }
-function sizeByte(n) { if (n > 127) throw new Error('fixture helper only supports 1-byte sizes'); return [0x80 | n]; }
+function sizeByte(n) {
+  for (let len = 1; len <= 8; len++) {
+    if (n <= Math.pow(2, 7 * len) - 1) {
+      const bytes = [];
+      let v = n;
+      for (let i = len - 1; i >= 0; i--) { bytes[i] = v & 0xFF; v = Math.floor(v / 256); }
+      bytes[0] |= (0x80 >> (len - 1));
+      return bytes;
+    }
+  }
+  throw new Error('size too large for fixture helper');
+}
 function strBytes(s) { return Array.from(s).map(c => c.charCodeAt(0)); }
 function el(hexId, contentBytes) { return idBytes(hexId).concat(sizeByte(contentBytes.length)).concat(contentBytes); }
 function trackEntry(num, type, codecId, lang, forced) {
@@ -28,8 +39,84 @@ function blockGroupEl(track, relTimecode, duration, text) {
   return el('A0', [].concat(el('A1', blockContent), el('9B', uintBytes(duration))));
 }
 function simpleBlockEl(track, relTimecode, flags, text) { return el('A3', blockHeader(track, relTimecode, flags).concat(strBytes(text))); }
+// Fixed-width (4-byte) uint encoding: length is independent of value, so a SeekHead/Cues
+// entry's own byte length can be computed before the position value it will hold is known.
+function uintBytesFixed(n) { const b = []; let v = n; for (let i = 0; i < 4; i++) { b.unshift(v & 0xFF); v = Math.floor(v / 256); } return b; }
+function seekFixed(idHex, pos) { return el('4DBB', [].concat(el('53AB', idBytes(idHex)), el('53AC', uintBytesFixed(pos)))); }
+function cuePointFixed(time, track, clusterPos) { return el('BB', [].concat(el('B3', uintBytes(time)), el('B7', [].concat(el('F7', uintBytes(track)), el('F1', uintBytesFixed(clusterPos)))))); }
 
-const ctx = { console };
+// A complete synthetic MKV: EBML header + Segment{Info, Tracks, SeekHead->Cues, Cues->Cluster}.
+// opts.subtitleTrack: {number, lang} or null (no subtitle track at all).
+// opts.cuesIndexesSubtitle: whether Cues' CuePoint references the subtitle track (true) or
+//   only the video track (false) -- the "Cues doesn't index the subtitle track" case.
+function buildMkv(opts) {
+  const ebmlHeader = el('1A45DFA3', []);
+  const infoEl = el('1549A966', el('2AD7B1', uintBytes(1000000)));
+  let tracksContent = trackEntry(1, 1, 'V_MPEG4/ISO/AVC', '', false);
+  if (opts.subtitleTrack) tracksContent = tracksContent.concat(trackEntry(opts.subtitleTrack.number, 17, 'S_TEXT/UTF8', opts.subtitleTrack.lang || '', false));
+  const tracksEl = el('1654AE6B', tracksContent);
+  const preSeekLen = infoEl.length + tracksEl.length;
+  const seekEntryLen = seekFixed('1C53BB6B', 0).length; // fixed-width: same length for any value
+  const seekHeadFullLen = idBytes('114D9B74').length + sizeByte(seekEntryLen).length + seekEntryLen; // SeekHead's own id+size header + its one Seek entry
+  const cuesOffset = preSeekLen + seekHeadFullLen; // Cues sits right after the whole SeekHead element, not just its inner Seek entry
+  const seekHeadEl = el('114D9B74', seekFixed('1C53BB6B', cuesOffset));
+
+  const cuesTrack = (opts.cuesIndexesSubtitle && opts.subtitleTrack) ? opts.subtitleTrack.number : 1;
+  const cuePointLen = cuePointFixed(0, cuesTrack, 0).length; // fixed-width: same length for any value
+  const cuesElLenSoFar = idBytes('1C53BB6B').length + 1 /* 1-byte size */ + cuePointLen;
+  const clusterPos = cuesOffset + cuesElLenSoFar;
+  const cuesEl = el('1C53BB6B', cuePointFixed(0, cuesTrack, clusterPos));
+
+  let clusterContent = el('E7', uintBytes(1000)); // cluster timecode
+  if (opts.subtitleTrack) clusterContent = clusterContent.concat(blockGroupEl(opts.subtitleTrack.number, 0, opts.cueDuration || 2000, opts.cueText || 'Hi there'));
+  const clusterEl = el('1F43B675', clusterContent);
+
+  const segmentContent = [].concat(infoEl, tracksEl, seekHeadEl, cuesEl, clusterEl);
+  const segmentEl = el('18538067', segmentContent);
+  return Uint8Array.from([].concat(ebmlHeader, segmentEl));
+}
+
+const mkvFixtures = {
+  '1.mkv': buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true }),
+  'novideosubs.mkv': buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: false }),
+  'novsubtracks.mkv': buildMkv({ subtitleTrack: null })
+};
+let fetchCallCount = 0;
+function fakeFetch(url, options) {
+  fetchCallCount++;
+  const m = /\/([^/]+)$/.exec(url);
+  const name = m ? m[1] : '';
+  if (name === 'dropsconnection.mkv') return Promise.reject(new Error('simulated connection drop'));
+  const data = mkvFixtures[name];
+  if (!data) return Promise.resolve({ ok: false, status: 404, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) });
+  const range = (options && options.headers && options.headers.Range) || '';
+  const rm = /bytes=(\d+)-(\d+)/.exec(range);
+  let start = 0, end = data.length - 1;
+  if (rm) { start = +rm[1]; end = Math.min(+rm[2], data.length - 1); }
+  if (start >= data.length) return Promise.resolve({ ok: false, status: 416, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) });
+  const slice = data.slice(start, end + 1);
+  return Promise.resolve({ ok: true, status: 206, arrayBuffer: () => Promise.resolve(slice.buffer.slice(slice.byteOffset, slice.byteOffset + slice.byteLength)) });
+}
+function makeFakeTrackElement() {
+  const cues = [];
+  return { kind: '', label: '', srclang: '', track: { cues: cues, addCue(c) { cues.push(c); } } };
+}
+function flush(rounds) {
+  rounds = rounds || 20;
+  let p = Promise.resolve();
+  for (let i = 0; i < rounds; i++) p = p.then(() => new Promise(res => setTimeout(res, 0)));
+  return p;
+}
+function waitForAsync(cond) { return flush().then(() => cond()); }
+
+const ctx = {
+  console, Promise,
+  fetch: (...a) => fakeFetch(...a),
+  Net: { wrap: u => u },
+  Log: { debug() {}, warn() {}, info() {} },
+  document: { createElement: tag => (tag === 'track' ? makeFakeTrackElement() : {}) },
+  VTTCue: function (start, end, text) { this.startTime = start; this.endTime = end; this.text = text; }
+};
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/mkvsubs.js'), 'utf8') + '\nthis.MkvSubs = MkvSubs;', ctx);
 const MkvSubs = ctx.MkvSubs;
@@ -103,5 +190,48 @@ ok('skips a laced block for the target track instead of misreading it',
 ok('a truncated Cluster buffer does not throw',
   (() => { try { MkvSubs.readClusterBlocks(clusterBuf.slice(0, 10), 0, 10, 3, 1000000); return true; } catch (e) { return false; } })());
 
-if (fail) { console.log(fail + ' mkvsubs test(s) failed'); process.exit(1); }
-console.log('all mkvsubs tests passed');
+// ---- extract() ----
+(async function () {
+  ok('extracts a subtitle cue end to end and adds it to a <track> on the video', await (async () => {
+    const video = { children: [], appendChild(el) { this.children.push(el); } };
+    MkvSubs.extract('http://p/movie/u/p/1.mkv', video);
+    return waitForAsync(() => video.children.length === 1 && video.children[0].track.cues.length === 1 && video.children[0].track.cues[0].text === 'Hi there');
+  })());
+
+  ok('a non-.mkv URL does nothing: no fetch call, no <track> added', await (async () => {
+    const video = { children: [], appendChild(el) { this.children.push(el); } };
+    fetchCallCount = 0;
+    MkvSubs.extract('http://p/movie/u/p/1.mp4', video);
+    await flush();
+    return fetchCallCount === 0 && video.children.length === 0;
+  })());
+
+  ok('a file whose Cues does not index the subtitle track adds nothing, no scan attempted', await (async () => {
+    const video = { children: [], appendChild(el) { this.children.push(el); } };
+    fetchCallCount = 0;
+    MkvSubs.extract('http://p/movie/u/p/novideosubs.mkv', video);
+    const settled = await waitForAsync(() => video.children.length === 0);
+    return settled && fetchCallCount <= 2;
+  })());
+
+  ok("cancel() before the async fetches resolve prevents any <track> from being added", await (async () => {
+    const video = { children: [], appendChild(el) { this.children.push(el); } };
+    const h = MkvSubs.extract('http://p/movie/u/p/1.mkv', video);
+    h.cancel();
+    return waitForAsync(() => video.children.length === 0);
+  })());
+
+  ok('a fetch that rejects (simulated dropped connection) does not throw out of extract()', (() => {
+    const video = { children: [], appendChild(el) { this.children.push(el); } };
+    try { MkvSubs.extract('http://p/movie/u/p/dropsconnection.mkv', video); return true; } catch (e) { return false; }
+  })());
+
+  ok('a valid MKV with a Tracks element but zero subtitle tracks adds nothing, no error', await (async () => {
+    const video = { children: [], appendChild(el) { this.children.push(el); } };
+    MkvSubs.extract('http://p/movie/u/p/novsubtracks.mkv', video);
+    return waitForAsync(() => video.children.length === 0);
+  })());
+
+  if (fail) { console.log(fail + ' mkvsubs test(s) failed'); process.exit(1); }
+  console.log('all mkvsubs tests passed');
+})();

@@ -232,12 +232,143 @@ var MkvSubs = (function () {
     return cues;
   }
 
+  // ---- extract(): network orchestration, ties the readers above to a <video> ----
+  var SEGMENT = 0x18538067, INFO = 0x1549A966, TIMECODESCALE = 0x2AD7B1, TRACKS_EL = 0x1654AE6B, SEEKHEAD = 0x114D9B74;
+
+  // Finds the first direct child of the given type within [offset, end); returns its
+  // content bounds, or null.  Used for the one-off lookups extract() needs (Segment's
+  // Tracks/SeekHead/Info, Info's TimecodeScale) -- not exported, every reader above
+  // already takes its own pre-bounded content.
+  function findChild(buf, offset, end, wantId) {
+    var pos = offset;
+    while (pos < end) {
+      var idr = readId(buf, pos);
+      if (idr.value === null) break;
+      var sz = readVint(buf, idr.next);
+      if (sz.value === null) break;
+      var cstart = sz.next, cend = Math.min(cstart + sz.value, end);
+      if (idr.value === wantId) return { start: cstart, end: cend };
+      pos = cend;
+    }
+    return null;
+  }
+
+  function fetchRange(url, start, end) {
+    return fetch(url, { headers: { Range: 'bytes=' + start + '-' + end } }).then(function (r) {
+      if (!r.ok && r.status !== 206) throw new Error('bad range response ' + r.status);
+      return r.arrayBuffer();
+    }).then(function (ab) { return new Uint8Array(ab); });
+  }
+
+  function extract(url, video) {
+    if (!/\.mkv(\?|#|$)/i.test(url)) return { cancel: function () {} };
+    var cancelled = false;
+    var wrapped = Net.wrap(url);
+
+    fetchRange(wrapped, 0, 262143).then(function (head) {
+      if (cancelled) return;
+      if (head.length < 4 || head[0] !== 0x1A || head[1] !== 0x45 || head[2] !== 0xDF || head[3] !== 0xA3) return;
+      var seg = findChild(head, 0, head.length, SEGMENT);
+      if (!seg) return;
+      var segmentDataStart = seg.start;
+      var tracksChild = findChild(head, seg.start, seg.end, TRACKS_EL);
+      if (!tracksChild) return;
+      var allTracks = readTracks(head, tracksChild.start, tracksChild.end);
+      var subTracks = [];
+      for (var i = 0; i < allTracks.length; i++) if (allTracks[i].type === 17) subTracks.push(allTracks[i]);
+      if (!subTracks.length) return;
+      var seekChild = findChild(head, seg.start, seg.end, SEEKHEAD);
+      if (!seekChild) return;
+      var seekMap = readSeekHead(head, seekChild.start, seekChild.end);
+      var cuesRel = seekMap['1C53BB6B'];
+      if (cuesRel === undefined) return;
+      var timecodeScale = 1000000;
+      var infoChild = findChild(head, seg.start, seg.end, INFO);
+      if (infoChild) {
+        var tcChild = findChild(head, infoChild.start, infoChild.end, TIMECODESCALE);
+        if (tcChild) timecodeScale = bytesToUint(head, tcChild.start, tcChild.end);
+      }
+      if (cancelled) return;
+      var cuesAbs = segmentDataStart + cuesRel;
+      return fetchRange(wrapped, cuesAbs, cuesAbs + 1048575).then(function (cuesBuf) {
+        if (cancelled) return;
+        // The fetched range starts exactly at the Cues element itself; peel its own
+        // id+size header before handing its content to readCuesForTrack, same as every
+        // other reader above expects content bounds, not an element including its header.
+        var cuesIdr = readId(cuesBuf, 0);
+        if (cuesIdr.value === null) return;
+        var cuesSz = readVint(cuesBuf, cuesIdr.next);
+        if (cuesSz.value === null) return;
+        var cuesContentStart = cuesSz.next, cuesContentEnd = Math.min(cuesContentStart + cuesSz.value, cuesBuf.length);
+        var perTrackCues = [];
+        for (var j = 0; j < subTracks.length; j++) {
+          var trk = subTracks[j];
+          var trkCues = readCuesForTrack(cuesBuf, cuesContentStart, cuesContentEnd, trk.number, timecodeScale);
+          if (trkCues.length) perTrackCues.push({ track: trk, cues: trkCues });
+        }
+        if (!perTrackCues.length) return;
+
+        var attached = [];
+        for (var k = 0; k < perTrackCues.length; k++) {
+          var entry = perTrackCues[k];
+          var trackEl = document.createElement('track');
+          trackEl.kind = 'subtitles';
+          trackEl.label = entry.track.language || ('Subtitle track ' + (k + 1));
+          trackEl.srclang = entry.track.language || '';
+          video.appendChild(trackEl);
+          attached.push({ textTrack: trackEl.track });
+        }
+        if (cancelled) return;
+
+        var offsetSet = {};
+        for (var m = 0; m < perTrackCues.length; m++) {
+          var mcues = perTrackCues[m].cues;
+          for (var n = 0; n < mcues.length; n++) offsetSet[segmentDataStart + mcues[n].clusterPos] = true;
+        }
+        var offsets = [];
+        for (var key in offsetSet) offsets.push(+key);
+
+        var chain = Promise.resolve();
+        offsets.forEach(function (off) {
+          chain = chain.then(function () {
+            if (cancelled) return;
+            return fetchRange(wrapped, off, off + 15).then(function (peek) {
+              if (cancelled) return;
+              var idr = readId(peek, 0);
+              if (idr.value === null) return;
+              var sz = readVint(peek, idr.next);
+              if (sz.value === null) return;
+              var headerLen = sz.next;
+              return fetchRange(wrapped, off, off + headerLen + sz.value - 1).then(function (clusterBuf) {
+                if (cancelled) return;
+                for (var a = 0; a < attached.length; a++) {
+                  var trackNumber = perTrackCues[a].track.number;
+                  var found = readClusterBlocks(clusterBuf, headerLen, clusterBuf.length, trackNumber, timecodeScale);
+                  for (var f = 0; f < found.length; f++) {
+                    if (cancelled) return;
+                    attached[a].textTrack.addCue(new VTTCue(found[f].startSec, found[f].endSec, found[f].text));
+                  }
+                }
+              });
+            });
+          });
+        });
+        return chain;
+      });
+    }).catch(function (e) {
+      if (typeof Log !== 'undefined' && Log.debug) Log.debug('mkvsubs', 'giving up: ' + (e && e.message));
+    });
+
+    return { cancel: function () { cancelled = true; } };
+  }
+
   return {
     readVint: readVint,
     readId: readId,
     readTracks: readTracks,
     readSeekHead: readSeekHead,
     readCuesForTrack: readCuesForTrack,
-    readClusterBlocks: readClusterBlocks
+    readClusterBlocks: readClusterBlocks,
+    extract: extract
   };
 })();
