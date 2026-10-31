@@ -57,13 +57,15 @@ json() {   # json FILE 'expression of j' [extra argument, as process.argv[2]]
 
 # One Luna call; prints the reply.  Root can use the private bus (luna-send), which newer TVs need
 # for the application manager: there luna-send-pub gets "Denied method call" (seen on webOS 25).
-# Falls back to the public bus when there is no luna-send or it refuses.
+# Falls back to the public bus when there is no luna-send or it refuses.  Input comes from /dev/null:
+# run as "curl ... | sh", the script itself arrives on stdin, and luna-send given that pipe answers
+# nothing at all (seen on webOS 25).
 luna() {   # luna URI JSON
   if command -v luna-send >/dev/null 2>&1; then
-    R="$(luna-send -n 1 "$1" "$2" 2>/dev/null || true)"
+    R="$(luna-send -n 1 "$1" "$2" </dev/null 2>/dev/null || true)"
     case "$R" in *'"returnValue":true'*|*'"returnValue": true'*) echo "$R"; return 0 ;; esac
   fi
-  luna-send-pub -n 1 "$1" "$2" 2>/dev/null || true
+  luna-send-pub -n 1 "$1" "$2" </dev/null 2>/dev/null || true
 }
 
 rm -rf "$WORK"; mkdir -p "$WORK"
