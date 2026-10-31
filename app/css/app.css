@@ -121,8 +121,7 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .gp.none{color:var(--dim)}
 /* Now: a thin line that runs behind the programmes (seen between them, never across their text), and a
    small marker in the time bar. */
-.gnow{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--accent);opacity:.7;z-index:-1}
-#guideBody{isolation:isolate}
+.gnow{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--accent);opacity:.55;z-index:3;pointer-events:none}
 .gnowh{position:absolute;bottom:-2px;width:0;height:0;margin-left:-7px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--accent);top:auto!important}
 /* guide top: details left, preview window right */
 .guide-top{display:flex;gap:40px;height:300px;flex:none;padding:6px 0 14px}
@@ -303,8 +302,8 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .gd-badge{display:inline-block;padding:2px 12px;border-radius:8px;background:var(--raised);color:var(--text);font-size:20px;margin-right:10px}
 .gd-badge.cu{background:#1d3b2e;color:#7fe0ae}
 .gd-badge.live{background:#3a1d20;color:#ff8e93}
-.gd-prog{height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin-top:14px;width:620px;overflow:hidden}
-.gd-prog i{display:block;height:100%;background:var(--accent)}
+.gd-mini{display:inline-block;vertical-align:middle;width:110px;height:4px;margin:0 14px 0 16px;border-radius:2px;background:rgba(255,255,255,.18);overflow:hidden}
+.gd-mini i{display:block;height:100%;background:var(--text)}
 .guide-detail p.gd-desc{-webkit-line-clamp:3}
 .gd-now{margin-top:auto;font-size:21px;color:var(--muted)}
 .gd-now b{display:inline;font-size:21px;color:var(--accent-text);margin:0}
@@ -316,11 +315,9 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .gch .cu{flex:none;font-size:18px;color:#7fe0ae;border:1px solid #2f6b50;border-radius:6px;padding:0 6px;margin-left:auto}
 /* live progress inside "now" programme cells */
 /* What's on now: a slim progress bar under the times, on a faint track. */
-.gp .gfill{position:absolute;left:18px;bottom:12px;height:3px;border-radius:2px;background:var(--text);opacity:.85;pointer-events:none;z-index:1}
-.gp.now::after{content:'';position:absolute;left:18px;right:18px;bottom:12px;height:3px;border-radius:2px;background:rgba(255,255,255,.14)}
-.gp.focus .gfill{background:var(--on-accent)}
-.gp.now.focus::after{background:rgba(0,0,0,.2)}
-body.now-off .gp.now::after{display:none}
+/* What's on now: the part already aired is tinted with the accent colour, under the text. */
+.gp .gfill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);opacity:.16;pointer-events:none}
+.gp.focus .gfill{background:#000;opacity:.12}
 .gp .gt,.gp .gs{position:relative}
 .gp .gcu{color:#7fe0ae}
 .gp.focus .gcu{color:#1d5c3c}

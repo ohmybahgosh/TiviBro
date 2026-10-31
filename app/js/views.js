@@ -1660,7 +1660,7 @@ var Guide = (function () {
       var past = p.e <= nowT, now = p.s <= nowT && p.e > nowT, from = Math.max(p.s, t0);
       // How much of what's on now has aired, shown inside its cell (by time, as the cell may be wider).
       cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : ''), a, w,
-        (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now && w > 70 ? U.clamp(Math.round((w - 36) * (nowT - from) / Math.max(1, p.e - from)), 0, w - 36) : -1, p.s);
+        (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, p.e - from)), 0, w) : -1, p.s);
     });
     if (!n) cell(r, n++, 'gp none' + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : l ? 'No guide information' : 'Loading…', false, null, -1, '');
     for (var j = n; j < r.cells.length; j++) if (!r.cells[j].off) { r.cells[j].d.style.display = 'none'; r.cells[j].off = true; }
@@ -1738,7 +1738,8 @@ var Guide = (function () {
       meta.appendChild(U.el('span', 'gd-badge' + (live ? ' live' : past && c.arch ? ' cu' : ''), live ? 'LIVE' : past ? (c.arch ? 'CATCH-UP' : 'AIRED') : 'UPCOMING'));
       meta.appendChild(document.createTextNode(new Date(h.p.s).toLocaleDateString(undefined, { weekday: 'short' }) + '  ' + U.hhmm(h.p.s) + ' – ' + U.hhmm(h.p.e)));
       part(mins(h.p.e - h.p.s));
-      if (live) part(mins(h.p.e - now) + ' left');
+      // TiviMate style: a short bar between the times and what is left.
+      if (live) { var mini = U.el('span', 'gd-mini'), mf = U.el('i'); mf.style.width = Math.round(100 * (now - h.p.s) / (h.p.e - h.p.s)) + '%'; mini.appendChild(mf); meta.appendChild(mini); meta.appendChild(document.createTextNode(mins(h.p.e - now) + ' left')); }
       else if (!past) part('starts in ' + mins(h.p.s - now));
       var ps = Epg.pubSource(c);
       if (ps) part('public guide, ' + ps.name);
@@ -1748,9 +1749,6 @@ var Guide = (function () {
     var dq = L.versionTag(c);
     meta2.textContent = (Store.settings.showNumbers ? c.num + '  ' : '') + L.name(c) + (dq ? ' ' + dq : '') + '   ·   ' + L.groupName(c.g) + (c.arch ? '   ·   ↺ catch-up ' + c.arch + ' days' : '');
     detail.appendChild(meta2);
-    if (h.p && h.p.s <= now && h.p.e > now && !h.p.up && !h.p.ended) {
-      var bar = U.el('div', 'gd-prog'), fill = U.el('i'); fill.style.width = Math.round(100 * (now - h.p.s) / (h.p.e - h.p.s)) + '%'; bar.appendChild(fill); detail.appendChild(bar);
-    }
     detail.appendChild(U.el('p', 'gd-desc', h.p ? Epg.desc(c, h.p) : ''));
     if (zone === 'grid') detail.appendChild(U.el('div', 'gd-ok', okMeaning(c, h)));
     nowLine(pv);
