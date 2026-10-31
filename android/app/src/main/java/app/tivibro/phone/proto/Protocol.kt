@@ -149,7 +149,7 @@ internal fun http(host: String, port: Int, method: String, path: String, body: B
         if (body != null) {
             c.doOutput = true
             c.setRequestProperty("Content-Type", "application/json")
-            c.setFixedLengthStreamingMode(body.size)
+            // Not streaming mode: the JVM's HttpURLConnection then throws on a 401 instead of returning it.
             c.outputStream.use { it.write(body) }
         }
         val status = c.responseCode
