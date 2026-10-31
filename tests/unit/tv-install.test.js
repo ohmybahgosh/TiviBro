@@ -28,6 +28,8 @@ esac
 // Fake private-bus luna-send, only where a test asks for it (FAKE_PRIV): root on the TV has it.
 fs.writeFileSync(path.join(bin, 'luna-send'), `#!/bin/sh
 [ -n "$FAKE_PRIV" ] || exit 127
+# Like the TV: given a pipe on stdin (the script itself, under "curl | sh"), it answers nothing.
+if [ ! -c /dev/stdin ]; then echo "priv (stdin was a pipe) $*" >> "${calls}"; exit 0; fi
 echo "priv $*" >> "${calls}"
 case "$*" in
   *getAppInfo*) echo '{"returnValue":true,"appInfo":{"version":"0.5.1"}}' ;;
@@ -59,7 +61,7 @@ const server = http.createServer((req, res) => {
   res.writeHead(404); res.end();
 });
 
-function run(args, extra) {
+function run(args, extra, piped) {
   try { fs.unlinkSync(calls); } catch (e) {}
   try { fs.unlinkSync(path.join(tmp, 'installed.ipk')); } catch (e) {}
   const B = 'http://127.0.0.1:' + server.address().port;
@@ -67,7 +69,9 @@ function run(args, extra) {
     NO_PROXY: '127.0.0.1,localhost', no_proxy: '127.0.0.1,localhost', HTTP_PROXY: '', http_proxy: '' }, extra || {});
   // Async: the fake GitHub runs in this process, so a blocking spawn would deadlock.
   return new Promise(res => {
-    const c = cp.spawn('sh', [SCRIPT].concat(args), { env });
+    // piped: the way people run it, "curl -fsSL .../install | sh -s -- args", the script on stdin.
+    const c = piped ? cp.spawn('sh', ['-s', '--'].concat(args), { env }) : cp.spawn('sh', [SCRIPT].concat(args), { env, stdio: ['ignore', 'pipe', 'pipe'] });
+    if (piped) c.stdin.end(fs.readFileSync(SCRIPT));
     let out = '';
     c.stdout.on('data', d => out += d); c.stderr.on('data', d => out += d);
     const t = setTimeout(() => c.kill('SIGKILL'), 30000);
@@ -113,6 +117,8 @@ server.listen(0, '127.0.0.1', async () => {
   // webOS 25 as root: the public bus is refused for the application manager, the private one works.
   r = await run(['--tag', 'v0.6.0'], { FAKE_PUB_DENIED: '1', FAKE_PRIV: '1' });
   ok('root on webOS 25: reads the version and starts TiviBro over the private bus', r.code === 0 && /Installed now: 0\.5\.1/.test(r.out) && /priv .*applicationManager\/launch/.test(r.log) && /Starting TiviBro/.test(r.out), r.out.trim().split('\n').pop());
+  r = await run(['--tag', 'v0.6.0'], { FAKE_PUB_DENIED: '1', FAKE_PRIV: '1' }, true);
+  ok('piped like "curl | sh": the TV still answers, so it starts TiviBro', r.code === 0 && r.installed && /Installed now: 0\.5\.1/.test(r.out) && /Starting TiviBro/.test(r.out) && !/stdin was a pipe/.test(r.log), r.out.trim().split('\n').pop() + ' | ' + (r.log.match(/priv.*/g) || []).join(' ; '));
   // No private bus and the public one refused: say so instead of claiming it started.
   r = await run(['--tag', 'v0.6.0'], { FAKE_PUB_DENIED: '1' });
   ok('when the TV refuses to start it, it says so', r.code === 0 && r.installed && !/Starting TiviBro/.test(r.out) && /Open TiviBro from the app list/.test(r.out), r.out.trim().split('\n').pop());

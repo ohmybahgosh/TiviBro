@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- The rooted-TV installer now really starts TiviBro when run the usual way (`curl -fsSL https://tivibro.app/install | sh`).  Run like that, the script arrives on the TV's input, and the TV's `luna-send` answered nothing at all, so alpha 22's installer said it couldn't start the app.  Its TV calls now take their input from `/dev/null`, and a test runs the installer piped, as people do.
+
 ## 0.6.0 (alpha 22, 2026-10-30)
 
 Pre-release: expect rough edges, and keep a backup before installing.
