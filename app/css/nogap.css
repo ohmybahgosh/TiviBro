@@ -5,6 +5,7 @@
 .nogap .osd-top > * + *{margin-left:24px}
 .nogap .meter > * + *{margin-left:14px}
 .nogap .gch > * + *{margin-left:14px}
+.nogap .gp > * + *{margin-top:4px}
 .nogap .guide-top > * + *{margin-left:40px}
 .nogap .guide-group > * + *{margin-left:10px}
 .nogap .set-nav > * + *{margin-top:6px}

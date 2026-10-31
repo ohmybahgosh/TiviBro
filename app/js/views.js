@@ -1445,7 +1445,7 @@ var Guide = (function () {
   'use strict';
   var $ = U.$, L = Library;
   var view = $('viewGuide'), body = $('guideBody'), timesEl = $('guideTimes'), detail = $('guideDetail'), ghead = $('guideGroup');
-  var ROW = 88, VIS = 0, WIN = 2.5 * 3600e3, PXW = 0, CHW = 470, MINCELL = 220;      // narrowest a programme is drawn (px)
+  var ROW = 100, VIS = 0, WIN = 2.5 * 3600e3, PXW = 0, CHW = 470, MINCELL = 220;      // narrowest a programme is drawn (px)
   var list = [], gid = null, loaded = null, sel = 0, top = 0, t0 = 0, focusT = 0, rows = [], zone = 'groups', groupsVL = null;
 
   function build() {
@@ -1660,7 +1660,7 @@ var Guide = (function () {
       var past = p.e <= nowT, now = p.s <= nowT && p.e > nowT, from = Math.max(p.s, t0);
       // How much of what's on now has aired, shown inside its cell (by time, as the cell may be wider).
       cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : ''), a, w,
-        (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now && w > 70 ? U.clamp(Math.round((w - 32) * (nowT - from) / Math.max(1, p.e - from)), 0, w - 32) : -1, p.s);
+        (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now && w > 70 ? U.clamp(Math.round((w - 36) * (nowT - from) / Math.max(1, p.e - from)), 0, w - 36) : -1, p.s);
     });
     if (!n) cell(r, n++, 'gp none' + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : l ? 'No guide information' : 'Loading…', false, null, -1, '');
     for (var j = n; j < r.cells.length; j++) if (!r.cells[j].off) { r.cells[j].d.style.display = 'none'; r.cells[j].off = true; }

@@ -115,15 +115,15 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .grow.sel .gch{background:var(--panel)}
 .gprogs{flex:1;position:relative;overflow:hidden}
 .gp{position:absolute;top:4px;bottom:4px;background:var(--panel);border-radius:8px;padding:0 16px;display:flex;flex-direction:column;justify-content:center;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:23px;border-left:2px solid var(--ink)}
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:24px;border-left:2px solid var(--ink);padding-left:18px;padding-right:18px;gap:4px}
 .gp.now{background:var(--raised)}
 .gp.focus{background:var(--accent);color:var(--on-accent)}
 .gp.none{color:var(--dim)}
 /* Now: a thin line that runs behind the programmes (seen between them, never across their text), and a
    small marker in the time bar. */
-.gnow{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--air);opacity:.6;z-index:-1}
+.gnow{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--accent);opacity:.7;z-index:-1}
 #guideBody{isolation:isolate}
-.gnowh{position:absolute;bottom:-2px;width:0;height:0;margin-left:-7px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--air);top:auto!important}
+.gnowh{position:absolute;bottom:-2px;width:0;height:0;margin-left:-7px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--accent);top:auto!important}
 /* guide top: details left, preview window right */
 .guide-top{display:flex;gap:40px;height:300px;flex:none;padding:6px 0 14px}
 .guide-detail{flex:1;min-width:0;padding:8px 20px;color:var(--muted);font-size:23px;overflow:hidden;display:flex;flex-direction:column}
@@ -134,7 +134,7 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .guide-preview{width:496px;height:279px;flex:none;border-radius:12px;background:var(--panel);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--dim);font-size:22px;line-height:1.5}
 /* two-line programme cells */
 .gp .gt{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.gp .gs{display:block;font-size:18px;color:var(--muted);white-space:nowrap;overflow:hidden;max-width:100%}
+.gp .gs{display:block;font-size:19px;color:var(--muted);white-space:nowrap;overflow:hidden;max-width:100%}
 .gp.focus .gs{color:var(--on-accent-dim)}
 body.guide1 .gp .gs{display:none}
 .grow.playing .gch .n{color:var(--accent-text)}
@@ -303,21 +303,21 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .gd-badge{display:inline-block;padding:2px 12px;border-radius:8px;background:var(--raised);color:var(--text);font-size:20px;margin-right:10px}
 .gd-badge.cu{background:#1d3b2e;color:#7fe0ae}
 .gd-badge.live{background:#3a1d20;color:#ff8e93}
-.gd-prog{height:6px;background:rgba(255,255,255,.12);border-radius:3px;margin-top:14px;width:620px;overflow:hidden}
-.gd-prog i{display:block;height:100%;background:var(--air)}
+.gd-prog{height:4px;background:rgba(255,255,255,.12);border-radius:2px;margin-top:14px;width:620px;overflow:hidden}
+.gd-prog i{display:block;height:100%;background:var(--accent)}
 .guide-detail p.gd-desc{-webkit-line-clamp:3}
 .gd-now{margin-top:auto;font-size:21px;color:var(--muted)}
 .gd-now b{display:inline;font-size:21px;color:var(--accent-text);margin:0}
 .guide-wrap{flex:1;position:relative;min-height:0}
 .guide-wrap .guide-body{position:absolute;top:0;left:0;right:0;bottom:0}
-:root{--grow:88px}
+:root{--grow:100px}
 .gch .logo{width:104px;height:62px;object-fit:contain;flex:none}
 .gch{gap:16px}
 .gch .cu{flex:none;font-size:18px;color:#7fe0ae;border:1px solid #2f6b50;border-radius:6px;padding:0 6px;margin-left:auto}
 /* live progress inside "now" programme cells */
 /* What's on now: a slim progress bar under the times, on a faint track. */
-.gp .gfill{position:absolute;left:16px;bottom:9px;height:3px;border-radius:2px;background:var(--accent);pointer-events:none;z-index:1}
-.gp.now::after{content:'';position:absolute;left:16px;right:16px;bottom:9px;height:3px;border-radius:2px;background:rgba(255,255,255,.13)}
+.gp .gfill{position:absolute;left:18px;bottom:12px;height:3px;border-radius:2px;background:var(--text);opacity:.85;pointer-events:none;z-index:1}
+.gp.now::after{content:'';position:absolute;left:18px;right:18px;bottom:12px;height:3px;border-radius:2px;background:rgba(255,255,255,.14)}
 .gp.focus .gfill{background:var(--on-accent)}
 .gp.now.focus::after{background:rgba(0,0,0,.2)}
 body.now-off .gp.now::after{display:none}
@@ -341,7 +341,7 @@ body:not(.nav-hidden) #viewGuide .guide-groups{left:96px}
 .qp-head .n{font-size:40px;font-weight:700}
 .qp-head .t{font-size:26px;color:var(--muted)}
 .qp-bar{height:6px;width:900px;background:rgba(255,255,255,.18);border-radius:3px;margin:14px 0 26px;overflow:hidden}
-.qp-bar i{display:block;height:100%;background:var(--air)}
+.qp-bar i{display:block;height:100%;background:var(--accent)}
 .qp-row-title{font-size:22px;color:var(--muted);margin:0 0 12px}
 .qp-actions{display:flex;gap:14px;flex-wrap:nowrap;margin-bottom:28px}
 .qp-act{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:150px;height:96px;padding:0 18px;border-radius:14px;background:var(--panel);font-size:21px;text-align:center}

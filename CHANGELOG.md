@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Guide rows have more room**, and the time line, its marker and the progress bars follow your accent colour instead of red.  On-now progress is a light bar that reads on any cell colour.
+
 ## 0.6.0 (alpha 26, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.
