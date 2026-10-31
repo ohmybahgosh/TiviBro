@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 34, 2026-10-31)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 34
 
 - **Shorter release notes.**  Each release page lists only what's new in that build, one line per change, with a link to the full changelog; install steps fold away.  Before, every test build repeated the whole 0.6.0 history.
 - **Search puts the best match first, movies and shows included.**  Results are ranked by how closely the title matches (the whole title, then the start, then a word), and then by what you can watch: on now, a movie or show, a channel, coming up, a replay.  Searching batman now lists the Batman films before the 24/7 Batman channels, and CNN still finds the channel first.  Before, movies and shows came after every channel and programme.
 
-## 0.6.0 (alpha 33, 2026-10-31)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 33
+### In alpha 33
 
 - **Movies and Shows by language, and lighter on the TV.**  Many providers put a language code in front of every title ("SE - ", "EN - ", "[SE]") or on the category ("|TR| DIZI").  TiviBro now takes it off the name, and a **Languages** row at the top of Movies and Shows picks which languages show.  By default that's your TV's language plus titles with no tag; a library with one language shows everything.  A 4K tag becomes a 4K label.  Hold OK (or Red) on a category to hide it, its titles leave All and Search too.  Only what shows is kept in memory, and on the TV the helper now downloads and slims the provider's list, so a 160,000-title library no longer has to be parsed by the app itself.
 - **Adult categories stay out of the way.**  Movie and show categories named for adults (Adults, XXX, 18+) are listed last, and their titles stay out of All movies, All shows and Search.  With a PIN for blocked channels, they ask for it.
