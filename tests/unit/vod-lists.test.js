@@ -57,8 +57,12 @@ const SERIES = [{ series_id: 9, name: '[SE] Nocturne', cover: 'c.jpg', plot: 'p'
   ok('ENG becomes EN', t('ENG - Heat') === 'EN|Heat|', t('ENG - Heat'));
   ok('no tag', t('Viking Uprising (2018)') === '|Viking Uprising (2018)|', t('Viking Uprising (2018)'));
   ok('a title that starts with a word is left alone', t('It - Chapter Two') === '|It - Chapter Two|', t('It - Chapter Two'));
-  ok('unknown capitals are left alone', t('ZZ - Top Gun') === '|ZZ - Top Gun|', t('ZZ - Top Gun'));
-  ok('Mission: Impossible is not a tag', t('MI: Impossible') === '|MI: Impossible|', t('MI: Impossible'));
+  ok('IN-TM- Title', t("IN-TM- Don't Trouble the Trouble") === "IN|Don't Trouble the Trouble|", t("IN-TM- Don't Trouble the Trouble"));
+  ok('4K-SC - Title', t('4K-SC - Verity') === 'SC|Verity|4K', t('4K-SC - Verity'));
+  ok('4K - Title: a label, no language', t('4K - Dune') === '|Dune|4K', t('4K - Dune'));
+  ok('NF - Title: a service, name kept', t('NF - Under Paris') === '|NF - Under Paris|', t('NF - Under Paris'));
+  ok('[X] marks adult', T.tag({ name: '[X][Studio] Something' }).adult === 1);
+  { const mi = [{ id: 1, name: 'MI: Impossible', cat: '1' }]; T.view('movie', { at: 1, cats: [], items: mi }); ok('Mission: Impossible is not a tag', mi[0].name === 'MI: Impossible' && mi[0].lang === '', mi[0].name); }
 
   const items = [];
   for (let i = 0; i < 1000; i++) items.push({ id: i, name: (i % 4 === 0 ? 'EN - ' : i % 4 === 1 ? '' : i % 4 === 2 ? 'SE - ' : 'IN - ') + 'T' + i, cat: String(i % 5) });
@@ -77,6 +81,17 @@ const SERIES = [{ series_id: 9, name: '[SE] Nocturne', cover: 'c.jpg', plot: 'p'
   const few = []; for (let i = 0; i < 1000; i++) few.push({ id: i, name: (i < 5 ? 'EN - ' : 'SE - ') + 'T' + i, cat: '1' });
   v = T.view('movie', { at: 1, cats: [], items: few });
   ok('the TV language matches almost nothing: everything shows', v.items.length === 1000 && !v.keep, v.items.length);
+
+  // A code TiviBro doesn't know: a language only when the provider uses it often.
+  const odd = [{ id: 1, name: 'AVP - Alien vs Predator', cat: '1' }];
+  for (let i = 0; i < 30; i++) odd.push({ id: 10 + i, name: 'TM - Film ' + i, cat: '1' }, { id: 100 + i, name: 'QQQ - Film ' + i, cat: '1' });
+  v = T.view('movie', { at: 1, cats: [], items: odd });
+  const avp = odd.find(x => x.id === 1);
+  ok('rare unknown code goes back into the title', avp.name === 'AVP - Alien vs Predator' && avp.lang === '', avp.name);
+  ok('common unknown code is a language', odd.find(x => x.id === 100).lang === 'QQQ' && odd.find(x => x.id === 100).name === 'Film 0');
+  const ad = [{ id: 1, name: 'Film', cat: 'a' }, { id: 2, name: 'Other', cat: 'b' }];
+  v = T.view('movie', { at: 1, cats: [{ id: 'a', name: 'FOR ADULTS' }, { id: 'b', name: 'Drama' }], items: ad });
+  ok('adult category marks its titles', ad[0].adult === 1 && !ad[1].adult && v.adultCat.a === 1);
 
   console.log(fail ? fail + ' failures' : 'all movie and show list tests passed');
   process.exit(fail ? 1 : 0);
