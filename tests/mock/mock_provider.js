@@ -264,6 +264,8 @@ const server = http.createServer((req, res) => {
     }
     return send(res, 200, []);
   }
+  // A guide that starts and never finishes (tests/soak/guide-memory.js: the app closing mid-load).
+  if (p === '/stall.xml') { res.writeHead(200, { 'Content-Type': 'application/xml', 'Access-Control-Allow-Origin': '*' }); res.write('<?xml version="1.0"?><tv>'); return; }
   if (p === '/xmltv.php' || p === '/guide.xml') return send(res, 200, BIG ? (xmlCache = xmlCache || xmltv()) : xmltv(), 'application/xml');
   // A zipped guide file, labelled the way many guide hosts do (no Content-Encoding): the helper unzips it.
   if (p === '/guide.xml.gz') return send(res, 200, require('zlib').gzipSync(BIG ? (xmlCache = xmlCache || xmltv()) : xmltv()), 'application/octet-stream');

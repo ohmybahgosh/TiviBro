@@ -152,6 +152,9 @@ var Epg = (function () {
     }
     self.onmessage = function (ev) {
       var d = ev.data, want = {}, names = d.names || {}, from = d.from, to = d.to, past = d.past || {}, recent = d.recent || from, descMax = d.descMax || 400;
+      // Memory budget (characters held, roughly): past half, descriptions get short; near the end no new
+      // channels are taken; at the end nothing more.  A huge extra guide used to run the TV out of memory.
+      var budget = d.budget || 0, used = 0, left = {};
       d.ids.forEach(function (i) { want[i] = 1; });
       // Earliest programme end worth keeping for a guide id: its catch-up days, or the last few hours.
       var since = {};
@@ -220,8 +223,11 @@ var Epg = (function () {
             if (!s || !e || e < sinceOf(ch) || s > to) continue;
             var t = /<title[^>]*>([\s\S]*?)<\/title>/.exec(m[2]);
             var de = /<desc[^>]*>([\s\S]*?)<\/desc>/.exec(m[2]);
+            if (budget && (used > budget || (!out[ch] && used > budget * 0.85))) { left[ch] = 1; continue; }
+            var tt = t ? unesc(t[1]) : '', dd = de ? unesc(de[1]).slice(0, budget && used > budget / 2 ? 100 : descMax) : '';
+            used += 60 + tt.length + dd.length;
             got[ch] = 1;
-            (out[ch] || (out[ch] = [])).push({ s: s, e: e, t: t ? unesc(t[1]) : '', d: de ? unesc(de[1]).slice(0, descMax) : '' });
+            (out[ch] || (out[ch] = [])).push({ s: s, e: e, t: tt, d: dd });
             n++; total++;
           }
           buf = final ? '' : buf.slice(last);
@@ -291,7 +297,8 @@ var Epg = (function () {
           for (u in out) if (!used[u]) { delete out[u]; delete icons[u]; }
         }
         for (var k in out) out[k].sort(function (a, b) { return a.s - b.s; });
-        self.postMessage({ map: out, icons: icons, channels: chans, matches: matches, report: report, pubMatch: pubMatch });
+        for (var lk in left) if (out[lk]) delete left[lk];
+        self.postMessage({ map: out, icons: icons, channels: chans, matches: matches, report: report, pubMatch: pubMatch, trimmed: Object.keys(left).length });
       });
     };
   }
@@ -331,6 +338,41 @@ var Epg = (function () {
     var keys = Object.keys(m); if (keys.length > 40) keys.slice(0, keys.length - 40).forEach(function (k) { delete m[k]; });
     if (n) try { localStorage.setItem('tivibro.guideSizes', JSON.stringify(m)); } catch (e) {}
   }
+  /* Memory budget for one guide load, in characters held (see the worker).  2 GB TVs (most webOS 6
+     and newer) get about 55 million, older ones less; safe mode (after the app closed during a load)
+     halves it. */
+  function budget(safe) {
+    var t = typeof Store !== 'undefined' && Store.settings && +Store.settings.guideBudget;      // tests
+    if (t) return safe ? Math.round(t / 2) : t;
+    var mem = (typeof navigator !== 'undefined' && navigator.deviceMemory) || 0, v = Caps.probe().webos;
+    var b = mem >= 8 ? 250e6 : mem >= 4 ? 140e6 : v && v <= 5 ? 30e6 : 55e6;
+    return safe ? Math.round(b / 2) : b;
+  }
+  /* Crash-loop guard.  A load that never finishes because the app was closed under it (out of
+     memory) is noted before it starts and cleared when it ends.  On the next start the same guide
+     loads in safe mode; after a second such close it is paused until "Reload guide now", instead of
+     closing TiviBro on every start. */
+  var RUN = 'tivibro.guideRun';
+  function runGet(kind) { try { var m = JSON.parse(localStorage.getItem(RUN) || '{}') || {}; return m[kind] || null; } catch (e) { return null; } }
+  function runSet(kind, v) {
+    try { var m = JSON.parse(localStorage.getItem(RUN) || '{}') || {}; if (v) m[kind] = v; else delete m[kind]; localStorage.setItem(RUN, JSON.stringify(m)); } catch (e) {}
+  }
+  var paused = null;
+  function guard(kind, sig, force) {
+    var prev = runGet(kind), tries = prev && prev.sig === sig ? prev.tries || 0 : 0;
+    if (force) tries = 0;
+    if (tries >= 2) {
+      paused = { kind: kind, host: prev.host || '', at: Date.now() };
+      var why = 'TiviBro closed twice while loading the guide' + (prev.host ? ' (' + prev.host + ')' : '') + ', probably out of memory.  Guide loading is paused: remove a big guide source, then use Reload guide now.';
+      Log.warn('epg', why);
+      setProgress({ active: false, phase: 'error', error: why, at: Date.now() });
+      U.toast(why, 8000);
+      return null;
+    }
+    if (tries === 1) Log.warn('epg', 'The last guide load did not finish (' + (prev.host || 'unknown source') + ').  Loading again with less memory.');
+    runSet(kind, { sig: sig, tries: tries + 1, at: Date.now(), host: '' });
+    return { safe: tries >= 1, host: function (h) { var x = runGet(kind); if (x && x.host !== h) { x.host = h; runSet(kind, x); } }, done: function () { runSet(kind, null); } };
+  }
   function loadXml(force) {
     var p = P(), srcs = sources();
     var ckey = 'epg:' + p.id;
@@ -340,8 +382,15 @@ var Epg = (function () {
       var stale = !c || c.sig !== sig || (hours > 0 && age > hours * 3600e3) || (hours === -1 && !loadXml.didStart);
       loadXml.didStart = true;
       if (c && c.sig === sig) { ingest(c); xmlReady = true; emit(null); }
-      if (!stale && !force) return;
-      return work(srcs).then(function (res) {
+      if (!stale && !force) { runSet('main', null); return; }     // a forced reload cut short: the cache is fine
+      var g = guard('main', sig, force); if (!g) return;
+      paused = null;
+      return work(srcs, null, g).then(function (res) {
+        g.done();
+        if (res.trimmed) {
+          Log.warn('epg', 'Guide trimmed to fit this TV\'s memory: ' + res.trimmed + ' guide channels left out' + (g.safe ? ' (safe mode)' : ''));
+          U.toast('The guide was too big for this TV: ' + res.trimmed + ' channels left out.  A big extra guide source is the usual cause.', 7000);
+        }
         setProgress(Object.assign({}, progress, { active: true, phase: 'save' }));
         res.at = Date.now(); res.sig = sig;
         ingest(res); xmlReady = true;
@@ -354,11 +403,11 @@ var Epg = (function () {
         setProgress({ active: false, phase: bad.length && bad.length === res.report.length ? 'error' : 'done', error: bad.length ? bad[0].error : '',
           at: Date.now(), programmes: progs, channels: Object.keys(res.map || {}).length, took: Date.now() - (progress.started || Date.now()),
           report: res.report.map(function (r) { return { host: r.provider ? 'provider guide' : hostOf(r.url), ok: r.ok, programmes: r.programmes || 0, channels: r.channels || 0, error: r.error || '' }; }) });
-      }, function (e) { setProgress({ active: false, phase: 'error', error: (e && e.message) || 'failed', at: Date.now() }); throw e; });
+      }, function (e) { g.done(); setProgress({ active: false, phase: 'error', error: (e && e.message) || 'failed', at: Date.now() }); throw e; });
     });
   }
 
-  function work(srcs, pub) {
+  function work(srcs, pub, g) {
     // Past programmes are only reachable on catch-up channels, so only those keep past days
     // (up to their catch-up length); the rest keep the last few hours.  On big playlists, where
     // most channels have no catch-up, this saves a large share of the TV's memory.
@@ -383,12 +432,12 @@ var Epg = (function () {
     }),
       ids: Object.keys(ids), past: ids, names: names, from: now - days * 86400e3, recent: now - 3 * 3600e3, to: now + 2 * 86400e3,
       // webOS 4 and 5 TVs (2018 to 2020) have the least memory: shorter programme descriptions there.
-      descMax: (function () { var v = Caps.probe().webos; return v && v <= 5 ? 250 : 400; })() };
+      descMax: (function () { var v = Caps.probe().webos; return v && v <= 5 ? 250 : 400; })(), budget: budget(g && g.safe) };
     if (pub) { msg.pub = true; msg.pk = pub.pk; msg.pubWant = pub.want; }
     var keysFn = typeof PubEpg !== 'undefined' ? PubEpg.keys : function () { return { keys: [], country: '' }; };
     var code = 'self.norm = ' + norm.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\n(' + workerMain.toString() + ')();';
     var started = Date.now();
-    function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; setProgress(p); }
+    function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; if (g) g.host(p.host); setProgress(p); }
     setProgress({ active: true, phase: 'download', src: 1, of: srcs.length, host: msg.sources[0] ? msg.sources[0].host : '', bytes: 0, total: 0, programmes: 0, channels: 0, started: started });
     return new Promise(function (res) {
       var w, url;
@@ -465,8 +514,9 @@ var Epg = (function () {
       var need = want.some(function (w) { return !cache.has(w); });
       var failed = c && (c.report || []).some(function (r) { return !r.ok; });
       var stale = !c || c.sig !== sig || age > every || miss.length > (c.asked || 0) + 20 || need || (failed && age > 3600e3) || (c.retry && Date.now() > c.retry);
+      var forced = pubForce;
       if (pubForce) { pubForce = false; stale = true; }
-      if (!stale) return;
+      if (!stale) { runSet('pub', null); return; }
       var pk = {}, days = +p.epgDays || 1, ctx = Tidy.make(Library.data);
       miss.forEach(function (ch) {
         // A channel with a known country only matches in that country's guides ("Mega" in a Greek
@@ -478,8 +528,9 @@ var Epg = (function () {
         PubEpg.keys(ch.n).keys.forEach(function (x) { add(x[0]); });
         if (ch.epg) add('id:' + ch.epg);
       });
-      var started = Date.now();
-      return work(files, { pk: pk, want: want }).then(function (res) {
+      var started = Date.now(), g = guard('pub', sig, forced); if (!g) return;
+      return work(files, { pk: pk, want: want }, g).then(function (res) {
+        g.done();
         rememberSizes(res.report);
         if (gen !== pubGen) {
           // Superseded (turned off, looked again): don't leave its download showing as still running.
@@ -538,6 +589,7 @@ var Epg = (function () {
     // Where a channel's guide comes from when it's the public one: { name, site } or null.
     pubSource: function (ch) { var id = ch && epgId(ch); return id && PUB_ID.test(id) && typeof PubEpg !== 'undefined' ? PubEpg.sourceOf(id) : null; },
     get pubStatus() { return pubStatus; },
+    get paused() { return paused; },
     pubAgain: function () { pubForce = true; return init(Library, false); },
     hasData: function (ch) { var id = epgId(ch); return !!(id && cache.has(id)) || !!(typeof Events !== 'undefined' && Events.of(ch)); },
     onUpdate: function (fn) { listeners.push(fn); },

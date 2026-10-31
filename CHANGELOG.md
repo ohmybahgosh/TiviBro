@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **A guide too big for the TV no longer closes TiviBro over and over.**  On a 2 GB TV, a 64 MB extra guide (iptv-epg.org, all of the US) on top of the provider's ran the app out of memory, and because the load started again on every launch, TiviBro kept closing.  Now a guide load keeps to a memory budget (descriptions get shorter, then extra channels are left out, with a notice saying so).  If the app still closes during a load, the next start tries once more with half the memory; after a second time, guide loading pauses with a notice naming the guide it was loading, until you remove it and press **Reload guide now**.
 - **Smart match applies what you approve.**  On a short list the matching finished before the dialog was ready and left **Apply** greyed out, so nothing was applied and the channels stayed under "Needs a guide".  Approving is also clearer: rows say **✓ Approved** in solid green, tapping ✓ again no longer quietly un-approves a row (✕ skips it), and Apply says "Nothing approved yet" when that's the case.
 - **Smart match on phones:** each row stacks the channel, the guide channel, then the confidence and Approve, so nothing hides off the right edge.
 - **Smart match no longer suggests a channel's own empty guide.**  Channels whose guide id has no programmes are looked at too; suggesting that same id again changed nothing.
