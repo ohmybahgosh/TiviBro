@@ -120,6 +120,7 @@ TiviBro works with the standard LG remote and the Magic Remote.  With the Magic 
 | **Hold OK** | Programme and channel options | Channel list over the video |
 | **Red** | Programme and channel options | Options for the channel |
 | **Info** | Programme and channel options | Programme details |
+| **Hold Info** | | Buffer info: how many seconds are banked and, when the player reports it, the stream's speed |
 | **▲ ▼** | Move between channels | Channel up and down |
 | **◀ ▶** | Move through time (◀ on "now" opens the groups) | ◀ rewind or last channel, ▶ info |
 | **CH + / CH −** | Page up and down | Channel up and down |
@@ -477,6 +478,7 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Connection** | **Automatic (recommended)** · Direct | *Automatic* sends provider requests through the [network helper](#what-is-the-network-helper), which webOS needs for most providers (it adds the headers the TV insists on, unzips guides, and works around sloppy servers).  *Direct* only works with servers that allow app requests. |
 | **Network helper** | (information) | Whether the helper is running.  **Settings > Diagnostics** shows its port and its log. |
 | **Buffer meter** | **When low** · Always · Off | A small gauge in fullscreen showing how many seconds of video are banked. |
+| **Buffer info on demand** | 5 seconds · **10 seconds** · 30 seconds · Until pressed again | How long the gauge stays when you hold **Info** in fullscreen, whatever the Buffer meter is set to.  Press again to hide it.  Any button can show it: set it to **Show buffer info** under Remote control. |
 | **Preview in channel list** | **On** · Off | Plays the channel you rest on in the Channels screen.  Turn it off on very slow TVs for the snappiest list. |
 | **When a channel stops working** | **Switch to another version** · Ask me · Keep retrying | When a channel has run out of retries and your playlist has it more than once (another quality, another group, or a copy you hid), TiviBro switches to the next version, steadiest first: Full HD, HD, unmarked, 4K, then SD.  *Ask me* asks before switching.  See [Other versions of a channel](#other-versions-of-a-channel). |
 | **Turn on last channel at launch** | **On** · Off | Starts the channel you watched last when TiviBro opens. |

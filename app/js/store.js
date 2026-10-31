@@ -13,6 +13,7 @@ var Store = (function () {
     buffer: 'balanced',      // low | balanced | stable | max | custom
     custom: { prebuffer: 3, ahead: 30, back: 8, stall: 6, retries: 8 },
     meter: 'auto',           // auto | always | off
+    meterPeek: 10,           // seconds the buffer meter shows on demand (Hold Info); 0 = until pressed again
     previewPlay: true,
     resumeLast: true,
     showHidden: false,

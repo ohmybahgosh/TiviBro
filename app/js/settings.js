@@ -59,6 +59,8 @@ var Settings = (function () {
       ['auto', 'direct'], ['Automatic (recommended)', 'Direct'], function () { return s.network || 'auto'; }, function (v) { s.network = v; save(); }));
     out.push(info('Network helper', Net.port ? 'running' : 'not running'));
     out.push(choice('Buffer meter', 'Shows how many seconds of video are banked, in fullscreen.', ['auto', 'always', 'off'], ['When low', 'Always', 'Off'], function () { return s.meter; }, function (v) { s.meter = v; save(); }));
+    out.push(choice('Buffer info on demand', 'Hold Info in fullscreen to show the buffer meter, with the stream\'s speed when the player reports it.  Press again to hide it.  Any button can do this: Settings > Remote control.',
+      [5, 10, 30, 0], ['5 seconds', '10 seconds', '30 seconds', 'Until pressed again'], function () { return s.meterPeek == null ? 10 : +s.meterPeek; }, function (v) { s.meterPeek = v; save(); }));
     out.push(toggle('Preview in channel list', 'Plays the channel you rest on.  Turn off on very slow TVs for the snappiest list.', function () { return s.previewPlay; }, function (v) { s.previewPlay = v; save(); }));
     out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',
       ['auto', 'ask', 'off'], ['Switch to another version', 'Ask me', 'Keep retrying'], function () { return s.backups || 'auto'; }, function (v) { s.backups = v; save(); }));

@@ -579,6 +579,7 @@ var Views = (function () {
       case 'audio': audioMenu(); return;
       case 'sleep': sleepMenu(); return;
       case 'reconnect': Player.retryNow(); return;
+      case 'buffer': peekMeter(); return;
     }
   }
   // Play resumes, Pause pauses, a combined button toggles: Play on a playing stream never pauses it.
@@ -689,6 +690,7 @@ var Views = (function () {
   }
   function exitFull() {
     closePanel();
+    peekUntil = 0; clearTimeout(peekT);
     full = false; overlay = false;
     Keymap.setContext(tab === 'live' ? 'list' : 'other');
     $('overlay').classList.add('hidden');
@@ -861,6 +863,7 @@ var Views = (function () {
       else if (a === 'playpause') playPause();
       else if (a === 'red' || a === 'hold') playerMenu();
       else if (a === 'info') osd(true);
+      else if (Keymap.get('player', a) === 'buffer') peekMeter();
       return true;
     }
     if (mode === 'catchup') {
@@ -876,6 +879,7 @@ var Views = (function () {
       else if (a === 'red' || a === 'hold') playerMenu();
       else if (a === 'yellow') backToLive();
       else if (a === 'info') osd(true);
+      else if (Keymap.get('player', a) === 'buffer') peekMeter();
       return true;
     }
     if (a === 'back') { if (!hidden) { $('osd').classList.add('hidden'); return true; } exitFull(); return true; }
@@ -1105,14 +1109,28 @@ var Views = (function () {
     if (s === 'playing' && fo && playing) { foFailed[playing.k] = 0; fo.tried = {}; fo.exhausted = false; }
   }
   var meter = $('meter'), mFill = $('meterFill'), mText = $('meterText'), goodSince = 0, spinPlain = false;
+  /* Buffer info on demand (Hold Info by default, or any button set to "Show buffer info"): the meter
+     shows whatever its setting, for the time in Settings > Playback, or until pressed again.  Pressing
+     it while it shows hides it. */
+  var peekUntil = 0, peekT = 0;
+  function peekMeter() {
+    if (!full) return;
+    clearTimeout(peekT);
+    if (Date.now() < peekUntil) { peekUntil = 0; meter.classList.add('hidden'); if (Player.stats) onStats(Player.stats); return; }
+    var secs = Store.settings.meterPeek == null ? 10 : +Store.settings.meterPeek;
+    peekUntil = secs > 0 ? Date.now() + secs * 1000 : Infinity;
+    if (secs > 0) peekT = setTimeout(function () { peekUntil = 0; if (Player.stats) onStats(Player.stats); else meter.classList.add('hidden'); }, secs * 1000 + 50);
+    if (Player.stats) onStats(Player.stats); else U.toast('No stream playing');
+  }
   function onStats(x) {
     // A plain refill shows how far along it is, so a long one doesn't look stuck.
     if (spinPlain && x.state === 'buffering' && x.target) spinText.textContent = 'Buffering  ' + Math.min(99, Math.round(100 * x.ahead / x.target)) + '%';
-    var m = Store.settings.meter;
-    if (m === 'off' || (!full && m !== 'always')) { meter.classList.add('hidden'); return; }
+    var m = Store.settings.meter, peek = full && Date.now() < peekUntil;
+    if (!peek && (m === 'off' || (!full && m !== 'always'))) { meter.classList.add('hidden'); return; }
     var ratio = x.target ? x.ahead / Math.max(x.target * 2, 4) : 0;
     var low = x.ahead < x.target, crit = x.ahead < 0.6;
-    if (m === 'auto') {
+    if (peek) meter.classList.toggle('hidden', x.state === 'idle');
+    else if (m === 'auto') {
       if (low || x.state === 'buffering') goodSince = 0; else if (!goodSince) goodSince = Date.now();
       var show = !goodSince || Date.now() - goodSince < 3000;
       meter.classList.toggle('hidden', !show || x.state === 'idle');

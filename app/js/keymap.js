@@ -22,18 +22,18 @@ var Keymap = (function () {
     guide: 'TV guide', search: 'Search', settings: 'Settings', editor: 'Edit on a phone or computer (QR code)', live: 'Channels screen', exit: 'Leave fullscreen',
     fav: 'Add or remove favorite', favorites: 'Open Favorites', recents: 'Open Recent channels',
     picture: 'Change picture mode', audio: 'Audio track', sleep: 'Sleep timer',
-    movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect stream'
+    movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect stream', buffer: 'Show buffer info'
   };
   // Short names for the on-screen button legend.
   var SHORT = {
     panel: 'Quick menu', list: 'Channel list', osd: 'Info', menu: 'Options', chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
     rewind: 'Rewind', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings', editor: 'Phone editor',
     live: 'Channels', exit: 'Exit fullscreen', fav: 'Favorite', favorites: 'Favorites', recents: 'Recent',
-    picture: 'Picture size', audio: 'Audio track', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect'
+    picture: 'Picture size', audio: 'Audio track', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info'
   };
   var CONTEXT_ACTIONS = {
     player: ['none', 'panel', 'list', 'osd', 'menu', 'chnext', 'chprev', 'last', 'rewind', 'restart', 'playpause', 'guide', 'search', 'settings', 'editor', 'exit',
-      'fav', 'favorites', 'recents', 'picture', 'audio', 'sleep', 'reconnect'],
+      'fav', 'favorites', 'recents', 'picture', 'audio', 'sleep', 'reconnect', 'buffer'],
     list: ['none', 'menu', 'last', 'guide', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'playpause']
   };
 
@@ -41,7 +41,7 @@ var Keymap = (function () {
     player: {
       ok: 'panel', 'long:ok': 'list', up: 'chprev', down: 'chnext', chup: 'chnext', chdown: 'chprev',
       left: 'rewind', right: 'osd', red: 'menu', green: 'guide', yellow: 'last', blue: 'audio',
-      playpause: 'playpause', stop: 'exit', rew: 'rewind', ff: 'none', info: 'osd'
+      playpause: 'playpause', stop: 'exit', rew: 'rewind', ff: 'none', info: 'osd', 'long:info': 'buffer'
     },
     list: { 'long:ok': 'menu', red: 'menu', green: 'guide', yellow: 'last', blue: 'settings', playpause: 'none', info: 'menu', stop: 'none', rew: 'none', ff: 'none' }
   };

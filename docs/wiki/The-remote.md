@@ -10,6 +10,7 @@ TiviBro works with the standard LG remote and the Magic Remote.  With the Magic 
 | **Hold OK** | Programme and channel options | Channel list over the video |
 | **Red** | Programme and channel options | Options for the channel |
 | **Info** | Programme and channel options | Programme details |
+| **Hold Info** | | Buffer info: how many seconds are banked and, when the player reports it, the stream's speed |
 | **▲ ▼** | Move between channels | Channel up and down |
 | **◀ ▶** | Move through time (◀ on "now" opens the groups) | ◀ rewind or last channel, ▶ info |
 | **CH + / CH −** | Page up and down | Channel up and down |

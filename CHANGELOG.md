@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Buffer info on demand** ([#6](https://github.com/ohmybahgosh/TiviBro/issues/6)).  Hold **Info** in fullscreen to show the buffer meter, with the seconds banked and the stream's speed when the player reports it, even with the meter set to Off.  It hides itself after 10 seconds (5, 30 or until pressed again in Settings > Playback), and pressing again hides it.  Any button can do it: **Show buffer info** under Remote control.
+
 ## 0.6.0 (alpha 35, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.

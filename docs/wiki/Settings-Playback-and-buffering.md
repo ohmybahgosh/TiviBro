@@ -28,6 +28,7 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Connection** | **Automatic (recommended)** · Direct | *Automatic* sends provider requests through the [network helper](Troubleshooting#what-is-the-network-helper), which webOS needs for most providers (it adds the headers the TV insists on, unzips guides, and works around sloppy servers).  *Direct* only works with servers that allow app requests. |
 | **Network helper** | (information) | Whether the helper is running.  **Settings > Diagnostics** shows its port and its log. |
 | **Buffer meter** | **When low** · Always · Off | A small gauge in fullscreen showing how many seconds of video are banked. |
+| **Buffer info on demand** | 5 seconds · **10 seconds** · 30 seconds · Until pressed again | How long the gauge stays when you hold **Info** in fullscreen, whatever the Buffer meter is set to.  Press again to hide it.  Any button can show it: set it to **Show buffer info** under Remote control. |
 | **Preview in channel list** | **On** · Off | Plays the channel you rest on in the Channels screen.  Turn it off on very slow TVs for the snappiest list. |
 | **When a channel stops working** | **Switch to another version** · Ask me · Keep retrying | When a channel has run out of retries and your playlist has it more than once (another quality, another group, or a copy you hid), TiviBro switches to the next version, steadiest first: Full HD, HD, unmarked, 4K, then SD.  *Ask me* asks before switching.  See [Other versions of a channel](Other-versions-of-a-channel). |
 | **Turn on last channel at launch** | **On** · Off | Starts the channel you watched last when TiviBro opens. |
@@ -43,6 +44,8 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Prefer surround sound** | On · **Off** | Picks the 5.1 or Dolby track in that language when there is one.  Your TV or soundbar needs to support it. |
 | **Subtitles automatically** | **Off** · Any language · English only · Spanish only · … | Turns subtitles on when a stream has them; with a language, only subtitles in that language.  You can still switch them from the quick menu. |
 | **Play next episode automatically** | **On** · Off | When an episode ends, the next one starts. |
+
+**Subtitles in MKV movies and episodes.**  Open **Subtitles** from the player menu to choose a language or **Off**.  The menu is available as soon as playback starts and shows **Finding subtitles…** while tracks are discovered.  The automatic subtitle language setting above also applies.  Supported embedded SRT tracks appear with their language names, and your selection survives seeking and reconnects.  Files without supported tracks show an unavailable message; styled ASS/SSA and bitmap subtitles are not supported.  Some MKV files do not index their subtitle tracks and cannot expose them here.
 
 ---
 
