@@ -13,7 +13,7 @@ import java.net.InetAddress
 
 /**
  * Against the TV's real helper code: CI starts tests/android/fake-tv.js (service/companion.js with
- * pairing open) and passes its code in TB_FAKE_TV=host:port:CODE.  Skipped without it.
+ * pairing open, and the web editor) and passes TB_FAKE_TV=host:port:CODE:TVID.  Skipped without it.
  */
 class LiveTvTest {
     private val env = System.getenv("TB_FAKE_TV")
@@ -37,7 +37,7 @@ class LiveTvTest {
         assertEquals("CI phone", info.getJSONObject("phone").getString("name"))
         c.open()
         val ed = c.editor()
-        assertTrue("editor starts or is ready", ed is EditorState.Starting || ed is EditorState.Ready)
+        assertTrue("the editor is ready, for this TV", ed is EditorState.Ready && app.tivibro.phone.proto.editorUrlOk(ed.url, tv))
 
         // A wrong key: refused, and the answer is not trusted.
         val bad = TvClient(tv.copy(key = ByteArray(32)))

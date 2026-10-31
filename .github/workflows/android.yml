@@ -79,3 +79,48 @@ jobs:
         run: |
           for i in $(seq 1 30); do gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && break; sleep 20; done
           gh release upload "$GITHUB_REF_NAME" "dist-apk/tivibro-phone-${{ steps.v.outputs.name }}.apk" --clobber
+
+  screens:
+    name: Run it on an emulator
+    needs: apk
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - uses: actions/download-artifact@v7
+        with:
+          path: apk
+          merge-multiple: true
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Stand-in TV
+        run: |
+          node tests/android/fake-tv.js > /tmp/fake-tv.txt &
+          for i in $(seq 1 20); do [ -s /tmp/fake-tv.txt ] && break; sleep 0.5; done
+          echo "TV=$(head -1 /tmp/fake-tv.txt)" >> "$GITHUB_ENV"
+
+      - name: Pair, open the editor, take screenshots
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          script: bash tests/android/ui-shots.sh "$(ls apk/*.apk | grep -v debug | head -1)" shots "$TV"
+
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: tivibro-phone-screens
+          path: shots/*.png
+          retention-days: 30

@@ -1,11 +1,13 @@
 /* A stand-in TV for the Android app's tests: the real phone app connection (service/companion.js) with
-   pairing open.  Prints "host:port:CODE" once ready, and keeps running.
+   pairing open, and the real web editor running (port 18787).  Prints "host:port:CODE:TVID" once
+   ready, and keeps running.
      node tests/android/fake-tv.js > /tmp/fake-tv.txt & */
 'use strict';
 const os = require('os'), fs = require('fs'), path = require('path');
 const Companion = require('../../service/companion.js');
+const editor = require('../../service/editor.js').create(() => {});
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-fake-tv-'));
-const c = Companion.create({ dir, version: 'fake-tv', log: () => {}, launch: (p, cb) => cb(null), sysinfo: (cb) => cb({ model: 'FAKE', webos: '0', name: 'Fake TV' }), app: () => ({ open: true }), editor: () => null });
+const c = Companion.create({ dir, version: 'fake-tv', log: () => {}, launch: (p, cb) => cb(null), sysinfo: (cb) => cb({ model: 'FAKE', webos: '0', name: 'Fake TV' }), app: () => ({ open: true }), editor: () => editor });
 function ctl(u, body) {
   return new Promise((resolve) => {
     const res = { writeHead() {}, end(b) { resolve(JSON.parse(b)); } };
@@ -15,7 +17,8 @@ function ctl(u, body) {
   });
 }
 (async () => {
+  await new Promise((r) => editor.start(18787, 'ABCD-EFGH', r));
   await ctl('/companion/set', { on: true });
   const s = await ctl('/companion/pair', { open: true });
-  console.log('127.0.0.1:' + s.port + ':' + s.pairing.code.replace(/-/g, ''));
+  console.log('127.0.0.1:' + s.port + ':' + s.pairing.code.replace(/-/g, '') + ':' + s.id);
 })();
