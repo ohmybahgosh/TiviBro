@@ -578,10 +578,10 @@ Everyone who has helped build TiviBro with code, ideas or bug reports.  This lis
 
 <!-- thanks:start -->
 <p>
-  <a href="https://github.com/moritzm784" title="moritzm784: 2 pull requests, 1 idea or bug report"><img src="https://avatars.githubusercontent.com/u/202101620?v=4&amp;s=96" width="48" height="48" alt="moritzm784"></a>
+  <a href="https://github.com/moritzm784" title="moritzm784: 3 pull requests, 1 idea or bug report"><img src="https://avatars.githubusercontent.com/u/202101620?v=4&amp;s=96" width="48" height="48" alt="moritzm784"></a>
 </p>
 
-- **[moritzm784](https://github.com/moritzm784)**: 2 pull requests, 1 idea or bug report
+- **[moritzm784](https://github.com/moritzm784)**: 3 pull requests, 1 idea or bug report
 <!-- thanks:end -->
 
 ## Credits
