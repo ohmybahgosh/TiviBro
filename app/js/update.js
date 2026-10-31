@@ -66,7 +66,7 @@ var Update = (function () {
   function notes(md) {
     var out = [], stop = false;
     String(md || '').split(/\r?\n/).forEach(function (l) {
-      if (/^#{1,4}\s*Install/i.test(l)) stop = true;          // the release workflow's install footer
+      if (/^#{1,4}\s*Install|^<details/i.test(l)) stop = true;          // the release workflow's install footer
       if (stop || out.length >= 14) return;
       var t = l.replace(/^\s*[-*]\s+/, '').replace(/\*\*|__|`/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/^#+\s*/, '').trim();
       if (!t || /^>/.test(t) || /^SHA-256/i.test(t)) return;

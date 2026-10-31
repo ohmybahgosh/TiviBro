@@ -12,7 +12,7 @@ TAG="v$VERSION${PRE:+-$PRE}"
 [ -z "$(git status --porcelain)" ] || { echo "Commit or stash your changes first." >&2; git status --short >&2; exit 1; }
 [ "$(git rev-parse --abbrev-ref HEAD)" = "main" ] || { echo "Release from main." >&2; exit 1; }
 git rev-parse -q --verify "refs/tags/$TAG" >/dev/null && { echo "Tag $TAG already exists.  Bump the version first." >&2; exit 1; }
-node scripts/release-notes.js "$VERSION" >/dev/null
+node scripts/release-notes.js "${TAG#v}" >/dev/null
 bash scripts/lint.sh
 npm test --silent
 bash scripts/build.sh

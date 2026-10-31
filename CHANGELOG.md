@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Shorter release notes.**  Each release page lists only what's new in that build, one line per change, with a link to the full changelog; install steps fold away.  Before, every test build repeated the whole 0.6.0 history.
 - **Search puts the best match first, movies and shows included.**  Results are ranked by how closely the title matches (the whole title, then the start, then a word), and then by what you can watch: on now, a movie or show, a channel, coming up, a replay.  Searching batman now lists the Batman films before the 24/7 Batman channels, and CNN still finds the channel first.  Before, movies and shows came after every channel and programme.
 
 ## 0.6.0 (alpha 33, 2026-10-31)
