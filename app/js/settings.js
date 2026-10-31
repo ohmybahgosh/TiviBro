@@ -6,6 +6,9 @@ var Settings = (function () {
   var SECTIONS = [['playback', 'Playback and buffering'], ['remote', 'Remote control'], ['playlists', 'Playlists and guide'], ['editor', 'Edit on a phone or computer'], ['phone', 'Phone app'],
     ['groups', 'Groups, sorting, hidden'], ['reminders', 'Guide, start screen, reminders'], ['look', 'Appearance'], ['parental', 'Parental controls'], ['updates', 'Updates and about'], ['diag', 'Diagnostics']];
   var sec = 0, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
+  // Phone app: test builds only while the Android app is in the works.
+  function shown(i) { return !!SECTIONS[i] && (SECTIONS[i][0] !== 'phone' || /alpha|beta/i.test(TIVIBRO_VERSION)); }
+  function nextSec(d) { var i = sec + d; while (SECTIONS[i] && !shown(i)) i += d; return SECTIONS[i] ? i : sec; }
   var stack = [];               // sub-pages: [{ title, fn, sel }]
 
   function cyc(list, cur, dir) { var i = list.indexOf(cur); if (i < 0) i = 0; return list[(i + dir + list.length) % list.length]; }
@@ -183,10 +186,10 @@ var Settings = (function () {
     out.push(toggle('Match guide by channel name', 'Links channels that have no guide id to a guide channel with the same name.', function () { return p.nameMatch; }, function (v) { p.nameMatch = v; persist(p, true); paint(); }));
     out.push(page('Public guide fill-in', 'Free guides from epg.pw and iptv-epg.org, only for channels nothing else covers', 'Public guide fill-in', function () { return pubPage(p); }, function () { return PubEpg.conf(p).on ? 'On' : 'Off'; }));
     if (active) {
-      out.push(action('Reload guide now', '', function () { Epg.refresh(L, true); U.toast('Reloading guide'); }));
+      out.push(action('Reload guide now', '', function () { Epg.refresh(L, true); U.toast('Reloading guide'); live(); }));
       var st = Epg.status;
       if (Epg.xml) {
-        out.push(info('Guide last loaded', Epg.loading ? 'loading now' : when(st.at)));
+        out.push(info('Guide last loaded', Epg.loading || (Epg.progress && Epg.progress.active) ? 'loading now' : when(st.at)));
         (st.sources || []).forEach(function (r) { out.push(info(r.url.replace(/(password|pass)=[^&]+/i, '$1=…'), r.ok ? r.channels + ' channels, ' + r.programmes + ' programmes' : 'failed: ' + r.error)); });
         var all = L.data.channels, n = 0, missing = [];
         all.forEach(function (c) { if (Epg.hasData(c)) n++; else if (missing.length < 300) missing.push(c); });
@@ -231,7 +234,7 @@ var Settings = (function () {
           (st.sources || []).forEach(function (r) { out.push(info(r.url, r.skipped ? 'not needed' : r.ok ? r.filled + ' channels' : 'failed: ' + r.error)); });
           if (!Net.active) out.push(info('iptv-epg.org', 'needs Settings > Playback > Network set to Automatic'));
         }
-        out.push(action('Look again now', 'Downloads the public guides again.', function () { Epg.pubAgain(); U.toast('Looking in the public guides'); }));
+        out.push(action('Look again now', 'Downloads the public guides again.', function () { Epg.pubAgain(); U.toast('Looking in the public guides'); live(); }));
       }
     }
     out.push(action('About these guides', 'Free, community-run guides.  TiviBro hosts nothing and sends no logins: the TV downloads the files straight from them, at most twice a day.  A wrong match?  Hold OK on the channel and choose Assign guide.', function () {}));
@@ -636,6 +639,18 @@ var Settings = (function () {
     return out;
   }
 
+  /* Pages show what is true now.  When the guide or the channel list finishes loading (or starts),
+     the page on screen is drawn again, so Guide last loaded, Last reloaded, each guide source's
+     result, Channels with guide data and the public guide's status never show an old value. */
+  var liveT = null, lastProg = '';
+  function live() {
+    if (Views.tab !== 'settings' || UI.modalOpen) return;
+    clearTimeout(liveT);
+    liveT = setTimeout(function () { if (Views.tab === 'settings' && !UI.modalOpen) build(); }, 250);
+  }
+  Epg.onUpdate(function (k) { if (!k) live(); });
+  Epg.onProgress(function (p) { var k = (p.active ? 1 : 0) + '|' + p.phase; if (k !== lastProg) { lastProg = k; live(); } });
+
   /* ---------- the TiviBro phone app ---------- */
   function phone() {
     var out = [], ps = Phone.status, on = !!(ps && ps.on);
@@ -753,6 +768,7 @@ var Settings = (function () {
   function paint() {
     nav.innerHTML = '';
     SECTIONS.forEach(function (s, i) {
+      if (!shown(i)) return;
       var n = U.el('div', i === sec ? 'on' : '', s[1]);
       n.addEventListener('click', function () { stack = []; sec = i; sel = 0; zone = 'nav'; build(); });
       nav.appendChild(n);
@@ -787,8 +803,8 @@ var Settings = (function () {
 
   function keys(a) {
     if (zone === 'nav') {
-      if (a === 'up') { if (sec > 0) { sec--; sel = 0; build(); } else Views.tabBar(function () { UI.setHandler(keys); paint(); }); }
-      else if (a === 'down') { if (sec < SECTIONS.length - 1) { sec++; sel = 0; build(); } }
+      if (a === 'up') { if (nextSec(-1) !== sec) { sec = nextSec(-1); sel = 0; build(); } else Views.tabBar(function () { UI.setHandler(keys); paint(); }); }
+      else if (a === 'down') { if (nextSec(1) !== sec) { sec = nextSec(1); sel = 0; build(); } }
       else if (a === 'right' || a === 'ok') { zone = 'body'; paint(); }      // pages of facts only scroll
       else if (a === 'left' || a === 'back') Views.tabBar(function () { UI.setHandler(keys); paint(); });
       else if (a === 'green') Views.switchTab('live');
@@ -819,8 +835,8 @@ var Settings = (function () {
   }
 
   // Straight to one section (the phone app's own shortcut, and tests).
-  function section(id) { for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return true; } return false; }
+  function section(id) { for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return true; } return false; }
 
-  return { open: open, assignGuide: assignGuide, section: section, reset: function () { stack = []; sel = 0; },
+  return { open: open, assignGuide: assignGuide, section: section, live: live, reset: function () { stack = []; sel = 0; },
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

@@ -319,6 +319,7 @@ var App = (function () {
       Library.set(data);
       Logos.load(data);
       Views.refreshLists(true);
+      Settings.live();
       if (manual) U.toast(Library.count() + ' channels loaded');
     }).catch(function (e) { if (manual) U.toast(e.message || 'Reload failed', 4000); });
   }

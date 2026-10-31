@@ -108,7 +108,7 @@ var seq = [
   },
   // Settings, Phone app: switched on, and the pairing screen with its code and QR code.
   function phone(next) {
-    js('Phone.turn(true).then(function () { Settings.section("phone"); }); return 1;', val(function () {
+    js('TIVIBRO_VERSION = "0.6.0-alpha.99"; Phone.turn(true).then(function () { Settings.section("phone"); }); return 1;', val(function () {
       setTimeout(function () {
         js('Phone.showPair(); return 1;', val(function () {
           setTimeout(function () {

@@ -579,7 +579,7 @@ var Epg = (function () {
     if (srcs.length) first = loadXml(force).catch(function () {});
     else { xmlReady = true; status.at = Date.now(); emit(null); first = Promise.resolve(); }
     loading = first.then(function () { return pub && gen === pubGen ? loadPub(gen).catch(function (e) { Log.warn('epg', 'Public guide failed: ' + (e && e.message || e)); }) : null; })
-      .then(function () { loading = null; });
+      .then(function () { loading = null; emit(null); });        // done: pages that say "loading now" redraw
     return loading;
   }
 
@@ -631,6 +631,7 @@ var Epg = (function () {
       if (c && c.sig === sig) { ingestPub(c); emit(null); }
       if (!files.length || !miss.length) {
         pubStatus = { at: Date.now(), countries: ccs, filled: 0, asked: miss.length, sources: [], none: !miss.length ? 'every channel has a guide' : 'no public guide for this playlist\'s countries' };
+        emit(null);
         return;
       }
       // Free services: at most twice a day, however often your own guide reloads ("Reload guide now"

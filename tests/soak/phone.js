@@ -35,7 +35,12 @@ const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', heade
   const modal = () => ev(() => { const m = document.getElementById('modal'); return m && !m.classList.contains('hidden') ? m.innerText : ''; });
 
   ok('TiviBro tells the helper its version', (await ctl('/companion/status')).ownName === '' && (await (await fetch(RELAY + '/companion/status')).json()).on === false);
-  await ev(() => { if (UI.modalOpen) UI.close(); Views.switchTab('settings'); Settings.open(); Settings.section('phone'); }); await page.waitForTimeout(800);
+  await ev(() => { if (UI.modalOpen) UI.close(); Views.switchTab('settings'); Settings.open(); }); await page.waitForTimeout(600);
+  const navRel = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
+  ok('a release build has no Phone app section yet', navRel.indexOf('Phone app') < 0 && !(await ev(() => Settings.section('phone'))), navRel.join(', '));
+  await ev(() => { TIVIBRO_VERSION = '0.6.0-alpha.99'; Settings.open(); Settings.section('phone'); }); await page.waitForTimeout(800);
+  const navTest = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
+  ok('test builds have it', navTest.indexOf('Phone app') > 0, navTest.join(', '));
   let t = await text();
   ok('Settings has a Phone app section, off at first', /Phone app/.test(t) && /Phone app connection[^‹]*‹Off›/.test(t) && !/Pair a phone…/.test(t), t.slice(t.indexOf('The TiviBro app'), t.indexOf('The TiviBro app') + 400));
   await row(/^Phone app connection/); await page.waitForTimeout(1200);
