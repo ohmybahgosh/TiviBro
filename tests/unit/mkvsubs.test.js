@@ -103,7 +103,27 @@ function fakeFetch(url, options) {
   if (rm) { start = +rm[1]; end = Math.min(+rm[2], data.length - 1); }
   if (start >= data.length) return Promise.resolve({ ok: false, status: 416, arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) });
   const slice = data.slice(start, end + 1);
-  return Promise.resolve({ ok: true, status: 206, arrayBuffer: () => Promise.resolve(slice.buffer.slice(slice.byteOffset, slice.byteOffset + slice.byteLength)) });
+  return Promise.resolve({ ok: true, status: 206, contentRange: 'bytes ' + start + '-' + end + '/' + data.length, arrayBuffer: () => Promise.resolve(slice.buffer.slice(slice.byteOffset, slice.byteOffset + slice.byteLength)) });
+}
+let abortedRequests = 0, responseMode = '', bodyReads = 0;
+class FakeXHR {
+  open(method, url) { this.url = url; }
+  setRequestHeader(k, v) { this.headers = this.headers || {}; this.headers[k] = v; }
+  getResponseHeader() { return this.contentRange; }
+  send() {
+    if (responseMode === 'pending') return;
+    fakeFetch(this.url, {headers: this.headers}).then(r => {
+      if (this.aborted) return;
+      this.status = responseMode === 'ignoreRange' ? 200 : r.status;
+      this.contentRange = responseMode === 'wrongRange' ? 'bytes 1-20/100' : r.contentRange;
+      this.readyState = 2;
+      this.onreadystatechange();
+      if (this.aborted) return;
+      bodyReads++;
+      return r.arrayBuffer().then(ab => { if (!this.aborted) { this.response = ab; this.onload(); } });
+    }).catch(() => { if (!this.aborted) this.onerror(); });
+  }
+  abort() { this.aborted = true; abortedRequests++; if (this.onabort) this.onabort(); }
 }
 function makeFakeTrackElement() {
   const cues = [];
@@ -118,7 +138,7 @@ function flush(rounds) {
 function waitForAsync(cond) { return flush().then(() => cond()); }
 
 const ctx = {
-  console, Promise, setTimeout, clearTimeout,
+  console, Promise, setTimeout, clearTimeout, XMLHttpRequest: FakeXHR,
   fetch: (...a) => fakeFetch(...a),
   Net: { wrap: u => u },
   Log: { debug() {}, warn() {}, info() {} },
@@ -241,7 +261,7 @@ ok('orders clusters by proximity to current playback position, nearest first, de
     fetchCallCount = 0;
     MkvSubs.extract('http://p/movie/u/p/novideosubs.mkv', video);
     const settled = await waitForAsync(() => video.children.length === 0);
-    return settled && fetchCallCount <= 2;
+    return settled && fetchCallCount === 3;
   })());
 
   ok("cancel() before the async fetches resolve prevents any <track> from being added", await (async () => {
@@ -309,6 +329,93 @@ ok('orders clusters by proximity to current playback position, nearest first, de
     MkvSubs.extract('http://p/movie/u/p/cacheme.mkv', v);
     // No flush/await: must already be attached from cache.
     return v.children.length === 1 && v.children[0].track.cues.length === 1;
+  })());
+
+  ok('sparse extraction skips a 2 MB video payload and preserves subtitle timing', await (async () => {
+    const media = el('A3', blockHeader(1, 0, 0).concat(new Array(2 * 1024 * 1024).fill(42)));
+    const bytes = u8(el('1F43B675', el('E7', uintBytes(1000)).concat(media, blockGroupEl(7, 250, 3000, 'Sparse subtitle'))));
+    let total = 0;
+    const cues = await MkvSubs.readSparseCluster((start, end) => {
+      const data = bytes.slice(start, end + 1); total += data.length; return Promise.resolve(data);
+    }, 0, [7], 1000000);
+    console.log('Sparse cluster transferred ' + total + ' bytes of ' + bytes.length);
+    return total < 10000 && cues.length === 1 && cues[0].text === 'Sparse subtitle' && cues[0].startSec === 1.25 && cues[0].endSec === 4.25;
+  })());
+
+  ok('relative cue positions skip intervening media headers', await (async () => {
+    const stamp = el('E7', uintBytes(1000));
+    const media = el('A3', blockHeader(1, 0, 0).concat(new Array(10000).fill(42)));
+    const pos = stamp.length + media.length;
+    const bytes = u8(el('1F43B675', stamp.concat(media, blockGroupEl(7, -250, 3000, 'Indexed'))));
+    let calls = 0;
+    const cues = await MkvSubs.readSparseCluster((start, end) => {
+      calls++; return Promise.resolve(bytes.slice(start, end + 1));
+    }, 0, [7], 1000000, [pos]);
+    const index = u8(el('BB', el('B3', [0]).concat(el('B7', el('F7', [7]).concat(el('F1', [0]), el('F0', uintBytes(pos)))))));
+    const parsed = MkvSubs.readCuesForTrack(index, 0, index.length, 7, 1000000);
+    return calls === 3 && cues.length === 1 && cues[0].text === 'Indexed' && cues[0].startSec === 0.75 && parsed[0].relativePos === pos;
+  })());
+
+  ok('buffering aborts an active read and resumes after the buffer refills', await (async () => {
+    mkvFixtures['resume.mkv'] = mkvFixtures['1.mkv'];
+    const events = {}, before = abortedRequests;
+    const video = {currentTime: 0, readyState: 4, buffered: {length: 1, start() {return 0;}, end() {return 20;}},
+      children: [], appendChild(el) {this.children.push(el);}, removeChild() {},
+      addEventListener(n, f) {events[n] = f;}, removeEventListener(n) {delete events[n];}};
+    responseMode = 'pending';
+    const h = MkvSubs.extract('http://p/resume.mkv', video);
+    await flush();
+    video.readyState = 2; events.waiting();
+    responseMode = '';
+    await flush();
+    const held = video.children.length === 0 && abortedRequests === before + 1;
+    video.readyState = 4;
+    await new Promise(r => setTimeout(r, 1050));
+    const resumed = video.children.length === 1 && video.children[0].track.cues.length === 1;
+    h.cancel();
+    return held && resumed;
+  })());
+
+  for (const mode of ['ignoreRange', 'wrongRange']) {
+    ok(mode + ': rejects headers before reading the movie body', await (async () => {
+      responseMode = mode; bodyReads = 0;
+      const before = abortedRequests;
+      const h = MkvSubs.extract('http://p/' + mode + '.mkv', {appendChild() {}});
+      await flush(); h.cancel(); responseMode = '';
+      return bodyReads === 0 && abortedRequests > before;
+    })());
+  }
+
+  ok('cancel aborts an in-flight HTTP request', await (async () => {
+    responseMode = 'pending';
+    const before = abortedRequests;
+    const h = MkvSubs.extract('http://p/pending.mkv', {});
+    await flush(); h.cancel(); responseMode = '';
+    await flush();
+    return abortedRequests === before + 1;
+  })());
+
+  ok('low playback buffer prevents extraction requests', await (async () => {
+    fetchCallCount = 0;
+    const video = {currentTime: 0, readyState: 2, buffered: {length: 1, start() {return 0;}, end() {return 2;}}};
+    const h = MkvSubs.extract('http://p/lowbuffer.mkv', video);
+    await flush(); h.cancel();
+    return fetchCallCount === 0;
+  })());
+
+  ok('only fetches near the playhead, then follows timeupdate', await (async () => {
+    mkvFixtures['window.mkv'] = mkvFixtures['1.mkv'];
+    const events = {};
+    const video = {currentTime: 300, children: [], appendChild(el) {this.children.push(el);}, removeChild() {},
+      addEventListener(n, fn) {events[n] = fn;}, removeEventListener(n) {delete events[n];}};
+    const h = MkvSubs.extract('http://p/window.mkv', video);
+    await flush();
+    const empty = video.children.length === 1 && video.children[0].track.cues.length === 0;
+    video.currentTime = 0; events.timeupdate();
+    await flush();
+    const loaded = video.children[0].track.cues.length === 1;
+    h.cancel();
+    return empty && loaded && !events.timeupdate;
   })());
 
   if (fail) { console.log(fail + ' mkvsubs test(s) failed'); process.exit(1); }

@@ -138,7 +138,7 @@ var MkvSubs = (function () {
           var vstart = csz.next, vend = Math.min(vstart + csz.value, cend);
           if (cidr.value === CUETIME) cueTime = bytesToUint(buf, vstart, vend);
           else if (cidr.value === CUETRACKPOSITIONS) {
-            var track = null, clusterPos = null;
+            var track = null, clusterPos = null, relativePos = null;
             var q = vstart;
             while (q < vend) {
               var qidr = readId(buf, q);
@@ -148,9 +148,14 @@ var MkvSubs = (function () {
               var qvstart = qsz.next, qvend = Math.min(qvstart + qsz.value, vend);
               if (qidr.value === CUETRACK) track = bytesToUint(buf, qvstart, qvend);
               else if (qidr.value === CUECLUSTERPOSITION) clusterPos = bytesToUint(buf, qvstart, qvend);
+              else if (qidr.value === 0xF0) relativePos = bytesToUint(buf, qvstart, qvend);
               q = qvend;
             }
-            if (track === trackNumber && clusterPos !== null) cues.push({ timeSec: cueTime * timecodeScale / 1e9, clusterPos: clusterPos });
+            if (track === trackNumber && clusterPos !== null) {
+              var cue = { timeSec: cueTime * timecodeScale / 1e9, clusterPos: clusterPos };
+              if (relativePos !== null) cue.relativePos = relativePos;
+              cues.push(cue);
+            }
           }
           p = vend;
         }
@@ -287,11 +292,89 @@ var MkvSubs = (function () {
     return '';
   }
 
-  function fetchRange(url, start, end) {
-    return fetch(url, { headers: { Range: 'bytes=' + start + '-' + end } }).then(function (r) {
-      if (!r.ok && r.status !== 206) throw new Error('bad range response ' + r.status);
-      return r.arrayBuffer();
-    }).then(function (ab) { return new Uint8Array(ab); });
+  // Walk element headers and skip media payloads by their declared size. A cluster
+  // commonly contains megabytes of video for only a few bytes of subtitle text.
+  function readSparseCluster(range, off, trackNumbers, scale, positions) {
+    var cache = null, cacheStart = 0, clusterEnd, stamp = 0, found = [];
+    function read(pos, size) {
+      if (size > 65536) return Promise.reject(new Error('oversized subtitle element'));
+      if (cache && pos >= cacheStart && pos + size <= cacheStart + cache.length)
+        return Promise.resolve(cache.subarray(pos - cacheStart, pos - cacheStart + size));
+      return range(pos, Math.min(pos + Math.max(size, 4096) - 1, clusterEnd === undefined ? off + 15 : clusterEnd - 1)).then(function (buf) {
+        cache = buf; cacheStart = pos;
+        if (buf.length < size) throw new Error('truncated cluster');
+        return buf.subarray(0, size);
+      });
+    }
+    function header(pos, end) {
+      return read(pos, Math.min(12, end - pos)).then(function (buf) {
+        var id = readId(buf, 0), sz = readVint(buf, id.next);
+        var start = pos + sz.next, stop = start + sz.value;
+        if (id.value === null || sz.value === null || stop > end || stop <= pos) throw new Error('invalid cluster element');
+        return { id: id.value, start: start, end: stop };
+      });
+    }
+    function block(h) {
+      return read(h.start, Math.min(12, h.end - h.start)).then(function (buf) {
+        var bh = readBlockHeader(buf, 0, buf.length);
+        if (!bh || trackNumbers.indexOf(bh.track) < 0) return null;
+        return read(h.start, h.end - h.start).then(function (body) {
+          return { track: bh.track, rel: bh.relTimecode, text: utf8Decode(body, bh.payloadStart, body.length) };
+        });
+      });
+    }
+    function group(pos, end, result) {
+      if (pos >= end) return Promise.resolve(result);
+      return header(pos, end).then(function (h) {
+        var work = Promise.resolve();
+        if (h.id === BLOCK) work = block(h).then(function (b) { result.block = b; });
+        else if (h.id === BLOCKDURATION) work = read(h.start, h.end - h.start).then(function (b) { result.duration = bytesToUint(b, 0, b.length); });
+        return work.then(function () { return group(h.end, end, result); });
+      });
+    }
+    function walk(pos) {
+      if (pos >= clusterEnd) return Promise.resolve();
+      return header(pos, clusterEnd).then(function (h) {
+        var work = Promise.resolve();
+        if (h.id === TIMECODE) work = read(h.start, h.end - h.start).then(function (b) { stamp = bytesToUint(b, 0, b.length); });
+        else if (h.id === SIMPLEBLOCK) work = block(h).then(function (b) { if (b) found.push({ block: b }); });
+        else if (h.id === BLOCKGROUP) work = group(h.start, h.end, {}).then(function (g) { if (g.block) found.push(g); });
+        return work.then(function () { return walk(h.end); });
+      });
+    }
+    return range(off, off + 15).then(function (buf) {
+      var id = readId(buf, 0), sz = readVint(buf, id.next);
+      if (id.value !== 0x1F43B675 || sz.value === null || sz.value > 64 * 1024 * 1024) throw new Error('invalid cluster');
+      clusterEnd = off + sz.next + sz.value;
+      var contentStart = off + sz.next;
+      if (!positions || !positions.length) return walk(contentStart);
+      // CueRelativePosition addresses the BlockGroup/SimpleBlock from the start
+      // of the Cluster payload. With it we need no intervening media headers.
+      function timestamp(pos) {
+        if (pos >= clusterEnd) throw new Error('missing cluster timestamp');
+        return header(pos, clusterEnd).then(function (h) {
+          if (h.id !== TIMECODE) return timestamp(h.end);
+          return read(h.start, h.end - h.start).then(function (b) { stamp = bytesToUint(b, 0, b.length); });
+        });
+      }
+      var chain = timestamp(contentStart);
+      positions.forEach(function (pos) {
+        chain = chain.then(function () {
+          if (pos < 0 || contentStart + pos >= clusterEnd) throw new Error('invalid cue position');
+          return header(contentStart + pos, clusterEnd).then(function (h) {
+            if (h.id === BLOCKGROUP) return group(h.start, h.end, {}).then(function (g) { if (g.block) found.push(g); });
+            if (h.id === SIMPLEBLOCK) return block(h).then(function (b) { if (b) found.push({ block: b }); });
+            throw new Error('cue does not address a block');
+          });
+        });
+      });
+      return chain;
+    }).then(function () {
+      return found.map(function (g) {
+        var start = (stamp + g.block.rel) * scale / 1e9;
+        return { track: g.block.track, startSec: start, endSec: start + (g.duration === undefined ? 2 : g.duration * scale / 1e9), text: g.block.text };
+      });
+    });
   }
 
   // Right after a (re)connect is the worst moment for extraction to start its own
@@ -299,10 +382,9 @@ var MkvSubs = (function () {
   // has no cushion yet.  Give it a head start before competing for the connection pool.
   var startupDelayMs = 3000;
 
-  // Extracted cues live longer than one playback instance.  A flaky provider cuts the
-  // stream every ~40s, and each cut tears down the engine and calls extract() afresh --
-  // without this cache every cut would wipe all subtitles and re-fetch them from zero
-  // (the "subtitles vanish on every buffer, then slowly come back" symptom).  Keyed by
+  // Extracted cues live longer than one playback instance. Reconnects tear down the
+  // engine and call extract() afresh; retain cues so they do not disappear and get
+  // fetched again on each reconnect. Keyed by
   // the file URL: { tracks: [{label, srclang}], cues: [[{s,e,text}]...] (per track),
   // fetched: {absClusterOffset: true}, done: bool }.  Cues replay instantly on reconnect
   // and only not-yet-fetched clusters are requested, so extraction converges rather than
@@ -315,6 +397,69 @@ var MkvSubs = (function () {
     var addedEls = [];        // <track> elements this call appended, so cancel() can undo them
     var liveTracks = [];      // the live TextTrack per track index, parallel to a rec's tracks/cues
     var wrapped = Net.wrap(url);
+    var activeRequest = null, gateTimer = null, rejectGate = null, pump = null;
+    function hasBuffer() {
+      if (!video.buffered) return true; // non-media test hosts
+      if (video.seeking || video.readyState < 3) return false;
+      for (var b = 0; b < video.buffered.length; b++) {
+        if (video.buffered.start(b) <= video.currentTime && video.buffered.end(b) - video.currentTime >= 8) return true;
+      }
+      return video.ended || (isFinite(video.duration) && video.duration - video.currentTime < 8 && video.readyState >= 3);
+    }
+    function waitForBuffer() {
+      return new Promise(function (resolve, reject) {
+        rejectGate = reject;
+        function check() {
+          if (cancelled) { rejectGate = null; reject(new Error('cancelled')); }
+          else if (hasBuffer()) { rejectGate = null; resolve(); }
+          else gateTimer = setTimeout(check, 1000);
+        }
+        check();
+      });
+    }
+    // XHR can abort on Chromium 53, where fetch's AbortController is unavailable.
+    // Reject a server ignoring Range before it downloads the whole movie.
+    function fetchRange(unused, start, end) {
+      return waitForBuffer().then(function () {
+        if (cancelled) throw new Error('cancelled');
+        return new Promise(function (resolve, reject) {
+          var xhr = new XMLHttpRequest(), settled = false, expected = 0;
+          function finish(err, data) {
+            if (settled) return;
+            settled = true; activeRequest = null;
+            if (err) reject(err); else resolve(data);
+          }
+          activeRequest = xhr;
+          xhr.open('GET', wrapped, true);
+          xhr.responseType = 'arraybuffer'; xhr.timeout = 10000;
+          xhr.setRequestHeader('Range', 'bytes=' + start + '-' + end);
+          xhr.onreadystatechange = function () {
+            if (xhr.readyState !== 2) return;
+            var m = /^bytes (\d+)-(\d+)\/(?:\d+|\*)$/i.exec(xhr.getResponseHeader('Content-Range') || '');
+            if (xhr.status !== 206 || !m || +m[1] !== start || +m[2] > end || +m[2] < start) {
+              finish(new Error('invalid range response')); xhr.abort();
+            } else expected = +m[2] - start + 1;
+          };
+          xhr.onprogress = function (e) { if (e.loaded > end - start + 1) { finish(new Error('oversized range response')); xhr.abort(); } };
+          xhr.onload = function () {
+            var data = xhr.response && new Uint8Array(xhr.response);
+            if (!data || !expected || data.length !== expected) finish(new Error('invalid range length'));
+            else finish(null, data);
+          };
+          xhr.onerror = xhr.ontimeout = function () { finish(new Error('range request failed')); };
+          xhr.onabort = function () { finish(new Error(xhr.yieldToPlayback ? 'buffer low' : 'cancelled')); };
+          xhr.send();
+        });
+      }).catch(function (e) {
+        if (!cancelled && e.message === 'buffer low') return fetchRange(unused, start, end);
+        throw e;
+      });
+    }
+    function onWaiting() {
+      if (activeRequest) { activeRequest.yieldToPlayback = true; activeRequest.abort(); }
+    }
+    function onTime() { if (pump) pump(); }
+    if (video.addEventListener) { video.addEventListener('timeupdate', onTime); video.addEventListener('waiting', onWaiting); }
     var rec = subCache[url];
 
     function ensureTracks(trackMeta) {
@@ -355,7 +500,7 @@ var MkvSubs = (function () {
       if (!tracksChild) return;
       var allTracks = readTracks(head, tracksChild.start, tracksChild.end);
       var subTracks = [];
-      for (var i = 0; i < allTracks.length; i++) if (allTracks[i].type === 17) subTracks.push(allTracks[i]);
+      for (var i = 0; i < allTracks.length; i++) if (allTracks[i].type === 17 && allTracks[i].codecId === 'S_TEXT/UTF8') subTracks.push(allTracks[i]);
       if (!subTracks.length) return;
       var seekChild = findChild(head, seg.start, seg.end, SEEKHEAD);
       if (!seekChild) return;
@@ -370,7 +515,11 @@ var MkvSubs = (function () {
       }
       if (cancelled) return;
       var cuesAbs = segmentDataStart + cuesRel;
-      return fetchRange(wrapped, cuesAbs, cuesAbs + 1048575).then(function (cuesBuf) {
+      return fetchRange(wrapped, cuesAbs, cuesAbs + 15).then(function (peek) {
+        var id = readId(peek, 0), size = readVint(peek, id.next);
+        if (id.value !== 0x1C53BB6B || size.value === null || size.value > 1048576) throw new Error('invalid Cues');
+        return fetchRange(wrapped, cuesAbs, cuesAbs + size.next + size.value - 1);
+      }).then(function (cuesBuf) {
         if (cancelled) return;
         // The fetched range starts exactly at the Cues element itself; peel its own
         // id+size header before handing its content to readCuesForTrack, same as every
@@ -400,38 +549,41 @@ var MkvSubs = (function () {
         ensureTracks(rec.tracks);
         if (cancelled) return;
 
-        var offsets = clusterFetchOrder(perTrackCues, video.currentTime || 0, segmentDataStart);
-        var pending = 0;
-        var chain = Promise.resolve();
-        offsets.forEach(function (off) {
-          if (rec.fetched[off]) return;           // already fetched (this instance or a prior one): skip
-          pending++;
-          chain = chain.then(function () {
-            if (cancelled || rec.fetched[off]) return;
-            return fetchRange(wrapped, off, off + 15).then(function (peek) {
-              if (cancelled) return;
-              var idr = readId(peek, 0);
-              if (idr.value === null) return;
-              var sz = readVint(peek, idr.next);
-              if (sz.value === null) return;
-              var headerLen = sz.next;
-              return fetchRange(wrapped, off, off + headerLen + sz.value - 1).then(function (clusterBuf) {
-                if (cancelled) return;
-                rec.fetched[off] = true;
-                for (var a = 0; a < perTrackCues.length; a++) {
-                  var trackNumber = perTrackCues[a].track.number;
-                  var found = readClusterBlocks(clusterBuf, headerLen, clusterBuf.length, trackNumber, timecodeScale);
-                  for (var f = 0; f < found.length; f++) {
-                    if (cancelled) return;
-                    liveTracks[a].addCue(new VTTCue(found[f].startSec, found[f].endSec, found[f].text));
-                    rec.cues[a].push({ s: found[f].startSec, e: found[f].endSec, text: found[f].text });
-                  }
-                }
-              });
-            });
+        var busy = false;
+        pump = function () {
+          if (cancelled || busy || !hasBuffer()) return;
+          var now = video.currentTime || 0;
+          var nearby = perTrackCues.map(function (t) {
+            return { cues: t.cues.filter(function (c) { return c.timeSec >= now - 30 && c.timeSec <= now + 60; }) };
           });
-        });
-        return chain.then(function () { if (!cancelled && !pending) rec.done = true; else if (!cancelled) { rec.done = offsets.every(function (o) { return rec.fetched[o]; }); } });
+          var offsets = clusterFetchOrder(nearby, now, segmentDataStart).filter(function (o) { return !rec.fetched[o]; });
+          if (!offsets.length) {
+            rec.done = clusterFetchOrder(perTrackCues, now, segmentDataStart).every(function (o) { return rec.fetched[o]; });
+            return;
+          }
+          busy = true;
+          var off = offsets[0], positions = [], indexed = true;
+          perTrackCues.forEach(function (t) { t.cues.forEach(function (c) {
+            if (segmentDataStart + c.clusterPos !== off) return;
+            if (c.relativePos === undefined) indexed = false;
+            else if (positions.indexOf(c.relativePos) < 0) positions.push(c.relativePos);
+          }); });
+          readSparseCluster(function (start, end) { return fetchRange(wrapped, start, end); }, off,
+            perTrackCues.map(function (t) { return t.track.number; }), timecodeScale, indexed ? positions : null).then(function (found) {
+            if (cancelled) return;
+            for (var a = 0; a < perTrackCues.length; a++) {
+              for (var f = 0; f < found.length; f++) {
+                if (found[f].track !== perTrackCues[a].track.number) continue;
+                liveTracks[a].addCue(new VTTCue(found[f].startSec, found[f].endSec, found[f].text));
+                rec.cues[a].push({ s: found[f].startSec, e: found[f].endSec, text: found[f].text });
+              }
+            }
+            rec.fetched[off] = true;
+            busy = false;
+            pump();
+          }).catch(function () { busy = false; pump = null; });
+        };
+        pump();
       });
     }).catch(function (e) {
       if (typeof Log !== 'undefined' && Log.debug) Log.debug('mkvsubs', 'giving up: ' + (e && e.message));
@@ -442,6 +594,10 @@ var MkvSubs = (function () {
       return { cancel: function () {
         cancelled = true;
         clearTimeout(timer);
+        clearTimeout(gateTimer);
+        if (rejectGate) { rejectGate(new Error('cancelled')); rejectGate = null; }
+        if (activeRequest) activeRequest.abort();
+        if (video.removeEventListener) { video.removeEventListener('timeupdate', onTime); video.removeEventListener('waiting', onWaiting); }
         for (var i = 0; i < addedEls.length; i++) { try { video.removeChild(addedEls[i]); } catch (e) {} }
         addedEls.length = 0;
       } };
@@ -456,6 +612,7 @@ var MkvSubs = (function () {
     readSeekHead: readSeekHead,
     readCuesForTrack: readCuesForTrack,
     readClusterBlocks: readClusterBlocks,
+    readSparseCluster: readSparseCluster,
     clusterFetchOrder: clusterFetchOrder,
     extract: extract,
     get startupDelayMs() { return startupDelayMs; },

@@ -216,9 +216,8 @@ var Player = (function () {
     var at0 = video.audioTracks, onAdd = at0 && at0.addEventListener ? U.debounce(tracks, 300) : null;
     if (onAdd) at0.addEventListener('addtrack', onAdd);
     return { name: 'Native', recover: function () {}, info: function () { return ''; },
-      // A seek moves the playhead well outside whatever cluster range extraction already
-      // fetched (it's nearest-to-the-start-position-only, not the whole file) -- restart
-      // it anchored at the new position rather than leave subtitles stuck on the old one.
+      // Abort reads at the old position and replay cached cues while extraction
+      // waits for the seek to finish and the playback buffer to refill.
       reanchor: function () { if (subs) { subs.cancel(); subs = (!cur.live && typeof MkvSubs !== 'undefined') ? MkvSubs.extract(url, video) : null; } },
       destroy: function () { if (subs) subs.cancel(); if (onAdd) { onAdd.cancel(); at0.removeEventListener('addtrack', onAdd); } },
       audio: function () {
