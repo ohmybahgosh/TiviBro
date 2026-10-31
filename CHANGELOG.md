@@ -1,21 +1,21 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 30, 2026-10-31)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 30
 
 - **Search shows why a channel matched.**  Providers often write the game into the channel name ("BIG10 10: Michigan vs Ohio State"), while TiviBro shows the short name ("BigTen 10"), so searching "michigan" listed a column of BigTen channels with nothing about Michigan.  Those results now show the game as the title with the channel under it ("in the name"), or as an upcoming or on-now event with its time when the name has one, sorted by time.  And a channel with no guide shows what its name says in the channel details and the player bar, instead of just "No guide information".
 - **Settings pages update by themselves.**  **Reload guide now** used to leave **Guide last loaded** at the old time until you left the page; it now says "loading now", then the new time.  The same goes for **Last reloaded** after **Reload channels now**, each guide source's result, **Channels with guide data**, and the public guide's last look.
 - **The start-up screen shows the full TiviBro logo** instead of the "tvb" initials.
 - **Phone app connection, ready for the TiviBro app for Android (test builds only for now).**  New in **Settings > Phone app**: switch it on, then **Pair a phone** shows a QR code and a 12-character code for ten minutes.  Paired phones are listed (when added, last seen) and can be removed, and you can name the TV.  While on, the helper keeps a small server running on your network (port 47810), also when TiviBro is closed, so a phone can find the TV, open TiviBro, and open the web editor already signed in (TiviBro starts the editor by itself when a phone asks).  After the TV restarts it is back within 15 minutes.  The pairing code never crosses the network, five wrong codes end it, each phone gets its own key, and every request and answer is signed and can't be replayed.  The protocol is in the wiki (Phone app protocol), with a reference client in scripts/companion/tb-phone.js.  The app itself comes next.
-- **The TiviBro app for Android, first version** (android/): pair by scanning the TV's code (or pick the TV found on your network and type the code), see each TV (on, TiviBro open), **Edit channels** opens the web editor full screen and signed in (backups and restores work from the phone), **Open TiviBro**, **Turn on** (Wake-on-LAN), and a Quick Settings tile that turns the TV on and opens TiviBro.  Keys are kept in the Android Keystore and out of backups.  CI tests it against the TV's real helper code and builds the APK.
+- **The TiviBro app for Android, first version** (android/, the APK is attached to this release): pair by scanning the TV's code (or pick the TV found on your network and type the code), see each TV (on, TiviBro open), **Edit channels** opens the web editor full screen and signed in (backups and restores work from the phone), **Open TiviBro**, **Turn on** (Wake-on-LAN), and a Quick Settings tile that turns the TV on and opens TiviBro.  Keys are kept in the Android Keystore and out of backups.  CI tests it against the TV's real helper code and builds the APK.
 - Only TiviBro can switch the web editor and the phone app connection on or off: the helper now gives TiviBro a secret when it starts, so a web page in the TV's browser can't reach them over localhost.
 - **Special thanks** in the README and on tivibro.app: everyone whose pull request was merged or who sent an idea or a bug report, kept up to date by itself (scripts/gen-thanks.js and the Thanks workflow).
 - Every screenshot, GIF and video re-recorded from the current app, the search video now finds a movie too, and tivibro.app's pictures follow (scripts/demo/site-shots.sh, scripts/demo/phone-shots.js).
 
-## 0.6.0 (alpha 29, 2026-10-31)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 29
+### In alpha 29
 
 - **TiviBro notices when it closed by itself, and asks to report it.**  webOS ends an app that runs out of memory without any error, so the old "hit an error" notice never showed (the alpha 24 guide loop said nothing).  TiviBro now keeps a note of what it is doing (loading which guide and how far, playing which channel, its memory use); if a session ends with that note still open, the next start asks right away and says what it was doing: **Send a report now** sends it straight from the TV (no phone, so it works even when TiviBro keeps closing), **Report with my phone** adds details, or **Not now**.  The report and the log carry it.  The TV turning off or restarting, and updates, don't count (the network helper says when the TV started and when it went to standby), and the helper keeps its own errors on the TV so a report made after it restarted still has them.  Warnings and errors are saved at once instead of a moment later, so the last lines before a close are kept.  Test builds have **Report a problem** at the bottom of the menu.
 
