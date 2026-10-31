@@ -1,7 +1,7 @@
 /* The day's GitHub numbers for the TiviBro stats dashboard (tivibro.app/stats), sent to the relay
    (relay/worker.js) by the Stats workflow every day, because GitHub keeps traffic for 14 days only.
      TB_STATS_TOKEN  fine-grained token, this repo, Administration: read (traffic needs it)
-     GITHUB_TOKEN    the workflow's own (stars, forks, releases)
+     GITHUB_TOKEN    the workflow's own, used only when TB_STATS_TOKEN is missing (its stargazer list is refused)
      TB_STATS_KEY    the relay's stats key;  STATS_URL  the relay (default below)
      node scripts/stats/collect.js [--dry]     --dry prints instead of sending */
 'use strict';
@@ -25,7 +25,7 @@ async function all(path, token, accept) {
 }
 
 (async () => {
-  const pub = process.env.GITHUB_TOKEN, traffic = process.env.TB_STATS_TOKEN;
+  const pub = process.env.TB_STATS_TOKEN || process.env.GITHUB_TOKEN, traffic = process.env.TB_STATS_TOKEN;
   const repo = (await gh('/repos/' + REPO, pub)).body;
   const out = {
     date: new Date().toISOString().slice(0, 10), at: new Date().toISOString(),
