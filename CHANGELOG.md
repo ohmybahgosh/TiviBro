@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Search now finds Movies and Shows.**  A new **Movies & Shows** filter sits beside Everything, On now, Coming up, Replays and Channels.  Matches whatever catalog is already loaded this session (open Movies or Shows once first); **OK** plays a movie or opens a show's episodes, same as picking it from the list.
 - **Guide rows have more room**, and the time line, its marker and the progress bars follow your accent colour instead of red.  On-now progress is a light bar that reads on any cell colour.
 
 ## 0.6.0 (alpha 26, 2026-10-31)

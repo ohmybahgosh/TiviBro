@@ -335,7 +335,9 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 
 ### Search
 
-**Search** in the menu finds channels and programmes in the guide (now, later today, the coming days and on catch-up) as you type.  Below the box, **Everything**, **On now**, **Coming up**, **Replays** and **Channels** narrow the results (**◀ ▶** on that row).  Each programme shows once, even when several copies of the channel carry it, with **Today**, **Tomorrow** or the day and its time.  **OK** watches, replays, or sets a reminder (**OK** again cancels it); **Hold OK** gives channel options.  **Yellow** adds what you typed to your [watchlist](#watchlist).
+**Search** in the menu finds channels and programmes in the guide (now, later today, the coming days and on catch-up) as you type, and also your Movies and Shows.  Below the box, **Everything**, **On now**, **Coming up**, **Replays**, **Channels** and **Movies & Shows** narrow the results (**◀ ▶** on that row).  Each programme shows once, even when several copies of the channel carry it, with **Today**, **Tomorrow** or the day and its time.  **OK** watches, replays, opens a show's episodes, or sets a reminder (**OK** again cancels it); **Hold OK** gives channel options.  **Yellow** adds what you typed to your [watchlist](#watchlist).
+
+A movie or show only shows up in Search once you have opened **Movies** or **Shows** that session — Search looks inside whatever is already loaded, it does not fetch your whole catalog just to search it.
 
 <p align="center"><a href="media/search.mp4"><img src="media/search.gif" width="100%" alt="Search"></a></p>
 <p align="center"><sub><a href="media/search.mp4">Watch the MP4</a></sub></p>
