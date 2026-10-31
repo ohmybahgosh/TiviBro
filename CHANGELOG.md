@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 33, 2026-10-31)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 33
 
 - **Movies and Shows by language, and lighter on the TV.**  Many providers put a language code in front of every title ("SE - ", "EN - ", "[SE]") or on the category ("|TR| DIZI").  TiviBro now takes it off the name, and a **Languages** row at the top of Movies and Shows picks which languages show.  By default that's your TV's language plus titles with no tag; a library with one language shows everything.  A 4K tag becomes a 4K label.  Hold OK (or Red) on a category to hide it, its titles leave All and Search too.  Only what shows is kept in memory, and on the TV the helper now downloads and slims the provider's list, so a 160,000-title library no longer has to be parsed by the app itself.
 - **Adult categories stay out of the way.**  Movie and show categories named for adults (Adults, XXX, 18+) are listed last, and their titles stay out of All movies, All shows and Search.  With a PIN for blocked channels, they ask for it.
 
-## 0.6.0 (alpha 32, 2026-10-31)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 32
+### In alpha 32
 
 - **Movies and Shows, checked against a provider with 54,000 movies and 13,000 shows.**  Details (plot, cast, director) now show for the first title of every list, not only after moving.  Running times read 1 h 25 min instead of 01:25:00, empty 00:00:00 times are hidden, and ratings show one decimal (★ 7.6, not ★ 7.634).  Coming back from a movie keeps you in the same category when Continue watching appears.
 - **Install numbers, anonymous.**  Once a day TiviBro says which version it is and which webOS the TV has (nothing else: no address kept, no ID, nothing about channels), and the install script says whether it installed or updated.  Off in **Settings > Updates and about > Count this TV in the install numbers**, or with `TIVIBRO_NO_COUNT=1` for the script.
