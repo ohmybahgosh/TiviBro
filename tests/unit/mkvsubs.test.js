@@ -105,7 +105,7 @@ function fakeFetch(url, options) {
   const slice = data.slice(start, end + 1);
   return Promise.resolve({ ok: true, status: 206, contentRange: 'bytes ' + start + '-' + end + '/' + data.length, arrayBuffer: () => Promise.resolve(slice.buffer.slice(slice.byteOffset, slice.byteOffset + slice.byteLength)) });
 }
-let abortedRequests = 0, responseMode = '', bodyReads = 0, redirectTarget = '', requestUrls = [];
+let abortedRequests = 0, responseMode = '', bodyReads = 0, redirectTarget = '', requestUrls = [], faultResponse = null;
 class FakeXHR {
   open(method, url) { this.url = url; requestUrls.push(url); }
   setRequestHeader(k, v) { this.headers = this.headers || {}; this.headers[k] = v; }
@@ -115,7 +115,7 @@ class FakeXHR {
     fakeFetch(this.url, {headers: this.headers}).then(r => {
       if (this.aborted) return;
       this.responseURL = redirectTarget || this.url;
-      this.status = responseMode === 'ignoreRange' ? 200 : r.status;
+      this.status = (faultResponse && faultResponse(this)) || (responseMode === 'ignoreRange' ? 200 : r.status);
       this.contentRange = responseMode === 'wrongRange' ? 'bytes 1-20/100' : r.contentRange;
       this.readyState = 2;
       this.onreadystatechange();
@@ -478,6 +478,34 @@ ok('orders clusters by proximity to current playback position, nearest first, de
     await flush();
     const loaded = v.children.length===1 && v.children[0].track.cues.length===1;
     h.cancel(); return loaded;
+  })());
+
+  ok('a transient cluster failure retries in the same session without a seek or reconnect', await (async () => {
+    mkvFixtures['retry.mkv'] = mkvFixtures['1.mkv'];
+    mkvFixtures['retry-edge.mkv'] = mkvFixtures['1.mkv'];
+    redirectTarget = 'http://edge/retry-edge.mkv'; requestUrls = []; bodyReads = 0;
+    let faults = 0;
+    faultResponse = () => {if (bodyReads === 3 && !faults++) return 503;};
+    const v = {children:[],appendChild(el){this.children.push(el);},removeChild(){}};
+    const h = MkvSubs.extract('http://provider/retry.mkv',v);
+    await flush();
+    const recovering = v._mkvSubsState==='recovering' && v.children[0].track.cues.length===0;
+    await new Promise(r=>setTimeout(r,1100));
+    const loaded = v._mkvSubsState==='ready' && v.children[0].track.cues.length===1;
+    h.cancel(); faultResponse=null; redirectTarget='';
+    return recovering && loaded && requestUrls.filter(u=>u==='http://provider/retry.mkv').length===1;
+  })());
+
+  ok('cancelling during retry backoff prevents further requests', await (async () => {
+    mkvFixtures['cancelretry.mkv'] = mkvFixtures['1.mkv']; bodyReads=0;
+    faultResponse=()=>bodyReads>=3?503:0;
+    const v={children:[],appendChild(el){this.children.push(el);},removeChild(){}};
+    const h=MkvSubs.extract('http://p/cancelretry.mkv',v);
+    await flush();
+    const recovering=v._mkvSubsState==='recovering';
+    h.cancel(); const count=fetchCallCount;
+    await new Promise(r=>setTimeout(r,1100)); faultResponse=null;
+    return recovering && fetchCallCount===count;
   })());
 
   if (fail) { console.log(fail + ' mkvsubs test(s) failed'); process.exit(1); }

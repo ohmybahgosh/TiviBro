@@ -53,3 +53,21 @@ overlay rendering the same cue was immediately visible to the user.
 The diagnosis is based on this provider/title/device. It does not establish that
 all provider outages or every MKV subtitle format are fixed. Only indexed UTF-8
 subtitle tracks are supported; no scan of unindexed subtitle streams is added.
+
+## Follow-up: recovery during long playback
+
+A later session exposed a transient rejected Range response. The cluster promise
+catch handler set `pump = null`, permanently stopping all future cue extraction
+while native playback continued. Restarting extraction in the same provider
+session immediately loaded cues again.
+
+Failed clusters now back off independently (1, 2, 4 seconds, up to 30 seconds),
+while other nearby clusters can continue loading. Timers are cancelled on teardown,
+and retries never reopen the provider entry URL. Range validation remains strict;
+invalid responses are still aborted before reading an unbounded body.
+
+Regression tests cover automatic recovery in the existing session and cancellation
+during backoff. On the TV, a deliberately injected subtitle-read error recovered
+without seeking or reconnecting: 21 cues loaded, Dutch captions rendered, and the
+provider entry request count remained one. This follow-up was tested on the branch
+merged with upstream alpha 34.

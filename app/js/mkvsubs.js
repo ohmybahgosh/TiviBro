@@ -420,7 +420,7 @@ var MkvSubs = (function () {
     var addedEls = [];        // <track> elements this call appended, so cancel() can undo them
     var liveTracks = [];      // the live TextTrack per track index, parallel to a rec's tracks/cues
     var wrapped = Net.wrap(url);
-    var activeRequest = null, gateTimer = null, rejectGate = null, pump = null;
+    var activeRequest = null, gateTimer = null, rejectGate = null, pump = null, retryTimer = null;
     function hasBuffer() {
       if (!video.buffered) return true; // non-media test hosts
       if (video.seeking || video.readyState < 3) return false;
@@ -460,7 +460,7 @@ var MkvSubs = (function () {
             if (xhr.readyState !== 2) return;
             var m = /^bytes (\d+)-(\d+)\/(?:\d+|\*)$/i.exec(xhr.getResponseHeader('Content-Range') || '');
             if (xhr.status !== 206 || !m || +m[1] !== start || +m[2] > end || +m[2] < start) {
-              finish(new Error('invalid range response')); xhr.abort();
+              finish(new Error('invalid range response (HTTP ' + xhr.status + ')')); xhr.abort();
             } else expected = +m[2] - start + 1;
           };
           xhr.onprogress = function (e) { if (e.loaded > end - start + 1) { finish(new Error('oversized range response')); xhr.abort(); } };
@@ -581,9 +581,11 @@ var MkvSubs = (function () {
         video._mkvSubsState = 'ready';
         if (cancelled) return;
 
-        var busy = false;
+        var busy = false, failures = {}, retryAt = {};
         pump = function () {
-          if (cancelled || busy || !hasBuffer()) return;
+          if (cancelled || busy) return;
+          clearTimeout(retryTimer); retryTimer = null;
+          if (!hasBuffer()) { retryTimer = setTimeout(pump, 1000); return; }
           var now = video.currentTime || 0;
           var nearby = perTrackCues.map(function (t) {
             return { cues: t.cues.filter(function (c) { return c.timeSec >= now - 30 && c.timeSec <= now + 60; }) };
@@ -593,6 +595,13 @@ var MkvSubs = (function () {
             rec.done = clusterFetchOrder(perTrackCues, now, segmentDataStart).every(function (o) { return rec.fetched[o]; });
             return;
           }
+          var clock = Date.now(), earliest = Infinity;
+          offsets = offsets.filter(function (off) {
+            if (!retryAt[off] || retryAt[off] <= clock) return true;
+            earliest = Math.min(earliest, retryAt[off]);
+            return false;
+          });
+          if (!offsets.length) { retryTimer = setTimeout(pump, Math.max(1, earliest - clock)); return; }
           busy = true;
           var off = offsets[0], positions = [], indexed = true;
           perTrackCues.forEach(function (t) { t.cues.forEach(function (c) {
@@ -611,10 +620,23 @@ var MkvSubs = (function () {
               }
             }
             rec.fetched[off] = true;
+            delete failures[off]; delete retryAt[off];
+            video._mkvSubsState = 'ready';
             busy = false;
             paint();
             pump();
-          }).catch(function (e) { busy = false; pump = null; if (!cancelled) { video._mkvSubsState = 'error'; Log.warn('mkvsubs', 'Subtitle read failed: ' + e.message); } });
+          }).catch(function (e) {
+            busy = false;
+            if (cancelled) return;
+            // A transient range failure must not disable extraction for the rest
+            // of the movie. Back off this cluster while other nearby cues load.
+            failures[off] = (failures[off] || 0) + 1;
+            var delay = Math.min(30000, 1000 * Math.pow(2, Math.min(failures[off] - 1, 5)));
+            retryAt[off] = Date.now() + delay;
+            video._mkvSubsState = 'recovering';
+            if (failures[off] === 1) Log.warn('mkvsubs', 'Subtitle read failed; retrying: ' + e.message);
+            pump();
+          });
         };
         pump();
       });
@@ -631,6 +653,7 @@ var MkvSubs = (function () {
         cancelled = true;
         clearTimeout(timer);
         clearTimeout(gateTimer);
+        clearTimeout(retryTimer);
         if (rejectGate) { rejectGate(new Error('cancelled')); rejectGate = null; }
         if (activeRequest) activeRequest.abort();
         if (video.removeEventListener) { video.removeEventListener('timeupdate', onTime); video.removeEventListener('waiting', onWaiting); }
