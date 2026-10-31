@@ -85,9 +85,92 @@ var MkvSubs = (function () {
     return s;
   }
 
+  var SEEK = 0x4DBB, SEEKID = 0x53AB, SEEKPOSITION = 0x53AC;
+
+  function readSeekHead(buf, offset, end) {
+    var map = {};
+    var pos = offset;
+    while (pos < end) {
+      var idr = readId(buf, pos);
+      if (idr.value === null) break;
+      var sz = readVint(buf, idr.next);
+      if (sz.value === null) break;
+      var cstart = sz.next, cend = Math.min(cstart + sz.value, end);
+      if (idr.value === SEEK) {
+        var seekId = null, seekPos = null;
+        var p = cstart;
+        while (p < cend) {
+          var cidr = readId(buf, p);
+          if (cidr.value === null) break;
+          var csz = readVint(buf, cidr.next);
+          if (csz.value === null) break;
+          var vstart = csz.next, vend = Math.min(vstart + csz.value, cend);
+          if (cidr.value === SEEKID) seekId = bytesToHex(buf, vstart, vend);
+          else if (cidr.value === SEEKPOSITION) seekPos = bytesToUint(buf, vstart, vend);
+          p = vend;
+        }
+        if (seekId !== null && seekPos !== null) map[seekId] = seekPos;
+      }
+      pos = cend;
+    }
+    return map;
+  }
+
+  var CUEPOINT = 0xBB, CUETIME = 0xB3, CUETRACKPOSITIONS = 0xB7, CUETRACK = 0xF7, CUECLUSTERPOSITION = 0xF1;
+
+  function readCuesForTrack(buf, offset, end, trackNumber, timecodeScale) {
+    var cues = [];
+    var pos = offset;
+    while (pos < end) {
+      var idr = readId(buf, pos);
+      if (idr.value === null) break;
+      var sz = readVint(buf, idr.next);
+      if (sz.value === null) break;
+      var cstart = sz.next, cend = Math.min(cstart + sz.value, end);
+      if (idr.value === CUEPOINT) {
+        var cueTime = 0;
+        var p = cstart;
+        while (p < cend) {
+          var cidr = readId(buf, p);
+          if (cidr.value === null) break;
+          var csz = readVint(buf, cidr.next);
+          if (csz.value === null) break;
+          var vstart = csz.next, vend = Math.min(vstart + csz.value, cend);
+          if (cidr.value === CUETIME) cueTime = bytesToUint(buf, vstart, vend);
+          else if (cidr.value === CUETRACKPOSITIONS) {
+            var track = null, clusterPos = null;
+            var q = vstart;
+            while (q < vend) {
+              var qidr = readId(buf, q);
+              if (qidr.value === null) break;
+              var qsz = readVint(buf, qidr.next);
+              if (qsz.value === null) break;
+              var qvstart = qsz.next, qvend = Math.min(qvstart + qsz.value, vend);
+              if (qidr.value === CUETRACK) track = bytesToUint(buf, qvstart, qvend);
+              else if (qidr.value === CUECLUSTERPOSITION) clusterPos = bytesToUint(buf, qvstart, qvend);
+              q = qvend;
+            }
+            if (track === trackNumber && clusterPos !== null) cues.push({ timeSec: cueTime * timecodeScale / 1e9, clusterPos: clusterPos });
+          }
+          p = vend;
+        }
+      }
+      pos = cend;
+    }
+    return cues;
+  }
+
+  function bytesToHex(buf, start, end) {
+    var s = '';
+    for (var i = start; i < end; i++) { var h = buf[i].toString(16).toUpperCase(); s += h.length < 2 ? '0' + h : h; }
+    return s;
+  }
+
   return {
     readVint: readVint,
     readId: readId,
-    readTracks: readTracks
+    readTracks: readTracks,
+    readSeekHead: readSeekHead,
+    readCuesForTrack: readCuesForTrack
   };
 })();
