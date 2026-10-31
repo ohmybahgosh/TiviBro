@@ -10,6 +10,7 @@
 - **Local channels:** stations with no city (Galavision, UniMás and other national feeds) no longer land in your "Local channels" group, a city in brackets counts ("CW | EAST (PHILLY)"), and coming back shows your earlier pick ticked.
 - **Start over** (Changes and restore points) resets the playlist to how the provider sends it, undoable, like the TV's Clear all edits.  The changes page offers **Undo the undo** after going back, and "yours" became "Saved by you".
 - **Guide page:** jump links to each step, the match list scrolls in its own box, and the **Watchlist** has its own page.  Guide sources show the free guide's name and size, or the server and file name (never a login), and recommended guides you added show **✓ Added** and **Remove**; a stale "added" message no longer stays after removing one.  Smart match says how many guesses were left unapproved.
+- The backup card explains Chrome's "can't be downloaded securely" warning (the editor comes from the TV over your home network) and that **Keep** is safe: the file is locked with your passphrase.
 - **On a phone:** dropdowns (like "All shown channels") no longer close as the keyboard comes up, and the menu button says **Menu** and pulses until first opened.  The checklist ticks **Download a backup** once one is made (it remembers when).
 ## 0.6.0 (alpha 23, 2026-10-31)
 
