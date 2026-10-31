@@ -91,6 +91,24 @@ const OVER = () => {
     if (phone) {
       await ed.tap('#gcBack'); await ed.waitForTimeout(300);
       ok(dev + ': ‹ Groups goes back to the groups', await ed.evaluate(() => !!document.querySelector('.gc .groups').offsetWidth && !document.querySelector('.gc .chans').offsetWidth));
+      // Group order without dragging: ⋯ on a group.
+      const order = () => ed.evaluate(() => providerGroups().map(g => g.id));
+      const o0 = await order(), second = o0[1];
+      await ed.tap('#glist .g[data-id="' + second + '"] [data-gmore]'); await ed.waitForTimeout(300);
+      const gm = await ed.evaluate(() => { const m = document.getElementById('menu'); if (!m) return null; const r = m.getBoundingClientRect(); return { t: m.innerText.replace(/\n+/g, ' | '), l: r.left, r: r.right, W: innerWidth }; });
+      ok(dev + ': ⋯ on a group offers the moves, on screen', gm && /Move up one/.test(gm.t) && /Move to position/.test(gm.t) && gm.l >= 0 && gm.r <= gm.W, JSON.stringify(gm));
+      await ed.tap('#menu .pick:has-text("Move up one")'); await ed.waitForTimeout(400);
+      const o1 = await order();
+      ok(dev + ': Move up one moves the group up', o1[0] === second && o1[1] === o0[0], o1.slice(0, 3).join(', '));
+      await ed.tap('#glist .g[data-id="' + second + '"] [data-gmore]'); await ed.waitForTimeout(300);
+      await ed.tap('#menu .pick:has-text("Move to position")'); await ed.waitForTimeout(300);
+      await ed.fill('#pbIn', '3'); await ed.tap('#pbOk'); await ed.waitForTimeout(400);
+      const o2 = await order();
+      ok(dev + ': Move to position puts it there', o2[2] === second, o2.slice(0, 4).join(', '));
+      const grip = await ed.evaluate(() => getComputedStyle(document.querySelector('#glist .g .grip')).display);
+      ok(dev + ': no drag handle where dragging can\'t work', grip === 'none', grip);
+      await ed.evaluate(() => { undo(); undo(); }); await ed.waitForTimeout(300);
+      ok(dev + ': undo puts the order back', JSON.stringify(await order()) === JSON.stringify(o0));
       await ed.tap('#navToggle'); await ed.waitForTimeout(300);
       const nav = await ed.evaluate(() => [].slice.call(document.querySelectorAll('#nav button')).filter(x => x.offsetWidth).map(x => x.querySelector('span').textContent.trim()));
       ok(dev + ': the top bar opens every page by name, and Log out', nav.indexOf('Smart clean-up') >= 0 && nav.indexOf('Backup and restore') >= 0 && nav.indexOf('Log out') >= 0, nav.join(', '));

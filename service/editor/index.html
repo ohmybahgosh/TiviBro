@@ -370,7 +370,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 }
 @media (max-width:360px){ .changebar{gap:6px} .changebar button{padding:6px 8px;font-size:13px} .changebar .lbl{font-size:13px} }
 /* Touch screens have no hover: show the row actions that otherwise appear under the mouse. */
-@media (hover:none){ .g .acts{display:flex} }
+@media (hover:none){ .g .acts{display:flex} .g .grip{display:none} }
 </style>
 </head>
 <body>
@@ -1482,7 +1482,8 @@ function renderGroups() {
     html.push('<div class="g' + (id === curGroup ? ' sel' : '') + (off ? ' off' : '') + '" data-id="' + esc(id) + '" draggable="' + (id !== ALL) + '">' +
       (id !== ALL ? '<span class="grip" title="Drag to reorder">⠿</span><input type="checkbox" class="sw" data-vis="' + esc(id) + '"' + (off ? '' : ' checked') + ' title="' + (off ? 'Hidden on the TV.  Click to show.' : 'Shown on the TV.  Click to hide.') + '">' : '<span class="grip"> </span>') +
       '<span class="gname" title="' + esc(raw && raw !== name ? name + '  (provider: ' + raw + ')' : name) + '">' + esc(name) + (raw && raw !== name && raw.indexOf(name) < 0 ? '' : '') + (badge || '') + (raw && raw !== name ? ' <span class="dim tiny">' + esc(raw) + '</span>' : '') + '</span>' +
-      (id !== ALL && id !== FAV ? '<span class="acts"><button class="ghost" data-ren="' + esc(id) + '" title="Rename">✎</button>' + (kind === 'custom' ? '<button class="ghost" data-del="' + esc(id) + '" title="Delete this group">✕</button>' : '') + '</span>' : '') +
+      (id !== ALL ? '<span class="acts">' + (id !== FAV ? '<button class="ghost" data-ren="' + esc(id) + '" title="Rename">✎</button>' : '') + (kind === 'custom' && id !== FAV ? '<button class="ghost" data-del="' + esc(id) + '" title="Delete this group">✕</button>' : '') +
+        '<button class="ghost" data-gmore="' + esc(id) + '" title="Move and more">⋯</button></span>' : '') +
       '<span class="cnt">' + n + '</span></div>');
   }
   row(ALL, 'All channels', channelsOf(ALL).length, 'all');
@@ -1517,6 +1518,7 @@ $('glist').addEventListener('click', function (e) {
   var t = e.target;
   if (t.dataset.vis) { var id = t.dataset.vis, on = t.checked; mut((on ? 'Showed' : 'Hid') + ' group ' + groupLabel(id), function () { if (on) delete E.hiddenGroups[id]; else E.hiddenGroups[id] = 1; }); return; }
   if (t.dataset.ren) { renameGroup(t.dataset.ren); return; }
+  if (t.dataset.gmore) { groupMenu(t, t.dataset.gmore); return; }
   if (t.dataset.del) {
     var d = customOf(t.dataset.del);
     ask('Delete "' + d.name + '"?', 'The group goes away; its ' + plural(d.items.length, 'channel') + ' stay in their provider groups.  You can undo this.', 'Delete group', function () {
@@ -1554,6 +1556,35 @@ $('glist').addEventListener('drop', function (e) {
     }
   });
 });
+/* Group order without dragging (phones and tablets can't drag): the ⋯ on a group.  Your groups move
+   among your groups, provider groups among provider groups, as with dragging. */
+function groupIds(id) { return isCustom(id) ? E.custom.map(function (g) { return g.id; }) : providerGroups().map(function (g) { return g.id; }); }
+function moveGroup(id, where) {
+  var ids = groupIds(id), from = ids.indexOf(id), n = ids.length;
+  if (from < 0) return;
+  var to = where === 'top' ? 0 : where === 'bottom' ? n - 1 : where === 'up' ? from - 1 : where === 'down' ? from + 1 : +where;
+  to = Math.max(0, Math.min(n - 1, to));
+  if (to === from) return;
+  mut('Moved group ' + groupLabel(id) + ' to position ' + (to + 1), function () {
+    if (isCustom(id)) { var it = E.custom.splice(from, 1)[0]; E.custom.splice(to, 0, it); }
+    else { ids.splice(from, 1); ids.splice(to, 0, id); E.groupOrder = ids; }
+  });
+  // Keep the moved group in view.
+  setTimeout(function () { var el = $('glist').querySelector('.g[data-id="' + id.replace(/"/g, '\\"') + '"]'); if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' }); }, 0);
+}
+function groupMenu(anchor, id) {
+  var ids = groupIds(id), pos = ids.indexOf(id), n = ids.length;
+  popMenu(anchor, [
+    pos > 0 ? ['Move to the top', function () { moveGroup(id, 'top'); }] : null,
+    pos > 0 ? ['Move up one', function () { moveGroup(id, 'up'); }] : null,
+    pos < n - 1 ? ['Move down one', function () { moveGroup(id, 'down'); }] : null,
+    pos < n - 1 ? ['Move to the bottom', function () { moveGroup(id, 'bottom'); }] : null,
+    n > 2 ? ['Move to position… (' + (pos + 1) + ' of ' + n + ')', function () {
+      promptBox('Move ' + groupLabel(id), 'New position among ' + (isCustom(id) ? 'your groups' : 'provider groups') + ' (1 to ' + n + ')', String(pos + 1), 'Move', function (v) { v = Math.round(+v); if (v >= 1) moveGroup(id, Math.min(n, v) - 1); });
+    }] : null,
+    id !== FAV ? ['Rename', function () { renameGroup(id); }] : null
+  ]);
+}
 function hideAll() { mut('Hid every group', function () { D.groups.forEach(function (g) { E.hiddenGroups[g.id] = 1; }); E.custom.forEach(function (g) { if (g.id !== FAV) E.hiddenGroups[g.id] = 1; }); }); toast('All groups hidden.  Switch on the ones you watch.', ['Undo', undo]); }
 $('showAll').onclick = function () { mut('Showed every group', function () { E.hiddenGroups = {}; }); toast('Every group is shown', ['Undo', undo]); };
 $('hideAll').onclick = function () { ask('Hide every group?', 'Then switch on just the ones you watch.  You can undo this.', 'Hide all', hideAll); };

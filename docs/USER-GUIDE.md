@@ -790,7 +790,7 @@ Cleaning up hundreds of groups with a TV remote is painful.  The web editor does
 
 The editor switches off every time TiviBro closes.  On a brand-new TV with no playlist it starts by itself, for the QR code on the first screen.  After five wrong passwords it locks for a minute.
 
-**On a phone.**  The [set-up tour](#the-set-up-tour)'s QR code opens the editor signed in; any phone browser works with the address and password too.  On a phone the page name sits in the top bar (tap it for the list of pages), **Groups and channels** shows the groups first and a group's channels on their own screen (**‹ Groups** goes back), and **⋯** on a channel has Rename, Copy or move and Take out.  Dragging to reorder needs a computer.
+**On a phone.**  The [set-up tour](#the-set-up-tour)'s QR code opens the editor signed in; any phone browser works with the address and password too.  On a phone the page name sits in the top bar (tap it for the list of pages), **Groups and channels** shows the groups first and a group's channels on their own screen (**‹ Groups** goes back), **⋯** on a group moves it (up, down, to the top or bottom, or to a position), and **⋯** on a channel has Rename, Copy or move, the same moves and Take out.
 
 <p align="center">
   <a href="https://tivibro.app/view/#editor-phone-tools"><img src="screenshots/editor-phone-tools.png" width="24%" alt="Smart clean-up on a phone"></a>
@@ -842,7 +842,7 @@ Reload the page, close the tab, or open the editor on another computer or your p
 
 ### Groups and channels
 
-- The switch beside a group shows or hides it on the TV.  Drag **⠿** to reorder; your groups always come first.
+- The switch beside a group shows or hides it on the TV.  Drag **⠿** to reorder, or use **⋯ > Move to the top, Move up one, Move down one, Move to the bottom** or **Move to position…** (on a phone or tablet, ⋯ is the way).  Your groups move among your groups and always come first; provider groups move among provider groups.
 - **✎** renames a group.  Renamed and edited groups are tagged so you can see what you changed.
 - Tick channels, then **Copy or move to group**.  Any group works as the destination, yours or the provider's.  Copy keeps the channel where it was; Move takes it out.
 - **Order** sorts the open group on the TV: provider order, A to Z, Z to A, channel number, or **Your order**, for your groups and the provider's.  In Your order, drag **⠿** to move a channel, or use **⋯ > Move to the top, Move up one, Move down one, Move to the bottom** or **Move to position…** (on a phone, ⋯ is the only way).  Channels the provider adds to a group later go to the end.

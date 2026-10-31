@@ -14,7 +14,7 @@ Cleaning up hundreds of groups with a TV remote is painful.  The web editor does
 
 The editor switches off every time TiviBro closes.  On a brand-new TV with no playlist it starts by itself, for the QR code on the first screen.  After five wrong passwords it locks for a minute.
 
-**On a phone.**  The [set-up tour](The-set-up-tour)'s QR code opens the editor signed in; any phone browser works with the address and password too.  On a phone the page name sits in the top bar (tap it for the list of pages), **Groups and channels** shows the groups first and a group's channels on their own screen (**‹ Groups** goes back), and **⋯** on a channel has Rename, Copy or move and Take out.  Dragging to reorder needs a computer.
+**On a phone.**  The [set-up tour](The-set-up-tour)'s QR code opens the editor signed in; any phone browser works with the address and password too.  On a phone the page name sits in the top bar (tap it for the list of pages), **Groups and channels** shows the groups first and a group's channels on their own screen (**‹ Groups** goes back), **⋯** on a group moves it (up, down, to the top or bottom, or to a position), and **⋯** on a channel has Rename, Copy or move, the same moves and Take out.
 
 <p align="center">
   <a href="https://tivibro.app/view/#editor-phone-tools"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-phone-tools.png" width="24%" alt="Smart clean-up on a phone"></a>
