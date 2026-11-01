@@ -1,18 +1,19 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 39, 2026-11-01)
 
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 39
+
+- **Big playlists stay responsive while you edit** ([#14](https://github.com/ohmybahgosh/TiviBro/issues/14)).  With a very large playlist (100,000 channels or more), the TV no longer sends the whole channel list to the web editor again after every change, so the remote and the phone app keep working while changes are applied.  The phone app says when TiviBro on the TV is busy.
 - **The phone app does a lot more** (TiviBro for Android).  On each TV: a **Guide** made for a phone (pick a time and a group, tap a channel for its schedule with descriptions, **Watch on TV** or set a reminder the TV keeps); **Movies** and **Shows** as posters with search, categories, details, resume and episodes, all played on the TV; a star on every channel for **Favorites**; and **Type on your phone** into any box the TV shows (setting up a playlist, Search, renaming), passwords included, sent encrypted.
 - **Share your provider's link to TiviBro.**  In the email or message from your provider, choose Share, then TiviBro: the app shows what it found and the TV adds the playlist.  On a brand-new TV this is the whole set-up.
 - **Backups on your phone.**  **Back up now**, or once a week on its own while TiviBro is open and the phone is on your Wi-Fi.  Restore on this TV or another, or save a copy the web editor can restore with a passphrase.  Logins and backups travel between the phone and the TV encrypted.
 - **Buffer info on every remote.**  **Stream info** in the quick menu (**OK** in fullscreen) now shows the buffer gauge too, and its numbers update while it's open, so Magic Remotes without an Info button can see it.  Any button can open it: **Stream info and buffer** under **Settings > Remote control**.  When TiviBro has only seen a Magic Remote, its hints stop pointing at the Info button.
 - **A bigger set-up banner** ([#8](https://github.com/ohmybahgosh/TiviBro/issues/8)).  What your phone or computer is doing during set-up now shows in a large banner along the bottom of the TV, easy to read on a small screen or from across the room: green when a playlist was added, red with the reason when it didn't work.  Any button on the TV remote clears it.
 
-## 0.6.0 (alpha 38, 2026-11-01)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 38
+### In alpha 38
 
 - **Paste your provider's full link** ([#11](https://github.com/ohmybahgosh/TiviBro/issues/11)).  Adding a playlist on the TV or in the web editor now starts on **Full link**: paste the whole link your provider sent (get.php, player_api.php, xmltv.php or a stream link with the username and password in it) and TiviBro says what it found, then fills in the Xtream Codes server, username and password.  A link without a login is added as an M3U playlist.  The Xtream Codes and M3U choices are still there for typing it in yourself.
 
