@@ -27,10 +27,10 @@ button.primary.spin::after{border-color:rgba(0,0,0,.2);border-top-color:var(--ac
 button.spin::after,.spinner{animation:rot .8s linear infinite}
 @keyframes rot{to{transform:rotate(360deg)}}
 .spinner{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.2);border-top-color:var(--accent);vertical-align:-3px;flex:none}
-input[type=text],input[type=password],input[type=search],input[type=url],input[type=number],textarea{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;outline:none;min-width:0}
+input[type=text],input[type=password],input[type=search],input[type=url],input[type=number],select,textarea{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;outline:none;min-width:0}
 input:focus,textarea:focus{border-color:var(--accent)}
 label.f{display:flex;flex-direction:column;gap:5px;font-size:13px;color:var(--muted)}
-label.f input,label.f .dd{font-size:15px;color:var(--text)}
+label.f input,label.f select,label.f .dd{font-size:15px;color:var(--text)}
 .hidden{display:none!important}
 body.setup nav.side button:not([data-page=playlists]):not([data-page=backup]):not([data-page=report]):not([data-page=help]):not([data-page=welcome]){display:none}
 body.setup nav.side button[data-page=welcome]{display:flex!important}
@@ -401,6 +401,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
       <button data-page="watch"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg><span>Watchlist</span></button>
       <button data-page="names"><svg viewBox="0 0 24 24"><path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/></svg><span>Channel names</span></button>
       <button data-page="tools"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4z"/><path d="M18 15l.8 2.2L21 18l-2.2.8L18 21l-.8-2.2L15 18l2.2-.8z"/></svg><span>Smart clean-up</span><em class="badge hidden" id="toolsBadge"></em></button>
+      <button data-page="media"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m10 8 6 4-6 4zM3 8h3M3 16h3M18 8h3M18 16h3"/></svg><span>My media</span></button>
       <button data-page="playlists"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/></svg><span>Playlists</span></button>
       <button data-page="history"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>Changes and restore points</span><em class="badge hidden" id="histBadge"></em></button>
       <button data-page="backup"><svg viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 17v3h16v-3"/></svg><span>Backup and restore</span></button>
@@ -584,6 +585,42 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
         <div class="card" id="tDivider"></div>
         <div class="card" id="tIdle"></div>
         <div class="card" id="tOld"></div>
+      </div>
+    </section>
+
+    <!-- MY MEDIA -->
+    <section class="page hidden" id="p-media">
+      <div class="phead"><div><h1>My media</h1><p>Your own movies from a home media server or a WebDAV service.  Watch them in My media on the TV.</p></div></div>
+      <div class="scroll">
+        <div class="note">For a home media server, choose <b>Settings &gt; My media &gt; Add media &gt; Browse my network (DLNA / UPnP)</b> on the TV.  Turn on media sharing on your server first.</div>
+        <div class="card" style="margin-bottom:18px;max-width:760px">
+          <h3>My media preferences</h3>
+          <form id="mediaPreferences" class="form">
+            <label class="f full">Sort movies by<select id="mediaSort"><option value="name">Name (A–Z)</option><option value="release">Release date (newest first)</option><option value="added">Date added (newest first)</option></select></label>
+            <label class="f full"><span id="mediaTokenLabel">Add TMDB API token</span><input id="mediaTmdbToken" type="password" autocomplete="new-password" placeholder="Leave blank to keep the saved token"></label>
+            <div class="full muted small">Create your own token at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">TMDB API settings</a>.  It is checked before saving, stays on this TV and is excluded from backups.  Saved tokens are never sent back to this page.  <span id="mediaTokenStatus"></span></div>
+            <div class="full"><button id="mediaTokenRemove" type="button" class="ghost danger hidden">Remove saved token</button></div>
+            <label class="f full">Metadata language<select id="mediaLanguage"><option value="en">English</option><option value="nl">Dutch</option><option value="de">German</option><option value="fr">French</option><option value="es">Spanish</option><option value="it">Italian</option></select></label>
+            <p class="full muted small">English is the default.  This preference is shared with My media on the TV.  TMDB retrieves titles, descriptions and artwork in your chosen language.  Saving a different language refreshes existing matches.  Missing translations use English.</p>
+            <div class="full row"><button class="primary" type="submit">Save preferences</button></div>
+          </form><div id="mediaPrefsMsg" aria-live="polite"></div>
+          <p class="muted small"><img src="tmdb.svg" alt="TMDB" width="90" style="vertical-align:middle;margin-right:10px">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+        </div>
+        <h2>Media sources</h2>
+        <div class="grid plgrid" id="mediaList"><div class="muted small">Loading media sources…</div></div>
+        <div class="card" style="margin-top:18px;max-width:760px">
+          <h3>Add a WebDAV server</h3>
+          <p>Enter the WebDAV folder address and login from your storage service or server.  The TV checks the login and looks for movies before saving it.</p>
+          <form id="mediaAdd" class="form">
+            <label class="f full">WebDAV address<input id="mediaAddress" type="url" placeholder="https://server.example/webdav/" autocomplete="off" required></label>
+            <label class="f">User name or customer ID<input id="mediaUser" type="text" autocomplete="off"></label>
+            <label class="f">Password or API key<input id="mediaPass" type="password" autocomplete="new-password"></label>
+            <div class="full muted small">Use the WebDAV address, not a website or a shared file link.  For services such as premiumize, use the customer ID and API key as the login.  Playback currently needs a server that redirects to a playable file link.</div>
+            <div class="full row"><button type="submit" class="primary">Check and add server</button></div>
+          </form>
+          <div id="mediaMsg" aria-live="polite"></div>
+        </div>
+        <p class="muted small">Rescan looks for added or removed movies.  Remove only takes a source out of TiviBro; your files stay where they are.  Saved logins are not sent back to this page or included in backups.</p>
       </div>
     </section>
 
@@ -1289,6 +1326,7 @@ function show(p, sub) {
   if (typeof navOpen === 'function') navOpen(false);
   document.querySelectorAll('.page').forEach(function (s) { s.classList.toggle('hidden', s.id !== 'p-' + p); });
   if (p === 'gc') renderChannels(); if (p === 'guide') renderGuide(); if (p === 'watch') renderWatch(); if (p === 'names') renderPreview(); if (p === 'home') renderHome();
+  if (p === 'media') loadMedia();
   if (p === 'tools') renderTools(); if (p === 'history') { renderHistory(); loadSnaps(); loadDrafts(); } if (p === 'help') renderHelp(sub); if (p === 'report') loadReport(false);
   var h = '#' + p + (sub ? '/' + sub : '');
   if (location.hash !== h) history.replaceState(null, '', h);
@@ -2935,6 +2973,56 @@ $('tKeyword').addEventListener('click', function (e) {
   }
 });
 $('tEmpty').addEventListener('click', function (e) { if (e.target.id === 'emGo') hideEmpty(); });
+
+/* ---------- My media: source management only ---------- */
+function loadMedia() {
+  command('mediaPreferences').then(function (r) { $('mediaLanguage').value = r.data.language; $('mediaSort').value = r.data.sort; $('mediaTokenLabel').textContent = r.data.tmdbConfigured ? 'TMDB API token saved on this TV' : 'Add TMDB API token'; $('mediaTmdbToken').placeholder = r.data.tmdbConfigured ? 'Paste a new token only to replace the saved one' : 'Paste your API key or Read Access Token'; $('mediaTokenStatus').textContent = r.data.tmdbConfigured ? 'Token saved on this TV.  Leave the field blank to keep it.' : 'No token saved yet.'; $('mediaTokenRemove').classList.toggle('hidden', !r.data.tmdbConfigured); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });
+  return command('mediaList').then(function (r) {
+    var list = $('mediaList'); list.textContent = '';
+    if (!(r.data || []).length) { var note = document.createElement('div'); note.className = 'note'; note.textContent = 'No media sources yet.  Add a WebDAV server below, or find a DLNA / UPnP server from My media on the TV.'; list.appendChild(note); }
+    (r.data || []).forEach(function (s) {
+      var card = document.createElement('div'); card.className = 'card pl';
+      var title = document.createElement('h3'); title.textContent = s.name; card.appendChild(title);
+      var detail = document.createElement('div'); detail.className = 'meta'; detail.textContent = (s.type === 'dlna' ? 'Home media server · DLNA / UPnP' : 'WebDAV server') + ' · ' + plural(s.count, 'movie'); card.appendChild(detail);
+      var actions = document.createElement('div'); actions.className = 'row'; card.appendChild(actions);
+      ['Rescan', 'Remove'].forEach(function (label) {
+        var b = document.createElement('button'); b.textContent = label; b.type = 'button';
+        if (label === 'Remove') b.className = 'ghost danger';
+        b.onclick = function () {
+          function run() {
+            b.disabled = true;
+            command(label === 'Rescan' ? 'mediaRescan' : 'mediaRemove', { id: s.id }, 160000, cmdMsg('mediaMsg', 'Working…')).then(function (r) {
+              msg('mediaMsg', 'ok', r.msg); loadMedia();
+            }).catch(function (e) { b.disabled = false; msg('mediaMsg', 'bad', e.message); });
+          }
+          if (label === 'Remove') ask('Remove this media source?', 'Your files stay where they are.', 'Remove', run); else run();
+        };
+        actions.appendChild(b);
+      });
+      list.appendChild(card);
+    });
+  }).catch(function (e) { msg('mediaMsg', 'bad', e.message); });
+}
+$('mediaPreferences').onsubmit = function (e) {
+  e.preventDefault();
+  var args = { language: $('mediaLanguage').value, sort: $('mediaSort').value };
+  if ($('mediaTmdbToken').value.trim()) args.tmdbToken = $('mediaTmdbToken').value.trim();
+  $('mediaTmdbToken').value = '';
+  busyBtn(this.querySelector('button[type="submit"]'), command('mediaPreferences', args)).then(function (r) { msg('mediaPrefsMsg', 'ok', r.msg); loadMedia(); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });
+};
+$('mediaTokenRemove').onclick = function () {
+  var b = this;
+  busyBtn(b, command('mediaPreferences', { clearTmdbToken: true })).then(function () { msg('mediaPrefsMsg', 'ok', 'TMDB token removed.  Saved movie details are kept.'); loadMedia(); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });
+};
+$('mediaAdd').onsubmit = function (e) {
+  e.preventDefault();
+  var button = this.querySelector('button'); button.disabled = true;
+  var args = { address: $('mediaAddress').value, user: $('mediaUser').value, pass: $('mediaPass').value };
+  $('mediaPass').value = '';
+  command('mediaAdd', args, 160000, cmdMsg('mediaMsg', 'Checking the login and looking for movies…')).then(function (r) {
+    msg('mediaMsg', 'ok', r.msg); loadMedia();
+  }).catch(function (e) { msg('mediaMsg', 'bad', e.message); }).then(function () { button.disabled = false; });
+};
 
 /* ---------- playlists ---------- */
 var REF = [[-1, 'Every app start'], [6, 'Every 6 hours'], [12, 'Every 12 hours'], [24, 'Every day'], [48, 'Every 2 days'], [168, 'Every week'], [0, 'Only when I ask']];

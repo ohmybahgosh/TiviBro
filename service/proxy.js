@@ -24,6 +24,7 @@ var Guide = require('./guide');
 var Vod = require('./vod');
 var Kv = require('./kv');
 var Live = require('./live');
+var Media = require('./media');
 
 /* DNS answers kept for a minute.  Node asks the system for every new connection, and each channel
    start (and each redirect to a provider's streaming server) is a new connection; on a TV with a
@@ -60,7 +61,8 @@ var LOG = [], LOG_MAX = 300;
 var SYS = { power: [] };
 function sys() { return { bootAt: Math.round(Date.now() - require('os').uptime() * 1000), power: SYS.power.slice(-10) }; }
 function redact(u) {
-  return String(u).replace(/((?:password|pass|pwd)=)[^&\s]*/gi, '$1***').replace(/(username=)([^&\s]{0,2})[^&\s]*/gi, '$1$2***')
+  return String(u).replace(/((?:[a-z0-9-]+\.)*energycdn\.com(?::[0-9]+)?)[/?][^\s\"'<>\\]*/gi, '$1/***')
+      .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s]*/gi, '$1***').replace(/(username=)([^&\s]{0,2})[^&\s]*/gi, '$1$2***')
     .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/');
 }
 /* The helper's own errors (an uncaught exception, a failed guide load) are also kept on the TV's
@@ -137,13 +139,14 @@ function create(opts) {
     /* The web editor and the phone app connection are switched on and off from TiviBro only.  On the
        TV the helper hands TiviBro a secret with its start reply (service.js, over luna, which only
        TiviBro may call); without it, a web page in the TV's browser could reach these over localhost. */
-    var ctlRoute = req.url.indexOf('/editor/') === 0 ? 'editor' : req.url.indexOf('/companion/') === 0 ? 'companion' : req.url.indexOf('/kv/') === 0 ? 'kv' : req.url.indexOf('/live/') === 0 ? 'live' : '';
+    var ctlRoute = req.url.indexOf('/editor/') === 0 ? 'editor' : req.url.indexOf('/companion/') === 0 ? 'companion' : req.url.indexOf('/kv/') === 0 ? 'kv' : req.url.indexOf('/live/') === 0 ? 'live' : req.url.indexOf('/media/') === 0 ? 'media' : '';
     if (ctlRoute) {
       res.setHeader('Access-Control-Allow-Origin', '*');
       if (opts.ctl && !sameText(req.headers['x-tivibro-ctl'], opts.ctl)) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end('{"error":"not allowed"}'); }
       if (ctlRoute === 'editor') return editor.control(req, res, req.url.split('?')[0]);
       if (ctlRoute === 'kv') return Kv.handle(req, res, ALLOW, log);
       if (ctlRoute === 'live') return Live.handle(req, res, ALLOW, log, server.address().port);
+      if (ctlRoute === 'media') return Media.handle(req, res, ALLOW, log);
       if (!opts.companion) { res.writeHead(404, { 'Content-Type': 'application/json' }); return res.end('{"error":"no phone app connection in this helper"}'); }
       return opts.companion.control(req, res, req.url.split('?')[0]);
     }

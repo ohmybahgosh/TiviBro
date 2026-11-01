@@ -13,8 +13,10 @@
 - [Watching fullscreen](Watching-fullscreen)
 - [Other versions of a channel](Other-versions-of-a-channel)
 - [Event channels: pay-per-view and sports passes](Event-channels-pay-per-view-and-sports-passes)
+- [My teams](My-teams)
 - [Catch-up](Catch-up)
 - [Movies and shows](Movies-and-shows)
+- [My media](My-media)
 - [Search](Search)
 - [Favorites, hiding and your own groups](Favorites-hiding-and-your-own-groups)
 - [Reminders](Reminders)
@@ -25,14 +27,14 @@
 
 **Every setting**
 - [Settings: Playback and buffering](Settings-Playback-and-buffering)
+- [Settings: My media](Settings-My-media)
 - [Settings: Remote control](Settings-Remote-control)
 - [Settings: Playlists and guide](Settings-Playlists-and-guide)
 - [Settings: Groups, sorting, hidden](Settings-Groups-sorting-hidden)
 - [Settings: Guide, start screen, reminders](Settings-Guide-start-screen-reminders)
 - [Settings: Appearance](Settings-Appearance)
 - [Settings: Parental controls](Settings-Parental-controls)
-- [Settings: Edit on a phone or computer](Settings-Edit-on-a-phone-or-computer)
-- [Settings: Phone app](Settings-Phone-app)
+- [Settings: Phone app and web editor](Settings-Phone-app-and-web-editor)
 - [Settings: Updates and about](Settings-Updates-and-about)
 - [Settings: Diagnostics](Settings-Diagnostics)
 

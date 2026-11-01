@@ -270,7 +270,37 @@ var WebEdit = (function () {
       return Store.bigSet('playlist:' + p.id, data).then(function () { return data; });
     });
   }
+  function mediaSource(a) {
+    var s = MediaStore.source(clean(a.id));
+    if (!s) throw new Error('That media source no longer exists.');
+    return s;
+  }
   var RUN = {
+    mediaPreferences: function (a) {
+      function saved() { var data = a.language || a.sort ? Media.updatePreferences(a) : MediaStore.preferences(); Settings.live(); return { msg: 'My media preferences saved.', data: data }; }
+      if (a.clearTmdbToken || (typeof a.tmdbToken === 'string' && a.tmdbToken.trim())) return Media.setTmdbToken(a.clearTmdbToken ? '' : a.tmdbToken).then(saved);
+      return saved();
+    },
+    mediaList: function () {
+      return MediaStore.load().then(function () { return { msg: 'Media sources', data: MediaStore.publicSources().map(function (s) { return { id: s.id, type: s.type, name: s.name, count: s.count }; }) }; });
+    },
+    mediaAdd: function (a) {
+      return Media.addAddress(clean(a.address), clean(a.user), clean(a.pass)).then(function (r) {
+        if (r.error) throw new Error(r.message || 'Could not add that media source.');
+        return { msg: 'Media source added.' };
+      });
+    },
+    mediaRemove: function (a) {
+      var s = mediaSource(a);
+      return MediaStore.load().then(function () { MediaStore.removeSource(s.id); Media.refresh(); return { msg: 'Media source removed.  Your files stay where they are.' }; });
+    },
+    mediaRescan: function (a) {
+      var s = mediaSource(a);
+      return Media.rescan(s.id).then(function (r) {
+        if (r.error) throw new Error(r.message || 'Could not read that media source.');
+        return { msg: r.note || r.count + ' movies found.' };
+      });
+    },
     report: function () { return Diag.report().then(function (r) { return { msg: 'ok', data: r }; }); },
     addPlaylist: function (a) {
       activity('Your phone or computer sent a playlist.  Checking the login and loading the channels…');

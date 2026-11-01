@@ -3,7 +3,7 @@ var Settings = (function () {
   'use strict';
   var $ = U.$, S = function () { return Store.settings; }, L = Library;
   var nav = $('setNav'), body = $('setBody');
-  var SECTIONS = [['playback', 'Playback and buffering'], ['remote', 'Remote control'], ['playlists', 'Playlists and guide'], ['connect', 'Phone app and web editor'],
+  var SECTIONS = [['playback', 'Playback and buffering'], ['remote', 'Remote control'], ['playlists', 'Playlists and guide'], ['media', 'My media'], ['connect', 'Phone app and web editor'],
     ['groups', 'Groups, sorting, hidden'], ['reminders', 'Guide, start screen, reminders'], ['look', 'Appearance'], ['parental', 'Parental controls'], ['updates', 'Updates and about'], ['diag', 'Diagnostics']];
   var sec = 0, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
   // Phone app: test builds only while the Android app is in the works (release builds show the web editor alone).
@@ -80,9 +80,12 @@ var Settings = (function () {
     out.push(toggle('Keep the picture while reconnecting', 'When a channel drops for a moment, the last picture stays on screen with a small Reconnecting notice instead of going black.  Not every stream allows it (the TV player draws some itself).', function () { return s.holdFrame !== false; }, function (v) { s.holdFrame = v; save(); }));
     out.push(toggle('Black screen while switching', 'Hides the last picture until the next channel starts.', function () { return !!s.blackSwitch; }, function (v) { s.blackSwitch = v; save(); }));
     out.push(head('Audio and subtitles'));
-    out.push(action('Audio language', 'When a channel or movie has more than one audio track, play this one.  Audio description tracks are skipped.', function () {
+    out.push(action('Audio language', 'Try this language first when a channel or movie has several audio tracks.  If missing, try the fallback language, then the first available track.  Track language labels must be supplied by the file or stream.', function () {
       langMenu('Audio language', 'The stream\'s own choice', s.audioLang, function (v) { s.audioLang = v; save(); });
     }, function () { return langName(s.audioLang, 'Stream\'s choice'); }));
+    out.push(action('Fallback audio language', 'Used when your preferred audio language is missing.  If neither language is available, use the first available track.', function () {
+      langMenu('Fallback audio language', 'First available track', s.audioFallback, function (v) { s.audioFallback = v; save(); });
+    }, function () { return langName(s.audioFallback, 'First available track'); }));
     out.push(toggle('Prefer surround sound', 'Picks the 5.1 or Dolby track when there is one in that language.  Your soundbar or TV needs to support it.', function () { return !!s.audioSurround; }, function (v) { s.audioSurround = v; save(); }));
     out.push(action('Subtitles automatically', 'Turns subtitles on when a stream includes them.  You can still switch them from OK in fullscreen.', function () {
       UI.menu('Subtitles automatically', [{ label: 'Off', sub: !s.autoSubs ? 'on' : '', action: function () { s.autoSubs = false; save(); } },
@@ -90,6 +93,30 @@ var Settings = (function () {
         .concat(U.LANGS.map(function (l) { return { label: l[1] + ' only', sub: s.autoSubs && s.subsLang === l[0] ? 'on' : '', action: function () { s.autoSubs = true; s.subsLang = l[0]; save(); } }; })));
     }, function () { return !s.autoSubs ? 'Off' : s.subsLang ? langName(s.subsLang) : 'Any language'; }));
     out.push(toggle('Play next episode automatically', '', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); }));
+    return out;
+  }
+
+  /* ---------- My media: source management and preferences live outside the movie browser ---------- */
+  var mediaLoaded = false;
+  function media() {
+    if (!mediaLoaded) { mediaLoaded = true; MediaStore.load().then(live); }
+    var names = { en: 'English', nl: 'Dutch', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian' };
+    var hasToken = MediaStore.preferences().tmdbConfigured;
+    var out = [head('Your movie library'),
+      action('Add media', 'Find a DLNA / UPnP server or enter a WebDAV address and login.', function () { Media.addMenu(); }),
+      action('Edit on a computer', 'Add server logins and change preferences in the web editor.', function () { WebEdit.showJoin('media'); }),
+      action('Rescan media sources', 'Look for new or removed movies.  Green on the My media screen.', function () { Media.rescanAll(); }),
+      action('Fetch missing movie details', 'Look up new movies and refresh outdated language details.  Yellow on My media.', function () { Media.fetchMissingDetails(); }),
+      head('Preferences'),
+      action(hasToken ? 'TMDB API token saved' : 'Add TMDB API token', hasToken ? 'Token saved on this TV.  Select to replace it, or use the web editor.' : 'Create your own API key or Read Access Token at themoviedb.org/settings/api.  The web editor is easier for pasting it.', function () { UI.prompt(hasToken ? 'Replace TMDB API token' : 'TMDB API key or Read Access Token', '', function (token) { if (!token.trim()) return; U.toast('Checking TMDB access…'); Media.setTmdbToken(token).then(function () { U.toast('TMDB token saved on this TV'); live(); }, function (e) { U.toast(e.message, 6000); }); }, 'The token stays on this TV and is excluded from backups.', true); }, function () { return MediaStore.preferences().tmdbConfigured ? 'Saved' : 'Not set'; }),
+      MediaStore.preferences().tmdbConfigured && action('Remove TMDB token', 'Saved movie details remain available.', function () { Media.setTmdbToken('').then(live); }),
+      choice('Sort movies by', 'Applies to All movies and Favorites.  Continue watching stays ordered by recent playback.', ['name', 'release', 'added'], ['Name (A–Z)', 'Release date (newest first)', 'Date added (newest first)'], function () { return MediaStore.preferences().sort; }, function (v) { Media.updatePreferences({ sort: v }); paint(); }),
+      choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); }),
+      head('Media sources')];
+    MediaStore.publicSources().forEach(function (s) {
+      out.push(action(s.name, s.type === 'dlna' ? 'DLNA / UPnP · rescan, movie details or remove' : 'WebDAV · rescan, movie details or remove', function () { Media.sourceMenu(s); }, function () { return MediaStore.movies(s.id).length + ' movies'; }));
+    });
+    if (!MediaStore.sources().length) out.push(info('No media sources yet', 'Choose Add media above'));
     return out;
   }
 
@@ -806,13 +833,17 @@ var Settings = (function () {
     out.push(toggle('Include test versions', 'Alpha and beta builds: new features first, and some rough edges.', function () { return Update.wantPre; }, function (v) { s.updatePre = v; save(); }));
     var how = info('Installing on this TV', ''); how.value = function () { var i = Update.state.installer; return i === 'hbchannel' ? 'Yes, through the Homebrew Channel' : i === '' ? 'From a computer only (not rooted)' : 'Checking…'; }; out.push(how);
     out.push(head('About'));
+    var credit = U.el('div', 'tmdb-credit'), logo = U.el('img');
+    logo.src = 'img/tmdb.svg'; logo.alt = 'TMDB'; logo.width = 120;
+    credit.appendChild(logo); credit.appendChild(U.el('span', '', 'This product uses the TMDB API but is not endorsed or certified by TMDB.'));
+    out.push({ preview: true, el: credit });
     out.push(info('Made by OhMyBahGosh', 'github.com/' + Update.REPO));
     out.push(info('Playback libraries', 'hls.js ' + (window.Hls ? Hls.version : '') + '   mpegts.js'));
     return out;
   }
 
   // Each section's page, by id, so reordering SECTIONS can never show one section under another's name.
-  var BY_ID = { playback: playback, remote: remote, playlists: playlists, connect: connect, groups: groups, reminders: reminders, look: look, parental: parental, updates: updates, diag: diag };
+  var BY_ID = { media: media, playback: playback, remote: remote, playlists: playlists, connect: connect, groups: groups, reminders: reminders, look: look, parental: parental, updates: updates, diag: diag };
   var FNS = SECTIONS.map(function (x) { return BY_ID[x[0]]; });
   function build() {
     var top = stack[stack.length - 1];

@@ -20,4 +20,4 @@ It understands the usual ways providers write these: "Oct 29 7:30 PM", "Sat 15th
 
 ---
 
-← [Other versions of a channel](Other-versions-of-a-channel)  ·  [Home](Home)  ·  [Catch-up](Catch-up) →
+← [Other versions of a channel](Other-versions-of-a-channel)  ·  [Home](Home)  ·  [My teams](My-teams) →
