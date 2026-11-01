@@ -142,13 +142,17 @@ fun SettingsTab(model: AppModel, id: String) {
                 }
             }
             page == null -> Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { if (error == null) CircularProgressIndicator() else Button(onClick = { loadPage() }) { Text("Try again") } }
-            else -> LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
-                items(page!!.rows, key = { it.i }) { r -> SettingRow(r,
+            else -> {
+              // The rows are read later by the list, after Back may have cleared the page: keep this page's.
+              val rows = page?.rows.orEmpty()
+              LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+                items(rows, key = { it.i }) { r -> SettingRow(r,
                     onToggle = { v -> change("toggle", r, JSONObject().put("on", v)) },
                     onPick = { picking = r },
                     onCycle = { d -> change("cycle", r, JSONObject().put("dir", d)) },
                     onOpen = { path = path + r.i },
                     onAction = { change("action", r) }) }
+              }
             }
         }
     }
