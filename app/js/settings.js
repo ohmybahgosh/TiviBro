@@ -413,7 +413,7 @@ var Settings = (function () {
     out.push(toggle('Show Recent channels', '', function () { return s.showRecent; }, function (v) { s.showRecent = v; apply(); }));
     out.push(choice('Recent channels kept', '', [10, 20, 30, 50], ['10', '20', '30', '50'], function () { return +s.recentCount; }, function (v) { s.recentCount = v; save(); }));
     out.push(toggle('Show Favorites group', '', function () { return s.showFav !== false; }, function (v) { s.showFav = v; apply(); }));
-    out.push(page('My teams', 'A group with your teams\' own channels and every channel showing one of their games.', 'My teams', teamsPage, function () { var n = Teams.followed().length; return n ? n + ' ›' : '›'; }));
+    out.push(page('My teams', 'A group with your teams\' own channels and every channel showing one of their games.  For now the NFL, NBA, NHL, MLB, WNBA and MLS only.', 'My teams', teamsPage, function () { var n = Teams.followed().length; return n ? n + ' ›' : '›'; }));
     if (Events.on()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in the playlist\'s Event channels.',
       function () { return Events.groupOn(); }, function (v) { var p = Store.playlist; p.events = Object.assign({}, p.events, { group: v }); Store.upsertPlaylist(p); Events.reset(); apply(); }));
     out.push(choice('Recently added channels', 'A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.', [0, 3, 7, 14], ['Off', '3 days', '7 days', '14 days'], function () { return s.newDays == null ? 7 : +s.newDays; }, function (v) { s.newDays = v; L.dirty(); apply(); }));
@@ -458,6 +458,7 @@ var Settings = (function () {
   function teamsPage() {
     var s = S(), out = [], lgs = Teams.leagues(), mine = Teams.followed();
     function apply() { Teams.dirty(); Store.saveSettings(); relist(); paint(); }
+    out.push(info('For now: the main North American leagues only (NFL, NBA, NHL, MLB, WNBA and MLS).  College, junior and minor league teams, and other countries\' leagues, aren\'t in it yet.', ''));
     out.push(toggle('Show the My teams group', 'Near the top of the guide: games on now first, then the next ones, then the teams\' own channels.',
       function () { return s.teamsGroup !== false; }, function (v) { s.teamsGroup = v; apply(); }));
     out.push(choice('Games starting within', 'How soon a game has to start to be in the group.', [3, 6, 12, 24], ['3 hours', '6 hours', '12 hours', '24 hours'],

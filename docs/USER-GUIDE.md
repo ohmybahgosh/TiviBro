@@ -299,6 +299,8 @@ Many providers have a group for each league's teams ("NFL TEAMS", "NHL TEAMS": "
 2. **Their next games**, starting within 6 hours (or 3, 12 or 24).
 3. **The teams' own channels.**
 
+For now it covers the main North American leagues only: NFL, NBA, NHL, MLB, WNBA and MLS.  College, junior and minor league teams, and other countries' leagues, aren't in it yet.
+
 Choose your teams in **Settings > Groups, sorting, hidden > My teams**.  It lists the leagues in your playlist (NFL, NBA, NHL, MLB, WNBA, MLS); open one and switch on your teams.  Teams with their own channel say so.  Or **hold OK** on a team's channel and choose **Follow the Detroit Red Wings**.  Your teams are kept in the settings, so they stay when you switch playlists.
 
 **Remind me before their games** (off at first) sets reminders for their games the way the [watchlist](#watchlist) does.  Unfollowing a team takes its reminders with it.

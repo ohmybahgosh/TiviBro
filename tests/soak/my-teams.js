@@ -30,7 +30,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   // Settings > Groups, sorting, hidden > My teams
   await H.section('Groups, sorting, hidden', true, true); await H.row('My teams'); await H.quiet('Enter', 900);
   let st = await page.innerText('#setBody');
-  ok('the My teams page lists the leagues found', /NHL/.test(st) && /NFL/.test(st) && !/\bMLB\b/.test(st) && /4 teams have their own channel/.test(st), st.replace(/\s+/g, ' ').slice(0, 300));
+  ok('the My teams page lists the leagues found', /NHL/.test(st) && /NFL/.test(st) && !/\bMLB\b/.test(st.split('Leagues')[1] || '') && /main North American leagues only/.test(st) && /4 teams have their own channel/.test(st), st.replace(/\s+/g, ' ').slice(0, 300));
   await shot('tv-teams-page');
   await H.row('NHL'); await H.quiet('Enter', 900);
   st = await page.innerText('#setBody');
