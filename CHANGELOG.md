@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **The phone app can reach the TV right after an update.**  Installing a new version stopped TiviBro's helper and removed its restart schedule, so the phone app couldn't reach the TV until TiviBro was opened.  The install script now starts it again straight away, and (with the phone app connection on) adds a 5-minute check that an update from the Homebrew Channel app can't remove.  The helper's own check now runs every 5 minutes instead of 15, so if webOS stops it while another app or the screensaver is on, it's back sooner.
-
-## 0.6.0 (alpha 43, 2026-11-01)
+## 0.6.0 (alpha 44, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 43
+### New in alpha 44
+
+- **The phone app can reach the TV right after an update.**  Installing a new version stopped TiviBro's helper and removed its restart schedule, so the phone app couldn't reach the TV until TiviBro was opened.  The install script now starts it again straight away, and (with the phone app connection on) adds a 5-minute check that an update from the Homebrew Channel app can't remove.  The helper's own check now runs every 5 minutes instead of 15, so if webOS stops it while another app or the screensaver is on, it's back sooner.
+
+### In alpha 43
 
 - **No more black screen when a channel drops for a moment.**  While a live channel reconnects, its last picture stays on screen with a small notice in the corner, instead of going black with "Tuning".  It goes as soon as the picture is back (or after a long outage), and a new channel never shows the old one's picture.  **Settings > Playback > Keep the picture while reconnecting** turns it off.  Streams the TV player draws itself can't be held and go black as before.
 - **A channel that keeps dropping tries HLS sooner.**  Three drops in three minutes on the MPEG-TS stream now switch to the provider's HLS version of that channel straight away (it was only tried after the whole reconnect budget), and TiviBro keeps using it for that channel until it closes.  Errors from the provider itself (outages, connection limits) don't count.
