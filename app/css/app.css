@@ -125,6 +125,8 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .gch .logo{width:70px;height:44px;object-fit:contain;flex:none}
 .gch span.n{overflow:hidden;text-overflow:ellipsis}
 .grow.sel .gch{background:var(--panel)}
+.grow.moving .gch{box-shadow:inset 0 0 0 3px var(--accent)}
+.grow.moving .gch .n::before{content:"⇅  ";color:var(--accent-text)}
 .gprogs{flex:1;position:relative;overflow:hidden}
 .gp{position:absolute;top:4px;bottom:4px;background:var(--panel);border-radius:8px;padding:0 16px;display:flex;flex-direction:column;justify-content:center;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:24px;border-left:2px solid var(--ink);padding-left:18px;padding-right:18px;gap:4px}

@@ -112,4 +112,19 @@ VList.prototype.refreshWhere = function (test) {
     if (s.idx >= 0 && test(this.items[s.idx])) this.renderRow(s.el, this.items[s.idx], s.idx);
   }
 };
+/* For a list built while hidden (no height yet): count the rows that fit now, so the last row shown is
+   whole and the selection never moves below what is visible.  Grows the row pool if more fit. */
+VList.prototype.measure = function () {
+  var h = this.host.clientHeight; if (!h) return;
+  var v = Math.max(1, Math.floor(h / this.rowH));
+  if (v === this.visible) return;
+  this.visible = v;
+  while (this.pool.length < v + 1) {
+    var r = document.createElement('div'); r.className = 'row'; r.style.display = 'none';
+    this.host.insertBefore(r, this.emptyEl);
+    this.pool.push({ el: r, idx: -1, hidden: true, y: null, on: null });
+  }
+  for (var i = 0; i < this.pool.length; i++) { this.pool[i].idx = -1; this.pool[i].y = null; }      // slots move round the pool again
+  this.top = -1; this.ensure(false); this.draw(true);
+};
 VList.prototype.setActive = function (on) { this.host.classList.toggle('active', !!on); };

@@ -1519,6 +1519,7 @@ var Guide = (function () {
   var view = $('viewGuide'), body = $('guideBody'), timesEl = $('guideTimes'), detail = $('guideDetail'), ghead = $('guideGroup');
   var ROW = 100, VIS = 0, WIN = 2.5 * 3600e3, PXW = 0, CHW = 470, MINCELL = 220;      // narrowest a programme is drawn (px)
   var list = [], gid = null, loaded = null, sel = 0, top = 0, t0 = 0, focusT = 0, rows = [], zone = 'groups', groupsVL = null;
+  var moving = null;              // the channel being moved up or down its group (Hold OK > Move…)
 
   function build() {
     VIS = Math.max(3, Math.floor(body.clientHeight / ROW) || 6);
@@ -1558,6 +1559,7 @@ var Guide = (function () {
       $('guideGroupList').parentNode.style.width = Math.max(want, 420) + 'px';
       var gs = L.groups(), i = gs.findIndex(function (g) { return g.id === gid; });
       groupsVL.setItems(gs, Math.max(0, i));
+      groupsVL.measure();                // built while the panel was hidden: count the rows that really fit
       groupsVL.setActive(true);
     }
     Views.placePreview();
@@ -1635,7 +1637,7 @@ var Guide = (function () {
 
   /* ---------- open / refresh ---------- */
   function load(groupId, key) {
-    gid = groupId || L.ALL;
+    gid = groupId || L.ALL; moving = null;
     list = L.channels(gid);
     if (!list.length && zone === 'grid') {
       var alt = Views.firstFilled();
@@ -1695,6 +1697,7 @@ var Guide = (function () {
     r.el.style.display = '';
     r.k = Epg.keyOf(c);
     r.el.classList.toggle('sel', focus);
+    r.el.classList.toggle('moving', moving === c.k);
     r.el.classList.toggle('playing', isPlaying(c));
     var lg = Views.logoOf(c), cuMark = c.arch && Store.settings.showCatchupMark !== false;
     var qt = L.versionTag(c);
@@ -1947,6 +1950,7 @@ var Guide = (function () {
     }
     if (Math.abs(focusT - now) > 60e3) items.push({ label: 'Jump to now', action: jumpNow });
     if (previewing()) items.push({ label: 'Stop the window', sub: L.name(previewing()), action: function () { Views.stopAll(); draw(); hints(); } });
+    if (L.canReorder(gid) && list.length > 1) items.push({ label: 'Move…', sub: 'change its place in ' + L.groupName(gid), action: function () { startMove(c); } });
     items.push({ label: 'Channel options…', sub: 'favorite, copy to group, hide, rename', action: function () { Views.chanMenu(c, gid); } });
     UI.menu(h.p ? h.p.t : L.name(c), items);
   }
@@ -1984,8 +1988,31 @@ var Guide = (function () {
     else if (a.indexOf('num') === 0) numJump(a.slice(3));
     return true;
   }
+  /* Moving a channel: ▲ ▼ move it a row, CH +/− a page, OK, Back or Hold OK when done.  The order is
+     saved as it goes (Library.moveInGroup), the same as moving it in the channel list. */
+  function startMove(c) {
+    if (!c || !L.canReorder(gid)) return;
+    moving = c.k;
+    draw();
+    UI.hints([['', '▲ ▼  move    CH +/−  a page'], ['', 'OK or Back  done', 'ok']]);
+    U.toast('Moving ' + L.name(c) + '.  ▲ ▼ to move, OK when done.', 4000);
+  }
+  function endMove() { moving = null; draw(); hints(); U.toast('Channel order saved'); }
+  function moveKeys(a) {
+    var step = a === 'up' ? -1 : a === 'down' ? 1 : a === 'chup' ? -(VIS - 1) : a === 'chdown' ? VIS - 1 : 0;
+    if (step) {
+      if (L.moveInGroup(gid, moving, step)) {
+        list = L.channels(gid);
+        var i = list.findIndex(function (x) { return x.k === moving; });
+        if (i >= 0) { sel = i; top = U.clamp(top, Math.max(0, sel - VIS + 2), Math.max(0, Math.min(sel - 1, list.length - VIS))); }
+        draw();
+      }
+    } else if (a === 'ok' || a === 'back' || a === 'hold') endMove();
+    return true;
+  }
   function keys(a) {
     if (zone === 'groups') return groupKeys(a);
+    if (moving) return moveKeys(a);
     if (a === 'up') moveSel(-1);
     else if (a === 'down') moveSel(1);
     else if (a === 'chup') selectIdx(sel - (VIS - 1));

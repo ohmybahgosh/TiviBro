@@ -76,8 +76,8 @@ tap "Add to the TV"
 shot 14-shared-added 6
 tap "Done"
 sleep 2
-# Backups.
-adb shell input keyevent KEYCODE_BACK; sleep 2
+# Backups.  Back goes to the remote tab first, then to the TV list.
+for i in 1 2 3; do [ -n "$(find_text "More")" ] && break; adb shell input keyevent KEYCODE_BACK; sleep 2; done
 tap "More"
 tap "Backups"
 tap "Back up now"

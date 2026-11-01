@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Move a channel from the guide.**  Hold OK on a channel in the guide and choose **Move…**, then ▲ ▼ (CH +/− for a page) and OK.  The new order is saved the same as moving it in the channel list.
+- **The guide's group list keeps the highlight on screen.**  Going down past the last group that fit, the highlight disappeared below the panel; the list now counts the rows that really fit.
 - **Matched, but the guide is empty, now says so.**  In the web editor's step 4, a channel matched to a guide channel that has nothing scheduled goes under a new **Guide is empty** tab, marked "matched, nothing scheduled" with **Find another…**, instead of looking unmatched under **Needs a guide**.  Smart match no longer suggests guide channels with nothing scheduled.
 - **Matching no longer silently does nothing on some providers.**  Some provider guides list channels with a blank id (550 on one provider tested), which can never have programmes.  Smart match offered them as 100% matches, and approving one left the channel unmatched.  They're left out now.
 - **Phone app: groups that were empty in the Guide and Channels tabs** (for example a **Local channels** group whose network groups are hidden) now list their channels.
