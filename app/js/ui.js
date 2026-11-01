@@ -14,8 +14,10 @@ var UI = (function () {
   var pointer = false, lastXY = '', lastInput = Date.now();     // lastInput: someone is using the TV (reminders.js, views.js)
   document.addEventListener('mousemove', function (e) {
     var xy = e.screenX + ',' + e.screenY;
-    if (xy !== lastXY) { lastXY = xy; lastInput = Date.now(); if (!pointer) { pointer = true; document.body.classList.add('pointer'); } }
+    if (xy !== lastXY) { lastXY = xy; lastInput = Date.now(); if (!pointer) { pointer = true; document.body.classList.add('pointer'); seen('sawPointer'); } }
   }, true);
+  // Remembers that this TV has a Magic Remote (pointer) or a remote with an Info button (Keymap.remote).
+  function seen(k) { var s = window.Store && Store.settings; if (s && !s[k]) { s[k] = 1; try { Store.saveSettings(); } catch (e) {} } }
   function keyMode() { lastInput = Date.now(); if (pointer) { pointer = false; document.body.classList.remove('pointer'); } }
   // Wheel on the Magic Remote scrolls whatever has focus.
   var wheelT = 0;
@@ -44,7 +46,7 @@ var UI = (function () {
       case K.PLAYPAUSE: playKey = 'toggle'; return 'playpause';
       case K.STOP: return 'stop';
       case 412: return 'rew'; case 417: return 'ff';
-      case K.INFO: return 'info';
+      case K.INFO: seen('sawInfo'); return 'info';
       // Desktop keyboard equivalents, handy when testing in a browser.
       case 71: return 'green'; case 77: return 'red'; case 89: return 'yellow'; case 66: return 'blue'; case 73: return 'info';
     }
@@ -276,6 +278,9 @@ var UI = (function () {
     get repeating() { return repeating; },     // true while a held arrow is auto-repeating
     get playKey() { return playKey; },
     press: function (a) { dispatch(a, null); },
+    // A menu that shows live values (Stream info) redraws itself while it is the one open.
+    menuOpen: function (title) { return !!modalH && !modal.classList.contains('hidden') && mTitle.textContent === title; },
+    redrawMenu: function () { if (modalH) drawMenu(); },
     menu: menu, prompt: prompt, confirm: confirm, pin: pin, clock: clock, panel: panel, set onClose(f) { onClose = f; },
     captureNext: function (fn) { capture = fn; }, close: close, hints: hints
   };

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Buffer info on every remote.**  **Stream info** in the quick menu (**OK** in fullscreen) now shows the buffer gauge too, and its numbers update while it's open, so Magic Remotes without an Info button can see it.  Any button can open it: **Stream info and buffer** under **Settings > Remote control**.  When TiviBro has only seen a Magic Remote, its hints stop pointing at the Info button.
 - **A bigger set-up banner** ([#8](https://github.com/ohmybahgosh/TiviBro/issues/8)).  What your phone or computer is doing during set-up now shows in a large banner along the bottom of the TV, easy to read on a small screen or from across the room: green when a playlist was added, red with the reason when it didn't work.  Any button on the TV remote clears it.
 
 ## 0.6.0 (alpha 38, 2026-11-01)

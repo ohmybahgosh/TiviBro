@@ -580,6 +580,7 @@ var Views = (function () {
       case 'sleep': sleepMenu(); return;
       case 'reconnect': Player.retryNow(); return;
       case 'buffer': peekMeter(); return;
+      case 'streaminfo': streamInfo(); return;
     }
   }
   // Play resumes, Pause pauses, a combined button toggles: Play on a playing stream never pauses it.
@@ -864,6 +865,7 @@ var Views = (function () {
       else if (a === 'red' || a === 'hold') playerMenu();
       else if (a === 'info') osd(true);
       else if (Keymap.get('player', a) === 'buffer') peekMeter();
+      else if (Keymap.get('player', a) === 'streaminfo') streamInfo();
       return true;
     }
     if (mode === 'catchup') {
@@ -880,6 +882,7 @@ var Views = (function () {
       else if (a === 'yellow') backToLive();
       else if (a === 'info') osd(true);
       else if (Keymap.get('player', a) === 'buffer') peekMeter();
+      else if (Keymap.get('player', a) === 'streaminfo') streamInfo();
       return true;
     }
     if (a === 'back') { if (!hidden) { $('osd').classList.add('hidden'); return true; } exitFull(); return true; }
@@ -1113,10 +1116,10 @@ var Views = (function () {
      shows whatever its setting, for the time in Settings > Playback, or until pressed again.  Pressing
      it while it shows hides it. */
   var peekUntil = 0, peekT = 0;
-  function peekMeter() {
+  function peekMeter(keep) {
     if (!full) return;
     clearTimeout(peekT);
-    if (Date.now() < peekUntil) { peekUntil = 0; meter.classList.add('hidden'); if (Player.stats) onStats(Player.stats); return; }
+    if (Date.now() < peekUntil && !keep) { peekUntil = 0; meter.classList.add('hidden'); if (Player.stats) onStats(Player.stats); return; }
     var secs = Store.settings.meterPeek == null ? 10 : +Store.settings.meterPeek;
     peekUntil = secs > 0 ? Date.now() + secs * 1000 : Infinity;
     if (secs > 0) peekT = setTimeout(function () { peekUntil = 0; if (Player.stats) onStats(Player.stats); else meter.classList.add('hidden'); }, secs * 1000 + 50);
@@ -1381,17 +1384,34 @@ var Views = (function () {
     UI.menu('Subtitles', [{ label: 'Off', sub: tr.every(function (t) { return t.mode !== 'showing'; }) ? 'on' : '', action: function () { tr.forEach(function (t) { t.mode = 'disabled'; }); } }]
       .concat(tr.map(function (t, i) { return { label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', action: function () { tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); } }; })));
   }
+  /* Stream info, with buffer info folded in: the rows update every second while it is open, and the
+     buffer gauge shows at the top right (as Show buffer info does).  From the quick menu, or any button
+     set to "Stream info and buffer", so Magic Remotes without an Info button get there too. */
   function streamInfo() {
-    var s = Player.stats || {};
-    UI.menu('Stream info', [
-      { label: 'Channel', sub: playing ? L.name(playing) : '' },
-      { label: 'Player', sub: s.engine || '' },
-      { label: 'Picture', sub: video && video.videoWidth ? video.videoWidth + ' × ' + video.videoHeight : '' },
-      { label: 'Buffered ahead', sub: s.ahead != null ? s.ahead.toFixed(1) + ' s' : '' },
-      { label: 'Details', sub: s.info || '' },
-      { label: 'Catch-up', sub: playing && playing.arch ? playing.arch + ' days' : 'not available' },
-      { label: 'Close' }
-    ]);
+    var T = 'Stream info', live = mode === 'live';
+    var rows = {
+      name: { label: mode === 'vod' ? 'Playing' : 'Channel' }, engine: { label: 'Player' }, pic: { label: 'Picture' },
+      buf: { label: 'Buffered ahead' }, info: { label: 'Details' },
+      arch: live && { label: 'Catch-up', sub: playing && playing.arch ? playing.arch + ' days' : 'not available' },
+      how: { label: 'Close', sub: Keymap.buttonsFor(['streaminfo', 'buffer']).length ? 'shortcut: ' + Keymap.buttonsFor(['streaminfo', 'buffer'])[0] : '' }
+    };
+    function fill() {
+      var s = Player.stats || {};
+      rows.name.sub = mode === 'vod' && vod ? vod.meta.title : playing ? L.name(playing) : '';
+      rows.engine.sub = s.engine || '';
+      rows.pic.sub = video && video.videoWidth ? video.videoWidth + ' × ' + video.videoHeight : '';
+      rows.buf.sub = s.ahead != null ? s.ahead.toFixed(1) + ' s' + (s.target ? ', aiming for ' + Math.round(s.target) + ' s' : '') + (s.state === 'buffering' ? ', refilling' : '') : 'nothing playing';
+      rows.info.sub = s.info || '';
+    }
+    fill();
+    UI.menu(T, [rows.name, rows.buf, rows.engine, rows.pic, rows.info, rows.arch, rows.how]);
+    if (full && Player.stats) peekMeter(true);
+    clearInterval(streamInfo.t);
+    streamInfo.t = setInterval(function () {
+      if (!UI.menuOpen(T)) { clearInterval(streamInfo.t); return; }
+      fill(); UI.redrawMenu();
+      if (full && Player.stats && Date.now() >= peekUntil) peekMeter(true);
+    }, 1000);
   }
 
   function playerMenu() {

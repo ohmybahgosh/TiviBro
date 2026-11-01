@@ -22,18 +22,18 @@ var Keymap = (function () {
     guide: 'TV guide', search: 'Search', settings: 'Settings', editor: 'Edit on a phone or computer (QR code)', live: 'Channels screen', exit: 'Leave fullscreen',
     fav: 'Add or remove favorite', favorites: 'Open Favorites', recents: 'Open Recent channels',
     picture: 'Change picture mode', audio: 'Audio track', sleep: 'Sleep timer',
-    movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect stream', buffer: 'Show buffer info'
+    movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect stream', buffer: 'Show buffer info', streaminfo: 'Stream info and buffer'
   };
   // Short names for the on-screen button legend.
   var SHORT = {
     panel: 'Quick menu', list: 'Channel list', osd: 'Info', menu: 'Options', chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
     rewind: 'Rewind', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings', editor: 'Phone editor',
     live: 'Channels', exit: 'Exit fullscreen', fav: 'Favorite', favorites: 'Favorites', recents: 'Recent',
-    picture: 'Picture size', audio: 'Audio track', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info'
+    picture: 'Picture size', audio: 'Audio track', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info', streaminfo: 'Stream info'
   };
   var CONTEXT_ACTIONS = {
     player: ['none', 'panel', 'list', 'osd', 'menu', 'chnext', 'chprev', 'last', 'rewind', 'restart', 'playpause', 'guide', 'search', 'settings', 'editor', 'exit',
-      'fav', 'favorites', 'recents', 'picture', 'audio', 'sleep', 'reconnect', 'buffer'],
+      'fav', 'favorites', 'recents', 'picture', 'audio', 'sleep', 'reconnect', 'buffer', 'streaminfo'],
     list: ['none', 'menu', 'last', 'guide', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'playpause']
   };
 
@@ -108,9 +108,38 @@ var Keymap = (function () {
   }
   function fixed(context, btn) { return !!(FIXED[context] && FIXED[context][btn]); }
 
+  /* Which remote is in use.  webOS doesn't say, so TiviBro goes by what it has seen: the Magic Remote's
+     pointer, and the Info button (key 457, which most Magic Remotes don't have).  Remembered on this TV. */
+  function remote() {
+    var s = Store.settings || {};
+    return { pointer: !!s.sawPointer, info: !!s.sawInfo, magic: !!s.sawPointer && !s.sawInfo };
+  }
+  // The buttons that run one of these actions in fullscreen, as people would say them ("Hold Info").
+  // Info is left out when this TV has only shown a Magic Remote.
+  function buttonsFor(actions) {
+    var m = remote().magic, out = [];
+    // Info first: it is the usual shortcut on LG's standard remote.
+    var all = allButtons(), bs = all.filter(function (x) { return x[0] === 'info'; }).concat(all.filter(function (x) { return x[0] !== 'info'; }));
+    bs.forEach(function (b) {
+      ['', 'long:'].forEach(function (p) {
+        var a = get('player', p + b[0]);
+        if (a && actions.indexOf(a) >= 0 && !(m && b[0] === 'info')) out.push(label(p + b[0]));
+      });
+    });
+    return out;
+  }
+  // How to see buffer info with the remote this TV has, for Settings and hints.
+  function bufferHint() {
+    var direct = buttonsFor(['buffer', 'streaminfo'])[0], qpOff = (Store.settings.qpHidden || {}).info, panel = !qpOff && buttonsFor(['panel'])[0];
+    var via = panel ? (panel === 'OK' ? 'OK' : panel) + ', then Stream info' : '';
+    if (direct && via) return direct + ' in fullscreen, or ' + via;
+    if (direct) return direct + ' in fullscreen';
+    return via ? 'In fullscreen, ' + via : 'Give a button Stream info under Settings > Remote control';
+  }
+
   return {
     BUTTONS: BUTTONS, ACTIONS: ACTIONS, SHORT: SHORT, CONTEXT_ACTIONS: CONTEXT_ACTIONS, DEFAULTS: DEFAULTS,
-    get: get, set: set, reset: reset, label: label, hasLong: hasLong, fixed: fixed,
+    get: get, set: set, reset: reset, label: label, hasLong: hasLong, fixed: fixed, remote: remote, buttonsFor: buttonsFor, bufferHint: bufferHint,
     allButtons: allButtons, learn: learn, alias: alias,
     setContext: function (c) { ctx = c; }, get context() { return ctx; }
   };

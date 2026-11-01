@@ -592,7 +592,7 @@ var WebEdit = (function () {
    Channel lists and the guide are not included; they reload from the provider. */
 var Backup = (function () {
   'use strict';
-  var KEEP_LOCAL = ['editorPass', 'editorPort', 'editorPortRandom', 'keyAliases', 'lastBackup'];   // belong to this TV, not the backup
+  var KEEP_LOCAL = ['editorPass', 'editorPort', 'editorPortRandom', 'keyAliases', 'lastBackup', 'sawPointer', 'sawInfo'];   // belong to this TV, not the backup
 
   // Everything needed to rebuild this setup on a fresh TV: settings, every playlist with its login,
   // each playlist's edits, and each playlist's restore points.  The helper encrypts it before it

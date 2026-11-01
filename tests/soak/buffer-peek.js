@@ -41,6 +41,32 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => UI.press('back'));
   await page.waitForTimeout(500);
   ok('leaving fullscreen hides it', !(await shown()));
+  // Stream info has buffer info folded in, and is a remote action of its own (Magic Remotes have no Info).
+  await ev(() => { const c = Library.data.channels[0]; Views.startChannel(c, false, function () { Views.goFull(); }); });
+  await page.waitForFunction(() => Player.stats && Player.stats.state === 'playing', null, { timeout: 30000 }).catch(() => {});
+  await page.waitForTimeout(800);
+  ok('Stream info can be given to a button', await ev(() => Keymap.CONTEXT_ACTIONS.player.indexOf('streaminfo') >= 0 && !!Keymap.ACTIONS.streaminfo));
+  await ev(() => { Store.settings.meterPeek = 2; Keymap.set('player', 'yellow', 'streaminfo'); });
+  await ev(() => UI.press('yellow'));
+  await page.waitForTimeout(300);
+  const rows = () => ev(() => document.getElementById('modalBody').textContent);
+  const r1 = await rows();
+  ok('Stream info opens with the seconds banked', (await ev(() => document.getElementById('modalTitle').textContent)) === 'Stream info' && /Buffered ahead\d+\.\d s/.test(r1), r1);
+  ok('and shows the buffer gauge', await shown());
+  await page.waitForTimeout(3500);
+  ok('the gauge stays while Stream info is open', await shown());
+  await ev(() => UI.press('back'));
+  await page.waitForTimeout(2600);
+  ok('closing it lets the gauge go', !(await shown()));
+  // A TV that has only seen a Magic Remote doesn't point at the Info button.
+  const h1 = await ev(() => Keymap.bufferHint());
+  ok('the hint names Hold Info on a standard remote', /^Hold Info/.test(h1), h1);
+  await ev(() => { Store.settings.sawPointer = 1; Store.settings.sawInfo = 0; });
+  const h2 = await ev(() => Keymap.bufferHint());
+  ok('on a Magic Remote it points at the quick menu and the button set instead', !/Info in/.test(h2) && /Yellow/.test(h2) && /OK, then Stream info/.test(h2), h2);
+  await ev(() => { Keymap.set('player', 'yellow', 'last'); });
+  const h3 = await ev(() => Keymap.bufferHint());
+  ok('with no button set, just the quick menu', h3 === 'In fullscreen, OK, then Stream info', h3);
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();
   console.log(fails ? fails + ' failures' : 'all buffer info tests passed');
