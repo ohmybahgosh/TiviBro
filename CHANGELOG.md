@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Phone app: My media.**  A **My media** tab (once the TV has a source) shows Continue watching, Favorites and All movies as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.
+- **Pictures of My media** in the user guide, the README and on tivibro.app.
+
 ## 0.6.0 (alpha 49, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

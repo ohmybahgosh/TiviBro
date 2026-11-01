@@ -313,6 +313,8 @@ data class NowState(
     val busy: Boolean = false,
     /** Whether the provider has movies and shows; null from an older TiviBro (then both tabs show). */
     val movies: Boolean? = null, val series: Boolean? = null,
+    /** Whether the TV has My media sources (its own movies); null from an older TiviBro (then no tab). */
+    val media: Boolean? = null,
 ) {
     companion object {
         fun from(j: JSONObject): NowState {
@@ -327,6 +329,7 @@ data class NowState(
                 vodTitle = v?.optString("title").orEmpty(), vodPos = v?.optInt("pos") ?: 0, vodDur = v?.optInt("dur") ?: 0,
                 busy = j.optBoolean("busy"),
                 movies = s?.optJSONObject("vod2")?.optBoolean("movies"), series = s?.optJSONObject("vod2")?.optBoolean("series"),
+                media = s?.optJSONObject("vod2")?.takeIf { it.has("media") }?.optBoolean("media"),
                 inputs = s?.optJSONArray("inputs")?.let { a -> (0 until a.length()).mapNotNull { TvInput.from(a.optJSONObject(it)) } }.orEmpty(),
             )
         }

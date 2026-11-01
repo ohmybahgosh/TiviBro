@@ -294,7 +294,9 @@ Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams in **Settings > Groups, sorti
 
 ### My media
 
-Your own movies next to your playlist: from a home media server (DLNA / UPnP, like a Fritz!Box) or a WebDAV cloud (like premiumize), on **Continue watching**, **Favorites** and **All movies** shelves, with resume, favorites and the normal movie player.  Add your own free TMDB token for posters, plots and details in your language.  Movies only for now: TV shows, trailers and extras are left out.  It joins the menu once you add a source in **Settings > My media**.  Thanks to [moritzm784](https://github.com/moritzm784) for building it.
+Your own movies next to your playlist: from a home media server (DLNA / UPnP, like a Fritz!Box) or a WebDAV cloud (like premiumize), on **Continue watching**, **Favorites** and **All movies** shelves, with resume, favorites and the normal movie player.  Add your own free TMDB token for posters, plots and details in your language.  Movies only for now: TV shows, trailers and extras are left out.  It joins the menu once you add a source in **Settings > My media**.  Browse it in the phone app too, and tap **Play on TV**.  Thanks to [moritzm784](https://github.com/moritzm784) for building it.
+
+<p align="center"><a href="https://tivibro.app/view/#tv-my-media"><img src="docs/screenshots/tv-my-media.png" width="49%" alt="My media"></a> <a href="https://tivibro.app/view/#tv-my-media-all"><img src="docs/screenshots/tv-my-media-all.png" width="49%" alt="My media: All movies"></a></p>
 
 ## The web editor
 
@@ -525,7 +527,7 @@ TiviBro checks for a new release once a day (**Settings > Updates and about**). 
 
 ### The phone app
 
-**TiviBro for Android** turns your phone into a remote and a second screen for the TV: arrows, OK, Back, channel and volume buttons, Play on TV from your own channel list, the web editor full screen, Wake-on-LAN, and a Quick Settings tile.
+**TiviBro for Android** turns your phone into a remote and a second screen for the TV: arrows, OK, Back, channel and volume buttons, Play on TV from your own channel list, the web editor full screen, Wake-on-LAN, and a Quick Settings tile.  Browse Movies, Shows and My media on the phone and play them on the TV.
 
 1. [Download the newest APK](https://tivibro.app/apk/) on your phone and open it to install.  Android asks to allow installs from your browser the first time, and Google Play Protect checks the app each time you update it.
 2. On the TV, turn on **Settings > Phone app** and choose **Pair a phone**.

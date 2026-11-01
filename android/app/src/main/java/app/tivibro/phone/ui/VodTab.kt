@@ -1,7 +1,8 @@
 /* Movies and Shows on the phone: the TV's own lists (its languages, hidden categories and PIN), as a
    poster grid that is quicker to browse with a thumb than with a remote.  Search, pick a category, open
    a title for its details, and play it on the TV: a movie from where it stopped or from the start, a show
-   by season and episode.  Everything plays on the TV; nothing plays on the phone. */
+   by season and episode.  My media (the TV's own movies) uses the same screen.  Everything plays on the TV;
+   nothing plays on the phone. */
 package app.tivibro.phone.ui
 
 import androidx.compose.foundation.background
@@ -77,7 +78,7 @@ import kotlinx.coroutines.delay
 
 private fun err(e: Exception) = (e as? TbException)?.message ?: "The TV didn't answer.  Is it on, and on the same network?"
 
-/** [kind] is "movie" or "series". */
+/** [kind] is "movie", "series" or "media" (My media: the TV's own movies, with Continue watching, Favorites and All movies as categories). */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VodTab(model: AppModel, id: String, kind: String) {
@@ -100,7 +101,7 @@ fun VodTab(model: AppModel, id: String, kind: String) {
         } catch (e: Exception) { error = err(e) }
     }
 
-    if (none) { Message("This playlist has no $word.  Movies and Shows come with Xtream Codes playlists that include them."); return }
+    if (none) { Message(if (kind == "media") "No My media sources on the TV yet.  Add your movies in the TV's Settings > My media (or the Settings tab here)." else "This playlist has no $word.  Movies and Shows come with Xtream Codes playlists that include them."); return }
     if (cats == null) {
         if (error != null) Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text(error!!, textAlign = TextAlign.Center); Spacer(Modifier.height(16.dp)); Button(onClick = { attempt++ }) { Text("Try again") }
@@ -252,7 +253,7 @@ private fun DetailsSheet(model: AppModel, id: String, kind: String, item: VodIte
                         if (meta.isNotBlank()) Text(meta, color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 4.dp))
                         if (!i?.genre.isNullOrBlank()) Text(i!!.genre, color = Muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 2.dp))
                         if (!i?.media.isNullOrBlank()) Text(i!!.media, color = Accent2, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 2.dp))
-                        if (kind == "movie" && i != null) {
+                        if (kind != "series" && i != null) {
                             Spacer(Modifier.height(12.dp))
                             if (i.pos > 0 && i.len > 0) {
                                 Button(onClick = { play(null, false) }, modifier = Modifier.fillMaxWidth()) { Icon(Icons.Rounded.PlayArrow, null, Modifier.size(18.dp)); Spacer(Modifier.width(6.dp)); Text("Resume on TV") }

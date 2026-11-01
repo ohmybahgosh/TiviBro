@@ -85,6 +85,31 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await ev(() => { Views.stopAll(); Views.switchTab('live'); });
   await page.waitForTimeout(800);
 
+  // My media on the phone: the shelves as categories, a movie's details, and playing it on the TV.
+  ok('no My media tab without a source', (await ask('vodcats', { kind: 'media' })).none === true);
+  await ev(() => {
+    const id = MediaStore.addSource({ type: 'dlna', name: 'Home server', control: 'http://127.0.0.1:9/ctl' });
+    const u = 'http://127.0.0.1:8077/movie/demo/demo/Moana.2.2024.mp4';
+    MediaStore.applyScan(id, { movies: [
+      { id: 'd:/m/a.mkv', title: 'Moonlight Harbor', year: '2015', file: 'Moonlight.Harbor.2015.1080p.mkv', size: 8e9, ext: 'mkv', info: ['1080p'], url: u },
+      { id: 'd:/m/b.mkv', title: 'The Glass Orchard', year: '2017', file: 'b.mkv', size: 6e9, ext: 'mkv', info: [], url: u }] });
+  });
+  await page.waitForTimeout(600);
+  const md_mc = await ask('vodcats', { kind: 'media' });
+  ok('My media on the phone: its shelves', md_mc.cats.map((c) => c.id).join(',') === 'continue,favorites,all' && md_mc.cats[2].count === 2, JSON.stringify(md_mc));
+  const md_mm = await ask('voditems', { kind: 'media', cat: 'all' });
+  ok('its movies', md_mm.total === 2 && md_mm.items[0].n === 'Moonlight Harbor' && md_mm.items[0].y === '2015', JSON.stringify(md_mm));
+  const md_mf = await ask('voditems', { kind: 'media', q: 'glass' });
+  ok('searching My media', md_mf.items.length === 1 && md_mf.items[0].n === 'The Glass Orchard');
+  const md_mdi = await ask('vodinfo', { kind: 'media', id: md_mm.items[0].id });
+  ok('a movie\'s details, with its file and source', md_mdi.n === 'Moonlight Harbor' && /1080p/.test(md_mdi.media) && /Home server/.test(md_mdi.media), JSON.stringify(md_mdi));
+  await ask('vodplay', { kind: 'media', id: md_mm.items[0].id, fromStart: true });
+  await page.waitForFunction(() => Views.mode === 'vod', null, { timeout: 15000 }).catch(() => {});
+  const md_mp = await ev(() => ({ tab: Views.tab, title: Views.vod && Views.vod.meta && Views.vod.meta.title, local: !!(Views.vod && Views.vod.meta && Views.vod.meta.local) }));
+  ok('a movie picked on the phone plays from My media on the TV', md_mp.tab === 'media' && md_mp.local && /Moonlight Harbor/.test(md_mp.title || ''), JSON.stringify(md_mp));
+  await ev(() => { Views.stopAll(); MediaStore.sources().forEach((x) => MediaStore.removeSource(x.id)); Views.switchTab('live'); });
+  await page.waitForTimeout(800);
+
   // Typing into the TV: a rename box.
   await ev(() => UI.prompt('Rename group', 'Old name', function (v) { window.__renamed = v; }));
   await page.waitForTimeout(400);

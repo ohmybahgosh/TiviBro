@@ -87,6 +87,17 @@ shot 11-movie 5
 adb shell input keyevent KEYCODE_BACK; sleep 2
 tap "Shows"
 shot 12-shows 6
+# My media: the TV's own movies, and Play on TV.
+if [ -n "$(find_text "My media")" ]; then
+  tap "My media"
+  shot 12a-my-media 6
+  n0=$(grep -c '^MEDIAPLAY' /tmp/fake-tv.txt || true)
+  tap "The Glass Orchard"
+  shot 12a-my-media-movie 5
+  tap "Resume on TV"; sleep 3
+  [ "$(grep -c '^MEDIAPLAY' /tmp/fake-tv.txt || true)" -gt "$n0" ] || { echo "My media did not play on the TV"; exit 1; }
+  echo "My media plays a movie on the TV"
+else echo "My media tab not on screen (scrolled away): skipped"; fi
 # The TV's settings on the phone.
 tap "Settings"
 shot 12b-settings 5

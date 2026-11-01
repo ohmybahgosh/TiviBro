@@ -200,12 +200,13 @@ var Phone = (function () {
       if (op === 'page') return Settings.phone.page(String(a.sec || ''), path);
       return Settings.phone.change(String(a.sec || ''), path, +a.i, op, a);
     },
-    vodcats: function (a) { return Vod.phone.cats(vodKind(a)); },
-    voditems: function (a) { return Vod.phone.items(vodKind(a), a.cat, a.q, a.offset, a.limit); },
-    vodinfo: function (a) { return Vod.phone.info(vodKind(a), a.id); },
+    // kind 'media': My media (Media.phone), the same shape as Movies.
+    vodcats: function (a) { return a.kind === 'media' ? Media.phone.cats() : Vod.phone.cats(vodKind(a)); },
+    voditems: function (a) { return a.kind === 'media' ? Media.phone.items(a.cat, a.q, a.offset, a.limit) : Vod.phone.items(vodKind(a), a.cat, a.q, a.offset, a.limit); },
+    vodinfo: function (a) { return a.kind === 'media' ? Media.phone.info(a.id) : Vod.phone.info(vodKind(a), a.id); },
     vodplay: function (a, c) {
       leaveFull();
-      return Vod.phone.play(vodKind(a), a.id, a.ep, a.fromStart).then(function (r) { U.toast('Playing ' + r.title + (c.from ? ', from ' + c.from : '')); return r; });
+      return (a.kind === 'media' ? Media.phone.play(a.id, a.fromStart) : Vod.phone.play(vodKind(a), a.id, a.ep, a.fromStart)).then(function (r) { U.toast('Playing ' + r.title + (c.from ? ', from ' + c.from : '')); return r; });
     },
     // A provider link shared to the phone app: added like the web editor's Add a playlist.
     playlist: function (a) {
@@ -279,7 +280,7 @@ var Phone = (function () {
     if (ins.length) out.inputs = ins;
     // Movies and Shows tabs on the phone only when the provider has them.
     var p = Store.playlist || {}, vd = p.vod || {};
-    out.vod2 = { movies: p.type === 'xtream' && !!vd.movies, series: p.type === 'xtream' && !!vd.series };
+    out.vod2 = { movies: p.type === 'xtream' && !!vd.movies, series: p.type === 'xtream' && !!vd.series, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0 };
     return out;
   }
   function pushState(soon) {

@@ -178,7 +178,7 @@ Your groups sit right beside the guide: **Favorites** and your own groups first,
 
 Long lists: **CH + / −** moves a page at a time everywhere, and holding **▲** or **▼** speeds up the longer you hold it, so the end of a 5,000 channel group is a few seconds away.
 
-**◀** or **Back** from the groups opens the menu: **Guide, Channels, Movies, Shows, Search, Edit on phone, Settings**.  Movies and Shows appear only when your provider has them.  **Edit on phone** isn't a screen: it turns on the [web editor](#turning-on-the-web-editor) and shows its QR code over whatever you're watching.
+**◀** or **Back** from the groups opens the menu: **Guide, Channels, Movies, Shows, My media, Search, Edit on phone, Settings**.  Movies and Shows appear only when your provider has them, and **My media** once you add a source.  **Edit on phone** isn't a screen: it turns on the [web editor](#turning-on-the-web-editor) and shows its QR code over whatever you're watching.
 
 <p align="center"><a href="media/groups.mp4"><img src="media/groups.gif" width="100%" alt="Groups and the menu"></a></p>
 <p align="center"><sub><a href="media/groups.mp4">Watch the MP4</a></sub></p>
@@ -363,6 +363,13 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 ### My media
 
 **My media** gives your own movies a full-width poster view.  It joins the menu once you add a source in **Settings > My media > Add media**.  It has **Continue watching**, **Favorites** and **All movies** shelves.  The movie you choose shows its title and description above the shelves.  There are no automatic trailers or previews.
+
+<p align="center">
+  <a href="https://tivibro.app/view/#tv-my-media"><img src="screenshots/tv-my-media.png" width="49%" alt="My media: Continue watching and Favorites"></a>
+  <a href="https://tivibro.app/view/#tv-my-media-all"><img src="screenshots/tv-my-media-all.png" width="49%" alt="My media: All movies"></a>
+</p>
+
+**In the phone app**, a **My media** tab shows the same shelves (Continue watching, Favorites, All movies) as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.
 
 Press **Green** on My media to rescan all saved sources for new or removed movies.  Press **Yellow** to fetch details and artwork for new movies or outdated language matches.  Yellow leaves up-to-date matches alone.  Wait for a rescan to finish before fetching details.
 
@@ -570,11 +577,13 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 
 ### Settings: My media
 
-Manage your own movie sources and preferences.  The [My media](#my-media) screen keeps the movie shelves full-width; source setup stays here.
+Manage your own movie sources and preferences.  The [My media](#my-media) screen keeps the movie shelves full-width; source setup stays here.  Movies only for now: TV shows, trailers and extras are left out.
+
+<p align="center"><a href="https://tivibro.app/view/#tv-set-my-media"><img src="screenshots/tv-set-my-media.png" width="70%" alt="Settings: My media"></a></p>
 
 | Settings > My media | Default | What it does |
 |---|---|---|
-| **Add media** | | Find a DLNA / UPnP server or enter a WebDAV address and login. |
+| **Add media** | | Find a DLNA / UPnP server, or enter the WebDAV address of your movies folder and its login.  One folder per movie, named like **Frozen (2013)**, matches best. |
 | **Edit on a computer** | | Open the web editor to type source logins on a computer. |
 | **TMDB API token** | Not set | Your own TMDB API key or Read Access Token.  Enter it on the TV or paste it in the web editor.  Settings and the editor show when a token is saved.  Select it to replace it, or leave the editor field blank to keep it. |
 | **Sort movies by** | **Name (A–Z)** | Name, release date (newest first), or date added (newest first).  All movies and Favorites follow this choice; Continue watching stays ordered by recent playback.  Rescans preserve the date first added. |
@@ -814,7 +823,7 @@ Five wrong PINs in a row lock the PIN for 30 seconds.
 
 Two different ways to use a phone with TiviBro, on one page.  Each works without the other: the phone app doesn't need the web editor switched on.
 
-- **The TiviBro phone app** (Android) is a remote with the guide, Movies and Shows.  Pair it once with **Pair the TiviBro app…**: that QR code is scanned inside the app, not with the phone's camera.
+- **The TiviBro phone app** (Android) is a remote with the guide, Movies, Shows and My media.  Pair it once with **Pair the TiviBro app…**: that QR code is scanned inside the app, not with the phone's camera.
 - **The web editor** works in any browser, for bigger jobs: groups, channels, Smart clean-up, guide matching and backups.  **Open it in a phone's browser (QR code)** is for the phone's camera.  The phone app opens the editor by itself (**Edit channels**), so the switch below is only needed for a browser.
 
 In release builds, where the phone app isn't offered yet, this page is called **Web editor**.

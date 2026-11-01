@@ -36,7 +36,7 @@ const t0 = Date.now() - 20 * 60000;
 const chans = Array.from({ length: 40 }, (_, i) => ({ k: 'fake|' + (i + 1), n: NAMES[i % 10] + (i >= 10 ? ' ' + (Math.floor(i / 10) + 1) : ''), num: i + 1, logo: '', fav: i < 3 ? 1 : 0, now: { t: SHOWS[i % 10], s: t0, e: t0 + 60 * 60000 } }));
 const groups = [{ id: 'fav', name: 'Favorites', keys: chans.slice(0, 3).map((x) => x.k) }, { id: 'news', name: 'News', keys: chans.filter((x, i) => i % 10 < 4).map((x) => x.k) }, { id: 'sports', name: 'Sports', keys: chans.filter((x, i) => i % 10 >= 4 && i % 10 < 8).map((x) => x.k) }];
 let seq = 0, playing = chans[0], paused = false;
-function sendState() { return ctl('/companion/state', { state: { tab: 'live', full: true, playing: { k: playing.k, name: playing.n, num: playing.num, logo: '', group: 'News' }, now: playing.now, next: { t: 'Late Edition', s: t0 + 60 * 60000 }, paused, inputs: [{ id: 1, label: 'Rename group', type: 'text', value: 'Sports', submit: 1 }] } }); }
+function sendState() { return ctl('/companion/state', { state: { tab: 'live', full: true, playing: { k: playing.k, name: playing.n, num: playing.num, logo: '', group: 'News' }, now: playing.now, next: { t: 'Late Edition', s: t0 + 60 * 60000 }, paused, inputs: [{ id: 1, label: 'Rename group', type: 'text', value: 'Sports', submit: 1 }], vod2: { movies: true, series: true, media: true } } }); }
 async function tivibro() {
   await sendState();
   for (;;) {
@@ -56,6 +56,8 @@ async function tivibro() {
 // Questions from the phone (POST /v1/ask), answered like app/js/phone.js does.
 const progs = (i) => [0, 1, 2].map((n) => ({ t: SHOWS[(i + n) % 10], s: t0 + n * 60 * 60000, e: t0 + (n + 1) * 60 * 60000 }));
 const movies = Array.from({ length: 30 }, (_, i) => ({ id: 5000 + i, n: 'Movie ' + (i + 1), c: '', r: '7.1', y: '2024' }));
+// My media (the TV's own movies): made-up titles, the shelves as categories.
+const mine = ['Moonlight Harbor', 'The Glass Orchard', 'Northbound', 'Paper Comets', 'Saltwater Kings', 'The Quiet Engine'].map((n, i) => ({ id: 'w:/Movies/' + i, n, c: '', r: '', y: String(2015 + i), p: i === 1 ? 40 : 0 }));
 let typed = '';
 async function answer(cmd) {
   const a = cmd.args || {}, say = (data) => ctl('/companion/answer', { id: cmd.id, ok: true, data }), no = (error) => ctl('/companion/answer', { id: cmd.id, ok: false, error });
@@ -70,6 +72,12 @@ async function answer(cmd) {
     return a.op === 'page' ? say(look) : say({ msg: '', page: look });
   }
   if (cmd.what === 'chan') { const c = chans.find((x) => x.k === a.k); if (!c) return no('That channel isn\'t in this playlist.'); return say({ k: c.k, name: c.n, provider: c.n, renamed: false, hidden: false, group: 'News', groups: [{ id: 'c_mine', name: 'My sports', has: 0 }], team: { id: 'nfl:det', name: 'Detroit Lions', on: a.op === 'follow' && a.on !== false ? 1 : 0 }, msg: a.op === 'info' ? '' : 'Done' }); }
+  if (a.kind === 'media') {
+    if (cmd.what === 'vodcats') return say({ cats: [{ id: 'continue', n: 'Continue watching', count: 1 }, { id: 'favorites', n: 'Favorites', count: 0 }, { id: 'all', n: 'All movies', count: mine.length }] });
+    if (cmd.what === 'voditems') { const l = a.cat === 'continue' ? mine.filter((m) => m.p) : a.cat === 'favorites' ? [] : mine; return say({ total: l.length, offset: 0, items: l }); }
+    if (cmd.what === 'vodinfo') { const m = mine.find((x) => x.id === a.id) || mine[0]; return say({ id: m.id, n: m.n, year: m.y, plot: 'A made-up movie for the phone app test.', genre: 'Drama', dur: '1h 52m', media: '1080p   HEVC   MKV   ·   8.2 GB   ·   premiumize', pos: m.p ? 2400 : 0, len: m.p ? 6000 : 0 }); }
+    if (cmd.what === 'vodplay') { console.log('MEDIAPLAY ' + a.id + (a.fromStart ? ' fromStart' : '')); return say({ title: (mine.find((x) => x.id === a.id) || mine[0]).n }); }
+  }
   if (cmd.what === 'vodcats') return say({ cats: [{ id: '_all', n: 'All movies', count: movies.length }, { id: '100', n: 'Action', count: 10 }] });
   if (cmd.what === 'voditems') { const off = a.offset || 0, lim = a.limit || 120; const l = a.q ? movies.filter((m) => m.n.toLowerCase().includes(String(a.q).toLowerCase())) : movies; return say({ total: l.length, offset: off, items: l.slice(off, off + lim) }); }
   if (cmd.what === 'vodinfo') return say(a.kind === 'series' ? { id: a.id, n: 'A Show', plot: 'Things happen.', seasons: [{ s: 1, eps: [{ id: 9001, e: 1, t: 'Pilot', dur: '45 min', pos: 600, len: 2700 }] }] } : { id: a.id, n: 'Movie 1', plot: 'A film.', year: '2024', pos: 0, len: 0 });

@@ -344,6 +344,60 @@ var Media = (function () {
     Views.stopAll();
     open(true);
   }
+  /* ---------- the phone app (app/js/phone.js) ----------
+     My media on the phone, in the same shape as Movies (Vod.phone): the shelves as categories, a page of
+     movies, one movie's details, and playing it on the TV (from where it stopped, or from the start). */
+  function phoneTitle(m) { return (m.metadata && m.metadata.title) || m.title; }
+  function phoneFind(id) {
+    var m = MediaStore.movies(null).filter(function (x) { return x.id === String(id); })[0];
+    if (!m) throw new Error('That movie is no longer in My media.  Rescan on the TV.');
+    return m;
+  }
+  function phoneSlim(m) {
+    var r = MediaStore.resume(m.id), md = m.metadata || {}, x = { id: m.id, n: phoneTitle(m), c: md.poster || '', r: '' };
+    if (m.year || md.year) x.y = String(m.year || md.year).slice(0, 4);
+    if (r && r.dur) x.p = Math.round(100 * r.pos / r.dur);
+    return x;
+  }
+  var ForPhone = {
+    cats: function () {
+      if (!MediaStore.sources().length) return Promise.resolve({ none: true, cats: [] });
+      return MediaStore.load().then(function () {
+        return { cats: MediaStore.sections(null).map(function (s) { return { id: s.id, n: s.title, count: s.movies.length, adult: 0, locked: 0 }; }) };
+      });
+    },
+    items: function (cid, q, off, lim) {
+      return MediaStore.load().then(function () {
+        var list;
+        q = String(q || '').trim().toLowerCase();
+        if (q) list = MediaStore.movies(null).filter(function (m) { return phoneTitle(m).toLowerCase().indexOf(q) >= 0 || String(m.title).toLowerCase().indexOf(q) >= 0; });
+        else list = (MediaStore.sections(null).filter(function (s) { return s.id === (cid || 'all'); })[0] || { movies: [] }).movies;
+        off = Math.max(0, +off || 0); lim = Math.min(300, Math.max(1, +lim || 120));
+        return { total: list.length, offset: off, items: list.slice(off, off + lim).map(phoneSlim) };
+      });
+    },
+    info: function (id) {
+      return MediaStore.load().then(function () {
+        var m = phoneFind(id), md = m.metadata || {}, r = MediaStore.resume(m.id), src = MediaStore.source(m.src);
+        return { id: m.id, n: phoneTitle(m), c: md.poster || '', plot: md.plot || '', genre: md.genre || '', cast: '', year: String(m.year || md.year || '').slice(0, 4),
+          dur: md.runtime || '', r: '', media: [fileInfo(m), m.size ? size(m.size) : '', src ? src.name : ''].filter(Boolean).join('   ·   '),
+          pos: r ? Math.round(r.pos) : 0, len: r ? Math.round(r.dur) : 0, fav: MediaStore.isFavorite(m.id) ? 1 : 0 };
+      });
+    },
+    // My media plays from its own screen on the TV, so the TV goes there first (Back then lands on the movie).
+    play: function (id, fromStart) {
+      return MediaStore.load().then(function () {
+        var m = phoneFind(id);
+        if (Views.tab !== 'media') Views.switchTab('media');
+        if (Views.tab !== 'media') throw new Error('My media could not be opened on the TV.');
+        if (document.body.classList.contains('nav-open') && Views.closeNav) Views.closeNav();
+        open(true);
+        play(m, !!fromStart);
+        return { title: phoneTitle(m) };
+      });
+    }
+  };
+
   function itemMenu(m) {
     if (!m) return;
     var r = MediaStore.resume(m.id);
@@ -415,7 +469,7 @@ var Media = (function () {
   return {
     leave: function () { playToken++; }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
     rescanAll: rescanAll, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
-    refresh: refresh, leftOut: leftOut,
+    refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { addServer: addServer, addAddress: addAddress, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };
 })();
