@@ -118,5 +118,16 @@ ok('order: moving in it starts from what you see', L.moveInGroup('c_y', '4', -1)
 ok('order: a missing channel is kept for later', customOf('c_y').items.join() === '1,4,3,9', customOf('c_y').items.join());
 ok('order: virtual groups cannot be reordered', !L.moveInGroup(L.ALL, '1', 1) && !L.moveInGroup(L.RECENT, '1', 1));
 
+// Guide ids that point nowhere: placeholders, and one id on many unrelated channels.
+L.set({ groups: [{ id: 'a', name: 'X' }], channels: [
+  { k: 'p1', n: 'NFL 1 | Bills @ Jets', g: 'a', epg: '0' }, { k: 'p2', n: 'NFL 2', g: 'a', epg: 'none' },
+  { k: 's1', n: 'USA | A&E', g: 'a', epg: 'AandENetwork.us' }, { k: 's2', n: 'USA | CHEDDAR NEWS', g: 'a', epg: 'AandENetwork.us' },
+  { k: 's3', n: 'USA | VSIN', g: 'a', epg: 'AandENetwork.us' }, { k: 's4', n: 'USA | NBC SPORTS BAY AREA+', g: 'a', epg: 'AandENetwork.us' },
+  { k: 'f1', n: 'F1 11 :', g: 'a', epg: 'skysportsf1.uk' }, { k: 'f2', n: 'F1 12 :', g: 'a', epg: 'skysportsf1.uk' }, { k: 'f3', n: 'F1 13 :', g: 'a', epg: 'skysportsf1.uk' }, { k: 'f4', n: 'F1 14 :', g: 'a', epg: 'skysportsf1.uk' }] });
+const ep = k => L.data.channels.find(c => c.k === k).epg;
+ok('placeholder ids ("0", "none") are dropped', ep('p1') === '' && ep('p2') === '');
+ok('a shared id stays on the channel it names', ep('s1') === 'AandENetwork.us');
+ok('and leaves the unrelated ones', ep('s2') === '' && ep('s3') === '' && ep('s4') === '');
+ok('one family of channels keeps its shared id', ep('f1') === 'skysportsf1.uk' && ep('f4') === 'skysportsf1.uk');
 console.log(fail ? fail + ' failures' : 'all library tests passed');
 process.exit(fail ? 1 : 0);

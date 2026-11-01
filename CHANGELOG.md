@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Empty event slots count as nothing on.**  **Hide channels with nothing on** now also catches slots with no event in them ("PPV 09 |", "EPL 02:", " :ESPN+ 291") and events that ended hours ago that the provider never renamed.  They come back by themselves when a new event is named.
+- **Old events say so.**  An event channel whose game is long over shows "Ended Feb 8: …" in the guide, instead of looking live or empty.  The web editor's Smart clean-up has a new step, **Groups of old events**, for groups where every event ended days ago (a Winter Olympics group in November).
+- **Team channels show the game.**  Guides that only say "Next game: Blackhawks at Bruins at 10/31 01:00 PM EDT" in long overlapping blocks now show "Next game Sat 1:00 PM: Blackhawks at Bruins" until the game, then the game at its time, without duplicates.
+- **Pluto TV channels get a guide.**  Pluto channels with no guide from the provider are filled from Pluto's own guide (i.mjh.nz), matched exactly by channel id, with the other public guides.  Turn it off with the public guide under **Settings > Playlists > the playlist > Guide**.
+- **Guide ids that point nowhere are ignored.**  Placeholder ids ("0") and one id given to many unrelated channels no longer tie those channels to the wrong guide or none; they get their guide by name or from the public guides instead.
 - **When your subscription ends, first on each playlist** ([#13](https://github.com/ohmybahgosh/TiviBro/issues/13)).  **Settings > Playlists** and the web editor's Playlists page lead with it ("Expires 19 Nov", "Expires in 3 days", "Expired 2 Oct"), for every playlist, not only the one in use.  Xtream Codes providers say when; M3U playlists don't.
 - **Browsers offer to save the web editor's password** ([#15](https://github.com/ohmybahgosh/TiviBro/issues/15)).  The login box is a real password field now (Firefox, Chrome and Safari offer to remember it), with **Show** to check what you typed.
 

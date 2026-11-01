@@ -297,7 +297,7 @@ var Settings = (function () {
     var n = p.names || (p.names = Names.defaults()), out = [], active = p.id === S().active;
     function changed(rebuild) { persist(p); Names.invalidate(); if (active) relist(); if (rebuild) build(); else paint(); }
     out.push(toggle('Clean up channel names', 'Your playlist is not changed.  Turn off to see the original names.', function () { return n.enabled; }, function (v) { n.enabled = v; changed(true); }));
-    out.push(toggle('Hide channels with nothing on', 'Channels named "Off Air", "Offline" or "No Event Scheduled" stay out of the lists until the provider names an event on them.  Favorites keep theirs.',
+    out.push(toggle('Hide channels with nothing on', 'Channels named "Off Air", "Offline" or "No Event Scheduled", empty slots like "PPV 09 |", and events that ended hours ago stay out of the lists until the provider names a new event on them.  Favorites keep theirs.',
       function () { return !!n.hideIdle; }, function (v) { n.hideIdle = v; changed(); }));
     if (!n.enabled) return out.concat([preview(n, active)]);
     out.push(toggle('Clean group names too', 'Turns "USA | Sports" into "Sports" in the group list.', function () { return n.groups; }, function (v) { n.groups = v; changed(); }));

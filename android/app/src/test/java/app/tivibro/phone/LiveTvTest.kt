@@ -24,8 +24,9 @@ class LiveTvTest {
         val p = port.toInt()
 
         // A busy CI machine can miss the first broadcast: a few tries.
-        var found = Discovery.find(1200, listOf(InetAddress.getByName(host)), p)
-        for (i in 0 until 3) { if (found.any { it.port == p }) break; found = Discovery.find(2500, listOf(InetAddress.getByName(host)), p) }
+        // Discovery is always UDP 47810 (the TV answers with its TCP port, which may be another one when 47810 is taken).
+        var found = Discovery.find(1200, listOf(InetAddress.getByName(host)))
+        for (i in 0 until 3) { if (found.any { it.port == p }) break; found = Discovery.find(2500, listOf(InetAddress.getByName(host))) }
         assertTrue("discovery answers", found.any { it.port == p })
 
         val wrong = runCatching { Pairing.pair(host, p, "ZZZZ-ZZZZ-ZZZZ", "Wrong", "Test") }.exceptionOrNull()

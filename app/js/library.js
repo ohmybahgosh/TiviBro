@@ -13,8 +13,42 @@ var Library = (function () {
   function E() { return Store.edits; }
   function S() { return Store.settings; }
 
+  /* Guide ids that point nowhere useful (issue: a provider's passes all say "0", one sports id given to 24
+     different channels).  A placeholder id is dropped; an id shared by many channels with different names
+     is kept only by the channel it names ("AandENetwork.us" stays on A&E, not on Cheddar News).  Those
+     channels then get their guide by name, or the public guide. */
+  var FAKE_ID = /^\s*(?:0+|-+|n\/?a|none|null|undefined|nil|false|no ?epg|epg)\s*$/i;
+  function core(n) {
+    var s = String(n || '').toLowerCase();
+    for (var i = 0; i < 3; i++) s = s.replace(/^[^|]{1,12}\|\s*/, '');
+    return s.replace(/&/g, 'and').replace(/\+/g, 'plus').replace(/\b(east|west|hd|fhd|uhd|4k|sd|us|usa|tv)\b/g, '').replace(/[^a-z]+/g, '');
+  }
+  function fixIds(chans) {
+    var by = {}, fixed = 0, i, c;
+    for (i = 0; i < chans.length; i++) {
+      c = chans[i];
+      if (!c.epg) continue;
+      if (FAKE_ID.test(c.epg)) { c.epg = ''; fixed++; continue; }
+      (by[c.epg] || (by[c.epg] = [])).push(c);
+    }
+    Object.keys(by).forEach(function (id) {
+      var l = by[id];
+      if (l.length < 4) return;
+      var cores = {}; l.forEach(function (x) { cores[core(x.n)] = 1; });
+      if (Object.keys(cores).length < 3) return;                 // "ESPN+ 01" to "ESPN+ 20": one channel family, one guide
+      var ic = id.split('.')[0].toLowerCase().replace(/[^a-z]+/g, '');
+      l.forEach(function (x) {
+        var cc = core(x.n);
+        if (cc.length >= 3 && ic.length >= 3 && (ic.indexOf(cc) >= 0 || cc.indexOf(ic) >= 0)) return;
+        x.epg = ''; fixed++;
+      });
+    });
+    if (fixed && typeof Log !== 'undefined') Log.info('library', 'Ignored ' + fixed + ' guide ids that were placeholders or shared by unrelated channels');
+  }
+
   function set(d) {
     data = d;
+    fixIds(d.channels);
     byKey = new Map();
     groupNames = {};
     for (var i = 0; i < d.channels.length; i++) {
@@ -106,6 +140,8 @@ var Library = (function () {
   // The quality tag lists show next to a name, only where the same channel is there more than once.
   function versionTag(c) { return versions(c).length ? qualityLabel(c) : ''; }
 
+  // Nothing on: the name says so (Off Air, an empty slot) or names an event that is long over.
+  function idle(c) { return Names.idle(c.n) || (typeof Events !== 'undefined' && Events.ended(c)); }
   function name(c) {
     if (!c) return '';
     if (E().renames[c.k]) return E().renames[c.k];
@@ -231,7 +267,7 @@ var Library = (function () {
     if (!showHidden) list = list.filter(function (c) { return !e.hiddenChannels[c.k]; });
     // Hide channels with nothing on (Settings > Channel names): judged on the name the provider sends
     // now, so a channel comes back by itself once an event is named on it.  Favorites keep theirs.
-    if (!showHidden && gid !== FAV && Names.hideIdle()) list = list.filter(function (c) { return !Names.idle(c.n); });
+    if (!showHidden && gid !== FAV && Names.hideIdle()) list = list.filter(function (c) { return !idle(c); });
     // Your own order for a provider group (moved on the TV or dragged in the web editor): the
     // channels you placed first, in your order, then any the provider added since, in its order.
     var own = e.groupSort && e.groupSort[gid];
@@ -374,7 +410,7 @@ var Library = (function () {
   }
 
   return {
-    ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
+    idle: idle, ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
     isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
     isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,

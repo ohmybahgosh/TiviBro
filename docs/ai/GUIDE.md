@@ -41,7 +41,7 @@ Also here: `site/` (tivibro.app, GitHub Pages), `relay/` (a Cloudflare Worker th
 
 **Privacy.**  The TV app has no analytics.  The only thing it sends about itself is an anonymous daily count (version and webOS version, no ID, `Update.countMe`), which users can switch off.  Don't add telemetry, tracking IDs, third-party SDKs or remote calls without a matching line in `docs/wiki/Privacy-and-security.md` and `site/privacy/index.html`.
 
-**Shared files stay in sync.**  `app/js/names.js`, `tidy.js`, `pubepg.js` and `links.js` are copied into `service/editor/` by `npm run build`; lint fails if a copy differs.  Edit the `app/js/` original and run the build (or copy the file).
+**Shared files stay in sync.**  `app/js/names.js`, `tidy.js`, `pubepg.js`, `links.js` and `events.js` are copied into `service/editor/` by `npm run build`; lint fails if a copy differs.  Edit the `app/js/` original and run the build (or copy the file).
 
 **Writing style for anything a person reads** (UI text, the user guide, the changelog, release notes, issue replies): plain words for viewers, not developers; two spaces between sentences; never an em dash (use a colon, a comma or a new sentence).  Say what happens and what to press, with screen names in bold in docs (**Settings > Playback and buffering**).
 

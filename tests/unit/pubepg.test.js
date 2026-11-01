@@ -67,4 +67,16 @@ t('the helper\'s guide reader normalises names exactly like the app (service/gui
   const G = require('../../service/guide.js');
   ['CNN HD', 'US: A&E (East) FHD', 'BBC One [UK]', 'ESPN 2 4K', 'Télé-Québec', ''].forEach(x => assert.strictEqual(G.norm(x), appNorm(x), x));
 });
+t('Pluto channels match Pluto\'s own guide by id', () => {
+  assert.strictEqual(P.appId('US_5ca525b650be2571e3943c63'), '5ca525b650be2571e3943c63');
+  assert.strictEqual(P.appId('CNN.us'), '');
+  assert.strictEqual(P.appId('XX_5ca525b650be2571e3943c63'), '');
+  const miss = ['US_5ca525b650be2571e3943c63', 'US_5ca525b650be2571e3943c64', 'US_5ca525b650be2571e3943c65', 'CA_5ca525b650be2571e3943c66'].map((e, i) => ({ k: 'k' + i, n: 'Pluto ' + i, epg: e }));
+  const f = P.appFiles(miss, true);
+  assert.strictEqual(f.length, 1, 'only regions with three or more channels');
+  assert.strictEqual(f[0].url, 'https://i.mjh.nz/PlutoTV/us.xml.gz');
+  assert.strictEqual(f[0].prefix, 'mjhpluto:US/');
+  assert.strictEqual(P.appFiles(miss, false).length, 0, 'gzip only: TVs that cannot unzip skip it');
+  assert.strictEqual(P.sourceOf('mjhpluto:US/abc').name, 'i.mjh.nz Pluto TV');
+});
 console.log(n + ' passed');

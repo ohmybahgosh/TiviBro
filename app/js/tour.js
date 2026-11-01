@@ -34,7 +34,7 @@ var Tour = (function () {
   function survey() {
     var data = Library.data, t = Tidy.make(data), now = Date.now(), ev = 0, idle = 0, upcoming = [];
     data.channels.forEach(function (c) {
-      if (Names.idle(c.n)) idle++;
+      if (Library.idle(c)) idle++;
       var e = Events.parse(c.n, now);
       if (e) { ev++; if (e.end > now && upcoming.length < 200) upcoming.push({ c: c, e: e }); }
     });
@@ -85,7 +85,7 @@ var Tour = (function () {
     // Channels with nothing on stay out of the lists while they say so (not hidden, so not counted as hidden).
     var chans = 0, groups = 0, gs = {}, idle = ch.names.hideIdle, fav = Library.isFav;
     data.groups.forEach(function (gr) { if (!E.hiddenGroups[gr.id] && !g[gr.id]) { gs[gr.id] = 1; groups++; } });
-    data.channels.forEach(function (x) { if (gs[x.g] && !E.hiddenChannels[x.k] && !c[x.k] && !(idle && Names.idle(x.n) && !fav(x.k))) chans++; });
+    data.channels.forEach(function (x) { if (gs[x.g] && !E.hiddenChannels[x.k] && !c[x.k] && !(idle && Library.idle(x) && !fav(x.k))) chans++; });
     if (cityKeep.length) { groups++; if (ch.cityHideNets) chans += cityKeep.length; }
     return { g: g, c: c, chans: chans, groups: groups, cityKeep: cityKeep, hidG: Object.keys(g).filter(function (id) { return !E.hiddenGroups[id]; }).length, hidC: Object.keys(c).filter(function (k) { return !E.hiddenChannels[k]; }).length };
   }
@@ -206,7 +206,7 @@ var Tour = (function () {
       out.push(toggle('Events by time', 'A group with every event on now or in the next two weeks, soonest first.', function () { return ev.group !== false; }, function (v) { ev.group = v; draw(); }));
       out.push(choice('Times with no time zone are in', 'Names that say ET, PT or UK are read that way.', Events.ZONE_CHOICES, Events.ZONE_LABELS, function () { return ev.tz || 'auto'; }, function (v) { ev.tz = v; draw(); }));
     }
-    if (st.sv.idle) out.push(toggle('Hide channels with nothing on', plural(st.sv.idle, 'channel') + ' say "Off Air", "Offline" or "No Event Scheduled" right now.  They come back by themselves when an event is on.', function () { return !!n.hideIdle; }, function (v) { n.hideIdle = v; draw(); }));
+    if (st.sv.idle) out.push(toggle('Hide channels with nothing on', plural(st.sv.idle, 'channel') + ' have nothing on right now: "Off Air", "No Event Scheduled", an empty slot like "PPV 09 |", or an event that ended hours ago.  They come back by themselves when a new event is named.', function () { return !!n.hideIdle; }, function (v) { n.hideIdle = v; draw(); }));
     if (st.sv.upcoming.length) {
       out.push(head('Coming up'));
       st.sv.upcoming.forEach(function (x) { out.push(info(Events.when(x.e.start) + '   ' + x.e.title, x.e.short || '')); });

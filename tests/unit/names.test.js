@@ -55,7 +55,10 @@ opt.forEach(([i, o]) => { const r = Names.cleanWith(O, i); if (r !== o) { fail++
 if (Names.cleanWith({ enabled: true, rules: { country: true }, prefixes: [], suffixes: [] }, 'UK◈ Sky Store ᴴᴰ') !== 'Sky Store') { fail++; console.log('FAIL old settings get new defaults'); }
 // Channels with nothing on
 const idle = [['FloHockey 39 - Off Air', true], ['PPV 07 | OFFLINE', true], ['BigTen 76 | No Event Scheduled', true], ['Victory+ | No Event Scheduled', true],
-  ['GR | BCI 24 News OFFLINE', true], ['NBA 07 : Offline', true], ['ESPN', false], ['Offline TV', false], ['Liveline', false], ['NFL 01: Bills vs Jets 1:00 PM ET', false]];
+  ['GR | BCI 24 News OFFLINE', true], ['NBA 07 : Offline', true], ['ESPN', false], ['Offline TV', false], ['Liveline', false], ['NFL 01: Bills vs Jets 1:00 PM ET', false],
+  // Empty event slots: the tag and nothing after it, or the network tag with nothing before it.
+  ['EPL 02:', true], ['PPV09 |', true], ['NFL Game Pass 3 :', true], ['F1 06:  :', true], [' :ESPN+  291', true], [' :FOX ONE  20', true], ['PPV10 | ', true],
+  ['MLB 1', false], ['Sky Sports:', false], ['ESPN 2', false], ['NFL | Replay 4', false], ['EPL 01: Liverpool VS Arsenal', false], ['USA | A&E', false]];
 idle.forEach(([n, w]) => { if (Names.idle(n) !== w) { fail++; console.log('FAIL idle', n); } });
 console.log(fail ? fail + ' failures' : 'all ' + (cases.length + 16 + real.length + opt.length + 1 + idle.length) + ' name tests passed');
 process.exit(fail ? 1 : 0);

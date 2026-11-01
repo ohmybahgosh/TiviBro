@@ -101,7 +101,8 @@ var WebEdit = (function () {
     var gc = (Epg.guideChannels && Epg.guideChannels()) || [];
     return {
       _channels: channelsJson(d, gc),
-      setup: !Store.settings.playlists.length,     // fresh TV: the editor offers restore or add a playlist
+      setup: !Store.settings.playlists.length,
+      tz: d.tz || '',     // fresh TV: the editor offers restore or add a playlist
       playlist: { id: p.id, name: p.name || 'Playlist', type: p.type },
       playlists: playlists(),
       guide: { channels: gc.slice(0, 30000).map(function (x) { return [x[0], x[1]]; }), mode: p.providerEpg, sources: (p.epgSources || []).length, xml: !!Epg.xml, loading: !!Epg.loading, status: Epg.status ? { at: Epg.status.at } : null, nameMatch: !!p.nameMatch,

@@ -17,6 +17,35 @@ var PubEpg = (function () {
     // No CORS headers: only reachable through the helper (or the dev relay).
     { id: 'iptvepg', name: 'iptv-epg.org', site: 'https://iptv-epg.org', cc: IE, helper: true, base: 'https://iptv-epg.org/files/', file: function (c) { return 'epg-' + c.toLowerCase() + '.xml.gz'; } }
   ];
+  /* Free streaming-app channels (Pluto TV) carry the app's own channel id in their guide id
+     ("US_5ca525b650be2571e3943c63"), and providers' guides for them are often empty.  i.mjh.nz publishes
+     the apps' own guides under those ids, so these match exactly, by id, without guessing by name.
+     Only downloaded when a playlist has such channels with no guide. */
+  var BY_ID = [
+    { id: 'mjhpluto', name: 'i.mjh.nz Pluto TV', site: 'https://i.mjh.nz', re: /^([A-Z]{2})_([0-9a-f]{24})$/i, base: 'https://i.mjh.nz/PlutoTV/',
+      regions: { US: 'us', CA: 'ca', GB: 'gb', UK: 'gb', DE: 'de', FR: 'fr', ES: 'es', IT: 'it', BR: 'br', MX: 'mx', AR: 'ar', CL: 'cl', DK: 'dk', SE: 'se', NO: 'no' } }
+  ];
+  // The id the app's own guide uses for a channel's guide id, or ''.
+  function appId(epg) {
+    for (var i = 0; i < BY_ID.length; i++) { var m = BY_ID[i].re.exec(epg || ''); if (m && BY_ID[i].regions[m[1].toUpperCase()]) return m[2].toLowerCase(); }
+    return '';
+  }
+  // Files for the channels with no guide that one of those apps covers: a region with three or more.
+  function appFiles(missing, gz) {
+    if (!gz) return [];
+    var test = typeof Store !== 'undefined' && Store.settings && Store.settings.pubEpgBase, out = [];
+    BY_ID.forEach(function (s) {
+      var by = {};
+      missing.forEach(function (c) { var m = s.re.exec(c.epg || ''); if (m && s.regions[m[1].toUpperCase()]) { var r = s.regions[m[1].toUpperCase()]; by[r] = (by[r] || 0) + 1; } });
+      Object.keys(by).forEach(function (r) {
+        if (by[r] < 3) return;
+        var cc = r === 'gb' ? 'GB' : r.toUpperCase();
+        out.push({ url: (test ? String(test).replace(/\/?$/, '/') + s.id + '/' : s.base) + r + '.xml.gz', cc: cc, src: s.id, name: s.name, prefix: s.id + ':' + cc + '/' });
+      });
+    });
+    return out;
+  }
+
   // Regions in playlists that are really several countries.
   var ALSO = { LAT: ['MX', 'AR', 'CO'], EXYU: ['RS', 'HR', 'BA'], NORDIC: ['SE', 'NO', 'DK'], CARIB: ['DO'], ARAB: [], AFRICA: ['ZA', 'NG'] };
   var AUTO_MAX = 4, MANUAL_MAX = 8, MIN_MISSING = 3;
@@ -112,8 +141,8 @@ var PubEpg = (function () {
     });
     return out;
   }
-  function sourceOf(id) { var m = /^(\w+):/.exec(id || ''); return m ? SOURCES.filter(function (s) { return s.id === m[1]; })[0] || null : null; }
+  function sourceOf(id) { var m = /^(\w+):/.exec(id || ''); return m ? SOURCES.concat(BY_ID).filter(function (s) { return s.id === m[1]; })[0] || null : null; }
 
-  return { SOURCES: SOURCES, conf: conf, set: set, keys: keys, countriesFor: countriesFor, countryOf: countryOf, files: files, supported: supported, all: all, name: name, code: code, sourceOf: sourceOf };
+  return { SOURCES: SOURCES, BY_ID: BY_ID, appId: appId, appFiles: appFiles, conf: conf, set: set, keys: keys, countriesFor: countriesFor, countryOf: countryOf, files: files, supported: supported, all: all, name: name, code: code, sourceOf: sourceOf };
 })();
 if (typeof module !== 'undefined') module.exports = PubEpg;

@@ -65,7 +65,7 @@ parts.push('## Architecture\n\n' + demote(read('docs/ARCHITECTURE.md').replace(/
 
 parts.push(block('The TV app: every file (app/js)', files('app/js', /\.js$/)));
 parts.push(block('The network helper: every file (service)', files('service', /\.js$/)));
-parts.push('## The web editor\n\n`service/editor/index.html` is the whole editor: HTML, CSS and one inline script.  It loads `names.js`, `tidy.js`, `pubepg.js` and `links.js` (build copies of the `app/js/` files).  Pages are `<section class="page" id="p-NAME">`; `show(name)` switches them.  Changes are drafts sent with `/api/save`; actions go through `command(type, args)` to the TV\'s `RUN` table in `app/js/webedit.js`.');
+parts.push('## The web editor\n\n`service/editor/index.html` is the whole editor: HTML, CSS and one inline script.  It loads `names.js`, `tidy.js`, `pubepg.js`, `links.js` and `events.js` (build copies of the `app/js/` files).  Pages are `<section class="page" id="p-NAME">`; `show(name)` switches them.  Changes are drafts sent with `/api/save`; actions go through `command(type, args)` to the TV\'s `RUN` table in `app/js/webedit.js`.');
 parts.push(block('The Android app (android)', walk('android/app/src/main/java', /\.kt$/)));
 parts.push(block('Build, release and tooling scripts', files('scripts', /\.(js|sh)$/).filter(f => !/_common\.sh$/.test(f)).concat(walk('scripts/wiki', /\.(js|sh)$/), walk('scripts/stats', /\.js$/), walk('scripts/companion', /\.js$/))));
 parts.push(block('The relay (Cloudflare Worker)', ['relay/worker.js']));

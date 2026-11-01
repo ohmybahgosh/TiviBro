@@ -583,6 +583,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
         <div class="card" id="tEmpty"></div>
         <div class="card" id="tDivider"></div>
         <div class="card" id="tIdle"></div>
+        <div class="card" id="tOld"></div>
       </div>
     </section>
 
@@ -728,6 +729,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 
 <script src="names.js"></script>
 <script src="links.js"></script>
+<script src="events.js"></script>
 <script src="tidy.js"></script>
 <script>
 'use strict';
@@ -938,6 +940,7 @@ function load(first) {
     var same = !!(j.data && j.data.sameChannels && had);
     if (same) { j.data.channels = had.channels; j.data.groups = had.groups; }
     D = j.data; rev = j.rev;
+    if (D.tz) Events.setProviderTz(D.tz);              // event times in names are in the provider's zone
     BASE = { E: pickE(D.edits), N: clone(D.names || Names.defaults()) };
     BASE.N.rules = BASE.N.rules || {};
     var keep = !first && pendingCount() > 0;
@@ -2499,7 +2502,26 @@ function dividerGroups(hidden) {
 }
 /* Channels with nothing on: "Off Air", "Offline", "No Event Scheduled".  Event channels are renamed by
    the provider when something is on, so this is a setting checked against the current name, not a hide. */
-function idleChannels() { return D.channels.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g] && Names.idle(c.n); }); }
+function idleChannels() { var now = Date.now(); return D.channels.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g] && (Names.idle(c.n) || Events.endedName(c.n, now)); }); }
+/* Groups of old events: every event named in the group ended days ago (the provider stopped updating it,
+   like a Winter Olympics group in November).  A hide that stays, unlike nothing-on. */
+var oldCache = null;
+function oldEventGroups(hidden) {
+  var now = Date.now(), key = D.chanRev + ':' + Math.floor(now / 3600e3);
+  if (!oldCache || oldCache.key !== key) {
+    var by = {};
+    D.channels.forEach(function (c) {
+      var e = Events.parse(c.n, now), x = by[c.g] || (by[c.g] = { n: 0, timed: 0, live: 0 });
+      x.n++;
+      if (e) { x.timed++; if (e.end + 2 * 86400e3 > now) x.live++; }
+    });
+    oldCache = { key: key, by: by };
+  }
+  return providerGroups().filter(function (g) {
+    var x = oldCache.by[g.id];
+    return x && !!E.hiddenGroups[g.id] === !!hidden && x.timed >= 3 && x.timed >= x.n * 0.6 && !x.live;
+  });
+}
 function groupFeed(g) { return Tidy.groupFeed(g && g.name); }
 function feedPairs() { return T().feeds(); }
 function feedGroups(feed) { return providerGroups().filter(function (g) { return Tidy.groupFeed(g.raw) === feed && channelsOf(g.id, true).length; }); }
@@ -2596,9 +2618,14 @@ function renderTools() {
     (dividerGroups(true).length ? '<div class="small" style="margin-top:10px">Hidden now: ' + plural(dividerGroups(true).length, 'divider group') + '  <button class="small ghost" id="dvBack">Show them again</button></div>' : '');
   /* nothing on */
   var idl = idleChannels();
-  $('tIdle').innerHTML = '<h3>Channels with nothing on</h3><p>Event channels the provider names "Off Air", "Offline" or "No Event Scheduled" between events.  This hides them only while they say so: as soon as the provider names an event on one, it shows again.  Favorites keep theirs.</p>' +
+  $('tIdle').innerHTML = '<h3>Channels with nothing on</h3><p>Event channels the provider names "Off Air", "Offline" or "No Event Scheduled" between events, empty slots like "PPV 09 |" or " :ESPN+ 291", and events that ended hours ago (the provider never renamed them).  This hides them only while they say so: as soon as the provider names an event on one, it shows again.  Favorites keep theirs.</p>' +
     (idl.length ? '<div class="small" style="margin-bottom:10px">' + plural(idl.length, 'shown channel') + ' say so right now, like ' + idl.slice(0, 6).map(function (c) { return esc(c.n); }).join(', ') + '</div>' : '<div class="muted small" style="margin-bottom:10px">No shown channel says so right now.</div>') +
     '<label class="rule" style="margin:0"><input type="checkbox" class="sw" id="idleOn"' + (N.hideIdle ? ' checked' : '') + '><div><b>Hide channels with nothing on</b><div class="ex">The same switch as Channel names on the TV (Settings, Playlists).</div></div></label>';
+  /* old events */
+  var od = oldEventGroups();
+  $('tOld').innerHTML = '<h3>Groups of old events</h3><p>Event groups where every event ended days ago: the provider stopped renaming those channels, so they only ever show old games.  Hide them; you can show them again here.</p>' +
+    (od.length ? '<div class="small" style="margin-bottom:10px">' + od.slice(0, 30).map(function (g) { return esc(g.name); }).join(', ') + (od.length > 30 ? ' and ' + (od.length - 30) + ' more' : '') + '</div><button class="primary" id="odGo">Hide ' + plural(od.length, 'group') + '</button>' : '<div class="muted">No shown group has only old events.</div>') +
+    (oldEventGroups(true).length ? '<div class="small" style="margin-top:10px">Hidden now: ' + plural(oldEventGroups(true).length, 'group') + '  <button class="small ghost" id="odBack">Show them again</button></div>' : '');
   /* East and West feeds */
   renderFeeds();
   /* local channels */
@@ -2660,7 +2687,7 @@ document.addEventListener('click', function (e) {
   mut('Took "' + w + '" off ' + plural(x.groups.length, 'group name'), function () { x.groups.forEach(function (g) { E.groupRenames[g.id] = trimPrefix(g.name, w); }); });
   toast('"' + w + '" taken off ' + plural(x.groups.length, 'group name'), ['Undo', undo]);
 });
-var TOOLS = [['adult', 'tAdult'], ['country', 'tCountry'], ['dupes', 'tDupes'], ['feeds', 'tFeeds'], ['local', 'tLocal'], ['divider', 'tDivider'], ['idle', 'tIdle'], ['empty', 'tEmpty']];
+var TOOLS = [['adult', 'tAdult'], ['country', 'tCountry'], ['dupes', 'tDupes'], ['feeds', 'tFeeds'], ['local', 'tLocal'], ['divider', 'tDivider'], ['idle', 'tIdle'], ['old', 'tOld'], ['empty', 'tEmpty']];
 function toolDone(id) {
   if (id === 'country') return countryStats().filter(function (x) { return x.shown > 0; }).length <= 2;
   if (id === 'dupes') return !dupeSets().length;
@@ -2670,6 +2697,7 @@ function toolDone(id) {
   if (id === 'adult') return !adultGroups().length;
   if (id === 'idle') return !!N.hideIdle || idleChannels().length < 10;
   if (id === 'empty') return !emptyGroups().length;
+  if (id === 'old') return !oldEventGroups().length;
   return true;
 }
 function toolsBadge() { var nt = toolsLeft(), b = $('toolsBadge'); b.textContent = nt; b.classList.toggle('hidden', !nt); b.title = plural(nt, 'step') + ' to do in Smart clean-up'; }
@@ -2778,6 +2806,13 @@ $('tCountry').addEventListener('click', function (e) {
     D.groups.forEach(function (g) { var p = groupCountry(g), show = p ? (keep[p] != null ? keep[p] : true) : !none; if (show) { if (p) delete E.hiddenGroups[g.id]; } else E.hiddenGroups[g.id] = 1; });
   });
   toast('Done.  Groups for ' + (names.join(', ') || 'no countries') + ' are shown.', ['Undo', undo]);
+});
+$('tOld').addEventListener('click', function (e) {
+  if (e.target.id === 'odBack') { var h = oldEventGroups(true); mut('Showed ' + plural(h.length, 'group of old events') + ' again', function () { h.forEach(function (g) { delete E.hiddenGroups[g.id]; }); }); return; }
+  if (e.target.id !== 'odGo') return;
+  var l = oldEventGroups();
+  mut('Hid ' + plural(l.length, 'group of old events'), function () { l.forEach(function (g) { E.hiddenGroups[g.id] = 1; }); });
+  toast(plural(l.length, 'group') + ' hidden', ['Undo', undo]);
 });
 $('tDivider').addEventListener('click', function (e) {
   if (e.target.id === 'dvBack') { var h = dividerGroups(true); mut('Showed ' + plural(h.length, 'divider group') + ' again', function () { h.forEach(function (g) { delete E.hiddenGroups[g.id]; }); }); return; }

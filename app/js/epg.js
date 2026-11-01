@@ -100,8 +100,18 @@ var Epg = (function () {
 
   /* Event channels (events.js): when the guide has nothing for a channel whose name carries the
      event and its time, the guide shows that event at its time instead. */
+  // A guide list as shown: team channels' "Next game" blocks become the game (Events.games), once per list.
+  var shaped = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+  function shape(list) {
+    if (!list || !list.length || typeof Events === 'undefined' || !Events.games) return list;
+    var hit = shaped && shaped.get(list);
+    if (hit) return hit;
+    var out = Events.games(list);
+    if (shaped) shaped.set(list, out);
+    return out;
+  }
   function request(ch) {
-    var list = guideFor(ch);
+    var list = shape(guideFor(ch));
     if (list && list.length) return list;
     var ev = ch && typeof Events !== 'undefined' ? Events.of(ch) : null;
     return ev ? Events.programmes(ev) : list;
@@ -132,6 +142,7 @@ var Epg = (function () {
     var list = null;
     if (xmlMode) { var id = epgId(ch), x = id && cache.get(id); if (x) list = x.list; }
     if (!list) { var hit = cache.get(ch.k); if (hit) list = hit.list; }
+    list = shape(list);
     if (!list || !list.length) { var ev = typeof Events !== 'undefined' ? Events.of(ch) : null; list = ev ? Events.programmes(ev) : null; }
     if (!list) return null;
     var t = Date.now();
@@ -635,9 +646,10 @@ var Epg = (function () {
     var p = P(), miss = missing(), map = Store.edits.epgMap || {};
     var ccs = PubEpg.countriesFor(p, miss, Library.data);
     var gz = !!Net.active || typeof DecompressionStream !== 'undefined';
-    var files = PubEpg.files(ccs, !!Net.active, gz);
+    var apps = PubEpg.appFiles ? PubEpg.appFiles(miss, gz) : [];
+    var files = PubEpg.files(ccs, !!Net.active, gz).concat(apps);
     var want = Object.keys(map).map(function (k) { return map[k]; }).filter(function (v) { return PUB_ID.test(v); });
-    var ckey = 'epgpub:' + p.id, sig = U.hash(ccs.join() + '|' + p.epgDays);
+    var ckey = 'epgpub:' + p.id, sig = U.hash(ccs.join() + '|' + p.epgDays + (apps.length ? '|' + apps.map(function (f) { return f.prefix; }).join() : ''));
     return useHelper().then(function (h) {
       hMode = h;
       if (!h) return Store.idbGet(ckey);
@@ -671,6 +683,8 @@ var Epg = (function () {
         PubEpg.keys(Library.name(ch)).keys.forEach(function (x) { add(x[0]); });
         PubEpg.keys(ch.n).keys.forEach(function (x) { add(x[0]); });
         if (ch.epg) add('id:' + ch.epg);
+        var aid = PubEpg.appId ? PubEpg.appId(ch.epg) : '';          // "US_5ca5…" is "5ca5…" in Pluto's own guide
+        if (aid && !seen['id:' + aid]) { seen['id:' + aid] = 1; (pk['id:' + aid] || (pk['id:' + aid] = [])).push([ch.k, pd, '']); }
       });
       var started = Date.now(), g = guard('pub', sig, forced); if (!g) return;
       return work(files, { pk: pk, want: want }, g, sig, { asked: miss.length, countries: ccs }).then(function (res) {

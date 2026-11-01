@@ -33,7 +33,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     [await find('^PPV 01'), await find('^PPV 02'), await find('^NFL 3')]);
   ok('on now: the event itself', /^UFC: Prelims \|/.test(nn[0]), nn[0]);
   ok('before it starts: "Starts ...", then the event', /^Starts .*: Main Card: Rivera v Okafor \| Main Card: Rivera v Okafor$/.test(nn[1]), nn[1]);
-  ok('long over: nothing', nn[2] === 'none', nn[2]);
+  ok('long over: says it ended, so it never looks live', /^Ended .*: Desert Hawks @ Summit Miners \| $/.test(nn[2]), nn[2]);
+  ok('and with Hide channels with nothing on, it leaves the lists', await ev(k => { const n = Store.playlist.names || (Store.playlist.names = Names.defaults()); n.hideIdle = true; Library.dirty(); const gone = !Library.channels(Library.find(k).g).some(c => c.k === k); n.hideIdle = false; Library.dirty(); return gone; }, await find('^NFL 3')));
   const real = await ev(() => { const c = Library.data.channels.find(c => c.epg); const l = Epg.request(c); return !l || !l.length || !l[0].up; });
   ok('channels with a real guide keep it', real);
 

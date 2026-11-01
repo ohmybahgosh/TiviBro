@@ -251,7 +251,7 @@ var Events = (function () {
     var d = new Date(t), n = new Date(now || Date.now());
     var day = d.toDateString() === n.toDateString() ? '' :
       Math.abs(t - n.getTime()) < 6 * 86400e3 ? DAY_S[d.getDay()] + ' ' : MON_S[d.getMonth()] + ' ' + d.getDate() + ', ';
-    return day + U.hhmm(t);
+    return day + (typeof U !== 'undefined' ? U.hhmm(t) : d.toTimeString().slice(0, 5));
   }
   // Before the start: "Starts 7:30 PM: Kings vs Pelicans"; the event itself; a while after: "Ended: ...".
   function programmes(ev) {
@@ -259,15 +259,83 @@ var Events = (function () {
     return [
       { s: Math.min(ev.start - 3 * 86400e3, Date.now() - 12 * 3600e3), e: ev.start, t: 'Starts ' + when(ev.start) + ': ' + ev.title, d: info, up: 1 },
       { s: ev.start, e: ev.end, t: ev.title, d: info, ev: 1 },
-      { s: ev.end, e: ev.end + 6 * 3600e3, t: 'Ended: ' + ev.title, d: info, ended: 1 }
+      // Ended: stays in the guide while the provider keeps the old name, so it never looks like a live event.
+      { s: ev.end, e: Math.max(ev.end + 6 * 3600e3, Date.now() + 7 * 86400e3), t: 'Ended ' + when(ev.end) + ': ' + ev.title, d: info, ended: 1 }
     ];
+  }
+
+  /* Team channels whose guide only says "Next game: Chicago Blackhawks at Boston Bruins at 10/31/2026
+     01:00 PM EDT", in long overlapping blocks.  games() turns those into what is true: "Next game Sat 1:00 PM:
+     Blackhawks at Bruins" until the game, the game itself at its time, and nothing about a game that is over.
+     Other programmes are kept as they are (the same objects, so descriptions loaded later still reach them). */
+  var NEXT = /^\s*next game:?\s*(.+?)\s+(?:at|on)\s+(\d{1,2})\/(\d{1,2})\/(20\d\d)\s+(\d{1,2}):(\d\d)\s*([ap]\.?m\.?)?\s*(?:\(([^)]*)\)|([A-Za-z]{2,4})\b)?/i;
+  function nextGame(t) {
+    var m = NEXT.exec(t || '');
+    if (!m) return null;
+    var zone = m[9] && ZONES[m[9].toUpperCase()] ? ZONES[m[9].toUpperCase()] : m[8] ? zoneOfIana(m[8]) : defaultZone();
+    if (zone === 'local' && m[8]) zone = defaultZone();
+    var start = toTime(+m[4], +m[2] - 1, +m[3], hour24(m[5], m[7]), +m[6], zone);
+    return isFinite(start) ? { title: m[1].replace(/\s+/g, ' ').trim(), start: start } : null;
+  }
+  function games(list) {
+    if (!list || !list.length) return list;
+    var any = false, i;
+    for (i = 0; i < list.length && !any; i++) if (/^\s*next game/i.test(list[i].t || '')) any = true;
+    if (!any) return list;
+    var now = Date.now(), seen = {}, gl = [], real = [], from = Infinity, to = 0;
+    list.forEach(function (p) {
+      if (!/^\s*next game/i.test(p.t || '')) { real.push(p); return; }
+      from = Math.min(from, p.s); to = Math.max(to, p.e);
+      var g = nextGame(p.t);
+      if (g && !seen[g.title + '@' + g.start]) { seen[g.title + '@' + g.start] = 1; gl.push(g); }
+    });
+    gl.sort(function (a, b) { return a.start - b.start; });
+    // The game itself, where the guide doesn't already have a programme at that time.
+    gl.forEach(function (g) {
+      var covered = real.some(function (p) { return p.s <= g.start + 15 * 60e3 && p.e > g.start; });
+      if (!covered) real.push({ s: g.start, e: g.start + lengthOf(g.title), t: g.title, d: 'The game, from this channel\'s guide.', ev: 1 });
+    });
+    real.sort(function (a, b) { return a.s - b.s || b.e - a.e; });
+    // Overlapping blocks (the provider's run over one another): a later one starts when the earlier ends.
+    var out = [];
+    real.forEach(function (p) {
+      var prev = out[out.length - 1];
+      if (prev && p.t === prev.t && p.s <= prev.e) {                  // the same game in two blocks: one
+        if (p.e > prev.e) out[out.length - 1] = { s: prev.s, e: p.e, t: prev.t, d: prev.d || p.d, ev: prev.ev };
+        return;
+      }
+      if (prev && p.s < prev.e) {
+        if (p.e <= prev.e) return;
+        p = { s: prev.e, e: p.e, t: p.t, d: p.d, ev: p.ev };
+      }
+      out.push(p);
+    });
+    // The gaps the "Next game" blocks covered: say which game comes next, and when.
+    var filled = [], cur = from;
+    function gap(a, b) {
+      if (b - a < 60e3) return;
+      var g = null;
+      for (var k = 0; k < gl.length; k++) if (gl[k].start >= b - 60e3) { g = gl[k]; break; }
+      if (g) filled.push({ s: a, e: b, t: 'Next game ' + when(g.start, now) + ': ' + g.title, d: 'From this channel\'s guide.', up: 1 });
+    }
+    out.forEach(function (p) {
+      if (p.s > cur && cur < to) gap(cur, Math.min(p.s, Math.max(to, p.s)));
+      filled.push(p);
+      cur = Math.max(cur, p.e);
+    });
+    if (cur < to) gap(cur, to);
+    return filled;
   }
 
   function on() { return cfg().on !== false; }
   function of(c) { return c && on() ? parse(c.n) : null; }
+  /* An event that is long over: the provider never renamed the channel ("Peacock 001 | ... (2026-02-08
+     03:00:00)" in November).  Six hours after its end, so a game that ran long still counts. */
+  var ENDED_MS = 6 * 3600e3;
+  function endedName(n, now) { now = now || Date.now(); var e = on() ? parse(n, now) : null; return !!(e && e.end + ENDED_MS < now); }
 
   return {
-    parse: parse, of: of, programmes: programmes, when: when, setProviderTz: setProviderTz, zoneOfIana: zoneOfIana, toTime: toTime,
+    parse: parse, of: of, programmes: programmes, games: games, nextGame: nextGame, ended: function (c, now) { return !!c && endedName(c.n, now); }, endedName: endedName, when: when, setProviderTz: setProviderTz, zoneOfIana: zoneOfIana, toTime: toTime,
     on: on, shortNames: function () { return on() && cfg().short !== false; }, groupOn: function () { return on() && cfg().group !== false; },
     zone: defaultZone, reset: function () { memo.clear(); },
     ZONE_CHOICES: ['auto', 'ET', 'CT', 'MT', 'PT', 'UK', 'CET', 'UTC', 'local'],

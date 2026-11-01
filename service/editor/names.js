@@ -41,6 +41,9 @@ var Names = (function () {
   // Notes some providers keep at the end of a name while a channel has nothing on.
   var IDLE = 'off[\\s-]?air|offline|no events? (?:scheduled|today|live)|no event|no live events?|event (?:ended|over|finished)|not live|no stream|stream offline|currently offline|nothing (?:on|scheduled)';
   var IDLE_RE = new RegExp('(?:^|[\\s|:\\-–—•(\\[])(?:' + IDLE + ')\\s*[\\])]?\\s*[.!]?\\s*$', 'i');
+  // Empty event slots: the tag and nothing after it ("EPL 02:", "PPV09 |", "NFL Game Pass 3 :"), or the
+  // network tag with nothing before it (" :ESPN+  291", " :FOX ONE  20").
+  var EMPTY_RE = /^\s*[^|:]{0,30}\d[^|:]{0,6}\s*[:|](?:\s*[:|])*\s*$|^\s*:\s?[A-Za-z][\w+&.' ]{0,24}?\s+\d{1,4}\s*$/;
   // Country codes and names at the end ("CANAL 4 PAN", "BEIN SPORTS 5 (USA)", "TN HD (Argentina)").
   var COUNTRY_WORDS = ['ARGENTINA', 'BRAZIL', 'BRASIL', 'MEXICO', 'MÉXICO', 'COLOMBIA', 'CHILE', 'PERU', 'PERÚ', 'ECUADOR', 'VENEZUELA', 'URUGUAY', 'PARAGUAY', 'BOLIVIA',
     'ESPAÑA', 'SPAIN', 'PORTUGAL', 'FRANCE', 'ITALIA', 'ITALY', 'GERMANY', 'POLAND', 'GREECE', 'TURKEY', 'INDIA', 'PAKISTAN', 'CANADA', 'LATINO AMERICA', 'LATINOAMERICA', 'LATAM',
@@ -187,7 +190,8 @@ var Names = (function () {
     // "Hide channels with nothing on": a channel whose name says it is off air, offline or has no
     // event scheduled.  Checked on the name the provider sends now, so it comes back by itself as
     // soon as the provider names an event on it.
-    idle: function (n) { return IDLE_RE.test(n || ''); },
+    idle: function (n) { return IDLE_RE.test(n || '') || EMPTY_RE.test(n || ''); },
+    empty: function (n) { return EMPTY_RE.test(n || ''); },
     hideIdle: function () { return !!cfgOf().hideIdle; }
   };
 })();

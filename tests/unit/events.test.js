@@ -60,10 +60,36 @@ ok('a zone in the name still wins', iso(Events.parse('NHL 1 | Mammoth @ Penguins
 Store.playlist.events = {}; Events.reset();
 // Guide entries
 const ev = Events.parse('PPV 02 | UFC | Main Card: Rivera v Okafor | Thu Oct 29 9:00 PM ET', NOW), pr = Events.programmes(ev);
-ok('guide: before, during, after', pr.length === 3 && /^Starts .*: Main Card: Rivera v Okafor$/.test(pr[0].t) && pr[0].e === ev.start && pr[1].t === 'Main Card: Rivera v Okafor' && pr[1].s === ev.start && /^Ended: /.test(pr[2].t) && pr[2].s === ev.end, JSON.stringify(pr.map(p => p.t)));
+ok('guide: before, during, after', pr.length === 3 && /^Starts .*: Main Card: Rivera v Okafor$/.test(pr[0].t) && pr[0].e === ev.start && pr[1].t === 'Main Card: Rivera v Okafor' && pr[1].s === ev.start && /^Ended .*: Main Card: Rivera v Okafor$/.test(pr[2].t) && pr[2].s === ev.end, JSON.stringify(pr.map(p => p.t)));
 ok('guide: the details and the full name are the description', /UFC/.test(pr[1].d) && /Rivera v Okafor \| Thu Oct 29/.test(pr[1].d));
 ok('length: soccer about two hours, prelims two, others three', Events.parse('EPL 01: Chelsea FC vs. Manchester United | Saturday, 31 October 2026 12:30', NOW).end - Events.parse('EPL 01: Chelsea FC vs. Manchester United | Saturday, 31 October 2026 12:30', NOW).start === 2.25 * 3600e3 &&
   ev.end - ev.start === 3 * 3600e3);
+// Ended events: the provider never renamed the channel.
+ok('an event long over has ended', Events.endedName('US (Peacock 001) | Women`s Downhill (2026-02-08 05:30:00)', NOW));
+ok('one tonight has not', !Events.endedName('NBA: Kings vs Pelicans @ Oct 29 7:30 PM :Nbc Sports  04', NOW));
+ok('one that ended an hour ago has not, yet (games run long)', !Events.endedName('NHL 1 | Mammoth @ Penguins - Thu Oct 29 07:00 AM EDT', Date.parse('2026-10-29T15:00:00Z')));
+ok('a name with only a time is never old', !Events.endedName('EVENTS 01: 5pm UFC Fight Night Moicano v Nolan', NOW));
+const endedList = Events.programmes(Events.parse('US (Peacock 001) | Women`s Downhill (2026-02-08 05:30:00)', NOW));
+ok('the guide says it ended, and keeps saying so', /^Ended /.test(endedList[2].t) && endedList[2].e > Date.now() + 86400e3, endedList[2].t);
+
+// Team channels: "Next game" blocks become the game.
+const H = 3600e3, T0 = Date.parse('2026-10-31T09:00:00Z');
+const nextList = [
+  { s: T0, e: T0 + 6 * H, t: 'Next game: Chicago Blackhawks at Boston Bruins at 10/31/2026 01:00 PM EDT' },
+  { s: T0 + H, e: T0 + 7 * H, t: 'Next game: Chicago Blackhawks at Boston Bruins at 10/31/2026 01:00 PM (US/Eastern)' },
+  { s: T0 + 6 * H, e: T0 + 8 * H, t: 'Next game: Chicago Blackhawks at Boston Bruins at 10/31/2026 01:00 PM EDT' },
+  { s: T0 + 11 * H, e: T0 + 30 * H, t: 'Next game: Vegas Golden Knights at Boston Bruins at 11/02/2026 07:00 PM EST' }];
+const g = Events.games(nextList);
+const gt = g.map(p => iso(p.s) + ' ' + p.t);
+ok('the game is at its time', g.some(p => p.t === 'Chicago Blackhawks at Boston Bruins' && iso(p.s) === '2026-10-31T17:00Z' && p.ev), gt.join(' / '));
+ok('before it: which game is next, and when', /^Next game .*: Chicago Blackhawks at Boston Bruins$/.test(g[0].t) && g[0].s === T0 && g[0].e === Date.parse('2026-10-31T17:00:00Z'), gt.join(' / '));
+ok('after it: the next one', g.some(p => /^Next game .*: Vegas Golden Knights at Boston Bruins$/.test(p.t)), gt.join(' / '));
+ok('no overlaps, no duplicates', g.every((p, i) => !i || p.s >= g[i - 1].e) && g.filter(p => p.t === 'Chicago Blackhawks at Boston Bruins').length === 1, gt.join(' / '));
+const withGame = nextList.concat([{ s: Date.parse('2026-10-31T17:00:00Z'), e: Date.parse('2026-10-31T19:30:00Z'), t: 'Chicago Blackhawks at Boston Bruins' }]);
+ok('the guide\'s own game entry is kept, not doubled', Events.games(withGame).filter(p => /Blackhawks at Boston Bruins$/.test(p.t) && !/^Next/.test(p.t)).length === 1);
+const plain = [{ s: 1, e: 2, t: 'News' }];
+ok('other guides are left alone', Events.games(plain) === plain);
+
 Store.playlist.events = { on: false };
 ok('off: nothing is read', Events.of({ n: 'PPV 02 | UFC | Main Card: Rivera v Okafor | Thu Oct 29 9:00 PM ET' }) === null);
 console.log(fail ? fail + ' failures' : 'all ' + n + ' event channel tests passed');
