@@ -360,6 +360,30 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 </p>
 </details>
 
+### My media
+
+**My media** gives your own movies a full-width poster view, with **Continue watching**, **Favorites** and **All movies** shelves.  The movie you choose shows its title and description above the shelves.  There are no automatic trailers or previews.
+
+Press **Green** on My media to rescan all saved sources for new or removed movies.  Press **Yellow** to fetch details and artwork for new movies or outdated language matches.  Yellow leaves up-to-date matches alone.  Wait for a rescan to finish before fetching details.
+
+Use **Left** and **Right** to move between movies, and **Up** and **Down** to move between shelves.  **OK** plays or resumes the selected movie.  **Hold OK** or **Red** opens movie options: add or remove a favorite, start over, mark as watched, find or correct movie details, or see file information.  Favorites and your place in a movie stay with My media across playlists and restarts.
+
+**Back** opens the standard main menu directly.  **Left** from the first movie does the same.  There is no separate source menu on the movie screen; all sources appear together and source management stays in Settings.
+
+**Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, or **Add a WebDAV server** and enter its WebDAV address and login.  Turn on media sharing on a home server first.  A playlist must already be set up.
+
+A WebDAV source is a WebDAV folder, not a normal website or HTTP directory.  Services such as premiumize use a customer ID and API key as the login.  Listing uses WebDAV; playback currently needs the server to redirect to a playable file link.  Servers that serve files directly with a login are not supported yet.
+
+For easier typing, open **Settings > My media > Edit on a computer** and connect to the web editor.  Its **My media** page lets you add WebDAV logins, rescan or remove sources, and change the shared metadata language.  Saved logins are never sent back to the editor.
+
+In **Settings > My media**, choose a saved source for **Rescan**, **Fetch movie details**, or **Remove**.  Removing a source leaves your files alone.  A failed, incomplete or empty scan keeps the previous library.
+
+**Movie details:** **Fetch movie details** looks up a source's movies on TMDB.  Create your own API key or API Read Access Token at [TMDB API settings](https://www.themoviedb.org/settings/api), then save it under **Settings > My media > TMDB API token**.  You can paste it in the web editor instead of typing with the remote.  The token is checked before saving, kept only on this TV, never sent back to the editor, and excluded from backups and problem reports.  Public builds contain no token.  Fetching details sends movie titles/years or saved movie IDs to TMDB.  Only an exact, unambiguous title/year match is saved automatically; use **Find movie details** or **Change movie details** in a movie's options to search and choose a match.  **Remove movie details** clears it.  Posters and backdrops load from image.tmdb.org.  Existing matches, including manually corrected matches, are refreshed by ID rather than searched again.  Details and poster addresses survive rescans and restarts.
+
+Movies use the usual seek bar and subtitle menu.  Embedded SRT text subtitles in MKV files can appear when the file has a usable subtitle index.  ASS/SSA, image subtitles such as VobSub or PGS, MP4 timed text and separate `.srt` files are not included yet.  **Back** hides the player controls first, then returns to the same movie.  Series, folder picking, Search and phone app browsing are not included yet.
+
+Playback contacts servers you add and their playback servers.  Fetching details also contacts api.themoviedb.org with titles/years or saved movie IDs and the preferred language, never your source logins or playback links.  Previously saved Cinemeta posters may still load from images.metahub.space until those movies are refreshed.  Cloud playback links are resolved each time you play and are never saved.  After a long pause with an expired link, return to the shelves and resume.  The library uses the helper's persistent storage, so app restarts and updates keep it even when browser storage is full.  Source logins are outside playlist backups and problem reports; add the sources again after restoring on another TV.  Up to eight sources can be saved.
+
 ### Search
 
 **Search** in the menu finds channels and programmes in the guide (now, later today, the coming days and on catch-up) as you type, and also your Movies and Shows.  Below the box, **Everything**, **On now**, **Coming up**, **Replays**, **Channels** and **Movies & Shows** narrow the results (**◀ ▶** on that row).  Each programme shows once, even when several copies of the channel carry it, with **Today**, **Tomorrow** or the day and its time.  **OK** watches, replays, opens a show's episodes, or sets a reminder (**OK** again cancels it); **Hold OK** gives channel options.  **Yellow** adds what you typed to your [watchlist](#watchlist).
@@ -519,12 +543,28 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Show stream details in the info panel** | **On** · Off | Adds the resolution, codecs and which player is in use. |
 | **Keep the picture while reconnecting** | **On** · Off | When a channel drops for a moment, the last picture stays on screen with a small notice in the corner instead of a black screen and "Tuning".  Some streams the TV player draws itself can't be held; those go black as before.  A channel that drops three times in three minutes on MPEG-TS also tries the provider's HLS version of it straight away, and keeps using it while TiviBro is open. |
 | **Black screen while switching** | On · **Off** | Hides the last picture until the next channel starts, instead of leaving it frozen. |
-| **Audio language** | **The stream's own choice** · English · Spanish · French · German · and more | When a channel or movie has more than one audio track, plays this one.  Audio description tracks are skipped unless nothing else is in that language.  A track you pick from the quick menu wins until you change channel. |
+| **Audio language** | **The stream's own choice** · English · Spanish · French · German · and more | When a channel or movie has more than one audio track, tries this language, then the fallback language, then the first available track.  This also applies to My media.  Language tags must be present in the file or stream.  Audio description tracks are skipped unless nothing else is in that language.  A track you pick from the quick menu wins until you change channel. |
+| **Fallback audio language** | **English** | Try this language when the preferred audio language is missing.  Choose First available track to skip the fallback.  For Dutch then English, set Audio language to Dutch and leave the fallback as English. |
 | **Prefer surround sound** | On · **Off** | Picks the 5.1 or Dolby track in that language when there is one.  Your TV or soundbar needs to support it. |
 | **Subtitles automatically** | **Off** · Any language · English only · Spanish only · … | Turns subtitles on when a stream has them; with a language, only subtitles in that language.  You can still switch them from the quick menu. |
 | **Play next episode automatically** | **On** · Off | When an episode ends, the next one starts. |
 
 **Subtitles in MKV movies and episodes.**  Open **Subtitles** from the player menu to choose a language or **Off**.  The menu is available as soon as playback starts and shows **Finding subtitles…** while tracks are discovered.  The automatic subtitle language setting above also applies.  Supported embedded SRT tracks appear with their language names, and your selection survives seeking and reconnects.  Files without supported tracks show an unavailable message; styled ASS/SSA and bitmap subtitles are not supported.  Some MKV files do not index their subtitle tracks and cannot expose them here.
+
+### Settings: My media
+
+Manage your own movie sources and preferences.  The [My media](#my-media) screen keeps the movie shelves full-width; source setup stays here.
+
+| Settings > My media | Default | What it does |
+|---|---|---|
+| **Add media** | | Find a DLNA / UPnP server or enter a WebDAV address and login. |
+| **Edit on a computer** | | Open the web editor to type source logins on a computer. |
+| **TMDB API token** | Not set | Your own TMDB API key or Read Access Token.  Enter it on the TV or paste it in the web editor.  Settings and the editor show when a token is saved.  Select it to replace it, or leave the editor field blank to keep it. |
+| **Sort movies by** | **Name (A–Z)** | Name, release date (newest first), or date added (newest first).  All movies and Favorites follow this choice; Continue watching stays ordered by recent playback.  Rescans preserve the date first added. |
+| **Rescan media sources** | | Same as Green on My media: scan every saved source. |
+| **Fetch missing movie details** | | Same as Yellow: look up new or outdated movie details in bulk. |
+| **Metadata language** | **English** | Shared by the TV app and web editor.  Changing it refreshes saved movie matches in the selected language.  Only missing translated fields fall back to English, identified beside the details.  If a request fails, the previous details remain. |
+| *(each source)* | | Rescan, fetch movie details, or remove the source. |
 
 ### Settings: Remote control
 
@@ -1026,7 +1066,7 @@ A backup is one file with everything: settings, every playlist **with its login*
   <a href="https://tivibro.app/view/#tv-set-diag-test"><img src="screenshots/tv-set-diag-test.png" width="60%" alt="Connection test"></a>
 </p>
 
-<a name="what-is-the-network-helper"></a>**What is the network helper?**  The **network helper** is a part of TiviBro that runs in the background on the TV.  It talks to your provider for the app: it fetches the channel list, the guide and the streams, sends the User-Agent your provider wants, unzips guides, and copes with servers that don't follow the rules.  webOS won't let an app talk to most IPTV servers directly, so TiviBro needs it.  It starts with TiviBro, runs only on the TV, and only ever contacts your own provider (and, if you turn them on, the logo projects).
+<a name="what-is-the-network-helper"></a>**What is the network helper?**  The **network helper** is a part of TiviBro that runs in the background on the TV.  It talks to your provider for the app: it fetches the channel list, the guide and the streams, sends the User-Agent your provider wants, unzips guides, and copes with servers that don't follow the rules.  webOS won't let an app talk to most IPTV servers directly, so TiviBro needs it.  It starts with TiviBro, runs only on the TV, and contacts your own provider, media sources you add and their playback servers (and, if you turn them on, the logo projects).
 
 You'll see it in three places: **Connection** on the first screen and in **Settings > Playback and buffering** (leave it on **Automatic**), **Network helper** in Settings and Diagnostics (it should say *running*), and the connection test.  If it says *not running*, restart TiviBro; if that doesn't help, **Settings > Diagnostics > View network helper log** shows why.
 

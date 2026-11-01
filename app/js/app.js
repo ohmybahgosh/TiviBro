@@ -465,7 +465,7 @@ var App = (function () {
     if (!ready) return;
     // Movies and catch-up come back where they were, and the spot is saved first in case the TV
     // closes the app while it is in the background.
-    if (document.hidden) { if (Vod.checkpoint) Vod.checkpoint(); wasPlaying = Player.suspend(); }
+    if (document.hidden) { if (Vod.checkpoint) Vod.checkpoint(); Media.checkpoint(); wasPlaying = Player.suspend(); }
     else if (wasPlaying) { wasPlaying = false; Player.resume(); }
   });
 

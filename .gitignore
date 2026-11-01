@@ -47,3 +47,6 @@ service/companion.json.tmp
 
 # the AI knowledge base, built by npm run ai (published at tivibro.app/ai/)
 tivibro-for-ai.md
+
+# Legacy credential file from older local builds: never package or commit
+service/media-tmdb-key.js

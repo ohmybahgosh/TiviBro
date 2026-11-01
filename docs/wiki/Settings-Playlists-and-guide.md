@@ -15,6 +15,8 @@ Your playlists, how often they reload, and where the programme guide comes from.
 | *(each playlist)* | | Its name and type, and for the one in use, how many channels it has.  **OK** opens its page (below). |
 | **Add playlist…** | | Opens the setup screen for another Xtream Codes or M3U playlist.  Each playlist keeps its own groups, favorites, hidden items, guide and name rules. |
 
+Each playlist in the list starts with when its subscription ends ("Expires 19 Nov", "Expires in 3 days" in the last two weeks, "Expired 2 Oct"), when the provider reports it.
+
 On a playlist's page:
 
 | Setting | Choices | What it does |
@@ -32,7 +34,7 @@ On a playlist's page:
 | **Reload guide** | Same choices as the channel list, **Every 12 hours** | How often the guide is downloaded again. |
 | **Keep past days** | 1 · **2** · 3 · 5 · 7 days | How far back the guide keeps programmes, for catch-up browsing.  More days use more TV memory. |
 | **Match guide by channel name** | **On** · Off | Links channels that have no guide id to a guide channel with the same name. |
-| **Public guide fill-in ›** | **On** · Off | For channels with no guide from your sources or your provider: free guides from epg.pw and iptv-epg.org, matched by guide id, a local station's call sign or the name.  **Countries**: **Automatic** (the countries of the channels that need a guide) or up to eight you choose.  Shows how many channels each guide filled in and when it last looked; **Look again now** downloads them again.  TiviBro hosts nothing and sends no logins.  See [Public guide fill-in](The-programme-guide). |
+| **Public guide fill-in ›** | **On** · Off | For channels with no guide from your sources or your provider: free guides from epg.pw and iptv-epg.org, matched by guide id, a local station's call sign or the name, and Pluto TV's own guide (i.mjh.nz) for Pluto channels, matched by their Pluto id.  **Countries**: **Automatic** (the countries of the channels that need a guide) or up to eight you choose.  Shows how many channels each guide filled in and when it last looked; **Look again now** downloads them again.  TiviBro hosts nothing and sends no logins.  See [Public guide fill-in](The-programme-guide). |
 | **Reload guide now** | | Downloads the guide right away. |
 | **Guide last loaded**, each source, **Channels with guide data** | (information) | When the guide loaded, how many channels and programmes each source gave, and how many of your channels have a guide. |
 | **Assign guide to channels without one** | | Lists channels with no guide; pick one and search the guide for the right channel.  Also on any channel: **Hold OK > Assign guide…**. |
@@ -48,7 +50,7 @@ On a playlist's page:
 | Setting | Default | What it does |
 |---|---|---|
 | **Clean up channel names** | **On** | The master switch.  Off shows the original names. |
-| **Hide channels with nothing on** | Off | Event channels the provider names "Off Air", "Offline" or "No Event Scheduled" between events stay out of the lists while they say so, and come back by themselves when an event is named on them.  Favorites keep theirs.  Works even with name clean-up off. |
+| **Hide channels with nothing on** | Off | Event channels the provider names "Off Air", "Offline" or "No Event Scheduled" between events, empty slots ("PPV 09 \|", "EPL 02:", " :ESPN+ 291") and events that ended hours ago (the provider never renamed them) stay out of the lists while they say so, and come back by themselves when an event is named on them.  Favorites keep theirs.  Works even with name clean-up off. |
 | **Clean group names too** | **On** | Turns "USA \| Sports" into "Sports" in the group list. |
 | **Enable recommended defaults** / **Turn all default rules off** | | Set every built-in rule at once.  Your own lists are kept. |
 | **Country and region prefixes** | **On** | "USA \| ESPN" → "ESPN", "\|UK\| BBC One" → "BBC One", "CA: TSN 1" → "TSN 1", "UK◈ Sky Store" → "Sky Store".  About 250 country, region and language codes (CAR, ARG, CO, CA-FR, AFG, PK and so on), with any separator: \| : - • » ◈ ▶. |

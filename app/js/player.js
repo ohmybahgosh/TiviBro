@@ -375,7 +375,8 @@ var Player = (function () {
     }, 50);
   }
   /* Preferred audio: the language chosen in Settings > Playback, and with "Prefer surround sound"
-     a 5.1 or Dolby track in it.  Audio description tracks only when nothing else matches.  A
+     a 5.1 or Dolby track in it.  Missing languages fall back to the second choice, then
+     the first available track.  Audio description tracks only when nothing else matches.  A
      track picked by hand from the quick menu wins until the channel changes. */
   var SURROUND = /5\.1|7\.1|\b[68] ?ch\b|\bac-?3\b|e-?ac-?3|\bdd\+?|dolby|atmos|surround|dts/i;
   var DESCRIBED = /\b(ad|audio ?desc\w*|descriptive|description|visually impaired|vi)\b/i;
@@ -383,11 +384,12 @@ var Player = (function () {
     var text = (t.label || '') + ' ' + (t.lang || '');
     return { lang: U.lang(t.lang) || U.lang(t.label), surround: t.ch > 2 || SURROUND.test(text), ad: /desc/i.test(t.kind || '') || DESCRIBED.test(text) };
   }
-  function bestAudio(list, want, surround) {
+  function bestAudio(list, want, surround, fallback) {
+    if (fallback === undefined) fallback = 'en';
     if (!want && !surround) return null;
     var best = null, bestScore = -1e9;
     list.forEach(function (t) {
-      var d = describeTrack(t), sc = (want && d.lang === want ? 100 : 0) + (surround && d.surround ? 10 : 0) - (d.ad ? 50 : 0) + (t.on ? 1 : 0);
+      var d = describeTrack(t), sc = (want && d.lang === want ? 200 : want && fallback && d.lang === fallback ? 100 : 0) + (surround && d.surround ? 10 : 0) - (d.ad ? 50 : 0) + (!want && t.on ? 1 : 0);
       if (sc > bestScore) { best = t; bestScore = sc; }
     });
     return best;
@@ -396,7 +398,7 @@ var Player = (function () {
     if (!eng || !eng.audio || !cur || cur.userAudio) return;
     var list = eng.audio(), s = Store.settings;
     if (list.length < 2) return;
-    var b = bestAudio(list, s.audioLang || '', !!s.audioSurround);
+    var b = bestAudio(list, s.audioLang || '', !!s.audioSurround, s.audioFallback === undefined ? 'en' : s.audioFallback);
     if (b && !b.on) { Log.info('player', 'Audio: "' + b.label + '" (preferred language' + (s.audioSurround ? ', surround' : '') + ')'); eng.setAudio(b.id); }
   }
 

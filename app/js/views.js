@@ -19,7 +19,7 @@ var Views = (function () {
   var overlay = false, ovGroup = null;
   var backT = 0, sleepAt = 0, sleepWarned = false, playStart = 0, recentDone = false;
 
-  var TAB_LABELS = { live: 'Channels', guide: 'Guide', movies: 'Movies', shows: 'Shows', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
+  var TAB_LABELS = { live: 'Channels', guide: 'Guide', movies: 'Movies', shows: 'Shows', media: 'My media', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
   // The guide is home: the app opens on it and Back from any other screen comes back to it.
   function home() { return Store.settings.startTab === 'live' ? 'live' : 'guide'; }
   /* The plain channel list in the menu: most people browse with the guide, so it shows only when
@@ -32,6 +32,7 @@ var Views = (function () {
     guide: '<path d="M3 5h18M3 12h18M3 19h18M9 3v18"/>',
     live: '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>',
     movies: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+    media: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 11l5 3-5 3z"/>',
     shows: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3l4 4 4-4"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
     editor: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
@@ -44,7 +45,7 @@ var Views = (function () {
     var pl = Store.playlist, v = pl.vod || {};
     if (pl.type === 'xtream' && v.movies) tabs.push('movies');
     if (pl.type === 'xtream' && v.series) tabs.push('shows');
-    tabs.push('search', 'editor', 'settings');
+    tabs.push('media', 'search', 'editor', 'settings');
     // Test builds: Report a problem one press away (it also stays in Settings > Diagnostics).
     if (/alpha|beta/i.test(TIVIBRO_VERSION) || Store.settings.reportInMenu) tabs.push('report');
     var nav = document.querySelector('.tabs');
@@ -406,6 +407,7 @@ var Views = (function () {
     doSwitch(t);
   }
   function doSwitch(t) {
+    if (tab === 'media' && t !== 'media') Media.leave();
     tab = t;
     Keymap.setContext(t === 'live' ? 'list' : t === 'guide' ? 'guide' : 'other');
     document.querySelectorAll('.tab').forEach(function (el, i) {
@@ -415,7 +417,7 @@ var Views = (function () {
       if (on) tabSel = i;
     });
     if (t !== 'guide') Guide.leave();
-    ['Live', 'Guide', 'Settings', 'Vod', 'Search'].forEach(function (x) {
+    ['Live', 'Guide', 'Settings', 'Vod', 'Media', 'Search'].forEach(function (x) {
       var want = t === 'movies' || t === 'shows' ? 'Vod' : t.charAt(0).toUpperCase() + t.slice(1);
       var v = $('view' + x);
       if (v) v.classList.toggle('hidden', x !== want);
@@ -437,6 +439,7 @@ var Views = (function () {
       if (!full) { Player.stop(); playing = null; }
       if (t === 'settings') Settings.open();
       else if (t === 'movies' || t === 'shows') Vod.open(t === 'shows' ? 'series' : 'movie');
+      else if (t === 'media') Media.open();
       else if (t === 'search') Search.open();
     }
   }
@@ -707,7 +710,7 @@ var Views = (function () {
     if (mode === 'vod') {
       var v = vod;
       vodSeekCommit();
-      Vod.stopped();
+      Vod.stopped(); Media.stopped();
       vod = null; mode = 'live'; Player.stop(); playing = null; stage.classList.add('off');
       if (v && v.onExit) v.onExit();
       return;
@@ -1112,7 +1115,7 @@ var Views = (function () {
     spinPlain = s === 'buffering' && (!msg || msg === 'Buffering');
     verr.classList.toggle('hidden', s !== 'error');
     if (s === 'error') verr.textContent = msg;
-    if (s === 'ended' && mode === 'vod') Vod.ended();
+    if (s === 'ended' && mode === 'vod') { if (vod && vod.meta.local) Media.ended(); else Vod.ended(); }
     if (s === 'error' && mode === 'live') downSoon();
     // Playing again: a later failure is a new incident (recent failures are still skipped for 10 min).
     if (s === 'playing' && fo && playing) { foFailed[playing.k] = 0; fo.tried = {}; fo.exhausted = false; }

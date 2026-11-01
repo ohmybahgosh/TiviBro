@@ -12,6 +12,7 @@ How the guide looks and behaves, which screen TiviBro opens on, and reminders.
 | Setting | Choices | What it does |
 |---|---|---|
 | **Start screen** | **Guide** · Channels list | What TiviBro opens on, and where **Back** from other screens leads. |
+| **Channels list in the menu** | On · **Off** | The plain channel list (without the guide) in the side menu.  Off, **Green** in the guide still opens it.  Always there while TiviBro starts on it. |
 | **OK on a channel in the Guide** | **Preview first, then fullscreen** · Fullscreen right away | Like TiviMate: the first **OK** plays the channel in the window, the second goes fullscreen.  Or go straight to fullscreen. |
 | **Two-line programmes** | **On** · Off | Each programme's time under its title in the grid. |
 | **Dim past programmes** | **On** · Off | Programmes that already ended look dimmer. |

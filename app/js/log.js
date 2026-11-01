@@ -17,7 +17,8 @@ var Log = (function () {
   function redact(s) {
     s = String(s == null ? '' : s);
     return s
-      .replace(/((?:password|pass|pwd)=)[^&\s"']*/gi, '$1***')
+      .replace(/((?:[a-z0-9-]+\.)*energycdn\.com(?::[0-9]+)?)[/?][^\s\"'<>\\]*/gi, '$1/***')
+      .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s"']*/gi, '$1***')
       .replace(/(username=)([^&\s"']{0,2})[^&\s"']*/gi, '$1$2***')
       .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/');
   }

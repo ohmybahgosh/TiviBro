@@ -21,6 +21,8 @@ Which groups show, in what order, and getting hidden things back.
 | **Show Recent channels** | **On** · Off | A group with the channels you watched lately. |
 | **Recent channels kept** | 10 · **20** · 30 · 50 | How many channels Recent remembers. |
 | **Show Favorites group** | **On** · Off | The Favorites group. |
+| **My teams ›** | | The teams you follow, for the [My teams](My-teams) group: **Show the My teams group** (**On**), **Games starting within** (3 · **6** · 12 · 24 hours), **Remind me before their games** (**Off**), and a page for each league in your playlist to pick teams. |
+| **Show Events by time** | **On** · Off | With event channels: the group of events on now or starting in the next two weeks.  Brings it back after **Turn off Events by time** in the group's menu. |
 | **Recently added channels** | Off · 3 days · **7 days** · 14 days | A **Recently added** group with the channels that are new in your playlist since it last loaded, newest first, and a **NEW** tag in the lists. |
 | **Groups your provider adds later** | **Show them** · Hide them | *Hide them* keeps a tidy list tidy after **Hide all groups**: new provider groups arrive hidden. |
 | **All channels includes hidden groups** | On · **Off** | Channels from groups you hid still appear in All channels. |

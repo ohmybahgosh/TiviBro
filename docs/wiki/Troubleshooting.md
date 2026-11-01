@@ -6,7 +6,7 @@
   <a href="https://tivibro.app/view/#tv-set-diag-test"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-set-diag-test.png" width="60%" alt="Connection test"></a>
 </p>
 
-<a name="what-is-the-network-helper"></a>**What is the network helper?**  The **network helper** is a part of TiviBro that runs in the background on the TV.  It talks to your provider for the app: it fetches the channel list, the guide and the streams, sends the User-Agent your provider wants, unzips guides, and copes with servers that don't follow the rules.  webOS won't let an app talk to most IPTV servers directly, so TiviBro needs it.  It starts with TiviBro, runs only on the TV, and only ever contacts your own provider (and, if you turn them on, the logo projects).
+<a name="what-is-the-network-helper"></a>**What is the network helper?**  The **network helper** is a part of TiviBro that runs in the background on the TV.  It talks to your provider for the app: it fetches the channel list, the guide and the streams, sends the User-Agent your provider wants, unzips guides, and copes with servers that don't follow the rules.  webOS won't let an app talk to most IPTV servers directly, so TiviBro needs it.  It starts with TiviBro, runs only on the TV, and contacts your own provider, media sources you add and their playback servers (and, if you turn them on, the logo projects).
 
 You'll see it in three places: **Connection** on the first screen and in **Settings > Playback and buffering** (leave it on **Automatic**), **Network helper** in Settings and Diagnostics (it should say *running*), and the connection test.  If it says *not running*, restart TiviBro; if that doesn't help, **Settings > Diagnostics > View network helper log** shows why.
 
@@ -19,7 +19,7 @@ You'll see it in three places: **Connection** on the first screen and in **Setti
 | The guide seems stuck loading | Big XMLTV files take minutes on a TV; watch the progress bar.  If it stays at 0, **Test** the address. |
 | The web editor says it can't reach the TV | TiviBro was closed or the TV went to sleep.  Open TiviBro; the editor reconnects and your drafts are safe. |
 | Changes don't show on the TV | Check the bar at the bottom of the editor.  If it still counts changes, press **Send to TV**. |
-| Wrong editor password | It's on the TV under **Settings > Edit on a phone or computer**.  After five wrong tries, wait a minute. |
+| Wrong editor password | It's on the TV under **Settings > Phone app and web editor**.  After five wrong tries, wait a minute. |
 | HDR looks grey or washed out | **Settings > Playback and buffering > HDR and Dolby Vision > TV player for all HDR**. |
 | A movie plays with no sound | It may only have DTS sound, which 2020 to 2022 LG TVs can't play.  The movie details warn about this; pick another audio track under **Options** if there is one. |
 | Dolby Vision shows odd green or purple colours | Make sure **HDR and Dolby Vision** isn't set to *Built-in player*. |

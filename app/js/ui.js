@@ -165,11 +165,11 @@ var UI = (function () {
     };
   }
 
-  function prompt(title, value, done, hint) {
+  function prompt(title, value, done, hint, secret) {
     mTitle.textContent = title;
     mBody.innerHTML = '';
     var inp = U.el('input');
-    inp.type = 'text'; inp.value = value || ''; inp.spellcheck = false;
+    inp.type = secret ? 'password' : 'text'; inp.value = value || ''; inp.spellcheck = false;
     mBody.appendChild(inp);
     if (hint) mBody.appendChild(U.el('div', 'mi', hint));
     var ok = U.el('div', 'mi', 'Save'), cancel = U.el('div', 'mi', 'Cancel');

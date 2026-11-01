@@ -21,7 +21,7 @@ Long lists: **CH + / −** moves a page at a time everywhere, and holding **▲*
 </p>
 </details>
 
-The **Channels** screen is the same list in TiviMate's classic layout: groups on the left, channels in the middle, the preview and details on the right.  Resting on a channel plays it in the preview (**Preview in channel list**); **OK** goes fullscreen.  Pick which screen opens first with **Start screen**.
+The **Channels** screen (in the side menu when **Channels list in the menu** is on, or **Green** in the guide) is the same list in TiviMate's classic layout: groups on the left, channels in the middle, the preview and details on the right.  Resting on a channel plays it in the preview (**Preview in channel list**); **OK** goes fullscreen.  Pick which screen opens first with **Start screen**.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-channels"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-channels.png" width="100%" alt="The Channels screen"></a>

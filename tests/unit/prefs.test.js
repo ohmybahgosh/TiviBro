@@ -17,11 +17,11 @@ const U = ctx.U, P = ctx.Player;
 
 // Track names the way streams send them.
 [['eng', 'en'], ['en-US', 'en'], ['English', 'en'], ['ENG 5.1', 'en'], ['Español (Latino)', 'es'], ['spa', 'es'], ['Deutsch', 'de'], ['ger', 'de'],
- ['fre', 'fr'], ['Audio Description (English)', 'en'], ['und', ''], ['Track 2', ''], ['', '']].forEach(function (c) {
+ ['nld', 'nl'], ['dut', 'nl'], ['nl-NL', 'nl'], ['Nederlands', 'nl'], ['fre', 'fr'], ['Audio Description (English)', 'en'], ['und', ''], ['Track 2', ''], ['', '']].forEach(function (c) {
   ok('language of "' + c[0] + '"', U.lang(c[0]) === c[1], U.lang(c[0]));
 });
 
-const pick = (list, want, surround) => { const b = P.bestAudio(list, want, surround); return b ? b.id : null; };
+const pick = (list, want, surround, fallback) => { const b = P.bestAudio(list, want, surround, fallback); return b ? b.id : null; };
 const tracks = [{ id: 0, label: 'Spanish', lang: 'spa', on: true }, { id: 1, label: 'English', lang: 'eng', on: false },
   { id: 2, label: 'English AD', lang: 'eng', on: false }, { id: 3, label: 'English 5.1', lang: 'eng', ch: 6, on: false }];
 ok('nothing chosen: leave the stream alone', pick(tracks, '', false) === null);
@@ -30,6 +30,12 @@ ok('surround in that language when asked', pick(tracks, 'en', true) === 3, pick(
 ok('audio description skipped', pick(tracks.slice(0, 3).reverse(), 'en', false) === 1);
 ok('only described in that language: still that language', pick([{ id: 0, label: 'French', lang: 'fra', on: true }, { id: 1, label: 'English AD', lang: 'eng' }], 'en', false) === 1);
 ok('no track in that language: keeps what plays', pick([{ id: 0, label: 'French', lang: 'fra', on: true }, { id: 1, label: 'German', lang: 'deu' }], 'en', false) === 0);
+ok('Dutch takes priority over the English fallback', pick([{ id: 0, lang: 'eng', on: true, ch: 6 }, { id: 1, lang: 'dut' }], 'nl', true) === 1);
+ok('missing Dutch falls back to English ahead of the active Spanish', pick(tracks, 'nl', false) === 1);
+ok('fallback language can be changed', pick(tracks, 'nl', false, 'es') === 0);
+ok('no matching languages uses the first normal track, not the active one', pick([{ id: 0, lang: 'fra' }, { id: 1, lang: 'deu', on: true }], 'nl', false) === 0);
+ok('blank fallback goes straight to the first available track', pick(tracks, 'nl', false, '') === 0);
+ok('a preferred described track still beats another language', pick([{ id: 0, lang: 'eng' }, { id: 1, lang: 'nld', label: 'Dutch AD' }], 'nl', false) === 1);
 ok('Dolby named in the label counts as surround', P.describeTrack({ label: 'English Dolby Digital Plus' }).surround && !P.describeTrack({ label: 'English Stereo' }).surround);
 
 // The watchlist's whole-word match (search.js).
