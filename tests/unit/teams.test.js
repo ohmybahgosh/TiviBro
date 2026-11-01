@@ -13,7 +13,7 @@ const ok = (name, c, x) => { n++; if (!c) { fail++; console.log('FAIL ' + name +
 const NOW = Date.now(), H = 3600e3;
 const hm = t => { const d = new Date(t); return (d.getHours() % 12 || 12) + ':' + String(d.getMinutes()).padStart(2, '0') + ' ' + (d.getHours() < 12 ? 'AM' : 'PM'); };
 const md = t => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-const groups = [{ id: 'g1', name: '⬬ NFL TEAMS' }, { id: 'g2', name: '⛸ NHL TEAMS' }, { id: 'g3', name: '⛸ NHL PASS 1' }, { id: 'g4', name: 'USA NHL' }, { id: 'g5', name: 'Movies' }, { id: 'g6', name: 'USA NBA' }];
+const groups = [{ id: 'g1', name: '⬬ NFL TEAMS' }, { id: 'g2', name: '⛸ NHL TEAMS' }, { id: 'g3', name: '⛸ NHL PASS 1' }, { id: 'g4', name: 'USA NHL' }, { id: 'g5', name: 'Movies' }, { id: 'g6', name: 'USA NBA' }, { id: 'g7', name: 'US Entertainment' }];
 let num = 0;
 const ch = (n, g) => ({ k: 'k' + (++num), n, g, num });
 const chans = [
@@ -22,7 +22,7 @@ const chans = [
   ch('NHL 1 | ' + md(NOW + H) + ' ' + hm(NOW + H) + ' | Carolina Hurricanes Winnipeg Jets', 'g3'),
   ch('USA NHL 02: WPG VS CAR (TVAS Feed ) @ ' + hm(NOW - H).toLowerCase(), 'g4'),
   ch('USA NBA 02: Magic vs Heat @ ' + hm(NOW + 2 * H), 'g6'),
-  ch('HBO', 'g5'), ch('ESPN', 'g5')
+  ch('HBO', 'g5'), ch('ESPN', 'g5'), ch('Chicago Fire', 'g7'), ch('USA NHL 01: WPG VS CAR (NHLN Feed ) @ ' + hm(NOW - H).toLowerCase(), 'g4')
 ];
 global.Library = { data: { channels: chans, groups }, find: k => chans.find(c => c.k === k), isFav: () => false };
 eval(fs.readFileSync(path.join(__dirname, '../../app/js/teams.js'), 'utf8') + ';global.Teams=Teams;');
@@ -40,6 +40,17 @@ ok('abbreviations in event titles, with the league', ids(Teams.named('WPG VS CAR
 ok('abbreviations need the league', ids(Teams.named('WPG VS CAR', 'Event 3', all, true)) === '');
 ok('abbreviations only in event titles', ids(Teams.named('CAR VS WPG', 'NHL', all, false)) === '');
 ok('St. Louis', ids(Teams.named('St. Louis Blues at Chicago Blackhawks', '', all)) === 'nhl:chi,nhl:stl');
+ok('another team with the same nickname', ids(Teams.named('2026 Parkland Rangers U15 vs Eastman Selects U15', 'Flo Hockey', all)) === '');
+ok('minor hockey by nickname', ids(Teams.named('Providence Bruins vs Lehigh Valley Phantoms', 'Hockey', all)) === '');
+ok('a city before the nickname that is not the team\'s', ids(Teams.named('Brandon Wheat Kings vs Interlake Lightning', 'NHL', all)) === '');
+ok('youth tag in the channel name', ids(Teams.named('Timberwolves vs Hurricanes', 'AEHLU17 | Timberwolves vs Hurricanes', all)) === '');
+ok('junior league', ids(Teams.named('Raiders vs Blues', 'OJHL: Raiders vs Blues :Flo Hockey', all)) === '');
+ok('cities with the league named', ids(Teams.named('NHL: Winnipeg vs Carolina', 'Sportsnet+ 08', all)) === 'nhl:car,nhl:wpg');
+ok('cities need the league named', ids(Teams.named('Winnipeg vs Carolina', 'Sportsnet+ 08', all)) === '');
+ok('a city two teams share is not enough', ids(Teams.named('NBA: Los Angeles vs Boston', '', all)) === '');
+ok('club cities', ids(Teams.named('MLS on TSN: Atlanta vs. Toronto', '', all)) === 'mls:atl,mls:tor');
+ok('nickname after a colon', ids(Teams.named('NFL on TSN: Browns vs. Steelers', '', all)) === 'nfl:cle,nfl:pit');
+ok('nickname after its own city', ids(Teams.named('Hockey: Wild vs. Capitals (Capitals Broadcast)', 'USA ESPN+ 133', all)) === 'nhl:min,nhl:wsh');
 ok('Athletics alone are no team', ids(Teams.named('World Athletics Championships', '', all)) === '');
 
 // Team channels and leagues
@@ -50,6 +61,7 @@ ok('event channels are not team channels', !tc['nhl:wpg'] || tc['nhl:wpg'].lengt
 ok('Red Wings vs Lions kept apart', tc['nhl:det'] && !tc['nhl:det'].some(c => /LIONS/.test(c.n)));
 const lg = Teams.leagues().map(l => l.id).join(',');
 ok('leagues found', lg === 'nfl,nba,nhl', lg);
+ok('a TV series is no team channel', !tc['mls:chi']);
 ok('ofChannel', Teams.ofChannel(tc['nhl:det'][0]).id === 'nhl:det');
 
 // The group
@@ -57,7 +69,9 @@ ok('no group before a team is followed', Teams.list().length === 0 && !Teams.gro
 Teams.follow('nhl:wpg', true);
 let list = Teams.list().map(c => c.n);
 ok('game on now first', /WPG VS CAR/.test(list[0]), list.join(' / '));
-ok('then the next game', /Carolina Hurricanes Winnipeg Jets/.test(list[1]), list.join(' / '));
+ok('every feed of the game on now, together', /WPG VS CAR/.test(list[1]) && list[0] !== list[1], list.join(' / '));
+ok('then the next game', /Carolina Hurricanes Winnipeg Jets/.test(list[2]), list.join(' / '));
+ok('one channel per game for reminders', Teams.games(0, true).length === 2);
 ok('then the team channel', list[list.length - 1] === 'NHL | WINNIPEG JETS', list.join(' / '));
 // Guide titles, including a team channel's "Next game" block.
 const lions = tc['nfl:det'][0], espn = chans.find(c => c.n === 'ESPN');

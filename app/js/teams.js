@@ -50,8 +50,8 @@ var Teams = (function () {
     mls: [['ATL', 'Atlanta United', 'Atlanta United', 'Atlanta United FC'], ['ATX', 'Austin FC', 'Austin FC'], ['CLT', 'Charlotte FC', 'Charlotte FC'], ['CHI', 'Chicago Fire', 'Chicago Fire', 'Chicago Fire FC'],
       ['CIN', 'FC Cincinnati', 'FC Cincinnati'], ['COL', 'Colorado Rapids', 'Rapids'], ['CLB', 'Columbus Crew', 'Crew'], ['DC', 'DC United', 'DC United', 'D C United'],
       ['DAL', 'FC Dallas', 'FC Dallas'], ['HOU', 'Houston Dynamo', 'Dynamo', 'Houston Dynamo FC'], ['MIA', 'Inter Miami', 'Inter Miami', 'Inter Miami CF'], ['LA', 'LA Galaxy', 'Galaxy', 'Los Angeles Galaxy'],
-      ['LAFC', 'Los Angeles FC', 'LAFC'], ['MIN', 'Minnesota United', 'Minnesota United', 'Minnesota United FC'], ['MTL', 'CF Montreal', 'CF Montreal', 'Club de Foot Montreal'], ['NSH', 'Nashville SC', 'Nashville SC'],
-      ['NE', 'New England Revolution', 'Revolution,Revs'], ['NYC', 'New York City FC', 'NYCFC'], ['RBNY', 'New York Red Bulls', 'Red Bulls'], ['ORL', 'Orlando City', 'Orlando City', 'Orlando City SC'],
+      ['LAFC', 'Los Angeles FC', 'LAFC', 'Los Angeles Football Club'], ['MIN', 'Minnesota United', 'Minnesota United', 'Minnesota United FC'], ['MTL', 'CF Montreal', 'CF Montreal', 'Club de Foot Montreal'], ['NSH', 'Nashville SC', 'Nashville SC'],
+      ['NE', 'New England Revolution', 'Revolution,Revs'], ['NYC', 'New York City FC', 'NYCFC'], ['RBNY', 'New York Red Bulls', 'Red Bulls', 'Red Bull New York'], ['ORL', 'Orlando City', 'Orlando City', 'Orlando City SC'],
       ['PHI', 'Philadelphia Union', 'Union'], ['POR', 'Portland Timbers', 'Timbers'], ['RSL', 'Real Salt Lake', 'Real Salt Lake'], ['SD', 'San Diego FC', 'San Diego FC'],
       ['SJ', 'San Jose Earthquakes', 'Earthquakes'], ['SEA', 'Seattle Sounders', 'Sounders', 'Seattle Sounders FC'], ['SKC', 'Sporting Kansas City', 'Sporting KC'], ['STL', 'St Louis City SC', 'St Louis City', 'Saint Louis City SC'],
       ['TOR', 'Toronto FC', 'Toronto FC'], ['VAN', 'Vancouver Whitecaps', 'Whitecaps', 'Vancouver Whitecaps FC']]
@@ -85,25 +85,66 @@ var Teams = (function () {
   function remindOn() { return !!S().teamsRemind && mine().length > 0; }
   function ahead() { return (+S().teamsAhead || 6) * 3600e3; }
 
-  /* Which of the given teams a text names.  Full names always count; a nickname ("Red Wings", "Kings")
-     needs the league: a league word in the text or its context (the channel and group names), or another
-     team of that league in the same text ("Heat at Magic").  Abbreviations ("WPG VS CAR") count only in
-     event titles, with the league in the context.  So "Magic Mike" is never a game. */
+  /* Which of the given teams a text names.  From real providers' lists:
+     - Full names always count ("Detroit Lions", "LA Clippers").
+     - A nickname ("Red Wings", "Kings") needs the league: a league word in the text or its context (the
+       channel and group names: "NHL", "Hockey"), or another team of that league ("Heat at Magic").  So
+       "Magic Mike" is never a game.  And it must stand alone: "Parkland Rangers", "Brandon Wheat Kings"
+       and "Providence Bruins" are other teams.
+     - A city alone ("NHL: Winnipeg vs Carolina") counts with the league named and two of its teams there,
+       when only one team of that league has that city.
+     - Abbreviations ("WPG VS CAR") count only in event titles, with the league in the context.
+     - Junior, minor and youth hockey and the like ("U15", "AAA", "OJHL", "flohockey") only by full name. */
+  var CODES = { nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|center ice/, mlb: /\bmlb\b|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|major league soccer/ };
+  var MINOR = /u(?:[89]|1\d|2[01])\b|\baaa\b|\d+aaa\b|\b(?:ojhl|ahl|echl|ohl|whl|qmjhl|bchl|ajhl|sjhl|mjhl|nahl|ushl|nwhl|pwhl|sphl|fphl|junior|jr|midget|bantam|minor|youth|college|ncaa\w*|flohockey|flo ?sports|g ?league|nbl|cfl|xfl|ufl|usl|nwsl)\b/i;
+  var BEFORE_OK = /^(vs|v|at|and|the|versus|vs\.|nfl|nba|nhl|mlb|wnba|mls|hockey|football|basketball|baseball|soccer|game|live|watch|preview|pregame|postgame|replay|on|in|night|day|sunday|monday|tuesday|wednesday|thursday|friday|saturday|tonight|today|pass|ticket)$/i;
+  function esc(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  // City words: the full name less the nickname ("winnipeg"), or for clubs less FC, SC, United ("atlanta").
+  ALL.forEach(function (x) {
+    var f = x.full[0] ? x.full[0].trim() : '', n = x.nk[0].trim();
+    var city = f && f.slice(-n.length) === n ? f.slice(0, f.length - n.length).trim() : f;
+    if (x.league === 'mls') city = (' ' + (city || f) + ' ').replace(/ (fc|sc|cf|united|city|inter|real|sporting|club de foot) /g, ' ').replace(/\s+/g, ' ').trim();
+    x.city = city;
+    x.words = {};
+    x.full.concat(x.nk).forEach(function (w) { w.trim().split(' ').forEach(function (y) { x.words[y] = 1; }); });
+    x.rx = x.nicks.map(function (nk) { return new RegExp('(^|[^A-Za-z0-9])(' + esc(nk).replace(/\s+/g, '\\s+') + ')(?![A-Za-z0-9])', 'gi'); });
+  });
+  var CITY_N = {};
+  ALL.forEach(function (x) { if (x.city) CITY_N[x.league + '|' + x.city] = (CITY_N[x.league + '|' + x.city] || 0) + 1; });
+  // A nickname that stands alone in the original text: not "Parkland Rangers".
+  function nickAlone(x, text) {
+    for (var i = 0; i < x.rx.length; i++) {
+      var rx = x.rx[i], m;
+      rx.lastIndex = 0;
+      while ((m = rx.exec(text))) {
+        var before = text.slice(0, m.index + m[1].length), w = /([A-Za-z][A-Za-z.'\u2019-]*)\s+$/.exec(before);
+        if (!w || BEFORE_OK.test(w[1]) || x.words[w[1].toLowerCase().replace(/[^a-z0-9]/g, '')]) return true;
+      }
+    }
+    return false;
+  }
   function named(text, ctx, teams, abbrs) {
-    var t = norm(text), c = norm(ctx || '') + t, hits = [], lg = {}, k;
-    for (k in LEAGUE_WORDS) if (LEAGUE_WORDS[k].test(c)) lg[k] = 1;
-    var seen = {};                                 // league -> teams of it named in the text (any team)
-    function note(team) { (seen[team.league] || (seen[team.league] = {}))[team.id] = 1; }
+    text = String(text || '');
+    var t = norm(text), c = norm(ctx || '') + t, hits = [], code = {}, word = {}, k;
+    var minor = MINOR.test(text + ' ' + (ctx || ''));
+    for (k in LEAGUE_WORDS) if (LEAGUE_WORDS[k].test(c)) word[k] = 1;
+    for (k in CODES) if (CODES[k].test(c)) code[k] = 1;
+    var seen = {}, seenCity = {};                    // league -> teams of it named in the text
+    function note(m, team) { (m[team.league] || (m[team.league] = {}))[team.id] = 1; }
     ALL.forEach(function (x) {
-      if (x.full.some(function (f) { return t.indexOf(f) >= 0; })) { note(x); x._full = 1; } else x._full = 0;
-      x._nick = x.nk.some(function (n) { return t.indexOf(n) >= 0; }) ? 1 : 0;
+      x._full = x.full.some(function (f) { return t.indexOf(f) >= 0; }) ? 1 : 0;
+      x._nick = !minor && !x._full && x.nk.some(function (n) { return t.indexOf(n) >= 0; }) && nickAlone(x, text) ? 1 : 0;
+      x._city = !minor && !x._full && !x._nick && x.city && CITY_N[x.league + '|' + x.city] === 1 && t.indexOf(' ' + x.city + ' ') >= 0 ? 1 : 0;
+      if (x._full || x._nick) note(seen, x);
+      if (x._full || x._nick || x._city) note(seenCity, x);
     });
-    Object.keys(NICKS).forEach(function (n) { if (t.indexOf(n) >= 0) NICKS[n].forEach(note); });
-    for (k in seen) if (Object.keys(seen[k]).length >= 2) lg[k] = 1;
-    var up = abbrs ? ' ' + String(text).replace(/[^A-Za-z0-9]+/g, ' ') + ' ' : '';
+    function n(m, l) { return m[l] ? Object.keys(m[l]).length : 0; }
+    var up = abbrs ? ' ' + text.replace(/[^A-Za-z0-9]+/g, ' ') + ' ' : '';
     teams.forEach(function (x) {
-      var hit = x._full || (x._nick && lg[x.league]);
-      if (!hit && abbrs && lg[x.league] && up.indexOf(' ' + x.abbr + ' ') >= 0 && MATCHUP.test(text)) hit = 1;
+      var l = x.league, hit = x._full ||
+        (x._nick && (word[l] || n(seen, l) >= 2)) ||
+        (x._city && (code[l] || n(seen, l) >= 1) && n(seenCity, l) >= 2);
+      if (!hit && abbrs && !minor && word[l] && up.indexOf(' ' + x.abbr + ' ') >= 0 && MATCHUP.test(text)) hit = 1;
       if (hit) hits.push(x);
     });
     return hits;
@@ -116,14 +157,18 @@ var Teams = (function () {
   function teamChannels() {
     var chans = Library.data.channels;
     if (chanCache && chanCache.of === chans) return chanCache.map;
-    var full = {}, map = {};
+    var full = {}, map = {}, gname = {};
     ALL.forEach(function (x) { x.full.forEach(function (f) { (full[f.trim()] || (full[f.trim()] = [])).push(x); }); });
+    Library.data.groups.forEach(function (g) { gname[g.id] = g.name; });
     for (var i = 0; i < chans.length; i++) {
       var n = norm(chans[i].n).replace(TAGS, ' ').replace(/\s+/g, ' ').trim(), l = full[n];
       if (!l) continue;
-      // Two teams with one name in different leagues don't happen today; the league tag would decide.
-      var tag = norm(chans[i].n), pick = l.length > 1 ? l.filter(function (x) { return LEAGUE_WORDS[x.league].test(tag); })[0] || l[0] : l[0];
-      (map[pick.id] || (map[pick.id] = [])).push(chans[i]);
+      // The league or sport has to show in the name or the group: a "Chicago Fire" channel of the TV
+      // series is no football club.
+      var tag = norm(chans[i].n + ' | ' + (gname[chans[i].g] || ''));
+      l = l.filter(function (x) { return LEAGUE_WORDS[x.league].test(tag) || /\b(sports?|teams?)\b/.test(tag); });
+      if (!l.length) continue;
+      (map[l[0].id] || (map[l[0].id] = [])).push(chans[i]);
     }
     chanCache = { of: chans, map: map };
     return map;
@@ -132,9 +177,17 @@ var Teams = (function () {
   function leagues() {
     var tc = teamChannels(), out = [];
     var names = norm(Library.data.groups.map(function (g) { return g.name; }).join(' | '));
+    if (!chanCache.named) {                      // league codes in channel names ("Major League Soccer: ...")
+      var chans = Library.data.channels, got = {}, left = LEAGUES.length;
+      for (var i = 0; i < chans.length && left; i++) {
+        var n = norm(chans[i].n);
+        for (var k in CODES) if (!got[k] && CODES[k].test(n)) { got[k] = 1; left--; }
+      }
+      chanCache.named = got;
+    }
     LEAGUES.forEach(function (lg) {
       var own = DATA[lg[0]].filter(function (r) { return tc[lg[0] + ':' + r[0].toLowerCase()]; }).length;
-      if (own || new RegExp(' ' + lg[0] + ' ').test(names)) out.push({ id: lg[0], name: lg[1], own: own });
+      if (own || new RegExp(' ' + lg[0] + ' ').test(names) || chanCache.named[lg[0]]) out.push({ id: lg[0], name: lg[1], own: own });
     });
     return out;
   }
@@ -146,23 +199,26 @@ var Teams = (function () {
     return S().showHidden || (!e.hiddenChannels[c.k] && !e.hiddenGroups[c.g]);
   }
 
-  /* Games of the followed teams on now or starting within the hours given: [{ c, p, team }], soonest first,
-     one channel per game (a Favorite, else the first found). */
-  function games(within) {
+  /* Games of the followed teams on now or starting within the hours given: [{ c, p, team }].  Every
+     channel showing a game (a league pass, a sports network, the other team's feed), so one that doesn't
+     work has others next to it; one: just one channel per game (a Favorite, else the first found), for
+     reminders.  Games on now first, then by start, a game's channels together. */
+  function games(within, one) {
     var teams = followed(), now = Date.now(), to = now + (within || ahead()), out = [], seen = {};
     if (!teams.length || !Library.data.channels.length) return out;
     var gname = {};
     Library.data.groups.forEach(function (g) { gname[g.id] = g.name; });
     function take(c, p, team) {
       if (!c || !shown(c) || !p.t || p.e <= now || p.s > to) return;
-      var key = team.id + '|' + p.s;
-      if (seen[key]) { if (Library.isFav(c.k) && !Library.isFav(seen[key].c.k)) seen[key].c = c; return; }
+      // One game, however the channels write its start ("12:55 PM" on one, "1:00 PM" on another).
+      var key = one ? team.id + '|' + Math.round(p.s / 2700e3) : c.k + '|' + team.id;
+      if (seen[key]) { if (one && Library.isFav(c.k) && !Library.isFav(seen[key].c.k)) seen[key].c = c; return; }
       seen[key] = { c: c, p: p, team: team };
       out.push(seen[key]);
     }
     // Words of every followed team, for a quick first look at each title.
     var words = [];
-    teams.forEach(function (x) { words = words.concat(x.full, x.nk); });
+    teams.forEach(function (x) { words = words.concat(x.full, x.nk, x.city ? [x.city] : []); });
     var quick = new RegExp(words.map(function (w) { return w.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|'));
     var byEpg = {}, all = Library.data.channels, i;
     if (Epg.xml) for (i = 0; i < all.length; i++) { var id = Epg.epgId(all[i]); if (id && !byEpg[id]) byEpg[id] = all[i]; }
@@ -184,7 +240,13 @@ var Teams = (function () {
       if (!quick.test(norm(ev.title)) && !MATCHUP.test(ev.title)) continue;
       named(ev.title, c.n + ' | ' + (gname[c.g] || ''), teams, true).forEach(function (x) { take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 }, x); });
     }
-    out.sort(function (a, b) { var an = a.p.s <= now, bn = b.p.s <= now; return (an === bn ? 0 : an ? -1 : 1) || a.p.s - b.p.s || a.c.num - b.c.num; });
+    // A game: its team and start (to the half hour); its first start orders it.
+    var first = {};
+    out.forEach(function (g) { g.gk = g.team.id + '|' + Math.round(g.p.s / 2700e3); if (first[g.gk] == null || g.p.s < first[g.gk]) first[g.gk] = g.p.s; });
+    out.sort(function (a, b) {
+      var an = first[a.gk] <= now, bn = first[b.gk] <= now;
+      return (an === bn ? 0 : an ? -1 : 1) || first[a.gk] - first[b.gk] || (a.gk < b.gk ? -1 : a.gk > b.gk ? 1 : 0) || a.c.num - b.c.num;
+    });
     return out;
   }
 

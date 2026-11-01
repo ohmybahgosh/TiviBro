@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **My teams.**  Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams in **Settings > Groups, sorting, hidden > My teams** (or hold OK on a team's channel and choose **Follow**).  A **My teams** group near the top of the guide has their games on now on any channel, then their next games, then the teams' own channels from your provider's team groups.  Their games can get reminders too (off at first).
+- **My teams.**  Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams in **Settings > Groups, sorting, hidden > My teams** (or hold OK on a team's channel and choose **Follow**).  A **My teams** group near the top of the guide has their games on now (every channel showing them, together), then their next games, then the teams' own channels from your provider's team groups.  Their games can get reminders too (off at first).
 - **Remote buttons in the guide can be changed** (**Settings > Remote control > In the guide**).  The colour buttons, Play, Info, Stop and Hold OK each pick an action, including **Watch fullscreen** (the channel in the window, else the highlighted one) for remotes without a Play button.  The defaults are what the guide did before.  The old **In the channel list** page is now just the Channels screen.
 - **Events by time is easy to bring back.**  **Settings > Groups, sorting, hidden > Show Events by time** (it was only in the playlist's Event channels page).
 - **Learn a button and Button tester say which buttons belong to the TV** (Home, Live TV, the TV's own Guide, Input, Settings).  webOS acts on those before TiviBro hears them, so they leave TiviBro.

@@ -24,7 +24,7 @@ var Watch = (function () {
       });
     });
     // Games of the teams you follow (Settings > Groups, sorting, hidden > My teams), when their reminders are on.
-    if (!q && typeof Teams !== 'undefined' && Teams.remindOn()) Teams.games(ahead()).forEach(function (g) {
+    if (!q && typeof Teams !== 'undefined' && Teams.remindOn()) Teams.games(ahead(), true).forEach(function (g) {
       if (g.p.s <= now) return;
       var k = g.p.t.toLowerCase() + '|' + g.p.s;
       if (dup[k]) return;
