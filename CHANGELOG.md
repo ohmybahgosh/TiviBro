@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Matched, but the guide is empty, now says so.**  In the web editor's step 4, a channel matched to a guide channel that has nothing scheduled goes under a new **Guide is empty** tab, marked "matched, nothing scheduled" with **Find another…**, instead of looking unmatched under **Needs a guide**.  Smart match no longer suggests guide channels with nothing scheduled.
+- **Matching no longer silently does nothing on some providers.**  Some provider guides list channels with a blank id (550 on one provider tested), which can never have programmes.  Smart match offered them as 100% matches, and approving one left the channel unmatched.  They're left out now.
+- **Phone app: groups that were empty in the Guide and Channels tabs** (for example a **Local channels** group whose network groups are hidden) now list their channels.
+- **Phone app: Movies and Shows tabs only show when the provider has movies or shows.**
+- **Phone app: Back goes back one step.**  In the web editor it closes what's open, then goes back through the pages you visited; on the Channels, Guide, Movies and Shows tabs it returns to the remote, before leaving the TV.
+- **Web editor: the "Show unsure guesses" box in Smart match** sits on its own line.
 - **Big playlists live on the TV's storage, not the browser's** (follow-up to [#18](https://github.com/ohmybahgosh/TiviBro/issues/18)).  Older TVs give TiviBro only a small share of their storage, so a big channel list or movie library didn't fit and was downloaded again every time.  The channel list and the full movie and show lists are now kept by TiviBro's helper on the TV itself, which also does the language and category filtering, so TiviBro holds only what you see.  Changing languages in Movies and Shows no longer downloads anything.
 
 ## 0.6.0 (alpha 41, 2026-11-01)

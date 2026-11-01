@@ -117,6 +117,7 @@ function start(body, log) {
       while ((c = CH.exec(buf))) {
         lastC = CH.lastIndex;
         var id = unesc(c[1]);
+        if (!id.trim()) continue;              // <channel id="">: no programme can point at it
         var dn = /<display-name[^>]*>([\s\S]*?)<\/display-name>/.exec(c[2]);
         var name = dn ? unesc(dn[1]).trim() : id;
         if (chans.length < 30000) chans.push([id, name]);

@@ -197,6 +197,7 @@ var GUIDE = (function () {
   var t0 = Date.now() - Date.now() % 3600e3 - 3600e3, o = '<?xml version="1.0"?><tv>';
   function xd(t) { var d = new Date(t), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + p(d.getUTCHours()) + p(d.getUTCMinutes()) + '00 +0000'; }
   ['a', 'b', 'c'].forEach(function (id) { o += '<channel id="' + id + '.us"><display-name>Chan ' + id.toUpperCase() + '</display-name><icon src="http://x/' + id + '.png"/></channel>'; });
+  o += '<channel id=""><display-name>Chan D</display-name><icon src="http://x/d.png"/></channel>';    // a blank id: no programme can use it
   ['a', 'b', 'c'].forEach(function (id) { for (var i = 0; i < 6; i++) o += '<programme start="' + xd(t0 + i * 1800e3) + '" stop="' + xd(t0 + (i + 1) * 1800e3) + '" channel="' + id + '.us"><title>Show ' + id + i + ' &amp; more</title><desc>About ' + id + i + '</desc></programme>'; });
   return o + '</tv>';
 })();
@@ -205,7 +206,7 @@ step(function guide(next) {
   process.env.TIVIBRO_GUIDE_DIR = dir;
   var now = Date.now();
   var msg = { sources: [{ url: B + '/unz/gt1/x/http/' + P + '/files/guide.xml.gz', unz: 'gt1', label: 'test guide', host: P, offset: 0 }],
-    ids: ['a.us'], past: {}, names: { chanb: 0 }, from: now - 86400e3, recent: now - 3 * 3600e3, to: now + 2 * 86400e3 };
+    ids: ['a.us'], past: {}, names: { chanb: 0, chand: 0 }, from: now - 86400e3, recent: now - 3 * 3600e3, to: now + 2 * 86400e3 };
   request('POST', B + '/guide/load', { body: { pl: 'p1', kind: 'main', sig: 's1', msg: msg } }, function (e, r, b) {
     ok('guide: the helper takes a load', !e && json(b) && json(b).ok, b && String(b));
     var tries = 0;
@@ -223,6 +224,7 @@ step(function guide(next) {
             request('GET', B + '/guide/meta?pl=p1&kind=main', function (e5, r5, b5) {
               var m = json(b5) || {};
               ok('guide: name match and icon reported', m.matches && m.matches.chanb === 'b.us' && m.icons && m.icons['a.us'] === 'http://x/a.png', String(b5).slice(0, 200));
+              ok('guide: a guide channel with a blank id is left out', !(m.matches && 'chand' in m.matches) && (m.channels || []).every(function (x) { return x[0]; }) && !(m.icons && '' in m.icons), JSON.stringify(m.channels));
               try { require('fs').readdirSync(dir).forEach(function (sub) { var d2 = path.join(dir, sub); require('fs').readdirSync(d2).forEach(function (f) { require('fs').unlinkSync(path.join(d2, f)); }); require('fs').rmdirSync(d2); }); require('fs').rmdirSync(dir); } catch (x) {}
               next();
             });

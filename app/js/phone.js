@@ -242,6 +242,9 @@ var Phone = (function () {
     }
     var ins = inputs();
     if (ins.length) out.inputs = ins;
+    // Movies and Shows tabs on the phone only when the provider has them.
+    var p = Store.playlist || {}, vd = p.vod || {};
+    out.vod2 = { movies: p.type === 'xtream' && !!vd.movies, series: p.type === 'xtream' && !!vd.series };
     return out;
   }
   function pushState(soon) {
@@ -260,20 +263,24 @@ var Phone = (function () {
     if (!ready()) { setTimeout(sendLineup, 1000); return; }
     if (Date.now() - lineupAt < 60000 && lineupAt) return;
     lineupAt = Date.now();
-    var groups = [], seen = {}, chans = [];
+    var groups = [], seen = {}, chans = [], extra = [];
     Library.groups().forEach(function (g) {
       if (g.id === Library.ALL) return;
-      var keys = Library.channels(g.id).map(function (c) { return c.k; });
-      if (!keys.length) return;
-      groups.push({ id: g.id, name: g.name, keys: keys });
+      var l = Library.channels(g.id);
+      if (!l.length) return;
+      groups.push({ id: g.id, name: g.name, keys: l.map(function (c) { return c.k; }) });
+      extra.push(l);
     });
-    Library.channels(Library.ALL).forEach(function (c) {
+    // Every channel a group shows, also ones All leaves out (a Local channels group keeps stations
+    // whose network groups are hidden), or the phone finds that group empty.
+    [Library.channels(Library.ALL)].concat(extra).forEach(function (l, li) { l.forEach(function (c) {
       if (seen[c.k]) return; seen[c.k] = 1;
       var nn = Epg.peek(c), now = nn && nn.now, x = { k: c.k, n: Library.name(c), num: c.num || '', logo: Views.logoOf(c) || '', fav: Library.isFav(c.k) ? 1 : 0 };
+      if (li) x.na = 1;                                  // not in All
       if (now) x.now = { t: now.t, s: now.s, e: now.e };
       else { var ex = Search.extra(c); if (ex) x.now = { t: ex }; }
       chans.push(x);
-    });
+    }); });
     call('/companion/lineup', { groups: groups, channels: chans }).then(function (r) {
       Log.info('phone', 'Sent the channel list to the phone app: ' + chans.length + ' channels, ' + groups.length + ' groups');
     }, function (e) { lineupAt = 0; Log.warn('phone', 'Could not send the channel list: ' + (e && e.message)); });

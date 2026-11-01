@@ -96,6 +96,23 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await page.waitForTimeout(300);
   ok('typing on the phone fills it and saves', await ev(() => window.__renamed) === 'Sports I watch');
 
+  // A group with channels All leaves out (a Local channels group keeps stations whose network group is
+  // hidden): the phone gets those channels too, marked as not in All, so the group isn't empty there.
+  const loc = await ev(() => {
+    var pg = Library.groups().filter(function (g) { return g.id !== Library.ALL && !Library.isCustom(g.id); })[0];
+    var keys = Library.channels(pg.id).slice(0, 2).map(function (c) { return c.k; });
+    var g = Library.createGroup('Local channels'); Library.copyTo(g.id, keys); Library.hideGroup(pg.id, true);
+    Phone.sendLineup();
+    return { id: g.id, keys: keys, inGroup: Library.channels(g.id).length };
+  });
+  let lu = null;
+  for (let i = 0; i < 12; i++) { lu = await C.call(cred, 'GET', '/v1/lineup'); if (lu.groups && lu.groups.some((g) => g.id === loc.id)) break; await wait(500); }
+  const lg = lu.groups && lu.groups.find((g) => g.id === loc.id);
+  const got = lg ? lg.keys.map((k) => lu.channels.find((c) => c.k === k)) : [];
+  ok('a group with channels All leaves out still lists them on the phone', loc.inGroup === 2 && got.length === 2 && got.every((c) => c && c.na === 1), JSON.stringify({ loc, lg, got }));
+  ok('and All on the phone still matches the TV\'s', lu.channels.filter((c) => !c.na).length === await ev(() => Library.channels(Library.ALL).length));
+  await ev((x) => { Library.deleteGroup(x.id); Library.groups().forEach(function (g) { Library.hideGroup(g.id, false); }); }, loc);
+
   // Backups.
   const bk = await ask('backup', {}, { seal: true });
   ok('a backup for the phone, with the playlists', bk.backup && bk.backup.kind === 'backup' && bk.backup.settings.playlists.length > 0);

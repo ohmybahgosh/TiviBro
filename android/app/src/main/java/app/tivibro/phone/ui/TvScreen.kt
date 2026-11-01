@@ -4,6 +4,7 @@
    Shows (VodTab.kt). */
 package app.tivibro.phone.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -140,6 +141,8 @@ fun TvScreen(
     onType: (TvInput, String, Boolean) -> Unit,
 ) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    // Back from another tab goes to the remote first, then to the TV list.
+    BackHandler(enabled = tab != 0) { tab = 0 }
     var typing by remember { mutableStateOf(false) }
     // The clock, for programme progress: once every 20 seconds is plenty.
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
@@ -168,19 +171,22 @@ fun TvScreen(
             }
             val inputs = state?.inputs.orEmpty()
             if (inputs.isNotEmpty()) TypeOnTv(inputs, onType, Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp))
+            // Movies and Shows only when the provider has them (an older TiviBro doesn't say: both show).
+            val tabs = listOfNotNull("Remote", "Channels", "Guide", "Movies".takeIf { state?.movies != false }, "Shows".takeIf { state?.series != false })
+            if (tab >= tabs.size) tab = 0
             ScrollableTabRow(
                 selectedTabIndex = tab, containerColor = Ink, contentColor = TextHi, edgePadding = 8.dp,
                 indicator = { pos -> TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(pos[tab]), color = Accent2) },
                 divider = {},
             ) {
-                listOf("Remote", "Channels", "Guide", "Movies", "Shows").forEachIndexed { i, t -> Tab(selected = tab == i, onClick = { tab = i }, text = { Text(t) }) }
+                tabs.forEachIndexed { i, t -> Tab(selected = tab == i, onClick = { tab = i }, text = { Text(t) }) }
             }
-            when (tab) {
-                0 -> Remote(volume, onKey, onAction, onVolume, onType = { typing = true })
-                1 -> Channels(lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) }, onFav = onFav)
-                2 -> GuideTab(model, id, lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) })
-                3 -> VodTab(model, id, "movie")
-                else -> VodTab(model, id, "series")
+            when (tabs.getOrNull(tab)) {
+                "Channels" -> Channels(lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) }, onFav = onFav)
+                "Guide" -> GuideTab(model, id, lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) })
+                "Movies" -> VodTab(model, id, "movie")
+                "Shows" -> VodTab(model, id, "series")
+                else -> Remote(volume, onKey, onAction, onVolume, onType = { typing = true })
             }
         }
     }
@@ -345,7 +351,7 @@ private fun Channels(lineup: Lineup?, note: String, playing: String, now: Long, 
     var q by rememberSaveable { mutableStateOf("") }
     var group by rememberSaveable { mutableStateOf("") }
     val list = remember(lineup, q, group) {
-        val base = if (group.isBlank()) lineup.channels else lineup.groups.firstOrNull { it.id == group }?.keys?.mapNotNull { lineup.byKey[it] } ?: lineup.channels
+        val base = if (group.isBlank()) lineup.all else lineup.groups.firstOrNull { it.id == group }?.keys?.mapNotNull { lineup.byKey[it] } ?: lineup.all
         val t = q.trim().lowercase()
         if (t.isEmpty()) base else base.filter { it.name.lowercase().contains(t) || (it.now?.title?.lowercase()?.contains(t) == true) || it.number == t }
     }

@@ -103,8 +103,13 @@ fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) ->
         error = null; url = null; status = "Asking the TV for the editor…"
         try { url = load { status = it } } catch (e: TbException) { error = e.message } catch (e: Exception) { error = "$name didn't answer.  Is it on, and on the same network?" }
     }
-    // Back leaves the editor (its pages are sections of one page, picked from its own menu).
-    BackHandler { android.util.Log.i("TiviBroBack", "Back in the editor: to the TV list"); onBack() }
+    // Back closes what is open in the editor, then goes back through its pages (tbBack in the editor),
+    // and only then leaves it.  An older TiviBro's editor has no tbBack: back leaves.
+    BackHandler {
+        val w = web
+        if (w == null || url == null) onBack()
+        else w.evaluateJavascript("(window.tbBack && window.tbBack()) ? 1 : 0") { r -> if (r?.trim() != "1") onBack() }
+    }
 
     Scaffold(
         containerColor = Ink,

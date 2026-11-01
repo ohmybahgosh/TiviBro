@@ -945,7 +945,7 @@ function load(first) {
     BASE.N.rules = BASE.N.rules || {};
     var keep = !first && pendingCount() > 0;
     if (!keep) { E = clone(BASE.E); N = clone(BASE.N); }
-    if (same) { guideName = new Map(); ((D.guide && D.guide.channels) || []).forEach(function (x) { guideName.set(x[0], x[1]); }); dupeCache = null; }
+    if (same) { readGuide(); dupeCache = null; }
     else index();
     var wasSetup = document.body.classList.contains('setup');
     document.body.classList.toggle('setup', !!D.setup);
@@ -960,10 +960,22 @@ function load(first) {
     if (jump && !first) show(jump);
   }, function (e) { busy(-1); throw e; });
 }
+/* The guide's channels.  A third field says whether one has programmes (TiviBro alpha 42 and later);
+   an XMLTV channel with a blank id can't have any, so it is left out (it only looked matchable). */
+var guideEmpty = null;
+function readGuide() {
+  guideName = new Map(); guideEmpty = null;
+  ((D.guide && D.guide.channels) || []).forEach(function (x) {
+    if (!x[0] || !String(x[0]).trim()) return;
+    guideName.set(x[0], x[1]);
+    if (x.length > 2) { if (!guideEmpty) guideEmpty = new Set(); if (!x[2]) guideEmpty.add(x[0]); }
+  });
+}
+function emptyGuide(id) { return !!(guideEmpty && guideEmpty.has(id)); }
 function index() {
   byKey = new Map(); byGroup = new Map(); guideName = new Map();
   D.channels.forEach(function (c) { byKey.set(c.k, c); if (!byGroup.has(c.g)) byGroup.set(c.g, []); byGroup.get(c.g).push(c); });
-  ((D.guide && D.guide.channels) || []).forEach(function (x) { guideName.set(x[0], x[1]); });
+  readGuide();
   matcherIndex = null; dupeCache = null;
   if (typeof renderTools === 'function') freshTools();
 }
@@ -1031,11 +1043,13 @@ function perChannel() { var pl = activePl(); return D.playlist && D.playlist.typ
 function guideState(c) {
   if (!guideKnown()) return 'prov';
   var m = E.epgMap[c.k];
-  if (m) return guideName.has(m) ? 'mine' : 'pending';
+  if (m) return !guideName.has(m) ? 'pending' : emptyGuide(m) ? 'empty' : 'mine';
   if (c.has) return 'auto';
-  return perChannel() ? 'prov' : 'none';
+  if (perChannel()) return 'prov';
+  return c.epg && guideName.has(c.epg) && emptyGuide(c.epg) ? 'empty' : 'none';
 }
-function hasGuide(c) { var s = guideState(c); return s !== 'none'; }
+// 'empty': pointed at a guide channel that has nothing scheduled, so the TV still shows no guide.
+function hasGuide(c) { var s = guideState(c); return s !== 'none' && s !== 'empty'; }
 function activePl() { return (D.playlists || []).filter(function (p) { return p.active; })[0] || {}; }
 
 /* ---------- edits, undo and drafts ---------- */
@@ -1255,8 +1269,20 @@ setInterval(function () {
 }, 2000);
 
 /* ---------- pages and routing ---------- */
+/* Back on a phone (the TiviBro phone app calls tbBack()): close what is open, then go back through
+   the pages visited, then leave.  Answers false when there is nothing to go back to. */
+var pageStack = [], goingBack = false;
+window.tbBack = function () {
+  if ($('modal')) { closeModal(); return true; }
+  if ($('menu')) { closeMenu(); return true; }
+  if (openDD) { closeDD(); return true; }
+  if (document.body.classList.contains('navopen')) { navOpen(false); return true; }
+  while (pageStack.length) { var prev = pageStack.pop(); if (prev !== page && document.getElementById('p-' + prev)) { goingBack = true; show(prev); goingBack = false; window.scrollTo(0, 0); return true; } }
+  return false;
+};
 function show(p, sub) {
   closeDD(); closeMenu();
+  if (!goingBack && page && page !== p) { pageStack.push(page); if (pageStack.length > 30) pageStack.shift(); }
   page = p;
   document.querySelectorAll('#nav button').forEach(function (b) { b.classList.toggle('on', b.dataset.page === p); });
   var nb = document.querySelector('#nav button[data-page="' + p + '"] span'); if (nb) $('navCur').textContent = nb.textContent;
@@ -1469,7 +1495,7 @@ function suggestions() {
   if (!N.hideIdle) { var idn = idleChannels().length; if (idn >= 10) out.push([plural(idn, 'channel') + ' with nothing on', 'Event channels named "Off Air" or "No Event Scheduled" between events.  Hide them while they say so.', 'tools', 'Show me']); }
   var empty = emptyGroups().length;
   if (empty) out.push([plural(empty, 'empty group') + ' still shown', 'They have no channels, or every channel in them is hidden.', 'tools', 'Hide them']);
-  if (guideKnown()) { var miss = channelsOf(ALL).filter(function (c) { return !E.hiddenChannels[c.k] && guideState(c) === 'none'; }).length; if (miss) out.push([plural(miss, 'shown channel') + ' without a guide', 'Smart match suggests the right guide channel for each; you approve.', 'guide', 'Match']); }
+  if (guideKnown()) { var miss = channelsOf(ALL).filter(function (c) { return !E.hiddenChannels[c.k] && !hasGuide(c) && guideState(c) !== 'prov'; }).length; if (miss) out.push([plural(miss, 'shown channel') + ' without a guide', 'Smart match suggests the right guide channel for each; you approve.', 'guide', 'Match']); }
   if (N.enabled === false || !Object.keys(N.rules).some(function (k) { return N.rules[k]; })) {
     var d = Names.defaults(), n = 0; for (var i = 0; i < D.channels.length && i < 4000; i++) if (Names.cleanWith(d, D.channels[i].n) !== D.channels[i].n) n++;
     if (n > 10) out.push(['Channel names have clutter', 'The recommended clean-up would tidy ' + n + '+ names.', 'names', 'Preview']);
@@ -1622,7 +1648,7 @@ function currentList() {
   var l = q ? D.channels.filter(function (c) { return chName(c).toLowerCase().indexOf(q) >= 0 || c.n.toLowerCase().indexOf(q) >= 0; }) : channelsOf(curGroup);
   if (f === 'shown') l = l.filter(function (c) { return !E.hiddenChannels[c.k]; });
   if (f === 'hidden') l = l.filter(function (c) { return E.hiddenChannels[c.k]; });
-  if (f === 'noguide') l = l.filter(function (c) { return guideState(c) === 'none'; });
+  if (f === 'noguide') l = l.filter(function (c) { var st = guideState(c); return st === 'none' || st === 'empty'; });
   if (f === 'added') { var g = realGroup(); l = l.filter(function (c) { return g && isProv(g) ? c.g !== g : false; }); }
   return l;
 }
@@ -2154,7 +2180,7 @@ $('catList').addEventListener('click', function (e) {
 
 /* ---------- matching channels to the guide ---------- */
 var mTab = 'none', mPage = 0, PAGE = 100;
-var TAB_LABEL = { none: 'Needs a guide', prov: 'Provider only', mine: 'Matched by you', auto: 'Matched on its own', pending: 'Waiting for the TV', all: 'All' };
+var TAB_LABEL = { none: 'Needs a guide', empty: 'Guide is empty', prov: 'Provider only', mine: 'Matched by you', auto: 'Matched on its own', pending: 'Waiting for the TV', all: 'All' };
 function matchPool() {
   var g = $('mGroup')._dd ? $('mGroup')._dd.value : ALL;
   return channelsOf(g || ALL).filter(function (c) { return !E.hiddenChannels[c.k] && (g !== ALL || !E.hiddenGroups[c.g]); });
@@ -2169,28 +2195,29 @@ function renderMatchList() {
     return;
   }
   $('mBody').classList.remove('hidden'); $('mEmpty').innerHTML = '';
-  var pool = matchPool(), counts = { none: 0, prov: 0, mine: 0, auto: 0, pending: 0, all: pool.length };
+  var pool = matchPool(), counts = { none: 0, empty: 0, prov: 0, mine: 0, auto: 0, pending: 0, all: pool.length };
   pool.forEach(function (c) { counts[guideState(c)]++; });
-  var tabs = ['none', 'prov', 'mine', 'auto', 'pending', 'all'].filter(function (t) { return t === 'none' || t === 'all' || counts[t]; });
+  var tabs = ['none', 'empty', 'prov', 'mine', 'auto', 'pending', 'all'].filter(function (t) { return t === 'none' || t === 'all' || counts[t]; });
   if (tabs.indexOf(mTab) < 0) mTab = 'none';
   $('mTabs').innerHTML = tabs.map(function (t) { return '<button data-t="' + t + '"' + (t === mTab ? ' class="on"' : '') + ' title="' + esc(TAB_HELP[t]) + '">' + TAB_LABEL[t] + '<b>' + counts[t] + '</b></button>'; }).join('');
   var q = $('mSearch').value.trim().toLowerCase();
   var l = pool.filter(function (c) { return (mTab === 'all' || guideState(c) === mTab) && (!q || chName(c).toLowerCase().indexOf(q) >= 0); });
-  $('smartBtn').textContent = '✦ Smart match' + (counts.none + counts.prov ? ' (' + (counts.none + counts.prov) + ')' : '');
+  $('smartBtn').textContent = '✦ Smart match' + (counts.none + counts.empty + counts.prov ? ' (' + (counts.none + counts.empty + counts.prov) + ')' : '');
   if (!l.length) { $('mList').innerHTML = '<div class="empty">' + (mTab === 'none' && !q ? '✓ Every channel here has a guide.  Nice.' : 'No channels match.') + '</div>'; return; }
   var pages = Math.ceil(l.length / PAGE); if (mPage >= pages) mPage = pages - 1;
   var part = l.slice(mPage * PAGE, mPage * PAGE + PAGE);
   $('mList').innerHTML = '<table class="t mrow"><tr><th>Channel</th><th>Guide channel</th><th>Status</th><th></th></tr>' + part.map(function (c) {
     var id = guideOf(c), st = guideState(c), mine = !!E.epgMap[c.k];
-    var chip = { mine: '<span class="chip ok">matched by you</span>', auto: '<span class="chip ok">matched on its own</span>', prov: '<span class="chip info" title="' + esc(TAB_HELP.prov) + '">provider per-channel</span>', none: '<span class="chip bad">no guide</span>', pending: '<span class="chip warn" title="' + esc(TAB_HELP.pending) + '">waiting for the TV</span>' }[st];
+    var chip = { mine: '<span class="chip ok">matched by you</span>', auto: '<span class="chip ok">matched on its own</span>', prov: '<span class="chip info" title="' + esc(TAB_HELP.prov) + '">provider per-channel</span>', none: '<span class="chip bad">no guide</span>', empty: '<span class="chip warn" title="' + esc(TAB_HELP.empty) + '">matched, nothing scheduled</span>', pending: '<span class="chip warn" title="' + esc(TAB_HELP.pending) + '">waiting for the TV</span>' }[st];
     return '<tr><td>' + (c.logo ? '<img class="logo" loading="lazy" src="' + esc(c.logo) + '" onerror="this.style.visibility=\'hidden\'">' : '') + '<b>' + esc(chName(c)) + '</b><div class="dim small">' + esc(groupLabel(c.g)) + '</div></td>' +
       '<td>' + (id && (guideName.has(id) || mine) ? esc(guideName.get(id) || id) + '<div class="dim small">' + esc(id) + '</div>' : '<span class="dim">none</span>') + '</td>' +
-      '<td>' + chip + '</td><td class="r"><button data-match="' + esc(c.k) + '" class="small' + (st === 'none' ? ' primary' : '') + '">' + (st === 'none' ? 'Find guide…' : 'Change…') + '</button>' + (mine ? ' <button class="ghost small" data-unmatch="' + esc(c.k) + '" title="Go back to the automatic match">Clear</button>' : '') + '</td></tr>';
+      '<td>' + chip + '</td><td class="r"><button data-match="' + esc(c.k) + '" class="small' + (st === 'none' || st === 'empty' ? ' primary' : '') + '">' + (st === 'none' ? 'Find guide…' : st === 'empty' ? 'Find another…' : 'Change…') + '</button>' + (mine ? ' <button class="ghost small" data-unmatch="' + esc(c.k) + '" title="Go back to the automatic match">Clear</button>' : '') + '</td></tr>';
   }).join('') + '</table>' +
     (pages > 1 ? '<div class="pager">' + (mPage * PAGE + 1) + '–' + Math.min(l.length, (mPage + 1) * PAGE) + ' of ' + l.length + '<button class="small" data-pg="-1"' + (mPage ? '' : ' disabled') + '>‹ Previous</button><button class="small" data-pg="1"' + (mPage < pages - 1 ? '' : ' disabled') + '>Next ›</button></div>' : '');
 }
 var TAB_HELP = {
-  none: 'No guide data found for these channels.  They show "No guide information" on the TV.',
+  none: 'Not matched to any guide channel.  They show "No guide information" on the TV.',
+  empty: 'Matched to a guide channel, but that guide channel has nothing scheduled, so the TV still shows "No guide information".  Pick another guide channel, or add a guide source that covers it.',
   prov: 'No match in the XMLTV guides, so the TV asks your provider per channel.  That often works; match these if the TV shows nothing.',
   mine: 'Channels you pointed at a guide channel yourself.',
   auto: 'Matched by the provider\'s guide id or by name, with nothing for you to do.',
@@ -2219,7 +2246,7 @@ function guideEntry(x) {
 var matcherIndex = null;
 function buildIndex() {
   if (matcherIndex) return matcherIndex;
-  var entries = (D.guide.channels || []).map(guideEntry), tok = new Map(), comp = new Map();
+  var entries = (D.guide.channels || []).filter(function (x) { return x[0] && String(x[0]).trim(); }).map(guideEntry), tok = new Map(), comp = new Map();
   entries.forEach(function (e, i) {
     [e.p, e.q].forEach(function (p) {
       if (!p) return;
@@ -2270,6 +2297,7 @@ function suggest(c, max) {
     var e = ix.entries[i], s = Math.max(score1(a, e.p), score1(a, e.q), b ? score1(b, e.p) : 0, b ? score1(b, e.q) : 0);
     if (c.has && c.epg && e.id.toLowerCase() === c.epg.toLowerCase()) s = Math.max(s, 95);
     if (!c.has && c.epg && e.id.toLowerCase() === c.epg.toLowerCase()) return;      // its own guide id is empty: no help
+    if (emptyGuide(e.id) || e.id === E.epgMap[c.k]) return;                         // nothing scheduled there, or already tried
     if (s >= 45) out.push({ id: e.id, name: e.name, score: Math.round(s) });
   });
   out.sort(function (x, y) { return y.score - x.score || x.name.length - y.name.length; });
@@ -2283,7 +2311,7 @@ function confidence(list) {
 var CONF = { high: ['ok', 'Very likely'], medium: ['warn', 'Likely'], low: ['bad', 'Unsure'] };
 
 $('smartBtn').onclick = function () {
-  var pool = matchPool().filter(function (c) { var s = guideState(c); return s === 'none' || s === 'prov'; });
+  var pool = matchPool().filter(function (c) { var s = guideState(c); return s === 'none' || s === 'empty' || s === 'prov'; });
   if (!pool.length) { toast('Every channel here already has a guide'); return; }
   modal('Smart match', '<div id="smHead"><p class="muted" style="margin-top:0">Looking at ' + plural(pool.length, 'channel') + ' without a guide and comparing names with ' + guideName.size.toLocaleString() + ' guide channels…</p><div class="bar acc" style="height:8px"><i id="smBar" style="width:0%"></i></div></div><div id="smBody"></div>',
     // Disabled before matching starts: a short list finishes at once and enables Apply itself.
@@ -2308,7 +2336,7 @@ function showSmart(res, took) {
     var n = counts(), rows = found.filter(function (r) { return showWeak || r.conf !== 'low'; });
     $('smHead').innerHTML = '<div class="row"><span class="chip ok">' + n.high + ' very likely</span><span class="chip warn">' + n.medium + ' likely</span><span class="chip bad">' + n.low + ' unsure</span><span class="chip">' + (res.length - found.length) + ' no idea</span><span class="grow"></span>' +
       '<button class="small" id="smAllHigh">Approve all very likely</button><button class="small" id="smAll">Approve everything shown</button><button class="small ghost" id="smNone">Decline all</button></div>' +
-      '<p class="muted small" style="margin:10px 0">Rows marked <b>✓ Approved</b> are matched when you press Apply; ✕ skips one.  "Very likely" ones start approved.  Use the list in each row to pick a different guide channel.  Nothing changes until you press Apply.  <label style="margin-left:10px"><input type="checkbox" id="smWeak"' + (showWeak ? ' checked' : '') + '> Show unsure guesses</label></p>';
+      '<p class="muted small" style="margin:10px 0">Rows marked <b>✓ Approved</b> are matched when you press Apply; ✕ skips one.  "Very likely" ones start approved.  Use the list in each row to pick a different guide channel.  Nothing changes until you press Apply.</p><label class="small" style="display:flex;align-items:center;gap:10px;margin:0 0 10px;cursor:pointer"><input type="checkbox" id="smWeak" style="margin:0;flex:none"' + (showWeak ? ' checked' : '') + '> Show unsure guesses</label>';
     var pages = Math.max(1, Math.ceil(rows.length / PG)); if (page2 >= pages) page2 = pages - 1;
     var part = rows.slice(page2 * PG, page2 * PG + PG);
     $('smBody').innerHTML = rows.length ? '<table class="t"><tr><th>Your channel</th><th>Guide channel</th><th>Confidence</th><th class="r">Approve?</th></tr>' + part.map(function (r) {
@@ -2371,7 +2399,7 @@ function openMatcher(k) {
   modal('Guide for ' + chName(c), '<p class="muted small" style="margin-top:0">Best guesses first.  Search to find any guide channel.  The percentage is how closely the names match.</p>' +
     '<input id="mq" type="search" style="width:100%" placeholder="Search ' + guideName.size.toLocaleString() + ' guide channels"><p class="muted small" id="mqn" style="margin:10px 0"></p><div id="mres"></div>', function () {
     var sug = suggest(c, 8);
-    function row(h) { return '<div class="pick" data-id="' + esc(h.id) + '">' + (h.id === cur ? '<span class="chip acc">current</span>' : '') + '<b>' + esc(h.name) + '</b>' + (h.score != null ? '<span class="chip ' + (h.score >= 90 ? 'ok' : h.score >= 72 ? 'warn' : '') + '">' + h.score + '%</span>' : '') + '<span class="id">' + esc(h.id) + '</span></div>'; }
+    function row(h) { return '<div class="pick" data-id="' + esc(h.id) + '">' + (h.id === cur ? '<span class="chip acc">current</span>' : '') + '<b>' + esc(h.name) + '</b>' + (h.score != null ? '<span class="chip ' + (h.score >= 90 ? 'ok' : h.score >= 72 ? 'warn' : '') + '">' + h.score + '%</span>' : '') + (emptyGuide(h.id) ? '<span class="chip bad">nothing scheduled</span>' : '') + '<span class="id">' + esc(h.id) + '</span></div>'; }
     function run() {
       var q = $('mq').value.trim();
       var hits = q ? searchGuide(q, 80) : sug;
@@ -2419,7 +2447,7 @@ var HELP = [
     '<p>The countries are picked automatically from the channels that need a guide, up to four.  You can choose up to eight yourself instead.  The files are big (the US one from iptv-epg.org is about 60 MB zipped), so the TV fetches them at most twice a day, in the background, after your own guide is on screen.  iptv-epg.org can only be reached through the network helper (Settings > Playback > Network: Automatic).</p>' +
     '<p>A wrong match?  Match that channel yourself in step 4, or on the TV hold OK on it and choose <b>Assign guide</b>.  Public guide channels are in the list too.  The TV shows "public guide" next to programmes that came from one.  These are free services that can change or go offline; TiviBro just reads what they publish.</p>'],
   ['matching', 'Matching channels and Smart match', '<p>Most channels match the guide by themselves, through the guide id the provider sends or by name.  The rest show "No guide information" on the TV.  The tabs sort channels by state:</p>' +
-    '<ul><li><b>Needs a guide</b>: nothing found.  These are the ones to fix.</li><li><b>Provider only</b>: no XMLTV match, but the per-channel provider guide is used.  Often fine.</li><li><b>Matched by you</b> and <b>Matched on its own</b>: done.</li><li><b>Waiting for the TV</b>: you matched it, and the TV loads that guide channel after you send.</li></ul>' +
+    '<ul><li><b>Needs a guide</b>: not matched to anything.  These are the ones to fix.</li><li><b>Guide is empty</b>: matched, but the guide channel has nothing scheduled.  Pick another one.</li><li><b>Provider only</b>: no XMLTV match, but the per-channel provider guide is used.  Often fine.</li><li><b>Matched by you</b> and <b>Matched on its own</b>: done.</li><li><b>Waiting for the TV</b>: you matched it, and the TV loads that guide channel after you send.</li></ul>' +
     '<h3>Smart match</h3><p>Smart match compares every unmatched channel with every guide channel.  It ignores clutter (HD, FHD, "US |"), understands country codes, East and West feeds, numbered channels (ESPN vs ESPN 2) and US station call signs (KABC), then shows its best guess with a confidence score.</p>' +
     '<p>You decide: ✓ approves a guess, ✕ declines it, and the list in each row offers the next best guesses or a search of the whole guide.  "Very likely" guesses start approved.  Nothing changes until you press <b>Apply</b>, and the whole batch is one undo step.</p>' +
     '<h3>By hand</h3><p><b>Find guide…</b> opens suggestions for that one channel plus a search box.  <b>Clear</b> returns a channel to its automatic match.</p>'],

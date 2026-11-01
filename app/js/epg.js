@@ -217,6 +217,7 @@ var Epg = (function () {
           while ((c = CH.exec(buf))) {
             lastC = CH.lastIndex;
             var id = unesc(c[1]);
+            if (!id.trim()) continue;            // <channel id="">: no programme can point at it
             var dn = /<display-name[^>]*>([\s\S]*?)<\/display-name>/.exec(c[2]);
             var name = dn ? unesc(dn[1]).trim() : id;
             if (chans.length < 30000) chans.push([id, name]);
@@ -755,6 +756,8 @@ var Epg = (function () {
     get pubStatus() { return pubStatus; },
     get paused() { return paused; },
     pubAgain: function () { pubForce = true; return init(Library, false); },
+    // Does this guide channel have any programmes (in the days loaded)?
+    hasId: function (id) { var x = id && cache.get(id); return !!(x && x.list && x.list.length); },
     hasData: function (ch) { var id = epgId(ch); return !!(id && cache.has(id)) || !!(typeof Events !== 'undefined' && Events.of(ch)); },
     onUpdate: function (fn) { listeners.push(fn); },
     refresh: function (lib, force) { return init(lib || Library, force); },

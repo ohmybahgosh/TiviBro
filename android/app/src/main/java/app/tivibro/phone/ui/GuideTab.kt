@@ -100,7 +100,7 @@ fun GuideTab(model: AppModel, id: String, lineup: Lineup?, lineupNote: String, p
     var error by remember(at, group) { mutableStateOf<String?>(null) }
     var open by remember { mutableStateOf<Chan?>(null) }
     val scope = rememberCoroutineScope()
-    val list = remember(lineup, group) { if (group.isBlank()) lineup.channels else lineup.groups.firstOrNull { it.id == group }?.keys?.mapNotNull { lineup.byKey[it] } ?: lineup.channels }
+    val list = remember(lineup, group) { if (group.isBlank()) lineup.all else lineup.groups.firstOrNull { it.id == group }?.keys?.mapNotNull { lineup.byKey[it] } ?: lineup.all }
     val state = rememberLazyListState()
     val choices = remember(now / 3_600_000L) { times(now) }
 

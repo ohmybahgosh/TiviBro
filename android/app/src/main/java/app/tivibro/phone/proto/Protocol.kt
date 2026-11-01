@@ -311,6 +311,8 @@ data class NowState(
     val inputs: List<TvInput> = emptyList(),
     /** TiviBro is open but busy (a huge playlist, a big clean-up): presses wait until it's done. */
     val busy: Boolean = false,
+    /** Whether the provider has movies and shows; null from an older TiviBro (then both tabs show). */
+    val movies: Boolean? = null, val series: Boolean? = null,
 ) {
     companion object {
         fun from(j: JSONObject): NowState {
@@ -324,23 +326,27 @@ data class NowState(
                 now = Prog.from(s?.optJSONObject("now")), next = Prog.from(s?.optJSONObject("next")), paused = s?.optBoolean("paused") == true,
                 vodTitle = v?.optString("title").orEmpty(), vodPos = v?.optInt("pos") ?: 0, vodDur = v?.optInt("dur") ?: 0,
                 busy = j.optBoolean("busy"),
+                movies = s?.optJSONObject("vod2")?.optBoolean("movies"), series = s?.optJSONObject("vod2")?.optBoolean("series"),
                 inputs = s?.optJSONArray("inputs")?.let { a -> (0 until a.length()).mapNotNull { TvInput.from(a.optJSONObject(it)) } }.orEmpty(),
             )
         }
     }
 }
 
-data class Chan(val k: String, val name: String, val number: String, val logo: String, val fav: Boolean, val now: Prog?)
+/** [inAll]: false for a channel only a group shows (a Local channels group keeps stations whose network groups are hidden). */
+data class Chan(val k: String, val name: String, val number: String, val logo: String, val fav: Boolean, val now: Prog?, val inAll: Boolean = true)
 data class Group(val id: String, val name: String, val keys: List<String>)
 data class Lineup(val rev: Int, val channels: List<Chan>, val groups: List<Group>) {
     val byKey: Map<String, Chan> by lazy { channels.associateBy { it.k } }
+    /** What the TV's All shows. */
+    val all: List<Chan> by lazy { channels.filter { it.inAll } }
     companion object {
         fun from(j: JSONObject): Lineup? {
             val cs = j.optJSONArray("channels") ?: return null
             val gs = j.optJSONArray("groups")
             val chans = (0 until cs.length()).map { i ->
                 val c = cs.getJSONObject(i)
-                Chan(c.getString("k"), c.optString("n"), c.opt("num")?.toString().orEmpty(), c.optString("logo"), c.optInt("fav") == 1, Prog.from(c.optJSONObject("now")))
+                Chan(c.getString("k"), c.optString("n"), c.opt("num")?.toString().orEmpty(), c.optString("logo"), c.optInt("fav") == 1, Prog.from(c.optJSONObject("now")), c.optInt("na") != 1)
             }
             val groups = if (gs == null) emptyList() else (0 until gs.length()).map { i ->
                 val g = gs.getJSONObject(i); val ks = g.optJSONArray("keys")
