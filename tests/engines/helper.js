@@ -221,12 +221,16 @@ step(function guide(next) {
           request('GET', B + '/guide/desc?pl=p1&kind=main&id=a.us', function (e4, r4, b4) {
             var d = json(b4);
             ok('guide: one channel\'s descriptions, in order', Array.isArray(d) && d.length >= 4 && /^About a\d$/.test(d[0]), String(b4));
+            request('GET', B + '/guide/find?pl=p1&kind=main&q=' + encodeURIComponent(JSON.stringify(['about A1'])), function (e6, r6, b6) {
+            var f = json(b6);
+            ok('guide: programmes found by their description (whole words, any case), with their place', Array.isArray(f) && f.length >= 1 && f.every(function (x) { return x.id === 'a.us' && x.d === 'About a1' && d[x.i] === 'About a1'; }), String(b6).slice(0, 200));
             request('GET', B + '/guide/meta?pl=p1&kind=main', function (e5, r5, b5) {
               var m = json(b5) || {};
               ok('guide: name match and icon reported', m.matches && m.matches.chanb === 'b.us' && m.icons && m.icons['a.us'] === 'http://x/a.png', String(b5).slice(0, 200));
               ok('guide: a guide channel with a blank id is left out', !(m.matches && 'chand' in m.matches) && (m.channels || []).every(function (x) { return x[0]; }) && !(m.icons && '' in m.icons), JSON.stringify(m.channels));
               try { require('fs').readdirSync(dir).forEach(function (sub) { var d2 = path.join(dir, sub); require('fs').readdirSync(d2).forEach(function (f) { require('fs').unlinkSync(path.join(d2, f)); }); require('fs').rmdirSync(d2); }); require('fs').rmdirSync(dir); } catch (x) {}
               next();
+            });
             });
           });
         });

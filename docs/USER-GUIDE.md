@@ -293,15 +293,16 @@ It understands the usual ways providers write these: "Oct 29 7:30 PM", "Sat 15th
 
 ### My teams
 
-Many providers have a group for each league's teams ("NFL TEAMS", "NHL TEAMS": "NHL | DETROIT RED WINGS") next to their league passes.  **My teams** gathers the teams you follow into one group near the top of the guide:
+Many providers have a group for each league's teams ("NFL TEAMS", "NHL TEAMS": "NHL | DETROIT RED WINGS") next to their league passes.  **My teams** gathers the games of the teams you follow into one group near the top of the guide:
 
 1. **Games on now**, on every channel showing them: event channels ("USA NHL 02: WPG VS CAR"), league passes, sports networks and guide programmes ("NFL Football: Lions at Vikings").  A game's channels are listed together, so when one feed doesn't work the next is right there.
-2. **Their next games**, starting within 6 hours (or 3, 12 or 24).
-3. **The teams' own channels.**
+2. **Their next games**, starting within 6 hours (or 3, 12 or 24), soonest first, at the bottom.
+
+Only games: a team's own channel is there while it shows a game, not when its guide says "Future events not found yet" or the next game is tomorrow night.  A show about one team (a pregame show, a team magazine) isn't a game.  Games a local station lists as "NFL Football", with the teams only in the description, count.
 
 For now it covers the main North American leagues only: NFL, NBA, NHL, MLB, WNBA and MLS.  College, junior and minor league teams, and other countries' leagues, aren't in it yet.
 
-Choose your teams in **Settings > Groups, sorting, hidden > My teams**.  It lists the leagues in your playlist (NFL, NBA, NHL, MLB, WNBA, MLS); open one and switch on your teams.  Teams with their own channel say so.  Or **hold OK** on a team's channel and choose **Follow the Detroit Red Wings**.  Your teams are kept in the settings, so they stay when you switch playlists.
+Choose your teams in **Settings > Groups, sorting, hidden > My teams**.  It lists the leagues in your playlist (NFL, NBA, NHL, MLB, WNBA, MLS); open one and switch on your teams.  Teams with their own channel say so.  Or **hold OK** on a team's channel and choose **Follow the Detroit Red Wings** (in the phone app: press and hold the channel).  Your teams are kept in the settings, so they stay when you switch playlists.
 
 **Remind me before their games** (off at first) sets reminders for their games the way the [watchlist](#watchlist) does.  Unfollowing a team takes its reminders with it.
 
@@ -362,6 +363,8 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 ### Search
 
 **Search** in the menu finds channels and programmes in the guide (now, later today, the coming days and on catch-up) as you type, and also your Movies and Shows.  Below the box, **Everything**, **On now**, **Coming up**, **Replays**, **Channels** and **Movies & Shows** narrow the results (**◀ ▶** on that row).  Each programme shows once, even when several copies of the channel carry it, with **Today**, **Tomorrow** or the day and its time.  **OK** watches, replays, opens a show's episodes, or sets a reminder (**OK** again cancels it); **Hold OK** gives channel options.  **Yellow** adds what you typed to your [watchlist](#watchlist).
+
+Programmes that have what you typed only in their **description** come after the rest, a moment later, with the words around it: **lions** finds the local station whose "NFL Football" is "Minnesota Vikings at Detroit Lions".
 
 Movies and shows are searchable without opening **Movies** or **Shows** first: Search reads the lists the TV keeps (or loads them once).  Results are ranked by how closely the title matches (the whole title, then the start, then a word), then by what you can watch: on now, a movie or show, a channel, coming up, a replay.  So **batman** lists the Batman films before the 24/7 Batman channels, and **CNN** still finds the channel first.  Titles in languages you hid, and adult titles, don't show.  **OK** on a movie opens it in **Movies** and plays it, so **Back** lands on it there; on a show it opens its episodes.
 

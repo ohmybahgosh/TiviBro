@@ -36,6 +36,15 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('a name with a time reads as an event, with its time', rows.some((r) => /Michigan Wolverines at Purdue/.test(r) && /\d:\d\d/.test(r) && r.indexOf(ks[3]) >= 0 && /upcoming|on now/.test(r)), JSON.stringify(rows));
   ok('every result says why it matched', rows.every((r) => /michigan/i.test(r)), JSON.stringify(rows));
 
+  // A word only in programme descriptions ("Morning Briefing": "...weather and traffic in one quick hour").
+  await ev(() => { const i = document.querySelector('.search-input'); i.value = 'traffic'; i.dispatchEvent(new Event('input')); });
+  let drows = [];
+  for (let w = 0; w < 10 && !drows.length; w++) {
+    await page.waitForTimeout(800);
+    drows = await ev(() => [].slice.call(document.querySelectorAll('.search-list .row')).filter((r) => r.offsetHeight).map((r) => r.innerText.replace(/\n+/g, ' | ')));
+  }
+  ok('programmes found by their description, with the words around it', drows.length && drows.every((r) => /traffic/i.test(r)) && drows.some((r) => /Morning Briefing/.test(r)), JSON.stringify(drows.slice(0, 3)));
+
   // On the channel: the info panel says what the name says when there is no guide.
   const info = await ev((k) => { Views.switchTab('channels'); const c = Library.find(k); Library.data.channels.forEach(() => {}); return Search.extra(c); }, ks[0]);
   ok('the channel\'s details show the game when there is no guide', info === 'Michigan vs Ohio State', info);

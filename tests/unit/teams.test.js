@@ -6,7 +6,8 @@ global.U = { hhmm: t => new Date(t).toISOString().slice(11, 16) };
 global.Store = { playlist: { events: {} }, settings: { myTeams: [], teamsAhead: 6 }, edits: { hiddenChannels: {}, hiddenGroups: {}, reminders: [] }, saveSettings() {}, saveEdits() {} };
 eval(fs.readFileSync(path.join(__dirname, '../../app/js/events.js'), 'utf8') + ';global.Events=Events;');
 let progs = {};
-global.Epg = { xml: false, epgId: () => '', search(test) { const out = []; Object.keys(progs).forEach(k => progs[k].forEach(p => { if (test(p.t)) out.push({ key: k, p }); })); return out; } };
+let descs = [];
+global.Epg = { xml: false, epgId: () => '', findDesc: () => Promise.resolve(descs), search(test) { const out = []; Object.keys(progs).forEach(k => progs[k].forEach(p => { if (test(p.t)) out.push({ key: k, p }); })); return out; } };
 let fail = 0, n = 0;
 const ok = (name, c, x) => { n++; if (!c) { fail++; console.log('FAIL ' + name + (x !== undefined ? '  ' + x : '')); } };
 
@@ -72,7 +73,7 @@ ok('game on now first', /WPG VS CAR/.test(list[0]), list.join(' / '));
 ok('every feed of the game on now, together', /WPG VS CAR/.test(list[1]) && list[0] !== list[1], list.join(' / '));
 ok('then the next game', /Carolina Hurricanes Winnipeg Jets/.test(list[2]), list.join(' / '));
 ok('one channel per game for reminders', Teams.games(0, true).length === 2);
-ok('then the team channel', list[list.length - 1] === 'NHL | WINNIPEG JETS', list.join(' / '));
+ok('a team channel with no game soon is left out', list.indexOf('NHL | WINNIPEG JETS') < 0, list.join(' / '));
 // Guide titles, including a team channel's "Next game" block.
 const lions = tc['nfl:det'][0], espn = chans.find(c => c.n === 'ESPN');
 const d = new Date(NOW + 3 * H), pad = x => String(x).padStart(2, '0');
@@ -87,7 +88,29 @@ ok('games past the window left out', !lionsGames.some(x => x.p.s > NOW + 6 * H))
 Teams.dirty();
 list = Teams.list().map(c => c.n);
 ok('on-now games first, team channels after', list[0] === 'ESPN' || /WPG VS CAR/.test(list[0]), list.join(' / '));
-ok('team channel once', list.filter(x => x === 'NFL | DETROIT LIONS').length === 1);
+ok('the team channel showing its next game is in once', list.filter(x => x === 'NFL | DETROIT LIONS').length === 1, list.join(' / '));
+ok('live games at the top, the next ones at the bottom', list[list.length - 1] === 'NFL | DETROIT LIONS', list.join(' / '));
+// Not games: a placeholder, a team show with one team named.
+const hbo = chans.find(c => c.n === 'HBO');
+const tig = ch('MLB | DETROIT TIGERS', 'g1'); chans.push(tig);
+progs[tig.k] = [{ s: NOW - H, e: NOW + 5 * H, t: 'Future Events for Detroit Tigers not found yet' }];
+progs[hbo.k] = [{ s: NOW - H, e: NOW + H, t: 'Inside the Detroit Lions' }];
+Teams.follow('mlb:det', true); Teams.dirty();
+list = Teams.list().map(c => c.n);
+ok('"not found yet" is no game', list.indexOf('MLB | DETROIT TIGERS') < 0, list.join(' / '));
+ok('a show about one team is no game', list.indexOf('HBO') < 0, list.join(' / '));
+// The game named only in the description, on a sports title.
+const fox = ch('FOX 2 Detroit', 'g5'); chans.push(fox);
+const foxGame = { s: NOW - H, e: NOW + 2 * H, t: 'NFL Football' }, foxNews = { s: NOW + H, e: NOW + 2 * H, t: 'FOX 2 News' };
+progs[fox.k] = [foxGame, foxNews];
+descs = [{ key: fox.k, p: foxGame, d: 'Minnesota Vikings at Detroit Lions.  From Ford Field.' }, { key: fox.k, p: foxNews, d: 'The Detroit Lions beat the Minnesota Vikings.' }];
+Teams.dirty(); Teams.list();
+(async () => {
+for (let w = 0; w < 3; w++) { await new Promise(r => setTimeout(r, 20)); Teams.list(); }
+Teams.dirty();
+list = Teams.list().map(c => c.n);
+ok('a game named only in the description', list.indexOf('FOX 2 Detroit') >= 0, list.join(' / '));
+ok('the news after it is not one', Teams.games().filter(x => x.c === fox).length === 1);
 // Hidden channels stay out.
 Store.edits.hiddenChannels[espn.k] = 1; Teams.dirty();
 ok('hidden channels stay out', Teams.list().indexOf(espn) < 0);
@@ -101,3 +124,4 @@ ok('group off', Teams.list().length === 0);
 
 console.log((fail ? fail + ' of ' : 'all ') + n + ' teams checks ' + (fail ? 'failed' : 'passed'));
 process.exit(fail ? 1 : 0);
+})();

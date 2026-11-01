@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **My teams only lists games.**  The group has the games on now at the top and the ones starting within **Games starting within** below, soonest first.  A team's own channel is in it only while it shows a game, so "Future events for Detroit Tigers not found yet" or a game tomorrow night no longer puts a channel there.  Shows about one team (a pregame show, a team magazine) aren't games either.
+- **Games named only in the description count.**  A local station's "NFL Football" with "Minnesota Vikings at Detroit Lions" in its description is in My teams now.
+- **Search looks in descriptions too.**  After the titles, programmes that have what you typed only in their description are listed, with the words around it.  Searching **lions** finds the local station carrying the game.
+- **Phone app: Follow a team** from a team channel's long-press options.
+
 ## 0.6.0 (alpha 45, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

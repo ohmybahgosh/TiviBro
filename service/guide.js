@@ -13,6 +13,7 @@
      POST /guide/load            { pl, kind: 'main'|'pub', sig, msg }   starts a load (replaces one running)
      GET  /guide/status?pl&kind  progress, or what is stored
      GET  /guide/meta?pl&kind    GET /guide/titles?pl&kind    GET /guide/desc?pl&kind&id
+     GET  /guide/find?pl&kind&q=["words"]&max   programmes whose description has one of the words
    Downloads go through the relay itself (msg.sources[].url are relay addresses with /unz/<id>), so
    custom User-Agents, unzipping, the DNS cache and the lenient parser all apply.
    Plain ES5 and callbacks for Node 0.12 (webOS 4). */
@@ -355,6 +356,48 @@ function desc(k, id, cb) {
   });
 }
 
+/* Programmes whose description has one of the words (whole words, any case): [{ id, i, d }], i the
+   programme's place in that channel's list (the same order as titles), d the description cut to 400
+   characters.  For Search and My teams: a local station's "NFL Football" says the teams only there.
+   Read in 4 MB steps, and only a channel whose descriptions match is parsed. */
+function find(k, words, max, cb) {
+  var ix = descIdx[k];
+  if (!ix) { try { ix = descIdx[k] = JSON.parse(fs.readFileSync(path.join(dirOf(k), 'desc.idx'), 'utf8')); } catch (e) { return cb(null, []); } }
+  var terms = (words || []).map(function (w) { return String(w).trim().toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+'); }).filter(function (w) { return w.length >= 2; }).slice(0, 400);
+  if (!terms.length) return cb(null, []);
+  var rx = new RegExp('(?:^|[^a-z0-9\u00c0-\uffff])(?:' + terms.join('|') + ')(?![a-z0-9\u00c0-\uffff])', 'i');
+  var list = Object.keys(ix).map(function (id) { return [id, ix[id][0], ix[id][1]]; }).sort(function (a, b) { return a[1] - b[1]; });
+  var out = [], n = 0, buf = null, at = 0, STEP = 4 << 20;
+  fs.open(path.join(dirOf(k), 'desc.json'), 'r', function (err, fd) {
+    if (err) return cb(null, []);
+    function done(e) { fs.close(fd, function () {}); cb(e || null, out); }
+    function next() {
+      while (n < list.length && out.length < max) {
+        var e = list[n];
+        if (!buf || e[1] < at || e[1] + e[2] > at + buf.length) return fill(e);
+        var raw = buf.toString('utf8', e[1] - at, e[1] - at + e[2]);
+        n++;
+        if (!rx.test(raw)) continue;
+        var arr; try { arr = JSON.parse(raw); } catch (x) { continue; }
+        for (var i = 0; i < arr.length && out.length < max; i++) if (arr[i] && rx.test(arr[i])) out.push({ id: e[0], i: i, d: String(arr[i]).slice(0, 400) });
+      }
+      done();
+    }
+    function fill(e) {
+      var size = Math.max(STEP, e[2]);
+      buf = new Buffer(size);                                 // eslint-disable-line no-buffer-constructor
+      fs.read(fd, buf, 0, size, e[1], function (e2, got) {
+        if (e2) return done(e2);
+        if (got < size) buf = buf.slice(0, got);
+        at = e[1];
+        if (e[1] + e[2] > at + buf.length) { n++; buf = null; }   // cut short (file changed): skip it
+        setImmediate(next);
+      });
+    }
+    next();
+  });
+}
+
 function send(res, code, body, type, h) {
   res.writeHead(code, Object.assign({ 'Content-Type': type || 'application/json', 'Cache-Control': 'no-store' }, h || {}));
   res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body));
@@ -390,10 +433,14 @@ function handle(req, res, allow, log) {
       });
       return;
     }
+    if (p === '/guide/find') {
+      var words; try { words = JSON.parse(q.q || '[]'); } catch (e) { words = []; }
+      return find(k, Array.isArray(words) ? words : [], Math.min(+q.max || 500, 3000), function (err, list) { send(res, err ? 500 : 200, err ? { ok: false, error: err.message } : list, null, allow); });
+    }
     if (p === '/guide/desc') return desc(k, q.id || '', function (err, list) { send(res, err ? 500 : 200, err ? { ok: false, error: err.message } : list, null, allow); });
     if (p === '/guide/drop') { if (jobs[k] && jobs[k].cancel) jobs[k].cancel(); delete jobs[k]; rmdir(dirOf(k)); delete descIdx[k]; return send(res, 200, { ok: true }, null, allow); }
   } catch (e) { return send(res, 500, { ok: false, error: e.message }, null, allow); }
   send(res, 404, { ok: false, error: 'unknown guide request' }, null, allow);
 }
 
-module.exports = { handle: handle, norm: norm, start: start, status: status, keyOf: keyOf, root: root };
+module.exports = { handle: handle, norm: norm, start: start, status: status, keyOf: keyOf, root: root, find: find };

@@ -350,7 +350,7 @@ var Epg = (function () {
   function ingest(c) {
     var t = Date.now();
     cache.clear();
-    for (var k in c.map) cache.set(k, { at: t + 1e12, list: c.map[k] });   // XML data does not expire per row
+    findMemo = {}; for (var k in c.map) cache.set(k, { at: t + 1e12, list: c.map[k] });   // XML data does not expire per row
     icons = c.icons || {};
     chList = c.channels || [];
     status = { at: c.at || 0, sources: c.report || [] };
@@ -634,7 +634,7 @@ var Epg = (function () {
   }
   function ingestPub(c) {
     var t = Date.now();
-    for (var k in c.map) cache.set(k, { at: t + 1e12, list: c.map[k] });
+    findMemo = {}; for (var k in c.map) cache.set(k, { at: t + 1e12, list: c.map[k] });
     for (var i in c.icons) if (!icons[i]) icons[i] = c.icons[i];
     pubMatched = c.pubMatch || {};
     pubList = c.channels || [];
@@ -737,6 +737,36 @@ var Epg = (function () {
     return out.slice(0, limit || 60);
   }
 
+  /* Programmes whose description has one of the words (whole words): a promise of [{ key, p, d }].  Local
+     stations often call a game "NFL Football" and name the teams only in the description.  Descriptions
+     the app holds (the provider's per-channel guide, a guide read in the app) are looked at here; a guide
+     the helper keeps is looked through by the helper (/guide/find), which sends back where they are. */
+  var findMemo = {};
+  function findDesc(words, max) {
+    words = (words || []).map(function (w) { return String(w).trim(); }).filter(function (w) { return w.length >= 2; });
+    max = max || 500;
+    if (!words.length) return Promise.resolve([]);
+    var key = words.join('\n') + '|' + max, memo = findMemo[key];
+    if (memo && Date.now() - memo.at < 120000) return memo.p;
+    var rx = new RegExp('(^|[^a-z0-9\u00c0-\uffff])(' + words.map(function (w) { return w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+'); }).join('|') + ')(?![a-z0-9\u00c0-\uffff])', 'i');
+    var out = [], have = new Map();
+    function take(key, p, d) { if (!p || have.has(p) || out.length >= max) return; have.set(p, 1); out.push({ key: key, p: p, d: d }); }
+    cache.forEach(function (v, k) {
+      if (!v.list) return;
+      for (var i = 0; i < v.list.length; i++) { var p = v.list[i]; if (p.d && rx.test(p.d)) take(k, p, p.d); }
+    });
+    var ask = !hMode ? Promise.resolve() : Promise.all(['main', 'pub'].map(function (kind) {
+      return fetch(hUrl('find', kind) + '&max=' + max + '&q=' + encodeURIComponent(JSON.stringify(words)), { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : []; }).then(function (arr) {
+          (Array.isArray(arr) ? arr : []).forEach(function (x) { var c = cache.get(x.id); if (c && c.list && c.list[x.i]) take(x.id, c.list[x.i], x.d); });
+        }, function () {});
+    }));
+    var pr = ask.then(function () { return out; });
+    for (var mk in findMemo) if (Date.now() - findMemo[mk].at > 120000) delete findMemo[mk];
+    findMemo[key] = { at: Date.now(), p: pr };
+    return pr;
+  }
+
   // Manual assignment: point a channel at any guide channel from the loaded sources.
   function assign(ch, id) {
     var m = Store.edits.epgMap;
@@ -747,7 +777,7 @@ var Epg = (function () {
   }
 
   return {
-    init: init, request: request, nowNext: nowNext, search: search, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc,
+    init: init, request: request, nowNext: nowNext, search: search, findDesc: findDesc, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc,
     get inHelper() { return hMode; },
     icon: function (id) { return icons[id] || ''; },
     guideChannels: function () { return pubList.length ? chList.concat(pubList) : chList; },

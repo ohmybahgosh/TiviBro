@@ -130,6 +130,17 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('hidden on the TV from the phone', ci.hidden && await ev((k) => !!Store.edits.hiddenChannels[k], ck));
   await ask('chan', { k: ck, op: 'hide', on: false });
   await ev((id) => Library.deleteGroup(id), ng.id);
+  ok('an ordinary channel has no team to follow', ci.team == null || (await ask('chan', { k: ck, op: 'info' })).team === null);
+  // A team's own channel: Follow from the phone (My teams).
+  const tk = g.rows[6].k;
+  const was = await ev((k) => { const c = Library.find(k), n = c.n; c.n = 'NFL | DETROIT LIONS'; Library.data.channels = Library.data.channels.slice(); return n; }, tk);
+  ci = await ask('chan', { k: tk, op: 'info' });
+  ok('a team channel offers its team', ci.team && ci.team.id === 'nfl:det' && ci.team.on === 0, JSON.stringify(ci.team));
+  ci = await ask('chan', { k: tk, op: 'follow', on: true });
+  ok('followed from the phone', ci.team.on === 1 && await ev(() => Teams.follows('nfl:det')) && /Following the Detroit Lions/.test(ci.msg), JSON.stringify(ci));
+  ci = await ask('chan', { k: tk, op: 'follow', on: false });
+  ok('and unfollowed', ci.team.on === 0 && !(await ev(() => Teams.follows('nfl:det'))));
+  await ev((x) => { const c = Library.find(x[0]); c.n = x[1]; Library.data.channels = Library.data.channels.slice(); }, [tk, was]);
 
   // Settings from the phone: every page, the same rows as on the TV, and changes that stick.
   const sa = (o) => ask('settings', o, { seal: true });

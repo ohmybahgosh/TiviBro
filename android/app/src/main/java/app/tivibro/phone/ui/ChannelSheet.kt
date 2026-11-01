@@ -1,4 +1,5 @@
 /* Long press on a channel (in the Guide and Channels tabs): watch it on the TV, its schedule, Favorites,
+   follow the team (a team's own channel, for My teams),
    your own groups (in or out, or a new group with it), rename it, or hide it on the TV.  The changes are
    made by TiviBro on the TV (ask "chan" in app/js/phone.js), the same as from the TV's own menus. */
 package app.tivibro.phone.ui
@@ -20,6 +21,7 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.Star
 import androidx.compose.material.icons.rounded.StarOutline
@@ -101,6 +103,12 @@ fun ChannelSheet(
             onSchedule?.let { s -> Option(Icons.Rounded.CalendarMonth, "Schedule and reminders") { onDismiss(); s() } }
             Option(if (fav) Icons.Rounded.Star else Icons.Rounded.StarOutline, if (fav) "Remove from Favorites" else "Add to Favorites") {
                 fav = !fav; model.favorite(id, c.k, fav)
+            }
+            info?.team?.let { t ->
+                Option(Icons.Rounded.EmojiEvents, if (t.on) "Stop following the " + t.name else "Follow the " + t.name,
+                    sub = if (t.on) "In My teams" else "My teams: its games on now and starting soon") {
+                    change("follow", JSONObject().put("on", !t.on))
+                }
             }
             HorizontalDivider(color = Line, modifier = Modifier.padding(vertical = 6.dp))
             Text("Your groups", color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(20.dp, 6.dp))

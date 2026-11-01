@@ -167,7 +167,8 @@ var Phone = (function () {
     },
     /* Changes to one channel from the phone's long press: what it is now (op 'info'), hide, rename (an
        empty name goes back to the provider's), put in or take out of one of your groups, or a new group
-       with it.  The phone's channel list follows (the lineup is sent again). */
+       with it, or follow the team whose channel it is (op 'follow', My teams).  The phone's channel list
+       follows (the lineup is sent again). */
     chan: function (a) {
       var c = chan(a.k), op = String(a.op || 'info'), msg = '';
       var E = Store.edits, mine = function () { return Library.customGroups().map(function (g) { return { id: g.id, name: g.name, has: g.items.indexOf(c.k) >= 0 ? 1 : 0 }; }); };
@@ -180,9 +181,14 @@ var Phone = (function () {
       } else if (op === 'newgroup') {
         var nm = String(a.name || '').trim().slice(0, 80); if (!nm) throw new Error('Give the group a name.');
         var ng = Library.createGroup(nm); Library.copyTo(ng.id, [c.k]); msg = 'New group ' + nm + ', with this channel';
+      } else if (op === 'follow') {
+        var tm = Teams.ofChannel(c); if (!tm) throw new Error('That isn\'t a team\'s channel.');
+        Teams.follow(tm.id, a.on !== false); msg = a.on !== false ? 'Following the ' + tm.name + '.  Find them in My teams.' : 'Stopped following the ' + tm.name;
       } else if (op !== 'info') throw new Error('Unknown change');
       if (op !== 'info') { Views.refreshLists(true); lineupAt = 0; sendLineup(); }
-      return { k: c.k, name: Library.name(c), provider: c.n, renamed: !!E.renames[c.k], hidden: !!E.hiddenChannels[c.k], group: Library.groupName(c.g), groups: mine(), msg: msg };
+      var team = Teams.ofChannel(c);
+      return { k: c.k, name: Library.name(c), provider: c.n, renamed: !!E.renames[c.k], hidden: !!E.hiddenChannels[c.k], group: Library.groupName(c.g), groups: mine(), msg: msg,
+        team: team ? { id: team.id, name: team.name, on: Teams.follows(team.id) ? 1 : 0 } : null };
     },
     /* TiviBro's Settings on the phone, page by page (see Settings.phone): the list of pages, one page, or a
        change on it (op toggle, choice, cycle, action).  Locked with the TV's PIN when Settings is: the

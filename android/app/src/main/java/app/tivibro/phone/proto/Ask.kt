@@ -39,10 +39,12 @@ data class Schedule(val key: String, val progs: List<Programme>, val catchupDays
 /** One channel as the TV has it, for the phone's long press (ask "chan"): its name, whether you renamed or
     hid it, its provider group, and your own groups with whether it is in each. */
 data class ChanGroup(val id: String, val name: String, val has: Boolean)
-data class ChanEdit(val key: String, val name: String, val provider: String, val renamed: Boolean, val hidden: Boolean, val group: String, val groups: List<ChanGroup>, val msg: String) {
+data class ChanTeam(val id: String, val name: String, val on: Boolean)
+data class ChanEdit(val key: String, val name: String, val provider: String, val renamed: Boolean, val hidden: Boolean, val group: String, val groups: List<ChanGroup>, val msg: String, val team: ChanTeam? = null) {
     companion object {
         fun from(j: JSONObject) = ChanEdit(j.optString("k"), j.optString("name"), j.optString("provider"), j.optBoolean("renamed"), j.optBoolean("hidden"), j.optString("group"),
-            j.optJSONArray("groups").list { ChanGroup(it.optString("id"), it.optString("name"), it.optInt("has") == 1) }, j.optString("msg"))
+            j.optJSONArray("groups").list { ChanGroup(it.optString("id"), it.optString("name"), it.optInt("has") == 1) }, j.optString("msg"),
+            j.optJSONObject("team")?.let { ChanTeam(it.optString("id"), it.optString("name"), it.optInt("on") == 1) })
     }
 }
 

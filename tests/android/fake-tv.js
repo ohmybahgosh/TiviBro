@@ -69,7 +69,7 @@ async function answer(cmd) {
     if (a.op === 'choice' && a.i === 2) { look.rows[2].cur = a.v; look.rows[2].value = look.rows[2].options[a.v]; }
     return a.op === 'page' ? say(look) : say({ msg: '', page: look });
   }
-  if (cmd.what === 'chan') { const c = chans.find((x) => x.k === a.k); if (!c) return no('That channel isn\'t in this playlist.'); return say({ k: c.k, name: c.n, provider: c.n, renamed: false, hidden: false, group: 'News', groups: [{ id: 'c_mine', name: 'My sports', has: 0 }], msg: a.op === 'info' ? '' : 'Done' }); }
+  if (cmd.what === 'chan') { const c = chans.find((x) => x.k === a.k); if (!c) return no('That channel isn\'t in this playlist.'); return say({ k: c.k, name: c.n, provider: c.n, renamed: false, hidden: false, group: 'News', groups: [{ id: 'c_mine', name: 'My sports', has: 0 }], team: { id: 'nfl:det', name: 'Detroit Lions', on: a.op === 'follow' && a.on !== false ? 1 : 0 }, msg: a.op === 'info' ? '' : 'Done' }); }
   if (cmd.what === 'vodcats') return say({ cats: [{ id: '_all', n: 'All movies', count: movies.length }, { id: '100', n: 'Action', count: 10 }] });
   if (cmd.what === 'voditems') { const off = a.offset || 0, lim = a.limit || 120; const l = a.q ? movies.filter((m) => m.n.toLowerCase().includes(String(a.q).toLowerCase())) : movies; return say({ total: l.length, offset: off, items: l.slice(off, off + lim) }); }
   if (cmd.what === 'vodinfo') return say(a.kind === 'series' ? { id: a.id, n: 'A Show', plot: 'Things happen.', seasons: [{ s: 1, eps: [{ id: 9001, e: 1, t: 'Pilot', dur: '45 min', pos: 600, len: 2700 }] }] } : { id: a.id, n: 'Movie 1', plot: 'A film.', year: '2024', pos: 0, len: 0 });

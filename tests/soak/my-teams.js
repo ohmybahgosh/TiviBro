@@ -45,7 +45,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const order = await ev(() => Library.channels(Library.TEAMS).map(c => c.n));
   ok('My teams: the game on now first', /WPG VS CAR/.test(order[0]), order.join(' / '));
   ok('then the next game', /Carolina Hurricanes Winnipeg Jets/.test(order[1]), order.join(' / '));
-  ok('then the team channel', order[order.length - 1] === 'NHL | WINNIPEG JETS' && order.length === 3, order.join(' / '));
+  ok('and no team channel without a game soon', order.indexOf('NHL | WINNIPEG JETS') < 0 && order.length === 2, order.join(' / '));
   const gs = await ev(() => Library.groups().map(g => g.name));
   ok('the group sits near the top', gs.indexOf('My teams') >= 0 && gs.indexOf('My teams') <= 2, gs.slice(0, 5).join(', '));
 
@@ -62,7 +62,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => { while (UI.modalOpen) { const m = document.querySelector('.modal, #menu'); document.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 27, bubbles: true })); if (!m) break; break; } });
   await page.waitForTimeout(500);
   const order2 = await ev(() => Library.channels(Library.TEAMS).map(c => c.n));
-  ok('Red Wings game and channel join the group', order2.some(n => /Boston Bruins Detroit Red Wings/.test(n)) && order2.indexOf('NHL | DETROIT RED WINGS') > order2.findIndex(n => /Boston Bruins/.test(n)), order2.join(' / '));
+  ok('the Red Wings game joins the group, at the bottom (it starts later)', /Boston Bruins Detroit Red Wings/.test(order2[order2.length - 1]) && order2.indexOf('NHL | DETROIT RED WINGS') < 0, order2.join(' / '));
 
   // The guide on My teams.
   await ev(() => { Views.switchTab('guide'); }); await page.waitForTimeout(1500);

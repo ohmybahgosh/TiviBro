@@ -97,7 +97,7 @@ var Search = (function () {
     } else if (it.p) {
       var now = Date.now(), p = it.p;
       row._n.textContent = p.t;
-      row._s.textContent = U.day(p.s) + ' ' + U.hhmm(p.s) + '   ' + L.name(c);
+      row._s.textContent = U.day(p.s) + ' ' + U.hhmm(p.s) + '   ' + L.name(c) + (it.inDesc ? '   ·   ' + it.inDesc : '');
       row._t.textContent = p.s <= now && p.e > now ? 'on now' : p.e <= now ? 'replay' : hasReminder(c, p) ? 'reminder set' : 'upcoming';
     } else {
       row._n.textContent = L.name(c);
@@ -209,6 +209,47 @@ var Search = (function () {
       'Nothing found.  Programmes are searchable once the guide has loaded them' + (Epg.xml ? '.' : ' (add an XMLTV guide in Settings > Playlists to search every channel).');
     vl.setItems(out, 0);
     if (zone === 'list' && !out.length) { zone = 'chips'; paint(); }
+    if (filter !== 'channels' && filter !== 'movies') inDescriptions(q, out);
+  }
+  /* Then programmes that have it only in their description (a local station's "NFL Football" says
+     "Minnesota Vikings at Detroit Lions" there).  Found a moment later, and added after the rest. */
+  var descGen = 0;
+  function inDescriptions(q, shown) {
+    var gen = ++descGen, now = Date.now();
+    Epg.findDesc([q], 300).then(function (res) {
+      if (gen !== descGen || input.value.trim().toLowerCase() !== q) return;
+      var seen = {}, more = [], all = L.data.channels, byEpg = {};
+      shown.forEach(function (it) { if (it.p) seen[it.p.t.toLowerCase() + '|' + it.p.s] = 1; });
+      if (Epg.xml) for (var i = 0; i < all.length; i++) { var id = Epg.epgId(all[i]); if (id && !byEpg[id]) byEpg[id] = all[i]; }
+      res.forEach(function (r) {
+        var c = L.find(r.key) || byEpg[r.key], p = r.p;
+        if (!c || !visible(c) || !p.t) return;
+        if (p.e <= now && !c.arch) return;
+        var on = p.s <= now && p.e > now;
+        if (filter === 'now' && !on) return;
+        if (filter === 'later' && p.s <= now) return;
+        if (filter === 'replay' && p.e > now) return;
+        var k = p.t.toLowerCase() + '|' + p.s;
+        if (seen[k]) return;
+        seen[k] = 1;
+        more.push({ c: c, p: p, d: r.d, on: on });
+      });
+      if (!more.length) return;
+      // On now first, then the next ones, then replays (newest first).
+      var rank = function (x) { return x.on ? 0 : x.p.s > now ? 1 : 2; };
+      more.sort(function (a, b) { return rank(a) - rank(b) || (rank(a) === 2 ? b.p.s - a.p.s : a.p.s - b.p.s); });
+      var keep = vl.sel;
+      vl.setItems(shown.concat(more.slice(0, 150).map(function (x) { return { c: x.c, p: x.p, inDesc: snippet(x.d, q) }; })), Math.max(0, keep));
+      if (zone === 'chips' && !shown.length) paint();
+    });
+  }
+  // The words around the match: "...Minnesota Vikings at Detroit Lions in a key..."
+  function snippet(d, q) {
+    d = String(d || '').replace(/\s+/g, ' ');
+    var i = d.toLowerCase().indexOf(q.toLowerCase());
+    if (i < 0) return d.slice(0, 70);
+    var a = Math.max(0, i - 30), b = Math.min(d.length, i + q.length + 40);
+    return (a > 0 ? '…' : '') + d.slice(a, b).trim() + (b < d.length ? '…' : '');
   }
 
   function remember(q) {

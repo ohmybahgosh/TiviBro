@@ -204,8 +204,18 @@ var Teams = (function () {
      work has others next to it; one: just one channel per game (a Favorite, else the first found), for
      reminders.  Games on now first, then by start, a game's channels together. */
   function games(within, one) {
-    var teams = followed(), now = Date.now(), to = now + (within || ahead()), out = [], seen = {};
+    var teams = followed(), now = Date.now(), to = now + (within || ahead()), out = [], seen = {}, mineIds = {};
     if (!teams.length || !Library.data.channels.length) return out;
+    teams.forEach(function (x) { mineIds[x.id] = 1; });
+    /* Followed teams in a game: two teams of one league named ("Minnesota Vikings at Detroit Lions",
+       "WPG VS CAR"), so a team's magazine show, a pregame show or "Future events for the Detroit Tigers
+       not found yet" isn't one. */
+    function playing(text, ctx, abbrs) {
+      if (!text || NOGAME.test(text)) return [];
+      var hits = named(text, ctx, ALL, abbrs), by = {};
+      hits.forEach(function (x) { by[x.league] = (by[x.league] || 0) + 1; });
+      return hits.filter(function (x) { return mineIds[x.id] && by[x.league] >= 2; });
+    }
     var gname = {};
     Library.data.groups.forEach(function (g) { gname[g.id] = g.name; });
     function take(c, p, team) {
@@ -231,14 +241,20 @@ var Teams = (function () {
         p = { s: g.start, e: g.start + 3 * 3600e3, t: g.title, ev: 1 };
       }
       if (!c || p.e <= now || p.s > to) return;
-      named(p.t, c.n + ' | ' + (gname[c.g] || ''), teams, false).forEach(function (x) { take(c, p, x); });
+      playing(p.t, c.n + ' | ' + (gname[c.g] || ''), false).forEach(function (x) { take(c, p, x); });
+    });
+    // Programmes that name the game only in the description ("NFL Football" on a local station).
+    descHits(words).forEach(function (r) {
+      var c = Library.find(r.key) || byEpg[r.key], p = r.p;
+      if (!c || p.e <= now || p.s > to || !SPORTY.test(p.t)) return;
+      playing(r.d, p.t + ' | ' + c.n + ' | ' + (gname[c.g] || ''), false).forEach(function (x) { take(c, p, x); });
     });
     // Event channels: the game is in the channel name.
     if (Events.on()) for (i = 0; i < all.length; i++) {
       var c = all[i], ev = Events.of(c);
       if (!ev || ev.end <= now || ev.start > to) continue;
       if (!quick.test(norm(ev.title)) && !MATCHUP.test(ev.title)) continue;
-      named(ev.title, c.n + ' | ' + (gname[c.g] || ''), teams, true).forEach(function (x) { take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 }, x); });
+      playing(ev.title, c.n + ' | ' + (gname[c.g] || ''), true).forEach(function (x) { take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 }, x); });
     }
     // A game: its team and start (to the half hour); its first start orders it.
     var first = {};
@@ -250,19 +266,39 @@ var Teams = (function () {
     return out;
   }
 
-  /* The My teams group: games on now, the next games, then the teams' own channels.  Kept a few minutes. */
+  var SPORTY = /\b(nfl|nba|nhl|mlb|wnba|mls|football|basketball|hockey|baseball|soccer|game|kickoff)\b/i;
+  var NOGAME = /not found|no (?:games?|events?)\b|off ?air|to be (?:announced|determined)|\btb[ad]\b/i;
+
+  /* Descriptions: looked through in the background (Epg.findDesc, the helper for a big guide), every few
+     minutes or when the followed teams change; the group is drawn again when they arrive. */
+  var desc = { key: '', at: 0, list: [], busy: false };
+  function descHits(words) {
+    var key = words.join('|');
+    if (!desc.busy && (desc.key !== key || Date.now() - desc.at > 240000) && typeof Epg.findDesc === 'function') {
+      desc.busy = true;
+      Epg.findDesc(words, 1500).then(function (l) {
+        var changed = desc.key !== key || l.length !== desc.list.length;
+        desc = { key: key, at: Date.now(), list: l, busy: false };
+        if (changed) { dirty(); if (typeof Views !== 'undefined' && Views.refreshLists) Views.refreshLists(true); }
+      }, function () { desc.busy = false; desc.at = Date.now(); });
+    }
+    return desc.key === key ? desc.list : [];
+  }
+
+  /* The My teams group: games on now at the top, then the games starting within the hours set (Games
+     starting within), soonest first; a game's channels together.  Nothing else, so a team with no game
+     soon isn't there.  Kept a few minutes. */
   var listCache = null;
   function list() {
     if (!groupOn()) return [];
     var now = Date.now();
     if (listCache && now - listCache.at < 180000 && listCache.of === Library.data.channels) return listCache.list;
-    var out = [], have = {}, tc = teamChannels();
+    var out = [], have = {};
     games().forEach(function (g) { if (!have[g.c.k]) { have[g.c.k] = 1; out.push(g.c); } });
-    followed().forEach(function (x) { (tc[x.id] || []).forEach(function (c) { if (!have[c.k] && shown(c)) { have[c.k] = 1; out.push(c); } }); });
     listCache = { at: now, of: Library.data.channels, list: out };
     return out;
   }
-  function dirty() { listCache = null; }
+  function dirty() { listCache = null; desc.at = 0; }       // descriptions looked at again (the guide may have changed)
 
   function follow(id, on) {
     var l = mine(), i = l.indexOf(id);
