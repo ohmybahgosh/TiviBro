@@ -3014,7 +3014,7 @@ $('snapList').addEventListener('click', function (e) {
    page ever sees it.  Restoring sends the locked file and the passphrase; the helper unlocks it
    and hands it to the TV.  Logins never sit in this page in readable form. */
 function genPass() {
-  var A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', b = new Uint8Array(20), o = '';
+  var A = 'ACDEFHJKMNPQRTWXY3479', b = new Uint8Array(20), o = '';
   crypto.getRandomValues(b);
   for (var i = 0; i < 20; i++) o += (i && i % 5 === 0 ? '-' : '') + A[b[i] % A.length];
   return o;

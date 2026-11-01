@@ -33,9 +33,10 @@ var WebEdit = (function () {
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'helper answered ' + r.status); return j; }); });
   }
 
-  // 8 characters from an alphabet without look-alikes (no 0/O, 1/I/L), shown as XXXX-XXXX.
+  // 8 characters that can't be misread from across the room (no 0/O, 1/I/L, 2/Z, 5/S, 6/G, 8/B, U/V),
+  // shown as XXXX-XXXX.
   function generate() {
-    var A = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', b = new Uint8Array(8), out = '';
+    var A = 'ACDEFHJKMNPQRTWXY3479', b = new Uint8Array(8), out = '';
     (window.crypto || window.msCrypto).getRandomValues(b);
     for (var i = 0; i < 8; i++) out += A[b[i] % A.length];
     return out.slice(0, 4) + '-' + out.slice(4);
@@ -241,6 +242,7 @@ var WebEdit = (function () {
   var RUN = {
     report: function () { return Diag.report().then(function (r) { return { msg: 'ok', data: r }; }); },
     addPlaylist: function (a) {
+      activity('Your phone or computer sent a playlist.  Checking the login and loading the channels…');
       var xc = a.type !== 'm3u';
       var p = { id: '', name: clean(a.name), type: xc ? 'xtream' : 'm3u', server: clean(a.server), user: clean(a.user), pass: clean(a.pass), m3u: clean(a.m3u) };
       if (xc && !(p.server && p.user && p.pass) && !Source.credsFromLink(p.server)) throw new Error('Enter the server, username and password.');
@@ -250,6 +252,7 @@ var WebEdit = (function () {
       p.id = 'p' + Date.now().toString(36);
       return loadAndSave(p).then(function (data) {
         if (!a.use && Store.settings.playlists.length === 1) { a.use = true; App.tourNext(); }   // first playlist on a fresh TV: then the set-up tour
+        activity('Added ' + p.name + ': ' + data.channels.length.toLocaleString() + ' channels.' + (a.use ? '  Opening the guide…' : ''), 'ok');
         if (a.use) App.switchPlaylist(p.id);
         return { msg: 'Added "' + p.name + '" with ' + data.channels.length + ' channels' + (a.use ? '.  The TV switched to it.' : '.') };
       });
@@ -413,7 +416,9 @@ var WebEdit = (function () {
     // The editor's checklist ticks "Download a backup" from this (any phone or computer, any time).
     backup: function () { return Backup.create().then(function (b) { Store.settings.lastBackup = Date.now(); Store.saveSettings(); lastSig = ''; return { msg: 'Backup ready', data: b }; }); },
     restore: function (a) {
+      activity('Restoring your backup…');
       return Backup.restore(a.data).then(function (info) {
+        activity('Backup restored: ' + info.playlists + ' playlist' + (info.playlists === 1 ? '' : 's') + '.  TiviBro is restarting…', 'ok');
         setTimeout(function () { location.reload(); }, 1500);
         return { msg: 'Restored ' + info.playlists + ' playlist(s).  The TV is restarting TiviBro.' };
       });
@@ -445,7 +450,10 @@ var WebEdit = (function () {
         var fn = RUN[c.type];
         return Promise.resolve().then(function () { if (!fn) throw new Error('Unknown action ' + c.type); return fn(c.args || {}); })
           .then(function (r) { return call('/editor/result', { id: c.id, ok: true, msg: r && r.msg, data: r && r.data }); },
-            function (e) { Log.warn('webedit', '"' + c.type + '" failed: ' + (e && e.message)); return call('/editor/result', { id: c.id, ok: false, msg: (e && e.message) || 'failed' }); })
+            function (e) {
+              Log.warn('webedit', '"' + c.type + '" failed: ' + (e && e.message));
+              if (c.type === 'addPlaylist' || c.type === 'restore') activity('That didn\'t work: ' + String((e && e.message) || 'it failed').replace(/([^.!?])$/, '$1.') + '  Fix it on your phone or computer and send it again.', 'err');
+              return call('/editor/result', { id: c.id, ok: false, msg: (e && e.message) || 'failed' }); })
           .then(function () { lastSig = ''; Log.state('editor', ''); });
       });
     });
@@ -505,6 +513,13 @@ var WebEdit = (function () {
   /* The QR code and address for a phone or computer (first screen, setup from a computer, the set-up
      tour).  The code opens the editor already signed in, on page (Smart clean-up: 'tools'; empty for
      the start page, which on a fresh TV is the welcome page for adding a playlist or restoring). */
+  /* What the phone or computer just asked the TV to do, shown on every QR code screen, so whoever is
+     in front of the TV sees it working (or why it didn't) without looking at the phone (issue #8). */
+  var act = null;
+  function activity(text, kind) {
+    act = text ? { text: text, kind: kind || 'busy', at: Date.now() } : null;
+    if (onStatus) try { onStatus(status); } catch (e) {}
+  }
   function drawJoin(qr, txt, page, s, waiting, connected) {
     qr.innerHTML = ''; txt.innerHTML = '';
     var addrs = status && status.ips && status.ips.length ? status.ips.map(function (ip) { return 'http://' + ip + ':' + status.port; }) : [];
@@ -518,6 +533,7 @@ var WebEdit = (function () {
     txt.appendChild(U.el('div', 'remote-l', 'Password'));
     txt.appendChild(U.el('div', 'remote-v', password()));
     txt.appendChild(U.el('div', 'remote-s', s && s.clients ? connected : waiting));
+    if (act && Date.now() - act.at < 10 * 60000) txt.appendChild(U.el('div', 'join-act ' + act.kind, act.text));
   }
 
   /* "Edit on a phone or computer" from anywhere (side menu, hold OK on a group, a remote button):

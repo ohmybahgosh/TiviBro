@@ -38,7 +38,7 @@ var PAIR_TRIES = 5;                    // wrong tries before the code stops work
 var SKEW_MS = 5 * 60000;               // signed requests: how far the phone's time may be from the TV's
 var MAX_BODY = 64 * 1024;
 var MAX_PHONES = 12;
-var CODE_ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';   // no 0/O, 1/I/L
+var CODE_ABC = 'ACDEFHJKMNPQRTWXY3479';   // nothing that can be misread: no 0/O, 1/I/L, 2/Z, 5/S, 6/G, 8/B, U/V
 var APP_ID = 'app.tivibro.tv';
 
 function hex(b) { return b.toString('hex'); }

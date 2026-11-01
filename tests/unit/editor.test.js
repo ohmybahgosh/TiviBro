@@ -32,6 +32,8 @@ function req(url, method, body, token) {
   a = await req(L + '/api/login', 'POST', { password: 'abcdefgh' });
   ok('accepts the password without dash, any case', a.status === 200 && a.json.token);
   const T = a.json.token;
+  a = await req(L + '/api/login', 'POST', { password: 'a8cd-ef6h' });
+  ok('look-alike characters count as the same (8 for B, 6 for G)', a.status === 200 && a.json.token, a.text);
   a = await req(L + '/api/state', 'GET', null, T);
   ok('no data until the TV sends it', a.status === 503);
   await req(C + '/editor/snapshot', 'POST', { playlist: { name: 'P' }, groups: [{ id: 'g1', name: 'News' }], channels: [{ k: 'x1', n: 'CNN', g: 'g1' }], edits: { hiddenGroups: {} } });

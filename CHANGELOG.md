@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **The TV shows what your phone is doing during set-up** ([#8](https://github.com/ohmybahgosh/TiviBro/issues/8)).  On the QR code screens, a line says when a playlist or backup arrives from a phone or computer, when it was added (with the channel count), and when it failed and why, so whoever is at the TV sees it working.  Nothing starts playing by itself.
+- **Codes you can't misread** ([#10](https://github.com/ohmybahgosh/TiviBro/issues/10)).  New web editor passwords, phone pairing codes and suggested backup passphrases leave out characters that look alike from across the room (2/Z, 5/S, 6/G, 8/B and U/V, on top of 0/O and 1/I/L).  Typing a look-alike still works, so a 5 for an S in an older password is accepted.
+
 ## 0.6.0 (alpha 36, 2026-10-31)
 
 Pre-release: expect rough edges, and keep a backup before installing.

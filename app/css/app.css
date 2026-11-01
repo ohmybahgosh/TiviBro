@@ -554,3 +554,10 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 /* Embedded MKV cues render in the DOM: old webOS errors on source-less tracks. */
 .mkv-captions{position:absolute;left:6%;right:6%;bottom:7%;text-align:center;color:#fff;font:42px sans-serif;white-space:pre-line;text-shadow:2px 2px 3px #000,-2px -2px 3px #000;z-index:10;pointer-events:none}
 video.mkv-captions-active::cue{color:transparent;background:transparent;text-shadow:none}
+
+/* What the phone or computer is doing, on the QR code screens (issue #8). */
+.join-act{margin-top:16px;padding:12px 16px;border-radius:12px;font-size:24px;line-height:1.35;background:rgba(91,140,255,.14);color:var(--text)}
+.join-act.busy::before{content:'';display:inline-block;width:14px;height:14px;margin-right:12px;border-radius:50%;background:var(--accent);animation:joinpulse 1s ease-in-out infinite alternate;vertical-align:middle}
+.join-act.ok{background:rgba(61,220,151,.16)}
+.join-act.err{background:rgba(229,115,115,.18);color:#ffb4b4}
+@keyframes joinpulse{from{opacity:.25}to{opacity:1}}

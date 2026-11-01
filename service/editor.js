@@ -134,7 +134,7 @@ function create(log) {
       if (fl.until > Date.now()) return send(res, 429, { error: 'Too many wrong passwords.  Wait ' + Math.ceil((fl.until - Date.now()) / 1000) + ' seconds.' });
       return readJSON(req, function (err, j) {
         if (err || !j || typeof j.password !== 'string') return send(res, 400, { error: 'bad request' });
-        var typed = j.password.replace(/[\s-]/g, '').toUpperCase(), real = st.password.replace(/[\s-]/g, '').toUpperCase();
+        var typed = fold(j.password), real = fold(st.password);
         if (!real || !same(typed, real)) {
           fl.n++; if (fl.n >= 5) { fl.until = Date.now() + 60000; fl.n = 0; }
           st.fails[who] = fl;
@@ -222,6 +222,11 @@ function create(log) {
     send(res, 404, { error: 'not found' });
   }
 
+  /* Passwords are read off a TV across the room.  Characters that look alike count as the same, so
+     typing 5 for S (or O for 0) still works, including for passwords made before the look-alikes
+     were left out of new ones. */
+  var LOOK = { O: '0', Q: '0', I: '1', L: '1', S: '5', Z: '2', B: '8', G: '6', V: 'U' };
+  function fold(p) { return String(p || '').replace(/[\s-]/g, '').toUpperCase().replace(/[OQILSZBGV]/g, function (c) { return LOOK[c]; }); }
   function start(port, password, cb) {
     if (!/^[A-Z0-9]{6,16}$/i.test(String(password || '').replace(/-/g, ''))) return cb(new Error('password missing'));
     st.password = String(password);
