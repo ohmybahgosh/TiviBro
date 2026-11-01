@@ -515,10 +515,25 @@ var WebEdit = (function () {
      the start page, which on a fresh TV is the welcome page for adding a playlist or restoring). */
   /* What the phone or computer just asked the TV to do, shown on every QR code screen, so whoever is
      in front of the TV sees it working (or why it didn't) without looking at the phone (issue #8). */
-  var act = null;
+  var act = null, banner = null;
   function activity(text, kind) {
     act = text ? { text: text, kind: kind || 'busy', at: Date.now() } : null;
     if (onStatus) try { onStatus(status); } catch (e) {}
+    showBanner();
+  }
+  /* A big banner along the bottom of the screen, readable from across the room on a small TV, while a
+     QR code screen is up (the first screen, Set up from a phone or computer, Edit on phone). */
+  function showBanner() {
+    if (!banner) { banner = U.el('div', 'join-banner hidden'); banner.setAttribute('role', 'status'); document.body.appendChild(banner);
+      // Someone using the TV's remote has moved on: the banner stops covering the screen (a busy one stays).
+      var away = function () { if (act && act.kind !== 'busy' && banner.className.indexOf('hidden') < 0) { act = null; showBanner(); } };
+      document.addEventListener('keydown', away, true); document.addEventListener('mousedown', away, true); }
+    var qr = [].slice.call(document.querySelectorAll('.join-qr')).some(function (q) { return q.offsetParent !== null; });
+    var on = act && qr && Date.now() - act.at < 10 * 60000;
+    banner.className = 'join-banner ' + (on ? act.kind : 'hidden');
+    if (on && banner.textContent !== act.text) banner.textContent = act.text;
+    clearTimeout(showBanner.t);
+    if (on) showBanner.t = setTimeout(showBanner, 1000);      // goes away by itself when the QR screen does
   }
   function drawJoin(qr, txt, page, s, waiting, connected) {
     qr.innerHTML = ''; txt.innerHTML = '';
@@ -533,7 +548,7 @@ var WebEdit = (function () {
     txt.appendChild(U.el('div', 'remote-l', 'Password'));
     txt.appendChild(U.el('div', 'remote-v', password()));
     txt.appendChild(U.el('div', 'remote-s', s && s.clients ? connected : waiting));
-    if (act && Date.now() - act.at < 10 * 60000) txt.appendChild(U.el('div', 'join-act ' + act.kind, act.text));
+    setTimeout(showBanner, 0);
   }
 
   /* "Edit on a phone or computer" from anywhere (side menu, hold OK on a group, a remote button):

@@ -27,21 +27,24 @@ function req(url, method, body, token) {
   const port = await ev(() => WebEdit.port()), pass = await ev(() => WebEdit.password());
   const E = 'http://127.0.0.1:' + port;
   const T = (await req(E + '/api/login', 'POST', { password: pass })).json.token;
-  const card = () => ev(() => { const a = document.querySelector('#viewSetup .join-act'); return a ? a.className + ' | ' + a.textContent : ''; });
+  const card = () => ev(() => { const a = document.querySelector('.join-banner'); return a ? a.className + ' | ' + a.textContent : ''; });
   const shot = (n) => page.screenshot({ path: '/tmp/setup-' + n + '.png' });
 
   // A server that doesn't answer: the TV says so.
   await req(E + '/api/command', 'POST', { type: 'addPlaylist', args: { server: 'http://127.0.0.1:9', user: 'nobody', pass: 'wrong' } }, T);
-  await page.waitForFunction(() => document.querySelector('#viewSetup .join-act'), null, { timeout: 15000 }).catch(() => {});
+  await page.waitForFunction(() => /busy|ok|err/.test((document.querySelector('.join-banner') || {}).className || ''), null, { timeout: 15000 }).catch(() => {});
   let seen = await card();
-  if (/busy/.test(seen)) { await page.waitForFunction(() => /err|ok/.test((document.querySelector('#viewSetup .join-act') || {}).className || ''), null, { timeout: 30000 }).catch(() => {}); seen = await card(); }
+  if (/busy/.test(seen)) { await page.waitForFunction(() => /err|ok/.test((document.querySelector('.join-banner') || {}).className || ''), null, { timeout: 30000 }).catch(() => {}); seen = await card(); }
   await shot('error');
-  ok('a failed playlist shows on the TV, with the reason', /join-act err/.test(seen) && /didn't work/.test(seen), seen);
+  ok('a failed playlist shows on the TV, with the reason', /join-banner err/.test(seen) && /didn't work/.test(seen), seen);
+  ok('the banner is big enough to read across the room', await ev(() => parseFloat(getComputedStyle(document.querySelector('.join-banner')).fontSize) >= 36));
+  await page.keyboard.press('ArrowDown'); await page.waitForTimeout(300);
+  ok('a press on the TV remote clears it', /hidden/.test(await card()), await card());
   ok('the TV is still on the set-up screen', await ev(() => !document.getElementById('viewSetup').classList.contains('hidden')));
 
   // A good one: progress, then it was added, then the guide opens.  No video starts.
   await req(E + '/api/command', 'POST', { type: 'addPlaylist', args: { server: 'http://127.0.0.1:8077', user: 'demo', pass: 'demo' } }, T);
-  await page.waitForFunction(() => /busy|ok/.test(((document.querySelector('#viewSetup .join-act') || {}).className || '')) && !/didn/.test(document.querySelector('#viewSetup .join-act').textContent), null, { timeout: 15000 }).catch(() => {});
+  await page.waitForFunction(() => /busy|ok/.test(((document.querySelector('.join-banner') || {}).className || '')) && !/didn/.test(document.querySelector('.join-banner').textContent), null, { timeout: 15000 }).catch(() => {});
   const during = await card();
   await shot('progress');
   ok('the TV shows the playlist arriving', /Checking the login|Added/.test(during), during);

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A bigger set-up banner** ([#8](https://github.com/ohmybahgosh/TiviBro/issues/8)).  What your phone or computer is doing during set-up now shows in a large banner along the bottom of the TV, easy to read on a small screen or from across the room: green when a playlist was added, red with the reason when it didn't work.  Any button on the TV remote clears it.
+
 ## 0.6.0 (alpha 38, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.
