@@ -1,7 +1,8 @@
-/* The certificates My media trusts for WebDAV, one per entry (Node 0.12 reads only the first from a joined
-   string).  webdav.premiumize.me sends only its own certificate, and old Node's built-in list predates
-   these, so the chain up to the ISRG roots is carried here.  The short-lived YE1 intermediate rotates:
-   if a premiumize scan says the certificate could not be checked, update it here.  Plain ES5. */
+/* Certificates My media tries when a WebDAV server's can't be checked with the TV's own list, one per
+   entry (Node 0.12 reads only the first from a joined string).  Some servers send only their own
+   certificate, and old TVs' Node predates these, so Let's Encrypt's chain up to the ISRG roots is carried
+   here (service/media.js tries it once after a certificate error, for any server).  The short-lived YE1
+   intermediate rotates: if a scan says the certificate could not be checked, update it here.  Plain ES5. */
 'use strict';
 module.exports = [
   '-----BEGIN CERTIFICATE-----\n' +

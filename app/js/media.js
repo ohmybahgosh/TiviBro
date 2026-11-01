@@ -318,6 +318,7 @@ var Media = (function () {
     ask('resolve', { source: src, path: m.path }, 25000).then(function (res) {
       if (token !== playToken) return;
       if (res.error || !res.url) { U.toast(res.message || 'Could not open that movie.', 6000); return; }
+      try { Log.hideLinksFrom(String(res.url).split('/')[2]); } catch (e) {}
       go(res.url);
     }, function (e) { if (token === playToken) U.toast('Could not open that movie: ' + why(e), 6000); });
   }

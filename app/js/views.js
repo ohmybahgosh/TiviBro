@@ -45,7 +45,9 @@ var Views = (function () {
     var pl = Store.playlist, v = pl.vod || {};
     if (pl.type === 'xtream' && v.movies) tabs.push('movies');
     if (pl.type === 'xtream' && v.series) tabs.push('shows');
-    tabs.push('media', 'search', 'editor', 'settings');
+    // My media: in the menu once a media source is added (Settings > My media is the way in before that).
+    if (typeof MediaStore !== 'undefined' && MediaStore.sources().length) tabs.push('media');
+    tabs.push('search', 'editor', 'settings');
     // Test builds: Report a problem one press away (it also stays in Settings > Diagnostics).
     if (/alpha|beta/i.test(TIVIBRO_VERSION) || Store.settings.reportInMenu) tabs.push('report');
     var nav = document.querySelector('.tabs');

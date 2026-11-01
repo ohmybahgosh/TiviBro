@@ -13,7 +13,7 @@
 | [**Guide, start screen, reminders**](Settings-Guide-start-screen-reminders) | Start screen, OK in the guide, guide layout, catch-up marks, reminders |
 | [**Appearance**](Settings-Appearance) | Accent color (twelve presets or your own from a hue and brightness), background (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), focus style (add a white outline to whatever is selected), text size, panel transparency, logos, clock, channel numbers |
 | [**Parental controls**](Settings-Parental-controls) | PIN, what it protects, blocked groups and channels |
-| [**Phone app and web editor**](Settings-Phone-app-and-web-editor) | Pairing the TiviBro app, and the web editor's switch, address and password |
+| [**Edit on a phone or computer**](Settings-Edit-on-a-phone-or-computer) | The web editor switch, its address and password |
 | [**Updates and about**](Settings-Updates-and-about) | Your version, check for updates, install an update (rooted TVs), what's new, automatic checks, test versions |
 | [**Diagnostics**](Settings-Diagnostics) | Connection test, app and helper logs, detailed logging, what this TV can play, what's playing now, status |
 

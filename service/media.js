@@ -88,9 +88,16 @@ function failure(kind) { return { error: kind, message: MESSAGES[kind] }; }
 function request(opts, cb) {
   var u; try { u = URL_.parse(opts.url); } catch (e) { return cb(e); }
   var isTls = u.protocol === 'https:', done = false;
-  function finish(e, s, h, b) { if (!done) { done = true; cb(e, s, h, b); } }
+  function finish(e, s, h, b) {
+    if (done) return;
+    done = true;
+    // Old TVs' Node predates today's Let's Encrypt roots: a certificate it can't check is tried once more
+    // against the chain in media-ca.js, for any server (still checked, never skipped).
+    if (e && isTls && opts.secure && !opts.withCa && errorKind(e) === 'cert') return request(Object.assign({}, opts, { withCa: true }), cb);
+    cb(e, s, h, b);
+  }
   var o = { hostname: u.hostname, port: u.port || (isTls ? 443 : 80), path: u.path || '/', method: opts.method || 'GET', headers: opts.headers || {}, agent: false };
-  if (isTls && opts.secure && u.hostname === 'webdav.premiumize.me') o.ca = CA;
+  if (isTls && opts.secure && opts.withCa) o.ca = CA;
   var req = (isTls ? https : http).request(o, function (res) {
     if (opts.headOnly) { res.resume(); finish(null, res.statusCode, res.headers, ''); try { req.abort(); } catch (e) {} return; }
     var chunks = [], len = 0;
@@ -255,7 +262,7 @@ function resolve(source, path, cb) {
       if (status >= 300 && status < 400 && h.location) {
         var to = URL_.resolve(url, h.location), tu = URL_.parse(to);
         if (tu.protocol !== 'http:' && tu.protocol !== 'https:') return cb(failure('address'));
-        if (tu.protocol + '//' + tu.host !== origin) return cb({ url: to });
+        if (tu.protocol + '//' + tu.host !== origin) { hideLinksFrom(tu.host); return cb({ url: to }); }
         if (left > 0) return hop(to, left - 1);
       }
       cb(failure(status >= 200 && status < 300 ? 'noredirect' : 'unreachable'));
@@ -346,4 +353,11 @@ function handle(req, res, ALLOW, log) {
   });
 }
 
-module.exports = { handle: handle, scan: scan, resolve: resolve, discover: discover, titleOf: titleOf, isJunk: isJunk, tokens: tokens, parseBrowse: parseBrowse, parsePropfind: parsePropfind, parseDevice: parseDevice, errorKind: errorKind };
+/* The file servers a WebDAV service sends movies to: their links are signed, so logs keep only the host
+   (proxy.js redact). */
+var signedHosts = [];
+function hideLinksFrom(host) {
+  host = str(host).toLowerCase();
+  if (host && signedHosts.indexOf(host) < 0) { signedHosts.push(host); if (signedHosts.length > 50) signedHosts.shift(); }
+}
+module.exports = { signedHosts: signedHosts, hideLinksFrom: hideLinksFrom, handle: handle, scan: scan, resolve: resolve, discover: discover, titleOf: titleOf, isJunk: isJunk, tokens: tokens, parseBrowse: parseBrowse, parsePropfind: parsePropfind, parseDevice: parseDevice, errorKind: errorKind };

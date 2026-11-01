@@ -27,4 +27,4 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 
 ---
 
-← [Catch-up](Catch-up)  ·  [Home](Home)  ·  [My media](My-media) →
+← [Catch-up](Catch-up)  ·  [Home](Home)  ·  [Search](Search) →

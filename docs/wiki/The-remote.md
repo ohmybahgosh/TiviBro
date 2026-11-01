@@ -6,20 +6,20 @@ TiviBro works with the standard LG remote and the Magic Remote.  With the Magic 
 
 | Button | In the guide | Watching fullscreen |
 |---|---|---|
-| **OK** | First OK previews in the window, second goes fullscreen | (fixed: watch) | Quick menu |
-| **Hold OK** | Programme and channel options | Options menu | Channel list over the video |
-| **Red** | Programme and channel options | Options menu | Options for the channel |
-| **Info** | Programme and channel options | Options menu | Programme details |
-| **Hold Info** | | Buffer info: how many seconds are banked and, when the player reports it, the stream's speed.  No Info button (most Magic Remotes): **OK**, then **Stream info** |
-| **▲ ▼** | Move between channels | (fixed) | Channel up and down |
+| **OK** | First OK previews in the window, second goes fullscreen | Quick menu |
+| **Hold OK** | Programme and channel options | Channel list over the video |
+| **Red** | Programme and channel options | Options for the channel |
+| **Info** | Programme and channel options | Programme details |
+| **Hold Info** | | Buffer info: how many seconds are banked and, when the player reports it, the stream's speed |
+| **▲ ▼** | Move between channels | Channel up and down |
 | **◀ ▶** | Move through time (◀ on "now" opens the groups) | ◀ rewind or last channel, ▶ info |
-| **CH + / CH −** | Page up and down | (fixed) | Channel up and down |
+| **CH + / CH −** | Page up and down | Channel up and down |
 | **⏪ ⏩** | Jump through time, into the past on catch-up channels | Skip in catch-up and movies |
 | **▶ Play** / **❙❙ Pause** | Watch the previewed channel fullscreen | Play only plays and Pause only pauses; a single Play/Pause button switches between them.  Live TV can be paused too. |
-| **Green** | Channel list | Channels screen | Guide over the video |
-| **Yellow** | Groups | Groups | Last channel |
-| **Blue** | Settings | Settings | Audio track |
-| **Back** | Back to now, then the groups | (fixed) | Back to the guide |
+| **Green** | Channel list | Guide over the video |
+| **Yellow** | Groups | Last channel |
+| **Blue** | Settings | Audio track |
+| **Back** | Back to now, then the groups | Back to the guide |
 | **0 to 9** | Jump to a channel number (at once when no longer number starts with what you typed, otherwise after a short pause) | Jump to a channel number, the same way |
 
 A few things work the way you would guess from other TV apps:

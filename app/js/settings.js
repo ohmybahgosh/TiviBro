@@ -80,12 +80,12 @@ var Settings = (function () {
     out.push(toggle('Keep the picture while reconnecting', 'When a channel drops for a moment, the last picture stays on screen with a small Reconnecting notice instead of going black.  Not every stream allows it (the TV player draws some itself).', function () { return s.holdFrame !== false; }, function (v) { s.holdFrame = v; save(); }));
     out.push(toggle('Black screen while switching', 'Hides the last picture until the next channel starts.', function () { return !!s.blackSwitch; }, function (v) { s.blackSwitch = v; save(); }));
     out.push(head('Audio and subtitles'));
-    out.push(action('Audio language', 'Try this language first when a channel or movie has several audio tracks.  If missing, try the fallback language, then the first available track.  Track language labels must be supplied by the file or stream.', function () {
+    out.push(action('Audio language', 'Try this language first when a channel or movie has several audio tracks.  If it is missing, the fallback language below, else the stream\'s own track.  Track language labels must be supplied by the file or stream.', function () {
       langMenu('Audio language', 'The stream\'s own choice', s.audioLang, function (v) { s.audioLang = v; save(); });
     }, function () { return langName(s.audioLang, 'Stream\'s choice'); }));
-    out.push(action('Fallback audio language', 'Used when your preferred audio language is missing.  If neither language is available, use the first available track.', function () {
-      langMenu('Fallback audio language', 'First available track', s.audioFallback, function (v) { s.audioFallback = v; save(); });
-    }, function () { return langName(s.audioFallback, 'First available track'); }));
+    out.push(action('Fallback audio language', 'Used when your preferred audio language is missing.  Off keeps the stream\'s own track.', function () {
+      langMenu('Fallback audio language', 'Off (the stream\'s own track)', s.audioFallback, function (v) { s.audioFallback = v; save(); });
+    }, function () { return langName(s.audioFallback, 'Off'); }));
     out.push(toggle('Prefer surround sound', 'Picks the 5.1 or Dolby track when there is one in that language.  Your soundbar or TV needs to support it.', function () { return !!s.audioSurround; }, function (v) { s.audioSurround = v; save(); }));
     out.push(action('Subtitles automatically', 'Turns subtitles on when a stream includes them.  You can still switch them from OK in fullscreen.', function () {
       UI.menu('Subtitles automatically', [{ label: 'Off', sub: !s.autoSubs ? 'on' : '', action: function () { s.autoSubs = false; save(); } },
@@ -993,7 +993,7 @@ var Settings = (function () {
   }
   var forPhone = {
     sections: function () { return SECTIONS.filter(function (x, i) { return shown(i); }).map(function (x) { return { id: x[0], title: title(x) }; }); },
-    page: function (secId, path) { var p = rowsOf(secId, path); return { title: p.title, trail: p.trail, rows: p.list.map(rowData) }; },
+    page: function (secId, path) { var p = rowsOf(secId, path); return { title: p.title, trail: p.trail, rows: p.list.map(rowData).filter(function (r, n) { return !p.list[n].preview; }) }; },   // pictures (a preview, the TMDB credit) stay on the TV
     // op: 'toggle' (on), 'choice' (v: the choice's index), 'cycle' (dir), 'action'.
     change: function (secId, path, n, op, a) {
       var p = rowsOf(secId, path), it = p.list[n], msg = '';

@@ -60,8 +60,13 @@ var LOG = [], LOG_MAX = 300;
    the TV started (from Node's uptime), and the TV's recent power changes (service.js records them). */
 var SYS = { power: [] };
 function sys() { return { bootAt: Math.round(Date.now() - require('os').uptime() * 1000), power: SYS.power.slice(-10) }; }
+/* Like Log.redact in the app.  Hosts whose links are signed (My media's file servers, learned as
+   service/media.js resolves a movie) keep only their host. */
+function escRx(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function redact(u) {
-  return String(u).replace(/((?:[a-z0-9-]+\.)*energycdn\.com(?::[0-9]+)?)[/?][^\s\"'<>\\]*/gi, '$1/***')
+  var s = String(u);
+  (Media.signedHosts || []).forEach(function (h) { s = s.replace(new RegExp('(' + escRx(h) + ')[/?][^\\s"\'<>\\\\]*', 'gi'), '$1/***'); });
+  return s.replace(/([?&](?:sig|signature|token|auth|key|expires|hash)=)[^&\s]*/gi, '$1***')
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s]*/gi, '$1***').replace(/(username=)([^&\s]{0,2})[^&\s]*/gi, '$1$2***')
     .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/');
 }

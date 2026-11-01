@@ -13,36 +13,35 @@ Remap any button, choose the quick menu's buttons, and teach TiviBro keys it doe
 | Setting | What it does |
 |---|---|
 | **In the player ›** | What each button does while watching live TV fullscreen.  Every button has a press and a **Hold** action.  **OK** opens a list of actions to pick from. |
-| **In the guide ›** | The same for the guide: the colour buttons, **Play / Pause**, **Info**, **Stop** and **Hold OK**.  Give any of them **Watch fullscreen** if your remote has no Play button.  Arrows, **OK**, **Back**, **CH + / −** and ⏪ ⏩ stay fixed there. |
-| **In the channel list ›** | The same for the Channels screen.  Arrows, **OK**, **Back** and **CH + / −** stay fixed there. |
+| **In the channel list ›** | The same for the guide and the Channels screen.  Arrows, **OK**, **Back** and **CH + / −** stay fixed there so you can always get around. |
 | **Quick menu buttons ›** | Switch each quick menu button on or off: Channel list, Watch from start, Favorite, TV guide, Other versions, Audio track, Subtitles, Video quality, Picture size, Sleep timer, Stream info, Reconnect.  All are on by default; a button only appears when it applies (Audio needs two or more tracks, for example). |
-| **Learn a button** | For keys TiviBro doesn't know yet (some LG remotes have extras).  Press this, then the button; it then appears in the button pages to assign.  Some buttons belong to the TV itself (Home, Live TV, the TV's own Guide, Input, Settings): webOS acts on them before TiviBro hears them, so they leave TiviBro and can't be learned. |
+| **Learn a button** | For keys TiviBro doesn't know yet (some LG remotes have extras).  Press this, then the button; it then appears in the two button pages to assign. |
 | **Button tester** | Shows the key code the TV sends for the next button you press, and what it does in TiviBro. |
 | **Restore default buttons** | Puts every button back the way it came.  Each button page also has **Restore defaults for this screen**. |
 
 The buttons and their defaults:
 
-| Button | In the player | In the guide | In the channel list |
-|---|---|---|---|
-| **OK** | Quick menu | (fixed: watch) | (fixed) |
-| **Hold OK** | Channel list over the video | Options menu | Options menu |
-| **▲ ▼** | Previous / next channel | (fixed) | (fixed) |
-| **◀** | Rewind (catch-up), else last channel | (fixed) | (fixed) |
-| **▶** | Show info panel | (fixed) | (fixed) |
-| **CH + / CH −** | Next / previous channel | (fixed) | (fixed) |
-| **Red** | Options menu | Options menu | Options menu |
-| **Green** | TV guide | Channels screen | TV guide |
-| **Yellow** | Last channel | Groups | Last channel |
-| **Blue** | Audio track | Settings | Settings |
-| **Play / Pause** | Play / pause | Watch fullscreen | Nothing |
-| **Stop** | Leave fullscreen | Stop the window | Nothing |
-| **⏪ Rewind** | Rewind (catch-up), else last channel | (fixed: earlier) | Nothing |
-| **⏩ Fast forward** | Nothing | (fixed: later) | Nothing |
-| **Info** | Show info panel | Options menu | Options menu |
-| **Back** | (fixed: leaves fullscreen) | (fixed) | (fixed) |
+| Button | In the player | In the channel list |
+|---|---|---|
+| **OK** | Quick menu | (fixed) |
+| **Hold OK** | Channel list over the video | Options menu |
+| **▲ ▼** | Previous / next channel | (fixed) |
+| **◀** | Rewind (catch-up), else last channel | (fixed) |
+| **▶** | Show info panel | (fixed) |
+| **CH + / CH −** | Next / previous channel | (fixed) |
+| **Red** | Options menu | Options menu |
+| **Green** | TV guide | TV guide |
+| **Yellow** | Last channel | Last channel |
+| **Blue** | Audio track | Settings |
+| **Play / Pause** | Play / pause | Nothing |
+| **Stop** | Leave fullscreen | Nothing |
+| **⏪ Rewind** | Rewind (catch-up), else last channel | Nothing |
+| **⏩ Fast forward** | Nothing | Nothing |
+| **Info** | Show info panel | Options menu |
+| **Back** | (fixed: leaves fullscreen) | (fixed) |
 
-Actions you can give a button in the player: nothing, quick menu, channel list over the video, info panel, options menu, next, previous or last channel, rewind, watch from start, play/pause, TV guide, search, Settings, leave fullscreen, add or remove favorite, open Favorites, open Recent channels, change picture mode, audio track, sleep timer and reconnect.  In the guide: nothing, watch fullscreen (the channel in the window, else the highlighted one), options menu, groups, jump to now, last channel, stop the window, Channels screen, search, Settings, the web editor, favorite, open Favorites or Recent channels, Movies and Shows.  In the channel list: nothing, options menu, last channel, TV guide, search, Settings, favorite, open Favorites, open Recent channels, Movies, Shows and play/pause.  Catch-up and movie playback keep fixed seek buttons so they always behave the same.
+Actions you can give a button in the player: nothing, quick menu, channel list over the video, info panel, options menu, next, previous or last channel, rewind, watch from start, play/pause, TV guide, search, Settings, leave fullscreen, add or remove favorite, open Favorites, open Recent channels, change picture mode, audio track, sleep timer and reconnect.  In the channel list: nothing, options menu, last channel, TV guide, search, Settings, favorite, open Favorites, open Recent channels, Movies, Shows and play/pause.  Catch-up and movie playback keep fixed seek buttons so they always behave the same.
 
 ---
 
-← [Settings: My media](Settings-My-media)  ·  [Home](Home)  ·  [Settings: Playlists and guide](Settings-Playlists-and-guide) →
+← [Settings: Playback and buffering](Settings-Playback-and-buffering)  ·  [Home](Home)  ·  [Settings: Playlists and guide](Settings-Playlists-and-guide) →

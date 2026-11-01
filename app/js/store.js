@@ -77,7 +77,7 @@ var Store = (function () {
     qpHidden: {},               // quick menu buttons switched off
     newDays: 7,                 // days a channel stays in Recently added (0 = no such group)
     audioLang: '',              // preferred audio language ('' = the stream's own choice), see U.lang
-    audioFallback: 'en',        // if preferred audio is missing, try English, then any track
+    audioFallback: '',          // when the preferred audio language is missing, try this one ('' = keep the track playing)
     audioSurround: false,       // prefer a 5.1 / Dolby track in that language
     subsLang: '',               // with autoSubs: only subtitles in this language ('' = any)
     watchAhead: 24,             // hours ahead the watchlist looks in the guide

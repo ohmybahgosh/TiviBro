@@ -24,4 +24,4 @@ From live TV, **From start** in the quick menu restarts the current programme.  
 
 ---
 
-← [My teams](My-teams)  ·  [Home](Home)  ·  [Movies and shows](Movies-and-shows) →
+← [Event channels: pay-per-view and sports passes](Event-channels-pay-per-view-and-sports-passes)  ·  [Home](Home)  ·  [Movies and shows](Movies-and-shows) →

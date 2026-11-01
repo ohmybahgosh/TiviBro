@@ -70,7 +70,11 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
     return false;
   };
 
-  ok('My media is in the menu', await ev(() => !!document.querySelector('.tab[data-tab="media"]')));
+  ok('My media stays out of the menu until a source is added', await ev(() => !document.querySelector('.tab[data-tab="media"]')));
+  // A source that holds nothing yet: the tab joins the menu.
+  const placeholder = await ev(() => MediaStore.addSource({ type: 'dlna', name: 'Empty server', control: 'http://127.0.0.1:9/ctl' }));
+  await page.waitForTimeout(300);
+  ok('My media is in the menu once there is a source', await ev(() => !!document.querySelector('.tab[data-tab="media"]')));
   await ev(() => Views.switchTab('media')); await page.waitForTimeout(500);
   ok('the screen opens', await ev(() => !document.getElementById('viewMedia').classList.contains('hidden')));
   ok('empty library points to Settings', /Settings/.test(await text('#mediaInfo')));
@@ -82,6 +86,8 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   await key('ArrowLeft');
   ok('Left at the first movie opens the standard main menu', await ev(() => document.body.classList.contains('nav-open')));
   await key('ArrowRight');
+  await ev((id) => { MediaStore.removeSource(id); }, placeholder); await page.waitForTimeout(300);
+  ok('and leaves the menu when the last source goes', await ev(() => !document.querySelector('.tab[data-tab="media"]')));
   await ev(() => Views.switchTab('settings')); await ev(() => Settings.section('media')); await page.waitForTimeout(300);
   ok('My media is a settings section', /Add media/.test(await text('#setBody')) && /Metadata language/.test(await text('#setBody')));
   await key('Enter');
@@ -115,6 +121,9 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
 
   // Adding a server.
   await ev(c => Media._test.addServer({ name: 'FritzBox Server', control: c }), control);
+  await page.waitForTimeout(300);
+  ok('the first source brings My media into the menu', await ev(() => !!document.querySelector('.tab[data-tab="media"]')));
+  await ev(() => Views.switchTab('media'));
   await page.waitForFunction(() => document.querySelector('#mediaItems').innerText.indexOf('Frozen') >= 0, null, { timeout: 8000 });
   const list = await text('#mediaItems');
   ok('folder titles in the list', /Frozen/.test(list) && /Moana 2/.test(list), list);

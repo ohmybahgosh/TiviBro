@@ -4,7 +4,11 @@ const read = p => fs.readFileSync(p, 'utf8');
 const proxy = require('../../service/proxy');
 const ctx = { localStorage: { getItem: () => null, setItem() {} }, U: { debounce: f => f }, Date, setTimeout() {}, clearTimeout() {}, setInterval() {}, document: { addEventListener() {} }, window: { addEventListener() {} } };
 vm.createContext(ctx); vm.runInContext(read('app/js/log.js'), ctx);
+// A signed link's host is learned when it is resolved (no service is named in the code).
+ctx.Log.hideLinksFrom('edge.energycdn.com'); require('../../service/media').hideLinksFrom('edge.energycdn.com');
 for (const redact of [ctx.Log.redact, proxy.redact]) {
+  assert(redact('http://cdn.example/v/1.mp4?sig=abc123&x=1').indexOf('abc123') < 0, 'signature query values hidden');
+  assert(redact('http://other.example/private/token.mkv').indexOf('private') >= 0, 'other hosts keep their path');
   assert(!redact('https://api.themoviedb.org/3/movie/7?api_key=mock-secret').includes('mock-secret'));
   for (const url of ['https://edge.energycdn.com/private/token.mkv?key=secret', 'https://edge.energycdn.com?key=secret', 'http://127.0.0.1/x/https/edge.energycdn.com/private/token.mkv?key=secret']) {
     assert(!/private|token|secret/.test(redact(url)), 'CDN path must be hidden');

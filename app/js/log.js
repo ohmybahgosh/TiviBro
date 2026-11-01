@@ -13,11 +13,20 @@ var Log = (function () {
   var verbose = localStorage.getItem('tivibro.logVerbose') === '1';
   var session = Date.now().toString(36);
 
+  /* Hosts whose links are signed (My media: the file server a WebDAV service sends a movie to): the whole
+     path and query of their links is the secret, so only the host is kept.  Learned as links are resolved. */
+  var signed = [];
+  function hideLinksFrom(host) {
+    host = String(host || '').toLowerCase().replace(/[^a-z0-9.:-]/g, '');
+    if (host && signed.indexOf(host) < 0) { signed.push(host); if (signed.length > 50) signed.shift(); }
+  }
+  function esc(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
   // Mask credentials in URLs and messages.
   function redact(s) {
     s = String(s == null ? '' : s);
+    signed.forEach(function (h) { s = s.replace(new RegExp('(' + esc(h) + ')[/?][^\\s"\'<>\\\\]*', 'gi'), '$1/***'); });
     return s
-      .replace(/((?:[a-z0-9-]+\.)*energycdn\.com(?::[0-9]+)?)[/?][^\s\"'<>\\]*/gi, '$1/***')
+      .replace(/([?&](?:sig|signature|token|auth|key|expires|hash)=)[^&\s"']*/gi, '$1***')
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s"']*/gi, '$1***')
       .replace(/(username=)([^&\s"']{0,2})[^&\s"']*/gi, '$1$2***')
       .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/');
@@ -145,7 +154,7 @@ var Log = (function () {
     info: function (c, m, d) { add('info', c, m, d); },
     warn: function (c, m, d) { add('warn', c, m, d); },
     error: function (c, m, d) { add('error', c, m, d); },
-    redact: redact,
+    redact: redact, hideLinksFrom: hideLinksFrom,
     // This session first-class; earlier sessions available on request.
     lines: function (withPrevious) {
       var all = (withPrevious ? saved : []).concat(buf), out = [], last = null;

@@ -2,13 +2,10 @@
 
 ## Unreleased
 
-- **My media plays your own movies from DLNA / UPnP and WebDAV sources.**  Browse poster shelves for Continue watching, Favorites and All movies, with the usual movie player, favorites and resume positions.  Source setup stays in Settings and the web editor.  WebDAV playback currently requires a redirect to a playable file link.
-
+- **My media plays your own movies from DLNA / UPnP and WebDAV sources.**  It joins the menu once you add a source in **Settings > My media**.  Browse poster shelves for Continue watching, Favorites and All movies, with the usual movie player, favorites and resume positions.  Source setup stays in Settings and the web editor.  WebDAV playback currently requires a redirect to a playable file link.
 - **My media can fetch translated movie details and artwork from TMDB.**  Save your own token on the TV or through the web editor, choose a language, and correct matches from movie options.  Public builds contain no token; media logins and the token stay out of backups and problem reports.
-
 - **Rescan and sort your movie library.**  Green rescans all sources; Yellow fetches missing or outdated movie details.  Sort by name, release date or date added.  Failed, empty or incomplete scans preserve saved entries, and library changes survive restarts.
-
-- **Audio can fall back to a second language.**  In Playback and buffering, choose a preferred audio language and a fallback (English by default).  Channels and movies, including My media, try those languages before the first available track.  Manual track choices take priority.
+- **Audio can fall back to a second language.**  In **Settings > Playback and buffering**, choose a preferred audio language and a fallback (off at first).  When neither is there, the stream's own track stays.  Thanks to moritzm784 for My media and this.
 
 ## 0.6.0 (alpha 48, 2026-11-01)
 

@@ -53,13 +53,15 @@ var MediaStore = (function () {
     if (state.sources.length >= MAX_SOURCES) throw new Error('You can add up to ' + MAX_SOURCES + ' sources.  Remove one first.');
     var id = 's' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
     state.sources.push({ id: id, type: s.type, name: s.name, control: s.control, address: s.address, user: s.user, pass: s.pass });
-    save();
+    save(); menu();
     return id;
   }
+  // The My media tab shows in the menu only while there is a source (views.js buildTabs).
+  function menu() { if (typeof Views !== 'undefined' && Views.buildTabs) setTimeout(function () { Views.buildTabs(); }, 0); }
   function removeSource(id) {
     state.sources = state.sources.filter(function (s) { return s.id !== id; });
     lib = lib.filter(function (m) { return m.src !== id; });
-    save(); saveLib();
+    save(); saveLib(); menu();
   }
   // For screens and the web editor: no logins.
   function publicSources() {
