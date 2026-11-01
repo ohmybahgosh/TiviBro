@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 37, 2026-11-01)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 37
 
 - **The TV shows what your phone is doing during set-up** ([#8](https://github.com/ohmybahgosh/TiviBro/issues/8)).  On the QR code screens, a line says when a playlist or backup arrives from a phone or computer, when it was added (with the channel count), and when it failed and why, so whoever is at the TV sees it working.  Nothing starts playing by itself.
 - **Codes you can't misread** ([#10](https://github.com/ohmybahgosh/TiviBro/issues/10)).  New web editor passwords, phone pairing codes and suggested backup passphrases leave out characters that look alike from across the room (2/Z, 5/S, 6/G, 8/B and U/V, on top of 0/O and 1/I/L).  Typing a look-alike still works, so a 5 for an S in an older password is accepted.
 
-## 0.6.0 (alpha 36, 2026-10-31)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 36
+### In alpha 36
 
 - **High ports for the web editor** ([#7](https://github.com/ohmybahgosh/TiviBro/issues/7)).  For networks that block the usual ports, **Settings > Edit on a phone or computer > Port** adds 18787, 28787, 38787, 48787, 58787 and 61787, and a random high port that stays the same until you choose **New random port**.
 - **Buffer info on demand** ([#6](https://github.com/ohmybahgosh/TiviBro/issues/6)).  Hold **Info** in fullscreen to show the buffer meter, with the seconds banked and the stream's speed when the player reports it, even with the meter set to Off.  It hides itself after 10 seconds (5, 30 or until pressed again in Settings > Playback), and pressing again hides it.  Any button can do it: **Show buffer info** under Remote control.
