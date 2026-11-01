@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Big channel lists load with far less memory.**  On a TV, TiviBro's helper now downloads and reads the provider's channel list (Xtream Codes or M3U) and hands TiviBro just the channels, using the same code, so every edit still fits.  With a 180,000-channel list, TiviBro used about 89 MB right after starting, where it used 268 MB before.
+- **One settings page for the phone app and the web editor.**  **Settings > Phone app and web editor** says which is which: **Pair the TiviBro app…** (scanned inside the app; it turns the connection on if needed) and **Open it in a phone's browser (QR code)** for the web editor.  The phone app works without the web editor switched on.
+- **The Channels list is out of the side menu unless you want it.**  Turn it on with **Settings > Guide, start screen, reminders > Channels list in the menu**.  **Green** in the guide still opens it, and it stays while TiviBro starts on it.
 - **Move a channel from the guide.**  Hold OK on a channel in the guide and choose **Move…**, then ▲ ▼ (CH +/− for a page) and OK.  The new order is saved the same as moving it in the channel list.
 - **The guide's group list keeps the highlight on screen.**  Going down past the last group that fit, the highlight disappeared below the panel; the list now counts the rows that really fit.
 - **Matched, but the guide is empty, now says so.**  In the web editor's step 4, a channel matched to a guide channel that has nothing scheduled goes under a new **Guide is empty** tab, marked "matched, nothing scheduled" with **Find another…**, instead of looking unmatched under **Needs a guide**.  Smart match no longer suggests guide channels with nothing scheduled.

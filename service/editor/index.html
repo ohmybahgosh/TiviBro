@@ -379,7 +379,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 
 <div id="login" class="login hidden">
   <h1><img src="wordmark.png" alt="TiviBro" style="height:44px"><span class="muted" style="font-weight:500;font-size:20px">editor</span></h1>
-  <p>Enter the password shown on your TV under Settings, Edit on a phone or computer.</p>
+  <p>Enter the password shown on your TV under Settings, Phone app and web editor.</p>
   <!-- A real password form, so browsers offer to save it (issue #15): the name is fixed, the password is the TV's. -->
   <form id="loginForm" method="post" action="#"><input type="text" name="username" autocomplete="username" value="TiviBro editor" hidden aria-hidden="true">
     <div class="pwwrap"><input id="pw" name="password" type="password" autocomplete="current-password" spellcheck="false" autocapitalize="characters" placeholder="XXXX-XXXX" autofocus><button type="button" class="ghost pwshow" id="pwShow">Show</button></div>
@@ -2463,13 +2463,13 @@ var HELP = [
   ['playlists', 'Playlists', '<p>Add Xtream Codes or M3U playlists, switch which one the TV uses, change reload schedules and the User-Agent, or change a login.  The TV tests a new login before saving it.  Logins never reach this editor; you only see server names.  Each playlist has its own groups, names and guide setup.</p>'],
   ['backup', 'Backup and restore', '<p>A backup is one file with everything: settings, every playlist <b>with its login</b>, each playlist\'s groups, favorites, names and guide matches, and its restore points.  Channel lists and guides are not in it; they reload from your provider.</p>' +
     '<h3>Locked with your passphrase</h3><p>Because it holds logins, the backup is always locked.  You pick a passphrase when you download it (or press <b>Suggest one</b>).  The TV makes the backup and locks it with AES-256 before it leaves the TV, so the file that reaches your computer is unreadable without the passphrase.  Nobody can recover a forgotten passphrase, us included, so keep it in a password manager or with the file.</p>' +
-    '<h3>Restoring, even on a brand-new TV</h3><ol><li>Install TiviBro and open it.  On the first screen choose <b>Set up or restore from a computer</b>.  (On a TV already set up: Settings, Edit on a phone or computer.)</li><li>Open the address shown on the TV in a browser and type the password shown there.</li><li>Choose <b>Restore a backup</b>, drop the file, type its passphrase and press <b>Unlock</b>.  The editor lists the playlists inside so you know it is the right file.</li><li>Press <b>Restore to the TV</b>.  TiviBro restarts with all your playlists, logins and settings, and this page reconnects by itself.</li></ol>' +
+    '<h3>Restoring, even on a brand-new TV</h3><ol><li>Install TiviBro and open it.  On the first screen choose <b>Set up or restore from a computer</b>.  (On a TV already set up: Settings, Phone app and web editor.)</li><li>Open the address shown on the TV in a browser and type the password shown there.</li><li>Choose <b>Restore a backup</b>, drop the file, type its passphrase and press <b>Unlock</b>.  The editor lists the playlists inside so you know it is the right file.</li><li>Press <b>Restore to the TV</b>.  TiviBro restarts with all your playlists, logins and settings, and this page reconnects by itself.</li></ol>' +
     '<p>Older backups made before locking existed still restore; download a new locked one afterwards and delete the old file.</p>'],
   ['keys', 'Keyboard shortcuts', '<ul><li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> or <kbd>Ctrl</kbd>+<kbd>Y</kbd> redo</li><li><kbd>Ctrl</kbd>+<kbd>S</kbd> send to TV</li><li><kbd>/</kbd> jump to the search box</li><li><kbd>Esc</kbd> close a window or list</li><li>In lists: <kbd>↑</kbd> <kbd>↓</kbd> and <kbd>Enter</kbd>, or type to filter</li></ul><p>On a Mac use <kbd>⌘</kbd> instead of <kbd>Ctrl</kbd>.</p>'],
   ['trouble', 'Troubleshooting', '<ul><li><b>"Can\'t reach TiviBro on the TV"</b>: TiviBro was closed, or the TV went to sleep.  Open TiviBro; the editor reconnects by itself.  Your drafts are safe in this browser.</li>' +
     '<li><b>Changes don\'t show on the TV</b>: check the bar at the bottom.  If it still counts changes, press Send to TV.</li>' +
     '<li><b>The guide seems stuck</b>: look at the progress bar on the Guide page.  Big files take minutes on a TV.  If it stays at 0, Test the address; the server may be down.</li>' +
-    '<li><b>Wrong password</b>: it is shown on the TV under Settings, Edit on a phone or computer.  After five wrong tries, wait a minute.</li>' +
+    '<li><b>Wrong password</b>: it is shown on the TV under Settings, Phone app and web editor.  After five wrong tries, wait a minute.</li>' +
     '<li><b>Times are off by an hour</b>: give that guide source an offset (60 or -60).</li></ul>']
 ];
 function renderHelp(sub) {

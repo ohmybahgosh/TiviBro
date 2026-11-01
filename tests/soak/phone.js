@@ -37,19 +37,19 @@ const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', heade
   ok('TiviBro tells the helper its version', (await ctl('/companion/status')).ownName === '' && (await (await fetch(RELAY + '/companion/status')).json()).on === false);
   await ev(() => { if (UI.modalOpen) UI.close(); Views.switchTab('settings'); Settings.open(); }); await page.waitForTimeout(600);
   const navRel = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
-  ok('a release build has no Phone app section yet', navRel.indexOf('Phone app') < 0 && !(await ev(() => Settings.section('phone'))), navRel.join(', '));
+  ok('a release build has no phone app part yet: the page is the web editor', navRel.indexOf('Web editor') > 0 && !navRel.some((x) => /Phone app/.test(x)) && !(await ev(() => Settings.section('phone'))), navRel.join(', '));
   await ev(() => { TIVIBRO_VERSION = '0.6.0-alpha.99'; Settings.open(); Settings.section('phone'); }); await page.waitForTimeout(800);
   const navTest = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
-  ok('test builds have it', navTest.indexOf('Phone app') > 0, navTest.join(', '));
+  ok('test builds have it, with the web editor on one page', navTest.indexOf('Phone app and web editor') > 0, navTest.join(', '));
   let t = await text();
-  ok('Settings has a Phone app section, off at first', /Phone app/.test(t) && /Phone app connection[^‹]*‹Off›/.test(t) && !/Pair a phone…/.test(t), t.slice(t.indexOf('The TiviBro app'), t.indexOf('The TiviBro app') + 400));
+  ok('Settings has a Phone app section, off at first', /Phone app/.test(t) && /Phone app connection[^‹]*‹Off›/.test(t) && /Turns the connection on/.test(t), t.slice(t.indexOf('Two ways'), t.indexOf('Two ways') + 400));
   await row(/^Phone app connection/); await page.waitForTimeout(1200);
   t = await text();
-  ok('switching it on shows Pair a phone, no phones yet, and the address', /Phone app connection[^‹]*‹On›/.test(t) && /Pair a phone/.test(t) && /None yet/.test(t) && /, port 47810/.test(t), t.slice(0, 600));
+  ok('switching it on shows Pair a phone, no phones yet, and the address', /Phone app connection[^‹]*‹On›/.test(t) && /Pair the TiviBro app/.test(t) && /none yet/.test(t) && /, port 47810/.test(t), t.slice(0, 600));
   const h0 = await C.hello({ host: '127.0.0.1', port: 47810 });
   ok('the TV answers on the network, with TiviBro\'s version', h0.app === 'TiviBro' && h0.version && h0.version !== 'dev', JSON.stringify(h0));
 
-  await row(/^Pair a phone…/); await page.waitForTimeout(1500);
+  await row(/^Pair the TiviBro app…/); await page.waitForTimeout(1500);
   let m = await modal();
   const code = (/([A-Z2-9]{4}-[A-Z2-9]{4}-[A-Z2-9]{4})/.exec(m) || [])[1];
   ok('Pair a phone: steps, a code, a QR code and how long it works', !!code && /Open the TiviBro app/.test(m) && /Works for 9:5\d|Works for 10:00/.test(m) && /Waiting for your phone/.test(m) && await ev(() => !!document.querySelector('#modal .pair-qr svg')), m);
@@ -64,7 +64,7 @@ const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', heade
   await shot('phone-paired');
   await page.keyboard.press('Enter'); await page.waitForTimeout(800);
   t = await text();
-  ok('the phone is listed in Settings', /Soak Phone/.test(t) && /Pixel 9/.test(t) && /Last seen just now/.test(t) && !/None yet/.test(t), t.slice(0, 700));
+  ok('the phone is listed in Settings', /Soak Phone/.test(t) && /Pixel 9/.test(t) && /Last seen just now/.test(t) && !/none yet/.test(t), t.slice(0, 700));
   await shot('phone-settings');
 
   // The phone asks for the web editor: TiviBro starts it, the phone gets a signed-in address.
@@ -99,7 +99,7 @@ const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', heade
   await page.keyboard.press('Enter'); await page.waitForTimeout(1200);
   e = await C.call(cred, 'GET', '/v1/info').catch((x) => x);
   t = await ev(() => [].map.call(document.querySelectorAll('.set-scroll .opt'), (d) => d.innerText).join('\n'));
-  ok('removed: gone from Settings, and the phone can no longer connect', !/Soak Phone/.test(t) && /None yet/.test(t) && e.code === 'unpaired', t.slice(0, 300) + ' / ' + e.message);
+  ok('removed: gone from Settings, and the phone can no longer connect', !/Soak Phone/.test(t) && /none yet/.test(t) && e.code === 'unpaired', t.slice(0, 300) + ' / ' + e.message);
 
   // Off.
   await row(/^Phone app connection/); await page.waitForTimeout(1200);

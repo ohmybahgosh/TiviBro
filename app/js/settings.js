@@ -3,11 +3,13 @@ var Settings = (function () {
   'use strict';
   var $ = U.$, S = function () { return Store.settings; }, L = Library;
   var nav = $('setNav'), body = $('setBody');
-  var SECTIONS = [['playback', 'Playback and buffering'], ['remote', 'Remote control'], ['playlists', 'Playlists and guide'], ['editor', 'Edit on a phone or computer'], ['phone', 'Phone app'],
+  var SECTIONS = [['playback', 'Playback and buffering'], ['remote', 'Remote control'], ['playlists', 'Playlists and guide'], ['connect', 'Phone app and web editor'],
     ['groups', 'Groups, sorting, hidden'], ['reminders', 'Guide, start screen, reminders'], ['look', 'Appearance'], ['parental', 'Parental controls'], ['updates', 'Updates and about'], ['diag', 'Diagnostics']];
   var sec = 0, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
-  // Phone app: test builds only while the Android app is in the works.
-  function shown(i) { return !!SECTIONS[i] && (SECTIONS[i][0] !== 'phone' || /alpha|beta/i.test(TIVIBRO_VERSION)); }
+  // Phone app: test builds only while the Android app is in the works (release builds show the web editor alone).
+  function phoneOK() { return /alpha|beta/i.test(TIVIBRO_VERSION); }
+  function shown(i) { return !!SECTIONS[i]; }
+  function title(sct) { return sct[0] === 'connect' && !phoneOK() ? 'Web editor' : sct[1]; }
   function nextSec(d) { var i = sec + d; while (SECTIONS[i] && !shown(i)) i += d; return SECTIONS[i] ? i : sec; }
   var stack = [];               // sub-pages: [{ title, fn, sel }]
 
@@ -452,6 +454,8 @@ var Settings = (function () {
     var s = S(), out = [];
     out.push(choice('Start screen', 'What TiviBro opens on, and where Back from other screens leads.', ['guide', 'live'], ['Guide', 'Channels list'],
       function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; save(); Views.buildTabs(); }));
+    out.push(toggle('Channels list in the menu', s.startTab === 'live' ? 'Always there while TiviBro starts on it.' : 'The plain list of channels, without the guide.  Off, it stays one press away: Green in the guide.',
+      function () { return s.startTab === 'live' || s.channelsTab === true; }, function (v) { if (s.startTab === 'live') { U.toast('TiviBro starts on the channels list, so it stays in the menu'); return; } s.channelsTab = v; save(); Views.buildTabs(); }));
     out.push(choice('OK on a channel in the Guide', 'Preview first works like TiviMate: the first OK plays it in the corner window, the second goes fullscreen.',
       ['preview', 'full'], ['Preview first, then fullscreen', 'Fullscreen right away'], function () { return s.guideOk === 'full' ? 'full' : 'preview'; }, function (v) { s.guideOk = v; save(); }));
     out.push(toggle('Two-line programmes', 'Shows each programme\'s time under its title in the grid.', function () { return s.guideLines !== 1; }, function (v) { s.guideLines = v ? 2 : 1; Views.applyLook(); save(); }));
@@ -619,16 +623,17 @@ var Settings = (function () {
 
   /* ---------- render ---------- */
   /* ---------- edit on a computer ---------- */
-  function editor() {
-    var s = S(), out = [], on = WebEdit.on, st = WebEdit.status;
-    WebEdit.onStatus = function () { if (Views.tab === 'settings' && SECTIONS[sec][0] === 'editor' && !stack.length) build(); };
-    out.push(info('Organise groups and channels from a browser on your computer, phone or tablet: show and hide, reorder, rename, favorites, your own groups and name clean-up.', ''));
-    out.push(action('Scan a QR code with your phone', 'Turns the editor on and opens it on your phone, signed in.  Also in the side menu: Edit on phone.', function () { WebEdit.showJoin('', build); }, function () { return '›'; }));
-    out.push(toggle('Web editor', on ? 'Running.  Changes appear on the TV within a few seconds.' : 'Off.  It also switches off whenever TiviBro closes.', function () { return WebEdit.on; }, function (v) {
+  function editor(out) {
+    var s = S(), on = WebEdit.on, st = WebEdit.status;
+    WebEdit.onStatus = function () { if (Views.tab === 'settings' && SECTIONS[sec][0] === 'connect' && !stack.length) build(); };
+    out.push(head('Web editor  ·  any browser'));
+    out.push(info('Groups, channels, Smart clean-up, guide matching and backups from a web browser on a computer, tablet or phone, with a real keyboard.  ' +
+      (phoneOK() ? 'The TiviBro app opens it for you (Edit channels) and switches it on by itself: this switch is only for a browser.' : ''), ''));
+    out.push(action('Open it in a phone\'s browser (QR code)', 'Turns the editor on and shows a code for the phone\'s camera.  It does not pair the TiviBro app.  Also in the side menu: Edit on phone.', function () { WebEdit.showJoin('', build); }, function () { return '›'; }));
+    out.push(toggle('Web editor for browsers', on ? 'Running.  Changes appear on the TV within a few seconds.' : 'Off.  It also switches off whenever TiviBro closes.' + (phoneOK() ? '  The phone app works either way.' : ''), function () { return WebEdit.on; }, function (v) {
       (v ? WebEdit.start() : WebEdit.stop()).then(function () { build(); if (v) U.toast('Web editor is on'); }, function (e) { U.toast(e.message, 5000); build(); });
     }));
     if (on && st) {
-      out.push(head('On your computer'));
       var addrs = WebEdit.addresses();
       if (!addrs.length) out.push(info('Open', 'http://<this TV\'s address>:' + st.port + '   (the TV reported no network address)'));
       addrs.forEach(function (a, i) { var x = info(i ? 'or' : 'Open this address', a); x.big = true; out.push(x); });
@@ -636,7 +641,6 @@ var Settings = (function () {
       out.push(info('Browsers connected', String(st.clients || 0)));
       out.push(info('The computer must be on the same network as the TV.', ''));
     }
-    out.push(head('Options'));
     out.push(action('New password', 'Logs out every browser.', function () { WebEdit.newPassword().then(function () { build(); U.toast('New password: ' + WebEdit.password(), 5000); }); }, function () { return on ? '' : WebEdit.password(); }));
     // The high ports and the random one are for networks that block the common ports.
     var restartEd = function () { WebEdit.restart().then(build, function (e) { U.toast(e.message, 5000); build(); }); };
@@ -646,6 +650,20 @@ var Settings = (function () {
       function () { return rnd ? 'random' : WebEdit.port(); },
       function (v) { s.editorPort = v; Store.saveSettings(); if (v === 'random') WebEdit.port(); restartEd(); }));
     if (rnd) out.push(action('New random port', 'This TV keeps ' + WebEdit.port() + ' until you choose this.  Saved addresses and bookmarks stop working.', function () { WebEdit.newRandomPort(); restartEd(); }, function () { return String(WebEdit.port()); }));
+    return out;
+  }
+
+  /* ---------- phone app and web editor: one page ----------
+     Two different things that both involve a phone, so they sit together and say which is which:
+     the TiviBro app (pair once with its own QR code; a remote, the guide, Movies and Shows, typing,
+     backups) and the web editor (any browser).  The app does not need the editor switch on. */
+  function connect() {
+    var out = [];
+    if (phoneOK()) {
+      out.push(info('Two ways to use a phone with TiviBro.  The TiviBro app for Android is a remote with the guide, Movies and Shows; pair it once below.  The web editor works in any browser, for bigger clean-up jobs.  Each works without the other.', ''));
+      phone(out);
+    }
+    editor(out);
     return out;
   }
 
@@ -662,20 +680,24 @@ var Settings = (function () {
   Epg.onProgress(function (p) { var k = (p.active ? 1 : 0) + '|' + p.phase; if (k !== lastProg) { lastProg = k; live(); } });
 
   /* ---------- the TiviBro phone app ---------- */
-  function phone() {
-    var out = [], ps = Phone.status, on = !!(ps && ps.on);
-    Phone.onChange = function () { if (Views.tab === 'settings' && SECTIONS[sec][0] === 'phone' && !stack.length) build(); };
+  function phone(out) {
+    var ps = Phone.status, on = !!(ps && ps.on);
+    Phone.onChange = function () { if (Views.tab === 'settings' && SECTIONS[sec][0] === 'connect' && !stack.length) build(); };
+    out.push(head('TiviBro phone app  ·  Android'));
     if (!ps) { Phone.refresh().catch(function (e) { U.toast(e.message, 5000); }); out.push(info('Checking…', '')); return out; }
-    out.push(info('The TiviBro app for Android finds this TV, opens TiviBro and the web editor full screen, and wakes the TV.  Pair a phone once; it stays paired.', ''));
+    out.push(info('Finds this TV, works as a remote with the guide, Movies and Shows, types into the TV, keeps backups, opens the web editor and wakes the TV.  Pair a phone once; it stays paired.', ''));
     out.push(toggle('Phone app connection', on ? 'On.  Paired phones can reach this TV on your network, even when TiviBro is closed.' : 'Off.  Phones can\'t find or reach this TV.', function () { return !!(Phone.status && Phone.status.on); }, function (v) {
       var go = function () { Phone.turn(v).then(function () { build(); U.toast(v ? 'Phone app connection is on' : 'Phone app connection is off'); }, function (e) { U.toast(e.message, 5000); build(); }); };
       if (v || !ps.phones.length) return go();
       UI.confirm('Turn off the phone app connection?  Paired phones stay paired, but can\'t reach this TV until you turn it back on.', 'Turn off', go);
     }));
+    // Pairing is the first thing people look for, so it's there even while the connection is off (it turns it on).
+    out.push(action('Pair the TiviBro app…', 'Shows the QR code and the code to scan in the TiviBro app (not the phone\'s camera).' + (on ? '' : '  Turns the connection on.'), function () {
+      if (on) return Phone.showPair(build);
+      Phone.turn(true).then(function () { build(); Phone.showPair(build); }, function (e) { U.toast(e.message, 5000); build(); });
+    }, function () { return '›'; }));
     if (on) {
-      out.push(action('Pair a phone…', 'Shows a QR code and a code for the TiviBro app.', function () { Phone.showPair(build); }, function () { return '›'; }));
-      out.push(head('Paired phones'));
-      if (!ps.phones.length) out.push(info('None yet', ''));
+      if (!ps.phones.length) out.push(info('Paired phones', 'none yet'));
       ps.phones.forEach(function (p) {
         out.push(action(p.name, (p.model ? p.model + '  ·  ' : '') + 'Added ' + when(p.added) + '  ·  Last seen ' + Phone.ago(p.seen), function () {
           UI.menu(p.name, [
@@ -686,8 +708,7 @@ var Settings = (function () {
           ]);
         }, function () { return '›'; }));
       });
-      out.push(head('This TV'));
-      out.push(action('Name', 'How phones show this TV.', function () {
+      out.push(action('This TV\'s name', 'How phones show this TV.', function () {
         UI.prompt('Name this TV', ps.ownName || ps.name, function (n) { Phone.rename(n).then(build, function (e) { U.toast(e.message, 5000); }); });
       }, function () { return Phone.status ? Phone.status.name : ''; }));
       out.push(info('Address', (ps.ips && ps.ips.length ? ps.ips.join(', ') : 'no network address') + ', port ' + ps.port));
@@ -735,7 +756,7 @@ var Settings = (function () {
   }
 
   // Each section's page, by id, so reordering SECTIONS can never show one section under another's name.
-  var BY_ID = { playback: playback, remote: remote, playlists: playlists, editor: editor, phone: phone, groups: groups, reminders: reminders, look: look, parental: parental, updates: updates, diag: diag };
+  var BY_ID = { playback: playback, remote: remote, playlists: playlists, connect: connect, groups: groups, reminders: reminders, look: look, parental: parental, updates: updates, diag: diag };
   var FNS = SECTIONS.map(function (x) { return BY_ID[x[0]]; });
   function build() {
     var top = stack[stack.length - 1];
@@ -780,7 +801,7 @@ var Settings = (function () {
     nav.innerHTML = '';
     SECTIONS.forEach(function (s, i) {
       if (!shown(i)) return;
-      var n = U.el('div', i === sec ? 'on' : '', s[1]);
+      var n = U.el('div', i === sec ? 'on' : '', title(s));
       n.addEventListener('click', function () { stack = []; sec = i; sel = 0; zone = 'nav'; build(); });
       nav.appendChild(n);
     });
@@ -846,7 +867,10 @@ var Settings = (function () {
   }
 
   // Straight to one section (the phone app's own shortcut, and tests).
-  function section(id) { for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return true; } return false; }
+  function section(id) {
+    if (id === 'phone' && !phoneOK()) return false;
+    if (id === 'phone' || id === 'editor') id = 'connect';
+    for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return true; } return false; }
 
   return { open: open, assignGuide: assignGuide, section: section, live: live, reset: function () { stack = []; sel = 0; },
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };

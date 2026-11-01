@@ -361,6 +361,7 @@ var App = (function () {
     loading('Loading ' + (p.name || 'channels') + '…');
     return Store.bigGet(cacheKey(p)).then(function (cached) {
       if (cached && cached.sig === Source.sig(p) && cached.channels && cached.channels.length) {
+        Log.info('app', 'Opened ' + cached.channels.length + ' channels kept from the last load');
         start(cached, true);
         if (plDue(p, cached.at, true)) setTimeout(function () { refresh(false); }, 15000);
         return;

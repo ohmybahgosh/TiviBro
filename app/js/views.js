@@ -22,6 +22,10 @@ var Views = (function () {
   var TAB_LABELS = { live: 'Channels', guide: 'Guide', movies: 'Movies', shows: 'Shows', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
   // The guide is home: the app opens on it and Back from any other screen comes back to it.
   function home() { return Store.settings.startTab === 'live' ? 'live' : 'guide'; }
+  /* The plain channel list in the menu: most people browse with the guide, so it shows only when
+     switched on (Settings > Guide, start screen, reminders) or when TiviBro starts on it.  Green in the
+     guide still opens it. */
+  function channelsInMenu() { var s = Store.settings; return s.channelsTab === true || (s.channelsTab == null && s.startTab === 'live') || home() === 'live'; }
   var fullFrom = 'guide';
   // Simple line icons for the side menu (inline SVG, no image files to load).
   var ICONS = {
@@ -36,7 +40,7 @@ var Views = (function () {
   };
   // Movies and Shows appear only when this playlist actually has them (checked in the background).
   function buildTabs() {
-    tabs = home() === 'live' ? ['live', 'guide'] : ['guide', 'live'];
+    tabs = home() === 'live' ? ['live', 'guide'] : channelsInMenu() ? ['guide', 'live'] : ['guide'];
     var pl = Store.playlist, v = pl.vod || {};
     if (pl.type === 'xtream' && v.movies) tabs.push('movies');
     if (pl.type === 'xtream' && v.series) tabs.push('shows');
@@ -53,7 +57,7 @@ var Views = (function () {
       s.addEventListener('mousemove', function () { if (UI.pointer && !document.body.classList.contains('nav-open') && !full) openNavFromPointer(); });
       nav.appendChild(s);
     });
-    if (tabs.indexOf(tab) < 0 && ready()) switchTab(home());
+    if (tabs.indexOf(tab) < 0 && tab !== 'live' && ready()) switchTab(home());
   }
   function ready() { return !!chansVL; }
   // Pointer near the menu: expand it so the labels show; it closes when the pointer leaves.
@@ -397,7 +401,7 @@ var Views = (function () {
 
   var guideSeen = false;
   function switchTab(t) {
-    if (tabs.indexOf(t) < 0) t = 'live';
+    if (tabs.indexOf(t) < 0 && t !== 'live') t = home();
     if (t === 'settings' && tab !== 'settings') return Parental.gate('settings', null, function () { doSwitch(t); });
     doSwitch(t);
   }

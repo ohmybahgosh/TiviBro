@@ -64,6 +64,8 @@ var seq = [
     });
   },
   function channels(next) { waitFor('channels loaded', 'window.Library && Library.count() > 0 && Library.count()', 45000, function (n) { R.channels = n; next(); }); },
+  // The channel list came from the helper (service/live.js), not parsed whole in the app.
+  function liveHelper(next) { waitFor('the channel list came from the helper or what it keeps', '/The helper loaded|kept from the last load/.test(Log.lines ? Log.lines(false).join("\\n") : "")', 5000, function () { next(); }); },
   function guide(next) { waitFor('guide shows programmes', '(document.body.innerText.match(/\\d:\\d\\d ?[ap]m/gi) || []).length > 6', 90000, function () { setTimeout(function () { shot('1-guide', next); }, 1500); }); },
   function xmltv(next) {
     if (!/xmltv|epgSources/.test(SETTINGS)) return next();

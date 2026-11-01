@@ -4,7 +4,7 @@ Everything TiviBro does, on the TV and from your computer.  Every picture here c
 
 **On the TV:** [First start](#first-start) · [The set-up tour](#the-set-up-tour) · [Channel logos](#channel-logos) · [The remote](#the-remote) · [The guide](#the-guide) · [Groups and the menu](#groups-and-the-menu) · [Watching fullscreen](#watching-fullscreen) · [Other versions of a channel](#other-versions-of-a-channel) · [Event channels](#event-channels-pay-per-view-and-sports-passes) · [Catch-up](#catch-up) · [Movies and shows](#movies-and-shows) · [Search](#search) · [Favorites, hiding and your own groups](#favorites-hiding-and-your-own-groups) · [Reminders](#reminders) · [Settings](#settings) · [Updates](#updates) · [Parental controls](#parental-controls)
 
-**Every setting:** [Playback and buffering](#settings-playback-and-buffering) · [Remote control](#settings-remote-control) · [Playlists and guide](#settings-playlists-and-guide) · [Groups, sorting, hidden](#settings-groups-sorting-hidden) · [Guide, start screen, reminders](#settings-guide-start-screen-reminders) · [Appearance](#settings-appearance) · [Parental controls](#settings-parental-controls) · [Edit on a phone or computer](#settings-edit-on-a-phone-or-computer) · [Updates and about](#settings-updates-and-about) · [Diagnostics](#settings-diagnostics)
+**Every setting:** [Playback and buffering](#settings-playback-and-buffering) · [Remote control](#settings-remote-control) · [Playlists and guide](#settings-playlists-and-guide) · [Groups, sorting, hidden](#settings-groups-sorting-hidden) · [Guide, start screen, reminders](#settings-guide-start-screen-reminders) · [Appearance](#settings-appearance) · [Parental controls](#settings-parental-controls) · [Phone app and web editor](#settings-phone-app-and-web-editor) · [Updates and about](#settings-updates-and-about) · [Diagnostics](#settings-diagnostics)
 
 **From your computer:** [Turning on the web editor](#turning-on-the-web-editor) · [Drafts and Send to TV](#drafts-and-send-to-tv) · [Groups and channels](#groups-and-channels) · [Smart clean-up](#smart-clean-up) · [Channel names](#channel-names) · [The programme guide](#the-programme-guide) · [Playlists](#playlists) · [Backup and restore](#backup-and-restore)
 
@@ -191,7 +191,7 @@ Long lists: **CH + / −** moves a page at a time everywhere, and holding **▲*
 </p>
 </details>
 
-The **Channels** screen is the same list in TiviMate's classic layout: groups on the left, channels in the middle, the preview and details on the right.  Resting on a channel plays it in the preview (**Preview in channel list**); **OK** goes fullscreen.  Pick which screen opens first with **Start screen**.
+The **Channels** screen (in the side menu when **Channels list in the menu** is on, or **Green** in the guide) is the same list in TiviMate's classic layout: groups on the left, channels in the middle, the preview and details on the right.  Resting on a channel plays it in the preview (**Preview in channel list**); **OK** goes fullscreen.  Pick which screen opens first with **Start screen**.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-channels"><img src="screenshots/tv-channels.png" width="100%" alt="The Channels screen"></a>
@@ -411,7 +411,7 @@ The watchlist needs the guide to know what's on: with an XMLTV guide it sees eve
 | [**Guide, start screen, reminders**](#settings-guide-start-screen-reminders) | Start screen, OK in the guide, guide layout, catch-up marks, reminders |
 | [**Appearance**](#settings-appearance) | Accent color (twelve presets or your own from a hue and brightness), background (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), focus style (add a white outline to whatever is selected), text size, panel transparency, logos, clock, channel numbers |
 | [**Parental controls**](#settings-parental-controls) | PIN, what it protects, blocked groups and channels |
-| [**Edit on a phone or computer**](#settings-edit-on-a-phone-or-computer) | The web editor switch, its address and password |
+| [**Phone app and web editor**](#settings-phone-app-and-web-editor) | Pairing the TiviBro app, and the web editor's switch, address and password |
 | [**Updates and about**](#settings-updates-and-about) | Your version, check for updates, install an update (rooted TVs), what's new, automatic checks, test versions |
 | [**Diagnostics**](#settings-diagnostics) | Connection test, app and helper logs, detailed logging, what this TV can play, what's playing now, status |
 
@@ -662,6 +662,7 @@ How the guide looks and behaves, which screen TiviBro opens on, and reminders.
 | Setting | Choices | What it does |
 |---|---|---|
 | **Start screen** | **Guide** · Channels list | What TiviBro opens on, and where **Back** from other screens leads. |
+| **Channels list in the menu** | On · **Off** | The plain channel list (without the guide) in the side menu.  Off, **Green** in the guide still opens it.  Always there while TiviBro starts on it. |
 | **OK on a channel in the Guide** | **Preview first, then fullscreen** · Fullscreen right away | Like TiviMate: the first **OK** plays the channel in the window, the second goes fullscreen.  Or go straight to fullscreen. |
 | **Two-line programmes** | **On** · Off | Each programme's time under its title in the grid. |
 | **Dim past programmes** | **On** · Off | Programmes that already ended look dimmer. |
@@ -724,9 +725,16 @@ A 4-digit PIN for blocked channels and groups, and optionally for Settings.  See
 
 Five wrong PINs in a row lock the PIN for 30 seconds.
 
-### Settings: Edit on a phone or computer
+### Settings: Phone app and web editor
 
-The [web editor](#turning-on-the-web-editor): organise groups and channels from a browser on your computer, phone or tablet.
+Two different ways to use a phone with TiviBro, on one page.  Each works without the other: the phone app doesn't need the web editor switched on.
+
+- **The TiviBro phone app** (Android) is a remote with the guide, Movies and Shows.  Pair it once with **Pair the TiviBro app…**: that QR code is scanned inside the app, not with the phone's camera.
+- **The web editor** works in any browser, for bigger jobs: groups, channels, Smart clean-up, guide matching and backups.  **Open it in a phone's browser (QR code)** is for the phone's camera.  The phone app opens the editor by itself (**Edit channels**), so the switch below is only needed for a browser.
+
+In release builds, where the phone app isn't offered yet, this page is called **Web editor**.
+
+**The web editor**
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-set-editor"><img src="screenshots/tv-set-editor.png" width="49%" alt="Edit on a phone or computer, off"></a>
@@ -735,15 +743,15 @@ The [web editor](#turning-on-the-web-editor): organise groups and channels from 
 
 | Setting | Choices | What it does |
 |---|---|---|
-| **Scan a QR code with your phone** | | Turns the editor on and shows the code for your phone, the same as **Edit on phone** in the side menu. |
-| **Web editor** | On · **Off** | Starts the editor.  It switches off whenever TiviBro closes. |
+| **Open it in a phone's browser (QR code)** | | Turns the editor on and shows the code for your phone's camera, the same as **Edit on phone** in the side menu.  It doesn't pair the TiviBro app. |
+| **Web editor for browsers** | On · **Off** | Starts the editor.  It switches off whenever TiviBro closes.  The phone app works either way. |
 | **Open this address**, **Password** | (information) | Shown while it runs: the address to open on a device on the same network, and the password to type. |
 | **Browsers connected** | (information) | How many browsers are using the editor now. |
 | **New password** | | Makes a new password and logs out every browser. |
 | **Port** | **8787** · 8080 · 8000 · 9090 · 18787 · 28787 · 38787 · 48787 · 58787 · 61787 · Random high port | Change it if another device on your network already uses this port, or if your network blocks it: the high ones often get through where the common ones don't.  A random port is picked once and kept, so a saved address keeps working. |
 | **New random port** | | Only with a random port: picks a different one.  Saved addresses and bookmarks stop working. |
 
-### Settings: Phone app
+**The TiviBro phone app**
 
 The TiviBro app for Android is a remote and a second screen for this TV.  Pair a phone once and it stays paired.  On each TV in the app:
 
@@ -758,14 +766,14 @@ The TiviBro app for Android is a remote and a second screen for this TV.  Pair a
 
 The app also turns the TV on (Wake-on-LAN) and has a Quick Settings tile that opens TiviBro on the TV.
 
-To get it: [download the newest APK](https://tivibro.app/apk/) on your phone and open it to install (Android asks to allow installs from your browser the first time, and Google Play Protect checks each update).  Then turn on **Phone app connection** below, choose **Pair a phone**, and scan the code with the app.
+To get it: [download the newest APK](https://tivibro.app/apk/) on your phone and open it to install (Android asks to allow installs from your browser the first time, and Google Play Protect checks each update).  Then choose **Pair the TiviBro app…** (it turns on **Phone app connection** if it's off) and scan the code with the app.
 
 | Setting | Choices | What it does |
 |---|---|---|
 | **Phone app connection** | On · **Off** | Lets paired phones reach this TV on your network, also while TiviBro is closed.  Off: phones can't find or reach it. |
-| **Pair a phone** | | Shows a QR code and a 12-character code for the app, for 10 minutes or until a phone pairs.  Five wrong codes end that code. |
+| **Pair the TiviBro app…** | | Turns the connection on if needed and shows a QR code and a 12-character code for the app, for 10 minutes or until a phone pairs.  Five wrong codes end that code. |
 | **Paired phones** | | Each phone, when it was added and last seen.  Select one to remove it; it can't connect again until you pair it again. |
-| **Name** | | How phones show this TV. |
+| **This TV's name** | | How phones show this TV. |
 | **Address** | (information) | This TV's network address and the port the app uses (47810). |
 
 To turn the TV on from the phone, switch on **Turn on via Wi-Fi** in the TV's own settings.
@@ -826,7 +834,7 @@ Cleaning up hundreds of groups with a TV remote is painful.  The web editor does
 
 ### Turning on the web editor
 
-1. On the TV, open **Edit on phone** in the side menu (◀ from the groups).  It turns the editor on and shows a QR code, the address and the password.  The same panel is under hold OK on any group (**Edit on a phone or computer…**), in **Settings > Edit on a phone or computer**, and on any remote button you like (Settings > Remote control).  (On a brand-new TV: the first screen already shows the code.)
+1. On the TV, open **Edit on phone** in the side menu (◀ from the groups).  It turns the editor on and shows a QR code, the address and the password.  The same panel is under hold OK on any group (**Edit on a phone or computer…**), in **Settings > Phone app and web editor**, and on any remote button you like (Settings > Remote control).  (On a brand-new TV: the first screen already shows the code.)
 2. On a phone, scan the code with the camera: the editor opens signed in.  On a computer, open the address, like `http://192.168.1.20:8787`, and type the password.  Dashes and capitals don't matter, and neither do look-alikes: 5 or S, 0 or O, 8 or B all work.  New passwords leave out characters that are easy to misread.
 3. **Done** closes the panel and leaves the editor running; **Turn the editor off** stops it.
 
@@ -970,7 +978,7 @@ A backup is one file with everything: settings, every playlist **with its login*
 
 **Restoring, even on a brand-new TV:**
 
-1. Install TiviBro and open it.  Choose **Set up or restore from a computer**.  (On a TV already set up: **Settings > Edit on a phone or computer**.)
+1. Install TiviBro and open it.  Choose **Set up or restore from a computer**.  (On a TV already set up: **Settings > Phone app and web editor**.)
 2. Open the address shown on the TV and type the password.
 3. **Restore a backup**, drop the file, type the passphrase and press **Unlock**.  The editor lists the playlists inside so you know it's the right file.
 4. **Restore to the TV.**  TiviBro restarts with everything back, and the editor reconnects by itself.
@@ -1002,7 +1010,7 @@ You'll see it in three places: **Connection** on the first screen and in **Setti
 | The guide seems stuck loading | Big XMLTV files take minutes on a TV; watch the progress bar.  If it stays at 0, **Test** the address. |
 | The web editor says it can't reach the TV | TiviBro was closed or the TV went to sleep.  Open TiviBro; the editor reconnects and your drafts are safe. |
 | Changes don't show on the TV | Check the bar at the bottom of the editor.  If it still counts changes, press **Send to TV**. |
-| Wrong editor password | It's on the TV under **Settings > Edit on a phone or computer**.  After five wrong tries, wait a minute. |
+| Wrong editor password | It's on the TV under **Settings > Phone app and web editor**.  After five wrong tries, wait a minute. |
 | HDR looks grey or washed out | **Settings > Playback and buffering > HDR and Dolby Vision > TV player for all HDR**. |
 | A movie plays with no sound | It may only have DTS sound, which 2020 to 2022 LG TVs can't play.  The movie details warn about this; pick another audio track under **Options** if there is one. |
 | Dolby Vision shows odd green or purple colours | Make sure **HDR and Dolby Vision** isn't set to *Built-in player*. |

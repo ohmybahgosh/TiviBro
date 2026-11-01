@@ -88,27 +88,9 @@ var Source = (function () {
       if (+ui.max_connections && +ui.active_cons >= +ui.max_connections) Log.warn('xc', 'All ' + ui.max_connections + ' connections are already in use; streams may be refused');
       var fmts = ui.allowed_output_formats || [];
       if (fmts.length && fmts.indexOf(Store.settings.format) < 0) Log.warn('xc', 'Provider does not list "' + Store.settings.format + '" as an allowed format (allows ' + fmts.join(', ') + ').  Change Stream format in Settings if channels fail.');
-      return Promise.all([U.getJSON(api(p, 'get_live_categories'), 30000, 'categories'), U.getJSON(api(p, 'get_live_streams'), 90000, 'channels')])
-        .then(function (r) {
-          if (!Array.isArray(r[0])) Log.warn('xc', 'Categories response is not a list', typeof r[0]);
-          if (!Array.isArray(r[1])) Log.warn('xc', 'Channel list response is not a list', typeof r[1]);
-          Log.info('xc', 'Loaded ' + ((r[0] || []).length) + ' categories and ' + ((r[1] || []).length) + ' channels in ' + (Date.now() - t0) + 'ms');
-          var cats = r[0] || [], streams = r[1] || [];
-          var groups = cats.map(function (c) { return { id: 'x' + c.category_id, name: c.category_name || 'Group' }; });
-          var known = {};
-          groups.forEach(function (g) { known[g.id] = 1; });
-          var chans = new Array(streams.length), n = 0;
-          for (var i = 0; i < streams.length; i++) {
-            var s = streams[i];
-            var gid = 'x' + s.category_id;
-            if (!known[gid]) { known[gid] = 1; groups.push({ id: gid, name: 'Other' }); }
-            chans[n++] = {
-              k: 'x' + s.stream_id, id: s.stream_id, n: s.name || '', g: gid,
-              logo: s.stream_icon || '', num: +s.num || 0, epg: s.epg_channel_id || '',
-              arch: +s.tv_archive ? (+s.tv_archive_duration || 3) : 0
-            };
-          }
-          chans.length = n;
+      return xtreamLists(p, t0)
+        .then(function (shaped) {
+          var groups = shaped.groups, chans = shaped.channels;
           return { server: found, user: p.user, pass: p.pass, groups: groups, channels: chans, epgUrl: base(p.server) + '/xmltv.php?username=' + encodeURIComponent(p.user) + '&password=' + encodeURIComponent(p.pass),
             tz: (info.server_info && info.server_info.timezone) || '',
             exp: info.user_info.exp_date ? +info.user_info.exp_date * 1000 : 0,
@@ -117,54 +99,34 @@ var Source = (function () {
     });
   }
 
-  // Single pass line parser.  No regex per attribute; one regex over the EXTINF line.
-  var ATTR = /([a-zA-Z0-9\-_]+)="([^"]*)"/g;
-  function parseM3U(text) {
-    var lines = text.split(/\r?\n/);
-    var groups = [], gmap = {}, chans = [], cur = null, epgUrl = '';
-    var head = lines[0] || '';
-    var m = head.match(/(?:url-tvg|x-tvg-url)="([^"]+)"/);
-    if (m) epgUrl = m[1].split(',')[0];
-    for (var i = 0; i < lines.length; i++) {
-      var L = lines[i];
-      if (!L) continue;
-      if (L.charCodeAt(0) === 35) {          // '#'
-        if (L.indexOf('#EXTINF') === 0) {
-          cur = { attrs: {}, name: '' };
-          var comma = L.lastIndexOf('",');
-          comma = comma >= 0 ? comma + 1 : L.indexOf(',');
-          cur.name = L.slice(comma + 1).trim();
-          var a, meta = L.slice(0, comma);
-          ATTR.lastIndex = 0;
-          while ((a = ATTR.exec(meta))) cur.attrs[a[1].toLowerCase()] = a[2];
-        } else if (L.indexOf('#EXTGRP:') === 0 && cur) {
-          cur.attrs['group-title'] = cur.attrs['group-title'] || L.slice(8).trim();
-        }
-        continue;
-      }
-      if (cur) {
-        var url = L.trim();
-        var gname = cur.attrs['group-title'] || 'Ungrouped';
-        var gid = gmap[gname];
-        if (!gid) { gid = 'm' + U.hash(gname); gmap[gname] = gid; groups.push({ id: gid, name: gname }); }
-        var key = 'm' + U.hash((cur.attrs['tvg-id'] || '') + '|' + (cur.attrs['tvg-name'] || cur.name) + '|' + gname);
-        chans.push({
-          k: key, id: key, n: cur.name || cur.attrs['tvg-name'] || 'Channel', g: gid,
-          logo: cur.attrs['tvg-logo'] || '', num: +cur.attrs['tvg-chno'] || 0,
-          epg: cur.attrs['tvg-id'] || '', url: url,
-          arch: cur.attrs['catchup'] || cur.attrs['catchup-type'] || cur.attrs['tvg-rec'] ? (+cur.attrs['catchup-days'] || +cur.attrs['tvg-rec'] || 3) : 0,
-          cu: cur.attrs['catchup'] || cur.attrs['catchup-type'] || '', cus: cur.attrs['catchup-source'] || ''
-        });
-        cur = null;
-      }
+  var parseM3U = PlShape.parseM3U;
+
+  /* On a TV the helper downloads and shapes the channel list (service/live.js), so the app never
+     parses the provider's whole answer; if it can't, the app does it here as before. */
+  function helperLive() { return !!(Net.active && Net.port && Net.info && Net.info.live >= 1); }
+  function viaHelper(path, body) {
+    var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, t = setTimeout(function () { if (ctl) ctl.abort(); }, 240000);
+    return fetch('http://127.0.0.1:' + Net.port + path, { method: 'POST', cache: 'no-store', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
+      .then(function (r) { return r.json().then(function (j) { clearTimeout(t); j._status = r.status; return j; }); }, function (e) { clearTimeout(t); throw e; });
+  }
+  function xtreamLists(p, t0) {
+    function direct() {
+      return Promise.all([U.getJSON(api(p, 'get_live_categories'), 30000, 'categories'), U.getJSON(api(p, 'get_live_streams'), 90000, 'channels')]).then(function (r) {
+        if (!Array.isArray(r[0])) Log.warn('xc', 'Categories response is not a list', typeof r[0]);
+        if (!Array.isArray(r[1])) Log.warn('xc', 'Channel list response is not a list', typeof r[1]);
+        Log.info('xc', 'Loaded ' + ((r[0] || []).length) + ' categories and ' + ((r[1] || []).length) + ' channels in ' + (Date.now() - t0) + 'ms');
+        return PlShape.xtream(r[0], r[1]);
+      });
     }
-    // Duplicate keys (same name+id in the same group) get a suffix so edits stay unique.
-    var seen = {};
-    for (var j = 0; j < chans.length; j++) {
-      var c = chans[j];
-      if (seen[c.k]) { c.k = c.k + '_' + (seen[c.k]++); c.id = c.k; } else seen[c.k] = 1;
-    }
-    return { groups: groups, channels: chans, epgUrl: epgUrl };
+    if (!helperLive()) return direct();
+    return viaHelper('/live/xtream', { u: Net.wrap(api(p, 'get_live_streams')), uc: Net.wrap(api(p, 'get_live_categories')) }).then(function (j) {
+      if (j._status !== 200 || !Array.isArray(j.channels)) throw new Error(j.error || 'HTTP ' + j._status);
+      Log.info('xc', 'The helper loaded ' + j.cats + ' categories and ' + j.channels.length + ' channels in ' + (Date.now() - t0) + 'ms');
+      return { groups: j.groups, channels: j.channels };
+    }).catch(function (e) {
+      Log.warn('xc', 'The helper could not load the channel list (' + (e && e.message || e) + '), loading it here');
+      return direct();
+    });
   }
 
   function loadM3U(p) {
@@ -173,6 +135,19 @@ var Source = (function () {
     Log.info('m3u', 'Loading playlist ' + raw + ' via ' + (Net.active ? 'helper :' + Net.port : 'direct'));
     function fetchList(i) {
       used = list[i];
+      if (helperLive()) {
+        return viaHelper('/live/m3u', { u: Net.wrap(list[i]) }).then(function (j) {
+          if (j._status === 422) return { notM3u: j.head || '' };
+          if (j._status !== 200 || !Array.isArray(j.channels)) throw new Error(j.error || 'HTTP ' + j._status);
+          return { shaped: j };
+        }).catch(function (e) {
+          Log.warn('m3u', 'The helper could not load ' + list[i] + ' (' + (e && e.message || e) + '), loading it here');
+          return direct(i);
+        });
+      }
+      return direct(i);
+    }
+    function direct(i) {
       return U.getText(list[i], 90000, 'playlist').catch(function (e) {
         if (i + 1 >= list.length || e.kind === 'timeout') throw e;
         Log.warn('m3u', list[i] + ' failed (' + e.message + '); trying ' + list[i + 1]);
@@ -180,12 +155,17 @@ var Source = (function () {
       });
     }
     return fetchList(0).then(function (t) {
-      if (t.indexOf('#EXTM3U') < 0 && t.indexOf('#EXTINF') < 0) {
-        Log.error('m3u', 'Not an M3U playlist.  First 200 characters', t.slice(0, 200));
+      var d, size;
+      if (typeof t === 'string') {
+        if (t.indexOf('#EXTM3U') < 0 && t.indexOf('#EXTINF') < 0) t = { notM3u: t.slice(0, 200) };
+        else { d = parseM3U(t); size = t.length; }
+      } else if (t.shaped) { d = t.shaped; size = d.bytes; }
+      if (!d) {
+        Log.error('m3u', 'Not an M3U playlist.  First 200 characters', t.notM3u);
         throw Object.assign(new Error('That URL did not return an M3U playlist.'), { kind: 'parse' });
       }
-      var d = parseM3U(t);
-      Log.info('m3u', 'Parsed ' + d.channels.length + ' channels in ' + d.groups.length + ' groups (' + Math.round(t.length / 1024) + ' KB, ' + (Date.now() - t0) + 'ms)' + (d.epgUrl ? '; guide address in playlist' : '; no guide address in playlist'));
+      d = { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl || '' };
+      Log.info('m3u', (t.shaped ? 'The helper parsed ' : 'Parsed ') + d.channels.length + ' channels in ' + d.groups.length + ' groups (' + Math.round(size / 1024) + ' KB, ' + (Date.now() - t0) + 'ms)' + (d.epgUrl ? '; guide address in playlist' : '; no guide address in playlist'));
       if (!d.channels.length) throw Object.assign(new Error('The playlist downloaded but has no channels in it.'), { kind: 'parse' });
       d.m3u = used;
       return d;
