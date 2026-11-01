@@ -7,7 +7,8 @@ global.Store = { playlist: { events: {} }, settings: { myTeams: [], teamsAhead: 
 eval(fs.readFileSync(path.join(__dirname, '../../app/js/events.js'), 'utf8') + ';global.Events=Events;');
 let progs = {};
 let descs = [];
-global.Epg = { xml: false, epgId: () => '', findDesc: () => Promise.resolve(descs), search(test) { const out = []; Object.keys(progs).forEach(k => progs[k].forEach(p => { if (test(p.t)) out.push({ key: k, p }); })); return out; } };
+let onUpd = [];
+global.Epg = { xml: false, epgId: () => '', onUpdate: f => onUpd.push(f), findDesc: () => Promise.resolve(descs), search(test) { const out = []; Object.keys(progs).forEach(k => progs[k].forEach(p => { if (test(p.t)) out.push({ key: k, p }); })); return out; } };
 let fail = 0, n = 0;
 const ok = (name, c, x) => { n++; if (!c) { fail++; console.log('FAIL ' + name + (x !== undefined ? '  ' + x : '')); } };
 
@@ -137,6 +138,13 @@ ok('a "Next game" block for tomorrow is no game now, whatever its description sa
 ok('a postgame show is no game', !Teams.games().some(x => x.p === post));
 ok('a local station in your own group, its provider group hidden', list.indexOf('US: FOX 2 WJBK Detroit') >= 0, list.join(' / '));
 delete Library.shownAnywhere; delete Store.edits.hiddenGroups.g8;
+// The guide arriving after the group was first worked out (TiviBro just started): looked at again.
+const late = ch('NFL | CHICAGO BEARS', 'g1'); chans.push(late);
+Teams.follow('nfl:chi', true); Teams.list();
+progs[late.k] = [{ s: NOW - H, e: NOW + 2 * H, t: 'Green Bay Packers at Chicago Bears' }];
+ok('before the guide says so, no Bears game', Teams.list().indexOf(late) < 0);
+onUpd.forEach(f => f(null));
+ok('the guide loading brings it in at once', onUpd.length === 1 && Teams.list().indexOf(late) >= 0, onUpd.length);
 // Hidden channels stay out.
 Store.edits.hiddenChannels[espn.k] = 1; Teams.dirty();
 ok('hidden channels stay out', Teams.list().indexOf(espn) < 0);

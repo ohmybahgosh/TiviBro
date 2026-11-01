@@ -251,8 +251,11 @@ var Teams = (function () {
     // Programmes that name the game only in the description ("NFL Football" on a local station).
     descHits(dwords).forEach(function (r) {
       var c = Library.find(r.key) || byEpg[r.key], p = r.p;
-      if (!c || p.e <= now || p.s > to || !SPORTY.test(p.t)) return;
-      playing(r.d, p.t + ' | ' + c.n + ' | ' + (gname[c.g] || ''), false, p.t).forEach(function (x) { take(c, p, x); });
+      if (!c || p.e <= now || p.s > to || !SPORTY.test(p.t) || /\breplay\b/i.test(p.t)) return;
+      // A description is loose talk: the team by its full name, or the league named ("NFL Football"), so a
+      // college game between the Tigers and the Cardinals isn't the Detroit Tigers.
+      var ctx = p.t + ' | ' + c.n + ' | ' + (gname[c.g] || '');
+      playing(r.d, ctx, false, p.t).forEach(function (x) { if (x._full || CODES[x.league].test(norm(ctx + ' ' + r.d))) take(c, p, x); });
     });
     // Event channels: the game is in the channel name.
     if (Events.on()) for (i = 0; i < all.length; i++) {
@@ -264,13 +267,23 @@ var Teams = (function () {
     // A game: its team and start (to the half hour); its first start orders it.
     var first = {};
     out.forEach(function (g) { g.gk = g.team.id + '|' + Math.round(g.p.s / 2700e3); if (first[g.gk] == null || g.p.s < first[g.gk]) first[g.gk] = g.p.s; });
+    /* At most MAX_FEEDS channels a game (a network game is on dozens of local stations): your team's own
+       channel, your Favorites and groups and event channels first, then by number.  Yours are all kept. */
+    var mineK = {}, per = {};
+    if (Library.customGroups) Library.customGroups().forEach(function (g) { g.items.forEach(function (k) { mineK[k] = 1; }); });
+    var rank = function (g) { return whose[g.c.k] ? 0 : mineK[g.c.k] ? 1 : g.p.ev ? 2 : 3; };
+    if (!one) {
+      out.sort(function (a, b) { return rank(a) - rank(b) || a.c.num - b.c.num; });
+      out = out.filter(function (g) { per[g.gk] = (per[g.gk] || 0) + 1; return rank(g) <= 1 || per[g.gk] <= MAX_FEEDS; });
+    }
     out.sort(function (a, b) {
       var an = first[a.gk] <= now, bn = first[b.gk] <= now;
-      return (an === bn ? 0 : an ? -1 : 1) || first[a.gk] - first[b.gk] || (a.gk < b.gk ? -1 : a.gk > b.gk ? 1 : 0) || a.c.num - b.c.num;
+      return (an === bn ? 0 : an ? -1 : 1) || first[a.gk] - first[b.gk] || (a.gk < b.gk ? -1 : a.gk > b.gk ? 1 : 0) || rank(a) - rank(b) || a.c.num - b.c.num;
     });
     return out;
   }
 
+  var MAX_FEEDS = 8;
   var SPORTY = /\b(nfl|nba|nhl|mlb|wnba|mls|football|basketball|hockey|baseball|soccer)\b/i;
   // Not the game: placeholders ("not found yet"), and the shows around it.
   var NOGAME = /not found|no (?:games?|events?)\b|off ?air|to be (?:announced|determined)|\btb[ad]\b|^\s*next game|\b(?:pre|post)[- ]?game\b|\bhighlights\b|\brecap\b|\bcountdown\b|\bgame ?day\b|\bpreview\b|\bfantasy\b|\bnfl sunday\b|\binside the\b|\bshow\b|\bpodcast\b|\btalk\b|\bpress conference\b/i;
@@ -295,10 +308,23 @@ var Teams = (function () {
      starting within), soonest first; a game's channels together.  Nothing else, so a team with no game
      soon isn't there.  Kept a few minutes. */
   var listCache = null;
+  /* When the guide (re)loads, look again: right after TiviBro starts, the group is first worked out before
+     a big guide has arrived from the helper, and would otherwise keep only the event channels for minutes. */
+  var hooked = false;
+  function hook() {
+    if (hooked || typeof Epg === 'undefined' || !Epg.onUpdate) return;
+    hooked = true;
+    Epg.onUpdate(function (k) {
+      if (k || !groupOn()) return;
+      dirty();
+      if (typeof Views !== 'undefined' && Views.refreshLists) Views.refreshLists(true);
+    });
+  }
   function list() {
+    hook();
     if (!groupOn()) return [];
     var now = Date.now();
-    if (listCache && now - listCache.at < 180000 && listCache.of === Library.data.channels) return listCache.list;
+    if (listCache && now - listCache.at < 60000 && listCache.of === Library.data.channels) return listCache.list;
     var out = [], have = {};
     games().forEach(function (g) { if (!have[g.c.k]) { have[g.c.k] = 1; out.push(g.c); } });
     listCache = { at: now, of: Library.data.channels, list: out };
