@@ -95,6 +95,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🖼️ **Fills in missing logos, without hosting a single one** | A small index points at iptv-org's and tv-logos' own logos.  Matched by guide id, cleaned name and country, and local call sign; a broken provider logo is swapped too.  Pick each channel's own logo or one matching style for dark screens. |
 | 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
 | 🖥️ **A full editor on your computer** | Clean up 10,000 channels with a keyboard and mouse instead of a remote: hide, sort, rename, copy and move, then **Send to TV**.  Unsent work is autosaved on the TV within seconds, with a version history, so a refresh never costs you an hour. |
+| 🏈 **Your teams, wherever they're playing** | Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams and **My teams** gathers their games near the top of the guide: on now first, then the ones starting soon, from league passes, event channels, your local station (even when the teams are only in the guide's description) and the team's own channel.  Optional reminders. |
 | 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
 | 🧹 **Clean-up that already knows IPTV** | Pick your city once and every local group (ABC, CBS, NBC, FOX, CW, PBS…) keeps only your stations.  Keep East or West feeds in one click.  Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from any naming style, duplicates in different qualities, and **Smart match** for channels without a guide. |
 | 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled" stay out of the way, and come back by themselves when an event is named. |
@@ -114,6 +115,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | Switches to another version of a dead channel by itself | ✅ | ❌ |
 | Preloaded name clean-up rules | ✅ About 250 country codes, tags, symbols | Your own prefix and suffix lists |
 | Hide channels with nothing on | ✅ | ❌ |
+| Follow your teams: their games from every channel in one group | ✅ | ❌ |
 | Pick your city for every local channel group at once | ✅ | ❌ One group at a time |
 | Keep East or West feeds in one step | ✅ | ❌ |
 | Guided set-up built from your playlist | ✅ Countries, feeds, city, events, logos, look | ❌ |
@@ -285,6 +287,14 @@ The logo library matches your channels to [iptv-org](https://github.com/iptv-org
 </td>
 </tr>
 </table>
+
+### My teams
+
+Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams in **Settings > Groups, sorting, hidden > My teams**, or hold OK on a team's channel and choose **Follow**.  The **My teams** group near the top of the guide lists only games: the ones on now first, every channel showing them together, then the ones starting within the next few hours.  It reads league passes, event channels, guide titles and descriptions (a local station's "NFL Football" counts when its description names the teams), and leaves out pregame shows, replays and minor league teams with the same names.  The main North American leagues for now.
+
+### My media
+
+Your own movies next to your playlist: from a home media server (DLNA / UPnP, like a Fritz!Box) or a WebDAV cloud (like premiumize), on **Continue watching**, **Favorites** and **All movies** shelves, with resume, favorites and the normal movie player.  Add your own free TMDB token for posters, plots and details in your language.  Movies only for now: TV shows, trailers and extras are left out.  It joins the menu once you add a source in **Settings > My media**.  Thanks to [moritzm784](https://github.com/moritzm784) for building it.
 
 ## The web editor
 
@@ -595,6 +605,7 @@ The [Release workflow](.github/workflows/release.yml) then runs the tests, build
 - Backups are always encrypted with a passphrase you choose.  Without it the file cannot be opened.
 - Logs mask usernames and passwords.  **Report a problem** also replaces every provider, guide and unknown server name before anything leaves the TV, and nothing is sent until you choose to send it (on your phone, or **Send a report now** on the TV after a crash).
 - **Install numbers.**  Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has, and the install script says whether it installed or updated which version.  Nothing else: no address is kept (a network is counted once a day using a hash that is forgotten after two days), no ID, nothing about your channels or playlists.  Switch it off in **Settings > Updates and about > Count this TV in the install numbers**, or run the install script with `TIVIBRO_NO_COUNT=1`.
+- **My media** contacts only the sources you add.  Their logins stay on the TV and out of backups and problem reports.  When you fetch movie details, only a movie's title and year (or its TMDB id) and your language go to TMDB, with your own token.
 - The logo library, when you turn it on, downloads lists of logo addresses from tivibro.app, one per country in your playlist, then each logo from its project.  Only the country is in the request: no channel names, logins or anything else from your playlist.
 
 ## Special thanks
