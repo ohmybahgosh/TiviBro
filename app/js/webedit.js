@@ -287,7 +287,7 @@ var WebEdit = (function () {
     mediaAdd: function (a) {
       return Media.addAddress(clean(a.address), clean(a.user), clean(a.pass)).then(function (r) {
         if (r.error) throw new Error(r.message || 'Could not add that media source.');
-        return { msg: 'Media source added.' };
+        return { msg: 'Media source added: ' + (r.movies || 0) + ' movies.' + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
       });
     },
     mediaRemove: function (a) {
@@ -298,7 +298,7 @@ var WebEdit = (function () {
       var s = mediaSource(a);
       return Media.rescan(s.id).then(function (r) {
         if (r.error) throw new Error(r.message || 'Could not read that media source.');
-        return { msg: r.note || r.count + ' movies found.' };
+        return { msg: (r.note || r.count + ' movies found.') + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
       });
     },
     report: function () { return Diag.report().then(function (r) { return { msg: 'ok', data: r }; }); },

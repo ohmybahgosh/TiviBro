@@ -74,13 +74,13 @@ function webdav(tree, auth, redirectTo, seen) {
     videos: [{ dir: 'All videos', id: 'all' }, { dir: 'Folders', id: 'folders' }],
     all: [
       { id: 'a1', title: 'FROZEN 2013 1080p BluRay', proto: MKV, size: 6555764176, url: movieUrl(H, 'Frozen (2013)', frozen) },
-      { id: 'a2', title: 'The.Grinch.2018.1080p.BluRay', proto: MP4, size: 100, url: movieUrl(H, 'The Grinch (2018)', grinch) },
-      { id: 'a3', title: 'Only flat 2020 1080p', proto: MKV, size: 5, url: `http://${H}/VIDEO/DLNA-0-0/Storage/Only.flat.2020.1080p.mkv` }
+      { id: 'a2', title: 'The.Grinch.2018.1080p.BluRay', proto: MP4, size: 2100000000, url: movieUrl(H, 'The Grinch (2018)', grinch) },
+      { id: 'a3', title: 'Only flat 2020 1080p', proto: MKV, size: 3100000000, url: `http://${H}/VIDEO/DLNA-0-0/Storage/Only.flat.2020.1080p.mkv` }
     ],
     folders: [{ dir: 'Storage', id: 'storage' }, { dir: '$RECYCLE.BIN', id: 'junk' }],
     storage: [{ dir: 'Frozen (2013)', id: 'f1' }, { dir: 'The Grinch (2018)', id: 'f2' }],
     f1: [{ id: 'i1', title: frozen, proto: MKV, size: 6555764176, url: movieUrl(H, 'Frozen (2013)', frozen) }],
-    f2: [{ id: 'i2', title: grinch, proto: MKV, size: 100, url: movieUrl(H, 'The Grinch (2018)', grinch) }, { id: 'i3', title: 'cover.mp3', proto: 'http-get:*:audio/mpeg:*', url: `http://${H}/AUDIO/cover.mp3` }],
+    f2: [{ id: 'i2', title: grinch, proto: MKV, size: 2100000000, url: movieUrl(H, 'The Grinch (2018)', grinch) }, { id: 'i3', title: 'cover.mp3', proto: 'http-get:*:audio/mpeg:*', url: `http://${H}/AUDIO/cover.mp3` }],
     music: [{ id: 'no', title: 'should not be read', proto: MKV, url: `http://${H}/x.mkv` }],
     index: [{ id: 'idx', title: 'Start Indexing', proto: 'http-get:*:audio/mpeg:*', url: `http://${H}/AUDIO/.start.mp3` }],
     junk: [{ id: 'j', title: 'bin.mkv', proto: MKV, url: `http://${H}/bin.mkv` }]
@@ -128,8 +128,8 @@ function webdav(tree, auth, redirectTo, seen) {
   // WebDAV
   const wt = {
     '/': [{ href: '/Frozen%20(2013)/', name: 'Frozen (2013)', dir: true }, { href: '/%24RECYCLE.BIN/', name: '$RECYCLE.BIN', dir: true }, { href: '/NoName%20(2011)/', dir: true }],
-    '/Frozen%20(2013)/': [{ href: '/Frozen%20(2013)/FROZEN.mkv', name: 'FROZEN.mkv', size: 10 }, { href: '/Frozen%20(2013)/FROZEN_dut.srt', name: 'FROZEN_dut.srt', size: 1 }, { href: '/Frozen%20(2013)/sample.mkv', name: 'sample.mkv', size: 1 }],
-    '/NoName%20(2011)/': [{ href: '/NoName%20(2011)/movie.mp4', size: 7 }],
+    '/Frozen%20(2013)/': [{ href: '/Frozen%20(2013)/FROZEN.mkv', name: 'FROZEN.mkv', size: 5100000000 }, { href: '/Frozen%20(2013)/FROZEN_dut.srt', name: 'FROZEN_dut.srt', size: 1 }, { href: '/Frozen%20(2013)/sample.mkv', name: 'sample.mkv', size: 1 }],
+    '/NoName%20(2011)/': [{ href: '/NoName%20(2011)/movie.mp4', size: 4100000000 }],
     '/%24RECYCLE.BIN/': [{ href: '/%24RECYCLE.BIN/x.mkv', name: 'x.mkv', size: 1 }]
   };
   const wseen = []; const wsrv = webdav(wt, 'cust:key', null, wseen); const wp = await listen(wsrv);
@@ -206,6 +206,29 @@ function webdav(tree, auth, redirectTo, seen) {
   a = await post('/media/resolve', {}, { 'X-TiviBro-Ctl': 'secret' });
   ok('a missing source is refused without stopping the helper', JSON.parse(a.body).error === 'address');
   await new Promise(f => rl.server.close(f));
+
+  // Movies only: a mixed WebDAV cloud (shows, a movie with its extras, trailers, a flat folder of movies).
+  const G = 1e9, mixed = {
+    '/Cloud/': [{ href: '/Cloud/Frozen (2013)/', name: 'Frozen (2013)', dir: true }, { href: '/Cloud/Breaking Bad/', name: 'Breaking Bad', dir: true },
+      { href: '/Cloud/The.Office.S02.1080p.WEB/', name: 'The.Office.S02.1080p.WEB', dir: true }, { href: '/Cloud/Old Films/', name: 'Old Films', dir: true },
+      { href: '/Cloud/Some.Show.S01E03.1080p.mkv', name: 'Some.Show.S01E03.1080p.mkv', size: 1.2 * G }, { href: '/Cloud/The.Interview.2014.1080p.mkv', name: 'The.Interview.2014.1080p.mkv', size: 7 * G }],
+    '/Cloud/Frozen (2013)/': [{ href: '/Cloud/Frozen (2013)/Frozen.2013.1080p.mkv', name: 'Frozen.2013.1080p.mkv', size: 8 * G },
+      { href: '/Cloud/Frozen (2013)/Frozen-trailer.mkv', name: 'Frozen-trailer.mkv', size: 0.2 * G }, { href: '/Cloud/Frozen (2013)/Making the songs.mkv', name: 'Making the songs.mkv', size: 1.1 * G },
+      { href: '/Cloud/Frozen (2013)/Featurettes/', name: 'Featurettes', dir: true }],
+    '/Cloud/Frozen (2013)/Featurettes/': [{ href: '/Cloud/Frozen (2013)/Featurettes/x.mkv', name: 'x.mkv', size: 0.5 * G }],
+    '/Cloud/Breaking Bad/': [{ href: '/Cloud/Breaking Bad/Season 1/', name: 'Season 1', dir: true }, { href: '/Cloud/Breaking Bad/Season 2/', name: 'Season 2', dir: true }],
+    '/Cloud/Breaking Bad/Season 1/': [{ href: '/Cloud/Breaking Bad/Season 1/e1.mkv', name: 'e1.mkv', size: G }],
+    '/Cloud/The.Office.S02.1080p.WEB/': [{ href: '/Cloud/The.Office.S02.1080p.WEB/a.mkv', name: 'a.mkv', size: G }],
+    '/Cloud/Old Films/': [{ href: '/Cloud/Old Films/Nosferatu.1922.avi', name: 'Nosferatu.1922.avi', size: 0.7 * G }, { href: '/Cloud/Old Films/Dune.2021.2160p.mkv', name: 'Dune.2021.2160p.mkv', size: 60 * G },
+      { href: '/Cloud/Old Films/Dune.2021.Official.Trailer.mp4', name: 'Dune.2021.Official.Trailer.mp4', size: 0.15 * G }, { href: '/Cloud/Old Films/clip.mp4', name: 'clip.mp4', size: 0.05 * G }]
+  };
+  const enc = {}; Object.keys(mixed).forEach(k => { enc[encodeURI(k)] = mixed[k].map(x => Object.assign({}, x, { href: encodeURI(x.href) })); });
+  const msrv = webdav(enc, 'cust:key'); const mp = await listen(msrv);
+  const mr = await scan({ type: 'webdav', address: 'http://127.0.0.1:' + mp + '/Cloud/', user: 'cust', pass: 'key' });
+  const mtitles = (mr.movies || []).map(m => m.title).sort();
+  ok('movies only: the movies are found', same(mtitles, ["Dune", "Frozen", "Nosferatu", "The Interview"]), mtitles);
+  ok('movies only: what was left out is counted', same(mr.skipped, { episodes: 1, tvFolders: 3, extras: 5 }), mr.skipped);
+  await new Promise(f => msrv.close(f));
 
   console.log(fail ? fail + ' FAILED' : 'ALL PASS');
   process.exit(fail ? 1 : 0);

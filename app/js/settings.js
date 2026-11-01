@@ -103,7 +103,8 @@ var Settings = (function () {
     var names = { en: 'English', nl: 'Dutch', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian' };
     var hasToken = MediaStore.preferences().tmdbConfigured;
     var out = [head('Your movie library'),
-      action('Add media', 'Find a DLNA / UPnP server or enter a WebDAV address and login.', function () { Media.addMenu(); }),
+      info('Movies only for now: TV shows, trailers and extras are left out.', ''),
+      action('Add media', 'Find a DLNA / UPnP server, or enter the WebDAV address of your movies folder and its login.  Best: one folder per movie, named like Frozen (2013).', function () { Media.addMenu(); }),
       action('Edit on a computer', 'Add server logins and change preferences in the web editor.', function () { WebEdit.showJoin('media'); }),
       action('Rescan media sources', 'Look for new or removed movies.  Green on the My media screen.', function () { Media.rescanAll(); }),
       action('Fetch missing movie details', 'Look up new movies and refresh outdated language details.  Yellow on My media.', function () { Media.fetchMissingDetails(); }),

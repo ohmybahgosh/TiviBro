@@ -372,6 +372,23 @@ Use **Left** and **Right** to move between movies, and **Up** and **Down** to mo
 
 **Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, or **Add a WebDAV server** and enter its WebDAV address and login.  Turn on media sharing on a home server first.  A playlist must already be set up.
 
+**Movies only for now.**  TV shows, trailers and extras are left out when a source is scanned, and the scan says how many it left out:
+
+- **TV:** season folders ("Season 1", "Specials", "Show.Name.S02.1080p") aren't opened, and episode files (S01E02, 1x02, "Episode 3") are skipped.
+- **Extras:** folders named Extras, Featurettes, Behind the Scenes, Deleted Scenes, Interviews, Trailers and the like aren't opened.  Files named like "Frozen-trailer.mkv" or with trailer, teaser or featurette in the name are skipped, and so are videos under 100 MB.  In a movie's own folder, a video much smaller than the movie (under a quarter of its size) counts as an extra too.
+
+Point a source at your movies folder, one folder per movie, named like this:
+
+```
+Movies/
+  Frozen (2013)/
+    Frozen.2013.1080p.BluRay.x264.mkv
+  Moana 2 (2024)/
+    Moana.2.2024.2160p.WEB-DL.mkv
+```
+
+A folder named "Title (Year)" gives the title and year, whatever the file is called.  Without one, the file name is used: dots and underscores become spaces, and it is cut at the quality words (1080p, BluRay, x265).
+
 A WebDAV source is a WebDAV folder, not a normal website or HTTP directory.  Services such as premiumize use a customer ID and API key as the login.  Listing uses WebDAV; playback currently needs the server to redirect to a playable file link.  Servers that serve files directly with a login are not supported yet.
 
 For easier typing, open **Settings > My media > Edit on a computer** and connect to the web editor.  Its **My media** page lets you add WebDAV logins, rescan or remove sources, and change the shared metadata language.  Saved logins are never sent back to the editor.

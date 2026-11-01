@@ -62,7 +62,7 @@ var Media = (function () {
     var m = itemsVL.current(), box = $('mediaInfo'); box.innerHTML = '';
     if (!m) {
       box.appendChild(U.el('h1', '', 'Your movies, your space'));
-      box.appendChild(U.el('p', 'media-summary', MediaStore.sources().length ? 'No movies in this source yet.  Rescan it from Settings › My media.' : 'Add a media server in Settings › My media to start your library.'));
+      box.appendChild(U.el('p', 'media-summary', MediaStore.sources().length ? 'No movies in this source yet.  Rescan it from Settings › My media.' : 'Add a media server in Settings › My media to start your library.  Movies only for now: TV shows, trailers and extras are left out.'));
       return;
     }
     var md = m.metadata || {}, src = MediaStore.source(m.src), r = MediaStore.resume(m.id);
@@ -118,6 +118,20 @@ var Media = (function () {
   }
 
   /* ---------- adding and scanning ---------- */
+  // What the scan left out, since My media is for movies only for now (service/media.js moviesOf).
+  function leftOut(sk) {
+    if (!sk) return '';
+    var parts = [], ep = (sk.episodes || 0), tv = (sk.tvFolders || 0), ex = (sk.extras || 0);
+    if (ep) parts.push(ep + ' TV episode' + (ep === 1 ? '' : 's'));
+    if (tv) parts.push(tv + ' TV season folder' + (tv === 1 ? '' : 's'));
+    if (ex) parts.push(ex + ' trailer' + (ex === 1 ? '' : 's') + ' and extras');
+    if (!parts.length) return '';
+    return '  Left out ' + (parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts[0]) + ': My media is for movies only for now.';
+  }
+  function found(id, name, r, res) {
+    var more = leftOut(res && res.skipped);
+    U.toast((r.note || MediaStore.movies(id).length + ' movies on ' + name + '.') + more, r.note || more ? 8000 : 3000);
+  }
   function rescan(id) {
     var src = MediaStore.source(id);
     if (!src || scanning[id]) return Promise.resolve({ error: 'busy', message: !src ? 'That media source was removed.' : 'This source is already being scanned.' });
@@ -126,8 +140,8 @@ var Media = (function () {
     return scanSource(src).then(function (res) {
       var r = MediaStore.applyScan(id, res);
       delete scanning[id]; refresh();
-      U.toast(r.note || MediaStore.movies(id).length + ' movies on ' + src.name, r.note ? 6000 : 3000);
-      return { error: res.error || '', message: res.message || '', kept: r.kept, note: r.note, count: MediaStore.movies(id).length };
+      found(id, src.name, r, res);
+      return { error: res.error || '', message: res.message || '', kept: r.kept, note: r.note, count: MediaStore.movies(id).length, skipped: res.skipped || null };
     }, function (e) { delete scanning[id]; refresh(); U.toast('Could not read ' + src.name + ': ' + why(e), 6000); return { error: 'helper' }; });
   }
   function addServer(server) {
@@ -159,22 +173,22 @@ var Media = (function () {
       try { id = MediaStore.addSource(source); } catch (e) { U.toast(e.message, 5000); return { error: 'full', message: e.message }; }
       var r = MediaStore.applyScan(id, res);
       refresh();
-      U.toast(r.note || MediaStore.movies(id).length + ' movies on ' + source.name, r.note ? 6000 : 3000);
-      return { id: id, movies: MediaStore.movies(id).length };
+      found(id, source.name, r, res);
+      return { id: id, movies: MediaStore.movies(id).length, skipped: res.skipped || null };
     }, function (e) { U.toast(why(e), 6000); return { error: 'helper', message: why(e) }; });
   }
   function askAddress() {
-    UI.prompt('WebDAV address', '', function (address) {
+    UI.prompt('WebDAV address of your movies folder', '', function (address) {
       if (!address.trim()) return;
       UI.prompt(/premiumize/i.test(address) ? 'Customer ID' : 'User name or customer ID', '', function (user) {
         UI.prompt(/premiumize/i.test(address) ? 'API key' : 'Password or API key', '', function (pass) { addAddress(address, user, pass); });
       });
-    });
+    }, 'Movies only for now: TV shows, trailers and extras are left out.  Point it at your movies folder, for example https://webdav.premiumize.me/Movies/');
   }
   function addMenu() {
-    UI.menu('Add media', [
+    UI.menu('Add movies (movies only for now)', [
       { label: 'Browse my network (DLNA / UPnP)', sub: 'Find a home media server with media sharing turned on', action: browseNetwork },
-      { label: 'Add a WebDAV server', sub: 'Enter your server address and login, or use the web editor', action: askAddress }
+      { label: 'Add a WebDAV server', sub: 'Enter your movies folder\'s address and login, or use the web editor', action: askAddress }
     ]);
   }
   function metadataRequest(q, language) {
@@ -401,7 +415,7 @@ var Media = (function () {
   return {
     leave: function () { playToken++; }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
     rescanAll: rescanAll, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
-    refresh: refresh,
+    refresh: refresh, leftOut: leftOut,
     _test: { addServer: addServer, addAddress: addAddress, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };
 })();

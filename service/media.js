@@ -59,6 +59,42 @@ function titleOf(folder, file) {
 }
 function isJunk(name) { name = str(name); return name.charAt(0) === '.' || JUNK.test(name); }
 function isMovieFile(name) { return VIDEO.test(str(name)) && !SAMPLE.test(str(name)); }
+
+/* ---------- movies only ----------
+   My media is for movies for now, so TV and a movie's extras are left out, and counted so the scan can
+   say so ("Left out 40 TV episodes and 6 extras").  The names are the ones Plex, Jellyfin and Kodi
+   use, and what downloads are called. */
+// Folders not looked into: a season of a show, a movie's extras.
+var TV_FOLDER = /^(season|series|staffel|saison|temporada|stagione|seizoen)[\s._-]*\d{1,3}$|^specials$|(^|[\s._-])s\d{1,2}([\s._-]|$)|(^|[\s._-])(complete[\s._-])?(season|series)[\s._-]*\d{1,2}([\s._-]|$)/i;
+var EXTRAS_FOLDER = /^(extras?|featurettes?|behind[\s._-]the[\s._-]scenes|deleted[\s._-]scenes|interviews?|scenes|shorts?|trailers?|bonus([\s._-]features)?|making[\s._-]of|other|samples?)$/i;
+// Files: an episode (S01E02, 1x02, Episode 3), or an extra (Plex's "-trailer" names, or trailer/teaser/featurette in the name).
+var EPISODE = /(^|[\s._\[(-])s\d{1,2}[\s._-]?e\d{1,3}|(^|[\s._\[(-])\d{1,2}x\d{2,3}([\s._\])-]|$)|(^|[\s._-])(episode|ep)[\s._-]?\d{1,3}([\s._-]|$)/i;
+var EXTRA_FILE = /-(trailer|teaser|featurette|behindthescenes|deleted|interview|scene|short|other|extra)\d*\.[a-z0-9]{2,4}$|(^|[\s._-])(trailer|teaser|featurette)([\s._-]|\.[a-z0-9]{2,4}$)/i;
+var SMALL = 100 * 1024 * 1024;          // a known size under 100 MB is a clip, not a movie
+function skipFolder(name, skipped) {
+  if (TV_FOLDER.test(str(name))) { skipped.tvFolders++; return true; }
+  if (EXTRAS_FOLDER.test(str(name))) { skipped.extras++; return true; }
+  return false;
+}
+/* One folder's video files ([{ file, size }]): the movies among them.  In a movie's own folder ("Frozen
+   (2013)", "Frozen.2013.1080p.BluRay", a few videos), a much smaller video (under a quarter of the
+   biggest) is one of its extras, whatever it is called.  Not in a folder of many movies, where a small
+   old film can sit next to a big 4K one. */
+function moviesOf(files, skipped, folder) {
+  var ownFolder = /(^|[^0-9])(19|20)\d{2}([^0-9]|$)/.test(str(folder)) && files.length <= 5;
+  var keep = [], big = 0;
+  files.forEach(function (f) {
+    if (EPISODE.test(f.file)) { skipped.episodes++; return; }
+    if (EXTRA_FILE.test(f.file)) { skipped.extras++; return; }
+    if (f.size && f.size < SMALL) { skipped.extras++; return; }
+    keep.push(f); if (f.size > big) big = f.size;
+  });
+  return keep.filter(function (f) {
+    if (ownFolder && keep.length > 1 && f.size && big && f.size < big / 4) { skipped.extras++; return false; }
+    return true;
+  });
+}
+function newSkipped() { return { episodes: 0, tvFolders: 0, extras: 0 }; }
 function tokens(file) {
   var out = [], name = str(file).replace(/_/g, ' ');
   TOKENS.forEach(function (t) { if (t[1].test(name)) out.push(t[0]); });
@@ -153,12 +189,16 @@ function browseAll(control, id, cb) {
 function scanDlna(source, cb) {
   var control = str(source.control);
   if (!/^https?:\/\//i.test(control)) return cb(failure('address'));
-  var byPath = {}, errors = [], partial = false, folders = 0, deadline = Date.now() + SCAN_MS;
+  var byPath = {}, errors = [], partial = false, folders = 0, deadline = Date.now() + SCAN_MS, skipped = newSkipped();
   var queue = [{ id: '0', name: '', depth: 0 }];
-  function add(it, folderName) {
-    if (!it.url) return;
+  function fileOf(it) {
     var u = URL_.parse(it.url), file = lastPart(u.pathname);
     if (!VIDEO.test(file)) file = it.title + (/\.[A-Za-z0-9]{2,4}$/.test(it.title) ? '' : '.' + extOf('', it.proto));
+    return file;
+  }
+  function add(it, folderName) {
+    if (!it.url) return;
+    var u = URL_.parse(it.url), file = fileOf(it);
     if (!isMovieFile(file)) return;
     var key = u.pathname, named = /\(\d{4}\)\s*$/.test(folderName), was = byPath[key];
     if (was && (was.named || !named)) return;
@@ -167,7 +207,7 @@ function scanDlna(source, cb) {
   }
   function done() {
     var movies = Object.keys(byPath).map(function (k) { return byPath[k].movie; });
-    cb({ movies: movies, partial: partial, errors: errors });
+    cb({ movies: movies, partial: partial, errors: errors, skipped: skipped });
   }
   (function next() {
     var c = queue.shift();
@@ -180,9 +220,12 @@ function scanDlna(source, cb) {
         partial = true; errors.push(c.name + ': ' + e.message);
         return next();
       }
+      // A server's own TV views ("Series", "TV Shows") are left alone like its music.
+      var vids = items.filter(function (it) { return !it.dir && it.url && isMovieFile(fileOf(it)); });
+      moviesOf(vids.map(function (it) { return { file: fileOf(it), size: it.size || 0, it: it }; }), skipped, c.name).forEach(function (f) { add(f.it, c.name); });
       items.forEach(function (it) {
-        if (!it.dir) return add(it, c.name);
-        if (isJunk(it.title) || (c.depth < 2 && SERVER_EXTRAS.test(it.title))) return;
+        if (!it.dir) return;
+        if (isJunk(it.title) || (c.depth < 2 && (SERVER_EXTRAS.test(it.title) || /^(tv|tv shows|series|serien|séries)$/i.test(it.title))) || skipFolder(it.title, skipped)) return;
         if (c.depth + 1 > MAX_DEPTH) { partial = true; return; }
         queue.push({ id: it.id, name: it.title, depth: c.depth + 1 });
       });
@@ -209,9 +252,9 @@ function webdavBase(source) {
 function scanWebdav(source, cb) {
   var base = webdavBase(source);
   if (!base) return cb(failure('address'));
-  var movies = [], errors = [], partial = false, folders = 0, deadline = Date.now() + SCAN_MS, stop = null;
+  var movies = [], errors = [], partial = false, folders = 0, deadline = Date.now() + SCAN_MS, stop = null, skipped = newSkipped();
   var queue = [{ path: base.path, name: '', depth: 0 }];
-  function done() { if (stop) return cb(failure(stop)); cb({ movies: movies, partial: partial, errors: errors }); }
+  function done() { if (stop) return cb(failure(stop)); cb({ movies: movies, partial: partial, errors: errors, skipped: skipped }); }
   (function next() {
     var c = queue.shift();
     if (!c || stop) return done();
@@ -231,19 +274,21 @@ function scanWebdav(source, cb) {
         partial = true; errors.push(c.name + ': HTTP ' + status);
         return next();
       }
-      var self = c.path.replace(/\/+$/, '');
+      var self = c.path.replace(/\/+$/, ''), files = [];
       parsePropfind(body).forEach(function (it) {
         var p = URL_.parse(it.href).pathname || it.href;
         if (p.replace(/\/+$/, '') === self) return;
         var name = it.name || lastPart(p);
         if (it.dir) {
           if (c.depth + 1 > MAX_DEPTH) { partial = true; return; }
-          if (!isJunk(name)) queue.push({ path: p, name: name, depth: c.depth + 1 });
+          if (!isJunk(name) && !skipFolder(name, skipped)) queue.push({ path: p, name: name, depth: c.depth + 1 });
           return;
         }
-        if (!isMovieFile(name)) return;
-        var t = titleOf(c.name, name);
-        movies.push({ id: 'w:' + p, title: t.title, year: t.year, file: name, size: it.size, ext: extOf(name), info: tokens(name), path: p });
+        if (isMovieFile(name)) files.push({ file: name, size: it.size || 0, path: p });
+      });
+      moviesOf(files, skipped, c.name).forEach(function (f) {
+        var t = titleOf(c.name, f.file);
+        movies.push({ id: 'w:' + f.path, title: t.title, year: t.year, file: f.file, size: f.size, ext: extOf(f.file), info: tokens(f.file), path: f.path });
       });
       next();
     });
@@ -360,4 +405,4 @@ function hideLinksFrom(host) {
   host = str(host).toLowerCase();
   if (host && signedHosts.indexOf(host) < 0) { signedHosts.push(host); if (signedHosts.length > 50) signedHosts.shift(); }
 }
-module.exports = { signedHosts: signedHosts, hideLinksFrom: hideLinksFrom, handle: handle, scan: scan, resolve: resolve, discover: discover, titleOf: titleOf, isJunk: isJunk, tokens: tokens, parseBrowse: parseBrowse, parsePropfind: parsePropfind, parseDevice: parseDevice, errorKind: errorKind };
+module.exports = { moviesOf: moviesOf, skipFolder: skipFolder, newSkipped: newSkipped, signedHosts: signedHosts, hideLinksFrom: hideLinksFrom, handle: handle, scan: scan, resolve: resolve, discover: discover, titleOf: titleOf, isJunk: isJunk, tokens: tokens, parseBrowse: parseBrowse, parsePropfind: parsePropfind, parseDevice: parseDevice, errorKind: errorKind };

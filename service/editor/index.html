@@ -592,6 +592,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
     <section class="page hidden" id="p-media">
       <div class="phead"><div><h1>My media</h1><p>Your own movies from a home media server or a WebDAV service.  Watch them in My media on the TV.</p></div></div>
       <div class="scroll">
+        <div class="note"><b>Movies only for now.</b>  TV shows, trailers and extras are left out when a source is scanned.  Point a source at your movies folder; one folder per movie, named like <b>Frozen (2013)</b>, matches best.</div>
         <div class="note">For a home media server, choose <b>Settings &gt; My media &gt; Add media &gt; Browse my network (DLNA / UPnP)</b> on the TV.  Turn on media sharing on your server first.</div>
         <div class="card" style="margin-bottom:18px;max-width:760px">
           <h3>My media preferences</h3>
@@ -610,7 +611,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
         <div class="grid plgrid" id="mediaList"><div class="muted small">Loading media sources…</div></div>
         <div class="card" style="margin-top:18px;max-width:760px">
           <h3>Add a WebDAV server</h3>
-          <p>Enter the WebDAV folder address and login from your storage service or server.  The TV checks the login and looks for movies before saving it.</p>
+          <p>Enter the WebDAV address of your movies folder and the login from your storage service or server.  The TV checks the login and looks for movies before saving it.</p>
           <form id="mediaAdd" class="form">
             <label class="f full">WebDAV address<input id="mediaAddress" type="url" placeholder="https://server.example/webdav/" autocomplete="off" required></label>
             <label class="f">User name or customer ID<input id="mediaUser" type="text" autocomplete="off"></label>
