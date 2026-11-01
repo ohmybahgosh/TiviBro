@@ -78,6 +78,7 @@ var WebEdit = (function () {
         active: p.id === s.active, ua: p.ua || '', plRefresh: p.plRefresh, epgRefresh: p.epgRefresh, providerEpg: p.providerEpg,
         // Never the address itself (it can hold a login): the host, the file name, and a fingerprint the
         // editor matches against its list of free guides.
+        exp: p.exp || 0,
         epgSources: (p.epgSources || []).map(function (x) { return { host: host(x.url), file: fileOf(x.url), id: U.hash(String(x.url).trim()), offset: x.offset || 0 }; }) };
     });
   }
@@ -263,6 +264,7 @@ var WebEdit = (function () {
     return Source.load(p).then(function (data) {
       var f = data && data.fixed;
       if (f) ['server', 'user', 'pass', 'm3u'].forEach(function (k) { p[k] = f[k]; });
+      if (data && data.exp) p.exp = data.exp;            // the subscription's end, shown with the playlist (issue #13)
       Store.upsertPlaylist(p);
       return Store.idbSet('playlist:' + p.id, data).then(function () { return data; });
     });

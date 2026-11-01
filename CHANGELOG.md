@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **When your subscription ends, first on each playlist** ([#13](https://github.com/ohmybahgosh/TiviBro/issues/13)).  **Settings > Playlists** and the web editor's Playlists page lead with it ("Expires 19 Nov", "Expires in 3 days", "Expired 2 Oct"), for every playlist, not only the one in use.  Xtream Codes providers say when; M3U playlists don't.
+- **Browsers offer to save the web editor's password** ([#15](https://github.com/ohmybahgosh/TiviBro/issues/15)).  The login box is a real password field now (Firefox, Chrome and Safari offer to remember it), with **Show** to check what you typed.
+
 ## 0.6.0 (alpha 39, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

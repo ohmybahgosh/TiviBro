@@ -558,6 +558,8 @@ Your playlists, how often they reload, and where the programme guide comes from.
 | *(each playlist)* | | Its name and type, and for the one in use, how many channels it has.  **OK** opens its page (below). |
 | **Add playlist…** | | Opens the setup screen for another Xtream Codes or M3U playlist.  Each playlist keeps its own groups, favorites, hidden items, guide and name rules. |
 
+Each playlist in the list starts with when its subscription ends ("Expires 19 Nov", "Expires in 3 days" in the last two weeks, "Expired 2 Oct"), when the provider reports it.
+
 On a playlist's page:
 
 | Setting | Choices | What it does |

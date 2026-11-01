@@ -145,7 +145,7 @@ var Settings = (function () {
     var s = S(), out = [];
     s.playlists.forEach(function (raw) {
       var p = Store.normalize(raw), active = p.id === s.active;
-      out.push(page(p.name || (p.type === 'xtream' ? p.user : 'M3U'), (p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist') + (active ? '   in use, ' + L.count() + ' channels' : ''),
+      out.push(page(p.name || (p.type === 'xtream' ? p.user : 'M3U'), [Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist', active ? 'in use, ' + L.count() + ' channels' : ''].filter(Boolean).join('   '),
         p.name || 'Playlist', function () { return playlistPage(p); }));
     });
     out.push(action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.', function () { App.setup('new'); }));
@@ -172,7 +172,7 @@ var Settings = (function () {
     if (active) {
       out.push(action('Reload channels now', 'Your groups, renames and hidden items are kept.', function () { App.refresh(true); }));
       out.push(info('Last reloaded', when(L.data.at)));
-      if (L.data.exp) out.push(info('Subscription expires', new Date(L.data.exp).toLocaleDateString()));
+      if (L.data.exp) out.push(info('Subscription expires', new Date(L.data.exp).toLocaleDateString() + (Store.expiry(p) ? '  (' + Store.expiry(p).replace(/^Expire[sd] /, '') + ')' : '')));
       if (L.data.maxConn) out.push(info('Connections allowed', String(L.data.maxConn)));
     }
     out.push(head('Guide'));

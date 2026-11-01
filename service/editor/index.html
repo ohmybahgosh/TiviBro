@@ -68,6 +68,7 @@ kbd{font:12px ui-monospace,Menlo,monospace;background:var(--raised);border:1px s
 .login h1{margin:0 0 6px;font-size:26px;display:flex;align-items:center;gap:10px}
 .login p{color:var(--muted);margin:0 0 20px}
 .login input{width:100%;font-size:24px;letter-spacing:4px;text-transform:uppercase;text-align:center;margin-bottom:12px}
+.pwwrap{position:relative}.pwwrap input{padding-right:72px}.pwshow{position:absolute;right:6px;top:6px;padding:8px 10px;font-size:13px}
 .login button{width:100%;padding:11px}
 .err{color:#ff9a9d;min-height:22px;margin-top:10px}
 .loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;gap:14px;font-size:17px;color:var(--muted);background:var(--ink);z-index:50}
@@ -379,7 +380,10 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 <div id="login" class="login hidden">
   <h1><img src="wordmark.png" alt="TiviBro" style="height:44px"><span class="muted" style="font-weight:500;font-size:20px">editor</span></h1>
   <p>Enter the password shown on your TV under Settings, Edit on a phone or computer.</p>
-  <form id="loginForm"><input id="pw" type="text" autocomplete="off" spellcheck="false" placeholder="XXXX-XXXX" autofocus><button class="primary" id="loginBtn">Open the editor</button></form>
+  <!-- A real password form, so browsers offer to save it (issue #15): the name is fixed, the password is the TV's. -->
+  <form id="loginForm" method="post" action="#"><input type="text" name="username" autocomplete="username" value="TiviBro editor" hidden aria-hidden="true">
+    <div class="pwwrap"><input id="pw" name="password" type="password" autocomplete="current-password" spellcheck="false" autocapitalize="characters" placeholder="XXXX-XXXX" autofocus><button type="button" class="ghost pwshow" id="pwShow">Show</button></div>
+    <button class="primary" id="loginBtn">Open the editor</button></form>
   <div id="loginErr" class="err"></div>
 </div>
 <div id="loadingScreen" class="loading hidden"><span class="spinner"></span><span id="loadingText">Loading the channel list from the TV…</span></div>
@@ -888,6 +892,7 @@ function showLogin(m) {
   token = ''; try { sessionStorage.removeItem('tivibro.editor.token'); } catch (e) {}
   $('app').classList.add('hidden'); $('loadingScreen').classList.add('hidden'); $('login').classList.remove('hidden'); $('loginErr').textContent = m || ''; $('pw').focus();
 }
+$('pwShow').addEventListener('click', function () { var p = $('pw'), shown = p.type === 'text'; p.type = shown ? 'password' : 'text'; this.textContent = shown ? 'Show' : 'Hide'; p.focus(); });
 $('loginForm').addEventListener('submit', function (e) {
   e.preventDefault(); $('loginErr').textContent = '';
   busyBtn($('loginBtn'), api('/api/login', { method: 'POST', body: { password: $('pw').value } })).then(function (j) {
@@ -2871,11 +2876,18 @@ $('tEmpty').addEventListener('click', function (e) { if (e.target.id === 'emGo')
 /* ---------- playlists ---------- */
 var REF = [[-1, 'Every app start'], [6, 'Every 6 hours'], [12, 'Every 12 hours'], [24, 'Every day'], [48, 'Every 2 days'], [168, 'Every week'], [0, 'Only when I ask']];
 function refLabel(v) { var r = REF.filter(function (x) { return x[0] === +v; })[0]; return r ? r[1] : v + ' h'; }
+// When the subscription ends, first on each playlist (issue #13).  Soon or past is marked.
+function expiryOf(p) {
+  var t = +p.exp; if (!t) return '';
+  var days = Math.ceil((t - Date.now()) / 86400000), d = new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  var txt = days < 0 ? 'Expired ' + d : days === 0 ? 'Expires today' : days <= 14 ? 'Expires in ' + days + (days === 1 ? ' day' : ' days') : 'Expires ' + d;
+  return '<span class="chip' + (days <= 14 ? ' bad' : '') + '">' + esc(txt) + '</span> ';
+}
 function renderPlaylists() {
   var pls = D.playlists || [];
   $('plList').innerHTML = pls.map(function (p) {
     return '<div class="card pl"><h3>' + esc(p.name) + (p.active ? ' <span class="chip acc">On the TV</span>' : '') + '</h3>' +
-      '<div class="meta">' + (p.type === 'm3u' ? 'M3U playlist' : 'Xtream Codes') + '  ·  ' + esc(p.host || 'no address') + '<br>Channels reload: ' + esc(refLabel(p.plRefresh)) + '  ·  Guide reload: ' + esc(refLabel(p.epgRefresh)) + (p.ua ? '<br>User-Agent: ' + esc(p.ua) : '') + '</div>' +
+      '<div class="meta">' + expiryOf(p) + (p.type === 'm3u' ? 'M3U playlist' : 'Xtream Codes') + '  ·  ' + esc(p.host || 'no address') + '<br>Channels reload: ' + esc(refLabel(p.plRefresh)) + '  ·  Guide reload: ' + esc(refLabel(p.epgRefresh)) + (p.ua ? '<br>User-Agent: ' + esc(p.ua) : '') + '</div>' +
       '<div class="row">' + (p.active ? '<button data-pl="refresh" data-id="' + p.id + '">Reload channels</button>' : '<button class="primary" data-pl="use" data-id="' + p.id + '">Use on the TV</button>') +
       '<button data-pl="edit" data-id="' + p.id + '">Edit</button>' + (pls.length > 1 ? '<button class="ghost danger" data-pl="del" data-id="' + p.id + '">Delete</button>' : '') + '</div><div id="plmsg-' + p.id + '"></div></div>';
   }).join('');

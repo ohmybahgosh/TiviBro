@@ -258,6 +258,16 @@ var Store = (function () {
     get playlist() { return playlist(); },
     normalize: normalize,
     usePlaylist: usePlaylist, upsertPlaylist: upsertPlaylist, removePlaylist: removePlaylist,
+    /* When a playlist's subscription ends, as people say it (issue #13): "Expires in 3 days",
+       "Expires 19 Nov", "Expired 2 Oct".  Empty when the provider doesn't say. */
+    expiry: function (p) {
+      var t = p && +p.exp; if (!t) return '';
+      var days = Math.ceil((t - Date.now()) / 86400000), d = new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: new Date(t).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
+      if (days < 0) return 'Expired ' + d;
+      if (days === 0) return 'Expires today';
+      if (days <= 14) return 'Expires in ' + days + (days === 1 ? ' day' : ' days');
+      return 'Expires ' + d;
+    },
     saveSettings: saveSettings, saveEdits: saveEdits, get editsRev() { return editsRev; },
     resetEdits: function () { edits = merge(clone(EDIT_DEFAULTS), null); saveEdits(); },
     idbGet: idbGet, idbSet: idbSet, DEFAULTS: DEFAULTS

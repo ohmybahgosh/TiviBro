@@ -23,6 +23,9 @@ var Library = (function () {
       byKey.set(c.k, c);
     }
     d.groups.forEach(function (g) { groupNames[g.id] = g.name; });
+    // Remember when the subscription ends with the playlist, so every playlist can show it (issue #13).
+    var pl = typeof Store !== 'undefined' && Store.playlist;
+    if (pl && pl.id && d.exp && pl.exp !== d.exp) { pl.exp = d.exp; Store.saveSettings(); }
     trackNewGroups(d.groups);
     Names.invalidate();
     versionIndex = null;
