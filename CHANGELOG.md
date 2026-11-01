@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **No more Movies and Shows crash on older TVs with big lists** ([#18](https://github.com/ohmybahgosh/TiviBro/issues/18)).  Changing the language filter or a category while the list was still loading could stop Movies and Shows from working; the list now stays on screen and is re-sorted from memory.  When a TV runs out of storage saving a big playlist, TiviBro frees the cached lists of your other playlists and tries again, so it no longer downloads everything again each time it starts.
+
 ## 0.6.0 (alpha 40, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

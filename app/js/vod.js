@@ -7,6 +7,7 @@ var Vod = (function () {
   var kind = 'movie', built = false, zone = 'items';
   var catsVL, itemsVL;
   var data = { movie: null, series: null };
+  var raw = { movie: null, series: null };   // the whole list as loaded, so a language change needs no reload (a full TV can't cache it)
   var info = new Map();
   var episodes = null, series = null;      // drill-down into a show
   var playingMeta = null;
@@ -27,13 +28,14 @@ var Vod = (function () {
     var ck = cacheKey(k);
     return Store.idbGet(ck).then(function (c) {
       var h = +Store.playlist.plRefresh, fresh = c && c.v === 3 && (h <= 0 || Date.now() - c.at < h * 3600e3);
-      if (c && fresh) return (data[k] = view(k, c));
+      if (c && fresh) { raw[k] = c; return (data[k] = view(k, c)); }
       return Promise.all([Source.vodCats(k), fetchItems(k)]).then(function (r) {
         var cats = (r[0] || []).map(function (x) { return { id: String(x.category_id), name: x.category_name || 'Other' }; });
         var d = { v: 3, at: Date.now(), cats: cats, items: r[1] };
         Store.idbSet(ck, d);
+        raw[k] = d;
         return (data[k] = view(k, d));
-      }).catch(function (e) { if (c) return (data[k] = view(k, c)); throw e; });
+      }).catch(function (e) { if (c) { raw[k] = c; return (data[k] = view(k, c)); } throw e; });
     });
   }
   function movieRow(x) { return ({ id: x[0], name: x[1], cover: x[2], rating: x[3], ext: x[4] || 'mp4', cat: x[5], added: x[6] }); }
@@ -165,8 +167,12 @@ var Vod = (function () {
   // After a language or category change: rebuild from the cache, keep the selected category.
   function reshow() {
     var was = catsVL.current(), wasId = was && was.id;
-    data = { movie: null, series: null };
-    load(kind).then(function () {
+    // Re-read the list already in memory; only a TV that has none loads it again.  The shown list stays
+    // until then, so a button pressed meanwhile never finds it missing (issue #18).
+    var other = kind === 'movie' ? 'series' : 'movie';
+    if (raw[other] && data[other]) data[other] = view(other, raw[other]);
+    var next = raw[kind] ? Promise.resolve(data[kind] = view(kind, raw[kind])) : (data[kind] = null, load(kind));
+    next.then(function () {
       var cl = catList(), at = Math.max(0, cl.findIndex(function (c) { return c.id === wasId; }));
       catsVL.setItems(cl, at);
       var c = catsVL.current();
@@ -251,6 +257,7 @@ var Vod = (function () {
 
   function catList() {
     var d = data[kind], counts = {};
+    if (!d) return [];
     d.items.forEach(function (it) { counts[it.cat] = (counts[it.cat] || 0) + 1; });
     var mine = E().myList.filter(function (k) { return k.charAt(0) === (kind === 'series' ? 's' : 'm'); }).length;
     var cw = continueList().length;
@@ -277,6 +284,7 @@ var Vod = (function () {
   }
   function itemsFor(cid) {
     var d = data[kind];
+    if (!d) return [];
     if (cid === CW) return continueList();
     if (cid === LANGS) return [];
     if (cid === MY) { var m = E().myList; return d.items.filter(function (it) { return m.indexOf(key(it)) >= 0; }); }
@@ -617,5 +625,5 @@ var Vod = (function () {
     }
   };
 
-  return { _test: { tag: tag, view: view }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, reset: function () { data = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
+  return { _test: { tag: tag, view: view }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, reset: function () { data = { movie: null, series: null }; raw = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
 })();

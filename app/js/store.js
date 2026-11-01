@@ -237,15 +237,45 @@ var Store = (function () {
       });
     }).catch(function () { return undefined; });
   }
-  function idbSet(k, v) {
+  /* A full TV (issue #18, webOS 4 with a big list): free the cached lists of the other playlists and the
+     logo cache, which all come back on their own, then try once more.  Settings and edits are never touched. */
+  function freeUp(keep) {
+    var mine = (settings.active || '') + '';
+    return db().then(function (d) {
+      return new Promise(function (res) {
+        var tx = d.transaction('kv', 'readwrite'), st = tx.objectStore('kv'), q = st.getAllKeys ? st.getAllKeys() : null, n = 0;
+        if (!q) return res(0);
+        q.onsuccess = function () {
+          (q.result || []).forEach(function (k) {
+            k = String(k);
+            if (k === keep) return;
+            var m = /^(playlist|vod|epg[a-z]*):([^:]+)/.exec(k);
+            if ((m && m[2] !== mine) || /^logos:/.test(k)) { st.delete(k); n++; }
+          });
+        };
+        tx.oncomplete = function () { res(n); };
+        tx.onerror = tx.onabort = function () { res(n); };
+      });
+    }).catch(function () { return 0; });
+  }
+  function idbSet(k, v, again) {
     return db().then(function (d) {
       return new Promise(function (res) {
         var tx = d.transaction('kv', 'readwrite');
         if (v === null) tx.objectStore('kv').delete(k); else tx.objectStore('kv').put(v, k);
         tx.oncomplete = function () { res(true); };
-        tx.onerror = function () { res(false); };
+        // A failed save always ends in onabort below (nothing here stops the error), so it answers there.
         // A full TV (quota exceeded) aborts the transaction without an error event on it.
-        tx.onabort = function () { if (window.Log) Log.warn('store', 'Could not save ' + k + ' (' + (tx.error && tx.error.name || 'aborted') + ')'); res(false); };
+        tx.onabort = function () {
+          var why = tx.error && tx.error.name || 'aborted';
+          if (why === 'QuotaExceededError' && !again && v !== null) {
+            return freeUp(k).then(function (n) {
+              if (window.Log) Log.warn('store', 'The TV is out of storage saving ' + k + ': freed ' + n + ' cached lists, trying again');
+              return n ? idbSet(k, v, true) : false;
+            }).then(res);
+          }
+          if (window.Log) Log.warn('store', 'Could not save ' + k + ' (' + why + ')'); res(false);
+        };
       });
     }).catch(function () { return false; });
   }
