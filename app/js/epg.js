@@ -58,12 +58,15 @@ var Epg = (function () {
   }
 
   function P() { return Store.playlist; }
+  // Does this guide id have anything from now on?  (Lists are in time order: the last one tells.)
+  function live(id) { var x = cache.get(id), l = x && x.list; return !!(l && l.length && l[l.length - 1].e > Date.now()); }
   function epgId(ch) {
     var m = Store.edits.epgMap && Store.edits.epgMap[ch.k];
     if (m) return m;
     var id = matched[ch.k] || ch.epg || '';
-    // The public guide only stands in where your sources and the provider's have nothing.
-    if (pubMatched[ch.k] && !(id && cache.has(id))) return pubMatched[ch.k];
+    // The public guide only stands in where your sources and the provider's have nothing (or nothing
+    // from now on: a provider's Pluto TV entries can stop days early).
+    if (pubMatched[ch.k] && !(id && live(id))) return pubMatched[ch.k];
     return id;
   }
   // Guide data for a channel lives under its XMLTV id when the XMLTV has it, otherwise under the channel key.
@@ -620,8 +623,10 @@ var Epg = (function () {
     return Library.data.channels.filter(function (ch) {
       if (map[ch.k] && !PUB_ID.test(map[ch.k])) return false;
       var id = matched[ch.k] || ch.epg || '';
-      if (id && cache.has(id)) return false;
-      if (short && ch.epg) return false;
+      if (id && live(id)) return false;
+      // Per-channel provider guides can't be checked ahead, except for app channels (Pluto TV), whose
+      // own guide is the better one anyway.
+      if (short && ch.epg && !(PubEpg.appId && PubEpg.appId(ch.epg))) return false;
       if (ev && Events.of(ch)) return false;
       return true;
     });
