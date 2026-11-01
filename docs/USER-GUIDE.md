@@ -21,7 +21,7 @@ Everything TiviBro does, on the TV and from your computer.  Every picture here c
 A brand-new TiviBro opens on **Add your playlist**.  You have two ways in:
 
 - **Scan the QR code with your phone.**  It sits beside the form and opens the web editor on your phone, already signed in: type your login there with a real keyboard, or restore a backup from another TV.  The address and password are under the code, for a computer on the same network.  The TV moves on by itself when you finish, then shows the [set-up tour](#the-set-up-tour).  (**Set up or restore from a phone or computer** shows the same code on a screen of its own.)
-- **Type it on the TV.**  Pick Xtream Codes or M3U, then fill in the server, username and password (or the M3U address).  A guide address is optional.  **Test connection** checks everything before you save; **Connect** saves and loads your channels.
+- **Type it on the TV.**  The type starts on **Full link**: paste the whole link your provider sent (the long one with username and password in it, often with get.php) and TiviBro says what it found, then fills in the Xtream Codes login when you press **Connect**.  Or pick Xtream Codes or M3U and fill in the server, username and password (or the M3U address) yourself.  A guide address is optional.  **Test connection** checks everything before you save; **Connect** saves and loads your channels.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-first-run"><img src="screenshots/tv-first-run.png" width="49%" alt="First-run screen"></a>
@@ -935,7 +935,7 @@ M3U playlists can use the guide address inside the playlist.
 
 ### Playlists
 
-Add Xtream Codes or M3U playlists, switch which one the TV uses, set reload schedules and the User-Agent, or change a login.  The TV tests every new login before saving.  **Logins never reach the editor**: it only ever sees server names.  Each playlist keeps its own groups, names and guide setup.
+Add Xtream Codes or M3U playlists (or paste the provider's **Full link** and let TiviBro fill in the login), switch which one the TV uses, set reload schedules and the User-Agent, or change a login.  The TV tests every new login before saving.  **Logins never reach the editor**: it only ever sees server names.  Each playlist keeps its own groups, names and guide setup.
 
 <p align="center">
   <a href="https://tivibro.app/view/#editor-playlists"><img src="screenshots/editor-playlists.png" width="100%" alt="Playlists in the editor"></a>

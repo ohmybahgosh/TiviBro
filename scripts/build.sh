@@ -12,6 +12,7 @@ case "$SVC_ID" in "$APP_ID".*) ;; *) echo "Service id $SVC_ID must start with $A
 cp "$ROOT/app/js/names.js" "$ROOT/service/editor/names.js"
 cp "$ROOT/app/js/tidy.js" "$ROOT/service/editor/tidy.js"
 cp "$ROOT/app/js/pubepg.js" "$ROOT/service/editor/pubepg.js"
+cp "$ROOT/app/js/links.js" "$ROOT/service/editor/links.js"
 rm -rf "$ROOT/service/guide-data" "$ROOT/service/power.json" "$ROOT/service/reminders.json" "$ROOT/service/helper-errors.json" "$ROOT/service/companion.json" "$ROOT/service/companion.json.tmp"                                # guides stored by a dev relay: not for the package     # the helper's guide reader matches with it
 mkdir -p "$ROOT/dist"
 echo "Packaging $APP_ID $VERSION ${MIN:+(dev, unminified)}"

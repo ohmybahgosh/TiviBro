@@ -5,7 +5,7 @@
 A brand-new TiviBro opens on **Add your playlist**.  You have two ways in:
 
 - **Scan the QR code with your phone.**  It sits beside the form and opens the web editor on your phone, already signed in: type your login there with a real keyboard, or restore a backup from another TV.  The address and password are under the code, for a computer on the same network.  The TV moves on by itself when you finish, then shows the [set-up tour](The-set-up-tour).  (**Set up or restore from a phone or computer** shows the same code on a screen of its own.)
-- **Type it on the TV.**  Pick Xtream Codes or M3U, then fill in the server, username and password (or the M3U address).  A guide address is optional.  **Test connection** checks everything before you save; **Connect** saves and loads your channels.
+- **Type it on the TV.**  The type starts on **Full link**: paste the whole link your provider sent (the long one with username and password in it, often with get.php) and TiviBro says what it found, then fills in the Xtream Codes login when you press **Connect**.  Or pick Xtream Codes or M3U and fill in the server, username and password (or the M3U address) yourself.  A guide address is optional.  **Test connection** checks everything before you save; **Connect** saves and loads your channels.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-first-run"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-first-run.png" width="49%" alt="First-run screen"></a>

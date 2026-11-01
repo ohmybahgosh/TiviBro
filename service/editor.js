@@ -64,7 +64,7 @@ function summary(b) {
 }
 function isBackup(b) { return !!(b && b.app === 'TiviBro' && b.kind === 'backup' && b.settings && Array.isArray(b.settings.playlists)); }
 
-var STATIC = { '/': ['index.html', 'text/html; charset=utf-8'], '/index.html': ['index.html', 'text/html; charset=utf-8'], '/names.js': ['names.js', 'application/javascript; charset=utf-8'], '/tidy.js': ['tidy.js', 'application/javascript; charset=utf-8'],
+var STATIC = { '/': ['index.html', 'text/html; charset=utf-8'], '/index.html': ['index.html', 'text/html; charset=utf-8'], '/names.js': ['names.js', 'application/javascript; charset=utf-8'], '/links.js': ['links.js', 'application/javascript; charset=utf-8'], '/tidy.js': ['tidy.js', 'application/javascript; charset=utf-8'],
   '/favicon.png': ['favicon.png', 'image/png'], '/favicon.ico': ['favicon.png', 'image/png'], '/wordmark.png': ['wordmark.png', 'image/png'], '/mark.png': ['mark.png', 'image/png'] };
 var MAX_BODY = 25 * 1024 * 1024;
 

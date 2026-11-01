@@ -561,3 +561,7 @@ video.mkv-captions-active::cue{color:transparent;background:transparent;text-sha
 .join-act.ok{background:rgba(61,220,151,.16)}
 .join-act.err{background:rgba(229,115,115,.18);color:#ffb4b4}
 @keyframes joinpulse{from{opacity:.25}to{opacity:1}}
+
+/* Full link (issue #11): what TiviBro found in the pasted link. */
+.setup .net.linknote:empty{display:none}
+.setup .net.linknote.ok{color:#7fe0ae}

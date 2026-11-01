@@ -36,6 +36,7 @@ body.setup nav.side button:not([data-page=playlists]):not([data-page=backup]):no
 body.setup nav.side button[data-page=welcome]{display:flex!important}
 body.setup #changebar,body.setup .plpill{display:none!important}
 .muted{color:var(--muted)} .dim{color:var(--dim)} .small{font-size:13px} .tiny{font-size:12px}
+#aLinkNote.ok{color:#7fe0ae}
 .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .col{display:flex;flex-direction:column;gap:8px}
 .grow{flex:1}
@@ -588,13 +589,15 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
         <div class="note">Logins never reach this page: playlists show only their server name.  The TV tests a new login before it saves it.  <a href="#help/playlists">Learn more</a></div>
         <div class="grid plgrid" id="plList"></div>
         <div class="card" style="margin-top:18px;max-width:760px">
-          <div class="row"><h3 class="grow" style="margin:0">Add a playlist</h3><div class="seg" id="addSeg"><button data-t="xtream" class="on">Xtream Codes</button><button data-t="m3u">M3U</button></div></div>
+          <div class="row"><h3 class="grow" style="margin:0">Add a playlist</h3><div class="seg" id="addSeg"><button data-t="link" class="on">Full link</button><button data-t="xtream">Xtream Codes</button><button data-t="m3u">M3U</button></div></div>
           <p style="margin-top:8px">The TV logs in and loads the channel list before saving, so you know it works.</p>
           <form id="addForm" class="form">
             <label class="f full">Name (optional)<input id="aName" type="text" placeholder="e.g. Living room provider"></label>
-            <label class="f full xc">Server<input id="aServer" type="text" placeholder="http://provider.com:8080 or just provider.com"></label>
-            <label class="f xc">Username<input id="aUser" type="text" autocomplete="off"></label>
-            <label class="f xc">Password<input id="aPass" type="password" autocomplete="new-password"></label>
+            <label class="f full lnk">Full link<input id="aLink" type="url" autocomplete="off" placeholder="http://provider.com:8080/get.php?username=…&password=…&type=m3u_plus"></label>
+            <div class="full lnk muted small" id="aLinkNote">Paste the whole link your provider sent, the long one with username and password in it (it often has get.php).  TiviBro fills in the server, username and password for you.</div>
+            <label class="f full xc hidden">Server<input id="aServer" type="text" placeholder="http://provider.com:8080 or just provider.com"></label>
+            <label class="f xc hidden">Username<input id="aUser" type="text" autocomplete="off"></label>
+            <label class="f xc hidden">Password<input id="aPass" type="password" autocomplete="new-password"></label>
             <label class="f full m3u hidden">Playlist address<input id="aM3u" type="url" placeholder="http://provider.com/get.php?username=…&type=m3u_plus"></label>
             <label class="f full">Guide address (optional)<input id="aEpg" type="url" placeholder="XMLTV link, .xml or .xml.gz"></label>
             <label class="muted small full"><input type="checkbox" id="aUse"> Switch the TV to this playlist when it is added</label>
@@ -720,6 +723,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 <div id="toast" class="toast hidden"></div>
 
 <script src="names.js"></script>
+<script src="links.js"></script>
 <script src="tidy.js"></script>
 <script>
 'use strict';
@@ -2903,18 +2907,41 @@ function editPlaylist(p) {
     busyBtn($('eGo'), command('updatePlaylist', args, 300000, cmdMsg('eMsg', 'Saving on the TV…'))).then(function (r) { msg('eMsg', 'ok', r.msg); setTimeout(function () { closeModal(); load(false).catch(function () {}); }, 1200); }).catch(function (err) { msg('eMsg', 'bad', err.message); });
   }, 'eGo']]);
 }
-var addType = 'xtream';
-$('addSeg').addEventListener('click', function (e) {
-  var t = e.target.dataset.t; if (!t) return; addType = t;
+// Full link (issue #11): paste what the provider sent; the Xtream Codes or M3U section fills in from it.
+var addType = 'link';
+function addTypeTo(t) {
+  addType = t;
   document.querySelectorAll('#addSeg button').forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+  document.querySelectorAll('#addForm .lnk').forEach(function (x) { x.classList.toggle('hidden', t !== 'link'); });
   document.querySelectorAll('#addForm .xc').forEach(function (x) { x.classList.toggle('hidden', t !== 'xtream'); });
   document.querySelectorAll('#addForm .m3u').forEach(function (x) { x.classList.toggle('hidden', t !== 'm3u'); });
+}
+$('addSeg').addEventListener('click', function (e) { var t = e.target.dataset.t; if (t) addTypeTo(t); });
+var LINK_HELP = $('aLinkNote').textContent;
+function linkHost(u) { var m = /^https?:\/\/([^\/?#]+)/i.exec(u || ''); return m ? m[1] : u; }
+$('aLink').addEventListener('input', function () {
+  var r = Links.parse($('aLink').value), n = $('aLinkNote');
+  n.textContent = !r ? LINK_HELP : r.type === 'xtream' ? 'Found an Xtream Codes login for ' + linkHost(r.server) + ' (username ' + r.user + ').  Add and test fills it in.'
+    : r.bare ? 'That is a server address without a login.  Paste the whole link, or choose Xtream Codes and type the username and password.'
+    : 'No login in this link, so it will be added as an M3U playlist.';
+  n.className = 'full lnk small ' + (r && !r.bare ? 'ok' : 'muted');
 });
+// Turns the Full link into the Xtream Codes or M3U fields, shown filled in.  False when it can't.
+function useLink() {
+  if (addType !== 'link') return true;
+  var r = Links.parse($('aLink').value);
+  if (!r || r.bare) { msg('addMsg', 'bad', r ? 'That is a server address without a login.  Paste the whole link from your provider.' : 'Paste the full link from your provider.'); return false; }
+  if (r.type === 'xtream') { $('aServer').value = r.server; $('aUser').value = r.user; $('aPass').value = r.pass; addTypeTo('xtream'); }
+  else { $('aM3u').value = r.m3u; addTypeTo('m3u'); }
+  $('aLink').value = ''; $('aLinkNote').textContent = LINK_HELP; $('aLinkNote').className = 'full lnk muted small';
+  return true;
+}
 $('addForm').addEventListener('submit', function (e) {
   e.preventDefault();
+  if (!useLink()) return;
   var args = { type: addType, name: $('aName').value, server: $('aServer').value, user: $('aUser').value, pass: $('aPass').value, m3u: $('aM3u').value, epg: $('aEpg').value, use: $('aUse').checked };
   busyBtn($('aGo'), command('addPlaylist', args, 300000, cmdMsg('addMsg', 'The TV is logging in and loading the channel list.  This can take a minute…'))).then(function (r) {
-    msg('addMsg', 'ok', r.msg); $('addForm').reset(); setTimeout(function () { load(!!args.use).catch(function () {}); }, 2500);
+    msg('addMsg', 'ok', r.msg); $('addForm').reset(); addTypeTo('link'); setTimeout(function () { load(!!args.use).catch(function () {}); }, 2500);
   }).catch(function (err) { msg('addMsg', 'bad', err.message); });
 });
 

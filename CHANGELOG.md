@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Paste your provider's full link** ([#11](https://github.com/ohmybahgosh/TiviBro/issues/11)).  Adding a playlist on the TV or in the web editor now starts on **Full link**: paste the whole link your provider sent (get.php, player_api.php, xmltv.php or a stream link with the username and password in it) and TiviBro says what it found, then fills in the Xtream Codes server, username and password.  A link without a login is added as an M3U playlist.  The Xtream Codes and M3U choices are still there for typing it in yourself.
+
 ## 0.6.0 (alpha 37, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

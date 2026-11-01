@@ -48,7 +48,8 @@ var App = (function () {
     window.__tbBooted = true;              // the setup screen counts as started
     var editing = target && target !== 'new';
     var existing = editing ? Store.settings.playlists.filter(function (x) { return x.id === target; })[0] : null;
-    var p = existing ? JSON.parse(JSON.stringify(existing)) : { id: '', name: '', type: 'xtream', server: '', user: '', pass: '', m3u: '', guide: '' };
+    // A new playlist starts on Full link: paste what the provider sent and TiviBro fills in the rest (#11).
+    var p = existing ? JSON.parse(JSON.stringify(existing)) : { id: '', name: '', type: 'link', link: '', server: '', user: '', pass: '', m3u: '', guide: '' };
     var canCancel = !!target && Store.settings.playlists.length > 0;
     setupEl.classList.remove('hidden');
     var fields = [], f = 0, msg;
@@ -58,18 +59,18 @@ var App = (function () {
       setupEl.classList.toggle('withjoin', !target);
       if (!target) { var wb = U.el('img', 'setupbrand'); wb.src = 'img/wordmark.png'; wb.alt = 'TiviBro'; setupEl.appendChild(wb); joinPanel(); }
       setupEl.appendChild(U.el('h1', '', editing ? 'Edit playlist' : target === 'new' ? 'Add a playlist' : 'Add your playlist'));
-      setupEl.appendChild(U.el('p', 'lead', 'Use your provider\'s Xtream Codes login or an M3U playlist address.  A Dispatcharr or other proxy address works with either.'));
+      setupEl.appendChild(U.el('p', 'lead', 'Paste the full link your provider sent, or choose Xtream Codes or M3U as the type.  A Dispatcharr or other proxy address works with either.'));
       fields = [];
       function row(label, key, type) {
         var d = U.el('div', 'field'), l = U.el('label', '', label);
         d.appendChild(l);
         if (key === 'type') {
-          d.appendChild(U.el('div', 'val', p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist'));
+          d.appendChild(U.el('div', 'val', TYPES[p.type] || 'Xtream Codes'));
           fields.push({ el: d, kind: 'type' });
         } else {
           var i = U.el('input');
           i.type = type || 'text'; i.value = p[key] || ''; i.spellcheck = false; i.autocomplete = 'off';
-          i.addEventListener('input', function () { p[key] = i.value; });
+          i.addEventListener('input', function () { p[key] = i.value; if (key === 'link') showLink(); });
           // Keep the field being typed in above the on-screen keyboard (it covers the bottom ~45%).
           i.addEventListener('focus', function () { kbFocus(d); });
           i.addEventListener('blur', function () { setTimeout(kbBlur, 0); });
@@ -88,7 +89,12 @@ var App = (function () {
       }
       row('Type', 'type');
       row('Name (optional)', 'name');
-      if (p.type === 'xtream') { row('Server', 'server', 'url'); row('Username', 'user'); row('Password', 'pass', 'password'); }
+      if (p.type === 'link') {
+        row('Full link', 'link', 'url');
+        setupEl.appendChild(U.el('div', 'net', 'Paste the whole link your provider sent, the long one with username and password in it (it often has get.php).  TiviBro fills in the server, username and password for you.'));
+        linkNote = U.el('div', 'net linknote'); setupEl.appendChild(linkNote); showLink();
+      }
+      else if (p.type === 'xtream') { row('Server', 'server', 'url'); row('Username', 'user'); row('Password', 'pass', 'password'); }
       else row('Playlist URL', 'm3u', 'url');
       if (!editing) row('Guide URL (optional)', 'guide', 'url');
       // Network: reachable here so a helper problem can never lock you out of the app.
@@ -170,6 +176,32 @@ var App = (function () {
       });
     }
 
+    /* Full link: what TiviBro found in it, as you type or paste. */
+    var TYPES = { link: 'Full link (paste from your provider)', xtream: 'Xtream Codes', m3u: 'M3U playlist' };
+    var linkNote = null;
+    function host(u) { var m = /^https?:\/\/([^\/?#]+)/i.exec(u || ''); return m ? m[1] : u; }
+    function showLink() {
+      if (!linkNote) return;
+      var r = Links.parse(p.link);
+      linkNote.className = 'net linknote' + (r && !r.bare ? ' ok' : '');
+      linkNote.textContent = !r ? '' : r.type === 'xtream' ? 'Found an Xtream Codes login for ' + host(r.server) + ' (username ' + r.user + ').  Connect fills it in and logs in.'
+        : r.bare ? 'That is a server address without a login.  Paste the whole link, or choose Xtream Codes as the type and type the username and password.'
+        : 'No login in this link, so it will be added as an M3U playlist.';
+    }
+    // Turns a Full link into an Xtream login or an M3U address, shown in its own section.  False when
+    // there is nothing usable, with the reason on screen.
+    function useLink() {
+      if (p.type !== 'link') return true;
+      var r = Links.parse(p.link);
+      if (!r || r.bare) { msg.className = 'msg err'; msg.textContent = r ? 'That is a server address without a login.  Paste the whole link from your provider.' : 'Paste the full link from your provider.'; return false; }
+      if (r.type === 'xtream') { p.type = 'xtream'; p.server = r.server; p.user = r.user; p.pass = r.pass; }
+      else { p.type = 'm3u'; p.m3u = r.m3u; }
+      delete p.link;
+      Log.info('app', 'Full link read as ' + (r.type === 'xtream' ? 'an Xtream Codes login (' + r.from + ')' : 'an M3U playlist'));
+      render();
+      return true;
+    }
+    function nextType() { var order = editing ? ['xtream', 'm3u'] : ['link', 'xtream', 'm3u']; p.type = order[(order.indexOf(p.type) + 1) % order.length]; render(); }
     function current() {
       var t = Object.assign({}, p);
       ['server', 'user', 'pass', 'm3u'].forEach(function (k) { if (t[k]) t[k] = String(t[k]).trim(); });
@@ -183,6 +215,7 @@ var App = (function () {
       if (Store.settings.network === 'auto') Net.start(6000).then(render); else render();
     }
     function connect() {
+      if (!useLink()) return;
       msg.className = 'msg'; msg.textContent = 'Connecting…';
       var test = Object.assign({}, p);
       if (!test.name) test.name = test.type === 'xtream' ? (test.user || 'Xtream') : 'M3U playlist';
@@ -219,16 +252,16 @@ var App = (function () {
       else if (a === 'left' || a === 'right') {
         if (cur.kind === 'net') toggleNet();
         else if (cur.toggle && document.activeElement !== cur.input) cur.toggle();
-        else if (cur.kind === 'type') { p.type = p.type === 'xtream' ? 'm3u' : 'xtream'; render(); }
+        else if (cur.kind === 'type') nextType();
         else if ((cur.kind === 'go' || cur.kind === 'test' || cur.kind === 'log' || cur.kind === 'report') && a === 'right' && fields[f + 1]) { f++; paint(); }
         else if ((cur.kind === 'test' || cur.kind === 'log' || cur.kind === 'report' || cur.kind === 'cancel') && a === 'left') { f--; paint(); }
       }
       else if (a === 'ok') {
         if (cur.kind === 'input') cur.input.focus();
-        else if (cur.kind === 'type') { p.type = p.type === 'xtream' ? 'm3u' : 'xtream'; render(); }
+        else if (cur.kind === 'type') nextType();
         else if (cur.kind === 'go') connect();
         else if (cur.kind === 'net') toggleNet();
-        else if (cur.kind === 'test') Diag.run(current());
+        else if (cur.kind === 'test') { if (useLink()) Diag.run(current()); }
         else if (cur.kind === 'log') Diag.showLog(true);
         else if (cur.kind === 'report') Diag.openReport(true);
         else if (cur.kind === 'remote') remote();
