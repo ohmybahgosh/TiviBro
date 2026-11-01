@@ -12,7 +12,6 @@ import app.tivibro.phone.proto.Wol
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -20,9 +19,14 @@ import kotlinx.coroutines.withContext
 /**
  * Quick Settings tile: TiviBro on the TV.  One tap turns the TV on if it is off (Wake-on-LAN) and opens
  * TiviBro.  For the TV picked in the app (or the only one).
+ *
+ * The work runs in a scope that outlives the tile: Android lets go of the tile service as soon as the
+ * Quick Settings panel closes, and work tied to it was cancelled before the TV was asked (the tile
+ * did nothing).  The tile is only redrawn while Android still has it.
  */
+private object TileWork { val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO) }
+
 class TvTileService : TileService() {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     override fun onStartListening() {
         val tv = TvStore(this).tileChoice()
@@ -37,8 +41,10 @@ class TvTileService : TileService() {
     override fun onClick() {
         val tv = TvStore(this).tileChoice() ?: return
         qsTile?.apply { state = Tile.STATE_ACTIVE; sub(this, "Opening…"); updateTile() }
-        scope.launch {
-            val ok = withContext(Dispatchers.IO) {
+        val app = applicationContext
+        TileWork.scope.launch {
+            android.util.Log.i("TiviBroTile", "Opening TiviBro on ${tv.name}")
+            val ok = run {
                 fun up() = runCatching { Pairing.hello(tv.host, tv.port, 1500); true }.getOrDefault(false)
                 if (!up() && tv.mac.isNotBlank()) {
                     val end = System.currentTimeMillis() + 45_000
@@ -49,14 +55,15 @@ class TvTileService : TileService() {
                     }
                     delay(4000)       // the TV answers before TiviBro can be opened
                 }
-                runCatching { TvClient(tv).open() }.isSuccess
+                runCatching { TvClient(tv).open() }.onFailure { android.util.Log.w("TiviBroTile", "Open failed: ${it.message}") }.isSuccess
             }
-            if (!ok) Toast.makeText(this@TvTileService, "${tv.name} didn't answer", Toast.LENGTH_SHORT).show()
-            qsTile?.apply { state = Tile.STATE_INACTIVE; sub(this, tv.name); updateTile() }
+            android.util.Log.i("TiviBroTile", if (ok) "Opened" else "${tv.name} didn't answer")
+            withContext(Dispatchers.Main) {
+                if (!ok) Toast.makeText(app, "${tv.name} didn't answer", Toast.LENGTH_SHORT).show()
+                runCatching { qsTile?.apply { state = Tile.STATE_INACTIVE; sub(this, tv.name); updateTile() } }
+            }
         }
     }
-
-    override fun onDestroy() { scope.cancel(); super.onDestroy() }
 }
 
 // The line under the tile's name exists from Android 10.

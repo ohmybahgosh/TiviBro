@@ -69,7 +69,7 @@ All signed like the calls above.  TiviBro carries out each command once; if Tivi
 | `POST /v1/text` | `{ "text": "michigan" }` | Searches for it on the TV. |
 | `POST /v1/volume` | `{ "dir": "up" }` | The TV's own volume: `up`, `down`, `mute`.  Works with TiviBro closed.  Answers `{ "volume": { "level", "muted" } }`. |
 | `GET /v1/state?since=<rev>&wait=1` | | What TiviBro shows: `{ rev, open, state: { tab, full, playing: { k, name, num, logo, group }, now: { t, s, e }, next, paused, vod } }`.  With `wait=1` and the current `rev`, the TV answers when it changes, or after 20 seconds. |
-| `GET /v1/lineup?rev=<rev>` | | The channel list as TiviBro shows it: `{ rev, groups: [{ id, name, keys }], channels: [{ k, n, num, logo, fav, now }] }`.  `pending: true` while TiviBro is making it (ask again in a second), `same: true` when `rev` is current, `closed: true` when TiviBro is closed. |
+| `GET /v1/lineup?rev=<rev>` | | The channel list as TiviBro shows it: `{ rev, groups: [{ id, name, keys }], channels: [{ k, n, num, logo, fav, now, na }] }` (`na: 1`: a channel only a group shows, not All).  `pending: true` while TiviBro is making it (ask again in a second), `same: true` when `rev` is current, `closed: true` when TiviBro is closed. |
 
 ## Questions for TiviBro
 
@@ -81,6 +81,7 @@ All signed like the calls above.  TiviBro carries out each command once; if Tivi
 | `schedule` | `k` | `{ k, arch (catch-up days), progs: [{ t, s, e, d (description), r }], descPending }`: from as far back as catch-up goes to a week ahead. |
 | `remind` | `k`, `s` (the programme's start), `on` | `{ on }`.  The TV's own reminder, shown also while TiviBro is closed. |
 | `fav` | `k`, `on` | `{ on }`.  The lineup follows. |
+| `chan` | `k`, `op` (`info`, `hide` with `on`, `rename` with `name` (empty: the provider's), `group` with `group` and `on`, `newgroup` with `name`) | `{ k, name, provider, renamed, hidden, group, groups: [{ id, name, has }], msg }`: the channel after the change.  The lineup follows. |
 | `vodcats` | `kind` (`movie` or `series`) | `{ cats: [{ id, n, count, adult, locked }] }`, or `{ none: true }` when the playlist has none.  `_all` is All movies or All shows, `_cw` Continue watching, `_my` My list. |
 | `voditems` | `kind`, `cat` or `q` (search), `offset`, `limit` (up to 300) | `{ total, offset, items: [{ id, n, c (cover), r (rating), y (year), p (percent watched) }] }`, `locked: true` for a category behind the PIN. |
 | `vodinfo` | `kind`, `id` | A movie: `{ id, n, c, plot, genre, cast, year, dur, r, media, pos, len }` (`pos` and `len` in seconds, where it stopped).  A show: `{ id, n, c, plot, genre, cast, year, r, seasons: [{ s, eps: [{ id, e, t, dur, plot, pos, len }] }] }`. |

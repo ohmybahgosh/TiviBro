@@ -113,6 +113,24 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('and All on the phone still matches the TV\'s', lu.channels.filter((c) => !c.na).length === await ev(() => Library.channels(Library.ALL).length));
   await ev((x) => { Library.deleteGroup(x.id); Library.groups().forEach(function (g) { Library.hideGroup(g.id, false); }); }, loc);
 
+  // A channel's options from the phone's long press: what it is, your groups, rename, a new group, hide.
+  const ck = g.rows[5].k;
+  let ci = await ask('chan', { k: ck, op: 'info' });
+  ok('a channel\'s options: its name, provider group and your groups', ci.k === ck && ci.name && ci.group && Array.isArray(ci.groups) && !ci.hidden, JSON.stringify(ci));
+  ci = await ask('chan', { k: ck, op: 'rename', name: 'Phone Named' });
+  ok('renamed from the phone', ci.name === 'Phone Named' && ci.renamed && await ev((k) => Library.name(Library.find(k)) === 'Phone Named', ck));
+  ci = await ask('chan', { k: ck, op: 'rename', name: '' });
+  ok('and back to the provider\'s name', !ci.renamed && ci.name !== 'Phone Named');
+  ci = await ask('chan', { k: ck, op: 'newgroup', name: 'From the phone' });
+  const ng = ci.groups.find((x) => x.name === 'From the phone');
+  ok('a new group with the channel in it', ng && ng.has === 1 && await ev((id) => Library.channels(id).length === 1, ng.id), JSON.stringify(ci.groups));
+  ci = await ask('chan', { k: ck, op: 'group', group: ng.id, on: false });
+  ok('and taken out of it again', ci.groups.find((x) => x.id === ng.id).has === 0);
+  ci = await ask('chan', { k: ck, op: 'hide', on: true });
+  ok('hidden on the TV from the phone', ci.hidden && await ev((k) => !!Store.edits.hiddenChannels[k], ck));
+  await ask('chan', { k: ck, op: 'hide', on: false });
+  await ev((id) => Library.deleteGroup(id), ng.id);
+
   // Backups.
   const bk = await ask('backup', {}, { seal: true });
   ok('a backup for the phone, with the playlists', bk.backup && bk.backup.kind === 'backup' && bk.backup.settings.playlists.length > 0);

@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Phone app: the Quick Settings tile opens TiviBro again.**  Android let go of the tile as soon as the panel closed, which cancelled the request before it reached the TV.
+- **Phone app: ▶ on every row of the Guide** plays that channel on the TV without opening its schedule.
+- **Phone app: press and hold a channel** (Guide or Channels) for its options: Watch on TV, its schedule, Favorites, your own groups (in or out, or a new group with it), **Rename…** and **Hide on the TV**.  The TV makes the change, the same as from its own menus.
+- **Ideas and feature requests now go to [Discussions > Ideas](https://github.com/ohmybahgosh/TiviBro/discussions/categories/ideas).**  Issues are for bugs and work in progress.
+
 ## 0.6.0 (alpha 42, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

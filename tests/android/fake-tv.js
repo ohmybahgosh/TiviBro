@@ -10,7 +10,7 @@ const Companion = require('../../service/companion.js');
 const editor = require('../../service/editor.js').create(() => {});
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-fake-tv-'));
 const vol = { level: 12, muted: false };
-const c = Companion.create({ dir, version: 'fake-tv', log: () => {}, launch: (p, cb) => cb(null), sysinfo: (cb) => cb({ model: 'FAKE', webos: '0', name: 'Fake TV' }), app: () => ({ open: true }), editor: () => editor,
+const c = Companion.create({ dir, version: 'fake-tv', log: () => {}, launch: (p, cb) => { console.log('LAUNCHED ' + JSON.stringify(p)); cb(null); }, sysinfo: (cb) => cb({ model: 'FAKE', webos: '0', name: 'Fake TV' }), app: () => ({ open: true }), editor: () => editor,
   volume: (d, cb) => { if (d === 'up') vol.level++; else if (d === 'down') vol.level--; else vol.muted = !vol.muted; cb(null, Object.assign({}, vol)); } });
 function ctl(u, body) {
   return new Promise((resolve) => {
@@ -62,6 +62,7 @@ async function answer(cmd) {
   if (cmd.what === 'schedule') return say({ k: a.k, arch: 3, progs: progs(1).map((p) => Object.assign({ d: 'About ' + p.t }, p)) });
   if (cmd.what === 'fav') { const c = chans.find((x) => x.k === a.k); if (!c) return no('That channel isn\'t in this playlist.'); c.fav = a.on ? 1 : 0; return say({ on: !!c.fav }); }
   if (cmd.what === 'remind') return say({ on: a.on !== false });
+  if (cmd.what === 'chan') { const c = chans.find((x) => x.k === a.k); if (!c) return no('That channel isn\'t in this playlist.'); return say({ k: c.k, name: c.n, provider: c.n, renamed: false, hidden: false, group: 'News', groups: [{ id: 'c_mine', name: 'My sports', has: 0 }], msg: a.op === 'info' ? '' : 'Done' }); }
   if (cmd.what === 'vodcats') return say({ cats: [{ id: '_all', n: 'All movies', count: movies.length }, { id: '100', n: 'Action', count: 10 }] });
   if (cmd.what === 'voditems') { const off = a.offset || 0, lim = a.limit || 120; const l = a.q ? movies.filter((m) => m.n.toLowerCase().includes(String(a.q).toLowerCase())) : movies; return say({ total: l.length, offset: off, items: l.slice(off, off + lim) }); }
   if (cmd.what === 'vodinfo') return say(a.kind === 'series' ? { id: a.id, n: 'A Show', plot: 'Things happen.', seasons: [{ s: 1, eps: [{ id: 9001, e: 1, t: 'Pilot', dur: '45 min', pos: 600, len: 2700 }] }] } : { id: a.id, n: 'Movie 1', plot: 'A film.', year: '2024', pos: 0, len: 0 });

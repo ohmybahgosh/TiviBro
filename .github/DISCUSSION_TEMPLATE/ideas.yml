@@ -1,11 +1,11 @@
-name: Idea or feature request
-description: Something TiviBro should do, or do better.
 title: "[Idea]: "
 labels: [enhancement]
 body:
   - type: markdown
     attributes:
       value: |
+        Ideas and feature requests live here in Discussions, where they're collected and discussed until work on one starts (then it becomes an issue).  Bugs still go to [Issues](https://github.com/ohmybahgosh/TiviBro/issues/new/choose).
+
         Check the [roadmap](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/ROADMAP.md) and the [TiviMate comparison](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/TIVIMATE-PARITY.md) first; it may already be planned.
   - type: textarea
     id: problem

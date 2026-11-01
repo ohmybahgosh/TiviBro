@@ -141,6 +141,7 @@ fun TvScreen(
     onType: (TvInput, String, Boolean) -> Unit,
 ) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    var chanOptions by remember { mutableStateOf<Chan?>(null) }
     // Back from another tab goes to the remote first, then to the TV list.
     BackHandler(enabled = tab != 0) { tab = 0 }
     var typing by remember { mutableStateOf(false) }
@@ -182,7 +183,7 @@ fun TvScreen(
                 tabs.forEachIndexed { i, t -> Tab(selected = tab == i, onClick = { tab = i }, text = { Text(t) }) }
             }
             when (tabs.getOrNull(tab)) {
-                "Channels" -> Channels(lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) }, onFav = onFav)
+                "Channels" -> Channels(lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) }, onFav = onFav, onOptions = { chanOptions = it })
                 "Guide" -> GuideTab(model, id, lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) })
                 "Movies" -> VodTab(model, id, "movie")
                 "Shows" -> VodTab(model, id, "series")
@@ -191,6 +192,7 @@ fun TvScreen(
         }
     }
     if (typing) TypeDialog(onDismiss = { typing = false }, onSend = { typing = false; onText(it) })
+    chanOptions?.let { c -> ChannelSheet(model, id, c, c.k == state?.channelKey, onPlay = { onPlay(c) }, onSchedule = null, onDismiss = { chanOptions = null }) }
 }
 
 private fun clock(t: Long): String = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(t))
@@ -346,7 +348,7 @@ private fun TypeDialog(onDismiss: () -> Unit, onSend: (String) -> Unit) {
 /* ---------- Play on TV ---------- */
 
 @Composable
-private fun Channels(lineup: Lineup?, note: String, playing: String, now: Long, onPlay: (Chan) -> Unit, onOpen: () -> Unit, onRetry: () -> Unit, onFav: (Chan, Boolean) -> Unit) {
+private fun Channels(lineup: Lineup?, note: String, playing: String, now: Long, onPlay: (Chan) -> Unit, onOpen: () -> Unit, onRetry: () -> Unit, onFav: (Chan, Boolean) -> Unit, onOptions: (Chan) -> Unit) {
     if (lineup == null) { LineupWaiting(note, onOpen, onRetry); return }
     var q by rememberSaveable { mutableStateOf("") }
     var group by rememberSaveable { mutableStateOf("") }
@@ -371,7 +373,7 @@ private fun Channels(lineup: Lineup?, note: String, playing: String, now: Long, 
         }
         if (list.isEmpty()) Text("Nothing here matches.", color = Muted, modifier = Modifier.padding(24.dp))
         LazyColumn(contentPadding = PaddingValues(bottom = 24.dp), modifier = Modifier.fillMaxSize()) {
-            items(list, key = { it.k }) { c -> ChannelRow(c, c.k == playing, now, onFav = { onFav(c, !c.fav) }) { onPlay(c) } }
+            items(list, key = { it.k }) { c -> ChannelRow(c, c.k == playing, now, onFav = { onFav(c, !c.fav) }, onLong = { onOptions(c) }) { onPlay(c) } }
         }
     }
 }
@@ -383,10 +385,11 @@ fun GroupChip(label: String, on: Boolean, onClick: () -> Unit) {
         border = FilterChipDefaults.filterChipBorder(enabled = true, selected = on, borderColor = Line))
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onFav: () -> Unit, onClick: () -> Unit) {
+private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onFav: () -> Unit, onLong: () -> Unit, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().clickable(onClickLabel = "Play on the TV", onClick = onClick).background(if (playing) Panel else Color.Transparent).padding(16.dp, 10.dp),
+        Modifier.fillMaxWidth().combinedClickable(onClickLabel = "Play on the TV", onLongClickLabel = "Channel options", onLongClick = onLong, onClick = onClick).background(if (playing) Panel else Color.Transparent).padding(16.dp, 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Logo(c.logo, c.number, 44.dp)

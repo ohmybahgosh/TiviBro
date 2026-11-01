@@ -165,6 +165,25 @@ var Phone = (function () {
       lineupAt = 0; sendLineup();
       return { on: Library.isFav(c.k) };
     },
+    /* Changes to one channel from the phone's long press: what it is now (op 'info'), hide, rename (an
+       empty name goes back to the provider's), put in or take out of one of your groups, or a new group
+       with it.  The phone's channel list follows (the lineup is sent again). */
+    chan: function (a) {
+      var c = chan(a.k), op = String(a.op || 'info'), msg = '';
+      var E = Store.edits, mine = function () { return Library.customGroups().map(function (g) { return { id: g.id, name: g.name, has: g.items.indexOf(c.k) >= 0 ? 1 : 0 }; }); };
+      if (op === 'hide') { Library.hideChannel(c.k, a.on !== false); msg = a.on !== false ? 'Hidden on the TV.  Bring it back in Settings > Groups, sorting, hidden.' : 'Shown again'; }
+      else if (op === 'rename') { var n = String(a.name || '').trim().slice(0, 80); Library.renameChannel(c.k, n); msg = n ? 'Renamed to ' + n : 'Back to the provider\'s name'; }
+      else if (op === 'group') {
+        var g = Library.customGroups().filter(function (x) { return x.id === a.group; })[0];
+        if (!g) throw new Error('That group isn\'t on the TV any more.');
+        if (a.on !== false) { Library.copyTo(g.id, [c.k]); msg = 'Added to ' + g.name; } else { Library.removeFrom(g.id, c.k); msg = 'Taken out of ' + g.name; }
+      } else if (op === 'newgroup') {
+        var nm = String(a.name || '').trim().slice(0, 80); if (!nm) throw new Error('Give the group a name.');
+        var ng = Library.createGroup(nm); Library.copyTo(ng.id, [c.k]); msg = 'New group ' + nm + ', with this channel';
+      } else if (op !== 'info') throw new Error('Unknown change');
+      if (op !== 'info') { Views.refreshLists(true); lineupAt = 0; sendLineup(); }
+      return { k: c.k, name: Library.name(c), provider: c.n, renamed: !!E.renames[c.k], hidden: !!E.hiddenChannels[c.k], group: Library.groupName(c.g), groups: mine(), msg: msg };
+    },
     vodcats: function (a) { return Vod.phone.cats(vodKind(a)); },
     voditems: function (a) { return Vod.phone.items(vodKind(a), a.cat, a.q, a.offset, a.limit); },
     vodinfo: function (a) { return Vod.phone.info(vodKind(a), a.id); },

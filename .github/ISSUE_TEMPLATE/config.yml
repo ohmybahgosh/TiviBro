@@ -1,5 +1,8 @@
 blank_issues_enabled: false
 contact_links:
+  - name: Idea or feature request
+    url: https://github.com/ohmybahgosh/TiviBro/discussions/new?category=ideas
+    about: Ideas and requests go to Discussions > Ideas, where they're collected until work on one starts.
   - name: User guide
     url: https://github.com/ohmybahgosh/TiviBro/blob/main/docs/USER-GUIDE.md
     about: Every remote button, screen and setting explained, plus troubleshooting.  Most answers are here.

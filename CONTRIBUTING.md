@@ -4,7 +4,7 @@ Thanks for helping.  Bug reports, ideas, docs fixes and code are all welcome.
 
 ## Reporting a problem
 
-Use [New issue](https://github.com/ohmybahgosh/TiviBro/issues/new/choose) and pick the form that fits: something doesn't work, channels/streams/guide, installing or updating, an idea, a question, or docs.
+Use [New issue](https://github.com/ohmybahgosh/TiviBro/issues/new/choose) and pick the form that fits: something doesn't work, channels/streams/guide, installing or updating, a question, or docs.  Ideas and feature requests go to [Discussions > Ideas](https://github.com/ohmybahgosh/TiviBro/discussions/categories/ideas).
 
 - **Never post your provider's address, username, password or a stream link**, in the text, a log or a screenshot.  TiviBro masks logins in its own log, but check anyway.
 - Include the TiviBro version (Settings > Updates and about) and your TV model and webOS version.

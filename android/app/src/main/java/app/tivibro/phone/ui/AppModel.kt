@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import app.tivibro.phone.data.BackupStore
 import app.tivibro.phone.data.SavedBackup
 import app.tivibro.phone.data.TvStore
+import app.tivibro.phone.proto.ChanEdit
 import app.tivibro.phone.proto.BackupFile
 import app.tivibro.phone.proto.GuidePage
 import app.tivibro.phone.proto.Schedule
@@ -328,6 +329,14 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             say(if (now) "Added to Favorites on the TV" else "Removed from Favorites")
         } catch (e: TbException) { say(e.message ?: "The TV said no") }
         catch (e: Exception) { say("The TV didn't answer.  Is it on, and on the same network?") }
+    }
+
+    /** One channel's details (op "info") or a change to it: hide, rename, group (in or out of one of your
+        groups), newgroup.  After a change the channel list is fetched again. */
+    suspend fun chanEdit(id: String, k: String, op: String, args: JSONObject = JSONObject()): ChanEdit {
+        val r = ChanEdit.from(ask(id, "chan", args.put("k", k).put("op", op), tries = 1))
+        if (op != "info") { if (r.msg.isNotBlank()) say(r.msg); loadLineup(id, true) }
+        return r
     }
 
     suspend fun vodCats(id: String, kind: String): List<VodCat>? {

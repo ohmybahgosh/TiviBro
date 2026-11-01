@@ -5,7 +5,9 @@
 package app.tivibro.phone.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -99,6 +101,7 @@ fun GuideTab(model: AppModel, id: String, lineup: Lineup?, lineupNote: String, p
     val asked = remember(at, group) { mutableStateMapOf<Int, Boolean>() }
     var error by remember(at, group) { mutableStateOf<String?>(null) }
     var open by remember { mutableStateOf<Chan?>(null) }
+    var options by remember { mutableStateOf<Chan?>(null) }
     val scope = rememberCoroutineScope()
     val list = remember(lineup, group) { if (group.isBlank()) lineup.all else lineup.groups.firstOrNull { it.id == group }?.keys?.mapNotNull { lineup.byKey[it] } ?: lineup.all }
     val state = rememberLazyListState()
@@ -129,12 +132,13 @@ fun GuideTab(model: AppModel, id: String, lineup: Lineup?, lineupNote: String, p
         LazyColumn(state = state, contentPadding = PaddingValues(bottom = 24.dp), modifier = Modifier.fillMaxSize()) {
             itemsIndexed(list, key = { _, c -> c.k }) { i, c ->
                 LaunchedEffect(i / PAGE) { load(i / PAGE) }
-                GuideChannelRow(c, rows[c.k], c.k == playing, at ?: now, now) { open = c }
+                GuideChannelRow(c, rows[c.k], c.k == playing, at ?: now, now, onPlay = { onPlay(c) }, onLong = { options = c }) { open = c }
                 HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp, modifier = Modifier.padding(start = 74.dp))
             }
         }
     }
     open?.let { c -> ScheduleSheet(model, id, c, at, c.k == playing, onPlay = { onPlay(c); open = null }, onDismiss = { open = null }) }
+    options?.let { c -> ChannelSheet(model, id, c, c.k == playing, onPlay = { onPlay(c) }, onSchedule = { open = c }, onDismiss = { options = null }) }
 }
 
 @Composable
@@ -148,13 +152,15 @@ fun LineupWaiting(note: String, onOpen: () -> Unit, onRetry: () -> Unit) {
     }
 }
 
+// Tap: the channel's schedule.  The play button: straight to the TV.  Long press: the channel's options.
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long, now: Long, onClick: () -> Unit) {
+private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long, now: Long, onPlay: () -> Unit, onLong: () -> Unit, onClick: () -> Unit) {
     val progs = row?.progs
     val first = progs?.firstOrNull { it.end > at }
     val after = progs?.filter { it.start >= (first?.end ?: Long.MAX_VALUE) }?.take(2).orEmpty()
     Row(
-        Modifier.fillMaxWidth().clickable(onClickLabel = "Schedule", onClick = onClick).background(if (playing) Panel else Color.Transparent).padding(16.dp, 12.dp),
+        Modifier.fillMaxWidth().combinedClickable(onClickLabel = "Schedule", onLongClickLabel = "Channel options", onLongClick = onLong, onClick = onClick).background(if (playing) Panel else Color.Transparent).padding(16.dp, 12.dp),
         verticalAlignment = Alignment.Top,
     ) {
         Logo(c.logo, c.number, 44.dp)
@@ -179,6 +185,9 @@ private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long,
                     }
                 }
             }
+        }
+        IconButton(onClick = onPlay) {
+            Icon(Icons.Rounded.PlayArrow, if (playing) "On the TV now" else "Watch " + c.name + " on TV", tint = if (playing) Accent2 else Muted)
         }
     }
 }

@@ -44,6 +44,15 @@ adb shell input keyevent KEYCODE_BACK
 sleep 3
 [ -n "$(find_text "Edit channels")" ] || { echo "Back did not return to the TV list"; adb exec-out screencap -p > "$OUT/fail.png"; adb logcat -d > "$OUT/logcat.txt"; grep -E "TiviBroBack|ActivityTaskManager|wm_|$PKG|FATAL" "$OUT/logcat.txt" | tail -60; exit 1; }
 echo "Back returns to the TV list"
+# The Quick Settings tile opens TiviBro on the TV (it used to do nothing: its work was cancelled as soon
+# as Android let go of the tile).
+n0=$(grep -c '^LAUNCHED' /tmp/fake-tv.txt || true)
+adb shell cmd statusbar add-tile $PKG/.tile.TvTileService >/dev/null 2>&1 || true
+adb shell cmd statusbar click-tile $PKG/.tile.TvTileService >/dev/null 2>&1
+adb shell cmd statusbar collapse >/dev/null 2>&1 || true
+for i in $(seq 1 15); do [ "$(grep -c '^LAUNCHED' /tmp/fake-tv.txt || true)" -gt "$n0" ] && break; sleep 1; done
+[ "$(grep -c '^LAUNCHED' /tmp/fake-tv.txt || true)" -gt "$n0" ] || { echo "The tile did not open TiviBro on the TV"; adb logcat -d | grep -E "TiviBroTile|TileService" | tail -20; exit 1; }
+echo "The tile opens TiviBro on the TV"
 # The remote, Play on TV, and Now playing following the TV.
 tap "Remote and channels"
 shot 4-remote 5
@@ -61,6 +70,12 @@ tap "Guide"
 shot 8-guide 6
 tap "World Tonight"
 shot 9-schedule 5
+adb shell input keyevent KEYCODE_BACK; sleep 2
+# Press and hold a channel in the guide: its options.
+xy=$(find_text "World Tonight"); [ -n "$xy" ] && adb shell input swipe $xy $xy 1000
+shot 9b-channel-options 4
+[ -n "$(find_text "Your groups")" ] || { echo "Press and hold did not show the channel's options"; exit 1; }
+echo "Press and hold shows a channel's options"
 adb shell input keyevent KEYCODE_BACK; sleep 2
 tap "Movies"
 shot 10-movies 6
