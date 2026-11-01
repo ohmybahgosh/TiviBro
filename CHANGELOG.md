@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 48, 2026-11-01)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 48
 
 - **My teams fills in as soon as the guide arrives.**  Right after TiviBro starts, the group was worked out before a big guide had loaded, and kept only the event channels for minutes.  Now it looks again the moment the guide is in, so your team's channel and the local station showing the game appear.
 - **At most 8 channels a game in My teams**, your team's channel and the channels in your own groups first (a network game is on dozens of local stations).
 - **A college game is no longer taken for your team** when its description only uses nicknames ("the Tigers and the Cardinals").  Replays aren't listed either.
 
-## 0.6.0 (alpha 47, 2026-11-01)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 47
+### In alpha 47
 
 - **My teams fixes from the first real game day.**
   - The local station carrying the game is there when you keep it in your own group (**Local channels**) and its provider group is hidden.  Search finds it the same way.
