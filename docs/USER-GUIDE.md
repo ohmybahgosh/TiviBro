@@ -772,7 +772,7 @@ To get it: [download the newest APK](https://tivibro.app/apk/) on your phone and
 
 | Setting | Choices | What it does |
 |---|---|---|
-| **Phone app connection** | On · **Off** | Lets paired phones reach this TV on your network, also while TiviBro is closed.  Off: phones can't find or reach it. |
+| **Phone app connection** | On · **Off** | Lets paired phones reach this TV on your network, also while TiviBro is closed or another app is on screen.  If webOS stops it, it comes back within 5 minutes, and after an install with the install script it's back right away.  Off: phones can't find or reach it. |
 | **Pair the TiviBro app…** | | Turns the connection on if needed and shows a QR code and a 12-character code for the app, for 10 minutes or until a phone pairs.  Five wrong codes end that code. |
 | **Paired phones** | | Each phone, when it was added and last seen.  Select one to remove it; it can't connect again until you pair it again. |
 | **This TV's name** | | How phones show this TV. |

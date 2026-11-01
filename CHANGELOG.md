@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The phone app can reach the TV right after an update.**  Installing a new version stopped TiviBro's helper and removed its restart schedule, so the phone app couldn't reach the TV until TiviBro was opened.  The install script now starts it again straight away, and (with the phone app connection on) adds a 5-minute check that an update from the Homebrew Channel app can't remove.  The helper's own check now runs every 5 minutes instead of 15, so if webOS stops it while another app or the screensaver is on, it's back sooner.
+
 ## 0.6.0 (alpha 43, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

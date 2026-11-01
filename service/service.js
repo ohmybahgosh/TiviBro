@@ -2,7 +2,9 @@
    subscription is open (and an activity holds the service), the relay keeps running.
    When the app closes, the subscription drops and the service shuts down on its own, unless the
    phone app connection is on (companion.js): then the helper stays, with only that LAN server
-   running, and an activity every 15 minutes brings it back after the TV restarts. */
+   running, and an activity every 5 minutes brings it back after the TV restarts or webOS stops it.
+   install.sh also adds one that isn't part of the package (an update removes the package's own); the
+   wake call below ends either for good once the phone app connection is off. */
 'use strict';
 var Service = require('webos-service');
 var proxy = require('./proxy');
@@ -94,7 +96,7 @@ var companion = require('./companion').create({
   editor: function () { return relay ? relay.editor : null; },
   onSwitch: function (on) { if (on) { hold(); wake(true); } else { wake(false); if (!subs) release(); } }
 });
-/* Every 15 minutes the activity manager calls "wake", which starts the helper if it isn't running
+/* Every 5 minutes the activity manager calls "wake", which starts the helper if it isn't running
    (after the TV restarted, or webOS stopped it).  Persistent, so it outlives a restart. */
 function wake(on) {
   if (!on) return lcall(AM + '/cancel', { activityName: WAKE }, function () {});
@@ -102,7 +104,7 @@ function wake(on) {
     activity: {
       name: WAKE, description: 'TiviBro: keep the phone app connection available',
       type: { background: true, persist: true, explicit: true },
-      schedule: { interval: '15m' },
+      schedule: { interval: '5m' },
       callback: { method: 'luna://app.tivibro.tv.service/wake', params: {} }
     },
     start: true, replace: true
@@ -157,7 +159,7 @@ service.register('visible', function (message) {
 service.register('fire', function (message) {
   reminders.fire(message.payload || {}, function (what) { message.respond({ returnValue: true, result: what }); });
 });
-// Called by the activity manager every 15 minutes while the phone app connection is on.
+// Called by the activity manager every 5 minutes while the phone app connection is on (and by install.sh).
 service.register('wake', function (message) {
   var act = message.payload && message.payload.$activity && message.payload.$activity.activityId;
   if (companion.on) { hold(); companion.start(function () {}); }

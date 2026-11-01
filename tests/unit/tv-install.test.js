@@ -128,6 +128,18 @@ server.listen(0, '127.0.0.1', async () => {
   r = await run(['--bogus']);
   ok('unknown options are refused', r.code !== 0 && /Unknown option/.test(r.out));
 
+  // The phone app connection: an install stopped the helper and removed its restart schedule.
+  const svc = path.join(tmp, 'svc'); fs.mkdirSync(svc, { recursive: true });
+  fs.writeFileSync(path.join(svc, 'companion.json'), '{"id":"x","on":true,"phones":[]}');
+  r = await run(['--no-launch'], { TIVIBRO_SVC_DIR: svc });
+  ok('with the phone app connection on, the helper is started again after the install', r.code === 0 && /app\.tivibro\.tv\.service\/wake/.test(r.log) && /Phone app connection restarted/.test(r.out), r.log.split('\n').slice(-4).join(' | '));
+  ok('and a 5 minute check that an update can\'t remove is added', /activitymanager\/create.*tivibro-keepalive.*"interval":"5m".*app\.tivibro\.tv\.service\/wake/.test(r.log));
+  r = await run(['--no-launch'], { TIVIBRO_SVC_DIR: svc, TIVIBRO_NO_KEEPALIVE: '1' });
+  ok('TIVIBRO_NO_KEEPALIVE=1 leaves the check out', /service\/wake/.test(r.log) && !/tivibro-keepalive/.test(r.log));
+  fs.writeFileSync(path.join(svc, 'companion.json'), '{"id":"x","on":false,"phones":[]}');
+  r = await run(['--no-launch'], { TIVIBRO_SVC_DIR: svc });
+  ok('with it off, nothing is started or scheduled', !/service\/wake|tivibro-keepalive/.test(r.log));
+
   const src = fs.readFileSync(SCRIPT, 'utf8');
   ok('no bash-only syntax (TVs have BusyBox sh)', !/\[\[|\bfunction\s+\w+|\$\{\w+\/\/|<<<|\bdeclare\b|\blocal\b/.test(src.replace(/^#.*$/gm, '')));
   const posix = cp.spawnSync('sh', ['-n', SCRIPT]);

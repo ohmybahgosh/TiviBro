@@ -4,7 +4,7 @@ How the TiviBro phone app talks to TiviBro on the TV.  For anyone building or ch
 
 - Off until the user switches it on in TiviBro: **Settings > Phone app > Phone app connection**.
 - While on, TiviBro's helper keeps running in the background, also when TiviBro is closed.  It listens on **TCP 47810** (the API, plain HTTP on the home network) and **UDP 47810** (discovery).  If 47810 is taken it uses 47816, 47817 or 47818, and says so in discovery.
-- After the TV restarts, the helper is back within 15 minutes (a persistent webOS activity calls it).
+- After the TV restarts, or if webOS stops it, the helper is back within 5 minutes (a persistent webOS activity calls it).  An install removes the package's own activity, so `install.sh` starts the helper again and adds a second 5-minute activity (`tivibro-keepalive`) that isn't part of the package; the helper ends either one when the connection is turned off.  `TIVIBRO_NO_KEEPALIVE=1` skips the second.
 
 ## Finding TVs
 
