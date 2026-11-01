@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 42, 2026-11-01)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 42
 
 - **Big channel lists load with far less memory.**  On a TV, TiviBro's helper now downloads and reads the provider's channel list (Xtream Codes or M3U) and hands TiviBro just the channels, using the same code, so every edit still fits.  With a 180,000-channel list, TiviBro used about 89 MB right after starting, where it used 268 MB before.
 - **One settings page for the phone app and the web editor.**  **Settings > Phone app and web editor** says which is which: **Pair the TiviBro app…** (scanned inside the app; it turns the connection on if needed) and **Open it in a phone's browser (QR code)** for the web editor.  The phone app works without the web editor switched on.
@@ -15,11 +19,7 @@
 - **Web editor: the "Show unsure guesses" box in Smart match** sits on its own line.
 - **Big playlists live on the TV's storage, not the browser's** (follow-up to [#18](https://github.com/ohmybahgosh/TiviBro/issues/18)).  Older TVs give TiviBro only a small share of their storage, so a big channel list or movie library didn't fit and was downloaded again every time.  The channel list and the full movie and show lists are now kept by TiviBro's helper on the TV itself, which also does the language and category filtering, so TiviBro holds only what you see.  Changing languages in Movies and Shows no longer downloads anything.
 
-## 0.6.0 (alpha 41, 2026-11-01)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 41
+### In alpha 41
 
 - **Numbers that stay put** ([#17](https://github.com/ohmybahgosh/TiviBro/issues/17)).  The buffer info no longer grows and shrinks as its seconds change.  **Settings > Appearance > Numbers** can give every digit the same width (**Even width**), so channel numbers and times line up, or a fixed-width style with a slashed zero.
 - **No more Movies and Shows crash on older TVs with big lists** ([#18](https://github.com/ohmybahgosh/TiviBro/issues/18)).  Changing the language filter or a category while the list was still loading could stop Movies and Shows from working; the list now stays on screen and is re-sorted from memory.  When a TV runs out of storage saving a big playlist, TiviBro frees the cached lists of your other playlists and tries again, so it no longer downloads everything again each time it starts.
