@@ -131,6 +131,30 @@ object Crypto {
 
     fun same(a: String, b: String): Boolean = MessageDigest.isEqual(a.toByteArray(), b.toByteArray())
 
+    /* Sealed bodies (logins, backups): AES-256-GCM under a key made from the phone's key, bound to the
+       phone and the request's nonce.  The TV answers a sealed request with a sealed answer. */
+    private fun sealKey(key: ByteArray): ByteArray {
+        val mac = Mac.getInstance("HmacSHA256"); mac.init(SecretKeySpec(key, "HmacSHA256"))
+        return mac.doFinal("tivibro-seal-v1".toByteArray(Charsets.UTF_8))
+    }
+    private fun sealAad(dir: String, phoneId: String, nonce: String) = "tivibro-seal-$dir-v1\n$phoneId\n$nonce".toByteArray(Charsets.UTF_8)
+
+    fun seal(obj: JSONObject, key: ByteArray, dir: String, phoneId: String, nonce: String): JSONObject {
+        val iv = ByteArray(12).also { rnd.nextBytes(it) }
+        val c = Cipher.getInstance("AES/GCM/NoPadding")
+        c.init(Cipher.ENCRYPT_MODE, SecretKeySpec(sealKey(key), "AES"), GCMParameterSpec(128, iv))
+        c.updateAAD(sealAad(dir, phoneId, nonce))
+        val out = c.doFinal(obj.toString().toByteArray(Charsets.UTF_8))
+        return JSONObject().put("iv", b64(iv)).put("data", b64(out.copyOfRange(0, out.size - 16))).put("tag", b64(out.copyOfRange(out.size - 16, out.size)))
+    }
+
+    fun unseal(box: JSONObject, key: ByteArray, dir: String, phoneId: String, nonce: String): JSONObject {
+        val c = Cipher.getInstance("AES/GCM/NoPadding")
+        c.init(Cipher.DECRYPT_MODE, SecretKeySpec(sealKey(key), "AES"), GCMParameterSpec(128, unb64(box.getString("iv"))))
+        c.updateAAD(sealAad(dir, phoneId, nonce))
+        return JSONObject(String(c.doFinal(unb64(box.getString("data")) + unb64(box.getString("tag"))), Charsets.UTF_8))
+    }
+
     private fun hex(b: ByteArray) = b.joinToString("") { "%02x".format(it) }
 }
 
@@ -207,23 +231,42 @@ sealed class EditorState {
 
 /** Signed calls to a paired TV.  Every answer must carry the TV's signature. */
 class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
-    fun call(method: String, path: String, body: JSONObject? = null, time: Long? = null): JSONObject {
+    fun call(method: String, path: String, body: JSONObject? = null, time: Long? = null): JSONObject = call(method, path, body, time, Crypto.nonce(), null)
+
+    private fun call(method: String, path: String, body: JSONObject?, time: Long?, nonce: String, open: ((JSONObject) -> JSONObject)?): JSONObject {
         val data = body?.toString()?.toByteArray(Charsets.UTF_8) ?: ByteArray(0)
         val t = time ?: (System.currentTimeMillis() + tv.offset)
-        val nonce = Crypto.nonce()
         val sig = Crypto.hmacHex(tv.key, "tivibro-req-v1\n$method\n$path\n$t\n$nonce\n${Crypto.sha256Hex(data)}")
         val r = http(tv.host, tv.port, method, path, if (body != null) data else null, mapOf(
             "X-TiviBro-Phone" to tv.phoneId, "X-TiviBro-Time" to t.toString(), "X-TiviBro-Nonce" to nonce, "X-TiviBro-Sig" to sig,
         ), timeoutMs)
         val want = Crypto.hmacHex(tv.key, "tivibro-res-v1\n$nonce\n${r.status}\n${Crypto.sha256Hex(r.body)}")
-        val j = r.json
+        val raw = r.json
         if (r.sig == null || !Crypto.same(r.sig.lowercase(), want)) {
+            val j = raw
             // The one answer the TV can't sign: it no longer knows this phone.  Anyone could send that, so say so, but keep the TV.
             throw TbException(j?.optString("error")?.ifBlank { null } ?: "The TV's answer was not signed (${r.status}).", j?.optString("code") ?: "", unsigned = true)
         }
+        // A sealed answer is opened here (errors from before the TV could open the request come back plain).
+        val j = if (raw != null && open != null && raw.has("sealed")) open(raw.getJSONObject("sealed")) else raw
         if (j == null) throw TbException("The TV gave an answer TiviBro doesn't understand.", "bad")
         if (r.status >= 400) throw TbException(j.optString("error", "Failed (${r.status})."), j.optString("code"))
         return j
+    }
+
+    /**
+     * A question for TiviBro on the TV (POST /v1/ask): the guide, movies and shows, favorites, reminders,
+     * typing, adding a playlist, backups.  [seal] for logins and backups.  The answer is { ok, data },
+     * or { pending } when TiviBro didn't answer in time, or { closed } with [noOpen] and TiviBro closed.
+     */
+    fun ask(what: String, args: JSONObject = JSONObject(), seal: Boolean = false, noOpen: Boolean = false): JSONObject {
+        val body = JSONObject().put("what", what).put("args", args)
+        if (noOpen) body.put("noOpen", true)
+        if (!seal) return call("POST", "/v1/ask", body)
+        val nonce = Crypto.nonce()
+        return call("POST", "/v1/ask", JSONObject().put("sealed", Crypto.seal(body, tv.key, "req", tv.phoneId, nonce)), null, nonce) { box ->
+            Crypto.unseal(box, tv.key, "res", tv.phoneId, nonce)
+        }
     }
 
     fun info(): JSONObject = call("GET", "/v1/info")
@@ -265,6 +308,7 @@ data class NowState(
     val channelKey: String = "", val channel: String = "", val number: String = "", val logo: String = "", val group: String = "",
     val now: Prog? = null, val next: Prog? = null, val paused: Boolean = false,
     val vodTitle: String = "", val vodPos: Int = 0, val vodDur: Int = 0,
+    val inputs: List<TvInput> = emptyList(),
 ) {
     companion object {
         fun from(j: JSONObject): NowState {
@@ -277,6 +321,7 @@ data class NowState(
                 logo = p?.optString("logo").orEmpty(), group = p?.optString("group").orEmpty(),
                 now = Prog.from(s?.optJSONObject("now")), next = Prog.from(s?.optJSONObject("next")), paused = s?.optBoolean("paused") == true,
                 vodTitle = v?.optString("title").orEmpty(), vodPos = v?.optInt("pos") ?: 0, vodDur = v?.optInt("dur") ?: 0,
+                inputs = s?.optJSONArray("inputs")?.let { a -> (0 until a.length()).mapNotNull { TvInput.from(a.optJSONObject(it)) } }.orEmpty(),
             )
         }
     }
@@ -299,6 +344,16 @@ data class Lineup(val rev: Int, val channels: List<Chan>, val groups: List<Group
                 Group(g.optString("id"), g.optString("name"), if (ks == null) emptyList() else (0 until ks.length()).map { ks.getString(it) })
             }
             return Lineup(j.optInt("rev"), chans, groups)
+        }
+    }
+}
+
+/** A text box on the TV's screen right now (set-up, search, a rename), that the phone can type into.  A password's text never comes to the phone. */
+data class TvInput(val id: Int, val label: String, val type: String, val value: String, val filled: Boolean, val canSubmit: Boolean, val focused: Boolean) {
+    val secret get() = type == "password"
+    companion object {
+        fun from(j: JSONObject?): TvInput? = j?.takeIf { it.has("id") }?.let {
+            TvInput(it.optInt("id"), it.optString("label", "Text"), it.optString("type", "text"), it.optString("value", ""), it.optInt("has") == 1 || it.optString("value").isNotEmpty(), it.optInt("submit") == 1, it.optInt("focus") == 1)
         }
     }
 }

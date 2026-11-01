@@ -581,6 +581,14 @@ var WebEdit = (function () {
     get on() { return on; }, get status() { return status; },
     set onStatus(fn) { onStatus = fn; },
     addresses: function () { return status && status.ips && status.ips.length ? status.ips.map(function (ip) { return 'http://' + ip + ':' + status.port; }) : []; },
+    // The phone app runs the same actions (adding a playlist from a shared link), with the same banner.
+    run: function (type, args) {
+      return Promise.resolve().then(function () { if (!RUN[type]) throw new Error('Unknown action ' + type); return RUN[type](args || {}); })
+        .then(function (r) { return { msg: r && r.msg }; }, function (e) {
+          if (type === 'addPlaylist' || type === 'restore') activity('That didn\'t work: ' + String((e && e.message) || 'it failed').replace(/([^.!?])$/, '$1.') + '  Fix it on your phone and send it again.', 'err');
+          throw e;
+        });
+    },
     _testEpgSource: function (a) { return RUN.testEpgSource(a); }   // test hook only
   };
   return exports;

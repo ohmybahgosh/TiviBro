@@ -1,6 +1,7 @@
 /* The app's state and actions, shared by every screen: paired TVs, discovery on the network, pairing,
    refreshing what each TV is doing, remote keys and actions, Play on TV, the channel list (lineup),
-   volume, the editor address and Wake-on-LAN.  Talks to the TV only through proto/. */
+   favorites, the guide and reminders, Movies and Shows, typing into the TV, adding a shared playlist
+   link, backups, volume, the editor address and Wake-on-LAN.  Talks to the TV only through proto/. */
 package app.tivibro.phone.ui
 
 import android.app.Application
@@ -8,7 +9,16 @@ import android.os.Build
 import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.tivibro.phone.data.BackupStore
+import app.tivibro.phone.data.SavedBackup
 import app.tivibro.phone.data.TvStore
+import app.tivibro.phone.proto.BackupFile
+import app.tivibro.phone.proto.GuidePage
+import app.tivibro.phone.proto.Schedule
+import app.tivibro.phone.proto.VodCat
+import app.tivibro.phone.proto.VodInfo
+import app.tivibro.phone.proto.VodPage
+import org.json.JSONObject
 import app.tivibro.phone.proto.Discovery
 import app.tivibro.phone.proto.EditorState
 import app.tivibro.phone.proto.Found
@@ -50,6 +60,7 @@ data class Pairing0(val busy: Boolean = false, val error: String? = null, val do
 
 class AppModel(app: Application) : AndroidViewModel(app) {
     private val store = TvStore(app)
+    val backups = BackupStore(app)
     private val _tvs = MutableStateFlow(store.load().map { TvUi(it) })
     val tvs: StateFlow<List<TvUi>> = _tvs.asStateFlow()
     private val _msg = MutableSharedFlow<String>(extraBufferCapacity = 8)
@@ -101,6 +112,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             if (t != tv || t.mac != tv.mac || t.model != tv.model || t.version != tv.version) saveTv(t)
             val open = info.optJSONObject("tivibro")?.optBoolean("open") == true
             setUi(tv.id) { it.copy(power = Power.ON, tivibroOpen = open) }
+            if (open && backups.due(tv.id) && backingUp.add(tv.id)) viewModelScope.launch { try { runCatching { autoBackup(t) } } finally { backingUp.remove(tv.id) } }
             true
         } catch (e: TbException) {
             if (e.code == "unpaired") { setUi(tv.id) { it.copy(power = Power.UNPAIRED) }; true }
@@ -154,6 +166,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         withContext(Dispatchers.IO) { runCatching { TvClient(tv, 3000).forget() } }
         store.remove(id)
         if (store.tileTv == id) store.tileTv = null
+        backups.forget(id)
         _tvs.update { l -> l.filterNot { it.tv.id == id } }
         say("${tv.name} removed")
     }
@@ -261,6 +274,114 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             delay(1200)
         }
         if (_lineup.value == null) _lineupNote.value = "none"
+    }
+
+    /* ---------- questions for TiviBro (POST /v1/ask) ---------- */
+
+    /** Asks TiviBro on the TV and returns its answer.  While TiviBro is still opening, asks again a few times. */
+    suspend fun ask(id: String, what: String, args: JSONObject = JSONObject(), seal: Boolean = false, timeoutMs: Int = 45_000, tries: Int = 3): JSONObject = withContext(Dispatchers.IO) {
+        val tv = tv(id) ?: throw TbException("This TV is no longer paired.")
+        repeat(tries) { i ->
+            val r = TvClient(tv, timeoutMs).ask(what, args, seal)
+            if (!r.optBoolean("pending")) return@withContext r.optJSONObject("data") ?: JSONObject()
+            if (i < tries - 1) delay(1200)
+        }
+        throw TbException("TiviBro on the TV didn't answer in time.  Is it open?")
+    }
+
+    /** A page of the guide.  Rows whose guide the TV is still loading are asked for again. */
+    suspend fun guide(id: String, group: String, at: Long?, offset: Int, limit: Int = 60): GuidePage {
+        fun args() = JSONObject().put("group", group).put("offset", offset).put("limit", limit).apply { if (at != null) put("at", at) }
+        var page = GuidePage.from(ask(id, "guide", args()))
+        for (i in 0 until 4) {
+            if (page.pending == 0) break
+            delay(1500)
+            val again = GuidePage.from(ask(id, "guide", args()))
+            page = again.copy(rows = again.rows.mapIndexed { n, r -> if (r.progs == null) page.rows.getOrNull(n)?.takeIf { it.key == r.key && it.progs != null } ?: r else r })
+        }
+        return page
+    }
+
+    suspend fun schedule(id: String, k: String): Schedule {
+        var s = Schedule.from(ask(id, "schedule", JSONObject().put("k", k)))
+        for (i in 0 until 4) {
+            if (!s.pending && !s.descPending) break
+            delay(1500)
+            s = Schedule.from(ask(id, "schedule", JSONObject().put("k", k)))
+        }
+        return s
+    }
+
+    suspend fun remind(id: String, k: String, start: Long, on: Boolean): Boolean =
+        ask(id, "remind", JSONObject().put("k", k).put("s", start).put("on", on), tries = 1).optBoolean("on")
+
+    /** A favorite on or off.  The channel list here follows at once; the TV sends its own after. */
+    fun favorite(id: String, k: String, on: Boolean) = viewModelScope.launch {
+        _lineup.value = _lineup.value?.let { l ->
+            l.copy(channels = l.channels.map { if (it.k == k) it.copy(fav = on) else it },
+                groups = l.groups.map { g -> if (g.id == "c_fav") g.copy(keys = if (on) (g.keys - k) + k else g.keys - k) else g })
+        }
+        try {
+            val now = ask(id, "fav", JSONObject().put("k", k).put("on", on), tries = 1).optBoolean("on")
+            say(if (now) "Added to Favorites on the TV" else "Removed from Favorites")
+        } catch (e: TbException) { say(e.message ?: "The TV said no") }
+        catch (e: Exception) { say("The TV didn't answer.  Is it on, and on the same network?") }
+    }
+
+    suspend fun vodCats(id: String, kind: String): List<VodCat>? {
+        val j = ask(id, "vodcats", JSONObject().put("kind", kind), timeoutMs = 100_000)
+        if (j.optBoolean("none")) return null
+        val a = j.optJSONArray("cats") ?: return emptyList()
+        return (0 until a.length()).map { a.getJSONObject(it) }.map { VodCat(it.optString("id"), it.optString("n"), it.optInt("count"), it.optInt("locked") == 1) }
+    }
+
+    suspend fun vodItems(id: String, kind: String, cat: String, q: String, offset: Int): VodPage =
+        VodPage.from(ask(id, "voditems", JSONObject().put("kind", kind).put("cat", cat).put("q", q).put("offset", offset).put("limit", 90), timeoutMs = 100_000))
+
+    suspend fun vodInfo(id: String, kind: String, itemId: String): VodInfo = VodInfo.from(ask(id, "vodinfo", JSONObject().put("kind", kind).put("id", itemId)))
+
+    fun vodPlay(id: String, kind: String, itemId: String, ep: String?, fromStart: Boolean) = viewModelScope.launch {
+        val tv = tv(id) ?: return@launch
+        try {
+            val r = ask(id, "vodplay", JSONObject().put("kind", kind).put("id", itemId).put("ep", ep ?: JSONObject.NULL).put("fromStart", fromStart), tries = 1)
+            say("Playing ${r.optString("title", "it")} on ${tv.name}")
+        } catch (e: TbException) { say(e.message ?: "The TV said no") }
+        catch (e: Exception) { say("The TV didn't answer.  Is it on, and on the same network?") }
+    }
+
+    /** Typing on the phone into a box on the TV's screen.  Sealed: it may be a password. */
+    fun typeInto(id: String, input: Int, value: String, submit: Boolean = false) {
+        val tv = tv(id) ?: return
+        presses.trySend { TvClient(tv, 8000).ask("input", JSONObject().put("id", input).put("value", value).put("submit", submit), seal = true) }
+    }
+
+    /** A provider link shared to the app: added on the TV like the web editor's Add a playlist.  Sealed: it holds the login. */
+    suspend fun addPlaylist(id: String, link: String, name: String, use: Boolean): String =
+        ask(id, "playlist", JSONObject().put("link", link).put("name", name).put("use", use), seal = true, timeoutMs = 140_000, tries = 1).optString("msg", "Added")
+
+    /* ---------- backups ---------- */
+
+    private val backingUp = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+    private suspend fun autoBackup(tv: Tv) = withContext(Dispatchers.IO) {
+        val r = TvClient(tv, 60_000).ask("backup", seal = true, noOpen = true)
+        r.optJSONObject("data")?.optJSONObject("backup")?.let { backups.save(tv.id, it, auto = true) }
+    }
+
+    suspend fun backupNow(id: String): SavedBackup = withContext(Dispatchers.IO) {
+        val b = ask(id, "backup", seal = true, timeoutMs = 60_000).optJSONObject("backup") ?: throw TbException("The TV sent no backup.")
+        backups.save(id, b, auto = false)
+    }
+
+    /** Puts a backup back on a TV (this one or another).  TiviBro restarts there. */
+    suspend fun restore(toId: String, b: SavedBackup): String = withContext(Dispatchers.IO) {
+        val r = ask(toId, "restore", JSONObject().put("backup", backups.open(b)), seal = true, timeoutMs = 90_000, tries = 1)
+        "Restored ${r.optInt("playlists")} playlist(s).  TiviBro is restarting on the TV."
+    }
+
+    /** A copy the web editor can restore on any TV, sealed with a passphrase. */
+    suspend fun exportBackup(b: SavedBackup, pass: String, out: android.net.Uri) = withContext(Dispatchers.IO) {
+        val file = BackupFile.seal(backups.open(b), pass)
+        getApplication<Application>().contentResolver.openOutputStream(out)?.use { it.write(file.toString().toByteArray(Charsets.UTF_8)) } ?: throw TbException("Couldn't write the file.")
     }
 
     /* ---------- adding a TV ---------- */

@@ -27,7 +27,7 @@ function hostPort(h) { const m = /^\[?([^\]]+?)\]?(?::(\d+))?$/.exec(String(h).t
 function raw(target, method, p, body, headers) {
   return new Promise((resolve, reject) => {
     const data = body === undefined ? Buffer.alloc(0) : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body), 'utf8');
-    const req = http.request({ host: target.host, port: target.port, method, path: p, agent: false, timeout: 15000,
+    const req = http.request({ host: target.host, port: target.port, method, path: p, agent: false, timeout: p === '/v1/ask' ? 150000 : 15000,   // questions wait for TiviBro
       headers: Object.assign({ 'Content-Type': 'application/json', 'Content-Length': data.length }, headers || {}) }, (res) => {
       const chunks = [];
       res.on('data', (d) => chunks.push(d));
@@ -94,7 +94,37 @@ async function call(cred, method, p, body, opts) {
   return r.json;
 }
 
-module.exports = { discover, hello, pair, call, pairKey, hmac, sha256, PORT };
+/* A question for TiviBro on the TV (POST /v1/ask): the guide, movies and shows, favorites, reminders,
+   typing, adding a playlist, backups.  With opts.seal the request and the answer are sealed (AES-256-GCM
+   under a key made from the phone's key), for logins and backups. */
+const sealKey = (key) => crypto.createHmac('sha256', key).update('tivibro-seal-v1', 'utf8').digest();
+const sealAad = (dir, phone, nonce) => Buffer.from('tivibro-seal-' + dir + '-v1\n' + phone + '\n' + nonce, 'utf8');
+function seal(obj, key, dir, phone, nonce) {
+  const iv = crypto.randomBytes(12), c = crypto.createCipheriv('aes-256-gcm', sealKey(key), iv);
+  c.setAAD(sealAad(dir, phone, nonce));
+  const data = Buffer.concat([c.update(Buffer.from(JSON.stringify(obj), 'utf8')), c.final()]);
+  return { iv: iv.toString('base64'), data: data.toString('base64'), tag: c.getAuthTag().toString('base64') };
+}
+function unseal(box, key, dir, phone, nonce) {
+  const d = crypto.createDecipheriv('aes-256-gcm', sealKey(key), Buffer.from(box.iv, 'base64'));
+  d.setAAD(sealAad(dir, phone, nonce)); d.setAuthTag(Buffer.from(box.tag, 'base64'));
+  return JSON.parse(Buffer.concat([d.update(Buffer.from(box.data, 'base64')), d.final()]).toString('utf8'));
+}
+async function ask(cred, what, args, opts) {
+  opts = opts || {};
+  const body = { what, args: args || {} };
+  if (opts.noOpen) body.noOpen = true;
+  if (!opts.seal) return call(cred, 'POST', '/v1/ask', body);
+  const key = Buffer.from(cred.key, 'base64'), nonce = crypto.randomBytes(18).toString('base64');
+  const r = await call(cred, 'POST', '/v1/ask', { sealed: seal(body, key, 'req', cred.phone, nonce) }, { nonce, raw: true });
+  if (!r.signed) { const e = new Error('The answer was not signed by this TV' + (r.json && r.json.error ? ': ' + r.json.error : ' (' + r.status + ')')); e.code = r.json && r.json.code; e.unsigned = true; throw e; }
+  // Errors before the TV could open the request come back plain; everything after, sealed.
+  const j = r.json && r.json.sealed ? unseal(r.json.sealed, key, 'res', cred.phone, nonce) : r.json;
+  if (r.status >= 400) { const e = new Error((j && j.error) || 'failed (' + r.status + ')'); e.code = j && j.code; throw e; }
+  return j;
+}
+
+module.exports = { discover, hello, pair, call, ask, seal, unseal, pairKey, hmac, sha256, PORT };
 
 if (require.main === module) {
   const FILE = process.env.TB_PHONE_FILE || path.join(os.homedir(), '.tivibro-phone.json');

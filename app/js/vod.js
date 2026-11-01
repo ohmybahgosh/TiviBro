@@ -323,7 +323,11 @@ var Vod = (function () {
     var at = itemsVL.items.findIndex(function (it) { return it.id === x.it.id; });
     if (at >= 0) itemsVL.setItems(itemsVL.items, at);
     setZone('items'); onItem();
-    if (k === 'series') openSeries(x.it); else play(x.it, false);
+    if (k === 'series') openSeries(x.it, x.ep ? function (eps) {
+      var e = eps.filter(function (y) { return String(y.id) === String(x.ep); })[0];
+      if (e) { itemsVL.setItems(eps, eps.indexOf(e)); onItem(); play(e, !!x.fromStart); }
+    } : null);
+    else play(x.it, !!x.fromStart);
   }
 
   var catDeb = U.debounce(function (c) {
@@ -378,7 +382,7 @@ var Vod = (function () {
   }
 
   /* ---------- series drill-down ---------- */
-  function openSeries(s) {
+  function openSeries(s, then) {
     $('vodTitle').textContent = 'Loading ' + s.name;
     Source.seriesInfo(s.id).then(function (r) {
       var eps = [], byS = (r && r.episodes) || {};
@@ -398,6 +402,7 @@ var Vod = (function () {
       itemsVL.setItems(eps, start);
       onItem();
       hints();
+      if (then) then(eps);
     }).catch(function () { U.toast('Could not load that show'); $('vodTitle').textContent = s.name; });
   }
   function closeSeries() {
@@ -535,5 +540,82 @@ var Vod = (function () {
     }).catch(function (e) { itemsVL.empty = 'Could not load ' + (k === 'series' ? 'shows' : 'movies') + ': ' + (e.message || e); itemsVL.setItems([], 0); });
   }
 
-  return { _test: { tag: tag, view: view }, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, reset: function () { data = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
+  /* ---------- the phone app (app/js/phone.js) ----------
+     Movies and Shows on the phone: categories, titles (a page at a time), details with episodes, and
+     playing one on the TV.  Same lists, languages, hidden categories and PIN as the TV shows. */
+  function withKind(k, fn) { var was = kind; kind = k; try { return fn(); } finally { kind = was; } }
+  function slimItem(k, it) {
+    var r = resumeOf((k === 'series' ? 's' : 'm') + it.id), x = { id: it.id, n: it.name, c: it.cover || '', r: stars(it.rating).replace('★ ', '') };
+    if (it.year) x.y = String(it.year).slice(0, 4);
+    if (r && r.dur && k === 'movie') x.p = Math.round(100 * r.pos / r.dur);
+    return x;
+  }
+  function phoneKind(k) { if (k !== 'movie' && k !== 'series') throw new Error('Unknown kind'); if (offered().indexOf(k) < 0) return null; return k; }
+  var ForPhone = {
+    cats: function (k) {
+      if (!phoneKind(k)) return Promise.resolve({ none: true, cats: [] });
+      return load(k).then(function () {
+        return { cats: withKind(k, catList).filter(function (c) { return c.id !== LANGS; }).map(function (c) { return { id: c.id, n: c.name, count: c.count, adult: c.adult ? 1 : 0, locked: c.adult && !adultOpen() ? 1 : 0 }; }) };
+      });
+    },
+    items: function (k, cid, q, off, lim) {
+      if (!phoneKind(k)) return Promise.resolve({ total: 0, items: [] });
+      return load(k).then(function () {
+        return withKind(k, function () {
+          var list;
+          q = String(q || '').trim().toLowerCase();
+          if (q) {
+            list = data[k].items.filter(function (it) { return !it.adult && String(it.name).toLowerCase().indexOf(q) >= 0; });
+            list.sort(function (a, b) { return (String(a.name).toLowerCase().indexOf(q) === 0 ? 0 : 1) - (String(b.name).toLowerCase().indexOf(q) === 0 ? 0 : 1); });
+          } else {
+            var c = catList().filter(function (x) { return x.id === (cid || ALL); })[0];
+            if (c && c.adult && !adultOpen()) return { total: 0, items: [], locked: true };
+            list = itemsFor(cid || ALL);
+          }
+          off = Math.max(0, +off || 0); lim = Math.min(300, Math.max(1, +lim || 120));
+          return { total: list.length, offset: off, items: list.slice(off, off + lim).map(function (it) { return slimItem(k, it); }) };
+        });
+      });
+    },
+    info: function (k, id) {
+      if (!phoneKind(k)) return Promise.reject(new Error('This playlist has no ' + (k === 'series' ? 'shows' : 'movies') + '.'));
+      return load(k).then(function () {
+        var it = data[k].items.filter(function (x) { return String(x.id) === String(id); })[0];
+        if (!it) throw new Error('That title is no longer in this playlist.');
+        var res = E().resume;
+        if (k === 'movie') {
+          return Source.vodInfo(it.id).then(function (r) {
+            var i = (r && r.info) || {}, rr = res['m' + it.id];
+            return { id: it.id, n: it.name, c: i.movie_image || i.cover_big || it.cover || '', plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '',
+              year: (i.releasedate || i.release_date || '').slice(0, 4), dur: niceDur(i.duration || ''), r: stars(it.rating).replace('★ ', ''), media: Caps.label(Caps.fromXtream(i)) || '',
+              pos: rr ? Math.round(rr.pos) : 0, len: rr ? Math.round(rr.dur) : 0, mine: E().myList.indexOf('m' + it.id) >= 0 };
+          }, function () { return { id: it.id, n: it.name, c: it.cover || '', plot: '', r: stars(it.rating).replace('★ ', '') }; });
+        }
+        return Source.seriesInfo(it.id).then(function (r) {
+          var byS = (r && r.episodes) || {}, seasons = [], inf = (r && r.info) || {};
+          Object.keys(byS).sort(function (a, b) { return +a - +b; }).forEach(function (sn) {
+            seasons.push({ s: +sn, eps: (byS[sn] || []).map(function (e) {
+              var ei = e.info || {}, rr = res['e' + e.id];
+              return { id: e.id, e: +e.episode_num || 0, t: String(e.title || '').replace(/^.*? - S\d+E\d+ - /i, ''), dur: niceDur(ei.duration || ''), plot: ei.plot || '', c: ei.movie_image || '',
+                pos: rr ? Math.round(rr.pos) : 0, len: rr ? Math.round(rr.dur) : 0 };
+            }) });
+          });
+          return { id: it.id, n: it.name, c: inf.cover || it.cover || '', plot: inf.plot || it.plot || '', genre: inf.genre || '', cast: inf.cast || '', year: String(it.year || inf.releaseDate || '').slice(0, 4),
+            r: stars(it.rating).replace('★ ', ''), seasons: seasons, mine: E().myList.indexOf('s' + it.id) >= 0 };
+        });
+      });
+    },
+    play: function (k, id, ep, fromStart) {
+      if (!phoneKind(k)) return Promise.reject(new Error('This playlist has no ' + (k === 'series' ? 'shows' : 'movies') + '.'));
+      return load(k).then(function () {
+        var it = data[k].items.filter(function (x) { return String(x.id) === String(id); })[0];
+        if (!it) throw new Error('That title is no longer in this playlist.');
+        if (it.adult && !adultOpen()) throw new Error('That title is locked.  Open it on the TV with the PIN.');
+        openItem({ it: it, kind: k, ep: ep || null, fromStart: !!fromStart });
+        return { title: it.name };
+      });
+    }
+  };
+
+  return { _test: { tag: tag, view: view }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, reset: function () { data = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
 })();

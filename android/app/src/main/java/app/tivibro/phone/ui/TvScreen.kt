@@ -1,6 +1,7 @@
-/* One TV: what it is showing now (followed with a long poll), a remote (arrows, OK, Back, channel and
-   volume buttons, menu actions), typing into the TV's search, and the TV's own channel list to play a
-   channel on the TV. */
+/* One TV: what it is showing now (followed with a long poll), typing on the phone into any text box the
+   TV is showing, a remote (arrows, OK, Back, channel and volume buttons, menu actions), the TV's own
+   channel list to play a channel on the TV and star favorites, the guide (GuideTab.kt), and Movies and
+   Shows (VodTab.kt). */
 package app.tivibro.phone.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -66,8 +67,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material.icons.rounded.StarOutline
+import androidx.compose.material.icons.rounded.Visibility
+import androidx.compose.material.icons.rounded.VisibilityOff
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import app.tivibro.phone.proto.TvInput
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
@@ -112,6 +120,8 @@ import java.util.Date
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TvScreen(
+    model: AppModel,
+    id: String,
     name: String,
     state: NowState?,
     lineup: Lineup?,
@@ -126,13 +136,15 @@ fun TvScreen(
     onPlay: (Chan) -> Unit,
     onOpen: () -> Unit,
     onLoadLineup: (Boolean) -> Unit,
+    onFav: (Chan, Boolean) -> Unit,
+    onType: (TvInput, String, Boolean) -> Unit,
 ) {
     var tab by rememberSaveable { mutableIntStateOf(0) }
     var typing by remember { mutableStateOf(false) }
     // The clock, for programme progress: once every 20 seconds is plenty.
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { delay(20_000); now = System.currentTimeMillis() } }
-    LaunchedEffect(tab) { if (tab == 1) onLoadLineup(false) }
+    LaunchedEffect(tab) { if (tab == 1 || tab == 2) onLoadLineup(false) }
 
     Scaffold(
         containerColor = Ink,
@@ -146,17 +158,23 @@ fun TvScreen(
         },
     ) { pad ->
         Column(Modifier.padding(pad).fillMaxSize()) {
-            NowPlaying(state, now, onKey, onOpen, Modifier.padding(16.dp, 4.dp, 16.dp, 12.dp))
-            TabRow(
-                selectedTabIndex = tab, containerColor = Ink, contentColor = TextHi,
+            NowPlaying(state, now, onKey, onOpen, Modifier.padding(16.dp, 4.dp, 16.dp, 8.dp))
+            val inputs = state?.inputs.orEmpty()
+            if (inputs.isNotEmpty()) TypeOnTv(inputs, onType, Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp))
+            ScrollableTabRow(
+                selectedTabIndex = tab, containerColor = Ink, contentColor = TextHi, edgePadding = 8.dp,
                 indicator = { pos -> TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(pos[tab]), color = Accent2) },
                 divider = {},
             ) {
-                Tab(selected = tab == 0, onClick = { tab = 0 }, text = { Text("Remote") })
-                Tab(selected = tab == 1, onClick = { tab = 1 }, text = { Text("Channels") })
+                listOf("Remote", "Channels", "Guide", "Movies", "Shows").forEachIndexed { i, t -> Tab(selected = tab == i, onClick = { tab = i }, text = { Text(t) }) }
             }
-            if (tab == 0) Remote(volume, onKey, onAction, onVolume, onType = { typing = true })
-            else Channels(lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) })
+            when (tab) {
+                0 -> Remote(volume, onKey, onAction, onVolume, onType = { typing = true })
+                1 -> Channels(lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) }, onFav = onFav)
+                2 -> GuideTab(model, id, lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) })
+                3 -> VodTab(model, id, "movie")
+                else -> VodTab(model, id, "series")
+            }
         }
     }
     if (typing) TypeDialog(onDismiss = { typing = false }, onSend = { typing = false; onText(it) })
@@ -315,17 +333,8 @@ private fun TypeDialog(onDismiss: () -> Unit, onSend: (String) -> Unit) {
 /* ---------- Play on TV ---------- */
 
 @Composable
-private fun Channels(lineup: Lineup?, note: String, playing: String, now: Long, onPlay: (Chan) -> Unit, onOpen: () -> Unit, onRetry: () -> Unit) {
-    if (lineup == null) {
-        Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-            when (note) {
-                "closed" -> { Text("TiviBro is closed on the TV.", textAlign = TextAlign.Center); Spacer(Modifier.height(16.dp)); Button(onClick = onOpen) { Text("Open TiviBro") } }
-                "none" -> { Text("The TV didn't send its channel list.", textAlign = TextAlign.Center); Spacer(Modifier.height(16.dp)); Button(onClick = onRetry) { Text("Try again") } }
-                else -> { CircularProgressIndicator(); Spacer(Modifier.height(16.dp)); Text("Getting the channel list from the TV…", color = Muted) }
-            }
-        }
-        return
-    }
+private fun Channels(lineup: Lineup?, note: String, playing: String, now: Long, onPlay: (Chan) -> Unit, onOpen: () -> Unit, onRetry: () -> Unit, onFav: (Chan, Boolean) -> Unit) {
+    if (lineup == null) { LineupWaiting(note, onOpen, onRetry); return }
     var q by rememberSaveable { mutableStateOf("") }
     var group by rememberSaveable { mutableStateOf("") }
     val list = remember(lineup, q, group) {
@@ -349,20 +358,20 @@ private fun Channels(lineup: Lineup?, note: String, playing: String, now: Long, 
         }
         if (list.isEmpty()) Text("Nothing here matches.", color = Muted, modifier = Modifier.padding(24.dp))
         LazyColumn(contentPadding = PaddingValues(bottom = 24.dp), modifier = Modifier.fillMaxSize()) {
-            items(list, key = { it.k }) { c -> ChannelRow(c, c.k == playing, now) { onPlay(c) } }
+            items(list, key = { it.k }) { c -> ChannelRow(c, c.k == playing, now, onFav = { onFav(c, !c.fav) }) { onPlay(c) } }
         }
     }
 }
 
 @Composable
-private fun GroupChip(label: String, on: Boolean, onClick: () -> Unit) {
+fun GroupChip(label: String, on: Boolean, onClick: () -> Unit) {
     FilterChip(selected = on, onClick = onClick, label = { Text(label, maxLines = 1) },
         colors = FilterChipDefaults.filterChipColors(containerColor = Panel, labelColor = TextHi, selectedContainerColor = Accent, selectedLabelColor = Color.White),
         border = FilterChipDefaults.filterChipBorder(enabled = true, selected = on, borderColor = Line))
 }
 
 @Composable
-private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onClick: () -> Unit) {
+private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onFav: () -> Unit, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().clickable(onClickLabel = "Play on the TV", onClick = onClick).background(if (playing) Panel else Color.Transparent).padding(16.dp, 10.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -372,7 +381,6 @@ private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onClick: () -> Unit
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(c.name, fontWeight = FontWeight.SemiBold, color = if (playing) Accent2 else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                if (c.fav) { Spacer(Modifier.width(6.dp)); Icon(Icons.Rounded.Star, "Favorite", tint = Accent2, modifier = Modifier.size(14.dp)) }
             }
             val p: Prog? = c.now
             if (p != null) {
@@ -384,5 +392,55 @@ private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onClick: () -> Unit
             }
         }
         if (playing) Text("On the TV", color = Accent2, style = MaterialTheme.typography.labelSmall)
+        IconButton(onClick = onFav) {
+            Icon(if (c.fav) Icons.Rounded.Star else Icons.Rounded.StarOutline, if (c.fav) "Remove from Favorites" else "Add to Favorites", tint = if (c.fav) Accent2 else Muted)
+        }
+    }
+}
+
+/* ---------- typing on the phone into the TV ---------- */
+
+/** The text boxes on the TV's screen right now (set-up, search, a rename): type them here.  Each change is
+    sent a moment after you stop typing, sealed (it may be a password); Save sends a rename or name box. */
+@Composable
+private fun TypeOnTv(inputs: List<TvInput>, onType: (TvInput, String, Boolean) -> Unit, modifier: Modifier) {
+    var shown by rememberSaveable { mutableStateOf(true) }
+    Surface(color = Panel, shape = MaterialTheme.shapes.medium, modifier = modifier.fillMaxWidth()) {
+        Column(Modifier.padding(14.dp, 10.dp)) {
+            Row(Modifier.fillMaxWidth().clickable { shown = !shown }, verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Keyboard, null, tint = Accent2, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(10.dp))
+                Text(if (inputs.size == 1) "Type on your phone: " + inputs[0].label else "Type on your phone", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Icon(if (shown) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, if (shown) "Hide" else "Show", tint = Muted)
+            }
+            if (shown) inputs.forEach { inp -> TvBox(inp, onType) }
+        }
+    }
+}
+
+@Composable
+private fun TvBox(inp: TvInput, onType: (TvInput, String, Boolean) -> Unit) {
+    // Starts from what the TV shows (a password never comes to the phone), then follows what is typed here.
+    var t by remember(inp.id) { mutableStateOf(if (inp.secret) "" else inp.value) }
+    var edited by remember(inp.id) { mutableStateOf(false) }
+    var see by remember(inp.id) { mutableStateOf(false) }
+    LaunchedEffect(inp.id, t) { if (edited) { delay(450); onType(inp, t, false) } }
+    Column(Modifier.padding(top = 8.dp)) {
+        OutlinedTextField(
+            value = t, onValueChange = { t = it; edited = true }, singleLine = true,
+            label = { Text(inp.label) },
+            placeholder = { if (inp.secret && inp.filled) Text("Filled in on the TV") },
+            visualTransformation = if (inp.secret && !see) PasswordVisualTransformation() else VisualTransformation.None,
+            keyboardOptions = KeyboardOptions(
+                keyboardType = when { inp.secret -> KeyboardType.Password; inp.type == "url" -> KeyboardType.Uri; else -> KeyboardType.Text },
+                imeAction = if (inp.canSubmit) ImeAction.Done else ImeAction.Next,
+            ),
+            keyboardActions = KeyboardActions(onDone = { onType(inp, t, inp.canSubmit) }),
+            trailingIcon = if (inp.secret) ({ IconButton(onClick = { see = !see }) { Icon(if (see) Icons.Rounded.VisibilityOff else Icons.Rounded.Visibility, if (see) "Hide" else "Show") } }) else null,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (inp.canSubmit) Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            TextButton(onClick = { onType(inp, t, true) }) { Text("Save on the TV") }
+        }
     }
 }

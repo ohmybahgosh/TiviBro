@@ -1,0 +1,15 @@
+{
+ "app": "TiviBro",
+ "kind": "backup-encrypted",
+ "format": 2,
+ "version": "0.6.0-test",
+ "created": "2026-11-01T00:00:00.000Z",
+ "playlists": 1,
+ "kdf": "pbkdf2-sha256",
+ "iter": 200000,
+ "cipher": "aes-256-gcm",
+ "salt": "bJSZ/MXE8/6vr4kg/NOhHg==",
+ "iv": "mbZc8WLpnY0cXCp7",
+ "tag": "IDJT2/DfdTMpRpytWsMKQA==",
+ "data": "q8CuYlPLmuDlccSMZEM0fzr+FgOueG0yspC9JM1SLKX23nufCbFrNZvkdsw9DEUmnIAPB25VjYIRErZdWRPQPTV0tSj4cl5RBPW23RIPscDu9GdaSVSVHwvNAVffkkIQ3FhDDmBXBWBFpxdz8cxNBcHobJdVroq0qR/M0qyqFhKjbczr5j/YEb/f7NiVDnCZCO3FD6SlaDMxDS/7fmzCUBH2bTz7O+aHyS8xB2DRWbDs0BWSThWX02yik+Z8Wjt8NOaN8hoXZ8OG8KjiL/wb+VJ8kwg3Jz13oraPTneK52tLXFpMxKrKjZmQ/ybtH6jn9OLqLG/00AGFlw0="
+}

@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.MoreVert
@@ -87,6 +88,7 @@ fun HomeScreen(
     onForget: (String) -> Unit,
     onTile: (String) -> Unit,
     onRepair: (String) -> Unit,
+    onBackups: (String) -> Unit,
 ) {
     var refreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -114,7 +116,7 @@ fun HomeScreen(
         ) {
             LazyColumn(contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxSize()) {
                 items(tvs, key = { it.tv.id }) { u ->
-                    TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onRemote, onOpen, onWake, onForget, onTile, onRepair)
+                    TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onRemote, onOpen, onWake, onForget, onTile, onRepair, onBackups)
                 }
             }
         }
@@ -149,7 +151,7 @@ private fun Empty(modifier: Modifier, onScan: () -> Unit, onFind: () -> Unit) {
 private fun TvCard(
     u: TvUi, isTile: Boolean,
     onEditor: (String) -> Unit, onRemote: (String) -> Unit, onOpen: (String) -> Unit, onWake: (String) -> Unit,
-    onForget: (String) -> Unit, onTile: (String) -> Unit, onRepair: (String) -> Unit,
+    onForget: (String) -> Unit, onTile: (String) -> Unit, onRepair: (String) -> Unit, onBackups: (String) -> Unit,
 ) {
     val tv = u.tv
     var menu by remember { mutableStateOf(false) }
@@ -183,6 +185,7 @@ private fun TvCard(
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         if (tv.mac.isNotBlank()) DropdownMenuItem(text = { Text("Turn on") }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) }, onClick = { menu = false; onWake(tv.id) })
                         if (u.power == Power.ON) DropdownMenuItem(text = { Text(if (u.tivibroOpen) "Show TiviBro on the TV" else "Open TiviBro on the TV") }, leadingIcon = { Icon(Icons.Rounded.PlayArrow, null) }, onClick = { menu = false; onOpen(tv.id) })
+                        DropdownMenuItem(text = { Text("Backups") }, leadingIcon = { Icon(Icons.Rounded.Backup, null) }, onClick = { menu = false; onBackups(tv.id) })
                         DropdownMenuItem(text = { Text("Use for the Quick Settings tile") }, leadingIcon = { Icon(Icons.Rounded.Tv, null) }, onClick = { menu = false; onTile(tv.id) })
                         DropdownMenuItem(text = { Text("Forget this TV") }, leadingIcon = { Icon(Icons.Rounded.LinkOff, null) }, onClick = { menu = false; confirm = true })
                     }

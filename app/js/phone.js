@@ -66,10 +66,18 @@ var Phone = (function () {
         loop();
       }, function () { polling = false; setTimeout(loop, 3000); });
   }
-  // Commands wait until TiviBro has its channels (a phone may have opened it a moment ago).
+  // Commands wait until TiviBro has its channels (a phone may have opened it a moment ago).  A few
+  // questions work on a TV with no playlist yet: adding one, typing into the set-up screen, backups.
   function ready() { return typeof Library !== 'undefined' && Library.count() > 0 && Views.tab; }
+  var EARLY = { playlist: 1, input: 1, backup: 1, restore: 1 };
   function run(c, tries) {
-    if (!ready()) { if ((tries || 0) < 60) setTimeout(function () { run(c, (tries || 0) + 1); }, 500); return; }
+    if (c.type === 'ask' && EARLY[c.what]) return answer(c);
+    if (!ready()) {
+      if ((tries || 0) < 60) setTimeout(function () { run(c, (tries || 0) + 1); }, 500);
+      else if (c.type === 'ask') call('/companion/answer', { id: c.id, ok: false, error: 'TiviBro on the TV has no channels loaded yet.' }).catch(function () {});
+      return;
+    }
+    if (c.type === 'ask') return answer(c);
     try {
       Log.info('phone', 'From ' + (c.from || 'a phone') + ': ' + c.type + ' ' + (c.key || c.action || c.k || c.text || ''));
       if (c.type === 'key') { UI.press(c.key); }
@@ -85,6 +93,132 @@ var Phone = (function () {
       else if (c.type === 'text') { if (UI.modalOpen) UI.close(); if (Views.full) Views.runAction('exit', 'player'); Views.switchTab('search'); Search.query(c.text); }
       pushState(true);
     } catch (e) { Log.warn('phone', 'Could not carry out ' + c.type + ': ' + (e && e.message)); }
+  }
+
+  /* ---------- questions from the phone (POST /v1/ask) ---------- */
+  function answer(c) {
+    Log.info('phone', 'From ' + (c.from || 'a phone') + ': ' + c.what);
+    Promise.resolve().then(function () {
+      var fn = ASK[c.what];
+      if (!fn) throw new Error('This TiviBro can\'t answer "' + c.what + '".  Update TiviBro on the TV.');
+      return fn(c.args || {}, c);
+    }).then(function (data) { return call('/companion/answer', { id: c.id, ok: true, data: data === undefined ? null : data }); },
+      function (e) {
+        Log.warn('phone', c.what + ' for the phone failed: ' + (e && e.message));
+        return call('/companion/answer', { id: c.id, ok: false, error: (e && e.message) || 'failed' });
+      })
+      .then(function () { pushState(true); }, function () {});
+  }
+  function prog(p) { return { t: p.t, s: p.s, e: p.e }; }
+  function hasReminder(k, s) { return (Store.edits.reminders || []).some(function (r) { return r.k === k && r.s === s; }); }
+  function chan(k) {
+    var c = Library.find(k);
+    if (!c) throw new Error('That channel isn\'t in this playlist.');
+    return c;
+  }
+  function vodKind(a) { return a.kind === 'series' ? 'series' : 'movie'; }
+  function leaveFull() { if (UI.modalOpen) UI.close(); if (Views.full) Views.runAction('exit', 'player'); }
+  var ASK = {
+    /* The guide for a page of channels: what is on at `at` and the two after it.  Channels whose guide
+       isn't loaded yet come back without programmes (and the guide starts loading them); the phone asks
+       again for those. */
+    guide: function (a) {
+      var gid = a.group || Library.ALL, at = +a.at || Date.now(), list = Library.channels(gid), off = Math.max(0, +a.offset || 0), lim = Math.min(200, Math.max(1, +a.limit || 60)), pending = 0;
+      var rows = list.slice(off, off + lim).map(function (c) {
+        var l = Epg.request(c);
+        if (!l) { pending++; return { k: c.k }; }
+        var out = [];
+        for (var i = 0; i < l.length && out.length < 3; i++) if (l[i].e > at) { var x = prog(l[i]); if (hasReminder(c.k, l[i].s)) x.r = 1; out.push(x); }
+        return { k: c.k, p: out, a: c.arch ? 1 : 0 };
+      });
+      return { total: list.length, offset: off, rows: rows, pending: pending };
+    },
+    // One channel's programmes, from as far back as catch-up goes to a week ahead, with descriptions.
+    schedule: function (a) {
+      var c = chan(a.k), l = Epg.request(c);
+      if (!l) return { k: c.k, pending: true, progs: [] };
+      var now = Date.now(), from = now - (c.arch ? c.arch * 86400000 : 3 * 3600000), to = now + 8 * 86400000;
+      var list = l.filter(function (p) { return p.e > from && p.s < to; }).slice(0, 700);
+      if (list.length) Epg.desc(c, list[0]);
+      return { k: c.k, arch: c.arch || 0, descPending: !!Epg.inHelper && list.some(function (p) { return p.d == null; }),
+        progs: list.map(function (p) { var x = prog(p); if (p.d) x.d = String(p.d).slice(0, 800); if (hasReminder(c.k, p.s)) x.r = 1; return x; }) };
+    },
+    remind: function (a) {
+      var c = chan(a.k), s = +a.s, l = Epg.request(c) || [], p = l.filter(function (x) { return x.s === s; })[0];
+      if (!p) throw new Error('That programme is no longer in the guide.');
+      var r = Store.edits.reminders, i = r.findIndex(function (x) { return x.k === c.k && x.s === s; }), on = a.on !== false;
+      if (on && i < 0) r.push({ k: c.k, s: p.s, e: p.e, t: p.t });
+      if (!on && i >= 0) r.splice(i, 1);
+      Store.saveEdits();
+      if (typeof Remind !== 'undefined' && Remind.sync) Remind.sync(true);
+      if (Views.tab === 'guide' && typeof Guide !== 'undefined') Guide.draw();
+      U.toast(on ? 'Reminder set for ' + p.t + ', ' + U.hhmm(p.s) : 'Reminder removed');
+      return { on: on };
+    },
+    fav: function (a) {
+      var c = chan(a.k), want = a.on !== false;
+      if (Library.isFav(c.k) !== want) Library.toggleFav(c.k);
+      Views.refreshLists(true);
+      lineupAt = 0; sendLineup();
+      return { on: Library.isFav(c.k) };
+    },
+    vodcats: function (a) { return Vod.phone.cats(vodKind(a)); },
+    voditems: function (a) { return Vod.phone.items(vodKind(a), a.cat, a.q, a.offset, a.limit); },
+    vodinfo: function (a) { return Vod.phone.info(vodKind(a), a.id); },
+    vodplay: function (a, c) {
+      leaveFull();
+      return Vod.phone.play(vodKind(a), a.id, a.ep, a.fromStart).then(function (r) { U.toast('Playing ' + r.title + (c.from ? ', from ' + c.from : '')); return r; });
+    },
+    // A provider link shared to the phone app: added like the web editor's Add a playlist.
+    playlist: function (a) {
+      var l = Links.parse(a.link);
+      if (!l) throw new Error('That isn\'t a link TiviBro can use.');
+      if (l.type === 'm3u' && l.bare) throw new Error('That is only a server address, without a login.  Share the full link your provider sent.');
+      var args = l.type === 'xtream' ? { type: 'xtream', server: l.server, user: l.user, pass: l.pass } : { type: 'm3u', m3u: l.m3u };
+      args.name = String(a.name || '').slice(0, 60); args.epg = String(a.epg || ''); if (a.use) args.use = true;
+      return WebEdit.run('addPlaylist', args);
+    },
+    // Typing on the phone into a box on the TV's screen (see inputs()).
+    input: function (a) {
+      var el = document.querySelector('input[data-tbin="' + String(a.id).replace(/[^0-9]/g, '') + '"]');
+      if (!el || el.offsetParent === null) throw new Error('That box is no longer on the TV\'s screen.');
+      el.value = String(a.value == null ? '' : a.value).slice(0, 2000);
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      if (a.submit && UI.modalOpen && el.closest('#modal')) UI.press('submit');
+      return { ok: true };
+    },
+    backup: function () {
+      return Backup.create().then(function (b) { Store.settings.lastBackup = Date.now(); Store.saveSettings(); return { backup: b }; });
+    },
+    restore: function (a) {
+      return Backup.restore(a.backup).then(function (info) {
+        U.toast('Backup restored from your phone: ' + info.playlists + ' playlist' + (info.playlists === 1 ? '' : 's') + '.  Restarting TiviBro…', 4000);
+        setTimeout(function () { location.reload(); }, 2000);
+        return info;
+      });
+    }
+  };
+
+  /* Text boxes on the TV's screen right now (set-up, search, a rename), so the phone can type into
+     them.  Passwords are never sent to the phone: only whether one is filled in. */
+  var inSeq = 0;
+  function inputs() {
+    var out = [];
+    [].slice.call(document.querySelectorAll('input')).forEach(function (el) {
+      if (el.offsetParent === null || !/^(text|url|password|search|email|)$/.test(el.type)) return;
+      var id = el.getAttribute('data-tbin');
+      if (!id) { id = String(++inSeq); el.setAttribute('data-tbin', id); }
+      var field = el.closest('.field'), modal = el.closest('#modal'), lab = field && field.querySelector('label');
+      var label = lab ? lab.textContent : modal ? (document.getElementById('modalTitle') || {}).textContent : el.placeholder || 'Text';
+      var secret = el.type === 'password' || (field && field.querySelector('.eye'));
+      var x = { id: +id, label: String(label || 'Text').slice(0, 80), type: secret ? 'password' : el.type === 'url' ? 'url' : 'text' };
+      if (secret) x.has = el.value ? 1 : 0; else x.value = el.value.slice(0, 500);
+      if (modal) x.submit = 1;
+      if (document.activeElement === el) x.focus = 1;
+      out.push(x);
+    });
+    return out;
   }
 
   /* What TiviBro is showing, for the phone's Now playing.  Sent when it changes (checked every second
@@ -103,10 +237,12 @@ var Phone = (function () {
       if (next) out.next = { t: next.t, s: next.s };
       out.paused = !!Player.paused;
     }
+    var ins = inputs();
+    if (ins.length) out.inputs = ins;
     return out;
   }
   function pushState(soon) {
-    if (!base() || !(st && st.on) || !ready()) return;
+    if (!base() || !(st && st.on) || !(ready() || document.querySelector('#viewSetup input'))) return;
     var s = snapshot(), k = JSON.stringify(s);
     if (k === lastState) return;
     lastState = k;

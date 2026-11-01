@@ -76,6 +76,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
     implementation("androidx.navigation:navigation-compose:2.8.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    // Automatic weekly backups of each TV (work/BackupWorker.kt).
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
     // Channel logos in the Play on TV list.
     implementation("io.coil-kt:coil-compose:2.7.0")
     // QR codes: Google's code scanner (no camera permission; the scanning screen comes from Play services).

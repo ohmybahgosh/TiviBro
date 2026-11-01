@@ -33,6 +33,12 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="tivibro.app" android:path="/pair" />
             </intent-filter>
+            <!-- A provider's link shared to TiviBro (Share, then TiviBro): added on a paired TV. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/plain" />
+            </intent-filter>
             <!-- The button on tivibro.app/pair, for phones where the link opened the browser. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

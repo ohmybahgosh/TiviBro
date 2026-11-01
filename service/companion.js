@@ -37,6 +37,7 @@ var PAIR_MS = 10 * 60000;              // a pairing code lasts ten minutes
 var PAIR_TRIES = 5;                    // wrong tries before the code stops working
 var SKEW_MS = 5 * 60000;               // signed requests: how far the phone's time may be from the TV's
 var MAX_BODY = 64 * 1024;
+var MAX_ASK_BODY = 40 * 1024 * 1024;   // a backup sent back to the TV (Restore) can be large
 var MAX_PHONES = 12;
 var CODE_ABC = 'ACDEFHJKMNPQRTWXY3479';   // nothing that can be misread: no 0/O, 1/I/L, 2/Z, 5/S, 6/G, 8/B, U/V
 var APP_ID = 'app.tivibro.tv';
@@ -58,6 +59,26 @@ function normCode(s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g
 function showCode(c) { return c.slice(0, 4) + '-' + c.slice(4, 8) + '-' + c.slice(8); }
 function cleanText(s, n) { return String(s == null ? '' : s).replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, n || 40); }
 function pairKey(code, tvId, cb) { crypto.pbkdf2(normCode(code), 'tivibro-pair-v1:' + tvId, KDF_ITER, 32, 'sha256', cb); }
+
+/* Sealed bodies, for what must not cross the network readable: a provider link or password typed on
+   the phone, and backups (which hold every login).  AES-256-GCM under a key made from the phone's key,
+   bound to the phone and the request's nonce, so a sealed body can't be moved to another request.
+   A sealed request always gets a sealed answer. */
+function sealKey(key) { return crypto.createHmac('sha256', key).update('tivibro-seal-v1', 'utf8').digest(); }
+function sealAad(dir, phoneId, nonce) { return Buffer.from('tivibro-seal-' + dir + '-v1\n' + phoneId + '\n' + nonce, 'utf8'); }
+function sealObj(obj, key, dir, phoneId, nonce) {
+  var iv = crypto.randomBytes(12), c = crypto.createCipheriv('aes-256-gcm', sealKey(key), iv);
+  c.setAAD(sealAad(dir, phoneId, nonce));
+  var data = Buffer.concat([c.update(Buffer.from(JSON.stringify(obj), 'utf8')), c.final()]);
+  return { iv: iv.toString('base64'), data: data.toString('base64'), tag: c.getAuthTag().toString('base64') };
+}
+function openObj(box, key, dir, phoneId, nonce) {
+  var d = crypto.createDecipheriv('aes-256-gcm', sealKey(key), Buffer.from(String(box.iv || ''), 'base64'));
+  d.setAAD(sealAad(dir, phoneId, nonce));
+  d.setAuthTag(Buffer.from(String(box.tag || ''), 'base64'));
+  var out = Buffer.concat([d.update(Buffer.from(String(box.data || ''), 'base64')), d.final()]);
+  return JSON.parse(out.toString('utf8'));
+}
 
 function ips() {
   var out = [], ifs = os.networkInterfaces();
@@ -83,6 +104,7 @@ function create(opts) {
      a long poll (/companion/next) and carries out; TiviBro sends what it is playing (/companion/state)
      and, when a phone asks, its channel list (/companion/lineup).  Phones wait for changes with a
      long poll too (/v1/state).  Volume goes straight to the TV, with or without TiviBro. */
+  var asks = {};                       // command id -> a phone waiting for TiviBro's answer (/v1/ask)
   var cmds = [], cmdSeq = 0, appWait = [], phoneWait = [], tvState = { rev: 0, data: null, at: 0 }, lineup = null, lineupRev = 0, wantLineup = false, launchedAt = 0;
 
   function load() {
@@ -307,6 +329,33 @@ function create(opts) {
     var how = queue(cmd, p.name);
     reply(200, { ok: true, id: cmd.id, state: how });
   }
+  /* Questions and changes that need TiviBro itself (POST /v1/ask { what, args }): the guide, movies
+     and shows, favorites, reminders, typing into the TV, adding a playlist, backups.  The phone waits
+     for TiviBro's answer (each kind has its own limit); TiviBro is opened first if it is closed,
+     except with noOpen (the phone's automatic backups never open TiviBro over something else). */
+  var ASKS = { guide: 30000, schedule: 30000, remind: 15000, fav: 15000, vodcats: 90000, voditems: 90000, vodinfo: 30000, vodplay: 20000,
+    playlist: 120000, input: 10000, backup: 45000, restore: 60000 };
+  // Logins and backups only travel sealed.
+  var SEALED = { playlist: 1, input: 1, backup: 1, restore: 1 };
+  function phoneAsk(j, p, reply, sealed) {
+    if (!j || typeof j.what !== 'string' || !Object.prototype.hasOwnProperty.call(ASKS, j.what)) return reply(400, { error: 'unknown question', code: 'bad' });
+    if (SEALED[j.what] && !sealed) return reply(400, { error: 'This needs a sealed request.', code: 'sealed' });
+    var args = j.args && typeof j.args === 'object' ? j.args : {};
+    if (j.noOpen && !appOpen()) return reply(200, { ok: true, closed: true });
+    var cmd = { type: 'ask', what: j.what, args: args };
+    var how = queue(cmd, p.name);
+    var w = asks[cmd.id] = { reply: reply };
+    w.timer = setTimeout(function () { delete asks[cmd.id]; reply(200, { ok: true, pending: true, state: how }); }, ASKS[j.what]);
+  }
+  function answerAsk(j) {
+    var w = asks[j.id];
+    if (!w) return false;
+    delete asks[j.id]; clearTimeout(w.timer);
+    if (j.ok === false) w.reply(409, { error: cleanText(j.error, 300) || 'TiviBro on the TV could not do that.', code: 'tv' });
+    else w.reply(200, { ok: true, data: j.data === undefined ? null : j.data });
+    return true;
+  }
+
   function volume(dir, reply) {
     if (['up', 'down', 'mute'].indexOf(dir) < 0) return reply(400, { error: 'bad volume', code: 'bad' });
     if (!opts.volume) return reply(501, { error: 'The TV\'s volume can\'t be changed from here.', code: 'volume' });
@@ -326,6 +375,15 @@ function create(opts) {
       if (pathOnly === '/v1/pair' && req.method === 'POST') return pair(req, res, buf, who);
       verify(req, res, buf, u, who, function (p, key, nonce) {
         var reply = function (code, obj) { send(res, code, obj, key, nonce); };
+        if (pathOnly === '/v1/ask' && req.method === 'POST') {
+          var j = parse(buf);
+          if (j && j.sealed) {
+            var inner;
+            try { inner = openObj(j.sealed, key, 'req', p.id, nonce); } catch (e) { return reply(400, { error: 'The sealed request could not be opened.', code: 'sealed' }); }
+            return phoneAsk(inner, p, function (code, obj) { send(res, code, { sealed: sealObj(obj, key, 'res', p.id, nonce) }, key, nonce); }, true);
+          }
+          return phoneAsk(j, p, reply);
+        }
         if (pathOnly === '/v1/info' && req.method === 'GET') return reply(200, info(p));
         if (pathOnly === '/v1/open' && req.method === 'POST') {
           return openApp({ companion: { open: true } }, function (e) { if (e) return reply(502, { error: 'Could not open TiviBro on the TV: ' + e.message, code: 'launch' }); reply(200, { ok: true }); });
@@ -342,7 +400,7 @@ function create(opts) {
         }
         reply(404, { error: 'not found', code: 'missing' });
       });
-    });
+    }, pathOnly === '/v1/ask' ? MAX_ASK_BODY : MAX_BODY);
   }
 
   /* ---------- discovery (UDP) ---------- */
@@ -361,7 +419,7 @@ function create(opts) {
     var srv = http.createServer(function (req, res) {
       try { lan(req, res); } catch (e) { log({ lv: 'error', event: 'companion request failed', e: e.message }); try { send(res, 500, { error: 'server error', code: 'error' }); } catch (x) {} }
     });
-    srv.timeout = 30000;
+    srv.timeout = 150000;      // a phone may wait for TiviBro to add a playlist (up to two minutes)
     srv.once('error', function (e) { log({ lv: 'warn', event: 'companion listen failed', port: PORTS[i], e: e.code || e.message }); listen(i + 1, cb); });
     srv.listen(PORTS[i], '0.0.0.0', function () { server = srv; port = PORTS[i]; cb(null); });
   }
@@ -447,6 +505,7 @@ function create(opts) {
         return done();
       }
       if (u === '/companion/editor-done' && req.method === 'POST') { wantEditor = 0; return done(); }
+      if (u === '/companion/answer' && req.method === 'POST') return reply(200, { ok: true, waiting: answerAsk(j) });
       if (u === '/companion/state' && req.method === 'POST') {
         var was = JSON.stringify(tvState.data), now = JSON.stringify(j.state || null);
         if (was !== now) { tvState = { rev: tvState.rev + 1, data: j.state || null, at: Date.now() }; flushPhones(); }
@@ -471,4 +530,4 @@ function create(opts) {
   };
 }
 
-module.exports = { create: create, API: API, PORT: PORT, DISCOVER: DISCOVER, KDF_ITER: KDF_ITER, normCode: normCode, pairKey: pairKey, hmac: hmac, sha256: sha256 };
+module.exports = { create: create, API: API, PORT: PORT, DISCOVER: DISCOVER, KDF_ITER: KDF_ITER, normCode: normCode, pairKey: pairKey, hmac: hmac, sha256: sha256, sealObj: sealObj, openObj: openObj };

@@ -55,6 +55,29 @@ class LiveTvTest {
         val bad = runCatching { c.key("power") }.exceptionOrNull() as TbException
         assertEquals("bad", bad.code)
 
+        // Questions for TiviBro (POST /v1/ask): the guide, favorites, movies, typing, links and backups.
+        val g = app.tivibro.phone.proto.GuidePage.from(c.ask("guide", org.json.JSONObject().put("group", "sports").put("limit", 5)).getJSONObject("data"))
+        assertTrue("a guide page for a group", g.total == 16 && g.rows.size == 5 && g.rows.all { (it.progs?.size ?: 0) == 3 })
+        val sch = app.tivibro.phone.proto.Schedule.from(c.ask("schedule", org.json.JSONObject().put("k", "fake|5")).getJSONObject("data"))
+        assertTrue("a channel's schedule, with descriptions", sch.progs.size == 3 && sch.progs[0].desc.startsWith("About") && sch.catchupDays == 3)
+        assertTrue("a favorite", c.ask("fav", org.json.JSONObject().put("k", "fake|9").put("on", true)).getJSONObject("data").getBoolean("on"))
+        val miss = runCatching { c.ask("fav", org.json.JSONObject().put("k", "nope")) }.exceptionOrNull() as TbException
+        assertEquals("TiviBro's reason comes back", "tv", miss.code)
+        val page = app.tivibro.phone.proto.VodPage.from(c.ask("voditems", org.json.JSONObject().put("kind", "movie").put("q", "movie 1")).getJSONObject("data"))
+        assertTrue("movies, searched", page.items.isNotEmpty() && page.items.all { it.name.startsWith("Movie 1") })
+        val show = app.tivibro.phone.proto.VodInfo.from(c.ask("vodinfo", org.json.JSONObject().put("kind", "series").put("id", "7")).getJSONObject("data"))
+        assertEquals(22, show.seasons[0].episodes[0].progress)
+        val unsealed = runCatching { c.ask("backup") }.exceptionOrNull() as TbException
+        assertEquals("backups only travel sealed", "sealed", unsealed.code)
+        val bk = c.ask("backup", seal = true).getJSONObject("data").getJSONObject("backup")
+        assertEquals("secret", bk.getJSONObject("settings").getJSONArray("playlists").getJSONObject(0).getString("pass"))
+        assertEquals(1, c.ask("restore", org.json.JSONObject().put("backup", bk), seal = true).getJSONObject("data").getInt("playlists"))
+        assertTrue(c.ask("input", org.json.JSONObject().put("id", 1).put("value", "hunter2"), seal = true).getBoolean("ok"))
+        val added = c.ask("playlist", org.json.JSONObject().put("link", "http://h/get.php?username=a&password=b"), seal = true)
+        assertTrue("a shared link is added", added.getJSONObject("data").getString("msg").startsWith("Added"))
+        val refused = runCatching { c.ask("playlist", org.json.JSONObject().put("link", "http://h"), seal = true) }.exceptionOrNull() as TbException
+        assertEquals("a sealed refusal is opened too", "tv", refused.code)
+
         // A wrong key: refused, and the answer is not trusted.
         val wrongKey = TvClient(tv.copy(key = ByteArray(32)))
         val e = runCatching { wrongKey.info() }.exceptionOrNull() as TbException
