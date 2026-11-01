@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 47, 2026-11-01)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 47
 
 - **My teams fixes from the first real game day.**
   - The local station carrying the game is there when you keep it in your own group (**Local channels**) and its provider group is hidden.  Search finds it the same way.
@@ -8,11 +12,7 @@
   - The opponent's own team channel is left out (your team's channel is enough), unless you follow both.
   - Pregame and postgame shows, highlights and the like aren't games.
 
-## 0.6.0 (alpha 46, 2026-11-01)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 46
+### In alpha 46
 
 - **My teams only lists games.**  The group has the games on now at the top and the ones starting within **Games starting within** below, soonest first.  A team's own channel is in it only while it shows a game, so "Future events for Detroit Tigers not found yet" or a game tomorrow night no longer puts a channel there.  Shows about one team (a pregame show, a team magazine) aren't games either.
 - **Games named only in the description count.**  A local station's "NFL Football" with "Minnesota Vikings at Detroit Lions" in its description is in My teams now.
