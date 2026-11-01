@@ -2,7 +2,7 @@
 
 Everything TiviBro does, on the TV and from your computer.  Every picture here comes from a made-up demo provider, so the channel names are invented.
 
-**On the TV:** [First start](#first-start) · [The set-up tour](#the-set-up-tour) · [Channel logos](#channel-logos) · [The remote](#the-remote) · [The guide](#the-guide) · [Groups and the menu](#groups-and-the-menu) · [Watching fullscreen](#watching-fullscreen) · [Other versions of a channel](#other-versions-of-a-channel) · [Event channels](#event-channels-pay-per-view-and-sports-passes) · [Catch-up](#catch-up) · [Movies and shows](#movies-and-shows) · [Search](#search) · [Favorites, hiding and your own groups](#favorites-hiding-and-your-own-groups) · [Reminders](#reminders) · [Settings](#settings) · [Updates](#updates) · [Parental controls](#parental-controls)
+**On the TV:** [First start](#first-start) · [The set-up tour](#the-set-up-tour) · [Channel logos](#channel-logos) · [The remote](#the-remote) · [The guide](#the-guide) · [Groups and the menu](#groups-and-the-menu) · [Watching fullscreen](#watching-fullscreen) · [Other versions of a channel](#other-versions-of-a-channel) · [Event channels](#event-channels-pay-per-view-and-sports-passes) · [My teams](#my-teams) · [Catch-up](#catch-up) · [Movies and shows](#movies-and-shows) · [Search](#search) · [Favorites, hiding and your own groups](#favorites-hiding-and-your-own-groups) · [Reminders](#reminders) · [Settings](#settings) · [Updates](#updates) · [Parental controls](#parental-controls)
 
 **Every setting:** [Playback and buffering](#settings-playback-and-buffering) · [Remote control](#settings-remote-control) · [Playlists and guide](#settings-playlists-and-guide) · [Groups, sorting, hidden](#settings-groups-sorting-hidden) · [Guide, start screen, reminders](#settings-guide-start-screen-reminders) · [Appearance](#settings-appearance) · [Parental controls](#settings-parental-controls) · [Phone app and web editor](#settings-phone-app-and-web-editor) · [Updates and about](#settings-updates-and-about) · [Diagnostics](#settings-diagnostics)
 
@@ -289,6 +289,25 @@ It understands the usual ways providers write these: "Oct 29 7:30 PM", "Sat 15th
 <p align="center">
   <a href="https://tivibro.app/view/#tv-events-list"><img src="screenshots/tv-events-list.png" width="49%" alt="Events by time"></a>
   <a href="https://tivibro.app/view/#tv-events-guide"><img src="screenshots/tv-events-guide.png" width="49%" alt="Events in the guide"></a>
+</p>
+
+### My teams
+
+Many providers have a group for each league's teams ("NFL TEAMS", "NHL TEAMS": "NHL | DETROIT RED WINGS") next to their league passes.  **My teams** gathers the teams you follow into one group near the top of the guide:
+
+1. **Games on now**, on any channel: event channels ("USA NHL 02: WPG VS CAR"), league passes, and guide programmes ("NFL Football: Lions at Vikings").
+2. **Their next games**, starting within 6 hours (or 3, 12 or 24).
+3. **The teams' own channels.**
+
+Choose your teams in **Settings > Groups, sorting, hidden > My teams**.  It lists the leagues in your playlist (NFL, NBA, NHL, MLB, WNBA, MLS); open one and switch on your teams.  Teams with their own channel say so.  Or **hold OK** on a team's channel and choose **Follow the Detroit Red Wings**.  Your teams are kept in the settings, so they stay when you switch playlists.
+
+**Remind me before their games** (off at first) sets reminders for their games the way the [watchlist](#watchlist) does.  Unfollowing a team takes its reminders with it.
+
+TiviBro knows the teams by their full names ("Detroit Red Wings"), by short names when the league is clear ("Red Wings" on an NHL channel, or "Heat at Magic"), and by abbreviations in event channel names ("WPG VS CAR" in an NHL group), so "Magic Mike" on a movie channel is never a game.  **Hold OK** on the group for **Choose teams…** or **Turn off My teams**.
+
+<p align="center">
+  <img src="screenshots/tv-teams-guide.png" width="49%" alt="My teams in the guide">
+  <img src="screenshots/tv-teams-page.png" width="49%" alt="Settings: My teams">
 </p>
 
 ### Catch-up
@@ -643,6 +662,7 @@ Which groups show, in what order, and getting hidden things back.
 | **Show Recent channels** | **On** · Off | A group with the channels you watched lately. |
 | **Recent channels kept** | 10 · **20** · 30 · 50 | How many channels Recent remembers. |
 | **Show Favorites group** | **On** · Off | The Favorites group. |
+| **My teams ›** | | The teams you follow, for the [My teams](#my-teams) group: **Show the My teams group** (**On**), **Games starting within** (3 · **6** · 12 · 24 hours), **Remind me before their games** (**Off**), and a page for each league in your playlist to pick teams. |
 | **Show Events by time** | **On** · Off | With event channels: the group of events on now or starting in the next two weeks.  Brings it back after **Turn off Events by time** in the group's menu. |
 | **Recently added channels** | Off · 3 days · **7 days** · 14 days | A **Recently added** group with the channels that are new in your playlist since it last loaded, newest first, and a **NEW** tag in the lists. |
 | **Groups your provider adds later** | **Show them** · Hide them | *Hide them* keeps a tidy list tidy after **Hide all groups**: new provider groups arrive hidden. |

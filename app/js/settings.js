@@ -413,6 +413,7 @@ var Settings = (function () {
     out.push(toggle('Show Recent channels', '', function () { return s.showRecent; }, function (v) { s.showRecent = v; apply(); }));
     out.push(choice('Recent channels kept', '', [10, 20, 30, 50], ['10', '20', '30', '50'], function () { return +s.recentCount; }, function (v) { s.recentCount = v; save(); }));
     out.push(toggle('Show Favorites group', '', function () { return s.showFav !== false; }, function (v) { s.showFav = v; apply(); }));
+    out.push(page('My teams', 'A group with your teams\' own channels and every channel showing one of their games.', 'My teams', teamsPage, function () { var n = Teams.followed().length; return n ? n + ' ›' : '›'; }));
     if (Events.on()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in the playlist\'s Event channels.',
       function () { return Events.groupOn(); }, function (v) { var p = Store.playlist; p.events = Object.assign({}, p.events, { group: v }); Store.upsertPlaylist(p); Events.reset(); apply(); }));
     out.push(choice('Recently added channels', 'A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.', [0, 3, 7, 14], ['Off', '3 days', '7 days', '14 days'], function () { return s.newDays == null ? 7 : +s.newDays; }, function (v) { s.newDays = v; L.dirty(); apply(); }));
@@ -451,6 +452,56 @@ var Settings = (function () {
       UI.confirm('Clear every group, rename and hidden item for this playlist?', 'Clear all edits', function () { Store.resetEdits(); relist(); build(); });
     }));
     return out;
+  }
+
+  /* ---------- My teams (app/js/teams.js) ---------- */
+  function teamsPage() {
+    var s = S(), out = [], lgs = Teams.leagues(), mine = Teams.followed();
+    function apply() { Teams.dirty(); Store.saveSettings(); relist(); paint(); }
+    out.push(toggle('Show the My teams group', 'Near the top of the guide: games on now first, then the next ones, then the teams\' own channels.',
+      function () { return s.teamsGroup !== false; }, function (v) { s.teamsGroup = v; apply(); }));
+    out.push(choice('Games starting within', 'How soon a game has to start to be in the group.', [3, 6, 12, 24], ['3 hours', '6 hours', '12 hours', '24 hours'],
+      function () { return +s.teamsAhead || 6; }, function (v) { s.teamsAhead = v; apply(); }));
+    out.push(toggle('Remind me before their games', 'Like the watchlist: how far ahead it looks, and a reminder or just a message, are set in Settings > Guide, start screen, reminders > Watchlist.',
+      function () { return !!s.teamsRemind; }, function (v) {
+        s.teamsRemind = v;
+        if (!v) { Store.edits.reminders = Store.edits.reminders.filter(function (r) { return !/^team:/.test(r.w || ''); }); Store.saveEdits(); }
+        Store.saveSettings(); if (v) Watch.scan(false); paint();
+      }));
+    out.push(head('Leagues'));
+    if (!lgs.length) out.push(info('No NFL, NBA, NHL, MLB, WNBA or MLS channels found in this playlist.', ''));
+    lgs.forEach(function (lg) {
+      var n = Teams.inLeague(lg.id).filter(function (x) { return Teams.follows(x.id); }).length;
+      out.push(page(lg.name, lg.own ? lg.own + ' teams have their own channel' : 'Games only, no team channels', lg.name + ' teams', function () { return leaguePage(lg.id); },
+        function () { return n ? n + ' followed ›' : '›'; }));
+    });
+    if (mine.length) {
+      out.push(head('Following'));
+      mine.forEach(function (x) {
+        out.push(action(x.name, x.league.toUpperCase() + (Teams.hasChannel(x.id) ? '' : '   ·   no channel of its own here, games only'), function () {
+          Teams.follow(x.id, false); U.toast('Stopped following the ' + x.name); relist(); build();
+        }, function () { return 'Unfollow'; }));
+      });
+    }
+    return out;
+  }
+  function leaguePage(lg) {
+    var out = [];
+    out.push(info('Tick the teams you follow.  Teams with their own channel in this playlist say so.', ''));
+    Teams.inLeague(lg).slice().sort(function (a, b) { return a.name.localeCompare(b.name); }).forEach(function (x) {
+      out.push(toggle(x.name, Teams.hasChannel(x.id) ? 'Has its own channel' : '', function () { return Teams.follows(x.id); }, function (v) {
+        Teams.follow(x.id, v); relist();
+        if (v && Store.settings.teamsRemind) Watch.scan(true);
+        paint();
+      }));
+    });
+    return out;
+  }
+  // Straight to My teams (the My teams group's menu).
+  function openTeams() {
+    Views.switchTab('settings');
+    if (Views.tab !== 'settings') return;
+    section('groups'); push('My teams', teamsPage);
   }
 
   /* ---------- guide display and reminders ---------- */
@@ -925,6 +976,6 @@ var Settings = (function () {
     }
   };
 
-  return { open: open, assignGuide: assignGuide, section: section, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
+  return { open: open, assignGuide: assignGuide, section: section, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

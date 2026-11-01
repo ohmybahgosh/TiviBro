@@ -149,7 +149,7 @@ var WebEdit = (function () {
       e.watchlist = ed.watchlist.filter(function (w) { return w && typeof w.q === 'string' && w.q.trim().length >= 2; }).slice(0, 100)
         .map(function (w) { return { q: w.q.replace(/\s+/g, ' ').trim().slice(0, 60), at: +w.at || Date.now() }; });
       var words = {}; e.watchlist.forEach(function (w) { words[w.q] = 1; });
-      e.reminders = (e.reminders || []).filter(function (r) { return !r.w || words[r.w]; });
+      e.reminders = (e.reminders || []).filter(function (r) { return !r.w || words[r.w] || /^team:/.test(r.w); });
       setTimeout(function () { Watch.scan(false); }, 500);
     }
     // Smart clean-up steps you chose to skip: { country: 1, dupes: 1, ... }.

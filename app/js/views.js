@@ -1179,8 +1179,13 @@ var Views = (function () {
     var inCustom = L.isCustom(gid);
     var fav = L.isFav(c.k);
     var blocked = !!Store.edits.blockedChannels[c.k];
+    var team = Teams.ofChannel(c), follow = team && Teams.follows(team.id);
     return [
       { label: fav ? 'Remove from Favorites' : 'Add to Favorites', action: function () { var on = L.toggleFav(c.k); U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); } },
+      team && { label: follow ? 'Stop following the ' + team.name : 'Follow the ' + team.name, sub: follow ? '' : 'in My teams, with its games', action: function () {
+        Teams.follow(team.id, !follow); refreshLists(true);
+        U.toast(follow ? 'Stopped following the ' + team.name : 'Following the ' + team.name + '.  Find them in My teams.');
+      } },
       { label: 'Copy to group…', action: function () { copyMenu([c.k], L.name(c)); } },
       !full && tab === 'live' && { label: 'Select multiple…', sub: 'copy, favorite or hide several', action: function () { startPick(c.k); } },
       L.versions(c).length && { label: 'Other versions…', sub: versionsSummary(c), action: function () { versionsMenu(c); } },
@@ -1454,6 +1459,10 @@ var Views = (function () {
       L.hasOwnOrder(g.id) && { label: 'Back to the provider\'s channel order', sub: 'undo the channels you moved here', action: function () { L.resetOrder(g.id); refreshLists(true); U.toast('Provider order restored'); } },
       g.id === L.EVENTS && { label: 'Turn off Events by time', sub: 'back on in Settings > Groups, sorting, hidden', action: function () {
         var p = Store.playlist; p.events = Object.assign({}, p.events, { group: false }); Store.upsertPlaylist(p); refreshLists(); U.toast('Events by time is off');
+      } },
+      g.id === L.TEAMS && { label: 'Choose teams…', sub: 'Settings > Groups, sorting, hidden > My teams', action: function () { Settings.openTeams(); } },
+      g.id === L.TEAMS && { label: 'Turn off My teams', sub: 'back on in Settings > Groups, sorting, hidden > My teams', action: function () {
+        Store.settings.teamsGroup = false; Store.saveSettings(); refreshLists(); U.toast('My teams is off');
       } },
       g.id === L.RECENT && { label: 'Clear recent channels', action: function () { Store.edits.recent = []; Store.saveEdits(); L.dirty(); refreshLists(); } },
       !virtual && Parental.enabled() && { label: blocked ? 'Unblock group' : 'Block group', action: function () {

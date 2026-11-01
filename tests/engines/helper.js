@@ -463,7 +463,7 @@ step(function service(next) {
         // Reminders while TiviBro is closed (remind.js): scheduled with the activity manager, then an alert.
         var t = Date.now() + 3600e3;
         handlers.reminders.fn({ payload: { pid: 'p1', before: 2, visible: false, list: [{ k: 'k1', s: t, e: t + 3600e3, t: 'Show', ch: 'Chan' }] }, respond: function (r) {
-          var made = lunaCalls.filter(function (c) { return /activitymanager\/create$/.test(c.uri); })[0];
+          var made = lunaCalls.filter(function (c) { return /activitymanager\/create$/.test(c.uri) && /\/fire$/.test(((c.params.activity || {}).callback || {}).method || ''); })[0];   // not the phone app's wake check
           ok('reminders: scheduled with the activity manager', r.returnValue && r.scheduled === 1 && made && made.params.activity.callback.method === 'luna://app.tivibro.tv.service/fire', JSON.stringify(r));
           handlers.fire.fn({ payload: made.params.activity.callback.params, respond: function (f) {
             ok('reminders: at reminder time the TV shows an alert', f.result === 'shown' && lunaCalls.some(function (c) { return /createAlert$/.test(c.uri); }), JSON.stringify(f));

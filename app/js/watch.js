@@ -23,6 +23,13 @@ var Watch = (function () {
         dup[k] = 1; r.w = w.q; out.push(r);
       });
     });
+    // Games of the teams you follow (Settings > Groups, sorting, hidden > My teams), when their reminders are on.
+    if (!q && typeof Teams !== 'undefined' && Teams.remindOn()) Teams.games(ahead()).forEach(function (g) {
+      if (g.p.s <= now) return;
+      var k = g.p.t.toLowerCase() + '|' + g.p.s;
+      if (dup[k]) return;
+      dup[k] = 1; out.push({ c: g.c, p: g.p, w: 'team:' + g.team.id });
+    });
     out.sort(function (a, b) { return a.p.s - b.p.s; });
     return out;
   }
@@ -31,7 +38,8 @@ var Watch = (function () {
 
   // Look now.  quiet: no message (the first look after adding a word says its own thing).
   function scan(quiet) {
-    if (!list().length || !L.data.channels.length) return [];
+    var teams = typeof Teams !== 'undefined' && Teams.remindOn();
+    if ((!list().length && !teams) || !L.data.channels.length) return [];
     lastScan = Date.now();
     var s = seen(), now = Date.now(), found = [], remind = Store.settings.watchAction !== 'tell';
     Object.keys(s).forEach(function (k) { if (s[k] < now) delete s[k]; });

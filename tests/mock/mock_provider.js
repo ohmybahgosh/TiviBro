@@ -124,6 +124,11 @@ if (process.env.MOCK_EVENTS) {
       [7, t => `NFL 2 | ${md(t)} ${hm(t)} | Prairie Bison @ Coastline Pilots`],
       [-30, t => `NFL 3 | ${md(t)} ${hm(t)} | Desert Hawks @ Summit Miners`]]]
   ];
+  // MOCK_TEAMS=1 as well: team channels and league pass games, for My teams (app/js/teams.js).
+  if (process.env.MOCK_TEAMS) EV.push(['NHL PASS 1', [
+    [1, t => `NHL 1 | ${md(t)} ${hm(t)} | Carolina Hurricanes Winnipeg Jets`],
+    [-1, t => `USA NHL 02: WPG VS CAR (TVAS Feed ) @ ${hm(t).toLowerCase()}`],
+    [2, t => `NHL 3 | ${md(t)} ${hm(t)} | Boston Bruins Detroit Red Wings`]]]);
   // East and West feeds, and local stations by city (Smart clean-up).
   const usEnt = streams.filter(x => /^US\| /.test(x.name)).slice(0, 6);
   const CITIES = [['DETROIT', 'MI'], ['LANSING', 'MI'], ['CHICAGO', 'IL'], ['BOSTON', 'MA'], ['DENVER', 'CO'], ['SEATTLE', 'WA'], ['AUSTIN', 'TX'], ['TAMPA', 'FL']];
@@ -135,6 +140,8 @@ if (process.env.MOCK_EVENTS) {
     ['NBC Locals', CITIES.slice(1, 8).map(([c], i) => () => `NBC | ${c} | ${call('N', i)}`)],
     ['PBS Locals', CITIES.map(([c, st], i) => () => `PBS | ${st} - ${c} (${call('P', i)})`)]
   ];
+  if (process.env.MOCK_TEAMS) extra.push(['⛸ NHL TEAMS', ['ANAHEIM DUCKS', 'CAROLINA HURRICANES', 'DETROIT RED WINGS', 'WINNIPEG JETS'].map(n => () => 'NHL | ' + n)],
+    ['⬬ NFL TEAMS', ['DETROIT LIONS', 'MINNESOTA VIKINGS'].map(n => () => 'NFL | ' + n)]);
   extra.forEach(([cname, list]) => {
     const ci = cats.length;
     cats.push({ category_id: String(ci + 1), category_name: cname, parent_id: 0 });

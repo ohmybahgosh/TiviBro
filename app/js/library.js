@@ -8,7 +8,7 @@ var Library = (function () {
   var byKey = new Map();
   var groupCache = new Map();     // groupId -> channel array (built on demand)
   var groupNames = {};
-  var ALL = 'all', RECENT = 'recent', FAV = 'c_fav', EVENTS = 'events', NEW = 'new';
+  var ALL = 'all', RECENT = 'recent', FAV = 'c_fav', EVENTS = 'events', NEW = 'new', TEAMS = 'teams';
 
   function E() { return Store.edits; }
   function S() { return Store.settings; }
@@ -93,7 +93,7 @@ var Library = (function () {
       Store.saveEdits();
     } catch (err) { Log.warn('library', 'Could not track new groups: ' + err.message); }
   }
-  function dirty() { groupCache.clear(); evCache = null; newCache = null; }
+  function dirty() { groupCache.clear(); evCache = null; newCache = null; if (typeof Teams !== 'undefined') Teams.dirty(); }
 
   /* ---------- other versions of a channel ----------
      The same channel in another quality, group or copy ("ESPN FHD", "ESPN HD", "US| ESPN (Backup)"),
@@ -186,7 +186,7 @@ var Library = (function () {
     out.sort(function (x, y) { return a[y.k] - a[x.k] || x.num - y.num; });
     return (newCache = out);
   }
-  function isVirtual(gid) { return gid === ALL || gid === RECENT || gid === EVENTS || gid === NEW; }
+  function isVirtual(gid) { return gid === ALL || gid === RECENT || gid === EVENTS || gid === NEW || gid === TEAMS; }
   function isCustom(gid) { return gid && gid.indexOf('c_') === 0; }
   function custom(gid) { return E().custom.filter(function (g) { return g.id === gid; })[0]; }
   function cleanGroup(n) { return Names.groupsOn() ? Names.clean(n) : n; }
@@ -195,6 +195,7 @@ var Library = (function () {
     if (gid === RECENT) return 'Recent';
     if (gid === NEW) return 'Recently added';
     if (gid === EVENTS) return 'Events by time';
+    if (gid === TEAMS) return 'My teams';
     var c = custom(gid);
     return c ? c.name : (E().groupRenames && E().groupRenames[gid]) || cleanGroup(groupNames[gid] || '');
   }
@@ -208,6 +209,9 @@ var Library = (function () {
     });
     if (s.showFav === false) customs = customs.filter(function (g) { return g.id !== FAV; });
     if (s.favFirst) out = out.concat(customs);
+    // My teams (app/js/teams.js): near the top, while one of the teams has a channel or a game coming up.
+    var mt = typeof Teams !== 'undefined' && Teams.groupOn() ? Teams.list().length : 0;
+    if (mt) out.push({ id: TEAMS, name: 'My teams', count: mt });
     if (s.showRecent && e.recent.length) out.push({ id: RECENT, name: 'Recent', count: e.recent.length });
     var fresh = newList().length;
     if (fresh) out.push({ id: NEW, name: 'Recently added', count: fresh });
@@ -240,6 +244,7 @@ var Library = (function () {
   function channels(gid) {
     if (gid === EVENTS) return eventList();
     if (gid === NEW) return newList();
+    if (gid === TEAMS) return typeof Teams !== 'undefined' ? Teams.list() : [];
     var hit = groupCache.get(gid);
     if (hit) return hit;
     var e = E(), showHidden = S().showHidden, list;
@@ -410,7 +415,7 @@ var Library = (function () {
   }
 
   return {
-    idle: idle, ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
+    idle: idle, ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, TEAMS: TEAMS, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
     isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
     isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,

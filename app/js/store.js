@@ -80,7 +80,11 @@ var Store = (function () {
     audioSurround: false,       // prefer a 5.1 / Dolby track in that language
     subsLang: '',               // with autoSubs: only subtitles in this language ('' = any)
     watchAhead: 24,             // hours ahead the watchlist looks in the guide
-    watchAction: 'remind'       // remind (set a reminder) | tell (just a message)
+    watchAction: 'remind',      // remind (set a reminder) | tell (just a message)
+    myTeams: [],                // teams followed, 'league:abbr' (app/js/teams.js), for the My teams group
+    teamsGroup: true,           // show the My teams group when teams are followed
+    teamsRemind: false,         // reminders for their games, the same way as the watchlist
+    teamsAhead: 6               // hours ahead a game counts for the My teams group
   };
 
   var EDIT_DEFAULTS = {
