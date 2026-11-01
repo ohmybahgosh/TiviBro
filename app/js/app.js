@@ -228,7 +228,7 @@ var App = (function () {
       Source.load(test).then(function (data) {
         adopt(test, data);
         Store.upsertPlaylist(test);
-        return Store.idbSet(cacheKey(test), data).then(function () { return data; });
+        return Store.bigSet(cacheKey(test), data).then(function () { return data; });
       }).then(function (data) {
         setupEl.classList.add('hidden');
         if (Store.settings.active !== test.id) Store.usePlaylist(test.id);
@@ -347,7 +347,7 @@ var App = (function () {
     return Source.load(p).then(function (data) {
       if (data.fixed) Store.upsertPlaylist(adopt(p, data));
       carryAdded(Library.data, data);
-      Store.idbSet(cacheKey(p), data);
+      Store.bigSet(cacheKey(p), data);
       Source.setTz(data.tz); Events.setProviderTz(data.tz);
       Library.set(data);
       Logos.load(data);
@@ -359,7 +359,7 @@ var App = (function () {
 
   function open(p) {
     loading('Loading ' + (p.name || 'channels') + '…');
-    return Store.idbGet(cacheKey(p)).then(function (cached) {
+    return Store.bigGet(cacheKey(p)).then(function (cached) {
       if (cached && cached.sig === Source.sig(p) && cached.channels && cached.channels.length) {
         start(cached, true);
         if (plDue(p, cached.at, true)) setTimeout(function () { refresh(false); }, 15000);
@@ -367,7 +367,7 @@ var App = (function () {
       }
       return Source.load(p).then(function (data) {
         if (data.fixed) Store.upsertPlaylist(adopt(p, data));
-        Store.idbSet(cacheKey(p), data); start(data, false);
+        Store.bigSet(cacheKey(p), data); start(data, false);
       });
     }).catch(function (e) {
       Log.error('app', 'Could not open playlist "' + (p.name || p.id) + '": ' + (e && e.message));

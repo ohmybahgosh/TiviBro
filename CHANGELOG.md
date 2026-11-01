@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Big playlists live on the TV's storage, not the browser's** (follow-up to [#18](https://github.com/ohmybahgosh/TiviBro/issues/18)).  Older TVs give TiviBro only a small share of their storage, so a big channel list or movie library didn't fit and was downloaded again every time.  The channel list and the full movie and show lists are now kept by TiviBro's helper on the TV itself, which also does the language and category filtering, so TiviBro holds only what you see.  Changing languages in Movies and Shows no longer downloads anything.
+
 ## 0.6.0 (alpha 41, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

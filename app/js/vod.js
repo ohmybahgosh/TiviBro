@@ -7,7 +7,7 @@ var Vod = (function () {
   var kind = 'movie', built = false, zone = 'items';
   var catsVL, itemsVL;
   var data = { movie: null, series: null };
-  var raw = { movie: null, series: null };   // the whole list as loaded, so a language change needs no reload (a full TV can't cache it)
+  var raw = { movie: null, series: null };   // without the helper: the whole list, so a language change needs no reload
   var info = new Map();
   var episodes = null, series = null;      // drill-down into a show
   var playingMeta = null;
@@ -23,8 +23,48 @@ var Vod = (function () {
      helper downloads and slims the provider's list (service/vod.js), so the app never parses the
      provider's full answer; without the helper (a browser) the app does it itself. */
   function cacheKey(k) { return 'vod:' + Store.playlist.id + ':' + k; }
-  function load(k) {
-    if (data[k]) return Promise.resolve(data[k]);
+  // On a TV the helper keeps the full lists on the TV's storage and answers with what shows (issue #18:
+  // a full list didn't fit an old TV's browser storage).  In a browser the app keeps them itself.
+  function helped() { return !!(Net.active && Net.port && Net.info && Net.info.vod >= 2 && Store.playlist && Store.playlist.type === 'xtream'); }
+  var asking = { movie: null, series: null };
+  function load(k, again) {
+    if (data[k] && !again) return Promise.resolve(data[k]);
+    if (raw[k] && again) return Promise.resolve(data[k] = view(k, raw[k]));
+    if (helped()) {
+      if (asking[k] && !again) return asking[k];
+      var p = asking[k] = fromHelper(k).then(function (d) {
+        if (asking[k] === p) asking[k] = null;
+        Store.idbSet(cacheKey(k), null);            // an older copy in the browser's storage: not needed now
+        return (data[k] = d);
+      }, function (e) {
+        if (asking[k] === p) asking[k] = null;
+        Log.warn('vod', 'The helper could not give the ' + (k === 'series' ? 'show' : 'movie') + ' list (' + (e && e.message || e) + '), loading it here');
+        return own(k);
+      });
+      return p;
+    }
+    return own(k);
+  }
+  function fromHelper(k) {
+    var p = Store.playlist, h = +p.plRefresh, t0 = Date.now();
+    return postJSON('http://127.0.0.1:' + Net.port + '/vod/list', {
+      pl: p.id, sig: Source.sig(p), kind: k, maxAge: h > 0 ? h * 3600e3 : 0,
+      u: Net.wrap(Source.api(p, k === 'series' ? 'get_series' : 'get_vod_streams')),
+      uc: Net.wrap(Source.api(p, k === 'series' ? 'get_series_categories' : 'get_vod_categories')),
+      picked: prefs().langs, navLang: navigator.language, hidden: hiddenCats(k)
+    }, 240000).then(function (j) {
+      if (!j || !Array.isArray(j.rows)) throw new Error((j && j.error) || 'no list');
+      var base = k === 'series' ? 8 : 7, mk = k === 'series' ? seriesRow : movieRow;
+      var items = j.rows.map(function (r) {
+        var it = mk(r); it.lang = r[base] || ''; if (r[base + 1]) it.q = r[base + 1]; if (r[base + 2]) it.adult = 1; if (r[base + 3]) it.p = r[base + 3];
+        return it;
+      });
+      Log.info('vod', 'The helper gave ' + items.length + ' of ' + j.total + ' ' + (k === 'series' ? 'shows' : 'movies') + ' in ' + (Date.now() - t0) + ' ms');
+      return { at: j.at, cats: j.cats, items: items, langs: j.langs, keep: j.keep, total: j.total, adultCat: j.adultCat };
+    });
+  }
+  // Without the helper: the full list is cached in the browser's storage and kept in memory.
+  function own(k) {
     var ck = cacheKey(k);
     return Store.idbGet(ck).then(function (c) {
       var h = +Store.playlist.plRefresh, fresh = c && c.v === 3 && (h <= 0 || Date.now() - c.at < h * 3600e3);
@@ -70,115 +110,25 @@ var Vod = (function () {
       .then(function (j) { clearTimeout(t); return j; }, function (e) { clearTimeout(t); throw e; });
   }
 
-  /* Languages.  Many providers put a language or country code in front of every title
-     ("SE - The Dog Stars", "SE-4K - Mutiny", "[SE] Nocturne", "EN - ...").  The code is taken off the
-     name, kept as the title's language, and a 4K tag next to it becomes a 4K label. */
-  var CODES = (function () { var o = { EN: 1, ENG: 1 }; (Names.COUNTRY || []).forEach(function (c) { o[c] = 1; }); return o; })();
-  // A code in front of the title: "EN - ", "SE-4K - ", "IN-TM- ", "4K-SC - ", "EN| ", "[SE] ".
-  var PRE = /^\s*(?:\[([A-Za-z]{1,3})\]\s*|([A-Z0-9+]{1,4}(?:-[A-Z0-9+]{1,4})*)\s*(?:[|:]|-\s|\s[-–])\s*)(?=\S)/;
-  // Parts of a code that are not a language: quality, services (Netflix, Apple TV+), sport, cam copies.
-  var NOTLANG = { '4K': 'q', UHD: 'q', FHD: 1, HD: 1, SD: 1, HEVC: 1, NF: 1, 'A+': 1, TOP: 1, CAM: 1, SPT: 1, WC: 1, X: 1, MULTI: 1, SUB: 1, SUBS: 1, DUB: 1, NEW: 1, VIP: 1 };
-  // A code counts as a language only when the provider uses it this often; fewer, and it was part of the title.
-  var MIN_KNOWN = 10, MIN_UNKNOWN = 20;
-  var ALIAS = { ENG: 'EN', SCA: 'SC', SWE: 'SE', GER: 'DE', DEU: 'DE', FRA: 'FR', ESP: 'ES', ITA: 'IT', NED: 'NL', POR: 'PT', POL: 'PL', TUR: 'TR', NOR: 'NO', DEN: 'DK', FIN: 'FI',
-    ARAB: 'AR', ARA: 'AR', RUS: 'RU', IND: 'IN', USA: 'US', GB: 'UK', BRA: 'BR', MEX: 'MX', GRE: 'GR', ROM: 'RO', HUN: 'HU', CZE: 'CZ', KOR: 'KR', JPN: 'JP', CHN: 'CN' };
-  var LABEL = { EN: 'English', US: 'English (US)', UK: 'English (UK)', CA: 'Canada', AU: 'Australia', SE: 'Swedish', NO: 'Norwegian', DK: 'Danish', FI: 'Finnish', NL: 'Dutch',
-    BE: 'Belgian', DE: 'German', AT: 'Austrian', CH: 'Swiss', FR: 'French', ES: 'Spanish', LAT: 'Latino', MX: 'Mexican', IT: 'Italian', PT: 'Portuguese', BR: 'Brazilian',
-    PL: 'Polish', TR: 'Turkish', AR: 'Arabic', IN: 'Indian', PK: 'Pakistani', RU: 'Russian', UA: 'Ukrainian', GR: 'Greek', RO: 'Romanian', HU: 'Hungarian', CZ: 'Czech',
-    SK: 'Slovak', HR: 'Croatian', RS: 'Serbian', BG: 'Bulgarian', AL: 'Albanian', EXYU: 'Ex-Yu', KR: 'Korean', JP: 'Japanese', CN: 'Chinese', PH: 'Filipino', IR: 'Persian',
-    KU: 'Kurdish', IL: 'Hebrew', TH: 'Thai', VN: 'Vietnamese', AFR: 'African', NORDIC: 'Nordic', SC: 'Scandinavian', SCA: 'Scandinavian', QFR: 'Québécois', QC: 'Québécois',
-    TM: 'Tamil', TA: 'Tamil', TE: 'Telugu', TG: 'Telugu', TL: 'Telugu', ML: 'Malayalam', KN: 'Kannada', KD: 'Kannada', BN: 'Bengali', UR: 'Urdu', MR: 'Marathi', PB: 'Punjabi', PU: 'Punjabi', GU: 'Gujarati' };
-  // Codes that mean the TV's own language, from its menu language and country (navigator.language).
-  var LOCALE = { en: ['EN', 'US', 'UK', 'CA', 'AU', 'NZ', 'IE', 'INT', 'CA-EN', 'US-EN'], sv: ['SE', 'NORDIC', 'SCAN'], nb: ['NO', 'NORDIC'], no: ['NO', 'NORDIC'], da: ['DK', 'NORDIC'],
-    fi: ['FI', 'NORDIC'], nl: ['NL', 'BE', 'BENELUX'], de: ['DE', 'AT', 'CH'], fr: ['FR', 'BE', 'CH', 'CA-FR', 'FR-CA', 'QC'], es: ['ES', 'LAT', 'LATINO', 'LATAM', 'MX', 'US-ES', 'HIS', 'HISP'],
-    it: ['IT'], pt: ['PT', 'BR'], pl: ['PL'], tr: ['TR', 'TURK'], ar: ['AR', 'MENA'], hi: ['IN', 'HINDI'], ru: ['RU'], uk: ['UA'], el: ['GR'], ro: ['RO'], hu: ['HU'], cs: ['CZ'],
-    sk: ['SK'], hr: ['HR', 'EXYU', 'BALKAN'], sr: ['RS', 'EXYU', 'BALKAN'], bg: ['BG'], ko: ['KR'], ja: ['JP'], zh: ['CN', 'HK', 'TW'], he: ['IL'], fa: ['IR', 'PERSIAN', 'FARSI'] };
-  function tag(it) {
-    it.lang = '';
-    var m = PRE.exec(it.name);
-    if (!m) return it;
-    if (m[1]) {
-      if (m[1].toUpperCase() === 'X') { it.adult = 1; return it; }
-      var b = ALIAS[m[1].toUpperCase()] || m[1].toUpperCase();
-      if (CODES[b] || LABEL[b]) { it.p = m[0]; it.name = it.name.slice(m[0].length); it.lang = b; }
-      return it;
-    }
-    var parts = m[2].split('-'), lang = '', q = '';
-    for (var i = 0; i < parts.length; i++) {
-      var c = parts[i];
-      if (NOTLANG[c]) { if (NOTLANG[c] === 'q') q = '4K'; else if (!lang) return it; continue; }   // "NF - ", "SPT - ": a service, leave the name
-      if (!lang && /^[A-Z]{2,3}$/.test(c)) lang = ALIAS[c] || c;
-    }
-    if (!lang && !q) return it;
-    it.p = m[0]; it.name = it.name.slice(m[0].length); it.lang = lang;
-    if (q) it.q = q;
-    return it;
-  }
-  function known(c) { return !!(CODES[c] || LABEL[c]); }
-  function langName(c) { return c ? (LABEL[c] ? LABEL[c] + '  ' + c : c) : 'No language tag'; }
   function prefs() { var p = Store.playlist; return p.vodPrefs || (p.vodPrefs = {}); }
   function hiddenCats(k) { var h = prefs().hide || {}; return h[k] || []; }
-  // Which languages show: the ones picked in Languages, or by default the TV's own language plus
-  // untagged titles.  Everything shows when the library has one language, or the TV's matches little.
-  function shownLangs(counts, total) {
-    var picked = prefs().langs;
-    var codes = Object.keys(counts).filter(Boolean);
-    if (codes.length < 2) return null;
-    var keep = {};
-    if (Array.isArray(picked)) { picked.forEach(function (c) { keep[c] = 1; }); return keep; }
-    var loc = String(navigator.language || 'en-US').split('-'), want = {};
-    (LOCALE[loc[0].toLowerCase()] || []).forEach(function (c) { want[c] = 1; });
-    if (loc[1]) want[loc[1].toUpperCase()] = 1;
-    keep[''] = 1; codes.forEach(function (c) { if (want[c]) keep[c] = 1; });
-    var n = Object.keys(keep).reduce(function (a, c) { return a + (counts[c] || 0); }, 0);
-    return n >= Math.min(200, total * 0.05) ? keep : null;
-  }
-  // Adult categories stay out of All and Search; they are listed last and ask for the PIN if one is set.
-  var ADULT = /\b(adults?|xxx|porn|erotic|18\s?\+|\+\s?18)(?![a-z])/i;
-  function view(k, d) {
-    var counts = {}, items = d.items, i, it;
-    // A title with no code takes its category's: "|TR| DIZI", "|SCA| NORDIC FILMS", "EN - MOVIES".
-    var catLang = {};
-    d.cats.forEach(function (c) {
-      var m = /^\s*[|\[]\s*([A-Za-z]{2,4})\s*[|\]]/.exec(c.name) || /^\s*([A-Z]{2,3})\s*(?:[|:]|\s[-–])\s/.exec(c.name);
-      var code = m && m[1].toUpperCase(); code = code && (ALIAS[code] || code);
-      if (code && !NOTLANG[code] && known(code)) catLang[c.id] = code;
-    });
-    for (i = 0; i < items.length; i++) {
-      it = items[i];
-      if (it.lang === undefined) { tag(it); if (!it.lang && catLang[it.cat]) it.lang = catLang[it.cat]; }
-      counts[it.lang] = (counts[it.lang] || 0) + 1;
-    }
-    // Codes used only a few times were part of the title ("AVP - Alien vs Predator", one "US - " film).
-    var undo = {};
-    Object.keys(counts).forEach(function (c) { if (c && counts[c] < (known(c) ? MIN_KNOWN : MIN_UNKNOWN)) { undo[c] = 1; counts[''] = (counts[''] || 0) + counts[c]; delete counts[c]; } });
-    var adultCat = {};
-    d.cats.forEach(function (c) { if (ADULT.test(c.name)) adultCat[c.id] = 1; });
-    for (i = 0; i < items.length; i++) {
-      it = items[i];
-      if (undo[it.lang]) { it.name = (it.p || '') + it.name; it.lang = ''; it.p = ''; it.q = ''; }
-      if (adultCat[it.cat]) it.adult = 1;
-    }
-    var keep = shownLangs(counts, items.length), hid = {};
-    hiddenCats(k).forEach(function (c) { hid[c] = 1; });
-    var shown = keep || hiddenCats(k).length ? items.filter(function (x) { return (!keep || keep[x.lang] || x.adult) && !hid[x.cat]; }) : items;
-    return { at: d.at, cats: d.cats, items: shown, langs: counts, keep: keep, total: items.length, adultCat: adultCat };
-  }
+  var tag = VodView.tag, langName = VodView.langName;
+  function view(k, d) { return VodView.view(d, { picked: prefs().langs, navLang: navigator.language, hidden: hiddenCats(k) }); }
+
   // After a language or category change: rebuild from the cache, keep the selected category.
   function reshow() {
     var was = catsVL.current(), wasId = was && was.id;
-    // Re-read the list already in memory; only a TV that has none loads it again.  The shown list stays
-    // until then, so a button pressed meanwhile never finds it missing (issue #18).
+    // The helper (or the list in memory) answers again for the new choice.  The shown list stays until
+    // then, so a button pressed meanwhile never finds it missing (issue #18).
     var other = kind === 'movie' ? 'series' : 'movie';
-    if (raw[other] && data[other]) data[other] = view(other, raw[other]);
-    var next = raw[kind] ? Promise.resolve(data[kind] = view(kind, raw[kind])) : (data[kind] = null, load(kind));
-    next.then(function () {
+    if (data[other]) load(other, true).catch(function () {});
+    load(kind, true).then(function () {
       var cl = catList(), at = Math.max(0, cl.findIndex(function (c) { return c.id === wasId; }));
       catsVL.setItems(cl, at);
       var c = catsVL.current();
       if (c && c.id !== LANGS) itemsVL.setItems(itemsFor(c.id), 0);
       onItem();
-    });
+    }).catch(function (e) { U.toast('Could not reload the list: ' + (e && e.message || e), 4000); });
   }
   function langMenu() {
     var d = data[kind]; if (!d) return;
@@ -625,5 +575,5 @@ var Vod = (function () {
     }
   };
 
-  return { _test: { tag: tag, view: view }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, reset: function () { data = { movie: null, series: null }; raw = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
+  return { _test: { tag: tag, view: view }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, reset: function () { data = { movie: null, series: null }; raw = { movie: null, series: null }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
 })();

@@ -1,6 +1,7 @@
-// Movies and Shows lists: the helper's /vod/slim route (service/vod.js) and the app's language tags
-// (app/js/vod.js).  Self-contained: its own tiny provider, no mock server needed.
-const http = require('http'), path = require('path'), fs = require('fs'), vm = require('vm');
+// Movies and Shows lists: the helper's /vod/slim and /vod/list routes (service/vod.js), its store for
+// big things (service/kv.js), and the app's language tags (app/js/vodview.js, vod.js).  Self-contained: its own tiny provider, no mock server needed.
+const http = require('http'), path = require('path'), fs = require('fs'), vm = require('vm'), os = require('os');
+const DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-vod-')); process.env.TIVIBRO_GUIDE_DIR = DIR; process.env.TIVIBRO_KV_DIR = DIR;
 const proxy = require(path.join(__dirname, '../../service/proxy.js'));
 let fail = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  ' + x : '')); if (!c) fail++; };
@@ -17,7 +18,11 @@ for (let i = 0; i < 3000; i++) MOVIES.push({ num: i, name: i % 3 ? 'SE - Film ' 
 const SERIES = [{ series_id: 9, name: '[SE] Nocturne', cover: 'c.jpg', plot: 'p'.repeat(1000), rating: '8', releaseDate: '2026-01-02', category_id: '7', last_modified: '1700000001', backdrop_path: ['a', 'b'], cast: 'x' }];
 
 (async () => {
+  let hits = 0, down = false;
   const up = http.createServer((req, res) => {
+    if (/get_vod_streams/.test(req.url)) hits++;
+    if (down) { res.writeHead(503); return res.end(); }
+    if (/categories/.test(req.url)) { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify([{ category_id: '5', category_name: 'Films' }, { category_id: '7', category_name: 'Shows' }])); }
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify(/get_series/.test(req.url) ? SERIES : /get_vod_streams/.test(req.url) ? MOVIES : { user_info: {} }));
   });
@@ -38,15 +43,66 @@ const SERIES = [{ series_id: 9, name: '[SE] Nocturne', cover: 'c.jpg', plot: 'p'
   a = await post(B + '/vod/slim', { kind: 'movie', u: 'http://127.0.0.1:' + (P + 1) + '/x/http/' + U + '/' });
   ok('not another port either', a.status === 400, a.status);
   const ping = await new Promise(res => http.get(B + '/ping', x => { let t = ''; x.on('data', d => t += d); x.on('end', () => res(JSON.parse(t))); }));
-  ok('ping says the helper slims lists', ping.vod === 1);
-  r.server.close(); up.close();
+  ok('ping says the helper keeps lists (vod 2, kv)', ping.vod >= 2 && ping.kv === 1);
+
+  // /vod/list: the full list kept on the TV's storage, only what shows sent to the app.
+  const q = (o) => Object.assign({ pl: 'p1', sig: 's1', kind: 'movie', u: api('get_vod_streams'), uc: api('get_vod_categories'), navLang: 'en-US', maxAge: 3600e3 }, o);
+  hits = 0;
+  a = await post(B + '/vod/list', q());
+  const j = a.json;
+  ok('the list comes back with only the TV\'s language', a.status === 200 && j.total === 3000 && j.rows.length === 1000 && j.langs.SE === 2000 && j.langs.EN === 1000, JSON.stringify(j && { total: j.total, n: j.rows.length, langs: j.langs }));
+  ok('rows carry the language, with the code off the name', JSON.stringify(j.rows[0]) === JSON.stringify([100, 'Movie 0', 'http://img/0.jpg', '7.25', 'mkv', '5', 1700000000, 'EN', '', 0, 'EN - ']), JSON.stringify(j.rows[0]));
+  ok('and the categories', j.cats.length === 2 && j.cats[0].name === 'Films');
+  await new Promise(f => setTimeout(f, 300));
+  ok('the full list is kept on the TV\'s storage', fs.readdirSync(path.join(DIR, 'vod')).indexOf('p1-movie.json') >= 0);
+  a = await post(B + '/vod/list', q({ picked: ['SE'] }));
+  ok('another language comes from the copy kept, not the provider', a.json.rows.length === 2000 && hits === 1, hits);
+  a = await post(B + '/vod/list', q({ hidden: ['5'] }));
+  ok('hidden categories stay out', a.json.rows.length === 0 && a.json.total === 3000);
+  a = await post(B + '/vod/list', q({ refresh: true }));
+  ok('a refresh asks the provider again', hits === 2, hits);
+  a = await post(B + '/vod/list', q({ sig: 's2' }));
+  ok('so does a changed login', hits === 3, hits);
+  down = true;
+  a = await post(B + '/vod/list', q({ sig: 's2', refresh: true }));
+  ok('the provider down: the copy kept answers', a.status === 200 && a.json.rows.length === 1000, a.status);
+  a = await post(B + '/vod/list', q({ pl: 'p9' }));
+  ok('and with no copy, the reason', a.status === 502 && a.json.error, JSON.stringify(a.json));
+  down = false;
+  a = await post(B + '/vod/list', q({ u: 'http://' + U + '/player_api.php' }));
+  ok('/vod/list takes only relay addresses on this helper', a.status === 400);
+  await post(B + '/vod/forget', { pl: 'p1' });
+  ok('a removed playlist\'s lists go', fs.readdirSync(path.join(DIR, 'vod')).indexOf('p1-movie.json') < 0);
+
+  // /kv: the playlist on the TV's storage.
+  const big = { channels: Array.from({ length: 50000 }, (_, i) => ({ n: 'Channel ' + i, u: 'http://h/live/u/p/' + i + '.ts' })) };
+  const raw = (m, u, body, h) => new Promise((res, rej) => { const x = new URL(u); const rq = http.request({ host: x.hostname, port: x.port, path: x.pathname + x.search, method: m, headers: h || {} }, (rs) => { let t = ''; rs.on('data', d => t += d); rs.on('end', () => res({ status: rs.statusCode, text: t })); }); rq.on('error', rej); rq.end(body); });
+  let k = await raw('POST', B + '/kv/put?k=playlist:p1', JSON.stringify(big));
+  ok('a big playlist is kept', k.status === 200, k.status + ' ' + k.text);
+  k = await raw('GET', B + '/kv/get?k=playlist:p1');
+  ok('and read back whole', k.status === 200 && JSON.parse(k.text).channels.length === 50000);
+  k = await raw('GET', B + '/kv/get?k=playlist:none');
+  ok('nothing kept: 404', k.status === 404);
+  k = await raw('POST', B + '/kv/put?k=../x', '{}');
+  ok('keys can\'t leave the folder', k.status === 400);
+  await raw('POST', B + '/kv/del?k=playlist:p1', '');
+  k = await raw('GET', B + '/kv/get?k=playlist:p1');
+  ok('and it can be removed', k.status === 404);
+  r.server.close();
+  const r2 = proxy.create({ ctl: 'secret' }); await new Promise(f => r2.server.listen(0, '127.0.0.1', f));
+  const B2 = 'http://127.0.0.1:' + r2.server.address().port;
+  k = await raw('POST', B2 + '/kv/put?k=playlist:p2', '{"a":1}');
+  ok('on the TV only TiviBro can use it (the logins are in it)', k.status === 403, k.status);
+  k = await raw('POST', B2 + '/kv/put?k=playlist:p2', '{"a":1}', { 'X-TiviBro-Ctl': 'secret' });
+  ok('TiviBro can', k.status === 200, k.status);
+  r2.server.close(); up.close();
 
   // The app's language tags, run in a sandbox with the real names.js and vod.js.
   const ctx = { window: {}, console, navigator: { language: 'en-US' }, Map, Promise, setTimeout, clearTimeout };
   ctx.U = { $: () => null, debounce: (f) => { const g = function () { return f.apply(null, arguments); }; g.cancel = () => {}; return g; }, el: () => ({}) };
   ctx.Store = { settings: {}, edits: { resume: {}, myList: [] }, playlist: { id: 'p', type: 'xtream' } };
   vm.createContext(ctx);
-  for (const f of ['names.js', 'vod.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js', f), 'utf8') + '\n;this.Names = typeof Names !== "undefined" ? Names : this.Names; this.Vod = typeof Vod !== "undefined" ? Vod : this.Vod;', ctx, { filename: f });
+  for (const f of ['names.js', 'vodview.js', 'vod.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js', f), 'utf8') + '\n;this.Names = typeof Names !== "undefined" ? Names : this.Names; this.Vod = typeof Vod !== "undefined" ? Vod : this.Vod; this.VodView = typeof VodView !== "undefined" ? VodView : this.VodView;', ctx, { filename: f });
   const T = ctx.Vod._test;
   ok('test hooks', !!T);
   const t = n => { const it = T.tag({ name: n }); return [it.lang, it.name, it.q || ''].join('|'); };

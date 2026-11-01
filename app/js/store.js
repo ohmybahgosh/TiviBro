@@ -209,7 +209,8 @@ var Store = (function () {
   function removePlaylist(id) {
     settings.playlists = settings.playlists.filter(function (x) { return x.id !== id; });
     localStorage.removeItem('tivibro.edits.' + id);
-    idbSet('playlist:' + id, null); idbSet('epgpub:' + id, null);
+    bigSet('playlist:' + id, null); idbSet('epgpub:' + id, null);
+    if (kvOn()) fetch('http://127.0.0.1:' + Net.port + '/vod/forget', { method: 'POST', body: JSON.stringify({ pl: id }) }).catch(function () {});
     // Its restore points and draft history (see webedit.js) go with it.
     idbSet('snaps:' + id, null);
     idbGet('drafts:' + id).then(function (l) { (Array.isArray(l) ? l : []).forEach(function (x) { idbSet('draft:' + id + ':' + x.id, null); }); idbSet('drafts:' + id, null); });
@@ -281,6 +282,41 @@ var Store = (function () {
     }).catch(function () { return false; });
   }
 
+  /* Big things (the playlist): on a TV the helper keeps them on the TV's storage (service/kv.js), which
+     an old TV's small browser storage can't hold (issue #18).  A copy still in the browser's storage
+     from an older TiviBro is read once, moved to the helper and freed.  Without the helper, or when
+     it can't keep it, the browser's storage as before. */
+  function kvOn() { return !!(window.Net && Net.active && Net.port && Net.info && Net.info.kv); }
+  function kv(path, body) {
+    return fetch('http://127.0.0.1:' + Net.port + path, { method: body === undefined ? 'GET' : 'POST', cache: 'no-store', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: body });
+  }
+  function bigGet(k) {
+    if (!kvOn()) return idbGet(k);
+    return kv('/kv/get?k=' + encodeURIComponent(k)).then(function (r) {
+      if (r.status === 404) return idbGet(k).then(function (v) {
+        if (v != null) bigSet(k, v);                   // moves it to the helper, and frees the browser's copy
+        return v;
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).catch(function (e) { if (window.Log) Log.warn('store', 'The helper could not give ' + k + ' (' + (e && e.message || e) + ')'); return idbGet(k); });
+  }
+  function bigSet(k, v) {
+    if (v === null) { if (kvOn()) kv('/kv/del?k=' + encodeURIComponent(k), '').catch(function () {}); return idbSet(k, null); }
+    if (!kvOn()) return idbSet(k, v);
+    var text;
+    try { text = JSON.stringify(v); } catch (e) { return idbSet(k, v); }
+    return kv('/kv/put?k=' + encodeURIComponent(k), text).then(function (r) {
+      text = null;
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return idbSet(k, null);
+    }).catch(function (e) {
+      text = null;
+      if (window.Log) Log.warn('store', 'The helper could not keep ' + k + ' (' + (e && e.message || e) + '), using the browser\'s storage');
+      return idbSet(k, v);
+    });
+  }
+
   function freeze() { frozen = true; }
   return {
     freeze: freeze,
@@ -301,6 +337,6 @@ var Store = (function () {
     },
     saveSettings: saveSettings, saveEdits: saveEdits, get editsRev() { return editsRev; },
     resetEdits: function () { edits = merge(clone(EDIT_DEFAULTS), null); saveEdits(); },
-    idbGet: idbGet, idbSet: idbSet, DEFAULTS: DEFAULTS
+    idbGet: idbGet, idbSet: idbSet, bigGet: bigGet, bigSet: bigSet, DEFAULTS: DEFAULTS
   };
 })();

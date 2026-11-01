@@ -69,6 +69,14 @@ var seq = [
     if (!/xmltv|epgSources/.test(SETTINGS)) return next();
     waitFor('XMLTV guide parsed', 'window.Epg && Epg.guideChannels().length > 0 && !Epg.loading && Epg.guideChannels().length', 90000, function (n) { R.xmltvChannels = n; next(); });
   },
+  // Movies from the helper, which keeps the full list on the TV's storage (service/vod.js), and the
+  // playlist kept there too (service/kv.js).
+  function movies(next) {
+    if (!/xtream/.test(SETTINGS)) return next();
+    js('Vod.prepare(); return 1;', val(function () {
+      waitFor('movies come from the helper', 'Vod.allItems().length > 0 && (Log.lines ? Log.lines(false).join("\\n") : "").indexOf("The helper gave") >= 0 && Vod.allItems().length', 60000, function (n) { R.movies = n; next(); });
+    }));
+  },
   function navigate(next) {
     js('return document.activeElement && document.querySelector(".focus, .focused, [data-focus]") ? (document.querySelector(".focus, .focused, [data-focus]").textContent || "").slice(0, 40) : null;', val(function (before) {
       keys(['Down', 'Down', 'Down', 'Right', 'Right', 'Left', 'Up'], function () {

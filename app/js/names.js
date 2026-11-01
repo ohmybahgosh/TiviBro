@@ -195,3 +195,4 @@ var Names = (function () {
     hideIdle: function () { return !!cfgOf().hideIdle; }
   };
 })();
+if (typeof module !== 'undefined') module.exports = Names;

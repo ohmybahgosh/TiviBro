@@ -8,7 +8,7 @@ Plain scripts loaded in order by `app/index.html` (no modules, no bundler: webOS
 | log.js | `Log`, `TIVIBRO_VERSION` | Ring-buffer log, persisted, credentials redacted.  **Version constant lives here** |
 | net.js | `Net` | Starts the helper service, rewrites provider URLs through it (Automatic/Direct) |
 | keymap.js | `Keymap` | Remote remapping: player/list contexts, short/long press, learned keys |
-| store.js | `Store` | Settings in localStorage, big lists in IndexedDB, multi-playlist, migrations |
+| store.js | `Store` | Settings in localStorage; the playlist on the helper's storage (`bigGet`/`bigSet`, IndexedDB without the helper); multi-playlist, migrations |
 | names.js | `Names` | Channel/group name cleaner: default rule packs + TiviMate-style prefix/suffix lists |
 | source.js | `Source` | Xtream Codes + M3U loading, http/https detection, catch-up URLs |
 | library.js | `Library` | Provider data + user overlays (hide, rename, custom groups, favorites, sorting) |
@@ -21,7 +21,8 @@ Plain scripts loaded in order by `app/index.html` (no modules, no bundler: webOS
 | ui.js | `UI` | Key routing, long-press, modal menus, prompts |
 | views.js | `Views` | Live list, fullscreen + OSD, guide grid, menus |
 | search.js | `Search` | Search across channels, the guide, movies and shows, ranked by match |
-| vod.js | `Vod` | Movies and Shows: lists (slimmed by the helper's `service/vod.js` on a TV), languages, hidden and adult categories, details, playback and resume |
+| vod.js | `Vod` | Movies and Shows: lists (kept and filtered by the helper's `service/vod.js` on a TV), languages, hidden and adult categories, details, playback and resume |
+| vodview.js | `VodView` | Movie and show language tags and what shows; shared with the helper (`service/editor/vodview.js` is a build copy) |
 | mkvsubs.js | `MkvSubs` | Reads SRT subtitles out of MKV files over Range requests for the TV's own player |
 | links.js | `Links` | Splits a provider's full link into server, username and password (shared with the editor) |
 | events.js | `Events` | Event channels: the game in a pay-per-view or sports-pass channel name, as a guide entry |
@@ -38,16 +39,18 @@ Plain scripts loaded in order by `app/index.html` (no modules, no bundler: webOS
 
 ## Network helper (`service/`)
 
-Files: `service.js` (the webOS service: start subscription, wake activity), `proxy.js` (the relay and its routes), `guide.js` (big guides), `vod.js` (slims movie and show lists), `editor.js` (the web editor's LAN server), `companion.js` (the phone app's LAN API on 47810 and UDP discovery), `remind.js` (reminders with TiviBro closed), `rawhttp.js`, `tssync.js`, `unzip.js`, `compat.js`.
+Files: `service.js` (the webOS service: start subscription, wake activity), `proxy.js` (the relay and its routes), `guide.js` (big guides), `vod.js` (keeps movie and show lists), `kv.js` (keeps the playlist), `editor.js` (the web editor's LAN server), `companion.js` (the phone app's LAN API on 47810 and UDP discovery), `remind.js` (reminders with TiviBro closed), `rawhttp.js`, `tssync.js`, `unzip.js`, `compat.js`.
 
 webOS enforces CORS for installed apps and most providers send no CORS headers.  `service.js` wraps `proxy.js`, a localhost relay on **127.0.0.1:47811** using path-style URLs: `/x/<scheme>/<host[:port]>/<path>`.  It adds CORS headers, rewrites redirects, passes Range through, accepts self-signed certs, exposes `/ping` and `/log`.  It keeps provider connections alive between requests and remembers DNS answers for a minute, so channel changes don't wait on the TV's resolver.  When Node's HTTP parser refuses a provider's reply (stray control characters, `Content-Length` twice), the request is repeated through `rawhttp.js`, a small forgiving HTTP/1.x reader.  Live MPEG-TS passes through `tssync.js`, which drops stray bytes and keeps 188-byte packets aligned, so a corrupted stretch costs a glitch instead of a stalled demuxer.  The app keeps a `start` subscription open; when the app closes the service exits.
 
 **Big guides (`guide.js`).**  With the helper running, XMLTV guides are read by the helper, not the app: webOS closes an app at about 500 MB, and a full guide parsed in the app can pass that (a 64 MB iptv-epg.org file did on a 2 GB C2).  The app posts what to keep (`POST /guide/load`: sources as relay addresses with `/unz/<id>`, wanted guide ids, name matches, the public guide's matching keys) and follows `GET /guide/status`.  The helper streams each file through its own relay, keeps the playlist's channels inside the time window (same rules as the in-app worker), spills programmes to bucket files, then writes per playlist and kind (`main`, `pub`) `titles.tsv` (start, end, title), `desc.json` with `desc.idx` (one channel's descriptions by offset) and `meta.json` (guide channel list, icons, name matches, report).  It keeps the old guide when every file fails, and stores under the service folder on the TV's storage (falls back to `/tmp`).  The app holds only titles and times (`Epg.request`, search, the watchlist, the grid) and asks `GET /guide/desc` when a description is shown (`Epg.desc`, last 80 channels kept).  A restart reads what is stored, with no download.  Without the helper the worker in `epg.js` does it all, within a memory budget.  `service/editor/pubepg.js` is a build copy of `app/js/pubepg.js` (lint checks it).
 
+**Movie and show lists (`vod.js`) and the playlist (`kv.js`).**  An old TV gives the web app only a small share of its storage (issue #18: a 51,000-channel list and its movie lists did not fit a 2019 C9), so with the helper running both live on the TV's storage: `/media/internal/.tivibro` when the helper can write there (kept across updates), else beside the guide.  `POST /vod/list` downloads and slims a list once, keeps it (`vod/<playlist>-<kind>.json`, and in the helper's memory for 3 minutes), and answers with only what shows: the languages picked and no hidden categories, using `VodView` like the app.  A language or category change asks again; the app never holds every language.  `GET/POST /kv/get|put|del?k=` keep the playlist (`Store.bigGet`/`bigSet`); they need TiviBro's secret like `/editor/` (the playlist holds stream addresses with the login).  A copy left in IndexedDB by an older TiviBro is moved over once.  Without the helper (a browser) both stay in IndexedDB, and a save that runs out of space frees other playlists' caches and tries again.
+
 Video handed to the TV's native player goes direct for http, through the helper for https.
 
 ## Storage keys
-`tivibro.settings`, `tivibro.edits.<playlistId>`, `tivibro.devRelay` (desktop testing only), IndexedDB `tivibro`.
+`tivibro.settings`, `tivibro.edits.<playlistId>`, `tivibro.devRelay` (desktop testing only), IndexedDB `tivibro`, and on a TV the helper's `kv/` and `vod/` folders.
 
 ## Web editor ("Edit on a phone or computer")
 - `service/editor.js`: LAN HTTP server (0.0.0.0:<port>, only while switched on) serving `service/editor/index.html` + `names.js` (copied from `app/js/names.js` by the build; lint checks it is current).  Browser API: `POST /api/login`, `GET /api/state`, `GET /api/rev`, `POST /api/save`, `POST /api/logout`, token in `X-Token`.

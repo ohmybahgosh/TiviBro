@@ -14,6 +14,7 @@ cp "$ROOT/app/js/tidy.js" "$ROOT/service/editor/tidy.js"
 cp "$ROOT/app/js/pubepg.js" "$ROOT/service/editor/pubepg.js"
 cp "$ROOT/app/js/links.js" "$ROOT/service/editor/links.js"
 cp "$ROOT/app/js/events.js" "$ROOT/service/editor/events.js"
+cp "$ROOT/app/js/vodview.js" "$ROOT/service/editor/vodview.js"   # the helper keeps the movie and show lists (service/vod.js)
 rm -rf "$ROOT/service/guide-data" "$ROOT/service/power.json" "$ROOT/service/reminders.json" "$ROOT/service/helper-errors.json" "$ROOT/service/companion.json" "$ROOT/service/companion.json.tmp"                                # guides stored by a dev relay: not for the package     # the helper's guide reader matches with it
 mkdir -p "$ROOT/dist"
 echo "Packaging $APP_ID $VERSION ${MIN:+(dev, unminified)}"

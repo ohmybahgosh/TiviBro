@@ -267,7 +267,7 @@ var WebEdit = (function () {
       if (f) ['server', 'user', 'pass', 'm3u'].forEach(function (k) { p[k] = f[k]; });
       if (data && data.exp) p.exp = data.exp;            // the subscription's end, shown with the playlist (issue #13)
       Store.upsertPlaylist(p);
-      return Store.idbSet('playlist:' + p.id, data).then(function () { return data; });
+      return Store.bigSet('playlist:' + p.id, data).then(function () { return data; });
     });
   }
   var RUN = {
