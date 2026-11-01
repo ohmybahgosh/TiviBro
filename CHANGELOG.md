@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **Paste your provider's full link** ([#11](https://github.com/ohmybahgosh/TiviBro/issues/11)).  Adding a playlist on the TV or in the web editor now starts on **Full link**: paste the whole link your provider sent (get.php, player_api.php, xmltv.php or a stream link with the username and password in it) and TiviBro says what it found, then fills in the Xtream Codes server, username and password.  A link without a login is added as an M3U playlist.  The Xtream Codes and M3U choices are still there for typing it in yourself.
-
-## 0.6.0 (alpha 37, 2026-11-01)
+## 0.6.0 (alpha 38, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 37
+### New in alpha 38
+
+- **Paste your provider's full link** ([#11](https://github.com/ohmybahgosh/TiviBro/issues/11)).  Adding a playlist on the TV or in the web editor now starts on **Full link**: paste the whole link your provider sent (get.php, player_api.php, xmltv.php or a stream link with the username and password in it) and TiviBro says what it found, then fills in the Xtream Codes server, username and password.  A link without a login is added as an M3U playlist.  The Xtream Codes and M3U choices are still there for typing it in yourself.
+
+### In alpha 37
 
 - **The TV shows what your phone is doing during set-up** ([#8](https://github.com/ohmybahgosh/TiviBro/issues/8)).  On the QR code screens, a line says when a playlist or backup arrives from a phone or computer, when it was added (with the channel count), and when it failed and why, so whoever is at the TV sees it working.  Nothing starts playing by itself.
 - **Codes you can't misread** ([#10](https://github.com/ohmybahgosh/TiviBro/issues/10)).  New web editor passwords, phone pairing codes and suggested backup passphrases leave out characters that look alike from across the room (2/Z, 5/S, 6/G, 8/B and U/V, on top of 0/O and 1/I/L).  Typing a look-alike still works, so a 5 for an S in an older password is accepted.
