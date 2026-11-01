@@ -1,3 +1,6 @@
+/* The app's state and actions, shared by every screen: paired TVs, discovery on the network, pairing,
+   refreshing what each TV is doing, remote keys and actions, Play on TV, the channel list (lineup),
+   volume, the editor address and Wake-on-LAN.  Talks to the TV only through proto/. */
 package app.tivibro.phone.ui
 
 import android.app.Application

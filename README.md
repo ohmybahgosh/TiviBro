@@ -37,6 +37,7 @@
 | 📺 **On your LG TV** | [How to install](#install).  Homebrew Channel repository: `https://tivibro.app/repo` |
 | 📱 **Phone app for Android** | [**Download the newest APK**](https://tivibro.app/apk/), then [pair it with your TV](#the-phone-app) |
 | 📦 **Every build and its notes** | [Releases page](https://github.com/ohmybahgosh/TiviBro/releases) |
+| 🤖 **Building a feature with AI?** | [Download the knowledge base](https://tivibro.app/ai/tivibro-for-ai.md) for Claude, ChatGPT or Gemini |
 
 > [!WARNING]
 > **TiviBro is under active development.**  These are early test builds: expect bugs and rough edges, and settings or features may change between versions.  Keep a backup before updating (**Backup and restore** in the [web editor](#the-web-editor)).  Found a bug?  On the TV, **Settings > Diagnostics > Report a problem** (also on the first screen) fills in a [GitHub issue](https://github.com/ohmybahgosh/TiviBro/issues) for you from your phone: see [Report a problem](#report-a-problem).
@@ -529,6 +530,9 @@ On the old TV, open the web editor, then **Backup and restore > Download locked 
 ## Develop
 
 Want to help?  [CONTRIBUTING.md](CONTRIBUTING.md) has the ground rules and how to report problems; security problems go through [SECURITY.md](SECURITY.md).
+
+> [!TIP]
+> **Building with an AI assistant?**  Download [**tivibro-for-ai.md**](https://tivibro.app/ai/tivibro-for-ai.md) and attach it to Claude, ChatGPT or Gemini before you ask for a feature.  It's one file with the project's rules, what every source file does, the settings, the remote actions and how to test, rebuilt from `main` on every website update (or run `npm run ai`).  Coding agents pick up [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) on their own.
 
 TiviBro is plain HTML, CSS and JavaScript, with no bundler and no build step beyond packaging.  The same IPK runs from webOS 4 (Chromium 53) to webOS 26, with webOS 25 as the main target; see [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md).  A small webOS JS service acts as a localhost relay (CORS, custom User-Agent) and hosts the LAN web editor.
 

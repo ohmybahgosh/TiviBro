@@ -1,3 +1,4 @@
+/* Colours, shapes and type: TiviBro's "Midnight Electric" look, the same as the TV app. */
 package app.tivibro.phone.ui
 
 import androidx.compose.material3.MaterialTheme

@@ -1,3 +1,6 @@
+/* The TV's web editor full screen in a WebView, signed in with a one-time token from the TV.  Saves the
+   files the editor makes (backups, problem reports) through a JavaScript bridge, opens the file picker
+   for restores, and keeps Back inside the editor until its first page. */
 package app.tivibro.phone.ui
 
 import android.annotation.SuppressLint

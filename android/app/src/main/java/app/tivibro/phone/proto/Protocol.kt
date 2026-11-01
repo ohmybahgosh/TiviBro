@@ -1,3 +1,6 @@
+/* The phone side of the pairing and request protocol (docs/wiki/Phone-app-protocol.md): reading pairing
+   links, PBKDF2 and HMAC for pairing, opening the TV's AES-GCM key delivery, and signing every request
+   and checking every answer.  Plain JVM code, unit tested against the TV's real service/companion.js. */
 package app.tivibro.phone.proto
 
 import org.json.JSONObject

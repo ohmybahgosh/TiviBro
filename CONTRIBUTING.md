@@ -26,6 +26,8 @@ npm test
 
 `node tests/mock/mock_provider.js` runs a made-up Xtream Codes provider for testing (`MOCK_EVENTS=1` adds event channels, East and West feeds and local stations).  The `tests/soak/` scripts drive the app and the web editor in a real browser; `bash tests/engines/run.sh` runs the app on the browser and Node versions of old TVs.
 
+**Working with an AI assistant?**  Give it the knowledge base first: [tivibro-for-ai.md](https://tivibro.app/ai/tivibro-for-ai.md) (download it and attach it to Claude, ChatGPT or Gemini, or run `npm run ai` in your clone).  It has the rules below, what every source file does, the settings, the remote actions and how to test, so the assistant writes changes that fit.  Coding agents read [AGENTS.md](AGENTS.md) and [CLAUDE.md](CLAUDE.md) by themselves.  [docs/ai/GUIDE.md](docs/ai/GUIDE.md) explains how to use it.
+
 Ground rules:
 
 - **Old TVs matter.**  The same IPK runs on webOS 4 (Chromium 53, Node 0.12 for the service).  No CSS grid, no Unicode property classes (`\p{L}`) in app regular expressions, ES5-style code in the service.  See [docs/COMPATIBILITY.md](docs/COMPATIBILITY.md).

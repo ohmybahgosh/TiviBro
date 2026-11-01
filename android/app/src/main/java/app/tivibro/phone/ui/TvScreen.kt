@@ -1,3 +1,6 @@
+/* One TV: what it is showing now (followed with a long poll), a remote (arrows, OK, Back, channel and
+   volume buttons, menu actions), typing into the TV's search, and the TV's own channel list to play a
+   channel on the TV. */
 package app.tivibro.phone.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi

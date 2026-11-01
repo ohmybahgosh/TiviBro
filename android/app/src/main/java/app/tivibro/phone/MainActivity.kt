@@ -1,3 +1,6 @@
+/* The app's single activity: opens pairing links (tivibro://pair and https://tivibro.app/pair from the TV's
+   QR code), runs the code scanner, and moves between the screens (home, add a TV, type the code, one TV,
+   the editor). */
 package app.tivibro.phone
 
 import android.content.Intent

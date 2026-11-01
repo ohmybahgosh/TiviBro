@@ -5,7 +5,7 @@ name: Website
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'README.md', 'docs/USER-GUIDE.md', 'scripts/gen-viewer.js', 'docs/media/guide.mp4', 'docs/media/live-edit.mp4', '.github/workflows/pages.yml', 'scripts/logos/**', 'scripts/tv/install.sh', 'app/js/tidy.js', 'app/js/names.js']
+    paths: ['site/**', 'README.md', 'docs/**', 'app/js/**', 'service/*.js', 'android/app/src/main/java/**', 'CHANGELOG.md', 'CONTRIBUTING.md', 'AGENTS.md', 'scripts/gen-ai-context.js', 'docs/USER-GUIDE.md', 'scripts/gen-viewer.js', 'docs/media/guide.mp4', 'docs/media/live-edit.mp4', '.github/workflows/pages.yml', 'scripts/logos/**', 'scripts/tv/install.sh', 'app/js/tidy.js', 'app/js/names.js']
   workflow_run:                 # after a release, so tivibro.app/repo has the new version
     workflows: [Release]
     types: [completed]
@@ -43,6 +43,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+      - name: Knowledge base for AI assistants (tivibro.app/ai/tivibro-for-ai.md)
+        run: node scripts/gen-ai-context.js _site/ai/tivibro-for-ai.md
       - name: Screenshot viewer list (tivibro.app/view)
         run: node scripts/gen-viewer.js _site/view/shots.json
       - name: Build the channel logo index

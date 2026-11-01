@@ -1,3 +1,5 @@
+/* The first screen: each paired TV as a card (what it is playing, or that it is off) with Remote,
+   Edit channels, Open TiviBro, Wake and Forget, plus adding a TV and choosing the Quick Settings tile's TV. */
 package app.tivibro.phone.ui
 
 import androidx.compose.foundation.Image

@@ -1,3 +1,5 @@
+/* Network: HTTP calls to a TV's phone app API (port 47810), UDP discovery of TVs on the network, and
+   Wake-on-LAN. */
 package app.tivibro.phone.proto
 
 import org.json.JSONObject

@@ -1,3 +1,5 @@
+/* Paired TVs and their keys, kept in the app's private storage and encrypted with a key in the Android
+   Keystore, so they never leave the phone (excluded from backups too). */
 package app.tivibro.phone.data
 
 import android.content.Context

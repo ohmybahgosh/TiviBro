@@ -1,3 +1,4 @@
+/* The Quick Settings tile: one tap opens TiviBro on the chosen TV (waking it first when it is off). */
 package app.tivibro.phone.tile
 
 import android.os.Build

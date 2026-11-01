@@ -20,12 +20,26 @@ Plain scripts loaded in order by `app/index.html` (no modules, no bundler: webOS
 | vlist.js | `VList` | Virtual list with pooled rows |
 | ui.js | `UI` | Key routing, long-press, modal menus, prompts |
 | views.js | `Views` | Live list, fullscreen + OSD, guide grid, menus |
-| search.js / vod.js | | Search, Movies/Shows |
+| search.js | `Search` | Search across channels, the guide, movies and shows, ranked by match |
+| vod.js | `Vod` | Movies and Shows: lists (slimmed by the helper's `service/vod.js` on a TV), languages, hidden and adult categories, details, playback and resume |
+| mkvsubs.js | `MkvSubs` | Reads SRT subtitles out of MKV files over Range requests for the TV's own player |
+| links.js | `Links` | Splits a provider's full link into server, username and password (shared with the editor) |
+| events.js | `Events` | Event channels: the game in a pay-per-view or sports-pass channel name, as a guide entry |
+| tidy.js | `Tidy` | Smart clean-up answers (countries, East and West, locals, duplicates), shared with the editor |
+| tour.js | `Tour` | The set-up tour after a new playlist |
+| logos.js | `Logos` | Logos from open logo projects for channels without one |
+| remind.js / watch.js | `Remind`, `Watch` | Reminders (handed to the helper so they work with TiviBro closed) and the watchlist |
+| update.js | `Update` | Checks for new releases, installs through the Homebrew Channel, the anonymous daily count |
+| phone.js | `Phone` | The phone app from TiviBro's side: pairing screens, remote commands, state and lineup for the phone |
+| webedit.js | `WebEdit`, `Backup` | The web editor from TiviBro's side: snapshots, applying saves, the `RUN` command table, backups |
 | settings.js | `Settings` | All settings pages |
 | diag.js | `Diag` | Test connection + log viewer |
 | app.js | `App` | Boot: paint cache, resume, background refresh |
 
 ## Network helper (`service/`)
+
+Files: `service.js` (the webOS service: start subscription, wake activity), `proxy.js` (the relay and its routes), `guide.js` (big guides), `vod.js` (slims movie and show lists), `editor.js` (the web editor's LAN server), `companion.js` (the phone app's LAN API on 47810 and UDP discovery), `remind.js` (reminders with TiviBro closed), `rawhttp.js`, `tssync.js`, `unzip.js`, `compat.js`.
+
 webOS enforces CORS for installed apps and most providers send no CORS headers.  `service.js` wraps `proxy.js`, a localhost relay on **127.0.0.1:47811** using path-style URLs: `/x/<scheme>/<host[:port]>/<path>`.  It adds CORS headers, rewrites redirects, passes Range through, accepts self-signed certs, exposes `/ping` and `/log`.  It keeps provider connections alive between requests and remembers DNS answers for a minute, so channel changes don't wait on the TV's resolver.  When Node's HTTP parser refuses a provider's reply (stray control characters, `Content-Length` twice), the request is repeated through `rawhttp.js`, a small forgiving HTTP/1.x reader.  Live MPEG-TS passes through `tssync.js`, which drops stray bytes and keeps 188-byte packets aligned, so a corrupted stretch costs a glitch instead of a stalled demuxer.  The app keeps a `start` subscription open; when the app closes the service exits.
 
 **Big guides (`guide.js`).**  With the helper running, XMLTV guides are read by the helper, not the app: webOS closes an app at about 500 MB, and a full guide parsed in the app can pass that (a 64 MB iptv-epg.org file did on a 2 GB C2).  The app posts what to keep (`POST /guide/load`: sources as relay addresses with `/unz/<id>`, wanted guide ids, name matches, the public guide's matching keys) and follows `GET /guide/status`.  The helper streams each file through its own relay, keeps the playlist's channels inside the time window (same rules as the in-app worker), spills programmes to bucket files, then writes per playlist and kind (`main`, `pub`) `titles.tsv` (start, end, title), `desc.json` with `desc.idx` (one channel's descriptions by offset) and `meta.json` (guide channel list, icons, name matches, report).  It keeps the old guide when every file fails, and stores under the service folder on the TV's storage (falls back to `/tmp`).  The app holds only titles and times (`Epg.request`, search, the watchlist, the grid) and asks `GET /guide/desc` when a description is shown (`Epg.desc`, last 80 channels kept).  A restart reads what is stored, with no download.  Without the helper the worker in `epg.js` does it all, within a memory budget.  `service/editor/pubepg.js` is a build copy of `app/js/pubepg.js` (lint checks it).

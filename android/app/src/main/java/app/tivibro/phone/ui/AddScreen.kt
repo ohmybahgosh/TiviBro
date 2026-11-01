@@ -1,3 +1,5 @@
+/* Adding a TV: scan the QR code, pick a TV found on the network, or type its address; then CodeScreen,
+   where the 12-character code from the TV is typed. */
 package app.tivibro.phone.ui
 
 import androidx.compose.foundation.background
