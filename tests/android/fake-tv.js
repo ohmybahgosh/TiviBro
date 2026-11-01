@@ -23,6 +23,7 @@ function ctl(u, body) {
 }
 (async () => {
   await new Promise((r) => editor.start(18787, 'ABCD-EFGH', r));
+  await require('./posters.js').serve(POSTERS);
   await ctl('/companion/set', { on: true });
   const s = await ctl('/companion/pair', { open: true });
   console.log('127.0.0.1:' + s.port + ':' + s.pairing.code.replace(/-/g, '') + ':' + s.id);
@@ -55,9 +56,22 @@ async function tivibro() {
 
 // Questions from the phone (POST /v1/ask), answered like app/js/phone.js does.
 const progs = (i) => [0, 1, 2].map((n) => ({ t: SHOWS[(i + n) % 10], s: t0 + n * 60 * 60000, e: t0 + (n + 1) * 60 * 60000 }));
-const movies = Array.from({ length: 30 }, (_, i) => ({ id: 5000 + i, n: 'Movie ' + (i + 1), c: '', r: '7.1', y: '2024' }));
+// Posters (posters.js) from this machine, which the emulator reaches as 10.0.2.2.
+const POSTERS = 18788, art = (n) => 'http://10.0.2.2:' + POSTERS + '/p/' + n + '.png';
+const movies = Array.from({ length: 30 }, (_, i) => ({ id: 5000 + i, n: 'Movie ' + (i + 1), c: art(i), r: '7.1', y: '2024' }));
 // My media (the TV's own movies): made-up titles, the shelves as categories.
-const mine = ['Moonlight Harbor', 'The Glass Orchard', 'Northbound', 'Paper Comets', 'Saltwater Kings', 'The Quiet Engine'].map((n, i) => ({ id: 'w:/Movies/' + i, n, c: '', r: '', y: String(2015 + i), p: i === 1 ? 40 : 0 }));
+const FILMS = [
+  ['The Lighthouse Keeper', 2025, 'Thriller', '1h 58m', 'A keeper on a remote island starts receiving signals from a ship that sank forty years ago.', 62],
+  ['Midnight Express Lane', 2024, 'Action', '1h 46m', 'A night courier has one hour to cross the city with a package everyone wants.', 0],
+  ['Paper Planes', 2025, 'Comedy, Drama', '1h 39m', 'Two rival grandfathers enter the national paper plane championship.', 22],
+  ['Iron Orchard', 2023, 'Drama', '2h 04m', 'A family fights to keep its orchard through the hardest winter in a century.', 0],
+  ['The Last Matinee', 2024, 'Family', '1h 41m', 'Kids stage one last show to save their small-town cinema.', 0],
+  ['Signal Lost', 2025, 'Sci-Fi', '1h 52m', 'A deep-space crew loses contact with Earth and must decide whether to turn back.', 40],
+  ['Copper Canyon', 2022, 'Western', '1h 55m', 'A retired marshal rides out for one last job in the canyon country.', 0],
+  ['Two Left Feet', 2023, 'Comedy', '1h 34m', 'A clumsy accountant is mistaken for a famous dance coach.', 0],
+  ['The Kite Festival', 2025, 'Family', '1h 37m', 'A boy builds the biggest kite his seaside town has ever seen.', 0]];
+const FAVS = ['Copper Canyon', 'The Kite Festival'];
+const mine = FILMS.map((f, i) => ({ id: 'w:/Movies/' + i, n: f[0], c: art(i), r: '', y: String(f[1]), p: f[5], g: f[2], d: f[3], plot: f[4], fav: FAVS.includes(f[0]) }));
 let typed = '';
 async function answer(cmd) {
   const a = cmd.args || {}, say = (data) => ctl('/companion/answer', { id: cmd.id, ok: true, data }), no = (error) => ctl('/companion/answer', { id: cmd.id, ok: false, error });
@@ -73,9 +87,10 @@ async function answer(cmd) {
   }
   if (cmd.what === 'chan') { const c = chans.find((x) => x.k === a.k); if (!c) return no('That channel isn\'t in this playlist.'); return say({ k: c.k, name: c.n, provider: c.n, renamed: false, hidden: false, group: 'News', groups: [{ id: 'c_mine', name: 'My sports', has: 0 }], team: { id: 'nfl:det', name: 'Detroit Lions', on: a.op === 'follow' && a.on !== false ? 1 : 0 }, msg: a.op === 'info' ? '' : 'Done' }); }
   if (a.kind === 'media') {
-    if (cmd.what === 'vodcats') return say({ cats: [{ id: 'continue', n: 'Continue watching', count: 1 }, { id: 'favorites', n: 'Favorites', count: 0 }, { id: 'all', n: 'All movies', count: mine.length }] });
-    if (cmd.what === 'voditems') { const l = a.cat === 'continue' ? mine.filter((m) => m.p) : a.cat === 'favorites' ? [] : mine; return say({ total: l.length, offset: 0, items: l }); }
-    if (cmd.what === 'vodinfo') { const m = mine.find((x) => x.id === a.id) || mine[0]; return say({ id: m.id, n: m.n, year: m.y, plot: 'A made-up movie for the phone app test.', genre: 'Drama', dur: '1h 52m', media: '1080p   HEVC   MKV   ·   8.2 GB   ·   premiumize', pos: m.p ? 2400 : 0, len: m.p ? 6000 : 0 }); }
+    const shelf = (id) => id === 'continue' ? mine.filter((m) => m.p) : id === 'favorites' ? mine.filter((m) => m.fav) : mine;
+    if (cmd.what === 'vodcats') return say({ cats: ['continue', 'favorites', 'all'].map((id, i) => ({ id, n: ['Continue watching', 'Favorites', 'All movies'][i], count: shelf(id).length })) });
+    if (cmd.what === 'voditems') { const l = a.q ? mine.filter((m) => m.n.toLowerCase().includes(String(a.q).toLowerCase())) : shelf(a.cat); return say({ total: l.length, offset: 0, items: l.map((m) => ({ id: m.id, n: m.n, c: m.c, y: m.y, p: m.p })) }); }
+    if (cmd.what === 'vodinfo') { const m = mine.find((x) => x.id === a.id) || mine[0]; return say({ id: m.id, n: m.n, c: m.c, year: m.y, plot: m.plot, genre: m.g, dur: m.d, media: '1080p   HEVC   MKV   ·   8.2 GB   ·   Living room NAS', pos: m.p ? Math.round(m.p * 60) : 0, len: m.p ? 6000 : 0 }); }
     if (cmd.what === 'vodplay') { console.log('MEDIAPLAY ' + a.id + (a.fromStart ? ' fromStart' : '')); return say({ title: (mine.find((x) => x.id === a.id) || mine[0]).n }); }
   }
   if (cmd.what === 'vodcats') return say({ cats: [{ id: '_all', n: 'All movies', count: movies.length }, { id: '100', n: 'Action', count: 10 }] });

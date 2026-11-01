@@ -92,7 +92,7 @@ if [ -n "$(find_text "My media")" ]; then
   tap "My media"
   shot 12a-my-media 6
   n0=$(grep -c '^MEDIAPLAY' /tmp/fake-tv.txt || true)
-  tap "The Glass Orchard"
+  tap "Paper Planes"
   shot 12a-my-media-movie 5
   tap "Resume on TV"; sleep 3
   [ "$(grep -c '^MEDIAPLAY' /tmp/fake-tv.txt || true)" -gt "$n0" ] || { echo "My media did not play on the TV"; exit 1; }
