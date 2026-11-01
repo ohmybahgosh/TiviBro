@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 49, 2026-11-01)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 49
 
 - **My media plays your own movies from DLNA / UPnP and WebDAV sources.**  It joins the menu once you add a source in **Settings > My media**.  Browse poster shelves for Continue watching, Favorites and All movies, with the usual movie player, favorites and resume positions.  Source setup stays in Settings and the web editor.  WebDAV playback currently requires a redirect to a playable file link.
 - **My media is for movies only for now, and says so.**  Scans leave out TV (season folders and episode files), trailers and extras (Extras and Featurettes folders, "-trailer" files, short clips, much smaller videos next to a movie), and say how many they left out.
@@ -8,11 +12,7 @@
 - **Rescan and sort your movie library.**  Green rescans all sources; Yellow fetches missing or outdated movie details.  Sort by name, release date or date added.  Failed, empty or incomplete scans preserve saved entries, and library changes survive restarts.
 - **Audio can fall back to a second language.**  In **Settings > Playback and buffering**, choose a preferred audio language and a fallback (off at first).  When neither is there, the stream's own track stays.  Thanks to moritzm784 for My media and this.
 
-## 0.6.0 (alpha 48, 2026-11-01)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 48
+### In alpha 48
 
 - **My teams fills in as soon as the guide arrives.**  Right after TiviBro starts, the group was worked out before a big guide had loaded, and kept only the event channels for minutes.  Now it looks again the moment the guide is in, so your team's channel and the local station showing the game appear.
 - **At most 8 channels a game in My teams**, your team's channel and the channels in your own groups first (a network game is on dozens of local stations).
