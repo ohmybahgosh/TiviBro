@@ -10,6 +10,7 @@ const Companion = require('../../service/companion.js');
 const editor = require('../../service/editor.js').create(() => {});
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-fake-tv-'));
 const vol = { level: 12, muted: false };
+const look = { title: 'Appearance', trail: ['Appearance'], rows: [{ i: 0, kind: 'head', label: 'Look' }, { i: 1, kind: 'toggle', label: 'Show clock', sub: '', on: true }, { i: 2, kind: 'choice', label: 'Numbers', sub: 'Even width lines up channel numbers.', options: ['TV font', 'Even width', 'Fixed width, slashed zero'], cur: 0, value: 'TV font' }, { i: 3, kind: 'page', label: 'Manage groups', sub: '', value: '' }] };
 const c = Companion.create({ dir, version: 'fake-tv', log: () => {}, launch: (p, cb) => { console.log('LAUNCHED ' + JSON.stringify(p)); cb(null); }, sysinfo: (cb) => cb({ model: 'FAKE', webos: '0', name: 'Fake TV' }), app: () => ({ open: true }), editor: () => editor,
   volume: (d, cb) => { if (d === 'up') vol.level++; else if (d === 'down') vol.level--; else vol.muted = !vol.muted; cb(null, Object.assign({}, vol)); } });
 function ctl(u, body) {
@@ -62,6 +63,12 @@ async function answer(cmd) {
   if (cmd.what === 'schedule') return say({ k: a.k, arch: 3, progs: progs(1).map((p) => Object.assign({ d: 'About ' + p.t }, p)) });
   if (cmd.what === 'fav') { const c = chans.find((x) => x.k === a.k); if (!c) return no('That channel isn\'t in this playlist.'); c.fav = a.on ? 1 : 0; return say({ on: !!c.fav }); }
   if (cmd.what === 'remind') return say({ on: a.on !== false });
+  if (cmd.what === 'settings') {
+    if (a.op === 'sections') return say({ sections: [{ id: 'playback', title: 'Playback and buffering' }, { id: 'look', title: 'Appearance' }] });
+    look.rows[1].on = a.op === 'toggle' && a.i === 1 ? a.on : look.rows[1].on;
+    if (a.op === 'choice' && a.i === 2) { look.rows[2].cur = a.v; look.rows[2].value = look.rows[2].options[a.v]; }
+    return a.op === 'page' ? say(look) : say({ msg: '', page: look });
+  }
   if (cmd.what === 'chan') { const c = chans.find((x) => x.k === a.k); if (!c) return no('That channel isn\'t in this playlist.'); return say({ k: c.k, name: c.n, provider: c.n, renamed: false, hidden: false, group: 'News', groups: [{ id: 'c_mine', name: 'My sports', has: 0 }], msg: a.op === 'info' ? '' : 'Done' }); }
   if (cmd.what === 'vodcats') return say({ cats: [{ id: '_all', n: 'All movies', count: movies.length }, { id: '100', n: 'Action', count: 10 }] });
   if (cmd.what === 'voditems') { const off = a.offset || 0, lim = a.limit || 120; const l = a.q ? movies.filter((m) => m.n.toLowerCase().includes(String(a.q).toLowerCase())) : movies; return say({ total: l.length, offset: off, items: l.slice(off, off + lim) }); }

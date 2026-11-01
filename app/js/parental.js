@@ -41,6 +41,16 @@ var Parental = (function () {
   function change(done) { if (!enabled()) return setPin(done); check(function () { setPin(done); }, 'Enter current PIN'); }
   function remove(done) { check(function () { Store.settings.pin = ''; Store.saveSettings(); U.toast('PIN removed'); if (done) done(); }, 'Enter current PIN'); }
 
-  return { gate: gate, change: change, remove: remove, enabled: enabled, lock: function () { unlocked = false; },
+  /* The phone app's Settings: allowed when Settings has no PIN (or it's open on the TV), or with the PIN
+     typed on the phone.  Wrong PINs count toward the same 30 second lock as on the TV. */
+  function phoneOk(pin) {
+    if (!enabled() || unlocked || !scope('settings')) return true;
+    if (Date.now() < lockUntil) throw Object.assign(new Error('Too many wrong PINs.  Try again in ' + Math.ceil((lockUntil - Date.now()) / 1000) + 's.'), { code: 'pin' });
+    if (pin == null || pin === '') throw Object.assign(new Error('Settings on this TV are locked with a PIN.'), { code: 'pin' });
+    if (hash(String(pin)) === Store.settings.pin) { fails = 0; return true; }
+    fails++; if (fails >= 5) { lockUntil = Date.now() + 30000; fails = 0; }
+    throw Object.assign(new Error('Wrong PIN'), { code: 'pin' });
+  }
+  return { gate: gate, change: change, remove: remove, enabled: enabled, phoneOk: phoneOk, lock: function () { unlocked = false; },
     blockedOk: function (c) { return !enabled() || unlocked || !scope('channels') || !Library.isBlocked(c); } };
 })();

@@ -131,6 +131,40 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await ask('chan', { k: ck, op: 'hide', on: false });
   await ev((id) => Library.deleteGroup(id), ng.id);
 
+  // Settings from the phone: every page, the same rows as on the TV, and changes that stick.
+  const sa = (o) => ask('settings', o, { seal: true });
+  const secs = await sa({ op: 'sections' });
+  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length >= 8, JSON.stringify(secs.sections));
+  let pg = await sa({ op: 'page', sec: 'look' });
+  const clock = pg.rows.find((r) => r.label === 'Show clock'), nums = pg.rows.find((r) => r.label === 'Numbers');
+  ok('a page comes as rows: toggles, choices with their options', clock && clock.kind === 'toggle' && nums && nums.kind === 'choice' && nums.options.length === 3, JSON.stringify(pg.rows.slice(0, 4)));
+  pg = await sa({ op: 'toggle', sec: 'look', i: clock.i, on: !clock.on });
+  ok('a toggle from the phone changes the TV', await ev(() => Store.settings.showClock) === !clock.on && pg.page.rows.find((r) => r.label === 'Show clock').on === !clock.on);
+  await sa({ op: 'toggle', sec: 'look', i: clock.i, on: clock.on });
+  pg = await sa({ op: 'choice', sec: 'look', i: nums.i, v: 1 });
+  ok('a choice from the phone changes the TV', await ev(() => Store.settings.numFont) === 'even' && await ev(() => document.body.classList.contains('nums-even')));
+  await sa({ op: 'choice', sec: 'look', i: nums.i, v: 0 });
+  const grp = await sa({ op: 'page', sec: 'groups' });
+  const sub = grp.rows.find((r) => r.kind === 'page');
+  if (sub) { const inner = await sa({ op: 'page', sec: 'groups', path: [sub.i] }); ok('and pages inside pages', inner.trail.length === 2 && inner.rows.length > 0, JSON.stringify(inner).slice(0, 200)); }
+  let pages = 0, badPages = [];
+  for (const sc of secs.sections) {
+    const top = await sa({ op: 'page', sec: sc.id }).catch((x) => { badPages.push(sc.id + ': ' + x.message); return null; });
+    if (!top) continue; pages++;
+    for (const r of top.rows.filter((x) => x.kind === 'page')) { await sa({ op: 'page', sec: sc.id, path: [r.i] }).then(() => pages++, (x) => badPages.push(sc.id + ' > ' + r.label + ': ' + x.message)); }
+  }
+  ok('every settings page and the pages inside them open on the phone (' + pages + ')', !badPages.length && pages > 15, badPages.join(' | '));
+  const e = await C.ask(cred, 'settings', { op: 'sections' }).catch((x) => x);
+  ok('settings only travel sealed (the PIN goes with them)', e.code === 'sealed');
+  await ev(() => { Store.settings.pin = Parental && (function () { return U.hash('tivibro:1234:pin'); })(); Store.settings.pinScope = 'both'; Parental.lock(); });
+  let lk = await sa({ op: 'sections' });
+  ok('locked with the TV\'s PIN: the phone is asked for it', lk.locked === true, JSON.stringify(lk));
+  lk = await sa({ op: 'sections', pin: '0000' });
+  ok('a wrong PIN is refused', lk.locked === true && /Wrong PIN/.test(lk.msg));
+  lk = await sa({ op: 'sections', pin: '1234' });
+  ok('the right PIN opens it', Array.isArray(lk.sections));
+  await ev(() => { delete Store.settings.pin; Store.saveSettings(); });
+
   // Backups.
   const bk = await ask('backup', {}, { seal: true });
   ok('a backup for the phone, with the playlists', bk.backup && bk.backup.kind === 'backup' && bk.backup.settings.playlists.length > 0);

@@ -16,15 +16,15 @@ var Settings = (function () {
   function cyc(list, cur, dir) { var i = list.indexOf(cur); if (i < 0) i = 0; return list[(i + dir + list.length) % list.length]; }
   function choice(label, sub, values, labels, get, set) {
     return { label: label, sub: sub, value: function () { var i = values.indexOf(get()); return i >= 0 ? labels[i] : String(get()); },
-      cycle: function (d) { set(cyc(values, get(), d)); } };
+      cycle: function (d) { set(cyc(values, get(), d)); }, values: values, labels: labels, get: get, set: set };
   }
   function toggle(label, sub, get, set) {
-    return { label: label, sub: sub, value: function () { return get() ? 'On' : 'Off'; }, cycle: function () { set(!get()); } };
+    return { label: label, sub: sub, value: function () { return get() ? 'On' : 'Off'; }, cycle: function () { set(!get()); }, toggle: true, get: get, set: set };
   }
   function action(label, sub, fn, value) { return { label: label, sub: sub, action: fn, value: value || function () { return ''; } }; }
   function head(t) { return { head: true, label: t }; }
   function info(label, value) { return { label: label, info: true, value: function () { return value; } }; }
-  function page(label, sub, title, fn, value) { return action(label, sub, function () { push(title, fn); }, value || function () { return '›'; }); }
+  function page(label, sub, title, fn, value) { var it = action(label, sub, function () { push(title, fn); }, value || function () { return '›'; }); it.page = { title: title, fn: fn }; return it; }
   function save(rebuild) { Store.saveSettings(); if (rebuild) build(); else paint(); }
   function push(title, fn) { stack.push({ title: title, fn: fn, sel: sel }); sel = 0; build(); }
   function pop() { var p = stack.pop(); sel = p ? p.sel : 0; build(); }
@@ -872,6 +872,55 @@ var Settings = (function () {
     if (id === 'phone' || id === 'editor') id = 'connect';
     for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return true; } return false; }
 
-  return { open: open, assignGuide: assignGuide, section: section, live: live, reset: function () { stack = []; sel = 0; },
+  /* Settings from the phone app (ask "settings" in phone.js): the same pages, built by the same code, as
+     data the phone draws.  A page is a section plus the page rows followed into it (path, by row).  Each
+     row: head, info, toggle, choice (with its choices), cycle (◀ ▶ only), page, or action (which runs on
+     the TV, so a box or menu it opens shows there; the phone can type into boxes).  After a change the
+     page is built again and sent back, so rows that depend on others appear or go. */
+  function rowsOf(secId, path) {
+    var i = -1; for (var x = 0; x < SECTIONS.length; x++) if (SECTIONS[x][0] === secId) i = x;
+    if (i < 0) throw new Error('No such settings page');
+    var list = FNS[i](), title = title0(SECTIONS[i]), trail = [title];
+    (path || []).forEach(function (n) {
+      var it = list[n];
+      if (!it || !it.page) throw new Error('That page has changed on the TV.  Go back and open it again.');
+      title = it.page.title; trail.push(title); list = it.page.fn();
+    });
+    return { title: title, trail: trail, list: list };
+  }
+  function title0(sct) { return title(sct); }
+  function rowData(it, n) {
+    var v = '';
+    try { v = it.value ? String(it.value() || '') : ''; } catch (e) {}
+    var r = { i: n, label: String(it.label || ''), sub: it.sub ? String(it.sub) : '' };
+    if (it.head) r.kind = 'head';
+    else if (it.info) { r.kind = 'info'; r.value = v; }
+    else if (it.toggle) { r.kind = 'toggle'; r.on = !!it.get(); }
+    else if (it.values) { r.kind = 'choice'; r.options = it.labels.map(String); r.cur = it.values.indexOf(it.get()); r.value = v; }
+    else if (it.cycle) { r.kind = 'cycle'; r.value = v; }
+    else if (it.page) { r.kind = 'page'; r.value = v === '›' ? '' : v; }
+    else if (it.action) { r.kind = 'action'; r.value = v; }
+    else { r.kind = 'info'; r.value = v; }
+    if (it.swatch) try { r.swatch = it.swatch() || ''; } catch (e) {}
+    return r;
+  }
+  var forPhone = {
+    sections: function () { return SECTIONS.filter(function (x, i) { return shown(i); }).map(function (x) { return { id: x[0], title: title(x) }; }); },
+    page: function (secId, path) { var p = rowsOf(secId, path); return { title: p.title, trail: p.trail, rows: p.list.map(rowData) }; },
+    // op: 'toggle' (on), 'choice' (v: the choice's index), 'cycle' (dir), 'action'.
+    change: function (secId, path, n, op, a) {
+      var p = rowsOf(secId, path), it = p.list[n], msg = '';
+      if (!it) throw new Error('That setting has changed on the TV.  Look again.');
+      if (op === 'toggle' && it.toggle) { if (!!it.get() !== (a.on !== false)) it.set(a.on !== false); }
+      else if (op === 'choice' && it.values) { var v = it.values[+a.v]; if (v === undefined) throw new Error('Not one of the choices'); if (it.get() !== v) it.set(v); }
+      else if (op === 'cycle' && it.cycle) it.cycle(+a.dir < 0 ? -1 : 1);
+      else if (op === 'action' && it.action && !it.page) { it.action(); msg = 'Done on the TV'; }
+      else throw new Error('That can\'t be changed that way');
+      Store.saveSettings();
+      return { msg: msg, page: forPhone.page(secId, path) };
+    }
+  };
+
+  return { open: open, assignGuide: assignGuide, section: section, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

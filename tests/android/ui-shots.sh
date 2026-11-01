@@ -84,6 +84,14 @@ shot 11-movie 5
 adb shell input keyevent KEYCODE_BACK; sleep 2
 tap "Shows"
 shot 12-shows 6
+# The TV's settings on the phone.
+tap "Settings"
+shot 12b-settings 5
+tap "Appearance"
+shot 12c-settings-appearance 5
+[ -n "$(find_text "Show clock")" ] || { echo "Settings on the phone did not show the TV's page"; exit 1; }
+echo "The TV's settings show on the phone"
+adb shell input keyevent KEYCODE_BACK; sleep 2
 # A provider link shared to the app.
 adb shell am start -W -a android.intent.action.SEND -t text/plain --es android.intent.extra.TEXT "'Your login: http://line.example.com:8080/get.php?username=demo&password=demo&type=m3u_plus'" -n $PKG/.MainActivity
 shot 13-share 5

@@ -173,7 +173,7 @@ fun TvScreen(
             val inputs = state?.inputs.orEmpty()
             if (inputs.isNotEmpty()) TypeOnTv(inputs, onType, Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp))
             // Movies and Shows only when the provider has them (an older TiviBro doesn't say: both show).
-            val tabs = listOfNotNull("Remote", "Channels", "Guide", "Movies".takeIf { state?.movies != false }, "Shows".takeIf { state?.series != false })
+            val tabs = listOfNotNull("Remote", "Channels", "Guide", "Movies".takeIf { state?.movies != false }, "Shows".takeIf { state?.series != false }, "Settings")
             if (tab >= tabs.size) tab = 0
             ScrollableTabRow(
                 selectedTabIndex = tab, containerColor = Ink, contentColor = TextHi, edgePadding = 8.dp,
@@ -187,6 +187,7 @@ fun TvScreen(
                 "Guide" -> GuideTab(model, id, lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) })
                 "Movies" -> VodTab(model, id, "movie")
                 "Shows" -> VodTab(model, id, "series")
+                "Settings" -> SettingsTab(model, id)
                 else -> Remote(volume, onKey, onAction, onVolume, onType = { typing = true })
             }
         }

@@ -184,6 +184,16 @@ var Phone = (function () {
       if (op !== 'info') { Views.refreshLists(true); lineupAt = 0; sendLineup(); }
       return { k: c.k, name: Library.name(c), provider: c.n, renamed: !!E.renames[c.k], hidden: !!E.hiddenChannels[c.k], group: Library.groupName(c.g), groups: mine(), msg: msg };
     },
+    /* TiviBro's Settings on the phone, page by page (see Settings.phone): the list of pages, one page, or a
+       change on it (op toggle, choice, cycle, action).  Locked with the TV's PIN when Settings is: the
+       answer says so ({ locked }) and the phone asks for the PIN. */
+    settings: function (a) {
+      try { Parental.phoneOk(a.pin); } catch (e) { if (e.code === 'pin') return { locked: true, msg: e.message }; throw e; }
+      var op = String(a.op || 'page'), path = Array.isArray(a.path) ? a.path.map(Number) : [];
+      if (op === 'sections') return { sections: Settings.phone.sections() };
+      if (op === 'page') return Settings.phone.page(String(a.sec || ''), path);
+      return Settings.phone.change(String(a.sec || ''), path, +a.i, op, a);
+    },
     vodcats: function (a) { return Vod.phone.cats(vodKind(a)); },
     voditems: function (a) { return Vod.phone.items(vodKind(a), a.cat, a.q, a.offset, a.limit); },
     vodinfo: function (a) { return Vod.phone.info(vodKind(a), a.id); },
