@@ -59,7 +59,7 @@ shot 7-remote-after 3
 # The guide, a channel's schedule, Movies and a movie's details, against the stand-in TV's answers.
 tap "Guide"
 shot 8-guide 6
-tap "Nova News 24"
+tap "World Tonight"
 shot 9-schedule 5
 adb shell input keyevent KEYCODE_BACK; sleep 2
 tap "Movies"
