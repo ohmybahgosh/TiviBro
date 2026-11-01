@@ -25,8 +25,10 @@ function sandbox(opts) {
       }
     },
     localStorage: { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = String(v); } },
-    location: { reload: () => reloads.push(1) },
-    setTimeout: (fn, ms) => { if (ms <= 3000) fn(); return 1; }, clearTimeout() {},
+    location: { reload: () => reloads.push(1), protocol: 'file:' },
+    setTimeout: (fn, ms) => { if (ms <= 3000 || opts.runAll) fn(); return 1; }, clearTimeout() {},
+    navigator: { userAgent: opts.ua || 'Mozilla/5.0 (Web0S; Linux/SmartTV) Chrome/87' },
+    fetch: opts.fetch || (() => Promise.reject(new Error('no network'))),
     Promise, JSON, Date, Math, String, Array, Object, RegExp, Error,
     PalmServiceBridge: opts.noBridge ? undefined : function () {
       const b = this;
@@ -120,6 +122,25 @@ const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), re
 
   s = sandbox();
   ok('describe() before any check', s.Update.describe() === 'Not checked yet');
+
+  // Counting: installs and updates the first time a version starts (most TVs never run install.sh).
+  async function counts(store, settings, version) {
+    const sent = [];
+    const fetch = (url, o) => /relay\.json/.test(url) ? Promise.resolve({ json: () => Promise.resolve({ url: 'https://relay.example/report' }) }) : (sent.push(JSON.parse(o.body).e + '@' + url), Promise.resolve({ ok: true }));
+    const t = sandbox({ runAll: true, fetch, settings, version });
+    Object.assign(t.store, store || {});
+    t.Update.countMe();
+    await new Promise((r) => setImmediate(r)); await new Promise((r) => setTimeout(r, 20));
+    return { sent, store: t.store };
+  }
+  let c = await counts({}, { playlists: [] }, '0.6.0-alpha.43');
+  ok('a brand-new TV counts an install, and being active', c.sent.sort().join(',') === 'active@https://relay.example/count,install@https://relay.example/count' && c.store['tivibro.countedVersion'] === '0.6.0-alpha.43', c.sent.join(','));
+  c = await counts({ 'tivibro.counted': '2026-10-01' }, { playlists: [{}] }, '0.6.0-alpha.43');
+  ok('a TV that ran TiviBro before counts an update', c.sent.indexOf('update@https://relay.example/count') >= 0 && c.sent.indexOf('install@https://relay.example/count') < 0, c.sent.join(','));
+  c = await counts({ 'tivibro.counted': new Date().toISOString().slice(0, 10), 'tivibro.countedVersion': '0.6.0-alpha.43' }, {}, '0.6.0-alpha.43');
+  ok('nothing again the same day on the same version', c.sent.length === 0, c.sent.join(','));
+  c = await counts({}, { countMe: false }, '0.6.0-alpha.43');
+  ok('nothing at all when counting is off', c.sent.length === 0);
 
   console.log(fail ? fail + ' failures' : 'all update tests passed');
   process.exit(fail ? 1 : 0);

@@ -40,8 +40,8 @@ adb shell am start -W -a android.intent.action.VIEW -d "tivibro://pair?v=1\&h=10
 shot 2-paired 8
 tap "Edit channels"
 shot 3-editor 10
-adb shell input keyevent KEYCODE_BACK
-sleep 3
+# Back closes what is open in the editor and goes back through its pages first, then leaves it.
+for i in 1 2 3 4; do adb shell input keyevent KEYCODE_BACK; sleep 3; [ -n "$(find_text "Edit channels")" ] && break; done
 [ -n "$(find_text "Edit channels")" ] || { echo "Back did not return to the TV list"; adb exec-out screencap -p > "$OUT/fail.png"; adb logcat -d > "$OUT/logcat.txt"; grep -E "TiviBroBack|ActivityTaskManager|wm_|$PKG|FATAL" "$OUT/logcat.txt" | tail -60; exit 1; }
 echo "Back returns to the TV list"
 # The Quick Settings tile opens TiviBro on the TV (it used to do nothing: its work was cancelled as soon

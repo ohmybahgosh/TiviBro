@@ -123,16 +123,24 @@ var Update = (function () {
     // TV's storage (file:); test pages are served over http and may pretend to be a TV.
     if (typeof PalmServiceBridge === 'undefined' || !/Web0S|webOS/i.test(navigator.userAgent) || /HeadlessChrome|Electron/i.test(navigator.userAgent)) return;
     if (location.protocol !== 'file:') return;
-    var today = new Date().toISOString().slice(0, 10);
-    try { if (localStorage.getItem('tivibro.counted') === today) return; } catch (e) { return; }
+    var today = new Date().toISOString().slice(0, 10), ls = function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } };
+    /* Installs and updates are counted here too, the first time a version starts: most TVs install
+       through the Homebrew Channel or Developer Mode, where install.sh (which also counts them) never
+       runs.  The relay counts each kind once a day per network, so a TV installed with install.sh isn't
+       counted twice.  A TV that has run TiviBro before (it counted itself, or has a playlist) is an update. */
+    var seenVer = ls('tivibro.countedVersion'), wasHere = !!(seenVer || ls('tivibro.counted') || (Store.settings.playlists || []).length);
+    var sends = [];
+    if (ls('tivibro.counted') !== today) sends.push({ e: 'active', done: function () { try { localStorage.setItem('tivibro.counted', today); } catch (e) {} } });
+    if (seenVer !== current()) sends.push({ e: wasHere ? 'update' : 'install', done: function () { try { localStorage.setItem('tivibro.countedVersion', current()); } catch (e) {} } });
+    if (!sends.length) return;
     setTimeout(function () {
       fetch((Store.settings.relayConfig || 'https://tivibro.app/relay.json'), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (cfg) {
         var url = String(cfg && cfg.url || '').replace(/\/report$/, '/count');
         if (!/^https:\/\//.test(url) && !/^http:\/\/127\.0\.0\.1/.test(url)) return;
         var w = typeof Caps !== 'undefined' ? Caps.webosVersion(navigator.userAgent) : 0;
-        return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ e: 'active', v: current(), w: w ? String(w) : '' }) }).then(function (r) {
-          if (r.ok) { try { localStorage.setItem('tivibro.counted', today); } catch (e) {} }
-        });
+        return Promise.all(sends.map(function (x) {
+          return fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ e: x.e, v: current(), w: w ? String(w) : '' }) }).then(function (r) { if (r.ok) x.done(); });
+        }));
       }).catch(function () {});
     }, 60000);
   }

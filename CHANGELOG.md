@@ -6,6 +6,7 @@
 - **Phone app: the TV's Settings, all of them.**  A new **Settings** tab has every page of TiviBro's Settings (appearance, playback, guide, playlists, groups, remote, parental controls and the rest), built by the TV itself so it always matches.  Changes apply on the TV at once.  Locked with the TV's PIN when its Settings are.
 - **Phone app: ▶ on every row of the Guide** plays that channel on the TV without opening its schedule.
 - **Phone app: press and hold a channel** (Guide or Channels) for its options: Watch on TV, its schedule, Favorites, your own groups (in or out, or a new group with it), **Rename…** and **Hide on the TV**.  The TV makes the change, the same as from its own menus.
+- **Installs are counted.**  The stats page showed 0 installs because only the install script counted them, and most TVs install through the Homebrew Channel or Developer Mode.  TiviBro now counts an install or an update itself the first time a new version starts (version and webOS only, like the daily count, and off with the same switch in Settings, Updates and about).
 - **Ideas and feature requests now go to [Discussions > Ideas](https://github.com/ohmybahgosh/TiviBro/discussions/categories/ideas).**  Issues are for bugs and work in progress.
 
 ## 0.6.0 (alpha 42, 2026-11-01)

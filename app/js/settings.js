@@ -746,7 +746,7 @@ var Settings = (function () {
     }
     out.push(head('Options'));
     out.push(toggle('Check automatically', 'Once a day when TiviBro starts.  Nothing is installed without asking you.', function () { return s.updateAuto !== false; }, function (v) { s.updateAuto = v; save(); }));
-    out.push(toggle('Count this TV in the install numbers', 'Once a day TiviBro says which version it is and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.', function () { return s.countMe !== false; }, function (v) { s.countMe = v; save(); }));
+    out.push(toggle('Count this TV in the install numbers', 'Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.', function () { return s.countMe !== false; }, function (v) { s.countMe = v; save(); }));
     out.push(toggle('Include test versions', 'Alpha and beta builds: new features first, and some rough edges.', function () { return Update.wantPre; }, function (v) { s.updatePre = v; save(); }));
     var how = info('Installing on this TV', ''); how.value = function () { var i = Update.state.installer; return i === 'hbchannel' ? 'Yes, through the Homebrew Channel' : i === '' ? 'From a computer only (not rooted)' : 'Checking…'; }; out.push(how);
     out.push(head('About'));

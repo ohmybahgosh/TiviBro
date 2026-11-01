@@ -107,7 +107,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:7px 4px;b
       box('Where visitors come from (14 days)', table(['Site', 'Views', 'Unique'], (last && last.referrers || []).map(function (r) { return [r.referrer, r.count, r.uniques]; }))) +
       box('Most visited (14 days)', table(['Page', 'Views', 'Unique'], (last && last.paths || []).map(function (p) { return [p.path.replace(/^\/ohmybahgosh\/TiviBro/, '') || '/', p.count, p.uniques]; }))) +
       box('Downloads by release', table(['Release', 'TV', 'Phone', 'Installer'], (last && last.releases || []).map(function (r) { var t = dl({ releases: [r] }); return [r.tag, t.tv, t.phone, t.other]; })), 'wide') +
-      '</div><p class="note">GitHub keeps traffic for 14 days; the Stats workflow saves it every morning, so this history grows from the day it started.  TVs count themselves once a day (version and webOS only, no address or ID, off in Settings, Updates and about); installs are counted by the install script.</p>';
+      '</div><p class="note">GitHub keeps traffic for 14 days; the Stats workflow saves it every morning, so this history grows from the day it started.  TVs count themselves once a day (version and webOS only, no address or ID, off in Settings, Updates and about); a new install or an update is counted the first time that version starts on a TV (from alpha 43; before that only the install script counted them, so Homebrew Channel and Developer Mode installs were missed).</p>';
     main.innerHTML = h;
     if (!window.Chart) return;
     Chart.defaults.color = '#8E97B5'; Chart.defaults.borderColor = 'rgba(38,48,82,.7)'; Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
@@ -119,7 +119,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:7px 4px;b
     var a2 = act.filter(function (a) { return a.active || a.install || a.update; });
     var noTv = 'No TVs counted yet.  Counting starts with the first release after alpha 31.';
     chart('cActive', a2.map(function (a) { return a.date; }), 'bar', [bar('TVs', a2.map(function (a) { return a.active; }), '#3DDC97')], false, noTv);
-    chart('cInst', a2.map(function (a) { return a.date; }), 'bar', [bar('Installs', a2.map(function (a) { return a.install; }), '#5B8CFF'), bar('Updates', a2.map(function (a) { return a.update; }), '#33E1FF')], true, 'No installs counted yet.  The install script counts them from the first release after alpha 31.');
+    chart('cInst', a2.map(function (a) { return a.date; }), 'bar', [bar('Installs', a2.map(function (a) { return a.install; }), '#5B8CFF'), bar('Updates', a2.map(function (a) { return a.update; }), '#33E1FF')], true, 'No installs counted yet.  TVs count them from alpha 43 (before that, only the install script did).');
     // An empty chart says why instead of drawing bare axes; a line with only a few days shows its points.
     function chart(id, labels, type, sets, stack, empty) {
       var c = el(id);
