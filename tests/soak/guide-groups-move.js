@@ -55,6 +55,14 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const after = await ev((id) => Library.channels(id).map(function (c) { return c.k; }).slice(0, 4), g);
   ok('▲ ▼ moved it, and OK keeps the new order', after[2] === before[0] && after[0] === before[1] && await ev((id) => Store.edits.groupSort[id] === 'custom', g), JSON.stringify({ before, after }));
   ok('the highlight followed it and move mode ended', await ev(() => Guide.__sel()) === 2 && !(await ev(() => !!document.querySelector('#guideBody .grow.moving'))));
+  // Remote buttons in the guide can be changed: Red set to watch fullscreen goes fullscreen.
+  ok('the guide has its own remote settings, with the old behaviour as defaults', await ev(() => Keymap.get('guide', 'red') === 'menu' && Keymap.get('guide', 'playpause') === 'full' && Keymap.CONTEXT_ACTIONS.guide.indexOf('full') >= 0));
+  await ev(() => { Keymap.set('guide', 'red', 'full'); UI.press('red'); });
+  await page.waitForFunction(() => Views.full, null, { timeout: 15000 }).catch(() => {});
+  ok('a button set to Watch fullscreen does that in the guide', await ev(() => !!Views.full));
+  await ev(() => { Keymap.reset('guide'); if (Views.full) Views.runAction('exit', 'player'); Views.switchTab('settings'); Settings.open(); Settings.section('remote'); });
+  await page.waitForTimeout(500);
+  ok('Settings > Remote control has In the guide', /In the guide/.test(await ev(() => document.body.innerText)));
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();
   console.log(fails ? fails + ' failures' : 'all guide group and move checks passed');

@@ -407,7 +407,7 @@ var Views = (function () {
   }
   function doSwitch(t) {
     tab = t;
-    Keymap.setContext(t === 'live' ? 'list' : 'other');
+    Keymap.setContext(t === 'live' ? 'list' : t === 'guide' ? 'guide' : 'other');
     document.querySelectorAll('.tab').forEach(function (el, i) {
       var on = el.getAttribute('data-tab') === t;
       el.classList.toggle('on', on);
@@ -1452,7 +1452,7 @@ var Views = (function () {
       !virtual && { label: 'Move up', action: function () { L.moveGroup(g.id, -1); refreshLists(true); groupsVL.move(-1); } },
       !virtual && { label: 'Move down', action: function () { L.moveGroup(g.id, 1); refreshLists(true); groupsVL.move(1); } },
       L.hasOwnOrder(g.id) && { label: 'Back to the provider\'s channel order', sub: 'undo the channels you moved here', action: function () { L.resetOrder(g.id); refreshLists(true); U.toast('Provider order restored'); } },
-      g.id === L.EVENTS && { label: 'Turn off Events by time', sub: 'back on in Settings, the playlist, Event channels', action: function () {
+      g.id === L.EVENTS && { label: 'Turn off Events by time', sub: 'back on in Settings > Groups, sorting, hidden', action: function () {
         var p = Store.playlist; p.events = Object.assign({}, p.events, { group: false }); Store.upsertPlaylist(p); refreshLists(); U.toast('Events by time is off');
       } },
       g.id === L.RECENT && { label: 'Clear recent channels', action: function () { Store.edits.recent = []; Store.saveEdits(); L.dirty(); refreshLists(); } },
@@ -1849,8 +1849,12 @@ var Guide = (function () {
         pv ? ['', 'Play ▶  watch ' + L.name(pv), 'playpause'] : null, ['', 'Back  menu', 'back']].filter(Boolean));
       return;
     }
-    UI.hints([['', '◀ on now  groups', 'yellow'], ['', 'Hold OK or Red  options', 'red'], ['green', 'Channels'], ['blue', 'Settings'],
-      pv ? ['', 'Play ▶  watch ' + L.name(pv), 'playpause'] : null, ['', 'Back  groups', 'back']].filter(Boolean));
+    var g = function (b) { var x = Keymap.get('guide', b); return x && x !== 'none' ? x : ''; };
+    var full = ['playpause', 'red', 'green', 'yellow', 'blue', 'info', 'stop'].filter(function (b) { return g(b) === 'full'; })[0];
+    UI.hints([['', '◀ on now  groups', 'yellow'], ['', 'Hold OK  options', 'hold'],
+      g('red') && g('red') !== 'full' ? ['', 'Red  ' + Keymap.SHORT[g('red')], 'red'] : null,
+      g('green') && g('green') !== 'full' ? ['green', Keymap.SHORT[g('green')]] : null, g('blue') && g('blue') !== 'full' ? ['blue', Keymap.SHORT[g('blue')]] : null,
+      pv && full ? ['', Keymap.label(full) + '  watch ' + L.name(pv), full] : null, ['', 'Back  groups', 'back']].filter(Boolean));
   }
 
   function selectIdx(i) {
@@ -2026,17 +2030,27 @@ var Guide = (function () {
     else if (a === 'rew') moveTime(-1);
     else if (a === 'ff') moveTime(1);
     else if (a === 'ok') activate();
-    else if (a === 'hold' || a === 'red' || a === 'info') menu();
-    else if (a === 'yellow') setZone('groups');
-    else if (a === 'green') Views.switchTab('live');
-    else if (a === 'blue') Views.switchTab('settings');
-    else if (a === 'playpause') { if (!watchPreview()) activate(); }
-    else if (a === 'stop') { if (previewing()) { Views.stopAll(); draw(); hints(); } }
+    else if (a !== 'back' && a.indexOf('num') !== 0) {
+      // Every other button does what Settings > Remote control > In the guide says.
+      var act = Keymap.get('guide', a === 'hold' ? 'long:ok' : a);
+      if (act) mapped(act);
+    }
     else if (a === 'back') { if (when() !== 'now') jumpNow(); else { setZone('groups'); Views.armExit(); } }
     else if (a.indexOf('num') === 0) numJump(a.slice(3));
     return true;
   }
 
+  function mapped(act) {
+    var c = list[sel];
+    if (act === 'full') { if (!watchPreview()) { if (c) Views.startChannel(c, false, Views.goFull); } }
+    else if (act === 'menu') menu();
+    else if (act === 'groups') setZone('groups');
+    else if (act === 'now') jumpNow();
+    else if (act === 'stopwin') { if (previewing()) { Views.stopAll(); draw(); hints(); } }
+    else if (act === 'favorites' || act === 'recents') { load(act === 'favorites' ? L.FAV : L.RECENT, null); setZone('grid'); draw(); }
+    else if (act === 'fav') { if (c) { L.toggleFav(c.k); U.toast(L.isFav(c.k) ? 'Added to Favorites' : 'Removed from Favorites'); draw(); } }
+    else if (act !== 'none') Views.runAction(act, 'guide');
+  }
   function rowUpdated(k) {
     for (var i = 0; i < rows.length; i++) if (rows[i].k === k) { drawRow(rows[i], top + i); if (top + i === sel) drawDetail(); }
   }

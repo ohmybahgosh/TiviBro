@@ -1,5 +1,5 @@
 /* Remote control remapping.
-   Two contexts, like TiviMate: "player" (fullscreen live TV) and "list" (the channel list).
+   Three contexts: "player" (fullscreen live TV), "guide" (the guide grid) and "list" (the channel list).
    Every button can have a short-press and a long-press action.  Buttons the app doesn't
    know (extra keys on some LG remotes) can be learned by pressing them once.
    Catch-up and movie playback keep fixed seek controls so they always behave the same. */
@@ -12,7 +12,8 @@ var Keymap = (function () {
     ['playpause', 'Play / Pause'], ['stop', 'Stop'], ['rew', 'Rewind'], ['ff', 'Fast forward'], ['info', 'Info'], ['back', 'Back']
   ];
   // Short presses that must stay put so you can always get around: Back in lists, arrows in lists.
-  var FIXED = { list: { up: 1, down: 1, left: 1, right: 1, ok: 1, back: 1, chup: 1, chdown: 1 }, player: { back: 1 } };
+  var FIXED = { list: { up: 1, down: 1, left: 1, right: 1, ok: 1, back: 1, chup: 1, chdown: 1 }, player: { back: 1 },
+    guide: { up: 1, down: 1, left: 1, right: 1, ok: 1, back: 1, chup: 1, chdown: 1, rew: 1, ff: 1 } };
 
   var ACTIONS = {
     none: 'Nothing',
@@ -22,19 +23,22 @@ var Keymap = (function () {
     guide: 'TV guide', search: 'Search', settings: 'Settings', editor: 'Edit on a phone or computer (QR code)', live: 'Channels screen', exit: 'Leave fullscreen',
     fav: 'Add or remove favorite', favorites: 'Open Favorites', recents: 'Open Recent channels',
     picture: 'Change picture mode', audio: 'Audio track', sleep: 'Sleep timer',
-    movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect stream', buffer: 'Show buffer info', streaminfo: 'Stream info and buffer'
+    movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect stream', buffer: 'Show buffer info', streaminfo: 'Stream info and buffer',
+    full: 'Watch fullscreen (the channel in the window, else the highlighted one)', now: 'Jump to now', groups: 'Open the groups', stopwin: 'Stop the window'
   };
   // Short names for the on-screen button legend.
   var SHORT = {
     panel: 'Quick menu', list: 'Channel list', osd: 'Info', menu: 'Options', chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
     rewind: 'Rewind', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings', editor: 'Phone editor',
     live: 'Channels', exit: 'Exit fullscreen', fav: 'Favorite', favorites: 'Favorites', recents: 'Recent',
-    picture: 'Picture size', audio: 'Audio track', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info', streaminfo: 'Stream info'
+    picture: 'Picture size', audio: 'Audio track', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info', streaminfo: 'Stream info',
+    full: 'Fullscreen', now: 'Now', groups: 'Groups', stopwin: 'Stop window'
   };
   var CONTEXT_ACTIONS = {
     player: ['none', 'panel', 'list', 'osd', 'menu', 'chnext', 'chprev', 'last', 'rewind', 'restart', 'playpause', 'guide', 'search', 'settings', 'editor', 'exit',
       'fav', 'favorites', 'recents', 'picture', 'audio', 'sleep', 'reconnect', 'buffer', 'streaminfo'],
-    list: ['none', 'menu', 'last', 'guide', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'playpause']
+    list: ['none', 'menu', 'last', 'guide', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'playpause'],
+    guide: ['none', 'full', 'menu', 'groups', 'now', 'last', 'stopwin', 'live', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows']
   };
 
   var DEFAULTS = {
@@ -43,7 +47,9 @@ var Keymap = (function () {
       left: 'rewind', right: 'osd', red: 'menu', green: 'guide', yellow: 'last', blue: 'audio',
       playpause: 'playpause', stop: 'exit', rew: 'rewind', ff: 'none', info: 'osd', 'long:info': 'buffer'
     },
-    list: { 'long:ok': 'menu', red: 'menu', green: 'guide', yellow: 'last', blue: 'settings', playpause: 'none', info: 'menu', stop: 'none', rew: 'none', ff: 'none' }
+    list: { 'long:ok': 'menu', red: 'menu', green: 'guide', yellow: 'last', blue: 'settings', playpause: 'none', info: 'menu', stop: 'none', rew: 'none', ff: 'none' },
+    // What the guide always did with these buttons, now changeable.
+    guide: { 'long:ok': 'menu', red: 'menu', info: 'menu', green: 'live', blue: 'settings', yellow: 'groups', playpause: 'full', stop: 'stopwin' }
   };
 
   var ctx = 'list';

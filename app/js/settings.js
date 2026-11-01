@@ -97,7 +97,8 @@ var Settings = (function () {
   function remote() {
     var out = [];
     out.push(page('In the player', 'Fullscreen live TV.', 'Buttons in the player', function () { return keysPage('player'); }));
-    out.push(page('In the channel list', 'Arrows, OK and Back stay fixed so you can always get around.', 'Buttons in the channel list', function () { return keysPage('list'); }));
+    out.push(page('In the guide', 'The colour buttons, Play, Info, Stop and Hold OK.  Arrows, OK and Back stay fixed so you can always get around.', 'Buttons in the guide', function () { return keysPage('guide'); }));
+    out.push(page('In the channel list', 'The Channels screen.  Arrows, OK and Back stay fixed.', 'Buttons in the channel list', function () { return keysPage('list'); }));
     out.push(page('Quick menu buttons', 'Which buttons show when you press OK in fullscreen.', 'Quick menu buttons', function () {
       var o = [], off = S().qpHidden || (S().qpHidden = {});
       o.push(info('Buttons only appear when they apply, e.g. Audio needs two or more tracks.', ''));
@@ -107,14 +108,14 @@ var Settings = (function () {
       return o;
     }));
     out.push(head('Extra buttons'));
-    out.push(action('Learn a button', 'For keys the app does not know yet.  Press this, then press the button.', function () {
+    out.push(action('Learn a button', 'For keys the app does not know yet.  Press this, then press the button.  Some buttons belong to the TV (Home, Live TV, the TV\'s own Guide, Input, Settings): webOS acts on them before TiviBro hears them, so they leave TiviBro and can\'t be learned.', function () {
       U.toast('Press the button to learn', 5000);
       UI.captureNext(function (code, known) {
         if (known && Keymap.BUTTONS.some(function (b) { return b[0] === known; })) { U.toast('That is ' + Keymap.label(known) + ', already supported'); return; }
-        Keymap.learn(code); U.toast('Learned button ' + code + '.  Assign it under In the player or In the channel list.'); build();
+        Keymap.learn(code); U.toast('Learned button ' + code + '.  Assign it under In the player, In the guide or In the channel list.'); build();
       });
     }));
-    out.push(action('Button tester', 'Shows what the app sees when you press a button.', function () {
+    out.push(action('Button tester', 'Shows what the app sees when you press a button.  The TV\'s own buttons (Home, Live TV, Guide, Input) never reach TiviBro.', function () {
       U.toast('Press any button', 5000);
       UI.captureNext(function (code, known) { U.toast('Key code ' + code + (known ? ':  ' + Keymap.label(known) : ':  not assigned'), 4000); });
     }));
@@ -136,7 +137,7 @@ var Settings = (function () {
       var arrowish = { up: 1, down: 1, left: 1, right: 1, chup: 1, chdown: 1, back: 1 };
       if (!Keymap.fixed(ctx, b[0])) out.push(slot(b[0], b[1]));
       // Long presses on arrows would break held scrolling in lists.
-      if (b[0] !== 'back' && !(ctx === 'list' && arrowish[b[0]])) out.push(slot('long:' + b[0], 'Hold ' + b[1]));
+      if (b[0] !== 'back' && !((ctx === 'list' || ctx === 'guide') && arrowish[b[0]]) && !(ctx === 'guide' && (b[0] === 'rew' || b[0] === 'ff'))) out.push(slot('long:' + b[0], 'Hold ' + b[1]));
     });
     out.push(head(''));
     out.push(action('Restore defaults for this screen', '', function () { Keymap.reset(ctx); U.toast('Defaults restored'); build(); }));
@@ -412,6 +413,8 @@ var Settings = (function () {
     out.push(toggle('Show Recent channels', '', function () { return s.showRecent; }, function (v) { s.showRecent = v; apply(); }));
     out.push(choice('Recent channels kept', '', [10, 20, 30, 50], ['10', '20', '30', '50'], function () { return +s.recentCount; }, function (v) { s.recentCount = v; save(); }));
     out.push(toggle('Show Favorites group', '', function () { return s.showFav !== false; }, function (v) { s.showFav = v; apply(); }));
+    if (Events.on()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in the playlist\'s Event channels.',
+      function () { return Events.groupOn(); }, function (v) { var p = Store.playlist; p.events = Object.assign({}, p.events, { group: v }); Store.upsertPlaylist(p); Events.reset(); apply(); }));
     out.push(choice('Recently added channels', 'A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.', [0, 3, 7, 14], ['Off', '3 days', '7 days', '14 days'], function () { return s.newDays == null ? 7 : +s.newDays; }, function (v) { s.newDays = v; L.dirty(); apply(); }));
     out.push(choice('Groups your provider adds later', 'Hide keeps a tidy list tidy after "Hide all groups".', ['show', 'hide'], ['Show them', 'Hide them'], function () { return s.newGroups === 'hide' ? 'hide' : 'show'; }, function (v) { s.newGroups = v; save(); }));
     out.push(toggle('All channels includes hidden groups', 'Channels from groups you hid still appear in All channels.', function () { return !!s.allHidden; }, function (v) { s.allHidden = v; apply(); }));
