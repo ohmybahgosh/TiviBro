@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 43, 2026-11-01)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 43
 
 - **No more black screen when a channel drops for a moment.**  While a live channel reconnects, its last picture stays on screen with a small notice in the corner, instead of going black with "Tuning".  It goes as soon as the picture is back (or after a long outage), and a new channel never shows the old one's picture.  **Settings > Playback > Keep the picture while reconnecting** turns it off.  Streams the TV player draws itself can't be held and go black as before.
 - **A channel that keeps dropping tries HLS sooner.**  Three drops in three minutes on the MPEG-TS stream now switch to the provider's HLS version of that channel straight away (it was only tried after the whole reconnect budget), and TiviBro keeps using it for that channel until it closes.  Errors from the provider itself (outages, connection limits) don't count.
@@ -11,11 +15,7 @@
 - **Installs are counted.**  The stats page showed 0 installs because only the install script counted them, and most TVs install through the Homebrew Channel or Developer Mode.  TiviBro now counts an install or an update itself the first time a new version starts (version and webOS only, like the daily count, and off with the same switch in Settings, Updates and about).
 - **Ideas and feature requests now go to [Discussions > Ideas](https://github.com/ohmybahgosh/TiviBro/discussions/categories/ideas).**  Issues are for bugs and work in progress.
 
-## 0.6.0 (alpha 42, 2026-11-01)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 42
+### In alpha 42
 
 - **Big channel lists load with far less memory.**  On a TV, TiviBro's helper now downloads and reads the provider's channel list (Xtream Codes or M3U) and hands TiviBro just the channels, using the same code, so every edit still fits.  With a 180,000-channel list, TiviBro used about 89 MB right after starting, where it used 268 MB before.
 - **One settings page for the phone app and the web editor.**  **Settings > Phone app and web editor** says which is which: **Pair the TiviBro app…** (scanned inside the app; it turns the connection on if needed) and **Open it in a phone's browser (QR code)** for the web editor.  The phone app works without the web editor switched on.
