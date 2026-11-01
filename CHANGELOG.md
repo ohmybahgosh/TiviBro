@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 41, 2026-11-01)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 41
 
 - **Numbers that stay put** ([#17](https://github.com/ohmybahgosh/TiviBro/issues/17)).  The buffer info no longer grows and shrinks as its seconds change.  **Settings > Appearance > Numbers** can give every digit the same width (**Even width**), so channel numbers and times line up, or a fixed-width style with a slashed zero.
 - **No more Movies and Shows crash on older TVs with big lists** ([#18](https://github.com/ohmybahgosh/TiviBro/issues/18)).  Changing the language filter or a category while the list was still loading could stop Movies and Shows from working; the list now stays on screen and is re-sorted from memory.  When a TV runs out of storage saving a big playlist, TiviBro frees the cached lists of your other playlists and tries again, so it no longer downloads everything again each time it starts.
 
-## 0.6.0 (alpha 40, 2026-11-01)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 40
+### In alpha 40
 
 - **Empty event slots count as nothing on.**  **Hide channels with nothing on** now also catches slots with no event in them ("PPV 09 |", "EPL 02:", " :ESPN+ 291") and events that ended hours ago that the provider never renamed.  They come back by themselves when a new event is named.
 - **Old events say so.**  An event channel whose game is long over shows "Ended Feb 8: …" in the guide, instead of looking live or empty.  The web editor's Smart clean-up has a new step, **Groups of old events**, for groups where every event ended days ago (a Winter Olympics group in November).
