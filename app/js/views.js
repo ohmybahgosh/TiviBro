@@ -1108,7 +1108,7 @@ var Views = (function () {
   function onPlayerState(s, msg) {
     if (s === 'playing' || s === 'error' || s === 'idle') stage.classList.remove('blank');
     spin.classList.toggle('hidden', !(s === 'loading' || s === 'buffering'));
-    spinText.textContent = s === 'loading' ? 'Tuning' : (msg || 'Buffering');
+    spinText.textContent = s === 'loading' ? (msg || 'Tuning') : (msg || 'Buffering');
     spinPlain = s === 'buffering' && (!msg || msg === 'Buffering');
     verr.classList.toggle('hidden', s !== 'error');
     if (s === 'error') verr.textContent = msg;

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **No more black screen when a channel drops for a moment.**  While a live channel reconnects, its last picture stays on screen with a small notice in the corner, instead of going black with "Tuning".  It goes as soon as the picture is back (or after a long outage), and a new channel never shows the old one's picture.  **Settings > Playback > Keep the picture while reconnecting** turns it off.  Streams the TV player draws itself can't be held and go black as before.
+- **A channel that keeps dropping tries HLS sooner.**  Three drops in three minutes on the MPEG-TS stream now switch to the provider's HLS version of that channel straight away (it was only tried after the whole reconnect budget), and TiviBro keeps using it for that channel until it closes.  Errors from the provider itself (outages, connection limits) don't count.
 - **Phone app: the Quick Settings tile opens TiviBro again.**  Android let go of the tile as soon as the panel closed, which cancelled the request before it reached the TV.
 - **Phone app: the TV's Settings, all of them.**  A new **Settings** tab has every page of TiviBro's Settings (appearance, playback, guide, playlists, groups, remote, parental controls and the rest), built by the TV itself so it always matches.  Changes apply on the TV at once.  Locked with the TV's PIN when its Settings are.
 - **Phone app: ▶ on every row of the Guide** plays that channel on the TV without opening its schedule.

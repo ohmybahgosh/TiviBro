@@ -40,6 +40,7 @@ var Player = (function () {
   var wd = 0, fastWd = 0, st = null;
   var lastStats = null;
   var fallbackHosts = {};        // host -> 'native' after MSE could not fetch it
+  var preferHls = {};            // live channels that played better as HLS this session (see reconnect)
 
   function on(ev, fn) { listeners[ev].push(fn); }
   function emit(ev, a, b) { var l = listeners[ev]; for (var i = 0; i < l.length; i++) l[i](a, b); }
@@ -232,6 +233,38 @@ var Player = (function () {
       setAudio: function (i) { var at = video.audioTracks; if (at) for (var j = 0; j < at.length; j++) at[j].enabled = j === i; } };
   }
 
+  /* ---------- holding the last picture while a live channel reconnects ----------
+     A reconnect tears the player down, which left a black screen and "Tuning" for a few seconds.  The
+     last frame is copied to a canvas over the video and stays until the picture is back, with a small
+     "Reconnecting" in the corner instead.  Only when the frame can really be read: video the TV draws on
+     its own plane, or from another site, can't be copied, and then it is the black screen as before. */
+  var holdEl = null, holding = false;
+  function holdFrame() {
+    if (!video || !cur || !cur.live || cur.timeshift || !video.videoWidth || video.readyState < 2 || Store.settings.holdFrame === false) return false;
+    try {
+      if (!holdEl) { holdEl = document.createElement('canvas'); holdEl.className = 'vid-hold'; video.parentNode.insertBefore(holdEl, video.nextSibling); }
+      var sc = Math.min(1, 960 / video.videoWidth), w = Math.max(2, Math.round(video.videoWidth * sc)), h = Math.max(2, Math.round(video.videoHeight * sc));
+      holdEl.width = w; holdEl.height = h;
+      var g = holdEl.getContext('2d');
+      g.drawImage(video, 0, 0, w, h);
+      // A picture the TV keeps on its own plane draws as black: then there is nothing to hold.
+      var d = g.getImageData(0, 0, w, h).data, lit = 0, step = Math.max(4, Math.floor(d.length / 4 / 400)) * 4;
+      for (var i = 0; i < d.length; i += step) if (d[i] + d[i + 1] + d[i + 2] > 48) { lit++; if (lit > 8) break; }
+      if (lit <= 8) return false;
+      holdEl.style.objectFit = video.style.objectFit || 'contain';
+      holdEl.classList.add('on');
+      if (video.parentNode.classList) video.parentNode.classList.add('holding');
+      holding = true;
+      return true;
+    } catch (e) { return false; }
+  }
+  function releaseFrame() {
+    if (!holding) return;
+    holding = false;
+    if (holdEl) holdEl.classList.remove('on');
+    if (video && video.parentNode && video.parentNode.classList) video.parentNode.classList.remove('holding');
+  }
+
   /* ---------- lifecycle ---------- */
   function teardown() {
     clearInterval(wd); wd = 0;
@@ -244,7 +277,7 @@ var Player = (function () {
     }
   }
 
-  function state(s, msg) { if (st) st.state = s; if (lastStats) lastStats.state = s; emit('state', s, msg); }
+  function state(s, msg) { if (s === 'playing' || s === 'error' || s === 'idle' || s === 'ended') releaseFrame(); if (st) st.state = s; if (lastStats) lastStats.state = s; emit('state', s, msg); }
   function notice(msg) { emit('notice', msg); }
   function isFile() { return cur && !cur.live && !cur.timeshift; }
   function hdrPolicy() { return Store.settings.hdrRoute || 'auto'; }
@@ -266,7 +299,7 @@ var Player = (function () {
     var gen = cur.gen = (cur.gen || 0) + 1;     // a torn-down engine's late events are ignored
     st = { state: 'loading', started: false, lastT: -1, lastMove: Date.now(), refilling: false, refillSince: 0,
       kind: kind, at: Date.now(), healthySince: 0, userPaused: isFile() && !!cur.userPaused };
-    state(cur.slow ? 'buffering' : 'loading', cur.slow ? cur.slow : undefined);
+    state(cur.slow ? 'buffering' : 'loading', cur.slow ? cur.slow : holding ? 'Reconnecting' : undefined);
 
     var fail = function (type, detail, earlyNet, ended, http) {
       if (myToken !== token || gen !== cur.gen) return;
@@ -440,8 +473,22 @@ var Player = (function () {
     var now = Date.now();
     // Movies and catch-up continue from where they got to, not from the start.
     if (!cur.live && !cur.timeshift && cur.pos > 5) cur.startAt = cur.pos;
+    if (!holding && cur.everPlayed) holdFrame();
     teardown();
     clearTimeout(cur.timer);              // several error events for one failure = one reconnect
+    /* A live channel that keeps dropping on the MPEG-TS stream (three reconnects in three minutes)
+       tries the provider's HLS version of it now, rather than after the whole reconnect budget: HLS
+       comes in short pieces and often rides out a shaky connection better.  Remembered for this
+       channel until TiviBro closes. */
+    // (Not when the provider answered with an error: that is the provider having trouble, not the stream format.)
+    if (cur.live && !cur.timeshift && cur.everPlayed && st && st.kind === 'ts' && !/^The provider answered/.test(why)) {
+      cur.drops = (cur.drops || []).filter(function (x) { return now - x < 180000; }); cur.drops.push(now);
+      if (cur.drops.length >= 3 && !(cur.late && cur.late.hls) && !(cur.tried && cur.tried.hls) && window.Hls && Hls.isSupported() && hlsVariant(cur.origUrl || cur.url)) {
+        Log.info('player', 'This channel dropped ' + cur.drops.length + ' times in 3 minutes on MPEG-TS; trying its HLS version');
+        cur.late = cur.late || {}; cur.late.ts = 1;
+        useEngine('hls'); preferHls[cur.origUrl || cur.url] = 1; cur.drops = [];
+      }
+    }
     // No network: don't spend the budget.  Wait for it to come back, checking every few seconds.
     if (navigator.onLine === false) {
       Log.warn('player', 'Network is down; waiting for it before reconnecting');
@@ -461,6 +508,7 @@ var Player = (function () {
         useEngine(alt); cur.retries = Math.floor(cur.p.retries / 2);
       } else if (cur.live && !cur.timeshift && cur.everPlayed && now - (cur.slowSince || now) < SLOW_FOR) {
         if (!cur.slowSince) { cur.slowSince = now; Log.warn('player', 'Channel keeps failing; retrying every ' + SLOW_EVERY / 1000 + 's'); emit('trouble', 'stopped'); }
+        releaseFrame();                    // a long outage: no frozen picture for minutes
         cur.slow = 'The channel stopped.  Still trying to get it back';
         state('buffering', cur.slow);
         cur.timer = setTimeout(function () { start(myToken); }, now - cur.slowSince < SLOW_FAST_FOR ? SLOW_FAST : SLOW_EVERY);
@@ -680,7 +728,9 @@ var Player = (function () {
     // like one that has played, instead of giving up after the first round.
     if (opts.keepTrying) cur.everPlayed = true;
     applyDisplay();
+    releaseFrame();                         // a new channel never shows the last one's picture
     if (video) video.playbackRate = 1;
+    if (cur.live && !cur.timeshift && preferHls[cur.url] && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) { Log.info('player', 'Using the HLS version of this channel, which played better earlier'); useEngine('hls'); }
     start(token);
   }
   // Picture size: this channel's own choice if it has one, otherwise the global setting.
@@ -764,6 +814,7 @@ var Player = (function () {
   }
 
   return {
+    _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
     PRESETS: PRESETS, bind: bind, play: play, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, on: on,
     seek: seek, seekTo: seekTo, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; },
