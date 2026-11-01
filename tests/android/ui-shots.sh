@@ -16,7 +16,7 @@ find_text() {   # centre of the first element whose text is $1, or nothing
   python3 - "$1" "$OUT/ui.xml" <<'PY'
 import re,sys
 t,f=sys.argv[1],open(sys.argv[2]).read()
-m=re.search(r'text="'+re.escape(t)+r'"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"',f)
+m=re.search(r'text="'+re.escape(t)+r'"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"',f) or re.search(r'content-desc="'+re.escape(t)+r'"[^>]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"',f)
 print('' if not m else '%d %d'%((int(m[1])+int(m[3]))//2,(int(m[2])+int(m[4]))//2))
 PY
 }
@@ -56,5 +56,31 @@ echo "Play on TV works, and Now playing follows the TV"
 tap "Remote"
 tap "OK"
 shot 7-remote-after 3
+# The guide, a channel's schedule, Movies and a movie's details, against the stand-in TV's answers.
+tap "Guide"
+shot 8-guide 6
+tap "Nova News 24"
+shot 9-schedule 5
+adb shell input keyevent KEYCODE_BACK; sleep 2
+tap "Movies"
+shot 10-movies 6
+tap "Movie 1"
+shot 11-movie 5
+adb shell input keyevent KEYCODE_BACK; sleep 2
+tap "Shows"
+shot 12-shows 6
+# A provider link shared to the app.
+adb shell am start -W -a android.intent.action.SEND -t text/plain --es android.intent.extra.TEXT "'Your login: http://line.example.com:8080/get.php?username=demo&password=demo&type=m3u_plus'" -n $PKG/.MainActivity
+shot 13-share 5
+tap "Add to the TV"
+shot 14-shared-added 6
+tap "Done"
+sleep 2
+# Backups.
+adb shell input keyevent KEYCODE_BACK; sleep 2
+tap "More"
+tap "Backups"
+tap "Back up now"
+shot 15-backups 6
 if adb logcat -d | grep -E "FATAL EXCEPTION|AndroidRuntime: Process: $PKG" ; then echo "The app crashed"; adb logcat -d | grep -A30 "FATAL EXCEPTION" | head -60; exit 1; fi
 echo "no crashes"

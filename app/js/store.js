@@ -132,10 +132,11 @@ var Store = (function () {
   }
   delete settings.playlist;
 
-  var edits = null, editsKey = '';
+  var edits = null, editsKey = '', editsRev = 0;
   function loadEdits() {
     editsKey = 'tivibro.edits.' + (settings.active || 'none');
     edits = merge(clone(EDIT_DEFAULTS), read(editsKey));
+    editsRev++;
   }
   loadEdits();
 
@@ -152,7 +153,10 @@ var Store = (function () {
     }
   }
   var saveSettings = U.debounce(function () { if (!frozen) lsSet('tivibro.settings', JSON.stringify(settings)); }, 300);
-  var saveEdits = U.debounce(function () { if (!frozen) lsSet(editsKey, JSON.stringify(edits)); }, 400);
+  var writeEdits = U.debounce(function () { if (!frozen) lsSet(editsKey, JSON.stringify(edits)); }, 400);
+  // A count of edit saves, so the web editor can tell the edits changed without comparing them
+  // (with 180,000 channels the hidden lists alone are megabytes; issue #14).
+  function saveEdits() { editsRev++; writeEdits(); }
 
   // Fill in every per-playlist option, and carry older single-value settings forward.
   function normalize(p) {
@@ -254,7 +258,7 @@ var Store = (function () {
     get playlist() { return playlist(); },
     normalize: normalize,
     usePlaylist: usePlaylist, upsertPlaylist: upsertPlaylist, removePlaylist: removePlaylist,
-    saveSettings: saveSettings, saveEdits: saveEdits,
+    saveSettings: saveSettings, saveEdits: saveEdits, get editsRev() { return editsRev; },
     resetEdits: function () { edits = merge(clone(EDIT_DEFAULTS), null); saveEdits(); },
     idbGet: idbGet, idbSet: idbSet, DEFAULTS: DEFAULTS
   };

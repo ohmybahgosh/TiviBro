@@ -20,6 +20,8 @@
 - Each phone gets its own key.  Everything it sends is signed with it, can't be replayed, and the TV signs its answers back.
 - Remove a phone in **Settings > Phone app** and its key stops working at once.
 - The Android app only talks to your TVs on your home network.  It sends nothing to us or anyone else, and has no analytics.
+- Logins (a shared provider link, a password typed on the phone) and backups travel between the phone and the TV encrypted with the phone's key, not just signed.
+- Backups made by the app stay on the phone, encrypted with a key in Android's secure key storage, and are left out of Android's own cloud backups.  A copy you save as a file is encrypted with the passphrase you pick.
 
 ## Backups
 

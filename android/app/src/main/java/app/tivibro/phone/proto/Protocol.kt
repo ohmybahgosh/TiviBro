@@ -309,6 +309,8 @@ data class NowState(
     val now: Prog? = null, val next: Prog? = null, val paused: Boolean = false,
     val vodTitle: String = "", val vodPos: Int = 0, val vodDur: Int = 0,
     val inputs: List<TvInput> = emptyList(),
+    /** TiviBro is open but busy (a huge playlist, a big clean-up): presses wait until it's done. */
+    val busy: Boolean = false,
 ) {
     companion object {
         fun from(j: JSONObject): NowState {
@@ -321,6 +323,7 @@ data class NowState(
                 logo = p?.optString("logo").orEmpty(), group = p?.optString("group").orEmpty(),
                 now = Prog.from(s?.optJSONObject("now")), next = Prog.from(s?.optJSONObject("next")), paused = s?.optBoolean("paused") == true,
                 vodTitle = v?.optString("title").orEmpty(), vodPos = v?.optInt("pos") ?: 0, vodDur = v?.optInt("dur") ?: 0,
+                busy = j.optBoolean("busy"),
                 inputs = s?.optJSONArray("inputs")?.let { a -> (0 until a.length()).mapNotNull { TvInput.from(a.optJSONObject(it)) } }.orEmpty(),
             )
         }

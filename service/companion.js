@@ -18,6 +18,9 @@
      and every answer is signed back, so the phone can tell a forged or altered answer.
    - Phones are listed in TiviBro and can be removed there; a removed phone's key stops working at
      once.  Keys stay in companion.json next to the helper, never in a backup.
+   Questions that need TiviBro itself (the guide, Movies and Shows, favorites, reminders, typing into the
+   TV, adding a playlist, backups) go through POST /v1/ask: queued for TiviBro like commands, answered on
+   /companion/answer.  Logins and backups only travel sealed (AES-256-GCM under the phone's key).
    See docs/wiki/Phone-app-protocol.md.  Plain ES5 and callbacks for the old Node on webOS (compat.js). */
 'use strict';
 require('./compat');
@@ -105,6 +108,11 @@ function create(opts) {
      and, when a phone asks, its channel list (/companion/lineup).  Phones wait for changes with a
      long poll too (/v1/state).  Volume goes straight to the TV, with or without TiviBro. */
   var asks = {};                       // command id -> a phone waiting for TiviBro's answer (/v1/ask)
+  /* Is TiviBro busy?  It waits here for commands between jobs; when it hasn't come back for a while
+     (loading a huge playlist, applying a big clean-up), phones are told, so the app can say so instead
+     of looking stuck (issue #14).  Volume works anyway: it doesn't need TiviBro. */
+  var appSeen = 0, wasBusy = false, busyTimer = null;
+  function busyNow() { var a = opts.app ? opts.app() : {}; return !!a.open && !appWait.length && Date.now() - appSeen > 5000; }
   var cmds = [], cmdSeq = 0, appWait = [], phoneWait = [], tvState = { rev: 0, data: null, at: 0 }, lineup = null, lineupRev = 0, wantLineup = false, launchedAt = 0;
 
   function load() {
@@ -303,7 +311,7 @@ function create(opts) {
     return appOpen() ? 'sent' : 'opening';
   }
   function stateView() {
-    return { ok: true, rev: tvState.rev, open: appOpen(), state: tvState.data, lineupRev: lineup ? lineup.rev : 0, now: Date.now() };
+    return { ok: true, rev: tvState.rev, open: appOpen(), busy: busyNow(), state: tvState.data, lineupRev: lineup ? lineup.rev : 0, now: Date.now() };
   }
   function phoneState(res, u, reply) {
     var since = +((/[?&]since=(\d+)/.exec(u) || [])[1] || 0), waitOk = /[?&]wait=1/.test(u);
@@ -345,7 +353,7 @@ function create(opts) {
     var cmd = { type: 'ask', what: j.what, args: args };
     var how = queue(cmd, p.name);
     var w = asks[cmd.id] = { reply: reply };
-    w.timer = setTimeout(function () { delete asks[cmd.id]; reply(200, { ok: true, pending: true, state: how }); }, ASKS[j.what]);
+    w.timer = setTimeout(function () { delete asks[cmd.id]; reply(200, { ok: true, pending: true, state: how, busy: busyNow() }); }, ASKS[j.what]);
   }
   function answerAsk(j) {
     var w = asks[j.id];
@@ -439,6 +447,8 @@ function create(opts) {
     listen(0, function (e) {
       if (e) { log({ lv: 'error', event: 'companion could not start', e: e.message }); return cb(e); }
       startUdp();
+      clearInterval(busyTimer);
+      busyTimer = setInterval(function () { var b = busyNow(); if (b !== wasBusy) { wasBusy = b; flushPhones(); } }, 2000);
       log({ lv: 'info', event: 'companion listening', port: port, ips: addresses() });
       cb(null, status());
     });
@@ -446,6 +456,7 @@ function create(opts) {
   function stop() {
     if (server) { try { server.close(); } catch (e) {} log({ lv: 'info', event: 'companion stopped' }); }
     if (udp) { try { udp.close(); } catch (e) {} }
+    clearInterval(busyTimer); busyTimer = null;
     server = null; udp = null; port = 0; pairing = null; nonces = {};
   }
 
@@ -456,10 +467,12 @@ function create(opts) {
     if (u === '/companion/status') return reply(200, status());
     // TiviBro waits here for commands from phones (and for a phone wanting the channel list).
     if (u === '/companion/next') {
+      appSeen = Date.now();
       var since = +((/[?&]since=(\d+)/.exec(req.url) || [])[1] || 0);
       var answer = function () {
         var t = Date.now(), list = cmds.filter(function (c) { return c.id > since && t - c.at < CMD_TTL; });
         cmds = cmds.filter(function (c) { return list.indexOf(c) < 0; });      // each command is carried out once
+        appSeen = Date.now();
         reply(200, { cmds: list, seq: cmdSeq, wantLineup: wantLineup, on: st.on });
       };
       if (cmds.length || wantLineup || !st.on || since > cmdSeq) return answer();

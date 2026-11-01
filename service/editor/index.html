@@ -927,14 +927,18 @@ function stateStr() { return JSON.stringify({ E: E, N: N }); }
 function setState(s) { var o = JSON.parse(s); E = o.E; N = o.N; }
 function load(first) {
   busy(1);
-  return api('/api/state').then(function (j) {
+  var had = !first && D && D.chanRev ? D : null;
+  return api('/api/state' + (had ? '?have=' + had.chanRev : '')).then(function (j) {
     busy(-1);
+    var same = !!(j.data && j.data.sameChannels && had);
+    if (same) { j.data.channels = had.channels; j.data.groups = had.groups; }
     D = j.data; rev = j.rev;
     BASE = { E: pickE(D.edits), N: clone(D.names || Names.defaults()) };
     BASE.N.rules = BASE.N.rules || {};
     var keep = !first && pendingCount() > 0;
     if (!keep) { E = clone(BASE.E); N = clone(BASE.N); }
-    index();
+    if (same) { guideName = new Map(); ((D.guide && D.guide.channels) || []).forEach(function (x) { guideName.set(x[0], x[1]); }); dupeCache = null; }
+    else index();
     var wasSetup = document.body.classList.contains('setup');
     document.body.classList.toggle('setup', !!D.setup);
     var jump = D.setup && ['playlists', 'backup', 'help', 'welcome', 'report'].indexOf(page) < 0 ? 'welcome' : wasSetup && !D.setup ? 'home' : null;

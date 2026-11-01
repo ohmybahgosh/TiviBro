@@ -27,9 +27,10 @@ var WebEdit = (function () {
   }
 
   function base() { return Net.port ? 'http://127.0.0.1:' + Net.port : ''; }
-  function call(path, body) {
+  function call(path, body, text) {
     if (!base()) return Promise.reject(new Error('The network helper is not running, so the editor cannot start.  See Settings, Diagnostics.'));
-    return fetch(base() + path, { method: body ? 'POST' : 'GET', cache: 'no-store', headers: Net.ctlHeaders(body ? { 'Content-Type': 'application/json' } : {}), body: body ? JSON.stringify(body) : undefined })
+    var post = body || text;
+    return fetch(base() + path, { method: post ? 'POST' : 'GET', cache: 'no-store', headers: Net.ctlHeaders(post ? { 'Content-Type': 'application/json' } : {}), body: text || (body ? JSON.stringify(body) : undefined) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'helper answered ' + r.status); return j; }); });
   }
 
@@ -64,7 +65,9 @@ var WebEdit = (function () {
     FIELDS.forEach(function (f) { out[f] = e[f] || (f === 'custom' || f === 'groupOrder' || f === 'watchlist' ? [] : {}); });
     return out;
   }
-  function sig() { try { return JSON.stringify(draftInfo) + JSON.stringify(editsOf()) + JSON.stringify(Store.playlist.names || null) + JSON.stringify(playlists()) + (Library.data ? Library.data.channels.length : 0) + ':' + (Epg.status && Epg.status.at) + ':' + (Epg.pubStatus && Epg.pubStatus.at); } catch (e) { return String(Date.now()); } }
+  /* Has anything the editor shows changed?  Checked every two seconds, so it compares counters, not the
+     edits themselves (megabytes with a huge playlist, issue #14). */
+  function sig() { try { return JSON.stringify(draftInfo) + Store.playlist.id + ':' + Store.editsRev + JSON.stringify(Store.playlist.names || null) + JSON.stringify(playlists()) + (Library.data ? Library.data.channels.length : 0) + ':' + (Epg.status && Epg.status.at) + ':' + (Epg.pubStatus && Epg.pubStatus.at); } catch (e) { return String(Date.now()); } }
 
   // Playlists as the browser sees them: no username, password or full addresses.
   function fileOf(u) { var m = /^[a-z]+:\/\/[^/]+\/(?:[^?#]*\/)?([^/?#]+)/i.exec(String(u || '')); return m && !/[=@]/.test(m[1]) ? decodeURIComponent(m[1]).slice(0, 60) : ''; }
@@ -78,16 +81,28 @@ var WebEdit = (function () {
         epgSources: (p.epgSources || []).map(function (x) { return { host: host(x.url), file: fileOf(x.url), id: U.hash(String(x.url).trim()), offset: x.offset || 0 }; }) };
     });
   }
+  /* The channel list part of the snapshot, as JSON, made again only when the channels or their guide
+     change: with a huge playlist it is most of the work, and edits alone don't change it (issue #14). */
+  var chanJson = { key: null, data: null, json: '' }, sentChans = null;
+  function channelsJson(d, gc) {
+    var key = [Store.playlist.id, d.channels.length, d.groups.length, Math.floor(Date.now() / 60000), Epg.status && Epg.status.at, Epg.pubStatus && Epg.pubStatus.at, gc.length].join(':');
+    if (chanJson.data === d && chanJson.key === key) return chanJson.json;
+    var json = JSON.stringify({
+      groups: d.groups.map(function (g) { return { id: g.id, name: g.name }; }),
+      channels: d.channels.map(function (c) { return { k: c.k, n: c.n, g: c.g, num: c.num, logo: c.logo || '', arch: c.arch || 0, epg: Epg.epgId(c) || '', has: !!Epg.hasData(c) }; })
+    });
+    chanJson = { key: key, data: d, json: json };
+    return json;
+  }
   function snapshot() {
     var d = Library.data, p = Store.playlist;
     if (!d) return null;
     var gc = (Epg.guideChannels && Epg.guideChannels()) || [];
     return {
+      _channels: channelsJson(d, gc),
       setup: !Store.settings.playlists.length,     // fresh TV: the editor offers restore or add a playlist
       playlist: { id: p.id, name: p.name || 'Playlist', type: p.type },
       playlists: playlists(),
-      groups: d.groups.map(function (g) { return { id: g.id, name: g.name }; }),
-      channels: d.channels.map(function (c) { return { k: c.k, n: c.n, g: c.g, num: c.num, logo: c.logo || '', arch: c.arch || 0, epg: Epg.epgId(c) || '', has: !!Epg.hasData(c) }; }),
       guide: { channels: gc.slice(0, 30000).map(function (x) { return [x[0], x[1]]; }), mode: p.providerEpg, sources: (p.epgSources || []).length, xml: !!Epg.xml, loading: !!Epg.loading, status: Epg.status ? { at: Epg.status.at } : null, nameMatch: !!p.nameMatch,
         pub: (function () { var cf = PubEpg.conf(p), ps = Epg.pubStatus; return { on: cf.on, cc: cf.cc, helper: !!Net.active, all: PubEpg.all().map(function (c) { return [c, PubEpg.name(c)]; }),
           status: ps ? { at: ps.at, countries: ps.countries, filled: ps.filled, asked: ps.asked, took: ps.took, none: ps.none || '', sources: ps.sources } : null }; })() },
@@ -104,8 +119,17 @@ var WebEdit = (function () {
     if (!force && s === lastSig) return Promise.resolve();
     var snap = snapshot(); if (!snap) return Promise.resolve();
     lastSig = s;
-    return call('/editor/snapshot', snap).then(function () { Log.debug('webedit', 'Sent the channel list to the editor (' + snap.channels.length + ' channels)'); })
-      .catch(function (e) { lastSig = ''; Log.warn('webedit', 'Could not send the channel list to the editor: ' + e.message); });
+    // The cached channel list is spliced in as text: { "groups": [...], "channels": [...], ...the rest }.
+    // Unchanged since the helper last got it: just say so, instead of megabytes again.
+    var ch = snap._channels; delete snap._channels;
+    var keep = sentChans === ch;
+    if (keep) snap.keepChannels = true;
+    var rest = JSON.stringify(snap);
+    var body = keep ? rest : ch.slice(0, -1) + (rest.length > 2 ? ',' + rest.slice(1) : '}');
+    return call('/editor/snapshot', null, body).then(function (r) {
+      if (r && r.needChannels) { sentChans = null; lastSig = ''; return push(true); }      // the helper restarted
+      sentChans = ch; if (!keep) Log.debug('webedit', 'Sent the channel list to the editor (' + Library.data.channels.length + ' channels)'); })
+      .catch(function (e) { lastSig = ''; sentChans = null; Log.warn('webedit', 'Could not send the channel list to the editor: ' + e.message); });
   }
 
   /* ---------- browser edits ---------- */
@@ -137,15 +161,19 @@ var WebEdit = (function () {
     Views.refreshLists(true);
     if (guideChanged) Epg.refresh(Library, false);
   }
+  // A moment for everything else (the remote, the phone app) between big steps (issue #14).
+  function breathe(v) { return new Promise(function (r) { setTimeout(function () { r(v); }, 30); }); }
   function apply(j) {
-    return snap('auto', 'Before changes sent from the computer').catch(function () {}).then(function () {
+    return snap('auto', 'Before changes sent from the computer').catch(function () {}).then(breathe).then(function () {
       writeEdits(j.edits || {}, j.names);
+      return breathe();
+    }).then(function () {
       markSent(j.edits || {});
       appliedRev = j.rev;
       Log.info('webedit', 'Applied changes from the web editor (save ' + j.rev + ')');
       U.toast('Changes from the computer applied');
-      return push(true);
-    });
+      return breathe();
+    }).then(function () { return push(true); });
   }
 
   /* ---------- draft history (IndexedDB, per playlist) ----------
@@ -477,7 +505,7 @@ var WebEdit = (function () {
   }
 
   function begin(s) {
-    status = s; on = true; lastSig = '';
+    status = s; on = true; lastSig = ''; sentChans = null;
     lastDraft = Math.max(lastDraft, s.draftAck || 0);
     if (Epg.progress && Epg.progress.phase) sendProgress(Epg.progress, true);
     clearInterval(timer); timer = setInterval(tick, 2000);

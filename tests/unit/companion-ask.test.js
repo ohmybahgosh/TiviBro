@@ -78,6 +78,9 @@ async function tivibro() {
   stop = true;
   r = await C.ask(cred, 'remind', { k: 'x', s: 1 });
   ok('no answer in time: the phone hears it is still pending', r.ok && r.pending === true && Date.now() - t0 >= 14000, JSON.stringify(r) + ' ' + (Date.now() - t0));
+  ok('and that TiviBro is busy (it stopped coming back for work)', r.busy === true, JSON.stringify(r));
+  const st = await C.call(cred, 'GET', '/v1/state');
+  ok('the state says so too, for the app\'s banner', st.busy === true, JSON.stringify(st));
 
   c.stop();
   console.log(fails ? fails + ' failures' : 'all phone question tests passed');

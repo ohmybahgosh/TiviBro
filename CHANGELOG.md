@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **The phone app does a lot more** (TiviBro for Android).  On each TV: a **Guide** made for a phone (pick a time and a group, tap a channel for its schedule with descriptions, **Watch on TV** or set a reminder the TV keeps); **Movies** and **Shows** as posters with search, categories, details, resume and episodes, all played on the TV; a star on every channel for **Favorites**; and **Type on your phone** into any box the TV shows (setting up a playlist, Search, renaming), passwords included, sent encrypted.
+- **Share your provider's link to TiviBro.**  In the email or message from your provider, choose Share, then TiviBro: the app shows what it found and the TV adds the playlist.  On a brand-new TV this is the whole set-up.
+- **Backups on your phone.**  **Back up now**, or once a week on its own while TiviBro is open and the phone is on your Wi-Fi.  Restore on this TV or another, or save a copy the web editor can restore with a passphrase.  Logins and backups travel between the phone and the TV encrypted.
 - **Buffer info on every remote.**  **Stream info** in the quick menu (**OK** in fullscreen) now shows the buffer gauge too, and its numbers update while it's open, so Magic Remotes without an Info button can see it.  Any button can open it: **Stream info and buffer** under **Settings > Remote control**.  When TiviBro has only seen a Magic Remote, its hints stop pointing at the Info button.
 - **A bigger set-up banner** ([#8](https://github.com/ohmybahgosh/TiviBro/issues/8)).  What your phone or computer is doing during set-up now shows in a large banner along the bottom of the TV, easy to read on a small screen or from across the room: green when a playlist was added, red with the reason when it didn't work.  Any button on the TV remote clears it.
 

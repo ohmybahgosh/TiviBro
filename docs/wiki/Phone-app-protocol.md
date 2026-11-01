@@ -71,6 +71,31 @@ All signed like the calls above.  TiviBro carries out each command once; if Tivi
 | `GET /v1/state?since=<rev>&wait=1` | | What TiviBro shows: `{ rev, open, state: { tab, full, playing: { k, name, num, logo, group }, now: { t, s, e }, next, paused, vod } }`.  With `wait=1` and the current `rev`, the TV answers when it changes, or after 20 seconds. |
 | `GET /v1/lineup?rev=<rev>` | | The channel list as TiviBro shows it: `{ rev, groups: [{ id, name, keys }], channels: [{ k, n, num, logo, fav, now }] }`.  `pending: true` while TiviBro is making it (ask again in a second), `same: true` when `rev` is current, `closed: true` when TiviBro is closed. |
 
+## Questions for TiviBro
+
+`POST /v1/ask` with `{ "what": "...", "args": { ... } }`, signed like every call.  TiviBro on the TV answers (it is opened first when closed), and the phone waits for it: `{ ok: true, data }`.  TiviBro's own refusals come back as `409` with `code: "tv"` and a reason to show.  `{ pending: true }` means TiviBro didn't answer in time (it may still be opening); ask again.  With `"noOpen": true` and TiviBro closed, the answer is `{ closed: true }` and nothing opens (the app's automatic backups).
+
+| what | args | data |
+|---|---|---|
+| `guide` | `group` (a group id from the lineup, empty for all), `at` (ms, default now), `offset`, `limit` (up to 200) | `{ total, offset, pending, rows: [{ k, a (catch-up), p: [{ t, s, e, r (reminder set) }] }] }`: what is on at `at` and the two after.  A row without `p` is still loading on the TV (`pending` counts them); ask again. |
+| `schedule` | `k` | `{ k, arch (catch-up days), progs: [{ t, s, e, d (description), r }], descPending }`: from as far back as catch-up goes to a week ahead. |
+| `remind` | `k`, `s` (the programme's start), `on` | `{ on }`.  The TV's own reminder, shown also while TiviBro is closed. |
+| `fav` | `k`, `on` | `{ on }`.  The lineup follows. |
+| `vodcats` | `kind` (`movie` or `series`) | `{ cats: [{ id, n, count, adult, locked }] }`, or `{ none: true }` when the playlist has none.  `_all` is All movies or All shows, `_cw` Continue watching, `_my` My list. |
+| `voditems` | `kind`, `cat` or `q` (search), `offset`, `limit` (up to 300) | `{ total, offset, items: [{ id, n, c (cover), r (rating), y (year), p (percent watched) }] }`, `locked: true` for a category behind the PIN. |
+| `vodinfo` | `kind`, `id` | A movie: `{ id, n, c, plot, genre, cast, year, dur, r, media, pos, len }` (`pos` and `len` in seconds, where it stopped).  A show: `{ id, n, c, plot, genre, cast, year, r, seasons: [{ s, eps: [{ id, e, t, dur, plot, pos, len }] }] }`. |
+| `vodplay` | `kind`, `id`, `ep` (an episode id, for a show), `fromStart` | `{ title }`.  Plays it on the TV (from where it stopped unless `fromStart`). |
+| `input` | `id` (from the state's `inputs`), `value`, `submit` | `{ ok }`.  Types into a text box on the TV's screen; `submit` saves a rename box. |
+| `playlist` | `link` (the provider's full link), `name`, `use` (switch to it) | `{ msg }`.  Adds the playlist like the web editor's Add a playlist. |
+| `backup` | | `{ backup }`: everything (settings, every playlist with its login, edits, restore points), the same as the web editor's backup before it is sealed with a passphrase. |
+| `restore` | `backup` | `{ playlists }`.  TiviBro restarts with it. |
+
+`GET /v1/state` also lists the text boxes on the TV's screen: `state.inputs: [{ id, label, type (text, url or password), value, has (a password is filled in), submit, focus }]`.  A password's text is never sent.
+
+### Sealed requests
+
+`playlist`, `input`, `backup` and `restore` are refused unless sealed, since they carry logins.  A sealed request's body is `{ "sealed": { iv, data, tag } }`: the question, AES-256-GCM encrypted under `HMAC-SHA256(key, "tivibro-seal-v1")` with additional data `tivibro-seal-req-v1\n<phone id>\n<nonce>` (the request's own nonce, so a sealed body can't be moved to another request).  The answer to a sealed request is sealed the same way with `tivibro-seal-res-v1\n<phone id>\n<nonce>`; errors from before the TV could open the request come back plain.  The signature covers the sealed body as sent.
+
 ## Waking the TV
 
 When the TV is off nothing answers.  Send Wake-on-LAN magic packets to the `mac` from info (broadcast, UDP 9), every few seconds until hello answers.  The TV needs **Turn on via Wi-Fi** (or **Mobile TV On**) switched on.

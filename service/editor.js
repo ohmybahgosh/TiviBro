@@ -73,6 +73,7 @@ function create(log) {
   var st = {
     server: null, port: 0, password: '', tokens: {},
     snapshot: null, snapRev: 0,          // what the app last sent
+    chanRev: 0,                          // bumps only when the channel list itself changes (issue #14)
     pending: null, pendingRev: 0,        // what a browser last saved, not yet applied by the app
     appliedRev: 0,                       // newest browser save the app has applied
     fails: {}, seen: {},
@@ -154,6 +155,13 @@ function create(log) {
     st.seen[tok] = Date.now();
     if (u === '/api/state' && req.method === 'GET') {
       if (!st.snapshot) return send(res, 503, { error: 'The TV has not sent its channel list yet.  Keep TiviBro open on the TV.' });
+      // A browser that already has this channel list gets the rest only (megabytes less to send and redraw).
+      var have = +((/[?&]have=(\d+)/.exec(req.url) || [])[1] || 0);
+      if (have && have === st.snapshot.chanRev) {
+        var lite = {}; Object.keys(st.snapshot).forEach(function (k) { if (k !== 'channels' && k !== 'groups') lite[k] = st.snapshot[k]; });
+        lite.sameChannels = true;
+        return send(res, 200, { rev: st.snapRev, appliedRev: st.appliedRev, data: lite });
+      }
       return send(res, 200, { rev: st.snapRev, appliedRev: st.appliedRev, data: st.snapshot });
     }
     if (u === '/api/rev' && req.method === 'GET') return send(res, 200, { rev: st.snapRev, pendingRev: st.pendingRev, appliedRev: st.appliedRev, progress: st.progress, tvSeen: st.tvSeen || 0, now: Date.now(), draftSeq: st.draftSeq, draftAck: st.draftAck });
@@ -273,6 +281,11 @@ function create(log) {
     if (u === '/editor/snapshot' && req.method === 'POST') {
       return readJSON(req, function (err, j) {
         if (err || !j) return send(res, 400, { error: 'bad snapshot' });
+        // The app sends the channel list only when it changed; otherwise it says keepChannels.
+        if (j.keepChannels && !st.snapshot) return send(res, 200, { ok: false, needChannels: true });
+        if (j.keepChannels && st.snapshot) { j.groups = st.snapshot.groups; j.channels = st.snapshot.channels; j.chanRev = st.chanRev; }
+        else { st.chanRev++; j.chanRev = st.chanRev; }
+        delete j.keepChannels;
         st.snapshot = j; st.snapRev++;
         if (j.appliedRev) st.appliedRev = Math.max(st.appliedRev, +j.appliedRev);
         send(res, 200, { ok: true, rev: st.snapRev });

@@ -159,6 +159,13 @@ fun TvScreen(
     ) { pad ->
         Column(Modifier.padding(pad).fillMaxSize()) {
             NowPlaying(state, now, onKey, onOpen, Modifier.padding(16.dp, 4.dp, 16.dp, 8.dp))
+            if (state?.busy == true) Surface(color = Panel2, shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp).fillMaxWidth()) {
+                Row(Modifier.padding(14.dp, 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Accent2)
+                    Spacer(Modifier.width(12.dp))
+                    Text("TiviBro on the TV is busy, for example loading a big playlist.  What you press here goes through when it's done; volume works now.", style = MaterialTheme.typography.bodySmall)
+                }
+            }
             val inputs = state?.inputs.orEmpty()
             if (inputs.isNotEmpty()) TypeOnTv(inputs, onType, Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp))
             ScrollableTabRow(
