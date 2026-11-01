@@ -2,7 +2,9 @@
 
 *Every setting*
 
-The TiviBro app for Android (coming soon) finds this TV on your network, opens TiviBro and the [web editor](Turning-on-the-web-editor) full screen, and turns the TV on.  Pair a phone once and it stays paired.
+The TiviBro app for Android is a remote and a second screen for this TV: arrows, OK, Back, channel and volume buttons, **Play on TV** from your own channel list, the [web editor](Turning-on-the-web-editor) full screen, turning the TV on, and a Quick Settings tile.  Pair a phone once and it stays paired.
+
+To get it: [download the newest APK](https://tivibro.app/apk/) on your phone and open it to install (Android asks to allow installs from your browser the first time, and Google Play Protect checks each update).  Then turn on **Phone app connection** below, choose **Pair a phone**, and scan the code with the app.
 
 | Setting | Choices | What it does |
 |---|---|---|

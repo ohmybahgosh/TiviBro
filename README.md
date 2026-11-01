@@ -30,6 +30,14 @@
   <a href="#develop">Develop</a>
 </p>
 
+## Get TiviBro
+
+| | |
+|---|---|
+| 📺 **On your LG TV** | [How to install](#install).  Homebrew Channel repository: `https://tivibro.app/repo` |
+| 📱 **Phone app for Android** | [**Download the newest APK**](https://tivibro.app/apk/), then [pair it with your TV](#the-phone-app) |
+| 📦 **Every build and its notes** | [Releases page](https://github.com/ohmybahgosh/TiviBro/releases) |
+
 > [!WARNING]
 > **TiviBro is under active development.**  These are early test builds: expect bugs and rough edges, and settings or features may change between versions.  Keep a backup before updating (**Backup and restore** in the [web editor](#the-web-editor)).  Found a bug?  On the TV, **Settings > Diagnostics > Report a problem** (also on the first screen) fills in a [GitHub issue](https://github.com/ohmybahgosh/TiviBro/issues) for you from your phone: see [Report a problem](#report-a-problem).
 
@@ -56,10 +64,12 @@ No typing logins with a remote.  The first screen shows a QR code: scan it with 
 
 | | |
 |---|---|
-| 📱 **Set up from your phone** | Scan the QR code on the first screen and type your login on your phone, not with the remote.  The TV takes it from there. |
+| 📱 **Set up from your phone** | Scan the QR code on the first screen and paste your provider's link on your phone, not with the remote.  The TV shows it arriving, says if something's wrong, and takes it from there. |
+| 🔗 **Paste the whole link** | Got one long get.php link from your provider?  Paste it under **Full link** and TiviBro fills in the server, username and password. |
+| 🎮 **A remote in your pocket** | The TiviBro app for Android pairs with the TV: a remote, Play on TV from your channel list, volume, the editor full screen, and Wake-on-LAN.  [Get the APK](https://tivibro.app/apk/). |
 | 📺 **Guide first** | Live preview top left, details top right, groups one press away.  OK previews, OK again goes fullscreen, just like TiviMate. |
 | ⏪ **Catch-up done right** | Rewind the guide into the past and replay what you missed, or restart the show you just tuned into. |
-| 🎬 **Movies and shows** | Your provider's VOD with posters, seasons, episodes, My list and resume. |
+| 🎬 **Movies and shows** | Your provider's VOD with posters, seasons, episodes, My list and resume.  A **Languages** row keeps a 160,000-title, twelve-language library to the ones you watch, categories can be hidden, adult ones stay out of the way, and MKV files bring their subtitles. |
 | 🧭 **Set up in two minutes** | A new playlist starts a tour that shows what it has (countries, East and West copies, local cities, event channels, duplicates) and tidies it with the remote, or with your phone by scanning a code. |
 | 🖼️ **Logos for every channel** | Missing logos filled in from two open logo projects, matched by guide id, name, country and call sign.  Or one matching style for the whole list. |
 | 🖥️ **A real editor** | Hide, sort, rename, copy and match guides for hundreds of channels from any browser.  Drafts, undo and restore points. |
@@ -164,7 +174,7 @@ Favorites and your own groups come first, then your provider's.  Moving through 
 
 ### Movies and shows
 
-Categories, posters, ratings and plots.  Shows open into seasons and episodes, and TiviBro remembers where you stopped.
+Categories, posters, ratings and plots.  Shows open into seasons and episodes, and TiviBro remembers where you stopped.  Pick the languages you watch from the **Languages** row, hide categories you never open, and turn on subtitles built into MKV files.
 
 </td>
 <td width="58%"><a href="docs/media/vod.mp4"><img src="docs/media/vod.gif" width="100%" alt="Movies and shows"></a><br><sub><a href="docs/media/vod.mp4">▶ MP4</a></sub></td>
@@ -177,7 +187,7 @@ Categories, posters, ratings and plots.  Shows open into seasons and episodes, a
 
 ### Search everything
 
-Channels and programmes now, later and on catch-up, as you type, with filters for On now, Coming up and Replays.  OK watches, replays or sets a reminder.  Yellow adds the search to your watchlist.
+Channels, programmes now, later and on catch-up, and your movies and shows, as you type, best match first, with filters for On now, Coming up, Replays and Movies & Shows.  OK watches, replays or sets a reminder.  Yellow adds the search to your watchlist.
 
 </td>
 </tr>
@@ -292,6 +302,7 @@ Open **Edit on phone** in the TV's side menu (or hold OK on any group).  It turn
 - **Recommended free guide sources** by region, each with a one-click **Test**.
 - **Public guide fill-in.**  Channels your provider sends no guide for get one from the free epg.pw and iptv-epg.org guides, matched by guide id, local call sign or name.  On by default, never over a guide you already have, and the TV downloads the files itself.
 - **Works on your phone.**  Scan the QR code in the TV's set-up tour, or open the address in any phone browser: a top bar for the pages, one pane at a time, and touch-sized controls.
+- **Paste the provider's whole link** when adding a playlist: **Full link** fills in the Xtream Codes server, username and password from it.
 - **Logins never leave the TV.**  The editor only ever sees server names.
 
 <p align="center">
@@ -500,6 +511,16 @@ If `scp` fails, pipe the file instead: `cat app.tivibro.tv_0.6.0_all.ipk | ssh r
 ### Updating
 
 TiviBro checks for a new release once a day (**Settings > Updates and about**).  On a rooted TV with the Homebrew Channel, **Install** there downloads it, checks it and installs it, and TiviBro restarts on the new version with all your settings.  On other TVs it shows the new version; install it the same way you installed TiviBro.
+
+### The phone app
+
+**TiviBro for Android** turns your phone into a remote and a second screen for the TV: arrows, OK, Back, channel and volume buttons, Play on TV from your own channel list, the web editor full screen, Wake-on-LAN, and a Quick Settings tile.
+
+1. [Download the newest APK](https://tivibro.app/apk/) on your phone and open it to install.  Android asks to allow installs from your browser the first time, and Google Play Protect checks the app each time you update it.
+2. On the TV, turn on **Settings > Phone app** and choose **Pair a phone**.
+3. In the app, scan the QR code on the TV (or pick the TV from the list and type the code).
+
+The app only talks to your TVs on your home network.  See [Settings: Phone app](docs/USER-GUIDE.md#settings-phone-app) for the details.
 
 ### Moving from another TV
 

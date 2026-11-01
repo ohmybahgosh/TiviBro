@@ -20,7 +20,7 @@ Everything TiviBro does, on the TV and from your computer.  Every picture here c
 
 A brand-new TiviBro opens on **Add your playlist**.  You have two ways in:
 
-- **Scan the QR code with your phone.**  It sits beside the form and opens the web editor on your phone, already signed in: type your login there with a real keyboard, or restore a backup from another TV.  The address and password are under the code, for a computer on the same network.  The TV moves on by itself when you finish, then shows the [set-up tour](#the-set-up-tour).  (**Set up or restore from a phone or computer** shows the same code on a screen of its own.)
+- **Scan the QR code with your phone.**  It sits beside the form and opens the web editor on your phone, already signed in: type your login there with a real keyboard, or restore a backup from another TV.  The address and password are under the code, for a computer on the same network.  While you work there, the TV shows what it receives ("Checking the login and loading the channels…", then how many channels it added, or why it didn't work), moves on by itself when you finish, then shows the [set-up tour](#the-set-up-tour).  Nothing starts playing on its own.  (**Set up or restore from a phone or computer** shows the same code on a screen of its own.)
 - **Type it on the TV.**  The type starts on **Full link**: paste the whole link your provider sent (the long one with username and password in it, often with get.php) and TiviBro says what it found, then fills in the Xtream Codes login when you press **Connect**.  Or pick Xtream Codes or M3U and fill in the server, username and password (or the M3U address) yourself.  A guide address is optional.  **Test connection** checks everything before you save; **Connect** saves and loads your channels.
 
 <p align="center">
@@ -320,6 +320,10 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 - Categories on the left (**Continue watching**, **My list**, **All movies**, then your provider's), titles in the middle, details and poster on the right.
 - **OK** plays a movie or opens a show's seasons and episodes.  **Hold OK** adds a title to **My list**.
 - **Info** or **Hold OK** opens a title's options.  **CH + / CH −** page through long category lists.
+- **Languages.**  Many providers put a language code in front of every title ("EN - ", "SE-4K - ", "[SE]") or on the category ("\|TR\| DIZI").  TiviBro takes it off the name and adds a **Languages** row at the top of the categories: **OK** on it picks which languages show.  By default that's your TV's language plus titles with no code; a library in one language shows everything and has no Languages row.  A 4K tag becomes a 4K label.
+- **Hide a category:** **Hold OK** or **Red** on it.  Its titles leave **All movies** (or **All shows**) and Search too.  The same menu brings hidden categories back.
+- **Adult categories** (named Adults, XXX, 18+ and the like) are listed last and stay out of **All** and Search.  With a PIN set for blocked channels, they ask for it.
+- Running times read **1 h 25 min**, ratings **★ 7.6**.  On a TV, big libraries are downloaded and slimmed by the network helper, so even 160,000 movies stay light on memory.
 - While watching, **◀ ▶** skip 30 seconds.  Keep pressing and each press jumps further (twice, four, then eight times as far); the info panel shows where you'll land and when the movie will end, and playback jumps there once you stop pressing.  **Back** cancels a jump you haven't landed yet.  **▲ ▼** skip 10 minutes.
 - TiviBro remembers where you stopped and offers to resume.  The next episode can start by itself (**Play next episode automatically**).
 
@@ -338,7 +342,7 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 
 **Search** in the menu finds channels and programmes in the guide (now, later today, the coming days and on catch-up) as you type, and also your Movies and Shows.  Below the box, **Everything**, **On now**, **Coming up**, **Replays**, **Channels** and **Movies & Shows** narrow the results (**◀ ▶** on that row).  Each programme shows once, even when several copies of the channel carry it, with **Today**, **Tomorrow** or the day and its time.  **OK** watches, replays, opens a show's episodes, or sets a reminder (**OK** again cancels it); **Hold OK** gives channel options.  **Yellow** adds what you typed to your [watchlist](#watchlist).
 
-Movies and shows are searchable without opening **Movies** or **Shows** first: Search reads the lists the TV keeps (or loads them once).  Titles that start with what you typed come first.  **OK** on a movie opens it in **Movies** and plays it, so **Back** lands on it there; on a show it opens its episodes.
+Movies and shows are searchable without opening **Movies** or **Shows** first: Search reads the lists the TV keeps (or loads them once).  Results are ranked by how closely the title matches (the whole title, then the start, then a word), then by what you can watch: on now, a movie or show, a channel, coming up, a replay.  So **batman** lists the Batman films before the 24/7 Batman channels, and **CNN** still finds the channel first.  Titles in languages you hid, and adult titles, don't show.  **OK** on a movie opens it in **Movies** and plays it, so **Back** lands on it there; on a show it opens its episodes.
 
 <p align="center"><a href="media/search.mp4"><img src="media/search.gif" width="100%" alt="Search"></a></p>
 <p align="center"><sub><a href="media/search.mp4">Watch the MP4</a></sub></p>
@@ -738,7 +742,9 @@ The [web editor](#turning-on-the-web-editor): organise groups and channels from 
 
 ### Settings: Phone app
 
-The TiviBro app for Android (coming soon) finds this TV on your network, opens TiviBro and the [web editor](#turning-on-the-web-editor) full screen, and turns the TV on.  Pair a phone once and it stays paired.
+The TiviBro app for Android is a remote and a second screen for this TV: arrows, OK, Back, channel and volume buttons, **Play on TV** from your own channel list, the [web editor](#turning-on-the-web-editor) full screen, turning the TV on, and a Quick Settings tile.  Pair a phone once and it stays paired.
+
+To get it: [download the newest APK](https://tivibro.app/apk/) on your phone and open it to install (Android asks to allow installs from your browser the first time, and Google Play Protect checks each update).  Then turn on **Phone app connection** below, choose **Pair a phone**, and scan the code with the app.
 
 | Setting | Choices | What it does |
 |---|---|---|
