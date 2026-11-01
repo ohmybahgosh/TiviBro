@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 45, 2026-11-01)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 45
 
 - **My teams.**  Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams in **Settings > Groups, sorting, hidden > My teams** (or hold OK on a team's channel and choose **Follow**).  A **My teams** group near the top of the guide has their games on now (every channel showing them, together), then their next games, then the teams' own channels from your provider's team groups.  Their games can get reminders too (off at first).  For now the main leagues only: no college, junior, minor league or other countries' teams yet.
 - **Remote buttons in the guide can be changed** (**Settings > Remote control > In the guide**).  The colour buttons, Play, Info, Stop and Hold OK each pick an action, including **Watch fullscreen** (the channel in the window, else the highlighted one) for remotes without a Play button.  The defaults are what the guide did before.  The old **In the channel list** page is now just the Channels screen.
 - **Events by time is easy to bring back.**  **Settings > Groups, sorting, hidden > Show Events by time** (it was only in the playlist's Event channels page).
 - **Learn a button and Button tester say which buttons belong to the TV** (Home, Live TV, the TV's own Guide, Input, Settings).  webOS acts on those before TiviBro hears them, so they leave TiviBro.
 
-## 0.6.0 (alpha 44, 2026-11-01)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 44
+### In alpha 44
 
 - **The phone app can reach the TV right after an update.**  Installing a new version stopped TiviBro's helper and removed its restart schedule, so the phone app couldn't reach the TV until TiviBro was opened.  The install script now starts it again straight away, and (with the phone app connection on) adds a 5-minute check that an update from the Homebrew Channel app can't remove.  The helper's own check now runs every 5 minutes instead of 15, so if webOS stops it while another app or the screensaver is on, it's back sooner.
 
