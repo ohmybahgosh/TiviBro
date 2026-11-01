@@ -529,6 +529,8 @@ TiviBro checks for a new release once a day (**Settings > Updates and about**). 
 
 **TiviBro for Android** turns your phone into a remote and a second screen for the TV: arrows, OK, Back, channel and volume buttons, Play on TV from your own channel list, the web editor full screen, Wake-on-LAN, and a Quick Settings tile.  Browse Movies, Shows and My media on the phone and play them on the TV.
 
+<p align="center"><img src="docs/screenshots/app-my-media.png" width="30%" alt="My media in the phone app"> <img src="docs/screenshots/app-my-media-movie.png" width="30%" alt="Resume on TV"></p>
+
 1. [Download the newest APK](https://tivibro.app/apk/) on your phone and open it to install.  Android asks to allow installs from your browser the first time, and Google Play Protect checks the app each time you update it.
 2. On the TV, turn on **Settings > Phone app** and choose **Pair a phone**.
 3. In the app, scan the QR code on the TV (or pick the TV from the list and type the code).

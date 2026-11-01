@@ -371,6 +371,11 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 
 **In the phone app**, a **My media** tab shows the same shelves (Continue watching, Favorites, All movies) as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.
 
+<p align="center">
+  <img src="screenshots/app-my-media.png" width="30%" alt="My media in the phone app">
+  <img src="screenshots/app-my-media-movie.png" width="30%" alt="A movie's details in the phone app, with Resume on TV">
+</p>
+
 Press **Green** on My media to rescan all saved sources for new or removed movies.  Press **Yellow** to fetch details and artwork for new movies or outdated language matches.  Yellow leaves up-to-date matches alone.  Wait for a rescan to finish before fetching details.
 
 Use **Left** and **Right** to move between movies, and **Up** and **Down** to move between shelves.  **OK** plays or resumes the selected movie.  **Hold OK** or **Red** opens movie options: add or remove a favorite, start over, mark as watched, find or correct movie details, or see file information.  Favorites and your place in a movie stay with My media across playlists and restarts.
