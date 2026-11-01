@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Numbers that stay put** ([#17](https://github.com/ohmybahgosh/TiviBro/issues/17)).  The buffer info no longer grows and shrinks as its seconds change.  **Settings > Appearance > Numbers** can give every digit the same width (**Even width**), so channel numbers and times line up, or a fixed-width style with a slashed zero.
 - **No more Movies and Shows crash on older TVs with big lists** ([#18](https://github.com/ohmybahgosh/TiviBro/issues/18)).  Changing the language filter or a category while the list was still loading could stop Movies and Shows from working; the list now stays on screen and is re-sorted from memory.  When a TV runs out of storage saving a big playlist, TiviBro frees the cached lists of your other playlists and tries again, so it no longer downloads everything again each time it starts.
 
 ## 0.6.0 (alpha 40, 2026-11-01)

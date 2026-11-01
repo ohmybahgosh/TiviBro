@@ -53,6 +53,7 @@ var Store = (function () {
     hdrRoute: 'auto',           // auto (Dolby Vision on the TV player) | tv (all HDR on the TV player) | builtin
     textSize: 'm',              // s | m | l
     clockDate: false,           // show the date next to the clock
+    numFont: 'tv',              // tv | even (every digit the same width) | mono (fixed width, slashed zero)
     overlay: 'm',               // l | m | h  transparency of panels over video
     nowStyle: 'fill',           // fill | color | off  how what's on now is marked in the guide
     guideNames: true,           // channel names in the guide (off = logos only)

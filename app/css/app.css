@@ -31,6 +31,16 @@ body.full #app{visibility:hidden}
 .channels{width:760px;margin-right:32px}
 .info{flex:1;min-width:0}
 
+/* Numbers (issue #17): Settings > Appearance > Numbers can give every digit the same width, so the
+   buffer pill, channel numbers and times stop shifting, or a fixed-width style with a slashed zero.
+   Subsets of Roboto and Roboto Mono (Apache 2.0); only the digits and the colon ever use them. */
+@font-face{font-family:"TiviBro Digits";font-weight:400;src:url(../fonts/digits.woff) format("woff");unicode-range:U+0030-003A}
+@font-face{font-family:"TiviBro Digits";font-weight:700;src:url(../fonts/digits-bold.woff) format("woff");unicode-range:U+0030-003A}
+@font-face{font-family:"TiviBro Mono Digits";font-weight:400;src:url(../fonts/digits-mono.woff) format("woff");unicode-range:U+0030-003A}
+@font-face{font-family:"TiviBro Mono Digits";font-weight:700;src:url(../fonts/digits-mono-bold.woff) format("woff");unicode-range:U+0030-003A}
+body.nums-even,body.nums-even input{font-family:"TiviBro Digits","LG Smart UI","LG Smart_UI","Museo Sans","TiviBro Symbols",Roboto,"Segoe UI",sans-serif}
+body.nums-mono,body.nums-mono input{font-family:"TiviBro Mono Digits","LG Smart UI","LG Smart_UI","Museo Sans","TiviBro Symbols",Roboto,"Segoe UI",sans-serif}
+
 /* Symbols (↺ ★ ▶ ✓ …) for TVs whose fonts lack them; only these characters ever use it. */
 @font-face{font-family:"TiviBro Symbols";src:url(../fonts/symbols.woff) format("woff");unicode-range:U+2022,U+2039-203A,U+2190-21FF,U+2212,U+2500-25FF,U+2600-27BF}
 
@@ -93,6 +103,7 @@ body.full .vid-error{left:50%;right:auto;bottom:auto;top:40%;transform:translate
    cushion the player has right now, so "choppy" stops being a mystery. */
 .meter{position:absolute;top:40px;right:56px;z-index:7;display:flex;align-items:center;gap:14px;
   background:rgba(7,9,18,.78);padding:10px 18px;border-radius:30px;font-size:21px;color:var(--muted);font-variant-numeric:tabular-nums}
+.meter-secs{display:inline-block;min-width:3.2em;text-align:right;color:var(--text)}
 .meter-track{width:220px;height:12px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden}
 .meter-track i{display:block;height:100%;width:0;background:var(--ok);transform-origin:left}
 .meter.low .meter-track i{background:var(--warn)}

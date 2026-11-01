@@ -25,7 +25,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => UI.press('long:info'));
   await page.waitForTimeout(300);
   ok('Hold Info shows the meter', await shown());
-  const text = await ev(() => document.getElementById('meterText').textContent);
+  const text = await ev(() => document.getElementById('meterSecs').textContent);
   ok('it shows the seconds banked', /\d+\.\ds/.test(text), text);
   await page.waitForTimeout(2600);
   ok('it hides itself after the set time', !(await shown()));

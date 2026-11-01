@@ -202,6 +202,8 @@ var Views = (function () {
     if (s.textSize === 's' || s.textSize === 'l') b.add('ts-' + s.textSize);
     if (s.overlay === 'l' || s.overlay === 'h') b.add('ov-' + s.overlay);
     if (s.nowStyle === 'color' || s.nowStyle === 'off') b.add('now-' + s.nowStyle);
+    b.toggle('nums-even', s.numFont === 'even');
+    b.toggle('nums-mono', s.numFont === 'mono');
     b.toggle('noguidenames', s.guideNames === false);
     b.toggle('twolinenames', !!s.twoLineNames);
     // webOS 6 and older put video on a plane behind the page, and a rounded clip around it can leave
@@ -1111,7 +1113,7 @@ var Views = (function () {
     // Playing again: a later failure is a new incident (recent failures are still skipped for 10 min).
     if (s === 'playing' && fo && playing) { foFailed[playing.k] = 0; fo.tried = {}; fo.exhausted = false; }
   }
-  var meter = $('meter'), mFill = $('meterFill'), mText = $('meterText'), goodSince = 0, spinPlain = false;
+  var meter = $('meter'), mFill = $('meterFill'), mText = $('meterText'), mSecs = $('meterSecs'), goodSince = 0, spinPlain = false;
   /* Buffer info on demand (Hold Info by default, or any button set to "Show buffer info"): the meter
      shows whatever its setting, for the time in Settings > Playback, or until pressed again.  Pressing
      it while it shows hides it. */
@@ -1141,7 +1143,9 @@ var Views = (function () {
     mFill.style.width = Math.round(U.clamp(ratio, 0, 1) * 100) + '%';
     meter.classList.toggle('low', low && !crit);
     meter.classList.toggle('crit', crit);
-    mText.textContent = x.ahead.toFixed(1) + 's   ' + [x.res, x.engine, x.info].filter(Boolean).join('  ');
+    // The seconds sit in a box of their own width, so the pill doesn't grow and shrink as they change (#17).
+    mSecs.textContent = x.ahead.toFixed(1) + 's';
+    mText.textContent = [x.res, x.engine, x.info].filter(Boolean).join('  ');
   }
 
   /* ---------- menus ---------- */

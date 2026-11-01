@@ -562,6 +562,7 @@ var Settings = (function () {
       var ls = Logos.status;
       out.push(info('Logo library status', ls.state === 'ready' ? ls.entries + ' names for ' + ls.countries.join(', ') : ls.state === 'loading' ? 'loading' : ls.state === 'error' ? 'not reachable: ' + ls.error : 'off'));
     }
+    out.push(choice('Numbers', 'Even width lines up channel numbers and times and keeps the buffer info steady.  Fixed width also crosses the zero.', ['tv', 'even', 'mono'], ['TV font', 'Even width', 'Fixed width, slashed zero'], function () { return s.numFont || 'tv'; }, function (v) { s.numFont = v; Views.applyLook(); save(); }));
     out.push(toggle('Show clock', '', function () { return s.showClock; }, function (v) { s.showClock = v; Views.applyLook(); save(); }));
     out.push(toggle('Show the date with the clock', '', function () { return !!s.clockDate; }, function (v) { s.clockDate = v; UI.clock(); save(); }));
     out.push(toggle('Show channel numbers', '', function () { return s.showNumbers; }, function (v) { s.showNumbers = v; Store.saveSettings(); relist(); build(); }));
