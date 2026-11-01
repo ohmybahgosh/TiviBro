@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 40, 2026-11-01)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 40
 
 - **Empty event slots count as nothing on.**  **Hide channels with nothing on** now also catches slots with no event in them ("PPV 09 |", "EPL 02:", " :ESPN+ 291") and events that ended hours ago that the provider never renamed.  They come back by themselves when a new event is named.
 - **Old events say so.**  An event channel whose game is long over shows "Ended Feb 8: …" in the guide, instead of looking live or empty.  The web editor's Smart clean-up has a new step, **Groups of old events**, for groups where every event ended days ago (a Winter Olympics group in November).
@@ -10,11 +14,7 @@
 - **When your subscription ends, first on each playlist** ([#13](https://github.com/ohmybahgosh/TiviBro/issues/13)).  **Settings > Playlists** and the web editor's Playlists page lead with it ("Expires 19 Nov", "Expires in 3 days", "Expired 2 Oct"), for every playlist, not only the one in use.  Xtream Codes providers say when; M3U playlists don't.
 - **Browsers offer to save the web editor's password** ([#15](https://github.com/ohmybahgosh/TiviBro/issues/15)).  The login box is a real password field now (Firefox, Chrome and Safari offer to remember it), with **Show** to check what you typed.
 
-## 0.6.0 (alpha 39, 2026-11-01)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 39
+### In alpha 39
 
 - **Big playlists stay responsive while you edit** ([#14](https://github.com/ohmybahgosh/TiviBro/issues/14)).  With a very large playlist (100,000 channels or more), the TV no longer sends the whole channel list to the web editor again after every change, so the remote and the phone app keep working while changes are applied.  The phone app says when TiviBro on the TV is busy.
 - **The phone app does a lot more** (TiviBro for Android).  On each TV: a **Guide** made for a phone (pick a time and a group, tap a channel for its schedule with descriptions, **Watch on TV** or set a reminder the TV keeps); **Movies** and **Shows** as posters with search, categories, details, resume and episodes, all played on the TV; a star on every channel for **Favorites**; and **Type on your phone** into any box the TV shows (setting up a playlist, Search, renaming), passwords included, sent encrypted.
