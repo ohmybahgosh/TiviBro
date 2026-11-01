@@ -48,9 +48,12 @@ echo "Back returns to the TV list"
 # as Android let go of the tile).
 n0=$(grep -c '^LAUNCHED' /tmp/fake-tv.txt || true)
 adb shell cmd statusbar add-tile $PKG/.tile.TvTileService >/dev/null 2>&1 || true
-adb shell cmd statusbar click-tile $PKG/.tile.TvTileService >/dev/null 2>&1
-adb shell cmd statusbar collapse >/dev/null 2>&1 || true
-for i in $(seq 1 15); do [ "$(grep -c '^LAUNCHED' /tmp/fake-tv.txt || true)" -gt "$n0" ] && break; sleep 1; done
+sleep 4             # a tile just added is bound a moment later; a click before that is lost
+for try in 1 2 3; do
+  adb shell cmd statusbar click-tile $PKG/.tile.TvTileService >/dev/null 2>&1
+  adb shell cmd statusbar collapse >/dev/null 2>&1 || true
+  for i in $(seq 1 10); do [ "$(grep -c '^LAUNCHED' /tmp/fake-tv.txt || true)" -gt "$n0" ] && break 2; sleep 1; done
+done
 [ "$(grep -c '^LAUNCHED' /tmp/fake-tv.txt || true)" -gt "$n0" ] || { echo "The tile did not open TiviBro on the TV"; adb logcat -d | grep -E "TiviBroTile|TileService" | tail -20; exit 1; }
 echo "The tile opens TiviBro on the TV"
 # The remote, Play on TV, and Now playing following the TV.
