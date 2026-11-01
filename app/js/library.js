@@ -93,7 +93,7 @@ var Library = (function () {
       Store.saveEdits();
     } catch (err) { Log.warn('library', 'Could not track new groups: ' + err.message); }
   }
-  function dirty() { groupCache.clear(); evCache = null; newCache = null; if (typeof Teams !== 'undefined') Teams.dirty(); }
+  function dirty() { groupCache.clear(); evCache = null; newCache = null; inShown = null; if (typeof Teams !== 'undefined') Teams.dirty(); }
 
   /* ---------- other versions of a channel ----------
      The same channel in another quality, group or copy ("ESPN FHD", "ESPN HD", "US| ESPN (Backup)"),
@@ -185,6 +185,21 @@ var Library = (function () {
     });
     out.sort(function (x, y) { return a[y.k] - a[x.k] || x.num - y.num; });
     return (newCache = out);
+  }
+  /* Is a channel anywhere in the lists?  Not hidden itself, and its provider group shown, or it is in one
+     of your groups (or copied into a provider group) that is shown: the local station you put in "Local
+     channels" while its provider group is hidden.  For Search and My teams. */
+  var inShown = null;
+  function shownAnywhere(c) {
+    var e = E();
+    if (!c || (!S().showHidden && e.hiddenChannels[c.k])) return false;
+    if (S().showHidden || !e.hiddenGroups[c.g]) return true;
+    if (!inShown) {
+      inShown = {};
+      e.custom.forEach(function (g) { if (!e.hiddenGroups[g.id]) g.items.forEach(function (k) { inShown[k] = 1; }); });
+      if (e.groupAdd) Object.keys(e.groupAdd).forEach(function (g) { if (!e.hiddenGroups[g]) e.groupAdd[g].forEach(function (k) { inShown[k] = 1; }); });
+    }
+    return !!inShown[c.k];
   }
   function isVirtual(gid) { return gid === ALL || gid === RECENT || gid === EVENTS || gid === NEW || gid === TEAMS; }
   function isCustom(gid) { return gid && gid.indexOf('c_') === 0; }
@@ -416,7 +431,7 @@ var Library = (function () {
 
   return {
     idle: idle, ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, TEAMS: TEAMS, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
-    isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
+    shownAnywhere: shownAnywhere, isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
     isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,
     createGroup: createGroup, renameGroup: renameGroup, deleteGroup: deleteGroup,

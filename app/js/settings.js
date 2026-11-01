@@ -459,7 +459,7 @@ var Settings = (function () {
     var s = S(), out = [], lgs = Teams.leagues(), mine = Teams.followed();
     function apply() { Teams.dirty(); Store.saveSettings(); relist(); paint(); }
     out.push(info('For now: the main North American leagues only (NFL, NBA, NHL, MLB, WNBA and MLS).  College, junior and minor league teams, and other countries\' leagues, aren\'t in it yet.', ''));
-    out.push(toggle('Show the My teams group', 'Near the top of the guide: games on now first, then the next ones, then the teams\' own channels.',
+    out.push(toggle('Show the My teams group', 'Near the top of the guide: their games on now at the top, then the ones starting within the time below.  A team\'s own channel is there while it shows a game.',
       function () { return s.teamsGroup !== false; }, function (v) { s.teamsGroup = v; apply(); }));
     out.push(choice('Games starting within', 'How soon a game has to start to be in the group.', [3, 6, 12, 24], ['3 hours', '6 hours', '12 hours', '24 hours'],
       function () { return +s.teamsAhead || 6; }, function (v) { s.teamsAhead = v; apply(); }));

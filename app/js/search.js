@@ -14,11 +14,8 @@ var Search = (function () {
     var rx = new RegExp('(^|[^a-z0-9À-￿])' + esc(q) + '($|[^a-z0-9À-￿])', 'i');
     return function (t) { return rx.test(t); };
   }
-  function visible(c) {
-    var E = Store.edits;
-    if (Store.settings.showHidden) return true;
-    return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g];
-  }
+  // In the lists somewhere: its group shown, or in one of your groups (Library.shownAnywhere).
+  function visible(c) { return L.shownAnywhere(c); }
 
   /* Programmes whose title matches q: [{ c, p }], one per programme even when several channels
      carry it (the HD and SD copies share a start time; East and West do not), on now first, then
@@ -27,7 +24,7 @@ var Search = (function () {
     opts = opts || {};
     var test = matcher(q, opts.word), now = Date.now(), out = [], seen = {};
     var all = L.data.channels, byEpg = {};
-    if (Epg.xml) for (var i = 0; i < all.length; i++) { var id = Epg.epgId(all[i]); if (id && !byEpg[id]) byEpg[id] = all[i]; }
+    if (Epg.xml) for (var i = 0; i < all.length; i++) { var id = Epg.epgId(all[i]); if (id && (!byEpg[id] || (!visible(byEpg[id]) && visible(all[i])))) byEpg[id] = all[i]; }   // one in the lists, if any
     function take(c, p) {
       if (!c || !visible(c) || !p.t) return;
       if (p.e <= now && !c.arch) return;          // past without catch-up is not watchable
@@ -220,7 +217,7 @@ var Search = (function () {
       if (gen !== descGen || input.value.trim().toLowerCase() !== q) return;
       var seen = {}, more = [], all = L.data.channels, byEpg = {};
       shown.forEach(function (it) { if (it.p) seen[it.p.t.toLowerCase() + '|' + it.p.s] = 1; });
-      if (Epg.xml) for (var i = 0; i < all.length; i++) { var id = Epg.epgId(all[i]); if (id && !byEpg[id]) byEpg[id] = all[i]; }
+      if (Epg.xml) for (var i = 0; i < all.length; i++) { var id = Epg.epgId(all[i]); if (id && (!byEpg[id] || (!visible(byEpg[id]) && visible(all[i])))) byEpg[id] = all[i]; }   // one in the lists, if any
       res.forEach(function (r) {
         var c = L.find(r.key) || byEpg[r.key], p = r.p;
         if (!c || !visible(c) || !p.t) return;

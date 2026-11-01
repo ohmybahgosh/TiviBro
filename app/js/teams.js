@@ -194,10 +194,8 @@ var Teams = (function () {
   function inLeague(lg) { return ALL.filter(function (x) { return x.league === lg; }); }
   function hasChannel(id) { return !!teamChannels()[id]; }
 
-  function shown(c) {
-    var e = Store.edits;
-    return S().showHidden || (!e.hiddenChannels[c.k] && !e.hiddenGroups[c.g]);
-  }
+  // In the lists somewhere (a local station in your own "Local channels" group counts).
+  function shown(c) { return Library.shownAnywhere ? Library.shownAnywhere(c) : !(Store.edits.hiddenChannels[c.k] || Store.edits.hiddenGroups[c.g]); }
 
   /* Games of the followed teams on now or starting within the hours given: [{ c, p, team }].  Every
      channel showing a game (a league pass, a sports network, the other team's feed), so one that doesn't
@@ -210,16 +208,20 @@ var Teams = (function () {
     /* Followed teams in a game: two teams of one league named ("Minnesota Vikings at Detroit Lions",
        "WPG VS CAR"), so a team's magazine show, a pregame show or "Future events for the Detroit Tigers
        not found yet" isn't one. */
-    function playing(text, ctx, abbrs) {
-      if (!text || NOGAME.test(text)) return [];
+    function playing(text, ctx, abbrs, title) {
+      if (!text || NOGAME.test(title || text)) return [];
       var hits = named(text, ctx, ALL, abbrs), by = {};
       hits.forEach(function (x) { by[x.league] = (by[x.league] || 0) + 1; });
       return hits.filter(function (x) { return mineIds[x.id] && by[x.league] >= 2; });
     }
     var gname = {};
     Library.data.groups.forEach(function (g) { gname[g.id] = g.name; });
+    var tc = teamChannels(), whose = {};
+    Object.keys(tc).forEach(function (id) { tc[id].forEach(function (c) { whose[c.k] = id; }); });
     function take(c, p, team) {
       if (!c || !shown(c) || !p.t || p.e <= now || p.s > to) return;
+      // Another team's own channel (the opponent's) shows the same game: yours is enough.
+      if (whose[c.k] && !mineIds[whose[c.k]]) return;
       // One game, however the channels write its start ("12:55 PM" on one, "1:00 PM" on another).
       var key = one ? team.id + '|' + Math.round(p.s / 2700e3) : c.k + '|' + team.id;
       if (seen[key]) { if (one && Library.isFav(c.k) && !Library.isFav(seen[key].c.k)) seen[key].c = c; return; }
@@ -229,9 +231,12 @@ var Teams = (function () {
     // Words of every followed team, for a quick first look at each title.
     var words = [];
     teams.forEach(function (x) { words = words.concat(x.full, x.nk, x.city ? [x.city] : []); });
+    // For descriptions, names only: a city ("Detroit") is in every local news programme.
+    var dwords = [];
+    teams.forEach(function (x) { dwords = dwords.concat(x.full, x.nk).map(function (w) { return w.trim(); }); });
     var quick = new RegExp(words.map(function (w) { return w.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|'));
     var byEpg = {}, all = Library.data.channels, i;
-    if (Epg.xml) for (i = 0; i < all.length; i++) { var id = Epg.epgId(all[i]); if (id && !byEpg[id]) byEpg[id] = all[i]; }
+    if (Epg.xml) for (i = 0; i < all.length; i++) { var id = Epg.epgId(all[i]); if (id && (!byEpg[id] || (!shown(byEpg[id]) && shown(all[i])))) byEpg[id] = all[i]; }   // one in the lists, if any
     Epg.search(function (t) { return quick.test(norm(t)); }, 4000).forEach(function (r) {
       var c = Library.find(r.key) || byEpg[r.key], p = r.p;
       // Team channels' "Next game: Lions at Vikings at 11/02/2026 01:00 PM" blocks: the game is at that time.
@@ -244,10 +249,10 @@ var Teams = (function () {
       playing(p.t, c.n + ' | ' + (gname[c.g] || ''), false).forEach(function (x) { take(c, p, x); });
     });
     // Programmes that name the game only in the description ("NFL Football" on a local station).
-    descHits(words).forEach(function (r) {
+    descHits(dwords).forEach(function (r) {
       var c = Library.find(r.key) || byEpg[r.key], p = r.p;
       if (!c || p.e <= now || p.s > to || !SPORTY.test(p.t)) return;
-      playing(r.d, p.t + ' | ' + c.n + ' | ' + (gname[c.g] || ''), false).forEach(function (x) { take(c, p, x); });
+      playing(r.d, p.t + ' | ' + c.n + ' | ' + (gname[c.g] || ''), false, p.t).forEach(function (x) { take(c, p, x); });
     });
     // Event channels: the game is in the channel name.
     if (Events.on()) for (i = 0; i < all.length; i++) {
@@ -266,8 +271,9 @@ var Teams = (function () {
     return out;
   }
 
-  var SPORTY = /\b(nfl|nba|nhl|mlb|wnba|mls|football|basketball|hockey|baseball|soccer|game|kickoff)\b/i;
-  var NOGAME = /not found|no (?:games?|events?)\b|off ?air|to be (?:announced|determined)|\btb[ad]\b/i;
+  var SPORTY = /\b(nfl|nba|nhl|mlb|wnba|mls|football|basketball|hockey|baseball|soccer)\b/i;
+  // Not the game: placeholders ("not found yet"), and the shows around it.
+  var NOGAME = /not found|no (?:games?|events?)\b|off ?air|to be (?:announced|determined)|\btb[ad]\b|^\s*next game|\b(?:pre|post)[- ]?game\b|\bhighlights\b|\brecap\b|\bcountdown\b|\bgame ?day\b|\bpreview\b|\bfantasy\b|\bnfl sunday\b|\binside the\b|\bshow\b|\bpodcast\b|\btalk\b|\bpress conference\b/i;
 
   /* Descriptions: looked through in the background (Epg.findDesc, the helper for a big guide), every few
      minutes or when the followed teams change; the group is drawn again when they arrive. */

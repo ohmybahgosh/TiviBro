@@ -111,6 +111,32 @@ Teams.dirty();
 list = Teams.list().map(c => c.n);
 ok('a game named only in the description', list.indexOf('FOX 2 Detroit') >= 0, list.join(' / '));
 ok('the news after it is not one', Teams.games().filter(x => x.c === fox).length === 1);
+// From Bob's TV: the opponent's own channel, a team channel's "Next game" block for tomorrow whose
+// description names the game, a postgame show, and a local station in your own group while its provider
+// group is hidden.
+const vik = tc['nfl:min'][0];
+progs[vik.k] = [{ s: NOW - H, e: NOW + 2 * H, t: 'Minnesota Vikings at Detroit Lions' }];
+const tomorrow = new Date(NOW + 30 * H), p2 = x => String(x).padStart(2, '0');
+const hornets = ch('NBA | CHARLOTTE HORNETS', 'g6'); chans.push(hornets);
+const hornNext = { s: NOW - 2 * H, e: NOW + 28 * H, t: 'Next game: Detroit Pistons at Charlotte Hornets at ' + p2(tomorrow.getMonth() + 1) + '/' + p2(tomorrow.getDate()) + '/' + tomorrow.getFullYear() + ' 07:30 PM' };
+progs[hornets.k] = [hornNext];
+const post = { s: NOW + 2 * H, e: NOW + 3 * H, t: 'Live: NFL on FOX Postgame' };
+progs[fox.k].push(post);
+const wjbk = ch('US: FOX 2 WJBK Detroit', 'g8'); chans.push(wjbk); groups.push({ id: 'g8', name: 'US Locals' });
+const wjbkGame = { s: NOW - H, e: NOW + 2 * H, t: 'Live: NFL Football' };
+progs[wjbk.k] = [wjbkGame];
+Store.edits.hiddenGroups.g8 = 1;
+Library.shownAnywhere = c => !Store.edits.hiddenChannels[c.k] && (!Store.edits.hiddenGroups[c.g] || c === wjbk);   // in "Local channels"
+descs = descs.concat([{ key: hornets.k, p: hornNext, d: 'Detroit Pistons at Charlotte Hornets.' }, { key: fox.k, p: post, d: 'Reaction after the Minnesota Vikings and Detroit Lions.' },
+  { key: wjbk.k, p: wjbkGame, d: 'The Detroit Lions host the Minnesota Vikings in NFL regular-season play at Ford Field.' }]);
+Teams.follow('nba:det', true);
+for (let w = 0; w < 3; w++) { await new Promise(r => setTimeout(r, 20)); Teams.dirty(); Teams.list(); }
+list = Teams.list().map(c => c.n);
+ok('the opponent\'s own channel is left out', list.indexOf('NFL | MINNESOTA VIKINGS') < 0, list.join(' / '));
+ok('a "Next game" block for tomorrow is no game now, whatever its description says', list.indexOf('NBA | CHARLOTTE HORNETS') < 0, list.join(' / '));
+ok('a postgame show is no game', !Teams.games().some(x => x.p === post));
+ok('a local station in your own group, its provider group hidden', list.indexOf('US: FOX 2 WJBK Detroit') >= 0, list.join(' / '));
+delete Library.shownAnywhere; delete Store.edits.hiddenGroups.g8;
 // Hidden channels stay out.
 Store.edits.hiddenChannels[espn.k] = 1; Teams.dirty();
 ok('hidden channels stay out', Teams.list().indexOf(espn) < 0);

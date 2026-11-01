@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **My teams fixes from the first real game day.**
+  - The local station carrying the game is there when you keep it in your own group (**Local channels**) and its provider group is hidden.  Search finds it the same way.
+  - Team channels whose guide only says "Next game Mon 7:30pm" are no longer listed as if the game were on.
+  - The opponent's own team channel is left out (your team's channel is enough), unless you follow both.
+  - Pregame and postgame shows, highlights and the like aren't games.
+
 ## 0.6.0 (alpha 46, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

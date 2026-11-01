@@ -298,7 +298,7 @@ Many providers have a group for each league's teams ("NFL TEAMS", "NHL TEAMS": "
 1. **Games on now**, on every channel showing them: event channels ("USA NHL 02: WPG VS CAR"), league passes, sports networks and guide programmes ("NFL Football: Lions at Vikings").  A game's channels are listed together, so when one feed doesn't work the next is right there.
 2. **Their next games**, starting within 6 hours (or 3, 12 or 24), soonest first, at the bottom.
 
-Only games: a team's own channel is there while it shows a game, not when its guide says "Future events not found yet" or the next game is tomorrow night.  A show about one team (a pregame show, a team magazine) isn't a game.  Games a local station lists as "NFL Football", with the teams only in the description, count.
+Only games: the other team's own channel is left out (unless you follow both), channels in your own groups count even when their provider group is hidden, and a team's own channel is there while it shows a game, not when its guide says "Future events not found yet" or the next game is tomorrow night.  A show about one team (a pregame show, a team magazine) isn't a game.  Games a local station lists as "NFL Football", with the teams only in the description, count.
 
 For now it covers the main North American leagues only: NFL, NBA, NHL, MLB, WNBA and MLS.  College, junior and minor league teams, and other countries' leagues, aren't in it yet.
 
