@@ -135,6 +135,20 @@ if [ -z "${TIVIBRO_NO_COUNT:-}" ] && command -v curl >/dev/null 2>&1; then
   KIND=install; [ -n "$OLD" ] && KIND=update
   curl -fsS -m 5 -X POST -H 'Content-Type: application/json' -d "{\"e\":\"$KIND\",\"v\":\"$VERSION\"}" https://tivibro-report.theboxmod.workers.dev/count >/dev/null 2>&1 || true
 fi
+# The phone app connection: an install removes the helper's own restart schedule and stops it, so the
+# phone couldn't reach the TV until TiviBro was opened again.  When the connection is on, start the
+# helper now (it schedules its own check again) and add a check every 5 minutes that belongs to the
+# TV, not to the TiviBro package, so an update from the Homebrew Channel app can't remove it.  The
+# helper ends that check itself once the phone app connection is turned off.  TIVIBRO_NO_KEEPALIVE=1
+# skips the second part.
+SVC_DIR="${TIVIBRO_SVC_DIR:-/media/developer/apps/usr/palm/services/$APP_ID.service}"
+if grep -q '"on":true' "$SVC_DIR/companion.json" 2>/dev/null; then
+  luna "luna://$APP_ID.service/wake" '{}' >/dev/null
+  if [ -z "${TIVIBRO_NO_KEEPALIVE:-}" ]; then
+    luna 'luna://com.palm.activitymanager/create' "{\"activity\":{\"name\":\"tivibro-keepalive\",\"description\":\"TiviBro: keep the phone app connection up (added by install.sh)\",\"type\":{\"background\":true,\"persist\":true,\"explicit\":true},\"schedule\":{\"interval\":\"5m\"},\"callback\":{\"method\":\"luna://$APP_ID.service/wake\",\"params\":{}}},\"start\":true,\"replace\":true}" >/dev/null
+  fi
+  echo "[*] Phone app connection restarted."
+fi
 if [ "$LAUNCH" = 1 ]; then
   # The reply says whether it worked; the command's exit code does not.
   case "$(luna 'luna://com.webos.applicationManager/launch' "{\"id\":\"$APP_ID\"}")" in
