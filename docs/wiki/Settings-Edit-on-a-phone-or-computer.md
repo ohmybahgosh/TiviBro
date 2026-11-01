@@ -16,7 +16,8 @@ The [web editor](Turning-on-the-web-editor): organise groups and channels from a
 | **Open this address**, **Password** | (information) | Shown while it runs: the address to open on a device on the same network, and the password to type. |
 | **Browsers connected** | (information) | How many browsers are using the editor now. |
 | **New password** | | Makes a new password and logs out every browser. |
-| **Port** | **8787** · 8080 · 8000 · 9090 | Change it if another device on your network already uses this port. |
+| **Port** | **8787** · 8080 · 8000 · 9090 · 18787 · 28787 · 38787 · 48787 · 58787 · 61787 · Random high port | Change it if another device on your network already uses this port, or if your network blocks it: the high ones often get through where the common ones don't.  A random port is picked once and kept, so a saved address keeps working. |
+| **New random port** | | Only with a random port: picks a different one.  Saved addresses and bookmarks stop working. |
 
 ---
 

@@ -637,7 +637,14 @@ var Settings = (function () {
     }
     out.push(head('Options'));
     out.push(action('New password', 'Logs out every browser.', function () { WebEdit.newPassword().then(function () { build(); U.toast('New password: ' + WebEdit.password(), 5000); }); }, function () { return on ? '' : WebEdit.password(); }));
-    out.push(choice('Port', 'Change it if another device on your network already uses this one.', WebEdit.PORTS, WebEdit.PORTS.map(String), function () { return WebEdit.port(); }, function (v) { s.editorPort = v; Store.saveSettings(); WebEdit.restart().then(build, function (e) { U.toast(e.message, 5000); build(); }); }));
+    // The high ports and the random one are for networks that block the common ports.
+    var restartEd = function () { WebEdit.restart().then(build, function (e) { U.toast(e.message, 5000); build(); }); };
+    var rnd = s.editorPort === 'random';
+    out.push(choice('Port', 'Change it if another device on your network already uses this one, or if your network blocks it: the high ones (18787 and up) or a random high port often get through.',
+      WebEdit.PORTS.concat(['random']), WebEdit.PORTS.map(String).concat([rnd ? 'Random: ' + WebEdit.port() : 'Random high port']),
+      function () { return rnd ? 'random' : WebEdit.port(); },
+      function (v) { s.editorPort = v; Store.saveSettings(); if (v === 'random') WebEdit.port(); restartEd(); }));
+    if (rnd) out.push(action('New random port', 'This TV keeps ' + WebEdit.port() + ' until you choose this.  Saved addresses and bookmarks stop working.', function () { WebEdit.newRandomPort(); restartEd(); }, function () { return String(WebEdit.port()); }));
     return out;
   }
 

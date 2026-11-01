@@ -19,6 +19,11 @@ function req(url, method, body, token) {
   ok('editor starts', a.status === 200 && a.json.running, a.text);
   const port = (await req(C + '/editor/status')).json.port;
   ok('listens on a port', port > 0, port);
+  a = await req(C + '/editor/start', 'POST', { port: 47811, password: 'ABCD-EFGH' });
+  ok("refuses the helper's own ports", a.status === 400 && /cannot be used/.test(a.json.error), a.text);
+  a = await req(C + '/editor/start', 'POST', { port: 80, password: 'ABCD-EFGH' });
+  ok('refuses ports below 1024', a.status === 400, a.text);
+  ok('and keeps running where it was', (await req(C + '/editor/status')).json.port === port);
   const L = 'http://127.0.0.1:' + port;
   a = await req(L + '/');
   ok('serves the editor page', a.status === 200 && /TiviBro Editor/.test(a.text));

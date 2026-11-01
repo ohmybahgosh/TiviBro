@@ -15,7 +15,16 @@ var WebEdit = (function () {
   var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip'];
   var SORTS = ['provider', 'az', 'za', 'number', 'custom'];
   var SNAP_AUTO = 15, SNAP_NAMED = 30;
-  var PORTS = [8787, 8080, 8000, 9090];
+  /* Ports for the editor.  High ones (one per ten thousand) for networks that block the common ones,
+     and a random high port that stays the same until you ask for a new one, so a saved address or
+     bookmark keeps working.  The helper's own ports (47810, 47811) are never used. */
+  var PORTS = [8787, 8080, 8000, 9090, 18787, 28787, 38787, 48787, 58787, 61787];
+  var RESERVED = [47810, 47811];
+  function randomPort() {
+    var b = new Uint16Array(1), p;
+    do { (window.crypto || window.msCrypto).getRandomValues(b); p = 10000 + b[0] % 55000; } while (RESERVED.indexOf(p) >= 0 || PORTS.indexOf(p) >= 0);
+    return p;
+  }
 
   function base() { return Net.port ? 'http://127.0.0.1:' + Net.port : ''; }
   function call(path, body) {
@@ -36,7 +45,17 @@ var WebEdit = (function () {
     if (!s.editorPass) { s.editorPass = generate(); Store.saveSettings(); }
     return s.editorPass;
   }
-  function port() { var p = +Store.settings.editorPort; return PORTS.indexOf(p) >= 0 ? p : 8787; }
+  function port() {
+    var s = Store.settings;
+    if (s.editorPort === 'random') {
+      var r = +s.editorPortRandom;
+      if (!(r >= 10000 && r <= 65000) || RESERVED.indexOf(r) >= 0) { s.editorPortRandom = randomPort(); Store.saveSettings(); }
+      return +s.editorPortRandom;
+    }
+    var p = +s.editorPort;
+    return PORTS.indexOf(p) >= 0 ? p : 8787;
+  }
+  function newRandomPort() { var s = Store.settings; s.editorPort = 'random'; s.editorPortRandom = randomPort(); Store.saveSettings(); return s.editorPortRandom; }
   function host(u) { var m = /^(?:https?:\/\/)?([^/:?#]+)/i.exec(u || ''); return m ? m[1] : ''; }
 
   function editsOf() {
@@ -526,7 +545,7 @@ var WebEdit = (function () {
   var exports = {
     showJoin: showJoin,
     drawJoin: drawJoin,
-    start: start, stop: stop, restart: restart, resume: resume, newPassword: newPassword, password: password, port: port, PORTS: PORTS,
+    start: start, stop: stop, restart: restart, resume: resume, newPassword: newPassword, password: password, port: port, PORTS: PORTS, newRandomPort: newRandomPort,
     snap: function (name) { return snap('named', name); },
     get on() { return on; }, get status() { return status; },
     set onStatus(fn) { onStatus = fn; },
@@ -542,7 +561,7 @@ var WebEdit = (function () {
    Channel lists and the guide are not included; they reload from the provider. */
 var Backup = (function () {
   'use strict';
-  var KEEP_LOCAL = ['editorPass', 'editorPort', 'keyAliases', 'lastBackup'];   // belong to this TV, not the backup
+  var KEEP_LOCAL = ['editorPass', 'editorPort', 'editorPortRandom', 'keyAliases', 'lastBackup'];   // belong to this TV, not the backup
 
   // Everything needed to rebuild this setup on a fresh TV: settings, every playlist with its login,
   // each playlist's edits, and each playlist's restore points.  The helper encrypts it before it

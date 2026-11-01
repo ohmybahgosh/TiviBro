@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **High ports for the web editor** ([#7](https://github.com/ohmybahgosh/TiviBro/issues/7)).  For networks that block the usual ports, **Settings > Edit on a phone or computer > Port** adds 18787, 28787, 38787, 48787, 58787 and 61787, and a random high port that stays the same until you choose **New random port**.
 - **Buffer info on demand** ([#6](https://github.com/ohmybahgosh/TiviBro/issues/6)).  Hold **Info** in fullscreen to show the buffer meter, with the seconds banked and the stream's speed when the player reports it, even with the meter set to Off.  It hides itself after 10 seconds (5, 30 or until pressed again in Settings > Playback), and pressing again hides it.  Any button can do it: **Show buffer info** under Remote control.
 
 ## 0.6.0 (alpha 35, 2026-10-31)

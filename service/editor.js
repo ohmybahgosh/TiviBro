@@ -260,7 +260,9 @@ function create(log) {
     if (u === '/editor/start' && req.method === 'POST') {
       return readJSON(req, function (err, j) {
         if (err || !j) return send(res, 400, { error: 'bad request' });
-        start(+j.port || 8787, j.password, function (e, s) { if (e) return send(res, 409, { error: e.message }); send(res, 200, s); });
+        var port = +j.port || 8787;
+        if (port < 1024 || port > 65535 || port === 47810 || port === 47811) return send(res, 400, { error: 'Port ' + port + ' cannot be used.  Pick another port.' });
+        start(port, j.password, function (e, s) { if (e) return send(res, 409, { error: e.message }); send(res, 200, s); });
       });
     }
     if (u === '/editor/snapshot' && req.method === 'POST') {
