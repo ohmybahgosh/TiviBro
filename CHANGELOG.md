@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 46, 2026-11-01)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 46
 
 - **My teams only lists games.**  The group has the games on now at the top and the ones starting within **Games starting within** below, soonest first.  A team's own channel is in it only while it shows a game, so "Future events for Detroit Tigers not found yet" or a game tomorrow night no longer puts a channel there.  Shows about one team (a pregame show, a team magazine) aren't games either.
 - **Games named only in the description count.**  A local station's "NFL Football" with "Minnesota Vikings at Detroit Lions" in its description is in My teams now.
 - **Search looks in descriptions too.**  After the titles, programmes that have what you typed only in their description are listed, with the words around it.  Searching **lions** finds the local station carrying the game.
 - **Phone app: Follow a team** from a team channel's long-press options.
 
-## 0.6.0 (alpha 45, 2026-11-01)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 45
+### In alpha 45
 
 - **My teams.**  Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams in **Settings > Groups, sorting, hidden > My teams** (or hold OK on a team's channel and choose **Follow**).  A **My teams** group near the top of the guide has their games on now (every channel showing them, together), then their next games, then the teams' own channels from your provider's team groups.  Their games can get reminders too (off at first).  For now the main leagues only: no college, junior, minor league or other countries' teams yet.
 - **Remote buttons in the guide can be changed** (**Settings > Remote control > In the guide**).  The colour buttons, Play, Info, Stop and Hold OK each pick an action, including **Watch fullscreen** (the channel in the window, else the highlighted one) for remotes without a Play button.  The defaults are what the guide did before.  The old **In the channel list** page is now just the Channels screen.
