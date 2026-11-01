@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 50, 2026-11-01)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 50
 
 - **Phone app: My media.**  A **My media** tab (once the TV has a source) shows Continue watching, Favorites and All movies as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.
 - **Pictures of My media** in the user guide, the README and on tivibro.app.
 
-## 0.6.0 (alpha 49, 2026-11-01)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 49
+### In alpha 49
 
 - **My media plays your own movies from DLNA / UPnP and WebDAV sources.**  It joins the menu once you add a source in **Settings > My media**.  Browse poster shelves for Continue watching, Favorites and All movies, with the usual movie player, favorites and resume positions.  Source setup stays in Settings and the web editor.  WebDAV playback currently requires a redirect to a playable file link.
 - **My media is for movies only for now, and says so.**  Scans leave out TV (season folders and episode files), trailers and extras (Extras and Featurettes folders, "-trailer" files, short clips, much smaller videos next to a movie), and say how many they left out.
