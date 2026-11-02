@@ -61,6 +61,19 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
     ok('Back returns to season picker',/Season 1/.test(await page.innerText('#modal')));
     await page.keyboard.press('Escape');await page.waitForTimeout(150);
     ok('Back returns to shows',/TV shows/.test(await page.innerText('#modal')));
+    await page.keyboard.press('Enter');await page.waitForTimeout(150);
+    await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForTimeout(150);
+    ok('show can be added to favorites with the remote',/Remove favourite/.test(await page.innerText('#modal')));
+    await page.keyboard.press('Escape');await page.waitForTimeout(150);
+    ok('favorited show leaves the general show list',/No items in this view/.test(await page.innerText('#modal')));
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(()=>document.querySelectorAll('.media-shelf')[1].querySelector('.media-shelf-count').textContent==='1');
+    ok('show is present in Favorites and absent from TV shows shelf',await page.evaluate(()=>document.querySelectorAll('.media-shelf')[3].querySelector('.media-shelf-count').textContent===''));
+    await page.keyboard.press('ArrowUp');await page.keyboard.press('Enter');await page.waitForTimeout(150);
+    await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForTimeout(150);
+    await page.keyboard.press('Escape');
+    await page.waitForFunction(()=>document.querySelectorAll('.media-shelf')[3].querySelector('.media-shelf-count').textContent==='1');
+    ok('removing a favorite returns the show to its shelf',await page.evaluate(()=>document.querySelectorAll('.media-shelf')[1].querySelector('.media-shelf-count').textContent===''));
     ok('no browser exceptions',errors.length===0,errors.join(', '));
   } finally {
     await browser.close();await new Promise(f=>relay.server.close(f));await new Promise(f=>fritz.close(f));

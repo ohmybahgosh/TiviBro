@@ -115,7 +115,7 @@ var Media = (function () {
     shelves = MediaStore.sections(null); shelves[0].movies = shelves[0].movies.concat(continuingShows);shelves[1].movies=shelves[1].movies.concat(favouriteShows);
     shelves = shelves.concat([{id:'shows',title:'TV shows',movies:seriesCards},{id:'review',title:'Needs review',movies:reviewCards}]);
     if (oldShelf) shelfAt = shelves.findIndex(function (s) { return s.id === oldShelf; });
-    if (shelfAt < 0 || !shelves[shelfAt].movies.length) shelfAt = shelves[0].movies.length ? 0 : shelves[2].movies.length ? 2 : shelves[3].movies.length ? 3 : shelves[4].movies.length ? 4 : 2;
+    if (shelfAt < 0 || !shelves[shelfAt].movies.length) shelfAt = shelves[0].movies.length ? 0 : shelves[2].movies.length ? 2 : shelves[3].movies.length ? 3 : shelves[1].movies.length ? 1 : shelves[4].movies.length ? 4 : 2;
     var active = shelves[shelfAt];
     if (movie) { var at = active.movies.findIndex(function (m) { return m.id === movie.id; }); if (at >= 0) shelfPos[active.id] = at; }
     drawShelves(); hints();
@@ -304,7 +304,11 @@ var Media = (function () {
       var language = MediaStore.preferences().language;
       var list = MediaStore.movies(null).filter(function (m) { return m.metadata && (m.metadata.provider !== 'TMDB' || (m.metadata.requestedLanguage || m.metadata.language) !== language); });
       return list.length ? fetchDetails(list, language) : { updated: 0 };
-    });
+    }).then(function(result){return showDetails(false,result);});
+  }
+  function showDetails(force,result){
+    if(typeof MediaSeries==='undefined'||!MediaSeries.fetchDetails||result&&result.error)return Promise.resolve(result);
+    return MediaSeries.fetchDetails(force).then(function(shows){if(result)result.shows=shows;return result||shows;});
   }
   function updatePreferences(next) {
     var result = MediaStore.preferences(next);
@@ -334,7 +338,7 @@ var Media = (function () {
       if (!list.length) return { updated: 0 };
       note('info', 'Looking up details for ' + list.length + ' movie(s) on their own');
       return fetchDetails(list, MediaStore.preferences().language, true);
-    }).catch(function (e) { note('warn', 'Automatic movie details: ' + why(e)); return { error: why(e) }; });
+    }).then(function(result){return showDetails(false,result);}).catch(function (e) { note('warn', 'Automatic media details: ' + why(e)); return { error: why(e) }; });
   }
   function autoSoon(ms) { clearTimeout(autoTimer); autoTimer = setTimeout(function () { try { autoDetails(); } catch (e) { note('warn', 'Automatic movie details: ' + e.message); } }, ms || 3000); }
   var scanningAll = false;
@@ -358,9 +362,9 @@ var Media = (function () {
     return MediaStore.load().then(function () {
       var language = MediaStore.preferences().language;
       var list = MediaStore.movies(null).filter(function (m) { return !m.metadata || m.metadata.provider !== 'TMDB' || (m.metadata.requestedLanguage || m.metadata.language) !== language; });
-      if (!list.length) { U.toast('All movie details are up to date.'); return { updated: 0 }; }
+      if (!list.length) return { updated: 0 };
       return fetchDetails(list, language);
-    }).catch(function (e) { U.toast(why(e), 6000); });
+    }).then(function(result){return showDetails(true,result);}).catch(function (e) { U.toast(why(e), 6000); });
   }
   function sourceMenu(s) {
     if (!s) return;s=MediaStore.source(s.id)||s;
@@ -580,7 +584,7 @@ var Media = (function () {
   }
   function refreshSeries() {
     if (seriesLoading) return; seriesLoading = true;
-    Promise.all([ask('library/query',{kind:'show',limit:60},30000),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),ask('library/query',{kind:'show',favourite:true,limit:60},30000)]).then(function (results) {
+    Promise.all([ask('library/query',{kind:'show',favourite:false,limit:60},30000),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),ask('library/query',{kind:'show',favourite:true,limit:60},30000)]).then(function (results) {
       seriesCards = (results[0].items || []).map(function (r) { r.id = r.handle; return r; });
       reviewCards = (results[1].items || []).map(function (r) { r.id = r.handle; return r; });
       continuingShows = (results[2].items || []).map(function(r){r.id=r.handle;return r;});
@@ -599,7 +603,7 @@ var Media = (function () {
   }
 
   return {
-    changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
+    refreshShows:refreshSeries, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
     rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: play, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { addServer: addServer, addAddress: addAddress, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }

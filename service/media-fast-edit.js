@@ -21,6 +21,10 @@ function run(c,q,cb){
       }
       if(q.operation==='setWatched'&&family==='episodes')add(family,target.id,function(ep){watch(ep,!!q.watched);});
       else if(q.operation==='setFavourite')add(family,target.id,function(r){r.favourite=!!q.favourite;});
+      else if(q.operation==='markMetadataChecked'&&family==='shows'){
+        if(!/^(en|nl|de|fr|es|it)$/.test(q.language||'')||typeof q.startedAt!=='number'||!isFinite(q.startedAt)||q.startedAt<=0||q.startedAt>Date.now())return done(new Error('Choose a valid metadata check.'));
+        add(family,target.id,function(r){r.metadataCheckedAt=q.startedAt;r.metadataCheckLanguage=q.language;r.metadataMissAt=q.missed?Date.now():0;});
+      }
       else if(q.operation==='setPreferredVersion'&&family==='episodes'){
         if(!target.fileIds.some(function(id){return 'file_'+hash(id)===q.version;}))return done(new Error('Choose a version belonging to this episode.'));add(family,target.id,function(ep){ep.preferredVersion=q.version;});
       }else if(q.operation==='setMetadata'){

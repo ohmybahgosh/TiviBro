@@ -24,6 +24,7 @@ function lookup(client, q) { return new Promise((res, rej) => client.lookup(q, (
   const tvCalls = [];
   const tv = M.create({credential:'demo-token',read:(url,headers,cb) => {
     tvCalls.push(url);
+    if (url.includes('/search/tv')&&url.includes('query=Unknown')) return cb(null,{results:[{id:8,name:'Unknown',first_air_date:'2020-01-01'},{id:9,name:'Unknown',first_air_date:'2021-01-01'}]});
     if (url.includes('/search/tv')) return cb(null,{results:[{id:42,name:'Harbour',first_air_date:'2020-01-01'}]});
     if (url.includes('/episode_groups')) return cb(null,{results:[{id:'group_demo',type:2,name:'Absolute'}]});
     if (url.includes('/episode_group/')) return cb(null,{id:'group_demo',groups:[]});
@@ -31,6 +32,7 @@ function lookup(client, q) { return new Promise((res, rej) => client.lookup(q, (
     cb(null,{id:42,name:'Harbour',overview:'Show plot',first_air_date:'2020-01-01',seasons:[{season_number:1,episode_count:2,name:'Season 1'}]});
   }});
   const show = await lookup(tv,{kind:'tv',title:'Harbour',auto:true}); assert.equal(show.metadata.id,'tmdb:tv:42'); assert.equal(show.metadata.kind,'show');
+  const uncertain = await lookup(tv,{kind:'tv',title:'Unknown',auto:true});assert(!uncertain.metadata);assert.equal(uncertain.matches.length,2,'ambiguous TV matches require manual selection');
   const season = await lookup(tv,{id:'tmdb:tv:42',season:1}); assert.equal(season.metadata.episodes[0].id,'tmdb:tv:42:season:1:episode:2');
   assert.equal((await lookup(tv,{id:'tmdb:tv:42',groups:true})).groups[0].id,'group_demo');
   assert.equal((await lookup(tv,{id:'tmdb:tv:42',groupId:'group_demo'})).group.id,'group_demo');

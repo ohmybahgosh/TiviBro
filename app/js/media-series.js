@@ -3,6 +3,70 @@
 var MediaSeries = (function () {
   'use strict';
   var generation = 0, nextTimer = null, pageFocus = {};
+  var fetchingMetadata = false, metadataToken = '', metadataLanguage = '', queuedMetadata = false;
+  // Background work has its own lifetime: browsing seasons must not cancel it.
+  function fetchDetails(force) {
+    var token=MediaStore.tmdbToken(),language=MediaStore.preferences().language,started=Date.now(),updated=0,missed=0,lastHandle=null;
+    if(!token)return Promise.resolve({skipped:true});
+    if(fetchingMetadata){
+      if(token!==metadataToken||language!==metadataLanguage)queuedMetadata=true;
+      if(force)U.toast('Show details are already being fetched.');
+      return Promise.resolve({skipped:true});
+    }
+    fetchingMetadata=true;metadataToken=token;metadataLanguage=language;
+    function finish(){fetchingMetadata=false;metadataToken='';Media.refreshShows();if(queuedMetadata){queuedMetadata=false;setTimeout(function(){fetchDetails(false);},350);}}
+    function active(){if(MediaStore.tmdbToken()!==token||MediaStore.preferences().language!==language)throw new Error('Show details stopped because the token or language changed.');}
+    function call(route,q){
+      try{active();}catch(e){return Promise.reject(e);}
+      return Media.request(route,q,30000).then(function(r){active();if(r.error)throw new Error(r.message||'Could not fetch show details.');return r;});
+    }
+    function lookup(q){q.credential=token;q.language=language;return call('metadata',q);}
+    function detail(handle){return call('library/detail',{kind:'show',handle:handle});}
+    function save(handle,operation,fields,expectedId){
+      return detail(handle).then(function(current){
+        if((current.metadata&&current.metadata.id)!==expectedId)throw new Error('A show match changed.  Saved matches are kept; fetch details again.');
+        var q={handle:handle,operation:operation,expectedRevision:current.revision};Object.keys(fields).forEach(function(k){q[k]=fields[k];});return call('library/edit',q);
+      });
+    }
+    function process(item){
+      return detail(item.handle).then(function(show){
+        var id=show.metadata&&show.metadata.id,handle=show.handle;
+        var q=id?{id:id}:{kind:'tv',title:show.title,auto:true};
+        return lookup(q).then(function(result){
+          if(!result.metadata){missed++;return save(handle,'markMetadataChecked',{language:language,startedAt:started,missed:true},id);}
+          return save(handle,'setMetadata',{metadata:result.metadata},id).then(function(saved){
+            handle=saved.mergedInto||handle;id=result.metadata.id;
+            return detail(handle);
+          }).then(function(current){
+            var at=0;
+            function season(){
+              if(current.order!=='aired'||at>=current.buckets.length)return Promise.resolve();
+              var number=+current.buckets[at++].key;
+              return lookup({id:id,season:number}).then(function(r){
+                if(!r.metadata)throw new Error('Season details were unavailable.  Saved matches are kept.');
+                return save(handle,'setSeasonMetadata',{metadata:r.metadata},id);
+              }).then(season);
+            }
+            return season();
+          }).then(function(){return save(handle,'markMetadataChecked',{language:language,startedAt:started,missed:false},id);}).then(function(){updated++;});
+        });
+      });
+    }
+    function next(){
+      var q={kind:'show',metadataPending:true,language:language,limit:1};if(force)q.metadataSince=started;
+      return call('library/query',q).then(function(r){
+        if(!r.items.length)return;
+        if(r.items[0].handle===lastHandle)throw new Error('The media library changed while fetching details.  Try again after scanning finishes.');
+        lastHandle=r.items[0].handle;
+        return process(r.items[0]).then(function(){return new Promise(function(resolve){setTimeout(resolve,350);});}).then(next);
+      });
+    }
+    return next().then(function(){
+      finish();
+      if(updated||force)U.toast(updated+' shows updated.  '+missed+' need a manual match.',6000);
+      return {updated:updated,missed:missed};
+    },function(e){finish();if(force)U.toast(e.message,6000);else if(typeof Log!=='undefined'&&Log.warn)Log.warn('media','Automatic show details: '+e.message);return {updated:updated,error:e.message};});
+  }
   function request(route, q, done) {
     var expected = ++generation;
     Media.request('library/' + route, q, 30000).then(function (r) {
@@ -209,7 +273,7 @@ var MediaSeries = (function () {
       options.push({label:'Back',action:back}); UI.menu(r.metadata && r.metadata.title || r.title,options,back);
     });
   }
-  function open() { page('TV shows',{kind:'show',limit:60},show,Media.restore); }
+  function open() { page('TV shows',{kind:'show',favourite:false,limit:60},show,Media.restore); }
   function locate(item,back){
     page('Choose replacement file',{kind:'files',availableOnly:true,limit:60},function(replacement){
       request('edit',{operation:'relinkFile',handle:item.handle,target:replacement.handle,expectedRevision:item.revision,preview:true},function(preview){
@@ -285,5 +349,5 @@ var MediaSeries = (function () {
       });
     }
   };
-  return {excluded:excluded,resume:function(card){request('detail',{kind:'episode',handle:card.continueEpisode},function(ep){var v=ep.versions.filter(function(version){return version.handle===card.continueFile;})[0];if(v)playVersion(v,ep);else showEpisode(ep,open);});},showItem:show,correct:correct,recordCompletion:recordCompletion,phone:phone,open:open,review:review,completed:completed,leave:function () { generation++; if (Media.cancelPending) Media.cancelPending(); clearTimeout(nextTimer); nextTimer = null; }};
+  return {fetchDetails:fetchDetails,excluded:excluded,resume:function(card){request('detail',{kind:'episode',handle:card.continueEpisode},function(ep){var v=ep.versions.filter(function(version){return version.handle===card.continueFile;})[0];if(v)playVersion(v,ep);else showEpisode(ep,open);});},showItem:show,correct:correct,recordCompletion:recordCompletion,phone:phone,open:open,review:review,completed:completed,leave:function () { generation++; if (Media.cancelPending) Media.cancelPending(); clearTimeout(nextTimer); nextTimer = null; }};
 })();

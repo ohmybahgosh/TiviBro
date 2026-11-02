@@ -135,7 +135,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   ok('sources and their counts are available in Settings', /FritzBox Server/.test(await text('#setBody')) && /2 movies/.test(await text('#setBody')));
   await ev(() => Views.switchTab('media')); await page.waitForTimeout(300);
   ok('movie details fill the header', /Frozen/.test(await text('#mediaInfo')));
-  ok('three movie sections are shown', /Continue watching/.test(list) && /Favorites/.test(list) && /All movies/.test(list));
+  ok('three movie sections are shown', /Continue watching/.test(list) && /Favorites/.test(list) && /Movies/.test(list));
   ok('large poster tiles replace list rows', await ev(() => !!document.querySelector('.media-tile.sel') && document.querySelector('.media-tile.sel .media-art').getBoundingClientRect().width > 200));
   await shot('media-list');
 

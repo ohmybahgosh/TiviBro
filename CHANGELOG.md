@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **TV-show details load automatically.**  With your saved TMDB token, My media fetches show posters and owned season and episode details after scanning and at startup.  Yellow retries missing matches; saved matches are refreshed by ID and uncertain titles remain available for manual matching.
+- **My media favourites have their own shelf.**  Favourite movies and shows leave the general lists and return when removed from favourites.  Continue watching still keeps your unfinished titles handy.
 - **Clearer My media button hints.**  Red is labelled **Options** for its menu; Blue remains **Settings**.
 - **My media TV-show test build.**  Discover shows alongside movies, browse seasons and episodes, fetch show metadata, correct matches, and remember episode progress.  Includes chapter and multi-episode playback support.
 

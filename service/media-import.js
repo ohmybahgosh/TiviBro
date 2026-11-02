@@ -63,6 +63,7 @@ function run(c,sourceId,scan,cb){
       var key=file.groupKey||group(file),sid=file.showOverride||persistent[key]||'show_'+hash(key),show=newShows[sid];
       if(!show){show=newShows[sid]=oldShows[sid]||{id:sid,kind:'show',title:cls.showTitle,order:cls.order,createdAt:now};show.orphaned=false;show.sourceIds=[];}
       if(!file.showOverride)show.title=cls.showTitle;
+      if(file.sourceId===sourceId)show.metadataScanAt=now;
       if(show.sourceIds.indexOf(file.sourceId)<0)show.sourceIds.push(file.sourceId);
       var previousIds=file.episodeIds||[];file.episodeIds=[];var previousShow=file.showId;file.showId=sid;
       coords(cls).forEach(function(coordinate,index){

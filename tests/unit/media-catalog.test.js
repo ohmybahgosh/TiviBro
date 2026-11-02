@@ -11,6 +11,12 @@ function ep(n) { return {id:'w:/Harbour/S01E'+n+'.mkv',path:'/Harbour/S01E'+n+'.
   await call(catalog,'importScan','demo',{files:[ep(10),ep(2)],partial:false});
   const shows = await call(catalog,'query',{kind:'show'}); assert.equal(shows.total,1);
   const handle = shows.items[0].handle;
+  await call(catalog,'edit',{operation:'setFavourite',handle,expectedRevision:catalog.library.manifest.revision,favourite:true});
+  assert.equal((await call(catalog,'query',{kind:'show',favourite:false})).total,0,'favorites leave the general show list');
+  assert.equal((await call(catalog,'query',{kind:'show',favourite:true})).items[0].handle,handle,'favorites remain in the favorites list');
+  assert.equal((await call(catalog,'query',{kind:'show'})).total,1,'complete catalogue still includes favorites for editing and matching');
+  await call(catalog,'edit',{operation:'setFavourite',handle,expectedRevision:catalog.library.manifest.revision,favourite:false});
+  assert.equal((await call(catalog,'query',{kind:'show',favourite:false})).items[0].handle,handle,'removing favorite restores the show');
   const detail = await call(catalog,'detail',{kind:'show',handle}); assert.equal(detail.buckets[0].count,2);
   const episodes = await call(catalog,'query',{kind:'episode',show:handle,limit:1}); assert.equal(episodes.items[0].number,2); assert(episodes.nextCursor);
   const episode = await call(catalog,'detail',{kind:'episode',handle:episodes.items[0].handle}); assert.equal(episode.versions.length,1);

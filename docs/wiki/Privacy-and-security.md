@@ -36,6 +36,7 @@
 TiviBro talks to:
 
 - Your provider, and guide sources you add.
+- Media servers you add to **My media**.  With your saved TMDB token, movie and TV-show details are fetched at startup, after scans and when you choose **Fetch details**.  Titles and years or saved TMDB IDs, season numbers and your preferred language go to api.themoviedb.org; posters and episode pictures load from image.tmdb.org.  Source logins and playback links never go to TMDB.  Your token stays on the TV outside backups and problem reports.
 - The public guide sources (epg.pw and iptv-epg.org, and i.mjh.nz for Pluto TV channels), to fill in channels your provider has no guide for.  On by default; switch it off per playlist under **Settings > Playlists and guide > (your playlist) > Public guide fill-in**.  They see a request from your network for a country's guide, nothing from your playlist.
 - GitHub (api.github.com), to check for updates.
 - tivibro.app, for the daily install count below, the logo library when you turn it on, and problem reports only when you choose to send one.

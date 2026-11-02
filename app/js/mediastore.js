@@ -109,7 +109,7 @@ var MediaStore = (function () {
     continuing.sort(function (a, b) { return (state.resume[b.id].at || 0) - (state.resume[a.id].at || 0); });
     return [{ id: 'continue', title: 'Continue watching', movies: continuing },
       { id: 'favorites', title: 'Favorites', movies: all.filter(function (m) { return isFavorite(m.id); }) },
-      { id: 'all', title: 'All movies', movies: all }];
+      { id: 'all', title: 'Movies', movies: all.filter(function (m) { return !isFavorite(m.id); }) }];
   }
   // TMDB had no match for it (automatic lookups leave it alone for a week).
   function markMissed(id) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.tmdbMiss = Date.now(); return saveLib(); } return Promise.resolve(); }

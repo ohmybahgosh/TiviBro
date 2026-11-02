@@ -106,6 +106,12 @@ Catalog.prototype.query = function (q, cb) {
       if(q.kind==='extra'&&r.kind!=='extra')return;
       if(q.availableOnly&&r.availability!=='available')return;
       if(q.favourite&&!r.favourite)return;
+      if(q.favourite===false&&r.favourite)return;
+      if(q.metadataPending){
+        var checked=r.metadataCheckedAt||0,language=q.language||'en';
+        if(q.metadataSince){if(checked>=q.metadataSince&&r.metadataCheckLanguage===language)return;}
+        else if(r.metadataCheckLanguage===language&&((r.metadataMissAt&&Date.now()-r.metadataMissAt<604800000)||(r.metadata&&checked&&checked>=(r.metadataScanAt||0)&&(r.metadata.requestedLanguage||r.metadata.language)===language)))return;
+      }
       if (q.kind === 'movie' && r.kind !== 'movie') return;
       if (q.show && r.showId !== q.show) return;
       if (q.season != null && r.season !== q.season) return;
@@ -180,7 +186,7 @@ Catalog.prototype.edit = function (q, cb) {
     };metadataDone.command=cb.command;return catalog.edit(request,metadataDone);
   }
   if(/^(classifyFile|resetOverride)$/.test(q.operation))return require('./media-fast-edit').reclassify(this,q,cb);
-  if(/^(setWatched|setFavourite|setPreferredVersion|setMetadata|completeFile|setSeasonMetadata|setBoundaries)$/.test(q.operation))return require('./media-fast-edit').run(this,q,cb);
+  if(/^(setWatched|setFavourite|setPreferredVersion|setMetadata|completeFile|setSeasonMetadata|setBoundaries|markMetadataChecked)$/.test(q.operation))return require('./media-fast-edit').run(this,q,cb);
   if (/^(mergeShows|unmergeShows|setOrder|setEpisodeGroup|relinkFile)$/.test(q.operation)) return require('./media-grouping').run(this,q,cb);
   if (/^(previewCorrection|commitPreview|undoEdit)$/.test(q.operation)) return require('./media-corrections').run(this,q,cb);
   return cb(new Error('Unknown library edit.'));
