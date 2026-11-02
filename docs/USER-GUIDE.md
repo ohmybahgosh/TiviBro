@@ -423,6 +423,11 @@ In **Settings > My media**, choose a saved source for **Rescan**, **Fetch movie 
 
 **Movie details:** **Fetch movie details** looks up a source's movies on TMDB.  Create your own API key or API Read Access Token at [TMDB API settings](https://www.themoviedb.org/settings/api), then save it under **Settings > My media > TMDB API token**.  You can paste it in the web editor instead of typing with the remote.  The token is checked before saving, kept only on this TV, never sent back to the editor, and excluded from backups and problem reports.  Public builds contain no token.  Fetching details sends movie titles/years or saved movie IDs to TMDB.  Only an exact, unambiguous title/year match is saved automatically; use **Find movie details** or **Change movie details** in a movie's options to search and choose a match.  **Remove movie details** clears it.  Posters and backdrops load from image.tmdb.org.  Existing matches, including manually corrected matches, are refreshed by ID rather than searched again.  Details and poster addresses survive rescans and restarts.  With a token saved, movies without details or a poster are looked up on their own after each scan and when TiviBro starts; one TMDB can't match is left alone for a week (a manual fetch still tries).  **Test TMDB token** (in Settings and the web editor) asks TMDB whether the saved token still works.
 
+**Subtitles for movies and shows:** the subtitle menu (**Red** > **Subtitles** while playing) has **Find subtitles…**, which looks on [OpenSubtitles.com](https://www.opensubtitles.com) for what's playing, in your **Subtitle languages** (several at once, Latin American Spanish and Brazilian Portuguese included).  The search is filled in from the title and year, or the show, season and episode; change the title when the subtitle sites know it by another name.  Pick one from the list (the most downloaded first, with its frame rate and whether it's for the deaf and hard of hearing) and it's on.
+- It needs your own free API key: sign up at opensubtitles.com, then **Profile > API consumers > New consumer**, and paste the key in **Settings > Playback and buffering > Add your OpenSubtitles API key** (typing it from the phone app is easiest).  Without an account OpenSubtitles allows 5 downloads a day; **Sign in** with a free account for 20.  The key and login stay on the TV, out of backups.
+- **Timing** moves any subtitle a little earlier or later (0.1 s or 1 s at a time).
+- **Line up with another track…** fixes a subtitle that drifts or starts at the wrong time by matching it to one that's already in time (a built-in one, or another download, in any language).  It finds the shift and a frame-rate difference (23.976, 24 or 25 fps) and says how much it moved.
+
 Movies use the usual seek bar and subtitle menu.  Embedded SRT text subtitles in MKV files can appear when the file has a usable subtitle index.  ASS/SSA, image subtitles such as VobSub or PGS, MP4 timed text and separate `.srt` files are not included yet.  **Back** hides the player controls first, then returns to the same movie.  Series, folder picking, Search and phone app browsing are not included yet.
 
 Playback contacts servers you add and their playback servers.  Fetching details also contacts api.themoviedb.org with titles/years or saved movie IDs and the preferred language, never your source logins or playback links.  Previously saved Cinemeta posters may still load from images.metahub.space until those movies are refreshed.  Cloud playback links are resolved each time you play and are never saved.  After a long pause with an expired link, return to the shelves and resume.  The library uses the helper's persistent storage, so app restarts and updates keep it even when browser storage is full.  Source logins are outside playlist backups and problem reports; add the sources again after restoring on another TV.  Up to eight sources can be saved.
@@ -533,6 +538,13 @@ The watchlist needs the guide to know what's on: with an XMLTV guide it sees eve
 
 ### Parental controls
 
+**Content filter**, at the top of **Settings > Parental controls**, takes channels out of TiviBro altogether, no PIN needed: they never show in the guide, any list, Search, the phone app or the web editor.
+
+- **Hide adult channels** catches channels and groups named Adult, XXX, 18+, Porn, Erotic and the like, in several languages, and channels the provider marks as adult.  "Adult Swim" stays.  A new TV asks on the set-up tour's first screen, with **Yes** picked.
+- **Add a word or call sign…** hides every channel and group with that whole word in its name: a city's affiliates by call sign, shopping channels, a sports league you never watch.
+- While watching or in the guide, a channel's or group's options have **Hide with the content filter** (asked first).
+- Each word, channel and group is listed there with **Remove**, and **Left out of this playlist** says how many channels and groups the filter takes out.  Nothing is deleted: remove an entry and the channels come back.
+
 Set a PIN under **Settings > Parental controls**, then **Hold OK** on any channel or group and choose **Block channel** (or block a whole group from its options).  Decide whether the PIN guards blocked channels, Settings, or both, and whether it stays unlocked until TiviBro restarts.  **Lock now** locks it again straight away.  Blocked channels show **Locked** instead of their programme, and blocking the channel that's playing stops it.  All options: [Settings: Parental controls](#settings-parental-controls).
 
 <p align="center"><a href="media/parental.mp4"><img src="media/parental.gif" width="100%" alt="Setting a PIN, blocking a channel, and the PIN question"></a></p>
@@ -593,6 +605,9 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Subtitles automatically** | **Off** · Any language · English only · Spanish only · … | Turns subtitles on when a stream has them; with a language, only subtitles in that language.  You can still switch them from the quick menu. |
 | **Closed captions** | On · **Off** | Captions on live TV in fullscreen, when the channel sends them (most US channels do).  The same switch as **Captions** in the quick menu.  Not with the TV player. |
 | **Caption size** | Small · **Medium** · Large | |
+| **Subtitle languages** | English and others, several at once | The languages **Find subtitles** looks for, your first one listed first. |
+| **Add your OpenSubtitles API key** | | Your free key from opensubtitles.com (Profile > API consumers).  Kept on this TV, out of backups. |
+| **Sign in (optional)** | | Your OpenSubtitles account: 20 downloads a day instead of 5.  Kept on this TV only. |
 | **Play next episode automatically** | **On** · Off | When an episode ends, the next one starts. |
 
 **Subtitles in MKV movies and episodes.**  Open **Subtitles** from the player menu to choose a language or **Off**.  The menu is available as soon as playback starts and shows **Finding subtitles…** while tracks are discovered.  The automatic subtitle language setting above also applies.  Supported embedded SRT tracks appear with their language names, and your selection survives seeking and reconnects.  Files without supported tracks show an unavailable message; styled ASS/SSA and bitmap subtitles are not supported.  Some MKV files do not index their subtitle tracks and cannot expose them here.
@@ -836,6 +851,9 @@ A 4-digit PIN for blocked channels and groups, and optionally for Settings.  See
 
 | Setting | Choices | What it does |
 |---|---|---|
+| **Hide adult channels** | On · Off | Content filter: channels and groups with adult words in their names, in several languages, and those the provider marks adult, are left out of everything.  No PIN needed.  On for a new TV (the set-up tour asks). |
+| **Add a word or call sign…** | | Content filter: every channel and group with that whole word in its name.  Each word, and each channel or group hidden with the filter, is listed with **Remove**. |
+| **Left out of this playlist** | | How many channels and groups the filter takes out. |
 | **Set a PIN** / **Change PIN** | | Choose a 4-digit PIN (typed twice).  Changing it asks for the current one first.  Type with the number keys, or pick each digit with **▲ ▼**. |
 | **PIN required for** | **Blocked channels** · Settings · Both | What the PIN guards. |
 | **Stay unlocked until the app restarts** | **On** · Off | On: after the PIN once, it isn't asked again until TiviBro restarts.  Off: asked every time. |
@@ -882,7 +900,13 @@ The TiviBro app for Android is a remote and a second screen for this TV.  Pair a
 - **Movies** and **Shows**: the TV's own lists (its languages, hidden categories and PIN) as posters.  Search, pick a category, and open a title: **Resume on TV**, **From the start**, or a show's season and episode.
 - **Settings**: every page of TiviBro's Settings on the TV, the same switches and choices, changed on the TV at once.  Buttons (like **Reload channels now**) run on the TV, and a box they open can be typed into from the phone.  When the TV's Settings are locked with a PIN, the phone asks for it.
 - **Edit channels**: the [web editor](#turning-on-the-web-editor) full screen, already signed in.
-- **Backups** (in the **⋮** menu of each TV): **Back up now**, and a backup every week on its own while TiviBro is open on the TV and the phone is on your Wi-Fi.  Backups stay on the phone, encrypted.  Put one back on this TV or another paired TV, or **Save a copy as a file** with a passphrase, which the web editor's Backup and restore can restore on any TV.
+- **Backups** (in the **⋮** menu of each TV): **Back up now**, and a backup every week on its own while TiviBro is open on the TV and the phone is on your Wi-Fi.  Backups stay on the phone, encrypted.  Put one back on this TV or another paired TV, or **Save a copy as a file** with a passphrase, which the web editor's Backup and restore can restore on any TV.  The newest 8 automatic backups are kept; named, copied and edited ones stay until you delete them.
+- **Working on backups without the TV** (each backup's **⋮** menu).  Every one of these makes a new backup and leaves the one you started from alone:
+  - **Edit channels on the phone** opens the web editor on the phone with that backup: groups, names, hiding, Smart clean-up and guide matches, with draft history.  **Save** keeps your changes; leaving asks whether to **Keep** them as a new backup.  It uses the channel list the phone kept the last time you opened **Edit channels** with that TV, so open it with the TV once first.  Adding playlists, guide sources and My media still need the TV.
+  - **Change settings**: start screen, text size, guide row size, clock, channel numbers, closed captions, hiding adult channels and more.
+  - **Name it**, **Duplicate**, and **Add playlists from another backup** (the playlists, with their edits, that this one doesn't have).
+  - **Delete** asks twice.
+  - Then **Restore** the new backup on the TV when you're ready.
 - **Add a playlist from a link**: in your provider's email or message, choose **Share**, then **TiviBro**.  The app says what it found (the password stays hidden), you pick the TV, and the TV checks the login and loads the channels.
 
 The app also turns the TV on (Wake-on-LAN) and has a Quick Settings tile that opens TiviBro on the TV.

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Content filter** (discussion #20): **Settings > Parental controls > Content filter** takes channels out of everything, the guide, lists, Search, the phone app and the web editor, with no PIN.  **Hide adult channels** knows the usual words in several languages (and leaves "Adult Swim" alone); add your own words and call signs; and **Hide with the content filter** is in a channel's or group's options while watching or in the guide.  A new TV asks on the set-up tour's first screen, before any channels show.
+- **Find subtitles for movies and shows** (discussion #19): **Subtitles > Find subtitles…** looks on OpenSubtitles.com for what's playing, in your subtitle languages, with your own free API key.  **Timing** moves a subtitle earlier or later, and **Line up with another track** fixes one that's off by matching it to one in time, frame rate included.
+- **Phone app: backups without the TV** (discussion #23): edit a backup's channels in the web editor right on the phone, change settings inside a backup, name, duplicate, merge and delete backups (delete asks twice).  Each makes a new backup to restore on the TV when you're ready.
 - **Closed captions on live TV.**  **Captions** in the quick menu (OK in fullscreen) turns them on or off for every channel, like a TV's CC button; also **Settings > Playback and buffering > Closed captions**, with a caption size.  TiviBro reads the CEA-608 captions US channels carry in the video and draws them over the picture in fullscreen, in time with it (pop-on, roll-up and paint-on).  Stream info says whether the channel has any.  Not with the TV player.
 - **Guide row size** (Settings > Guide, start screen, reminders): Bigger and Biggest, a little taller rows with bigger names and titles, for smaller TVs or reading from across the room.
 - **Bigger movie posters** in the guide's details.
