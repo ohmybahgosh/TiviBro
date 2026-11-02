@@ -890,7 +890,7 @@ var Views = (function () {
     clearTimeout(vs.t); vs.t = setTimeout(vodSeekCommit, 650);
     osd(true);
   }
-  function vodSeekCommit() { clearTimeout(vs.t); if (vs.pending == null) return; var t = vs.pending; vs.pending = null; Player.seekTo(t); osd(true); }
+  function vodSeekCommit() { clearTimeout(vs.t); if (vs.pending == null) return; var t = vs.pending; vs.pending = null; if (vod && vod.meta.local && Media.seeking) Media.seeking(t); Player.seekTo(t); osd(true); }
   function vodSeekCancel() { clearTimeout(vs.t); vs.pending = null; vs.n = 0; osd(true); }
   // Magic Remote: click anywhere on the progress bar to jump there.
   $('osdBar').parentNode.addEventListener('click', function (e) {
@@ -1585,7 +1585,7 @@ var Views = (function () {
     var items = [];
     if (mode === 'live' && playing) items = items.concat(chanItems(playing, curGroup));
     if (mode === 'catchup') items.push({ label: 'Back to live', action: backToLive });
-    if (mode === 'vod' && vod) items.push({ label: 'Restart from beginning', action: function () { Player.seek(-1e7); } });
+    if (mode === 'vod' && vod) items.push({ label: 'Restart from beginning', action: function () { if (vod.meta.local && Media.seeking) Media.seeking(0); Player.seek(-1e7); } });
     var tracks = Player.audioTracks();
     if (tracks.length > 1) items.push({ label: 'Audio track', sub: (tracks.filter(function (t) { return t.on; })[0] || {}).label, action: audioMenu });
     items.push({ label: 'Picture size', sub: DM[Player.displayFor(mode === 'live' ? playing : null)], action: pictureMenu });
@@ -1665,7 +1665,7 @@ var Views = (function () {
 
   return {
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
-    closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, playVod: playVod,
+    closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
     manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     filterChanged: filterChanged,
     get group() { return curGroup; }, set group(g) { curGroup = g; },

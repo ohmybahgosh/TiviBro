@@ -1,0 +1,22 @@
+'use strict';
+const fs=require('fs'),os=require('os'),path=require('path'),assert=require('assert'),Catalog=require('../../service/media-catalog').Catalog,C=require('../../service/media-classify');
+const root=fs.mkdtempSync(path.join(os.tmpdir(),'tivibro-grouping-'));
+const call=(o,m,...args)=>new Promise((resolve,reject)=>o[m](...args,(e,r)=>e?reject(e):resolve(r)));
+const file=()=>({id:'w:/Harbour.S01E02.mkv',file:'Harbour.S01E02.mkv',kind:'episode',classification:C.classify({basename:'Harbour.S01E02.mkv'}),ancestors:[]});
+(async()=>{try{
+const c=new Catalog(root);await call(c,'open');await call(c,'importScan','a',{files:[file()]});await call(c,'importScan','b',{files:[file()]});
+let shows=await call(c,'query',{kind:'show'});assert.equal(shows.total,2,'title alone never merges sources');
+const source=shows.items[0].handle,target=shows.items[1].handle;
+let eps=await call(c,'query',{kind:'episode',show:source});await call(c,'edit',{operation:'setWatched',handle:eps.items[0].handle,expectedRevision:eps.revision,watched:true});
+const preview=await call(c,'edit',{operation:'mergeShows',handle:source,target,expectedRevision:c.library.manifest.revision,preview:true});assert.equal(preview.count,1);assert.equal((await call(c,'query',{kind:'show'})).total,2);
+await call(c,'edit',{operation:'mergeShows',handle:source,target,expectedRevision:c.library.manifest.revision});
+shows=await call(c,'query',{kind:'show'});assert.equal(shows.total,1);
+eps=await call(c,'query',{kind:'episode',show:target});assert.equal(eps.total,1);assert.equal(eps.items[0].versionCount,2);assert.equal(eps.items[0].watchState,'watched');
+const merge=shows.items[0].mergedFrom[0].operation;
+await call(c,'edit',{operation:'unmergeShows',handle:target,mergeHandle:merge,expectedRevision:c.library.manifest.revision});
+assert.equal((await call(c,'query',{kind:'show'})).total,2);
+eps=await call(c,'query',{kind:'episode',show:source});assert.equal(eps.items[0].watchState,'watched');
+await call(c,'edit',{operation:'setOrder',handle:source,order:'custom',mapping:[{episode:eps.items[0].handle,position:0}],expectedRevision:c.library.manifest.revision});
+assert.equal((await call(c,'detail',{kind:'show',handle:source})).displayOrder,'custom');
+console.log('PASS explicit merge preview, versions, watched preservation, unmerge and custom order mapping');
+}finally{fs.rmSync(root,{recursive:true,force:true});}})().catch(e=>{console.error(e);process.exitCode=1;});

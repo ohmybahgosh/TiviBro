@@ -149,6 +149,32 @@ function webdav(tree, auth, redirectTo, seen) {
   ok('the password is not in the answer', JSON.stringify(r).indexOf('wrong') < 0);
   wsrv.close();
 
+  // Opt-in mixed discovery traverses season folders and retains small episodes.
+  const discoveryTree = {
+    '/Library/': [{href:'/Library/Harbour/', name:'Harbour', dir:true}, {href:'/Library/Amber.2021.mkv', name:'Amber.2021.mkv',size:200000000}],
+    '/Library/Harbour/': [{href:'/Library/Harbour/Season1/',name:'Season 1',dir:true}],
+    '/Library/Harbour/Season1/': [{href:'/Library/Harbour/Season1/Episode02.mkv',name:'Episode 02.mkv',size:1000}]
+  };
+  const mixedServer = webdav(discoveryTree, 'demo:demo'); const mixedPort = await listen(mixedServer);
+  const mixedSource = {type:'webdav',address:'http://127.0.0.1:'+mixedPort+'/Library/',user:'demo',pass:'demo',contentMode:'automatic'};
+  const mixedResult = await scan(mixedSource);
+  ok('automatic discovery keeps movies and small episodes', mixedResult.files.length === 2 && mixedResult.movies.length === 1);
+  const episode = mixedResult.files.filter(f => f.kind === 'episode')[0];
+  ok('WebDAV discovery carries full ancestry', episode.classification.showTitle === 'Harbour' && episode.classification.season === 1 && episode.classification.numbers[0] === 2);
+  const showsOnly = await scan(Object.assign({},mixedSource,{contentMode:'shows'}));
+  ok('shows mode does not leak episodes into legacy movie list', showsOnly.movies.length === 0 && showsOnly.files.some(f => f.kind === 'episode'));
+  let chunk = await scan(Object.assign({},mixedSource,{scanFolderBudget:1}));
+  ok('a budget pause retains a continuation',chunk.partial && chunk._continuation && chunk._continuation.queue.length);
+  let slices=0;
+  while(chunk._continuation && slices++<10) chunk=await scan(Object.assign({},mixedSource,{scanFolderBudget:1,_continuation:chunk._continuation}));
+  ok('resuming scan budgets eventually completes without duplicate records',!chunk.partial && chunk.files.length===2 && slices<10);
+  await new Promise(f => mixedServer.close(f));
+  const seriesTree = {0:[{dir:'TV Shows',id:'tv'}],tv:[{dir:'Harbour',id:'show'}],show:[{dir:'Season 1',id:'season'}],season:[{id:'ep',title:'Episode 02.mkv',url:'http://127.0.0.1/episode.mkv',proto:MKV,size:1000}]};
+  const seriesServer = dlna(seriesTree); const seriesPort = await listen(seriesServer);
+  const seriesResult = await scan({type:'dlna',control:'http://127.0.0.1:'+seriesPort+'/ctl',contentMode:'automatic'});
+  ok('DLNA traverses TV views in automatic mode', seriesServer.browsed.indexOf('season') >= 0 && seriesResult.files.length === 1);
+  await new Promise(f => seriesServer.close(f));
+
   // Signed links
   const cdnSeen = [];
   const cdn = http.createServer((q, s) => { cdnSeen.push(q.headers.authorization); s.writeHead(206); s.end('x'); });

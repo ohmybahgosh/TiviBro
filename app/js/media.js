@@ -8,10 +8,11 @@
 var Media = (function () {
   'use strict';
   var $ = U.$;
-  var built = false, playingMeta = null, scanning = {}, playToken = 0, loaded = null;
+  var built = false, playingMeta = null, scanning = {}, scanRuns = {}, pausedScans = {}, playToken = 0, loaded = null, progressTimer = null;
 
   /* ---------- helper ---------- */
   function ask(route, body, ms) {
+    if(route==='library/edit'&&!body.idempotencyKey)body.idempotencyKey='edit_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
     if (!Net.port) return Promise.reject(new Error('The TiviBro helper is not running.  Close TiviBro and open it again.'));
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
     return new Promise(function (resolve, reject) {
@@ -22,15 +23,16 @@ var Media = (function () {
         .then(function (r) { return r.json(); }).then(function (j) { finish(null, j); }, function () { finish(new Error('Could not reach the media helper.  Please try again.')); });
     });
   }
-  function scanSource(source) { return MediaStore.load().then(function () { return ask('scan', { source: source }, 150000); }); }
+  function scanSource(source,restart) { return MediaStore.load().then(function () { return ask('scan', { source: source, restart:!!restart }, 150000); }); }
 
   function why(e) { return (e && e.message) || 'That did not work.'; }
 
   /* ---------- poster shelves ---------- */
+  var seriesCards = [], reviewCards = [], continuingShows = [], favouriteShows = [], seriesLoading = false;
   var shelves = [], shelfAt = 2, shelfPos = {}, shelfViews = [], posterQueue = [], posterBusy = 0;
   var TILE_STEP = 260, TILE_POOL = 7;
   var itemsVL = { current: function () { var s = shelves[shelfAt]; return s && s.movies[shelfPos[s.id] || 0]; }, refresh: function () { refresh(); } };
-  function label(m) { return m.title + (m.year ? ' (' + m.year + ')' : ''); }
+  function label(m) { return (m.title || m.label || '') + (m.year ? ' (' + m.year + ')' : ''); }
   function size(n) { return n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n >= 1e6 ? Math.round(n / 1e6) + ' MB' : ''; }
   function fileInfo(m) { return (m.info || []).concat(m.ext ? [String(m.ext).toUpperCase()] : []).join('   '); }
   function pumpPosters() {
@@ -62,8 +64,8 @@ var Media = (function () {
   function showInfo() {
     var m = itemsVL.current(), box = $('mediaInfo'); box.innerHTML = '';
     if (!m) {
-      box.appendChild(U.el('h1', '', 'Your movies, your space'));
-      box.appendChild(U.el('p', 'media-summary', MediaStore.sources().length ? 'No movies in this source yet.  Rescan it from Settings › My media.' : 'Add a media server in Settings › My media to start your library.  Movies only for now: TV shows, trailers and extras are left out.'));
+      box.appendChild(U.el('h1', '', 'Your media, your space'));
+      box.appendChild(U.el('p', 'media-summary', MediaStore.sources().length ? 'No movies in this source yet.  Press red for TV shows, or rescan from Settings › My media.' : 'Add a media server in Settings › My media to start your library.'));
       return;
     }
     var md = m.metadata || {}, src = MediaStore.source(m.src), r = MediaStore.resume(m.id);
@@ -96,8 +98,8 @@ var Media = (function () {
         slot.el._at = i; slot.el._row = row; cover(slot, m);
         slot.el.classList.toggle('sel', row === shelfAt && i === at);
         slot.el.setAttribute('aria-label', label(m));
-        var r = MediaStore.resume(m.id); slot.progress.style.width = r && r.dur ? Math.min(100, 100 * r.pos / r.dur) + '%' : '0%';
-        slot.favorite.textContent = MediaStore.isFavorite(m.id) ? '★' : '';
+        var r = MediaStore.resume(m.id); slot.progress.style.width = m.progressPercent != null ? m.progressPercent + '%' : r && r.dur ? Math.min(100, 100 * r.pos / r.dur) + '%' : '0%';
+        slot.favorite.textContent = (m.favourite || MediaStore.isFavorite(m.id)) ? '★' : '';
       }
       view.pool.forEach(function (slot, n) { if (!used[n]) { slot.el.style.display = 'none'; slot.art.innerHTML = ''; slot.key = ''; } });
       y += s.movies.length ? 440 : 100;
@@ -110,9 +112,10 @@ var Media = (function () {
     if (typeof Settings !== 'undefined' && Settings.live) Settings.live();
     if (!built || $('viewMedia').classList.contains('hidden') || document.body.classList.contains('full')) return;
     var movie = itemsVL.current(), oldShelf = shelves[shelfAt] && shelves[shelfAt].id;
-    shelves = MediaStore.sections(null);
+    shelves = MediaStore.sections(null); shelves[0].movies = shelves[0].movies.concat(continuingShows);shelves[1].movies=shelves[1].movies.concat(favouriteShows);
+    shelves = shelves.concat([{id:'shows',title:'TV shows',movies:seriesCards},{id:'review',title:'Needs review',movies:reviewCards}]);
     if (oldShelf) shelfAt = shelves.findIndex(function (s) { return s.id === oldShelf; });
-    if (shelfAt < 0 || !shelves[shelfAt].movies.length) shelfAt = shelves[0].movies.length ? 0 : 2;
+    if (shelfAt < 0 || !shelves[shelfAt].movies.length) shelfAt = shelves[0].movies.length ? 0 : shelves[2].movies.length ? 2 : shelves[3].movies.length ? 3 : shelves[4].movies.length ? 4 : 2;
     var active = shelves[shelfAt];
     if (movie) { var at = active.movies.findIndex(function (m) { return m.id === movie.id; }); if (at >= 0) shelfPos[active.id] = at; }
     drawShelves(); hints();
@@ -131,20 +134,26 @@ var Media = (function () {
   }
   function found(id, name, r, res) {
     var more = leftOut(res && res.skipped);
-    U.toast((r.note || MediaStore.movies(id).length + ' movies on ' + name + '.') + more, r.note || more ? 8000 : 3000);
+    U.toast((r.note || MediaStore.movies(id).length + ' movies'+(res&&res.episodeFiles?' and '+res.episodeFiles+' episode files':'')+' on ' + name + '.') + more, r.note || more ? 8000 : 3000);
   }
-  function rescan(id) {
+  function rescan(id,restart) {
     var src = MediaStore.source(id);
     if (!src || scanning[id]) return Promise.resolve({ error: 'busy', message: !src ? 'That media source was removed.' : 'This source is already being scanned.' });
-    scanning[id] = 1; refresh();
+    scanning[id] = 1;pausedScans[id]=false; refresh();
     U.toast('Looking for movies on ' + src.name + '…');
-    return scanSource(src).then(function (res) {
+    function slice(first){return scanSource(src,first&&restart).then(function (res) {
       var r = MediaStore.applyScan(id, res);
-      delete scanning[id]; refresh();
+      if(res.resumable&&!res.error&&!pausedScans[id]&&!document.hidden&&MediaStore.source(id)){refreshSeries();refresh();U.toast('Scan saved.  Continuing '+src.name+'…');return new Promise(function(resolve){setTimeout(function(){resolve(slice(false));},500);});}
+      delete scanning[id]; refreshSeries(); refresh();
       found(id, src.name, r, res);
       if (!scanningAll) autoSoon();
       return { error: res.error || '', message: res.message || '', kept: r.kept, note: r.note, count: MediaStore.movies(id).length, skipped: res.skipped || null };
-    }, function (e) { delete scanning[id]; refresh(); U.toast('Could not read ' + src.name + ': ' + why(e), 6000); return { error: 'helper' }; });
+    }, function (e) { delete scanning[id]; refresh(); U.toast('Could not read ' + src.name + ': ' + why(e), 6000); return { error: 'helper' }; });}
+    var job=slice(true);scanRuns[id]=job;job.then(function(){if(scanRuns[id]===job)delete scanRuns[id];},function(){if(scanRuns[id]===job)delete scanRuns[id];});return job;
+  }
+  function changeSourceMode(id,mode){
+    MediaStore.sourceMode(id,mode);pausedScans[id]=true;var old=scanRuns[id]||Promise.resolve();
+    return ask('library/source',{action:'configure',sourceId:id,contentMode:mode},30000).then(function(r){if(r.error)throw new Error(r.message);if(scanning[id])ask('scan/control',{sourceId:id},15000).catch(function(){});return old;}).then(function(){return rescan(id,true);});
   }
   function addServer(server) {
     var id;
@@ -166,7 +175,7 @@ var Media = (function () {
   // A new login is checked by scanning before anything is saved.
   function addAddress(address, user, pass) {
     address = String(address || '').trim();
-    var source = { type: 'webdav', address: address, user: String(user || '').trim(), pass: String(pass || '').trim() };
+    var source = { contentMode: 'automatic', type: 'webdav', address: address, user: String(user || '').trim(), pass: String(pass || '').trim() };
     U.toast('Checking ' + nameFor(address) + '…');
     return scanSource(source).then(function (res) {
       if (res.error) { U.toast(res.message, 6000); return { error: res.error, message: res.message }; }
@@ -174,6 +183,7 @@ var Media = (function () {
       var id;
       try { id = MediaStore.addSource(source); } catch (e) { U.toast(e.message, 5000); return { error: 'full', message: e.message }; }
       var r = MediaStore.applyScan(id, res);
+      if (res.scanHandle) ask('library/adopt', {sourceId:id,scanHandle:res.scanHandle},30000).then(function (saved) { if (saved.error) U.toast(saved.message,6000); refreshSeries(); refresh(); }, function (e) { U.toast(why(e),6000); });
       refresh();
       found(id, source.name, r, res);
       autoSoon();
@@ -181,15 +191,15 @@ var Media = (function () {
     }, function (e) { U.toast(why(e), 6000); return { error: 'helper', message: why(e) }; });
   }
   function askAddress() {
-    UI.prompt('WebDAV address of your movies folder', '', function (address) {
+    UI.prompt('WebDAV address of your media folder', '', function (address) {
       if (!address.trim()) return;
       UI.prompt(/premiumize/i.test(address) ? 'Customer ID' : 'User name or customer ID', '', function (user) {
         UI.prompt(/premiumize/i.test(address) ? 'API key' : 'Password or API key', '', function (pass) { addAddress(address, user, pass); });
       });
-    }, 'Movies only for now: TV shows, trailers and extras are left out.  Point it at your movies folder, for example https://webdav.premiumize.me/Movies/');
+    }, 'Files can be in this folder or its subfolders.  Movies and TV shows are recognised from their names.');
   }
   function addMenu() {
-    UI.menu('Add movies (movies only for now)', [
+    UI.menu('Add media', [
       { label: 'Browse my network (DLNA / UPnP)', sub: 'Find a home media server with media sharing turned on', action: browseNetwork },
       { label: 'Add a WebDAV server', sub: 'Enter your movies folder\'s address and login, or use the web editor', action: askAddress }
     ]);
@@ -353,12 +363,17 @@ var Media = (function () {
     }).catch(function (e) { U.toast(why(e), 6000); });
   }
   function sourceMenu(s) {
-    if (!s) return;
+    if (!s) return;s=MediaStore.source(s.id)||s;
     UI.menu(s.name, [
+      scanning[s.id]&&{label:'Pause scan',action:function(){pausedScans[s.id]=true;ask('scan/control',{sourceId:s.id},15000).then(function(){U.toast('Scan will pause after the current request.');});}},
+      !scanning[s.id]&&{label:'Restart scan',action:function(){rescan(s.id,true);}},
       { label: 'Fetch movie details', sub: 'TMDB · uses your saved API token', action: function () { sourceDetails(s); } },
+      { label: 'Content: ' + (s.contentMode || 'movies'), action: function () { UI.menu('Source content', ['automatic','movies','shows'].map(function (mode) { return {label:mode === 'automatic' ? 'Movies and TV shows' : mode === 'movies' ? 'Movies only' : 'TV shows only',action:function () { changeSourceMode(s.id,mode).catch(function(e){U.toast(why(e),6000);}); }}; })); } },
+      { label:'Review excluded files',action:function(){MediaSeries.excluded();} },
+      { label: 'TV shows', action: function () { MediaSeries.open(); } },
       { label: 'Rescan', sub: 'Look for added or removed movies', action: function () { rescan(s.id); } },
       { label: 'Remove', sub: 'Your files stay where they are', action: function () {
-        UI.confirm('Remove ' + s.name + ' from My media?', 'Remove', function () { MediaStore.load().then(function () { MediaStore.removeSource(s.id); refresh(); U.toast(s.name + ' removed'); }); });
+        UI.confirm('Remove ' + s.name + ' from My media?', 'Remove', function () { MediaStore.load().then(function () { MediaStore.removeSource(s.id); ask('library/source',{sourceId:s.id,action:'remove'},30000).then(function(){refresh();UI.menu(s.name+' removed',[{label:'Undo removal',action:function(){if(MediaStore.restoreSource(s.id))ask('library/source',{sourceId:s.id,action:'activate'},30000).then(function(){refresh();});}},{label:'Done'}]);},function(e){U.toast(why(e),6000);}); }); });
       } }
     ]);
   }
@@ -366,12 +381,20 @@ var Media = (function () {
   /* ---------- playback ---------- */
   function play(m, fromStart) {
     if (!m) return;
-    var token = ++playToken, r = MediaStore.resume(m.id);
-    var startAt = !fromStart && r && r.pos > 30 && r.pos < r.dur - 60 ? r.pos - 5 : 0;
+    if (m.continueEpisode) return MediaSeries.resume(m);
+    if (m.kind === 'show') return MediaSeries.showItem(m,restore);
+    if (m.review && m.review.length) return MediaSeries.correct(m,restore);
+    if (typeof MediaSeries !== 'undefined') MediaSeries.leave();
+    var token = ++playToken, r = MediaStore.resume(m.resumeKey || m.id);
+    var startAt = !fromStart && r && r.pos > (m.kind === 'episode' ? 5 : 30) && r.pos < r.dur - (m.kind === 'episode' ? 1 : 60) ? Math.max(0,r.pos - 5) : 0;
+    if (m.startSec != null && (startAt < m.startSec || (m.endSec != null && startAt >= m.endSec))) startAt = m.startSec;
     function go(url) {
-      if (token !== playToken || $('viewMedia').classList.contains('hidden') || document.body.classList.contains('nav-open')) return;   // moved on while waiting: nothing starts by itself
-      playingMeta = { id: m.id, media: null, title: label(m), sub: m.year || '', item: m, local: true };
-      Views.playVod(playingMeta, url, startAt, function () { open(true); });
+      if (token !== playToken || !MediaStore.source(m.src) || $('viewMedia').classList.contains('hidden') || document.body.classList.contains('nav-open')) return;   // moved on while waiting: nothing starts by itself
+      playingMeta = { id: m.resumeKey || m.id, media: null, title: label(m), sub: m.year || '', item: m, local: true, lastPos:startAt,lastAt:Date.now(),continuous:0,session:Date.now()+'_'+token,startedAt:Date.now(),sequence:0 };
+      m.playStartedAt=playingMeta.startedAt;
+      clearInterval(progressTimer);
+      if (m.kind === 'episode') progressTimer = setInterval(function () { checkpoint(true); if (playingMeta && !playingMeta.boundaryPending && playingMeta.item.endSec != null && Player.position >= playingMeta.item.endSec) boundary(); },1000);
+      Views.playVod(playingMeta, url, startAt, function () { open(true);if(m.returnTo)m.returnTo(); });
     }
     if (m.url) return go(m.url);
     var src = MediaStore.source(m.src);
@@ -384,13 +407,58 @@ var Media = (function () {
       go(res.url);
     }, function (e) { if (token === playToken) U.toast('Could not open that movie: ' + why(e), 6000); });
   }
-  function checkpoint() { if (playingMeta) MediaStore.saveResume(playingMeta.id, Player.position, Player.duration); }
-  function stopped() { if (!playingMeta) return; checkpoint(); playingMeta = null; }
+  function checkpoint(sample) {
+    if (!playingMeta) return;
+    if (playingMeta.item.kind === 'episode') {
+      var now = Date.now(), delta = Player.position - playingMeta.lastPos, elapsed = (now - playingMeta.lastAt) / 1000;
+      if (delta > 0 && delta <= elapsed * 1.5 + 2) playingMeta.continuous += Math.min(delta,elapsed);
+      else if (delta < -1 || delta > elapsed * 1.5 + 2) playingMeta.continuous = 0;
+      playingMeta.lastPos = Player.position; playingMeta.lastAt = now;
+      if (!sample || !playingMeta.lastSaved || now - playingMeta.lastSaved >= 10000) { MediaStore.saveEpisodeResume(playingMeta.id,Player.position,Player.duration); playingMeta.lastSaved = now;
+        if(Player.duration>0)ask('library/progress',{handle:playingMeta.item.id,position:Player.position,duration:Player.duration,session:playingMeta.session,startedAt:playingMeta.startedAt,sequence:++playingMeta.sequence},15000).catch(function(){});
+      }
+    } else MediaStore.saveResume(playingMeta.id, Player.position, Player.duration);
+  }
+  function boundary(){
+    if(!playingMeta||playingMeta.boundaryPending)return;
+    var meta=playingMeta,file=meta.item,length=(file.endSec||Player.duration)-(file.startSec||0);
+    if(meta.continuous<Math.min(30,length*0.1))return ended();
+    meta.boundaryPending=true;clearInterval(progressTimer);progressTimer=null;Player.setPaused(true);checkpoint();
+    function stop(){if(playingMeta!==meta)return;playingMeta=null;Views.stopAll();open(true);}
+    MediaSeries.completed(file,{
+      stop:stop,
+      cancel:function(){stop();if(file.returnTo)file.returnTo();},
+      continue:function(ep,range){
+        if(playingMeta!==meta)return;
+        file.episodeHandle=ep.handle;file.showId=ep.showId;file.number=ep.number;file.season=ep.season;file.order=ep.order;file.startSec=range.startSec;file.endSec=range.endSec;file.segmented=true;file.libraryRevision=ep.revision;file.playStartedAt=Date.now();
+        file.returnTo=ep.originPage||file.returnTo;
+        file.title=(ep.metadata&&ep.metadata.title||ep.title||'Episode')+'  '+(ep.label||'');
+        meta.title=file.title;meta.continuous=0;meta.lastPos=Player.position;meta.lastAt=Date.now();meta.boundaryPending=false;
+        if(Player.position<range.startSec||Player.position>range.startSec+2)Player.seekTo(range.startSec);
+        Player.setPaused(false);if(Views.refreshVodMeta)Views.refreshVodMeta();
+        progressTimer=setInterval(function(){checkpoint(true);if(playingMeta&&!playingMeta.boundaryPending&&playingMeta.item.endSec!=null&&Player.position>=playingMeta.item.endSec)boundary();},1000);
+      }
+    });
+  }
+  function stopped() {
+    clearInterval(progressTimer); progressTimer = null;if(typeof MediaSeries!=='undefined')MediaSeries.leave(); if (!playingMeta) return; checkpoint();
+    var item = playingMeta.item, length = (item.endSec || Player.duration) - (item.startSec || 0);
+    var position = Player.position - (item.startSec || 0);
+    if (item.kind === 'episode' && length > 0 && position >= length - Math.min(60,length * 0.1) && playingMeta.continuous >= Math.min(30,length * 0.1)) {
+      if (typeof MediaSeries !== 'undefined') MediaSeries.recordCompletion(item);
+    }
+    playingMeta = null;
+  }
   function ended() {
+    clearInterval(progressTimer); progressTimer = null;
+    checkpoint();
+    var finished = playingMeta && playingMeta.item;
+    var eligible = !finished || finished.kind !== 'episode' || playingMeta.continuous >= ((finished.endSec || Player.duration) > 0 ? Math.min(30,((finished.endSec || Player.duration) - (finished.startSec || 0)) * 0.1) : 5);
     if (playingMeta) MediaStore.clearResume(playingMeta.id);
     playingMeta = null;
     Views.stopAll();
     open(true);
+    if (eligible && typeof MediaSeries !== 'undefined') MediaSeries.completed(finished);
   }
   /* ---------- the phone app (app/js/phone.js) ----------
      My media on the phone, in the same shape as Movies (Vod.phone): the shelves as categories, a page of
@@ -448,6 +516,8 @@ var Media = (function () {
 
   function itemMenu(m) {
     if (!m) return;
+    if (m.kind === 'show') return MediaSeries.showItem(m,restore);
+    if (m.review && m.review.length) return MediaSeries.correct(m,restore);
     var r = MediaStore.resume(m.id);
     UI.menu(label(m), [
       { label: MediaStore.isFavorite(m.id) ? 'Remove from Favorites' : 'Add to Favorites', action: function () { MediaStore.toggleFavorite(m.id); refresh(); } },
@@ -455,6 +525,8 @@ var Media = (function () {
       { label: r ? 'Play from beginning' : 'Play', action: function () { play(m, true); } },
       { label: m.metadata ? 'Change movie details' : 'Find movie details', sub: 'Search TMDB and choose the correct match', action: function () { findDetails(m); } },
       m.metadata && { label: 'Remove movie details', action: function () { MediaStore.setMetadata(m.id, null); refresh(); } },
+      { label:'TV shows',action:function () { MediaSeries.open(); } },
+      { label:'Needs review',action:function () { MediaSeries.review(); } },
       { label: 'File information', sub: fileInfo(m) + (m.size ? ' · ' + size(m.size) : ''), action: function () { UI.menu('File information', [{ label: m.file, sub: (MediaStore.source(m.src) || {}).name || '' }]); } },
       r && { label: 'Mark as watched', action: function () { MediaStore.clearResume(m.id); itemsVL.refresh(); showInfo(); } }
     ]);
@@ -463,7 +535,7 @@ var Media = (function () {
   /* ---------- remote and pointer navigation ---------- */
   function hints() {
     if (document.body.classList.contains('nav-open')) return;
-    UI.hints([['', 'OK  play'], ['', 'Hold OK  movie options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Options'], ['green', 'Rescan'], ['yellow', 'Fetch details'], ['blue', 'Settings']]);
+    UI.hints([['', 'OK  play'], ['', 'Hold OK  movie options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Movies / TV shows'], ['green', 'Rescan'], ['yellow', 'Fetch details'], ['blue', 'Settings']]);
   }
   function moveShelf(d) {
     var row = shelfAt + d;
@@ -474,6 +546,7 @@ var Media = (function () {
     if (a !== 'ok') playToken++;
     if (a === 'green') { rescanAll(); return true; }
     if (a === 'yellow') { fetchMissingDetails(); return true; }
+    if (a === 'red') { if (itemsVL.current()) { itemMenu(itemsVL.current()); return true; } UI.menu('My media', [{label:'TV shows',action:function () { MediaSeries.open(); }},{label:'Needs review',action:function () { MediaSeries.review(); }},{label:'Movie options',action:function () { itemMenu(itemsVL.current()); }}]); return true; }
     if (a === 'blue') { Views.switchTab('settings'); Settings.section('media'); return true; }
     var s = shelves[shelfAt], at = s && shelfPos[s.id] || 0;
     if (a === 'up') moveShelf(-1);
@@ -485,9 +558,9 @@ var Media = (function () {
     else if (a === 'red' || a === 'hold' || a === 'info') itemMenu(itemsVL.current());
     return true;
   }
-  function restore() { UI.setHandler(keys); if (shelves.length) drawShelves(); hints(); }
+  function restore() { UI.setHandler(keys);refreshSeries(); if (shelves.length) drawShelves(); hints(); }
   function build() {
-    ['continue', 'favorites', 'all'].forEach(function () {
+    ['continue', 'favorites', 'all', 'shows', 'review'].forEach(function () {
       var el = U.el('section', 'media-shelf'), heading = U.el('h2'), count = U.el('span', 'media-shelf-count'), track = U.el('div', 'media-track'), empty = U.el('p', 'media-shelf-empty'), pool = [];
       var title = U.el('div', 'media-shelf-title'); title.appendChild(heading); title.appendChild(count); el.appendChild(title); el.appendChild(track); el.appendChild(empty);
       for (var i = 0; i < TILE_POOL; i++) {
@@ -504,9 +577,19 @@ var Media = (function () {
     });
     built = true;
   }
+  function refreshSeries() {
+    if (seriesLoading) return; seriesLoading = true;
+    Promise.all([ask('library/query',{kind:'show',limit:60},30000),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),ask('library/query',{kind:'show',favourite:true,limit:60},30000)]).then(function (results) {
+      seriesCards = (results[0].items || []).map(function (r) { r.id = r.handle; return r; });
+      reviewCards = (results[1].items || []).map(function (r) { r.id = r.handle; return r; });
+      continuingShows = (results[2].items || []).map(function(r){r.id=r.handle;return r;});
+      favouriteShows=(results[3].items||[]).map(function(r){r.id=r.handle;return r;});
+      seriesLoading = false; refresh();
+    },function () { seriesLoading = false; });
+  }
   function open(keepState) {
     playToken++;
-    if (!built) build(); UI.setHandler(keys);
+    if (!built) build(); UI.setHandler(keys); refreshSeries();
     if (keepState && loaded) { refresh(); restore(); return; }
     (loaded || (loaded = MediaStore.load())).then(function () {
       if ($('viewMedia').classList.contains('hidden')) return;
@@ -515,9 +598,9 @@ var Media = (function () {
   }
 
   return {
-    leave: function () { playToken++; }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
+    changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
     rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
-    refresh: refresh, leftOut: leftOut, phone: ForPhone,
+    watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: play, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { addServer: addServer, addAddress: addAddress, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };
 })();

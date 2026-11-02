@@ -1,37 +1,11 @@
-# Implementation ledger
+# Implementation status
 
-Baseline: `d1e7110`, the combined subtitle and authenticated WebDAV branch.
-Feature branch: `feature/my-media-series`.
-Worktree: `/Users/moritz/lg-tv/tivibro-series`.
+Branch: `feature/my-media-series`.  Full feature remains in development.
 
-The full specification remains required.  No TV-show UI or playback change is shipped yet.
+Implemented: recursive opt-in movie/TV discovery; ancestry-aware classification; typed shows/episodes; streaming legacy migration and recovery snapshot; paged storage, indexes, page-local edits, cleanup and idempotency; TV shelves and season/episode menus; metadata matching and enrichment; favourites, progress and watched state; cancellable next episode; MKV/MP4 chapter inspection and manual boundaries; same-file segment continuation; correction previews, folder rules and undo; grouping/order mapping/relink backend; editor correction UI; additive phone protocol and Android browsing.
 
-## Implemented foundations
+Validation performed: affected unit suites, ES5/compatibility checks, initial full unit passes, browser TV navigation, and a 50,000-episode/5,000-movie helper corpus.  Latest changes require another integrated run.  Android compilation and C9 verification are outstanding.
 
-- Pure ES5 classifier: filename and ancestor evidence, explicit episode coverage, specials, date validation, absolute numbering, structured server candidates and ordered user overrides.
-- Immutable ES5 storage primitive: bounded record pages, hash validation, atomic manifest publication, previous-generation recovery, revision conflicts and paginated reads.
-- Classification regression suite, real-disk storage/recovery suite and package test registration.
-- Specification, acceptance matrix and handoff copied into repository developer documentation.
+User redirected immediate priority to merging the 19 upstream commits and producing a TV test build.  Pause feature expansion during integration.
 
-## Validation
-
-- Classifier: 30 behavioural checks pass.
-- Storage: persistence, bounded batches, paging, stale revisions/cursors and corrupt-page recovery pass.
-- New helper modules parse with Acorn `ecmaVersion: 5`.
-- `npm run lint`: passed.
-- Full existing `npm test` run: passed.  New suites were also run directly after their final edits; both passed.
-- Old-engine runtime, Android, browser, build and TV checks: not run for these foundations.
-
-## Required remaining work
-
-- Complete classifier validation, movie-folder inference, exclusions and adapter-backed evidence parsing.
-- Durable indexed transactions/overlays, migration, idempotency, progress records and storage fault injection.  The current primitive appends pages; it is not yet the complete indexed library.
-- Resumable source traversal, scopes, stable identity and duplicate/version grouping.
-- Protected routes, app store facade and legacy compatibility adapters.
-- Metadata, artwork, matching/order mapping and MKV/MP4 chapter services.
-- TV browsing, remote corrections, merge/unmerge/relink and watched state.
-- Playback session state machine and cancellable progression.
-- Web editor and Android protocol/screens.
-- User guide/privacy/protocol updates, full verification and integrated build.
-
-No production reader or scanner uses the new modules yet.  Existing saved libraries remain on their current code path while migration and integration are implemented.
+Remaining specification gaps include full browser movie pagination, advanced editor mapping/relink controls and complete relink undo/history conflict handling, source exclusion controls, metadata-only missing-episode presentation, durable artwork cache, source-scan cancellation edge cases and complete acceptance coverage.  Do not describe this as the finished full specification.

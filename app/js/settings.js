@@ -132,14 +132,14 @@ var Settings = (function () {
       info('Movies only for now: TV shows, trailers and extras are left out.', ''),
       action('Add media', 'Find a DLNA / UPnP server, or enter the WebDAV address of your movies folder and its login.  Best: one folder per movie, named like Frozen (2013).', function () { Media.addMenu(); }),
       action('Edit on a computer', 'Add server logins and change preferences in the web editor.', function () { WebEdit.showJoin('media'); }),
-      action('Rescan media sources', 'Look for new or removed movies.  Green on the My media screen.', function () { Media.rescanAll(); }),
+      action('Rescan media sources', 'Look for movies and episodes.  Green on the My media screen.', function () { Media.rescanAll(); }),
       action('Fetch missing movie details', 'Look up new movies and refresh outdated language details.  Yellow on My media.', function () { Media.fetchMissingDetails(); }),
       head('Preferences')].concat(tmdbRows(), [
       choice('Sort movies by', 'Applies to All movies and Favorites.  Continue watching stays ordered by recent playback.', ['name', 'release', 'added'], ['Name (A–Z)', 'Release date (newest first)', 'Date added (newest first)'], function () { return MediaStore.preferences().sort; }, function (v) { Media.updatePreferences({ sort: v }); paint(); }),
       choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); }),
       head('Media sources')]);
     MediaStore.publicSources().forEach(function (s) {
-      out.push(action(s.name, s.type === 'dlna' ? 'DLNA / UPnP · rescan, movie details or remove' : 'WebDAV · rescan, movie details or remove', function () { Media.sourceMenu(s); }, function () { return MediaStore.movies(s.id).length + ' movies'; }));
+      out.push(action(s.name, s.type === 'dlna' ? 'DLNA / UPnP · rescan, movie details or remove' : 'WebDAV · rescan, movie details or remove', function () { Media.sourceMenu(s); }, function () { return MediaStore.movies(s.id).length + ' movies'+(s.episodeFiles?' · '+s.episodeFiles+' episode files':''); }));
     });
     if (!MediaStore.sources().length) out.push(info('No media sources yet', 'Choose Add media above'));
     return out;

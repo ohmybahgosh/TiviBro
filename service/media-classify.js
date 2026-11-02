@@ -81,12 +81,21 @@ function classify(observation, options, overrides) {
   if (!Array.isArray(r.numbers)) { r.numbers = []; r.review.push('invalidEpisodeNumber'); }
   if (r.numbers.length > 50) { r.numbers = r.numbers.slice(0, 50); r.review.push('invalidEpisodeRange'); }
   if (r.numbers.some(function (v, i, a) { return typeof v !== 'number' || v < 1 || Math.floor(v) !== v || a.indexOf(v) !== i; })) r.review.push('invalidEpisodeNumber');
+  if (rule.kind === 'movie' || rule.kind === 'extra') r.review = [];
+  if (['movie','episode','unclassified','extra'].indexOf(r.kind) < 0) r.review.push('invalidKind');
+  if (r.kind === 'episode' && ['aired','date','absolute','group','custom'].indexOf(r.order) < 0) r.review.push('invalidOrder');
+  if (r.kind === 'episode' && r.order === 'absolute' && (!(r.absoluteNumber > 0) || Math.floor(r.absoluteNumber) !== r.absoluteNumber)) r.review.push('invalidEpisodeNumber');
+  if (r.kind === 'episode' && r.order === 'date') {
+    var dateParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(r.airDate || '');
+    if (!dateParts || !validDate(dateParts[1],dateParts[2],dateParts[3])) r.review.push('invalidAirDate');
+  }
   if (r.kind === 'episode') {
     if (!r.showTitle) r.review.push('missingShow');
     if (r.order === 'aired' && r.season == null) r.review.push('missingSeason');
     if (r.order === 'aired' && !r.numbers.length) r.review.push('missingEpisode');
   }
   r.review = r.review.filter(function (reason, i, a) { return a.indexOf(reason) === i; });
+  if(opts.compact && !r.review.length)r.evidence=r.evidence.map(function(e){return {origin:e.origin};});
   return r;
 }
 module.exports = { classify: classify, context: context, validDate: validDate };

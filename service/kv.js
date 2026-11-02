@@ -117,4 +117,4 @@ function handle(req, res, ALLOW, log) {
   send(res, ALLOW, 404, { error: 'unknown kv route' });
 }
 
-module.exports = { handle: handle, root: root, sub: sub, liveDir: liveDir };
+module.exports = { handle: handle, root: root, sub: sub, liveDir: liveDir, fileOf: fileOf };

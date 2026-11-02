@@ -4,7 +4,7 @@
 var https = require('https');
 var BASE = 'https://api.themoviedb.org/3';
 var LOCALES = { en: 'en-US', nl: 'nl-NL', de: 'de-DE', fr: 'fr-FR', es: 'es-ES', it: 'it-IT' };
-function json(url, headers, cb) {
+function networkJson(url, headers, cb) {
   var done = false;
   function finish(e, data) { if (!done) { done = true; cb(e, data); } }
   var u = require('url').parse(url); u.headers = headers;
@@ -12,7 +12,10 @@ function json(url, headers, cb) {
     var body = '', bytes = 0;
     if (res.statusCode !== 200) {
       res.resume();
-      return finish(new Error(res.statusCode === 401 || res.statusCode === 403 ? 'TMDB refused the token.  Check it in Settings > My media.' : res.statusCode === 429 ? 'TMDB is busy.  Please try again later.' : 'Movie details service returned HTTP ' + res.statusCode + '.  Try again later.'));
+      var failure = new Error(res.statusCode === 401 || res.statusCode === 403 ? 'TMDB refused the token.  Check it in Settings > My media.' : res.statusCode === 429 ? 'TMDB is busy.  Please try again later.' : 'Movie details service returned HTTP ' + res.statusCode + '.  Try again later.');
+      failure.status = res.statusCode;
+      var retry = res.headers['retry-after']; failure.retryAfter = /^[0-9]+$/.test(retry || '') ? +retry : Math.max(0,(Date.parse(retry || '') - Date.now()) / 1000);
+      return finish(failure);
     }
     res.setEncoding('utf8');
     res.on('data', function (b) { bytes += Buffer.byteLength(b); if (bytes > 2097152) { finish(new Error('Movie details response is too large.')); req.abort(); } else body += b; });
@@ -21,7 +24,9 @@ function json(url, headers, cb) {
   });
   req.on('error', function () { finish(new Error('Could not reach TMDB.')); });
   req.setTimeout(10000, function () { finish(new Error('Movie details request timed out.')); req.abort(); });
+  return {cancel:function(){if(done)return;finish(new Error('Metadata request cancelled.'));try{req.abort();}catch(e){}}};
 }
+var json = require('./media-metadata-cache').create(networkJson);
 function str(v, n) { return typeof v === 'string' ? v.slice(0, n) : ''; }
 function normal(v) { return str(v, 200).toLowerCase().replace(/[^a-z0-9]/g, ''); }
 function image(path, size) { return /^\/[a-zA-Z0-9._-]+$/.test(path || '') ? 'https://image.tmdb.org/t/p/' + size + path : ''; }
@@ -62,12 +67,12 @@ function details(m, en, language) {
 }
 function create(opts) {
   opts = opts || {};
-  var credential = str(opts.credential, 2048).trim(), read = opts.read || json;
+  var credential = str(opts.credential, 2048).trim(), read = opts.read || json, cancelled=false, jobs=[];
   function request(path, cb) {
     var headers = { Accept: 'application/json' }, url = BASE + path;
     if (/^[a-f0-9]{32}$/i.test(credential)) url += (url.indexOf('?') < 0 ? '?' : '&') + 'api_key=' + encodeURIComponent(credential);
     else headers.Authorization = 'Bearer ' + credential;
-    read(url, headers, cb);
+    if(cancelled)return;var job=read(url,headers,function(e,r){if(!cancelled)cb(e,r);},opts.refresh || /\/configuration(?:\?|$)/.test(path));if(job&&job.cancel)jobs.push(job);return job;
   }
   function lookup(q, cb) {
     if (!credential) return cb(new Error('Add your TMDB API key or Read Access Token in Settings > My media.'));
@@ -104,6 +109,52 @@ function create(opts) {
       cb(null, { matches: matches });
     });
   }
+  function tvLookup(q, cb) {
+    if (!credential) return cb(new Error('Add your TMDB token first.'));
+    var language = LOCALES[q.language] ? q.language : 'en', locale = LOCALES[language];
+    var match = /^tmdb:tv:([1-9][0-9]*)$/.exec(String(q.id || ''));
+    if (!match) {
+      var query = str(q.title,200).trim();
+      if (!query) return cb(new Error('Enter a show title.'));
+      return request('/search/tv?query='+encodeURIComponent(query)+'&language='+locale+(q.year ? '&first_air_date_year='+encodeURIComponent(q.year) : ''),function (e,r) {
+        if (e) return cb(e);
+        var matches = (r && Array.isArray(r.results) ? r.results : []).filter(function (m) { return m && /^[1-9][0-9]*$/.test(String(m.id)); }).slice(0,20).map(function (m) { return {id:'tmdb:tv:'+m.id,title:str(m.name || m.original_name,200),original:str(m.original_name,200),year:str(m.first_air_date,4),poster:image(m.poster_path,'w185')}; });
+        var exact = matches.filter(function (m) { return (normal(m.title) === normal(query) || normal(m.original) === normal(query)) && (!q.year || m.year === String(q.year)); });
+        if (q.auto && exact.length === 1) { var next = {}; Object.keys(q).forEach(function (k) { next[k] = q[k]; }); next.id = exact[0].id; return tvLookup(next,cb); }
+        cb(null,{matches:matches});
+      });
+    }
+    var id = match[1], route = '/tv/'+id, suffix = '', key = 'tmdb:tv:'+id;
+    if (q.groups) return request(route+'/episode_groups',function (e,r) { cb(e,e ? null : {groups:r && r.results || []}); });
+    if (q.groupId) {
+      if (!/^[a-zA-Z0-9_-]{1,128}$/.test(q.groupId)) return cb(new Error('Choose a valid episode group.'));
+      return request('/tv/episode_group/'+q.groupId,function (e,r) { cb(e,e ? null : {group:r}); });
+    }
+    if (q.season != null) {
+      if (typeof q.season !== 'number' || q.season < 0 || Math.floor(q.season) !== q.season) return cb(new Error('Choose a valid season.'));
+      suffix += '/season/'+q.season; key += ':season:'+q.season;
+      if (q.episode != null) {
+        if (typeof q.episode !== 'number' || q.episode < 1 || Math.floor(q.episode) !== q.episode) return cb(new Error('Choose a valid episode.'));
+        suffix += '/episode/'+q.episode; key += ':episode:'+q.episode;
+      }
+    }
+    function convert(m, english) {
+      function movieShape(x) { var out = {}; Object.keys(x).forEach(function (k) { out[k] = x[k]; }); out.title = x.name; out.release_date = x.first_air_date || x.air_date; out.runtime = x.runtime || (x.episode_run_time || [])[0]; return out; }
+      var out = details(movieShape(m),movieShape(english || {}),language);
+      out.id = key; out.kind = q.episode != null ? 'episode' : q.season != null ? 'season' : 'show'; out.originalTitle = str(m.original_name,200); out.status = str(m.status,100);
+      out.still = image(m.still_path,'w500');
+      out.cast = ((m.credits || {}).cast || []).slice(0,20).map(function(person){return str(person.name,100);}).filter(Boolean).join(', ');
+      if (Array.isArray(m.seasons)) out.seasons = m.seasons.map(function (season) { return {number:season.season_number,title:str(season.name,200),episodeCount:season.episode_count,airDate:str(season.air_date,10),poster:image(season.poster_path,'w185')}; });
+      if (Array.isArray(m.episodes)) out.episodes = m.episodes.map(function (episode) { var en={};((english||{}).episodes||[]).some(function(e){if(e.episode_number===episode.episode_number){en=e;return true;}return false;}); return {id:'tmdb:tv:'+id+':season:'+q.season+':episode:'+episode.episode_number,number:episode.episode_number,season:episode.season_number,title:str(episode.name||en.name,200),plot:str(episode.overview||en.overview,5000),airDate:str(episode.air_date,10),runtime:episode.runtime || null,still:image(episode.still_path,'w500')}; });
+      return out;
+    }
+    request(route+suffix+'?language='+locale+'&append_to_response=images,credits&include_image_language='+language+',en,null',function (e,m) {
+      if (e) return cb(e);
+      if (!m || !m.id) return cb(new Error('No TV details found.'));
+      if (language === 'en' || (m.name && m.overview && !(m.episodes||[]).some(function(ep){return !ep.name || !ep.overview;}))) return cb(null,{metadata:convert(m,{})});
+      request(route+suffix+'?language=en-US',function (err,en) { if (err) return cb(err); cb(null,{metadata:convert(m,en || {})}); });
+    });
+  }
   /* A guide programme that may be a movie (app/js/movies.js): its title, maybe a year, and how sure the
      guide is (q.guide: 'strong' when it says Movie or the channel shows films, 'weak' for any long
      programme).  A movie of exactly that title (and year) is the answer; for a weak one it must also be
@@ -130,6 +181,6 @@ function create(opts) {
       });
     });
   }
-  return { lookup: function (q, cb) { return q && q.guide ? guideLookup(q, cb) : lookup(q, cb); }, configured: function () { return !!credential; } };
+  return { cancel:function(){cancelled=true;jobs.forEach(function(job){job.cancel();});jobs=[];}, lookup: function (q, cb) { return q && q.guide ? guideLookup(q, cb) : q && (q.kind === 'tv' || /^tmdb:tv:/.test(q.id || '')) ? tvLookup(q, cb) : lookup(q, cb); }, configured: function () { return !!credential; } };
 }
-module.exports = { lookup: function (q, cb) { return create({ credential: q.credential }).lookup(q, cb); }, create: create };
+module.exports = { lookup: function (q, cb) { return create({ credential: q.credential, refresh:!!q.refresh }).lookup(q, cb); }, create: create };

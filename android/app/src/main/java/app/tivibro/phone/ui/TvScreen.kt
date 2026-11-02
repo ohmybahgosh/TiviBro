@@ -188,7 +188,7 @@ fun TvScreen(
                 "On now" -> OnNowTab(model, id, state?.channelKey.orEmpty(), now)
                 "Movies" -> VodTab(model, id, "movie")
                 "Shows" -> VodTab(model, id, "series")
-                "My media" -> VodTab(model, id, "media")
+                "My media" -> if ((state?.mediaLibraryVersion ?: 0) >= 2) MyMediaTab(model, id) else VodTab(model, id, "media")
                 "Settings" -> SettingsTab(model, id)
                 else -> Remote(volume, onKey, onAction, onVolume, onType = { typing = true })
             }

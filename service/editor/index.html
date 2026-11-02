@@ -592,7 +592,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
     <section class="page hidden" id="p-media">
       <div class="phead"><div><h1>My media</h1><p>Your own movies from a home media server or a WebDAV service.  Watch them in My media on the TV.</p></div></div>
       <div class="scroll">
-        <div class="note"><b>Movies only for now.</b>  TV shows, trailers and extras are left out when a source is scanned.  Point a source at your movies folder; one folder per movie, named like <b>Frozen (2013)</b>, matches best.</div>
+        <div class="note">Movies and TV shows can share a source, with files at the top level or in subfolders.  Existing sources keep movie-only scanning until you enable TV shows from the source options on the TV.</div>
         <div class="note">For a home media server, choose <b>Settings &gt; My media &gt; Add media &gt; Browse my network (DLNA / UPnP)</b> on the TV.  Turn on media sharing on your server first.</div>
         <div class="card" style="margin-bottom:18px;max-width:760px">
           <h3>My media preferences</h3>
@@ -606,6 +606,18 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
             <div class="full row"><button class="primary" type="submit">Save preferences</button></div>
           </form><div id="mediaPrefsMsg" aria-live="polite"></div>
           <p class="muted small"><img src="tmdb.svg" alt="TMDB" width="90" style="vertical-align:middle;margin-right:10px">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+        </div>
+        <div class="card" id="mediaLibraryPanel" style="margin-bottom:18px">
+          <h3>Library corrections</h3>
+          <div class="row"><label>View <select id="mediaLibraryKind"><option value="review">Needs review</option><option value="files">All files</option><option value="show">TV shows</option></select></label><button type="button" id="mediaLibraryReload">Load library</button></div>
+          <div id="mediaLibraryRows"></div><button id="mediaLibraryMore" type="button" class="ghost hidden">Next page</button>
+          <form id="mediaLibraryCorrection" class="form">
+            <label class="f">Show title<input id="mediaCorrectionTitle" maxlength="512" required></label>
+            <label class="f">Season number<input id="mediaCorrectionSeason" type="number" min="0" max="999" required></label>
+            <p class="full muted small">Select files above.  Existing episode numbers are retained.  Review the proposed changes before saving.</p>
+            <button type="submit">Preview TV-show correction</button>
+          </form>
+          <div id="mediaCorrectionPreview"></div><div id="mediaLibraryMsg" aria-live="polite"></div>
         </div>
         <h2>Media sources</h2>
         <div class="grid plgrid" id="mediaList"><div class="muted small">Loading media sources…</div></div>
@@ -2988,6 +3000,7 @@ function loadMedia() {
       var title = document.createElement('h3'); title.textContent = s.name; card.appendChild(title);
       var detail = document.createElement('div'); detail.className = 'meta'; detail.textContent = (s.type === 'dlna' ? 'Home media server · DLNA / UPnP' : 'WebDAV server') + ' · ' + plural(s.count, 'movie'); card.appendChild(detail);
       var actions = document.createElement('div'); actions.className = 'row'; card.appendChild(actions);
+      var mode=document.createElement('select');[['automatic','Movies and TV shows'],['movies','Movies only'],['shows','TV shows only']].forEach(function(option){var item=document.createElement('option');item.value=option[0];item.textContent=option[1];mode.appendChild(item);});mode.value=s.contentMode||'movies';mode.onchange=function(){mode.disabled=true;command('mediaSourceMode',{id:s.id,mode:mode.value},160000,cmdMsg('mediaMsg','Updating source…')).then(function(){loadMedia();},function(e){mode.disabled=false;msg('mediaMsg','bad',e.message);});};actions.appendChild(mode);
       ['Rescan', 'Remove'].forEach(function (label) {
         var b = document.createElement('button'); b.textContent = label; b.type = 'button';
         if (label === 'Remove') b.className = 'ghost danger';
@@ -3006,6 +3019,37 @@ function loadMedia() {
     });
   }).catch(function (e) { msg('mediaMsg', 'bad', e.message); });
 }
+var mediaLibraryPage=null,mediaLibraryCursor=null;
+function loadMediaLibrary(cursor){
+  return command('mediaLibrary',{kind:$('mediaLibraryKind').value,cursor:cursor||null,limit:60}).then(function(r){
+    mediaLibraryPage=r.data;mediaLibraryCursor=r.data.nextCursor;var rows=$('mediaLibraryRows');rows.textContent='';$('mediaCorrectionPreview').textContent='';
+    (r.data.items||[]).forEach(function(item){
+      var row=document.createElement('label');row.className='row';row.style.padding='10px 0';
+      var checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.value=item.handle;checkbox.className='media-library-choice';checkbox.disabled=item.kind==='show';row.appendChild(checkbox);
+      var name=document.createElement('span');name.textContent=(item.label||item.title)+' '+(item.review||[]).join(', ');row.appendChild(name);rows.appendChild(row);
+    });
+    if(!(r.data.items||[]).length)rows.textContent='No items in this view.';
+    $('mediaLibraryMore').classList.toggle('hidden',!mediaLibraryCursor);
+  }).catch(function(e){msg('mediaLibraryMsg','bad',e.message);});
+}
+$('mediaLibraryReload').onclick=function(){loadMediaLibrary();};
+$('mediaLibraryKind').onchange=function(){loadMediaLibrary();};
+$('mediaLibraryMore').onclick=function(){loadMediaLibrary(mediaLibraryCursor);};
+$('mediaLibraryCorrection').onsubmit=function(e){
+  e.preventDefault();if(!mediaLibraryPage)return;
+  var handles=Array.prototype.slice.call(document.querySelectorAll('.media-library-choice:checked')).map(function(n){return n.value;});
+  if(!handles.length)return msg('mediaLibraryMsg','bad','Select files first.');
+  var fields={kind:'episode',showTitle:$('mediaCorrectionTitle').value.trim(),season:+$('mediaCorrectionSeason').value,order:'aired'};
+  command('mediaLibraryEdit',{operation:'previewCorrection',expectedRevision:mediaLibraryPage.revision,handles:handles,fields:fields}).then(function(r){
+    var box=$('mediaCorrectionPreview');box.textContent='';var title=document.createElement('p');title.textContent=r.data.count+' files will be updated.';box.appendChild(title);
+    (r.data.examples||[]).forEach(function(example){var line=document.createElement('p');line.textContent=JSON.stringify(example.before)+' → '+JSON.stringify(example.after);box.appendChild(line);});
+    var button=document.createElement('button');button.type='button';button.textContent='Save these corrections';box.appendChild(button);
+    button.onclick=function(){button.disabled=true;command('mediaLibraryEdit',{operation:'commitPreview',previewToken:r.data.previewToken,expectedRevision:r.data.revision}).then(function(saved){
+      box.textContent='Corrections saved.  ';var undo=document.createElement('button');undo.type='button';undo.textContent='Undo';box.appendChild(undo);
+      undo.onclick=function(){command('mediaLibraryEdit',{operation:'undoEdit',undoHandle:saved.data.undoHandle,expectedRevision:saved.data.revision}).then(function(){loadMediaLibrary();}).catch(function(error){msg('mediaLibraryMsg','bad',error.message);});};
+    }).catch(function(error){button.disabled=false;msg('mediaLibraryMsg','bad',error.message);});};
+  }).catch(function(error){msg('mediaLibraryMsg','bad',error.message);});
+};
 $('mediaPreferences').onsubmit = function (e) {
   e.preventDefault();
   var args = { language: $('mediaLanguage').value, sort: $('mediaSort').value };
