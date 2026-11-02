@@ -19,7 +19,7 @@ var Views = (function () {
   var overlay = false, ovGroup = null;
   var backT = 0, sleepAt = 0, sleepWarned = false, playStart = 0, recentDone = false;
 
-  var TAB_LABELS = { live: 'Channels', guide: 'Guide', movies: 'Movies', shows: 'Shows', media: 'My media', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
+  var TAB_LABELS = { live: 'Channels', guide: 'Guide', onnow: 'Movies on now', movies: 'Movies', shows: 'Shows', media: 'My media', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
   // The guide is home: the app opens on it and Back from any other screen comes back to it.
   function home() { return Store.settings.startTab === 'live' ? 'live' : 'guide'; }
   /* The plain channel list in the menu: most people browse with the guide, so it shows only when
@@ -31,6 +31,7 @@ var Views = (function () {
   var ICONS = {
     guide: '<path d="M3 5h18M3 12h18M3 19h18M9 3v18"/>',
     live: '<rect x="3" y="5" width="18" height="12" rx="2"/><path d="M8 21h8M12 17v4"/>',
+    onnow: '<path d="M4 9h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M4 9l1.5-4.5 15 3.5L20 9"/><path d="M9 5.3l1.6 3.4M14 6.4l1.6 2.6"/><path d="M10.5 12.5v5l4-2.5z"/>',
     movies: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
     media: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M10 11l5 3-5 3z"/>',
     shows: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3l4 4 4-4"/>',
@@ -43,6 +44,8 @@ var Views = (function () {
   function buildTabs() {
     tabs = home() === 'live' ? ['live', 'guide'] : channelsInMenu() ? ['guide', 'live'] : ['guide'];
     var pl = Store.playlist, v = pl.vod || {};
+    // Movies on now (onnow.js): in the menu while a TMDB token is saved and movie details are on.
+    if (typeof Movies !== 'undefined' && Movies.on()) tabs.push('onnow');
     if (pl.type === 'xtream' && v.movies) tabs.push('movies');
     if (pl.type === 'xtream' && v.series) tabs.push('shows');
     // My media: in the menu once a media source is added (Settings > My media is the way in before that).
@@ -443,6 +446,7 @@ var Views = (function () {
   function doSwitch(t) {
     if (lvis && t !== 'live') endListVis(true);
     if (tab === 'media' && t !== 'media') Media.leave();
+    if (tab === 'onnow' && t !== 'onnow') OnNow.leave();
     tab = t;
     Keymap.setContext(t === 'live' ? 'list' : t === 'guide' ? 'guide' : 'other');
     document.querySelectorAll('.tab').forEach(function (el, i) {
@@ -452,7 +456,7 @@ var Views = (function () {
       if (on) tabSel = i;
     });
     if (t !== 'guide') Guide.leave();
-    ['Live', 'Guide', 'Settings', 'Vod', 'Media', 'Search'].forEach(function (x) {
+    ['Live', 'Guide', 'Settings', 'Vod', 'Media', 'Onnow', 'Search'].forEach(function (x) {
       var want = t === 'movies' || t === 'shows' ? 'Vod' : t.charAt(0).toUpperCase() + t.slice(1);
       var v = $('view' + x);
       if (v) v.classList.toggle('hidden', x !== want);
@@ -475,6 +479,7 @@ var Views = (function () {
       if (t === 'settings') Settings.open();
       else if (t === 'movies' || t === 'shows') Vod.open(t === 'shows' ? 'series' : 'movie');
       else if (t === 'media') Media.open();
+      else if (t === 'onnow') OnNow.open();
       else if (t === 'search') Search.open();
     }
   }

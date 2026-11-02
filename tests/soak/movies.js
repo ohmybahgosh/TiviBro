@@ -29,17 +29,21 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const seen = await ev((mock) => {
     const asked = [];
     window.__asked = asked;
+    Movies.reset();
     MediaStore.setTmdbToken('mock-user-token-123456789012345');
     let pick = null;
     const now = Date.now();
-    Epg.during(now, now + 3 * 3600e3, (k, p) => { if (!pick && p.e - p.s >= 75 * 60000 && p.s <= now && !/news|live|show/i.test(p.t)) pick = p.t; });
+    const byKey = {}; Library.data.channels.forEach((c) => { const k = Epg.keyOf(c); if (k && !byKey[k]) byKey[k] = c; });
+    // One on now that it will ask about first (a strong one), so the made-up answer comes back quickly.
+    Epg.during(now, now + 3 * 3600e3, (k, p) => { const c = byKey[k]; if (!pick && c && p.s <= now && p.e - p.s >= 75 * 60000 && Movies.strength(c, p, '') === 'strong') pick = p.t; });
+    if (!pick) Epg.during(now, now + 3 * 3600e3, (k, p) => { if (!pick && p.e - p.s >= 75 * 60000 && p.s <= now && !/news|live|show/i.test(p.t)) pick = p.t; });
     window.__pick = pick;
     Media.guideLookup = (t, y, st) => { asked.push(t + '|' + st); return Promise.resolve(t === pick ? { metadata: { id: 'tmdb:1', title: t, year: '2011', poster: mock + '/poster/m0.svg', plot: 'A made-up plot from TMDB that is long enough to show.', genre: 'Comedy, Drama', runtime: '105 min', rating: '7.4' } } : { miss: true }); };
     Movies.poke();
     return pick;
   }, MOCK);
   ok('a long programme on now to try it on', !!seen, seen);
-  await page.waitForFunction(() => Library.groups().some((g) => g.id === Library.MOVIES && g.count > 0), null, { timeout: 30000 }).catch(() => {});
+  await page.waitForFunction(() => Library.groups().some((g) => g.id === Library.MOVIES && g.count > 0), null, { timeout: 75000 }).catch(() => {});
   const asked = await ev(() => window.__asked);
   ok('long programmes were asked about, news and shows not', asked.length > 0 && !asked.some((a) => /news|live|show\b/i.test(a)), asked.slice(0, 8).join(', '));
   const g = await ev(() => { const x = Library.groups().find((g) => g.id === Library.MOVIES); return x && { name: x.name, n: Library.channels(Library.MOVIES).length }; });

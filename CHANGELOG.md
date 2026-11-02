@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Movies on now, a screen of its own.**  In the side menu while a TMDB token is saved: big posters of the movies on now and starting in the next three hours, the focused one large over its backdrop with its title logo, its channel, time left and plot.  OK watches it (or sets a reminder for one starting later); Hold OK lists every channel showing it.
+
 ## 0.6.0 (alpha 53, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

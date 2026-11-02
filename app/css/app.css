@@ -651,3 +651,38 @@ video.mkv-captions-active::cue{color:transparent;background:transparent;text-sha
 .media-language-note{z-index:1}
 
 .media-library-label{color:var(--muted);font-size:22px}
+
+/* ---------- Movies on now (onnow.js): the focused movie large over its backdrop, big posters below ---------- */
+.view.onnow{position:relative;display:block;padding:0 0 0 152px;overflow:hidden}
+.on-hero{position:relative;height:470px;margin-left:-152px;padding:56px 56px 0 152px;overflow:hidden}
+.on-bd{position:absolute;top:0;right:0;width:1320px;height:100%;background:var(--panel) center/cover no-repeat}
+.on-fade{position:absolute;top:0;right:0;bottom:0;left:0;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 34%,rgba(0,0,0,0) 72%),linear-gradient(0deg,var(--ink) 0,rgba(0,0,0,0) 45%)}
+.on-info{position:relative;width:860px}
+.on-logo{display:block;max-width:560px;max-height:150px;object-fit:contain;object-position:left bottom;margin-bottom:22px}
+.on-title{font-size:64px;line-height:1.05;color:var(--text);margin-bottom:18px;font-weight:800;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.on-meta{color:var(--muted);font-size:25px;display:flex;align-items:center;gap:14px;white-space:nowrap}
+.on-where{color:var(--accent-text);font-size:26px;margin-top:10px}
+.on-facts{color:var(--muted);font-size:24px;margin-top:6px}
+.on-plot{color:var(--text);opacity:.85;font-size:24px;line-height:1.35;margin-top:14px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+.on-shelves{position:absolute;top:470px;left:152px;right:0;bottom:0;overflow:hidden}
+.on-stage{transition:transform .18s ease-out}
+.on-shelf{padding:0 0 26px 0}
+.on-shelf h3{font-size:28px;color:var(--muted);font-weight:600;margin:0 0 14px 4px}
+.on-shelf.active h3{color:var(--text)}
+.on-track{display:flex;gap:24px;padding:6px 4px;transition:transform .18s ease-out}
+.on-card{flex:none;width:300px}
+.on-art{position:relative;width:300px;height:450px;border-radius:14px;overflow:hidden;background:var(--raised)}
+.on-art img{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
+.on-ph{position:absolute;left:20px;right:20px;bottom:40px;font-size:30px;font-weight:700;color:var(--text)}
+.on-art img + .on-ph{display:none}
+.on-bar{position:absolute;left:0;right:0;bottom:0;height:8px;background:rgba(0,0,0,.55)}
+.on-bar b{display:block;height:100%;background:var(--accent)}
+.on-card.focus .on-art{box-shadow:0 0 0 5px var(--accent)}
+body.focus-ring .on-card.focus .on-art{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff}
+.on-cap{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:22px;color:var(--muted);white-space:nowrap}
+.on-cap .on-ch{overflow:hidden;text-overflow:ellipsis;color:var(--text)}
+.on-card.focus .on-cap .on-ch{color:var(--accent-text)}
+.on-empty{position:absolute;top:300px;left:152px;right:152px;text-align:center}
+.on-empty b{display:block;font-size:40px;color:var(--text);margin-bottom:16px}
+.on-empty p{font-size:26px;color:var(--muted);max-width:1100px;margin:0 auto;line-height:1.4}
+body.onnow-open:not(.full) #clock{text-shadow:0 2px 10px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.9)}

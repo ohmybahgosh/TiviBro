@@ -51,6 +51,11 @@ function details(m, en, language) {
   out.runtime = (m.runtime || en.runtime) > 0 ? Math.min(9999, m.runtime || en.runtime) + ' min' : '';
   out.poster = image(art(images.posters, language, m.poster_path || en.poster_path), 'w185');
   out.backdrop = image(art(images.backdrops, language, m.backdrop_path || en.backdrop_path), 'w780');
+  out.backdropHd = image(art(images.backdrops, language, m.backdrop_path || en.backdrop_path), 'w1280');
+  // The title as artwork (Movies on now): in your language, else English; none is fine.
+  var logos = (Array.isArray(images.logos) ? images.logos : []).filter(function (x) { return x && image(x.file_path, 'w500'); }), lg = null;
+  [language, 'en'].some(function (l) { var f = logos.filter(function (x) { return x.iso_639_1 === l; }); f.sort(function (a, b) { return (b.vote_average || 0) - (a.vote_average || 0); }); lg = f[0]; return !!lg; });
+  out.logo = lg ? image(lg.file_path, 'w500') : '';
   out.rating = (m.vote_average || en.vote_average) > 0 ? String(Math.round((m.vote_average || en.vote_average) * 10) / 10) : '';
   out.fallbackFields = fallbackFields;
   return out;

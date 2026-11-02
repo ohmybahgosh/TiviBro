@@ -44,9 +44,10 @@ function serve(port) {
   const cache = {};
   return new Promise((resolve) => {
     require('http').createServer((req, res) => {
-      const m = /^\/p\/(\d{1,3})\.png$/.exec(req.url);
+      // /p/<n>.png a poster, /b/<n>.png a wide backdrop (Movies on now pictures)
+      const m = /^\/([pb])\/(\d{1,3})\.png$/.exec(req.url);
       if (!m) { res.writeHead(404); return res.end(); }
-      const png = cache[m[1]] || (cache[m[1]] = poster(+m[1]));
+      const png = cache[m[1] + m[2]] || (cache[m[1] + m[2]] = m[1] === 'b' ? poster(+m[2] + 3, 1280, 720) : poster(+m[2]));
       res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': png.length, 'Cache-Control': 'max-age=3600' });
       res.end(png);
     }).listen(port, '0.0.0.0', resolve);

@@ -207,6 +207,11 @@ var Media = (function () {
     return ask('metadata', { credential: token, guide: strength || 'weak', title: title, year: year || '', language: MediaStore.preferences().language }, 25000)
       .then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
+  function movieById(id) {
+    var token = MediaStore.tmdbToken();
+    if (!token) return Promise.reject(new Error('No TMDB token'));
+    return ask('metadata', { credential: token, id: id, language: MediaStore.preferences().language }, 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
+  }
   var tokenVersion = 0;
   function setTmdbToken(value) {
     var version = ++tokenVersion;
@@ -510,7 +515,7 @@ var Media = (function () {
 
   return {
     leave: function () { playToken++; }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
-    rescanAll: rescanAll, guideLookup: guideLookup, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
+    rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { addServer: addServer, addAddress: addAddress, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };

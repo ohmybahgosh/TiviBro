@@ -89,7 +89,7 @@ var Movies = (function () {
         var st = strength(c, p, gname[c.g]); if (!st) return;
         var key = keyOf(p), hit = cache[key];
         if (hit && (hit.m || hit.s === 'strong' || st === 'weak')) {
-          if (hit.m && (p.mv || p.e - p.s >= 75 * 60000) && p.s < now + SOON) fresh.push({ c: c, p: p, m: hit.m });
+          if (hit.m && (p.mv || p.e - p.s >= 75 * 60000)) fresh.push({ c: c, p: p, m: hit.m });
           return;
         }
         if (!queued[key]) { queued[key] = 1; var ct = clean(p.t); want.push({ key: key, t: ct.t, y: p.y || ct.y, st: st, rank: (p.s <= now ? 0 : 2) + (st === 'strong' ? 0 : 1) }); }
@@ -108,7 +108,7 @@ var Movies = (function () {
     var w = queue.shift();
     Media.guideLookup(w.t, w.y, w.st).then(function (r) {
       var m = r && r.metadata;
-      cache[w.key] = { at: Date.now(), s: w.st, m: m ? { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, plot: m.plot, genre: m.genre, runtime: m.runtime, rating: m.rating } : 0 };
+      cache[w.key] = { at: Date.now(), s: w.st, m: m ? lite(m) : 0 };
       ver++; save();
       if (m) soon();
     }, function (e) {
@@ -123,11 +123,12 @@ var Movies = (function () {
   function refound() {
     var now = Date.now(), byKey = {}, out = [];
     Library.data.channels.forEach(function (c) { if (Library.shownAnywhere && !Library.shownAnywhere(c)) return; var k = Epg.keyOf(c); if (k && !byKey[k]) byKey[k] = c; });
-    Epg.during(now, now + SOON, function (k, p) { var c = byKey[k]; if (!c) return; var m = of(c, p); if (m) out.push({ c: c, p: p, m: m }); });
+    Epg.during(now, now + LOOK, function (k, p) { var c = byKey[k]; if (!c) return; var m = of(c, p); if (m) out.push({ c: c, p: p, m: m }); });
     found = out; foundAt = now;
   }
   var lastSig = '';
   function changed() {
+    if (typeof OnNow !== 'undefined' && OnNow.changed) OnNow.changed();
     var sig = list().map(function (x) { return x.c.k; }).join();
     if (sig === lastSig) return;
     lastSig = sig;
@@ -148,6 +149,42 @@ var Movies = (function () {
     return onNow.concat(next).filter(function (x) { if (seen[x.c.k]) return false; seen[x.c.k] = 1; return true; });
   }
   function channels() { return list().map(function (x) { return x.c; }); }
+  function lite(m) { return { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, backdropHd: m.backdropHd || '', logo: m.logo || '', plot: m.plot, genre: m.genre, runtime: m.runtime, rating: m.rating }; }
+
+  /* The Movies on now screen (onnow.js): each movie once, with every channel showing it (the one to
+     tune first: a favorite, then the soonest / longest left).  on: playing now, most left first;
+     soon: starting within three hours, soonest first.  Whether the group is on doesn't matter here. */
+  function shelves() {
+    var now = Date.now(), by = {}, out = { on: [], soon: [] };
+    if (!on()) return out;
+    found.forEach(function (x) {
+      if (x.p.e <= now) return;
+      var live = x.p.s <= now, id = x.m.id + (live ? '|on' : '|soon'), g = by[id];
+      if (!g) { g = by[id] = { m: x.m, live: live, list: [] }; (live ? out.on : out.soon).push(g); }
+      g.list.push({ c: x.c, p: x.p });
+    });
+    function rank(a) { return (Library.isFav && Library.isFav(a.c.k) ? 0 : 1); }
+    out.on.concat(out.soon).forEach(function (g) {
+      g.list.sort(function (a, b) { return rank(a) - rank(b) || (g.live ? b.p.e - a.p.e : a.p.s - b.p.s); });
+      g.c = g.list[0].c; g.p = g.list[0].p;
+    });
+    out.on.sort(function (a, b) { return b.p.e - a.p.e; });
+    out.soon.sort(function (a, b) { return a.p.s - b.p.s; });
+    return out;
+  }
+  /* Movies saved before title logos and large backdrops were kept: ask TMDB by id once, then
+     everything showing that movie gets them.  cb when it changed. */
+  var filling = {};
+  function fill(m, cb) {
+    if (!m || m.logo !== undefined && m.backdropHd !== undefined || filling[m.id] || typeof Media === 'undefined' || !Media.movieById) return;
+    filling[m.id] = 1;
+    Media.movieById(m.id).then(function (r) {
+      var x = r && r.metadata; if (!x) return;
+      Object.keys(cache).forEach(function (k) { var e = cache[k]; if (e && e.m && e.m.id === m.id) { e.m.logo = x.logo || ''; e.m.backdropHd = x.backdropHd || ''; } });
+      m.logo = x.logo || ''; m.backdropHd = x.backdropHd || '';
+      ver++; save(); if (cb) cb();
+    }, function () {});
+  }
   function emptyText() {
     if (!on()) return 'Save a TMDB token in Settings > Guide, start screen, reminders to find the movies in your guide.';
     return queue.length || busy ? 'Looking through the guide for movies…' : 'No movies on now or starting within the hour.';
@@ -161,8 +198,10 @@ var Movies = (function () {
     if (typeof Epg !== 'undefined' && Epg.onUpdate) Epg.onUpdate(function (k) { if (!k && on() && Date.now() - lastScan > 60000) setTimeout(scan, 5000); });
   }
   // The token or the switch changed: look now, or forget the group.
-  function poke() { ver++; lastSig = ''; if (on()) scan(); else { found = []; changed(); } }
+  function poke() { ver++; lastSig = ''; if (on()) scan(); else { found = []; changed(); } if (typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs(); }
 
-  return { on: on, groupOn: groupOn, of: of, list: list, channels: channels, emptyText: emptyText, start: start, scan: scan, poke: poke, clean: clean, strength: strength,
-    get pending() { return queue.length + (busy ? 1 : 0); } };
+  // Forget every answer (the tests start from nothing; a different token or language could use it too).
+  function reset() { cache = {}; loaded = Promise.resolve(); found = []; ver++; if (Store.bigSet) Store.bigSet(KEY, {}); }
+  return { reset: reset, on: on, groupOn: groupOn, of: of, list: list, channels: channels, shelves: shelves, fill: fill, emptyText: emptyText, start: start, scan: scan, poke: poke, clean: clean, strength: strength,
+    get pending() { return queue.length + (busy ? 1 : 0); }, get lastScan() { return lastScan; } };
 })();
