@@ -309,7 +309,24 @@ var Store = (function () {
   }
   function bigSet(k, v) {
     if (v === null) { if (kvOn()) kv('/kv/del?k=' + encodeURIComponent(k), '').catch(function () {}); return idbSet(k, null); }
+    var live = v && v._live;
+    if (v && '_live' in v) delete v._live;
     if (!kvOn()) return idbSet(k, v);
+    /* A channel list the helper loaded and kept (source.js, live.js): only the few other fields go to
+       it, and it saves its own copy of the list.  Turning tens of MB of channels into text here was
+       what ran a small TV out of memory on a 187,000-channel reload (issues #24, #25). */
+    if (live && v.channels) {
+      var extra = {};
+      Object.keys(v).forEach(function (x) { if (x !== 'groups' && x !== 'channels') extra[x] = v[x]; });
+      return kv('/kv/put?k=' + encodeURIComponent(k) + '&from=' + encodeURIComponent(live), JSON.stringify(extra)).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        if (window.Log) Log.info('store', 'The helper saved its copy of ' + v.channels.length + ' channels');
+        return idbSet(k, null);
+      }).catch(function (e) {
+        if (window.Log) Log.warn('store', 'The helper could not save its copy (' + (e && e.message || e) + '); sending the list');
+        return bigSet(k, v);
+      });
+    }
     var text;
     try { text = JSON.stringify(v); } catch (e) { return idbSet(k, v); }
     return kv('/kv/put?k=' + encodeURIComponent(k), text).then(function (r) {

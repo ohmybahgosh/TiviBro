@@ -10,6 +10,7 @@
        -> { groups, channels, n, cats }
      POST /live/m3u     { u: <relayed playlist address> }
        -> { groups, channels, epgUrl, bytes }, or 422 { kind: 'parse' } when it isn't an M3U playlist
+     Either with keep: true also answers live: <id>, and the answer is kept for /kv/put?from=<id> (kv.js).
    Any other failure answers 502 and the app loads the list itself, as before.
    Plain ES5 and callbacks for Node 0.12 (webOS 4). */
 'use strict';
@@ -30,7 +31,7 @@ function send(res, ALLOW, code, obj) {
 // A relay address on this helper, read whole as text.
 function getText(url, cb) {
   var done = false;
-  var finish = function (e, v) { if (!done) { done = true; cb(e, v); } };
+  var finish = function (e, v, n) { if (!done) { done = true; cb(e, v, n); } };
   var req = http.get(url, function (res) {
     if (res.statusCode !== 200) { res.resume(); return finish(new Error('HTTP ' + res.statusCode)); }
     var parts = [], size = 0;
@@ -50,6 +51,31 @@ function getJSON(url, cb) {
     if (e) return cb(e);
     var j; try { j = JSON.parse(t); } catch (x) { return cb(new Error('not JSON (' + t.length + ' characters)')); }
     cb(null, j);
+  });
+}
+
+/* The answer, also kept as a file (live~<id>.json beside the kv store) when the app asks (keep), so the
+   app can save it as the playlist's cache with /kv/put?from=<id> instead of turning tens of MB of
+   channels back into text itself: on a small TV that copy was the moment memory ran out (issues #24,
+   #25: 187,000 channels).  The id comes back in the answer (live); no file, no id. */
+var KEEP_FOR = 15 * 60000;
+function reply(res, ALLOW, obj, keep, log) {
+  if (!keep) return send(res, ALLOW, 200, obj);
+  var dir = null, id = Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  try { var Kv = require('./kv'); dir = Kv.liveDir(); } catch (e) { dir = null; }
+  if (!dir) return send(res, ALLOW, 200, obj);
+  obj.live = id;
+  var text = JSON.stringify(obj), f = require('path').join(dir, 'live~' + id + '.json');
+  obj = null;
+  // Old ones nobody claimed (the app closed meanwhile).
+  try { require('fs').readdirSync(dir).forEach(function (n) { if (/^live~[a-z0-9]+\.json$/.test(n)) { var q = require('path').join(dir, n); try { if (Date.now() - require('fs').statSync(q).mtime.getTime() > KEEP_FOR) require('fs').unlinkSync(q); } catch (e) {} } }); } catch (e) {}
+  require('fs').writeFile(f, text, function (e) {
+    if (e) { require('fs').unlink(f, function () {}); if (log) log({ lv: 'warn', event: 'live list not kept', e: e.message }); text = text.replace('"live":"' + id + '"', '"live":""'); }
+    var h = { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' };
+    for (var k in ALLOW) h[k] = ALLOW[k];
+    res.writeHead(200, h);
+    res.end(text);
+    text = null;
   });
 }
 
@@ -75,7 +101,7 @@ function handle(req, res, ALLOW, log, port) {
           var d = PlShape.xtream(cats, streams), n = streams.length, nc = Array.isArray(cats) ? cats.length : 0;
           streams = null; cats = null;
           if (log) log({ lv: 'info', event: 'live list', n: n, ms: Date.now() - t0 });
-          send(res, ALLOW, 200, { groups: d.groups, channels: d.channels, n: n, cats: nc });
+          reply(res, ALLOW, { groups: d.groups, channels: d.channels, n: n, cats: nc }, !!q.keep, log);
         });
       });
       return;
@@ -86,7 +112,7 @@ function handle(req, res, ALLOW, log, port) {
       var d = PlShape.parseM3U(t);
       t = null;
       if (log) log({ lv: 'info', event: 'live m3u', n: d.channels.length, ms: Date.now() - t0 });
-      send(res, ALLOW, 200, { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl, bytes: size });
+      reply(res, ALLOW, { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl, bytes: size }, !!q.keep, log);
     });
   });
 }

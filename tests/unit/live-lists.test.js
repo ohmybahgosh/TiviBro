@@ -1,6 +1,7 @@
 // The helper's /live/xtream and /live/m3u routes (service/live.js): the channel list shaped on the TV
 // with the app's own code (app/js/plshape.js), so the keys match what the app makes itself.
-const http = require('http'), path = require('path');
+const http = require('http'), path = require('path'), fs = require('fs'), os = require('os');
+const DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-live-')); process.env.TIVIBRO_GUIDE_DIR = DIR; process.env.TIVIBRO_KV_DIR = DIR;
 const proxy = require(path.join(__dirname, '../../service/proxy.js'));
 const PlShape = require(path.join(__dirname, '../../app/js/plshape.js'));
 let fail = 0;
@@ -43,6 +44,29 @@ for (let i = 0; i < 3000; i++) M3U += '#EXTINF:-1 tvg-id="m' + i + '" tvg-logo="
   ok('only relay addresses on this helper', a.status === 400);
   a = await post(B + '/live/xtream', { u: api('get_live_streams'), uc: api('get_live_categories') });
   ok('only TiviBro can ask (the lists can hold logins)', a.status === 403, a.status);
+  // keep: the helper keeps its answer, and saves it as the playlist's cache with the app's few fields
+  // in front (issues #24, #25: the app never turns the whole list back into text).
+  const raw = (m, u, body, h) => new Promise((res, rej) => { const x = new URL(u); const rq = http.request({ host: x.hostname, port: x.port, path: x.pathname + x.search, method: m, headers: h || {} }, (rs) => { let t = ''; rs.on('data', (d) => t += d); rs.on('end', () => res({ status: rs.statusCode, text: t })); }); rq.on('error', rej); rq.end(body); });
+  a = await post(B + '/live/m3u', { u: B + '/x/http/' + U + '/list.m3u', keep: true }, H);
+  const id = a.json && a.json.live;
+  ok('keep: the answer says which kept copy it is', a.status === 200 && /^[a-z0-9]{6,24}$/.test(id || '') && a.json.channels.length === 3000, a.json && a.json.live);
+  ok('and the size in the log is a number now (was NaN KB)', a.json.bytes === Buffer.byteLength(M3U), a.json.bytes);
+  ok('the copy is on the TV\'s storage', fs.existsSync(path.join(DIR, 'kv', 'live~' + id + '.json')));
+  const extra = { epgUrl: 'http://g/guide.xml', at: 123, sig: 'abc', added: { x: 5 }, fixed: null, m3u: 'http://s/list.m3u' };
+  let k = await raw('POST', B + '/kv/put?k=playlist:p9&from=' + id, JSON.stringify(extra), H);
+  ok('saved from the kept copy with the app\'s fields', k.status === 200, k.status + ' ' + k.text);
+  k = await raw('GET', B + '/kv/get?k=playlist:p9', undefined, H);
+  const back = JSON.parse(k.text);
+  ok('read back: the whole list and the app\'s fields', back.channels.length === 3000 && JSON.stringify(back.channels) === JSON.stringify(wm.channels) && back.at === 123 && back.sig === 'abc' && back.added.x === 5 && back.m3u === 'http://s/list.m3u' && back.groups.length === wm.groups.length);
+  ok('the kept copy is gone once saved', !fs.existsSync(path.join(DIR, 'kv', 'live~' + id + '.json')));
+  k = await raw('POST', B + '/kv/put?k=playlist:p9&from=' + id, '{}', H);
+  ok('a second save from it: 404 (the app then sends the list itself)', k.status === 404);
+  k = await raw('POST', B + '/kv/put?k=playlist:p9&from=' + id, '{}');
+  ok('only TiviBro can', k.status === 403);
+  a = await post(B + '/live/xtream', { u: api('get_live_streams'), uc: api('get_live_categories'), keep: true }, H);
+  ok('Xtream keeps its answer too', a.status === 200 && !!a.json.live && fs.existsSync(path.join(DIR, 'kv', 'live~' + a.json.live + '.json')));
+  a = await post(B + '/live/m3u', { u: B + '/x/http/' + U + '/list.m3u' }, H);
+  ok('without keep: nothing kept, no id', a.status === 200 && !a.json.live);
   r.server.close(); up.close();
   console.log(fail ? fail + ' failures' : 'all live list tests passed');
   process.exit(fail ? 1 : 0);

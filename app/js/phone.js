@@ -334,6 +334,7 @@ var Phone = (function () {
 
   /* The channel list for the phone: the groups as shown on the TV and every shown channel, with
      what is on now from what the guide already has.  At most once a minute. */
+  var LINEUP_MAX = 30000;
   function sendLineup() {
     if (!ready()) { setTimeout(sendLineup, 1000); return; }
     if (Date.now() - lineupAt < 60000 && lineupAt) return;
@@ -348,14 +349,26 @@ var Phone = (function () {
     });
     // Every channel a group shows, also ones All leaves out (a Local channels group keeps stations
     // whose network groups are hidden), or the phone finds that group empty.
-    [Library.channels(Library.ALL)].concat(extra).forEach(function (l, li) { l.forEach(function (c) {
-      if (seen[c.k]) return; seen[c.k] = 1;
+    // A playlist of hundreds of thousands of channels (issues #24, #25) is more than the phone needs, and
+    // turning it all into text costs the TV a lot of memory: the first LINEUP_MAX (groups first).
+    var full = false, all = Library.channels(Library.ALL), inAll = null;
+    // Big: groups first (what the phone browses), then the rest of All; "not in All" from a lookup.
+    var lists = all.length > LINEUP_MAX ? extra.concat([all]) : [all].concat(extra);
+    if (all.length > LINEUP_MAX) { inAll = {}; all.forEach(function (c) { inAll[c.k] = 1; }); }
+    lists.forEach(function (l, j) { var li = inAll ? 0 : j; l.forEach(function (c) {
+      if (seen[c.k] || full) return;
+      if (chans.length >= LINEUP_MAX) { full = true; return; }
+      seen[c.k] = 1;
       var nn = Epg.peek(c), now = nn && nn.now, x = { k: c.k, n: Library.name(c), num: c.num || '', logo: Views.logoOf(c) || '', fav: Library.isFav(c.k) ? 1 : 0 };
-      if (li) x.na = 1;                                  // not in All
+      if (inAll ? !inAll[c.k] : li) x.na = 1;            // not in All
       if (now) x.now = { t: now.t, s: now.s, e: now.e };
       else { var ex = Search.extra(c); if (ex) x.now = { t: ex }; }
       chans.push(x);
     }); });
+    if (full) {
+      groups.forEach(function (g) { g.keys = g.keys.filter(function (k) { return seen[k]; }); });
+      Log.warn('phone', 'The playlist is too big to send whole to the phone app: sending the first ' + LINEUP_MAX + ' channels');
+    }
     call('/companion/lineup', { groups: groups, channels: chans }).then(function (r) {
       Log.info('phone', 'Sent the channel list to the phone app: ' + chans.length + ' channels, ' + groups.length + ' groups');
     }, function (e) { lineupAt = 0; Log.warn('phone', 'Could not send the channel list: ' + (e && e.message)); });

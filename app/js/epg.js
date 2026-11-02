@@ -665,8 +665,25 @@ var Epg = (function () {
     try { localStorage.setItem('tivibro.pubRetry', JSON.stringify(m)); } catch (e) {}
     return m;
   }
+  /* At most this many channels are looked for in the public guides.  Building the list of names to look
+     for costs the app memory per channel, and on a 187,000-channel playlist it came on top of a reload
+     and the TV closed TiviBro (issue #24).  Your own groups and Favorites, recent channels and shown
+     groups come first. */
+  var PUB_MAX = 30000;
+  function pubPick(miss) {
+    if (miss.length <= PUB_MAX) return miss;
+    var mine = {}, e = Store.edits, rank = function (c) { return mine[c.k] || (e.hiddenGroups && e.hiddenGroups[c.g] ? 3 : 2); };
+    (e.recent || []).forEach(function (k) { mine[k] = 1; });
+    if (Library.customGroups) Library.customGroups().forEach(function (g) { g.items.forEach(function (k) { mine[k] = 1; }); });
+    var out = miss.map(function (c, i) { return { c: c, r: rank(c), i: i }; }).sort(function (a, b) { return a.r - b.r || a.i - b.i; }).slice(0, PUB_MAX).map(function (x) { return x.c; });
+    Log.info('epg', 'Public guide: ' + miss.length + ' channels have no guide; looking for the first ' + PUB_MAX + ' (your groups, recent channels and shown groups first)');
+    return out;
+  }
   function loadPub(gen) {
-    var p = P(), miss = missing(), map = Store.edits.epgMap || {};
+    // Not while the channel list reloads: that is the TV's busiest moment (issue #24).
+    var b = typeof Source !== 'undefined' && Source.busy ? Source.busy() : null;
+    if (b) { Log.info('epg', 'Public guide: waiting for the channel list to finish reloading'); return b.then(function () { return gen === pubGen ? loadPub(gen) : null; }); }
+    var p = P(), miss = pubPick(missing()), map = Store.edits.epgMap || {};
     var ccs = PubEpg.countriesFor(p, miss, Library.data);
     var gz = !!Net.active || typeof DecompressionStream !== 'undefined';
     var apps = PubEpg.appFiles ? PubEpg.appFiles(miss, gz) : [];
@@ -804,7 +821,7 @@ var Epg = (function () {
   }
 
   return {
-    untangle: untangle, init: init, request: request, nowNext: nowNext, search: search, during: during, findDesc: findDesc, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc,
+    untangle: untangle, pubPick: function (miss) { return pubPick(miss); }, init: init, request: request, nowNext: nowNext, search: search, during: during, findDesc: findDesc, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc,
     get inHelper() { return hMode; },
     icon: function (id) { return icons[id] || ''; },
     guideChannels: function () { return pubList.length ? chList.concat(pubList) : chList; },

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **Very big playlists don't close TiviBro when they reload** (issues #24 and #25: 186,928 channels on a 2022 32-inch TV).  A reload was the moment memory ran out; it now asks much less of the TV:
+  - One reload at a time.  A second (Reload channels while the scheduled reload runs, the web editor) waits for the first instead of downloading and reading the list again.
+  - The network helper saves the list it just read as the playlist's copy on the TV, so TiviBro no longer turns hundreds of thousands of channels back into text to save them.
+  - The public guide waits until a reload is done, and looks for at most 30,000 channels with no guide (your groups, Favorites, recent channels and shown groups first).
+  - The phone app gets at most 30,000 channels of such a list.
+  - A playlist over 100,000 channels gets a one-time note on what helps (Reload channel list: Manual, or a smaller list from the provider).
+- **Problem reports no longer say "using 10 MB" when the TV doesn't say.**  webOS 22 answers a fixed placeholder for memory; reports now say unknown.
+- **The playlist's size shows in the log again** (an M3U read by the network helper said "NaN KB").
+
 ## 0.6.0 (alpha 55, 2026-11-02)
 
 Pre-release: expect rough edges, and keep a backup before installing.

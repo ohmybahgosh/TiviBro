@@ -48,7 +48,16 @@ var Log = (function () {
      finds it still open, the last session ended unexpectedly, and the marker says while doing what. */
   var MARK = 'tivibro.alive', doing = {}, lastMark = 0, started = Date.now(), prevRun = null, unclean = null, bootAt = 0, settled = false;
   try { prevRun = JSON.parse(localStorage.getItem(MARK) || 'null'); } catch (e) {}
-  function heapMB() { try { return performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : 0; } catch (e) { return 0; } }
+  /* Memory the page uses, in MB, or 0 when the browser won't say.  Without precise memory info Chromium
+     answers a fixed placeholder (used and total both 10,000,000 bytes) instead of the real figure: on
+     webOS 22 every report said "using 10 MB" (issues #24, #25).  That counts as not knowing. */
+  function heapMB() {
+    try {
+      var m = performance.memory;
+      if (!m || !m.usedJSHeapSize || (m.usedJSHeapSize === m.totalJSHeapSize && m.usedJSHeapSize % 1000000 === 0)) return 0;
+      return Math.round(m.usedJSHeapSize / 1048576);
+    } catch (e) { return 0; }
+  }
   function mark(open) {
     lastMark = Date.now();
     try { localStorage.setItem(MARK, JSON.stringify({ s: session, v: TIVIBRO_VERSION, t0: started, t: lastMark, open: open !== false, doing: doing, heap: heapMB(), boot: bootAt })); } catch (e) {}
@@ -149,6 +158,7 @@ var Log = (function () {
   setTimeout(sinkStart, 0);
 
   return {
+    heapMB: heapMB,
     get sinking() { return sinkOn; },
     debug: function (c, m, d) { add('debug', c, m, d); },
     info: function (c, m, d) { add('info', c, m, d); },

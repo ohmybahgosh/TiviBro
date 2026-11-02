@@ -94,7 +94,7 @@ var Source = (function () {
           return { server: found, user: p.user, pass: p.pass, groups: groups, channels: chans, epgUrl: base(p.server) + '/xmltv.php?username=' + encodeURIComponent(p.user) + '&password=' + encodeURIComponent(p.pass),
             tz: (info.server_info && info.server_info.timezone) || '',
             exp: info.user_info.exp_date ? +info.user_info.exp_date * 1000 : 0,
-            maxConn: +info.user_info.max_connections || 0 };
+            maxConn: +info.user_info.max_connections || 0, _live: shaped._live || '' };
         });
     });
   }
@@ -104,6 +104,9 @@ var Source = (function () {
   /* On a TV the helper downloads and shapes the channel list (service/live.js), so the app never
      parses the provider's whole answer; if it can't, the app does it here as before. */
   function helperLive() { return !!(Net.active && Net.port && Net.info && Net.info.live >= 1); }
+  // The helper keeps what it loaded for the playlist's cache (Store.bigSet saves it from there), when it
+  // keeps the cache at all.
+  function keepIt() { return !!(Net.info && Net.info.kv); }
   function viaHelper(path, body) {
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, t = setTimeout(function () { if (ctl) ctl.abort(); }, 240000);
     return fetch('http://127.0.0.1:' + Net.port + path, { method: 'POST', cache: 'no-store', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
@@ -119,10 +122,10 @@ var Source = (function () {
       });
     }
     if (!helperLive()) return direct();
-    return viaHelper('/live/xtream', { u: Net.wrap(api(p, 'get_live_streams')), uc: Net.wrap(api(p, 'get_live_categories')) }).then(function (j) {
+    return viaHelper('/live/xtream', { u: Net.wrap(api(p, 'get_live_streams')), uc: Net.wrap(api(p, 'get_live_categories')), keep: keepIt() }).then(function (j) {
       if (j._status !== 200 || !Array.isArray(j.channels)) throw new Error(j.error || 'HTTP ' + j._status);
       Log.info('xc', 'The helper loaded ' + j.cats + ' categories and ' + j.channels.length + ' channels in ' + (Date.now() - t0) + 'ms');
-      return { groups: j.groups, channels: j.channels };
+      return { groups: j.groups, channels: j.channels, _live: j.live || '' };
     }).catch(function (e) {
       Log.warn('xc', 'The helper could not load the channel list (' + (e && e.message || e) + '), loading it here');
       return direct();
@@ -136,7 +139,7 @@ var Source = (function () {
     function fetchList(i) {
       used = list[i];
       if (helperLive()) {
-        return viaHelper('/live/m3u', { u: Net.wrap(list[i]) }).then(function (j) {
+        return viaHelper('/live/m3u', { u: Net.wrap(list[i]), keep: keepIt() }).then(function (j) {
           if (j._status === 422) return { notM3u: j.head || '' };
           if (j._status !== 200 || !Array.isArray(j.channels)) throw new Error(j.error || 'HTTP ' + j._status);
           return { shaped: j };
@@ -164,7 +167,7 @@ var Source = (function () {
         Log.error('m3u', 'Not an M3U playlist.  First 200 characters', t.notM3u);
         throw Object.assign(new Error('That URL did not return an M3U playlist.'), { kind: 'parse' });
       }
-      d = { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl || '' };
+      d = { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl || '', _live: t.shaped ? t.shaped.live || '' : '' };
       Log.info('m3u', (t.shaped ? 'The helper parsed ' : 'Parsed ') + d.channels.length + ' channels in ' + d.groups.length + ' groups (' + Math.round(size / 1024) + ' KB, ' + (Date.now() - t0) + 'ms)' + (d.epgUrl ? '; guide address in playlist' : '; no guide address in playlist'));
       if (!d.channels.length) throw Object.assign(new Error('The playlist downloaded but has no channels in it.'), { kind: 'parse' });
       d.m3u = used;
@@ -172,7 +175,22 @@ var Source = (function () {
     });
   }
 
+  /* One load of a playlist at a time.  A second ask while one runs (the scheduled reload and Reload
+     channels, the web editor) gets the same answer instead of a second download and parse: on a
+     187,000-channel list two at once ran a small TV out of memory (issue #25).  busy(): the load
+     running now, if any (the public guide waits for it). */
+  var running = {};
+  function busy() { var k = Object.keys(running)[0]; return k ? running[k].job.then(function () {}, function () {}) : null; }
   function load(p) {
+    var id = (p && p.id) || '', key = id + '|' + sig(p), r = running[id];
+    if (r && r.key === key) { Log.info(p.type === 'm3u' ? 'm3u' : 'xc', 'Already loading this playlist; waiting for that load'); return r.job; }
+    var job = load1(p);
+    running[id] = { key: key, job: job };
+    function done() { if (running[id] && running[id].job === job) delete running[id]; }
+    job.then(done, done);
+    return job;
+  }
+  function load1(p) {
     var job = p.type === 'm3u' ? loadM3U(p) : loadXtream(p);
     return job.then(function (data) {
       // Remember the address that actually worked (and credentials taken from a pasted link).
@@ -280,7 +298,7 @@ var Source = (function () {
   function movieUrl(id, ext) { var p = Store.playlist; return base(p.server) + '/movie/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
   function episodeUrl(id, ext) { var p = Store.playlist; return base(p.server) + '/series/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
 
-  return { load: load, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
+  return { load: load, busy: busy, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
     catchupUrl: catchupUrl, setTz: setTz,
     vodCats: vodCats, vodList: vodList, vodInfo: vodInfo, seriesInfo: seriesInfo, movieUrl: movieUrl, episodeUrl: episodeUrl };
 })();

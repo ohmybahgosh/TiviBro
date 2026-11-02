@@ -296,6 +296,7 @@ var App = (function () {
     Views.setZone('channels');
     setupEl.classList.add('hidden');
     checkVod();
+    setTimeout(function () { bigList(Store.playlist); }, 8000);
     // Guide loads after first paint so it never delays the channel list.
     setTimeout(function () { Epg.init(Library); }, fromCache ? 1500 : 300);
     Views.resume();
@@ -341,10 +342,15 @@ var App = (function () {
     });
   }
 
+  /* Reload the channel list.  One at a time: a second ask (Reload channels while the scheduled reload
+     runs) waits for that one, with nothing loaded twice (issue #25). */
+  var reloading = null;
   function refresh(manual) {
+    if (reloading) { if (manual) U.toast('Already reloading the channels'); return reloading; }
     var p = Store.playlist;
     if (manual) U.toast('Reloading channels');
-    return Source.load(p).then(function (data) {
+    Log.info('app', (manual ? 'Reloading' : 'Scheduled reload of') + ' the channel list (' + Library.count() + ' channels now)');
+    reloading = Source.load(p).then(function (data) {
       if (data.fixed) Store.upsertPlaylist(adopt(p, data));
       carryAdded(Library.data, data);
       Store.bigSet(cacheKey(p), data);
@@ -354,7 +360,19 @@ var App = (function () {
       Views.refreshLists(true);
       Settings.live();
       if (manual) U.toast(Library.count() + ' channels loaded');
-    }).catch(function (e) { if (manual) U.toast(e.message || 'Reload failed', 4000); });
+      bigList(p);
+    }).catch(function (e) { if (manual) U.toast(e.message || 'Reload failed', 4000); }).then(function () { reloading = null; });
+    return reloading;
+  }
+  /* A playlist bigger than a TV comfortably holds (186,928 channels on a 32-inch 2022 set, issues #24
+     and #25): say so once, with what helps.  Every reload of such a list is a big moment for the TV. */
+  var BIG = 100000;
+  function bigList(p) {
+    var n = Library.count();
+    if (n < BIG || p.bigNoted) return;
+    Log.warn('app', 'This playlist has ' + n + ' channels, more than most TVs comfortably hold.  Reloading it is the hardest moment for the TV.');
+    p.bigNoted = 1; Store.upsertPlaylist(p);
+    U.toast(n.toLocaleString() + ' channels is a very big playlist for a TV.  If TiviBro closes after reloading it, set Settings > Playlists and guide > ' + (p.name || 'this playlist') + ' > Reload channel list to Manual, or ask your provider for a smaller list.', 14000);
   }
 
   function open(p) {
@@ -469,7 +487,7 @@ var App = (function () {
     else if (wasPlaying) { wasPlaying = false; Player.resume(); }
   });
 
-  return { boot: boot, setup: setup, refresh: refresh, switchPlaylist: switchPlaylist, tourNext: function () { tourNext = true; } };
+  return { boot: boot, setup: setup, refresh: refresh, bigList: bigList, switchPlaylist: switchPlaylist, tourNext: function () { tourNext = true; } };
 })();
 
 window.addEventListener('load', function () { App.boot(); });

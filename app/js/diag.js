@@ -136,7 +136,7 @@ var Diag = (function () {
       ['Player', s.engine || 'auto'], ['Start screen', s.startTab || 'guide'],
       ['Detailed logging', Log.verbose ? 'on' : 'off'],
       ['Last session', Log.unclean ? 'closed unexpectedly, ' + scrub(Log.unclean.text) + (Log.unclean.recent > 1 ? ' (' + Log.unclean.recent + ' times in the last hour)' : '') : 'ended normally'],
-      ['Memory now', (function () { try { return performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) + ' MB used' : 'unknown'; } catch (e) { return 'unknown'; } })()]
+      ['Memory now', (function () { var mb = Log.heapMB ? Log.heapMB() : 0; return mb ? mb + ' MB used' : 'unknown (this TV doesn\'t say)'; })()]
     ];
     if (window.Player && Player.current) facts.push(['Playing', scrub([Player.media, Player.engine].filter(Boolean).join('  '))]);
     var app = Log.lines(true).map(scrub);
