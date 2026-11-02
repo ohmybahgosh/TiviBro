@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **TiviBro tells you when the developer answers your problem report.**  Reports sent from the TV or the web editor are opened on GitHub by the report relay, so whoever sent one heard nothing back.  The TV now keeps the reports it sent and asks every few hours (only the report numbers leave the TV).  A reply, or the report being closed, shows once: what the developer wrote, **Update to** the version with the fix when yours is older, a code to read the whole thread on your phone, and **Still happening**, which sends the log as it is now (with a note if you want) and reopens a closed report.  During fullscreen it waits, with a short note, until you're back.  **Settings > Diagnostics > Your problem reports** lists them all with their status, and **Check now** asks straight away.
-
-## 0.6.0 (alpha 56, 2026-11-02)
+## 0.6.0 (alpha 57, 2026-11-02)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 56
+### New in alpha 57
+
+- **TiviBro tells you when the developer answers your problem report.**  Reports sent from the TV or the web editor are opened on GitHub by the report relay, so whoever sent one heard nothing back.  The TV now keeps the reports it sent and asks every few hours (only the report numbers leave the TV).  A reply, or the report being closed, shows once: what the developer wrote, **Update to** the version with the fix when yours is older, a code to read the whole thread on your phone, and **Still happening**, which sends the log as it is now (with a note if you want) and reopens a closed report.  During fullscreen it waits, with a short note, until you're back.  **Settings > Diagnostics > Your problem reports** lists them all with their status, and **Check now** asks straight away.
+
+### In alpha 56
 
 - **Very big playlists don't close TiviBro when they reload** (issues #24 and #25: 186,928 channels on a 2022 32-inch TV).  A reload was the moment memory ran out; it now asks much less of the TV:
   - One reload at a time.  A second (Reload channels while the scheduled reload runs, the web editor) waits for the first instead of downloading and reading the list again.
