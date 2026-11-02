@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 58, 2026-11-02)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 58
 
 - **Content filter** (discussion #20): **Settings > Parental controls > Content filter** takes channels out of everything, the guide, lists, Search, the phone app and the web editor, with no PIN.  **Hide adult channels** knows the usual words in several languages (and leaves "Adult Swim" alone); add your own words and call signs; and **Hide with the content filter** is in a channel's or group's options while watching or in the guide.  A new TV asks on the set-up tour's first screen, before any channels show.
 - **Find subtitles for movies and shows** (discussion #19): **Subtitles > Find subtitles…** looks on OpenSubtitles.com for what's playing, in your subtitle languages, with your own free API key.  **Timing** moves a subtitle earlier or later, and **Line up with another track** fixes one that's off by matching it to one in time, frame rate included.
@@ -10,11 +14,7 @@
 - **Bigger movie posters** in the guide's details.
 - **The channel guide over the video** is called that everywhere now (it was "Channel list"), and the remote table in the user guide matches what the buttons do.
 
-## 0.6.0 (alpha 57, 2026-11-02)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 57
+### In alpha 57
 
 - **TiviBro tells you when the developer answers your problem report.**  Reports sent from the TV or the web editor are opened on GitHub by the report relay, so whoever sent one heard nothing back.  The TV now keeps the reports it sent and asks every few hours (only the report numbers leave the TV).  A reply, or the report being closed, shows once: what the developer wrote, **Update to** the version with the fix when yours is older, a code to read the whole thread on your phone, and **Still happening**, which sends the log as it is now (with a note if you want) and reopens a closed report.  During fullscreen it waits, with a short note, until you're back.  **Settings > Diagnostics > Your problem reports** lists them all with their status, and **Check now** asks straight away.
 
