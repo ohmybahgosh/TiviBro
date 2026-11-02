@@ -108,29 +108,39 @@ var Subs = (function () {
   function gone(t) { return dead.indexOf(t) >= 0; }
   function reset() {
     added.forEach(function (t) { try { t.mode = 'disabled'; } catch (e) {} dead.push(t); });
-    added = []; delay = 0; clearInterval(delayTimer); delayTimer = 0;
+    added = []; delay = 0; clearInterval(delayTimer); delayTimer = 0; lined = {};
   }
 
   /* ---------- timing ---------- */
   function cuesOf(t) { var c = t && t.cues, out = []; for (var i = 0; c && i < c.length; i++) out.push(c[i]); return out; }
   // Every cue keeps its own time (_s0) and shows at that time plus the delay.  Tracks that are still
   // filling in (subtitles read from the file as it plays) get the delay as their lines arrive.
+  /* A track that was lined up keeps that (by its name and language): subtitles read from a movie file
+     come back as new lines, on a new track even, after a seek or reconnect (mkvsubs.js), and get the
+     same scale and shift as they arrive (fresh()). */
+  var lined = {};
+  function trackKey(t) { return (t.label || '') + '|' + (t.language || ''); }
+  function fix(t) {
+    var map = lined[trackKey(t)];
+    cuesOf(t).forEach(function (c) {
+      if (c._s0 == null) { c._s0 = map ? c.startTime * map.scale + map.off : c.startTime; c._e0 = map ? c.endTime * map.scale + map.off : c.endTime; }
+      var s = Math.max(0, c._s0 + delay), e = Math.max(s + 0.05, c._e0 + delay);
+      if (Math.abs(c.startTime - s) > 0.001) { try { c.startTime = s; c.endTime = e; } catch (x) {} }
+    });
+  }
   function applyDelay() {
     var v = video(), t = v && v.textTracks;
     for (var i = 0; t && i < t.length; i++) {
       if ((t[i].kind !== 'subtitles' && t[i].kind !== 'captions') || gone(t[i])) continue;
-      cuesOf(t[i]).forEach(function (c) {
-        if (c._s0 == null) { c._s0 = c.startTime; c._e0 = c.endTime; }
-        var s = Math.max(0, c._s0 + delay), e = Math.max(s + 0.05, c._e0 + delay);
-        if (Math.abs(c.startTime - s) > 0.001) { try { c.startTime = s; c.endTime = e; } catch (x) {} }
-      });
+      fix(t[i]);
     }
   }
+  function fresh(t) { if (t && (delay || lined[trackKey(t)])) fix(t); }
+  function timed() { clearInterval(delayTimer); delayTimer = delay || Object.keys(lined).length ? setInterval(applyDelay, 2000) : 0; }
   function shift(d) {
     delay = Math.round((delay + d) * 10) / 10;
     applyDelay();
-    clearInterval(delayTimer);
-    if (delay) delayTimer = setInterval(applyDelay, 2000);
+    timed();
     return delay;
   }
 
@@ -168,7 +178,11 @@ var Subs = (function () {
     if (!r) return null;
     r.moved = Math.round((r.off - delay) * 100) / 100;           // how far the lines move on screen
     tc.forEach(function (x) { x.c._s0 = x.s * r.scale + r.off - delay; x.c._e0 = x.e * r.scale + r.off - delay; });
+    // On top of an earlier line-up: a line that arrives later gets both.
+    var was = lined[trackKey(target)] || { scale: 1, off: 0 };
+    lined[trackKey(target)] = { scale: r.scale * was.scale, off: r.scale * was.off + r.off - delay };
     applyDelay();
+    timed();
     return r;
   }
 
@@ -263,7 +277,7 @@ var Subs = (function () {
     }
   }
 
-  return { find: find, gone: gone, refresh: applyDelay, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
+  return { find: find, gone: gone, refresh: applyDelay, fresh: fresh, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
     get delay() { return delay; }, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
     _test: { parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack } };
 })();

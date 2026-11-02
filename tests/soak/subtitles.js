@@ -80,6 +80,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await page.waitForTimeout(1500);
   const lined = await ev(() => { const tt = [].slice.call(document.getElementById('video').textTracks); const es = tt.find(t => /Spanish/.test(t.label)), en = tt.find(t => /English/.test(t.label)); if (en.mode === 'disabled') en.mode = 'hidden'; return { es: es.cues[3].startTime, en: en.cues[3].startTime, toast: document.body.innerText.match(/Lined up[^\n]*/) }; });
   ok('lined up: the Spanish lines start with the English ones', Math.abs(lined.es - lined.en) < 0.06 && lined.toast && /2\.50 s earlier/.test(lined.toast[0]), JSON.stringify(lined));
+  // The same subtitle back as new lines on a new track (a movie file's subtitles after a seek, mkvsubs.js):
+  // they come lined up too.
+  const again = await ev((raw) => { const v = document.getElementById('video'), es = [].slice.call(v.textTracks).find(t => /Spanish/.test(t.label));
+    const t2 = v.addTextTrack('subtitles', es.label, es.language); t2.mode = 'hidden'; t2.addCue(new VTTCue(raw, raw + 1.5, 'otra vez')); Subs.fresh(t2); return { now: t2.cues[0].startTime, first: es.cues[0].startTime }; }, late.first - 1);
+  ok('lines that arrive later on the same subtitle are lined up too', Math.abs(again.now - again.first) < 0.06 && Math.abs(again.now - (late.first - 1)) > 0.5, JSON.stringify(again));
   // Settings.
   await ev(() => { Views.runAction('exit', 'player'); Views.switchTab('settings'); Settings.section('playback'); }); await page.waitForTimeout(600);
   const set = await ev(() => document.body.innerText);

@@ -566,6 +566,7 @@ var MkvSubs = (function () {
       for (var k = 0; k < r.cues.length; k++) {
         var list = r.cues[k];
         for (var j = 0; j < list.length; j++) liveTracks[k].addCue(new VTTCue(list[j].s, list[j].e, list[j].text));
+        if (typeof Subs !== 'undefined' && Subs.fresh) Subs.fresh(liveTracks[k]);    // a Line up or Timing done before the seek
       }
     }
 
@@ -621,6 +622,7 @@ var MkvSubs = (function () {
               rec.cues[a].push({ s: found[f].startSec, e: found[f].endSec, text: text });
             }
           }
+          if (typeof Subs !== 'undefined' && Subs.fresh) liveTracks.forEach(function (t) { Subs.fresh(t); });
           rec.fetched[off] = true;
           delete failures[off]; delete retryAt[off];
           video._mkvSubsState = 'ready';
