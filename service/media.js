@@ -3,8 +3,8 @@
    helper's secret because a login goes through them (see proxy.js).
 
    Three things stay separate on purpose: a movie's id (from its stable path), its container, and the
-   address it plays from.  A WebDAV movie's address is a signed link that expires, so it is asked for
-   again at every play and never kept.
+   address it plays from.  At every play, WebDAV gives either a fresh signed link or
+   a temporary localhost stream whose login stays in the helper (media-stream.js).
 
    Logs name hosts only.  A login goes only to the host it was entered for, never after a redirect to
    another one, and certificates are always checked for WebDAV.
@@ -115,8 +115,7 @@ var MESSAGES = {
   login: 'The server did not accept that login.',
   cert: 'TiviBro could not check this server\'s security certificate.',
   unreachable: 'The server did not answer.',
-  address: 'That address does not work.  It has to start with http:// or https://.',
-  noredirect: 'This server does not give a link TiviBro can play.'
+  address: 'That address does not work.  It has to start with http:// or https://.'
 };
 function failure(kind) { return { error: kind, message: MESSAGES[kind] }; }
 
@@ -294,8 +293,8 @@ function scanWebdav(source, cb) {
     });
   })();
 }
-// The address to play now.  The server answers with a redirect to a signed link on another host; the
-// login stays behind.  A redirect on the same host and scheme still needs the login, so it is followed.
+// Signed redirects stay direct.  Servers serving the authenticated file themselves
+// get a temporary localhost stream, shared by the player and subtitle Range reads.
 function resolve(source, path, cb) {
   var base = webdavBase(source);
   if (!base || str(path).charAt(0) !== '/') return cb(failure('address'));
@@ -310,7 +309,8 @@ function resolve(source, path, cb) {
         if (tu.protocol + '//' + tu.host !== origin) { hideLinksFrom(tu.host); return cb({ url: to }); }
         if (left > 0) return hop(to, left - 1);
       }
-      cb(failure(status >= 200 && status < 300 ? 'noredirect' : 'unreachable'));
+      if (status === 200 || status === 206) return cb({ url: require('./media-stream').create(url, basic(source), extOf(URL_.parse(url).pathname) || extOf(path)) });
+      cb(failure('unreachable'));
     });
   })(origin + path, 3);
 }
@@ -398,6 +398,7 @@ function handle(req, res, ALLOW, log) {
     });
     resolve(q.source, q.path, function (r) {
       log({ lv: r.error ? 'warn' : 'info', event: 'media link', host: host, error: r.error || null });
+      if (r.url && r.url.indexOf('/media-stream/') === 0) r.url = 'http://127.0.0.1:' + req.connection.localPort + r.url;
       send(res, ALLOW, 200, r);
     });
   });

@@ -415,7 +415,7 @@ Movies/
 
 A folder named "Title (Year)" gives the title and year, whatever the file is called.  Without one, the file name is used: dots and underscores become spaces, and it is cut at the quality words (1080p, BluRay, x265).
 
-A WebDAV source is a WebDAV folder, not a normal website or HTTP directory.  Services such as premiumize use a customer ID and API key as the login.  Listing uses WebDAV; playback currently needs the server to redirect to a playable file link.  Servers that serve files directly with a login are not supported yet.
+A WebDAV source is a WebDAV folder, not a normal website or HTTP directory.  Services such as premiumize use a customer ID and API key as the login.  TiviBro supports both signed file links and servers that serve files directly with HTTP Basic authentication.  For a file that needs a login, the helper streams it to the player and handles seeking and subtitle reads.  Your login is sent only to the server you added.
 
 For easier typing, open **Settings > My media > Edit on a computer** and connect to the web editor.  Its **My media** page lets you add WebDAV logins, rescan or remove sources, and change the shared metadata language.  Saved logins are never sent back to the editor.
 
@@ -428,7 +428,7 @@ In **Settings > My media**, choose a saved source for **Rescan**, **Fetch movie 
 - **Timing** moves any subtitle a little earlier or later (0.1 s or 1 s at a time).
 - **Line up with another track…** fixes a subtitle that drifts or starts at the wrong time by matching it to one that's already in time (a built-in one, or another download, in any language).  It finds the shift and a frame-rate difference (23.976, 24 or 25 fps) and says how much it moved.
 
-Movies use the usual seek bar and subtitle menu.  Embedded SRT text subtitles in MKV files can appear when the file has a usable subtitle index.  ASS/SSA, image subtitles such as VobSub or PGS, MP4 timed text and separate `.srt` files are not included yet.  **Back** hides the player controls first, then returns to the same movie.  Series, folder picking, Search and phone app browsing are not included yet.
+Movies use the usual seek bar and subtitle menu.  Embedded SRT, ASS/SSA and WebVTT text subtitles in MKV files can appear when the file has a usable subtitle index, including larger indexes in movies with many languages.  ASS/SSA and WebVTT show as plain text, without their custom fonts, positioning or animation.  Image subtitles such as VobSub or PGS, MP4 timed text and separate subtitle files from your server are not included yet.  **Find subtitles** can add a subtitle from OpenSubtitles even when the file has no supported embedded tracks.  **Back** hides the player controls first, then returns to the same movie.  Series, folder picking and Search are not included yet.
 
 Playback contacts servers you add and their playback servers.  Fetching details also contacts api.themoviedb.org with titles/years or saved movie IDs and the preferred language, never your source logins or playback links.  Previously saved Cinemeta posters may still load from images.metahub.space until those movies are refreshed.  Cloud playback links are resolved each time you play and are never saved.  After a long pause with an expired link, return to the shelves and resume.  The library uses the helper's persistent storage, so app restarts and updates keep it even when browser storage is full.  Source logins are outside playlist backups and problem reports; add the sources again after restoring on another TV.  Up to eight sources can be saved.
 
@@ -610,7 +610,7 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Sign in (optional)** | | Your OpenSubtitles account: 20 downloads a day instead of 5.  Kept on this TV only. |
 | **Play next episode automatically** | **On** · Off | When an episode ends, the next one starts. |
 
-**Subtitles in MKV movies and episodes.**  Open **Subtitles** from the player menu to choose a language or **Off**.  The menu is available as soon as playback starts and shows **Finding subtitles…** while tracks are discovered.  The automatic subtitle language setting above also applies.  Supported embedded SRT tracks appear with their language names, and your selection survives seeking and reconnects.  Files without supported tracks show an unavailable message; styled ASS/SSA and bitmap subtitles are not supported.  Some MKV files do not index their subtitle tracks and cannot expose them here.
+**Subtitles in MKV movies and episodes.**  Open **Subtitles** from the player menu to choose a language or **Off**.  The menu is available as soon as playback starts and shows **Finding subtitles…** while tracks are discovered.  The automatic subtitle language setting above also applies.  Supported embedded SRT, ASS/SSA and WebVTT tracks appear with their language names, and your selection survives seeking and reconnects.  ASS/SSA and WebVTT show as plain text.  My media uses the file's known type even when its signed playback link has no extension.  Files without supported tracks show an unavailable message; bitmap subtitles and MP4 timed text are not supported.  Some MKV files do not index their subtitle tracks and cannot expose them here.  **Find subtitles** offers another way to add them.
 
 ### Settings: My media
 

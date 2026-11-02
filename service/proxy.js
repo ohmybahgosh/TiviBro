@@ -66,7 +66,7 @@ function escRx(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function redact(u) {
   var s = String(u);
   (Media.signedHosts || []).forEach(function (h) { s = s.replace(new RegExp('(' + escRx(h) + ')[/?][^\\s"\'<>\\\\]*', 'gi'), '$1/***'); });
-  return s.replace(/([?&](?:sig|signature|token|auth|key|expires|hash)=)[^&\s]*/gi, '$1***')
+  return s.replace(/\/media-stream\/[a-f0-9]{48}/gi, '/media-stream/***').replace(/([?&](?:sig|signature|token|auth|key|expires|hash)=)[^&\s]*/gi, '$1***')
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s]*/gi, '$1***').replace(/(username=)([^&\s]{0,2})[^&\s]*/gi, '$1$2***')
     .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/');
 }
@@ -140,6 +140,7 @@ function create(opts) {
 
   var server = http.createServer(function (req, res) {
     if (req.method === 'OPTIONS') { res.writeHead(204, ALLOW); return res.end(); }
+    if (req.url.indexOf('/media-stream/') === 0) return require('./media-stream').handle(req, res, ALLOW);
     if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, node: process.version, stats: stats, guide: 2, vod: 2, kv: 1, live: 1, sys: sys() })); }
     /* The web editor and the phone app connection are switched on and off from TiviBro only.  On the
        TV the helper hands TiviBro a secret with its start reply (service.js, over luna, which only

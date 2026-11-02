@@ -164,7 +164,8 @@ function webdav(tree, auth, redirectTo, seen) {
   rsrv.close(); cdn.close();
   const plain = webdav({}, 'cust:key'); const pp = await listen(plain);
   r = await resolve({ type: 'webdav', address: `http://127.0.0.1:${pp}/`, user: 'cust', pass: 'key' }, '/x.mkv');
-  ok('a server with no redirect is not playable yet', r.error === 'noredirect', r);
+  ok('an authenticated file gets a temporary stream address', /^\/media-stream\/[a-f0-9]{48}\/movie\.mkv$/.test(r.url), r);
+  ok('the stream address contains no server login', !r.url.includes('cust') && !r.url.includes('key'));
   plain.close();
 
   // Finding servers: the Fritz!Box's own description

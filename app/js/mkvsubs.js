@@ -1,11 +1,11 @@
-/* Embedded SRT subtitle extraction for MKV movies/series.  The native engine's <video>
+/* Embedded text subtitle extraction for MKV movies/series.  The native engine's <video>
    decodes an MKV's video/audio fine but never exposes its embedded subtitle tracks
    through video.textTracks -- that's a near-universal limitation of browser <video>
    elements, not a webOS quirk.  This reads just enough of the MKV container itself
    (Tracks, then SeekHead -> Cues -> the handful of Clusters a subtitle track's cues
    actually live in) over HTTP Range requests to pull the subtitle text out, and adds
    it as real VTTCue objects on a <track> so the app's existing subtitle UI (auto-on,
-   the in-player Subtitles menu) works on its own.  SRT (S_TEXT/UTF8) only; if a file's
+   the in-player Subtitles menu) works on its own.  SRT, ASS/SSA and WebVTT as plain text; if a file's
    Cues doesn't index its subtitle track, this gives up rather than scanning the file. */
 var MkvSubs = (function () {
   'use strict';
@@ -52,7 +52,7 @@ var MkvSubs = (function () {
       if (sz.value === null) break;
       var cstart = sz.next, cend = Math.min(cstart + sz.value, end);
       if (idr.value === TRACKENTRY) {
-        var t = { number: 0, type: 0, codecId: '', language: '', forced: false };
+        var t = { number: 0, type: 0, codecId: '', language: 'eng', name: '', forced: false }, languageBCP47 = '';
         var p = cstart;
         while (p < cend) {
           var cidr = readId(buf, p);
@@ -64,9 +64,12 @@ var MkvSubs = (function () {
           else if (cidr.value === TRACKTYPE) t.type = bytesToUint(buf, vstart, vend);
           else if (cidr.value === CODECID) t.codecId = bytesToAscii(buf, vstart, vend);
           else if (cidr.value === LANGUAGE) t.language = bytesToAscii(buf, vstart, vend);
+          else if (cidr.value === 0x22B59D) languageBCP47 = bytesToAscii(buf, vstart, vend);
+          else if (cidr.value === 0x536E) t.name = utf8Decode(buf, vstart, vend);
           else if (cidr.value === FLAGFORCED) t.forced = bytesToUint(buf, vstart, vend) !== 0;
           p = vend;
         }
+        if (languageBCP47) t.language = languageBCP47;
         tracks.push(t);
       }
       pos = cend;
@@ -182,6 +185,20 @@ var MkvSubs = (function () {
     var s = decoder ? decoder.decode(slice) : '';
     if (!decoder) for (var i = start; i < end; i++) s += String.fromCharCode(buf[i]);
     return s.replace(ASS_OVERRIDE, '');
+  }
+  // Matroska ASS/SSA blocks contain eight comma-separated metadata fields, then text
+  // (which may itself contain commas).  Timing comes from the block, not Dialogue lines.
+  function subtitleText(text, codec) {
+    if (codec === 'S_TEXT/ASS' || codec === 'S_TEXT/SSA') {
+      var at = 0;
+      for (var i = 0; i < 8; i++) { at = text.indexOf(',', at); if (at < 0) return ''; at++; }
+      text = text.slice(at).replace(/\\[Nn]/g, '\n').replace(/\\h/g, '\u00a0');
+    }
+    // The TV overlay draws textContent.  Strip cue markup and decode only text entities,
+    // so voice names, styles and timestamps never become visible words or HTML.
+    return text.replace(/<[^>]*>/g, '').replace(/&(?:amp|lt|gt|nbsp|quot|apos);/g, function (s) {
+      return { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&nbsp;': '\u00a0', '&quot;': '"', '&apos;': "'" }[s];
+    });
   }
   // A Block/SimpleBlock's own content: track number as a size-style vint (marker bits
   // stripped, same rule as an element size -- NOT an element ID), then a 2-byte signed
@@ -389,9 +406,12 @@ var MkvSubs = (function () {
   // and only not-yet-fetched clusters are requested, so extraction converges rather than
   // restarting, and the provider sees far fewer requests overall.
   var subCache = {};
+  // A movie with many languages can have an index larger than 1 MB.  Bound only
+  // the index read, independently of file size; never fall back to reading media.
+  var MAX_CUES_BYTES = 8 * 1024 * 1024;
 
-  function extract(url, video, onResolved) {
-    if (!/\.mkv(\?|#|$)/i.test(url)) { if (onResolved) onResolved(url); return { cancel: function () {} }; }
+  function extract(url, video, onResolved, container) {
+    if (!/\.mkv(\?|#|$)/i.test(url) && !/^mkv$/i.test(container || '')) { if (onResolved) onResolved(url); return { cancel: function () {} }; }
     var cancelled = false, started = false;
     function startVideo(resolved) { if (!cancelled && !started && onResolved) { started = true; onResolved(resolved); } }
     video._mkvSubsState = 'discovering';
@@ -407,9 +427,14 @@ var MkvSubs = (function () {
       for (var a = 0; a < liveTracks.length; a++) {
         if (liveTracks[a].mode !== 'showing') continue;
         selected = true;
-        var list = rec && rec.cues[a] || [];
+        // Subs timing and alignment change live cue times.  Some native players
+        // clear a <track>'s cues when enabling it; retain the text cache fallback.
+        var live = liveTracks[a].cues, useLive = live && live.length;
+        var list = useLive ? live : rec && rec.cues[a] || [];
+        var delay = !useLive && typeof Subs !== 'undefined' ? Subs.delay || 0 : 0;
         for (var b = 0; b < list.length; b++) {
-          if (list[b].s <= video.currentTime && list[b].e > video.currentTime)
+          var s = useLive ? list[b].startTime : list[b].s + delay, e = useLive ? list[b].endTime : list[b].e + delay;
+          if (s <= video.currentTime && e > video.currentTime)
             lines.push(list[b].text.replace(/<\/?(?:b|i|u|font)(?:\s[^>]*)?>/gi, ''));
         }
       }
@@ -534,7 +559,7 @@ var MkvSubs = (function () {
       if (!tracksChild) return;
       var allTracks = readTracks(head, tracksChild.start, tracksChild.end);
       var subTracks = [];
-      for (var i = 0; i < allTracks.length; i++) if (allTracks[i].type === 17 && allTracks[i].codecId === 'S_TEXT/UTF8') subTracks.push(allTracks[i]);
+      for (var i = 0; i < allTracks.length; i++) if (allTracks[i].type === 17 && /^(S_TEXT\/(UTF8|ASS|SSA|WEBVTT))$/.test(allTracks[i].codecId)) subTracks.push(allTracks[i]);
       if (!subTracks.length) return;
       var seekChild = findChild(head, seg.start, seg.end, SEEKHEAD);
       if (!seekChild) return;
@@ -551,7 +576,7 @@ var MkvSubs = (function () {
       var cuesAbs = segmentDataStart + cuesRel;
       return fetchRange(wrapped, cuesAbs, cuesAbs + 15, true).then(function (peek) {
         var id = readId(peek, 0), size = readVint(peek, id.next);
-        if (id.value !== 0x1C53BB6B || size.value === null || size.value > 1048576) throw new Error('invalid Cues');
+        if (id.value !== 0x1C53BB6B || size.value === null || size.value > MAX_CUES_BYTES) throw new Error('invalid Cues');
         return fetchRange(wrapped, cuesAbs, cuesAbs + size.next + size.value - 1, true);
       }).then(function (cuesBuf) {
         if (cancelled) return;
@@ -575,8 +600,10 @@ var MkvSubs = (function () {
         if (!rec) {
           var meta = [];
           for (var k = 0; k < perTrackCues.length; k++) {
-            var langCode = (typeof U !== 'undefined' && U.lang) ? U.lang(perTrackCues[k].track.language) : '';
-            meta.push({ label: langDisplayName(langCode) || ('Subtitle track ' + (k + 1)), srclang: langCode || '' });
+            var tr = perTrackCues[k].track;
+            var langCode = (typeof U !== 'undefined' && U.lang) ? U.lang(tr.language) : '';
+            var rawLang = tr.language !== 'und' ? tr.language : '';
+            meta.push({ label: tr.name || langDisplayName(langCode) || rawLang || ('Subtitle track ' + (k + 1)), srclang: langCode || rawLang });
           }
           rec = subCache[url] = { tracks: meta, cues: meta.map(function () { return []; }), fetched: {}, done: false };
         }
@@ -619,8 +646,10 @@ var MkvSubs = (function () {
             for (var a = 0; a < perTrackCues.length; a++) {
               for (var f = 0; f < found.length; f++) {
                 if (found[f].track !== perTrackCues[a].track.number) continue;
-                liveTracks[a].addCue(new VTTCue(found[f].startSec, found[f].endSec, found[f].text));
-                rec.cues[a].push({ s: found[f].startSec, e: found[f].endSec, text: found[f].text });
+                var text = subtitleText(found[f].text, perTrackCues[a].track.codecId);
+                if (!text.trim()) continue;
+                liveTracks[a].addCue(new VTTCue(found[f].startSec, found[f].endSec, text));
+                rec.cues[a].push({ s: found[f].startSec, e: found[f].endSec, text: text });
               }
             }
             rec.fetched[off] = true;

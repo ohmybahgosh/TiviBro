@@ -3,7 +3,8 @@
    network work (service/media.js); MediaStore keeps what is remembered.
 
    Titles start with folder names.  Explicitly requested TMDB lookups add movie details and posters;
-   only titles/years or chosen movie IDs are sent.  A WebDAV signed link is resolved for every play. */
+   only titles/years or chosen movie IDs are sent.  A fresh signed link or authenticated
+   localhost stream is resolved for every WebDAV play. */
 var Media = (function () {
   'use strict';
   var $ = U.$;

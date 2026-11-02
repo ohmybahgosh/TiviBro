@@ -282,5 +282,10 @@ ok('native video uses the exact URL resolved by subtitle discovery', t.video.src
 t.P.stop();
 ok('stopping native MKV playback cancels subtitle discovery', cancelledMkv === 1);
 
+let hintedExt;
+t = setup({mkvSubs: {extract(url, video, resolved, ext) { hintedExt = ext; resolved(url); return {cancel() {}}; }}});
+t.P.play({n: 'Signed movie', url: 'http://mock/signed-file'}, {live: false, meta: {item: {ext: 'mkv'}}});
+ok('My media passes its known container to subtitle extraction for extensionless links', hintedExt === 'mkv');
+
 if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }
 console.log('all player tests passed');

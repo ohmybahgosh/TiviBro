@@ -6,75 +6,7 @@ let fail = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  ' + x : '')); if (!c) fail++; };
 
 // ---- tiny EBML byte builders, for constructing fixtures only ----
-function idBytes(hex) { const b = []; for (let i = 0; i < hex.length; i += 2) b.push(parseInt(hex.slice(i, i + 2), 16)); return b; }
-function sizeByte(n) {
-  for (let len = 1; len <= 8; len++) {
-    if (n <= Math.pow(2, 7 * len) - 1) {
-      const bytes = [];
-      let v = n;
-      for (let i = len - 1; i >= 0; i--) { bytes[i] = v & 0xFF; v = Math.floor(v / 256); }
-      bytes[0] |= (0x80 >> (len - 1));
-      return bytes;
-    }
-  }
-  throw new Error('size too large for fixture helper');
-}
-function strBytes(s) { return Array.from(s).map(c => c.charCodeAt(0)); }
-function el(hexId, contentBytes) { return idBytes(hexId).concat(sizeByte(contentBytes.length)).concat(contentBytes); }
-function trackEntry(num, type, codecId, lang, forced) {
-  let content = [].concat(el('D7', [num]), el('83', [type]), el('86', strBytes(codecId)));
-  if (lang) content = content.concat(el('22B59C', strBytes(lang)));
-  if (forced) content = content.concat(el('55AA', [1]));
-  return el('AE', content);
-}
-function u8(arr) { return Uint8Array.from(arr); }
-function uintBytes(n) { if (n === 0) return [0]; const b = []; let v = n; while (v > 0) { b.unshift(v & 0xFF); v = Math.floor(v / 256); } return b; }
-function seek(idHex, pos) { return el('4DBB', [].concat(el('53AB', idBytes(idHex)), el('53AC', uintBytes(pos)))); }
-function cuePoint(time, track, clusterPos) { return el('BB', [].concat(el('B3', uintBytes(time)), el('B7', [].concat(el('F7', uintBytes(track)), el('F1', uintBytes(clusterPos)))))); }
-function trackVint(n) { return [0x80 | n]; }
-function i16be(n) { if (n < 0) n = 0x10000 + n; return [(n >> 8) & 0xFF, n & 0xFF]; }
-function blockHeader(track, relTimecode, flags) { return trackVint(track).concat(i16be(relTimecode), [flags]); }
-function blockGroupEl(track, relTimecode, duration, text) {
-  const blockContent = blockHeader(track, relTimecode, 0x00).concat(strBytes(text));
-  return el('A0', [].concat(el('A1', blockContent), el('9B', uintBytes(duration))));
-}
-function simpleBlockEl(track, relTimecode, flags, text) { return el('A3', blockHeader(track, relTimecode, flags).concat(strBytes(text))); }
-// Fixed-width (4-byte) uint encoding: length is independent of value, so a SeekHead/Cues
-// entry's own byte length can be computed before the position value it will hold is known.
-function uintBytesFixed(n) { const b = []; let v = n; for (let i = 0; i < 4; i++) { b.unshift(v & 0xFF); v = Math.floor(v / 256); } return b; }
-function seekFixed(idHex, pos) { return el('4DBB', [].concat(el('53AB', idBytes(idHex)), el('53AC', uintBytesFixed(pos)))); }
-function cuePointFixed(time, track, clusterPos) { return el('BB', [].concat(el('B3', uintBytes(time)), el('B7', [].concat(el('F7', uintBytes(track)), el('F1', uintBytesFixed(clusterPos)))))); }
-
-// A complete synthetic MKV: EBML header + Segment{Info, Tracks, SeekHead->Cues, Cues->Cluster}.
-// opts.subtitleTrack: {number, lang} or null (no subtitle track at all).
-// opts.cuesIndexesSubtitle: whether Cues' CuePoint references the subtitle track (true) or
-//   only the video track (false) -- the "Cues doesn't index the subtitle track" case.
-function buildMkv(opts) {
-  const ebmlHeader = el('1A45DFA3', []);
-  const infoEl = el('1549A966', el('2AD7B1', uintBytes(1000000)));
-  let tracksContent = trackEntry(1, 1, 'V_MPEG4/ISO/AVC', '', false);
-  if (opts.subtitleTrack) tracksContent = tracksContent.concat(trackEntry(opts.subtitleTrack.number, 17, 'S_TEXT/UTF8', opts.subtitleTrack.lang || '', false));
-  const tracksEl = el('1654AE6B', tracksContent);
-  const preSeekLen = infoEl.length + tracksEl.length;
-  const seekEntryLen = seekFixed('1C53BB6B', 0).length; // fixed-width: same length for any value
-  const seekHeadFullLen = idBytes('114D9B74').length + sizeByte(seekEntryLen).length + seekEntryLen; // SeekHead's own id+size header + its one Seek entry
-  const cuesOffset = preSeekLen + seekHeadFullLen; // Cues sits right after the whole SeekHead element, not just its inner Seek entry
-  const seekHeadEl = el('114D9B74', seekFixed('1C53BB6B', cuesOffset));
-
-  const cuesTrack = (opts.cuesIndexesSubtitle && opts.subtitleTrack) ? opts.subtitleTrack.number : 1;
-  const cuePointLen = cuePointFixed(0, cuesTrack, 0).length; // fixed-width: same length for any value
-  const cuesElLenSoFar = idBytes('1C53BB6B').length + 1 /* 1-byte size */ + cuePointLen;
-  const clusterPos = cuesOffset + cuesElLenSoFar;
-  const cuesEl = el('1C53BB6B', cuePointFixed(0, cuesTrack, clusterPos));
-
-  let clusterContent = el('E7', uintBytes(1000)); // cluster timecode
-  if (opts.subtitleTrack) clusterContent = clusterContent.concat(blockGroupEl(opts.subtitleTrack.number, 0, opts.cueDuration || 2000, opts.cueText || 'Hi there'));
-  const clusterEl = el('1F43B675', clusterContent);
-
-  const segmentContent = [].concat(infoEl, tracksEl, seekHeadEl, cuesEl, clusterEl);
-  const segmentEl = el('18538067', segmentContent);
-  return Uint8Array.from([].concat(ebmlHeader, segmentEl));
-}
+const { idBytes, sizeByte, strBytes, el, trackEntry, u8, uintBytes, seek, cuePoint, trackVint, i16be, blockHeader, blockGroupEl, simpleBlockEl, uintBytesFixed, seekFixed, cuePointFixed, buildMkv } = require("../lib/mkv-fixture");
 
 const mkvFixtures = {
   '1.mkv': buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true }),
@@ -165,12 +97,17 @@ ok('reads a subtitle track with language and forced flag',
     return !!sub && sub.number === 3 && sub.codecId === 'S_TEXT/UTF8' && sub.language === 'nl' && sub.forced === true;
   })());
 
-ok('reads a video track with no language tag as empty string, not throwing',
+ok('an omitted language tag uses the Matroska English default',
   (() => {
     const tracks = MkvSubs.readTracks(buf, 0, buf.length);
     const vid = tracks.find(t => t.type === 1);
-    return !!vid && vid.number === 1 && vid.codecId === 'V_MPEG4/ISO/AVC' && vid.language === '';
+    return !!vid && vid.number === 1 && vid.codecId === 'V_MPEG4/ISO/AVC' && vid.language === 'eng';
   })());
+
+const named = u8(el('AE', [].concat(el('D7',[3]),el('83',[17]),el('86',strBytes('S_TEXT/UTF8')),
+  el('22B59D',strBytes('nl-NL')),el('22B59C',strBytes('eng')),el('536E',strBytes('Dutch SDH')))));
+const namedTrack = MkvSubs.readTracks(named,0,named.length)[0];
+ok('BCP 47 takes precedence regardless of element order and keeps track names', namedTrack.language==='nl-NL' && namedTrack.name==='Dutch SDH');
 
 const videoOnlyBuf = u8(trackEntry(1, 1, 'V_MPEG4/ISO/AVC', '', false));
 ok('an MKV with no subtitle track returns an empty subtitle list, not throwing',
@@ -243,6 +180,41 @@ ok('orders clusters by proximity to current playback position, nearest first, de
 
 // ---- extract() ----
 (async function () {
+  mkvFixtures['large-index.mkv'] = buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true, indexPadding: 1631554 });
+  const largeVideo = { children: [], appendChild(el) { this.children.push(el); } };
+  const largeHandle = MkvSubs.extract('http://mock/large-index.mkv', largeVideo);
+  await flush(60);
+  ok('a subtitle index over 1 MB still exposes its tracks and cues', largeVideo.children.length === 1 && largeVideo.children[0].track.cues[0].text === 'Hi there');
+  largeHandle.cancel();
+  const oversized = Array.from(buildMkv({subtitleTrack:{number:7,lang:'en'},cuesIndexesSubtitle:true}));
+  const cuesAt = Buffer.from(oversized).lastIndexOf(Buffer.from('1c53bb6b','hex'));
+  const oldSize = MkvSubs.readVint(u8(oversized),cuesAt+4);
+  oversized.splice(cuesAt+4,oldSize.next-cuesAt-4,...sizeByte(8*1024*1024+1));
+  mkvFixtures['oversized-index.mkv'] = u8(oversized);
+  const oversizeVideo = {children:[],appendChild(el){this.children.push(el);}};
+  fetchCallCount = 0;
+  const oversizeHandle = MkvSubs.extract('http://mock/oversized-index.mkv',oversizeVideo);
+  await flush(50);
+  ok('an index beyond the memory bound is rejected before reading its payload',oversizeVideo._mkvSubsState==='error' && fetchCallCount===2 && oversizeVideo.children.length===0);
+  oversizeHandle.cancel();
+  for (const codec of ['S_TEXT/ASS', 'S_TEXT/SSA', 'S_TEXT/WEBVTT']) {
+    const name = codec.split('/')[1].toLowerCase() + '.mkv';
+    const ass = codec !== 'S_TEXT/WEBVTT';
+    mkvFixtures[name] = buildMkv({ subtitleTrack: { number: 7, lang: 'en', codec }, cuesIndexesSubtitle: true,
+      cueText: ass ? '0,0,Default,,0,0,0,,{\\i1}Hello, world!\\NNext\\hline' : '<v Speaker>Hello, world!</v>\nNext&nbsp;line' });
+    const video = { children: [], appendChild(el) { this.children.push(el); } };
+    const h = MkvSubs.extract('http://mock/' + name, video);
+    await flush(50);
+    const c = video.children[0] && video.children[0].track.cues[0];
+    ok(codec + ' is extracted as readable text with container timing', c && c.text === 'Hello, world!\nNext\u00a0line' && c.startTime === 1 && c.endTime === 3);
+    h.cancel();
+  }
+  mkvFixtures['signed-link'] = buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true });
+  const signedVideo = { children: [], appendChild(el) { this.children.push(el); } };
+  const signedHandle = MkvSubs.extract('http://mock/signed-link', signedVideo, null, 'mkv');
+  await flush(50);
+  ok('a known MKV is extracted even when its signed URL has no extension', signedVideo.children.length === 1 && signedVideo.children[0].track.cues[0].text === 'Hi there');
+  signedHandle.cancel();
   ok('extracts a subtitle cue end to end and adds it to a <track> on the video', await (async () => {
     const video = { children: [], appendChild(el) { this.children.push(el); } };
     MkvSubs.extract('http://p/movie/u/p/1.mkv', video);
@@ -443,6 +415,8 @@ ok('orders clusters by proximity to current playback position, nearest first, de
     const t = v.children[0].track; t.mode = 'showing'; t.activeCues = [];
     events.timeupdate();
     const visible = parent.children[0].textContent === 'Hi there' && classes['mkv-captions-active'];
+    t.cues[0].startTime = 2.5; t.cues[0].endTime = 4.5; events.timeupdate();
+    const shifted = parent.children[0].textContent === '';
     t.mode = 'disabled'; events.timeupdate();
     const off = parent.children[0].textContent === '' && !classes['mkv-captions-active'];
     t.mode = 'showing'; v.currentTime = 5; events.timeupdate();
@@ -450,7 +424,7 @@ ok('orders clusters by proximity to current playback position, nearest first, de
     h.cancel();
     const h2 = MkvSubs.extract('http://p/overlay.mkv', v);
     const preserved = v.children[0].track.mode === 'showing'; h2.cancel();
-    return visible && off && expired && preserved && parent.children.length === 0;
+    return visible && shifted && off && expired && preserved && parent.children.length === 0;
   })());
 
   ok('playback and subtitles share the first resolved session URL', await (async () => {
