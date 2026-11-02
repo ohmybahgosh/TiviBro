@@ -282,7 +282,7 @@ var Player = (function () {
     var want = ccOn() && full && st && st.started;
     // hls.js: its own captions track.
     ccTracks().forEach(function (t, i) { var m = want && kind === 'hls' && i === 0 ? 'showing' : 'hidden'; if (t.mode !== m) t.mode = m; });
-    var lines = want && kind === 'ts' && ccDec ? ccDec.at(video.currentTime * 1000) : null;
+    var lines = want && kind === 'ts' && ccDec ? ccDec.screenAt(video.currentTime * 1000) : null;
     var key = lines ? lines.key + '|' + (Store.settings.ccSize || 'm') : '';
     if (key === ccLast) return;
     ccLast = key;

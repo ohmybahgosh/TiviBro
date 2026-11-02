@@ -5,7 +5,7 @@
 
    Captions.feed(seiBytes, ptsMs): the SEI as it came (Annex B or not), with its presentation time.
    Decoding happens in time order (B-frames send captions out of order), into "screens": what CC1
-   shows from a time on.  Captions.at(t) is the screen to show at video time t.
+   shows from a time on.  Captions.screenAt(t) is the screen to show at video time t.
 
    CEA-608 in short: pairs of bytes with odd parity.  0x10-0x1F as the first byte is a control code
    (sent twice, the copy ignored); the rest is text.  Three styles: pop-on (written off screen, then
@@ -183,7 +183,7 @@ var Captions = (function () {
       /* What to show at video time t (ms): the lines, or null.  Pop-on captions are cleared just
          before the next one is swapped in; that blink is skipped.  Nothing for a while (the channel
          stopped sending captions) clears the screen. */
-      at: function (t) {
+      screenAt: function (t) {
         var s = d.screens, lo = 0, hi = s.length - 1, i = -1;
         if (t > lastFeed + STALE) return null;
         while (lo <= hi) { var mid = (lo + hi) >> 1; if (s[mid].t <= t) { i = mid; lo = mid + 1; } else hi = mid - 1; }
