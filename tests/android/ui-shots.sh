@@ -80,8 +80,8 @@ shot 9b-channel-options 4
 [ -n "$(find_text "Your groups")" ] || { echo "Press and hold did not show the channel's options"; exit 1; }
 echo "Press and hold shows a channel's options"
 # Show or hide channels: the group's channels with ticks (the sheet's last option).
-if [ -n "$(find_text "Show or hide channels")" ]; then
-  tap "Show or hide channels"
+if [ -n "$(find_text "Show or hide channels…")" ]; then
+  tap "Show or hide channels…"
   shot 9c-show-hide 4
   [ -n "$(find_text "11 of 12 shown")" ] || { echo "Show or hide channels did not list the group"; exit 1; }
   echo "Show or hide channels lists the group with ticks"
@@ -91,11 +91,11 @@ else echo "Show or hide channels not on screen: skipped"; adb shell input keyeve
 if [ -n "$(find_text "On now")" ]; then
   tap "On now"
   shot 9d-on-now 6
-  for i in 1 2 3 4; do [ -n "$(find_text "left")" ] && break; sleep 3; done
-  [ -n "$(find_text "left")" ] || { echo "On now did not show its shelves"; exit 1; }
-  tap "Iron Orchard" || true
+  for i in 1 2 3 4; do [ -n "$(find_text "The Lighthouse Keeper")" ] && break; sleep 3; done
+  [ -n "$(find_text "The Lighthouse Keeper")" ] || { echo "On now did not show its shelves"; exit 1; }
+  tap "The Lighthouse Keeper" || true
   shot 9e-on-now-movie 5
-  [ -n "$(find_text "Iron Orchard")" ] || { echo "On now did not open the movie"; exit 1; }
+  [ -n "$(find_text "The Lighthouse Keeper")" ] || { echo "On now did not open the movie"; exit 1; }
   echo "On now shows posters and opens a movie"
   adb shell input keyevent KEYCODE_BACK; sleep 2
 else echo "On now tab not on screen: skipped"; fi
