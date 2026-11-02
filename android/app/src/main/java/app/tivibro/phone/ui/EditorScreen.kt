@@ -64,12 +64,28 @@ var oc=HTMLAnchorElement.prototype.click;HTMLAnchorElement.prototype.click=funct
 document.addEventListener('click',function(e){var a=e.target&&e.target.closest&&e.target.closest('a[download]');if(a&&/^blob:/.test(a.href)){e.preventDefault();e.stopPropagation();send(a)}},true)})();"""
 
 /* The editor's channel list, kept on the phone each time it loads with the TV (EditorCopies.kt), so a
-   backup can be edited later without the TV (OfflineEditorScreen.kt).  Only when the channels change. */
-private const val KEEP = """(function(){if(window.__tbk)return;window.__tbk=1;var last='';setInterval(function(){try{var d=window.D;if(!d||!d.channels||!d.channels.length||!d.playlist||!window.TiviBroApp.keep)return;var sig=d.playlist.id+'|'+(d.chanRev||'')+'|'+d.channels.length;if(sig===last)return;last=sig;TiviBroApp.keep(JSON.stringify(d))}catch(e){}},4000)})();"""
+   backup can be edited later without the TV (OfflineEditorScreen.kt).  Only when the channels change.
+   Gzipped in the page and handed over in pieces of 384 KB, so a list of 186,000 channels gets through
+   (one string that size did not).  The app says when it's saved, or why not. */
+private const val KEEP = """(function(){if(window.__tbk)return;window.__tbk=1;var last='',busy=false,A=window.TiviBroApp;
+function b64(u){var s='',i;for(i=0;i<u.length;i+=32768)s+=String.fromCharCode.apply(null,u.subarray(i,i+32768));return btoa(s)}
+function zip(t){if(!window.CompressionStream)return Promise.resolve(null);return new Response(new Blob([t]).stream().pipeThrough(new CompressionStream('gzip'))).arrayBuffer().then(function(b){return new Uint8Array(b)},function(){return null})}
+function send(d){var t=JSON.stringify(d);return zip(t).then(function(gz){
+var meta={pid:d.playlist.id,name:d.playlist.name||'',channels:d.channels.length,gz:!!gz};if(gz)t=null;
+if(!A.keepStart(JSON.stringify(meta)))throw new Error('the phone did not take it');
+var N=gz?393216:1048576,len=gz?gz.length:t.length,i;
+for(i=0;i<len;i+=N){if(!A.keepPart(gz?b64(gz.subarray(i,i+N)):t.slice(i,i+N)))throw new Error('the phone is out of room')}
+if(!A.keepEnd())throw new Error('it did not arrive whole')})}
+setInterval(function(){var d=window.D,sig;try{if(busy||!d||!d.channels||!d.channels.length||!d.playlist||!A.keepStart)return;
+sig=d.playlist.id+'|'+(d.chanRev||'')+'|'+d.channels.length;if(sig===last)return;last=sig;busy=true;
+send(d).catch(function(e){A.keepFailed(String(e&&e.message||e))}).then(function(){busy=false})}catch(e){busy=false;A.keepFailed(String(e&&e.message||e))}},4000)})();"""
 
-private class Bridge(val onSave: (String, ByteArray, String) -> Unit, val onKeep: ((String) -> Unit)? = null) {
-    @JavascriptInterface
-    fun keep(json: String) { onKeep?.invoke(json) }
+/** What the page hands the app.  [keeper] takes the editor's channel list in pieces (KEEP above). */
+private class Bridge(val onSave: (String, ByteArray, String) -> Unit, val keeper: Keeper? = null) {
+    @JavascriptInterface fun keepStart(meta: String): Boolean = keeper?.begin(meta) ?: false
+    @JavascriptInterface fun keepPart(chunk: String): Boolean = keeper?.part(chunk) ?: false
+    @JavascriptInterface fun keepEnd(): Boolean = keeper?.end() ?: false
+    @JavascriptInterface fun keepFailed(why: String) { keeper?.failed(why) }
 
     @JavascriptInterface
     fun save(name: String, dataUrl: String) {
@@ -81,10 +97,18 @@ private class Bridge(val onSave: (String, ByteArray, String) -> Unit, val onKeep
     }
 }
 
+/** Where the editor's channel list goes (AppModel: EditorCopies for this TV). */
+interface Keeper {
+    fun begin(meta: String): Boolean
+    fun part(chunk: String): Boolean
+    fun end(): Boolean
+    fun failed(why: String)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) -> String, onBack: () -> Unit, say: (String) -> Unit, onKeep: ((String) -> Unit)? = null) {
+fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) -> String, onBack: () -> Unit, say: (String) -> Unit, keeper: Keeper? = null) {
     val ctx = LocalContext.current
     var url by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf("Asking the TV for the editor…") }
@@ -158,7 +182,7 @@ fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) ->
                             settings.allowFileAccess = false
                             settings.allowContentAccess = false
                             settings.setSupportMultipleWindows(false)
-                            addJavascriptInterface(Bridge({ n, b, _ -> post { pendingSave = b; create.launch(n) } }, onKeep), "TiviBroApp")
+                            addJavascriptInterface(Bridge({ n, b, _ -> post { pendingSave = b; create.launch(n) } }, keeper), "TiviBroApp")
                             webViewClient = object : WebViewClient() {
                                 // The editor stays in the app; anything else (GitHub, the wiki) opens in the browser.
                                 override fun shouldOverrideUrlLoading(view: WebView, req: WebResourceRequest): Boolean {
@@ -168,7 +192,7 @@ fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) ->
                                     return true
                                 }
                                 override fun onPageStarted(view: WebView, u2: String?, favicon: Bitmap?) { progress = 5 }
-                                override fun onPageFinished(view: WebView, u2: String?) { progress = 100; view.evaluateJavascript(HOOK, null); if (onKeep != null) view.evaluateJavascript(KEEP, null) }
+                                override fun onPageFinished(view: WebView, u2: String?) { progress = 100; view.evaluateJavascript(HOOK, null); if (keeper != null) view.evaluateJavascript(KEEP, null) }
                             }
                             webChromeClient = object : WebChromeClient() {
                                 override fun onProgressChanged(view: WebView, p: Int) { progress = p }

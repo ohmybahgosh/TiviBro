@@ -3,7 +3,7 @@
    browser with a stand-in for the app's TiviBroOffline bridge, and the editor copy taken from a real
    TiviBro (the app on :8078 with the dev relay, mock provider on :8077).
      node tests/soak/editor-offline.js [--shots dir]
-   Checks: it opens with the kept channel list and the backup's edits, hiding a group and renaming a
+   Checks: the phone app gets the channel list gzipped in pieces (190,000 channels too), it opens with the kept channel list and the backup's edits, hiding a group and renaming a
    channel then Save hands the bridge the edits the TV would get, drafts work, TV-only pages are gone,
    and the words say backup, not TV. */
 'use strict';
@@ -31,6 +31,23 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const copy = await on.evaluate(() => JSON.stringify(D));
   const D0 = JSON.parse(copy);
   ok('the editor copy has the channel list and no logins', D0.channels.length > 30 && D0.playlist && D0.playlist.id && !/secret|password/i.test(JSON.stringify(D0.playlists || [])));
+
+  // 1b. How the phone app takes it (EditorScreen.kt KEEP): gzipped, in pieces, so a huge list gets through.
+  const kt = fs.readFileSync(path.join(__dirname, '../../android/app/src/main/java/app/tivibro/phone/ui/EditorScreen.kt'), 'utf8');
+  const KEEP = /private const val KEEP = """([\s\S]*?)"""/.exec(kt)[1];
+  await on.evaluate(() => { window.__got = { meta: null, parts: [], ends: 0, failed: [] }; window.TiviBroApp = { keepStart: (m) => { __got.meta = JSON.parse(m); __got.parts = []; return true; }, keepPart: (c) => { __got.parts.push(c); return true; }, keepEnd: () => { __got.ends++; return true; }, keepFailed: (w) => { __got.failed.push(w); } }; });
+  await on.evaluate(KEEP);
+  await on.waitForFunction(() => __got.ends >= 1 || __got.failed.length, null, { timeout: 20000 }).catch(() => {});
+  const zlib = require('zlib');
+  const got = async () => { const g = await on.evaluate(() => ({ meta: __got.meta, parts: __got.parts, failed: __got.failed })); return { g, text: g.meta && g.meta.gz ? zlib.gunzipSync(Buffer.concat(g.parts.map((p) => Buffer.from(p, 'base64')))).toString('utf8') : g.parts.join('') }; };
+  let k = await got();
+  ok('the phone gets the channel list gzipped, and it comes out whole', k.g.meta && k.g.meta.gz && k.g.meta.pid === D0.playlist.id && k.g.meta.channels === D0.channels.length && JSON.parse(k.text).channels.length === D0.channels.length, JSON.stringify(k.g.meta) + ' ' + k.g.failed.join());
+  // A list the size of the one in issue #25.
+  await on.evaluate(() => { const base = D.channels, out = []; for (let i = 0; out.length < 190000; i++) { const c = Object.assign({}, base[i % base.length]); c.k = 'big' + i; c.n = base[i % base.length].n + ' ' + i; out.push(c); } D.channels = out; D.chanRev = 'big'; });
+  await on.waitForFunction(() => __got.ends >= 2 || __got.failed.length, null, { timeout: 120000 }).catch(() => {});
+  k = await got();
+  ok('190,000 channels get through, in pieces of at most 512 KB', k.g.meta && k.g.meta.channels === 190000 && k.g.parts.length > 1 && k.g.parts.every((p) => p.length <= 524288) && JSON.parse(k.text).channels.length === 190000,
+    JSON.stringify(k.g.meta) + ' parts ' + k.g.parts.length + ' ' + k.g.failed.join());
   await on.close();
 
   // 2. The phone's offline page.
@@ -39,12 +56,12 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const ctx = await b.newContext({ viewport: { width: 412, height: 860 }, isMobile: true });
   const page = await ctx.newPage(); page.on('pageerror', e => errs.push(e.message));
   await page.exposeFunction('__save', (s) => { saved.push(JSON.parse(s)); });
-  await page.addInitScript(({ copy, edits }) => {
-    const d = JSON.parse(copy); d.edits = edits;
-    window.TiviBroOffline = { state: () => JSON.stringify(d), save: (s) => { window.__save(s); return true; }, id: () => 'tv1' };
-  }, { copy, edits: backupEdits });
+  await page.addInitScript(({ edits }) => {
+    window.TiviBroOffline = { extras: () => JSON.stringify({ edits, names: null }), save: (s) => { window.__save(s); return true; }, id: () => 'tv1' };
+  }, { edits: backupEdits });
   await ctx.route('https://tivibro.offline/**', async (r) => {
     const p = new URL(r.request().url()).pathname, f = p === '/' ? 'index.html' : p.slice(1);
+    if (f === '__copy.json') return r.fulfill({ status: 200, body: copy, contentType: 'application/json' });     // the app serves the kept list as a file
     if (!fs.existsSync(path.join(ED, f))) return r.fulfill({ status: 404, body: '' });
     let body = fs.readFileSync(path.join(ED, f));
     if (f === 'index.html') body = String(body).replace(/<script/, '<script>' + OFF.replace(/<\/script/g, '<\\/script') + '</script><script');

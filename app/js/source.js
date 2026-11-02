@@ -109,6 +109,7 @@ var Source = (function () {
   function keepIt() { return !!(Net.info && Net.info.kv); }
   function viaHelper(path, body) {
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, t = setTimeout(function () { if (ctl) ctl.abort(); }, 240000);
+    if (ctl) { aborts.push(ctl); if (aborts.length > 8) aborts.shift(); }
     return fetch('http://127.0.0.1:' + Net.port + path, { method: 'POST', cache: 'no-store', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
       .then(function (r) { return r.json().then(function (j) { clearTimeout(t); j._status = r.status; return j; }); }, function (e) { clearTimeout(t); throw e; });
   }
@@ -127,6 +128,7 @@ var Source = (function () {
       Log.info('xc', 'The helper loaded ' + j.cats + ' categories and ' + j.channels.length + ' channels in ' + (Date.now() - t0) + 'ms');
       return { groups: j.groups, channels: j.channels, _live: j.live || '' };
     }).catch(function (e) {
+      if (stopping) throw stopped();
       Log.warn('xc', 'The helper could not load the channel list (' + (e && e.message || e) + '), loading it here');
       return direct();
     });
@@ -144,6 +146,7 @@ var Source = (function () {
           if (j._status !== 200 || !Array.isArray(j.channels)) throw new Error(j.error || 'HTTP ' + j._status);
           return { shaped: j };
         }).catch(function (e) {
+          if (stopping) throw stopped();
           Log.warn('m3u', 'The helper could not load ' + list[i] + ' (' + (e && e.message || e) + '), loading it here');
           return direct(i);
         });
@@ -151,7 +154,9 @@ var Source = (function () {
       return direct(i);
     }
     function direct(i) {
+      if (stopping) return Promise.reject(stopped());
       return U.getText(list[i], 90000, 'playlist').catch(function (e) {
+        if (stopping) throw stopped();
         if (i + 1 >= list.length || e.kind === 'timeout') throw e;
         Log.warn('m3u', list[i] + ' failed (' + e.message + '); trying ' + list[i + 1]);
         return fetchList(i + 1);
@@ -181,11 +186,28 @@ var Source = (function () {
      running now, if any (the public guide waits for it). */
   var running = {};
   function busy() { var k = Object.keys(running)[0]; return k ? running[k].job.then(function () {}, function () {}) : null; }
+  /* Stop a load (Back on the loading screen, Stop reloading in Settings; issue #25): the helper's
+     download is cut off, nothing falls back to loading it here instead, and whoever waits gets a
+     'stopped' error at once. */
+  var aborts = [], stopping = false;
+  function stopped() { return Object.assign(new Error('Stopped loading the channel list.'), { kind: 'stopped' }); }
+  function stop(id) {
+    var r = running[id || ''] || running[Object.keys(running)[0]];
+    if (!r) return false;
+    stopping = true;
+    aborts.splice(0).forEach(function (c) { try { c.abort(); } catch (e) {} });
+    Log.warn('app', 'Stopped loading the channel list');
+    r.stop(stopped());
+    return true;
+  }
   function load(p) {
     var id = (p && p.id) || '', key = id + '|' + sig(p), r = running[id];
     if (r && r.key === key) { Log.info(p.type === 'm3u' ? 'm3u' : 'xc', 'Already loading this playlist; waiting for that load'); return r.job; }
-    var job = load1(p);
-    running[id] = { key: key, job: job };
+    stopping = false;
+    var halt, gate = new Promise(function (res, rej) { halt = rej; });
+    var job = Promise.race([load1(p), gate]);
+    job.catch(function () {});
+    running[id] = { key: key, job: job, stop: halt };
     function done() { if (running[id] && running[id].job === job) delete running[id]; }
     job.then(done, done);
     return job;
@@ -203,6 +225,7 @@ var Source = (function () {
       data.sig = sig(q);
       return data;
     }).catch(function (e) {
+      if (stopping || (e && e.kind === 'stopped')) throw stopped();
       var msg = friendly(e);
       var tried = e && e.tried && e.tried.length > 1 ? e.tried : null;
       Log.error(p.type === 'm3u' ? 'm3u' : 'xc', 'Load failed: ' + msg + (e && e.kind ? '  [kind=' + e.kind + (e.status ? ' status=' + e.status : '') + ' via=' + e.via + ']' : '') + (tried ? '  tried: ' + tried.join(' | ') : ''));
@@ -298,7 +321,7 @@ var Source = (function () {
   function movieUrl(id, ext) { var p = Store.playlist; return base(p.server) + '/movie/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
   function episodeUrl(id, ext) { var p = Store.playlist; return base(p.server) + '/series/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
 
-  return { load: load, busy: busy, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
+  return { load: load, busy: busy, stop: stop, get loading() { return Object.keys(running).length > 0; }, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
     catchupUrl: catchupUrl, setTz: setTz,
     vodCats: vodCats, vodList: vodList, vodInfo: vodInfo, seriesInfo: seriesInfo, movieUrl: movieUrl, episodeUrl: episodeUrl };
 })();

@@ -147,7 +147,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
             val scope = rememberCoroutineScope()
             OfflineEditorScreen(
                 title = model.backupName(b), tvId = id,
-                state = { model.offlineState(b, pid) },
+                copy = { model.offlineCopy(b, pid) }, extras = { model.offlineExtras(b, pid) },
                 onKeep = { saved, label -> scope.launch { runCatching { model.keepEdited(b, pid, saved, label) }.onSuccess { model.say("Kept as a new backup.  Restore it on the TV from Backups.") }.onFailure { model.say(it.message ?: "Couldn't keep it") } } },
                 onBack = { nav.popBackStack() },
             )
@@ -209,7 +209,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
             val tv = model.tv(id)
             if (tv == null) { LaunchedEffect(Unit) { nav.popBackStack() }; return@composable }
             EditorScreen(name = tv.name, host = tv.host, load = { progress -> model.editorUrl(id, progress) }, onBack = { nav.popBackStack() }, say = { model.say(it) },
-                onKeep = { json -> model.keepEditorCopy(id, json) })
+                keeper = remember(id) { model.editorKeeper(id) })
         }
     }
 }

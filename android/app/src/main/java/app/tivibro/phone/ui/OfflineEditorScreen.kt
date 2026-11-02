@@ -46,9 +46,10 @@ import java.io.ByteArrayInputStream
 
 private const val ORIGIN = "tivibro.offline"
 
-/** What the page asks the app for: the editor's data with the backup's edits, and Save. */
+/** What the page asks the app for: the backup's edits and name rules (the channel list itself comes as
+ *  the file __copy.json, which can be big), and Save. */
 private class OfflineBridge(val tvId: String, val read: () -> String, val onSave: (String) -> Unit) {
-    @JavascriptInterface fun state(): String = read()
+    @JavascriptInterface fun extras(): String = read()
     @JavascriptInterface fun save(json: String): Boolean { onSave(json); return true }
     @JavascriptInterface fun id(): String = tvId
 }
@@ -56,7 +57,7 @@ private class OfflineBridge(val tvId: String, val read: () -> String, val onSave
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun OfflineEditorScreen(title: String, tvId: String, state: () -> String, onKeep: (String, String) -> Unit, onBack: () -> Unit) {
+fun OfflineEditorScreen(title: String, tvId: String, copy: () -> java.io.File, extras: () -> String, onKeep: (String, String) -> Unit, onBack: () -> Unit) {
     var saved by remember { mutableStateOf<String?>(null) }
     var asking by remember { mutableStateOf(false) }
     var label by remember { mutableStateOf("Edited on the phone") }
@@ -91,7 +92,7 @@ fun OfflineEditorScreen(title: String, tvId: String, state: () -> String, onKeep
                     settings.domStorageEnabled = true
                     settings.allowFileAccess = false
                     settings.allowContentAccess = false
-                    addJavascriptInterface(OfflineBridge(tvId, state) { j -> post { saved = j } }, "TiviBroOffline")
+                    addJavascriptInterface(OfflineBridge(tvId, extras) { j -> post { saved = j } }, "TiviBroOffline")
                     webViewClient = object : WebViewClient() {
                         // The editor's own files, from the app; offline.js goes in first.  Nothing else loads.
                         override fun shouldInterceptRequest(view: WebView, req: WebResourceRequest): WebResourceResponse? {
@@ -99,6 +100,10 @@ fun OfflineEditorScreen(title: String, tvId: String, state: () -> String, onKeep
                             if (u.host != ORIGIN) return WebResourceResponse("text/plain", "utf-8", 404, "Not here", emptyMap(), ByteArrayInputStream(ByteArray(0)))
                             val path = (u.path ?: "/").trimStart('/').ifBlank { "index.html" }
                             if (path.contains("..")) return null
+                            // The kept channel list, read straight from storage as the page reads it.
+                            if (path == "__copy.json") return runCatching {
+                                WebResourceResponse("application/json", "utf-8", java.util.zip.GZIPInputStream(copy().inputStream().buffered(256 * 1024)))
+                            }.getOrElse { WebResourceResponse("text/plain", "utf-8", 404, "Not kept", emptyMap(), ByteArrayInputStream(ByteArray(0))) }
                             return runCatching {
                                 val a = view.context.assets
                                 var bytes = a.open("editor/$path").use { it.readBytes() }

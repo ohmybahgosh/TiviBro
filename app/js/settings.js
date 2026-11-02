@@ -226,7 +226,8 @@ var Settings = (function () {
     out.push(head('Channel list updates'));
     out.push(choice('Reload channel list', '', REFRESH, REFRESH_L, function () { return +p.plRefresh; }, function (v) { p.plRefresh = v; persist(p); paint(); }));
     if (active) {
-      out.push(action('Reload channels now', 'Your groups, renames and hidden items are kept.', function () { App.refresh(true); }));
+      if (App.reloading) out.push(action('Stop reloading', 'The channels from the last load stay.', function () { App.stopReload(); }));
+      else out.push(action('Reload channels now', 'Your groups, renames and hidden items are kept.', function () { App.refresh(true); }));
       out.push(info('Last reloaded', when(L.data.at)));
       if (L.data.exp) out.push(info('Subscription expires', new Date(L.data.exp).toLocaleDateString() + (Store.expiry(p) ? '  (' + Store.expiry(p).replace(/^Expire[sd] /, '') + ')' : '')));
       if (L.data.maxConn) out.push(info('Connections allowed', String(L.data.maxConn)));
@@ -1025,6 +1026,15 @@ var Settings = (function () {
     build();
   }
 
+  // One playlist's page (after it closed TiviBro, or most of its channels fail; issue #25).
+  function openPlaylist(id) {
+    var raw = S().playlists.filter(function (x) { return x.id === id; })[0];
+    if (!raw || !section('playlists')) return false;
+    var p = Store.normalize(raw);
+    push(p.name || 'Playlist', function () { return playlistPage(p); });
+    return true;
+  }
+
   // Straight to one section (the phone app's own shortcut, and tests).
   function section(id) {
     if (id === 'phone' && !phoneOK()) return false;
@@ -1080,6 +1090,6 @@ var Settings = (function () {
     }
   };
 
-  return { open: open, assignGuide: assignGuide, section: section, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
+  return { open: open, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **A playlist that keeps closing TiviBro is stopped** (issue #25).  If TiviBro closes twice in a row while loading or reloading a playlist, that playlist's **Reload channel list** becomes **Only when I ask**, and the next start says so.  When nothing of the list is kept yet, it asks first: try it again, change the connection, use another playlist or add one, instead of loading it a third time.
+- **Stop a load with the remote** (issue #25).  **Back** on the loading screen offers to stop loading a playlist, and **Settings > Playlists and guide > the playlist > Stop reloading** stops a reload and keeps the channels you had.
+- **When most of a playlist won't play, TiviBro says so** (issue #25).  Five or more channels failing with errors from the provider (404 Not Found, 522 and the like), and next to none playing, means the list itself is the problem even when the login works and the account is active: out of date, or channels that only work from another country.  It says so once a day, with **Reload the channel list**.
+- **Logins hidden in more links** (issue #25).  The log and problem reports now hide the username and password in the short links many M3U lists use (`http://server/user/pass/12345.ts`), not only in `/live/` links.
+- **Phone app: editing backups without the TV, easier to start** (discussion #23).  Opening **Edit channels** with the TV now says "channel list saved" once the phone has it (or why it couldn't), each backup says which of its playlists can be edited on the phone, and very big lists (186,000 channels) get through: the editor sends them gzipped, in pieces.
+
 ## 0.6.0 (alpha 58, 2026-11-02)
 
 Pre-release: expect rough edges, and keep a backup before installing.

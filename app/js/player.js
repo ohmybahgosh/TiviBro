@@ -487,6 +487,8 @@ var Player = (function () {
     Log.error('player', 'No player could open this channel (tried ' + Object.keys(cur.tried || {}).join(', ') + ')  ' + (cur.origUrl || cur.url));
     teardown();
     cur.failed = true;
+    // Counted for the warning that most of a playlist will not play (deadlist.js).
+    if (cur.live && cur.lastHttp && window.DeadList) { try { DeadList.failed(cur.ch, cur.origUrl || cur.url, cur.lastHttp); } catch (e) {} }
     if (cur.lastHttp) return state('error', 'The provider is not sending this ' + (isFile() ? 'video' : 'channel') + ' right now (error ' + cur.lastHttp + ').  Press OK to try again, or try ' + (isFile() ? 'again later.' : 'another channel.'));
     state('error', isFile() ? 'This video will not play on this TV.  It may use a format the TV cannot decode.' : 'This channel will not play on this TV.  It may use a format the TV cannot decode, or the provider may be having trouble with it.');
   }
@@ -611,6 +613,7 @@ var Player = (function () {
         st.started = true; st.lastMove = now;
         if (!cur.audioPicked) { cur.audioPicked = true; preferAudio(); }
         if (cur.slow) { Log.info('player', 'Channel is back after ' + Math.round((now - cur.slowSince) / 1000) + 's'); notice('Back on air'); }
+        if (cur.live && !cur.everPlayed && window.DeadList) DeadList.played(cur.ch, cur.origUrl || cur.url);
         cur.slow = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0; cur.starved = false; cur.lastFailHttp = false;
         Log.info('player', 'Playing after ' + (now - st.at) + 'ms with ' + ahead.toFixed(1) + 's buffered' + (ahead < p.prebuffer ? ' (prebuffer timed out)' : '') + (video.videoHeight ? ', ' + video.videoWidth + 'x' + video.videoHeight : ''));
         if (bf.length && video.currentTime < first && !cur.startAt) { try { video.currentTime = first + 0.05; } catch (e) {} }

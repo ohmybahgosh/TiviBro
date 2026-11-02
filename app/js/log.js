@@ -29,7 +29,10 @@ var Log = (function () {
       .replace(/([?&](?:sig|signature|token|auth|key|expires|hash)=)[^&\s"']*/gi, '$1***')
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s"']*/gi, '$1***')
       .replace(/(username=)([^&\s"']{0,2})[^&\s"']*/gi, '$1$2***')
-      .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/');
+      .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/')
+      /* The short Xtream link many M3U lists use, http://server/user/pass/12345.ts, with no /live/ in
+         front (issue #25): the two parts before the channel number are the login. */
+      .replace(/(\b[a-z][a-z0-9+.-]*:\/\/[^\/\s"'<>]+)\/([^\/\s"'<>?#]{0,2})[^\/\s"'<>?#]*\/[^\/\s"'<>?#]+\/(\d+(?:\.[a-z0-9]{2,5})?)(?=[\s"'<>?#]|$)/gi, '$1/$2***/***/$3');
   }
   function fmt(d) {
     if (d == null) return '';

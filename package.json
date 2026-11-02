@@ -30,6 +30,7 @@
     "soak:captions": "node tests/soak/captions.js",
     "soak:subtitles": "node tests/soak/subtitles.js",
     "soak:filter": "node tests/soak/filter.js",
+    "soak:load-guard": "node tests/soak/load-guard.js",
     "soak:guide-rows": "node tests/soak/guide-rows.js",
     "soak:editor-mobile": "node tests/soak/editor-mobile.js",
     "logos": "node scripts/logos/build-index.js",

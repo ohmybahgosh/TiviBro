@@ -10,6 +10,11 @@ for (const redact of [ctx.Log.redact, proxy.redact]) {
   assert(redact('http://cdn.example/v/1.mp4?sig=abc123&x=1').indexOf('abc123') < 0, 'signature query values hidden');
   assert(redact('http://other.example/private/token.mkv').indexOf('private') >= 0, 'other hosts keep their path');
   assert(!redact('https://api.themoviedb.org/3/movie/7?api_key=mock-secret').includes('mock-secret'));
+  // The short Xtream link in M3U lists (issue #25): the login before the channel number is hidden.
+  for (const [u, want] of [['http://prov.example:80/dalohe704/hiperiom25/745415.ts', 'http://prov.example:80/da***/***/745415.ts'],
+    ['Start "AB" with ts engine  http://prov.example/someuser/somepass/12 and more', 'Start "AB" with ts engine  http://prov.example/so***/***/12 and more'],
+    ['http://prov.example/live/someuser/somepass/12.m3u8', 'http://prov.example/live/so***/***/12.m3u8']]) assert.strictEqual(redact(u), want);
+  assert.strictEqual(redact('http://cdn.example/a/b.png'), 'http://cdn.example/a/b.png', 'ordinary links are kept');
   for (const url of ['https://edge.energycdn.com/private/token.mkv?key=secret', 'https://edge.energycdn.com?key=secret', 'http://127.0.0.1/x/https/edge.energycdn.com/private/token.mkv?key=secret']) {
     assert(!/private|token|secret/.test(redact(url)), 'CDN path must be hidden');
     assert(redact(url).includes('edge.energycdn.com'), 'keep the host');
