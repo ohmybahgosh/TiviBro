@@ -423,7 +423,7 @@ var MkvSubs = (function () {
     var cancelled = false, started = false;
     function startVideo(resolved) { if (!cancelled && !started && onResolved) { started = true; onResolved(resolved); } }
     video._mkvSubsState = 'discovering';
-    var overlay = null, lastText = '';
+    var overlay = null, lastText = '', selectedTrack = null;
     if (video.parentNode && video.style) {
       overlay = document.createElement('div');
       overlay.className = 'mkv-captions';
@@ -431,6 +431,21 @@ var MkvSubs = (function () {
     }
     function paint() {
       if (!overlay || cancelled) return;
+      // Track updates must not leave more than one subtitle language enabled.
+      // Keep the current choice until it is switched off (as the subtitle menu
+      // does when choosing a different track), rather than stacking languages.
+      var tracks = video.textTracks || liveTracks;
+      if (!selectedTrack || selectedTrack.mode !== 'showing' || Array.prototype.indexOf.call(tracks, selectedTrack) < 0) {
+        selectedTrack = null;
+        for (var n = 0; n < tracks.length; n++) {
+          if (tracks[n].kind && tracks[n].kind !== 'subtitles') continue;
+          if (tracks[n].mode === 'showing') { selectedTrack = tracks[n]; break; }
+        }
+      }
+      for (var m = 0; selectedTrack && m < tracks.length; m++) {
+        if (tracks[m] !== selectedTrack && (!tracks[m].kind || tracks[m].kind === 'subtitles') && tracks[m].mode === 'showing')
+          tracks[m].mode = 'disabled';
+      }
       var lines = [], selected = false;
       for (var a = 0; a < liveTracks.length; a++) {
         if (liveTracks[a].mode !== 'showing') continue;
@@ -515,7 +530,10 @@ var MkvSubs = (function () {
       if (activeRequest) { activeRequest.yieldToPlayback = true; activeRequest.abort(); }
     }
     function onTime() { paint(); if (pump) pump(); }
-    if (video.addEventListener) { video.addEventListener('timeupdate', onTime); video.addEventListener('waiting', onWaiting); }
+    if (video.addEventListener) {
+      video.addEventListener('timeupdate', onTime); video.addEventListener('waiting', onWaiting);
+      video.addEventListener('seeking', paint); video.addEventListener('seeked', paint);
+    }
     if (video.textTracks && video.textTracks.addEventListener) video.textTracks.addEventListener('change', paint);
     var rec = subCache[url];
     // A file found to have no usable subtitles is remembered for seeks and reconnects (no more
@@ -703,7 +721,10 @@ var MkvSubs = (function () {
         clearTimeout(retryTimer);
         if (rejectGate) { rejectGate(new Error('cancelled')); rejectGate = null; }
         if (activeRequest) activeRequest.abort();
-        if (video.removeEventListener) { video.removeEventListener('timeupdate', onTime); video.removeEventListener('waiting', onWaiting); }
+        if (video.removeEventListener) {
+          video.removeEventListener('timeupdate', onTime); video.removeEventListener('waiting', onWaiting);
+          video.removeEventListener('seeking', paint); video.removeEventListener('seeked', paint);
+        }
         if (video.textTracks && video.textTracks.removeEventListener) video.textTracks.removeEventListener('change', paint);
         for (var i = 0; i < addedEls.length; i++) { try { video.removeChild(addedEls[i]); } catch (e) {} }
         addedEls.length = 0;

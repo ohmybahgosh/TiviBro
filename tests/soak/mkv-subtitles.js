@@ -65,6 +65,18 @@ const server = http.createServer((q,s) => {
       const rendered=await page.evaluate(()=>{var v=document.getElementById('video'),t=v.textTracks[0];return {text:document.querySelector('.mkv-captions').textContent,mode:t.mode,time:v.currentTime,cues:Array.prototype.map.call(t.cues||[],function(c){return {s:c.startTime,e:c.endTime,text:c.text};})};});
       ok(codec + ' selected with the remote renders plain text', rendered.text==='Hello, world!\nNext line',rendered);
       if(codec === 'UTF8') {
+        const exclusive=await page.evaluate(()=>{
+          var v=document.getElementById('video'),chosen=v.textTracks[0],extra=v.addTextTrack('subtitles','English','en');
+          extra.mode='showing';v.dispatchEvent(new Event('timeupdate'));
+          return chosen.mode==='showing' && extra.mode==='disabled' && document.querySelector('.mkv-captions').textContent==='Hello, world!\nNext line';
+        });
+        ok('another enabled language cannot stack over the selected Dutch subtitles',exclusive);
+        const seeks=await page.evaluate(()=>{
+          var v=document.getElementById('video'),chosen=v.textTracks[0],extra=v.textTracks[1],ok=true;
+          [0,5,1.5].forEach(function(time){v.currentTime=time;extra.mode='showing';v.dispatchEvent(new Event('seeking'));v.dispatchEvent(new Event('seeked'));ok=ok&&chosen.mode==='showing'&&extra.mode==='disabled';});
+          return ok && document.querySelector('.mkv-captions').textContent==='Hello, world!\nNext line';
+        });
+        ok('backward and forward seeks keep only the selected language enabled',seeks);
         await page.evaluate(()=>{Subs._test.shift(1);document.getElementById('video').dispatchEvent(new Event('timeupdate'));});
         ok('Timing also shifts the embedded subtitle overlay',await page.evaluate(()=>document.querySelector('.mkv-captions').textContent===''));
         await page.evaluate(()=>{Subs._test.shift(-1);});

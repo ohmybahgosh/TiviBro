@@ -440,6 +440,29 @@ ok('orders clusters by proximity to current playback position, nearest first, de
     return visible && shifted && off && expired && preserved && parent.children.length === 0;
   })());
 
+  ok('a second showing language cannot replace the selection or stack captions', await (async () => {
+    mkvFixtures['exclusive.mkv'] = mkvFixtures['1.mkv'];
+    const events = {}, parent = {appendChild(el) {this.overlay=el;}, removeChild() {}};
+    const v = {currentTime:1.5,style:{},parentNode:parent,children:[],textTracks:[],
+      appendChild(el) {this.children.push(el);this.textTracks.push(el.track);}, removeChild() {},
+      addEventListener(n,f) {events[n]=f;},removeEventListener(n) {delete events[n];}};
+    const h = MkvSubs.extract('http://p/exclusive.mkv', v);
+    await flush();
+    const chosen = v.textTracks[0], other = {kind:'subtitles',mode:'disabled'};
+    chosen.mode='showing';events.timeupdate();
+    v.textTracks.push(other);other.mode='showing';events.timeupdate();
+    const exclusive = chosen.mode==='showing' && other.mode==='disabled' && parent.overlay.textContent==='Hi there';
+    v.currentTime=0;other.mode='showing';events.seeking();
+    const backwards = chosen.mode==='showing' && other.mode==='disabled';
+    v.currentTime=5;other.mode='showing';events.seeked();
+    const forwards = chosen.mode==='showing' && other.mode==='disabled' && parent.overlay.textContent==='';
+    chosen.mode='disabled';other.mode='showing';events.timeupdate();
+    const switched = chosen.mode==='disabled' && other.mode==='showing' && parent.overlay.textContent==='';
+    other.mode='disabled';events.timeupdate();
+    const off = v.textTracks.every(t=>t.mode==='disabled');
+    h.cancel();return exclusive && backwards && forwards && switched && off && !events.seeking && !events.seeked;
+  })());
+
   ok('playback and subtitles share the first resolved session URL', await (async () => {
     mkvFixtures['shared.mkv'] = mkvFixtures['1.mkv'];
     redirectTarget = 'http://edge/edge.mkv'; requestUrls = [];
