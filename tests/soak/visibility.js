@@ -35,34 +35,50 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const gitems = await ev((id) => { let got = null; const m = UI.menu; UI.menu = (t, l) => { got = l.filter(Boolean).map((x) => x.label); }; Views.groupMenu({ id, name: 'x' }); UI.menu = m; return got; }, g.id);
   ok('group options offer it too', gitems && gitems.indexOf('Show or hide channels…') >= 0, gitems && gitems.join(', '));
 
-  // Open it on the second channel.
-  await ev((id) => Views.manageVisibility(id, Library.channels(id)[1]), g.id); await page.waitForTimeout(300);
-  let title = await page.innerText('#modalTitle');
-  ok('the list says how many are shown', new RegExp(g.n + ' of ' + g.n + ' shown').test(title), title);
-  ok('it opens on the channel held', /focus/.test(await ev(() => document.querySelector('#modalBody .mi.focus .lbl') && document.querySelector('#modalBody .mi.focus').className)) &&
-    (await ev((id) => document.querySelector('#modalBody .mi.focus .lbl').textContent === Library.name(Library.channels(id)[1]), g.id)));
-  ok('ticks on every channel, quick rows on top', await ev(() => document.querySelectorAll('#modalBody .mi .box.on').length > 0) && /Show all/.test(await page.innerText('#modalBody')) || true);
-  await key('Enter');                         // untick the held channel
-  await key('ArrowDown'); await key('Enter'); // and the next one
-  title = await page.innerText('#modalTitle');
-  ok('unticked: the count follows', new RegExp((g.n - 2) + ' of ' + g.n + ' shown').test(title), title);
+  // In the guide itself: ticks on the rows, opened on the channel held.
+  await ev((id) => { Views.switchTab('guide'); Guide.open(id, Library.channels(id)[0].k); }, g.id); await page.waitForTimeout(600);
+  await ev((id) => Views.manageVisibility(id, Library.channels(id)[1]), g.id); await page.waitForTimeout(400);
+  ok('no popup: it happens in the guide', await ev(() => document.getElementById('modal').classList.contains('hidden') && Guide.vis));
+  let head = await page.innerText('#guideGroup');
+  ok('the header says how many are shown', new RegExp(g.n + ' of ' + g.n + ' shown').test(head), head);
+  ok('a tick on every row', await ev(() => document.querySelectorAll('.grow.vis').length > 0 && !document.querySelector('.grow.vis-off')));
+  ok('it starts on the channel held', await ev((id) => document.querySelector('.grow.sel .n').textContent === Library.name(Library.channels(id)[1]), g.id));
+  await key('Enter'); await key('ArrowDown'); await key('Enter');
+  ok('unticked rows are dimmed', await ev(() => document.querySelectorAll('.grow.vis-off').length) === 2);
+  head = await page.innerText('#guideGroup');
+  ok('the count follows', new RegExp((g.n - 2) + ' of ' + g.n + ' shown').test(head), head);
+  ok('hints for the mode', /tick or untick/.test(await page.innerText('#hints')) && await ev(() => !!document.querySelector('#hints b.k-red')));
   ok('nothing saved before Back', await ev((id) => Library.channels(id).length, g.id) === g.n);
   await shot('tv-show-hide');
   await key('Escape', 500);
-  ok('Back saves: two hidden', await ev((id) => Library.channels(id).length, g.id) === g.n - 2);
-  ok('the hint bar is back to the guide hints', !/tick or untick/.test(await page.innerText('#hints')));
+  ok('Back saves: two hidden, the mode ends', await ev((id) => Library.channels(id).length, g.id) === g.n - 2 && await ev(() => !Guide.vis));
+  ok('the guide hints are back', !/tick or untick/.test(await page.innerText('#hints')));
 
-  // Again: they're listed, unticked; Show all brings them back.
+  // Again: hidden ones are in the list, unticked; Red > Show all brings them back.
   await ev((id) => Views.manageVisibility(id), g.id); await page.waitForTimeout(300);
-  ok('hidden ones are listed, dimmed', await ev(() => document.querySelectorAll('#modalBody .mi.chk.off').length) === 2);
-  await key('Enter');                         // Show all (the first row)
-  await key('Escape', 500);
+  ok('hidden ones are listed, dimmed', await ev(() => document.querySelectorAll('.grow.vis-off').length) === 2);
+  await ev(() => UI.press('red')); await page.waitForTimeout(200);
+  ok('Red: all, none, no guide', /Show all/.test(await page.innerText('#modal')) && /Hide channels with no guide/.test(await page.innerText('#modal')));
+  await key('Enter'); await key('Escape', 500);
   ok('Show all brings them back', await ev((id) => Library.channels(id).length, g.id) === g.n);
 
-  // Back without changes changes nothing.
+  // Leave without saving.
   await ev((id) => Views.manageVisibility(id), g.id); await page.waitForTimeout(200);
-  await key('Escape', 400);
-  ok('Back with no changes keeps everything', await ev((id) => Library.channels(id).length, g.id) === g.n);
+  await key('Enter');
+  await ev(() => UI.press('red')); await page.waitForTimeout(200);
+  await ev(() => { for (let i = 0; i < 4; i++) UI.press('down'); UI.press('ok'); }); await page.waitForTimeout(300);
+  ok('Leave without saving keeps everything', await ev((id) => Library.channels(id).length, g.id) === g.n && await ev(() => !Guide.vis));
+
+  // The Channels screen: the same, on its rows.
+  await ev((id) => { Views.switchTab('live'); }, g.id); await page.waitForTimeout(500);
+  await ev((id) => Views.manageVisibility(id, Library.channels(id)[0]), g.id); await page.waitForTimeout(400);
+  ok('Channels screen: ticks on its rows, no popup', await ev(() => document.querySelectorAll('#chanList .row.vis').length > 0 && document.getElementById('modal').classList.contains('hidden')));
+  await key('Enter');
+  ok('its header counts too', new RegExp((g.n - 1) + ' of ' + g.n + ' shown').test(await page.innerText('#chanTitle')), await page.innerText('#chanTitle'));
+  await shot('tv-show-hide-list');
+  await key('Escape', 500);
+  ok('Back saves there too', await ev((id) => Library.channels(id).length, g.id) === g.n - 1);
+  await ev((id) => Library.hideChannels({ [Library.channels(id, true)[0].k]: false }), g.id);
 
   // Hints: colour buttons as a square and a label, the same everywhere.
   await ev((id) => { Views.switchTab('guide'); Guide.open(id, Library.channels(id)[0].k); }, g.id); await page.waitForTimeout(800);

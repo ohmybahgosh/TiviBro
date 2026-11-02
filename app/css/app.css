@@ -133,6 +133,17 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .grow.sel .gch{background:var(--panel)}
 .grow.moving .gch{box-shadow:inset 0 0 0 3px var(--accent)}
 .grow.moving .gch .n::before{content:"⇅  ";color:var(--accent-text)}
+/* Show or hide channels, in the list itself: a tick on each row, unticked rows dimmed. */
+.vbox{display:none}
+.grow.vis .vbox,.row.vis .vbox{display:flex;flex:none;width:34px;height:34px;margin-left:auto;border:3px solid var(--accent);border-radius:8px;background:var(--accent);color:var(--on-accent);align-items:center;justify-content:center;font-size:22px;line-height:1}
+.grow.vis .vbox::before,.row.vis .vbox::before{content:'✓'}
+.grow.vis-off .vbox,.row.vis-off .vbox{background:transparent;border-color:var(--muted)}
+.grow.vis-off .vbox::before,.row.vis-off .vbox::before{content:''}
+.grow.vis-off .gch .n,.grow.vis-off .gch .logo,.grow.vis-off .gch .num,.grow.vis-off .gprogs{opacity:.4}
+.row.vis-off .name,.row.vis-off .sub,.row.vis-off img{opacity:.4}
+.grow.vis .gchips,.row.vis .tag,.row.vis .qtag{display:none}
+.vlist.active .row.sel.vis .vbox{border-color:var(--on-accent);background:var(--on-accent);color:var(--accent)}
+.vlist.active .row.sel.vis-off .vbox{background:transparent}
 .gprogs{flex:1;position:relative;overflow:hidden}
 .gp{position:absolute;top:4px;bottom:4px;background:var(--panel);border-radius:8px;padding:0 16px;display:flex;flex-direction:column;justify-content:center;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:24px;border-left:2px solid var(--ink);padding-left:18px;padding-right:18px;gap:4px}
@@ -219,14 +230,6 @@ body.guide1 .gp .gs{display:none}
 .mi.focus{background:var(--accent);color:var(--on-accent)}
 .mi small{color:var(--muted)}
 .mi.focus small{color:var(--on-accent-dim)}
-.mi.chk{justify-content:flex-start;align-items:center}
-.mi.chk .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mi.chk.off .lbl,.mi.chk.off .lg{opacity:.45}
-.mi .lg{width:64px;height:40px;object-fit:contain;flex:none}
-.mi .box{flex:none;width:36px;height:36px;border:3px solid var(--muted);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1}
-.mi .box.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
-.mi.focus .box{border-color:var(--on-accent)}.mi.focus .box.on{background:var(--on-accent);color:var(--accent)}
-.mi.quick .lbl{color:var(--accent-text)}.mi.quick.focus .lbl{color:var(--on-accent)}
 .modal input{width:100%;background:var(--ink);border:2px solid var(--accent);color:var(--text);font:inherit;padding:14px 18px;border-radius:8px;outline:none;margin-bottom:18px}
 
 .toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);z-index:40;background:var(--raised);padding:16px 32px;border-radius:40px;font-size:24px}

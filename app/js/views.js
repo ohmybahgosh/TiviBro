@@ -113,6 +113,7 @@ var Views = (function () {
       box.appendChild(row._n); box.appendChild(row._s); box.appendChild(row._p);
       row._t = U.el('span', 'tag'); row._q = U.el('span', 'qtag');
       row.appendChild(row._num); row.appendChild(row._img); row.appendChild(box); row.appendChild(row._q); row.appendChild(row._t);
+      row.appendChild(U.el('span', 'vbox'));
     }
     var showNum = Store.settings.showNumbers;
     row._num.textContent = showNum ? c.num : '';
@@ -145,6 +146,8 @@ var Views = (function () {
     row.classList.toggle('hid', !!Store.edits.hiddenChannels[c.k]);
     row.classList.toggle('picked', !!(pick && pick.has(c.k)));
     row.classList.toggle('moving', moving === c.k);
+    row.classList.toggle('vis', !!lvis);
+    row.classList.toggle('vis-off', !!lvis && !lvis.on[c.k]);
   }
 
   /* ---------- live view ---------- */
@@ -418,6 +421,7 @@ var Views = (function () {
   function hintsFor() {
     if (tab !== 'live') return;
     if (pick) UI.hints([['', 'OK  select or unselect'], ['red', 'Actions (' + pick.size + ' selected)'], ['', 'Back  done']]);
+    else if (lvis) UI.hints([['', 'OK  tick or untick', 'ok'], ['', 'CH +/−  a page', 'chup'], ['', 'Back  save and finish', 'back'], ['red', 'All, none, no guide']]);
     else {
       var h = [['', zone === 'groups' ? 'OK  open group' : 'OK  watch fullscreen', 'ok'], ['', 'Hold OK  options', 'hold'], ['', zone === 'groups' ? 'Back or ◀  menu bar' : 'Back or ◀  groups', 'back']];
       var vlz = zone === 'groups' ? groupsVL : chansVL;
@@ -437,6 +441,7 @@ var Views = (function () {
     doSwitch(t);
   }
   function doSwitch(t) {
+    if (lvis && t !== 'live') endListVis(true);
     if (tab === 'media' && t !== 'media') Media.leave();
     tab = t;
     Keymap.setContext(t === 'live' ? 'list' : t === 'guide' ? 'guide' : 'other');
@@ -540,6 +545,7 @@ var Views = (function () {
   function openNav() { tabBar(function () { UI.setHandler(liveKeys); setZone(liveZone); }); }
   function liveKeys(a) {
     if (pick) return pickKeys(a);
+    if (lvis) return listVisKeys(a);
     if (moving) return moveKeys(a);
     if (a.indexOf('num') === 0) return zapDigit(a.slice(3)), true;
     var mapped = listMapped(a);
@@ -1211,25 +1217,55 @@ var Views = (function () {
   function canManage(gid) { return gid && gid !== L.ALL && gid !== L.RECENT && gid !== L.TEAMS && gid !== L.EVENTS && gid !== L.NEW; }
   function manageVisibility(gid, at) {
     if (!canManage(gid)) return;
+    if (!L.channels(gid, true).length) { U.toast('That group is empty'); return; }
+    if (tab === 'guide') return Guide.startVis(gid, at);
+    startListVis(gid, at);
+  }
+  /* The same in the channel list (Channels screen): ticks on the rows, OK ticks, Red for all / none /
+     no guide, Back saves. */
+  var lvis = null;
+  function startListVis(gid, at) {
+    if (pick) endPick();
+    if (curGroup !== gid) { var gi = groupsVL.items.findIndex(function (x) { return x.id === gid; }); if (gi >= 0) { groupsVL.sel = gi; groupsVL.ensure(false); groupsVL.draw(true); } showGroup(gid); }
+    lvis = { gid: gid, was: {}, on: {} };
     var all = L.channels(gid, true);
-    if (!all.length) { U.toast('That group is empty'); return; }
-    var rows = all.map(function (c) { return { label: L.name(c), logo: logoOf(c), on: !L.isHidden(c.k), k: c.k, c: c, was: !L.isHidden(c.k) }; });
-    var chans = function (list) { return list.filter(function (r) { return r.k; }); };
-    var quick = [
-      { label: 'Show all', act: function (l) { chans(l).forEach(function (r) { r.on = true; }); } },
-      { label: 'Hide all', act: function (l) { chans(l).forEach(function (r) { r.on = false; }); } },
-      { label: 'Hide channels with no guide information', act: function (l) { chans(l).forEach(function (r) { if (!Epg.hasData(r.c)) r.on = false; }); } }
-    ];
-    var list = quick.concat(rows), i = at ? rows.findIndex(function (r) { return r.k === at.k; }) : -1;
-    var title = function () { return L.groupName(gid) + ':  ' + chans(list).filter(function (r) { return r.on; }).length + ' of ' + rows.length + ' shown'; };
-    UI.hints([['', 'OK  tick or untick', 'ok'], ['', 'CH +/−  a page', 'chup'], ['', 'Back  save and close', 'back'], ['', 'Hidden channels are hidden in every group']]);
-    UI.checklist(title, list, function (l) {
-      var change = {}, hid = 0, shown = 0;
-      chans(l).forEach(function (r) { if (r.on !== r.was) { change[r.k] = !r.on; if (r.on) shown++; else hid++; } });
-      if (hid || shown) { L.hideChannels(change); U.toast([hid ? hid + ' hidden' : '', shown ? shown + ' shown' : ''].filter(Boolean).join(', ') + '.  Hidden channels are hidden everywhere.', 4000); }
-      refreshLists(true);
-      hintsFor(); if (tab === 'guide') { Guide.refresh(); if (Guide.hints) Guide.hints(); }
-    }, i >= 0 ? i + quick.length : 0);
+    all.forEach(function (x) { lvis.on[x.k] = lvis.was[x.k] = !L.isHidden(x.k); });
+    var i = at ? all.findIndex(function (x) { return x.k === at.k; }) : 0;
+    setZone('channels');
+    chansVL.setItems(all, Math.max(0, i));
+    listVisHead(); hintsFor();
+    U.toast('Untick the channels to hide.  Back saves.', 3500);
+  }
+  function listVisHead() { var all = chansVL.items; $('chanTitle').textContent = L.groupName(lvis.gid) + '  ' + all.filter(function (c) { return lvis.on[c.k]; }).length + ' of ' + all.length + ' shown'; }
+  function endListVis(keep) {
+    if (!lvis) return;
+    var v = lvis, change = {}, hid = 0, shown = 0, cur = chansVL.current();
+    lvis = null;
+    if (keep) Object.keys(v.on).forEach(function (k) { if (v.on[k] !== v.was[k]) { change[k] = !v.on[k]; if (v.on[k]) shown++; else hid++; } });
+    if (hid || shown) { L.hideChannels(change); U.toast([hid ? hid + ' hidden' : '', shown ? shown + ' shown' : ''].filter(Boolean).join(', ') + '.  Hidden channels are hidden in every group.', 4000); }
+    else if (!keep) U.toast('Nothing changed');
+    refreshLists(true);
+    var list = L.channels(curGroup), i = cur ? list.findIndex(function (x) { return x.k === cur.k; }) : -1;
+    chansVL.setItems(list, Math.max(0, i));
+    hintsFor();
+  }
+  function listVisAll(f) { chansVL.items.forEach(function (c) { var on = f(c); if (on != null) lvis.on[c.k] = on; }); chansVL.refresh(); listVisHead(); }
+  function listVisKeys(a) {
+    if (a === 'up') chansVL.move(-1, true);
+    else if (a === 'down') chansVL.move(1, true);
+    else if (a === 'chup') chansVL.page(-1);
+    else if (a === 'chdown') chansVL.page(1);
+    else
+    if (a === 'ok') { var c = chansVL.current(); if (c) { lvis.on[c.k] = !lvis.on[c.k]; chansVL.refreshWhere(function (x) { return x === c; }); listVisHead(); } }
+    else if (a === 'red' || a === 'hold') UI.menu('Show or hide channels', [
+      { label: 'Show all', action: function () { listVisAll(function () { return true; }); } },
+      { label: 'Hide all', action: function () { listVisAll(function () { return false; }); } },
+      { label: 'Hide channels with no guide information', action: function () { listVisAll(function (c) { return Epg.hasData(c) ? null : false; }); } },
+      { label: 'Save and finish', action: function () { endListVis(true); } },
+      { label: 'Leave without saving', action: function () { endListVis(false); } }
+    ]);
+    else if (a === 'back' || a === 'left') endListVis(true);
+    return true;
   }
   function chanItems(c, gid) {
     var hidden = !!Store.edits.hiddenChannels[c.k];
@@ -1543,10 +1579,11 @@ var Views = (function () {
     var gsel = Math.max(0, gs.findIndex(function (x) { return x.id === curGroup; }));
     groupsVL.setItems(gs, gsel);
     var oldSel = chansVL.sel;
-    var list = L.channels(curGroup);
+    var list = L.channels(curGroup, !!lvis);
     chansVL.empty = emptyFor(curGroup);
     chansVL.setItems(list, Math.min(oldSel, list.length - 1));
     $('chanTitle').textContent = L.groupName(curGroup) + '  ' + list.length;
+    if (lvis) listVisHead();
     if (tab === 'guide' && !UI.modalOpen && !full) Guide.refresh();
     updateInfo();
   }
@@ -1594,6 +1631,7 @@ var Guide = (function () {
   var ROW = 100, VIS = 0, WIN = 2.5 * 3600e3, PXW = 0, CHW = 470, MINCELL = 220;      // narrowest a programme is drawn (px)
   var list = [], gid = null, loaded = null, sel = 0, top = 0, t0 = 0, focusT = 0, rows = [], zone = 'groups', groupsVL = null;
   var moving = null;              // the channel being moved up or down its group (Hold OK > Move…)
+  var vis = null;                 // Show or hide channels, right in the list: { gid, was: { k: shown }, on: { k: shown } }
 
   function build() {
     VIS = Math.max(3, Math.floor(body.clientHeight / ROW) || 6);
@@ -1607,6 +1645,7 @@ var Guide = (function () {
       ch.appendChild(U.el('span', 'n'));
       var chips = U.el('span', 'gchips'), cuEl = U.el('span', 'cu'), qEl = U.el('span', 'qtag');
       chips.appendChild(cuEl); chips.appendChild(qEl); ch.appendChild(chips);
+      ch.appendChild(U.el('span', 'vbox'));
       r.appendChild(ch); r.appendChild(pr);
       r.style.transform = 'translateY(' + (i * ROW) + 'px)';
       r.setAttribute('data-slot', i);
@@ -1642,7 +1681,7 @@ var Guide = (function () {
     hints();
   }
   function enterGrid() { if (loaded !== gid) load(gid, null); setZone('grid'); draw(); }
-  function leave() { document.body.classList.remove('nav-hidden'); view.classList.remove('groups-open'); }
+  function leave() { if (vis) endVis(true); document.body.classList.remove('nav-hidden'); view.classList.remove('groups-open'); }
 
   function renderGroupRow(row, g) {
     if (!row._n) { var nm = U.el('span', 'name'); row._n = U.el('i'); nm.appendChild(row._n); row._t = U.el('span', 'tag'); var b = U.el('div', 'txt'); b.appendChild(nm); row.appendChild(b); row.appendChild(row._t); }
@@ -1712,8 +1751,9 @@ var Guide = (function () {
   /* ---------- open / refresh ---------- */
   function load(groupId, key) {
     gid = groupId || L.ALL; moving = null;
-    list = L.channels(gid);
-    if (!list.length && zone === 'grid' && gid !== L.TEAMS) {      // My teams between games says when the next one is
+    if (vis && vis.gid !== gid) vis = null;
+    list = L.channels(gid, !!vis);
+    if (!list.length && zone === 'grid' && gid !== L.TEAMS && !vis) {      // My teams between games says when the next one is
       var alt = Views.firstFilled();
       if (alt !== gid && L.channels(alt).length) { U.toast(L.groupName(gid) + ' is empty, showing ' + L.groupName(alt)); gid = alt; list = L.channels(gid); remember(); }
     }
@@ -1721,9 +1761,12 @@ var Guide = (function () {
     var i = key ? list.findIndex(function (c) { return c.k === key; }) : -1;
     sel = i >= 0 ? i : 0;
     top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS));
-    ghead.textContent = L.groupName(gid) + '   ' + list.length;
+    head();
     body.classList.toggle('empty', !list.length);
     body.setAttribute('data-empty', gid === L.TEAMS && typeof Teams !== 'undefined' ? Teams.emptyText() : 'No channels in ' + L.groupName(gid) + '.');
+  }
+  function head() {
+    ghead.textContent = L.groupName(gid) + '   ' + (vis ? list.filter(function (c) { return vis.on[c.k]; }).length + ' of ' + list.length + ' shown' : list.length);
   }
   // From the menu: groups panel first.  With a channel playing: straight into the grid on it.
   function open(groupId, key) {
@@ -1773,6 +1816,8 @@ var Guide = (function () {
     r.el.classList.toggle('sel', focus);
     r.el.classList.toggle('moving', moving === c.k);
     r.el.classList.toggle('playing', isPlaying(c));
+    r.el.classList.toggle('vis', !!vis);
+    r.el.classList.toggle('vis-off', !!vis && !vis.on[c.k]);
     var lg = Views.logoOf(c), cuMark = c.arch && Store.settings.showCatchupMark !== false;
     var qt = L.versionTag(c);
     var head = (Store.settings.showNumbers ? c.num : '') + '|' + L.name(c) + '|' + (cuMark ? c.arch : '') + '|' + qt;
@@ -1913,6 +1958,7 @@ var Guide = (function () {
 
   function hints() {
     if (Views.tab !== 'guide' || Views.full) return;
+    if (vis && zone === 'grid') { UI.hints([['', 'OK  tick or untick', 'ok'], ['', 'CH +/−  a page', 'chup'], ['', 'Back  save and finish', 'back'], ['red', 'All, none, no guide']]); return; }
     var pv = previewing();
     if (zone === 'groups') {
       UI.hints([['', '▲ ▼  choose a group'], ['', 'OK or ▶  its channels', 'ok'], ['', '◀  menu', 'left'], ['', 'Hold OK  group options', 'hold'],
@@ -2007,6 +2053,7 @@ var Guide = (function () {
   function watchPreview() { if (previewing()) { Views.goFull(); return true; } return false; }
   function activate() {
     var c = list[sel]; if (!c) return;
+    if (vis) { vis.on[c.k] = !vis.on[c.k]; head(); draw(); return; }
     var h = progAt(c, focusT), now = Date.now();
     if (!h.p || (h.p.s <= now && h.p.e > now)) return watch(c);
     if (h.p.e <= now) { if (c.arch) Views.playCatchup(c, h.p, 0); else U.toast('This channel has no catch-up'); return; }
@@ -2090,9 +2137,48 @@ var Guide = (function () {
     } else if (a === 'ok' || a === 'back' || a === 'hold') endMove();
     return true;
   }
+  /* Show or hide channels, in the guide itself: every channel of the group with a tick (hidden ones
+     dimmed), OK ticks or unticks, Red for all / none / no guide, Back saves (one save) and leaves. */
+  function startVis(g, c) {
+    if (!Views.canManage(g)) return;
+    vis = { gid: g, was: {}, on: {} };
+    if (zone !== 'grid') setZone('grid');
+    load(g, c && c.k);
+    L.channels(g, true).forEach(function (x) { vis.on[x.k] = vis.was[x.k] = !L.isHidden(x.k); });
+    head(); draw(); hints();
+    U.toast('Untick the channels to hide.  Back saves.', 3500);
+  }
+  function endVis(keep) {
+    if (!vis) return;
+    var v = vis, change = {}, hid = 0, shown = 0, at = list[sel] && list[sel].k;
+    vis = null;
+    if (keep) Object.keys(v.on).forEach(function (k) { if (v.on[k] !== v.was[k]) { change[k] = !v.on[k]; if (v.on[k]) shown++; else hid++; } });
+    if (hid || shown) { L.hideChannels(change); U.toast([hid ? hid + ' hidden' : '', shown ? shown + ' shown' : ''].filter(Boolean).join(', ') + '.  Hidden channels are hidden in every group.', 4000); }
+    else if (!keep) U.toast('Nothing changed');
+    Views.refreshLists(true);
+    load(gid, at); draw(); hints();
+  }
+  function visAll(f) { list.forEach(function (c) { var on = f(c); if (on != null) vis.on[c.k] = on; }); head(); draw(); }
+  function visKeys(a) {
+    if (a === 'up') moveSel(-1);
+    else if (a === 'down') moveSel(1);
+    else if (a === 'chup') selectIdx(sel - (VIS - 1));
+    else if (a === 'chdown') selectIdx(sel + (VIS - 1));
+    else if (a === 'ok') { var c = list[sel]; if (c) { vis.on[c.k] = !vis.on[c.k]; head(); draw(); } }
+    else if (a === 'red' || a === 'hold') UI.menu('Show or hide channels', [
+      { label: 'Show all', action: function () { visAll(function () { return true; }); } },
+      { label: 'Hide all', action: function () { visAll(function () { return false; }); } },
+      { label: 'Hide channels with no guide information', action: function () { visAll(function (c) { return Epg.hasData(c) ? null : false; }); } },
+      { label: 'Save and finish', action: function () { endVis(true); } },
+      { label: 'Leave without saving', action: function () { endVis(false); } }
+    ]);
+    else if (a === 'back') endVis(true);
+    return true;
+  }
   function keys(a) {
     if (zone === 'groups') return groupKeys(a);
     if (moving) return moveKeys(a);
+    if (vis) return visKeys(a);
     if (a === 'up') moveSel(-1);
     else if (a === 'down') moveSel(1);
     else if (a === 'chup') selectIdx(sel - (VIS - 1));
@@ -2127,6 +2213,6 @@ var Guide = (function () {
     for (var i = 0; i < rows.length; i++) if (rows[i].k === k) { drawRow(rows[i], top + i); if (top + i === sel) drawDetail(); }
   }
 
-  return { open: open, resume: resume, refresh: refresh, draw: draw, rowUpdated: rowUpdated, leave: leave, hints: hints,
+  return { open: open, resume: resume, refresh: refresh, draw: draw, rowUpdated: rowUpdated, leave: leave, hints: hints, startVis: startVis, endVis: endVis, get vis() { return !!vis; },
     __sel: function () { return sel; }, __gsel: function () { return groupsVL ? groupsVL.sel : 0; } };
 })();
