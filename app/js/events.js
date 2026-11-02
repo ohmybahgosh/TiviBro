@@ -241,7 +241,7 @@ var Events = (function () {
     if (network && details.indexOf(network) < 0) details.push(network);
     if (!title || title.length < 3) return null;
     var len = lengthOf(s);
-    return { short: short, title: title, details: details, start: start, end: start + len, zone: zone, raw: raw };
+    return { short: short, title: title, details: details, start: start, end: start + len, zone: zone, raw: raw, guess: !date };    // guess: only a time, the day worked out
   }
 
   /* ---------- guide entries ---------- */

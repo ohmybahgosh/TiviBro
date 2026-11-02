@@ -599,8 +599,8 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
           <form id="mediaPreferences" class="form">
             <label class="f full">Sort movies by<select id="mediaSort"><option value="name">Name (A–Z)</option><option value="release">Release date (newest first)</option><option value="added">Date added (newest first)</option></select></label>
             <label class="f full"><span id="mediaTokenLabel">Add TMDB API token</span><input id="mediaTmdbToken" type="password" autocomplete="new-password" placeholder="Leave blank to keep the saved token"></label>
-            <div class="full muted small">Create your own token at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">TMDB API settings</a>.  It is checked before saving, stays on this TV and is excluded from backups.  Saved tokens are never sent back to this page.  <span id="mediaTokenStatus"></span></div>
-            <div class="full"><button id="mediaTokenRemove" type="button" class="ghost danger hidden">Remove saved token</button></div>
+            <div class="full muted small">Create your own token at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">TMDB API settings</a>.  It is checked before saving, stays on this TV and is excluded from backups.  With a token saved, movies without details or posters are looked up on their own.  Saved tokens are never sent back to this page.  <span id="mediaTokenStatus"></span></div>
+            <div class="full row"><button id="mediaTokenTest" type="button" class="ghost hidden">Test saved token</button><button id="mediaTokenRemove" type="button" class="ghost danger hidden">Remove saved token</button></div>
             <label class="f full">Metadata language<select id="mediaLanguage"><option value="en">English</option><option value="nl">Dutch</option><option value="de">German</option><option value="fr">French</option><option value="es">Spanish</option><option value="it">Italian</option></select></label>
             <p class="full muted small">English is the default.  This preference is shared with My media on the TV.  TMDB retrieves titles, descriptions and artwork in your chosen language.  Saving a different language refreshes existing matches.  Missing translations use English.</p>
             <div class="full row"><button class="primary" type="submit">Save preferences</button></div>
@@ -2977,7 +2977,7 @@ $('tEmpty').addEventListener('click', function (e) { if (e.target.id === 'emGo')
 
 /* ---------- My media: source management only ---------- */
 function loadMedia() {
-  command('mediaPreferences').then(function (r) { $('mediaLanguage').value = r.data.language; $('mediaSort').value = r.data.sort; $('mediaTokenLabel').textContent = r.data.tmdbConfigured ? 'TMDB API token saved on this TV' : 'Add TMDB API token'; $('mediaTmdbToken').placeholder = r.data.tmdbConfigured ? 'Paste a new token only to replace the saved one' : 'Paste your API key or Read Access Token'; $('mediaTokenStatus').textContent = r.data.tmdbConfigured ? 'Token saved on this TV.  Leave the field blank to keep it.' : 'No token saved yet.'; $('mediaTokenRemove').classList.toggle('hidden', !r.data.tmdbConfigured); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });
+  command('mediaPreferences').then(function (r) { $('mediaLanguage').value = r.data.language; $('mediaSort').value = r.data.sort; $('mediaTokenLabel').textContent = r.data.tmdbConfigured ? 'TMDB API token saved on this TV' : 'Add TMDB API token'; $('mediaTmdbToken').placeholder = r.data.tmdbConfigured ? 'Paste a new token only to replace the saved one' : 'Paste your API key or Read Access Token'; $('mediaTokenStatus').textContent = r.data.tmdbConfigured ? 'Token saved on this TV.  Leave the field blank to keep it.' : 'No token saved yet.'; $('mediaTokenRemove').classList.toggle('hidden', !r.data.tmdbConfigured); $('mediaTokenTest').classList.toggle('hidden', !r.data.tmdbConfigured); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });
   return command('mediaList').then(function (r) {
     var list = $('mediaList'); list.textContent = '';
     if (!(r.data || []).length) { var note = document.createElement('div'); note.className = 'note'; note.textContent = 'No media sources yet.  Add a WebDAV server below, or find a DLNA / UPnP server from My media on the TV.'; list.appendChild(note); }
@@ -3010,6 +3010,9 @@ $('mediaPreferences').onsubmit = function (e) {
   if ($('mediaTmdbToken').value.trim()) args.tmdbToken = $('mediaTmdbToken').value.trim();
   $('mediaTmdbToken').value = '';
   busyBtn(this.querySelector('button[type="submit"]'), command('mediaPreferences', args)).then(function (r) { msg('mediaPrefsMsg', 'ok', r.msg); loadMedia(); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });
+};
+$('mediaTokenTest').onclick = function () {
+  busyBtn(this, command('mediaTokenTest')).then(function (r) { msg('mediaPrefsMsg', 'ok', r.msg); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });
 };
 $('mediaTokenRemove').onclick = function () {
   var b = this;

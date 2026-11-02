@@ -110,6 +110,19 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('placeholder reminders are not asked about on opening', !asked.got.some((x) => /Next game/.test(x)), JSON.stringify(asked));
   ok('placeholder and "Next game" reminders removed, started or not, games kept', tidied.gone === 4 && tidied.left.indexOf('Boston Bruins at Detroit Red Wings') >= 0 && tidied.left.indexOf('Live: NFL Football') >= 0, JSON.stringify(tidied));
 
+  // Between games the group stays, empty, and says when the next game is.
+  const between = await ev(() => {
+    const keep = Teams.list; Teams.list = () => [];
+    Teams.dirty();
+    const inList = Library.groups().some((g) => g.id === Library.TEAMS);
+    const text = Views.emptyFor(Library.TEAMS);
+    Teams.list = keep; Teams.dirty();
+    return { inList, text, next: Teams.nextGame() && Teams.nextGame().p.t };
+  });
+  ok('with no game in the window the group stays', between.inList, JSON.stringify(between));
+  ok('and says when the next game is', /^No games on now or in the next 6 hours\.  Next: .+, (Today|Tomorrow|\w{3}) \d+:\d\d[ap]m on .+\.$/.test(between.text), between.text);
+  ok('other groups keep their own empty text', /Copy to group/.test(await ev(() => Views.emptyFor('nope'))));
+
   // The group's menu: turn it off.
   const items = await ev(() => { let got = null; const m = UI.menu; UI.menu = (t, l) => { got = l.filter(Boolean).map(x => x.label); }; Views.groupMenu({ id: Library.TEAMS, name: 'My teams' }); UI.menu = m; return got; });
   ok('the group menu has Choose teams and Turn off', items && items.indexOf('Choose teams…') >= 0 && items.indexOf('Turn off My teams') >= 0, items && items.join(', '));

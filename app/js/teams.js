@@ -261,6 +261,9 @@ var Teams = (function () {
     if (Events.on()) for (i = 0; i < all.length; i++) {
       var c = all[i], ev = Events.of(c);
       if (!ev || ev.end <= now || ev.start > to) continue;
+      // Only a time in the name ("Vikings @ Lions 1:00 PM") means today's game.  Long over, the name reads
+      // as tomorrow's: a channel the provider hasn't renamed yet, not a game.
+      if (ev.guess && ev.start - now > 6 * 3600e3 && new Date(ev.start).getDate() !== new Date(now).getDate()) continue;
       if (!quick.test(norm(ev.title)) && !MATCHUP.test(ev.title)) continue;
       playing(ev.title, c.n + ' | ' + (gname[c.g] || ''), true).forEach(function (x) { take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 }, x); });
     }
@@ -344,7 +347,26 @@ var Teams = (function () {
     listCache = { at: now, of: Library.data.channels, list: out };
     return out;
   }
-  function dirty() { listCache = null; desc.at = 0; }       // descriptions looked at again (the guide may have changed)
+  function dirty() { listCache = null; nextCache = null; desc.at = 0; }
+  /* With no game in the window, the group stays and says when the next one is: the soonest game in the
+     guide within a week (team channels' "Next game" blocks count). */
+  var nextCache = null;
+  function nextGame() {
+    var now = Date.now();
+    if (nextCache && now - nextCache.at < 300000 && nextCache.of === Library.data.channels) return nextCache.g;
+    var g = null;
+    games(7 * 86400e3, true).forEach(function (x) { if (x.p.s > now && (!g || x.p.s < g.p.s)) g = x; });
+    nextCache = { at: now, of: Library.data.channels, g: g };
+    return g;
+  }
+  function emptyText() {
+    if (!followed().length) return 'Choose your teams in Settings > Groups, sorting, hidden > My teams.';
+    var h = +S().teamsAhead || 6, n = nextGame();
+    var t = 'No games on now or in the next ' + h + (h === 1 ? ' hour.' : ' hours.');
+    if (n) t += '  Next: ' + n.p.t + ', ' + U.day(n.p.s) + ' ' + U.hhmm(n.p.s) + (n.c ? ' on ' + Library.name(n.c) : '') + '.';
+    else t += '  No games in the guide for the next few days.';
+    return t;
+  }       // descriptions looked at again (the guide may have changed)
 
   function follow(id, on) {
     var l = mine(), i = l.indexOf(id);
@@ -369,6 +391,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    isGame: isGame, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, dirty: dirty
+    isGame: isGame, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
 })();

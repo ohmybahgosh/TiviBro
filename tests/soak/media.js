@@ -206,10 +206,13 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   ok('source settings offer Rescan and Remove', /Rescan/.test(await text('#modal')) && /Remove/.test(await text('#modal')));
   await key('Escape');
 
-  ok('movie details make no calls before the viewer asks', metadataRequests.length === 0);
+  // With a TMDB token saved, movies without details are looked up on their own after a scan.
+  await page.waitForFunction(() => MediaStore.movies(null).filter(m => m.metadata).length === 2, null, { timeout: 20000 }).catch(() => {});
+  ok('with a token, new movies get details on their own after a scan', metadataRequests.length === 2 && await ev(() => MediaStore.movies(null).filter(m => m.metadata).length === 2), metadataRequests.length);
   await ev(() => Views.switchTab('media')); await page.waitForTimeout(300);
   await ev(() => UI.press('yellow'));
-  await page.waitForFunction(() => MediaStore.movies(null).filter(m => m.metadata).length === 2);
+  await page.waitForTimeout(500);
+  ok('Yellow then finds nothing left to fetch', metadataRequests.length === 2, metadataRequests.length);
   ok('source scraping saves details', await ev(() => MediaStore.movies(null).every(m => m.metadata.plot === 'A mock movie description.')));
   ok('only titles and years go to the metadata service', metadataRequests.every(q => Object.keys(q).every(k => ['title', 'year', 'auto', 'language', 'credential'].includes(k))));
   await ev(() => Media._test.rescanCurrent()); await page.waitForTimeout(1000);

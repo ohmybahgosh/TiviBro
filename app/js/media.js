@@ -141,6 +141,7 @@ var Media = (function () {
       var r = MediaStore.applyScan(id, res);
       delete scanning[id]; refresh();
       found(id, src.name, r, res);
+      if (!scanningAll) autoSoon();
       return { error: res.error || '', message: res.message || '', kept: r.kept, note: r.note, count: MediaStore.movies(id).length, skipped: res.skipped || null };
     }, function (e) { delete scanning[id]; refresh(); U.toast('Could not read ' + src.name + ': ' + why(e), 6000); return { error: 'helper' }; });
   }
@@ -174,6 +175,7 @@ var Media = (function () {
       var r = MediaStore.applyScan(id, res);
       refresh();
       found(id, source.name, r, res);
+      autoSoon();
       return { id: id, movies: MediaStore.movies(id).length, skipped: res.skipped || null };
     }, function (e) { U.toast(why(e), 6000); return { error: 'helper', message: why(e) }; });
   }
@@ -207,7 +209,16 @@ var Media = (function () {
     return ask('metadata', { credential: value, check: true }, 15000).then(function (r) {
       if (version !== tokenVersion) throw new Error('TMDB setup changed while this token was being checked.');
       if (r.error || !r.ok) throw new Error(r.message || 'TMDB did not accept that token.');
-      MediaStore.setTmdbToken(value); refresh(); return MediaStore.preferences();
+      MediaStore.setTmdbToken(value); refresh(); autoSoon(); return MediaStore.preferences();
+    });
+  }
+  // Settings > My media > Test TMDB token, and the web editor: is the saved token still accepted?
+  function testTmdbToken() {
+    var token = MediaStore.tmdbToken();
+    if (!token) return Promise.reject(new Error('No TMDB token saved yet.'));
+    return ask('metadata', { credential: token, check: true }, 15000).then(function (r) {
+      if (r.error || !r.ok) throw new Error(r.message || 'TMDB did not accept the saved token.');
+      return 'TMDB accepted the saved token.';
     });
   }
   function needToken() {
@@ -229,13 +240,17 @@ var Media = (function () {
     });
   }
   var fetchingDetails = false, pendingLanguageRefresh = false;
-  function fetchDetails(list, language) {
+  function fetchDetails(list, language, quiet) {
     if (fetchingDetails) return Promise.resolve({ busy: true });
     fetchingDetails = true;
     var at = 0, found = 0, missed = 0;
     return new Promise(function (resolve) {
       function done(message, error) {
-        fetchingDetails = false; refresh(); U.toast(message, 7000);
+        fetchingDetails = false; refresh();
+        // On its own (autoDetails): a word only when something was found, or it stopped on an error.
+        if (!quiet) U.toast(message, 7000);
+        else if (error) note('warn', 'Automatic movie details stopped: ' + error);
+        else if (found) U.toast('Movie details and posters added for ' + found + (found === 1 ? ' movie.' : ' movies.'), 5000);
         resolve({ updated: found, missed: missed, error: error || '' });
         if (pendingLanguageRefresh) { pendingLanguageRefresh = false; refreshMetadata().catch(function (e) { U.toast(why(e), 6000); }); }
       }
@@ -243,7 +258,7 @@ var Media = (function () {
         if (at >= list.length) return done(found + ' movies updated.  ' + missed + ' need a manual match in movie options.');
         var m = list[at++];
         if (!MediaStore.source(m.src)) return next();
-        U.toast('Movie details: ' + at + ' of ' + list.length);
+        if (!quiet) U.toast('Movie details: ' + at + ' of ' + list.length);
         var id = m.metadata && m.metadata.id;
         var q = id && /^(tmdb:[1-9][0-9]*|tt[0-9]+)$/.test(id) ? { id: id } : { title: m.title, year: m.year, auto: true };
         metadataRequest(q, language).then(function (r) {
@@ -252,6 +267,7 @@ var Media = (function () {
             if (!current || (current.metadata && current.metadata.id) !== id) return;
             found++; return MediaStore.setMetadata(m.id, r.metadata);
           } missed++;
+          return MediaStore.markMissed(m.id);
         }).then(function () { setTimeout(next, 350); }, function (e) { done('Stopped fetching details: ' + why(e) + '  Saved matches are kept.', why(e)); });
       }
       next();
@@ -279,6 +295,25 @@ var Media = (function () {
       MediaStore.load().then(function () { return fetchDetails(MediaStore.movies(s.id), MediaStore.preferences().language); }).catch(function (e) { U.toast(why(e), 6000); });
     });
   }
+  /* Movies without details or a poster are looked up on their own once a TMDB token is saved: after a
+     scan and when TiviBro starts.  The token is the go-ahead (the same titles a manual fetch sends).
+     One TMDB had no match for waits a week; a manual fetch or Find movie details still tries. */
+  var WEEK = 7 * 86400e3, autoTimer = null;
+  function note(lv, m) { if (typeof Log !== 'undefined' && Log[lv]) Log[lv]('media', m); }
+  function needsDetails(m, now) {
+    if (m.tmdbMiss && now - m.tmdbMiss < WEEK) return false;
+    return !m.metadata || (!m.metadata.poster && m.metadata.provider !== 'TMDB');
+  }
+  function autoDetails() {
+    if (!MediaStore.tmdbToken() || fetchingDetails || scanningAll || Object.keys(scanning).length || !MediaStore.sources().length) return Promise.resolve({ skipped: true });
+    return MediaStore.load().then(function () {
+      var now = Date.now(), list = MediaStore.movies(null).filter(function (m) { return needsDetails(m, now); });
+      if (!list.length) return { updated: 0 };
+      note('info', 'Looking up details for ' + list.length + ' movie(s) on their own');
+      return fetchDetails(list, MediaStore.preferences().language, true);
+    }).catch(function (e) { note('warn', 'Automatic movie details: ' + why(e)); return { error: why(e) }; });
+  }
+  function autoSoon(ms) { clearTimeout(autoTimer); autoTimer = setTimeout(function () { try { autoDetails(); } catch (e) { note('warn', 'Automatic movie details: ' + e.message); } }, ms || 3000); }
   var scanningAll = false;
   function rescanAll() {
     if (scanningAll || Object.keys(scanning).length) { U.toast('A media rescan is already running.'); return Promise.resolve(); }
@@ -290,7 +325,7 @@ var Media = (function () {
       if (at >= sources.length) return;
       return rescan(sources[at++].id).then(function (r) { if (r && r.error) failures++; if (r && r.kept) kept++; return next(); });
     }).then(function () {
-      scanningAll = false; refresh(); U.toast(failures ? 'Rescan finished.  ' + failures + ' sources could not be read; their saved movies are kept.' : kept ? 'Media rescan finished.  The list stays as it was where scans found no movies.' : 'Media rescan finished.  Press Yellow to fetch missing movie details.', 6000);
+      scanningAll = false; refresh(); autoSoon(8000); U.toast(failures ? 'Rescan finished.  ' + failures + ' sources could not be read; their saved movies are kept.' : kept ? 'Media rescan finished.  The list stays as it was where scans found no movies.' : 'Media rescan finished.  Press Yellow to fetch missing movie details.', 6000);
     }, function (e) { scanningAll = false; U.toast('Could not finish the rescan: ' + why(e), 6000); });
   }
   function fetchMissingDetails() {
@@ -468,7 +503,7 @@ var Media = (function () {
 
   return {
     leave: function () { playToken++; }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
-    rescanAll: rescanAll, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
+    rescanAll: rescanAll, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { addServer: addServer, addAddress: addAddress, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };

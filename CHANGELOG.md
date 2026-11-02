@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **My teams stays between games and says when the next one is.**  With no game on or within the window, the group no longer disappears from the guide and the channel list: it reads "No games on now or in the next 6 hours.  Next: Detroit Red Wings at Florida Panthers, Tomorrow 7:00pm on NHL | DETROIT RED WINGS."
+- **Yesterday's event channels aren't tomorrow's games.**  An event channel named with only a time ("Vikings @ Lions 1:00 PM"), still up hours after the game, no longer counts as a game the next day.
+- **Test TMDB token.**  Settings > My media and the web editor can check whether the saved token still works.
+- **Movies without details or posters get them on their own.**  With a TMDB token saved, new movies are looked up after each scan and when TiviBro starts, quietly.  One TMDB can't match waits a week; Yellow or Find movie details still tries.
 - **No more "Started at …: Next game" questions when TiviBro opens.**  Alpha 51 cleaned up the placeholder reminders that hadn't started yet, but kept the ones whose time had passed while TiviBro was closed, and asked about each of those on opening.  Those go too now, and a placeholder ("Next game: …", "No future events scheduled") is never asked about, whoever set the reminder.
 
 ## 0.6.0 (alpha 51, 2026-11-01)

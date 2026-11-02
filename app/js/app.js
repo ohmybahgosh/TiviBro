@@ -288,7 +288,7 @@ var App = (function () {
     Library.set(data);
     Logos.load(data);
     Vod.reset();
-    if (!ready) { Views.init(); Watch.start(); Remind.start(); ready = true; }
+    if (!ready) { Views.init(); Watch.start(); Remind.start(); ready = true; if (typeof Media !== 'undefined' && Media.autoSoon) Media.autoSoon(45000); }   // movies still without details or posters
     window.__tbBooted = true;              // compat.js shows an error screen if errors stop the start
     Views.stopAll();
     Views.reload(false);

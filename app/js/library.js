@@ -224,9 +224,8 @@ var Library = (function () {
     });
     if (s.showFav === false) customs = customs.filter(function (g) { return g.id !== FAV; });
     if (s.favFirst) out = out.concat(customs);
-    // My teams (app/js/teams.js): near the top, while one of the teams has a channel or a game coming up.
-    var mt = typeof Teams !== 'undefined' && Teams.groupOn() ? Teams.list().length : 0;
-    if (mt) out.push({ id: TEAMS, name: 'My teams', count: mt });
+    // My teams (app/js/teams.js): near the top while it's on, empty between games (it says when the next one is).
+    if (typeof Teams !== 'undefined' && Teams.groupOn()) out.push({ id: TEAMS, name: 'My teams', count: Teams.list().length });
     if (s.showRecent && e.recent.length) out.push({ id: RECENT, name: 'Recent', count: e.recent.length });
     var fresh = newList().length;
     if (fresh) out.push({ id: NEW, name: 'Recently added', count: fresh });

@@ -281,6 +281,7 @@ var WebEdit = (function () {
       if (a.clearTmdbToken || (typeof a.tmdbToken === 'string' && a.tmdbToken.trim())) return Media.setTmdbToken(a.clearTmdbToken ? '' : a.tmdbToken).then(saved);
       return saved();
     },
+    mediaTokenTest: function () { return Media.testTmdbToken().then(function (m) { return { msg: m }; }); },
     mediaList: function () {
       return MediaStore.load().then(function () { return { msg: 'Media sources', data: MediaStore.publicSources().map(function (s) { return { id: s.id, type: s.type, name: s.name, count: s.count }; }) }; });
     },

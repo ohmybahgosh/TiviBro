@@ -151,7 +151,7 @@ var Views = (function () {
   function init() {
     groupsVL = new VList($('groupList'), { render: renderGroup, onSel: onGroupSel, empty: 'No groups', visible: 11,
       onHover: function () { if (zone !== 'groups') setZone('groups'); }, onClick: function () { UI.press('ok'); } });
-    chansVL = new VList($('chanList'), { render: renderChan, onSel: onChanSel, empty: 'No channels in this group.  Hold OK on any channel and choose "Copy to group" to add some.', visible: 11,
+    chansVL = new VList($('chanList'), { render: renderChan, onSel: onChanSel, empty: EMPTY, visible: 11,
       onHover: function () { if (zone !== 'channels') setZone('channels'); }, onClick: function () { UI.press('ok'); } });
     ovVL = new VList($('ovList'), { render: renderChan, empty: 'No channels', visible: 11, onClick: function () { UI.press('ok'); } });
     ovVL.setActive(true);
@@ -305,6 +305,8 @@ var Views = (function () {
     for (var i = 0; i < gs.length; i++) if (!gs[i].hidden && L.channels(gs[i].id).length) return gs[i].id;
     return gs[0] ? gs[0].id : L.ALL;
   }
+  var EMPTY = 'No channels in this group.  Hold OK on any channel and choose "Copy to group" to add some.';
+  function emptyFor(gid) { return gid === L.TEAMS && typeof Teams !== 'undefined' ? Teams.emptyText() : EMPTY; }
   function showGroup(gid, keepSel) {
     var prev = chansVL.current();
     curGroup = gid;
@@ -312,6 +314,7 @@ var Views = (function () {
     var sel = 0;
     var want = keepSel && prev ? prev.k : (playing ? playing.k : null);
     if (want) { var i = list.findIndex(function (c) { return c.k === want; }); if (i >= 0) sel = i; }
+    chansVL.empty = emptyFor(gid);
     chansVL.setItems(list, sel);
     $('chanTitle').textContent = L.groupName(gid) + '  ' + list.length;
     updateInfo();
@@ -1490,6 +1493,7 @@ var Views = (function () {
     groupsVL.setItems(gs, gsel);
     var oldSel = chansVL.sel;
     var list = L.channels(curGroup);
+    chansVL.empty = emptyFor(curGroup);
     chansVL.setItems(list, Math.min(oldSel, list.length - 1));
     $('chanTitle').textContent = L.groupName(curGroup) + '  ' + list.length;
     if (tab === 'guide' && !UI.modalOpen && !full) Guide.refresh();
@@ -1512,7 +1516,7 @@ var Views = (function () {
   return {
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, playVod: playVod,
-    QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; }, get vod() { return vod; }, runAction: runAction,
     restoreKeys: function () { UI.setHandler(full ? fullKeys : liveKeys); },
@@ -1658,7 +1662,7 @@ var Guide = (function () {
   function load(groupId, key) {
     gid = groupId || L.ALL; moving = null;
     list = L.channels(gid);
-    if (!list.length && zone === 'grid') {
+    if (!list.length && zone === 'grid' && gid !== L.TEAMS) {      // My teams between games says when the next one is
       var alt = Views.firstFilled();
       if (alt !== gid && L.channels(alt).length) { U.toast(L.groupName(gid) + ' is empty, showing ' + L.groupName(alt)); gid = alt; list = L.channels(gid); remember(); }
     }
@@ -1668,7 +1672,7 @@ var Guide = (function () {
     top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS));
     ghead.textContent = L.groupName(gid) + '   ' + list.length;
     body.classList.toggle('empty', !list.length);
-    body.setAttribute('data-empty', 'No channels in ' + L.groupName(gid) + '.');
+    body.setAttribute('data-empty', gid === L.TEAMS && typeof Teams !== 'undefined' ? Teams.emptyText() : 'No channels in ' + L.groupName(gid) + '.');
   }
   // From the menu: groups panel first.  With a channel playing: straight into the grid on it.
   function open(groupId, key) {

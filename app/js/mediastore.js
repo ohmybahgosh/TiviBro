@@ -107,6 +107,8 @@ var MediaStore = (function () {
       { id: 'favorites', title: 'Favorites', movies: all.filter(function (m) { return isFavorite(m.id); }) },
       { id: 'all', title: 'All movies', movies: all }];
   }
+  // TMDB had no match for it (automatic lookups leave it alone for a week).
+  function markMissed(id) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.tmdbMiss = Date.now(); return saveLib(); } return Promise.resolve(); }
   function setMetadata(id, metadata) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { if (metadata) m.metadata = metadata; else delete m.metadata; return saveLib(); } return Promise.resolve(); }
   function movies(srcId) {
     var list = srcId ? lib.filter(function (m) { return m.src === srcId; }) : lib.slice(), sort = preferences().sort;
@@ -143,7 +145,7 @@ var MediaStore = (function () {
 
   return {
     sources: function () { return state.sources.slice(); }, source: source, publicSources: publicSources, addSource: addSource, removeSource: removeSource,
-    tmdbToken: function () { return state.tmdbToken || ''; }, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, applyScan: applyScan, movies: movies, load: load,
+    tmdbToken: function () { return state.tmdbToken || ''; }, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, markMissed: markMissed, applyScan: applyScan, movies: movies, load: load,
     resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, clearResume: clearResume
   };
 })();
