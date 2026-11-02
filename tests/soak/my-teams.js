@@ -90,11 +90,25 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     Store.edits.reminders.push({ k, s: t, e: t + 3600e3, t: 'Future Events for Detroit Tigers not found yet', w: 'team:mlb:det' },
       { k, s: t + 60e3, e: t + 3600e3, t: 'Next game: Detroit Red Wings at Florida Panthers at 11/02/2026 07:00 PM (US/Eastern)', w: 'team:nhl:det' },
       { k, s: t + 120e3, e: t + 3600e3, t: 'Boston Bruins at Detroit Red Wings', w: 'team:nhl:det' },
-      { k, s: t + 180e3, e: t + 3600e3, t: 'Live: NFL Football', w: 'team:nfl:det', g: 1 });
+      { k, s: t + 180e3, e: t + 3600e3, t: 'Live: NFL Football', w: 'team:nfl:det', g: 1 },
+      // Started while TiviBro was closed: these came up on opening alpha 51.
+      { k, s: t - 2 * 3600e3, e: t + 3600e3, t: 'Next game: Detroit Pistons at Charlotte Hornets at 11/02/2026 07:30 PM EST', w: 'team:nba:det' },
+      // Set by hand on a placeholder.
+      { k, s: t + 240e3, e: t + 3600e3, t: 'No future events scheduled' });
     const gone = Watch.tidy();
     return { gone, left: Store.edits.reminders.filter((r) => /^team:/.test(r.w || '')).map((r) => r.t) };
   });
-  ok('placeholder and "Next game" reminders removed, games kept', tidied.gone === 2 && tidied.left.indexOf('Boston Bruins at Detroit Red Wings') >= 0 && tidied.left.indexOf('Live: NFL Football') >= 0, JSON.stringify(tidied));
+  // And one that slips through is never asked about.
+  const asked = await ev(() => {
+    const k = Library.data.channels[0].k, t = Date.now() - 600e3, m = UI.menu; let got = [];
+    UI.menu = (title) => { got.push(title); };
+    Store.edits.reminders.push({ k, s: t, e: t + 7200e3, t: 'Next game: Detroit Red Wings at Florida Panthers', w: 'team:nhl:det' });
+    Views.dueReminder(Date.now());
+    UI.menu = m;
+    return { got, left: Store.edits.reminders.filter((r) => /Florida Panthers/.test(r.t)).length };
+  });
+  ok('placeholder reminders are not asked about on opening', !asked.got.some((x) => /Next game/.test(x)), JSON.stringify(asked));
+  ok('placeholder and "Next game" reminders removed, started or not, games kept', tidied.gone === 4 && tidied.left.indexOf('Boston Bruins at Detroit Red Wings') >= 0 && tidied.left.indexOf('Live: NFL Football') >= 0, JSON.stringify(tidied));
 
   // The group's menu: turn it off.
   const items = await ev(() => { let got = null; const m = UI.menu; UI.menu = (t, l) => { got = l.filter(Boolean).map(x => x.label); }; Views.groupMenu({ id: Library.TEAMS, name: 'My teams' }); UI.menu = m; return got; });

@@ -286,6 +286,9 @@ var Teams = (function () {
   var MAX_FEEDS = 8;
   var SPORTY = /\b(nfl|nba|nhl|mlb|wnba|mls|football|basketball|hockey|baseball|soccer)\b/i;
   // Not the game: placeholders ("not found yet"), and the shows around it.
+  // Guide placeholders, never a programme to be reminded of (the helper's remind.js has the same list).
+  var PLACEHOLDER = /^\s*next (?:game|event|match)\b|not found|no (?:future |upcoming |more |scheduled )?(?:games?|events?|matches)\b|not scheduled|nothing scheduled/i;
+  function placeholder(t) { return PLACEHOLDER.test(t || ''); }
   var NOGAME = /not found|no (?:future |upcoming |more |scheduled )?(?:games?|events?|matches)\b|not scheduled|nothing scheduled|off ?air|to be (?:announced|determined)|\btb[ad]\b|^\s*next game|\b(?:pre|post)[- ]?game\b|\bhighlights\b|\brecap\b|\bcountdown\b|\bgame ?day\b|\bpreview\b|\bfantasy\b|\bnfl sunday\b|\binside the\b|\bshow\b|\bpodcast\b|\btalk\b|\bpress conference\b/i;
 
   /* Is this a game?  Two teams of one league named, and not a placeholder or a show around the game.  For
@@ -366,6 +369,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    isGame: isGame, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, dirty: dirty
+    isGame: isGame, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, dirty: dirty
   };
 })();

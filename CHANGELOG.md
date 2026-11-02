@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **No more "Started at …: Next game" questions when TiviBro opens.**  Alpha 51 cleaned up the placeholder reminders that hadn't started yet, but kept the ones whose time had passed while TiviBro was closed, and asked about each of those on opening.  Those go too now, and a placeholder ("Next game: …", "No future events scheduled") is never asked about, whoever set the reminder.
+
 ## 0.6.0 (alpha 51, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -95,18 +95,23 @@ var Watch = (function () {
      and their "Next game: ..." blocks.  Those go, here and on the helper, at every start and look. */
   // A team reminder set now was checked as a game (Teams.games): say so, so tidy() never doubts it.
   function mark(r) { if (/^team:/.test(r.w || '')) r.g = 1; return r; }
+  // Not worth a reminder: a guide placeholder, or a team reminder that isn't a game.  Started or not:
+  // one that began while TiviBro was closed would otherwise come up the moment it opens.
+  function doubtful(r) {
+    if (typeof Teams === 'undefined' || !Teams.isGame) return false;
+    if (Teams.placeholder(r.t)) return true;
+    if (!/^team:/.test(r.w || '') || r.g) return false;          // g: checked as a game when it was set
+    var c = L.find(r.k);
+    return !Teams.isGame(r.t, c ? c.n : '');
+  }
   function tidy() {
     if (typeof Teams === 'undefined' || !Teams.isGame) return 0;
-    var rem = Store.edits.reminders, now = Date.now(), keep = rem.filter(function (r) {
-      if (!/^team:/.test(r.w || '') || r.s <= now || r.g) return true;   // g: checked as a game when it was set
-      var c = L.find(r.k);
-      return Teams.isGame(r.t, c ? c.n : '');
-    });
+    var rem = Store.edits.reminders, keep = rem.filter(function (r) { return !doubtful(r); });
     var gone = rem.length - keep.length;
     if (!gone) return 0;
     Store.edits.reminders = keep;
     Store.saveEdits();
-    Log.info('watch', 'Removed ' + gone + ' team reminder(s) that were not games');
+    Log.info('watch', 'Removed ' + gone + ' reminder(s) that were not programmes or games');
     if (typeof Remind !== 'undefined' && Remind.sync) Remind.sync(true);
     return gone;
   }
@@ -120,5 +125,5 @@ var Watch = (function () {
     Epg.onUpdate(function (k) { if (!k) soon(); });
   }
 
-  return { tidy: tidy, list: list, add: add, remove: remove, has: has, upcoming: upcoming, scan: scan, start: start };
+  return { tidy: tidy, doubtful: doubtful, list: list, add: add, remove: remove, has: has, upcoming: upcoming, scan: scan, start: start };
 })();
