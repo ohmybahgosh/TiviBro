@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **WebDAV movies can play directly with a login.**  Servers using HTTP Basic authentication work alongside signed file links.  The helper keeps the login out of playback addresses and handles seeking and subtitle reads.  Invalid stream redirects return an error instead of leaving playback waiting.
+
 ## 0.6.0 (alpha 58, 2026-11-02)
 
 Pre-release: expect rough edges, and keep a backup before installing.
