@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **Movies on now, a screen of its own.**  In the side menu while a TMDB token is saved: big posters of the movies on now and starting in the next three hours, the focused one large over its backdrop with its title logo, its channel, time left and plot.  OK watches it (for one starting later it asks first: remind me, watch the channel now, or Cancel); Hold OK lists every channel showing it.
-
-## 0.6.0 (alpha 53, 2026-11-01)
+## 0.6.0 (alpha 54, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 53
+### New in alpha 54
+
+- **Movies on now, a screen of its own.**  In the side menu while a TMDB token is saved: big posters of the movies on now and starting in the next three hours, the focused one large over its backdrop with its title logo, its channel, time left and plot.  OK watches it (for one starting later it asks first: remind me, watch the channel now, or Cancel); Hold OK lists every channel showing it.
+
+### In alpha 53
 
 - **Show or hide channels, like TiviMate.**  Hold OK on a channel (or a group) and choose **Show or hide channels…**: the guide (or the channel list) puts a tick on every row, hidden channels too, right where you are.  OK ticks or unticks; Red for Show all, Hide all, Hide channels with no guide information or Leave without saving; Back saves.  The phone app has it too: press and hold a channel.
 - **Movies on now, and movie details in the guide (with your TMDB token).**  TiviBro finds the movies in your guide: the guide's Movie category, a year in the title, long programmes on movie channels, and other long programmes TMDB knows well as films.  A movie's details in the guide show its poster, year, runtime, genres and TMDB rating; the grid marks it **Movie**; and a **Movies on now** group lists the movies on now (most left first) and starting within the hour.  Answers are kept 30 days.  The TMDB token can now be added, tested and removed in Settings > Guide, start screen, reminders too.
