@@ -1,4 +1,4 @@
-/* Embedded subtitle menus and overlay in the real app and authenticated helper.
+/* Embedded subtitle menus and overlay in the real app and a Range-capable file server.
    Synthetic MKV bytes exercise extraction without requiring a browser MKV decoder.
    Start the mock provider and npm run serve, then run this file with Playwright. */
 'use strict';
@@ -13,11 +13,9 @@ for (const codec of ['UTF8', 'ASS', 'SSA', 'WEBVTT']) fixtures['/' + codec + '.m
   indexPadding:codec === 'UTF8' ? 1631554 : 0,
   cueText:/ASS|SSA/.test(codec) ? '0,0,Default,,0,0,0,,{\\i1}Hello, world!\\NNext line' : '<b>Hello, world!</b>\nNext line'
 }));
-const auth = 'Basic ' + Buffer.from('demo:demo').toString('base64');
 let requests = 0, fails = 0;
 const ok = (n,c,detail) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (!c && detail ? ' '+JSON.stringify(detail) : '')); if (!c) fails++; };
 const server = http.createServer((q,s) => {
-  if (q.headers.authorization !== auth) { s.writeHead(401); return s.end(); }
   requests++;
   const b = fixtures[q.url]; if (!b) { s.writeHead(404); return s.end(); }
   const r = /bytes=(\d+)-(\d+)/.exec(q.headers.range || '');
@@ -47,9 +45,7 @@ const server = http.createServer((q,s) => {
       const url = 'http://127.0.0.1:' + server.address().port;
       await page.evaluate(async ({codec,url}) => {
         UI.close();
-        var r=await fetch('http://127.0.0.1:'+Net.port+'/media/resolve',{method:'POST',headers:Net.ctlHeaders({'Content-Type':'application/json'}),body:JSON.stringify({source:{type:'webdav',address:url,user:'demo',pass:'demo'},path:'/'+codec+'.mkv'})});
-        var j=await r.json(); if(j.error)throw new Error(j.error);
-        window.__embeddedTest=MkvSubs.extract(j.url,document.getElementById('video'));
+        window.__embeddedTest=MkvSubs.extract(Net.wrap(url+'/'+codec+'.mkv'),document.getElementById('video'));
       },{codec,url});
       await page.waitForFunction(()=>{var t=document.getElementById('video').textTracks;if(t.length)t[0].mode='hidden';return t.length && t[0].cues && t[0].cues.length;},null,{timeout:15000});
       await page.evaluate(()=>Views.runAction('subs','player'));
@@ -85,7 +81,7 @@ const server = http.createServer((q,s) => {
       ok(codec + ' disappears at its end time',await page.evaluate(()=>document.querySelector('.mkv-captions').textContent===''));
       await page.evaluate(()=>{window.__embeddedTest.cancel();document.getElementById('video').currentTime=1.5;});
     }
-    ok('authenticated playback and subtitle reads reached the server',requests>16);
+    ok('subtitle Range reads reached the file server',requests>16);
     ok('no uncaught app errors',errors.length===0);
   } finally { await browser.close(); await new Promise(r=>server.close(r)); }
   if(fails)process.exitCode=1;

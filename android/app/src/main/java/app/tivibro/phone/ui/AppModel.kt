@@ -414,8 +414,18 @@ class AppModel(app: Application) : AndroidViewModel(app) {
 
     /* ---------- backups on the phone, without the TV (discussion #23) ---------- */
 
-    /** The web editor loaded a TV's channel list: kept for editing backups without the TV. */
-    fun keepEditorCopy(tvId: String, json: String) { copies.keep(tvId, json) }
+    /** The web editor's channel list, kept for editing this TV's backups without the TV (EditorScreen KEEP).
+     *  Says when a copy is saved, so you know the backups can be edited, or why it couldn't be. */
+    fun editorKeeper(tvId: String) = object : app.tivibro.phone.ui.Keeper {
+        override fun begin(meta: String) = copies.begin(tvId, meta)
+        override fun part(chunk: String) = copies.part(chunk)
+        override fun end(): Boolean {
+            val c = copies.end() ?: return false
+            say("${c.name}: channel list saved, so its backups can be edited on the phone without the TV")
+            return true
+        }
+        override fun failed(why: String) { say("Couldn't save the channel list for editing without the TV ($why)") }
+    }
 
     fun backupName(b: SavedBackup): String = b.label.ifBlank { java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(b.at)) }
 
@@ -437,16 +447,20 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         backups.save(b.tvId, BackupTools.withSettings(backups.open(b), values), auto = false, label = label)
     }
 
-    /** What the offline editor starts from: the kept channel list, with the backup's edits and name rules for that playlist. */
-    fun offlineState(b: SavedBackup, pid: String): String {
-        val d = JSONObject(copies.read(b.tvId, pid))
+    /** What the offline editor starts from: the kept channel list (served to the page as a file) ... */
+    fun offlineCopy(b: SavedBackup, pid: String): java.io.File = copies.file(b.tvId, pid)
+
+    /** ... with the backup's edits and name rules for that playlist. */
+    fun offlineExtras(b: SavedBackup, pid: String): String {
         val backup = backups.open(b)
-        d.put("edits", backup.optJSONObject("edits")?.optJSONObject(pid) ?: JSONObject())
         val pl = backup.optJSONObject("settings")?.optJSONArray("playlists")?.let { l -> (0 until l.length()).mapNotNull { l.optJSONObject(it) }.firstOrNull { it.optString("id") == pid } }
-        d.put("names", pl?.optJSONObject("names") ?: JSONObject.NULL)
-        d.put("setup", false); d.put("lastBackup", 0); d.remove("drafts")
-        return d.toString()
+        return JSONObject().put("edits", backup.optJSONObject("edits")?.optJSONObject(pid) ?: JSONObject()).put("names", pl?.optJSONObject("names") ?: JSONObject.NULL).toString()
     }
+
+    /** Each backup's playlists that can be edited on the phone (a channel list is kept for them), by name. */
+    fun offlinePlaylists(b: SavedBackup): List<String> = runCatching {
+        BackupTools.playlists(backups.open(b)).filter { copies.has(b.tvId, it.first) }.map { it.second }
+    }.getOrDefault(emptyList())
 
     /** Changes made in the offline editor, kept as a new backup. */
     suspend fun keepEdited(b: SavedBackup, pid: String, saved: String, label: String): SavedBackup = withContext(Dispatchers.IO) {

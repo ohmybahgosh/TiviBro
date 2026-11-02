@@ -9,7 +9,7 @@
      POST /live/xtream  { u: <relayed get_live_streams address>, uc: <relayed get_live_categories> }
        -> { groups, channels, n, cats }
      POST /live/m3u     { u: <relayed playlist address> }
-       -> { groups, channels, epgUrl, bytes }, or 422 { kind: 'parse' } when it isn't an M3U playlist
+       -> { groups, channels, epgUrl, bytes, vod: { movies, series } }, or 422 { kind: 'parse' } when it isn't an M3U playlist
      Either with keep: true also answers live: <id>, and the answer is kept for /kv/put?from=<id> (kv.js).
    Any other failure answers 502 and the app loads the list itself, as before.
    Plain ES5 and callbacks for Node 0.12 (webOS 4). */
@@ -109,10 +109,14 @@ function handle(req, res, ALLOW, log, port) {
     getText(u, function (e, t, size) {
       if (e) { if (log) log({ lv: 'warn', event: 'live list failed', e: e.message }); return send(res, ALLOW, 502, { error: e.message }); }
       if (t.indexOf('#EXTM3U') < 0 && t.indexOf('#EXTINF') < 0) return send(res, ALLOW, 422, { kind: 'parse', error: 'not an M3U playlist', head: t.slice(0, 200) });
-      var d = PlShape.parseM3U(t);
+      // Movies and shows in the list become Movies and Shows (kept here for /vod/, vod.js), not channels.
+      var d = PlShape.parseM3U(t, { vod: true });
       t = null;
-      if (log) log({ lv: 'info', event: 'live m3u', n: d.channels.length, ms: Date.now() - t0 });
-      reply(res, ALLOW, { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl, bytes: size }, !!q.keep, log);
+      var v = d.vod, counts = { movies: v.movie.rows.length, series: v.series.rows.length };
+      if (log) log({ lv: 'info', event: 'live m3u', n: d.channels.length, movies: counts.movies, shows: counts.series, ms: Date.now() - t0 });
+      if (q.pl && (counts.movies || counts.series)) require('./vod').saveM3u(String(q.pl), String(q.sig || ''), v, log);
+      d.vod = null; v = null;
+      reply(res, ALLOW, { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl, bytes: size, vod: counts }, !!q.keep, log);
     });
   });
 }

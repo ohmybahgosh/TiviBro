@@ -326,7 +326,8 @@ var Phone = (function () {
     if (ins.length) out.inputs = ins;
     // Movies and Shows tabs on the phone only when the provider has them.
     var p = Store.playlist || {}, vd = p.vod || {};
-    out.vod2 = { mediaLibraryVersion:2, movies: p.type === 'xtream' && !!vd.movies, series: p.type === 'xtream' && !!vd.series, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0, onnow: typeof Movies !== 'undefined' && Movies.on() };
+    var vk = p.type === 'xtream' || !!vd.m3u;
+    out.vod2 = { mediaLibraryVersion:2, movies: vk && !!vd.movies, series: vk && !!vd.series, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0, onnow: typeof Movies !== 'undefined' && Movies.on() };
     return out;
   }
   function pushState(soon) {

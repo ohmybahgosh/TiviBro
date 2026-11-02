@@ -41,7 +41,7 @@
 | 🤖 **Building a feature with AI?** | [Download the knowledge base](https://tivibro.app/ai/tivibro-for-ai.md) for Claude, ChatGPT or Gemini |
 
 > [!WARNING]
-> **TiviBro is under active development.**  These are early test builds: expect bugs and rough edges, and settings or features may change between versions.  Keep a backup before updating (**Backup and restore** in the [web editor](#the-web-editor)).  Found a bug?  On the TV, **Settings > Diagnostics > Report a problem** (also on the first screen) fills in a [GitHub issue](https://github.com/ohmybahgosh/TiviBro/issues) for you from your phone: see [Report a problem](#report-a-problem).
+> **TiviBro is in alpha testing.**  It runs every day on real LG TVs, from a 2019 webOS 4 OLED to webOS 5, 22 and 25 sets, along with the Android phone app, and beta is next.  Expect some rough edges, and settings or features may still change between builds.  Keep a backup before updating (**Backup and restore** in the [web editor](#the-web-editor)).  Found a bug?  On the TV, **Settings > Diagnostics > Report a problem** (also on the first screen) fills in a [GitHub issue](https://github.com/ohmybahgosh/TiviBro/issues) for you from your phone: see [Report a problem](#report-a-problem).
 
 <p align="center"><a href="docs/media/guide.mp4"><img src="docs/media/guide.gif" width="100%" alt="The TiviBro guide, preview and fullscreen"></a></p>
 <p align="center"><sub>The guide is home: browse, preview in the window, OK again for fullscreen.  <a href="docs/media/guide.mp4">Watch the full-quality MP4</a>.  Every picture here is clickable.</sub></p>
@@ -59,8 +59,6 @@ No typing logins with a remote.  The first screen shows a QR code: scan it with 
 </p>
 
 > **TiviBro does not provide any channels, streams or playlists.**  You bring your own legal subscription.
-
-> **Status: beta.**  Everything here runs in the webOS 25 Simulator and in desktop test harnesses.  Real-TV testing is under way, so expect rough edges.
 
 ## Why TiviBro
 
@@ -624,11 +622,11 @@ Everyone who has helped build TiviBro with code, ideas or bug reports.  This lis
 
 <!-- thanks:start -->
 <p>
-  <a href="https://github.com/moritzm784" title="moritzm784: 4 pull requests, 1 idea or bug report"><img src="https://avatars.githubusercontent.com/u/202101620?v=4&amp;s=96" width="48" height="48" alt="moritzm784"></a>
+  <a href="https://github.com/moritzm784" title="moritzm784: 7 pull requests, 1 idea or bug report"><img src="https://avatars.githubusercontent.com/u/202101620?v=4&amp;s=96" width="48" height="48" alt="moritzm784"></a>
   <a href="https://github.com/ich0x" title="ich0x: 12 ideas and bug reports"><img src="https://avatars.githubusercontent.com/u/25590184?v=4&amp;s=96" width="48" height="48" alt="ich0x"></a>
 </p>
 
-- **[moritzm784](https://github.com/moritzm784)**: 4 pull requests, 1 idea or bug report
+- **[moritzm784](https://github.com/moritzm784)**: 7 pull requests, 1 idea or bug report
 - **[ich0x](https://github.com/ich0x)**: 12 ideas and bug reports
 <!-- thanks:end -->
 

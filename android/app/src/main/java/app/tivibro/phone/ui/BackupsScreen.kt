@@ -49,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -72,6 +73,10 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
     val tv = tvs.firstOrNull { it.tv.id == id }?.tv ?: return
     var version by remember { mutableIntStateOf(0) }
     val list = remember(version) { model.backups.list(id) }
+    // Which playlists in each backup can be edited on the phone (a channel list is kept for them).
+    val offline by produceState(emptyMap<String, List<String>>(), version) {
+        value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { list.associate { it.file.name to model.offlinePlaylists(it) } }
+    }
     var auto by remember { mutableStateOf(model.backups.auto) }
     var busy by remember { mutableStateOf(false) }
     var restoring by remember { mutableStateOf<Pair<SavedBackup, String>?>(null) }
@@ -141,7 +146,7 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
             }
             if (list.isEmpty()) item { Text("No backups yet.", color = Muted, modifier = Modifier.padding(top = 8.dp)) }
             items(list, key = { it.file.name }) { b ->
-                BackupRow(b, others = tvs.filter { it.tv.id != id }.map { it.tv.id to it.tv.name },
+                BackupRow(b, offline = offline[b.file.name], others = tvs.filter { it.tv.id != id }.map { it.tv.id to it.tv.name },
                     onRestore = { to, _ -> restoring = b to to },
                     onExport = { exporting = b },
                     onDelete = { deleting = b to 1 },
@@ -228,7 +233,7 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
     if (noCopy) AlertDialog(
         onDismissRequest = { noCopy = false }, containerColor = Panel,
         title = { Text("Open the editor with the TV once") },
-        text = { Text("To edit channels without the TV, the phone needs the channel list.  Open Edit channels with ${tv.name} once (on the same Wi-Fi): the phone keeps a copy of each playlist's channels for next time.") },
+        text = { Text("To edit channels without the TV, the phone needs the channel list.  Open Edit channels with ${tv.name} once (on the same Wi-Fi) and wait a few seconds for \"channel list saved\".  The phone keeps a copy of each playlist you open there, and this list then shows which ones you can edit.") },
         confirmButton = { TextButton(onClick = { noCopy = false }) { Text("OK") } },
     )
     // Delete asks twice: a backup is the only copy of the logins it holds.
@@ -273,7 +278,7 @@ private fun SettingsDialog(model: AppModel, b: SavedBackup, onDone: (Map<BackupT
 private fun stamp(t: Long) = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(t))
 
 @Composable
-private fun BackupRow(b: SavedBackup, others: List<Pair<String, String>>, onRestore: (String, String) -> Unit, onExport: () -> Unit, onDelete: () -> Unit,
+private fun BackupRow(b: SavedBackup, offline: List<String>?, others: List<Pair<String, String>>, onRestore: (String, String) -> Unit, onExport: () -> Unit, onDelete: () -> Unit,
                       onEdit: () -> Unit, onSettings: () -> Unit, onRename: () -> Unit, onDuplicate: () -> Unit, onMerge: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     Surface(color = Panel, shape = MaterialTheme.shapes.medium) {
@@ -282,6 +287,11 @@ private fun BackupRow(b: SavedBackup, others: List<Pair<String, String>>, onRest
                 Text(b.label.ifBlank { stamp(b.at) }, fontWeight = FontWeight.SemiBold)
                 Text(listOf(if (b.label.isNotBlank()) stamp(b.at) else "", "${b.playlists} playlist" + (if (b.playlists == 1) "" else "s"), if (b.auto) "automatic" else "", b.version.ifBlank { "" }).filter { it.isNotBlank() }.joinToString("  ·  "),
                     color = Muted, style = MaterialTheme.typography.labelSmall)
+                // Says up front which playlists Edit channels on the phone can open (discussion #23).
+                if (offline != null) Text(
+                    if (offline.isEmpty()) "To edit on the phone: open Edit channels with the TV once"
+                    else "Edit on the phone: " + offline.joinToString(", "),
+                    color = if (offline.isEmpty()) Muted else Accent, style = MaterialTheme.typography.labelSmall)
             }
             TextButton(onClick = { onRestore(b.tvId, "") }) { Text("Restore") }
             IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, "More") }

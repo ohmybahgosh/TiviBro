@@ -46,8 +46,9 @@ var Views = (function () {
     var pl = Store.playlist, v = pl.vod || {};
     // Movies on now (onnow.js): in the menu while a TMDB token is saved and movie details are on.
     if (typeof Movies !== 'undefined' && Movies.on()) tabs.push('onnow');
-    if (pl.type === 'xtream' && v.movies) tabs.push('movies');
-    if (pl.type === 'xtream' && v.series) tabs.push('shows');
+    // Movies and Shows: an Xtream login's, or an M3U list's own (Vod.m3u: kept by the network helper).
+    if ((pl.type === 'xtream' || v.m3u) && v.movies) tabs.push('movies');
+    if ((pl.type === 'xtream' || v.m3u) && v.series) tabs.push('shows');
     // My media: in the menu once a media source is added (Settings > My media is the way in before that).
     if (typeof MediaStore !== 'undefined' && MediaStore.sources().length) tabs.push('media');
     tabs.push('search', 'editor', 'settings');

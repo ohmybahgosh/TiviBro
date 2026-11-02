@@ -23,6 +23,8 @@ const get = (url, opts = {}) => new Promise((resolve, reject) => {
     if (q.url === '/malformed.mkv') { s.writeHead(302, {Location:'http://[invalid'}); return s.end(); }
     if (q.url === '/badport.mkv') { s.writeHead(302, {Location:'http://127.0.0.1:99999/video.mkv'}); return s.end(); }
     if (redirect) { s.writeHead(302, {Location:cb + '/movie.mkv'}); return s.end(); }
+    if (q.url === '/pause.mkv') { s.writeHead(200); s.write('before'); return setTimeout(() => s.end('after'), 400); }
+    if (q.url === '/silent.mkv') return;                       // never answers
     if (q.url === '/slow.mkv' && q.headers.range !== 'bytes=0-0') {
       s.writeHead(200); s.write('start');
       const timer = setInterval(() => s.write('more'), 20);
@@ -78,6 +80,14 @@ const get = (url, opts = {}) => new Promise((resolve, reject) => {
   ok('helper logs contain no stream tokens or credentials', !logs.body.includes(url.split('/')[4]) && !logs.body.includes(auth));
   const token = url.split('/')[4];
   ok('stream capabilities are masked in log messages', !proxy.redact(url).includes(token));
+  // The wait for an answer is not a limit on the stream: a pause longer than it doesn't cut the movie.
+  streams._wait(150);
+  r = await get(rb + streams.create(base + '/pause.mkv', auth, 'mkv'));
+  ok('a stream that goes quiet for longer than the answer timeout keeps going', r.status === 200 && r.body === 'beforeafter');
+  r = await get(rb + streams.create(base + '/silent.mkv', auth, 'mkv'));
+  ok('a server that never answers gets 504', r.status === 504);
+  streams._wait(20000);
+  server.closeAllConnections && server.closeAllConnections();
   await Promise.all([server, cdn, relay.server].map(s => new Promise(r => s.close(r))));
   if (fail) process.exitCode = 1;
 })().catch(e => { console.error(e); process.exit(1); });

@@ -2,18 +2,32 @@
 
 ## Unreleased
 
-- **Prepare My media TV-show discovery.**  Add tested local episode classification and recoverable paged storage foundations.  TV-show screens and playback integration are still in development.
+- **My media TV-show test build.**  Discover shows alongside movies, browse seasons and episodes, fetch show metadata, correct matches, and remember episode progress.  Includes chapter and multi-episode playback support.
 
-- **One subtitle language at a time.**  The MKV overlay keeps the selected track when another subtitle track becomes active, including after skipping backward or forward, preventing English and Dutch captions from stacking.
-- **Subtitle text stays readable in more files.**  ASS drawing instructions are left out of plain text, literal words such as `<Enter>` are kept, and an invalid WebDAV redirect returns an error instead of leaving playback waiting.
-- **More embedded subtitles in MKV movies.**  Movies with large subtitle indexes no longer lose all their tracks.  ASS/SSA and WebVTT tracks now show as plain text alongside SRT, and My media finds MKV subtitles even when a signed playback link has no file extension.  Track names and newer language tags are read, and Timing also moves the TV's subtitle overlay.
-- **WebDAV movies can play directly with a login.**  Servers using HTTP Basic authentication now work alongside signed file links.  The helper keeps the login out of playback addresses and handles seeking and subtitle reads.
-
-## 0.6.0 (alpha 58, 2026-11-02)
+## 0.6.0 (alpha 60, 2026-11-02)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 58
+### New in alpha 60
+
+- **Movies and Shows from M3U links.**  Many providers give one M3U link with their films and series in it.  Those now go to **Movies** and **Shows**, by category, instead of filling the channel list: films as movies, and episodes gathered into shows by season, played from the links in the list.  Search finds them too.  The network helper keeps the library on the TV's storage, so a list with 300,000 titles still fits (issue #26's list: 2,775 channels, 21,946 movies and 7,048 shows).  Reload the channel list once to get them.
+- **Guide fallback messages explain what happened.**  When the provider guide fails, TiviBro says it is checking public guides and only says it is using them when matching listings are available.  The TV and web editor keep the original source error for diagnosis.
+- **More embedded subtitles in MKV movies.**  Movies with large subtitle indexes no longer lose all their tracks.  ASS/SSA and WebVTT tracks show as plain text alongside SRT.  My media finds MKV subtitles even when a playback link has no file extension.  Track names and newer language tags are read, and Timing also moves the subtitle overlay.
+- **One subtitle language at a time.**  The MKV overlay keeps the selected track when another track becomes active, including after skipping backward or forward, preventing languages from stacking.
+- **Subtitle text stays readable in more files.**  ASS drawing instructions are left out of plain text, and literal words such as `<Enter>` are kept.
+- **Line up survives a seek.**  A subtitle lined up with another track (or moved with **Timing**) stays in time after skipping or a reconnect, including subtitles read from an MKV file as it plays.
+- **WebDAV movies can play directly with a login.**  Servers using HTTP Basic authentication work alongside signed file links.  The helper keeps the login out of playback addresses and handles seeking and subtitle reads.  Invalid stream redirects return an error instead of leaving playback waiting.
+
+### In alpha 59
+
+- **A playlist that keeps closing TiviBro is stopped** (issue #25).  If TiviBro closes twice in a row while loading or reloading a playlist, that playlist's **Reload channel list** becomes **Only when I ask**, and the next start says so.  When nothing of the list is kept yet, it asks first: try it again, change the connection, use another playlist or add one, instead of loading it a third time.
+- **Stop a load with the remote** (issue #25).  **Back** on the loading screen offers to stop loading a playlist, and **Settings > Playlists and guide > the playlist > Stop reloading** stops a reload and keeps the channels you had.
+- **When most of a playlist won't play, TiviBro says so** (issue #25).  Five or more channels failing with errors from the provider (404 Not Found, 522 and the like), and next to none playing, means the list itself is the problem even when the login works and the account is active: out of date, or channels that only work from another country.  It says so once a day, with **Reload the channel list**.
+- **Logins hidden in more links** (issues #25 and #26).  The log and problem reports now hide the username and password in the short links many M3U lists use (`http://server/user/pass/12345.ts`), not only in `/live/` links, and the network helper's control key.  The report relay masks them again, and on GitHub every new or edited issue, comment and discussion is checked and masked too, whoever posted it.
+- **Huge M3U lists with a film library load on older TVs** (issue #26).  Some M3U lists carry a provider's whole film and series library as entries: one had 2,775 channels and 307,413 movies and episodes (93 MB), which closed TiviBro on a 2020 TV.  In a list of more than 100,000 entries TiviBro now keeps the live channels and leaves the movies and episodes out (it says how many; Movies and Shows come with an Xtream Codes login), and the network helper reads the list with far less memory.  If the helper still can't read a list, TiviBro says it's too big for this TV instead of trying to read it itself and closing.
+- **Phone app: editing backups without the TV, easier to start** (discussion #23).  Opening **Edit channels** with the TV now says "channel list saved" once the phone has it (or why it couldn't), each backup says which of its playlists can be edited on the phone, and very big lists (186,000 channels) get through: the editor sends them gzipped, in pieces.
+
+### In alpha 58
 
 - **Content filter** (discussion #20): **Settings > Parental controls > Content filter** takes channels out of everything, the guide, lists, Search, the phone app and the web editor, with no PIN.  **Hide adult channels** knows the usual words in several languages (and leaves "Adult Swim" alone); add your own words and call signs; and **Hide with the content filter** is in a channel's or group's options while watching or in the guide.  A new TV asks on the set-up tour's first screen, before any channels show.
 - **Find subtitles for movies and shows** (discussion #19): **Subtitles > Find subtitles…** looks on OpenSubtitles.com for what's playing, in your subtitle languages, with your own free API key.  **Timing** moves a subtitle earlier or later, and **Line up with another track** fixes one that's off by matching it to one in time, frame rate included.

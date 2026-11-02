@@ -8,6 +8,8 @@ Welcome to the TiviBro wiki.  It explains every screen and every setting on the 
 
 > TiviBro does not provide any channels, streams or playlists.  You bring your own legal subscription (Xtream Codes, or M3U with XMLTV).
 
+> TiviBro is in alpha testing on real LG TVs (webOS 4 to 25), with beta next.  Expect some rough edges, and keep a backup before updating.
+
 ## Start here
 
 | | |

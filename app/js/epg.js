@@ -36,7 +36,8 @@ var Epg = (function () {
   function chip(p) {
     var el = document.getElementById('epgProg'); if (!el) return;
     if (!p.active) {
-      if (p.phase === 'error') { el.textContent = 'Guide did not load: ' + (p.error || 'error'); el.className = 'epgprog bad'; }
+      if (p.message) { el.textContent = p.message; el.className = 'epgprog' + (p.phase === 'error' ? ' bad' : p.phase === 'done' ? ' ok' : ''); }
+      else if (p.phase === 'error') { el.textContent = 'Guide did not load: ' + (p.error || 'error'); el.className = 'epgprog bad'; }
       else if (p.phase === 'done') { el.textContent = 'Guide loaded'; el.className = 'epgprog ok'; }
       clearTimeout(chip.t); chip.t = setTimeout(function () { el.className = 'epgprog hidden'; }, 3500);
       return;
@@ -514,7 +515,35 @@ var Epg = (function () {
     return '';
   }
 
-  function loadXml(force) {
+  // Keep a source failure distinct from the outcome of the public-guide pass.
+  // Only say we are using public guides once there are current matching listings,
+  // including a saved guide when a fresh download is unnecessary or unavailable.
+  function mainGuideFailure(notice, error, report) {
+    if (notice.gen != null && notice.gen !== pubGen) return;            // a newer load took over
+    notice.error = error; notice.report = report || [];
+    var label = notice.provider ? 'Provider guide unavailable' : 'Guide sources unavailable';
+    setProgress({ active: false, phase: notice.fallback ? 'fallback' : 'error', error: error, at: Date.now(),
+      message: notice.fallback ? label + '; checking public guides…' : '', report: notice.report });
+    if (!notice.fallback) U.toast('Guide source failed: ' + error, 4000);
+  }
+  function finishGuideNotice(notice) {
+    // Public guides paused after closes: guard()'s message is the one that matters, so it stays.
+    if (!notice.error || !notice.fallback || paused) return;
+    var available = Object.keys(pubMatched).some(function (k) { return live(pubMatched[k]); });
+    var label = notice.provider ? 'Provider guide unavailable' : 'Guide sources unavailable';
+    var reports = (pubStatus && pubStatus.sources || []).map(function (r) {
+      return { host: r.host || r.name || 'public guide', ok: r.ok, programmes: r.programmes || 0, error: r.error || '' };
+    });
+    // The helper kept the guide it had: that one still works, so it isn't a failure.
+    var msg = notice.kept ? (notice.provider ? 'Provider guide' : 'Guide sources') + ' could not update; using the saved guide' + (available ? ' and public guides.' : '.')
+      : label + (available ? '; using public guides.' : '; public guides supplied no matching listings.');
+    setProgress({ active: false, phase: available || notice.kept ? 'done' : 'error', error: notice.error, at: Date.now(),
+      message: msg,
+      channels: pubStatus && pubStatus.filled || 0, programmes: reports.reduce(function (a, r) { return a + r.programmes; }, 0),
+      report: notice.report.concat(reports) });
+  }
+
+  function loadXml(force, notice) {
     var p = P(), srcs = sources();
     var ckey = 'epg:' + p.id;
     var sig = U.hash(JSON.stringify(srcs) + '|' + p.epgDays + '|' + p.nameMatch);
@@ -534,8 +563,10 @@ var Epg = (function () {
       return work(srcs, null, g, sig).then(function (res) {
         g.done();
         if (res.failed) {                                              // the helper kept the guide it had
-          setProgress({ active: false, phase: 'error', error: res.failed, at: Date.now() });
-          U.toast('Guide source failed: ' + res.failed, 4000);
+          notice.kept = Object.keys(matched).length > 0;               // and it still has listings
+          mainGuideFailure(notice, res.failed, (res.report || []).map(function (r) {
+            return { host: r.provider ? 'provider guide' : hostOf(r.url), ok: r.ok, error: r.error || res.failed };
+          }));
           return;
         }
         if (res.trimmed) {
@@ -549,12 +580,18 @@ var Epg = (function () {
         emit(null);
         rememberSizes(res.report);
         var bad = res.report.filter(function (r) { return !r.ok; });
+        if (bad.length && bad.length === res.report.length) {
+          mainGuideFailure(notice, bad[0].error, bad.map(function (r) {
+            return { host: r.provider ? 'provider guide' : hostOf(r.url), ok: false, error: r.error };
+          }));
+          return;
+        }
         if (bad.length) U.toast('Guide source failed: ' + bad[0].error, 4000);
         var progs = res.report.reduce(function (a, r) { return a + (r.programmes || 0); }, 0);
-        setProgress({ active: false, phase: bad.length && bad.length === res.report.length ? 'error' : 'done', error: bad.length ? bad[0].error : '',
+        setProgress({ active: false, phase: 'done', error: bad.length ? bad[0].error : '',
           at: Date.now(), programmes: progs, channels: Object.keys(res.map || {}).length, took: Date.now() - (progress.started || Date.now()),
           report: res.report.map(function (r) { return { host: r.provider ? 'provider guide' : hostOf(r.url), ok: r.ok, programmes: r.programmes || 0, channels: r.channels || 0, error: r.error || '' }; }) });
-      }, function (e) { g.done(); setProgress({ active: false, phase: 'error', error: (e && e.message) || 'failed', at: Date.now() }); throw e; });
+      }, function (e) { g.done(); mainGuideFailure(notice, (e && e.message) || 'failed', []); throw e; });
     });
   }
 
@@ -624,11 +661,11 @@ var Epg = (function () {
     var srcs = sources(), pub = pubOn(), gen = pubGen;
     xmlMode = srcs.length > 0 || pub; xmlReady = false;
     if (!xmlMode) { status.at = Date.now(); emit(null); return Promise.resolve(); }
-    var first;
-    if (srcs.length) first = loadXml(force).catch(function () {});
+    var first, notice = { gen: gen, fallback: pub, provider: srcs.length > 0 && srcs.every(function (s) { return !!s.provider; }) };
+    if (srcs.length) first = loadXml(force, notice).catch(function () {});
     else { xmlReady = true; status.at = Date.now(); emit(null); first = Promise.resolve(); }
     loading = first.then(function () { return pub && gen === pubGen ? loadPub(gen).catch(function (e) { Log.warn('epg', 'Public guide failed: ' + (e && e.message || e)); }) : null; })
-      .then(function () { loading = null; emit(null); });        // done: pages that say "loading now" redraw
+      .then(function () { if (gen === pubGen) finishGuideNotice(notice); loading = null; emit(null); });        // done: pages that say "loading now" redraw
     return loading;
   }
 

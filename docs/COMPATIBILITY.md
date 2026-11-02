@@ -7,13 +7,13 @@ TiviBro is built and tested first on **webOS TV 25**, and runs the same code on 
 | 26 | 2026 | Chromium 132 | 20.12 | Supported.  Access Control Groups (`requiredACG`) are declared, so the stricter permission checks pass. |
 | **25** | 2025 | Chromium 120 | 16.20 | **Main target.**  Developed and tested in the webOS 25 Simulator, and running on a real LG C2 (2022, OLED65C2PUA) upgraded to webOS 25 (10.3.1). |
 | 24 | 2024 | Chromium 108 | 16.19 | Supported, same engine family as 25. |
-| 22, 23 | 2022 to 2023 | Chromium 87, 94 | 12.x | Supported.  Run in Chromium 87 and Node 12 (see below). |
+| 22, 23 | 2022 to 2023 | Chromium 87, 94 | 12.x | Supported.  Run in Chromium 87 and Node 12 (see below), and in use on a real LG 32LQ630B (2022, webOS 22). |
 | 6.x | 2021 | Chromium 79 | 8.12 | Supported.  Run in Chromium 78 and Node 8.12.  Flex spacing comes from the fallback stylesheet.  `.gz` guides are unzipped by the helper. |
-| 5.x | 2020 | Chromium 68 | 8.12 | Supported, same notes as 6.x (run in Chromium 69). |
-| 4.x | 2018 to 2019 | Chromium 53 | 0.12 | Supported.  Run in Chromium 53 and Node 0.12; not yet tried on a real 4.x TV. |
+| 5.x | 2020 | Chromium 68 | 8.12 | Supported, same notes as 6.x (run in Chromium 69), and in use on a real LG 50NANO79 (webOS 5.6). |
+| 4.x | 2018 to 2019 | Chromium 53 | 0.12 | Supported.  Run in Chromium 53 and Node 0.12, and in use on a real LG OLED65C9 (2019, webOS 4.10). |
 | 3.x and older | 2016 and older | Chromium 38 or WebKit | 0.12 or older | Not supported.  The app shows "This TV is too old for TiviBro" instead of a black screen. |
 
-"Supported" for versions other than 25 means the code is checked against that engine (syntax and APIs, see below), the fallbacks are in place, and the app and helper have run on the matching Chromium and Node builds (see "Run on the real engines").  Real-TV reports for those versions are very welcome.
+"Supported" for versions other than 25 means the code is checked against that engine (syntax and APIs, see below), the fallbacks are in place, and the app and helper have run on the matching Chromium and Node builds (see "Run on the real engines").  TiviBro is in alpha testing on the real TVs in this table; reports from other models and versions are very welcome.
 
 ## How the app stays compatible
 

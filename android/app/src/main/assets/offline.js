@@ -9,11 +9,22 @@
   if (!window.TiviBroOffline) return;
   var B = window.TiviBroOffline;
   var D = null, rev = 1, pending = 0, applied = 0, draftSeq = 0, results = {}, cmdSeq = 0;
-  var PID = '';
-  function state() {
-    if (!D) { D = JSON.parse(B.state()); PID = D.playlist && D.playlist.id || 'p'; D.drafts = draftInfo(); }
-    return D;
+  var PID = '', loading = null;
+  var realFetch = window.fetch;
+  /* The kept channel list comes as a file the app serves (__copy.json: it can be tens of MB), the backup's
+     edits and name rules through the bridge. */
+  function load() {
+    return loading || (loading = realFetch.call(window, '/__copy.json', { cache: 'no-store' }).then(function (r) {
+      if (!r.ok) throw new Error('The channel list kept on this phone is missing.  Open Edit channels with the TV once.');
+      return r.json();
+    }).then(function (d) {
+      var x = JSON.parse(B.extras() || '{}');
+      d.edits = x.edits || {}; d.names = x.names || null; d.setup = false; d.lastBackup = 0; delete d.drafts;
+      D = d; PID = d.playlist && d.playlist.id || 'p'; D.drafts = draftInfo();
+      return D;
+    }).catch(function (e) { loading = null; throw e; }));
   }
+  function state() { return D; }
   function json(obj, status) { return Promise.resolve(new Response(JSON.stringify(obj), { status: status || 200, headers: { 'Content-Type': 'application/json' } })); }
   function key() { return 'tivibro.offline.drafts.' + B.id() + '.' + PID; }
   function drafts() { try { return JSON.parse(localStorage.getItem(key()) || '[]'); } catch (e) { return []; } }
@@ -27,14 +38,16 @@
     listSnaps: function () { return { msg: '0 restore points', data: [] }; }
   };
   function body(o) { try { return o && o.body ? JSON.parse(o.body) : {}; } catch (e) { return {}; } }
-  var realFetch = window.fetch;
   window.fetch = function (url, o) {
     var u = String(url && url.url || url), m = /^(?:https?:\/\/[^/]+)?(\/api\/[a-z]+)(?:\?(.*))?$/.exec(u);
     if (!m) return realFetch.apply(this, arguments);
     var path = m[1], q = m[2] || '', method = (o && o.method || 'GET').toUpperCase();
+    if (path === '/api/login') return json({ ok: true, token: 'offline' });
+    if (path === '/api/logout') return json({ ok: true });
+    return load().then(function () { return answer(path, q, method, o); }, function (e) { return json({ error: e.message }, 500); });
+  };
+  function answer(path, q, method, o) {
     try {
-      if (path === '/api/login') return json({ ok: true, token: 'offline' });
-      if (path === '/api/logout') return json({ ok: true });
       if (path === '/api/state') { var d = state(); if (/have=/.test(q) && q.indexOf('have=' + d.chanRev) >= 0) { var c = {}; Object.keys(d).forEach(function (k) { if (k !== 'channels' && k !== 'groups') c[k] = d[k]; }); c.sameChannels = true; return json({ data: c, rev: rev }); } return json({ data: d, rev: rev }); }
       if (path === '/api/rev') return json({ rev: rev, pendingRev: pending, appliedRev: applied, progress: null, tvSeen: Date.now(), now: Date.now(), draftAck: draftSeq });
       if (path === '/api/save' && method === 'POST') {
@@ -60,7 +73,7 @@
       if (path === '/api/restore') return json({ error: NEEDS_TV }, 400);
       return json({ error: 'Not on the phone' }, 404);
     } catch (e) { return json({ error: e.message }, 500); }
-  };
+  }
 
   /* The words: this is a backup on the phone, not the TV.  The editor's own status lines are reworded
      as they are written, and pages that need the TV are left out of the menu. */

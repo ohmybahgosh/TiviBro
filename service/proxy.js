@@ -68,7 +68,9 @@ function redact(u) {
   (Media.signedHosts || []).forEach(function (h) { s = s.replace(new RegExp('(' + escRx(h) + ')[/?][^\\s"\'<>\\\\]*', 'gi'), '$1/***'); });
   return s.replace(/\/media-stream\/[a-f0-9]{48}/gi, '/media-stream/***').replace(/([?&](?:sig|signature|token|auth|key|expires|hash)=)[^&\s]*/gi, '$1***')
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s]*/gi, '$1***').replace(/(username=)([^&\s]{0,2})[^&\s]*/gi, '$1$2***')
-    .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/');
+    .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/')
+    // The short Xtream link, http://server/user/pass/12345.ts (issue #25); the same rule as app/js/log.js.
+    .replace(/(\b[a-z][a-z0-9+.-]*:\/\/[^\/\s"'<>]+)\/([^\/\s"'<>?#]{0,2})[^\/\s"'<>?#]*\/[^\/\s"'<>?#]+\/(\d+(?:\.[a-z0-9]{2,5})?)(?=[\s"'<>?#]|$)/gi, '$1/$2***/***/$3');
 }
 /* The helper's own errors (an uncaught exception, a failed guide load) are also kept on the TV's
    storage, last 30, so a report made after the helper restarted still has them (/log "earlier"). */

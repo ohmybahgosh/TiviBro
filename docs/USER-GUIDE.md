@@ -340,7 +340,7 @@ From live TV, **From start** in the quick menu restarts the current programme.  
 
 ### Movies and shows
 
-If your Xtream provider offers video on demand, **Movies** and **Shows** appear in the menu.
+If your provider offers video on demand, **Movies** and **Shows** appear in the menu.  With an Xtream Codes login they come from the provider's movie and series lists.  With an M3U link they come from the list itself: its films (links to `/movie/` or to a video file) go to **Movies**, and its episodes (links to `/series/`, or named like "Show S01 E02") are gathered into shows in **Shows**, by season, instead of filling the channel list.  The list's groups become the categories.  The network helper keeps them on the TV, so a list with hundreds of thousands of titles still fits.
 
 - Categories on the left (**Continue watching**, **My list**, **All movies**, then your provider's), titles in the middle, details and poster on the right.
 - **OK** plays a movie or opens a show's seasons and episodes.  **Hold OK** adds a title to **My list**.
@@ -398,22 +398,15 @@ Use **Left** and **Right** to move between movies, and **Up** and **Down** to mo
 
 **Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, or **Add a WebDAV server** and enter its WebDAV address and login.  Turn on media sharing on a home server first.  A playlist must already be set up.
 
-**Movies only for now.**  TV shows, trailers and extras are left out when a source is scanned, and the scan says how many it left out:
+**Movies and TV shows can share a source.**  Files may be at the top level, in one folder per title, or mixed across subfolders.  New sources discover both.  Existing sources keep their previous movie-only behaviour: open the source in **Settings > My media** and change **Content** to **Movies and TV shows** to enable episodes.
 
-- **TV:** season folders ("Season 1", "Specials", "Show.Name.S02.1080p") aren't opened, and episode files (S01E02, 1x02, "Episode 3") are skipped.
-- **Extras:** folders named Extras, Featurettes, Behind the Scenes, Deleted Scenes, Interviews, Trailers and the like aren't opened.  Files named like "Frozen-trailer.mkv" or with trailer, teaser or featurette in the name are skipped, and so are videos under 100 MB.  In a movie's own folder, a video much smaller than the movie (under a quarter of its size) counts as an extra too.
+The **TV shows** shelf opens seasons and episodes.  **Red** also offers **TV shows** and **Needs review**.  Episode names such as `Harbour.S01E02.mkv` or `Harbour/Season 1/Episode 02.mkv` supply numbering.  Date-based and absolute-numbered files keep their own labels until a verified mapping is chosen.  Ambiguous files remain in **Needs review**; correct one file or preview a folder correction before saving.  The web editor also supports selection, correction previews, saving and undo.
 
-Point a source at your movies folder, one folder per movie, named like this:
+Show options include metadata matching with your own TMDB token, favourites, episode order, and merging or separating show groups.  Episode options include version selection, watched/unwatched state and episode starts.  Known chapter markers can supply starts in a combined file; otherwise enter them manually.  A file with unknown episode boundaries offers combined-file playback rather than guessing a timestamp.
 
-```
-Movies/
-  Frozen (2013)/
-    Frozen.2013.1080p.BluRay.x264.mkv
-  Moana 2 (2024)/
-    Moana.2.2024.2160p.WEB-DL.mkv
-```
+Episode playback remembers its physical file position.  The existing **Auto next episode** setting controls the five-second next-episode prompt.  **Back** cancels it.  Missing numbered episodes ask before continuing.  Adjacent mapped episodes in one file keep the same player and subtitle session.
 
-A folder named "Title (Year)" gives the title and year, whatever the file is called.  Without one, the file name is used: dots and underscores become spaces, and it is cut at the quality words (1080p, BluRay, x265).
+Scans save progress when a work limit is reached and continue in subsequent slices.  A source's options offer **Pause scan** and **Restart scan**.  Failed, empty and partial scans preserve saved entries.  Metadata is optional; local browsing and playback work without a TMDB token.
 
 A WebDAV source is a WebDAV folder, not a normal website or HTTP directory.  Services such as premiumize use a customer ID and API key as the login.  TiviBro supports both signed file links and servers that serve files directly with HTTP Basic authentication.  For a file that needs a login, the helper streams it to the player and handles seeking and subtitle reads.  Your login is sent only to the server you added.
 
@@ -428,7 +421,7 @@ In **Settings > My media**, choose a saved source for **Rescan**, **Fetch movie 
 - **Timing** moves any subtitle a little earlier or later (0.1 s or 1 s at a time).
 - **Line up with another track…** fixes a subtitle that drifts or starts at the wrong time by matching it to one that's already in time (a built-in one, or another download, in any language).  It finds the shift and a frame-rate difference (23.976, 24 or 25 fps) and says how much it moved.
 
-Movies use the usual seek bar and subtitle menu.  Embedded SRT, ASS/SSA and WebVTT text subtitles in MKV files can appear when the file has a usable subtitle index, including larger indexes in movies with many languages.  ASS/SSA and WebVTT show as plain text, without their custom fonts, positioning or animation.  Image subtitles such as VobSub or PGS, MP4 timed text and separate subtitle files from your server are not included yet.  **Find subtitles** can add a subtitle from OpenSubtitles even when the file has no supported embedded tracks.  **Back** hides the player controls first, then returns to the same movie.  Series, folder picking and Search are not included yet.
+Movies use the usual seek bar and subtitle menu.  Embedded SRT, ASS/SSA and WebVTT text subtitles in MKV files can appear when the file has a usable subtitle index, including larger indexes in movies with many languages.  ASS/SSA and WebVTT show as plain text, without their custom fonts, positioning or animation.  Image subtitles such as VobSub or PGS, MP4 timed text and separate subtitle files from your server are not included yet.  **Find subtitles** can add a subtitle from OpenSubtitles even when the file has no supported embedded tracks.  **Back** hides the player controls first, then returns to the same movie.  Series, folder picking, Search and phone app browsing are not included yet.
 
 Playback contacts servers you add and their playback servers.  Fetching details also contacts api.themoviedb.org with titles/years or saved movie IDs and the preferred language, never your source logins or playback links.  Previously saved Cinemeta posters may still load from images.metahub.space until those movies are refreshed.  Cloud playback links are resolved each time you play and are never saved.  After a long pause with an expired link, return to the shelves and resume.  The library uses the helper's persistent storage, so app restarts and updates keep it even when browser storage is full.  Source logins are outside playlist backups and problem reports; add the sources again after restoring on another TV.  Up to eight sources can be saved.
 
@@ -698,7 +691,7 @@ On a playlist's page:
 | **Connection** | | Server, username and password (or the M3U address).  Opens the setup screen, which tests the login before saving. |
 | **User-Agent** | **Default** or your own | Only if your provider asks for a specific one (TiviMate's "User-Agent" setting).  The network helper sends it for this playlist. |
 | **Reload channel list** | Every app start · Every 6 hours · **Every 12 hours** · Every day · Every 2 days · Every week · Only when I ask | How often the channel list is fetched again.  Your groups, renames and hidden items are always kept. |
-| **Reload channels now** | | Fetches the channel list right away. |
+| **Reload channels now** | | Fetches the channel list right away.  While it reloads this row is **Stop reloading**, which stops it and keeps the channels from the last load. |
 | **Last reloaded**, **Subscription expires**, **Connections allowed** | (information) | From your provider, when it reports them. |
 | **Provider guide** | Xtream: **Per channel** · Full XMLTV file · Off.  M3U: **From playlist** · Off | *Per channel* asks for each channel's programmes as you browse: light and fast.  *Full XMLTV file* downloads the provider's whole guide: days ahead, guide search and manual matching, but often 20 to 200 MB.  *Off* uses only your own guide sources. |
 | **Provider guide time offset** | −12:00 to +12:00 in half hours, **0:00** | Use it when every programme from the provider guide is too early or too late. |
@@ -784,6 +777,8 @@ Which groups show, in what order, and getting hidden things back.
 ### Settings: Guide, start screen, reminders
 
 How the guide looks and behaves, which screen TiviBro opens on, and reminders.
+
+With public guides on, if the provider guide fails, the guide status says it is checking public guides.  Once they supply current matching listings, it says **Provider guide unavailable; using public guides.**  If they supply none, it says so instead.  If the guide TiviBro already had is still there, it says it is **using the saved guide**.  The original error stays in the guide's details.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-set-guide"><img src="screenshots/tv-set-guide.png" width="49%" alt="Guide, start screen, reminders"></a>
@@ -902,7 +897,7 @@ The TiviBro app for Android is a remote and a second screen for this TV.  Pair a
 - **Edit channels**: the [web editor](#turning-on-the-web-editor) full screen, already signed in.
 - **Backups** (in the **⋮** menu of each TV): **Back up now**, and a backup every week on its own while TiviBro is open on the TV and the phone is on your Wi-Fi.  Backups stay on the phone, encrypted.  Put one back on this TV or another paired TV, or **Save a copy as a file** with a passphrase, which the web editor's Backup and restore can restore on any TV.  The newest 8 automatic backups are kept; named, copied and edited ones stay until you delete them.
 - **Working on backups without the TV** (each backup's **⋮** menu).  Every one of these makes a new backup and leaves the one you started from alone:
-  - **Edit channels on the phone** opens the web editor on the phone with that backup: groups, names, hiding, Smart clean-up and guide matches, with draft history.  **Save** keeps your changes; leaving asks whether to **Keep** them as a new backup.  It uses the channel list the phone kept the last time you opened **Edit channels** with that TV, so open it with the TV once first.  Adding playlists, guide sources and My media still need the TV.
+  - **Edit channels on the phone** opens the web editor on the phone with that backup: groups, names, hiding, Smart clean-up and guide matches, with draft history.  **Save** keeps your changes; leaving asks whether to **Keep** them as a new backup.  It uses the channel list the phone kept the last time you opened **Edit channels** with that TV, so open it with the TV once first: there's no setting for it, and after a few seconds the phone says "channel list saved".  It keeps one per playlist you open there (very big lists too), and each backup in the list says which of its playlists you can edit on the phone.  Adding playlists, guide sources and My media still need the TV.
   - **Change settings**: start screen, text size, guide row size, clock, channel numbers, closed captions, hiding adult channels and more.
   - **Name it**, **Duplicate**, and **Add playlists from another backup** (the playlists, with their edits, that this one doesn't have).
   - **Delete** asks twice.
@@ -1155,7 +1150,10 @@ You'll see it in three places: **Connection** on the first screen and in **Setti
 | Every channel fails | **Settings > Diagnostics > Run connection test**.  It checks the [network helper](#what-is-the-network-helper), your login, the channel list, a stream and the guide, step by step. |
 | "No guide information" | Check that **Public guide fill-in** is on (Settings > Playlists and guide > the playlist), and that its countries include the channel's.  Then use **Smart match** in the web editor, or **Hold OK > Assign guide** on the TV.  Or add an extra guide source for your region. |
 | Guide times are off by an hour | **Provider guide time offset** in Settings, or **Offset** on an extra source in the editor. |
-| TiviBro closes after reloading a very big playlist (100,000 channels or more) | A very big list is a lot for a TV to hold, and a reload is the hardest moment.  Set **Settings > Playlists and guide > the playlist > Reload channel list** to **Manual** and reload when you're not watching, or ask your provider for a smaller list.  TiviBro reloads one list at a time, lets the network helper save it, looks for at most 30,000 channels in the public guides and sends the phone app at most 30,000. |
+| TiviBro closes after reloading a very big playlist (100,000 channels or more) | A very big list is a lot for a TV to hold, and a reload is the hardest moment.  Set **Settings > Playlists and guide > the playlist > Reload channel list** to **Only when I ask** and reload when you're not watching, or ask your provider for a smaller list.  TiviBro reloads one list at a time, lets the network helper save it, looks for at most 30,000 channels in the public guides and sends the phone app at most 30,000.  If TiviBro closes twice in a row while loading a playlist, it sets that playlist to **Only when I ask** itself and says so; when nothing of that list is kept yet, the next start asks whether to try it again, change the connection or use another playlist instead of loading it a third time. |
+| An M3U list's films and series aren't in Movies and Shows | They come in when the network helper reads the list, so **Reload channels now** once after updating.  Films need a link to `/movie/` or to a video file (`.mp4`, `.mkv` and the like), and episodes a link to `/series/` or a name like "Show S01 E02".  If TiviBro says a list is too big for this TV, ask your provider for a smaller one. |
+| A playlist takes forever to load | **Back** on the loading screen offers to stop: change the connection, use another playlist or add one.  During a reload, **Settings > Playlists and guide > the playlist > Stop reloading** stops it and keeps the channels you had. |
+| Most channels won't play, with errors like 404 or 522 | When five or more channels fail with errors from the provider and next to none play, TiviBro says so (once a day).  The login can work and the account be active while the list itself is out of date, or its channels only work from another country (with a VPN).  **Reload the channel list**, or ask your provider. |
 | The guide seems stuck loading | Big XMLTV files take minutes on a TV; watch the progress bar.  If it stays at 0, **Test** the address. |
 | The web editor says it can't reach the TV | TiviBro was closed or the TV went to sleep.  Open TiviBro; the editor reconnects and your drafts are safe. |
 | Changes don't show on the TV | Check the bar at the bottom of the editor.  If it still counts changes, press **Send to TV**. |

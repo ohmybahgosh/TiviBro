@@ -25,7 +25,7 @@ var Vod = (function () {
   function cacheKey(k) { return 'vod:' + Store.playlist.id + ':' + k; }
   // On a TV the helper keeps the full lists on the TV's storage and answers with what shows (issue #18:
   // a full list didn't fit an old TV's browser storage).  In a browser the app keeps them itself.
-  function helped() { return !!(Net.active && Net.port && Net.info && Net.info.vod >= 2 && Store.playlist && Store.playlist.type === 'xtream'); }
+  function helped() { return !!(Net.active && Net.port && Net.info && Net.info.vod >= 2 && Store.playlist && (Store.playlist.type === 'xtream' || Source.m3uVod())); }
   var asking = { movie: null, series: null };
   function load(k, again) {
     if (data[k] && !again) return Promise.resolve(data[k]);
@@ -38,21 +38,24 @@ var Vod = (function () {
         return (data[k] = d);
       }, function (e) {
         if (asking[k] === p) asking[k] = null;
+        if (Source.m3uVod()) throw e;                // an M3U list's library lives with the helper only
         Log.warn('vod', 'The helper could not give the ' + (k === 'series' ? 'show' : 'movie') + ' list (' + (e && e.message || e) + '), loading it here');
         return own(k);
       });
       return p;
     }
+    if (Source.m3uVod()) return Promise.reject(new Error('Movies and shows from an M3U list need the network helper.'));
     return own(k);
   }
   function fromHelper(k) {
     var p = Store.playlist, h = +p.plRefresh, t0 = Date.now();
-    return postJSON('http://127.0.0.1:' + Net.port + '/vod/list', {
+    var body = Source.m3uVod() ? { pl: p.id, sig: Source.sig(p), kind: k, m3u: 1, picked: prefs().langs, navLang: navigator.language, hidden: hiddenCats(k) } : {
       pl: p.id, sig: Source.sig(p), kind: k, maxAge: h > 0 ? h * 3600e3 : 0,
       u: Net.wrap(Source.api(p, k === 'series' ? 'get_series' : 'get_vod_streams')),
       uc: Net.wrap(Source.api(p, k === 'series' ? 'get_series_categories' : 'get_vod_categories')),
       picked: prefs().langs, navLang: navigator.language, hidden: hiddenCats(k)
-    }, 240000).then(function (j) {
+    };
+    return postJSON('http://127.0.0.1:' + Net.port + '/vod/list', body, 240000).then(function (j) {
       if (!j || !Array.isArray(j.rows)) throw new Error((j && j.error) || 'no list');
       var base = k === 'series' ? 8 : 7, mk = k === 'series' ? seriesRow : movieRow;
       var items = j.rows.map(function (r) {
@@ -254,7 +257,7 @@ var Vod = (function () {
   /* Search looks inside Movies and Shows without opening them first: the lists load from the TV's
      cache (or the provider, once) when Search opens.  Only the kinds the provider offers. */
   var preparing = null;
-  function offered() { var p = Store.playlist || {}, v = p.vod || {}; return p.type === 'xtream' ? ['movie', 'series'].filter(function (k) { return k === 'movie' ? v.movies : v.series; }) : []; }
+  function offered() { var p = Store.playlist || {}, v = p.vod || {}; return p.type === 'xtream' || v.m3u ? ['movie', 'series'].filter(function (k) { return k === 'movie' ? v.movies : v.series; }) : []; }
   function prepare() {
     var want = offered().filter(function (k) { return !data[k]; });
     if (!want.length) return Promise.resolve(false);
@@ -347,7 +350,7 @@ var Vod = (function () {
       Object.keys(byS).sort(function (a, b) { return +a - +b; }).forEach(function (sn) {
         (byS[sn] || []).forEach(function (e) {
           var inf = e.info || {};
-          eps.push({ ep: true, id: e.id, ext: e.container_extension || 'mp4', season: +sn, num: +e.episode_num || 0, media: Caps.fromXtream(inf),
+          eps.push({ ep: true, id: e.id, ext: e.container_extension || 'mp4', url: e.direct_source && Source.m3uVod() ? e.direct_source : '', season: +sn, num: +e.episode_num || 0, media: Caps.fromXtream(inf),
             label: 'S' + sn + ' E' + (e.episode_num || '?') + '   ' + (e.title || '').replace(/^.*? - S\d+E\d+ - /i, ''),
             dur: inf.duration || '', plotEp: inf.plot || '', cover: inf.movie_image || s.cover });
         });
@@ -376,9 +379,13 @@ var Vod = (function () {
   function play(it, fromStart) {
     var id = it.ep ? 'e' + it.id : key(it);
     var r = resumeOf(id), startAt = !fromStart && r && r.pos > 30 && r.pos < r.dur - 60 ? r.pos - 5 : 0;
-    var url = it.ep ? Source.episodeUrl(it.id, it.ext) : Source.movieUrl(it.id, it.ext);
-    playingMeta = { id: id, media: mediaOf(it), title: it.ep ? (series ? series.name : '') + '   ' + it.label : it.name, sub: it.ep ? '' : it.year || '', item: it, seriesKey: series ? 's' + series.id : null };
-    Views.playVod(playingMeta, url, startAt, function () { open(kind, true); });
+    var meta = { id: id, media: mediaOf(it), title: it.ep ? (series ? series.name : '') + '   ' + it.label : it.name, sub: it.ep ? '' : it.year || '', item: it, seriesKey: series ? 's' + series.id : null };
+    // An M3U list's episodes carry their own link, and its movies' links are asked for (Source.movieLink).
+    var link = it.ep ? Promise.resolve(it.url || Source.episodeUrl(it.id, it.ext)) : Source.movieLink(it.id, it.ext);
+    link.then(function (url) {
+      playingMeta = meta;
+      Views.playVod(meta, url, startAt, function () { open(kind, true); });
+    }, function (e) { U.toast((e && e.message) || 'Could not play that', 5000); });
   }
   // Save where playback is without stopping (the app going to the background).
   function checkpoint() {

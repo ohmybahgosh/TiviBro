@@ -455,7 +455,15 @@ var MkvSubs = (function () {
         var live = liveTracks[a].cues, useLive = live && live.length;
         var list = useLive ? live : rec && rec.cues[a] || [];
         var delay = !useLive && typeof Subs !== 'undefined' ? Subs.delay || 0 : 0;
-        for (var b = 0; b < list.length; b++) {
+        // A track's cue list is in start order: find where "now" falls instead of walking every cue
+        // each frame (some native players leave activeCues empty, so it can't be used).
+        var from = 0;
+        if (useLive) {
+          var lo = 0, hi = list.length, t = video.currentTime;
+          while (lo < hi) { var mid = (lo + hi) >> 1; if (list[mid].startTime <= t) lo = mid + 1; else hi = mid; }
+          from = Math.max(0, lo - 12);           // a few earlier ones that may still be on screen
+        }
+        for (var b = from; b < (useLive ? Math.min(list.length, from + 13) : list.length); b++) {
           var s = useLive ? list[b].startTime : list[b].s + delay, e = useLive ? list[b].endTime : list[b].e + delay;
           if (s <= video.currentTime && e > video.currentTime)
             lines.push(list[b].text.replace(/<\/?(?:b|i|u|font)(?:\s[^>]*)?>/gi, ''));
@@ -558,6 +566,7 @@ var MkvSubs = (function () {
       for (var k = 0; k < r.cues.length; k++) {
         var list = r.cues[k];
         for (var j = 0; j < list.length; j++) liveTracks[k].addCue(new VTTCue(list[j].s, list[j].e, list[j].text));
+        if (typeof Subs !== 'undefined' && Subs.fresh) Subs.fresh(liveTracks[k]);    // a Line up or Timing done before the seek
       }
     }
 
@@ -571,7 +580,77 @@ var MkvSubs = (function () {
 
     var timer = setTimeout(function () { if (!cancelled) runExtraction(); }, startupDelayMs);
 
+    // Reads the subtitle blocks near the playing position, cluster by cluster, from the file's index.
+    function pumpWith(perTrackCues, timecodeScale, segmentDataStart) {
+      var busy = false, failures = {}, retryAt = {};
+      pump = function () {
+        if (cancelled || busy) return;
+        clearTimeout(retryTimer); retryTimer = null;
+        if (!hasBuffer()) { retryTimer = setTimeout(pump, 1000); return; }
+        var now = video.currentTime || 0;
+        var nearby = perTrackCues.map(function (t) {
+          return { cues: t.cues.filter(function (c) { return c.timeSec >= now - 30 && c.timeSec <= now + 60; }) };
+        });
+        var offsets = clusterFetchOrder(nearby, now, segmentDataStart).filter(function (o) { return !rec.fetched[o]; });
+        if (!offsets.length) {
+          rec.done = clusterFetchOrder(perTrackCues, now, segmentDataStart).every(function (o) { return rec.fetched[o]; });
+          return;
+        }
+        var clock = Date.now(), earliest = Infinity;
+        offsets = offsets.filter(function (off) {
+          if (!retryAt[off] || retryAt[off] <= clock) return true;
+          earliest = Math.min(earliest, retryAt[off]);
+          return false;
+        });
+        if (!offsets.length) { retryTimer = setTimeout(pump, Math.max(1, earliest - clock)); return; }
+        busy = true;
+        var off = offsets[0], positions = [], indexed = true;
+        perTrackCues.forEach(function (t) { t.cues.forEach(function (c) {
+          if (segmentDataStart + c.clusterPos !== off) return;
+          if (c.relativePos === undefined) indexed = false;
+          else if (positions.indexOf(c.relativePos) < 0) positions.push(c.relativePos);
+        }); });
+        readSparseCluster(function (start, end) { return fetchRange(wrapped, start, end); }, off,
+          perTrackCues.map(function (t) { return t.track.number; }), timecodeScale, indexed ? positions : null).then(function (found) {
+          if (cancelled) return;
+          for (var a = 0; a < perTrackCues.length; a++) {
+            for (var f = 0; f < found.length; f++) {
+              if (found[f].track !== perTrackCues[a].track.number) continue;
+              var text = subtitleText(found[f].text, perTrackCues[a].track.codecId);
+              if (!text.trim()) continue;
+              liveTracks[a].addCue(new VTTCue(found[f].startSec, found[f].endSec, text));
+              rec.cues[a].push({ s: found[f].startSec, e: found[f].endSec, text: text });
+            }
+          }
+          if (typeof Subs !== 'undefined' && Subs.fresh) liveTracks.forEach(function (t) { Subs.fresh(t); });
+          rec.fetched[off] = true;
+          delete failures[off]; delete retryAt[off];
+          video._mkvSubsState = 'ready';
+          busy = false;
+          paint();
+          pump();
+        }).catch(function (e) {
+          busy = false;
+          if (cancelled) return;
+          // A transient range failure must not disable extraction for the rest
+          // of the movie. Back off this cluster while other nearby cues load.
+          failures[off] = (failures[off] || 0) + 1;
+          var delay = Math.min(30000, 1000 * Math.pow(2, Math.min(failures[off] - 1, 5)));
+          retryAt[off] = Date.now() + delay;
+          video._mkvSubsState = 'recovering';
+          if (failures[off] === 1) Log.warn('mkvsubs', 'Subtitle read failed; retrying: ' + e.message);
+          pump();
+        });
+      };
+      pump();
+    }
+
     function runExtraction() {
+    // The index read before for this file: straight to the subtitle blocks.
+    if (rec && rec.index && rec.resolved && liveTracks.length) {
+      startVideo(rec.resolved);
+      return pumpWith(rec.index.perTrackCues, rec.index.timecodeScale, rec.index.segmentDataStart);
+    }
     fetchRange(wrapped, 0, 262143, true).then(function (head) {
       if (cancelled) return;
       startVideo(wrapped);
@@ -629,7 +708,7 @@ var MkvSubs = (function () {
             var tr = perTrackCues[k].track;
             var langCode = (typeof U !== 'undefined' && U.lang) ? U.lang(tr.language) : '';
             var rawLang = tr.language !== 'und' ? tr.language : '';
-            meta.push({ label: tr.name || langDisplayName(langCode) || rawLang || ('Subtitle track ' + (k + 1)), srclang: langCode || rawLang });
+            meta.push({ label: String(tr.name || '').slice(0, 60) || langDisplayName(langCode) || rawLang || ('Subtitle track ' + (k + 1)), srclang: langCode || rawLang });
           }
           rec = subCache[url] = { tracks: meta, cues: meta.map(function () { return []; }), fetched: {}, done: false };
         }
@@ -638,66 +717,10 @@ var MkvSubs = (function () {
         video._mkvSubsState = 'ready';
         if (cancelled) return;
 
-        var busy = false, failures = {}, retryAt = {};
-        pump = function () {
-          if (cancelled || busy) return;
-          clearTimeout(retryTimer); retryTimer = null;
-          if (!hasBuffer()) { retryTimer = setTimeout(pump, 1000); return; }
-          var now = video.currentTime || 0;
-          var nearby = perTrackCues.map(function (t) {
-            return { cues: t.cues.filter(function (c) { return c.timeSec >= now - 30 && c.timeSec <= now + 60; }) };
-          });
-          var offsets = clusterFetchOrder(nearby, now, segmentDataStart).filter(function (o) { return !rec.fetched[o]; });
-          if (!offsets.length) {
-            rec.done = clusterFetchOrder(perTrackCues, now, segmentDataStart).every(function (o) { return rec.fetched[o]; });
-            return;
-          }
-          var clock = Date.now(), earliest = Infinity;
-          offsets = offsets.filter(function (off) {
-            if (!retryAt[off] || retryAt[off] <= clock) return true;
-            earliest = Math.min(earliest, retryAt[off]);
-            return false;
-          });
-          if (!offsets.length) { retryTimer = setTimeout(pump, Math.max(1, earliest - clock)); return; }
-          busy = true;
-          var off = offsets[0], positions = [], indexed = true;
-          perTrackCues.forEach(function (t) { t.cues.forEach(function (c) {
-            if (segmentDataStart + c.clusterPos !== off) return;
-            if (c.relativePos === undefined) indexed = false;
-            else if (positions.indexOf(c.relativePos) < 0) positions.push(c.relativePos);
-          }); });
-          readSparseCluster(function (start, end) { return fetchRange(wrapped, start, end); }, off,
-            perTrackCues.map(function (t) { return t.track.number; }), timecodeScale, indexed ? positions : null).then(function (found) {
-            if (cancelled) return;
-            for (var a = 0; a < perTrackCues.length; a++) {
-              for (var f = 0; f < found.length; f++) {
-                if (found[f].track !== perTrackCues[a].track.number) continue;
-                var text = subtitleText(found[f].text, perTrackCues[a].track.codecId);
-                if (!text.trim()) continue;
-                liveTracks[a].addCue(new VTTCue(found[f].startSec, found[f].endSec, text));
-                rec.cues[a].push({ s: found[f].startSec, e: found[f].endSec, text: text });
-              }
-            }
-            rec.fetched[off] = true;
-            delete failures[off]; delete retryAt[off];
-            video._mkvSubsState = 'ready';
-            busy = false;
-            paint();
-            pump();
-          }).catch(function (e) {
-            busy = false;
-            if (cancelled) return;
-            // A transient range failure must not disable extraction for the rest
-            // of the movie. Back off this cluster while other nearby cues load.
-            failures[off] = (failures[off] || 0) + 1;
-            var delay = Math.min(30000, 1000 * Math.pow(2, Math.min(failures[off] - 1, 5)));
-            retryAt[off] = Date.now() + delay;
-            video._mkvSubsState = 'recovering';
-            if (failures[off] === 1) Log.warn('mkvsubs', 'Subtitle read failed; retrying: ' + e.message);
-            pump();
-          });
-        };
-        pump();
+        // Kept with the file, so a seek or reconnect starts reading subtitles at once instead of
+        // downloading and scanning the index again (it can be 8 MB).
+        rec.index = { perTrackCues: perTrackCues, timecodeScale: timecodeScale, segmentDataStart: segmentDataStart };
+        pumpWith(perTrackCues, timecodeScale, segmentDataStart);
       });
     }).then(function () {
       startVideo(wrapped);

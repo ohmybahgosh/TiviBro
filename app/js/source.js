@@ -109,8 +109,17 @@ var Source = (function () {
   function keepIt() { return !!(Net.info && Net.info.kv); }
   function viaHelper(path, body) {
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, t = setTimeout(function () { if (ctl) ctl.abort(); }, 240000);
+    if (ctl) { aborts.push(ctl); if (aborts.length > 8) aborts.shift(); }
     return fetch('http://127.0.0.1:' + Net.port + path, { method: 'POST', cache: 'no-store', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
-      .then(function (r) { return r.json().then(function (j) { clearTimeout(t); j._status = r.status; return j; }); }, function (e) { clearTimeout(t); throw e; });
+      .then(function (r) { return r.json().then(function (j) { clearTimeout(t); j._status = r.status; return j; }); }, function (e) { clearTimeout(t); e.dropped = true; throw e; });
+  }
+  /* The helper read the list and then went quiet (it ran out of memory: a 93 MB list on a 2020 TV, issue
+     #26), or said the list is too big.  Reading it in the app instead only closes TiviBro as well, so
+     this ends the load with a clear message.  Other helper errors still fall back to the app. */
+  function tooBig(e, what) {
+    if (!(e && (e.dropped || /too big/i.test(e.message || '')))) return null;
+    Log.error(what, 'The network helper stopped while reading the list (' + (e.message || e) + '); not loading it in the app, which would close TiviBro');
+    return Object.assign(new Error('This playlist is too big for this TV to read: the network helper stopped while reading it.  Ask your provider for a smaller list (live channels only), or add it as an Xtream Codes login.'), { kind: 'toobig' });
   }
   function xtreamLists(p, t0) {
     function direct() {
@@ -127,6 +136,8 @@ var Source = (function () {
       Log.info('xc', 'The helper loaded ' + j.cats + ' categories and ' + j.channels.length + ' channels in ' + (Date.now() - t0) + 'ms');
       return { groups: j.groups, channels: j.channels, _live: j.live || '' };
     }).catch(function (e) {
+      if (stopping) throw stopped();
+      var big = tooBig(e, 'xc'); if (big) throw big;
       Log.warn('xc', 'The helper could not load the channel list (' + (e && e.message || e) + '), loading it here');
       return direct();
     });
@@ -139,11 +150,13 @@ var Source = (function () {
     function fetchList(i) {
       used = list[i];
       if (helperLive()) {
-        return viaHelper('/live/m3u', { u: Net.wrap(list[i]), keep: keepIt() }).then(function (j) {
+        return viaHelper('/live/m3u', { u: Net.wrap(list[i]), keep: keepIt(), pl: p.id || '', sig: sig(p) }).then(function (j) {
           if (j._status === 422) return { notM3u: j.head || '' };
           if (j._status !== 200 || !Array.isArray(j.channels)) throw new Error(j.error || 'HTTP ' + j._status);
           return { shaped: j };
         }).catch(function (e) {
+          if (stopping) throw stopped();
+          var big = tooBig(e, 'm3u'); if (big) throw big;
           Log.warn('m3u', 'The helper could not load ' + list[i] + ' (' + (e && e.message || e) + '), loading it here');
           return direct(i);
         });
@@ -151,7 +164,9 @@ var Source = (function () {
       return direct(i);
     }
     function direct(i) {
+      if (stopping) return Promise.reject(stopped());
       return U.getText(list[i], 90000, 'playlist').catch(function (e) {
+        if (stopping) throw stopped();
         if (i + 1 >= list.length || e.kind === 'timeout') throw e;
         Log.warn('m3u', list[i] + ' failed (' + e.message + '); trying ' + list[i + 1]);
         return fetchList(i + 1);
@@ -167,8 +182,10 @@ var Source = (function () {
         Log.error('m3u', 'Not an M3U playlist.  First 200 characters', t.notM3u);
         throw Object.assign(new Error('That URL did not return an M3U playlist.'), { kind: 'parse' });
       }
-      d = { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl || '', _live: t.shaped ? t.shaped.live || '' : '' };
-      Log.info('m3u', (t.shaped ? 'The helper parsed ' : 'Parsed ') + d.channels.length + ' channels in ' + d.groups.length + ' groups (' + Math.round(size / 1024) + ' KB, ' + (Date.now() - t0) + 'ms)' + (d.epgUrl ? '; guide address in playlist' : '; no guide address in playlist'));
+      d = { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl || '', _live: t.shaped ? t.shaped.live || '' : '', vodSkipped: +d.vodSkipped || 0, vod: d.vod && d.vod.movies != null ? d.vod : null };
+      Log.info('m3u', (t.shaped ? 'The helper parsed ' : 'Parsed ') + d.channels.length + ' channels in ' + d.groups.length + ' groups (' + Math.round(size / 1024) + ' KB, ' + (Date.now() - t0) + 'ms)' + (d.epgUrl ? '; guide address in playlist' : '; no guide address in playlist') +
+        (d.vodSkipped ? '; left out ' + d.vodSkipped + ' movies and series episodes (a list this big keeps its live channels)' : '') +
+        (d.vod ? '; ' + d.vod.movies + ' movies and ' + d.vod.series + ' shows go to Movies and Shows' : ''));
       if (!d.channels.length) throw Object.assign(new Error('The playlist downloaded but has no channels in it.'), { kind: 'parse' });
       d.m3u = used;
       return d;
@@ -181,11 +198,28 @@ var Source = (function () {
      running now, if any (the public guide waits for it). */
   var running = {};
   function busy() { var k = Object.keys(running)[0]; return k ? running[k].job.then(function () {}, function () {}) : null; }
+  /* Stop a load (Back on the loading screen, Stop reloading in Settings; issue #25): the helper's
+     download is cut off, nothing falls back to loading it here instead, and whoever waits gets a
+     'stopped' error at once. */
+  var aborts = [], stopping = false;
+  function stopped() { return Object.assign(new Error('Stopped loading the channel list.'), { kind: 'stopped' }); }
+  function stop(id) {
+    var r = running[id || ''] || running[Object.keys(running)[0]];
+    if (!r) return false;
+    stopping = true;
+    aborts.splice(0).forEach(function (c) { try { c.abort(); } catch (e) {} });
+    Log.warn('app', 'Stopped loading the channel list');
+    r.stop(stopped());
+    return true;
+  }
   function load(p) {
     var id = (p && p.id) || '', key = id + '|' + sig(p), r = running[id];
     if (r && r.key === key) { Log.info(p.type === 'm3u' ? 'm3u' : 'xc', 'Already loading this playlist; waiting for that load'); return r.job; }
-    var job = load1(p);
-    running[id] = { key: key, job: job };
+    stopping = false;
+    var halt, gate = new Promise(function (res, rej) { halt = rej; });
+    var job = Promise.race([load1(p), gate]);
+    job.catch(function () {});
+    running[id] = { key: key, job: job, stop: halt };
     function done() { if (running[id] && running[id].job === job) delete running[id]; }
     job.then(done, done);
     return job;
@@ -203,6 +237,7 @@ var Source = (function () {
       data.sig = sig(q);
       return data;
     }).catch(function (e) {
+      if (stopping || (e && e.kind === 'stopped')) throw stopped();
       var msg = friendly(e);
       var tried = e && e.tried && e.tried.length > 1 ? e.tried : null;
       Log.error(p.type === 'm3u' ? 'm3u' : 'xc', 'Load failed: ' + msg + (e && e.kind ? '  [kind=' + e.kind + (e.status ? ' status=' + e.status : '') + ' via=' + e.via + ']' : '') + (tried ? '  tried: ' + tried.join(' | ') : ''));
@@ -213,7 +248,7 @@ var Source = (function () {
   // One readable sentence per failure type, shown on screen; the log keeps the details.
   function friendly(e) {
     if (!e) return 'Unknown error';
-    if (e.kind === 'auth' || e.kind === 'notxc' || e.kind === 'parse' && !e.body) return e.message;
+    if (e.kind === 'auth' || e.kind === 'notxc' || e.kind === 'toobig' || e.kind === 'parse' && !e.body) return e.message;
     if (e.kind === 'timeout') return 'The server took too long to answer.  ' + (e.via === 'helper' ? 'It may be overloaded or blocking this TV.' : '');
     if (e.kind === 'network') return e.via === 'helper'
       ? 'The network helper stopped responding.  Restart the app; if it keeps happening, see Settings > Diagnostics.'
@@ -293,12 +328,24 @@ var Source = (function () {
   /* ---------- VOD (Xtream) ---------- */
   function vodCats(kind) { return U.getJSON(api(Store.playlist, kind === 'series' ? 'get_series_categories' : 'get_vod_categories'), 30000); }
   function vodList(kind) { return U.getJSON(api(Store.playlist, kind === 'series' ? 'get_series' : 'get_vod_streams'), 90000); }
-  function vodInfo(id) { return U.getJSON(api(Store.playlist, 'get_vod_info', '&vod_id=' + id), 15000); }
-  function seriesInfo(id) { return U.getJSON(api(Store.playlist, 'get_series_info', '&series_id=' + id), 20000); }
+  /* An M3U playlist's movies and shows are kept by the network helper (service/vod.js): it answers a show's
+     episodes in the shape of Xtream's get_series_info, with each episode's link, and a movie's link. */
+  function m3uVod() { var p = Store.playlist; return p && p.type === 'm3u' && p.vod && p.vod.m3u; }
+  function helperVod(op, id) {
+    if (!(Net.active && Net.port)) return Promise.reject(new Error('Movies and shows from an M3U list need the network helper.'));
+    return viaHelper('/vod/m3u', { pl: Store.playlist.id, op: op, id: String(id) }).then(function (j) {
+      if (j._status !== 200) throw new Error(j.error || 'HTTP ' + j._status);
+      return j;
+    });
+  }
+  function vodInfo(id) { return m3uVod() ? Promise.resolve({ info: {} }) : U.getJSON(api(Store.playlist, 'get_vod_info', '&vod_id=' + id), 15000); }
+  function seriesInfo(id) { return m3uVod() ? helperVod('series', id) : U.getJSON(api(Store.playlist, 'get_series_info', '&series_id=' + id), 20000); }
+  // The link to play a movie: built from the login, or for an M3U list the one the list gave.
+  function movieLink(id, ext) { return m3uVod() ? helperVod('url', id).then(function (j) { return j.url; }) : Promise.resolve(movieUrl(id, ext)); }
   function movieUrl(id, ext) { var p = Store.playlist; return base(p.server) + '/movie/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
   function episodeUrl(id, ext) { var p = Store.playlist; return base(p.server) + '/series/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
 
-  return { load: load, busy: busy, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
+  return { load: load, busy: busy, stop: stop, get loading() { return Object.keys(running).length > 0; }, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
     catchupUrl: catchupUrl, setTz: setTz,
-    vodCats: vodCats, vodList: vodList, vodInfo: vodInfo, seriesInfo: seriesInfo, movieUrl: movieUrl, episodeUrl: episodeUrl };
+    vodCats: vodCats, vodList: vodList, vodInfo: vodInfo, seriesInfo: seriesInfo, movieUrl: movieUrl, movieLink: movieLink, episodeUrl: episodeUrl, m3uVod: m3uVod };
 })();

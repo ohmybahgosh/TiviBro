@@ -138,6 +138,8 @@ tap "More"
 tap "Backups"
 tap "Back up now"
 shot 15-backups 6
+find_text "x" >/dev/null; grep -q 'text="Edit on the phone: ' "$OUT/ui.xml" || { echo "Backups do not say which playlists can be edited on the phone (was the channel list kept?)"; adb logcat -d | grep -E "chromium|TiviBro" | tail -30; exit 1; }
+echo "Backups say which playlists can be edited on the phone"
 # Editing that backup's channels on the phone, without the TV: the editor copy kept when Edit channels opened above.
 tap "More"
 tap "Edit channels on the phone"

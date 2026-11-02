@@ -283,7 +283,18 @@ var App = (function () {
 
   /* ---------- start ---------- */
   var tourNext = false;     // the first playlist came from a phone or computer: show the set-up tour once it loads
+  /* An M3U list's movies and shows (kept by the network helper when it read the list, service/vod.js):
+     Movies and Shows appear when the last load found any, and go when it found none. */
+  function noteVod(p, data) {
+    if (p.type !== 'm3u' || !data || !data.vod) return false;
+    var v = data.vod, was = p.vod || {}, now = { movies: v.movies > 0, series: v.series > 0, m3u: 1, at: data.at || Date.now() };
+    if (!!was.m3u && was.movies === now.movies && was.series === now.series) return false;
+    p.vod = now; Store.upsertPlaylist(p);
+    Log.info('app', 'This M3U list has ' + v.movies + ' movies and ' + v.series + ' shows: they are in Movies and Shows');
+    return true;
+  }
   function start(data, fromCache) {
+    noteVod(Store.playlist, data);
     Source.setTz(data.tz); Events.setProviderTz(data.tz);
     Library.set(data);
     Logos.load(data);
@@ -350,6 +361,7 @@ var App = (function () {
     var p = Store.playlist;
     if (manual) U.toast('Reloading channels');
     Log.info('app', (manual ? 'Reloading' : 'Scheduled reload of') + ' the channel list (' + Library.count() + ' channels now)');
+    busyStart(p, 'reloading');
     reloading = Source.load(p).then(function (data) {
       if (data.fixed) Store.upsertPlaylist(adopt(p, data));
       carryAdded(Library.data, data);
@@ -357,12 +369,88 @@ var App = (function () {
       Source.setTz(data.tz); Events.setProviderTz(data.tz);
       Library.set(data);
       Logos.load(data);
+      if (data.vod) { Vod.reset(); if (noteVod(p, data)) Views.buildTabs(); }
       Views.refreshLists(true);
       Settings.live();
       if (manual) U.toast(Library.count() + ' channels loaded');
       bigList(p);
-    }).catch(function (e) { if (manual) U.toast(e.message || 'Reload failed', 4000); }).then(function () { reloading = null; });
+      busyEnd(10000);
+    }).catch(function (e) {
+      busyEnd(0);
+      if (e && e.kind === 'stopped') U.toast('Stopped reloading.  The channels from the last load are still here.', 5000);
+      else if (manual) U.toast(e.message || 'Reload failed', 4000);
+    }).then(function () { reloading = null; if (window.Settings && Settings.live) Settings.live(); });
+    if (window.Settings && Settings.live) Settings.live();
     return reloading;
+  }
+  // Stop reloading (Settings > Playlists and guide, issue #25): the channels from the last load stay.
+  function stopReload() { return !!reloading && Source.stop(Store.playlist.id); }
+
+  /* ---------- a playlist that keeps closing TiviBro (issue #25) ----------
+     While a channel list loads, or a big one is opened, a marker says so.  If TiviBro closes on its own
+     during that twice in a row, the playlist's reload is set to Only when I ask and the next start asks
+     what to do instead of loading it a third time.  The marker goes once the list has been on screen
+     for a few seconds. */
+  var BUSY = 'tivibro.plBusy', TRIES = 'tivibro.plCrash', busyT = 0;
+  function busyStart(p, how) {
+    clearTimeout(busyT);
+    try { localStorage.setItem(BUSY, JSON.stringify({ pid: p.id, how: how, t: Date.now() })); } catch (e) {}
+    Log.state('playlist', how + ' the channel list of ' + (p.name || 'the playlist'));
+  }
+  function busyEnd(after) {
+    clearTimeout(busyT);
+    busyT = setTimeout(function () {
+      try { localStorage.removeItem(BUSY); localStorage.removeItem(TRIES); } catch (e) {}
+      Log.state('playlist', '');
+    }, after || 0);
+  }
+  function crashGuard(gone) {
+    var busy = null, tries = null;
+    try { busy = JSON.parse(localStorage.getItem(BUSY) || 'null'); tries = JSON.parse(localStorage.getItem(TRIES) || 'null'); localStorage.removeItem(BUSY); } catch (e) {}
+    if (!gone || !busy || !busy.pid) return null;
+    var p = Store.settings.playlists.filter(function (x) { return x.id === busy.pid; })[0];
+    if (!p) return null;
+    var n = tries && tries.pid === busy.pid && Date.now() - (tries.t || 0) < 6 * 3600e3 ? tries.n + 1 : 1;
+    try { localStorage.setItem(TRIES, JSON.stringify({ pid: busy.pid, n: n, t: Date.now() })); } catch (e) {}
+    Log.warn('app', 'TiviBro closed while ' + busy.how + ' the channel list of ' + (p.name || 'a playlist') + (n > 1 ? ' (' + n + ' times in a row)' : ''));
+    if (n < 2) return null;
+    var was = +p.plRefresh;
+    if (was !== 0) { p.plRefresh = 0; Store.upsertPlaylist(p); Log.warn('app', 'Set ' + (p.name || 'the playlist') + ' to reload only when asked, so it does not close TiviBro again'); }
+    return { p: Store.normalize(p), how: busy.how, n: n, was: was };
+  }
+  function guarded(g) {
+    var p = g.p, name = p.name || 'this playlist';
+    if (Store.settings.active !== p.id) return open(Store.playlist);
+    var title = 'TiviBro closed ' + (g.n > 2 ? g.n + ' times' : 'twice') + ' while ' + g.how + ' ' + name;
+    // Reloading broke it: the list from before is still kept, so open that; the next reload waits to be asked.
+    if (g.how === 'reloading') {
+      return open(p).then(function () {
+        setTimeout(function () {
+          UI.panel(title, U.el('p', 'panel-text', 'So it doesn\'t happen again, its channel list now reloads only when you ask, and the channels from its last good load are here.  ' +
+            'If it has grown too big for this TV, ask your provider for a smaller list.'), [
+            { label: 'OK' },
+            { label: 'Playlist settings', action: function () { openPlaylistSettings(p.id); } }
+          ]);
+        }, 800);
+      });
+    }
+    // Loading or opening it is what closes TiviBro: ask before trying again.
+    loading(title);
+    var others = Store.settings.playlists.filter(function (x) { return x.id !== p.id; });
+    function ask() {
+      UI.menu(title, [
+        { label: 'Try loading it again', sub: 'it may close TiviBro again', action: function () { open(p); } },
+        { label: 'Change the connection', sub: 'the server, login or playlist address', action: function () { setup(p.id); } }
+      ].concat(others.map(function (o) { return { label: 'Use ' + (o.name || 'another playlist'), action: function () { switchPlaylist(o.id); } }; }))
+        .concat([{ label: 'Add another playlist', action: function () { setup('new'); } }]), function () { setTimeout(ask, 0); });
+    }
+    UI.setHandler(function () { ask(); return true; });
+    ask();
+  }
+  function openPlaylistSettings(id) {
+    if (!ready) return setup(id);
+    Views.switchTab('settings');
+    if (Settings.openPlaylist) Settings.openPlaylist(id);
   }
   /* A playlist bigger than a TV comfortably holds (186,928 channels on a 32-inch 2022 set, issues #24
      and #25): say so once, with what helps.  Every reload of such a list is a big moment for the TV. */
@@ -372,7 +460,7 @@ var App = (function () {
     if (n < BIG || p.bigNoted) return;
     Log.warn('app', 'This playlist has ' + n + ' channels, more than most TVs comfortably hold.  Reloading it is the hardest moment for the TV.');
     p.bigNoted = 1; Store.upsertPlaylist(p);
-    U.toast(n.toLocaleString() + ' channels is a very big playlist for a TV.  If TiviBro closes after reloading it, set Settings > Playlists and guide > ' + (p.name || 'this playlist') + ' > Reload channel list to Manual, or ask your provider for a smaller list.', 14000);
+    U.toast(n.toLocaleString() + ' channels is a very big playlist for a TV.  If TiviBro closes after reloading it, set Settings > Playlists and guide > ' + (p.name || 'this playlist') + ' > Reload channel list to Only when I ask, or ask your provider for a smaller list.', 14000);
   }
 
   function open(p) {
@@ -380,19 +468,39 @@ var App = (function () {
     return Store.bigGet(cacheKey(p)).then(function (cached) {
       if (cached && cached.sig === Source.sig(p) && cached.channels && cached.channels.length) {
         Log.info('app', 'Opened ' + cached.channels.length + ' channels kept from the last load');
+        var big = cached.channels.length >= BIG;
+        if (big) busyStart(p, 'opening');
         start(cached, true);
+        if (big) busyEnd(10000);
         if (plDue(p, cached.at, true)) setTimeout(function () { refresh(false); }, 15000);
         return;
       }
+      // Downloading the list: Back offers to stop (a list that is too big, or a server that never answers).
+      busyStart(p, 'loading');
+      setupEl.appendChild(U.el('p', 'lead', 'Press Back to stop.'));
+      UI.setHandler(function (a) { if (a === 'back') askStop(p); return true; });
       return Source.load(p).then(function (data) {
         if (data.fixed) Store.upsertPlaylist(adopt(p, data));
         Store.bigSet(cacheKey(p), data); start(data, false);
+        busyEnd(10000);
       });
     }).catch(function (e) {
+      busyEnd(0);
+      if (e && e.kind === 'stopped') return;           // askStop has already moved on
       Log.error('app', 'Could not open playlist "' + (p.name || p.id) + '": ' + (e && e.message));
       setup(p.id);
       U.toast((e.message || 'Could not load the playlist') + '  Test connection shows details.', 7000);
     });
+  }
+  function askStop(p) {
+    if (!Source.loading) return;
+    var others = Store.settings.playlists.filter(function (x) { return x.id !== p.id; });
+    function halt(then) { return function () { Source.stop(p.id); then(); }; }
+    UI.menu('Stop loading ' + (p.name || 'this playlist') + '?', [
+      { label: 'Keep waiting' },
+      { label: 'Stop, and change the connection', sub: 'the server, login or playlist address', action: halt(function () { setup(p.id); }) }
+    ].concat(others.map(function (o) { return { label: 'Stop, and use ' + (o.name || 'another playlist'), action: halt(function () { switchPlaylist(o.id); }) }; }))
+      .concat([{ label: 'Stop, and add another playlist', action: halt(function () { setup('new'); }) }]));
   }
 
   // Is a playlist reload due?  hours: -1 every app start, 0 manual only, otherwise an interval.
@@ -470,11 +578,13 @@ var App = (function () {
       Reports.start();
       // Something broke last time (an error, or TiviBro closed on its own): offer to report it, once.
       var crash = Log.lastCrash, gone = Log.settle(Net.info && Net.info.sys), key = gone ? 'u' + gone.s : crash ? crash.s : '';
+      var guard = crashGuard(gone);
       if (key && localStorage.getItem('tivibro.crashSeen') !== key) {
         try { localStorage.setItem('tivibro.crashSeen', key); } catch (e) {}
         setTimeout(function () { offerReport(gone, crash); }, 2000);    // soon: in a loop the next close may not wait
       }
       if (!Store.settings.playlists.length) return setup();
+      if (guard) return guarded(guard);
       open(Store.playlist);
     });
   }
@@ -488,7 +598,7 @@ var App = (function () {
     else if (wasPlaying) { wasPlaying = false; Player.resume(); }
   });
 
-  return { boot: boot, setup: setup, refresh: refresh, bigList: bigList, switchPlaylist: switchPlaylist, tourNext: function () { tourNext = true; } };
+  return { boot: boot, setup: setup, refresh: refresh, stopReload: stopReload, get reloading() { return !!reloading; }, openPlaylistSettings: openPlaylistSettings, bigList: bigList, switchPlaylist: switchPlaylist, tourNext: function () { tourNext = true; } };
 })();
 
 window.addEventListener('load', function () { App.boot(); });
