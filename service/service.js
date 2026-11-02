@@ -22,6 +22,12 @@ var reminders = require('./remind').create({
   log: function (o) { proxy.log(o); }
 });
 
+// Rooted TVs: the two permissions developer mode leaves out (grant.js), added once through the Homebrew Channel.
+var grant = require('./grant').create({
+  call: function (uri, params, cb) { try { service.call(uri, params, function (m) { cb(m && m.payload || {}); }); } catch (e) { cb({ returnValue: false, errorText: e.message }); } },
+  log: function (o) { proxy.log(o); }
+});
+
 proxy.log({ lv: 'info', event: 'service loaded', node: process.version });
 
 /* The TV's power changes (turned off, standby), kept in power.json, so the app can tell that its last
@@ -128,7 +134,7 @@ service.register('start', function (message) {
   clearTimeout(idleTimer);
   listen(0, function (err, p) {
     if (err) return message.respond({ returnValue: false, errorText: err.message });
-    if (message.isSubscription) { subs++; hold(); watchPower(); }
+    if (message.isSubscription) { subs++; hold(); watchPower(); grant.ensure(); }
     proxy.log({ lv: 'info', event: 'start', subscribers: subs, port: p });
     message.respond({ returnValue: true, port: p, subscribed: !!message.isSubscription, ctl: CTL });
   });

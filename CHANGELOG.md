@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **No more reminders for "games" that aren't.**  An earlier version set My teams reminders for team channels' placeholders ("Future events for Detroit Tigers not found yet", "No future events scheduled") and their "Next game" listings.  TiviBro now removes those from the reminder list when it starts, the TV's helper refuses to show or schedule them even before TiviBro is next opened, and "no future events" style listings never count as games.
+- **Reminders know when nobody's watching, on rooted TVs.**  In developer mode the TV refused the helper two questions: is the screen on (or the screensaver / Always Ready), and which app is in front.  So reminders could come up over the screensaver.  On rooted TVs install.sh, or TiviBro itself through the Homebrew Channel, now adds just those two permissions for the helper.
 - **Phone app: TiviBro log.**  **Settings > TiviBro log** in the phone app shows the TV's log (the app's and the network helper's), the same as Report a problem with provider and server names taken out.  **Problems only** and **Share**.
 
 ## 0.6.0 (alpha 50, 2026-11-01)
