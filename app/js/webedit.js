@@ -303,6 +303,13 @@ var WebEdit = (function () {
       });
     },
     report: function () { return Diag.report().then(function (r) { return { msg: 'ok', data: r }; }); },
+    // The editor sent a report through the relay: the TV follows it from now on (app/js/reports.js).
+    reported: function (a) {
+      var n = +a.number;
+      if (!(n > 0) || !/^https:\/\/github\.com\//.test(String(a.url || ''))) throw new Error('That is not a report.');
+      Reports.add({ number: n, url: String(a.url), key: /^[0-9a-f]{32}$/.test(a.key || '') ? a.key : '' }, clean(a.title));
+      return { msg: 'ok' };
+    },
     addPlaylist: function (a) {
       activity('Your phone or computer sent a playlist.  Checking the login and loading the channels…');
       var xc = a.type !== 'm3u';

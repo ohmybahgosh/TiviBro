@@ -449,7 +449,7 @@ var App = (function () {
     UI.menu(what, [
       { label: 'Send a report now', sub: 'straight from the TV, with the log, logins and server names taken out', action: function () {
         U.toast('Sending the report…', 3000);
-        Diag.sendNow(what, sub).then(function (j) { U.toast('Report sent, thank you.  It is issue #' + j.number + ' on GitHub.', 7000); },
+        Diag.sendNow(what, sub).then(function (j) { U.toast('Report sent, thank you.  It is issue #' + j.number + ' on GitHub.  TiviBro will tell you when the developer answers.', 8000); },
           function (e) { U.toast('The report could not be sent (' + ((e && e.message) || 'no connection') + ').  Settings > Diagnostics > Report a problem sends it from your phone.', 9000); });
       } },
       { label: 'Report with my phone', sub: 'add what you were doing; scan a code with your phone', action: function () { Diag.openReport(); } },
@@ -467,6 +467,7 @@ var App = (function () {
       Phone.launched(launchParams());
       Update.autoCheck();
       Update.countMe();
+      Reports.start();
       // Something broke last time (an error, or TiviBro closed on its own): offer to report it, once.
       var crash = Log.lastCrash, gone = Log.settle(Net.info && Net.info.sys), key = gone ? 'u' + gone.s : crash ? crash.s : '';
       if (key && localStorage.getItem('tivibro.crashSeen') !== key) {

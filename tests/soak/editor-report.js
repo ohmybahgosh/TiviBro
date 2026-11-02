@@ -38,10 +38,13 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   // Send report goes through the relay named in tivibro.app/relay.json (both stubbed here).
   let posted = null;
   await ctx.route('https://tivibro.app/relay.json', r => r.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ url: 'https://relay.test/report' }) }));
-  await ctx.route('https://relay.test/report', r => { if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'POST' } }); posted = JSON.parse(r.request().postData()); r.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, url: 'https://github.com/ohmybahgosh/TiviBro/issues/7', number: 7 }) }); });
+  await ctx.route('https://relay.test/report', r => { if (r.request().method() === 'OPTIONS') return r.fulfill({ status: 204, headers: { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Allow-Methods': 'POST' } }); posted = JSON.parse(r.request().postData()); r.fulfill({ status: 200, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ ok: true, url: 'https://github.com/ohmybahgosh/TiviBro/issues/7', number: 7, key: 'b'.repeat(32) }) }); });
   await ed.click('#rpSend'); await ed.waitForTimeout(1500);
   const sent = await ed.evaluate(() => ({ btn: document.getElementById('rpSend').textContent, msg: document.getElementById('rpSendMsg').textContent }));
   ok('Send report posts to the relay and links the new issue', posted && posted.what === 'It froze on Sports.' && /^# TiviBro problem report/.test(posted.log) && posted.log.indexOf('secretpass') < 0 && /issue #7/.test(sent.msg) && /#7/.test(sent.btn), JSON.stringify(sent));
+  await tv.waitForTimeout(2500);
+  const kept = await tv.evaluate(() => Reports.list.map(r => r.n + ':' + r.key + ':' + r.title));
+  ok('the TV follows the report the editor sent', kept[0] === '7:' + 'b'.repeat(32) + ':' + await ed.evaluate(() => document.getElementById('rpTitle').value.trim() || document.getElementById('rpArea').value), kept.join(' | '));
   await ed.click('#rpGo'); await ed.waitForTimeout(1000);
   ok('the button opens GitHub', !!opened && /github\.com/.test(opened), opened);
   const dl = ed.waitForEvent('download'); await ed.click('#rpSave'); const d = await dl;

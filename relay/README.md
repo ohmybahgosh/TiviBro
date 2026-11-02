@@ -8,6 +8,13 @@ A small Cloudflare Worker that lets people send **Report a problem** from the we
 - Deploy from this folder with `npx wrangler deploy`; set the token with `npx wrangler secret put GITHUB_TOKEN`.  To move the relay, change `site/relay.json`: the editor follows it without a new release.
 - If the relay is down or out of its daily allowance, the page says so and the GitHub form still works.
 
+## Following reports up
+
+- `/report` also answers a `key` for the new issue (an HMAC of its number, signed with the secret `REPORT_KEY`, or the GitHub token if that isn't set).  The TV keeps it.
+- `GET /status?n=24,25`: for issues the relay opened (label `from-tv`), open or closed, the newest comment by the repo's owner or members (as plain text), and the newest TiviBro version those comments name.  Answers are cached for five minutes.  TiviBro asks every few hours and shows a reply once (`app/js/reports.js`).
+- `POST /followup` `{ n, key, what, version, tv, log }`: **Still happening** on the TV.  Needs that issue's key, masks the log again, shares the report limits, adds a comment and reopens the issue if it was closed.  The relay's own comments carry `<!-- tivibro-followup -->`, so they never count as a reply from the developer.
+- Set the signing secret once: `openssl rand -hex 32 | npx wrangler secret put REPORT_KEY`.  Changing it later means older reports can no longer be followed up from the TV (they can on GitHub).
+
 ## Install numbers and the stats dashboard
 
 - `POST /count` `{ e: install | update | active, v, w }`: the install script and TiviBro (once a day) count themselves.  Each network counts once a day per kind (a hash of the address, kept two days); only the day's totals by kind, version and webOS version are stored, in the `STATS` KV namespace.

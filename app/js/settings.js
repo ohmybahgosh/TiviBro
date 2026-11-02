@@ -705,6 +705,16 @@ var Settings = (function () {
     out.push(action('Report a problem', 'Scan a QR code: your phone fills in a GitHub issue with this TV\'s details and log, logins and server names taken out.', function () {
       Diag.openReport();
     }, function () { return '›'; }));
+    if (Reports.list.length) out.push(page('Your problem reports', 'The reports this TV sent, and whether the developer has answered.  TiviBro also tells you when one gets a reply.', 'Your problem reports', function () {
+      var o = Reports.list.map(function (r) {
+        return action('#' + r.n + '  ' + (r.title || 'Problem report'), 'Sent ' + Reports.when(r.sent) + ' from ' + (r.version || '?') + '.  ' + Reports.statusText(r), function () { Reports.show(r.n); }, function () { return '›'; });
+      });
+      o.push(action('Check now', 'Asks GitHub, through the report relay, for news on these reports.  Only the report numbers are sent.', function () {
+        U.toast('Checking…', 2000);
+        Reports.check(true).then(function () { build(); U.toast('Checked', 2000); });
+      }));
+      return o;
+    }));
     out.push(action('Run connection test', 'Checks the helper, login, channel list, a stream and the guide, step by step.', function () { Diag.run(); }));
     out.push(action('Speed test', 'Your internet speed and your provider\'s, and what that is enough for.  Stops playback while it runs.', function () { Diag.speedTest(); }));
     out.push(action('View app log', 'This session.', function () { Diag.showLog(false); }));

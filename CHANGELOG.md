@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **TiviBro tells you when the developer answers your problem report.**  Reports sent from the TV or the web editor are opened on GitHub by the report relay, so whoever sent one heard nothing back.  The TV now keeps the reports it sent and asks every few hours (only the report numbers leave the TV).  A reply, or the report being closed, shows once: what the developer wrote, **Update to** the version with the fix when yours is older, a code to read the whole thread on your phone, and **Still happening**, which sends the log as it is now (with a note if you want) and reopens a closed report.  During fullscreen it waits, with a short note, until you're back.  **Settings > Diagnostics > Your problem reports** lists them all with their status, and **Check now** asks straight away.
+
 ## 0.6.0 (alpha 56, 2026-11-02)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -572,6 +572,14 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 .edit-join-lead{font-size:24px;color:var(--muted);margin:0 0 26px;line-height:1.4}
 .edit-join{display:flex;align-items:center}
 .edit-join .join-qr{flex:none;margin-right:48px}
+.rep-box{display:flex;align-items:flex-start}
+.rep-txt{flex:1;min-width:0}
+.rep-state{font-size:30px;font-weight:600;color:var(--accent);margin-bottom:6px}
+.rep-title{font-size:24px;color:var(--muted);margin-bottom:22px}
+.rep-reply{font-size:24px;line-height:1.45;white-space:pre-line;max-height:430px;overflow:hidden;margin-top:6px}
+.rep-qr{flex:none;width:220px;margin-left:40px;text-align:center}
+.rep-qr svg{width:220px;height:220px;display:block;background:#fff;border-radius:12px;padding:8px;box-sizing:border-box}
+.rep-qr .remote-s{margin-top:10px}
 .edit-join .remote-l{font-size:22px;margin-top:12px}
 .edit-join .remote-v{font-size:40px;letter-spacing:1px}
 .edit-join .remote-s{font-size:22px;margin-top:14px}

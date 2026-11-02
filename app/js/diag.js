@@ -87,7 +87,19 @@ var Diag = (function () {
         return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
           title: title, area: area, often: Log.unclean && Log.unclean.recent > 1 ? 'Every time' : 'Once', what: what + '  (sent from the TV after it closed unexpectedly)',
           steps: '', expected: '', version: r.version, tv: r.tv, log: r.text }) });
-      }).then(function (x) { return x.json().catch(function () { return {}; }).then(function (j) { if (!x.ok || !j.ok) throw new Error(j.error || 'HTTP ' + x.status); Log.info('diag', 'Crash report sent: issue #' + j.number); return j; }); });
+      }).then(function (x) { return x.json().catch(function () { return {}; }).then(function (j) { if (!x.ok || !j.ok) throw new Error(j.error || 'HTTP ' + x.status); Log.info('diag', 'Crash report sent: issue #' + j.number); if (window.Reports) Reports.add(j, title); return j; }); });
+    });
+  }
+  /* Still happening (app/js/reports.js): a comment on report n with the log as it is now.  The key the
+     relay gave the TV with the report shows it is this TV's. */
+  function followup(n, key, what) {
+    var scrub = scrubber(), cfgUrl = (Store.settings && Store.settings.relayConfig) || RELAY_CONFIG;
+    return report().then(function (r) {
+      return fetch(Net.wrap(cfgUrl), { cache: 'no-store' }).then(function (x) { if (!x.ok) throw new Error('report service not found'); return x.json(); }).then(function (c) {
+        if (!c || !c.url) throw new Error('report service not available');
+        return fetch(String(c.url).replace(/\/report$/, '/followup'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+          n: n, key: key, what: scrub(what || ''), version: r.version, tv: r.tv, log: r.text }) });
+      }).then(function (x) { return x.json().catch(function () { return {}; }).then(function (j) { if (!x.ok || !j.ok) throw new Error(j.error || 'HTTP ' + x.status); Log.info('diag', 'Told report #' + n + ' it still happens'); return j; }); });
     });
   }
 
@@ -475,5 +487,5 @@ var Diag = (function () {
     });
   }
 
-  return { report: report, openReport: openReport, sendNow: sendNow, run: run, speedTest: speedTest, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
+  return { report: report, openReport: openReport, sendNow: sendNow, followup: followup, run: run, speedTest: speedTest, showLog: showLog, showHelperLog: showHelperLog, close: close, get open() { return box && !box.classList.contains('hidden'); } };
 })();

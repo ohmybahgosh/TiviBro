@@ -1422,7 +1422,9 @@ $('rpSend').onclick = function () {
     .then(function (j) {
       rpSent = j.url;
       $('rpSend').textContent = 'Open issue #' + j.number;
-      msg('rpSendMsg', 'ok', 'Sent.  Thanks!  It is issue #' + j.number + ' on GitHub; the button opens it.');
+      msg('rpSendMsg', 'ok', 'Sent.  Thanks!  It is issue #' + j.number + ' on GitHub; the button opens it.  The TV will say when the developer answers.');
+      // The TV follows the report from now on (app/js/reports.js); if it can't be told, nothing is lost.
+      command('reported', { number: j.number, url: j.url, key: j.key || '', title: $('rpTitle').value.trim() || $('rpArea').value }, 15000).catch(function () {});
     }, function (e) {
       msg('rpSendMsg', 'err', (e && e.message && !/Failed to fetch|NetworkError|Load failed/i.test(e.message) ? e.message : 'This phone or computer could not reach the report service.') + '  You can still send it with the GitHub form below.');
     });
