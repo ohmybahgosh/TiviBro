@@ -87,6 +87,24 @@ const fire = p => new Promise(res => R.fire(p, res));
   ok('the list survives a helper restart', R.state.lists.p1 && R.state.lists.p1.length === 1 && R.state.lists.p2.length === 1);
   r = R.set({ pid: 'p3', list: [{ k: 'z1', s: now + H, e: now + 2 * H, t: 'No future events scheduled' }, { k: 'z2', s: now + H, e: now + 2 * H, t: 'Lions at Packers' }] });
   ok('placeholders are not scheduled', r.count === 1, JSON.stringify(r));
+  // Rooted TVs: a refused alert goes out as root (rootAlert), and after one refusal straight away.
+  let rooted = [], rootOk = true;
+  const R2 = require('../../service/remind.js').create({ files: [path.join(dir, 'r2.json')], now: () => now, log() {},
+    call: (uri, params, cb) => { calls.push({ uri, params }); cb(answer[uri.split('/').pop()] || { returnValue: true }); },
+    rootAlert: (alert, cb) => { rooted.push(alert); cb(rootOk, rootOk ? '' : 'no Homebrew Channel'); } });
+  now = Date.UTC(2026, 10, 2, 1, 0, 0);
+  const rl = [{ k: 'r1', s: now + 60000, e: now + H, t: 'Lions at Packers', ch: 'FOX 2' }];
+  R2.set({ pid: 'p9', list: rl });
+  answer = { createAlert: { returnValue: false, errorText: 'Permission Denied' } }; calls = [];
+  w = await new Promise(res => R2.fire(Object.assign({ pid: 'p9' }, rl[0]), res));
+  ok('alert refused on a rooted TV: shown as root, with Watch', w === 'shown (as root)' && rooted.length === 1 && rooted[0].buttons[0].label === 'Watch' && rooted[0].buttons[0].params.params.reminder.k === 'r1' && !calls.some(c => /createToast$/.test(c.uri)), w);
+  calls = [];
+  w = await new Promise(res => R2.fire(Object.assign({ pid: 'p9' }, rl[0]), res));
+  ok('next time straight to root, no refused call', w === 'shown (as root)' && !calls.some(c => /createAlert$/.test(c.uri)), w);
+  rootOk = false; calls = [];
+  w = await new Promise(res => R2.fire(Object.assign({ pid: 'p9' }, rl[0]), res));
+  ok('root not available: a toast', /toast/.test(w) && calls.some(c => /createToast$/.test(c.uri)), w);
+  answer = {};
   console.log(fail ? fail + ' failures' : 'all reminder helper tests passed');
   process.exit(fail ? 1 : 0);
 })();

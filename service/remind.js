@@ -27,7 +27,7 @@ function create(opts) {
   var call = opts.call, log = opts.log || function () {}, now = opts.now || Date.now;
   var files = (opts.files || [path.join(__dirname, 'reminders.json'), path.join(os.tmpdir(), 'tivibro-reminders.json')]);
   var state = { lists: {}, names: {} };      // lists: pid -> [reminder]; names: activity name -> 1
-  var visible = false;
+  var visible = false, alertRefused = false;
 
   function load() {
     for (var i = 0; i < files.length; i++) {
@@ -135,16 +135,28 @@ function create(opts) {
     var title = started ? 'Started at ' + when(+p.s) : +p.s > t + 30000 ? 'Starts at ' + when(+p.s) : 'Starting now';
     var msg = '<h3>' + title + ': ' + html(clean(p.t)) + '</h3>' + (p.ch ? 'On ' + html(clean(p.ch, 80)) + ' in TiviBro' : 'In TiviBro');
     var launch = { id: APP, params: { reminder: { pid: p.pid, k: p.k, s: +p.s } } };
-    call('luna://com.webos.notification/createAlert', {
-      sourceId: APP, message: msg,
-      buttons: [{ label: 'Watch', onclick: 'luna://com.webos.applicationManager/launch', params: launch }, { label: 'Dismiss' }]
-    }, function (res) {
-      if (res && res.returnValue !== false) return finish('shown');
-      log({ lv: 'warn', event: 'alert refused, using a toast', e: res && (res.errorText || res.errorCode) });
+    var alert = { sourceId: APP, message: msg, buttons: [{ label: 'Watch', onclick: 'luna://com.webos.applicationManager/launch', params: launch }, { label: 'Dismiss' }] };
+    function toast() {
       call('luna://com.webos.notification/createToast', { sourceId: APP, message: msg + '<br>Select to watch', onclick: { appId: APP, params: launch.params }, noaction: false, persistent: true }, function (r2) {
         if (r2 && r2.returnValue === false) log({ lv: 'error', event: 'toast refused', e: r2.errorText || r2.errorCode });
         finish(r2 && r2.returnValue === false ? 'not shown' : 'shown as a toast');
       });
+    }
+    // The TV keeps alerts for LG's own apps.  On a rooted TV the same alert goes out as root instead
+    // (opts.rootAlert, through the Homebrew Channel); otherwise, or if that fails, a notification.
+    function viaRoot(why) {
+      if (!opts.rootAlert) { log({ lv: 'warn', event: 'alert refused, using a toast', e: why }); return toast(); }
+      opts.rootAlert(alert, function (ok, e) {
+        if (ok) return finish('shown (as root)');
+        log({ lv: 'warn', event: 'alert refused, using a toast', e: why + '; as root: ' + (e || 'failed') });
+        toast();
+      });
+    }
+    if (alertRefused && opts.rootAlert) return viaRoot('refused before');
+    call('luna://com.webos.notification/createAlert', alert, function (res) {
+      if (res && res.returnValue !== false) return finish('shown');
+      alertRefused = true;
+      viaRoot(res && (res.errorText || res.errorCode) || 'refused');
     });
     }
   }

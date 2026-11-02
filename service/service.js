@@ -17,9 +17,22 @@ var relay = null, port = 0, subs = 0, activity = null, idleTimer = null;
 var CTL = crypto.randomBytes(16).toString('hex');
 var PORTS = [47811, 47812, 47813, 47814, 47815];
 // Reminders while TiviBro is closed (remind.js): the activity manager calls "fire" at reminder time.
+var alertN = 0;
+function lcallP(uri, params, cb) { try { service.call(uri, params, function (m) { cb(m && m.payload || {}); }); } catch (e) { cb({ returnValue: false, errorText: e.message }); } }
 var reminders = require('./remind').create({
-  call: function (uri, params, cb) { try { service.call(uri, params, function (m) { cb(m && m.payload || {}); }); } catch (e) { cb({ returnValue: false, errorText: e.message }); } },
-  log: function (o) { proxy.log(o); }
+  call: lcallP,
+  log: function (o) { proxy.log(o); },
+  // Rooted TVs: the alert the TV refuses TiviBro, sent as root by alert.sh through the Homebrew Channel.
+  // The alert goes in a file; the command line only ever carries a number.
+  rootAlert: function (alert, cb) {
+    var n = (Date.now() % 1e9) * 10 + (alertN++ % 10), f = require('path').join(__dirname, 'alert-' + n + '.json');
+    try { require('fs').writeFileSync(f, JSON.stringify(alert)); } catch (e) { return cb(false, 'not written: ' + e.message); }
+    lcallP('luna://org.webosbrew.hbchannel.service/exec', { command: 'sh ' + JSON.stringify(require('path').join(__dirname, 'alert.sh')) + ' ' + n }, function (res) {
+      var out = String(res && (res.stdoutString || res.stdout) || '');
+      try { require('fs').unlinkSync(f); } catch (e) {}
+      cb(res && res.returnValue !== false && /"returnValue"\s*:\s*true/.test(out), (res && res.errorText) || out.slice(0, 200));
+    });
+  }
 });
 
 // Rooted TVs: the two permissions developer mode leaves out (grant.js), added once through the Homebrew Channel.
