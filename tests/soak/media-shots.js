@@ -57,7 +57,7 @@ const FILMS = [
 
   await ev(() => Views.switchTab('media')); await page.waitForTimeout(2500);
   const txt = await page.innerText('#viewMedia');
-  ok('the shelves and the movie on top', /Continue watching/.test(txt) && /Favorites/.test(txt) && /All movies/.test(txt) && /Signal Lost/.test(txt), txt.slice(0, 300));
+  ok('the shelves and the movie on top', /Continue watching/.test(txt) && /Favorites/.test(txt) && /Movies/.test(txt) && /Signal Lost/.test(txt), txt.slice(0, 300));
   ok('posters drawn', await ev(() => [].slice.call(document.querySelectorAll('#viewMedia img')).some((im) => im.complete && im.naturalWidth > 0)));
   // Up to Continue watching: the movie you were in the middle of.
   await page.keyboard.press('ArrowUp'); await page.waitForTimeout(300);

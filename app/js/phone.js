@@ -235,11 +235,18 @@ var Phone = (function () {
       if (op === 'page') return Settings.phone.page(String(a.sec || ''), path);
       return Settings.phone.change(String(a.sec || ''), path, +a.i, op, a);
     },
+    medialibrary:function (a) { return MediaSeries.phone.query(a); },
+    mediashow:function (a) { return MediaSeries.phone.detail('show',a.handle); },
+    mediaepisodes:function (a) { var q = {}; Object.keys(a).forEach(function (k) { q[k] = a[k]; }); q.kind = 'episode'; return MediaSeries.phone.query(q); },
+    mediaepisode:function (a) { return MediaSeries.phone.detail('episode',a.handle); },
+    mediaedit:function (a) { return MediaSeries.phone.edit(a); },
+    mediaplay:function (a) { leaveFull(); return MediaSeries.phone.play(a); },
     // kind 'media': My media (Media.phone), the same shape as Movies.
     vodcats: function (a) { return a.kind === 'media' ? Media.phone.cats() : Vod.phone.cats(vodKind(a)); },
     voditems: function (a) { return a.kind === 'media' ? Media.phone.items(a.cat, a.q, a.offset, a.limit) : Vod.phone.items(vodKind(a), a.cat, a.q, a.offset, a.limit); },
     vodinfo: function (a) { return a.kind === 'media' ? Media.phone.info(a.id) : Vod.phone.info(vodKind(a), a.id); },
     vodplay: function (a, c) {
+      if (typeof MediaSeries !== 'undefined') MediaSeries.leave();
       leaveFull();
       return (a.kind === 'media' ? Media.phone.play(a.id, a.fromStart) : Vod.phone.play(vodKind(a), a.id, a.ep, a.fromStart)).then(function (r) { U.toast('Playing ' + r.title + (c.from ? ', from ' + c.from : '')); return r; });
     },
@@ -320,7 +327,7 @@ var Phone = (function () {
     // Movies and Shows tabs on the phone only when the provider has them.
     var p = Store.playlist || {}, vd = p.vod || {};
     var vk = p.type === 'xtream' || !!vd.m3u;
-    out.vod2 = { movies: vk && !!vd.movies, series: vk && !!vd.series, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0, onnow: typeof Movies !== 'undefined' && Movies.on() };
+    out.vod2 = { mediaLibraryVersion:2, movies: vk && !!vd.movies, series: vk && !!vd.series, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0, onnow: typeof Movies !== 'undefined' && Movies.on() };
     return out;
   }
   function pushState(soon) {

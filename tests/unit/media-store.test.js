@@ -101,10 +101,11 @@ const titles = l => Array.from(l).map(m => m.title);
   const shelfRestart = world(full).M; await shelfRestart.load();
   ok('favorite survives restart', shelfRestart.isFavorite(mid));
   const shelves = shelfRestart.sections(ds);
-  ok('sections include Continue watching, Favorites and All movies', shelves.map(s => s.title).join() === 'Continue watching,Favorites,All movies');
-  ok('movie appears in continue watching and favorites', shelves[0].movies[0].id === mid && shelves[1].movies[0].id === mid && shelves[2].movies.length === 1);
+  ok('sections include Continue watching, Favorites and Movies', shelves.map(s => s.title).join() === 'Continue watching,Favorites,Movies');
+  ok('favorite stays in continue watching and favorites, leaving the general list', shelves[0].movies[0].id === mid && shelves[1].movies[0].id === mid && shelves[2].movies.length === 0);
   shelfRestart.toggleFavorite(mid); shelfRestart.clearResume(mid);
   ok('clearing favorite and resume empties the matching shelves', shelfRestart.sections(ds)[0].movies.length === 0 && shelfRestart.sections(ds)[1].movies.length === 0);
+  ok('removing favorite returns the movie to Movies', shelfRestart.sections(ds)[2].movies[0].id === mid);
   ok('source filter applies to every section', shelfRestart.sections('missing').every(s => !s.movies.length));
 
   let clock = 1000;

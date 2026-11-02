@@ -1,0 +1,14 @@
+'use strict';
+const assert=require('assert'),create=require('../../service/media-metadata-cache').create;
+let time=0,reads=0,waiting=[],timers=[];
+const read=create((url,headers,cb)=>{reads++;waiting.push(cb);},{now:()=>time,later:(f,ms)=>timers.push({f,ms}),maxEntries:2});
+let results=[];read('https://example.invalid/tv/1?language=nl&api_key=demo',{Authorization:'Bearer demo'},(e,r)=>results.push(r));
+waiting.shift()(null,{title:'Harbour'});
+read('https://example.invalid/tv/1?language=nl&api_key=other',{},(e,r)=>results.push(r));assert.equal(reads,1,'credential not part of cache key');assert.equal(results.length,2);
+read('https://example.invalid/tv/1?language=en',{},()=>{});assert.equal(reads,2,'locales cached separately');waiting.shift()(null,{title:'Harbour'});
+time=8*86400000;read('https://example.invalid/tv/1?language=nl&api_key=demo',{},()=>{});assert.equal(reads,3,'expired metadata refetched');
+waiting.shift()(Object.assign(new Error('busy'),{status:429,retryAfter:3}));assert.equal(timers[0].ms,3000);timers.shift().f();assert.equal(reads,4);waiting.shift()(null,{title:'Harbour'});
+read('https://example.invalid/tv/2',{},()=>{});read('https://example.invalid/tv/3',{},()=>{});read('https://example.invalid/tv/4',{},()=>{});assert.equal(read.stats().active,2);assert.equal(read.stats().queued,1);
+while(waiting.length)waiting.shift()(null,{title:'Demo'});
+assert(read.stats().entries<=2);assert.equal(read.stats().queued,0);
+console.log('PASS bounded metadata cache, locale keys, credential exclusion, expiry, Retry-After and concurrency');

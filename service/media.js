@@ -10,6 +10,7 @@
    another one, and certificates are always checked for WebDAV.
    Plain ES5 for Node 0.12 on webOS 4 (see compat.js). */
 'use strict';
+var Classifier = require('./media-classify');
 require('./compat');
 var dgram = require('dgram');
 var http = require('http');
@@ -158,6 +159,8 @@ function parseBrowse(raw) {
   while ((m = re.exec(didl))) {
     var it = { dir: m[1] === 'container', id: attr(m[2], 'id'), title: tag(m[3], 'dc:title') };
     if (!it.dir) {
+      var seriesTitle = tag(m[3], 'upnp:seriesTitle'), episodeNumber = tag(m[3], 'upnp:episodeNumber');
+      if (seriesTitle && /^[1-9][0-9]*$/.test(episodeNumber)) it.server = {validated:true,showTitle:seriesTitle,number:+episodeNumber};
       var rre = /<res\b([^>]*)>([\s\S]*?)<\/res>/g, rm;
       while ((rm = rre.exec(m[3]))) {
         var proto = attr(rm[1], 'protocolInfo');
@@ -168,9 +171,11 @@ function parseBrowse(raw) {
   }
   return { items: items, total: +tag(raw, 'TotalMatches') || 0, returned: +tag(raw, 'NumberReturned') || 0, fault: /<Fault>/i.test(raw) };
 }
-function browseAll(control, id, cb) {
-  var items = [];
+function browseAll(control, id, cb, options) {
+  options = options || {};
+  var items = [], initial = options.start || 0;
   (function page(start) {
+    if((options.paused&&options.paused())||(options.deadline && Date.now()>options.deadline)){var budget=new Error('Scan slice finished.');budget.budget=true;budget.items=items;budget.nextStart=start;return cb(budget);}
     request({ url: control, method: 'POST', body: browseBody(id, start), headers: {
       'Content-Type': 'text/xml; charset="utf-8"', SOAPACTION: '"urn:schemas-upnp-org:service:ContentDirectory:1#Browse"', 'Content-Length': Buffer.byteLength(browseBody(id, start))
     } }, function (e, status, h, body) {
@@ -178,58 +183,93 @@ function browseAll(control, id, cb) {
       if (status !== 200) return cb(new Error('HTTP ' + status));
       var p = parseBrowse(body);
       if (p.fault) return cb(new Error('the server refused'));
-      if (start && p.items.length && p.items[0].id === items[0].id) return cb(new Error('the server repeated a page'));
+      if (items.length && start && p.items.length && p.items[0].id === items[0].id) return cb(new Error('the server repeated a page'));
       items = items.concat(p.items);
-      if (p.items.length && items.length < p.total) return page(items.length);
+      if (p.items.length && start + p.items.length < p.total) return page(start + p.items.length);
       cb(null, items);
     });
-  })(0);
+  })(initial);
+}
+function discovery(source) { return source.contentMode === 'automatic' || source.contentMode === 'shows'; }
+function observed(source, file, ancestors, extra) {
+  var r = Classifier.classify({ basename: file, ancestors: ancestors, server: extra && extra.server }, { order: source.defaultOrder, compact:true });
+  if(r.kind==='movie' && ancestors.some(function(name){return EXTRAS_FOLDER.test(String(name));})){r.kind='extra';r.evidence.push({origin:'folder',fields:{kind:'extra'}});}
+  if(r.kind==='movie' && extra && extra.size>0 && extra.size<SMALL){r.kind='unclassified';r.review.push('uncertainSmallVideo');}
+  var out = extra || {};
+  out.file = file; out.kind = r.kind; out.classification = r; out.ancestors = ancestors;
+  out.title = r.title;
+  return out;
+}
+function safeMovieFolder(folder, files) {
+  // A collection's year is not evidence that all its videos are the same movie.
+  if (files.length !== 1) return '';
+  var stem = str(files[0].file).replace(/\.[a-z0-9]+$/i, '');
+  return /^(video|movie|film|main|feature|x)$/i.test(stem) || /^.+\(\d{4}\)\s*$/.test(folder) ? folder : '';
 }
 function scanDlna(source, cb) {
   var control = str(source.control);
   if (!/^https?:\/\//i.test(control)) return cb(failure('address'));
-  var byPath = {}, errors = [], partial = false, folders = 0, deadline = Date.now() + SCAN_MS, skipped = newSkipped();
-  var queue = [{ id: '0', name: '', depth: 0 }];
+  var saved = source._continuation || {};
+  var byPath = saved.byPath || {}, errors = saved.errors || [], partial = !!saved.partial, folders = 0, paused = false, deadline = Date.now() + SCAN_MS, skipped = newSkipped();
+  var queue = saved.queue || [{ id: '0', name: '', depth: 0, ancestors: [] }], visited = saved.visited || {}, discovered = saved.discovered || {}, pathOwners = saved.pathOwners || {};
   function fileOf(it) {
     var u = URL_.parse(it.url), file = lastPart(u.pathname);
     if (!VIDEO.test(file)) file = it.title + (/\.[A-Za-z0-9]{2,4}$/.test(it.title) ? '' : '.' + extOf('', it.proto));
     return file;
   }
-  function add(it, folderName) {
+  function add(it, folderName, ancestors) {
     if (!it.url) return;
     var u = URL_.parse(it.url), file = fileOf(it);
-    if (!isMovieFile(file)) return;
-    var key = u.pathname, named = /\(\d{4}\)\s*$/.test(folderName), was = byPath[key];
-    if (was && (was.named || !named)) return;
+    if (!(discovery(source) ? VIDEO.test(file) : isMovieFile(file))) return;
+    var key = u.pathname + (discovery(source) ? u.search || '' : ''), named = /\(\d{4}\)\s*$/.test(folderName), was = byPath[key];
+    if (was && (was.named || !named) && !discovery(source)) return;
+    if (discovery(source)) {
+      var entry = observed(source, file, ancestors, { id: 'd:' + u.pathname, size: it.size || 0, ext: extOf(file, it.proto), info: tokens(file), url: it.url, server: it.server });
+      var prior=discovered[key];
+      if(prior && prior.classification.review.length <= entry.classification.review.length && prior.ancestors.length >= entry.ancestors.length) entry=prior;
+      var owner=pathOwners[u.pathname];
+      if(owner && owner!==key){entry.id='d:'+key;entry.classification.review.push('identityCollision');if(discovered[owner])discovered[owner].classification.review.push('identityCollision');}
+      else pathOwners[u.pathname]=key;
+      discovered[key] = entry;
+      if (entry.kind !== 'movie' || source.contentMode === 'shows') return;
+    }
     var t = titleOf(folderName, file);
     byPath[key] = { named: named, movie: { id: 'd:' + key, title: t.title, year: t.year, file: file, size: it.size || 0, ext: extOf(file, it.proto), info: tokens(file), url: it.url } };
   }
   function done() {
     var movies = Object.keys(byPath).map(function (k) { return byPath[k].movie; });
-    cb({ movies: movies, partial: partial, errors: errors, skipped: skipped });
+    var result={ movies: movies, files: discovery(source) ? Object.keys(discovered).map(function (k) { return discovered[k]; }) : undefined, partial: partial, errors: errors, skipped: skipped };
+    if(paused)result._continuation={queue:queue,visited:visited,byPath:byPath,discovered:discovered,pathOwners:pathOwners,errors:errors.filter(function(e){return !/^stopped early/.test(e);}),partial:errors.some(function(e){return !/^stopped early/.test(e);})};
+    cb(result);
   }
   (function next() {
     var c = queue.shift();
     if (!c) return done();
-    if (Date.now() > deadline || folders >= MAX_FOLDERS) { partial = true; errors.push('stopped early, the server is very large'); return done(); }
+    if ((source._control&&source._control.paused) || Date.now() > deadline || folders >= (source.scanFolderBudget > 0 && source.scanFolderBudget <= MAX_FOLDERS ? source.scanFolderBudget : MAX_FOLDERS)) { queue.unshift(c); paused=true; partial = true; errors.push('stopped early, the server is very large'); return done(); }
+    if (visited['o:'+c.id]) return next();
+    visited['o:'+c.id] = true;
     folders++;
     browseAll(control, c.id, function (e, items) {
-      if (e) {
+      var pageBudget=e&&e.budget;
+      if(pageBudget){items=e.items;c.pageStart=e.nextStart;delete visited['o:'+c.id];}
+      if (e && !pageBudget) {
         if (c.depth === 0) return cb(failure(errorKind(e)));
         partial = true; errors.push(c.name + ': ' + e.message);
         return next();
       }
       // A server's own TV views ("Series", "TV Shows") are left alone like its music.
-      var vids = items.filter(function (it) { return !it.dir && it.url && isMovieFile(fileOf(it)); });
-      moviesOf(vids.map(function (it) { return { file: fileOf(it), size: it.size || 0, it: it }; }), skipped, c.name).forEach(function (f) { add(f.it, c.name); });
+      var vids = items.filter(function (it) { return !it.dir && it.url && (discovery(source) ? VIDEO.test(fileOf(it)) : isMovieFile(fileOf(it))); });
+      var candidates = vids.map(function (it) { return { file: fileOf(it), size: it.size || 0, it: it }; });
+      (discovery(source) ? candidates : moviesOf(candidates, skipped, c.name)).forEach(function (f) { add(f.it, discovery(source) ? safeMovieFolder(c.name, candidates) : c.name, c.ancestors); });
       items.forEach(function (it) {
         if (!it.dir) return;
-        if (isJunk(it.title) || (c.depth < 2 && (SERVER_EXTRAS.test(it.title) || /^(tv|tv shows|series|serien|séries)$/i.test(it.title))) || skipFolder(it.title, skipped)) return;
-        if (c.depth + 1 > MAX_DEPTH) { partial = true; return; }
-        queue.push({ id: it.id, name: it.title, depth: c.depth + 1 });
+        if (isJunk(it.title) || (c.depth < 2 && SERVER_EXTRAS.test(it.title)) || (!discovery(source) && ((c.depth < 2 && /^(tv|tv shows|series|serien|séries)$/i.test(it.title)) || skipFolder(it.title, skipped)))) return;
+        if (c.depth + 1 > (source.maxDepth || MAX_DEPTH)) { partial = true; errors.push('depth limit reached'); return; }
+        queue.push({ id: it.id, name: it.title, depth: c.depth + 1, ancestors: c.ancestors.concat([it.title]) });
       });
+      if(pageBudget){queue.unshift(c);paused=true;partial=true;return done();}
       next();
-    });
+    },{deadline:deadline,start:c.pageStart||0,paused:function(){return !!(source._control&&source._control.paused);}});
   })();
 }
 
@@ -239,7 +279,7 @@ function basic(source) { return 'Basic ' + Buffer.from(str(source.user) + ':' + 
 function parsePropfind(raw) {
   var xml = str(raw).replace(/<(\/?)[A-Za-z0-9_-]+:/g, '<$1'), out = [], re = /<response\b[^>]*>([\s\S]*?)<\/response>/gi, m;
   while ((m = re.exec(xml))) {
-    out.push({ href: tag(m[1], 'href'), name: tag(m[1], 'displayname'), dir: /<collection\s*\/?>/i.test(m[1]), size: +tag(m[1], 'getcontentlength') || 0 });
+    out.push({ href: tag(m[1], 'href'), name: tag(m[1], 'displayname'), dir: /<collection\s*\/?>/i.test(m[1]), size: +tag(m[1], 'getcontentlength') || 0, etag:tag(m[1],'getetag').slice(0,512),modified:tag(m[1],'getlastmodified').slice(0,128) });
   }
   return out;
 }
@@ -251,13 +291,16 @@ function webdavBase(source) {
 function scanWebdav(source, cb) {
   var base = webdavBase(source);
   if (!base) return cb(failure('address'));
-  var movies = [], errors = [], partial = false, folders = 0, deadline = Date.now() + SCAN_MS, stop = null, skipped = newSkipped();
-  var queue = [{ path: base.path, name: '', depth: 0 }];
-  function done() { if (stop) return cb(failure(stop)); cb({ movies: movies, partial: partial, errors: errors, skipped: skipped }); }
+  var saved = source._continuation || {};
+  var movies = saved.movies || [], errors = saved.errors || [], partial = !!saved.partial, folders = 0, paused = false, deadline = Date.now() + SCAN_MS, stop = null, skipped = newSkipped();
+  var queue = saved.queue || [{ path: base.path, name: '', depth: 0, ancestors: [] }], visited = saved.visited || {}, discovered = saved.discovered || [];
+  function done() { if (stop) return cb(failure(stop)); var result={ movies: movies, files: discovery(source) ? discovered : undefined, partial: partial, errors: errors, skipped: skipped };if(paused)result._continuation={queue:queue,visited:visited,movies:movies,discovered:discovered,errors:errors.filter(function(e){return !/^stopped early/.test(e);}),partial:errors.some(function(e){return !/^stopped early/.test(e);})};cb(result); }
   (function next() {
     var c = queue.shift();
     if (!c || stop) return done();
-    if (Date.now() > deadline || folders >= MAX_FOLDERS) { partial = true; errors.push('stopped early, the library is very large'); return done(); }
+    if ((source._control&&source._control.paused) || Date.now() > deadline || folders >= (source.scanFolderBudget > 0 && source.scanFolderBudget <= MAX_FOLDERS ? source.scanFolderBudget : MAX_FOLDERS)) { queue.unshift(c);paused=true;partial = true; errors.push('stopped early, the library is very large'); return done(); }
+    if (visited[c.path]) return next();
+    visited[c.path] = true;
     folders++;
     request({ url: base.origin + c.path, method: 'PROPFIND', secure: true, body: PROPFIND, headers: {
       Authorization: basic(source), Depth: '1', 'Content-Type': 'application/xml; charset="utf-8"', 'Content-Length': Buffer.byteLength(PROPFIND)
@@ -275,18 +318,27 @@ function scanWebdav(source, cb) {
       }
       var self = c.path.replace(/\/+$/, ''), files = [];
       parsePropfind(body).forEach(function (it) {
-        var p = URL_.parse(it.href).pathname || it.href;
+        var target = URL_.parse(URL_.resolve(base.origin + c.path,it.href));
+        if (target.protocol + '//' + target.host !== base.origin) { partial = true; return; }
+        var p = target.pathname || it.href;
         if (p.replace(/\/+$/, '') === self) return;
+        var root = base.path.replace(/\/+$/, '') + '/';
+        if (p.indexOf(root) !== 0 || /(?:^|\/)(?:\.\.|%2e%2e)(?:\/|$)/i.test(p)) { partial = true; return; }
         var name = it.name || lastPart(p);
         if (it.dir) {
-          if (c.depth + 1 > MAX_DEPTH) { partial = true; return; }
-          if (!isJunk(name) && !skipFolder(name, skipped)) queue.push({ path: p, name: name, depth: c.depth + 1 });
+          if (c.depth + 1 > (source.maxDepth || MAX_DEPTH)) { partial = true; errors.push('depth limit reached'); return; }
+          if (!isJunk(name) && (discovery(source) || !skipFolder(name, skipped))) queue.push({ path: p, name: name, depth: c.depth + 1, ancestors: c.ancestors.concat([name]) });
           return;
         }
-        if (isMovieFile(name)) files.push({ file: name, size: it.size || 0, path: p });
+        if (discovery(source) ? VIDEO.test(name) : isMovieFile(name)) files.push({ file: name, size: it.size || 0, path: p,etag:it.etag,modified:it.modified });
       });
-      moviesOf(files, skipped, c.name).forEach(function (f) {
-        var t = titleOf(c.name, f.file);
+      (discovery(source) ? files : moviesOf(files, skipped, c.name)).forEach(function (f) {
+        if (discovery(source)) {
+          var entry = observed(source, f.file, c.ancestors, { id: 'w:' + f.path, size: f.size, ext: extOf(f.file), info: tokens(f.file), path: f.path,etag:f.etag,modified:f.modified });
+          discovered.push(entry);
+          if (entry.kind !== 'movie' || source.contentMode === 'shows') return;
+        }
+        var t = titleOf(discovery(source) ? safeMovieFolder(c.name, files) : c.name, f.file);
         movies.push({ id: 'w:' + f.path, title: t.title, year: t.year, file: f.file, size: f.size, ext: extOf(f.file), info: tokens(f.file), path: f.path });
       });
       next();
@@ -375,27 +427,108 @@ function send(res, ALLOW, code, obj) {
   res.end(JSON.stringify(obj));
 }
 function hostOf(source) { try { return URL_.parse(str(source && (source.control || source.address))).hostname || ''; } catch (e) { return ''; } }
+var catalogOpening = null, scanResults = {}, activeScanControls = {};
+function catalog(cb) {
+  if (catalogOpening) return catalogOpening.push(cb);
+  catalogOpening = [cb];
+  var root;
+  try { root = require('./kv').sub('media-v2'); } catch (e) { var wait = catalogOpening; catalogOpening = null; return wait.forEach(function (f) { f(e); }); }
+  new (require('./media-catalog').Catalog)(root).open(function (e, lib) {
+    var waiting = catalogOpening; catalogOpening = null;
+    if (!e) catalog = function (f) { f(null, lib); };
+    waiting.forEach(function (f) { f(e, lib); });
+  });
+}
 function handle(req, res, ALLOW, log) {
   var route = req.url.split('?')[0];
+  var libraryRoute = /^\/media\/library\/(query|detail|edit|migrate|progress|continue|chapters|source|adopt|resolve|status)$/.exec(route);
   var subs = /^\/media\/subs\/(search|get|login)$/.exec(route);
-  if (req.method !== 'POST' || (!subs && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/metadata')) return send(res, ALLOW, 404, { error: 'unknown media route' });
-  var body = '', over = false;
-  req.on('data', function (c) { if (over) return; body += c; if (body.length > 65536) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
+  if (req.method !== 'POST' || (!libraryRoute && !subs && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/metadata')) return send(res, ALLOW, 404, { error: 'unknown media route' });
+  var body = '', over = false, bodyBytes = 0, bodyLimit = libraryRoute ? 1048576 : 65536;
+  if (req.setEncoding) req.setEncoding('utf8');
+  req.on('data', function (c) { if (over) return; body += c; bodyBytes += Buffer.byteLength(c,'utf8'); if (bodyBytes > bodyLimit) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
   req.on('end', function () {
     if (over) return;
     var q; try { q = JSON.parse(body || '{}'); } catch (e) { return send(res, ALLOW, 400, { error: 'bad request' }); }
     if (!q || typeof q !== 'object' || Array.isArray(q)) return send(res, ALLOW, 400, { error: 'bad request' });
+    if (libraryRoute) return catalog(function (e, lib) {
+      if (e) return send(res, ALLOW, 507, {error:'STORAGE_UNAVAILABLE',message:'The TV could not open the media library.'});
+      function answer(err, result) { send(res, ALLOW, err ? 400 : 200, err ? {error:err.code || 'LIBRARY_ERROR',message:err.message} : result); }
+      if (libraryRoute[1] === 'migrate') return require('./media-migrate').migrate(lib,q,answer);
+      if (libraryRoute[1] === 'status') return answer(null, {schema:2,revision:lib.library.manifest.revision});
+      if (libraryRoute[1] === 'source') {if(q.action==='remove'&&activeScanControls[q.sourceId])activeScanControls[q.sourceId].paused=true;return lib.source(q,answer);}
+      if (libraryRoute[1] === 'progress') return lib.progress(q,answer);
+      if (libraryRoute[1] === 'continue') return lib.continuing(answer);
+      if (libraryRoute[1] === 'query') return lib.query(q, answer);
+      if (libraryRoute[1] === 'detail') return lib.detail(q, answer);
+      if (libraryRoute[1] === 'edit') {delete q._commandPrepared;delete q._single;return lib.edit(q, answer);}
+      if (libraryRoute[1] === 'adopt') {
+        var pending = scanResults[q.scanHandle];
+        if (!pending) return answer(new Error('Scan expired.  Rescan the source.'));
+        var source={};Object.keys(pending.source||{}).forEach(function(k){source[k]=pending.source[k];});source.id=q.sourceId;
+        return require('./media-scan-jobs').save(source,pending.continuation,function(saveError){if(saveError)return answer(saveError);pending.continuation=null;pending.result.consume=true;lib.importScan(q.sourceId,pending.result,function(err,result){if(!err)delete scanResults[q.scanHandle];answer(err,result);});});
+      }
+      lib.file(q.handle, function (err, file) {
+        if (err || !file || !q.source || q.source.id !== file.sourceId) return answer(new Error('This file is no longer available from that source.'));
+        function resolved(r) {
+          if (r.url && r.url.indexOf('/media-stream/') === 0) r.url = 'http://127.0.0.1:' + req.connection.localPort + r.url;
+          if (libraryRoute[1] !== 'chapters' || r.error) { if (r.url) r.resumeKey = file.id; return answer(null,r); }
+          require('./media-chapter-request').inspect(r.url,file.size,file.ext,answer);
+        }
+        if (file.url) return resolved({url:file.url});
+        resolve(q.source, file.path, function (r) {
+          if (r.url && r.url.indexOf('/media-stream/') === 0) r.url = 'http://127.0.0.1:' + req.connection.localPort + r.url;
+          resolved(r);
+        });
+      });
+    });
     if (subs) return require('./subtitles')[subs[1]](q, function (r) {
       log({ lv: r.error ? 'warn' : 'info', event: 'subtitles ' + subs[1], results: r.results ? r.results.length : undefined, error: r.error || null });
       send(res, ALLOW, 200, r);
     });
-    if (route === '/media/metadata') return require('./media-metadata').lookup(q, function (e, r) { send(res, ALLOW, 200, e ? { error: 'metadata', message: e.message } : r); });
+    if(route==='/media/scan/control'){
+      var control=activeScanControls[q.sourceId];if(control)control.paused=true;return send(res,ALLOW,200,{paused:true});
+    }
+    if (route === '/media/metadata') {var metadataClient=require('./media-metadata').create({credential:q.credential,refresh:!!q.refresh}),metadataClosed=false;function cancelMetadata(){metadataClosed=true;metadataClient.cancel();}req.on('aborted',cancelMetadata);if(res.on)res.on('close',cancelMetadata);return metadataClient.lookup(q,function(e,r){if(!metadataClosed)send(res,ALLOW,200,e?{error:'metadata',message:e.message}:r);});}
     var t0 = Date.now(), host = hostOf(q.source);
     if (route === '/media/discover') return discover(function (r) { log({ lv: 'info', event: 'media discover', servers: r.servers.length }); send(res, ALLOW, 200, r); });
-    if (route === '/media/scan') return scan(q.source, function (r) {
+    if (route === '/media/scan') {function beginScan(){return require('./media-scan-jobs').prepare(q.source,!!q.restart,function(jobError,prepared){
+      if(jobError)return send(res,ALLOW,507,{error:'SCAN_STORAGE',message:jobError.message});
+      var control={paused:false};if(prepared&&prepared.id){activeScanControls[prepared.id]=control;prepared._control=control;}
+      scan(prepared, function (r) {
+      if(prepared&&prepared.id&&activeScanControls[prepared.id]===control)delete activeScanControls[prepared.id];
+      r.contentMode=q.source&&q.source.contentMode||'movies';
+      var continuation=r._continuation; delete r._continuation;
+      require('./media-scan-jobs').save(q.source,r.error ? prepared && prepared._continuation : continuation,function(checkpointError){
+      if(checkpointError)return send(res,ALLOW,507,{error:'SCAN_STORAGE',message:'The scan checkpoint could not be saved.  Your old library is kept.'});
+      r.resumable=!!continuation;r.episodeFiles=(r.files||[]).filter(function(file){return file.kind==='episode';}).length;
       log({ lv: r.error ? 'warn' : 'info', event: 'media scan', host: host, movies: r.movies ? r.movies.length : 0, partial: !!r.partial, error: r.error || null, ms: Date.now() - t0 });
+      if (r.files) {
+        Object.keys(scanResults).forEach(function (k) { if (Date.now() - scanResults[k].at > 900000) delete scanResults[k]; });
+        var pendingKeys = Object.keys(scanResults);
+        if (pendingKeys.length >= 8) delete scanResults[pendingKeys[0]];
+        var scanHandle = require('crypto').randomBytes(16).toString('hex');
+        scanResults[scanHandle] = {at:Date.now(),result:r,continuation:continuation,source:q.source};
+        if (q.source.id) { delete scanResults[scanHandle]; continuation=null; if(prepared)delete prepared._continuation; r.consume=true; return catalog(function (err, lib) {
+          if (err) return send(res, ALLOW, 507, {error:'STORAGE_UNAVAILABLE',message:'The scan could not be saved.  Your old library is kept.'});
+          lib.importScan(q.source.id,r,function (saveErr) {
+            delete scanResults[scanHandle];
+            if (saveErr) return send(res, ALLOW, 507, {error:'STORAGE_UNAVAILABLE',message:'The scan could not be saved.  Your old library is kept.'});
+            var reply = {}; Object.keys(r).forEach(function (k) { if (k !== 'files' && k !== 'consume') reply[k] = r[k]; });
+            reply.fileCount=r.files.length;send(res, ALLOW, 200, reply);
+          });
+        });
+        }
+        var response = {}; Object.keys(r).forEach(function (k) { if (k !== 'files') response[k] = r[k]; });
+        response.fileCount=r.files.length;response.scanHandle = scanHandle; return send(res, ALLOW, 200, response);
+      }
       send(res, ALLOW, 200, r);
-    });
+      });
+      });
+    });}
+      if(q.source&&q.source.id)return catalog(function(e,lib){if(e)return send(res,ALLOW,507,{error:'STORAGE_UNAVAILABLE',message:'The library could not be opened.'});lib.source({action:'configure',sourceId:q.source.id,contentMode:q.source.contentMode||'movies'},function(error){if(error)return send(res,ALLOW,400,{error:'SOURCE_CHANGED',message:error.message});beginScan();});});
+      return beginScan();
+    }
     resolve(q.source, q.path, function (r) {
       log({ lv: r.error ? 'warn' : 'info', event: 'media link', host: host, error: r.error || null });
       if (r.url && r.url.indexOf('/media-stream/') === 0) r.url = 'http://127.0.0.1:' + req.connection.localPort + r.url;
