@@ -6,7 +6,7 @@
 require('./compat');
 var http = require('http'), https = require('https'), URL_ = require('url');
 var crypto = require('crypto'), CA = require('./media-ca');
-var sessions = {}, TTL = 24 * 3600000, MAX = 16;
+var sessions = {}, TTL = 24 * 3600000, MAX = 16, WAIT = 20000;
 var PASS = ['content-type', 'content-length', 'content-range', 'accept-ranges', 'etag', 'last-modified'];
 
 function origin(u) { return u.protocol + '//' + u.host; }
@@ -41,10 +41,11 @@ function handle(req, res, allow) {
     if (req.headers['if-range']) headers['If-Range'] = req.headers['if-range'];
     var opts = { hostname: u.hostname, port: u.port || (tls ? 443 : 80), path: u.path || '/', method: req.method, headers: headers, agent: false };
     if (tls && withCa) opts.ca = CA;
-    var attempt;
+    var attempt, waiting = null;
     try { attempt = (tls ? https : http).request(opts, onResponse); }
     catch (e) { return end(502); }
     function onResponse(remote) {
+      clearTimeout(waiting);
       if (stopped) { remote.destroy(); return; }
       var code = remote.statusCode;
       if (code >= 300 && code < 400 && remote.headers.location) {
@@ -61,13 +62,16 @@ function handle(req, res, allow) {
     }
     up = attempt;
     attempt.on('error', function (e) {
+      clearTimeout(waiting);
       if (stopped) return;
       if (tls && !withCa && !res.headersSent && /CERT|UNABLE_TO_GET_ISSUER|UNABLE_TO_VERIFY|SELF_SIGNED|DEPTH_ZERO/i.test(e.code || '')) return open(url, left, true);
       end(502);
     });
-    attempt.setTimeout(20000, function () { end(504); attempt.abort(); });
+    /* 20 s for the server to answer.  Only until it does: once the movie is streaming, a pause on the TV
+       stops reading and the connection goes quiet for as long as the pause, which must not end it. */
+    waiting = setTimeout(function () { if (!stopped) { end(504); attempt.abort(); } }, WAIT);
     attempt.end();
   }
   open(s.url, 5, false);
 }
-module.exports = { create: create, handle: handle };
+module.exports = { create: create, handle: handle, _wait: function (ms) { WAIT = ms; } };
