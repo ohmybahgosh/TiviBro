@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 60, 2026-11-02)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 60
 
 - **Movies and Shows from M3U links.**  Many providers give one M3U link with their films and series in it.  Those now go to **Movies** and **Shows**, by category, instead of filling the channel list: films as movies, and episodes gathered into shows by season, played from the links in the list.  Search finds them too.  The network helper keeps the library on the TV's storage, so a list with 300,000 titles still fits (issue #26's list: 2,775 channels, 21,946 movies and 7,048 shows).  Reload the channel list once to get them.
 - **Guide fallback messages explain what happened.**  When the provider guide fails, TiviBro says it is checking public guides and only says it is using them when matching listings are available.  The TV and web editor keep the original source error for diagnosis.
@@ -10,11 +14,7 @@
 - **Line up survives a seek.**  A subtitle lined up with another track (or moved with **Timing**) stays in time after skipping or a reconnect, including subtitles read from an MKV file as it plays.
 - **WebDAV movies can play directly with a login.**  Servers using HTTP Basic authentication work alongside signed file links.  The helper keeps the login out of playback addresses and handles seeking and subtitle reads.  Invalid stream redirects return an error instead of leaving playback waiting.
 
-## 0.6.0 (alpha 59, 2026-11-02)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 59
+### In alpha 59
 
 - **A playlist that keeps closing TiviBro is stopped** (issue #25).  If TiviBro closes twice in a row while loading or reloading a playlist, that playlist's **Reload channel list** becomes **Only when I ask**, and the next start says so.  When nothing of the list is kept yet, it asks first: try it again, change the connection, use another playlist or add one, instead of loading it a third time.
 - **Stop a load with the remote** (issue #25).  **Back** on the loading screen offers to stop loading a playlist, and **Settings > Playlists and guide > the playlist > Stop reloading** stops a reload and keeps the channels you had.
