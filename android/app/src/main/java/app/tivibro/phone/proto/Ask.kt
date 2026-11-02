@@ -9,12 +9,34 @@ import org.json.JSONObject
 private inline fun <T> JSONArray?.list(f: (JSONObject) -> T?): List<T> = if (this == null) emptyList() else (0 until length()).mapNotNull { optJSONObject(it)?.let(f) }
 
 /** A programme in the guide.  [reminder] when a reminder is set for it on the TV. */
-data class Programme(val title: String, val start: Long, val end: Long, val desc: String = "", val reminder: Boolean = false) {
+data class Programme(val title: String, val start: Long, val end: Long, val desc: String = "", val reminder: Boolean = false, val movie: ProgMovie? = null) {
     fun on(now: Long) = start <= now && end > now
     companion object {
         fun from(j: JSONObject) = j.optString("t").takeIf { it.isNotBlank() }?.let {
-            Programme(it, j.optLong("s"), j.optLong("e"), j.optString("d", ""), j.optInt("r") == 1)
+            Programme(it, j.optLong("s"), j.optLong("e"), j.optString("d", ""), j.optInt("r") == 1,
+                j.optJSONObject("m")?.let { m -> ProgMovie(m.optString("i"), m.optString("y"), m.optString("g"), m.optString("r")) })
         }
+    }
+}
+
+/** A guide programme the TV found to be a movie (TMDB, with its token): poster, year, genres, rating. */
+data class ProgMovie(val poster: String, val year: String, val genre: String, val rating: String) {
+    val facts get() = listOf("Movie", year, genre, if (rating.isNotBlank()) "★ $rating" else "").filter { it.isNotBlank() }.joinToString("  ·  ")
+}
+
+/** Movies on now: one movie, and the channels showing it ([OnNowChan]). */
+data class OnNowChan(val key: String, val name: String, val logo: String, val start: Long, val end: Long, val reminder: Boolean)
+data class OnNowMovie(val id: String, val title: String, val year: String, val genre: String, val runtime: String, val rating: String, val plot: String,
+                      val poster: String, val backdrop: String, val logo: String, val live: Boolean, val chans: List<OnNowChan>) {
+    val first get() = chans.first()
+    val facts get() = listOf(year, runtime, genre, if (rating.isNotBlank()) "★ $rating" else "").filter { it.isNotBlank() }.joinToString("  ·  ")
+}
+data class OnNow(val off: Boolean, val msg: String, val on: List<OnNowMovie>, val soon: List<OnNowMovie>, val looking: Boolean) {
+    companion object {
+        private fun movie(j: JSONObject) = OnNowMovie(j.optString("id"), j.optString("title"), j.optString("year"), j.optString("genre"), j.optString("runtime"), j.optString("rating"),
+            j.optString("plot"), j.optString("poster"), j.optString("backdrop"), j.optString("logo"), j.optInt("live") == 1,
+            j.optJSONArray("chans").list { OnNowChan(it.optString("k"), it.optString("n"), it.optString("logo"), it.optLong("s"), it.optLong("e"), it.optInt("r") == 1) }).takeIf { it.chans.isNotEmpty() }
+        fun from(j: JSONObject) = OnNow(j.optBoolean("off"), j.optString("msg"), j.optJSONArray("on").list { movie(it) }, j.optJSONArray("soon").list { movie(it) }, j.optInt("looking") == 1)
     }
 }
 

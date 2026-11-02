@@ -37,7 +37,7 @@ const t0 = Date.now() - 20 * 60000;
 const chans = Array.from({ length: 40 }, (_, i) => ({ k: 'fake|' + (i + 1), n: NAMES[i % 10] + (i >= 10 ? ' ' + (Math.floor(i / 10) + 1) : ''), num: i + 1, logo: '', fav: i < 3 ? 1 : 0, now: { t: SHOWS[i % 10], s: t0, e: t0 + 60 * 60000 } }));
 const groups = [{ id: 'fav', name: 'Favorites', keys: chans.slice(0, 3).map((x) => x.k) }, { id: 'news', name: 'News', keys: chans.filter((x, i) => i % 10 < 4).map((x) => x.k) }, { id: 'sports', name: 'Sports', keys: chans.filter((x, i) => i % 10 >= 4 && i % 10 < 8).map((x) => x.k) }];
 let seq = 0, playing = chans[0], paused = false;
-function sendState() { return ctl('/companion/state', { state: { tab: 'live', full: true, playing: { k: playing.k, name: playing.n, num: playing.num, logo: '', group: 'News' }, now: playing.now, next: { t: 'Late Edition', s: t0 + 60 * 60000 }, paused, inputs: [{ id: 1, label: 'Rename group', type: 'text', value: 'Sports', submit: 1 }], vod2: { movies: true, series: true, media: true } } }); }
+function sendState() { return ctl('/companion/state', { state: { tab: 'live', full: true, playing: { k: playing.k, name: playing.n, num: playing.num, logo: '', group: 'News' }, now: playing.now, next: { t: 'Late Edition', s: t0 + 60 * 60000 }, paused, inputs: [{ id: 1, label: 'Rename group', type: 'text', value: 'Sports', submit: 1 }], vod2: { movies: true, series: true, media: true, onnow: true } } }); }
 async function tivibro() {
   await sendState();
   for (;;) {
@@ -84,6 +84,14 @@ async function answer(cmd) {
     look.rows[1].on = a.op === 'toggle' && a.i === 1 ? a.on : look.rows[1].on;
     if (a.op === 'choice' && a.i === 2) { look.rows[2].cur = a.v; look.rows[2].value = look.rows[2].options[a.v]; }
     return a.op === 'page' ? say(look) : say({ msg: '', page: look });
+  }
+  // Movies on now: made-up films on the made-up channels, with posters and backdrops from posters.js.
+  if (cmd.what === 'onnow') {
+    const now = Date.now(), H = 3600e3;
+    const one = (f, n, live) => ({ id: 'tmdb:' + (100 + n), title: f[0], year: String(f[1]), genre: f[2], runtime: f[3], rating: (6.5 + (n % 5) / 4).toFixed(1), plot: f[4],
+      poster: art(n), backdrop: 'http://10.0.2.2:' + POSTERS + '/b/' + n + '.png', logo: '', live: live ? 1 : 0,
+      chans: chans.slice(n * 2, n * 2 + (n % 3) + 1).map((c) => ({ k: c.k, n: c.n, logo: '', s: live ? now - (20 + n * 9) * 60000 : now + (25 + n * 20) * 60000, e: live ? now + (40 + n * 11) * 60000 : now + (25 + n * 20) * 60000 + 1.8 * H, r: 0 })) });
+    return say({ on: FILMS.slice(0, 5).map((f, n) => one(f, n, true)), soon: FILMS.slice(5).map((f, n) => one(f, n + 5, false)), looking: 0 });
   }
   if (cmd.what === 'vis') {
     if (a.op === 'save') { const n = Object.keys(a.changes || {}).length; return say({ msg: n ? n + ' changed on the TV' : 'Nothing changed' }); }

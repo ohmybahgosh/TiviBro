@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Phone app: movie posters.**  An **On now** tab shows the TV's Movies on now as big posters (On now and Starting soon); a tap opens the movie with its backdrop, title logo, plot and every channel showing it, to watch on the TV or set a reminder (asked first).  Movies in the phone's guide and schedules show their poster and year, genres and rating.
+
 ## 0.6.0 (alpha 54, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

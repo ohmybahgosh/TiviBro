@@ -315,6 +315,8 @@ data class NowState(
     val movies: Boolean? = null, val series: Boolean? = null,
     /** Whether the TV has My media sources (its own movies); null from an older TiviBro (then no tab). */
     val media: Boolean? = null,
+    /** Whether the TV finds the movies on now (a TMDB token saved there): the On now tab. */
+    val onnow: Boolean = false,
 ) {
     companion object {
         fun from(j: JSONObject): NowState {
@@ -330,6 +332,7 @@ data class NowState(
                 busy = j.optBoolean("busy"),
                 movies = s?.optJSONObject("vod2")?.optBoolean("movies"), series = s?.optJSONObject("vod2")?.optBoolean("series"),
                 media = s?.optJSONObject("vod2")?.takeIf { it.has("media") }?.optBoolean("media"),
+                onnow = s?.optJSONObject("vod2")?.optBoolean("onnow") == true,
                 inputs = s?.optJSONArray("inputs")?.let { a -> (0 until a.length()).mapNotNull { TvInput.from(a.optJSONObject(it)) } }.orEmpty(),
             )
         }

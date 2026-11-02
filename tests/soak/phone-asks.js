@@ -112,6 +112,24 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
   // The log for the phone (sealed): the Report a problem text.
   const logAns = await ask('logs', {}, { seal: true });
+  // Movies on now: off without a TMDB token; with one, the movies and their channels.
+  const onOff = await ask('onnow', {});
+  ok('Movies on now: off without a TMDB token', onOff.off === true && /TMDB/.test(onOff.msg), JSON.stringify(onOff));
+  await ev(() => {
+    Movies.reset();
+    let n = 0; const by = {};
+    Media.guideLookup = (t) => { if (!(t in by)) by[t] = n++ < 4 ? { id: 'tmdb:' + n, title: 'Film ' + n, year: '2020', poster: 'http://x/p' + n + '.jpg', backdropHd: 'http://x/b' + n + '.jpg', logo: '', genre: 'Drama', rating: '7' } : null; return Promise.resolve(by[t] ? { metadata: by[t] } : { miss: true }); };
+    Media.movieById = () => Promise.resolve({});
+    MediaStore.setTmdbToken('mock-user-token-123456789012345');
+  });
+  for (let n = 0; n < 40 && !(await ev(() => Movies.shelves().on.length + Movies.shelves().soon.length)); n++) await wait(1500);
+  const mv = await ask('onnow', {});
+  const all = (mv.on || []).concat(mv.soon || []);
+  ok('Movies on now: posters, backdrops and the channels showing each', !mv.off && all.length > 0 && all.every((m) => m.title && /p\d\.jpg$/.test(m.poster) && /b\d\.jpg$/.test(m.backdrop) && m.chans.length && m.chans[0].k && m.chans[0].s), JSON.stringify(mv).slice(0, 300));
+  const sched = await ev(() => { const x = Movies.shelves(); const g = x.on[0] || x.soon[0]; return g && g.c.k; });
+  if (sched) { const sc = await ask('schedule', { k: sched }); ok('the schedule marks the movie with its poster', sc.progs.some((p) => p.m && /p\d\.jpg$/.test(p.m.i)), JSON.stringify(sc.progs.filter((p) => p.m)).slice(0, 200)); }
+  await ev(() => { MediaStore.setTmdbToken(''); Movies.reset(); });
+
   // Show or hide channels in a group, hidden ones listed too; saved in one go.
   const gk = await ev(() => { const c = Library.data.channels[0]; return { k: c.k, g: c.g, n: Library.channels(c.g, true).length }; });
   const vis = await ask('vis', { op: 'list', group: '', k: gk.k });

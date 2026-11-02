@@ -61,6 +61,10 @@ import app.tivibro.phone.proto.Chan
 import app.tivibro.phone.proto.GuideRow
 import app.tivibro.phone.proto.Lineup
 import app.tivibro.phone.proto.Programme
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import app.tivibro.phone.proto.Schedule
 import app.tivibro.phone.proto.TbException
 import kotlinx.coroutines.launch
@@ -176,6 +180,7 @@ private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long,
                         if (first.reminder) { Spacer(Modifier.width(6.dp)); Icon(Icons.Rounded.NotificationsActive, "Reminder set", tint = Accent2, modifier = Modifier.size(14.dp)) }
                     }
                     Text(time(first.start) + " – " + time(first.end), color = Muted, style = MaterialTheme.typography.labelSmall)
+                    first.movie?.let { mv -> Text(mv.facts, color = Accent2, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     if (first.on(now)) {
                         Spacer(Modifier.height(4.dp))
                         LinearProgressIndicator(progress = { ((now - first.start).toFloat() / (first.end - first.start)).coerceIn(0f, 1f) }, color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth(0.7f).height(3.dp))
@@ -185,6 +190,10 @@ private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long,
                     }
                 }
             }
+        }
+        first?.movie?.poster?.takeIf { it.isNotBlank() }?.let { url ->
+            Spacer(Modifier.width(8.dp))
+            AsyncImage(model = url, contentDescription = first.title, contentScale = ContentScale.Crop, modifier = Modifier.width(48.dp).height(72.dp).clip(RoundedCornerShape(6.dp)))
         }
         IconButton(onClick = onPlay) {
             Icon(Icons.Rounded.PlayArrow, if (playing) "On the TV now" else "Watch " + c.name + " on TV", tint = if (playing) Accent2 else Muted)
@@ -262,8 +271,13 @@ private fun ProgrammeRow(p: Programme, now: Long, reminder: Boolean, open: Boole
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick).background(if (on) Panel else Color.Transparent).padding(16.dp, 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(time(p.start), color = if (on) Accent2 else Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(72.dp))
+            p.movie?.poster?.takeIf { it.isNotBlank() }?.let { url ->
+                AsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Crop,
+                    modifier = Modifier.padding(end = 10.dp).width(if (open) 80.dp else 36.dp).height(if (open) 120.dp else 54.dp).clip(RoundedCornerShape(6.dp)))
+            }
             Column(Modifier.weight(1f)) {
                 Text(p.title, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, color = if (past) Muted else TextHi, maxLines = if (open) 3 else 1, overflow = TextOverflow.Ellipsis)
+                p.movie?.let { mv -> Text(mv.facts, color = Accent2, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 if (on) {
                     Spacer(Modifier.height(4.dp))
                     LinearProgressIndicator(progress = { ((now - p.start).toFloat() / (p.end - p.start)).coerceIn(0f, 1f) }, color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth().height(3.dp))

@@ -87,6 +87,17 @@ if [ -n "$(find_text "Show or hide channels")" ]; then
   echo "Show or hide channels lists the group with ticks"
   adb shell input keyevent KEYCODE_BACK; sleep 2
 else echo "Show or hide channels not on screen: skipped"; adb shell input keyevent KEYCODE_BACK; sleep 2; fi
+# Movies on now: big posters, and a movie's sheet with its channels.
+if [ -n "$(find_text "On now")" ]; then
+  tap "On now"
+  shot 9d-on-now 6
+  [ -n "$(find_text "Starting soon")" ] || { echo "On now did not show its shelves"; exit 1; }
+  tap "Iron Orchard" || true
+  shot 9e-on-now-movie 5
+  [ -n "$(find_text "Iron Orchard")" ] || { echo "On now did not open the movie"; exit 1; }
+  echo "On now shows posters and opens a movie"
+  adb shell input keyevent KEYCODE_BACK; sleep 2
+else echo "On now tab not on screen: skipped"; fi
 tap "Movies"
 shot 10-movies 6
 tap "Movie 1"

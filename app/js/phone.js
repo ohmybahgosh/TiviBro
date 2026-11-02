@@ -112,7 +112,13 @@ var Phone = (function () {
       })
       .then(function () { pushState(true); }, function () {});
   }
-  function prog(p) { return { t: p.t, s: p.s, e: p.e }; }
+  function prog(p, c) {
+    var x = { t: p.t, s: p.s, e: p.e };
+    // A movie (movies.js, TMDB): its poster and a few facts for the phone's guide and schedule.
+    var m = c && typeof Movies !== 'undefined' ? Movies.of(c, p) : null;
+    if (m) x.m = { i: m.poster || '', y: m.year || '', g: m.genre || '', r: m.rating || '' };
+    return x;
+  }
   function hasReminder(k, s) { return (Store.edits.reminders || []).some(function (r) { return r.k === k && r.s === s; }); }
   function chan(k) {
     var c = Library.find(k);
@@ -131,7 +137,7 @@ var Phone = (function () {
         var l = Epg.request(c);
         if (!l) { pending++; return { k: c.k }; }
         var out = [];
-        for (var i = 0; i < l.length && out.length < 3; i++) if (l[i].e > at) { var x = prog(l[i]); if (hasReminder(c.k, l[i].s)) x.r = 1; out.push(x); }
+        for (var i = 0; i < l.length && out.length < 3; i++) if (l[i].e > at) { var x = prog(l[i], c); if (hasReminder(c.k, l[i].s)) x.r = 1; out.push(x); }
         return { k: c.k, p: out, a: c.arch ? 1 : 0 };
       });
       return { total: list.length, offset: off, rows: rows, pending: pending };
@@ -144,7 +150,7 @@ var Phone = (function () {
       var list = l.filter(function (p) { return p.e > from && p.s < to; }).slice(0, 700);
       if (list.length) Epg.desc(c, list[0]);
       return { k: c.k, arch: c.arch || 0, descPending: !!Epg.inHelper && list.some(function (p) { return p.d == null; }),
-        progs: list.map(function (p) { var x = prog(p); if (p.d) x.d = String(p.d).slice(0, 800); if (hasReminder(c.k, p.s)) x.r = 1; return x; }) };
+        progs: list.map(function (p) { var x = prog(p, c); if (p.d) x.d = String(p.d).slice(0, 800); if (hasReminder(c.k, p.s)) x.r = 1; return x; }) };
     },
     remind: function (a) {
       var c = chan(a.k), s = +a.s, l = Epg.request(c) || [], p = l.filter(function (x) { return x.s === s; })[0];
@@ -189,6 +195,20 @@ var Phone = (function () {
       var team = Teams.ofChannel(c);
       return { k: c.k, name: Library.name(c), provider: c.n, renamed: !!E.renames[c.k], hidden: !!E.hiddenChannels[c.k], group: Library.groupName(c.g), groups: mine(), msg: msg,
         team: team ? { id: team.id, name: team.name, on: Teams.follows(team.id) ? 1 : 0 } : null };
+    },
+    /* Movies on now (onnow.js on the TV): the movies on now and starting in the next three hours, each
+       once with the channels showing it.  { off } when there's no TMDB token or it's switched off. */
+    onnow: function () {
+      if (typeof Movies === 'undefined' || !Movies.on()) return { off: true, msg: 'Save a TMDB token on the TV (Settings > Guide, start screen, reminders) to see the movies on now.' };
+      var sh = Movies.shelves();
+      function one(g) {
+        var m = g.m;
+        Movies.fill(m);
+        return { id: m.id, title: m.title, year: m.year || '', genre: m.genre || '', runtime: m.runtime || '', rating: m.rating || '', plot: m.plot || '',
+          poster: m.poster || '', backdrop: m.backdropHd || m.backdrop || '', logo: m.logo || '', live: g.live ? 1 : 0,
+          chans: g.list.map(function (x) { return { k: x.c.k, n: Library.name(x.c), logo: Views.logoOf(x.c) || '', s: x.p.s, e: x.p.e, r: hasReminder(x.c.k, x.p.s) ? 1 : 0 }; }) };
+      }
+      return { on: sh.on.map(one), soon: sh.soon.map(one), looking: Movies.pending > 0 ? 1 : 0 };
     },
     /* Show or hide channels in one group (the channel sheet's "Show or hide channels…"), hidden ones too.
        op list: the group's channels with on (shown); op save: { changes: { key: true (show) | false } }.
@@ -299,7 +319,7 @@ var Phone = (function () {
     if (ins.length) out.inputs = ins;
     // Movies and Shows tabs on the phone only when the provider has them.
     var p = Store.playlist || {}, vd = p.vod || {};
-    out.vod2 = { movies: p.type === 'xtream' && !!vd.movies, series: p.type === 'xtream' && !!vd.series, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0 };
+    out.vod2 = { movies: p.type === 'xtream' && !!vd.movies, series: p.type === 'xtream' && !!vd.series, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0, onnow: typeof Movies !== 'undefined' && Movies.on() };
     return out;
   }
   function pushState(soon) {

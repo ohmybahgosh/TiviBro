@@ -17,6 +17,7 @@ import app.tivibro.phone.proto.BackupFile
 import app.tivibro.phone.proto.GuidePage
 import app.tivibro.phone.proto.Schedule
 import app.tivibro.phone.proto.VisList
+import app.tivibro.phone.proto.OnNow
 import app.tivibro.phone.proto.VodCat
 import app.tivibro.phone.proto.VodInfo
 import app.tivibro.phone.proto.VodPage
@@ -339,6 +340,9 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         if (op != "info") { if (r.msg.isNotBlank()) say(r.msg); loadLineup(id, true) }
         return r
     }
+
+    /** Movies on now on the TV's channels (TMDB, with the TV's token). */
+    suspend fun onNow(id: String): OnNow = OnNow.from(ask(id, "onnow", JSONObject(), timeoutMs = 25_000))
 
     /** Show or hide channels: the group's channels ([group] blank: the channel [k]'s own group). */
     suspend fun visList(id: String, group: String, k: String): VisList =
