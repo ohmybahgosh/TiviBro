@@ -1843,7 +1843,7 @@ var Guide = (function () {
     var segs = [];
     if (l) for (var i = 0; i < l.length; i++) {
       var p = l[i];
-      if (p.e <= t0 || p.s >= t1) continue;
+      if (p.e <= t0 || p.s >= t1 || p.e <= p.s) continue;              // p.e <= p.s: overlapped by the next (Epg.untangle)
       segs.push({ p: p, a: Math.max(0, x(p.s)), b: Math.min(PXW, x(p.e)) });
     }
     // A programme with only minutes showing (one ending just after the guide's start, a short filler)

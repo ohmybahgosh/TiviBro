@@ -24,6 +24,10 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 60000 });
   await page.waitForTimeout(2500);
 
+  // A guide with two programmes at once (an old schedule left in): the later start wins, positions kept.
+  const un = await ev(() => { const H = 3600e3, b = 1e12, l = [{ s: b, e: b + 3 * H, t: 'National Treasure: Book of Secrets' }, { s: b + 25 * 60000, e: b + 2.9 * H, t: 'X-Men: The Last Stand' }, { s: b + 2.9 * H, e: b + 4 * H, t: 'Next' }];
+    Epg.untangle(l); return l.map((p) => p.t + ' ' + (p.e - p.s) / 60000); });
+  ok('overlapping programmes: the earlier ends where the later starts', un.join(' | ') === 'National Treasure: Book of Secrets 25 | X-Men: The Last Stand 149 | Next 66', un.join(' | '));
   ok('no token: no group', await ev(() => !Library.groups().some((g) => g.id === Library.MOVIES)));
   // Every long programme on now or soon, as the scan would find them; TMDB (made up) knows two of them.
   const seen = await ev((mock) => {

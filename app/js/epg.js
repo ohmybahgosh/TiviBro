@@ -96,7 +96,7 @@ var Epg = (function () {
         var e = +p.stop_timestamp ? +p.stop_timestamp * 1000 : Date.parse((p.end || p.stop || '').replace(' ', 'T') + 'Z');
         return { s: s + off, e: e + off, t: U.b64utf8(p.title), d: U.b64utf8(p.description) };
       }).filter(function (p) { return p.e > p.s && isFinite(p.s); }).sort(function (a, b) { return a.s - b.s; });
-      cache.set(k, { at: Date.now(), list: list });
+      cache.set(k, { at: Date.now(), list: untangle(list) });
       emit(k);
     }).catch(function () { cache.set(k, { at: Date.now() - TTL + 60000, list: [] }); });
   }
@@ -351,10 +351,20 @@ var Epg = (function () {
     return list;
   }
 
+  /* Guides sometimes have two programmes at once on a channel: an old schedule left in next to the new
+     one (FX with National Treasure 10:00pm-1:00am and X-Men 10:25pm-12:55am, X-Men airing).  The later
+     start is what airs, so the earlier one ends there.  Only ends move: descriptions the helper keeps
+     are found by a programme's place in the list. */
+  function untangle(list) {
+    if (!list || list.length < 2) return list;
+    for (var i = 1; i < list.length; i++) if (list[i].s < list[i - 1].s) { list.sort(function (a, b) { return a.s - b.s; }); break; }   // read in the app: no positions to keep
+    for (var j = 0; j < list.length - 1; j++) { var a = list[j], b = list[j + 1]; if (a.e > b.s) a.e = Math.max(a.s, b.s); }
+    return list;
+  }
   function ingest(c) {
     var t = Date.now();
     cache.clear();
-    findMemo = {}; for (var k in c.map) cache.set(k, { at: t + 1e12, list: c.map[k] });   // XML data does not expire per row
+    findMemo = {}; for (var k in c.map) cache.set(k, { at: t + 1e12, list: untangle(c.map[k]) });   // XML data does not expire per row
     icons = c.icons || {};
     chList = c.channels || [];
     status = { at: c.at || 0, sources: c.report || [] };
@@ -641,7 +651,7 @@ var Epg = (function () {
   }
   function ingestPub(c) {
     var t = Date.now();
-    findMemo = {}; for (var k in c.map) cache.set(k, { at: t + 1e12, list: c.map[k] });
+    findMemo = {}; for (var k in c.map) cache.set(k, { at: t + 1e12, list: untangle(c.map[k]) });
     for (var i in c.icons) if (!icons[i]) icons[i] = c.icons[i];
     pubMatched = c.pubMatch || {};
     pubList = c.channels || [];
@@ -794,7 +804,7 @@ var Epg = (function () {
   }
 
   return {
-    init: init, request: request, nowNext: nowNext, search: search, during: during, findDesc: findDesc, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc,
+    untangle: untangle, init: init, request: request, nowNext: nowNext, search: search, during: during, findDesc: findDesc, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc,
     get inHelper() { return hMode; },
     icon: function (id) { return icons[id] || ''; },
     guideChannels: function () { return pubList.length ? chList.concat(pubList) : chList; },
