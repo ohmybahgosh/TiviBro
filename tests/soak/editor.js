@@ -115,6 +115,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
   await step('playlists', async () => {
     await go('playlists');
+    await ed.click('#addSeg button[data-t="xtream"]'); await ed.waitForTimeout(200);
     await ed.fill('#aName', 'Second'); await ed.fill('#aServer', 'http://127.0.0.1:8077'); await ed.fill('#aUser', 'demo'); await ed.fill('#aPass', 'demo');
     await ed.click('#aGo'); await ed.waitForFunction(() => /Added|channels|failed|Error/i.test(document.getElementById('addMsg').innerText), null, { timeout: 30000 });
     ok('add a playlist (TV tests the login)', await tvState(() => Store.settings.playlists.length === 2), await ed.innerText('#addMsg'));

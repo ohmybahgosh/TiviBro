@@ -138,5 +138,15 @@ tap "More"
 tap "Backups"
 tap "Back up now"
 shot 15-backups 6
+# Editing that backup's channels on the phone, without the TV: the editor copy kept when Edit channels opened above.
+tap "More"
+tap "Edit channels on the phone"
+shot 16-backup-offline-editor 10
+[ -n "$(find_text "Overview")" ] || { echo "The offline editor did not open"; adb exec-out screencap -p > "$OUT/fail.png"; adb logcat -d | grep -E "chromium|TiviBro|FATAL" | tail -40; exit 1; }
+adb shell input keyevent KEYCODE_BACK; sleep 3
+tap "More"
+tap "Change settings"
+shot 17-backup-settings 4
+tap "Cancel"
 if adb logcat -d | grep -E "FATAL EXCEPTION|AndroidRuntime: Process: $PKG" ; then echo "The app crashed"; adb logcat -d | grep -A30 "FATAL EXCEPTION" | head -60; exit 1; fi
 echo "no crashes"

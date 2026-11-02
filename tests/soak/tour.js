@@ -42,7 +42,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await shot('tv-tour-welcome');
 
   // Phone or computer: QR code, address and password, then back.
-  await key('ArrowDown'); ok('second choice is the phone', /phone or computer/.test(await focused()));
+  ok('it asks about adult channels first, focused', /Hide adult channels/.test(await focused()), await focused());
+  await key('ArrowDown'); await key('ArrowDown'); ok('then step by step, then the phone', /phone or computer/.test(await focused()));
   await key('Enter', 2500);
   const qr = await ev(() => { const s = document.querySelector('.tour-qr svg'); return { qr: !!s, txt: document.getElementById('viewSetup').innerText }; });
   ok('phone: QR code, address and password', qr.qr && /Address/.test(qr.txt) && /Password/.test(qr.txt), qr.txt.replace(/\s+/g, ' ').slice(0, 200));
@@ -117,9 +118,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await next();
 
   ok('look step', await step() === 'look', await step());
-  const acc0 = await ev(() => Store.settings.accent);
+  const acc0 = await ev(() => (Store.settings.palette || '') + '|' + Store.settings.accent);
   await key('ArrowRight', 400);
-  ok('look: accent changes live', await ev(() => Store.settings.accent) !== acc0);
+  ok('look: the theme changes live', await ev(() => (Store.settings.palette || '') + '|' + Store.settings.accent) !== acc0);
   await key('ArrowLeft', 400);
   await shot('tv-tour-look');
   await next();

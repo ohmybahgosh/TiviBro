@@ -23,6 +23,17 @@ function ctl(u, body) {
 }
 (async () => {
   await new Promise((r) => editor.start(18787, 'ABCD-EFGH', r));
+  // The editor's channel list (what TiviBro sends it), so it opens on a real page and the phone keeps a copy
+  // for editing backups without the TV (OfflineEditorScreen.kt).
+  await new Promise((resolve) => {
+    const res = Object.assign(new (require('events'))(), { setHeader() {}, writeHead() {}, end() { resolve(); } });
+    const req = new (require('events'))(); req.method = 'POST'; req.url = '/editor/snapshot'; req.headers = {};
+    editor.control(req, res, '/editor/snapshot');
+    const groups = [{ id: 'news', name: 'News' }, { id: 'sports', name: 'Sports' }, { id: 'more', name: 'More' }];
+    const channels = Array.from({ length: 40 }, (_, i) => ({ k: 'fake|' + (i + 1), n: ['Nova News 24', 'Metro Report', 'Global Desk', 'Capitol Wire', 'Big Ten 10', 'Big Ten 14', 'Arena Sports', 'Goal Line', 'Kitchen Live', 'Wild Planet'][i % 10], g: groups[i % 10 < 4 ? 0 : i % 10 < 8 ? 1 : 2].id, num: i + 1, logo: '', arch: 0, epg: '', has: false }));
+    process.nextTick(() => { req.emit('data', Buffer.from(JSON.stringify({ groups, channels, setup: false, tz: '', playlist: { id: 'p1', name: 'Fake', type: 'xtream' }, playlists: [{ id: 'p1', name: 'Fake', type: 'xtream', host: 'fake.example', active: true }],
+      guide: { channels: [], mode: 'short', sources: 0, xml: false, loading: false }, edits: {}, names: null, drafts: {}, appliedRev: 0 }))); req.emit('end'); });
+  });
   await require('./posters.js').serve(POSTERS);
   await ctl('/companion/set', { on: true });
   const s = await ctl('/companion/pair', { open: true });
