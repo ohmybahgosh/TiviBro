@@ -53,6 +53,9 @@ ok('a city two teams share is not enough', ids(Teams.named('NBA: Los Angeles vs 
 ok('club cities', ids(Teams.named('MLS on TSN: Atlanta vs. Toronto', '', all)) === 'mls:atl,mls:tor');
 ok('nickname after a colon', ids(Teams.named('NFL on TSN: Browns vs. Steelers', '', all)) === 'nfl:cle,nfl:pit');
 ok('nickname after its own city', ids(Teams.named('Hockey: Wild vs. Capitals (Capitals Broadcast)', 'USA ESPN+ 133', all)) === 'nhl:min,nhl:wsh');
+ok('a game is a game', Teams.isGame('Minnesota Vikings at Detroit Lions', 'NFL | DETROIT LIONS') && Teams.isGame('WPG VS CAR (TVAS Feed )', 'USA NHL 02'));
+ok('a placeholder is no game', !Teams.isGame('Future Events for Detroit Tigers not found yet', 'MLB | DETROIT TIGERS') && !Teams.isGame('No Future Events Scheduled', 'NHL | DETROIT RED WINGS'));
+ok('a "Next game" block is no game to remind at', !Teams.isGame('Next game: Detroit Red Wings at Florida Panthers at 11/02/2026 07:00 PM (US/Eastern)', 'NHL | FLORIDA PANTHERS'));
 ok('Athletics alone are no team', ids(Teams.named('World Athletics Championships', '', all)) === '');
 
 // Team channels and leagues

@@ -378,6 +378,9 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         r.optJSONObject("data")?.optJSONObject("backup")?.let { backups.save(tv.id, it, auto = true) }
     }
 
+    /** TiviBro's log from the TV (app and helper), as Report a problem makes it: names of providers and servers taken out. */
+    suspend fun tvLog(id: String): String = ask(id, "logs", seal = true, timeoutMs = 45_000, tries = 2).optString("text")
+
     suspend fun backupNow(id: String): SavedBackup = withContext(Dispatchers.IO) {
         val b = ask(id, "backup", seal = true, timeoutMs = 60_000).optJSONObject("backup") ?: throw TbException("The TV sent no backup.")
         backups.save(id, b, auto = false)

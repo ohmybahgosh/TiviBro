@@ -38,6 +38,7 @@ var Watch = (function () {
 
   // Look now.  quiet: no message (the first look after adding a word says its own thing).
   function scan(quiet) {
+    tidy();
     var teams = typeof Teams !== 'undefined' && Teams.remindOn();
     if ((!list().length && !teams) || !L.data.channels.length) return [];
     lastScan = Date.now();
@@ -52,7 +53,7 @@ var Watch = (function () {
       if (s[k] || !Parental.blockedOk(r.c)) return;
       if (remind) {
         if ((pending[r.w] || 0) >= PER_WORD) return;
-        if (!reminded(r.c, r.p)) { Store.edits.reminders.push({ k: r.c.k, s: r.p.s, e: r.p.e, t: r.p.t, w: r.w }); pending[r.w] = (pending[r.w] || 0) + 1; }
+        if (!reminded(r.c, r.p)) { Store.edits.reminders.push(mark({ k: r.c.k, s: r.p.s, e: r.p.e, t: r.p.t, w: r.w })); pending[r.w] = (pending[r.w] || 0) + 1; }
       } else if (found.length >= PER_WORD * 2) return;
       s[k] = r.p.e;
       found.push(r);
@@ -89,7 +90,29 @@ var Watch = (function () {
     Store.saveEdits();
   }
 
+  /* Team reminders that aren't games: an earlier TiviBro (alpha 45 to 48) set reminders for team
+     channels' placeholders ("Future events for Detroit Tigers not found yet", "No future events scheduled")
+     and their "Next game: ..." blocks.  Those go, here and on the helper, at every start and look. */
+  // A team reminder set now was checked as a game (Teams.games): say so, so tidy() never doubts it.
+  function mark(r) { if (/^team:/.test(r.w || '')) r.g = 1; return r; }
+  function tidy() {
+    if (typeof Teams === 'undefined' || !Teams.isGame) return 0;
+    var rem = Store.edits.reminders, now = Date.now(), keep = rem.filter(function (r) {
+      if (!/^team:/.test(r.w || '') || r.s <= now || r.g) return true;   // g: checked as a game when it was set
+      var c = L.find(r.k);
+      return Teams.isGame(r.t, c ? c.n : '');
+    });
+    var gone = rem.length - keep.length;
+    if (!gone) return 0;
+    Store.edits.reminders = keep;
+    Store.saveEdits();
+    Log.info('watch', 'Removed ' + gone + ' team reminder(s) that were not games');
+    if (typeof Remind !== 'undefined' && Remind.sync) Remind.sync(true);
+    return gone;
+  }
+
   function start() {
+    tidy();
     clearInterval(timer);
     timer = setInterval(function () { scan(false); }, 10 * 60000);
     // A guide that just loaded is the best moment to look.
@@ -97,5 +120,5 @@ var Watch = (function () {
     Epg.onUpdate(function (k) { if (!k) soon(); });
   }
 
-  return { list: list, add: add, remove: remove, has: has, upcoming: upcoming, scan: scan, start: start };
+  return { tidy: tidy, list: list, add: add, remove: remove, has: has, upcoming: upcoming, scan: scan, start: start };
 })();

@@ -342,9 +342,9 @@ function create(opts) {
      for TiviBro's answer (each kind has its own limit); TiviBro is opened first if it is closed,
      except with noOpen (the phone's automatic backups never open TiviBro over something else). */
   var ASKS = { guide: 30000, schedule: 30000, remind: 15000, fav: 15000, chan: 15000, settings: 20000, vodcats: 90000, voditems: 90000, vodinfo: 30000, vodplay: 20000,
-    playlist: 120000, input: 10000, backup: 45000, restore: 60000 };
+    playlist: 120000, input: 10000, backup: 45000, restore: 60000, logs: 30000 };
   // Logins and backups only travel sealed.
-  var SEALED = { playlist: 1, input: 1, backup: 1, restore: 1, settings: 1 };
+  var SEALED = { playlist: 1, input: 1, backup: 1, restore: 1, settings: 1, logs: 1 };
   function phoneAsk(j, p, reply, sealed) {
     if (!j || typeof j.what !== 'string' || !Object.prototype.hasOwnProperty.call(ASKS, j.what)) return reply(400, { error: 'unknown question', code: 'bad' });
     if (SEALED[j.what] && !sealed) return reply(400, { error: 'This needs a sealed request.', code: 'sealed' });

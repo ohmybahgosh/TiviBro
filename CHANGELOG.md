@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **No more reminders for "games" that aren't.**  An earlier version set My teams reminders for team channels' placeholders ("Future events for Detroit Tigers not found yet", "No future events scheduled") and their "Next game" listings.  TiviBro now removes those from the reminder list when it starts, and "no future events" style listings never count as games.
+- **Phone app: TiviBro log.**  **Settings > TiviBro log** in the phone app shows the TV's log (the app's and the network helper's), the same as Report a problem with provider and server names taken out.  **Problems only** and **Share**.
+
 ## 0.6.0 (alpha 50, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

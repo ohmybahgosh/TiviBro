@@ -87,6 +87,8 @@ fun SettingsTab(model: AppModel, id: String) {
     var error by remember { mutableStateOf<String?>(null) }
     var busy by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf<SetRow?>(null) }
+    var showLog by remember { mutableStateOf(false) }
+    if (showLog) { LogScreen(model, id) { showLog = false }; return }
 
     // Every request carries where we are and the PIN (if one was typed); the answer may say "locked".
     fun send(op: String, extra: JSONObject = JSONObject(), then: (JSONObject) -> Unit) {
@@ -138,6 +140,15 @@ fun SettingsTab(model: AppModel, id: String) {
                             Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
                         }
                         HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp)
+                    }
+                    item {
+                        Row(Modifier.fillMaxWidth().clickable { showLog = true }.padding(16.dp, 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Column(Modifier.weight(1f)) {
+                                Text("TiviBro log")
+                                Text("What TiviBro on the TV did and what went wrong, to read or share", color = Muted, style = MaterialTheme.typography.bodySmall)
+                            }
+                            Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
+                        }
                     }
                 }
             }

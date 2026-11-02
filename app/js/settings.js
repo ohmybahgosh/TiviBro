@@ -596,7 +596,7 @@ var Settings = (function () {
         var set = Store.edits.reminders.some(function (x) { return x.k === r.c.k && x.s === r.p.s; });
         out.push(action(r.p.t, U.day(r.p.s) + ' ' + U.hhmm(r.p.s) + '   ' + L.name(r.c), function () {
           var rem = Store.edits.reminders, i = rem.findIndex(function (x) { return x.k === r.c.k && x.s === r.p.s; });
-          if (i >= 0) { rem.splice(i, 1); Store.edits.watchSeen = Store.edits.watchSeen || {}; Store.edits.watchSeen[r.p.t.toLowerCase() + '|' + r.p.s] = r.p.e; U.toast('Reminder cancelled'); } else { rem.push({ k: r.c.k, s: r.p.s, e: r.p.e, t: r.p.t, w: r.w }); U.toast('Reminder set'); }
+          if (i >= 0) { rem.splice(i, 1); Store.edits.watchSeen = Store.edits.watchSeen || {}; Store.edits.watchSeen[r.p.t.toLowerCase() + '|' + r.p.s] = r.p.e; U.toast('Reminder cancelled'); } else { rem.push({ k: r.c.k, s: r.p.s, e: r.p.e, t: r.p.t, w: r.w, g: /^team:/.test(r.w || '') ? 1 : undefined }); U.toast('Reminder set'); }
           Store.saveEdits(); build();
         }, function () { return set ? 'Reminder set' : 'Remind me'; }));
       });

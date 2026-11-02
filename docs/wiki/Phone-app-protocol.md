@@ -91,12 +91,13 @@ All signed like the calls above.  TiviBro carries out each command once; if Tivi
 | `playlist` | `link` (the provider's full link), `name`, `use` (switch to it) | `{ msg }`.  Adds the playlist like the web editor's Add a playlist. |
 | `backup` | | `{ backup }`: everything (settings, every playlist with its login, edits, restore points), the same as the web editor's backup before it is sealed with a passphrase. |
 | `restore` | `backup` | `{ playlists }`.  TiviBro restarts with it. |
+| `logs` (sealed) | | `{ text }`: TiviBro's log, the app's (this and earlier sessions) and the network helper's, as **Report a problem** makes it: provider, guide and server names replaced.  The last 600,000 characters. |
 
 `GET /v1/state` also lists the text boxes on the TV's screen: `state.inputs: [{ id, label, type (text, url or password), value, has (a password is filled in), submit, focus }]`.  A password's text is never sent.
 
 ### Sealed requests
 
-`playlist`, `input`, `backup` and `restore` are refused unless sealed, since they carry logins.  A sealed request's body is `{ "sealed": { iv, data, tag } }`: the question, AES-256-GCM encrypted under `HMAC-SHA256(key, "tivibro-seal-v1")` with additional data `tivibro-seal-req-v1\n<phone id>\n<nonce>` (the request's own nonce, so a sealed body can't be moved to another request).  The answer to a sealed request is sealed the same way with `tivibro-seal-res-v1\n<phone id>\n<nonce>`; errors from before the TV could open the request come back plain.  The signature covers the sealed body as sent.
+`playlist`, `input`, `backup`, `restore`, `settings` and `logs` are refused unless sealed, since they carry logins or private details.  A sealed request's body is `{ "sealed": { iv, data, tag } }`: the question, AES-256-GCM encrypted under `HMAC-SHA256(key, "tivibro-seal-v1")` with additional data `tivibro-seal-req-v1\n<phone id>\n<nonce>` (the request's own nonce, so a sealed body can't be moved to another request).  The answer to a sealed request is sealed the same way with `tivibro-seal-res-v1\n<phone id>\n<nonce>`; errors from before the TV could open the request come back plain.  The signature covers the sealed body as sent.
 
 ## Waking the TV
 

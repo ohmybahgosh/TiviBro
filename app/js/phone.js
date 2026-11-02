@@ -227,6 +227,10 @@ var Phone = (function () {
       if (a.submit && UI.modalOpen && el.closest('#modal')) UI.press('submit');
       return { ok: true };
     },
+    // TiviBro's log for the phone (Settings tab > TiviBro log): the Report a problem text, names taken out.
+    logs: function () {
+      return Diag.report().then(function (r) { var t = r.text || ''; return { text: t.length > 600000 ? t.slice(-600000) : t }; });
+    },
     backup: function () {
       return Backup.create().then(function (b) { Store.settings.lastBackup = Date.now(); Store.saveSettings(); return { backup: b }; });
     },

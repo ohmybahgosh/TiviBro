@@ -899,6 +899,8 @@ Your version, and new versions from GitHub.  See [Updates](#updates).
 
 Finding out what's wrong, and what this TV can play.
 
+**On the phone:** the phone app's **Settings** tab has **TiviBro log** at the bottom: the same log as Report a problem (the app's, this and earlier sessions, and the network helper's), with provider, guide and server names taken out.  **Problems only** shows the warnings and errors, and **Share** sends it to a message, an email or a GitHub issue.
+
 <p align="center">
   <a href="https://tivibro.app/view/#tv-set-diag"><img src="screenshots/tv-set-diag.png" width="49%" alt="Diagnostics"></a>
   <a href="https://tivibro.app/view/#tv-set-diag-test"><img src="screenshots/tv-set-diag-test.png" width="49%" alt="Connection test"></a>

@@ -286,7 +286,18 @@ var Teams = (function () {
   var MAX_FEEDS = 8;
   var SPORTY = /\b(nfl|nba|nhl|mlb|wnba|mls|football|basketball|hockey|baseball|soccer)\b/i;
   // Not the game: placeholders ("not found yet"), and the shows around it.
-  var NOGAME = /not found|no (?:games?|events?)\b|off ?air|to be (?:announced|determined)|\btb[ad]\b|^\s*next game|\b(?:pre|post)[- ]?game\b|\bhighlights\b|\brecap\b|\bcountdown\b|\bgame ?day\b|\bpreview\b|\bfantasy\b|\bnfl sunday\b|\binside the\b|\bshow\b|\bpodcast\b|\btalk\b|\bpress conference\b/i;
+  var NOGAME = /not found|no (?:future |upcoming |more |scheduled )?(?:games?|events?|matches)\b|not scheduled|nothing scheduled|off ?air|to be (?:announced|determined)|\btb[ad]\b|^\s*next game|\b(?:pre|post)[- ]?game\b|\bhighlights\b|\brecap\b|\bcountdown\b|\bgame ?day\b|\bpreview\b|\bfantasy\b|\bnfl sunday\b|\binside the\b|\bshow\b|\bpodcast\b|\btalk\b|\bpress conference\b/i;
+
+  /* Is this a game?  Two teams of one league named, and not a placeholder or a show around the game.  For
+     reminders set by an earlier TiviBro, which put team channels' "Future events for Detroit Tigers not
+     found yet" and "Next game: ..." blocks on the reminder list (watch.js tidy()). */
+  function isGame(title, ctx) {
+    if (!title || NOGAME.test(title)) return false;
+    var by = {};
+    named(title, ctx || '', ALL, true).forEach(function (x) { by[x.league] = (by[x.league] || 0) + 1; });
+    for (var k in by) if (by[k] >= 2) return true;
+    return false;
+  }
 
   /* Descriptions: looked through in the background (Epg.findDesc, the helper for a big guide), every few
      minutes or when the followed teams change; the group is drawn again when they arrive. */
@@ -355,6 +366,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, dirty: dirty
+    isGame: isGame, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, dirty: dirty
   };
 })();

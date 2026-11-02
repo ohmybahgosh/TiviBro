@@ -110,6 +110,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await ev(() => { Views.stopAll(); MediaStore.sources().forEach((x) => MediaStore.removeSource(x.id)); Views.switchTab('live'); });
   await page.waitForTimeout(800);
 
+  // The log for the phone (sealed): the Report a problem text.
+  const logAns = await ask('logs', {}, { seal: true });
+  ok('the log reaches the phone, sealed', typeof logAns.text === 'string' && /# TiviBro problem report/.test(logAns.text) && /App log/.test(logAns.text), String(logAns.text).slice(0, 120));
+  const lgPlain = await C.ask(cred, 'logs', {}).catch((e) => e);
+  ok('and not without sealing', lgPlain instanceof Error || (lgPlain && lgPlain.error), String(lgPlain && (lgPlain.message || lgPlain.error)));
+
   // Typing into the TV: a rename box.
   await ev(() => UI.prompt('Rename group', 'Old name', function (v) { window.__renamed = v; }));
   await page.waitForTimeout(400);
