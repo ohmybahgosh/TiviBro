@@ -1,9 +1,9 @@
 # Roadmap and status
 
-## Now: first install on the TV (the app already runs in the webOS 25 Simulator, `npm run sim`, see SIMULATOR.md)
-- [ ] Install `dist/app.tivibro.tv_<version>_all.ipk` with `npm run install:tv` (it builds the IPK first if `dist/` is empty).
-- [ ] Confirm Settings > Playback > Network helper says "running on port 47811".
-- [ ] Run Test connection against the real XC provider; photo the result if anything fails.
+## Now: alpha testing on real TVs
+- Alpha builds (0.6.0 alpha) are in daily use on real LG TVs: a C2 on webOS 25, an OLED65C9 on webOS 4, a 50NANO79 on webOS 5 and a 32LQ630B on webOS 22, plus the Android phone app.
+- Problem reports come straight from the TVs (Settings > Diagnostics > Report a problem) and land in GitHub issues; fixes ship in the next alpha.
+- Next: beta.
 
 ## Known gaps
 - **Mock provider incomplete.**  `tests/mock/mock_provider.js` is now in the repo, but it is the demo provider: plain http on 127.0.0.1:8077, any login, about 60 made-up channels.  The original used by `tests/e2e/*` and `tests/unit/proxy.test.js` lived only in the old chat sandbox and was not in the source zip.  Those suites also expect :8443 (self-signed https), 2000 channels, 3 live categories, `guide2.xml`, `/hls/`, `/redir.m3u8`, timeshift/movie paths and test users `goodu`, `bad`, `html`, `empty`, `full`.  Until the mock covers that, CI runs the unit tests only and `npm run test:relay` and the e2e suites can't run.
