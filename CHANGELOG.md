@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Subtitle text stays readable in more files.**  ASS drawing instructions are left out of plain text, literal words such as `<Enter>` are kept, and an invalid WebDAV redirect returns an error instead of leaving playback waiting.
 - **More embedded subtitles in MKV movies.**  Movies with large subtitle indexes no longer lose all their tracks.  ASS/SSA and WebVTT tracks now show as plain text alongside SRT, and My media finds MKV subtitles even when a signed playback link has no file extension.  Track names and newer language tags are read, and Timing also moves the TV's subtitle overlay.
 - **WebDAV movies can play directly with a login.**  Servers using HTTP Basic authentication now work alongside signed file links.  The helper keeps the login out of playback addresses and handles seeking and subtitle reads.
 

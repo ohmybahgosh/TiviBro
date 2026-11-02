@@ -180,11 +180,11 @@ var MkvSubs = (function () {
   // override codes like {\an8} (position), {\pos(x,y)}, etc. -- strip them rather than
   // display the literal markup.
   var ASS_OVERRIDE = /\{\\[^}]*\}/g;
-  function utf8Decode(buf, start, end) {
+  function utf8Decode(buf, start, end, raw) {
     var slice = buf.subarray ? buf.subarray(start, end) : buf.slice(start, end);
     var s = decoder ? decoder.decode(slice) : '';
     if (!decoder) for (var i = start; i < end; i++) s += String.fromCharCode(buf[i]);
-    return s.replace(ASS_OVERRIDE, '');
+    return raw ? s : s.replace(ASS_OVERRIDE, '');
   }
   // Matroska ASS/SSA blocks contain eight comma-separated metadata fields, then text
   // (which may itself contain commas).  Timing comes from the block, not Dialogue lines.
@@ -192,11 +192,19 @@ var MkvSubs = (function () {
     if (codec === 'S_TEXT/ASS' || codec === 'S_TEXT/SSA') {
       var at = 0;
       for (var i = 0; i < 8; i++) { at = text.indexOf(',', at); if (at < 0) return ''; at++; }
-      text = text.slice(at).replace(/\\[Nn]/g, '\n').replace(/\\h/g, '\u00a0');
-    }
+      var drawing = false, plain = '';
+      text.slice(at).replace(/\{[^}]*\}|[^{}]+|[{}]/g, function (part) {
+        if (part.charAt(0) === '{' && part.charAt(part.length - 1) === '}') {
+          var re = /\\p(\d+)(?=\\|\s|\}|$)/g, m;
+          while ((m = re.exec(part))) drawing = +m[1] > 0;
+        } else if (!drawing) plain += part;
+        return part;
+      });
+      text = plain.replace(/\\N/g, '\n').replace(/\\n/g, ' ').replace(/\\h/g, '\u00a0');
+    } else text = text.replace(ASS_OVERRIDE, '');
     // The TV overlay draws textContent.  Strip cue markup and decode only text entities,
     // so voice names, styles and timestamps never become visible words or HTML.
-    return text.replace(/<[^>]*>/g, '').replace(/&(?:amp|lt|gt|nbsp|quot|apos);/g, function (s) {
+    return text.replace(/<\/?(?:b|i|u|font|v|c|lang|ruby|rt)(?=[\s.>])[^>]*>|<(?:\d+:)?\d{2}:\d{2}\.\d{3}>/gi, '').replace(/&(?:amp|lt|gt|nbsp|quot|apos);/g, function (s) {
       return { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&nbsp;': '\u00a0', '&quot;': '"', '&apos;': "'" }[s];
     });
   }
@@ -336,7 +344,7 @@ var MkvSubs = (function () {
         var bh = readBlockHeader(buf, 0, buf.length);
         if (!bh || trackNumbers.indexOf(bh.track) < 0) return null;
         return read(h.start, h.end - h.start).then(function (body) {
-          return { track: bh.track, rel: bh.relTimecode, text: utf8Decode(body, bh.payloadStart, body.length) };
+          return { track: bh.track, rel: bh.relTimecode, text: utf8Decode(body, bh.payloadStart, body.length, true) };
         });
       });
     }

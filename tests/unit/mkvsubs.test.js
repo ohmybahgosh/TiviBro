@@ -180,6 +180,19 @@ ok('orders clusters by proximity to current playback position, nearest first, de
 
 // ---- extract() ----
 (async function () {
+  for (const [name,codec,text,expected] of [
+    ['drawing','ASS','0,0,Default,,0,0,0,,{\\p1}m 0 0 l 20 0 20 20{\\p0}Hello','Hello'],
+    ['drawing-only','ASS','0,0,Default,,0,0,0,,{\\p2}m 0 0 l 20 0 20 20',''],
+    ['literal','UTF8','Press <Enter> to continue.  2 < 3 and 5 > 4.','Press <Enter> to continue.  2 < 3 and 5 > 4.'],
+    ['styled','UTF8','{\\an8}<i>Hello</i> &amp; <b>world</b>','Hello & world']
+  ]) {
+    mkvFixtures[name+'.mkv']=buildMkv({subtitleTrack:{number:7,lang:'en',codec:'S_TEXT/'+codec},cuesIndexesSubtitle:true,cueText:text});
+    const v={children:[],appendChild(el){this.children.push(el);}};
+    const h=MkvSubs.extract('http://mock/'+name+'.mkv',v); await flush(50);
+    const cues=v.children[0] && v.children[0].track.cues;
+    ok('subtitle conversion: '+name, cues && (expected ? cues.length===1 && cues[0].text===expected : cues.length===0));
+    h.cancel();
+  }
   mkvFixtures['large-index.mkv'] = buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true, indexPadding: 1631554 });
   const largeVideo = { children: [], appendChild(el) { this.children.push(el); } };
   const largeHandle = MkvSubs.extract('http://mock/large-index.mkv', largeVideo);

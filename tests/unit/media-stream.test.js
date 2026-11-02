@@ -21,6 +21,7 @@ const get = (url, opts = {}) => new Promise((resolve, reject) => {
     if (q.url === '/loop.mkv') { s.writeHead(302, {Location:'/loop.mkv'}); return s.end(); }
     if (q.url === '/bad.mkv') { s.writeHead(302, {Location:'file:///etc/passwd'}); return s.end(); }
     if (q.url === '/malformed.mkv') { s.writeHead(302, {Location:'http://[invalid'}); return s.end(); }
+    if (q.url === '/badport.mkv') { s.writeHead(302, {Location:'http://127.0.0.1:99999/video.mkv'}); return s.end(); }
     if (redirect) { s.writeHead(302, {Location:cb + '/movie.mkv'}); return s.end(); }
     if (q.url === '/slow.mkv' && q.headers.range !== 'bytes=0-0') {
       s.writeHead(200); s.write('start');
@@ -53,6 +54,8 @@ const get = (url, opts = {}) => new Promise((resolve, reject) => {
   ok('non-HTTP redirects are rejected', r.status === 502);
   r = await get(rb + streams.create(base + '/malformed.mkv', auth, 'mkv'));
   ok('a malformed redirect cannot stop the helper', r.status === 502);
+  r = await get(rb + streams.create(base + '/badport.mkv', auth, 'mkv'));
+  ok('an invalid redirect port returns an error without hanging playback', r.status === 502);
   r = await get(rb + '/media-stream/' + '0'.repeat(48) + '/movie.mkv');
   ok('unknown tokens cannot stream a file', r.status === 404);
   r = await get(url, {method:'POST'});

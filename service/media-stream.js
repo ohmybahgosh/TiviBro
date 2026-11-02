@@ -34,13 +34,17 @@ function handle(req, res, allow) {
     var u; try { u = URL_.parse(url); } catch (e) { return end(502); }
     var tls = u.protocol === 'https:';
     if (!u.hostname || (!tls && u.protocol !== 'http:')) return end(502);
+    if (u.port && (!/^\d+$/.test(u.port) || +u.port < 1 || +u.port > 65535)) return end(502);
     var headers = { Accept: '*/*', 'Accept-Encoding': 'identity' };
     if (origin(u) === s.origin) headers.Authorization = s.authorization;
     if (req.headers.range) headers.Range = req.headers.range;
     if (req.headers['if-range']) headers['If-Range'] = req.headers['if-range'];
     var opts = { hostname: u.hostname, port: u.port || (tls ? 443 : 80), path: u.path || '/', method: req.method, headers: headers, agent: false };
     if (tls && withCa) opts.ca = CA;
-    var attempt = (tls ? https : http).request(opts, function (remote) {
+    var attempt;
+    try { attempt = (tls ? https : http).request(opts, onResponse); }
+    catch (e) { return end(502); }
+    function onResponse(remote) {
       if (stopped) { remote.destroy(); return; }
       var code = remote.statusCode;
       if (code >= 300 && code < 400 && remote.headers.location) {
@@ -54,7 +58,7 @@ function handle(req, res, allow) {
       res.writeHead(code, h);
       remote.on('error', function () { res.destroy(); });
       remote.pipe(res);
-    });
+    }
     up = attempt;
     attempt.on('error', function (e) {
       if (stopped) return;
