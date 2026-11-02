@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 59, 2026-11-02)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 59
 
 - **A playlist that keeps closing TiviBro is stopped** (issue #25).  If TiviBro closes twice in a row while loading or reloading a playlist, that playlist's **Reload channel list** becomes **Only when I ask**, and the next start says so.  When nothing of the list is kept yet, it asks first: try it again, change the connection, use another playlist or add one, instead of loading it a third time.
 - **Stop a load with the remote** (issue #25).  **Back** on the loading screen offers to stop loading a playlist, and **Settings > Playlists and guide > the playlist > Stop reloading** stops a reload and keeps the channels you had.
@@ -9,11 +13,7 @@
 - **Huge M3U lists with a film library load on older TVs** (issue #26).  Some M3U lists carry a provider's whole film and series library as entries: one had 2,775 channels and 307,413 movies and episodes (93 MB), which closed TiviBro on a 2020 TV.  In a list of more than 100,000 entries TiviBro now keeps the live channels and leaves the movies and episodes out (it says how many; Movies and Shows come with an Xtream Codes login), and the network helper reads the list with far less memory.  If the helper still can't read a list, TiviBro says it's too big for this TV instead of trying to read it itself and closing.
 - **Phone app: editing backups without the TV, easier to start** (discussion #23).  Opening **Edit channels** with the TV now says "channel list saved" once the phone has it (or why it couldn't), each backup says which of its playlists can be edited on the phone, and very big lists (186,000 channels) get through: the editor sends them gzipped, in pieces.
 
-## 0.6.0 (alpha 58, 2026-11-02)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 58
+### In alpha 58
 
 - **Content filter** (discussion #20): **Settings > Parental controls > Content filter** takes channels out of everything, the guide, lists, Search, the phone app and the web editor, with no PIN.  **Hide adult channels** knows the usual words in several languages (and leaves "Adult Swim" alone); add your own words and call signs; and **Hide with the content filter** is in a channel's or group's options while watching or in the guide.  A new TV asks on the set-up tour's first screen, before any channels show.
 - **Find subtitles for movies and shows** (discussion #19): **Subtitles > Find subtitles…** looks on OpenSubtitles.com for what's playing, in your subtitle languages, with your own free API key.  **Timing** moves a subtitle earlier or later, and **Line up with another track** fixes one that's off by matching it to one in time, frame rate included.
