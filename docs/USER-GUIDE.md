@@ -780,7 +780,7 @@ How the guide looks and behaves, which screen TiviBro opens on, and reminders.
 | **Start screen** | **Guide** · Channels screen | What TiviBro opens on, and where **Back** from other screens leads. |
 | **Channels screen in the menu** | On · **Off** | The plain channel list (without the guide) in the side menu.  Off, **Green** in the guide still opens it.  Always there while TiviBro starts on it. |
 | **OK on a channel in the Guide** | **Preview first, then fullscreen** · Fullscreen right away | Like TiviMate: the first **OK** plays the channel in the window, the second goes fullscreen.  Or go straight to fullscreen. |
-| **Guide row size** | **Normal** · Large · Extra large | Taller rows with bigger channel names, titles and logos (long names wrap to two lines).  Easier to read on smaller TVs or from across the room; fewer channels fit at once. |
+| **Guide row size** | **Normal** · Bigger · Biggest | A little taller rows with bigger channel names and titles (Biggest wraps long names to two lines).  For smaller TVs or reading from across the room; one channel fewer fits at once. |
 | **Two-line programmes** | **On** · Off | Each programme's time under its title in the grid. |
 | **Dim past programmes** | **On** · Off | Programmes that already ended look dimmer. |
 | **Mark what's on now** | **Tint what has aired** · Colour and tint · Off | How the guide shows programmes airing right now: the part already aired tinted in your accent colour, a coloured cell with that tint, or nothing.  The time of day is a thin line in the accent colour with a marker in the time bar. |

@@ -29,8 +29,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'tv-guide-rows-' + v + '.png') });
   }
   ok('Normal: 100 px rows', m.h === 100 && m.fits, JSON.stringify(m));
-  ok('Large: taller rows, bigger titles, fewer rows that still fit', out.l.h === 120 && out.l.title > m.title && out.l.rows < m.rows && out.l.fits, JSON.stringify(out.l));
-  ok('Extra large: taller again', out.xl.h === 150 && out.xl.title > out.l.title && out.xl.rows <= out.l.rows && out.xl.fits, JSON.stringify(out.xl));
+  ok('Bigger: taller rows, bigger titles, fewer rows that still fit', out.l.h === 112 && out.l.title > m.title && out.l.rows < m.rows && out.l.fits, JSON.stringify(out.l));
+  ok('Biggest: taller again', out.xl.h === 124 && out.xl.title > out.l.title && out.xl.rows <= out.l.rows && out.xl.fits, JSON.stringify(out.xl));
   ok('the same channel stays selected', out.l.sel === m.sel && out.xl.sel === m.sel, [m.sel, out.l.sel, out.xl.sel].join(' / '));
   await page.keyboard.press('ArrowDown'); await page.waitForTimeout(300);
   ok('moving still works after a change', await page.evaluate(() => !!document.querySelector('.grow.sel')) && (await look()).sel !== m.sel);

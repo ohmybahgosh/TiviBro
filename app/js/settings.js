@@ -553,7 +553,7 @@ var Settings = (function () {
       function () { return s.startTab === 'live' || s.channelsTab === true; }, function (v) { if (s.startTab === 'live') { U.toast('TiviBro starts on the Channels screen, so it stays in the menu'); return; } s.channelsTab = v; save(); Views.buildTabs(); }));
     out.push(choice('OK on a channel in the Guide', 'Preview first works like TiviMate: the first OK plays it in the corner window, the second goes fullscreen.',
       ['preview', 'full'], ['Preview first, then fullscreen', 'Fullscreen right away'], function () { return s.guideOk === 'full' ? 'full' : 'preview'; }, function (v) { s.guideOk = v; save(); }));
-    out.push(choice('Guide row size', 'Taller rows with bigger channel names and titles.  Easier to read on smaller TVs or from across the room; fewer channels fit at once.', ['m', 'l', 'xl'], ['Normal', 'Large', 'Extra large'],
+    out.push(choice('Guide row size', 'A little taller rows with bigger channel names and titles, for smaller TVs or reading from across the room.  One channel fewer fits at once.', ['m', 'l', 'xl'], ['Normal', 'Bigger', 'Biggest'],
       function () { return s.guideRows || 'm'; }, function (v) { s.guideRows = v; Views.applyLook(); if (window.Guide && Guide.resize) Guide.resize(); save(); }));
     out.push(toggle('Two-line programmes', 'Shows each programme\'s time under its title in the grid.', function () { return s.guideLines !== 1; }, function (v) { s.guideLines = v ? 2 : 1; Views.applyLook(); save(); }));
     out.push(toggle('Dim past programmes', '', function () { return s.dimPast; }, function (v) { s.dimPast = v; Views.applyLook(); save(); }));

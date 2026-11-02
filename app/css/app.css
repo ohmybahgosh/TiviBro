@@ -697,19 +697,16 @@ body.focus-ring .on-card.focus .on-art{box-shadow:0 0 0 5px var(--accent),0 0 0 
 .on-empty b{display:block;font-size:40px;color:var(--text);margin-bottom:16px}
 .on-empty p{font-size:26px;color:var(--muted);max-width:1100px;margin:0 auto;line-height:1.4}
 body.onnow-open:not(.full) #clock{text-shadow:0 2px 10px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.9)}
-/* Guide row size (Settings > Guide): Large and Extra large rows, with text and logos to match. */
-body.gr-l{--grow:120px}
-body.gr-l .gp{font-size:28px}
-body.gr-l .gp .gt{font-size:28px}
-body.gr-l .gp .gs{font-size:22px}
-body.gr-l .gch .n{font-size:31px}
-body.gr-l .gch .num{font-size:28px;width:64px}
-body.gr-l .gch .logo{width:112px;height:66px}
-body.gr-xl{--grow:150px}
-body.gr-xl .gp{font-size:33px}
-body.gr-xl .gp .gt{font-size:33px}
-body.gr-xl .gp .gs{font-size:25px}
-body.gr-xl .gch .n{font-size:36px}
-body.gr-xl .gch .num{font-size:32px;width:72px}
-body.gr-xl .gch .logo{width:120px;height:72px}
-body.gr-l .gch .n,body.gr-xl .gch .n{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.12}
+/* Guide row size (Settings > Guide): a little taller rows, with text and logos to match. */
+body.gr-l{--grow:112px}
+body.gr-l .gp,body.gr-l .gp .gt{font-size:26px}
+body.gr-l .gp .gs{font-size:20px}
+body.gr-l .gch .n{font-size:28px}
+body.gr-l .gch .num{font-size:26px}
+body.gr-xl{--grow:124px}
+body.gr-xl .gp,body.gr-xl .gp .gt{font-size:28px}
+body.gr-xl .gp .gs{font-size:21px}
+body.gr-xl .gch .n{font-size:30px}
+body.gr-xl .gch .num{font-size:28px;width:62px}
+body.gr-xl .gch .logo{width:112px;height:66px}
+body.gr-xl .gch .n{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.12}

@@ -1664,7 +1664,7 @@ var Guide = (function () {
   var vis = null;                 // Show or hide channels, right in the list: { gid, was: { k: shown }, on: { k: shown } }
 
   /* Guide row size (Settings > Guide): taller rows with bigger text, for smaller TVs and across the room. */
-  var ROW_SIZES = { m: 100, l: 120, xl: 150 }, built = false;
+  var ROW_SIZES = { m: 100, l: 112, xl: 124 }, built = false;
   function build() {
     ROW = ROW_SIZES[Store.settings.guideRows] || 100;
     VIS = Math.max(3, Math.floor(body.clientHeight / ROW) || 6);
