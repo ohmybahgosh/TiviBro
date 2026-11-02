@@ -77,6 +77,9 @@ function logo(title, [color, font]) {
   if (noLogo > 0) { for (let n = 0; n < noLogo; n++) await key('ArrowRight', 150); await page.waitForTimeout(500);
     ok('no title logo: the title in big type', await ev(() => !!document.querySelector('#onInfo h1.on-title') && !document.querySelector('#onInfo img.on-logo')));
     await shot('tv-onnow-title'); }
+  // Pictures arriving (a re-draw) keep you where you are, on either shelf.
+  await ev(() => OnNow.render(true)); await page.waitForTimeout(200);
+  ok('opens on On now and stays there through a re-draw', await ev(() => document.querySelector('#onStage .on-shelf.active h3').textContent.indexOf('On now') === 0));
   // Down to Starting soon.
   if (st.rows.length > 1) {
     await key('ArrowDown', 600);
@@ -101,6 +104,8 @@ function logo(title, [color, font]) {
     await key('Enter', 300);
     ok('the reminder is set', await ev((n) => Store.edits.reminders.length >= n, before));
     await key('ArrowUp', 400);
+    await ev(() => OnNow.render(true)); await page.waitForTimeout(300);
+    ok('Up to On now stays on On now (also when the screen re-draws)', await ev(() => document.querySelector('#onStage .on-shelf.active h3').textContent.indexOf('On now') === 0));
   }
   // OK watches it, fullscreen; Back lands in the guide on that channel.
   const want = await ev(() => OnNow.rows[0].items[0].c.k);

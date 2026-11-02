@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Movies on now stays on the shelf you're on.**  It opened on Starting soon, and Up to On now jumped back down whenever pictures arrived, when a movie was on now and again later.  It now opens on On now and keeps your place.
 - **Two programmes at once on a channel no longer mix up.**  When a guide still lists an old schedule next to the new one (FX showed National Treasure 10:00pm to 1:00am and X-Men 10:25pm to 12:55am, X-Men airing), the later start wins: the earlier one ends there.  The details, Movies on now and the grid now agree with what's on.
 - **Phone app: movie posters.**  An **On now** tab shows the TV's Movies on now as big posters (On now and Starting soon); a tap opens the movie with its backdrop, title logo, plot and every channel showing it, to watch on the TV or set a reminder (asked first).  Movies in the phone's guide and schedules show their poster and year, genres and rating.
 

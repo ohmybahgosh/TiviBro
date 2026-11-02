@@ -27,7 +27,7 @@ var OnNow = (function () {
     if (!built) return;
     var rs = data(), s = signature(rs);
     if (!force && s === sig) { rows = rs; times(); return; }
-    var was = rows[row] && rows[row].items[pos[rows[row].id] || 0];
+    var wasRow = rows[row] && rows[row].id, was = wasRow && rows[row].items[pos[wasRow] || 0];
     rows = rs; sig = s;
     var stage = $('onStage');
     stage.innerHTML = '';
@@ -65,7 +65,14 @@ var OnNow = (function () {
       stage.appendChild(shelf);
     });
     // Keep the movie you were on.
-    if (was) rows.forEach(function (r, ri) { var i = r.items.indexOf(r.items.filter(function (g) { return g.m.id === was.m.id; })[0]); if (i >= 0) { row = ri; pos[r.id] = i; } });
+    // Keep the shelf and the movie you were on.  A movie can be on now and again later: the shelf you're
+    // on wins, so new pictures arriving never move you to the other one.
+    var same = wasRow ? rows.map(function (r) { return r.id; }).indexOf(wasRow) : -1;
+    if (same >= 0) {
+      row = same;
+      var at = was ? rows[same].items.map(function (g) { return g.m.id; }).indexOf(was.m.id) : -1;
+      pos[wasRow] = at >= 0 ? at : Math.min(pos[wasRow] || 0, rows[same].items.length - 1);
+    } else row = 0;
     row = Math.min(row, rows.length - 1);
     draw();
   }
@@ -176,6 +183,7 @@ var OnNow = (function () {
   function restore() { UI.setHandler(keys); hints(); }
   function open() {
     build(); open_ = true;
+    rows = []; row = 0; pos = {};                                 // each visit starts at the top: On now, first movie
     document.body.classList.add('onnow-open');                   // the clock over a backdrop gets a shadow
     UI.setHandler(keys);
     render(true);
