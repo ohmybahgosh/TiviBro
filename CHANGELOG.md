@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 56, 2026-11-02)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 56
 
 - **Very big playlists don't close TiviBro when they reload** (issues #24 and #25: 186,928 channels on a 2022 32-inch TV).  A reload was the moment memory ran out; it now asks much less of the TV:
   - One reload at a time.  A second (Reload channels while the scheduled reload runs, the web editor) waits for the first instead of downloading and reading the list again.
@@ -11,11 +15,7 @@
 - **Problem reports no longer say "using 10 MB" when the TV doesn't say.**  webOS 22 answers a fixed placeholder for memory; reports now say unknown.
 - **The playlist's size shows in the log again** (an M3U read by the network helper said "NaN KB").
 
-## 0.6.0 (alpha 55, 2026-11-02)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 55
+### In alpha 55
 
 - **Movies on now stays on the shelf you're on.**  It opened on Starting soon, and Up to On now jumped back down whenever pictures arrived, when a movie was on now and again later.  It now opens on On now and keeps your place.
 - **Two programmes at once on a channel no longer mix up.**  When a guide still lists an old schedule next to the new one (FX showed National Treasure 10:00pm to 1:00am and X-Men 10:25pm to 12:55am, X-Men airing), the later start wins: the earlier one ends there.  The details, Movies on now and the grid now agree with what's on.
