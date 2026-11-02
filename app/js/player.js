@@ -301,7 +301,7 @@ var Player = (function () {
       d.appendChild(sp); ccEl.appendChild(d);
     });
   }
-  setInterval(function () { ccDraw(); if (ccDec && video && st && st.started) ccDec.trim(video.currentTime * 1000 - 5000); }, 200);
+  setInterval(function () { try { ccDraw(); } catch (e) {} if (ccDec && video && st && st.started) ccDec.trim(video.currentTime * 1000 - 5000); }, 200);
   // What the quick menu says: on or off, and whether this channel sends any.
   function ccState() {
     var kind = st && st.kind, found = kind === 'ts' ? !!(ccDec && ccDec.seen) : kind === 'hls' ? ccTracks().length > 0 : false;
@@ -340,7 +340,7 @@ var Player = (function () {
     Log.state('player', 'playing ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '"' : 'a video') + ' with the ' + kind + ' engine');
     Log.info('player', 'Start ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '" ' : '') + 'with ' + kind + ' engine' + (kind !== 'native' && Net.active ? ' via helper' : '') + ', profile ' + p.label + ' (prebuffer ' + p.prebuffer + 's)' + (cur.retries ? ', attempt ' + (cur.retries + 1) : '') + (cur.startAt ? ', from ' + Math.round(cur.startAt) + 's' : '') + '  ' + url);
     var gen = cur.gen = (cur.gen || 0) + 1;     // a torn-down engine's late events are ignored
-    ccDec = window.Captions ? Captions.create() : null; ccStarted = Date.now(); ccLast = '-';
+    ccDec = window.Captions ? Captions.create() : null; ccStarted = Date.now();
     st = { state: 'loading', started: false, lastT: -1, lastMove: Date.now(), refilling: false, refillSince: 0,
       kind: kind, at: Date.now(), healthySince: 0, userPaused: isFile() && !!cur.userPaused };
     state(cur.slow ? 'buffering' : 'loading', cur.slow ? cur.slow : holding ? 'Reconnecting' : undefined);
@@ -886,6 +886,6 @@ var Player = (function () {
     get userPaused() { return !!(st && st.userPaused); },
     get playing() { return !!(st && st.state === 'playing'); },
     get cc() { return ccState(); },
-    setCC: function (on) { Store.settings.cc = !!on; Store.saveSettings(); ccLast = '-'; ccDraw(); }
+    setCC: function (on) { Store.settings.cc = !!on; Store.saveSettings(); ccLast = '-'; try { ccDraw(); } catch (e) {} }
   };
 })();
