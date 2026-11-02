@@ -536,7 +536,7 @@ var Media = (function () {
   /* ---------- remote and pointer navigation ---------- */
   function hints() {
     if (document.body.classList.contains('nav-open')) return;
-    UI.hints([['', 'OK  play'], ['', 'Hold OK  movie options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Movies / TV shows'], ['green', 'Rescan'], ['yellow', 'Fetch details'], ['blue', 'Settings']]);
+    UI.hints([['', 'OK  play'], ['', 'Hold OK  movie options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Options'], ['green', 'Rescan'], ['yellow', 'Fetch details'], ['blue', 'Settings']]);
   }
   function moveShelf(d) {
     var row = shelfAt + d;

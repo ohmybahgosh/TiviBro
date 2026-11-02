@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Clearer My media button hints.**  Red is labelled **Options** for its menu; Blue remains **Settings**.
 - **My media TV-show test build.**  Discover shows alongside movies, browse seasons and episodes, fetch show metadata, correct matches, and remember episode progress.  Includes chapter and multi-episode playback support.
 
 ## 0.6.0 (alpha 60, 2026-11-02)
