@@ -116,20 +116,20 @@ TiviBro works with the standard LG remote and the Magic Remote.  With the Magic 
 
 | Button | In the guide | Watching fullscreen |
 |---|---|---|
-| **OK** | First OK previews in the window, second goes fullscreen | (fixed: watch) | Quick menu |
-| **Hold OK** | Programme and channel options | Options menu | Channel list over the video |
-| **Red** | Programme and channel options | Options menu | Options for the channel |
-| **Info** | Programme and channel options | Options menu | Programme details |
+| **OK** | First OK previews in the window, second goes fullscreen | Quick menu |
+| **Hold OK** | Programme and channel options | Channel guide over the video |
+| **Red** | Programme and channel options | Options for the channel |
+| **Info** | Programme and channel options | Programme details |
 | **Hold Info** | | Buffer info: how many seconds are banked and, when the player reports it, the stream's speed.  No Info button (most Magic Remotes): **OK**, then **Stream info** |
-| **▲ ▼** | Move between channels | (fixed) | Channel up and down |
+| **▲ ▼** | Move between channels | Channel up and down |
 | **◀ ▶** | Move through time (◀ on "now" opens the groups) | ◀ rewind or last channel, ▶ info |
-| **CH + / CH −** | Page up and down | (fixed) | Channel up and down |
+| **CH + / CH −** | Page up and down | Channel up and down |
 | **⏪ ⏩** | Jump through time, into the past on catch-up channels | Skip in catch-up and movies |
 | **▶ Play** / **❙❙ Pause** | Watch the previewed channel fullscreen | Play only plays and Pause only pauses; a single Play/Pause button switches between them.  Live TV can be paused too. |
-| **Green** | Channel list | Channels screen | Guide over the video |
-| **Yellow** | Groups | Groups | Last channel |
-| **Blue** | Settings | Settings | Audio track |
-| **Back** | Back to now, then the groups | (fixed) | Back to the guide |
+| **Green** | Channels screen | Back to the TV guide |
+| **Yellow** | Groups | Last channel |
+| **Blue** | Settings | Audio track |
+| **Back** | Back to now, then the groups | Back to the guide |
 | **0 to 9** | Jump to a channel number (at once when no longer number starts with what you typed, otherwise after a short pause) | Jump to a channel number, the same way |
 
 A few things work the way you would guess from other TV apps:
@@ -191,7 +191,7 @@ Long lists: **CH + / −** moves a page at a time everywhere, and holding **▲*
 </p>
 </details>
 
-The **Channels** screen (in the side menu when **Channels list in the menu** is on, or **Green** in the guide) is the same list in TiviMate's classic layout: groups on the left, channels in the middle, the preview and details on the right.  Resting on a channel plays it in the preview (**Preview in channel list**); **OK** goes fullscreen.  Pick which screen opens first with **Start screen**.
+The **Channels** screen (in the side menu when **Channels screen in the menu** is on, or **Green** in the guide) is the same list in TiviMate's classic layout: groups on the left, channels in the middle, the preview and details on the right.  Resting on a channel plays it in the preview (**Preview in channel list**); **OK** goes fullscreen.  Pick which screen opens first with **Start screen**.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-channels"><img src="screenshots/tv-channels.png" width="100%" alt="The Channels screen"></a>
@@ -200,10 +200,11 @@ The **Channels** screen (in the side menu when **Channels list in the menu** is 
 ### Watching fullscreen
 
 - **▲ ▼** or **CH + / CH −** change channel.  An info bar shows the channel, what's on now and next, and how far into the programme you are.
-- **▶** shows the full programme info.  **Yellow** jumps back to the last channel.  **Green** lays the guide over the video.
-- **Green** (or **OK > Channel list**) lays the channel list over the video.  **OK** on another channel switches to it and keeps the list open so you can keep browsing; **OK** on the channel that's already playing closes the list.  **◀ ▶** change group.
-- **OK** opens the **quick menu**: Channel list, From start (catch-up channels), Favorite, TV guide, Other versions (when the channel has them), Picture size, Sleep timer, Stream info and Reconnect.  Pick which buttons appear under **Settings > Remote control > Quick menu buttons**.
-- **Red** opens options for the channel: favorite, copy to group, other versions, watch from start, catch-up, rename, assign guide, hide, picture size and sleep timer.  **Hold OK** opens the channel list over the video.
+- **▶** shows the full programme info.  **Yellow** jumps back to the last channel.  **Green** goes back to the TV guide.
+- **Hold OK** (or **OK > Channel guide**) lays the channel guide over the video: the group's channels with what's on now.  **OK** on another channel switches to it and keeps the channel guide open so you can keep browsing; **OK** on the channel that's already playing closes it.  **◀ ▶** change group.
+- **OK** opens the **quick menu**: Channel guide, From start (catch-up channels), Favorite, TV guide, Other versions (when the channel has them), Captions, Picture size, Sleep timer, Stream info and Reconnect.
+- **Closed captions**: **Captions** in the quick menu turns them on or off for every channel, like a TV's CC button (also **Settings > Playback and buffering > Closed captions**, with a caption size).  They show in fullscreen when the channel sends them, which most US channels do.  Not with the TV player (Settings > Playback > Player); **Stream info** says whether this channel has captions.  Pick which buttons appear under **Settings > Remote control > Quick menu buttons**.
+- **Red** opens options for the channel: favorite, copy to group, other versions, watch from start, catch-up, rename, assign guide, hide, picture size and sleep timer.  **Hold OK** opens the channel guide over the video.
 - **Stream info** (quick menu) shows the channel, how much is buffered, the player in use, the picture size, the bitrate and catch-up, updating while it's open, with the buffer gauge at the top right.  Any button can open it: **Stream info and buffer** under **Settings > Remote control**.  **Sleep timer** stops playback after 15 minutes to 2 hours.  **Picture** sets Normal, Stretch or Zoom for this channel, or for all of them.
 
 <p align="center"><a href="media/zap.mp4"><img src="media/zap.gif" width="100%" alt="Changing channels, info and the quick menu"></a></p>
@@ -574,7 +575,7 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Network helper** | (information) | Whether the helper is running.  **Settings > Diagnostics** shows its port and its log. |
 | **Buffer meter** | **When low** · Always · Off | A small gauge in fullscreen showing how many seconds of video are banked. |
 | **Buffer info on demand** | 5 seconds · **10 seconds** · 30 seconds · Until pressed again | How long the gauge stays when you hold **Info** in fullscreen (the INFO button on LG's standard remote, or I on a keyboard), whatever the Buffer meter is set to.  Press again to hide it.  **Stream info** in the quick menu (**OK** in fullscreen) shows it too, along with the stream's details, and works on every remote.  Most Magic Remotes have no Info button: TiviBro notices and the hint here changes to match, and you can give any button **Show buffer info** or **Stream info and buffer** under **Settings > Remote control > In the player**. |
-| **Preview in channel list** | **On** · Off | Plays the channel you rest on in the Channels screen.  Turn it off on very slow TVs for the snappiest list. |
+| **Preview on the Channels screen** | **On** · Off | Plays the channel you rest on in the Channels screen.  Turn it off on very slow TVs for the snappiest list. |
 | **When a channel stops working** | **Switch to another version** · Ask me · Keep retrying | When a channel has run out of retries and your playlist has it more than once (another quality, another group, or a copy you hid), TiviBro switches to the next version, steadiest first: Full HD, HD, unmarked, 4K, then SD.  *Ask me* asks before switching.  See [Other versions of a channel](#other-versions-of-a-channel). |
 | **Turn on last channel at launch** | **On** · Off | Starts the channel you watched last when TiviBro opens. |
 | **HDR and Dolby Vision** | **Automatic** · TV player for all HDR · Built-in player | *Automatic* plays Dolby Vision through the TV player (which switches the screen into Dolby Vision itself) and keeps HDR10 and HLG on the built-in player for steadier buffering.  Pick *TV player for all HDR* if HDR pictures look grey or washed out. |
@@ -590,6 +591,8 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Fallback audio language** | **Off** · English · and more | Try this language when the preferred audio language is missing.  Off keeps the stream's own track.  For Dutch then English, set Audio language to Dutch and the fallback to English. |
 | **Prefer surround sound** | On · **Off** | Picks the 5.1 or Dolby track in that language when there is one.  Your TV or soundbar needs to support it. |
 | **Subtitles automatically** | **Off** · Any language · English only · Spanish only · … | Turns subtitles on when a stream has them; with a language, only subtitles in that language.  You can still switch them from the quick menu. |
+| **Closed captions** | On · **Off** | Captions on live TV in fullscreen, when the channel sends them (most US channels do).  The same switch as **Captions** in the quick menu.  Not with the TV player. |
+| **Caption size** | Small · **Medium** · Large | |
 | **Play next episode automatically** | **On** · Off | When an episode ends, the next one starts. |
 
 **Subtitles in MKV movies and episodes.**  Open **Subtitles** from the player menu to choose a language or **Off**.  The menu is available as soon as playback starts and shows **Finding subtitles…** while tracks are discovered.  The automatic subtitle language setting above also applies.  Supported embedded SRT tracks appear with their language names, and your selection survives seeking and reconnects.  Files without supported tracks show an unavailable message; styled ASS/SSA and bitmap subtitles are not supported.  Some MKV files do not index their subtitle tracks and cannot expose them here.
@@ -625,18 +628,18 @@ Remap any button, choose the quick menu's buttons, and teach TiviBro keys it doe
 |---|---|
 | **In the player ›** | What each button does while watching live TV fullscreen.  Every button has a press and a **Hold** action.  **OK** opens a list of actions to pick from. |
 | **In the guide ›** | The same for the guide: the colour buttons, **Play / Pause**, **Info**, **Stop** and **Hold OK**.  Give any of them **Watch fullscreen** if your remote has no Play button.  Arrows, **OK**, **Back**, **CH + / −** and ⏪ ⏩ stay fixed there. |
-| **In the channel list ›** | The same for the Channels screen.  Arrows, **OK**, **Back** and **CH + / −** stay fixed there. |
-| **Quick menu buttons ›** | Switch each quick menu button on or off: Channel list, Watch from start, Favorite, TV guide, Other versions, Audio track, Subtitles, Video quality, Picture size, Sleep timer, Stream info, Reconnect.  All are on by default; a button only appears when it applies (Audio needs two or more tracks, for example). |
+| **On the Channels screen ›** | The same for the Channels screen.  Arrows, **OK**, **Back** and **CH + / −** stay fixed there. |
+| **Quick menu buttons ›** | Switch each quick menu button on or off: Channel guide, Watch from start, Favorite, TV guide, Other versions, Audio track, Subtitles, Closed captions, Video quality, Picture size, Sleep timer, Stream info, Reconnect.  All are on by default; a button only appears when it applies (Audio needs two or more tracks, for example). |
 | **Learn a button** | For keys TiviBro doesn't know yet (some LG remotes have extras).  Press this, then the button; it then appears in the button pages to assign.  Some buttons belong to the TV itself (Home, Live TV, the TV's own Guide, Input, Settings): webOS acts on them before TiviBro hears them, so they leave TiviBro and can't be learned. |
 | **Button tester** | Shows the key code the TV sends for the next button you press, and what it does in TiviBro. |
 | **Restore default buttons** | Puts every button back the way it came.  Each button page also has **Restore defaults for this screen**. |
 
 The buttons and their defaults:
 
-| Button | In the player | In the guide | In the channel list |
+| Button | In the player | In the guide | On the Channels screen |
 |---|---|---|---|
 | **OK** | Quick menu | (fixed: watch) | (fixed) |
-| **Hold OK** | Channel list over the video | Options menu | Options menu |
+| **Hold OK** | Channel guide over the video | Options menu | Options menu |
 | **▲ ▼** | Previous / next channel | (fixed) | (fixed) |
 | **◀** | Rewind (catch-up), else last channel | (fixed) | (fixed) |
 | **▶** | Show info panel | (fixed) | (fixed) |
@@ -652,7 +655,7 @@ The buttons and their defaults:
 | **Info** | Show info panel | Options menu | Options menu |
 | **Back** | (fixed: leaves fullscreen) | (fixed) | (fixed) |
 
-Actions you can give a button in the player: nothing, quick menu, channel list over the video, info panel, options menu, next, previous or last channel, rewind, watch from start, play/pause, TV guide, search, Settings, leave fullscreen, add or remove favorite, open Favorites, open Recent channels, change picture mode, audio track, sleep timer and reconnect.  In the guide: nothing, watch fullscreen (the channel in the window, else the highlighted one), options menu, groups, jump to now, last channel, stop the window, Channels screen, search, Settings, the web editor, favorite, open Favorites or Recent channels, Movies and Shows.  In the channel list: nothing, options menu, last channel, TV guide, search, Settings, favorite, open Favorites, open Recent channels, Movies, Shows and play/pause.  Catch-up and movie playback keep fixed seek buttons so they always behave the same.
+Actions you can give a button in the player: nothing, quick menu, channel guide over the video, info panel, options menu, next, previous or last channel, rewind, watch from start, play/pause, TV guide, search, Settings, leave fullscreen, add or remove favorite, open Favorites, open Recent channels, change picture mode, audio track, closed captions on or off, sleep timer and reconnect.  In the guide: nothing, watch fullscreen (the channel in the window, else the highlighted one), options menu, groups, jump to now, last channel, stop the window, Channels screen, search, Settings, the web editor, favorite, open Favorites or Recent channels, Movies and Shows.  On the Channels screen: nothing, options menu, last channel, TV guide, search, Settings, favorite, open Favorites, open Recent channels, Movies, Shows and play/pause.  Catch-up and movie playback keep fixed seek buttons so they always behave the same.
 
 ### Settings: Playlists and guide
 
@@ -774,9 +777,10 @@ How the guide looks and behaves, which screen TiviBro opens on, and reminders.
 
 | Setting | Choices | What it does |
 |---|---|---|
-| **Start screen** | **Guide** · Channels list | What TiviBro opens on, and where **Back** from other screens leads. |
-| **Channels list in the menu** | On · **Off** | The plain channel list (without the guide) in the side menu.  Off, **Green** in the guide still opens it.  Always there while TiviBro starts on it. |
+| **Start screen** | **Guide** · Channels screen | What TiviBro opens on, and where **Back** from other screens leads. |
+| **Channels screen in the menu** | On · **Off** | The plain channel list (without the guide) in the side menu.  Off, **Green** in the guide still opens it.  Always there while TiviBro starts on it. |
 | **OK on a channel in the Guide** | **Preview first, then fullscreen** · Fullscreen right away | Like TiviMate: the first **OK** plays the channel in the window, the second goes fullscreen.  Or go straight to fullscreen. |
+| **Guide row size** | **Normal** · Large · Extra large | Taller rows with bigger channel names, titles and logos (long names wrap to two lines).  Easier to read on smaller TVs or from across the room; fewer channels fit at once. |
 | **Two-line programmes** | **On** · Off | Each programme's time under its title in the grid. |
 | **Dim past programmes** | **On** · Off | Programmes that already ended look dimmer. |
 | **Mark what's on now** | **Tint what has aired** · Colour and tint · Off | How the guide shows programmes airing right now: the part already aired tinted in your accent colour, a coloured cell with that tint, or nothing.  The time of day is a thin line in the accent colour with a marker in the time bar. |

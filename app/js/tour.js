@@ -298,9 +298,9 @@ var Tour = (function () {
     if (!Views.PALETTES[s.palette]) out.push(choice('Background', '', K.THEMES, K.THEME_NAMES, function () { return s.theme || 'dark'; }, function (v) { s.theme = v; Views.applyLook(); Store.saveSettings(); draw(); },
       function () { return K.THEME_INK[s.theme || 'dark']; }));
     out.push(choice('Text size', '', ['s', 'm', 'l'], ['Small', 'Medium', 'Large'], function () { return s.textSize || 'm'; }, function (v) { s.textSize = v; Views.applyLook(); Store.saveSettings(); draw(); }));
-    out.push(choice('Start screen', 'What TiviBro opens on.', ['guide', 'live'], ['Guide', 'Channels list'], function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; Store.saveSettings(); Views.buildTabs(); draw(); }));
+    out.push(choice('Start screen', 'What TiviBro opens on.', ['guide', 'live'], ['Guide', 'Channels screen'], function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; Store.saveSettings(); Views.buildTabs(); draw(); }));
     out.push(toggle('Turn on the last channel at launch', '', function () { return !!s.resumeLast; }, function (v) { s.resumeLast = v; Store.saveSettings(); draw(); }));
-    out.push(toggle('Preview in the channel list', 'Plays the channel you rest on in a corner window.', function () { return s.previewPlay !== false; }, function (v) { s.previewPlay = v; Store.saveSettings(); draw(); }));
+    out.push(toggle('Preview on the Channels screen', 'Plays the channel you rest on in a corner window.', function () { return s.previewPlay !== false; }, function (v) { s.previewPlay = v; Store.saveSettings(); draw(); }));
     out.push(choice('When a channel stops working', 'Switches to another version of the same channel, like its HD copy.', ['auto', 'ask', 'off'], ['Switch to another version', 'Ask me', 'Keep retrying'],
       function () { return s.backups || 'auto'; }, function (v) { s.backups = v; Store.saveSettings(); draw(); }));
     return out;

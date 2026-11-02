@@ -42,6 +42,20 @@ if [ ! -s "$OUT/chaos.ts" ]; then
     -vf "drawtext=fontfile=$FONT:text='%{pts\\:hms}':fontcolor=white:fontsize=48:x=40:y=40:box=1:boxcolor=black@0.6" \
     -c:v libx264 -preset ultrafast -profile:v main -pix_fmt yuv420p -g 50 -b:v 1200k -c:a aac -b:a 64k -shortest -f mpegts "$OUT/chaos.ts"
 fi
+# Closed captions (tests/soak/captions.js): CEA-608 in the video, the way US channels carry them, and
+# the time on screen so you can see the captions keep up.
+if [ ! -s "$OUT/cc.ts" ]; then
+  echo "making cc.ts"
+  T="$(mktemp -d)"
+  ffmpeg -hide_banner -loglevel error -y -f lavfi -i "gradients=s=960x540:r=25:d=$DUR:c0=0x1a1a1a:c1=0x3a3a3a:c2=0x0b0b0b:speed=0.01" \
+    -vf "drawtext=fontfile=$FONT:text='CAPTIONS':fontcolor=white:fontsize=80:x=(w-tw)/2:y=h*0.25,\
+drawtext=fontfile=$FONT:text='%{pts\\:hms}':fontcolor=white@0.8:fontsize=40:x=(w-tw)/2:y=h*0.25+100" \
+    -c:v libx264 -preset ultrafast -profile:v main -pix_fmt yuv420p -g 50 -bf 0 -b:v 900k -x264-params aud=1 -f h264 "$T/v.h264"
+  node "$ROOT/scripts/demo/add-captions.js" "$T/v.h264" "$T/cc.h264" 25 "$DUR"
+  ffmpeg -hide_banner -loglevel error -y -r 25 -i "$T/cc.h264" -f lavfi -i "sine=f=330:r=48000" -t "$DUR" \
+    -map 0:v -map 1:a -c:v copy -c:a aac -b:a 64k -shortest -f mpegts "$OUT/cc.ts"
+  rm -rf "$T"
+fi
 if [ ! -s "$OUT/movie.mp4" ]; then
   echo "making movie.mp4"
   ffmpeg -hide_banner -loglevel error -y -f lavfi -i "gradients=s=960x540:r=25:d=$DUR:c0=0x1a0b3d:c1=0x5b8cff:c2=0x33e1ff:speed=0.01" \

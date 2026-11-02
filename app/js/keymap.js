@@ -1,5 +1,5 @@
 /* Remote control remapping.
-   Three contexts: "player" (fullscreen live TV), "guide" (the guide grid) and "list" (the channel list).
+   Three contexts: "player" (fullscreen live TV), "guide" (the guide grid) and "list" (the Channels screen).
    Every button can have a short-press and a long-press action.  Buttons the app doesn't
    know (extra keys on some LG remotes) can be learned by pressing them once.
    Catch-up and movie playback keep fixed seek controls so they always behave the same. */
@@ -17,26 +17,26 @@ var Keymap = (function () {
 
   var ACTIONS = {
     none: 'Nothing',
-    panel: 'Quick menu (actions and recent channels)', list: 'Channel list over the video', osd: 'Show info panel', menu: 'Options menu',
+    panel: 'Quick menu (actions and recent channels)', list: 'Channel guide over the video', osd: 'Show info panel', menu: 'Options menu',
     chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
     rewind: 'Rewind (catch-up), else last channel', restart: 'Watch from start', playpause: 'Play / pause',
     guide: 'TV guide', search: 'Search', settings: 'Settings', editor: 'Edit on a phone or computer (QR code)', live: 'Channels screen', exit: 'Leave fullscreen',
     fav: 'Add or remove favorite', favorites: 'Open Favorites', recents: 'Open Recent channels',
-    picture: 'Change picture mode', audio: 'Audio track', sleep: 'Sleep timer',
+    picture: 'Change picture mode', audio: 'Audio track', cc: 'Closed captions on or off', sleep: 'Sleep timer',
     movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect stream', buffer: 'Show buffer info', streaminfo: 'Stream info and buffer',
     full: 'Watch fullscreen (the channel in the window, else the highlighted one)', now: 'Jump to now', groups: 'Open the groups', stopwin: 'Stop the window'
   };
   // Short names for the on-screen button legend.
   var SHORT = {
-    panel: 'Quick menu', list: 'Channel list', osd: 'Info', menu: 'Options', chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
+    panel: 'Quick menu', list: 'Channel guide', osd: 'Info', menu: 'Options', chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
     rewind: 'Rewind', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings', editor: 'Phone editor',
     live: 'Channels', exit: 'Exit fullscreen', fav: 'Favorite', favorites: 'Favorites', recents: 'Recent',
-    picture: 'Picture size', audio: 'Audio track', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info', streaminfo: 'Stream info',
+    picture: 'Picture size', audio: 'Audio track', cc: 'Captions', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info', streaminfo: 'Stream info',
     full: 'Fullscreen', now: 'Now', groups: 'Groups', stopwin: 'Stop window'
   };
   var CONTEXT_ACTIONS = {
     player: ['none', 'panel', 'list', 'osd', 'menu', 'chnext', 'chprev', 'last', 'rewind', 'restart', 'playpause', 'guide', 'search', 'settings', 'editor', 'exit',
-      'fav', 'favorites', 'recents', 'picture', 'audio', 'sleep', 'reconnect', 'buffer', 'streaminfo'],
+      'fav', 'favorites', 'recents', 'picture', 'audio', 'cc', 'sleep', 'reconnect', 'buffer', 'streaminfo'],
     list: ['none', 'menu', 'last', 'guide', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'playpause'],
     guide: ['none', 'full', 'menu', 'groups', 'now', 'last', 'stopwin', 'live', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows']
   };

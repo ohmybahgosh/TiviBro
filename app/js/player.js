@@ -187,6 +187,8 @@ var Player = (function () {
     });
     // Live TS that "completes" means the server hung up.  Reconnect right away.
     if (live) m.on(mpegts.Events.LOADING_COMPLETE, function () { fail('net', 'server closed stream', false, true); });
+    // Closed captions: the caption SEIs the patched demuxer hands over (vendor/PATCHES.md).
+    m.on(mpegts.Events.PES_PRIVATE_DATA_ARRIVED, function (d) { if (d && d.pid === -608 && ccDec) ccDec.feed(d.data, d.pts); });
     m.attachMediaElement(video);
     m.load();
     return {
@@ -265,6 +267,47 @@ var Player = (function () {
     if (video && video.parentNode && video.parentNode.classList) video.parentNode.classList.remove('holding');
   }
 
+  /* ---------- closed captions ----------
+     CEA-608 captions in the video (US channels).  The built-in demuxer: decoded by Captions
+     (captions.js) and drawn here over the picture.  The HLS engine: hls.js makes a "captions" text
+     track that the TV draws; this shows or hides it.  The TV player: not possible from an app.
+     Shown only fullscreen, when Settings > Playback > Closed captions (or the quick menu) is on. */
+  var ccDec = null, ccEl = null, ccLast = '', ccStarted = 0;
+  var CC_SIZE = { s: 0.040, m: 0.048, l: 0.060 };
+  function ccOn() { return !!Store.settings.cc; }
+  function ccTracks() { var t = video && video.textTracks, out = []; for (var i = 0; t && i < t.length; i++) if (t[i].kind === 'captions') out.push(t[i]); return out; }
+  function ccDraw() {
+    if (!video) return;
+    var stage = video.parentNode, full = stage && stage.classList && stage.classList.contains('full'), kind = st && st.kind;
+    var want = ccOn() && full && st && st.started;
+    // hls.js: its own captions track.
+    ccTracks().forEach(function (t, i) { var m = want && kind === 'hls' && i === 0 ? 'showing' : 'hidden'; if (t.mode !== m) t.mode = m; });
+    var lines = want && kind === 'ts' && ccDec ? ccDec.at(video.currentTime * 1000) : null;
+    var key = lines ? lines.key + '|' + (Store.settings.ccSize || 'm') : '';
+    if (key === ccLast) return;
+    ccLast = key;
+    if (!ccEl) { ccEl = document.createElement('div'); ccEl.className = 'cc'; }
+    if (ccEl.parentNode !== stage && stage) stage.appendChild(ccEl);
+    ccEl.innerHTML = '';
+    if (!lines || !lines.lines.length) { ccEl.style.display = 'none'; return; }
+    ccEl.style.display = '';
+    ccEl.style.fontSize = Math.round((stage.clientHeight || 1080) * (CC_SIZE[Store.settings.ccSize] || CC_SIZE.m)) + 'px';
+    lines.lines.forEach(function (l) {
+      var d = document.createElement('div'), sp = document.createElement('span');
+      d.className = 'cc-line';
+      d.style.top = (10 + (l.row - 1) * 80 / 15) + '%';
+      d.style.left = (10 + l.col * 80 / 32) + '%';
+      sp.textContent = l.text;
+      d.appendChild(sp); ccEl.appendChild(d);
+    });
+  }
+  setInterval(function () { ccDraw(); if (ccDec && video && st && st.started) ccDec.trim(video.currentTime * 1000 - 5000); }, 200);
+  // What the quick menu says: on or off, and whether this channel sends any.
+  function ccState() {
+    var kind = st && st.kind, found = kind === 'ts' ? !!(ccDec && ccDec.seen) : kind === 'hls' ? ccTracks().length > 0 : false;
+    return { on: ccOn(), engine: kind || '', found: found, possible: kind === 'ts' || kind === 'hls', waited: ccStarted && Date.now() - ccStarted > 12000 };
+  }
+
   /* ---------- lifecycle ---------- */
   function teardown() {
     clearInterval(wd); wd = 0;
@@ -297,6 +340,7 @@ var Player = (function () {
     Log.state('player', 'playing ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '"' : 'a video') + ' with the ' + kind + ' engine');
     Log.info('player', 'Start ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '" ' : '') + 'with ' + kind + ' engine' + (kind !== 'native' && Net.active ? ' via helper' : '') + ', profile ' + p.label + ' (prebuffer ' + p.prebuffer + 's)' + (cur.retries ? ', attempt ' + (cur.retries + 1) : '') + (cur.startAt ? ', from ' + Math.round(cur.startAt) + 's' : '') + '  ' + url);
     var gen = cur.gen = (cur.gen || 0) + 1;     // a torn-down engine's late events are ignored
+    ccDec = window.Captions ? Captions.create() : null; ccStarted = Date.now(); ccLast = '-';
     st = { state: 'loading', started: false, lastT: -1, lastMove: Date.now(), refilling: false, refillSince: 0,
       kind: kind, at: Date.now(), healthySince: 0, userPaused: isFile() && !!cur.userPaused };
     state(cur.slow ? 'buffering' : 'loading', cur.slow ? cur.slow : holding ? 'Reconnecting' : undefined);
@@ -840,6 +884,8 @@ var Player = (function () {
     get duration() { return video && isFinite(video.duration) ? video.duration : 0; },
     get paused() { return !video || video.paused; },
     get userPaused() { return !!(st && st.userPaused); },
-    get playing() { return !!(st && st.state === 'playing'); }
+    get playing() { return !!(st && st.state === 'playing'); },
+    get cc() { return ccState(); },
+    setCC: function (on) { Store.settings.cc = !!on; Store.saveSettings(); ccLast = '-'; ccDraw(); }
   };
 })();

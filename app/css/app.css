@@ -83,6 +83,9 @@ body.nums-mono,body.nums-mono input{font-family:"TiviBro Mono Digits","LG Smart 
 .stage.holding .spinner i{width:28px;height:28px;border-width:4px}
 .stage.preview{border-radius:12px}
 body.old-video .stage.preview{border-radius:0}
+.stage .cc{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:2;font-family:"DejaVu Sans Mono","Roboto Mono",monospace;line-height:1.25}
+.stage .cc-line{position:absolute;white-space:pre}
+.stage .cc-line span{background:rgba(0,0,0,.82);color:#fff;padding:.04em .28em}
 .stage.full{left:0!important;top:0!important;width:1920px!important;height:1080px!important;border-radius:0;z-index:5}
 .stage.off{visibility:hidden}
 .spinner{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;align-items:center;justify-content:center;gap:18px;color:var(--text);font-size:26px;pointer-events:none}
@@ -332,8 +335,8 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .gd-meta .sep{color:var(--dim);margin:0 12px}
 /* Movies (movies.js): the poster at the right of the details, a line under the times, a tag in the grid. */
 .guide-detail{position:relative}
-.guide-detail.has-poster{padding-right:200px}
-.guide-detail .gd-poster{position:absolute;right:16px;top:56px;width:160px;height:240px;object-fit:cover;border-radius:10px;background:var(--raised)}
+.guide-detail.has-poster{padding-right:228px;overflow:visible}
+.guide-detail .gd-poster{position:absolute;right:8px;top:52px;width:180px;height:270px;object-fit:cover;border-radius:12px;background:var(--raised);box-shadow:0 10px 28px rgba(0,0,0,.45);z-index:2}
 .gd-meta.gd-movie{color:var(--accent-text)}
 .gp.mv .gs::before{content:'Movie  ·  ';color:var(--accent-text)}
 .gp.mv.focus .gs::before{color:inherit}
@@ -694,3 +697,19 @@ body.focus-ring .on-card.focus .on-art{box-shadow:0 0 0 5px var(--accent),0 0 0 
 .on-empty b{display:block;font-size:40px;color:var(--text);margin-bottom:16px}
 .on-empty p{font-size:26px;color:var(--muted);max-width:1100px;margin:0 auto;line-height:1.4}
 body.onnow-open:not(.full) #clock{text-shadow:0 2px 10px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.9)}
+/* Guide row size (Settings > Guide): Large and Extra large rows, with text and logos to match. */
+body.gr-l{--grow:120px}
+body.gr-l .gp{font-size:28px}
+body.gr-l .gp .gt{font-size:28px}
+body.gr-l .gp .gs{font-size:22px}
+body.gr-l .gch .n{font-size:31px}
+body.gr-l .gch .num{font-size:28px;width:64px}
+body.gr-l .gch .logo{width:112px;height:66px}
+body.gr-xl{--grow:150px}
+body.gr-xl .gp{font-size:33px}
+body.gr-xl .gp .gt{font-size:33px}
+body.gr-xl .gp .gs{font-size:25px}
+body.gr-xl .gch .n{font-size:36px}
+body.gr-xl .gch .num{font-size:32px;width:72px}
+body.gr-xl .gch .logo{width:120px;height:72px}
+body.gr-l .gch .n,body.gr-xl .gch .n{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.12}

@@ -80,6 +80,12 @@ function schedule(ch) {
   }
   return out;
 }
+// MOCK_CC=1: a "TEST | Captions" channel whose video carries CEA-608 closed captions (tests/soak/captions.js).
+if (process.env.MOCK_CC) {
+  const ci = cats.length;
+  cats.push({ category_id: String(ci + 1), category_name: 'TEST | Captions', parent_id: 0 });
+  streams.push({ num: 990, name: 'Caption Test', stream_type: 'live', stream_id: 990, stream_icon: '', epg_channel_id: '', added: '1761000000', category_id: String(ci + 1), tv_archive: 0, tv_archive_duration: 0, clip: 'cc', base: 'Caption Test', ci });
+}
 // MOCK_CHAOS=1: a "TEST | Chaos" group of deliberately sloppy streams (tests/mock/chaos.js).
 const CHAOS = process.env.MOCK_CHAOS ? require('./chaos') : null;
 if (CHAOS) {

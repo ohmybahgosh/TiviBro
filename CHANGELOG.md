@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Closed captions on live TV.**  **Captions** in the quick menu (OK in fullscreen) turns them on or off for every channel, like a TV's CC button; also **Settings > Playback and buffering > Closed captions**, with a caption size.  TiviBro reads the CEA-608 captions US channels carry in the video and draws them over the picture in fullscreen, in time with it (pop-on, roll-up and paint-on).  Stream info says whether the channel has any.  Not with the TV player.
+- **Guide row size** (Settings > Guide, start screen, reminders): Large and Extra large rows with bigger names, titles and logos, for smaller TVs or reading from across the room.
+- **Bigger movie posters** in the guide's details.
+- **The channel guide over the video** is called that everywhere now (it was "Channel list"), and the remote table in the user guide matches what the buttons do.
+
 ## 0.6.0 (alpha 57, 2026-11-02)
 
 Pre-release: expect rough edges, and keep a backup before installing.

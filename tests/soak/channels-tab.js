@@ -33,7 +33,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   m = await menu();
   ok('starting on it keeps it in the menu', m[0] === 'live', m.join(','));
   await ev(() => { Store.settings.startTab = 'guide'; Views.buildTabs(); Views.switchTab('settings'); Settings.open(); Settings.section('reminders'); }); await page.waitForTimeout(500);
-  ok('Settings has the switch', /Channels list in the menu/.test(await ev(() => document.body.innerText)));
+  ok('Settings has the switch', /Channels screen in the menu/.test(await ev(() => document.body.innerText)));
 
   // The phone app and the web editor on one page, each saying what it is.
   await ev(() => { TIVIBRO_VERSION = '0.6.0-alpha.99'; Settings.open(); Settings.section('connect'); }); await page.waitForTimeout(1200);

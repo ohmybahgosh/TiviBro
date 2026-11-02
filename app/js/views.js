@@ -175,7 +175,7 @@ var Views = (function () {
       var t = e.track;
       // With a language chosen (Settings > Playback), only a track in that language.
       var want = Store.settings.subsLang || '';
-      if (Store.settings.autoSubs && t && (t.kind === 'subtitles' || t.kind === 'captions') && (!want || U.lang(t.language || t.label) === want))
+      if (Store.settings.autoSubs && t && t.kind === 'subtitles' && (!want || U.lang(t.language || t.label) === want))
         setTimeout(function () { if (subtitleTracks().every(function (x) { return x.mode !== 'showing'; })) t.mode = 'showing'; }, 0);
     });
     Epg.onUpdate(function (k) {
@@ -232,7 +232,8 @@ var Views = (function () {
     document.body.classList.toggle('guide1', Store.settings.guideLines === 1);
     var s = Store.settings, b = document.body.classList;
     document.body.className.split(/\s+/).forEach(function (c) { if (/^theme-/.test(c)) b.remove(c); });
-    ['ts-s', 'ts-l', 'ov-l', 'ov-h', 'now-color', 'now-off'].forEach(function (c) { b.remove(c); });
+    ['ts-s', 'ts-l', 'ov-l', 'ov-h', 'now-color', 'now-off', 'gr-l', 'gr-xl'].forEach(function (c) { b.remove(c); });
+    if (s.guideRows === 'l' || s.guideRows === 'xl') b.add('gr-' + s.guideRows);
     if (!pal && s.theme && s.theme !== 'dark') b.add('theme-' + s.theme);
     b.toggle('pal', !!pal);
     b.toggle('focus-ring', s.focusStyle === 'ring' || (!pal && s.theme === 'contrast'));
@@ -627,6 +628,7 @@ var Views = (function () {
       case 'recents': openGroup(L.RECENT); return;
       case 'picture': cyclePicture(); return;
       case 'audio': audioMenu(); return;
+      case 'cc': ccToggle(); return;
       case 'sleep': sleepMenu(); return;
       case 'reconnect': Player.retryNow(); return;
       case 'buffer': peekMeter(); return;
@@ -942,7 +944,7 @@ var Views = (function () {
     return true;
   }
 
-  /* ---------- channel list over the video ---------- */
+  /* ---------- the channel guide over the video (channels with what's on now) ---------- */
   function openOverlay() {
     overlay = true;
     ovGroup = curGroup;
@@ -1317,8 +1319,8 @@ var Views = (function () {
      ◀ ▶ move along a row, ▲ ▼ switch rows, OK picks, Back closes.  Clickable with the pointer. */
   var qp = null;                  // { row, col, rows: [[items]], timer }
   // Quick menu buttons.  Each can be switched off in Settings > Remote control > Quick menu buttons.
-  var QP_BUTTONS = [['list', 'Channel list'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['audio', 'Audio track'],
-    ['subs', 'Subtitles'], ['quality', 'Video quality'], ['picture', 'Picture size'], ['sleep', 'Sleep timer'],
+  var QP_BUTTONS = [['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['audio', 'Audio track'],
+    ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Picture size'], ['sleep', 'Sleep timer'],
     ['info', 'Stream info'], ['reconnect', 'Reconnect']];
   // Line icons for the quick actions, drawn like the side menu's (24 x 24, stroked).
   var QP_ICONS = {
@@ -1330,6 +1332,7 @@ var Views = (function () {
     versions: '<rect x="3" y="7" width="13" height="10" rx="2"/><path d="M19 9v8a2 2 0 0 1-2 2H8"/><path d="M21 11v6"/>',
     audio: '<path d="M9 18V6l11-2v12"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
     subs: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15h4M13 15h4M7 11h2M11 11h6"/>',
+    cc: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10.5 9.6a2.6 2.6 0 1 0 0 4.8M17 9.6a2.6 2.6 0 1 0 0 4.8"/>',
     quality: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v6M11 9v6M7 12h4M14 9h2a3 3 0 0 1 0 6h-2z"/>',
     picture: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M8 9H6v2M16 9h2v2M8 15H6v-2M16 15h2v-2"/>',
     sleep: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
@@ -1339,22 +1342,41 @@ var Views = (function () {
   function qpActions() {
     var c = playing, a = [], nn = c && Epg.nowNext(c), now = Date.now(), off = Store.settings.qpHidden || {};
     function add(id, it) { if (!off[id]) { it.id = id; a.push(it); } }
-    add('list', { label: 'Channel list', icon: 'list', run: function () { closePanel(); openOverlay(); } });
+    add('list', { label: 'Channel guide', icon: 'list', run: function () { closePanel(); openOverlay(); } });
     if (c && c.arch && nn && nn.now && nn.now.s <= now) add('start', { label: 'From start', icon: 'start', v: 'catch-up', run: function () { closePanel(); watchFromStart(c); } });
     if (c) add('fav', { label: L.isFav(c.k) ? 'Favorite' : 'Add favorite', icon: L.isFav(c.k) ? 'faved' : 'fav', run: function () { var on = L.toggleFav(c.k); U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); renderPanel(); } });
     add('guide', { label: 'TV guide', icon: 'guide', run: function () { closePanel(); leaveTo('guide'); } });
     if (c && L.versions(c).length) add('versions', { label: 'Other versions', icon: 'versions', v: versionsSummary(c), run: function () { closePanel(); versionsMenu(c); } });
     var tracks = Player.audioTracks();
     if (tracks.length > 1) add('audio', { label: 'Audio', icon: 'audio', v: (tracks.filter(function (t) { return t.on; })[0] || {}).label || '', run: function () { closePanel(); audioMenu(); } });
-    var subs = subtitleTracks();
+    // Live captions (CEA-608) have their own switch; Subtitles is for real subtitle tracks.
+    var subs = subtitleTracks().filter(function (t) { return mode === 'vod' || t.kind === 'subtitles'; });
     if (subs.length || mode === 'vod') add('subs', { label: 'Subtitles', icon: 'subs', v: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || subtitleStatus(), run: function () { closePanel(); subtitleMenu(); } });
+    if (mode !== 'vod') add('cc', { label: 'Captions', icon: 'cc', v: ccLabel(), run: function () { ccToggle(); renderPanel(); } });
     if (Player.qualities().length > 1) add('quality', { label: 'Quality', icon: 'quality', v: qualityLabel(), run: function () { closePanel(); qualityMenu(); } });
     add('picture', { label: 'Picture', icon: 'picture', v: DM[Player.displayFor(c)] || 'Normal', run: function () { closePanel(); pictureMenu(); } });
     add('sleep', { label: 'Sleep timer', icon: 'sleep', v: sleepAt ? U.hhmm(sleepAt) : 'off', run: function () { closePanel(); sleepMenu(); } });
     add('info', { label: 'Stream info', icon: 'info', run: function () { closePanel(); streamInfo(); } });
     add('reconnect', { label: 'Reconnect', icon: 'reconnect', run: function () { closePanel(); Player.retryNow(); U.toast('Reconnecting'); } });
-    if (!a.length) a.push({ id: 'list', label: 'Channel list', icon: 'list', run: function () { closePanel(); openOverlay(); } });
+    if (!a.length) a.push({ id: 'list', label: 'Channel guide', icon: 'list', run: function () { closePanel(); openOverlay(); } });
     return a;
+  }
+  /* Closed captions: one switch for every channel, like a TV's CC button.  OK on it in the quick menu
+     turns them on or off and leaves the menu open, so you can see what changed. */
+  function ccLabel() {
+    var s = Player.cc;
+    if (!s.on) return 'Off';
+    if (s.engine && !s.possible) return 'Not with TV player';
+    return s.found ? 'On' : s.waited ? 'On, none here' : 'On';
+  }
+  function ccToggle() {
+    var on = !Store.settings.cc;
+    Player.setCC(on);
+    var s = Player.cc;
+    if (!on) U.toast('Closed captions off');
+    else if (s.engine && !s.possible) U.toast('Closed captions on.  This channel plays with the TV player, which can\'t show them.  Other channels will.', 7000);
+    else if (s.found || !s.waited) U.toast('Closed captions on' + (s.found ? '' : '.  They show when the channel sends them.'), s.found ? 0 : 5000);
+    else U.toast('Closed captions on.  This channel doesn\'t send any; channels that do will show them.', 7000);
   }
   function qualityLabel() { if (Player.qualityAuto()) return 'Auto'; var q = Player.qualities().filter(function (x) { return x.on; })[0]; return q ? q.label.split(' ')[0] : 'Auto'; }
   function qualityMenu() {
@@ -1504,7 +1526,7 @@ var Views = (function () {
     var T = 'Stream info', live = mode === 'live';
     var rows = {
       name: { label: mode === 'vod' ? 'Playing' : 'Channel' }, engine: { label: 'Player' }, pic: { label: 'Picture' },
-      buf: { label: 'Buffered ahead' }, info: { label: 'Details' },
+      buf: { label: 'Buffered ahead' }, info: { label: 'Details' }, cc: live && { label: 'Closed captions' },
       arch: live && { label: 'Catch-up', sub: playing && playing.arch ? playing.arch + ' days' : 'not available' },
       how: { label: 'Close', sub: Keymap.buttonsFor(['streaminfo', 'buffer']).length ? 'shortcut: ' + Keymap.buttonsFor(['streaminfo', 'buffer'])[0] : '' }
     };
@@ -1515,9 +1537,10 @@ var Views = (function () {
       rows.pic.sub = video && video.videoWidth ? video.videoWidth + ' × ' + video.videoHeight : '';
       rows.buf.sub = s.ahead != null ? s.ahead.toFixed(1) + ' s' + (s.target ? ', aiming for ' + Math.round(s.target) + ' s' : '') + (s.state === 'buffering' ? ', refilling' : '') : 'nothing playing';
       rows.info.sub = s.info || '';
+      if (rows.cc) { var c = Player.cc; rows.cc.sub = (c.found ? 'in this stream' : c.possible ? (c.waited ? 'none in this stream' : 'looking…') : 'not with the TV player') + ', ' + (c.on ? 'shown' : 'off'); }
     }
     fill();
-    UI.menu(T, [rows.name, rows.buf, rows.engine, rows.pic, rows.info, rows.arch, rows.how]);
+    UI.menu(T, [rows.name, rows.buf, rows.engine, rows.pic, rows.info, rows.arch, rows.cc, rows.how]);
     if (full && Player.stats) peekMeter(true);
     clearInterval(streamInfo.t);
     streamInfo.t = setInterval(function () {
@@ -1537,8 +1560,10 @@ var Views = (function () {
     items.push({ label: 'Picture size', sub: DM[Player.displayFor(mode === 'live' ? playing : null)], action: pictureMenu });
     if (Player.qualities().length > 1) items.push({ label: 'Video quality', sub: qualityLabel(), action: qualityMenu });
     if (mode === 'vod' || mode === 'catchup') items.push({ label: 'Playback speed', sub: Player.rate === 1 ? 'Normal' : Player.rate + '×', action: speedMenu });
-    var subs = subtitleTracks();
+    // Live captions (CEA-608) have their own switch; Subtitles is for real subtitle tracks.
+    var subs = subtitleTracks().filter(function (t) { return mode === 'vod' || t.kind === 'subtitles'; });
     if (subs.length || mode === 'vod') items.push({ label: 'Subtitles', sub: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || subtitleStatus(), action: subtitleMenu });
+    if (mode !== 'vod') items.push({ label: 'Closed captions', sub: ccLabel(), action: ccToggle });
     items.push({ label: 'Sleep timer', sub: sleepAt ? 'stops at ' + U.hhmm(sleepAt) : 'off', action: sleepMenu });
     items.push({ label: 'Reconnect stream', action: function () { Player.retryNow(); } });
     UI.menu(mode === 'vod' && vod ? vod.meta.title : playing ? L.name(playing) : 'Player', items);
@@ -1638,7 +1663,10 @@ var Guide = (function () {
   var moving = null;              // the channel being moved up or down its group (Hold OK > Move…)
   var vis = null;                 // Show or hide channels, right in the list: { gid, was: { k: shown }, on: { k: shown } }
 
+  /* Guide row size (Settings > Guide): taller rows with bigger text, for smaller TVs and across the room. */
+  var ROW_SIZES = { m: 100, l: 120, xl: 150 }, built = false;
   function build() {
+    ROW = ROW_SIZES[Store.settings.guideRows] || 100;
     VIS = Math.max(3, Math.floor(body.clientHeight / ROW) || 6);
     PXW = (body.clientWidth || 1808) - CHW;
     body.innerHTML = '';
@@ -1658,6 +1686,8 @@ var Guide = (function () {
       rows.push({ el: r, ch: ch, pr: pr, img: img, k: null, slot: i, cells: [], cuEl: cuEl, qEl: qEl });
     }
     var nowLine = U.el('div', 'gnow'); nowLine.id = 'gnow'; body.appendChild(nowLine);
+    if (built) return;
+    built = true;
     groupsVL = new VList($('guideGroupList'), { render: renderGroupRow, onSel: onGroupSel, empty: 'No groups', visible: 7, rowH: ROW,
       onHover: function () { if (zone !== 'groups') setZone('groups'); }, onClick: function () { enterGrid(); } });
     pointerSetup();
@@ -1791,6 +1821,13 @@ var Guide = (function () {
     if (key) { var i = list.findIndex(function (c) { return c.k === key; }); if (i >= 0) { sel = i; top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS)); } }
     focusT = Date.now(); t0 = focusT - (focusT % (30 * 60e3));
     setZone('grid');
+    draw();
+  }
+  // The row size changed: new rows, same channel and time.
+  function resize() {
+    if (!rows.length) return;
+    build();
+    top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS));
     draw();
   }
   function refresh() {
@@ -2229,6 +2266,6 @@ var Guide = (function () {
     for (var i = 0; i < rows.length; i++) if (rows[i].k === k) { drawRow(rows[i], top + i); if (top + i === sel) drawDetail(); }
   }
 
-  return { open: open, resume: resume, refresh: refresh, draw: draw, rowUpdated: rowUpdated, leave: leave, hints: hints, startVis: startVis, endVis: endVis, get vis() { return !!vis; },
+  return { open: open, resume: resume, refresh: refresh, draw: draw, resize: resize, rowUpdated: rowUpdated, leave: leave, hints: hints, startVis: startVis, endVis: endVis, get vis() { return !!vis; },
     __sel: function () { return sel; }, __gsel: function () { return groupsVL ? groupsVL.sel : 0; } };
 })();

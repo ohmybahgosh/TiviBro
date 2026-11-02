@@ -63,7 +63,7 @@ var Settings = (function () {
     out.push(choice('Buffer meter', 'Shows how many seconds of video are banked, in fullscreen.', ['auto', 'always', 'off'], ['When low', 'Always', 'Off'], function () { return s.meter; }, function (v) { s.meter = v; save(); }));
     out.push(choice('Buffer info on demand', Keymap.bufferHint() + ' shows the buffer meter and stream info, even with the meter off.  Press again to hide it.  Any button can do this: Settings > Remote control.',
       [5, 10, 30, 0], ['5 seconds', '10 seconds', '30 seconds', 'Until pressed again'], function () { return s.meterPeek == null ? 10 : +s.meterPeek; }, function (v) { s.meterPeek = v; save(); }));
-    out.push(toggle('Preview in channel list', 'Plays the channel you rest on.  Turn off on very slow TVs for the snappiest list.', function () { return s.previewPlay; }, function (v) { s.previewPlay = v; save(); }));
+    out.push(toggle('Preview on the Channels screen', 'Plays the channel you rest on.  Turn off on very slow TVs for the snappiest list.', function () { return s.previewPlay; }, function (v) { s.previewPlay = v; save(); }));
     out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',
       ['auto', 'ask', 'off'], ['Switch to another version', 'Ask me', 'Keep retrying'], function () { return s.backups || 'auto'; }, function (v) { s.backups = v; save(); }));
     out.push(toggle('Turn on last channel at launch', '', function () { return s.resumeLast; }, function (v) { s.resumeLast = v; save(); }));
@@ -92,6 +92,8 @@ var Settings = (function () {
         { label: 'Any language', sub: s.autoSubs && !s.subsLang ? 'on' : '', action: function () { s.autoSubs = true; s.subsLang = ''; save(); } }]
         .concat(U.LANGS.map(function (l) { return { label: l[1] + ' only', sub: s.autoSubs && s.subsLang === l[0] ? 'on' : '', action: function () { s.autoSubs = true; s.subsLang = l[0]; save(); } }; })));
     }, function () { return !s.autoSubs ? 'Off' : s.subsLang ? langName(s.subsLang) : 'Any language'; }));
+    out.push(toggle('Closed captions', 'Live TV in fullscreen, when the channel sends them (most US channels do).  Also in the quick menu (OK in fullscreen), for every channel at once.  Not with the TV player.', function () { return !!s.cc; }, function (v) { Player.setCC(v); }));
+    out.push(choice('Caption size', '', ['s', 'm', 'l'], ['Small', 'Medium', 'Large'], function () { return s.ccSize || 'm'; }, function (v) { s.ccSize = v; save(); }));
     out.push(toggle('Play next episode automatically', '', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); }));
     return out;
   }
@@ -133,7 +135,7 @@ var Settings = (function () {
     var out = [];
     out.push(page('In the player', 'Fullscreen live TV.', 'Buttons in the player', function () { return keysPage('player'); }));
     out.push(page('In the guide', 'The colour buttons, Play, Info, Stop and Hold OK.  Arrows, OK and Back stay fixed so you can always get around.', 'Buttons in the guide', function () { return keysPage('guide'); }));
-    out.push(page('In the channel list', 'The Channels screen.  Arrows, OK and Back stay fixed.', 'Buttons in the channel list', function () { return keysPage('list'); }));
+    out.push(page('On the Channels screen', 'The plain channel browser.  Arrows, OK and Back stay fixed.', 'Buttons on the Channels screen', function () { return keysPage('list'); }));
     out.push(page('Quick menu buttons', 'Which buttons show when you press OK in fullscreen.', 'Quick menu buttons', function () {
       var o = [], off = S().qpHidden || (S().qpHidden = {});
       o.push(info('Buttons only appear when they apply, e.g. Audio needs two or more tracks.', ''));
@@ -147,7 +149,7 @@ var Settings = (function () {
       U.toast('Press the button to learn', 5000);
       UI.captureNext(function (code, known) {
         if (known && Keymap.BUTTONS.some(function (b) { return b[0] === known; })) { U.toast('That is ' + Keymap.label(known) + ', already supported'); return; }
-        Keymap.learn(code); U.toast('Learned button ' + code + '.  Assign it under In the player, In the guide or In the channel list.'); build();
+        Keymap.learn(code); U.toast('Learned button ' + code + '.  Assign it under In the player, In the guide or On the Channels screen.'); build();
       });
     }));
     out.push(action('Button tester', 'Shows what the app sees when you press a button.  The TV\'s own buttons (Home, Live TV, Guide, Input) never reach TiviBro.', function () {
@@ -545,12 +547,14 @@ var Settings = (function () {
   /* ---------- guide display and reminders ---------- */
   function reminders() {
     var s = S(), out = [];
-    out.push(choice('Start screen', 'What TiviBro opens on, and where Back from other screens leads.', ['guide', 'live'], ['Guide', 'Channels list'],
+    out.push(choice('Start screen', 'What TiviBro opens on, and where Back from other screens leads.', ['guide', 'live'], ['Guide', 'Channels screen'],
       function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; save(); Views.buildTabs(); }));
-    out.push(toggle('Channels list in the menu', s.startTab === 'live' ? 'Always there while TiviBro starts on it.' : 'The plain list of channels, without the guide.  Off, it stays one press away: Green in the guide.',
-      function () { return s.startTab === 'live' || s.channelsTab === true; }, function (v) { if (s.startTab === 'live') { U.toast('TiviBro starts on the channels list, so it stays in the menu'); return; } s.channelsTab = v; save(); Views.buildTabs(); }));
+    out.push(toggle('Channels screen in the menu', s.startTab === 'live' ? 'Always there while TiviBro starts on it.' : 'The plain list of channels, without the guide.  Off, it stays one press away: Green in the guide.',
+      function () { return s.startTab === 'live' || s.channelsTab === true; }, function (v) { if (s.startTab === 'live') { U.toast('TiviBro starts on the Channels screen, so it stays in the menu'); return; } s.channelsTab = v; save(); Views.buildTabs(); }));
     out.push(choice('OK on a channel in the Guide', 'Preview first works like TiviMate: the first OK plays it in the corner window, the second goes fullscreen.',
       ['preview', 'full'], ['Preview first, then fullscreen', 'Fullscreen right away'], function () { return s.guideOk === 'full' ? 'full' : 'preview'; }, function (v) { s.guideOk = v; save(); }));
+    out.push(choice('Guide row size', 'Taller rows with bigger channel names and titles.  Easier to read on smaller TVs or from across the room; fewer channels fit at once.', ['m', 'l', 'xl'], ['Normal', 'Large', 'Extra large'],
+      function () { return s.guideRows || 'm'; }, function (v) { s.guideRows = v; Views.applyLook(); if (window.Guide && Guide.resize) Guide.resize(); save(); }));
     out.push(toggle('Two-line programmes', 'Shows each programme\'s time under its title in the grid.', function () { return s.guideLines !== 1; }, function (v) { s.guideLines = v ? 2 : 1; Views.applyLook(); save(); }));
     out.push(toggle('Dim past programmes', '', function () { return s.dimPast; }, function (v) { s.dimPast = v; Views.applyLook(); save(); }));
     out.push(choice('Mark what\'s on now', 'How the guide shows programmes airing right now.', ['fill', 'color', 'off'], ['Tint what has aired', 'Colour and tint', 'Off'], function () { return s.nowStyle || 'fill'; }, function (v) { s.nowStyle = v; Views.applyLook(); save(); }));
@@ -662,7 +666,7 @@ var Settings = (function () {
     }
     out.push(choice('Focus style', 'How the selected item stands out.  Outline adds a white ring, easier to spot from across the room.', ['fill', 'ring'], ['Filled', 'Filled with outline'], function () { return s.focusStyle || 'fill'; }, function (v) { s.focusStyle = v; Views.applyLook(); save(); }));
     out.push(choice('Text size', 'Guide and channel lists.', ['s', 'm', 'l'], ['Small', 'Medium', 'Large'], function () { return s.textSize || 'm'; }, function (v) { s.textSize = v; Views.applyLook(); save(); }));
-    out.push(choice('Panels over video', 'How see-through the info panel, quick menu and channel list are in fullscreen.', ['l', 'm', 'h'], ['Solid', 'Normal', 'See-through'], function () { return s.overlay || 'm'; }, function (v) { s.overlay = v; Views.applyLook(); save(); }));
+    out.push(choice('Panels over video', 'How see-through the info panel, quick menu and channel guide are in fullscreen.', ['l', 'm', 'h'], ['Solid', 'Normal', 'See-through'], function () { return s.overlay || 'm'; }, function (v) { s.overlay = v; Views.applyLook(); save(); }));
     out.push(choice('Channel logos', 'Which logo to use when both the playlist and the guide have one.', ['playlist', 'guide'], ['From the playlist', 'From the guide'], function () { return s.logoPref === 'guide' ? 'guide' : 'playlist'; }, function (v) { s.logoPref = v; save(); relist(); }));
     out.push(choice('Logo library', 'Logos from two open projects, iptv-org and tv-logos, matched to your channels by guide id, name and country.  TiviBro hosts no images: each logo loads from its project.',
       ['off', 'fill', 'all'], ['Off', 'Fill in missing logos', 'Use for every channel it knows'], function () { return s.logoLib || 'off'; },
