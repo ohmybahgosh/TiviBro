@@ -165,14 +165,14 @@ var UI = (function () {
     };
   }
 
-  function prompt(title, value, done, hint, secret) {
+  function prompt(title, value, done, hint, secret, okLabel) {
     mTitle.textContent = title;
     mBody.innerHTML = '';
     var inp = U.el('input');
     inp.type = secret ? 'password' : 'text'; inp.value = value || ''; inp.spellcheck = false;
     mBody.appendChild(inp);
     if (hint) mBody.appendChild(U.el('div', 'mi', hint));
-    var ok = U.el('div', 'mi', 'Save'), cancel = U.el('div', 'mi', 'Cancel');
+    var ok = U.el('div', 'mi', okLabel || 'Save'), cancel = U.el('div', 'mi', 'Cancel');
     ok.addEventListener('click', function () { var v = inp.value; close(); done(v); });
     cancel.addEventListener('click', function () { close(); });
     mBody.appendChild(ok); mBody.appendChild(cancel);

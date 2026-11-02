@@ -16,7 +16,7 @@ const setIssue = (n, v) => fetch(MOCK + '/mock-issue?n=' + n + '&v=' + encodeURI
   async function start(state) {
     const ctx = await b.newContext(Object.assign({ viewport: { width: 1920, height: 1080 } }, state ? { storageState: state } : {}));
     const page = await ctx.newPage(); page.on('pageerror', e => errs.push(e.message));
-    await page.addInitScript(R.init({ time: Date.now() })[0]);
+    if (!state) await page.addInitScript(R.init({ time: Date.now() })[0]);
     await page.goto(APP);
     await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 60000 });
     await page.evaluate(m => { Store.settings.relayConfig = m + '/relay.json'; }, MOCK);
@@ -43,7 +43,7 @@ const setIssue = (n, v) => fetch(MOCK + '/mock-issue?n=' + n + '&v=' + encodeURI
   await a.ev(() => Reports.check(true)); await a.page.waitForTimeout(1000);
   let m = await modal(a.ev);
   ok('the reply shows once, by itself', /Your problem report #42/.test(m) && /The developer replied, fix in 0\.9\.9-alpha\.1/.test(m) && /fixed in 0\.9\.9-alpha\.1: big playlists/.test(m), m);
-  ok('with Update, Still happening, OK and a code for the phone', /Update to 0\.9\.9-alpha\.1/.test(m) && /Still happening/.test(m) && /\bOK\b/.test(m) && /Scan to read it all/.test(m) && await a.ev(() => !!document.querySelector('#modal .rep-qr svg')), m);
+  ok('with Update, Still happening, OK and a code for the phone', /Update to 0\.9\.9-alpha\.1/.test(m) && await a.ev(() => [].slice.call(document.querySelectorAll('#modal .mbtns .btn')).map(x => x.textContent).join('|')) === 'Update to 0.9.9-alpha.1|Still happening|OK' && /Scan to read it all/.test(m) && await a.ev(() => !!document.querySelector('#modal .rep-qr svg')), m);
   // Still happening, with the log.
   await key(a.page, 'ArrowRight'); await key(a.page, 'Enter');
   m = await modal(a.ev);

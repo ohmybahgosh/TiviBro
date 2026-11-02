@@ -124,7 +124,7 @@ var Reports = (function () {
     UI.menu('Tell the developer it still happens?', [
       { label: 'Send with the log', sub: (behind ? 'You have ' + cur + '; the fix is in ' + r.fixed + '.  ' : '') + 'The log goes too, with logins and server names taken out.', action: function () { send(r, ''); } },
       { label: 'Add a note first', sub: 'What you were doing, or what is different now', action: function () {
-        UI.prompt('What happens now?', '', function (v) { send(r, v); }, 'A sentence is plenty.  The log goes with it.');
+        UI.prompt('What happens now?', '', function (v) { send(r, v); }, 'A sentence is plenty.  The log goes with it.', false, 'Send');
       } },
       { label: 'Cancel', current: true }
     ]);
