@@ -65,23 +65,24 @@ object BackupTools {
     }
 
     /** The settings the phone can change in a backup, with their choices (value to label). */
-    data class Choice(val key: String, val label: String, val values: List<Pair<Any, String>>, val path: List<String> = listOf(key))
+    data class Choice(val key: String, val label: String, val values: List<Pair<Any, String>>, val default: Any, val path: List<String> = listOf(key))
     val CHOICES = listOf(
-        Choice("startTab", "Start screen", listOf("guide" to "Guide", "live" to "Channels screen")),
-        Choice("textSize", "Text size", listOf("s" to "Small", "m" to "Medium", "l" to "Large")),
-        Choice("guideRows", "Guide row size", listOf("m" to "Normal", "l" to "Bigger", "xl" to "Biggest")),
-        Choice("showClock", "Clock", listOf(true to "On", false to "Off")),
-        Choice("showNumbers", "Channel numbers", listOf(true to "On", false to "Off")),
-        Choice("cc", "Closed captions", listOf(true to "On", false to "Off")),
-        Choice("adult", "Hide adult channels", listOf(true to "On", false to "Off"), listOf("filter", "adult")),
-        Choice("updateAuto", "Check for updates automatically", listOf(true to "On", false to "Off")),
-        Choice("exitTwice", "Press Back twice to exit", listOf(true to "On", false to "Off")),
+        // Each with the TV's own default (app/js/store.js DEFAULTS), for a backup that never changed it.
+        Choice("startTab", "Start screen", listOf("guide" to "Guide", "live" to "Channels screen"), "guide"),
+        Choice("textSize", "Text size", listOf("s" to "Small", "m" to "Medium", "l" to "Large"), "m"),
+        Choice("guideRows", "Guide row size", listOf("m" to "Normal", "l" to "Bigger", "xl" to "Biggest"), "m"),
+        Choice("showClock", "Clock", listOf(true to "On", false to "Off"), true),
+        Choice("showNumbers", "Channel numbers", listOf(true to "On", false to "Off"), true),
+        Choice("cc", "Closed captions", listOf(true to "On", false to "Off"), false),
+        Choice("adult", "Hide adult channels", listOf(true to "On", false to "Off"), false, listOf("filter", "adult")),
+        Choice("updateAuto", "Check for updates automatically", listOf(true to "On", false to "Off"), true),
+        Choice("exitTwice", "Press Back twice to exit", listOf(true to "On", false to "Off"), true),
     )
 
     fun get(b: JSONObject, c: Choice): Any? {
         var o: JSONObject? = b.optJSONObject("settings")
         for (k in c.path.dropLast(1)) o = o?.optJSONObject(k)
-        return o?.opt(c.path.last())
+        return o?.opt(c.path.last())?.takeIf { it != JSONObject.NULL } ?: c.default
     }
 
     /** A copy of [b] with these settings. */

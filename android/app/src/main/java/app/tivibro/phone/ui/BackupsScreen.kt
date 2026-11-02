@@ -256,7 +256,7 @@ private fun SettingsDialog(model: AppModel, b: SavedBackup, onDone: (Map<BackupT
                 Text("Saved as a new backup; restore it to use them on the TV.", color = Muted, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(6.dp))
                 BackupTools.CHOICES.forEach { c ->
-                    val cur = changed[c] ?: backup?.let { BackupTools.get(it, c) } ?: c.values.first().first
+                    val cur = changed[c] ?: backup?.let { BackupTools.get(it, c) } ?: c.default
                     val i = c.values.indexOfFirst { it.first == cur }.coerceAtLeast(0)
                     Row(Modifier.fillMaxWidth().clickable { changed[c] = c.values[(i + 1) % c.values.size].first }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(c.label, Modifier.weight(1f))
