@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 52, 2026-11-01)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 52
 
 - **My teams stays between games and says when the next one is.**  With no game on or within the window, the group no longer disappears from the guide and the channel list: it reads "No games on now or in the next 6 hours.  Next: Detroit Red Wings at Florida Panthers, Tomorrow 7:00pm on NHL | DETROIT RED WINGS."
 - **Yesterday's event channels aren't tomorrow's games.**  An event channel named with only a time ("Vikings @ Lions 1:00 PM"), still up hours after the game, no longer counts as a game the next day.
@@ -8,11 +12,7 @@
 - **Movies without details or posters get them on their own.**  With a TMDB token saved, new movies are looked up after each scan and when TiviBro starts, quietly.  One TMDB can't match waits a week; Yellow or Find movie details still tries.
 - **No more "Started at …: Next game" questions when TiviBro opens.**  Alpha 51 cleaned up the placeholder reminders that hadn't started yet, but kept the ones whose time had passed while TiviBro was closed, and asked about each of those on opening.  Those go too now, and a placeholder ("Next game: …", "No future events scheduled") is never asked about, whoever set the reminder.
 
-## 0.6.0 (alpha 51, 2026-11-01)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 51
+### In alpha 51
 
 - **No more reminders for "games" that aren't.**  An earlier version set My teams reminders for team channels' placeholders ("Future events for Detroit Tigers not found yet", "No future events scheduled") and their "Next game" listings.  TiviBro now removes those from the reminder list when it starts, the TV's helper refuses to show or schedule them even before TiviBro is next opened, and "no future events" style listings never count as games.
 - **Reminders know when nobody's watching, on rooted TVs.**  In developer mode the TV refused the helper two questions: is the screen on (or the screensaver / Always Ready), and which app is in front.  So reminders could come up over the screensaver.  On rooted TVs install.sh, or TiviBro itself through the Homebrew Channel, now adds just those two permissions for the helper.
