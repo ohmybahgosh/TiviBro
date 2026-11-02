@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Movies and Shows from M3U links.**  Many providers give one M3U link with their films and series in it.  Those now go to **Movies** and **Shows**, by category, instead of filling the channel list: films as movies, and episodes gathered into shows by season, played from the links in the list.  Search finds them too.  The network helper keeps the library on the TV's storage, so a list with 300,000 titles still fits (issue #26's list: 2,775 channels, 21,946 movies and 7,048 shows).  Reload the channel list once to get them.
+- **Guide fallback messages explain what happened.**  When the provider guide fails, TiviBro says it is checking public guides and only says it is using them when matching listings are available.  The TV and web editor keep the original source error for diagnosis.
 
 ## 0.6.0 (alpha 59, 2026-11-02)
 
