@@ -2035,7 +2035,7 @@ $('gReload').onclick = function () {
 function onProgress(p) {
   var was = lastProgress; lastProgress = p;
   if (page === 'guide') drawProgress(p);
-  if (!p.active && p.phase === 'done' && ((was && was.active) || (p.message && (!was || was.message !== p.message)))) toast(p.message || ('Guide loaded on the TV: ' + (p.programmes || 0).toLocaleString() + ' programmes'));
+  if (!p.active && p.phase === 'done' && ((was && was.active) || (p.message && was && (was.active || was.phase === 'fallback' || was.message !== p.message)))) toast(p.message || ('Guide loaded on the TV: ' + (p.programmes || 0).toLocaleString() + ' programmes'));
 }
 function drawProgress(p) {
   var box = $('gProg');

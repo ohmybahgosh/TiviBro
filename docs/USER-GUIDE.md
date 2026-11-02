@@ -783,9 +783,9 @@ Which groups show, in what order, and getting hidden things back.
 
 ### Settings: Guide, start screen, reminders
 
-With public guides enabled, if the provider guide fails, the guide status says it is checking public guides.  Once public guides supply current matching listings, it says **Provider guide unavailable; using public guides.**  If they supply none, it says so instead.  The original source error remains in the guide diagnostics.
-
 How the guide looks and behaves, which screen TiviBro opens on, and reminders.
+
+With public guides on, if the provider guide fails, the guide status says it is checking public guides.  Once they supply current matching listings, it says **Provider guide unavailable; using public guides.**  If they supply none, it says so instead.  If the guide TiviBro already had is still there, it says it is **using the saved guide**.  The original error stays in the guide's details.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-set-guide"><img src="screenshots/tv-set-guide.png" width="49%" alt="Guide, start screen, reminders"></a>

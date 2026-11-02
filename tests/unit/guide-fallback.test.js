@@ -11,7 +11,7 @@ let fails=0;
 function check(name,fn){try{fn();console.log('PASS '+name);}catch(e){fails++;console.error('FAIL '+name+': '+e.message);}}
 function world(){
   const states=[],toasts=[];
-  const c={pubMatched:{},pubStatus:null,live:id=>id==='fresh',setProgress:p=>states.push(p),U:{toast:m=>toasts.push(m)}};
+  const c={pubMatched:{},pubStatus:null,pubGen:1,paused:null,hostOf:u=>u,live:id=>id==='fresh',setProgress:p=>states.push(p),U:{toast:m=>toasts.push(m)}};
   vm.createContext(c);vm.runInContext(code,c);return {c,states,toasts};
 }
 check('a provider failure waits neutrally for enabled public guides',()=>{
@@ -36,5 +36,16 @@ check('extra guide failures are not mislabeled as a provider failure',()=>{
 });
 check('successful main guides do not get a fallback notice',()=>{
   const w=world();w.c.finishGuideNotice({provider:true,fallback:true});assert.equal(w.states.length,0);
+});
+check('the guide kept from before still works: no red notice',()=>{
+  const w=world(),n={provider:true,fallback:true,kept:true};w.c.mainGuideFailure(n,'HTTP 404',[]);w.c.finishGuideNotice(n);
+  assert.equal(w.states[1].phase,'done');assert.match(w.states[1].message,/using the saved guide\.$/);
+});
+check('public guides paused after closes: that message stays',()=>{
+  const w=world(),n={provider:true,fallback:true};w.c.mainGuideFailure(n,'HTTP 404',[]);w.c.paused={kind:'pub'};w.c.finishGuideNotice(n);
+  assert.equal(w.states.length,1);
+});
+check('an older load says nothing once a newer one started',()=>{
+  const w=world(),n={gen:1,provider:true,fallback:true};w.c.pubGen=2;w.c.mainGuideFailure(n,'HTTP 404',[]);assert.equal(w.states.length,0);
 });
 if(fails)process.exitCode=1;
