@@ -61,7 +61,16 @@ android {
     buildFeatures { compose = true }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
     testOptions { unitTests.isReturnDefaultValues = true }
+    // The web editor, for editing a backup on the phone without the TV (OfflineEditorScreen.kt): the
+    // same files the TV's helper serves (service/editor), copied in at build time.
+    sourceSets["main"].assets.srcDir("build/generated/editorAssets")
 }
+
+val copyEditor by tasks.registering(Copy::class) {
+    from("../../service/editor")
+    into("build/generated/editorAssets/editor")
+}
+tasks.named("preBuild") { dependsOn(copyEditor) }
 
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.10.01")

@@ -13,6 +13,7 @@ import androidx.activity.viewModels
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +36,7 @@ import app.tivibro.phone.work.BackupWorker
 import app.tivibro.phone.ui.AppModel
 import app.tivibro.phone.ui.CodeScreen
 import app.tivibro.phone.ui.EditorScreen
+import app.tivibro.phone.ui.OfflineEditorScreen
 import app.tivibro.phone.ui.HomeScreen
 import app.tivibro.phone.ui.TbTheme
 import app.tivibro.phone.ui.TvScreen
@@ -43,6 +45,7 @@ import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private val model: AppModel by viewModels()
@@ -132,7 +135,22 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
         }
         composable("backups/{id}") { e ->
             val id = e.arguments?.getString("id").orEmpty()
-            BackupsScreen(model, id, tvs, snack, onBack = { nav.popBackStack() })
+            BackupsScreen(model, id, tvs, snack, onBack = { nav.popBackStack() }, onEditOffline = { b, pid -> nav.navigate("offline/${enc(id)}/${enc(b.file.name)}/${enc(pid)}") })
+        }
+        // A backup's channels in the web editor, on the phone, without the TV (OfflineEditorScreen.kt).
+        composable("offline/{id}/{file}/{pid}") { e ->
+            val id = e.arguments?.getString("id").orEmpty()
+            val file = e.arguments?.getString("file").orEmpty()
+            val pid = e.arguments?.getString("pid").orEmpty()
+            val b = model.backups.list(id).firstOrNull { it.file.name == file }
+            if (b == null) { LaunchedEffect(Unit) { nav.popBackStack() }; return@composable }
+            val scope = rememberCoroutineScope()
+            OfflineEditorScreen(
+                title = model.backupName(b), tvId = id,
+                state = { model.offlineState(b, pid) },
+                onKeep = { saved, label -> scope.launch { runCatching { model.keepEdited(b, pid, saved, label) }.onSuccess { model.say("Kept as a new backup.  Restore it on the TV from Backups.") }.onFailure { model.say(it.message ?: "Couldn't keep it") } } },
+                onBack = { nav.popBackStack() },
+            )
         }
         composable("add") {
             AddScreen(
@@ -190,7 +208,8 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
             val id = e.arguments?.getString("id").orEmpty()
             val tv = model.tv(id)
             if (tv == null) { LaunchedEffect(Unit) { nav.popBackStack() }; return@composable }
-            EditorScreen(name = tv.name, host = tv.host, load = { progress -> model.editorUrl(id, progress) }, onBack = { nav.popBackStack() }, say = { model.say(it) })
+            EditorScreen(name = tv.name, host = tv.host, load = { progress -> model.editorUrl(id, progress) }, onBack = { nav.popBackStack() }, say = { model.say(it) },
+                onKeep = { json -> model.keepEditorCopy(id, json) })
         }
     }
 }

@@ -1,7 +1,8 @@
 /* Backups of each TV's TiviBro, kept on the phone: made by hand or automatically once a week (while
    TiviBro is open on the TV, see work/BackupWorker.kt).  A backup holds every playlist login, so each one
    is encrypted with a key in the Android Keystore and kept in app storage that is left out of backups
-   and device transfers.  The newest eight per TV are kept. */
+   and device transfers.  The newest eight automatic ones per TV are kept; ones made by hand, copies,
+   merges and edits made on the phone (BackupTools.kt) stay until deleted.  Each can have a name. */
 package app.tivibro.phone.data
 
 import android.content.Context
@@ -18,7 +19,7 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 /** A backup on the phone: when it was made, from which TiviBro, and how many playlists it has. */
-data class SavedBackup(val tvId: String, val file: File, val at: Long, val version: String, val playlists: Int, val auto: Boolean, val size: Long)
+data class SavedBackup(val tvId: String, val file: File, val at: Long, val version: String, val playlists: Int, val auto: Boolean, val size: Long, val label: String = "")
 
 class BackupStore(context: Context) {
     private val root = File(context.applicationContext.filesDir, "backups")
@@ -41,23 +42,24 @@ class BackupStore(context: Context) {
     private fun dir(tvId: String) = File(root, tvId.filter { it.isLetterOrDigit() }).apply { mkdirs() }
 
     @Synchronized
-    fun save(tvId: String, backup: JSONObject, auto: Boolean): SavedBackup {
+    fun save(tvId: String, backup: JSONObject, auto: Boolean, label: String = ""): SavedBackup {
         val c = Cipher.getInstance("AES/GCM/NoPadding")
         c.init(Cipher.ENCRYPT_MODE, key())
         val data = c.doFinal(backup.toString().toByteArray(Charsets.UTF_8))
-        val at = System.currentTimeMillis()
-        val meta = JSONObject().put("at", at).put("version", backup.optString("version")).put("auto", auto)
+        var at = System.currentTimeMillis()
+        while (File(dir(tvId), "$at.tbk").exists()) at++
+        val meta = JSONObject().put("at", at).put("version", backup.optString("version")).put("auto", auto).put("label", label.take(80))
             .put("playlists", backup.optJSONObject("settings")?.optJSONArray("playlists")?.length() ?: 0)
         val f = File(dir(tvId), "$at.tbk")
         f.writeText(JSONObject().put("meta", meta).put("iv", b64(c.iv)).put("data", b64(data)).toString())
-        prefs.edit().putLong("last:$tvId", at).apply()
-        list(tvId).drop(KEEP).forEach { it.file.delete() }
+        if (auto || label.isBlank()) prefs.edit().putLong("last:$tvId", at).apply()
+        list(tvId).filter { it.auto }.drop(KEEP).forEach { it.file.delete() }
         return read(tvId, f)!!
     }
 
     private fun read(tvId: String, f: File): SavedBackup? = runCatching {
         val m = JSONObject(f.readText()).getJSONObject("meta")
-        SavedBackup(tvId, f, m.getLong("at"), m.optString("version"), m.optInt("playlists"), m.optBoolean("auto"), f.length())
+        SavedBackup(tvId, f, m.getLong("at"), m.optString("version"), m.optInt("playlists"), m.optBoolean("auto"), f.length(), m.optString("label"))
     }.getOrNull()
 
     fun list(tvId: String): List<SavedBackup> = (dir(tvId).listFiles { f -> f.name.endsWith(".tbk") } ?: emptyArray()).mapNotNull { read(tvId, it) }.sortedByDescending { it.at }
@@ -71,6 +73,14 @@ class BackupStore(context: Context) {
     }
 
     fun delete(b: SavedBackup) { b.file.delete() }
+
+    /** A name for a backup ("Before the big clean-up"), kept with it. */
+    @Synchronized
+    fun rename(b: SavedBackup, label: String) {
+        val j = JSONObject(b.file.readText())
+        j.getJSONObject("meta").put("label", label.trim().take(80)).put("auto", false)
+        b.file.writeText(j.toString())
+    }
 
     fun lastAt(tvId: String): Long = prefs.getLong("last:$tvId", 0)
 

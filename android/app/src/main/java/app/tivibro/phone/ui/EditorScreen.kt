@@ -63,7 +63,14 @@ function send(a){fetch(a.href).then(function(r){return r.blob()}).then(function(
 var oc=HTMLAnchorElement.prototype.click;HTMLAnchorElement.prototype.click=function(){if(this.download&&/^blob:/.test(this.href)){send(this);return}return oc.call(this)};
 document.addEventListener('click',function(e){var a=e.target&&e.target.closest&&e.target.closest('a[download]');if(a&&/^blob:/.test(a.href)){e.preventDefault();e.stopPropagation();send(a)}},true)})();"""
 
-private class Bridge(val onSave: (String, ByteArray, String) -> Unit) {
+/* The editor's channel list, kept on the phone each time it loads with the TV (EditorCopies.kt), so a
+   backup can be edited later without the TV (OfflineEditorScreen.kt).  Only when the channels change. */
+private const val KEEP = """(function(){if(window.__tbk)return;window.__tbk=1;var last='';setInterval(function(){try{var d=window.D;if(!d||!d.channels||!d.channels.length||!d.playlist||!window.TiviBroApp.keep)return;var sig=d.playlist.id+'|'+(d.chanRev||'')+'|'+d.channels.length;if(sig===last)return;last=sig;TiviBroApp.keep(JSON.stringify(d))}catch(e){}},4000)})();"""
+
+private class Bridge(val onSave: (String, ByteArray, String) -> Unit, val onKeep: ((String) -> Unit)? = null) {
+    @JavascriptInterface
+    fun keep(json: String) { onKeep?.invoke(json) }
+
     @JavascriptInterface
     fun save(name: String, dataUrl: String) {
         val comma = dataUrl.indexOf(',')
@@ -77,7 +84,7 @@ private class Bridge(val onSave: (String, ByteArray, String) -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) -> String, onBack: () -> Unit, say: (String) -> Unit) {
+fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) -> String, onBack: () -> Unit, say: (String) -> Unit, onKeep: ((String) -> Unit)? = null) {
     val ctx = LocalContext.current
     var url by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf("Asking the TV for the editor…") }
@@ -151,7 +158,7 @@ fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) ->
                             settings.allowFileAccess = false
                             settings.allowContentAccess = false
                             settings.setSupportMultipleWindows(false)
-                            addJavascriptInterface(Bridge { n, b, _ -> post { pendingSave = b; create.launch(n) } }, "TiviBroApp")
+                            addJavascriptInterface(Bridge({ n, b, _ -> post { pendingSave = b; create.launch(n) } }, onKeep), "TiviBroApp")
                             webViewClient = object : WebViewClient() {
                                 // The editor stays in the app; anything else (GitHub, the wiki) opens in the browser.
                                 override fun shouldOverrideUrlLoading(view: WebView, req: WebResourceRequest): Boolean {
@@ -161,7 +168,7 @@ fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) ->
                                     return true
                                 }
                                 override fun onPageStarted(view: WebView, u2: String?, favicon: Bitmap?) { progress = 5 }
-                                override fun onPageFinished(view: WebView, u2: String?) { progress = 100; view.evaluateJavascript(HOOK, null) }
+                                override fun onPageFinished(view: WebView, u2: String?) { progress = 100; view.evaluateJavascript(HOOK, null); if (onKeep != null) view.evaluateJavascript(KEEP, null) }
                             }
                             webChromeClient = object : WebChromeClient() {
                                 override fun onProgressChanged(view: WebView, p: Int) { progress = p }

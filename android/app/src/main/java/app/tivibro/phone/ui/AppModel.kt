@@ -10,6 +10,8 @@ import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.tivibro.phone.data.BackupStore
+import app.tivibro.phone.data.BackupTools
+import app.tivibro.phone.data.EditorCopies
 import app.tivibro.phone.data.SavedBackup
 import app.tivibro.phone.data.TvStore
 import app.tivibro.phone.proto.ChanEdit
@@ -64,6 +66,7 @@ data class Pairing0(val busy: Boolean = false, val error: String? = null, val do
 class AppModel(app: Application) : AndroidViewModel(app) {
     private val store = TvStore(app)
     val backups = BackupStore(app)
+    val copies = EditorCopies(app)
     private val _tvs = MutableStateFlow(store.load().map { TvUi(it) })
     val tvs: StateFlow<List<TvUi>> = _tvs.asStateFlow()
     private val _msg = MutableSharedFlow<String>(extraBufferCapacity = 8)
@@ -170,6 +173,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         store.remove(id)
         if (store.tileTv == id) store.tileTv = null
         backups.forget(id)
+        copies.forget(id)
         _tvs.update { l -> l.filterNot { it.tv.id == id } }
         say("${tv.name} removed")
     }
@@ -406,6 +410,47 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     suspend fun restore(toId: String, b: SavedBackup): String = withContext(Dispatchers.IO) {
         val r = ask(toId, "restore", JSONObject().put("backup", backups.open(b)), seal = true, timeoutMs = 90_000, tries = 1)
         "Restored ${r.optInt("playlists")} playlist(s).  TiviBro is restarting on the TV."
+    }
+
+    /* ---------- backups on the phone, without the TV (discussion #23) ---------- */
+
+    /** The web editor loaded a TV's channel list: kept for editing backups without the TV. */
+    fun keepEditorCopy(tvId: String, json: String) { copies.keep(tvId, json) }
+
+    fun backupName(b: SavedBackup): String = b.label.ifBlank { java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT).format(java.util.Date(b.at)) }
+
+    suspend fun duplicate(b: SavedBackup): SavedBackup = withContext(Dispatchers.IO) { backups.save(b.tvId, backups.open(b), auto = false, label = "Copy of " + backupName(b)) }
+
+    suspend fun rename(b: SavedBackup, label: String) = withContext(Dispatchers.IO) { backups.rename(b, label) }
+
+    /** [a] with the playlists from [b] it doesn't have.  Says how many came in. */
+    suspend fun merge(a: SavedBackup, b: SavedBackup): Int = withContext(Dispatchers.IO) {
+        val (out, added) = BackupTools.merge(backups.open(a), backups.open(b))
+        if (added == 0) throw TbException("Nothing to add: ${backupName(a)} already has every playlist in ${backupName(b)}.")
+        backups.save(a.tvId, out, auto = false, label = backupName(a) + " + " + backupName(b))
+        added
+    }
+
+    fun openBackup(b: SavedBackup): JSONObject = backups.open(b)
+
+    suspend fun withSettings(b: SavedBackup, values: Map<BackupTools.Choice, Any>, label: String): SavedBackup = withContext(Dispatchers.IO) {
+        backups.save(b.tvId, BackupTools.withSettings(backups.open(b), values), auto = false, label = label)
+    }
+
+    /** What the offline editor starts from: the kept channel list, with the backup's edits and name rules for that playlist. */
+    fun offlineState(b: SavedBackup, pid: String): String {
+        val d = JSONObject(copies.read(b.tvId, pid))
+        val backup = backups.open(b)
+        d.put("edits", backup.optJSONObject("edits")?.optJSONObject(pid) ?: JSONObject())
+        val pl = backup.optJSONObject("settings")?.optJSONArray("playlists")?.let { l -> (0 until l.length()).mapNotNull { l.optJSONObject(it) }.firstOrNull { it.optString("id") == pid } }
+        d.put("names", pl?.optJSONObject("names") ?: JSONObject.NULL)
+        d.put("setup", false); d.put("lastBackup", 0); d.remove("drafts")
+        return d.toString()
+    }
+
+    /** Changes made in the offline editor, kept as a new backup. */
+    suspend fun keepEdited(b: SavedBackup, pid: String, saved: String, label: String): SavedBackup = withContext(Dispatchers.IO) {
+        backups.save(b.tvId, BackupTools.withEdits(backups.open(b), pid, JSONObject(saved)), auto = false, label = label.ifBlank { "Edited on the phone" })
     }
 
     /** A copy the web editor can restore on any TV, sealed with a passphrase. */

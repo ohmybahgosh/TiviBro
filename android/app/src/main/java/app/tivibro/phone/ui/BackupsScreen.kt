@@ -1,6 +1,9 @@
 /* Backups of a TV kept on the phone: back up now, the weekly automatic backups (on unless switched off),
    put one back on this TV or another paired TV, and save a copy as a file the web editor can restore on
-   any TV (sealed with a passphrase, like the editor's own backups). */
+   any TV (sealed with a passphrase, like the editor's own backups).
+   Without the TV (discussion #23): name, duplicate and merge backups, change settings inside one, edit
+   a playlist's channels in the web editor on the phone (OfflineEditorScreen.kt), and delete with two
+   confirmations.  Each of those makes a new backup and leaves the one it came from alone. */
 package app.tivibro.phone.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -54,6 +57,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import app.tivibro.phone.data.BackupTools
 import app.tivibro.phone.data.SavedBackup
 import app.tivibro.phone.proto.TbException
 import kotlinx.coroutines.launch
@@ -64,7 +68,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarHostState, onBack: () -> Unit) {
+fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarHostState, onBack: () -> Unit, onEditOffline: (SavedBackup, String) -> Unit = { _, _ -> }) {
     val tv = tvs.firstOrNull { it.tv.id == id }?.tv ?: return
     var version by remember { mutableIntStateOf(0) }
     val list = remember(version) { model.backups.list(id) }
@@ -73,7 +77,20 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
     var restoring by remember { mutableStateOf<Pair<SavedBackup, String>?>(null) }
     var exporting by remember { mutableStateOf<SavedBackup?>(null) }
     var pass by remember { mutableStateOf("") }
+    var renaming by remember { mutableStateOf<SavedBackup?>(null) }
+    var newName by remember { mutableStateOf("") }
+    var merging by remember { mutableStateOf<SavedBackup?>(null) }
+    var settingsOf by remember { mutableStateOf<SavedBackup?>(null) }
+    var deleting by remember { mutableStateOf<Pair<SavedBackup, Int>?>(null) }
+    var picking by remember { mutableStateOf<Pair<SavedBackup, List<Pair<String, String>>>?>(null) }
+    var noCopy by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    fun act(what: suspend () -> String) { scope.launch { try { model.say(what()); version++ } catch (e: TbException) { model.say(e.message ?: "That didn't work") } catch (e: Exception) { model.say(e.message ?: "That didn't work") } } }
+    // Edit a playlist's channels on the phone: needs the channel list the web editor kept (EditorCopies.kt).
+    fun editOffline(b: SavedBackup) {
+        val pls = runCatching { BackupTools.playlists(model.openBackup(b)) }.getOrDefault(emptyList()).filter { model.copies.has(id, it.first) }
+        when (pls.size) { 0 -> noCopy = true; 1 -> onEditOffline(b, pls[0].first); else -> picking = b to pls }
+    }
     val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         val b = exporting; val p = pass
         exporting = null; pass = ""
@@ -116,7 +133,7 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
                     Row(Modifier.fillMaxWidth().clickable { auto = !auto; model.backups.auto = auto }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text("Back up every week")
-                            Text("When the phone is on your Wi-Fi and TiviBro is open on the TV.  The newest ${app.tivibro.phone.data.BackupStore.KEEP} are kept.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                            Text("When the phone is on your Wi-Fi and TiviBro is open on the TV.  The newest ${app.tivibro.phone.data.BackupStore.KEEP} automatic ones are kept; named, copied and edited ones stay until you delete them.", color = Muted, style = MaterialTheme.typography.bodySmall)
                         }
                         Switch(auto, { auto = it; model.backups.auto = it })
                     }
@@ -127,7 +144,12 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
                 BackupRow(b, others = tvs.filter { it.tv.id != id }.map { it.tv.id to it.tv.name },
                     onRestore = { to, _ -> restoring = b to to },
                     onExport = { exporting = b },
-                    onDelete = { model.backups.delete(b); version++ })
+                    onDelete = { deleting = b to 1 },
+                    onEdit = { editOffline(b) },
+                    onSettings = { settingsOf = b },
+                    onRename = { renaming = b; newName = b.label },
+                    onDuplicate = { act { model.duplicate(b); "Copied" } },
+                    onMerge = { if (list.size < 2) model.say("Make another backup first: merging adds the playlists of one backup to another.") else merging = b })
             }
         }
     }
@@ -164,24 +186,112 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
             dismissButton = { TextButton(onClick = { exporting = null; pass = "" }) { Text("Cancel") } },
         )
     }
+    renaming?.let { b ->
+        AlertDialog(
+            onDismissRequest = { renaming = null }, containerColor = Panel,
+            title = { Text("Name this backup") },
+            text = { OutlinedTextField(newName, { newName = it.take(80) }, singleLine = true, label = { Text("Like \"Before the big clean-up\"") }) },
+            confirmButton = { TextButton(onClick = { renaming = null; act { model.rename(b, newName); if (newName.isBlank()) "Name removed" else "Named" } }) { Text("Save") } },
+            dismissButton = { TextButton(onClick = { renaming = null }) { Text("Cancel") } },
+        )
+    }
+    merging?.let { a ->
+        AlertDialog(
+            onDismissRequest = { merging = null }, containerColor = Panel,
+            title = { Text("Add playlists from…") },
+            text = {
+                Column {
+                    Text("A new backup: ${model.backupName(a)}, with the playlists (and their edits) from the one you pick that it doesn't have.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(8.dp))
+                    list.filter { it != a }.take(12).forEach { o ->
+                        TextButton(onClick = { merging = null; act { val n = model.merge(a, o); "Merged: $n playlist" + (if (n == 1) "" else "s") + " added" } }) {
+                            Text(model.backupName(o) + "  ·  ${o.playlists} playlist" + (if (o.playlists == 1) "" else "s"))
+                        }
+                    }
+                }
+            },
+            confirmButton = {}, dismissButton = { TextButton(onClick = { merging = null }) { Text("Cancel") } },
+        )
+    }
+    settingsOf?.let { b -> SettingsDialog(model, b, onDone = { values ->
+        settingsOf = null
+        if (values.isNotEmpty()) act { model.withSettings(b, values, "Settings changed: " + model.backupName(b)); "Saved as a new backup" }
+    }) }
+    picking?.let { (b, pls) ->
+        AlertDialog(
+            onDismissRequest = { picking = null }, containerColor = Panel,
+            title = { Text("Which playlist?") },
+            text = { Column { pls.forEach { (pid, name) -> TextButton(onClick = { picking = null; onEditOffline(b, pid) }) { Text(name) } } } },
+            confirmButton = {}, dismissButton = { TextButton(onClick = { picking = null }) { Text("Cancel") } },
+        )
+    }
+    if (noCopy) AlertDialog(
+        onDismissRequest = { noCopy = false }, containerColor = Panel,
+        title = { Text("Open the editor with the TV once") },
+        text = { Text("To edit channels without the TV, the phone needs the channel list.  Open Edit channels with ${tv.name} once (on the same Wi-Fi): the phone keeps a copy of each playlist's channels for next time.") },
+        confirmButton = { TextButton(onClick = { noCopy = false }) { Text("OK") } },
+    )
+    // Delete asks twice: a backup is the only copy of the logins it holds.
+    deleting?.let { (b, step) ->
+        AlertDialog(
+            onDismissRequest = { deleting = null }, containerColor = Panel,
+            title = { Text(if (step == 1) "Delete this backup?" else "Delete it for good?") },
+            text = { Text(if (step == 1) "${model.backupName(b)}, with ${b.playlists} playlist" + (if (b.playlists == 1) "" else "s") + "." else "It can't be brought back.  Your TV and your other backups aren't changed.") },
+            confirmButton = { TextButton(onClick = { if (step == 1) deleting = b to 2 else { deleting = null; model.backups.delete(b); version++; model.say("Deleted") } }) { Text(if (step == 1) "Delete" else "Delete for good", color = Bad) } },
+            dismissButton = { TextButton(onClick = { deleting = null }) { Text("Keep it") } },
+        )
+    }
+}
+
+/* A few settings inside a backup, changed on the phone (BackupTools.CHOICES): tap one to change it. */
+@Composable
+private fun SettingsDialog(model: AppModel, b: SavedBackup, onDone: (Map<BackupTools.Choice, Any>) -> Unit) {
+    val backup = remember(b) { runCatching { model.openBackup(b) }.getOrNull() }
+    val changed = remember { androidx.compose.runtime.mutableStateMapOf<BackupTools.Choice, Any>() }
+    AlertDialog(
+        onDismissRequest = { onDone(emptyMap()) }, containerColor = Panel,
+        title = { Text("Settings in this backup") },
+        text = {
+            Column {
+                Text("Saved as a new backup; restore it to use them on the TV.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(6.dp))
+                BackupTools.CHOICES.forEach { c ->
+                    val cur = changed[c] ?: backup?.let { BackupTools.get(it, c) } ?: c.values.first().first
+                    val i = c.values.indexOfFirst { it.first == cur }.coerceAtLeast(0)
+                    Row(Modifier.fillMaxWidth().clickable { changed[c] = c.values[(i + 1) % c.values.size].first }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(c.label, Modifier.weight(1f))
+                        Text(c.values[i].second, color = if (changed.containsKey(c)) Accent else Muted)
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { onDone(changed.toMap()) }, enabled = changed.isNotEmpty()) { Text("Save as new backup") } },
+        dismissButton = { TextButton(onClick = { onDone(emptyMap()) }) { Text("Cancel") } },
+    )
 }
 
 private fun stamp(t: Long) = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(t))
 
 @Composable
-private fun BackupRow(b: SavedBackup, others: List<Pair<String, String>>, onRestore: (String, String) -> Unit, onExport: () -> Unit, onDelete: () -> Unit) {
+private fun BackupRow(b: SavedBackup, others: List<Pair<String, String>>, onRestore: (String, String) -> Unit, onExport: () -> Unit, onDelete: () -> Unit,
+                      onEdit: () -> Unit, onSettings: () -> Unit, onRename: () -> Unit, onDuplicate: () -> Unit, onMerge: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     Surface(color = Panel, shape = MaterialTheme.shapes.medium) {
         Row(Modifier.fillMaxWidth().padding(16.dp, 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
-                Text(stamp(b.at), fontWeight = FontWeight.SemiBold)
-                Text(listOf("${b.playlists} playlist" + (if (b.playlists == 1) "" else "s"), if (b.auto) "automatic" else "", b.version.ifBlank { "" }).filter { it.isNotBlank() }.joinToString("  ·  "),
+                Text(b.label.ifBlank { stamp(b.at) }, fontWeight = FontWeight.SemiBold)
+                Text(listOf(if (b.label.isNotBlank()) stamp(b.at) else "", "${b.playlists} playlist" + (if (b.playlists == 1) "" else "s"), if (b.auto) "automatic" else "", b.version.ifBlank { "" }).filter { it.isNotBlank() }.joinToString("  ·  "),
                     color = Muted, style = MaterialTheme.typography.labelSmall)
             }
             TextButton(onClick = { onRestore(b.tvId, "") }) { Text("Restore") }
             IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, "More") }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                 others.forEach { (tid, name) -> DropdownMenuItem(text = { Text("Restore on $name") }, onClick = { menu = false; onRestore(tid, name) }) }
+                DropdownMenuItem(text = { Text("Edit channels on the phone") }, onClick = { menu = false; onEdit() })
+                DropdownMenuItem(text = { Text("Change settings") }, onClick = { menu = false; onSettings() })
+                DropdownMenuItem(text = { Text("Name it") }, onClick = { menu = false; onRename() })
+                DropdownMenuItem(text = { Text("Duplicate") }, onClick = { menu = false; onDuplicate() })
+                DropdownMenuItem(text = { Text("Add playlists from another backup") }, onClick = { menu = false; onMerge() })
                 DropdownMenuItem(text = { Text("Save a copy as a file") }, onClick = { menu = false; onExport() })
                 DropdownMenuItem(text = { Text("Delete", color = Bad) }, onClick = { menu = false; onDelete() })
             }
