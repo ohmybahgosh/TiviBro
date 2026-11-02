@@ -135,13 +135,22 @@ if [ -z "${TIVIBRO_NO_COUNT:-}" ] && command -v curl >/dev/null 2>&1; then
   KIND=install; [ -n "$OLD" ] && KIND=update
   curl -fsS -m 5 -X POST -H 'Content-Type: application/json' -d "{\"e\":\"$KIND\",\"v\":\"$VERSION\"}" https://tivibro-report.theboxmod.workers.dev/count >/dev/null 2>&1 || true
 fi
+# Developer mode gives TiviBro's helper only the public permissions, so the TV won't tell it whether the
+# screen is on or which app is in front (for reminders).  Add those two (service/grant.sh says exactly
+# what); every install writes TiviBro's permissions afresh.  TIVIBRO_NO_GRANT=1 skips it.
+SVC_DIR="${TIVIBRO_SVC_DIR:-/media/developer/apps/usr/palm/services/$APP_ID.service}"
+if [ -z "${TIVIBRO_NO_GRANT:-}" ] && [ -f "$SVC_DIR/grant.sh" ]; then
+  case "$(sh "$SVC_DIR/grant.sh" 2>&1)" in
+    *granted*) echo "[*] Helper permissions added (screen state, app in front)." ;;
+    *) ;;
+  esac
+fi
 # The phone app connection: an install removes the helper's own restart schedule and stops it, so the
 # phone couldn't reach the TV until TiviBro was opened again.  When the connection is on, start the
 # helper now (it schedules its own check again) and add a check every 5 minutes that belongs to the
 # TV, not to the TiviBro package, so an update from the Homebrew Channel app can't remove it.  The
 # helper ends that check itself once the phone app connection is turned off.  TIVIBRO_NO_KEEPALIVE=1
 # skips the second part.
-SVC_DIR="${TIVIBRO_SVC_DIR:-/media/developer/apps/usr/palm/services/$APP_ID.service}"
 if grep -q '"on":true' "$SVC_DIR/companion.json" 2>/dev/null; then
   luna "luna://$APP_ID.service/wake" '{}' >/dev/null
   if [ -z "${TIVIBRO_NO_KEEPALIVE:-}" ]; then
