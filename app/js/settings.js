@@ -96,6 +96,15 @@ var Settings = (function () {
     return out;
   }
 
+  /* Your TMDB token: in Settings > My media and in Settings > Guide (Movies on now uses it too). */
+  function tmdbRows() {
+    var hasToken = MediaStore.preferences().tmdbConfigured;
+    return [
+      action(hasToken ? 'TMDB API token saved' : 'Add TMDB API token', hasToken ? 'Token saved on this TV.  Select to replace it, or use the web editor.' : 'Create your own free API key or Read Access Token at themoviedb.org/settings/api.  The web editor is easier for pasting it.  It gives My media its posters and details, and finds the movies in your guide.', function () { UI.prompt(hasToken ? 'Replace TMDB API token' : 'TMDB API key or Read Access Token', '', function (token) { if (!token.trim()) return; U.toast('Checking TMDB access…'); Media.setTmdbToken(token).then(function () { U.toast('TMDB token saved on this TV'); if (typeof Movies !== 'undefined') Movies.poke(); live(); }, function (e) { U.toast(e.message, 6000); }); }, 'The token stays on this TV and is excluded from backups.', true); }, function () { return MediaStore.preferences().tmdbConfigured ? 'Saved' : 'Not set'; }),
+      hasToken && action('Test TMDB token', 'Asks TMDB now whether the saved token works.', function () { U.toast('Checking the TMDB token…'); Media.testTmdbToken().then(function (m) { U.toast(m, 5000); }, function (e) { U.toast(e.message, 7000); }); }),
+      hasToken && action('Remove TMDB token', 'Saved movie details remain available.', function () { Media.setTmdbToken('').then(function () { if (typeof Movies !== 'undefined') Movies.poke(); live(); }); })
+    ].filter(Boolean);
+  }
   /* ---------- My media: source management and preferences live outside the movie browser ---------- */
   var mediaLoaded = false;
   function media() {
@@ -108,13 +117,10 @@ var Settings = (function () {
       action('Edit on a computer', 'Add server logins and change preferences in the web editor.', function () { WebEdit.showJoin('media'); }),
       action('Rescan media sources', 'Look for new or removed movies.  Green on the My media screen.', function () { Media.rescanAll(); }),
       action('Fetch missing movie details', 'Look up new movies and refresh outdated language details.  Yellow on My media.', function () { Media.fetchMissingDetails(); }),
-      head('Preferences'),
-      action(hasToken ? 'TMDB API token saved' : 'Add TMDB API token', hasToken ? 'Token saved on this TV.  Select to replace it, or use the web editor.' : 'Create your own API key or Read Access Token at themoviedb.org/settings/api.  The web editor is easier for pasting it.  With a token saved, movies without details or posters are looked up on their own.', function () { UI.prompt(hasToken ? 'Replace TMDB API token' : 'TMDB API key or Read Access Token', '', function (token) { if (!token.trim()) return; U.toast('Checking TMDB access…'); Media.setTmdbToken(token).then(function () { U.toast('TMDB token saved on this TV'); live(); }, function (e) { U.toast(e.message, 6000); }); }, 'The token stays on this TV and is excluded from backups.', true); }, function () { return MediaStore.preferences().tmdbConfigured ? 'Saved' : 'Not set'; }),
-      MediaStore.preferences().tmdbConfigured && action('Test TMDB token', 'Asks TMDB now whether the saved token works.', function () { U.toast('Checking the TMDB token…'); Media.testTmdbToken().then(function (m) { U.toast(m, 5000); }, function (e) { U.toast(e.message, 7000); }); }),
-      MediaStore.preferences().tmdbConfigured && action('Remove TMDB token', 'Saved movie details remain available.', function () { Media.setTmdbToken('').then(live); }),
+      head('Preferences')].concat(tmdbRows(), [
       choice('Sort movies by', 'Applies to All movies and Favorites.  Continue watching stays ordered by recent playback.', ['name', 'release', 'added'], ['Name (A–Z)', 'Release date (newest first)', 'Date added (newest first)'], function () { return MediaStore.preferences().sort; }, function (v) { Media.updatePreferences({ sort: v }); paint(); }),
       choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); }),
-      head('Media sources')];
+      head('Media sources')]);
     MediaStore.publicSources().forEach(function (s) {
       out.push(action(s.name, s.type === 'dlna' ? 'DLNA / UPnP · rescan, movie details or remove' : 'WebDAV · rescan, movie details or remove', function () { Media.sourceMenu(s); }, function () { return MediaStore.movies(s.id).length + ' movies'; }));
     });
@@ -443,6 +449,8 @@ var Settings = (function () {
     out.push(choice('Recent channels kept', '', [10, 20, 30, 50], ['10', '20', '30', '50'], function () { return +s.recentCount; }, function (v) { s.recentCount = v; save(); }));
     out.push(toggle('Show Favorites group', '', function () { return s.showFav !== false; }, function (v) { s.showFav = v; apply(); }));
     out.push(page('My teams', 'A group with your teams\' own channels and every channel showing one of their games.  For now the NFL, NBA, NHL, MLB, WNBA and MLS only.', 'My teams', teamsPage, function () { var n = Teams.followed().length; return n ? n + ' ›' : '›'; }));
+    out.push(toggle('Show Movies on now', 'Movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Guide, start screen, reminders).',
+      function () { return s.moviesGroup !== false; }, function (v) { s.moviesGroup = v; apply(); if (typeof Movies !== 'undefined') Movies.poke(); }));
     if (Events.on()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in the playlist\'s Event channels.',
       function () { return Events.groupOn(); }, function (v) { var p = Store.playlist; p.events = Object.assign({}, p.events, { group: v }); Store.upsertPlaylist(p); Events.reset(); apply(); }));
     out.push(choice('Recently added channels', 'A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.', [0, 3, 7, 14], ['Off', '3 days', '7 days', '14 days'], function () { return s.newDays == null ? 7 : +s.newDays; }, function (v) { s.newDays = v; L.dirty(); apply(); }));
@@ -549,6 +557,11 @@ var Settings = (function () {
     out.push(toggle('Channel names in the guide', 'Off shows logos only, leaving more room.', function () { return s.guideNames !== false; }, function (v) { s.guideNames = v; Views.applyLook(); save(); }));
     out.push(toggle('Two-line channel names', 'Long names wrap instead of being cut off.', function () { return !!s.twoLineNames; }, function (v) { s.twoLineNames = v; Views.applyLook(); save(); }));
     out.push(toggle('Mark catch-up channels', 'Shows ↺ on channels and programmes you can replay.', function () { return s.showCatchupMark !== false; }, function (v) { s.showCatchupMark = v; save(); relist(); }));
+    out.push(head('Movies in the guide'));
+    out.push(toggle('Movie details from TMDB', 'Finds the movies in your guide with your TMDB token: a poster, year, genres and rating in the guide, a Movie tag on them, and the Movies on now group.  Only programme titles go to TMDB.',
+      function () { return s.guideMovies !== false; }, function (v) { s.guideMovies = v; save(true); if (typeof Movies !== 'undefined') Movies.poke(); }));
+    out = out.concat(tmdbRows());
+    if (!MediaStore.preferences().tmdbConfigured) out.push(info('Needs a TMDB token: add one above, free from themoviedb.org.', ''));
     out.push(head('Watchlist'));
     out.push(page('Watchlist', 'Shows, teams and names to look for in the guide.  TiviBro sets a reminder when one is coming up.', 'Watchlist', watchlist, function () { var n = Watch.list().length; return n ? n + ' ›' : '›'; }));
     out.push(head('Reminders'));

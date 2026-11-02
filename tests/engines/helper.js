@@ -198,7 +198,7 @@ var GUIDE = (function () {
   function xd(t) { var d = new Date(t), p = function (n) { return (n < 10 ? '0' : '') + n; }; return d.getUTCFullYear() + p(d.getUTCMonth() + 1) + p(d.getUTCDate()) + p(d.getUTCHours()) + p(d.getUTCMinutes()) + '00 +0000'; }
   ['a', 'b', 'c'].forEach(function (id) { o += '<channel id="' + id + '.us"><display-name>Chan ' + id.toUpperCase() + '</display-name><icon src="http://x/' + id + '.png"/></channel>'; });
   o += '<channel id=""><display-name>Chan D</display-name><icon src="http://x/d.png"/></channel>';    // a blank id: no programme can use it
-  ['a', 'b', 'c'].forEach(function (id) { for (var i = 0; i < 6; i++) o += '<programme start="' + xd(t0 + i * 1800e3) + '" stop="' + xd(t0 + (i + 1) * 1800e3) + '" channel="' + id + '.us"><title>Show ' + id + i + ' &amp; more</title><desc>About ' + id + i + '</desc></programme>'; });
+  ['a', 'b', 'c'].forEach(function (id) { for (var i = 0; i < 6; i++) o += '<programme start="' + xd(t0 + i * 1800e3) + '" stop="' + xd(t0 + (i + 1) * 1800e3) + '" channel="' + id + '.us"><title>Show ' + id + i + ' &amp; more</title><desc>About ' + id + i + '</desc>' + (id === 'a' && i === 2 ? '<category>Movie</category><date>2011</date>' : '') + '</programme>'; });
   return o + '</tv>';
 })();
 step(function guide(next) {
@@ -217,6 +217,7 @@ step(function guide(next) {
         ok('guide: read and stored, through a redirect', st.phase === 'stored' && st.stored && st.stored.sig === 's1' && st.stored.kept === 2, String(b2));
         request('GET', B + '/guide/titles?pl=p1&kind=main', function (e3, r3, b3) {
           var lines = String(b3 || '').split('\n').filter(Boolean);
+          ok('guide: a movie (its <category>) is marked after its title', lines.some(function (l) { return /\tShow a2 & more\tm2011$/.test(l); }) && lines.filter(function (l) { return /\tm\d*$/.test(l); }).length === 1, lines.filter(function (l) { return /a2/.test(l); }).join(' | '));
           ok('guide: titles for the wanted id and the name match, not the others', lines.length >= 8 && lines.every(function (l) { return /^(a|b)\.us\t\d+\t\d+\tShow /.test(l); }) && lines.some(function (l) { return /Show a0 & more$/.test(l) || /Show a\d & more$/.test(l); }), lines.slice(0, 2).join(' | '));
           request('GET', B + '/guide/desc?pl=p1&kind=main&id=a.us', function (e4, r4, b4) {
             var d = json(b4);

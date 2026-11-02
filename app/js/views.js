@@ -333,7 +333,7 @@ var Views = (function () {
     return gs[0] ? gs[0].id : L.ALL;
   }
   var EMPTY = 'No channels in this group.  Hold OK on any channel and choose "Copy to group" to add some.';
-  function emptyFor(gid) { return gid === L.TEAMS && typeof Teams !== 'undefined' ? Teams.emptyText() : EMPTY; }
+  function emptyFor(gid) { return gid === L.TEAMS && typeof Teams !== 'undefined' ? Teams.emptyText() : gid === L.MOVIES && typeof Movies !== 'undefined' ? Movies.emptyText() : EMPTY; }
   function showGroup(gid, keepSel) {
     var prev = chansVL.current();
     curGroup = gid;
@@ -1214,7 +1214,7 @@ var Views = (function () {
 
   /* Show or hide channels… (Hold OK on a channel or a group): every channel of the group with a tick,
      hidden ones unticked.  Nothing changes until Back; then one save.  Hiding is everywhere, as always. */
-  function canManage(gid) { return gid && gid !== L.ALL && gid !== L.RECENT && gid !== L.TEAMS && gid !== L.EVENTS && gid !== L.NEW; }
+  function canManage(gid) { return gid && gid !== L.ALL && gid !== L.RECENT && gid !== L.TEAMS && gid !== L.EVENTS && gid !== L.NEW && gid !== L.MOVIES; }
   function manageVisibility(gid, at) {
     if (!canManage(gid)) return;
     if (!L.channels(gid, true).length) { U.toast('That group is empty'); return; }
@@ -1753,7 +1753,7 @@ var Guide = (function () {
     gid = groupId || L.ALL; moving = null;
     if (vis && vis.gid !== gid) vis = null;
     list = L.channels(gid, !!vis);
-    if (!list.length && zone === 'grid' && gid !== L.TEAMS && !vis) {      // My teams between games says when the next one is
+    if (!list.length && zone === 'grid' && gid !== L.TEAMS && gid !== L.MOVIES && !vis) {      // My teams between games says when the next one is
       var alt = Views.firstFilled();
       if (alt !== gid && L.channels(alt).length) { U.toast(L.groupName(gid) + ' is empty, showing ' + L.groupName(alt)); gid = alt; list = L.channels(gid); remember(); }
     }
@@ -1763,7 +1763,7 @@ var Guide = (function () {
     top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS));
     head();
     body.classList.toggle('empty', !list.length);
-    body.setAttribute('data-empty', gid === L.TEAMS && typeof Teams !== 'undefined' ? Teams.emptyText() : 'No channels in ' + L.groupName(gid) + '.');
+    body.setAttribute('data-empty', gid === L.TEAMS || gid === L.MOVIES ? Views.emptyFor(gid) : 'No channels in ' + L.groupName(gid) + '.');
   }
   function head() {
     ghead.textContent = L.groupName(gid) + '   ' + (vis ? list.filter(function (c) { return vis.on[c.k]; }).length + ' of ' + list.length + ' shown' : list.length);
@@ -1853,7 +1853,7 @@ var Guide = (function () {
       var p = sg.p, a = sg.a, w = Math.max(4, sg.b - sg.a);
       var past = p.e <= nowT, now = p.s <= nowT && p.e > nowT, from = Math.max(p.s, t0);
       // How much of what's on now has aired, shown inside its cell (by time, as the cell may be wider).
-      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : ''), a, w,
+      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (typeof Movies !== 'undefined' && Movies.of(c, p) ? ' mv' : ''), a, w,
         (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, p.e - from)), 0, w) : -1, p.s);
     });
     if (!n) cell(r, n++, 'gp none' + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : l ? 'No guide information' : 'Loading…', false, null, -1, '');
@@ -1943,7 +1943,18 @@ var Guide = (function () {
     var dq = L.versionTag(c);
     meta2.textContent = (Store.settings.showNumbers ? c.num + '  ' : '') + L.name(c) + (dq ? ' ' + dq : '') + '   ·   ' + L.groupName(c.g) + (c.arch ? '   ·   ↺ catch-up ' + c.arch + ' days' : '');
     detail.appendChild(meta2);
-    detail.appendChild(U.el('p', 'gd-desc', h.p ? Epg.desc(c, h.p) : ''));
+    // A movie (movies.js, TMDB): its poster at the right, a line with the year, genres and rating, and
+    // TMDB's plot when the guide has little to say.
+    var mv = h.p && typeof Movies !== 'undefined' ? Movies.of(c, h.p) : null, gd = h.p ? Epg.desc(c, h.p) : '';
+    detail.classList.toggle('has-poster', !!(mv && mv.poster));
+    if (mv) {
+      var m3 = U.el('div', 'gd-meta gd-movie');
+      m3.textContent = ['Movie', mv.year, mv.runtime, mv.genre, mv.rating ? '★ ' + mv.rating + ' TMDB' : ''].filter(Boolean).join('   ·   ');
+      detail.appendChild(m3);
+      if (mv.poster) { var pim = U.el('img', 'gd-poster'); pim.src = mv.poster; pim.alt = ''; pim.onerror = function () { this.remove(); detail.classList.remove('has-poster'); }; detail.appendChild(pim); }
+      if ((!gd || gd.length < 60) && mv.plot) gd = mv.plot;
+    }
+    detail.appendChild(U.el('p', 'gd-desc', gd));
     if (zone === 'grid') detail.appendChild(U.el('div', 'gd-ok', okMeaning(c, h)));
     nowLine(pv);
   }

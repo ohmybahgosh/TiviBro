@@ -47,6 +47,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   await page.route('**/media/metadata', route => {
     const q = route.request().postDataJSON();
     if (q.check) return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true }) });
+    if (q.guide) return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ miss: true }) });   // Movies on now (movies.js), not My media
     metadataRequests.push(q);
     return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ metadata: { provider: 'TMDB', id: q.id || 'tmdb:7', title: q.title || 'Localized movie', year: q.year || '2013', language: q.language, requestedLanguage: q.language, fallbackFields: [], plot: 'A mock movie description.', genre: 'Animation', poster: 'http://127.0.0.1:8088/mock-poster.svg', backdrop: 'http://127.0.0.1:8088/mock-poster.svg' } }) });
   });

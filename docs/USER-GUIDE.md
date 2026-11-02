@@ -2,7 +2,7 @@
 
 Everything TiviBro does, on the TV and from your computer.  Every picture here comes from a made-up demo provider, so the channel names are invented.
 
-**On the TV:** [First start](#first-start) · [The set-up tour](#the-set-up-tour) · [Channel logos](#channel-logos) · [The remote](#the-remote) · [The guide](#the-guide) · [Groups and the menu](#groups-and-the-menu) · [Watching fullscreen](#watching-fullscreen) · [Other versions of a channel](#other-versions-of-a-channel) · [Event channels](#event-channels-pay-per-view-and-sports-passes) · [My teams](#my-teams) · [My media](#my-media) · [Catch-up](#catch-up) · [Movies and shows](#movies-and-shows) · [Search](#search) · [Favorites, hiding and your own groups](#favorites-hiding-and-your-own-groups) · [Reminders](#reminders) · [Settings](#settings) · [Updates](#updates) · [Parental controls](#parental-controls)
+**On the TV:** [First start](#first-start) · [The set-up tour](#the-set-up-tour) · [Channel logos](#channel-logos) · [The remote](#the-remote) · [The guide](#the-guide) · [Groups and the menu](#groups-and-the-menu) · [Watching fullscreen](#watching-fullscreen) · [Other versions of a channel](#other-versions-of-a-channel) · [Event channels](#event-channels-pay-per-view-and-sports-passes) · [My teams](#my-teams) · [Movies on now](#movies-on-now) · [My media](#my-media) · [Catch-up](#catch-up) · [Movies and shows](#movies-and-shows) · [Search](#search) · [Favorites, hiding and your own groups](#favorites-hiding-and-your-own-groups) · [Reminders](#reminders) · [Settings](#settings) · [Updates](#updates) · [Parental controls](#parental-controls)
 
 **Every setting:** [Playback and buffering](#settings-playback-and-buffering) · [Remote control](#settings-remote-control) · [Playlists and guide](#settings-playlists-and-guide) · [Groups, sorting, hidden](#settings-groups-sorting-hidden) · [Guide, start screen, reminders](#settings-guide-start-screen-reminders) · [Appearance](#settings-appearance) · [Parental controls](#settings-parental-controls) · [Phone app and web editor](#settings-phone-app-and-web-editor) · [Updates and about](#settings-updates-and-about) · [Diagnostics](#settings-diagnostics)
 
@@ -361,6 +361,15 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
   <a href="https://tivibro.app/view/#tv-episodes"><img src="screenshots/tv-episodes.png" width="49%" alt="Episodes"></a>
 </p>
 </details>
+
+### Movies on now
+
+With your own free TMDB token saved (Settings > Guide, start screen, reminders, or Settings > My media), TiviBro finds the movies in your guide:
+
+- **In the guide:** a movie's details show its poster, and a line with the year, runtime, genres and TMDB rating.  When the guide says little about it, TMDB's plot is shown instead.  Movies in the grid say **Movie** next to their time.
+- **The Movies on now group,** near the top of the guide: the movies on now, most time left first, then the ones starting within the hour.  With none, it says so.
+
+Which programmes are movies: the guide's own **Movie** category, a year in the title ("Bridesmaids (2011)") or "Movie:", anything 75 minutes or longer on a movie channel (HBO, Cinemax, Starz, TCM, a "Movies" group…), and other programmes 80 minutes to 4 hours long that aren't news, sport or a show.  TMDB has the last word: a movie of exactly that title (and year), and for the last kind also well known and not a TV series of the same name.  Only the programme titles (and years) go to TMDB, with your token.  Answers are kept on the TV for 30 days, so after the first day only a few titles an hour are looked up.  Turn it off with **Movie details from TMDB**, or just the group with **Show Movies on now** (Settings > Groups, sorting, hidden).
 
 ### My media
 
@@ -772,6 +781,8 @@ How the guide looks and behaves, which screen TiviBro opens on, and reminders.
 | **Channel names in the guide** | **On** · Off | Off shows logos only, leaving more room for programmes. |
 | **Two-line channel names** | On · **Off** | Long channel names wrap instead of being cut off. |
 | **Mark catch-up channels** | **On** · Off | Shows **↺** on channels and programmes you can replay. |
+| **Movie details from TMDB** | **On** · Off | With a TMDB token: posters and details for movies in the guide, the **Movie** tag, and the [Movies on now](#movies-on-now) group.  Only programme titles go to TMDB. |
+| **TMDB API token** | Not set | The same token as in Settings > My media: add, **Test TMDB token**, or remove it here too. |
 | **Watchlist ›** | | Shows, teams and names to look for in the guide; see [Watchlist](#watchlist).  Inside: **Add a show, team or name…**, **Look ahead** (6 hours · 12 hours · **24 hours** · 2 days), **When something is found** (**Set a reminder** · Just tell me), your words, and everything coming up. |
 | **Remind me before start** | At start · 1 min · **2 min** · 5 min · 10 min | How early a reminder comes up. |
 | **When a reminder starts** | **Ask me** · Switch to the channel | *Ask me* shows **Watch** or **Dismiss**; *Switch* changes channel by itself. |

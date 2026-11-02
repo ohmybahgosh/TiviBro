@@ -96,6 +96,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
 | 🖥️ **A full editor on your computer** | Clean up 10,000 channels with a keyboard and mouse instead of a remote: hide, sort, rename, copy and move, then **Send to TV**.  Unsent work is autosaved on the TV within seconds, with a version history, so a refresh never costs you an hour. |
 | 🏈 **Your teams, wherever they're playing** | Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams and **My teams** gathers their games near the top of the guide: on now first, then the ones starting soon, from league passes, event channels, your local station (even when the teams are only in the guide's description) and the team's own channel.  Optional reminders. |
+| 🎬 **Movies on now** | With your own free TMDB token, the movies in your guide get posters, years, genres and ratings, and a **Movies on now** group lists what's on and starting within the hour. |
 | 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
 | 🧹 **Clean-up that already knows IPTV** | Pick your city once and every local group (ABC, CBS, NBC, FOX, CW, PBS…) keeps only your stations.  Keep East or West feeds in one click.  Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from any naming style, duplicates in different qualities, and **Smart match** for channels without a guide. |
 | 🙈 **Hides channels with nothing on** | Event channels that say "Off Air" or "No Event Scheduled" stay out of the way, and come back by themselves when an event is named. |
@@ -287,6 +288,10 @@ The logo library matches your channels to [iptv-org](https://github.com/iptv-org
 </td>
 </tr>
 </table>
+
+### Movies on now
+
+Save your own free TMDB token (Settings > Guide, start screen, reminders) and TiviBro finds the movies in your guide: the guide's Movie category, a year in the title, long programmes on movie channels, and other long programmes that TMDB knows well as films.  They get a poster, year, runtime, genres and rating in the guide, a **Movie** tag in the grid, and a **Movies on now** group: what's on (most left first), then what starts within the hour.  Only titles go to TMDB, and answers are kept on the TV for 30 days.
 
 ### My teams
 
@@ -609,7 +614,7 @@ The [Release workflow](.github/workflows/release.yml) then runs the tests, build
 - Backups are always encrypted with a passphrase you choose.  Without it the file cannot be opened.
 - Logs mask usernames and passwords.  **Report a problem** also replaces every provider, guide and unknown server name before anything leaves the TV, and nothing is sent until you choose to send it (on your phone, or **Send a report now** on the TV after a crash).
 - **Install numbers.**  Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has, and the install script says whether it installed or updated which version.  Nothing else: no address is kept (a network is counted once a day using a hash that is forgotten after two days), no ID, nothing about your channels or playlists.  Switch it off in **Settings > Updates and about > Count this TV in the install numbers**, or run the install script with `TIVIBRO_NO_COUNT=1`.
-- **My media** contacts only the sources you add.  Their logins stay on the TV and out of backups and problem reports.  When movie details are fetched (by you, or on their own for new movies once you've saved a token), only a movie's title and year (or its TMDB id) and your language go to TMDB, with your own token.
+- **My media** contacts only the sources you add.  Their logins stay on the TV and out of backups and problem reports.  When movie details are fetched (by you, on their own for new movies once you've saved a token, or for the movies in your guide), only a title and year (or its TMDB id) and your language go to TMDB, with your own token.
 - The logo library, when you turn it on, downloads lists of logo addresses from tivibro.app, one per country in your playlist, then each logo from its project.  Only the country is in the request: no channel names, logins or anything else from your playlist.
 
 ## Special thanks

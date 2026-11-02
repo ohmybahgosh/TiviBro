@@ -8,7 +8,7 @@ var Library = (function () {
   var byKey = new Map();
   var groupCache = new Map();     // groupId -> channel array (built on demand)
   var groupNames = {};
-  var ALL = 'all', RECENT = 'recent', FAV = 'c_fav', EVENTS = 'events', NEW = 'new', TEAMS = 'teams';
+  var ALL = 'all', RECENT = 'recent', FAV = 'c_fav', EVENTS = 'events', NEW = 'new', TEAMS = 'teams', MOVIES = 'moviesnow';
 
   function E() { return Store.edits; }
   function S() { return Store.settings; }
@@ -201,7 +201,7 @@ var Library = (function () {
     }
     return !!inShown[c.k];
   }
-  function isVirtual(gid) { return gid === ALL || gid === RECENT || gid === EVENTS || gid === NEW || gid === TEAMS; }
+  function isVirtual(gid) { return gid === ALL || gid === RECENT || gid === EVENTS || gid === NEW || gid === TEAMS || gid === MOVIES; }
   function isCustom(gid) { return gid && gid.indexOf('c_') === 0; }
   function custom(gid) { return E().custom.filter(function (g) { return g.id === gid; })[0]; }
   function cleanGroup(n) { return Names.groupsOn() ? Names.clean(n) : n; }
@@ -211,6 +211,7 @@ var Library = (function () {
     if (gid === NEW) return 'Recently added';
     if (gid === EVENTS) return 'Events by time';
     if (gid === TEAMS) return 'My teams';
+    if (gid === MOVIES) return 'Movies on now';
     var c = custom(gid);
     return c ? c.name : (E().groupRenames && E().groupRenames[gid]) || cleanGroup(groupNames[gid] || '');
   }
@@ -226,6 +227,8 @@ var Library = (function () {
     if (s.favFirst) out = out.concat(customs);
     // My teams (app/js/teams.js): near the top while it's on, empty between games (it says when the next one is).
     if (typeof Teams !== 'undefined' && Teams.groupOn()) out.push({ id: TEAMS, name: 'My teams', count: Teams.list().length });
+    // Movies on now (app/js/movies.js): with a TMDB token, the guide's movies on now and starting within the hour.
+    if (typeof Movies !== 'undefined' && Movies.groupOn()) out.push({ id: MOVIES, name: 'Movies on now', count: Movies.list().length });
     if (s.showRecent && e.recent.length) out.push({ id: RECENT, name: 'Recent', count: e.recent.length });
     var fresh = newList().length;
     if (fresh) out.push({ id: NEW, name: 'Recently added', count: fresh });
@@ -260,6 +263,7 @@ var Library = (function () {
     if (gid === EVENTS) return eventList();
     if (gid === NEW) return newList();
     if (gid === TEAMS) return typeof Teams !== 'undefined' ? Teams.list() : [];
+    if (gid === MOVIES) return typeof Movies !== 'undefined' ? Movies.channels() : [];
     var hit = !withHidden && groupCache.get(gid);
     if (hit) return hit;
     var e = E(), showHidden = withHidden || S().showHidden, list;
@@ -433,7 +437,7 @@ var Library = (function () {
   }
 
   return {
-    hideChannels: hideChannels, isHidden: isHidden, idle: idle, ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, TEAMS: TEAMS, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
+    hideChannels: hideChannels, isHidden: isHidden, idle: idle, ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, TEAMS: TEAMS, MOVIES: MOVIES, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
     shownAnywhere: shownAnywhere, isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
     isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,

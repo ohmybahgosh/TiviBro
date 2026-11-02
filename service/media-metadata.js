@@ -51,6 +51,7 @@ function details(m, en, language) {
   out.runtime = (m.runtime || en.runtime) > 0 ? Math.min(9999, m.runtime || en.runtime) + ' min' : '';
   out.poster = image(art(images.posters, language, m.poster_path || en.poster_path), 'w185');
   out.backdrop = image(art(images.backdrops, language, m.backdrop_path || en.backdrop_path), 'w780');
+  out.rating = (m.vote_average || en.vote_average) > 0 ? String(Math.round((m.vote_average || en.vote_average) * 10) / 10) : '';
   out.fallbackFields = fallbackFields;
   return out;
 }
@@ -98,6 +99,32 @@ function create(opts) {
       cb(null, { matches: matches });
     });
   }
-  return { lookup: lookup, configured: function () { return !!credential; } };
+  /* A guide programme that may be a movie (app/js/movies.js): its title, maybe a year, and how sure the
+     guide is (q.guide: 'strong' when it says Movie or the channel shows films, 'weak' for any long
+     programme).  A movie of exactly that title (and year) is the answer; for a weak one it must also be
+     well known (200+ votes) and not a better-known TV series of the same name.  { metadata } or { miss }. */
+  function guideLookup(q, cb) {
+    var language = LOCALES[q.language] ? q.language : 'en', locale = LOCALES[language];
+    var title = str(q.title, 200).trim(), year = /^\d{4}$/.test(q.year || '') ? String(q.year) : '', weak = q.guide !== 'strong';
+    if (!title) return cb(null, { miss: true });
+    request('/search/movie?query=' + encodeURIComponent(title) + '&language=' + locale + (year ? '&year=' + year : ''), function (e, r) {
+      if (e) return cb(e);
+      var exact = (r && Array.isArray(r.results) ? r.results : []).filter(function (m) {
+        return m && /^[1-9][0-9]*$/.test(String(m.id)) && (normal(m.title) === normal(title) || normal(m.original_title) === normal(title)) && (!year || str(m.release_date, 4) === year);
+      });
+      exact.sort(function (a, b) { return (b.popularity || 0) - (a.popularity || 0); });
+      var best = exact[0];
+      if (!best || (weak && (best.vote_count || 0) < 200)) return cb(null, { miss: true });
+      function take() { lookup({ id: 'tmdb:' + best.id, language: language }, function (e2, x) { cb(e2, x && x.metadata ? { metadata: x.metadata } : { miss: true }); }); }
+      if (!weak) return take();
+      request('/search/tv?query=' + encodeURIComponent(title) + '&language=' + locale, function (e3, tv) {
+        if (e3) return cb(e3);
+        var show = (tv && Array.isArray(tv.results) ? tv.results : []).filter(function (t) { return t && (normal(t.name) === normal(title) || normal(t.original_name) === normal(title)); })[0];
+        if (show && (show.popularity || 0) >= (best.popularity || 0)) return cb(null, { miss: true });
+        take();
+      });
+    });
+  }
+  return { lookup: function (q, cb) { return q && q.guide ? guideLookup(q, cb) : lookup(q, cb); }, configured: function () { return !!credential; } };
 }
 module.exports = { lookup: function (q, cb) { return create({ credential: q.credential }).lookup(q, cb); }, create: create };

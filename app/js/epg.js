@@ -210,6 +210,8 @@ var Epg = (function () {
       function one(src, i) {
         var got = {}, buf = '', n = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {};
         var RE = /<programme\b([^>]*)>([\s\S]*?)<\/programme>/g;
+        // The guide says Movie (as service/guide.js movieFlag): for Movies on now (movies.js).
+        var MOVIE_CAT = /<category[^>]*>\s*(?:(?:tv |feature )?(?:movies?|films?)|spielfilm|película|cine|kino)\s*<\/category>/i;
         var CH = /<channel\b[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/channel>/g;
         function eat(final) {
           CH.lastIndex = 0;
@@ -262,7 +264,9 @@ var Epg = (function () {
             var tt = t ? unesc(t[1]) : '', dd = de ? unesc(de[1]).slice(0, budget && used > budget / 2 ? 100 : descMax) : '';
             used += 60 + tt.length + dd.length;
             got[ch] = 1;
-            (out[ch] || (out[ch] = [])).push({ s: s, e: e, t: tt, d: dd });
+            var pg = { s: s, e: e, t: tt, d: dd };
+            if (MOVIE_CAT.test(m[2])) { pg.mv = 1; var yr = /<date[^>]*>\s*((?:19|20)\d\d)\s*<\/date>/.exec(m[2]); if (yr) pg.y = yr[1]; }
+            (out[ch] || (out[ch] = [])).push(pg);
             n++; total++;
           }
           buf = final ? '' : buf.slice(last);
@@ -432,9 +436,12 @@ var Epg = (function () {
         var j = text.indexOf('\n', i); if (j < 0) j = n;
         var a = text.indexOf('\t', i), b = text.indexOf('\t', a + 1), c = text.indexOf('\t', b + 1);
         if (a > i && c > 0 && c < j) {
-          var id = text.slice(i, a), t = text.slice(c + 1, j), one = seen.get(t);
+          var d = text.indexOf('\t', c + 1), te = d > 0 && d < j ? d : j;           // after the title, maybe the guide's movie flag ("m2011")
+          var id = text.slice(i, a), t = text.slice(c + 1, te), one = seen.get(t);
           if (one === undefined) { seen.set(t, t); one = t; }              // a title repeated all week is kept once
-          (map[id] || (map[id] = [])).push({ s: +text.slice(a + 1, b), e: +text.slice(b + 1, c), t: one });
+          var pg = { s: +text.slice(a + 1, b), e: +text.slice(b + 1, c), t: one };
+          if (te < j && text.charAt(te + 1) === 'm') { pg.mv = 1; if (j - te > 2) pg.y = text.slice(te + 2, j); }
+          (map[id] || (map[id] = [])).push(pg);
         }
         i = j + 1;
       }
@@ -725,6 +732,16 @@ var Epg = (function () {
      Every match is gathered first (up to a safety cap) and then the useful ones kept: on now, the
      soonest to come, the latest replays.  Stopping at the first matches found would miss tonight's
      showing on a channel that happens to come late in the guide. */
+  /* Programmes on between from and to on every guide channel the app holds: cb(guide key, programme).
+     Lists are in start order, so each is entered by a binary search (Movies on now looks every few minutes). */
+  function during(from, to, cb) {
+    cache.forEach(function (v, k) {
+      var l = v.list; if (!l || !l.length) return;
+      var lo = 0, hi = l.length;
+      while (lo < hi) { var mid = (lo + hi) >> 1; if (l[mid].e <= from) lo = mid + 1; else hi = mid; }
+      for (var i = lo; i < l.length && l[i].s < to; i++) if (l[i].e > from) cb(k, l[i]);
+    });
+  }
   function search(q, limit) {
     var test = typeof q === 'function' ? q : (function (s) { s = String(s).toLowerCase(); return function (t) { return t.toLowerCase().indexOf(s) >= 0; }; })(q);
     var out = [], CAP = 20000;
@@ -777,7 +794,7 @@ var Epg = (function () {
   }
 
   return {
-    init: init, request: request, nowNext: nowNext, search: search, findDesc: findDesc, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc,
+    init: init, request: request, nowNext: nowNext, search: search, during: during, findDesc: findDesc, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc,
     get inHelper() { return hMode; },
     icon: function (id) { return icons[id] || ''; },
     guideChannels: function () { return pubList.length ? chList.concat(pubList) : chList; },

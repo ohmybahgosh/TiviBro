@@ -49,6 +49,14 @@ function unesc(s) {
     .replace(/&apos;/g, "'").replace(/&#x([0-9a-f]+);/gi, function (a, n) { return String.fromCharCode(parseInt(n, 16)); })
     .replace(/&#(\d+);/g, function (a, n) { return String.fromCharCode(+n); }).replace(/&amp;/g, '&');
 }
+/* The guide says it's a movie: <category>Movie</category> (Film, Feature Film, TV Movie, Movies), with
+   its year from <date> when there is one.  "m" or "m2011" goes after the title in titles.tsv; nothing else. */
+var MOVIE_CAT = /<category[^>]*>\s*(?:(?:tv |feature )?(?:movies?|films?)|spielfilm|película|cine|kino)\s*<\/category>/i;
+function movieFlag(body) {
+  if (!MOVIE_CAT.test(body)) return '';
+  var y = /<date[^>]*>\s*((?:19|20)\d\d)\s*<\/date>/.exec(body);
+  return 'm' + (y ? y[1] : '');
+}
 function flat(s) { return String(s || '').replace(/[\t\r\n]+/g, ' '); }
 
 /* ---------- where the guide lives ---------- */
@@ -163,7 +171,7 @@ function start(body, log) {
         ix = slot(ch); firstSrc[ix] = si; count[ix]++;
         got[ch] = 1;
         var bw = buckets[ix % NB];
-        if (!bw.write(ix + '\t' + s + '\t' + e + '\t' + flat(t ? unesc(t[1]) : '') + '\t' + flat(de ? unesc(de[1]).slice(0, DESC_MAX) : '') + '\n') && !bw.full) { bw.full = true; waiting++; }
+        if (!bw.write(ix + '\t' + s + '\t' + e + '\t' + flat(t ? unesc(t[1]) : '') + '\t' + flat(de ? unesc(de[1]).slice(0, DESC_MAX) : '') + '\t' + movieFlag(m[2]) + '\n') && !bw.full) { bw.full = true; waiting++; }
         if (bw.full) full = true;
         n++; total++;
       }
@@ -277,7 +285,7 @@ function start(body, log) {
         for (var i = 0; i < lines.length; i++) {
           var l = lines[i]; if (!l) continue;
           var p = l.split('\t'), ix = +p[0];
-          (by[ix] || (by[ix] = [])).push([+p[1], +p[2], p[3] || '', p[4] || '']);
+          (by[ix] || (by[ix] = [])).push([+p[1], +p[2], p[3] || '', p[4] || '', p[5] || '']);
         }
         lines = null;
         var tOut = [], dOut = [];
@@ -286,7 +294,7 @@ function start(body, log) {
           if (keep && !keep[id]) return;
           list.sort(function (x, y) { return x[0] - y[0]; });
           var sid = flat(id);
-          for (var j = 0; j < list.length; j++) tOut.push(sid + '\t' + list[j][0] + '\t' + list[j][1] + '\t' + list[j][2]);
+          for (var j = 0; j < list.length; j++) tOut.push(sid + '\t' + list[j][0] + '\t' + list[j][1] + '\t' + list[j][2] + (list[j][4] ? '\t' + list[j][4] : ''));
           var dj = JSON.stringify(list.map(function (x) { return x[3]; })), len = Buffer.byteLength(dj);
           dIdx[id] = [off, len]; off += len; dOut.push(dj);
           kept++;
@@ -443,4 +451,4 @@ function handle(req, res, allow, log) {
   send(res, 404, { ok: false, error: 'unknown guide request' }, null, allow);
 }
 
-module.exports = { handle: handle, norm: norm, start: start, status: status, keyOf: keyOf, root: root, find: find };
+module.exports = { movieFlag: movieFlag, handle: handle, norm: norm, start: start, status: status, keyOf: keyOf, root: root, find: find };

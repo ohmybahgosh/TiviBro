@@ -200,16 +200,23 @@ var Media = (function () {
     q.language = language || MediaStore.preferences().language;
     return ask('metadata', q, 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
+  // A guide programme that may be a movie (movies.js): { metadata } or { miss }.
+  function guideLookup(title, year, strength) {
+    var token = MediaStore.tmdbToken();
+    if (!token) return Promise.reject(new Error('No TMDB token'));
+    return ask('metadata', { credential: token, guide: strength || 'weak', title: title, year: year || '', language: MediaStore.preferences().language }, 25000)
+      .then(function (r) { if (r.error) throw new Error(r.message); return r; });
+  }
   var tokenVersion = 0;
   function setTmdbToken(value) {
     var version = ++tokenVersion;
     value = String(value || '').trim();
-    if (!value) { MediaStore.setTmdbToken(''); refresh(); return Promise.resolve(MediaStore.preferences()); }
+    if (!value) { MediaStore.setTmdbToken(''); refresh(); if (typeof Movies !== 'undefined') Movies.poke(); return Promise.resolve(MediaStore.preferences()); }
     if (!/^[A-Za-z0-9._-]{24,2048}$/.test(value)) return Promise.reject(new Error('Enter a valid TMDB API key or API Read Access Token.'));
     return ask('metadata', { credential: value, check: true }, 15000).then(function (r) {
       if (version !== tokenVersion) throw new Error('TMDB setup changed while this token was being checked.');
       if (r.error || !r.ok) throw new Error(r.message || 'TMDB did not accept that token.');
-      MediaStore.setTmdbToken(value); refresh(); autoSoon(); return MediaStore.preferences();
+      MediaStore.setTmdbToken(value); refresh(); autoSoon(); if (typeof Movies !== 'undefined') Movies.poke(); return MediaStore.preferences();
     });
   }
   // Settings > My media > Test TMDB token, and the web editor: is the saved token still accepted?
@@ -503,7 +510,7 @@ var Media = (function () {
 
   return {
     leave: function () { playToken++; }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
-    rescanAll: rescanAll, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
+    rescanAll: rescanAll, guideLookup: guideLookup, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { addServer: addServer, addAddress: addAddress, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };

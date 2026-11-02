@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **Show or hide channels, like TiviMate.**  Hold OK on a channel (or a group) and choose **Show or hide channels…**: the guide (or the channel list) puts a tick on every row, hidden channels too, right where you are.  OK ticks or unticks; Red for Show all, Hide all, Hide channels with no guide information or Leave without saving; Back saves.  The phone app has it too: press and hold a channel.
+- **Movies on now, and movie details in the guide (with your TMDB token).**  TiviBro finds the movies in your guide: the guide's Movie category, a year in the title, long programmes on movie channels, and other long programmes TMDB knows well as films.  A movie's details in the guide show its poster, year, runtime, genres and TMDB rating; the grid marks it **Movie**; and a **Movies on now** group lists the movies on now (most left first) and starting within the hour.  Answers are kept 30 days.  The TMDB token can now be added, tested and removed in Settings > Guide, start screen, reminders too.
 - **Full themes.**  Settings > Look > Theme sets every colour at once: Black and white, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin Mocha, Solarized Dark, One Dark, Rosé Pine, Everforest, Kanagawa and Monokai.  Your own mix keeps the background and accent choices.
 - **One style for the coloured buttons.**  The hint bar shows every coloured button as a coloured square and what it does, in the same order everywhere (the guide said "Red" in words next to a blue square).
 
