@@ -83,11 +83,23 @@ function logo(title, [color, font]) {
     const soon = await ev(() => document.querySelector('#onInfo .on-meta').textContent);
     ok('Starting soon: when it starts', /STARTS/.test(soon) && /in /.test(soon), soon);
     await shot('tv-onnow-soon');
+    // OK asks first, on Cancel: a stray press sets nothing.
+    const before = await ev(() => Store.edits.reminders.length);
+    await key('Enter', 300);
+    const ask = await page.innerText('#modal');
+    ok('OK on one starting later asks first', /Remind me at /.test(ask) && /Watch .+ now/.test(ask) && await ev(() => document.querySelector('#modalBody .mi.focus').textContent === 'Cancel'), ask);
+    await key('Enter', 300);
+    ok('a second OK (on Cancel) sets nothing', await ev((n) => Store.edits.reminders.length === n && !UI.modalOpen, before));
+    await key('Enter', 300); await key('ArrowUp', 100); await key('ArrowUp', 100); await key('Enter', 300);
+    ok('Remind me sets it', await ev((n) => Store.edits.reminders.length === n + 1, before));
+    await key('Enter', 300);
+    ok('asked again, it offers to cancel it', /Cancel the reminder/.test(await page.innerText('#modal')));
+    await key('Escape', 200);
     await ev(() => UI.press('hold')); await page.waitForTimeout(300);
     const menu = await page.innerText('#modal');
     ok('Hold OK on one starting later: a reminder on its channel', /Remind me on /.test(menu) && /Show in the guide/.test(menu), menu);
     await key('Enter', 300);
-    ok('the reminder is set', await ev(() => Store.edits.reminders.length > 0));
+    ok('the reminder is set', await ev((n) => Store.edits.reminders.length >= n, before));
     await key('ArrowUp', 400);
   }
   // OK watches it, fullscreen; Back lands in the guide on that channel.

@@ -121,13 +121,23 @@ var OnNow = (function () {
     if (!open_ || Views.tab !== 'onnow') return;
     if (!rows.length) return UI.hints([['', 'Back  menu', 'back'], ['blue', 'Settings']]);
     var g = current();
-    UI.hints([['', 'OK  watch' + (g && !g.live ? ' (starts ' + U.hhmm(g.p.s) + ')' : ''), 'ok'], ['', 'Hold OK  channels, remind', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Options'], ['blue', 'Settings']]);
+    UI.hints([['', g && !g.live ? 'OK  remind me or watch the channel' : 'OK  watch', 'ok'], ['', 'Hold OK  channels, remind', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Options'], ['blue', 'Settings']]);
   }
 
   function watch(g, x) {
     x = x || g;
-    if (!g.live && !x.live && x.p.s > Date.now() + 60000) { remind(x); return; }
+    if (!g.live && !x.live && x.p.s > Date.now() + 60000) { askRemind(g, x); return; }
     Views.startChannel(x.c, false, function () { Views.goFull(); });
+  }
+  /* OK on a movie starting later asks first (an OK pressed by accident sets nothing): Cancel is where
+     the cursor starts. */
+  function askRemind(g, x) {
+    var set = has(x), name = Library.name(x.c);
+    UI.menu(g.m.title + (set ? ': reminder set' : ' starts at ' + U.hhmm(x.p.s)), [
+      { label: set ? 'Cancel the reminder' : 'Remind me at ' + U.hhmm(x.p.s), sub: 'on ' + name, action: function () { remind(x); } },
+      { label: 'Watch ' + name + ' now', sub: 'the movie starts in ' + mins(x.p.s - Date.now()), action: function () { Views.startChannel(x.c, false, function () { Views.goFull(); }); } },
+      { label: 'Cancel', current: true }
+    ]);
   }
   function remind(x) {
     var rem = Store.edits.reminders, i = rem.findIndex(function (r) { return r.k === x.c.k && r.s === x.p.s; });
