@@ -13,6 +13,9 @@ var fs = require('fs'), path = require('path'), os = require('os');
 var APP = 'app.tivibro.tv', SELF = 'luna://app.tivibro.tv.service';
 var AM = 'luna://com.palm.activitymanager';
 var RETRY = 2 * 60000;
+// Guide placeholders, not programmes: "Next game: …", "Future events … not found", "No events
+// scheduled".  Earlier versions could set reminders on them (My teams); never schedule or show one.
+var PLACEHOLDER = /^\s*next (?:game|event|match)\b|not found|no (?:future |upcoming |more |scheduled )?(?:games?|events?|matches)\b|not scheduled|nothing scheduled/i;
 // What's in front when nobody is watching: the screensaver, Gallery / art and Always Ready.  The ids
 // differ by model and year, so names are matched loosely; the helper log records the real one.
 // Seen on a 2022 C2 (webOS 10.3): com.webos.app.screensaver, com.webos.app.lifeonscreen ("LG
@@ -68,7 +71,7 @@ function create(opts) {
   function set(p) {
     var pid = clean(p.pid, 40), before = Math.max(0, Math.min(60, +p.before || 0)) * 60000, t = now();
     if (typeof p.visible === 'boolean') visible = p.visible;
-    var list = (Array.isArray(p.list) ? p.list : []).filter(function (r) { return r && r.k && +r.s && +r.e > t; }).slice(0, 200).map(function (r) {
+    var list = (Array.isArray(p.list) ? p.list : []).filter(function (r) { return r && r.k && +r.s && +r.e > t && !PLACEHOLDER.test(r.t || ''); }).slice(0, 200).map(function (r) {
       return { k: clean(r.k, 80), s: +r.s, e: +r.e, t: clean(r.t), ch: clean(r.ch, 80), at: +r.s - before };
     });
     var want = {};
@@ -109,6 +112,7 @@ function create(opts) {
       if (done) done(what);
     }
     if (!p || !p.k) return finish('ignored (no channel)');
+    if (PLACEHOLDER.test(p.t || '')) return finish('skipped (not a programme)');
     if (!still(p)) return finish('skipped (removed in the app)');
     if (+p.e <= t) return finish('skipped (already over)');
     if (visible) return finish('left to the app (it is on screen)');

@@ -76,9 +76,17 @@ const fire = p => new Promise(res => R.fire(p, res));
   w = await fire(Object.assign({ pid: 'p1' }, list[1]));
   ok('nearly over and still nobody there: gives up (the app asks next time)', /not shown/.test(w) && !calls.some(c => /create$/.test(c.uri)), w);
   answer = {};
+  // Guide placeholders left as reminders by earlier versions: never shown, and dropped from the list.
+  now = list[1].s; calls = [];
+  w = await fire({ pid: 'p1', k: 'x2', s: list[1].s, e: list[1].e, t: 'Next game: Detroit Lions at Miami Dolphins at 11/08/2026 01:00 PM', ch: 'NFL | MIAMI DOLPHINS' });
+  ok('a "Next game:" placeholder is not shown', /not a programme/.test(w) && !calls.some(c => /notification/.test(c.uri)), w);
+  w = await fire({ pid: 'p1', k: 'x2', s: list[1].s, e: list[1].e, t: 'Future Events for Detroit Tigers not found yet' });
+  ok('"... not found" is not shown', /not a programme/.test(w), w);
   // A restarted helper reads the list back.
   R = make();
   ok('the list survives a helper restart', R.state.lists.p1 && R.state.lists.p1.length === 1 && R.state.lists.p2.length === 1);
+  r = R.set({ pid: 'p3', list: [{ k: 'z1', s: now + H, e: now + 2 * H, t: 'No future events scheduled' }, { k: 'z2', s: now + H, e: now + 2 * H, t: 'Lions at Packers' }] });
+  ok('placeholders are not scheduled', r.count === 1, JSON.stringify(r));
   console.log(fail ? fail + ' failures' : 'all reminder helper tests passed');
   process.exit(fail ? 1 : 0);
 })();
