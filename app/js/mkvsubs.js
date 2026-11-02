@@ -714,6 +714,7 @@ var MkvSubs = (function () {
     }
     function cancelHandle() {
       return { cancel: function () {
+        paint(); // Normalize late track changes before a seek/reconnect saves the selection.
         if (rec && liveTracks.length) rec.modes = liveTracks.map(function (t) { return t.mode; });
         cancelled = true;
         clearTimeout(timer);

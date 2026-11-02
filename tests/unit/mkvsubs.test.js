@@ -460,7 +460,9 @@ ok('orders clusters by proximity to current playback position, nearest first, de
     const switched = chosen.mode==='disabled' && other.mode==='showing' && parent.overlay.textContent==='';
     other.mode='disabled';events.timeupdate();
     const off = v.textTracks.every(t=>t.mode==='disabled');
-    h.cancel();return exclusive && backwards && forwards && switched && off && !events.seeking && !events.seeked;
+    chosen.mode='showing';events.timeupdate();other.mode='showing';
+    h.cancel();
+    return exclusive && backwards && forwards && switched && off && other.mode==='disabled' && !events.seeking && !events.seeked;
   })());
 
   ok('playback and subtitles share the first resolved session URL', await (async () => {
