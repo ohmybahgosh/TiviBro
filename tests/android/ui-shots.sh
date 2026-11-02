@@ -79,8 +79,7 @@ xy=$(find_text "World Tonight"); [ -n "$xy" ] && adb shell input swipe $xy $xy 1
 shot 9b-channel-options 4
 [ -n "$(find_text "Your groups")" ] || { echo "Press and hold did not show the channel's options"; exit 1; }
 echo "Press and hold shows a channel's options"
-# Show or hide channels: the group's channels with ticks (lower in the sheet: scroll to it).
-adb shell input swipe 540 1700 540 900 400; sleep 1
+# Show or hide channels: the group's channels with ticks (the sheet's last option).
 if [ -n "$(find_text "Show or hide channels")" ]; then
   tap "Show or hide channels"
   shot 9c-show-hide 4
