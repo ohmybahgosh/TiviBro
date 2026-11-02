@@ -184,7 +184,7 @@ function poster(title, i) {
 }
 
 let lastReport = null, lastFollowup = null;
-const mockIssues = {}, statusAsked = [];
+const mockIssues = {}, statusAsked = [], osAsked = [];
 /* ---------- XMLTV ---------- */
 const xd = t => { const d = new Date(t), p = n => String(n).padStart(2, '0'); return `${d.getUTCFullYear()}${p(d.getUTCMonth() + 1)}${p(d.getUTCDate())}${p(d.getUTCHours())}${p(d.getUTCMinutes())}00 +0000`; };
 function xmltv() {
@@ -308,6 +308,32 @@ const server = http.createServer((req, res) => {
     return;
   }
   if (p === '/last-report') return send(res, 200, lastReport || {});
+  // OpenSubtitles (service/subtitles.js with TIVIBRO_OS_BASE=http://127.0.0.1:PORT/os/api/v1, tests/soak/subtitles.js):
+  // English in time with the movie, Spanish 2.5 s late, for the movie and for any query.
+  if (p.indexOf('/os/') === 0) {
+    const okKey = req.headers['api-key'] === 'a'.repeat(32);
+    if (!okKey && p.indexOf('/os/file/') !== 0) return send(res, 401, { message: 'invalid api key' });
+    osAsked.push(req.method + ' ' + req.url);
+    if (p === '/os/api/v1/subtitles') {
+      const q = u.query || {};
+      const sub = (id, lang, rel) => ({ attributes: { language: lang, release: rel, download_count: id === 11 ? 5000 : 800, hearing_impaired: false, fps: 25, from_trusted: id === 11, feature_details: { title: 'Feature Presentation', year: 2024 }, files: [{ file_id: id, file_name: rel + '.srt' }] } });
+      const langs = String(q.languages || 'en').split(',');
+      return send(res, 200, { total_count: 2, data: [langs.indexOf('en') >= 0 && sub(11, 'en', 'Feature.Presentation.2024.WEB'), langs.indexOf('es') >= 0 && sub(12, 'es', 'Feature.Presentation.2024.Latino')].filter(Boolean) });
+    }
+    if (p === '/os/api/v1/download' && req.method === 'POST') {
+      let b = ''; req.on('data', d => { b += d; }); req.on('end', () => { const id = JSON.parse(b || '{}').file_id; send(res, 200, { link: `http://127.0.0.1:${PORT}/os/file/${id}.srt`, file_name: id + '.srt', remaining: 4, reset_time: '23 hours' }); });
+      return;
+    }
+    if (p === '/os/api/v1/login' && req.method === 'POST') { let b = ''; req.on('data', d => { b += d; }); req.on('end', () => send(res, 200, { token: 'tok', user: { allowed_downloads: 20, level: 'Sub leecher' } })); return; }
+    const fm = /^\/os\/file\/(\d+)\.srt$/.exec(p);
+    if (fm) {
+      const late = fm[1] === '12' ? 2.5 : 0, ts = (t) => { const ms = Math.round(t * 1000); return new Date(ms).toISOString().slice(11, 19) + ',' + String(ms % 1000).padStart(3, '0'); };
+      let out = '', n = 0; for (let t = 2; t < 118; t += 3 + (n % 4) * 0.7) { n++; out += n + '\n' + ts(t + late) + ' --> ' + ts(t + late + 1.8) + '\n' + (late ? 'Línea ' : 'Line ') + n + '\n\n'; }
+      return send(res, 200, out, 'text/plain; charset=utf-8');
+    }
+    return send(res, 404, { message: 'not found' });
+  }
+  if (p === '/os-asked') return send(res, 200, osAsked);
   // Following reports up (tests/soak/report-followup.js): /status answers what /mock-issue set.
   if (p === '/status') { statusAsked.push(q.n); return send(res, 200, { ok: true, issues: String(q.n || '').split(',').map(n => Object.assign({ n: +n, state: 'open', url: 'https://github.com/x/y/issues/' + n, reply: null, fixed: '' }, mockIssues[n] || {})) }); }
   if (p === '/mock-issue') { mockIssues[q.n] = JSON.parse(q.v || '{}'); return send(res, 200, { ok: true }); }

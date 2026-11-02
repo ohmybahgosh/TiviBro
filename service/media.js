@@ -377,13 +377,18 @@ function send(res, ALLOW, code, obj) {
 function hostOf(source) { try { return URL_.parse(str(source && (source.control || source.address))).hostname || ''; } catch (e) { return ''; } }
 function handle(req, res, ALLOW, log) {
   var route = req.url.split('?')[0];
-  if (req.method !== 'POST' || (route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/metadata')) return send(res, ALLOW, 404, { error: 'unknown media route' });
+  var subs = /^\/media\/subs\/(search|get|login)$/.exec(route);
+  if (req.method !== 'POST' || (!subs && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/metadata')) return send(res, ALLOW, 404, { error: 'unknown media route' });
   var body = '', over = false;
   req.on('data', function (c) { if (over) return; body += c; if (body.length > 65536) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
   req.on('end', function () {
     if (over) return;
     var q; try { q = JSON.parse(body || '{}'); } catch (e) { return send(res, ALLOW, 400, { error: 'bad request' }); }
     if (!q || typeof q !== 'object' || Array.isArray(q)) return send(res, ALLOW, 400, { error: 'bad request' });
+    if (subs) return require('./subtitles')[subs[1]](q, function (r) {
+      log({ lv: r.error ? 'warn' : 'info', event: 'subtitles ' + subs[1], results: r.results ? r.results.length : undefined, error: r.error || null });
+      send(res, ALLOW, 200, r);
+    });
     if (route === '/media/metadata') return require('./media-metadata').lookup(q, function (e, r) { send(res, ALLOW, 200, e ? { error: 'metadata', message: e.message } : r); });
     var t0 = Date.now(), host = hostOf(q.source);
     if (route === '/media/discover') return discover(function (r) { log({ lv: 'info', event: 'media discover', servers: r.servers.length }); send(res, ALLOW, 200, r); });

@@ -629,6 +629,7 @@ var Views = (function () {
       case 'picture': cyclePicture(); return;
       case 'audio': audioMenu(); return;
       case 'cc': ccToggle(); return;
+      case 'subs': subtitleMenu(); return;
       case 'sleep': sleepMenu(); return;
       case 'reconnect': Player.retryNow(); return;
       case 'buffer': peekMeter(); return;
@@ -1061,6 +1062,7 @@ var Views = (function () {
     vodSeekCancel();
     vod = { meta: meta, onExit: onExit };
     mode = 'vod'; cu = null; playing = null;
+    Subs.reset();
     stage.classList.remove('off');
     Player.play({ k: 'vod:' + meta.id, n: meta.title, num: '' }, { url: url, live: false, startAt: startAt || 0, meta: meta });
     goFull();
@@ -1517,17 +1519,20 @@ var Views = (function () {
   }
   function subtitleTracks() {
     var t = video && video.textTracks, out = [];
-    for (var i = 0; t && i < t.length; i++) if (t[i].kind === 'subtitles' || t[i].kind === 'captions') out.push(t[i]);
+    for (var i = 0; t && i < t.length; i++) if ((t[i].kind === 'subtitles' || t[i].kind === 'captions') && !(window.Subs && Subs.gone(t[i]))) out.push(t[i]);
     return out;
   }
   function subtitleStatus() {
     var state = video && video._mkvSubsState;
     return state === 'discovering' ? 'Finding subtitles…' : state === 'error' ? 'Subtitles unavailable' : state === 'unavailable' ? 'No supported subtitles' : 'Off';
   }
+  /* Subtitles: the tracks, then for movies and shows Find subtitles (OpenSubtitles, subs.js), Timing
+     and Line up with another track. */
   function subtitleMenu() {
-    var tr = subtitleTracks();
+    var tr = subtitleTracks().filter(function (t) { return mode === 'vod' || t.kind === 'subtitles'; });
+    var items = [];
     if (!tr.length) {
-      UI.menu('Subtitles', [{ label: subtitleStatus() === 'Off' ? 'No subtitles available' : subtitleStatus() }]);
+      items.push({ label: subtitleStatus() === 'Off' ? 'No subtitles in this ' + (mode === 'vod' ? 'video' : 'stream') : subtitleStatus() });
       if (video._mkvSubsState === 'discovering') {
         var refresh = setInterval(function () {
           if (subtitleTracks().length || video._mkvSubsState !== 'discovering') {
@@ -1536,10 +1541,14 @@ var Views = (function () {
         }, 250);
         UI.onClose = function () { clearInterval(refresh); };
       }
-      return;
+    } else {
+      items.push({ label: 'Off', sub: tr.every(function (t) { return t.mode !== 'showing'; }) ? 'on' : '', action: function () { tr.forEach(function (t) { t.mode = 'disabled'; }); } });
+      tr.forEach(function (t, i) { items.push({ label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', action: function () { tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
     }
-    UI.menu('Subtitles', [{ label: 'Off', sub: tr.every(function (t) { return t.mode !== 'showing'; }) ? 'on' : '', action: function () { tr.forEach(function (t) { t.mode = 'disabled'; }); } }]
-      .concat(tr.map(function (t, i) { return { label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', action: function () { tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); } }; })));
+    if (mode === 'vod' && vod) items.push({ label: 'Find subtitles…', sub: Subs.configured ? 'OpenSubtitles, in ' + Subs.langs().map(Subs.langName).join(', ') : 'from OpenSubtitles, with your free API key', action: function () { Subs.find(vod.meta); } });
+    if (tr.length) items.push({ label: 'Timing', sub: Subs.delay ? (Subs.delay > 0 ? '+' : '') + Subs.delay.toFixed(1) + ' s' : 'in time', action: Subs.timingMenu });
+    if (tr.length > 1) items.push({ label: 'Line up with another track…', sub: 'match a subtitle that is already in time', action: function () { Subs.lineUpMenu(tr); } });
+    UI.menu('Subtitles', items);
   }
   /* Stream info, with buffer info folded in: the rows update every second while it is open, and the
      buffer gauge shows at the top right (as Show buffer info does).  From the quick menu, or any button
@@ -1652,7 +1661,7 @@ var Views = (function () {
 
   // Blocking what is playing (the preview, say) stops it, so OK can't take it fullscreen without the PIN.
   function stopIfBlocked() { if (playing && mode === 'live' && !Parental.blockedOk(playing)) stopAll(); }
-  function stopAll() { if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off'); }
+  function stopAll() { Subs.reset(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off'); }
 
   return {
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,

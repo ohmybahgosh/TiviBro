@@ -94,6 +94,21 @@ var Settings = (function () {
     }, function () { return !s.autoSubs ? 'Off' : s.subsLang ? langName(s.subsLang) : 'Any language'; }));
     out.push(toggle('Closed captions', 'Live TV in fullscreen, when the channel sends them (most US channels do).  Also in the quick menu (OK in fullscreen), for every channel at once.  Not with the TV player.', function () { return !!s.cc; }, function (v) { Player.setCC(v); }));
     out.push(choice('Caption size', '', ['s', 'm', 'l'], ['Small', 'Medium', 'Large'], function () { return s.ccSize || 'm'; }, function (v) { s.ccSize = v; save(); }));
+    out.push(head('Subtitles from OpenSubtitles'));
+    out.push(action('Subtitle languages', 'For Find subtitles (Subtitles in a movie or show\'s menu).  Several at once: English and Spanish (Latin America), say.', function () { Subs.langMenu(function () { build(); }); },
+      function () { return Subs.langs().map(Subs.langName).join(', '); }));
+    out.push(action(Subs.configured ? 'OpenSubtitles API key saved' : 'Add your OpenSubtitles API key', 'Free: sign up at opensubtitles.com, then Profile > API consumers > New consumer, and copy its key here.  It stays on this TV, out of backups.', function () {
+      UI.prompt('OpenSubtitles API key', '', function (k) { try { Subs.setKey(k); U.toast(k.trim() ? 'API key saved' : 'API key removed'); build(); } catch (e) { U.toast(e.message, 7000); } }, 'Empty removes it.  Typing is easier from the phone app.', true);
+    }, function () { return Subs.configured ? 'Saved' : 'Not set'; }));
+    if (Subs.configured) out.push(action(Subs.user ? 'Signed in as ' + Subs.user : 'Sign in (optional)', 'Without an account OpenSubtitles allows 5 downloads a day; with a free one, 20.', function () {
+      UI.prompt('OpenSubtitles username', Subs.user, function (u) {
+        if (!u.trim()) { Subs.signIn('', ''); U.toast('Signed out'); build(); return; }
+        UI.prompt('Password for ' + u.trim(), '', function (p) {
+          U.toast('Signing in…');
+          Subs.signIn(u, p).then(function (n) { U.toast('Signed in' + (n ? ': ' + n + ' downloads a day' : '')); build(); }, function (e) { U.toast(e.message, 6000); build(); });
+        }, 'Kept on this TV only, to sign in again each day.', true);
+      }, 'Empty signs out.');
+    }, function () { return Subs.user ? (Subs.allowed ? Subs.allowed + ' a day' : 'Signed in') : '5 a day'; }));
     out.push(toggle('Play next episode automatically', '', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); }));
     return out;
   }
