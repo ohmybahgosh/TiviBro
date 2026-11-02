@@ -111,7 +111,15 @@ var Source = (function () {
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, t = setTimeout(function () { if (ctl) ctl.abort(); }, 240000);
     if (ctl) { aborts.push(ctl); if (aborts.length > 8) aborts.shift(); }
     return fetch('http://127.0.0.1:' + Net.port + path, { method: 'POST', cache: 'no-store', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
-      .then(function (r) { return r.json().then(function (j) { clearTimeout(t); j._status = r.status; return j; }); }, function (e) { clearTimeout(t); throw e; });
+      .then(function (r) { return r.json().then(function (j) { clearTimeout(t); j._status = r.status; return j; }); }, function (e) { clearTimeout(t); e.dropped = true; throw e; });
+  }
+  /* The helper read the list and then went quiet (it ran out of memory: a 93 MB list on a 2020 TV, issue
+     #26), or said the list is too big.  Reading it in the app instead only closes TiviBro as well, so
+     this ends the load with a clear message.  Other helper errors still fall back to the app. */
+  function tooBig(e, what) {
+    if (!(e && (e.dropped || /too big/i.test(e.message || '')))) return null;
+    Log.error(what, 'The network helper stopped while reading the list (' + (e.message || e) + '); not loading it in the app, which would close TiviBro');
+    return Object.assign(new Error('This playlist is too big for this TV to read: the network helper stopped while reading it.  Ask your provider for a smaller list (live channels only), or add it as an Xtream Codes login.'), { kind: 'toobig' });
   }
   function xtreamLists(p, t0) {
     function direct() {
@@ -129,6 +137,7 @@ var Source = (function () {
       return { groups: j.groups, channels: j.channels, _live: j.live || '' };
     }).catch(function (e) {
       if (stopping) throw stopped();
+      var big = tooBig(e, 'xc'); if (big) throw big;
       Log.warn('xc', 'The helper could not load the channel list (' + (e && e.message || e) + '), loading it here');
       return direct();
     });
@@ -147,6 +156,7 @@ var Source = (function () {
           return { shaped: j };
         }).catch(function (e) {
           if (stopping) throw stopped();
+          var big = tooBig(e, 'm3u'); if (big) throw big;
           Log.warn('m3u', 'The helper could not load ' + list[i] + ' (' + (e && e.message || e) + '), loading it here');
           return direct(i);
         });
@@ -172,8 +182,9 @@ var Source = (function () {
         Log.error('m3u', 'Not an M3U playlist.  First 200 characters', t.notM3u);
         throw Object.assign(new Error('That URL did not return an M3U playlist.'), { kind: 'parse' });
       }
-      d = { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl || '', _live: t.shaped ? t.shaped.live || '' : '' };
-      Log.info('m3u', (t.shaped ? 'The helper parsed ' : 'Parsed ') + d.channels.length + ' channels in ' + d.groups.length + ' groups (' + Math.round(size / 1024) + ' KB, ' + (Date.now() - t0) + 'ms)' + (d.epgUrl ? '; guide address in playlist' : '; no guide address in playlist'));
+      d = { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl || '', _live: t.shaped ? t.shaped.live || '' : '', vodSkipped: +d.vodSkipped || 0 };
+      Log.info('m3u', (t.shaped ? 'The helper parsed ' : 'Parsed ') + d.channels.length + ' channels in ' + d.groups.length + ' groups (' + Math.round(size / 1024) + ' KB, ' + (Date.now() - t0) + 'ms)' + (d.epgUrl ? '; guide address in playlist' : '; no guide address in playlist') +
+        (d.vodSkipped ? '; left out ' + d.vodSkipped + ' movies and series episodes (a list this big keeps its live channels)' : ''));
       if (!d.channels.length) throw Object.assign(new Error('The playlist downloaded but has no channels in it.'), { kind: 'parse' });
       d.m3u = used;
       return d;
@@ -236,7 +247,7 @@ var Source = (function () {
   // One readable sentence per failure type, shown on screen; the log keeps the details.
   function friendly(e) {
     if (!e) return 'Unknown error';
-    if (e.kind === 'auth' || e.kind === 'notxc' || e.kind === 'parse' && !e.body) return e.message;
+    if (e.kind === 'auth' || e.kind === 'notxc' || e.kind === 'toobig' || e.kind === 'parse' && !e.body) return e.message;
     if (e.kind === 'timeout') return 'The server took too long to answer.  ' + (e.via === 'helper' ? 'It may be overloaded or blocking this TV.' : '');
     if (e.kind === 'network') return e.via === 'helper'
       ? 'The network helper stopped responding.  Restart the app; if it keeps happening, see Settings > Diagnostics.'

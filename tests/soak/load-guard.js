@@ -116,6 +116,15 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await s.ev(() => { localStorage.removeItem('tivibro.deadNoted'); DeadList._reset(); for (let k = 0; k < 6; k++) DeadList.played({ k: 'p' + k }); for (let k = 0; k < 8; k++) DeadList.failed({ k: 'c' + k }, '', 404); });
   ok('a list where plenty plays says nothing', !(await modal(s.ev)), await modal(s.ev));
 
+  // 6. The helper goes quiet while reading a list (it ran out of memory, issue #26): the app doesn't read
+  //    the list itself (that closed TiviBro too), and says why.
+  let direct = 0;
+  s.page.on('request', (q) => { if (/huge-list\.m3u/.test(q.url()) && !/127\.0\.0\.1:47811/.test(q.url())) direct++; });
+  await s.page.route(/\/live\/m3u/, (r) => r.abort('connectionreset'));
+  const e6 = await s.ev(() => Source.load({ id: 'huge', type: 'm3u', m3u: 'http://127.0.0.1:8077/huge-list.m3u' }).then(() => 'loaded', (e) => e.kind + ': ' + e.message));
+  ok('the helper stopping is not followed by loading it in the app', direct === 0 && /^toobig: This playlist is too big for this TV/.test(e6), direct + ' ' + e6);
+  await s.page.unroute(/\/live\/m3u/);
+
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();
   console.log(fails ? fails + ' FAILED' : 'all load guard checks passed');

@@ -321,9 +321,10 @@ var WebEdit = (function () {
       p.id = 'p' + Date.now().toString(36);
       return loadAndSave(p).then(function (data) {
         if (!a.use && Store.settings.playlists.length === 1) { a.use = true; App.tourNext(); }   // first playlist on a fresh TV: then the set-up tour
-        activity('Added ' + p.name + ': ' + data.channels.length.toLocaleString() + ' channels.' + (a.use ? '  Opening the guide…' : ''), 'ok');
+        var vod = data.vodSkipped ? '  Left out ' + data.vodSkipped.toLocaleString() + ' movies and series episodes: a list this big keeps its live channels.' : '';
+        activity('Added ' + p.name + ': ' + data.channels.length.toLocaleString() + ' channels.' + vod + (a.use ? '  Opening the guide…' : ''), 'ok');
         if (a.use) App.switchPlaylist(p.id);
-        return { msg: 'Added "' + p.name + '" with ' + data.channels.length + ' channels' + (a.use ? '.  The TV switched to it.' : '.') };
+        return { msg: 'Added "' + p.name + '" with ' + data.channels.length + ' channels' + (a.use ? '.  The TV switched to it.' : '.') + vod };
       });
     },
     updatePlaylist: function (a) {

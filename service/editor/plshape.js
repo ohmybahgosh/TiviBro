@@ -33,16 +33,30 @@ var PlShape = (function () {
     return { groups: groups, channels: chans };
   }
 
-  // Single pass line parser.  No regex per attribute; one regex over the EXTINF line.
+  /* A list bigger than this (entries) keeps its live channels only.  Many M3U lists carry a provider's
+     whole film and series library as entries: one had 2,775 channels and 307,413 movies and episodes
+     (93 MB, issue #26), more than a 2020 TV could read at all.  TiviBro's Movies and Shows come from the
+     Xtream login, so in a list this big they are left out and counted (vodSkipped).  Smaller lists are
+     kept whole, as before. */
+  var BIG = 100000;
+  var VOD = /\/(movie|movies|series)\/|\.(mp4|mkv|avi|mov|m4v)(\?|$)/i;
+  function count(text, what) { var n = 0, i = -1; while ((i = text.indexOf(what, i + 1)) >= 0) n++; return n; }
+
+  // Single pass line parser.  No regex per attribute; one regex over the EXTINF line.  Lines are read in
+  // place, not split into an array first: on a 90 MB list that array alone was hundreds of MB.
   var ATTR = /([a-zA-Z0-9\-_]+)="([^"]*)"/g;
   function parseM3U(text) {
-    var lines = text.split(/\r?\n/);
     var groups = [], gmap = {}, chans = [], cur = null, epgUrl = '';
-    var head = lines[0] || '';
+    var nl0 = text.indexOf('\n'), head = nl0 < 0 ? text : text.slice(0, nl0);
     var m = head.match(/(?:url-tvg|x-tvg-url)="([^"]+)"/);
     if (m) epgUrl = m[1].split(',')[0];
-    for (var i = 0; i < lines.length; i++) {
-      var L = lines[i];
+    var liveOnly = count(text, '#EXTINF') > BIG, skipped = 0;
+    for (var pos = 0, len = text.length; pos < len;) {
+      var nl = text.indexOf('\n', pos);
+      if (nl < 0) nl = len;
+      var L = text.slice(pos, nl);
+      pos = nl + 1;
+      if (L.charCodeAt(L.length - 1) === 13) L = L.slice(0, -1);   // \r\n
       if (!L) continue;
       if (L.charCodeAt(0) === 35) {          // '#'
         if (L.indexOf('#EXTINF') === 0) {
@@ -60,6 +74,7 @@ var PlShape = (function () {
       }
       if (cur) {
         var url = L.trim();
+        if (liveOnly && VOD.test(url)) { skipped++; cur = null; continue; }
         var gname = cur.attrs['group-title'] || 'Ungrouped';
         var gid = gmap[gname];
         if (!gid) { gid = 'm' + hash(gname); gmap[gname] = gid; groups.push({ id: gid, name: gname }); }
@@ -80,9 +95,9 @@ var PlShape = (function () {
       var c = chans[j];
       if (seen[c.k]) { c.k = c.k + '_' + (seen[c.k]++); c.id = c.k; } else seen[c.k] = 1;
     }
-    return { groups: groups, channels: chans, epgUrl: epgUrl };
+    return { groups: groups, channels: chans, epgUrl: epgUrl, vodSkipped: skipped };
   }
 
-  return { hash: hash, xtream: xtream, parseM3U: parseM3U };
+  return { hash: hash, xtream: xtream, parseM3U: parseM3U, BIG: BIG };
 })();
 if (typeof module !== 'undefined') module.exports = PlShape;

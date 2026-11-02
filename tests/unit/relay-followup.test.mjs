@@ -66,7 +66,7 @@ issues[7].state = 'closed'; issues[7].state_reason = 'completed';
 r = await (await post('/followup', { n: 7, key, what: 'Still closes, @someone see #3', version: '0.6.0-alpha.56', tv: 'OLED', log: LOG }, '2.2.2.2')).json();
 const made = comments[7][comments[7].length - 1];
 ok('Still happening adds a comment with the note and a fresh log', r.ok && /Still happening/.test(made.body) && /Still closes/.test(made.body) && /0\.6\.0-alpha\.56 on OLED/.test(made.body) && /# TiviBro problem report/.test(made.body), made.body.slice(0, 300));
-ok('logins and servers are masked again', !/secret|my\.provider/.test(made.body) && /<server>/.test(made.body), made.body);
+ok('logins and servers are masked again', !/secret|my\.provider/.test(made.body) && /<server>|<provider>/.test(made.body), made.body);
 ok('no @mentions or issue links from outside', /@​someone/.test(made.body) && /#​3/.test(made.body));
 ok('a closed report is reopened', r.reopened && issues[7].state === 'open');
 s = await get('/status?n=7');

@@ -1,0 +1,41 @@
+# Logins out of everything posted on GitHub (scripts/mask-issues.mjs, relay/mask.js): a new or edited issue,
+# comment, discussion or discussion comment is checked as it arrives, and everything once a day.
+name: Mask logins
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+  discussion:
+    types: [created, edited]
+  discussion_comment:
+    types: [created, edited]
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  discussions: write
+concurrency:
+  group: mask-${{ github.event.issue.number || github.event.discussion.number || 'all' }}
+  cancel-in-progress: false
+jobs:
+  mask:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          sparse-checkout: |
+            relay/
+            scripts/mask-issues.mjs
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Mask
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node --no-warnings scripts/mask-issues.mjs ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '--all' || '' }}

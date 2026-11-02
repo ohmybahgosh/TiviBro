@@ -29,6 +29,7 @@ var Log = (function () {
       .replace(/([?&](?:sig|signature|token|auth|key|expires|hash)=)[^&\s"']*/gi, '$1***')
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s"']*/gi, '$1***')
       .replace(/(username=)([^&\s"']{0,2})[^&\s"']*/gi, '$1$2***')
+      .replace(/("ctl"\s*:\s*")[0-9a-f]{8,}(")/gi, '$1***$2')             // the helper's control key (issue #26)
       .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/')
       /* The short Xtream link many M3U lists use, http://server/user/pass/12345.ts, with no /live/ in
          front (issue #25): the two parts before the channel number are the login. */

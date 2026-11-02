@@ -111,8 +111,8 @@ function handle(req, res, ALLOW, log, port) {
       if (t.indexOf('#EXTM3U') < 0 && t.indexOf('#EXTINF') < 0) return send(res, ALLOW, 422, { kind: 'parse', error: 'not an M3U playlist', head: t.slice(0, 200) });
       var d = PlShape.parseM3U(t);
       t = null;
-      if (log) log({ lv: 'info', event: 'live m3u', n: d.channels.length, ms: Date.now() - t0 });
-      reply(res, ALLOW, { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl, bytes: size }, !!q.keep, log);
+      if (log) log({ lv: 'info', event: 'live m3u', n: d.channels.length, vod: d.vodSkipped || 0, ms: Date.now() - t0 });
+      reply(res, ALLOW, { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl, bytes: size, vodSkipped: d.vodSkipped || 0 }, !!q.keep, log);
     });
   });
 }

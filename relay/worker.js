@@ -43,9 +43,12 @@ const KEEP = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|(.*\.)
 const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type, X-Stats-Key', 'Access-Control-Max-Age': '86400' };
 function json(obj, status) { return new Response(JSON.stringify(obj), { status: status || 200, headers: Object.assign({ 'Content-Type': 'application/json' }, CORS) }); }
 
-// Logins and servers, once more: query logins and tokens, user:pass@, Xtream stream paths, and any server we don't know.
+import { maskSecrets } from './mask.js';
+
+// Logins and servers, once more: query logins and tokens, user:pass@, Xtream stream paths (the short form
+// too: mask.js), the helper's control key, and any server we don't know.
 function scrub(s) {
-  return String(s == null ? '' : s)
+  return maskSecrets(s)
     .replace(/((?:password|pass|pwd|token|key|auth|sig|signature|hash|session|sid|user|username|u|p)=)[^&\s"'<>]+/gi, '$1***')
     .replace(/\/\/([^/\s:@]+):([^/\s@]+)@/g, '//***:***@')
     .replace(/\/(live|movie|series|timeshift)\/[^/\s]+\/[^/\s]+\//gi, '/$1/***/***/')
