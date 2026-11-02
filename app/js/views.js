@@ -192,8 +192,31 @@ var Views = (function () {
     applyLook();
   }
 
+  /* Full themes: every colour from one palette (Settings > Look > Theme).  '' is "Your own mix", the
+     Background (app.css body.theme-*) and Accent settings.  Colours from each theme's published palette. */
+  var V = ['ink', 'panel', 'raised', 'line', 'text', 'muted', 'dim', 'accent', 'accent2', 'warn', 'air', 'ok', 'side'];
+  var PALETTES = {
+    mono:       ['#000000', '#0e0e0e', '#1c1c1c', '#3a3a3a', '#ffffff', '#c4c4c4', '#8a8a8a', '#ffffff', '#d6d6d6', '#e6e6e6', '#ffffff', '#d6d6d6', '#000000'],
+    tokyo:      ['#1a1b26', '#1f2335', '#292e42', '#3b4261', '#c0caf5', '#a9b1d6', '#565f89', '#7aa2f7', '#7dcfff', '#e0af68', '#f7768e', '#9ece6a', '#16161e'],
+    dracula:    ['#282a36', '#303341', '#44475a', '#525670', '#f8f8f2', '#c5c8de', '#6272a4', '#bd93f9', '#ff79c6', '#f1fa8c', '#ff5555', '#50fa7b', '#21222c'],
+    nord:       ['#2e3440', '#3b4252', '#434c5e', '#4c566a', '#eceff4', '#d8dee9', '#7b88a1', '#88c0d0', '#81a1c1', '#ebcb8b', '#bf616a', '#a3be8c', '#272c36'],
+    gruvbox:    ['#282828', '#32302f', '#3c3836', '#504945', '#ebdbb2', '#bdae93', '#7c6f64', '#fabd2f', '#fe8019', '#fe8019', '#fb4934', '#b8bb26', '#1d2021'],
+    catppuccin: ['#1e1e2e', '#262637', '#313244', '#45475a', '#cdd6f4', '#a6adc8', '#6c7086', '#cba6f7', '#89b4fa', '#f9e2af', '#f38ba8', '#a6e3a1', '#181825'],
+    solarized:  ['#002b36', '#073642', '#0b4250', '#2a5561', '#eee8d5', '#93a1a1', '#657b83', '#268bd2', '#2aa198', '#b58900', '#dc322f', '#859900', '#00212b'],
+    onedark:    ['#282c34', '#2c313a', '#353b45', '#3e4451', '#dcdfe4', '#abb2bf', '#5c6370', '#61afef', '#56b6c2', '#e5c07b', '#e06c75', '#98c379', '#21252b'],
+    rosepine:   ['#191724', '#1f1d2e', '#26233a', '#403d52', '#e0def4', '#908caa', '#6e6a86', '#c4a7e7', '#ebbcba', '#f6c177', '#eb6f92', '#9ccfd8', '#13111e'],
+    everforest: ['#2d353b', '#343f44', '#3d484d', '#475258', '#d3c6aa', '#9da9a0', '#7a8478', '#a7c080', '#83c092', '#dbbc7f', '#e67e80', '#a7c080', '#272e33'],
+    kanagawa:   ['#1f1f28', '#2a2a37', '#363646', '#54546d', '#dcd7ba', '#c8c093', '#727169', '#7e9cd8', '#7fb4ca', '#e6c384', '#ff5d62', '#98bb6c', '#16161d'],
+    monokai:    ['#272822', '#2f302a', '#3e3d32', '#49483e', '#f8f8f2', '#cfcfc2', '#75715e', '#a6e22e', '#66d9ef', '#e6db74', '#f92672', '#a6e22e', '#1e1f1c']
+  };
+  var PALETTE_NAMES = { mono: 'Black and white', tokyo: 'Tokyo Night', dracula: 'Dracula', nord: 'Nord', gruvbox: 'Gruvbox', catppuccin: 'Catppuccin Mocha', solarized: 'Solarized Dark',
+    onedark: 'One Dark', rosepine: 'Rosé Pine', everforest: 'Everforest', kanagawa: 'Kanagawa', monokai: 'Monokai' };
+  function palette(id) { var p = PALETTES[id]; if (!p) return null; var o = {}; V.forEach(function (k, i) { o[k] = p[i]; }); return o; }
   function applyLook() {
-    var acc = Store.settings.accent || '#5b8cff', on = U.onColor(acc), root = document.documentElement.style;
+    var pal = palette(Store.settings.palette), root = document.documentElement.style;
+    // A full theme sets every colour; your own mix leaves app.css's (and body.theme-*) to it.
+    V.forEach(function (k) { if (k !== 'accent') { if (pal) root.setProperty('--' + k, pal[k]); else root.removeProperty('--' + k); } });
+    var acc = pal ? pal.accent : Store.settings.accent || '#5b8cff', on = U.onColor(acc);
     root.setProperty('--accent', acc);
     root.setProperty('--on-accent', on.fg);
     root.setProperty('--on-accent-dim', on.dim);
@@ -204,8 +227,9 @@ var Views = (function () {
     var s = Store.settings, b = document.body.classList;
     document.body.className.split(/\s+/).forEach(function (c) { if (/^theme-/.test(c)) b.remove(c); });
     ['ts-s', 'ts-l', 'ov-l', 'ov-h', 'now-color', 'now-off'].forEach(function (c) { b.remove(c); });
-    if (s.theme && s.theme !== 'dark') b.add('theme-' + s.theme);
-    b.toggle('focus-ring', s.focusStyle === 'ring' || s.theme === 'contrast');
+    if (!pal && s.theme && s.theme !== 'dark') b.add('theme-' + s.theme);
+    b.toggle('pal', !!pal);
+    b.toggle('focus-ring', s.focusStyle === 'ring' || (!pal && s.theme === 'contrast'));
     if (s.textSize === 's' || s.textSize === 'l') b.add('ts-' + s.textSize);
     if (s.overlay === 'l' || s.overlay === 'h') b.add('ov-' + s.overlay);
     if (s.nowStyle === 'color' || s.nowStyle === 'off') b.add('now-' + s.nowStyle);
@@ -1182,6 +1206,31 @@ var Views = (function () {
     UI.menu('Copy to group', items);
   }
 
+  /* Show or hide channels… (Hold OK on a channel or a group): every channel of the group with a tick,
+     hidden ones unticked.  Nothing changes until Back; then one save.  Hiding is everywhere, as always. */
+  function canManage(gid) { return gid && gid !== L.ALL && gid !== L.RECENT && gid !== L.TEAMS && gid !== L.EVENTS && gid !== L.NEW; }
+  function manageVisibility(gid, at) {
+    if (!canManage(gid)) return;
+    var all = L.channels(gid, true);
+    if (!all.length) { U.toast('That group is empty'); return; }
+    var rows = all.map(function (c) { return { label: L.name(c), logo: logoOf(c), on: !L.isHidden(c.k), k: c.k, c: c, was: !L.isHidden(c.k) }; });
+    var chans = function (list) { return list.filter(function (r) { return r.k; }); };
+    var quick = [
+      { label: 'Show all', act: function (l) { chans(l).forEach(function (r) { r.on = true; }); } },
+      { label: 'Hide all', act: function (l) { chans(l).forEach(function (r) { r.on = false; }); } },
+      { label: 'Hide channels with no guide information', act: function (l) { chans(l).forEach(function (r) { if (!Epg.hasData(r.c)) r.on = false; }); } }
+    ];
+    var list = quick.concat(rows), i = at ? rows.findIndex(function (r) { return r.k === at.k; }) : -1;
+    var title = function () { return L.groupName(gid) + ':  ' + chans(list).filter(function (r) { return r.on; }).length + ' of ' + rows.length + ' shown'; };
+    UI.hints([['', 'OK  tick or untick', 'ok'], ['', 'CH +/−  a page', 'chup'], ['', 'Back  save and close', 'back'], ['', 'Hidden channels are hidden in every group']]);
+    UI.checklist(title, list, function (l) {
+      var change = {}, hid = 0, shown = 0;
+      chans(l).forEach(function (r) { if (r.on !== r.was) { change[r.k] = !r.on; if (r.on) shown++; else hid++; } });
+      if (hid || shown) { L.hideChannels(change); U.toast([hid ? hid + ' hidden' : '', shown ? shown + ' shown' : ''].filter(Boolean).join(', ') + '.  Hidden channels are hidden everywhere.', 4000); }
+      refreshLists(true);
+      hintsFor(); if (tab === 'guide') { Guide.refresh(); if (Guide.hints) Guide.hints(); }
+    }, i >= 0 ? i + quick.length : 0);
+  }
   function chanItems(c, gid) {
     var hidden = !!Store.edits.hiddenChannels[c.k];
     var renamed = !!Store.edits.renames[c.k];
@@ -1211,6 +1260,7 @@ var Views = (function () {
         var go = function () { L.block('channel', c.k, !blocked); U.toast(blocked ? 'Unblocked' : 'Blocked'); refreshLists(true); stopIfBlocked(); };
         if (blocked) Parental.gate('channels', c, go); else go();
       } },
+      canManage(gid) && { label: 'Show or hide channels…', sub: 'tick the channels to keep in ' + L.groupName(gid), action: function () { manageVisibility(gid, c); } },
       hidden ? { label: 'Show channel', action: function () { L.hideChannel(c.k, false); U.toast('Channel restored'); refreshLists(true); } }
              : { label: 'Hide channel', sub: 'restore from Settings', action: function () { L.hideChannel(c.k, true); U.toast('Hidden.  Restore it in Settings, Groups and hidden items.'); refreshLists(true); } }
     ];
@@ -1478,6 +1528,7 @@ var Views = (function () {
         var go = function () { L.block('group', g.id, !blocked); refreshLists(true); stopIfBlocked(); };
         if (blocked) Parental.gate('channels', { k: '', g: g.id }, go); else go();
       } },
+      canManage(g.id) && { label: 'Show or hide channels…', sub: 'tick the channels to keep', action: function () { manageVisibility(g.id); } },
       !virtual && (hidden ? { label: 'Show group', action: function () { L.hideGroup(g.id, false); U.toast('Group restored'); refreshLists(true); } }
                           : { label: 'Hide group', sub: 'restore from Settings', action: function () { L.hideGroup(g.id, true); U.toast('Hidden.  Restore it in Settings, Groups and hidden items.'); refreshLists(); } }),
       custom && { label: 'Delete group', action: function () { UI.confirm('Delete ' + g.name + '?', 'Delete', function () { L.deleteGroup(g.id); refreshLists(); }); } },
@@ -1516,7 +1567,7 @@ var Views = (function () {
   return {
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, playVod: playVod,
-    emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; }, get vod() { return vod; }, runAction: runAction,
     restoreKeys: function () { UI.setHandler(full ? fullKeys : liveKeys); },
@@ -1870,10 +1921,11 @@ var Guide = (function () {
     }
     var g = function (b) { var x = Keymap.get('guide', b); return x && x !== 'none' ? x : ''; };
     var full = ['playpause', 'red', 'green', 'yellow', 'blue', 'info', 'stop'].filter(function (b) { return g(b) === 'full'; })[0];
-    UI.hints([['', '◀ on now  groups', 'yellow'], ['', 'Hold OK  options', 'hold'],
-      g('red') && g('red') !== 'full' ? ['', 'Red  ' + Keymap.SHORT[g('red')], 'red'] : null,
-      g('green') && g('green') !== 'full' ? ['green', Keymap.SHORT[g('green')]] : null, g('blue') && g('blue') !== 'full' ? ['blue', Keymap.SHORT[g('blue')]] : null,
-      pv && full ? ['', Keymap.label(full) + '  watch ' + L.name(pv), full] : null, ['', 'Back  groups', 'back']].filter(Boolean));
+    // Same order everywhere: the moves, Back, then the colour buttons (a coloured square and what it does).
+    var grp = g('yellow') === 'groups';
+    UI.hints([['', '◀ on now  groups', grp ? 'yellow' : ''], ['', 'Hold OK  options', 'hold'],
+      pv && full ? ['', Keymap.label(full) + '  watch ' + L.name(pv), full] : null, ['', 'Back  groups', 'back']]
+      .concat(['red', 'green', 'yellow', 'blue'].map(function (b) { var a = g(b); return a && a !== 'full' && !(b === 'yellow' && grp) ? [b, Keymap.SHORT[a] || Keymap.ACTIONS[a]] : null; })).filter(Boolean));
   }
 
   function selectIdx(i) {
@@ -1978,6 +2030,7 @@ var Guide = (function () {
     if (Math.abs(focusT - now) > 60e3) items.push({ label: 'Jump to now', action: jumpNow });
     if (previewing()) items.push({ label: 'Stop the window', sub: L.name(previewing()), action: function () { Views.stopAll(); draw(); hints(); } });
     if (L.canReorder(gid) && list.length > 1) items.push({ label: 'Move…', sub: 'change its place in ' + L.groupName(gid), action: function () { startMove(c); } });
+    if (Views.canManage(gid)) items.push({ label: 'Show or hide channels…', sub: 'tick the channels to keep in ' + L.groupName(gid), action: function () { Views.manageVisibility(gid, c); } });
     items.push({ label: 'Channel options…', sub: 'favorite, copy to group, hide, rename', action: function () { Views.chanMenu(c, gid); } });
     UI.menu(h.p ? h.p.t : L.name(c), items);
   }
@@ -2074,6 +2127,6 @@ var Guide = (function () {
     for (var i = 0; i < rows.length; i++) if (rows[i].k === k) { drawRow(rows[i], top + i); if (top + i === sel) drawDetail(); }
   }
 
-  return { open: open, resume: resume, refresh: refresh, draw: draw, rowUpdated: rowUpdated, leave: leave,
+  return { open: open, resume: resume, refresh: refresh, draw: draw, rowUpdated: rowUpdated, leave: leave, hints: hints,
     __sel: function () { return sel; }, __gsel: function () { return groupsVL ? groupsVL.sel : 0; } };
 })();

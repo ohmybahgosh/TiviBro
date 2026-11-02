@@ -112,6 +112,19 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
   // The log for the phone (sealed): the Report a problem text.
   const logAns = await ask('logs', {}, { seal: true });
+  // Show or hide channels in a group, hidden ones listed too; saved in one go.
+  const gk = await ev(() => { const c = Library.data.channels[0]; return { k: c.k, g: c.g, n: Library.channels(c.g, true).length }; });
+  const vis = await ask('vis', { op: 'list', group: '', k: gk.k });
+  ok('show or hide: the channel\'s group, every channel ticked', vis.group === gk.g && vis.rows.length === gk.n && vis.rows.every((r) => r.on === 1 && r.k && r.n), JSON.stringify(vis).slice(0, 200));
+  const two = vis.rows.slice(0, 2).map((r) => r.k), chg = {}; two.forEach((k) => { chg[k] = false; });
+  const saved = await ask('vis', { op: 'save', group: vis.group, changes: chg });
+  ok('saving hides them on the TV', /2 hidden/.test(saved.msg) && await ev((ks) => ks.every((k) => Library.isHidden(k)), two), saved.msg);
+  const again = await ask('vis', { op: 'list', group: vis.group });
+  ok('hidden ones stay in the list, unticked', again.rows.length === gk.n && again.rows.filter((r) => !r.on).map((r) => r.k).join() === two.join(), JSON.stringify(again.rows.filter((r) => !r.on)));
+  chg[two[0]] = true; delete chg[two[1]];
+  const back = await ask('vis', { op: 'save', group: vis.group, changes: chg });
+  ok('and can be shown again', /1 shown/.test(back.msg) && await ev((k) => !Library.isHidden(k), two[0]), back.msg);
+  await ev((k) => Library.hideChannel(k, false), two[1]);
   ok('the log reaches the phone, sealed', typeof logAns.text === 'string' && /# TiviBro problem report/.test(logAns.text) && /App log/.test(logAns.text), String(logAns.text).slice(0, 120));
   const lgPlain = await C.ask(cred, 'logs', {}).catch((e) => e);
   ok('and not without sealing', lgPlain instanceof Error || (lgPlain && lgPlain.error), String(lgPlain && (lgPlain.message || lgPlain.error)));

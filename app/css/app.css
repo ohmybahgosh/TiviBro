@@ -219,6 +219,14 @@ body.guide1 .gp .gs{display:none}
 .mi.focus{background:var(--accent);color:var(--on-accent)}
 .mi small{color:var(--muted)}
 .mi.focus small{color:var(--on-accent-dim)}
+.mi.chk{justify-content:flex-start;align-items:center}
+.mi.chk .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mi.chk.off .lbl,.mi.chk.off .lg{opacity:.45}
+.mi .lg{width:64px;height:40px;object-fit:contain;flex:none}
+.mi .box{flex:none;width:36px;height:36px;border:3px solid var(--muted);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;line-height:1}
+.mi .box.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.mi.focus .box{border-color:var(--on-accent)}.mi.focus .box.on{background:var(--on-accent);color:var(--accent)}
+.mi.quick .lbl{color:var(--accent-text)}.mi.quick.focus .lbl{color:var(--on-accent)}
 .modal input{width:100%;background:var(--ink);border:2px solid var(--accent);color:var(--text);font:inherit;padding:14px 18px;border-radius:8px;outline:none;margin-bottom:18px}
 
 .toast{position:absolute;left:50%;bottom:90px;transform:translateX(-50%);z-index:40;background:var(--raised);padding:16px 32px;border-radius:40px;font-size:24px}
@@ -426,6 +434,8 @@ body.theme-mocha .sidenav,body.theme-mocha.nav-open .sidenav{background:#16100c}
 /* High contrast: pure black, brighter secondary text and lines, and the focus ring always on */
 body.theme-contrast{--ink:#000;--panel:#0a0a0a;--raised:#1f1f1f;--line:#5a5a5a;--text:#fff;--muted:#d0d0d0;--dim:#a8a8a8}
 body.theme-contrast .sidenav,body.theme-contrast.nav-open .sidenav{background:#000}
+/* Full themes (Settings > Look > Theme): the colours come from views.js PALETTES; the open menu uses --side. */
+body.pal .sidenav,body.pal.nav-open .sidenav{background:var(--side)}
 /* Focus ring: a white outline on top of the accent fill, for distance viewing and pale accents */
 body.focus-ring .vlist.active .row.sel,body.focus-ring .gp.focus,body.focus-ring .guide-group.focus,body.focus-ring .btn.focus,body.focus-ring .mi.focus,
 body.focus-ring .tab.focus,body.focus-ring .qp-act.focus,body.focus-ring .qp-ch.focus,body.focus-ring .set-nav.active div.on,body.focus-ring .opt.focus{outline:4px solid #fff;outline-offset:-4px}

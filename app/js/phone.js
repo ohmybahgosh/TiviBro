@@ -190,6 +190,21 @@ var Phone = (function () {
       return { k: c.k, name: Library.name(c), provider: c.n, renamed: !!E.renames[c.k], hidden: !!E.hiddenChannels[c.k], group: Library.groupName(c.g), groups: mine(), msg: msg,
         team: team ? { id: team.id, name: team.name, on: Teams.follows(team.id) ? 1 : 0 } : null };
     },
+    /* Show or hide channels in one group (the channel sheet's "Show or hide channels…"), hidden ones too.
+       op list: the group's channels with on (shown); op save: { changes: { key: true (show) | false } }.
+       The group: the one the phone is showing, else the channel's own. */
+    vis: function (a) {
+      var gid = String(a.group || '');
+      if (!Views.canManage(gid)) { if (!a.k) throw new Error('Pick a group first.'); gid = chan(a.k).g; }
+      var all = Library.channels(gid, true);
+      if (String(a.op || 'list') === 'save') {
+        var ch = a.changes || {}, change = {}, hid = 0, shown = 0;
+        all.forEach(function (c) { if (ch.hasOwnProperty(c.k) && !!ch[c.k] === Library.isHidden(c.k)) { change[c.k] = !ch[c.k]; if (ch[c.k]) shown++; else hid++; } });
+        if (hid || shown) { Library.hideChannels(change); Views.refreshLists(true); lineupAt = 0; sendLineup(); }
+        return { msg: hid || shown ? [hid ? hid + ' hidden' : '', shown ? shown + ' shown' : ''].filter(Boolean).join(', ') + ' on the TV' : 'Nothing changed' };
+      }
+      return { group: gid, title: Library.groupName(gid), rows: all.map(function (c) { return { k: c.k, n: Library.name(c), num: c.num || '', logo: Views.logoOf(c) || '', on: Library.isHidden(c.k) ? 0 : 1, g: Epg.hasData(c) ? 1 : 0 }; }) };
+    },
     /* TiviBro's Settings on the phone, page by page (see Settings.phone): the list of pages, one page, or a
        change on it (op toggle, choice, cycle, action).  Locked with the TV's PIN when Settings is: the
        answer says so ({ locked }) and the phone asks for the PIN. */

@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.EmojiEvents
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -62,6 +63,7 @@ import org.json.JSONObject
 fun ChannelSheet(
     model: AppModel, id: String, c: Chan, playing: Boolean,
     onPlay: () -> Unit, onSchedule: (() -> Unit)?, onDismiss: () -> Unit,
+    group: String = "",
 ) {
     val sheet = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
@@ -71,6 +73,7 @@ fun ChannelSheet(
     var renaming by remember { mutableStateOf(false) }
     var newGroup by remember { mutableStateOf(false) }
     var hiding by remember { mutableStateOf(false) }
+    var managing by remember { mutableStateOf(false) }
     var fav by remember { mutableStateOf(c.fav) }
 
     LaunchedEffect(c.k) {
@@ -126,6 +129,7 @@ fun ChannelSheet(
                     HorizontalDivider(color = Line, modifier = Modifier.padding(vertical = 6.dp))
                     Option(Icons.Rounded.Edit, "Rename…", sub = if (i.renamed) "Provider's name: " + i.provider else null) { renaming = true }
                     Option(Icons.Rounded.VisibilityOff, "Hide on the TV", sub = "Back in the TV's Settings > Groups, sorting, hidden") { hiding = true }
+                    Option(Icons.Rounded.Checklist, "Show or hide channels…", sub = "Tick the channels to keep in this group") { managing = true }
                 }
             }
         }
@@ -135,6 +139,7 @@ fun ChannelSheet(
         onExtra = { renaming = false; change("rename", JSONObject().put("name", "")) },
         onDismiss = { renaming = false }) { n -> renaming = false; change("rename", JSONObject().put("name", n)) }
     if (newGroup) NameDialog("New group", "", "Create", onDismiss = { newGroup = false }) { n -> newGroup = false; change("newgroup", JSONObject().put("name", n)) }
+    if (managing) VisibilityScreen(model, id, group, c.k) { managing = false; onDismiss() }
     if (hiding) AlertDialog(
         onDismissRequest = { hiding = false }, containerColor = Panel,
         title = { Text("Hide " + (info?.name ?: c.name) + "?") },

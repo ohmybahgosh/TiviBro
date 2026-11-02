@@ -85,6 +85,10 @@ async function answer(cmd) {
     if (a.op === 'choice' && a.i === 2) { look.rows[2].cur = a.v; look.rows[2].value = look.rows[2].options[a.v]; }
     return a.op === 'page' ? say(look) : say({ msg: '', page: look });
   }
+  if (cmd.what === 'vis') {
+    if (a.op === 'save') { const n = Object.keys(a.changes || {}).length; return say({ msg: n ? n + ' changed on the TV' : 'Nothing changed' }); }
+    return say({ group: 'news', title: 'News', rows: chans.slice(0, 12).map((c, i) => ({ k: c.k, n: c.n, num: c.num || '', logo: c.logo || '', on: i === 3 ? 0 : 1, g: i % 4 ? 1 : 0 })) });
+  }
   if (cmd.what === 'chan') { const c = chans.find((x) => x.k === a.k); if (!c) return no('That channel isn\'t in this playlist.'); return say({ k: c.k, name: c.n, provider: c.n, renamed: false, hidden: false, group: 'News', groups: [{ id: 'c_mine', name: 'My sports', has: 0 }], team: { id: 'nfl:det', name: 'Detroit Lions', on: a.op === 'follow' && a.on !== false ? 1 : 0 }, msg: a.op === 'info' ? '' : 'Done' }); }
   if (a.kind === 'media') {
     const shelf = (id) => id === 'continue' ? mine.filter((m) => m.p) : id === 'favorites' ? mine.filter((m) => m.fav) : mine;

@@ -255,13 +255,14 @@ var Library = (function () {
     finally { S().showHidden = keep; }
   }
 
-  function channels(gid) {
+  // withHidden: every channel of the group, hidden ones too (Show or hide channels…).
+  function channels(gid, withHidden) {
     if (gid === EVENTS) return eventList();
     if (gid === NEW) return newList();
     if (gid === TEAMS) return typeof Teams !== 'undefined' ? Teams.list() : [];
-    var hit = groupCache.get(gid);
+    var hit = !withHidden && groupCache.get(gid);
     if (hit) return hit;
-    var e = E(), showHidden = S().showHidden, list;
+    var e = E(), showHidden = withHidden || S().showHidden, list;
     var sortable = false;
     if (gid === RECENT) {
       list = e.recent.map(function (k) { return byKey.get(k); }).filter(Boolean);
@@ -304,13 +305,16 @@ var Library = (function () {
       else if (mode === 'za') list.sort(function (a, b) { return name(b).localeCompare(name(a), undefined, { numeric: true }); });
       else if (mode === 'watch') list.sort(function (a, b) { return (e.watch[b.k] || 0) - (e.watch[a.k] || 0); });
     }
-    groupCache.set(gid, list);
+    if (!withHidden) groupCache.set(gid, list);
     return list;
   }
 
   /* ---------- edits ---------- */
   function commit() { dirty(); Store.saveEdits(); }
 
+  // Many at once, one save: { key: true (hide) | false (show) }.
+  function hideChannels(changes) { var h = E().hiddenChannels; Object.keys(changes).forEach(function (k) { if (changes[k]) h[k] = 1; else delete h[k]; }); commit(); }
+  function isHidden(k) { return !!E().hiddenChannels[k]; }
   function hideChannel(k, on) { if (on) E().hiddenChannels[k] = 1; else delete E().hiddenChannels[k]; commit(); }
   function hideGroup(id, on) { if (on) E().hiddenGroups[id] = 1; else delete E().hiddenGroups[id]; commit(); }
   // Bulk version: one save for any number of groups.
@@ -429,7 +433,7 @@ var Library = (function () {
   }
 
   return {
-    idle: idle, ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, TEAMS: TEAMS, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
+    hideChannels: hideChannels, isHidden: isHidden, idle: idle, ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, TEAMS: TEAMS, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
     shownAnywhere: shownAnywhere, isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
     isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,

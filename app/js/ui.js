@@ -139,9 +139,11 @@ var UI = (function () {
     mTop = U.clamp(mTop, Math.max(0, mSel - M_VIS + 1), mSel);
     mBody.innerHTML = '';
     for (var i = mTop; i < Math.min(mItems.length, mTop + M_VIS); i++) {
-      var it = mItems[i], d = U.el('div', 'mi' + (i === mSel ? ' focus' : ''));
-      d.appendChild(U.el('span', '', it.label));
+      var it = mItems[i], chk = typeof it.on === 'boolean', d = U.el('div', 'mi' + (i === mSel ? ' focus' : '') + (chk ? ' chk' + (it.on ? '' : ' off') : '') + (it.act ? ' quick' : ''));
+      if (it.logo) { var im = U.el('img', 'lg'); im.src = it.logo; im.onerror = function () { this.style.visibility = 'hidden'; }; d.appendChild(im); }
+      d.appendChild(U.el('span', 'lbl', it.label));
       if (it.sub) d.appendChild(U.el('small', '', it.sub));
+      if (chk) d.appendChild(U.el('b', 'box' + (it.on ? ' on' : ''), it.on ? '✓' : ''));
       (function (idx) {
         d.addEventListener('mousemove', function () { if (pointer && mSel !== idx) { mSel = idx; drawMenu(); } });
         d.addEventListener('click', function () { mSel = idx; dispatch('ok', null); });
@@ -161,6 +163,26 @@ var UI = (function () {
       else if (a === 'down') { if (mSel < mItems.length - 1) { mSel++; drawMenu(); } }
       else if (a === 'ok') { var it = mItems[mSel]; close(); if (it && it.action) it.action(); }
       else if (a === 'back') { close(); if (onBack) onBack(); }
+      return true;
+    };
+  }
+
+  /* A list to tick and untick (Show or hide channels…): rows { label, sub, logo, on }, and quick rows
+     { label, act(rows) } at the top.  OK ticks, CH +/− pages, Back closes and hands back the rows. */
+  function checklist(title, rows, done, start) {
+    mItems = rows; mSel = U.clamp(start || 0, 0, Math.max(0, rows.length - 1)); mTop = Math.max(0, mSel - 3);
+    var head = typeof title === 'function' ? title : function () { return title; };
+    function draw() { mTitle.textContent = head(); drawMenu(); }
+    modal.querySelector('.modal-box').classList.add('wide');
+    modal.classList.remove('hidden');
+    draw();
+    modalH = function (a) {
+      if (a === 'up') { if (mSel > 0) { mSel--; draw(); } }
+      else if (a === 'down') { if (mSel < mItems.length - 1) { mSel++; draw(); } }
+      else if (a === 'chup' || a === 'left') { mSel = Math.max(0, mSel - M_VIS); mTop = Math.max(0, mTop - M_VIS); draw(); }
+      else if (a === 'chdown' || a === 'right') { mSel = Math.min(mItems.length - 1, mSel + M_VIS); mTop = mTop + M_VIS; draw(); }
+      else if (a === 'ok') { var it = mItems[mSel]; if (it && it.act) it.act(mItems); else if (it && typeof it.on === 'boolean') it.on = !it.on; draw(); }
+      else if (a === 'back') { close(); if (done) done(mItems); }
       return true;
     };
   }
@@ -278,6 +300,7 @@ var UI = (function () {
     get repeating() { return repeating; },     // true while a held arrow is auto-repeating
     get playKey() { return playKey; },
     press: function (a) { dispatch(a, null); },
+    checklist: checklist,
     // A menu that shows live values (Stream info) redraws itself while it is the one open.
     menuOpen: function (title) { return !!modalH && !modal.classList.contains('hidden') && mTitle.textContent === title; },
     redrawMenu: function () { if (modalH) drawMenu(); },

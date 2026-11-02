@@ -47,6 +47,7 @@ var Store = (function () {
     keyAliases: {},             // learned keyCode -> button name
     // Added after the TiviMate menu review (all off/neutral by default unless noted).
     theme: 'dark',              // dark (Midnight Electric) | black | slate | ocean | forest | plum | mocha | contrast | classic
+    palette: '',                // a full theme (views.js PALETTES: tokyo, dracula, nord…); '' = your own mix of theme and accent
     accentMode: '',             // '' (one of the presets) | custom (accentHue + accentLight)
     accentHue: 210, accentLight: 62,
     focusStyle: 'fill',         // fill | ring (white outline as well)

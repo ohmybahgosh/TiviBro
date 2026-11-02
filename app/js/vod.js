@@ -429,13 +429,13 @@ var Vod = (function () {
 
   function setZone(z) { zone = z; catsVL.setActive(z === 'cats'); itemsVL.setActive(z === 'items'); hints(); }
   function hints() {
-    if (episodes) return UI.hints([['', 'OK  play'], ['', 'Hold OK  options'], ['', 'Back  all shows']]);
+    if (episodes) return UI.hints([['', 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  all shows', 'back']]);
     if (zone === 'cats') {
       var c = catsVL && catsVL.current();
       return UI.hints(c && c.id === LANGS ? [['', 'OK  pick languages'], ['', 'Back  menu bar', 'back'], ['green', 'Guide'], ['blue', 'Settings']]
-        : [['', 'OK  open'], ['', 'Hold OK or Red  hide category'], ['', 'Back  menu bar', 'back'], ['green', 'Guide'], ['blue', 'Settings']]);
+        : [['', 'OK  open'], ['', 'Hold OK  hide category', 'hold'], ['', 'Back  menu bar', 'back'], ['red', 'Hide category'], ['green', 'Guide'], ['blue', 'Settings']]);
     }
-    UI.hints([['', 'OK  ' + (kind === 'series' ? 'open' : 'play')], ['', 'Hold OK or Red  options'], ['', 'Back  menu bar', 'back'], ['green', 'Guide'], ['blue', 'Settings']]);
+    UI.hints([['', 'OK  ' + (kind === 'series' ? 'open' : 'play')], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu bar', 'back'], ['red', 'Options'], ['green', 'Guide'], ['blue', 'Settings']]);
   }
 
   function keys(a) {

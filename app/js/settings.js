@@ -615,6 +615,14 @@ var Settings = (function () {
   var THEME_INK = { dark: '#141a2e', black: '#000', slate: '#263342', ocean: '#0f2a3a', forest: '#14271d', plum: '#2a1830', mocha: '#2b2019', contrast: '#000', classic: '#18222e' };
   function look() {
     var s = S(), out = [];
+    var PIDS = [''].concat(Object.keys(Views.PALETTES)), PNAMES = ['Your own mix'].concat(Object.keys(Views.PALETTES).map(function (k) { return Views.PALETTE_NAMES[k]; }));
+    var th = choice('Theme', 'Every colour at once: Black and white, Tokyo Night, Dracula, Nord, Gruvbox and more.  Your own mix: choose a background and an accent below.', PIDS, PNAMES,
+      function () { return Views.PALETTES[s.palette] ? s.palette : ''; }, function (v) { s.palette = v; Views.applyLook(); save(true); });
+    th.swatch = function () { var p = Views.palette(s.palette); return p ? p.accent : s.accent; };
+    out.push(th);
+    if (Views.PALETTES[s.palette]) {
+      out.push(info('Background and accent', 'From the theme'));
+    } else {
     var custom = s.accentMode === 'custom';
     var acc = choice('Accent color', 'The colour of whatever is focused, and of progress bars.', ACCENTS, ACCENT_NAMES,
       function () { return custom ? 'custom' : s.accent; },
@@ -638,6 +646,7 @@ var Settings = (function () {
     var bg = choice('Background', '', THEMES, THEME_NAMES, function () { return s.theme || 'dark'; }, function (v) { s.theme = v; Views.applyLook(); save(); });
     bg.swatch = function () { return THEME_INK[s.theme || 'dark'] || THEME_INK.dark; };
     out.push(bg);
+    }
     out.push(choice('Focus style', 'How the selected item stands out.  Outline adds a white ring, easier to spot from across the room.', ['fill', 'ring'], ['Filled', 'Filled with outline'], function () { return s.focusStyle || 'fill'; }, function (v) { s.focusStyle = v; Views.applyLook(); save(); }));
     out.push(choice('Text size', 'Guide and channel lists.', ['s', 'm', 'l'], ['Small', 'Medium', 'Large'], function () { return s.textSize || 'm'; }, function (v) { s.textSize = v; Views.applyLook(); save(); }));
     out.push(choice('Panels over video', 'How see-through the info panel, quick menu and channel list are in fullscreen.', ['l', 'm', 'h'], ['Solid', 'Normal', 'See-through'], function () { return s.overlay || 'm'; }, function (v) { s.overlay = v; Views.applyLook(); save(); }));

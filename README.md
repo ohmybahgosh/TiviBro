@@ -81,7 +81,7 @@ No typing logins with a remote.  The first screen shows a QR code: scan it with 
 | ⏰ **Reminders, a watchlist and parental controls** | A reminder on any future programme, a watchlist that finds your teams and shows in the guide and reminds you, and a PIN for channels, groups or Settings. |
 | 🛟 **Streams that don't quit** | Reconnects with backoff, waits out Wi-Fi drops, tries every player before giving up, and keeps a dropped channel coming back by itself.  Movies and catch-up resume where they dropped. |
 | 🌈 **HDR, Dolby Vision and Atmos** | Reads each stream's format before the picture starts and sends Dolby Vision to the TV's own player, HDR10 and HLG to the steadier built-in one.  The info panel shows *4K  HEVC  Dolby Vision  E-AC-3 5.1 Atmos*. |
-| 🎨 **Midnight Electric** | A dark, calm look with nine backgrounds (true black for OLED, high contrast), twelve accents or your own, and an outline focus style for across the room. |
+| 🎨 **Midnight Electric** | A dark, calm look, or a full theme (Black and white, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin and more).  Nine backgrounds (true black for OLED, high contrast), twelve accents or your own, and an outline focus style for across the room. |
 | 💸 **Free and open** | MIT licensed, no accounts, no ads, no tracking: just an anonymous daily count of installs by version, which you can switch off. |
 
 ## What no other IPTV player does
@@ -202,7 +202,7 @@ Channels, programmes now, later and on catch-up, and your movies and shows, as y
 
 ### Make it yours
 
-Twelve accent colours or your own from a hue and brightness, nine backgrounds (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), a white focus outline for distance viewing, text size, panel transparency, clock, logos and more, all live.
+Twelve full themes (Black and white, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin Mocha, Solarized Dark, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai), or your own mix: twelve accent colours or your own from a hue and brightness, nine backgrounds (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), a white focus outline for distance viewing, text size, panel transparency, clock, logos and more, all live.
 
 Plus remote remapping, parental controls, reminders, buffering profiles and on-TV diagnostics.
 

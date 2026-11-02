@@ -438,6 +438,7 @@ Movies and shows are searchable without opening **Movies** or **Shows** first: S
 - **Select multiple…** (in the channel list) lets you copy, favorite or hide several channels at once.
 - **Copy to group** adds it to one of your own groups (make one under **Settings > Groups, sorting, hidden > New group…**).
 - **Hide channel** removes it from the lists.  Hidden items come back from **Settings > Groups, sorting, hidden**, or show them dimmed with **Show hidden items in lists**.
+- **Show or hide channels…** lists every channel of the group, hidden ones too, with a tick for the ones you see.  **OK** ticks or unticks, **CH +/−** turns a page, and at the top are **Show all**, **Hide all** and **Hide channels with no guide information**.  Nothing changes until **Back**, which saves.  It's also in a group's options, and in the guide's **Hold OK** menu.  A hidden channel is hidden in every group.  In the phone app: press and hold a channel, then **Show or hide channels…**.
 - **Rename…** and **Assign guide…** fix a name or a missing guide for that one channel.
 - **Other versions…** lists the same channel in its other qualities and copies, hidden ones included, to switch to one directly.
 - **Move…** (in the channel list and the guide) changes the channel's place in its group, yours or the provider's: **▲ ▼** carry it, **CH + / −** a page at a time, **OK** puts it down.  A provider group you reorder keeps your order after playlist refreshes, and channels the provider adds later go to the end.  **Hold OK** on the group > **Back to the provider's channel order** undoes it.
@@ -488,7 +489,7 @@ The watchlist needs the guide to know what's on: with an XMLTV guide it sees eve
 | [**Playlists and guide**](#settings-playlists-and-guide) | Add and switch playlists, reload schedules, User-Agent, provider guide mode and offset, extra guide sources, channel name editor, subscription expiry and connections |
 | [**Groups, sorting, hidden**](#settings-groups-sorting-hidden) | Manage groups, sort orders, your groups first, Recent and Favorites, new groups, hidden groups and channels |
 | [**Guide, start screen, reminders**](#settings-guide-start-screen-reminders) | Start screen, OK in the guide, guide layout, catch-up marks, reminders |
-| [**Appearance**](#settings-appearance) | Accent color (twelve presets or your own from a hue and brightness), background (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), focus style (add a white outline to whatever is selected), text size, panel transparency, logos, clock, channel numbers |
+| [**Appearance**](#settings-appearance) | Theme (Black and white, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin, Solarized, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai, or your own mix), accent color (twelve presets or your own from a hue and brightness), background (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), focus style (add a white outline to whatever is selected), text size, panel transparency, logos, clock, channel numbers |
 | [**Parental controls**](#settings-parental-controls) | PIN, what it protects, blocked groups and channels |
 | [**Phone app and web editor**](#settings-phone-app-and-web-editor) | Pairing the TiviBro app, and the web editor's switch, address and password |
 | [**Updates and about**](#settings-updates-and-about) | Your version, check for updates, install an update (rooted TVs), what's new, automatic checks, test versions |
@@ -788,6 +789,7 @@ Colours, sizes and what's on screen.  Every change shows straight away.
 
 | Setting | Choices | What it does |
 |---|---|---|
+| **Theme** | **Your own mix** · Black and white · Tokyo Night · Dracula · Nord · Gruvbox · Catppuccin Mocha · Solarized Dark · One Dark · Rosé Pine · Everforest · Kanagawa · Monokai | Every colour at once, from the popular editor and desktop themes.  *Black and white* is true black with white focus.  With a theme on, the accent and background below give way to it; *Your own mix* brings them back. |
 | **Accent color** | **Electric blue** · Cyan · Violet · Lavender · Pink · Mint · Teal · Lime · Amber · Ember · Red · White · Custom | The colour of whatever is focused, and of progress bars.  A swatch shows it beside the name. |
 | **Custom hue** *(Custom only)* | 0° to 350°, **210°** | Around the colour wheel: red, yellow, green, cyan, blue, magenta. |
 | **Custom brightness** *(Custom only)* | Deep · Rich · **Normal** · Light · Pastel | How light the custom accent is. |

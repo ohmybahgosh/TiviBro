@@ -16,6 +16,7 @@ import app.tivibro.phone.proto.ChanEdit
 import app.tivibro.phone.proto.BackupFile
 import app.tivibro.phone.proto.GuidePage
 import app.tivibro.phone.proto.Schedule
+import app.tivibro.phone.proto.VisList
 import app.tivibro.phone.proto.VodCat
 import app.tivibro.phone.proto.VodInfo
 import app.tivibro.phone.proto.VodPage
@@ -337,6 +338,17 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         val r = ChanEdit.from(ask(id, "chan", args.put("k", k).put("op", op), tries = 1))
         if (op != "info") { if (r.msg.isNotBlank()) say(r.msg); loadLineup(id, true) }
         return r
+    }
+
+    /** Show or hide channels: the group's channels ([group] blank: the channel [k]'s own group). */
+    suspend fun visList(id: String, group: String, k: String): VisList =
+        VisList.from(ask(id, "vis", JSONObject().put("op", "list").put("group", group).put("k", k)))
+    /** Saves the changes ({ key: shown }) and fetches the channel list again. */
+    suspend fun visSave(id: String, group: String, changes: Map<String, Boolean>) {
+        val ch = JSONObject(); changes.forEach { (k, v) -> ch.put(k, v) }
+        val r = ask(id, "vis", JSONObject().put("op", "save").put("group", group).put("changes", ch), tries = 1)
+        r.optString("msg").takeIf { it.isNotBlank() }?.let { say(it) }
+        loadLineup(id, true)
     }
 
     suspend fun vodCats(id: String, kind: String): List<VodCat>? {

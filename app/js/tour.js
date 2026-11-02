@@ -290,9 +290,12 @@ var Tour = (function () {
 
   function lookRows() {
     var s = S(), out = [], K = Settings.LOOK;
-    out.push(choice('Accent color', 'The colour of whatever is focused.', K.ACCENTS.slice(0, -1), K.ACCENT_NAMES.slice(0, -1), function () { return s.accent; },
+    var PIDS = [''].concat(Object.keys(Views.PALETTES)), PNAMES = ['Your own mix'].concat(Object.keys(Views.PALETTES).map(function (k) { return Views.PALETTE_NAMES[k]; }));
+    out.push(choice('Theme', 'Every colour at once.  Your own mix: pick an accent and a background.', PIDS, PNAMES, function () { return Views.PALETTES[s.palette] ? s.palette : ''; },
+      function (v) { s.palette = v; Views.applyLook(); Store.saveSettings(); draw(); }, function () { var p = Views.palette(s.palette); return p ? p.accent : s.accent; }));
+    if (!Views.PALETTES[s.palette]) out.push(choice('Accent color', 'The colour of whatever is focused.', K.ACCENTS.slice(0, -1), K.ACCENT_NAMES.slice(0, -1), function () { return s.accent; },
       function (v) { s.accentMode = ''; s.accent = v; Views.applyLook(); Store.saveSettings(); draw(); }, function () { return s.accent; }));
-    out.push(choice('Background', '', K.THEMES, K.THEME_NAMES, function () { return s.theme || 'dark'; }, function (v) { s.theme = v; Views.applyLook(); Store.saveSettings(); draw(); },
+    if (!Views.PALETTES[s.palette]) out.push(choice('Background', '', K.THEMES, K.THEME_NAMES, function () { return s.theme || 'dark'; }, function (v) { s.theme = v; Views.applyLook(); Store.saveSettings(); draw(); },
       function () { return K.THEME_INK[s.theme || 'dark']; }));
     out.push(choice('Text size', '', ['s', 'm', 'l'], ['Small', 'Medium', 'Large'], function () { return s.textSize || 'm'; }, function (v) { s.textSize = v; Views.applyLook(); Store.saveSettings(); draw(); }));
     out.push(choice('Start screen', 'What TiviBro opens on.', ['guide', 'live'], ['Guide', 'Channels list'], function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; Store.saveSettings(); Views.buildTabs(); draw(); }));
@@ -350,7 +353,7 @@ var Tour = (function () {
     out.push(['logos', 'Logos', !s.logoLib || s.logoLib === 'off' ? 'Playlist and guide logos only' : (s.logoLib === 'all' ? 'Library for every channel' : 'Fill in missing') + ', ' + (s.logoStyle === 'original' ? 'original logos' : 'matching set')]);
     out.push(['guide', 'Guide', PubEpg.conf(Store.playlist).on ? 'Public guides fill in channels with no guide' : 'Your sources and the provider\'s guide only']);
     var K = Settings.LOOK, ai = K.ACCENTS.indexOf(s.accent), ti = K.THEMES.indexOf(s.theme || 'dark');
-    out.push(['look', 'Look and start', (ai >= 0 ? K.ACCENT_NAMES[ai] : 'Custom colour') + ' on ' + (ti >= 0 ? K.THEME_NAMES[ti] : 'Midnight') + ', opens on ' + (s.startTab === 'live' ? 'Channels' : 'Guide')]);
+    out.push(['look', 'Look and start', (Views.PALETTES[s.palette] ? Views.PALETTE_NAMES[s.palette] : (ai >= 0 ? K.ACCENT_NAMES[ai] : 'Custom colour') + ' on ' + (ti >= 0 ? K.THEME_NAMES[ti] : 'Midnight')) + ', opens on ' + (s.startTab === 'live' ? 'Channels' : 'Guide')]);
     return out;
   }
   function jump(id) {

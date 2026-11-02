@@ -138,7 +138,7 @@ fun GuideTab(model: AppModel, id: String, lineup: Lineup?, lineupNote: String, p
         }
     }
     open?.let { c -> ScheduleSheet(model, id, c, at, c.k == playing, onPlay = { onPlay(c); open = null }, onDismiss = { open = null }) }
-    options?.let { c -> ChannelSheet(model, id, c, c.k == playing, onPlay = { onPlay(c) }, onSchedule = { open = c }, onDismiss = { options = null }) }
+    options?.let { c -> ChannelSheet(model, id, c, c.k == playing, onPlay = { onPlay(c) }, onSchedule = { open = c }, onDismiss = { options = null }, group = group) }
 }
 
 @Composable

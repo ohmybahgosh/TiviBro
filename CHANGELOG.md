@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Show or hide channels, like TiviMate.**  Hold OK on a channel (or a group) and choose **Show or hide channels…**: every channel of the group with a tick, hidden ones too.  OK ticks or unticks; Show all, Hide all and Hide channels with no guide information at the top; Back saves.  The phone app has it too: press and hold a channel.
+- **Full themes.**  Settings > Look > Theme sets every colour at once: Black and white, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin Mocha, Solarized Dark, One Dark, Rosé Pine, Everforest, Kanagawa and Monokai.  Your own mix keeps the background and accent choices.
+- **One style for the coloured buttons.**  The hint bar shows every coloured button as a coloured square and what it does, in the same order everywhere (the guide said "Red" in words next to a blue square).
+
 ## 0.6.0 (alpha 52, 2026-11-01)
 
 Pre-release: expect rough edges, and keep a backup before installing.

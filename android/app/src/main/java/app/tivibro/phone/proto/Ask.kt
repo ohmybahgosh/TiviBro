@@ -48,6 +48,15 @@ data class ChanEdit(val key: String, val name: String, val provider: String, val
     }
 }
 
+/** Show or hide channels in one group: every channel, hidden ones too ([on] false), [guide] when it has guide data. */
+data class VisRow(val key: String, val name: String, val number: String, val logo: String, val on: Boolean, val guide: Boolean)
+data class VisList(val group: String, val title: String, val rows: List<VisRow>) {
+    companion object {
+        fun from(j: JSONObject) = VisList(j.optString("group"), j.optString("title"),
+            j.optJSONArray("rows").list { VisRow(it.optString("k"), it.optString("n"), it.optString("num"), it.optString("logo"), it.optInt("on") == 1, it.optInt("g") == 1) })
+    }
+}
+
 /* ---------- Movies and Shows ---------- */
 
 data class VodCat(val id: String, val name: String, val count: Int, val locked: Boolean)
