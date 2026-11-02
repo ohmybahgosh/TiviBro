@@ -118,6 +118,9 @@ var Tour = (function () {
     if (sv.dupeExtra) card(fmt(sv.dupeExtra), 'extra copies');
     if (p.vod && (p.vod.movies || p.vod.series)) card(p.vod.movies && p.vod.series ? 'Movies + Shows' : p.vod.movies ? 'Movies' : 'Shows', 'on demand');
     out.push(custom(cards));
+    // Asked before anything else shows (filter.js): on for a new TV until answered.
+    out.push(toggle('Hide adult channels', 'Adult, XXX, 18+ and the like, from the guide, lists, Search and the phone app.  Change it, or add your own words, in Settings > Parental controls.',
+      function () { return !!Filter.conf().adult; }, function (v) { Filter.setAdult(v); Views.filterChanged(); st.sv = survey(); st.planned = null; draw(); }, 'Yes, hide them', 'No, show them'));
     out.push(action('Tidy up here, step by step', 'About two minutes with the remote.  Nothing changes until the last screen.', function () { go(1); }, function () { return '›'; }));
     out.push(action('Tidy up on a phone or computer', 'Scan a code with your phone: Smart clean-up, renaming, sorting and backups with a real keyboard.', remote, function () { return '›'; }));
     out.push(action('Skip, start watching', 'Run this again any time: Settings > Playlists and guide > ' + (p.name || 'the playlist') + ' > Set-up tour.', function () { finish(false); }, function () { return ''; }));

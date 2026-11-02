@@ -1305,10 +1305,32 @@ var Views = (function () {
       } },
       canManage(gid) && { label: 'Show or hide channels…', sub: 'tick the channels to keep in ' + L.groupName(gid), action: function () { manageVisibility(gid, c); } },
       hidden ? { label: 'Show channel', action: function () { L.hideChannel(c.k, false); U.toast('Channel restored'); refreshLists(true); } }
-             : { label: 'Hide channel', sub: 'restore from Settings', action: function () { L.hideChannel(c.k, true); U.toast('Hidden.  Restore it in Settings, Groups and hidden items.'); refreshLists(true); } }
+             : { label: 'Hide channel', sub: 'restore from Settings', action: function () { L.hideChannel(c.k, true); U.toast('Hidden.  Restore it in Settings, Groups and hidden items.'); refreshLists(true); } },
+      { label: 'Hide with the content filter', sub: 'gone from everything, not just this list', action: function () { filterOut('channel', c.n, L.name(c)); } }
     ];
   }
 
+  /* The content filter (filter.js, Settings > Parental controls): a channel or group taken out of
+     everything, the guide, lists, Search and the phone app.  Asked first, since it is a bigger step
+     than hiding. */
+  function filterOut(kind, raw, label) {
+    UI.menu('Hide "' + label + '" with the content filter?', [
+      { label: kind === 'group' ? 'Hide the group and its channels' : 'Hide this channel', sub: 'Bring it back in Settings > Parental controls > Content filter', action: function () {
+        if (kind === 'group') Filter.addGroup(raw); else Filter.addChannel(raw);
+        filterChanged();
+        U.toast('"' + label + '" is hidden by the content filter.', 5000);
+      } },
+      { label: 'Cancel', current: true }
+    ]);
+  }
+  // After the filter changes: the lists again, and leave a channel the filter just took away.
+  function filterChanged() {
+    L.refilter();
+    if (playing && !L.find(playing.k)) { if (full) exitFull(); stopAll(); }
+    refreshLists(true);
+    if (typeof Movies !== 'undefined' && Movies.poke) Movies.poke();
+    if (window.Guide && Guide.refresh && tab === 'guide') Guide.refresh();
+  }
   function chanMenu(c, gid) {
     if (!c) return;
     UI.menu(L.name(c), [{ label: 'Watch', action: function () { startChannel(c, false, function () { if (!full) goFull(); else osd(true); }); } }].concat(chanItems(c, gid)));
@@ -1597,6 +1619,7 @@ var Views = (function () {
       canManage(g.id) && { label: 'Show or hide channels…', sub: 'tick the channels to keep', action: function () { manageVisibility(g.id); } },
       !virtual && (hidden ? { label: 'Show group', action: function () { L.hideGroup(g.id, false); U.toast('Group restored'); refreshLists(true); } }
                           : { label: 'Hide group', sub: 'restore from Settings', action: function () { L.hideGroup(g.id, true); U.toast('Hidden.  Restore it in Settings, Groups and hidden items.'); refreshLists(); } }),
+      !virtual && !custom && { label: 'Hide with the content filter', sub: 'the group and its channels, gone from everything', action: function () { filterOut('group', g.name, L.groupName(g.id)); } },
       custom && { label: 'Delete group', action: function () { UI.confirm('Delete ' + g.name + '?', 'Delete', function () { L.deleteGroup(g.id); refreshLists(); }); } },
       { label: 'Edit on a phone or computer…', sub: 'scan a QR code: rename, hide and sort with a real keyboard', action: function () { WebEdit.showJoin(); } }
     ]);
@@ -1635,6 +1658,7 @@ var Views = (function () {
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, playVod: playVod,
     manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    filterChanged: filterChanged,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; }, get vod() { return vod; }, runAction: runAction,
     restoreKeys: function () { UI.setHandler(full ? fullKeys : liveKeys); },

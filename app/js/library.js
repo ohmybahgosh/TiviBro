@@ -46,9 +46,14 @@ var Library = (function () {
     if (fixed && typeof Log !== 'undefined') Log.info('library', 'Ignored ' + fixed + ' guide ids that were placeholders or shared by unrelated channels');
   }
 
+  /* The content filter (filter.js) takes its channels and groups out here, so nothing past this point
+     ever sees them.  raw keeps the whole list for when the filter changes. */
+  var raw = null;
   function set(d) {
-    data = d;
+    raw = d;
     fixIds(d.channels);
+    if (typeof Filter !== 'undefined') d = Filter.apply(d);
+    data = d;
     byKey = new Map();
     groupNames = {};
     for (var i = 0; i < d.channels.length; i++) {
@@ -60,7 +65,7 @@ var Library = (function () {
     // Remember when the subscription ends with the playlist, so every playlist can show it (issue #13).
     var pl = typeof Store !== 'undefined' && Store.playlist;
     if (pl && pl.id && d.exp && pl.exp !== d.exp) { pl.exp = d.exp; Store.saveSettings(); }
-    trackNewGroups(d.groups);
+    trackNewGroups(raw.groups);
     Names.invalidate();
     versionIndex = null;
     growable = null;
@@ -427,6 +432,8 @@ var Library = (function () {
     return { groups: gs, channels: cs };
   }
 
+  // The filter changed: the same playlist again, through it.
+  function refilter() { if (raw) set(raw); }
   function find(k) { return byKey.get(k); }
   function count() { return data.channels.length; }
   function sample(n) {
@@ -437,7 +444,7 @@ var Library = (function () {
   }
 
   return {
-    hideChannels: hideChannels, isHidden: isHidden, idle: idle, ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, TEAMS: TEAMS, MOVIES: MOVIES, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
+    hideChannels: hideChannels, isHidden: isHidden, refilter: refilter, get raw() { return raw; }, idle: idle, ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, TEAMS: TEAMS, MOVIES: MOVIES, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
     shownAnywhere: shownAnywhere, isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
     isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,

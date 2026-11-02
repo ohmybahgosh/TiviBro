@@ -686,8 +686,27 @@ var Settings = (function () {
     return out;
   }
 
+  /* Content filter (filter.js): separate from the PIN, so it comes first. */
+  function filterRows(out) {
+    var f = Filter.conf();
+    out.push(head('Content filter'));
+    out.push(toggle('Hide adult channels', 'Channels and groups named Adult, XXX, 18+, Porn, Erotic and the like, in several languages ("Adult Swim" stays).  Gone from the guide, every list, Search and the phone app.  No PIN needed.',
+      function () { return !!Filter.conf().adult; }, function (v) { Filter.setAdult(v); Views.filterChanged(); build(); }));
+    out.push(action('Add a word or call sign…', 'Hides every channel and group with it in the name, as a whole word: "WXYZ", "Shopping".', function () {
+      UI.prompt('Hide channels and groups with this word', '', function (w) { if (!w.trim()) return; Filter.addWord(w); Views.filterChanged(); build(); U.toast(Filter.last.channels + ' channels and ' + Filter.last.groups + ' groups left out now', 5000); },
+        'A word, a call sign or a few words together.  Upper or lower case doesn\'t matter.');
+    }, function () { return '›'; }));
+    (f.words || []).forEach(function (w) { out.push(action('Word: ' + w, 'Select to stop hiding it', function () { Filter.remove('words', w); Views.filterChanged(); build(); }, function () { return 'Remove'; })); });
+    (f.groups || []).forEach(function (n) { out.push(action('Group: ' + n, 'Hidden with the filter.  Select to bring it back', function () { Filter.remove('groups', n); Views.filterChanged(); build(); }, function () { return 'Remove'; })); });
+    (f.chans || []).forEach(function (n) { out.push(action('Channel: ' + n, 'Hidden with the filter.  Select to bring it back', function () { Filter.remove('chans', n); Views.filterChanged(); build(); }, function () { return 'Remove'; })); });
+    var l = Filter.last;
+    out.push(info('Left out of this playlist', Filter.active() ? l.channels.toLocaleString() + ' channels, ' + l.groups.toLocaleString() + ' groups' : 'nothing, the filter is off'));
+    out.push(info('Hide a channel or group while watching', 'Its options (Red, or hold OK) > Hide with the content filter'));
+    out.push(head('PIN'));
+  }
   function parental() {
     var s = S(), out = [], on = Parental.enabled();
+    filterRows(out);
     out.push(action(on ? 'Change PIN' : 'Set a PIN', 'Then hold OK on a channel or group and choose Block.', function () { Parental.change(build); }));
     if (!on) return out;
     out.push(choice('PIN required for', '', ['channels', 'settings', 'both'], ['Blocked channels', 'Settings', 'Both'], function () { return s.pinScope; }, function (v) { s.pinScope = v; save(); }));

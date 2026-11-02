@@ -27,6 +27,7 @@ var PlShape = (function () {
         logo: s.stream_icon || '', num: +s.num || 0, epg: s.epg_channel_id || '',
         arch: +s.tv_archive ? (+s.tv_archive_duration || 3) : 0
       };
+      if (+s.is_adult) chans[n - 1].adult = 1;           // the provider's own adult flag (filter.js)
     }
     chans.length = n;
     return { groups: groups, channels: chans };

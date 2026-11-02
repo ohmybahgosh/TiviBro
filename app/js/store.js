@@ -127,6 +127,8 @@ var Store = (function () {
 
   var raw = read('tivibro.settings') || {};
   var settings = merge(clone(DEFAULTS), raw);
+  // The content filter (filter.js): on for a new TV (the set-up tour asks), off for one that already had playlists.
+  if (!settings.filter || typeof settings.filter !== 'object') settings.filter = { adult: !((raw.playlists && raw.playlists.length) || (raw.playlist && (raw.playlist.server || raw.playlist.m3u))), words: [], chans: [], groups: [], asked: !!(raw.playlists && raw.playlists.length) };
   // 0.6 look: the old amber default becomes Midnight Electric blue (a chosen colour other than the old default is kept).
   if (!settings.look2) { if (!raw.accent || raw.accent === '#f2b33d') settings.accent = '#5b8cff'; settings.look2 = 1; }
   // v0.1 had a single "playlist" object.
