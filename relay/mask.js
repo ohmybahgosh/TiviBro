@@ -14,7 +14,8 @@ const SHORT = /(\b[a-z][a-z0-9+.-]*:\/\/)(<[a-z]+>(?::\d+)?|[^/\s"'<>)\]]+)\/[^/
 const CTL = /("ctl"\s*:\s*")[0-9a-f]{8,}(")/gi;
 // Our own sites and well-known places keep their name: a link to them is never a login.
 const KEEP = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|(.*\.)?(tivibro\.app|ohmybahgosh\.dev|github\.com|githubusercontent\.com|jsdelivr\.net|iptv-org\.github\.io)(:\d+)?$)/i;
-function host(h) { return KEEP.test(h) ? h : '<provider>'; }
+// A name already masked keeps its port, so masking again changes nothing.
+function host(h) { return KEEP.test(h) || h.charAt(0) === '<' ? h : '<provider>'; }
 
 export function maskSecrets(s) {
   return String(s == null ? '' : s)
@@ -23,6 +24,6 @@ export function maskSecrets(s) {
     .replace(XTREAM, (m, scheme, h, kind) => scheme + host(h) + '/' + kind + '/***/***/')
     // The short form looks like plenty of ordinary links, so only one that looks like a stream: a port
     // on the server (IPTV panels nearly always have one) or a stream file at the end.
-    .replace(SHORT, (m, scheme, h, id) => KEEP.test(h) || !(/:\d+$/.test(h) || /\.(ts|m3u8|mp4|mkv|avi)$/i.test(id)) ? m : scheme + '<provider>/***/***/' + id)
+    .replace(SHORT, (m, scheme, h, id) => KEEP.test(h) || !(/:\d+$/.test(h) || /\.(ts|m3u8|mp4|mkv|avi)$/i.test(id)) ? m : scheme + host(h) + '/***/***/' + id)
     .replace(CTL, '$1***$2');
 }

@@ -6,7 +6,7 @@ let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined && !c ? '  ' + String(x).slice(0, 300) : '')); if (!c) fails++; };
 const same = (a, b, n) => ok(n, m(a) === b, m(a));
 
-same('Start "AB" with ts engine  http://<provider>:80/someuser/somepass/745415.ts', 'Start "AB" with ts engine  http://<provider>/***/***/745415.ts', 'the short Xtream link in a log the TV had already half masked (issue #25)');
+same('Start "AB" with ts engine  http://<provider>:80/someuser/somepass/745415.ts', 'Start "AB" with ts engine  http://<provider>:80/***/***/745415.ts', 'the short Xtream link in a log the TV had already half masked (issue #25)');
 same('http://dns.example-panel.com:80/632270679/F823j7133R/244074', 'http://<provider>/***/***/244074', 'the short link in an M3U line, with its port');
 same('http://prov.example:8080/live/bob/secret/12.m3u8', 'http://<provider>/live/***/***/12.m3u8', '/live/ links');
 same('http://prov.example/movie/bob/secret/77.mkv', 'http://<provider>/movie/***/***/77.mkv', '/movie/ links');
