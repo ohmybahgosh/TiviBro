@@ -18,7 +18,7 @@ let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  ' + String(x).slice(0, 200) : '')); if (!c) fails++; };
 const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-let empty = false, extra = false, davPassword = 'right';
+let empty = false, extra = false, needsReview = false, davPassword = 'right';
 const fritz = http.createServer((req, res) => {
   let b = ''; req.on('data', d => b += d); req.on('end', () => {
     if (req.method === 'GET') { res.writeHead(404); return res.end(); }
@@ -27,7 +27,7 @@ const fritz = http.createServer((req, res) => {
     const dir = (t, c) => `<container id="${c}"><dc:title>${esc(t)}</dc:title></container>`;
     const tree = { 0: dir('Music', 'm') + dir('Videos', 'v'), v: dir('Harbour','show') + dir('Folders', 'fl'), show:dir('Season 1','season'), season:item('Harbour.S01E02.mkv','/VIDEO/Harbour.S01E02.mkv'), fl: dir('Frozen (2013)', 'a') + dir('Moana 2 (2024)', 'b') + (extra ? dir('New movie (2025)', 'c') : ''), c: item('New.movie.2025.mkv', '/VIDEO/new.mkv'),
       a: item('FROZEN 2013 1080p BluRay.mkv', '/VIDEO/Frozen/FROZEN%202013%201080p%20BluRay.mkv'), b: item('Moana.2.2024.mp4', MOCK.replace(/^http:\/\//, '').replace(/^/, '\u0000')) };
-    const didl = empty ? '' : (tree[id] || ''), n = (didl.match(/<(item|container) /g) || []).length;
+    const didl = empty ? '' : (tree[id] || '') + (id === 'season' && needsReview ? item('Harbour.S03E02.mkv','/VIDEO/Harbour.S03E02.mkv') : ''), n = (didl.match(/<(item|container) /g) || []).length;
     res.writeHead(200, { 'Content-Type': 'text/xml' });
     res.end(`<Envelope><Result>${esc('<DIDL-Lite>' + didl + '</DIDL-Lite>')}</Result><NumberReturned>${n}</NumberReturned><TotalMatches>${n}</TotalMatches></Envelope>`);
   });
@@ -74,6 +74,23 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
     await page.keyboard.press('Escape');
     await page.waitForFunction(()=>document.querySelectorAll('.media-shelf')[3].querySelector('.media-shelf-count').textContent==='1');
     ok('removing a favorite returns the show to its shelf',await page.evaluate(()=>document.querySelectorAll('.media-shelf')[1].querySelector('.media-shelf-count').textContent===''));
+    ok('empty Needs review shelf is hidden',!await page.locator('.media-shelf').nth(4).isVisible());
+    await page.keyboard.press('m');await page.waitForTimeout(100);
+    ok('empty Needs review is absent from options',!/Needs review/.test(await page.innerText('#modal')));
+    await page.keyboard.press('Escape');
+    needsReview=true;await page.evaluate(()=>Media._test.rescanCurrent());
+    await page.waitForFunction(()=>!document.querySelectorAll('.media-shelf')[4].classList.contains('hidden'));
+    ok('Needs review appears when a conflicting file is discovered',/Needs review/.test(await page.locator('.media-shelf').nth(4).innerText()));
+    await page.keyboard.press('m');await page.waitForTimeout(100);
+    ok('Needs review is offered in options for a nonempty queue',/Needs review/.test(await page.innerText('#modal')));
+    await page.keyboard.press('Escape');
+    await page.evaluate(async()=>{
+      const r=await Media.request('library/query',{kind:'review',limit:1},30000),item=r.items[0];
+      const saved=await Media.request('library/edit',{operation:'classifyFile',handle:item.handle,expectedRevision:item.revision,fields:{kind:'episode',showTitle:'Harbour',order:'aired',season:1,numbers:[3]}},30000);
+      if(saved.error)throw new Error(saved.message);Media.refreshShows();
+    });
+    await page.waitForFunction(()=>document.querySelectorAll('.media-shelf')[4].classList.contains('hidden'));
+    ok('Needs review disappears after the last item is corrected',true);
     ok('no browser exceptions',errors.length===0,errors.join(', '));
   } finally {
     await browser.close();await new Promise(f=>relay.server.close(f));await new Promise(f=>fritz.close(f));

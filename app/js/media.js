@@ -85,6 +85,9 @@ var Media = (function () {
     var y = 0, focusedY = 0;
     shelves.forEach(function (s, row) {
       var view = shelfViews[row], at = shelfPos[s.id] || 0;
+      var hiddenReview = s.id === 'review' && !s.movies.length;
+      view.el.classList.toggle('hidden', hiddenReview);
+      if (hiddenReview) return;
       at = Math.max(0, Math.min(at, s.movies.length - 1)); shelfPos[s.id] = at;
       if (row === shelfAt) focusedY = y;
       view.el.style.transform = 'translateY(' + y + 'px)';
@@ -372,7 +375,7 @@ var Media = (function () {
       scanning[s.id]&&{label:'Pause scan',action:function(){pausedScans[s.id]=true;ask('scan/control',{sourceId:s.id},15000).then(function(){U.toast('Scan will pause after the current request.');});}},
       !scanning[s.id]&&{label:'Restart scan',action:function(){rescan(s.id,true);}},
       { label: 'Fetch movie details', sub: 'TMDB · uses your saved API token', action: function () { sourceDetails(s); } },
-      { label: 'Content: ' + (s.contentMode || 'movies'), action: function () { UI.menu('Source content', ['automatic','movies','shows'].map(function (mode) { return {label:mode === 'automatic' ? 'Movies and TV shows' : mode === 'movies' ? 'Movies only' : 'TV shows only',action:function () { changeSourceMode(s.id,mode).catch(function(e){U.toast(why(e),6000);}); }}; })); } },
+      { label: 'Content: ' + (s.contentMode === 'automatic' ? 'Movies and TV shows' : s.contentMode === 'shows' ? 'TV shows only' : 'Movies only'), action: function () { UI.menu('Source content', ['automatic','movies','shows'].map(function (mode) { return {label:mode === 'automatic' ? 'Movies and TV shows' : mode === 'movies' ? 'Movies only' : 'TV shows only',action:function () { changeSourceMode(s.id,mode).catch(function(e){U.toast(why(e),6000);}); }}; })); } },
       { label:'Review excluded files',action:function(){MediaSeries.excluded();} },
       { label: 'TV shows', action: function () { MediaSeries.open(); } },
       { label: 'Rescan', sub: 'Look for added or removed movies', action: function () { rescan(s.id); } },
@@ -531,7 +534,7 @@ var Media = (function () {
       { label: m.metadata ? 'Change movie details' : 'Find movie details', sub: 'Search TMDB and choose the correct match', action: function () { findDetails(m); } },
       m.metadata && { label: 'Remove movie details', action: function () { MediaStore.setMetadata(m.id, null); refresh(); } },
       { label:'TV shows',action:function () { MediaSeries.open(); } },
-      { label:'Needs review',action:function () { MediaSeries.review(); } },
+      reviewCards.length > 0 && { label:'Needs review',action:function () { MediaSeries.review(); } },
       { label: 'File information', sub: fileInfo(m) + (m.size ? ' · ' + size(m.size) : ''), action: function () { UI.menu('File information', [{ label: m.file, sub: (MediaStore.source(m.src) || {}).name || '' }]); } },
       r && { label: 'Mark as watched', action: function () { MediaStore.clearResume(m.id); itemsVL.refresh(); showInfo(); } }
     ]);
@@ -551,7 +554,7 @@ var Media = (function () {
     if (a !== 'ok') playToken++;
     if (a === 'green') { rescanAll(); return true; }
     if (a === 'yellow') { fetchMissingDetails(); return true; }
-    if (a === 'red') { if (itemsVL.current()) { itemMenu(itemsVL.current()); return true; } UI.menu('My media', [{label:'TV shows',action:function () { MediaSeries.open(); }},{label:'Needs review',action:function () { MediaSeries.review(); }},{label:'Movie options',action:function () { itemMenu(itemsVL.current()); }}]); return true; }
+    if (a === 'red') { if (itemsVL.current()) { itemMenu(itemsVL.current()); return true; } UI.menu('My media', [{label:'TV shows',action:function () { MediaSeries.open(); }},reviewCards.length > 0 && {label:'Needs review',action:function () { MediaSeries.review(); }},{label:'Movie options',action:function () { itemMenu(itemsVL.current()); }}]); return true; }
     if (a === 'blue') { Views.switchTab('settings'); Settings.section('media'); return true; }
     var s = shelves[shelfAt], at = s && shelfPos[s.id] || 0;
     if (a === 'up') moveShelf(-1);

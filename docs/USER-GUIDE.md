@@ -408,6 +408,8 @@ Show options include metadata matching with your own TMDB token, favourites, epi
 
 With a saved TMDB token, show details and posters are fetched automatically at startup and after scanning, followed by season details and episode names, summaries and pictures for the seasons you own.  Only exact, unambiguous show matches are selected automatically.  Use **Find show details** to choose an uncertain match yourself.  Saved matches refresh by ID in your chosen metadata language.  Unmatched shows are left alone for a week; **Yellow (Fetch details)** retries them immediately.  Date-based and absolute-numbered shows receive show details; episode details need a verified mapping to aired seasons first.  Show titles or saved TMDB IDs, season numbers and your preferred language are sent to TMDB using your saved token.  Source logins and playback links are never sent there.
 
+The **Needs review** shelf and menu entry appear only when there are files needing attention.  They disappear when the last item is resolved.
+
 Episode playback remembers its physical file position.  The existing **Auto next episode** setting controls the five-second next-episode prompt.  **Back** cancels it.  Missing numbered episodes ask before continuing.  Adjacent mapped episodes in one file keep the same player and subtitle session.
 
 Scans save progress when a work limit is reached and continue in subsequent slices.  A source's options offer **Pause scan** and **Restart scan**.  Failed, empty and partial scans preserve saved entries.  Metadata is optional; local browsing and playback work without a TMDB token.
