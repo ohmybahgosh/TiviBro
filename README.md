@@ -16,6 +16,7 @@
   <img alt="Price: free" src="https://img.shields.io/badge/price-free-3DDC97?style=flat-square">
   <img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-8F9BBF?style=flat-square">
   <img alt="No bundler" src="https://img.shields.io/badge/plain-HTML%20%2F%20JS-141A2E?style=flat-square">
+  <a href="https://ohmybahgosh.dev/tivibro/"><img alt="Project page on ohmybahgosh.dev" src="https://img.shields.io/badge/ohmybahgosh.dev-project%20page-33E1FF?style=flat-square&labelColor=141A2E"></a>
 </p>
 
 <p align="center">
