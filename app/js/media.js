@@ -390,6 +390,7 @@ var Media = (function () {
     if (m.startSec != null && (startAt < m.startSec || (m.endSec != null && startAt >= m.endSec))) startAt = m.startSec;
     function go(url) {
       if (token !== playToken || !MediaStore.source(m.src) || $('viewMedia').classList.contains('hidden') || document.body.classList.contains('nav-open')) return;   // moved on while waiting: nothing starts by itself
+      if(m.kind==='episode'){try{Log.hideLinksFrom(String(url).split('/')[2]);}catch(e){}}
       playingMeta = { id: m.resumeKey || m.id, media: null, title: label(m), sub: m.year || '', item: m, local: true, lastPos:startAt,lastAt:Date.now(),continuous:0,session:Date.now()+'_'+token,startedAt:Date.now(),sequence:0 };
       m.playStartedAt=playingMeta.startedAt;
       clearInterval(progressTimer);
