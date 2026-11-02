@@ -17,6 +17,11 @@
        is maxAge old (0: until refresh), and returns only what shows: the languages picked, without
        hidden categories (vodview.js, shared with the app).  Rows are the slim rows plus
        [lang, q (4K), adult, p (the code taken off the name)].
+     POST /vod/list   { pl, sig, kind, m3u: 1, picked, navLang, hidden }
+       An M3U playlist's movies and shows: the same answer, from what the helper kept when it read the
+       list (saveM3u, called by live.js).  Nothing is downloaded here.
+     POST /vod/m3u    { pl, op: 'series', id }  -> the show's episodes, shaped like Xtream's get_series_info
+                      { pl, op: 'url', id }     -> { url } for a movie
    The address goes in the body, not the query, so it never shows in a log line.  It must be a relay
    address on this TV, so the download gets the playlist's User-Agent and the relay's DNS cache.
    Plain ES5 and callbacks for Node 0.12 (webOS 4). */
@@ -105,7 +110,59 @@ function writeList(pl, kind, d, cb) {
 setInterval(function () { var now = Date.now(); Object.keys(memo).forEach(function (k) { if (now - memo[k].used > MEMO_MS) delete memo[k]; }); }, 60000).unref();
 function forget(pl) {
   Object.keys(memo).forEach(function (k) { if (k.indexOf(pl + '|') === 0) delete memo[k]; });
-  ['movie', 'series'].forEach(function (kind) { try { fs.unlinkSync(fileOf(pl, kind)); } catch (e) {} });
+  ['movie', 'series', 'm3u'].forEach(function (kind) { try { fs.unlinkSync(fileOf(pl, kind)); } catch (e) {} });
+  delete links[pl];
+}
+
+/* An M3U playlist's library (PlShape.parseM3U with { vod: true }): the movie and show lists in the same
+   files as an Xtream login's, marked m3u, and the links in a third file, read when a title is opened. */
+var links = {};          // pl -> { at, used, urls } for a few minutes
+function saveM3u(pl, sig, vod, log, cb) {
+  var at = Date.now(), left = 3, failed = null;
+  function one(e) { if (e && !failed) failed = e; if (--left === 0) { if (failed && log) log({ lv: 'warn', event: 'm3u library not saved', e: failed.message }); if (cb) cb(failed); } }
+  Object.keys(memo).forEach(function (k) { if (k.indexOf(pl + '|') === 0) delete memo[k]; });
+  delete links[pl];
+  ['movie', 'series'].forEach(function (kind) {
+    var d = { v: 2, at: at, sig: sig, m3u: 1, rows: vod[kind].rows, cats: vod[kind].cats };
+    writeList(pl, kind, d, one);
+    keep(pl, kind, d);
+  });
+  writeList(pl, 'm3u', { at: at, sig: sig, urls: vod.urls }, one);
+}
+function readLinks(pl, cb) {
+  var c = links[pl];
+  if (c) { c.used = Date.now(); return cb(c.urls); }
+  var f; try { f = fileOf(pl, 'm3u'); } catch (e) { return cb(null); }
+  fs.readFile(f, 'utf8', function (e, text) {
+    var d = null; try { d = !e && JSON.parse(text); } catch (x) {}
+    if (!d || !d.urls) return cb(null);
+    links[pl] = { used: Date.now(), urls: d.urls };
+    cb(d.urls);
+  });
+}
+setInterval(function () { var now = Date.now(); Object.keys(links).forEach(function (k) { if (now - links[k].used > MEMO_MS) delete links[k]; }); }, 60000).unref();
+function m3u(q, res, ALLOW) {
+  var pl = str(q.pl), id = str(q.id);
+  if (!pl || !id) return send(res, ALLOW, 400, { error: 'bad request' });
+  readLinks(pl, function (u) {
+    if (!u) return send(res, ALLOW, 404, { error: 'This playlist\'s movies and shows are not on the TV yet.  Reload the channel list.' });
+    function link(x) { return x && u.p[x[0]] != null ? u.p[x[0]] + x[1] : ''; }
+    if (q.op === 'url') {
+      var url = link(u.m[id]);
+      return url ? send(res, ALLOW, 200, { url: url }) : send(res, ALLOW, 404, { error: 'That movie is no longer in this playlist.' });
+    }
+    var eps = u.s[id];
+    if (!eps) return send(res, ALLOW, 404, { error: 'That show is no longer in this playlist.' });
+    var by = {}, seen = {};
+    eps.forEach(function (e) {
+      var r = e[3] || '', m = /\.([a-z0-9]{2,4})(?:\?|$)/i.exec(r), eid = id + '_' + e[0] + '_' + e[1];
+      if (seen[eid]) eid += '_' + (seen[eid]++); else seen[eid] = 1;            // the same episode twice: both kept
+      (by[e[0]] = by[e[0]] || []).push({ id: eid, episode_num: e[1], title: 'Episode ' + e[1],
+        container_extension: m ? m[1].toLowerCase() : 'mp4', direct_source: link([e[2], r]) });
+    });
+    Object.keys(by).forEach(function (sn) { by[sn].sort(function (a, b) { return a.episode_num - b.episode_num; }); });
+    send(res, ALLOW, 200, { info: {}, episodes: by });
+  });
 }
 
 // What shows: the shared view over objects made from the rows, then back to rows with the tags.
@@ -121,6 +178,13 @@ function shown(kind, d, q) {
 
 function list(q, res, ALLOW, log, port) {
   var kind = q.kind === 'series' ? 'series' : 'movie', pl = str(q.pl), sig = str(q.sig), maxAge = +q.maxAge || 0;
+  if (q.m3u) {
+    if (!pl) return send(res, ALLOW, 400, { error: 'bad request' });
+    return readList(pl, kind, function (d) {
+      if (!d || !d.m3u) return send(res, ALLOW, 404, { error: 'This playlist\'s movies and shows are not on the TV yet.  Reload the channel list.' });
+      send(res, ALLOW, 200, shown(kind, d, q));
+    });
+  }
   var mine = new RegExp('^http://127\\.0\\.0\\.1:' + port + '/(?:ua/[A-Za-z0-9_-]+/)?x/https?/');
   if (!pl || !mine.test(str(q.u)) || !mine.test(str(q.uc))) return send(res, ALLOW, 400, { error: 'not a relay address' });
   readList(pl, kind, function (d) { got(d && d.sig === sig ? d : null); });
@@ -152,6 +216,7 @@ function list(q, res, ALLOW, log, port) {
 function handle(req, res, ALLOW, log, port) {
   var route = req.url.split('?')[0];
   if (req.method === 'POST' && route === '/vod/list') return readBody(req, res, ALLOW, function (q) { list(q || {}, res, ALLOW, log, port); });
+  if (req.method === 'POST' && route === '/vod/m3u') return readBody(req, res, ALLOW, function (q) { m3u(q || {}, res, ALLOW); });
   if (req.method === 'POST' && route === '/vod/forget') return readBody(req, res, ALLOW, function (q) { if (q && q.pl) forget(str(q.pl)); send(res, ALLOW, 200, { ok: true }); });
   if (req.method !== 'POST' || route !== '/vod/slim') return send(res, ALLOW, 404, { error: 'unknown vod route' });
   var body = '', over = false;
@@ -186,4 +251,4 @@ function readBody(req, res, ALLOW, cb) {
   });
 }
 
-module.exports = { handle: handle, slim: slim, shown: shown, forget: forget };
+module.exports = { handle: handle, slim: slim, shown: shown, forget: forget, saveM3u: saveM3u };

@@ -283,7 +283,18 @@ var App = (function () {
 
   /* ---------- start ---------- */
   var tourNext = false;     // the first playlist came from a phone or computer: show the set-up tour once it loads
+  /* An M3U list's movies and shows (kept by the network helper when it read the list, service/vod.js):
+     Movies and Shows appear when the last load found any, and go when it found none. */
+  function noteVod(p, data) {
+    if (p.type !== 'm3u' || !data || !data.vod) return false;
+    var v = data.vod, was = p.vod || {}, now = { movies: v.movies > 0, series: v.series > 0, m3u: 1, at: data.at || Date.now() };
+    if (!!was.m3u && was.movies === now.movies && was.series === now.series) return false;
+    p.vod = now; Store.upsertPlaylist(p);
+    Log.info('app', 'This M3U list has ' + v.movies + ' movies and ' + v.series + ' shows: they are in Movies and Shows');
+    return true;
+  }
   function start(data, fromCache) {
+    noteVod(Store.playlist, data);
     Source.setTz(data.tz); Events.setProviderTz(data.tz);
     Library.set(data);
     Logos.load(data);
@@ -358,6 +369,7 @@ var App = (function () {
       Source.setTz(data.tz); Events.setProviderTz(data.tz);
       Library.set(data);
       Logos.load(data);
+      if (data.vod) { Vod.reset(); if (noteVod(p, data)) Views.buildTabs(); }
       Views.refreshLists(true);
       Settings.live();
       if (manual) U.toast(Library.count() + ' channels loaded');

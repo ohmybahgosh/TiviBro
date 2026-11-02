@@ -33,24 +33,74 @@ var PlShape = (function () {
     return { groups: groups, channels: chans };
   }
 
-  /* A list bigger than this (entries) keeps its live channels only.  Many M3U lists carry a provider's
-     whole film and series library as entries: one had 2,775 channels and 307,413 movies and episodes
-     (93 MB, issue #26), more than a 2020 TV could read at all.  TiviBro's Movies and Shows come from the
-     Xtream login, so in a list this big they are left out and counted (vodSkipped).  Smaller lists are
-     kept whole, as before. */
+  /* Movies and shows in an M3U list.  Many providers hand out one M3U link with their whole film and
+     series library in it as entries (one had 2,775 channels and 307,413 movies and episodes, 93 MB,
+     issue #26).  With { vod: true } (the network helper, service/live.js) those entries become TiviBro's
+     Movies and Shows instead of channels: a movie is a link to a file, or to /movie/; a show's episode
+     is a link to /series/, or a file named like "Show S01 E02".  The helper keeps them on the TV's
+     storage (service/vod.js) and the app asks for them as it does for an Xtream login's.
+     Without it (the app reading a list itself), a list of more than BIG entries keeps its live channels
+     and counts the rest (vodSkipped); a smaller one is kept whole, with its movies as channels. */
   var BIG = 100000;
   var VOD = /\/(movie|movies|series)\/|\.(mp4|mkv|avi|mov|m4v)(\?|$)/i;
+  var SERIES_URL = /\/series\//i, EPISODE = /^(.*?)[\s._-]*\bS(\d{1,3})[\s._-]*E(\d{1,4})\b/i, YEAR = /\((\d{4})\)\s*$/;
   function count(text, what) { var n = 0, i = -1; while ((i = text.indexOf(what, i + 1)) >= 0) n++; return n; }
+
+  /* The collected library: compact rows the way service/vod.js keeps an Xtream list, and each title's
+     link split into a shared prefix and its last part (a library's links differ only in the file name,
+     so 300,000 of them take a few MB, not 25).
+       movie  rows: [id, name, cover, rating, ext, cat, added]   urls.m[id] = [prefix, rest]
+       series rows: [id, name, cover, plot, rating, year, cat, added]   (a show is its name in its group:
+                    the dubbed and the subtitled copy in two groups are two shows)
+                    urls.s[id] = [[season, episode, prefix, rest], ...] in order */
+  function library() {
+    var L = { movie: { rows: [], cats: [], cmap: {} }, series: { rows: [], cats: [], cmap: {} }, urls: { p: [], pmap: {}, m: {}, s: {} }, seen: {}, sIndex: {} };
+    function cat(k, name) {
+      var b = L[k], id = b.cmap[name];
+      if (!id) { id = 'c' + hash(k + '|' + name); b.cmap[name] = id; b.cats.push({ id: id, name: name }); }
+      return id;
+    }
+    function split(url) {
+      var i = url.lastIndexOf('/') + 1, pre = url.slice(0, i), pi = L.urls.pmap[pre];
+      if (pi == null) { pi = L.urls.p.length; L.urls.p.push(pre); L.urls.pmap[pre] = pi; }
+      return [pi, url.slice(i)];
+    }
+    function ext(url) { var m = /\.([a-z0-9]{2,4})(?:\?|$)/i.exec(url); return m ? m[1].toLowerCase() : 'mp4'; }
+    L.add = function (name, group, logo, url) {
+      var ep = EPISODE.exec(name);
+      if (ep || SERIES_URL.test(url)) {
+        var show = (ep ? ep[1] : name).replace(/[\s._-]+$/, '').trim() || name, sid = 's' + hash(group + '|' + show.toLowerCase()), list = L.urls.s[sid];
+        if (!list) {
+          list = L.urls.s[sid] = [];
+          var y = YEAR.exec(show);
+          L.series.rows.push([sid, show, logo || '', '', '', y ? y[1] : '', cat('series', group), 0]);
+        }
+        var u = split(url);
+        list.push([ep ? +ep[2] : 1, ep ? +ep[3] : list.length + 1, u[0], u[1]]);
+        return;
+      }
+      var mid = 'm' + hash(group + '|' + name);
+      if (L.seen[mid]) mid += '_' + (L.seen[mid]++); else L.seen[mid] = 1;
+      L.urls.m[mid] = split(url);
+      L.movie.rows.push([mid, name, logo || '', '', ext(url), cat('movie', group), 0]);
+    };
+    L.done = function () {
+      delete L.urls.pmap;
+      return { movie: { rows: L.movie.rows, cats: L.movie.cats }, series: { rows: L.series.rows, cats: L.series.cats }, urls: L.urls };
+    };
+    return L;
+  }
 
   // Single pass line parser.  No regex per attribute; one regex over the EXTINF line.  Lines are read in
   // place, not split into an array first: on a 90 MB list that array alone was hundreds of MB.
   var ATTR = /([a-zA-Z0-9\-_]+)="([^"]*)"/g;
-  function parseM3U(text) {
+  function parseM3U(text, opts) {
+    var lib = opts && opts.vod ? library() : null;
     var groups = [], gmap = {}, chans = [], cur = null, epgUrl = '';
     var nl0 = text.indexOf('\n'), head = nl0 < 0 ? text : text.slice(0, nl0);
     var m = head.match(/(?:url-tvg|x-tvg-url)="([^"]+)"/);
     if (m) epgUrl = m[1].split(',')[0];
-    var liveOnly = count(text, '#EXTINF') > BIG, skipped = 0;
+    var liveOnly = !lib && count(text, '#EXTINF') > BIG, skipped = 0;
     for (var pos = 0, len = text.length; pos < len;) {
       var nl = text.indexOf('\n', pos);
       if (nl < 0) nl = len;
@@ -74,7 +124,10 @@ var PlShape = (function () {
       }
       if (cur) {
         var url = L.trim();
-        if (liveOnly && VOD.test(url)) { skipped++; cur = null; continue; }
+        if ((lib || liveOnly) && VOD.test(url)) {
+          if (lib) lib.add(cur.name || cur.attrs['tvg-name'] || 'Untitled', cur.attrs['group-title'] || 'Other', cur.attrs['tvg-logo'] || '', url); else skipped++;
+          cur = null; continue;
+        }
         var gname = cur.attrs['group-title'] || 'Ungrouped';
         var gid = gmap[gname];
         if (!gid) { gid = 'm' + hash(gname); gmap[gname] = gid; groups.push({ id: gid, name: gname }); }
@@ -95,7 +148,9 @@ var PlShape = (function () {
       var c = chans[j];
       if (seen[c.k]) { c.k = c.k + '_' + (seen[c.k]++); c.id = c.k; } else seen[c.k] = 1;
     }
-    return { groups: groups, channels: chans, epgUrl: epgUrl, vodSkipped: skipped };
+    var out = { groups: groups, channels: chans, epgUrl: epgUrl, vodSkipped: skipped };
+    if (lib) out.vod = lib.done();
+    return out;
   }
 
   return { hash: hash, xtream: xtream, parseM3U: parseM3U, BIG: BIG };

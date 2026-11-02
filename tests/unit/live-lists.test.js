@@ -79,6 +79,16 @@ for (let i = 0; i < 3000; i++) M3U += '#EXTINF:-1 tvg-id="m' + i + '" tvg-logo="
   ok('a huge list with a film library keeps its live channels only', bp.channels.length === live && bp.vodSkipped === PlShape.BIG + 50 - live && bp.groups.length === 1, bp.channels.length + ' ' + bp.vodSkipped + ' ' + bp.groups.length);
   const sm = PlShape.parseM3U('#EXTM3U\r\n#EXTINF:-1 group-title="TV",A\r\nhttp://x/1\r\n#EXTINF:-1 group-title="Films",F\r\nhttp://x/movie/u/p/2.mp4\r\n');
   ok('a small list keeps its movies, as before (and \\r\\n lines)', sm.channels.length === 2 && sm.vodSkipped === 0 && sm.channels[0].url === 'http://x/1' && sm.channels[0].n === 'A');
+  // With { vod: true } (the helper): films and series become a library, not channels.
+  const lib = PlShape.parseM3U('#EXTM3U\n#EXTINF:-1 group-title="TV",News\nhttp://p.example:80/u/p/1\n' +
+    '#EXTINF:-1 tvg-logo="http://i/f.jpg" group-title="Films",Film (2020)\nhttp://p.example:80/movie/u/p/9.mkv\n' +
+    '#EXTINF:-1 group-title="Séries | Drama",Show S01 E02\nhttp://p.example:80/series/u/p/22.mp4\n#EXTINF:-1 group-title="Séries | Drama",Show S01 E01\nhttp://p.example:80/series/u/p/21.mp4\n' +
+    '#EXTINF:-1 group-title="Séries | Legendado",Show S01E01\nhttp://p.example:80/series/u/p/41.mp4\n', { vod: true });
+  const v = lib.vod, u = v.urls;
+  ok('films and series leave the channel list', lib.channels.length === 1 && lib.channels[0].n === 'News');
+  ok('a film: its row and its link', v.movie.rows.length === 1 && v.movie.rows[0][1] === 'Film (2020)' && v.movie.rows[0][2] === 'http://i/f.jpg' && v.movie.rows[0][4] === 'mkv' && u.p[u.m[v.movie.rows[0][0]][0]] + u.m[v.movie.rows[0][0]][1] === 'http://p.example:80/movie/u/p/9.mkv');
+  ok('episodes gather under their show, one show per group', v.series.rows.length === 2 && v.series.rows[0][1] === 'Show' && u.s[v.series.rows[0][0]].map((e) => e[0] + '.' + e[1] + '=' + e[3]).join() === '1.2=22.mp4,1.1=21.mp4' && u.s[v.series.rows[1][0]].length === 1);
+  ok('links share their prefix', u.p.length === 2);
   r.server.close(); up.close();
   console.log(fail ? fail + ' failures' : 'all live list tests passed');
   process.exit(fail ? 1 : 0);

@@ -150,7 +150,7 @@ var Source = (function () {
     function fetchList(i) {
       used = list[i];
       if (helperLive()) {
-        return viaHelper('/live/m3u', { u: Net.wrap(list[i]), keep: keepIt() }).then(function (j) {
+        return viaHelper('/live/m3u', { u: Net.wrap(list[i]), keep: keepIt(), pl: p.id || '', sig: sig(p) }).then(function (j) {
           if (j._status === 422) return { notM3u: j.head || '' };
           if (j._status !== 200 || !Array.isArray(j.channels)) throw new Error(j.error || 'HTTP ' + j._status);
           return { shaped: j };
@@ -182,9 +182,10 @@ var Source = (function () {
         Log.error('m3u', 'Not an M3U playlist.  First 200 characters', t.notM3u);
         throw Object.assign(new Error('That URL did not return an M3U playlist.'), { kind: 'parse' });
       }
-      d = { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl || '', _live: t.shaped ? t.shaped.live || '' : '', vodSkipped: +d.vodSkipped || 0 };
+      d = { groups: d.groups, channels: d.channels, epgUrl: d.epgUrl || '', _live: t.shaped ? t.shaped.live || '' : '', vodSkipped: +d.vodSkipped || 0, vod: d.vod && d.vod.movies != null ? d.vod : null };
       Log.info('m3u', (t.shaped ? 'The helper parsed ' : 'Parsed ') + d.channels.length + ' channels in ' + d.groups.length + ' groups (' + Math.round(size / 1024) + ' KB, ' + (Date.now() - t0) + 'ms)' + (d.epgUrl ? '; guide address in playlist' : '; no guide address in playlist') +
-        (d.vodSkipped ? '; left out ' + d.vodSkipped + ' movies and series episodes (a list this big keeps its live channels)' : ''));
+        (d.vodSkipped ? '; left out ' + d.vodSkipped + ' movies and series episodes (a list this big keeps its live channels)' : '') +
+        (d.vod ? '; ' + d.vod.movies + ' movies and ' + d.vod.series + ' shows go to Movies and Shows' : ''));
       if (!d.channels.length) throw Object.assign(new Error('The playlist downloaded but has no channels in it.'), { kind: 'parse' });
       d.m3u = used;
       return d;
@@ -327,12 +328,24 @@ var Source = (function () {
   /* ---------- VOD (Xtream) ---------- */
   function vodCats(kind) { return U.getJSON(api(Store.playlist, kind === 'series' ? 'get_series_categories' : 'get_vod_categories'), 30000); }
   function vodList(kind) { return U.getJSON(api(Store.playlist, kind === 'series' ? 'get_series' : 'get_vod_streams'), 90000); }
-  function vodInfo(id) { return U.getJSON(api(Store.playlist, 'get_vod_info', '&vod_id=' + id), 15000); }
-  function seriesInfo(id) { return U.getJSON(api(Store.playlist, 'get_series_info', '&series_id=' + id), 20000); }
+  /* An M3U playlist's movies and shows are kept by the network helper (service/vod.js): it answers a show's
+     episodes in the shape of Xtream's get_series_info, with each episode's link, and a movie's link. */
+  function m3uVod() { var p = Store.playlist; return p && p.type === 'm3u' && p.vod && p.vod.m3u; }
+  function helperVod(op, id) {
+    if (!(Net.active && Net.port)) return Promise.reject(new Error('Movies and shows from an M3U list need the network helper.'));
+    return viaHelper('/vod/m3u', { pl: Store.playlist.id, op: op, id: String(id) }).then(function (j) {
+      if (j._status !== 200) throw new Error(j.error || 'HTTP ' + j._status);
+      return j;
+    });
+  }
+  function vodInfo(id) { return m3uVod() ? Promise.resolve({ info: {} }) : U.getJSON(api(Store.playlist, 'get_vod_info', '&vod_id=' + id), 15000); }
+  function seriesInfo(id) { return m3uVod() ? helperVod('series', id) : U.getJSON(api(Store.playlist, 'get_series_info', '&series_id=' + id), 20000); }
+  // The link to play a movie: built from the login, or for an M3U list the one the list gave.
+  function movieLink(id, ext) { return m3uVod() ? helperVod('url', id).then(function (j) { return j.url; }) : Promise.resolve(movieUrl(id, ext)); }
   function movieUrl(id, ext) { var p = Store.playlist; return base(p.server) + '/movie/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
   function episodeUrl(id, ext) { var p = Store.playlist; return base(p.server) + '/series/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
 
   return { load: load, busy: busy, stop: stop, get loading() { return Object.keys(running).length > 0; }, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
     catchupUrl: catchupUrl, setTz: setTz,
-    vodCats: vodCats, vodList: vodList, vodInfo: vodInfo, seriesInfo: seriesInfo, movieUrl: movieUrl, episodeUrl: episodeUrl };
+    vodCats: vodCats, vodList: vodList, vodInfo: vodInfo, seriesInfo: seriesInfo, movieUrl: movieUrl, movieLink: movieLink, episodeUrl: episodeUrl, m3uVod: m3uVod };
 })();
