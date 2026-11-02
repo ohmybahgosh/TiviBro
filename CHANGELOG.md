@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Prepare My media TV-show discovery.**  Add tested local episode classification and recoverable paged storage foundations.  TV-show screens and playback integration are still in development.
+
 - **One subtitle language at a time.**  The MKV overlay keeps the selected track when another subtitle track becomes active, including after skipping backward or forward, preventing English and Dutch captions from stacking.
 - **Subtitle text stays readable in more files.**  ASS drawing instructions are left out of plain text, literal words such as `<Enter>` are kept, and an invalid WebDAV redirect returns an error instead of leaving playback waiting.
 - **More embedded subtitles in MKV movies.**  Movies with large subtitle indexes no longer lose all their tracks.  ASS/SSA and WebVTT tracks now show as plain text alongside SRT, and My media finds MKV subtitles even when a signed playback link has no file extension.  Track names and newer language tags are read, and Timing also moves the TV's subtitle overlay.
