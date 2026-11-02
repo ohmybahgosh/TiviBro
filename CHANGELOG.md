@@ -7,6 +7,7 @@
 - **More embedded subtitles in MKV movies.**  Movies with large subtitle indexes no longer lose all their tracks.  ASS/SSA and WebVTT tracks show as plain text alongside SRT.  My media finds MKV subtitles even when a playback link has no file extension.  Track names and newer language tags are read, and Timing also moves the subtitle overlay.
 - **One subtitle language at a time.**  The MKV overlay keeps the selected track when another track becomes active, including after skipping backward or forward, preventing languages from stacking.
 - **Subtitle text stays readable in more files.**  ASS drawing instructions are left out of plain text, and literal words such as `<Enter>` are kept.
+- **WebDAV movies can play directly with a login.**  Servers using HTTP Basic authentication work alongside signed file links.  The helper keeps the login out of playback addresses and handles seeking and subtitle reads.  Invalid stream redirects return an error instead of leaving playback waiting.
 
 ## 0.6.0 (alpha 59, 2026-11-02)
 

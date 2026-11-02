@@ -415,7 +415,7 @@ Movies/
 
 A folder named "Title (Year)" gives the title and year, whatever the file is called.  Without one, the file name is used: dots and underscores become spaces, and it is cut at the quality words (1080p, BluRay, x265).
 
-A WebDAV source is a WebDAV folder, not a normal website or HTTP directory.  Services such as premiumize use a customer ID and API key as the login.  Listing uses WebDAV; playback currently needs the server to redirect to a playable file link.  Servers that serve files directly with a login are not supported yet.
+A WebDAV source is a WebDAV folder, not a normal website or HTTP directory.  Services such as premiumize use a customer ID and API key as the login.  TiviBro supports both signed file links and servers that serve files directly with HTTP Basic authentication.  For a file that needs a login, the helper streams it to the player and handles seeking and subtitle reads.  Your login is sent only to the server you added.
 
 For easier typing, open **Settings > My media > Edit on a computer** and connect to the web editor.  Its **My media** page lets you add WebDAV logins, rescan or remove sources, and change the shared metadata language.  Saved logins are never sent back to the editor.
 

@@ -26,6 +26,7 @@ var Log = (function () {
     s = String(s == null ? '' : s);
     signed.forEach(function (h) { s = s.replace(new RegExp('(' + esc(h) + ')[/?][^\\s"\'<>\\\\]*', 'gi'), '$1/***'); });
     return s
+      .replace(/\/media-stream\/[a-f0-9]{48}/gi, '/media-stream/***')
       .replace(/([?&](?:sig|signature|token|auth|key|expires|hash)=)[^&\s"']*/gi, '$1***')
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s"']*/gi, '$1***')
       .replace(/(username=)([^&\s"']{0,2})[^&\s"']*/gi, '$1$2***')
