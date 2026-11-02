@@ -2035,16 +2035,16 @@ $('gReload').onclick = function () {
 function onProgress(p) {
   var was = lastProgress; lastProgress = p;
   if (page === 'guide') drawProgress(p);
-  if (was && was.active && !p.active && p.phase === 'done') toast('Guide loaded on the TV: ' + (p.programmes || 0).toLocaleString() + ' programmes');
+  if (!p.active && p.phase === 'done' && ((was && was.active) || (p.message && (!was || was.message !== p.message)))) toast(p.message || ('Guide loaded on the TV: ' + (p.programmes || 0).toLocaleString() + ' programmes'));
 }
 function drawProgress(p) {
   var box = $('gProg');
   var fresh = p.active || (p.at && Date.now() - p.at < 5 * 60000);
   if (!fresh || !p.phase) { box.innerHTML = ''; return; }
   if (!p.active) {
-    var ok = p.phase === 'done';
-    box.innerHTML = '<div class="prog ' + (ok ? 'ok' : 'bad') + '"><div class="top"><b>' + (ok ? '✓ Guide loaded' : '✕ The guide did not load') + '</b><span class="nums">' +
-      (ok ? (p.programmes || 0).toLocaleString() + ' programmes for ' + (p.channels || 0).toLocaleString() + ' guide channels' + (p.took ? ' in ' + fmtTime(p.took) : '') : esc(p.error || '')) + '  ·  ' + ago(p.at) + '</span></div>' +
+    var ok = p.phase === 'done', pending = p.phase === 'fallback';
+    box.innerHTML = '<div class="prog ' + (ok ? 'ok' : pending ? '' : 'bad') + '"><div class="top"><b>' + (p.message ? esc(p.message) : ok ? '✓ Guide loaded' : '✕ The guide did not load') + '</b><span class="nums">' +
+      (ok ? (p.programmes || 0).toLocaleString() + ' programmes for ' + (p.channels || 0).toLocaleString() + ' guide channels' + (p.took ? ' in ' + fmtTime(p.took) : '') : pending ? '' : esc(p.error || '')) + '  ·  ' + ago(p.at) + '</span></div>' +
       (p.report && p.report.length > 1 ? '<div class="nums" style="margin-top:6px">' + p.report.map(function (r) { return esc(r.host) + ': ' + (r.ok ? r.programmes.toLocaleString() + ' programmes' : 'failed (' + esc(r.error) + ')'); }).join('  ·  ') + '</div>' : '') + '</div>';
     return;
   }

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Guide fallback messages explain what happened.**  When the provider guide fails, TiviBro says it is checking public guides and only says it is using them when matching listings are available.  The TV and web editor keep the original source error for diagnosis.
+
 - **A playlist that keeps closing TiviBro is stopped** (issue #25).  If TiviBro closes twice in a row while loading or reloading a playlist, that playlist's **Reload channel list** becomes **Only when I ask**, and the next start says so.  When nothing of the list is kept yet, it asks first: try it again, change the connection, use another playlist or add one, instead of loading it a third time.
 - **Stop a load with the remote** (issue #25).  **Back** on the loading screen offers to stop loading a playlist, and **Settings > Playlists and guide > the playlist > Stop reloading** stops a reload and keeps the channels you had.
 - **When most of a playlist won't play, TiviBro says so** (issue #25).  Five or more channels failing with errors from the provider (404 Not Found, 522 and the like), and next to none playing, means the list itself is the problem even when the login works and the account is active: out of date, or channels that only work from another country.  It says so once a day, with **Reload the channel list**.
