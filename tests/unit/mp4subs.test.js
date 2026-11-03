@@ -590,6 +590,18 @@ const twoParts = (late, extra) => buildMp4(Object.assign({ tracks: [{ lang: 'eng
     const got = textsOf(t).sort().join();
     ok('showing plus Line up reads both windows and nothing between', got === 'lineup,now', got);
     h.cancel();
+    // Windows that overlap: a line in both is read once.
+    files['overlap.mp4'] = asU8(buildMp4({ tracks: [{ lang: 'eng', cues: [[1, 3, 'both']] }] }).bytes);
+    const v2 = makeVideo({ currentTime: 0 });
+    const h2 = Mp4Subs.extract('http://p/movie/overlap.mp4', v2, () => {}, '');
+    await until(() => v2.children.length === 1);
+    await wait(100);
+    const t2 = tracksOf(v2)[0];
+    t2.mode = 'showing';
+    await t2._embedLoad(0, 10, 3000);
+    await wait(30);
+    ok('a line in both windows is read once', textsOf(t2).join() === 'both', textsOf(t2));
+    h2.cancel();
   }
   if (fail) { console.log(fail + ' mp4subs test(s) failed'); process.exit(1); }
   console.log('all mp4subs tests passed');

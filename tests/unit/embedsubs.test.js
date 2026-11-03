@@ -493,6 +493,15 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     await wait(120);
     const race = modes(v);
     h.cancel();
+    files['race2'] = new Uint8Array(64);
+    const w = browserLike(null, 40);
+    const hw = EmbedSubs.run('http://p/movie/race2', w, () => {}, ad());
+    await until(() => w.children.length === 2);
+    await wait(20);
+    menu(w, 1);                                      // Dutch, then the browser turns English on
+    await wait(120);
+    const race2 = modes(w);
+    hw.cancel();
     files['life'] = new Uint8Array(64);
     const a = browserLike();
     ctx.Subs.autoOn = t => a.children.some(c => c.track === t && c.srclang === 'en');
@@ -512,7 +521,7 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     await wait(120);
     const off = modes(c);
     h3.cancel(); delete ctx.Subs;
-    ok('a menu choice right after the tracks appear is kept (Off stays off)', race === 'disabled,disabled', race);
+    ok('a menu choice right after the tracks appear is kept over a late browser pick (Off, or Dutch alone)', race === 'disabled,disabled' && race2 === 'disabled,showing', { race, race2 });
     ok('auto-on, then Dutch and Off each survive a reconnect over the browser\'s pick', auto === 'showing,disabled' && dutch === 'disabled,showing' && off === 'disabled,disabled', { auto, dutch, off });
   }
   {
