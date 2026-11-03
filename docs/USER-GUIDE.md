@@ -360,6 +360,7 @@ If your provider offers video on demand, **Movies** and **Shows** appear in the 
 - Running times read **1 h 25 min**, ratings **★ 7.6**.  On a TV, big libraries are downloaded and slimmed by the network helper, so even 160,000 movies stay light on memory.
 - While watching, **◀ ▶** skip 30 seconds.  Keep pressing and each press jumps further (twice, four, then eight times as far); the info panel shows where you'll land and when the movie will end, and playback jumps there once you stop pressing.  **Back** cancels a jump you haven't landed yet.  **▲ ▼** skip 10 minutes.
 - TiviBro remembers where you stopped and offers to resume.  The next episode can start by itself (**Play next episode automatically**).
+- A movie or episode you watched to the end gets a **✓** in the list, and one you stopped part-way shows how far you got.  A show you started shows the episode you're on ("S1 E5") and how far you got in it, and opens on that episode.  **Hold OK** marks a title as watched or unwatched by hand.
 
 <p align="center"><a href="media/vod.mp4"><img src="media/vod.gif" width="100%" alt="Movies and shows"></a></p>
 <p align="center"><sub><a href="media/vod.mp4">Watch the MP4</a></sub></p>

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Watched movies and episodes get a ✓.**  In **Movies** and **Shows**, a title you watched to the end used to look the same as one you never started, so it was hard to see where you left off.  Now it keeps a ✓ in the list and "Watched" in its details, a show opens on the episode after the last one you watched and its row shows that episode ("S1 E5") with how far you got, **Hold OK** has **Mark as watched** and **Mark unwatched**, and **Resume** on a show plays the episode you're on.
+
 ## 0.6.0 (alpha 67, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.
