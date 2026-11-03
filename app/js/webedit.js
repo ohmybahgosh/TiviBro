@@ -193,7 +193,7 @@ var WebEdit = (function () {
   // writes one version, not the whole history.
   function draftKey(id) { return 'drafts:' + (id || Store.playlist.id); }
   function stateKey(id, rid) { return 'draft:' + (id || Store.playlist.id) + ':' + rid; }
-  function drafts(id) { return Store.idbGet(draftKey(id)).then(function (l) { return Array.isArray(l) ? l : []; }, function () { return []; }); }
+  function drafts(id) { return Store.bigGet(draftKey(id)).then(function (l) { return Array.isArray(l) ? l : []; }, function () { return []; }); }
   function bytes(l) { return l.reduce(function (n, x) { return n + (x.size || 0); }, 0); }
   function editsHash(E) { return U.hash(JSON.stringify(FIELDS.map(function (f) { return E && E[f] != null ? E[f] : null; }))); }
   function summarize(l) {
@@ -220,11 +220,11 @@ var WebEdit = (function () {
         if (rolling) { rec.id = top.id; rec.started = top.started || top.at; rec.startChanges = top.startChanges || 0; l[0] = rec; }
         else { rec.started = at; rec.startChanges = rec.changes; l.unshift(rec); }
         var kept = pruneDrafts(l.slice()), gone = l.filter(function (x) { return kept.indexOf(x) < 0; });
-        return Store.idbSet(stateKey(id, rec.id), d.state).then(function (ok) {
+        return Store.bigSet(stateKey(id, rec.id), d.state).then(function (ok) {
           if (!ok) throw new Error('the TV storage is full');
-          return Store.idbSet(draftKey(id), kept);
+          return Store.bigSet(draftKey(id), kept);
         }).then(function () {
-          gone.forEach(function (x) { Store.idbSet(stateKey(id, x.id), null); });
+          gone.forEach(function (x) { Store.bigSet(stateKey(id, x.id), null); });
           if (id === Store.playlist.id) summarize(kept);
         });
       });
@@ -237,7 +237,7 @@ var WebEdit = (function () {
     draftQ = draftQ.then(function () {
       return drafts().then(function (l) {
         var x = l.filter(function (y) { return y.eh === eh; })[0];
-        if (x && !x.sent) { x.sent = true; return Store.idbSet(draftKey(), l).then(function () { summarize(l); }); }
+        if (x && !x.sent) { x.sent = true; return Store.bigSet(draftKey(), l).then(function () { summarize(l); }); }
       });
     }).catch(function () {});
   }
@@ -245,7 +245,7 @@ var WebEdit = (function () {
 
   /* ---------- restore points (IndexedDB, per playlist) ---------- */
   function snapKey() { return 'snaps:' + Store.playlist.id; }
-  function snaps() { return Store.idbGet(snapKey()).then(function (l) { return Array.isArray(l) ? l : []; }, function () { return []; }); }
+  function snaps() { return Store.bigGet(snapKey()).then(function (l) { return Array.isArray(l) ? l : []; }, function () { return []; }); }
   function snap(kind, name) {
     return snaps().then(function (l) {
       var cur = { edits: editsOf(), names: Store.playlist.names || null };
@@ -256,7 +256,7 @@ var WebEdit = (function () {
       l.unshift(s);
       var autos = 0, named = 0;
       l = l.filter(function (x) { return x.kind === 'auto' ? ++autos <= SNAP_AUTO : ++named <= SNAP_NAMED; });
-      return Store.idbSet(snapKey(), l).then(function () { return s; });
+      return Store.bigSet(snapKey(), l).then(function () { return s; });
     });
   }
   function snapList() { return snaps().then(function (l) { return l.map(function (x) { return { id: x.id, at: x.at, kind: x.kind, name: x.name, stats: x.stats }; }); }); }
@@ -467,7 +467,7 @@ var WebEdit = (function () {
       return draftQ.then(function () { return drafts(); }).then(function (l) {
         var x = l.filter(function (y) { return y.id === a.id; })[0];
         if (!x) throw new Error('That draft version no longer exists.');
-        return Store.idbGet(stateKey(null, x.id)).then(function (state) {
+        return Store.bigGet(stateKey(null, x.id)).then(function (state) {
           if (typeof state !== 'string') throw new Error('That draft version could not be read.');
           return { msg: 'Draft version', data: { id: x.id, at: x.at, state: state, changes: x.changes, label: x.label } };
         });
@@ -476,14 +476,14 @@ var WebEdit = (function () {
     deleteDraft: function (a) {
       draftQ = draftQ.then(function () { return drafts(); }).then(function (l) {
         l = l.filter(function (x) { return x.id !== a.id; });
-        return Store.idbSet(draftKey(), l).then(function () { Store.idbSet(stateKey(null, a.id), null); summarize(l); });
+        return Store.bigSet(draftKey(), l).then(function () { Store.bigSet(stateKey(null, a.id), null); summarize(l); });
       });
       return draftQ.then(function () { return { msg: 'Draft version deleted' }; });
     },
     listSnaps: function () { return snapList().then(function (l) { return { msg: l.length + ' restore points', data: l }; }); },
     makeSnap: function (a) { return snap('named', clean(a.name) || 'Restore point').then(function (s) { return { msg: 'Restore point "' + s.name + '" saved on the TV', data: { id: s.id } }; }); },
     deleteSnap: function (a) {
-      return snaps().then(function (l) { var n = l.filter(function (x) { return x.id !== a.id; }); return Store.idbSet(snapKey(), n).then(function () { return { msg: 'Restore point deleted' }; }); });
+      return snaps().then(function (l) { var n = l.filter(function (x) { return x.id !== a.id; }); return Store.bigSet(snapKey(), n).then(function () { return { msg: 'Restore point deleted' }; }); });
     },
     restoreSnap: function (a) {
       return snaps().then(function (l) {
@@ -699,7 +699,7 @@ var Backup = (function () {
     });
     KEEP_LOCAL.forEach(function (k) { delete s[k]; });
     return Promise.all(s.playlists.map(function (p) {
-      return Store.idbGet('snaps:' + p.id).then(function (l) { if (Array.isArray(l) && l.length) snaps[p.id] = l; }, function () {});
+      return Store.bigGet('snaps:' + p.id).then(function (l) { if (Array.isArray(l) && l.length) snaps[p.id] = l; }, function () {});
     })).then(function () {
       return { app: 'TiviBro', kind: 'backup', format: 2, version: TIVIBRO_VERSION, created: new Date().toISOString(), settings: s, edits: edits, snaps: snaps };
     });
@@ -720,7 +720,7 @@ var Backup = (function () {
     localStorage.setItem('tivibro.settings', JSON.stringify(next));
     Log.info('backup', 'Restored a backup from ' + b.created + ' with ' + next.playlists.length + ' playlist(s)');
     var snaps = b.snaps || {};
-    return Promise.all(Object.keys(snaps).map(function (id) { return Array.isArray(snaps[id]) ? Store.idbSet('snaps:' + id, snaps[id]).catch(function () {}) : null; }))
+    return Promise.all(Object.keys(snaps).map(function (id) { return Array.isArray(snaps[id]) ? Store.bigSet('snaps:' + id, snaps[id]).catch(function () {}) : null; }))
       .then(function () { return { playlists: next.playlists.length }; });
   }
   return { create: create, restore: restore, check: check };

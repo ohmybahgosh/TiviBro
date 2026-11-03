@@ -221,9 +221,9 @@ var Store = (function () {
     localStorage.removeItem('tivibro.edits.' + id);
     bigSet('playlist:' + id, null); idbSet('epgpub:' + id, null);
     if (kvOn()) fetch('http://127.0.0.1:' + Net.port + '/vod/forget', { method: 'POST', body: JSON.stringify({ pl: id }) }).catch(function () {});
-    // Its restore points and draft history (see webedit.js) go with it.
-    idbSet('snaps:' + id, null);
-    idbGet('drafts:' + id).then(function (l) { (Array.isArray(l) ? l : []).forEach(function (x) { idbSet('draft:' + id + ':' + x.id, null); }); idbSet('drafts:' + id, null); });
+    // Its restore points and draft history (see webedit.js; on the helper's storage, or the browser's) go with it.
+    bigSet('snaps:' + id, null);
+    bigGet('drafts:' + id).then(function (l) { (Array.isArray(l) ? l : []).forEach(function (x) { bigSet('draft:' + id + ':' + x.id, null); }); bigSet('drafts:' + id, null); });
     if (settings.active === id) { settings.active = settings.playlists[0] ? settings.playlists[0].id : ''; loadEdits(); }
     saveSettings();
   }

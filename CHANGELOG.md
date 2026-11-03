@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Restore points and draft history move to the TV's big storage.**  They were kept in the browser's own storage, which on LG TVs sits on the small partition webOS itself uses (720 MB on a C2, two thirds full), and a big playlist's 45 restore points can take many MB.  With the network helper running they now live with the playlists and guide on app storage, and older ones move over the first time they're read.
 - **Built-in subtitles keep up when the provider refuses a read** (thanks to moritzm784, pull request #39).  When the provider refuses a subtitle read or the session runs out, the MKV and MP4 subtitle readers now wait together, ask once for a new session (checking it's still the same file) and carry on, also across seeks.
 
 ## 0.6.0 (alpha 66, 2026-11-03)
