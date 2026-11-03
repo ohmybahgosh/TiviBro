@@ -1,17 +1,27 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>TiviBro for Android</title><meta name="robots" content="noindex"><link rel="icon" href="/img/icon-32.png">
+<title>TiviBro for Android</title><meta name="robots" content="noindex"><meta name="ga-id" content="G-63KMVHL4PY"><meta name="ga-banner" content="off"><link rel="icon" href="/img/icon-32.png">
 <style>html,body{margin:0;height:100%;background:#0b0e1a;color:#e8ecf8;font:17px/1.5 Inter,system-ui,sans-serif;display:flex;align-items:center;justify-content:center;text-align:center}main{max-width:440px;padding:24px}a{color:#33e1ff}small{color:#7c85a3}</style>
+<script src="/analytics.js?v=7"></script>
 </head><body><main>
 <p id="m">Finding the newest TiviBro app for Android…</p>
 <p><small>Or pick one yourself on the <a href="https://github.com/ohmybahgosh/TiviBro/releases">releases page</a>.</small></p>
 </main>
 <script>
 /* The newest release that carries the phone app (test builds included), straight to its APK.  The
-   releases page if GitHub doesn't answer. */
+   releases page if GitHub doesn't answer.  For people who allowed analytics on tivibro.app, the visit
+   and a download_apk event are sent first (two seconds at most). */
 (function () {
   var REL = 'https://github.com/ohmybahgosh/TiviBro/releases', m = document.getElementById('m');
-  function fallback() { m.innerHTML = 'Taking you to the <a href="' + REL + '">releases page</a>…'; location.replace(REL); }
+  function leave(url, counted) {
+    var done = false;
+    function go() { if (!done) { done = true; location.replace(url); } }
+    if (window.tivibroAnalytics && window.tivibroAnalytics.on()) {
+      if (counted) window.gtag('event', 'download_apk', { event_callback: go, event_timeout: 1500 });
+      setTimeout(go, counted ? 2000 : 800);
+    } else go();
+  }
+  function fallback() { m.innerHTML = 'Taking you to the <a href="' + REL + '">releases page</a>…'; leave(REL, false); }
   var x = new XMLHttpRequest();
   x.open('GET', 'https://api.github.com/repos/ohmybahgosh/TiviBro/releases?per_page=20');
   x.timeout = 8000;
@@ -21,7 +31,7 @@
       for (var i = 0; i < list.length; i++) {
         if (list[i].draft) continue;
         var a = (list[i].assets || []).filter(function (f) { return /\.apk$/i.test(f.name); })[0];
-        if (a) { m.innerHTML = 'Downloading <b>' + a.name + '</b> (' + list[i].tag_name + ')…<br><small>On your phone, open it from your downloads to install.</small>'; location.replace(a.browser_download_url); return; }
+        if (a) { m.innerHTML = 'Downloading <b>' + a.name + '</b> (' + list[i].tag_name + ')…<br><small>On your phone, open it from your downloads to install.</small>'; leave(a.browser_download_url, true); return; }
       }
     } catch (e) {}
     fallback();

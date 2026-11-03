@@ -1,10 +1,13 @@
 /* Visit counts for tivibro.app with Google Analytics 4, only after the visitor says yes.
-   Switched on by the measurement ID in <meta name="ga-id" content="G-XXXXXXXXXX"> in index.html;
-   while that is empty nothing loads and no banner shows.  The choice is kept in this browser
+   Switched on by the measurement ID in <meta name="ga-id" content="G-XXXXXXXXXX"> on each page that
+   loads this file (the home page, /view/ and /apk/); while that is empty nothing loads and no banner shows.
+   <meta name="ga-banner" content="off"> (on /apk/, which leaves at once) counts only people who already said yes.  The choice is kept in this browser
    (localStorage), and "Cookie settings" in the footer asks again.  The TV app has no analytics (only the anonymous daily count in app/js/update.js). */
 (function () {
   var meta = document.querySelector('meta[name="ga-id"]'), ID = meta && meta.content.trim();
   var KEY = 'tivibro.analytics', loaded = false;
+  var bannerOff = !!document.querySelector('meta[name="ga-banner"][content="off"]');
+  window.tivibroAnalytics = { on: function () { return loaded; } };
   function get() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
   function set(v) { try { localStorage.setItem(KEY, v); } catch (e) {} }
   window.dataLayer = window.dataLayer || [];
@@ -26,7 +29,19 @@
     var s = document.createElement('script'); s.async = true; s.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(ID);
     document.head.appendChild(s);
   }
+  // Pages without style.css (/view/) get the banner's look from here.
+  function bannerStyle() {
+    if (document.querySelector('link[href*="style.css"]') || document.getElementById('consentStyle')) return;
+    var st = document.createElement('style'); st.id = 'consentStyle';
+    st.textContent = '.consent{position:fixed;left:20px;bottom:20px;z-index:60;max-width:440px;padding:18px 20px;border-radius:18px;background:rgba(17,22,43,.96);border:1px solid #2d3760;box-shadow:0 24px 60px rgba(0,0,0,.55);color:#9aa4c4;font:14px/1.5 Inter,system-ui,sans-serif;text-align:left}' +
+      '.consent p{margin:0 0 14px}.consent b{color:#e8ecf8}.consent a{color:#33e1ff}.consent div{display:flex;gap:10px}' +
+      '.consent button{padding:8px 16px;border-radius:11px;border:1px solid #2d3760;background:rgba(17,22,43,.6);color:#e8ecf8;font:600 14px Inter,system-ui,sans-serif;cursor:pointer}' +
+      '.consent button[data-c="yes"]{background:linear-gradient(135deg,#5b8cff,#4a6fff 55%,#6f5cff);border-color:transparent}' +
+      '@media (max-width:600px){.consent{left:12px;right:12px;bottom:12px;max-width:none}}';
+    document.head.appendChild(st);
+  }
   function banner() {
+    bannerStyle();
     var old = document.getElementById('consent'); if (old) old.remove();
     var b = document.createElement('div'); b.id = 'consent'; b.className = 'consent'; b.setAttribute('role', 'dialog'); b.setAttribute('aria-label', 'Analytics');
     b.innerHTML = '<p><b>Can we count your visit?</b>  tivibro.app uses Google Analytics to see which pages help people.  The TiviBro app on your TV doesn\'t track you.  <a href="/privacy/">Privacy</a></p>' +
@@ -46,7 +61,9 @@
        open_video_fullscreen  video_name: guide | web_editor
        open_faq               faq_question
        view_install_steps     (no parameters) the install section was seen: step 2 of the install funnel
-       view_section           section_name (once per page view, after a second with half of it, or half the screen, showing) */
+       view_section           section_name (once per page view, after a second with half of it, or half the screen, showing)
+       click_apk_download     link_location: the section with the /apk/ link
+       download_apk           (no parameters) /apk/ found the newest APK and is starting the download */
   var METHOD = { hbc: 'homebrew', root: 'rooted', dev: 'devmode' };
   function track(name, params) { if (loaded) gtag('event', name, params || {}); }
   function sectionOf(el) { var s = el.closest && el.closest('section[id], header, footer'); return s ? (s.id || s.tagName.toLowerCase()) : 'page'; }
@@ -66,6 +83,7 @@
       var target = /\/releases/.test(path) ? 'releases' : /\/issues/.test(path) ? 'issues' : /\/wiki/.test(path) ? 'wiki' : /^[^/]+\/[^/]+\/?$/.test(path) ? 'repo' : /^[^/]+\/?$/.test(path) ? 'profile' : 'other';
       return track('click_github', { link_target: target, link_location: sectionOf(t) });
     }
+    if (/^\/apk\/?$/.test(h)) return track('click_apk_download', { link_location: sectionOf(t) });
     if (h === '#install') return track('click_install_button', { button_location: t.closest('.top, header') ? 'nav' : t.closest('#hero') ? 'hero' : 'footer_cta' });
   }, true);
   // Videos are tapped directly too (they open full screen).
@@ -89,5 +107,5 @@
   }
   if (!ID) return;
   var link = document.getElementById('consentLink'); if (link) { link.hidden = false; link.addEventListener('click', function (e) { e.preventDefault(); banner(); }); }
-  if (get() === 'yes') load(); else if (get() !== 'no') banner();
+  if (get() === 'yes') load(); else if (get() !== 'no' && !bannerOff) banner();
 })();
