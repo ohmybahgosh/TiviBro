@@ -140,6 +140,7 @@ var EmbedSubs = (function () {
         }
         for (var b = from; b < (useLive ? Math.min(list.length, from + 13) : list.length); b++) {
           var s = useLive ? list[b].startTime : list[b].s * scale + delay, e = useLive ? list[b].endTime : list[b].e * scale + delay;
+          if (!useLive) { s = Math.max(0, s); e = Math.max(s + 0.05, e); }      // as Subs places a moved line (subs.js placed())
           if (s <= video.currentTime && e > video.currentTime)
             lines.push(list[b].text.replace(/<\/?(?:b|i|u|font)(?:\s[^>]*)?>/gi, ''));
         }

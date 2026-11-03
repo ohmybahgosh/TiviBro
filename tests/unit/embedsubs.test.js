@@ -414,9 +414,13 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     ctx.Subs = { delay: 0, timingOf: t => (t === tr ? { scale: 2, off: 1, delay: 0.5 } : null) };
     v.currentTime = 1.5; (v.listeners.seeked || []).forEach(f => f()); const before = overlayEl.textContent;
     v.currentTime = 4; (v.listeners.seeked || []).forEach(f => f()); const at = overlayEl.textContent;
+    // Moved before the start, a line is kept the way Subs keeps it (subs.js placed()): from 0, for 0.05 s.
+    ctx.Subs.timingOf = () => ({ scale: 1, off: -3, delay: 0 });
+    v.currentTime = 0.02; (v.listeners.seeked || []).forEach(f => f()); const clamped = overlayEl.textContent;
     delete ctx.Subs; h.cancel();
     ctx.document.createElement = tag => (tag === 'track' ? makeTrackElement() : { textContent: '', className: '' });
     ok('overlay fallback applies line-up scale', before === '' && at === 'line a', { before, at });   // 1-2 s shows at 3.5-5.5 s
+    ok('overlay fallback keeps a line moved before the start, as Subs does', clamped === 'line a', clamped);
   }
   {
     // Chromium turns on a newly added subtitle track by itself once any track was shown on that video
