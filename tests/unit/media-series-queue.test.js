@@ -7,7 +7,7 @@ function world(options={}){
  const first={handle:'ep1',kind:'episode',showId:'show',season:1,number:1,order:'aired',title:'One',revision:1,versions:[{handle:'file1',sourceId:'demo'}]};
  const second={handle:'ep2',kind:'episode',showId:'show',season:1,number:2,order:'aired',title:'Two',revision:2,gapBefore:!!options.gap,versions:[{handle:'file2',sourceId:'demo'}]};
  if(options.shared){second.versions[0].handle='file1';second.versions[0].boundaries=[{episode:'ep2',startSec:100,endSec:200}];}
- const ctx={Promise,console,setTimeout:(f,ms)=>{const t={f,ms,cleared:false};timers.push(t);return t;},clearTimeout:t=>{if(t)t.cleared=true;},Store:{settings:{autoNext:options.autoNext!==false}},MediaStore:{source:id=>({id,name:'Demo'}),preferredSource:()=>null},U:{toast(){}},UI:{menu:(title,items,back)=>menus.push({title,items,back}),close(){}},Media:{cancelPending(){},restore(){},playFile:m=>plays.push(m),request:(route,q)=>{
+ const ctx={Promise,console,setTimeout:(f,ms)=>{const t={f,ms,cleared:false};timers.push(t);return t;},clearTimeout:t=>{if(t)t.cleared=true;},Store:{settings:{autoNext:options.autoNext!==false}},MediaStore:{source:id=>({id,name:'Demo'}),preferredSource:()=>null,preferences:()=>({language:'en',favoritesInLists:true})},U:{toast(){}},UI:{menu:(title,items,back)=>menus.push({title,items,back}),close(){}},Media:{cancelPending(){},restore(){},playFile:m=>plays.push(m),request:(route,q)=>{
    if(route==='library/edit')return Promise.resolve({revision:2});
    if(route==='library/query')return Promise.resolve({items:q.kind==='show'?[]:[second],revision:2});
    if(route==='library/detail')return Promise.resolve(q.handle==='ep1'?first:second);

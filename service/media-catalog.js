@@ -54,7 +54,7 @@ function group(file) {
   ancestors.some(function (name, i) { if (String(name).toLowerCase() === String(c.showTitle).toLowerCase()) { anchor = JSON.stringify(ancestors.slice(0, i + 1)); return true; } return false; });
   return file.sourceId + '|' + (anchor || c.showTitle || '').toLowerCase();
 }
-function eligible(file) { var c = file.classification || {}; return file.kind === 'episode' && !!c.showTitle && !(c.review || []).length; }
+function eligible(file) { var c = file.classification || {}; return file.kind === 'episode' && file.availability !== 'missing' && !!c.showTitle && !(c.review || []).length; }
 function titleKeyOf(key) {
   var at = String(key).indexOf('|[');
   if (at < 0) return key;
@@ -85,7 +85,8 @@ function project(r) {
   }
   return out;
 }
-function needsReview(r) { return !!((r.classification && (r.classification.review || []).length) || r.availability === 'missing'); }
+// A missing file is hidden, not a question for the viewer (media-import.js keeps it a while, then drops it).
+function needsReview(r) { return r.availability !== 'missing' && !!(r.classification && (r.classification.review || []).length); }
 function countShard(shard) {
   var out = {}, any = false;
   (shard.files || []).forEach(function (f) {
@@ -372,7 +373,7 @@ Catalog.prototype.apply = function (ctx, plan, cb) {
         if (c) { delete inPlace[f.id]; var r = c.make(f); if (r) { at[r.id] = kept.length; kept.push(r); } else forgetHandle(f, name); return; }
         if (gone[f.id]) { forgetHandle(f, name); return; }
         if (h && h !== name) return;                      // a stale copy: the file lives in another shard
-        if (plan.untouched) { f = plan.untouched(name, f); if (!f) return; }
+        if (plan.untouched) { var u = plan.untouched(name, f); if (!u) { forgetHandle(f, name); return; } f = u; }
         at[f.id] = kept.length; kept.push(f);
       });
       changes.forEach(function (c) {

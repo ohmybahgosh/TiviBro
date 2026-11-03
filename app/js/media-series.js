@@ -188,7 +188,7 @@ var MediaSeries = (function () {
   }
   function origin(ep){return function(){request('detail',{kind:'show',handle:ep.showId},function(showRecord){var bucket=showRecord.displayOrder&&showRecord.displayOrder!=='aired'?'Episodes':ep.order==='date'?ep.airDate.slice(0,4):ep.order==='absolute'?'Episodes':String(ep.season);var q={kind:'episode',show:ep.showId,bucket:bucket,limit:60};pageFocus[showRecord.title+'|'+JSON.stringify(q)]=ep.handle;page(showRecord.title,q,showEpisode,function(){show({handle:ep.showId},open);});});};}
   function playVersion(v, episode, acceptCombined) {
-    if(v.availability==='missing')return U.toast('This file is missing.  Use Needs review to locate it.',6000);
+    if(v.availability==='missing')return U.toast('This file is no longer on the server.  Rescan once it is back.',6000);
     if(episode.beforePlay){var before=episode.beforePlay;episode.beforePlay=null;if(before(v,episode)===false)return;}
     clearTimeout(nextTimer); nextTimer = null;
     var selectedRange = (v.boundaries || []).filter(function (range) { return range.episode === episode.handle; })[0];
@@ -286,7 +286,7 @@ var MediaSeries = (function () {
       options.push({label:'Back',action:back}); UI.menu(r.metadata && r.metadata.title || r.title,options,back);
     });
   }
-  function open() { page('TV shows',{kind:'show',limit:60},show,Media.restore); }
+  function open() { page('TV shows',MediaStore.preferences().favoritesInLists===false?{kind:'show',favourite:false,limit:60}:{kind:'show',limit:60},show,Media.restore); }
   function locate(item,back){
     page('Choose replacement file',{kind:'files',availableOnly:true,limit:60},function(replacement){
       request('edit',{operation:'relinkFile',handle:item.handle,target:replacement.handle,expectedRevision:item.revision,preview:true},function(preview){

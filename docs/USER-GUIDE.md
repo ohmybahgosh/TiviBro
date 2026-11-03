@@ -414,7 +414,7 @@ Use **Left** and **Right** to move between movies, and **Up** and **Down** to mo
 
 **Movies and TV shows.**  A new source finds both.  A source added before alpha 61 stays movies only until you open it in **Settings > My media** and set **Content** to **Movies and TV shows** (or **TV shows only**), then rescan.
 
-Shows open into seasons and episodes.  **Red (Options)** has **TV shows** and, when something needs a look, **Needs review**.  **Favorites** shows your favourite movies and shows; they stay in the **Movies** and **TV shows** lists too.
+Shows open into seasons and episodes.  **Red (Options)** has **TV shows** and, when something needs a look, **Needs review**.  **Favorites** shows your favourite movies and shows; they stay in the **Movies** and **TV shows** lists too, unless you turn off **Favorites also in lists** in **Settings > My media**.
 
 Name folders and files like this, and the rest takes care of itself:
 
@@ -433,6 +433,7 @@ TV/
 - **Episodes:** S01E02, 1x02, or "Episode 2" inside a "Season 1" folder give the season and episode.  Shows numbered by air date or by one running number get their own order.
 - **Extras:** folders named Extras, Featurettes, Behind the Scenes, Deleted Scenes, Interviews, Trailers and the like aren't opened.  Files with trailer, teaser or featurette in the name are skipped, and so are videos under 100 MB.
 - **Needs review:** a file TiviBro isn't sure about waits here.  Fix one file, or a whole folder (you see what changes before it's saved).  The web editor can do the same, with undo.
+- **Deleted files:** a file you delete from the server leaves My media at the next complete rescan.  If it comes back within 30 days, it keeps its details, favorite and watched state.  A scan that couldn't read every folder, or found nothing, changes nothing.
 
 **Show details.**  With a TMDB token saved, shows get their poster and details on their own, then season details and episode names, summaries and pictures for the seasons you have.  Only exact matches are picked automatically; **Find show details** on a show picks one yourself.  **Yellow** fetches details again.  TMDB gets show titles or IDs, season numbers and your language, with your token, and never a source's login or links.
 
@@ -819,6 +820,7 @@ Your own movie and TV show sources and their preferences.  The [My media](#my-me
 | **Add TMDB API token** | Not set | Under **Preferences**.  Your own TMDB API key or Read Access Token, the same one as under [Settings: Guide](#settings-guide).  Enter it on the TV, paste it in the phone app or the web editor.  Once saved the row reads **TMDB API token saved** (select it to replace it), with **Test TMDB token** and **Remove TMDB token** (saved movie details stay). |
 | **Sort movies by** | **Name (A–Z)** | Name, release date (newest first), or date added (newest first).  Movies and Favorites follow this choice; Continue watching stays ordered by recent playback.  Rescans preserve the date first added. |
 | **Sort TV shows by** | **Name (A–Z)** | Name, first aired (newest first), or date added (newest first).  TV shows and favorite shows follow it, on the TV and in the phone app; Continue watching stays ordered by recent playback. |
+| **Favorites also in lists** | **On** | On: a favorite movie or show is in **Favorites** and also in **Movies** or **TV shows**.  Off: it is only in **Favorites**. |
 | **Metadata language** | **English** | Shared by the TV app and web editor.  Changing it refreshes saved movie and show matches in the selected language.  Only missing translated fields fall back to English, identified beside the details.  If a request fails, the previous details remain. |
 | *(each source)* | | Under **Media sources**, with how many movies and episode files it has.  **Content** (Movies only, Movies and TV shows, TV shows only), rescan, pause or restart a scan, fetch details, or remove the source. |
 

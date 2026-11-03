@@ -29,8 +29,11 @@ var Media = (function () {
   function why(e) { return (e && e.message) || 'That did not work.'; }
 
   /* ---------- poster shelves ---------- */
-  var seriesCards = [], reviewCards = [], continuingShows = [], favouriteShows = [], seriesLoading = false;
+  var seriesCards = [], reviewCards = [], continuingShows = [], favouriteShows = [], seriesLoading = false, seriesAgain = false;
   var shelves = [], shelfAt = 2, shelfPos = {}, shelfViews = [], posterQueue = [], posterBusy = 0;
+  // Opening My media focuses the first item on screen; shelves that fill in later (shows and episodes come
+  // from the helper) still move it there, until the viewer presses a key.
+  var followTop = true;
   var TILE_STEP = 260, TILE_POOL = 7;
   var itemsVL = { current: function () { var s = shelves[shelfAt]; return s && s.movies[shelfPos[s.id] || 0]; }, refresh: function () { refresh(); } };
   function label(m) { return (m.title || m.label || '') + (m.year ? ' (' + m.year + ')' : ''); }
@@ -118,10 +121,12 @@ var Media = (function () {
     var movie = itemsVL.current(), oldShelf = shelves[shelfAt] && shelves[shelfAt].id;
     shelves = MediaStore.sections(null); shelves[0].movies = shelves[0].movies.concat(continuingShows);shelves[1].movies=shelves[1].movies.concat(favouriteShows);
     shelves = shelves.concat([{id:'shows',title:'TV shows',movies:seriesCards},{id:'review',title:'Needs review',movies:reviewCards}]);
+    var top = shelves.findIndex(function (s) { return s.movies.length > 0; });
     if (oldShelf) shelfAt = shelves.findIndex(function (s) { return s.id === oldShelf; });
-    if (shelfAt < 0 || !shelves[shelfAt].movies.length) shelfAt = shelves[0].movies.length ? 0 : shelves[2].movies.length ? 2 : shelves[3].movies.length ? 3 : shelves[1].movies.length ? 1 : shelves[4].movies.length ? 4 : 2;
+    if (followTop || shelfAt < 0 || !shelves[shelfAt].movies.length) shelfAt = top < 0 ? 2 : top;
     var active = shelves[shelfAt];
-    if (movie) { var at = active.movies.findIndex(function (m) { return m.id === movie.id; }); if (at >= 0) shelfPos[active.id] = at; }
+    if (followTop) shelfPos[active.id] = 0;
+    else if (movie) { var at = active.movies.findIndex(function (m) { return m.id === movie.id; }); if (at >= 0) shelfPos[active.id] = at; }
     drawShelves(); hints();
   }
 
@@ -313,6 +318,7 @@ var Media = (function () {
   function updatePreferences(next) {
     var result = MediaStore.preferences(next);
     if (next && next.language) refreshMetadata().catch(function (e) { U.toast('Language saved.  Movie details could not be refreshed: ' + why(e), 6000); });
+    if (next && typeof next.favoritesInLists === 'boolean') refreshSeries();
     refresh(); return result;
   }
   // The phone app's Fetch details for one source (it asks first on the phone).
@@ -554,6 +560,7 @@ var Media = (function () {
     if (row >= 0 && row < shelves.length) { shelfAt = row; drawShelves(); }
   }
   function keys(a) {
+    followTop = false;
     if (a !== 'ok') playToken++;
     if (a === 'green') { rescanAll(); return true; }
     if (a === 'yellow') { fetchMissingDetails(); return true; }
@@ -578,7 +585,7 @@ var Media = (function () {
         var tile = U.el('div', 'media-tile'), art = U.el('div', 'media-art'), name = U.el('div', 'media-tile-title'), year = U.el('div', 'media-tile-year'), progress = U.el('i'), favorite = U.el('span', 'media-favorite');
         tile.setAttribute('role', 'button'); var bar = U.el('div', 'media-progress'); bar.appendChild(progress); tile.appendChild(favorite); tile.appendChild(art); tile.appendChild(name); tile.appendChild(year); tile.appendChild(bar);
         (function (node) {
-          function focus() { shelfAt = node._row; shelfPos[shelves[shelfAt].id] = node._at; drawShelves(); }
+          function focus() { followTop = false; shelfAt = node._row; shelfPos[shelves[shelfAt].id] = node._at; drawShelves(); }
           node.addEventListener('mousemove', function () { if (UI.pointer && (shelfAt !== node._row || (shelfPos[shelves[node._row].id] || 0) !== node._at)) focus(); });
           node.addEventListener('click', function () { focus(); play(itemsVL.current(), false); });
         })(tile);
@@ -589,18 +596,22 @@ var Media = (function () {
     built = true;
   }
   function refreshSeries() {
-    if (seriesLoading) return; seriesLoading = true;
-    Promise.all([ask('library/query',{kind:'show',limit:60},30000),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),ask('library/query',{kind:'show',favourite:true,limit:60},30000)]).then(function (results) {
+    if (seriesLoading) { seriesAgain = true; return; }   // asked again mid-load (a setting changed): load once more after
+    seriesLoading = true; seriesAgain = false;
+    Promise.all([ask('library/query',MediaStore.preferences().favoritesInLists?{kind:'show',limit:60}:{kind:'show',favourite:false,limit:60},30000),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),ask('library/query',{kind:'show',favourite:true,limit:60},30000)]).then(function (results) {
       seriesCards = (results[0].items || []).map(function (r) { r.id = r.handle; return r; });
       reviewCards = (results[1].items || []).map(function (r) { r.id = r.handle; return r; });
       continuingShows = (results[2].items || []).map(function(r){r.id=r.handle;return r;});
       favouriteShows=(results[3].items||[]).map(function(r){r.id=r.handle;return r;});
       seriesLoading = false; refresh();
-    },function () { seriesLoading = false; });
+      if (seriesAgain) refreshSeries();
+    },function () { seriesLoading = false; if (seriesAgain) refreshSeries(); });
   }
   function open(keepState) {
     playToken++;
-    if (!built) build(); UI.setHandler(keys); refreshSeries();
+    if (!built) build(); UI.setHandler(keys);
+    if (!keepState) { followTop = true; shelfPos = {}; }
+    refreshSeries();
     if (keepState && loaded) { refresh(); restore(); return; }
     (loaded || (loaded = MediaStore.load())).then(function () {
       if ($('viewMedia').classList.contains('hidden')) return;

@@ -22,8 +22,9 @@ var MediaStore = (function () {
     if (next && /^(en|nl|de|fr|es|it)$/.test(next.language)) { p.language = next.language; changed = true; }
     if (next && /^(name|release|added)$/.test(next.sort)) { p.sort = next.sort; changed = true; }
     if (next && /^(name|release|added)$/.test(next.showSort)) { p.showSort = next.showSort; changed = true; }
+    if (next && typeof next.favoritesInLists === 'boolean') { p.favoritesInLists = next.favoritesInLists; changed = true; }
     if (changed) save();
-    return { language: p.language || 'en', sort: p.sort || 'name', showSort: p.showSort || 'name', tmdbConfigured: !!state.tmdbToken };
+    return { language: p.language || 'en', sort: p.sort || 'name', showSort: p.showSort || 'name', favoritesInLists: p.favoritesInLists !== false, tmdbConfigured: !!state.tmdbToken };
   }
   function setTmdbToken(value) {
     value = String(value || '').trim();
@@ -112,7 +113,7 @@ var MediaStore = (function () {
     continuing.sort(function (a, b) { return (state.resume[b.id].at || 0) - (state.resume[a.id].at || 0); });
     return [{ id: 'continue', title: 'Continue watching', movies: continuing },
       { id: 'favorites', title: 'Favorites', movies: all.filter(function (m) { return isFavorite(m.id); }) },
-      { id: 'all', title: 'Movies', movies: all }];
+      { id: 'all', title: 'Movies', movies: preferences().favoritesInLists ? all : all.filter(function (m) { return !isFavorite(m.id); }) }];
   }
   // TMDB had no match for it (automatic lookups leave it alone for a week).
   function markMissed(id) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.tmdbMiss = Date.now(); return saveLib(); } return Promise.resolve(); }
