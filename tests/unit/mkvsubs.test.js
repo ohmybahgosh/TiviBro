@@ -81,6 +81,7 @@ const ctx = {
 ctx.window = ctx;
 vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/util.js'), 'utf8') + '\nthis.U = U;', ctx);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/embedsubs.js'), 'utf8') + '\nthis.EmbedSubs = EmbedSubs;', ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/mkvsubs.js'), 'utf8') + '\nthis.MkvSubs = MkvSubs;', ctx);
 const MkvSubs = ctx.MkvSubs;
 MkvSubs.startupDelayMs = 0; // keep every other test fast/deterministic; the dedicated delay test below sets its own value and restores this

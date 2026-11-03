@@ -175,13 +175,14 @@ var Views = (function () {
     // clicking the picture shows or hides it.
     stage.addEventListener('click', function () { if (!full) { if (playing && mode === 'live') goFull(); return; } var o = $('osd'); if (o.classList.contains('hidden')) osd(true); else o.classList.add('hidden'); });
     document.addEventListener('mousemove', U.debounce(function () { if (full && UI.pointer && !overlay) osd(true); }, 120));
-    // Subtitles on automatically when a stream brings them (Settings > Playback).
+    // Subtitles on automatically when a stream brings them (Settings > Playback), in the chosen language,
+    // until the viewer picks in the Subtitles menu: a reconnect's tracks then keep that choice, Off too.
+    // Tracks read from MKV and MP4 files (_embedded) are turned on by their reader (embedsubs.js),
+    // which also undoes the browser's own pick.
     if (video.textTracks && video.textTracks.addEventListener) video.textTracks.addEventListener('addtrack', function (e) {
       var t = e.track;
-      // With a language chosen (Settings > Playback), only a track in that language.
-      var want = Store.settings.subsLang || '';
-      if (Store.settings.autoSubs && t && t.kind === 'subtitles' && (!want || U.lang(t.language || t.label) === want))
-        setTimeout(function () { if (subtitleTracks().every(function (x) { return x.mode !== 'showing'; })) t.mode = 'showing'; }, 0);
+      if (t && !t._embedded && Subs.autoOn(t, video))
+        setTimeout(function () { if (!video._subsChoice && subtitleTracks().every(function (x) { return x.mode !== 'showing'; })) t.mode = 'showing'; }, 0);
     });
     Epg.onUpdate(function (k) {
       if (!k) { chansVL.refresh(); if (overlay) ovVL.refresh(); if (tab === 'guide') Guide.draw(); updateInfo(); return; }
@@ -421,6 +422,7 @@ var Views = (function () {
       Store.edits.last = c.k; Store.saveEdits();
       stage.classList.remove('off');
       if (Store.settings.blackSwitch) stage.classList.add('blank');
+      video._subsChoice = false;           // a new playback: subtitles may turn on by themselves again
       Player.play(c, { preview: preview, keepTrying: foSwitching === 'back' });
       chansVL.refreshWhere(function (x) { return x && (x.k === c.k || (lastPlayed && x.k === lastPlayed.k)); });
       if (then) then();
@@ -1025,6 +1027,7 @@ var Views = (function () {
       playing = c; mode = 'catchup';
       cu = { c: c, p: p, off: Math.max(0, offSec || 0), first: true, pending: null };
       stage.classList.remove('off');
+      video._subsChoice = false;
       Player.play(c, { live: false, timeshift: true, urlFn: function () {
         if (!cu) return '';
         if (!cu.first) cu.off += Player.position;     // a reconnect continues from where playback reached
@@ -1090,6 +1093,7 @@ var Views = (function () {
     mode = 'vod'; cu = null; playing = null;
     Subs.reset();
     stage.classList.remove('off');
+    video._subsChoice = false;
     Player.play({ k: 'vod:' + meta.id, n: meta.title, num: '' }, { url: url, live: false, startAt: startAt || 0, meta: meta });
     goFull();
   }
@@ -1580,8 +1584,9 @@ var Views = (function () {
         UI.onClose = function () { clearInterval(refresh); };
       }
     } else {
-      items.push({ label: 'Off', sub: tr.every(function (t) { return t.mode !== 'showing'; }) ? 'on' : '', action: function () { tr.forEach(function (t) { t.mode = 'disabled'; }); } });
-      tr.forEach(function (t, i) { items.push({ label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', action: function () { tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
+      // Any choice here (Off too) is the viewer's for the rest of this playback: see the addtrack handler.
+      items.push({ label: 'Off', sub: tr.every(function (t) { return t.mode !== 'showing'; }) ? 'on' : '', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = null; tr.forEach(function (t) { t.mode = 'disabled'; }); } });
+      tr.forEach(function (t, i) { items.push({ label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = t; tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
     }
     if (mode === 'vod' && vod) items.push({ label: 'Find subtitles…', sub: Subs.configured ? 'OpenSubtitles, in ' + Subs.langs().map(Subs.langName).join(', ') : 'from OpenSubtitles, with your free API key', action: function () { Subs.find(vod.meta); } });
     if (tr.length) items.push({ label: 'Timing', sub: Subs.timing, action: Subs.timingMenu });

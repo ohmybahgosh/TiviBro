@@ -225,9 +225,18 @@ function pubGuide(kind) {
 
 /* ---------- server ---------- */
 function send(res, code, body, type) { res.writeHead(code, { 'Content-Type': type || 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }); res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body)); }
+// MOCK_ONE_REQUEST=1: an account allowed one connection at a time.  A stream request while another
+// is still open gets 503 (that request only; the open one carries on), like a strict provider.
+const ONE_REQUEST = !!process.env.MOCK_ONE_REQUEST;
+let streaming = 0;
 function stream(res, req, file, type) {
   const f = path.join(MEDIA, file);
   if (!fs.existsSync(f)) return send(res, 404, 'no demo media (run scripts/demo/make-media.sh)', 'text/plain');
+  if (ONE_REQUEST) {
+    if (streaming) return send(res, 503, 'one connection at a time', 'text/plain');
+    streaming++;
+    res.on('close', () => { streaming--; });
+  }
   const size = fs.statSync(f).size, range = /bytes=(\d+)-(\d*)/.exec(req.headers.range || '');
   if (range) {
     const a = +range[1], b = range[2] ? +range[2] : size - 1;
