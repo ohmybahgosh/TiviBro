@@ -18,7 +18,10 @@
      discover(head, range, rec, alive) -> Promise of the format's index, null (tracks, none usable)
                                     or { none: 'empty' } (no subtitle tracks at all: the menu says so)
      describe(index)                -> [{ label, srclang }] in attach order
-     candidates(rec, now)           -> ordered work items { id, keys? } not yet fetched, near now
+     candidates(rec, now, ctx)      -> ordered work items { id, keys? } not yet fetched, near now.
+                                    ctx.demand(i): null, or 'now' while track i is showing; ctx.timing(i):
+                                    { scale, off, delay }, how Subs shows track i's lines (shown =
+                                    source * scale + off + delay).  Formats that read every track ignore it
      complete(rec, now)             -> true when nothing is left anywhere in the file
      read(rec, item, range, alive)  -> Promise of [{ track, s, e, text }], track = index into describe()
    range(start, end, metadata) reads bytes [start, end] into a Uint8Array whose .total is the file
@@ -205,11 +208,21 @@ var EmbedSubs = (function () {
       if (activeRequest) { activeRequest.yieldToPlayback = true; activeRequest.abort(); }
     }
     function onTime() { paint(); if (pump) pump(); }
+    // A track switched on (or off) is read at once, even while paused, rather than at the next timeupdate.
+    function onTracks() { paint(); if (pump) pump(); }
+    // What the format asks before choosing what to read next.
+    var ctx = {
+      demand: function (i) { var t = liveTracks[i]; return t && t.mode === 'showing' ? 'now' : null; },
+      timing: function (i) {
+        var has = typeof Subs !== 'undefined', m = has && Subs.timing ? Subs.timing(liveTracks[i]) : null;
+        return m || { scale: 1, off: 0, delay: has ? Subs.delay || 0 : 0 };
+      }
+    };
     if (video.addEventListener) {
       video.addEventListener('timeupdate', onTime); video.addEventListener('waiting', onWaiting);
       video.addEventListener('seeking', paint); video.addEventListener('seeked', paint);
     }
-    if (video.textTracks && video.textTracks.addEventListener) video.textTracks.addEventListener('change', paint);
+    if (video.textTracks && video.textTracks.addEventListener) video.textTracks.addEventListener('change', onTracks);
     var rec = subCache[url];
     if (rec) touch(url);
     // A file found to have no usable subtitles is remembered for seeks and reconnects (no more
@@ -262,7 +275,7 @@ var EmbedSubs = (function () {
         clearTimeout(retryTimer); retryTimer = null;
         if (!hasBuffer()) { retryTimer = setTimeout(pump, 1000); return; }
         var now = video.currentTime || 0;
-        var items = adapter.candidates(rec, now);
+        var items = adapter.candidates(rec, now, ctx);
         if (!items.length) { rec.done = adapter.complete(rec, now); return; }
         var clock = Date.now(), earliest = Infinity;
         items = items.filter(function (it) {
@@ -402,7 +415,7 @@ var EmbedSubs = (function () {
           video.removeEventListener('timeupdate', onTime); video.removeEventListener('waiting', onWaiting);
           video.removeEventListener('seeking', paint); video.removeEventListener('seeked', paint);
         }
-        if (video.textTracks && video.textTracks.removeEventListener) video.textTracks.removeEventListener('change', paint);
+        if (video.textTracks && video.textTracks.removeEventListener) video.textTracks.removeEventListener('change', onTracks);
         dropTracks();
         if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
         if (video.classList) video.classList.remove('mkv-captions-active');

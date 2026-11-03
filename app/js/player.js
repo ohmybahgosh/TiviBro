@@ -216,17 +216,19 @@ var Player = (function () {
     function loadNative(resolved) { video.src = resolved; video.load(); }
     // Resolve the provider entry URL once. Both playback and subtitle ranges use
     // the same resulting session URL; opening the entry separately can evict video.
-    var subs = null;
+    // MKV and MP4 files carry subtitles the TV's player doesn't show: their reader finds them.
+    var subs = null, reader = null;
     var item = cur.meta && cur.meta.item || {}, container = item.ext || item.container_extension || '';
-    if (!cur.live && (/\.mkv(\?|#|$)/i.test(url) || /^mkv$/i.test(container)) && typeof MkvSubs !== 'undefined')
-      subs = MkvSubs.extract(url, video, loadNative, container);
+    if (!cur.live && (/\.mkv(\?|#|$)/i.test(url) || /^mkv$/i.test(container)) && typeof MkvSubs !== 'undefined') reader = MkvSubs;
+    else if (!cur.live && typeof Mp4Subs !== 'undefined' && Mp4Subs.isMp4(url, container)) reader = Mp4Subs;
+    if (reader) subs = reader.extract(url, video, loadNative, container);
     else loadNative(url);
     var at0 = video.audioTracks, onAdd = at0 && at0.addEventListener ? U.debounce(tracks, 300) : null;
     if (onAdd) at0.addEventListener('addtrack', onAdd);
     return { name: 'Native', recover: function () {}, info: function () { return ''; },
       // Abort reads at the old position and replay cached cues while extraction
       // waits for the seek to finish and the playback buffer to refill.
-      reanchor: function () { if (subs) { subs.cancel(); subs = (!cur.live && typeof MkvSubs !== 'undefined') ? MkvSubs.extract(url, video, null, container) : null; } },
+      reanchor: function () { if (subs) { subs.cancel(); subs = reader ? reader.extract(url, video, null, container) : null; } },
       destroy: function () { if (subs) subs.cancel(); if (onAdd) { onAdd.cancel(); at0.removeEventListener('addtrack', onAdd); } },
       audio: function () {
         var at = video.audioTracks, out = [];

@@ -9,7 +9,8 @@
 //                   track), stsdCount, externalDref, drefs: [[type, self]], dri (the entry's
 //                   data_reference_index), noDinf, cttsVersion, stz2, sdi, sizeOverride: { index: bytes } }]
 //   opts.video (default true): a video track first, with one 1000-byte chunk
-//   opts.moovAtEnd, opts.co64, opts.mvex, opts.movieTimescale (1000), opts.mvhdV1
+//   opts.moovAtEnd, opts.co64, opts.mvex, opts.movieTimescale (1000), opts.mvhdV1, opts.videoPadding (bytes
+//   of 'free' inside the video track's stbl, like its real sample tables); the result has moovStart
 //   opts.virtualBase: absolute offset where sample data starts (> 2^32 for co64 tests); the gap reads
 //                     as zeros and lives inside one mdat with a 64-bit size
 //   track.hugeCount: stts/stsz/stsc that agree on this many samples (rounded up to even; tables stay tiny)
@@ -66,7 +67,9 @@ function trakBox(t, id, offsets, opts) {
     : t.stz2 ? full('stz2', 0, 0, [0, 0, 0], [16], u32(sizes.length), cat(sizes.map(u16)))
     : full('stsz', 0, 0, u32(0), u32(sizes.length), cat(sizes.map(u32)));
   const co = opts.co64 ? full('co64', 0, 0, u32(offsets.length), cat(offsets.map(u64))) : full('stco', 0, 0, u32(offsets.length), cat(offsets.map(u32)));
-  const stbl = box('stbl', stsd, stts, ctts, stsc, stsz, co);
+  // A video track's tables are megabytes in real files: opts.videoPadding stands in for them.
+  const pad = t.video && opts.videoPadding ? box('free', Array(opts.videoPadding).fill(0)) : [];
+  const stbl = box('stbl', stsd, stts, ctts, stsc, stsz, co, pad);
   const minf = box('minf', t.video ? full('vmhd', 0, 1, Array(8).fill(0)) : full('nmhd', 0, 0), dref, stbl);
   const udta = t.name ? box('udta', box('name', Array.from(Buffer.from(t.name, 'utf8')))) : [];
   return box('trak', tkhd, edts, tref, box('mdia', mdhd, hdlr, minf), udta);
@@ -113,7 +116,7 @@ function buildMp4(opts) {
     }
     return out;
   }
-  return { size, read, bytes: size < 64 * 1024 * 1024 ? read(0, size - 1) : null, sampleData: rel, dataStart };
+  return { size, read, bytes: size < 64 * 1024 * 1024 ? read(0, size - 1) : null, sampleData: rel, dataStart, moovStart: opts.moovAtEnd ? mdatEnd : ftyp.length };
 }
 
 module.exports = { buildMp4, box, full, u8, u16, u32, u64, textSample, lang3 };

@@ -5,7 +5,59 @@ const fs = require('fs'), path = require('path'), vm = require('vm');
 let fail = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  ' + JSON.stringify(x) : '')); if (!c) fail++; };
 
-const ctx = { console, Promise, setTimeout, clearTimeout, Date, Net: { wrap: u => u }, Log: { debug() {}, warn() {}, info() {} } };
+// A Range server for the adapter tests: files by name (bytes, or { size, read } for sparse ones past
+// 4 GB), with faults per file: ignoreRange (200, whole body), fail: [status...] for sample reads,
+// wrongRange / truncate once for sample reads, delay ms, redirect (the session URL).
+const files = {}, faults = {};
+let requests = [];
+class FakeXHR {
+  open(method, url) { this.url = url; }
+  setRequestHeader(k, v) { this.headers = this.headers || {}; this.headers[k] = v; }
+  getResponseHeader(h) { return h === 'Content-Range' ? this.contentRange : null; }
+  send() {
+    const name = /\/([^/?]+)(?:\?.*)?$/.exec(this.url)[1], f = files[name], fl = faults[name] || {};
+    const rm = /bytes=(\d+)-(\d+)/.exec(this.headers.Range), start = +rm[1], end = +rm[2];
+    requests.push({ name, start, end, url: this.url });
+    const sample = start > 0 && fl.sampleFrom !== undefined && start >= fl.sampleFrom;
+    setTimeout(() => {
+      if (this.aborted) return;
+      if (!f) { this.status = 404; this.readyState = 2; this.onreadystatechange(); return this.onload(); }
+      const size = f.size !== undefined ? f.size : f.length, read = (a, b) => f.read ? f.read(a, b) : f.slice(a, b + 1);
+      if (fl.ignoreRange) {
+        this.status = 200; this.contentRange = null; this.readyState = 2; this.onreadystatechange();
+        if (this.aborted) return;
+        const all = read(0, size - 1); this.response = all.buffer.slice(all.byteOffset, all.byteOffset + all.length); return this.onload();
+      }
+      if (sample && fl.fail && fl.fail.length) { this.status = fl.fail.shift(); this.readyState = 2; this.onreadystatechange(); return this.onload && this.onload(); }
+      const last = Math.min(end, size - 1);
+      let data = read(start, last);
+      this.responseURL = fl.redirect || this.url;
+      this.status = 206; this.contentRange = 'bytes ' + start + '-' + last + '/' + size;
+      if (sample && fl.wrongRange) { fl.wrongRange = false; this.contentRange = 'bytes ' + (start + 1) + '-' + last + '/' + size; }
+      if (sample && fl.truncate) { fl.truncate = false; data = data.slice(0, data.length - 1); }
+      this.readyState = 2; this.onreadystatechange();
+      if (this.aborted) return;
+      this.response = data.buffer.slice(data.byteOffset, data.byteOffset + data.length); this.onload();
+    }, fl.delay || 1);
+  }
+  abort() { this.aborted = true; if (this.onabort) this.onabort(); }
+}
+const ctx = { console, Promise, setTimeout, clearTimeout, Date, XMLHttpRequest: FakeXHR, Net: { wrap: u => u },
+  Log: { debug() {}, warn() {}, info() {} },
+  document: { createElement: tag => (tag === 'track' ? makeTrackElement() : { textContent: '', className: '' }) },
+  VTTCue: function (start, end, text) { this.startTime = start; this.endTime = end; this.text = text; } };
+function makeTrackElement() { const cues = []; return { kind: '', label: '', srclang: '', track: { kind: 'subtitles', mode: 'disabled', cues, addCue(c) { cues.push(c); } } }; }
+function makeVideo(extra) {
+  const listeners = {};
+  return Object.assign({
+    children: [], listeners, currentTime: 0,
+    appendChild(el) { this.children.push(el); },
+    removeChild(el) { this.children.splice(this.children.indexOf(el), 1); },
+    addEventListener(t, f) { (listeners[t] = listeners[t] || []).push(f); },
+    removeEventListener(t, f) { listeners[t] = (listeners[t] || []).filter(g => g !== f); },
+    fire(t) { (listeners[t] || []).forEach(f => f()); }
+  }, extra || {});
+}
 ctx.window = ctx;
 vm.createContext(ctx);
 for (const f of ['util.js', 'embedsubs.js', 'mp4subs.js'])
@@ -265,5 +317,208 @@ const labels = list => Mp4Subs.describe(list).map(d => d.label);
   const got = labels([trk('und', 'constructor'), trk('und', '__proto__'), trk('und', 'toString'), trk('constructor', ''), trk('__proto__', '')]);
   ok('labels named like object properties stay as they are', got.join('|') === 'constructor|__proto__|toString|constructor 2|__proto__ 2', got);
 }
-if (fail) { console.log(fail + ' mp4subs test(s) failed'); process.exit(1); }
-console.log('all mp4subs tests passed');
+
+const wait = ms => new Promise(r => setTimeout(r, ms));
+const until = async (cond, ms) => { for (let t = 0; t < (ms || 2000) && !cond(); t += 5) await wait(5); return cond(); };
+const tracksOf = v => v.children.map(c => c.track);
+const textsOf = tr => tr.cues.map(c => c.text);
+// Turn track i on and let the core notice (as a playing video's timeupdate would).
+const show = (v, i) => { tracksOf(v).forEach((t, k) => { t.mode = k === i ? 'showing' : 'disabled'; }); v.fire('timeupdate'); };
+const fasts = fs.readFileSync(path.join(__dirname, '../lib/mp4/faststart.mp4'));
+const asU8 = b => new Uint8Array(b.buffer, b.byteOffset, b.length);
+const twoParts = (late, extra) => buildMp4(Object.assign({ tracks: [{ lang: 'eng', cues: [[1, 3, 'early'], [100, 103, 'late']].concat(late || []) }] }, extra || {}));
+
+(async () => {
+  {
+    files['fast.mp4'] = asU8(fasts); faults['fast.mp4'] = { redirect: 'http://cdn/session/fast.mp4' }; requests = [];
+    const v = makeVideo({ currentTime: 1.5 }), resolved = [];
+    const h = Mp4Subs.extract('http://p/movie/u/p/fast.mp4', v, u => resolved.push(u), '');
+    await until(() => v.children.length === 2);
+    const listed = v.children.map(c => c.label + '/' + c.srclang).join();
+    show(v, 1);
+    await until(() => tracksOf(v)[1].cues.length >= 2);
+    ok('faststart: tracks listed, Dutch cues near 1.5 s read, onResolved once with session URL',
+      listed === 'English/en,Dutch/nl' && textsOf(tracksOf(v)[1]).join('|') === 'Hallo|Tot ziens' && tracksOf(v)[0].cues.length === 0 &&
+      resolved.length === 1 && resolved[0] === 'http://cdn/session/fast.mp4' && requests.slice(1).every(r => r.url === 'http://cdn/session/fast.mp4') &&
+      v._mkvSubsState === 'ready', { listed, texts: textsOf(tracksOf(v)[1]), resolved, requests: requests.length });
+    h.cancel();
+  }
+  {
+    const f = buildMp4({ moovAtEnd: true, virtualBase: 5e6, videoPadding: 300000, tracks: [{ lang: 'eng', cues: [[1, 2, 'One']] }, { lang: 'nld', cues: [[1, 2, 'Een']] }] });
+    files['end.mp4'] = f; requests = [];
+    const v = makeVideo();
+    const h = Mp4Subs.extract('http://p/movie/end.mp4', v, () => {}, '');
+    await until(() => v.children.length === 2);
+    const m = movie(Buffer.from(f.read(f.moovStart, f.size - 1)), f.moovStart);
+    // The video trak, as absolute positions: the walk above in file coordinates.
+    let p = f.moovStart + 8, vt = null;
+    const mb = Buffer.from(f.read(f.moovStart, f.size - 1));
+    while (p < f.size) { const b = Mp4Subs.box(mb, p, f.size, f.moovStart); if (b.type === 'trak') { vt = b; break; } p = b.end; }
+    const inVideo = requests.reduce((n, r) => n + Math.max(0, Math.min(r.end + 1, vt.end) - Math.max(r.start, vt.start)), 0);
+    ok('moov at end: request count for discovery ≤ 8 and no byte of video trak tables requested (≤ 2 KB of its 300 KB)',
+      m && m.traks.length === 3 && requests.length <= 8 && inVideo <= 2048 && vt.size > 300000, { requests: requests.length, inVideo, vt: vt && vt.size });
+    h.cancel();
+  }
+  {
+    files['frag.mp4'] = buildMp4({ mvex: true, tracks: [{ lang: 'eng', cues: [[1, 2, 'A']] }] }).bytes; requests = [];
+    const v = makeVideo();
+    Mp4Subs.extract('http://p/movie/frag.mp4', v, () => {}, '');
+    await until(() => v._mkvSubsState === 'unavailable');
+    ok('fragmented (mvex) settles unavailable, no sample reads', v._mkvSubsState === 'unavailable' && v.children.length === 0 && requests.length === 1,
+      { s: v._mkvSubsState, requests: requests.length });
+  }
+  {
+    files['chap.mp4'] = buildMp4({ tracks: [{ lang: 'eng', handler: 'text', chapter: true, cues: [[0, 5, 'Chapter 1']] }] }).bytes;
+    files['none.mp4'] = buildMp4({ tracks: [] }).bytes;
+    files['bad.mp4'] = buildMp4({ tracks: [{ lang: 'eng', format: 'wvtt', cues: [[1, 2, 'A']] }] }).bytes;
+    const a = makeVideo(), b = makeVideo(), c = makeVideo();
+    Mp4Subs.extract('http://p/movie/chap.mp4', a, () => {}, ''); Mp4Subs.extract('http://p/movie/none.mp4', b, () => {}, '');
+    Mp4Subs.extract('http://p/movie/bad.mp4', c, () => {}, '');
+    await until(() => a._mkvSubsState === '' && b._mkvSubsState === '' && c._mkvSubsState === 'unavailable');
+    ok('chapter-only file shows empty state', a._mkvSubsState === '' && b._mkvSubsState === '' && c._mkvSubsState === 'unavailable' && a.children.length === 0,
+      { chap: a._mkvSubsState, none: b._mkvSubsState, wvtt: c._mkvSubsState });
+  }
+  {
+    files['quiet.mp4'] = asU8(fasts); requests = [];
+    const v = makeVideo({ currentTime: 2 });
+    const h = Mp4Subs.extract('http://p/movie/quiet.mp4', v, () => {}, '');
+    await until(() => v.children.length === 2);
+    tracksOf(v).forEach(t => { t.mode = 'hidden'; });
+    for (let i = 0; i < 5; i++) { v.fire('timeupdate'); await wait(10); }
+    ok('disabled tracks never requested', requests.length === 1 && tracksOf(v).every(t => t.cues.length === 0), { requests: requests.length });
+    h.cancel();
+  }
+  {
+    files['seek.mp4'] = twoParts(null, { moovAtEnd: true, virtualBase: 2e6, videoPadding: 100000 }); faults['seek.mp4'] = { delay: 15 }; requests = [];
+    const v = makeVideo();
+    const h1 = Mp4Subs.extract('http://p/movie/seek.mp4', v, () => {}, '');
+    await wait(40);                      // the head is in, the moov walk is under way
+    const mid = requests.length;
+    h1.cancel();
+    v.currentTime = 101;
+    const h2 = Mp4Subs.extract('http://p/movie/seek.mp4', v, null, '');
+    await until(() => v.children.length >= 1, 3000);
+    show(v, 0);
+    await until(() => tracksOf(v)[0].cues.length >= 1, 3000);
+    ok('seek during discovery: no duplicate tracks, reads resume at the new time', mid >= 2 && v.children.length === 1 &&
+      textsOf(tracksOf(v)[0]).join() === 'late', { mid, tracks: v.children.length, texts: textsOf(tracksOf(v)[0]) });
+    h2.cancel();
+  }
+  {
+    files['norange.mp4'] = asU8(fasts); faults['norange.mp4'] = { ignoreRange: true };
+    const v = makeVideo(), resolved = [];
+    Mp4Subs.extract('http://p/movie/norange.mp4', v, u => resolved.push(u), '');
+    await until(() => v._mkvSubsState === 'error');
+    ok('ignored Range on head read: video starts on original URL, state error', resolved.join() === 'http://p/movie/norange.mp4' && v._mkvSubsState === 'error',
+      { resolved, s: v._mkvSubsState });
+  }
+  {
+    files['slow.mp4'] = asU8(fasts); faults['slow.mp4'] = { delay: 400 }; requests = [];
+    const MP4 = Mp4Subs.MP4, was = MP4.startupDeadlineMs;
+    const isDefault = was === 3000;
+    MP4.startupDeadlineMs = 60;
+    const v = makeVideo(), resolved = [];
+    const h = Mp4Subs.extract('http://p/movie/slow.mp4', v, u => resolved.push(u), '');
+    await wait(500); h.cancel();
+    const v2 = makeVideo(), n = requests.length;
+    const h2 = Mp4Subs.extract('http://p/movie/slow.mp4', v2, null, '');
+    await wait(50);
+    MP4.startupDeadlineMs = was;
+    ok('head read slower than 3000 ms: video on original URL, error remembered for reanchor', isDefault && resolved.join() === 'http://p/movie/slow.mp4' &&
+      v2._mkvSubsState === 'error' && requests.length === n, { isDefault, resolved, s2: v2._mkvSubsState });
+    h2.cancel();
+  }
+  {
+    // Sample reads failing once each way: the track backs off and then fills in.
+    const names = ['s416', 's429', 's503', 'trunc', 'wrong'];
+    const vids = names.map(n => {
+      files[n + '.mp4'] = asU8(fasts);
+      faults[n + '.mp4'] = { sampleFrom: 1, fail: /^s\d/.test(n) ? [+n.slice(1)] : [], truncate: n === 'trunc', wrongRange: n === 'wrong' };
+      const v = makeVideo({ currentTime: 2 });
+      v.h = Mp4Subs.extract('http://p/movie/' + n + '.mp4', v, () => {}, '');
+      return v;
+    });
+    await until(() => vids.every(v => v.children.length === 2));
+    vids.forEach(v => show(v, 1));
+    await wait(150);
+    const early = vids.map(v => [v._mkvSubsState, tracksOf(v)[1].cues.length]);
+    await until(() => vids.every(v => tracksOf(v)[1].cues.length === 2), 2500);
+    const later = vids.map(v => [v._mkvSubsState, textsOf(tracksOf(v)[1]).join('|')]);
+    const statuses = early.slice(0, 3), bodies = early.slice(3);
+    ok('416/429/503 on a sample read back off and recover', statuses.every(x => x[0] === 'recovering' && x[1] === 0) &&
+      later.slice(0, 3).every(x => x[0] === 'ready' && x[1] === 'Hallo|Tot ziens'), { early: statuses, later: later.slice(0, 3) });
+    ok('truncated body and wrong Content-Range rejected', bodies.every(x => x[0] === 'recovering' && x[1] === 0) &&
+      later.slice(3).every(x => x[1] === 'Hallo|Tot ziens'), { early: bodies, later: later.slice(3) });
+    vids.forEach(v => v.h.cancel());
+  }
+  {
+    files['again.mp4'] = buildMp4({ moovAtEnd: true, virtualBase: 3e6, videoPadding: 100000, tracks: [{ lang: 'eng', cues: [[1, 2, 'One'], [4, 5, 'Two']] }] });
+    faults['again.mp4'] = { redirect: 'http://cdn/s1/again.mp4' };
+    const v = makeVideo({ currentTime: 1 });
+    const h1 = Mp4Subs.extract('http://p/movie/again.mp4', v, () => {}, '');
+    await until(() => v.children.length === 1); show(v, 0);
+    await until(() => tracksOf(v)[0].cues.length === 2);
+    h1.cancel();
+    faults['again.mp4'].redirect = 'http://cdn/s2/again.mp4'; requests = [];
+    const v2 = makeVideo({ currentTime: 1 }), resolved = [];
+    const h2 = Mp4Subs.extract('http://p/movie/again.mp4', v2, u => resolved.push(u), '');
+    await until(() => resolved.length === 1); await wait(30);
+    ok('reconnect re-resolves, keeps index', resolved[0] === 'http://cdn/s2/again.mp4' && requests.length === 1 && requests[0].start === 0 &&
+      textsOf(tracksOf(v2)[0]).join('|') === 'One|Two' && tracksOf(v2)[0].mode === 'showing', { resolved, requests: requests.map(r => r.start), texts: textsOf(tracksOf(v2)[0]) });
+    h2.cancel();
+  }
+  {
+    // At 100 s only the empty gap sample (size 2) between the lines is in the window: nothing to read.
+    files['gap.mp4'] = buildMp4({ tracks: [{ lang: 'eng', cues: [[1, 2, 'A'], [200, 201, 'B']] }] }).bytes; requests = [];
+    const v = makeVideo({ currentTime: 100 });
+    const h = Mp4Subs.extract('http://p/movie/gap.mp4', v, () => {}, '');
+    await until(() => v.children.length === 1); show(v, 0);
+    for (let i = 0; i < 5; i++) { v.fire('timeupdate'); await wait(10); }
+    ok('empty samples are never read', requests.length === 1 && tracksOf(v)[0].cues.length === 0, { requests: requests.length });
+    h.cancel();
+    // Not an MP4 after all (the first box isn't one an MP4 starts with): no reads past the head.
+    const odd = Buffer.from(buildMp4({ tracks: [{ lang: 'eng', cues: [[1, 2, 'A']] }] }).bytes); odd.write('abcd', 4, 'latin1');
+    files['odd.mp4'] = asU8(odd); requests = [];
+    const w = makeVideo();
+    Mp4Subs.extract('http://p/movie/odd.mp4', w, () => {}, '');
+    await until(() => w._mkvSubsState !== 'discovering');
+    ok('a file that does not start like an MP4 settles unavailable', w._mkvSubsState === 'unavailable' && w.children.length === 0 && requests.length === 1,
+      { s: w._mkvSubsState, requests: requests.length });
+  }
+  const timed = async (name, fixture, now, timing) => {
+    files[name] = fixture.bytes;
+    ctx.Subs = { delay: 0, timing: () => timing };
+    const v = makeVideo({ currentTime: now });
+    const h = Mp4Subs.extract('http://p/movie/' + name, v, () => {}, '');
+    await until(() => v.children.length === 1); show(v, 0);
+    await until(() => tracksOf(v)[0].cues.length > 0, 500); await wait(30);
+    const got = textsOf(tracksOf(v)[0]);
+    h.cancel(); delete ctx.Subs;
+    return got;
+  };
+  {
+    const got = await timed('shift.mp4', twoParts([[300, 302, 'far']]), 140, { scale: 1, off: 40, delay: 0 });
+    ok('timing shift of +40 s fetches samples at source time now−40', got.join() === 'late', got);
+  }
+  {
+    // Shown at source × 23.976/25: the line at 7000 s in the file shows at 6713 s.
+    const scale = 23.976 / 25;
+    const got = await timed('scale.mp4', buildMp4({ tracks: [{ lang: 'eng', cues: [[6500, 6502, 'before'], [7000, 7003, 'right'], [7400, 7402, 'after']] }] }), 7000 * scale + 1, { scale, off: 0, delay: 0 });
+    ok('frame-rate scale 25/23.976 late in a 2 h file fetches the right samples', got.join() === 'right', got);
+  }
+  {
+    const got = await timed('long.mp4', buildMp4({ tracks: [{ lang: 'eng', cues: [[0, 120, 'long'], [200, 201, 'later']] }] }), 90, { scale: 1, off: 0, delay: 0 });
+    ok('long cue (0–120 s) found when seeking to 90 s', got.join() === 'long', got);
+  }
+  {
+    // Container gate: path extension or the known container, nothing else.
+    const calls = [];
+    const g = (u, c) => { const v = makeVideo(), h = Mp4Subs.extract(u, v, x => calls.push(x), c), st = v._mkvSubsState; h.cancel(); return st; };
+    const off = [g('http://p/movie/a.mkv', ''), g('http://p/x?name=a.mp4', ''), g('http://p/movie/a.avi', 'mkv')];
+    const on = [g('http://p/movie/a.MP4?t=1', ''), g('http://p/movie/a.m4v#x', ''), g('http://p/movie/a.mov', ''), g('http://p/signed', 'mp4')];
+    ok('extract gates on .mp4/.m4v/.mov or the container', off.every(x => x === undefined) && on.every(x => x === 'discovering') && calls.length === 3 &&
+      Mp4Subs.isMp4('http://p/signed', 'M4V') && !Mp4Subs.isMp4('http://p/a.mkv', ''), { off, on, calls: calls.length });
+  }
+  if (fail) { console.log(fail + ' mp4subs test(s) failed'); process.exit(1); }
+  console.log('all mp4subs tests passed');
+})().catch(e => { console.error(e); process.exit(1); });

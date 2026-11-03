@@ -353,5 +353,213 @@ var Mp4Subs = (function () {
     });
   }
 
-  return { box: box, readTrak: readTrak, samples: samples, text: text, describe: describe };
+  /* ---- the MP4 format for EmbedSubs (embedsubs.js runs the network, tracks and overlay) ----
+     Finding the tracks without downloading moov: hop top-level box headers to moov (a few 16-byte
+     reads even when it sits at the end of an 18 GB file), walk moov's children by their declared
+     sizes, read small tracks whole and big ones (video, audio: megabytes of tables) only as far as
+     their handler, then keep the tx3g subtitle tracks.  Every read is counted against the caps
+     below; going over gives up on subtitles for the file rather than reading on.
+     Index (kept with the file in rec.index): { meta: [{ label, srclang, forced }], tracks: [{ n, off,
+     size, s, e }] in attach order, total: samples with text }.  A work item is a run of samples
+     close together in the file (across the tracks being shown), read in one request. */
+  var HEAD_BYTES = 65536, WINDOW = 65536, RUN_WINDOW = 262144, HEADER_WINDOW = 1024;
+  var MAX_REQUESTS = 32, MAX_BYTES = 16 * 1048576, MAX_MS = 20000, MAX_TRAK = 4 * 1048576, MAX_TRACKS = 64;
+  var MAX_GAP = 65536, MAX_JOIN = 262144, MAX_SAMPLES = 100000, MAX_SAMPLE_BYTES = 4096;
+  var TOP_LEVEL = Object.create(null);
+  'ftyp moov mdat free skip wide pdin uuid'.split(' ').forEach(function (t) { TOP_LEVEL[t] = 1; });
+  function isSubtitleHandler(h) { return h === 'sbtl' || h === 'subt' || h === 'text'; }
+  function capped(why) { var e = new Error(why); e.capped = true; return e; }
+
+  function discover(head, range, rec, alive) {
+    var total = isFinite(head.total) ? head.total : head.length < HEAD_BYTES ? head.length : MAX_SAFE;
+    var first = box(head, 0, total, 0);
+    if (!first || !TOP_LEVEL[first.type]) return Promise.resolve(null);
+    var windows = [{ start: 0, bytes: head }], requests = 0, bytes = 0, began = Date.now();
+    // Bytes [pos, pos + len) from what was read already, or one read of at least `win` bytes (never
+    // past `limit`).  Resolves to { start, bytes } with bytes[0] at absolute position start.
+    function get(pos, len, win, limit) {
+      for (var i = 0; i < windows.length; i++) {
+        var w = windows[i];
+        if (pos >= w.start && pos + len <= w.start + w.bytes.length) return Promise.resolve(w);
+      }
+      var end = Math.min(limit, pos + Math.max(len, win));
+      if (end < pos + len) return Promise.reject(capped('box past the end of the file'));
+      if (++requests > MAX_REQUESTS || (bytes += end - pos) > MAX_BYTES || Date.now() - began > MAX_MS)
+        return Promise.reject(capped('the subtitle index is too big to look through'));
+      return range(pos, end - 1).then(function (b) {
+        if (!alive()) throw new Error('cancelled');
+        var got = { start: pos, bytes: b };
+        windows.push(got);
+        return got;
+      });
+    }
+    function header(pos, end, win) {
+      return get(pos, Math.min(16, end - pos), win, end).then(function (w) { return box(w.bytes, pos, end, w.start); });
+    }
+    // Top level: hop from box to box until moov.
+    function toMoov(pos) {
+      if (pos + 8 > total) return Promise.resolve(null);
+      return header(pos, total, 16).then(function (b) {
+        if (!b) return null;
+        return b.type === 'moov' ? b : toMoov(b.end);
+      });
+    }
+    // The wanted children of [start, end), by type, reading headers only.
+    function kids(start, end, want) {
+      var found = {}, left = want.length;
+      function step(pos) {
+        if (!left || pos + 8 > end) return Promise.resolve(found);
+        return header(pos, end, HEADER_WINDOW).then(function (b) {
+          if (!b) throw capped('malformed box');
+          if (want.indexOf(b.type) >= 0 && !found[b.type]) { found[b.type] = b; left--; }
+          return step(b.end);
+        });
+      }
+      return step(start);
+    }
+
+    var timescale = 0, candidates = [], chapters = Object.create(null), lastWasSub = false;
+    function noteChapters(list) { for (var i = 0; i < list.length; i++) chapters[list[i]] = true; }
+    function wholeTrak(t, win, moov) {
+      return get(t.start, t.size, win, moov.end).then(function (w) {
+        var info = readTrak(w.bytes, t.start - w.start, t.end - w.start);
+        if (!info) return;
+        noteChapters(info.chap);
+        lastWasSub = isSubtitleHandler(info.handler);
+        if (lastWasSub && candidates.length < MAX_TRACKS) candidates.push(info);
+      });
+    }
+    // A big track: its handler and chapter references from headers, the whole of it only if it's text.
+    function bigTrak(t, moov) {
+      lastWasSub = false;
+      return kids(t.start + t.headerSize, t.end, ['tref', 'mdia']).then(function (k) {
+        var chap = !k.tref || k.tref.size > 4096 ? Promise.resolve() : get(k.tref.start, k.tref.size, 0, k.tref.end).then(function (w) {
+          var at = k.tref.start - w.start, c = children(w.bytes, at + k.tref.headerSize, at + k.tref.size);
+          if (c && c.chap) for (var q = c.chap.start + c.chap.headerSize; q + 4 <= c.chap.end; q += 4) chapters[u32(w.bytes, q)] = true;
+        });
+        return chap.then(function () {
+          if (!k.mdia) return null;
+          return kids(k.mdia.start + k.mdia.headerSize, k.mdia.end, ['hdlr']);
+        }).then(function (m) {
+          if (!m || !m.hdlr || m.hdlr.size < m.hdlr.headerSize + 12) return null;
+          return get(m.hdlr.start, m.hdlr.headerSize + 12, HEADER_WINDOW, m.hdlr.end).then(function (w) {
+            var handler = fourcc(w.bytes, m.hdlr.start - w.start + m.hdlr.headerSize + 8);
+            if (isSubtitleHandler(handler) && t.size <= MAX_TRAK) return wholeTrak(t, 0, moov);
+          });
+        });
+      });
+    }
+    function walk(moov, pos) {
+      if (!alive()) return Promise.reject(new Error('cancelled'));
+      if (pos + 8 > moov.end) return Promise.resolve(true);
+      return header(pos, moov.end, HEADER_WINDOW).then(function (b) {
+        if (!b) throw capped('malformed box');
+        if (b.type === 'mvex') return false;             // fragmented: not supported
+        var next;
+        if (b.type === 'mvhd') next = get(b.start, b.headerSize + 24, HEADER_WINDOW, b.end).then(function (w) {
+          var p = b.start - w.start + b.headerSize;
+          timescale = w.bytes[p] === 1 ? u32(w.bytes, p + 20) : u32(w.bytes, p + 12);
+        });
+        else if (b.type === 'trak') next = b.size <= WINDOW ? wholeTrak(b, lastWasSub ? RUN_WINDOW : WINDOW, moov) : bigTrak(b, moov);
+        else next = Promise.resolve();
+        return next.then(function () { return walk(moov, b.end); });
+      });
+    }
+
+    return toMoov(0).then(function (moov) {
+      if (!moov) throw capped('no movie header');
+      return walk(moov, moov.start + moov.headerSize);
+    }).then(function (whole) {
+      if (!whole) { Log.debug('mp4subs', 'Fragmented MP4: subtitles not supported'); return null; }
+      var listed = candidates.filter(function (t) { return t.handler !== 'text' || !chapters[t.id]; });
+      if (!listed.length) return { none: 'empty' };
+      var usable = [], smp = [];
+      listed.forEach(function (t) {
+        var s = t.format === 'tx3g' && t.editOk ? samples(t, timescale, { maxSamples: MAX_SAMPLES, maxSampleBytes: MAX_SAMPLE_BYTES, fileSize: total }) : null;
+        if (s) { usable.push(t); smp.push(s); }
+        else Log.debug('mp4subs', 'Subtitle track ' + t.id + ' (' + t.format + ') left out');
+      });
+      if (!usable.length) return null;
+      var meta = describe(usable), count = 0;
+      var tracks = meta.map(function (m) {
+        var s = smp[m.trakIndex];
+        for (var k = 0; k < s.n; k++) if (s.size[k] > 2) count++;
+        return s;
+      });
+      return { meta: meta.map(function (m) { return { label: m.label, srclang: m.srclang, forced: m.forced }; }), tracks: tracks, total: count };
+    }).catch(function (e) {
+      if (e && e.capped) { Log.debug('mp4subs', 'Subtitles not read: ' + e.message); return null; }
+      throw e;
+    });
+  }
+
+  // The first sample whose end is after t (ends only grow in a text track).
+  function firstEndingAfter(T, t) {
+    var lo = 0, hi = T.n;
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (T.e[mid] <= t) lo = mid + 1; else hi = mid; }
+    return lo;
+  }
+  function candidatesOf(rec, now, ctx) {
+    var ix = rec.index, picks = [];
+    for (var i = 0; ctx && i < ix.tracks.length; i++) {
+      var want = ctx.demand(i);
+      if (!want) continue;
+      // The window is in shown time; samples are in the file's time.
+      var tm = ctx.timing(i) || { scale: 1, off: 0, delay: 0 }, scale = tm.scale > 0 ? tm.scale : 1, shift = (tm.off || 0) + (tm.delay || 0);
+      var from = want === 'now' ? now - 30 : want.from, to = want === 'now' ? now + 60 : want.to;
+      var a = (from - shift) / scale, b = (to - shift) / scale, here = (now - shift) / scale, T = ix.tracks[i];
+      for (var k = firstEndingAfter(T, a); k < T.n && T.s[k] < b; k++) {
+        if (T.size[k] <= 2 || rec.fetched[i + ':' + k]) continue;
+        picks.push({ t: i, k: k, start: T.off[k], end: T.off[k] + T.size[k], dist: T.s[k] > here ? T.s[k] - here : T.e[k] < here ? here - T.e[k] : 0 });
+      }
+    }
+    // Samples close together in the file go in one read.
+    picks.sort(function (x, y) { return x.start - y.start; });
+    var items = [], run = null;
+    for (var p = 0; p < picks.length; p++) {
+      var s = picks[p];
+      if (run && s.start - run.end <= MAX_GAP && Math.max(run.end, s.end) - run.start <= MAX_JOIN) {
+        run.end = Math.max(run.end, s.end); run.members.push([s.t, s.k]); run.keys.push(s.t + ':' + s.k); run.dist = Math.min(run.dist, s.dist);
+      } else {
+        run = { start: s.start, end: s.end, members: [[s.t, s.k]], keys: [s.t + ':' + s.k], dist: s.dist };
+        items.push(run);
+      }
+    }
+    items.forEach(function (it) { it.id = it.start + '-' + it.end; });
+    return items.sort(function (x, y) { return x.dist - y.dist || x.start - y.start; });
+  }
+
+  var MP4 = {
+    id: 'mp4',
+    headBytes: HEAD_BYTES,
+    startupDeadlineMs: 3000,
+    reuseSession: false,
+    discover: discover,
+    describe: function (index) { return index.meta; },
+    candidates: candidatesOf,
+    complete: function (rec) { var n = 0; for (var key in rec.fetched) n++; return n >= rec.index.total; },
+    read: function (rec, item, range, alive) {
+      return range(item.start, item.end - 1).then(function (buf) {
+        var out = [];
+        if (!alive()) return out;
+        for (var m = 0; m < item.members.length; m++) {
+          var t = item.members[m][0], k = item.members[m][1], T = rec.index.tracks[t], at = T.off[k] - item.start;
+          var line = text(buf, at, at + T.size[k]);
+          if (line) out.push({ track: t, s: T.s[k], e: T.e[k], text: line });
+        }
+        return out;
+      });
+    }
+  };
+
+  // MP4, M4V and QuickTime files, by the link's path or the container My media or the provider names.
+  function isMp4(url, container) {
+    return /\.(mp4|m4v|mov)$/i.test(String(url || '').split(/[?#]/)[0]) || /^(mp4|m4v|mov)$/i.test(container || '');
+  }
+  function extract(url, video, onResolved, container) {
+    if (!isMp4(url, container)) { if (onResolved) onResolved(url); return { cancel: function () {} }; }
+    return EmbedSubs.run(url, video, onResolved, MP4);
+  }
+
+  return { box: box, readTrak: readTrak, samples: samples, text: text, describe: describe, MP4: MP4, isMp4: isMp4, extract: extract };
 })();

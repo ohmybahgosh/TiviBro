@@ -52,6 +52,7 @@ function setup(opts) {
     addEventListener: (t, f) => { winL[t] = f; }
   };
   if (opts.mkvSubs) ctx.MkvSubs = opts.mkvSubs;
+  if (opts.mp4Subs) ctx.Mp4Subs = opts.mp4Subs;
   ctx.window = ctx;
   vm.createContext(ctx);
   const load = (f, name) => vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js', f), 'utf8') + '\nthis.' + name + ' = ' + name + ';', ctx);
@@ -357,6 +358,32 @@ t.P.setAspect('contain', t.P.current);
 ok('Original for this channel clears the transform', t.video.style.objectFit === 'contain' && t.video.style.transform === '', t.video.style.transform);
 t.settings.display = 'bogus';
 ok('an unknown stored value falls back to Original', t.P.displayFor({ k: 'c7' }) === 'contain');
+
+// Native MP4 playback: the same shared session URL, through the MP4 reader.
+const fakeMp4 = (o) => ({ isMp4: (u, c) => /\.(mp4|m4v|mov)$/i.test(u.split(/[?#]/)[0]) || /^(mp4|m4v|mov)$/i.test(c || ''),
+  extract(url, video, resolved, ext) { o.calls.push({ url, resolved, ext }); return { cancel() { o.cancelled++; } }; } });
+let mp4 = { calls: [], cancelled: 0 }, mkvCalls = 0;
+t = setup({ mp4Subs: fakeMp4(mp4), mkvSubs: { extract(u, v, r) { mkvCalls++; r(u); return { cancel() {} }; } } });
+t.P.play({ n: 'Episode', url: 'http://provider/series/u/p/7.mp4' }, { live: false });
+ok('MP4 native playback waits for the shared URL', t.video.src === '' && mp4.calls.length === 1 && typeof mp4.calls[0].resolved === 'function' && mkvCalls === 0);
+mp4.calls[0].resolved('http://relay/session/two');
+ok('native MP4 video uses the URL resolved by subtitle discovery', t.video.src === 'http://relay/session/two');
+t.P.stop();
+ok('stopping native MP4 playback cancels subtitle discovery', mp4.cancelled === 1);
+
+mp4 = { calls: [], cancelled: 0 };
+t = setup({ mp4Subs: fakeMp4(mp4) });
+t.P.play({ n: 'Signed movie', url: 'http://mock/signed-file' }, { live: false, meta: { item: { ext: 'mp4' } } });
+ok('My media passes mp4 container for extensionless links', mp4.calls.length === 1 && mp4.calls[0].ext === 'mp4');
+
+mp4 = { calls: [], cancelled: 0 }; mkvCalls = 0;
+t = setup({ mp4Subs: fakeMp4(mp4), mkvSubs: { extract(u, v, r) { mkvCalls++; r(u); return { cancel() {} }; } } });
+t.P.play({ n: 'Film', url: 'http://provider/movie/u/p/3.mkv' }, { live: false });
+ok('MKV still goes to MkvSubs', mkvCalls === 1 && mp4.calls.length === 0 && t.video.src === 'http://provider/movie/u/p/3.mkv');
+t.P.stop();
+t = setup({ mp4Subs: fakeMp4(mp4) });
+t.P.play({ n: 'Clip', url: 'http://provider/movie/u/p/4.avi' }, { live: false });
+ok('other files play directly, without subtitle extraction', mp4.calls.length === 0 && t.video.src === 'http://provider/movie/u/p/4.avi');
 
 if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }
 console.log('all player tests passed');
