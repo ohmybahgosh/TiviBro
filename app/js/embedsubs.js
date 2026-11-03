@@ -351,6 +351,9 @@ var EmbedSubs = (function () {
     function startPump() {
       var busy = false, failures = {}, retryAt = {}, base = adapter.retryBaseMs || 1000;
       var R = rec.retry || (rec.retry = { refused: 0, pausedUntil: 0, fresh: false });
+      // A seek's reader takes the session when it starts reading, not when it was made: the player
+      // makes it in the same step as cancelling the old one, before a renewal just answered is saved.
+      if (!onResolved && rec.resolved) wrapped = rec.resolved;
       function stop() { video._mkvSubsState = 'error'; giveUp(); paint(); }
       function refusedBy(e) {
         busy = false;
