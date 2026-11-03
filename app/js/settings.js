@@ -91,6 +91,7 @@ var Settings = (function () {
       langMenu('Fallback audio language', 'Off (the stream\'s own track)', s.audioFallback, function (v) { s.audioFallback = v; save(); });
     }, function () { return langName(s.audioFallback, 'Off'); }));
     out.push(toggle('Prefer surround sound', 'Picks the 5.1 or Dolby track when there is one in that language.  Your soundbar or TV needs to support it.', function () { return !!s.audioSurround; }, function (v) { s.audioSurround = v; save(); }));
+    out = out.concat(converterRows());
     out.push(action('Subtitles automatically', 'Turns subtitles on when a stream includes them.  You can still switch them from OK in fullscreen.', function () {
       UI.menu('Subtitles automatically', [{ label: 'Off', sub: !s.autoSubs ? 'on' : '', action: function () { s.autoSubs = false; save(); } },
         { label: 'Any language', sub: s.autoSubs && !s.subsLang ? 'on' : '', action: function () { s.autoSubs = true; s.subsLang = ''; save(); } }]
@@ -114,6 +115,34 @@ var Settings = (function () {
       }, 'Empty signs out.');
     }, function () { return Subs.user ? (Subs.allowed ? Subs.allowed + ' a day' : 'Signed in') : '5 a day'; }));
     out.push(toggle('Play next episode automatically', '', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); }));
+    return out;
+  }
+
+  /* ---------- the audio converter (convert.js) ---------- */
+  var convSt = null, convAt = 0;
+  function convFresh() {
+    if (typeof Convert === 'undefined' || (convAt && Date.now() - convAt < 5000)) return;
+    convAt = Date.now();
+    Convert.status(true).then(function (x) { convSt = x; live(); });
+  }
+  function convLine() { var r = info('Audio converter', ''); r.value = function () { return Net.port ? Convert.describe(convSt) : 'needs the network helper'; }; return r; }
+  function converterRows() {
+    if (typeof Convert === 'undefined') return [];
+    var s = S(), out = [];
+    convFresh();
+    out.push(choice('Convert audio the TV can\'t play', 'Some movies have only sound this TV can\'t decode: DTS on LG TVs from 2020 to 2022, Dolby TrueHD on every LG TV, and FLAC surround.  Automatic turns that sound into Dolby Digital while the movie plays, with a small audio converter kept on the TV.  The picture is not touched.  Off plays them as they are, often without sound.',
+      ['auto', 'off'], ['Automatic', 'Off'], function () { return s.convertAudio === 'off' ? 'off' : 'auto'; }, function (v) { s.convertAudio = v; save(); }));
+    out.push(convLine());
+    var ready = convSt && convSt.state === 'ready';
+    if (ready && !/TIVIBRO_FFMPEG/.test(convSt.where || '')) out.push(action('Remove the converter', 'Frees about 3 MB of the TV\'s storage.  TiviBro offers it again when a movie needs it.', function () {
+      Convert.remove().then(function (x) { convSt = x; s.convertAsked = false; save(); U.toast('Audio converter removed'); build(); }, function (e) { U.toast(e.message, 5000); });
+    }));
+    else if (!ready) out.push(action('Get the converter now', 'Downloads it (about 2 MB) from TiviBro\'s releases on GitHub, checks its fingerprint and keeps it on the TV\'s storage, so movies don\'t wait for it.', function () {
+      if (!Net.port) { U.toast('The network helper is not running', 4000); return; }
+      U.toast('Getting the audio converter…', 30000);
+      Convert.get(function (pc) { convSt = { state: 'downloading', percent: pc }; paint(); }).then(function (x) { convSt = x; U.toast('Audio converter ready', 3000); build(); },
+        function (e) { convAt = 0; convFresh(); U.toast(e.message, 7000); build(); });
+    }));
     return out;
   }
 
@@ -828,6 +857,7 @@ var Settings = (function () {
     out.push(page('What this TV can play', 'Video, HDR and sound formats, for the built-in player and the TV player.', 'What this TV can play', function () {
       var o = [info('From the TV\'s own answers plus what LG TVs are known to do.  Dolby Vision and DTS are not always reported correctly, so the known rules win.', '')];
       Caps.report().forEach(function (r) { o.push(info(r[0], r[1])); });
+      if (typeof Convert !== 'undefined') { convFresh(); o.push(convLine()); }
       return o;
     }));
     if (Player.current) out.push(info('Playing now', [Player.media, Player.engine].filter(Boolean).join('   ') || 'details not known yet'));
@@ -837,6 +867,7 @@ var Settings = (function () {
     var st = Net.info && Net.info.store;
     out.push(info('Storage', st ? st.where + (st.freeMB >= 0 ? ', ' + st.freeMB.toLocaleString() + ' MB free' : '') : 'the TV app\'s own'));
     out.push(info('Network setting', (S().network || 'auto') === 'direct' ? 'Direct' : 'Automatic'));
+    if (typeof Convert !== 'undefined') { convFresh(); out.push(convLine()); }
     out.push(info('TiviBro', TIVIBRO_VERSION));
     out.push(info('Browser engine', (/Chrome\/([\d.]+)/.exec(navigator.userAgent) || [])[1] || navigator.userAgent.slice(0, 60)));
     out.push(info('Channels loaded', String(L.count())));

@@ -260,8 +260,23 @@ It tries hard never to just stop:
 - **Dolby Vision** plays through the TV's own player, which switches the screen into Dolby Vision itself.
 - **HDR10 and HLG** stay on TiviBro's built-in player by default, for its steadier buffering.  If HDR pictures look grey or washed out, set **Settings > Playback > HDR and Dolby Vision** to *TV player for all HDR*.
 - **HEVC, AV1, AAC, Dolby Digital (AC-3) and Dolby Digital Plus (E-AC-3, Atmos)** play on webOS 6 and later TVs.  Anything the built-in player can't decode moves to the TV's player automatically.
-- **DTS:** LG TVs from 2020, 2021 and 2022 (including the C1 and C2) can't play DTS sound.  TiviBro warns you when a movie only has DTS, so pick another audio track under **Options** if there is one.
+- **DTS, Dolby TrueHD and FLAC surround:** some sound the TV can't play at all.  TiviBro converts it for you, see [Sound the TV can't play](#sound-the-tv-cant-play).
 - **Settings > Updates, about and diagnostics > What this TV can play** lists every format and which player handles it on your TV.
+
+### Sound the TV can't play
+
+LG TVs from 2020, 2021 and 2022 (webOS 5, 6 and 22, including the C1 and C2) can't play **DTS** sound at all.  No LG TV plays **Dolby TrueHD**, and **FLAC** with more than two channels doesn't play either.  Many movie files have one of those as their only sound, so they play with no sound.
+
+TiviBro checks the sound before a movie, episode or My media file starts:
+
+- **Another audio track the TV can play**, in the same language (or your **Audio language**): TiviBro plays that one.  Nothing to convert.
+- **Only sound the TV can't play:** the network helper converts it to **Dolby Digital (AC-3)** while you watch, and TiviBro says so once ("Converting DTS audio for this TV").  The picture isn't touched, only the sound.  5.1 stays 5.1; 7.1 becomes 5.1.  It works with a soundbar or receiver too, since every one of them takes Dolby Digital.
+- **Seeking** in a converted movie takes a moment longer than usual: the conversion starts again from the new spot.  The time, the progress bar, where you left off and subtitles all keep the movie's own time.
+- **Audio track** in the quick menu lists the movie's own tracks.  Picking another one the TV can't play converts that one instead.
+
+The conversion needs the **audio converter**, a small program (about 2 MB) the network helper downloads once from TiviBro's releases on GitHub, checks and keeps on the TV's storage.  The first movie that needs it asks: *Get* downloads it and the movie starts with sound; *Not now* plays the movie as it is, with no sound, and says why.  You can get it or remove it any time in **Settings > Playback**.  It is turned off or on with **Settings > Playback > Convert audio the TV can't play**.
+
+Live channels with sound the TV can't play are converted the same way, when the stream says what its sound is.
 
 ### Other versions of a channel
 
@@ -535,7 +550,7 @@ The watchlist needs the guide to know what's on: with an XMLTV guide it sees eve
 | [**Channels and groups**](#settings-channels-and-groups) | Manage groups, sort orders, your groups first, Recent and Favorites, My teams, Movies on now, event channels, recently added, your own groups, hidden groups and channels |
 | [**Channel and group names**](#settings-channel-and-group-names) | Name clean-up rules, hiding channels with nothing on, your prefixes and suffixes, group prefixes and suffixes, previews |
 | [**Reminders and watchlist**](#settings-reminders-and-watchlist) | When reminders come up and what they do, the watchlist, and every reminder coming up, with Cancel and Cancel all |
-| [**Playback**](#settings-playback) | Buffer profile, player engine, MPEG-TS or HLS, network helper, HDR and Dolby Vision, aspect, catch-up skip steps, info panel when switching, audio, subtitles and captions, next episode |
+| [**Playback**](#settings-playback) | Buffer profile, player engine, MPEG-TS or HLS, network helper, HDR and Dolby Vision, aspect, catch-up skip steps, info panel when switching, audio, converting sound the TV can't play, subtitles and captions, next episode |
 | [**My media**](#settings-my-media) | Add media sources, rescan, fetch details, the TMDB token, sort orders, metadata language, each source |
 | [**Remote and buttons**](#settings-remote-and-buttons) | Remap buttons in the player and lists, quick menu buttons, learn a button, button tester |
 | [**Appearance and start screen**](#settings-appearance-and-start-screen) | Start screen, OK in the guide, guide layout, catch-up marks, theme (Black and white, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin, Solarized, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai, or your own mix), accent color (twelve presets or your own from a hue and brightness), background (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), focus style, text size, panel transparency, logos, clock, channel numbers |
@@ -793,6 +808,9 @@ How channels start, how much video TiviBro holds, which player it uses, what it 
 | **Audio language** | **The stream's own choice** · English · Spanish · French · German · and more | Under **Audio and subtitles**.  When a channel or movie has more than one audio track, tries this language, then the fallback language if you set one, else keeps the stream's own track.  This also applies to My media.  Language tags must be present in the file or stream.  Audio description tracks are skipped unless nothing else is in that language.  A track you pick from the quick menu wins until you change channel. |
 | **Fallback audio language** | **Off** · English · and more | Try this language when the preferred audio language is missing.  Off keeps the stream's own track.  For Dutch then English, set Audio language to Dutch and the fallback to English. |
 | **Prefer surround sound** | On · **Off** | Picks the 5.1 or Dolby track in that language when there is one.  Your TV or soundbar needs to support it. |
+| **Convert audio the TV can't play** | **Automatic** · Off | DTS on LG TVs from 2020 to 2022, Dolby TrueHD on every LG TV, and FLAC surround don't play.  *Automatic* plays another audio track the TV can play if the movie has one, or has the network helper turn the sound into Dolby Digital while you watch.  *Off* plays those movies as they are, often without sound.  See [Sound the TV can't play](#sound-the-tv-cant-play). |
+| **Audio converter** | (information) | Whether the audio converter is on the TV, its size and where it is kept, or how far its download has got. |
+| **Get the converter now** / **Remove the converter** | | Downloads the audio converter (about 2 MB) from TiviBro's releases on GitHub, checks its fingerprint and keeps it on the TV's storage, so the first movie that needs it doesn't wait.  Once it is there, **Remove the converter** deletes it again; TiviBro then asks before getting it next time. |
 | **Subtitles automatically** | **Off** · Any language · English only · Spanish only · … | Turns subtitles on when a stream has them; with a language, only subtitles in that language.  You can still switch them from the quick menu. |
 | **Closed captions** | On · **Off** | Captions on live TV in fullscreen, when the channel sends them (most US channels do).  The same switch as **Captions** in the quick menu.  Not with the TV player. |
 | **Caption size** | Small · **Medium** · Large | |
@@ -1055,9 +1073,9 @@ Your version, new versions from GitHub, and finding out what's wrong.  See [Upda
 | **View network helper log** | | Every request the helper made: status, time, size, and the network error if any. |
 | **Detailed logging** | On · **Off** | Also logs every request and buffer event.  Turn it on while chasing a problem.  It stays on until you turn it off. |
 | **Clear log** | | Empties the log. |
-| **What this TV can play ›** | | Every video, HDR and sound format, and which player handles it on this TV.  It combines the TV's own answers with what LG TVs are known to do (Dolby Vision and DTS aren't always reported correctly). |
+| **What this TV can play ›** | | Every video, HDR and sound format, and which player handles it on this TV.  It combines the TV's own answers with what LG TVs are known to do (Dolby Vision and DTS aren't always reported correctly).  **Converted sound** says which formats the audio converter turns into Dolby Digital on this TV, and **Audio converter** whether it is there. |
 | **Playing now** | (information) | The current stream's format and player. |
-| **Status** | (information) | The network helper, where TiviBro stores things, the network setting, your TiviBro version, the browser engine, how many channels are loaded, and the command for debugging from a computer. |
+| **Status** | (information) | The network helper, where TiviBro stores things, the network setting, the audio converter, your TiviBro version, the browser engine, how many channels are loaded, and the command for debugging from a computer. |
 | **Storage** | (information) | Where TiviBro keeps playlists, guides and movie and show lists on the TV, and how much room is left there.  It picks the TV's storage that survives updates and has the most room (app storage on recent LG TVs, not the smaller user data), and keeps it readable by TiviBro only. |
 
 Logs always mask usernames and passwords.
@@ -1303,7 +1321,7 @@ You'll see it in three places: **Connection** on the first screen and in **Setti
 | Changes don't show on the TV | Check the bar at the bottom of the editor.  If it still counts changes, press **Send to TV**. |
 | Wrong editor password | It's on the TV under **Settings > Phone app and web editor**.  After five wrong tries, wait a minute. |
 | HDR looks grey or washed out | **Settings > Playback > HDR and Dolby Vision > TV player for all HDR**. |
-| A movie plays with no sound | It may only have DTS sound, which 2020 to 2022 LG TVs can't play.  The movie details warn about this; pick another audio track under **Options** if there is one. |
+| A movie plays with no sound | It may only have DTS, Dolby TrueHD or FLAC surround sound, which the TV can't play.  Check that **Settings > Playback > Convert audio the TV can't play** is *Automatic* and that **Audio converter** says *Ready* (**Get the converter now** if not).  See [Sound the TV can't play](#sound-the-tv-cant-play). |
 | Dolby Vision shows odd green or purple colours | Make sure **HDR and Dolby Vision** isn't set to *Built-in player*. |
 | A remote button does nothing | **Settings > Remote and buttons > Button tester**, then **Learn a button**. |
 | Something crashed, or TiviBro closed by itself | The next time it starts, TiviBro asks whether to report it and says what it was doing (loading which guide, playing which channel, how much memory it used).  **Send a report now** sends it from the TV straight away; **Report with my phone** shows the code for your phone so you can add what you were doing.  The report carries the log of the session that closed.  The TV turning off or restarting, and updates, don't count as a crash.  Test builds also have **Report a problem** at the bottom of the menu, and it is always in **Settings > Updates, about and diagnostics**.  **View app log with earlier sessions** shows the log on the TV.  Logs mask usernames and passwords.  When the developer answers your report, TiviBro shows the reply; if it still happens, **Still happening** sends a fresh log to the same report. |

@@ -16,6 +16,7 @@ Plain scripts loaded in order by `app/index.html` (no modules, no bundler: webOS
 | epg.js | `Epg` | XMLTV per playlist (worker parsed), short EPG fallback, name matching, assignment |
 | pubepg.js | `PubEpg` | Public guide fill-in: sources (epg.pw, iptv-epg.org), countries, matching keys (also run in the guide worker); `Epg` runs it as a second pass for channels with no guide |
 | caps.js | `Caps` | What the TV decodes (MSE vs TV player, plus known LG rules such as no DTS on 2020-2022 models), stream descriptions from HLS / mpegts.js / Xtream, and pipeline routing for HDR, Dolby Vision and codecs |
+| convert.js | `Convert` | Sound the TV can't play (DTS on 2020-2022 models, TrueHD, FLAC surround): before a movie starts, picks a playable audio track or has the helper convert the sound to AC-3 (`/convert`), and offers the audio converter download once |
 | player.js | `Player` | mpegts.js / hls.js / TV player engines, buffer profiles, a cushion that grows on unsteady streams, a start check every 50ms until the first frame, timestamp-jump following, starvation detection, watchdog, reconnect ladder (backoff with jitter, offline wait, other pipelines, slow retry), resume, live pause, suspend/resume |
 | vlist.js | `VList` | Virtual list with pooled rows |
 | ui.js | `UI` | Key routing, long-press, modal menus, prompts |
@@ -41,7 +42,7 @@ Plain scripts loaded in order by `app/index.html` (no modules, no bundler: webOS
 
 ## Network helper (`service/`)
 
-Files: `service.js` (the webOS service: start subscription, wake activity), `proxy.js` (the relay and its routes), `guide.js` (big guides), `vod.js` (keeps movie and show lists), `kv.js` (keeps the playlist), `editor.js` (the web editor's LAN server), `companion.js` (the phone app's LAN API on 47810 and UDP discovery), `remind.js` (reminders with TiviBro closed), `rawhttp.js`, `tssync.js`, `unzip.js`, `compat.js`.
+Files: `service.js` (the webOS service: start subscription, wake activity), `proxy.js` (the relay and its routes), `guide.js` (big guides), `vod.js` (keeps movie and show lists), `kv.js` (keeps the playlist), `editor.js` (the web editor's LAN server), `companion.js` (the phone app's LAN API on 47810 and UDP discovery), `remind.js` (reminders with TiviBro closed), `ffmpeg.js` and `convert.js` (the audio converter: download, probe and conversion, see docs/FFMPEG.md), `rawhttp.js`, `tssync.js`, `unzip.js`, `compat.js`.
 
 webOS enforces CORS for installed apps and most providers send no CORS headers.  `service.js` wraps `proxy.js`, a localhost relay on **127.0.0.1:47811** using path-style URLs: `/x/<scheme>/<host[:port]>/<path>`.  It adds CORS headers, rewrites redirects, passes Range through, accepts self-signed certs, exposes `/ping` and `/log`.  It keeps provider connections alive between requests and remembers DNS answers for a minute, so channel changes don't wait on the TV's resolver.  When Node's HTTP parser refuses a provider's reply (stray control characters, `Content-Length` twice), the request is repeated through `rawhttp.js`, a small forgiving HTTP/1.x reader.  Live MPEG-TS passes through `tssync.js`, which drops stray bytes and keeps 188-byte packets aligned, so a corrupted stretch costs a glitch instead of a stalled demuxer.  The app keeps a `start` subscription open; when the app closes the service exits.
 

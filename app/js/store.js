@@ -52,6 +52,8 @@ var Store = (function () {
     accentHue: 210, accentLight: 62,
     focusStyle: 'fill',         // fill | ring (white outline as well)
     hdrRoute: 'auto',           // auto (Dolby Vision on the TV player) | tv (all HDR on the TV player) | builtin
+    convertAudio: 'auto',       // auto | off  sound the TV can't play converted to AC-3 by the helper (convert.js)
+    convertAsked: false,        // the offer to get the audio converter was shown once
     textSize: 'm',              // s | m | l
     clockDate: false,           // show the date next to the clock
     numFont: 'tv',              // tv | even (every digit the same width) | mono (fixed width, slashed zero)

@@ -375,7 +375,7 @@ var Phone = (function () {
   function snapshot() {
     var c = Views.playing, v = Views.vod, video = document.querySelector('video'), out = { tab: Views.tab, full: !!Views.full, mode: Views.mode || '' };
     if (Views.mode === 'vod' && v && v.meta) {
-      out.vod = { title: String(v.meta.title || ''), pos: video ? Math.round(video.currentTime) : 0, dur: video && isFinite(video.duration) ? Math.round(video.duration) : 0 };
+      out.vod = { title: String(v.meta.title || ''), pos: video ? Math.round(Player.position) : 0, dur: Math.round(Player.duration || 0) };
       out.paused = !!Player.paused;
     } else if (c) {
       var nn = Epg.peek(c), now = nn && nn.now, next = nn && nn.next;

@@ -15,7 +15,9 @@
        does not report it.  Through MSE it is not dependable, so Dolby Vision goes to the TV player.
      - DTS: not on LG TVs from 2020, 2021 and 2022 (webOS 5, 6 and 22, including the C1 and C2),
        whatever webOS version they were later updated to.  Back on 2023 models.
+     - Dolby TrueHD: no LG TV decodes it.
      - FLAC with more than two channels does not play.
+   Sound that can't play (unplayable()) can be converted to AC-3 by the helper (convert.js).
    probe() asks the TV as well and keeps both answers, so Settings > Updates, about and diagnostics can show them. */
 var Caps = (function () {
   'use strict';
@@ -226,9 +228,24 @@ var Caps = (function () {
       }
     }
     var au = m.audio || [];
-    if (au.length && au.every(function (a) { return (a === 'dts' && !c.dts) || (a === 'truehd' && !c.tv.truehd) || (a === 'flac' && m.channels > 2); }))
+    if (au.length && au.every(function (a) { return unplayable(a, m.channels, c); })) {
       out.warn = (NAMES[au[0]] || au[0]) + (au[0] === 'flac' ? ' surround' : '') + ' sound, which this TV can\'t play.  If there is no sound, pick another audio track.';
+      out.unplayable = au[0];
+    }
     return out;
+  }
+
+  /* Sound this TV can't play at all, through either player: the reason ('DTS', 'Dolby TrueHD',
+     'FLAC surround'), or '' when it plays.  The audio converter (convert.js) turns these into AC-3.
+     codec: a Caps name or ffmpeg's (dca, mlp, truehd, pcm_s24le...); channels: 0 when unknown. */
+  function unplayable(codec, channels, c) {
+    c = c || probe();
+    var a = audioCodec(codec);
+    if (a === 'dca') a = 'dts';
+    if (a === 'dts' && !c.dts) return 'DTS';
+    if ((a === 'truehd' || a === 'mlp') && !c.tv.truehd) return 'Dolby TrueHD';
+    if (a === 'flac' && channels > 2) return 'FLAC surround';
+    return '';
   }
 
   // Rows for Settings > Diagnostics > What this TV can play.
@@ -238,10 +255,15 @@ var Caps = (function () {
     rows.push(['webOS', c.webos ? String(c.webos) : 'not webOS'], ['TV model', c.model || 'unknown'], ['Model year', c.year ? String(c.year) : 'unknown']);
     VIDEO.concat(AUDIO).forEach(function (x) { rows.push([x[1], 'built-in ' + yn(c.mse[x[0]]) + '   TV player ' + yn(c.tv[x[0]])]); });
     CONTAINERS.forEach(function (x) { rows.push([x[1] + ' files', 'TV player ' + yn(c.containers[x[0]])]); });
+    // What the audio converter (Settings > Playback) turns into Dolby Digital on this TV.
+    var conv = [unplayable('dts', 6, c), unplayable('truehd', 8, c), unplayable('flac', 6, c)].filter(Boolean);
+    rows.push(['Converted sound', conv.length ? conv.join(', ') + ' become Dolby Digital (AC-3) through the audio converter, when it is on' : 'nothing needs converting']);
     return rows;
   }
 
   return { probe: probe, apply: apply, loadSystemInfo: loadSystemInfo, webosVersion: webosVersion, modelYear: modelYear,
     videoCodec: videoCodec, audioCodec: audioCodec, fromHlsLevel: fromHlsLevel, bestHlsLevel: bestHlsLevel, fromMpegts: fromMpegts, fromXtream: fromXtream,
-    label: label, route: route, report: report };
+    label: label, route: route, report: report, unplayable: unplayable,
+    // Tests: pretend to be a given TV model (OLED65C2PUA is a 2022 C2, no DTS).
+    _model: function (m) { sysInfo.model = m || ''; probed = null; } };
 })();

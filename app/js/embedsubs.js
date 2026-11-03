@@ -98,6 +98,9 @@ var EmbedSubs = (function () {
     var cancelled = false, started = false;
     function startVideo(resolved) { if (!cancelled && !started && onResolved) { started = true; onResolved(resolved); } }
     video._mkvSubsState = 'discovering';
+    /* The movie's own time.  Converted sound (player.js) plays a stream that starts at the seek, so the
+       video's clock is behind the movie by video._tbOffset. */
+    function vnow() { return (video.currentTime || 0) + (video._tbOffset || 0); }
     var overlay = null, lastText = '', selectedTrack = null;
     if (video.parentNode && video.style) {
       overlay = document.createElement('div');
@@ -135,14 +138,14 @@ var EmbedSubs = (function () {
         // each frame (some native players leave activeCues empty, so it can't be used).
         var from = 0;
         if (useLive) {
-          var lo = 0, hi = list.length, t = video.currentTime;
+          var lo = 0, hi = list.length, t = vnow();
           while (lo < hi) { var mid = (lo + hi) >> 1; if (list[mid].startTime <= t) lo = mid + 1; else hi = mid; }
           from = Math.max(0, lo - 12);           // a few earlier ones that may still be on screen
         }
         for (var b = from; b < (useLive ? Math.min(list.length, from + 13) : list.length); b++) {
           var s = useLive ? list[b].startTime : list[b].s * scale + delay, e = useLive ? list[b].endTime : list[b].e * scale + delay;
           if (!useLive) { s = Math.max(0, s); e = Math.max(s + 0.05, e); }      // as Subs places a moved line (subs.js placed())
-          if (s <= video.currentTime && e > video.currentTime)
+          if (s <= vnow() && e > vnow())
             lines.push(list[b].text.replace(/<\/?(?:b|i|u|font)(?:\s[^>]*)?>/gi, ''));
         }
       }
@@ -281,7 +284,7 @@ var EmbedSubs = (function () {
       for (var k in loads) {
         if (!rec || !rec.index) continue;
         var one = loads[k], only = { demand: function (i) { return String(i) === k ? one : null; }, timing: ctx.timing };
-        if (rec.done || !adapter.candidates(rec, video.currentTime || 0, only).length) one.settle(null);
+        if (rec.done || !adapter.candidates(rec, vnow(), only).length) one.settle(null);
       }
     }
     function ensureTracks(trackMeta) {
@@ -406,7 +409,7 @@ var EmbedSubs = (function () {
         if (!hasBuffer()) { retryTimer = setTimeout(pump, 1000); return; }
         var wait = R.pausedUntil - Date.now();
         if (wait > 0) { retryTimer = setTimeout(pump, wait); return; }
-        var now = video.currentTime || 0;
+        var now = vnow();
         var items = adapter.candidates(rec, now, ctx);
         if (!items.length) { rec.done = adapter.complete(rec, now); checkLoads(); return; }
         var clock = Date.now(), earliest = Infinity;

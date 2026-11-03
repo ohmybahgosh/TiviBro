@@ -199,7 +199,7 @@ var Subs = (function () {
   function drawLines() {
     var v = video();
     if (!v || !v.textTracks || !v.parentNode) return;
-    var stage = v.parentNode, full = !stage.classList || stage.classList.contains('full'), lines = [], drawing = false, t = v.currentTime || 0;
+    var stage = v.parentNode, full = !stage.classList || stage.classList.contains('full'), lines = [], drawing = false, t = (v.currentTime || 0) + (v._tbOffset || 0);   // converted sound: see player.js
     for (var i = 0; full && i < v.textTracks.length; i++) {
       var tr = v.textTracks[i];
       if (tr.kind !== 'subtitles' || tr.mode !== 'showing' || tr._tbMkv || gone(tr)) continue;
@@ -378,7 +378,7 @@ var Subs = (function () {
     if (t._embedLoad) {
       // Read the reference where the target has lines (and 30 s around), within Line up's ±120 s search
       // around now, then match.  Its reading stops once it settles.
-      var tl = cuesOf(showing), now = (video() || {}).currentTime || 0;
+      var tl = cuesOf(showing), now = ((video() || {}).currentTime || 0) + ((video() || {})._tbOffset || 0);
       var from = tl.length ? Math.max(tl[0].startTime - 30, now - 150) : now - 150;
       var to = tl.length ? Math.min(tl[tl.length - 1].endTime + 30, now + 180) : now + 180;
       U.toast('Lining up…', 20000);

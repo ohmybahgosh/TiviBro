@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Sound the TV can't play is converted.**  LG TVs from 2020 to 2022 (the C1 and C2 among them) can't play DTS, no LG TV plays Dolby TrueHD, and FLAC surround fails, so movies with only that sound played silent.  TiviBro now checks the sound before a movie, episode or My media file starts.  If the file has another audio track the TV plays, in your language, it plays that one.  Otherwise the network helper turns the sound into Dolby Digital (AC-3) while you watch, the picture untouched, and TiviBro says so once.  Seeking starts the conversion again from the new spot, and the time, progress bar, resume point and subtitles keep the movie's own time.  Live channels whose sound the TV can't play are converted too.
+- **The audio converter is a small download, only when needed.**  It is a 2 MB build of ffmpeg, made for TiviBro and published on its GitHub releases.  The first movie that needs it asks before downloading.  The helper checks its fingerprint, keeps it on the TV's storage and runs it at low priority so the TV stays responsive.  **Settings > Playback** has **Convert audio the TV can't play** (Automatic or Off), the converter's status, size and where it is kept, and **Get the converter now** or **Remove the converter**.  **What this TV can play** lists which formats get converted on your TV.
+
 ## 0.6.0 (alpha 68, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.

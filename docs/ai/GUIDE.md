@@ -65,7 +65,7 @@ Also here: `site/` (tivibro.app, GitHub Pages), `relay/` (a Cloudflare Worker th
 | Change channel loading or a provider format | `app/js/source.js` (Xtream Codes and M3U into one compact channel shape) |
 | Change what a channel or group name shows | `app/js/names.js` (rules) or `Library` overlays (`app/js/library.js`) |
 | Change Movies and Shows | `app/js/vod.js` (lists, languages, categories, playback), `service/vod.js` (the helper slims big lists) |
-| Change playback | `app/js/player.js` (engines, buffering, reconnects), `app/js/caps.js` (what the TV decodes), `app/js/embedsubs.js` (built-in subtitles: reading, timing, showing), `app/js/mkvsubs.js` and `app/js/mp4subs.js` (MKV and MP4 subtitle formats) |
+| Change playback | `app/js/player.js` (engines, buffering, reconnects), `app/js/caps.js` (what the TV decodes), `app/js/embedsubs.js` (built-in subtitles: reading, timing, showing), `app/js/mkvsubs.js` and `app/js/mp4subs.js` (MKV and MP4 subtitle formats), `app/js/convert.js` with `service/convert.js` and `service/ffmpeg.js` (sound the TV can't play, converted by the helper's ffmpeg: docs/FFMPEG.md) |
 | Add a web editor page or action | `service/editor/index.html` (the page) and the `RUN` table in `app/js/webedit.js` (commands the TV carries out); the browser sends `POST /api/command {type, args}` |
 | Add a helper route | `service/proxy.js` routes to modules like `service/guide.js` and `service/vod.js`; plain ES5; bind localhost only unless it is the editor or phone LAN server |
 | Change the phone app protocol | `service/companion.js` (TV side), `app/js/phone.js` (TiviBro side), `android/.../proto/` (phone side), `docs/wiki/Phone-app-protocol.md`, and the Android tests (`tests/android/fake-tv.js`) |

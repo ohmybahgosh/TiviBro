@@ -24,7 +24,14 @@
 
    Routing: HDR and codec facts (Caps) decide the pipeline before the first frame.  Dolby
    Vision goes to the TV player; HDR10/HLG stays on the built-in player unless Settings say
-   otherwise; codecs MSE can't take go to the TV player. */
+   otherwise; codecs MSE can't take go to the TV player.
+
+   Sound the TV can't play (DTS on 2020 to 2022 TVs, TrueHD, surround FLAC): Convert.plan() is asked
+   before a movie starts.  It may pick another audio track, or have the helper convert the sound
+   (cur.conv).  A converted movie is a stream, not a file: a seek starts a new conversion at that time
+   (conv.t), and position = conv.base + video.currentTime, where conv.base is conv.t unless the TV's
+   player already shows the movie's own times.  Everything outside asks Player.position, and
+   subtitles add video._tbOffset (the same base) to the video's clock. */
 var Player = (function () {
   'use strict';
 
@@ -209,11 +216,14 @@ var Player = (function () {
     catch (e) { return false; }
   })();
 
-  function nativeEngine(url, tracks) {
+  function nativeEngine(url, tracks, conv) {
     // HTTPS on the TV's own player can fail on self-signed or unusual certificates, which IPTV
     // panels often have.  The helper accepts them and passes Range requests through for seeking.
-    if ((/^https:/i.test(url) || Net.ua) && Net.active) { url = Net.wrap(url); Log.info('player', 'TV player using the helper' + (Net.ua ? ' (custom User-Agent)' : ' for HTTPS')); }
-    function loadNative(resolved) { video.src = resolved; video.load(); }
+    // A conversion link (conv) is the helper's already; its subtitles come from the movie itself.
+    var play = url;
+    if (conv) { url = conv.src; if ((/^https:/i.test(url) || Net.ua) && Net.active) url = Net.wrap(url); }
+    else if ((/^https:/i.test(url) || Net.ua) && Net.active) { url = Net.wrap(url); play = url; Log.info('player', 'TV player using the helper' + (Net.ua ? ' (custom User-Agent)' : ' for HTTPS')); }
+    function loadNative(resolved) { video.src = conv ? play : resolved; video.load(); }
     // Resolve the provider entry URL once. Both playback and subtitle ranges use
     // the same resulting session URL; opening the entry separately can evict video.
     // MKV and MP4 files carry subtitles the TV's player doesn't show: their reader finds them.
@@ -222,7 +232,7 @@ var Player = (function () {
     if (!cur.live && (/\.mkv(\?|#|$)/i.test(url) || /^mkv$/i.test(container)) && typeof MkvSubs !== 'undefined') reader = MkvSubs;
     else if (!cur.live && typeof Mp4Subs !== 'undefined' && Mp4Subs.isMp4(url, container)) reader = Mp4Subs;
     if (reader) subs = reader.extract(url, video, loadNative, container);
-    else loadNative(url);
+    else loadNative(play);
     var at0 = video.audioTracks, onAdd = at0 && at0.addEventListener ? U.debounce(tracks, 300) : null;
     if (onAdd) at0.addEventListener('addtrack', onAdd);
     return { name: 'Native', recover: function () {}, info: function () { return ''; },
@@ -315,6 +325,7 @@ var Player = (function () {
   /* ---------- lifecycle ---------- */
   function teardown() {
     clearInterval(wd); wd = 0;
+    if (video) video._tbOffset = 0;
     clearInterval(fastWd); fastWd = 0;
     if (eng) { eng.destroy(); eng = null; }
     if (video) {
@@ -334,15 +345,22 @@ var Player = (function () {
     clearTimeout(cur.timer);
     teardown();
     if (cur.urlFn) { cur.url = cur.urlFn(); cur.pos = 0; }  // catch-up: every reconnect resumes where playback got to
-    var url = cur.url, p = cur.p;
+    var url = cur.url, p = cur.p, conv = cur.conv;
     var kind = cur.forceKind || (cur.forceNative ? 'native' : pickEngine(url));
+    if (conv) {
+      // A converted movie starts where it should be (resume, reconnect, seek): the stream begins there.
+      if (cur.startAt) { conv.t = cur.startAt; cur.startAt = 0; }
+      conv.base = conv.t || 0; conv.checked = false;
+      url = Convert.link(conv);
+      kind = conv.fmt === 'ts' && window.mpegts && mse() && Caps.probe().mse.ac3 ? 'ts' : 'native';
+    }
     // Known codecs up front (a movie's details): route before anything loads.
-    if (!cur.forceKind && !cur.forceNative && kind !== 'native' && cur.media && !cur.routed) {
+    if (!conv && !cur.forceKind && !cur.forceNative && kind !== 'native' && cur.media && !cur.routed) {
       var r0 = Caps.route(cur.media, hdrPolicy());
       if (r0.engine === 'native') { cur.routed = true; Log.info('player', r0.reason); useEngine('native'); kind = 'native'; }
     }
     Log.state('player', 'playing ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '"' : 'a video') + ' with the ' + kind + ' engine');
-    Log.info('player', 'Start ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '" ' : '') + 'with ' + kind + ' engine' + (kind !== 'native' && Net.active ? ' via helper' : '') + ', profile ' + p.label + ' (prebuffer ' + p.prebuffer + 's)' + (cur.retries ? ', attempt ' + (cur.retries + 1) : '') + (cur.startAt ? ', from ' + Math.round(cur.startAt) + 's' : '') + '  ' + url);
+    Log.info('player', 'Start ' + (cur.ch && cur.ch.n ? '"' + cur.ch.n + '" ' : '') + 'with ' + kind + ' engine' + (kind !== 'native' && Net.active ? ' via helper' : '') + ', profile ' + p.label + ' (prebuffer ' + p.prebuffer + 's)' + (cur.retries ? ', attempt ' + (cur.retries + 1) : '') + (cur.startAt ? ', from ' + Math.round(cur.startAt) + 's' : '') + (conv ? ', sound converted from ' + Math.round(conv.t) + 's' : '') + '  ' + (conv ? cur.url : url));
     var gen = cur.gen = (cur.gen || 0) + 1;     // a torn-down engine's late events are ignored
     ccDec = window.Captions ? Captions.create() : null; ccStarted = Date.now();
     st = { state: 'loading', started: false, lastT: -1, lastMove: Date.now(), refilling: false, refillSince: 0,
@@ -351,6 +369,7 @@ var Player = (function () {
 
     var fail = function (type, detail, earlyNet, ended, http) {
       if (myToken !== token || gen !== cur.gen) return;
+      if (conv && !st.started && !conv.played) return convFailed(myToken, kind + ' ' + type + ': ' + detail);
       Log.warn('player', kind + ' engine ' + type + ' error: ' + (detail && detail.message ? detail.message : detail) + (st.started ? '' : ' (before first frame)') + '  ' + cur.url);
       // The server answered with an error before any video.  Twice is worth a quick retry (a
       // connection limit while the last channel hangs up clears in a second or two); after that
@@ -391,9 +410,16 @@ var Player = (function () {
     // TS demuxer's media info.  Switch pipeline once if the stream belongs on the TV player.
     var media = function (m) {
       if (myToken !== token || gen !== cur.gen || !m) return;
+      if (conv) return;                                  // the converter's output: AC-3, known
       cur.media = merge(cur.media, m);
       var r = Caps.route(cur.media, hdrPolicy());
-      if (r.warn && !cur.warned) { cur.warned = true; Log.warn('player', r.warn); notice(r.warn); }
+      // A live channel whose sound this TV can't play: the converter, if it's on.
+      if (r.unplayable && cur.live && !cur.timeshift && !cur.convTried && window.Convert && Convert.on()) {
+        cur.convTried = true;
+        Convert.planLive(cur.origUrl || cur.url, r.unplayable, cur.media.channels).then(function (pl) { livePlan(pl, myToken, r.unplayable); });
+        return;
+      }
+      if (r.warn && !cur.warned) { cur.warned = true; Log.warn('player', r.warn); notice(r.unplayable && window.Convert ? Convert.noSound(Caps.unplayable(r.unplayable, cur.media.channels) || r.unplayable) : r.warn); }
       if (r.engine === 'native' && kind !== 'native' && !st.started && !cur.routed && !(cur.tried && cur.tried.native)) {
         cur.routed = true;
         Log.info('player', r.reason + '; switching to the TV player');
@@ -407,14 +433,23 @@ var Player = (function () {
     try {
       if (kind === 'hls') eng = hlsEngine(url, p, cur.preview, fail, media, tracks);
       else if (kind === 'ts') eng = tsEngine(url, p, cur.preview, fail, media);
-      else eng = nativeEngine(url, tracks);
+      else eng = nativeEngine(url, tracks, conv);
     } catch (e) {
       Log.warn('player', kind + ' engine could not start: ' + e.message);
+      if (conv) return convFailed(myToken, e.message);
       if (kind === 'native') return giveUp(myToken);
       useEngine('native');
       return start(myToken);
     }
-    if (kind === 'native' && cur.media) { var rn = Caps.route(cur.media, hdrPolicy()); if (rn.warn && !cur.warned) { cur.warned = true; notice(rn.warn); } }
+    if (conv) {
+      video._tbOffset = conv.base;
+      // The audio menu lists the movie's own tracks; another one is a new conversion from here.
+      eng.audio = function () { return (conv.tracks || []).map(function (t, i) { return { id: i, label: trackLabel(t, i, conv.bad && conv.bad[i]), lang: t.lang || '', ch: t.channels || 0, on: i === conv.a }; }); };
+      eng.setAudio = function (i) { var t = conv.tracks && conv.tracks[i]; if (!t || i === conv.a) return; switchConv(i, t); };
+      if (cur.convNotice) { notice(cur.convNotice); cur.convNotice = ''; }
+    }
+    if (cur.noSound && !cur.warned) { cur.warned = true; Log.warn('player', 'No converter: ' + cur.noSound + ' sound will be silent'); notice(Convert.noSound(cur.noSound)); }
+    if (kind === 'native' && cur.media && !conv) { var rn = Caps.route(cur.media, hdrPolicy()); if (rn.warn && !cur.warned) { cur.warned = true; notice(rn.unplayable && window.Convert ? Convert.noSound(Caps.unplayable(rn.unplayable, cur.media.channels) || rn.unplayable) : rn.warn); } }
     wd = setInterval(function () { tick(myToken); }, 400);
     // Until the first frame, check every 50ms: the video is often ready to play within 100-200ms
     // of a channel change, and waiting for the 400ms watchdog added up to a third of a second.
@@ -444,9 +479,16 @@ var Player = (function () {
     return best;
   }
   function preferAudio() {
-    if (!eng || !eng.audio || !cur || cur.userAudio) return;
+    if (!eng || !eng.audio || !cur || cur.userAudio || cur.conv) return;
     var list = eng.audio(), s = Store.settings;
     if (list.length < 2) return;
+    // The track Convert picked because this TV plays it (the default one it can't).
+    if (cur.preferTrack != null) {
+      var pt = list[cur.preferTrack];
+      if (pt && !pt.on) { Log.info('player', 'Audio: track ' + (cur.preferTrack + 1) + ', which this TV can play'); eng.setAudio(cur.preferTrack); }
+      return;
+    }
+    if (cur.badTracks) list = list.filter(function (t) { return !cur.badTracks[t.id]; });
     var b = bestAudio(list, s.audioLang || '', !!s.audioSurround, s.audioFallback || '');
     if (b && !b.on) { Log.info('player', 'Audio: "' + b.label + '" (preferred language' + (s.audioSurround ? ', surround' : '') + ')'); eng.setAudio(b.id); }
   }
@@ -599,7 +641,12 @@ var Player = (function () {
     if (myToken !== token || !st || !video) return;
     var now = Date.now(), ahead = bufferedAhead(), t = video.currentTime;
     var p = cur.p;
-    if (st.started && video.readyState > 0 && !video.seeking) cur.pos = t;
+    // A converted movie: does the TV's player show the movie's own times, or count from the seek?
+    if (cur.conv && st.started && !cur.conv.checked && t > 0) {
+      cur.conv.checked = true; cur.conv.played = true;
+      if (cur.conv.t > 5 && t > cur.conv.t / 2) { cur.conv.base = 0; video._tbOffset = 0; Log.info('player', 'The TV player shows the movie\'s own times'); }
+    }
+    if (st.started && video.readyState > 0 && !video.seeking) cur.pos = t + base();
     applyDisplay();               // the picture's own size arrives with the first frame (Aspect)
     var goal = refillGoal();
     var endNow = bufferEnd();
@@ -622,6 +669,7 @@ var Player = (function () {
       if (ready) {
         st.started = true; st.lastMove = now;
         if (!cur.audioPicked) { cur.audioPicked = true; preferAudio(); }
+        if (cur.conv) Log.info('player', 'Converted sound playing from ' + Math.round(cur.conv.t) + 's');
         if (cur.slow) { Log.info('player', 'Channel is back after ' + Math.round((now - cur.slowSince) / 1000) + 's'); notice('Back on air'); }
         if (cur.live && !cur.everPlayed && window.DeadList) DeadList.played(cur.ch, cur.origUrl || cur.url);
         cur.slow = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0; cur.starved = false; cur.lastFailHttp = false;
@@ -692,8 +740,8 @@ var Player = (function () {
     if (st.pendingReconnect && ahead < Math.max(2, p.prebuffer)) { st.pendingReconnect = false; reconnect(myToken, 'Reconnecting'); return; }
     if (isFile() && video.ended) {
       // The TV player sometimes reports "ended" when the connection drops mid-film.
-      var d = video.duration;
-      if (isFinite(d) && d > 120 && t < d - 30) { Log.warn('player', 'Video ended at ' + Math.round(t) + 's of ' + Math.round(d) + 's; treating it as a dropped connection'); cur.pos = t; reconnect(myToken, 'Connection dropped, reconnecting'); return; }
+      var d = cur.conv ? cur.conv.dur : video.duration, te = t + base();
+      if (isFinite(d) && d > 120 && te < d - 30) { Log.warn('player', 'Video ended at ' + Math.round(te) + 's of ' + Math.round(d) + 's; treating it as a dropped connection'); cur.pos = te; reconnect(myToken, 'Connection dropped, reconnecting'); return; }
       clearInterval(wd); wd = 0; state('ended'); return;
     }
     if (t !== st.lastT && !video.paused) {
@@ -753,6 +801,7 @@ var Player = (function () {
          closed the connection; the link it handed out may have expired, or it still counts the old
          connection): that is the connection, not the format.  Reconnect at the same spot, never fall
          through to "a format the TV cannot decode" (issue #34). */
+      if (cur.conv && !st.started && !cur.conv.played) return convFailed(my, 'TV player error ' + video.error.code);
       if (isFile() && cur.everPlayed) return reconnect(my, 'The provider closed the connection, reconnecting');
       if (st.kind === 'native' && !st.started) {
         // Native refused the container or codec: try the next pipeline, once each.
@@ -795,7 +844,80 @@ var Player = (function () {
     releaseFrame();                         // a new channel never shows the last one's picture
     if (video) video.playbackRate = 1;
     if (cur.live && !cur.timeshift && preferHls[cur.url] && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) { Log.info('player', 'Using the HLS version of this channel, which played better earlier'); useEngine('hls'); }
+    // Movies, episodes and My media files: is the sound one this TV plays?  (convert.js)
+    if (window.Convert && !cur.live && !cur.timeshift && !cur.preview && Convert.on()) {
+      var my = token, item = cur.meta && cur.meta.item || {};
+      teardown(); st = null;
+      state('loading');
+      Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', container: item.ext || item.container_extension || '' })
+        .then(function (r) { applyPlan(r, my); }, function () { if (my === token) start(my); });
+      return;
+    }
     start(token);
+  }
+
+  /* ---------- sound the TV can't play (convert.js) ---------- */
+  function base() { return cur && cur.conv ? cur.conv.base || 0 : 0; }
+  function trackLabel(t, i, bad) {
+    var ch = t.channels >= 8 ? ' 7.1' : t.channels >= 6 ? ' 5.1' : t.channels === 2 ? ' stereo' : '';
+    var code = t.lang ? U.lang(t.lang) : '', name = code ? (U.LANGS.filter(function (l) { return l[0] === code; })[0] || [])[1] : '';
+    return (t.title || name || (t.lang ? t.lang.toUpperCase() : 'Track ' + (i + 1))) + '  ' + (Convert.NAMES[t.codec] || String(t.codec || '').toUpperCase()) + ch + (bad ? ' (converted)' : '');
+  }
+  function useConv(conv, why) {
+    cur.conv = conv; cur.convNotice = why || ''; cur.audioPicked = true;
+    cur.forceKind = null; cur.forceNative = false; cur.tried = null;
+    if (!conv.t) conv.t = 0;
+    Log.info('player', 'Sound: ' + (conv.codec || '?') + ' track ' + (conv.a + 1) + ' through the audio converter (' + conv.fmt + ')');
+  }
+  function applyPlan(r, my) {
+    if (my !== token || !cur) return;
+    if (r && r.offer) {
+      return Convert.offer(r.offer, r.guessed, function (got) {
+        if (my !== token || !cur) return;
+        if (!got) { cur.noSound = r.offer; return start(my); }
+        Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '' }).then(function (r2) { applyPlan(r2 && r2.offer ? null : r2, my); });
+      });
+    }
+    if (r && r.conv) useConv(r.conv, r.notice);
+    else if (r && r.track != null) {
+      cur.badTracks = r.bad; cur.probe = { tracks: r.tracks, dur: r.dur || 0 };
+      var t = r.tracks[r.track] || {};
+      // The TV's player switches tracks itself where it can; without that, the helper copies just
+      // that track into a stream (no conversion, nearly no work).
+      if (video && video.audioTracks) cur.preferTrack = r.track;
+      else useConv({ src: cur.url, a: r.track, fmt: 'mkv', codec: t.codec, channels: t.channels || 0, tracks: r.tracks, bad: r.bad, dur: r.dur || 0 }, '');
+    }
+    start(my);
+  }
+  // A track picked from the audio menu: converted sound restarts with it, from where playback is.
+  function switchConv(i, t) {
+    var conv = cur.conv;
+    conv.a = i; conv.codec = t.codec; conv.channels = t.channels || 0;
+    cur.startAt = Math.max(0.1, position()); cur.retries = 0;
+    Log.info('player', 'Audio track ' + (i + 1) + ' (' + t.codec + '): restarting the stream at ' + Math.round(cur.startAt) + 's');
+    start(token);
+  }
+  // The converter didn't get going: play the movie as it is, and say why there's no sound.
+  function convFailed(my, why) {
+    if (my !== token || !cur || !cur.conv) return;
+    var conv = cur.conv;
+    Log.warn('player', 'Converted sound did not start (' + why + '); playing the movie as it is');
+    if (!conv.played && conv.t && !cur.startAt) cur.startAt = conv.t;
+    cur.conv = null; cur.convNotice = ''; cur.noSound = Caps.unplayable(conv.codec, conv.channels) || '';
+    if (cur.live) cur.convTried = true;
+    start(my);
+  }
+  function livePlan(pl, my, codec) {
+    if (my !== token || !cur) return;
+    if (pl && pl.conv) { useConv(pl.conv, pl.notice); return start(my); }
+    if (pl && pl.offer) {
+      return Convert.offer(pl.offer, false, function (got) {
+        if (my !== token || !cur) return;
+        if (got) return Convert.planLive(cur.origUrl || cur.url, codec, cur.media && cur.media.channels).then(function (p2) { livePlan(p2 && p2.conv ? p2 : null, my, codec); });
+        if (!cur.warned) { cur.warned = true; notice(Convert.noSound(Caps.unplayable(codec, cur.media && cur.media.channels) || codec)); }
+      });
+    }
+    if (!cur.warned) { cur.warned = true; notice(Convert.noSound(Caps.unplayable(codec, cur.media && cur.media.channels) || codec)); }
   }
   /* Aspect (discussion #31): this channel's or movie's own choice if it has one (Store.edits.display,
      by channel key, or "vod:<id>" for a movie or episode), otherwise the global setting.
@@ -850,11 +972,13 @@ var Player = (function () {
   function playing() { return !!(st && st.started && video && video.readyState > 0); }
   function seekTo(t) {
     if (!video || !cur || cur.live) return;
-    var d = video.duration;
+    var d = cur.conv ? cur.conv.dur : video.duration;
     if (isFinite(d) && d > 0) t = U.clamp(t, 0, Math.max(0, d - 2));
     t = Math.max(0, t);
     cur.pos = t;
     if (!playing()) { cur.startAt = t; return; }        // reconnecting: the new connection starts there
+    // Converted sound is a stream: a new conversion from there.
+    if (cur.conv) { cur.startAt = Math.max(0.1, t); cur.retries = 0; Log.info('player', 'Seek to ' + Math.round(t) + 's: restarting the converted stream there'); start(token); return; }
     if (st) st.lastMove = Date.now();
     video.currentTime = t;
     if (eng && eng.reanchor) eng.reanchor();
@@ -931,7 +1055,7 @@ var Player = (function () {
     return true;
   }
   function position() {
-    if (playing()) return video.seeking && cur && cur.pos != null ? cur.pos : video.currentTime;
+    if (playing()) return video.seeking && cur && cur.pos != null ? cur.pos : video.currentTime + base();
     return cur ? cur.pos || 0 : 0;
   }
 
@@ -946,7 +1070,18 @@ var Player = (function () {
     setRate: function (r) { if (video) video.playbackRate = r; },
     get rate() { return video ? video.playbackRate : 1; },
     displayFor: displayFor, setAspect: setAspect, aspectFit: aspectFit, ASPECTS: ASPECTS, ASPECT_NAMES: ASPECT_NAMES,
-    setAudio: function (i) { if (eng && eng.setAudio) { if (cur) cur.userAudio = true; eng.setAudio(i); } },
+    setAudio: function (i) {
+      if (!eng || !eng.setAudio) return;
+      if (cur) cur.userAudio = true;
+      // A track this TV can't play, picked by hand: convert it (when the converter is there).
+      if (cur && !cur.conv && cur.badTracks && cur.badTracks[i] && cur.probe && window.Convert && Convert.key) {
+        var t = cur.probe.tracks[i] || {};
+        useConv({ src: cur.origUrl || cur.url, a: i, fmt: 'mkv', codec: t.codec, channels: t.channels || 0, tracks: cur.probe.tracks, bad: cur.badTracks, dur: cur.probe.dur }, 'Converting ' + (Convert.NAMES[t.codec] || t.codec) + ' audio for this TV');
+        cur.startAt = Math.max(0.1, position()); cur.retries = 0;
+        return start(token);
+      }
+      eng.setAudio(i);
+    },
     bestAudio: bestAudio, describeTrack: describeTrack,
     get stats() { return lastStats; },
     get current() { return cur && cur.ch; },
@@ -957,7 +1092,9 @@ var Player = (function () {
     get mediaInfo() { return cur && cur.media; },
     get engine() { return st ? ENGINE_NAMES[st.kind] || st.kind : ''; },
     get position() { return position(); },
-    get duration() { return video && isFinite(video.duration) ? video.duration : 0; },
+    get duration() { return cur && cur.conv && cur.conv.dur ? cur.conv.dur : video && isFinite(video.duration) ? video.duration : 0; },
+    // Sound being converted right now: { codec, track, from } (Stream info, tests).
+    get converting() { return cur && cur.conv ? { codec: cur.conv.codec, track: cur.conv.a, from: cur.conv.t, base: cur.conv.base, fmt: cur.conv.fmt, url: st && st.state !== 'idle' && video ? video.getAttribute('src') || '' : '' } : null; },
     get paused() { return !video || video.paused; },
     get userPaused() { return !!(st && st.userPaused); },
     get playing() { return !!(st && st.state === 'playing'); },

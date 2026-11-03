@@ -25,6 +25,8 @@ var Vod = require('./vod');
 var Kv = require('./kv');
 var Live = require('./live');
 var Media = require('./media');
+var Convert = require('./convert');
+var Ffmpeg = require('./ffmpeg');
 
 /* DNS answers kept for a minute.  Node asks the system for every new connection, and each channel
    start (and each redirect to a provider's streaming server) is a new connection; on a TV with a
@@ -88,6 +90,8 @@ function log(entry) {
   }
 }
 
+Ffmpeg.setLog(log);
+
 function target(reqUrl) {
   var m = /^\/x\/(https?)\/([^/?#]+)(\/[^?#]*)?(\?[^#]*)?/.exec(reqUrl);
   if (!m) return null;
@@ -143,11 +147,14 @@ function create(opts) {
   var server = http.createServer(function (req, res) {
     if (req.method === 'OPTIONS') { res.writeHead(204, ALLOW); return res.end(); }
     if (req.url.indexOf('/media-stream/') === 0) return require('./media-stream').handle(req, res, ALLOW);
-    if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, node: process.version, stats: stats, guide: 2, vod: 2, kv: 1, live: 1, sys: sys(), store: require('./storage').info() })); }
+    // Converted sound (convert.js): the link carries its own key, since the TV's player can't send the secret.
+    if (Convert.isStream(req.url)) return Convert.stream(req, res, ALLOW, log, server.address().port, redact);
+    if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, node: process.version, stats: stats, guide: 2, vod: 2, kv: 1, live: 1, convert: 1, sys: sys(), store: require('./storage').info() })); }
     /* The web editor and the phone app connection are switched on and off from TiviBro only.  On the
        TV the helper hands TiviBro a secret with its start reply (service.js, over luna, which only
        TiviBro may call); without it, a web page in the TV's browser could reach these over localhost. */
-    var ctlRoute = req.url.indexOf('/editor/') === 0 ? 'editor' : req.url.indexOf('/companion/') === 0 ? 'companion' : req.url.indexOf('/kv/') === 0 ? 'kv' : req.url.indexOf('/live/') === 0 ? 'live' : req.url.indexOf('/media/') === 0 ? 'media' : '';
+    var ctlRoute = req.url.indexOf('/editor/') === 0 ? 'editor' : req.url.indexOf('/companion/') === 0 ? 'companion' : req.url.indexOf('/kv/') === 0 ? 'kv' : req.url.indexOf('/live/') === 0 ? 'live' : req.url.indexOf('/media/') === 0 ? 'media' :
+      req.url.indexOf('/convert/') === 0 ? 'convert' : req.url.indexOf('/ffmpeg/') === 0 ? 'ffmpeg' : '';
     if (ctlRoute) {
       res.setHeader('Access-Control-Allow-Origin', '*');
       if (opts.ctl && !sameText(req.headers['x-tivibro-ctl'], opts.ctl)) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end('{"error":"not allowed"}'); }
@@ -155,6 +162,8 @@ function create(opts) {
       if (ctlRoute === 'kv') return Kv.handle(req, res, ALLOW, log);
       if (ctlRoute === 'live') return Live.handle(req, res, ALLOW, log, server.address().port);
       if (ctlRoute === 'media') return Media.handle(req, res, ALLOW, log);
+      if (ctlRoute === 'convert') return Convert.control(req, res, ALLOW, log, server.address().port, redact);
+      if (ctlRoute === 'ffmpeg') return Ffmpeg.handle(req, res, ALLOW);
       if (!opts.companion) { res.writeHead(404, { 'Content-Type': 'application/json' }); return res.end('{"error":"no phone app connection in this helper"}'); }
       return opts.companion.control(req, res, req.url.split('?')[0]);
     }
