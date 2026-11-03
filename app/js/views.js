@@ -116,7 +116,8 @@ var Views = (function () {
       row._p.appendChild(row._pi);
       box.appendChild(row._n); box.appendChild(row._s); box.appendChild(row._p);
       row._t = U.el('span', 'tag'); row._q = U.el('span', 'qtag');
-      row.appendChild(row._num); row.appendChild(row._img); row.appendChild(box); row.appendChild(row._q); row.appendChild(row._t);
+      row._d = U.el('span', 'deadtag', 'not playing lately'); row._d.style.display = 'none';
+      row.appendChild(row._num); row.appendChild(row._img); row.appendChild(box); row.appendChild(row._d); row.appendChild(row._q); row.appendChild(row._t);
       row.appendChild(U.el('span', 'vbox'));
     }
     var showNum = Store.settings.showNumbers;
@@ -140,6 +141,9 @@ var Views = (function () {
     } else { row._s.textContent = nn ? '' : ' '; row._p.style.display = 'none'; }
     var qt = L.versionTag(c);
     if (row._qt !== qt) { row._qt = qt; row._q.textContent = qt; row._q.style.display = qt ? '' : 'none'; }
+    // Its last tries failed while other channels play (issue #37); gone once it plays again.
+    var dead = typeof DeadList !== 'undefined' && DeadList.marked(c);
+    if (row._dd !== dead) { row._dd = dead; row._d.style.display = dead ? '' : 'none'; }
     var tags = [];
     if (L.isFav(c.k)) tags.push('★');
     if (c.arch && Store.settings.showCatchupMark !== false) tags.push('↺');
@@ -188,6 +192,13 @@ var Views = (function () {
       if (cur && hit(cur)) updateInfo();
       if (playing && hit(playing) && mode === 'live') osd(false);
       if (tab === 'guide') Guide.rowUpdated(k);
+    });
+    // A channel gets or loses the "not playing lately" mark (deadlist.js): its rows, wherever they show.
+    if (typeof DeadList !== 'undefined' && DeadList.onChange) DeadList.onChange(function (k) {
+      var hit = function (c) { return c && c.k === k; };
+      chansVL.refreshWhere(hit);
+      if (overlay) ovVL.refreshWhere(hit);
+      if (tab === 'guide') Guide.draw();
     });
     setInterval(function () { if (tab === 'live' && !full) chansVL.refresh(); }, 60000);
     setInterval(heartbeat, 5000);
@@ -571,7 +582,7 @@ var Views = (function () {
     if (mapped) { runAction(mapped, 'list'); return true; }
     if (zone === 'groups') {
       if (a === 'up') groupsVL.move(-1);
-      else if (a === 'down') groupsVL.move(1);
+      else if (a === 'down') groupsVL.move(1, 'down');      // past the last group: back to the first
       else if (a === 'left') openNav();
       else if (a === 'chup') groupsVL.page(-1);
       else if (a === 'chdown') groupsVL.page(1);
@@ -1180,7 +1191,10 @@ var Views = (function () {
     // Playing again: a later failure is a new incident (recent failures are still skipped for 10 min).
     if (s === 'playing' && fo && playing) { foFailed[playing.k] = 0; fo.tried = {}; fo.exhausted = false; }
   }
-  var meter = $('meter'), mFill = $('meterFill'), mText = $('meterText'), mSecs = $('meterSecs'), goodSince = 0, spinPlain = false;
+  /* The buffer pill (discussion #36) is three parts of fixed width, so changing numbers never move the
+     bar: the bar with the seconds written inside it (light on the empty part, dark on the filled part,
+     so both read), the picture and engine, and the speed. */
+  var meter = $('meter'), mFill = $('meterFill'), mRes = $('meterRes'), mRate = $('meterRate'), mSecs = $('meterSecs'), mSecsIn = $('meterSecsIn'), goodSince = 0, spinPlain = false;
   /* Buffer info on demand (Hold Info by default, or any button set to "Show buffer info"): the meter
      shows whatever its setting, for the time in Settings > Playback, or until pressed again.  Pressing
      it while it shows hides it. */
@@ -1210,9 +1224,12 @@ var Views = (function () {
     mFill.style.width = Math.round(U.clamp(ratio, 0, 1) * 100) + '%';
     meter.classList.toggle('low', low && !crit);
     meter.classList.toggle('crit', crit);
-    // The seconds sit in a box of their own width, so the pill doesn't grow and shrink as they change (#17).
-    mSecs.textContent = x.ahead.toFixed(1) + 's';
-    mText.textContent = [x.res, x.engine, x.info].filter(Boolean).join('  ');
+    var secs = x.ahead.toFixed(1) + 's';
+    if (mSecs.textContent !== secs) { mSecs.textContent = secs; mSecsIn.textContent = secs; }
+    mRes.textContent = [x.res, x.engine].filter(Boolean).join('  ');
+    mRate.textContent = x.info || '';
+    // The TV player never says its speed: no empty box for it.
+    mRate.classList.toggle('hidden', !x.info && x.engine === 'Native');
   }
 
   /* ---------- menus ---------- */
@@ -1730,14 +1747,15 @@ var Guide = (function () {
       ch.appendChild(U.el('span', 'num'));
       var img = U.el('img', 'logo'); img.decoding = 'async'; img.onerror = function () { Views.logoFailed(this, this._c); }; ch.appendChild(img);
       ch.appendChild(U.el('span', 'n'));
-      var chips = U.el('span', 'gchips'), cuEl = U.el('span', 'cu'), qEl = U.el('span', 'qtag');
-      chips.appendChild(cuEl); chips.appendChild(qEl); ch.appendChild(chips);
+      var chips = U.el('span', 'gchips'), cuEl = U.el('span', 'cu'), qEl = U.el('span', 'qtag'), dEl = U.el('span', 'deadtag', 'not playing');
+      dEl.style.display = 'none';
+      chips.appendChild(cuEl); chips.appendChild(qEl); chips.appendChild(dEl); ch.appendChild(chips);
       ch.appendChild(U.el('span', 'vbox'));
       r.appendChild(ch); r.appendChild(pr);
       r.style.transform = 'translateY(' + (i * ROW) + 'px)';
       r.setAttribute('data-slot', i);
       body.appendChild(r);
-      rows.push({ el: r, ch: ch, pr: pr, img: img, k: null, slot: i, cells: [], cuEl: cuEl, qEl: qEl });
+      rows.push({ el: r, ch: ch, pr: pr, img: img, k: null, slot: i, cells: [], cuEl: cuEl, qEl: qEl, dEl: dEl });
     }
     var nowLine = U.el('div', 'gnow'); nowLine.id = 'gnow'; body.appendChild(nowLine);
     if (built) return;
@@ -1858,8 +1876,18 @@ var Guide = (function () {
     ghead.textContent = L.groupName(gid) + '   ' + (vis ? list.filter(function (c) { return vis.on[c.k]; }).length + ' of ' + list.length + ' shown' : list.length);
   }
   // From the menu: groups panel first.  With a channel playing: straight into the grid on it.
+  /* Rows made while the guide was hidden (a row size changed in Settings, or the guide built before it
+     was first shown) were counted from a guess: too many, and the last ones sat under the button hints
+     (discussion #36).  Count again now that the guide shows, and make the rows again if it differs. */
+  function fit() {
+    var h = body.clientHeight; if (!h || !rows.length) return;
+    var r = ROW_SIZES[Store.settings.guideRows] || 100;
+    if (r === ROW && Math.max(3, Math.floor(h / r)) === VIS) return;
+    build();
+    top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS));
+  }
   function open(groupId, key) {
-    if (!rows.length) build();
+    if (!rows.length) build(); else fit();
     var now = Date.now();
     t0 = now - (now % (30 * 60e3));
     focusT = now;
@@ -1871,6 +1899,7 @@ var Guide = (function () {
   }
   function resume(key) {
     if (!rows.length) return open(Views.group, key);
+    fit();
     UI.setHandler(keys);
     if (key) { var i = list.findIndex(function (c) { return c.k === key; }); if (i >= 0) { sel = i; top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS)); } }
     focusT = Date.now(); t0 = focusT - (focusT % (30 * 60e3));
@@ -1886,6 +1915,7 @@ var Guide = (function () {
   }
   function refresh() {
     if (!rows.length) return;
+    fit();
     var key = list[sel] && list[sel].k;
     load(gid, key);
     setZone(zone);
@@ -1915,8 +1945,8 @@ var Guide = (function () {
     r.el.classList.toggle('vis', !!vis);
     r.el.classList.toggle('vis-off', !!vis && !vis.on[c.k]);
     var lg = Views.logoOf(c), cuMark = c.arch && Store.settings.showCatchupMark !== false;
-    var qt = L.versionTag(c);
-    var head = (Store.settings.showNumbers ? c.num : '') + '|' + L.name(c) + '|' + (cuMark ? c.arch : '') + '|' + qt;
+    var qt = L.versionTag(c), dead = typeof DeadList !== 'undefined' && DeadList.marked(c);
+    var head = (Store.settings.showNumbers ? c.num : '') + '|' + L.name(c) + '|' + (cuMark ? c.arch : '') + '|' + qt + '|' + dead;
     if (r.head !== head) {
       r.head = head;
       r.ch.children[0].textContent = Store.settings.showNumbers ? c.num : '';
@@ -1926,6 +1956,7 @@ var Guide = (function () {
       r.cuEl.style.display = cuMark ? '' : 'none';
       r.qEl.textContent = qt;
       r.qEl.style.display = qt ? '' : 'none';
+      r.dEl.style.display = dead ? '' : 'none';         // not playing lately (issue #37)
     }
     r.img._c = c;
     if (r.img._src !== lg) { r.img._src = lg; r.img.style.visibility = lg ? 'visible' : 'hidden'; if (lg) r.img.src = lg; }
@@ -2116,7 +2147,14 @@ var Guide = (function () {
     if (UI.repeating) detailT = setTimeout(drawDetail, 120);
     else drawDetail();
   }
-  function moveSel(d) { var s2 = sel + d; if (s2 < 0 || s2 >= list.length) return false; return selectIdx(s2); }
+  /* Down on the last channel goes back to the first, like the channel list (one press, never while
+     Down is held).  Up on the first channel stays put. */
+  function moveSel(d) {
+    var s2 = sel + d;
+    if (s2 >= list.length && d === 1 && list.length > 2 && !UI.repeating) s2 = 0;
+    if (s2 < 0 || s2 >= list.length) return false;
+    return selectIdx(s2);
+  }
 
   // Through the schedule.  Programmes that already aired only on channels with catch-up.
   function moveTime(dir) {
@@ -2211,7 +2249,7 @@ var Guide = (function () {
   function backToMenu() { Views.tabBar(function () { UI.setHandler(keys); setZone('groups'); }, true); }
   function groupKeys(a) {
     if (a === 'up') groupsVL.move(-1);
-    else if (a === 'down') groupsVL.move(1);
+    else if (a === 'down') groupsVL.move(1, 'down');      // past the last group: back to the first
     else if (a === 'chup') groupsVL.page(-1);
     else if (a === 'chdown') groupsVL.page(1);
     else if (a === 'right' || a === 'ok') enterGrid();

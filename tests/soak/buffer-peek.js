@@ -38,6 +38,22 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => UI.press('long:info'));
   await page.waitForTimeout(3000);
   ok('Until pressed again keeps it up', await shown());
+  // Discussion #36: three parts of fixed width, so changing numbers never move the bar, and the seconds
+  // drawn inside the bar (a light copy over the empty part, a dark one over the filled part).
+  const looks = [];
+  for (let j = 0; j < 6; j++) {
+    looks.push(await ev(() => { const r = (id) => document.querySelector(id).getBoundingClientRect(), m = document.getElementById('meter');
+      return { track: Math.round(r('.meter-track').left), w: Math.round(r('#meter').width), res: Math.round(r('#meterRes').width), rate: Math.round(r('#meterRate').width),
+        secs: document.getElementById('meterSecs').textContent, inner: document.getElementById('meterSecsIn').textContent, rateText: document.getElementById('meterRate').textContent,
+        inBar: !!document.querySelector('.meter-track #meterSecs') && !!document.querySelector('#meterFill #meterSecsIn'),
+        light: getComputedStyle(document.getElementById('meterSecs')).color, dark: getComputedStyle(document.getElementById('meterSecsIn')).color, fill: getComputedStyle(document.getElementById('meterFill')).backgroundColor, style: getComputedStyle(document.getElementById('meterSecsIn')).fontStyle }; }));
+    await page.waitForTimeout(500);
+  }
+  const L0 = looks[0];
+  ok('the bar stays put while the numbers change', looks.every((x) => x.track === L0.track && x.w === L0.w && x.res === L0.res && x.rate === L0.rate), JSON.stringify(looks.map((x) => [x.track, x.w, x.secs, x.rateText])));
+  ok('the seconds are drawn inside the bar, both copies the same', looks.every((x) => x.inBar && x.secs === x.inner && /^\d+\.\ds$/.test(x.secs)), JSON.stringify(L0));
+  ok('light on the empty part, dark on the filled part, upright', L0.light !== L0.dark && L0.dark === 'rgb(11, 14, 26)' && L0.style === 'normal', JSON.stringify(L0));
+  if (process.env.SHOTS) await page.screenshot({ path: require('path').join(process.env.SHOTS, 'buffer-pill.png'), clip: { x: 960, y: 0, width: 960, height: 140 } });
   await ev(() => UI.press('back'));
   await page.waitForTimeout(500);
   ok('leaving fullscreen hides it', !(await shown()));

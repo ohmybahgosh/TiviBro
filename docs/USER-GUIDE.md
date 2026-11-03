@@ -134,7 +134,7 @@ TiviBro works with the standard LG remote and the Magic Remote.  With the Magic 
 
 A few things work the way you would guess from other TV apps:
 
-- Channel lists wrap around: **▲** on the first channel goes to the last.  Holding an arrow stops at the end instead of flying past it.  Group lists don't wrap.
+- Channel lists wrap around: **▲** on the first channel goes to the last, and **▼** on the last goes back to the first.  In the guide and in the group lists, **▼** on the last row goes back to the first, and **▲** on the first row stays where it is.  Holding an arrow stops at the end instead of flying past it.
 - **▲** at the top of a list never opens the menu by surprise.  **◀** or **Back** does.
 - **Leaving TiviBro:** press **Back** until the groups show on the home screen; it says **Press Back again to exit**, and one more **Back** closes the app.  The first screen works the same way.
 - In a confirmation ("Delete this playlist?"), **Cancel** is selected first, so a stray **OK** never deletes anything.
@@ -171,6 +171,8 @@ The guide is the home screen.  The channel you are on plays in the window at the
 
 Where the guide comes from (your provider, your own sources, public fill-in, and how channels are matched) is explained at the top of [Settings: Guide](#settings-guide).  How it looks is under [Settings: Appearance and start screen](#settings-appearance-and-start-screen): two-line programmes, dimming past programmes, how "now" is marked, logos only or names too, and catch-up marks.  Where your playlist has the same channel more than once, a small quality tag (**FHD**, **HD**, **SD**, **4K**) tells the copies apart.
 
+**Not playing lately.**  A channel whose last two tries both failed, while the playlist's other channels play, gets a small amber tag: **not playing** in the guide's channel column, **not playing lately** on the Channels screen and in the phone app.  It's usually the provider: the channel may be off air or moved.  The tag goes the moment the channel plays again, and after three days on its own.
+
 ### Groups and the menu
 
 Your groups sit right beside the guide: **Favorites** and your own groups first, then **All channels**, then your provider's groups.  Moving through the list updates the guide behind it.  **OK** or **▶** opens a group; **Hold OK** gives group options (rename, hide, sort, block).
@@ -201,6 +203,7 @@ The **Channels** screen (in the side menu when **Channels screen in the menu** i
 ### Watching fullscreen
 
 - **▲ ▼** or **CH + / CH −** change channel.  An info bar shows the channel, what's on now and next, and how far into the programme you are.
+- **The screensaver waits.**  While a channel, a movie or episode, My media or catch-up plays, TiviBro asks the TV to hold off its screensaver (a homebrew one such as Aerial too).  When nothing plays, playback is paused, or you are in another app, the screensaver comes on as usual.  There is nothing to set.
 - **▶** shows the full programme info.  **Yellow** jumps back to the last channel.  **Green** goes back to the TV guide.
 - **Hold OK** (or **OK > Channel guide**) lays the channel guide over the video: the group's channels with what's on now.  **OK** on another channel switches to it and keeps the channel guide open so you can keep browsing; **OK** on the channel that's already playing closes it.  **◀ ▶** change group.
 - **OK** opens the **quick menu**: Channel guide, From start (catch-up channels), Favorite, TV guide, Other versions (when the channel has them), Captions, Aspect, Sleep timer, Stream info and Reconnect.
@@ -772,7 +775,7 @@ How channels start, how much video TiviBro holds, which player it uses, what it 
 | **Stream format** *(Xtream playlists)* | **MPEG-TS** · HLS | MPEG-TS usually switches channels faster.  HLS copes better with a weak connection and some providers prefer it. |
 | **Connection** | **Automatic (recommended)** · Direct | *Automatic* sends provider requests through the [network helper](#what-is-the-network-helper), which webOS needs for most providers (it adds the headers the TV insists on, unzips guides, and works around sloppy servers).  *Direct* only works with servers that allow app requests. |
 | **Network helper** | (information) | Whether the helper is running.  **Settings > Updates, about and diagnostics** shows its status and its log. |
-| **Buffer meter** | **When low** · Always · Off | A small gauge in fullscreen showing how many seconds of video are banked. |
+| **Buffer meter** | **When low** · Always · Off | A small gauge in fullscreen showing how many seconds of video are banked, written inside its bar, then the picture and the player in use, then the speed.  Each part keeps its width, so the bar stays still while the numbers change. |
 | **Buffer info on demand** | 5 seconds · **10 seconds** · 30 seconds · Until pressed again | How long the gauge stays when you hold **Info** in fullscreen (the INFO button on LG's standard remote, or I on a keyboard), whatever the Buffer meter is set to.  Press again to hide it.  **Stream info** in the quick menu (**OK** in fullscreen) shows it too, along with the stream's details, and works on every remote.  Most Magic Remotes have no Info button: TiviBro notices and the hint here changes to match, and you can give any button **Show buffer info** or **Stream info and buffer** under **Settings > Remote and buttons > In the player**. |
 | **Preview on the Channels screen** | **On** · Off | Plays the channel you rest on in the Channels screen.  Turn it off on very slow TVs for the snappiest list. |
 | **When a channel stops working** | **Switch to another version** · Ask me · Keep retrying | When a channel has run out of retries and your playlist has it more than once (another quality, another group, or a copy you hid), TiviBro switches to the next version, steadiest first: Full HD, HD, unmarked, 4K, then SD.  *Ask me* asks before switching.  See [Other versions of a channel](#other-versions-of-a-channel). |

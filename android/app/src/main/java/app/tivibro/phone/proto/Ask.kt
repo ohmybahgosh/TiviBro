@@ -48,13 +48,14 @@ data class OnNow(val off: Boolean, val msg: String, val on: List<OnNowMovie>, va
     }
 }
 
-/** One channel's row in the guide: what is on at the time asked for, and the two after.  [progs] is null while the TV is still loading its guide. */
-data class GuideRow(val key: String, val progs: List<Programme>?, val catchup: Boolean)
+/** One channel's row in the guide: what is on at the time asked for, and the two after.  [progs] is null while the TV is still loading its guide.
+ *  [dead]: the channel's last tries on the TV failed (issue #37). */
+data class GuideRow(val key: String, val progs: List<Programme>?, val catchup: Boolean, val dead: Boolean = false)
 
 data class GuidePage(val total: Int, val offset: Int, val rows: List<GuideRow>, val pending: Int) {
     companion object {
         fun from(j: JSONObject) = GuidePage(j.optInt("total"), j.optInt("offset"),
-            j.optJSONArray("rows").list { r -> GuideRow(r.getString("k"), r.optJSONArray("p")?.let { a -> a.list { Programme.from(it) } }, r.optInt("a") == 1) },
+            j.optJSONArray("rows").list { r -> GuideRow(r.getString("k"), r.optJSONArray("p")?.let { a -> a.list { Programme.from(it) } }, r.optInt("a") == 1, r.optInt("dead") == 1) },
             j.optInt("pending"))
     }
 }

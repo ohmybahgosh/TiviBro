@@ -132,11 +132,25 @@ var UI = (function () {
   // Magic Remote: clicking outside the box is the same as Back.
   modal.addEventListener('click', function (e) { if (e.target === modal && modalH) dispatch('back', null); });
 
-  function close() { modal.classList.add('hidden'); modal.querySelector('.modal-box').classList.remove('wide'); modalH = null; mBody.innerHTML = ''; if (onClose) { var f = onClose; onClose = null; f(); } }
+  function close() { modal.classList.add('hidden'); modal.querySelector('.modal-box').classList.remove('wide', 'panel'); modalH = null; mBody.innerHTML = ''; if (onClose) { var f = onClose; onClose = null; f(); } }
   var onClose = null;
 
+  /* Up to M_VIS rows show.  Rows that wrap onto two or three lines (long subtitle names, discussion
+     #36) make fewer fit: the list then starts lower until the focused row is whole, and a last row
+     that would be cut off by the bottom of the box is left out. */
   function drawMenu() {
     mTop = U.clamp(mTop, Math.max(0, mSel - M_VIS + 1), mSel);
+    fillMenu();
+    var h = mBody.clientHeight, f = mBody.children[mSel - mTop];
+    if (!h || !f) return;
+    while (mTop < mSel && f.offsetTop + f.offsetHeight > h) { mTop++; fillMenu(); f = mBody.children[mSel - mTop]; }
+    for (var k = mBody.children.length - 1; k > 0; k--) {
+      var e = mBody.children[k];
+      if (e === f || e.offsetTop + e.offsetHeight <= h) break;
+      e.style.visibility = 'hidden';
+    }
+  }
+  function fillMenu() {
     mBody.innerHTML = '';
     for (var i = mTop; i < Math.min(mItems.length, mTop + M_VIS); i++) {
       var it = mItems[i], d = U.el('div', 'mi' + (i === mSel ? ' focus' : ''));
@@ -155,6 +169,7 @@ var UI = (function () {
     if (!mItems.length) mItems = [{ label: 'Nothing to choose from' }];      // an empty list is never a dead end
     mSel = Math.max(0, mItems.findIndex(function (x) { return x.current; }));
     mTitle.textContent = title;
+    mBox.classList.remove('panel');
     modal.classList.remove('hidden');
     drawMenu();
     modalH = function (a) {
@@ -225,6 +240,8 @@ var UI = (function () {
     mTitle.textContent = title;
     mBody.innerHTML = '';
     mBox.classList.add('wide');
+    // Long text gives way to the buttons, which always show whole at the bottom (discussion #36).
+    mBox.classList.add('panel');
     mBody.appendChild(body);
     var row = U.el('div', 'mbtns'), els = [], f = 0;
     buttons.forEach(function (b, i) {

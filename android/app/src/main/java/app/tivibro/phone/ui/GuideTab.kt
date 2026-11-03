@@ -175,6 +175,7 @@ private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long,
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text((if (c.number.isNotBlank()) c.number + "  " else "") + c.name, color = if (playing) Accent else Muted, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (c.dead || row?.dead == true) NotPlayingTag()
             when {
                 row == null || progs == null -> Text("…", color = Muted)
                 first == null -> Text("No guide information", color = Muted, style = MaterialTheme.typography.bodyMedium)

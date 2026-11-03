@@ -569,6 +569,7 @@ var App = (function () {
     loading('Starting…');
     Log.info('app', 'TiviBro ' + TIVIBRO_VERSION + ' starting.  ' + navigator.userAgent);
     Caps.loadSystemInfo();
+    Awake.start();                 // the TV's screensaver waits while something plays (issue #37)
     Net.start(6000).then(function () {
       WebEdit.resume();
       Phone.start();

@@ -3,7 +3,6 @@
 .nogap .vlist .row > * + *{margin-left:18px}
 .nogap .spinner > * + *{margin-left:18px}
 .nogap .osd-top > * + *{margin-left:24px}
-.nogap .meter > * + *{margin-left:14px}
 .nogap .gch > * + *{margin-left:14px}
 .nogap .gp > * + *{margin-top:4px}
 .nogap .guide-top > * + *{margin-left:40px}

@@ -46,6 +46,7 @@ class LiveTvTest {
         var lineup: app.tivibro.phone.proto.Lineup? = null
         for (i in 0 until 20) { lineup = app.tivibro.phone.proto.Lineup.from(c.lineup(0)); if (lineup != null) break; Thread.sleep(300) }
         assertTrue("the channel list arrives", lineup != null && lineup.channels.size == 40 && lineup.groups.any { it.name == "Sports" })
+        assertTrue("a channel that isn't playing lately says so, the rest don't", lineup!!.byKey["fake|3"]?.dead == true && lineup.channels.count { it.dead } == 1)
         val st0 = c.state(0, false)
         c.play("fake|5")
         val st1 = c.state(st0.rev, true)

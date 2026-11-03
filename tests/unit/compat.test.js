@@ -186,6 +186,8 @@ Promise.resolve(5).finally(() => order.push('f')).then(v => order.push(v))
     const known = ['luna://com.webos.service.tv.systemproperty', 'luna://' + info.id + '.service', 'luna://org.webosbrew.hbchannel', 'luna://com.palm.activitymanager', 'luna://com.webos.applicationManager', 'luna://com.webos.notification', 'luna://com.webos.settingsservice', 'luna://com.webos.service.audio',
       // tvpower/getPowerState (is the screen on, or the screensaver / Always Ready?) has no public ACG group;
       // remind.js treats a refused call as "don't know" and still checks the app in front.
+      // tvpower/registerScreenSaverRequest and responseScreenSaverRequest (awake.js, issue #37) are open
+      // to developer-mode apps without a group; a refusal is logged and playback carries on.
       'luna://com.webos.service.tvpower'];
     luna.forEach(u => ok('Luna call has a known ACG: ' + u, known.some(k => u.indexOf(k) === 0)));
 

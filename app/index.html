@@ -92,7 +92,7 @@
   <div class="osd-prog"><div id="osdNow" class="osd-now"></div><div class="bar"><i id="osdBar"></i></div><div id="osdNext" class="osd-next"></div></div>
   <div id="osdKeys" class="osd-keys"></div>
 </div>
-<div id="meter" class="meter hidden"><span class="meter-label">Buffer</span><div class="meter-track"><i id="meterFill"></i></div><span id="meterSecs" class="meter-secs"></span><span id="meterText"></span></div>
+<div id="meter" class="meter hidden"><span class="meter-buf"><span class="meter-label">Buffer</span><span class="meter-track"><span id="meterSecs" class="meter-secs"></span><i id="meterFill"><span id="meterSecsIn" class="meter-secs"></span></i></span></span><span id="meterRes" class="meter-res"></span><span id="meterRate" class="meter-rate"></span></div>
 <div id="zapNum" class="zapnum hidden"></div>
 
 <!-- Setup -->
@@ -129,6 +129,7 @@
 <script src="js/captions.js"></script>
 <script src="js/player.js"></script>
 <script src="js/deadlist.js"></script>
+<script src="js/awake.js"></script>
 <script src="js/vlist.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/views.js"></script>

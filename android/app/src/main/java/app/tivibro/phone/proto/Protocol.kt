@@ -354,8 +354,9 @@ data class NowState(
     }
 }
 
-/** [inAll]: false for a channel only a group shows (a Local channels group keeps stations whose network groups are hidden). */
-data class Chan(val k: String, val name: String, val number: String, val logo: String, val fav: Boolean, val now: Prog?, val inAll: Boolean = true)
+/** [inAll]: false for a channel only a group shows (a Local channels group keeps stations whose network groups are hidden).
+ *  [dead]: its last tries on the TV failed while other channels play (issue #37); false again once it plays. */
+data class Chan(val k: String, val name: String, val number: String, val logo: String, val fav: Boolean, val now: Prog?, val inAll: Boolean = true, val dead: Boolean = false)
 data class Group(val id: String, val name: String, val keys: List<String>)
 data class Lineup(val rev: Int, val channels: List<Chan>, val groups: List<Group>) {
     val byKey: Map<String, Chan> by lazy { channels.associateBy { it.k } }
@@ -367,7 +368,7 @@ data class Lineup(val rev: Int, val channels: List<Chan>, val groups: List<Group
             val gs = j.optJSONArray("groups")
             val chans = (0 until cs.length()).map { i ->
                 val c = cs.getJSONObject(i)
-                Chan(c.getString("k"), c.optString("n"), c.opt("num")?.toString().orEmpty(), c.optString("logo"), c.optInt("fav") == 1, Prog.from(c.optJSONObject("now")), c.optInt("na") != 1)
+                Chan(c.getString("k"), c.optString("n"), c.opt("num")?.toString().orEmpty(), c.optString("logo"), c.optInt("fav") == 1, Prog.from(c.optJSONObject("now")), c.optInt("na") != 1, c.optInt("dead") == 1)
             }
             val groups = if (gs == null) emptyList() else (0 until gs.length()).map { i ->
                 val g = gs.getJSONObject(i); val ks = g.optJSONArray("keys")

@@ -490,8 +490,9 @@ var Player = (function () {
     Log.error('player', 'No player could open this channel (tried ' + Object.keys(cur.tried || {}).join(', ') + ')  ' + (cur.origUrl || cur.url));
     teardown();
     cur.failed = true;
-    // Counted for the warning that most of a playlist will not play (deadlist.js).
-    if (cur.live && cur.lastHttp && window.DeadList) { try { DeadList.failed(cur.ch, cur.origUrl || cur.url, cur.lastHttp); } catch (e) {} }
+    // Counted for the warning that most of a playlist will not play, and for the "not playing lately"
+    // mark on a channel that fails again and again (deadlist.js).  Once per try.
+    if (cur.live && !cur.timeshift && !cur.deadCounted && window.DeadList) { cur.deadCounted = true; try { DeadList.failed(cur.ch, cur.origUrl || cur.url, cur.lastHttp || 0); } catch (e) {} }
     // A movie that was playing here a moment ago is not a format the TV can't decode (issue #34).
     if (isFile() && cur.everPlayed) return state('error', CLOSED);
     if (cur.lastHttp) return state('error', 'The provider is not sending this ' + (isFile() ? 'video' : 'channel') + ' right now (error ' + cur.lastHttp + ').  Press OK to try again, or try ' + (isFile() ? 'again later.' : 'another channel.'));
@@ -958,6 +959,7 @@ var Player = (function () {
     get paused() { return !video || video.paused; },
     get userPaused() { return !!(st && st.userPaused); },
     get playing() { return !!(st && st.state === 'playing'); },
+    get state() { return st ? st.state || 'idle' : 'idle'; },        // loading, buffering, playing, error, ended, idle
     get cc() { return ccState(); },
     setCC: function (on) { Store.settings.cc = !!on; Store.saveSettings(); ccLast = '-'; try { ccDraw(); } catch (e) {} }
   };

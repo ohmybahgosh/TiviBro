@@ -64,6 +64,17 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   f = await ask('fav', { k: fk, on: false });
   ok('and off again', !f.on && await ev((x) => !Library.isFav(x), fk));
 
+  // A channel whose last tries failed (issue #37): "not playing lately" in the phone's list and guide.
+  const dk = g.rows[4].k;
+  await ev((k) => { const c = Library.data.channels.find((x) => x.k === k); DeadList.failed(c, '', 404); DeadList.failed(c, '', 404); }, dk);
+  for (let i = 0; i < 20; i++) { l = await C.call(cred, 'GET', '/v1/lineup'); if (l.channels && l.channels.find((c) => c.k === dk && c.dead)) break; await wait(500); }
+  ok('a channel not playing lately is marked in the phone\'s list (and only that one)', !!(l.channels && l.channels.find((c) => c.k === dk && c.dead === 1)) && l.channels.filter((c) => c.dead).length === 1);
+  const gd = await ask('guide', { offset: 0, limit: 20 });
+  ok('and in the phone\'s guide', gd.rows.find((r) => r.k === dk).dead === 1 && gd.rows.filter((r) => r.dead).length === 1, JSON.stringify(gd.rows[4]).slice(0, 200));
+  await ev((k) => { DeadList.played(Library.data.channels.find((x) => x.k === k), ''); }, dk);
+  for (let i = 0; i < 20; i++) { l = await C.call(cred, 'GET', '/v1/lineup'); if (l.channels && !l.channels.some((c) => c.dead)) break; await wait(500); }
+  ok('once it plays, the mark goes on the phone too', !l.channels.some((c) => c.dead) && !(await ask('guide', { offset: 0, limit: 20 })).rows.some((r) => r.dead));
+
   // Movies and Shows.
   const mc = await ask('vodcats', { kind: 'movie' });
   ok('movie categories, as on the TV', mc.cats.length > 2 && mc.cats.some((c) => c.id === '_all'), JSON.stringify(mc.cats.slice(0, 4)));

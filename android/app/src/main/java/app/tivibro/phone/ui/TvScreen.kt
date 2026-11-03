@@ -413,6 +413,7 @@ private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onFav: () -> Unit, 
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(c.name, fontWeight = FontWeight.SemiBold, color = if (playing) Accent else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                if (c.dead) { Spacer(Modifier.width(8.dp)); NotPlayingTag() }
             }
             val p: Prog? = c.now
             if (p != null) {
@@ -428,6 +429,12 @@ private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onFav: () -> Unit, 
             Icon(if (c.fav) Icons.Rounded.Star else Icons.Rounded.StarOutline, if (c.fav) "Remove from Favorites" else "Add to Favorites", tint = if (c.fav) Accent else Muted)
         }
     }
+}
+
+/** A channel whose last tries on the TV failed while other channels play (issue #37): a quiet amber note, gone once it plays. */
+@Composable
+internal fun NotPlayingTag() {
+    Text("not playing lately", color = Warn, style = MaterialTheme.typography.labelSmall, maxLines = 1)
 }
 
 /* ---------- typing on the phone into the TV ---------- */

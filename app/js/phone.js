@@ -136,10 +136,12 @@ var Phone = (function () {
       var gid = a.group || Library.ALL, at = +a.at || Date.now(), list = Library.channels(gid), off = Math.max(0, +a.offset || 0), lim = Math.min(200, Math.max(1, +a.limit || 60)), pending = 0;
       var rows = list.slice(off, off + lim).map(function (c) {
         var l = Epg.request(c);
-        if (!l) { pending++; return { k: c.k }; }
+        if (!l) { pending++; return typeof DeadList !== 'undefined' && DeadList.marked(c) ? { k: c.k, dead: 1 } : { k: c.k }; }
         var out = [];
         for (var i = 0; i < l.length && out.length < 3; i++) if (l[i].e > at) { var x = prog(l[i], c); if (hasReminder(c.k, l[i].s)) x.r = 1; out.push(x); }
-        return { k: c.k, p: out, a: c.arch ? 1 : 0 };
+        var row = { k: c.k, p: out, a: c.arch ? 1 : 0 };
+        if (typeof DeadList !== 'undefined' && DeadList.marked(c)) row.dead = 1;      // not playing lately (issue #37)
+        return row;
       });
       return { total: list.length, offset: off, rows: rows, pending: pending };
     },
@@ -432,6 +434,7 @@ var Phone = (function () {
       seen[c.k] = 1;
       var nn = Epg.peek(c), now = nn && nn.now, x = { k: c.k, n: Library.name(c), num: c.num || '', logo: Views.logoOf(c) || '', fav: Library.isFav(c.k) ? 1 : 0 };
       if (inAll ? !inAll[c.k] : li) x.na = 1;            // not in All
+      if (typeof DeadList !== 'undefined' && DeadList.marked(c)) x.dead = 1;      // its last tries failed (issue #37)
       if (now) x.now = { t: now.t, s: now.s, e: now.e };
       else { var ex = Search.extra(c); if (ex) x.now = { t: ex }; }
       chans.push(x);
@@ -444,6 +447,13 @@ var Phone = (function () {
       Log.info('phone', 'Sent the channel list to the phone app: ' + chans.length + ' channels, ' + groups.length + ' groups');
     }, function (e) { lineupAt = 0; Log.warn('phone', 'Could not send the channel list: ' + (e && e.message)); });
   }
+
+  // A channel got or lost the "not playing lately" mark: the phone's list follows, a few seconds later.
+  var deadT = 0;
+  if (typeof DeadList !== 'undefined' && DeadList.onChange) DeadList.onChange(function () {
+    if (!(st && st.on) || !base() || deadT) return;
+    deadT = setTimeout(function () { deadT = 0; lineupAt = 0; sendLineup(); }, 5000);
+  });
 
   function turn(on) {
     return call('/companion/set', { on: !!on }).then(set).then(function (s) {

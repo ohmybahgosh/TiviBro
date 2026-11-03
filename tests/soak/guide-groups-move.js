@@ -23,7 +23,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await page.waitForTimeout(400);      // the guide opens on its group panel
   const n = await ev(() => Library.groups().length);
   let worst = null;
-  for (let i = 0; i < n + 2; i++) {
+  // Down on the last group goes back to the first now (one press): walk only as far as the last one.
+  for (let i = Math.max(0, await ev(() => Guide.__gsel())); i < n - 1; i++) {
     await ev(() => UI.press('down')); await page.waitForTimeout(120);
     const r = await ev(() => {
       var host = document.getElementById('guideGroupList'), s = host.querySelector('.row.sel');
@@ -37,6 +38,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   }
   const end = await ev(() => Guide.__gsel());
   ok('the highlighted group stays whole on screen to the bottom of the list (' + n + ' groups)', !worst && end === n - 1, JSON.stringify({ worst, end }));
+  await ev(() => UI.press('down')); await page.waitForTimeout(150);
+  ok('one more Down goes back to the first group', await ev(() => Guide.__gsel()) === 0);
+  await ev(() => { for (let j = 0; j < 40 && Guide.__gsel() < Library.groups().length - 1; j++) UI.press('down'); }); await page.waitForTimeout(150);
 
   // Into the grid, on a provider group, and move its first channel down two places.
   const g = await ev(() => { var g = Library.groups().filter(function (x) { return !Library.isCustom(x.id) && x.id !== Library.ALL && Library.channels(x.id).length > 3; })[0]; return g.id; });

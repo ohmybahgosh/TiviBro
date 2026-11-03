@@ -43,6 +43,7 @@ function VList(host, opts) {
   });
 }
 VList.prototype.setItems = function (items, sel) {
+  this.fit();
   this.items = items || [];
   this.sel = U.clamp(sel || 0, 0, Math.max(0, this.items.length - 1));
   this.top = -1;
@@ -78,8 +79,9 @@ VList.prototype.draw = function (force) {
   }
   for (i = 0; i < P; i++) if (!used[i] && !this.pool[i].hidden) { this.pool[i].el.style.display = 'none'; this.pool[i].hidden = true; this.pool[i].idx = -1; }
 };
-// wrap: one press past either end goes round to the other end, like a TV channel list.  Never
-// while an arrow is held down, so holding Down stops at the bottom instead of racing round.
+// wrap: one press past either end goes round to the other end, like a TV channel list.  wrap 'down':
+// only Down on the last row goes round to the first; Up on the first row stays put.  Never while an
+// arrow is held down, so holding Down stops at the bottom instead of racing round.
 // Holding Up or Down speeds up the longer it is held: 2 rows a step after a second, 5 after
 // two and a half, 15 after four, so the bottom of a 5,000 channel group is a few seconds away.
 VList.prototype.move = function (d, wrap) {
@@ -92,8 +94,9 @@ VList.prototype.move = function (d, wrap) {
     var t = now - this._held;
     d *= t > 4000 ? 15 : t > 2500 ? 5 : t > 1000 ? 2 : 1;
   } else this._held = 0;
+  if (!this._fitH) this.fit();
   var s = this.sel + d;
-  if (wrap && n > 2 && Math.abs(d) === 1 && !UI.repeating && (s < 0 || s >= n)) s = s < 0 ? n - 1 : 0;
+  if (wrap && n > 2 && Math.abs(d) === 1 && !UI.repeating && (s >= n || (s < 0 && wrap !== 'down'))) s = s < 0 ? n - 1 : 0;
   s = U.clamp(s, 0, n - 1);
   if (s === this.sel) return false;
   this.sel = s;
@@ -115,9 +118,16 @@ VList.prototype.refreshWhere = function (test) {
 /* For a list built while hidden (no height yet): count the rows that fit now, so the last row shown is
    whole and the selection never moves below what is visible.  Grows the row pool if more fit. */
 VList.prototype.measure = function () {
-  var h = this.host.clientHeight; if (!h) return;
+  if (this.fit()) { this.top = -1; this.ensure(false); this.draw(true); }
+};
+/* Count the rows that fit, without drawing.  A list made while its screen was hidden guessed
+   (opts.visible), and a guess that is too high puts the last rows under the button hints (discussion
+   #36); so the first move or new items on a shown list count again.  true when the count changed. */
+VList.prototype.fit = function () {
+  var h = this.host.clientHeight; if (!h) return false;
+  this._fitH = h;
   var v = Math.max(1, Math.floor(h / this.rowH));
-  if (v === this.visible) return;
+  if (v === this.visible) return false;
   this.visible = v;
   while (this.pool.length < v + 1) {
     var r = document.createElement('div'); r.className = 'row'; r.style.display = 'none';
@@ -125,6 +135,7 @@ VList.prototype.measure = function () {
     this.pool.push({ el: r, idx: -1, hidden: true, y: null, on: null });
   }
   for (var i = 0; i < this.pool.length; i++) { this.pool[i].idx = -1; this.pool[i].y = null; }      // slots move round the pool again
-  this.top = -1; this.ensure(false); this.draw(true);
+  this.top = U.clamp(this.top, -1, Math.max(0, this.items.length - v));
+  return true;
 };
 VList.prototype.setActive = function (on) { this.host.classList.toggle('active', !!on); };
