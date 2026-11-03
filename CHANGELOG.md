@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.6.0 (alpha 66, 2026-11-03)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 66
+
 - **The TV's screensaver stays away while something plays** (issue #37).  webOS starts its screensaver when no button has been pressed for a while, even over a channel or a movie, and with a homebrew screensaver such as Aerial it showed as a black screen with text over the picture.  TiviBro now asks the TV to wait while live TV, a movie or episode, My media or catch-up plays, loads or buffers, and lets it start when nothing plays, playback is paused, or TiviBro is in the background.  Nothing to switch on, and no extra permissions.  Each time it holds the screensaver off, the log says what was playing.
 - **Channels that aren't playing lately are marked** (issue #37).  A channel whose last two tries both failed, while the playlist's other channels play, shows a small amber **not playing lately** tag in the channel lists and the phone app, and **not playing** in the guide's channel column.  The tag goes the moment the channel plays again, and after three days on its own.
 - **The last rows of long lists show whole** (discussion #36).  A menu with rows that wrap onto two or three lines, like subtitle search results, starts lower so the focused row is never cut off at the bottom, and leaves out a half row.  The guide's last channels no longer sit under the button hints after its row size was changed in Settings, and a message box always shows its buttons under long text.
@@ -11,11 +17,7 @@
 - **Subtitles in MP4 movies and episodes** (thanks to moritzm784, pull request #39).  Built-in subtitles in MP4 files from your provider and from My media now show in **Subtitles**, with their language names.  Only the subtitle you turn on is read.
 - **Subtitles stay off when you turn them off.**  Choosing **Off** is kept when the player reconnects, even with automatic subtitles on, and a subtitle no longer turns itself on when an MKV or MP4 file's tracks appear.
 
-## 0.6.0 (alpha 65, 2026-11-03)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 65
+### In alpha 65
 
 - **A paused movie plays again after a long pause** (issue #34).  When the provider closed the connection during the pause, the movie could refuse to load and even say its format can't be played.  A movie or episode that was playing is now always opened again at the same spot: after a pause of a few minutes it reopens on play, a link that expired meanwhile is asked for again, and the network helper no longer cuts a paused movie's connection after 30 seconds.  If the provider really won't let it back in, the message says so and OK tries again from where you were.
 - **Aspect, for pictures with the wrong shape** (discussion #31).  The quick menu's Picture is now **Aspect**: Original, Fill, Zoom, 4:3, 16:9 (for a 16:9 picture squashed into 4:3), 21:9 (a letterboxed 2.35:1 film fills the screen) and 4:3 to 16:9.  Each channel, movie and episode remembers its own, and **Settings > Playback > Aspect** sets the default.  With the TV player some TVs keep the picture as it was, and the menu says so.
