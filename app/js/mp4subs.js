@@ -267,7 +267,22 @@ var Mp4Subs = (function () {
       }
     }
     if (kept < n) { off = off.subarray(0, kept); size = size.subarray(0, kept); s = s.subarray(0, kept); e = e.subarray(0, kept); }
-    return { n: kept, off: off, size: size, s: s, e: e };
+    // Composition offsets can put samples out of time order: sort them by start, so the lookup by time
+    // works (a sample is then known by its place in this order).
+    var sorted = true;
+    for (k = 1; k < kept && sorted; k++) if (s[k] < s[k - 1]) sorted = false;
+    if (!sorted) {
+      var order = [];
+      for (k = 0; k < kept; k++) order.push(k);
+      order.sort(function (x, y) { return s[x] - s[y] || x - y; });
+      var o2 = new Float64Array(kept), z2 = new Uint32Array(kept), s2 = new Float64Array(kept), e2 = new Float64Array(kept);
+      for (k = 0; k < kept; k++) { o2[k] = off[order[k]]; z2[k] = size[order[k]]; s2[k] = s[order[k]]; e2[k] = e[order[k]]; }
+      off = o2; size = z2; s = s2; e = e2;
+    }
+    // The latest end so far: overlapping samples can end out of order too.
+    var me = new Float64Array(kept);
+    for (k = 0; k < kept; k++) me[k] = k && me[k - 1] > e[k] ? me[k - 1] : e[k];
+    return { n: kept, off: off, size: size, s: s, e: e, me: me };
   }
 
   // One 3GPP text sample (TS 26.245 §5.17): a 16-bit length, then the text in UTF-8, or UTF-16
@@ -363,7 +378,7 @@ var Mp4Subs = (function () {
      size, s, e }] in attach order, total: samples with text }.  A work item is a run of samples
      close together in the file (across the tracks being shown), read in one request. */
   var HEAD_BYTES = 65536, WINDOW = 65536, RUN_WINDOW = 262144, HEADER_WINDOW = 1024;
-  var MAX_REQUESTS = 32, MAX_BYTES = 16 * 1048576, MAX_MS = 20000, MAX_TRAK = 4 * 1048576, MAX_TRACKS = 64;
+  var MAX_REQUESTS = 32, MAX_BYTES = 16 * 1048576, MAX_MS = 20000, MAX_TRAK = 4 * 1048576, MAX_TRACKS = 64, MAX_READ = 1048576;
   var MAX_GAP = 65536, MAX_JOIN = 262144, MAX_SAMPLES = 100000, MAX_SAMPLE_BYTES = 4096;
   var TOP_LEVEL = Object.create(null);
   'ftyp moov mdat free skip wide pdin uuid'.split(' ').forEach(function (t) { TOP_LEVEL[t] = 1; });
@@ -384,14 +399,22 @@ var Mp4Subs = (function () {
       }
       var end = Math.min(limit, pos + Math.max(len, win));
       if (end < pos + len) return Promise.reject(capped('box past the end of the file'));
-      if (++requests > MAX_REQUESTS || (bytes += end - pos) > MAX_BYTES || Date.now() - began > MAX_MS)
-        return Promise.reject(capped('the subtitle index is too big to look through'));
-      return range(pos, end - 1).then(function (b) {
-        if (!alive()) throw new Error('cancelled');
-        var got = { start: pos, bytes: b };
-        windows.push(got);
-        return got;
-      });
+      // At most 1 MiB a request, so a big track doesn't hold the line long while the video loads.
+      var out = end - pos > MAX_READ ? new Uint8Array(end - pos) : null;
+      function piece(at) {
+        if (at >= end) { var got = { start: pos, bytes: out }; windows.push(got); return Promise.resolve(got); }
+        var to = Math.min(end, at + MAX_READ);
+        if (++requests > MAX_REQUESTS || (bytes += to - at) > MAX_BYTES || Date.now() - began > MAX_MS)
+          return Promise.reject(capped('the subtitle index is too big to look through'));
+        return range(at, to - 1).then(function (b) {
+          if (!alive()) throw new Error('cancelled');
+          if (at === pos && to === end) { out = b; return piece(to); }
+          if (b.length < to - at) throw capped('short read');
+          out.set(b.subarray(0, to - at), at - pos);
+          return piece(to);
+        });
+      }
+      return piece(pos);
     }
     function header(pos, end, win) {
       return get(pos, Math.min(16, end - pos), win, end).then(function (w) { return box(w.bytes, pos, end, w.start); });
@@ -493,10 +516,10 @@ var Mp4Subs = (function () {
     });
   }
 
-  // The first sample whose end is after t (ends only grow in a text track).
+  // The first sample that may end after t: samples go by start, and me[] (the latest end so far) only grows.
   function firstEndingAfter(T, t) {
     var lo = 0, hi = T.n;
-    while (lo < hi) { var mid = (lo + hi) >> 1; if (T.e[mid] <= t) lo = mid + 1; else hi = mid; }
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (T.me[mid] <= t) lo = mid + 1; else hi = mid; }
     return lo;
   }
   function candidatesOf(rec, now, ctx) {
@@ -509,7 +532,7 @@ var Mp4Subs = (function () {
       var from = want === 'now' ? now - 30 : want.from, to = want === 'now' ? now + 60 : want.to;
       var a = (from - shift) / scale, b = (to - shift) / scale, here = (now - shift) / scale, T = ix.tracks[i];
       for (var k = firstEndingAfter(T, a); k < T.n && T.s[k] < b; k++) {
-        if (T.size[k] <= 2 || rec.fetched[i + ':' + k]) continue;
+        if (T.size[k] <= 2 || T.e[k] <= a || rec.fetched[i + ':' + k]) continue;
         picks.push({ t: i, k: k, start: T.off[k], end: T.off[k] + T.size[k], dist: T.s[k] > here ? T.s[k] - here : T.e[k] < here ? here - T.e[k] : 0 });
       }
     }

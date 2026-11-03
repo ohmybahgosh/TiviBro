@@ -43,6 +43,9 @@ var EmbedSubs = (function () {
   // and only not-yet-fetched work is requested, so extraction converges rather than
   // restarting, and the provider sees far fewer requests overall.
   var subCache = {};
+  // The session the newest play resolved, before its file has a cache record: a seek during discovery
+  // restarts the reader on it instead of opening the provider's entry link next to the video.
+  var lastSession = null;
   // Only the playing file and the two before it keep their cache: a seek or reconnect needs it, an
   // evening of episodes shouldn't pile up indexes and lines in the TV's memory.
   var CACHE_FILES = 3, cacheOrder = [];
@@ -220,7 +223,15 @@ var EmbedSubs = (function () {
     var loads = {};               // track index -> { from, to, settle }: an _embedLoad in progress
     var settleTimers = [];        // putting the track modes back after the browser's own pick
     var ctx = {
-      demand: function (i) { var t = liveTracks[i]; return loads[i] ? loads[i] : t && t.mode === 'showing' ? 'now' : null; },
+      // A shown track that Line up also reads asks for both windows (what lies between is bounded: Line
+      // up's window is near the playing position).
+      demand: function (i) {
+        var t = liveTracks[i], on = t && t.mode === 'showing', l = loads[i];
+        if (!l) return on ? 'now' : null;
+        if (!on) return l;
+        var now = video.currentTime || 0;
+        return { from: Math.min(l.from, now - 30), to: Math.max(l.to, now + 60) };
+      },
       timing: function (i) {
         var has = typeof Subs !== 'undefined', m = has && Subs.timing ? Subs.timing(liveTracks[i]) : null;
         return m || { scale: 1, off: 0, delay: has ? Subs.delay || 0 : 0 };
@@ -242,6 +253,7 @@ var EmbedSubs = (function () {
     // Items whose lines didn't fit the text cap are read again in this play.
     if (rec && rec.unretained) { for (var uk in rec.unretained) delete rec.fetched[uk]; rec.unretained = null; rec.done = false; }
     if (!onResolved && rec && rec.resolved) wrapped = rec.resolved;
+    else if (!onResolved && lastSession && lastSession.url === url) wrapped = lastSession.resolved;
 
     // Line up asks for a window of a track nobody is watching: read it, then stop asking.
     function loadFor(k) {
@@ -292,8 +304,10 @@ var EmbedSubs = (function () {
       if (intent.indexOf('showing') < 0 && !video._subsChoice && typeof Subs !== 'undefined' && Subs.autoOn) {
         for (var a = 0; a < liveTracks.length; a++) if (Subs.autoOn(liveTracks[a], video)) { intent[a] = 'showing'; break; }
       }
+      // A choice in the Subtitles menu (views.js counts them in video._subsRev) wins over this.
+      var rev0 = video._subsRev;
       function settle() {
-        if (cancelled) return;
+        if (cancelled || video._subsRev !== rev0) return;
         for (var i = 0; i < liveTracks.length; i++) if (liveTracks[i].mode !== intent[i]) liveTracks[i].mode = intent[i];
         paint();
         if (pump) pump();
@@ -402,6 +416,7 @@ var EmbedSubs = (function () {
     fetchRange(wrapped, 0, adapter.headBytes - 1, true).then(function (head) {
       clearTimeout(deadline);
       if (cancelled || timedOut) return;
+      if (onResolved) lastSession = { url: url, resolved: wrapped };
       startVideo(wrapped);
       // The same link now serving a different file (a different size) starts over.
       if (rec && rec.size !== undefined && isFinite(head.total) && head.total !== rec.size) {

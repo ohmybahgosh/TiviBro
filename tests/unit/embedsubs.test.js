@@ -32,6 +32,7 @@ class FakeXHR {
   abort() { this.aborted = true; aborted++; if (this.onabort) this.onabort(); }
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
+const until = async (cond, ms) => { for (let t = 0; t < (ms || 2000) && !cond(); t += 2) await wait(2); return cond(); };
 function makeTrackElement() { const cues = []; return { kind: '', label: '', srclang: '', track: { mode: 'disabled', cues, addCue(c) { cues.push(c); } } }; }
 function makeVideo(extra) {
   const listeners = {};
@@ -447,6 +448,71 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     h3.cancel(); delete ctx.Subs;
     ok("the browser's own track pick is undone; auto-on picks by Subs.autoOn, not after a choice",
       off === 'disabled,disabled' && auto === 'disabled,showing' && chosen === 'disabled,disabled', { off, auto, chosen });
+  }
+  {
+    // A track that is showing keeps its playback window while Line up reads another window of it.
+    files['both'] = new Uint8Array(64);
+    const ad = Object.assign(fakeAdapter({ items: [{ id: 'a', s: 10 }, { id: 'b', s: 500 }] }), { lazy: true });
+    ad.candidates = (rec, now, c) => {
+      const d = c.demand(0);
+      if (!d) return [];
+      const lo = d === 'now' ? now - 30 : d.from, hi = d === 'now' ? now + 60 : d.to;
+      return rec.index.items.filter(it => !rec.fetched[it.id] && it.s >= lo && it.s <= hi).sort((x, y) => Math.abs(x.s - now) - Math.abs(y.s - now));
+    };
+    const read = ad.read; ad.read = function (rec, item, range) { return item.id === 'b' ? (ad.reads.push('b'), new Promise(() => {})) : read.apply(this, arguments); };
+    const v = makeVideo({ currentTime: 0 });
+    const h = EmbedSubs.run('http://p/movie/both', v, () => {}, ad);
+    await wait(120);
+    const t0 = v.children[0].track;
+    t0.mode = 'showing';
+    t0._embedLoad(400, 600, 5000).catch(() => {});
+    await wait(40);
+    ok('a pending Line up read keeps the showing track\'s own window', ad.reads[0] === 'a', ad.reads);
+    h.cancel();
+  }
+  {
+    // The modes put back after the browser's pick never undo a choice made in the menu meanwhile, and
+    // a choice (a language, or Off) comes back on a reconnect whatever the browser picks.
+    const browserLike = extra => {
+      const v = makeVideo(Object.assign({ currentTime: 0 }, extra || {})), append = v.appendChild;
+      let first = true;
+      v.appendChild = function (el) { const r = append.call(this, el); if (first) { first = false; setTimeout(() => { el.track.mode = 'showing'; }, 0); } return r; };
+      return v;
+    };
+    const menu = (v, i) => { v._subsChoice = true; v._subsRev = (v._subsRev || 0) + 1; v.children.forEach((c, k) => { c.track.mode = k === i ? 'showing' : 'disabled'; }); };
+    const modes = v => v.children.map(c => c.track.mode).join();
+    const ad = () => Object.assign(fakeAdapter({ items: [{ id: 'a', s: 1 }] }), { describe: () => [{ label: 'English', srclang: 'en' }, { label: 'Dutch', srclang: 'nl' }] });
+    files['race'] = new Uint8Array(64);
+    const v = browserLike();
+    ctx.Subs = { delay: 0, autoOn: t => v.children.some(c => c.track === t && c.srclang === 'nl') };
+    const h = EmbedSubs.run('http://p/movie/race', v, () => {}, ad());
+    await until(() => v.children.length === 2);
+    await wait(20);
+    menu(v, -1);                                     // Off, between the two put-backs
+    await wait(120);
+    const race = modes(v);
+    h.cancel();
+    files['life'] = new Uint8Array(64);
+    const a = browserLike();
+    ctx.Subs.autoOn = t => a.children.some(c => c.track === t && c.srclang === 'en');
+    const h1 = EmbedSubs.run('http://p/movie/life', a, () => {}, ad());
+    await wait(120);
+    const auto = modes(a);
+    menu(a, 1);                                      // Dutch
+    h1.cancel();
+    const b = browserLike({ _subsChoice: a._subsChoice, _subsRev: a._subsRev });    // the reconnect: same video
+    const h2 = EmbedSubs.run('http://p/movie/life', b, () => {}, ad());
+    await wait(120);
+    const dutch = modes(b);
+    menu(b, -1);                                     // Off
+    h2.cancel();
+    const c = browserLike({ _subsChoice: true, _subsRev: b._subsRev });
+    const h3 = EmbedSubs.run('http://p/movie/life', c, () => {}, ad());
+    await wait(120);
+    const off = modes(c);
+    h3.cancel(); delete ctx.Subs;
+    ok('a menu choice right after the tracks appear is kept (Off stays off)', race === 'disabled,disabled', race);
+    ok('auto-on, then Dutch and Off each survive a reconnect over the browser\'s pick', auto === 'showing,disabled' && dutch === 'disabled,showing' && off === 'disabled,disabled', { auto, dutch, off });
   }
   {
     // mkv-fixture writes one byte per character: hand it the UTF-8 bytes as a binary string.

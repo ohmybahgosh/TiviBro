@@ -533,6 +533,48 @@ const twoParts = (late, extra) => buildMp4(Object.assign({ tracks: [{ lang: 'eng
     ok('extract gates on .mp4/.m4v/.mov or the container', off.every(x => x === undefined) && on.every(x => x === 'discovering') && calls.length === 3 &&
       Mp4Subs.isMp4('http://p/signed', 'M4V') && !Mp4Subs.isMp4('http://p/a.mkv', ''), { off, on, calls: calls.length });
   }
+  {
+    // A seek before discovery is done: the restarted reader stays on the session the video plays from.
+    files['seekr.mp4'] = twoParts(null, { moovAtEnd: true, virtualBase: 2e6, videoPadding: 100000 });
+    faults['seekr.mp4'] = { delay: 15, redirect: 'http://cdn/s1/seekr.mp4' }; requests = [];
+    const v = makeVideo();
+    const h1 = Mp4Subs.extract('http://p/movie/seekr.mp4', v, () => {}, '');
+    await wait(40);
+    h1.cancel();
+    v.currentTime = 101;
+    const h2 = Mp4Subs.extract('http://p/movie/seekr.mp4', v, null, '');
+    await until(() => v.children.length >= 1, 3000);
+    show(v, 0);
+    await until(() => tracksOf(v)[0] && tracksOf(v)[0].cues.length >= 1, 3000);
+    const entry = requests.filter(r => r.url === 'http://p/movie/seekr.mp4').length;
+    ok('seek during discovery keeps the resolved session (entry link read once)', entry === 1 && textsOf(tracksOf(v)[0]).join() === 'late',
+      { entry, urls: requests.map(r => r.url.slice(0, 18)), texts: tracksOf(v)[0] && textsOf(tracksOf(v)[0]) });
+    h2.cancel();
+  }
+  {
+    // Composition offsets out of order: shown times 200, 1 and 2 s.  The lines at 1 and 2 s still come.
+    files['ctts.mp4'] = asU8(buildMp4({ tracks: [{ lang: 'eng', cues: [[0, 1, 'first'], [1, 2, 'second'], [2, 3, 'third']], ctts: [[1, 200000], [2, 0]] }] }).bytes);
+    requests = [];
+    const v = makeVideo({ currentTime: 2 });
+    const h = Mp4Subs.extract('http://p/movie/ctts.mp4', v, () => {}, '');
+    await until(() => v.children.length === 1);
+    show(v, 0);
+    await until(() => tracksOf(v)[0].cues.length >= 2, 1500);
+    const got = textsOf(tracksOf(v)[0]).sort().join();
+    ok('composition offsets out of order still find the lines near now', got === 'second,third', got);
+    h.cancel();
+  }
+  {
+    // A subtitle track bigger than 1 MiB (allowed up to 4 MiB) is read in pieces of at most 1 MiB.
+    files['bigtrak.mp4'] = asU8(buildMp4({ moovAtEnd: true, tracks: [{ lang: 'eng', padding: 1100000, cues: [[1, 3, 'big']] }] }).bytes);
+    requests = [];
+    const v = makeVideo({ currentTime: 1 });
+    const h = Mp4Subs.extract('http://p/movie/bigtrak.mp4', v, () => {}, '');
+    await until(() => v.children.length === 1, 3000);
+    const biggest = Math.max.apply(null, requests.map(r => r.end - r.start + 1));
+    ok('a big subtitle track is read in pieces of at most 1 MiB', v.children.length === 1 && biggest <= 1048576, { tracks: v.children.length, biggest, n: requests.length });
+    h.cancel();
+  }
   if (fail) { console.log(fail + ' mp4subs test(s) failed'); process.exit(1); }
   console.log('all mp4subs tests passed');
 })().catch(e => { console.error(e); process.exit(1); });

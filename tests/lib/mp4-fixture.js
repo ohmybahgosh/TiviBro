@@ -14,6 +14,7 @@
 //   opts.virtualBase: absolute offset where sample data starts (> 2^32 for co64 tests); the gap reads
 //                     as zeros and lives inside one mdat with a 64-bit size
 //   track.hugeCount: stts/stsz/stsc that agree on this many samples (rounded up to even; tables stay tiny)
+//   track.padding: bytes of 'free' inside the track's stbl (a big subtitle track)
 'use strict';
 const u8 = a => Uint8Array.from(a);
 const u16 = n => [(n >>> 8) & 255, n & 255];
@@ -68,7 +69,9 @@ function trakBox(t, id, offsets, opts) {
     : full('stsz', 0, 0, u32(0), u32(sizes.length), cat(sizes.map(u32)));
   const co = opts.co64 ? full('co64', 0, 0, u32(offsets.length), cat(offsets.map(u64))) : full('stco', 0, 0, u32(offsets.length), cat(offsets.map(u32)));
   // A video track's tables are megabytes in real files: opts.videoPadding stands in for them.
-  const pad = t.video && opts.videoPadding ? box('free', Array(opts.videoPadding).fill(0)) : [];
+  // track.padding does the same for a subtitle track (a big one, past the 1 MiB read cap).
+  const padBytes = t.video ? opts.videoPadding : t.padding;
+  const pad = padBytes ? box('free', Array(padBytes).fill(0)) : [];
   const stbl = box('stbl', stsd, stts, ctts, stsc, stsz, co, pad);
   const minf = box('minf', t.video ? full('vmhd', 0, 1, Array(8).fill(0)) : full('nmhd', 0, 0), dref, stbl);
   const udta = t.name ? box('udta', box('name', Array.from(Buffer.from(t.name, 'utf8')))) : [];

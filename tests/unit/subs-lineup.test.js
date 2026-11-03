@@ -105,6 +105,26 @@ const lineUpWith = async (target, other) => {
     ok('Line up times out cleanly after 20000 ms with the existing toast', ms === 20000 && shown[0] === 'Lining up…' &&
       /took too long/.test(shown[shown.length - 1]) && target.cues[0].startTime === ref[0].s, { ms, shown });
   }
+  {
+    // Both tracks read around where they were watched, the target a minute late: the shift is tested
+    // before the overlap is judged, so lines outside the uncorrected overlap still count.
+    const win = ref.filter(x => x.s < 90).slice(0, 10);
+    const target = mk('English', 'en', win.map(x => ({ s: x.s + 60, e: x.e + 60 })), { mode: 'showing', _embedded: true });
+    toasts.length = 0;
+    await lineUpWith(target, mk('Dutch', 'nl', win, { _embedded: true }));
+    const r = toasts.length ? toasts[toasts.length - 1][0] : '';
+    ok('embedded pair a minute apart lines up (60 s earlier, full match)', /^Lined up: 60(\.0+)? s earlier \((9\d|100)% match\)/.test(r) &&
+      Math.abs(target.cues[0].startTime - win[0].s) < 0.06, { r, first: target.cues[0].startTime, want: win[0].s });
+    Subs.reset();
+    // Late in the film, a frame-rate difference moves lines out of the uncorrected overlap.
+    const late = ref.filter(x => x.s > 1500 && x.s < 1700);
+    const t2 = mk('English', 'en', late.map(x => ({ s: x.s / k, e: x.e / k })), { mode: 'showing', _embedded: true });
+    toasts.length = 0;
+    await lineUpWith(t2, mk('Dutch', 'nl', late, { _embedded: true }));
+    const r2 = toasts.length ? toasts[toasts.length - 1][0] : '';
+    ok('embedded pair late in the film: frame rate fixed', /frame rate fixed \((9\d|100)% match\)/.test(r2), { r2, n: late.length });
+    Subs.reset();
+  }
   if (fail) { console.log(fail + ' subs-lineup test(s) failed'); process.exit(1); }
   console.log('all subs-lineup tests passed');
 })().catch(e => { console.error(e); process.exit(1); });

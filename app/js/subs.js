@@ -239,6 +239,7 @@ var Subs = (function () {
       for (var off = -120; off <= 120; off += 0.5) { var v = overlap(a, b, sc, off); if (coarse.score < 0 || near(v, coarse.score, off, coarse.off)) coarse = { score: v, off: off }; }
       for (var f = coarse.off - 0.6; f <= coarse.off + 0.6; f += 0.05) { var w = overlap(a, b, sc, f); if (w > best.score) best = { score: w, scale: sc, off: Math.round(f * 100) / 100 }; }
     });
+    if (typeof total === 'function') total = total(best);
     if (total === undefined) total = b.reduce(function (n, c) { return n + (c.e - c.s); }, 0);
     else best.score = Math.min(best.score, total);
     best.match = total ? best.score / total : 0;
@@ -249,14 +250,16 @@ var Subs = (function () {
     var rc = cuesOf(ref).map(function (c) { return { s: c.startTime, e: c.endTime }; });
     var r;
     if (target._embedded || ref._embedded) {
-      // A track read from the file as it plays has lines only around where it was watched: match over the
-      // time both tracks have lines for (the reference a little wider, for the shift search), and score
-      // against the reference's lines in that time, not the whole film's.
+      // A track read from the file as it plays has lines only around where it was watched: score against
+      // the reference's lines in the time both have lines for once the target is moved, not the whole
+      // film's (the reference a little wider than the target, for the shift search).
       if (!tc.length || !rc.length) return null;
-      var lo = Math.max(tc[0].s, rc[0].s), hi = Math.min(tc[tc.length - 1].e, rc[rc.length - 1].e);
-      var tIn = tc.filter(function (x) { return x.s >= lo && x.e <= hi; }), rIn = rc.filter(function (x) { return x.e > lo - 120 && x.s < hi + 120; });
-      var total = rc.reduce(function (n, x) { return n + Math.max(0, Math.min(x.e, hi) - Math.max(x.s, lo)); }, 0);
-      r = align(tIn, rIn, total);
+      var t0 = tc[0].s, t1 = tc[tc.length - 1].e;
+      var rIn = rc.filter(function (x) { return x.e > Math.min(t0, t0 * 0.95) - 120 && x.s < Math.max(t1, t1 * 1.05) + 120; });
+      r = align(tc, rIn, function (best) {
+        var lo = Math.max(t0 * best.scale + best.off, rc[0].s), hi = Math.min(t1 * best.scale + best.off, rc[rc.length - 1].e);
+        return rc.reduce(function (n, x) { return n + Math.max(0, Math.min(x.e, hi) - Math.max(x.s, lo)); }, 0);
+      });
     } else r = align(tc, rc);
     if (!r) return null;
     r.moved = Math.round((r.off - delay) * 100) / 100;           // how far the lines move on screen
