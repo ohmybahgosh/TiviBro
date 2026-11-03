@@ -6,7 +6,8 @@
 //   opts.tracks: [{ lang: 'eng', name, enabled: true, displayFlags: 0, cues: [[startSec, endSec, text]],
 //                   handler: 'sbtl', format: 'tx3g', timescale: 1000, mdhdV1, edits: [[segmentDurationMovie,
 //                   mediaTime, rate]], ctts: [[count, offset]], chapter (a 'chap' target of the video
-//                   track), stsdCount, externalDref, stz2, sdi, sizeOverride: { index: bytes } }]
+//                   track), stsdCount, externalDref, drefs: [[type, self]], dri (the entry's
+//                   data_reference_index), noDinf, cttsVersion, stz2, sdi, sizeOverride: { index: bytes } }]
 //   opts.video (default true): a video track first, with one 1000-byte chunk
 //   opts.moovAtEnd, opts.co64, opts.mvex, opts.movieTimescale (1000), opts.mvhdV1
 //   opts.virtualBase: absolute offset where sample data starts (> 2^32 for co64 tests); the gap reads
@@ -48,14 +49,16 @@ function trakBox(t, id, offsets, opts) {
                         : full('mdhd', 0, 0, u32(0), u32(0), u32(ts), u32(dur), lang3(t.lang), u16(0));
   const handler = t.handler || (t.video ? 'vide' : 'sbtl');
   const hdlr = full('hdlr', 0, 0, u32(0), ascii(handler), u32(0), u32(0), u32(0), ascii('Handler'), [0]);
-  const dref = box('dinf', full('dref', 0, 0, u32(1), t.externalDref ? full('url ', 0, 0, ascii('http://x/y'), [0]) : full('url ', 0, 1)));
+  // drefs: [[type, selfContained]] replaces the single self-contained 'url ' entry; noDinf leaves dinf out.
+  const drefs = t.drefs || [['url ', !t.externalDref]];
+  const dref = t.noDinf ? [] : box('dinf', full('dref', 0, 0, u32(drefs.length), cat(drefs.map(([ty, self]) => self ? full(ty, 0, 1) : full(ty, 0, 0, ascii('http://x/y'), [0])))));
   const fmt = t.video ? 'avc1' : (t.format || 'tx3g');
   const entry = t.video ? box(fmt, Array(6).fill(0), u16(1), Array(70).fill(0))
-    : box(fmt, Array(6).fill(0), u16(1), u32(t.displayFlags || 0), [0, 0], [0, 0, 0, 0], u16(0), u16(0), u16(0), u16(0), u16(0), u16(1), [0, 0x10], [255, 255, 255, 255], box('ftab', u16(1), u16(1), [5], ascii('Arial')));
+    : box(fmt, Array(6).fill(0), u16(t.dri || 1), u32(t.displayFlags || 0), [0, 0], [0, 0, 0, 0], u16(0), u16(0), u16(0), u16(0), u16(0), u16(1), [0, 0x10], [255, 255, 255, 255], box('ftab', u16(1), u16(1), [5], ascii('Arial')));
   const stsd = full('stsd', 0, 0, u32(t.stsdCount || 1), cat(Array(t.stsdCount || 1).fill(entry)));
   const n = t.hugeCount || smp.length;
   const stts = t.hugeCount ? full('stts', 0, 0, u32(1), u32(Math.ceil(n / 2) * 2), u32(1000)) : full('stts', 0, 0, u32(smp.length), cat(smp.map(s => u32(1).concat(u32(s.dur)))));
-  const ctts = t.ctts ? full('ctts', 0, 0, u32(t.ctts.length), cat(t.ctts.map(([c, o]) => u32(c).concat(i32(o))))) : [];
+  const ctts = t.ctts ? full('ctts', t.cttsVersion || 0, 0, u32(t.ctts.length), cat(t.ctts.map(([c, o]) => u32(c).concat(i32(o))))) : [];
   // hugeCount: consistent tables (two chunks of hugeCount / 2), so only the sample cap can reject them.
   const stsc = full('stsc', 0, 0, u32(1), u32(1), u32(t.hugeCount ? Math.ceil(n / 2) : 1), u32(t.sdi || 1));
   const sizes = smp.map((s, i) => (t.sizeOverride && t.sizeOverride[i]) || s.bytes.length);

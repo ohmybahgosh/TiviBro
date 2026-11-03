@@ -17,7 +17,8 @@
  *   stco/co64 (§8.7.5), with the track's own edit list applied.
  *
  * Rejected (the track is left out rather than shown wrong): more than one sample description or
- * a chunk using another one, samples in another file (external dref), compact sample sizes
+ * a chunk using another one, samples not proven to be in this file (the sample entry's data
+ * reference must be a self-contained 'url ', or 'alis' in QuickTime files), compact sample sizes
  * (stz2), tables that disagree on the sample count, more than limits.maxSamples samples, a sample
  * over limits.maxSampleBytes, data past the end of the file, and edit lists other than none or
  * one optional leading empty edit followed by one normal rate-1 edit.  Malformed or truncated
@@ -121,7 +122,7 @@ var Mp4Subs = (function () {
       enabled: buf[body(k.tkhd) + 3] % 2 === 1,
       handler: '', format: '', lang: 'und', name: '', displayFlags: 0, mediaTimescale: 0,
       edit: null, editOk: true, chap: [],
-      tables: { buf: buf, stts: null, stsc: null, stsz: null, stz2: false, stco: null, co64: null, ctts: null, dref: 'self', stsdCount: 0 }
+      tables: { buf: buf, stts: null, stsc: null, stsz: null, stz2: false, stco: null, co64: null, ctts: null, dref: 'external', stsdCount: 0 }
     };
     var m = children(buf, body(k.mdia), k.mdia.end);
     if (!m || !m.mdhd || !m.hdlr || !fits(m.hdlr, 12) || !fits(m.mdhd, 4)) return null;
@@ -151,14 +152,20 @@ var Mp4Subs = (function () {
 
     var minf = m.minf && children(buf, body(m.minf), m.minf.end);
     if (m.minf && !minf) return null;
+    var refs = null;                  // the data references: [{ type, self }]
     if (minf && minf.dinf) {
       var di = children(buf, body(minf.dinf), minf.dinf.end);
       if (!di) return null;
       if (di.dref) {
         var dr = table(buf, di.dref, 0, 0);
-        var entry = dr && dr.count ? box(buf, dr.at, di.dref.end, 0) : null;
-        if (!dr || (dr.count && (!entry || !fits(entry, 4)))) return null;
-        if (entry && buf[body(entry) + 3] % 2 !== 1) info.tables.dref = 'external';   // flag 1: data in this file
+        if (!dr) return null;
+        refs = [];
+        for (var rp = dr.at, rn = 0; rn < dr.count; rn++) {
+          var ref = box(buf, rp, di.dref.end, 0);
+          if (!ref || !fits(ref, 4)) return null;
+          refs.push({ type: ref.type, self: buf[body(ref) + 3] % 2 === 1 });   // flag 1: the data is in this file
+          rp = ref.end;
+        }
       }
     }
     var st = minf && minf.stbl && children(buf, body(minf.stbl), minf.stbl.end);
@@ -171,6 +178,10 @@ var Mp4Subs = (function () {
         T.stsdCount = sd.count;
         if (first) {
           info.format = first.type;
+          // The entry names its data reference (1-based).  Only one that says "this file" is read:
+          // 'url ' per ISO, or QuickTime's 'alis' in .mov files.  No reference at all is not proof.
+          var use = refs && fits(first, 8) ? refs[u16(buf, body(first) + 6) - 1] : null;
+          T.dref = use && use.self && (use.type === 'url ' || use.type === 'alis') ? 'self' : 'external';
           if (first.type === 'tx3g' && fits(first, 12)) info.displayFlags = u32(buf, body(first) + 8);
         }
       }
@@ -203,6 +214,9 @@ var Mp4Subs = (function () {
     var sum = 0, k;
     for (k = 0; k < T.stts.count; k++) { sum += u32(buf, T.stts.at + k * 8); if (sum > n) return null; }
     if (sum !== n) return null;
+    // Composition offsets are read signed in both versions, as ffmpeg does: old muxers write
+    // negative ones in version 0.
+    if (T.ctts && T.ctts.version > 1) return null;
     if (T.ctts) {
       for (sum = 0, k = 0; k < T.ctts.count; k++) { sum += u32(buf, T.ctts.at + k * 8); if (sum > n) return null; }
       if (sum !== n) return null;

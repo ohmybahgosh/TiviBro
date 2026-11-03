@@ -118,15 +118,28 @@ const rows = s => s ? Array.from(s.s).map((x, i) => [+x.toFixed(3), +s.e[i].toFi
 }
 {
   const { s } = one({ tracks: [{ lang: 'eng', ctts: [[2, 500]], cues: [[1, 2, 'A']] }] });
-  ok('ctts offsets applied', s && s.n === 2 && near(s.s[0], 0.5) && near(s.e[0], 1.5) && near(s.s[1], 1.5) && near(s.e[1], 2.5), rows(s));
+  // Signed in both versions, as ffmpeg reads them (old muxers write negative offsets in version 0).
+  const neg0 = one({ tracks: [{ lang: 'eng', ctts: [[2, -250]], cues: [[1, 2, 'A']] }] }).s;
+  const neg1 = one({ tracks: [{ lang: 'eng', ctts: [[2, -250]], cttsVersion: 1, cues: [[1, 2, 'A']] }] }).s;
+  const v2 = one({ tracks: [{ lang: 'eng', ctts: [[2, 0]], cttsVersion: 2, cues: [[1, 2, 'A']] }] });
+  ok('ctts offsets applied', s && s.n === 2 && near(s.s[0], 0.5) && near(s.e[0], 1.5) && near(s.s[1], 1.5) && near(s.e[1], 2.5) &&
+    neg0 && neg0.n === 2 && near(neg0.s[0], 0) && near(neg0.e[0], 0.75) && near(neg0.s[1], 0.75) && neg1 && near(neg1.s[1], 0.75) &&
+    v2.t && v2.s === null, { s: rows(s), neg0: rows(neg0), neg1: rows(neg1), v2: v2.s && v2.s.n });
 }
 {
   const a = one({ tracks: [{ lang: 'eng', sdi: 2, cues: [[1, 2, 'A']] }] }), b = one({ tracks: [{ lang: 'eng', stsdCount: 2, cues: [[1, 2, 'A']] }] });
   ok('stsc description index 2 rejected', a.t && a.s === null && b.t && b.t.tables.stsdCount === 2 && b.s === null);
 }
 {
-  const { t, s } = one({ tracks: [{ lang: 'eng', externalDref: true, cues: [[1, 2, 'A']] }] });
-  ok('external dref rejected', t && t.tables.dref === 'external' && s === null);
+  const cue = [[1, 2, 'A']], dref = o => one({ tracks: [Object.assign({ lang: 'eng', cues: cue }, o)] });
+  const cases = {
+    external: dref({ externalDref: true }), missing: dref({ noDinf: true }), outOfRange: dref({ dri: 2 }),
+    secondExternal: dref({ drefs: [['url ', true], ['url ', false]], dri: 2 }), urn: dref({ drefs: [['urn ', true]] }),
+    secondSelf: dref({ drefs: [['url ', false], ['url ', true]], dri: 2 }), alias: dref({ drefs: [['alis', true]] })
+  };
+  const got = {}; for (const k in cases) got[k] = cases[k].t ? [cases[k].t.tables.dref, !!cases[k].s] : null;
+  ok('external dref rejected', ['external', 'missing', 'outOfRange', 'secondExternal', 'urn'].every(k => got[k] && got[k][0] === 'external' && !got[k][1]) &&
+    got.secondSelf[0] === 'self' && got.secondSelf[1] && got.alias[0] === 'self' && got.alias[1], got);
 }
 {
   const { t, s } = one({ tracks: [{ lang: 'eng', stz2: true, cues: [[1, 2, 'A']] }] });
