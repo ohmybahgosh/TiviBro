@@ -600,6 +600,27 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     ok('a seek during the wait after a refusal keeps waiting, then gets a new session', early === 0 && readsOk === items.length &&
       requestUrls.slice(-1)[0] === 'http://edge/s2/seekw', { early, readsOk, tail: requestUrls.slice(-2) });
     h2.cancel();
+    // A seek while the new session is being asked for: the renewal is still owed, not dropped.
+    files['seekr'] = new Uint8Array(64); n = 0; cut = 0; readsOk = 0; requestUrls = [];
+    let refusals = 0;
+    redirectFor = u => (/^http:\/\/p\//.test(u) ? 'http://edge/s' + (++n) + '/seekr' : u);
+    refuse = u => { if (u !== 'http://edge/s1/seekr' || !cut) return 0; if (++refusals === 2) pending = true; return 509; };
+    const adr = Object.assign(fakeAdapter({ items }), { retryBaseMs: 10 });
+    const realr = adr.read;
+    adr.read = function () { return realr.apply(this, arguments).then(r => { if (++readsOk === 1) cut = 1; return r; }); };
+    const r1 = makeVideo({ currentTime: 0 });
+    const hr1 = EmbedSubs.run('http://p/movie/seekr', r1, () => {}, adr);
+    await wait(30); show(r1);
+    await until(() => pending && requestUrls.filter(u => u === 'http://p/movie/seekr').length === 2);    // renewal asked, no answer
+    hr1.cancel(); pending = false;
+    const atr = requestUrls.length;
+    const r2 = makeVideo({ currentTime: 0 });
+    const hr2 = EmbedSubs.run('http://p/movie/seekr', r2, null, adr);
+    await wait(5); show(r2);
+    await until(() => readsOk === items.length, 3000);
+    ok('a seek during the new-session request still gets the new session, not the refused one', requestUrls[atr] === 'http://p/movie/seekr' &&
+      readsOk === items.length && requestUrls.slice(atr).indexOf('http://edge/s1/seekr') === -1, { next: requestUrls.slice(atr, atr + 3), readsOk });
+    hr2.cancel();
     // Refused on every session, with a seek after each refusal: seeks don't start the count again.
     files['seekd'] = new Uint8Array(64); n = 0; requestUrls = [];
     redirectFor = u => (/^http:\/\/p\//.test(u) ? 'http://edge/s' + (++n) + '/seekd' : u);

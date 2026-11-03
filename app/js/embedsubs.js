@@ -400,9 +400,14 @@ var EmbedSubs = (function () {
         });
         if (!items.length) { retryTimer = setTimeout(pump, Math.max(1, earliest - clock)); return; }
         busy = true;
+        // The renewal stays owed until it is answered: a seek that cancels it asks again.
         if (R.fresh) {
-          R.fresh = false;
-          newSession().then(function (same) { busy = false; if (cancelled) return; if (same) pump(); else stop(); }, refusedBy);
+          newSession().then(function (same) {
+            busy = false;
+            if (cancelled) return;
+            R.fresh = false;
+            if (same) pump(); else stop();
+          }, refusedBy);
           return;
         }
         var item = items[0];
