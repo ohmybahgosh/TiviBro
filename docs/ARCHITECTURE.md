@@ -23,7 +23,9 @@ Plain scripts loaded in order by `app/index.html` (no modules, no bundler: webOS
 | search.js | `Search` | Search across channels, the guide, movies and shows, ranked by match |
 | vod.js | `Vod` | Movies and Shows: lists (kept and filtered by the helper's `service/vod.js` on a TV), languages, hidden and adult categories, details, playback and resume |
 | vodview.js | `VodView` | Movie and show language tags and what shows; shared with the helper (`service/editor/vodview.js` is a build copy) |
-| mkvsubs.js | `MkvSubs` | Reads SRT subtitles out of MKV files over Range requests for the TV's own player |
+| embedsubs.js | `EmbedSubs` | Built-in subtitles for the TV's own player: Range reads that wait for playback, only the selected track's window, timing, track modes and the menu state; formats plug in as adapters |
+| mkvsubs.js | `MkvSubs` | MKV adapter for `EmbedSubs`: SRT, ASS/SSA and WebVTT tracks from the Cues index |
+| mp4subs.js | `Mp4Subs` | MP4 adapter for `EmbedSubs`: tx3g text tracks from the moov box, with edit lists and language labels |
 | links.js | `Links` | Splits a provider's full link into server, username and password (shared with the editor) |
 | events.js | `Events` | Event channels: the game in a pay-per-view or sports-pass channel name, as a guide entry |
 | tidy.js | `Tidy` | Smart clean-up answers (countries, East and West, locals, duplicates), shared with the editor |

@@ -65,7 +65,7 @@ Also here: `site/` (tivibro.app, GitHub Pages), `relay/` (a Cloudflare Worker th
 | Change channel loading or a provider format | `app/js/source.js` (Xtream Codes and M3U into one compact channel shape) |
 | Change what a channel or group name shows | `app/js/names.js` (rules) or `Library` overlays (`app/js/library.js`) |
 | Change Movies and Shows | `app/js/vod.js` (lists, languages, categories, playback), `service/vod.js` (the helper slims big lists) |
-| Change playback | `app/js/player.js` (engines, buffering, reconnects), `app/js/caps.js` (what the TV decodes), `app/js/mkvsubs.js` (MKV subtitles) |
+| Change playback | `app/js/player.js` (engines, buffering, reconnects), `app/js/caps.js` (what the TV decodes), `app/js/embedsubs.js` (built-in subtitles: reading, timing, showing), `app/js/mkvsubs.js` and `app/js/mp4subs.js` (MKV and MP4 subtitle formats) |
 | Add a web editor page or action | `service/editor/index.html` (the page) and the `RUN` table in `app/js/webedit.js` (commands the TV carries out); the browser sends `POST /api/command {type, args}` |
 | Add a helper route | `service/proxy.js` routes to modules like `service/guide.js` and `service/vod.js`; plain ES5; bind localhost only unless it is the editor or phone LAN server |
 | Change the phone app protocol | `service/companion.js` (TV side), `app/js/phone.js` (TiviBro side), `android/.../proto/` (phone side), `docs/wiki/Phone-app-protocol.md`, and the Android tests (`tests/android/fake-tv.js`) |
@@ -81,7 +81,7 @@ Also here: `site/` (tivibro.app, GitHub Pages), `relay/` (a Cloudflare Worker th
 ## Things that look like bugs but are on purpose
 
 - The Phone app settings section shows only in test builds (`alpha` or `beta` versions).
-- Video for the TV's own player goes direct for http and through the helper for https or a custom User-Agent; MKV files with subtitles share one resolved session URL between the player and subtitle reads (`mkvsubs.js`).
+- Video for the TV's own player goes direct for http and through the helper for https or a custom User-Agent; MKV files with subtitles and MP4 files with subtitles share one resolved session URL between the player and subtitle reads (`embedsubs.js`); MP4 resolves a fresh session on every new engine start and keeps only the parsed index (`mp4subs.js`).
 - New editor passwords and pairing codes leave out look-alike characters (`0/O`, `1/I/L`, `2/Z`, `5/S`, `6/G`, `8/B`, `U/V`); the editor login treats look-alikes as the same.
 - Headless Chromium can't decode HEVC or AC-3; a stream that fails in a soak test may play fine on a TV.
 - `docs/wiki/` is generated from `docs/USER-GUIDE.md`: edit the guide, not the wiki pages.
