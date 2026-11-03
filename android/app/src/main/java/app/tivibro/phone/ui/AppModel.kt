@@ -38,6 +38,8 @@ import app.tivibro.phone.proto.editorUrlOk
 import app.tivibro.phone.proto.Lineup
 import app.tivibro.phone.proto.NowState
 import app.tivibro.phone.proto.Volume
+import app.tivibro.phone.proto.Reminder
+import app.tivibro.phone.proto.RestorePoint
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.Dispatchers
@@ -59,6 +61,8 @@ data class TvUi(
     val power: Power = Power.CHECKING,
     val tivibroOpen: Boolean = false,
     val busy: String? = null,
+    /** What TiviBro on the TV said it has (movies, shows, My media, On now), for the home screen's shortcuts; null until known. */
+    val caps: NowState? = null,
 )
 
 data class Pairing0(val busy: Boolean = false, val error: String? = null, val done: Tv? = null)
@@ -117,7 +121,9 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             )
             if (t != tv || t.mac != tv.mac || t.model != tv.model || t.version != tv.version) saveTv(t)
             val open = info.optJSONObject("tivibro")?.optBoolean("open") == true
-            setUi(tv.id) { it.copy(power = Power.ON, tivibroOpen = open) }
+            // What TiviBro has, for the shortcuts (one quick look, only while it is open).
+            val caps = if (open) runCatching { TvClient(t, 4000).state(0, false) }.getOrNull()?.takeIf { it.open } else null
+            setUi(tv.id) { it.copy(power = Power.ON, tivibroOpen = open, caps = caps ?: it.caps) }
             if (open && backups.due(tv.id) && backingUp.add(tv.id)) viewModelScope.launch { try { runCatching { autoBackup(t) } } finally { backingUp.remove(tv.id) } }
             true
         } catch (e: TbException) {
@@ -390,6 +396,26 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     suspend fun addPlaylist(id: String, link: String, name: String, use: Boolean): String =
         ask(id, "playlist", JSONObject().put("link", link).put("name", name).put("use", use), seal = true, timeoutMs = 140_000, tries = 1).optString("msg", "Added")
 
+    /* ---------- reminders and restore points on the TV ---------- */
+
+    /** The reminders still to come ([op] list), or cancel one ([op] cancel, with [k] and [start]) or all ([op] clear).
+        Returns what the TV said and the list after. */
+    suspend fun reminders(id: String, op: String = "list", k: String = "", start: Long = 0): Pair<String, List<Reminder>> {
+        val a = JSONObject().put("op", op)
+        if (op == "cancel") a.put("k", k).put("s", start)
+        val r = ask(id, "reminders", a, timeoutMs = if (op == "list") 25_000 else 20_000, tries = if (op == "list") 2 else 1)
+        return r.optString("msg") to Reminder.list(r)
+    }
+
+    /** Restore points on the TV: [op] list, make (with a [name]), restore or delete (with the point's [pointId]). */
+    suspend fun snaps(id: String, op: String = "list", name: String = "", pointId: String = ""): Pair<String, List<RestorePoint>> {
+        val a = JSONObject().put("op", op)
+        if (op == "make") a.put("name", name.trim().take(60))
+        if (op == "restore" || op == "delete") a.put("id", pointId)
+        val r = ask(id, "snaps", a, timeoutMs = if (op == "list") 25_000 else 40_000, tries = if (op == "list") 2 else 1)
+        return r.optString("msg") to RestorePoint.list(r)
+    }
+
     /* ---------- backups ---------- */
 
     private val backingUp = java.util.Collections.synchronizedSet(mutableSetOf<String>())
@@ -473,6 +499,43 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         getApplication<Application>().contentResolver.openOutputStream(out)?.use { it.write(file.toString().toByteArray(Charsets.UTF_8)) } ?: throw TbException("Couldn't write the file.")
     }
 
+    /** A locked backup file of the TV as it is now (or, when the TV doesn't answer, of the newest backup on the phone). */
+    suspend fun exportNow(id: String, pass: String, out: android.net.Uri): String = withContext(Dispatchers.IO) {
+        val tv = tv(id) ?: throw TbException("This TV is no longer paired.")
+        val fresh = runCatching { ask(id, "backup", seal = true, timeoutMs = 60_000, tries = 1).optJSONObject("backup") }.getOrNull()
+        val newest = if (fresh == null) backups.list(id).firstOrNull() else null
+        val b = fresh ?: newest?.let { backups.open(it) } ?: throw TbException("${tv.name} didn't answer, and there is no backup on this phone yet.  Turn the TV on and try again.")
+        val file = BackupFile.seal(b, pass)
+        getApplication<Application>().contentResolver.openOutputStream(out)?.use { it.write(file.toString().toByteArray(Charsets.UTF_8)) } ?: throw TbException("Couldn't write the file.")
+        if (fresh != null) "Saved.  Keep the file and its passphrase somewhere safe."
+        else "${tv.name} didn't answer, so the file holds the newest backup on this phone (${backupName(newest!!)})."
+    }
+
+    /** A backup file (from this app or the web editor) read from the phone's storage: null [pass] for a file
+        that isn't locked.  Kept on the phone as a new backup of this TV, ready to restore. */
+    suspend fun importFile(id: String, from: android.net.Uri, pass: String?): SavedBackup = withContext(Dispatchers.IO) {
+        val j = readBackupFile(from)
+        val b = BackupFile.open(j, pass.orEmpty())
+        if (!BackupFile.isBackup(b) && b.optJSONObject("settings") == null) throw TbException("That file isn't a TiviBro backup.")
+        backups.save(id, b, auto = false, label = "From a file")
+    }
+
+    /** Whether a backup file is locked with a passphrase.  Throws when it isn't a TiviBro backup at all. */
+    suspend fun backupFileLocked(from: android.net.Uri): Boolean = withContext(Dispatchers.IO) {
+        readBackupFile(from).optString("kind") == "backup-encrypted"
+    }
+
+    private fun readBackupFile(from: android.net.Uri): JSONObject {
+        val text = getApplication<Application>().contentResolver.openInputStream(from)?.use { s ->
+            val bytes = s.readBytes()
+            if (bytes.size > 200 * 1024 * 1024) throw TbException("That file is too big to be a TiviBro backup.")
+            String(bytes, Charsets.UTF_8)
+        } ?: throw TbException("Couldn't read the file.")
+        val j = runCatching { JSONObject(text) }.getOrNull()
+        if (!BackupFile.isBackup(j)) throw TbException("That file isn't a TiviBro backup.")
+        return j!!
+    }
+
     /* ---------- adding a TV ---------- */
 
     fun discover() = viewModelScope.launch {
@@ -486,7 +549,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
 
     fun pairWithLink(text: String?) {
         val l = PairLink.parse(text)
-        if (l == null) { say("That isn't a TiviBro pairing code.  On the TV: Settings, Phone app, Pair a phone."); return }
+        if (l == null) { say("That isn't a TiviBro pairing code.  On the TV: Settings, Phone app and web editor, Pair a phone."); return }
         pair(l.host, l.port, l.code, l.id)
     }
 

@@ -111,11 +111,11 @@ const OVER = () => {
       ok(dev + ': undo puts the order back', JSON.stringify(await order()) === JSON.stringify(o0));
       await ed.tap('#navToggle'); await ed.waitForTimeout(300);
       const nav = await ed.evaluate(() => [].slice.call(document.querySelectorAll('#nav button')).filter(x => x.offsetWidth).map(x => x.querySelector('span').textContent.trim()));
-      ok(dev + ': the top bar opens every page by name, and Log out', nav.indexOf('Smart clean-up') >= 0 && nav.indexOf('Backup and restore') >= 0 && nav.indexOf('Log out') >= 0, nav.join(', '));
+      ok(dev + ': the top bar opens every page by name, and Log out', nav.indexOf('Smart clean-up') >= 0 && nav.indexOf('Backups and restore points') >= 0 && nav.indexOf('Log out') >= 0, nav.join(', '));
       if (SHOTS && dev === 'iPhone 13') await ed.screenshot({ path: path.join(SHOTS, 'editor-phone-pages.png') });
       await ed.tap('#nav button[data-page="names"]'); await ed.waitForTimeout(400);
       const after = await ed.evaluate(() => ({ open: document.body.classList.contains('navopen'), cur: document.getElementById('navCur').textContent, page: page }));
-      ok(dev + ': picking a page closes the list and names it in the top bar', !after.open && after.cur === 'Channel names' && after.page === 'names', JSON.stringify(after));
+      ok(dev + ': picking a page closes the list and names it in the top bar', !after.open && after.cur === 'Channel and group names' && after.page === 'names', JSON.stringify(after));
     }
     // Smart match: long channel names must not push the confidence and approve buttons off screen.
     await ed.evaluate(() => { location.hash = '#guide'; }); await ed.waitForTimeout(800);

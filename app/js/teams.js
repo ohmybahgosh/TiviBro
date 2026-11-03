@@ -360,7 +360,7 @@ var Teams = (function () {
     return g;
   }
   function emptyText() {
-    if (!followed().length) return 'Choose your teams in Settings > Groups, sorting, hidden > My teams.';
+    if (!followed().length) return 'Choose your teams in Settings > Channels and groups > My teams.';
     var h = +S().teamsAhead || 6, n = nextGame();
     var t = 'No games on now or in the next ' + h + (h === 1 ? ' hour.' : ' hours.');
     if (n) t += '  Next: ' + n.p.t + ', ' + U.day(n.p.s) + ' ' + U.hhmm(n.p.s) + (n.c ? ' on ' + Library.name(n.c) : '') + '.';

@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- **Settings, cleaned up and the same everywhere.**  The TV, the phone app's Settings tab and the web editor now share one layout and the same names: Playlists, Guide, Channels and groups, Channel and group names, Reminders and watchlist, Playback, My media, Remote and buttons, Appearance and start screen, Parental controls, Backups and restore points, Phone app and web editor, and Updates, about and diagnostics.  Every row's text was checked against what TiviBro does today.
+- **The phone app does it on the phone.**  When a setting asks something (a box to type in, a list to pick from, "are you sure"), the question now comes up on the phone instead of on the TV.  The few that need the TV's screen (the button tester, learning a button, the set-up tour, pairing) say so.
+- **A new home screen in the phone app.**  Each TV has shortcuts: Remote, Guide, On now, Movies and Shows, My media, Reminders, Edit channels, Backups and Settings.
+- **Backups and restore points in one place.**  In the phone app: backups kept on the phone, a locked backup file to save or restore, and the restore points on the TV.  The web editor's two pages are now one, and the TV has its own Backups and restore points section.
+- **See your reminders.**  Every reminder still to come, with Cancel and Cancel all: in Settings > Reminders and watchlist on the TV, the phone app's Reminders (also the bell on its Guide tab), and the web editor's Reminders and watchlist page.
+- **Channels with no guide.**  A radio stream or a camera never gets a guide: Hold OK > No guide for this channel (or Ignore in the web editor's Guide page) keeps it out of guide matching and stops "No guide information".  Settings > Guide lists them to undo.
+- **How your guide is built, explained.**  The Guide settings and the editor's Guide page now say, in order, where programmes come from: your provider, your own sources, the public fill-in (epg.pw, iptv-epg.org and Pluto TV's own guide for Pluto channels), then matching.
+- **Group names get their own prefixes and suffixes.**  Channel and group names (was Channel names) has group prefix and suffix lists next to the channel ones, on the TV and in the web editor, and Shorter group names moved there.
+- **Web editor tidy-up.**  Tips can be dismissed (Show hidden tips brings them back).  The Clean up your guide steps can each be skipped, fold away when done, and have a collapse button.  Local channels starts with a search for your city.  My media's corrections are now "Fix TV show episodes", with what it is for.  One colour scheme, matching the TV and the phone app.
+
 ## 0.6.0 (alpha 63, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.

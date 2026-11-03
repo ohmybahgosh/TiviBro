@@ -96,7 +96,7 @@ private fun times(now: Long): List<Pair<Long?, String>> {
 }
 
 @Composable
-fun GuideTab(model: AppModel, id: String, lineup: Lineup?, lineupNote: String, playing: String, now: Long, onPlay: (Chan) -> Unit, onOpen: () -> Unit, onRetry: () -> Unit) {
+fun GuideTab(model: AppModel, id: String, lineup: Lineup?, lineupNote: String, playing: String, now: Long, onPlay: (Chan) -> Unit, onOpen: () -> Unit, onRetry: () -> Unit, onReminders: (() -> Unit)? = null) {
     if (lineup == null) { LineupWaiting(lineupNote, onOpen, onRetry); return }
     var at by rememberSaveable { mutableStateOf<Long?>(null) }
     var group by rememberSaveable { mutableStateOf("") }
@@ -125,8 +125,12 @@ fun GuideTab(model: AppModel, id: String, lineup: Lineup?, lineupNote: String, p
     LaunchedEffect(at, group) { state.scrollToItem(0); load(0) }
 
     Column(Modifier.fillMaxSize()) {
-        LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 10.dp)) {
-            items(choices, key = { it.first ?: 0L }) { (t, label) -> GroupChip(label, at == t) { at = t } }
+        Row(Modifier.fillMaxWidth().padding(top = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            LazyRow(contentPadding = PaddingValues(start = 16.dp, end = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
+                items(choices, key = { it.first ?: 0L }) { (t, label) -> GroupChip(label, at == t) { at = t } }
+            }
+            // Every reminder set on the TV, to see or cancel (RemindersScreen.kt).
+            if (onReminders != null) IconButton(onClick = onReminders) { Icon(Icons.Rounded.NotificationsActive, "Your reminders", tint = Accent) }
         }
         LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(vertical = 6.dp)) {
             item { GroupChip("All", group.isBlank()) { group = "" } }
@@ -170,17 +174,17 @@ private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long,
         Logo(c.logo, c.number, 44.dp)
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
-            Text((if (c.number.isNotBlank()) c.number + "  " else "") + c.name, color = if (playing) Accent2 else Muted, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text((if (c.number.isNotBlank()) c.number + "  " else "") + c.name, color = if (playing) Accent else Muted, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             when {
                 row == null || progs == null -> Text("…", color = Muted)
                 first == null -> Text("No guide information", color = Muted, style = MaterialTheme.typography.bodyMedium)
                 else -> {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(first.title, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                        if (first.reminder) { Spacer(Modifier.width(6.dp)); Icon(Icons.Rounded.NotificationsActive, "Reminder set", tint = Accent2, modifier = Modifier.size(14.dp)) }
+                        if (first.reminder) { Spacer(Modifier.width(6.dp)); Icon(Icons.Rounded.NotificationsActive, "Reminder set", tint = Accent, modifier = Modifier.size(14.dp)) }
                     }
                     Text(time(first.start) + " – " + time(first.end), color = Muted, style = MaterialTheme.typography.labelSmall)
-                    first.movie?.let { mv -> Text(mv.facts, color = Accent2, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    first.movie?.let { mv -> Text(mv.facts, color = Accent, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     if (first.on(now)) {
                         Spacer(Modifier.height(4.dp))
                         LinearProgressIndicator(progress = { ((now - first.start).toFloat() / (first.end - first.start)).coerceIn(0f, 1f) }, color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth(0.7f).height(3.dp))
@@ -196,7 +200,7 @@ private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long,
             AsyncImage(model = url, contentDescription = first.title, contentScale = ContentScale.Crop, modifier = Modifier.width(48.dp).height(72.dp).clip(RoundedCornerShape(6.dp)))
         }
         IconButton(onClick = onPlay) {
-            Icon(Icons.Rounded.PlayArrow, if (playing) "On the TV now" else "Watch " + c.name + " on TV", tint = if (playing) Accent2 else Muted)
+            Icon(Icons.Rounded.PlayArrow, if (playing) "On the TV now" else "Watch " + c.name + " on TV", tint = if (playing) Accent else Muted)
         }
     }
 }
@@ -215,7 +219,7 @@ private fun ScheduleSheet(model: AppModel, id: String, c: Chan, at: Long?, playi
     LaunchedEffect(c.k) {
         try { sch = model.schedule(id, c.k) } catch (e: TbException) { error = e.message } catch (e: Exception) { error = "The TV didn't answer." }
     }
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Ink) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Panel) {
         Column(Modifier.fillMaxHeight(0.92f)) {
             Row(Modifier.padding(16.dp, 0.dp, 16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Logo(c.logo, c.number, 48.dp)
@@ -270,23 +274,23 @@ private fun ProgrammeRow(p: Programme, now: Long, reminder: Boolean, open: Boole
     val past = p.end <= now
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick).background(if (on) Panel else Color.Transparent).padding(16.dp, 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(time(p.start), color = if (on) Accent2 else Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(72.dp))
+            Text(time(p.start), color = if (on) Accent else Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(72.dp))
             p.movie?.poster?.takeIf { it.isNotBlank() }?.let { url ->
                 AsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Crop,
                     modifier = Modifier.padding(end = 10.dp).width(if (open) 80.dp else 36.dp).height(if (open) 120.dp else 54.dp).clip(RoundedCornerShape(6.dp)))
             }
             Column(Modifier.weight(1f)) {
                 Text(p.title, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, color = if (past) Muted else TextHi, maxLines = if (open) 3 else 1, overflow = TextOverflow.Ellipsis)
-                p.movie?.let { mv -> Text(mv.facts, color = Accent2, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                p.movie?.let { mv -> Text(mv.facts, color = Accent, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 if (on) {
                     Spacer(Modifier.height(4.dp))
                     LinearProgressIndicator(progress = { ((now - p.start).toFloat() / (p.end - p.start)).coerceIn(0f, 1f) }, color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth().height(3.dp))
                 }
             }
             when {
-                onWatch != null -> IconButton(onClick = onWatch) { Icon(Icons.Rounded.PlayArrow, "Watch on TV", tint = Accent2) }
+                onWatch != null -> IconButton(onClick = onWatch) { Icon(Icons.Rounded.PlayArrow, "Watch on TV", tint = Accent) }
                 onRemind != null -> IconButton(onClick = onRemind) {
-                    Icon(if (reminder) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications, if (reminder) "Remove the reminder" else "Remind me", tint = if (reminder) Accent2 else Muted)
+                    Icon(if (reminder) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications, if (reminder) "Remove the reminder" else "Remind me", tint = if (reminder) Accent else Muted)
                 }
             }
         }

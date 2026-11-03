@@ -251,9 +251,9 @@ var Source = (function () {
     if (e.kind === 'auth' || e.kind === 'notxc' || e.kind === 'toobig' || e.kind === 'parse' && !e.body) return e.message;
     if (e.kind === 'timeout') return 'The server took too long to answer.  ' + (e.via === 'helper' ? 'It may be overloaded or blocking this TV.' : '');
     if (e.kind === 'network') return e.via === 'helper'
-      ? 'The network helper stopped responding.  Restart the app; if it keeps happening, see Settings > Diagnostics.'
+      ? 'The network helper stopped responding.  Restart the app; if it keeps happening, see Settings > Updates, about and diagnostics.'
       : (Net.state === 'off' ? 'Could not reach the server.  The network helper is not running, so this only works if the provider allows app requests (CORS).  Run the connection test for details.'
-        : 'Could not reach the server, or it does not allow app requests.  Set Network to Automatic, or run the connection test.');
+        : 'Could not reach the server, or it does not allow app requests.  Set Settings > Playback > Connection to Automatic, or run the connection test.');
     if (e.kind === 'http') {
       if (/^helper: /.test(e.message)) {
         var m = e.message;

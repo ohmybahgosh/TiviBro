@@ -140,7 +140,7 @@ var Keymap = (function () {
     var via = panel ? (panel === 'OK' ? 'OK' : panel) + ', then Stream info' : '';
     if (direct && via) return direct + ' in fullscreen, or ' + via;
     if (direct) return direct + ' in fullscreen';
-    return via ? 'In fullscreen, ' + via : 'Give a button Stream info under Settings > Remote control';
+    return via ? 'In fullscreen, ' + via : 'Give a button Stream info under Settings > Remote and buttons';
   }
 
   return {

@@ -5,6 +5,8 @@
       Each rule set can be switched on or off, and "recommended defaults" restores them.
    2. Your own prefix and suffix lists, matched literally and case-insensitively at the
       start or end of a name, exactly like TiviMate.  Spaces count: " HD" will not touch "WHD".
+      Groups have their own lists too (gprefixes, gsuffixes), applied to group names only, after
+      the channel rules when those also clean groups.
    Safety: a step that would leave nothing (or just a number) is undone, so a channel
    is never cleaned into a blank. */
 var Names = (function () {
@@ -71,7 +73,7 @@ var Names = (function () {
   function defaults() {
     var r = {};
     RULES.forEach(function (x) { r[x.id] = x.on; });
-    return { enabled: true, groups: true, rules: r, prefixes: [], suffixes: [], hideIdle: false };
+    return { enabled: true, groups: true, rules: r, prefixes: [], suffixes: [], gprefixes: [], gsuffixes: [], hideIdle: false };
   }
 
   function alt(list) { return list.slice().sort(function (a, b) { return b.length - a.length; }).join('|'); }
@@ -161,6 +163,19 @@ var Names = (function () {
     return clean;
   }
 
+  // Group names: the channel rules (when they clean groups too), then your group lists.
+  var gcache = { sig: '', fn: null };
+  function groupCleaner(cfg) {
+    var sig = JSON.stringify([cfg.enabled, cfg.gprefixes || [], cfg.gsuffixes || []]);
+    if (sig !== gcache.sig) { gcache.sig = sig; gcache.fn = cfg.enabled && ((cfg.gprefixes || []).length || (cfg.gsuffixes || []).length) ? compile({ rules: offRules(), prefixes: cfg.gprefixes, suffixes: cfg.gsuffixes }) : null; }
+    return gcache.fn;
+  }
+  function offRules() { var r = {}; RULES.forEach(function (x) { r[x.id] = false; }); return r; }
+  function cleanGroupWith(cfg, n) {
+    var s = cfg.enabled && cfg.groups ? cleanerFor(cfg)(n) : (n || '');
+    var g = groupCleaner(cfg);
+    return g ? g(s) : s;
+  }
   var cache = { sig: '', fn: null };
   function cfgOf() {
     var p = (typeof Store !== 'undefined' && Store.playlist) || {};
@@ -179,9 +194,11 @@ var Names = (function () {
 
   return {
     clean: function (n) { return cleanerFor(cfgOf())(n); },
+    cleanGroup: function (n) { return cleanGroupWith(cfgOf(), n); },
+    cleanGroupWith: cleanGroupWith,
     cleanWith: function (cfg, n) { return cleanerFor(cfg)(n); },
     compile: compile,
-    invalidate: function () { cache.sig = ''; },
+    invalidate: function () { cache.sig = ''; gcache.sig = ''; },
     defaults: defaults,
     RULES: RULES,
     COUNTRY: COUNTRY,

@@ -48,12 +48,12 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('with all 5 changes', /5 changes/.test(await ed.innerText('#cbText')), await ed.innerText('#cbText'));
 
   // 4. draft history
-  await ed.click('#nav [data-page=history]'); await ed.waitForTimeout(2500);
+  await ed.click('#nav [data-page=backups]'); await ed.waitForTimeout(2500);
   await ed.fill('#dName', 'Five groups hidden'); await ed.click('#dSave'); await ed.waitForTimeout(4000);
   await ed.click('#nav [data-page=gc]'); await ed.waitForTimeout(600);
   for (const id of ['x14', 'x15']) { await ed.click('input[data-vis="' + id + '"]'); await ed.waitForTimeout(250); }
   await ed.waitForTimeout(4000);
-  await ed.click('#nav [data-page=history]'); await ed.waitForTimeout(3000);
+  await ed.click('#nav [data-page=backups]'); await ed.waitForTimeout(3000);
   const rows = await ed.locator('#dList tr').allInnerTexts();
   ok('draft history lists the versions, the named one too', rows.some(r => /Five groups hidden/.test(r)) && rows.length >= 3, rows.slice(1).map(r => r.replace(/\s+/g, ' ').slice(0, 70)).join(' | '));
   ok('and how much room they take on the TV', /on the TV/.test(await ed.innerText('#dSize')), await ed.innerText('#dSize'));
@@ -69,7 +69,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   if (await offer(ed)) await ed.locator('#modal button', { hasText: 'Throw them away' }).click();
   await ed.waitForTimeout(500);
   ok('throwing away leaves nothing unsent', !(await ed.isVisible('#changebar')) || /0 change/.test(await ed.innerText('#cbText')));
-  await ed.click('#nav [data-page=history]'); await ed.waitForTimeout(3000);
+  await ed.click('#nav [data-page=backups]'); await ed.waitForTimeout(3000);
   ok('but the work is still in draft history', (await ed.locator('#dList tr').count()) >= 3);
   await ed.locator('#dList tr').nth(1).locator('[data-dopen]').click(); await ed.waitForFunction(() => /^7 changes/.test(document.getElementById('cbText').textContent), null, { timeout: 10000 }).catch(() => {});
   ok('and opens again', /7 changes/.test(await ed.innerText('#cbText')), await ed.innerText('#cbText'));
@@ -77,7 +77,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   // 6. send
   await ed.click('#cbSend'); await ed.waitForFunction(() => /Everything is on the TV|on the TV/.test(document.getElementById('status').innerText), null, { timeout: 25000 }); await ed.waitForTimeout(3500);
   ok('sending applies it on the TV', await tv.evaluate(() => !!Store.edits.hiddenGroups.x9 && !!Store.edits.hiddenGroups.x15));
-  await ed.click('#nav [data-page=history]'); await ed.waitForTimeout(3000);
+  await ed.click('#nav [data-page=backups]'); await ed.waitForTimeout(3000);
   ok('the version is marked as sent', /sent to the TV/.test(await ed.innerText('#dList')), (await ed.innerText('#dList')).slice(0, 200));
   await ed.context().close();
   ed = await browser(); await ed.waitForTimeout(2000);

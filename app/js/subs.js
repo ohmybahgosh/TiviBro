@@ -190,7 +190,7 @@ var Subs = (function () {
   function find(meta) {
     if (!state.key) {
       UI.menu('Find subtitles', [
-        { label: 'Add your OpenSubtitles API key first', sub: 'Free: sign up at opensubtitles.com, then Profile > API consumers > New consumer.  Then Settings > Playback and buffering > Subtitles from OpenSubtitles.' },
+        { label: 'Add your OpenSubtitles API key first', sub: 'Free: sign up at opensubtitles.com, then Profile > API consumers > New consumer.  Then Settings > Playback > Subtitles from OpenSubtitles.' },
         { label: 'Open Settings', action: function () { Views.runAction('exit', 'player'); Views.switchTab('settings'); Settings.section('playback'); } }
       ]);
       return;

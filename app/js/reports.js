@@ -4,7 +4,7 @@
    and asks the relay now and then (GET /status, relay/worker.js) whether the developer has answered.  A
    new reply, or the report being closed, shows once: what the developer said, Update when the fix is in
    a newer version, Still happening (a comment with a fresh log, which reopens a closed report) and a code
-   to read the whole thread on a phone.  Settings > Diagnostics > Your problem reports lists them all.
+   to read the whole thread on a phone.  Settings > Updates, about and diagnostics > Your problem reports lists them all.
    Nothing but the issue numbers leaves the TV when it asks. */
 var Reports = (function () {
   var KEY = 'tivibro.reports', MAX = 20, EVERY = 6 * 3600e3, FIRST = 90e3, KEEP_CLOSED = 60 * 86400e3;

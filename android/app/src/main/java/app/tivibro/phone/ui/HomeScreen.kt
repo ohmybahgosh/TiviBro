@@ -1,9 +1,12 @@
-/* The first screen: each paired TV as a card (what it is playing, or that it is off) with Remote,
-   Edit channels, Open TiviBro, Wake and Forget, plus adding a TV and choosing the Quick Settings tile's TV. */
+/* The first screen: each paired TV as a card (on, off, TiviBro open) with shortcuts straight to the
+   Remote, Guide, On now, Movies and Shows, My media, Reminders, Edit channels, Backups and Settings (the
+   ones this TV has, see Shortcuts.kt), and in its menu Turn on, Open TiviBro, the Quick Settings tile and
+   Forget; plus adding a TV.  A TV that is off still offers Edit channels and its backups on the phone. */
 package app.tivibro.phone.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +25,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Movie
+import androidx.compose.material.icons.rounded.Notifications
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Theaters
+import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.MoreVert
@@ -62,6 +71,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -82,7 +92,9 @@ fun HomeScreen(
     onScan: () -> Unit,
     onFind: () -> Unit,
     onEditor: (String) -> Unit,
-    onRemote: (String) -> Unit,
+    /** Opens one TV's screen on a tab (TvScreen's tab names: Remote, Guide, On now, Movies, Shows, My media, Settings). */
+    onTab: (String, String) -> Unit,
+    onReminders: (String) -> Unit,
     onOpen: (String) -> Unit,
     onWake: (String) -> Unit,
     onForget: (String) -> Unit,
@@ -116,7 +128,7 @@ fun HomeScreen(
         ) {
             LazyColumn(contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxSize()) {
                 items(tvs, key = { it.tv.id }) { u ->
-                    TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onRemote, onOpen, onWake, onForget, onTile, onRepair, onBackups)
+                    TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups)
                 }
             }
         }
@@ -127,13 +139,13 @@ fun HomeScreen(
 private fun Empty(modifier: Modifier, onScan: () -> Unit, onFind: () -> Unit) {
     Column(modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         Box(Modifier.size(96.dp).clip(CircleShape).background(Panel2), contentAlignment = Alignment.Center) {
-            Icon(Icons.Rounded.Tv, null, tint = Accent2, modifier = Modifier.size(48.dp))
+            Icon(Icons.Rounded.Tv, null, tint = Accent, modifier = Modifier.size(48.dp))
         }
         Spacer(Modifier.height(24.dp))
         Text("Pair your TV", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(10.dp))
         Text(
-            "On the TV, open TiviBro and go to Settings, Phone app.  Switch on the connection, then choose Pair a phone.",
+            "On the TV, open TiviBro and go to Settings, Phone app and web editor.  Switch on the connection, then choose Pair a phone.",
             style = MaterialTheme.typography.bodyLarge, color = Muted, textAlign = TextAlign.Center,
         )
         Spacer(Modifier.height(28.dp))
@@ -147,10 +159,35 @@ private fun Empty(modifier: Modifier, onScan: () -> Unit, onFind: () -> Unit) {
     }
 }
 
+private fun iconOf(s: Shortcut): ImageVector = when (s) {
+    Shortcut.REMOTE -> Icons.Rounded.SettingsRemote
+    Shortcut.GUIDE -> Icons.Rounded.CalendarMonth
+    Shortcut.ON_NOW -> Icons.Rounded.Theaters
+    Shortcut.VOD -> Icons.Rounded.Movie
+    Shortcut.MEDIA -> Icons.Rounded.VideoLibrary
+    Shortcut.REMINDERS -> Icons.Rounded.Notifications
+    Shortcut.EDITOR -> Icons.Rounded.Edit
+    Shortcut.BACKUPS -> Icons.Rounded.Backup
+    Shortcut.SETTINGS -> Icons.Rounded.Settings
+}
+
+@Composable
+private fun ShortcutTile(s: Shortcut, enabled: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    Column(
+        modifier.height(76.dp).clip(MaterialTheme.shapes.small).background(Panel2)
+            .clickable(enabled = enabled, onClickLabel = s.label, onClick = onClick).padding(6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+    ) {
+        Icon(iconOf(s), null, tint = if (enabled) Accent else Muted, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.height(6.dp))
+        Text(s.label, color = if (enabled) TextHi else Muted, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    }
+}
+
 @Composable
 private fun TvCard(
     u: TvUi, isTile: Boolean,
-    onEditor: (String) -> Unit, onRemote: (String) -> Unit, onOpen: (String) -> Unit, onWake: (String) -> Unit,
+    onEditor: (String) -> Unit, onTab: (String, String) -> Unit, onReminders: (String) -> Unit, onOpen: (String) -> Unit, onWake: (String) -> Unit,
     onForget: (String) -> Unit, onTile: (String) -> Unit, onRepair: (String) -> Unit, onBackups: (String) -> Unit,
 ) {
     val tv = u.tv
@@ -158,7 +195,7 @@ private fun TvCard(
     var confirm by remember { mutableStateOf(false) }
     val (dot, status) = when (u.power) {
         Power.CHECKING -> Muted to "Checking…"
-        Power.WAKING -> Accent2 to "Turning on…"
+        Power.WAKING -> Accent to "Turning on…"
         Power.ON -> Good to (if (u.tivibroOpen) "On · TiviBro open" else "On")
         Power.OFF -> Muted to "Off or not reachable"
         Power.UNPAIRED -> Bad to "This TV no longer knows this phone"
@@ -167,7 +204,7 @@ private fun TvCard(
         Column(Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(48.dp).clip(CircleShape).background(Panel2), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Tv, null, tint = if (u.power == Power.ON) Accent2 else Muted)
+                    Icon(Icons.Rounded.Tv, null, tint = if (u.power == Power.ON) Accent else Muted)
                 }
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
@@ -177,7 +214,7 @@ private fun TvCard(
                         Spacer(Modifier.width(6.dp))
                         Text(listOfNotNull(status, tv.model.ifBlank { null }).joinToString("  ·  "), style = MaterialTheme.typography.bodySmall, color = Muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    if (isTile) Text("Quick Settings tile", style = MaterialTheme.typography.labelSmall, color = Accent2)
+                    if (isTile) Text("Quick Settings tile", style = MaterialTheme.typography.labelSmall, color = Accent)
                 }
                 if (u.busy != null || u.power == Power.WAKING || u.power == Power.CHECKING) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                 Box {
@@ -185,7 +222,6 @@ private fun TvCard(
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         if (tv.mac.isNotBlank()) DropdownMenuItem(text = { Text("Turn on") }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) }, onClick = { menu = false; onWake(tv.id) })
                         if (u.power == Power.ON) DropdownMenuItem(text = { Text(if (u.tivibroOpen) "Show TiviBro on the TV" else "Open TiviBro on the TV") }, leadingIcon = { Icon(Icons.Rounded.PlayArrow, null) }, onClick = { menu = false; onOpen(tv.id) })
-                        DropdownMenuItem(text = { Text("Backups") }, leadingIcon = { Icon(Icons.Rounded.Backup, null) }, onClick = { menu = false; onBackups(tv.id) })
                         DropdownMenuItem(text = { Text("Use for the Quick Settings tile") }, leadingIcon = { Icon(Icons.Rounded.Tv, null) }, onClick = { menu = false; onTile(tv.id) })
                         DropdownMenuItem(text = { Text("Forget this TV") }, leadingIcon = { Icon(Icons.Rounded.LinkOff, null) }, onClick = { menu = false; confirm = true })
                     }
@@ -198,14 +234,32 @@ private fun TvCard(
                     if (tv.mac.isNotBlank()) Button(onClick = { onWake(tv.id) }, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                         Icon(Icons.Rounded.PowerSettingsNew, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Turn on")
                     }
-                    OutlinedButton(onClick = { onEditor(tv.id) }, modifier = Modifier.fillMaxWidth().height(48.dp)) { Text("Edit channels anyway") }
-                }
-                else -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Button(onClick = { onRemote(tv.id) }, enabled = u.power == Power.ON, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                        Icon(Icons.Rounded.SettingsRemote, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Remote and channels", maxLines = 1)
+                    // Without the TV: its backups on this phone, and the editor (which tries the TV anyway).
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(onClick = { onEditor(tv.id) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("Edit channels anyway", maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                        OutlinedButton(onClick = { onBackups(tv.id) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("Backups", maxLines = 1) }
                     }
-                    FilledTonalButton(onClick = { onEditor(tv.id) }, enabled = u.power == Power.ON, modifier = Modifier.fillMaxWidth().height(48.dp)) {
-                        Icon(Icons.Rounded.Edit, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Edit channels", maxLines = 1)
+                }
+                else -> {
+                    val on = u.power == Power.ON
+                    val list = Shortcut.forTv(u.caps)
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        list.chunked(3).forEach { row ->
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                row.forEach { sc ->
+                                    ShortcutTile(sc, enabled = on || sc == Shortcut.BACKUPS, modifier = Modifier.weight(1f)) {
+                                        when (sc) {
+                                            Shortcut.REMINDERS -> onReminders(tv.id)
+                                            Shortcut.EDITOR -> onEditor(tv.id)
+                                            Shortcut.BACKUPS -> onBackups(tv.id)
+                                            else -> onTab(tv.id, Shortcut.tab(sc, u.caps) ?: "Remote")
+                                        }
+                                    }
+                                }
+                                // Keeps the tiles of a short last row the same size.
+                                repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                            }
+                        }
                     }
                 }
             }

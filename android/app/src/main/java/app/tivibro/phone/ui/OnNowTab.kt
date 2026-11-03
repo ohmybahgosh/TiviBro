@@ -138,7 +138,7 @@ private fun MovieSheet(model: AppModel, id: String, m: OnNowMovie, now: Long, pl
     val scope = rememberCoroutineScope()
     var ask by remember { mutableStateOf<OnNowChan?>(null) }
     var reminded by remember { mutableStateOf(m.chans.filter { it.reminder }.map { it.key }.toSet()) }
-    ModalBottomSheet(onDismissRequest = onDone, sheetState = sheet, containerColor = Ink) {
+    ModalBottomSheet(onDismissRequest = onDone, sheetState = sheet, containerColor = Panel) {
         Column(Modifier.padding(bottom = 24.dp).verticalScroll(rememberScrollState())) {
             // The backdrop, with the title logo (or the title) over its lower edge.
             Box(Modifier.fillMaxWidth().aspectRatio(16f / 9f)) {
@@ -160,11 +160,11 @@ private fun MovieSheet(model: AppModel, id: String, m: OnNowMovie, now: Long, pl
                     Logo(c.logo, "", 40.dp)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(c.name, color = if (c.key == playing) Accent2 else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(c.name, color = if (c.key == playing) Accent else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(time(c.start) + " – " + time(c.end) + "   ·   " + (if (m.live) mins(c.end - now) + " left" else "in " + mins(c.start - now)), color = Muted, style = MaterialTheme.typography.labelSmall)
                     }
                     Icon(if (m.live) Icons.Rounded.PlayArrow else if (set) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications,
-                        if (m.live) "Watch on TV" else if (set) "Reminder set" else "Remind me", tint = if (m.live || set) Accent2 else Muted)
+                        if (m.live) "Watch on TV" else if (set) "Reminder set" else "Remind me", tint = if (m.live || set) Accent else Muted)
                 }
             }
         }

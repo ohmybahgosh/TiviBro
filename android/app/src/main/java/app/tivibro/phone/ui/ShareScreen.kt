@@ -71,7 +71,7 @@ fun ShareScreen(model: AppModel, text: String, tvs: List<TvUi>, onBack: () -> Un
         Column(Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Surface(color = Panel, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Rounded.Link, null, tint = if (link != null && !link.bare) Accent2 else Bad)
+                    Icon(Icons.Rounded.Link, null, tint = if (link != null && !link.bare) Accent else Bad)
                     Spacer(Modifier.width(12.dp))
                     Column {
                         when {
@@ -85,7 +85,7 @@ fun ShareScreen(model: AppModel, text: String, tvs: List<TvUi>, onBack: () -> Un
             }
             if (link == null || link.bare) { Button(onClick = onBack, modifier = Modifier.fillMaxWidth()) { Text("Close") }; return@Column }
             if (tvs.isEmpty()) {
-                Text("Pair your TV first: on the TV, open TiviBro, Settings, Phone app, Pair a phone.", color = Muted)
+                Text("Pair your TV first: on the TV, open TiviBro, Settings, Phone app and web editor, Pair a phone.", color = Muted)
                 Button(onClick = onPair, modifier = Modifier.fillMaxWidth()) { Text("Add a TV") }
                 return@Column
             }

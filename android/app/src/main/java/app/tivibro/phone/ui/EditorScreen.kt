@@ -1,6 +1,9 @@
-/* The TV's web editor full screen in a WebView, signed in with a one-time token from the TV.  Saves the
-   files the editor makes (backups, problem reports) through a JavaScript bridge, opens the file picker
-   for restores, and keeps Back inside the editor until its first page. */
+/* The TV's web editor full screen in a WebView, signed in with a one-time token from the TV, opened on
+   the page asked for (a Settings row can open, say, Channel and group names).  Saves the files the
+   editor makes (backups, problem reports) through a JavaScript bridge, opens the file picker for
+   restores, and keeps Back inside the editor until its first page.  The same bridge (window.TiviBroApp,
+   which the editor uses to tell it is inside the app) lets the editor send you to the phone's own
+   screens: TiviBroApp.open('media' | 'backups' | 'reminders' | 'settings'). */
 package app.tivibro.phone.ui
 
 import android.annotation.SuppressLint
@@ -55,6 +58,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import app.tivibro.phone.proto.TbException
+import app.tivibro.phone.proto.editorPageUrl
 
 /* Saving files the editor makes (a backup, a problem report): the page builds them as blob: links, which
    a WebView can't download, so a small script hands them to the app, which asks where to save them. */
@@ -81,7 +85,18 @@ sig=d.playlist.id+'|'+(d.chanRev||'')+'|'+d.channels.length;if(sig===last)return
 send(d).catch(function(e){A.keepFailed(String(e&&e.message||e))}).then(function(){busy=false})}catch(e){busy=false;A.keepFailed(String(e&&e.message||e))}},4000)})();"""
 
 /** What the page hands the app.  [keeper] takes the editor's channel list in pieces (KEEP above). */
-private class Bridge(val onSave: (String, ByteArray, String) -> Unit, val keeper: Keeper? = null) {
+private class Bridge(val onSave: (String, ByteArray, String) -> Unit, val keeper: Keeper? = null, val onOpen: ((String) -> Unit)? = null) {
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+
+    /** Leaves the editor for one of the phone's own screens.  Called on the web view's own thread: the
+        screen change happens on the main thread. */
+    @JavascriptInterface
+    fun open(where: String) {
+        val w = where.trim().lowercase()
+        val go = onOpen ?: return
+        if (w in OPENS) main.post { go(w) }
+    }
+
     @JavascriptInterface fun keepStart(meta: String): Boolean = keeper?.begin(meta) ?: false
     @JavascriptInterface fun keepPart(chunk: String): Boolean = keeper?.part(chunk) ?: false
     @JavascriptInterface fun keepEnd(): Boolean = keeper?.end() ?: false
@@ -97,6 +112,9 @@ private class Bridge(val onSave: (String, ByteArray, String) -> Unit, val keeper
     }
 }
 
+/** The phone screens the editor can send you to (Bridge.open). */
+private val OPENS = setOf("media", "backups", "reminders", "settings")
+
 /** Where the editor's channel list goes (AppModel: EditorCopies for this TV). */
 interface Keeper {
     fun begin(meta: String): Boolean
@@ -108,7 +126,13 @@ interface Keeper {
 @OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) -> String, onBack: () -> Unit, say: (String) -> Unit, keeper: Keeper? = null) {
+fun EditorScreen(
+    name: String, host: String, load: suspend ((String) -> Unit) -> String, onBack: () -> Unit, say: (String) -> Unit, keeper: Keeper? = null,
+    /** An editor page to open on (its id, such as "names"), or "" for the first page. */
+    page: String = "",
+    /** The editor asked for one of the phone's own screens: media, backups, reminders or settings. */
+    onOpen: ((String) -> Unit)? = null,
+) {
     val ctx = LocalContext.current
     var url by remember { mutableStateOf<String?>(null) }
     var status by remember { mutableStateOf("Asking the TV for the editor…") }
@@ -132,7 +156,7 @@ fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) ->
 
     LaunchedEffect(attempt) {
         error = null; url = null; status = "Asking the TV for the editor…"
-        try { url = load { status = it } } catch (e: TbException) { error = e.message } catch (e: Exception) { error = "$name didn't answer.  Is it on, and on the same network?" }
+        try { url = editorPageUrl(load { status = it }, page) } catch (e: TbException) { error = e.message } catch (e: Exception) { error = "$name didn't answer.  Is it on, and on the same network?" }
     }
     // Back closes what is open in the editor, then goes back through its pages (tbBack in the editor),
     // and only then leaves it.  An older TiviBro's editor has no tbBack: back leaves.
@@ -182,7 +206,7 @@ fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) ->
                             settings.allowFileAccess = false
                             settings.allowContentAccess = false
                             settings.setSupportMultipleWindows(false)
-                            addJavascriptInterface(Bridge({ n, b, _ -> post { pendingSave = b; create.launch(n) } }, keeper), "TiviBroApp")
+                            addJavascriptInterface(Bridge({ n, b, _ -> post { pendingSave = b; create.launch(n) } }, keeper, onOpen), "TiviBroApp")
                             webViewClient = object : WebViewClient() {
                                 // The editor stays in the app; anything else (GitHub, the wiki) opens in the browser.
                                 override fun shouldOverrideUrlLoading(view: WebView, req: WebResourceRequest): Boolean {
@@ -207,7 +231,7 @@ fun EditorScreen(name: String, host: String, load: suspend ((String) -> Unit) ->
                             web = this
                         }
                     })
-                    if (progress in 1..99) LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth(), color = Accent2, trackColor = Ink)
+                    if (progress in 1..99) LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.align(Alignment.TopCenter).fillMaxWidth(), color = Accent, trackColor = Ink)
                 }
             }
         }

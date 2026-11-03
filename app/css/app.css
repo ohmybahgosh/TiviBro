@@ -182,8 +182,8 @@ body.guide1 .gp .gs{display:none}
 .guide-group.focus .gbar-count{color:var(--on-accent-dim)}
 
 /* settings */
-.set-nav{width:420px;margin-right:40px;display:flex;flex-direction:column;gap:6px}
-.set-nav div{padding:16px 22px;border-radius:10px;color:var(--muted)}
+.set-nav{width:450px;margin-right:36px;display:flex;flex-direction:column;gap:6px}
+.set-nav div{padding:12px 22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:10px;color:var(--muted)}
 .set-nav div.on{color:var(--text);background:var(--panel)}
 .set-nav.active div.on{background:var(--accent);color:var(--on-accent)}
 .set-body{flex:1;overflow:hidden;position:relative}

@@ -23,7 +23,7 @@ var Views = (function () {
   // The guide is home: the app opens on it and Back from any other screen comes back to it.
   function home() { return Store.settings.startTab === 'live' ? 'live' : 'guide'; }
   /* The plain channel list in the menu: most people browse with the guide, so it shows only when
-     switched on (Settings > Guide, start screen, reminders) or when TiviBro starts on it.  Green in the
+     switched on (Settings > Appearance and start screen) or when TiviBro starts on it.  Green in the
      guide still opens it. */
   function channelsInMenu() { var s = Store.settings; return s.channelsTab === true || (s.channelsTab == null && s.startTab === 'live') || home() === 'live'; }
   var fullFrom = 'guide';
@@ -389,7 +389,7 @@ var Views = (function () {
       // No guide: what the provider wrote in the channel name (often the game or show) is the next best thing.
       var ex = Search.extra(c);
       if (ex) { now.firstChild.textContent = ex; now.appendChild(U.el('small', '', L.name(c) + '   from the channel name, no guide information')); }
-      else now.appendChild(U.el('small', '', nn ? 'No guide information' : 'Loading guide'));
+      else now.appendChild(U.el('small', '', Library.noGuide(c) ? '' : nn ? 'No guide information' : 'Loading guide'));
     }
     if (nn && nn.next) next.textContent = 'Next  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t;
   }
@@ -817,7 +817,7 @@ var Views = (function () {
       if (nn && nn.now) {
         $('osdNow').textContent = (nn.now.up || nn.now.ended ? '' : U.hhmm(nn.now.s) + ' to ' + U.hhmm(nn.now.e) + '   ') + nn.now.t;
         $('osdBar').style.width = nn.now.up || nn.now.ended ? '0' : Math.round(100 * (Date.now() - nn.now.s) / (nn.now.e - nn.now.s)) + '%';
-      } else { $('osdNow').textContent = Search.extra(c) || (nn ? 'No guide information' : ''); $('osdBar').style.width = '0'; }
+      } else { $('osdNow').textContent = Search.extra(c) || (nn && !Library.noGuide(c) ? 'No guide information' : ''); $('osdBar').style.width = '0'; }
       $('osdNext').textContent = nn && nn.next ? 'Next  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t : '';
     }
     osdLegend();
@@ -1314,6 +1314,7 @@ var Views = (function () {
       } },
       renamed && { label: 'Restore original name', action: function () { L.renameChannel(c.k, ''); refreshLists(true); } },
       { label: 'Assign guide…', sub: Store.edits.epgMap[c.k] ? 'assigned' : Epg.pubSource(c) ? 'from the public guide (' + Epg.pubSource(c).name + ')' : Epg.hasData(c) ? '' : 'no guide yet', action: function () { Settings.assignGuide(c); } },
+      !Epg.hasData(c) || Library.noGuide(c) ? { label: Library.noGuide(c) ? 'Look for a guide again' : 'No guide for this channel', sub: Library.noGuide(c) ? 'it shows "No guide information" again, and guide matching includes it' : 'stops "No guide information" here, and guide matching leaves it out', action: function () { Library.setNoGuide(c.k, !Library.noGuide(c)); U.toast(Library.noGuide(c) ? 'No guide for ' + Library.name(c) : 'Looking for a guide for ' + Library.name(c) + ' again'); refreshLists(true); } } : null,
       Parental.enabled() && { label: blocked ? 'Unblock channel' : 'Block channel', sub: 'needs the PIN to watch', action: function () {
         var go = function () { L.block('channel', c.k, !blocked); U.toast(blocked ? 'Unblocked' : 'Blocked'); refreshLists(true); stopIfBlocked(); };
         if (blocked) Parental.gate('channels', c, go); else go();
@@ -1626,11 +1627,11 @@ var Views = (function () {
       !virtual && { label: 'Move up', action: function () { L.moveGroup(g.id, -1); refreshLists(true); groupsVL.move(-1); } },
       !virtual && { label: 'Move down', action: function () { L.moveGroup(g.id, 1); refreshLists(true); groupsVL.move(1); } },
       L.hasOwnOrder(g.id) && { label: 'Back to the provider\'s channel order', sub: 'undo the channels you moved here', action: function () { L.resetOrder(g.id); refreshLists(true); U.toast('Provider order restored'); } },
-      g.id === L.EVENTS && { label: 'Turn off Events by time', sub: 'back on in Settings > Groups, sorting, hidden', action: function () {
+      g.id === L.EVENTS && { label: 'Turn off Events by time', sub: 'back on in Settings > Channels and groups', action: function () {
         var p = Store.playlist; p.events = Object.assign({}, p.events, { group: false }); Store.upsertPlaylist(p); refreshLists(); U.toast('Events by time is off');
       } },
-      g.id === L.TEAMS && { label: 'Choose teams…', sub: 'Settings > Groups, sorting, hidden > My teams', action: function () { Settings.openTeams(); } },
-      g.id === L.TEAMS && { label: 'Turn off My teams', sub: 'back on in Settings > Groups, sorting, hidden > My teams', action: function () {
+      g.id === L.TEAMS && { label: 'Choose teams…', sub: 'Settings > Channels and groups > My teams', action: function () { Settings.openTeams(); } },
+      g.id === L.TEAMS && { label: 'Turn off My teams', sub: 'back on in Settings > Channels and groups > My teams', action: function () {
         Store.settings.teamsGroup = false; Store.saveSettings(); refreshLists(); U.toast('My teams is off');
       } },
       g.id === L.RECENT && { label: 'Clear recent channels', action: function () { Store.edits.recent = []; Store.saveEdits(); L.dirty(); refreshLists(); } },
@@ -1944,7 +1945,7 @@ var Guide = (function () {
       cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (typeof Movies !== 'undefined' && Movies.of(c, p) ? ' mv' : ''), a, w,
         (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, p.e - from)), 0, w) : -1, p.s);
     });
-    if (!n) cell(r, n++, 'gp none' + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : l ? 'No guide information' : 'Loading…', false, null, -1, '');
+    if (!n) cell(r, n++, 'gp none' + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : Library.noGuide(c) ? Library.name(c) : l ? 'No guide information' : 'Loading…', false, null, -1, '');
     for (var j = n; j < r.cells.length; j++) if (!r.cells[j].off) { r.cells[j].d.style.display = 'none'; r.cells[j].off = true; }
   }
   // Programme cells are kept per row and reused, so scrolling the guide creates no new elements.
@@ -2025,7 +2026,7 @@ var Guide = (function () {
       else if (!past) part('starts in ' + mins(h.p.s - now));
       var ps = Epg.pubSource(c);
       if (ps) part('public guide, ' + ps.name);
-    } else meta.appendChild(document.createTextNode(Epg.request(c) ? 'No guide information for this time' : 'Loading guide…'));
+    } else meta.appendChild(document.createTextNode(Library.noGuide(c) ? 'No guide wanted for this channel' : Epg.request(c) ? 'No guide information for this time' : 'Loading guide…'));
     detail.appendChild(meta);
     var meta2 = U.el('div', 'gd-meta');
     var dq = L.versionTag(c);

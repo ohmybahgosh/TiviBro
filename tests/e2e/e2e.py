@@ -79,7 +79,7 @@ async def main():
         await key('ArrowDown',2); await key('ArrowRight'); await key('Enter',w=300)   # Playlists -> first playlist page
         await shot('d_playlist')
         # find name editor row
-        idx=await ev("()=>[...document.querySelectorAll('.opt')].findIndex(e=>e.textContent.indexOf('Channel name editor')===0)")
+        idx=await ev("()=>[...document.querySelectorAll('.opt')].findIndex(e=>e.textContent.indexOf('Channel and group names')===0)")
         cur=await ev("()=>[...document.querySelectorAll('.opt')].findIndex(e=>e.classList.contains('focus'))")
         for _ in range(idx-cur): await key('ArrowDown',w=60)
         await key('Enter',w=300); await shot('d_names')

@@ -78,8 +78,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const cancelled = await ev(() => { const i = Store.edits.reminders.findIndex(r => r.w), r = Store.edits.reminders[i]; Store.edits.reminders.splice(i, 1); Watch.scan(false); return r.k + '|' + r.s; });
   ok('a reminder you cancel does not come back', await ev(g => !Store.edits.reminders.some(r => r.k + '|' + r.s === g), cancelled));
   ok('whole words only', await ev(() => { Watch.add('Zzq'); const n = Watch.upcoming('Zzq').length; Watch.remove('Zzq'); return n === 0; }));
-  // Settings > Guide, start screen, reminders > Watchlist
-  await section('Guide, start screen, reminders'); await H.row('Watchlist'); await H.quiet('Enter', 900);
+  // Settings > Reminders and watchlist > Watchlist
+  await section('Reminders and watchlist'); await H.row('Watchlist'); await H.quiet('Enter', 900);
   const wpage = await page.innerText('#setBody');
   ok('the Watchlist settings page lists the word and what is coming up', new RegExp(word, 'i').test(wpage) && /Coming up/.test(wpage) && /Look ahead/.test(wpage), wpage.replace(/\s+/g, ' ').slice(0, 260));
   await shot('tv-set-watchlist');
@@ -132,7 +132,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('holding Down for 3 seconds goes a long way', +moved - s0 > 60, moved);
 
   /* ---------- audio and subtitles ---------- */
-  await section('Playback and buffering'); await H.row('Audio language'); await H.quiet('Enter', 600);
+  await section('Playback'); await H.row('Audio language'); await H.quiet('Enter', 600);
   await H.pick('Spanish', '', 500);
   ok('audio language is saved', await ev(() => Store.settings.audioLang === 'es'));
   await H.row('Subtitles automatically'); await H.quiet('Enter', 600);
@@ -143,7 +143,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await shot('tv-set-audio');
 
   /* ---------- speed test ---------- */
-  await section('Diagnostics'); await H.row('Speed test'); await H.quiet('Enter', 500);
+  await section('Updates, about and diagnostics'); await H.row('Speed test'); await H.quiet('Enter', 500);
   await page.waitForFunction(() => /Done\./.test((document.querySelector('.diag-body') || {}).innerText || ''), null, { timeout: 60000 }).catch(() => {});
   const sp = await page.innerText('.diag');
   ok('the speed test reports the provider\'s speed', /Provider: [\d.]+ Mbps|Live channel: [\d.]+ Mbps/.test(sp), sp.replace(/\s+/g, ' ').slice(0, 300));

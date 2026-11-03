@@ -41,7 +41,7 @@ shot 2-paired 8
 tap "Edit channels"
 shot 3-editor 10
 # Back closes what is open in the editor and goes back through its pages first, then leaves it.
-for i in 1 2 3 4; do adb shell input keyevent KEYCODE_BACK; sleep 3; [ -n "$(find_text "Edit channels")" ] && break; done
+for i in 1 2 3 4; do adb shell input keyevent KEYCODE_BACK; sleep 4; [ -n "$(find_text "Edit channels")" ] && break; sleep 2; [ -n "$(find_text "Edit channels")" ] && break; done
 [ -n "$(find_text "Edit channels")" ] || { echo "Back did not return to the TV list"; adb exec-out screencap -p > "$OUT/fail.png"; adb logcat -d > "$OUT/logcat.txt"; grep -E "TiviBroBack|ActivityTaskManager|wm_|$PKG|FATAL" "$OUT/logcat.txt" | tail -60; exit 1; }
 echo "Back returns to the TV list"
 # The Quick Settings tile opens TiviBro on the TV (it used to do nothing: its work was cancelled as soon
@@ -57,7 +57,7 @@ done
 [ "$(grep -c '^LAUNCHED' /tmp/fake-tv.txt || true)" -gt "$n0" ] || { echo "The tile did not open TiviBro on the TV"; adb logcat -d | grep -E "TiviBroTile|TileService" | tail -20; exit 1; }
 echo "The tile opens TiviBro on the TV"
 # The remote, Play on TV, and Now playing following the TV.
-tap "Remote and channels"
+tap "Remote"
 shot 4-remote 5
 tap "Channels"
 shot 5-channels 5
@@ -120,7 +120,7 @@ else echo "My media tab not on screen (scrolled away): skipped"; fi
 # The TV's settings on the phone.
 tap "Settings"
 shot 12b-settings 5
-tap "Appearance"
+tap "Appearance and start screen"
 shot 12c-settings-appearance 5
 [ -n "$(find_text "Show clock")" ] || { echo "Settings on the phone did not show the TV's page"; exit 1; }
 echo "The TV's settings show on the phone"
@@ -133,8 +133,8 @@ shot 14-shared-added 6
 tap "Done"
 sleep 2
 # Backups.  Back goes to the remote tab first, then to the TV list.
-for i in 1 2 3; do [ -n "$(find_text "More")" ] && break; adb shell input keyevent KEYCODE_BACK; sleep 2; done
-tap "More"
+for i in 1 2 3 4; do [ -n "$(find_text "Edit channels")" ] && break; adb shell input keyevent KEYCODE_BACK; sleep 4; done
+[ -n "$(find_text "Edit channels")" ] || { echo "Back did not return to the TV list after sharing"; adb exec-out screencap -p > "$OUT/fail.png"; adb logcat -d > "$OUT/logcat.txt"; grep -E "Killing .*$PKG|FATAL|$PKG.*died" "$OUT/logcat.txt" | tail -20; exit 1; }
 tap "Backups"
 tap "Back up now"
 shot 15-backups 6

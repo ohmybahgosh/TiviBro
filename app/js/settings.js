@@ -3,8 +3,11 @@ var Settings = (function () {
   'use strict';
   var $ = U.$, S = function () { return Store.settings; }, L = Library;
   var nav = $('setNav'), body = $('setBody');
-  var SECTIONS = [['playback', 'Playback and buffering'], ['remote', 'Remote control'], ['playlists', 'Playlists and guide'], ['media', 'My media'], ['connect', 'Phone app and web editor'],
-    ['groups', 'Groups, sorting, hidden'], ['reminders', 'Guide, start screen, reminders'], ['look', 'Appearance'], ['parental', 'Parental controls'], ['updates', 'Updates and about'], ['diag', 'Diagnostics']];
+  var SECTIONS = [['playlists', 'Playlists'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['names', 'Channel and group names'], ['reminders', 'Reminders and watchlist'],
+    ['playback', 'Playback'], ['media', 'My media'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
+    ['backups', 'Backups and restore points'], ['connect', 'Phone app and web editor'], ['about', 'Updates, about and diagnostics']];
+  // Old section ids (links in other screens, tests, older phone apps) still land somewhere sensible.
+  var ALIAS = { groups: 'channels', updates: 'about', diag: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders' };
   var sec = 0, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
   // Phone app: test builds only while the Android app is in the works (release builds show the web editor alone).
   function phoneOK() { return /alpha|beta/i.test(TIVIBRO_VERSION); }
@@ -61,7 +64,7 @@ var Settings = (function () {
       ['auto', 'direct'], ['Automatic (recommended)', 'Direct'], function () { return s.network || 'auto'; }, function (v) { s.network = v; save(); }));
     out.push(info('Network helper', Net.port ? 'running' : 'not running'));
     out.push(choice('Buffer meter', 'Shows how many seconds of video are banked, in fullscreen.', ['auto', 'always', 'off'], ['When low', 'Always', 'Off'], function () { return s.meter; }, function (v) { s.meter = v; save(); }));
-    out.push(choice('Buffer info on demand', Keymap.bufferHint() + ' shows the buffer meter and stream info, even with the meter off.  Press again to hide it.  Any button can do this: Settings > Remote control.',
+    out.push(choice('Buffer info on demand', Keymap.bufferHint() + ' shows the buffer meter and stream info, even with the meter off.  Press again to hide it.  Any button can do this: Settings > Remote and buttons.',
       [5, 10, 30, 0], ['5 seconds', '10 seconds', '30 seconds', 'Until pressed again'], function () { return s.meterPeek == null ? 10 : +s.meterPeek; }, function (v) { s.meterPeek = v; save(); }));
     out.push(toggle('Preview on the Channels screen', 'Plays the channel you rest on.  Turn off on very slow TVs for the snappiest list.', function () { return s.previewPlay; }, function (v) { s.previewPlay = v; save(); }));
     out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',
@@ -116,7 +119,9 @@ var Settings = (function () {
   /* A button the phone app does on the phone itself (a form there instead of boxes on the TV), when it
      knows how: rowData sends the name.  Older phone apps run it on the TV as before. */
   function phoneDoes(name, it) { it.phone = name; return it; }
-  /* Your TMDB token: in Settings > My media and in Settings > Guide (Movies on now uses it too). */
+  // A button that only makes sense on the TV's own screen (it waits for a remote button, or shows a QR code).
+  function tvOnly(it) { it.tv = 1; return it; }
+  /* Your TMDB token: in Settings > My media and in Settings > Guide > Movies in the guide (Movies on now uses it too). */
   function tmdbRows() {
     var hasToken = MediaStore.preferences().tmdbConfigured;
     return [
@@ -132,9 +137,9 @@ var Settings = (function () {
     var names = { en: 'English', nl: 'Dutch', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian' };
     var hasToken = MediaStore.preferences().tmdbConfigured;
     var out = [head('Your media library'),
-      info('Movies and TV shows from your own media servers.', 'Files can be mixed at the top level or nested in folders.  Choose which content to scan in each source.'),
+      info('Movies and TV shows from your own media servers (DLNA / UPnP, or a WebDAV folder).  Files can be at the top level or in folders.  Choose what each source holds: movies, TV shows or both.  The phone app does all of this too, with the typing on the phone.', ''),
       phoneDoes('media-add', action('Add media', 'Find a DLNA / UPnP server, or enter a WebDAV folder address and login.  Subfolders are scanned too.', function () { Media.addMenu(); })),
-      action('Edit on a computer', 'Add server logins and change preferences in the web editor.', function () { WebEdit.showJoin('media'); }),
+      tvOnly(action('Edit on a computer', 'Shows a code for a computer or phone browser: the web editor\'s My media page, for typing server logins and fixing TV show episodes.', function () { WebEdit.showJoin('media'); })),
       action('Rescan media sources', 'Look for movies and episodes.  Green on the My media screen.', function () { Media.rescanAll(); }),
       action('Fetch media details', 'Look up movies, shows and owned episodes.  Refresh outdated language details.  Yellow on My media.', function () { Media.fetchMissingDetails(); }),
       head('Preferences')].concat(tmdbRows(), [
@@ -165,17 +170,17 @@ var Settings = (function () {
       return o;
     }));
     out.push(head('Extra buttons'));
-    out.push(action('Learn a button', 'For keys the app does not know yet.  Press this, then press the button.  Some buttons belong to the TV (Home, Live TV, the TV\'s own Guide, Input, Settings): webOS acts on them before TiviBro hears them, so they leave TiviBro and can\'t be learned.', function () {
+    out.push(tvOnly(action('Learn a button', 'For keys the app does not know yet.  Press this, then press the button.  Some buttons belong to the TV (Home, Live TV, the TV\'s own Guide, Input, Settings): webOS acts on them before TiviBro hears them, so they leave TiviBro and can\'t be learned.', function () {
       U.toast('Press the button to learn', 5000);
       UI.captureNext(function (code, known) {
         if (known && Keymap.BUTTONS.some(function (b) { return b[0] === known; })) { U.toast('That is ' + Keymap.label(known) + ', already supported'); return; }
         Keymap.learn(code); U.toast('Learned button ' + code + '.  Assign it under In the player, In the guide or On the Channels screen.'); build();
       });
-    }));
-    out.push(action('Button tester', 'Shows what the app sees when you press a button.  The TV\'s own buttons (Home, Live TV, Guide, Input) never reach TiviBro.', function () {
+    })));
+    out.push(tvOnly(action('Button tester', 'Shows what the app sees when you press a button.  The TV\'s own buttons (Home, Live TV, Guide, Input) never reach TiviBro.', function () {
       U.toast('Press any button', 5000);
       UI.captureNext(function (code, known) { U.toast('Key code ' + code + (known ? ':  ' + Keymap.label(known) : ':  not assigned'), 4000); });
-    }));
+    })));
     out.push(head(''));
     out.push(action('Restore default buttons', '', function () { UI.confirm('Restore every button to its default?', 'Restore', function () { Keymap.reset(); U.toast('Default buttons restored'); build(); }); }));
     return out;
@@ -209,9 +214,8 @@ var Settings = (function () {
       out.push(page(p.name || (p.type === 'xtream' ? p.user : 'M3U'), [Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist', active ? 'in use, ' + L.count() + ' channels' : ''].filter(Boolean).join('   '),
         p.name || 'Playlist', function () { return playlistPage(p); }));
     });
-    out.push(action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.', function () { App.setup('new'); }));
-    out.push(head('About'));
-    out.push(info('TiviBro ' + TIVIBRO_VERSION, 'hls.js ' + (window.Hls ? Hls.version : '') + '   mpegts.js'));
+    out.push(action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.  Adding one from the phone app is easier: share your provider\'s link to it.', function () { App.setup('new'); }));
+    out.push(info('The guide, names and channels of the playlist in use are under Guide, Channel and group names, and Channels and groups.', ''));
     return out;
   }
 
@@ -237,35 +241,10 @@ var Settings = (function () {
       if (L.data.exp) out.push(info('Subscription expires', new Date(L.data.exp).toLocaleDateString() + (Store.expiry(p) ? '  (' + Store.expiry(p).replace(/^Expire[sd] /, '') + ')' : '')));
       if (L.data.maxConn) out.push(info('Connections allowed', String(L.data.maxConn)));
     }
-    out.push(head('Guide'));
-    out.push(choice('Provider guide', xc ? 'Per channel is light and loads as you browse.  The full file also enables guide search and manual assignment.' : 'The guide address inside the playlist, if it has one.',
-      xc ? ['short', 'xmltv', 'off'] : ['xmltv', 'off'], xc ? ['Per channel', 'Full XMLTV file', 'Off'] : ['From playlist', 'Off'],
-      function () { return p.providerEpg; }, function (v) { p.providerEpg = v; persist(p, true); build(); }));
-    var offs = [], offl = [];
-    for (var m = -720; m <= 720; m += 30) { offs.push(m); offl.push((m > 0 ? '+' : m < 0 ? '-' : '') + Math.floor(Math.abs(m) / 60) + ':' + U.pad(Math.abs(m) % 60)); }
-    if (p.providerEpg !== 'off') out.push(choice('Provider guide time offset', 'Use when every programme is too early or too late.', offs, offl, function () { return +p.epgOffset; }, function (v) { p.epgOffset = v; persist(p, true); paint(); }));
-    out.push(page('Guide sources', (p.epgSources || []).length + ' XMLTV address' + ((p.epgSources || []).length === 1 ? '' : 'es') + ', checked before the provider guide', 'Guide sources', function () { return sourcesPage(p); }));
-    out.push(choice('Reload guide', '', REFRESH, REFRESH_L, function () { return +p.epgRefresh; }, function (v) { p.epgRefresh = v; persist(p); paint(); }));
-    out.push(choice('Keep past days', 'For catch-up browsing.  More days use more TV memory.', [1, 2, 3, 5, 7], ['1 day', '2 days', '3 days', '5 days', '7 days'], function () { return +p.epgDays; }, function (v) { p.epgDays = v; persist(p, true); paint(); }));
-    out.push(toggle('Match guide by channel name', 'Links channels that have no guide id to a guide channel with the same name.', function () { return p.nameMatch; }, function (v) { p.nameMatch = v; persist(p, true); paint(); }));
-    out.push(page('Public guide fill-in', 'Free guides from epg.pw and iptv-epg.org, only for channels nothing else covers', 'Public guide fill-in', function () { return pubPage(p); }, function () { return PubEpg.conf(p).on ? 'On' : 'Off'; }));
-    if (active) {
-      out.push(action('Reload guide now', '', function () { Epg.refresh(L, true); U.toast('Reloading guide'); live(); }));
-      var st = Epg.status;
-      if (Epg.xml) {
-        out.push(info('Guide last loaded', Epg.loading || (Epg.progress && Epg.progress.active) ? 'loading now' : when(st.at)));
-        (st.sources || []).forEach(function (r) { out.push(info(r.url.replace(/(password|pass)=[^&]+/i, '$1=…'), r.ok ? r.channels + ' channels, ' + r.programmes + ' programmes' : 'failed: ' + r.error)); });
-        var all = L.data.channels, n = 0, missing = [];
-        all.forEach(function (c) { if (Epg.hasData(c)) n++; else if (missing.length < 300) missing.push(c); });
-        out.push(info('Channels with guide data', n + ' of ' + all.length));
-        if (missing.length) out.push(action('Assign guide to channels without one', 'Or hold OK on any channel and choose Assign guide.', function () {
-          UI.menu('Channels without guide', missing.map(function (c) { return { label: L.name(c), sub: L.groupName(c.g), action: function () { assignGuide(c); } }; }));
-        }));
-      }
-    }
-    out.push(head('Channel names'));
-    if (active) out.push(action('Set-up tour', 'Countries, channel names, East or West, your city, event channels, clutter, logos and look, one screen at a time.', function () { Tour.open({ from: 'settings' }); }, function () { return p.tour > 0 ? 'done ' + when(p.tour) : '›'; }));
-    out.push(page('Channel name editor', p.names && p.names.enabled ? 'On' : 'Off', 'Channel name editor', function () { return namesPage(p); }));
+    out.push(head('This playlist\'s guide, names and events'));
+    out.push(page('Guide', 'The provider\'s guide, your guide sources and public fill-in for this playlist', 'Guide: ' + (p.name || 'playlist'), function () { return guideRows(p); }));
+    if (active) out.push(tvOnly(action('Set-up tour', 'Countries, channel names, East or West, your city, event channels, clutter, logos and look, one screen at a time.', function () { Tour.open({ from: 'settings' }); }, function () { return p.tour > 0 ? 'done ' + when(p.tour) : '›'; })));
+    out.push(page('Channel and group names', p.names && p.names.enabled ? 'On' : 'Off', 'Channel and group names', function () { return namesPage(p); }));
     out.push(page('Event channels', p.events && p.events.on === false ? 'Off' : 'On', 'Event channels', function () { return eventsPage(p); }));
     if (s.playlists.length > 1) {
       out.push(head(''));
@@ -276,6 +255,46 @@ var Settings = (function () {
           if (active) App.switchPlaylist(Store.settings.active); else build();
         });
       }));
+    }
+    return out;
+  }
+
+  /* One playlist's guide (the Guide section shows the one in use; each playlist's page has its own). */
+  function guideRows(p) {
+    var out = [], active = p.id === S().active, xc = p.type === 'xtream';
+    out.push(choice('Provider guide', xc ? 'Per channel is light and loads as you browse.  The full file also enables guide search and manual assignment.' : 'The guide address inside the playlist, if it has one.',
+      xc ? ['short', 'xmltv', 'off'] : ['xmltv', 'off'], xc ? ['Per channel', 'Full XMLTV file', 'Off'] : ['From playlist', 'Off'],
+      function () { return p.providerEpg; }, function (v) { p.providerEpg = v; persist(p, true); build(); }));
+    var offs = [], offl = [];
+    for (var m = -720; m <= 720; m += 30) { offs.push(m); offl.push((m > 0 ? '+' : m < 0 ? '-' : '') + Math.floor(Math.abs(m) / 60) + ':' + U.pad(Math.abs(m) % 60)); }
+    if (p.providerEpg !== 'off') out.push(choice('Provider guide time offset', 'Use when every programme is too early or too late.', offs, offl, function () { return +p.epgOffset; }, function (v) { p.epgOffset = v; persist(p, true); paint(); }));
+    out.push(page('Guide sources', (p.epgSources || []).length + ' XMLTV address' + ((p.epgSources || []).length === 1 ? '' : 'es') + ', checked before the provider guide', 'Guide sources', function () { return sourcesPage(p); }));
+    out.push(choice('Reload guide', '', REFRESH, REFRESH_L, function () { return +p.epgRefresh; }, function (v) { p.epgRefresh = v; persist(p); paint(); }));
+    out.push(choice('Keep past days', 'For catch-up browsing.  More days use more TV memory.', [1, 2, 3, 5, 7], ['1 day', '2 days', '3 days', '5 days', '7 days'], function () { return +p.epgDays; }, function (v) { p.epgDays = v; persist(p, true); paint(); }));
+    out.push(toggle('Match guide by channel name', 'Links channels that have no guide id to a guide channel with the same name.', function () { return p.nameMatch; }, function (v) { p.nameMatch = v; persist(p, true); paint(); }));
+    out.push(page('Public guide fill-in', 'Free guides (epg.pw, iptv-epg.org, and Pluto TV\'s own for Pluto channels), only for channels nothing else covers', 'Public guide fill-in', function () { return pubPage(p); }, function () { return PubEpg.conf(p).on ? 'On' : 'Off'; }));
+    if (active) {
+      out.push(action('Reload guide now', '', function () { Epg.refresh(L, true); U.toast('Reloading guide'); live(); }));
+      var st = Epg.status;
+      if (Epg.xml) {
+        out.push(info('Guide last loaded', Epg.loading || (Epg.progress && Epg.progress.active) ? 'loading now' : when(st.at)));
+        (st.sources || []).forEach(function (r) { out.push(info(r.url.replace(/(password|pass)=[^&]+/i, '$1=…'), r.ok ? r.channels + ' channels, ' + r.programmes + ' programmes' : 'failed: ' + r.error)); });
+        var all = L.data.channels, n = 0, missing = [];
+        all.forEach(function (c) { if (Epg.hasData(c)) n++; else if (!L.noGuide(c) && missing.length < 300) missing.push(c); });
+        out.push(info('Channels with guide data', n + ' of ' + all.length));
+        if (missing.length) out.push(action('Assign guide to channels without one', 'Or hold OK on any channel and choose Assign guide.  A channel that will never have a guide: hold OK > No guide for this channel.', function () {
+          UI.menu('Channels without guide', missing.map(function (c) { return { label: L.name(c), sub: L.groupName(c.g), action: function () { assignGuide(c); } }; }));
+        }));
+      }
+      // Channels you said need no guide (Hold OK > No guide for this channel, or Ignore in the web editor).
+      var none = L.data.channels.filter(function (c) { return L.noGuide(c); });
+      if (none.length) out.push(page('Channels with no guide wanted', 'Left out of guide matching and public fill-in, and they don\'t say "No guide information".', 'No guide wanted', function () {
+        var o = [info('Select one to look for a guide for it again.', '')];
+        L.data.channels.filter(function (c) { return L.noGuide(c); }).forEach(function (c) {
+          o.push(action(L.name(c), L.groupName(c.g), function () { L.setNoGuide(c.k, false); relist(); U.toast('Looking for a guide for ' + L.name(c) + ' again'); build(); }, function () { return 'Look again'; }));
+        });
+        return o;
+      }, function () { return none.length + ' ›'; }));
     }
     return out;
   }
@@ -296,7 +315,7 @@ var Settings = (function () {
           out.push(info('Channels filled in', st.filled + ' of ' + st.asked + ' with no other guide'));
           out.push(info('Last looked', when(st.at) + (st.took ? ', took ' + Math.max(1, Math.round(st.took / 1000)) + ' s' : '')));
           (st.sources || []).forEach(function (r) { out.push(info(r.url, r.skipped ? 'not needed' : r.ok ? r.filled + ' channels' : 'failed: ' + r.error)); });
-          if (!Net.active) out.push(info('iptv-epg.org', 'needs Settings > Playback > Network set to Automatic'));
+          if (!Net.active) out.push(info('iptv-epg.org', 'needs Settings > Playback > Connection set to Automatic'));
         }
         out.push(action('Look again now', 'Downloads the public guides again.', function () { Epg.pubAgain(); U.toast('Looking in the public guides'); live(); }));
       }
@@ -362,7 +381,7 @@ var Settings = (function () {
     out.push(toggle('Hide channels with nothing on', 'Channels named "Off Air", "Offline" or "No Event Scheduled", empty slots like "PPV 09 |", and events that ended hours ago stay out of the lists until the provider names a new event on them.  Favorites keep theirs.',
       function () { return !!n.hideIdle; }, function (v) { n.hideIdle = v; changed(); }));
     if (!n.enabled) return out.concat([preview(n, active)]);
-    out.push(toggle('Clean group names too', 'Turns "USA | Sports" into "Sports" in the group list.', function () { return n.groups; }, function (v) { n.groups = v; changed(); }));
+    out.push(toggle('Clean group names too', 'The rules below also tidy group names: "USA | Sports" becomes "Sports".  Your group prefixes and suffixes (further down) apply either way.', function () { return n.groups; }, function (v) { n.groups = v; changed(); }));
     out.push(head('Default rules, preloaded'));
     out.push(action('Enable recommended defaults', 'Turns on the default rules below.  Your own lists are kept.', function () {
       var d = Names.defaults().rules; n.rules = d; changed(true); U.toast('Recommended defaults on');
@@ -374,9 +393,15 @@ var Settings = (function () {
       var ex = r.ex.map(function (e) { return '"' + e[0] + '" → "' + e[1] + '"'; }).join(',  ');
       out.push(toggle(r.label, ex + (r.note ? '.  ' + r.note : ''), function () { return n.rules[r.id] != null ? !!n.rules[r.id] : r.on; }, function (v) { n.rules[r.id] = v; changed(); }));
     });
-    listSection(out, 'Your prefixes', 'prefix', n.prefixes, changed, 'Removed from the start of a name, any capitalisation.  Example: NOW: ');
-    listSection(out, 'Your suffixes', 'suffix', n.suffixes, changed, 'Removed from the end.  A leading space counts, so " HD" will not touch "WHD".');
+    listSection(out, 'Your prefixes', 'prefix', n.prefixes, changed, 'Removed from the start of a channel name, any capitalisation.  Example: NOW: ');
+    listSection(out, 'Your suffixes', 'suffix', n.suffixes, changed, 'Removed from the end of a channel name.  A leading space counts, so " HD" will not touch "WHD".');
     out.push(preview(n, active));
+    // Group names: their own lists, for words only groups carry ("USA ", " Channels").
+    if (!n.gprefixes) n.gprefixes = [];
+    if (!n.gsuffixes) n.gsuffixes = [];
+    listSection(out, 'Group prefixes', 'group prefix', n.gprefixes, changed, 'Removed from the start of a group name only.  Example: USA ');
+    listSection(out, 'Group suffixes', 'group suffix', n.gsuffixes, changed, 'Removed from the end of a group name only.  Example: " Channels"');
+    out.push(groupPreview(n, active));
     return out;
   }
   /* ---------- event channels ---------- */
@@ -407,7 +432,7 @@ var Settings = (function () {
   function listSection(out, title, kind, arr, changed, hint) {
     out.push(head(title + ' (' + arr.length + ')'));
     out.push(action('Add a ' + kind + '…', hint, function () {
-      UI.prompt('Add a ' + kind, '', function (v) { if (v.trim()) { arr.push(kind === 'prefix' ? v.replace(/^\s+/, '') : v.replace(/\s+$/, '')); changed(true); } }, 'Spaces count.  Shown with · in the list.');
+      UI.prompt('Add a ' + kind, '', function (v) { if (v.trim()) { arr.push(/prefix/.test(kind) ? v.replace(/^\s+/, '') : v.replace(/\s+$/, '')); changed(true); } }, 'Spaces count.  Shown with · in the list.');
     }));
     arr.forEach(function (e, i) {
       out.push(action(show(e), '', function () {
@@ -421,6 +446,19 @@ var Settings = (function () {
       UI.prompt(title + ', comma separated', Names.joinList(arr), function (v) { arr.length = 0; Names.parseList(v).forEach(function (x) { arr.push(x); }); changed(true); });
     }));
     if (arr.length) out.push(action('Clear ' + title.toLowerCase(), '', function () { UI.confirm('Clear all ' + title.toLowerCase() + '?', 'Clear', function () { arr.length = 0; changed(true); }); }));
+  }
+  function groupPreview(cfg, active) {
+    var box = U.el('div', 'prev-table');
+    box.appendChild(U.el('div', 'opt head', active ? 'Group names with your rules' : 'Group names (switch to this playlist to see its groups)'));
+    var gs = active ? L.data.groups.slice(0, 400) : [];
+    var changed = gs.filter(function (g) { return Names.cleanGroupWith(cfg, g.name) !== g.name; });
+    changed.concat(gs.filter(function (g) { return changed.indexOf(g) < 0; })).slice(0, 8).forEach(function (g) {
+      var r = U.el('div'), raw = g.name;
+      r.appendChild(U.el('span', 'a', raw));
+      r.appendChild(U.el('span', 'b', Names.cleanGroupWith(cfg, raw)));
+      box.appendChild(r);
+    });
+    return { preview: true, el: box };
   }
   function preview(cfg, active) {
     var box = U.el('div', 'prev-table');
@@ -457,7 +495,7 @@ var Settings = (function () {
     return out;
   }
 
-  /* ---------- groups ---------- */
+  /* ---------- channels and groups ---------- */
   function groups() {
     var s = S(), out = [], hid = L.hiddenItems();
     function apply() { Store.saveSettings(); relist(); build(); }
@@ -472,9 +510,10 @@ var Settings = (function () {
     out.push(choice('Recent channels kept', '', [10, 20, 30, 50], ['10', '20', '30', '50'], function () { return +s.recentCount; }, function (v) { s.recentCount = v; save(); }));
     out.push(toggle('Show Favorites group', '', function () { return s.showFav !== false; }, function (v) { s.showFav = v; apply(); }));
     out.push(page('My teams', 'A group with your teams\' own channels and every channel showing one of their games.  For now the NFL, NBA, NHL, MLB, WNBA and MLS only.', 'My teams', teamsPage, function () { var n = Teams.followed().length; return n ? n + ' ›' : '›'; }));
-    out.push(toggle('Show Movies on now', 'Movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Guide, start screen, reminders).',
+    out.push(toggle('Show Movies on now', 'A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Guide > Movies in the guide).',
       function () { return s.moviesGroup !== false; }, function (v) { s.moviesGroup = v; apply(); if (typeof Movies !== 'undefined') Movies.poke(); }));
-    if (Events.on()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in the playlist\'s Event channels.',
+    out.push(page('Event channels', 'Pay-per-view and league pass channels whose names carry the game and its time: read into the guide.', 'Event channels', function () { return eventsPage(Store.playlist); }, function () { var ev = Store.playlist.events; return ev && ev.on === false ? 'Off' : 'On'; }));
+    if (Events.on()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.',
       function () { return Events.groupOn(); }, function (v) { var p = Store.playlist; p.events = Object.assign({}, p.events, { group: v }); Store.upsertPlaylist(p); Events.reset(); apply(); }));
     out.push(choice('Recently added channels', 'A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.', [0, 3, 7, 14], ['Off', '3 days', '7 days', '14 days'], function () { return s.newDays == null ? 7 : +s.newDays; }, function (v) { s.newDays = v; L.dirty(); apply(); }));
     out.push(choice('Groups your provider adds later', 'Hide keeps a tidy list tidy after "Hide all groups".', ['show', 'hide'], ['Show them', 'Hide them'], function () { return s.newGroups === 'hide' ? 'hide' : 'show'; }, function (v) { s.newGroups = v; save(); }));
@@ -523,7 +562,7 @@ var Settings = (function () {
       function () { return s.teamsGroup !== false; }, function (v) { s.teamsGroup = v; apply(); }));
     out.push(choice('Games starting within', 'How soon a game has to start to be in the group.', [3, 6, 12, 24], ['3 hours', '6 hours', '12 hours', '24 hours'],
       function () { return +s.teamsAhead || 6; }, function (v) { s.teamsAhead = v; apply(); }));
-    out.push(toggle('Remind me before their games', 'Like the watchlist: how far ahead it looks, and a reminder or just a message, are set in Settings > Guide, start screen, reminders > Watchlist.',
+    out.push(toggle('Remind me before their games', 'Like the watchlist: how far ahead it looks, and a reminder or just a message, are set in Settings > Reminders and watchlist > Watchlist.',
       function () { return !!s.teamsRemind; }, function (v) {
         s.teamsRemind = v;
         if (!v) { Store.edits.reminders = Store.edits.reminders.filter(function (r) { return !/^team:/.test(r.w || ''); }); Store.saveEdits(); }
@@ -562,45 +601,46 @@ var Settings = (function () {
   function openTeams() {
     Views.switchTab('settings');
     if (Views.tab !== 'settings') return;
-    section('groups'); push('My teams', teamsPage);
+    section('channels'); push('My teams', teamsPage);
   }
 
-  /* ---------- guide display and reminders ---------- */
-  function reminders() {
-    var s = S(), out = [];
-    out.push(choice('Start screen', 'What TiviBro opens on, and where Back from other screens leads.', ['guide', 'live'], ['Guide', 'Channels screen'],
-      function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; save(); Views.buildTabs(); }));
-    out.push(toggle('Channels screen in the menu', s.startTab === 'live' ? 'Always there while TiviBro starts on it.' : 'The plain list of channels, without the guide.  Off, it stays one press away: Green in the guide.',
-      function () { return s.startTab === 'live' || s.channelsTab === true; }, function (v) { if (s.startTab === 'live') { U.toast('TiviBro starts on the Channels screen, so it stays in the menu'); return; } s.channelsTab = v; save(); Views.buildTabs(); }));
-    out.push(choice('OK on a channel in the Guide', 'Preview first works like TiviMate: the first OK plays it in the corner window, the second goes fullscreen.',
-      ['preview', 'full'], ['Preview first, then fullscreen', 'Fullscreen right away'], function () { return s.guideOk === 'full' ? 'full' : 'preview'; }, function (v) { s.guideOk = v; save(); }));
-    out.push(choice('Guide row size', 'A little taller rows with bigger channel names and titles, for smaller TVs or reading from across the room.  One channel fewer fits at once.', ['m', 'l', 'xl'], ['Normal', 'Bigger', 'Biggest'],
-      function () { return s.guideRows || 'm'; }, function (v) { s.guideRows = v; Views.applyLook(); if (window.Guide && Guide.resize) Guide.resize(); save(); }));
-    out.push(toggle('Two-line programmes', 'Shows each programme\'s time under its title in the grid.', function () { return s.guideLines !== 1; }, function (v) { s.guideLines = v ? 2 : 1; Views.applyLook(); save(); }));
-    out.push(toggle('Dim past programmes', '', function () { return s.dimPast; }, function (v) { s.dimPast = v; Views.applyLook(); save(); }));
-    out.push(choice('Mark what\'s on now', 'How the guide shows programmes airing right now.', ['fill', 'color', 'off'], ['Tint what has aired', 'Colour and tint', 'Off'], function () { return s.nowStyle || 'fill'; }, function (v) { s.nowStyle = v; Views.applyLook(); save(); }));
-    out.push(toggle('Channel names in the guide', 'Off shows logos only, leaving more room.', function () { return s.guideNames !== false; }, function (v) { s.guideNames = v; Views.applyLook(); save(); }));
-    out.push(toggle('Two-line channel names', 'Long names wrap instead of being cut off.', function () { return !!s.twoLineNames; }, function (v) { s.twoLineNames = v; Views.applyLook(); save(); }));
-    out.push(toggle('Mark catch-up channels', 'Shows ↺ on channels and programmes you can replay.', function () { return s.showCatchupMark !== false; }, function (v) { s.showCatchupMark = v; save(); relist(); }));
+  /* ---------- the guide: how it's built, then the playlist in use's guide settings ---------- */
+  function guide() {
+    var s = S(), p = Store.playlist, out = [];
+    out.push(head('How your guide is built, in this order'));
+    out.push(info('1.  Your provider\'s guide.', ''));
+    out.push(info('2.  Your own guide sources, the first one first.  They win over the provider\'s.', ''));
+    out.push(info('3.  Public fill-in, only for channels nothing else covers: epg.pw, iptv-epg.org, and Pluto TV\'s own guide from i.mjh.nz for Pluto channels.', ''));
+    out.push(info('4.  Matching: each channel is linked to a guide channel by its guide id, then its name.  A wrong one: Hold OK > Assign guide.', ''));
+    out.push(info('A channel that will never have a guide (a radio stream, a camera, an event slot): Hold OK > No guide for this channel.  It drops out of matching and stops saying "No guide information".  The web editor\'s Guide page does many at once (Ignore).', ''));
+    out.push(head('Guide for ' + (p.name || 'this playlist')));
+    out = out.concat(guideRows(p));
     out.push(head('Movies in the guide'));
-    out.push(toggle('Movie details from TMDB', 'Finds the movies in your guide with your TMDB token: a poster, year, genres and rating in the guide, a Movie tag on them, and the Movies on now group.  Only programme titles go to TMDB.',
+    out.push(toggle('Movie details from TMDB', 'Finds the movies in your guide with your TMDB token: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  Only programme titles go to TMDB.',
       function () { return s.guideMovies !== false; }, function (v) { s.guideMovies = v; save(true); if (typeof Movies !== 'undefined') Movies.poke(); }));
     out = out.concat(tmdbRows());
-    if (!MediaStore.preferences().tmdbConfigured) out.push(info('Needs a TMDB token: add one above, free from themoviedb.org.', ''));
-    out.push(head('Watchlist'));
-    out.push(page('Watchlist', 'Shows, teams and names to look for in the guide.  TiviBro sets a reminder when one is coming up.', 'Watchlist', watchlist, function () { var n = Watch.list().length; return n ? n + ' ›' : '›'; }));
-    out.push(head('Reminders'));
+    if (!MediaStore.preferences().tmdbConfigured) out.push(info('Needs a TMDB token: add one above, free from themoviedb.org.  The same token gives My media its posters.', ''));
+    return out;
+  }
+
+  /* ---------- reminders and watchlist ---------- */
+  function reminders() {
+    var s = S(), out = [], rem = Remind.list();
     out.push(choice('Remind me before start', '', [0, 1, 2, 5, 10], ['At start', '1 min', '2 min', '5 min', '10 min'], function () { return +s.remindBefore; }, function (v) { s.remindBefore = v; save(); }));
     out.push(choice('When a reminder starts', '', ['ask', 'switch'], ['Ask me', 'Switch to the channel'], function () { return s.remindAction === 'switch' ? 'switch' : 'ask'; }, function (v) { s.remindAction = v; save(); }));
     out.push(choice('Reminder question stays for', '', [10, 20, 30, 60], ['10s', '20s', '30s', '1 min'], function () { return +s.remindTimeout || 20; }, function (v) { s.remindTimeout = v; save(); }));
-    var rem = Store.edits.reminders.slice().sort(function (a, b) { return a.s - b.s; });
-    if (!rem.length) out.push(info('No reminders.  Pick a future programme in the Guide and press OK.', ''));
+    out.push(head('Watchlist'));
+    out.push(page('Watchlist', 'Shows, teams and names to look for in the guide.  TiviBro sets a reminder when one is coming up.', 'Watchlist', watchlist, function () { var n = Watch.list().length; return n ? n + ' ›' : '›'; }));
+    out.push(head('Coming up  (' + rem.length + ')'));
+    if (!rem.length) out.push(info('No reminders.  Pick a future programme in the Guide and press OK, or add to the watchlist.  The phone app and the web editor list them too.', ''));
     rem.forEach(function (r) {
-      var c = L.find(r.k);
-      out.push(action(r.t, new Date(r.s).toLocaleDateString(undefined, { weekday: 'short' }) + ' ' + U.hhmm(r.s) + (c ? '   ' + L.name(c) : ''), function () {
-        Store.edits.reminders = Store.edits.reminders.filter(function (x) { return x !== r; }); Store.saveEdits(); U.toast('Reminder removed'); build();
-      }, function () { return 'Remove'; }));
+      out.push(action(r.t || 'Programme', U.day(r.s) + ' ' + U.hhmm(r.s) + '   ' + r.ch + (r.live ? '   on now' : '') + (r.w ? '   from your watchlist: ' + r.w.replace(/^team:/, 'team ') : ''), function () {
+        UI.confirm('Cancel the reminder for ' + (r.t || 'this programme') + '?', 'Cancel the reminder', function () { Remind.cancel(r.k, r.s); U.toast('Reminder cancelled'); build(); });
+      }, function () { return 'Cancel'; }));
     });
+    if (rem.length > 1) out.push(action('Cancel all reminders', rem.length + ' set', function () {
+      UI.confirm('Cancel all ' + rem.length + ' reminders?', 'Cancel them all', function () { Remind.clear(); U.toast('All reminders cancelled'); build(); });
+    }));
     return out;
   }
 
@@ -616,7 +656,7 @@ var Settings = (function () {
     }));
     out.push(choice('Look ahead', 'How far into the guide to look.', [6, 12, 24, 48], ['6 hours', '12 hours', '24 hours', '2 days'], function () { return +s.watchAhead || 24; }, function (v) { s.watchAhead = v; save(); Watch.scan(true); build(); }));
     out.push(choice('When something is found', '', ['remind', 'tell'], ['Set a reminder', 'Just tell me'], function () { return s.watchAction === 'tell' ? 'tell' : 'remind'; }, function (v) { s.watchAction = v; save(); }));
-    if (!Epg.xml) out.push(info('Tip: with only the provider\'s per-channel guide, TiviBro only knows programmes on channels you have looked at.  An XMLTV guide (Settings > Playlists) lets the watchlist see every channel.', ''));
+    if (!Epg.xml) out.push(info('Tip: with only the provider\'s per-channel guide, TiviBro only knows programmes on channels you have looked at.  An XMLTV guide (Settings > Guide: the full provider guide or a guide source) lets the watchlist see every channel.', ''));
     if (!words.length) { out.push(info('Nothing on your watchlist yet.', '')); return out; }
     out.push(head('Your watchlist'));
     words.forEach(function (w) {
@@ -653,6 +693,22 @@ var Settings = (function () {
   var THEME_INK = { dark: '#141a2e', black: '#000', slate: '#263342', ocean: '#0f2a3a', forest: '#14271d', plum: '#2a1830', mocha: '#2b2019', contrast: '#000', classic: '#18222e' };
   function look() {
     var s = S(), out = [];
+    out.push(choice('Start screen', 'What TiviBro opens on, and where Back from other screens leads.', ['guide', 'live'], ['Guide', 'Channels screen'],
+      function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; save(); Views.buildTabs(); }));
+    out.push(toggle('Channels screen in the menu', s.startTab === 'live' ? 'Always there while TiviBro starts on it.' : 'The plain list of channels, without the guide.  Off, it stays one press away: Green in the guide.',
+      function () { return s.startTab === 'live' || s.channelsTab === true; }, function (v) { if (s.startTab === 'live') { U.toast('TiviBro starts on the Channels screen, so it stays in the menu'); return; } s.channelsTab = v; save(); Views.buildTabs(); }));
+    out.push(head('The guide'));
+    out.push(choice('OK on a channel in the Guide', 'Preview first works like TiviMate: the first OK plays it in the corner window, the second goes fullscreen.',
+      ['preview', 'full'], ['Preview first, then fullscreen', 'Fullscreen right away'], function () { return s.guideOk === 'full' ? 'full' : 'preview'; }, function (v) { s.guideOk = v; save(); }));
+    out.push(choice('Guide row size', 'A little taller rows with bigger channel names and titles, for smaller TVs or reading from across the room.  One channel fewer fits at once.', ['m', 'l', 'xl'], ['Normal', 'Bigger', 'Biggest'],
+      function () { return s.guideRows || 'm'; }, function (v) { s.guideRows = v; Views.applyLook(); if (window.Guide && Guide.resize) Guide.resize(); save(); }));
+    out.push(toggle('Two-line programmes', 'Shows each programme\'s time under its title in the grid.', function () { return s.guideLines !== 1; }, function (v) { s.guideLines = v ? 2 : 1; Views.applyLook(); save(); }));
+    out.push(toggle('Dim past programmes', '', function () { return s.dimPast; }, function (v) { s.dimPast = v; Views.applyLook(); save(); }));
+    out.push(choice('Mark what\'s on now', 'How the guide shows programmes airing right now.', ['fill', 'color', 'off'], ['Tint what has aired', 'Colour and tint', 'Off'], function () { return s.nowStyle || 'fill'; }, function (v) { s.nowStyle = v; Views.applyLook(); save(); }));
+    out.push(toggle('Channel names in the guide', 'Off shows logos only, leaving more room.', function () { return s.guideNames !== false; }, function (v) { s.guideNames = v; Views.applyLook(); save(); }));
+    out.push(toggle('Two-line channel names', 'Long names wrap instead of being cut off.', function () { return !!s.twoLineNames; }, function (v) { s.twoLineNames = v; Views.applyLook(); save(); }));
+    out.push(toggle('Mark catch-up channels', 'Shows ↺ on channels and programmes you can replay.', function () { return s.showCatchupMark !== false; }, function (v) { s.showCatchupMark = v; save(); relist(); }));
+    out.push(head('Colours and text'));
     var PIDS = [''].concat(Object.keys(Views.PALETTES)), PNAMES = ['Your own mix'].concat(Object.keys(Views.PALETTES).map(function (k) { return Views.PALETTE_NAMES[k]; }));
     var th = choice('Theme', 'Every colour at once: Black and white, Tokyo Night, Dracula, Nord, Gruvbox and more.  Your own mix: choose a background and an accent below.', PIDS, PNAMES,
       function () { return Views.PALETTES[s.palette] ? s.palette : ''; }, function (v) { s.palette = v; Views.applyLook(); save(true); });
@@ -746,9 +802,10 @@ var Settings = (function () {
 
   function diag() {
     var out = [];
-    out.push(action('Report a problem', 'Scan a QR code: your phone fills in a GitHub issue with this TV\'s details and log, logins and server names taken out.', function () {
+    var rp = phoneDoes('editor', action('Report a problem', 'Scan a QR code: your phone fills in a GitHub issue with this TV\'s details and log, logins and server names taken out.  In the phone app it opens the report page there.', function () {
       Diag.openReport();
     }, function () { return '›'; }));
+    rp.epage = 'report'; out.push(rp);
     if (Reports.list.length) out.push(page('Your problem reports', 'The reports this TV sent, and whether the developer has answered.  TiviBro also tells you when one gets a reply.', 'Your problem reports', function () {
       var o = Reports.list.map(function (r) {
         return action('#' + r.n + '  ' + (r.title || 'Problem report'), 'Sent ' + Reports.when(r.sent) + ' from ' + (r.version || '?') + '.  ' + Reports.statusText(r), function () { Reports.show(r.n); }, function () { return '›'; });
@@ -761,7 +818,7 @@ var Settings = (function () {
     }));
     out.push(action('Run connection test', 'Checks the helper, login, channel list, a stream and the guide, step by step.', function () { Diag.run(); }));
     out.push(action('Speed test', 'Your internet speed and your provider\'s, and what that is enough for.  Stops playback while it runs.', function () { Diag.speedTest(); }));
-    out.push(action('View app log', 'This session.', function () { Diag.showLog(false); }));
+    out.push(phoneDoes('log', action('View app log', 'This session.  The phone app shows it as text you can read and share.', function () { Diag.showLog(false); })));
     out.push(action('View app log with earlier sessions', 'Useful after a crash or restart.', function () { Diag.showLog(true); }));
     out.push(action('View network helper log', 'Every request the helper made: status, time, size, and the network error if any.', function () { Diag.showHelperLog(); }));
     out.push(toggle('Detailed logging', 'Also logs every request and buffer event.  Turn on while chasing a problem.', function () { return Log.verbose; }, function (v) { Log.verbose = v; paint(); }));
@@ -791,9 +848,9 @@ var Settings = (function () {
     var s = S(), on = WebEdit.on, st = WebEdit.status;
     WebEdit.onStatus = function () { if (Views.tab === 'settings' && SECTIONS[sec][0] === 'connect' && !stack.length) build(); };
     out.push(head('Web editor  ·  any browser'));
-    out.push(info('Groups, channels, Smart clean-up, guide matching and backups from a web browser on a computer, tablet or phone, with a real keyboard.  ' +
+    out.push(info('Groups, channels, names, Smart clean-up, guide matching, reminders and backups from a web browser on a computer, tablet or phone, with a real keyboard.  ' +
       (phoneOK() ? 'The TiviBro app opens it for you (Edit channels) and switches it on by itself: this switch is only for a browser.' : ''), ''));
-    out.push(action('Open it in a phone\'s browser (QR code)', 'Turns the editor on and shows a code for the phone\'s camera.  It does not pair the TiviBro app.  Also in the side menu: Edit on phone.', function () { WebEdit.showJoin('', build); }, function () { return '›'; }));
+    out.push(tvOnly(action('Open it in a phone\'s browser (QR code)', 'Turns the editor on and shows a code for the phone\'s camera.  It does not pair the TiviBro app.  Also in the side menu: Edit on phone.', function () { WebEdit.showJoin('', build); }, function () { return '›'; })));
     out.push(toggle('Web editor for browsers', on ? 'Running.  Changes appear on the TV within a few seconds.' : 'Off.  It also switches off whenever TiviBro closes.' + (phoneOK() ? '  The phone app works either way.' : ''), function () { return WebEdit.on; }, function (v) {
       (v ? WebEdit.start() : WebEdit.stop()).then(function () { build(); if (v) U.toast('Web editor is on'); }, function (e) { U.toast(e.message, 5000); build(); });
     }));
@@ -824,7 +881,7 @@ var Settings = (function () {
   function connect() {
     var out = [];
     if (phoneOK()) {
-      out.push(info('Two ways to use a phone with TiviBro.  The TiviBro app for Android is a remote with the guide, Movies and Shows; pair it once below.  The web editor works in any browser, for bigger clean-up jobs.  Each works without the other.', ''));
+      out.push(info('Two ways to use a phone with TiviBro.  The TiviBro app for Android is a remote with the guide, On now, Movies, Shows, My media, reminders, backups and all of these settings; pair it once below.  The web editor works in any browser, for bigger clean-up jobs.  Each works without the other.', ''));
       phone(out);
     }
     editor(out);
@@ -849,17 +906,17 @@ var Settings = (function () {
     Phone.onChange = function () { if (Views.tab === 'settings' && SECTIONS[sec][0] === 'connect' && !stack.length) build(); };
     out.push(head('TiviBro phone app  ·  Android'));
     if (!ps) { Phone.refresh().catch(function (e) { U.toast(e.message, 5000); }); out.push(info('Checking…', '')); return out; }
-    out.push(info('Finds this TV, works as a remote with the guide, Movies and Shows, types into the TV, keeps backups, opens the web editor and wakes the TV.  Pair a phone once; it stays paired.', ''));
+    out.push(info('Finds this TV, works as a remote with the guide, On now, Movies, Shows and My media, changes every setting here (questions are asked on the phone), lists and cancels reminders, keeps backups, types into the TV, opens the web editor and wakes the TV.  Pair a phone once; it stays paired.', ''));
     out.push(toggle('Phone app connection', on ? 'On.  Paired phones can reach this TV on your network, even when TiviBro is closed.' : 'Off.  Phones can\'t find or reach this TV.', function () { return !!(Phone.status && Phone.status.on); }, function (v) {
       var go = function () { Phone.turn(v).then(function () { build(); U.toast(v ? 'Phone app connection is on' : 'Phone app connection is off'); }, function (e) { U.toast(e.message, 5000); build(); }); };
       if (v || !ps.phones.length) return go();
       UI.confirm('Turn off the phone app connection?  Paired phones stay paired, but can\'t reach this TV until you turn it back on.', 'Turn off', go);
     }));
     // Pairing is the first thing people look for, so it's there even while the connection is off (it turns it on).
-    out.push(action('Pair the TiviBro app…', 'Shows the QR code and the code to scan in the TiviBro app (not the phone\'s camera).' + (on ? '' : '  Turns the connection on.'), function () {
+    out.push(tvOnly(action('Pair the TiviBro app…', 'Shows the QR code and the code to scan in the TiviBro app (not the phone\'s camera).' + (on ? '' : '  Turns the connection on.'), function () {
       if (on) return Phone.showPair(build);
       Phone.turn(true).then(function () { build(); Phone.showPair(build); }, function (e) { U.toast(e.message, 5000); build(); });
-    }, function () { return '›'; }));
+    }, function () { return '›'; })));
     if (on) {
       if (!ps.phones.length) out.push(info('Paired phones', 'none yet'));
       ps.phones.forEach(function (p) {
@@ -885,7 +942,7 @@ var Settings = (function () {
   /* ---------- updates and about ---------- */
   var lastUpd = '';
   Update.onChange(function (st) {
-    if (Views.tab !== 'settings' || SECTIONS[sec][0] !== 'updates' || stack.length) return;
+    if (Views.tab !== 'settings' || SECTIONS[sec][0] !== 'about' || stack.length) return;
     var k = st.state + '|' + st.installer;
     if (k !== lastUpd) { lastUpd = k; build(); } else paint();
   });
@@ -924,7 +981,56 @@ var Settings = (function () {
   }
 
   // Each section's page, by id, so reordering SECTIONS can never show one section under another's name.
-  var BY_ID = { media: media, playback: playback, remote: remote, playlists: playlists, connect: connect, groups: groups, reminders: reminders, look: look, parental: parental, updates: updates, diag: diag };
+  /* ---------- channel and group names (the playlist in use) ---------- */
+  function names() {
+    var p = Store.playlist, out = [info('For ' + (p.name || 'this playlist') + '.  Each playlist has its own rules (Playlists > the playlist).  The provider\'s names stay as they are: TiviBro only changes how they show.', '')];
+    return out.concat(namesPage(p));
+  }
+
+  /* ---------- backups and restore points ---------- */
+  var snapsCache = null, snapsAt = 0;
+  function loadSnaps() {
+    if (snapsAt && Date.now() - snapsAt < 3000) return;
+    snapsAt = Date.now();
+    WebEdit.runData('listSnaps', {}).then(function (r) { snapsCache = r.data || []; live(); }, function () { snapsCache = []; live(); });
+  }
+  function backups() {
+    var out = [];
+    loadSnaps();
+    out.push(info('Two kinds of safety net.  A backup holds everything (playlists with their logins, groups, favorites, names, guide matches, settings) and lives off the TV: in the TiviBro phone app, or as a locked file from the web editor.  A restore point lives on this TV and puts back your channel edits (groups, hidden items, names, guide matches) for this playlist.', ''));
+    out.push(head('Backups'));
+    out.push(phoneDoes('backups', action('In the TiviBro phone app', 'Backups > Back up now, or every week by itself.  Restore puts one back on this TV or a new one.', function () { U.toast('Open the TiviBro app on your phone, then Backups', 5000); })));
+    out.push(phoneDoes('editor', action('As a file, from the web editor', 'Backups and restore points > Download a locked backup.  It needs a passphrase you choose.', function () { WebEdit.showJoin('backup', build); }, function () { return '›'; })));
+    out[out.length - 1].epage = 'backup';
+    out.push(info('Last backup', Store.settings.lastBackup ? when(Store.settings.lastBackup) : 'none yet'));
+    out.push(head('Restore points on this TV'));
+    out.push(action('Save a restore point now', 'TiviBro also saves one before big changes: Smart clean-up, the set-up tour, changes sent from the web editor.', function () {
+      UI.prompt('Name the restore point', '', function (v) { WebEdit.runData('makeSnap', { name: v }).then(function (r) { U.toast(r.msg); snapsAt = 0; loadSnaps(); }, function (e) { U.toast(e.message, 5000); }); }, 'For example: Before hiding sports');
+    }));
+    if (snapsCache === null) out.push(info('Loading…', ''));
+    else if (!snapsCache.length) out.push(info('No restore points yet', ''));
+    else snapsCache.slice(0, 40).forEach(function (x) {
+      out.push(action(x.name || 'Restore point', when(x.at) + (x.kind === 'auto' ? '   saved by itself' : ''), function () {
+        UI.menu(x.name || 'Restore point', [
+          { label: 'Restore it', sub: 'your current edits are saved as a restore point first', action: function () {
+            UI.confirm('Put back "' + (x.name || 'this restore point') + '"?', 'Restore', function () { WebEdit.runData('restoreSnap', { id: x.id }).then(function (r) { U.toast(r.msg, 5000); snapsAt = 0; loadSnaps(); }, function (e) { U.toast(e.message, 5000); }); });
+          } },
+          { label: 'Delete it', action: function () { WebEdit.runData('deleteSnap', { id: x.id }).then(function (r) { U.toast(r.msg); snapsAt = 0; loadSnaps(); }, function (e) { U.toast(e.message, 5000); }); } },
+          { label: 'Cancel', current: true }
+        ]);
+      }, function () { return '›'; }));
+    });
+    return out;
+  }
+
+  /* ---------- updates, about and diagnostics ---------- */
+  function about() {
+    var out = updates();
+    out.push(head('Diagnostics'));
+    return out.concat(diag());
+  }
+
+  var BY_ID = { playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, media: media, remote: remote, look: look, parental: parental, backups: backups, connect: connect, about: about };
   var FNS = SECTIONS.map(function (x) { return BY_ID[x[0]]; });
   function build() {
     var top = stack[stack.length - 1];
@@ -1046,7 +1152,7 @@ var Settings = (function () {
   // Straight to one section (the phone app's own shortcut, and tests).
   function section(id) {
     if (id === 'phone' && !phoneOK()) return false;
-    if (id === 'phone' || id === 'editor') id = 'connect';
+    if (ALIAS[id]) id = ALIAS[id];
     for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return true; } return false; }
 
   /* Settings from the phone app (ask "settings" in phone.js): the same pages, built by the same code, as
@@ -1055,6 +1161,7 @@ var Settings = (function () {
      the TV, so a box or menu it opens shows there; the phone can type into boxes).  After a change the
      page is built again and sent back, so rows that depend on others appear or go. */
   function rowsOf(secId, path) {
+    if (ALIAS[secId]) secId = ALIAS[secId];
     var i = -1; for (var x = 0; x < SECTIONS.length; x++) if (SECTIONS[x][0] === secId) i = x;
     if (i < 0) throw new Error('No such settings page');
     var list = FNS[i](), title = title0(SECTIONS[i]), trail = [title];
@@ -1079,20 +1186,84 @@ var Settings = (function () {
     else if (it.action) { r.kind = 'action'; r.value = v; }
     else { r.kind = 'info'; r.value = v; }
     if (it.swatch) try { r.swatch = it.swatch() || ''; } catch (e) {}
-    if (it.phone) { r.phone = it.phone; if (it.sid) r.sid = it.sid; }
+    if (it.phone) { r.phone = it.phone; if (it.sid) r.sid = it.sid; if (it.epage) r.epage = it.epage; }
+    if (it.tv) r.tv = 1;
     return r;
+  }
+  /* A button pressed on the phone asks its questions on the phone.  While it runs (and for a while
+     after, as answers can take a moment), a box, menu or "are you sure" it opens, and the toasts it
+     shows, go to the phone instead of the TV's screen: the answer carries { dialog } and the phone
+     shows it, then answers with op "answer".  Nothing appears on the TV.  Rows the phone does all by
+     itself carry phone (phoneDoes); rows that only make sense on the TV's screen carry tv: 1. */
+  var cap = null, dlgN = 0;
+  function startCapture() {
+    endCapture();
+    var c = cap = { dialog: null, toasts: [], last: Date.now(), wake: null, orig: { menu: UI.menu, prompt: UI.prompt, confirm: UI.confirm, toast: U.toast } };
+    function got(d) { if (cap !== c) return false; d.id = 'd' + (++dlgN); c.dialog = d; c.last = Date.now(); if (c.wake) c.wake(); return true; }
+    UI.menu = function (title, items, onBack) { var list = (items || []).filter(Boolean); if (!got({ kind: 'menu', title: String(title || ''), items: list.map(function (x) { return { label: String(x.label || ''), sub: x.sub ? String(x.sub) : '', current: !!x.current }; }), _items: list, _back: onBack })) c.orig.menu.apply(UI, arguments); };
+    UI.prompt = function (title, value, done, hint, secret, okLabel) { if (!got({ kind: 'prompt', title: String(title || ''), value: String(value == null ? '' : value), hint: hint ? String(hint) : '', secret: !!secret, ok: okLabel ? String(okLabel) : '', _done: done })) c.orig.prompt.apply(UI, arguments); };
+    UI.confirm = function (title, yesLabel, yes) { if (!got({ kind: 'confirm', title: String(title || ''), ok: String(yesLabel || 'OK'), _yes: yes })) c.orig.confirm.apply(UI, arguments); };
+    U.toast = function (m) { if (cap !== c) return c.orig.toast.apply(U, arguments); c.toasts.push(String(m)); c.last = Date.now(); if (c.wake) c.wake(); };
+    c.timer = setTimeout(endCapture, 60000);                       // nobody answered: back to normal
+    return c;
+  }
+  function endCapture() {
+    if (!cap) return;
+    var o = cap.orig; clearTimeout(cap.timer);
+    UI.menu = o.menu; UI.prompt = o.prompt; UI.confirm = o.confirm; U.toast = o.toast;
+    cap = null;
+  }
+  // After a step: wait for a box or menu, or for the toasts to settle (up to 8 s for slow checks).
+  function settle(c, secId, path) {
+    var started = Date.now();
+    return new Promise(function (resolve) {
+      function check() {
+        c.wake = null;
+        var quiet = Date.now() - c.last;
+        if (c.dialog || (quiet > 700 && (c.toasts.length || Date.now() - started > 1500)) || Date.now() - started > 8000) return done();
+        c.wake = check; setTimeout(check, 250);
+      }
+      function done() {
+        c.wake = null;
+        var d = c.dialog, out = { msg: c.toasts.join('  '), page: null };
+        c.toasts = [];
+        try { out.page = forPhone.page(secId, path); } catch (e) {}
+        if (d) out.dialog = { id: d.id, kind: d.kind, title: d.title, items: d.items, value: d.value, hint: d.hint, secret: d.secret, ok: d.ok };
+        else endCapture();
+        resolve(out);
+      }
+      setTimeout(check, 120);
+    });
   }
   var forPhone = {
     sections: function () { return SECTIONS.filter(function (x, i) { return shown(i); }).map(function (x) { return { id: x[0], title: title(x) }; }); },
     page: function (secId, path) { var p = rowsOf(secId, path); return { title: p.title, trail: p.trail, rows: p.list.map(rowData).filter(function (r, n) { return !p.list[n].preview; }) }; },   // pictures (a preview, the TMDB credit) stay on the TV
-    // op: 'toggle' (on), 'choice' (v: the choice's index), 'cycle' (dir), 'action'.
+    // op: 'toggle' (on), 'choice' (v: the choice's index), 'cycle' (dir), 'action', 'answer' (to a dialog).
     change: function (secId, path, n, op, a) {
-      var p = rowsOf(secId, path), it = p.list[n], msg = '';
-      if (!it) throw new Error('That setting has changed on the TV.  Look again.');
-      if (op === 'toggle' && it.toggle) { if (!!it.get() !== (a.on !== false)) it.set(a.on !== false); }
-      else if (op === 'choice' && it.values) { var v = it.values[+a.v]; if (v === undefined) throw new Error('Not one of the choices'); if (it.get() !== v) it.set(v); }
-      else if (op === 'cycle' && it.cycle) it.cycle(+a.dir < 0 ? -1 : 1);
-      else if (op === 'action' && it.action && !it.page) { it.action(); msg = 'Done on the TV'; }
+      if (op === 'answer') {
+        var c = cap, d = c && c.dialog;
+        if (!d || d.id !== String(a.dialog || '')) { endCapture(); throw new Error('That question has gone.  Press the button again.'); }
+        c.dialog = null;
+        if (!a.cancel) {
+          if (d.kind === 'prompt') d._done(String(a.value == null ? '' : a.value).slice(0, 4000));
+          else if (d.kind === 'confirm') d._yes();
+          else { var it = d._items[+a.choice]; if (!it) throw new Error('Not one of the choices'); if (it.action) it.action(); }
+        } else if (d.kind === 'menu' && d._back) d._back();
+        Store.saveSettings();
+        return settle(c, secId, path);
+      }
+      var p = rowsOf(secId, path), it2 = p.list[n], msg = '';
+      if (!it2) throw new Error('That setting has changed on the TV.  Look again.');
+      if (op === 'toggle' && it2.toggle) { if (!!it2.get() !== (a.on !== false)) it2.set(a.on !== false); }
+      else if (op === 'choice' && it2.values) { var v = it2.values[+a.v]; if (v === undefined) throw new Error('Not one of the choices'); if (it2.get() !== v) it2.set(v); }
+      else if (op === 'cycle' && it2.cycle) it2.cycle(+a.dir < 0 ? -1 : 1);
+      else if (op === 'action' && it2.action && !it2.page) {
+        if (it2.tv) { it2.action(); Store.saveSettings(); return { msg: 'On the TV\'s screen now', page: forPhone.page(secId, path) }; }
+        var c2 = startCapture();
+        try { it2.action(); } catch (e) { endCapture(); throw e; }
+        Store.saveSettings();
+        return settle(c2, secId, path);
+      }
       else throw new Error('That can\'t be changed that way');
       Store.saveSettings();
       return { msg: msg, page: forPhone.page(secId, path) };

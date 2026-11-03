@@ -176,7 +176,7 @@ var Vod = (function () {
   }
   // 7.634 -> ★ 7.6; nothing for 0 or a missing rating.
   function stars(r) { r = Math.round(parseFloat(r) * 10) / 10; return r > 0 ? '★ ' + r : ''; }
-  function cleanCat(n) { return Names.groupsOn() ? Names.clean(n) : n; }
+  function cleanCat(n) { return Names.cleanGroup(n); }
 
   function renderCat(row, c) {
     if (!row._n) { row._n = U.el('span', 'name'); row._t = U.el('span', 'tag'); var b = U.el('div', 'txt'); b.appendChild(row._n); row.appendChild(b); row.appendChild(row._t); }

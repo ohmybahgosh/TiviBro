@@ -148,7 +148,7 @@ fun VodTab(model: AppModel, id: String, kind: String) {
             val c = cats!!.firstOrNull { it.id == cat }
             Row(Modifier.fillMaxWidth().clickable { picking = true }.padding(20.dp, 10.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(c?.name ?: "All", fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                Icon(Icons.Rounded.KeyboardArrowDown, "Pick a category", tint = Accent2)
+                Icon(Icons.Rounded.KeyboardArrowDown, "Pick a category", tint = Accent)
                 Spacer(Modifier.weight(1f))
                 if (total >= 0) Text("$total", color = Muted, style = MaterialTheme.typography.labelMedium)
             }
@@ -185,7 +185,7 @@ private fun Poster(it: VodItem, onClick: () -> Unit) {
         Box(Modifier.fillMaxWidth().aspectRatio(2f / 3f).clip(RoundedCornerShape(12.dp)).background(Panel2), contentAlignment = Alignment.Center) {
             Text(it.name, color = Muted, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, maxLines = 4, modifier = Modifier.padding(8.dp))
             if (it.cover.isNotBlank()) AsyncImage(model = it.cover, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
-            if (it.progress > 0) LinearProgressIndicator(progress = { it.progress / 100f }, color = Accent2, trackColor = Panel2, modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(4.dp))
+            if (it.progress > 0) LinearProgressIndicator(progress = { it.progress / 100f }, color = Accent, trackColor = Panel2, modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(4.dp))
         }
         Spacer(Modifier.height(6.dp))
         Text(it.name, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -198,7 +198,7 @@ private fun Poster(it: VodItem, onClick: () -> Unit) {
 @Composable
 private fun CategorySheet(cats: List<VodCat>, current: String, onPick: (String) -> Unit, onDismiss: () -> Unit) {
     var f by remember { mutableStateOf("") }
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = Ink) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = Panel) {
         Column(Modifier.fillMaxHeight(0.85f)) {
             if (cats.size > 12) OutlinedTextField(
                 value = f, onValueChange = { f = it }, singleLine = true, placeholder = { Text("Find a category") }, leadingIcon = { Icon(Icons.Rounded.Search, null) },
@@ -208,7 +208,7 @@ private fun CategorySheet(cats: List<VodCat>, current: String, onPick: (String) 
             LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
                 items(shown, key = { it.id }) { c ->
                     Row(Modifier.fillMaxWidth().clickable { onPick(c.id) }.background(if (c.id == current) Panel else androidx.compose.ui.graphics.Color.Transparent).padding(20.dp, 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(c.name, color = if (c.id == current) Accent2 else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
+                        Text(c.name, color = if (c.id == current) Accent else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f))
                         if (c.locked) Icon(Icons.Rounded.Lock, "Locked", tint = Muted, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(10.dp))
                         Text("${c.count}", color = Muted, style = MaterialTheme.typography.labelMedium)
@@ -237,7 +237,7 @@ private fun DetailsSheet(model: AppModel, id: String, kind: String, item: VodIte
     }
     fun play(ep: Episode?, fromStart: Boolean) { model.vodPlay(id, kind, item.id, ep?.id, fromStart); onDismiss() }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = Ink) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true), containerColor = Panel) {
         LazyColumn(Modifier.fillMaxHeight(0.92f), contentPadding = PaddingValues(bottom = 32.dp)) {
             item {
                 Row(Modifier.padding(16.dp, 0.dp, 16.dp, 12.dp)) {
@@ -252,7 +252,7 @@ private fun DetailsSheet(model: AppModel, id: String, kind: String, item: VodIte
                         val meta = listOf(i?.year ?: item.year, i?.duration.orEmpty(), (i?.rating ?: item.rating).takeIf { it.isNotBlank() }?.let { "★ $it" }.orEmpty()).filter { it.isNotBlank() }.joinToString("  ·  ")
                         if (meta.isNotBlank()) Text(meta, color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(top = 4.dp))
                         if (!i?.genre.isNullOrBlank()) Text(i!!.genre, color = Muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 2.dp))
-                        if (!i?.media.isNullOrBlank()) Text(i!!.media, color = Accent2, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 2.dp))
+                        if (!i?.media.isNullOrBlank()) Text(i!!.media, color = Accent, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 2.dp))
                         if (kind != "series" && i != null) {
                             Spacer(Modifier.height(12.dp))
                             if (i.pos > 0 && i.len > 0) {
@@ -298,8 +298,8 @@ private fun EpisodeRow(e: Episode, onPlay: () -> Unit) {
             Text(e.title.ifBlank { "Episode ${e.number}" }, maxLines = 1, overflow = TextOverflow.Ellipsis)
             val sub = listOf(e.duration, if (e.pos > 0 && e.len > 0) "stopped at ${mins(e.pos)}" else "").filter { it.isNotBlank() }.joinToString("  ·  ")
             if (sub.isNotBlank()) Text(sub, color = Muted, style = MaterialTheme.typography.labelSmall)
-            if (e.progress > 0) LinearProgressIndicator(progress = { e.progress / 100f }, color = Accent2, trackColor = Panel2, modifier = Modifier.padding(top = 4.dp).fillMaxWidth(0.6f).height(3.dp))
+            if (e.progress > 0) LinearProgressIndicator(progress = { e.progress / 100f }, color = Accent, trackColor = Panel2, modifier = Modifier.padding(top = 4.dp).fillMaxWidth(0.6f).height(3.dp))
         }
-        Icon(Icons.Rounded.PlayArrow, null, tint = Accent2)
+        Icon(Icons.Rounded.PlayArrow, null, tint = Accent)
     }
 }

@@ -1,9 +1,14 @@
-/* Backups of a TV kept on the phone: back up now, the weekly automatic backups (on unless switched off),
-   put one back on this TV or another paired TV, and save a copy as a file the web editor can restore on
-   any TV (sealed with a passphrase, like the editor's own backups).
-   Without the TV (discussion #23): name, duplicate and merge backups, change settings inside one, edit
-   a playlist's channels in the web editor on the phone (OfflineEditorScreen.kt), and delete with two
-   confirmations.  Each of those makes a new backup and leaves the one it came from alone. */
+/* Backups and restore points: the one place for them on the phone (the home screen's shortcut, the
+   Settings tab's Backups rows and the web editor's Backup page all come here).
+   Saved on this phone: back up now, the weekly automatic backups (on unless switched off), put one back
+   on this TV or another paired TV.  Without the TV (discussion #23): name, duplicate and merge backups,
+   change settings inside one, edit a playlist's channels in the web editor on the phone
+   (OfflineEditorScreen.kt), and delete with two confirmations.  Each of those makes a new backup and
+   leaves the one it came from alone.
+   Backup file: save a locked backup file to the phone's storage (the web editor reads it too), and
+   restore from one.
+   Restore points on the TV (ask "snaps"): copies of the channel edits and names the TV keeps by itself
+   and when asked; make one, go back to one (TiviBro restarts on the TV) or delete one. */
 package app.tivibro.phone.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -24,8 +29,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Backup
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,6 +44,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -46,6 +56,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -60,6 +71,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import app.tivibro.phone.data.BackupTools
 import app.tivibro.phone.data.SavedBackup
+import app.tivibro.phone.proto.RestorePoint
 import app.tivibro.phone.proto.TbException
 import kotlinx.coroutines.launch
 import java.text.DateFormat
@@ -89,7 +101,36 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
     var deleting by remember { mutableStateOf<Pair<SavedBackup, Int>?>(null) }
     var picking by remember { mutableStateOf<Pair<SavedBackup, List<Pair<String, String>>>?>(null) }
     var noCopy by remember { mutableStateOf(false) }
+    var showAll by remember { mutableStateOf(false) }
+    // A backup file: saving one (asks a passphrase first), and opening one (a passphrase when it is locked).
+    var fileOut by remember { mutableStateOf(false) }
+    var filePass by remember { mutableStateOf("") }
+    var fileIn by remember { mutableStateOf<android.net.Uri?>(null) }
+    var fileBusy by remember { mutableStateOf(false) }
+    // Restore points on the TV.
+    var points by remember { mutableStateOf<List<RestorePoint>?>(null) }
+    var pointsError by remember { mutableStateOf<String?>(null) }
+    var pointsBusy by remember { mutableStateOf(false) }
+    var pointsTry by remember { mutableIntStateOf(0) }
+    var making by remember { mutableStateOf(false) }
+    var pointName by remember { mutableStateOf("") }
+    var backTo by remember { mutableStateOf<RestorePoint?>(null) }
+    var dropping by remember { mutableStateOf<RestorePoint?>(null) }
     val scope = rememberCoroutineScope()
+    fun snaps(op: String, name: String = "", p: RestorePoint? = null) {
+        pointsBusy = true; pointsError = null
+        scope.launch {
+            try {
+                val (msg, l) = model.snaps(id, op, name, p?.id.orEmpty())
+                points = l
+                if (op != "list" && op != "restore" && msg.isNotBlank()) model.say(msg)
+                if (op == "restore") model.say("Restored \"" + p?.name.orEmpty().ifBlank { "the restore point" } + "\".  TiviBro restarts on the TV.")
+            } catch (e: TbException) { pointsError = e.message ?: "The TV said no" }
+            catch (e: Exception) { pointsError = "${tv.name} didn't answer.  Is it on, and on the same network?" }
+            pointsBusy = false
+        }
+    }
+    LaunchedEffect(pointsTry) { snaps("list") }
     fun act(what: suspend () -> String) { scope.launch { try { model.say(what()); version++ } catch (e: TbException) { model.say(e.message ?: "That didn't work") } catch (e: Exception) { model.say(e.message ?: "That didn't work") } } }
     // Edit a playlist's channels on the phone: needs the channel list the web editor kept (EditorCopies.kt).
     fun editOffline(b: SavedBackup) {
@@ -100,18 +141,52 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
         val b = exporting; val p = pass
         exporting = null; pass = ""
         if (uri != null && b != null) scope.launch {
-            try { model.exportBackup(b, p, uri); model.say("Saved.  Restore it in the web editor: Backup and restore.") } catch (e: Exception) { model.say(e.message ?: "Couldn't save the file.") }
+            try { model.exportBackup(b, p, uri); model.say("Saved.  Restore it here with Restore a file, or in the web editor.") } catch (e: Exception) { model.say(e.message ?: "Couldn't save the file.") }
+        }
+    }
+
+    val saveFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        val p = filePass
+        filePass = ""
+        if (uri != null) { fileBusy = true; scope.launch {
+            try { model.say(model.exportNow(id, p, uri)) } catch (e: Exception) { model.say(e.message ?: "Couldn't save the file.") }
+            fileBusy = false
+        } }
+    }
+    // Opens the backup on the phone as a new backup of this TV, then asks before putting it on the TV.
+    fun importFrom(uri: android.net.Uri, pass: String?) {
+        fileBusy = true
+        scope.launch {
+            try { val b = model.importFile(id, uri, pass); version++; model.say("Kept on this phone as \"From a file\""); restoring = b to id }
+            catch (e: TbException) { model.say(e.message ?: "Couldn't open the file.") }
+            catch (e: Exception) { model.say("Couldn't open the file.") }
+            fileBusy = false
+        }
+    }
+    val openFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) scope.launch {
+            try { if (model.backupFileLocked(uri)) { filePass = ""; fileIn = uri } else importFrom(uri, null) }
+            catch (e: TbException) { model.say(e.message ?: "Couldn't open the file.") }
+            catch (e: Exception) { model.say("Couldn't open the file.") }
         }
     }
 
     Scaffold(
         containerColor = Ink, snackbarHost = { SnackbarHost(snack) },
         topBar = {
-            TopAppBar(title = { Text("Backups: ${tv.name}") }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
+            TopAppBar(
+                title = {
+                    Column {
+                        Text("Backups and restore points", maxLines = 1)
+                        Text(tv.name, color = Muted, style = MaterialTheme.typography.labelMedium, maxLines = 1)
+                    }
+                },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Back") } },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Ink))
         },
     ) { pad ->
-        LazyColumn(Modifier.padding(pad).fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        LazyColumn(Modifier.padding(pad).fillMaxSize(), contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 32.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            item { Heading("Saved on this phone") }
             item {
                 Text("Everything on the TV: playlists with their logins, your channel edits, favorites, groups and settings.  Kept on this phone, encrypted, and never sent anywhere else.",
                     color = Muted, style = MaterialTheme.typography.bodySmall)
@@ -144,8 +219,9 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
                     }
                 }
             }
-            if (list.isEmpty()) item { Text("No backups yet.", color = Muted, modifier = Modifier.padding(top = 8.dp)) }
-            items(list, key = { it.file.name }) { b ->
+            if (list.isEmpty()) item { Text("No backups on this phone yet.", color = Muted, modifier = Modifier.padding(top = 4.dp)) }
+            // The newest few; the rest on request, so the file and restore points stay near.
+            items(if (showAll) list else list.take(SHOWN), key = { it.file.name }) { b ->
                 BackupRow(b, offline = offline[b.file.name], others = tvs.filter { it.tv.id != id }.map { it.tv.id to it.tv.name },
                     onRestore = { to, _ -> restoring = b to to },
                     onExport = { exporting = b },
@@ -155,6 +231,51 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
                     onRename = { renaming = b; newName = b.label },
                     onDuplicate = { act { model.duplicate(b); "Copied" } },
                     onMerge = { if (list.size < 2) model.say("Make another backup first: merging adds the playlists of one backup to another.") else merging = b })
+            }
+            if (list.size > SHOWN) item {
+                TextButton(onClick = { showAll = !showAll }) { Text(if (showAll) "Show fewer" else "Show all ${list.size} backups") }
+            }
+
+            item { Spacer(Modifier.height(8.dp)); Heading("Backup file") }
+            item {
+                Text("A backup file on the phone's storage, locked with a passphrase you pick (it holds your logins).  Restore it here, or on any TV in the web editor.",
+                    color = Muted, style = MaterialTheme.typography.bodySmall)
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedButton(onClick = { filePass = ""; fileOut = true }, enabled = !fileBusy, modifier = Modifier.weight(1f).height(48.dp)) {
+                        Icon(Icons.Rounded.Save, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Save a file", maxLines = 1)
+                    }
+                    OutlinedButton(onClick = { runCatching { openFile.launch(arrayOf("application/json", "application/octet-stream", "text/plain", "*/*")) } }, enabled = !fileBusy, modifier = Modifier.weight(1f).height(48.dp)) {
+                        Icon(Icons.Rounded.FolderOpen, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Restore a file", maxLines = 1)
+                    }
+                }
+            }
+            if (fileBusy) item { Row(verticalAlignment = Alignment.CenterVertically) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Spacer(Modifier.width(10.dp)); Text("Working on it…", color = Muted) } }
+
+            item { Spacer(Modifier.height(8.dp)); Heading("Restore points on the TV") }
+            item {
+                Text("The TV keeps these by itself before big changes, and when you make one.  Going back to one puts your channel edits, groups and names back as they were; your playlists and logins stay.",
+                    color = Muted, style = MaterialTheme.typography.bodySmall)
+            }
+            item {
+                Button(onClick = { pointName = ""; making = true }, enabled = !pointsBusy && points != null, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                    Icon(Icons.Rounded.Add, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Make a restore point")
+                }
+            }
+            val pl = points
+            when {
+                pointsError != null -> item {
+                    Column {
+                        Text(pointsError ?: "", color = Bad, style = MaterialTheme.typography.bodySmall)
+                        TextButton(onClick = { pointsTry++ }) { Text("Try again") }
+                    }
+                }
+                pl == null -> item { Row(verticalAlignment = Alignment.CenterVertically) { CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp); Spacer(Modifier.width(10.dp)); Text("Asking the TV…", color = Muted) } }
+                pl.isEmpty() -> item { Text("No restore points on the TV yet.", color = Muted) }
+            }
+            if (pl != null) items(pl, key = { "snap:" + it.id }) { p ->
+                PointRow(p, enabled = !pointsBusy, onRestore = { backTo = p }, onDelete = { dropping = p })
             }
         }
     }
@@ -176,13 +297,72 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
             dismissButton = { TextButton(onClick = { restoring = null }) { Text("Cancel") } },
         )
     }
+    if (fileOut) AlertDialog(
+        onDismissRequest = { fileOut = false; filePass = "" }, containerColor = Panel,
+        title = { Text("Save a backup file") },
+        text = {
+            Column {
+                Text("A backup of ${tv.name} as it is now.  Pick a passphrase to lock the file: you'll need it to restore the file.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(filePass, { filePass = it }, singleLine = true, label = { Text("Passphrase, 8 or more characters") }, visualTransformation = PasswordVisualTransformation())
+            }
+        },
+        confirmButton = { TextButton(onClick = { fileOut = false; saveFile.launch("tivibro-backup-" + SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()) + ".json") }, enabled = filePass.length >= 8) { Text("Save") } },
+        dismissButton = { TextButton(onClick = { fileOut = false; filePass = "" }) { Text("Cancel") } },
+    )
+    fileIn?.let { uri ->
+        AlertDialog(
+            onDismissRequest = { fileIn = null; filePass = "" }, containerColor = Panel,
+            title = { Text("This file is locked") },
+            text = {
+                Column {
+                    Text("Type the passphrase it was saved with.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedTextField(filePass, { filePass = it }, singleLine = true, label = { Text("Passphrase") }, visualTransformation = PasswordVisualTransformation())
+                }
+            },
+            confirmButton = { TextButton(onClick = { val p = filePass; fileIn = null; filePass = ""; importFrom(uri, p) }, enabled = filePass.isNotEmpty()) { Text("Open") } },
+            dismissButton = { TextButton(onClick = { fileIn = null; filePass = "" }) { Text("Cancel") } },
+        )
+    }
+    if (making) AlertDialog(
+        onDismissRequest = { making = false }, containerColor = Panel,
+        title = { Text("Make a restore point") },
+        text = {
+            Column {
+                Text("Saved on ${tv.name}: your channel edits, groups and names as they are now.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(pointName, { pointName = it.take(60) }, singleLine = true, label = { Text("A name, like \"Before the clean-up\"") })
+            }
+        },
+        confirmButton = { TextButton(onClick = { making = false; snaps("make", pointName.trim().ifBlank { "Restore point" }) }) { Text("Make it") } },
+        dismissButton = { TextButton(onClick = { making = false }) { Text("Cancel") } },
+    )
+    backTo?.let { p ->
+        AlertDialog(
+            onDismissRequest = { backTo = null }, containerColor = Panel,
+            title = { Text("Go back to \"" + pointTitle(p) + "\"?") },
+            text = { Text("Your channel edits, groups and names on ${tv.name} go back to how they were on ${stamp(p.at)}.  A restore point of how things are now is made first, so you can change your mind.  TiviBro restarts on the TV.") },
+            confirmButton = { TextButton(onClick = { backTo = null; snaps("restore", p = p) }) { Text("Restore") } },
+            dismissButton = { TextButton(onClick = { backTo = null }) { Text("Cancel") } },
+        )
+    }
+    dropping?.let { p ->
+        AlertDialog(
+            onDismissRequest = { dropping = null }, containerColor = Panel,
+            title = { Text("Delete \"" + pointTitle(p) + "\"?") },
+            text = { Text("The restore point from ${stamp(p.at)} goes from ${tv.name}.  Your channels aren't changed.") },
+            confirmButton = { TextButton(onClick = { dropping = null; snaps("delete", p = p) }) { Text("Delete", color = Bad) } },
+            dismissButton = { TextButton(onClick = { dropping = null }) { Text("Keep it") } },
+        )
+    }
     exporting?.let { b ->
         AlertDialog(
             onDismissRequest = { exporting = null; pass = "" }, containerColor = Panel,
             title = { Text("Save a copy") },
             text = {
                 Column {
-                    Text("Pick a passphrase to protect the file (it holds your logins).  You'll need it to restore the file in the web editor.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    Text("Pick a passphrase to protect the file (it holds your logins).  You'll need it to restore the file.", color = Muted, style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(pass, { pass = it }, singleLine = true, label = { Text("Passphrase, 8 or more characters") }, visualTransformation = PasswordVisualTransformation())
                 }
@@ -276,6 +456,30 @@ private fun SettingsDialog(model: AppModel, b: SavedBackup, onDone: (Map<BackupT
 }
 
 private fun stamp(t: Long) = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(t))
+
+/** How many backups on the phone show before "Show all". */
+private const val SHOWN = 4
+
+private fun pointTitle(p: RestorePoint) = p.name.ifBlank { if (p.auto) "Made by the TV" else "Restore point" }
+
+/** A section heading: the one place teal is used. */
+@Composable
+private fun Heading(text: String) = Text(text, color = Accent2, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+
+@Composable
+private fun PointRow(p: RestorePoint, enabled: Boolean, onRestore: () -> Unit, onDelete: () -> Unit) {
+    Surface(color = Panel, shape = MaterialTheme.shapes.medium) {
+        Row(Modifier.fillMaxWidth().padding(16.dp, 10.dp, 4.dp, 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(pointTitle(p), fontWeight = FontWeight.SemiBold)
+                Text(listOf(if (p.at > 0) stamp(p.at) else "", if (p.auto) "made by the TV" else "").filter { it.isNotBlank() }.joinToString("  ·  "),
+                    color = Muted, style = MaterialTheme.typography.labelSmall)
+            }
+            TextButton(onClick = onRestore, enabled = enabled) { Text("Restore") }
+            IconButton(onClick = onDelete, enabled = enabled) { Icon(Icons.Rounded.Delete, "Delete this restore point", tint = Muted) }
+        }
+    }
+}
 
 @Composable
 private fun BackupRow(b: SavedBackup, offline: List<String>?, others: List<Pair<String, String>>, onRestore: (String, String) -> Unit, onExport: () -> Unit, onDelete: () -> Unit,

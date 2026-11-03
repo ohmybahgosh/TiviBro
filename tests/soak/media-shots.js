@@ -72,7 +72,7 @@ const FILMS = [
 
   await ev(() => { Views.switchTab('settings'); Settings.section('media'); }); await page.waitForTimeout(900);
   const st = await page.innerText('#setBody');
-  ok('Settings > My media says movies only', /Movies only for now/.test(st) && /Add media/.test(st) && /Living room NAS/.test(st), st.slice(0, 300));
+  ok('Settings > My media says what it holds', /movies, TV shows or both/.test(st) && /Add media/.test(st) && /Living room NAS/.test(st), st.slice(0, 300));
   await shot('tv-set-my-media');
 
   ok('no page errors', !errs.length, errs.join(' | '));

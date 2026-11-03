@@ -16,7 +16,7 @@
      - DTS: not on LG TVs from 2020, 2021 and 2022 (webOS 5, 6 and 22, including the C1 and C2),
        whatever webOS version they were later updated to.  Back on 2023 models.
      - FLAC with more than two channels does not play.
-   probe() asks the TV as well and keeps both answers, so Settings > Diagnostics can show them. */
+   probe() asks the TV as well and keeps both answers, so Settings > Updates, about and diagnostics can show them. */
 var Caps = (function () {
   'use strict';
 

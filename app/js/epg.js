@@ -1,6 +1,6 @@
 /* Program guide, built so the UI thread never parses anything large.
 
-   Sources, per playlist (Settings > Playlists > the playlist > Guide sources):
+   Sources, per playlist (Settings > Guide > Guide sources):
    - Your XMLTV addresses, in priority order, each with its own time offset.
    - The provider's guide: for Xtream either per-channel ("short", fast and light) or the
      full XMLTV file; for M3U the address inside the playlist.
@@ -278,7 +278,7 @@ var Epg = (function () {
           if (!r.ok) throw new Error('HTTP ' + r.status);
           var unzipped = !!r.headers.get('x-unzipped');                 // the helper did it
           var gz = !src.xfer && /\.gz($|\?)/.test(src.url);              // direct connection: unzip here
-          if (gz && typeof DecompressionStream === 'undefined') { try { r.body.cancel(); } catch (e) {} throw new Error('This TV can only read .gz guides through the network helper.  Set Settings > Playback > Network to Automatic, or use the plain .xml address.'); }
+          if (gz && typeof DecompressionStream === 'undefined') { try { r.body.cancel(); } catch (e) {} throw new Error('This TV can only read .gz guides through the network helper.  Set Settings > Playback > Connection to Automatic, or use the plain .xml address.'); }
           var size = +(r.headers.get('x-raw-length') || r.headers.get('content-length')) || 0, bytes = 0, raw = r.body;
           // Unzipped by the helper: progress counts the zipped bytes it has downloaded, not the XML.
           if (unzipped) poll = setInterval(function () {
@@ -677,6 +677,7 @@ var Epg = (function () {
     var map = Store.edits.epgMap || {}, short = shortAllowed(), ev = typeof Events !== 'undefined';
     return Library.data.channels.filter(function (ch) {
       if (map[ch.k] && !PUB_ID.test(map[ch.k])) return false;
+      if (Library.noGuide(ch)) return false;                    // no guide wanted
       var id = matched[ch.k] || ch.epg || '';
       if (id && live(id)) return false;
       // Per-channel provider guides can't be checked ahead, except for app channels (Pluto TV), whose

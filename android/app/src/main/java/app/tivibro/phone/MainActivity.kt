@@ -1,7 +1,7 @@
 /* The app's single activity: opens pairing links (tivibro://pair and https://tivibro.app/pair from the TV's
    QR code), takes a provider's link shared to TiviBro (Share, then TiviBro), runs the code scanner, starts
-   the weekly backups, and moves between the screens (home, add a TV, type the code, one TV, the editor,
-   adding a shared playlist, backups). */
+   the weekly backups, and moves between the screens (home, add a TV, type the code, one TV on any of its
+   tabs, the editor on any of its pages, adding a shared playlist, backups and restore points, reminders). */
 package app.tivibro.phone
 
 import android.content.Intent
@@ -37,6 +37,7 @@ import app.tivibro.phone.ui.AppModel
 import app.tivibro.phone.ui.CodeScreen
 import app.tivibro.phone.ui.EditorScreen
 import app.tivibro.phone.ui.OfflineEditorScreen
+import app.tivibro.phone.ui.RemindersScreen
 import app.tivibro.phone.ui.HomeScreen
 import app.tivibro.phone.ui.TbTheme
 import app.tivibro.phone.ui.TvScreen
@@ -105,6 +106,18 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
         if (pairing.done != null) { nav.popBackStack("home", inclusive = false); model.resetPairing() }
     }
 
+    // One TV's screen on a tab (and, for Settings, a section), its other screens, and the editor on a page.
+    fun tvAt(id: String, tab: String, sec: String = "") = "tv/$id?tab=${enc(tab)}&sec=${enc(sec)}"
+    fun go(id: String, where: String, page: String = "") {
+        when (where) {
+            "reminders" -> nav.navigate("reminders/$id")
+            "backups" -> nav.navigate("backups/$id")
+            "editor" -> nav.navigate("editor/$id?page=${enc(page)}")
+            "media" -> nav.navigate(tvAt(id, "Settings", "media"))
+            "settings" -> nav.navigate(tvAt(id, "Settings"))
+        }
+    }
+
     fun scan() {
         val opts = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).enableAutoZoom().build()
         GmsBarcodeScanning.getClient(ctx, opts).startScan()
@@ -120,15 +133,22 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 onAdd = { nav.navigate("add") },
                 onScan = { scan() },
                 onFind = { nav.navigate("add") },
-                onEditor = { id -> nav.navigate("editor/$id") },
-                onRemote = { id -> nav.navigate("tv/$id") },
+                onEditor = { id -> go(id, "editor") },
+                onTab = { id, tab -> nav.navigate(tvAt(id, tab)) },
+                onReminders = { id -> go(id, "reminders") },
                 onOpen = { model.openTiviBro(it) },
                 onWake = { model.wake(it) },
                 onForget = { model.forget(it) },
                 onTile = { model.tileTv = it; tile = it; model.say("The Quick Settings tile now opens TiviBro on this TV") },
                 onRepair = { nav.navigate("add") },
-                onBackups = { id -> nav.navigate("backups/$id") },
+                onBackups = { id -> go(id, "backups") },
             )
+        }
+        composable("reminders/{id}") { e ->
+            val id = e.arguments?.getString("id").orEmpty()
+            val tv = model.tv(id)
+            if (tv == null) { LaunchedEffect(Unit) { nav.popBackStack() }; return@composable }
+            RemindersScreen(model, id, tv.name, snack, onBack = { nav.popBackStack() })
         }
         composable("share") {
             ShareScreen(model, shareText, tvs, onBack = { nav.popBackStack() }, onPair = { nav.navigate("add") })
@@ -181,8 +201,16 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 onPair = { code -> model.pair(host, port, code, id) },
             )
         }
-        composable("tv/{id}") { e ->
+        composable(
+            "tv/{id}?tab={tab}&sec={sec}",
+            arguments = listOf(
+                navArgument("tab") { type = NavType.StringType; defaultValue = "Remote" },
+                navArgument("sec") { type = NavType.StringType; defaultValue = "" },
+            ),
+        ) { e ->
             val id = e.arguments?.getString("id").orEmpty()
+            val startTab = e.arguments?.getString("tab").orEmpty().ifBlank { "Remote" }
+            val startSec = e.arguments?.getString("sec").orEmpty().ifBlank { null }
             val tv = model.tv(id)
             if (tv == null) { LaunchedEffect(Unit) { nav.popBackStack() }; return@composable }
             val now by model.nowState.collectAsStateWithLifecycle()
@@ -202,14 +230,22 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 onLoadLineup = { force -> model.loadLineup(id, force) },
                 onFav = { c, on -> model.favorite(id, c.k, on) },
                 onType = { inp, value, submit -> model.typeInto(id, inp.id, value, submit) },
+                startTab = startTab, startSec = startSec,
+                onGo = { where, page -> go(id, where, page) },
             )
         }
-        composable("editor/{id}") { e ->
+        composable(
+            "editor/{id}?page={page}",
+            arguments = listOf(navArgument("page") { type = NavType.StringType; defaultValue = "" }),
+        ) { e ->
             val id = e.arguments?.getString("id").orEmpty()
+            val page = e.arguments?.getString("page").orEmpty()
             val tv = model.tv(id)
             if (tv == null) { LaunchedEffect(Unit) { nav.popBackStack() }; return@composable }
             EditorScreen(name = tv.name, host = tv.host, load = { progress -> model.editorUrl(id, progress) }, onBack = { nav.popBackStack() }, say = { model.say(it) },
-                keeper = remember(id) { model.editorKeeper(id) })
+                keeper = remember(id) { model.editorKeeper(id) }, page = page,
+                // The editor's My media, Backups, Reminders or Settings: close the editor and open the phone's own screen.
+                onOpen = { where -> if (nav.currentBackStackEntry?.id == e.id) { nav.popBackStack(); go(id, where) } })
         }
     }
 }

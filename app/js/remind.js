@@ -51,5 +51,21 @@ var Remind = (function () {
     document.addEventListener('visibilitychange', function () { visible(); if (!document.hidden) sync(false); });
   }
 
-  return { start: start, sync: sync, params: params, launchParams: launchParams };
+  /* Every reminder still to come (Settings > Reminders and watchlist, the phone's Reminders, the web
+     editor), soonest first: the channel's name and logo, the programme, and what set it (w: a
+     watchlist word or team, empty when you set it yourself). */
+  function list(now) {
+    now = now || Date.now();
+    return (Store.edits.reminders || []).filter(function (r) { return r && r.e > now; }).sort(function (a, b) { return a.s - b.s; }).map(function (r) {
+      var c = typeof Library !== 'undefined' ? Library.find(r.k) : null;
+      return { k: r.k, ch: c ? Library.name(c) : 'Channel not in this playlist', logo: c && typeof Views !== 'undefined' && Views.logoOf ? Views.logoOf(c) || '' : '', s: r.s, e: r.e, t: r.t || '', w: r.w || '', live: r.s <= now ? 1 : 0 };
+    });
+  }
+  function cancel(k, s) {
+    var rem = Store.edits.reminders || [], i = rem.findIndex(function (r) { return r.k === k && r.s === s; });
+    if (i < 0) return false;
+    rem.splice(i, 1); Store.saveEdits(); sync(true); return true;
+  }
+  function clear() { var rem = Store.edits.reminders || []; rem.splice(0, rem.length); Store.saveEdits(); sync(true); }
+  return { start: start, sync: sync, params: params, launchParams: launchParams, list: list, cancel: cancel, clear: clear };
 })();

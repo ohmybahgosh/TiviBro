@@ -1,7 +1,8 @@
 /* One TV: what it is showing now (followed with a long poll), typing on the phone into any text box the
    TV is showing, a remote (arrows, OK, Back, channel and volume buttons, menu actions), the TV's own
-   channel list to play a channel on the TV and star favorites, the guide (GuideTab.kt), and Movies and
-   Shows (VodTab.kt). */
+   channel list to play a channel on the TV and star favorites, the guide (GuideTab.kt), Movies and
+   Shows (VodTab.kt), My media and the TV's settings (SettingsTab.kt).  Opens on the tab the home
+   screen's shortcut asked for. */
 package app.tivibro.phone.ui
 
 import androidx.activity.compose.BackHandler
@@ -139,16 +140,19 @@ fun TvScreen(
     onLoadLineup: (Boolean) -> Unit,
     onFav: (Chan, Boolean) -> Unit,
     onType: (TvInput, String, Boolean) -> Unit,
+    /** The tab to open on: Remote, Channels, Guide, On now, Movies, Shows, My media or Settings. */
+    startTab: String = "Remote",
+    /** With startTab Settings: a settings section to open (a TV section id, such as "media"). */
+    startSec: String? = null,
+    /** Opens one of the phone's own screens: "reminders", "backups" or "editor" (with an editor page id, or ""). */
+    onGo: (String, String) -> Unit = { _, _ -> },
 ) {
-    var tab by rememberSaveable { mutableIntStateOf(0) }
+    var tab by rememberSaveable { mutableStateOf(startTab.ifBlank { "Remote" }) }
     var chanOptions by remember { mutableStateOf<Chan?>(null) }
-    // Back from another tab goes to the remote first, then to the TV list.
-    BackHandler(enabled = tab != 0) { tab = 0 }
     var typing by remember { mutableStateOf(false) }
     // The clock, for programme progress: once every 20 seconds is plenty.
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) { while (true) { delay(20_000); now = System.currentTimeMillis() } }
-    LaunchedEffect(tab) { if (tab == 1 || tab == 2) onLoadLineup(false) }
 
     Scaffold(
         containerColor = Ink,
@@ -165,7 +169,7 @@ fun TvScreen(
             NowPlaying(state, now, onKey, onOpen, Modifier.padding(16.dp, 4.dp, 16.dp, 8.dp))
             if (state?.busy == true) Surface(color = Panel2, shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp).fillMaxWidth()) {
                 Row(Modifier.padding(14.dp, 10.dp), verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Accent2)
+                    CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Accent)
                     Spacer(Modifier.width(12.dp))
                     Text("TiviBro on the TV is busy, for example loading a big playlist.  What you press here goes through when it's done; volume works now.", style = MaterialTheme.typography.bodySmall)
                 }
@@ -173,23 +177,32 @@ fun TvScreen(
             val inputs = state?.inputs.orEmpty()
             if (inputs.isNotEmpty()) TypeOnTv(inputs, onType, Modifier.padding(16.dp, 0.dp, 16.dp, 8.dp))
             // Movies and Shows only when the provider has them (an older TiviBro doesn't say: both show).
-            val tabs = listOfNotNull("Remote", "Channels", "Guide", "On now".takeIf { state?.onnow == true }, "Movies".takeIf { state?.movies != false }, "Shows".takeIf { state?.series != false }, "My media".takeIf { state?.media == true }, "Settings")
-            if (tab >= tabs.size) tab = 0
+            // Until the TV has said what it has, the tab a shortcut opened stays.
+            val waiting = state == null
+            val tabs = listOfNotNull("Remote", "Channels", "Guide", "On now".takeIf { state?.onnow == true || waiting && tab == "On now" },
+                "Movies".takeIf { state?.movies != false }, "Shows".takeIf { state?.series != false },
+                "My media".takeIf { state?.media == true || waiting && tab == "My media" }, "Settings")
+            val cur = if (tab in tabs) tab else "Remote"
+            val sel = tabs.indexOf(cur).coerceAtLeast(0)
             ScrollableTabRow(
-                selectedTabIndex = tab, containerColor = Ink, contentColor = TextHi, edgePadding = 8.dp,
-                indicator = { pos -> TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(pos[tab]), color = Accent2) },
+                selectedTabIndex = sel, containerColor = Ink, contentColor = TextHi, edgePadding = 8.dp,
+                // The tab positions can still be the old list's for a frame when the TV's tabs change: never index past them.
+                indicator = { pos -> if (sel < pos.size) TabRowDefaults.SecondaryIndicator(Modifier.tabIndicatorOffset(pos[sel]), color = Accent) },
                 divider = {},
             ) {
-                tabs.forEachIndexed { i, t -> Tab(selected = tab == i, onClick = { tab = i }, text = { Text(t) }) }
+                tabs.forEach { t -> Tab(selected = cur == t, onClick = { tab = t }, text = { Text(t) }, selectedContentColor = Accent, unselectedContentColor = TextHi) }
             }
-            when (tabs.getOrNull(tab)) {
+            // Back from another tab goes to the remote first, then to the TV list.
+            BackHandler(enabled = cur != "Remote") { tab = "Remote" }
+            LaunchedEffect(cur) { if (cur == "Channels" || cur == "Guide") onLoadLineup(false) }
+            when (cur) {
                 "Channels" -> Channels(lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) }, onFav = onFav, onOptions = { chanOptions = it })
-                "Guide" -> GuideTab(model, id, lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) })
+                "Guide" -> GuideTab(model, id, lineup, lineupNote, state?.channelKey.orEmpty(), now, onPlay, onOpen = { onOpen(); onLoadLineup(true) }, onRetry = { onLoadLineup(true) }, onReminders = { onGo("reminders", "") })
                 "On now" -> OnNowTab(model, id, state?.channelKey.orEmpty(), now)
                 "Movies" -> VodTab(model, id, "movie")
                 "Shows" -> VodTab(model, id, "series")
                 "My media" -> if ((state?.mediaLibraryVersion ?: 0) >= 2) MyMediaTab(model, id) else VodTab(model, id, "media")
-                "Settings" -> SettingsTab(model, id)
+                "Settings" -> SettingsTab(model, id, startSec = if (startTab == "Settings") startSec else null, onGo = onGo)
                 else -> Remote(volume, onKey, onAction, onVolume, onType = { typing = true })
             }
         }
@@ -221,7 +234,7 @@ private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen
                         Text(st.vodTitle, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         if (st.vodDur > 0) {
                             Spacer(Modifier.height(8.dp))
-                            LinearProgressIndicator(progress = { (st.vodPos.toFloat() / st.vodDur).coerceIn(0f, 1f) }, color = Accent2, trackColor = Panel2, modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(progress = { (st.vodPos.toFloat() / st.vodDur).coerceIn(0f, 1f) }, color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth())
                         }
                     }
                     PlayPause(st.paused, onKey)
@@ -235,7 +248,7 @@ private fun NowPlaying(st: NowState?, now: Long, onKey: (String) -> Unit, onOpen
                         val p = st.now
                         if (p != null && p.end > p.start) {
                             Spacer(Modifier.height(6.dp))
-                            LinearProgressIndicator(progress = { ((now - p.start).toFloat() / (p.end - p.start)).coerceIn(0f, 1f) }, color = Accent2, trackColor = Panel2, modifier = Modifier.fillMaxWidth())
+                            LinearProgressIndicator(progress = { ((now - p.start).toFloat() / (p.end - p.start)).coerceIn(0f, 1f) }, color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth())
                             Text(clock(p.start) + " – " + clock(p.end) + (st.next?.let { "   Next: " + it.title } ?: ""), color = Muted, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
@@ -293,7 +306,7 @@ private fun Remote(volume: Volume?, onKey: (String) -> Unit, onAction: (String) 
             Key(Icons.Rounded.KeyboardArrowDown, "Down", { onKey("down") }, Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp), color = Color.Transparent)
             Key(Icons.Rounded.KeyboardArrowLeft, "Left", { onKey("left") }, Modifier.align(Alignment.CenterStart).padding(start = 8.dp), color = Color.Transparent)
             Key(Icons.Rounded.KeyboardArrowRight, "Right", { onKey("right") }, Modifier.align(Alignment.CenterEnd).padding(end = 8.dp), color = Color.Transparent)
-            Key(null, "OK", { onKey("ok") }, Modifier.align(Alignment.Center), size = 96.dp, color = Accent, tint = Color.White, onLong = { onKey("hold") })
+            Key(null, "OK", { onKey("ok") }, Modifier.align(Alignment.Center), size = 96.dp, color = Accent, tint = OnAccent, onLong = { onKey("hold") })
         }
         Text("Hold OK for options", color = Muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(top = 8.dp))
         Spacer(Modifier.height(22.dp))
@@ -384,7 +397,7 @@ private fun Channels(lineup: Lineup?, note: String, playing: String, now: Long, 
 @Composable
 fun GroupChip(label: String, on: Boolean, onClick: () -> Unit) {
     FilterChip(selected = on, onClick = onClick, label = { Text(label, maxLines = 1) },
-        colors = FilterChipDefaults.filterChipColors(containerColor = Panel, labelColor = TextHi, selectedContainerColor = Accent, selectedLabelColor = Color.White),
+        colors = FilterChipDefaults.filterChipColors(containerColor = Panel, labelColor = TextHi, selectedContainerColor = Accent, selectedLabelColor = OnAccent),
         border = FilterChipDefaults.filterChipBorder(enabled = true, selected = on, borderColor = Line))
 }
 
@@ -399,7 +412,7 @@ private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onFav: () -> Unit, 
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(c.name, fontWeight = FontWeight.SemiBold, color = if (playing) Accent2 else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                Text(c.name, fontWeight = FontWeight.SemiBold, color = if (playing) Accent else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
             }
             val p: Prog? = c.now
             if (p != null) {
@@ -410,9 +423,9 @@ private fun ChannelRow(c: Chan, playing: Boolean, now: Long, onFav: () -> Unit, 
                 }
             }
         }
-        if (playing) Text("On the TV", color = Accent2, style = MaterialTheme.typography.labelSmall)
+        if (playing) Text("On the TV", color = Accent, style = MaterialTheme.typography.labelSmall)
         IconButton(onClick = onFav) {
-            Icon(if (c.fav) Icons.Rounded.Star else Icons.Rounded.StarOutline, if (c.fav) "Remove from Favorites" else "Add to Favorites", tint = if (c.fav) Accent2 else Muted)
+            Icon(if (c.fav) Icons.Rounded.Star else Icons.Rounded.StarOutline, if (c.fav) "Remove from Favorites" else "Add to Favorites", tint = if (c.fav) Accent else Muted)
         }
     }
 }
@@ -427,7 +440,7 @@ private fun TypeOnTv(inputs: List<TvInput>, onType: (TvInput, String, Boolean) -
     Surface(color = Panel, shape = MaterialTheme.shapes.medium, modifier = modifier.fillMaxWidth()) {
         Column(Modifier.padding(14.dp, 10.dp)) {
             Row(Modifier.fillMaxWidth().clickable { shown = !shown }, verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Rounded.Keyboard, null, tint = Accent2, modifier = Modifier.size(20.dp))
+                Icon(Icons.Rounded.Keyboard, null, tint = Accent, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(10.dp))
                 Text(if (inputs.size == 1) "Type on your phone: " + inputs[0].label else "Type on your phone", fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Icon(if (shown) Icons.Rounded.KeyboardArrowUp else Icons.Rounded.KeyboardArrowDown, if (shown) "Hide" else "Show", tint = Muted)

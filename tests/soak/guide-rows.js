@@ -1,4 +1,4 @@
-/* Guide row size (Settings > Guide, start screen, reminders): Normal, Large and Extra large rows, with
+/* Guide row size (Settings > Appearance and start screen): Normal, Large and Extra large rows, with
    bigger text, and the same channel still selected after a change.
      node tests/soak/guide-rows.js [--shots dir]      (mock provider on :8077, npm run serve) */
 'use strict';
@@ -36,7 +36,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('moving still works after a change', await page.evaluate(() => !!document.querySelector('.grow.sel')) && (await look()).sel !== m.sel);
   await page.evaluate(() => { Store.settings.guideRows = 'm'; Views.applyLook(); Guide.resize(); }); await page.waitForTimeout(500);
   ok('back to Normal', (await look()).h === 100);
-  ok('Settings has Guide row size', await page.evaluate(() => { Views.switchTab('settings'); Settings.section('reminders'); return /Guide row size/.test(document.body.innerText); }));
+  ok('Settings has Guide row size', await page.evaluate(() => { Views.switchTab('settings'); Settings.section('look'); return /Guide row size/.test(document.body.innerText); }));
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();
   console.log(fails ? fails + ' FAILED' : 'all guide row size checks passed');

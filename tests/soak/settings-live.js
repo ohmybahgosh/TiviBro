@@ -21,14 +21,12 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const row = (label) => ev((l) => { const r = [].slice.call(document.querySelectorAll('.set-scroll .opt')).find((d) => d.querySelector('.ol') && d.querySelector('.ol').firstChild.textContent === l); return r ? r.querySelector('.ov').innerText.trim() : null; }, label);
   const click = (label) => ev((l) => { const r = [].slice.call(document.querySelectorAll('.set-scroll .opt')).find((d) => d.querySelector('.ol') && d.querySelector('.ol').firstChild.textContent === l); if (r) r.click(); return !!r; }, label);
 
-  // Pretend both loaded three hours ago, then open the playlist's page.
+  // Pretend both loaded three hours ago, then open Settings > Guide.
   await ev(() => { Epg.status.at = Date.now() - 3 * 3600e3; Library.data.at = Date.now() - 3 * 3600e3; });
-  await ev(() => { Views.switchTab('settings'); Settings.open(); Settings.section('playlists'); });
-  await page.waitForTimeout(600);
-  await ev(() => document.querySelector('.set-scroll .opt').click());
+  await ev(() => { Views.switchTab('settings'); Settings.open(); Settings.section('guide'); });
   await page.waitForTimeout(800);
-  const before = await row('Guide last loaded'), chBefore = await row('Last reloaded');
-  ok('the page shows the old times', !!before && !!chBefore, before + ' / ' + chBefore);
+  const before = await row('Guide last loaded');
+  ok('the Guide page shows the old time', !!before, before);
 
   await click('Reload guide now');
   let sawLoading = false;
@@ -43,11 +41,20 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('Reload guide now: "loading now" while it loads', sawLoading);
   ok('then the new time, on the same page', after === want && after !== before, before + ' -> ' + after + ' (want ' + want + ')');
 
+  ok('still on the Guide page', /Guide last loaded/.test(await ev(() => document.querySelector('.set-scroll').innerText)));
+
+  // The playlist's page: Last reloaded.
+  await ev(() => { Settings.section('playlists'); });
+  await page.waitForTimeout(600);
+  await ev(() => document.querySelector('.set-scroll .opt').click());
+  await page.waitForTimeout(800);
+  const chBefore = await row('Last reloaded');
+  ok('the playlist page shows the old time', !!chBefore, chBefore);
   await click('Reload channels now');
   let chAfter = chBefore;
   for (let i = 0; i < 60 && chAfter === chBefore; i++) { await page.waitForTimeout(250); chAfter = await row('Last reloaded'); }
   ok('Reload channels now: Last reloaded updates on the same page', chAfter && chAfter !== chBefore, chBefore + ' -> ' + chAfter);
-  ok('still on the playlist page', /Guide last loaded/.test(await ev(() => document.querySelector('.set-scroll').innerText)));
+  ok('still on the playlist page', /Last reloaded/.test(await ev(() => document.querySelector('.set-scroll').innerText)));
 
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();

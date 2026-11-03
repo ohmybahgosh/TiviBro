@@ -3,7 +3,7 @@
    details, player engine choices and failures, guide loading.
    - Kept in memory (last 800 lines) and saved (last 300) so a previous session can be read
      after a restart.
-   - Shown in Settings > Diagnostics (and from the setup screen), and mirrored to the
+   - Shown in Settings > Updates, about and diagnostics (and from the setup screen), and mirrored to the
      console for `ares-inspect`.
    - Credentials are masked before anything is stored or shown. */
 var TIVIBRO_VERSION = '0.6.0';

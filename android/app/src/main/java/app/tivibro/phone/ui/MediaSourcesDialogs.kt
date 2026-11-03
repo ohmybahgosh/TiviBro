@@ -53,14 +53,14 @@ private suspend fun myMedia(model: AppModel, id: String, args: JSONObject): Pair
 
 @Composable
 private fun Busy(text: String) = Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Accent2)
+    CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp, color = Accent)
     Spacer(Modifier.size(12.dp)); Text(text, color = Muted)
 }
 
 @Composable
 private fun Choice(label: String, sub: String = "", onClick: () -> Unit) {
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 12.dp)) {
-        Text(label, fontWeight = FontWeight.SemiBold, color = Accent2)
+        Text(label, fontWeight = FontWeight.SemiBold, color = Accent)
         if (sub.isNotBlank()) Text(sub, color = Muted, style = MaterialTheme.typography.bodySmall)
     }
     HorizontalDivider(color = Line.copy(alpha = 0.35f), thickness = 0.5.dp)

@@ -4,7 +4,7 @@
    service (a localhost relay, see /service).  Video handed to the TV's own player is not
    subject to CORS and goes direct.
 
-   Settings > Playback > Network: Automatic (relay when the helper is running), Always relay,
+   Settings > Playback > Connection: Automatic (relay when the helper is running), Always relay,
    or Direct (for providers or proxies like Dispatcharr that already send CORS headers). */
 var Net = (function () {
   'use strict';

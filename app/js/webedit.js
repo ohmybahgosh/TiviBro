@@ -12,7 +12,7 @@
 var WebEdit = (function () {
   'use strict';
   var on = false, timer = 0, appliedRev = 0, lastCmd = 0, lastDraft = 0, lastSig = '', status = null, busy = false, onStatus = null;
-  var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip'];
+  var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip', 'guideSkip', 'noGuide'];
   var SORTS = ['provider', 'az', 'za', 'number', 'custom'];
   var SNAP_AUTO = 15, SNAP_NAMED = 30;
   /* Ports for the editor.  High ones (one per ten thousand) for networks that block the common ones,
@@ -154,6 +154,9 @@ var WebEdit = (function () {
     }
     // Smart clean-up steps you chose to skip: { country: 1, dupes: 1, ... }.
     if (obj(ed.toolSkip)) { e.toolSkip = {}; Object.keys(ed.toolSkip).forEach(function (k) { if (/^[a-z]{2,12}$/.test(k) && ed.toolSkip[k]) e.toolSkip[k] = 1; }); }
+    if (obj(ed.guideSkip)) { e.guideSkip = {}; Object.keys(ed.guideSkip).forEach(function (k) { if (/^[a-z]{2,12}$/.test(k) && ed.guideSkip[k]) e.guideSkip[k] = 1; }); }
+    // Channels you don't want a guide for: out of guide matching, and the TV doesn't say "No guide information".
+    if (obj(ed.noGuide)) { e.noGuide = {}; Object.keys(ed.noGuide).forEach(function (k) { if (ed.noGuide[k] && k.length < 200) e.noGuide[k] = 1; }); }
     if (obj(ed.chanOrder)) { e.chanOrder = {}; Object.keys(ed.chanOrder).forEach(function (g) { var l = strs(ed.chanOrder[g]); if (l.length) e.chanOrder[g] = l; }); }
     if (obj(ed.groupSort)) { e.groupSort = {}; Object.keys(ed.groupSort).forEach(function (g) { if (SORTS.indexOf(ed.groupSort[g]) >= 0) e.groupSort[g] = ed.groupSort[g]; }); }
     if (obj(ed.epgMap) && JSON.stringify(ed.epgMap) !== JSON.stringify(e.epgMap || {})) { e.epgMap = ed.epgMap; guideChanged = true; }
@@ -306,6 +309,13 @@ var WebEdit = (function () {
         return { msg: (r.note || r.count + ' movies found.') + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
       });
     },
+    /* Reminders waiting to go off (the Watchlist and reminders page): the list, cancelling one, or all. */
+    reminders: function (a) {
+      var op = String(a.op || 'list');
+      if (op === 'cancel') Remind.cancel(String(a.k), +a.s);
+      if (op === 'clear') Remind.clear();
+      return { msg: op === 'cancel' ? 'Reminder cancelled' : op === 'clear' ? 'All reminders cancelled' : '', data: Remind.list() };
+    },
     report: function () { return Diag.report().then(function (r) { return { msg: 'ok', data: r }; }); },
     // The editor sent a report through the relay: the TV follows it from now on (app/js/reports.js).
     reported: function (a) {
@@ -438,7 +448,7 @@ var WebEdit = (function () {
         return step();
       }).then(function (txt) {
         clearTimeout(idle);
-        if (noGzMsg) return { msg: 'Reachable, but this TV can only unzip .gz guides through the network helper.  Set Settings > Playback > Network to Automatic, or use the plain .xml address.', data: { ok: true, size: size, gz: true, noGz: true } };
+        if (noGzMsg) return { msg: 'Reachable, but this TV can only unzip .gz guides through the network helper.  Set Settings > Playback > Connection to Automatic, or use the plain .xml address.', data: { ok: true, size: size, gz: true, noGz: true } };
         if (!/<tv[\s>]/.test(txt) && !/<channel\b/.test(txt)) throw new Error('That address does not return an XMLTV guide.');
         var ch = (txt.match(/<channel\b/g) || []).length, ms = Date.now() - t0;
         return { msg: 'Works.  ' + (size ? (size / 1048576).toFixed(1) + ' MB' + (gz ? ' zipped' : '') + ', ' : '') + 'answered in ' + (ms / 1000).toFixed(1) + ' s.', data: { ok: true, size: size, gz: gz, channelsSeen: ch } };
@@ -663,6 +673,8 @@ var WebEdit = (function () {
           throw e;
         });
     },
+    // The same, with the data too (the phone app's restore points and reminders).
+    runData: function (type, args) { return Promise.resolve().then(function () { if (!RUN[type]) throw new Error('Unknown action ' + type); return RUN[type](args || {}); }); },
     _testEpgSource: function (a) { return RUN.testEpgSource(a); }   // test hook only
   };
   return exports;

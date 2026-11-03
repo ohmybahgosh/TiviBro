@@ -21,8 +21,8 @@ fun MyMediaTab(model: AppModel, id: String) {
     var shows by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.padding(8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = !shows, onClick = { shows = false }, label = { Text("Movies") })
-            FilterChip(selected = shows, onClick = { shows = true }, label = { Text("TV shows") })
+            GroupChip("Movies", !shows) { shows = false }
+            GroupChip("TV shows", shows) { shows = true }
         }
         if (!shows) VodTab(model, id, "media") else MediaShows(model, id)
     }

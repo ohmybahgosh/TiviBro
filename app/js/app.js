@@ -460,7 +460,7 @@ var App = (function () {
     if (n < BIG || p.bigNoted) return;
     Log.warn('app', 'This playlist has ' + n + ' channels, more than most TVs comfortably hold.  Reloading it is the hardest moment for the TV.');
     p.bigNoted = 1; Store.upsertPlaylist(p);
-    U.toast(n.toLocaleString() + ' channels is a very big playlist for a TV.  If TiviBro closes after reloading it, set Settings > Playlists and guide > ' + (p.name || 'this playlist') + ' > Reload channel list to Only when I ask, or ask your provider for a smaller list.', 14000);
+    U.toast(n.toLocaleString() + ' channels is a very big playlist for a TV.  If TiviBro closes after reloading it, set Settings > Playlists > ' + (p.name || 'this playlist') + ' > Reload channel list to Only when I ask, or ask your provider for a smaller list.', 14000);
   }
 
   function open(p) {
@@ -558,7 +558,7 @@ var App = (function () {
       { label: 'Send a report now', sub: 'straight from the TV, with the log, logins and server names taken out', action: function () {
         U.toast('Sending the report…', 3000);
         Diag.sendNow(what, sub).then(function (j) { U.toast('Report sent, thank you.  It is issue #' + j.number + ' on GitHub.  TiviBro will tell you when the developer answers.', 8000); },
-          function (e) { U.toast('The report could not be sent (' + ((e && e.message) || 'no connection') + ').  Settings > Diagnostics > Report a problem sends it from your phone.', 9000); });
+          function (e) { U.toast('The report could not be sent (' + ((e && e.message) || 'no connection') + ').  Settings > Updates, about and diagnostics > Report a problem sends it from your phone.', 9000); });
       } },
       { label: 'Report with my phone', sub: 'add what you were doing; scan a code with your phone', action: function () { Diag.openReport(); } },
       { label: 'Not now', sub: sub.length > 90 ? sub.slice(0, 88) + '…' : sub }

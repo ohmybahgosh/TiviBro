@@ -181,7 +181,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await ev(() => UI.prompt('Rename group', 'Old name', function (v) { window.__renamed = v; }));
   await page.waitForTimeout(400);
   let st = null;
-  for (let i = 0; i < 8; i++) { st = await C.call(cred, 'GET', '/v1/state'); if (st.state && st.state.inputs) break; await wait(500); }
+  for (let i = 0; i < 20; i++) { st = await C.call(cred, 'GET', '/v1/state'); if (st.state && st.state.inputs) break; await wait(500); }
   const box = st.state && st.state.inputs && st.state.inputs[0];
   ok('the phone sees a text box on the TV, with its label and text', box && box.label === 'Rename group' && box.value === 'Old name' && box.submit === 1, JSON.stringify(st.state && st.state.inputs));
   await ask('input', { id: box.id, value: 'Sports I watch', submit: true }, { seal: true });
@@ -237,7 +237,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   // Settings from the phone: every page, the same rows as on the TV, and changes that stick.
   const sa = (o) => ask('settings', o, { seal: true });
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length >= 8, JSON.stringify(secs.sections));
+  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance and start screen') && secs.sections.length === 13, JSON.stringify(secs.sections));
   let pg = await sa({ op: 'page', sec: 'look' });
   const clock = pg.rows.find((r) => r.label === 'Show clock'), nums = pg.rows.find((r) => r.label === 'Numbers');
   ok('a page comes as rows: toggles, choices with their options', clock && clock.kind === 'toggle' && nums && nums.kind === 'choice' && nums.options.length === 3, JSON.stringify(pg.rows.slice(0, 4)));
@@ -247,9 +247,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   pg = await sa({ op: 'choice', sec: 'look', i: nums.i, v: 1 });
   ok('a choice from the phone changes the TV', await ev(() => Store.settings.numFont) === 'even' && await ev(() => document.body.classList.contains('nums-even')));
   await sa({ op: 'choice', sec: 'look', i: nums.i, v: 0 });
-  const grp = await sa({ op: 'page', sec: 'groups' });
+  const grp = await sa({ op: 'page', sec: 'channels' });
   const sub = grp.rows.find((r) => r.kind === 'page');
-  if (sub) { const inner = await sa({ op: 'page', sec: 'groups', path: [sub.i] }); ok('and pages inside pages', inner.trail.length === 2 && inner.rows.length > 0, JSON.stringify(inner).slice(0, 200)); }
+  if (sub) { const inner = await sa({ op: 'page', sec: 'channels', path: [sub.i] }); ok('and pages inside pages', inner.trail.length === 2 && inner.rows.length > 0, JSON.stringify(inner).slice(0, 200)); }
   let pages = 0, badPages = [];
   for (const sc of secs.sections) {
     const top = await sa({ op: 'page', sec: sc.id }).catch((x) => { badPages.push(sc.id + ': ' + x.message); return null; });

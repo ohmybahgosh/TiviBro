@@ -101,7 +101,7 @@ fun AddScreen(
     LaunchedEffect(Unit) { onSearch() }
     Scaffold(containerColor = Ink, topBar = { Bar("Add a TV", onBack) }, snackbarHost = { SnackbarHost(snack) }) { pad ->
         Column(Modifier.padding(pad).fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp).imePadding()) {
-            Text("On the TV, open TiviBro: Settings, Phone app, Pair a phone.", color = Muted, style = MaterialTheme.typography.bodyLarge)
+            Text("On the TV, open TiviBro: Settings, Phone app and web editor, Pair a phone.", color = Muted, style = MaterialTheme.typography.bodyLarge)
             Spacer(Modifier.height(20.dp))
             Button(onClick = onScan, modifier = Modifier.fillMaxWidth().height(56.dp)) {
                 Icon(Icons.Rounded.QrCodeScanner, null); Spacer(Modifier.width(10.dp)); Text("Scan the code on the TV")
@@ -121,7 +121,7 @@ fun AddScreen(
                         else -> found.forEachIndexed { i, f ->
                             if (i > 0) HorizontalDivider(color = Line)
                             Row(Modifier.fillMaxWidth().clickable { onPick(f.host, f.port, f.id, f.name) }.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                                Box(Modifier.size(40.dp).clip(CircleShape).background(Panel2), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Tv, null, tint = Accent2) }
+                                Box(Modifier.size(40.dp).clip(CircleShape).background(Panel2), contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Tv, null, tint = Accent) }
                                 Spacer(Modifier.width(14.dp))
                                 Column(Modifier.weight(1f)) {
                                     Text(f.name, fontWeight = FontWeight.SemiBold)
@@ -139,7 +139,7 @@ fun AddScreen(
                 OutlinedTextField(
                     value = addr, onValueChange = { addr = it.trim(); addrErr = null }, singleLine = true,
                     label = { Text("TV address, like 192.168.1.20") }, isError = addrErr != null,
-                    supportingText = { Text(addrErr ?: "Shown on the TV under Settings, Phone app, Address") },
+                    supportingText = { Text(addrErr ?: "Shown on the TV under Settings, Phone app and web editor, Address") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri, imeAction = ImeAction.Go),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -169,7 +169,7 @@ fun CodeScreen(name: String, busy: Boolean, error: String?, onBack: () -> Unit, 
     val code = Crypto.normCode(v.text)
     Scaffold(containerColor = Ink, topBar = { Bar("Pair with $name", onBack) }) { pad ->
         Column(Modifier.padding(pad).fillMaxSize().padding(24.dp).imePadding(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Type the code shown on the TV.  It is under Settings, Phone app, Pair a phone.", color = Muted, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
+            Text("Type the code shown on the TV.  It is under Settings, Phone app and web editor, Pair a phone.", color = Muted, textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
             Spacer(Modifier.height(28.dp))
             OutlinedTextField(
                 value = v,

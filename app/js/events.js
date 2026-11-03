@@ -7,7 +7,7 @@
    and a start time, so the channel list can show a short name and the guide can show the event
    at its time (programmes() makes guide entries when the guide has nothing for the channel).
    Times that carry a zone (ET, EDT, PT, UK, CET...) use it; the others are read in the playlist's
-   event time zone (Settings > Playlists > the playlist > Event channels), by default the
+   event time zone (Settings > Channels and groups > Event channels), by default the
    provider's own.  Daylight saving rules are built in, so old TVs without time zone data work. */
 var Events = (function () {
   'use strict';

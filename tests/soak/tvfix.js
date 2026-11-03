@@ -43,7 +43,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   // 2. Settings.
   await ev(() => Views.switchTab('settings')); await page.waitForTimeout(600);
   const click = async re => { const h = await page.evaluateHandle(r => [...document.querySelectorAll('#app *')].filter(e => e.children.length < 4 && new RegExp(r).test(e.textContent.trim()) && e.offsetParent).sort((a, c) => a.textContent.length - c.textContent.length)[0], re); const el = h.asElement(); if (!el) throw new Error('no ' + re); await el.click(); await page.waitForTimeout(500); };
-  await click('^Guide, start screen, reminders$');
+  await click('^Appearance and start screen$');
   await key('ArrowRight'); await key('ArrowDown', 30, 60);
   const last = await ev(() => { const body = document.querySelector('.set-body').getBoundingClientRect(), rows = [...document.querySelectorAll('.set-scroll .opt')], r = rows[rows.length - 1].getBoundingClientRect(); return { bottom: r.bottom, limit: body.bottom, text: rows[rows.length - 1].textContent }; });
   ok('the note after the last choice is in view, not under the hint bar', last.bottom <= last.limit + 1, JSON.stringify(last));
@@ -51,7 +51,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await key('ArrowUp', 40, 40);
   const clockTop = await ev(() => { const c = document.getElementById('clock').getBoundingClientRect(), r = document.querySelector('.set-scroll .opt.focus').getBoundingClientRect(); return r.top >= c.bottom; });
   ok('the top row clears the clock', clockTop);
-  await click('^Diagnostics$');
+  await click('^Updates, about and diagnostics$');
   await click('^What this TV can play');
   ok('a page of facts draws no row as selected', await ev(() => !document.querySelector('.set-scroll .opt.focus')));
   const y0 = await ev(() => document.querySelector('.set-scroll')._y || 0);

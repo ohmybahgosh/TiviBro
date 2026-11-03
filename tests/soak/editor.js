@@ -105,7 +105,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   });
 
   await step('history', async () => {
-    await go('history');
+    await go('backups');
     await ed.fill('#snapName', 'Audit point'); await ed.click('#snapGo'); await ed.waitForTimeout(800); if (await ed.locator('#modal').count()) await ed.locator('#modal button.primary').last().click(); await ed.waitForTimeout(3500);
     ok('restore point made on the TV', /Audit point/.test(await ed.innerText('#snapList')), (await ed.innerText('#snapList')).slice(0, 120));
     await ed.click('#hUndo'); await ed.waitForTimeout(400);
@@ -124,14 +124,14 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   });
 
   await step('backup', async () => {
-    await go('backup');
+    await go('backups');
     await ed.fill('#bPass', 'audit passphrase 1'); if (await ed.locator('#bPass2').count()) await ed.fill('#bPass2', 'audit passphrase 1');
     const [dl] = await Promise.all([ed.waitForEvent('download', { timeout: 30000 }), ed.click('#bDown')]);
     const f = await dl.path(); const j = JSON.parse(require('fs').readFileSync(f, 'utf8'));
     ok('backup downloads, encrypted, no login inside', j.kind === 'backup-encrypted' && JSON.stringify(j).indexOf('demo') < 0, j.cipher);
     await ed.setInputFiles('#bFile', f); await ed.waitForTimeout(800);
     await ed.fill('#rPass', 'audit passphrase 1'); await ed.click('#rUnlock'); await ed.waitForTimeout(3000);
-    ok('backup unlocks and lists its playlists', /Demo provider|Second/.test(await ed.innerText('#p-backup')), (await ed.innerText('#rInfo')).slice(0, 120));
+    ok('backup unlocks and lists its playlists', /Demo provider|Second/.test(await ed.innerText('#p-backups')), (await ed.innerText('#rInfo')).slice(0, 120));
   });
 
   await step('help and logout', async () => {

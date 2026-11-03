@@ -48,9 +48,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('the guide shows the events at their times', /Rivera v Okafor/.test(grid) && /NORTH RIVER @ LAKESIDE STATE/.test(grid), grid.replace(/\s+/g, ' ').slice(0, 200));
   await shot('tv-events-guide');
 
-  // Settings > Playlists > the playlist > Event channels
+  // Settings > Channels and groups > Event channels
   const H = R.helpers(page);
-  await H.section('Playlists and guide', true, true); await H.row('Demo provider'); await H.quiet('Enter', 900);
+  await H.section('Channels and groups', true, true);
   await H.row('Event channels'); await H.quiet('Enter', 900);
   const st = await page.innerText('#setBody');
   ok('the Event channels page lists the events and the time zone choice', /Read events from channel names/.test(st) && /Times with no time zone are in/.test(st) && /event channels in this playlist/.test(st), st.replace(/\s+/g, ' ').slice(0, 200));

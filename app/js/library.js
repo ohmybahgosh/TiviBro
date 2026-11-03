@@ -173,7 +173,7 @@ var Library = (function () {
     return evCache.list;
   }
   /* Recently added: channels that were not in the playlist the last time it loaded (app.js keeps
-     data.added = { key: first seen } across reloads).  Newest first, for Settings > Groups days. */
+     data.added = { key: first seen } across reloads).  Newest first, for Settings > Channels and groups > Recently added channels. */
   function newDays() { var d = S().newDays; return d == null ? 7 : +d || 0; }
   function isNew(c) { var a = data.added, d = newDays(); return !!(d && a && c && a[c.k] && Date.now() - a[c.k] < d * 86400e3); }
   var newCache = null;
@@ -209,7 +209,7 @@ var Library = (function () {
   function isVirtual(gid) { return gid === ALL || gid === RECENT || gid === EVENTS || gid === NEW || gid === TEAMS || gid === MOVIES; }
   function isCustom(gid) { return gid && gid.indexOf('c_') === 0; }
   function custom(gid) { return E().custom.filter(function (g) { return g.id === gid; })[0]; }
-  function cleanGroup(n) { return Names.groupsOn() ? Names.clean(n) : n; }
+  function cleanGroup(n) { return Names.cleanGroup(n); }
   function groupName(gid) {
     if (gid === ALL) return 'All channels';
     if (gid === RECENT) return 'Recent';
@@ -435,6 +435,9 @@ var Library = (function () {
   // The filter changed: the same playlist again, through it.
   function refilter() { if (raw) set(raw); }
   function find(k) { return byKey.get(k); }
+  // A channel you said needs no guide (the web editor's Ignore, Hold OK > No guide for this channel).
+  function noGuide(c) { var n = E().noGuide; return !!(c && n && n[c.k]); }
+  function setNoGuide(k, on) { var e = E(); if (!e.noGuide) e.noGuide = {}; if (on) e.noGuide[k] = 1; else delete e.noGuide[k]; Store.saveEdits(); }
   function count() { return data.channels.length; }
   function sample(n) {
     // A spread of real names for the cleanup preview.
@@ -446,7 +449,7 @@ var Library = (function () {
   return {
     hideChannels: hideChannels, isHidden: isHidden, refilter: refilter, get raw() { return raw; }, idle: idle, ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, TEAMS: TEAMS, MOVIES: MOVIES, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
     shownAnywhere: shownAnywhere, isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
-    isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
+    noGuide: noGuide, setNoGuide: setNoGuide, isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,
     createGroup: createGroup, renameGroup: renameGroup, deleteGroup: deleteGroup,
     copyTo: copyTo, removeFrom: removeFrom, moveInGroup: moveInGroup, moveGroup: moveGroup,

@@ -1,5 +1,5 @@
 /* Public guide fill-in: free XMLTV guides by country, for the channels that still have no guide
-   after your own guide sources and the provider's.  Settings > Playlists > the playlist > Guide.
+   after your own guide sources and the provider's.  Settings > Guide > Public guide fill-in.
    Two open projects, tried in this order:
      epg.pw          20 countries, lighter files, updated daily
      iptv-epg.org    70 countries, bigger and more complete, updated hourly (needs the helper)

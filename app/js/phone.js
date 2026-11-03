@@ -72,7 +72,7 @@ var Phone = (function () {
   // Commands wait until TiviBro has its channels (a phone may have opened it a moment ago).  A few
   // questions work on a TV with no playlist yet: adding one, typing into the set-up screen, backups.
   function ready() { return typeof Library !== 'undefined' && Library.count() > 0 && Views.tab; }
-  var EARLY = { playlist: 1, input: 1, backup: 1, restore: 1, mymedia: 1 };
+  var EARLY = { playlist: 1, input: 1, backup: 1, restore: 1, mymedia: 1, reminders: 1, snaps: 1 };
   function run(c, tries) {
     if (c.type === 'ask' && EARLY[c.what]) return answer(c);
     if (!ready()) {
@@ -179,7 +179,7 @@ var Phone = (function () {
     chan: function (a) {
       var c = chan(a.k), op = String(a.op || 'info'), msg = '';
       var E = Store.edits, mine = function () { return Library.customGroups().map(function (g) { return { id: g.id, name: g.name, has: g.items.indexOf(c.k) >= 0 ? 1 : 0 }; }); };
-      if (op === 'hide') { Library.hideChannel(c.k, a.on !== false); msg = a.on !== false ? 'Hidden on the TV.  Bring it back in Settings > Groups, sorting, hidden.' : 'Shown again'; }
+      if (op === 'hide') { Library.hideChannel(c.k, a.on !== false); msg = a.on !== false ? 'Hidden on the TV.  Bring it back in Settings > Channels and groups.' : 'Shown again'; }
       else if (op === 'rename') { var n = String(a.name || '').trim().slice(0, 80); Library.renameChannel(c.k, n); msg = n ? 'Renamed to ' + n : 'Back to the provider\'s name'; }
       else if (op === 'group') {
         var g = Library.customGroups().filter(function (x) { return x.id === a.group; })[0];
@@ -200,7 +200,7 @@ var Phone = (function () {
     /* Movies on now (onnow.js on the TV): the movies on now and starting in the next three hours, each
        once with the channels showing it.  { off } when there's no TMDB token or it's switched off. */
     onnow: function () {
-      if (typeof Movies === 'undefined' || !Movies.on()) return { off: true, msg: 'Save a TMDB token on the TV (Settings > Guide, start screen, reminders) to see the movies on now.' };
+      if (typeof Movies === 'undefined' || !Movies.on()) return { off: true, msg: 'Save a TMDB token (Settings > Guide > Movies in the guide, or Settings > My media) to see the movies on now.' };
       var sh = Movies.shelves();
       function one(g) {
         var m = g.m;
@@ -299,6 +299,17 @@ var Phone = (function () {
         return Media.setTmdbToken(t).then(function () { Settings.live(); return { msg: t ? 'TMDB token saved on the TV.' : 'TMDB token removed.  Saved details stay.', token: t ? 1 : 0 }; });
       }
       throw new Error('Unknown My media request');
+    },
+    /* Reminders still to come (the phone's Reminders screen): the list, cancelling one, or all. */
+    reminders: function (a) {
+      var op = String(a.op || 'list');
+      return WebEdit.runData('reminders', { op: op, k: a.k, s: a.s }).then(function (r) { return { msg: r.msg || '', items: r.data }; });
+    },
+    /* Restore points on the TV (the phone's Backups and restore points): list, make, restore, delete. */
+    snaps: function (a) {
+      var op = String(a.op || 'list'), id = String(a.id || '');
+      var run = op === 'make' ? WebEdit.runData('makeSnap', { name: String(a.name || '').slice(0, 60) }) : op === 'restore' ? WebEdit.runData('restoreSnap', { id: id }) : op === 'delete' ? WebEdit.runData('deleteSnap', { id: id }) : Promise.resolve({ msg: '' });
+      return run.then(function (r) { return WebEdit.runData('listSnaps', {}).then(function (l) { return { msg: op === 'list' ? '' : r.msg || '', items: (l.data || []).map(function (x) { return { id: x.id, name: x.name || '', at: x.at || 0, kind: x.kind || '', playlist: x.playlist || '' }; }) }; }); });
     },
     // A provider link shared to the phone app: added like the web editor's Add a playlist.
     playlist: function (a) {

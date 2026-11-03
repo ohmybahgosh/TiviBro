@@ -40,7 +40,7 @@ var OnNow = (function () {
       $('onEmpty').innerHTML = '';
       $('onEmpty').appendChild(U.el('b', '', Movies.on() ? (Movies.pending ? 'Looking through your guide for movies…' : 'No movies on right now') : 'Movies on now needs a TMDB token'));
       $('onEmpty').appendChild(U.el('p', '', Movies.on() ? 'TiviBro looks at what\'s on and the next three hours, and asks TMDB which programmes are movies.  New ones show up here as they are found.'
-        : 'Save your own free TMDB token in Settings > Guide, start screen, reminders.  Blue opens it.'));
+        : 'Save your own free TMDB token in Settings > Guide > Movies in the guide.  Blue opens it.'));
       hints(); return;
     }
     rows.forEach(function (r, ri) {
@@ -169,7 +169,7 @@ var OnNow = (function () {
   function keys(a) {
     var r = rows[row];
     if (a === 'back') { Views.tabBar(restore); return true; }
-    if (a === 'blue') { Views.switchTab('settings'); Settings.section('reminders'); return true; }
+    if (a === 'blue') { Views.switchTab('settings'); Settings.section('guide'); return true; }
     if (!r) { if (a === 'left') Views.tabBar(restore); return true; }
     var at = pos[r.id] || 0;
     if (a === 'left') { if (at === 0) Views.tabBar(restore); else { pos[r.id] = at - 1; draw(); } }

@@ -83,9 +83,9 @@ fun LogScreen(model: AppModel, id: String, onBack: () -> Unit) {
             }) { Icon(Icons.Rounded.Share, "Share") }
         }
         Row(Modifier.padding(16.dp, 0.dp, 16.dp, 6.dp), verticalAlignment = Alignment.CenterVertically) {
-            FilterChip(selected = !problems, onClick = { problems = false }, label = { Text("Everything") })
+            GroupChip("Everything", !problems) { problems = false }
             Spacer(Modifier.width(8.dp))
-            FilterChip(selected = problems, onClick = { problems = true }, label = { Text("Problems only") })
+            GroupChip("Problems only", problems) { problems = true }
         }
         Text("From the TV, with provider, guide and server names taken out.", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 6.dp))
         when {
@@ -97,7 +97,7 @@ fun LogScreen(model: AppModel, id: String, onBack: () -> Unit) {
             else -> LazyColumn(state = list, contentPadding = PaddingValues(12.dp, 4.dp, 12.dp, 24.dp)) {
                 itemsIndexed(lines) { _, l ->
                     Text(l, fontFamily = FontFamily.Monospace, fontSize = 11.sp, lineHeight = 14.sp,
-                        color = when { l.contains("ERROR") -> Bad; l.contains("WARN") -> Accent2; l.startsWith("#") || l.startsWith("────") -> TextHi; else -> Muted })
+                        color = when { l.contains("ERROR") -> Bad; l.contains("WARN") -> Warn; l.startsWith("#") || l.startsWith("────") -> TextHi; else -> Muted })
                 }
             }
         }

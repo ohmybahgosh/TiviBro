@@ -79,16 +79,18 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => { ['USA News', 'USA Kids', 'USA Sports'].forEach((n, i) => { D.groups.push({ id: 'ux' + i, name: n }); byGroup.set('ux' + i, []); }); renderTools(); });
   const pre = await ev(() => groupPrefixes().map(x => x.p));
   ok('a word most group names start with is offered', pre.indexOf('USA') >= 0, pre.join());
+  await ev(() => show('names')); await ed.waitForTimeout(300);
   await ed.click('[data-gpre="USA"]'); await ed.waitForTimeout(300);
   ok('taking it off renames those groups', await ev(() => E.groupRenames.ux0 === 'News' && E.groupRenames.ux2 === 'Sports'), await ev(() => JSON.stringify(E.groupRenames)));
   ok('the step then shows it as taken off, with Put it back', /Taken off now: "USA"/.test(await ev(() => document.getElementById('tGnames').textContent)));
   await ed.click('[data-gback="USA"]'); await ed.waitForTimeout(200);
   ok('Put it back restores the names', await ev(() => !E.groupRenames.ux0 && !E.groupRenames.ux2));
-  await ev(() => { [0, 1, 2].forEach(i => { D.groups.pop(); byGroup.delete('ux' + i); delete E.groupRenames['ux' + i]; }); renderTools(); });
+  await ev(() => { [0, 1, 2].forEach(i => { D.groups.pop(); byGroup.delete('ux' + i); delete E.groupRenames['ux' + i]; }); renderTools(); show('tools'); });
 
   // Local channels: national feeds stay out of the group; the pick is remembered.
   await ev(() => { renderTools.local = null; renderTools(); });
   const city = await ev(() => localIndex().cities[0].city);
+  await ed.fill('#lcQ', city.slice(0, 4)); await ed.waitForTimeout(300);
   await ed.click('[data-city="' + city + '"]'); await ed.waitForTimeout(200);
   await ed.click('#lcGo'); await ed.waitForTimeout(400);
   const grp = await ev(() => { const g = E.custom.find(x => x.name === 'Local channels'); const by = {}; localIndex().chans.forEach(x => { by[x.c.k] = x.p.city; }); return g ? g.items.map(k => by[k]) : null; });
@@ -114,7 +116,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await tv.evaluate(() => { Store.playlist.epgSources = []; Store.upsertPlaylist(Store.playlist); });
 
   // Start over.
-  await ed.click('#nav button[data-page=history]'); await ed.waitForTimeout(500);
+  await ed.click('#nav button[data-page=backups]'); await ed.waitForTimeout(500);
   await ed.click('#hReset'); await ed.waitForTimeout(300);
   await ed.click('#modal .primary, #modal button.danger:not(.ghost)').catch(() => {}); await ed.waitForTimeout(400);
   ok('Start over clears every change in the editor', await ev(() => !Object.keys(E.hiddenGroups).length && !Object.keys(E.groupRenames).length && E.custom.every(g => !g.items.length)), await ev(() => JSON.stringify({ h: Object.keys(E.hiddenGroups).length, r: Object.keys(E.groupRenames).length })));

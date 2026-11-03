@@ -1,5 +1,5 @@
 /* Channel logos from open logo projects, for channels the provider and the guide have no logo for
-   (or, if you like, for every channel, so they all match).  Settings > Appearance > Logo library.
+   (or, if you like, for every channel, so they all match).  Settings > Appearance and start screen > Logo library.
    TiviBro hosts no logo images.  It downloads a small index (tivibro.app/logos/, built by
    scripts/logos/build-index.js) for the countries in your playlist, matches each channel by its guide
    id, its cleaned name and country, or a local station's call sign, and loads the logo from where its

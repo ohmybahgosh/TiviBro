@@ -203,7 +203,7 @@ var Search = (function () {
     var vst = Vod.searchState;
     vl.empty = filter === 'channels' ? 'No channel has that name.' :
       filter === 'movies' ? (vst === 'loading' ? 'Loading your movies and shows…' : vst === 'none' ? 'This provider has no movies or shows.' : 'No movie or show has that name.') :
-      'Nothing found.  Programmes are searchable once the guide has loaded them' + (Epg.xml ? '.' : ' (add an XMLTV guide in Settings > Playlists to search every channel).');
+      'Nothing found.  Programmes are searchable once the guide has loaded them' + (Epg.xml ? '.' : ' (add an XMLTV guide in Settings > Guide to search every channel).');
     vl.setItems(out, 0);
     if (zone === 'list' && !out.length) { zone = 'chips'; paint(); }
     if (filter !== 'channels' && filter !== 'movies') inDescriptions(q, out);

@@ -88,7 +88,7 @@ fun VisibilityScreen(model: AppModel, id: String, group: String, k: String, onCl
                     Text(data?.title ?: "Show or hide channels", style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     data?.let { d -> Text("${d.rows.count { on[it.key] ?: it.on }} of ${d.rows.size} shown", color = Muted, style = MaterialTheme.typography.bodySmall) }
                 }
-                if (saving) CircularProgressIndicator(Modifier.size(20.dp).padding(end = 4.dp), strokeWidth = 2.dp, color = Accent2)
+                if (saving) CircularProgressIndicator(Modifier.size(20.dp).padding(end = 4.dp), strokeWidth = 2.dp, color = Accent)
                 else TextButton(onClick = { done() }, enabled = data != null) { Text("Save") }
             }
             val d = data

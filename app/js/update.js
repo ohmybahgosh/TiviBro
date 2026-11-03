@@ -99,7 +99,7 @@ var Update = (function () {
         if (m.ipkSize) r.size = m.ipkSize;
         set({ state: 'available', latest: r, checked: Date.now() });
         keep({ checked: Date.now(), latest: r });
-        if (quiet) U.toast('TiviBro ' + r.version + ' is available.  Settings > Updates and about.', 7000);
+        if (quiet) U.toast('TiviBro ' + r.version + ' is available.  Settings > Updates, about and diagnostics.', 7000);
         Log.info('update', 'Update available: ' + r.version + ' (running ' + current() + ')');
         return st;
       });

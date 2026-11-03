@@ -91,7 +91,7 @@ fun ChannelSheet(
         }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Ink) {
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheet, containerColor = Panel) {
         Column(Modifier.padding(bottom = 24.dp).verticalScroll(rememberScrollState())) {
             Row(Modifier.padding(20.dp, 0.dp, 20.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 Logo(c.logo, c.number, 40.dp)
@@ -100,7 +100,7 @@ fun ChannelSheet(
                     Text((if (c.number.isNotBlank()) c.number + "  " else "") + (info?.name ?: c.name), fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     info?.let { i -> Text(i.group + (if (i.renamed) "   ·   was " + i.provider else ""), color = Muted, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
                 }
-                if (busy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Accent2)
+                if (busy) CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Accent)
             }
             Option(Icons.Rounded.PlayArrow, if (playing) "On the TV now" else "Watch on TV") { onPlay(); onDismiss() }
             onSchedule?.let { s -> Option(Icons.Rounded.CalendarMonth, "Schedule and reminders") { onDismiss(); s() } }
@@ -128,7 +128,7 @@ fun ChannelSheet(
                     Option(Icons.Rounded.Add, "New group with this channel…") { newGroup = true }
                     HorizontalDivider(color = Line, modifier = Modifier.padding(vertical = 6.dp))
                     Option(Icons.Rounded.Edit, "Rename…", sub = if (i.renamed) "Provider's name: " + i.provider else null) { renaming = true }
-                    Option(Icons.Rounded.VisibilityOff, "Hide on the TV", sub = "Back in the TV's Settings > Groups, sorting, hidden") { hiding = true }
+                    Option(Icons.Rounded.VisibilityOff, "Hide on the TV", sub = "Bring it back in the TV's Settings > Channels and groups") { hiding = true }
                     Option(Icons.Rounded.Checklist, "Show or hide channels…", sub = "Tick the channels to keep in this group") { managing = true }
                 }
             }
@@ -143,7 +143,7 @@ fun ChannelSheet(
     if (hiding) AlertDialog(
         onDismissRequest = { hiding = false }, containerColor = Panel,
         title = { Text("Hide " + (info?.name ?: c.name) + "?") },
-        text = { Text("It leaves the TV's lists and the guide.  Bring it back in the TV's Settings > Groups, sorting, hidden, or in the web editor.") },
+        text = { Text("It leaves the TV's lists and the guide.  Bring it back in the TV's Settings > Channels and groups, or in the web editor.") },
         confirmButton = { TextButton(onClick = { hiding = false; change("hide", JSONObject().put("on", true), close = true) }) { Text("Hide") } },
         dismissButton = { TextButton(onClick = { hiding = false }) { Text("Cancel") } },
     )
@@ -152,7 +152,7 @@ fun ChannelSheet(
 @Composable
 private fun Option(icon: ImageVector?, label: String, sub: String? = null, onClick: () -> Unit) {
     Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(20.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (icon != null) Icon(icon, null, tint = Accent2, modifier = Modifier.size(22.dp)) else Spacer(Modifier.size(22.dp))
+        if (icon != null) Icon(icon, null, tint = Accent, modifier = Modifier.size(22.dp)) else Spacer(Modifier.size(22.dp))
         Spacer(Modifier.width(16.dp))
         Column {
             Text(label)

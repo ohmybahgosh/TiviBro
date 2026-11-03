@@ -60,5 +60,11 @@ const idle = [['FloHockey 39 - Off Air', true], ['PPV 07 | OFFLINE', true], ['Bi
   ['EPL 02:', true], ['PPV09 |', true], ['NFL Game Pass 3 :', true], ['F1 06:  :', true], [' :ESPN+  291', true], [' :FOX ONE  20', true], ['PPV10 | ', true],
   ['MLB 1', false], ['Sky Sports:', false], ['ESPN 2', false], ['NFL | Replay 4', false], ['EPL 01: Liverpool VS Arsenal', false], ['USA | A&E', false]];
 idle.forEach(([n, w]) => { if (Names.idle(n) !== w) { fail++; console.log('FAIL idle', n); } });
-console.log(fail ? fail + ' failures' : 'all ' + (cases.length + 16 + real.length + opt.length + 1 + idle.length) + ' name tests passed');
+// Group names: your group prefixes and suffixes, on group names only, with or without the channel rules.
+const G = Object.assign(Names.defaults(), { gprefixes: ['USA ', 'Sports: '], gsuffixes: [' Channels'] });
+[[G, 'USA News Channels', 'News'], [G, 'US| Sports: NFL', 'NFL'], [Object.assign({}, G, { groups: false }), 'US| Kids Channels', 'US| Kids'], [G, 'USA ', 'USA'],
+ [Object.assign({}, G, { enabled: false }), 'USA News Channels', 'USA News Channels']].forEach(([cfg, n, want], i) => {
+  const got = Names.cleanGroupWith(cfg, n); if (got !== want) { fail++; console.log('FAIL group name', i, JSON.stringify(n), '->', JSON.stringify(got), 'want', JSON.stringify(want)); } });
+if (Names.cleanWith(G, 'USA News Channels') === 'News') { fail++; console.log('FAIL group lists must not touch channel names'); }
+console.log(fail ? fail + ' failures' : 'all ' + (cases.length + 16 + real.length + opt.length + 1 + idle.length + 6) + ' name tests passed');
 process.exit(fail ? 1 : 0);

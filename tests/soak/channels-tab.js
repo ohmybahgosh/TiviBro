@@ -32,7 +32,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => { Store.settings.channelsTab = false; Store.settings.startTab = 'live'; Views.buildTabs(); });
   m = await menu();
   ok('starting on it keeps it in the menu', m[0] === 'live', m.join(','));
-  await ev(() => { Store.settings.startTab = 'guide'; Views.buildTabs(); Views.switchTab('settings'); Settings.open(); Settings.section('reminders'); }); await page.waitForTimeout(500);
+  await ev(() => { Store.settings.startTab = 'guide'; Views.buildTabs(); Views.switchTab('settings'); Settings.open(); Settings.section('look'); }); await page.waitForTimeout(500);
   ok('Settings has the switch', /Channels screen in the menu/.test(await ev(() => document.body.innerText)));
 
   // The phone app and the web editor on one page, each saying what it is.
