@@ -396,23 +396,35 @@ Use **Left** and **Right** to move between movies, and **Up** and **Down** to mo
 
 **Back** opens the standard main menu directly.  **Left** from the first movie does the same.  There is no separate source menu on the movie screen; all sources appear together and source management stays in Settings.
 
-Favourite movies and TV shows appear in the **Favorites** shelf instead of the general **Movies** and **TV shows** lists.  Remove a favourite to return it to its general list.  An unfinished favourite can also appear in **Continue watching** so you can resume it quickly.
-
 **Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, or **Add a WebDAV server** and enter its WebDAV address and login.  Turn on media sharing on a home server first.  A playlist must already be set up.
 
-**Movies and TV shows can share a source.**  Files may be at the top level, in one folder per title, or mixed across subfolders.  New sources discover both.  Existing sources keep their previous movie-only behaviour: open the source in **Settings > My media** and change **Content** to **Movies and TV shows** to enable episodes.
+**Movies and TV shows.**  A new source finds both.  A source added before alpha 61 stays movies only until you open it in **Settings > My media** and set **Content** to **Movies and TV shows** (or **TV shows only**), then rescan.
 
-The **TV shows** shelf opens seasons and episodes.  **Red (Options)** opens the options menu, including **TV shows** and **Needs review**.  **Blue (Settings)** opens My media settings.  Episode names such as `Harbour.S01E02.mkv` or `Harbour/Season 1/Episode 02.mkv` supply numbering.  Date-based and absolute-numbered files keep their own labels until a verified mapping is chosen.  Ambiguous files remain in **Needs review**; correct one file or preview a folder correction before saving.  The web editor also supports selection, correction previews, saving and undo.
+Shows open into seasons and episodes.  **Red (Options)** has **TV shows** and, when something needs a look, **Needs review**.  **Favorites** shows your favourite movies and shows; they stay in the **Movies** and **TV shows** lists too.
 
-Show options include metadata matching with your own TMDB token, favourites, episode order, and merging or separating show groups.  Episode options include version selection, watched/unwatched state and episode starts.  Known chapter markers can supply starts in a combined file; otherwise enter them manually.  A file with unknown episode boundaries offers combined-file playback rather than guessing a timestamp.
+Name folders and files like this, and the rest takes care of itself:
 
-With a saved TMDB token, show details and posters are fetched automatically at startup and after scanning, followed by season details and episode names, summaries and pictures for the seasons you own.  Only exact, unambiguous show matches are selected automatically.  Use **Find show details** to choose an uncertain match yourself.  Saved matches refresh by ID in your chosen metadata language.  Unmatched shows are left alone for a week; **Yellow (Fetch details)** retries them immediately.  Date-based and absolute-numbered shows receive show details; episode details need a verified mapping to aired seasons first.  Show titles or saved TMDB IDs, season numbers and your preferred language are sent to TMDB using your saved token.  Source logins and playback links are never sent there.
+```
+Movies/
+  Frozen (2013)/
+    Frozen.2013.1080p.BluRay.x264.mkv
+TV/
+  Harbour/
+    Season 1/
+      Harbour.S01E01.mkv
+      Episode 02.mkv
+```
 
-The **Needs review** shelf and menu entry appear only when there are files needing attention.  They disappear when the last item is resolved.
+- **Movies:** a folder named "Title (Year)" gives the title and year, whatever the file is called.  Without one, the file name is used: dots and underscores become spaces, and it is cut at the quality words (1080p, BluRay, x265).
+- **Episodes:** S01E02, 1x02, or "Episode 2" inside a "Season 1" folder give the season and episode.  Shows numbered by air date or by one running number get their own order.
+- **Extras:** folders named Extras, Featurettes, Behind the Scenes, Deleted Scenes, Interviews, Trailers and the like aren't opened.  Files with trailer, teaser or featurette in the name are skipped, and so are videos under 100 MB.
+- **Needs review:** a file TiviBro isn't sure about waits here.  Fix one file, or a whole folder (you see what changes before it's saved).  The web editor can do the same, with undo.
 
-Episode playback remembers its physical file position.  The existing **Auto next episode** setting controls the five-second next-episode prompt.  **Back** cancels it.  Missing numbered episodes ask before continuing.  Adjacent mapped episodes in one file keep the same player and subtitle session.
+**Show details.**  With a TMDB token saved, shows get their poster and details on their own, then season details and episode names, summaries and pictures for the seasons you have.  Only exact matches are picked automatically; **Find show details** on a show picks one yourself.  **Yellow** fetches details again.  TMDB gets show titles or IDs, season numbers and your language, with your token, and never a source's login or links.
 
-Scans save progress when a work limit is reached and continue in subsequent slices.  A source's options offer **Pause scan** and **Restart scan**.  Failed, empty and partial scans preserve saved entries.  Metadata is optional; local browsing and playback work without a TMDB token.
+**Episodes.**  Playback remembers where you stopped, and **Auto next episode** offers the next one.  For a file that holds several episodes, TiviBro uses its chapters, or you can set where each episode starts.
+
+**Big libraries.**  A scan works in parts and carries on where it stopped, and the source's options have **Pause scan** and **Restart scan**.  A scan that fails or finds nothing keeps what you had.
 
 A WebDAV source is a WebDAV folder, not a normal website or HTTP directory.  Services such as premiumize use a customer ID and API key as the login.  TiviBro supports both signed file links and servers that serve files directly with HTTP Basic authentication.  For a file that needs a login, the helper streams it to the player and handles seeking and subtitle reads.  Your login is sent only to the server you added.
 
@@ -622,11 +634,11 @@ Manage your own movie sources and preferences.  The [My media](#my-media) screen
 | **Add media** | | Find a DLNA / UPnP server, or enter the WebDAV address of your movies folder and its login.  One folder per movie, named like **Frozen (2013)**, matches best. |
 | **Edit on a computer** | | Open the web editor to type source logins on a computer. |
 | **TMDB API token** | Not set | Your own TMDB API key or Read Access Token.  Enter it on the TV or paste it in the web editor.  Settings and the editor show when a token is saved.  Select it to replace it, or leave the editor field blank to keep it.  **Test TMDB token** checks the saved one. |
-| **Sort movies by** | **Name (A–Z)** | Name, release date (newest first), or date added (newest first).  All movies and Favorites follow this choice; Continue watching stays ordered by recent playback.  Rescans preserve the date first added. |
+| **Sort movies by** | **Name (A–Z)** | Name, release date (newest first), or date added (newest first).  Movies and Favorites follow this choice; Continue watching stays ordered by recent playback.  Rescans preserve the date first added. |
 | **Rescan media sources** | | Same as Green on My media: scan every saved source. |
-| **Fetch media details** | | Same as Yellow: look up movies, shows and owned episodes in bulk, including shows needing a manual retry. |
+| **Fetch media details** | | Same as Yellow: look up details for movies, shows and the episodes you have. |
 | **Metadata language** | **English** | Shared by the TV app and web editor.  Changing it refreshes saved movie and show matches in the selected language.  Only missing translated fields fall back to English, identified beside the details.  If a request fails, the previous details remain. |
-| *(each source)* | | Rescan, fetch movie details, or remove the source. |
+| *(each source)* | | **Content** (Movies only, Movies and TV shows, TV shows only), rescan, pause or restart a scan, or remove the source. |
 
 ### Settings: Remote control
 

@@ -83,7 +83,7 @@ private fun MediaShows(model: AppModel, id: String) {
         LazyColumn(Modifier.weight(1f)) {
             items(rows) { row ->
                 val label = when (screen.level) {
-                    "show" -> if (row.optString("key") == "0") "Specials" else "Season / group ${row.optString("key")}"
+                    "show" -> row.optString("title").takeUnless { it.isBlank() || it == "null" } ?: if (row.optString("key") == "0") "Specials" else if (row.optString("key").length < 4 && row.optString("key").all { it.isDigit() }) "Season ${row.optString("key")}" else row.optString("key")
                     "episode" -> row.optString("label", "Version")
                     else -> {
                         val md = row.optJSONObject("metadata")

@@ -6,7 +6,7 @@ var MediaSeries = (function () {
   var fetchingMetadata = false, metadataToken = '', metadataLanguage = '', queuedMetadata = false;
   // Background work has its own lifetime: browsing seasons must not cancel it.
   function fetchDetails(force) {
-    var token=MediaStore.tmdbToken(),language=MediaStore.preferences().language,started=Date.now(),updated=0,missed=0,lastHandle=null;
+    var token=MediaStore.tmdbToken(),language=MediaStore.preferences().language,started=Date.now(),updated=0,missed=0,lastHandle=null,streak=0;
     if(!token)return Promise.resolve({skipped:true});
     if(fetchingMetadata){
       if(token!==metadataToken||language!==metadataLanguage)queuedMetadata=true;
@@ -58,12 +58,25 @@ var MediaSeries = (function () {
         if(!r.items.length)return;
         if(r.items[0].handle===lastHandle)throw new Error('The media library changed while fetching details.  Try again after scanning finishes.');
         lastHandle=r.items[0].handle;
-        return process(r.items[0]).then(function(){return new Promise(function(resolve){setTimeout(resolve,350);});}).then(next);
+        var item=r.items[0];
+        // One show that fails (no season details, a network error, a changed match) is marked checked as
+        // missed and the run goes on, so it can't stop every show after it from getting details.
+        return process(item).then(function(){streak=0;},function(e){
+          active();                                  // the token or language changed: stop, as before
+          // Two shows in a row failing looks like TMDB or the network being down: stop and leave them
+          // pending for next time instead of putting every show on a week's wait.
+          if(++streak>=2)throw e;
+          missed++;
+          if(typeof Log!=='undefined'&&Log.warn)Log.warn('media','Show details for one show failed: '+(e&&e.message));
+          return detail(item.handle).then(function(show){return save(show.handle,'markMetadataChecked',{language:language,startedAt:started,missed:true},show.metadata&&show.metadata.id);});
+        }).then(function(){return new Promise(function(resolve){setTimeout(resolve,350);});}).then(next);
       });
     }
     return next().then(function(){
       finish();
-      if(updated||force)U.toast(updated+' shows updated.  '+missed+' need a manual match.',6000);
+      var n=function(k,one,many){return k+' '+(k===1?one:many);};
+      if(updated||missed)U.toast(n(updated,'show','shows')+' updated'+(missed?'.  '+n(missed,'needs','need')+' a manual match.':'.'),6000);
+      else if(force)U.toast('All show details are up to date.',4000);
       return {updated:updated,missed:missed};
     },function(e){finish();if(force)U.toast(e.message,6000);else if(typeof Log!=='undefined'&&Log.warn)Log.warn('media','Automatic show details: '+e.message);return {updated:updated,error:e.message};});
   }
@@ -265,7 +278,7 @@ var MediaSeries = (function () {
       var options = r.buckets.map(function (bucket) { return {label:bucket.title || (r.order === 'aired' && (!r.displayOrder || r.displayOrder === 'aired') ? bucket.key === '0' ? 'Specials' : 'Season ' + bucket.key : bucket.key),sub:bucket.count + ' episodes',action:function () { page(r.title,{kind:'episode',show:r.handle,bucket:bucket.key,limit:60},showEpisode,function () { show(item,back); }); }}; });
       options.push({label:r.favourite ? 'Remove favourite' : 'Add favourite',action:function () { edit(r,'setFavourite',{favourite:!r.favourite},function () { show(item,back); }); }});
       options.push({label:'Merge with another show',action:function(){mergeShow(r,function(){show(item,back);});}});
-      options.push({label:'Preferred source',action:function(){UI.menu('Preferred source',MediaStore.sources().map(function(source){return {label:source.name,action:function(){MediaStore.sourcePreference(source.id);show(item,back);}};}),function(){show(item,back);});}});
+      options.push({label:'Preferred source for every show',action:function(){UI.menu('Preferred source for every show',MediaStore.sources().map(function(source){return {label:source.name,action:function(){MediaStore.sourcePreference(source.id);show(item,back);}};}),function(){show(item,back);});}});
       options.push({label:'Episode order',action:function(){groupOrder(r,function(){show(item,back);});}});
       (r.mergedFrom||[]).forEach(function(m){options.push({label:'Separate '+m.title,action:function(){request('edit',{operation:'unmergeShows',handle:r.handle,mergeHandle:m.operation,expectedRevision:r.revision},open);}});});
       options.push({label:'Find show details',action:function () { match(r,function () { show({handle:r.handle},back); }); }});
@@ -273,7 +286,7 @@ var MediaSeries = (function () {
       options.push({label:'Back',action:back}); UI.menu(r.metadata && r.metadata.title || r.title,options,back);
     });
   }
-  function open() { page('TV shows',{kind:'show',favourite:false,limit:60},show,Media.restore); }
+  function open() { page('TV shows',{kind:'show',limit:60},show,Media.restore); }
   function locate(item,back){
     page('Choose replacement file',{kind:'files',availableOnly:true,limit:60},function(replacement){
       request('edit',{operation:'relinkFile',handle:item.handle,target:replacement.handle,expectedRevision:item.revision,preview:true},function(preview){

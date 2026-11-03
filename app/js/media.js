@@ -92,7 +92,7 @@ var Media = (function () {
       if (row === shelfAt) focusedY = y;
       view.el.style.transform = 'translateY(' + y + 'px)';
       view.heading.textContent = s.title; view.count.textContent = s.movies.length ? String(s.movies.length) : '';
-      view.empty.textContent = s.id === 'continue' ? 'Movies you start will be waiting here.' : s.id === 'favorites' ? 'Hold OK on a movie to add it to Favorites.' : MediaStore.sources().length ? 'No movies in this source.' : 'Add your first server in Settings › My media.';
+      view.empty.textContent = s.id === 'continue' ? 'Movies you start will be waiting here.' : s.id === 'favorites' ? 'Hold OK on a movie to add it to Favorites.' : s.id === 'shows' ? 'No TV shows yet.  In Settings › My media, set a source\'s Content to Movies and TV shows, then rescan.' : MediaStore.sources().length ? 'No movies in this source.' : 'Add your first server in Settings › My media.';
       view.empty.classList.toggle('hidden', s.movies.length > 0);
       var start = Math.max(0, Math.min(at - 4, s.movies.length - 6)), used = {};
       for (var i = start; i < Math.min(s.movies.length, start + TILE_POOL); i++) {
@@ -143,7 +143,7 @@ var Media = (function () {
     var src = MediaStore.source(id);
     if (!src || scanning[id]) return Promise.resolve({ error: 'busy', message: !src ? 'That media source was removed.' : 'This source is already being scanned.' });
     scanning[id] = 1;pausedScans[id]=false; refresh();
-    U.toast('Looking for movies on ' + src.name + '…');
+    U.toast('Looking for movies and shows on ' + src.name + '…');
     function slice(first){return scanSource(src,first&&restart).then(function (res) {
       var r = MediaStore.applyScan(id, res);
       if(res.resumable&&!res.error&&!pausedScans[id]&&!document.hidden&&MediaStore.source(id)){refreshSeries();refresh();U.toast('Scan saved.  Continuing '+src.name+'…');return new Promise(function(resolve){setTimeout(function(){resolve(slice(false));},500);});}
@@ -204,7 +204,7 @@ var Media = (function () {
   function addMenu() {
     UI.menu('Add media', [
       { label: 'Browse my network (DLNA / UPnP)', sub: 'Find a home media server with media sharing turned on', action: browseNetwork },
-      { label: 'Add a WebDAV server', sub: 'Enter your movies folder\'s address and login, or use the web editor', action: askAddress }
+      { label: 'Add a WebDAV server', sub: 'Enter your media folder\'s address and login, or use the web editor', action: askAddress }
     ]);
   }
   function metadataRequest(q, language) {
@@ -380,7 +380,7 @@ var Media = (function () {
       { label: 'TV shows', action: function () { MediaSeries.open(); } },
       { label: 'Rescan', sub: 'Look for added or removed movies', action: function () { rescan(s.id); } },
       { label: 'Remove', sub: 'Your files stay where they are', action: function () {
-        UI.confirm('Remove ' + s.name + ' from My media?', 'Remove', function () { MediaStore.load().then(function () { MediaStore.removeSource(s.id); ask('library/source',{sourceId:s.id,action:'remove'},30000).then(function(){refresh();UI.menu(s.name+' removed',[{label:'Undo removal',action:function(){if(MediaStore.restoreSource(s.id))ask('library/source',{sourceId:s.id,action:'activate'},30000).then(function(){refresh();});}},{label:'Done'}]);},function(e){U.toast(why(e),6000);}); }); });
+        UI.confirm('Remove ' + s.name + ' from My media?', 'Remove', function () { MediaStore.load().then(function () { MediaStore.removeSource(s.id); ask('library/source',{sourceId:s.id,action:'remove'},30000).then(function(){refresh();UI.menu(s.name+' removed',[{label:'Undo removal',action:function(){if(MediaStore.restoreSource(s.id))ask('library/source',{sourceId:s.id,action:'activate'},30000).then(function(){refresh();rescan(s.id);});}},{label:'Done'}]);},function(e){U.toast(why(e),6000);}); }); });
       } }
     ]);
   }
@@ -423,7 +423,7 @@ var Media = (function () {
       else if (delta < -1 || delta > elapsed * 1.5 + 2) playingMeta.continuous = 0;
       playingMeta.lastPos = Player.position; playingMeta.lastAt = now;
       if (!sample || !playingMeta.lastSaved || now - playingMeta.lastSaved >= 10000) { MediaStore.saveEpisodeResume(playingMeta.id,Player.position,Player.duration); playingMeta.lastSaved = now;
-        if(Player.duration>0)ask('library/progress',{handle:playingMeta.item.id,position:Player.position,duration:Player.duration,session:playingMeta.session,startedAt:playingMeta.startedAt,sequence:++playingMeta.sequence},15000).catch(function(){});
+        if(Player.duration>0)ask('library/progress',{handle:playingMeta.item.id,position:Player.position,duration:Player.duration,session:playingMeta.session,startedAt:playingMeta.startedAt,sequence:++playingMeta.sequence,final:!sample},15000).catch(function(){});
       }
     } else MediaStore.saveResume(playingMeta.id, Player.position, Player.duration);
   }
@@ -543,7 +543,7 @@ var Media = (function () {
   /* ---------- remote and pointer navigation ---------- */
   function hints() {
     if (document.body.classList.contains('nav-open')) return;
-    UI.hints([['', 'OK  play'], ['', 'Hold OK  movie options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Options'], ['green', 'Rescan'], ['yellow', 'Fetch details'], ['blue', 'Settings']]);
+    UI.hints([['', 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Options'], ['green', 'Rescan'], ['yellow', 'Fetch details'], ['blue', 'Settings']]);
   }
   function moveShelf(d) {
     var row = shelfAt + d;
@@ -554,7 +554,7 @@ var Media = (function () {
     if (a !== 'ok') playToken++;
     if (a === 'green') { rescanAll(); return true; }
     if (a === 'yellow') { fetchMissingDetails(); return true; }
-    if (a === 'red') { if (itemsVL.current()) { itemMenu(itemsVL.current()); return true; } UI.menu('My media', [{label:'TV shows',action:function () { MediaSeries.open(); }},reviewCards.length > 0 && {label:'Needs review',action:function () { MediaSeries.review(); }},{label:'Movie options',action:function () { itemMenu(itemsVL.current()); }}]); return true; }
+    if (a === 'red') { if (itemsVL.current()) { itemMenu(itemsVL.current()); return true; } UI.menu('My media', [{label:'TV shows',action:function () { MediaSeries.open(); }},reviewCards.length > 0 && {label:'Needs review',action:function () { MediaSeries.review(); }}].filter(Boolean)); return true; }
     if (a === 'blue') { Views.switchTab('settings'); Settings.section('media'); return true; }
     var s = shelves[shelfAt], at = s && shelfPos[s.id] || 0;
     if (a === 'up') moveShelf(-1);
@@ -587,7 +587,7 @@ var Media = (function () {
   }
   function refreshSeries() {
     if (seriesLoading) return; seriesLoading = true;
-    Promise.all([ask('library/query',{kind:'show',favourite:false,limit:60},30000),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),ask('library/query',{kind:'show',favourite:true,limit:60},30000)]).then(function (results) {
+    Promise.all([ask('library/query',{kind:'show',limit:60},30000),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),ask('library/query',{kind:'show',favourite:true,limit:60},30000)]).then(function (results) {
       seriesCards = (results[0].items || []).map(function (r) { r.id = r.handle; return r; });
       reviewCards = (results[1].items || []).map(function (r) { r.id = r.handle; return r; });
       continuingShows = (results[2].items || []).map(function(r){r.id=r.handle;return r;});

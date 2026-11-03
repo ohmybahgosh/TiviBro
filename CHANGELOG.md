@@ -2,11 +2,7 @@
 
 ## Unreleased
 
-- **Needs review appears only when needed.**  My media hides the empty shelf and its menu entry until a file needs attention.
-- **TV-show details load automatically.**  With your saved TMDB token, My media fetches show posters and owned season and episode details after scanning and at startup.  Yellow retries missing matches; saved matches are refreshed by ID and uncertain titles remain available for manual matching.
-- **My media favourites have their own shelf.**  Favourite movies and shows leave the general lists and return when removed from favourites.  Continue watching still keeps your unfinished titles handy.
-- **Clearer My media button hints.**  Red is labelled **Options** for its menu; Blue remains **Settings**.
-- **My media TV-show test build.**  Discover shows alongside movies, browse seasons and episodes, fetch show metadata, correct matches, and remember episode progress.  Includes chapter and multi-episode playback support.
+- **TV shows in My media** (thanks to moritzm784, pull request #30).  Shows on your own DLNA and WebDAV servers are found next to movies, in flat, nested or mixed folders, and open into seasons and episodes.  With your TMDB token, shows get posters and details on their own, and the seasons you have get episode names, summaries and pictures.  Episodes remember where you stopped and offer the next one, files TiviBro isn't sure about wait in **Needs review** for a quick fix (on the TV or in the web editor, with undo), and a file holding several episodes can use its chapters.  New sources find movies and shows; a source you already have stays movies only until you set its **Content** in Settings > My media.  The library is kept by the network helper in small files, read only when needed, so big libraries fit on older TVs, and it runs on every webOS version from 4 on.
 
 ## 0.6.0 (alpha 60, 2026-11-02)
 

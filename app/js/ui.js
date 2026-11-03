@@ -152,6 +152,7 @@ var UI = (function () {
 
   function menu(title, items, onBack) {
     mItems = items.filter(Boolean); mTop = 0;
+    if (!mItems.length) mItems = [{ label: 'Nothing to choose from' }];      // an empty list is never a dead end
     mSel = Math.max(0, mItems.findIndex(function (x) { return x.current; }));
     mTitle.textContent = title;
     modal.classList.remove('hidden');

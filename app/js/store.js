@@ -302,7 +302,8 @@ var Store = (function () {
     if (!kvOn()) return idbGet(k);
     return kv('/kv/get?k=' + encodeURIComponent(k)).then(function (r) {
       if (r.status === 404) return idbGet(k).then(function (v) {
-        if (v != null) return bigSet(k, v).then(function () { return v; }); // finish the move before another reader migrates it
+        // Finish the move before another reader migrates it; if the move fails, the value still answers.
+        if (v != null) return bigSet(k, v).then(function () { return v; }, function () { return v; });
         return v;
       });
       if (!r.ok) throw new Error('HTTP ' + r.status);

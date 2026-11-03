@@ -13,7 +13,7 @@ var MediaStore = (function () {
   function read() {
     try {
       var o = JSON.parse(localStorage.getItem(KEY) || 'null');
-      if (o && Array.isArray(o.sources) && o.resume && typeof o.resume === 'object') return o;
+      if (o && Array.isArray(o.sources) && o.resume && typeof o.resume === 'object') { delete o.removedSources; return o; }   // (test builds saved removed sources' logins)
     } catch (e) {}
     return { sources: [], resume: {} };
   }
@@ -59,12 +59,14 @@ var MediaStore = (function () {
   // The My media tab shows in the menu only while there is a source (views.js buildTabs).
   function menu() { if (typeof Views !== 'undefined' && Views.buildTabs) setTimeout(function () { Views.buildTabs(); }, 0); }
   function removeSource(id) {
-    var removed = source(id); if (removed) { state.removedSources = state.removedSources || {}; state.removedSources[id] = removed; }
+    // Kept in memory only, for Undo right after: a removed source's login is never saved.
+    var removed = source(id); if (removed) undoable[id] = removed;
     state.sources = state.sources.filter(function (s) { return s.id !== id; });
     lib = lib.filter(function (m) { return m.src !== id; });
     save(); saveLib(); menu();
   }
-  function restoreSource(id) { var s = state.removedSources && state.removedSources[id]; if (!s || state.sources.length >= MAX_SOURCES) return false; state.sources.push(s); delete state.removedSources[id]; save(); menu(); return true; }
+  var undoable = {};
+  function restoreSource(id) { var s = undoable[id]; if (!s || state.sources.length >= MAX_SOURCES) return false; state.sources.push(s); delete undoable[id]; save(); menu(); return true; }
   // For screens and the web editor: no logins.
   function publicSources() {
     return state.sources.map(function (s) { return { id: s.id, type: s.type, name: s.name, address: s.address || '', contentMode:s.contentMode||'movies',episodeFiles:state.sourceStats&&state.sourceStats[s.id]?state.sourceStats[s.id].episodeFiles:0, count: lib.filter(function (m) { return m.src === s.id; }).length }; });
@@ -109,7 +111,7 @@ var MediaStore = (function () {
     continuing.sort(function (a, b) { return (state.resume[b.id].at || 0) - (state.resume[a.id].at || 0); });
     return [{ id: 'continue', title: 'Continue watching', movies: continuing },
       { id: 'favorites', title: 'Favorites', movies: all.filter(function (m) { return isFavorite(m.id); }) },
-      { id: 'all', title: 'Movies', movies: all.filter(function (m) { return !isFavorite(m.id); }) }];
+      { id: 'all', title: 'Movies', movies: all }];
   }
   // TMDB had no match for it (automatic lookups leave it alone for a week).
   function markMissed(id) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.tmdbMiss = Date.now(); return saveLib(); } return Promise.resolve(); }
