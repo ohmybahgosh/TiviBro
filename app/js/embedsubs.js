@@ -298,8 +298,9 @@ var EmbedSubs = (function () {
       // shown on this video, whatever the script set, so the saved choice comes back just after it.
       // With no saved choice and none made in this playback, Subs.autoOn picks (Settings > Playback);
       // views.js leaves these tracks to this.
+      // A subtitle already on that isn't one of these (a download from Find subtitles) stays the one shown.
       var intent = liveTracks.map(function (t, i) { return rec && rec.modes && rec.modes[i] || 'disabled'; });
-      if (intent.indexOf('showing') < 0 && !video._subsChoice && typeof Subs !== 'undefined' && Subs.autoOn) {
+      if (intent.indexOf('showing') < 0 && !video._subsChoice && !otherShowing() && typeof Subs !== 'undefined' && Subs.autoOn) {
         for (var a = 0; a < liveTracks.length; a++) if (Subs.autoOn(liveTracks[a], video)) { intent[a] = 'showing'; break; }
       }
       // A choice in the Subtitles menu meanwhile (views.js counts them in video._subsRev and keeps the
@@ -313,6 +314,14 @@ var EmbedSubs = (function () {
         if (pump) pump();
       }
       settleTimers.push(setTimeout(settle, 0), setTimeout(settle, 60));
+    }
+    function otherShowing() {
+      var all = video.textTracks || [];
+      for (var i = 0; i < all.length; i++) {
+        var t = all[i];
+        if (liveTracks.indexOf(t) < 0 && t.kind === 'subtitles' && t.mode === 'showing' && !(typeof Subs !== 'undefined' && Subs.gone && Subs.gone(t))) return true;
+      }
+      return false;
     }
     function replayCached(r) {
       for (var k = 0; k < r.cues.length; k++) {

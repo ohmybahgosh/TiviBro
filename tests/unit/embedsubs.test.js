@@ -454,6 +454,27 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
       off === 'disabled,disabled' && auto === 'disabled,showing' && chosen === 'disabled,disabled', { off, auto, chosen });
   }
   {
+    // A subtitle from Find subtitles is on (Subs.addTrack, no menu choice): tracks attached after it, by
+    // a seek or reconnect or a slow discovery, don't turn themselves on over it with automatic subtitles.
+    const ad = () => Object.assign(fakeAdapter({ items: [{ id: 'a', s: 1 }] }), { describe: () => [{ label: 'English', srclang: 'en' }, { label: 'Dutch', srclang: 'nl' }] });
+    const download = { kind: 'subtitles', mode: 'showing' }, old = { kind: 'subtitles', mode: 'showing' };
+    ctx.Subs = { delay: 0, autoOn: () => true, gone: t => t === old };
+    files['dl'] = new Uint8Array(64);
+    const v = makeVideo({ currentTime: 0, textTracks: [download] });
+    const h = EmbedSubs.run('http://p/movie/dl', v, () => {}, ad());
+    await wait(120);
+    const kept = v.children.map(c => c.track.mode).join() + '|' + download.mode;
+    h.cancel();
+    // A download from an earlier movie (switched off and left out of every list) doesn't count.
+    files['dl2'] = new Uint8Array(64);
+    const w = makeVideo({ currentTime: 0, textTracks: [old] });
+    const hw = EmbedSubs.run('http://p/movie/dl2', w, () => {}, ad());
+    await wait(120);
+    const auto = w.children.map(c => c.track.mode).join();
+    hw.cancel(); delete ctx.Subs;
+    ok('automatic subtitles leave a downloaded subtitle that is on alone', kept === 'disabled,disabled|showing' && auto === 'showing,disabled', { kept, auto });
+  }
+  {
     // A track that is showing keeps its playback window while Line up reads another window of it.
     files['both'] = new Uint8Array(64);
     const ad = Object.assign(fakeAdapter({ items: [{ id: 'a', s: 10 }, { id: 'c', s: 200 }, { id: 'b', s: 500 }] }), { lazy: true });
