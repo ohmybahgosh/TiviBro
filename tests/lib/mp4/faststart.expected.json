@@ -1,0 +1,96 @@
+{
+    "packets": [
+        {
+            "stream_index": 1,
+            "pts_time": "0.000000",
+            "duration_time": "1.000000",
+            "size": "2",
+            "pos": "2730"
+        },
+        {
+            "stream_index": 2,
+            "pts_time": "0.000000",
+            "duration_time": "2.000000",
+            "size": "2",
+            "pos": "2732"
+        },
+        {
+            "stream_index": 1,
+            "pts_time": "1.000000",
+            "duration_time": "2.000000",
+            "size": "14",
+            "pos": "2744"
+        },
+        {
+            "stream_index": 2,
+            "pts_time": "2.000000",
+            "duration_time": "2.000000",
+            "size": "7",
+            "pos": "2768"
+        },
+        {
+            "stream_index": 1,
+            "pts_time": "3.000000",
+            "duration_time": "1.500000",
+            "size": "2",
+            "pos": "2817"
+        },
+        {
+            "stream_index": 2,
+            "pts_time": "4.000000",
+            "duration_time": "3.000000",
+            "size": "2",
+            "pos": "2819"
+        },
+        {
+            "stream_index": 1,
+            "pts_time": "4.500000",
+            "duration_time": "1.500000",
+            "size": "25",
+            "pos": "2821"
+        },
+        {
+            "stream_index": 1,
+            "pts_time": "6.000000",
+            "duration_time": "2.000000",
+            "size": "2",
+            "pos": "2876"
+        },
+        {
+            "stream_index": 2,
+            "pts_time": "7.000000",
+            "duration_time": "2.000000",
+            "size": "11",
+            "pos": "2878"
+        },
+        {
+            "stream_index": 1,
+            "pts_time": "8.000000",
+            "duration_time": "2.250000",
+            "size": "11",
+            "pos": "2899"
+        }
+    ],
+    "programs": [
+
+    ],
+    "stream_groups": [
+
+    ],
+    "streams": [
+        {
+            "index": 1,
+            "codec_name": "mov_text",
+            "tags": {
+                "language": "eng"
+            }
+        },
+        {
+            "index": 2,
+            "codec_name": "mov_text",
+            "tags": {
+                "language": "nld"
+            }
+        }
+    ]
+}
