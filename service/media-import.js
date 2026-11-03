@@ -3,11 +3,15 @@
    The scan list is never changed, so a failed import can be retried with the same scan.
    Existing records keep the viewer's overlays (corrections, matches, favourites, ranges, first-seen
    time); a full scan marks files it no longer found as missing (a partial or empty one never does).
+   A missing file is hidden (not in Needs review, not an episode) but kept with everything the viewer
+   set on it, because a server can list less for a while without an error (a DLNA server re-indexing,
+   an unmounted disk, a listing cut short).  It comes back as it was, or leaves after MISSING_DAYS.
    ES5 / Node 0.12. */
 'use strict';
 var M = require('./media-catalog'), Corrections = require('./media-corrections');
 var SCAN_FIELDS = ['file', 'title', 'year', 'size', 'ext', 'info', 'path', 'url', 'etag', 'modified', 'ancestors', 'server'];
-var OWN = { id: 1, handle: 1, sourceId: 1, kind: 1, classification: 1, override: 1, showOverride: 1, groupKey: 1, showId: 1, episodeIds: 1, availability: 1, addedAt: 1 };
+var OWN = { id: 1, handle: 1, sourceId: 1, kind: 1, classification: 1, override: 1, showOverride: 1, groupKey: 1, showId: 1, episodeIds: 1, availability: 1, addedAt: 1, missingSince: 1 };
+var MISSING_DAYS = 30;
 SCAN_FIELDS.forEach(function (k) { OWN[k] = 1; });
 
 function compactEvidence(c) {
@@ -107,8 +111,9 @@ function plan(c, ctx, scan, job, input, entries, rules, count, done) {
   if (!scan.partial && count) {
     shape.extra = [M.headName(job.sourceId)].concat(Object.keys(ctx.shows).filter(function (sid) { return (ctx.shows[sid].sourceIds || []).indexOf(job.sourceId) >= 0; }));
     shape.untouched = function (name, f) {
-      if (f.sourceId !== job.sourceId || input[f.id] || f.availability === 'missing') return f;
-      var r = M.copy(f); r.availability = 'missing'; return r;
+      if (f.sourceId !== job.sourceId || input[f.id]) return f;
+      if (f.availability === 'missing' && f.missingSince) return job.now - f.missingSince > MISSING_DAYS * 86400000 ? null : f;
+      var r = M.copy(f); r.availability = 'missing'; r.missingSince = job.now; return r;
     };
   }
   entries = null;
