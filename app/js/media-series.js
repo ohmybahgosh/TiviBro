@@ -286,7 +286,7 @@ var MediaSeries = (function () {
       options.push({label:'Back',action:back}); UI.menu(r.metadata && r.metadata.title || r.title,options,back);
     });
   }
-  function open() { page('TV shows',{kind:'show',limit:60},show,Media.restore); }
+  function open() { page('TV shows',MediaStore.preferences().favoritesInLists===false?{kind:'show',favourite:false,limit:60}:{kind:'show',limit:60},show,Media.restore); }
   function locate(item,back){
     page('Choose replacement file',{kind:'files',availableOnly:true,limit:60},function(replacement){
       request('edit',{operation:'relinkFile',handle:item.handle,target:replacement.handle,expectedRevision:item.revision,preview:true},function(preview){

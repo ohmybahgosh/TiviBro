@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Favorites only in Favorites, if you like.**  **Settings > My media > Favorites also in lists** (on by default).  Turn it off and a favorite movie or show is shown only in **Favorites**, not again in **Movies** or **TV shows**.
 - **My media opens on the first item on screen.**  It used to jump straight to the **Movies** shelf, past **Continue watching** and **Favorites**.  It now starts on the top shelf that has something, and stays put once you press a button.
 - **Deleted files leave My media.**  A movie or episode you deleted from your server no longer waits in **Needs review** as a missing file: after a complete rescan it is gone from My media.  TiviBro keeps it out of sight for 30 days in case the server only listed it out for a while (a media server rebuilding its list, a disk that wasn't connected), so a file that comes back keeps its details, favorite and watched state.  A scan that couldn't read every folder, or found nothing at all, changes nothing.
 - **Restore points and draft history move to the TV's big storage.**  They were kept in the browser's own storage, which on LG TVs sits on the small partition webOS itself uses (720 MB on a C2, two thirds full), and a big playlist's 45 restore points can take many MB.  With the network helper running they now live with the playlists and guide on app storage, and older ones move over the first time they're read.

@@ -414,7 +414,7 @@ Use **Left** and **Right** to move between movies, and **Up** and **Down** to mo
 
 **Movies and TV shows.**  A new source finds both.  A source added before alpha 61 stays movies only until you open it in **Settings > My media** and set **Content** to **Movies and TV shows** (or **TV shows only**), then rescan.
 
-Shows open into seasons and episodes.  **Red (Options)** has **TV shows** and, when something needs a look, **Needs review**.  **Favorites** shows your favourite movies and shows; they stay in the **Movies** and **TV shows** lists too.
+Shows open into seasons and episodes.  **Red (Options)** has **TV shows** and, when something needs a look, **Needs review**.  **Favorites** shows your favourite movies and shows; they stay in the **Movies** and **TV shows** lists too, unless you turn off **Favorites also in lists** in **Settings > My media**.
 
 Name folders and files like this, and the rest takes care of itself:
 
@@ -820,6 +820,7 @@ Your own movie and TV show sources and their preferences.  The [My media](#my-me
 | **Add TMDB API token** | Not set | Under **Preferences**.  Your own TMDB API key or Read Access Token, the same one as under [Settings: Guide](#settings-guide).  Enter it on the TV, paste it in the phone app or the web editor.  Once saved the row reads **TMDB API token saved** (select it to replace it), with **Test TMDB token** and **Remove TMDB token** (saved movie details stay). |
 | **Sort movies by** | **Name (A–Z)** | Name, release date (newest first), or date added (newest first).  Movies and Favorites follow this choice; Continue watching stays ordered by recent playback.  Rescans preserve the date first added. |
 | **Sort TV shows by** | **Name (A–Z)** | Name, first aired (newest first), or date added (newest first).  TV shows and favorite shows follow it, on the TV and in the phone app; Continue watching stays ordered by recent playback. |
+| **Favorites also in lists** | **On** | On: a favorite movie or show is in **Favorites** and also in **Movies** or **TV shows**.  Off: it is only in **Favorites**. |
 | **Metadata language** | **English** | Shared by the TV app and web editor.  Changing it refreshes saved movie and show matches in the selected language.  Only missing translated fields fall back to English, identified beside the details.  If a request fails, the previous details remain. |
 | *(each source)* | | Under **Media sources**, with how many movies and episode files it has.  **Content** (Movies only, Movies and TV shows, TV shows only), rescan, pause or restart a scan, fetch details, or remove the source. |
 

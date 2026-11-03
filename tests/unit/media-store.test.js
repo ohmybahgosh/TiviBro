@@ -107,6 +107,15 @@ const titles = l => Array.from(l).map(m => m.title);
   ok('clearing favorite and resume empties the matching shelves', shelfRestart.sections(ds)[0].movies.length === 0 && shelfRestart.sections(ds)[1].movies.length === 0);
   ok('removing favorite returns the movie to Movies', shelfRestart.sections(ds)[2].movies[0].id === mid);
   ok('source filter applies to every section', shelfRestart.sections('missing').every(s => !s.movies.length));
+  ok('favorites also in Movies is on by default', shelfRestart.preferences().favoritesInLists === true);
+  shelfRestart.toggleFavorite(mid); shelfRestart.preferences({ favoritesInLists: false });
+  ok('with it off, a favorite leaves Movies and stays in Favorites', !shelfRestart.sections(ds)[2].movies.some(m => m.id === mid) && shelfRestart.sections(ds)[1].movies[0].id === mid);
+  ok('the choice survives a restart', world(full).M.preferences().favoritesInLists === false);
+  shelfRestart.preferences({ language: 'de' });
+  ok('other preference changes keep it off', shelfRestart.preferences().favoritesInLists === false);
+  shelfRestart.preferences({ favoritesInLists: true });
+  ok('turning it on returns favorites to Movies', shelfRestart.sections(ds)[2].movies.some(m => m.id === mid));
+  shelfRestart.toggleFavorite(mid);
 
   let clock = 1000;
   const sortingWorld = world(null, () => clock), sorting = sortingWorld.M, sortSource = sorting.addSource({ type: 'dlna', name: 'Mock', control: 'http://mock/sort' });

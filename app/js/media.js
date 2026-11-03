@@ -29,7 +29,7 @@ var Media = (function () {
   function why(e) { return (e && e.message) || 'That did not work.'; }
 
   /* ---------- poster shelves ---------- */
-  var seriesCards = [], reviewCards = [], continuingShows = [], favouriteShows = [], seriesLoading = false;
+  var seriesCards = [], reviewCards = [], continuingShows = [], favouriteShows = [], seriesLoading = false, seriesAgain = false;
   var shelves = [], shelfAt = 2, shelfPos = {}, shelfViews = [], posterQueue = [], posterBusy = 0;
   // Opening My media focuses the first item on screen; shelves that fill in later (shows and episodes come
   // from the helper) still move it there, until the viewer presses a key.
@@ -318,6 +318,7 @@ var Media = (function () {
   function updatePreferences(next) {
     var result = MediaStore.preferences(next);
     if (next && next.language) refreshMetadata().catch(function (e) { U.toast('Language saved.  Movie details could not be refreshed: ' + why(e), 6000); });
+    if (next && typeof next.favoritesInLists === 'boolean') refreshSeries();
     refresh(); return result;
   }
   // The phone app's Fetch details for one source (it asks first on the phone).
@@ -595,14 +596,16 @@ var Media = (function () {
     built = true;
   }
   function refreshSeries() {
-    if (seriesLoading) return; seriesLoading = true;
-    Promise.all([ask('library/query',{kind:'show',limit:60},30000),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),ask('library/query',{kind:'show',favourite:true,limit:60},30000)]).then(function (results) {
+    if (seriesLoading) { seriesAgain = true; return; }   // asked again mid-load (a setting changed): load once more after
+    seriesLoading = true; seriesAgain = false;
+    Promise.all([ask('library/query',MediaStore.preferences().favoritesInLists?{kind:'show',limit:60}:{kind:'show',favourite:false,limit:60},30000),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),ask('library/query',{kind:'show',favourite:true,limit:60},30000)]).then(function (results) {
       seriesCards = (results[0].items || []).map(function (r) { r.id = r.handle; return r; });
       reviewCards = (results[1].items || []).map(function (r) { r.id = r.handle; return r; });
       continuingShows = (results[2].items || []).map(function(r){r.id=r.handle;return r;});
       favouriteShows=(results[3].items||[]).map(function(r){r.id=r.handle;return r;});
       seriesLoading = false; refresh();
-    },function () { seriesLoading = false; });
+      if (seriesAgain) refreshSeries();
+    },function () { seriesLoading = false; if (seriesAgain) refreshSeries(); });
   }
   function open(keepState) {
     playToken++;

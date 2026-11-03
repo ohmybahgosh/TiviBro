@@ -1,5 +1,7 @@
-/* Opening My media focuses the first item on screen (the top shelf that has something), keeps doing so
-   while TV shows and episodes arrive from the helper, and stops once the viewer moves.  Synthetic data. */
+/* My media shelves.  Opening focuses the first item on screen (the top shelf that has something), keeps
+   doing so while TV shows and episodes arrive from the helper, and stops once the viewer presses a key.
+   With Favorites also in lists off, the TV shows shelf asks the helper for shows that aren't favorites.
+   Synthetic data. */
 'use strict';
 const fs = require('fs'), vm = require('vm'), assert = require('assert');
 function el(tag, cls, text) {
@@ -12,16 +14,16 @@ function el(tag, cls, text) {
 }
 const ids = { viewMedia: el('div'), mediaShelfStage: el('div'), mediaItems: el('div'), mediaInfo: el('div') };
 const movie = (id, title) => ({ id, src: 's', title });
-let lib = [], favorites = {}, continuing = [], handler = null;
+let lib = [], favorites = {}, continuing = [], handler = null, prefs = { language: 'en', sort: 'name', showSort: 'name', favoritesInLists: true }, showQueries = [];
 const c = { Promise, setTimeout, clearTimeout, console, document: { body: el('body'), hidden: false },
   Net: { port: 1, ctlHeaders: h => h },
   U: { $: id => ids[id], el, toast() {} },
   UI: { setHandler: h => { handler = h; }, hints() {}, pointer: false },
   Views: { tabBar() {} }, MediaSeries: new Proxy({}, { get: () => function () {} }),
   MediaStore: { load: () => Promise.resolve(), sources: () => [{ id: 's', name: 'Server' }], source: () => ({ id: 's', name: 'Server' }), resume: () => null,
-    isFavorite: id => !!favorites[id], preferences: () => ({ language: 'en', sort: 'name', showSort: 'name' }),
+    isFavorite: id => !!favorites[id], preferences: n => { if (n) Object.assign(prefs, n); return Object.assign({}, prefs); },
     sections: () => [{ id: 'continue', title: 'Continue watching', movies: [] }, { id: 'favorites', title: 'Favorites', movies: lib.filter(m => favorites[m.id]) }, { id: 'all', title: 'Movies', movies: lib.slice() }] },
-  fetch: (url, opts) => Promise.resolve({ json: () => Promise.resolve(/library\/continue$/.test(url) ? { items: continuing.slice() } : { items: [] }) })
+  fetch: (url, opts) => { const q = JSON.parse(opts.body); if (/library\/query$/.test(url) && q.kind === 'show' && q.favourite !== true) showQueries.push(q); return Promise.resolve({ json: () => Promise.resolve(/library\/continue$/.test(url) ? { items: continuing.slice() } : { items: [] }) }); }
 };
 vm.createContext(c); vm.runInContext(fs.readFileSync('app/js/media.js', 'utf8'), c);
 const settle = () => new Promise(r => setTimeout(r, 20));
@@ -50,5 +52,11 @@ const focused = () => { for (const shelf of ids.mediaShelfStage.children) for (c
 
   continuing = []; favorites = {}; c.Media.open(); await settle();
   assert.equal(focused(), 'Movies: Alpha', 'with only movies, the first movie');
-  console.log('PASS My media opens on the first item on screen and keeps the place once the viewer moves');
+
+  assert(showQueries.length && showQueries.every(q => q.favourite === undefined), 'by default the TV shows shelf includes favorites');
+  showQueries = []; c.Media.updatePreferences({ favoritesInLists: false }); await settle();
+  assert(showQueries.length && showQueries.every(q => q.favourite === false), 'with Favorites also in lists off, favorite shows leave the TV shows shelf at once');
+  showQueries = []; c.Media.refreshShows(); c.Media.updatePreferences({ favoritesInLists: true }); await settle();
+  assert(showQueries.length >= 2 && showQueries[showQueries.length - 1].favourite === undefined, 'a change made while shows are loading is not lost: they load again');
+  console.log('PASS My media opens on the first item on screen, keeps the place once the viewer moves, and favorite shows can leave TV shows');
 })().catch(e => { console.error(e); process.exitCode = 1; });
