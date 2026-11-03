@@ -6,12 +6,13 @@ let fail = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  ' + JSON.stringify(x) : '')); if (!c) fail++; };
 
 const files = {};                 // name -> Uint8Array
-let requestUrls = [], aborted = 0, pending = false, redirect = '', active = 0, maxActive = 0;
+let requestUrls = [], requestRanges = [], logs = [], aborted = 0, pending = false, redirect = '', active = 0, maxActive = 0;
 class FakeXHR {
   open(method, url) { this.url = url; requestUrls.push(url); }
   setRequestHeader(k, v) { this.headers = this.headers || {}; this.headers[k] = v; }
   getResponseHeader() { return this.contentRange; }
   send() {
+    requestRanges.push(this.headers.Range);
     if (pending) return;
     active++; maxActive = Math.max(maxActive, active);
     const name = /\/([^/?]+)(?:\?.*)?$/.exec(this.url)[1], data = files[name];
@@ -45,14 +46,17 @@ function makeVideo(extra) {
 const ctx = {
   console, Promise, setTimeout, clearTimeout, Date, XMLHttpRequest: FakeXHR,
   Net: { wrap: u => u },
-  Log: { debug() {}, warn() {}, info() {} },
+  Log: { debug: (t, m) => logs.push(m), warn: (t, m) => logs.push(m), info() {} },
   document: { createElement: tag => (tag === 'track' ? makeTrackElement() : { textContent: '', className: '' }) },
   VTTCue: function (start, end, text) { this.startTime = start; this.endTime = end; this.text = text; }
 };
 ctx.window = ctx;
 vm.createContext(ctx);
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/util.js'), 'utf8') + '\nthis.U = U;', ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/embedsubs.js'), 'utf8') + '\nthis.EmbedSubs = EmbedSubs;', ctx);
-const EmbedSubs = ctx.EmbedSubs;
+vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/mkvsubs.js'), 'utf8') + '\nthis.MkvSubs = MkvSubs;', ctx);
+const EmbedSubs = ctx.EmbedSubs, MkvSubs = ctx.MkvSubs;
+const { buildMkv } = require('../lib/mkv-fixture');
 
 // A fake format: one English track; candidates are named work items with cue times.
 function fakeAdapter(opts) {
@@ -78,7 +82,7 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
 (async () => {
   // 1. Session resolution: one head read, the video starts on the response URL.
   {
-    requestUrls = []; redirect = 'http://cdn/session/f1';
+    requestUrls = []; requestRanges = []; redirect = 'http://cdn/session/f1';
     const video = makeVideo(), resolved = [];
     const h = EmbedSubs.run('http://p/movie/f1', video, u => resolved.push(u), fakeAdapter());
     await wait(40);
@@ -86,8 +90,9 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     const t = video.children[0] && video.children[0].track;
     ok('head read happens once and resolves the video with the responseURL',
       resolved.length === 1 && resolved[0] === 'http://cdn/session/f1' && requestUrls[0] === 'http://p/movie/f1' &&
-      requestUrls.slice(1).every(u => u === 'http://cdn/session/f1') && t && t.cues.length === 1 && t.cues[0].text === 'line a',
-      { resolved, requestUrls });
+      requestUrls.slice(1).every(u => u === 'http://cdn/session/f1') && requestRanges.filter(r => r === 'bytes=0-15').length === 1 &&
+      t && t.cues.length === 1 && t.cues[0].text === 'line a',
+      { resolved, requestUrls, requestRanges });
     h.cancel();
   }
   // 2. Work items: nearest first, one request at a time, only while the playback buffer holds.
@@ -137,7 +142,8 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
   {
     const parent = { kids: [], appendChild(el) { el.parentNode = this; this.kids.push(el); }, removeChild(el) { this.kids.splice(this.kids.indexOf(el), 1); } };
     const video = makeVideo({ parentNode: parent, style: {}, classList: { toggle() {}, remove() {} }, textTracks: [] });
-    video.textTracks.addEventListener = () => {}; video.textTracks.removeEventListener = () => {};
+    const tl = video.textTracks.listeners = [];
+    video.textTracks.addEventListener = (t, f) => tl.push(f); video.textTracks.removeEventListener = (t, f) => tl.splice(tl.indexOf(f), 1);
     let open = false;
     const ad = fakeAdapter({ items: [{ id: 'a', s: 1 }, { id: 'later', s: 9 }] });
     const all = ad.candidates;
@@ -152,8 +158,19 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     pending = false;
     const left = Object.keys(video.listeners).filter(k => video.listeners[k].length);
     ok('cancel removes tracks, overlay and listeners and aborts the request',
-      hadTrack && hadOverlay && aborted === 1 && video.children.length === 0 && parent.kids.length === 0 && left.length === 0 && video._mkvSubsState === '',
-      { hadTrack, hadOverlay, kids: video.children.length, overlay: parent.kids.length, left, aborted });
+      hadTrack && hadOverlay && aborted === 1 && video.children.length === 0 && parent.kids.length === 0 && left.length === 0 && tl.length === 0 && video._mkvSubsState === '',
+      { hadTrack, hadOverlay, kids: video.children.length, overlay: parent.kids.length, left, trackListeners: tl.length, aborted });
+  }
+  // 6. MKV: stopping playback as the video starts (inside onResolved) reads nothing more and logs nothing.
+  {
+    files['c.mkv'] = buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true });
+    requestRanges = []; logs = [];
+    const video = makeVideo();
+    let h = null;
+    h = MkvSubs.extract('http://p/movie/c.mkv', video, () => { h.cancel(); });
+    await wait(60);
+    ok('cancelling from onResolved stops before the Cues read, silently',
+      requestRanges.length === 1 && logs.length === 0 && video.children.length === 0, { requestRanges, logs });
   }
   if (fail) { console.log(fail + ' embedsubs test(s) failed'); process.exit(1); }
   console.log('all embedsubs tests passed');

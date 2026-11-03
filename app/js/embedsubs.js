@@ -12,12 +12,13 @@
      id, headBytes                  name for logs, size of the first (session-resolving) read
      startupDelayMs                 optional delay before the first read (tests, diagnostics)
      reuseSession                   a cached index may start the video with no new read
-     discover(head, range, rec)     -> Promise of the format's index, or null (no usable tracks)
+     discover(head, range, rec, alive) -> Promise of the format's index, or null (no usable tracks)
      describe(index)                -> [{ label, srclang }] in attach order
      candidates(rec, now)           -> ordered work items { id, keys? } not yet fetched, near now
      complete(rec, now)             -> true when nothing is left anywhere in the file
-     read(rec, item, range)         -> Promise of [{ track, s, e, text }], track = index into describe()
-   range(start, end, metadata) reads bytes [start, end]; metadata reads skip the buffer wait. */
+     read(rec, item, range, alive)  -> Promise of [{ track, s, e, text }], track = index into describe()
+   range(start, end, metadata) reads bytes [start, end]; metadata reads skip the buffer wait.  alive()
+   is false once cancelled: check it before parsing a response, so a stopped player costs no work. */
 var EmbedSubs = (function () {
   'use strict';
 
@@ -147,6 +148,7 @@ var EmbedSubs = (function () {
       });
     }
     function range(start, end, metadata) { return fetchRange(wrapped, start, end, metadata); }
+    function alive() { return !cancelled; }
     function onWaiting() {
       if (activeRequest) { activeRequest.yieldToPlayback = true; activeRequest.abort(); }
     }
@@ -212,7 +214,7 @@ var EmbedSubs = (function () {
         if (!items.length) { retryTimer = setTimeout(pump, Math.max(1, earliest - clock)); return; }
         busy = true;
         var item = items[0];
-        adapter.read(rec, item, function (start, end) { return fetchRange(wrapped, start, end); }).then(function (found) {
+        adapter.read(rec, item, function (start, end) { return fetchRange(wrapped, start, end); }, alive).then(function (found) {
           if (cancelled) return;
           for (var f = 0; f < found.length; f++) {
             var c = found[f];
@@ -254,7 +256,8 @@ var EmbedSubs = (function () {
       startVideo(wrapped);
       if (rec) rec.resolved = wrapped;
       if (rec && rec.done) return;
-      return adapter.discover(head, range, rec).then(function (index) {
+      if (cancelled) return;                  // stopped as the video started (inside onResolved)
+      return adapter.discover(head, range, rec, alive).then(function (index) {
         if (cancelled || !index) return;
         // Create (or reuse) this URL's cache record, then attach tracks if not already.
         if (!rec) {

@@ -420,7 +420,7 @@ var MkvSubs = (function () {
     headBytes: 262144,
     reuseSession: true,
     get startupDelayMs() { return startupDelayMs; },
-    discover: function (head, range) {
+    discover: function (head, range, rec, alive) {
       if (head.length < 4 || head[0] !== 0x1A || head[1] !== 0x45 || head[2] !== 0xDF || head[3] !== 0xA3) return Promise.resolve(null);
       var seg = findChild(head, 0, head.length, SEGMENT);
       if (!seg) return Promise.resolve(null);
@@ -442,12 +442,14 @@ var MkvSubs = (function () {
         var tcChild = findChild(head, infoChild.start, infoChild.end, TIMECODESCALE);
         if (tcChild) timecodeScale = bytesToUint(head, tcChild.start, tcChild.end);
       }
+      if (!alive()) return Promise.resolve(null);
       var cuesAbs = segmentDataStart + cuesRel;
       return range(cuesAbs, cuesAbs + 15, true).then(function (peek) {
         var id = readId(peek, 0), size = readVint(peek, id.next);
         if (id.value !== 0x1C53BB6B || size.value === null || size.value > MAX_CUES_BYTES) throw new Error('invalid Cues');
         return range(cuesAbs, cuesAbs + size.next + size.value - 1, true);
       }).then(function (cuesBuf) {
+        if (!alive()) return null;
         // The fetched range starts exactly at the Cues element itself; peel its own
         // id+size header before handing its content to readCuesForTrack, same as every
         // other reader above expects content bounds, not an element including its header.
@@ -489,7 +491,7 @@ var MkvSubs = (function () {
       var ix = rec.index;
       return clusterFetchOrder(ix.perTrackCues, now, ix.segmentDataStart).every(function (o) { return rec.fetched[o]; });
     },
-    read: function (rec, item, range) {
+    read: function (rec, item, range, alive) {
       var ix = rec.index, perTrackCues = ix.perTrackCues, off = item.id, positions = [], indexed = true;
       perTrackCues.forEach(function (t) { t.cues.forEach(function (c) {
         if (ix.segmentDataStart + c.clusterPos !== off) return;
@@ -498,6 +500,7 @@ var MkvSubs = (function () {
       }); });
       return readSparseCluster(range, off, perTrackCues.map(function (t) { return t.track.number; }), ix.timecodeScale, indexed ? positions : null).then(function (found) {
         var out = [];
+        if (!alive()) return out;
         for (var a = 0; a < perTrackCues.length; a++) {
           for (var f = 0; f < found.length; f++) {
             if (found[f].track !== perTrackCues[a].track.number) continue;
