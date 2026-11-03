@@ -42,6 +42,14 @@ tap "Edit channels"
 shot 3-editor 10
 # Back closes what is open in the editor and goes back through its pages first, then leaves it.
 for i in 1 2 3 4; do adb shell input keyevent KEYCODE_BACK; sleep 4; [ -n "$(find_text "Edit channels")" ] && break; sleep 2; [ -n "$(find_text "Edit channels")" ] && break; done
+# The emulator's Google services sometimes die under memory pressure and Android takes the app (and its
+# WebView, which uses their font provider) with them: that's the emulator, not TiviBro.  Open it again.
+if [ -z "$(find_text "Edit channels")" ] && adb logcat -d | grep -q "Killing .*$PKG.*FontsProvider"; then
+  echo "The emulator killed the app with its Google services: opening it again"; adb shell am start -W -n $PKG/.MainActivity >/dev/null; sleep 6
+  # The editor's channel list is kept for offline editing while it is open: open it once more to keep it.
+  tap "Edit channels"; sleep 15
+  for i in 1 2 3 4; do adb shell input keyevent KEYCODE_BACK; sleep 4; [ -n "$(find_text "Edit channels")" ] && break; done
+fi
 [ -n "$(find_text "Edit channels")" ] || { echo "Back did not return to the TV list"; adb exec-out screencap -p > "$OUT/fail.png"; adb logcat -d > "$OUT/logcat.txt"; grep -E "TiviBroBack|ActivityTaskManager|wm_|$PKG|FATAL" "$OUT/logcat.txt" | tail -60; exit 1; }
 echo "Back returns to the TV list"
 # The Quick Settings tile opens TiviBro on the TV (it used to do nothing: its work was cancelled as soon
