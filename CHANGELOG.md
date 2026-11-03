@@ -2,16 +2,18 @@
 
 ## Unreleased
 
+## 0.6.0 (alpha 63, 2026-11-03)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 63
+
 - **Add media from the phone.**  **Settings > My media** in the phone app has its own forms now: **Add media** lists the servers the TV finds on your network, or takes a WebDAV address and login typed on the phone.  Tap a source to rescan it, change what it holds (movies, TV shows or both), fetch its details or remove it, and paste your TMDB token there too.  Logins only travel sealed.
 - **Sort TV shows by.**  Next to **Sort movies by** in **Settings > My media** (on the TV, in the phone app and in the web editor): name, first aired or date added.
 - **Movies on now by genre.**  Under **On now** and **Starting soon** come the same movies by genre (Action, Comedy, Family…), on the TV and in the phone app's On now tab.
 - **No more "My media is for movies only" note.**  Scans only mention the trailers and extras they leave out, as episodes go to TV shows.
 
-## 0.6.0 (alpha 62, 2026-11-02)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 62
+### In alpha 62
 
 - **Your playlist logins are private to TiviBro.**  The files where the network helper keeps playlists, movie and show lists and guides were readable by other apps on the TV: their folder is shared into other apps' sandboxes (YouTube, Netflix, the browser and more).  They are now readable by TiviBro only, and files from earlier versions are locked down when TiviBro starts.
 - **The guide survives TiviBro updates.**  It was kept in the helper's own folder, which every update replaces, so each update downloaded and read the whole guide again.  It now sits with the playlists on the TV's storage.
