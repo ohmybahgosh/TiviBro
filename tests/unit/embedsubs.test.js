@@ -265,19 +265,96 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     ok('LRU keeps 3 files', keptReads === 0 && kept.children.length === 1 && requestRanges.length > 0, { keptReads, after: requestRanges.length });
   }
   {
+    // An item's lines are kept whole or not at all, and an item whose lines weren't kept is read
+    // again after a seek (MKV too): the cap must not lose subtitles for the rest of the play.
     files['big'] = new Uint8Array(64);
-    const huge = 'x'.repeat(1500000);
     const ad = fakeAdapter({ items: [{ id: 'a', s: 1 }, { id: 'b', s: 3 }] });
-    ad.read = (rec, item, range) => range(0, 3).then(() => [{ track: 0, s: item.s, e: item.s + 1, text: huge }]);
+    ad.read = (rec, item, range) => { ad.reads.push(item.id); return range(0, 3).then(() => item.id === 'a'
+      ? [{ track: 0, s: 1, e: 2, text: 'a'.repeat(1500000) }, { track: 0, s: 2, e: 2.5, text: 'A'.repeat(1000000) }]
+      : [{ track: 0, s: 3, e: 4, text: 'b'.repeat(1000000) }]); };
     const v = makeVideo();
     const h = EmbedSubs.run('http://p/movie/big', v, () => {}, ad);
     await wait(60);
     const live = v.children[0] ? v.children[0].track.cues.length : -1;
     h.cancel();
     const v2 = makeVideo();
-    EmbedSubs.run('http://p/movie/big', v2, null, ad);
-    ok('cue text cap stops retention at 2000000 chars', live === 2 && v2.children[0].track.cues.length === 1,
-      { live, replayed: v2.children[0] && v2.children[0].track.cues.length });
+    const h2 = EmbedSubs.run('http://p/movie/big', v2, null, ad);
+    const replayed = v2.children[0] ? v2.children[0].track.cues.length : -1;
+    await wait(60);
+    const after = v2.children[0] ? v2.children[0].track.cues.map(c => c.text[0]).sort().join('') : '';
+    ok('cue text cap keeps whole items and re-reads the rest after a seek', live === 3 && replayed === 1 && after === 'Aab' &&
+      ad.reads.join() === 'a,b,a', { live, replayed, after, reads: ad.reads });
+    h2.cancel();
+  }
+  {
+    // waiting aborts the first read before the deadline; once the deadline has passed, the buffer
+    // coming back must not open a request next to the video's.
+    files['slow2'] = new Uint8Array(64);
+    pending = true; requestRanges = [];
+    const buffered = { length: 1, start: () => 0, end: () => 1e9 };
+    const video = makeVideo({ currentTime: 0, readyState: 4, seeking: false, buffered });
+    const ad = Object.assign(fakeAdapter(), { startupDeadlineMs: 50 });
+    const h = EmbedSubs.run('http://p/movie/slow2', video, () => {}, ad);
+    await wait(20);
+    video.readyState = 2;
+    (video.listeners.waiting || []).forEach(f => f());
+    await wait(60);
+    pending = false; video.readyState = 4;
+    await wait(1200);
+    ok('no read after the startup deadline, even when a waiting retry was queued', requestRanges.length === 1 && video._mkvSubsState === 'error',
+      { requestRanges, s: video._mkvSubsState });
+    h.cancel();
+  }
+  {
+    // A timed-out reconnect of a file whose index is cached: a seek in that play stays given up
+    // (cached lines only, no reads); the next engine start tries again.
+    files['slow3'] = new Uint8Array(64);
+    let failB = true;              // b fails (and backs off) in the first play, so a seek would have something to read
+    const ad = Object.assign(fakeAdapter({ items: [{ id: 'a', s: 1 }, { id: 'b', s: 500 }], failRead: it => failB && it.id === 'b' }),
+      { reuseSession: false, startupDeadlineMs: 50 });
+    ad.complete = () => false;
+    const h1 = EmbedSubs.run('http://p/movie/slow3', makeVideo({ currentTime: 0 }), () => {}, ad);
+    await wait(40); h1.cancel(); failB = false;
+    pending = true;
+    const v2 = makeVideo({ currentTime: 0 });
+    const h2 = EmbedSubs.run('http://p/movie/slow3', v2, () => {}, ad);
+    await wait(100);
+    const s2 = v2._mkvSubsState; h2.cancel();
+    pending = false; requestRanges = [];
+    const v3 = makeVideo({ currentTime: 0 });
+    const h3 = EmbedSubs.run('http://p/movie/slow3', v3, null, ad);
+    await wait(40);
+    const seekReads = requestRanges.length, s3 = v3._mkvSubsState, cues3 = v3.children[0] ? v3.children[0].track.cues.length : -1;
+    h3.cancel();
+    const v4 = makeVideo({ currentTime: 0 });
+    const h4 = EmbedSubs.run('http://p/movie/slow3', v4, () => {}, ad);
+    await wait(40);
+    ok('timed-out reconnect with a cached index stays given up for seeks, retried on the next start',
+      s2 === 'error' && s3 === 'error' && seekReads === 0 && cues3 === 1 && v4._mkvSubsState === 'ready' && requestRanges.length > 0,
+      { s2, s3, seekReads, cues3, s4: v4._mkvSubsState });
+    h4.cancel();
+  }
+  {
+    // The link now serves another file with no usable subtitles: blank overlay, unavailable, remembered.
+    files['f10'] = new Uint8Array(64);
+    let unsupported = false;
+    const ad = Object.assign(fakeAdapter({ discover: () => unsupported ? null : { items: [{ id: 'a', s: 0 }] } }), { reuseSession: false });
+    ad.complete = () => false;
+    const h1 = EmbedSubs.run('http://p/movie/f10', makeVideo({ currentTime: 0 }), () => {}, ad);
+    await wait(40); h1.cancel();
+    files['f10'] = new Uint8Array(128); unsupported = true;
+    const v = makeVideo({ currentTime: 0, parentNode: { appendChild(el) { el.parentNode = this; }, removeChild() {} }, style: {} });
+    v.textTracks = { length: 0 };
+    const h2 = EmbedSubs.run('http://p/movie/f10', v, () => {}, ad);
+    await wait(40);
+    requestRanges = [];
+    const v3 = makeVideo({ currentTime: 0 });
+    EmbedSubs.run('http://p/movie/f10', v3, null, ad);
+    await wait(40);
+    ok('changed size with an unsupported replacement settles unavailable, remembered for seeks',
+      v._mkvSubsState === 'unavailable' && v.children.length === 0 && v3._mkvSubsState === 'unavailable' && requestRanges.length === 0,
+      { s: v._mkvSubsState, tracks: v.children.length, s3: v3._mkvSubsState, requestRanges });
+    h2.cancel();
   }
   {
     // mkv-fixture writes one byte per character: hand it the UTF-8 bytes as a binary string.

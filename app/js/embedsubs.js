@@ -154,7 +154,7 @@ var EmbedSubs = (function () {
       return new Promise(function (resolve, reject) {
         rejectGate = reject;
         function check() {
-          if (cancelled) { rejectGate = null; reject(new Error('cancelled')); }
+          if (cancelled || timedOut) { rejectGate = null; reject(new Error('cancelled')); }
           else if (hasBuffer()) { rejectGate = null; resolve(); }
           else gateTimer = setTimeout(check, 1000);
         }
@@ -165,7 +165,7 @@ var EmbedSubs = (function () {
     // Reject a server ignoring Range before it downloads the whole movie.
     function fetchRange(unused, start, end, metadata) {
       return (metadata ? Promise.resolve() : waitForBuffer()).then(function () {
-        if (cancelled) throw new Error('cancelled');
+        if (cancelled || timedOut) throw new Error('cancelled');
         return new Promise(function (resolve, reject) {
           var xhr = new XMLHttpRequest(), settled = false, expected = 0, total = NaN;
           function finish(err, data) {
@@ -195,7 +195,7 @@ var EmbedSubs = (function () {
           xhr.send();
         });
       }).catch(function (e) {
-        if (!cancelled && e.message === 'buffer low') return waitForBuffer().then(function () { return fetchRange(unused, start, end, metadata); });
+        if (!cancelled && !timedOut && e.message === 'buffer low') return waitForBuffer().then(function () { return fetchRange(unused, start, end, metadata); });
         throw e;
       });
     }
@@ -215,6 +215,11 @@ var EmbedSubs = (function () {
     // A file found to have no usable subtitles is remembered for seeks and reconnects (no more
     // header reads); a fresh start of the file looks again.
     if (rec && rec.none && onResolved) rec = subCache[url] = null;
+    // A play that gave up (startup deadline, failed first read) stays given up for its seeks; the
+    // next engine start tries again.
+    if (rec && rec.failed && onResolved) delete rec.failed;
+    // Items whose lines didn't fit the text cap are read again in this play.
+    if (rec && rec.unretained) { for (var uk in rec.unretained) delete rec.fetched[uk]; rec.unretained = null; rec.done = false; }
     if (!onResolved && rec && rec.resolved) wrapped = rec.resolved;
 
     function ensureTracks(trackMeta) {
@@ -244,6 +249,7 @@ var EmbedSubs = (function () {
     if (rec && rec.tracks.length) { ensureTracks(rec.tracks); replayCached(rec); }
     if (rec && rec.tracks.length) { video._mkvSubsState = 'ready'; paint(); }
     if (rec && rec.none) video._mkvSubsState = shown(rec.none);
+    if (rec && rec.failed) { video._mkvSubsState = 'error'; return cancelHandle(); }   // cached lines only, no reads
     if (rec && rec.done && !onResolved) return cancelHandle();   // fully cached: nothing left to fetch
 
     var timer = setTimeout(function () { if (!cancelled) runExtraction(); }, adapter.startupDelayMs || 0);
@@ -269,16 +275,23 @@ var EmbedSubs = (function () {
         var item = items[0];
         adapter.read(rec, item, function (start, end) { return fetchRange(wrapped, start, end); }, alive).then(function (found) {
           if (cancelled) return;
-          for (var f = 0; f < found.length; f++) {
+          // An item's lines are kept for replays whole or not at all, so one that didn't fit the text
+          // cap can be read again after a seek without doubling the lines that were kept.
+          var chars = 0;
+          for (var f = 0; f < found.length; f++) chars += found[f].text.length;
+          var keep = (rec.textChars || 0) + chars <= MAX_TEXT_CHARS;
+          if (keep) rec.textChars = (rec.textChars || 0) + chars;
+          for (f = 0; f < found.length; f++) {
             var c = found[f];
             liveTracks[c.track].addCue(new VTTCue(c.s, c.e, c.text));
-            if ((rec.textChars || 0) + c.text.length > MAX_TEXT_CHARS) continue;
-            rec.textChars = (rec.textChars || 0) + c.text.length;
-            rec.cues[c.track].push({ s: c.s, e: c.e, text: c.text });
+            if (keep) rec.cues[c.track].push({ s: c.s, e: c.e, text: c.text });
           }
           if (typeof Subs !== 'undefined' && Subs.fresh) liveTracks.forEach(function (t) { Subs.fresh(t); });
           var keys = item.keys || [item.id];
-          for (var k = 0; k < keys.length; k++) rec.fetched[keys[k]] = true;
+          for (var k = 0; k < keys.length; k++) {
+            rec.fetched[keys[k]] = true;
+            if (!keep) (rec.unretained = rec.unretained || {})[keys[k]] = true;
+          }
           delete failures[item.id]; delete retryAt[item.id];
           video._mkvSubsState = 'ready';
           busy = false;
@@ -315,7 +328,9 @@ var EmbedSubs = (function () {
       timedOut = true;
       Log.warn(tag, 'Subtitles gave up: the file took too long to answer');
       startVideo(url);
-      video._mkvSubsState = 'error'; remember('error');
+      video._mkvSubsState = 'error'; giveUp();
+      clearTimeout(gateTimer);
+      if (rejectGate) { rejectGate(new Error('cancelled')); rejectGate = null; }
       if (activeRequest) activeRequest.abort();
     }, adapter.startupDeadlineMs);
     fetchRange(wrapped, 0, adapter.headBytes - 1, true).then(function (head) {
@@ -323,7 +338,10 @@ var EmbedSubs = (function () {
       if (cancelled || timedOut) return;
       startVideo(wrapped);
       // The same link now serving a different file (a different size) starts over.
-      if (rec && rec.size !== undefined && isFinite(head.total) && head.total !== rec.size) { dropTracks(); rec = subCache[url] = null; }
+      if (rec && rec.size !== undefined && isFinite(head.total) && head.total !== rec.size) {
+        dropTracks(); rec = subCache[url] = null;
+        video._mkvSubsState = 'discovering'; paint();          // the old file's lines leave the screen
+      }
       if (rec) rec.resolved = wrapped;
       if (rec && rec.done) return;
       if (cancelled) return;                  // stopped as the video started (inside onResolved)
@@ -354,7 +372,7 @@ var EmbedSubs = (function () {
       clearTimeout(deadline);
       if (timedOut) return;
       startVideo(url);
-      if (!cancelled) { video._mkvSubsState = 'error'; remember('error'); }
+      if (!cancelled) { video._mkvSubsState = 'error'; giveUp(); }
       if (typeof Log !== 'undefined' && Log.debug) Log.debug(tag, 'giving up: ' + (e && e.message));
     });
     }
@@ -362,6 +380,9 @@ var EmbedSubs = (function () {
     function remember(state, size) {
       if (!subCache[url]) { subCache[url] = { tracks: [], cues: [], fetched: {}, done: true, none: state, resolved: wrapped, size: size }; touch(url); }
     }
+    // This play is on the original link, not the session the cached index was read through: no reads
+    // until the next engine start.
+    function giveUp() { if (subCache[url]) subCache[url].failed = true; else remember('error'); }
     function dropTracks() {
       for (var i = 0; i < addedEls.length; i++) { try { video.removeChild(addedEls[i]); } catch (e) {} }
       addedEls.length = 0; liveTracks.length = 0;
