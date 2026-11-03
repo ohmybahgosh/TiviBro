@@ -231,11 +231,21 @@ sealed class EditorState {
 
 /** Signed calls to a paired TV.  Every answer must carry the TV's signature. */
 class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
-    fun call(method: String, path: String, body: JSONObject? = null, time: Long? = null): JSONObject = call(method, path, body, time, Crypto.nonce(), null)
+    companion object {
+        /** How far each TV's clock is from this phone's, learnt from the TV's answer when they drift apart
+         *  (a TV whose clock never syncs, issue #32), so requests keep working without pairing again. */
+        val skew = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    }
+    private fun now() = System.currentTimeMillis() + (skew[tv.id] ?: tv.offset)
+    /** Once more with the TV's time when the TV says the clocks are too far apart. */
+    private fun <T> clocked(f: () -> T): T = try { f() } catch (e: TbException) { if (e.code != "clock") throw e; f() }
+
+    fun call(method: String, path: String, body: JSONObject? = null, time: Long? = null): JSONObject =
+        if (time != null) call(method, path, body, time, Crypto.nonce(), null) else clocked { call(method, path, body, null, Crypto.nonce(), null) }
 
     private fun call(method: String, path: String, body: JSONObject?, time: Long?, nonce: String, open: ((JSONObject) -> JSONObject)?): JSONObject {
         val data = body?.toString()?.toByteArray(Charsets.UTF_8) ?: ByteArray(0)
-        val t = time ?: (System.currentTimeMillis() + tv.offset)
+        val t = time ?: now()
         val sig = Crypto.hmacHex(tv.key, "tivibro-req-v1\n$method\n$path\n$t\n$nonce\n${Crypto.sha256Hex(data)}")
         val r = http(tv.host, tv.port, method, path, if (body != null) data else null, mapOf(
             "X-TiviBro-Phone" to tv.phoneId, "X-TiviBro-Time" to t.toString(), "X-TiviBro-Nonce" to nonce, "X-TiviBro-Sig" to sig,
@@ -250,6 +260,7 @@ class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
         // A sealed answer is opened here (errors from before the TV could open the request come back plain).
         val j = if (raw != null && open != null && raw.has("sealed")) open(raw.getJSONObject("sealed")) else raw
         if (j == null) throw TbException("The TV gave an answer TiviBro doesn't understand.", "bad")
+        if (r.status == 401 && j.optString("code") == "clock" && j.optLong("now") > 0) skew[tv.id] = j.optLong("now") - System.currentTimeMillis()
         if (r.status >= 400) throw TbException(j.optString("error", "Failed (${r.status})."), j.optString("code"))
         return j
     }
@@ -263,9 +274,11 @@ class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
         val body = JSONObject().put("what", what).put("args", args)
         if (noOpen) body.put("noOpen", true)
         if (!seal) return call("POST", "/v1/ask", body)
-        val nonce = Crypto.nonce()
-        return call("POST", "/v1/ask", JSONObject().put("sealed", Crypto.seal(body, tv.key, "req", tv.phoneId, nonce)), null, nonce) { box ->
-            Crypto.unseal(box, tv.key, "res", tv.phoneId, nonce)
+        return clocked {
+            val nonce = Crypto.nonce()
+            call("POST", "/v1/ask", JSONObject().put("sealed", Crypto.seal(body, tv.key, "req", tv.phoneId, nonce)), null, nonce) { box ->
+                Crypto.unseal(box, tv.key, "res", tv.phoneId, nonce)
+            }
         }
     }
 

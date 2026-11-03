@@ -11,7 +11,7 @@ Legend: **Have** = already in TiviBro.  **Added** = added in this pass.  **Later
 | Turn on last channel on app start | Have |
 | Autoplay channels (preview) | Have: Preview in channel list, and the Guide window |
 | Display mode (Normal / Full / Zoom / Enlarge / Reduce) | Have: Normal / Stretch / Zoom.  **Added:** per channel, with "Use this size for all channels" |
-| Apply to all channels | **Added** (Picture size menu) |
+| Apply to all channels | **Added** (Aspect menu) |
 | Video tracks | **Added:** Video quality for HLS streams (Automatic or a fixed resolution) |
 | Audio tracks | Have |
 | Closed captions / Show closed captions for all channels | **Added:** Subtitles menu, and "Subtitles on automatically" |

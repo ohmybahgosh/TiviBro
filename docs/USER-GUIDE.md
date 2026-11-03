@@ -203,10 +203,15 @@ The **Channels** screen (in the side menu when **Channels screen in the menu** i
 - **▲ ▼** or **CH + / CH −** change channel.  An info bar shows the channel, what's on now and next, and how far into the programme you are.
 - **▶** shows the full programme info.  **Yellow** jumps back to the last channel.  **Green** goes back to the TV guide.
 - **Hold OK** (or **OK > Channel guide**) lays the channel guide over the video: the group's channels with what's on now.  **OK** on another channel switches to it and keeps the channel guide open so you can keep browsing; **OK** on the channel that's already playing closes it.  **◀ ▶** change group.
-- **OK** opens the **quick menu**: Channel guide, From start (catch-up channels), Favorite, TV guide, Other versions (when the channel has them), Captions, Picture size, Sleep timer, Stream info and Reconnect.
+- **OK** opens the **quick menu**: Channel guide, From start (catch-up channels), Favorite, TV guide, Other versions (when the channel has them), Captions, Aspect, Sleep timer, Stream info and Reconnect.
 - **Closed captions**: **Captions** in the quick menu turns them on or off for every channel, like a TV's CC button (also **Settings > Playback > Closed captions**, with a caption size).  They show in fullscreen when the channel sends them, which most US channels do.  Not with the TV player (Settings > Playback > Player engine); **Stream info** says whether this channel has captions.  Pick which buttons appear under **Settings > Remote and buttons > Quick menu buttons**.
-- **Red** opens options for the channel: favorite, copy to group, other versions, watch from start, catch-up, rename, assign guide, hide, picture size and sleep timer.  **Hold OK** opens the channel guide over the video.
-- **Stream info** (quick menu) shows the channel, how much is buffered, the player in use, the picture size, the bitrate and catch-up, updating while it's open, with the buffer gauge at the top right.  Any button can open it: **Stream info and buffer** under **Settings > Remote and buttons**.  **Sleep timer** stops playback after 15 minutes to 2 hours.  **Picture** sets Normal, Stretch or Zoom for this channel, or for all of them.
+- **Red** opens options for the channel: favorite, copy to group, other versions, watch from start, catch-up, rename, assign guide, hide, aspect and sleep timer.  **Hold OK** opens the channel guide over the video.
+- **Stream info** (quick menu) shows the channel, how much is buffered, the player in use, the picture's resolution, the bitrate and catch-up, updating while it's open, with the buffer gauge at the top right.  Any button can open it: **Stream info and buffer** under **Settings > Remote and buttons**.  **Sleep timer** stops playback after 15 minutes to 2 hours.  **Aspect** sets the shape of the picture for this channel (or this movie or episode), or for all of them:
+  - *Original*: the picture's own shape.  *Fill*: stretched to fill the screen.  *Zoom*: fills the screen, edges cropped.
+  - *4:3*: shown 4:3 with bars at the sides.  *16:9*: for a 16:9 picture squashed into 4:3, which some channels send.
+  - *21:9*: a 2.35:1 film with black bars above and below fills the screen; the sides are cropped.
+  - *4:3 to 16:9*: a 4:3 picture, or a 4:3 picture with black bars at the sides, stretched out to fill a 16:9 screen.
+  - Each channel, movie and episode remembers its own choice; **Use this aspect for everything** makes it the default.  The shapes past Zoom need the picture to be scaled by TiviBro; with the TV player (Stream info says which player is in use) some TVs keep the picture as it was, and the menu says so.
 
 <p align="center"><a href="media/zap.mp4"><img src="media/zap.gif" width="100%" alt="Changing channels, info and the quick menu"></a></p>
 <p align="center"><sub><a href="media/zap.mp4">Watch the MP4</a></sub></p>
@@ -221,9 +226,9 @@ The **Channels** screen (in the side menu when **Channels screen in the menu** i
 </p>
 </details>
 
-The options menu, stream info, sleep timer and picture size:
+The options menu, stream info, sleep timer and aspect:
 
-<p align="center"><a href="media/options.mp4"><img src="media/options.gif" width="100%" alt="Options, stream info, sleep timer and picture size"></a></p>
+<p align="center"><a href="media/options.mp4"><img src="media/options.gif" width="100%" alt="Options, stream info, sleep timer and aspect"></a></p>
 <p align="center"><sub><a href="media/options.mp4">Watch the MP4</a></sub></p>
 
 <details>
@@ -232,7 +237,7 @@ The options menu, stream info, sleep timer and picture size:
   <a href="https://tivibro.app/view/#tv-options"><img src="screenshots/tv-options.png" width="49%" alt="Options (Red)"></a>
   <a href="https://tivibro.app/view/#tv-stream-info"><img src="screenshots/tv-stream-info.png" width="49%" alt="Stream info"></a>
   <a href="https://tivibro.app/view/#tv-sleep"><img src="screenshots/tv-sleep.png" width="49%" alt="Sleep timer"></a>
-  <a href="https://tivibro.app/view/#tv-picture"><img src="screenshots/tv-picture.png" width="49%" alt="Picture size"></a>
+  <a href="https://tivibro.app/view/#tv-aspect"><img src="screenshots/tv-aspect.png" width="49%" alt="Aspect"></a>
 </p>
 </details>
 
@@ -375,6 +380,11 @@ With your own free TMDB token saved (Settings > Guide > Movies in the guide, or 
 
 Which programmes are movies: the guide's own **Movie** category, a year in the title ("Bridesmaids (2011)") or "Movie:", anything 75 minutes or longer on a movie channel (HBO, Cinemax, Starz, TCM, a "Movies" group…), and other programmes 80 minutes to 4 hours long that aren't news, sport or a show.  TMDB has the last word: a movie of exactly that title (and year), and for the last kind also well known and not a TV series of the same name.  Only the programme titles (and years) go to TMDB, with your token.  Answers are kept on the TV for 30 days, so after the first day only a few titles an hour are looked up.  Turn it off with **Movie details from TMDB**, or just the group with **Show Movies on now** (Settings > Channels and groups).
 
+<p align="center">
+  <a href="https://tivibro.app/view/#tv-onnow"><img src="screenshots/tv-onnow.png" width="49%" alt="The Movies on now screen"></a>
+  <a href="https://tivibro.app/view/#tv-onnow-genre"><img src="screenshots/tv-onnow-genre.png" width="49%" alt="A genre shelf"></a>
+</p>
+
 ### My media
 
 **My media** gives your own movies a full-width poster view.  It joins the menu once you add a source in **Settings > My media > Add media**.  It has **Continue watching**, **Favorites** and **All movies** shelves.  The movie you choose shows its title and description above the shelves.  There are no automatic trailers or previews.
@@ -437,7 +447,8 @@ In **Settings > My media**, choose a saved source for **Rescan**, **Fetch movie 
 
 **Subtitles for movies and shows:** the subtitle menu (**Red** > **Subtitles** while playing) has **Find subtitles…**, which looks on [OpenSubtitles.com](https://www.opensubtitles.com) for what's playing, in your **Subtitle languages** (several at once, Latin American Spanish and Brazilian Portuguese included).  The search is filled in from the title and year, or the show, season and episode; change the title when the subtitle sites know it by another name.  Pick one from the list (the most downloaded first, with its frame rate and whether it's for the deaf and hard of hearing) and it's on.
 - It needs your own free API key: sign up at opensubtitles.com, then **Profile > API consumers > New consumer**, and paste the key in **Settings > Playback > Add your OpenSubtitles API key** (typing it from the phone app is easiest).  Without an account OpenSubtitles allows 5 downloads a day; **Sign in** with a free account for 20.  The key and login stay on the TV, out of backups.
-- **Timing** moves any subtitle a little earlier or later (0.1 s or 1 s at a time).
+- **Timing** moves any subtitle a little earlier or later (0.1 s or 1 s at a time).  **Timing > Frame rate…** fixes a subtitle made for a copy at another frame rate, which drifts further out of time as the film goes on: pick *Subtitle for 23.976 fps, video at 25 fps* and so on (23.976, 24 and 25 fps), and every line's time is scaled to match.  A subtitle that is in time, then early or late for a while, then in time again was made for another cut of the film: try another download.
+- TiviBro draws subtitle lines itself, exactly the ones whose time is now, so a line can't stay stuck on screen after Timing, Line up or a seek moved it.
 - **Line up with another track…** fixes a subtitle that drifts or starts at the wrong time by matching it to one that's already in time (a built-in one, or another download, in any language).  It finds the shift and a frame-rate difference (23.976, 24 or 25 fps) and says how much it moved.
 
 Movies use the usual seek bar and subtitle menu.  Embedded SRT, ASS/SSA and WebVTT text subtitles in MKV files can appear when the file has a usable subtitle index, including larger indexes in movies with many languages.  ASS/SSA and WebVTT show as plain text, without their custom fonts, positioning or animation.  Image subtitles such as VobSub or PGS, MP4 timed text and separate subtitle files from your server are not included yet.  **Find subtitles** can add a subtitle from OpenSubtitles even when the file has no supported embedded tracks.  **Back** hides the player controls first, then returns to the same movie.  Series, folder picking, Search and phone app browsing are not included yet.
@@ -520,7 +531,7 @@ The watchlist needs the guide to know what's on: with an XMLTV guide it sees eve
 | [**Channels and groups**](#settings-channels-and-groups) | Manage groups, sort orders, your groups first, Recent and Favorites, My teams, Movies on now, event channels, recently added, your own groups, hidden groups and channels |
 | [**Channel and group names**](#settings-channel-and-group-names) | Name clean-up rules, hiding channels with nothing on, your prefixes and suffixes, group prefixes and suffixes, previews |
 | [**Reminders and watchlist**](#settings-reminders-and-watchlist) | When reminders come up and what they do, the watchlist, and every reminder coming up, with Cancel and Cancel all |
-| [**Playback**](#settings-playback) | Buffer profile, player engine, MPEG-TS or HLS, network helper, HDR and Dolby Vision, picture size, catch-up skip steps, info panel when switching, audio, subtitles and captions, next episode |
+| [**Playback**](#settings-playback) | Buffer profile, player engine, MPEG-TS or HLS, network helper, HDR and Dolby Vision, aspect, catch-up skip steps, info panel when switching, audio, subtitles and captions, next episode |
 | [**My media**](#settings-my-media) | Add media sources, rescan, fetch details, the TMDB token, sort orders, metadata language, each source |
 | [**Remote and buttons**](#settings-remote-and-buttons) | Remap buttons in the player and lists, quick menu buttons, learn a button, button tester |
 | [**Appearance and start screen**](#settings-appearance-and-start-screen) | Start screen, OK in the guide, guide layout, catch-up marks, theme (Black and white, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin, Solarized, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai, or your own mix), accent color (twelve presets or your own from a hue and brightness), background (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), focus style, text size, panel transparency, logos, clock, channel numbers |
@@ -585,8 +596,9 @@ On a row with a choice, **◀ ▶** change it (with the Magic Remote, click the 
 Your playlists and how often their channel lists reload.  **OK** on a playlist opens its page.  The guide, names and channels of the playlist in use have their own sections: [Guide](#settings-guide), [Channel and group names](#settings-channel-and-group-names) and [Channels and groups](#settings-channels-and-groups).
 
 <p align="center">
-  <a href="https://tivibro.app/view/#tv-set-playlists"><img src="screenshots/tv-set-playlists.png" width="49%" alt="Playlists"></a>
-  <a href="https://tivibro.app/view/#tv-set-playlist"><img src="screenshots/tv-set-playlist.png" width="49%" alt="A playlist's page"></a>
+  <a href="https://tivibro.app/view/#tv-set-playlists"><img src="screenshots/tv-set-playlists.png" width="32%" alt="Playlists"></a>
+  <a href="https://tivibro.app/view/#tv-set-playlist"><img src="screenshots/tv-set-playlist.png" width="32%" alt="A playlist's page"></a>
+  <a href="https://tivibro.app/view/#tv-set-playlist-2"><img src="screenshots/tv-set-playlist-2.png" width="32%" alt="A playlist's guide settings"></a>
 </p>
 
 | Setting | Choices | What it does |
@@ -628,7 +640,10 @@ A channel that will never have a guide (a radio stream, a camera, an event slot)
 
 With public guides on, if the provider guide fails, the guide status says it is checking public guides.  Once they supply current matching listings, it says **Provider guide unavailable; using public guides.**  If they supply none, it says so instead.  If the guide TiviBro already had is still there, it says it is **using the saved guide**.  The original error stays in the guide's details.
 
-<p align="center"><a href="https://tivibro.app/view/#tv-set-playlist-2"><img src="screenshots/tv-set-playlist-2.png" width="60%" alt="A playlist's guide settings"></a></p>
+<p align="center">
+  <a href="https://tivibro.app/view/#tv-set-guide"><img src="screenshots/tv-set-guide.png" width="49%" alt="How your guide is built"></a>
+  <a href="https://tivibro.app/view/#tv-set-guide-2"><img src="screenshots/tv-set-guide-2.png" width="49%" alt="Guide settings, further down"></a>
+</p>
 
 | Setting | Choices | What it does |
 |---|---|---|
@@ -722,7 +737,7 @@ Rules that strip clutter from every channel and group name at once, for the play
 
 How reminders behave, the [watchlist](#watchlist), and every reminder waiting to come up.
 
-<p align="center"><a href="https://tivibro.app/view/#tv-set-guide-2"><img src="screenshots/tv-set-guide-2.png" width="60%" alt="Reminders"></a></p>
+<p align="center"><a href="https://tivibro.app/view/#tv-set-reminders"><img src="screenshots/tv-set-reminders.png" width="60%" alt="Reminders and watchlist, with Coming up"></a></p>
 
 | Setting | Choices | What it does |
 |---|---|---|
@@ -763,7 +778,7 @@ How channels start, how much video TiviBro holds, which player it uses, what it 
 | **When a channel stops working** | **Switch to another version** · Ask me · Keep retrying | When a channel has run out of retries and your playlist has it more than once (another quality, another group, or a copy you hid), TiviBro switches to the next version, steadiest first: Full HD, HD, unmarked, 4K, then SD.  *Ask me* asks before switching.  See [Other versions of a channel](#other-versions-of-a-channel). |
 | **Turn on last channel at launch** | **On** · Off | Starts the channel you watched last when TiviBro opens. |
 | **HDR and Dolby Vision** | **Automatic** · TV player for all HDR · Built-in player | *Automatic* plays Dolby Vision through the TV player (which switches the screen into Dolby Vision itself) and keeps HDR10 and HLG on the built-in player for steadier buffering.  Pick *TV player for all HDR* if HDR pictures look grey or washed out. |
-| **Picture** | **Normal** · Stretch · Zoom | Picture size for every channel.  A single channel can have its own size from the quick menu (**Picture**). |
+| **Aspect** | **Original** · Fill · Zoom · 4:3 · 16:9 · 21:9 · 4:3 to 16:9 | The shape of the picture for every channel and video.  *Fill* stretches it to the screen, *Zoom* fills the screen and crops the edges, *16:9* fixes a picture squashed into 4:3, *21:9* fills the screen with a letterboxed 2.35:1 film, *4:3 to 16:9* stretches a 4:3 picture wide.  A channel, movie or episode can have its own from the quick menu (**Aspect**). |
 | **Skip step** | 10 s · 15 s · **30 s** · 1 min · 2 min | Under **Catch-up, movies and shows**.  How far **◀ ▶** jump while watching catch-up or a movie.  Pressing again quickly jumps further each time. |
 | **Rewind / fast forward step** | 30 s · 1 min · **2 min** · 5 min · 10 min | How far **⏪ ⏩** jump while watching catch-up or a movie. |
 | **◀ on a live channel with catch-up** | **Rewind** · Last channel | On a catch-up channel, **◀** rewinds into the current programme.  Without catch-up, **◀** always goes to the last channel. |
@@ -817,7 +832,7 @@ Remap any button, choose the quick menu's buttons, and teach TiviBro keys it doe
 | **In the player ›** | What each button does while watching live TV fullscreen.  Every button has a press and a **Hold** action.  **OK** opens a list of actions to pick from. |
 | **In the guide ›** | The same for the guide: the colour buttons, **Play / Pause**, **Info**, **Stop** and **Hold OK**.  Give any of them **Watch fullscreen** if your remote has no Play button.  Arrows, **OK**, **Back**, **CH + / −** and ⏪ ⏩ stay fixed there. |
 | **On the Channels screen ›** | The same for the Channels screen.  Arrows, **OK**, **Back** and **CH + / −** stay fixed there. |
-| **Quick menu buttons ›** | Switch each quick menu button on or off: Channel guide, Watch from start, Favorite, TV guide, Other versions, Audio track, Subtitles, Closed captions, Video quality, Picture size, Sleep timer, Stream info, Reconnect.  All are on by default; a button only appears when it applies (Audio needs two or more tracks, for example). |
+| **Quick menu buttons ›** | Switch each quick menu button on or off: Channel guide, Watch from start, Favorite, TV guide, Other versions, Audio track, Subtitles, Closed captions, Video quality, Aspect, Sleep timer, Stream info, Reconnect.  All are on by default; a button only appears when it applies (Audio needs two or more tracks, for example). |
 | **Learn a button** *(on the TV)* | Under **Extra buttons**.  For keys TiviBro doesn't know yet (some LG remotes have extras).  Press this, then the button; it then appears in the button pages to assign.  Some buttons belong to the TV itself (Home, Live TV, the TV's own Guide, Input, Settings): webOS acts on them before TiviBro hears them, so they leave TiviBro and can't be learned. |
 | **Button tester** *(on the TV)* | Shows the key code the TV sends for the next button you press, and what it does in TiviBro. |
 | **Restore default buttons** | Puts every button back the way it came, after asking.  Each button page also has **Restore defaults for this screen**. |
@@ -843,15 +858,15 @@ The buttons and their defaults:
 | **Info** | Show info panel | Options menu | Options menu |
 | **Back** | (fixed: leaves fullscreen) | (fixed) | (fixed) |
 
-Actions you can give a button in the player: nothing, quick menu, channel guide over the video, info panel, options menu, next, previous or last channel, rewind, watch from start, play/pause, TV guide, search, Settings, leave fullscreen, add or remove favorite, open Favorites, open Recent channels, change picture mode, audio track, closed captions on or off, sleep timer and reconnect.  In the guide: nothing, watch fullscreen (the channel in the window, else the highlighted one), options menu, groups, jump to now, last channel, stop the window, Channels screen, search, Settings, the web editor, favorite, open Favorites or Recent channels, Movies and Shows.  On the Channels screen: nothing, options menu, last channel, TV guide, search, Settings, favorite, open Favorites, open Recent channels, Movies, Shows and play/pause.  Catch-up and movie playback keep fixed seek buttons so they always behave the same.
+Actions you can give a button in the player: nothing, quick menu, channel guide over the video, info panel, options menu, next, previous or last channel, rewind, watch from start, play/pause, TV guide, search, Settings, leave fullscreen, add or remove favorite, open Favorites, open Recent channels, change the aspect, audio track, closed captions on or off, sleep timer and reconnect.  In the guide: nothing, watch fullscreen (the channel in the window, else the highlighted one), options menu, groups, jump to now, last channel, stop the window, Channels screen, search, Settings, the web editor, favorite, open Favorites or Recent channels, Movies and Shows.  On the Channels screen: nothing, options menu, last channel, TV guide, search, Settings, favorite, open Favorites, open Recent channels, Movies, Shows and play/pause.  Catch-up and movie playback keep fixed seek buttons so they always behave the same.
 
 ### Settings: Appearance and start screen
 
 Which screen TiviBro opens on, how the guide looks, colours, sizes and what's on screen.  Every change shows straight away.
 
 <p align="center">
-  <a href="https://tivibro.app/view/#tv-set-guide"><img src="screenshots/tv-set-guide.png" width="32%" alt="Start screen and the guide"></a>
-  <a href="https://tivibro.app/view/#tv-set-look"><img src="screenshots/tv-set-look.png" width="32%" alt="Colours and text"></a>
+  <a href="https://tivibro.app/view/#tv-set-look"><img src="screenshots/tv-set-look.png" width="32%" alt="Start screen and the guide"></a>
+  <a href="https://tivibro.app/view/#tv-set-look-2"><img src="screenshots/tv-set-look-2.png" width="32%" alt="Colours and text"></a>
   <a href="https://tivibro.app/view/#tv-settings-look"><img src="screenshots/tv-settings-look.png" width="32%" alt="Changing the accent colour"></a>
 </p>
 
@@ -912,6 +927,8 @@ Five wrong PINs in a row lock the PIN for 30 seconds.
 ### Settings: Backups and restore points
 
 Two kinds of safety net, on one page.
+
+<p align="center"><a href="https://tivibro.app/view/#tv-set-backups"><img src="screenshots/tv-set-backups.png" width="60%" alt="Backups and restore points"></a></p>
 
 - **A backup** holds everything: playlists with their logins, groups, favorites, names, guide matches and settings.  It lives off the TV: in the TiviBro phone app, or as a locked file from the web editor (or the phone app).
 - **A restore point** lives on this TV and puts back your channel edits for this playlist: groups, hidden items, names and guide matches.  Your playlists and logins stay as they are.
@@ -1003,7 +1020,7 @@ Your version, new versions from GitHub, and finding out what's wrong.  See [Upda
 | **Check for updates** | | Looks for a newer release now. |
 | **Install … now** | | On a rooted TV with the Homebrew Channel: downloads the new version, checks its fingerprint, installs it and restarts TiviBro with all your settings.  Other TVs get a note to install it from a computer. |
 | **Released**, **What's new** | | When the new version came out and its size, and the changes in it. |
-| **Check automatically** | **On** · Off | Under **Options**.  Once a day when TiviBro starts.  Nothing is installed without asking you. |
+| **Check automatically** | **On** · Off | Under **Options**.  When TiviBro starts and every 6 hours while it is open.  A new version is announced once, and **Updates, about and diagnostics** is marked "update ready" until you install it.  Nothing is installed without asking you. |
 | **Count this TV in the install numbers** | **On** · Off | Once a day, and when a new version first starts (as an install or an update), TiviBro says which version it is and which webOS the TV has.  Nothing else: no address is kept, no ID, nothing about your channels. |
 | **Include test versions** | On · Off (**On** when you are running one) | Also offers alpha and beta builds: new features first, and some rough edges. |
 | **Installing on this TV** | (information) | Whether this TV can install updates by itself. |
@@ -1072,7 +1089,10 @@ The pages follow the TV's Settings: **Overview**, **Playlists**, **Guide**, **Ch
   <a href="https://tivibro.app/view/#tv-set-editor-on"><img src="screenshots/tv-set-editor-on.png" width="60%" alt="The address and password on the TV"></a>
 </p>
 
-<p align="center"><a href="https://tivibro.app/view/#editor-overview"><img src="screenshots/editor-overview.png" width="100%" alt="Web editor overview"></a></p>
+<p align="center">
+  <a href="https://tivibro.app/view/#editor-overview"><img src="screenshots/editor-overview.png" width="49%" alt="Web editor overview"></a>
+  <a href="https://tivibro.app/view/#editor-steps"><img src="screenshots/editor-steps.png" width="49%" alt="Clean up your guide in five steps"></a>
+</p>
 
 The **Overview** shows how many channels and groups are on the TV, guide coverage, **Smart suggestions**, and **Clean up your guide in five steps**: hide the groups you never watch, clean up channel and group names, make favorites and your own groups, get a guide for every channel, and download a backup.
 
@@ -1193,7 +1213,8 @@ M3U playlists can use the guide address inside the playlist.
 **Ignore.**  Radio stations, cameras and 24/7 loops never have a guide.  **Ignore** on a row, or tick several and press **Ignore for the guide**, and they move to the **Ignored** tab: they leave every other tab, the counts and Smart match, public fill-in skips them, and the TV stops saying "No guide information" for them.  **Look for a guide again**, in the Ignored tab, undoes it.  On the TV it's **Hold OK > No guide for this channel** (and **Look for a guide again**), and **Settings > Guide > Channels with no guide wanted** lists them.
 
 <p align="center">
-  <a href="https://tivibro.app/view/#editor-guide"><img src="screenshots/editor-guide.png" width="100%" alt="The guide page"></a>
+  <a href="https://tivibro.app/view/#editor-guide"><img src="screenshots/editor-guide.png" width="49%" alt="The guide page"></a>
+  <a href="https://tivibro.app/view/#editor-guide-ignored"><img src="screenshots/editor-guide-ignored.png" width="49%" alt="Matching, with the Ignored tab"></a>
   <a href="https://tivibro.app/view/#editor-guide-progress"><img src="screenshots/editor-guide-progress.png" width="49%" alt="Guide download progress"></a>
   <a href="https://tivibro.app/view/#editor-smart-match"><img src="screenshots/editor-smart-match.png" width="49%" alt="Smart match"></a>
 </p>
@@ -1204,6 +1225,8 @@ M3U playlists can use the guide address inside the playlist.
 - **Watchlist**: type a show, team or name and **Add**; **✕** removes one.  The TV looks for them in the guide and sets reminders (see [Watchlist](#watchlist)).
 
 The same reminders are under **Settings > Reminders and watchlist** on the TV and on the phone app's **Reminders** screen.
+
+<p align="center"><a href="https://tivibro.app/view/#editor-reminders"><img src="screenshots/editor-reminders.png" width="80%" alt="Reminders and watchlist in the editor"></a></p>
 
 ### Playlists
 

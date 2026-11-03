@@ -255,6 +255,7 @@ var Player = (function () {
       for (var i = 0; i < d.length; i += step) if (d[i] + d[i + 1] + d[i + 2] > 48) { lit++; if (lit > 8) break; }
       if (lit <= 8) return false;
       holdEl.style.objectFit = video.style.objectFit || 'contain';
+      holdEl.style.transform = video.style.transform || '';
       holdEl.classList.add('on');
       if (video.parentNode.classList) video.parentNode.classList.add('holding');
       holding = true;
@@ -369,8 +370,9 @@ var Player = (function () {
         }
       }
       // Before the first frame, a failure in the built-in demuxer (unsupported codec, or a fetch
-      // the browser refused) goes straight to the next pipeline.  No retry loop first.
-      if ((earlyNet || type === 'media') && kind !== 'native' && !st.started) {
+      // the browser refused) goes straight to the next pipeline.  No retry loop first.  Not for a
+      // movie that has played on this pipeline already: that is the connection again (issue #34).
+      if ((earlyNet || type === 'media') && kind !== 'native' && !st.started && !(isFile() && cur.everPlayed)) {
         // A fetch the demuxer could not make is about the host (CORS etc.), so remember it for
         // the host.  A codec problem is about this one channel only.
         if (earlyNet) fallbackHosts[hostOf(url)] = 'native';
@@ -490,6 +492,8 @@ var Player = (function () {
     cur.failed = true;
     // Counted for the warning that most of a playlist will not play (deadlist.js).
     if (cur.live && cur.lastHttp && window.DeadList) { try { DeadList.failed(cur.ch, cur.origUrl || cur.url, cur.lastHttp); } catch (e) {} }
+    // A movie that was playing here a moment ago is not a format the TV can't decode (issue #34).
+    if (isFile() && cur.everPlayed) return state('error', CLOSED);
     if (cur.lastHttp) return state('error', 'The provider is not sending this ' + (isFile() ? 'video' : 'channel') + ' right now (error ' + cur.lastHttp + ').  Press OK to try again, or try ' + (isFile() ? 'again later.' : 'another channel.'));
     state('error', isFile() ? 'This video will not play on this TV.  It may use a format the TV cannot decode.' : 'This channel will not play on this TV.  It may use a format the TV cannot decode, or the provider may be having trouble with it.');
   }
@@ -500,6 +504,7 @@ var Player = (function () {
      itself rather than sit on an error. */
   // Slow retries: every 6s for the first 3 minutes (most outages are short, and the picture should
   // be back within seconds of the provider), then every 15s.
+  var CLOSED = 'The provider closed the connection to this video and did not let TiviBro back in.  Press OK to try again from where you were.';
   var SLOW_EVERY = 15000, SLOW_FAST = 6000, SLOW_FAST_FOR = 3 * 60000, SLOW_FOR = 20 * 60000;
   function lateEngine(failed) {
     if (isFile() && !/\.m3u8(\?|$)/i.test(cur.origUrl || cur.url)) return null;   // a movie file has one pipeline
@@ -564,7 +569,7 @@ var Player = (function () {
         return;
       } else {
         Log.error('player', 'Gave up after ' + cur.p.retries + ' reconnects' + (cur.slowSince ? ' and ' + Math.round((now - cur.slowSince) / 60000) + ' minutes of retrying' : '') + '  ' + cur.url);
-        state('error', isFile() ? 'This video stopped loading.  Press OK to try again.' : 'This channel stopped responding.  Press OK to try again, or try another channel.');
+        state('error', isFile() ? (cur.everPlayed ? CLOSED : 'This video stopped loading.  Press OK to try again.') : 'This channel stopped responding.  Press OK to try again, or try another channel.');
         cur.failed = true;
         return;
       }
@@ -592,6 +597,7 @@ var Player = (function () {
     var now = Date.now(), ahead = bufferedAhead(), t = video.currentTime;
     var p = cur.p;
     if (st.started && video.readyState > 0 && !video.seeking) cur.pos = t;
+    applyDisplay();               // the picture's own size arrives with the first frame (Aspect)
     var goal = refillGoal();
     var endNow = bufferEnd();
     if (endNow > (st.growEnd || 0) + 0.05) { st.growEnd = endNow; st.growAt = now; } else if (endNow < (st.growEnd || 0) - 1) { st.growEnd = endNow; st.growAt = now; }
@@ -740,6 +746,11 @@ var Player = (function () {
       if (!cur || !st || st.kind !== 'native' || !video.error || !video.getAttribute('src')) return;
       Log.warn('player', 'TV player error code ' + video.error.code + (video.error.message ? ': ' + video.error.message : '') + '  ' + cur.url);
       var my = token;
+      /* A movie or episode that already played here and fails to open again (after a pause, the provider
+         closed the connection; the link it handed out may have expired, or it still counts the old
+         connection): that is the connection, not the format.  Reconnect at the same spot, never fall
+         through to "a format the TV cannot decode" (issue #34). */
+      if (isFile() && cur.everPlayed) return reconnect(my, 'The provider closed the connection, reconnecting');
       if (st.kind === 'native' && !st.started) {
         // Native refused the container or codec: try the next pipeline, once each.
         fallbackHosts[hostOf(cur.url)] = '';
@@ -783,9 +794,56 @@ var Player = (function () {
     if (cur.live && !cur.timeshift && preferHls[cur.url] && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) { Log.info('player', 'Using the HLS version of this channel, which played better earlier'); useEngine('hls'); }
     start(token);
   }
-  // Picture size: this channel's own choice if it has one, otherwise the global setting.
-  function displayFor(ch) { var d = ch && Store.edits.display && Store.edits.display[ch.k]; return d || Store.settings.display || 'contain'; }
-  function applyDisplay() { if (video) video.style.objectFit = displayFor(cur && cur.ch); }
+  /* Aspect (discussion #31): this channel's or movie's own choice if it has one (Store.edits.display,
+     by channel key, or "vod:<id>" for a movie or episode), otherwise the global setting.
+     Original, Fill and Zoom are object-fit.  The others draw the picture stretched to the screen
+     (object-fit: fill) and scale it with a CSS transform to the shape wanted; the stage clips what
+     falls outside.  Works on Chromium 53. */
+  var ASPECTS = [['contain', 'Original'], ['fill', 'Fill'], ['cover', 'Zoom'], ['4:3', '4:3'], ['16:9', '16:9'], ['21:9', '21:9'], ['stretch43', '4:3 to 16:9']];
+  var ASPECT_NAMES = {};
+  ASPECTS.forEach(function (a) { ASPECT_NAMES[a[0]] = a[1]; });
+  function displayFor(ch) { var d = ch && Store.edits.display && Store.edits.display[ch.k]; d = d || Store.settings.display; return ASPECT_NAMES[d] ? d : 'contain'; }
+  /* How to draw a vw x vh picture on a W x H screen for an aspect mode: { fit, sx, sy }.  The element
+     always fills the screen; sx and sy scale it from its centre. */
+  function aspectFit(mode, vw, vh, W, H) {
+    var out = { fit: mode === 'fill' || mode === 'cover' ? mode : 'contain', sx: 1, sy: 1 };
+    if (!W || !H) { W = 1920; H = 1080; }
+    var A = vw > 0 && vh > 0 ? vw / vh : 16 / 9, S = W / H, fw, fh;
+    function box(a) { return a > S ? { w: W, h: W / a } : { w: H * a, h: H }; }
+    if (mode === '4:3' || mode === '16:9') {
+      // Show the whole picture as this shape: a squashed 16:9 film sent as 4:3, or the other way.
+      var b = box(mode === '4:3' ? 4 / 3 : 16 / 9); fw = b.w; fh = b.h;
+    } else if (mode === '21:9') {
+      // A 2.35:1 film letterboxed inside the picture: grow it until the film fills the screen's
+      // height and crop the sides.  A picture already that wide fills the screen the same way.
+      var band = Math.max(2.35, A);
+      fw = band >= S ? band * H : W; fh = fw / A;
+    } else if (mode === 'stretch43') {
+      // A 4:3 picture (or a 4:3 picture with black bars at the sides) stretched out to 16:9.
+      var r = Math.min(4 / 3, A), wide = box(16 / 9);
+      fw = wide.w * A / r; fh = wide.h;
+    } else return out;
+    out.fit = 'fill';
+    out.sx = Math.round(fw / W * 10000) / 10000; out.sy = Math.round(fh / H * 10000) / 10000;
+    return out;
+  }
+  var fitKey = '';
+  function applyDisplay() {
+    if (!video) return;
+    var mode = displayFor(cur && cur.ch), W = video.clientWidth || 0, H = video.clientHeight || 0;
+    var key = mode + '|' + video.videoWidth + 'x' + video.videoHeight + '|' + W + 'x' + H;
+    if (key === fitKey && video.style.objectFit) return;
+    fitKey = key;
+    var f = aspectFit(mode, video.videoWidth, video.videoHeight, W, H);
+    video.style.objectFit = f.fit;
+    video.style.transform = f.sx === 1 && f.sy === 1 ? '' : 'scale(' + f.sx + ',' + f.sy + ')';
+  }
+  function setAspect(mode, ch) {
+    if (!ASPECT_NAMES[mode]) return;
+    if (ch) { Store.edits.display = Store.edits.display || {}; Store.edits.display[ch.k] = mode; Store.saveEdits(); }
+    else { Store.settings.display = mode; Store.saveSettings(); }
+    fitKey = ''; applyDisplay();
+  }
   function playing() { return !!(st && st.started && video && video.readyState > 0); }
   function seekTo(t) {
     if (!video || !cur || cur.live) return;
@@ -819,12 +877,22 @@ var Player = (function () {
         start(token);
         return;
       }
+      /* A movie on the TV player paused for minutes: providers close quiet connections, and the link
+         they handed out can expire meanwhile.  Open it again at the same spot rather than find out
+         on play (issue #34). */
+      if (isFile() && st.kind === 'native' && st.started && st.pausedAt && Date.now() - st.pausedAt > LONG_PAUSE) {
+        cur.startAt = Math.max(0.1, position()); cur.pos = cur.startAt; cur.retries = 0;
+        Log.info('player', 'Paused for ' + Math.round((Date.now() - st.pausedAt) / 1000) + 's; opening the video again at ' + Math.round(cur.startAt) + 's');
+        start(token);
+        return;
+      }
       var r = video.play(); if (r && r.catch) r.catch(function () {});
     } else {
       st.userPaused = true; st.pausedAt = Date.now();
       video.pause();
     }
   }
+  var LONG_PAUSE = 3 * 60000;
   function togglePause() { if (video && st) setPaused(!st.userPaused); }
   // A fresh go from the top: every pipeline gets another chance.
   function retryNow() {
@@ -832,6 +900,7 @@ var Player = (function () {
     if (cur.origUrl) cur.url = cur.origUrl;
     cur.retries = 0; cur.triedNative = false; cur.failed = false; cur.slowSince = 0; cur.slow = '';
     cur.tried = null; cur.late = null; cur.forceKind = null; cur.forceNative = false; cur.routed = false; cur.httpFails = 0; cur.lastHttp = 0;
+    if (isFile() && !cur.startAt && cur.pos > 5) cur.startAt = cur.pos;      // a movie tries again where it was
     start(token);
   }
 
@@ -873,7 +942,7 @@ var Player = (function () {
     setQuality: function (i) { if (eng && eng.setLevel) eng.setLevel(i); },
     setRate: function (r) { if (video) video.playbackRate = r; },
     get rate() { return video ? video.playbackRate : 1; },
-    displayFor: displayFor,
+    displayFor: displayFor, setAspect: setAspect, aspectFit: aspectFit, ASPECTS: ASPECTS, ASPECT_NAMES: ASPECT_NAMES,
     setAudio: function (i) { if (eng && eng.setAudio) { if (cur) cur.userAudio = true; eng.setAudio(i); } },
     bestAudio: bestAudio, describeTrack: describeTrack,
     get stats() { return lastStats; },

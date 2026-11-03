@@ -44,7 +44,7 @@ function setup(opts) {
     MediaSource: { isTypeSupported: () => true },
     mpegts, Hls,
     document: { createElement: () => ({ canPlayType: t => /dtsc/.test(t) ? '' : 'maybe' }) },
-    Store: { settings, edits: { display: {} } },
+    Store: { settings, edits: { display: {} }, saveEdits() {}, saveSettings() {} },
     Source: { streamUrl: ch => ch.url },
     Net: { wrap: u => u, active: false, ua: '' },
     U: { clamp: (v, a, b) => Math.max(a, Math.min(b, v)) },
@@ -167,6 +167,46 @@ ok('reconnect resumes at the same spot', Math.abs(t.video.currentTime - 1800) < 
 t.video.ended = true; t.run(500);
 ok('an early "ended" reconnects instead of finishing', !t.states.some(s => s === 'ended') && t.logs.some(l => /treating it as a dropped connection/.test(l)));
 
+// ---- issue #34: a paused movie whose connection the provider closed ----
+t = setup();
+t.P.play({ n: 'Paused film', url: 'http://p/movie/u/p/30.mkv' }, { live: false });
+t.video.duration = 7200; t.feed(0, 4000); t.run(2000);
+t.video.currentTime = 1200; t.run(500);
+t.P.setPaused(true); t.run(60000);
+t.P.setPaused(false);
+const fire = code => { t.video.error = { code }; t.video.l.error.forEach(f => f()); };
+fire(2);                                                   // the old connection is gone
+t.run(1500);
+fire(4);                                                   // and the old link is refused before the first frame
+t.run(1500);
+ok('#34: a refused reopen of a movie that played is a reconnect, not another pipeline', !t.logs.some(l => /Trying the/.test(l)) && t.logs.some(l => /provider closed the connection, reconnecting/.test(l)) && /movie\/u\/p\/30\.mkv$/.test(t.video._src), t.logs.filter(l => /Trying|closed/.test(l)).join(' | '));
+ok('#34: and never says the format cannot be played', !t.states.some(s => /format/.test(s)), t.states.join(' | '));
+t.video.duration = 7200; t.feed(0, 4000); t.run(1500);
+ok('#34: it comes back at the same spot, still playing', Math.abs(t.video.currentTime - 1200) < 3 && !t.video.paused, t.video.currentTime);
+
+t = setup({ settings: { buffer: 'custom', custom: { prebuffer: 1, ahead: 10, back: 4, stall: 4, retries: 2 } } });
+t.P.play({ n: 'Gone film', url: 'http://p/movie/u/p/31.mp4' }, { live: false });
+t.video.duration = 7200; t.feed(0, 4000); t.run(2000);
+t.video.currentTime = 900; t.run(500);
+for (let i = 0; i < 6; i++) { t.video.error = { code: i ? 4 : 2 }; t.video.l.error.forEach(f => f()); t.run(6000); }
+const lastState = t.states[t.states.length - 1];
+ok('#34: when reconnecting really fails, the message says the provider closed the connection and offers to try again', /^error: The provider closed the connection/.test(lastState) && /Press OK to try again/.test(lastState) && !/format/.test(lastState), lastState);
+t.P.retryNow(); t.video.duration = 7200; t.feed(0, 4000); t.run(1500);
+ok('#34: OK tries again from where it was', Math.abs(t.video.currentTime - 900) < 3, t.video.currentTime);
+
+t = setup();
+t.P.play({ n: 'Long pause', url: 'http://p/movie/u/p/32.mkv' }, { live: false });
+t.video.duration = 7200; t.feed(0, 4000); t.run(2000);
+t.video.currentTime = 3000; t.run(500);
+t.P.setPaused(true); t.run(30000);
+t.P.setPaused(false);
+ok('#34: a short pause just plays on', !t.video.paused && t.video._src !== '' && !t.logs.some(l => /opening the video again/.test(l)));
+t.P.setPaused(true); t.run(4 * 60000);
+t.P.setPaused(false);
+ok('#34: after a long pause the movie is opened again', t.logs.some(l => /Paused for \d+s; opening the video again at 300\ds/.test(l)), t.logs.slice(-3).join(' | '));
+t.video.duration = 7200; t.feed(0, 4000); t.run(1500);
+ok('#34: at the same spot, playing', Math.abs(t.video.currentTime - 3000) < 3 && !t.video.paused, t.video.currentTime);
+
 // ---- seeking during a reconnect lands there once it is back ----
 t = setup();
 t.P.play({ n: 'Film', url: 'http://p/movie/u/p/9.mp4' }, { live: false });
@@ -286,6 +326,37 @@ let hintedExt;
 t = setup({mkvSubs: {extract(url, video, resolved, ext) { hintedExt = ext; resolved(url); return {cancel() {}}; }}});
 t.P.play({n: 'Signed movie', url: 'http://mock/signed-file'}, {live: false, meta: {item: {ext: 'mkv'}}});
 ok('My media passes its known container to subtitle extraction for extensionless links', hintedExt === 'mkv');
+
+// ---- Aspect (discussion #31) ----
+t = setup();
+const F = t.P.aspectFit, near = (a, b) => Math.abs(a - b) < 0.002;
+let f = F('contain', 1920, 1080, 1920, 1080);
+ok('Aspect: Original, Fill and Zoom are plain object-fit', f.fit === 'contain' && f.sx === 1 && F('fill', 720, 576, 1920, 1080).fit === 'fill' && F('cover', 720, 576, 1920, 1080).fit === 'cover' && F('cover', 720, 576, 1920, 1080).sx === 1);
+f = F('16:9', 720, 540, 1920, 1080);
+ok('Aspect 16:9: a squashed 4:3 picture fills a 16:9 screen', f.fit === 'fill' && f.sx === 1 && f.sy === 1, JSON.stringify(f));
+f = F('4:3', 1920, 1080, 1920, 1080);
+ok('Aspect 4:3: shown 4:3 with bars at the sides', f.fit === 'fill' && near(f.sx, 0.75) && f.sy === 1, JSON.stringify(f));
+f = F('21:9', 1920, 1080, 1920, 1080);
+ok('Aspect 21:9: a letterboxed 2.35:1 film fills the height, sides cropped, shape kept', near(f.sx, 2.35 / (16 / 9)) && near(f.sy, 2.35 / (16 / 9)), JSON.stringify(f));
+f = F('stretch43', 1920, 1080, 1920, 1080);
+ok('Aspect 4:3 to 16:9: the 4:3 middle of a pillarboxed picture is stretched to the full width', near(f.sx, 4 / 3) && f.sy === 1, JSON.stringify(f));
+f = F('stretch43', 640, 480, 1920, 1080);
+ok('Aspect 4:3 to 16:9: a 4:3 picture is stretched to the screen', f.sx === 1 && f.sy === 1 && f.fit === 'fill', JSON.stringify(f));
+t.settings.display = '21:9';
+t.P.play({ k: 'c1', n: 'Wide', url: 'http://p/live/u/p/40.ts' });
+t.feed(0, 30); t.run(1000);
+ok('Aspect from Settings applies to the video with a transform', t.video.style.objectFit === 'fill' && /^scale\(1\.32/.test(t.video.style.transform), t.video.style.objectFit + ' ' + t.video.style.transform);
+t.P.setAspect('4:3', t.P.current);
+ok('Aspect for one channel is remembered by its key', t.P.displayFor({ k: 'c1' }) === '4:3' && t.P.displayFor({ k: 'c2' }) === '21:9' && t.video.style.transform === 'scale(0.75,1)', t.video.style.transform);
+t.P.play({ k: 'c2', n: 'Other', url: 'http://p/live/u/p/41.ts' }); t.feed(0, 30); t.run(1000);
+t.P.play({ k: 'c1', n: 'Wide', url: 'http://p/live/u/p/40.ts' }); t.feed(0, 30); t.run(1000);
+ok('and comes back with the channel', t.video.style.transform === 'scale(0.75,1)', t.video.style.transform);
+t.P.setAspect('contain', null);
+ok('changing the default leaves a channel with its own choice alone', t.P.displayFor({ k: 'c9' }) === 'contain' && t.video.style.transform === 'scale(0.75,1)');
+t.P.setAspect('contain', t.P.current);
+ok('Original for this channel clears the transform', t.video.style.objectFit === 'contain' && t.video.style.transform === '', t.video.style.transform);
+t.settings.display = 'bogus';
+ok('an unknown stored value falls back to Original', t.P.displayFor({ k: 'c7' }) === 'contain');
 
 if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }
 console.log('all player tests passed');

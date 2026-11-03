@@ -58,6 +58,20 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const en = await ev(() => { const t = [].slice.call(document.getElementById('video').textTracks).find(t => /English \(OpenSubtitles\)/.test(t.label)); return t && { mode: t.mode, n: t.cues.length, first: t.cues[0].startTime, text: t.cues[0].text }; });
   ok('the download becomes a subtitle track, on', en && en.mode === 'showing' && en.n > 20 && en.first === 2 && en.text === 'Line 1', JSON.stringify(en));
   ok('and says how many downloads are left today', /4 downloads left today/.test(await ev(() => document.body.innerText)));
+  // TiviBro draws the lines itself, exactly those whose time includes now (discussion #19: a line stuck on screen).
+  const onScreen = () => ev(() => {
+    Subs.draw();
+    const v = document.getElementById('video'), b = document.querySelector('.subs-captions'), now = v.currentTime;
+    const tr = [].slice.call(v.textTracks).find(t => /English \(OpenSubtitles\)/.test(t.label));
+    const want = [].slice.call(tr.cues).filter(c => c.startTime <= now && c.endTime > now).map(c => c.text).join('\n');
+    return { hidden: v.classList.contains('subs-drawn'), text: b && b.style.display !== 'none' ? b.textContent : '', want, now };
+  });
+  await ev(() => { Player.setPaused(true); Player.seekTo(2.5); }); await page.waitForTimeout(800);
+  let d = await onScreen();
+  ok('the line of now is drawn by TiviBro, the TV\'s own drawing hidden', d.hidden && d.text === 'Line 1' && d.text === d.want, JSON.stringify(d));
+  await ev(() => Subs._test.shift(1)); d = await onScreen();
+  ok('moving the times while a line shows leaves exactly the lines of the new times', d.text === d.want, JSON.stringify(d));
+  await ev(() => Subs._test.shift(-1)); await ev(() => Player.setPaused(false));
 
   // Timing.
   await subsMenu(); await pick('^Timing'); await pick('^Later by 1 s');

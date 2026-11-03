@@ -392,12 +392,14 @@ var Phone = (function () {
     return out;
   }
   function pushState(soon) {
+    // "Soon" looks again in 300 ms rather than sending what it sees now: a snapshot taken now and sent
+    // later could land after a newer one and leave the phone with the old screen (a box it can't see).
+    if (soon) { setTimeout(function () { pushState(false); }, 300); return; }
     if (!base() || !(st && st.on) || !(ready() || document.querySelector('#viewSetup input'))) return;
     var s = snapshot(), k = JSON.stringify(s);
     if (k === lastState) return;
     lastState = k;
-    var go = function () { call('/companion/state', { state: s }).catch(function () { lastState = ''; }); };
-    if (soon) setTimeout(go, 300); else go();
+    call('/companion/state', { state: s }).catch(function () { if (lastState === k) lastState = ''; });
   }
   setInterval(function () { if (st && st.on) pushState(false); }, 1500);
 

@@ -4,6 +4,14 @@
    Forget; plus adding a TV.  A TV that is off still offers Edit channels and its backups on the phone. */
 package app.tivibro.phone.ui
 
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import app.tivibro.phone.proto.AppUpdate
+import app.tivibro.phone.proto.AppRelease
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -127,6 +135,7 @@ fun HomeScreen(
             modifier = Modifier.padding(pad).fillMaxSize(),
         ) {
             LazyColumn(contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxSize()) {
+                item(key = "app-update") { AppUpdateCard() }
                 items(tvs, key = { it.tv.id }) { u ->
                     TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups)
                 }
@@ -275,3 +284,29 @@ private fun TvCard(
     )
 }
 
+
+
+/** "A new TiviBro app is out", once a day at most per app start: Download opens the APK in the browser. */
+@Composable
+private fun AppUpdateCard() {
+    val ctx = LocalContext.current
+    var rel by remember { mutableStateOf<AppRelease?>(null) }
+    var hidden by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        val cur = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull().orEmpty()
+        rel = withContext(Dispatchers.IO) { AppUpdate.check(cur) }
+    }
+    val r = rel ?: return
+    if (hidden) return
+    ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = Panel), modifier = Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(16.dp)) {
+            Text("TiviBro app ${r.version} is out", style = MaterialTheme.typography.titleMedium)
+            Text("Install it over this one: your TVs and backups stay.", color = Muted, style = MaterialTheme.typography.bodySmall)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = { runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(r.apk)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }) { Text("Download") }
+                TextButton(onClick = { runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(r.page)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }) { Text("What's new") }
+                TextButton(onClick = { hidden = true }) { Text("Later") }
+            }
+        }
+    }
+}

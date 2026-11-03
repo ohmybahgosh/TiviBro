@@ -655,13 +655,15 @@ var Views = (function () {
     if (k === 'play') Player.setPaused(false); else if (k === 'pause') Player.setPaused(true); else Player.togglePause();
     if (full) osd(true);
   }
-  var DM = { contain: 'Normal', fill: 'Stretch', cover: 'Zoom' };
+  /* Aspect (discussion #31): remembered for the channel on live TV and for the movie or episode
+     (its "vod:<id>" key) when one is playing; elsewhere it changes the default. */
+  var DM = Player.ASPECT_NAMES;
+  function aspectTarget() { return mode === 'live' ? playing : mode === 'vod' ? Player.current : null; }
   function cyclePicture() {
-    var k = Object.keys(DM), i = k.indexOf(Store.settings.display);
-    var c = mode === 'live' ? playing : null, cur = Player.displayFor(c), nk = k[(k.indexOf(cur) + 1) % k.length];
-    if (c) { Store.edits.display = Store.edits.display || {}; Store.edits.display[c.k] = nk; Store.saveEdits(); } else { Store.settings.display = nk; Store.saveSettings(); }
-    Player.applyDisplay();
-    U.toast('Picture: ' + DM[nk] + (c ? ' for this channel' : ''));
+    var k = Player.ASPECTS.map(function (a) { return a[0]; });
+    var c = aspectTarget(), nk = k[(k.indexOf(Player.displayFor(c)) + 1) % k.length];
+    Player.setAspect(nk, c);
+    U.toast('Aspect: ' + DM[nk] + (c ? (mode === 'vod' ? ' for this video' : ' for this channel') : ''));
   }
   function audioMenu() {
     var tracks = Player.audioTracks();
@@ -1358,7 +1360,7 @@ var Views = (function () {
   var qp = null;                  // { row, col, rows: [[items]], timer }
   // Quick menu buttons.  Each can be switched off in Settings > Remote control > Quick menu buttons.
   var QP_BUTTONS = [['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['audio', 'Audio track'],
-    ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Picture size'], ['sleep', 'Sleep timer'],
+    ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Aspect'], ['sleep', 'Sleep timer'],
     ['info', 'Stream info'], ['reconnect', 'Reconnect']];
   // Line icons for the quick actions, drawn like the side menu's (24 x 24, stroked).
   var QP_ICONS = {
@@ -1392,7 +1394,7 @@ var Views = (function () {
     if (subs.length || mode === 'vod') add('subs', { label: 'Subtitles', icon: 'subs', v: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || subtitleStatus(), run: function () { closePanel(); subtitleMenu(); } });
     if (mode !== 'vod') add('cc', { label: 'Captions', icon: 'cc', v: ccLabel(), run: function () { ccToggle(); renderPanel(); } });
     if (Player.qualities().length > 1) add('quality', { label: 'Quality', icon: 'quality', v: qualityLabel(), run: function () { closePanel(); qualityMenu(); } });
-    add('picture', { label: 'Picture', icon: 'picture', v: DM[Player.displayFor(c)] || 'Normal', run: function () { closePanel(); pictureMenu(); } });
+    add('picture', { label: 'Aspect', icon: 'picture', v: DM[Player.displayFor(aspectTarget())], run: function () { closePanel(); pictureMenu(); } });
     add('sleep', { label: 'Sleep timer', icon: 'sleep', v: sleepAt ? U.hhmm(sleepAt) : 'off', run: function () { closePanel(); sleepMenu(); } });
     add('info', { label: 'Stream info', icon: 'info', run: function () { closePanel(); streamInfo(); } });
     add('reconnect', { label: 'Reconnect', icon: 'reconnect', run: function () { closePanel(); Player.retryNow(); U.toast('Reconnecting'); } });
@@ -1422,21 +1424,26 @@ var Views = (function () {
     UI.menu('Video quality', [{ label: 'Automatic', sub: Player.qualityAuto() ? 'on' : 'adapts to your connection', action: function () { Player.setQuality(-1); } }]
       .concat(q.map(function (x) { return { label: x.label, sub: x.on ? 'on' : '', action: function () { Player.setQuality(x.id); } }; })));
   }
-  // Picture size for this channel only, or for every channel (TiviMate's "Apply to all channels").
+  /* Aspect for this channel or video only, or for everything (TiviMate's "Apply to all channels").
+     The shapes past Zoom scale the picture with CSS; the TV player draws some streams on its own
+     video plane, and some TVs then keep the picture as it was, which the menu says. */
+  var ASPECT_SUB = { contain: 'the picture\'s own shape', fill: 'stretched to the screen', cover: 'fills the screen, edges cropped', '4:3': 'shown 4:3, bars at the sides',
+    '16:9': 'a squashed 16:9 picture sent as 4:3', '21:9': 'a 2.35:1 film fills the screen, sides cropped', stretch43: 'a 4:3 picture stretched wide' };
   function pictureMenu() {
-    var c = playing, own = c && Store.edits.display && Store.edits.display[c.k];
-    var items = Object.keys(DM).map(function (k) {
-      return { label: DM[k], sub: k === Player.displayFor(c) ? 'on' : '', action: function () {
-        if (c) { Store.edits.display = Store.edits.display || {}; Store.edits.display[c.k] = k; Store.saveEdits(); }
-        else { Store.settings.display = k; Store.saveSettings(); }
-        Player.applyDisplay();
+    var c = aspectTarget(), own = c && Store.edits.display && Store.edits.display[c.k], what = mode === 'vod' ? 'video' : 'channel';
+    var tv = Player.engine === 'TV player', on = Player.displayFor(c);
+    var items = Player.ASPECTS.map(function (a) {
+      var k = a[0], shaped = k !== 'contain' && k !== 'fill' && k !== 'cover';
+      return { label: a[1], sub: k === on ? 'on' : tv && shaped ? 'may not change with the TV player' : ASPECT_SUB[k], action: function () {
+        Player.setAspect(k, c);
+        if (tv && shaped) U.toast('Aspect ' + a[1] + '.  This ' + what + ' plays with the TV player, which some TVs keep at its own shape.', 6000);
       } };
     });
-    items.push({ label: 'Use this size for all channels', sub: 'currently ' + (DM[Store.settings.display] || 'Normal'), action: function () {
-      Store.settings.display = Player.displayFor(c); Store.saveSettings(); Store.edits.display = {}; Store.saveEdits(); Player.applyDisplay(); U.toast('Picture size set for all channels');
+    items.push({ label: 'Use this aspect for everything', sub: 'currently ' + DM[Player.displayFor(null)], action: function () {
+      Store.settings.display = Player.displayFor(c); Store.saveSettings(); Store.edits.display = {}; Store.saveEdits(); Player.setAspect(Store.settings.display, null); U.toast('Aspect set for every channel and video');
     } });
-    if (own) items.push({ label: 'Forget this channel\'s size', action: function () { delete Store.edits.display[c.k]; Store.saveEdits(); Player.applyDisplay(); } });
-    UI.menu('Picture size' + (c ? ':  ' + L.name(c) : ''), items);
+    if (own) items.push({ label: 'Forget this ' + what + '\'s aspect', action: function () { delete Store.edits.display[c.k]; Store.saveEdits(); Player.setAspect(Player.displayFor(null), null); } });
+    UI.menu('Aspect' + (c ? ':  ' + (mode === 'vod' ? c.n : L.name(c)) : ''), items);
   }
   function speedMenu() {
     UI.menu('Playback speed', [0.5, 0.75, 1, 1.25, 1.5, 2].map(function (r) { return { label: r === 1 ? 'Normal' : r + '×', sub: Math.abs(Player.rate - r) < 0.01 ? 'on' : '', action: function () { Player.setRate(r); } }; }));
@@ -1560,7 +1567,7 @@ var Views = (function () {
       tr.forEach(function (t, i) { items.push({ label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', action: function () { tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
     }
     if (mode === 'vod' && vod) items.push({ label: 'Find subtitles…', sub: Subs.configured ? 'OpenSubtitles, in ' + Subs.langs().map(Subs.langName).join(', ') : 'from OpenSubtitles, with your free API key', action: function () { Subs.find(vod.meta); } });
-    if (tr.length) items.push({ label: 'Timing', sub: Subs.delay ? (Subs.delay > 0 ? '+' : '') + Subs.delay.toFixed(1) + ' s' : 'in time', action: Subs.timingMenu });
+    if (tr.length) items.push({ label: 'Timing', sub: Subs.timing, action: Subs.timingMenu });
     if (tr.length > 1) items.push({ label: 'Line up with another track…', sub: 'match a subtitle that is already in time', action: function () { Subs.lineUpMenu(tr); } });
     UI.menu('Subtitles', items);
   }
@@ -1602,7 +1609,7 @@ var Views = (function () {
     if (mode === 'vod' && vod) items.push({ label: 'Restart from beginning', action: function () { if (vod.meta.local && Media.seeking) Media.seeking(0); Player.seek(-1e7); } });
     var tracks = Player.audioTracks();
     if (tracks.length > 1) items.push({ label: 'Audio track', sub: (tracks.filter(function (t) { return t.on; })[0] || {}).label, action: audioMenu });
-    items.push({ label: 'Picture size', sub: DM[Player.displayFor(mode === 'live' ? playing : null)], action: pictureMenu });
+    items.push({ label: 'Aspect', sub: DM[Player.displayFor(aspectTarget())], action: pictureMenu });
     if (Player.qualities().length > 1) items.push({ label: 'Video quality', sub: qualityLabel(), action: qualityMenu });
     if (mode === 'vod' || mode === 'catchup') items.push({ label: 'Playback speed', sub: Player.rate === 1 ? 'Normal' : Player.rate + '×', action: speedMenu });
     // Live captions (CEA-608) have their own switch; Subtitles is for real subtitle tracks.

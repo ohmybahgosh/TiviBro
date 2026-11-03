@@ -603,8 +603,8 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 .mbtns .btn{margin:24px 18px 0 0}
 
 /* Embedded MKV cues render in the DOM: old webOS errors on source-less tracks. */
-.mkv-captions{position:absolute;left:6%;right:6%;bottom:7%;text-align:center;color:#fff;font:42px sans-serif;white-space:pre-line;text-shadow:2px 2px 3px #000,-2px -2px 3px #000;z-index:10;pointer-events:none}
-video.mkv-captions-active::cue{color:transparent;background:transparent;text-shadow:none}
+.mkv-captions,.subs-captions{position:absolute;left:6%;right:6%;bottom:7%;text-align:center;color:#fff;font:42px sans-serif;white-space:pre-line;text-shadow:2px 2px 3px #000,-2px -2px 3px #000;z-index:10;pointer-events:none}
+video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;background:transparent;text-shadow:none}
 
 /* What the phone or computer is doing, on the QR code screens (issue #8): a big banner along the
    bottom, readable from across the room on a small TV. */

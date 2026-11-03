@@ -235,7 +235,7 @@ function create(opts) {
     var want = hmac(key, 'tivibro-req-v1\n' + req.method + '\n' + u + '\n' + t + '\n' + nonce + '\n' + sha256(buf));
     if (!same(want, sig)) { log({ lv: 'warn', event: 'companion: bad signature', phone: p.name, from: who }); return send(res, 401, { error: 'bad signature', code: 'signature' }); }
     var now = Date.now();
-    if (Math.abs(now - t) > SKEW_MS) return send(res, 401, { error: 'clock', code: 'clock', now: now }, key, nonce);
+    if (Math.abs(now - t) > SKEW_MS) return send(res, 401, { error: 'This phone\'s clock and the TV\'s are more than 5 minutes apart.  Check the time on both (Settings, General, Time and date on the TV).', code: 'clock', now: now }, key, nonce);
     if (nonces[nonce]) return send(res, 401, { error: 'replayed', code: 'replay' }, key, nonce);
     nonces[nonce] = now;
     for (var n in nonces) if (now - nonces[n] > 2 * SKEW_MS) delete nonces[n];

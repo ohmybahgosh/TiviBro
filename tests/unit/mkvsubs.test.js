@@ -475,6 +475,30 @@ ok('orders clusters by proximity to current playback position, nearest first, de
     return starts === 1 && playbackUrl === 'http://edge/edge.mkv' && requestUrls.filter(u=>u==='http://provider/shared.mkv').length===1 && v.children[0].track.cues.length===1;
   })());
 
+  ok('a reconnect asks the movie link again for a new session instead of reusing one that may have expired (issue #34)', await (async () => {
+    // shared.mkv is cached by the test above, with the session http://edge/edge.mkv.
+    redirectTarget = 'http://edge/edge-new.mkv'; requestUrls = [];
+    let playbackUrl = '', starts = 0;
+    const v = {children: [], appendChild(el) {this.children.push(el);}, removeChild() {}};
+    const h = MkvSubs.extract('http://provider/shared.mkv', v, u => {playbackUrl=u;starts++;});
+    const cachedAtOnce = v.children.length === 1 && v.children[0].track.cues.length === 1;
+    await flush(); h.cancel(); redirectTarget = '';
+    return cachedAtOnce && starts === 1 && playbackUrl === 'http://edge/edge-new.mkv' && requestUrls[0] === 'http://provider/shared.mkv' && requestUrls.indexOf('http://edge/edge.mkv') < 0;
+  })());
+
+  ok('when the link cannot be opened again the video still starts from the movie link once', await (async () => {
+    mkvFixtures['gone.mkv'] = mkvFixtures['1.mkv'];
+    const v1 = {children: [], appendChild(el) {this.children.push(el);}, removeChild() {}};
+    const h1 = MkvSubs.extract('http://provider/gone.mkv', v1, () => {});
+    await flush(); h1.cancel();
+    const saved = mkvFixtures['gone.mkv']; delete mkvFixtures['gone.mkv'];
+    let playbackUrl = '', starts = 0;
+    const v = {children: [], appendChild(el) {this.children.push(el);}, removeChild() {}};
+    const h = MkvSubs.extract('http://provider/gone.mkv', v, u => {playbackUrl=u;starts++;});
+    await flush(); h.cancel(); mkvFixtures['gone.mkv'] = saved;
+    return starts === 1 && playbackUrl === 'http://provider/gone.mkv';
+  })());
+
   ok('metadata failure still starts native playback once', await (async () => {
     let starts = 0, playbackUrl = '';
     const h = MkvSubs.extract('http://p/dropsconnection.mkv', {}, u => {starts++;playbackUrl=u;});

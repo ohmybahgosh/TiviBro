@@ -155,9 +155,9 @@
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-sparkle"/></svg></span><h3>Clean names, tidy lists</h3><p>"USA | ESPN FHD ◉" shows as "ESPN".  Hundreds of tags handled.</p></article>
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-bell"/></svg></span><h3>Reminders that find you</h3><p>Even with TiviBro closed, on another app or input.  Never over the screensaver.</p></article>
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-search"/></svg></span><h3>Search everything</h3><p>Every showing in the guide, plus your movies and shows, best match first.  On now, Coming up and Replays one press away.</p></article>
-      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-star"/></svg></span><h3>A watchlist</h3><p>Add "Yankees" or "Bluey" once.  TiviBro reminds you whenever it's on.</p></article>
+      <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-star"/></svg></span><h3>A watchlist</h3><p>Add "Yankees" or "Bluey" once.  TiviBro reminds you whenever it's on, and every reminder still to come waits in one list to cancel.</p></article>
       <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-trophy"/></svg></span><h3>My teams</h3><p>Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams.  One group near the top of the guide has their games on now, on every channel showing them, then the next ones, with reminders if you want them.</p></article>
-      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-movie"/></svg></span><h3>My media</h3><p>Your own movies from a home media server (DLNA) or a WebDAV cloud like premiumize, on poster shelves with resume and favorites, details from TMDB with your own free token, and browsing from the phone app.</p></article>
+      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-movie"/></svg></span><h3>My media</h3><p>Your own movies and TV shows from a home media server (DLNA) or a WebDAV cloud like premiumize, on poster shelves with resume and favorites, details from TMDB with your own free token, and browsing from the phone app.</p></article>
       <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-phone"/></svg></span><h3>A remote in your pocket</h3><p>The TiviBro app for Android: a remote, Play on TV from your channel list, volume, and the editor full screen.  <a href="/apk/">Get the APK</a>.</p></article>
       <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-monitor"/></svg></span><h3>Buffer info on demand</h3><p>Hold Info, or open Stream info from the quick menu, to see how much video is banked and how fast it's coming in.</p></article>
       <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-palette"/></svg></span><h3>Make it yours</h3><p>Nine backgrounds including true black for OLED, twelve accents or your own.</p></article>
@@ -259,6 +259,7 @@
     <figure><img loading="lazy" src="img/shots/tv-catchup-guide.webp" alt="Catch-up in the guide" width="1280" height="720"><figcaption>Catch-up: travel back in the guide</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-movies.webp" alt="Movies" width="1280" height="720"><figcaption>Movies with posters and ratings</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-episodes.webp" alt="Episodes" width="1280" height="720"><figcaption>Shows, seasons and episodes</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-onnow-genre.webp" alt="Movies on now, a genre shelf" width="1280" height="720"><figcaption>Movies on now, by genre</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-search.webp" alt="Search" width="1280" height="720"><figcaption>Search channels and programmes</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-versions.webp" alt="Other versions of a channel" width="1280" height="720"><figcaption>Other versions of a channel</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-reminder.webp" alt="A reminder" width="1280" height="720"><figcaption>Reminders</figcaption></figure>
@@ -330,13 +331,13 @@
   <div class="wrap split">
     <div class="reveal">
       <p class="kicker">My media</p>
-      <h2>Your own movies, <span class="grad">next to your channels.</span></h2>
-      <p>Point TiviBro at a home media server (DLNA, like a NAS or a Fritz!Box) or a WebDAV cloud like premiumize, and your movies land on poster shelves.</p>
+      <h2>Your own movies and shows, <span class="grad">next to your channels.</span></h2>
+      <p>Point TiviBro at a home media server (DLNA, like a NAS or a Fritz!Box) or a WebDAV cloud like premiumize, and your movies and TV shows land on poster shelves.</p>
       <ul class="ticks">
-        <li><b>Continue watching</b>, <b>Favorites</b> and <b>All movies</b>, with resume and the normal movie player.</li>
+        <li><b>Continue watching</b>, <b>Favorites</b>, <b>Movies</b> and <b>TV shows</b>, with resume and the normal movie player.  Shows open into seasons and episodes.</li>
         <li>Posters, plots and details in your language from TMDB, with your own free token.</li>
         <li>Browse them in the phone app and play them on the TV.</li>
-        <li>Movies only for now: TV shows, trailers and extras are left out.</li>
+        <li>Trailers and extras are left out.</li>
       </ul>
     </div>
     <div class="layers">
@@ -368,8 +369,8 @@
   <div class="wrap thumbs reveal">
     <img class="zoomable" loading="lazy" src="img/shots/editor-overview.webp" alt="Editor overview" width="1280" height="720">
     <img class="zoomable" loading="lazy" src="img/shots/editor-feeds-local.webp" alt="East and West feeds, and local channels by city" width="1280" height="764">
-    <img class="zoomable" loading="lazy" src="img/shots/editor-groups.webp" alt="Groups and channels" width="1280" height="720">
-    <img class="zoomable" loading="lazy" src="img/shots/editor-backup.webp" alt="Backup and restore" width="1280" height="720">
+    <img class="zoomable" loading="lazy" src="img/shots/editor-groups.webp" alt="Channels and groups" width="1280" height="720">
+    <img class="zoomable" loading="lazy" src="img/shots/editor-backup.webp" alt="Backups and restore points" width="1280" height="720">
   </div>
 </section>
 
@@ -403,7 +404,7 @@
         <li>Open the <b>Homebrew Channel</b>, go to <b>Settings</b>, and choose <b>Add repository</b>.</li>
         <li>Enter this address:
           <div class="copy"><code>https://tivibro.app/repo</code><button type="button">Copy</button></div></li>
-        <li>TiviBro appears in the app list.  Choose <b>Install</b>.  New versions show up as <b>Update</b>, and inside TiviBro under <b>Settings, Updates and about</b>.</li>
+        <li>TiviBro appears in the app list.  Choose <b>Install</b>.  New versions show up as <b>Update</b>, and inside TiviBro under <b>Settings, Updates, about and diagnostics</b>.</li>
         <li>Open TiviBro and scan the QR code on the first screen with your phone to add your playlist there.</li>
       </ol>
       <p class="note">Want every test build as soon as it's out?  Add <code>https://tivibro.app/testing</code> instead.</p>
@@ -421,7 +422,7 @@
         <li>Install it with <code>ares-install -d yourTV app.tivibro.tv_*.ipk</code>, or build from source with <code>npm run build</code> and <code>npm run install:tv</code>.</li>
       </ol>
     </div>
-    <p class="note center"><b>The phone app:</b> TiviBro for Android pairs with your TV for a remote and Play on TV.  <a href="/apk/">Download the newest APK</a>, open it on your phone to install, then turn on <b>Settings > Phone app</b> on the TV.</p>
+    <p class="note center"><b>The phone app:</b> TiviBro for Android pairs with your TV for a remote and Play on TV.  <a href="/apk/">Download the newest APK</a>, open it on your phone to install, then open <b>Settings > Phone app and web editor</b> on the TV and pair it.</p>
     <p class="note center">TiviBro is in alpha testing on real LG TVs (webOS 4 to 25), with beta next.  Expect some rough edges, keep a backup before updating, and report bugs in <a href="https://github.com/ohmybahgosh/TiviBro/issues">Issues</a>.</p>
   </div>
 </section>
@@ -438,7 +439,7 @@
     <details class="reveal"><summary>If I hide the other qualities of a channel, can TiviBro still switch to them?</summary><p>Yes.  Hiding only takes a copy out of your lists.  When the copy you watch stops working, TiviBro still moves to another quality or copy by itself, hidden ones included, and tells you.  Only a copy you lock with the parental PIN is skipped.  The other East or West feed isn't used, since it runs hours apart.</p></details>
     <details class="reveal"><summary>Is it really free?</summary><p>Yes.  It's MIT licensed open source, with no accounts, ads or paid tiers, and the app on your TV doesn't track you.  It only sends an anonymous daily count of TVs by version, which you can switch off.</p></details>
     <details class="reveal"><summary>Are my logins safe?</summary><p>Logins stay on the TV.  The web editor only ever sees server names, it needs the password shown on the TV, and backups are always encrypted with a passphrase you choose.</p></details>
-    <details class="reveal"><summary>Something isn't working.  How do I report it?</summary><p>On the TV, open <b>Report a problem</b> (at the bottom of the menu in test builds, in <b>Settings &gt; Diagnostics</b>, and on the first screen) and scan the QR code.  Your phone opens a short form; the TV adds its version, model and log with logins and server names taken out, and the report goes to GitHub with one press, no account needed.  If TiviBro closed by itself, the next start asks right away and can send the report straight from the TV.</p></details>
+    <details class="reveal"><summary>Something isn't working.  How do I report it?</summary><p>On the TV, open <b>Report a problem</b> (at the bottom of the menu in test builds, in <b>Settings &gt; Updates, about and diagnostics</b>, and on the first screen) and scan the QR code.  Your phone opens a short form; the TV adds its version, model and log with logins and server names taken out, and the report goes to GitHub with one press, no account needed.  If TiviBro closed by itself, the next start asks right away and can send the report straight from the TV.</p></details>
     <details class="reveal"><summary>Where's the full manual?</summary><p>The <a href="https://github.com/ohmybahgosh/TiviBro/wiki">user guide</a> covers every remote button, every screen and every setting, with videos and screenshots.</p></details>
   </div>
 </section>

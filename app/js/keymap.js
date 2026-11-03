@@ -22,7 +22,7 @@ var Keymap = (function () {
     rewind: 'Rewind (catch-up), else last channel', restart: 'Watch from start', playpause: 'Play / pause',
     guide: 'TV guide', search: 'Search', settings: 'Settings', editor: 'Edit on a phone or computer (QR code)', live: 'Channels screen', exit: 'Leave fullscreen',
     fav: 'Add or remove favorite', favorites: 'Open Favorites', recents: 'Open Recent channels',
-    picture: 'Change picture mode', audio: 'Audio track', cc: 'Closed captions on or off', subs: 'Subtitles menu', sleep: 'Sleep timer',
+    picture: 'Change the aspect', audio: 'Audio track', cc: 'Closed captions on or off', subs: 'Subtitles menu', sleep: 'Sleep timer',
     movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect stream', buffer: 'Show buffer info', streaminfo: 'Stream info and buffer',
     full: 'Watch fullscreen (the channel in the window, else the highlighted one)', now: 'Jump to now', groups: 'Open the groups', stopwin: 'Stop the window'
   };
@@ -31,7 +31,7 @@ var Keymap = (function () {
     panel: 'Quick menu', list: 'Channel guide', osd: 'Info', menu: 'Options', chnext: 'Next channel', chprev: 'Previous channel', last: 'Last channel',
     rewind: 'Rewind', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings', editor: 'Phone editor',
     live: 'Channels', exit: 'Exit fullscreen', fav: 'Favorite', favorites: 'Favorites', recents: 'Recent',
-    picture: 'Picture size', audio: 'Audio track', cc: 'Captions', subs: 'Subtitles', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info', streaminfo: 'Stream info',
+    picture: 'Aspect', audio: 'Audio track', cc: 'Captions', subs: 'Subtitles', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info', streaminfo: 'Stream info',
     full: 'Fullscreen', now: 'Now', groups: 'Groups', stopwin: 'Stop window'
   };
   var CONTEXT_ACTIONS = {

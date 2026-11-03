@@ -198,9 +198,14 @@ function create(opts) {
       // the forgiving reader in rawhttp.js instead, see onUpError.
       insecureHTTPParser: true, lookup: cachedLookup
     };
-    var up = lib.request(reqOpts, onResponse), triedRaw = false;
+    var up = lib.request(reqOpts, onResponse), triedRaw = false, reading = false;
     function onResponse(ur) {
       var code = ur.statusCode || 502;
+      /* A movie being read with Range (the TV's player always asks that way) goes quiet for as long as
+         the viewer pauses: the player stops reading, so the provider stops sending.  That is not a dead
+         server, and cutting it after 30 s made a paused movie fail on play (issue #34).  The player's
+         own watchdog notices a provider that stops sending while it plays. */
+      if (req.headers.range && (code === 200 || code === 206)) reading = true;
       rec.s = code; rec.ct = ur.headers['content-type'];
       rec.firstByteMs = Date.now() - t0;
       if (code >= 300 && code < 400 && ur.headers.location) {
@@ -276,7 +281,7 @@ function create(opts) {
         body.pipe(res);
       });
     }
-    function onTimeout() { up.destroy(new Error('upstream timeout')); }
+    function onTimeout() { if (!reading) up.destroy(new Error('upstream timeout')); }
     function onUpError(e) {
       // Node's parser refused the reply: ask again with the forgiving reader.
       if (!aborted && !triedRaw && !res.headersSent && /^HPE_/.test(e.code || '')) {

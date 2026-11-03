@@ -4,15 +4,18 @@
      can change (for a title the subtitle sites know by another name), in your subtitle languages.
      The helper asks OpenSubtitles (service/subtitles.js) with the viewer's own free API key; with a free
      account too, 20 downloads a day instead of 5.
-   - Timing: + / - 0.1 s and 1 s, for subtitles a little early or late (any track whose lines can be read).
+   - Timing: + / - 0.1 s and 1 s, for subtitles a little early or late (any track whose lines can be read),
+     and a frame rate fix (23.976, 24, 25 fps) for lines that drift further out of time as the film goes on.
    - Line up with another track: finds the shift (and a frame-rate difference, 23.976 / 24 / 25 fps)
      that best matches a subtitle already in time, like AutoSubSync does with a reference subtitle.
+   - Drawing: TiviBro draws the lines itself (drawLines), exactly the ones whose time includes now, and
+     hides the TV's own drawing of them, which could leave a line stuck on screen after its times moved.
    The key and login stay on this TV (localStorage 'tivibro.subs'), out of backups and problem reports. */
 var Subs = (function () {
   'use strict';
   var KEY = 'tivibro.subs';
   var EXTRA = [['ea', 'Spanish (Latin America)'], ['pt-br', 'Portuguese (Brazil)'], ['zh-tw', 'Chinese (traditional)']];
-  var state = read(), added = [], delay = 0, delayTimer = 0, lastFind = null;
+  var state = read(), added = [], delay = 0, rate = 1, delayTimer = 0, lastFind = null, version = 0;
 
   function read() { try { var o = JSON.parse(localStorage.getItem(KEY) || 'null'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); return true; } catch (e) { return false; } }
@@ -101,14 +104,18 @@ var Subs = (function () {
     var v = video(), tr = v.addTextTrack('subtitles', label, lang || '');
     for (var i = 0; i < v.textTracks.length; i++) if (v.textTracks[i] !== tr && v.textTracks[i].kind === 'subtitles') v.textTracks[i].mode = 'disabled';
     tr.mode = 'showing';
-    cues.forEach(function (c) { try { var q = new VTTCue(c.s + delay, c.e + delay, c.text); q._s0 = c.s; q._e0 = c.e; tr.addCue(q); } catch (e) {} });
+    cues.forEach(function (c) { try { var p = placed(c.s, c.e), q = new VTTCue(p.s, p.e, c.text); q._s0 = c.s; q._e0 = c.e; tr.addCue(q); } catch (e) {} });
     added.push(tr);
+    version++;
+    startDrawing();
+    drawLines();
     return tr;
   }
   function gone(t) { return dead.indexOf(t) >= 0; }
   function reset() {
     added.forEach(function (t) { try { t.mode = 'disabled'; } catch (e) {} dead.push(t); });
-    added = []; delay = 0; clearInterval(delayTimer); delayTimer = 0; lined = {};
+    added = []; delay = 0; rate = 1; clearInterval(delayTimer); delayTimer = 0; lined = {}; version++;
+    startDrawing();
   }
 
   /* ---------- timing ---------- */
@@ -120,12 +127,19 @@ var Subs = (function () {
      same scale and shift as they arrive (fresh()). */
   var lined = {};
   function trackKey(t) { return (t.label || '') + '|' + (t.language || ''); }
+  /* Where a line shows: its own time, scaled for the frame rate fix, plus the delay.  A line moved
+     before 0 still ends after it starts. */
+  function placed(s0, e0) { var s = Math.max(0, s0 * rate + delay); return { s: s, e: Math.max(s + 0.05, e0 * rate + delay) }; }
   function fix(t) {
     var map = lined[trackKey(t)];
     cuesOf(t).forEach(function (c) {
       if (c._s0 == null) { c._s0 = map ? c.startTime * map.scale + map.off : c.startTime; c._e0 = map ? c.endTime * map.scale + map.off : c.endTime; }
-      var s = Math.max(0, c._s0 + delay), e = Math.max(s + 0.05, c._e0 + delay);
-      if (Math.abs(c.startTime - s) > 0.001) { try { c.startTime = s; c.endTime = e; } catch (x) {} }
+      var p = placed(c._s0, c._e0);
+      if (Math.abs(c.startTime - p.s) > 0.001 || Math.abs(c.endTime - p.e) > 0.001) {
+        // End first when a line moves later, start first when it moves earlier: it never has its end before its start.
+        try { if (p.s > c.startTime) { c.endTime = p.e; c.startTime = p.s; } else { c.startTime = p.s; c.endTime = p.e; } } catch (x) {}
+        version++;
+      }
     });
   }
   function applyDelay() {
@@ -134,15 +148,73 @@ var Subs = (function () {
       if ((t[i].kind !== 'subtitles' && t[i].kind !== 'captions') || gone(t[i])) continue;
       fix(t[i]);
     }
+    drawLines();
   }
-  function fresh(t) { if (t && (delay || lined[trackKey(t)])) fix(t); }
-  function timed() { clearInterval(delayTimer); delayTimer = delay || Object.keys(lined).length ? setInterval(applyDelay, 2000) : 0; }
+  function fresh(t) { if (t && (delay || rate !== 1 || lined[trackKey(t)])) fix(t); }
+  function timed() { clearInterval(delayTimer); delayTimer = delay || rate !== 1 || Object.keys(lined).length ? setInterval(applyDelay, 2000) : 0; }
+  function setRate(r) { rate = r > 0.5 && r < 2 ? r : 1; applyDelay(); timed(); return rate; }
   function shift(d) {
     delay = Math.round((delay + d) * 10) / 10;
     applyDelay();
     timed();
     return delay;
   }
+
+  /* ---------- drawing the lines (discussion #19) ----------
+     The TV drew subtitle lines itself, and a line whose times changed while it was on screen (Timing,
+     Line up, or the frame rate fix, every 2 s while lines arrive) could stay there, with newer lines
+     drawn over it until the subtitle was switched off and on.  Now TiviBro draws them: four times a
+     second, exactly the lines whose start is at or before now and whose end is after it, and the TV's
+     own drawing is hidden (video.subs-drawn::cue).  Subtitles read from a movie file have their own
+     drawing (mkvsubs.js) and are left to it. */
+  var shots = [], board = null, boardText = null, drawTimer = 0;
+  // A track's lines as a plain list in start order, rebuilt when the track or its times change.
+  function snapshot(t) {
+    var c = t.cues, n = c ? c.length : 0, now = Date.now();
+    for (var k = 0; k < shots.length; k++) {
+      var h = shots[k];
+      if (h.t !== t) continue;
+      if (h.n === n && h.v === version && now - h.at < 2000) return h;
+      shots.splice(k, 1); break;
+    }
+    var list = [], longest = 0;
+    for (var i = 0; i < n; i++) {
+      var s = c[i].startTime, e = c[i].endTime;
+      if (!(e > s)) continue;                       // a line with its end before its start never shows
+      list.push({ s: s, e: e, text: c[i].text });
+      if (e - s > longest) longest = e - s;
+    }
+    list.sort(function (a, b) { return a.s - b.s; });
+    var shot = { t: t, n: n, v: version, at: now, list: list, longest: longest };
+    shots.unshift(shot); shots.length = Math.min(shots.length, 8);
+    return shot;
+  }
+  // The lines on screen at time t: every line that has started and not yet ended, nothing else.
+  function linesAt(list, longest, t) {
+    var lo = 0, hi = list.length, out = [];
+    while (lo < hi) { var mid = (lo + hi) >> 1; if (list[mid].s <= t) lo = mid + 1; else hi = mid; }
+    for (var i = lo - 1; i >= 0 && list[i].s > t - longest - 0.001; i--) if (list[i].e > t) out.unshift(list[i].text);
+    return out;
+  }
+  function drawLines() {
+    var v = video();
+    if (!v || !v.textTracks || !v.parentNode) return;
+    var stage = v.parentNode, full = !stage.classList || stage.classList.contains('full'), lines = [], drawing = false, t = v.currentTime || 0;
+    for (var i = 0; full && i < v.textTracks.length; i++) {
+      var tr = v.textTracks[i];
+      if (tr.kind !== 'subtitles' || tr.mode !== 'showing' || tr._tbMkv || gone(tr)) continue;
+      drawing = true;
+      var sh = snapshot(tr);
+      lines = lines.concat(linesAt(sh.list, sh.longest, t));
+    }
+    if (v.classList) v.classList.toggle('subs-drawn', drawing);
+    if (!board && !drawing) return;
+    if (!board) { board = document.createElement('div'); board.className = 'subs-captions'; }
+    if (board.parentNode !== stage) stage.appendChild(board);
+    var text = lines.join('\n').replace(/<\/?(?:b|i|u|font)(?:\s[^>]*)?>/gi, '');
+    if (text !== boardText) { board.textContent = text; board.style.display = text ? '' : 'none'; boardText = text; }
+  }
+  function startDrawing() { if (!drawTimer && typeof document !== 'undefined') drawTimer = setInterval(function () { try { drawLines(); } catch (e) {} }, 250); }
 
   /* ---------- line up with a subtitle already in time ----------
      For each frame rate ratio, the shift (to 0.1 s) that makes the two tracks' lines overlap most. */
@@ -177,10 +249,11 @@ var Subs = (function () {
     var r = align(tc, rc);
     if (!r) return null;
     r.moved = Math.round((r.off - delay) * 100) / 100;           // how far the lines move on screen
-    tc.forEach(function (x) { x.c._s0 = x.s * r.scale + r.off - delay; x.c._e0 = x.e * r.scale + r.off - delay; });
+    // Shown at _s0 * rate + delay (placed()), which must land on s * scale + off.
+    tc.forEach(function (x) { x.c._s0 = (x.s * r.scale + r.off - delay) / rate; x.c._e0 = (x.e * r.scale + r.off - delay) / rate; });
     // On top of an earlier line-up: a line that arrives later gets both.
     var was = lined[trackKey(target)] || { scale: 1, off: 0 };
-    lined[trackKey(target)] = { scale: r.scale * was.scale, off: r.scale * was.off + r.off - delay };
+    lined[trackKey(target)] = { scale: r.scale * was.scale / rate, off: (r.scale * was.off + r.off - delay) / rate };
     applyDelay();
     timed();
     return r;
@@ -240,6 +313,25 @@ var Subs = (function () {
     }
     draw();
   }
+  /* Frame rate fix: a subtitle made for a video at one frame rate, played with a copy at another (a
+     25 fps European copy of a 23.976 fps film, say), drifts further out of time as the film goes on.
+     Every line's time is scaled by subtitle fps / video fps. */
+  var RATES = [[23.976, 25], [25, 23.976], [24, 25], [25, 24], [23.976, 24], [24, 23.976]];
+  function rateName() {
+    for (var i = 0; i < RATES.length; i++) if (Math.abs(RATES[i][0] / RATES[i][1] - rate) < 1e-6) return RATES[i][0] + ' to ' + RATES[i][1] + ' fps';
+    return rate === 1 ? 'off' : 'fixed by Line up';
+  }
+  function timingSummary() {
+    var d = delay ? (delay > 0 ? '+' : '') + delay.toFixed(1) + ' s' : '';
+    return [d, rate !== 1 ? rateName() : ''].filter(Boolean).join(', ') || 'in time';
+  }
+  function rateMenu() {
+    UI.menu('Frame rate fix: ' + rateName(), [{ label: 'Off', sub: rate === 1 ? 'on' : 'lines keep their own times', action: function () { setRate(1); timingMenu(); } }]
+      .concat(RATES.map(function (r) {
+        var k = r[0] / r[1], on = Math.abs(k - rate) < 1e-6;
+        return { label: 'Subtitle for ' + r[0] + ' fps, video at ' + r[1] + ' fps', sub: on ? 'on' : k < 1 ? 'lines come later and later' : 'lines come sooner and sooner', action: function () { setRate(k); timingMenu(); } };
+      })).concat([{ label: 'Only some parts out of time?', sub: 'In time, then early or late, then in time again: that subtitle was made for another cut of the film.  Try another download.' }]));
+  }
   function timingMenu() {
     var sign = function (d) { return (d > 0 ? '+' : '') + d.toFixed(1) + ' s'; };
     var step = function (d) { return function () { shift(d); timingMenu(); }; };
@@ -249,6 +341,7 @@ var Subs = (function () {
       { label: 'Later by 1 s', action: step(1) },
       { label: 'Earlier by 1 s', action: step(-1) },
       delay && { label: 'Back to 0', action: function () { shift(-delay); timingMenu(); } },
+      { label: 'Frame rate…', sub: rate === 1 ? 'for lines that drift further out of time as the film goes on' : rateName(), action: rateMenu },
       { label: 'Done', current: true }
     ]);
   }
@@ -278,6 +371,6 @@ var Subs = (function () {
   }
 
   return { find: find, gone: gone, refresh: applyDelay, fresh: fresh, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
-    get delay() { return delay; }, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
-    _test: { parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack } };
+    get delay() { return delay; }, get rate() { return rate; }, get timing() { return timingSummary(); }, setRate: setRate, draw: drawLines, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
+    _test: { parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
 })();

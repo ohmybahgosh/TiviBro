@@ -92,7 +92,7 @@ function helpers(page) {
   const section = async (name, enter, silent) => {
     if ((await ev(() => Views.tab)) !== 'settings') await open('Settings', 1000);
     for (let i = 0; i < 8 && !(await ev(() => document.getElementById('setNav').classList.contains('active'))); i++) await quiet('Escape', 300);
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < 16; i++) {
       const cur = await focusText('#setNav .on');
       if (cur === name) break;
       const names = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), d => d.innerText.trim()));
@@ -115,7 +115,16 @@ function helpers(page) {
   };
   const digits = async (s, caption) => { await ev(c => window.__key && window.__key('0 to 9', c), caption || ''); for (const d of s) { await page.keyboard.press(d); await page.waitForTimeout(250); } };
   const full = async (k) => { await ev(k => Views.startChannel(Library.find(k), false, () => Views.goFull()), k); await page.waitForTimeout(3500); };
-  return { press, shot, say, hold, quiet, open, section, row, pick, qp, digits, full };
+  // A few reminders on real programmes later tonight, so the reminder lists have something to show.
+  const seedReminders = () => ev(() => {
+    const now = Date.now(), seen = {}, titles = {}, picks = [], byKey = {};
+    Library.data.channels.forEach(c => { const g = Epg.keyOf(c); if (g && !byKey[g]) byKey[g] = c; });
+    Epg.during(now + 20 * 60000, now + 4 * 3600e3, (g, p) => { const c = byKey[g];
+      if (c && picks.length < 4 && !seen[c.k] && !titles[p.t] && p.s > now + 15 * 60000 && p.t) { seen[c.k] = titles[p.t] = 1; picks.push({ k: c.k, s: p.s, e: p.e, t: p.t }); } });
+    picks.forEach(r => { if (!Store.edits.reminders.some(x => x.k === r.k && x.s === r.s)) Store.edits.reminders.push(r); });
+    Store.saveEdits(); return picks.length;
+  });
+  return { press, shot, say, hold, quiet, open, section, row, pick, qp, digits, full, seedReminders };
 }
 
 // A visible mouse pointer for the computer-side recordings (headless recordings show none).
@@ -238,11 +247,13 @@ if (require.main === module) (async () => {
   });
 
   // Settings: the sections, and a live look change.
-  await scene(browser, 'settings', {}, async ({ press, shot, stop, quiet, open, section }) => {
+  await scene(browser, 'settings', {}, async ({ press, shot, stop, quiet, open, section, row }) => {
     await open('Settings', 1400);
     await shot('tv-settings');
-    await section('Appearance', true);
-    await press('ArrowRight', 'Accent color', 1200); await press('ArrowRight', '', 1200); await press('ArrowRight', '', 1400);
+    await press('ArrowDown', 'The same sections on the TV, the phone and the web editor', 700);
+    for (let i = 0; i < 4; i++) await press('ArrowDown', '', 600);
+    await section('Appearance and start screen', true);
+    await row('Accent color'); await press('ArrowRight', 'Accent color', 1200); await press('ArrowRight', '', 1200); await press('ArrowRight', '', 1400);
     await shot('tv-settings-look');
     await press('ArrowDown', 'Background', 900);
     await press('ArrowRight', '', 1500); await press('ArrowRight', '', 1500); await press('ArrowRight', '', 1500);
@@ -324,7 +335,7 @@ if (require.main === module) (async () => {
     await digits('1234', 'Only with the PIN'); await page.waitForTimeout(3500);
   });
 
-  // Fullscreen options: the Red menu, stream info, sleep timer and picture size.
+  // Fullscreen options: the Red menu, stream info, sleep timer and the picture's aspect.
   await scene(browser, 'options', {}, async ({ page, press, shot, mark, full, qp }) => {
     await full('x4');
     mark();
@@ -337,34 +348,39 @@ if (require.main === module) (async () => {
     await qp('Sleep timer', 1300);
     await shot('tv-sleep');
     await press('Escape', '', 800);
-    await qp('Picture', 1300);
-    await shot('tv-picture');
+    await qp('Aspect', 1300);
+    await shot('tv-aspect');
     await press('Escape', '', 1000);
   });
 
   // Every Settings section and the pages inside them, as screenshots.
-  await scene(browser, 'settings-pages', { video: false }, async ({ page, press, quiet, shot, open, section, row }) => {
+  await scene(browser, 'settings-pages', { video: false }, async ({ page, quiet, shot, open, section, row, seedReminders }) => {
     await page.evaluate(() => WebEdit.stop());
+    await seedReminders();
     await open('Settings', 2400);
-    const S = [['Playback and buffering', 'playback'], ['Remote control', 'remote'], ['Playlists and guide', 'playlists'], ['Groups, sorting, hidden', 'groups'],
-      ['Guide, start screen, reminders', 'guide'], ['Appearance', 'look'], ['Parental controls', 'parental'], ['Edit on a phone or computer', 'editor'], ['Updates and about', 'updates'], ['Diagnostics', 'diag']];
+    const bottom = async () => { for (let i = 0; i < 60; i++) await quiet('ArrowDown', 50); await page.waitForTimeout(400); };
+    const S = [['Playlists', 'playlists'], ['Guide', 'guide'], ['Channels and groups', 'groups'], ['Channel and group names', 'names'], ['Reminders and watchlist', 'reminders'],
+      ['Playback', 'playback'], ['Remote and buttons', 'remote'], ['Appearance and start screen', 'look'], ['Parental controls', 'parental'], ['Backups and restore points', 'backups'],
+      ['Web editor', 'editor'], ['Updates, about and diagnostics', 'updates']];   // 'Web editor' is 'Phone app and web editor' in test builds
     for (const [name, id] of S) {
       await section(name, true, true);
+      await page.waitForTimeout(id === 'backups' ? 2000 : 300);
       await shot('tv-set-' + id);
-      if (id === 'playback' || id === 'groups' || id === 'guide') { for (let i = 0; i < 40; i++) await quiet('ArrowDown', 60); await page.waitForTimeout(400); await shot('tv-set-' + id + '-2'); }
+      if (id === 'playback' || id === 'groups' || id === 'guide') { await bottom(); await shot('tv-set-' + id + '-2'); }
+      if (id === 'look') { await row('Theme'); await page.waitForTimeout(400); await shot('tv-set-look-2'); }
+      if (id === 'updates') { await row('Report a problem'); await page.waitForTimeout(400); await shot('tv-set-diag'); }
     }
     const sub = async (sec, rowLabel, name, more) => { await section(sec, true, true); await row(rowLabel); await quiet('Enter', 900); if (more) await more(); await shot(name); };
-    await sub('Remote control', 'In the player', 'tv-set-remote-player');
-    await sub('Remote control', 'Quick menu buttons', 'tv-set-quick-menu');
-    await sub('Playlists and guide', 'Demo provider', 'tv-set-playlist');
-    await sub('Playlists and guide', 'Demo provider', 'tv-set-playlist-2', async () => { for (let i = 0; i < 40; i++) await quiet('ArrowDown', 60); await page.waitForTimeout(400); });
-    await sub('Playlists and guide', 'Demo provider', 'tv-set-names', async () => { await row('Channel name editor'); await quiet('Enter', 900); });
-    await sub('Groups, sorting, hidden', 'Manage groups', 'tv-set-manage-groups');
-    await sub('Diagnostics', 'What this TV can play', 'tv-set-caps');
-    await section('Diagnostics', true, true); await row('Run connection test'); await quiet('Enter', 200); await page.waitForTimeout(7000); await shot('tv-set-diag-test'); await quiet('Escape', 600);
-    await section('Diagnostics', true, true); await row('View app log'); await quiet('Enter', 1200); await shot('tv-set-diag-log'); await quiet('Escape', 600);
+    await sub('Remote and buttons', 'In the player', 'tv-set-remote-player');
+    await sub('Remote and buttons', 'Quick menu buttons', 'tv-set-quick-menu');
+    await sub('Playlists', 'Demo provider', 'tv-set-playlist');
+    await sub('Playlists', 'Demo provider', 'tv-set-playlist-2', bottom);
+    await sub('Channels and groups', 'Manage groups', 'tv-set-manage-groups');
+    await sub('Updates, about and diagnostics', 'What this TV can play', 'tv-set-caps');
+    await section('Updates, about and diagnostics', true, true); await row('Run connection test'); await quiet('Enter', 200); await page.waitForTimeout(7000); await shot('tv-set-diag-test'); await quiet('Escape', 600);
+    await section('Updates, about and diagnostics', true, true); await row('View app log'); await quiet('Enter', 1200); await shot('tv-set-diag-log'); await quiet('Escape', 600);
     await page.evaluate(() => WebEdit.start()); await page.waitForTimeout(1500);
-    await section('Edit on a phone or computer', true, true); await page.waitForTimeout(800); await shot('tv-set-editor-on');
+    await section('Web editor', true, true); await page.waitForTimeout(800); await shot('tv-set-editor-on');
     await page.evaluate(() => WebEdit.stop()); await page.waitForTimeout(500);
   });
 
@@ -390,7 +406,7 @@ if (require.main === module) (async () => {
     await ed.open();
     await ed.type('#pw', pw);
     await ed.click('#loginBtn', 2200);
-    await ed.click('#p-welcome [data-go=backup]', 1200);
+    await ed.click('#p-welcome [data-go=backups]', 1200);
     await ed.move('#drop', 600);
     await ed.page.setInputFiles('#bFile', backup); await ed.page.waitForTimeout(1200);
     await ed.type('#rPass', PASS, 45);
@@ -448,7 +464,7 @@ async function makeBackup(browser, file, pass) {
   const pw = await tv.evaluate(() => WebEdit.password());
   const ed = await ctx.newPage();
   await ed.goto(EDITOR); await ed.fill('#pw', pw); await ed.click('#loginBtn'); await ed.waitForTimeout(2000);
-  await ed.click('#nav [data-page=backup]'); await ed.fill('#bPass', pass); await ed.fill('#bPass2', pass);
+  await ed.click('#nav [data-page=backups]'); await ed.fill('#bPass', pass); await ed.fill('#bPass2', pass);
   const [dl] = await Promise.all([ed.waitForEvent('download'), ed.click('#bDown')]);
   await dl.saveAs(file);
   await tv.evaluate(() => WebEdit.stop());
@@ -503,6 +519,7 @@ async function editorShots(browser) {
   const tv = await ctx.newPage();
   await tv.addInitScript(init({ time: primeTime(), settings: { providerEpg: 'xmltv' } })[0]);
   await tv.goto(APP); await tv.waitForTimeout(6000);
+  await helpers(tv).seedReminders();
   await tv.evaluate(() => WebEdit.start()); await tv.waitForTimeout(1000);
   const pw = await tv.evaluate(() => WebEdit.password());
   const ed = await (await browser.newContext({ viewport: { width: 1440, height: 860 }, timezoneId: 'America/Detroit' })).newPage();
@@ -512,6 +529,8 @@ async function editorShots(browser) {
   const close = async () => { await ed.keyboard.press('Escape'); await ed.waitForTimeout(400); };
   await ed.goto(EDITOR); await ed.fill('#pw', pw); await ed.click('#loginBtn'); await ed.waitForTimeout(2500);
   await snap('editor-overview');
+  // Overview's "Clean up your guide" steps, with Skip and the fold button.
+  await ed.evaluate(() => document.getElementById('stepsCard').scrollIntoView({ block: 'start' })); await snap('editor-steps');
   await go('gc');
   await ed.click('#glist .g:nth-child(4)').catch(() => {}); await ed.waitForTimeout(800);
   await snap('editor-groups');
@@ -521,29 +540,73 @@ async function editorShots(browser) {
   await snap('editor-copy-move');
   await close();
   await go('guide'); await snap('editor-guide');
-  await go('names'); await snap('editor-names');
-  await go('tools'); await snap('editor-smart-cleanup');
-  // East and West feeds, and local stations by city (the mock has them with MOCK_EVENTS=1).
-  if (await ed.$('#lcQ')) {
-    await ed.fill('#lcQ', 'mi'); await ed.waitForTimeout(400);
-    await ed.click('#lcList input[data-city="DETROIT"]').catch(() => {}); await ed.click('#lcList input[data-city="LANSING"]').catch(() => {});
-    await ed.evaluate(() => document.getElementById('tFeeds').scrollIntoView({ block: 'start' })); await snap('editor-feeds-local');
+  // A big guide on its way, as the TV reports it while it downloads (the demo guide loads in a blink).
+  await ed.evaluate(() => { window.__op = onProgress; onProgress = function () {}; document.getElementById('toast').classList.add('hidden');
+    __op({ active: true, phase: 'download', host: 'provider guide', bytes: 8.4e6, total: 52e6, started: Date.now() - 2600, programmes: 27962, at: Date.now() }); document.getElementById('provChoices').closest('.card').scrollIntoView({ block: 'start' }); });
+  await snap('editor-guide-progress');
+  await ed.evaluate(() => { onProgress = window.__op; drawProgress({}); });
+  // Matching: two channels that never have a guide, ignored, then the Ignored tab.
+  await ed.click('#mTabs button[data-t=all]').catch(() => {}); await ed.waitForTimeout(600);
+  const sel = ed.locator('#mList input[data-msel]');
+  if (await sel.count() >= 2) {
+    // Two channels with different names (the demo list starts with three copies of one).
+    const pick = await ed.evaluate(() => { const seen = {}, out = []; document.querySelectorAll('#mList input[data-msel]').forEach((x, n) => { const r = x.closest('tr') || x.parentElement.parentElement, t = r.innerText.trim().split('\n')[0]; if (out.length < 2 && !seen[t]) { seen[t] = 1; out.push(n); } }); return out; });
+    for (const n of pick) await sel.nth(n).check();
+    await ed.waitForTimeout(300);
+    await ed.click('#mIgnore'); await ed.waitForTimeout(900);
+    await ed.click('#mTabs button[data-t=ignored]').catch(() => {}); await ed.waitForTimeout(6500);   // the toast goes
+    await ed.evaluate(() => document.getElementById('mTabs').closest('.card').scrollIntoView({ block: 'start' })); await snap('editor-guide-ignored');
   }
+  await go('names'); await snap('editor-names');
+  await go('watch'); await snap('editor-reminders');
+  await go('tools'); await snap('editor-smart-cleanup');
   await go('playlists'); await snap('editor-playlists');
-  // A couple of drafts, so Review and the history have something to show.
+  // A couple of drafts, so the changes and the draft history have something to show.
   await go('gc');
   for (const id of ['x9', 'x10']) await ed.click('input[data-vis="' + id + '"]').catch(() => {});
   await ed.waitForTimeout(5000);                    // the draft autosave reaches the TV
-  await go('history'); await ed.waitForTimeout(3500); await snap('editor-history');
+  await go('backups'); await ed.waitForTimeout(3500); await snap('editor-backup');
+  await ed.evaluate(() => document.getElementById('sec-changes').scrollIntoView({ block: 'start' })); await snap('editor-history');
   await ed.fill('#dName', 'Before hiding the sports groups'); await ed.click('#dSave'); await ed.waitForTimeout(4500);
   await ed.evaluate(() => document.getElementById('dList').closest('.card').scrollIntoView({ block: 'center' })); await snap('editor-drafts');
   // An accidental reload: the editor offers the unsent work back.
   await ed.reload(); await ed.fill('#pw', pw).catch(() => {}); await ed.click('#loginBtn').catch(() => {}); await ed.waitForTimeout(4000);
   await snap('editor-recover');
   await ed.locator('#modal button', { hasText: 'Keep working' }).click().catch(() => {}); await ed.waitForTimeout(500);
-  await go('backup'); await snap('editor-backup');
   await go('help'); await snap('editor-help');
   await tv.evaluate(() => WebEdit.stop());
   await ctx.close();
+  await feedsShot(browser);
   console.log('editor: ' + (errs.length ? 'errors: ' + errs.join(' | ') : 'ok'));
+}
+
+// East and West feeds, and local stations by city: the demo provider has them with MOCK_EVENTS=1
+// (MOCK_PORT=8088 node tests/mock/mock_provider.js, or DEMO_EVENTS_SERVER).  Skipped when it isn't running.
+async function feedsShot(browser) {
+  await stopEditor();
+  const server = process.env.DEMO_EVENTS_SERVER || 'http://127.0.0.1:8088';
+  const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 }, timezoneId: 'America/Detroit' });
+  const tv = await ctx.newPage();
+  await tv.addInitScript(init({ time: primeTime(), settings: { playlists: [Object.assign({}, SETTINGS.playlists[0], { server })] } })[0]);
+  await tv.goto(APP); await tv.waitForTimeout(6000);
+  if (!(await tv.evaluate(() => Library.count() > 0))) { console.log('feeds: no events provider on ' + server + ', editor-feeds-local kept'); await ctx.close(); return; }
+  await tv.evaluate(() => WebEdit.start()); await tv.waitForTimeout(1000);
+  const pw = await tv.evaluate(() => WebEdit.password());
+  const ed = await (await browser.newContext({ viewport: { width: 1440, height: 860 }, timezoneId: 'America/Detroit' })).newPage();
+  await ed.goto(EDITOR); await ed.fill('#pw', pw); await ed.click('#loginBtn'); await ed.waitForTimeout(2500);
+  await ed.click('#nav [data-page=tools]'); await ed.waitForTimeout(1200);
+  if (await ed.$('#lcQ')) {
+    await ed.fill('#lcQ', 'mi'); await ed.waitForTimeout(400);
+    await ed.click('#lcList input[data-city="DETROIT"]').catch(() => {}); await ed.click('#lcList input[data-city="LANSING"]').catch(() => {});
+    await ed.evaluate(() => document.getElementById('tFeeds').scrollIntoView({ block: 'start' })); await ed.waitForTimeout(700);
+    await ed.screenshot({ path: path.join(SHOTS, 'editor-feeds-local.png') });
+  }
+  // Smart match: the West copies have no guide id of their own.
+  await ed.click('#nav [data-page=guide]'); await ed.waitForTimeout(1500);
+  if (await ed.$('#smartBtn')) {
+    await ed.click('#smartBtn'); await ed.waitForTimeout(3000);
+    await ed.screenshot({ path: path.join(SHOTS, 'editor-smart-match.png') });
+  }
+  await tv.evaluate(() => WebEdit.stop());
+  await ctx.close();
 }

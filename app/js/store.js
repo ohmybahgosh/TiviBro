@@ -17,7 +17,7 @@ var Store = (function () {
     previewPlay: true,
     resumeLast: true,
     showHidden: false,
-    display: 'contain',      // contain | fill | cover
+    display: 'contain',      // Aspect: contain (Original) | fill | cover | 4:3 | 16:9 | 21:9 | stretch43
     names: {
       enabled: true, groups: true,
       packs: { country: true, quality: true, tags: true, superscript: true, feeds: false, brackets: false },

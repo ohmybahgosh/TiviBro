@@ -559,6 +559,7 @@ var MkvSubs = (function () {
         video.appendChild(trackEl);
         addedEls.push(trackEl);
         liveTracks.push(trackEl.track);
+        trackEl.track._tbMkv = true;            // drawn here, not by Subs (subs.js)
         if (rec && rec.modes && rec.modes[k]) trackEl.track.mode = rec.modes[k];
       }
     }
@@ -648,8 +649,20 @@ var MkvSubs = (function () {
     function runExtraction() {
     // The index read before for this file: straight to the subtitle blocks.
     if (rec && rec.index && rec.resolved && liveTracks.length) {
-      startVideo(rec.resolved);
-      return pumpWith(rec.index.perTrackCues, rec.index.timecodeScale, rec.index.segmentDataStart);
+      var idx = rec.index;
+      if (!onResolved) return pumpWith(idx.perTrackCues, idx.timecodeScale, idx.segmentDataStart);
+      /* A fresh start of the video (a reconnect, or play after a long pause): ask the movie's own link
+         again for the provider's current session.  The one from before can have expired or been
+         closed meanwhile, and opening it failed as if the file could not be played (issue #34). */
+      return fetchRange(wrapped, 0, 15, true).then(function () {
+        if (cancelled) return;
+        rec.resolved = wrapped;
+        startVideo(wrapped);
+        pumpWith(idx.perTrackCues, idx.timecodeScale, idx.segmentDataStart);
+      }).catch(function (e) {
+        startVideo(url);
+        if (typeof Log !== 'undefined' && Log.debug) Log.debug('mkvsubs', 'could not open the movie link again: ' + (e && e.message));
+      });
     }
     fetchRange(wrapped, 0, 262143, true).then(function (head) {
       if (cancelled) return;

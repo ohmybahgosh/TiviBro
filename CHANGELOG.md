@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- **A paused movie plays again after a long pause** (issue #34).  When the provider closed the connection during the pause, the movie could refuse to load and even say its format can't be played.  A movie or episode that was playing is now always opened again at the same spot: after a pause of a few minutes it reopens on play, a link that expired meanwhile is asked for again, and the network helper no longer cuts a paused movie's connection after 30 seconds.  If the provider really won't let it back in, the message says so and OK tries again from where you were.
+- **Aspect, for pictures with the wrong shape** (discussion #31).  The quick menu's Picture is now **Aspect**: Original, Fill, Zoom, 4:3, 16:9 (for a 16:9 picture squashed into 4:3), 21:9 (a letterboxed 2.35:1 film fills the screen) and 4:3 to 16:9.  Each channel, movie and episode remembers its own, and **Settings > Playback > Aspect** sets the default.  With the TV player some TVs keep the picture as it was, and the menu says so.
+- **Subtitle lines no longer get stuck on screen** (discussion #19).  TiviBro now draws downloaded subtitles itself, exactly the lines whose time is now, so a line moved by Timing, Line up or a seek can't stay behind with newer lines drawn over it.
+- **Frame rate fix for subtitles.**  **Subtitles > Timing > Frame rate…** scales every line for a subtitle made for a copy at another frame rate (23.976, 24 or 25 fps), for lines that drift further out of time as the film goes on.
+- **The phone app keeps working when the TV's clock is off** (issue #32).  A TV whose clock doesn't sync (an app blocking the time server, for example) made the phone app fail with "clock" until it was paired again.  The app now takes the TV's time from its answer and tries again, and the message says what's wrong if it still can't.
+- **Update notices that show up** (discussion #33).  TiviBro looked for a new version only once a day, 45 seconds after it started, so a TV that's never switched off rarely heard about one.  It now looks every 6 hours while open, says so once per new version, and **Updates, about and diagnostics** in Settings is marked until you install it.
+- **The phone app says when a new version is out** (discussion #33).  The home screen shows a card with **Download** and **What's new** when GitHub has a newer TiviBro app (checked each time the app opens).
+- **Typing from the phone, every time.**  A box that opened on the TV right after another change could stay invisible to the phone app (it was told about the screen as it was a moment before).  It now always gets the newest one.
+
 ## 0.6.0 (alpha 64, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.

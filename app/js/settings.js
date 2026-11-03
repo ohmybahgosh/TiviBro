@@ -12,7 +12,7 @@ var Settings = (function () {
   // Phone app: test builds only while the Android app is in the works (release builds show the web editor alone).
   function phoneOK() { return /alpha|beta/i.test(TIVIBRO_VERSION); }
   function shown(i) { return !!SECTIONS[i]; }
-  function title(sct) { return sct[0] === 'connect' && !phoneOK() ? 'Web editor' : sct[1]; }
+  function title(sct) { return sct[0] === 'connect' && !phoneOK() ? 'Web editor' : sct[0] === 'about' && typeof Update !== 'undefined' && Update.state && Update.state.state === 'available' ? sct[1] + '  ·  update ready' : sct[1]; }
   function nextSec(d) { var i = sec + d; while (SECTIONS[i] && !shown(i)) i += d; return SECTIONS[i] ? i : sec; }
   var stack = [];               // sub-pages: [{ title, fn, sel }]
 
@@ -72,7 +72,8 @@ var Settings = (function () {
     out.push(toggle('Turn on last channel at launch', '', function () { return s.resumeLast; }, function (v) { s.resumeLast = v; save(); }));
     out.push(choice('HDR and Dolby Vision', 'Automatic plays Dolby Vision through the TV player, which switches the screen into Dolby Vision itself, and keeps HDR10 and HLG on the built-in player for its steadier buffering.  Choose TV player for all HDR if HDR pictures look washed out or grey.',
       ['auto', 'tv', 'builtin'], ['Automatic', 'TV player for all HDR', 'Built-in player'], function () { return s.hdrRoute || 'auto'; }, function (v) { s.hdrRoute = v; save(); }));
-    out.push(choice('Picture', '', ['contain', 'fill', 'cover'], ['Normal', 'Stretch', 'Zoom'], function () { return s.display; }, function (v) { s.display = v; Player.applyDisplay(); save(); }));
+    out.push(choice('Aspect', 'The shape of the picture for every channel and video: Original, Fill (stretched to the screen), Zoom (fills it, edges cropped), 4:3, 16:9 (for a squashed picture), 21:9 (a 2.35:1 film fills the screen) or 4:3 to 16:9.  A channel or video can have its own from the quick menu.',
+      Player.ASPECTS.map(function (a) { return a[0]; }), Player.ASPECTS.map(function (a) { return a[1]; }), function () { return Player.displayFor(null); }, function (v) { Player.setAspect(v, null); save(); }));
     out.push(head('Catch-up, movies and shows'));
     out.push(choice('Skip step', 'For Left and Right while watching catch-up or a movie.', [10, 15, 30, 60, 120], ['10s', '15s', '30s', '1 min', '2 min'], function () { return +s.skip; }, function (v) { s.skip = v; save(); }));
     out.push(choice('Rewind / fast forward step', 'For the ◀◀ and ▶▶ buttons while watching catch-up or a movie.', [30, 60, 120, 300, 600], ['30s', '1 min', '2 min', '5 min', '10 min'], function () { return +s.ffStep || 120; }, function (v) { s.ffStep = v; save(); }));
@@ -966,7 +967,7 @@ var Settings = (function () {
       }));
     }
     out.push(head('Options'));
-    out.push(toggle('Check automatically', 'Once a day when TiviBro starts.  Nothing is installed without asking you.', function () { return s.updateAuto !== false; }, function (v) { s.updateAuto = v; save(); }));
+    out.push(toggle('Check automatically', 'When TiviBro starts and every 6 hours while it is open.  Nothing is installed without asking you.', function () { return s.updateAuto !== false; }, function (v) { s.updateAuto = v; save(); }));
     out.push(toggle('Count this TV in the install numbers', 'Once a day, and when a new version first starts, TiviBro says which version it is (and whether it is new or an update) and which webOS this TV has.  Nothing else: no address is kept, no ID, nothing about your channels or playlists.', function () { return s.countMe !== false; }, function (v) { s.countMe = v; save(); }));
     out.push(toggle('Include test versions', 'Alpha and beta builds: new features first, and some rough edges.', function () { return Update.wantPre; }, function (v) { s.updatePre = v; save(); }));
     var how = info('Installing on this TV', ''); how.value = function () { var i = Update.state.installer; return i === 'hbchannel' ? 'Yes, through the Homebrew Channel' : i === '' ? 'From a computer only (not rooted)' : 'Checking…'; }; out.push(how);

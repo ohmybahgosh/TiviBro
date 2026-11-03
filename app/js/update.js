@@ -98,8 +98,10 @@ var Update = (function () {
         r.sha256 = m.ipkHash.sha256;
         if (m.ipkSize) r.size = m.ipkSize;
         set({ state: 'available', latest: r, checked: Date.now() });
-        keep({ checked: Date.now(), latest: r });
-        if (quiet) U.toast('TiviBro ' + r.version + ' is available.  Settings > Updates, about and diagnostics.', 7000);
+        // Said once per version (issue #33: a TV that stays on never saw it); Settings marks it after that.
+        var told = (load() || {}).told;
+        if (quiet && told !== r.version) { U.toast('TiviBro ' + r.version + ' is available.  Settings > Updates, about and diagnostics.', 9000); told = r.version; }
+        keep({ checked: Date.now(), latest: r, told: told });
         Log.info('update', 'Update available: ' + r.version + ' (running ' + current() + ')');
         return st;
       });
@@ -145,11 +147,16 @@ var Update = (function () {
     }, 60000);
   }
 
+  /* At start (45 s in) when the last look was over 6 hours ago, then every 6 hours while TiviBro stays
+     open: a TV that is never switched off used to look only once (issue #33). */
+  var EVERY = 6 * 3600e3, timer = null;
   function autoCheck() {
     var c = load();
     if (c && c.latest && compare(c.latest.version, current()) > 0 && c.latest.sha256) set({ state: 'available', latest: c.latest, checked: c.checked });
+    clearInterval(timer);
+    timer = setInterval(function () { if (auto() && Date.now() - ((load() || {}).checked || 0) >= EVERY) check(true).catch(function () {}); }, 30 * 60000);
     if (!auto()) return;
-    if (c && Date.now() - (c.checked || 0) < DAY) return;
+    if (c && Date.now() - (c.checked || 0) < EVERY) return;
     setTimeout(function () { check(true); }, 45000);
   }
 
