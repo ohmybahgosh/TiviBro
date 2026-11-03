@@ -284,7 +284,7 @@ var Mp4Subs = (function () {
 
   // English names for ISO 639-2 codes (both the /B and /T forms), for labels.  U.LANGS stays the
   // short list behind Settings; this one only names tracks.  Unlisted codes show as themselves.
-  var LANG_NAMES = {};
+  var LANG_NAMES = Object.create(null);
   (function (rows) {
     for (var i = 0; i < rows.length; i++) {
       var codes = rows[i][0].split(' ');
@@ -306,7 +306,8 @@ var Mp4Subs = (function () {
   // A track name that only says the language again ("Nederlands" on a Dutch track) adds nothing.
   // U.LANGS also knows regional variants as ways to spell a language; on a track those tell two
   // tracks of one language apart, so they stay.
-  var VARIANTS = { latino: 1, castellano: 1, mandarin: 1, cantonese: 1 };
+  var VARIANTS = Object.create(null);
+  VARIANTS.latino = VARIANTS.castellano = VARIANTS.mandarin = VARIANTS.cantonese = 1;
   function restates(name, code) {
     var n = name.toLowerCase();
     if (VARIANTS[n]) return false;
@@ -321,17 +322,21 @@ var Mp4Subs = (function () {
   function cut(s, n) { return s.length > n ? s.slice(0, n).replace(/\s+$/, '') : s; }
 
   // The tracks as the menu lists them: { label, srclang, forced, trakIndex } in attach order.
-  // Within a language, the track the file marks enabled and isn't forced comes first, so turning
-  // subtitles on by language picks it; other languages keep their places.
+  // Within a language (fre and fra are one), the track the file marks enabled and isn't forced comes
+  // first and forced tracks last, so turning subtitles on by language picks an ordinary track; the
+  // rest keep file order, and other languages keep their places.
   function describe(traks) {
-    var order = traks.map(function (t, i) { return i; }), byLang = {};
-    order.forEach(function (i) { (byLang[traks[i].lang] = byLang[traks[i].lang] || []).push(i); });
-    function rank(i) { return (isForced(traks[i]) ? 2 : 0) + (traks[i].enabled ? 0 : 1); }
+    var order = traks.map(function (t, i) { return i; }), byLang = Object.create(null);
+    order.forEach(function (i) {
+      var c = traks[i].lang || 'und', key = U.lang(c) || LANG_NAMES[c] || c;
+      (byLang[key] = byLang[key] || []).push(i);
+    });
+    function rank(i) { return isForced(traks[i]) ? 2 : traks[i].enabled ? 0 : 1; }
     for (var code in byLang) {
       var places = byLang[code], sorted = places.slice().sort(function (a, b) { return rank(a) - rank(b) || a - b; });
       for (var k = 0; k < places.length; k++) order[places[k]] = sorted[k];
     }
-    var used = {};
+    var used = Object.create(null);
     return order.map(function (i, at) {
       var t = traks[i], code = t.lang || 'und', name = String(t.name || '').replace(/^\s+|\s+$/g, '');
       var base = code === 'und' ? name || 'Subtitle track ' + (at + 1)

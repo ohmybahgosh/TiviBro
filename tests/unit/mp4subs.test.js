@@ -254,5 +254,16 @@ const labels = list => Mp4Subs.describe(list).map(d => d.label);
   const d = Mp4Subs.describe([trk('nld', ''), trk('ger', ''), trk('bul', ''), trk('und', '')]);
   ok('srclang uses U.lang when known ("nld" → "nl")', d.map(x => x.srclang).join() === 'nl,de,bul,und' && d[2].label === 'Bulgarian', d);
 }
+{
+  // fre and fra are one language; forced tracks keep file order among themselves.
+  const alias = Mp4Subs.describe([trk('fre', 'Old'), trk('fra', 'Main', { enabled: true })]).map(x => x.trakIndex).join();
+  const forced = Mp4Subs.describe([trk('eng', 'F1', { displayFlags: 0xC0000000 }), trk('eng', 'F2', { displayFlags: 0xC0000000, enabled: true }), trk('eng', 'Plain')])
+    .map(x => x.trakIndex).join();
+  ok('language aliases group; forced tracks after ordinary ones, in file order', alias === '1,0' && forced === '2,0,1', { alias, forced });
+}
+{
+  const got = labels([trk('und', 'constructor'), trk('und', '__proto__'), trk('und', 'toString'), trk('constructor', ''), trk('__proto__', '')]);
+  ok('labels named like object properties stay as they are', got.join('|') === 'constructor|__proto__|toString|constructor 2|__proto__ 2', got);
+}
 if (fail) { console.log(fail + ' mp4subs test(s) failed'); process.exit(1); }
 console.log('all mp4subs tests passed');
