@@ -15,7 +15,8 @@
                                     video starts on the original URL and subtitles give up for this play
      reuseSession                   a cached index may start the video with no new read.  false: every
                                     new engine start reads the head again (fresh session, the index kept)
-     lazy                           reads only tracks asked for (ctx.demand): each track gets
+     lazy                           reads only tracks asked for (ctx.demand(i): null, 'now', { from, to }
+                                    or a list of those): each track gets
                                     _embedLoad(fromSec, toSec, timeoutMs) -> Promise, which asks for
                                     that window until nothing in it is left to read (Line up's reference)
      describe() entries may carry forced: true.  Every attached track has _embedded = true and
@@ -223,14 +224,11 @@ var EmbedSubs = (function () {
     var loads = {};               // track index -> { from, to, settle }: an _embedLoad in progress
     var settleTimers = [];        // putting the track modes back after the browser's own pick
     var ctx = {
-      // A shown track that Line up also reads asks for both windows (what lies between is bounded: Line
-      // up's window is near the playing position).
+      // A shown track that Line up also reads asks for both windows, as a list (nothing in between).
       demand: function (i) {
         var t = liveTracks[i], on = t && t.mode === 'showing', l = loads[i];
         if (!l) return on ? 'now' : null;
-        if (!on) return l;
-        var now = video.currentTime || 0;
-        return { from: Math.min(l.from, now - 30), to: Math.max(l.to, now + 60) };
+        return on ? ['now', l] : l;
       },
       timing: function (i) {
         var has = typeof Subs !== 'undefined', m = has && Subs.timing ? Subs.timing(liveTracks[i]) : null;
@@ -304,11 +302,13 @@ var EmbedSubs = (function () {
       if (intent.indexOf('showing') < 0 && !video._subsChoice && typeof Subs !== 'undefined' && Subs.autoOn) {
         for (var a = 0; a < liveTracks.length; a++) if (Subs.autoOn(liveTracks[a], video)) { intent[a] = 'showing'; break; }
       }
-      // A choice in the Subtitles menu (views.js counts them in video._subsRev) wins over this.
+      // A choice in the Subtitles menu meanwhile (views.js counts them in video._subsRev and keeps the
+      // chosen track in video._subsWant, null for Off) is what gets put back instead.
       var rev0 = video._subsRev;
       function settle() {
-        if (cancelled || video._subsRev !== rev0) return;
-        for (var i = 0; i < liveTracks.length; i++) if (liveTracks[i].mode !== intent[i]) liveTracks[i].mode = intent[i];
+        if (cancelled) return;
+        var want = video._subsRev === rev0 ? intent : liveTracks.map(function (t) { return t === video._subsWant ? 'showing' : 'disabled'; });
+        for (var i = 0; i < liveTracks.length; i++) if (liveTracks[i].mode !== want[i]) liveTracks[i].mode = want[i];
         paint();
         if (pump) pump();
       }

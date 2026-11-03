@@ -452,12 +452,12 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
   {
     // A track that is showing keeps its playback window while Line up reads another window of it.
     files['both'] = new Uint8Array(64);
-    const ad = Object.assign(fakeAdapter({ items: [{ id: 'a', s: 10 }, { id: 'b', s: 500 }] }), { lazy: true });
+    const ad = Object.assign(fakeAdapter({ items: [{ id: 'a', s: 10 }, { id: 'c', s: 200 }, { id: 'b', s: 500 }] }), { lazy: true });
     ad.candidates = (rec, now, c) => {
       const d = c.demand(0);
       if (!d) return [];
-      const lo = d === 'now' ? now - 30 : d.from, hi = d === 'now' ? now + 60 : d.to;
-      return rec.index.items.filter(it => !rec.fetched[it.id] && it.s >= lo && it.s <= hi).sort((x, y) => Math.abs(x.s - now) - Math.abs(y.s - now));
+      const ws = [].concat(d).map(w => w === 'now' ? [now - 30, now + 60] : [w.from, w.to]);
+      return rec.index.items.filter(it => !rec.fetched[it.id] && ws.some(w => it.s >= w[0] && it.s <= w[1])).sort((x, y) => Math.abs(x.s - now) - Math.abs(y.s - now));
     };
     const read = ad.read; ad.read = function (rec, item, range) { return item.id === 'b' ? (ad.reads.push('b'), new Promise(() => {})) : read.apply(this, arguments); };
     const v = makeVideo({ currentTime: 0 });
@@ -467,23 +467,24 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     t0.mode = 'showing';
     t0._embedLoad(400, 600, 5000).catch(() => {});
     await wait(40);
-    ok('a pending Line up read keeps the showing track\'s own window', ad.reads[0] === 'a', ad.reads);
+    ok('a pending Line up read keeps the showing track\'s own window, and nothing between the two is read', ad.reads.join() === 'a,b', ad.reads);
     h.cancel();
   }
   {
     // The modes put back after the browser's pick never undo a choice made in the menu meanwhile, and
     // a choice (a language, or Off) comes back on a reconnect whatever the browser picks.
-    const browserLike = extra => {
+    const browserLike = (extra, pickAt) => {
       const v = makeVideo(Object.assign({ currentTime: 0 }, extra || {})), append = v.appendChild;
       let first = true;
-      v.appendChild = function (el) { const r = append.call(this, el); if (first) { first = false; setTimeout(() => { el.track.mode = 'showing'; }, 0); } return r; };
+      v.appendChild = function (el) { const r = append.call(this, el); if (first) { first = false; setTimeout(() => { el.track.mode = 'showing'; }, pickAt || 0); } return r; };
       return v;
     };
-    const menu = (v, i) => { v._subsChoice = true; v._subsRev = (v._subsRev || 0) + 1; v.children.forEach((c, k) => { c.track.mode = k === i ? 'showing' : 'disabled'; }); };
+    // What the Subtitles menu does (views.js): the choice, counted, and the track chosen (null for Off).
+    const menu = (v, i) => { v._subsChoice = true; v._subsRev = (v._subsRev || 0) + 1; v._subsWant = i >= 0 ? v.children[i].track : null; v.children.forEach((c, k) => { c.track.mode = k === i ? 'showing' : 'disabled'; }); };
     const modes = v => v.children.map(c => c.track.mode).join();
     const ad = () => Object.assign(fakeAdapter({ items: [{ id: 'a', s: 1 }] }), { describe: () => [{ label: 'English', srclang: 'en' }, { label: 'Dutch', srclang: 'nl' }] });
     files['race'] = new Uint8Array(64);
-    const v = browserLike();
+    const v = browserLike(null, 40);                // the browser picks late, after the viewer's Off
     ctx.Subs = { delay: 0, autoOn: t => v.children.some(c => c.track === t && c.srclang === 'nl') };
     const h = EmbedSubs.run('http://p/movie/race', v, () => {}, ad());
     await until(() => v.children.length === 2);
@@ -500,13 +501,13 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     const auto = modes(a);
     menu(a, 1);                                      // Dutch
     h1.cancel();
-    const b = browserLike({ _subsChoice: a._subsChoice, _subsRev: a._subsRev });    // the reconnect: same video
+    const b = browserLike({ _subsChoice: a._subsChoice, _subsRev: a._subsRev, _subsWant: a._subsWant });    // the reconnect: same video
     const h2 = EmbedSubs.run('http://p/movie/life', b, () => {}, ad());
     await wait(120);
     const dutch = modes(b);
     menu(b, -1);                                     // Off
     h2.cancel();
-    const c = browserLike({ _subsChoice: true, _subsRev: b._subsRev });
+    const c = browserLike({ _subsChoice: true, _subsRev: b._subsRev, _subsWant: null });
     const h3 = EmbedSubs.run('http://p/movie/life', c, () => {}, ad());
     await wait(120);
     const off = modes(c);

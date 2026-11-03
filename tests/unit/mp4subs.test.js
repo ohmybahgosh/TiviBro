@@ -575,6 +575,22 @@ const twoParts = (late, extra) => buildMp4(Object.assign({ tracks: [{ lang: 'eng
     ok('a big subtitle track is read in pieces of at most 1 MiB', v.children.length === 1 && biggest <= 1048576, { tracks: v.children.length, biggest, n: requests.length });
     h.cancel();
   }
+  {
+    // A shown track that Line up also reads: its playback window and Line up's, nothing in between.
+    files['twowin.mp4'] = asU8(buildMp4({ tracks: [{ lang: 'eng', cues: [[1, 3, 'now'], [200, 202, 'between'], [400, 402, 'lineup']] }] }).bytes);
+    requests = [];
+    const v = makeVideo({ currentTime: 0 });
+    const h = Mp4Subs.extract('http://p/movie/twowin.mp4', v, () => {}, '');
+    await until(() => v.children.length === 1);
+    await wait(100);
+    const t = tracksOf(v)[0];
+    t.mode = 'showing';
+    await t._embedLoad(380, 420, 3000);
+    await wait(30);
+    const got = textsOf(t).sort().join();
+    ok('showing plus Line up reads both windows and nothing between', got === 'lineup,now', got);
+    h.cancel();
+  }
   if (fail) { console.log(fail + ' mp4subs test(s) failed'); process.exit(1); }
   console.log('all mp4subs tests passed');
 })().catch(e => { console.error(e); process.exit(1); });

@@ -527,13 +527,17 @@ var Mp4Subs = (function () {
     for (var i = 0; ctx && i < ix.tracks.length; i++) {
       var want = ctx.demand(i);
       if (!want) continue;
-      // The window is in shown time; samples are in the file's time.
+      // The windows are in shown time; samples are in the file's time.
       var tm = ctx.timing(i) || { scale: 1, off: 0, delay: 0 }, scale = tm.scale > 0 ? tm.scale : 1, shift = (tm.off || 0) + (tm.delay || 0);
-      var from = want === 'now' ? now - 30 : want.from, to = want === 'now' ? now + 60 : want.to;
-      var a = (from - shift) / scale, b = (to - shift) / scale, here = (now - shift) / scale, T = ix.tracks[i];
-      for (var k = firstEndingAfter(T, a); k < T.n && T.s[k] < b; k++) {
-        if (T.size[k] <= 2 || T.e[k] <= a || rec.fetched[i + ':' + k]) continue;
-        picks.push({ t: i, k: k, start: T.off[k], end: T.off[k] + T.size[k], dist: T.s[k] > here ? T.s[k] - here : T.e[k] < here ? here - T.e[k] : 0 });
+      var wins = [].concat(want), seen = {}, here = (now - shift) / scale, T = ix.tracks[i];
+      for (var w = 0; w < wins.length; w++) {
+        var from = wins[w] === 'now' ? now - 30 : wins[w].from, to = wins[w] === 'now' ? now + 60 : wins[w].to;
+        var a = (from - shift) / scale, b = (to - shift) / scale;
+        for (var k = firstEndingAfter(T, a); k < T.n && T.s[k] < b; k++) {
+          if (T.size[k] <= 2 || T.e[k] <= a || seen[k] || rec.fetched[i + ':' + k]) continue;
+          seen[k] = true;
+          picks.push({ t: i, k: k, start: T.off[k], end: T.off[k] + T.size[k], dist: T.s[k] > here ? T.s[k] - here : T.e[k] < here ? here - T.e[k] : 0 });
+        }
       }
     }
     // Samples close together in the file go in one read.

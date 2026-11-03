@@ -1568,8 +1568,8 @@ var Views = (function () {
       }
     } else {
       // Any choice here (Off too) is the viewer's for the rest of this playback: see the addtrack handler.
-      items.push({ label: 'Off', sub: tr.every(function (t) { return t.mode !== 'showing'; }) ? 'on' : '', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; tr.forEach(function (t) { t.mode = 'disabled'; }); } });
-      tr.forEach(function (t, i) { items.push({ label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
+      items.push({ label: 'Off', sub: tr.every(function (t) { return t.mode !== 'showing'; }) ? 'on' : '', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = null; tr.forEach(function (t) { t.mode = 'disabled'; }); } });
+      tr.forEach(function (t, i) { items.push({ label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = t; tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
     }
     if (mode === 'vod' && vod) items.push({ label: 'Find subtitles…', sub: Subs.configured ? 'OpenSubtitles, in ' + Subs.langs().map(Subs.langName).join(', ') : 'from OpenSubtitles, with your free API key', action: function () { Subs.find(vod.meta); } });
     if (tr.length) items.push({ label: 'Timing', sub: Subs.timing, action: Subs.timingMenu });
