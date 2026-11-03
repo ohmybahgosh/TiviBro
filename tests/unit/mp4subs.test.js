@@ -485,6 +485,19 @@ const twoParts = (late, extra) => buildMp4(Object.assign({ tracks: [{ lang: 'eng
     ok('a file that does not start like an MP4 settles unavailable', w._mkvSubsState === 'unavailable' && w.children.length === 0 && requests.length === 1,
       { s: w._mkvSubsState, requests: requests.length });
   }
+  {
+    // Two English tracks, the second marked enabled: it is attached first, so turning subtitles on by
+    // language (the first match wins) picks it; forced ones are marked before they're attached.
+    files['two.mp4'] = buildMp4({ tracks: [{ lang: 'eng', name: 'SDH', enabled: false, cues: [[1, 2, 'a']] }, { lang: 'eng', enabled: true, cues: [[1, 2, 'b']] },
+      { lang: 'eng', enabled: true, displayFlags: 0xC0000000, cues: [[1, 2, 'c']] }] }).bytes;
+    const v = makeVideo();
+    const h = Mp4Subs.extract('http://p/movie/two.mp4', v, () => {}, '');
+    await until(() => v.children.length === 3);
+    ok('autoSubs picks the enabled English first when two match', v.children.map(c => c.label).join('|') === 'English|English · SDH|English (forced)' &&
+      tracksOf(v).map(t => !!t._forced).join() === 'false,false,true' && tracksOf(v).every(t => t._embedded && typeof t._embedLoad === 'function'),
+      v.children.map(c => c.label));
+    h.cancel();
+  }
   const timed = async (name, fixture, now, timing) => {
     files[name] = fixture.bytes;
     ctx.Subs = { delay: 0, timing: () => timing };

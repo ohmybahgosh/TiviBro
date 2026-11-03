@@ -228,7 +228,7 @@ var Subs = (function () {
     }
     return sum;
   }
-  function align(target, ref) {
+  function align(target, ref, total) {
     var a = target.map(function (c) { return { s: c.s, e: c.e }; }), b = ref.map(function (c) { return { s: c.s, e: c.e }; });
     if (a.length < 5 || b.length < 5) return null;
     var best = { score: -1, scale: 1, off: 0 }, scales = [1, 25 / 23.976, 23.976 / 25, 24 / 23.976, 23.976 / 24, 25 / 24, 24 / 25];
@@ -239,14 +239,25 @@ var Subs = (function () {
       for (var off = -120; off <= 120; off += 0.5) { var v = overlap(a, b, sc, off); if (coarse.score < 0 || near(v, coarse.score, off, coarse.off)) coarse = { score: v, off: off }; }
       for (var f = coarse.off - 0.6; f <= coarse.off + 0.6; f += 0.05) { var w = overlap(a, b, sc, f); if (w > best.score) best = { score: w, scale: sc, off: Math.round(f * 100) / 100 }; }
     });
-    var total = b.reduce(function (n, c) { return n + (c.e - c.s); }, 0);
+    if (total === undefined) total = b.reduce(function (n, c) { return n + (c.e - c.s); }, 0);
+    else best.score = Math.min(best.score, total);
     best.match = total ? best.score / total : 0;
     return best;
   }
   function lineUp(target, ref) {
     var tc = cuesOf(target).map(function (c) { return { s: c._s0 != null ? c._s0 : c.startTime, e: c._e0 != null ? c._e0 : c.endTime, c: c }; });
     var rc = cuesOf(ref).map(function (c) { return { s: c.startTime, e: c.endTime }; });
-    var r = align(tc, rc);
+    var r;
+    if (target._embedded || ref._embedded) {
+      // A track read from the file as it plays has lines only around where it was watched: match over the
+      // time both tracks have lines for (the reference a little wider, for the shift search), and score
+      // against the reference's lines in that time, not the whole film's.
+      if (!tc.length || !rc.length) return null;
+      var lo = Math.max(tc[0].s, rc[0].s), hi = Math.min(tc[tc.length - 1].e, rc[rc.length - 1].e);
+      var tIn = tc.filter(function (x) { return x.s >= lo && x.e <= hi; }), rIn = rc.filter(function (x) { return x.e > lo - 120 && x.s < hi + 120; });
+      var total = rc.reduce(function (n, x) { return n + Math.max(0, Math.min(x.e, hi) - Math.max(x.s, lo)); }, 0);
+      r = align(tIn, rIn, total);
+    } else r = align(tc, rc);
     if (!r) return null;
     r.moved = Math.round((r.off - delay) * 100) / 100;           // how far the lines move on screen
     // Shown at _s0 * rate + delay (placed()), which must land on s * scale + off.
@@ -350,7 +361,8 @@ var Subs = (function () {
     if (!showing) { U.toast('Turn on the subtitle to fix first.'); return; }
     // A track that is off has no lines to read; "hidden" keeps it off the screen but readable.
     tracks.forEach(function (t) { if (t !== showing && t.mode === 'disabled') t.mode = 'hidden'; });
-    var others = tracks.filter(function (t) { return t !== showing && cuesOf(t).length; });
+    // Tracks read from the file as it plays (MP4) are read only when picked (_embedLoad).
+    var others = tracks.filter(function (t) { return t !== showing && (cuesOf(t).length || t._embedLoad); });
     if (!others.length) { U.toast('No other subtitle to line it up with.  Movies with built-in subtitles, or a second download, have one.', 7000); return; }
     UI.menu('Line up "' + (showing.label || 'this subtitle') + '" with…', others.map(function (t) {
       return { label: t.label || t.language || 'Track', sub: 'one that is already in time, any language', action: function () {
@@ -360,6 +372,20 @@ var Subs = (function () {
     }));
   }
   function lineUpNow(showing, t) {
+    if (t._embedLoad) {
+      // Read the reference where the target has lines (and 30 s around), within Line up's ±120 s search
+      // around now, then match.  Its reading stops once it settles.
+      var tl = cuesOf(showing), now = (video() || {}).currentTime || 0;
+      var from = tl.length ? Math.max(tl[0].startTime - 30, now - 150) : now - 150;
+      var to = tl.length ? Math.min(tl[tl.length - 1].endTime + 30, now + 180) : now + 180;
+      U.toast('Lining up…', 20000);
+      t._embedLoad(from, to, 20000).then(function () { match(showing, t); },
+        function () { U.toast('That subtitle took too long to read.  Try again, or use Timing.', 6000); });
+      return;
+    }
+    match(showing, t);
+  }
+  function match(showing, t) {
     {
       {
         var r = lineUp(showing, t);
@@ -370,7 +396,21 @@ var Subs = (function () {
     }
   }
 
-  return { find: find, gone: gone, refresh: applyDelay, fresh: fresh, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
+  // How a track's lines are shown, for readers that draw them (embedsubs.js): shown time = file time
+  // * scale + off + delay (a Line up, the frame rate fix, then Timing; placed() and fix() do the same).
+  function timingOf(t) {
+    var map = t && lined[trackKey(t)];
+    return { scale: (map ? map.scale : 1) * rate, off: (map ? map.off : 0) * rate, delay: delay };
+  }
+  // Whether a track that just appeared turns on by itself (Settings > Playback): not once the viewer
+  // chose in the Subtitles menu during this playback (Off included), and never a forced track.
+  function autoOn(t, v) {
+    var want = Store.settings.subsLang || '';
+    return !!(Store.settings.autoSubs && t && t.kind === 'subtitles' && !t._forced && !(v && v._subsChoice) &&
+      (!want || U.lang(t.language || t.label) === want));
+  }
+
+  return { find: find, gone: gone, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
     get delay() { return delay; }, get rate() { return rate; }, get timing() { return timingSummary(); }, setRate: setRate, draw: drawLines, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
     _test: { parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
 })();

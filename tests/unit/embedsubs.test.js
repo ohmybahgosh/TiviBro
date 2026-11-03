@@ -357,6 +357,67 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     h2.cancel();
   }
   {
+    // A lazy format (MP4): tracks are marked before they're attached, nothing is read until a track is
+    // shown or _embedLoad asks for a window, and that demand ends when the load settles.
+    files['lazy'] = new Uint8Array(64);
+    const demands = [];
+    const ad = Object.assign(fakeAdapter({ items: [{ id: 'a', s: 10 }, { id: 'b', s: 500 }, { id: 'c', s: 900 }] }), { lazy: true });
+    ad.describe = () => [{ label: 'English', srclang: 'en', forced: false }, { label: 'English (forced)', srclang: 'en', forced: true }];
+    ad.candidates = (rec, now, c) => {
+      const d = c.demand(0); demands.push(d && (d === 'now' ? 'now' : d.from + '-' + d.to)); demands.push(c.demand(1));
+      if (!d) return [];
+      const lo = d === 'now' ? now - 30 : d.from, hi = d === 'now' ? now + 60 : d.to;
+      return rec.index.items.filter(it => !rec.fetched[it.id] && it.s >= lo && it.s <= hi);
+    };
+    let marksAtAppend = null;
+    const v = makeVideo({ currentTime: 0 });
+    const append = v.appendChild; v.appendChild = function (el) { if (!marksAtAppend) marksAtAppend = [el.track._embedded, el.track._forced, typeof el.track._embedLoad]; return append.call(this, el); };
+    const h = EmbedSubs.run('http://p/movie/lazy', v, () => {}, ad);
+    await wait(40);
+    const idle = ad.reads.length;
+    const t0 = v.children[0].track, t1 = v.children[1].track;
+    let loaded = false;
+    const p = t0._embedLoad(400, 600, 5000).then(() => { loaded = true; });
+    await wait(60);
+    const during = demands.slice();
+    await p;
+    demands.length = 0; (v.listeners.timeupdate || []).forEach(f => f()); await wait(20);
+    const after = demands.slice(), readsAfter = ad.reads.join();
+    let timedOut = null;
+    await t0._embedLoad(850, 950, 1).then(() => { timedOut = 'resolved'; }, e => { timedOut = e.message; });
+    ok('lazy tracks: marked before attach, nothing read until asked, _embedLoad reads only its window and then lets go',
+      JSON.stringify(marksAtAppend) === JSON.stringify([true, false, 'function']) && t1._forced === true && idle === 0 && loaded &&
+      readsAfter === 'b' && during.includes('400-600') && after.every(d => d === null) && /^(timeout|resolved)$/.test(timedOut),
+      { marksAtAppend, idle, readsAfter, during: during.slice(0, 4), after: after.slice(0, 4), timedOut });
+    // A load that can't finish in time rejects and leaves no demand behind.
+    ad.read = () => new Promise(() => {});
+    let late = null;
+    await t0._embedLoad(5, 15, 50).then(() => { late = 'resolved'; }, e => { late = e.message; });
+    demands.length = 0; (v.listeners.timeupdate || []).forEach(f => f()); await wait(10);
+    ok('_embedLoad times out and releases its demand', late === 'timeout' && demands.every(d => d === null), { late, demands });
+    let cancelledLoad = null;
+    const pending = t0._embedLoad(0, 2000, 5000).catch(e => { cancelledLoad = e.message; });
+    h.cancel(); await pending;
+    ok('cancel rejects a pending _embedLoad', cancelledLoad === 'cancelled', cancelledLoad);
+  }
+  {
+    // The overlay's fallback (a native player that empties a track's cues) shows lines where Subs shows them.
+    files['fall'] = new Uint8Array(64);
+    const overlayEl = { textContent: '', className: '' };
+    ctx.document.createElement = tag => (tag === 'track' ? makeTrackElement() : overlayEl);
+    const v = makeVideo({ currentTime: 0, parentNode: { appendChild(el) { el.parentNode = this; }, removeChild() {} }, style: {}, classList: { toggle() {}, remove() {} } });
+    const ad = fakeAdapter({ items: [{ id: 'a', s: 1 }] });
+    const h = EmbedSubs.run('http://p/movie/fall', v, () => {}, ad);
+    await wait(40);
+    const tr = v.children[0].track; tr.mode = 'showing'; tr.cues.length = 0;      // live cues gone: the cache draws
+    ctx.Subs = { delay: 0, timing: t => (t === tr ? { scale: 2, off: 1, delay: 0.5 } : null) };
+    v.currentTime = 1.5; (v.listeners.seeked || []).forEach(f => f()); const before = overlayEl.textContent;
+    v.currentTime = 4; (v.listeners.seeked || []).forEach(f => f()); const at = overlayEl.textContent;
+    delete ctx.Subs; h.cancel();
+    ctx.document.createElement = tag => (tag === 'track' ? makeTrackElement() : { textContent: '', className: '' });
+    ok('overlay fallback applies line-up scale', before === '' && at === 'line a', { before, at });   // 1-2 s shows at 3.5-5.5 s
+  }
+  {
     // mkv-fixture writes one byte per character: hand it the UTF-8 bytes as a binary string.
     files['utf8.mkv'] = buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true, cueText: Buffer.from('Café 日本', 'utf8').toString('latin1') });
     const v = makeVideo();

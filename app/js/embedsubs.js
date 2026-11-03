@@ -15,6 +15,11 @@
                                     video starts on the original URL and subtitles give up for this play
      reuseSession                   a cached index may start the video with no new read.  false: every
                                     new engine start reads the head again (fresh session, the index kept)
+     lazy                           reads only tracks asked for (ctx.demand): each track gets
+                                    _embedLoad(fromSec, toSec, timeoutMs) -> Promise, which asks for
+                                    that window until nothing in it is left to read (Line up's reference)
+     describe() entries may carry forced: true.  Every attached track has _embedded = true and
+     _forced, set before it is attached (the addtrack handler reads them).
      discover(head, range, rec, alive) -> Promise of the format's index, null (tracks, none usable)
                                     or { none: 'empty' } (no subtitle tracks at all: the menu says so)
      describe(index)                -> [{ label, srclang }] in attach order
@@ -121,7 +126,8 @@ var EmbedSubs = (function () {
         // clear a <track>'s cues when enabling it; retain the text cache fallback.
         var live = liveTracks[a].cues, useLive = live && live.length;
         var list = useLive ? live : rec && rec.cues[a] || [];
-        var delay = !useLive && typeof Subs !== 'undefined' ? Subs.delay || 0 : 0;
+        // The text cache holds file times: show them where Subs shows this track (Line up, Timing).
+        var tm = useLive ? null : ctx.timing(a), scale = tm ? tm.scale || 1 : 1, delay = tm ? (tm.off || 0) + (tm.delay || 0) : 0;
         // A track's cue list is in start order: find where "now" falls instead of walking every cue
         // each frame (some native players leave activeCues empty, so it can't be used).
         var from = 0;
@@ -131,7 +137,7 @@ var EmbedSubs = (function () {
           from = Math.max(0, lo - 12);           // a few earlier ones that may still be on screen
         }
         for (var b = from; b < (useLive ? Math.min(list.length, from + 13) : list.length); b++) {
-          var s = useLive ? list[b].startTime : list[b].s + delay, e = useLive ? list[b].endTime : list[b].e + delay;
+          var s = useLive ? list[b].startTime : list[b].s * scale + delay, e = useLive ? list[b].endTime : list[b].e * scale + delay;
           if (s <= video.currentTime && e > video.currentTime)
             lines.push(list[b].text.replace(/<\/?(?:b|i|u|font)(?:\s[^>]*)?>/gi, ''));
         }
@@ -211,8 +217,9 @@ var EmbedSubs = (function () {
     // A track switched on (or off) is read at once, even while paused, rather than at the next timeupdate.
     function onTracks() { paint(); if (pump) pump(); }
     // What the format asks before choosing what to read next.
+    var loads = {};               // track index -> { from, to, settle }: an _embedLoad in progress
     var ctx = {
-      demand: function (i) { var t = liveTracks[i]; return t && t.mode === 'showing' ? 'now' : null; },
+      demand: function (i) { var t = liveTracks[i]; return loads[i] ? loads[i] : t && t.mode === 'showing' ? 'now' : null; },
       timing: function (i) {
         var has = typeof Subs !== 'undefined', m = has && Subs.timing ? Subs.timing(liveTracks[i]) : null;
         return m || { scale: 1, off: 0, delay: has ? Subs.delay || 0 : 0 };
@@ -235,6 +242,32 @@ var EmbedSubs = (function () {
     if (rec && rec.unretained) { for (var uk in rec.unretained) delete rec.fetched[uk]; rec.unretained = null; rec.done = false; }
     if (!onResolved && rec && rec.resolved) wrapped = rec.resolved;
 
+    // Line up asks for a window of a track nobody is watching: read it, then stop asking.
+    function loadFor(k) {
+      return function (from, to, ms) {
+        return new Promise(function (resolve, reject) {
+          if (cancelled) return reject(new Error('cancelled'));
+          if (rec && rec.failed) return reject(new Error('unavailable'));
+          if (loads[k]) loads[k].settle(new Error('replaced'));
+          var timer = setTimeout(function () { load.settle(new Error('timeout')); }, ms);
+          var load = loads[k] = { from: from, to: to, settle: function (err) {
+            if (loads[k] !== load) return;
+            delete loads[k]; clearTimeout(timer);
+            if (err) reject(err); else resolve();
+          } };
+          checkLoads();
+          if (loads[k] && pump) pump();
+        });
+      };
+    }
+    // A load is done when the format has nothing left to read for that track in that window.
+    function checkLoads() {
+      for (var k in loads) {
+        if (!rec || !rec.index) continue;
+        var one = loads[k], only = { demand: function (i) { return String(i) === k ? one : null; }, timing: ctx.timing };
+        if (rec.done || !adapter.candidates(rec, video.currentTime || 0, only).length) one.settle(null);
+      }
+    }
     function ensureTracks(trackMeta) {
       if (liveTracks.length) return;              // already attached (from cache or a prior call in this instance)
       for (var k = 0; k < trackMeta.length; k++) {
@@ -242,6 +275,9 @@ var EmbedSubs = (function () {
         trackEl.kind = 'subtitles';
         trackEl.label = trackMeta[k].label;
         trackEl.srclang = trackMeta[k].srclang;
+        trackEl.track._embedded = true;
+        trackEl.track._forced = !!trackMeta[k].forced;
+        if (adapter.lazy) trackEl.track._embedLoad = loadFor(k);
         video.appendChild(trackEl);
         addedEls.push(trackEl);
         liveTracks.push(trackEl.track);
@@ -276,7 +312,7 @@ var EmbedSubs = (function () {
         if (!hasBuffer()) { retryTimer = setTimeout(pump, 1000); return; }
         var now = video.currentTime || 0;
         var items = adapter.candidates(rec, now, ctx);
-        if (!items.length) { rec.done = adapter.complete(rec, now); return; }
+        if (!items.length) { rec.done = adapter.complete(rec, now); checkLoads(); return; }
         var clock = Date.now(), earliest = Infinity;
         items = items.filter(function (it) {
           if (!retryAt[it.id] || retryAt[it.id] <= clock) return true;
@@ -309,6 +345,7 @@ var EmbedSubs = (function () {
           video._mkvSubsState = 'ready';
           busy = false;
           paint();
+          checkLoads();
           pump();
         }).catch(function (e) {
           busy = false;
@@ -411,6 +448,7 @@ var EmbedSubs = (function () {
         clearTimeout(deadline);
         if (rejectGate) { rejectGate(new Error('cancelled')); rejectGate = null; }
         if (activeRequest) activeRequest.abort();
+        for (var lk in loads) loads[lk].settle(new Error('cancelled'));
         if (video.removeEventListener) {
           video.removeEventListener('timeupdate', onTime); video.removeEventListener('waiting', onWaiting);
           video.removeEventListener('seeking', paint); video.removeEventListener('seeked', paint);
