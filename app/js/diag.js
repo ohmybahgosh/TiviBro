@@ -85,7 +85,7 @@ var Diag = (function () {
         if (!c || !c.url) throw new Error('report service not available');
         // The helper relays GET only; the report relay sends CORS headers, so this goes straight there.
         return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
-          title: title, area: area, often: Log.unclean && Log.unclean.recent > 1 ? 'Every time' : 'Once', what: what + '  (sent from the TV after it closed unexpectedly)',
+          title: title, area: area, often: Log.unclean && Log.unclean.recent > 1 ? 'Every time' : 'Once', what: what + (Log.unclean ? '  (sent from the TV after it closed unexpectedly)' : '  (sent from the TV after an error)'),
           steps: '', expected: '', version: r.version, tv: r.tv, log: r.text }) });
       }).then(function (x) { return x.json().catch(function () { return {}; }).then(function (j) { if (!x.ok || !j.ok) throw new Error(j.error || 'HTTP ' + x.status); Log.info('diag', 'Crash report sent: issue #' + j.number); if (window.Reports) Reports.add(j, title); return j; }); });
     });

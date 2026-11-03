@@ -66,6 +66,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('the session before ' + name + ' is not a crash', !(await e.ev(() => Log.unclean)) && !/closed unexpectedly/.test(await menuText(e.ev)) && await e.ev(w => Log.lines().some(l => new RegExp(w).test(l)), why.source), await menuText(e.ev));
     await e.ctx.close();
   }
+  // A hidden error from a worker ("Script error.", no file or line) isn't a crash (issue #37).
+  const hid = await d.ev(() => { window.dispatchEvent(new ErrorEvent('error', { message: 'Script error.', filename: '', lineno: 0 })); return { crash: !!Log.lastCrash && /Script error/.test(Log.lastCrash.m), warned: Log.lines().some(l => /WARN .*An error inside a playback library/.test(l)) }; });
+  ok('a hidden worker error is a warning, not a crash to report', !hid.crash && hid.warned, JSON.stringify(hid));
   // Test builds: Report a problem in the menu.
   await d.ev(() => { TIVIBRO_VERSION = '0.6.0-alpha.99'; Views.buildTabs(); });
   const tabs = await d.ev(() => [].slice.call(document.querySelectorAll('.tab .lbl')).map(x => x.textContent));

@@ -147,6 +147,10 @@ var Log = (function () {
   window.addEventListener('pagehide', function () { mark(false); persistNow(); });
 
   window.addEventListener('error', function (ev) {
+    // "Script error." with no file or line: the browser hides an error from a worker (the TS player's
+    // demuxer runs in one) or another origin.  It says nothing, it doesn't stop TiviBro, and it isn't
+    // worth a "TiviBro hit an error" report (issue #37: one came from a channel switch that played fine).
+    if (/^Script error\.?$/.test(ev.message || '') && !ev.filename && !ev.lineno) { add('warn', 'app', 'An error inside a playback library (the TV hides its details); TiviBro carried on'); return; }
     add('error', 'app', 'Uncaught: ' + (ev.message || 'error') + ' at ' + (ev.filename || '').split('/').pop() + ':' + ev.lineno);
   });
   window.addEventListener('unhandledrejection', function (ev) {

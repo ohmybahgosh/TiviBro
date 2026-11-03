@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **No more "TiviBro hit an error" for nothing** (issue #37).  When a channel switched to the TV player, the TS player's worker could throw an error the TV hides the details of ("Script error.").  TiviBro carried on fine, but the next start offered to report it.  Those are now a warning in the log, and a report sent after an error (rather than a close) no longer says TiviBro closed unexpectedly.
+
 ## 0.6.0 (alpha 65, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.
