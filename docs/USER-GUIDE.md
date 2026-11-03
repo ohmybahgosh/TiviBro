@@ -851,7 +851,7 @@ Colours, sizes and what's on screen.  Every change shows straight away.
 | **Numbers** | **TV font** · Even width · Fixed width, slashed zero | Even width gives every digit the same width, so channel numbers and times line up and the buffer info stays steady.  Fixed width also crosses the zero. |
 | **Show channel numbers** | **On** · Off | Numbers beside channel names in lists and the guide. |
 | **Info panel stays for** | 3 s · **5 s** · 8 s · 12 s | How long the info panel stays up in fullscreen. |
-| **Press Back twice to exit** | **On** · Off | Back to the groups on the home screen (or the first screen) shows **Press Back again to exit**; a second **Back** closes TiviBro.  Off: Back on the menu bar closes it at once. |
+| **Press Back twice to exit** | **On** · Off | Back to the groups on the home screen (or the first screen) shows **Press Back again to exit**; a second **Back** asks **Do you want to exit?** (the TV's own question on webOS 6 and later, TiviBro's on older TVs) and you choose to exit or stay.  Off: Back on the menu bar asks at once. |
 
 ### Settings: Parental controls
 

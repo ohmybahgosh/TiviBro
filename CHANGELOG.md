@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **TV shows in My media** (thanks to moritzm784, pull request #30).  Shows on your own DLNA and WebDAV servers are found next to movies, in flat, nested or mixed folders, and open into seasons and episodes.  With your TMDB token, shows get posters and details on their own, and the seasons you have get episode names, summaries and pictures.  Episodes remember where you stopped and offer the next one, files TiviBro isn't sure about wait in **Needs review** for a quick fix (on the TV or in the web editor, with undo), and a file holding several episodes can use its chapters.  New sources find movies and shows; a source you already have stays movies only until you set its **Content** in Settings > My media.  The library is kept by the network helper in small files, read only when needed, so big libraries fit on older TVs, and it runs on every webOS version from 4 on.
+- **Exiting asks first.**  Back to exit (after **Press Back again to exit**) now brings up **Do you want to exit?** and you choose, instead of TiviBro closing at once: the TV's own question on webOS 6 and later, and the same question from TiviBro on older TVs.
 
 ## 0.6.0 (alpha 60, 2026-11-02)
 

@@ -32,6 +32,7 @@
     "soak:filter": "node tests/soak/filter.js",
     "soak:load-guard": "node tests/soak/load-guard.js",
     "soak:m3u-vod": "node tests/soak/m3u-vod.js",
+    "soak:exit-ask": "node tests/soak/exit-ask.js",
     "soak:guide-rows": "node tests/soak/guide-rows.js",
     "soak:editor-mobile": "node tests/soak/editor-mobile.js",
     "logos": "node scripts/logos/build-index.js",

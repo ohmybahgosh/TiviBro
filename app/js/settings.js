@@ -698,7 +698,7 @@ var Settings = (function () {
     out.push(toggle('Show the date with the clock', '', function () { return !!s.clockDate; }, function (v) { s.clockDate = v; UI.clock(); save(); }));
     out.push(toggle('Show channel numbers', '', function () { return s.showNumbers; }, function (v) { s.showNumbers = v; Store.saveSettings(); relist(); build(); }));
     out.push(choice('Info panel stays for', '', [3, 5, 8, 12], ['3s', '5s', '8s', '12s'], function () { return +s.osdTimeout; }, function (v) { s.osdTimeout = v; save(); }));
-    out.push(toggle('Press Back twice to exit', '', function () { return s.exitTwice; }, function (v) { s.exitTwice = v; save(); }));
+    out.push(toggle('Press Back twice to exit', 'Then the TV asks whether to exit.', function () { return s.exitTwice; }, function (v) { s.exitTwice = v; save(); }));
     return out;
   }
 
