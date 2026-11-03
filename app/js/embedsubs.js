@@ -11,6 +11,7 @@
    URL; null for a reanchor (seek), which keeps the video as it is.  An adapter is a container:
      id, headBytes                  name for logs, size of the first (session-resolving) read
      startupDelayMs                 optional delay before the first read (tests, diagnostics)
+     retryBaseMs                    optional first wait after a refused read (1000; shorter in tests)
      startupDeadlineMs              0, or how long the video may wait for the first read: after it the
                                     video starts on the original URL and subtitles give up for this play
      lazy                           reads only tracks asked for (ctx.demand(i): null, 'now', { from, to }
@@ -193,7 +194,10 @@ var EmbedSubs = (function () {
             if (xhr.readyState !== 2) return;
             var m = /^bytes (\d+)-(\d+)\/(\d+|\*)$/i.exec(xhr.getResponseHeader('Content-Range') || '');
             if (xhr.status !== 206 || !m || +m[1] !== start || +m[2] > end || +m[2] < start) {
-              finish(new Error('invalid range response (HTTP ' + xhr.status + ')')); xhr.abort();
+              // Not a part of the file at all: the provider (or the network) refused this read.
+              var err = new Error('invalid range response (HTTP ' + xhr.status + ')');
+              if (xhr.status !== 206) err.refused = true;
+              finish(err); xhr.abort();
             } else { expected = +m[2] - start + 1; total = m[3] === '*' ? NaN : +m[3]; }
           };
           xhr.onprogress = function (e) { if (e.loaded > end - start + 1) { finish(new Error('oversized range response')); xhr.abort(); } };
@@ -202,7 +206,7 @@ var EmbedSubs = (function () {
             if (!data || !expected || data.length !== expected) finish(new Error('invalid range length'));
             else { if (xhr.responseURL) wrapped = xhr.responseURL; data.total = total; finish(null, data); }
           };
-          xhr.onerror = xhr.ontimeout = function () { finish(new Error('range request failed')); };
+          xhr.onerror = xhr.ontimeout = function () { var err = new Error('range request failed'); err.refused = true; finish(err); };
           xhr.onabort = function () { finish(new Error(xhr.yieldToPlayback ? 'buffer low' : 'cancelled')); };
           xhr.send();
         });
@@ -334,12 +338,44 @@ var EmbedSubs = (function () {
     var timer = setTimeout(function () { if (!cancelled) runExtraction(); }, adapter.startupDelayMs || 0);
 
     // Reads the format's work items near the playing position, one at a time.
+    //   A read the provider refuses (an HTTP error, or no answer) is about the session, not the item:
+    //   every read waits together, longer each time (1, 2, 4... s, at most 30 s).  Providers' session
+    //   links can stop taking new requests mid-play (HTTP 509 after about ten minutes on one) while the
+    //   video's open connection carries on, so every second refusal in a row asks the movie's own link
+    //   for a new session first (16 bytes; the video keeps its connection).  Six in a row: subtitles
+    //   give up for this play.  Bad data in an answer (a wrong range) backs off only that item.
     function startPump() {
-      var busy = false, failures = {}, retryAt = {};
+      var busy = false, failures = {}, retryAt = {}, refused = 0, pausedUntil = 0, fresh = false, base = adapter.retryBaseMs || 1000;
+      function refusedBy(e) {
+        busy = false;
+        if (cancelled) return;
+        refused++;
+        if (refused >= 6) {
+          Log.warn(tag, 'Subtitles gave up: the provider keeps refusing the reads (' + (e && e.message) + ')');
+          video._mkvSubsState = 'error'; giveUp(); paint();
+          return;
+        }
+        if (refused === 1) Log.warn(tag, 'Subtitle read refused; all reads wait, then try again: ' + (e && e.message));
+        fresh = refused % 2 === 0;
+        pausedUntil = Date.now() + Math.min(30000, base * Math.pow(2, refused - 1));
+        video._mkvSubsState = 'recovering';
+        pump();
+      }
+      function newSession() {
+        var old = wrapped;
+        wrapped = Net.wrap(url);
+        return fetchRange(wrapped, 0, 15).then(function () {
+          if (rec) rec.resolved = wrapped;
+          lastSession = { url: url, resolved: wrapped };
+          Log.info(tag, 'The provider stopped taking subtitle reads on its session: reading on a new one');
+        }, function (e) { wrapped = old; throw e; });
+      }
       pump = function () {
-        if (cancelled || busy) return;
+        if (cancelled || busy || (rec && rec.failed)) return;
         clearTimeout(retryTimer); retryTimer = null;
         if (!hasBuffer()) { retryTimer = setTimeout(pump, 1000); return; }
+        var wait = pausedUntil - Date.now();
+        if (wait > 0) { retryTimer = setTimeout(pump, wait); return; }
         var now = video.currentTime || 0;
         var items = adapter.candidates(rec, now, ctx);
         if (!items.length) { rec.done = adapter.complete(rec, now); checkLoads(); return; }
@@ -351,6 +387,7 @@ var EmbedSubs = (function () {
         });
         if (!items.length) { retryTimer = setTimeout(pump, Math.max(1, earliest - clock)); return; }
         busy = true;
+        if (fresh) { fresh = false; newSession().then(function () { busy = false; pump(); }, refusedBy); return; }
         var item = items[0];
         adapter.read(rec, item, function (start, end) { return fetchRange(wrapped, start, end); }, alive).then(function (found) {
           if (cancelled) return;
@@ -372,6 +409,7 @@ var EmbedSubs = (function () {
             if (!keep) (rec.unretained = rec.unretained || {})[keys[k]] = true;
           }
           delete failures[item.id]; delete retryAt[item.id];
+          refused = 0;
           video._mkvSubsState = 'ready';
           busy = false;
           paint();
@@ -380,6 +418,7 @@ var EmbedSubs = (function () {
         }).catch(function (e) {
           busy = false;
           if (cancelled) return;
+          if (e && e.refused) return refusedBy(e);
           // A transient range failure must not disable extraction for the rest
           // of the movie. Back off this item while other nearby cues load.
           failures[item.id] = (failures[item.id] || 0) + 1;

@@ -7,6 +7,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
 const files = {};                 // name -> Uint8Array
 let requestUrls = [], requestRanges = [], logs = [], aborted = 0, pending = false, redirect = '', active = 0, maxActive = 0;
+// refuse(url) -> an HTTP status to answer with instead (a provider refusing a session), or 0.
+// redirectFor(url) -> the session URL to answer from, when it depends on the request.
+let refuse = null, redirectFor = null;
 class FakeXHR {
   open(method, url) { this.url = url; requestUrls.push(url); }
   setRequestHeader(k, v) { this.headers = this.headers || {}; this.headers[k] = v; }
@@ -21,8 +24,10 @@ class FakeXHR {
       active--;
       if (this.aborted) return;
       if (!data) { this.status = 404; this.readyState = 2; this.onreadystatechange(); return this.onload(); }
+      const no = refuse && refuse(this.url);
+      if (no) { this.status = no; this.contentRange = null; this.readyState = 2; this.onreadystatechange(); return this.aborted ? undefined : this.onload(); }
       const start = +rm[1], end = Math.min(+rm[2], data.length - 1), slice = data.slice(start, end + 1);
-      this.responseURL = redirect || this.url;
+      this.responseURL = (redirectFor && redirectFor(this.url)) || redirect || this.url;
       this.status = 206; this.contentRange = 'bytes ' + start + '-' + end + '/' + data.length;
       this.readyState = 2; this.onreadystatechange();
       if (this.aborted) return;
@@ -527,6 +532,46 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     h3.cancel(); delete ctx.Subs;
     ok('a menu choice right after the tracks appear is kept over a late browser pick (Off, or Dutch alone)', race === 'disabled,disabled' && race2 === 'disabled,showing', { race, race2 });
     ok('auto-on, then Dutch and Off each survive a reconnect over the browser\'s pick', auto === 'showing,disabled' && dutch === 'disabled,showing' && off === 'disabled,disabled', { auto, dutch, off });
+  }
+  {
+    // A provider's session that stops taking new requests mid-play (HTTP 509 after ~10 minutes on a real
+    // one): every read waits together, not each on its own clock, and a new session comes from the
+    // movie's own link.  The video keeps its connection: it is never restarted.
+    files['sess'] = new Uint8Array(64);
+    const items = [1, 2, 3, 4, 5, 6].map(s => ({ id: 'i' + s, s }));
+    let n = 0, cut = 0;
+    redirectFor = u => (/^http:\/\/p\//.test(u) ? 'http://edge/s' + (++n) + '/sess' : u);
+    refuse = u => (u === 'http://edge/s1/sess' && cut ? 509 : 0);
+    const ad = Object.assign(fakeAdapter({ items }), { retryBaseMs: 40 });
+    const real = ad.read; let readsOk = 0;
+    ad.read = function (rec, item, range) { return real.apply(this, arguments).then(r => { if (++readsOk === 1) cut = 1; return r; }); };
+    const v = makeVideo({ currentTime: 0 }), starts = [];
+    requestUrls = [];
+    const h = EmbedSubs.run('http://p/movie/sess', v, u => starts.push(u), ad);
+    await wait(30);
+    v.children[0].track.mode = 'showing'; (v.listeners.timeupdate || []).forEach(f => f());
+    await wait(40);
+    const refusedSoon = requestUrls.filter(u => u === 'http://edge/s1/sess').length;
+    await until(() => v.children[0].track.cues.length === items.length, 3000);
+    const entries = requestUrls.filter(u => u === 'http://p/movie/sess').length;
+    ok('a refused session pauses every read together (no retry storm)', refusedSoon <= 3, { refusedSoon });
+    ok('a refused session is replaced from the movie\'s link and every line still comes', v.children[0].track.cues.length === items.length &&
+      entries === 2 && starts.length === 1 && starts[0] === 'http://edge/s1/sess' && requestUrls.slice(-1)[0] === 'http://edge/s2/sess',
+      { cues: v.children[0].track.cues.length, entries, starts, tail: requestUrls.slice(-3) });
+    h.cancel();
+    // Refused on every new session too: subtitles give up for this play, and the reads stop.
+    files['dead'] = new Uint8Array(64); n = 0; requestUrls = [];
+    refuse = u => (/^http:\/\/edge\//.test(u) && requestUrls.filter(x => /^http:\/\/edge\//.test(x)).length > 1 ? 509 : 0);
+    const ad2 = Object.assign(fakeAdapter({ items }), { retryBaseMs: 20 });
+    const v2 = makeVideo({ currentTime: 0 });
+    const h2 = EmbedSubs.run('http://p/movie/dead', v2, () => {}, ad2);
+    await wait(30);
+    v2.children[0].track.mode = 'showing'; (v2.listeners.timeupdate || []).forEach(f => f());
+    await until(() => v2._mkvSubsState === 'error', 5000);
+    const at = requestUrls.length; await wait(400); (v2.listeners.timeupdate || []).forEach(f => f()); await wait(100);
+    ok('refused on fresh sessions too: subtitles give up for this play and stop asking', v2._mkvSubsState === 'error' && requestUrls.length === at &&
+      requestUrls.filter(u => u === 'http://p/movie/dead').length <= 4, { state: v2._mkvSubsState, more: requestUrls.length - at, entries: requestUrls.filter(u => u === 'http://p/movie/dead').length });
+    h2.cancel(); refuse = null; redirectFor = null;
   }
   {
     // mkv-fixture writes one byte per character: hand it the UTF-8 bytes as a binary string.
