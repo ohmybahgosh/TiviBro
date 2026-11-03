@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.6.0 (alpha 65, 2026-11-03)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 65
+
 - **A paused movie plays again after a long pause** (issue #34).  When the provider closed the connection during the pause, the movie could refuse to load and even say its format can't be played.  A movie or episode that was playing is now always opened again at the same spot: after a pause of a few minutes it reopens on play, a link that expired meanwhile is asked for again, and the network helper no longer cuts a paused movie's connection after 30 seconds.  If the provider really won't let it back in, the message says so and OK tries again from where you were.
 - **Aspect, for pictures with the wrong shape** (discussion #31).  The quick menu's Picture is now **Aspect**: Original, Fill, Zoom, 4:3, 16:9 (for a 16:9 picture squashed into 4:3), 21:9 (a letterboxed 2.35:1 film fills the screen) and 4:3 to 16:9.  Each channel, movie and episode remembers its own, and **Settings > Playback > Aspect** sets the default.  With the TV player some TVs keep the picture as it was, and the menu says so.
 - **Subtitle lines no longer get stuck on screen** (discussion #19).  TiviBro now draws downloaded subtitles itself, exactly the lines whose time is now, so a line moved by Timing, Line up or a seek can't stay behind with newer lines drawn over it.
@@ -11,11 +17,7 @@
 - **The phone app says when a new version is out** (discussion #33).  The home screen shows a card with **Download** and **What's new** when GitHub has a newer TiviBro app (checked each time the app opens).
 - **Typing from the phone, every time.**  A box that opened on the TV right after another change could stay invisible to the phone app (it was told about the screen as it was a moment before).  It now always gets the newest one.
 
-## 0.6.0 (alpha 64, 2026-11-03)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 64
+### In alpha 64
 
 - **Settings, cleaned up and the same everywhere.**  The TV, the phone app's Settings tab and the web editor now share one layout and the same names: Playlists, Guide, Channels and groups, Channel and group names, Reminders and watchlist, Playback, My media, Remote and buttons, Appearance and start screen, Parental controls, Backups and restore points, Phone app and web editor, and Updates, about and diagnostics.  Every row's text was checked against what TiviBro does today.
 - **The phone app does it on the phone.**  When a setting asks something (a box to type in, a list to pick from, "are you sure"), the question now comes up on the phone instead of on the TV.  The few that need the TV's screen (the button tester, learning a button, the set-up tour, pairing) say so.
