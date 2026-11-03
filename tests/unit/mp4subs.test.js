@@ -187,5 +187,72 @@ const rows = s => s ? Array.from(s.s).map((x, i) => [+x.toFixed(3), +s.e[i].toFi
   ok('chapter text track ignored', m && m.traks[0].handler === 'vide' && m.traks[0].chap.join() === '2' && m.traks[1].handler === 'text' &&
     m.traks[1].id === 2 && m.traks[2].chap.length === 0, m && m.traks.map(t => t && [t.id, t.handler, t.chap]));
 }
+
+// --- 3GPP text samples (TS 26.245 §5.17) and track labels.
+const T = bytes => Uint8Array.from(bytes);
+const utf8 = str => Array.from(Buffer.from(str, 'utf8'));
+const txt = (b) => Mp4Subs.text(b, 0, b.length);
+ok('text: "00 05 Snel." → "Snel."', txt(T([0, 5].concat(utf8('Snel.')))) === 'Snel.');
+{
+  const styl = box('styl', u32(1).slice(2), [0, 0, 0, 4, 0, 1, 1, 0x12, 255, 255, 255, 255]);
+  const b = T([0, 10].concat(utf8('Two\r\nlines'), styl));
+  const crOnly = T([0, 7].concat(utf8(' a\rb c ')));
+  ok('text with trailing styl box', txt(b) === 'Two\nlines' && txt(crOnly) === 'a\nb c', [txt(b), txt(crOnly)]);
+}
+{
+  const be = [0xFE, 0xFF].concat(...Array.from('Héllo').map(c => [c.charCodeAt(0) >> 8, c.charCodeAt(0) & 255]));
+  const le = [0xFF, 0xFE].concat(...Array.from('日本').map(c => [c.charCodeAt(0) & 255, c.charCodeAt(0) >> 8]));
+  const bom8 = [0xEF, 0xBB, 0xBF].concat(utf8('Café'));
+  ok('text UTF-16 BOM', txt(T([0, be.length].concat(be))) === 'Héllo' && txt(T([0, le.length].concat(le))) === '日本' &&
+    txt(T([0, bom8.length].concat(bom8))) === 'Café', [txt(T([0, be.length].concat(be))), txt(T([0, le.length].concat(le)))]);
+}
+ok('empty sample → ""', txt(T([0, 0])) === '' && txt(T([0, 0, 0x00, 0x00, 0x00, 0x0c])) === '' && txt(T([0, 9, 0x41])) === '' && txt(T([0])) === '',
+  [txt(T([0, 9, 0x41]))]);
+
+const trk = (lang, name, o) => Object.assign({ lang, name: name || '', enabled: false, displayFlags: 0 }, o || {});
+const labels = list => Mp4Subs.describe(list).map(d => d.label);
+{
+  const got = labels([trk('eng', 'BTM', { enabled: true }), trk('spa', 'BTM LA'), trk('spa', 'BTM ES'), trk('dan', 'BTM'), trk('tha', 'BTM')]);
+  ok('labels for file B shape: "English · BTM", "Spanish · BTM LA", "Spanish · BTM ES", "Danish · BTM", "Thai · BTM"',
+    got.join('|') === 'English · BTM|Spanish · BTM LA|Spanish · BTM ES|Danish · BTM|Thai · BTM', got);
+}
+{
+  const d = Mp4Subs.describe([trk('nld', 'Nederlands'), trk('eng', 'english'), trk('deu', 'Deutsch'), trk('fre', 'French'), trk('nld', 'Dutch SDH')]);
+  ok('file A shape: nld + "Nederlands" → "Dutch"', d[0].label === 'Dutch' && d.map(x => x.label).join('|') === 'Dutch|English|German|French|Dutch · Dutch SDH',
+    d.map(x => x.label));
+}
+{
+  const got = labels([trk('eng', 'BTM'), trk('eng', 'BTM'), trk('eng', 'BTM'), trk('und', ''), trk('und', 'Commentary')]);
+  ok('duplicate labels get " 2"', got.join('|') === 'English · BTM|English · BTM 2|English · BTM 3|Subtitle track 4|Commentary', got);
+}
+{
+  const long = 'A very long release group description that goes on and on';
+  const d = Mp4Subs.describe([trk('eng', long, { displayFlags: 0xC0000000 }), trk('eng', long, { displayFlags: 0xC0000000 })]);
+  const l = d.map(x => x.label);
+  ok('60-char cut keeps " (forced) 2" suffix', l[0].length <= 60 && l[1].length <= 60 && /^English · A very long.* \(forced\)$/.test(l[0]) &&
+    / \(forced\) 2$/.test(l[1]) && l[0] !== l[1] && !/ {2}/.test(l[0]) && !/ \(forced\)/.test(l[0].slice(0, -9)), l);
+}
+{
+  const d = Mp4Subs.describe([trk('eng', '', { displayFlags: 0xC0000000, enabled: true }), trk('eng', '', { displayFlags: 0x40000000 }), trk('fra', '', { displayFlags: 0x80000000 })]);
+  const f = d.map(x => [x.label, x.forced, x.trakIndex]);
+  ok('0xC0000000 → forced, label "(forced)"; 0x40000000 → not forced',
+    JSON.stringify(f) === JSON.stringify([['English', false, 1], ['English (forced)', true, 0], ['French (forced)', true, 2]]), f);
+}
+{
+  const d = Mp4Subs.describe([trk('eng', 'SDH'), trk('spa', ''), trk('eng', '', { enabled: true }), trk('spa', 'Latino', { enabled: true })]);
+  const variants = labels([trk('spa', 'Castellano'), trk('zho', 'Cantonese'), trk('zho', 'Mandarin')]).join('|');
+  const f = d.map(x => [x.label, x.trakIndex]);
+  ok('enabled English attached before a second English',
+    JSON.stringify(f) === JSON.stringify([['English', 2], ['Spanish · Latino', 3], ['English · SDH', 0], ['Spanish', 1]]) &&
+    variants === 'Spanish · Castellano|Chinese · Cantonese|Chinese · Mandarin', { f, variants });
+}
+{
+  const d = Mp4Subs.describe([trk('xyz', '')]);
+  ok('unknown "xyz" → label "xyz", srclang "xyz"', d[0].label === 'xyz' && d[0].srclang === 'xyz', d[0]);
+}
+{
+  const d = Mp4Subs.describe([trk('nld', ''), trk('ger', ''), trk('bul', ''), trk('und', '')]);
+  ok('srclang uses U.lang when known ("nld" → "nl")', d.map(x => x.srclang).join() === 'nl,de,bul,und' && d[2].label === 'Bulgarian', d);
+}
 if (fail) { console.log(fail + ' mp4subs test(s) failed'); process.exit(1); }
 console.log('all mp4subs tests passed');
