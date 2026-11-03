@@ -251,6 +251,8 @@ var EmbedSubs = (function () {
     // A play that gave up (startup deadline, failed first read) stays given up for its seeks; the
     // next engine start tries again.
     if (rec && rec.failed && onResolved) delete rec.failed;
+    // Refusals are counted, and waited out, across the seeks of a play; the next engine start begins afresh.
+    if (rec && onResolved) delete rec.retry;
     // Items whose lines didn't fit the text cap are read again in this play.
     if (rec && rec.unretained) { for (var uk in rec.unretained) delete rec.fetched[uk]; rec.unretained = null; rec.done = false; }
     if (!onResolved && rec && rec.resolved) wrapped = rec.resolved;
@@ -343,38 +345,49 @@ var EmbedSubs = (function () {
     //   links can stop taking new requests mid-play (HTTP 509 after about ten minutes on one) while the
     //   video's open connection carries on, so every second refusal in a row asks the movie's own link
     //   for a new session first (16 bytes; the video keeps its connection).  Six in a row: subtitles
-    //   give up for this play.  Bad data in an answer (a wrong range) backs off only that item.
+    //   give up for this play.  The count and the wait carry over seeks (they live in the file's record);
+    //   a new engine start begins afresh.  A new session that serves another size is a different file:
+    //   subtitles stop there.  Bad data in an answer (a wrong range) backs off only that item.
     function startPump() {
-      var busy = false, failures = {}, retryAt = {}, refused = 0, pausedUntil = 0, fresh = false, base = adapter.retryBaseMs || 1000;
+      var busy = false, failures = {}, retryAt = {}, base = adapter.retryBaseMs || 1000;
+      var R = rec.retry || (rec.retry = { refused: 0, pausedUntil: 0, fresh: false });
+      function stop() { video._mkvSubsState = 'error'; giveUp(); paint(); }
       function refusedBy(e) {
         busy = false;
         if (cancelled) return;
-        refused++;
-        if (refused >= 6) {
+        R.refused++;
+        if (R.refused >= 6) {
           Log.warn(tag, 'Subtitles gave up: the provider keeps refusing the reads (' + (e && e.message) + ')');
-          video._mkvSubsState = 'error'; giveUp(); paint();
+          stop();
           return;
         }
-        if (refused === 1) Log.warn(tag, 'Subtitle read refused; all reads wait, then try again: ' + (e && e.message));
-        fresh = refused % 2 === 0;
-        pausedUntil = Date.now() + Math.min(30000, base * Math.pow(2, refused - 1));
+        if (R.refused === 1) Log.warn(tag, 'Subtitle read refused; all reads wait, then try again: ' + (e && e.message));
+        R.fresh = R.refused % 2 === 0;
+        R.pausedUntil = Date.now() + Math.min(30000, base * Math.pow(2, R.refused - 1));
         video._mkvSubsState = 'recovering';
         pump();
       }
+      // Resolves to false when the link now serves another file (another size): its offsets don't fit.
       function newSession() {
         var old = wrapped;
         wrapped = Net.wrap(url);
-        return fetchRange(wrapped, 0, 15).then(function () {
-          if (rec) rec.resolved = wrapped;
+        return fetchRange(wrapped, 0, 15).then(function (bytes) {
+          if (rec.size !== undefined && isFinite(bytes.total) && bytes.total !== rec.size) {
+            wrapped = old;
+            Log.warn(tag, 'Subtitles stopped: the movie\'s link now serves a different file');
+            return false;
+          }
+          rec.resolved = wrapped;
           lastSession = { url: url, resolved: wrapped };
           Log.info(tag, 'The provider stopped taking subtitle reads on its session: reading on a new one');
+          return true;
         }, function (e) { wrapped = old; throw e; });
       }
       pump = function () {
         if (cancelled || busy || (rec && rec.failed)) return;
         clearTimeout(retryTimer); retryTimer = null;
         if (!hasBuffer()) { retryTimer = setTimeout(pump, 1000); return; }
-        var wait = pausedUntil - Date.now();
+        var wait = R.pausedUntil - Date.now();
         if (wait > 0) { retryTimer = setTimeout(pump, wait); return; }
         var now = video.currentTime || 0;
         var items = adapter.candidates(rec, now, ctx);
@@ -387,7 +400,11 @@ var EmbedSubs = (function () {
         });
         if (!items.length) { retryTimer = setTimeout(pump, Math.max(1, earliest - clock)); return; }
         busy = true;
-        if (fresh) { fresh = false; newSession().then(function () { busy = false; pump(); }, refusedBy); return; }
+        if (R.fresh) {
+          R.fresh = false;
+          newSession().then(function (same) { busy = false; if (cancelled) return; if (same) pump(); else stop(); }, refusedBy);
+          return;
+        }
         var item = items[0];
         adapter.read(rec, item, function (start, end) { return fetchRange(wrapped, start, end); }, alive).then(function (found) {
           if (cancelled) return;
@@ -409,7 +426,7 @@ var EmbedSubs = (function () {
             if (!keep) (rec.unretained = rec.unretained || {})[keys[k]] = true;
           }
           delete failures[item.id]; delete retryAt[item.id];
-          refused = 0;
+          R.refused = 0;
           video._mkvSubsState = 'ready';
           busy = false;
           paint();
