@@ -40,6 +40,8 @@ import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 /** One media source as the TV sends it. */
+private fun plural(n: Int, word: String) = "$n $word" + if (n == 1) "" else "s"
+
 private data class MediaSrc(val id: String, val name: String, val type: String, val mode: String, val movies: Int, val episodes: Int, val scanning: Boolean)
 
 private val MODES = listOf("automatic" to "Movies and TV shows", "movies" to "Movies only", "shows" to "TV shows only")
@@ -168,7 +170,7 @@ fun MediaSourceDialog(model: AppModel, id: String, sid: String, onDone: (changed
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 8.dp)) }
-                if (s != null) Text((if (s.type == "dlna") "DLNA / UPnP" else "WebDAV") + "  ·  ${s.movies} movies" + (if (s.episodes > 0) "  ·  ${s.episodes} episode files" else "") + (if (s.scanning) "  ·  scanning now" else ""),
+                if (s != null) Text((if (s.type == "dlna") "DLNA / UPnP" else "WebDAV") + (if (s.mode != "shows") "  ·  " + plural(s.movies, "movie") else "") + (if (s.mode != "movies" || s.episodes > 0) "  ·  " + plural(s.episodes, "episode") else "") + (if (s.scanning) "  ·  scanning now" else ""),
                     color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(bottom = 6.dp))
                 when {
                     busy != null -> Busy(busy!!)

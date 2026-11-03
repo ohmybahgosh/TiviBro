@@ -288,7 +288,7 @@ var Phone = (function () {
         return waitFor(Media.addAddress(address, String(a.user || '').slice(0, 300), String(a.pass || '').slice(0, 2000)).then(function (r) { return r && !r.error ? { msg: 'Added: ' + (r.movies || 0) + ' movies.' + Media.leftOut(r.skipped) } : r; }),
           'Login accepted.  The TV is still looking through the folder.');
       }
-      if (op === 'rescan') { var s1 = src(); return waitFor(Media.rescan(s1.id, !!a.restart).then(function (r) { return r && !r.error ? { msg: r.note || (r.count || 0) + ' movies on ' + s1.name + '.' } : r; }), 'Still scanning ' + s1.name + ' on the TV.'); }
+      if (op === 'rescan') { var s1 = src(); return waitFor(Media.rescan(s1.id, !!a.restart).then(function (r) { return r && !r.error ? { msg: r.note || r.text || (r.count || 0) + ' movies on ' + s1.name + '.' } : r; }), 'Still scanning ' + s1.name + ' on the TV.'); }
       if (op === 'mode') {
         var s2 = src(), mode = String(a.mode || '');
         if (['automatic', 'movies', 'shows'].indexOf(mode) < 0) throw new Error('Not one of the choices');

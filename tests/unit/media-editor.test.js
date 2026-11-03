@@ -39,9 +39,11 @@ vm.runInContext(src.slice(src.indexOf('  function mediaSource(a)'), end + 5), c)
   assert.equal((await c.RUN.mediaRescan({ id: 's' })).msg, 'The list stays.');
   // The editor can add a login before My media has ever been opened on the TV.
   const m = { Promise, setTimeout, clearTimeout, Net: c.Net, U: { toast() {} },
-    MediaStore: { load: () => Promise.resolve(), publicSources: () => [], addSource: () => 'new', applyScan: () => ({}), movies: () => [] },
+    MediaStore: { load: () => Promise.resolve(), publicSources: () => [], addSource: () => 'new', applyScan: () => ({}), movies: () => [], source: () => ({ id: 'new', name: 'Cloud', contentMode: 'automatic' }) },
     fetch: () => Promise.resolve({ json: () => Promise.resolve({ movies: [] }) }) };
   vm.createContext(m); vm.runInContext(read('app/js/media.js'), m);
   assert.equal((await m.Media.addAddress('https://example.invalid/', 'u', 'p')).id, 'new');
+  assert.equal(m.Media.foundText('new', 'Cloud', 24), '0 movies and 24 episodes on Cloud.');
+  assert.equal(m.Media.foundText('new', 'Cloud', 1), '0 movies and 1 episode on Cloud.');
   console.log('PASS media editor privacy, login failure, rescan, removal and adding before opening the screen');
 })().catch(e => { console.error(e); process.exitCode = 1; });

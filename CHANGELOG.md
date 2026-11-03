@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Scans count episodes too.**  After a rescan, My media now says what it found as "3 movies and 24 episodes on Home server" on the TV, in the phone app and in the web editor, instead of only counting movies.  A source set to TV shows only counts episodes.
+
 ## 0.6.0 (alpha 69, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.

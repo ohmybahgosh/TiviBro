@@ -306,7 +306,7 @@ var WebEdit = (function () {
       var s = mediaSource(a);
       return Media.rescan(s.id).then(function (r) {
         if (r.error) throw new Error(r.message || 'Could not read that media source.');
-        return { msg: (r.note || r.count + ' movies found.') + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
+        return { msg: (r.note || r.text || r.count + ' movies found.') + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
       });
     },
     /* Reminders waiting to go off (the Watchlist and reminders page): the list, cancelling one, or all. */

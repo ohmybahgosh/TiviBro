@@ -137,9 +137,18 @@ var Media = (function () {
     var ex = sk && sk.extras || 0;
     return ex ? '  Left out ' + ex + ' trailer' + (ex === 1 ? '' : 's') + ' and extras.' : '';
   }
+  // What a scan found on a source: "1 movie and 24 episodes on Home server."  Episodes are counted when
+  // the source also looks for TV shows (its content is Automatic or TV shows).
+  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
+  function foundText(id, name, episodes) {
+    var s = MediaStore.source(id) || {}, mode = s.contentMode || 'movies', m = MediaStore.movies(id).length, e = +episodes || 0, parts = [];
+    if (mode !== 'shows') parts.push(plural(m, 'movie'));
+    if (mode !== 'movies') parts.push(plural(e, 'episode'));
+    return parts.join(' and ') + ' on ' + name + '.';
+  }
   function found(id, name, r, res) {
     var more = leftOut(res && res.skipped);
-    U.toast((r.note || MediaStore.movies(id).length + ' movies'+(res&&res.episodeFiles?' and '+res.episodeFiles+' episode files':'')+' on ' + name + '.') + more, r.note || more ? 8000 : 3000);
+    U.toast((r.note || foundText(id, name, res && res.episodeFiles)) + more, r.note || more ? 8000 : 3000);
   }
   function rescan(id,restart) {
     var src = MediaStore.source(id);
@@ -152,7 +161,7 @@ var Media = (function () {
       delete scanning[id]; refreshSeries(); refresh();
       found(id, src.name, r, res);
       if (!scanningAll) autoSoon();
-      return { error: res.error || '', message: res.message || '', kept: r.kept, note: r.note, count: MediaStore.movies(id).length, skipped: res.skipped || null };
+      return { error: res.error || '', message: res.message || '', kept: r.kept, note: r.note, count: MediaStore.movies(id).length, episodes: res.episodeFiles || 0, text: foundText(id, src.name, res.episodeFiles), skipped: res.skipped || null };
     }, function (e) { delete scanning[id]; refresh(); U.toast('Could not read ' + src.name + ': ' + why(e), 6000); return { error: 'helper' }; });}
     var job=slice(true);scanRuns[id]=job;job.then(function(){if(scanRuns[id]===job)delete scanRuns[id];},function(){if(scanRuns[id]===job)delete scanRuns[id];});return job;
   }
@@ -387,7 +396,7 @@ var Media = (function () {
       { label: 'Content: ' + (s.contentMode === 'automatic' ? 'Movies and TV shows' : s.contentMode === 'shows' ? 'TV shows only' : 'Movies only'), action: function () { UI.menu('Source content', ['automatic','movies','shows'].map(function (mode) { return {label:mode === 'automatic' ? 'Movies and TV shows' : mode === 'movies' ? 'Movies only' : 'TV shows only',action:function () { changeSourceMode(s.id,mode).catch(function(e){U.toast(why(e),6000);}); }}; })); } },
       { label:'Review excluded files',action:function(){MediaSeries.excluded();} },
       { label: 'TV shows', action: function () { MediaSeries.open(); } },
-      { label: 'Rescan', sub: 'Look for added or removed movies', action: function () { rescan(s.id); } },
+      { label: 'Rescan', sub: 'Look for added or removed movies and episodes', action: function () { rescan(s.id); } },
       { label: 'Remove', sub: 'Your files stay where they are', action: function () {
         UI.confirm('Remove ' + s.name + ' from My media?', 'Remove', function () { MediaStore.load().then(function () { MediaStore.removeSource(s.id); ask('library/source',{sourceId:s.id,action:'remove'},30000).then(function(){refresh();UI.menu(s.name+' removed',[{label:'Undo removal',action:function(){if(MediaStore.restoreSource(s.id))ask('library/source',{sourceId:s.id,action:'activate'},30000).then(function(){refresh();rescan(s.id);});}},{label:'Done'}]);},function(e){U.toast(why(e),6000);}); }); });
       } }
@@ -620,7 +629,7 @@ var Media = (function () {
   }
 
   return {
-    refreshShows:refreshSeries, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
+    refreshShows:refreshSeries, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
     rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: play, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { addServer: addServer, addAddress: addAddress, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
