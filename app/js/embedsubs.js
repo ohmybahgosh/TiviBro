@@ -218,6 +218,7 @@ var EmbedSubs = (function () {
     function onTracks() { paint(); if (pump) pump(); }
     // What the format asks before choosing what to read next.
     var loads = {};               // track index -> { from, to, settle }: an _embedLoad in progress
+    var settleTimers = [];        // putting the track modes back after the browser's own pick
     var ctx = {
       demand: function (i) { var t = liveTracks[i]; return loads[i] ? loads[i] : t && t.mode === 'showing' ? 'now' : null; },
       timing: function (i) {
@@ -283,6 +284,21 @@ var EmbedSubs = (function () {
         liveTracks.push(trackEl.track);
         if (rec && rec.modes && rec.modes[k]) trackEl.track.mode = rec.modes[k];
       }
+      // Chromium switches on a newly added track by itself (the browser's language) once any track was
+      // shown on this video, whatever the script set, so the saved choice comes back just after it.
+      // With no saved choice and none made in this playback, Subs.autoOn picks (Settings > Playback);
+      // views.js leaves these tracks to this.
+      var intent = liveTracks.map(function (t, i) { return rec && rec.modes && rec.modes[i] || 'disabled'; });
+      if (intent.indexOf('showing') < 0 && !video._subsChoice && typeof Subs !== 'undefined' && Subs.autoOn) {
+        for (var a = 0; a < liveTracks.length; a++) if (Subs.autoOn(liveTracks[a], video)) { intent[a] = 'showing'; break; }
+      }
+      function settle() {
+        if (cancelled) return;
+        for (var i = 0; i < liveTracks.length; i++) if (liveTracks[i].mode !== intent[i]) liveTracks[i].mode = intent[i];
+        paint();
+        if (pump) pump();
+      }
+      settleTimers.push(setTimeout(settle, 0), setTimeout(settle, 60));
     }
     function replayCached(r) {
       for (var k = 0; k < r.cues.length; k++) {
@@ -449,6 +465,7 @@ var EmbedSubs = (function () {
         if (rejectGate) { rejectGate(new Error('cancelled')); rejectGate = null; }
         if (activeRequest) activeRequest.abort();
         for (var lk in loads) loads[lk].settle(new Error('cancelled'));
+        settleTimers.forEach(clearTimeout);
         if (video.removeEventListener) {
           video.removeEventListener('timeupdate', onTime); video.removeEventListener('waiting', onWaiting);
           video.removeEventListener('seeking', paint); video.removeEventListener('seeked', paint);

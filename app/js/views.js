@@ -173,9 +173,11 @@ var Views = (function () {
     document.addEventListener('mousemove', U.debounce(function () { if (full && UI.pointer && !overlay) osd(true); }, 120));
     // Subtitles on automatically when a stream brings them (Settings > Playback), in the chosen language,
     // until the viewer picks in the Subtitles menu: a reconnect's tracks then keep that choice, Off too.
+    // Tracks read from MKV and MP4 files (_embedded) are turned on by their reader (embedsubs.js),
+    // which also undoes the browser's own pick.
     if (video.textTracks && video.textTracks.addEventListener) video.textTracks.addEventListener('addtrack', function (e) {
       var t = e.track;
-      if (Subs.autoOn(t, video))
+      if (t && !t._embedded && Subs.autoOn(t, video))
         setTimeout(function () { if (!video._subsChoice && subtitleTracks().every(function (x) { return x.mode !== 'showing'; })) t.mode = 'showing'; }, 0);
     });
     Epg.onUpdate(function (k) {

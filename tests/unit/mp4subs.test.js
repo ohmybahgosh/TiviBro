@@ -322,8 +322,9 @@ const wait = ms => new Promise(r => setTimeout(r, ms));
 const until = async (cond, ms) => { for (let t = 0; t < (ms || 2000) && !cond(); t += 5) await wait(5); return cond(); };
 const tracksOf = v => v.children.map(c => c.track);
 const textsOf = tr => tr.cues.map(c => c.text);
-// Turn track i on and let the core notice (as a playing video's timeupdate would).
-const show = (v, i) => { tracksOf(v).forEach((t, k) => { t.mode = k === i ? 'showing' : 'disabled'; }); v.fire('timeupdate'); };
+// Turn track i on and let the core notice (as a playing video's timeupdate would): a moment after the
+// tracks appear, as a viewer would, once the core has settled their modes (60 ms).
+const show = (v, i) => setTimeout(() => { tracksOf(v).forEach((t, k) => { t.mode = k === i ? 'showing' : 'disabled'; }); v.fire('timeupdate'); }, 80);
 const fasts = fs.readFileSync(path.join(__dirname, '../lib/mp4/faststart.mp4'));
 const asU8 = b => new Uint8Array(b.buffer, b.byteOffset, b.length);
 const twoParts = (late, extra) => buildMp4(Object.assign({ tracks: [{ lang: 'eng', cues: [[1, 3, 'early'], [100, 103, 'late']].concat(late || []) }] }, extra || {}));

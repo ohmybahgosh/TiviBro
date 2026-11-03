@@ -418,6 +418,37 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     ok('overlay fallback applies line-up scale', before === '' && at === 'line a', { before, at });   // 1-2 s shows at 3.5-5.5 s
   }
   {
+    // Chromium turns on a newly added subtitle track by itself once any track was shown on that video
+    // (its automatic track selection, after the script's own mode).  The core puts its choice back:
+    // the saved modes (Off kept), or the auto-on pick when there is one.
+    files['pick'] = new Uint8Array(64);
+    const browserLike = () => {
+      const v = makeVideo({ currentTime: 0 }), append = v.appendChild;
+      let first = true;
+      v.appendChild = function (el) { const r = append.call(this, el); if (first) { first = false; setTimeout(() => { el.track.mode = 'showing'; }, 0); } return r; };
+      return v;
+    };
+    const ad = () => Object.assign(fakeAdapter({ items: [{ id: 'a', s: 1 }] }), { describe: () => [{ label: 'English', srclang: 'en' }, { label: 'Dutch', srclang: 'nl' }] });
+    const v1 = browserLike();
+    const h1 = EmbedSubs.run('http://p/movie/pick', v1, () => {}, ad());
+    await wait(120);
+    const off = v1.children.map(c => c.track.mode).join();
+    h1.cancel();
+    const v2 = browserLike(); files['pick2'] = new Uint8Array(64);
+    ctx.Subs = { delay: 0, autoOn: t => v2.children.some(c => c.track === t && c.srclang === 'nl') };   // a real TextTrack's language is srclang
+    const h2 = EmbedSubs.run('http://p/movie/pick2', v2, () => {}, ad());
+    await wait(120);
+    const auto = v2.children.map(c => c.track.mode).join();
+    h2.cancel();
+    const v3 = browserLike(); v3._subsChoice = true; files['pick3'] = new Uint8Array(64);
+    const h3 = EmbedSubs.run('http://p/movie/pick3', v3, () => {}, ad());
+    await wait(120);
+    const chosen = v3.children.map(c => c.track.mode).join();
+    h3.cancel(); delete ctx.Subs;
+    ok("the browser's own track pick is undone; auto-on picks by Subs.autoOn, not after a choice",
+      off === 'disabled,disabled' && auto === 'disabled,showing' && chosen === 'disabled,disabled', { off, auto, chosen });
+  }
+  {
     // mkv-fixture writes one byte per character: hand it the UTF-8 bytes as a binary string.
     files['utf8.mkv'] = buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true, cueText: Buffer.from('Café 日本', 'utf8').toString('latin1') });
     const v = makeVideo();
