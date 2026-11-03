@@ -57,12 +57,12 @@ function inspect(b,read,cb){
     if(sample!==count)throw new Error('Chapter samples are missing.');
     var groups=[];samples.forEach(function(sample){var last=groups[groups.length-1];if(last&&last.offset+last.size===sample.offset&&last.size+sample.size<=1048576){last.samples.push(sample);last.size+=sample.size;}else groups.push({offset:sample.offset,size:sample.size,samples:[sample]});});
     var at=0,chapters=[];
-    function next(){
+    var next=function(){
       if(at===groups.length)return cb(null,{status:'available',physicalTimeline:true,chapters:chapters});
       var group=groups[at++];read(group.offset,group.size,function(data){
         try{group.samples.forEach(function(sample){var start=sample.offset-group.offset;chapters.push({startSec:sample.startSec,endSec:null,name:decode(data.slice(start,start+sample.size)),language:''});});next();}catch(e){cb(e);}
       });
-    }
+    };
     next();
   }catch(e){cb(e);}
 }

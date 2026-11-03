@@ -10,7 +10,7 @@ function file(title,n){return {id:'demo:/'+title+'/S01E'+n+'.mkv',file:title+'.S
     const c=new Catalog(root);await new Promise((resolve,reject)=>c.open(e=>e?reject(e):resolve()));
     const files=[file('Harbour',1),file('Copper',1),file('Unknown',1)];
     await new Promise((resolve,reject)=>c.importScan('demo',{files,partial:false},e=>e?reject(e):resolve()));
-    let token='mock-token',language='en',cancel=false,failSeason=false;
+    let token='mock-token',language='en',cancel=false,failSeason=false,failOne='';
     const lookups=[],notices=[];
     const ctx={Promise,Date,setTimeout:(f)=>setTimeout(f,0),clearTimeout,
       MediaStore:{tmdbToken:()=>token,preferences:()=>({language})},
@@ -21,6 +21,7 @@ function file(title,n){return {id:'demo:/'+title+'/S01E'+n+'.mkv',file:title+'.S
         if(q.title==='Unknown')return Promise.resolve({matches:[{id:'tmdb:tv:8'},{id:'tmdb:tv:9'}]});
         const id=q.id||'tmdb:tv:'+(q.title==='Harbour'?1:2);
         if(failSeason&&q.season!=null)return Promise.resolve({error:'metadata',message:'TMDB unavailable'});
+        if(failOne&&q.season!=null&&id===failOne)return Promise.resolve({error:'metadata',message:'Season details were unavailable'});
         return Promise.resolve({metadata:q.season!=null?{id:id+':season:'+q.season,title:'Season one',episodes:[{id:id+':season:1:episode:1',season:1,number:1,title:'Pilot '+language,plot:'Episode summary',still:'https://image.tmdb.org/test.jpg'}]}:{id,provider:'TMDB',requestedLanguage:language,title:'Matched '+(q.title||id),poster:'https://image.tmdb.org/poster.jpg'}});
       }}};
     vm.createContext(ctx);vm.runInContext(fs.readFileSync('app/js/media-series.js','utf8'),ctx);
@@ -49,6 +50,10 @@ function file(title,n){return {id:'demo:/'+title+'/S01E'+n+'.mkv',file:title+'.S
     assert.equal((await call(c,'detail',{kind:'show',handle:harbour.handle})).metadata.id,'tmdb:tv:1','token removal prevents late metadata writes');
     cancel=false;token='mock-token';failSeason=true;const failed=await ctx.MediaSeries.fetchDetails(false);assert(failed.error);
     assert((await call(c,'query',{kind:'show',metadataPending:true,language:'nl'})).total>0,'failed season stays pending for retry');
+    // One show failing is set aside (checked, missed) and the run goes on with the others.
+    failSeason=false;failOne='tmdb:tv:1';await new Promise(resolve=>setTimeout(resolve,3));
+    const one=await ctx.MediaSeries.fetchDetails(true);
+    assert(!one.error,one.error);assert(one.missed>=1&&one.updated>=1,'the other show still gets its details: '+JSON.stringify(one));
     console.log('PASS automatic show matches, owned episode enrichment, bounded pending queries, saved IDs, language refresh, miss cooldown, explicit retry and cancellation');
   }finally{fs.rmSync(root,{recursive:true,force:true});}
 })().catch(e=>{console.error(e);process.exitCode=1;});

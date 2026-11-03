@@ -8,6 +8,10 @@
 
    Logs name hosts only.  A login goes only to the host it was entered for, never after a redirect to
    another one, and certificates are always checked for WebDAV.
+   TV shows (contentMode automatic or shows) go into the catalogue (media-catalog.js).  A movies-only
+   scan never needs it, nor a checkpoint: if either cannot be read the scan still answers.  A show
+   scan for a source not saved yet waits for /media/library/adopt (at most two, five minutes) and is
+   only dropped once imported, so a failed adopt can be retried.
    Plain ES5 for Node 0.12 on webOS 4 (see compat.js). */
 'use strict';
 var Classifier = require('./media-classify');
@@ -132,7 +136,8 @@ function request(opts, cb) {
     if (e && isTls && opts.secure && !opts.withCa && errorKind(e) === 'cert') return request(Object.assign({}, opts, { withCa: true }), cb);
     cb(e, s, h, b);
   }
-  var o = { hostname: u.hostname, port: u.port || (isTls ? 443 : 80), path: u.path || '/', method: opts.method || 'GET', headers: opts.headers || {}, agent: false };
+  // An address typed with "é" or a space: url.parse leaves them, and Node refuses (or garbles) them in a request.
+  var o = { hostname: u.hostname, port: u.port || (isTls ? 443 : 80), path: str(u.path || '/').replace(/[^\x21-\x7e]+/g, function (run) { return encodeURIComponent(run); }), method: opts.method || 'GET', headers: opts.headers || {}, agent: false };
   if (isTls && opts.secure && opts.withCa) o.ca = CA;
   var req = (isTls ? https : http).request(o, function (res) {
     if (opts.headOnly) { res.resume(); finish(null, res.statusCode, res.headers, ''); try { req.abort(); } catch (e) {} return; }
@@ -200,6 +205,8 @@ function observed(source, file, ancestors, extra) {
   out.title = r.title;
   return out;
 }
+// Two server entries for one file path: both need review, once (a resumed scan sees them again).
+function flagCollision(entry) { var review = entry.classification.review; if (review.indexOf('identityCollision') < 0) review.push('identityCollision'); }
 function safeMovieFolder(folder, files) {
   // A collection's year is not evidence that all its videos are the same movie.
   if (files.length !== 1) return '';
@@ -228,7 +235,7 @@ function scanDlna(source, cb) {
       var prior=discovered[key];
       if(prior && prior.classification.review.length <= entry.classification.review.length && prior.ancestors.length >= entry.ancestors.length) entry=prior;
       var owner=pathOwners[u.pathname];
-      if(owner && owner!==key){entry.id='d:'+key;entry.classification.review.push('identityCollision');if(discovered[owner])discovered[owner].classification.review.push('identityCollision');}
+      if(owner && owner!==key){entry.id='d:'+key;flagCollision(entry);if(discovered[owner])flagCollision(discovered[owner]);}
       else pathOwners[u.pathname]=key;
       discovered[key] = entry;
       if (entry.kind !== 'movie' || source.contentMode === 'shows') return;
@@ -283,10 +290,18 @@ function parsePropfind(raw) {
   }
   return out;
 }
+/* Same server: protocol, host name and port, with the default port filled in (https://host:443/
+   is https://host/).  Paths compare decoded, since servers encode "(", "@" or "é" differently from
+   url.parse (Nextcloud sends %28, %40, %C3%A9). */
+function originKey(u) {
+  var protocol = str(u && u.protocol).toLowerCase(), port = str(u && u.port) || (protocol === 'https:' ? '443' : protocol === 'http:' ? '80' : '');
+  return protocol + '//' + str(u && u.hostname).toLowerCase() + ':' + port;
+}
+function samePath(p) { return decodePart(str(p)).replace(/\/+$/, ''); }
 function webdavBase(source) {
   var u; try { u = URL_.parse(str(source && source.address)); } catch (e) { return null; }
   if ((u.protocol !== 'http:' && u.protocol !== 'https:') || !u.hostname) return null;
-  return { origin: u.protocol + '//' + u.host, path: u.pathname || '/' };
+  return { origin: u.protocol + '//' + u.host, key: originKey(u), path: u.pathname || '/' };
 }
 function scanWebdav(source, cb) {
   var base = webdavBase(source);
@@ -299,8 +314,8 @@ function scanWebdav(source, cb) {
     var c = queue.shift();
     if (!c || stop) return done();
     if ((source._control&&source._control.paused) || Date.now() > deadline || folders >= (source.scanFolderBudget > 0 && source.scanFolderBudget <= MAX_FOLDERS ? source.scanFolderBudget : MAX_FOLDERS)) { queue.unshift(c);paused=true;partial = true; errors.push('stopped early, the library is very large'); return done(); }
-    if (visited[c.path]) return next();
-    visited[c.path] = true;
+    if (visited[samePath(c.path)]) return next();
+    visited[samePath(c.path)] = true;
     folders++;
     request({ url: base.origin + c.path, method: 'PROPFIND', secure: true, body: PROPFIND, headers: {
       Authorization: basic(source), Depth: '1', 'Content-Type': 'application/xml; charset="utf-8"', 'Content-Length': Buffer.byteLength(PROPFIND)
@@ -316,14 +331,13 @@ function scanWebdav(source, cb) {
         partial = true; errors.push(c.name + ': HTTP ' + status);
         return next();
       }
-      var self = c.path.replace(/\/+$/, ''), files = [];
+      var self = samePath(c.path), root = samePath(base.path) + '/', files = [];
       parsePropfind(body).forEach(function (it) {
         var target = URL_.parse(URL_.resolve(base.origin + c.path,it.href));
-        if (target.protocol + '//' + target.host !== base.origin) { partial = true; return; }
-        var p = target.pathname || it.href;
-        if (p.replace(/\/+$/, '') === self) return;
-        var root = base.path.replace(/\/+$/, '') + '/';
-        if (p.indexOf(root) !== 0 || /(?:^|\/)(?:\.\.|%2e%2e)(?:\/|$)/i.test(p)) { partial = true; return; }
+        if (originKey(target) !== base.key) { partial = true; return; }
+        var p = target.pathname || it.href, plain = samePath(p);
+        if (plain === self) return;
+        if ((plain + '/').indexOf(root) !== 0 || /(?:^|\/)(?:\.\.|%2e%2e)(?:\/|$)/i.test(p) || /(?:^|\/)\.\.(?:\/|$)/.test(plain)) { partial = true; return; }
         var name = it.name || lastPart(p);
         if (it.dir) {
           if (c.depth + 1 > (source.maxDepth || MAX_DEPTH)) { partial = true; errors.push('depth limit reached'); return; }
@@ -358,7 +372,7 @@ function resolve(source, path, cb) {
       if (status >= 300 && status < 400 && h.location) {
         var to = URL_.resolve(url, h.location), tu = URL_.parse(to);
         if (tu.protocol !== 'http:' && tu.protocol !== 'https:') return cb(failure('address'));
-        if (tu.protocol + '//' + tu.host !== origin) { hideLinksFrom(tu.host); return cb({ url: to }); }
+        if (originKey(tu) !== base.key) { hideLinksFrom(tu.host); return cb({ url: to }); }
         if (left > 0) return hop(to, left - 1);
       }
       if (status === 200 || status === 206) return cb({ url: require('./media-stream').create(url, basic(source), extOf(URL_.parse(url).pathname) || extOf(path)) });
@@ -427,16 +441,123 @@ function send(res, ALLOW, code, obj) {
   res.end(JSON.stringify(obj));
 }
 function hostOf(source) { try { return URL_.parse(str(source && (source.control || source.address))).hostname || ''; } catch (e) { return ''; } }
-var catalogOpening = null, scanResults = {}, activeScanControls = {};
+/* The catalogue opens once, on first use.  A failure is not remembered: the next request tries again. */
+var catalogOpening = null, openCatalog = null, scanResults = {}, activeScanControls = {};
+var SCAN_KEEP_MS = 300000, SCAN_KEEP = 2;
 function catalog(cb) {
+  if (openCatalog) return cb(null, openCatalog);
   if (catalogOpening) return catalogOpening.push(cb);
   catalogOpening = [cb];
-  var root;
-  try { root = require('./kv').sub('media-v2'); } catch (e) { var wait = catalogOpening; catalogOpening = null; return wait.forEach(function (f) { f(e); }); }
-  new (require('./media-catalog').Catalog)(root).open(function (e, lib) {
+  var root, Catalog;
+  try { root = require('./kv').sub('media-v3'); Catalog = require('./media-catalog').Catalog; } catch (e) { var wait = catalogOpening; catalogOpening = null; return wait.forEach(function (f) { f(e); }); }
+  new Catalog(root).open(function (e, lib) {
     var waiting = catalogOpening; catalogOpening = null;
-    if (!e) catalog = function (f) { f(null, lib); };
+    if (!e) openCatalog = lib;
     waiting.forEach(function (f) { f(e, lib); });
+  });
+}
+/* A discovery scan waiting for the app to adopt it: at most SCAN_KEEP, for SCAN_KEEP_MS, and gone
+   as soon as it is imported. */
+function keepScan(result, continuation, source) {
+  var now = Date.now();
+  Object.keys(scanResults).forEach(function (k) { if (now - scanResults[k].at > SCAN_KEEP_MS) delete scanResults[k]; });
+  var keys = Object.keys(scanResults).sort(function (a, b) { return scanResults[a].at - scanResults[b].at; });
+  while (keys.length >= SCAN_KEEP) delete scanResults[keys.shift()];
+  var handle = require('crypto').randomBytes(16).toString('hex');
+  scanResults[handle] = { at: now, result: result, continuation: continuation, source: source };
+  return handle;
+}
+function withoutFiles(r) { var out = {}; Object.keys(r).forEach(function (k) { if (k !== 'files') out[k] = r[k]; }); out.fileCount = r.files ? r.files.length : 0; return out; }
+function libraryRequest(kind, q, req, res, ALLOW, log) {
+  catalog(function (e, lib) {
+    if (e) return send(res, ALLOW, 507, { error: 'STORAGE_UNAVAILABLE', message: 'The TV could not open the media library.' });
+    var answer = function (err, result) { send(res, ALLOW, err ? 400 : 200, err ? { error: err.code || 'LIBRARY_ERROR', message: err.message } : result); };
+    if (kind === 'migrate') return require('./media-migrate').migrate(lib, q, answer);
+    if (kind === 'status') return answer(null, { schema: 3, revision: lib.revision });
+    if (kind === 'source') { if (q.action === 'remove' && activeScanControls[q.sourceId]) activeScanControls[q.sourceId].paused = true; return lib.source(q, answer); }
+    if (kind === 'progress') return lib.progress(q, answer);
+    if (kind === 'continue') return lib.continuing(answer);
+    if (kind === 'query') return lib.query(q, answer);
+    if (kind === 'detail') return lib.detail(q, answer);
+    if (kind === 'edit') { delete q._commandPrepared; delete q._single; return lib.edit(q, answer); }
+    if (kind === 'adopt') {
+      var pending = scanResults[q.scanHandle];
+      if (!pending || Date.now() - pending.at > SCAN_KEEP_MS) { delete scanResults[q.scanHandle]; return answer({ code: 'SCAN_EXPIRED', message: 'Scan expired.  Rescan the source.' }); }
+      if (!/^[a-zA-Z0-9_-]{1,80}$/.test(q.sourceId || '')) return answer({ code: 'INVALID_SCAN', message: 'Invalid source.' });
+      // The scan stays whole until it is imported, so a failed adopt can be tried again.
+      return lib.importScan(q.sourceId, pending.result, function (err, result) {
+        if (err) return answer(err);
+        delete scanResults[q.scanHandle];
+        var source = {};
+        Object.keys(pending.source || {}).forEach(function (k) { source[k] = pending.source[k]; });
+        source.id = q.sourceId;
+        require('./media-scan-jobs').save(source, pending.continuation, function (saveError) {
+          if (saveError) log({ lv: 'warn', event: 'media checkpoint not saved', error: saveError.code || 'write' });
+          answer(null, result);
+        });
+      });
+    }
+    lib.file(q.handle, function (err, file) {
+      if (err || !file || !q.source || q.source.id !== file.sourceId) return answer({ code: 'NOT_FOUND', message: 'This file is no longer available from that source.' });
+      var local = function (r) { if (r.url && r.url.indexOf('/media-stream/') === 0) r.url = 'http://127.0.0.1:' + req.connection.localPort + r.url; return r; };
+      var resolved = function (r) {
+        local(r);
+        if (kind !== 'chapters' || r.error) { if (r.url) r.resumeKey = file.id; return answer(null, r); }
+        require('./media-chapter-request').inspect(r.url, file.size, file.ext, answer);
+      };
+      if (file.url) return resolved({ url: file.url });
+      resolve(q.source, file.path, resolved);
+    });
+  });
+}
+function scanRequest(q, req, res, ALLOW, log) {
+  var t0 = Date.now(), host = hostOf(q.source), mode = q.source && q.source.contentMode || 'movies', discovering = mode === 'automatic' || mode === 'shows';
+  var begin = function () {
+    require('./media-scan-jobs').prepare(q.source, !!q.restart, function (jobError, prepared, ignored) {
+      if (ignored) log({ lv: 'info', event: 'media checkpoint ignored', reason: ignored });
+      prepared = prepared || q.source;
+      var control = { paused: false };
+      if (prepared && prepared.id) { activeScanControls[prepared.id] = control; prepared._control = control; }
+      scan(prepared, function (r) {
+        if (prepared && prepared.id && activeScanControls[prepared.id] === control) delete activeScanControls[prepared.id];
+        r.contentMode = mode;
+        var continuation = r._continuation; delete r._continuation;
+        log({ lv: r.error ? 'warn' : 'info', event: 'media scan', host: host, movies: r.movies ? r.movies.length : 0, partial: !!r.partial, error: r.error || null, ms: Date.now() - t0 });
+        r.episodeFiles = (r.files || []).filter(function (file) { return file.kind === 'episode'; }).length;
+        // Movies only: the answer never waits on (or fails with) the show library or a checkpoint.
+        if (!r.files) {
+          return require('./media-scan-jobs').save(q.source, r.error ? prepared && prepared._continuation : continuation, function (saveError, saved) {
+            if (saveError) log({ lv: 'warn', event: 'media checkpoint not saved', error: saveError.code || 'write' });
+            r.resumable = !!(continuation && saved);
+            send(res, ALLOW, 200, r);
+          });
+        }
+        if (!(q.source && q.source.id)) {
+          r.resumable = !!continuation;
+          var response = withoutFiles(r); response.scanHandle = keepScan(r, continuation, q.source);
+          return send(res, ALLOW, 200, response);
+        }
+        catalog(function (err, lib) {
+          if (err) return send(res, ALLOW, 507, { error: 'STORAGE_UNAVAILABLE', message: 'The scan could not be saved.  Your old library is kept.' });
+          lib.importScan(q.source.id, r, function (saveErr) {
+            if (saveErr) return send(res, ALLOW, 507, { error: 'STORAGE_UNAVAILABLE', message: 'The scan could not be saved.  Your old library is kept.' });
+            require('./media-scan-jobs').save(q.source, continuation, function (saveError, saved) {
+              if (saveError) log({ lv: 'warn', event: 'media checkpoint not saved', error: saveError.code || 'write' });
+              r.resumable = !!(continuation && saved);
+              send(res, ALLOW, 200, withoutFiles(r));
+            });
+          });
+        });
+      });
+    });
+  };
+  if (!(q.source && q.source.id)) return begin();
+  catalog(function (e, lib) {
+    if (e) { if (!discovering) return begin(); return send(res, ALLOW, 507, { error: 'STORAGE_UNAVAILABLE', message: 'The library could not be opened.' }); }
+    lib.source({ action: 'configure', sourceId: q.source.id, contentMode: mode }, function (error) {
+      if (error && discovering) return send(res, ALLOW, 400, { error: 'SOURCE_CHANGED', message: error.message });
+      begin();
+    });
   });
 }
 function handle(req, res, ALLOW, log) {
@@ -446,89 +567,29 @@ function handle(req, res, ALLOW, log) {
   if (req.method !== 'POST' || (!libraryRoute && !subs && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/metadata')) return send(res, ALLOW, 404, { error: 'unknown media route' });
   var body = '', over = false, bodyBytes = 0, bodyLimit = libraryRoute ? 1048576 : 65536;
   if (req.setEncoding) req.setEncoding('utf8');
-  req.on('data', function (c) { if (over) return; body += c; bodyBytes += Buffer.byteLength(c,'utf8'); if (bodyBytes > bodyLimit) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
+  req.on('data', function (c) { if (over) return; body += c; bodyBytes += Buffer.byteLength(c, 'utf8'); if (bodyBytes > bodyLimit) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
   req.on('end', function () {
     if (over) return;
     var q; try { q = JSON.parse(body || '{}'); } catch (e) { return send(res, ALLOW, 400, { error: 'bad request' }); }
     if (!q || typeof q !== 'object' || Array.isArray(q)) return send(res, ALLOW, 400, { error: 'bad request' });
-    if (libraryRoute) return catalog(function (e, lib) {
-      if (e) return send(res, ALLOW, 507, {error:'STORAGE_UNAVAILABLE',message:'The TV could not open the media library.'});
-      function answer(err, result) { send(res, ALLOW, err ? 400 : 200, err ? {error:err.code || 'LIBRARY_ERROR',message:err.message} : result); }
-      if (libraryRoute[1] === 'migrate') return require('./media-migrate').migrate(lib,q,answer);
-      if (libraryRoute[1] === 'status') return answer(null, {schema:2,revision:lib.library.manifest.revision});
-      if (libraryRoute[1] === 'source') {if(q.action==='remove'&&activeScanControls[q.sourceId])activeScanControls[q.sourceId].paused=true;return lib.source(q,answer);}
-      if (libraryRoute[1] === 'progress') return lib.progress(q,answer);
-      if (libraryRoute[1] === 'continue') return lib.continuing(answer);
-      if (libraryRoute[1] === 'query') return lib.query(q, answer);
-      if (libraryRoute[1] === 'detail') return lib.detail(q, answer);
-      if (libraryRoute[1] === 'edit') {delete q._commandPrepared;delete q._single;return lib.edit(q, answer);}
-      if (libraryRoute[1] === 'adopt') {
-        var pending = scanResults[q.scanHandle];
-        if (!pending) return answer(new Error('Scan expired.  Rescan the source.'));
-        var source={};Object.keys(pending.source||{}).forEach(function(k){source[k]=pending.source[k];});source.id=q.sourceId;
-        return require('./media-scan-jobs').save(source,pending.continuation,function(saveError){if(saveError)return answer(saveError);pending.continuation=null;pending.result.consume=true;lib.importScan(q.sourceId,pending.result,function(err,result){if(!err)delete scanResults[q.scanHandle];answer(err,result);});});
-      }
-      lib.file(q.handle, function (err, file) {
-        if (err || !file || !q.source || q.source.id !== file.sourceId) return answer(new Error('This file is no longer available from that source.'));
-        function resolved(r) {
-          if (r.url && r.url.indexOf('/media-stream/') === 0) r.url = 'http://127.0.0.1:' + req.connection.localPort + r.url;
-          if (libraryRoute[1] !== 'chapters' || r.error) { if (r.url) r.resumeKey = file.id; return answer(null,r); }
-          require('./media-chapter-request').inspect(r.url,file.size,file.ext,answer);
-        }
-        if (file.url) return resolved({url:file.url});
-        resolve(q.source, file.path, function (r) {
-          if (r.url && r.url.indexOf('/media-stream/') === 0) r.url = 'http://127.0.0.1:' + req.connection.localPort + r.url;
-          resolved(r);
-        });
-      });
-    });
+    if (libraryRoute) return libraryRequest(libraryRoute[1], q, req, res, ALLOW, log);
     if (subs) return require('./subtitles')[subs[1]](q, function (r) {
       log({ lv: r.error ? 'warn' : 'info', event: 'subtitles ' + subs[1], results: r.results ? r.results.length : undefined, error: r.error || null });
       send(res, ALLOW, 200, r);
     });
-    if(route==='/media/scan/control'){
-      var control=activeScanControls[q.sourceId];if(control)control.paused=true;return send(res,ALLOW,200,{paused:true});
+    if (route === '/media/scan/control') {
+      var control = activeScanControls[q.sourceId]; if (control) control.paused = true;
+      return send(res, ALLOW, 200, { paused: true });
     }
-    if (route === '/media/metadata') {var metadataClient=require('./media-metadata').create({credential:q.credential,refresh:!!q.refresh}),metadataClosed=false;function cancelMetadata(){metadataClosed=true;metadataClient.cancel();}req.on('aborted',cancelMetadata);if(res.on)res.on('close',cancelMetadata);return metadataClient.lookup(q,function(e,r){if(!metadataClosed)send(res,ALLOW,200,e?{error:'metadata',message:e.message}:r);});}
-    var t0 = Date.now(), host = hostOf(q.source);
+    if (route === '/media/metadata') {
+      var metadataClient = require('./media-metadata').create({ credential: q.credential, refresh: !!q.refresh }), metadataClosed = false;
+      var cancelMetadata = function () { metadataClosed = true; metadataClient.cancel(); };
+      req.on('aborted', cancelMetadata); if (res.on) res.on('close', cancelMetadata);
+      return metadataClient.lookup(q, function (e, r) { if (!metadataClosed) send(res, ALLOW, 200, e ? { error: 'metadata', message: e.message } : r); });
+    }
     if (route === '/media/discover') return discover(function (r) { log({ lv: 'info', event: 'media discover', servers: r.servers.length }); send(res, ALLOW, 200, r); });
-    if (route === '/media/scan') {function beginScan(){return require('./media-scan-jobs').prepare(q.source,!!q.restart,function(jobError,prepared){
-      if(jobError)return send(res,ALLOW,507,{error:'SCAN_STORAGE',message:jobError.message});
-      var control={paused:false};if(prepared&&prepared.id){activeScanControls[prepared.id]=control;prepared._control=control;}
-      scan(prepared, function (r) {
-      if(prepared&&prepared.id&&activeScanControls[prepared.id]===control)delete activeScanControls[prepared.id];
-      r.contentMode=q.source&&q.source.contentMode||'movies';
-      var continuation=r._continuation; delete r._continuation;
-      require('./media-scan-jobs').save(q.source,r.error ? prepared && prepared._continuation : continuation,function(checkpointError){
-      if(checkpointError)return send(res,ALLOW,507,{error:'SCAN_STORAGE',message:'The scan checkpoint could not be saved.  Your old library is kept.'});
-      r.resumable=!!continuation;r.episodeFiles=(r.files||[]).filter(function(file){return file.kind==='episode';}).length;
-      log({ lv: r.error ? 'warn' : 'info', event: 'media scan', host: host, movies: r.movies ? r.movies.length : 0, partial: !!r.partial, error: r.error || null, ms: Date.now() - t0 });
-      if (r.files) {
-        Object.keys(scanResults).forEach(function (k) { if (Date.now() - scanResults[k].at > 900000) delete scanResults[k]; });
-        var pendingKeys = Object.keys(scanResults);
-        if (pendingKeys.length >= 8) delete scanResults[pendingKeys[0]];
-        var scanHandle = require('crypto').randomBytes(16).toString('hex');
-        scanResults[scanHandle] = {at:Date.now(),result:r,continuation:continuation,source:q.source};
-        if (q.source.id) { delete scanResults[scanHandle]; continuation=null; if(prepared)delete prepared._continuation; r.consume=true; return catalog(function (err, lib) {
-          if (err) return send(res, ALLOW, 507, {error:'STORAGE_UNAVAILABLE',message:'The scan could not be saved.  Your old library is kept.'});
-          lib.importScan(q.source.id,r,function (saveErr) {
-            delete scanResults[scanHandle];
-            if (saveErr) return send(res, ALLOW, 507, {error:'STORAGE_UNAVAILABLE',message:'The scan could not be saved.  Your old library is kept.'});
-            var reply = {}; Object.keys(r).forEach(function (k) { if (k !== 'files' && k !== 'consume') reply[k] = r[k]; });
-            reply.fileCount=r.files.length;send(res, ALLOW, 200, reply);
-          });
-        });
-        }
-        var response = {}; Object.keys(r).forEach(function (k) { if (k !== 'files') response[k] = r[k]; });
-        response.fileCount=r.files.length;response.scanHandle = scanHandle; return send(res, ALLOW, 200, response);
-      }
-      send(res, ALLOW, 200, r);
-      });
-      });
-    });}
-      if(q.source&&q.source.id)return catalog(function(e,lib){if(e)return send(res,ALLOW,507,{error:'STORAGE_UNAVAILABLE',message:'The library could not be opened.'});lib.source({action:'configure',sourceId:q.source.id,contentMode:q.source.contentMode||'movies'},function(error){if(error)return send(res,ALLOW,400,{error:'SOURCE_CHANGED',message:error.message});beginScan();});});
-      return beginScan();
-    }
+    if (route === '/media/scan') return scanRequest(q, req, res, ALLOW, log);
+    var host = hostOf(q.source);
     resolve(q.source, q.path, function (r) {
       log({ lv: r.error ? 'warn' : 'info', event: 'media link', host: host, error: r.error || null });
       if (r.url && r.url.indexOf('/media-stream/') === 0) r.url = 'http://127.0.0.1:' + req.connection.localPort + r.url;
@@ -544,4 +605,4 @@ function hideLinksFrom(host) {
   host = str(host).toLowerCase();
   if (host && signedHosts.indexOf(host) < 0) { signedHosts.push(host); if (signedHosts.length > 50) signedHosts.shift(); }
 }
-module.exports = { moviesOf: moviesOf, skipFolder: skipFolder, newSkipped: newSkipped, signedHosts: signedHosts, hideLinksFrom: hideLinksFrom, handle: handle, scan: scan, resolve: resolve, discover: discover, titleOf: titleOf, isJunk: isJunk, tokens: tokens, parseBrowse: parseBrowse, parsePropfind: parsePropfind, parseDevice: parseDevice, errorKind: errorKind };
+module.exports = { catalog: catalog, scanResults: scanResults, originKey: originKey, samePath: samePath, moviesOf: moviesOf, skipFolder: skipFolder, newSkipped: newSkipped, signedHosts: signedHosts, hideLinksFrom: hideLinksFrom, handle: handle, scan: scan, resolve: resolve, discover: discover, titleOf: titleOf, isJunk: isJunk, tokens: tokens, parseBrowse: parseBrowse, parsePropfind: parsePropfind, parseDevice: parseDevice, errorKind: errorKind };

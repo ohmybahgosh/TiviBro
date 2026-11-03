@@ -8,7 +8,7 @@ const legacy=Kv.fileOf('media:lib');const records=Array.from({length:600},(_,i)=
 const reader=new Reader(legacy);let count=0,max=0;for(;;){const rows=await call(reader,'next');if(!rows)break;count+=rows.length;max=Math.max(max,rows.length);}reader.close();assert.equal(count,600);assert.equal(max,256);
 const c=new Catalog(Kv.sub('media-v2'));await call(c,'open');let result=await new Promise((resolve,reject)=>Migrate.migrate(c,{},(e,r)=>e?reject(e):resolve(r)));assert.equal(result.count,600);
 const page=await call(c,'query',{kind:'movie'});assert.equal(page.total,600);assert.equal(page.items[0].addedAt,123);assert.equal(page.items[0].metadata.id,'tmdb:movie:7');
-assert.equal(JSON.parse(fs.readFileSync(path.join(c.library.root,'legacy-movies.snapshot.json'),'utf8')).length,600);
+assert.equal(JSON.parse(fs.readFileSync(path.join(c.root,'legacy-movies.snapshot.json'),'utf8')).length,600);
 result=await new Promise((resolve,reject)=>Migrate.migrate(c,{},(e,r)=>e?reject(e):resolve(r)));assert(result.migrated);assert.equal((await call(c,'query',{kind:'movie'})).total,600,'idempotent migration');
 console.log('PASS streamed Unicode/string-safe migration, bounded batches, typed metadata, snapshot recovery and idempotence');
 }finally{fs.rmSync(root,{recursive:true,force:true});}})().catch(e=>{console.error(e);process.exitCode=1;});

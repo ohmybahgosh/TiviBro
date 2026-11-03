@@ -135,7 +135,7 @@ function inspect(read,size,ext,cb) {
         if(length===1){if(header.length<16)throw new Error('Truncated extended MP4 atom.');length=uint(header,8,16);start=offset+16;}
         if(!length)length=end-offset;
         if(length<start-offset || offset+length>end)throw new Error('Invalid MP4 atom size.');
-        function advance(){if(!found)atoms(offset+length,end,depth,next);}
+        var advance=function(){if(!found)atoms(offset+length,end,depth,next);};
         if(type==='chpl') return range(start,offset+length-start,function(b){try{found=true;finish(null,chpl(b));}catch(e){finish(e);}});
         if(type==='moov')return block(start,offset+length-start,function(body){require('./media-quicktime-chapters').inspect(body,range,function(error,result){if(error)return finish(error);if(result.nero){try{return finish(null,chpl(result.nero));}catch(parseError){return finish(parseError);}}finish(null,result);});});
         if(type==='udta')return atoms(start,offset+length,depth+1,advance);

@@ -28,7 +28,8 @@ function classify(observation, options, overrides) {
   function episode(show, season, numbers, origin) { r.kind = 'episode'; r.showTitle = title(show) || c.showTitle || null; r.season = season; r.numbers = numbers; r.order = 'aired'; note(origin, { showTitle: r.showTitle, season: season, numbers: numbers.slice() }); }
   if (!VIDEO.test(file)) { r.kind = 'unclassified'; r.review.push('unsupportedContainer'); return r; }
   m = /(?:^|[ ._\[(-])s(\d{1,3})[ ._-]*e(\d{1,4})((?:[ ._]*e\d{1,4})*|)(?:[ ._]*-[ ._]*(?:e)?(\d{1,4}))?/i.exec(stem);
-  if (!m) m = /(?:^|[ ._\[(-])(\d{1,3})x(\d{2,4})(?:[ ._]*-[ ._]*(\d{1,4}))?(?=$|[ ._\])-])/i.exec(stem);
+  // 1x02: a one or two digit season only, so a resolution like 720x480 is not season 720.
+  if (!m) m = /(?:^|[ ._\[(-])(\d{1,2})x(\d{2,3})(?:[ ._]*-[ ._]*(\d{1,3}))?(?=$|[ ._\])-])/i.exec(stem);
   if (m) {
     explicitSeason = +m[1]; tail = stem.slice(0, m.index); rest = [ +m[2] ];
     if (/s\d/i.test(m[0])) {
@@ -45,6 +46,8 @@ function classify(observation, options, overrides) {
     m = /(?:^|[ ._-])(episode|ep)[ ._-]*(\d{1,4})(?=$|[ ._-])/i.exec(stem);
     if (m) episode(stem.slice(0, m.index), c.season == null ? null : c.season, [+m[2]], 'filenameAndAncestors');
     else if (c.season != null && (m = /^(\d{1,3})[ ._-]+(.+)$/.exec(stem))) episode(c.showTitle, c.season, [+m[1]], 'ancestors');
+    // "E01 - Pilot" inside a season folder.
+    else if (c.season != null && (m = /(?:^|[ ._-])e(\d{1,4})(?=$|[ ._-])/i.exec(stem))) episode(stem.slice(0, m.index), c.season, [+m[1]], 'filenameAndAncestors');
     else if ((m = /(?:^|[ ._-])((?:19|20)\d{2})[._-](\d{2})[._-](\d{2})(?=$|[ ._-])/.exec(stem))) {
       r.kind = 'unclassified'; r.showTitle = title(stem.slice(0, m.index)) || c.showTitle || null; r.order = 'date';
       if (!validDate(m[1], m[2], m[3])) r.review.push('invalidAirDate');
@@ -52,6 +55,8 @@ function classify(observation, options, overrides) {
       note('filename', { airDate: r.airDate || null });
     } else {
       m = /^(?:\[[^\]]+\][ ._-]*)?(.+?)[ ]+-[ ]+(\d{1,4})(?:\.(\d+))?(?=$|[ ._\[-])/.exec(stem);
+      // "Title - 2001" is a movie and its year, not episode 2001 (unless the source is in absolute order).
+      if (m && !m[3] && /^(19|20)\d{2}$/.test(m[2]) && opts.order !== 'absolute') m = null;
       if (!m && opts.order === 'absolute') m = /^(.+?)[ ._-]+ep[ ._-]*(\d{1,4})(?=$|[ ._\[-])/i.exec(stem);
       if (m) {
         r.kind = opts.order === 'absolute' || /^\[[^\]]+\]/.test(stem) ? 'episode' : 'unclassified'; r.showTitle = title(m[1]) || c.showTitle || null; r.order = 'absolute'; r.absoluteNumber = +m[2];
@@ -76,7 +81,8 @@ function classify(observation, options, overrides) {
   // Caller supplies applicable folder rules in least-to-most-specific order, then the file rule.
   (overrides || []).forEach(function (v) { Object.keys(v).forEach(function (k) { rule[k] = v[k]; }); });
   ['kind', 'showTitle', 'season', 'numbers', 'order', 'airDate', 'absoluteNumber', 'absolutePart', 'title'].forEach(function (k) { if (Object.prototype.hasOwnProperty.call(rule, k)) r[k] = Array.isArray(rule[k]) ? rule[k].slice() : rule[k]; });
-  if (Object.keys(rule).length) { note('user', rule); r.review = r.review.filter(function (reason) { return !((reason === 'conflictingSeason' || reason === 'conflictingServerSeason') && rule.season != null) && !(reason === 'uncertainAbsoluteOrder' && rule.order === 'absolute') && !(reason === 'uncertainDateOrder' && rule.order === 'date'); }); if (r.kind === 'unclassified' && (rule.order === 'absolute' || rule.order === 'date') && r.showTitle) r.kind = 'episode'; }
+  // What was missing is checked again below, after the viewer's fields are in.
+  if (Object.keys(rule).length) { note('user', rule); r.review = r.review.filter(function (reason) { return !/^missing(Episode|Season|Show)$/.test(reason) && !((reason === 'conflictingSeason' || reason === 'conflictingServerSeason') && rule.season != null) && !(reason === 'uncertainAbsoluteOrder' && rule.order === 'absolute') && !(reason === 'uncertainDateOrder' && rule.order === 'date'); }); if (r.kind === 'unclassified' && (rule.order === 'absolute' || rule.order === 'date') && r.showTitle) r.kind = 'episode'; }
   if (r.season != null && (typeof r.season !== 'number' || r.season < 0 || Math.floor(r.season) !== r.season)) r.review.push('invalidSeason');
   if (!Array.isArray(r.numbers)) { r.numbers = []; r.review.push('invalidEpisodeNumber'); }
   if (r.numbers.length > 50) { r.numbers = r.numbers.slice(0, 50); r.review.push('invalidEpisodeRange'); }

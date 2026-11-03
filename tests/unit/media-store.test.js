@@ -102,7 +102,7 @@ const titles = l => Array.from(l).map(m => m.title);
   ok('favorite survives restart', shelfRestart.isFavorite(mid));
   const shelves = shelfRestart.sections(ds);
   ok('sections include Continue watching, Favorites and Movies', shelves.map(s => s.title).join() === 'Continue watching,Favorites,Movies');
-  ok('favorite stays in continue watching and favorites, leaving the general list', shelves[0].movies[0].id === mid && shelves[1].movies[0].id === mid && shelves[2].movies.length === 0);
+  ok('favorite shows in continue watching, favorites and the general list', shelves[0].movies[0].id === mid && shelves[1].movies[0].id === mid && shelves[2].movies.some(function (m) { return m.id === mid; }));
   shelfRestart.toggleFavorite(mid); shelfRestart.clearResume(mid);
   ok('clearing favorite and resume empties the matching shelves', shelfRestart.sections(ds)[0].movies.length === 0 && shelfRestart.sections(ds)[1].movies.length === 0);
   ok('removing favorite returns the movie to Movies', shelfRestart.sections(ds)[2].movies[0].id === mid);
