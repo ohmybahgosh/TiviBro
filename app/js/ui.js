@@ -141,8 +141,9 @@ var UI = (function () {
   function drawMenu() {
     mTop = U.clamp(mTop, Math.max(0, mSel - M_VIS + 1), mSel);
     fillMenu();
-    var h = mBody.clientHeight, f = mBody.children[mSel - mTop];
-    if (!h || !f) return;
+    // 2 px of slack: sizes are rounded to whole pixels, so a row that fits exactly can read 1 px over.
+    var h = mBody.clientHeight + 2, f = mBody.children[mSel - mTop];
+    if (!h || !f || mBody.scrollHeight <= h) return;           // everything fits: nothing to do
     while (mTop < mSel && f.offsetTop + f.offsetHeight > h) { mTop++; fillMenu(); f = mBody.children[mSel - mTop]; }
     for (var k = mBody.children.length - 1; k > 0; k--) {
       var e = mBody.children[k];

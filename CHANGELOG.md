@@ -8,7 +8,7 @@
 - **A steadier buffer pill** (discussion #36).  The buffer meter is now three parts that keep their width: the bar, the picture and engine, and the speed.  Changing numbers no longer push the bar back and forth, and the seconds banked are written inside the bar, light over the empty part and dark over the filled part.
 - **Down on the last row goes back to the top.**  In the guide, Down on the last group or the last channel goes round to the first, and so does Down on the last group of the Channels screen (its channel list already did).  Up on the first row stays where it is, as before.  Holding Down still stops at the bottom.
 - **No more "TiviBro hit an error" for nothing** (issue #37).  When a channel switched to the TV player, the TS player's worker could throw an error the TV hides the details of ("Script error.").  TiviBro carried on fine, but the next start offered to report it.  Those are now a warning in the log, and a report sent after an error (rather than a close) no longer says TiviBro closed unexpectedly.
-- **Subtitles in MP4 movies and episodes.**  Built-in subtitles in MP4 files from your provider and from My media now show in **Subtitles**, with their language names.  Only the subtitle you turn on is read.
+- **Subtitles in MP4 movies and episodes** (thanks to moritzm784, pull request #39).  Built-in subtitles in MP4 files from your provider and from My media now show in **Subtitles**, with their language names.  Only the subtitle you turn on is read.
 - **Subtitles stay off when you turn them off.**  Choosing **Off** is kept when the player reconnects, even with automatic subtitles on, and a subtitle no longer turns itself on when an MKV or MP4 file's tracks appear.
 
 ## 0.6.0 (alpha 65, 2026-11-03)
