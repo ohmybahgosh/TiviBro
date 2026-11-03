@@ -7,7 +7,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
 // A Range server for the adapter tests: files by name (bytes, or { size, read } for sparse ones past
 // 4 GB), with faults per file: ignoreRange (200, whole body), fail: [status...] for sample reads,
-// wrongRange / truncate once for sample reads, delay ms, redirect (the session URL).
+// wrongRange / truncate / short (a shorter range, as at the end of the file) once for sample reads,
+// delay ms, redirect (the session URL).
 const files = {}, faults = {};
 let requests = [];
 class FakeXHR {
@@ -29,7 +30,8 @@ class FakeXHR {
         const all = read(0, size - 1); this.response = all.buffer.slice(all.byteOffset, all.byteOffset + all.length); return this.onload();
       }
       if (sample && fl.fail && fl.fail.length) { this.status = fl.fail.shift(); this.readyState = 2; this.onreadystatechange(); return this.onload && this.onload(); }
-      const last = Math.min(end, size - 1);
+      let last = Math.min(end, size - 1);
+      if (sample && fl.short) { fl.short = false; last = Math.max(start, last - 1); }    // a consistent Content-Range, one byte short
       let data = read(start, last);
       this.responseURL = fl.redirect || this.url;
       this.status = 206; this.contentRange = 'bytes ' + start + '-' + last + '/' + size;
@@ -431,10 +433,10 @@ const twoParts = (late, extra) => buildMp4(Object.assign({ tracks: [{ lang: 'eng
   }
   {
     // Sample reads failing once each way: the track backs off and then fills in.
-    const names = ['s416', 's429', 's503', 'trunc', 'wrong'];
+    const names = ['s416', 's429', 's503', 'trunc', 'wrong', 'short'];
     const vids = names.map(n => {
       files[n + '.mp4'] = asU8(fasts);
-      faults[n + '.mp4'] = { sampleFrom: 1, fail: /^s\d/.test(n) ? [+n.slice(1)] : [], truncate: n === 'trunc', wrongRange: n === 'wrong' };
+      faults[n + '.mp4'] = { sampleFrom: 1, fail: /^s\d/.test(n) ? [+n.slice(1)] : [], truncate: n === 'trunc', wrongRange: n === 'wrong', short: n === 'short' };
       const v = makeVideo({ currentTime: 2 });
       v.h = Mp4Subs.extract('http://p/movie/' + n + '.mp4', v, () => {}, '');
       return v;
@@ -448,9 +450,24 @@ const twoParts = (late, extra) => buildMp4(Object.assign({ tracks: [{ lang: 'eng
     const statuses = early.slice(0, 3), bodies = early.slice(3);
     ok('416/429/503 on a sample read back off and recover', statuses.every(x => x[0] === 'recovering' && x[1] === 0) &&
       later.slice(0, 3).every(x => x[0] === 'ready' && x[1] === 'Hallo|Tot ziens'), { early: statuses, later: later.slice(0, 3) });
-    ok('truncated body and wrong Content-Range rejected', bodies.every(x => x[0] === 'recovering' && x[1] === 0) &&
+    ok('truncated body, wrong Content-Range and a short range rejected', bodies.every(x => x[0] === 'recovering' && x[1] === 0) &&
       later.slice(3).every(x => x[1] === 'Hallo|Tot ziens'), { early: bodies, later: later.slice(3) });
     vids.forEach(v => v.h.cancel());
+  }
+  {
+    // Four tracks whose few hundred bytes of tables claim 100,000 samples each: the file keeps at most
+    // 250,000 samples' times and offsets, so the first two are listed and the rest left out.
+    const huge = buildMp4({ tracks: ['eng', 'nld', 'deu', 'fra'].map(lang => ({ lang, hugeCount: 100000, cues: [[1, 2, 'A']] })) });
+    files['huge.mp4'] = { size: 1e12, read: (a, b) => { const o = new Uint8Array(b - a + 1); if (a < huge.size) o.set(huge.read(a, b)); return o; } };
+    const F = vm.runInContext('Float64Array', ctx); let held = 0;
+    ctx.Float64Array = function (n) { held += n; return new F(n); };
+    const v = makeVideo();
+    const h = Mp4Subs.extract('http://p/movie/huge.mp4', v, () => {}, '');
+    await until(() => v._mkvSubsState !== 'discovering');
+    ctx.Float64Array = F;
+    ok('samples kept per file are capped across tracks', v.children.map(c => c.srclang).join() === 'en,nl' && held <= 250000 * 4 + 8,
+      { tracks: v.children.map(c => c.srclang), held, state: v._mkvSubsState });
+    h.cancel();
   }
   {
     files['again.mp4'] = buildMp4({ moovAtEnd: true, virtualBase: 3e6, videoPadding: 100000, tracks: [{ lang: 'eng', cues: [[1, 2, 'One'], [4, 5, 'Two']] }] });

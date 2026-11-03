@@ -380,6 +380,9 @@ var Mp4Subs = (function () {
   var HEAD_BYTES = 65536, WINDOW = 65536, RUN_WINDOW = 262144, HEADER_WINDOW = 1024;
   var MAX_REQUESTS = 32, MAX_BYTES = 16 * 1048576, MAX_MS = 20000, MAX_TRAK = 4 * 1048576, MAX_TRACKS = 64, MAX_READ = 1048576;
   var MAX_GAP = 65536, MAX_JOIN = 262144, MAX_SAMPLES = 100000, MAX_SAMPLE_BYTES = 4096;
+  // Samples kept for the whole file (about 44 bytes each): a few hundred bytes of tables can claim
+  // 100,000 samples, so 64 such tracks would otherwise hold over 200 MB on the TV.
+  var MAX_FILE_SAMPLES = 250000;
   var TOP_LEVEL = Object.create(null);
   'ftyp moov mdat free skip wide pdin uuid'.split(' ').forEach(function (t) { TOP_LEVEL[t] = 1; });
   function isSubtitleHandler(h) { return h === 'sbtl' || h === 'subt' || h === 'text'; }
@@ -496,10 +499,11 @@ var Mp4Subs = (function () {
       if (!whole) { Log.debug('mp4subs', 'Fragmented MP4: subtitles not supported'); return null; }
       var listed = candidates.filter(function (t) { return t.handler !== 'text' || !chapters[t.id]; });
       if (!listed.length) return { none: 'empty' };
-      var usable = [], smp = [];
+      var usable = [], smp = [], budget = MAX_FILE_SAMPLES;
       listed.forEach(function (t) {
-        var s = t.format === 'tx3g' && t.editOk ? samples(t, timescale, { maxSamples: MAX_SAMPLES, maxSampleBytes: MAX_SAMPLE_BYTES, fileSize: total }) : null;
-        if (s) { usable.push(t); smp.push(s); }
+        var max = Math.min(MAX_SAMPLES, budget);
+        var s = t.format === 'tx3g' && t.editOk ? samples(t, timescale, { maxSamples: max, maxSampleBytes: MAX_SAMPLE_BYTES, fileSize: total }) : null;
+        if (s) { usable.push(t); smp.push(s); budget -= t.tables.stsz.count; }    // what was allocated, before the edit list trims
         else Log.debug('mp4subs', 'Subtitle track ' + t.id + ' (' + t.format + ') left out');
       });
       if (!usable.length) return null;
@@ -569,6 +573,7 @@ var Mp4Subs = (function () {
       return range(item.start, item.end - 1).then(function (buf) {
         var out = [];
         if (!alive()) return out;
+        if (buf.length < item.end - item.start) throw new Error('short read');   // the file ends before its lines
         for (var m = 0; m < item.members.length; m++) {
           var t = item.members[m][0], k = item.members[m][1], T = rec.index.tracks[t], at = T.off[k] - item.start;
           var line = text(buf, at, at + T.size[k]);
