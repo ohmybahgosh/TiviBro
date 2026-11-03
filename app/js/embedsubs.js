@@ -368,13 +368,18 @@ var EmbedSubs = (function () {
         pump();
       }
       // Resolves to false when the link now serves another file (another size): its offsets don't fit.
+      // The answer is kept even if a seek cancelled this pump meanwhile (the seek reads on it), but not
+      // once a new engine start has begun a new play (it has its own session).
       function newSession() {
         var old = wrapped;
         wrapped = Net.wrap(url);
         return fetchRange(wrapped, 0, 15).then(function (bytes) {
+          if (rec.retry !== R) { wrapped = old; return null; }
+          R.fresh = false;
           if (rec.size !== undefined && isFinite(bytes.total) && bytes.total !== rec.size) {
             wrapped = old;
             Log.warn(tag, 'Subtitles stopped: the movie\'s link now serves a different file');
+            giveUp();
             return false;
           }
           rec.resolved = wrapped;
@@ -405,7 +410,6 @@ var EmbedSubs = (function () {
           newSession().then(function (same) {
             busy = false;
             if (cancelled) return;
-            R.fresh = false;
             if (same) pump(); else stop();
           }, refusedBy);
           return;

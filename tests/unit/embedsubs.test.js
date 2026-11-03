@@ -621,6 +621,30 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     ok('a seek during the new-session request still gets the new session, not the refused one', requestUrls[atr] === 'http://p/movie/seekr' &&
       readsOk === items.length && requestUrls.slice(atr).indexOf('http://edge/s1/seekr') === -1, { next: requestUrls.slice(atr, atr + 3), readsOk });
     hr2.cancel();
+    // A seek right after the new session answered: it is kept and read on, not asked for again.
+    files['seeka'] = new Uint8Array(64); n = 0; cut = 0; readsOk = 0; requestUrls = [];
+    let ha = null;
+    redirectFor = u => {
+      if (!/^http:\/\/p\//.test(u)) return u;
+      if (++n === 2) Promise.resolve().then(() => ha.cancel());        // before the answer is handled
+      return 'http://edge/s' + n + '/seeka';
+    };
+    refuse = u => (u === 'http://edge/s1/seeka' && cut ? 509 : 0);
+    const ada = Object.assign(fakeAdapter({ items }), { retryBaseMs: 10 });
+    const reala = ada.read;
+    ada.read = function () { return reala.apply(this, arguments).then(r => { if (++readsOk === 1) cut = 1; return r; }); };
+    const a1 = makeVideo({ currentTime: 0 });
+    ha = EmbedSubs.run('http://p/movie/seeka', a1, () => {}, ada);
+    await wait(30); show(a1);
+    await until(() => n === 2); await wait(5);
+    const ata = requestUrls.length;
+    const a2 = makeVideo({ currentTime: 0 });
+    const ha2 = EmbedSubs.run('http://p/movie/seeka', a2, null, ada);
+    await wait(5); show(a2);
+    await until(() => readsOk === items.length, 3000);
+    ok('a seek right after the new session answered reads on it without asking for another', requestUrls[ata] === 'http://edge/s2/seeka' &&
+      readsOk === items.length && requestUrls.filter(u => u === 'http://p/movie/seeka').length === 2, { next: requestUrls.slice(ata, ata + 2), entries: requestUrls.filter(u => u === 'http://p/movie/seeka').length });
+    ha2.cancel();
     // Refused on every session, with a seek after each refusal: seeks don't start the count again.
     files['seekd'] = new Uint8Array(64); n = 0; requestUrls = [];
     redirectFor = u => (/^http:\/\/p\//.test(u) ? 'http://edge/s' + (++n) + '/seekd' : u);
