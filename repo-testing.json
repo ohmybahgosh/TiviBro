@@ -10,30 +10,30 @@
       "id": "app.tivibro.tv",
       "title": "TiviBro",
       "iconUri": "https://raw.githubusercontent.com/ohmybahgosh/TiviBro/main/logos/clean/tivibro-icon-512.png",
-      "manifestUrl": "https://github.com/ohmybahgosh/TiviBro/releases/download/v0.6.0-alpha.60/app.tivibro.tv.manifest.json",
+      "manifestUrl": "https://github.com/ohmybahgosh/TiviBro/releases/download/v0.6.0-alpha.61/app.tivibro.tv.manifest.json",
       "manifest": {
         "id": "app.tivibro.tv",
-        "version": "0.5.10060",
+        "version": "0.5.10061",
         "type": "web",
         "title": "TiviBro",
-        "appDescription": "Test build 0.6.0-alpha.60.  Free, guide-first IPTV player for your own Xtream Codes or M3U subscription",
+        "appDescription": "Test build 0.6.0-alpha.61.  Free, guide-first IPTV player for your own Xtream Codes or M3U subscription",
         "iconUri": "https://raw.githubusercontent.com/ohmybahgosh/TiviBro/main/logos/clean/tivibro-icon-512.png",
         "sourceUrl": "https://github.com/ohmybahgosh/TiviBro",
         "rootRequired": false,
-        "ipkUrl": "https://github.com/ohmybahgosh/TiviBro/releases/download/v0.6.0-alpha.60/app.tivibro.tv_0.5.10060_all.ipk",
-        "ipkSize": 831662,
+        "ipkUrl": "https://github.com/ohmybahgosh/TiviBro/releases/download/v0.6.0-alpha.61/app.tivibro.tv_0.5.10061_all.ipk",
+        "ipkSize": 873768,
         "ipkHash": {
-          "sha256": "19b9814f7d846c024041ab78303d9763fb39632190ad153bbd687c8aef31b530"
+          "sha256": "5bd0d2154a118ffbfe42291bfa97226bb77d95c43652b80f3b62e8f22da5d5ed"
         }
       },
-      "shortDescription": "Test build 0.6.0-alpha.60: The IPTV player LG TVs never got",
+      "shortDescription": "Test build 0.6.0-alpha.61: The IPTV player LG TVs never got",
       "fullDescriptionUrl": "https://tivibro.app/hb/description.html",
       "requirements": {
         "webosRelease": ">=4.0"
       },
       "tivibro": {
-        "tag": "v0.6.0-alpha.60",
-        "version": "0.6.0-alpha.60",
+        "tag": "v0.6.0-alpha.61",
+        "version": "0.6.0-alpha.61",
         "prerelease": true
       }
     }
