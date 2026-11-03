@@ -21,10 +21,11 @@ var Logos = (function () {
   function cc(code) { code = String(code || '').toUpperCase(); return code === 'GB' ? 'UK' : code; }
 
   function cached(name, maxAge) {
-    return Store.idbGet('logos:' + name).then(function (x) {
+    // Kept by the helper with the playlists (Store.bigGet/bigSet), not in the browser's small storage.
+    return Store.bigGet('logos:' + name).catch(function () { return null; }).then(function (x) {
       if (x && x.base === base() && Date.now() - x.at < maxAge) return x.data;
       return U.getJSON(base() + name + '.json', 30000, 'logos ' + name).then(function (data) {
-        Store.idbSet('logos:' + name, { at: Date.now(), base: base(), data: data });
+        Store.bigSet('logos:' + name, { at: Date.now(), base: base(), data: data });
         return data;
       }, function (e) { if (x && x.data) return x.data; throw e; });   // offline: last week's copy beats nothing
     });

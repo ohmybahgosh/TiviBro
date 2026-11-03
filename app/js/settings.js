@@ -769,6 +769,9 @@ var Settings = (function () {
     if (Player.current) out.push(info('Playing now', [Player.media, Player.engine].filter(Boolean).join('   ') || 'details not known yet'));
     out.push(head('Status'));
     out.push(info('Network helper', Net.status()));
+    // Where playlists, guides and libraries are kept (service/storage.js), and the room left there.
+    var st = Net.info && Net.info.store;
+    out.push(info('Storage', st ? st.where + (st.freeMB >= 0 ? ', ' + st.freeMB.toLocaleString() + ' MB free' : '') : 'the TV app\'s own'));
     out.push(info('Network setting', (S().network || 'auto') === 'direct' ? 'Direct' : 'Automatic'));
     out.push(info('TiviBro', TIVIBRO_VERSION));
     out.push(info('Browser engine', (/Chrome\/([\d.]+)/.exec(navigator.userAgent) || [])[1] || navigator.userAgent.slice(0, 60)));

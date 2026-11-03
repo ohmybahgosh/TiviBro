@@ -40,6 +40,7 @@ site/logos/
 service/reminders.json
 site/view/shots.json
 service/guide-data/
+service/data/
 service/power.json
 service/helper-errors.json
 service/companion.json

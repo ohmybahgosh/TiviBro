@@ -17,7 +17,7 @@ let fetched = [];
 vm.runInContext(`
   var Log = { info: function () {}, warn: function () {} };
   var Store = { settings: { logoLib: 'fill', logoStyle: 'set', logoBase: 'https://logos.test/' }, _db: {},
-    idbGet: function (k) { return Promise.resolve(this._db[k]); }, idbSet: function (k, v) { this._db[k] = v; return Promise.resolve(); } };
+    bigGet: function (k) { return Promise.resolve(this._db[k]); }, bigSet: function (k, v) { this._db[k] = v; return Promise.resolve(); } };
   var Events = { of: function (c) { return /\\| .* @ /.test(c.n) ? { title: 'game' } : null; } };
 `, ctx);
 ctx.U = { getJSON: url => { const n = url.replace('https://logos.test/', '').replace('.json', ''); fetched.push(n); return FILES[n] ? Promise.resolve(FILES[n]) : Promise.reject(new Error('404')); } };

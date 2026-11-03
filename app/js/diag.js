@@ -136,6 +136,7 @@ var Diag = (function () {
     var facts = [
       ['TiviBro', TIVIBRO_VERSION], ['TV', tv], ['Browser engine', engine ? 'Chromium ' + engine : navigator.userAgent.slice(0, 80)],
       ['Network', (s.network || 'auto') === 'direct' ? 'Direct' : 'Automatic (' + Net.status() + ')'],
+      ['Storage', (function () { var st = Net.info && Net.info.store; if (!st) return 'the TV app\'s own'; return st.where + (st.freeMB >= 0 ? ', ' + st.freeMB.toLocaleString() + ' MB free' : ''); })()],
       ['Playlist', (p.type === 'm3u' ? 'M3U' : 'Xtream Codes') + ', ' + Library.count() + ' channels, ' + (Store.settings.playlists || []).length + ' playlist(s)'],
       ['Guide', (p.epgSources || []).length + ' extra source(s), provider guide ' + (p.providerEpg || 'auto')],
       ['Public guide', (function () {

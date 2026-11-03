@@ -64,8 +64,11 @@ var ROOT = null;
 function mkdir(d) { try { fs.mkdirSync(d); } catch (e) { if (e.code !== 'EEXIST') throw e; } }
 function root() {
   if (ROOT) return ROOT;
-  // The service's own folder is on the TV's storage; /tmp is memory, so it comes last.
-  var tries = [process.env.TIVIBRO_GUIDE_DIR, path.join(__dirname, 'guide-data'), '/media/internal/.tivibro-guide', path.join(os.tmpdir(), 'tivibro-guide')];
+  // With the rest of TiviBro's data (storage.js), which an update keeps: the helper's own folder is
+  // replaced by every update, and the guide went with it.  /tmp is memory, so it comes last.
+  var kept = null;
+  try { var S = require('./storage'); if (!S.memory()) kept = S.sub('guide'); } catch (e) {}
+  var tries = [process.env.TIVIBRO_GUIDE_DIR, kept, path.join(__dirname, 'guide-data'), path.join(os.tmpdir(), 'tivibro-guide')];
   for (var i = 0; i < tries.length; i++) {
     var d = tries[i];
     if (!d) continue;

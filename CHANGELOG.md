@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Your playlist logins are private to TiviBro.**  The files where the network helper keeps playlists, movie and show lists and guides were readable by other apps on the TV: their folder is shared into other apps' sandboxes (YouTube, Netflix, the browser and more).  They are now readable by TiviBro only, and files from earlier versions are locked down when TiviBro starts.
+- **The guide survives TiviBro updates.**  It was kept in the helper's own folder, which every update replaces, so each update downloaded and read the whole guide again.  It now sits with the playlists on the TV's storage.
+- **Storage with the most room.**  TiviBro keeps its data on the TV storage that survives updates and has the most free space (app storage on recent LG TVs, not the smaller user data that webOS needs for itself), and stays there.  **Settings > Diagnostics** and problem reports say where, and how much room is left.  Channel logo lists moved there too, out of the app's small browser storage.
+
 ## 0.6.0 (alpha 61, 2026-11-02)
 
 Pre-release: expect rough edges, and keep a backup before installing.

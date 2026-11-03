@@ -12,25 +12,15 @@
    Keys: letters, digits, ":", "_" and "-", up to 80.  Plain ES5 and callbacks for Node 0.12 (webOS 4). */
 'use strict';
 var fs = require('fs'), path = require('path');
-var Guide = require('./guide');
 
 var MAX = 512 * 1024 * 1024;
-/* Where: the TV's user storage first, which keeps it when TiviBro is updated (an update replaces the
-   helper's own folder, and with it the guide); then the guide's folder.  /tmp is memory and would
-   vanish with the TV, so there the app keeps using its own storage. */
-var ROOT = null;
-function root() {
-  if (ROOT) return ROOT;
-  var tries = [process.env.TIVIBRO_KV_DIR, '/media/internal/.tivibro', path.join(Guide.root(), 'kv')];
-  for (var i = 0; i < tries.length; i++) {
-    var d = tries[i];
-    if (!d) continue;
-    try { try { fs.mkdirSync(d); } catch (e) { if (e.code !== 'EEXIST') throw e; } var t = path.join(d, '.w'); fs.writeFileSync(t, '1'); fs.unlinkSync(t); ROOT = d; return d; } catch (e2) {}
-  }
-  throw new Error('no place to keep it');
-}
-function sub(name) { var d = path.join(root(), name); try { fs.mkdirSync(d); } catch (e) { if (e.code !== 'EEXIST') throw e; } return d; }
-function onDisk() { return root().indexOf(path.join(require('os').tmpdir(), 'tivibro-guide')) !== 0; }
+/* Where: storage.js picks one folder for everything big (TV storage that survives updates, on the
+   partition with the most room, private to the helper).  In memory (/tmp) it would vanish with the TV,
+   so there the app keeps using its own storage. */
+var Storage = require('./storage');
+function root() { return Storage.base(); }
+function sub(name) { return Storage.sub(name); }
+function onDisk() { return !Storage.memory(); }
 function fileOf(k) { return path.join(sub('kv'), k.replace(/:/g, '~') + '.json'); }
 
 // Where live.js keeps a channel list it just made, until the app saves it (/kv/put?from=); null when

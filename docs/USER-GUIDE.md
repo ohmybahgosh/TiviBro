@@ -980,6 +980,7 @@ Finding out what's wrong, and what this TV can play.
 | **What this TV can play ›** | | Every video, HDR and sound format, and which player handles it on this TV.  It combines the TV's own answers with what LG TVs are known to do (Dolby Vision and DTS aren't always reported correctly). |
 | **Playing now** | (information) | The current stream's format and player. |
 | **Status** | (information) | The helper, the network setting, your TiviBro version, the browser engine, how many channels are loaded, and the command for debugging from a computer. |
+| **Storage** | (information) | Where TiviBro keeps playlists, guides and movie and show lists on the TV, and how much room is left there.  It picks the TV's storage that survives updates and has the most room (app storage on recent LG TVs, not the smaller user data), and keeps it readable by TiviBro only. |
 
 Logs always mask usernames and passwords.
 
