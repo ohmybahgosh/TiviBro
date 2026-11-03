@@ -17,6 +17,38 @@ var Vod = (function () {
   function E() { return Store.edits; }
   function key(it) { return (kind === 'series' && !it.ep ? 's' : 'm') + it.id; }
   function resumeOf(id) { return E().resume[id]; }
+  function idOf(it) { return it.ep ? 'e' + it.id : key(it); }
+  /* Watched: a movie or episode played to its last minute (or marked) keeps a ✓, so a finished one never
+     looks like one never started.  id -> 1, in the playlist's edits beside resume, so backups carry it. */
+  function seen() { var e = E(); if (!e.watched || typeof e.watched !== 'object') e.watched = {}; return e.watched; }
+  function isWatched(id) { return !!seen()[id]; }
+  // Watched at 90% (Plex and Jellyfin's default, so a movie stopped at its credits counts), or in a short
+  // clip's last minute.  The one rule for the ✓, Continue watching and where a show opens.
+  function finished(pos, dur) { return pos >= dur * 0.9 || pos > dur - 60; }
+  // Where playback stopped: finished is watched, part-way is a place to resume, the first 30 s is nothing.
+  function done(id, pos, dur) {
+    if (!(dur > 60)) return;
+    var r = E().resume;
+    if (finished(pos, dur)) { delete r[id]; seen()[id] = 1; }
+    else if (pos > 30) r[id] = { pos: pos, dur: dur, at: Date.now() };
+  }
+  function mark(id, on) { delete E().resume[id]; if (on) seen()[id] = 1; else delete seen()[id]; Store.saveEdits(); }
+  /* A show remembers the episode you're on, for Continue watching and its row: the one you stopped in,
+     or the next one once that's finished.  pos/dur only keep it in Continue watching; ep and l are what shows. */
+  function markShow(k, it, eps) {
+    var i = eps ? eps.indexOf(it) : -1, cur = !E().resume['e' + it.id] && isWatched('e' + it.id) && i >= 0 && eps[i + 1] ? eps[i + 1] : it;
+    E().resume[k] = { pos: 61, dur: 1e6, at: Date.now(), ep: 'e' + cur.id, l: 'S' + cur.season + ' E' + (cur.num || '?') };
+  }
+  // A show opens on the episode after the last one watched or started, or on the one in progress.
+  function openAt(eps) {
+    var res = E().resume;
+    for (var i = eps.length - 1; i >= 0; i--) {
+      var id = 'e' + eps[i].id, x = res[id];
+      if (x && !finished(x.pos, x.dur)) return i;
+      if (x || isWatched(id)) return Math.min(i + 1, eps.length - 1);
+    }
+    return 0;
+  }
 
   /* Lists.  The full list (every language) is cached per playlist; only what is shown stays in memory,
      so a 160,000-title library with a dozen languages costs the TV what one language does.  On a TV the
@@ -194,10 +226,13 @@ var Vod = (function () {
     if (row._src !== img) { row._src = img; row._img.style.visibility = img ? 'visible' : 'hidden'; if (img) row._img.src = img; else row._img.removeAttribute('src'); }
     row._n.textContent = it.ep ? it.label : it.name;
     var d = data[kind], many = d && (!d.keep || Object.keys(d.keep).length > 2) && Object.keys(d.langs || {}).length > 2;
-    row._s.textContent = it.ep ? niceDur(it.dur) : [it.year, stars(it.rating), it.q, many && it.lang].filter(Boolean).join('   ');
-    var r = resumeOf(it.ep ? 'e' + it.id : key(it));
-    if (r && r.dur) { row._p.style.display = ''; row._pi.style.width = Math.round(100 * r.pos / r.dur) + '%'; } else row._p.style.display = 'none';
-    row._t.textContent = E().myList.indexOf(key(it)) >= 0 && !it.ep ? '★' : '';
+    var id = idOf(it), r = resumeOf(id), show = kind === 'series' && !it.ep;
+    // A show's row: the episode you're on, and that episode's progress (none before you start it).
+    var at = show ? r && r.l : '', bar = show ? r && r.ep && resumeOf(r.ep) : r;
+    row._s.textContent = it.ep ? niceDur(it.dur) : [at, it.year, stars(it.rating), it.q, many && it.lang].filter(Boolean).join('   ');
+    if (bar && bar.dur) { row._p.style.display = ''; row._pi.style.width = Math.round(100 * bar.pos / bar.dur) + '%'; } else row._p.style.display = 'none';
+    // ✓ for watched (not while it's being watched again: the bar shows then), ★ for My list.
+    row._t.textContent = [!r && isWatched(id) && '✓', !it.ep && E().myList.indexOf(key(it)) >= 0 && '★'].filter(Boolean).join('  ');
   }
 
   function build() {
@@ -232,7 +267,7 @@ var Vod = (function () {
   function continueList() {
     var d = data[kind]; if (!d) return [];
     var r = E().resume, out = [];
-    d.items.forEach(function (it) { var x = r[key(it)]; if (x && x.pos > 60 && x.pos < x.dur - 120) out.push({ it: it, at: x.at }); });
+    d.items.forEach(function (it) { var x = r[key(it)]; if (x && x.pos > 60 && !finished(x.pos, x.dur)) out.push({ it: it, at: x.at }); });
     return out.sort(function (a, b) { return b.at - a.at; }).map(function (x) { return x.it; });
   }
   function itemsFor(cid) {
@@ -338,8 +373,16 @@ var Vod = (function () {
     if (plot) box.appendChild(U.el('p', 'vod-plot', plot));
     if (m && m.cast) box.appendChild(U.el('div', 'vod-meta', 'Cast: ' + m.cast));
     if (m && m.director) box.appendChild(U.el('div', 'vod-meta', 'Director: ' + m.director));
-    var r = resumeOf(it.ep ? 'e' + it.id : key(it));
+    var id = idOf(it), r = resumeOf(id);
+    // A show: the episode you're on (its own resume point is only there for Continue watching).
+    if (kind === 'series' && !it.ep) {
+      var er = r && r.ep && resumeOf(r.ep);
+      if (er) box.appendChild(U.el('div', 'vod-meta', r.l + ': stopped at ' + Math.floor(er.pos / 60) + ' of ' + Math.floor(er.dur / 60) + ' min'));
+      else if (r && r.l) box.appendChild(U.el('div', 'vod-meta', 'Up next: ' + r.l));
+      r = null;
+    }
     if (r && r.dur) box.appendChild(U.el('div', 'vod-meta', 'Stopped at ' + Math.floor(r.pos / 60) + ' of ' + Math.floor(r.dur / 60) + ' min'));
+    else if (isWatched(id)) box.appendChild(U.el('div', 'vod-meta', '✓  Watched'));
   }
 
   /* ---------- series drill-down ---------- */
@@ -357,14 +400,18 @@ var Vod = (function () {
       });
       series = s; episodes = eps;
       $('vodTitle').textContent = s.name + '   ' + eps.length + ' episodes';
-      // Start on the next unwatched episode.
-      var res = E().resume, start = 0;
-      for (var i = eps.length - 1; i >= 0; i--) if (res['e' + eps[i].id]) { var x = res['e' + eps[i].id]; start = x.pos < x.dur - 120 ? i : Math.min(i + 1, eps.length - 1); break; }
-      itemsVL.setItems(eps, start);
+      itemsVL.setItems(eps, openAt(eps));
       onItem();
       hints();
       if (then) then(eps);
     }).catch(function () { U.toast('Could not load that show'); $('vodTitle').textContent = s.name; });
+  }
+  // Open a show's episodes on one of them ('e' + id) and play it from where it stopped.
+  function playEpisode(s, epId) {
+    openSeries(s, function (eps) {
+      var e = eps.filter(function (y) { return 'e' + y.id === epId; })[0];
+      if (e) { itemsVL.setItems(eps, eps.indexOf(e)); onItem(); play(e, false); }
+    });
   }
   function closeSeries() {
     var s = series; episodes = null; series = null;
@@ -377,7 +424,7 @@ var Vod = (function () {
 
   /* ---------- playback ---------- */
   function play(it, fromStart) {
-    var id = it.ep ? 'e' + it.id : key(it);
+    var id = idOf(it);
     var r = resumeOf(id), startAt = !fromStart && r && r.pos > 30 && r.pos < r.dur - 60 ? r.pos - 5 : 0;
     var meta = { id: id, media: mediaOf(it), title: it.ep ? (series ? series.name : '') + '   ' + it.label : it.name, sub: it.ep ? '' : it.year || '', item: it, seriesKey: series ? 's' + series.id : null };
     // An M3U list's episodes carry their own link, and its movies' links are asked for (Source.movieLink).
@@ -391,17 +438,16 @@ var Vod = (function () {
   function checkpoint() {
     if (!playingMeta) return;
     var pos = Player.position, dur = Player.duration;
-    if (dur > 60 && pos > 30 && pos < dur - 60) { E().resume[playingMeta.id] = { pos: pos, dur: dur, at: Date.now() }; Store.saveEdits(); }
+    // In the credits counts as watched too: webOS may close the app in the background, so stopped() never runs.
+    if (dur > 60) { done(playingMeta.id, pos, dur); if (playingMeta.seriesKey) markShow(playingMeta.seriesKey, playingMeta.item, episodes); Store.saveEdits(); }
   }
   function stopped() {
     if (!playingMeta) return;
     var pos = Player.position, dur = Player.duration;
     if (dur > 60) {
-      var r = E().resume;
-      if (pos > dur - 60) delete r[playingMeta.id];
-      else if (pos > 30) r[playingMeta.id] = { pos: pos, dur: dur, at: Date.now() };
+      done(playingMeta.id, pos, dur);
       // A show tracks its latest episode too, for Continue watching.
-      if (playingMeta.seriesKey) r[playingMeta.seriesKey] = { pos: 61, dur: 1e6, at: Date.now() };
+      if (playingMeta.seriesKey) markShow(playingMeta.seriesKey, playingMeta.item, episodes);
       Store.saveEdits();
     }
     playingMeta = null;
@@ -409,7 +455,7 @@ var Vod = (function () {
   function ended() {
     var m = playingMeta;
     if (m && m.item && m.item.ep && episodes && Store.settings.autoNext !== false) {
-      delete E().resume[m.id]; Store.saveEdits();
+      mark(m.id, true);
       var i = episodes.indexOf(m.item);
       if (i >= 0 && episodes[i + 1]) { playingMeta = null; U.toast('Next episode'); play(episodes[i + 1], true); return; }
     }
@@ -420,20 +466,34 @@ var Vod = (function () {
 
   function itemMenu(it) {
     if (!it) return;
-    var id = it.ep ? 'e' + it.id : key(it);
-    var r = resumeOf(id), mine = E().myList.indexOf(key(it)) >= 0;
+    var id = idOf(it);
+    var r = resumeOf(id), mine = E().myList.indexOf(key(it)) >= 0, playable = kind === 'movie' || it.ep, w = isWatched(id);
+    var er = !playable && r && r.ep ? resumeOf(r.ep) : null;
     UI.menu(it.ep ? it.label : it.name, [
-      r && { label: 'Resume', sub: Math.floor(r.pos / 60) + ' min', action: function () { play(it, false); } },
-      kind === 'movie' || it.ep ? { label: r ? 'Play from beginning' : 'Play', action: function () { play(it, true); } } : { label: 'Open episodes', action: function () { openSeries(it); } },
+      playable && r && { label: 'Resume', sub: Math.floor(r.pos / 60) + ' min', action: function () { play(it, false); } },
+      // A show: straight into the episode you're on, or the next one.
+      !playable && r && r.ep && { label: (er ? 'Resume ' : 'Play ') + r.l, sub: er ? Math.floor(er.pos / 60) + ' min' : '', action: function () { playEpisode(it, r.ep); } },
+      playable ? { label: r ? 'Play from beginning' : 'Play', action: function () { play(it, true); } } : { label: 'Open episodes', action: function () { openSeries(it); } },
       !it.ep && { label: mine ? 'Remove from My list' : 'Add to My list', action: function () {
         var l = E().myList, k = key(it);
         if (mine) E().myList = l.filter(function (x) { return x !== k; }); else l.push(k);
         Store.saveEdits(); itemsVL.refresh(); U.toast(mine ? 'Removed from My list' : 'Added to My list');
       } },
-      r && { label: 'Mark as watched', action: function () { delete E().resume[id]; Store.saveEdits(); itemsVL.refresh(); } }
+      // On a show (no file of its own) it only takes the show off Continue watching, as before.
+      (playable ? r || !w : r) && { label: 'Mark as watched', action: function () { if (playable) mark(id, true); else { delete E().resume[id]; Store.saveEdits(); } relist(); } },
+      playable && w && !r && { label: 'Mark unwatched', action: function () { mark(id, false); relist(); } }
     ]);
   }
 
+  // After marking: Continue watching and its count follow (a title marked watched leaves it).
+  function relist() {
+    if (!episodes) {
+      var was = catsVL.current(), cl = catList(), sel = itemsVL.sel;
+      catsVL.setItems(cl, Math.max(0, cl.findIndex(function (c) { return was && c.id === was.id; })));
+      if (was && was.id === CW) itemsVL.setItems(itemsFor(CW), sel);
+    }
+    itemsVL.refresh(); onItem();
+  }
   function setZone(z) { zone = z; catsVL.setActive(z === 'cats'); itemsVL.setActive(z === 'items'); hints(); }
   function hints() {
     if (episodes) return UI.hints([['', 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  all shows', 'back']]);
@@ -582,5 +642,5 @@ var Vod = (function () {
     }
   };
 
-  return { _test: { tag: tag, view: view }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, reset: function () { data = { movie: null, series: null }; raw = { movie: null, series: null }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
+  return { _test: { tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, reset: function () { data = { movie: null, series: null }; raw = { movie: null, series: null }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
 })();

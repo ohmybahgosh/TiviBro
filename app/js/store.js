@@ -100,6 +100,7 @@ var Store = (function () {
     blockedGroups: {}, blockedChannels: {},
     reminders: [],           // [{ k, s, e, t }]
     resume: {},              // vod id -> { pos, dur, at }
+    watched: {},             // vod id -> 1: played to the end or marked watched (a ✓ in Movies and Shows)
     myList: [],              // vod ids
     epgMap: {},              // chanKey -> guide channel id chosen by hand
     groupAdd: {},            // provider group id -> [chanKeys] copied or moved into it

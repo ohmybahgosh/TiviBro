@@ -153,6 +153,99 @@ const SERIES = [{ series_id: 9, name: '[SE] Nocturne', cover: 'c.jpg', plot: 'p'
   v = T.view('movie', { at: 1, cats: [{ id: 't', name: '|TR| DIZI' }, { id: 'e', name: 'Movies' }], items: ct });
   ok('untagged titles take their category language', ct[0].lang === 'TR' && v.langs.TR === 20 && v.items.every(x => x.lang !== 'TR'), JSON.stringify(v.langs));
 
+  // Watched marks: a finished movie or episode keeps a ✓ instead of looking never started.
+  {
+    const E = ctx.Store.edits; E.resume = {}; delete E.watched; E.myList = []; ctx.Store.saveEdits = () => {};
+    T.done('e1', 1190, 1200);
+    ok('a finished episode is watched', T.isWatched('e1') && !E.resume.e1, JSON.stringify(E));
+    T.done('e2', 600, 1200);
+    ok('one stopped part-way is not, and keeps its place', !T.isWatched('e2') && E.resume.e2.pos === 600);
+    T.done('e3', 20, 1200);
+    ok('a few seconds in counts as nothing', !T.isWatched('e3') && !E.resume.e3);
+    T.done('e1', 300, 1200);
+    ok('watching it again part-way keeps the mark and the new place', T.isWatched('e1') && E.resume.e1.pos === 300);
+    T.mark('e1', false);
+    ok('Mark unwatched clears both', !T.isWatched('e1') && !E.resume.e1);
+    T.mark('m7', true);
+    ok('Mark as watched marks it', T.isWatched('m7'));
+    // 90% watched counts (Plex and Jellyfin's default), so stopping at a movie's credits is watched.
+    T.done('m8', 6500, 7200);
+    ok('stopped at the credits (90%) is watched', T.isWatched('m8') && !E.resume.m8, JSON.stringify(E.resume.m8));
+    T.done('m9', 6000, 7200);
+    ok('stopped at 83% is not', !T.isWatched('m9') && E.resume.m9.pos === 6000);
+    T.done('e9', 250, 300);
+    ok('a short clip: its last minute counts too', T.isWatched('e9'));
+
+    // Hold OK offers one of the two, never both.
+    const menus = []; ctx.UI = { menu: (t, items) => menus.push(items.filter(Boolean).map(x => x.label)) };
+    const labels = (it) => { menus.length = 0; T.itemMenu(it); return menus[0]; };
+    E.resume = {}; E.watched = {};
+    ok('not started: Mark as watched', labels({ id: 30, name: 'A' }).indexOf('Mark as watched') >= 0 && labels({ id: 30, name: 'A' }).indexOf('Mark unwatched') < 0);
+    T.mark('m31', true);
+    ok('watched: Mark unwatched', labels({ id: 31, name: 'B' }).indexOf('Mark unwatched') >= 0 && labels({ id: 31, name: 'B' }).indexOf('Mark as watched') < 0);
+    E.resume.m31 = { pos: 300, dur: 7200, at: 1 };
+    const both = labels({ id: 31, name: 'B' });
+    ok('watched and being watched again: only Mark as watched', both.indexOf('Mark as watched') >= 0 && both.indexOf('Mark unwatched') < 0, JSON.stringify(both));
+    // On a show, Resume goes to the episode you're on (it used to try to play the show itself).
+    const showMenu = () => T.withKind('series', () => labels({ id: 9, name: 'Nocturne' }));
+    E.resume = { s9: { pos: 61, dur: 1e6, at: 1, ep: 'e42', l: 'S1 E2' }, e42: { pos: 600, dur: 1200, at: 1 } };
+    ok('a show part-way through an episode: Resume S1 E2', showMenu().indexOf('Resume S1 E2') >= 0 && showMenu().indexOf('Resume') < 0, JSON.stringify(showMenu()));
+    delete E.resume.e42;
+    ok('its episode finished: Play the next one', showMenu().indexOf('Play S1 E2') >= 0, JSON.stringify(showMenu()));
+    E.resume = { s9: { pos: 61, dur: 1e6, at: 1 } };
+    ok('saved by an older version: no Resume, just Open episodes', !showMenu().some(l => /^(Resume|Play)/.test(l)) && showMenu().indexOf('Open episodes') >= 0, JSON.stringify(showMenu()));
+
+    const fake = () => ({ style: {}, textContent: '', appendChild() {}, removeAttribute() {} });
+    const el = ctx.U.el; ctx.U.el = fake;
+    const row = (it) => { const r = fake(); T.renderItem(r, it); return r; };
+    E.resume = {}; E.watched = {};
+    T.mark('e10', true); E.resume.e11 = { pos: 300, dur: 1200, at: 1 };
+    let r = row({ ep: true, id: 10, label: 'S1 E1' });
+    ok('a watched episode row shows ✓ and no bar', r._t.textContent === '✓' && r._p.style.display === 'none', JSON.stringify([r._t.textContent, r._p.style.display]));
+    r = row({ ep: true, id: 11, label: 'S1 E2' });
+    ok('one in progress shows its bar, no ✓', r._t.textContent === '' && r._p.style.display === '' && r._pi.style.width === '25%');
+    r = row({ ep: true, id: 12, label: 'S1 E3' });
+    ok('one not started shows nothing', r._t.textContent === '' && r._p.style.display === 'none');
+    T.mark('m20', true); E.myList = ['m20'];
+    r = row({ id: 20, name: 'Heat' });
+    ok('a watched movie in My list shows both', r._t.textContent === '✓  ★', r._t.textContent);
+
+    // A show's row follows the episode you're on: its progress, and "S1 E2" under the title.
+    const sEps = [1, 2, 3].map(n => ({ ep: true, id: 40 + n, season: 1, num: n }));
+    const show = { id: 9, name: 'Nocturne', year: '2026' };
+    const showRow = () => T.withKind('series', () => row(show));
+    E.resume = {}; E.watched = {};
+    E.resume.e42 = { pos: 600, dur: 1200, at: 1 };
+    T.markShow('s9', sEps[1], sEps);
+    ok('stopped part-way: the show remembers that episode', E.resume.s9.ep === 'e42' && E.resume.s9.l === 'S1 E2', JSON.stringify(E.resume.s9));
+    r = showRow();
+    ok('and its row shows that episode\'s progress', r._p.style.display === '' && r._pi.style.width === '50%', JSON.stringify([r._p.style.display, r._pi.style.width]));
+    ok('with the episode under the title', /^S1 E2/.test(r._s.textContent), r._s.textContent);
+    delete E.resume.e42; T.mark('e42', true);
+    T.markShow('s9', sEps[1], sEps);
+    r = showRow();
+    ok('finished: the row moves on to the next episode, no bar yet', E.resume.s9.ep === 'e43' && /^S1 E3/.test(r._s.textContent) && r._p.style.display === 'none', JSON.stringify(E.resume.s9));
+    T.mark('e43', true); T.markShow('s9', sEps[2], sEps);
+    ok('the last one finished: it stays on it', E.resume.s9.ep === 'e43');
+    ok('still in Continue watching', E.resume.s9.pos > 60 && E.resume.s9.dur > E.resume.s9.pos * 100);
+    E.resume.s9 = { pos: 61, dur: 1e6, at: 1 };
+    r = showRow();
+    ok('a show saved by an older version shows no empty bar', r._p.style.display === 'none' && r._s.textContent === '2026', JSON.stringify([r._p.style.display, r._s.textContent]));
+    ctx.U.el = el;
+
+    const eps = [1, 2, 3, 4].map(id => ({ ep: true, id }));
+    E.resume = {}; E.watched = {};
+    ok('a new show opens on its first episode', T.openAt(eps) === 0);
+    T.mark('e1', true); T.mark('e2', true);
+    ok('then on the one after the last watched', T.openAt(eps) === 2, T.openAt(eps));
+    E.resume.e3 = { pos: 300, dur: 1200, at: 1 };
+    ok('or on the one in progress', T.openAt(eps) === 2);
+    E.resume = {}; T.mark('e4', true);
+    ok('all watched: the last one', T.openAt(eps) === 3);
+    E.watched = {}; T.mark('e3', true);
+    ok('an episode watched out of order still moves the start past it', T.openAt(eps) === 3);
+  }
+
   console.log(fail ? fail + ' failures' : 'all movie and show list tests passed');
   process.exit(fail ? 1 : 0);
 })();
