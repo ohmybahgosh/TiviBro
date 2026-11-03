@@ -11,13 +11,18 @@
    URL; null for a reanchor (seek), which keeps the video as it is.  An adapter is a container:
      id, headBytes                  name for logs, size of the first (session-resolving) read
      startupDelayMs                 optional delay before the first read (tests, diagnostics)
-     reuseSession                   a cached index may start the video with no new read
-     discover(head, range, rec, alive) -> Promise of the format's index, or null (no usable tracks)
+     startupDeadlineMs              0, or how long the video may wait for the first read: after it the
+                                    video starts on the original URL and subtitles give up for this play
+     reuseSession                   a cached index may start the video with no new read.  false: every
+                                    new engine start reads the head again (fresh session, the index kept)
+     discover(head, range, rec, alive) -> Promise of the format's index, null (tracks, none usable)
+                                    or { none: 'empty' } (no subtitle tracks at all: the menu says so)
      describe(index)                -> [{ label, srclang }] in attach order
      candidates(rec, now)           -> ordered work items { id, keys? } not yet fetched, near now
      complete(rec, now)             -> true when nothing is left anywhere in the file
      read(rec, item, range, alive)  -> Promise of [{ track, s, e, text }], track = index into describe()
-   range(start, end, metadata) reads bytes [start, end]; metadata reads skip the buffer wait.  alive()
+   range(start, end, metadata) reads bytes [start, end] into a Uint8Array whose .total is the file
+   size from Content-Range (NaN if unknown); metadata reads skip the buffer wait.  alive()
    is false once cancelled: check it before parsing a response, so a stopped player costs no work. */
 var EmbedSubs = (function () {
   'use strict';
@@ -30,9 +35,55 @@ var EmbedSubs = (function () {
   // and only not-yet-fetched work is requested, so extraction converges rather than
   // restarting, and the provider sees far fewer requests overall.
   var subCache = {};
+  // Only the playing file and the two before it keep their cache: a seek or reconnect needs it, an
+  // evening of episodes shouldn't pile up indexes and lines in the TV's memory.
+  var CACHE_FILES = 3, cacheOrder = [];
+  function touch(url) {
+    cacheOrder = cacheOrder.filter(function (u) { return u !== url; });
+    cacheOrder.push(url);
+    while (cacheOrder.length > CACHE_FILES) delete subCache[cacheOrder.shift()];
+  }
+  // Lines kept per file for replays (the live track keeps them all).
+  var MAX_TEXT_CHARS = 2000000;
+
+  /* Text.  TextDecoder exists on every webOS TV (Chromium 38+); the fallback is a complete decoder for
+     the hosts without it: U+FFFD for malformed or cut-off sequences (as TextDecoder does), surrogate
+     pairs for characters past U+FFFF. */
+  var decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8') : null;
+  function utf8(buf, start, end) {
+    if (decoder) return decoder.decode(buf.subarray(start, end));
+    var out = '', i = start;
+    if (end - start >= 3 && buf[i] === 0xEF && buf[i + 1] === 0xBB && buf[i + 2] === 0xBF) i += 3;   // BOM, as TextDecoder drops it
+    while (i < end) {
+      var b = buf[i], need, cp, lower = 0x80, upper = 0xBF;
+      if (b < 0x80) { out += String.fromCharCode(b); i++; continue; }
+      if (b >= 0xC2 && b <= 0xDF) { need = 1; cp = b & 0x1F; }
+      else if (b >= 0xE0 && b <= 0xEF) { need = 2; cp = b & 0x0F; if (b === 0xE0) lower = 0xA0; if (b === 0xED) upper = 0x9F; }
+      else if (b >= 0xF0 && b <= 0xF4) { need = 3; cp = b & 0x07; if (b === 0xF0) lower = 0x90; if (b === 0xF4) upper = 0x8F; }
+      else { out += '\uFFFD'; i++; continue; }
+      var j = i + 1, good = true;
+      for (var k = 0; k < need; k++, j++) {
+        var c = j < end ? buf[j] : -1;
+        if (c < (k ? 0x80 : lower) || c > (k ? 0xBF : upper)) { good = false; break; }
+        cp = cp * 64 + (c & 0x3F);
+      }
+      i = j;                                 // a bad byte is read again as the start of the next character
+      if (!good) { out += '\uFFFD'; continue; }
+      if (cp > 0xFFFF) { cp -= 0x10000; out += String.fromCharCode(0xD800 + Math.floor(cp / 1024), 0xDC00 + cp % 1024); }
+      else out += String.fromCharCode(cp);
+    }
+    return out;
+  }
+  function utf16(buf, start, end, littleEndian) {
+    var out = '';
+    for (var i = start; i + 1 < end; i += 2) out += String.fromCharCode(littleEndian ? buf[i] + buf[i + 1] * 256 : buf[i] * 256 + buf[i + 1]);
+    if ((end - start) % 2) out += '\uFFFD';
+    return out;
+  }
 
   function run(url, video, onResolved, adapter) {
     var tag = adapter.id + 'subs';
+    function shown(none) { return none === 'empty' ? '' : none; }   // 'empty': the menu says the video has none
     var cancelled = false, started = false;
     function startVideo(resolved) { if (!cancelled && !started && onResolved) { started = true; onResolved(resolved); } }
     video._mkvSubsState = 'discovering';
@@ -90,6 +141,7 @@ var EmbedSubs = (function () {
     var liveTracks = [];      // the live TextTrack per track index, parallel to a rec's tracks/cues
     var wrapped = Net.wrap(url);
     var activeRequest = null, gateTimer = null, rejectGate = null, pump = null, retryTimer = null;
+    var timedOut = false, deadline = null;     // the startup deadline (adapter.startupDeadlineMs)
     function hasBuffer() {
       if (!video.buffered) return true; // non-media test hosts
       if (video.seeking || video.readyState < 3) return false;
@@ -115,7 +167,7 @@ var EmbedSubs = (function () {
       return (metadata ? Promise.resolve() : waitForBuffer()).then(function () {
         if (cancelled) throw new Error('cancelled');
         return new Promise(function (resolve, reject) {
-          var xhr = new XMLHttpRequest(), settled = false, expected = 0;
+          var xhr = new XMLHttpRequest(), settled = false, expected = 0, total = NaN;
           function finish(err, data) {
             if (settled) return;
             settled = true; activeRequest = null;
@@ -127,16 +179,16 @@ var EmbedSubs = (function () {
           xhr.setRequestHeader('Range', 'bytes=' + start + '-' + end);
           xhr.onreadystatechange = function () {
             if (xhr.readyState !== 2) return;
-            var m = /^bytes (\d+)-(\d+)\/(?:\d+|\*)$/i.exec(xhr.getResponseHeader('Content-Range') || '');
+            var m = /^bytes (\d+)-(\d+)\/(\d+|\*)$/i.exec(xhr.getResponseHeader('Content-Range') || '');
             if (xhr.status !== 206 || !m || +m[1] !== start || +m[2] > end || +m[2] < start) {
               finish(new Error('invalid range response (HTTP ' + xhr.status + ')')); xhr.abort();
-            } else expected = +m[2] - start + 1;
+            } else { expected = +m[2] - start + 1; total = m[3] === '*' ? NaN : +m[3]; }
           };
           xhr.onprogress = function (e) { if (e.loaded > end - start + 1) { finish(new Error('oversized range response')); xhr.abort(); } };
           xhr.onload = function () {
             var data = xhr.response && new Uint8Array(xhr.response);
             if (!data || !expected || data.length !== expected) finish(new Error('invalid range length'));
-            else { if (xhr.responseURL) wrapped = xhr.responseURL; finish(null, data); }
+            else { if (xhr.responseURL) wrapped = xhr.responseURL; data.total = total; finish(null, data); }
           };
           xhr.onerror = xhr.ontimeout = function () { finish(new Error('range request failed')); };
           xhr.onabort = function () { finish(new Error(xhr.yieldToPlayback ? 'buffer low' : 'cancelled')); };
@@ -159,6 +211,7 @@ var EmbedSubs = (function () {
     }
     if (video.textTracks && video.textTracks.addEventListener) video.textTracks.addEventListener('change', paint);
     var rec = subCache[url];
+    if (rec) touch(url);
     // A file found to have no usable subtitles is remembered for seeks and reconnects (no more
     // header reads); a fresh start of the file looks again.
     if (rec && rec.none && onResolved) rec = subCache[url] = null;
@@ -190,7 +243,7 @@ var EmbedSubs = (function () {
     // subtitles instantly instead of blanking them.
     if (rec && rec.tracks.length) { ensureTracks(rec.tracks); replayCached(rec); }
     if (rec && rec.tracks.length) { video._mkvSubsState = 'ready'; paint(); }
-    if (rec && rec.none) video._mkvSubsState = rec.none;
+    if (rec && rec.none) video._mkvSubsState = shown(rec.none);
     if (rec && rec.done && !onResolved) return cancelHandle();   // fully cached: nothing left to fetch
 
     var timer = setTimeout(function () { if (!cancelled) runExtraction(); }, adapter.startupDelayMs || 0);
@@ -219,6 +272,8 @@ var EmbedSubs = (function () {
           for (var f = 0; f < found.length; f++) {
             var c = found[f];
             liveTracks[c.track].addCue(new VTTCue(c.s, c.e, c.text));
+            if ((rec.textChars || 0) + c.text.length > MAX_TEXT_CHARS) continue;
+            rec.textChars = (rec.textChars || 0) + c.text.length;
             rec.cues[c.track].push({ s: c.s, e: c.e, text: c.text });
           }
           if (typeof Subs !== 'undefined' && Subs.fresh) liveTracks.forEach(function (t) { Subs.fresh(t); });
@@ -247,22 +302,40 @@ var EmbedSubs = (function () {
 
     function runExtraction() {
     // The index read before for this file: straight to the subtitle lines.
-    if (adapter.reuseSession && rec && rec.index && rec.resolved && liveTracks.length) {
+    // A seek keeps the video's session; only a new engine start (onResolved) needs a fresh one, and
+    // only formats that ask for it (reuseSession false) get one even with the index cached.
+    if ((adapter.reuseSession || !onResolved) && rec && rec.index && rec.resolved && liveTracks.length) {
       startVideo(rec.resolved);
       return startPump();
     }
+    if (adapter.startupDeadlineMs > 0 && onResolved) deadline = setTimeout(function () {
+      if (cancelled || started) return;
+      // A provider this slow to answer would keep the picture waiting: play now, on the original link,
+      // and do without subtitles this time rather than open a second session next to the video's.
+      timedOut = true;
+      Log.warn(tag, 'Subtitles gave up: the file took too long to answer');
+      startVideo(url);
+      video._mkvSubsState = 'error'; remember('error');
+      if (activeRequest) activeRequest.abort();
+    }, adapter.startupDeadlineMs);
     fetchRange(wrapped, 0, adapter.headBytes - 1, true).then(function (head) {
-      if (cancelled) return;
+      clearTimeout(deadline);
+      if (cancelled || timedOut) return;
       startVideo(wrapped);
+      // The same link now serving a different file (a different size) starts over.
+      if (rec && rec.size !== undefined && isFinite(head.total) && head.total !== rec.size) { dropTracks(); rec = subCache[url] = null; }
       if (rec) rec.resolved = wrapped;
       if (rec && rec.done) return;
       if (cancelled) return;                  // stopped as the video started (inside onResolved)
+      if (rec && rec.index && liveTracks.length) return startPump();     // fresh session, index kept
       return adapter.discover(head, range, rec, alive).then(function (index) {
         if (cancelled || !index) return;
+        if (index.none) { video._mkvSubsState = shown(index.none); remember(index.none, head.total); return; }
         // Create (or reuse) this URL's cache record, then attach tracks if not already.
         if (!rec) {
           var meta = adapter.describe(index);
-          rec = subCache[url] = { tracks: meta, cues: meta.map(function () { return []; }), fetched: {}, done: false };
+          rec = subCache[url] = { tracks: meta, cues: meta.map(function () { return []; }), fetched: {}, done: false, size: head.total };
+          touch(url);
         }
         rec.resolved = wrapped;
         ensureTracks(rec.tracks);
@@ -278,14 +351,20 @@ var EmbedSubs = (function () {
       startVideo(wrapped);
       if (!cancelled && video._mkvSubsState === 'discovering') { video._mkvSubsState = 'unavailable'; remember('unavailable'); }
     }).catch(function (e) {
+      clearTimeout(deadline);
+      if (timedOut) return;
       startVideo(url);
       if (!cancelled) { video._mkvSubsState = 'error'; remember('error'); }
       if (typeof Log !== 'undefined' && Log.debug) Log.debug(tag, 'giving up: ' + (e && e.message));
     });
     }
 
-    function remember(state) {
-      if (!subCache[url]) subCache[url] = { tracks: [], cues: [], fetched: {}, done: true, none: state, resolved: wrapped };
+    function remember(state, size) {
+      if (!subCache[url]) { subCache[url] = { tracks: [], cues: [], fetched: {}, done: true, none: state, resolved: wrapped, size: size }; touch(url); }
+    }
+    function dropTracks() {
+      for (var i = 0; i < addedEls.length; i++) { try { video.removeChild(addedEls[i]); } catch (e) {} }
+      addedEls.length = 0; liveTracks.length = 0;
     }
     function cancelHandle() {
       return { cancel: function () {
@@ -295,6 +374,7 @@ var EmbedSubs = (function () {
         clearTimeout(timer);
         clearTimeout(gateTimer);
         clearTimeout(retryTimer);
+        clearTimeout(deadline);
         if (rejectGate) { rejectGate(new Error('cancelled')); rejectGate = null; }
         if (activeRequest) activeRequest.abort();
         if (video.removeEventListener) {
@@ -302,8 +382,7 @@ var EmbedSubs = (function () {
           video.removeEventListener('seeking', paint); video.removeEventListener('seeked', paint);
         }
         if (video.textTracks && video.textTracks.removeEventListener) video.textTracks.removeEventListener('change', paint);
-        for (var i = 0; i < addedEls.length; i++) { try { video.removeChild(addedEls[i]); } catch (e) {} }
-        addedEls.length = 0;
+        dropTracks();
         if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
         if (video.classList) video.classList.remove('mkv-captions-active');
         video._mkvSubsState = '';
@@ -312,5 +391,5 @@ var EmbedSubs = (function () {
     return cancelHandle();
   }
 
-  return { run: run };
+  return { run: run, utf8: utf8, utf16: utf16 };
 })();

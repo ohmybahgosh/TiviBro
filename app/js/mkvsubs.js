@@ -176,15 +176,12 @@ var MkvSubs = (function () {
   }
 
   var TIMECODE = 0xE7, BLOCKGROUP = 0xA0, BLOCK = 0xA1, SIMPLEBLOCK = 0xA3, BLOCKDURATION = 0x9B;
-  var decoder = typeof TextDecoder !== 'undefined' ? new TextDecoder('utf-8') : null;
   // Some releases tag an S_TEXT/UTF8 track as plain SRT, but the text still carries ASS
   // override codes like {\an8} (position), {\pos(x,y)}, etc. -- strip them rather than
   // display the literal markup.
   var ASS_OVERRIDE = /\{\\[^}]*\}/g;
   function utf8Decode(buf, start, end, raw) {
-    var slice = buf.subarray ? buf.subarray(start, end) : buf.slice(start, end);
-    var s = decoder ? decoder.decode(slice) : '';
-    if (!decoder) for (var i = start; i < end; i++) s += String.fromCharCode(buf[i]);
+    var s = EmbedSubs.utf8(buf, start, end);    // TextDecoder, or a complete fallback without it
     return raw ? s : s.replace(ASS_OVERRIDE, '');
   }
   // Matroska ASS/SSA blocks contain eight comma-separated metadata fields, then text

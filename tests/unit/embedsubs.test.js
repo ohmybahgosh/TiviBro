@@ -172,6 +172,123 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     ok('cancelling from onResolved stops before the Cues read, silently',
       requestRanges.length === 1 && logs.length === 0 && video.children.length === 0, { requestRanges, logs });
   }
+  // ---- Task 2: what MP4 needs from the core ----
+  {
+    const enc = t => new Uint8Array(Buffer.from(t, 'utf8'));
+    ok('utf8 fallback decodes "Café 日本 😀" without TextDecoder', typeof ctx.TextDecoder === 'undefined' && EmbedSubs.utf8(enc('Café 日本 😀'), 0, enc('Café 日本 😀').length) === 'Café 日本 😀');
+    const cut = enc('ab日'); // 'ab' + 3-byte char, cut after its first byte
+    ok('truncated utf8 gives U+FFFD', EmbedSubs.utf8(cut, 0, 3) === 'ab�' && EmbedSubs.utf8(new Uint8Array([0x61, 0xC3, 0x28]), 0, 3) === 'a�(');
+    const be = new Uint8Array([0x00, 0x48, 0x00, 0xE9, 0xD8, 0x3D, 0xDE, 0x00]), le = new Uint8Array([0x48, 0x00, 0xE9, 0x00]);
+    ok('utf16 BE and LE', EmbedSubs.utf16(be, 0, 8, false) === 'Hé😀' && EmbedSubs.utf16(le, 0, 4, true) === 'Hé');
+  }
+  {
+    let seenTotal;
+    const ad = fakeAdapter({ discover: head => { seenTotal = head.total; return { items: [{ id: 'a', s: 1 }] }; } });
+    const h = EmbedSubs.run('http://p/movie/f6', makeVideo(), () => {}, ad);
+    await wait(40);
+    ok('range bytes carry total from Content-Range', seenTotal === 64, seenTotal);
+    h.cancel();
+  }
+  {
+    files['slow'] = new Uint8Array(64);
+    pending = true; aborted = 0;
+    const resolved = [], video = makeVideo();
+    const ad = Object.assign(fakeAdapter(), { startupDeadlineMs: 50 });
+    const h = EmbedSubs.run('http://p/movie/slow', video, u => resolved.push(u), ad);
+    await wait(120);
+    pending = false;
+    const v2 = makeVideo(); requestRanges = [];
+    const h2 = EmbedSubs.run('http://p/movie/slow', v2, null, ad);
+    await wait(40);
+    ok('startup deadline starts the original URL and settles error, remembered for a seek',
+      resolved.length === 1 && resolved[0] === 'http://p/movie/slow' && aborted === 1 && video._mkvSubsState === 'error' &&
+      v2._mkvSubsState === 'error' && requestRanges.length === 0, { resolved, aborted, s: video._mkvSubsState, s2: v2._mkvSubsState, requestRanges });
+    h.cancel(); h2.cancel();
+  }
+  {
+    let discovers = 0;
+    const ad = Object.assign(fakeAdapter({ items: [{ id: 'a', s: 1 }, { id: 'b', s: 500 }] }), { reuseSession: false });
+    const d0 = ad.discover; ad.discover = function () { discovers++; return d0.apply(this, arguments); };
+    ad.complete = () => false;
+    const h1 = EmbedSubs.run('http://p/movie/f7', makeVideo({ currentTime: 0 }), () => {}, ad);
+    files['f7'] = new Uint8Array(64);
+    await wait(40); h1.cancel();
+    requestRanges = [];
+    const v = makeVideo({ currentTime: 0 }), resolved = [];
+    const h2 = EmbedSubs.run('http://p/movie/f7', v, u => resolved.push(u), ad);
+    await wait(40);
+    const heads = requestRanges.filter(r => r === 'bytes=0-15').length;
+    requestRanges = [];
+    const v3 = makeVideo({ currentTime: 0 });
+    const h3 = EmbedSubs.run('http://p/movie/f7', v3, null, ad);       // a seek: no new session needed
+    await wait(40);
+    ok('reuseSession false re-reads head on a new engine start but not the index, and not on a seek',
+      discovers === 1 && heads === 1 && resolved.length === 1 && v.children[0].track.cues.length >= 1 &&
+      requestRanges.filter(r => r === 'bytes=0-15').length === 0, { discovers, heads, seekReads: requestRanges });
+    h2.cancel(); h3.cancel();
+  }
+  {
+    let discovers = 0;
+    files['f8'] = new Uint8Array(64);
+    const ad = Object.assign(fakeAdapter(), { reuseSession: false });
+    const d0 = ad.discover; ad.discover = function () { discovers++; return d0.apply(this, arguments); };
+    ad.complete = () => false;
+    const h1 = EmbedSubs.run('http://p/movie/f8', makeVideo(), () => {}, ad);
+    await wait(40); h1.cancel();
+    files['f8'] = new Uint8Array(128);                               // the link now serves another file
+    const v = makeVideo();
+    const h2 = EmbedSubs.run('http://p/movie/f8', v, () => {}, ad);
+    await wait(40);
+    ok('changed total size drops the cached index', discovers === 2 && v.children.length === 1, { discovers, tracks: v.children.length });
+    h2.cancel();
+  }
+  {
+    files['f9'] = new Uint8Array(64); requestRanges = [];
+    const v = makeVideo();
+    const h = EmbedSubs.run('http://p/movie/f9', v, () => {}, fakeAdapter({ discover: () => ({ none: 'empty' }) }));
+    await wait(40); h.cancel();
+    const n = requestRanges.length, v2 = makeVideo();
+    EmbedSubs.run('http://p/movie/f9', v2, null, fakeAdapter({ discover: () => ({ none: 'empty' }) }));
+    await wait(40);
+    ok('empty settles to blank state, remembered', v._mkvSubsState === '' && v2._mkvSubsState === '' && requestRanges.length === n && v.children.length === 0,
+      { s: v._mkvSubsState, s2: v2._mkvSubsState });
+  }
+  {
+    for (const n of ['l1', 'l2', 'l3', 'l4']) files[n] = new Uint8Array(64);
+    for (const n of ['l1', 'l2', 'l3', 'l4']) { const h = EmbedSubs.run('http://p/movie/' + n, makeVideo(), () => {}, fakeAdapter()); await wait(30); h.cancel(); }
+    requestRanges = [];
+    const kept = makeVideo(); EmbedSubs.run('http://p/movie/l4', kept, null, fakeAdapter()).cancel;
+    await wait(30);
+    const keptReads = requestRanges.length;
+    const gone = makeVideo(); EmbedSubs.run('http://p/movie/l1', gone, null, fakeAdapter());
+    await wait(30);
+    ok('LRU keeps 3 files', keptReads === 0 && kept.children.length === 1 && requestRanges.length > 0, { keptReads, after: requestRanges.length });
+  }
+  {
+    files['big'] = new Uint8Array(64);
+    const huge = 'x'.repeat(1500000);
+    const ad = fakeAdapter({ items: [{ id: 'a', s: 1 }, { id: 'b', s: 3 }] });
+    ad.read = (rec, item, range) => range(0, 3).then(() => [{ track: 0, s: item.s, e: item.s + 1, text: huge }]);
+    const v = makeVideo();
+    const h = EmbedSubs.run('http://p/movie/big', v, () => {}, ad);
+    await wait(60);
+    const live = v.children[0] ? v.children[0].track.cues.length : -1;
+    h.cancel();
+    const v2 = makeVideo();
+    EmbedSubs.run('http://p/movie/big', v2, null, ad);
+    ok('cue text cap stops retention at 2000000 chars', live === 2 && v2.children[0].track.cues.length === 1,
+      { live, replayed: v2.children[0] && v2.children[0].track.cues.length });
+  }
+  {
+    // mkv-fixture writes one byte per character: hand it the UTF-8 bytes as a binary string.
+    files['utf8.mkv'] = buildMkv({ subtitleTrack: { number: 7, lang: 'en' }, cuesIndexesSubtitle: true, cueText: Buffer.from('Café 日本', 'utf8').toString('latin1') });
+    const v = makeVideo();
+    const h = MkvSubs.extract('http://p/movie/utf8.mkv', v, () => {});
+    await wait(80);
+    const c = v.children[0] && v.children[0].track.cues[0];
+    ok('MKV cue text "Café 日本" decodes without TextDecoder', c && c.text === 'Café 日本', c && c.text);
+    h.cancel();
+  }
   if (fail) { console.log(fail + ' embedsubs test(s) failed'); process.exit(1); }
   console.log('all embedsubs tests passed');
 })().catch(e => { console.error(e); process.exit(1); });
