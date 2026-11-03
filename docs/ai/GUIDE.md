@@ -81,7 +81,7 @@ Also here: `site/` (tivibro.app, GitHub Pages), `relay/` (a Cloudflare Worker th
 ## Things that look like bugs but are on purpose
 
 - The Phone app settings section shows only in test builds (`alpha` or `beta` versions).
-- Video for the TV's own player goes direct for http and through the helper for https or a custom User-Agent; MKV files with subtitles and MP4 files with subtitles share one resolved session URL between the player and subtitle reads (`embedsubs.js`); MP4 resolves a fresh session on every new engine start and keeps only the parsed index (`mp4subs.js`).
+- Video for the TV's own player goes direct for http and through the helper for https or a custom User-Agent; MKV files with subtitles and MP4 files with subtitles share one resolved session URL between the player and subtitle reads (`embedsubs.js`); MP4 resolves a fresh session on every new engine start, keeping the parsed index, the lines read so far and the selection (`mp4subs.js`).
 - New editor passwords and pairing codes leave out look-alike characters (`0/O`, `1/I/L`, `2/Z`, `5/S`, `6/G`, `8/B`, `U/V`); the editor login treats look-alikes as the same.
 - Headless Chromium can't decode HEVC or AC-3; a stream that fails in a soak test may play fine on a TV.
 - `docs/wiki/` is generated from `docs/USER-GUIDE.md`: edit the guide, not the wiki pages.

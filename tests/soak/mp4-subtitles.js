@@ -175,7 +175,9 @@ function region(f, trackIndex) {
     ok('file without text tracks says "No subtitles in this video"', /No subtitles in this video/.test(none), none);
     await page.evaluate(() => { UI.close(); window.__mp4.cancel(); window.__mp4 = null; });
 
-    // One connection at a time: the video's request is open, the subtitle read gets 503, the video's carries on.
+    // One connection at a time: the video's request is open, so the reader's first read gets 503.  The video
+    // starts once, on its own link, subtitles give up for this play, and the video's download is untouched.
+    // (Sample reads refused later back off and recover: mp4subs.test.js, "416/429/503 on a sample read".)
     oneMock = spawn(process.execPath, [path.join(__dirname, '../mock/mock_provider.js')], { env: Object.assign({}, process.env, { MOCK_PORT: '8099', MOCK_ONE_REQUEST: '1' }), stdio: 'ignore' });
     await new Promise(r => setTimeout(r, 1500));
     const held = await new Promise((resolve, reject) => {
@@ -192,7 +194,7 @@ function region(f, trackIndex) {
     await page.waitForFunction(() => /error|unavailable/.test(document.getElementById('video')._mkvSubsState), null, { timeout: 10000 }).catch(() => {});
     const one = await page.evaluate(() => ({ state: document.getElementById('video')._mkvSubsState, resolved: window.__resolved.length }));
     const done = await new Promise(resolve => { held.res.on('end', () => resolve(held.got())); held.res.resume(); setTimeout(() => resolve(held.got()), 10000); });
-    ok('under MOCK_ONE_REQUEST playback keeps going when subtitle reads get 503', held.status === 206 && done === held.total && one.state === 'error' && one.resolved === 1,
+    ok('one-connection provider: a refused subtitle read starts the video once on its own link, gives up subtitles, and the video download finishes', held.status === 206 && done === held.total && one.state === 'error' && one.resolved === 1,
       { status: held.status, done, total: held.total, one });
     await page.evaluate(() => { if (window.__mp4) window.__mp4.cancel(); });
 
