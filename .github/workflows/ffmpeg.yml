@@ -1,0 +1,143 @@
+name: ffmpeg
+
+# Builds the tiny static LGPL ffmpeg that TiviBro's network helper runs on the TV
+# to convert audio the TV can't play (DTS, TrueHD, ...).  Manual only: run it from
+# the Actions tab.  It publishes a pre-release (never "latest") with the binaries,
+# their license and the exact source.  See docs/FFMPEG.md.
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to create or update
+        required: true
+        default: ffmpeg-7.1-tb1
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ffmpeg-${{ github.event.inputs.tag }}
+  cancel-in-progress: false
+
+env:
+  CACHE_DIR: ${{ github.workspace }}/.ffmpeg-cache
+
+jobs:
+  build:
+    name: Build ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [armv7, aarch64]
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install host tools
+        # Cross binutils for strip/nm, qemu-user for the smoke test, host ffmpeg
+        # (with the experimental dca encoder) to make the DTS test file.
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends \
+            binutils-arm-linux-gnueabihf binutils-aarch64-linux-gnu \
+            qemu-user-static ffmpeg make xz-utils bzip2
+
+      - name: Cache toolchain and sources
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.CACHE_DIR }}/zig-0.*
+            ${{ env.CACHE_DIR }}/*.tar.*
+          key: ffmpeg-toolchain-${{ hashFiles('scripts/ffmpeg/build.sh') }}
+          restore-keys: ffmpeg-toolchain-
+
+      - name: Build
+        run: bash scripts/ffmpeg/build.sh "${{ matrix.arch }}" "$RUNNER_TEMP/out"
+
+      - name: Smoke test under qemu
+        run: bash scripts/ffmpeg/build.sh test "${{ matrix.arch }}" "$RUNNER_TEMP/out"
+
+      - name: Size check
+        run: |
+          BIN="$RUNNER_TEMP/out/tivibro-ffmpeg-${{ matrix.arch }}"
+          SIZE="$(stat -c %s "$BIN")"
+          echo "### tivibro-ffmpeg-${{ matrix.arch }}: $SIZE bytes" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$SIZE" -gt $((4 * 1024 * 1024)) ]; then
+            echo "::warning::tivibro-ffmpeg-${{ matrix.arch }} is $SIZE bytes, over the 4 MB target"
+          fi
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: ffmpeg-${{ matrix.arch }}
+          path: ${{ runner.temp }}/out/
+          if-no-files-found: error
+
+  release:
+    name: Publish ${{ github.event.inputs.tag }}
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: parts
+
+      - name: Assemble release files
+        run: |
+          set -euo pipefail
+          mkdir dist
+          for a in armv7 aarch64; do
+            gzip -9 -n -c "parts/ffmpeg-$a/tivibro-ffmpeg-$a" > "dist/tivibro-ffmpeg-$a.gz"
+          done
+          # License files are the same for both builds.
+          cp parts/ffmpeg-armv7/LICENSE.md parts/ffmpeg-armv7/COPYING.LGPLv2.1 parts/ffmpeg-armv7/COPYING.LGPLv3 dist/
+          if [ -f parts/ffmpeg-armv7/LICENSE.mbedtls.txt ]; then cp parts/ffmpeg-armv7/LICENSE.mbedtls.txt dist/; fi
+          {
+            echo "ffmpeg for TiviBro (audio conversion), release $TAG"
+            echo "Built by .github/workflows/ffmpeg.yml from $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/tree/$GITHUB_SHA"
+            echo "Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo "SHA-256 of the uncompressed binaries:"
+            for a in armv7 aarch64; do
+              echo "  $(sha256sum "parts/ffmpeg-$a/tivibro-ffmpeg-$a" | cut -d' ' -f1)  tivibro-ffmpeg-$a"
+            done
+            for a in armv7 aarch64; do
+              echo
+              echo "------------------------------------------------------------------------"
+              cat "parts/ffmpeg-$a/SOURCE-$a.txt"
+            done
+          } > dist/SOURCE.txt
+          ( cd dist && sha256sum -- * > SHA256SUMS )
+          cat dist/SHA256SUMS
+          ls -l dist
+
+      - name: Create or update the release
+        run: |
+          set -euo pipefail
+          SIZES="$(for a in armv7 aarch64; do printf -- '- `tivibro-ffmpeg-%s.gz`: %s bytes gzipped, %s bytes unpacked\n' \
+            "$a" "$(stat -c %s "dist/tivibro-ffmpeg-$a.gz")" "$(stat -c %s "parts/ffmpeg-$a/tivibro-ffmpeg-$a")"; done)"
+          VERSION_LINE="$(grep -m1 '^ffmpeg version:' parts/ffmpeg-armv7/SOURCE-armv7.txt | sed 's/^ffmpeg version: *//')"
+          cat > notes.md <<EOF
+          A tiny, fully static ffmpeg $VERSION_LINE that TiviBro's network helper downloads on demand to convert
+          audio the TV can't play (DTS, TrueHD, multichannel FLAC, ...) to AC-3, E-AC-3 or AAC.  Video is copied,
+          never re-encoded.  This is not an app release: you don't need to download anything here yourself.
+
+          $SIZES
+
+          LGPL build (no GPL or nonfree parts).  Source, exact version and configure line: \`SOURCE.txt\`.
+          Licenses: \`LICENSE.md\`, \`COPYING.LGPLv3\`, \`COPYING.LGPLv2.1\`, \`LICENSE.mbedtls.txt\`.  Checksums: \`SHA256SUMS\`.
+          More: docs/FFMPEG.md in the repository.
+          EOF
+          TITLE="ffmpeg for TiviBro (audio conversion)"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "$TITLE" --notes-file notes.md --prerelease --latest=false
+            gh release upload "$TAG" dist/* --clobber
+          else
+            gh release create "$TAG" dist/* --target "$GITHUB_SHA" --title "$TITLE" \
+              --notes-file notes.md --prerelease --latest=false
+          fi
+          gh release view "$TAG" --json url,assets --jq '.url, (.assets[] | "  \(.name)  \(.size)")'

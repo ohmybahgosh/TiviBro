@@ -17,7 +17,8 @@ permissions: {}
 
 jobs:
   notify:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    # App releases only: the ffmpeg download (tag ffmpeg-...) isn't news for the site.
+    if: (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') && !startsWith(github.event.release.tag_name || '', 'ffmpeg-')
     runs-on: ubuntu-latest
     steps:
       - name: Send repository_dispatch to the site

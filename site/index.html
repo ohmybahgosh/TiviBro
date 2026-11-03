@@ -521,7 +521,7 @@
   });
   // Newest build, straight from GitHub.  GitHub lists releases by tag name (alpha.9 before alpha.10), so take the newest by date.
   fetch('https://api.github.com/repos/ohmybahgosh/TiviBro/releases?per_page=100').then(function (r) { return r.ok ? r.json() : []; }).then(function (l) {
-    l = (l || []).filter(function (r) { return !r.draft && r.tag_name; }).sort(function (a, b) { return (b.published_at || '') > (a.published_at || '') ? 1 : (b.published_at || '') < (a.published_at || '') ? -1 : 0; });
+    l = (l || []).filter(function (r) { return !r.draft && /^v\d/.test(r.tag_name || ''); })   // app releases only (not the ffmpeg download).sort(function (a, b) { return (b.published_at || '') > (a.published_at || '') ? 1 : (b.published_at || '') < (a.published_at || '') ? -1 : 0; });
     if (l && l[0] && l[0].tag_name) $('#ver').textContent = 'Newest: ' + l[0].tag_name.replace(/^v/, '').replace(/-alpha\./, ' alpha ').replace(/-beta\./, ' beta ');
   }).catch(function () {});
 
