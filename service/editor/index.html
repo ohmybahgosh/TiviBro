@@ -590,14 +590,15 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 
     <!-- MY MEDIA -->
     <section class="page hidden" id="p-media">
-      <div class="phead"><div><h1>My media</h1><p>Your own movies from a home media server or a WebDAV service.  Watch them in My media on the TV.</p></div></div>
+      <div class="phead"><div><h1>My media</h1><p>Your own movies and TV shows from a home media server or a WebDAV service.  Watch them in My media on the TV.</p></div></div>
       <div class="scroll">
         <div class="note">Movies and TV shows can share a source, with files at the top level or in subfolders.  Existing sources keep movie-only scanning until you enable TV shows from the source options on the TV.</div>
-        <div class="note">For a home media server, choose <b>Settings &gt; My media &gt; Add media &gt; Browse my network (DLNA / UPnP)</b> on the TV.  Turn on media sharing on your server first.</div>
+        <div class="note">For a home media server, choose <b>Settings &gt; My media &gt; Add media &gt; Browse my network (DLNA / UPnP)</b> on the TV, or Add media in the TiviBro phone app.  Turn on media sharing on your server first.</div>
         <div class="card" style="margin-bottom:18px;max-width:760px">
           <h3>My media preferences</h3>
           <form id="mediaPreferences" class="form">
             <label class="f full">Sort movies by<select id="mediaSort"><option value="name">Name (A–Z)</option><option value="release">Release date (newest first)</option><option value="added">Date added (newest first)</option></select></label>
+            <label class="f full">Sort TV shows by<select id="mediaShowSort"><option value="name">Name (A–Z)</option><option value="release">First aired (newest first)</option><option value="added">Date added (newest first)</option></select></label>
             <label class="f full"><span id="mediaTokenLabel">Add TMDB API token</span><input id="mediaTmdbToken" type="password" autocomplete="new-password" placeholder="Leave blank to keep the saved token"></label>
             <div class="full muted small">Create your own token at <a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noopener noreferrer">TMDB API settings</a>.  It is checked before saving, stays on this TV and is excluded from backups.  With a token saved, movies without details or posters are looked up on their own.  Saved tokens are never sent back to this page.  <span id="mediaTokenStatus"></span></div>
             <div class="full row"><button id="mediaTokenTest" type="button" class="ghost hidden">Test saved token</button><button id="mediaTokenRemove" type="button" class="ghost danger hidden">Remove saved token</button></div>
@@ -2991,7 +2992,7 @@ $('tEmpty').addEventListener('click', function (e) { if (e.target.id === 'emGo')
 
 /* ---------- My media: source management only ---------- */
 function loadMedia() {
-  command('mediaPreferences').then(function (r) { $('mediaLanguage').value = r.data.language; $('mediaSort').value = r.data.sort; $('mediaTokenLabel').textContent = r.data.tmdbConfigured ? 'TMDB API token saved on this TV' : 'Add TMDB API token'; $('mediaTmdbToken').placeholder = r.data.tmdbConfigured ? 'Paste a new token only to replace the saved one' : 'Paste your API key or Read Access Token'; $('mediaTokenStatus').textContent = r.data.tmdbConfigured ? 'Token saved on this TV.  Leave the field blank to keep it.' : 'No token saved yet.'; $('mediaTokenRemove').classList.toggle('hidden', !r.data.tmdbConfigured); $('mediaTokenTest').classList.toggle('hidden', !r.data.tmdbConfigured); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });
+  command('mediaPreferences').then(function (r) { $('mediaLanguage').value = r.data.language; $('mediaSort').value = r.data.sort; $('mediaShowSort').value = r.data.showSort || 'name'; $('mediaTokenLabel').textContent = r.data.tmdbConfigured ? 'TMDB API token saved on this TV' : 'Add TMDB API token'; $('mediaTmdbToken').placeholder = r.data.tmdbConfigured ? 'Paste a new token only to replace the saved one' : 'Paste your API key or Read Access Token'; $('mediaTokenStatus').textContent = r.data.tmdbConfigured ? 'Token saved on this TV.  Leave the field blank to keep it.' : 'No token saved yet.'; $('mediaTokenRemove').classList.toggle('hidden', !r.data.tmdbConfigured); $('mediaTokenTest').classList.toggle('hidden', !r.data.tmdbConfigured); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });
   return command('mediaList').then(function (r) {
     var list = $('mediaList'); list.textContent = '';
     if (!(r.data || []).length) { var note = document.createElement('div'); note.className = 'note'; note.textContent = 'No media sources yet.  Add a WebDAV server below, or find a DLNA / UPnP server from My media on the TV.'; list.appendChild(note); }
@@ -3052,7 +3053,7 @@ $('mediaLibraryCorrection').onsubmit=function(e){
 };
 $('mediaPreferences').onsubmit = function (e) {
   e.preventDefault();
-  var args = { language: $('mediaLanguage').value, sort: $('mediaSort').value };
+  var args = { language: $('mediaLanguage').value, sort: $('mediaSort').value, showSort: $('mediaShowSort').value };
   if ($('mediaTmdbToken').value.trim()) args.tmdbToken = $('mediaTmdbToken').value.trim();
   $('mediaTmdbToken').value = '';
   busyBtn(this.querySelector('button[type="submit"]'), command('mediaPreferences', args)).then(function (r) { msg('mediaPrefsMsg', 'ok', r.msg); loadMedia(); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });

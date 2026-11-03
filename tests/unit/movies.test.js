@@ -26,6 +26,14 @@ ok('a long programme anywhere: weak', M.strength(chan('AMC HD'), at('The Walking
 ok('sport, news, shows and marathons are not', ['NFL Football: Lions at Vikings', 'World News Tonight', 'Saturday Night Live', 'Law & Order Marathon', 'Paid Programming', 'Next game: Red Wings'].every((t) => M.strength(chan('ABC'), at(t, 180)) === ''));
 ok('short programmes are not (unless the guide says Movie)', M.strength(chan('HBO'), at('Real Time', 60)) === '' && M.strength(chan('ABC'), at('Movie: Bambi', 70)) === 'strong');
 ok('the channel name as the programme is not', M.strength(chan('Starlight Movies'), at('Starlight Movies', 240)) === '');
+// The genre shelves under On now and Starting soon.
+{
+  const g = (id, genre, live) => ({ m: { id, genre }, live, list: [] });
+  const sh = { on: [g('a', 'Action, Comedy', true), g('b', 'Drama', true), g('c', 'Action', true)], soon: [g('a', 'Action, Comedy', false), g('d', 'Comedy, Drama', false), g('e', 'Horror', false)] };
+  const out = M.genres(sh), txt = out.map((r) => r.title + ':' + r.items.map((x) => x.m.id + (x.live ? '+' : '-')).join(' ')).join(' | ');
+  ok('genres with two or more movies, most first, each movie once (the one on now)', txt === 'Action:a+ c+ | Comedy:a+ d- | Drama:b+ d-', txt);
+  ok('no genres, no shelves', M.genres({ on: [g('x', '', true)], soon: [] }).length === 0);
+}
 c.Events.of = () => ({}); ok('event channels are not', M.strength(chan('HBO'), at('Frozen (2013)', 120)) === ''); c.Events.of = () => null;
 
 // The TMDB check.

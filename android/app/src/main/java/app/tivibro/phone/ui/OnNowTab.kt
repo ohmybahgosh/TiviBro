@@ -1,7 +1,8 @@
 /* Movies on now, on the phone: the TV's Movies on now (onnow.js, TMDB with the TV's own token) as big
-   posters in two shelves, On now and Starting soon.  A tap opens the movie: its backdrop with the title
-   logo, the facts and plot, and every channel showing it.  Watch on TV for one that's on; for one that
-   starts later, a reminder on the TV (asked first) or the channel now. */
+   posters in shelves: On now, Starting soon, then the same movies by genre (the TV picks the genres).
+   A tap opens the movie: its backdrop with the title logo, the facts and plot, and every channel
+   showing it.  Watch on TV for one that's on; for one that starts later, a reminder on the TV (asked
+   first) or the channel now. */
 package app.tivibro.phone.ui
 
 import androidx.compose.foundation.background
@@ -99,6 +100,7 @@ fun OnNowTab(model: AppModel, id: String, playing: String, now: Long) {
         else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
             if (d.on.isNotEmpty()) item { Shelf("On now", d.on, now) { open = it } }
             if (d.soon.isNotEmpty()) item { Shelf("Starting soon", d.soon, now) { open = it } }
+            items(d.genreShelves(), key = { "g:" + it.first }) { (title, list) -> Shelf(title, list, now) { open = it } }
         }
     }
     open?.let { m -> MovieSheet(model, id, m, now, playing, onDone = { open = null; attempt++ }) }

@@ -1,7 +1,8 @@
 /* TiviBro's Settings on the phone: every page the TV has, built by the TV's own code and sent as rows
    (ask "settings", see Settings.phone in app/js/settings.js), so the phone always matches the TV.
    Switches and choices change the TV at once; buttons run on the TV (a box they open can be typed into
-   from the phone).  Locked with the TV's PIN when its Settings are. */
+   from the phone), except adding and managing My media sources and the TMDB token, which have their own
+   forms here (MediaSourcesDialogs.kt).  Locked with the TV's PIN when its Settings are. */
 package app.tivibro.phone.ui
 
 import androidx.activity.compose.BackHandler
@@ -64,14 +65,19 @@ import org.json.JSONObject
 data class SetRow(
     val i: Int, val kind: String, val label: String, val sub: String, val value: String,
     val on: Boolean, val options: List<String>, val cur: Int, val swatch: String,
+    /** A button the phone does itself (Settings.phone's phoneDoes): media-add, media-source (with [sid]), tmdb-token. */
+    val phone: String = "", val sid: String = "",
 ) {
     companion object {
         fun from(j: JSONObject) = SetRow(
             j.optInt("i"), j.optString("kind"), j.optString("label"), j.optString("sub"), j.optString("value"),
             j.optBoolean("on"), j.optJSONArray("options")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty(), j.optInt("cur", -1), j.optString("swatch"),
+            j.optString("phone"), j.optString("sid"),
         )
     }
 }
+/** The buttons this app does on the phone; others run on the TV. */
+private val NATIVE = setOf("media-add", "media-source", "tmdb-token")
 private data class SetPage(val title: String, val rows: List<SetRow>)
 private fun pageOf(j: JSONObject) = SetPage(j.optString("title"), j.optJSONArray("rows")?.let { a -> (0 until a.length()).map { SetRow.from(a.getJSONObject(it)) } }.orEmpty())
 
@@ -88,6 +94,7 @@ fun SettingsTab(model: AppModel, id: String) {
     var busy by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf<SetRow?>(null) }
     var showLog by remember { mutableStateOf(false) }
+    var native by remember { mutableStateOf<SetRow?>(null) }      // a media-add, media-source or tmdb-token row open here
     if (showLog) { LogScreen(model, id) { showLog = false }; return }
 
     // Every request carries where we are and the PIN (if one was typed); the answer may say "locked".
@@ -162,12 +169,20 @@ fun SettingsTab(model: AppModel, id: String) {
                     onPick = { picking = r },
                     onCycle = { d -> change("cycle", r, JSONObject().put("dir", d)) },
                     onOpen = { path = path + r.i },
-                    onAction = { change("action", r) }) }
+                    onAction = { if (r.phone in NATIVE) native = r else change("action", r) }) }
               }
             }
         }
     }
 
+    native?.let { r ->
+        val done: (Boolean) -> Unit = { changed -> native = null; if (changed) loadPage() }
+        when (r.phone) {
+            "media-add" -> MediaAddDialog(model, id, done)
+            "media-source" -> MediaSourceDialog(model, id, r.sid, done)
+            "tmdb-token" -> TmdbTokenDialog(model, id, r.value == "Saved", done)
+        }
+    }
     picking?.let { r ->
         AlertDialog(
             onDismissRequest = { picking = null }, containerColor = Panel,

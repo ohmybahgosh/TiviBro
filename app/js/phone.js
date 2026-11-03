@@ -72,7 +72,7 @@ var Phone = (function () {
   // Commands wait until TiviBro has its channels (a phone may have opened it a moment ago).  A few
   // questions work on a TV with no playlist yet: adding one, typing into the set-up screen, backups.
   function ready() { return typeof Library !== 'undefined' && Library.count() > 0 && Views.tab; }
-  var EARLY = { playlist: 1, input: 1, backup: 1, restore: 1 };
+  var EARLY = { playlist: 1, input: 1, backup: 1, restore: 1, mymedia: 1 };
   function run(c, tries) {
     if (c.type === 'ask' && EARLY[c.what]) return answer(c);
     if (!ready()) {
@@ -127,6 +127,7 @@ var Phone = (function () {
   }
   function vodKind(a) { return a.kind === 'series' ? 'series' : 'movie'; }
   function leaveFull() { if (UI.modalOpen) UI.close(); if (Views.full) Views.runAction('exit', 'player'); }
+  var found = [];                        // the media servers the last Look for servers found (mymedia)
   var ASK = {
     /* The guide for a page of channels: what is on at `at` and the two after it.  Channels whose guide
        isn't loaded yet come back without programmes (and the guide starts loading them); the phone asks
@@ -208,7 +209,9 @@ var Phone = (function () {
           poster: m.poster || '', backdrop: m.backdropHd || m.backdrop || '', logo: m.logo || '', live: g.live ? 1 : 0,
           chans: g.list.map(function (x) { return { k: x.c.k, n: Library.name(x.c), logo: Views.logoOf(x.c) || '', s: x.p.s, e: x.p.e, r: hasReminder(x.c.k, x.p.s) ? 1 : 0 }; }) };
       }
-      return { on: sh.on.map(one), soon: sh.soon.map(one), looking: Movies.pending > 0 ? 1 : 0 };
+      // The genre shelves (Movies.genres): each movie by its id and whether it's the one on now.
+      var genres = Movies.genres(sh).map(function (r) { return { t: r.title, ids: r.items.map(function (g) { return g.m.id + (g.live ? '|on' : '|soon'); }) }; });
+      return { on: sh.on.map(one), soon: sh.soon.map(one), genres: genres, looking: Movies.pending > 0 ? 1 : 0 };
     },
     /* Show or hide channels in one group (the channel sheet's "Show or hide channels…"), hidden ones too.
        op list: the group's channels with on (shown); op save: { changes: { key: true (show) | false } }.
@@ -249,6 +252,53 @@ var Phone = (function () {
       if (typeof MediaSeries !== 'undefined') MediaSeries.leave();
       leaveFull();
       return (a.kind === 'media' ? Media.phone.play(a.id, a.fromStart) : Vod.phone.play(vodKind(a), a.id, a.ep, a.fromStart)).then(function (r) { U.toast('Playing ' + r.title + (c.from ? ', from ' + c.from : '')); return r; });
+    },
+    /* My media sources from the phone app (Settings > My media there): the list, finding DLNA servers,
+       adding one or a WebDAV folder, and each source's rescan, content, details and remove, plus the
+       TMDB token.  Sealed: WebDAV logins and the token cross here.  A scan can take minutes: after 25
+       seconds the answer says it is still going, and the TV finishes it (and says so on screen). */
+    mymedia: function (a) {
+      var op = String(a.op || 'sources');
+      function src() { var s = MediaStore.source(String(a.id || '')); if (!s) throw new Error('That media source no longer exists.'); return s; }
+      function sources() {
+        return MediaStore.publicSources().map(function (s) {
+          return { id: s.id, name: s.name, type: s.type, mode: s.contentMode || 'movies', movies: MediaStore.movies(s.id).length, episodes: s.episodeFiles || 0, scanning: Media.isScanning(s.id) ? 1 : 0 };
+        });
+      }
+      function waitFor(p, still) {
+        return Promise.race([p, new Promise(function (ok) { setTimeout(function () { ok({ still: true }); }, 25000); })]).then(function (r) {
+          r = r || {};
+          if (r.still) return { msg: still, sources: sources() };
+          if (r.error) throw new Error(r.message || 'That didn\'t work.  Look at the TV for more.');
+          return { msg: r.msg || '', sources: sources() };
+        });
+      }
+      if (op === 'sources') return MediaStore.load().then(function () { return { sources: sources(), token: MediaStore.preferences().tmdbConfigured ? 1 : 0 }; });
+      if (op === 'discover') return Media.discover().then(function (list) { found = list; return { servers: list.map(function (x, i) { return { i: i, name: String(x.name || 'Media server').slice(0, 80) }; }) }; });
+      if (op === 'adddlna') {
+        var server = found[+a.i];
+        if (!server) throw new Error('Look for servers again.');
+        return waitFor(Media.addServer(server).then(function (r) { return r && !r.error ? { msg: server.name + ' added: ' + (r.count || 0) + ' movies.' } : r; }), server.name + ' added.  The TV is still looking through it.');
+      }
+      if (op === 'addwebdav') {
+        var address = String(a.address || '').trim();
+        if (!/^https?:\/\/[^\s]+$/i.test(address)) throw new Error('Enter the folder\'s full address, starting with https:// or http://.');
+        return waitFor(Media.addAddress(address, String(a.user || '').slice(0, 300), String(a.pass || '').slice(0, 2000)).then(function (r) { return r && !r.error ? { msg: 'Added: ' + (r.movies || 0) + ' movies.' + Media.leftOut(r.skipped) } : r; }),
+          'Login accepted.  The TV is still looking through the folder.');
+      }
+      if (op === 'rescan') { var s1 = src(); return waitFor(Media.rescan(s1.id, !!a.restart).then(function (r) { return r && !r.error ? { msg: r.note || (r.count || 0) + ' movies on ' + s1.name + '.' } : r; }), 'Still scanning ' + s1.name + ' on the TV.'); }
+      if (op === 'mode') {
+        var s2 = src(), mode = String(a.mode || '');
+        if (['automatic', 'movies', 'shows'].indexOf(mode) < 0) throw new Error('Not one of the choices');
+        return waitFor(Media.changeSourceMode(s2.id, mode).then(function () { return { msg: s2.name + ' updated.' }; }), s2.name + ' updated.  The TV is scanning it again.');
+      }
+      if (op === 'details') { var s3 = src(); return waitFor(Media.sourceDetailsNow(s3.id).then(function (r) { return { msg: (r && r.updated || 0) + ' movies updated.' }; }), 'The TV is fetching the details.'); }
+      if (op === 'remove') return WebEdit.run('mediaRemove', { id: src().id }).then(function (r) { Settings.live(); return { msg: r.msg, sources: sources() }; });
+      if (op === 'token') {
+        var t = String(a.token || '').trim();
+        return Media.setTmdbToken(t).then(function () { Settings.live(); return { msg: t ? 'TMDB token saved on the TV.' : 'TMDB token removed.  Saved details stay.', token: t ? 1 : 0 }; });
+      }
+      throw new Error('Unknown My media request');
     },
     // A provider link shared to the phone app: added like the web editor's Add a playlist.
     playlist: function (a) {

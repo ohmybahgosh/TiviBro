@@ -31,12 +31,20 @@ data class OnNowMovie(val id: String, val title: String, val year: String, val g
     val first get() = chans.first()
     val facts get() = listOf(year, runtime, genre, if (rating.isNotBlank()) "★ $rating" else "").filter { it.isNotBlank() }.joinToString("  ·  ")
 }
-data class OnNow(val off: Boolean, val msg: String, val on: List<OnNowMovie>, val soon: List<OnNowMovie>, val looking: Boolean) {
+/** A genre shelf: its name and its movies, each as "id|on" or "id|soon" (the TV picks them, Movies.genres). */
+data class OnNowGenre(val title: String, val ids: List<String>)
+data class OnNow(val off: Boolean, val msg: String, val on: List<OnNowMovie>, val soon: List<OnNowMovie>, val looking: Boolean, val genres: List<OnNowGenre> = emptyList()) {
+    /** The genre shelves with their movies (an older TV sends none). */
+    fun genreShelves(): List<Pair<String, List<OnNowMovie>>> {
+        val by = (on.map { it.id + "|on" to it } + soon.map { it.id + "|soon" to it }).toMap()
+        return genres.map { g -> g.title to g.ids.mapNotNull { by[it] } }.filter { it.second.isNotEmpty() }
+    }
     companion object {
         private fun movie(j: JSONObject) = OnNowMovie(j.optString("id"), j.optString("title"), j.optString("year"), j.optString("genre"), j.optString("runtime"), j.optString("rating"),
             j.optString("plot"), j.optString("poster"), j.optString("backdrop"), j.optString("logo"), j.optInt("live") == 1,
             j.optJSONArray("chans").list { OnNowChan(it.optString("k"), it.optString("n"), it.optString("logo"), it.optLong("s"), it.optLong("e"), it.optInt("r") == 1) }).takeIf { it.chans.isNotEmpty() }
-        fun from(j: JSONObject) = OnNow(j.optBoolean("off"), j.optString("msg"), j.optJSONArray("on").list { movie(it) }, j.optJSONArray("soon").list { movie(it) }, j.optInt("looking") == 1)
+        fun from(j: JSONObject) = OnNow(j.optBoolean("off"), j.optString("msg"), j.optJSONArray("on").list { movie(it) }, j.optJSONArray("soon").list { movie(it) }, j.optInt("looking") == 1,
+            j.optJSONArray("genres").list { g -> OnNowGenre(g.optString("t"), g.optJSONArray("ids")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty()) })
     }
 }
 

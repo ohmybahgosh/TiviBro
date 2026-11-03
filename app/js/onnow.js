@@ -1,5 +1,5 @@
 /* Movies on now, as a screen in the side menu: big posters of the movies on your channels right now and
-   starting in the next three hours (movies.js finds them, TMDB fills them in with your token), the
+   starting in the next three hours, then the same movies by genre (movies.js finds them, TMDB fills them in with your token), the
    focused one large at the top over its backdrop, with its title logo.  OK watches it; Hold OK or Red
    lists every channel showing it, a reminder for one starting later, or the guide on it. */
 var OnNow = (function () {
@@ -19,7 +19,8 @@ var OnNow = (function () {
 
   function data() {
     var sh = Movies.shelves();
-    return [{ id: 'on', title: 'On now', items: sh.on }, { id: 'soon', title: 'Starting soon', items: sh.soon }].filter(function (r) { return r.items.length; });
+    return [{ id: 'on', title: 'On now', items: sh.on }, { id: 'soon', title: 'Starting soon', items: sh.soon }].filter(function (r) { return r.items.length; })
+      .concat(Movies.genres(sh).map(function (r) { return { id: 'g:' + r.title.toLowerCase(), title: r.title, items: r.items }; }));
   }
   function signature(rs) { return rs.map(function (r) { return r.id + ':' + r.items.map(function (g) { return g.m.id + '@' + g.c.k + (g.m.logo ? 'L' : ''); }).join(','); }).join('|'); }
 

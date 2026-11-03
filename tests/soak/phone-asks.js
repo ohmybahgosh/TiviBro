@@ -110,6 +110,34 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   await ev(() => { Views.stopAll(); MediaStore.sources().forEach((x) => MediaStore.removeSource(x.id)); Views.switchTab('live'); });
   await page.waitForTimeout(800);
 
+  // My media sources from the phone (sealed): the list, adding, removing, the TMDB token; and the
+  // Settings rows the phone does itself.
+  const mmPlain = await C.ask(cred, 'mymedia', { op: 'sources' }).catch((e) => e);
+  ok('My media sources need a sealed request', mmPlain instanceof Error || (mmPlain && mmPlain.error), JSON.stringify(mmPlain && (mmPlain.message || mmPlain)));
+  const mm = (w, a) => C.ask(cred, 'mymedia', Object.assign({ op: w }, a || {}), { seal: true }).then((r) => r.data, (e) => ({ err: e.message }));
+  ok('no sources yet', JSON.stringify((await mm('sources')).sources) === '[]');
+  const setp = await ask('settings', { op: 'page', sec: 'media', path: [] }, { seal: true });
+  const tagged = setp.rows.filter((r) => r.phone).map((r) => r.phone + (r.sid ? ':s' : '')).join();
+  ok('Settings > My media: Add media and the TMDB token are done on the phone', /media-add/.test(tagged) && /tmdb-token/.test(tagged), tagged);
+  ok('and Sort TV shows by is there', setp.rows.some((r) => r.label === 'Sort TV shows by' && r.kind === 'choice' && r.options.length === 3), setp.rows.map((r) => r.label).join(' | '));
+  ok('a WebDAV address must be a web address', /https?:\/\//.test((await mm('addwebdav', { address: 'nas.local/movies' })).err || ''));
+  ok('a server needs looking for first', /again/.test((await mm('adddlna', { i: 0 })).err || ''));
+  await ev(() => {
+    Media.discover = () => Promise.resolve([{ name: 'Living room NAS', control: 'http://127.0.0.1:9/ctl' }]);
+    Media.addServer = (sv) => { MediaStore.addSource({ type: 'dlna', name: sv.name, control: sv.control }); return Promise.resolve({ count: 0 }); };
+  });
+  const disc = await mm('discover');
+  ok('looking for servers lists them by name only', JSON.stringify(disc.servers) === '[{"i":0,"name":"Living room NAS"}]', JSON.stringify(disc));
+  const added = await mm('adddlna', { i: 0 });
+  ok('adding one from the phone', /Living room NAS added/.test(added.msg) && added.sources.length === 1 && added.sources[0].type === 'dlna', JSON.stringify(added));
+  const setp2 = await ask('settings', { op: 'page', sec: 'media', path: [] }, { seal: true });
+  const srow = setp2.rows.filter((r) => r.phone === 'media-source')[0];
+  ok('its Settings row opens on the phone, with its id', srow && srow.sid === added.sources[0].id, JSON.stringify(srow));
+  ok('a content choice that isn\'t one is refused', /choices/.test((await mm('mode', { id: added.sources[0].id, mode: 'music' })).err || ''));
+  const rm = await mm('remove', { id: added.sources[0].id });
+  ok('removing it from the phone', /removed/.test(rm.msg || '') && rm.sources.length === 0, JSON.stringify(rm));
+  ok('a token TMDB wouldn\'t take is refused', !!(await mm('token', { token: 'short' })).err);
+
   // The log for the phone (sealed): the Report a problem text.
   const logAns = await ask('logs', {}, { seal: true });
   // Movies on now: off without a TMDB token; with one, the movies and their channels.
@@ -126,6 +154,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const mv = await ask('onnow', {});
   const all = (mv.on || []).concat(mv.soon || []);
   ok('Movies on now: posters, backdrops and the channels showing each', !mv.off && all.length > 0 && all.every((m) => m.title && /p\d\.jpg$/.test(m.poster) && /b\d\.jpg$/.test(m.backdrop) && m.chans.length && m.chans[0].k && m.chans[0].s), JSON.stringify(mv).slice(0, 300));
+  const dr = (mv.genres || []).filter((g) => g.t === 'Drama')[0];
+  ok('Movies on now: genre shelves, each movie by id and showing', all.length < 2 || (dr && dr.ids.length === new Set(all.map((m) => m.id)).size && dr.ids.every((x) => /^tmdb:\d+\|(on|soon)$/.test(x))), JSON.stringify(mv.genres));
   const sched = await ev(() => { const x = Movies.shelves(); const g = x.on[0] || x.soon[0]; return g && g.c.k; });
   if (sched) { const sc = await ask('schedule', { k: sched }); ok('the schedule marks the movie with its poster', sc.progs.some((p) => p.m && /p\d\.jpg$/.test(p.m.i)), JSON.stringify(sc.progs.filter((p) => p.m)).slice(0, 200)); }
   await ev(() => { MediaStore.setTmdbToken(''); Movies.reset(); });

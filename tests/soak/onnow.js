@@ -65,6 +65,8 @@ function logo(title, [color, font]) {
   await ev(() => Views.switchTab('onnow')); await page.waitForTimeout(1500);
   const st = await ev(() => ({ rows: OnNow.rows.map((r) => r.title + ':' + r.items.length), cards: document.querySelectorAll('#onStage .on-card').length, w: document.querySelector('#onStage .on-art').offsetWidth, h: document.querySelector('#onStage .on-art').offsetHeight }));
   ok('shelves: On now and Starting soon', st.rows.length >= 1 && /^On now:/.test(st.rows[0]), JSON.stringify(st));
+  const gr = await ev(() => { const sh = Movies.shelves(), want = Movies.genres(sh).map((r) => r.title); return { want, got: OnNow.rows.filter((r) => /^g:/.test(r.id)).map((r) => r.title), first: OnNow.rows.findIndex((r) => /^g:/.test(r.id)) }; });
+  ok('then a shelf for each genre with two or more movies, after On now and Starting soon', gr.got.join() === gr.want.join() && (!gr.got.length || gr.first >= 1), JSON.stringify(gr));
   ok('big posters (300 x 450)', st.w === 300 && st.h === 450, JSON.stringify(st));
   ok('a movie once, however many channels show it', await ev(() => OnNow.rows.every((r) => new Set(r.items.map((g) => g.m.id)).size === r.items.length)), await ev(() => OnNow.rows.map((r) => r.items.map((g) => g.m.id + '@' + g.p.s).join(',')).join(' | ')));
   const hero = await ev(() => ({ logo: !!document.querySelector('#onInfo img.on-logo'), bd: getComputedStyle(document.getElementById('onBd')).backgroundImage, meta: document.querySelector('#onInfo .on-meta').textContent, where: document.querySelector('#onInfo .on-where').textContent }));
@@ -106,6 +108,14 @@ function logo(title, [color, font]) {
     await key('ArrowUp', 400);
     await ev(() => OnNow.render(true)); await page.waitForTimeout(300);
     ok('Up to On now stays on On now (also when the screen re-draws)', await ev(() => document.querySelector('#onStage .on-shelf.active h3').textContent.indexOf('On now') === 0));
+  }
+  // Down to the first genre shelf, and back up.
+  if (gr.got.length) {
+    for (let n = 0; n < gr.first; n++) await key('ArrowDown', 400);
+    const h = await ev(() => document.querySelector('#onStage .on-shelf.active h3').textContent);
+    ok('Down reaches the genre shelves', h.indexOf(gr.got[0]) === 0, h);
+    await shot('tv-onnow-genre');
+    for (let n = 0; n < gr.first; n++) await key('ArrowUp', 300);
   }
   // OK watches it, fullscreen; Back lands in the guide on that channel.
   const want = await ev(() => OnNow.rows[0].items[0].c.k);

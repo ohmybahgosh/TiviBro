@@ -113,11 +113,14 @@ var Settings = (function () {
     return out;
   }
 
+  /* A button the phone app does on the phone itself (a form there instead of boxes on the TV), when it
+     knows how: rowData sends the name.  Older phone apps run it on the TV as before. */
+  function phoneDoes(name, it) { it.phone = name; return it; }
   /* Your TMDB token: in Settings > My media and in Settings > Guide (Movies on now uses it too). */
   function tmdbRows() {
     var hasToken = MediaStore.preferences().tmdbConfigured;
     return [
-      action(hasToken ? 'TMDB API token saved' : 'Add TMDB API token', hasToken ? 'Token saved on this TV.  Select to replace it, or use the web editor.' : 'Create your own free API key or Read Access Token at themoviedb.org/settings/api.  The web editor is easier for pasting it.  It gives My media its posters and details, and finds the movies in your guide.', function () { UI.prompt(hasToken ? 'Replace TMDB API token' : 'TMDB API key or Read Access Token', '', function (token) { if (!token.trim()) return; U.toast('Checking TMDB access…'); Media.setTmdbToken(token).then(function () { U.toast('TMDB token saved on this TV'); if (typeof Movies !== 'undefined') Movies.poke(); live(); }, function (e) { U.toast(e.message, 6000); }); }, 'The token stays on this TV and is excluded from backups.', true); }, function () { return MediaStore.preferences().tmdbConfigured ? 'Saved' : 'Not set'; }),
+      phoneDoes('tmdb-token', action(hasToken ? 'TMDB API token saved' : 'Add TMDB API token', hasToken ? 'Token saved on this TV.  Select to replace it, or use the web editor.' : 'Create your own free API key or Read Access Token at themoviedb.org/settings/api.  The web editor is easier for pasting it.  It gives My media its posters and details, and finds the movies in your guide.', function () { UI.prompt(hasToken ? 'Replace TMDB API token' : 'TMDB API key or Read Access Token', '', function (token) { if (!token.trim()) return; U.toast('Checking TMDB access…'); Media.setTmdbToken(token).then(function () { U.toast('TMDB token saved on this TV'); if (typeof Movies !== 'undefined') Movies.poke(); live(); }, function (e) { U.toast(e.message, 6000); }); }, 'The token stays on this TV and is excluded from backups.', true); }, function () { return MediaStore.preferences().tmdbConfigured ? 'Saved' : 'Not set'; })),
       hasToken && action('Test TMDB token', 'Asks TMDB now whether the saved token works.', function () { U.toast('Checking the TMDB token…'); Media.testTmdbToken().then(function (m) { U.toast(m, 5000); }, function (e) { U.toast(e.message, 7000); }); }),
       hasToken && action('Remove TMDB token', 'Saved movie details remain available.', function () { Media.setTmdbToken('').then(function () { if (typeof Movies !== 'undefined') Movies.poke(); live(); }); })
     ].filter(Boolean);
@@ -130,16 +133,18 @@ var Settings = (function () {
     var hasToken = MediaStore.preferences().tmdbConfigured;
     var out = [head('Your media library'),
       info('Movies and TV shows from your own media servers.', 'Files can be mixed at the top level or nested in folders.  Choose which content to scan in each source.'),
-      action('Add media', 'Find a DLNA / UPnP server, or enter a WebDAV folder address and login.  Subfolders are scanned too.', function () { Media.addMenu(); }),
+      phoneDoes('media-add', action('Add media', 'Find a DLNA / UPnP server, or enter a WebDAV folder address and login.  Subfolders are scanned too.', function () { Media.addMenu(); })),
       action('Edit on a computer', 'Add server logins and change preferences in the web editor.', function () { WebEdit.showJoin('media'); }),
       action('Rescan media sources', 'Look for movies and episodes.  Green on the My media screen.', function () { Media.rescanAll(); }),
       action('Fetch media details', 'Look up movies, shows and owned episodes.  Refresh outdated language details.  Yellow on My media.', function () { Media.fetchMissingDetails(); }),
       head('Preferences')].concat(tmdbRows(), [
       choice('Sort movies by', 'Applies to Movies and Favorites.  Continue watching stays ordered by recent playback.', ['name', 'release', 'added'], ['Name (A–Z)', 'Release date (newest first)', 'Date added (newest first)'], function () { return MediaStore.preferences().sort; }, function (v) { Media.updatePreferences({ sort: v }); paint(); }),
+      choice('Sort TV shows by', 'Applies to TV shows and favorite shows, on the TV and the phone.  Continue watching stays ordered by recent playback.', ['name', 'release', 'added'], ['Name (A–Z)', 'First aired (newest first)', 'Date added (newest first)'], function () { return MediaStore.preferences().showSort; }, function (v) { Media.updatePreferences({ showSort: v }); Media.refreshShows(); paint(); }),
       choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); }),
       head('Media sources')]);
     MediaStore.publicSources().forEach(function (s) {
-      out.push(action(s.name, s.type === 'dlna' ? 'DLNA / UPnP · rescan, movie details or remove' : 'WebDAV · rescan, movie details or remove', function () { Media.sourceMenu(s); }, function () { return MediaStore.movies(s.id).length + ' movies'+(s.episodeFiles?' · '+s.episodeFiles+' episode files':''); }));
+      var row = phoneDoes('media-source', action(s.name, (s.type === 'dlna' ? 'DLNA / UPnP' : 'WebDAV') + ' · rescan, content, details or remove', function () { Media.sourceMenu(s); }, function () { return MediaStore.movies(s.id).length + ' movies'+(s.episodeFiles?' · '+s.episodeFiles+' episode files':''); }));
+      row.sid = s.id; out.push(row);
     });
     if (!MediaStore.sources().length) out.push(info('No media sources yet', 'Choose Add media above'));
     return out;
@@ -1074,6 +1079,7 @@ var Settings = (function () {
     else if (it.action) { r.kind = 'action'; r.value = v; }
     else { r.kind = 'info'; r.value = v; }
     if (it.swatch) try { r.swatch = it.swatch() || ''; } catch (e) {}
+    if (it.phone) { r.phone = it.phone; if (it.sid) r.sid = it.sid; }
     return r;
   }
   var forPhone = {

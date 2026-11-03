@@ -12,6 +12,7 @@ var Media = (function () {
 
   /* ---------- helper ---------- */
   function ask(route, body, ms) {
+    if(route==='library/query'&&body&&body.kind==='show'&&!body.sort)body.sort=MediaStore.preferences().showSort;   // Sort TV shows by
     if(route==='library/edit'&&!body.idempotencyKey)body.idempotencyKey='edit_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
     if (!Net.port) return Promise.reject(new Error('The TiviBro helper is not running.  Close TiviBro and open it again.'));
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -125,15 +126,11 @@ var Media = (function () {
   }
 
   /* ---------- adding and scanning ---------- */
-  // What the scan left out, since My media is for movies only for now (service/media.js moviesOf).
+  // What the movie scan left out (service/media.js moviesOf): trailers and extras.  Episodes and season
+  // folders aren't left out any more: they are under TV shows.
   function leftOut(sk) {
-    if (!sk) return '';
-    var parts = [], ep = (sk.episodes || 0), tv = (sk.tvFolders || 0), ex = (sk.extras || 0);
-    if (ep) parts.push(ep + ' TV episode' + (ep === 1 ? '' : 's'));
-    if (tv) parts.push(tv + ' TV season folder' + (tv === 1 ? '' : 's'));
-    if (ex) parts.push(ex + ' trailer' + (ex === 1 ? '' : 's') + ' and extras');
-    if (!parts.length) return '';
-    return '  Left out ' + (parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts[0]) + ': My media is for movies only for now.';
+    var ex = sk && sk.extras || 0;
+    return ex ? '  Left out ' + ex + ' trailer' + (ex === 1 ? '' : 's') + ' and extras.' : '';
   }
   function found(id, name, r, res) {
     var more = leftOut(res && res.skipped);
@@ -163,10 +160,10 @@ var Media = (function () {
     try { id = MediaStore.addSource({ type: 'dlna', name: server.name, control: server.control }); } catch (e) { U.toast(e.message, 5000); return Promise.resolve(); }
     return rescan(id);
   }
+  function discover() { return ask('discover', {}, 12000).then(function (r) { return (r && r.servers) || []; }); }
   function browseNetwork() {
     U.toast('Looking for media servers on your network…');
-    ask('discover', {}, 12000).then(function (r) {
-      var servers = (r && r.servers) || [];
+    discover().then(function (servers) {
       if (!servers.length) { U.toast('No media servers answered.  Is media sharing on, and is the server on this network?', 6000); return; }
       UI.menu('Media servers', servers.map(function (s) { return { label: s.name, action: function () { addServer(s); } }; }));
     }, function (e) { U.toast(why(e), 5000); });
@@ -317,6 +314,12 @@ var Media = (function () {
     var result = MediaStore.preferences(next);
     if (next && next.language) refreshMetadata().catch(function (e) { U.toast('Language saved.  Movie details could not be refreshed: ' + why(e), 6000); });
     refresh(); return result;
+  }
+  // The phone app's Fetch details for one source (it asks first on the phone).
+  function sourceDetailsNow(id) {
+    if (!MediaStore.tmdbToken()) return Promise.reject(new Error('Save your TMDB token first.'));
+    if (fetchingDetails) return Promise.reject(new Error('Movie details are already being fetched.'));
+    return MediaStore.load().then(function () { return fetchDetails(MediaStore.movies(id), MediaStore.preferences().language); });
   }
   function sourceDetails(s) {
     if (needToken()) return;
@@ -606,7 +609,7 @@ var Media = (function () {
   }
 
   return {
-    refreshShows:refreshSeries, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
+    refreshShows:refreshSeries, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
     rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: play, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { addServer: addServer, addAddress: addAddress, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }

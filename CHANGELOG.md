@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **Add media from the phone.**  **Settings > My media** in the phone app has its own forms now: **Add media** lists the servers the TV finds on your network, or takes a WebDAV address and login typed on the phone.  Tap a source to rescan it, change what it holds (movies, TV shows or both), fetch its details or remove it, and paste your TMDB token there too.  Logins only travel sealed.
+- **Sort TV shows by.**  Next to **Sort movies by** in **Settings > My media** (on the TV, in the phone app and in the web editor): name, first aired or date added.
+- **Movies on now by genre.**  Under **On now** and **Starting soon** come the same movies by genre (Action, Comedy, Family…), on the TV and in the phone app's On now tab.
+- **No more "My media is for movies only" note.**  Scans only mention the trailers and extras they leave out, as episodes go to TV shows.
+
 ## 0.6.0 (alpha 62, 2026-11-02)
 
 Pre-release: expect rough edges, and keep a backup before installing.

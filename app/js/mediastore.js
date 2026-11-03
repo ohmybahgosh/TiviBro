@@ -21,8 +21,9 @@ var MediaStore = (function () {
     var p = state.preferences || (state.preferences = {}), changed = false;
     if (next && /^(en|nl|de|fr|es|it)$/.test(next.language)) { p.language = next.language; changed = true; }
     if (next && /^(name|release|added)$/.test(next.sort)) { p.sort = next.sort; changed = true; }
+    if (next && /^(name|release|added)$/.test(next.showSort)) { p.showSort = next.showSort; changed = true; }
     if (changed) save();
-    return { language: p.language || 'en', sort: p.sort || 'name', tmdbConfigured: !!state.tmdbToken };
+    return { language: p.language || 'en', sort: p.sort || 'name', showSort: p.showSort || 'name', tmdbConfigured: !!state.tmdbToken };
   }
   function setTmdbToken(value) {
     value = String(value || '').trim();

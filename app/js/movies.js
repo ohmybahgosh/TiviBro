@@ -172,6 +172,24 @@ var Movies = (function () {
     out.soon.sort(function (a, b) { return a.p.s - b.p.s; });
     return out;
   }
+  /* Genre shelves under On now and Starting soon (onnow.js, and the phone app's On now tab): each genre
+     TMDB gave two or more of the movies, most movies first, up to ten.  A movie is in each of its
+     genres, once: the showing on now if there is one, else the next.  Genres come in your metadata
+     language, as TMDB names them. */
+  function genres(sh) {
+    var by = {}, names = [];
+    sh.on.concat(sh.soon).forEach(function (g) {
+      String(g.m.genre || '').split(',').forEach(function (t) {
+        t = t.trim(); if (!t) return;
+        var k = t.toLowerCase(), r = by[k];
+        if (!r) { r = by[k] = { title: t, items: [], seen: {} }; names.push(k); }
+        if (!r.seen[g.m.id]) { r.seen[g.m.id] = 1; r.items.push(g); }
+      });
+    });
+    return names.map(function (k) { return by[k]; }).filter(function (r) { return r.items.length >= 2; })
+      .sort(function (a, b) { return b.items.length - a.items.length || (a.title < b.title ? -1 : 1); }).slice(0, 10)
+      .map(function (r) { return { title: r.title, items: r.items }; });
+  }
   /* Movies saved before title logos and large backdrops were kept: ask TMDB by id once, then
      everything showing that movie gets them.  cb when it changed. */
   var filling = {};
@@ -202,6 +220,6 @@ var Movies = (function () {
 
   // Forget every answer (the tests start from nothing; a different token or language could use it too).
   function reset() { cache = {}; loaded = Promise.resolve(); found = []; ver++; if (Store.bigSet) Store.bigSet(KEY, {}); }
-  return { reset: reset, on: on, groupOn: groupOn, of: of, list: list, channels: channels, shelves: shelves, fill: fill, emptyText: emptyText, start: start, scan: scan, poke: poke, clean: clean, strength: strength,
+  return { reset: reset, on: on, groupOn: groupOn, of: of, list: list, channels: channels, shelves: shelves, genres: genres, fill: fill, emptyText: emptyText, start: start, scan: scan, poke: poke, clean: clean, strength: strength,
     get pending() { return queue.length + (busy ? 1 : 0); }, get lastScan() { return lastScan; } };
 })();

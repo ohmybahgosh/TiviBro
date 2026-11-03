@@ -369,8 +369,8 @@ With your own free TMDB token saved (Settings > Guide, start screen, reminders, 
 
 - **In the guide:** a movie's details show its poster, and a line with the year, runtime, genres and TMDB rating.  When the guide says little about it, TMDB's plot is shown instead.  Movies in the grid say **Movie** next to their time.
 - **The Movies on now group,** near the top of the guide: the movies on now, most time left first, then the ones starting within the hour.  With none, it says so.
-- **In the phone app:** an **On now** tab with the same posters; tap one for its backdrop, title logo, plot and channels (watch on the TV, or a reminder for one starting later).  Movies in the phone's guide and schedules show their poster.
-- **The Movies on now screen,** in the side menu while a token is saved: big posters of the movies on now and starting in the next three hours, the one you're on large at the top over its backdrop, with its title logo (or its title when TMDB has no logo), its channel, time left, year, genres, rating and plot.  A movie on several channels is there once.  **OK** watches it fullscreen (Back lands in the guide on that channel); for one starting later, **OK** asks whether to set a reminder or watch the channel now (the cursor starts on **Cancel**, so a stray press sets nothing).  **Hold OK** or **Red** lists every channel showing it, a reminder on any of them, or the guide.
+- **In the phone app:** an **On now** tab with the same posters and genre shelves; tap one for its backdrop, title logo, plot and channels (watch on the TV, or a reminder for one starting later).  Movies in the phone's guide and schedules show their poster.
+- **The Movies on now screen,** in the side menu while a token is saved: big posters of the movies on now and starting in the next three hours, the one you're on large at the top over its backdrop, with its title logo (or its title when TMDB has no logo), its channel, time left, year, genres, rating and plot.  A movie on several channels is there once.  Under **On now** and **Starting soon** come the same movies by genre (**Action**, **Comedy**, **Family**…): a shelf for each genre with two or more of them, the biggest first, up to ten.  **OK** watches it fullscreen (Back lands in the guide on that channel); for one starting later, **OK** asks whether to set a reminder or watch the channel now (the cursor starts on **Cancel**, so a stray press sets nothing).  **Hold OK** or **Red** lists every channel showing it, a reminder on any of them, or the guide.
 
 Which programmes are movies: the guide's own **Movie** category, a year in the title ("Bridesmaids (2011)") or "Movie:", anything 75 minutes or longer on a movie channel (HBO, Cinemax, Starz, TCM, a "Movies" group…), and other programmes 80 minutes to 4 hours long that aren't news, sport or a show.  TMDB has the last word: a movie of exactly that title (and year), and for the last kind also well known and not a TV series of the same name.  Only the programme titles (and years) go to TMDB, with your token.  Answers are kept on the TV for 30 days, so after the first day only a few titles an hour are looked up.  Turn it off with **Movie details from TMDB**, or just the group with **Show Movies on now** (Settings > Groups, sorting, hidden).
 
@@ -383,7 +383,7 @@ Which programmes are movies: the guide's own **Movie** category, a year in the t
   <a href="https://tivibro.app/view/#tv-my-media-all"><img src="screenshots/tv-my-media-all.png" width="49%" alt="My media: All movies"></a>
 </p>
 
-**In the phone app**, a **My media** tab shows the same shelves (Continue watching, Favorites, All movies) as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.
+**In the phone app**, a **My media** tab shows the same shelves (Continue watching, Favorites, All movies) as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.  **Settings > My media** in the phone app adds sources too: **Add media** looks for servers on your network (the TV looks, you tap one) or takes a WebDAV address and login typed on the phone.  Tap a source to rescan it, change its **Content**, fetch its movie details or remove it, and tap the TMDB token row to paste a token.  A scan that takes longer carries on on the TV.
 
 <p align="center">
   <img src="screenshots/app-my-media.png" width="30%" alt="My media in the phone app">
@@ -396,7 +396,7 @@ Use **Left** and **Right** to move between movies, and **Up** and **Down** to mo
 
 **Back** opens the standard main menu directly.  **Left** from the first movie does the same.  There is no separate source menu on the movie screen; all sources appear together and source management stays in Settings.
 
-**Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, or **Add a WebDAV server** and enter its WebDAV address and login.  Turn on media sharing on a home server first.  A playlist must already be set up.
+**Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, or **Add a WebDAV server** and enter its WebDAV address and login.  The phone app's **Settings > My media** does the same, with the typing on the phone.  Turn on media sharing on a home server first.  A playlist must already be set up.
 
 **Movies and TV shows.**  A new source finds both.  A source added before alpha 61 stays movies only until you open it in **Settings > My media** and set **Content** to **Movies and TV shows** (or **TV shows only**), then rescan.
 
@@ -631,10 +631,11 @@ Manage your own movie sources and preferences.  The [My media](#my-media) screen
 
 | Settings > My media | Default | What it does |
 |---|---|---|
-| **Add media** | | Find a DLNA / UPnP server, or enter the WebDAV address of your movies folder and its login.  One folder per movie, named like **Frozen (2013)**, matches best. |
+| **Add media** | | Find a DLNA / UPnP server, or enter the WebDAV address of your media folder and its login (on the TV, or typed in the phone app).  One folder per movie, named like **Frozen (2013)**, matches best. |
 | **Edit on a computer** | | Open the web editor to type source logins on a computer. |
 | **TMDB API token** | Not set | Your own TMDB API key or Read Access Token.  Enter it on the TV or paste it in the web editor.  Settings and the editor show when a token is saved.  Select it to replace it, or leave the editor field blank to keep it.  **Test TMDB token** checks the saved one. |
 | **Sort movies by** | **Name (A–Z)** | Name, release date (newest first), or date added (newest first).  Movies and Favorites follow this choice; Continue watching stays ordered by recent playback.  Rescans preserve the date first added. |
+| **Sort TV shows by** | **Name (A–Z)** | Name, first aired (newest first), or date added (newest first).  TV shows and favorite shows follow it, on the TV and in the phone app; Continue watching stays ordered by recent playback. |
 | **Rescan media sources** | | Same as Green on My media: scan every saved source. |
 | **Fetch media details** | | Same as Yellow: look up details for movies, shows and the episodes you have. |
 | **Metadata language** | **English** | Shared by the TV app and web editor.  Changing it refreshes saved movie and show matches in the selected language.  Only missing translated fields fall back to English, identified beside the details.  If a request fails, the previous details remain. |
