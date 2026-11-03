@@ -415,7 +415,6 @@ var MkvSubs = (function () {
   var MKV = {
     id: 'mkv',
     headBytes: 262144,
-    reuseSession: true,
     get startupDelayMs() { return startupDelayMs; },
     discover: function (head, range, rec, alive) {
       if (head.length < 4 || head[0] !== 0x1A || head[1] !== 0x45 || head[2] !== 0xDF || head[3] !== 0xA3) return Promise.resolve(null);

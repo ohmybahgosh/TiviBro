@@ -1,4 +1,4 @@
-/* Subs and embedded (MKV, MP4) tracks: the timing it applies to a track (Subs.timing), turning
+/* Subs and embedded (MKV, MP4) tracks: the timing it applies to a track (Subs.timingOf), turning
    subtitles on by themselves (Subs.autoOn: not after the viewer chose, never a forced track), and Line
    up with a track that is read from the file as it plays (_embedLoad, a common time span).
      node tests/unit/subs-lineup.test.js */
@@ -40,11 +40,18 @@ const lineUpWith = async (target, other) => {
     const first = target.cues.slice(0, 3).map(c => [+c.startTime.toFixed(3), +c.endTime.toFixed(3)]);
     ok('OpenSubtitles vs OpenSubtitles Line up result unchanged', toasts[toasts.length - 1][0] === 'Lined up: 1.75 s earlier, frame rate fixed (99% match)' &&
       JSON.stringify(first) === JSON.stringify([[6.223, 9.785], [13.589, 15.02], [22.785, 25.183]]), { toast: toasts[toasts.length - 1], first });
-    const tm = Subs.timing(target);
+    const tm = Subs.timingOf(target);
     Subs._test.shift(0.5);
-    const tm2 = Subs.timing(target), plain = Subs.timing(mk('Other', 'en', []));
-    ok('Subs.timing reflects a Line up and Timing', tm && Math.abs(tm.scale - k) < 1e-6 && Math.abs(tm.off - (-1.7 * k)) < 0.06 && tm.delay === 0 &&
+    const tm2 = Subs.timingOf(target), plain = Subs.timingOf(mk('Other', 'en', []));
+    ok('Subs.timingOf reflects a Line up and Timing', tm && Math.abs(tm.scale - k) < 1e-6 && Math.abs(tm.off - (-1.7 * k)) < 0.06 && tm.delay === 0 &&
       tm2.delay === 0.5 && tm2.scale === tm.scale && plain.scale === 1 && plain.off === 0 && plain.delay === 0.5, { tm, tm2, plain });
+    // The frame rate fix (Timing > Frame rate) scales every line, on top of a Line up.
+    const r = 25 / 23.976;
+    Subs.setRate(r);
+    const tm3 = Subs.timingOf(target), plain3 = Subs.timingOf(mk('Other', 'en', []));
+    Subs.setRate(1);
+    ok('Subs.timingOf includes the frame rate fix', Math.abs(tm3.scale - tm.scale * r) < 1e-9 && Math.abs(tm3.off - tm.off * r) < 1e-9 &&
+      Math.abs(plain3.scale - r) < 1e-9 && plain3.off === 0, { tm3, plain3 });
     Subs.reset();
   }
   {
@@ -127,4 +134,5 @@ const lineUpWith = async (target, other) => {
   }
   if (fail) { console.log(fail + ' subs-lineup test(s) failed'); process.exit(1); }
   console.log('all subs-lineup tests passed');
+  process.exit(0);                       // Subs keeps a drawing timer going
 })().catch(e => { console.error(e); process.exit(1); });

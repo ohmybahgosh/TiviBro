@@ -64,7 +64,7 @@ function fakeAdapter(opts) {
   opts = opts || {};
   const reads = [];
   const a = {
-    id: 'fake', headBytes: 16, startupDeadlineMs: 0, reuseSession: true, reads,
+    id: 'fake', headBytes: 16, startupDeadlineMs: 0, reads,
     discover(head, range) { return Promise.resolve(opts.discover ? opts.discover(head, range) : { items: opts.items || [{ id: 'a', s: 1 }] }); },
     describe() { return [{ label: 'English', srclang: 'en' }]; },
     candidates(rec, now) { return rec.index.items.filter(it => !rec.fetched[it.id]).sort((x, y) => Math.abs(x.s - now) - Math.abs(y.s - now)); },
@@ -208,7 +208,7 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
   }
   {
     let discovers = 0;
-    const ad = Object.assign(fakeAdapter({ items: [{ id: 'a', s: 1 }, { id: 'b', s: 500 }] }), { reuseSession: false });
+    const ad = fakeAdapter({ items: [{ id: 'a', s: 1 }, { id: 'b', s: 500 }] });
     const d0 = ad.discover; ad.discover = function () { discovers++; return d0.apply(this, arguments); };
     ad.complete = () => false;
     const h1 = EmbedSubs.run('http://p/movie/f7', makeVideo({ currentTime: 0 }), () => {}, ad);
@@ -223,7 +223,7 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     const v3 = makeVideo({ currentTime: 0 });
     const h3 = EmbedSubs.run('http://p/movie/f7', v3, null, ad);       // a seek: no new session needed
     await wait(40);
-    ok('reuseSession false re-reads head on a new engine start but not the index, and not on a seek',
+    ok('a new engine start re-opens the link with a small read but not the index (issue #34), a seek reads neither',
       discovers === 1 && heads === 1 && resolved.length === 1 && v.children[0].track.cues.length >= 1 &&
       requestRanges.filter(r => r === 'bytes=0-15').length === 0, { discovers, heads, seekReads: requestRanges });
     h2.cancel(); h3.cancel();
@@ -231,7 +231,7 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
   {
     let discovers = 0;
     files['f8'] = new Uint8Array(64);
-    const ad = Object.assign(fakeAdapter(), { reuseSession: false });
+    const ad = fakeAdapter();
     const d0 = ad.discover; ad.discover = function () { discovers++; return d0.apply(this, arguments); };
     ad.complete = () => false;
     const h1 = EmbedSubs.run('http://p/movie/f8', makeVideo(), () => {}, ad);
@@ -312,7 +312,7 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     files['slow3'] = new Uint8Array(64);
     let failB = true;              // b fails (and backs off) in the first play, so a seek would have something to read
     const ad = Object.assign(fakeAdapter({ items: [{ id: 'a', s: 1 }, { id: 'b', s: 500 }], failRead: it => failB && it.id === 'b' }),
-      { reuseSession: false, startupDeadlineMs: 50 });
+      { startupDeadlineMs: 50 });
     ad.complete = () => false;
     const h1 = EmbedSubs.run('http://p/movie/slow3', makeVideo({ currentTime: 0 }), () => {}, ad);
     await wait(40); h1.cancel(); failB = false;
@@ -339,7 +339,7 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     // The link now serves another file with no usable subtitles: blank overlay, unavailable, remembered.
     files['f10'] = new Uint8Array(64);
     let unsupported = false;
-    const ad = Object.assign(fakeAdapter({ discover: () => unsupported ? null : { items: [{ id: 'a', s: 0 }] } }), { reuseSession: false });
+    const ad = fakeAdapter({ discover: () => unsupported ? null : { items: [{ id: 'a', s: 0 }] } });
     ad.complete = () => false;
     const h1 = EmbedSubs.run('http://p/movie/f10', makeVideo({ currentTime: 0 }), () => {}, ad);
     await wait(40); h1.cancel();
@@ -411,7 +411,7 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     const h = EmbedSubs.run('http://p/movie/fall', v, () => {}, ad);
     await wait(40);
     const tr = v.children[0].track; tr.mode = 'showing'; tr.cues.length = 0;      // live cues gone: the cache draws
-    ctx.Subs = { delay: 0, timing: t => (t === tr ? { scale: 2, off: 1, delay: 0.5 } : null) };
+    ctx.Subs = { delay: 0, timingOf: t => (t === tr ? { scale: 2, off: 1, delay: 0.5 } : null) };
     v.currentTime = 1.5; (v.listeners.seeked || []).forEach(f => f()); const before = overlayEl.textContent;
     v.currentTime = 4; (v.listeners.seeked || []).forEach(f => f()); const at = overlayEl.textContent;
     delete ctx.Subs; h.cancel();

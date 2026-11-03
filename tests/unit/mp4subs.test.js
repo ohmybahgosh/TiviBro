@@ -501,7 +501,7 @@ const twoParts = (late, extra) => buildMp4(Object.assign({ tracks: [{ lang: 'eng
   }
   const timed = async (name, fixture, now, timing) => {
     files[name] = fixture.bytes;
-    ctx.Subs = { delay: 0, timing: () => timing };
+    ctx.Subs = { delay: 0, timingOf: () => timing };
     const v = makeVideo({ currentTime: now });
     const h = Mp4Subs.extract('http://p/movie/' + name, v, () => {}, '');
     await until(() => v.children.length === 1); show(v, 0);
@@ -602,6 +602,36 @@ const twoParts = (late, extra) => buildMp4(Object.assign({ tracks: [{ lang: 'eng
     await wait(30);
     ok('a line in both windows is read once', textsOf(t2).join() === 'both', textsOf(t2));
     h2.cancel();
+  }
+  {
+    // Embedded tracks are drawn by the reader (and the TV), not by Subs' own drawing (subs.js drawLines).
+    const v = makeVideo({ currentTime: 0 });
+    const h = Mp4Subs.extract('http://p/movie/fast.mp4', v, () => {}, '');
+    await until(() => v.children.length >= 1);
+    ok('MP4 tracks are marked for the reader\'s own drawing', tracksOf(v).every(t => t._tbMkv === true), tracksOf(v).map(t => t._tbMkv));
+    h.cancel();
+  }
+  {
+    // A reconnect asks the link again with a small read (issue #34); a link now serving another file
+    // (another size) is read from the start, with a whole head.
+    files['swap.mp4'] = asU8(buildMp4({ tracks: [{ lang: 'eng', cues: [[1, 3, 'old']] }] }).bytes);
+    faults['swap.mp4'] = { redirect: 'http://cdn/a/swap.mp4' }; requests = [];
+    const v1 = makeVideo({ currentTime: 0 }), seen = [];
+    const h1 = Mp4Subs.extract('http://p/movie/swap.mp4', v1, u => seen.push(u), '');
+    await until(() => v1.children.length === 1); h1.cancel();
+    faults['swap.mp4'].redirect = 'http://cdn/b/swap.mp4'; requests = [];
+    const v2 = makeVideo({ currentTime: 0 });
+    const h2 = Mp4Subs.extract('http://p/movie/swap.mp4', v2, u => seen.push(u), '');
+    await wait(60);
+    const reopen = requests.slice(); h2.cancel();
+    ok('a reconnect re-opens the link with a 16-byte read and plays on the new session', reopen.length === 1 && reopen[0].url === 'http://p/movie/swap.mp4' &&
+      reopen[0].end - reopen[0].start + 1 === 16 && seen.join() === 'http://cdn/a/swap.mp4,http://cdn/b/swap.mp4', { reopen, seen });
+    files['swap.mp4'] = asU8(buildMp4({ tracks: [{ lang: 'nld', cues: [[1, 3, 'new']] }, { lang: 'eng', cues: [[5, 6, 'x']] }] }).bytes); requests = [];
+    const v3 = makeVideo({ currentTime: 0 });
+    const h3 = Mp4Subs.extract('http://p/movie/swap.mp4', v3, () => {}, '');
+    await until(() => v3.children.length === 2, 3000);
+    ok('a different file on the same link is found again from a whole head', v3.children.length === 2 && requests.some(r => r.start === 0 && r.end === 65535), { tracks: v3.children.length, reqs: requests.map(r => r.start + '-' + r.end) });
+    h3.cancel();
   }
   if (fail) { console.log(fail + ' mp4subs test(s) failed'); process.exit(1); }
   console.log('all mp4subs tests passed');

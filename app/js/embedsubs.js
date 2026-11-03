@@ -13,8 +13,6 @@
      startupDelayMs                 optional delay before the first read (tests, diagnostics)
      startupDeadlineMs              0, or how long the video may wait for the first read: after it the
                                     video starts on the original URL and subtitles give up for this play
-     reuseSession                   a cached index may start the video with no new read.  false: every
-                                    new engine start reads the head again (fresh session, the index kept)
      lazy                           reads only tracks asked for (ctx.demand(i): null, 'now', { from, to }
                                     or a list of those): each track gets
                                     _embedLoad(fromSec, toSec, timeoutMs) -> Promise, which asks for
@@ -231,7 +229,7 @@ var EmbedSubs = (function () {
         return on ? ['now', l] : l;
       },
       timing: function (i) {
-        var has = typeof Subs !== 'undefined', m = has && Subs.timing ? Subs.timing(liveTracks[i]) : null;
+        var has = typeof Subs !== 'undefined', m = has && Subs.timingOf ? Subs.timingOf(liveTracks[i]) : null;
         return m || { scale: 1, off: 0, delay: has ? Subs.delay || 0 : 0 };
       }
     };
@@ -287,6 +285,7 @@ var EmbedSubs = (function () {
         trackEl.label = trackMeta[k].label;
         trackEl.srclang = trackMeta[k].srclang;
         trackEl.track._embedded = true;
+        trackEl.track._tbMkv = true;            // drawn here (and by the TV), not by Subs' own drawing (subs.js)
         trackEl.track._forced = !!trackMeta[k].forced;
         if (adapter.lazy) trackEl.track._embedLoad = loadFor(k);
         video.appendChild(trackEl);
@@ -394,13 +393,12 @@ var EmbedSubs = (function () {
     }
 
     function runExtraction() {
-    // The index read before for this file: straight to the subtitle lines.
-    // A seek keeps the video's session; only a new engine start (onResolved) needs a fresh one, and
-    // only formats that ask for it (reuseSession false) get one even with the index cached.
-    if ((adapter.reuseSession || !onResolved) && rec && rec.index && rec.resolved && liveTracks.length) {
-      startVideo(rec.resolved);
-      return startPump();
-    }
+    // The index read before for this file: straight to the subtitle lines.  A seek keeps the video's
+    // session.  A new engine start (a reconnect, or play after a long pause) asks the movie's own link
+    // again for the provider's current session, with a 16-byte read: the one from before can have
+    // expired or been closed meanwhile (issue #34).
+    if (!onResolved && rec && rec.index && rec.resolved && liveTracks.length) return startPump();
+    var reopen = !!(rec && rec.index && liveTracks.length);
     if (adapter.startupDeadlineMs > 0 && onResolved) deadline = setTimeout(function () {
       if (cancelled || started) return;
       // A provider this slow to answer would keep the picture waiting: play now, on the original link,
@@ -413,7 +411,7 @@ var EmbedSubs = (function () {
       if (rejectGate) { rejectGate(new Error('cancelled')); rejectGate = null; }
       if (activeRequest) activeRequest.abort();
     }, adapter.startupDeadlineMs);
-    fetchRange(wrapped, 0, adapter.headBytes - 1, true).then(function (head) {
+    fetchRange(wrapped, 0, (reopen ? 16 : adapter.headBytes) - 1, true).then(function (head) {
       clearTimeout(deadline);
       if (cancelled || timedOut) return;
       if (onResolved) lastSession = { url: url, resolved: wrapped };
@@ -427,7 +425,10 @@ var EmbedSubs = (function () {
       if (rec && rec.done) return;
       if (cancelled) return;                  // stopped as the video started (inside onResolved)
       if (rec && rec.index && liveTracks.length) return startPump();     // fresh session, index kept
-      return adapter.discover(head, range, rec, alive).then(function (index) {
+      // A reopen read only the first bytes: discovery needs the whole head.
+      var whole = head.length < adapter.headBytes && !(isFinite(head.total) && head.length >= head.total)
+        ? fetchRange(wrapped, 0, adapter.headBytes - 1, true) : Promise.resolve(head);
+      return whole.then(function (h) { return adapter.discover(h, range, rec, alive); }).then(function (index) {
         if (cancelled || !index) return;
         if (index.none) { video._mkvSubsState = shown(index.none); remember(index.none, head.total); return; }
         // Create (or reuse) this URL's cache record, then attach tracks if not already.

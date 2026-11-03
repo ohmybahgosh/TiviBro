@@ -164,7 +164,7 @@ function region(f, trackIndex) {
     await pick(/^English/);
     await page.waitForFunction(() => /^Lined up|match well enough|too long/.test(document.getElementById('toast').textContent), null, { timeout: 25000 }).catch(() => {});
     const toast = await page.evaluate(() => document.getElementById('toast').textContent);
-    const tm = await page.evaluate(() => Subs.timing(document.getElementById('video').textTracks[1]));
+    const tm = await page.evaluate(() => Subs.timingOf(document.getElementById('video').textTracks[1]));
     ok('Line up with an MP4 reference', englishEarly === 0 && /^Lined up: 2\.00 s earlier/.test(toast) && Math.abs(tm.off + 2) < 0.06, { englishEarly, toast, tm });
     await page.evaluate(() => Subs.reset());
 

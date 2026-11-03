@@ -560,7 +560,6 @@ var Mp4Subs = (function () {
     id: 'mp4',
     headBytes: HEAD_BYTES,
     startupDeadlineMs: 3000,
-    reuseSession: false,
     lazy: true,                         // only the tracks being shown, or Line up's reference, are read
     discover: discover,
     describe: function (index) { return index.meta; },
