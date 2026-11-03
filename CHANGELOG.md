@@ -2,14 +2,16 @@
 
 ## Unreleased
 
-- **Restore points and draft history move to the TV's big storage.**  They were kept in the browser's own storage, which on LG TVs sits on the small partition webOS itself uses (720 MB on a C2, two thirds full), and a big playlist's 45 restore points can take many MB.  With the network helper running they now live with the playlists and guide on app storage, and older ones move over the first time they're read.
-- **Built-in subtitles keep up when the provider refuses a read** (thanks to moritzm784, pull request #39).  When the provider refuses a subtitle read or the session runs out, the MKV and MP4 subtitle readers now wait together, ask once for a new session (checking it's still the same file) and carry on, also across seeks.
-
-## 0.6.0 (alpha 66, 2026-11-03)
+## 0.6.0 (alpha 67, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 66
+### New in alpha 67
+
+- **Restore points and draft history move to the TV's big storage.**  They were kept in the browser's own storage, which on LG TVs sits on the small partition webOS itself uses (720 MB on a C2, two thirds full), and a big playlist's 45 restore points can take many MB.  With the network helper running they now live with the playlists and guide on app storage, and older ones move over the first time they're read.
+- **Built-in subtitles keep up when the provider refuses a read** (thanks to moritzm784, pull request #39).  When the provider refuses a subtitle read or the session runs out, the MKV and MP4 subtitle readers now wait together, ask once for a new session (checking it's still the same file) and carry on, also across seeks.
+
+### In alpha 66
 
 - **The TV's screensaver stays away while something plays** (issue #37).  webOS starts its screensaver when no button has been pressed for a while, even over a channel or a movie, and with a homebrew screensaver such as Aerial it showed as a black screen with text over the picture.  TiviBro now asks the TV to wait while live TV, a movie or episode, My media or catch-up plays, loads or buffers, and lets it start when nothing plays, playback is paused, or TiviBro is in the background.  Nothing to switch on, and no extra permissions.  Each time it holds the screensaver off, the log says what was playing.
 - **Channels that aren't playing lately are marked** (issue #37).  A channel whose last two tries both failed, while the playlist's other channels play, shows a small amber **not playing lately** tag in the channel lists and the phone app, and **not playing** in the guide's channel column.  The tag goes the moment the channel plays again, and after three days on its own.
