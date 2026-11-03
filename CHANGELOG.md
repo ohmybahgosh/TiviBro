@@ -2,15 +2,17 @@
 
 ## Unreleased
 
+## 0.6.0 (alpha 62, 2026-11-02)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 62
+
 - **Your playlist logins are private to TiviBro.**  The files where the network helper keeps playlists, movie and show lists and guides were readable by other apps on the TV: their folder is shared into other apps' sandboxes (YouTube, Netflix, the browser and more).  They are now readable by TiviBro only, and files from earlier versions are locked down when TiviBro starts.
 - **The guide survives TiviBro updates.**  It was kept in the helper's own folder, which every update replaces, so each update downloaded and read the whole guide again.  It now sits with the playlists on the TV's storage.
 - **Storage with the most room.**  TiviBro keeps its data on the TV storage that survives updates and has the most free space (app storage on recent LG TVs, not the smaller user data that webOS needs for itself), and stays there.  **Settings > Diagnostics** and problem reports say where, and how much room is left.  Channel logo lists moved there too, out of the app's small browser storage.
 
-## 0.6.0 (alpha 61, 2026-11-02)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 61
+### In alpha 61
 
 - **TV shows in My media** (thanks to moritzm784, pull request #30).  Shows on your own DLNA and WebDAV servers are found next to movies, in flat, nested or mixed folders, and open into seasons and episodes.  With your TMDB token, shows get posters and details on their own, and the seasons you have get episode names, summaries and pictures.  Episodes remember where you stopped and offer the next one, files TiviBro isn't sure about wait in **Needs review** for a quick fix (on the TV or in the web editor, with undo), and a file holding several episodes can use its chapters.  New sources find movies and shows; a source you already have stays movies only until you set its **Content** in Settings > My media.  The library is kept by the network helper in small files, read only when needed, so big libraries fit on older TVs, and it runs on every webOS version from 4 on.
 - **Exiting asks first.**  Back to exit (after **Press Back again to exit**) now brings up **Do you want to exit?** and you choose, instead of TiviBro closing at once: the TV's own question on webOS 6 and later, and the same question from TiviBro on older TVs.
