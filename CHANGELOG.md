@@ -2,15 +2,17 @@
 
 ## Unreleased
 
+## 0.6.0 (alpha 69, 2026-11-03)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 69
+
 - **Sound the TV can't play is converted.**  LG TVs from 2020 to 2022 (the C1 and C2 among them) can't play DTS, no LG TV plays Dolby TrueHD, and FLAC surround fails, so movies with only that sound played silent.  TiviBro now checks the sound before a movie, episode or My media file starts.  If the file has another audio track the TV plays, in your language, it plays that one.  Otherwise the network helper turns the sound into Dolby Digital (AC-3) while you watch, the picture untouched, and TiviBro says so once.  Seeking starts the conversion again from the new spot, and the time, progress bar, resume point and subtitles keep the movie's own time.  Live channels whose sound the TV can't play are converted too.
 - **The audio converter is a small download, only when needed.**  It is a 2 MB build of ffmpeg, made for TiviBro and published on its GitHub releases.  The first movie that needs it asks before downloading.  The helper checks its fingerprint, keeps it on the TV's storage and runs it at low priority so the TV stays responsive.  **Settings > Playback** has **Convert audio the TV can't play** (Automatic or Off), the converter's status, size and where it is kept, and **Get the converter now** or **Remove the converter**.  **What this TV can play** lists which formats get converted on your TV.
 - **Watched movies and episodes get a ✓** (thanks to moritzm784, pull request #41).  In **Movies** and **Shows**, a title you watched to the end used to look the same as one you never started, so it was hard to see where you left off.  Now it keeps a ✓ in the list and "Watched" in its details, a show opens on the episode after the last one you watched and its row shows that episode ("S1 E5") with how far you got, **Hold OK** has **Mark as watched** and **Mark unwatched**, and **Resume** on a show plays the episode you're on.
 
-## 0.6.0 (alpha 68, 2026-11-03)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 68
+### In alpha 68
 
 - **Favorites only in Favorites, if you like** (thanks to moritzm784, pull request #40).  **Settings > My media > Favorites also in lists** (on by default).  Turn it off and a favorite movie or show is shown only in **Favorites**, not again in **Movies** or **TV shows**.
 - **My media opens on the first item on screen** (thanks to moritzm784, pull request #40).  It used to jump straight to the **Movies** shelf, past **Continue watching** and **Favorites**.  It now starts on the top shelf that has something, and stays put once you press a button.
