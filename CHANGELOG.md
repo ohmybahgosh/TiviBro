@@ -2,14 +2,16 @@
 
 ## Unreleased
 
-- **The audio converter is offered when it's needed** (alpha 69 only offered it once, and not at all for a movie whose name didn't give its sound away).  A movie whose sound the TV can't play now asks every time until you choose **Don't ask again**, including when only the file's own tracks show it is DTS or TrueHD: TiviBro reads them as the movie starts, offers the converter, and carries on from the same point with sound.  The "can't play" notice now says where the converter is: **Settings > Playback > Audio and subtitles**.
-- **Scans count episodes too.**  After a rescan, My media now says what it found as "3 movies and 24 episodes on Home server" on the TV, in the phone app and in the web editor, instead of only counting movies.  A source set to TV shows only counts episodes.
-
-## 0.6.0 (alpha 69, 2026-11-03)
+## 0.6.0 (alpha 70, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 69
+### New in alpha 70
+
+- **The audio converter is offered when it's needed** (alpha 69 only offered it once, and not at all for a movie whose name didn't give its sound away).  A movie whose sound the TV can't play now asks every time until you choose **Don't ask again**, including when only the file's own tracks show it is DTS or TrueHD: TiviBro reads them as the movie starts, offers the converter, and carries on from the same point with sound.  The "can't play" notice now says where the converter is: **Settings > Playback > Audio and subtitles**.
+- **Scans count episodes too.**  After a rescan, My media now says what it found as "3 movies and 24 episodes on Home server" on the TV, in the phone app and in the web editor, instead of only counting movies.  A source set to TV shows only counts episodes.
+
+### In alpha 69
 
 - **Sound the TV can't play is converted.**  LG TVs from 2020 to 2022 (the C1 and C2 among them) can't play DTS, no LG TV plays Dolby TrueHD, and FLAC surround fails, so movies with only that sound played silent.  TiviBro now checks the sound before a movie, episode or My media file starts.  If the file has another audio track the TV plays, in your language, it plays that one.  Otherwise the network helper turns the sound into Dolby Digital (AC-3) while you watch, the picture untouched, and TiviBro says so once.  Seeking starts the conversion again from the new spot, and the time, progress bar, resume point and subtitles keep the movie's own time.  Live channels whose sound the TV can't play are converted too.
 - **The audio converter is a small download, only when needed.**  It is a 2 MB build of ffmpeg, made for TiviBro and published on its GitHub releases.  The first movie that needs it asks before downloading.  The helper checks its fingerprint, keeps it on the TV's storage and runs it at low priority so the TV stays responsive.  **Settings > Playback** has **Convert audio the TV can't play** (Automatic or Off), the converter's status, size and where it is kept, and **Get the converter now** or **Remove the converter**.  **What this TV can play** lists which formats get converted on your TV.
