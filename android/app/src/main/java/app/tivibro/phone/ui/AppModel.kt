@@ -25,6 +25,7 @@ import app.tivibro.phone.proto.VodInfo
 import app.tivibro.phone.proto.VodPage
 import org.json.JSONObject
 import app.tivibro.phone.proto.Discovery
+import app.tivibro.phone.proto.Dropbox
 import app.tivibro.phone.proto.EditorState
 import app.tivibro.phone.proto.Found
 import app.tivibro.phone.proto.Hello
@@ -64,6 +65,12 @@ data class TvUi(
     /** What TiviBro on the TV said it has (movies, shows, My media, On now), for the home screen's shortcuts; null until known. */
     val caps: NowState? = null,
 )
+
+/** A Dropbox sign-in for one TV: [stage] is waiting (the browser is open, [url]), exchanging, ready (pick a folder) or failed ([error]). */
+data class DropboxStep(val tv: String, val stage: String, val error: String? = null, val url: String = "")
+
+/** How long a Dropbox sign-in may take in the browser. */
+private const val DROPBOX_WAIT_MS = 10 * 60_000L
 
 data class Pairing0(val busy: Boolean = false, val error: String? = null, val done: Tv? = null)
 
@@ -537,6 +544,81 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     }
 
     /* ---------- adding a TV ---------- */
+
+    /* ---------- Dropbox sign-in for My media (DropboxDialog in MediaSourcesDialogs.kt) ---------- */
+
+    /** The sign-in's verifier, state and TV, kept briefly in case Android recreates the app while the browser is open. */
+    private val dbxPrefs = app.getSharedPreferences("dropbox", android.content.Context.MODE_PRIVATE)
+    private val _dropbox = MutableStateFlow<DropboxStep?>(null)
+    val dropbox: StateFlow<DropboxStep?> = _dropbox.asStateFlow()
+    /** The refresh token, only in memory, only from the code exchange until the TV has it.  Never logged. */
+    private var dropboxToken: String? = null
+    /** A media source was added outside the Settings page's own dialogs (the page reloads). */
+    private val _mediaChanged = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val mediaChanged: SharedFlow<Unit> = _mediaChanged.asSharedFlow()
+
+    /** Starts a Dropbox sign-in for [tvId]; returns Dropbox's sign-in page to open in the browser. */
+    fun dropboxStart(tvId: String): String {
+        val v = Dropbox.verifier()
+        val st = Dropbox.state()
+        dropboxToken = null
+        dbxPrefs.edit().putString("verifier", v).putString("state", st).putString("tv", tvId).putLong("at", System.currentTimeMillis()).apply()
+        val url = Dropbox.authorizeUrl(Dropbox.challenge(v), st)
+        _dropbox.value = DropboxStep(tvId, "waiting", url = url)
+        return url
+    }
+
+    /** Dropbox's redirect came back (the App Link, or the button on tivibro.app/dropbox). */
+    fun dropboxRedirect(link: String) {
+        val r = Dropbox.redirect(link) ?: return
+        val verifier = dbxPrefs.getString("verifier", null)
+        val state = dbxPrefs.getString("state", null)
+        val tvId = dbxPrefs.getString("tv", null)
+        val at = dbxPrefs.getLong("at", 0)
+        // One use only: the same link opened twice (the App Link, then the page's button) does nothing more.
+        if (verifier == null && _dropbox.value?.stage.let { it == "exchanging" || it == "ready" }) return
+        dbxPrefs.edit().clear().apply()
+        if (verifier == null || state == null || tvId == null || System.currentTimeMillis() - at > DROPBOX_WAIT_MS) {
+            _dropbox.value = null
+            say("That Dropbox sign-in is too old.  Start again: Settings, My media, Add media, Dropbox.")
+            return
+        }
+        if (r.state != state) { _dropbox.value = DropboxStep(tvId, "failed", "That sign-in didn't start on this phone.  Try again."); return }
+        if (r.error.isNotBlank() || r.code.isBlank()) { _dropbox.value = DropboxStep(tvId, "failed", Dropbox.redirectError(r.error)); return }
+        _dropbox.value = DropboxStep(tvId, "exchanging")
+        viewModelScope.launch {
+            try {
+                dropboxToken = withContext(Dispatchers.IO) { Dropbox.exchange(r.code, verifier) }
+                _dropbox.value = DropboxStep(tvId, "ready")
+            } catch (e: TbException) {
+                _dropbox.value = DropboxStep(tvId, "failed", e.message)
+            } catch (e: Exception) {
+                _dropbox.value = DropboxStep(tvId, "failed", "Couldn't reach Dropbox.  Is the phone online?")
+            }
+        }
+    }
+
+    /** Asks the TV for the Dropbox folders in [path] ("" = the top), with the signed-in account's name. */
+    suspend fun dropboxFolders(tvId: String, path: String): JSONObject {
+        val t = dropboxToken ?: throw TbException("The Dropbox sign-in is gone.  Sign in again.")
+        return ask(tvId, "mymedia", JSONObject().put("op", "dbfolders").put("refresh", t).put("path", path), seal = true, timeoutMs = 45_000, tries = 1)
+    }
+
+    /** Adds the chosen folder on the TV ("" = the whole Dropbox), which scans it.  Returns the TV's message. */
+    suspend fun dropboxAdd(tvId: String, root: String, name: String): String {
+        val t = dropboxToken ?: throw TbException("The Dropbox sign-in is gone.  Sign in again.")
+        val r = ask(tvId, "mymedia", JSONObject().put("op", "adddropbox").put("refresh", t).put("root", root).put("name", name), seal = true, timeoutMs = 70_000, tries = 1)
+        dropboxToken = null
+        _mediaChanged.tryEmit(Unit)
+        return r.optString("msg")
+    }
+
+    /** Ends the sign-in (done, cancelled or failed): forgets the token and the verifier. */
+    fun dropboxEnd() {
+        dropboxToken = null
+        dbxPrefs.edit().clear().apply()
+        _dropbox.value = null
+    }
 
     fun discover() = viewModelScope.launch {
         _found.value = null

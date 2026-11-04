@@ -1,10 +1,12 @@
 /* My media, helper side.  Finds and reads the viewer's own movie servers: DLNA (like a Fritz!Box, no
-   login) and WebDAV (like premiumize, with a login).  The app asks over /media/ routes, which need the
+   login), WebDAV (like premiumize, with a login) and Dropbox (signed in from the phone app, see
+   dropbox.js).  The app asks over /media/ routes, which need the
    helper's secret because a login goes through them (see proxy.js).
 
    Three things stay separate on purpose: a movie's id (from its stable path), its container, and the
    address it plays from.  At every play, WebDAV gives either a fresh signed link or
-   a temporary localhost stream whose login stays in the helper (media-stream.js).
+   a temporary localhost stream whose login stays in the helper (media-stream.js), and Dropbox a
+   temporary link (Range works on it, so the player reads it directly).
 
    Logs name hosts only.  A login goes only to the host it was entered for, never after a redirect to
    another one, and certificates are always checked for WebDAV.
@@ -21,6 +23,7 @@ var http = require('http');
 var https = require('https');
 var URL_ = require('url');
 var CA = require('./media-ca');
+var Dropbox = require('./dropbox');
 
 var REQUEST_MS = 8000, SCAN_MS = 120000, PAGE = 200, MAX_DEPTH = 12, MAX_FOLDERS = 3000, BODY_MAX = 16 * 1024 * 1024;
 var VIDEO = /\.(mkv|mp4|m4v|avi|mov|m2ts|ts|webm)$/i;
@@ -122,7 +125,14 @@ var MESSAGES = {
   unreachable: 'The server did not answer.',
   address: 'That address does not work.  It has to start with http:// or https://.'
 };
-function failure(kind) { return { error: kind, message: MESSAGES[kind] }; }
+// Dropbox has no address or password the viewer typed, so its words say what to do instead.
+var DROPBOX_MESSAGES = {
+  login: 'Dropbox didn\'t accept the sign-in.  Remove this source and add it again from the phone app.',
+  address: 'That Dropbox folder or file isn\'t there any more.  Check it in Dropbox, or add the source again from the phone app.',
+  unreachable: 'Dropbox did not answer.  Check the TV\'s internet connection and try again.'
+};
+function failure(kind, source) { return { error: kind, message: (source && source.type === 'dropbox' && DROPBOX_MESSAGES[kind]) || MESSAGES[kind] }; }
+function dropboxFailure(e) { var k = e && e.kind; return failure(k === 'login' || k === 'address' || k === 'cert' ? k : 'unreachable', { type: 'dropbox' }); }
 
 // opts: url, method, headers, body, secure (send the pinned certificates); cb(err, status, headers, bodyText)
 function request(opts, cb) {
@@ -362,6 +372,7 @@ function scanWebdav(source, cb) {
 // Signed redirects stay direct.  Servers serving the authenticated file themselves
 // get a temporary localhost stream, shared by the player and subtitle Range reads.
 function resolve(source, path, cb) {
+  if (source && source.type === 'dropbox') return resolveDropbox(source, path, cb);
   var base = webdavBase(source);
   if (!base || str(path).charAt(0) !== '/') return cb(failure('address'));
   var origin = base.origin;
@@ -381,10 +392,92 @@ function resolve(source, path, cb) {
   })(origin + path, 3);
 }
 
+/* ---------- Dropbox ----------
+   One recursive listing of the source's folder (2000 entries a page, then /continue), so a page is
+   what a folder is to WebDAV for the scan's budget.  Only video files are kept from it, and the
+   cursor and those files go in the checkpoint, so a paused scan goes on from the next page.  Once
+   the listing is whole (or a slice ends), the files are grouped by folder and go through the same
+   rules as WebDAV: ids are x: + path_lower, paths (to play from) path_display, and the folder names
+   below the source's folder are the ancestors titles and seasons come from. */
+function dropboxSegments(rootLower, rootDepth, e) {
+  var lower = str(e.path_lower), display = str(e.path_display);
+  if (rootLower && lower.indexOf(rootLower + '/') !== 0) return null;
+  var segs = display.split('/').filter(function (x) { return x !== ''; });
+  if (segs.length !== lower.split('/').filter(function (x) { return x !== ''; }).length) return null;
+  return segs.slice(rootDepth);
+}
+function dropboxResult(source, entries, partial, errors) {
+  var rootLower = Dropbox.folderPath(source.root).toLowerCase(), rootDepth = rootLower ? rootLower.split('/').length - 1 : 0;
+  var skipped = newSkipped(), folderSkip = {}, groups = {}, movies = [], discovered = [], deep = false, seen = {};
+  entries.forEach(function (e) {
+    if (e.tag !== 'file' || seen[e.path_lower]) return;
+    var segs = dropboxSegments(rootLower, rootDepth, e);
+    if (!segs || !segs.length) return;
+    var name = segs[segs.length - 1], ancestors = segs.slice(0, -1);
+    if (!(discovery(source) ? VIDEO.test(name) : isMovieFile(name))) return;
+    if (ancestors.length > (source.maxDepth || MAX_DEPTH)) { deep = true; return; }
+    for (var i = 0; i < ancestors.length; i++) {
+      var key = ancestors.slice(0, i + 1).join('/').toLowerCase();
+      if (!(key in folderSkip)) folderSkip[key] = isJunk(ancestors[i]) || (!discovery(source) && skipFolder(ancestors[i], skipped));
+      if (folderSkip[key]) return;
+    }
+    seen[e.path_lower] = true;
+    var parent = ancestors.join('/').toLowerCase();
+    if (!groups[parent]) groups[parent] = { name: ancestors.length ? ancestors[ancestors.length - 1] : '', ancestors: ancestors, files: [] };
+    groups[parent].files.push({ file: name, size: e.size || 0, id: 'x:' + e.path_lower, path: e.path_display, etag: e.rev, modified: e.modified });
+  });
+  if (deep) { partial = true; errors.push('depth limit reached'); }
+  Object.keys(groups).sort().forEach(function (k) {
+    var g = groups[k];
+    (discovery(source) ? g.files : moviesOf(g.files, skipped, g.name)).forEach(function (f) {
+      if (discovery(source)) {
+        var entry = observed(source, f.file, g.ancestors, { id: f.id, size: f.size, ext: extOf(f.file), info: tokens(f.file), path: f.path, etag: f.etag, modified: f.modified });
+        discovered.push(entry);
+        if (entry.kind !== 'movie' || source.contentMode === 'shows') return;
+      }
+      var t = titleOf(discovery(source) ? safeMovieFolder(g.name, g.files) : g.name, f.file);
+      movies.push({ id: f.id, title: t.title, year: t.year, file: f.file, size: f.size, ext: extOf(f.file), info: tokens(f.file), path: f.path });
+    });
+  });
+  return { movies: movies, files: discovery(source) ? discovered : undefined, partial: partial, errors: errors, skipped: skipped };
+}
+function scanDropbox(source, cb) {
+  if (!str(source.refresh)) return cb(failure('login', source));
+  var saved = source._continuation || {}, deadline = Date.now() + SCAN_MS;
+  var budget = source.scanFolderBudget > 0 && source.scanFolderBudget <= MAX_FOLDERS ? source.scanFolderBudget : MAX_FOLDERS;
+  Dropbox.listAll(source, function (e, listed) {
+    var errors = [], partial = false;
+    if (e) {
+      // Nothing listed yet, or the sign-in is gone: the scan fails and the saved list stays.
+      if (e.kind === 'login' || !(listed && listed.entries.length)) return cb(dropboxFailure(e));
+      partial = true; errors.push('Dropbox: ' + dropboxFailure(e).message);
+    }
+    var r = dropboxResult(source, listed.entries, partial, errors);
+    if (!e && listed.more) {
+      r.partial = true; r.errors.push('stopped early, the library is very large');
+      r._continuation = { cursor: listed.cursor, entries: listed.entries };
+    }
+    cb(r);
+  }, {
+    cursor: saved.cursor || '', entries: saved.entries || [],
+    keep: function (x) { return x.tag === 'file' && VIDEO.test(x.name); },
+    stop: function (pages) { return !!(source._control && source._control.paused) || Date.now() > deadline || pages >= budget; }
+  });
+}
+function resolveDropbox(source, path, cb) {
+  if (str(path).charAt(0) !== '/') return cb(failure('address', source));
+  Dropbox.tempLink(source, path, function (e, url) {
+    if (e) return cb(dropboxFailure(e));
+    try { hideLinksFrom(URL_.parse(url).host); } catch (x) {}
+    cb({ url: url });
+  });
+}
+
 function scan(source, cb) {
   var type = source && source.type;
   if (type === 'dlna') return scanDlna(source, cb);
   if (type === 'webdav') return scanWebdav(source, cb);
+  if (type === 'dropbox') return scanDropbox(source, cb);
   cb(failure('address'));
 }
 
@@ -440,7 +533,7 @@ function send(res, ALLOW, code, obj) {
   res.writeHead(code, h);
   res.end(JSON.stringify(obj));
 }
-function hostOf(source) { try { return URL_.parse(str(source && (source.control || source.address))).hostname || ''; } catch (e) { return ''; } }
+function hostOf(source) { if (source && source.type === 'dropbox') return 'dropbox'; try { return URL_.parse(str(source && (source.control || source.address))).hostname || ''; } catch (e) { return ''; } }
 /* The catalogue opens once, on first use.  A failure is not remembered: the next request tries again. */
 var catalogOpening = null, openCatalog = null, scanResults = {}, activeScanControls = {};
 var SCAN_KEEP_MS = 300000, SCAN_KEEP = 2;
@@ -560,11 +653,29 @@ function scanRequest(q, req, res, ALLOW, log) {
     });
   });
 }
+/* The phone app's Dropbox folder picker (before the source exists), the account name, and signing out
+   when a source is removed.  The refresh token comes in and never goes back out, nor into the log. */
+function dropboxRequest(kind, q, res, ALLOW, log) {
+  var refresh = str(q.refresh), path = str(q.path);
+  function answer(e, out) {
+    log({ lv: e ? 'warn' : 'info', event: 'dropbox ' + kind, folders: out && out.folders ? out.folders.length : undefined, error: e ? e.kind || 'unreachable' : null });
+    send(res, ALLOW, 200, e && kind !== 'revoke' ? dropboxFailure(e) : out);
+  }
+  if (!/^[\x21-\x7e]{8,4096}$/.test(refresh)) { var none = new Error('no sign-in'); none.kind = 'login'; return answer(none, kind === 'revoke' ? { revoked: false } : null); }
+  if (kind === 'revoke') return Dropbox.revoke(refresh, function (e) { answer(e, { revoked: !e }); });
+  if (kind === 'account') return Dropbox.account(refresh, function (e, account) { answer(e, { account: account }); });
+  if (path.length > 2000) { var bad = new Error('path'); bad.kind = 'address'; return answer(bad); }
+  Dropbox.listFolder({ refresh: refresh }, path, function (e, folders) {
+    if (e) return answer(e);
+    Dropbox.account(refresh, function (e2, account) { answer(null, { folders: folders, account: e2 ? '' : account }); });
+  });
+}
 function handle(req, res, ALLOW, log) {
   var route = req.url.split('?')[0];
   var libraryRoute = /^\/media\/library\/(query|detail|edit|migrate|progress|continue|chapters|source|adopt|resolve|status)$/.exec(route);
   var subs = /^\/media\/subs\/(search|get|login)$/.exec(route);
-  if (req.method !== 'POST' || (!libraryRoute && !subs && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/metadata')) return send(res, ALLOW, 404, { error: 'unknown media route' });
+  var dropbox = /^\/media\/dropbox\/(folders|account|revoke)$/.exec(route);
+  if (req.method !== 'POST' || (!libraryRoute && !subs && !dropbox && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/metadata')) return send(res, ALLOW, 404, { error: 'unknown media route' });
   var body = '', over = false, bodyBytes = 0, bodyLimit = libraryRoute ? 1048576 : 65536;
   if (req.setEncoding) req.setEncoding('utf8');
   req.on('data', function (c) { if (over) return; body += c; bodyBytes += Buffer.byteLength(c, 'utf8'); if (bodyBytes > bodyLimit) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
@@ -573,6 +684,7 @@ function handle(req, res, ALLOW, log) {
     var q; try { q = JSON.parse(body || '{}'); } catch (e) { return send(res, ALLOW, 400, { error: 'bad request' }); }
     if (!q || typeof q !== 'object' || Array.isArray(q)) return send(res, ALLOW, 400, { error: 'bad request' });
     if (libraryRoute) return libraryRequest(libraryRoute[1], q, req, res, ALLOW, log);
+    if (dropbox) return dropboxRequest(dropbox[1], q, res, ALLOW, log);
     if (subs) return require('./subtitles')[subs[1]](q, function (r) {
       log({ lv: r.error ? 'warn' : 'info', event: 'subtitles ' + subs[1], results: r.results ? r.results.length : undefined, error: r.error || null });
       send(res, ALLOW, 200, r);
@@ -599,10 +711,11 @@ function handle(req, res, ALLOW, log) {
 }
 
 /* The file servers a WebDAV service sends movies to: their links are signed, so logs keep only the host
-   (proxy.js redact). */
-var signedHosts = [];
+   (proxy.js redact).  Dropbox's temporary links (any *.dropboxusercontent.com) always count, and stay
+   first in the list. */
+var signedHosts = ['dropboxusercontent.com'];
 function hideLinksFrom(host) {
   host = str(host).toLowerCase();
-  if (host && signedHosts.indexOf(host) < 0) { signedHosts.push(host); if (signedHosts.length > 50) signedHosts.shift(); }
+  if (host && signedHosts.indexOf(host) < 0) { signedHosts.push(host); if (signedHosts.length > 50) signedHosts.splice(1, 1); }
 }
-module.exports = { catalog: catalog, scanResults: scanResults, originKey: originKey, samePath: samePath, moviesOf: moviesOf, skipFolder: skipFolder, newSkipped: newSkipped, signedHosts: signedHosts, hideLinksFrom: hideLinksFrom, handle: handle, scan: scan, resolve: resolve, discover: discover, titleOf: titleOf, isJunk: isJunk, tokens: tokens, parseBrowse: parseBrowse, parsePropfind: parsePropfind, parseDevice: parseDevice, errorKind: errorKind };
+module.exports = { catalog: catalog, scanResults: scanResults, originKey: originKey, samePath: samePath, moviesOf: moviesOf, skipFolder: skipFolder, newSkipped: newSkipped, signedHosts: signedHosts, hideLinksFrom: hideLinksFrom, handle: handle, scan: scan, resolve: resolve, discover: discover, titleOf: titleOf, isJunk: isJunk, tokens: tokens, parseBrowse: parseBrowse, parsePropfind: parsePropfind, parseDevice: parseDevice, errorKind: errorKind, failure: failure };

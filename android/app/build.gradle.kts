@@ -89,6 +89,8 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.1")
     // Channel logos in the Play on TV list.
     implementation("io.coil-kt:coil-compose:2.7.0")
+    // Dropbox sign-in in a Custom Tab (proto/Dropbox.kt), falling back to the browser.
+    implementation("androidx.browser:browser:1.8.0")
     // QR codes: Google's code scanner (no camera permission; the scanning screen comes from Play services).
     implementation("com.google.android.gms:play-services-code-scanner:16.1.0")
     debugImplementation("androidx.compose.ui:ui-tooling")

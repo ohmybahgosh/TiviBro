@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dropbox sign-in · TiviBro</title><meta name="robots" content="noindex"><meta name="referrer" content="no-referrer">
+<link rel="icon" href="/img/icon-32.png">
+<style>
+html,body{margin:0;min-height:100%;background:#0b0e1a;color:#e8ecf8;font:17px/1.5 Inter,system-ui,sans-serif}
+main{max-width:440px;margin:0 auto;padding:56px 22px}
+img{width:56px;height:56px;border-radius:14px}
+h1{font-size:26px;margin:18px 0 6px}
+p{color:#a9b1c9;margin:0 0 16px}
+.btn{display:block;text-align:center;background:#33e1ff;color:#0b0e1a;font-weight:700;text-decoration:none;padding:15px;border-radius:14px;margin:24px 0 12px}
+small{color:#7c85a3}
+</style>
+</head><body><main>
+<img src="/img/icon-192.png" alt="">
+<h1 id="h">Dropbox sign-in</h1>
+<p id="p">Start the Dropbox sign-in in the TiviBro phone app: Settings, My media, Add media, Dropbox.</p>
+<div id="go" hidden>
+  <a class="btn" id="open" href="#">Open TiviBro</a>
+  <p>The TiviBro app then asks your TV for your Dropbox folders, so you can pick the one with your movies and shows.</p>
+</div>
+<p><small>This page sends nothing anywhere.  The sign-in goes only to the TiviBro app on this phone.</small></p>
+</main>
+<!-- No analytics or other scripts on this page: the sign-in code in the address must not go anywhere but the app. -->
+<script>
+(function () {
+  var q = {};
+  location.search.slice(1).split('&').forEach(function (kv) {
+    var i = kv.indexOf('=');
+    if (i > 0) { try { q[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1).replace(/\+/g, ' ')); } catch (e) {} }
+  });
+  if (!q.code && !q.error) return;
+  // Out of the address bar and history: the code works once, and only with this phone's sign-in.
+  try { history.replaceState(null, '', location.pathname); } catch (e) {}
+  if (q.error) {
+    document.getElementById('h').textContent = 'Sign-in cancelled';
+    document.getElementById('p').textContent = 'Dropbox sign-in was cancelled.  Go back to the TiviBro app and try again.';
+    return;
+  }
+  var link = 'tivibro://dropbox?code=' + encodeURIComponent(q.code) + '&state=' + encodeURIComponent(q.state || '');
+  document.getElementById('h').textContent = 'Signed in to Dropbox';
+  document.getElementById('p').textContent = 'One more step: open the TiviBro app to pick your folder.';
+  document.getElementById('open').href = link;
+  document.getElementById('go').hidden = false;
+  // Once: if the browser allows it, straight back to the app (otherwise the button does it).
+  try { location.replace(link); } catch (e) {}
+})();
+</script>
+</body></html>

@@ -1,5 +1,5 @@
 /* My media: the viewer's own movies, from a home media server (DLNA, like a Fritz!Box) or a cloud
-   (WebDAV, like premiumize).  Full-width poster shelves and the normal movie player.  The helper does the
+   (WebDAV, like premiumize, or Dropbox, signed in from the phone app).  Full-width poster shelves and the normal movie player.  The helper does the
    network work (service/media.js); MediaStore keeps what is remembered.
 
    Titles start with folder names.  Explicitly requested TMDB lookups add movie details and posters;
@@ -186,24 +186,51 @@ var Media = (function () {
     var m = /^https?:\/\/([^/:]+)/i.exec(address);
     return !m ? address : /premiumize/i.test(m[1]) ? 'premiumize' : m[1];
   }
+  // A new source's first scan answered: save it (with its name set) and what the scan found.
+  function addScanned(source, res) {
+    if (res.error) { U.toast(res.message, 6000); return { error: res.error, message: res.message }; }
+    var id;
+    try { id = MediaStore.addSource(source); } catch (e) { U.toast(e.message, 5000); return { error: 'full', message: e.message }; }
+    var r = MediaStore.applyScan(id, res);
+    if (res.scanHandle) ask('library/adopt', {sourceId:id,scanHandle:res.scanHandle},30000).then(function (saved) { if (saved.error) U.toast(saved.message,6000); refreshSeries(); refresh(); }, function (e) { U.toast(why(e),6000); });
+    refresh();
+    found(id, source.name, r, res);
+    autoSoon();
+    return { id: id, movies: MediaStore.movies(id).length, episodes: res.episodeFiles || 0, skipped: res.skipped || null };
+  }
   // A new login is checked by scanning before anything is saved.
   function addAddress(address, user, pass) {
     address = String(address || '').trim();
     var source = { contentMode: 'automatic', type: 'webdav', address: address, user: String(user || '').trim(), pass: String(pass || '').trim() };
     U.toast('Checking ' + nameFor(address) + '…');
     return scanSource(source).then(function (res) {
-      if (res.error) { U.toast(res.message, 6000); return { error: res.error, message: res.message }; }
-      source.name = nameFor(address);
-      var id;
-      try { id = MediaStore.addSource(source); } catch (e) { U.toast(e.message, 5000); return { error: 'full', message: e.message }; }
-      var r = MediaStore.applyScan(id, res);
-      if (res.scanHandle) ask('library/adopt', {sourceId:id,scanHandle:res.scanHandle},30000).then(function (saved) { if (saved.error) U.toast(saved.message,6000); refreshSeries(); refresh(); }, function (e) { U.toast(why(e),6000); });
-      refresh();
-      found(id, source.name, r, res);
-      autoSoon();
-      return { id: id, movies: MediaStore.movies(id).length, skipped: res.skipped || null };
+      if (!res.error) source.name = nameFor(address);
+      return addScanned(source, res);
     }, function (e) { U.toast(why(e), 6000); return { error: 'helper', message: why(e) }; });
   }
+  /* Dropbox, from the phone app: it signed in and chose the folder, and sends only the refresh token
+     (a secret, kept like a WebDAV password).  The account is checked, then the folder scanned, before
+     anything is saved.  root '' is the whole Dropbox. */
+  function dropboxRoot(root) {
+    root = String(root || '').trim().replace(/\/+$/, '');
+    return !root ? '' : root.charAt(0) === '/' ? root : '/' + root;
+  }
+  function addDropbox(refresh, root, name) {
+    var source = { contentMode: 'automatic', type: 'dropbox', root: dropboxRoot(root), refresh: String(refresh || '').trim(), name: String(name || '').trim().slice(0, 80) || 'Dropbox' };
+    U.toast('Checking Dropbox…');
+    return ask('dropbox/account', { refresh: source.refresh }, 25000).then(function (a) {
+      if (a.error) { U.toast(a.message, 6000); return { error: a.error, message: a.message }; }
+      source.account = String(a.account || '');
+      return scanSource(source).then(function (res) { return addScanned(source, res); });
+    }).catch(function (e) { U.toast(why(e), 6000); return { error: 'helper', message: why(e) }; });
+  }
+  // The phone app's folder picker: a folder's folders, before the source exists.
+  function dropboxFolders(refresh, path) { return ask('dropbox/folders', { refresh: String(refresh || ''), path: String(path || '') }, 25000); }
+  // A removed Dropbox source signs out of Dropbox (best effort: the source is gone either way).
+  function signOut(source) {
+    if (source && source.type === 'dropbox' && source.refresh) ask('dropbox/revoke', { refresh: source.refresh }, 25000).catch(function () {});
+  }
+  function dropboxHelp() { UI.menu('Dropbox', [{ label: 'Sign in with the TiviBro phone app: Settings > My media > Add media > Dropbox.' }, { label: 'Done' }]); }
   function askAddress() {
     UI.prompt('WebDAV address of your media folder', '', function (address) {
       if (!address.trim()) return;
@@ -215,7 +242,8 @@ var Media = (function () {
   function addMenu() {
     UI.menu('Add media', [
       { label: 'Browse my network (DLNA / UPnP)', sub: 'Find a home media server with media sharing turned on', action: browseNetwork },
-      { label: 'Add a WebDAV server', sub: 'Enter your media folder\'s address and login, or use the web editor', action: askAddress }
+      { label: 'Add a WebDAV server', sub: 'Enter your media folder\'s address and login, or use the web editor', action: askAddress },
+      { label: 'Dropbox', sub: 'Sign in with the TiviBro phone app: Settings > My media > Add media > Dropbox.', action: dropboxHelp }
     ]);
   }
   function metadataRequest(q, language) {
@@ -398,7 +426,7 @@ var Media = (function () {
       { label: 'TV shows', action: function () { MediaSeries.open(); } },
       { label: 'Rescan', sub: 'Look for added or removed movies and episodes', action: function () { rescan(s.id); } },
       { label: 'Remove', sub: 'Your files stay where they are', action: function () {
-        UI.confirm('Remove ' + s.name + ' from My media?', 'Remove', function () { MediaStore.load().then(function () { MediaStore.removeSource(s.id); ask('library/source',{sourceId:s.id,action:'remove'},30000).then(function(){refresh();UI.menu(s.name+' removed',[{label:'Undo removal',action:function(){if(MediaStore.restoreSource(s.id))ask('library/source',{sourceId:s.id,action:'activate'},30000).then(function(){refresh();rescan(s.id);});}},{label:'Done'}]);},function(e){U.toast(why(e),6000);}); }); });
+        UI.confirm('Remove ' + s.name + ' from My media?' + (s.type === 'dropbox' ? '  TiviBro signs out of Dropbox on this TV.' : ''), 'Remove', function () { MediaStore.load().then(function () { var gone = MediaStore.source(s.id); MediaStore.removeSource(s.id); signOut(gone); ask('library/source',{sourceId:s.id,action:'remove'},30000).then(function(){refresh();UI.menu(s.name+' removed',(gone && gone.type === 'dropbox' ? [] : [{label:'Undo removal',action:function(){if(MediaStore.restoreSource(s.id))ask('library/source',{sourceId:s.id,action:'activate'},30000).then(function(){refresh();rescan(s.id);});}}]).concat([{label:'Done'}]));},function(e){U.toast(why(e),6000);}); }); });
       } }
     ]);
   }
@@ -629,9 +657,9 @@ var Media = (function () {
   }
 
   return {
-    refreshShows:refreshSeries, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress,
+    refreshShows:refreshSeries, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, signOut: signOut,
     rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: play, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
-    _test: { addServer: addServer, addAddress: addAddress, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
+    _test: { addServer: addServer, addAddress: addAddress, addDropbox: addDropbox, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };
 })();

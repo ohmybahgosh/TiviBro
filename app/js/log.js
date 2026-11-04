@@ -14,11 +14,12 @@ var Log = (function () {
   var session = Date.now().toString(36);
 
   /* Hosts whose links are signed (My media: the file server a WebDAV service sends a movie to): the whole
-     path and query of their links is the secret, so only the host is kept.  Learned as links are resolved. */
-  var signed = [];
+     path and query of their links is the secret, so only the host is kept.  Learned as links are resolved.
+     Dropbox's temporary links (any *.dropboxusercontent.com) always count, and stay first in the list. */
+  var signed = ['dropboxusercontent.com'];
   function hideLinksFrom(host) {
     host = String(host || '').toLowerCase().replace(/[^a-z0-9.:-]/g, '');
-    if (host && signed.indexOf(host) < 0) { signed.push(host); if (signed.length > 50) signed.shift(); }
+    if (host && signed.indexOf(host) < 0) { signed.push(host); if (signed.length > 50) signed.splice(1, 1); }
   }
   function esc(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
   // Mask credentials in URLs and messages.

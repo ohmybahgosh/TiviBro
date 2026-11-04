@@ -1,6 +1,7 @@
 /* The app's single activity: opens pairing links (tivibro://pair and https://tivibro.app/pair from the TV's
-   QR code), takes a provider's link shared to TiviBro (Share, then TiviBro), runs the code scanner, starts
-   the weekly backups, and moves between the screens (home, add a TV, type the code, one TV on any of its
+   QR code), catches the Dropbox sign-in's return (https://tivibro.app/dropbox, or tivibro://dropbox from that
+   page's button) and shows the Dropbox folder picker, takes a provider's link shared to TiviBro (Share, then
+   TiviBro), runs the code scanner, starts the weekly backups, and moves between the screens (home, add a TV, type the code, one TV on any of its
    tabs, the editor on any of its pages, adding a shared playlist, backups and restore points, reminders). */
 package app.tivibro.phone
 
@@ -35,6 +36,7 @@ import app.tivibro.phone.ui.ShareScreen
 import app.tivibro.phone.work.BackupWorker
 import app.tivibro.phone.ui.AppModel
 import app.tivibro.phone.ui.CodeScreen
+import app.tivibro.phone.ui.DropboxDialog
 import app.tivibro.phone.ui.EditorScreen
 import app.tivibro.phone.ui.OfflineEditorScreen
 import app.tivibro.phone.ui.RemindersScreen
@@ -56,7 +58,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        handle(intent)
+        handle(intent, fresh = savedInstanceState == null)
         runCatching { BackupWorker.schedule(this) }
         setContent { TbTheme { App(model, link, shared) } }
     }
@@ -69,10 +71,15 @@ class MainActivity : ComponentActivity() {
     }
 
     // Opened by the TV's QR code scanned with the camera (https://tivibro.app/pair#...), or the button on that page (tivibro://pair?...).
-    private fun handle(i: Intent?) {
+    // [fresh]: not the same intent again after Android recreated the activity (a Dropbox code works only once).
+    private fun handle(i: Intent?, fresh: Boolean = true) {
         // A provider's link shared from an email, a message or a browser.
         if (i?.action == Intent.ACTION_SEND) { i.getStringExtra(Intent.EXTRA_TEXT)?.let { shared.value = it }; return }
         val d = i?.data ?: return
+        if ((d.scheme == "tivibro" && d.host == "dropbox") || (d.scheme == "https" && d.host == "tivibro.app" && (d.path == "/dropbox" || d.path == "/dropbox/"))) {
+            if (fresh) model.dropboxRedirect(d.toString())
+            return
+        }
         if ((d.scheme == "tivibro" && d.host == "pair") || (d.scheme == "https" && d.host == "tivibro.app" && d.path == "/pair")) link.value = d.toString()
     }
 }
@@ -89,6 +96,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
     val found by model.found.collectAsStateWithLifecycle()
     val pending by link.collectAsStateWithLifecycle()
     val share by shared.collectAsStateWithLifecycle()
+    val dropbox by model.dropbox.collectAsStateWithLifecycle()
     var shareText by remember { mutableStateOf("") }
     var tile by remember { mutableStateOf(model.tileTv) }
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -246,6 +254,14 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 keeper = remember(id) { model.editorKeeper(id) }, page = page,
                 // The editor's My media, Backups, Reminders or Settings: close the editor and open the phone's own screen.
                 onOpen = { where -> if (nav.currentBackStackEntry?.id == e.id) { nav.popBackStack(); go(id, where) } })
+        }
+    }
+
+    // A Dropbox sign-in under way (started in Settings > My media > Add media): over whatever screen is open,
+    // since Android may have recreated the app while the browser was open.  Added: show that TV's My media.
+    dropbox?.let { step ->
+        DropboxDialog(model, step) { added ->
+            if (added && nav.currentDestination?.route?.startsWith("tv/") != true && model.tv(step.tv) != null) nav.navigate(tvAt(step.tv, "Settings", "media"))
         }
     }
 }

@@ -127,6 +127,7 @@ var Phone = (function () {
   }
   function vodKind(a) { return a.kind === 'series' ? 'series' : 'movie'; }
   function leaveFull() { if (UI.modalOpen) UI.close(); if (Views.full) Views.runAction('exit', 'player'); }
+  function plural(n, word) { return n + ' ' + word + (n === 1 ? '' : 's'); }
   var found = [];                        // the media servers the last Look for servers found (mymedia)
   var ASK = {
     /* The guide for a page of channels: what is on at `at` and the two after it.  Channels whose guide
@@ -256,15 +257,18 @@ var Phone = (function () {
       return (a.kind === 'media' ? Media.phone.play(a.id, a.fromStart) : Vod.phone.play(vodKind(a), a.id, a.ep, a.fromStart)).then(function (r) { U.toast('Playing ' + r.title + (c.from ? ', from ' + c.from : '')); return r; });
     },
     /* My media sources from the phone app (Settings > My media there): the list, finding DLNA servers,
-       adding one or a WebDAV folder, and each source's rescan, content, details and remove, plus the
-       TMDB token.  Sealed: WebDAV logins and the token cross here.  A scan can take minutes: after 25
+       adding one, a WebDAV folder or a Dropbox folder (dbfolders is its folder picker), and each
+       source's rescan, content, details and remove, plus the TMDB token.  Sealed: WebDAV logins, the
+       Dropbox refresh token and the TMDB token cross here, and none of them ever goes back.  A scan can take minutes: after 25
        seconds the answer says it is still going, and the TV finishes it (and says so on screen). */
     mymedia: function (a) {
       var op = String(a.op || 'sources');
       function src() { var s = MediaStore.source(String(a.id || '')); if (!s) throw new Error('That media source no longer exists.'); return s; }
       function sources() {
         return MediaStore.publicSources().map(function (s) {
-          return { id: s.id, name: s.name, type: s.type, mode: s.contentMode || 'movies', movies: MediaStore.movies(s.id).length, episodes: s.episodeFiles || 0, scanning: Media.isScanning(s.id) ? 1 : 0 };
+          var row = { id: s.id, name: s.name, type: s.type, mode: s.contentMode || 'movies', movies: MediaStore.movies(s.id).length, episodes: s.episodeFiles || 0, scanning: Media.isScanning(s.id) ? 1 : 0 };
+          if (s.type === 'dropbox') { row.root = s.root || ''; row.account = s.account || ''; }
+          return row;
         });
       }
       function waitFor(p, still) {
@@ -287,6 +291,20 @@ var Phone = (function () {
         if (!/^https?:\/\/[^\s]+$/i.test(address)) throw new Error('Enter the folder\'s full address, starting with https:// or http://.');
         return waitFor(Media.addAddress(address, String(a.user || '').slice(0, 300), String(a.pass || '').slice(0, 2000)).then(function (r) { return r && !r.error ? { msg: 'Added: ' + (r.movies || 0) + ' movies.' + Media.leftOut(r.skipped) } : r; }),
           'Login accepted.  The TV is still looking through the folder.');
+      }
+      if (op === 'dbfolders' || op === 'adddropbox') {
+        var refresh = String(a.refresh || '').trim(), dbPath = String((op === 'dbfolders' ? a.path : a.root) || '').trim();
+        var signIn = 'Dropbox didn\'t accept that sign-in.  Sign in again.';
+        if (!/^[\x21-\x7e]{8,4096}$/.test(refresh)) throw new Error(signIn);
+        if (dbPath.length > 2000 || (dbPath && dbPath !== '/' && dbPath.charAt(0) !== '/')) throw new Error('That isn\'t a Dropbox folder.');
+        if (op === 'dbfolders') return Media.dropboxFolders(refresh, dbPath === '/' ? '' : dbPath).then(function (r) {
+          if (r.error) throw new Error(r.error === 'login' ? signIn : r.message || 'Dropbox didn\'t answer.  Try again.');
+          return { folders: (r.folders || []).map(function (f) { return { name: String(f.name || ''), path: String(f.path || '') }; }), account: String(r.account || '') };
+        });
+        return waitFor(Media.addDropbox(refresh, dbPath === '/' ? '' : dbPath, String(a.name || '').slice(0, 80)).then(function (r) {
+          if (r && r.error === 'login') return { error: 'login', message: signIn };
+          return r && !r.error ? { msg: 'Added: ' + plural(r.movies || 0, 'movie') + ' and ' + plural(r.episodes || 0, 'episode') + '.' + Media.leftOut(r.skipped) } : r;
+        }), 'Signed in to Dropbox.  The TV is still looking through the folder.');
       }
       if (op === 'rescan') { var s1 = src(); return waitFor(Media.rescan(s1.id, !!a.restart).then(function (r) { return r && !r.error ? { msg: r.note || r.text || (r.count || 0) + ' movies on ' + s1.name + '.' } : r; }), 'Still scanning ' + s1.name + ' on the TV.'); }
       if (op === 'mode') {

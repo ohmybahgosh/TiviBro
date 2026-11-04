@@ -54,25 +54,35 @@ var MediaStore = (function () {
     }
     if (state.sources.length >= MAX_SOURCES) throw new Error('You can add up to ' + MAX_SOURCES + ' sources.  Remove one first.');
     var id = 's' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36);
-    state.sources.push({ id: id, type: s.type, name: s.name, control: s.control, address: s.address, user: s.user, pass: s.pass, contentMode: s.contentMode || 'automatic' });
+    var row = { id: id, type: s.type, name: s.name, control: s.control, address: s.address, user: s.user, pass: s.pass, contentMode: s.contentMode || 'automatic' };
+    // Dropbox: its folder, the account it was signed in with (display only) and the refresh token, a secret like pass.
+    if (s.type === 'dropbox') { row.root = s.root || ''; row.account = s.account || ''; row.refresh = s.refresh; }
+    state.sources.push(row);
     save(); menu();
     return id;
   }
   // The My media tab shows in the menu only while there is a source (views.js buildTabs).
   function menu() { if (typeof Views !== 'undefined' && Views.buildTabs) setTimeout(function () { Views.buildTabs(); }, 0); }
   function removeSource(id) {
-    // Kept in memory only, for Undo right after: a removed source's login is never saved.
-    var removed = source(id); if (removed) undoable[id] = removed;
+    // Kept in memory only, for Undo right after: a removed source's login is never saved.  Not a Dropbox
+    // one: removing it signs it out of Dropbox (Media.signOut), so it could not come back.
+    var removed = source(id); if (removed && removed.type !== 'dropbox') undoable[id] = removed;
     state.sources = state.sources.filter(function (s) { return s.id !== id; });
     lib = lib.filter(function (m) { return m.src !== id; });
     save(); saveLib(); menu();
   }
   var undoable = {};
   function restoreSource(id) { var s = undoable[id]; if (!s || state.sources.length >= MAX_SOURCES) return false; state.sources.push(s); delete undoable[id]; save(); menu(); return true; }
-  // For screens and the web editor: no logins.
+  // For screens and the web editor: no logins (no pass, no Dropbox refresh token).
   function publicSources() {
-    return state.sources.map(function (s) { return { id: s.id, type: s.type, name: s.name, address: s.address || '', contentMode:s.contentMode||'movies',episodeFiles:state.sourceStats&&state.sourceStats[s.id]?state.sourceStats[s.id].episodeFiles:0, count: lib.filter(function (m) { return m.src === s.id; }).length }; });
+    return state.sources.map(function (s) {
+      var out = { id: s.id, type: s.type, name: s.name, address: s.address || '', contentMode:s.contentMode||'movies',episodeFiles:state.sourceStats&&state.sourceStats[s.id]?state.sourceStats[s.id].episodeFiles:0, count: lib.filter(function (m) { return m.src === s.id; }).length };
+      if (s.type === 'dropbox') { out.root = s.root || ''; out.account = s.account || ''; }
+      return out;
+    });
   }
+  // What a source is, in words: Settings, the phone app and the web editor say the same.
+  function typeLabel(type) { return type === 'dlna' ? 'DLNA / UPnP' : type === 'dropbox' ? 'Dropbox' : 'WebDAV'; }
 
   function sourceMode(id, mode) { var s = source(id); if (!s || !/^(automatic|movies|shows)$/.test(mode)) throw new Error('Choose a valid source mode.'); s.contentMode = mode; save(); }
   function stamp(srcId, m) {
@@ -160,7 +170,7 @@ var MediaStore = (function () {
   function clearResume(id) { delete state.resume[id]; save(); }
 
   return {
-    preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
+    preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, typeLabel: typeLabel, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
     tmdbToken: function () { return state.tmdbToken || ''; }, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, markMissed: markMissed, applyScan: applyScan, movies: movies, load: load,
     resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, clearResume: clearResume
   };

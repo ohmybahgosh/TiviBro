@@ -3242,7 +3242,7 @@ function loadMedia() {
     (r.data || []).forEach(function (s) {
       var card = document.createElement('div'); card.className = 'card pl';
       var title = document.createElement('h3'); title.textContent = s.name; card.appendChild(title);
-      var detail = document.createElement('div'); detail.className = 'meta'; detail.textContent = (s.type === 'dlna' ? 'Home media server · DLNA / UPnP' : 'WebDAV server') + ' · ' + plural(s.count || 0, 'movie') + (s.episodeFiles ? ' · ' + plural(s.episodeFiles, 'episode file') : ''); card.appendChild(detail);
+      var detail = document.createElement('div'); detail.className = 'meta'; detail.textContent = (s.type === 'dlna' ? 'Home media server · DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' + (s.root ? ' · ' + s.root : '') : 'WebDAV server') + ' · ' + plural(s.count || 0, 'movie') + (s.episodeFiles ? ' · ' + plural(s.episodeFiles, 'episode file') : ''); card.appendChild(detail);
       var actions = document.createElement('div'); actions.className = 'row'; card.appendChild(actions);
       var mode=document.createElement('select');[['automatic','Movies and TV shows'],['movies','Movies only'],['shows','TV shows only']].forEach(function(option){var item=document.createElement('option');item.value=option[0];item.textContent=option[1];mode.appendChild(item);});mode.value=s.contentMode||'movies';mode.onchange=function(){mode.disabled=true;command('mediaSourceMode',{id:s.id,mode:mode.value},160000,cmdMsg('mediaMsg','Updating source…')).then(function(){loadMedia();},function(e){mode.disabled=false;msg('mediaMsg','bad',e.message);});};actions.appendChild(mode);
       ['Rescan', 'Remove'].forEach(function (label) {

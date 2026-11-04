@@ -413,7 +413,7 @@ Which programmes are movies: the guide's own **Movie** category, a year in the t
   <a href="https://tivibro.app/view/#tv-my-media-all"><img src="screenshots/tv-my-media-all.png" width="49%" alt="My media: All movies"></a>
 </p>
 
-**In the phone app**, a **My media** tab shows the same shelves (Continue watching, Favorites, All movies) as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.  **Settings > My media** in the phone app adds sources too: **Add media** looks for servers on your network (the TV looks, you tap one) or takes a WebDAV address and login typed on the phone.  Tap a source to rescan it, change its **Content**, fetch its movie details or remove it, and tap the TMDB token row to paste a token.  A scan that takes longer carries on on the TV.
+**In the phone app**, a **My media** tab shows the same shelves (Continue watching, Favorites, All movies) as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.  **Settings > My media** in the phone app adds sources too: **Add media** looks for servers on your network (the TV looks, you tap one), takes a WebDAV address and login typed on the phone, or signs in to **Dropbox** and lets you pick the folder.  Tap a source to rescan it, change its **Content**, fetch its movie details or remove it, and tap the TMDB token row to paste a token.  A scan that takes longer carries on on the TV.
 
 <p align="center">
   <img src="screenshots/app-my-media.png" width="30%" alt="My media in the phone app">
@@ -426,7 +426,7 @@ Use **Left** and **Right** to move between movies, and **Up** and **Down** to mo
 
 **Back** opens the standard main menu directly.  **Left** from the first movie does the same.  There is no separate source menu on the movie screen; all sources appear together and source management stays in Settings.
 
-**Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, or **Add a WebDAV server** and enter its WebDAV address and login.  The phone app's **Settings > My media** does the same, with the typing on the phone.  Turn on media sharing on a home server first.  A playlist must already be set up.
+**Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, or **Add a WebDAV server** and enter its WebDAV address and login.  Dropbox is added from the phone app (see below).  The phone app's **Settings > My media** does the same, with the typing on the phone.  Turn on media sharing on a home server first.  A playlist must already be set up.
 
 **Movies and TV shows.**  A new source finds both.  A source added before alpha 61 stays movies only until you open it in **Settings > My media** and set **Content** to **Movies and TV shows** (or **TV shows only**), then rescan.
 
@@ -458,6 +458,8 @@ TV/
 **Big libraries.**  A scan works in parts and carries on where it stopped, and the source's options have **Pause scan** and **Restart scan**.  A scan that fails or finds nothing keeps what you had.
 
 A WebDAV source is a WebDAV folder, not a normal website or HTTP directory.  Services such as premiumize use a customer ID and API key as the login.  TiviBro supports both signed file links and servers that serve files directly with HTTP Basic authentication.  For a file that needs a login, the helper streams it to the player and handles seeking and subtitle reads.  Your login is sent only to the server you added.
+
+**Dropbox.**  Sign in with the TiviBro phone app: **Settings > My media > Add media > Dropbox**.  Sign in to Dropbox in the browser that opens, come back to the app, choose the folder your movies and shows are in (or the whole Dropbox) and tap **Use this folder**.  The TV keeps only the sign-in, never your Dropbox password, and it stays on the TV: not in backups, problem reports or the web editor.  Movies play straight from Dropbox.  Removing the source signs the TV out of Dropbox.  If Dropbox stops accepting the sign-in (you changed your password or removed TiviBro from your Dropbox apps), remove the source and add it again from the phone app.
 
 For easier typing, open **Settings > My media > Edit on a computer** and connect to the web editor.  Its **My media** page lets you add WebDAV logins, rescan or remove sources, and change the shared metadata language.  Saved logins are never sent back to the editor.
 
@@ -832,7 +834,7 @@ Your own movie and TV show sources and their preferences.  The [My media](#my-me
 
 | Settings > My media | Default | What it does |
 |---|---|---|
-| **Add media** | | Find a DLNA / UPnP server, or enter the WebDAV address of your media folder and its login.  Subfolders are scanned too.  One folder per movie, named like **Frozen (2013)**, matches best.  In the phone app the server list and the WebDAV form are on the phone. |
+| **Add media** | | Find a DLNA / UPnP server, or enter the WebDAV address of your media folder and its login.  **Dropbox** is signed in from the phone app.  Subfolders are scanned too.  One folder per movie, named like **Frozen (2013)**, matches best.  In the phone app the server list and the WebDAV form are on the phone. |
 | **Edit on a computer** *(on the TV)* | | Shows a code for a computer or phone browser: the web editor's My media page, for typing server logins and fixing TV show episodes. |
 | **Rescan media sources** | | Same as Green on My media: scan every saved source for movies and episodes. |
 | **Fetch media details** | | Same as Yellow: look up details for movies, shows and the episodes you have, and refresh outdated language details. |

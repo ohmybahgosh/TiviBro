@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Dropbox in My media.**  Sign in with the phone app (Settings > My media > Add media > Dropbox), pick a folder, and its movies and TV shows join My media on the TV.  Movies play straight from Dropbox.  The TV keeps only the sign-in, out of backups, logs and problem reports, and removing the source signs it out.
+
 ## 0.6.0 (alpha 72, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.

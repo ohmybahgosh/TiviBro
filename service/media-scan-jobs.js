@@ -19,13 +19,14 @@ function key(directory) {
 function fingerprint(directory, source) {
   var clean = {};
   ['type', 'address', 'control', 'user', 'contentMode', 'maxDepth'].forEach(function (k) { clean[k] = source[k] || ''; });
+  if (source.type === 'dropbox') clean.root = String(source.root || '').toLowerCase();   // its folder (the refresh token, like a password, is left out)
   return crypto.createHmac('sha256', key(directory)).update(JSON.stringify(clean)).digest('hex');
 }
 function name(id) { return 'scan_' + crypto.createHash('sha256').update(String(id)).digest('hex').slice(0, 40) + '.json'; }
 function size(state) {
   var n = 0;
   function count(v) { if (!v) return 0; if (Array.isArray(v)) return v.length; return typeof v === 'object' ? Object.keys(v).length : 0; }
-  ['queue', 'visited', 'byPath', 'discovered', 'pathOwners', 'movies'].forEach(function (k) { n += count(state[k]); });
+  ['queue', 'visited', 'byPath', 'discovered', 'pathOwners', 'movies', 'entries'].forEach(function (k) { n += count(state[k]); });
   return n;
 }
 /* The source to scan, with _continuation when a matching checkpoint exists.  Never fails: a

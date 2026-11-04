@@ -151,6 +151,8 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
     }
 
     LaunchedEffect(Unit) { loadSections() }
+    // A Dropbox folder added (its dialog is MainActivity's): the open page shows the new source.
+    LaunchedEffect(Unit) { model.mediaChanged.collect { if (sec != null) loadPage() } }
     LaunchedEffect(sec, path) { if (sec != null) { page = null; loadPage() } }
     BackHandler(enabled = sec != null) { if (path.isNotEmpty()) path = path.dropLast(1) else { sec = null; page = null } }
 

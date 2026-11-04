@@ -26,12 +26,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
             <!-- The TV's QR code is a tivibro.app/pair link: scanned with the camera, it opens the app straight
-                 away (verified with tivibro.app/.well-known/assetlinks.json). -->
+                 away (verified with tivibro.app/.well-known/assetlinks.json).  tivibro.app/dropbox is where
+                 Dropbox sends the phone back after signing in (Settings > My media > Add media > Dropbox). -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="tivibro.app" android:path="/pair" />
+                <data android:scheme="https" android:host="tivibro.app" android:path="/dropbox" />
             </intent-filter>
             <!-- A provider's link shared to TiviBro (Share, then TiviBro): added on a paired TV. -->
             <intent-filter>
@@ -45,6 +47,13 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="tivibro" android:host="pair" />
+            </intent-filter>
+            <!-- The button on tivibro.app/dropbox, for phones where Dropbox's return opened the browser. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="tivibro" android:host="dropbox" />
             </intent-filter>
         </activity>
 

@@ -290,7 +290,7 @@ var WebEdit = (function () {
     mediaLibraryEdit:function (a) { return Media.request('library/edit',a,30000).then(function (r) { if(r.error)throw new Error(r.message);if(a.operation==='setWatched'&&!a.watched&&Media.watchedReset)Media.watchedReset(a.handle,r.revision);return {msg:'Library updated.',data:r}; }); },
     mediaTokenTest: function () { return Media.testTmdbToken().then(function (m) { return { msg: m }; }); },
     mediaList: function () {
-      return MediaStore.load().then(function () { return { msg: 'Media sources', data: MediaStore.publicSources().map(function (s) { return { id: s.id, type: s.type, name: s.name, count: s.count,contentMode:s.contentMode||'movies',episodeFiles:s.episodeFiles||0 }; }) }; });
+      return MediaStore.load().then(function () { return { msg: 'Media sources', data: MediaStore.publicSources().map(function (s) { return { id: s.id, type: s.type, name: s.name, root: s.type === 'dropbox' ? s.root || '' : undefined, count: s.count,contentMode:s.contentMode||'movies',episodeFiles:s.episodeFiles||0 }; }) }; });
     },
     mediaAdd: function (a) {
       return Media.addAddress(clean(a.address), clean(a.user), clean(a.pass)).then(function (r) {
@@ -300,7 +300,7 @@ var WebEdit = (function () {
     },
     mediaRemove: function (a) {
       var s = mediaSource(a);
-      return MediaStore.load().then(function () { MediaStore.removeSource(s.id); return Media.request('library/source',{sourceId:s.id,action:'remove'},30000).then(function(r){if(r.error)throw new Error(r.message);Media.refresh();return {msg:'Media source removed.  Your files stay where they are.'};}); });
+      return MediaStore.load().then(function () { MediaStore.removeSource(s.id); if (Media.signOut) Media.signOut(s); return Media.request('library/source',{sourceId:s.id,action:'remove'},30000).then(function(r){if(r.error)throw new Error(r.message);Media.refresh();return {msg:'Media source removed.  Your files stay where they are.'};}); });
     },
     mediaRescan: function (a) {
       var s = mediaSource(a);

@@ -167,8 +167,8 @@ var Settings = (function () {
     var names = { en: 'English', nl: 'Dutch', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian' };
     var hasToken = MediaStore.preferences().tmdbConfigured;
     var out = [head('Your media library'),
-      info('Movies and TV shows from your own media servers (DLNA / UPnP, or a WebDAV folder).  Files can be at the top level or in folders.  Choose what each source holds: movies, TV shows or both.  The phone app does all of this too, with the typing on the phone.', ''),
-      phoneDoes('media-add', action('Add media', 'Find a DLNA / UPnP server, or enter a WebDAV folder address and login.  Subfolders are scanned too.', function () { Media.addMenu(); })),
+      info('Movies and TV shows from your own media servers (DLNA / UPnP, a WebDAV folder, or Dropbox).  Files can be at the top level or in folders.  Choose what each source holds: movies, TV shows or both.  The phone app does all of this too, with the typing on the phone.', ''),
+      phoneDoes('media-add', action('Add media', 'Find a DLNA / UPnP server, or enter a WebDAV folder address and login.  Dropbox signs in from the phone app.  Subfolders are scanned too.', function () { Media.addMenu(); })),
       tvOnly(action('Edit on a computer', 'Shows a code for a computer or phone browser: the web editor\'s My media page, for typing server logins and fixing TV show episodes.', function () { WebEdit.showJoin('media'); })),
       action('Rescan media sources', 'Look for movies and episodes.  Green on the My media screen.', function () { Media.rescanAll(); }),
       action('Fetch media details', 'Look up movies, shows and owned episodes.  Refresh outdated language details.  Yellow on My media.', function () { Media.fetchMissingDetails(); }),
@@ -179,7 +179,7 @@ var Settings = (function () {
       choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); }),
       head('Media sources')]);
     MediaStore.publicSources().forEach(function (s) {
-      var row = phoneDoes('media-source', action(s.name, (s.type === 'dlna' ? 'DLNA / UPnP' : 'WebDAV') + ' · rescan, content, details or remove', function () { Media.sourceMenu(s); }, function () { return MediaStore.movies(s.id).length + ' movies'+(s.episodeFiles?' · '+s.episodeFiles+' episode files':''); }));
+      var row = phoneDoes('media-source', action(s.name, (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' : 'WebDAV') + ' · rescan, content, details or remove', function () { Media.sourceMenu(s); }, function () { return MediaStore.movies(s.id).length + ' movies'+(s.episodeFiles?' · '+s.episodeFiles+' episode files':''); }));
       row.sid = s.id; out.push(row);
     });
     if (!MediaStore.sources().length) out.push(info('No media sources yet', 'Choose Add media above'));
