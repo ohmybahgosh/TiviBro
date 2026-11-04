@@ -45,9 +45,12 @@ const server = http.createServer((q,s) => {
       const url = 'http://127.0.0.1:' + server.address().port;
       await page.evaluate(async ({codec,url}) => {
         UI.close();
+        // Each file is a new playback: no subtitle chosen yet, and the English track added below is off.
+        var v=document.getElementById('video'); v._subsChoice=false; v._subsWant=null; [].forEach.call(v.textTracks,function(t){t.mode='disabled';});
         window.__embeddedTest=MkvSubs.extract(Net.wrap(url+'/'+codec+'.mkv'),document.getElementById('video'));
       },{codec,url});
-      await page.waitForFunction(()=>{var t=document.getElementById('video').textTracks;if(t.length)t[0].mode='hidden';return t.length && t[0].cues && t[0].cues.length;},null,{timeout:15000});
+      await page.waitForFunction(()=>{// Only a shown track is read (MKV is lazy, as MP4): switch the file's track on, as if chosen.
+        var v=document.getElementById('video'),t=v.textTracks;if(t.length&&t[0].mode!=='showing'){v._subsChoice=true;v._subsRev=(v._subsRev||0)+1;v._subsWant=t[0];[].forEach.call(t,function(x){if(x!==t[0])x.mode='disabled';});t[0].mode='showing';}return t.length && t[0].cues && t[0].cues.length;},null,{timeout:15000});
       await page.evaluate(()=>Views.runAction('subs','player'));
       ok(codec + ' appears as Dutch in the subtitle menu', /Dutch/.test(await page.innerText('#modal')));
       const rows=page.locator('#modal .mi'), count=await rows.count();
