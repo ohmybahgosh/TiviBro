@@ -97,23 +97,24 @@ data class TvAdvert(val update: Int, val deviceType: Int, val modules: List<Pair
 
 /**
  * Whether the TV came on, from its Bluetooth advertisements while the phone wakes it.  Used only when the phone
- * can't reach the TV over Wi-Fi.  The TV counts as on when an advertisement says its wake-up service isn't off
- * (ThinQ's test), or, once the first [windowMs] are over, when the TV sends an advertisement it wasn't sending
- * at the start (it began advertising, or what it advertises changed).
+ * can't reach the TV over Wi-Fi.  An LG TV advertises in standby too, and the first byte of its advertisement
+ * counts its changes of state (a C2 sent 3 while on, 4 once off, 5 once woken again), so the TV counts as on when
+ * that counter moves on from the first advertisement heard.  ThinQ's own test (the wake-up module, 9, not off)
+ * counts too, though a C2 never shows it.
  */
-class TvSeen(private val windowMs: Long = 5000) {
-    private val before = mutableSetOf<String>()
+class TvSeen {
+    private var first: Int? = null
     var on = false; private set
     var why = ""; private set
-    /** One advertisement [atMs] after the start, its manufacturer data as [hex].  True once the TV counts as on. */
-    fun saw(atMs: Long, hex: String, ad: TvAdvert?): Boolean {
-        if (on) return true
+    /** One advertisement, read by [BleWake.parseAdvert] (null when it had no LG data).  True once the TV counts as on. */
+    fun saw(ad: TvAdvert?): Boolean {
+        if (on || ad == null) return on
+        val f = first
         when {
-            ad != null && !ad.wakeOff -> { on = true; why = "its wake-up service is on" }
-            atMs < windowMs -> before += hex
-            hex !in before -> { on = true; why = if (before.isEmpty()) "it started advertising" else "its advertisement changed" }
+            !ad.wakeOff -> { on = true; why = "its wake-up service is on" }
+            f == null -> first = ad.update
+            ad.update != f -> { on = true; why = "its advertisement changed (state ${f} to ${ad.update})" }
         }
         return on
     }
 }
-

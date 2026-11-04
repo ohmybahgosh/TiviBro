@@ -74,22 +74,23 @@ class BleWakeTest {
         assertNull(BleWake.addressFromRecord(bytes(0x09, 0x1b, 0x00)))
     }
 
+    /** Bob's C2 woken with the phone's Wi-Fi off: 04 in standby, 05 about ten seconds later, modules unchanged. */
     @Test fun tellsTheTvCameOn() {
-        val standby = "0334141216fd80"
-        // Advertising the same thing all along: never on.
-        val same = TvSeen()
-        assertFalse(same.saw(500, standby, BleWake.parseAdvert(bytes(0x03, 0x34, 0x14, 0x12, 0x16, 0xfd, 0x80))))
-        assertFalse(same.saw(20_000, standby, BleWake.parseAdvert(bytes(0x03, 0x34, 0x14, 0x12, 0x16, 0xfd, 0x80))))
-        // Silent at first, then advertising: on.
-        val appears = TvSeen()
-        assertTrue(appears.saw(8_000, standby, BleWake.parseAdvert(bytes(0x03, 0x34, 0x14, 0x12, 0x16, 0xfd, 0x80))))
-        assertEquals("it started advertising", appears.why)
-        // Something new in the first seconds only joins what it sent before.
-        val early = TvSeen()
-        assertFalse(early.saw(1_000, standby, BleWake.parseAdvert(bytes(0x03, 0x34, 0x14, 0x12, 0x16, 0xfd, 0x80))))
-        assertTrue(early.saw(9_000, "0434141216fd80", BleWake.parseAdvert(bytes(0x04, 0x34, 0x14, 0x12, 0x16, 0xfd, 0x80))))
-        assertEquals("its advertisement changed", early.why)
-        // The wake-up module on: on at once (ThinQ's test).
-        assertTrue(TvSeen().saw(100, "0331130", BleWake.parseAdvert(bytes(0x03, 0x31, 0x13))))
+        fun ad(u: Int) = BleWake.parseAdvert(bytes(u, 0x34, 0x14, 0x12, 0x16, 0xfd, 0x80))
+        val woke = TvSeen()
+        assertFalse(woke.saw(ad(4)))
+        assertFalse(woke.saw(ad(4)))
+        assertTrue(woke.saw(ad(5)))
+        assertTrue(woke.why.contains("4 to 5"))
+        assertTrue(woke.saw(ad(5)))
+        // Standby all along (or a TV that was already on): never counts.
+        val still = TvSeen()
+        repeat(20) { assertFalse(still.saw(ad(5))) }
+        // Heard late is still only a starting point.
+        val late = TvSeen()
+        assertFalse(late.saw(null))
+        assertFalse(late.saw(ad(5)))
+        // ThinQ's test: the wake-up module on.
+        assertTrue(TvSeen().saw(BleWake.parseAdvert(bytes(0x03, 0x31, 0x13))))
     }
 }

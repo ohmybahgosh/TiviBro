@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Seeing the TV come on over Bluetooth is more reliable.**  An LG TV advertises over Bluetooth in standby too, and counts each change of state in its advertisement.  The app now waits for that count to move on (as it did about ten seconds after a Turn on with the phone's Wi-Fi off) instead of guessing from when it first heard the TV, so a TV the phone hears late is no longer taken for one that just came on.
+
 ## 0.6.0 (alpha 76, 2026-11-04)
 
 Pre-release: expect rough edges, and keep a backup before installing.

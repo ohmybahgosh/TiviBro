@@ -267,7 +267,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             val at = log.ms()
             val ad = BleWake.parseAdvert(data)
             log.advert(at, rssi, BleWake.hex(data), ad)
-            if (seen.saw(at, BleWake.hex(data), ad) && bleOn.compareAndSet(false, true)) log.add("Counts as on: ${seen.why}.")
+            if (seen.saw(ad) && bleOn.compareAndSet(false, true)) log.add("Counts as on: ${seen.why}.")
         } else null
         if (watch != null) log.add("Watching for the TV over Bluetooth: ${watch.result}.")
         var on = false
