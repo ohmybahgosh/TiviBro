@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 83, 2026-11-04)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 83
 
 - **Subtitles look the way you like** (discussion #19, thanks ich0x).  **Settings > Playback** has **Subtitle colour** (white, yellow, gold, light blue or light green), **Subtitle size** (small to extra large) and **Subtitle background** (outline, a see-through box or a black box behind each line).  They apply to downloads, subtitles in the file and the stream's own.
 - **Downloaded subtitles are kept for a week** (discussion #19).  Stop a movie on a work night and finish it at the weekend: its subtitles come back on, with your timing, without using another download.  **Settings > Playback > Keep downloaded subtitles** sets how long, or Off.
@@ -9,11 +13,7 @@
 - **The buffer pill's colours fit the Automatic buffer** (discussion #36).  Green now runs down to half the refill goal, so a steady stream on a small cushion no longer sits in yellow; red is for under a second.  "most 24s" now sits right after the bar.
 - **The web editor's sign-in on a phone** (discussion #36).  The **Show** button covered the whole password box on narrow screens; it now sits inside the box's right end.
 
-## 0.6.0 (alpha 82, 2026-11-04)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 82
+### In alpha 82
 
 - **MKV subtitles keep up in movies with many languages** (#48, thanks moritzm784).  Only the subtitles you are watching are read from the file, as for MP4 files, so a movie with dozens of subtitle languages no longer shows its lines late or not at all.  A language you switch to is read as you pick it.
 - **The subtitle menu keeps its settings at the top** (#49, thanks moritzm784).  **Find subtitles…**, **Timing** and **Line up with another track…** now come first under a **Settings** heading, and the video's own subtitles follow under **In this movie** (or episode, or stream) with how many there are.  The menu opens on the subtitle that is on.  Before, a movie with dozens of languages put Timing at the very bottom.
