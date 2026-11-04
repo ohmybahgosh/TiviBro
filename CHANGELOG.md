@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **Subtitles look the way you like** (discussion #19, thanks ich0x).  **Settings > Playback** has **Subtitle colour** (white, yellow, gold, light blue or light green), **Subtitle size** (small to extra large) and **Subtitle background** (outline, a see-through box or a black box behind each line).  They apply to downloads, subtitles in the file and the stream's own.
+- **Downloaded subtitles are kept for a week** (discussion #19).  Stop a movie on a work night and finish it at the weekend: its subtitles come back on, with your timing, without using another download.  **Settings > Playback > Keep downloaded subtitles** sets how long, or Off.
+- **Film shape in Aspect** (discussion #31).  Any wide film fills the screen, sides cropped: 1.85, 1.90 (IMAX), 2.00, 2.20, 2.39 or 2.76, or type your own, like 64:27.  Remembered per channel, movie or episode like the other shapes.
+- **Notices wait until the movie is over** (discussion #35).  A watchlist find while a movie or episode plays full screen shows afterwards ("While you watched: …"), and any notice in full screen now shows near the top, clear of the subtitles.  **Settings > Playback > Hold notices during movies** turns the waiting off.  Reminders you set still come on time.
+- **The buffer pill's colours fit the Automatic buffer** (discussion #36).  Green now runs down to half the refill goal, so a steady stream on a small cushion no longer sits in yellow; red is for under a second.  "most 24s" now sits right after the bar.
+- **The web editor's sign-in on a phone** (discussion #36).  The **Show** button covered the whole password box on narrow screens; it now sits inside the box's right end.
+
 ## 0.6.0 (alpha 82, 2026-11-04)
 
 Pre-release: expect rough edges, and keep a backup before installing.

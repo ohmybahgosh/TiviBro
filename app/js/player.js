@@ -1068,7 +1068,12 @@ var Player = (function () {
   var ASPECTS = [['contain', 'Original'], ['fill', 'Fill'], ['cover', 'Zoom'], ['4:3', '4:3'], ['16:9', '16:9'], ['21:9', '21:9'], ['stretch43', '4:3 to 16:9']];
   var ASPECT_NAMES = {};
   ASPECTS.forEach(function (a) { ASPECT_NAMES[a[0]] = a[1]; });
-  function displayFor(ch) { var d = ch && Store.edits.display && Store.edits.display[ch.k]; d = d || Store.settings.display; return ASPECT_NAMES[d] ? d : 'contain'; }
+  /* A film shape of your own (discussion #31): 'film:2.39' grows a letterboxed film of that shape until it
+     fills the screen's height, sides cropped, as 21:9 does for 2.35.  From 1.5 to 3. */
+  function filmShape(mode) { var m = /^film:(\d(?:\.\d{1,3})?)$/.exec(String(mode || '')), r = m ? +m[1] : 0; return r >= 1.5 && r <= 3 ? r : 0; }
+  function validAspect(mode) { return !!(ASPECT_NAMES[mode] || filmShape(mode)); }
+  function aspectName(mode) { var r = filmShape(mode); return r ? 'Film ' + r.toFixed(2) + ':1' : ASPECT_NAMES[mode] || ''; }
+  function displayFor(ch) { var d = ch && Store.edits.display && Store.edits.display[ch.k]; d = d || Store.settings.display; return validAspect(d) ? d : 'contain'; }
   /* How to draw a vw x vh picture on a W x H screen for an aspect mode: { fit, sx, sy }.  The element
      always fills the screen; sx and sy scale it from its centre. */
   function aspectFit(mode, vw, vh, W, H) {
@@ -1079,10 +1084,10 @@ var Player = (function () {
     if (mode === '4:3' || mode === '16:9') {
       // Show the whole picture as this shape: a squashed 16:9 film sent as 4:3, or the other way.
       var b = box(mode === '4:3' ? 4 / 3 : 16 / 9); fw = b.w; fh = b.h;
-    } else if (mode === '21:9') {
-      // A 2.35:1 film letterboxed inside the picture: grow it until the film fills the screen's
-      // height and crop the sides.  A picture already that wide fills the screen the same way.
-      var band = Math.max(2.35, A);
+    } else if (mode === '21:9' || filmShape(mode)) {
+      // A 2.35:1 film (or the film shape chosen) letterboxed inside the picture: grow it until the film
+      // fills the screen's height and crop the sides.  A picture already that wide fills the screen the same way.
+      var band = Math.max(filmShape(mode) || 2.35, A);
       fw = band >= S ? band * H : W; fh = fw / A;
     } else if (mode === 'stretch43') {
       // A 4:3 picture (or a 4:3 picture with black bars at the sides) stretched out to 16:9.
@@ -1105,7 +1110,7 @@ var Player = (function () {
     video.style.transform = f.sx === 1 && f.sy === 1 ? '' : 'scale(' + f.sx + ',' + f.sy + ')';
   }
   function setAspect(mode, ch) {
-    if (!ASPECT_NAMES[mode]) return;
+    if (!validAspect(mode)) return;
     if (ch) { Store.edits.display = Store.edits.display || {}; Store.edits.display[ch.k] = mode; Store.saveEdits(); }
     else { Store.settings.display = mode; Store.saveSettings(); }
     fitKey = ''; applyDisplay();
@@ -1210,7 +1215,7 @@ var Player = (function () {
     setQuality: function (i) { if (eng && eng.setLevel) eng.setLevel(i); },
     setRate: function (r) { if (video) video.playbackRate = r; },
     get rate() { return video ? video.playbackRate : 1; },
-    displayFor: displayFor, setAspect: setAspect, aspectFit: aspectFit, ASPECTS: ASPECTS, ASPECT_NAMES: ASPECT_NAMES,
+    displayFor: displayFor, setAspect: setAspect, aspectName: aspectName, filmShape: filmShape, aspectFit: aspectFit, ASPECTS: ASPECTS, ASPECT_NAMES: ASPECT_NAMES,
     setAudio: function (i) {
       if (!eng || !eng.setAudio) return;
       if (cur) cur.userAudio = true;

@@ -113,10 +113,65 @@ var Subs = (function () {
   }
   function gone(t) { return dead.indexOf(t) >= 0; }
   function reset() {
+    keepTiming();
+    subject = '';
     added.forEach(function (t) { try { t.mode = 'disabled'; } catch (e) {} dead.push(t); });
     added = []; delay = 0; rate = 1; clearInterval(delayTimer); delayTimer = 0; lined = {}; version++;
     startDrawing();
   }
+
+  /* ---------- downloads kept for a while (discussion #19) ----------
+     A movie stopped on a work night and finished at the weekend gets its subtitles back without another
+     download (they count against OpenSubtitles' daily limit).  Downloads are kept per movie or episode,
+     with the timing that was set, for Settings > Playback > Keep downloaded subtitles (a week unless
+     changed; Off keeps none).  At most 3 per title and about 1.5 MB in all, the oldest go first. */
+  var KEPT = 'tivibro.subsKept', KEPT_CHARS = 1500000, subject = '';
+  function keepDays() { var d = Store.settings.keepSubs; return d === 0 ? 0 : +d > 0 ? +d : 7; }
+  function keptAll() {
+    var o = null, days = keepDays(), old = Date.now() - days * 86400e3;
+    try { o = JSON.parse(localStorage.getItem(KEPT) || 'null'); } catch (e) { o = null; }
+    if (!o || typeof o !== 'object') o = {};
+    Object.keys(o).forEach(function (k) { if (!days || !o[k] || !(o[k].at > old)) delete o[k]; });
+    return o;
+  }
+  function keptSave(o) {
+    var keys = Object.keys(o).sort(function (a, b) { return o[a].at - o[b].at; }), text = JSON.stringify(o);
+    while (keys.length && text.length > KEPT_CHARS) { delete o[keys.shift()]; text = JSON.stringify(o); }
+    try { if (keys.length) localStorage.setItem(KEPT, text); else localStorage.removeItem(KEPT); } catch (e) {}
+  }
+  function keep(label, lang, cues) {
+    if (!subject || !keepDays()) return;
+    var o = keptAll(), r = o[subject] || { subs: [] };
+    r.subs = r.subs.filter(function (x) { return x.label !== label; }).concat([{ label: label, lang: lang, c: cues.map(function (c) { return [c.s, c.e, c.text]; }) }]).slice(-3);
+    r.at = Date.now(); r.delay = delay; r.rate = rate;
+    o[subject] = r;
+    keptSave(o);
+  }
+  function keepTiming() {
+    if (!subject || !added.length || !keepDays()) return;
+    var o = keptAll(), r = o[subject];
+    if (!r) return;
+    r.delay = delay; r.rate = rate; r.at = Date.now();
+    keptSave(o);
+  }
+  /** A movie or episode starts: what was downloaded for it in the last days comes back, the last one on. */
+  function restore(meta) {
+    subject = meta && meta.id != null ? 'v:' + meta.id : '';
+    if (!subject || !keepDays() || typeof document === 'undefined') return 0;
+    var r = keptAll()[subject];
+    if (!r || !r.subs || !r.subs.length) return 0;
+    delay = +r.delay || 0; rate = +r.rate > 0 ? +r.rate : 1; timed();
+    var v = video();
+    if (v) v._subsChoice = true;
+    r.subs.forEach(function (x) { addTrack(x.label, x.lang, x.c.map(function (c) { return { s: c[0], e: c[1], text: c[2] }; })); });
+    var last = r.subs[r.subs.length - 1];
+    Log.info('subs', 'Kept subtitles back: ' + r.subs.map(function (x) { return x.label; }).join(', '));
+    U.toast(last.label + ' is on again, from last time.' + (delay || rate !== 1 ? '  With your timing.' : ''), 5000);
+    return r.subs.length;
+  }
+  /** Settings: how many titles have subtitles kept now. */
+  function keptCount() { return Object.keys(keptAll()).length; }
+  function forgetKept() { try { localStorage.removeItem(KEPT); } catch (e) {} }
 
   /* ---------- timing ---------- */
   function cuesOf(t) { var c = t && t.cues, out = []; for (var i = 0; c && i < c.length; i++) out.push(c[i]); return out; }
@@ -152,11 +207,12 @@ var Subs = (function () {
   }
   function fresh(t) { if (t && (delay || rate !== 1 || lined[trackKey(t)])) fix(t); }
   function timed() { clearInterval(delayTimer); delayTimer = delay || rate !== 1 || Object.keys(lined).length ? setInterval(applyDelay, 2000) : 0; }
-  function setRate(r) { rate = r > 0.5 && r < 2 ? r : 1; applyDelay(); timed(); return rate; }
+  function setRate(r) { rate = r > 0.5 && r < 2 ? r : 1; applyDelay(); timed(); keepTiming(); return rate; }
   function shift(d) {
     delay = Math.round((delay + d) * 10) / 10;
     applyDelay();
     timed();
+    keepTiming();
     return delay;
   }
 
@@ -212,7 +268,7 @@ var Subs = (function () {
     if (!board) { board = document.createElement('div'); board.className = 'subs-captions'; }
     if (board.parentNode !== stage) stage.appendChild(board);
     var text = lines.join('\n').replace(/<\/?(?:b|i|u|font)(?:\s[^>]*)?>/gi, '');
-    if (text !== boardText) { board.textContent = text; board.style.display = text ? '' : 'none'; boardText = text; }
+    if (text !== boardText) { if (U.lines) U.lines(board, text); else board.textContent = text; board.style.display = text ? '' : 'none'; boardText = text; }
   }
   function startDrawing() { if (!drawTimer && typeof document !== 'undefined') drawTimer = setInterval(function () { try { drawLines(); } catch (e) {} }, 250); }
 
@@ -315,6 +371,7 @@ var Subs = (function () {
       var cues = parse(j.text);
       if (!cues.length) throw new Error('That file had no subtitles TiviBro can read.');
       addTrack(langName(x.lang) + ' (OpenSubtitles)', x.lang, cues);
+      keep(langName(x.lang) + ' (OpenSubtitles)', x.lang, cues);
       Log.info('subs', 'OpenSubtitles: ' + cues.length + ' lines in ' + x.lang + ', ' + j.remaining + ' downloads left today');
       U.toast(langName(x.lang) + ' subtitles on.' + (j.remaining != null ? '  ' + j.remaining + ' downloads left today.' : '') + '  Out of time?  Subtitles > Timing.', 7000);
     }).catch(function (e) { U.toast(e.message, 7000); });
@@ -413,7 +470,7 @@ var Subs = (function () {
       (!want || U.lang(t.language || t.label) === want));
   }
 
-  return { find: find, gone: gone, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
+  return { find: find, gone: gone, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, keptCount: keptCount, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
     get delay() { return delay; }, get rate() { return rate; }, get timing() { return timingSummary(); }, setRate: setRate, draw: drawLines, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
-    _test: { parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
+    _test: { keep: keep, parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
 })();

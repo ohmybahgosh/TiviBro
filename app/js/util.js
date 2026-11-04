@@ -140,6 +140,26 @@ var U = (function () {
     toastT = setTimeout(function () { t.classList.add('hidden'); }, ms || 2600);
   }
 
+  /* A notice nobody asked for just now (the watchlist setting a reminder, say).  While a movie or episode
+     plays full screen it waits, so nothing covers the subtitles (discussion #35), and shows once you're back:
+     "While you watched: …".  Settings > Playback > Hold notices during movies (on unless switched off). */
+  var held = [], heldT = 0;
+  function watching() {
+    return typeof Views !== 'undefined' && Views.full && Views.mode === 'vod' &&
+      !(typeof Store !== 'undefined' && Store.settings && Store.settings.holdNotices === false);
+  }
+  function notice(msg, ms) {
+    if (!watching()) { toast(msg, ms); return false; }
+    held.push(msg);
+    if (!heldT) heldT = setInterval(function () {
+      if (watching() || !held.length) return;
+      var first = held[0], more = held.length - 1;
+      held = []; clearInterval(heldT); heldT = 0;
+      toast('While you watched: ' + first + (more ? '  And ' + more + ' more.' : ''), 9000);
+    }, 2000);
+    return true;
+  }
+
   // Run fn in idle time so big data jobs never block a keypress.
   var idle = window.requestIdleCallback || function (fn) { return setTimeout(function () { fn({ timeRemaining: function () { return 8; } }); }, 1); };
 
@@ -176,8 +196,19 @@ var U = (function () {
     var A = h(a), B = h(b);
     return '#' + A.map(function (v, i) { return ('0' + Math.round(v + (B[i] - v) * t).toString(16)).slice(-2); }).join('');
   }
+  /* Subtitle lines into a caption box: one span per line (so a background box hugs each line), newlines kept
+     between them, so textContent reads as the text itself. */
+  function lines(el, text) {
+    text = String(text || '');
+    if (typeof document === 'undefined' || !el.appendChild || !document.createTextNode) { el.textContent = text; return; }
+    el.textContent = '';
+    text.split('\n').forEach(function (l, i) {
+      if (i) el.appendChild(document.createTextNode('\n'));
+      if (l) { var sp = document.createElement('span'); sp.textContent = l; el.appendChild(sp); }
+    });
+  }
   return {
-    hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
+    lines: lines, notice: notice, hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
     secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, day: day, LANGS: LANGS, lang: lang, hash: hash,
     b64utf8: b64utf8, request: request, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad };
 })();

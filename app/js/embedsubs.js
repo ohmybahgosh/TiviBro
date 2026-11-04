@@ -151,7 +151,7 @@ var EmbedSubs = (function () {
       }
       if (video.classList) video.classList.toggle('mkv-captions-active', selected);
       var text = lines.join('\n');
-      if (text !== lastText) { overlay.textContent = text; lastText = text; }
+      if (text !== lastText) { if (typeof U !== 'undefined' && U.lines) U.lines(overlay, text); else overlay.textContent = text; lastText = text; }
     }
     var addedEls = [];        // <track> elements this call appended, so cancel() can undo them
     var liveTracks = [];      // the live TextTrack per track index, parallel to a rec's tracks/cues

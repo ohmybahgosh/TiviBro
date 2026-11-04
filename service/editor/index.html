@@ -72,7 +72,8 @@ kbd{font:12px ui-monospace,Menlo,monospace;background:var(--raised);border:1px s
 .login h1{margin:0 0 6px;font-size:26px;display:flex;align-items:center;gap:10px}
 .login p{color:var(--muted);margin:0 0 20px}
 .login input{width:100%;font-size:24px;letter-spacing:4px;text-transform:uppercase;text-align:center;margin-bottom:12px}
-.pwwrap{position:relative}.pwwrap input{padding-right:72px}.pwshow{position:absolute;right:6px;top:6px;padding:8px 10px;font-size:13px}
+/* Show sits inside the box's right end.  .login button is full width, so it is undone here (discussion #36: Show covered the box on a phone). */
+.pwwrap{position:relative;margin-bottom:12px}.login .pwwrap input{padding-right:72px;margin-bottom:0}.login .pwshow,.pwshow{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:auto;padding:6px 10px;font-size:13px}
 .login button{width:100%;padding:11px}
 .err{color:#ff9a9d;min-height:22px;margin-top:10px}
 .loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;gap:14px;font-size:17px;color:var(--muted);background:var(--ink);z-index:50}

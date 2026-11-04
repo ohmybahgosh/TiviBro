@@ -256,7 +256,11 @@ var Views = (function () {
     document.body.classList.toggle('guide1', Store.settings.guideLines === 1);
     var s = Store.settings, b = document.body.classList;
     document.body.className.split(/\s+/).forEach(function (c) { if (/^theme-/.test(c)) b.remove(c); });
-    ['ts-s', 'ts-l', 'ov-l', 'ov-h', 'now-color', 'now-off', 'gr-l', 'gr-xl'].forEach(function (c) { b.remove(c); });
+    ['ts-s', 'ts-l', 'ov-l', 'ov-h', 'now-color', 'now-off', 'gr-l', 'gr-xl', 'sub-yellow', 'sub-gold', 'sub-cyan', 'sub-green', 'sub-s', 'sub-l', 'sub-xl', 'sub-box', 'sub-solid'].forEach(function (c) { b.remove(c); });
+    // Subtitle look (discussion #19): colour, size and a box behind the lines, for subtitles TiviBro draws and the TV's own.
+    if (/^(yellow|gold|cyan|green)$/.test(s.subColor)) b.add('sub-' + s.subColor);
+    if (/^(s|l|xl)$/.test(s.subSize)) b.add('sub-' + s.subSize);
+    if (/^(box|solid)$/.test(s.subBack)) b.add('sub-' + s.subBack);
     if (s.guideRows === 'l' || s.guideRows === 'xl') b.add('gr-' + s.guideRows);
     if (!pal && s.theme && s.theme !== 'dark') b.add('theme-' + s.theme);
     b.toggle('pal', !!pal);
@@ -681,13 +685,12 @@ var Views = (function () {
   }
   /* Aspect (discussion #31): remembered for the channel on live TV and for the movie or episode
      (its "vod:<id>" key) when one is playing; elsewhere it changes the default. */
-  var DM = Player.ASPECT_NAMES;
   function aspectTarget() { return mode === 'live' ? playing : mode === 'vod' ? Player.current : null; }
   function cyclePicture() {
     var k = Player.ASPECTS.map(function (a) { return a[0]; });
     var c = aspectTarget(), nk = k[(k.indexOf(Player.displayFor(c)) + 1) % k.length];
     Player.setAspect(nk, c);
-    U.toast('Aspect: ' + DM[nk] + (c ? (mode === 'vod' ? ' for this video' : ' for this channel') : ''));
+    U.toast('Aspect: ' + Player.aspectName(nk) + (c ? (mode === 'vod' ? ' for this video' : ' for this channel') : ''));
   }
   function audioMenu() {
     var tracks = Player.audioTracks();
@@ -1106,6 +1109,7 @@ var Views = (function () {
     stage.classList.remove('off');
     video._subsChoice = false;
     Player.play({ k: 'vod:' + meta.id, n: meta.title, num: '' }, { url: url, live: false, startAt: startAt || 0, meta: meta });
+    Subs.restore(meta);           // subtitles downloaded for it in the last days (discussion #19)
     goFull();
   }
 
@@ -1209,7 +1213,7 @@ var Views = (function () {
   /* The buffer pill (discussion #36) is three parts of fixed width, so changing numbers never move the
      bar: the bar with the seconds written inside it (light on the empty part, dark on the filled part,
      so both read), the picture and engine, and the speed. */
-  var meter = $('meter'), mFill = $('meterFill'), mRes = $('meterRes'), mRate = $('meterRate'), mSecs = $('meterSecs'), mSecsIn = $('meterSecsIn'), goodSince = 0, spinPlain = false;
+  var meter = $('meter'), mFill = $('meterFill'), mRes = $('meterRes'), mRate = $('meterRate'), mSecs = $('meterSecs'), mSecsIn = $('meterSecsIn'), mMost = $('meterMost'), goodSince = 0, spinPlain = false;
   /* Buffer info on demand (Hold Info by default, or any button set to "Show buffer info"): the meter
      shows whatever its setting, for the time in Settings > Playback, or until pressed again.  Pressing
      it while it shows hides it. */
@@ -1229,7 +1233,9 @@ var Views = (function () {
     var m = Store.settings.meter, peek = full && Date.now() < peekUntil;
     if (!peek && (m === 'off' || (!full && m !== 'always'))) { meter.classList.add('hidden'); return; }
     var ratio = x.target ? x.ahead / Math.max(x.target * 2, 4) : 0;
-    var low = x.ahead < x.target, crit = x.ahead < 0.6;
+    // Colours (discussion #36): with the Automatic profile a steady stream often runs on a few seconds, so
+    // yellow is for under half the refill goal (at least 1.5 s), red for under a second; green above that.
+    var low = x.ahead < Math.max(1.5, x.target * 0.5), crit = x.ahead < 1;
     if (peek) meter.classList.toggle('hidden', x.state === 'idle');
     else if (m === 'auto') {
       if (low || x.state === 'buffering') goodSince = 0; else if (!goodSince) goodSince = Date.now();
@@ -1242,7 +1248,9 @@ var Views = (function () {
     var secs = x.ahead.toFixed(1) + 's';
     if (mSecs.textContent !== secs) { mSecs.textContent = secs; mSecsIn.textContent = secs; }
     // "most 34s": how far this stream has got, so a buffer that never reaches the profile's read-ahead shows why.
-    mRes.textContent = [x.res, x.engine, x.most >= 1 ? 'most ' + Math.round(x.most) + 's' : ''].filter(Boolean).join('  ');
+    var most = x.most >= 1 ? 'most ' + Math.round(x.most) + 's' : '';
+    if (mMost && mMost.textContent !== most) mMost.textContent = most;
+    mRes.textContent = [x.res, x.engine].filter(Boolean).join('  ');
     mRate.textContent = x.info || '';
     // The TV player never says its speed: no empty box for it.
     mRate.classList.toggle('hidden', !x.info && x.engine === 'Native');
@@ -1427,7 +1435,7 @@ var Views = (function () {
     if (subs.length || mode === 'vod') add('subs', { label: 'Subtitles', icon: 'subs', v: (subs.filter(function (t) { return t.mode === 'showing'; })[0] || {}).label || subtitleStatus(), run: function () { closePanel(); subtitleMenu(); } });
     if (mode !== 'vod') add('cc', { label: 'Captions', icon: 'cc', v: ccLabel(), run: function () { ccToggle(); renderPanel(); } });
     if (Player.qualities().length > 1) add('quality', { label: 'Quality', icon: 'quality', v: qualityLabel(), run: function () { closePanel(); qualityMenu(); } });
-    add('picture', { label: 'Aspect', icon: 'picture', v: DM[Player.displayFor(aspectTarget())], run: function () { closePanel(); pictureMenu(); } });
+    add('picture', { label: 'Aspect', icon: 'picture', v: Player.aspectName(Player.displayFor(aspectTarget())), run: function () { closePanel(); pictureMenu(); } });
     add('sleep', { label: 'Sleep timer', icon: 'sleep', v: sleepAt ? U.hhmm(sleepAt) : 'off', run: function () { closePanel(); sleepMenu(); } });
     add('info', { label: 'Stream info', icon: 'info', run: function () { closePanel(); streamInfo(); } });
     add('reconnect', { label: 'Reconnect', icon: 'reconnect', run: function () { closePanel(); Player.retryNow(); U.toast('Reconnecting'); } });
@@ -1472,11 +1480,31 @@ var Views = (function () {
         if (tv && shaped) U.toast('Aspect ' + a[1] + '.  This ' + what + ' plays with the TV player, which some TVs keep at its own shape.', 6000);
       } };
     });
-    items.push({ label: 'Use this aspect for everything', sub: 'currently ' + DM[Player.displayFor(null)], action: function () {
+    // A film shape of your own: IMAX 1.90, 2.39 scope and so on, cropped to fill the screen (discussion #31).
+    var film = Player.filmShape(on);
+    items.push({ label: 'Film shape…', sub: film ? 'on: ' + Player.aspectName(on) : 'a wide film inside the picture fills the screen: 1.90 IMAX, 2.39 and others', action: function () { filmMenu(c, tv, what); } });
+    items.push({ label: 'Use this aspect for everything', sub: 'currently ' + Player.aspectName(Player.displayFor(null)), action: function () {
       Store.settings.display = Player.displayFor(c); Store.saveSettings(); Store.edits.display = {}; Store.saveEdits(); Player.setAspect(Store.settings.display, null); U.toast('Aspect set for every channel and video');
     } });
     if (own) items.push({ label: 'Forget this ' + what + '\'s aspect', action: function () { delete Store.edits.display[c.k]; Store.saveEdits(); Player.setAspect(Player.displayFor(null), null); } });
     UI.menu('Aspect' + (c ? ':  ' + (mode === 'vod' ? c.n : L.name(c)) : ''), items);
+  }
+  function filmMenu(c, tv, what) {
+    var on = Player.filmShape(Player.displayFor(c));
+    function use(r) {
+      Player.setAspect('film:' + r, c);
+      if (tv) U.toast('Film ' + r.toFixed(2) + ':1.  This ' + what + ' plays with the TV player, which some TVs keep at its own shape.', 6000);
+    }
+    UI.menu('Film shape', [[1.85, 'Widescreen films'], [1.9, 'IMAX digital'], [2, 'Many series (2:1)'], [2.2, '70 mm'], [2.39, 'Scope (most wide films)'], [2.76, 'Ultra Panavision']].map(function (x) {
+      return { label: x[0].toFixed(2) + ':1', sub: Math.abs(on - x[0]) < 0.001 ? 'on' : x[1], action: function () { use(x[0]); } };
+    }).concat([{ label: 'Type a shape…', sub: 'From 1.50 to 3.00, or like 64:27', action: function () {
+      UI.prompt('Film shape', on ? on.toFixed(2) : '', function (v) {
+        var m = /^\s*(\d+(?:[.,]\d+)?)\s*(?:[:x\/]\s*(\d+(?:[.,]\d+)?))?\s*(?::1)?\s*$/.exec(v), r = m ? parseFloat(m[1].replace(',', '.')) / (m[2] ? parseFloat(m[2].replace(',', '.')) : 1) : 0;
+        r = Math.round(r * 100) / 100;
+        if (!(r >= 1.5 && r <= 3)) { U.toast('A shape from 1.50 to 3.00, like 2.39 or 64:27', 5000); return; }
+        use(r);
+      }, 'Width over height: 2.39, 1.90, or 64:27.', false, 'OK');
+    } }]));
   }
   function speedMenu() {
     UI.menu('Playback speed', [0.5, 0.75, 1, 1.25, 1.5, 2].map(function (r) { return { label: r === 1 ? 'Normal' : r + '×', sub: Math.abs(Player.rate - r) < 0.01 ? 'on' : '', action: function () { Player.setRate(r); } }; }));
@@ -1653,7 +1681,7 @@ var Views = (function () {
     if (mode === 'vod' && vod) items.push({ label: 'Restart from beginning', action: function () { if (vod.meta.local && Media.seeking) Media.seeking(0); Player.seek(-1e7); } });
     var tracks = Player.audioTracks();
     if (tracks.length > 1) items.push({ label: 'Audio track', sub: (tracks.filter(function (t) { return t.on; })[0] || {}).label, action: audioMenu });
-    items.push({ label: 'Aspect', sub: DM[Player.displayFor(aspectTarget())], action: pictureMenu });
+    items.push({ label: 'Aspect', sub: Player.aspectName(Player.displayFor(aspectTarget())), action: pictureMenu });
     if (Player.qualities().length > 1) items.push({ label: 'Video quality', sub: qualityLabel(), action: qualityMenu });
     if (mode === 'vod' || mode === 'catchup') items.push({ label: 'Playback speed', sub: Player.rate === 1 ? 'Normal' : Player.rate + '×', action: speedMenu });
     // Live captions (CEA-608) have their own switch; Subtitles is for real subtitle tracks.

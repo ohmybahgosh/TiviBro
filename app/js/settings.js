@@ -79,8 +79,11 @@ var Settings = (function () {
     out.push(toggle('Turn on last channel at launch', '', function () { return s.resumeLast; }, function (v) { s.resumeLast = v; save(); }));
     out.push(choice('HDR and Dolby Vision', 'Automatic plays Dolby Vision through the TV player, which switches the screen into Dolby Vision itself, and keeps HDR10 and HLG on the built-in player for its steadier buffering.  Choose TV player for all HDR if HDR pictures look washed out or grey.',
       ['auto', 'tv', 'builtin'], ['Automatic', 'TV player for all HDR', 'Built-in player'], function () { return s.hdrRoute || 'auto'; }, function (v) { s.hdrRoute = v; save(); }));
-    out.push(choice('Aspect', 'The shape of the picture for every channel and video: Original, Fill (stretched to the screen), Zoom (fills it, edges cropped), 4:3, 16:9 (for a squashed picture), 21:9 (a 2.35:1 film fills the screen) or 4:3 to 16:9.  A channel or video can have its own from the quick menu.',
-      Player.ASPECTS.map(function (a) { return a[0]; }), Player.ASPECTS.map(function (a) { return a[1]; }), function () { return Player.displayFor(null); }, function (v) { Player.setAspect(v, null); save(); }));
+    // A film shape set from the quick menu (Aspect > Film shape…) shows by its name and stays in the cycle.
+    var aspV = Player.ASPECTS.map(function (a) { return a[0]; }), aspL = Player.ASPECTS.map(function (a) { return a[1]; }), aspOn = Player.displayFor(null);
+    if (Player.filmShape(aspOn)) { aspV.push(aspOn); aspL.push(Player.aspectName(aspOn)); }
+    out.push(choice('Aspect', 'The shape of the picture for every channel and video: Original, Fill (stretched to the screen), Zoom (fills it, edges cropped), 4:3, 16:9 (for a squashed picture), 21:9 (a 2.35:1 film fills the screen) or 4:3 to 16:9.  A channel or video can have its own from the quick menu, which also has Film shape for any wide film (IMAX 1.90, 2.39 and so on).',
+      aspV, aspL, function () { return Player.displayFor(null); }, function (v) { Player.setAspect(v, null); save(); }));
     out.push(head('Catch-up, movies and shows'));
     out.push(choice('Skip step', 'For Left and Right while watching catch-up or a movie.', [10, 15, 30, 60, 120], ['10s', '15s', '30s', '1 min', '2 min'], function () { return +s.skip; }, function (v) { s.skip = v; save(); }));
     out.push(choice('Rewind / fast forward step', 'For the ◀◀ and ▶▶ buttons while watching catch-up or a movie.', [30, 60, 120, 300, 600], ['30s', '1 min', '2 min', '5 min', '10 min'], function () { return +s.ffStep || 120; }, function (v) { s.ffStep = v; save(); }));
@@ -106,12 +109,19 @@ var Settings = (function () {
     }, function () { return !s.autoSubs ? 'Off' : s.subsLang ? langName(s.subsLang) : 'Any language'; }));
     out.push(toggle('Closed captions', 'Live TV in fullscreen, when the channel sends them (most US channels do).  Also in the quick menu (OK in fullscreen), for every channel at once.  Not with the TV player.', function () { return !!s.cc; }, function (v) { Player.setCC(v); }));
     out.push(choice('Caption size', '', ['s', 'm', 'l'], ['Small', 'Medium', 'Large'], function () { return s.ccSize || 'm'; }, function (v) { s.ccSize = v; save(); }));
+    out.push(choice('Subtitle colour', 'For subtitles in movies, shows and channels.  Closed captions keep the channel\'s own colours.', ['white', 'yellow', 'gold', 'cyan', 'green'], ['White', 'Yellow', 'Gold', 'Light blue', 'Light green'],
+      function () { return s.subColor || 'white'; }, function (v) { s.subColor = v; Views.applyLook(); save(); }));
+    out.push(choice('Subtitle size', '', ['s', 'm', 'l', 'xl'], ['Small', 'Medium', 'Large', 'Extra large'], function () { return s.subSize || 'm'; }, function (v) { s.subSize = v; Views.applyLook(); save(); }));
+    out.push(choice('Subtitle background', 'Outline keeps the picture clear; a box is easier to read over bright scenes.', ['outline', 'box', 'solid'], ['Outline', 'See-through box', 'Black box'],
+      function () { return s.subBack || 'outline'; }, function (v) { s.subBack = v; Views.applyLook(); save(); }));
     out.push(head('Subtitles from OpenSubtitles'));
     out.push(action('Subtitle languages', 'For Find subtitles (Subtitles in a movie or show\'s menu).  Several at once: English and Spanish (Latin America), say.', function () { Subs.langMenu(function () { build(); }); },
       function () { return Subs.langs().map(Subs.langName).join(', '); }));
     out.push(action(Subs.configured ? 'OpenSubtitles API key saved' : 'Add your OpenSubtitles API key', 'Free: sign up at opensubtitles.com, then Profile > API consumers > New consumer, and copy its key here.  It stays on this TV, out of backups.', function () {
       UI.prompt('OpenSubtitles API key', '', function (k) { try { Subs.setKey(k); U.toast(k.trim() ? 'API key saved' : 'API key removed'); build(); } catch (e) { U.toast(e.message, 7000); } }, 'Empty removes it.  Typing is easier from the phone app.', true);
     }, function () { return Subs.configured ? 'Saved' : 'Not set'; }));
+    out.push(choice('Keep downloaded subtitles', 'A movie or episode you come back to gets its subtitles and timing again, without another download.  Kept on this TV only.', [0, 1, 3, 7], ['Off', '1 day', '3 days', 'A week'],
+      function () { return s.keepSubs === 0 ? 0 : +s.keepSubs > 0 ? +s.keepSubs : 7; }, function (v) { s.keepSubs = v; if (!v) Subs.forgetKept(); save(); }));
     if (Subs.configured) out.push(action(Subs.user ? 'Signed in as ' + Subs.user : 'Sign in (optional)', 'Without an account OpenSubtitles allows 5 downloads a day; with a free one, 20.', function () {
       UI.prompt('OpenSubtitles username', Subs.user, function (u) {
         if (!u.trim()) { Subs.signIn('', ''); U.toast('Signed out'); build(); return; }
@@ -121,6 +131,7 @@ var Settings = (function () {
         }, 'Kept on this TV only, to sign in again each day.', true);
       }, 'Empty signs out.');
     }, function () { return Subs.user ? (Subs.allowed ? Subs.allowed + ' a day' : 'Signed in') : '5 a day'; }));
+    out.push(toggle('Hold notices during movies', 'Watchlist finds and the like wait while a movie or episode plays full screen, and show when you stop or leave full screen.  Reminders you set still come on time.', function () { return s.holdNotices !== false; }, function (v) { s.holdNotices = v; save(); }));
     out.push(toggle('Play next episode automatically', '', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); }));
     return out;
   }

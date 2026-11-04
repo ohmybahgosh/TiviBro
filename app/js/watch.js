@@ -63,7 +63,7 @@ var Watch = (function () {
       Log.info('watch', 'Watchlist found ' + found.length + ' programme(s)');
       if (!quiet) {
         var f = found[0], what = '"' + f.p.t + '" ' + U.day(f.p.s).toLowerCase() + ' ' + U.hhmm(f.p.s) + ' on ' + L.name(f.c);
-        U.toast('Watchlist: ' + what + (found.length > 1 ? ', and ' + (found.length - 1) + ' more' : '') + (remind ? '.  Reminder' + (found.length > 1 ? 's' : '') + ' set.' : '.'), 7000);
+        U.notice('Watchlist: ' + what + (found.length > 1 ? ', and ' + (found.length - 1) + ' more' : '') + (remind ? '.  Reminder' + (found.length > 1 ? 's' : '') + ' set.' : '.'), 7000);
       }
     }
     return found;

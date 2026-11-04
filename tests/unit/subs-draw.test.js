@@ -112,5 +112,27 @@ ok('Line up with a frame rate fix on lines the subtitle up with the other as sho
 Subs.reset();
 ok('a new video starts with no fix', Subs.rate === 1 && Subs.delay === 0);
 
+// Downloads kept for a while (discussion #19): a movie played again gets its subtitles and timing back.
+ctx.Log = { info() {}, warn() {} };
+const toasts = []; ctx.U.toast = (m) => toasts.push(m);
+Subs.restore({ id: 'm1' });
+T.addTrack('English (OpenSubtitles)', 'en', [{ s: 1, e: 2, text: 'Hi' }, { s: 3, e: 4, text: 'There' }]);
+T.keep('English (OpenSubtitles)', 'en', [{ s: 1, e: 2, text: 'Hi' }, { s: 3, e: 4, text: 'There' }]);
+T.shift(0.5);
+Subs.reset();
+ok('a new video starts with no kept subtitles of its own', Subs.restore({ id: 'm2' }) === 0 && Subs.delay === 0);
+Subs.reset();
+const before = video.textTracks.length;
+ok('the movie played again gets its download back, on, with its timing', Subs.restore({ id: 'm1' }) === 1 && video.textTracks.length === before + 1 &&
+  video.textTracks[before].mode === 'showing' && video.textTracks[before].cues.length === 2 && Subs.delay === 0.5 && Math.abs(video.textTracks[before].cues[0].startTime - 1.5) < 1e-9 && /on again/.test(toasts.pop()),
+  JSON.stringify(video.textTracks[before] && video.textTracks[before].cues));
+Subs.reset();
+store['tivibro.subsKept'] = JSON.stringify(Object.assign(JSON.parse(store['tivibro.subsKept']), { 'v:old': { at: Date.now() - 8 * 86400e3, subs: [{ label: 'x', lang: 'en', c: [[1, 2, 'a']] }] } }));
+ok('anything older than a week is let go', Subs.restore({ id: 'old' }) === 0 && Subs.keptCount() === 1);
+Subs.reset();
+ctx.Store.settings.keepSubs = 0;
+ok('Keep downloaded subtitles Off brings nothing back', Subs.restore({ id: 'm1' }) === 0);
+Subs.reset(); delete ctx.Store.settings.keepSubs;
+
 console.log(fails ? fails + ' FAILED' : 'all subtitle drawing checks passed');
 process.exit(fails ? 1 : 0);
