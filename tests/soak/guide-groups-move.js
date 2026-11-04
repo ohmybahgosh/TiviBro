@@ -46,7 +46,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const g = await ev(() => { var g = Library.groups().filter(function (x) { return !Library.isCustom(x.id) && x.id !== Library.ALL && Library.channels(x.id).length > 3; })[0]; return g.id; });
   await ev((id) => { Views.switchTab('live'); Views.switchTab('guide'); }, g);
   await page.waitForTimeout(600);
-  await ev((id) => { var gs = Library.groups(), i = gs.findIndex(function (x) { return x.id === id; }); for (var k = 0; k < 60; k++) UI.press('up'); for (var j = 0; j < i; j++) UI.press('down'); UI.press('ok'); }, g);
+  await ev((id) => { var gs = Library.groups(), i = gs.findIndex(function (x) { return x.id === id; }); for (var k = 0; k < 200 && Guide.__gsel() > 0; k++) UI.press('up'); for (var j = 0; j < i; j++) UI.press('down'); UI.press('ok'); }, g);
   await page.waitForTimeout(800);
   const before = await ev((id) => Library.channels(id).map(function (c) { return c.k; }).slice(0, 4), g);
   await ev(() => UI.press('hold')); await page.waitForTimeout(400);

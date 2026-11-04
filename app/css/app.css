@@ -729,3 +729,7 @@ body.gr-xl .gch .n{font-size:30px}
 body.gr-xl .gch .num{font-size:28px;width:62px}
 body.gr-xl .gch .logo{width:112px;height:66px}
 body.gr-xl .gch .n{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.12}
+/* What's new (update.js): the release's lines as a short list over the buttons. */
+.upd-notes p{margin:0 0 14px}
+.upd-notes ul{margin:0;padding-left:1.2em;line-height:1.35}
+.upd-notes li{margin:0 0 8px}

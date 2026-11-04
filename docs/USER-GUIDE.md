@@ -134,7 +134,7 @@ TiviBro works with the standard LG remote and the Magic Remote.  With the Magic 
 
 A few things work the way you would guess from other TV apps:
 
-- Channel lists wrap around: **▲** on the first channel goes to the last, and **▼** on the last goes back to the first.  In the guide and in the group lists, **▼** on the last row goes back to the first, and **▲** on the first row stays where it is.  Holding an arrow stops at the end instead of flying past it.
+- Lists wrap around: **▲** on the first row goes to the last, and **▼** on the last goes back to the first.  That goes for channel lists, the guide, group lists, Movies and Shows categories, My media shelves and pop-up menus.  Holding an arrow stops at the end instead of flying past it.
 - **▲** at the top of a list never opens the menu by surprise.  **◀** or **Back** does.
 - **Leaving TiviBro:** press **Back** until the groups show on the home screen; it says **Press Back again to exit**, and one more **Back** closes the app.  The first screen works the same way.
 - In a confirmation ("Delete this playlist?"), **Cancel** is selected first, so a stray **OK** never deletes anything.
@@ -1007,7 +1007,7 @@ The TiviBro app for Android is a remote and a second screen for this TV.  Pair a
 
 The app, the web editor and the TV share one colour scheme.  The app also turns the TV on (Wake-on-LAN and Bluetooth) and has a Quick Settings tile that opens TiviBro on the TV.
 
-To get it: [download the newest APK](https://tivibro.app/apk/) on your phone and open it to install (Android asks to allow installs from your browser the first time, and Google Play Protect checks each update).  After that the app updates itself: when a newer version is out, **Update now** on the home screen downloads it with a progress bar, checks it is the release GitHub describes and installs it (Android asks you to allow TiviBro to install apps the first time, and to confirm).  **Download** still opens the APK in the browser.  Then choose **Pair the TiviBro app…** (it turns on **Phone app connection** if it's off) and scan the code with the app.
+To get it: [download the newest APK](https://tivibro.app/apk/) on your phone and open it to install (Android asks to allow installs from your browser the first time, and Google Play Protect checks each update).  After that the app updates itself: when a newer version is out, **Update now** on the home screen downloads it with a progress bar, checks it is the release GitHub describes and installs it (Android asks you to allow TiviBro to install apps the first time, and to confirm).  The **App update** tile on the first TV's card checks any time, and the first start of a new version shows what's new in it.  **Download** still opens the APK in the browser.  Then choose **Pair the TiviBro app…** (it turns on **Phone app connection** if it's off) and scan the code with the app.
 
 | Setting | Choices | What it does |
 |---|---|---|
@@ -1050,7 +1050,7 @@ Your version, new versions from GitHub, and finding out what's wrong.  See [Upda
 | **Check for updates** | | Looks for a newer release now. |
 | **Install … now** | | On a rooted TV with the Homebrew Channel: downloads the new version, checks its fingerprint, installs it and restarts TiviBro with all your settings.  Other TVs get a note to install it from a computer. |
 | **Released**, **What's new** | | When the new version came out and its size, and the changes in it. |
-| **Check automatically** | **On** · Off | Under **Options**.  When TiviBro starts and every 6 hours while it is open.  A new version is announced once, and **Updates, about and diagnostics** is marked "update ready" until you install it.  Nothing is installed without asking you. |
+| **Check automatically** | **On** · Off | Under **Options**.  Every time TiviBro starts and every 6 hours while it is open.  A new version found at start is offered right away, with what's new in it: on a rooted TV with the Homebrew Channel, **Install and restart** installs it and TiviBro starts again on it; **Later** asks again next time.  **Updates, about and diagnostics** is marked "update ready" until you install it.  Nothing is installed without asking you.  The first time a new version starts, however it was installed, TiviBro shows what's new in it. |
 | **Count this TV in the install numbers** | **On** · Off | Once a day, and when a new version first starts (as an install or an update), TiviBro says which version it is and which webOS the TV has.  Nothing else: no address is kept, no ID, nothing about your channels. |
 | **Include test versions** | On · Off (**On** when you are running one) | Also offers alpha and beta builds: new features first, and some rough edges. |
 | **Installing on this TV** | (information) | Whether this TV can install updates by itself. |

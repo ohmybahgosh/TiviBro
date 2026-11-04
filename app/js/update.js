@@ -100,7 +100,8 @@ var Update = (function () {
         set({ state: 'available', latest: r, checked: Date.now() });
         // Said once per version (issue #33: a TV that stays on never saw it); Settings marks it after that.
         var told = (load() || {}).told;
-        if (quiet && told !== r.version) { U.toast('TiviBro ' + r.version + ' is available.  Settings > Updates, about and diagnostics.', 9000); told = r.version; }
+        if (quiet && atLaunch) { atLaunch = false; offerSoon(r); }
+        else if (quiet && told !== r.version) { U.toast('TiviBro ' + r.version + ' is available.  Settings > Updates, about and diagnostics.', 9000); told = r.version; }
         keep({ checked: Date.now(), latest: r, told: told });
         Log.info('update', 'Update available: ' + r.version + ' (running ' + current() + ')');
         return st;
@@ -147,17 +148,74 @@ var Update = (function () {
     }, 60000);
   }
 
-  /* At start (45 s in) when the last look was over 6 hours ago, then every 6 hours while TiviBro stays
-     open: a TV that is never switched off used to look only once (issue #33). */
-  var EVERY = 6 * 3600e3, timer = null;
+  /* Every time TiviBro starts (10 s in, once the guide is up), then every 6 hours while it stays open:
+     a TV that is never switched off used to look only once (issue #33).  A newer version found at
+     start is offered at once (offer): Install and restart on a TV that can install by itself, and
+     what's new in it either way. */
+  var EVERY = 6 * 3600e3, timer = null, atLaunch = false;
   function autoCheck() {
     var c = load();
     if (c && c.latest && compare(c.latest.version, current()) > 0 && c.latest.sha256) set({ state: 'available', latest: c.latest, checked: c.checked });
     clearInterval(timer);
     timer = setInterval(function () { if (auto() && Date.now() - ((load() || {}).checked || 0) >= EVERY) check(true).catch(function () {}); }, 30 * 60000);
     if (!auto()) return;
-    if (c && Date.now() - (c.checked || 0) < EVERY) return;
-    setTimeout(function () { check(true); }, 45000);
+    atLaunch = true;
+    setTimeout(function () { check(true).then(function () { atLaunch = false; }); }, 10000);
+  }
+
+  /* ---------- the offer at start, and what's new after an update ---------- */
+  // Waits for a free moment: not over another question, the set-up tour or a dialog already open.
+  function whenFree(fn, tries) {
+    tries = tries || 0;
+    var busy = UI.modalOpen || !(Store.settings.playlists && Store.settings.playlists.length) || (window.App && App.reloading);
+    if (!busy) return fn();
+    if (tries < 20) setTimeout(function () { whenFree(fn, tries + 1); }, 15000);
+  }
+  function notesBox(lines, intro) {
+    var box = U.el('div', 'upd-notes');
+    if (intro) box.appendChild(U.el('p', 'panel-text', intro));
+    var ul = U.el('ul');
+    (lines && lines.length ? lines : ['No notes for this release.']).forEach(function (n) { ul.appendChild(U.el('li', '', n)); });
+    box.appendChild(ul);
+    return box;
+  }
+  function offerSoon(r) {
+    installer().then(function (can) {
+      whenFree(function () {
+        if (st.state !== 'available' || !st.latest || st.latest.version !== r.version) return;
+        var size = r.size ? '  (' + (r.size / 1048576).toFixed(1) + ' MB)' : '';
+        if (can) {
+          Log.info('update', 'Offering ' + r.version + ' at start');
+          UI.panel('TiviBro ' + r.version + ' is out', notesBox(r.notes, 'Install it now?  TiviBro restarts on the new version with all your settings' + size + '.'), [
+            { label: 'Install and restart', action: function () { install().catch(function (e) { U.toast(e.message, 6000); }); } },
+            { label: 'Later' }
+          ]);
+        } else {
+          UI.panel('TiviBro ' + r.version + ' is out', notesBox(r.notes, 'This TV can\'t install updates by itself (that needs a rooted TV with the Homebrew Channel).  Install it from a computer: github.com/' + REPO + '/releases'), [{ label: 'OK' }]);
+        }
+        var c = load() || {}; c.told = r.version; keep(c);
+      });
+    });
+  }
+  /* The first start of a newer version, however it was installed: what's new in it, once.  The notes
+     saved before an install from here, or the release's own notes from GitHub. */
+  var RUN = 'tivibro.lastRun';
+  function whatsNew() {
+    var cur = current(), last = null;
+    // Before alpha 79 there was no record of the last version run: the install numbers' one stands in.
+    try { last = localStorage.getItem(RUN) || localStorage.getItem('tivibro.countedVersion'); localStorage.setItem(RUN, cur); } catch (e) { return; }
+    if (!last || compare(cur, last) <= 0) return;
+    var saved = (load() || {}).pending;
+    var got = saved && saved.version === cur && saved.notes && saved.notes.length ? Promise.resolve(saved.notes)
+      : U.getJSON('https://api.github.com/repos/' + REPO + '/releases/tags/v' + cur, 15000, 'release notes').then(function (r) { return notes(r && r.body); }, function () { return []; });
+    got.then(function (lines) {
+      setTimeout(function () {
+        whenFree(function () {
+          Log.info('update', 'Showing what\'s new in ' + cur + ' (was ' + last + ')');
+          UI.panel('What\'s new in TiviBro ' + cur, notesBox(lines, 'Updated from ' + last + '.'), [{ label: 'OK' }]);
+        });
+      }, 4000);
+    });
   }
 
   /* ---------- installing (rooted TVs with the Homebrew Channel) ---------- */
@@ -206,7 +264,7 @@ var Update = (function () {
             job = null;
             set({ state: 'installed', status: 'Installed', progress: 100 });
             Log.info('update', 'Installed ' + r.version + '; restarting');
-            keep({ checked: 0, latest: null });
+            keep({ checked: 0, latest: null, pending: { version: r.version, notes: r.notes || [] } });
             // The new files are on disk; reloading the page starts the new version.
             setTimeout(function () { location.reload(); }, 2500);
             res(st);
@@ -230,7 +288,7 @@ var Update = (function () {
   }
 
   return {
-    check: check, autoCheck: autoCheck, countMe: countMe, install: install, installer: installer, describe: describe,
+    check: check, autoCheck: autoCheck, whatsNew: whatsNew, countMe: countMe, install: install, installer: installer, describe: describe,
     onChange: function (f) { listeners.push(f); }, get state() { return st; }, get current() { return current(); },
     get wantPre() { return wantPre(); }, REPO: REPO, isPre: isPre,
     _test: { parse: parse, compare: compare, pick: pick, notes: notes, isPre: isPre }

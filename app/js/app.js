@@ -574,6 +574,7 @@ var App = (function () {
       WebEdit.resume();
       Phone.start();
       Phone.launched(launchParams());
+      Update.whatsNew();             // the first start of a newer version: its notes, once
       Update.autoCheck();
       Update.countMe();
       Reports.start();

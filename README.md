@@ -550,7 +550,7 @@ If `scp` fails, pipe the file instead: `cat app.tivibro.tv_0.6.0_all.ipk | ssh r
 
 ### Updating
 
-TiviBro checks for a new release when it starts and every 6 hours while it is open (**Settings > Updates, about and diagnostics**), says so once per new version, and marks that section until you install it.  On a rooted TV with the Homebrew Channel, **Install** there downloads it, checks it and installs it, and TiviBro restarts on the new version with all your settings.  On other TVs it shows the new version; install it the same way you installed TiviBro.
+TiviBro checks for a new release every time it starts and every 6 hours while it is open (**Settings > Updates, about and diagnostics**).  A new version found at start is offered right away with what's new in it: on a rooted TV with the Homebrew Channel, **Install and restart** downloads it, checks it and installs it, and TiviBro restarts on the new version with all your settings, then shows what changed.  On other TVs it shows the new version; install it the same way you installed TiviBro.
 
 ### The phone app
 

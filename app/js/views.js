@@ -594,8 +594,8 @@ var Views = (function () {
     var mapped = listMapped(a);
     if (mapped) { runAction(mapped, 'list'); return true; }
     if (zone === 'groups') {
-      if (a === 'up') groupsVL.move(-1);
-      else if (a === 'down') groupsVL.move(1, 'down');      // past the last group: back to the first
+      if (a === 'up') groupsVL.move(-1, true);              // past the first group: round to the last
+      else if (a === 'down') groupsVL.move(1, true);       // past the last group: back to the first
       else if (a === 'left') openNav();
       else if (a === 'chup') groupsVL.page(-1);
       else if (a === 'chdown') groupsVL.page(1);
@@ -2168,11 +2168,12 @@ var Guide = (function () {
     if (UI.repeating) detailT = setTimeout(drawDetail, 120);
     else drawDetail();
   }
-  /* Down on the last channel goes back to the first, like the channel list (one press, never while
-     Down is held).  Up on the first channel stays put. */
+  /* Down on the last channel goes back to the first, and Up on the first round to the last, like the
+     channel list (one press, never while the arrow is held). */
   function moveSel(d) {
     var s2 = sel + d;
     if (s2 >= list.length && d === 1 && list.length > 2 && !UI.repeating) s2 = 0;
+    else if (s2 < 0 && d === -1 && list.length > 2 && !UI.repeating) s2 = list.length - 1;
     if (s2 < 0 || s2 >= list.length) return false;
     return selectIdx(s2);
   }
@@ -2269,8 +2270,8 @@ var Guide = (function () {
 
   function backToMenu() { Views.tabBar(function () { UI.setHandler(keys); setZone('groups'); }, true); }
   function groupKeys(a) {
-    if (a === 'up') groupsVL.move(-1);
-    else if (a === 'down') groupsVL.move(1, 'down');      // past the last group: back to the first
+    if (a === 'up') groupsVL.move(-1, true);              // past the first group: round to the last
+    else if (a === 'down') groupsVL.move(1, true);       // past the last group: back to the first
     else if (a === 'chup') groupsVL.page(-1);
     else if (a === 'chdown') groupsVL.page(1);
     else if (a === 'right' || a === 'ok') enterGrid();

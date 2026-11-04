@@ -507,8 +507,8 @@ var Vod = (function () {
 
   function keys(a) {
     if (zone === 'cats') {
-      if (a === 'up') catsVL.move(-1);
-      else if (a === 'down') catsVL.move(1);
+      if (a === 'up') catsVL.move(-1, true);
+      else if (a === 'down') catsVL.move(1, true);
       else if (a === 'chup') catsVL.page(-1);
       else if (a === 'chdown') catsVL.page(1);
       else if ((a === 'ok' || a === 'right') && catsVL.current() && catsVL.current().id === LANGS) { if (a === 'ok') langMenu(); }

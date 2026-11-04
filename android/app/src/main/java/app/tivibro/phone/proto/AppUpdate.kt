@@ -64,6 +64,33 @@ object AppUpdate {
         try { if (c.responseCode != 200) null else pick(JSONArray(c.inputStream.bufferedReader().readText())) } finally { c.disconnect() }
     }.getOrNull()
 
+    /** Release notes as short plain lines (the release's bold headlines), as the TV shows them: no Markdown,
+     *  nothing from the install footer on, at most 14 lines. */
+    fun notes(md: String?): List<String> {
+        val out = mutableListOf<String>()
+        for (l in (md ?: "").split(Regex("\\r?\\n"))) {
+            if (Regex("^#{1,4}\\s*Install|^<details", RegexOption.IGNORE_CASE).containsMatchIn(l)) break
+            if (out.size >= 14) break
+            val t = l.replace(Regex("^\\s*[-*]\\s+"), "").replace(Regex("\\*\\*|__|`"), "")
+                .replace(Regex("\\[([^\\]]+)\\]\\([^)]+\\)"), "$1").replace(Regex("^#+\\s*"), "").trim()
+            if (t.isEmpty() || t.startsWith(">") || t.startsWith("SHA-256", ignoreCase = true)) continue
+            out += if (t.length > 220) t.take(217) + "…" else t
+        }
+        return out
+    }
+    /** What's new in release [version] (its notes), or an empty list when GitHub didn't answer. */
+    fun notesFor(version: String): List<String> = runCatching {
+        val c = URL("https://api.github.com/repos/ohmybahgosh/TiviBro/releases/tags/v" + version.removePrefix("v")).openConnection() as HttpURLConnection
+        c.connectTimeout = 8000; c.readTimeout = 8000
+        c.setRequestProperty("Accept", "application/vnd.github+json")
+        c.setRequestProperty("User-Agent", "TiviBro-phone")
+        try { if (c.responseCode != 200) emptyList() else notes(org.json.JSONObject(c.inputStream.bufferedReader().readText()).optString("body")) } finally { c.disconnect() }
+    }.getOrDefault(emptyList())
+    /** Is this the first start of a newer version?  [last]: the version that ran before (null: none recorded);
+     *  [updated]: Android says the app was updated rather than first installed. */
+    fun justUpdated(last: String?, now: String, updated: Boolean): Boolean =
+        if (last == null) updated && key(now) != null else newer(now, last)
+
     /** A newer release than [current], or null (none, a test build, or no answer). */
     fun check(current: String): AppRelease? {
         if (key(current) == null || current.contains("dev")) return null

@@ -77,4 +77,17 @@ class AppUpdateTest {
         assertTrue(e is IOException)
         assertFalse(dest.exists()); assertFalse(File(dest.path + ".part").exists())
     }
+    @Test fun releaseNotes() {
+        val md = "### New in alpha 79\n\n- **App update at start.**  The TV offers it.\n- See [the guide](https://x)\n> a quote\n\n### Install\n\n- ignore me"
+        assertEquals(listOf("New in alpha 79", "App update at start.  The TV offers it.", "See the guide"), AppUpdate.notes(md))
+        assertEquals(emptyList<String>(), AppUpdate.notes(null))
+        assertEquals(14, AppUpdate.notes((1..30).joinToString("\n") { "- line $it" }).size)
+    }
+    @Test fun firstStartOfANewVersion() {
+        assertTrue(AppUpdate.justUpdated("0.6.0-alpha.78", "0.6.0-alpha.79", updated = true))
+        assertFalse(AppUpdate.justUpdated("0.6.0-alpha.79", "0.6.0-alpha.79", updated = true))
+        assertFalse(AppUpdate.justUpdated(null, "0.6.0-alpha.79", updated = false))   // a first install
+        assertTrue(AppUpdate.justUpdated(null, "0.6.0-alpha.79", updated = true))     // updated from before this was recorded
+        assertFalse(AppUpdate.justUpdated(null, "0.1.0-dev", updated = true))
+    }
 }

@@ -136,6 +136,32 @@ fun HomeScreen(
     var checking by remember { mutableStateOf(false) }
     val current = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull().orEmpty() }
     LaunchedEffect(Unit) { rel = withContext(Dispatchers.IO) { AppUpdate.check(current) } }
+    // The first start of a newer version (after Update now, or an APK installed by hand): what's new, once.
+    var news by remember { mutableStateOf<Pair<String, List<String>>?>(null) }
+    LaunchedEffect(Unit) {
+        val prefs = ctx.getSharedPreferences("app", android.content.Context.MODE_PRIVATE)
+        val last = prefs.getString("lastRun", null)
+        prefs.edit().putString("lastRun", current).apply()
+        val pi = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0) }.getOrNull()
+        val updated = pi != null && pi.lastUpdateTime > pi.firstInstallTime
+        if (current.isNotBlank() && AppUpdate.justUpdated(last, current, updated)) {
+            news = current to withContext(Dispatchers.IO) { AppUpdate.notesFor(current) }
+        }
+    }
+    news?.let { (v, lines) ->
+        AlertDialog(
+            onDismissRequest = { news = null },
+            title = { Text("What's new in TiviBro app $v") },
+            text = {
+                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                    if (lines.isEmpty()) Text("This version is installed.  Its notes are on the release page.", color = Muted)
+                    lines.forEach { Text("•  $it", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(bottom = 8.dp)) }
+                }
+            },
+            confirmButton = { TextButton(onClick = { news = null }) { Text("OK") } },
+            containerColor = Panel,
+        )
+    }
     val list = rememberLazyListState()
     fun checkNow() {
         if (checking) return

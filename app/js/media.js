@@ -591,10 +591,15 @@ var Media = (function () {
     if (document.body.classList.contains('nav-open')) return;
     UI.hints([['', 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Options'], ['green', 'Rescan'], ['yellow', 'Fetch details'], ['blue', 'Settings']]);
   }
+  // Past the last shelf: back to the first, and Up on the first round to the last (one press, not held).
   function moveShelf(d) {
     var row = shelfAt + d;
     while (row >= 0 && row < shelves.length && !shelves[row].movies.length) row += d;
-    if (row >= 0 && row < shelves.length) { shelfAt = row; drawShelves(); }
+    if ((row < 0 || row >= shelves.length) && !UI.repeating && shelves.filter(function (x) { return x.movies.length; }).length > 2) {
+      row = d > 0 ? 0 : shelves.length - 1;
+      while (row >= 0 && row < shelves.length && !shelves[row].movies.length) row += d;
+    }
+    if (row >= 0 && row < shelves.length && row !== shelfAt) { shelfAt = row; drawShelves(); }
   }
   function keys(a) {
     followTop = false;

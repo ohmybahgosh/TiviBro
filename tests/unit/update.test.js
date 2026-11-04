@@ -8,7 +8,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
 function sandbox(opts) {
   opts = opts || {};
-  const store = {}, toasts = [], calls = [], reloads = [];
+  const store = Object.assign({}, opts.store || {}), toasts = [], calls = [], reloads = [], panels = [];
   const sb = {
     TIVIBRO_VERSION: opts.version || '0.6.0-alpha.2',
     Store: { settings: Object.assign({}, opts.settings || {}) },
@@ -16,9 +16,12 @@ function sandbox(opts) {
     Net: { wrap: u => u },
     U: {
       toast: (m) => toasts.push(m),
+      el: (tag, cls, text) => ({ tag, cls, text, kids: [], appendChild(c) { this.kids.push(c); } }),
       getJSON: (url) => {
         calls.push(url);
         if (opts.apiError && /api\.github/.test(url)) return Promise.reject(Object.assign(new Error('HTTP 404 Not Found'), { status: 404 }));
+        const tm = /\/releases\/tags\/(v[^?]+)$/.exec(url);
+        if (tm) return Promise.resolve(rel(tm[1], { body: '- **What changed in ' + tm[1] + '**\n- **Another thing**' }));
         if (/api\.github/.test(url)) return Promise.resolve(opts.releases || RELEASES);
         if (/manifest\.json$/.test(url)) return Promise.resolve({ version: '0.7.0', ipkUrl: 'app.tivibro.tv_0.7.0_all.ipk', ipkHash: { sha256: 'ab'.repeat(32) }, ipkSize: 700000 });
         return Promise.reject(new Error('unexpected ' + url));
@@ -26,7 +29,8 @@ function sandbox(opts) {
     },
     localStorage: { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = String(v); } },
     location: { reload: () => reloads.push(1), protocol: 'file:' },
-    setTimeout: (fn, ms) => { if (ms <= 3000 || opts.runAll) fn(); return 1; }, clearTimeout() {},
+    setTimeout: (fn, ms) => { if (ms <= 3000 || opts.runAll || (opts.run || []).indexOf(ms) >= 0) fn(); return 1; }, clearTimeout() {}, setInterval: () => 1, clearInterval() {},
+    UI: { get modalOpen() { return false; }, panel: (title, body, buttons) => panels.push({ title, body, buttons }) },
     navigator: { userAgent: opts.ua || 'Mozilla/5.0 (Web0S; Linux/SmartTV) Chrome/87' },
     fetch: opts.fetch || (() => Promise.reject(new Error('no network'))),
     Promise, JSON, Date, Math, String, Array, Object, RegExp, Error,
@@ -48,7 +52,7 @@ function sandbox(opts) {
   sb.window = sb;
   vm.createContext(sb);
   vm.runInContext(SRC, sb);
-  return { Update: vm.runInContext('Update', sb), toasts, calls, reloads, store, sb };
+  return { Update: vm.runInContext('Update', sb), toasts, calls, reloads, store, sb, panels };
 }
 const rel = (tag, extra) => Object.assign({ tag_name: tag, name: 'TiviBro ' + tag, html_url: 'https://github.com/x/y/releases/tag/' + tag, published_at: '2026-10-27T23:00:00Z',
   body: '### New\n\n- **Faster** guides with `gz`\n- See [docs](https://x)\n\n### Install\n\n- ignore me',
@@ -141,6 +145,39 @@ const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), re
   ok('nothing again the same day on the same version', c.sent.length === 0, c.sent.join(','));
   c = await counts({}, { countMe: false }, '0.6.0-alpha.43');
   ok('nothing at all when counting is off', c.sent.length === 0);
+
+  // ---- at start: a newer version is offered, and installed from the offer ----
+  const tick = () => new Promise(r => setTimeout(r, 20));
+  const lines = (pn) => { const ul = pn.body.kids.find(k => k.tag === 'ul'); return ul ? ul.kids.map(k => k.text) : []; };
+  let o = sandbox({ version: '0.6.0-alpha.2', run: [10000], settings: { playlists: [{ id: 'p1' }] } });
+  o.Update.autoCheck(); await tick(); await tick();
+  ok('start: a newer version is offered', o.panels.length === 1 && /TiviBro 0\.7\.0-alpha\.1 is out/.test(o.panels[0].title) && o.panels[0].buttons.map(b => b.label).join('/') === 'Install and restart/Later', JSON.stringify(o.panels.map(p => p.title)));
+  ok('start: with what is new in it', lines(o.panels[0]).indexOf('Faster guides with gz') >= 0, JSON.stringify(lines(o.panels[0])));
+  o.panels[0].buttons[0].action(); await tick();
+  ok('start: Install and restart installs it and restarts', o.reloads.length === 1 && o.calls.some(c => /\/install /.test(c)));
+  ok('start: the notes are kept for after the restart', /"pending":\{"version":"0.7.0-alpha.1"/.test(o.store['tivibro.update'] || ''), o.store['tivibro.update']);
+  o = sandbox({ version: '0.6.0-alpha.2', runAll: true, noHbc: true, settings: { playlists: [{ id: 'p1' }] } });
+  o.Update.autoCheck(); await tick(); await tick();
+  ok('start: a TV that can not install says where to get it instead', o.panels.length === 1 && o.panels[0].buttons.length === 1 && /from a computer/.test(o.panels[0].body.kids[0].text));
+  o = sandbox({ version: '0.6.0-alpha.2', run: [10000], settings: { playlists: [] } });
+  o.Update.autoCheck(); await tick(); await tick();
+  ok('start: never over the first set-up', o.panels.length === 0);
+  o = sandbox({ version: '0.6.0-alpha.2', run: [10000], settings: { playlists: [{ id: 'p1' }], updateAuto: false } });
+  o.Update.autoCheck(); await tick(); await tick();
+  ok('start: nothing when checking automatically is off', o.panels.length === 0 && !o.calls.length);
+
+  // ---- the first start of a newer version: what's new, once ----
+  o = sandbox({ version: '0.6.0-alpha.5', run: [4000], settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4', 'tivibro.update': JSON.stringify({ pending: { version: '0.6.0-alpha.5', notes: ['Saved line one', 'Saved line two'] } }) } });
+  o.Update.whatsNew(); await tick();
+  ok('after an update: what is new, from the notes saved before installing', o.panels.length === 1 && /What's new in TiviBro 0\.6\.0-alpha\.5/.test(o.panels[0].title) && lines(o.panels[0]).join('|') === 'Saved line one|Saved line two' && !o.calls.length, JSON.stringify(o.panels.map(p => [p.title, lines(p)])));
+  o.Update.whatsNew(); await tick();
+  ok('after an update: only once', o.panels.length === 1);
+  o = sandbox({ version: '0.6.0-alpha.5', run: [4000], settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.countedVersion': '0.6.0-alpha.3' } });
+  o.Update.whatsNew(); await tick();
+  ok('after an update some other way: the release notes from GitHub', o.panels.length === 1 && lines(o.panels[0])[0] === 'What changed in v0.6.0-alpha.5' && /Updated from 0\.6\.0-alpha\.3/.test(o.panels[0].body.kids[0].text), JSON.stringify(o.panels.map(p => lines(p))));
+  o = sandbox({ version: '0.6.0-alpha.5', run: [4000], settings: { playlists: [{ id: 'p1' }] } });
+  o.Update.whatsNew(); await tick();
+  ok('a first install shows nothing', o.panels.length === 0 && o.store['tivibro.lastRun'] === '0.6.0-alpha.5');
 
   console.log(fail ? fail + ' failures' : 'all update tests passed');
   process.exit(fail ? 1 : 0);

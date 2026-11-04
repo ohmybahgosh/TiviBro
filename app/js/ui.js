@@ -174,8 +174,9 @@ var UI = (function () {
     modal.classList.remove('hidden');
     drawMenu();
     modalH = function (a) {
-      if (a === 'up') { if (mSel > 0) { mSel--; drawMenu(); } }
-      else if (a === 'down') { if (mSel < mItems.length - 1) { mSel++; drawMenu(); } }
+      // Past either end of a menu: round to the other end (one press, not while the arrow is held).
+      if (a === 'up') { if (mSel > 0) { mSel--; drawMenu(); } else if (mItems.length > 2 && !repeating) { mSel = mItems.length - 1; drawMenu(); } }
+      else if (a === 'down') { if (mSel < mItems.length - 1) { mSel++; drawMenu(); } else if (mItems.length > 2 && !repeating) { mSel = 0; drawMenu(); } }
       else if (a === 'ok') { var it = mItems[mSel]; close(); if (it && it.action) it.action(); }
       else if (a === 'back') { close(); if (onBack) onBack(); }
       return true;

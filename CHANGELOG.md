@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **New versions are offered when TiviBro starts.**  TiviBro now checks every time it starts, and a newer version comes up right away with what's new in it.  On a rooted TV with the Homebrew Channel, **Install and restart** installs it and TiviBro starts again on it; **Later** asks again next time.  Other TVs say where to get it.
+- **What's new after an update.**  The first time a new version starts, on the TV or in the phone app, it shows what changed, however it was installed.
+- **▲ on the first row goes to the last**, as **▼** on the last already went to the first: in the guide, the group lists, Movies and Shows categories, My media shelves and pop-up menus too.
+
 ## 0.6.0 (alpha 78, 2026-11-04)
 
 Pre-release: expect rough edges, and keep a backup before installing.

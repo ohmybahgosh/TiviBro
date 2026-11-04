@@ -3,7 +3,7 @@
        and a panel's buttons always show under long text;
      - the guide after its row size changed in Settings: the last channel sits above the button hints;
      - Down on the last group or the last channel goes back to the first, in the guide and on the
-       Channels screen; Up on the first stays put;
+       Channels screen, and Up on the first goes round to the last;
      - a channel that failed twice in a row gets "not playing lately" in the channel list and the
        guide, while the others play, and loses it the moment it plays.
      node tests/soak/list-ends.js [--shots dir]      (mock provider on :8077, npm run serve) */
@@ -70,7 +70,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await press('down'); await page.waitForTimeout(200);
   ok('guide: Down on the last channel goes to the first', await ev(() => Guide.__sel()) === 0);
   await press('up'); await page.waitForTimeout(200);
-  ok('guide: Up on the first channel stays there', await ev(() => Guide.__sel()) === 0);
+  const nAll = await ev(() => Library.channels(Library.ALL).length);
+  ok('guide: Up on the first channel goes round to the last', await ev(() => Guide.__sel()) === nAll - 1, await ev(() => Guide.__sel()));
+  await press('down'); await page.waitForTimeout(200);
   await press('down', 2); await page.waitForTimeout(100);
   ok('and Down moves on as before', await ev(() => Guide.__sel()) === 2);
   await press('back'); await page.waitForTimeout(300);        // to the groups
@@ -80,7 +82,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('guide groups: Down on the last group goes back to the first', gs < ng - 1, gs + ' of ' + ng);
   await ev(() => { while (Guide.__gsel() > 0) UI.press('up'); });
   await press('up'); await page.waitForTimeout(100);
-  ok('guide groups: Up on the first group stays there', await ev(() => Guide.__gsel()) === 0);
+  ok('guide groups: Up on the first group goes round to the last', await ev(() => Guide.__gsel()) === ng - 1, await ev(() => Guide.__gsel()));
+  await press('down'); await page.waitForTimeout(100);
   await press('down', ng - 1); await page.waitForTimeout(200);
   ok('guide groups: the last group', await ev(() => Guide.__gsel()) === ng - 1);
   await press('down'); await page.waitForTimeout(200);
@@ -90,10 +93,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const live = () => ev(() => { const s = document.querySelector('#groupList .row.sel .name'); return s ? s.textContent : ''; });
   const names = await ev(() => Library.groups().map((x) => x.name));
   await ev(() => { if (!document.getElementById('groupList').classList.contains('active')) UI.press('left'); });
-  await press('up', names.length + 2); await page.waitForTimeout(200);
+  await ev((first) => { for (let i = 0; i < 500; i++) { const s = document.querySelector('#groupList .row.sel .name'); if (s && s.textContent === first) break; UI.press('up'); } }, names[0]); await page.waitForTimeout(200);
   ok('Channels screen: on the first group', (await live()) === names[0], await live());
   await press('up'); await page.waitForTimeout(100);
-  ok('Channels screen: Up on the first group stays there', (await live()) === names[0]);
+  ok('Channels screen: Up on the first group goes round to the last', (await live()) === names[names.length - 1], await live());
+  await press('down'); await page.waitForTimeout(100);
   await press('down', names.length - 1); await page.waitForTimeout(200);
   ok('Channels screen: the last group', (await live()) === names[names.length - 1], await live());
   await press('down'); await page.waitForTimeout(200);
@@ -112,7 +116,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => { Views.switchTab('live'); }); await page.waitForTimeout(300);
   const ai = await ev(() => Library.groups().findIndex((x) => x.id === Library.ALL));
   await ev(() => { if (!document.getElementById('groupList').classList.contains('active')) UI.press('left'); });
-  await press('up', names.length + 2); await press('down', ai); await press('right'); await page.waitForTimeout(500);
+  await ev((first) => { for (let i = 0; i < 500; i++) { const s = document.querySelector('#groupList .row.sel .name'); if (s && s.textContent === first) break; UI.press('up'); } }, names[0]);
+  await press('down', ai); await press('right'); await page.waitForTimeout(500);
   const tagIn = (sel) => ev((a) => [].some.call(document.querySelectorAll(a.sel), (r) => r.textContent.indexOf(a.n) >= 0 && r.querySelector('.deadtag') && getComputedStyle(r.querySelector('.deadtag')).display !== 'none'), { sel: sel, n: c.n });
   const tagsShown = (sel) => ev((s) => [].filter.call(document.querySelectorAll(s + ' .deadtag'), (e) => e.style.display !== 'none' && e.offsetParent).length, sel);
   ok('Channels screen: "not playing lately" on its row', await tagIn('#chanList .row'));
