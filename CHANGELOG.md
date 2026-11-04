@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 79, 2026-11-04)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 79
 
 - **Small TVs stop closing while a channel reconnects** (#42, #46, thanks ich0x).  On a 32-inch LG with little memory, the biggest buffer profiles held a minute of HD video, and a reconnect built a new player while the old one's memory was still being freed: webOS closed TiviBro.  After TiviBro closes while playing, and on any TV that reports 1 GB of memory or less, playback now goes memory-safe for a week: at most 20 seconds read ahead, and a second's pause before a reconnect starts the new player.  Stream info shows "memory-safe" next to the buffer profile, and problem reports say how much memory the TV reports.
 - **New versions are offered when TiviBro starts.**  TiviBro now checks every time it starts, and a newer version comes up right away with what's new in it.  On a rooted TV with the Homebrew Channel, **Install and restart** installs it and TiviBro starts again on it; **Later** asks again next time.  Other TVs say where to get it.
 - **What's new after an update.**  The first time a new version starts, on the TV or in the phone app, it shows what changed, however it was installed.
 - **▲ on the first row goes to the last**, as **▼** on the last already went to the first: in the guide, the group lists, Movies and Shows categories, My media shelves and pop-up menus too.
 
-## 0.6.0 (alpha 78, 2026-11-04)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 78
+### In alpha 78
 
 - **Live channels start faster, and learn.**  The new **Automatic** buffer profile (now the default; one picked by hand is kept) learns from each provider as you watch.  It starts like Balanced, then a provider whose channels hardly ever run dry starts channels at 0.8 s instead of 2 s (about a second sooner on a provider without a head start), and a shaky one gets a bigger cushion from the start.  **Settings > Playback > Profile details** shows what it learned.
 - **Each channel remembers what it needed, across restarts.**  A channel that only plays as HLS or on the TV's player starts that way at once instead of spending seconds on the others first, and a channel that ran dry keeps the bigger cushion it earned.
