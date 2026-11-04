@@ -19,11 +19,15 @@ ok('before: the permissions are missing', g.missing() === true);
 let r; g.ensure((x) => { r = x; });
 ok('asks the Homebrew Channel to run grant.sh once', r === 'added' && calls.length === 1 && calls[0].uri === 'luna://org.webosbrew.hbchannel.service/exec' && /grant\.sh"$/.test(calls[0].params.command), JSON.stringify(calls));
 const m = JSON.parse(fs.readFileSync(M, 'utf8')), p = JSON.parse(fs.readFileSync(P, 'utf8'));
-ok('only the two groups, for the helper only', JSON.stringify(p) === '{"app.tivibro.tv.service*":["tv.management","applications.internal"]}', JSON.stringify(p));
+ok('only the three groups, for the helper only', JSON.stringify(p) === '{"app.tivibro.tv.service*":["tv.management","applications.internal","bluetooth.query"]}', JSON.stringify(p));
 ok('listed in TiviBro\'s manifest, the rest kept', m.clientPermissionFiles.length === 3 && m.clientPermissionFiles[2] === P && m.version === '0.6.0');
 ok('after: nothing missing', g.missing() === false);
 ok('running it again changes nothing', run() === 'granted' && JSON.parse(fs.readFileSync(M, 'utf8')).clientPermissionFiles.length === 3);
 calls = []; g.ensure(); ok('not asked again', calls.length === 0);
+// An older grant (before Bluetooth): missing again, so the helper asks once more.
+fs.writeFileSync(P, '{"app.tivibro.tv.service*":["tv.management","applications.internal"]}');
+ok('an older grant without bluetooth.query counts as missing', g.missing() === true);
+ok('grant.sh brings it up to date', /granted/.test(run()) && g.missing() === false);
 // An install writes the manifest afresh: a new helper asks again.
 fs.writeFileSync(M, JSON.stringify(orig)); calls = [];
 const g2 = G.create({ dir, call: (uri, params, cb) => { calls.push(uri); cb({ returnValue: false, errorText: 'Service does not exist: org.webosbrew.hbchannel.service.' }); } });

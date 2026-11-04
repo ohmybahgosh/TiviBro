@@ -136,12 +136,13 @@ if [ -z "${TIVIBRO_NO_COUNT:-}" ] && command -v curl >/dev/null 2>&1; then
   curl -fsS -m 5 -X POST -H 'Content-Type: application/json' -d "{\"e\":\"$KIND\",\"v\":\"$VERSION\"}" https://tivibro-report.theboxmod.workers.dev/count >/dev/null 2>&1 || true
 fi
 # Developer mode gives TiviBro's helper only the public permissions, so the TV won't tell it whether the
-# screen is on or which app is in front (for reminders).  Add those two (service/grant.sh says exactly
+# screen is on, which app is in front (for reminders) or its Bluetooth address (to wake it over
+# Bluetooth).  Add those three (service/grant.sh says exactly
 # what); every install writes TiviBro's permissions afresh.  TIVIBRO_NO_GRANT=1 skips it.
 SVC_DIR="${TIVIBRO_SVC_DIR:-/media/developer/apps/usr/palm/services/$APP_ID.service}"
 if [ -z "${TIVIBRO_NO_GRANT:-}" ] && [ -f "$SVC_DIR/grant.sh" ]; then
   case "$(sh "$SVC_DIR/grant.sh" 2>&1)" in
-    *granted*) echo "[*] Helper permissions added (screen state, app in front)." ;;
+    *granted*) echo "[*] Helper permissions added (screen state, app in front, Bluetooth address)." ;;
     *) ;;
   esac
 fi
