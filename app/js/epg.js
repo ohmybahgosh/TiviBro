@@ -151,19 +151,23 @@ var Epg = (function () {
     if (!list) return null;
     var t = Date.now();
     for (var i = 0; i < list.length; i++) {
-      if (list[i].s <= t && list[i].e > t) return { now: list[i], next: list[i + 1] || null };
-      if (list[i].s > t) return { now: null, next: list[i] };
+      if (list[i].s <= t && list[i].e > t) return { now: list[i], next: after(list, i) };
+      if (list[i].s > t && list[i].e > list[i].s) return { now: null, next: list[i] };
     }
     return null;
   }
 
+  /* The programme after list[i], passing over empty ones: untangle() leaves a programme that started at the
+     same time as another with no time of its own (a guide listing "CNN Special Program" and "Election Day in
+     America" both at 9:00), kept in the list only so positions don't move. */
+  function after(list, i) { for (var j = i + 1; j < list.length; j++) if (list[j].e > list[j].s) return list[j]; return null; }
   function nowNext(ch) {
     var list = request(ch);
     if (!list) return null;
     var t = Date.now(), now = null, next = null;
     for (var i = 0; i < list.length; i++) {
-      if (list[i].s <= t && list[i].e > t) { now = list[i]; next = list[i + 1] || null; break; }
-      if (list[i].s > t) { next = list[i]; break; }
+      if (list[i].s <= t && list[i].e > t) { now = list[i]; next = after(list, i); break; }
+      if (list[i].s > t && list[i].e > list[i].s) { next = list[i]; break; }
     }
     return { now: now, next: next };
   }
@@ -804,7 +808,7 @@ var Epg = (function () {
       var l = v.list; if (!l || !l.length) return;
       var lo = 0, hi = l.length;
       while (lo < hi) { var mid = (lo + hi) >> 1; if (l[mid].e <= from) lo = mid + 1; else hi = mid; }
-      for (var i = lo; i < l.length && l[i].s < to; i++) if (l[i].e > from) cb(k, l[i]);
+      for (var i = lo; i < l.length && l[i].s < to; i++) if (l[i].e > from && l[i].e > l[i].s) cb(k, l[i]);
     });
   }
   function search(q, limit) {
@@ -812,7 +816,7 @@ var Epg = (function () {
     var out = [], CAP = 20000;
     cache.forEach(function (v, k) {
       if (out.length >= CAP || !v.list) return;
-      for (var i = 0; i < v.list.length; i++) { var p = v.list[i]; if (p.t && test(p.t)) out.push({ key: k, p: p }); }
+      for (var i = 0; i < v.list.length; i++) { var p = v.list[i]; if (p.t && p.e > p.s && test(p.t)) out.push({ key: k, p: p }); }
     });
     var now = Date.now(), rank = function (x) { return x.p.s <= now && x.p.e > now ? 0 : x.p.s > now ? 1 : 2; };
     out.sort(function (a, b) { var d = rank(a) - rank(b); return d || (rank(a) === 2 ? b.p.s - a.p.s : a.p.s - b.p.s); });

@@ -250,7 +250,8 @@ private fun ScheduleSheet(model: AppModel, id: String, c: Chan, at: Long?, playi
                         if (i > 0) listState.scrollToItem(i - 1)
                     }
                     LazyColumn(state = listState, contentPadding = PaddingValues(bottom = 32.dp)) {
-                        items(list, key = { it.start }) { p ->
+                        // Keys stay unique even if two programmes ever share a start (Schedule.clean leaves out such pairs).
+                        itemsIndexed(list, key = { i, p -> "${p.start}:$i" }) { _, p ->
                             val set = reminders[p.start] ?: p.reminder
                             ProgrammeRow(p, now, set, expanded == p.start, onClick = { expanded = if (expanded == p.start) null else p.start },
                                 onWatch = if (p.on(now)) onPlay else null,

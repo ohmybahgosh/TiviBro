@@ -63,7 +63,11 @@ data class GuidePage(val total: Int, val offset: Int, val rows: List<GuideRow>, 
 /** A channel's programmes from as far back as catch-up goes to a week ahead. */
 data class Schedule(val key: String, val progs: List<Programme>, val catchupDays: Int, val pending: Boolean, val descPending: Boolean) {
     companion object {
-        fun from(j: JSONObject) = Schedule(j.optString("k"), j.optJSONArray("progs").list { Programme.from(it) }, j.optInt("arch"), j.optBoolean("pending"), j.optBoolean("descPending"))
+        /** Programmes with no time of their own are left out, and only the first of any at the same start is
+         *  kept: the schedule lists them by start, and two at once crashed the app (a guide with CNN's
+         *  "Special Program" and "Election Day in America" both at 9:00). */
+        fun from(j: JSONObject) = Schedule(j.optString("k"), clean(j.optJSONArray("progs").list { Programme.from(it) }), j.optInt("arch"), j.optBoolean("pending"), j.optBoolean("descPending"))
+        fun clean(progs: List<Programme>): List<Programme> = progs.filter { it.end > it.start }.distinctBy { it.start }
     }
 }
 

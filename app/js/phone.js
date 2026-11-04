@@ -139,7 +139,7 @@ var Phone = (function () {
         var l = Epg.request(c);
         if (!l) { pending++; return typeof DeadList !== 'undefined' && DeadList.marked(c) ? { k: c.k, dead: 1 } : { k: c.k }; }
         var out = [];
-        for (var i = 0; i < l.length && out.length < 3; i++) if (l[i].e > at) { var x = prog(l[i], c); if (hasReminder(c.k, l[i].s)) x.r = 1; out.push(x); }
+        for (var i = 0; i < l.length && out.length < 3; i++) if (l[i].e > at && l[i].e > l[i].s) { var x = prog(l[i], c); if (hasReminder(c.k, l[i].s)) x.r = 1; out.push(x); }
         var row = { k: c.k, p: out, a: c.arch ? 1 : 0 };
         if (typeof DeadList !== 'undefined' && DeadList.marked(c)) row.dead = 1;      // not playing lately (issue #37)
         return row;
@@ -151,7 +151,8 @@ var Phone = (function () {
       var c = chan(a.k), l = Epg.request(c);
       if (!l) return { k: c.k, pending: true, progs: [] };
       var now = Date.now(), from = now - (c.arch ? c.arch * 86400000 : 3 * 3600000), to = now + 8 * 86400000;
-      var list = l.filter(function (p) { return p.e > from && p.s < to; }).slice(0, 700);
+      // Never two programmes at one start (the phone lists them by start): empty ones are left out (epg.js untangle).
+      var seen = {}, list = l.filter(function (p) { if (!(p.e > from && p.s < to && p.e > p.s) || seen[p.s]) return false; seen[p.s] = 1; return true; }).slice(0, 700);
       if (list.length) Epg.desc(c, list[0]);
       return { k: c.k, arch: c.arch || 0, descPending: !!Epg.inHelper && list.some(function (p) { return p.d == null; }),
         progs: list.map(function (p) { var x = prog(p, c); if (p.d) x.d = String(p.d).slice(0, 800); if (hasReminder(c.k, p.s)) x.r = 1; return x; }) };
