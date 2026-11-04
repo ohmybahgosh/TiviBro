@@ -268,6 +268,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     for (const r of top.rows.filter((x) => x.kind === 'page')) { await sa({ op: 'page', sec: sc.id, path: [r.i] }).then(() => pages++, (x) => badPages.push(sc.id + ' > ' + r.label + ': ' + x.message)); }
   }
   ok('every settings page and the pages inside them open on the phone (' + pages + ')', !badPages.length && pages > 15, badPages.join(' | '));
+  const pb = await sa({ op: 'page', sec: 'playback', path: [] });
+  const pbl = (((pb.page || pb).rows) || []).map((r) => r.label);
+  ok('the phone\'s Playback page has the audio converter', pbl.indexOf('Convert audio the TV can\'t play') >= 0 && pbl.indexOf('Audio converter') >= 0, pbl.filter((l) => /onver|udio/.test(l)).join(' | '));
   const e = await C.ask(cred, 'settings', { op: 'sections' }).catch((x) => x);
   ok('settings only travel sealed (the PIN goes with them)', e.code === 'sealed');
   await ev(() => { Store.settings.pin = Parental && (function () { return U.hash('tivibro:1234:pin'); })(); Store.settings.pinScope = 'both'; Parental.lock(); });

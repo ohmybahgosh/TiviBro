@@ -274,7 +274,7 @@ TiviBro checks the sound before a movie, episode or My media file starts:
 - **Seeking** in a converted movie takes a moment longer than usual: the conversion starts again from the new spot.  The time, the progress bar, where you left off and subtitles all keep the movie's own time.
 - **Audio track** in the quick menu lists the movie's own tracks.  Picking another one the TV can't play converts that one instead.
 
-The conversion needs the **audio converter**, a small program (about 2 MB) the network helper downloads once from TiviBro's releases on GitHub, checks and keeps on the TV's storage.  The first movie that needs it asks: *Get* downloads it and the movie starts with sound; *Not now* plays the movie as it is, with no sound, and says why.  You can get it or remove it any time in **Settings > Playback**.  It is turned off or on with **Settings > Playback > Convert audio the TV can't play**.
+The conversion needs the **audio converter**, a small program (about 2 MB) the network helper downloads once from TiviBro's releases on GitHub, checks and keeps on the TV's storage.  A movie that needs it asks, before it starts or, when only the file itself says what its sound is, as it starts: *Get* downloads it and the movie carries on with sound; *Not now* plays the movie as it is, with no sound, and says why; *Don't ask again* stops the question.  You can get it or remove it any time in **Settings > Playback**, under **Audio and subtitles**.  It is turned off or on with **Settings > Playback > Convert audio the TV can't play**.
 
 Live channels with sound the TV can't play are converted the same way, when the stream says what its sound is.
 

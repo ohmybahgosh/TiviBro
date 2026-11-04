@@ -419,6 +419,7 @@ var Player = (function () {
         Convert.planLive(cur.origUrl || cur.url, r.unplayable, cur.media.channels).then(function (pl) { livePlan(pl, myToken, r.unplayable); });
         return;
       }
+      if (r.warn && r.unplayable && !cur.warned && lateConvert(r.unplayable, myToken)) cur.warned = true;
       if (r.warn && !cur.warned) { cur.warned = true; Log.warn('player', r.warn); notice(r.unplayable && window.Convert ? Convert.noSound(Caps.unplayable(r.unplayable, cur.media.channels) || r.unplayable) : r.warn); }
       if (r.engine === 'native' && kind !== 'native' && !st.started && !cur.routed && !(cur.tried && cur.tried.native)) {
         cur.routed = true;
@@ -449,7 +450,7 @@ var Player = (function () {
       if (cur.convNotice) { notice(cur.convNotice); cur.convNotice = ''; }
     }
     if (cur.noSound && !cur.warned) { cur.warned = true; Log.warn('player', 'No converter: ' + cur.noSound + ' sound will be silent'); notice(Convert.noSound(cur.noSound)); }
-    if (kind === 'native' && cur.media && !conv) { var rn = Caps.route(cur.media, hdrPolicy()); if (rn.warn && !cur.warned) { cur.warned = true; notice(rn.unplayable && window.Convert ? Convert.noSound(Caps.unplayable(rn.unplayable, cur.media.channels) || rn.unplayable) : rn.warn); } }
+    if (kind === 'native' && cur.media && !conv) { var rn = Caps.route(cur.media, hdrPolicy()); if (rn.warn && rn.unplayable && !cur.warned && lateConvert(rn.unplayable, myToken)) cur.warned = true; if (rn.warn && !cur.warned) { cur.warned = true; notice(rn.unplayable && window.Convert ? Convert.noSound(Caps.unplayable(rn.unplayable, cur.media.channels) || rn.unplayable) : rn.warn); } }
     wd = setInterval(function () { tick(myToken); }, 400);
     // Until the first frame, check every 50ms: the video is often ready to play within 100-200ms
     // of a channel change, and waiting for the 400ms watchdog added up to a third of a second.
@@ -869,6 +870,42 @@ var Player = (function () {
     if (!conv.t) conv.t = 0;
     Log.info('player', 'Sound: ' + (conv.codec || '?') + ' track ' + (conv.a + 1) + ' through the audio converter (' + conv.fmt + ')');
   }
+  /* A movie whose sound turns out, once it plays, to be one this TV can't play (the file's own tracks,
+     not known before it started): offer the converter there, or use it, and carry on from the same
+     point.  Once per movie; true when it took over the warning. */
+  function lateConvert(codec, my) {
+    if (!cur || cur.live || cur.timeshift || cur.preview || cur.conv || cur.lateConv || cur.noSound || !window.Convert || !Convert.on()) return false;
+    cur.lateConv = true;
+    var what = Caps.unplayable(codec, cur.media && cur.media.channels) || String(codec).toUpperCase(), item = cur.meta && cur.meta.item || {};
+    function silent() { if (my === token && cur) notice(Convert.noSound(what)); }
+    function again() {
+      if (my !== token || !cur) return;
+      var at = Math.max(0, position());
+      Convert.plan({ url: cur.url, media: cur.media, title: (cur.meta && cur.meta.title) || '', container: item.ext || item.container_extension || '' }).then(function (r) {
+        if (my !== token || !cur) return;
+        if (!r || r.offer) return silent();
+        Log.info('player', 'Sound: ' + what + ' found while playing; restarting at ' + Math.round(at) + 's with the converter');
+        teardown(); st = null; state('loading');
+        cur.startAt = at; cur.retries = 0;
+        applyPlan(r, my);
+      }, silent);
+    }
+    Convert.status(true).then(function (s) {
+      if (my !== token || !cur) return;
+      if (s.state === 'ready') return again();
+      Convert.offer(what, false, function (got) { if (got) again(); else { if (cur) cur.noSound = what; silent(); } });
+    });
+    return true;
+  }
+  /* The movie file's own audio tracks, read by the subtitle reader (mkvsubs.js) as it starts: when none
+     of them is one this TV plays, the converter is offered (or used) from here. */
+  function heardAudio(codecs) {
+    if (!cur || !codecs || !codecs.length || cur.live || cur.conv) return;
+    var c = Caps.probe(), bad = codecs.filter(function (a) { return Caps.unplayable(a, 0, c); });
+    if (bad.length < codecs.length) return;
+    cur.media = merge(cur.media, { audio: codecs });
+    if (!cur.warned && lateConvert(bad[0], token)) cur.warned = true;
+  }
   function applyPlan(r, my) {
     if (my !== token || !cur) return;
     if (r && r.offer) {
@@ -1061,7 +1098,7 @@ var Player = (function () {
 
   return {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
-    PRESETS: PRESETS, bind: bind, play: play, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, on: on,
+    PRESETS: PRESETS, bind: bind, play: play, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, on: on,
     seek: seek, seekTo: seekTo, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; },
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **The audio converter is offered when it's needed** (alpha 69 only offered it once, and not at all for a movie whose name didn't give its sound away).  A movie whose sound the TV can't play now asks every time until you choose **Don't ask again**, including when only the file's own tracks show it is DTS or TrueHD: TiviBro reads them as the movie starts, offers the converter, and carries on from the same point with sound.  The "can't play" notice now says where the converter is: **Settings > Playback > Audio and subtitles**.
 - **Scans count episodes too.**  After a rescan, My media now says what it found as "3 movies and 24 episodes on Home server" on the TV, in the phone app and in the web editor, instead of only counting movies.  A source set to TV shows only counts episodes.
 
 ## 0.6.0 (alpha 69, 2026-11-03)

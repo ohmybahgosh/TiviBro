@@ -412,6 +412,13 @@ var MkvSubs = (function () {
      Index (kept with the file in rec.index): { perTrackCues: [{ track, cues }], timecodeScale,
      segmentDataStart }.  A work item is one Cluster, by its absolute offset; every subtitle track
      with a cue in that Cluster is read from it at once. */
+  // Matroska audio codec ids, in the names Caps uses.
+  function audioCodec(id) {
+    id = String(id || '');
+    var map = [[/^A_DTS/, 'dts'], [/^A_TRUEHD/, 'truehd'], [/^A_EAC3/, 'eac3'], [/^A_AC3/, 'ac3'], [/^A_AAC/, 'aac'], [/^A_FLAC/, 'flac'], [/^A_OPUS/, 'opus'], [/^A_MPEG\/L3/, 'mp3'], [/^A_MPEG\/L2/, 'mp2'], [/^A_VORBIS/, 'vorbis']];
+    for (var i = 0; i < map.length; i++) if (map[i][0].test(id)) return map[i][1];
+    return '';
+  }
   var MKV = {
     id: 'mkv',
     headBytes: 262144,
@@ -424,6 +431,8 @@ var MkvSubs = (function () {
       var tracksChild = findChild(head, seg.start, seg.end, TRACKS_EL);
       if (!tracksChild) return Promise.resolve(null);
       var allTracks = readTracks(head, tracksChild.start, tracksChild.end);
+      // The movie's sound, for the player (player.js heardAudio): DTS or TrueHD the TV can't play gets the converter.
+      try { if (typeof Player !== 'undefined' && Player.heardAudio) Player.heardAudio(allTracks.filter(function (t) { return t.type === 2; }).map(function (t) { return audioCodec(t.codecId); }).filter(Boolean)); } catch (e) {}
       var subTracks = [];
       for (var i = 0; i < allTracks.length; i++) if (allTracks[i].type === 17 && /^(S_TEXT\/(UTF8|ASS|SSA|WEBVTT))$/.test(allTracks[i].codecId)) subTracks.push(allTracks[i]);
       if (!subTracks.length) return Promise.resolve(null);

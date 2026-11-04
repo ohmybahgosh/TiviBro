@@ -72,7 +72,7 @@ ok('conversion link: helper, key, movie.mkv, url, time, track, codec, User-Agent
 ok('live channels get movie.ts', /\/movie\.ts\?/.test(Convert.link({ src: 'http://x/1.ts', a: 0, t: 0, fmt: 'ts' })));
 ok('describe: ready line says size and where', Convert.describe({ state: 'ready', size: 3145728, where: 'TV storage' }) === 'Ready, 3.0 MB, kept on TV storage');
 ok('describe: downloading', Convert.describe({ state: 'downloading', percent: 40 }) === 'Downloading 40%');
-ok('no-sound notice names the format and the setting', /^DTS sound, which this TV can't play\.  Settings > Playback can get the audio converter/.test(Convert.noSound('DTS')));
+ok('no-sound notice names the format and the setting', /^DTS sound, which this TV can't play\.  Settings > Playback > Audio and subtitles can get the audio converter/.test(Convert.noSound('DTS')));
 
 // plan: what happens before a movie starts, with a helper answering
 let probes = 0, statusState = 'ready';

@@ -153,7 +153,8 @@ var Convert = (function () {
   // The offer, on the TV's screen.  cb(true) once the converter is ready, cb(false) otherwise.
   function offer(what, guessed, cb) {
     var s = settings();
-    if (s.convertAsked || typeof UI === 'undefined' || !UI.panel) return cb(false);
+    // Asked every time a movie needs it, until "Don't ask again" (Settings > Playback still gets it).
+    if (s.convertNever || typeof UI === 'undefined' || !UI.panel) return cb(false);
     s.convertAsked = true;
     try { Store.saveSettings(); } catch (e) {}
     var body = U.el('p', 'panel-text', (guessed ? 'This movie\'s sound looks like ' + what + ', which this TV can\'t play.' : 'This movie\'s sound is ' + what + ', which this TV can\'t play.') +
@@ -164,10 +165,11 @@ var Convert = (function () {
         get(function (p) { U.toast('Getting the audio converter… ' + p + '%', 30000); }).then(function () { U.toast('Audio converter ready', 2500); cb(true); },
           function (e) { U.toast(e.message, 7000); cb(false); });
       } },
-      { label: 'Not now', action: function () { cb(false); } }
+      { label: 'Not now', action: function () { cb(false); } },
+      { label: 'Don\'t ask again', action: function () { s.convertNever = true; try { Store.saveSettings(); } catch (e) {} cb(false); } }
     ], function () { cb(false); });
   }
-  function noSound(what) { return what + ' sound, which this TV can\'t play.  Settings > Playback can get the audio converter, or pick another audio track.'; }
+  function noSound(what) { return what + ' sound, which this TV can\'t play.  Settings > Playback > Audio and subtitles can get the audio converter, or pick another audio track.'; }
 
   return { on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, offer: offer, noSound: noSound,
     probe: probe, ensureKey: ensureKey, NAMES: NAMES, get key() { return key; }, _reset: function () { key = ''; st = null; probes = {}; } };
