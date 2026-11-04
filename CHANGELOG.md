@@ -2,13 +2,15 @@
 
 ## Unreleased
 
-- **Converted sound keeps playing.**  LG's own player reads a movie in long pulls, hangs up when its buffer is full and later asks for the next part.  The converted stream could only be read from the start, so the picture went black, TiviBro reconnected and the movie began again.  The conversion now runs ahead into a spool on the TV's big storage (at most about half a gigabyte, cleared as the movie goes), and the player gets whatever part it asks for.
-
-## 0.6.0 (alpha 70, 2026-11-03)
+## 0.6.0 (alpha 71, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 70
+### New in alpha 71
+
+- **Converted sound keeps playing.**  LG's own player reads a movie in long pulls, hangs up when its buffer is full and later asks for the next part.  The converted stream could only be read from the start, so the picture went black, TiviBro reconnected and the movie began again.  The conversion now runs ahead into a spool on the TV's big storage (at most about half a gigabyte, cleared as the movie goes), and the player gets whatever part it asks for.
+
+### In alpha 70
 
 - **The audio converter is offered when it's needed** (alpha 69 only offered it once, and not at all for a movie whose name didn't give its sound away).  A movie whose sound the TV can't play now asks every time until you choose **Don't ask again**, including when only the file's own tracks show it is DTS or TrueHD: TiviBro reads them as the movie starts, offers the converter, and carries on from the same point with sound.  The "can't play" notice now says where the converter is: **Settings > Playback > Audio and subtitles**.
 - **Scans count episodes too.**  After a rescan, My media now says what it found as "3 movies and 24 episodes on Home server" on the TV, in the phone app and in the web editor, instead of only counting movies.  A source set to TV shows only counts episodes.
