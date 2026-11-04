@@ -26,6 +26,10 @@ import app.tivibro.phone.proto.VodCat
 import app.tivibro.phone.proto.VodInfo
 import app.tivibro.phone.proto.VodPage
 import org.json.JSONObject
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
+import kotlinx.coroutines.Job
 import app.tivibro.phone.proto.Discovery
 import app.tivibro.phone.proto.Dropbox
 import app.tivibro.phone.proto.EditorState
@@ -93,6 +97,38 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         set(v) { store.tileTv = v }
 
     fun say(s: String) { _msg.tryEmit(s) }
+
+    /* ---------- the phone's own network ---------- */
+
+    private val conn = app.getSystemService(ConnectivityManager::class.java)
+    private var netCheck: Job? = null
+    /** Wi-Fi or Ethernet: the way the phone reaches its TVs (not mobile data). */
+    private fun onLan(n: Network?): Boolean = runCatching {
+        val cm = conn ?: return@runCatching true
+        val c = cm.getNetworkCapabilities(n ?: cm.activeNetwork) ?: return@runCatching false
+        c.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) || c.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET)
+    }.getOrDefault(true)
+    /** Android calls onAvailable once at once for the network the phone is already on: that one is skipped. */
+    @Volatile private var netSeen = false
+    /** When the phone gets back on Wi-Fi (after a Turn on with Wi-Fi off, say), ask the TVs again at once
+     *  rather than waiting for the next check. */
+    private val netCallback = object : ConnectivityManager.NetworkCallback() {
+        override fun onAvailable(network: Network) {
+            if (!netSeen) { netSeen = true; return }
+            if (!onLan(network)) return
+            netCheck?.cancel()
+            netCheck = viewModelScope.launch { delay(1500); refresh() }
+        }
+    }
+    init {
+        // No network now: the first onAvailable is a real change, so it isn't skipped.
+        netSeen = runCatching { conn?.activeNetwork == null }.getOrDefault(false)
+        runCatching { conn?.registerDefaultNetworkCallback(netCallback) }
+    }
+    override fun onCleared() {
+        runCatching { conn?.unregisterNetworkCallback(netCallback) }
+        super.onCleared()
+    }
     private fun setUi(id: String, f: (TvUi) -> TvUi) = _tvs.update { l -> l.map { if (it.tv.id == id) f(it) else it } }
     private fun saveTv(tv: Tv) { store.upsert(tv); setUi(tv.id) { it.copy(tv = tv) } }
     fun tv(id: String): Tv? = _tvs.value.firstOrNull { it.tv.id == id }?.tv
@@ -230,6 +266,11 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         }
         setUi(id) { it.copy(power = Power.CHECKING) }
         if (on) { check(tv(id) ?: tv); say("${tv.name} is on") }
+        else if (!onLan(null) && ble?.result == BleWaker.Start.STARTED) {
+            // Without Wi-Fi the phone can't see the TV, so it can't tell whether the Bluetooth wake worked.
+            setUi(id) { it.copy(power = Power.OFF) }
+            say("Sent the Bluetooth wake to ${tv.name}.  The phone isn't on Wi-Fi, so it can't see the TV: turn Wi-Fi on to check.")
+        }
         else {
             setUi(id) { it.copy(power = Power.OFF) }
             say(if (tv.bt.isNotBlank()) "${tv.name} didn't answer.  Is Turn on via Wi-Fi on, and Bluetooth on the phone?"

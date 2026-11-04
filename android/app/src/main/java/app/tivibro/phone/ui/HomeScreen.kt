@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -54,6 +55,7 @@ import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SettingsRemote
 import androidx.compose.material.icons.rounded.Tv
+import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -118,6 +120,27 @@ fun HomeScreen(
 ) {
     var refreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val ctx = LocalContext.current
+    // The app update: checked once per app start, and again from the App update tile.
+    var rel by remember { mutableStateOf<AppRelease?>(null) }
+    var relHidden by remember { mutableStateOf(false) }
+    var checking by remember { mutableStateOf(false) }
+    val current = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull().orEmpty() }
+    LaunchedEffect(Unit) { rel = withContext(Dispatchers.IO) { AppUpdate.check(current) } }
+    val list = rememberLazyListState()
+    fun checkNow() {
+        if (checking) return
+        checking = true
+        scope.launch {
+            val n = withContext(Dispatchers.IO) { AppUpdate.newest() }
+            checking = false
+            when {
+                n == null -> snack.showSnackbar("Couldn't reach GitHub to check.  Try again in a moment.")
+                AppUpdate.key(current) != null && AppUpdate.newer(n.version, current) -> { rel = n; relHidden = false; list.animateScrollToItem(0) }
+                else -> snack.showSnackbar("This is the newest TiviBro app ($current).")
+            }
+        }
+    }
     Scaffold(
         containerColor = Ink,
         topBar = {
@@ -140,10 +163,13 @@ fun HomeScreen(
             onRefresh = { scope.launch { refreshing = true; onRefresh(); delay(400); refreshing = false } },
             modifier = Modifier.padding(pad).fillMaxSize(),
         ) {
-            LazyColumn(contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxSize()) {
-                item(key = "app-update") { AppUpdateCard() }
+            LazyColumn(state = list, contentPadding = PaddingValues(16.dp, 8.dp, 16.dp, 96.dp), verticalArrangement = Arrangement.spacedBy(14.dp), modifier = Modifier.fillMaxSize()) {
+                item(key = "app-update") { rel?.takeIf { !relHidden }?.let { AppUpdateCard(it) { relHidden = true } } }
                 items(tvs, key = { it.tv.id }) { u ->
-                    TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups)
+                    // The App update tile goes on the first TV's card only (it is about this phone's app, not a TV).
+                    val first = u.tv.id == tvs.first().tv.id
+                    TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups,
+                        appUpdate = if (first) AppUpdateTile(checking, rel != null && relHidden.not(), ::checkNow) else null)
                 }
             }
         }
@@ -199,11 +225,32 @@ private fun ShortcutTile(s: Shortcut, enabled: Boolean, modifier: Modifier, onCl
     }
 }
 
+/** The App update tile in a TV card's grid: [checking] while it asks GitHub, [ready] when an update is waiting. */
+private class AppUpdateTile(val checking: Boolean, val ready: Boolean, val onClick: () -> Unit)
+
+@Composable
+private fun UpdateTile(t: AppUpdateTile, modifier: Modifier) {
+    Column(
+        modifier.height(76.dp).clip(MaterialTheme.shapes.small).background(Panel2)
+            .clickable(enabled = !t.checking, onClickLabel = "Check for app updates", onClick = t.onClick).padding(6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center,
+    ) {
+        if (t.checking) CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp, color = Accent)
+        else Icon(Icons.Rounded.SystemUpdate, null, tint = if (t.ready) Good else Accent, modifier = Modifier.size(24.dp))
+        Spacer(Modifier.height(6.dp))
+        Text(
+            if (t.checking) "Checking…" else if (t.ready) "Update ready" else "App update",
+            color = TextHi, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 2, overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
 @Composable
 private fun TvCard(
     u: TvUi, isTile: Boolean,
     onEditor: (String) -> Unit, onTab: (String, String) -> Unit, onReminders: (String) -> Unit, onOpen: (String) -> Unit, onWake: (String) -> Unit,
     onForget: (String) -> Unit, onTile: (String) -> Unit, onRepair: (String) -> Unit, onBackups: (String) -> Unit,
+    appUpdate: AppUpdateTile? = null,
 ) {
     val tv = u.tv
     var menu by remember { mutableStateOf(false) }
@@ -254,14 +301,21 @@ private fun TvCard(
                         OutlinedButton(onClick = { onEditor(tv.id) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("Edit channels anyway", maxLines = 1, overflow = TextOverflow.Ellipsis) }
                         OutlinedButton(onClick = { onBackups(tv.id) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("Backups", maxLines = 1) }
                     }
+                    // The app can be updated with the TV off too.
+                    if (appUpdate != null) OutlinedButton(onClick = appUpdate.onClick, enabled = !appUpdate.checking, modifier = Modifier.fillMaxWidth().height(48.dp)) {
+                        Icon(Icons.Rounded.SystemUpdate, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp))
+                        Text(if (appUpdate.checking) "Checking for an app update…" else "Check for an app update")
+                    }
                 }
                 else -> {
                     val on = u.power == Power.ON
-                    val list = Shortcut.forTv(u.caps)
+                    // null in the grid: the App update tile, last.
+                    val cells: List<Shortcut?> = Shortcut.forTv(u.caps) + (if (appUpdate != null) listOf(null) else emptyList())
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        list.chunked(3).forEach { row ->
+                        cells.chunked(3).forEach { row ->
                             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                 row.forEach { sc ->
+                                    if (sc == null) { if (appUpdate != null) UpdateTile(appUpdate, Modifier.weight(1f)); return@forEach }
                                     ShortcutTile(sc, enabled = on || sc == Shortcut.BACKUPS, modifier = Modifier.weight(1f)) {
                                         when (sc) {
                                             Shortcut.REMINDERS -> onReminders(tv.id)
@@ -292,19 +346,13 @@ private fun TvCard(
 
 
 
-/** "A new TiviBro app is out", checked once per app start.  Update now downloads it with a progress bar and
- *  installs it over this one (update/Updater.kt).  Test builds, and anything that goes wrong, fall back to
- *  the APK link in the browser. */
+/** "A new TiviBro app is out" (checked once per app start, and from the App update tile).  Update now downloads
+ *  it with a progress bar and installs it over this one (update/Updater.kt).  Test builds, and anything that
+ *  goes wrong, fall back to the APK link in the browser. */
 @Composable
-private fun AppUpdateCard() {
+private fun AppUpdateCard(rel: AppRelease, onLater: () -> Unit) {
     val ctx = LocalContext.current
-    var rel by remember { mutableStateOf<AppRelease?>(null) }
-    var hidden by remember { mutableStateOf(false) }
     val step by Updater.step.collectAsStateWithLifecycle()
-    LaunchedEffect(Unit) {
-        val cur = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull().orEmpty()
-        rel = withContext(Dispatchers.IO) { AppUpdate.check(cur) }
-    }
     // Back from Android's "Install unknown apps" setting: carry on if TiviBro may install now.
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         val r = rel
@@ -313,8 +361,7 @@ private fun AppUpdateCard() {
             else Updater.fail("TiviBro isn't allowed to install apps, so it can't update itself.")
         }
     }
-    val r = rel ?: return
-    if (hidden) return
+    val r = rel
     val inPlace = Updater.inPlace(ctx)
     fun open(url: String) { runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
     val small = MaterialTheme.typography.bodySmall
@@ -365,7 +412,7 @@ private fun AppUpdateCard() {
                         if (inPlace) Button(onClick = { Updater.start(ctx, r) }) { Text("Update now") }
                         else TextButton(onClick = { open(r.apk) }) { Text("Download") }
                         TextButton(onClick = { open(r.page) }) { Text("What's new") }
-                        TextButton(onClick = { hidden = true }) { Text("Later") }
+                        TextButton(onClick = onLater) { Text("Later") }
                     }
                 }
             }

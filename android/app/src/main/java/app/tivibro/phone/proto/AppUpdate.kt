@@ -55,16 +55,19 @@ object AppUpdate {
         }
         return best
     }
+    /** The newest release with an APK, or null when GitHub didn't answer. */
+    fun newest(): AppRelease? = runCatching {
+        val c = URL(API).openConnection() as HttpURLConnection
+        c.connectTimeout = 8000; c.readTimeout = 8000
+        c.setRequestProperty("Accept", "application/vnd.github+json")
+        c.setRequestProperty("User-Agent", "TiviBro-phone")
+        try { if (c.responseCode != 200) null else pick(JSONArray(c.inputStream.bufferedReader().readText())) } finally { c.disconnect() }
+    }.getOrNull()
+
     /** A newer release than [current], or null (none, a test build, or no answer). */
     fun check(current: String): AppRelease? {
         if (key(current) == null || current.contains("dev")) return null
-        return runCatching {
-            val c = URL(API).openConnection() as HttpURLConnection
-            c.connectTimeout = 8000; c.readTimeout = 8000
-            c.setRequestProperty("Accept", "application/vnd.github+json")
-            c.setRequestProperty("User-Agent", "TiviBro-phone")
-            try { if (c.responseCode != 200) null else pick(JSONArray(c.inputStream.bufferedReader().readText())) } finally { c.disconnect() }
-        }.getOrNull()?.takeIf { newer(it.version, current) }
+        return newest()?.takeIf { newer(it.version, current) }
     }
 
     /** A file's SHA-256 in lowercase hex. */
