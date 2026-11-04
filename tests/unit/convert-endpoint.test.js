@@ -1,6 +1,7 @@
 // The /convert endpoint end to end, with the real ffmpeg on this computer (TIVIBRO_FFMPEG, default
 // /usr/local/bin/ffmpeg): a 20 s H.264 + DTS 5.1 MKV converted to AC-3 through the helper, a seek, the
-// player hanging up, one conversion at a time, the key, and the probe.  Skipped when there is no ffmpeg
+// player hanging up and coming back for a later byte (the spool), one conversion at a time, the key,
+// and the probe.  Skipped when there is no ffmpeg
 // with a DTS encoder.
 'use strict';
 const fs = require('fs'), os = require('os'), path = require('path'), http = require('http'), cp = require('child_process');
@@ -34,6 +35,8 @@ const src = http.createServer((q, s) => {
 });
 
 const proxy = require('../../service/proxy.js'), Convert = require('../../service/convert.js');
+// Small spool pieces, so the tests cross them; the player's minute away shortened to 1.5 s.
+Convert._sizes(65536, 1048576, 262144, 1500, 5000);
 const relay = proxy.create({ ctl: 'secret' });
 const alive = (pid) => { try { process.kill(pid, 0); return !/^Z/.test((fs.readFileSync('/proc/' + pid + '/stat', 'utf8').split(') ')[1] || '')); } catch (e) { return false; } };
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -66,12 +69,12 @@ src.listen(0, '127.0.0.1', () => relay.server.listen(0, '127.0.0.1', async () =>
     r = await fetch(H + '/convert/' + key + '/movie.mkv?u=' + encodeURIComponent('file:///etc/passwd'));
     ok('not a web address: 400', r.status === 400);
     r = await fetch(H + '/convert/' + key + '/movie.mkv?u=' + encodeURIComponent(u), { headers: { Range: 'bytes=1000-' } });
-    ok('a byte seek: 416 (a seek is a new conversion with t=)', r.status === 416);
+    ok('a byte seek with nothing converting: 416 (a seek in the movie is a new conversion with t=)', r.status === 416);
 
     // The whole movie
     const link = (t, extra) => H + '/convert/' + key + '/movie.mkv?u=' + encodeURIComponent(u) + '&t=' + t + '&a=0' + (extra || '');
     r = await fetch(link(0));
-    ok('answers 200, MKV, no length, not byte-seekable', r.status === 200 && /matroska/.test(r.headers.get('content-type')) && !r.headers.get('content-length') && r.headers.get('accept-ranges') === 'none');
+    ok('answers 200, MKV, no length, later bytes on request', r.status === 200 && /matroska/.test(r.headers.get('content-type')) && !r.headers.get('content-length') && r.headers.get('accept-ranges') === 'bytes');
     let out = path.join(tmp, 'out0.mkv');
     fs.writeFileSync(out, Buffer.from(await r.arrayBuffer()));
     if (probeBin) {
@@ -99,28 +102,53 @@ src.listen(0, '127.0.0.1', () => relay.server.listen(0, '127.0.0.1', async () =>
       ok('seek: still AC-3', a === 'ac3', a);
     }
 
-    // The player hangs up: ffmpeg is stopped, nothing left running.
+    // LG's player: reads a while, hangs up, comes back for the next byte (Range).  The same conversion
+    // carries on from the spool, and the two pieces make the whole movie.
     const slowLink = H + '/convert/' + key + '/movie.mkv?u=' + encodeURIComponent(P + '/slow/dts51.mkv') + '&t=0&a=0&c=dts&ch=6';
-    const open = (url) => new Promise((resolve) => { const q = http.get(url, (res) => { res.once('data', () => resolve({ q, res })); }); q.on('error', () => {}); });
-    let c1 = await open(slowLink);
+    const open = (url, headers) => new Promise((resolve) => { const q = http.get(url, { headers: headers || {} }, (res) => { res.once('data', (d) => resolve({ q, res, first: d })); }); q.on('error', () => {}); });
+    const fastLink = link(0);
+    let c1 = await open(fastLink);
+    const pid0 = Convert.busy() && Convert.busy().pid;
+    const parts = [c1.first]; let got = c1.first.length;
+    await new Promise((resolve) => { c1.res.on('data', (d) => { parts.push(d); got += d.length; if (got > 300000) { c1.q.destroy(); resolve(); } }); c1.res.on('end', resolve); });
+    const head = Buffer.concat(parts);
+    await wait(200);
+    ok('the player hung up: the conversion keeps going for its return', Convert.busy() && Convert.busy().pid === pid0);
+    r = await fetch(fastLink, { headers: { Range: 'bytes=' + head.length + '-' } });
+    ok('...and its next byte comes back: 206 from there', r.status === 206 && new RegExp('^bytes ' + head.length + '-\\d+/\\d+$').test(r.headers.get('content-range') || ''), [r.status, r.headers.get('content-range')]);
+    const tail = Buffer.from(await r.arrayBuffer());
+    ok('...from the same conversion', Convert.session && Convert.session.p.pid === pid0);
+    out = path.join(tmp, 'joined.mkv');
+    fs.writeFileSync(out, Buffer.concat([head, tail]));
+    if (probeBin) {
+      const lastA = +ffprobe(out, ['-select_streams', 'a:0', '-show_entries', 'packet=pts_time', '-of', 'csv=p=0']).split('\n').pop();
+      ok('the two pieces make the whole 20 s', lastA > 19 && lastA < 20.5, lastA);
+    }
+    r = await fetch(fastLink, { headers: { Range: 'bytes=' + (head.length + tail.length + 10) + '-' } });
+    ok('past the end of a finished conversion: 416', r.status === 416, r.status);
+    ok('pieces far behind the player are deleted', fs.readdirSync(path.join(tmp, 'store', 'convert')).length < Math.ceil((head.length + tail.length) / 65536), fs.readdirSync(path.join(tmp, 'store', 'convert')).length);
+    ok('...and when the player is gone, the conversion and its spool go too', await until(() => !Convert.session && fs.readdirSync(path.join(tmp, 'store', 'convert')).length === 0, 4000));
+
+    // The player hangs up and doesn't come back: ffmpeg is stopped, nothing left running.
+    c1 = await open(slowLink);
     const pid1 = Convert.busy() && Convert.busy().pid;
     ok('converting: a process is running', pid1 > 0 && alive(pid1), pid1);
     c1.q.destroy();
-    ok('player hung up: ffmpeg stopped within 3 s', await until(() => !alive(pid1), 3000), pid1);
+    ok('player gone: ffmpeg stopped soon after', await until(() => !alive(pid1), 5000), pid1);
     ok('...and nothing is converting', Convert.busy() === null);
 
-    // One at a time: a second conversion replaces the first.
+    // One at a time: another conversion (here, another start time) replaces the first.
     c1 = await open(slowLink);
     const pidA = Convert.busy().pid;
     let ended = false; c1.res.on('end', () => { ended = true; }); c1.res.on('close', () => { ended = true; }); c1.res.resume();
-    const c2 = await open(slowLink);
+    const c2 = await open(slowLink.replace('&t=0', '&t=1'));
     const pidB = Convert.busy().pid;
     ok('second conversion: a new process', pidB > 0 && pidB !== pidA, [pidA, pidB]);
     ok('the first one is stopped', await until(() => !alive(pidA), 3000), pidA);
     ok('the first player\'s stream ended', await until(() => ended, 3000));
     ok('the second keeps going', alive(pidB));
     c2.q.destroy();
-    ok('and stops when its player hangs up', await until(() => !alive(pidB), 3000));
+    ok('and stops when its player is gone', await until(() => !alive(pidB), 5000));
 
     // &in=pipe: the helper reads the movie itself and feeds ffmpeg.
     r = await fetch(link(0, '&in=pipe'));

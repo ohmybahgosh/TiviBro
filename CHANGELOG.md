@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Converted sound keeps playing.**  LG's own player reads a movie in long pulls, hangs up when its buffer is full and later asks for the next part.  The converted stream could only be read from the start, so the picture went black, TiviBro reconnected and the movie began again.  The conversion now runs ahead into a spool on the TV's big storage (at most about half a gigabyte, cleared as the movie goes), and the player gets whatever part it asks for.
+
 ## 0.6.0 (alpha 70, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.
