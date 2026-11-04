@@ -29,23 +29,33 @@ var Convert = require('./convert');
 var Ffmpeg = require('./ffmpeg');
 var Pace = require('./pace');
 
-/* DNS answers kept for a minute.  Node asks the system for every new connection, and each channel
-   start (and each redirect to a provider's streaming server) is a new connection; on a TV with a
-   slow resolver that is up to a few hundred milliseconds per channel change.  An answer is
-   dropped when a connection to it fails, so a provider that moves is followed at once.  Node 20
-   (webOS 26) asks with all: true and wants a list back; older Node asks for one address.  Node
-   0.12 ignores custom lookups and keeps asking the system. */
-var dnsCache = {};
+/* DNS answers.  Node asks the system for every new connection, and each channel start (and each
+   redirect to a provider's streaming server) is a new connection; on a TV with a slow resolver that is
+   up to a few hundred milliseconds per channel change.  An answer is used as it is for a minute; after
+   that, for up to half an hour, it is still used at once while a fresh one is asked for in the
+   background, so a channel change after a while away doesn't wait for the resolver either.  An answer
+   is dropped when a connection to it fails, so a provider that moves is followed at once.  Node 20
+   (webOS 26) asks with all: true and wants a list back; older Node asks for one address.  Node 0.12
+   ignores custom lookups and keeps asking the system. */
+var dnsCache = {}, DNS_FRESH = 60000, DNS_STALE = 30 * 60000;
 function cachedLookup(host, opts, cb) {
   if (typeof opts === 'function') { cb = opts; opts = {}; }
   if (typeof opts === 'number') opts = { family: opts };
   opts = opts || {};
-  var key = host + '|' + (opts.family || 0) + '|' + (opts.all ? 1 : 0), hit = dnsCache[key];
-  if (hit && Date.now() - hit.t < 60000) return process.nextTick(function () { cb.apply(null, [null].concat(hit.r)); });
-  dns.lookup(host, opts, function (err, a, f) {
-    if (!err && a) dnsCache[key] = { t: Date.now(), r: opts.all ? [a] : [a, f] };
-    cb(err, a, f);
-  });
+  var key = host + '|' + (opts.family || 0) + '|' + (opts.all ? 1 : 0), hit = dnsCache[key], age = hit ? Date.now() - hit.t : Infinity;
+  function ask(done) {
+    dns.lookup(host, opts, function (err, a, f) {
+      if (!err && a) dnsCache[key] = { t: Date.now(), r: opts.all ? [a] : [a, f] };
+      else if (dnsCache[key]) dnsCache[key].refreshing = false;
+      if (done) done(err, a, f);
+    });
+  }
+  if (hit && age < DNS_FRESH) return process.nextTick(function () { cb.apply(null, [null].concat(hit.r)); });
+  if (hit && age < DNS_STALE) {
+    if (!hit.refreshing) { hit.refreshing = true; ask(null); }
+    return process.nextTick(function () { cb.apply(null, [null].concat(hit.r)); });
+  }
+  ask(cb);
 }
 function forgetHost(host) { for (var k in dnsCache) if (k.indexOf(host + '|') === 0) delete dnsCache[k]; }
 
@@ -335,4 +345,5 @@ function create(opts) {
   return { server: server, stats: stats, editor: editor };
 }
 
-module.exports = { SYS: SYS, sys: sys, create: create, target: target, relayed: relayed, rewriteHls: rewriteHls, log: log, redact: redact, LOG: LOG };
+module.exports = { SYS: SYS, sys: sys, create: create, target: target, relayed: relayed, rewriteHls: rewriteHls, log: log, redact: redact, LOG: LOG,
+  _dns: { lookup: cachedLookup, cache: dnsCache, forget: forgetHost } };

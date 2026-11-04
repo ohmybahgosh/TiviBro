@@ -28,6 +28,21 @@ const get = (url) => new Promise((res) => http.get(url, (r) => { let b = ''; r.o
   await get(B + '/x/http/localhost:' + port + '/gone2');
   const final = lookups.filter(h => /^localhost/.test(h)).length;
   ok('and the host is looked up again afterwards', final > after, after + ' then ' + final);
+  // An answer older than a minute is still used at once, and a fresh one is asked for in the background.
+  const D = proxy._dns;
+  await new Promise(f => D.lookup('localhost', {}, f));
+  Object.keys(D.cache).forEach(k => { if (/^localhost\|0\|0$/.test(k)) D.cache[k].t = Date.now() - 5 * 60000; });
+  const n0 = lookups.length, t0 = Date.now();
+  const ans = await new Promise(f => D.lookup('localhost', {}, (e, a) => f({ e, a, ms: Date.now() - t0, asked: lookups.length - n0 })));
+  ok('an older answer is used at once', !ans.e && ans.a && ans.ms < 50, JSON.stringify(ans));
+  ok('and refreshed in the background', ans.asked === 1, ans.asked);
+  await new Promise(f => setTimeout(f, 100));
+  const fresh = D.cache['localhost|0|0'];
+  ok('the refreshed answer replaces it', fresh && Date.now() - fresh.t < 5000 && !fresh.refreshing, fresh && (Date.now() - fresh.t));
+  Object.keys(D.cache).forEach(k => { if (/^localhost\|0\|0$/.test(k)) D.cache[k].t = Date.now() - 2 * 3600e3; });
+  const n1 = lookups.length;
+  await new Promise(f => D.lookup('localhost', {}, f));
+  ok('an answer older than half an hour is asked for again first', lookups.length === n1 + 1);
   r.server.close();
   console.log(fail ? fail + ' failures' : 'all helper DNS tests passed');
   process.exit(fail ? 1 : 0);

@@ -1612,7 +1612,7 @@ var Views = (function () {
     var T = 'Stream info', live = mode === 'live';
     var rows = {
       name: { label: mode === 'vod' ? 'Playing' : 'Channel' }, engine: { label: 'Player' }, pic: { label: 'Picture' },
-      buf: { label: 'Buffered ahead' }, info: { label: 'Details' }, cc: live && { label: 'Closed captions' },
+      buf: { label: 'Buffered ahead' }, start: { label: 'Started in' }, prof: { label: 'Buffer profile' }, info: { label: 'Details' }, cc: live && { label: 'Closed captions' },
       arch: live && { label: 'Catch-up', sub: playing && playing.arch ? playing.arch + ' days' : 'not available' },
       how: { label: 'Close', sub: Keymap.buttonsFor(['streaminfo', 'buffer']).length ? 'shortcut: ' + Keymap.buttonsFor(['streaminfo', 'buffer'])[0] : '' }
     };
@@ -1621,12 +1621,16 @@ var Views = (function () {
       rows.name.sub = mode === 'vod' && vod ? vod.meta.title : playing ? L.name(playing) : '';
       rows.engine.sub = s.engine || '';
       rows.pic.sub = video && video.videoWidth ? video.videoWidth + ' × ' + video.videoHeight : '';
-      rows.buf.sub = s.ahead != null ? s.ahead.toFixed(1) + ' s' + (s.target ? ', aiming for ' + Math.round(s.target) + ' s' : '') + (s.state === 'buffering' ? ', refilling' : '') : 'nothing playing';
+      rows.buf.sub = s.ahead != null ? s.ahead.toFixed(1) + ' s' + (s.target ? ', aiming for ' + Math.round(s.target) + ' s' : '') + (s.most >= 1 ? ', most ' + Math.round(s.most) + ' s' : '') + (s.state === 'buffering' ? ', refilling' : '') : 'nothing playing';
       rows.info.sub = s.info || '';
+      // Where the start went: the first video data, the first picture, then the start-up buffer.
+      function sec(ms) { return (ms / 1000).toFixed(1) + ' s'; }
+      rows.start.sub = s.startMs ? sec(s.startMs) + (s.dataMs ? ': first data ' + sec(s.dataMs) + ', picture ' + sec(s.picMs || s.dataMs) + ', then buffering' : '') : '';
+      rows.prof.sub = s.profile || '';
       if (rows.cc) { var c = Player.cc; rows.cc.sub = (c.found ? 'in this stream' : c.possible ? (c.waited ? 'none in this stream' : 'looking…') : 'not with the TV player') + ', ' + (c.on ? 'shown' : 'off'); }
     }
     fill();
-    UI.menu(T, [rows.name, rows.buf, rows.engine, rows.pic, rows.info, rows.arch, rows.cc, rows.how]);
+    UI.menu(T, [rows.name, rows.buf, rows.start, rows.prof, rows.engine, rows.pic, rows.info, rows.arch, rows.cc, rows.how]);
     if (full && Player.stats) peekMeter(true);
     clearInterval(streamInfo.t);
     streamInfo.t = setInterval(function () {

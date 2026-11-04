@@ -10,7 +10,7 @@ var Store = (function () {
     engine: 'auto',          // auto | mse | native
     network: 'auto',         // auto | relay | direct   (see net.js)
     format: 'ts',            // ts | m3u8   (Xtream live URL extension)
-    buffer: 'balanced',      // low | balanced | stable | max | custom
+    buffer: 'auto',          // auto | low | balanced | stable | max | custom  (auto: learns per provider, playmemo.js)
     custom: { prebuffer: 3, ahead: 30, back: 8, stall: 6, retries: 8 },
     meter: 'auto',           // auto | always | off
     meterPeek: 10,           // seconds the buffer meter shows on demand (Hold Info, Stream info); 0 = until pressed again
@@ -135,6 +135,8 @@ var Store = (function () {
   var settings = merge(clone(DEFAULTS), raw);
   // The content filter (filter.js): on for a new TV (the set-up tour asks), off for one that already had playlists.
   if (!settings.filter || typeof settings.filter !== 'object') settings.filter = { adult: !((raw.playlists && raw.playlists.length) || (raw.playlist && (raw.playlist.server || raw.playlist.m3u))), words: [], chans: [], groups: [], asked: !!(raw.playlists && raw.playlists.length) };
+  // Alpha 78: Automatic becomes the buffer profile for TVs still on the old default, Balanced (one chosen by hand is kept).
+  if (!settings.buf2) { if (!raw.buffer || raw.buffer === 'balanced') settings.buffer = 'auto'; settings.buf2 = 1; }
   // 0.6 look: the old amber default becomes Midnight Electric blue (a chosen colour other than the old default is kept).
   if (!settings.look2) { if (!raw.accent || raw.accent === '#f2b33d') settings.accent = '#5b8cff'; settings.look2 = 1; }
   // v0.1 had a single "playlist" object.

@@ -41,10 +41,17 @@ var Settings = (function () {
     var s = S(), out = [];
     var P = Player.PRESETS;
     out.push(choice('Buffer profile',
-      'How much video to hold before and during playback.  More buffer means fewer freezes on shaky streams, but channels take a little longer to start.  A live channel only banks what the provider sends ahead of real time, often 10 to 40 seconds, so the bigger profiles mostly start safer rather than hold more.  Buffer info shows the most a channel has reached.',
-      ['low', 'balanced', 'stable', 'max', 'custom'], [P.low.label, P.balanced.label, P.stable.label, P.max.label, 'Custom'],
+      'How much video to hold before and during playback.  More buffer means fewer freezes on shaky streams, but channels take a little longer to start.  Automatic learns from each provider: channels start fast where its streams are steady, and with a bigger cushion where they run dry.  A live channel only banks what the provider sends ahead of real time, often 10 to 40 seconds, so the bigger profiles mostly start safer rather than hold more.  Buffer info shows the most a channel has reached.',
+      ['auto', 'low', 'balanced', 'stable', 'max', 'custom'], ['Automatic', P.low.label, P.balanced.label, P.stable.label, P.max.label, 'Custom'],
       function () { return s.buffer; }, function (v) { s.buffer = v; save(true); }));
-    var cur = s.buffer === 'custom' ? null : P[s.buffer];
+    var cur = s.buffer === 'custom' || s.buffer === 'auto' ? null : P[s.buffer];
+    if (s.buffer === 'auto' && window.PlayMemo) {
+      var known = PlayMemo.summary();
+      out.push(info('Profile details', known.length ? known.slice(0, 3).map(function (k) {
+        return k.host.replace(/:\d+$/, '') + ': ' + k.why + ', starts at ' + k.prebuffer + 's (' + (k.hours < 1 ? Math.round(k.hours * 60) + ' min' : Math.round(k.hours) + ' h') + ' watched)';
+      }).join('; ') : 'Learns as you watch: starts at ' + PlayMemo.LEARNING.prebuffer + 's until a provider has shown how steady it is'));
+      out.push(action('Start learning again', 'Forget what TiviBro learned about your providers and channels: how steady each provider is, the cushion each channel earned, and which player each channel needs.', function () { PlayMemo.reset(); U.toast('TiviBro will learn your providers again'); build(); }));
+    }
     if (cur) out.push(info('Profile details', 'starts at ' + cur.prebuffer + 's, holds up to ' + cur.ahead + 's, refills to ' + Math.max(2, cur.prebuffer * 1.5) + 's'));
     if (s.buffer === 'custom') {
       var c = s.custom;

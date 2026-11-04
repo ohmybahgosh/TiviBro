@@ -52,13 +52,17 @@ var Player = (function () {
   function on(ev, fn) { listeners[ev].push(fn); }
   function emit(ev, a, b) { var l = listeners[ev]; for (var i = 0; i < l.length; i++) l[i](a, b); }
 
-  function cfg(preview) {
+  function cfg(preview, url) {
     var s = Store.settings, p;
-    if (s.buffer === 'custom') {
+    if (s.buffer === 'auto' && window.PlayMemo) {
+      // Automatic: what this provider has shown so far (playmemo.js).
+      p = PlayMemo.auto(hostOf(url || ''));
+      p.label = 'Automatic (' + p.why + ')'; p.chase = false;
+    } else if (s.buffer === 'custom') {
       var c = s.custom;
       p = { label: 'Custom', prebuffer: +c.prebuffer, ahead: +c.ahead, back: +c.back, stall: +c.stall, retries: +c.retries,
         stash: Math.round(U.clamp(c.prebuffer * 160, 128, 2048)), chase: c.prebuffer < 1 };
-    } else p = PRESETS[s.buffer] || PRESETS.balanced;
+    } else p = PRESETS[s.buffer === 'auto' ? 'balanced' : s.buffer] || PRESETS.balanced;
     p = Object.assign({}, p);
     // Previews should appear fast; the full preset applies once you go fullscreen.
     if (preview) p.prebuffer = Math.min(p.prebuffer, 1.2);
@@ -508,6 +512,16 @@ var Player = (function () {
      of the same channel.  Once all have failed there is no point in eight reconnects. */
   var ENGINE_NAMES = { ts: 'built-in demuxer', native: 'TV player', hls: 'HLS version of this channel' };
   function hlsVariant(url) { return cur && cur.live && !cur.timeshift && /\/live\/[^?]+\.ts(\?|$)/i.test(url) ? url.replace(/\.ts(\?|$)/i, '.m3u8$1') : null; }
+  /** Can this TV use pipeline [k] for the current channel? */
+  function engineOk(k) {
+    var u = cur.origUrl || cur.url, isHlsUrl = /\.m3u8(\?|$)/i.test(u);
+    if (k === 'native') return true;
+    if (k === 'ts') return !isHlsUrl && !!(window.mpegts && mse());
+    if (k === 'hls') return !!(window.Hls && Hls.isSupported() && (isHlsUrl || hlsVariant(u)));
+    return false;
+  }
+  /** The provider this channel comes from, for what playmemo.js learns about it. */
+  function memoHost() { return cur ? hostOf(cur.origUrl || cur.url) : ''; }
   function nextEngine(failed) {
     cur.tried = cur.tried || {};
     cur.tried[failed] = 1;
@@ -581,7 +595,7 @@ var Player = (function () {
        comes in short pieces and often rides out a shaky connection better.  Remembered for this
        channel until TiviBro closes. */
     // (Not when the provider answered with an error: that is the provider having trouble, not the stream format.)
-    if (cur.live && !cur.timeshift && cur.everPlayed && st && st.kind === 'ts' && !/^The provider answered/.test(why)) {
+    if (cur.live && !cur.timeshift && cur.everPlayed && st && st.kind === 'ts' && !/^The provider answered|slowed down/.test(why)) {
       cur.drops = (cur.drops || []).filter(function (x) { return now - x < 180000; }); cur.drops.push(now);
       if (cur.drops.length >= 3 && !(cur.late && cur.late.hls) && !(cur.tried && cur.tried.hls) && window.Hls && Hls.isSupported() && hlsVariant(cur.origUrl || cur.url)) {
         Log.info('player', 'This channel dropped ' + cur.drops.length + ' times in 3 minutes on MPEG-TS; trying its HLS version');
@@ -630,12 +644,40 @@ var Player = (function () {
      by running dry before (kept across reconnects of the same channel). */
   function capFor(p) { return Math.max(p.refill, Math.min(p.ahead * 0.6, 20)); }
   function refillGoal() { var p = cur.p; return Math.min(capFor(p), p.refill + (cur.boost || 0)); }
+  /* Is the stream trickling in too slowly to ever keep up?  The end of what is buffered is sampled every
+     tick; over the last 30 seconds it should move about as fast as the clock.  Only a steady trickle
+     counts: data that keeps coming, at under half of real time, with the cushion nearly gone.  A stall
+     (nothing for 6 seconds or more) or a slow patch that catches up again is left to the refill, which
+     keeps the burst that usually follows (the chaos soak showed reconnecting then loses it). */
+  var EARLY_RATE = 0.5, EARLY_WIN = 30000, EARLY_GAP = 6000, EARLY_EVERY = 120000;
+  function early(now, ahead, p) {
+    if (!st.started || st.refilling || video.seeking || video.paused || st.userPaused) { st.arr = null; return false; }
+    var arr = st.arr || (st.arr = []), end = bufferEnd();
+    arr.push([now, end]);
+    while (arr.length > 2 && now - arr[1][0] >= EARLY_WIN) arr.shift();
+    if (now - arr[0][0] < EARLY_WIN || now - (cur.earlyAt || 0) < EARLY_EVERY || now - st.at < EARLY_WIN) return false;
+    // An HLS stream with several qualities lowers its own quality instead.
+    if (st.kind === 'hls' && eng && eng.levels && eng.levels().length > 1 && eng.auto && eng.auto()) return false;
+    var rate = (end - arr[0][1]) / ((now - arr[0][0]) / 1000);
+    if (rate >= EARLY_RATE || rate < 0.05 || ahead > Math.max(2.5, p.refill) || ahead < 0.8) return false;
+    // A trickle, not a stall: something arrived at least every few seconds the whole time.
+    for (var i = 1, since = arr[0][0]; i < arr.length; i++) {
+      if (arr[i][1] > arr[i - 1][1] + 0.01) since = arr[i][0];
+      else if (arr[i][0] - since > EARLY_GAP) return false;
+    }
+    cur.earlyAt = now; st.arr = null;
+    Log.warn('player', 'The stream is arriving at ' + Math.round(rate * 100) + '% of real time with ' + ahead.toFixed(1) + 's left; reconnecting before it runs out');
+    if (window.PlayMemo) PlayMemo.ranDry(memoHost());
+    grow(p);
+    return true;
+  }
   function grow(p) {
     if (cur.preview) return;
     var before = cur.boost || 0;
     cur.boost = Math.min(capFor(p) - p.refill, before + Math.max(1.5, p.refill * 0.75));
     cur.boostAt = Date.now();
     if (cur.boost > before) Log.info('player', 'This channel keeps running dry; cushion raised to ' + refillGoal().toFixed(1) + 's');
+    if (cur.live && !cur.timeshift && window.PlayMemo) PlayMemo.boost(cur.ch, cur.boost);
   }
 
   function tick(myToken) {
@@ -656,10 +698,14 @@ var Player = (function () {
     // (often well under the profile's read-ahead), so buffer info shows what this one really reaches.
     if (st.started && ahead > (st.most || 0)) st.most = ahead;
     emit('stats', lastStats = { ahead: ahead, target: st.started ? goal : p.prebuffer, cushion: cur.boost || 0, engine: eng ? eng.name : '', info: eng ? eng.info() : '',
-      res: video.videoHeight ? video.videoHeight + 'p' : '', state: st.state, most: st.most || 0, cap: p.ahead });
+      res: video.videoHeight ? video.videoHeight + 'p' : '', state: st.state, most: st.most || 0, cap: p.ahead,
+      profile: p.label, startMs: cur.startMs || 0, dataMs: cur.dataMs || 0, picMs: cur.picMs || 0 });
 
     // 1. Prebuffer before the first frame.
     if (!st.started) {
+      // Where a start spends its time: the first video data, the first picture, then the buffer.
+      if (!st.tData && video.buffered.length && bufferEnd() > 0) st.tData = now;
+      if (!st.tPic && video.readyState >= 2) st.tPic = now;
       // Live streams often buffer from a timestamp after 0 (e.g. 1.4s).  Measure from the start of
       // what is buffered, and move the playhead there before playing.
       var bf = video.buffered, first = bf.length ? bf.start(0) : 0;
@@ -677,7 +723,10 @@ var Player = (function () {
         if (cur.slow) { Log.info('player', 'Channel is back after ' + Math.round((now - cur.slowSince) / 1000) + 's'); notice('Back on air'); }
         if (cur.live && !cur.everPlayed && window.DeadList) DeadList.played(cur.ch, cur.origUrl || cur.url);
         cur.slow = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0; cur.starved = false; cur.lastFailHttp = false;
-        Log.info('player', 'Playing after ' + (now - st.at) + 'ms with ' + ahead.toFixed(1) + 's buffered' + (ahead < p.prebuffer ? ' (prebuffer timed out)' : '') + (video.videoHeight ? ', ' + video.videoWidth + 'x' + video.videoHeight : ''));
+        cur.startMs = now - st.at; cur.dataMs = st.tData ? st.tData - st.at : 0; cur.picMs = st.tPic ? st.tPic - st.at : 0;
+        Log.info('player', 'Playing after ' + (now - st.at) + 'ms with ' + ahead.toFixed(1) + 's buffered' + (ahead < p.prebuffer ? ' (prebuffer timed out)' : '') + (video.videoHeight ? ', ' + video.videoWidth + 'x' + video.videoHeight : '') +
+          (cur.dataMs ? ' (first data ' + cur.dataMs + 'ms, first picture ' + (cur.picMs || cur.dataMs) + 'ms)' : ''));
+        if (cur.live && !cur.timeshift && window.PlayMemo) { PlayMemo.worked(cur.ch, st.kind, cur.usual); PlayMemo.started(memoHost()); }
         if (bf.length && video.currentTime < first && !cur.startAt) { try { video.currentTime = first + 0.05; } catch (e) {} }
         st.growAt = now;
         if (cur.startAt && !cur.live) { try { video.currentTime = cur.startAt; } catch (e) {} cur.pos = cur.startAt; cur.startAt = 0; }
@@ -702,6 +751,7 @@ var Player = (function () {
       var jt = jumpTarget(t);
       if (jt) {
         Log.info('player', 'Stream timestamps jumped by ' + (jt.start - t).toFixed(1) + 's; following the stream');
+        st.arr = null;
         try { video.currentTime = jt.start + 0.05; } catch (e) {}
         st.lastMove = now; st.lastT = -1; st.jumps = (st.jumps || 0) + 1;
         if (st.refilling) { st.refillSince = now; }
@@ -748,13 +798,22 @@ var Player = (function () {
       if (isFinite(d) && d > 120 && te < d - 30) { Log.warn('player', 'Video ended at ' + Math.round(te) + 's of ' + Math.round(d) + 's; treating it as a dropped connection'); cur.pos = te; reconnect(myToken, 'Connection dropped, reconnecting'); return; }
       clearInterval(wd); wd = 0; state('ended'); return;
     }
+    // 5. Arriving slower than it plays: reconnect while there is still a cushion (the last picture
+    //    stays on screen), rather than playing it down to nothing and then waiting for data that
+    //    isn't coming.  Live channels only, a while after the start, at most once every 2 minutes.
+    if (cur.live && !cur.timeshift && early(now, ahead, p)) {
+      cur.starved = true;
+      return reconnect(myToken, 'The stream slowed down, reconnecting before it runs out');
+    }
     if (t !== st.lastT && !video.paused) {
+      if (cur.live && !cur.timeshift && window.PlayMemo && st.watchAt && now - st.watchAt < 2000) PlayMemo.watched(memoHost(), now - st.watchAt);
+      st.watchAt = now;
       st.lastT = t; st.lastMove = now;
       if (st.state !== 'playing') state('playing');
       if (!st.healthySince) st.healthySince = now;
       // 30s of clean playback earns the retry budget back; 3 clean minutes halve the extra cushion.
       if (now - st.healthySince > 30000 && (cur.retries || cur.slowSince)) { cur.retries = 0; cur.triedNative = false; cur.slowSince = 0; cur.late = null; }
-      if (cur.boost && now - st.healthySince > 180000 && now - (cur.boostAt || 0) > 180000) { cur.boost = Math.round(cur.boost * 5) / 10; cur.boostAt = now; if (cur.boost < 0.5) cur.boost = 0; Log.info('player', 'Clean for 3 minutes; extra cushion now ' + cur.boost + 's'); }
+      if (cur.boost && now - st.healthySince > 180000 && now - (cur.boostAt || 0) > 180000) { cur.boost = Math.round(cur.boost * 5) / 10; cur.boostAt = now; if (cur.boost < 0.5) cur.boost = 0; Log.info('player', 'Clean for 3 minutes; extra cushion now ' + cur.boost + 's'); if (cur.live && !cur.timeshift && window.PlayMemo) PlayMemo.boost(cur.ch, cur.boost); }
       return;
     }
     if (video.paused && !st.refilling) {
@@ -771,11 +830,12 @@ var Player = (function () {
     // 3. Gap jump: a hole just ahead of the playhead.
     if (stuck > 800) {
       var gap = nextRangeStart();
-      if (gap > 0) { Log.debug('player', 'Jumped a ' + (gap - t).toFixed(2) + 's gap in the buffer'); video.currentTime = gap + 0.05; st.lastMove = now; return; }
+      if (gap > 0) { st.arr = null; Log.debug('player', 'Jumped a ' + (gap - t).toFixed(2) + 's gap in the buffer'); video.currentTime = gap + 0.05; st.lastMove = now; return; }
     }
     // Ran dry: start a proper refill instead of stutter-playing.
     if (stuck > 600 && ahead < 0.3) {
-      st.refilling = true; st.refillSince = now; st.refills = (st.refills || 0) + 1;
+      st.refilling = true; st.refillSince = now; st.refills = (st.refills || 0) + 1; st.arr = null;
+      if (cur.live && !cur.timeshift && window.PlayMemo) PlayMemo.ranDry(memoHost());
       grow(p);
       Log.info('player', 'Buffer ran dry (' + st.refills + ' times this stream); refilling to ' + refillGoal().toFixed(1) + 's');
       video.pause();
@@ -836,8 +896,8 @@ var Player = (function () {
     token++;
     if (cur) clearTimeout(cur.timer);
     lastStats = null;                       // no stale numbers from the last channel in Stream info
-    var fmt = Store.settings.format;
-    cur = { ch: ch, url: opts.url || Source.streamUrl(ch, fmt), p: cfg(opts.preview), preview: !!opts.preview, retries: 0,
+    var fmt = Store.settings.format, url0 = opts.url || Source.streamUrl(ch, fmt);
+    cur = { ch: ch, url: url0, p: cfg(opts.preview, url0), preview: !!opts.preview, retries: 0,
       forceNative: false, triedNative: false, live: opts.live !== false, startAt: opts.startAt || 0, meta: opts.meta || null,
       timeshift: !!opts.timeshift, urlFn: opts.urlFn || null, pos: opts.startAt || 0,
       media: opts.media || (opts.meta && opts.meta.media) || null, opts: opts };
@@ -847,7 +907,14 @@ var Player = (function () {
     applyDisplay();
     releaseFrame();                         // a new channel never shows the last one's picture
     if (video) video.playbackRate = 1;
+    cur.usual = pickEngine(cur.url);
     if (cur.live && !cur.timeshift && preferHls[cur.url] && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) { Log.info('player', 'Using the HLS version of this channel, which played better earlier'); useEngine('hls'); }
+    // What this channel needed last time (playmemo.js): its pipeline, and the cushion it earned.
+    else if (cur.live && !cur.timeshift && window.PlayMemo && Store.settings.engine !== 'native') {
+      var memo = PlayMemo.get(ch);
+      if (memo.engine && memo.engine !== cur.usual && engineOk(memo.engine)) { Log.info('player', 'Starting with the ' + (memo.engine === 'hls' ? 'HLS version' : ENGINE_NAMES[memo.engine]) + ', which played this channel last time'); useEngine(memo.engine); }
+      if (memo.boost && !cur.preview) { cur.boost = memo.boost; cur.boostAt = Date.now(); }
+    }
     // Movies, episodes and My media files: is the sound one this TV plays?  (convert.js)
     if (window.Convert && !cur.live && !cur.timeshift && !cur.preview && Convert.on()) {
       var my = token, item = cur.meta && cur.meta.item || {};
@@ -1028,7 +1095,7 @@ var Player = (function () {
   function upgrade(preview) {
     if (!cur) return;
     cur.preview = preview;
-    cur.p = cfg(preview);
+    cur.p = cfg(preview, cur.origUrl || cur.url);
   }
   function stop() { token++; if (cur) clearTimeout(cur.timer); cur = null; held = null; teardown(); state('idle'); Log.state('player', ''); }
 

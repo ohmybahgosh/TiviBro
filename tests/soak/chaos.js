@@ -18,13 +18,13 @@ const ALL = [901, 902, 903, 904, 905, 906, 907, 908, 909, 910, 911, 912];
 const modes = argv.filter(a => /^9\d\d$/.test(a)).map(Number);
 const run = modes.length ? modes : ALL;
 
-const SETTINGS = { meter: 'off', buffer: PROFILE, playlists: [{ id: 'p1', name: 'Chaos', type: 'xtream', server: 'http://127.0.0.1:8077', user: 'demo', pass: 'demo', providerEpg: 'short', epgDays: 1 }], active: 'p1' };
+const SETTINGS = { meter: 'off', buffer: PROFILE, buf2: 1, playlists: [{ id: 'p1', name: 'Chaos', type: 'xtream', server: 'http://127.0.0.1:8077', user: 'demo', pass: 'demo', providerEpg: 'short', epgDays: 1 }], active: 'p1' };
 
 async function one(browser, id) {
   const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
   const page = await ctx.newPage();
   const errors = [];
-  page.on('pageerror', e => errors.push(e.message));
+  page.on('pageerror', e => errors.push(String(e.stack || e.message).split('\n').slice(0, 3).join(' | ')));
   await page.addInitScript(([s, relay]) => {
     if (!sessionStorage.getItem('chaosInit')) { localStorage.clear(); localStorage.setItem('tivibro.settings', s); sessionStorage.setItem('chaosInit', '1'); }
     localStorage.setItem('tivibro.devRelay', relay);

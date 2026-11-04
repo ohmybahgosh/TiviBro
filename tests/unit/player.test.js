@@ -52,11 +52,17 @@ function setup(opts) {
     addEventListener: (t, f) => { winL[t] = f; }
   };
   if (opts.mkvSubs) ctx.MkvSubs = opts.mkvSubs;
+  // What playback learns (playmemo.js), in a localStorage that can outlive one setup (an app restart).
+  if (opts.memo) {
+    const ls = opts.memo;
+    ctx.localStorage = { getItem: k => (k in ls ? ls[k] : null), setItem: (k, v) => { ls[k] = String(v); }, removeItem: k => { delete ls[k]; } };
+    ctx.Store.playlist = { id: 'p1' };
+  }
   if (opts.mp4Subs) ctx.Mp4Subs = opts.mp4Subs;
   ctx.window = ctx;
   vm.createContext(ctx);
   const load = (f, name) => vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js', f), 'utf8') + '\nthis.' + name + ' = ' + name + ';', ctx);
-  load('caps.js', 'Caps'); load('player.js', 'Player');
+  load('caps.js', 'Caps'); if (opts.memo) load('playmemo.js', 'PlayMemo'); load('player.js', 'Player');
   const P = ctx.Player;
   P.bind(video);
   const states = [], notices = [];
@@ -82,7 +88,7 @@ function setup(opts) {
   // The current engine delivers media: buffer [from, to] and enough data to play.
   function feed(from, to) { video.readyState = 4; video._ranges = [[from, to]]; if (video.currentTime < from) video.currentTime = from; video.videoHeight = 1080; video.videoWidth = 1920; }
   const last = () => made[made.length - 1];
-  return { P, video, run, feed, last, made, states, notices, logs, nav, winL, settings, get now() { return now; } };
+  return { P, video, run, feed, last, made, states, notices, logs, nav, winL, settings, ctx, get now() { return now; } };
 }
 
 // ---- a live channel that drops reconnects, and keeps going ----
@@ -280,6 +286,98 @@ t.feed(0, 12); t.run(2500);
 ok('buffer info knows the most held so far', t.P.stats && t.P.stats.most >= 11 && t.P.stats.cap === 30, JSON.stringify(t.P.stats));
 t.video.currentTime = 10; t.run(600);
 ok('and keeps the most, not the latest', t.P.stats.most >= 11 && t.P.stats.ahead < 3, t.P.stats.most + ' / ' + t.P.stats.ahead);
+
+// ---- remembered across restarts (playmemo.js): the pipeline a channel needed, and its cushion ----
+{
+  const ls = {};
+  let m = setup({ memo: ls });
+  const ch = { k: 'only-hls', n: 'Only HLS', url: 'http://p/live/u/p/40.ts' };
+  m.P.play(ch);
+  m.last().h.err('MediaError', 'unsupported', {});          // the demuxer can't take it: next pipeline
+  ok('memo: a channel the demuxer refuses tries the TV player', m.last().kind === 'native' || !!m.video._src, m.last().kind);
+  m.video.l.error && m.video.l.error.forEach(f => { m.video.error = { code: 4 }; m.video._src = 'x'; f(); });
+  m.run(100);
+  ok('memo: then its HLS version', m.last().kind === 'hls', m.last().kind);
+  m.feed(0, 10); m.run(1500);
+  ok('memo: plays as HLS', m.P.playing && m.logs.some(l => /Playing after/.test(l)));
+  m.ctx.PlayMemo.flush();
+  ok('memo: remembered', /only-hls/.test(ls['tivibro.playMemo'] || '') && /"hls"/.test(ls['tivibro.playMemo']), ls['tivibro.playMemo']);
+  // The next day (a new app start): straight to HLS.
+  m = setup({ memo: ls });
+  m.P.play(ch);
+  ok('memo: next time it starts as HLS at once', m.made.length === 1 && m.last().kind === 'hls' && m.logs.some(l => /which played this channel last time/.test(l)), m.made.map(x => x.kind).join(','));
+  // A channel that played on the usual pipeline leaves nothing behind.
+  m.P.play({ k: 'plain', n: 'Plain', url: 'http://p/live/u/p/41.ts' }); m.feed(0, 10); m.run(1500);
+  m.ctx.PlayMemo.flush();
+  ok('memo: a channel that plays the usual way is not stored', !/plain/.test(ls['tivibro.playMemo']));
+  // The cushion a channel earned comes back after a restart.
+  m.P.play({ k: 'dry', n: 'Dry', url: 'http://p/live/u/p/42.ts' }); m.feed(0, 4); m.run(2500); m.run(4000);
+  const earned = m.P.stats.target;
+  m.ctx.PlayMemo.flush();
+  m = setup({ memo: ls });
+  m.P.play({ k: 'dry', n: 'Dry', url: 'http://p/live/u/p/42.ts' }); m.feed(0, 4); m.run(2500); m.run(4000);
+  ok('memo: the earned cushion is there from the first refill after a restart', m.P.stats.target >= earned && earned > 3, earned + ' then ' + m.P.stats.target);
+}
+
+// ---- Automatic buffer: a steady provider starts fast, a shaky one holds more ----
+{
+  const ls = {};
+  let m = setup({ memo: ls, settings: { buffer: 'auto' } });
+  m.P.play({ k: 'a1', n: 'A1', url: 'http://steady.example/live/u/p/1.ts' });
+  ok('auto: learning at first', /Automatic \(still learning\)/.test(m.logs.find(l => /^Start /.test(l)) || ''), m.logs.find(l => /^Start /.test(l)));
+  const PM = m.ctx.PlayMemo;
+  for (let i = 0; i < 4; i++) PM.started('steady.example');
+  PM.watched('steady.example', 50000); for (let i = 0; i < 40; i++) PM.watched('steady.example', 50000);    // about 35 minutes, never dry
+  for (let i = 0; i < 4; i++) PM.started('shaky.example');
+  for (let i = 0; i < 40; i++) PM.watched('shaky.example', 50000);
+  for (let i = 0; i < 10; i++) PM.ranDry('shaky.example');                                                  // 10 in about 33 minutes
+  m.P.play({ k: 'a2', n: 'A2', url: 'http://steady.example/live/u/p/2.ts' });
+  ok('auto: a steady provider starts at 0.8s', /Automatic \(steady\).*prebuffer 0.8s/.test(m.logs.filter(l => /^Start /.test(l)).pop()), m.logs.filter(l => /^Start /.test(l)).pop());
+  m.P.play({ k: 'b1', n: 'B1', url: 'http://shaky.example/live/u/p/1.ts' });
+  ok('auto: a very shaky one holds 6s', /Automatic \(very shaky\).*prebuffer 6s/.test(m.logs.filter(l => /^Start /.test(l)).pop()), m.logs.filter(l => /^Start /.test(l)).pop());
+  // Running dry counts against the provider; time watched counts for it.
+  m.P.play({ k: 'c1', n: 'C1', url: 'http://new.example/live/u/p/1.ts' }); m.feed(0, 30); m.run(3000); m.run(10000);
+  m.video._ranges = [[0, m.video.currentTime + 0.1]]; m.run(2000);
+  const h = JSON.parse(JSON.stringify(PM.summary())).find(x => x.host === 'new.example');
+  ok('auto: watching and running dry are counted for the provider', h && h.dry === 1 && h.hours > 0.002, JSON.stringify(h));
+}
+
+// ---- arriving slower than it plays: reconnect while there is still a cushion ----
+{
+  const m = setup();
+  m.P.play({ n: 'Slow', url: 'http://p/live/u/p/50.ts' });
+  m.feed(0, 40); m.run(3000);
+  let e0 = 40; for (let i = 0; i < 200; i++) { e0 += 0.03; m.video._ranges = [[0, e0]]; m.run(100); }   // 20s of a slow trickle, cushion still big
+  ok('slow: not before the cushion is nearly gone', !m.logs.some(l => /arriving at/.test(l)));
+  // From now on video arrives at 40% of real time.
+  let end = e0;
+  const n0 = m.made.length;
+  for (let i = 0; i < 400 && m.made.length === n0; i++) { end += 0.03; m.video._ranges = [[0, end]]; m.run(100); }
+  const lg = m.logs.find(l => /arriving at/.test(l)) || '';
+  ok('slow: reconnects before running dry, with the cushion still there', /arriving at \d+% of real time with [12]\.\d+s left/.test(lg) && m.made.length === n0 + 1 && !m.logs.some(l => /Buffer ran dry/.test(l)), lg);
+  // A stall (nothing at all for 8s, then a burst) is left to the refill, which keeps the burst.
+  const st2 = setup();
+  st2.P.play({ n: 'Stall', url: 'http://p/live/u/p/52.ts' });
+  st2.feed(0, 34); st2.run(3000);
+  let e3 = 34;
+  for (let k = 0; k < 4; k++) { st2.run(8000); for (let i = 0; i < 20; i++) { e3 += 0.4; st2.video._ranges = [[0, e3]]; st2.run(100); } }
+  ok('slow: a stall then a burst is not a trickle', !st2.logs.some(l => /arriving at/.test(l)), st2.logs.filter(l => /arriving|dry|Reconnect/.test(l)).join(' | '));
+  // A steady stream never does.
+  const q = setup();
+  q.P.play({ n: 'Fine', url: 'http://p/live/u/p/51.ts' });
+  q.feed(0, 6); q.run(2500);
+  let e2 = 6; for (let i = 0; i < 600; i++) { e2 += 0.1; q.video._ranges = [[0, e2]]; q.run(100); }
+  ok('slow: a stream keeping up is left alone', !q.logs.some(l => /arriving at|ran dry/.test(l)) && q.made.length === 1, q.logs.filter(l => /arriving|dry/.test(l)).join(' | '));
+}
+
+// ---- the start, split up for Stream info ----
+{
+  const m = setup();
+  m.P.play({ n: 'Timed', url: 'http://p/live/u/p/60.ts' });
+  m.run(300); m.video._ranges = [[0, 0.5]]; m.run(200); m.video.readyState = 4; m.video._ranges = [[0, 4]]; m.run(200); m.run(500);
+  const s = m.P.stats;
+  ok('timing: first data, first picture and the start are known', s && s.startMs >= 500 && s.dataMs >= 300 && s.dataMs <= s.startMs && /first data \d+ms/.test(m.logs.find(l => /Playing after/.test(l)) || ''), JSON.stringify(s));
+}
 
 // ---- sloppy streams: a growing cushion, quick reconnect when data stops, timestamp jumps ----
 t = setup();
