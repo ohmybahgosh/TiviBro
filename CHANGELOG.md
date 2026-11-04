@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **Each channel switches between MPEG-TS and HLS by itself, whichever holds up** (#47, thanks ich0x).  A live channel that drops twice in three minutes, or trickles in too slowly to keep up, now switches to its other version straight away, and back again if that one does worse (at most three switches in ten minutes).  A version that doesn't play at all (missing, or no picture within 8 seconds) sends it straight back.  It used to wait for three drops, and a switch on the last reconnect of the budget was overridden: the channel went to the TV's player, then back to MPEG-TS, before HLS was tried.  What worked is remembered for the channel, after a restart too.
-
-## 0.6.0 (alpha 80, 2026-11-04)
+## 0.6.0 (alpha 81, 2026-11-04)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 80
+### New in alpha 81
+
+- **Each channel switches between MPEG-TS and HLS by itself, whichever holds up** (#47, thanks ich0x).  A live channel that drops twice in three minutes, or trickles in too slowly to keep up, now switches to its other version straight away, and back again if that one does worse (at most three switches in ten minutes).  A version that doesn't play at all (missing, or no picture within 8 seconds) sends it straight back.  It used to wait for three drops, and a switch on the last reconnect of the budget was overridden: the channel went to the TV's player, then back to MPEG-TS, before HLS was tried.  What worked is remembered for the channel, after a restart too.
+
+### In alpha 80
 
 - **The phone app no longer closes when you open a channel's schedule** (CNN in the guide, on election night).  The guide listed two programmes at the same start time; TiviBro kept one with no time of its own, and the phone's schedule, which lists programmes by start, closed on the repeat.  Programmes with no time of their own are now left out of schedules, search, Movies on now and what's next, on the TV and the phone, and the phone app can't close on a repeated start any more.
 - **What's new no longer gets skipped.**  A start that reloaded at once (the TV's helper was slow to answer) marked the new version as seen before the list could show, so the next start skipped it.  It now counts as seen only once it has shown, it waits for a quiet moment (not while a channel is starting or you are pressing buttons), and the list leaves out the release's own heading and the changelog link, on the TV and in the phone app.
