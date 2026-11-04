@@ -1,15 +1,16 @@
 # Changelog
 
-## Unreleased
-
-- **The phone app turns the TV on over Bluetooth too.**  **Turn on** and the Quick Settings tile now also send LG's Bluetooth wake signal, the way LG's ThinQ app does, next to Wake-on-LAN, so a TV that ignores the network wake still comes on.  The app registers itself with the TV by itself while the TV is on, Android 12 and later ask for **Nearby devices** the first time you press **Turn on**, and if Bluetooth is off on the phone the app says so and wakes the TV over the network only.
-- **The phone app updates itself.**  When a new TiviBro app is out, **Update now** on the home screen downloads it with a progress bar, checks it is the release GitHub describes, and installs it over this one (Android asks you to allow TiviBro to install apps the first time, and to confirm).  If anything goes wrong, **Download** still opens the APK in the browser.
-
-## 0.6.0 (alpha 74, 2026-11-03)
+## 0.6.0 (alpha 75, 2026-11-04)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 74
+### New in alpha 75
+
+- **The phone app turns the TV on over Bluetooth too.**  **Turn on** and the Quick Settings tile now also send LG's Bluetooth wake signal, the way LG's ThinQ app does, next to Wake-on-LAN, so a TV that ignores the network wake still comes on.  The app registers itself with the TV by itself while the TV is on, Android 12 and later ask for **Nearby devices** the first time you press **Turn on**, and if Bluetooth is off on the phone the app says so and wakes the TV over the network only.
+- **The phone app updates itself.**  When a new TiviBro app is out, **Update now** on the home screen downloads it with a progress bar, checks it is the release GitHub describes, and installs it over this one (Android asks you to allow TiviBro to install apps the first time, and to confirm).  If anything goes wrong, **Download** still opens the APK in the browser.
+- **Turn on reaches every network card the TV has.**  The phone app used to send Wake-on-LAN only to the card the TV was using when the app last saw it.  It now learns the TV's Wi-Fi and wired addresses and wakes all of them, as LG's ThinQ app does, so a TV that was on Wi-Fi last time and is wired now (or the other way round) still comes on.
+
+### In alpha 74
 
 - **No more restarts while a big library gets its details.**  Adding a 1,600-movie Dropbox folder made TiviBro grow by about 3 MB a second while it looked up posters and details, until webOS closed it for using 950 MB of the TV's 2 GB.  Every movie's details saved the whole library again, and the TV kept a copy of each save.  Details are now saved together every few seconds, and big saves are sent in a way the TV frees at once: the same lookup now stays flat.
 
