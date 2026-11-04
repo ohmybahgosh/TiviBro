@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **MKV subtitles keep up in movies with many languages.**  Only the subtitles you are watching are read from the file, as for MP4 files, so a movie with dozens of subtitle languages no longer shows its lines late or not at all.  A language you switch to is read as you pick it.
+
 ## 0.6.0 (alpha 81, 2026-11-04)
 
 Pre-release: expect rough edges, and keep a backup before installing.

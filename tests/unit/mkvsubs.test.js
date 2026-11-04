@@ -75,6 +75,8 @@ const ctx = {
   fetch: (...a) => fakeFetch(...a),
   Net: { wrap: u => u },
   Log: { debug() {}, warn() {}, info() {} },
+  // Tracks are read only while shown (as on the TV, where Subs turns on the preferred language).
+  Subs: { autoOn: () => true },
   document: { createElement: tag => (tag === 'track' ? makeFakeTrackElement() : {textContent: ''}) },
   VTTCue: function (start, end, text) { this.startTime = start; this.endTime = end; this.text = text; }
 };
@@ -169,18 +171,57 @@ const assTagCluster = u8([].concat(
 ok('strips ASS override codes like {\\an8} from cue text instead of displaying them literally',
   MkvSubs.readClusterBlocks(assTagCluster, 0, assTagCluster.length, 3, 1000000)[0].text === 'Hello, world!');
 
-// ---- clusterFetchOrder: prioritize clusters near current playback position, not file order ----
-ok('orders clusters by proximity to current playback position, nearest first, deduped', (() => {
-  const perTrackCues = [
-    { track: { number: 7 }, cues: [{ timeSec: 20, clusterPos: 100 }, { timeSec: 2300, clusterPos: 500 }] },
-    { track: { number: 7 }, cues: [{ timeSec: 2290, clusterPos: 500 }] } // same cluster as above -> must dedupe to one entry
-  ];
-  const order = MkvSubs.clusterFetchOrder(perTrackCues, 2295, 10);
-  return JSON.stringify(order) === JSON.stringify([510, 110]);
+// ---- only the shown track is read (as MP4 does): a file with dozens of languages has a block per
+// language in every cluster, and reading them all left the shown one seconds behind the picture ----
+ok('only tracks being shown are read, per track, and nothing while none is shown', (() => {
+  const MKV = MkvSubs.MKV;
+  const rec = { fetched: {}, index: { segmentDataStart: 0, timecodeScale: 1000000, perTrackCues: [
+    { track: { number: 3 }, cues: [{ timeSec: 10, clusterPos: 100, relativePos: 5 }, { timeSec: 40, clusterPos: 200, relativePos: 7 }] },
+    { track: { number: 4 }, cues: [{ timeSec: 10, clusterPos: 100, relativePos: 9 }] }
+  ] } };
+  const none = MKV.candidates(rec, 10, { demand: () => null, timing: () => null });
+  const second = MKV.candidates(rec, 10, { demand: i => (i === 1 ? 'now' : null), timing: () => null });
+  rec.fetched['1:100'] = true;
+  const afterRead = MKV.candidates(rec, 10, { demand: i => (i === 1 ? 'now' : null), timing: () => null });
+  const first = MKV.candidates(rec, 10, { demand: i => (i === 0 ? 'now' : null), timing: () => null });
+  return MKV.lazy === true && none.length === 0 &&
+    second.length === 1 && JSON.stringify(second[0].keys) === '["1:100"]' &&
+    afterRead.length === 0 &&
+    JSON.stringify(first.map(it => it.keys)) === '[["0:100"],["0:200"]]' &&
+    !MKV.complete(rec, 10);
 })());
+
+ok('readCuesForTrack keeps a CueDuration as the cue end', (() => {
+  const withDuration = u8(el('BB', [].concat(el('B3', uintBytes(1000)), el('B7', [].concat(el('F7', [3]), el('F1', uintBytes(40)), el('B2', uintBytes(120000)))))));
+  const c = MkvSubs.readCuesForTrack(withDuration, 0, withDuration.length, 3, 1000000)[0];
+  return c && c.timeSec === 1 && c.endSec === 121;
+})());
+
+ok('switching to a track mid-line reads the line still on screen (it started before the window)', (() => {
+  const rec = { fetched: {}, index: { segmentDataStart: 0, timecodeScale: 1000000, perTrackCues: [
+    { track: { number: 3 }, cues: [{ timeSec: 0, endSec: 120, clusterPos: 100 }] },
+    { track: { number: 4 }, cues: [{ timeSec: 0, clusterPos: 100 }] }
+  ] } };
+  // Track 0's index says how long the line lasts, so it is read.  Track 1's doesn't: a line that started
+  // more than 30 s back is not looked for (the reader stays near the playhead).
+  const items = MkvSubs.MKV.candidates(rec, 90, { demand: () => 'now', timing: () => null });
+  return items.length === 1 && JSON.stringify(items[0].keys) === '["0:100"]';
+})());
+
 
 // ---- extract() ----
 (async function () {
+  ok('read() takes only the asked tracks from a cluster several tracks share, under their own index', await (async () => {
+    const cluster = u8(el('1F43B675', [].concat(el('E7', uintBytes(1000)), blockGroupEl(3, 0, 2000, 'Three'), blockGroupEl(4, 0, 2000, 'Four'))));
+    const rec = { fetched: {}, index: { segmentDataStart: 0, timecodeScale: 1000000, perTrackCues: [
+      { track: { number: 3, codecId: 'S_TEXT/UTF8' }, cues: [{ timeSec: 1, clusterPos: 0 }] },
+      { track: { number: 4, codecId: 'S_TEXT/UTF8' }, cues: [{ timeSec: 1, clusterPos: 0 }] }
+    ] } };
+    const range = (s, e) => Promise.resolve(cluster.slice(s, e + 1));
+    const item = MkvSubs.MKV.candidates(rec, 1, { demand: i => (i === 1 ? 'now' : null), timing: () => null })[0];
+    const out = await MkvSubs.MKV.read(rec, item, range, () => true);
+    return out.length === 1 && out[0].track === 1 && out[0].text === 'Four';
+  })());
   for (const [name,codec,text,expected] of [
     ['drawing','ASS','0,0,Default,,0,0,0,,{\\p1}m 0 0 l 20 0 20 20{\\p0}Hello','Hello'],
     ['drawing-only','ASS','0,0,Default,,0,0,0,,{\\p2}m 0 0 l 20 0 20 20',''],
