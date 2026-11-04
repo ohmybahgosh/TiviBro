@@ -30,7 +30,8 @@ function sandbox(opts) {
     localStorage: { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = String(v); } },
     location: { reload: () => reloads.push(1), protocol: 'file:' },
     setTimeout: (fn, ms) => { if (ms <= 3000 || opts.runAll || (opts.run || []).indexOf(ms) >= 0) fn(); return 1; }, clearTimeout() {}, setInterval: () => 1, clearInterval() {},
-    UI: { get modalOpen() { return false; }, panel: (title, body, buttons) => panels.push({ title, body, buttons }) },
+    UI: { get modalOpen() { return false; }, get lastInput() { return opts.lastInput || 0; }, panel: (title, body, buttons) => panels.push({ title, body, buttons }) },
+    Player: opts.playerState ? { state: opts.playerState } : undefined,
     navigator: { userAgent: opts.ua || 'Mozilla/5.0 (Web0S; Linux/SmartTV) Chrome/87' },
     fetch: opts.fetch || (() => Promise.reject(new Error('no network'))),
     Promise, JSON, Date, Math, String, Array, Object, RegExp, Error,
@@ -178,6 +179,16 @@ const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), re
   o = sandbox({ version: '0.6.0-alpha.5', run: [4000], settings: { playlists: [{ id: 'p1' }] } });
   o.Update.whatsNew(); await tick();
   ok('a first install shows nothing', o.panels.length === 0 && o.store['tivibro.lastRun'] === '0.6.0-alpha.5');
+  // Not while a channel is starting, or someone is pressing buttons.
+  o = sandbox({ version: '0.6.0-alpha.5', run: [4000], playerState: 'loading', settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
+  o.Update.whatsNew(); await tick();
+  ok('not while a channel is starting', o.panels.length === 0 && o.store['tivibro.lastRun'] === '0.6.0-alpha.4');
+  o = sandbox({ version: '0.6.0-alpha.5', run: [4000], lastInput: Date.now(), settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
+  o.Update.whatsNew(); await tick();
+  ok('not while buttons are being pressed', o.panels.length === 0);
+  o = sandbox({ version: '0.6.0-alpha.5', run: [4000], playerState: 'playing', lastInput: Date.now() - 20000, settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
+  o.Update.whatsNew(); await tick();
+  ok('over a channel that is playing, once things are quiet', o.panels.length === 1);
   // A start that reloads before the notes show (the helper answered late) shows them next time.
   o = sandbox({ version: '0.6.0-alpha.5', settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
   o.Update.whatsNew(); await tick();

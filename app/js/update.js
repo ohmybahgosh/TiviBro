@@ -165,12 +165,17 @@ var Update = (function () {
   }
 
   /* ---------- the offer at start, and what's new after an update ---------- */
-  // Waits for a free moment: not over another question, the set-up tour or a dialog already open.
+  // Waits for a quiet moment: not over another question, the set-up tour or a dialog already open, not
+  // while a channel is starting or buffering, and not while someone is pressing buttons (changing
+  // channels, moving through the guide).  Looks every 3 seconds for up to 5 minutes; what's new that
+  // didn't get its moment shows at the next start.
+  var QUIET = 6000;
   function whenFree(fn, tries) {
     tries = tries || 0;
-    var busy = UI.modalOpen || !(Store.settings.playlists && Store.settings.playlists.length) || (window.App && App.reloading);
+    var ps = window.Player && Player.state, busy = UI.modalOpen || !(Store.settings.playlists && Store.settings.playlists.length) ||
+      (window.App && App.reloading) || ps === 'loading' || ps === 'buffering' || Date.now() - (UI.lastInput || 0) < QUIET;
     if (!busy) return fn();
-    if (tries < 20) setTimeout(function () { whenFree(fn, tries + 1); }, 15000);
+    if (tries < 100) setTimeout(function () { whenFree(fn, tries + 1); }, 3000);
   }
   function notesBox(lines, intro) {
     var box = U.el('div', 'upd-notes');
