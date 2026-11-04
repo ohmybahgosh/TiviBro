@@ -2,16 +2,18 @@
 
 ## Unreleased
 
+## 0.6.0 (alpha 72, 2026-11-03)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 72
+
 - **The audio converter comes with TiviBro.**  No download and no question: the helper unpacks it onto the TV's storage the first time it runs.  The package grows by about 3 MB (both TV builds, with their licences).
 - **Converted movies show their picture.**  A converted movie streamed to the TV's own player played sound over a black screen.  It now plays in TiviBro's own player, the way live channels with Dolby Digital do, with the picture copied as it is.
 - **Sound and picture start together after a resume or a skip.**  A converted movie started its picture at the nearest full frame before the spot and its sound at the spot itself, so the first second or two was silent.  Both now start at the same frame.
 - **Converted movies play through without stopping.**  The converted stream was marked as live, so the TV's own player only ever held a few seconds of it and then stopped asking for more: the picture ran out, TiviBro reconnected and it happened again every few seconds.  It is now sent as an ordinary movie file, which the player reads the whole way through.
 
-## 0.6.0 (alpha 71, 2026-11-03)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 71
+### In alpha 71
 
 - **Converted sound keeps playing.**  LG's own player reads a movie in long pulls, hangs up when its buffer is full and later asks for the next part.  The converted stream could only be read from the start, so the picture went black, TiviBro reconnected and the movie began again.  The conversion now runs ahead into a spool on the TV's big storage (at most about half a gigabyte, cleared as the movie goes), and the player gets whatever part it asks for.
 
