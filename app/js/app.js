@@ -404,6 +404,20 @@ var App = (function () {
       Log.state('playlist', '');
     }, after || 0);
   }
+  /* Closed while playing (issues #42, #46): for a week after, playback holds less video in memory
+     (player.js, memory-safe).  Each new close while playing starts the week again. */
+  var PLAYSAFE = 'tivibro.playSafe';
+  function playSafe(gone) {
+    var ps = null;
+    try { ps = JSON.parse(localStorage.getItem(PLAYSAFE) || 'null'); } catch (e) {}
+    var now = Date.now(), live = ps && ps.until > now;
+    if (gone && gone.doing && gone.doing.player) {
+      ps = { until: now + 7 * 86400e3, n: (live ? ps.n : 0) + 1 };
+      try { localStorage.setItem(PLAYSAFE, JSON.stringify(ps)); } catch (e) {}
+      live = true;
+    }
+    if (live) Player.memorySafe('TiviBro closed while playing ' + (ps.n > 1 ? ps.n + ' times' : 'once') + ' this week');
+  }
   function crashGuard(gone) {
     var busy = null, tries = null;
     try { busy = JSON.parse(localStorage.getItem(BUSY) || 'null'); tries = JSON.parse(localStorage.getItem(TRIES) || 'null'); localStorage.removeItem(BUSY); } catch (e) {}
@@ -580,6 +594,7 @@ var App = (function () {
       Reports.start();
       // Something broke last time (an error, or TiviBro closed on its own): offer to report it, once.
       var crash = Log.lastCrash, gone = Log.settle(Net.info && Net.info.sys), key = gone ? 'u' + gone.s : crash ? crash.s : '';
+      playSafe(gone);
       var guard = crashGuard(gone);
       if (key && localStorage.getItem('tivibro.crashSeen') !== key) {
         try { localStorage.setItem('tivibro.crashSeen', key); } catch (e) {}

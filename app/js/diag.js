@@ -149,7 +149,8 @@ var Diag = (function () {
       ['Player', s.engine || 'auto'], ['Buffer', (s.buffer || 'auto') + (s.buffer === 'auto' && window.PlayMemo ? ' (' + PlayMemo.summary().slice(0, 2).map(function (k) { return k.why + ', ' + Math.round(k.hours * 10) / 10 + ' h, ' + Math.round(k.dry) + ' dry'; }).join('; ') + ')' : '')], ['Start screen', s.startTab || 'guide'],
       ['Detailed logging', Log.verbose ? 'on' : 'off'],
       ['Last session', Log.unclean ? 'closed unexpectedly, ' + scrub(Log.unclean.text) + (Log.unclean.recent > 1 ? ' (' + Log.unclean.recent + ' times in the last hour)' : '') : 'ended normally'],
-      ['Memory now', (function () { var mb = Log.heapMB ? Log.heapMB() : 0; return mb ? mb + ' MB used' : 'unknown (this TV doesn\'t say)'; })()]
+      ['Memory now', (function () { var mb = Log.heapMB ? Log.heapMB() : 0; return mb ? mb + ' MB used' : 'unknown (this TV doesn\'t say)'; })()],
+      ['TV memory', (navigator.deviceMemory ? navigator.deviceMemory + ' GB (as the browser reports it)' : 'not reported') + (Player.memSafe ? '; playback memory-safe: ' + Player.memSafe : '')]
     ];
     if (window.Player && Player.current) facts.push(['Playing', scrub([Player.media, Player.engine].filter(Boolean).join('  '))]);
     var app = Log.lines(true).map(scrub);

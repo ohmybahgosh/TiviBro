@@ -67,8 +67,21 @@ var Player = (function () {
     // Previews should appear fast; the full preset applies once you go fullscreen.
     if (preview) p.prebuffer = Math.min(p.prebuffer, 1.2);
     p.refill = Math.max(2, p.prebuffer * 1.5);
+    // Memory-safe (issues #42, #46): on a TV that closed TiviBro while it played, or one with 1 GB of
+    // memory or less, the video held in memory is capped whatever the profile asks.  On a small TV,
+    // a minute of 1080p read ahead plus a big cushion, and a reconnect building a new player while the
+    // old one's memory is still being freed, was enough for webOS to close TiviBro.
+    if (memSafe()) {
+      p.ahead = Math.min(p.ahead, 20); p.back = Math.min(p.back, 4); p.stash = Math.min(p.stash, 384);
+      p.label += ', memory-safe';
+    }
     return p;
   }
+  var safeWhy = '';
+  function lowMemory() { var m = typeof navigator !== 'undefined' && navigator.deviceMemory; return !!(m && m <= 1); }
+  function memSafe() { return !!safeWhy || lowMemory(); }
+  /** Called at start when TiviBro closed while playing lately (app.js). */
+  function memorySafe(why) { safeWhy = why || ''; if (why) Log.warn('player', 'Holding less video in memory: ' + why); }
 
   function bufferedAhead() {
     if (!video) return 0;
@@ -637,6 +650,8 @@ var Player = (function () {
     state('buffering', why);
     // Exponential backoff with jitter, so a TV and its neighbours don't all hit the provider at once.
     delay = Math.min(5000, 300 * Math.pow(2, Math.max(0, cur.retries - 1))) * (0.8 + Math.random() * 0.4);
+    // Memory-safe: give the old player's video memory a moment to go before the new one fills up.
+    if (memSafe()) delay = Math.max(delay, 1000);
     cur.timer = setTimeout(function () { start(myToken); }, delay);
   }
 
@@ -1168,7 +1183,7 @@ var Player = (function () {
 
   return {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
-    PRESETS: PRESETS, bind: bind, play: play, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, on: on,
+    PRESETS: PRESETS, memorySafe: memorySafe, get memSafe() { return memSafe() ? (safeWhy || 'this TV has 1 GB of memory or less') : ''; }, bind: bind, play: play, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, on: on,
     seek: seek, seekTo: seekTo, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; },
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },

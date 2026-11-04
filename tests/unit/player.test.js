@@ -379,6 +379,27 @@ ok('and keeps the most, not the latest', t.P.stats.most >= 11 && t.P.stats.ahead
   ok('timing: first data, first picture and the start are known', s && s.startMs >= 500 && s.dataMs >= 300 && s.dataMs <= s.startMs && /first data \d+ms/.test(m.logs.find(l => /Playing after/.test(l)) || ''), JSON.stringify(s));
 }
 
+// ---- memory-safe playback (#42, #46): less video held after a close while playing, or on a 1 GB TV ----
+{
+  let m = setup({ settings: { buffer: 'max' } });
+  m.P.play({ n: 'Big', url: 'http://p/live/u/p/70.ts' });
+  ok('memory: Rock solid holds a minute normally', m.last().src && /Rock solid \(prebuffer 8s\)/.test(m.logs.find(l => /^Start /.test(l))) && !m.P.memSafe);
+  m = setup({ settings: { buffer: 'max' } });
+  m.P.memorySafe('TiviBro closed while playing once this week');
+  m.P.play({ n: 'Big', url: 'http://p/live/u/p/70.ts' });
+  m.feed(0, 30); m.run(9000);
+  ok('memory: after a close while playing, memory-safe', /Rock solid, memory-safe/.test(m.logs.find(l => /^Start /.test(l))) && m.P.stats.cap === 20 && /closed while playing/.test(m.P.memSafe), m.P.stats.cap + ' ' + m.P.memSafe);
+  m.last().h.err('NetworkError', 'EarlyEof', {});
+  const n0 = m.made.length; m.run(900);
+  ok('memory: a reconnect waits a second for the old player to go', m.made.length === n0, m.made.length - n0);
+  m.run(400);
+  ok('memory: then reconnects', m.made.length === n0 + 1);
+  m = setup({ settings: { buffer: 'max' } });
+  m.nav.deviceMemory = 1;
+  m.P.play({ n: 'Small TV', url: 'http://p/live/u/p/71.ts' });
+  ok('memory: a TV with 1 GB is memory-safe from the start', /memory-safe/.test(m.logs.find(l => /^Start /.test(l)) || '') && /1 GB/.test(m.P.memSafe), m.P.memSafe);
+}
+
 // ---- sloppy streams: a growing cushion, quick reconnect when data stops, timestamp jumps ----
 t = setup();
 t.P.play({ n: 'Sloppy', url: 'http://p/live/u/p/20.ts' });
