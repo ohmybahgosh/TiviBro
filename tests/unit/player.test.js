@@ -144,7 +144,8 @@ for (let i = 0; i < 12; i++) {
   else { t.video.error = { code: 2 }; t.video._ranges = []; t.video.l.error.forEach(f => f()); }
   t.run(9000);
 }
-ok('tries the TV player and the HLS version before giving up', t.logs.some(l => /Still failing; trying the TV player/.test(l)) && t.logs.some(l => /Still failing; trying the HLS version/.test(l)));
+ok('tries the TV player and the HLS version before giving up', t.logs.some(l => /Still failing; trying the TV player/.test(l)) && t.logs.some(l => /with hls engine/.test(l)));
+ok('an HLS version that is not there sends it back to MPEG-TS at once', t.logs.some(l => /Its HLS version doesn't play here \(.*\); back to MPEG-TS/.test(l)));
 ok('then keeps retrying slowly with a message, not an error', /still trying/i.test(t.states[t.states.length - 1]) || t.logs.some(l => /retrying every 15s/.test(l)), t.states[t.states.length - 1]);
 ok('no error state yet', !t.states.some(s => /^error/.test(s)));
 
@@ -158,6 +159,54 @@ for (let i = 0; i < 10; i++) {
   t.run(30000);
 }
 ok('never-played channel ends on an error after every pipeline', /^error/.test(t.states[t.states.length - 1]), t.states[t.states.length - 1]);
+
+// ---- MPEG-TS or HLS per channel, whichever holds up (#47) ----
+{
+  // (HLS reloads by itself twice before a network error counts as a drop.)
+  const drop = (m) => { const e = m.last(); if (e.kind === 'ts') e.h.err('NetworkError', 'EarlyEof', {}); else for (let i = 0; i < 3; i++) e.h.hlsError('e', { fatal: true, type: 'networkError', details: 'fragLoadError' }); };
+  // Two drops in three minutes on MPEG-TS: its HLS version.
+  let m = setup();
+  m.P.play({ n: 'Swap', url: 'http://p/live/u/p/80.ts' });
+  m.feed(0, 30); m.run(3000);
+  drop(m); m.run(1500); m.feed(0, 30); m.run(3000);
+  drop(m); m.run(1500);
+  ok('swap: two drops in three minutes on MPEG-TS switch to HLS', m.last().kind === 'hls' && m.logs.some(l => /dropped 2 times in 3 minutes on MPEG-TS; switching to its HLS version/.test(l)), m.made.map(x => x.kind).join(','));
+  m.feed(0, 30); m.run(3000);
+  ok('swap: and plays as HLS', m.P.playing);
+  // HLS dropping twice in turn: back to MPEG-TS.
+  drop(m); m.run(1500); m.feed(0, 30); m.run(3000);
+  drop(m); m.run(1500);
+  ok('swap: HLS dropping twice goes back to MPEG-TS', m.last().kind === 'ts' && m.logs.some(l => /on HLS; switching to its MPEG-TS version/.test(l)), m.made.map(x => x.kind).join(','));
+  // A third switch is allowed, then it settles.
+  for (let k = 0; k < 6; k++) { m.feed(0, 30); m.run(3000); drop(m); m.run(1500); }
+  const swaps = m.logs.filter(l => /switching to its/.test(l)).length;
+  ok('swap: at most three switches in ten minutes', swaps === 3, swaps);
+
+  // The switch on the last reconnect of the budget is kept (it went to the TV player and back to MPEG-TS before).
+  m = setup({ settings: { buffer: 'custom', custom: { prebuffer: 1, ahead: 10, back: 4, stall: 4, retries: 2 } } });
+  m.P.play({ n: 'Budget', url: 'http://p/live/u/p/81.ts' });
+  m.feed(0, 30); m.run(3000);
+  drop(m); m.run(1500);
+  drop(m); m.run(1500);
+  ok('swap: a switch on the last reconnect of the budget sticks', m.last().kind === 'hls' && !m.logs.some(l => /Still failing; trying the TV player/.test(l)), m.made.map(x => x.kind).join(','));
+
+  // An HLS version that never shows a picture: back to MPEG-TS after 8 seconds, not 15.
+  m = setup();
+  m.P.play({ n: 'No picture', url: 'http://p/live/u/p/83.ts' });
+  m.feed(0, 30); m.run(3000);
+  drop(m); m.run(1500); m.feed(0, 30); m.run(3000);
+  drop(m); m.run(1500);
+  m.video.readyState = 0; m.video._ranges = []; m.run(9000);
+  ok('swap: an HLS version with no picture goes back to MPEG-TS within 8 seconds', m.last().kind === 'ts' && m.logs.some(l => /HLS version doesn't play here \(no video yet\); back to MPEG-TS/.test(l)), m.made.map(x => x.kind).join(',') + ' ' + m.logs.filter(l => /back to|No playable/.test(l)).join(' | '));
+  // A trickle switches at once.
+  m = setup();
+  m.P.play({ n: 'Trickle', url: 'http://p/live/u/p/82.ts' });
+  m.feed(0, 40); m.run(3000);
+  let e0 = 40; const n0 = m.made.length;
+  for (let i = 0; i < 600 && m.made.length === n0; i++) { e0 += 0.03; m.video._ranges = [[0, e0]]; m.run(100); }
+  m.run(1500);
+  ok('swap: a stream trickling in on MPEG-TS goes to HLS straight away', m.last().kind === 'hls' && m.logs.some(l => /is trickling in on MPEG-TS; switching to its HLS version/.test(l)), m.made.map(x => x.kind).join(','));
+}
 
 // ---- a movie that drops resumes where it was ----
 t = setup();

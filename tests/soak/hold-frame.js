@@ -1,6 +1,6 @@
 /* A live channel that drops for a moment: the last picture stays on screen with a small "Reconnecting"
    instead of a black screen and "Tuning", it goes when the picture is back, a new channel never shows
-   the old one's picture, and a channel that keeps dropping on MPEG-TS tries its HLS version early.
+   the old one's picture, and a channel that keeps dropping on MPEG-TS tries its HLS version early (two drops in three minutes).
      node tests/soak/hold-frame.js      (mock provider on :8077, the dev relay, npm run serve) */
 'use strict';
 const { chromium } = require('playwright');
@@ -26,10 +26,10 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const during = await ev(() => ({ held: Player._test.holding, canvas: !!document.querySelector('.vid-hold.on'), text: document.getElementById('spinnerText').textContent, spin: !document.getElementById('spinner').classList.contains('hidden') }));
   ok('a drop keeps the last picture on screen, with a small notice, not Tuning', during.held && during.canvas && during.spin && during.text !== 'Tuning', JSON.stringify(during));
   ok('the picture comes back and the held one goes', await playingNow() && await ev(() => !Player._test.holding && !document.querySelector('.vid-hold.on')));
-  // Two more drops within three minutes on MPEG-TS: the HLS version is tried.
-  for (let i = 0; i < 2; i++) { await page.waitForTimeout(1500); await ev(() => Player._test.reconnect('another drop')); await page.waitForTimeout(300); if (i === 0) await playingNow(); }
+  // One more drop within three minutes on MPEG-TS: the HLS version is tried (issue #47).
+  await page.waitForTimeout(1500); await ev(() => Player._test.reconnect('another drop')); await page.waitForTimeout(300);
   const lines = await ev(() => Log.lines(false).join('\n'));
-  ok('three drops in three minutes on MPEG-TS: its HLS version is tried', kind0 === 'ts' && /dropped 3 times in 3 minutes on MPEG-TS; trying its HLS version/.test(lines), kind0);
+  ok('two drops in three minutes on MPEG-TS: its HLS version is tried', kind0 === 'ts' && /dropped 2 times in 3 minutes on MPEG-TS; switching to its HLS version/.test(lines), kind0);
   await ev(() => { var c = Library.channels(Library.ALL)[3]; Store.settings.holdFrame = true; Views.startChannel(c, false); });
   await page.waitForTimeout(200);
   ok('a new channel never shows the last one\'s picture', await ev(() => !document.querySelector('.vid-hold.on')));

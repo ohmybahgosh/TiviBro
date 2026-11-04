@@ -584,10 +584,11 @@ var Player = (function () {
     cur.late = cur.late || {};
     cur.late[failed] = 1;
     var isHlsUrl = /\.m3u8(\?|$)/i.test(cur.origUrl || cur.url);
-    var order = isHlsUrl ? ['hls', 'native'] : ['ts', 'native', 'hls'];
+    // After a channel has played, a pipeline failing is mostly the connection: its HLS version before the TV player.
+    var order = isHlsUrl ? ['hls', 'native'] : cur.live && !cur.timeshift && cur.everPlayed && hlsVariant(cur.origUrl || cur.url) ? ['ts', 'hls', 'native'] : ['ts', 'native', 'hls'];
     for (var i = 0; i < order.length; i++) {
       var k = order[i];
-      if (cur.late[k] || (cur.tried && cur.tried[k])) continue;
+      if (cur.late[k] || (cur.tried && cur.tried[k]) || (cur.bad && cur.bad[k])) continue;
       if (k === 'ts' && !(window.mpegts && mse())) continue;
       if (k === 'hls' && !(window.Hls && Hls.isSupported() && (isHlsUrl || hlsVariant(cur.origUrl || cur.url)))) continue;
       return k;
@@ -603,17 +604,33 @@ var Player = (function () {
     if (!holding && cur.everPlayed) holdFrame();
     teardown();
     clearTimeout(cur.timer);              // several error events for one failure = one reconnect
-    /* A live channel that keeps dropping on the MPEG-TS stream (three reconnects in three minutes)
-       tries the provider's HLS version of it now, rather than after the whole reconnect budget: HLS
-       comes in short pieces and often rides out a shaky connection better.  Remembered for this
-       channel until TiviBro closes. */
+    /* MPEG-TS or HLS, per channel, whichever holds up (issue #47).  A live channel that drops twice in three
+       minutes on one, or trickles in too slowly to keep up (early()), switches to the other: HLS comes in
+       short pieces and often rides out a shaky connection better, and some channels are the other way
+       round.  At most 3 switches in 10 minutes, so a channel bad on both settles instead of bouncing.  A
+       switch starts a fresh reconnect budget on the new format (before, a switch on the last reconnect of
+       the budget was overridden by "Still failing", which went to the TV player and back to MPEG-TS).
+       Remembered for this channel (preferHls, and playmemo.js across restarts). */
     // (Not when the provider answered with an error: that is the provider having trouble, not the stream format.)
-    if (cur.live && !cur.timeshift && cur.everPlayed && st && st.kind === 'ts' && !/^The provider answered|slowed down/.test(why)) {
+    // The format just switched to fails before it ever played (no HLS version at this provider, or one
+    // that never shows a picture): back to the one that played, and no more switching for this channel.
+    if (cur.swapFrom && !cur.swapPlayed && st && !st.started && st.kind !== cur.swapFrom) {
+      var http = /^The provider answered (\d+)/.exec(why);
+      Log.info('player', (st.kind === 'native' ? 'The TV player doesn\'t play it' : 'Its ' + (st.kind === 'hls' ? 'HLS' : 'MPEG-TS') + ' version doesn\'t play') + ' here (' + (http ? 'HTTP ' + http[1] : why.replace(/, (retrying|reconnecting)$/, '').toLowerCase()) + '); back to ' + (cur.swapFrom === 'ts' ? 'MPEG-TS' : cur.swapFrom === 'hls' ? 'HLS' : 'the TV player'));
+      if (st.kind === 'hls') delete preferHls[cur.origUrl || cur.url];
+      cur.bad = cur.bad || {}; cur.bad[st.kind] = 1;
+      useEngine(cur.swapFrom); cur.swapFrom = null; cur.noSwap = true; cur.tried = null; cur.late = null; cur.retries = 0;
+    }
+    else if (cur.live && !cur.timeshift && cur.everPlayed && !cur.noSwap && st && (st.kind === 'ts' || st.kind === 'hls') && !/^The provider answered/.test(why)) {
+      var orig = cur.origUrl || cur.url, trickle = /slowed down/.test(why), other = st.kind === 'ts' ? 'hls' : 'ts';
       cur.drops = (cur.drops || []).filter(function (x) { return now - x < 180000; }); cur.drops.push(now);
-      if (cur.drops.length >= 3 && !(cur.late && cur.late.hls) && !(cur.tried && cur.tried.hls) && window.Hls && Hls.isSupported() && hlsVariant(cur.origUrl || cur.url)) {
-        Log.info('player', 'This channel dropped ' + cur.drops.length + ' times in 3 minutes on MPEG-TS; trying its HLS version');
-        cur.late = cur.late || {}; cur.late.ts = 1;
-        useEngine('hls'); preferHls[cur.origUrl || cur.url] = 1; cur.drops = [];
+      cur.swaps = (cur.swaps || []).filter(function (x) { return now - x < 600000; });
+      if ((trickle || cur.drops.length >= 2) && cur.swaps.length < 3 && engineOk(other) && !(cur.bad && cur.bad[other]) && (other === 'ts' || hlsVariant(orig) || /\.m3u8(\?|$)/i.test(orig))) {
+        Log.info('player', 'This channel ' + (trickle ? 'is trickling in' : 'dropped ' + cur.drops.length + ' times in 3 minutes') + ' on ' + (st.kind === 'ts' ? 'MPEG-TS' : 'HLS') + '; switching to its ' + (other === 'ts' ? 'MPEG-TS' : 'HLS') + ' version');
+        useEngine(other); cur.swapFrom = st.kind; cur.swapPlayed = false;
+        if (other === 'hls') preferHls[orig] = 1; else delete preferHls[orig];
+        cur.drops = []; cur.swaps.push(now);
+        cur.tried = null; cur.late = null; cur.retries = 0;
       }
     }
     // No network: don't spend the budget.  Wait for it to come back, checking every few seconds.
@@ -632,6 +649,7 @@ var Player = (function () {
       var alt = cur.slow || cur.lastFailHttp ? null : lateEngine(st ? st.kind : '');
       if (alt) {
         Log.info('player', 'Still failing; trying the ' + ENGINE_NAMES[alt]);
+        if (cur.live && !cur.timeshift && cur.everPlayed && st) { cur.swapFrom = st.kind; cur.swapPlayed = false; }
         useEngine(alt); cur.retries = Math.floor(cur.p.retries / 2);
       } else if (cur.live && !cur.timeshift && cur.everPlayed && now - (cur.slowSince || now) < SLOW_FOR) {
         if (!cur.slowSince) { cur.slowSince = now; Log.warn('player', 'Channel keeps failing; retrying every ' + SLOW_EVERY / 1000 + 's'); emit('trouble', 'stopped'); }
@@ -737,6 +755,7 @@ var Player = (function () {
         if (cur.conv) Log.info('player', 'Converted sound playing from ' + Math.round(cur.conv.t) + 's');
         if (cur.slow) { Log.info('player', 'Channel is back after ' + Math.round((now - cur.slowSince) / 1000) + 's'); notice('Back on air'); }
         if (cur.live && !cur.everPlayed && window.DeadList) DeadList.played(cur.ch, cur.origUrl || cur.url);
+        if (cur.swapFrom) cur.swapPlayed = true;
         cur.slow = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0; cur.starved = false; cur.lastFailHttp = false;
         cur.startMs = now - st.at; cur.dataMs = st.tData ? st.tData - st.at : 0; cur.picMs = st.tPic ? st.tPic - st.at : 0;
         Log.info('player', 'Playing after ' + (now - st.at) + 'ms with ' + ahead.toFixed(1) + 's buffered' + (ahead < p.prebuffer ? ' (prebuffer timed out)' : '') + (video.videoHeight ? ', ' + video.videoWidth + 'x' + video.videoHeight : '') +
@@ -748,7 +767,7 @@ var Player = (function () {
         if (st.userPaused) return;
         var pr = video.play();
         if (pr && pr.catch) pr.catch(function () {});
-      } else if (now - st.at > 15000 + need * 1000) {
+      } else if (now - st.at > (cur.swapFrom && !cur.swapPlayed ? 8000 : 15000 + need * 1000)) {
         Log.warn('player', 'No playable video after ' + (now - st.at) + 'ms (readyState ' + video.readyState + ', buffered ' + ahead.toFixed(1) + 's)');
         reconnect(myToken, 'No video yet, retrying');
       }
