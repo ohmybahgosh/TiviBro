@@ -125,8 +125,9 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             val t = tvsLatest(tv).copy(
                 name = info.optString("name", tv.name), model = info.optString("model", tv.model),
                 mac = info.optString("mac", "").ifBlank { tv.mac }, version = info.optString("version", tv.version),
+                macs = Tv.macList(info.optJSONArray("macs")).ifEmpty { tv.macs },
             )
-            if (t != tv || t.mac != tv.mac || t.model != tv.model || t.version != tv.version) saveTv(t)
+            if (t != tv || t.mac != tv.mac || t.macs != tv.macs || t.model != tv.model || t.version != tv.version) saveTv(t)
             val open = info.optJSONObject("tivibro")?.optBoolean("open") == true
             // What TiviBro has, for the shortcuts (one quick look, only while it is open).
             val caps = if (open) runCatching { TvClient(t, 4000).state(0, false) }.getOrNull()?.takeIf { it.open } else null
@@ -166,12 +167,12 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     /** Wake-on-LAN, then wait for the TV to answer (up to a minute). */
     fun wake(id: String) = viewModelScope.launch {
         val tv = tv(id) ?: return@launch
-        if (tv.mac.isBlank()) { say("This TV hasn't told the app its network card yet.  Open it once while it's on."); return@launch }
+        if (tv.wakeMacs().isEmpty()) { say("This TV hasn't told the app its network card yet.  Open it once while it's on."); return@launch }
         setUi(id) { it.copy(power = Power.WAKING) }
         val end = System.currentTimeMillis() + 60_000
         var on = false
         while (System.currentTimeMillis() < end && !on) {
-            withContext(Dispatchers.IO) { runCatching { Wol.wake(tv.mac, tv.host) } }
+            withContext(Dispatchers.IO) { runCatching { Wol.wakeAll(tv.wakeMacs(), tv.host) } }
             delay(3000)
             on = withContext(Dispatchers.IO) { runCatching { Pairing.hello(tv.host, tv.port, 1500); true }.getOrDefault(false) }
         }

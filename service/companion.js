@@ -248,7 +248,10 @@ function create(opts) {
     return {
       ok: true, app: 'TiviBro', api: API, id: st.id, name: tvName(), version: version(),
       model: sys && sys.model || '', webos: sys && sys.webos || '',
-      mac: a.length ? a[0].mac : '', macs: a.map(function (x) { return x.mac; }).filter(Boolean),
+      mac: a.length ? a[0].mac : '', macs: a.map(function (x) { return x.mac; }).filter(Boolean).concat(sys && sys.macs || []).filter(function (m, i, l) { return l.indexOf(m) === i; }),
+      // Every card above, built-in Wi-Fi and Ethernet too (LG's ThinQ app wakes both): a TV on a USB Ethernet
+      // adapter answers from the adapter, which has no power while the TV is off.  wol: Turn on via Wi-Fi.
+      wol: sys && sys.wol != null ? sys.wol : undefined,
       ips: a.map(function (x) { return x.ip; }), port: port,
       tivibro: { open: !!app.open, visible: !!app.visible, editor: !!(ed && ed.status().running) },
       phone: phoneView(p), now: Date.now()

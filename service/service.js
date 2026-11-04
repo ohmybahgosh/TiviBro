@@ -87,10 +87,16 @@ var companion = require('./companion').create({
   sysinfo: function (cb) {
     lcall('luna://com.webos.service.tv.systemproperty/getSystemInfo', { keys: ['modelName', 'sdkVersion'] }, function (r) {
       var out = { model: r.modelName || '', webos: r.sdkVersion || '' };
-      lcall('luna://com.webos.settingsservice/getSystemSettings', { category: 'network', keys: ['deviceName'] }, function (n) {
+      lcall('luna://com.webos.settingsservice/getSystemSettings', { category: 'network', keys: ['deviceName', 'wolwowlOnOff'] }, function (n) {
         out.name = (n.settings && n.settings.deviceName) || '';
-        proxy.log({ lv: 'info', event: 'companion: this TV', model: out.model, webos: out.webos, name: out.name });
-        cb(out);
+        // "Turn on via Wi-Fi" (Mobile TV On): what lets the phone wake the TV.
+        out.wol = n.settings && n.settings.wolwowlOnOff != null ? String(n.settings.wolwowlOnOff) === 'true' : null;
+        // The built-in Wi-Fi and Ethernet cards, for Wake-on-LAN even when another card (a USB adapter) is in use.
+        lcall('luna://com.webos.service.connectionmanager/getinfo', {}, function (c) {
+          out.macs = [c.wiredInfo, c.wifiInfo].map(function (x) { return x && x.macAddress ? String(x.macAddress).toLowerCase() : ''; }).filter(Boolean);
+          proxy.log({ lv: 'info', event: 'companion: this TV', model: out.model, webos: out.webos, name: out.name, wol: out.wol, cards: out.macs.length });
+          cb(out);
+        });
       });
     });
   },

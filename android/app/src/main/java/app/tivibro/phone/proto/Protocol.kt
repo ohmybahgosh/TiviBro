@@ -40,20 +40,28 @@ data class Tv(
     val offset: Long = 0,
     val model: String = "",
     val mac: String = "",
+    /** Every network card the TV reported (built-in Wi-Fi and Ethernet too), for Wake-on-LAN. */
+    val macs: List<String> = emptyList(),
     val version: String = "",
     val added: Long = System.currentTimeMillis(),
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("id", id).put("name", name).put("host", host).put("port", port).put("phone", phoneId)
-        .put("key", b64(key)).put("offset", offset).put("model", model).put("mac", mac).put("version", version).put("added", added)
+        .put("key", b64(key)).put("offset", offset).put("model", model).put("mac", mac).put("macs", org.json.JSONArray(macs)).put("version", version).put("added", added)
 
     companion object {
         fun fromJson(j: JSONObject) = Tv(
             id = j.getString("id"), name = j.optString("name", "TV"), host = j.getString("host"), port = j.optInt("port", DEFAULT_PORT),
             phoneId = j.getString("phone"), key = unb64(j.getString("key")), offset = j.optLong("offset", 0),
-            model = j.optString("model", ""), mac = j.optString("mac", ""), version = j.optString("version", ""), added = j.optLong("added", 0),
+            model = j.optString("model", ""), mac = j.optString("mac", ""), macs = macList(j.optJSONArray("macs")), version = j.optString("version", ""), added = j.optLong("added", 0),
         )
+
+        fun macList(a: org.json.JSONArray?): List<String> =
+            if (a == null) emptyList() else (0 until a.length()).map { a.optString(it, "") }.filter { Wol.macBytes(it) != null }.distinct()
     }
+
+    /** What to wake: the main card first, then every other one the TV reported. */
+    fun wakeMacs(): List<String> = (listOf(mac) + macs).filter { it.isNotBlank() }.map { it.lowercase() }.distinct()
 
     override fun equals(other: Any?) = other is Tv && other.id == id && other.phoneId == phoneId && other.host == host && other.name == name
     override fun hashCode() = id.hashCode()

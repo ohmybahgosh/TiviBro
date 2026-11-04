@@ -46,10 +46,10 @@ class TvTileService : TileService() {
             android.util.Log.i("TiviBroTile", "Opening TiviBro on ${tv.name}")
             val ok = run {
                 fun up() = runCatching { Pairing.hello(tv.host, tv.port, 1500); true }.getOrDefault(false)
-                if (!up() && tv.mac.isNotBlank()) {
+                if (!up() && tv.wakeMacs().isNotEmpty()) {
                     val end = System.currentTimeMillis() + 45_000
                     while (System.currentTimeMillis() < end) {
-                        runCatching { Wol.wake(tv.mac, tv.host) }
+                        runCatching { Wol.wakeAll(tv.wakeMacs(), tv.host) }
                         delay(3000)
                         if (up()) break
                     }

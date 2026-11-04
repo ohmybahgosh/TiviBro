@@ -72,6 +72,9 @@ object Wol {
 
     fun packet(mac: ByteArray): ByteArray = ByteArray(6) { 0xFF.toByte() } + (1..16).flatMap { mac.toList() }.toByteArray()
 
+    /** Every card in [macs] (a TV's built-in Wi-Fi and Ethernet both, as LG's ThinQ app does). */
+    fun wakeAll(macs: List<String>, lastHost: String? = null): Boolean = macs.map { wake(it, lastHost) }.any { it }
+
     /** Magic packets to every broadcast address, on ports 9 and 7, and straight to the TV's last address. */
     fun wake(mac: String, lastHost: String? = null): Boolean {
         val m = macBytes(mac) ?: return false
