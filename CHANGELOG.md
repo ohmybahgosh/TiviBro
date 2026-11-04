@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **Seeing the TV come on over Bluetooth is more reliable.**  An LG TV advertises over Bluetooth in standby too, and counts each change of state in its advertisement.  The app now waits for that count to move on (as it did about ten seconds after a Turn on with the phone's Wi-Fi off) instead of guessing from when it first heard the TV, so a TV the phone hears late is no longer taken for one that just came on.
-
-## 0.6.0 (alpha 76, 2026-11-04)
+## 0.6.0 (alpha 77, 2026-11-04)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 76
+### New in alpha 77
+
+- **Seeing the TV come on over Bluetooth is more reliable.**  An LG TV advertises over Bluetooth in standby too, and counts each change of state in its advertisement.  The app now waits for that count to move on (as it did about ten seconds after a Turn on with the phone's Wi-Fi off) instead of guessing from when it first heard the TV, so a TV the phone hears late is no longer taken for one that just came on.
+
+### In alpha 76
 
 - **App update on the home screen.**  The first TV's card has an **App update** tile next to Remote, Guide and the rest (and a **Check for an app update** button while the TV is off).  It asks GitHub at once: a newer app shows the **Update now** card, otherwise the app says you have the newest one.
 - **The phone sees the TV come on over Bluetooth too.**  While **Turn on** wakes the TV, the app (on Android 12 and later) also listens for the TV's own Bluetooth signal, the way LG's ThinQ app does, so with the phone's Wi-Fi off it can still say the TV is on.  Android asks once more for **Nearby devices** to allow it.  The TV's menu on the home screen has a **Bluetooth log** of the last wake, with **Listen for the TV** and **Share**, to look into a TV that doesn't wake.
