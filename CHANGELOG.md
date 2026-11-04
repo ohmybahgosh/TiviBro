@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **The subtitle menu keeps its settings at the top.**  **Find subtitles…**, **Timing** and **Line up with another track…** now come first under a **Settings** heading, and the video's own subtitles follow under **In this movie** (or episode, or stream) with how many there are.  The menu opens on the subtitle that is on.  Before, a movie with dozens of languages put Timing at the very bottom.
 - **What's new no longer gets skipped.**  A start that reloaded at once (the TV's helper was slow to answer) marked the new version as seen before the list could show, so the next start skipped it.  It now counts as seen only once it has shown, it waits for a quiet moment (not while a channel is starting or you are pressing buttons), and the list leaves out the release's own heading and the changelog link, on the TV and in the phone app.
 
 ## 0.6.0 (alpha 79, 2026-11-04)
