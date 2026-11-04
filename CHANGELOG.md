@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **The phone app updates itself.**  When a new TiviBro app is out, **Update now** on the home screen downloads it with a progress bar, checks it is the release GitHub describes, and installs it over this one (Android asks you to allow TiviBro to install apps the first time, and to confirm).  If anything goes wrong, **Download** still opens the APK in the browser.
+
 ## 0.6.0 (alpha 74, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.

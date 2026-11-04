@@ -12,6 +12,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import app.tivibro.phone.proto.AppUpdate
 import app.tivibro.phone.proto.AppRelease
+import app.tivibro.phone.update.UpdateStep
+import app.tivibro.phone.update.Updater
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -286,27 +292,85 @@ private fun TvCard(
 
 
 
-/** "A new TiviBro app is out", once a day at most per app start: Download opens the APK in the browser. */
+/** "A new TiviBro app is out", checked once per app start.  Update now downloads it with a progress bar and
+ *  installs it over this one (update/Updater.kt).  Test builds, and anything that goes wrong, fall back to
+ *  the APK link in the browser. */
 @Composable
 private fun AppUpdateCard() {
     val ctx = LocalContext.current
     var rel by remember { mutableStateOf<AppRelease?>(null) }
     var hidden by remember { mutableStateOf(false) }
+    val step by Updater.step.collectAsStateWithLifecycle()
     LaunchedEffect(Unit) {
         val cur = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull().orEmpty()
         rel = withContext(Dispatchers.IO) { AppUpdate.check(cur) }
     }
+    // Back from Android's "Install unknown apps" setting: carry on if TiviBro may install now.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        val r = rel
+        if (r != null && Updater.step.value == UpdateStep.NeedsPermission) {
+            if (Updater.allowed(ctx)) Updater.start(ctx, r)
+            else Updater.fail("TiviBro isn't allowed to install apps, so it can't update itself.")
+        }
+    }
     val r = rel ?: return
     if (hidden) return
+    val inPlace = Updater.inPlace(ctx)
+    fun open(url: String) { runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+    val small = MaterialTheme.typography.bodySmall
     ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = Panel), modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp)) {
             Text("TiviBro app ${r.version} is out", style = MaterialTheme.typography.titleMedium)
-            Text("Install it over this one: your TVs and backups stay.", color = Muted, style = MaterialTheme.typography.bodySmall)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = { runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(r.apk)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }) { Text("Download") }
-                TextButton(onClick = { runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(r.page)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }) { Text("What's new") }
-                TextButton(onClick = { hidden = true }) { Text("Later") }
+            when (val s = step) {
+                is UpdateStep.Downloading -> {
+                    Text(if (s.total > 0) "Downloading: ${mb(s.done)} of ${mb(s.total)} MB" else "Downloading: ${mb(s.done)} MB", color = Muted, style = small)
+                    Spacer(Modifier.height(8.dp))
+                    if (s.total > 0) LinearProgressIndicator(progress = { (s.done.toFloat() / s.total).coerceIn(0f, 1f) }, color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth())
+                    else LinearProgressIndicator(color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth())
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = { Updater.cancel() }) { Text("Cancel") }
+                    }
+                }
+                UpdateStep.Installing -> {
+                    Text("Installing.  Android may ask you to confirm.", color = Muted, style = small)
+                    Spacer(Modifier.height(8.dp))
+                    LinearProgressIndicator(color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth())
+                }
+                is UpdateStep.Confirm -> {
+                    Text("Android is asking you to confirm the update.", color = Muted, style = small)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = { runCatching { ctx.startActivity(s.confirm) }.onFailure { Updater.fail("Android's install question didn't open.") } }) { Text("Continue") }
+                        TextButton(onClick = { Updater.reset() }) { Text("Cancel") }
+                    }
+                }
+                UpdateStep.Done -> Text("Updated.  If TiviBro closed, open it again.", color = Muted, style = small)
+                is UpdateStep.Failed -> {
+                    Text(s.message, color = Bad, style = small)
+                    Text("You can download it in the browser instead and install it over this one: your TVs and backups stay.", color = Muted, style = small)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TextButton(onClick = { open(r.apk) }) { Text("Download") }
+                        if (inPlace) TextButton(onClick = { Updater.start(ctx, r) }) { Text("Try again") }
+                        TextButton(onClick = { open(r.page) }) { Text("What's new") }
+                    }
+                }
+                else -> {
+                    val needs = s == UpdateStep.NeedsPermission
+                    Text(
+                        if (needs) "Allow TiviBro to install apps in the setting that opened, then come back here."
+                        else "Install it over this one: your TVs and backups stay.",
+                        color = if (needs) Warn else Muted, style = small,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // A test build has its own package name and key, so it can't update the release app in place.
+                        if (inPlace) Button(onClick = { Updater.start(ctx, r) }) { Text("Update now") }
+                        else TextButton(onClick = { open(r.apk) }) { Text("Download") }
+                        TextButton(onClick = { open(r.page) }) { Text("What's new") }
+                        TextButton(onClick = { hidden = true }) { Text("Later") }
+                    }
+                }
             }
         }
     }
 }
+
+private fun mb(bytes: Long) = "%.1f".format(bytes / 1_048_576.0)

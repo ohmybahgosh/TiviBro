@@ -34,6 +34,7 @@ import app.tivibro.phone.ui.AddScreen
 import app.tivibro.phone.ui.BackupsScreen
 import app.tivibro.phone.ui.ShareScreen
 import app.tivibro.phone.work.BackupWorker
+import app.tivibro.phone.update.Updater
 import app.tivibro.phone.ui.AppModel
 import app.tivibro.phone.ui.CodeScreen
 import app.tivibro.phone.ui.DropboxDialog
@@ -60,6 +61,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         handle(intent, fresh = savedInstanceState == null)
         runCatching { BackupWorker.schedule(this) }
+        // A downloaded update left over from last time (installed, or cut short).
+        if (savedInstanceState == null) Updater.cleanup(this)
         setContent { TbTheme { App(model, link, shared) } }
     }
 

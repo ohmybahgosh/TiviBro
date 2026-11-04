@@ -3,6 +3,9 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Updating the app in place (update/Updater.kt): Android still asks the user, and the setting
+         "Install unknown apps" has to be on for TiviBro. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
 
     <!-- Paired TVs (with their keys) stay on this phone: no cloud backup, no device-to-device transfer. -->
     <application
@@ -56,6 +59,11 @@
                 <data android:scheme="tivibro" android:host="dropbox" />
             </intent-filter>
         </activity>
+
+        <!-- The outcome of an update in place, sent by PackageInstaller through the app's own PendingIntent. -->
+        <receiver
+            android:name=".update.UpdateReceiver"
+            android:exported="false" />
 
         <service
             android:name=".tile.TvTileService"
