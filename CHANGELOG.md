@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 82, 2026-11-04)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 82
 
 - **MKV subtitles keep up in movies with many languages.**  Only the subtitles you are watching are read from the file, as for MP4 files, so a movie with dozens of subtitle languages no longer shows its lines late or not at all.  A language you switch to is read as you pick it.
 - **The subtitle menu keeps its settings at the top.**  **Find subtitles…**, **Timing** and **Line up with another track…** now come first under a **Settings** heading, and the video's own subtitles follow under **In this movie** (or episode, or stream) with how many there are.  The menu opens on the subtitle that is on.  Before, a movie with dozens of languages put Timing at the very bottom.
 
-## 0.6.0 (alpha 81, 2026-11-04)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 81
+### In alpha 81
 
 - **Each channel switches between MPEG-TS and HLS by itself, whichever holds up** (#47, thanks ich0x).  A live channel that drops twice in three minutes, or trickles in too slowly to keep up, now switches to its other version straight away, and back again if that one does worse (at most three switches in ten minutes).  A version that doesn't play at all (missing, or no picture within 8 seconds) sends it straight back.  It used to wait for three drops, and a switch on the last reconnect of the budget was overridden: the channel went to the TV's player, then back to MPEG-TS, before HLS was tried.  What worked is remembered for the channel, after a restart too.
 
