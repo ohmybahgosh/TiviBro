@@ -88,8 +88,11 @@ object AppUpdate {
     }.getOrDefault(emptyList())
     /** Is this the first start of a newer version?  [last]: the version that ran before (null: none recorded);
      *  [updated]: Android says the app was updated rather than first installed. */
-    fun justUpdated(last: String?, now: String, updated: Boolean): Boolean =
-        if (last == null) updated && key(now) != null else newer(now, last)
+    fun justUpdated(last: String?, now: String, updated: Boolean): Boolean = when {
+        key(now) == null || now.contains("dev") -> false          // a test build has no release notes
+        last == null -> updated
+        else -> newer(now, last)
+    }
 
     /** A newer release than [current], or null (none, a test build, or no answer). */
     fun check(current: String): AppRelease? {
