@@ -33,14 +33,24 @@ var MediaStore = (function () {
     if (!save()) { state.tmdbToken = before; throw new Error('The TV could not save the token.  Check its available storage.'); }
   }
   function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); return true; } catch (e) { return false; } }
+  /* Writes to the helper stay ordered, and later loads wait for the newest one.  At most one write runs
+     and one waits: a change made while a write is waiting rides along with it, and the copy of the library
+     is taken when the write starts, not when it is asked for.  (Copying the whole library for every movie
+     whose details arrived, while each 1 MB write was still going, piled up copies of a 1,600-movie Dropbox
+     library until webOS closed TiviBro for using 950 MB.) */
+  var queued = null;
   function saveLib() {
     revision++;
-    // Keep helper writes ordered, and make later loads wait for the newest scan.
-    var snapshot = lib.map(function (m) { var out = {}; Object.keys(m).forEach(function (k) { out[k] = m[k]; }); return out; });
-    function write() { return Store.bigSet(LIB, snapshot); }
+    if (queued) return queued;
+    function write() {
+      queued = null;
+      var snapshot = lib.map(function (m) { var out = {}; Object.keys(m).forEach(function (k) { out[k] = m[k]; }); return out; });
+      return Store.bigSet(LIB, snapshot);
+    }
     var job = saving ? saving.then(write, write) : write();
+    if (saving) queued = job;
     saving = job;
-    job.then(function () { if (saving === job) saving = null; }, function () {});
+    job.then(function () { if (saving === job) saving = null; }, function () { if (saving === job) saving = null; });
     return job;
   }
   function sortKey(m) { return String(m.metadata && m.metadata.title || m.title).toLowerCase() + ' ' + (m.year || ''); }
@@ -126,8 +136,14 @@ var MediaStore = (function () {
       { id: 'all', title: 'Movies', movies: preferences().favoritesInLists ? all : all.filter(function (m) { return !isFavorite(m.id); }) }];
   }
   // TMDB had no match for it (automatic lookups leave it alone for a week).
-  function markMissed(id) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.tmdbMiss = Date.now(); return saveLib(); } return Promise.resolve(); }
-  function setMetadata(id, metadata) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { if (metadata) m.metadata = metadata; else delete m.metadata; return saveLib(); } return Promise.resolve(); }
+  /* Details found one movie at a time (Media.fetchDetails) are saved together: within 5 s of the first
+     unsaved one, and at the end (flush).  Saving the whole library for each of 1,600 movies was most of
+     what ran a TV out of memory. */
+  var later = null;
+  function saveSoon() { if (!later) later = setTimeout(function () { later = null; saveLib(); }, 5000); return Promise.resolve(); }
+  function flush() { if (later) { clearTimeout(later); later = null; return saveLib(); } return saving || Promise.resolve(); }
+  function markMissed(id, batch) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.tmdbMiss = Date.now(); return batch ? saveSoon() : saveLib(); } return Promise.resolve(); }
+  function setMetadata(id, metadata, batch) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { if (metadata) m.metadata = metadata; else delete m.metadata; return batch ? saveSoon() : saveLib(); } return Promise.resolve(); }
   function movies(srcId) {
     var list = lib.filter(function (m) { var s = source(m.src); return (!srcId || m.src === srcId) && (!s || s.contentMode !== 'shows'); }), sort = preferences().sort;
     return list.sort(function (a, b) {
@@ -171,7 +187,7 @@ var MediaStore = (function () {
 
   return {
     preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, typeLabel: typeLabel, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
-    tmdbToken: function () { return state.tmdbToken || ''; }, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, markMissed: markMissed, applyScan: applyScan, movies: movies, load: load,
+    tmdbToken: function () { return state.tmdbToken || ''; }, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
     resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, clearResume: clearResume
   };
 })();

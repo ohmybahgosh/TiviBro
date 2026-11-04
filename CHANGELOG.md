@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **No more restarts while a big library gets its details.**  Adding a 1,600-movie Dropbox folder made TiviBro grow by about 3 MB a second while it looked up posters and details, until webOS closed it for using 950 MB of the TV's 2 GB.  Every movie's details saved the whole library again, and the TV kept a copy of each save.  Details are now saved together every few seconds, and big saves are sent in a way the TV frees at once: the same lookup now stays flat.
+
 ## 0.6.0 (alpha 73, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.

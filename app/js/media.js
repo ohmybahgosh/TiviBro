@@ -311,7 +311,7 @@ var Media = (function () {
     var at = 0, found = 0, missed = 0;
     return new Promise(function (resolve) {
       function done(message, error) {
-        fetchingDetails = false; refresh();
+        fetchingDetails = false; if (MediaStore.flush) MediaStore.flush(); refresh();
         // On its own (autoDetails): a word only when something was found, or it stopped on an error.
         if (!quiet) U.toast(message, 7000);
         else if (error) note('warn', 'Automatic movie details stopped: ' + error);
@@ -330,9 +330,9 @@ var Media = (function () {
           if (r.metadata) {
             var current = MediaStore.movies(m.src).filter(function (x) { return x.id === m.id; })[0];
             if (!current || (current.metadata && current.metadata.id) !== id) return;
-            found++; return MediaStore.setMetadata(m.id, r.metadata);
+            found++; return MediaStore.setMetadata(m.id, r.metadata, true);
           } missed++;
-          return MediaStore.markMissed(m.id);
+          return MediaStore.markMissed(m.id, true);
         }).then(function () { setTimeout(next, 350); }, function (e) { done('Stopped fetching details: ' + why(e) + '  Saved matches are kept.', why(e)); });
       }
       next();

@@ -301,8 +301,13 @@ var Store = (function () {
      from an older TiviBro is read once, moved to the helper and freed.  Without the helper, or when
      it can't keep it, the browser's storage as before. */
   function kvOn() { return !!(window.Net && Net.active && Net.port && Net.info && Net.info.kv); }
+  /* A big text body goes as a Blob: Chromium keeps a copy of every large string it uploads for far too
+     long (a few hundred 1 MB saves held 300 MB on a TV and webOS closed TiviBro), while a Blob's data is
+     handed over and freed. */
   function kv(path, body) {
-    return fetch('http://127.0.0.1:' + Net.port + path, { method: body === undefined ? 'GET' : 'POST', cache: 'no-store', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: body });
+    var b = body;
+    if (typeof b === 'string' && b.length > 32768 && typeof Blob !== 'undefined') { try { b = new Blob([b], { type: 'application/json' }); } catch (e) { b = body; } }
+    return fetch('http://127.0.0.1:' + Net.port + path, { method: body === undefined ? 'GET' : 'POST', cache: 'no-store', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: b });
   }
   function bigGet(k) {
     if (!kvOn()) return idbGet(k);

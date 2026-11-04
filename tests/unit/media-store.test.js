@@ -183,6 +183,26 @@ const titles = l => Array.from(l).map(m => m.title);
   c.removeSource(s1);
   ok('removing a source removes its movies', c.sources().length === 0 && c.movies(null).length === 0);
 
+  // A big library getting its details one movie at a time: the writes don't pile up copies of the library.
+  {
+    const w = world(); const W = w.M;
+    const src = W.addSource({ type: 'dlna', name: 'Big', control: 'http://big/ctl' });
+    W.applyScan(src, { movies: Array.from({ length: 1600 }, (_, i) => movie('Movie ' + i, 'd:/' + i)), partial: false, errors: [] });
+    await new Promise((r) => setTimeout(r, 20));
+    // A slow helper: each write takes 30 ms, and holds what it was handed until then.
+    let writes = 0, inFlight = 0, most = 0, last = null;
+    w.store.bigSet = (k, v) => { writes++; inFlight++; most = Math.max(most, inFlight); return new Promise((r) => setTimeout(() => { inFlight--; last = v; r(true); }, 30)); };
+    const ids = W.movies(null).slice(0, 200).map((m) => m.id);
+    const jobs = ids.map((id, i) => W.setMetadata(id, { provider: 'TMDB', id: 'tmdb:' + (i + 1), title: 'T' + i, poster: 'p' + i }));
+    await Promise.all(jobs);
+    ok('200 details arriving quickly: a handful of writes, not 200', writes <= 3, writes);
+    ok('never more than one write at a time', most === 1, most);
+    ok('the last write holds every one of them', last && ids.every((id) => last.some((m) => m.id === id && m.metadata && m.metadata.poster)), last && last.length);
+    let n = 0; const slow = async () => { for (const id of ids.slice(0, 20)) { await W.setMetadata(id, { provider: 'TMDB', id: 'tmdb:9' + n++, poster: 'x' }); } };
+    writes = 0; await slow();
+    ok('one at a time, waiting for each: one write each, still in order', writes === 20, writes);
+  }
+
   console.log(fail ? fail + ' FAILED' : 'ALL PASS');
   process.exit(fail ? 1 : 0);
 })().catch(e => { console.error(e); process.exit(1); });
