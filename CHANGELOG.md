@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **What's new no longer gets skipped.**  A start that reloaded at once (the TV's helper was slow to answer) marked the new version as seen before the list could show, so the next start skipped it.  It now counts as seen only once it has shown, and the list leaves out the release's own heading and the changelog link, on the TV and in the phone app.
+
 ## 0.6.0 (alpha 79, 2026-11-04)
 
 Pre-release: expect rough edges, and keep a backup before installing.
@@ -7,8 +11,8 @@ Pre-release: expect rough edges, and keep a backup before installing.
 ### New in alpha 79
 
 - **Small TVs stop closing while a channel reconnects** (#42, #46, thanks ich0x).  On a 32-inch LG with little memory, the biggest buffer profiles held a minute of HD video, and a reconnect built a new player while the old one's memory was still being freed: webOS closed TiviBro.  After TiviBro closes while playing, and on any TV that reports 1 GB of memory or less, playback now goes memory-safe for a week: at most 20 seconds read ahead, and a second's pause before a reconnect starts the new player.  Stream info shows "memory-safe" next to the buffer profile, and problem reports say how much memory the TV reports.
-- **New versions are offered when TiviBro starts.**  TiviBro now checks every time it starts, and a newer version comes up right away with what's new in it.  On a rooted TV with the Homebrew Channel, **Install and restart** installs it and TiviBro starts again on it; **Later** asks again next time.  Other TVs say where to get it.
-- **What's new after an update.**  The first time a new version starts, on the TV or in the phone app, it shows what changed, however it was installed.
+- **TiviBro tells you when there's an update, and installs it.**  Each time TiviBro starts it looks for a newer version, and if there is one it shows what's new in it straight away.  On a rooted TV with the Homebrew Channel, **Install and restart** installs it and TiviBro starts again on it; **Later** asks again next time.  Other TVs say where to get it.
+- **After an update, a list of what changed.**  The first time a new version starts, on the TV or in the phone app, it shows what's new in it, however it was installed.
 - **▲ on the first row goes to the last**, as **▼** on the last already went to the first: in the guide, the group lists, Movies and Shows categories, My media shelves and pop-up menus too.
 
 ### In alpha 78

@@ -141,12 +141,13 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         val prefs = ctx.getSharedPreferences("app", android.content.Context.MODE_PRIVATE)
         val last = prefs.getString("lastRun", null)
-        prefs.edit().putString("lastRun", current).apply()
         val pi = runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0) }.getOrNull()
         val updated = pi != null && pi.lastUpdateTime > pi.firstInstallTime
         if (current.isNotBlank() && AppUpdate.justUpdated(last, current, updated)) {
             news = current to withContext(Dispatchers.IO) { AppUpdate.notesFor(current) }
         }
+        // Marked as seen once shown (or when there is nothing to show), so a start cut short shows it next time.
+        prefs.edit().putString("lastRun", current).apply()
     }
     news?.let { (v, lines) ->
         AlertDialog(

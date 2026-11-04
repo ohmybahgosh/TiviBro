@@ -73,7 +73,7 @@ const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), re
   ok('pick: newest full release when test versions are off', T.pick(RELEASES, false).version === '0.6.0');
   ok('pick: newest overall when test versions are on, drafts and releases without a manifest skipped', T.pick(RELEASES, true).version === '0.7.0-alpha.1');
   const n = T.notes(RELEASES[0].body);
-  ok('release notes stop at the folded install section too', T.notes('**New in alpha 33**\n\n- One\n\n> **Test build.**\n\n<details><summary>Install</summary>\n\n- Homebrew').join('|') === 'New in alpha 33|One', T.notes('**New in alpha 33**\n\n- One\n\n<details><summary>Install</summary>\n- Homebrew').join('|'));
+  ok('release notes stop at the folded install section too', T.notes('**New in alpha 33**\n\n- One\n\n> **Test build.**\n\n<details><summary>Install</summary>\n\n- Homebrew').join('|') === 'One', T.notes('**New in alpha 33**\n\n- One\n\n<details><summary>Install</summary>\n- Homebrew').join('|'));
   ok('release notes become plain lines and stop at the install section', n.join('|') === 'New|Faster guides with gz|See docs', n.join('|'));
 
   // Running an alpha: test versions are on by default, so 0.7.0-alpha.1 is offered.
@@ -178,6 +178,11 @@ const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), re
   o = sandbox({ version: '0.6.0-alpha.5', run: [4000], settings: { playlists: [{ id: 'p1' }] } });
   o.Update.whatsNew(); await tick();
   ok('a first install shows nothing', o.panels.length === 0 && o.store['tivibro.lastRun'] === '0.6.0-alpha.5');
+  // A start that reloads before the notes show (the helper answered late) shows them next time.
+  o = sandbox({ version: '0.6.0-alpha.5', settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
+  o.Update.whatsNew(); await tick();
+  ok('not marked as seen before it shows', o.panels.length === 0 && o.store['tivibro.lastRun'] === '0.6.0-alpha.4', o.store['tivibro.lastRun']);
+  ok('release notes: the heading and the changelog link are left out', JSON.stringify(o.Update._test.notes('**New in alpha 79**\n\n- One\n- Two\n\nEvery detail: [changelog](https://x)')) === '["One","Two"]', JSON.stringify(o.Update._test.notes('**New in alpha 79**\n\n- One\n\nEvery detail: [changelog](https://x)')));
 
   console.log(fail ? fail + ' failures' : 'all update tests passed');
   process.exit(fail ? 1 : 0);

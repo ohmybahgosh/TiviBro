@@ -73,7 +73,9 @@ object AppUpdate {
             if (out.size >= 14) break
             val t = l.replace(Regex("^\\s*[-*]\\s+"), "").replace(Regex("\\*\\*|__|`"), "")
                 .replace(Regex("\\[([^\\]]+)\\]\\([^)]+\\)"), "$1").replace(Regex("^#+\\s*"), "").trim()
-            if (t.isEmpty() || t.startsWith(">") || t.startsWith("SHA-256", ignoreCase = true)) continue
+            // The dialog's title already says which version, and the changelog link can't be followed there.
+            if (t.isEmpty() || t.startsWith(">") || t.startsWith("SHA-256", ignoreCase = true) ||
+                Regex("^(New )?in (alpha|beta|rc) \\d+$", RegexOption.IGNORE_CASE).matches(t) || t.startsWith("Every detail", ignoreCase = true)) continue
             out += if (t.length > 220) t.take(217) + "…" else t
         }
         return out

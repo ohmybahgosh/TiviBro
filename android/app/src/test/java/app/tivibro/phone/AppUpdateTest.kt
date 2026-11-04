@@ -81,6 +81,8 @@ class AppUpdateTest {
         val md = "### New in alpha 79\n\n- **App update at start.**  The TV offers it.\n- See [the guide](https://x)\n> a quote\n\n### Install\n\n- ignore me"
         assertEquals(listOf("New in alpha 79", "App update at start.  The TV offers it.", "See the guide"), AppUpdate.notes(md))
         assertEquals(emptyList<String>(), AppUpdate.notes(null))
+        // The release's own heading and the changelog link are left out.
+        assertEquals(listOf("Small TVs stop closing"), AppUpdate.notes("**New in alpha 79**\n\n- Small TVs stop closing\n\nEvery detail: [changelog](https://x)"))
         assertEquals(14, AppUpdate.notes((1..30).joinToString("\n") { "- line $it" }).size)
     }
     @Test fun firstStartOfANewVersion() {

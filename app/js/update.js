@@ -69,7 +69,8 @@ var Update = (function () {
       if (/^#{1,4}\s*Install|^<details/i.test(l)) stop = true;          // the release workflow's install footer
       if (stop || out.length >= 14) return;
       var t = l.replace(/^\s*[-*]\s+/, '').replace(/\*\*|__|`/g, '').replace(/\[([^\]]+)\]\([^)]+\)/g, '$1').replace(/^#+\s*/, '').trim();
-      if (!t || /^>/.test(t) || /^SHA-256/i.test(t)) return;
+      // The title already says which version; the full-changelog link can't be followed on a TV.
+      if (!t || /^>/.test(t) || /^SHA-256/i.test(t) || /^(New )?in (alpha|beta|rc) \d+$/i.test(t) || /^New in \d/i.test(t) || /^Every detail/i.test(t)) return;
       out.push(t.length > 220 ? t.slice(0, 217) + '…' : t);
     });
     return out;
@@ -202,15 +203,19 @@ var Update = (function () {
   var RUN = 'tivibro.lastRun';
   function whatsNew() {
     var cur = current(), last = null;
+    function seen() { try { localStorage.setItem(RUN, cur); } catch (e) {} }
     // Before alpha 79 there was no record of the last version run: the install numbers' one stands in.
-    try { last = localStorage.getItem(RUN) || localStorage.getItem('tivibro.countedVersion'); localStorage.setItem(RUN, cur); } catch (e) { return; }
-    if (!last || compare(cur, last) <= 0) return;
+    try { last = localStorage.getItem(RUN) || localStorage.getItem('tivibro.countedVersion'); } catch (e) { return; }
+    // Marked as seen only once it has shown: a start that closes or reloads first (alpha 79 on a TV
+    // whose helper was slow to answer reloaded at once) shows it next time instead of never.
+    if (!last || compare(cur, last) <= 0) return seen();
     var saved = (load() || {}).pending;
     var got = saved && saved.version === cur && saved.notes && saved.notes.length ? Promise.resolve(saved.notes)
       : U.getJSON('https://api.github.com/repos/' + REPO + '/releases/tags/v' + cur, 15000, 'release notes').then(function (r) { return notes(r && r.body); }, function () { return []; });
     got.then(function (lines) {
       setTimeout(function () {
         whenFree(function () {
+          seen();
           Log.info('update', 'Showing what\'s new in ' + cur + ' (was ' + last + ')');
           UI.panel('What\'s new in TiviBro ' + cur, notesBox(lines, 'Updated from ' + last + '.'), [{ label: 'OK' }]);
         });
