@@ -2,13 +2,15 @@
 
 ## Unreleased
 
-- **Dropbox in My media.**  Sign in with the phone app (Settings > My media > Add media > Dropbox), pick a folder, and its movies and TV shows join My media on the TV.  Movies play straight from Dropbox.  The TV keeps only the sign-in, out of backups, logs and problem reports, and removing the source signs it out.
-
-## 0.6.0 (alpha 72, 2026-11-03)
+## 0.6.0 (alpha 73, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 72
+### New in alpha 73
+
+- **Dropbox in My media.**  Sign in with the phone app (Settings > My media > Add media > Dropbox), pick a folder, and its movies and TV shows join My media on the TV.  Movies play straight from Dropbox.  The TV keeps only the sign-in, out of backups, logs and problem reports, and removing the source signs it out.
+
+### In alpha 72
 
 - **The audio converter comes with TiviBro.**  No download and no question: the helper unpacks it onto the TV's storage the first time it runs.  The package grows by about 3 MB (both TV builds, with their licences).
 - **Converted movies show their picture.**  A converted movie streamed to the TV's own player played sound over a black screen.  It now plays in TiviBro's own player, the way live channels with Dolby Digital do, with the picture copied as it is.
