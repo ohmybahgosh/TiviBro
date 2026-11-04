@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **App update on the home screen.**  The first TV's card has an **App update** tile next to Remote, Guide and the rest (and a **Check for an app update** button while the TV is off).  It asks GitHub at once: a newer app shows the **Update now** card, otherwise the app says you have the newest one.
+- **The phone sees the TV come on over Bluetooth too.**  While **Turn on** wakes the TV, the app (on Android 12 and later) also listens for the TV's own Bluetooth signal, the way LG's ThinQ app does, so with the phone's Wi-Fi off it can still say the TV is on.  Android asks once more for **Nearby devices** to allow it.  The TV's menu on the home screen has a **Bluetooth log** of the last wake, with **Listen for the TV** and **Share**, to look into a TV that doesn't wake.
 - **The phone notices the TV as soon as it is back on Wi-Fi.**  After a **Turn on** with the phone's Wi-Fi off (the Bluetooth wake still works), the app said the TV didn't answer and kept showing it as off until its next check.  It now says the wake was sent over Bluetooth and that Wi-Fi is needed to see the TV, and checks every TV the moment the phone is back on Wi-Fi.
 
 ## 0.6.0 (alpha 75, 2026-11-04)

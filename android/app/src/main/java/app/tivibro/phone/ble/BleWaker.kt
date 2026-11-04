@@ -47,12 +47,24 @@ object BleWaker {
         Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
             ContextCompat.checkSelfPermission(ctx, Manifest.permission.BLUETOOTH_ADVERTISE) == PackageManager.PERMISSION_GRANTED
 
-    /** Ask for the permission now?  Only once, the first time Turn on is used with a TV that has Bluetooth. */
-    fun shouldAsk(ctx: Context): Boolean =
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !allowed(ctx) && hasBle(ctx) &&
-            !ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("asked", false)
+    /**
+     * The Nearby devices permissions still missing (Android 12 and later): advertising wakes the TV, scanning
+     * sees it come on (ble/BleWatcher.kt).  Android shows them as one question.
+     */
+    fun missing(ctx: Context): Array<String> =
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) emptyArray()
+        else arrayOf(Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.BLUETOOTH_SCAN)
+            .filter { ContextCompat.checkSelfPermission(ctx, it) != PackageManager.PERMISSION_GRANTED }.toTypedArray()
 
-    fun markAsked(ctx: Context) { ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("asked", true).apply() }
+    /**
+     * Ask for them now?  Only once, the first time Turn on is used with a TV that has Bluetooth.  ("asked2":
+     * phones that were asked only for advertising, before the app watched for the TV, are asked once more.)
+     */
+    fun shouldAsk(ctx: Context): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && missing(ctx).isNotEmpty() && hasBle(ctx) &&
+            !ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean("asked2", false)
+
+    fun markAsked(ctx: Context) { ctx.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean("asked2", true).apply() }
 
     private fun hasBle(ctx: Context) = ctx.packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE)
 

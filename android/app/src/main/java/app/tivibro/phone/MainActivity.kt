@@ -6,7 +6,6 @@
    tabs, the editor on any of its pages, adding a shared playlist, backups and restore points, reminders). */
 package app.tivibro.phone
 
-import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -138,7 +137,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
     // Turn on: the first time, with a TV that can be woken over Bluetooth, Android 12 and later ask for the
     // Nearby devices permission; the TV is woken whatever the answer (Wake-on-LAN alone without it).
     var wakeAfterAsk by rememberSaveable { mutableStateOf<String?>(null) }
-    val askBle = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
+    val askBle = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { _ ->
         wakeAfterAsk?.let { model.wake(it) }
         wakeAfterAsk = null
     }
@@ -147,7 +146,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
         if (tv != null && tv.bt.isNotBlank() && BleWaker.shouldAsk(ctx)) {
             BleWaker.markAsked(ctx)
             wakeAfterAsk = id
-            askBle.launch(Manifest.permission.BLUETOOTH_ADVERTISE)
+            askBle.launch(BleWaker.missing(ctx))
         } else model.wake(id)
     }
 
@@ -175,6 +174,8 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 onTile = { model.tileTv = it; tile = it; model.say("The Quick Settings tile now opens TiviBro on this TV") },
                 onRepair = { nav.navigate("add") },
                 onBackups = { id -> go(id, "backups") },
+                bleLog = { model.bleLog() },
+                onBleListen = { model.bleListen(it) },
             )
         }
         composable("reminders/{id}") { e ->

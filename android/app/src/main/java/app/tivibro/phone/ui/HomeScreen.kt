@@ -55,6 +55,12 @@ import androidx.compose.material.icons.rounded.QrCodeScanner
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SettingsRemote
 import androidx.compose.material.icons.rounded.Tv
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.rounded.Bluetooth
 import androidx.compose.material.icons.rounded.SystemUpdate
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -117,6 +123,9 @@ fun HomeScreen(
     onTile: (String) -> Unit,
     onRepair: (String) -> Unit,
     onBackups: (String) -> Unit,
+    /** The last Bluetooth wake's log (ble/WakeLog.kt), and listening for a TV for 20 seconds into it. */
+    bleLog: () -> String = { "" },
+    onBleListen: (String) -> Unit = {},
 ) {
     var refreshing by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -169,6 +178,7 @@ fun HomeScreen(
                     // The App update tile goes on the first TV's card only (it is about this phone's app, not a TV).
                     val first = u.tv.id == tvs.first().tv.id
                     TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups,
+                        bleLog = bleLog, onBleListen = onBleListen,
                         appUpdate = if (first) AppUpdateTile(checking, rel != null && relHidden.not(), ::checkNow) else null)
                 }
             }
@@ -250,10 +260,12 @@ private fun TvCard(
     u: TvUi, isTile: Boolean,
     onEditor: (String) -> Unit, onTab: (String, String) -> Unit, onReminders: (String) -> Unit, onOpen: (String) -> Unit, onWake: (String) -> Unit,
     onForget: (String) -> Unit, onTile: (String) -> Unit, onRepair: (String) -> Unit, onBackups: (String) -> Unit,
+    bleLog: () -> String = { "" }, onBleListen: (String) -> Unit = {},
     appUpdate: AppUpdateTile? = null,
 ) {
     val tv = u.tv
     var menu by remember { mutableStateOf(false) }
+    var logText by remember { mutableStateOf<String?>(null) }
     var confirm by remember { mutableStateOf(false) }
     val (dot, status) = when (u.power) {
         Power.CHECKING -> Muted to "Checking…"
@@ -284,6 +296,7 @@ private fun TvCard(
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         if (tv.canWake()) DropdownMenuItem(text = { Text("Turn on") }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) }, onClick = { menu = false; onWake(tv.id) })
                         if (u.power == Power.ON) DropdownMenuItem(text = { Text(if (u.tivibroOpen) "Show TiviBro on the TV" else "Open TiviBro on the TV") }, leadingIcon = { Icon(Icons.Rounded.PlayArrow, null) }, onClick = { menu = false; onOpen(tv.id) })
+                        if (tv.bt.isNotBlank()) DropdownMenuItem(text = { Text("Bluetooth log") }, leadingIcon = { Icon(Icons.Rounded.Bluetooth, null) }, onClick = { menu = false; logText = bleLog() })
                         DropdownMenuItem(text = { Text("Use for the Quick Settings tile") }, leadingIcon = { Icon(Icons.Rounded.Tv, null) }, onClick = { menu = false; onTile(tv.id) })
                         DropdownMenuItem(text = { Text("Forget this TV") }, leadingIcon = { Icon(Icons.Rounded.LinkOff, null) }, onClick = { menu = false; confirm = true })
                     }
@@ -333,6 +346,38 @@ private fun TvCard(
                 }
             }
         }
+    }
+    logText?.let { text ->
+        val ctx = LocalContext.current
+        AlertDialog(
+            onDismissRequest = { logText = null },
+            title = { Text("Bluetooth log") },
+            text = {
+                Column {
+                    Text(
+                        "What the phone sent and heard the last time it turned ${tv.name} on.  Listen for the TV hears it for 20 seconds without waking it (try it with the TV off, then on).",
+                        style = MaterialTheme.typography.bodySmall, color = Muted,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Box(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState()).horizontalScroll(rememberScrollState())) {
+                        Text(text.ifBlank { "Nothing yet.  Press Turn on, or Listen for the TV." }, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { logText = null; onBleListen(tv.id) }) { Text("Listen for the TV") }
+            },
+            dismissButton = {
+                Row {
+                    if (text.isNotBlank()) TextButton(onClick = {
+                        val i = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text)
+                        runCatching { ctx.startActivity(Intent.createChooser(i, "Share the Bluetooth log").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    }) { Text("Share") }
+                    TextButton(onClick = { logText = null }) { Text("Close") }
+                }
+            },
+            containerColor = Panel,
+        )
     }
     if (confirm) AlertDialog(
         onDismissRequest = { confirm = false },

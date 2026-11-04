@@ -10,6 +10,9 @@ import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.tivibro.phone.ble.BleWaker
+import app.tivibro.phone.ble.BleWatcher
+import app.tivibro.phone.ble.WakeLog
+import app.tivibro.phone.proto.TvSeen
 import app.tivibro.phone.data.BackupStore
 import app.tivibro.phone.data.BackupTools
 import app.tivibro.phone.data.EditorCopies
@@ -250,24 +253,52 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         val tv = tv(id) ?: return@launch
         if (!tv.canWake()) { say("This TV hasn't told the app its network card yet.  Open it once while it's on."); return@launch }
         setUi(id) { it.copy(power = Power.WAKING) }
-        val ble = if (tv.bt.isNotBlank()) withContext(Dispatchers.IO) { BleWaker.start(getApplication<Application>(), tv.bt) } else null
+        val app = getApplication<Application>()
+        val log = WakeLog(tv.name)
+        val lan = onLan(null)
+        val ble = if (tv.bt.isNotBlank()) withContext(Dispatchers.IO) { BleWaker.start(app, tv.bt) } else null
+        log.add("Turn on.  Phone on Wi-Fi: ${if (lan) "yes" else "no"}.  Bluetooth wake: ${ble?.result ?: "no Bluetooth address for this TV"}.")
         if (ble != null) android.util.Log.i("TiviBroBle", "Turn on ${tv.name} over Bluetooth: ${ble.result}")
         if (ble?.result == BleWaker.Start.OFF) say("Turn on Bluetooth on the phone to wake the TV over Bluetooth too.")
+        // Watching for the TV's own advertisement: tells the TV came on when Wi-Fi can't (the phone isn't on it).
+        val seen = TvSeen()
+        val bleOn = java.util.concurrent.atomic.AtomicBoolean(false)
+        val watch = if (tv.bt.isNotBlank()) BleWatcher.start(app, tv.bt) { rssi, data ->
+            val at = log.ms()
+            val ad = BleWake.parseAdvert(data)
+            log.advert(at, rssi, BleWake.hex(data), ad)
+            if (seen.saw(at, BleWake.hex(data), ad) && bleOn.compareAndSet(false, true)) log.add("Counts as on: ${seen.why}.")
+        } else null
+        if (watch != null) log.add("Watching for the TV over Bluetooth: ${watch.result}.")
         var on = false
         try {
             val end = System.currentTimeMillis() + BleWake.ADVERTISE_MS
+            var nextWol = 0L
             while (System.currentTimeMillis() < end && !on) {
-                if (tv.wakeMacs().isNotEmpty()) withContext(Dispatchers.IO) { runCatching { Wol.wakeAll(tv.wakeMacs(), tv.host) } }
-                delay(3000)
-                on = withContext(Dispatchers.IO) { runCatching { Pairing.hello(tv.host, tv.port, 1500); true }.getOrDefault(false) }
+                if (System.currentTimeMillis() >= nextWol) {
+                    if (tv.wakeMacs().isNotEmpty()) withContext(Dispatchers.IO) { runCatching { Wol.wakeAll(tv.wakeMacs(), tv.host) } }
+                    nextWol = System.currentTimeMillis() + 3000
+                }
+                delay(1000)
+                // Without Wi-Fi, the TV's Bluetooth advertisement is the only sign it came on.
+                if (bleOn.get() && !onLan(null)) break
+                if (System.currentTimeMillis() >= nextWol - 500) on = withContext(Dispatchers.IO) { runCatching { Pairing.hello(tv.host, tv.port, 1500); true }.getOrDefault(false) }
             }
         } finally {
             ble?.stop()
+            log.add(if (on) "The TV answered over Wi-Fi." else "Stopped the Bluetooth wake.")
+            // Keep listening a little longer, to see what the TV sends once it is up (for the log).
+            if (watch != null) viewModelScope.launch { delay(15_000); watch.stop(); log.add("Stopped watching."); log.save(app) }
+            else log.save(app)
         }
         setUi(id) { it.copy(power = Power.CHECKING) }
         if (on) { check(tv(id) ?: tv); say("${tv.name} is on") }
+        else if (bleOn.get() && !onLan(null)) {
+            setUi(id) { it.copy(power = Power.OFF) }
+            say("${tv.name} is on (the phone saw it over Bluetooth).  Turn on Wi-Fi on the phone to use it.")
+        }
         else if (!onLan(null) && ble?.result == BleWaker.Start.STARTED) {
-            // Without Wi-Fi the phone can't see the TV, so it can't tell whether the Bluetooth wake worked.
+            // Without Wi-Fi, and not seen over Bluetooth either: the phone can't tell whether the wake worked.
             setUi(id) { it.copy(power = Power.OFF) }
             say("Sent the Bluetooth wake to ${tv.name}.  The phone isn't on Wi-Fi, so it can't see the TV: turn Wi-Fi on to check.")
         }
@@ -276,6 +307,35 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             say(if (tv.bt.isNotBlank()) "${tv.name} didn't answer.  Is Turn on via Wi-Fi on, and Bluetooth on the phone?"
                 else "${tv.name} didn't answer.  Is Turn on via Wi-Fi on in the TV's settings?")
         }
+    }
+
+    /** The last Bluetooth wake's log (WakeLog), for the TV card's menu.  Empty when there is none yet. */
+    fun bleLog(): String = WakeLog.last(getApplication<Application>())
+
+    /** Listens for the TV over Bluetooth for 20 seconds without waking it, into the Bluetooth log (to see what it sends while off). */
+    fun bleListen(id: String) = viewModelScope.launch {
+        val tv = tv(id) ?: return@launch
+        if (tv.bt.isBlank()) { say("This TV hasn't told the app its Bluetooth address yet.  Open the app once while the TV is on."); return@launch }
+        val app = getApplication<Application>()
+        val log = WakeLog(tv.name)
+        log.add("Listening for 20 seconds, without waking the TV.  Phone on Wi-Fi: ${if (onLan(null)) "yes" else "no"}.")
+        val watch = BleWatcher.start(app, tv.bt) { rssi, data -> log.advert(log.ms(), rssi, BleWake.hex(data), BleWake.parseAdvert(data)) }
+        log.add("Watching: ${watch.result}.")
+        if (watch.result != BleWaker.Start.STARTED) {
+            log.save(app)
+            say(when (watch.result) {
+                BleWaker.Start.NOT_ALLOWED -> "The app isn't allowed to use Bluetooth.  Allow Nearby devices for TiviBro in Android's settings."
+                BleWaker.Start.OFF -> "Turn on Bluetooth on the phone first."
+                else -> "This phone can't listen for the TV over Bluetooth."
+            })
+            return@launch
+        }
+        say("Listening for ${tv.name} for 20 seconds…")
+        delay(20_000)
+        watch.stop()
+        log.add("Done.")
+        log.save(app)
+        say("Done.  Open the Bluetooth log to see what the TV sent.")
     }
 
     fun forget(id: String) = viewModelScope.launch {
