@@ -1580,13 +1580,18 @@ var Views = (function () {
     var state = video && video._mkvSubsState;
     return state === 'discovering' ? 'Finding subtitles…' : state === 'error' ? 'Subtitles unavailable' : state === 'unavailable' ? 'No supported subtitles' : 'Off';
   }
-  /* Subtitles: the tracks, then for movies and shows Find subtitles (OpenSubtitles, subs.js), Timing
-     and Line up with another track. */
+  /* Subtitles: the settings first (for movies and shows Find subtitles from OpenSubtitles, subs.js;
+     Timing; Line up with another track), under a Settings heading, then what this video has under its
+     own heading.  The settings stay at the top however many languages a file carries, and the menu
+     opens on the subtitle that is on (or Off). */
   function subtitleMenu() {
     var tr = subtitleTracks().filter(function (t) { return mode === 'vod' || t.kind === 'subtitles'; });
-    var items = [];
+    var settings = [], list = [];
+    if (mode === 'vod' && vod) settings.push({ label: 'Find subtitles…', sub: Subs.configured ? 'OpenSubtitles, in ' + Subs.langs().map(Subs.langName).join(', ') : 'from OpenSubtitles, with your free API key', action: function () { Subs.find(vod.meta); } });
+    if (tr.length) settings.push({ label: 'Timing', sub: Subs.timing, action: Subs.timingMenu });
+    if (tr.length > 1) settings.push({ label: 'Line up with another track…', sub: 'match a subtitle that is already in time', action: function () { Subs.lineUpMenu(tr); } });
     if (!tr.length) {
-      items.push({ label: subtitleStatus() === 'Off' ? 'No subtitles in this ' + (mode === 'vod' ? 'video' : 'stream') : subtitleStatus() });
+      list.push({ label: subtitleStatus() === 'Off' ? 'No subtitles in this ' + (mode === 'vod' ? 'video' : 'stream') : subtitleStatus() });
       if (video._mkvSubsState === 'discovering') {
         var refresh = setInterval(function () {
           if (subtitleTracks().length || video._mkvSubsState !== 'discovering') {
@@ -1596,14 +1601,15 @@ var Views = (function () {
         UI.onClose = function () { clearInterval(refresh); };
       }
     } else {
+      var none = tr.every(function (t) { return t.mode !== 'showing'; });
       // Any choice here (Off too) is the viewer's for the rest of this playback: see the addtrack handler.
-      items.push({ label: 'Off', sub: tr.every(function (t) { return t.mode !== 'showing'; }) ? 'on' : '', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = null; tr.forEach(function (t) { t.mode = 'disabled'; }); } });
-      tr.forEach(function (t, i) { items.push({ label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = t; tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
+      list.push({ label: 'Off', sub: none ? 'on' : '', current: none, action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = null; tr.forEach(function (t) { t.mode = 'disabled'; }); } });
+      tr.forEach(function (t, i) { list.push({ label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', current: t.mode === 'showing', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = t; tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
     }
-    if (mode === 'vod' && vod) items.push({ label: 'Find subtitles…', sub: Subs.configured ? 'OpenSubtitles, in ' + Subs.langs().map(Subs.langName).join(', ') : 'from OpenSubtitles, with your free API key', action: function () { Subs.find(vod.meta); } });
-    if (tr.length) items.push({ label: 'Timing', sub: Subs.timing, action: Subs.timingMenu });
-    if (tr.length > 1) items.push({ label: 'Line up with another track…', sub: 'match a subtitle that is already in time', action: function () { Subs.lineUpMenu(tr); } });
-    UI.menu('Subtitles', items);
+    if (!settings.length) return UI.menu('Subtitles', list);
+    var it = vod && vod.meta && vod.meta.item || {};
+    var here = mode !== 'vod' ? 'In this stream' : it.ep || it.kind === 'episode' ? 'In this episode' : 'In this movie';
+    UI.menu('Subtitles', [{ head: true, label: 'Settings' }].concat(settings, [{ head: true, label: here + (tr.length ? ' · ' + tr.length : '') }], list));
   }
   /* Stream info, with buffer info folded in: the rows update every second while it is open, and the
      buffer gauge shows at the top right (as Show buffer info does).  From the quick menu, or any button

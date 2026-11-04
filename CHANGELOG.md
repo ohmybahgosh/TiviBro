@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **MKV subtitles keep up in movies with many languages.**  Only the subtitles you are watching are read from the file, as for MP4 files, so a movie with dozens of subtitle languages no longer shows its lines late or not at all.  A language you switch to is read as you pick it.
+- **The subtitle menu keeps its settings at the top.**  **Find subtitles…**, **Timing** and **Line up with another track…** now come first under a **Settings** heading, and the video's own subtitles follow under **In this movie** (or episode, or stream) with how many there are.  The menu opens on the subtitle that is on.  Before, a movie with dozens of languages put Timing at the very bottom.
 
 ## 0.6.0 (alpha 81, 2026-11-04)
 

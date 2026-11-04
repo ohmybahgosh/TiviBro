@@ -73,17 +73,15 @@ function region(f, trackIndex) {
     const tracks = () => page.evaluate(() => Array.prototype.map.call(document.getElementById('video').textTracks, t => ({ label: t.label, mode: t.mode, cues: t.cues ? t.cues.length : 0 })));
     const overlay = () => page.evaluate(() => (document.querySelector('.mkv-captions') || {}).textContent);
     const tick = () => page.evaluate(() => document.getElementById('video').dispatchEvent(new Event('timeupdate')));
-    // Move the menu focus to the row whose text matches, with the arrow keys, and press OK.
+    // Move the menu focus to the row whose text matches, with the arrow keys, and press OK.  The menu draws
+    // only the rows on screen, so step down (round the end, as the remote does) until the row is focused.
     async function pick(re) {
-      const rows = page.locator('#modal .mi'), count = await rows.count();
-      let index = -1;
-      for (let i = 0; i < count; i++) if (re.test(await rows.nth(i).innerText())) { index = i; break; }
-      if (index < 0) return false;
-      const current = await page.evaluate(() => [].slice.call(document.querySelectorAll('#modal .mi')).findIndex(x => x.classList.contains('focus')));
-      for (let i = 0; i < Math.abs(index - current); i++) { await page.keyboard.press(index > current ? 'ArrowDown' : 'ArrowUp'); await page.waitForTimeout(60); }
-      await page.keyboard.press('Enter');
-      await page.waitForTimeout(100);
-      return true;
+      for (let n = 0; n < 80; n++) {
+        const focused = await page.evaluate(() => { const f = document.querySelector('#modal .mi.focus'); return f ? f.innerText : ''; });
+        if (re.test(focused)) { await page.keyboard.press('Enter'); await page.waitForTimeout(100); return true; }
+        await page.keyboard.press('ArrowDown'); await page.waitForTimeout(30);
+      }
+      return false;
     }
 
     // The ffmpeg file: English and Dutch; Dutch chosen with the remote shows "Hallo" at 2.5 s.

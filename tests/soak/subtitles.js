@@ -31,6 +31,10 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await page.keyboard.press('Enter'); await page.waitForTimeout(500);
     return true;
   };
+  // The menu's grey headings (UI.menu head rows) and the row the highlight is on.
+  const heads = () => ev(() => [].slice.call(document.querySelectorAll('#modal .mh')).map(x => x.textContent));
+  const rows = () => ev(() => [].slice.call(document.querySelectorAll('#modal .mi, #modal .mh')).map(x => x.classList.contains('mh') ? '# ' + x.textContent : x.querySelector('span').textContent));
+  const focused = () => ev(() => { const f = document.querySelector('#modal .mi.focus span'); return f ? f.textContent : ''; });
   const subsMenu = async () => { await ev(() => UI.close && UI.close()); await ev(() => Views.runAction('subs', 'player')); await page.waitForTimeout(400); };
 
   await ev(m => { Subs.setKey(''); Store.settings.subLangs = ['en', 'es']; Views.playVod({ id: 'm1', title: 'EN - Feature Presentation (2024)', sub: '2024', item: { name: 'EN - Feature Presentation (2024) 4K', year: '2024' } }, m + '/movie/1.mp4', 0, function () {}); }, MOCK);
@@ -38,6 +42,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await subsMenu();
   let m = await modal();
   ok('Subtitles offers Find subtitles in a movie', /No subtitles in this video/.test(m) && /Find subtitles/.test(m), m);
+  ok('Subtitles: a Settings heading above Find subtitles, an In this movie heading above what the movie has', JSON.stringify(await heads()) === '["Settings","In this movie"]' && /^# Settings,Find subtitles…,# In this movie,No subtitles in this video$/.test((await rows()).join(',')), (await rows()).join(','));
   await pick('^Find subtitles');
   m = await modal();
   ok('without a key it says where to add one', /Add your OpenSubtitles API key first/.test(m) && /API consumers/.test(m), m);
@@ -90,6 +95,12 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await subsMenu();
   m = await modal();
   ok('Line up with another track appears with two tracks', /Line up with another track/.test(m), m);
+  ok('with subtitles: settings first, then the subtitles under In this movie with their count', /^# Settings,Find subtitles…,Timing,Line up with another track…,# In this movie · 2,Off,English \(OpenSubtitles\),Spanish \(OpenSubtitles\)$/.test((await rows()).join(',')), (await rows()).join(','));
+  ok('the menu opens on the subtitle that is on', /^Spanish/.test(await focused()), await focused());
+  await shot('tv-subs-menu');
+  for (let k = 0; k < 3; k++) { await page.keyboard.press('ArrowUp'); await page.waitForTimeout(50); }
+  ok('the remote steps over a heading: Up from Off goes to Line up', /^Line up with another track/.test(await focused()), await focused());
+  await subsMenu();
   await pick('^Line up with another track'); await pick('^English');
   await page.waitForTimeout(1500);
   const lined = await ev(() => { const tt = [].slice.call(document.getElementById('video').textTracks); const es = tt.find(t => /Spanish/.test(t.label)), en = tt.find(t => /English/.test(t.label)); if (en.mode === 'disabled') en.mode = 'hidden'; return { es: es.cues[3].startTime, en: en.cues[3].startTime, toast: document.body.innerText.match(/Lined up[^\n]*/) }; });

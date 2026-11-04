@@ -137,9 +137,11 @@ var UI = (function () {
 
   /* Up to M_VIS rows show.  Rows that wrap onto two or three lines (long subtitle names, discussion
      #36) make fewer fit: the list then starts lower until the focused row is whole, and a last row
-     that would be cut off by the bottom of the box is left out. */
+     that would be cut off by the bottom of the box is left out.  A heading ({ head: true }, grey, as in
+     Settings) is never focused: the arrows and the pointer step over it, and it stays in view above the
+     row under it. */
   function drawMenu() {
-    mTop = U.clamp(mTop, Math.max(0, mSel - M_VIS + 1), mSel);
+    mTop = U.clamp(mTop, Math.max(0, mSel - M_VIS + 1), mSel > 0 && mItems[mSel - 1].head ? mSel - 1 : mSel);
     fillMenu();
     // 2 px of slack: sizes are rounded to whole pixels, so a row that fits exactly can read 1 px over.
     var h = mBody.clientHeight + 2, f = mBody.children[mSel - mTop];
@@ -154,7 +156,9 @@ var UI = (function () {
   function fillMenu() {
     mBody.innerHTML = '';
     for (var i = mTop; i < Math.min(mItems.length, mTop + M_VIS); i++) {
-      var it = mItems[i], d = U.el('div', 'mi' + (i === mSel ? ' focus' : ''));
+      var it = mItems[i];
+      if (it.head) { mBody.appendChild(U.el('div', 'mh', it.label)); continue; }
+      var d = U.el('div', 'mi' + (i === mSel ? ' focus' : ''));
       d.appendChild(U.el('span', '', it.label));
       if (it.sub) d.appendChild(U.el('small', '', it.sub));
       (function (idx) {
@@ -168,15 +172,20 @@ var UI = (function () {
   function menu(title, items, onBack) {
     mItems = items.filter(Boolean); mTop = 0;
     if (!mItems.length) mItems = [{ label: 'Nothing to choose from' }];      // an empty list is never a dead end
-    mSel = Math.max(0, mItems.findIndex(function (x) { return x.current; }));
+    var rows = [];
+    mItems.forEach(function (x, i) { if (!x.head) rows.push(i); });
+    if (!rows.length) { mItems.push({ label: 'Nothing to choose from' }); rows.push(mItems.length - 1); }
+    mSel = mItems.findIndex(function (x) { return x.current && !x.head; });
+    if (mSel < 0) mSel = rows[0];
     mTitle.textContent = title;
     mBox.classList.remove('panel');
     modal.classList.remove('hidden');
     drawMenu();
     modalH = function (a) {
       // Past either end of a menu: round to the other end (one press, not while the arrow is held).
-      if (a === 'up') { if (mSel > 0) { mSel--; drawMenu(); } else if (mItems.length > 2 && !repeating) { mSel = mItems.length - 1; drawMenu(); } }
-      else if (a === 'down') { if (mSel < mItems.length - 1) { mSel++; drawMenu(); } else if (mItems.length > 2 && !repeating) { mSel = 0; drawMenu(); } }
+      var at = rows.indexOf(mSel);
+      if (a === 'up') { if (at > 0) { mSel = rows[at - 1]; drawMenu(); } else if (rows.length > 2 && !repeating) { mSel = rows[rows.length - 1]; drawMenu(); } }
+      else if (a === 'down') { if (at < rows.length - 1) { mSel = rows[at + 1]; drawMenu(); } else if (rows.length > 2 && !repeating) { mSel = rows[0]; drawMenu(); } }
       else if (a === 'ok') { var it = mItems[mSel]; close(); if (it && it.action) it.action(); }
       else if (a === 'back') { close(); if (onBack) onBack(); }
       return true;
