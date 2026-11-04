@@ -70,7 +70,7 @@ DNS comes from musl's resolver, which reads `/etc/resolv.conf` directly.  If a T
 ```sh
 nice -n 10 ffmpeg -hide_banner -nostdin -loglevel error -stats -stats_period 5 -protocol_whitelist http,tcp \
   -ss $T -i "$RELAYED_URL" -copyts -start_at_zero -map 0:v:0? -map 0:a:$A -c:v copy \
-  -c:a ac3 -b:a 640k -sn -dn -max_muxing_queue_size 1024 -f matroska -live 1 pipe:1
+  -c:a ac3 -b:a 640k -sn -dn -max_muxing_queue_size 1024 -f matroska pipe:1
 ```
 
 - AC-3 640k for 3 to 6 channels, 224k for mono or stereo, and `-ac 6` for 7.1: ffmpeg's E-AC-3 encoder can't make 7.1 (it quietly drops to 5.0), so 7.1 is mixed down to 5.1 AC-3.  A track the TV already plays (AC-3, E-AC-3, AAC, MP3, MP2) is copied, not re-encoded.

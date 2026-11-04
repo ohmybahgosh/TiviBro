@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Converted movies play through without stopping.**  The converted stream was marked as live, so the TV's own player only ever held a few seconds of it and then stopped asking for more: the picture ran out, TiviBro reconnected and it happened again every few seconds.  It is now sent as an ordinary movie file, which the player reads the whole way through.
+
 ## 0.6.0 (alpha 71, 2026-11-03)
 
 Pre-release: expect rough edges, and keep a backup before installing.

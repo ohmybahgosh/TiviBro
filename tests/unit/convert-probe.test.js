@@ -47,7 +47,7 @@ let a = C.args({ input: 'http://127.0.0.1:47811/x/http/h/m.mkv', t: 600, a: 1, f
 const j = a.join(' ');
 ok('seek before -i (Range), movie times kept', /-ss 600 -i http:\/\/127\.0\.0\.1:47811\/x\/http\/h\/m\.mkv -copyts -start_at_zero/.test(j), j);
 ok('video copied, the chosen audio track mapped', /-map 0:v:0\? -map 0:a:1 -c:v copy -c:a ac3 -b:a 640k/.test(j), j);
-ok('no subtitles or data, MKV for live playback to stdout', /-sn -dn .*-f matroska -live 1 pipe:1$/.test(j), j);
+ok('no subtitles or data, MKV to stdout, not marked live (LG\'s player stops reading a live MKV)', /-sn -dn .*-f matroska pipe:1$/.test(j) && j.indexOf('-live') < 0, j);
 ok('only http for the input', /-protocol_whitelist http,tcp/.test(j), j);
 ok('progress every 5 s for the speed log', /-stats -stats_period 5/.test(j), j);
 a = C.args({ input: 'pipe:0', pipe: true, t: 30, a: 0, fmt: 'ts', track: { codec: 'dts', channels: 6 } }).join(' ');

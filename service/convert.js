@@ -108,7 +108,9 @@ function args(o) {
   a = a.concat(audioArgs(o.track).args);
   a.push('-sn', '-dn', '-max_muxing_queue_size', '1024');
   if (o.fmt === 'ts') a.push('-f', 'mpegts', 'pipe:1');
-  else a.push('-f', 'matroska', '-live', '1', 'pipe:1');
+  // Not "-live 1": LG's player takes a live-marked MKV for a live stream, fills a few seconds and stops
+  // reading (tested on a C2: a live MKV starved every 10 s, the same file without it played through).
+  else a.push('-f', 'matroska', 'pipe:1');
   return a;
 }
 
