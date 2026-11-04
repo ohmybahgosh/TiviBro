@@ -66,11 +66,12 @@ No typing logins with a remote.  The first screen shows a QR code: scan it with 
 |---|---|
 | 📱 **Set up from your phone** | Scan the QR code on the first screen and paste your provider's link on your phone, not with the remote.  The TV shows it arriving, says if something's wrong, and takes it from there. |
 | 🔗 **Paste the whole link** | Got one long get.php link from your provider?  Paste it under **Full link** and TiviBro fills in the server, username and password. |
-| 🎮 **A remote in your pocket** | The TiviBro app for Android pairs with the TV: a remote, Play on TV from your channel list, volume, the editor full screen, and Wake-on-LAN.  Each TV gets shortcuts on the home screen (Remote, Guide, On now, Movies and Shows, My media, Reminders, Edit channels, Backups, Settings), and when a setting asks something, the question comes up on the phone.  [Get the APK](https://tivibro.app/apk/). |
+| 🎮 **A remote in your pocket** | The TiviBro app for Android pairs with the TV: a remote, Play on TV from your channel list, volume, the editor full screen, and **Turn on**, which wakes the TV over every network card and over Bluetooth, the way LG's ThinQ app does.  It updates itself when a new version is out.  Each TV gets shortcuts on the home screen (Remote, Guide, On now, Movies and Shows, My media, Reminders, Edit channels, Backups, Settings), and when a setting asks something, the question comes up on the phone.  [Get the APK](https://tivibro.app/apk/). |
 | 📺 **Guide first** | Live preview top left, details top right, groups one press away.  OK previews, OK again goes fullscreen, just like TiviMate. |
 | ⏪ **Catch-up done right** | Rewind the guide into the past and replay what you missed, or restart the show you just tuned into. |
-| 🎬 **Movies and shows** | Your provider's VOD with posters, seasons, episodes, My list and resume.  A **Languages** row keeps a 160,000-title, twelve-language library to the ones you watch, categories can be hidden, adult ones stay out of the way, and MKV files bring their subtitles. |
+| 🎬 **Movies and shows** | Your provider's VOD with posters, seasons, episodes, My list and resume, and a ✓ on what you watched to the end.  A **Languages** row keeps a 160,000-title, twelve-language library to the ones you watch, categories can be hidden, adult ones stay out of the way, and MKV files bring their subtitles. |
 | 🧭 **Set up in two minutes** | A new playlist starts a tour that shows what it has (countries, East and West copies, local cities, event channels, duplicates) and tidies it with the remote, or with your phone by scanning a code. |
+| 🔊 **Sound the TV can't play** | LG TVs from 2020 to 2022 can't play DTS, and no LG TV plays Dolby TrueHD.  TiviBro picks another track in your language if the file has one, or converts the sound to Dolby Digital while you watch, picture untouched.  The converter comes with TiviBro: nothing to download or set up. |
 | 🖼️ **Logos for every channel** | Missing logos filled in from two open logo projects, matched by guide id, name, country and call sign.  Or one matching style for the whole list. |
 | 🖥️ **A real editor** | Hide, sort, rename, copy and match guides for hundreds of channels from any browser.  Drafts, undo and restore points. |
 | ⚙️ **Settings that match everywhere** | The TV, the phone app and the web editor share one layout with the same names: Playlists, Guide, Channels and groups, Channel and group names, Reminders and watchlist, Playback, My media, Remote and buttons, Appearance and start screen, Parental controls, Backups and restore points, Phone app and web editor, and Updates, about and diagnostics. |
@@ -179,7 +180,7 @@ Favorites and your own groups come first, then your provider's.  Moving through 
 
 ### Movies and shows
 
-Categories, posters, ratings and plots.  Shows open into seasons and episodes, and TiviBro remembers where you stopped.  Pick the languages you watch from the **Languages** row, hide categories you never open, and turn on subtitles built into MKV files.
+Categories, posters, ratings and plots.  Shows open into seasons and episodes, and TiviBro remembers where you stopped.  Pick the languages you watch from the **Languages** row, hide categories you never open, and turn on subtitles built into MKV files.  A title you watched to the end keeps a ✓, and **Hold OK** marks one watched or unwatched.
 
 </td>
 <td width="58%"><a href="docs/media/vod.mp4"><img src="docs/media/vod.gif" width="100%" alt="Movies and shows"></a><br><sub><a href="docs/media/vod.mp4">▶ MP4</a></sub></td>
@@ -304,7 +305,7 @@ Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams in **Settings > Channels and 
 
 ### My media
 
-Your own movies and TV shows next to your playlist: from a home media server (DLNA / UPnP, like a Fritz!Box) or a WebDAV cloud (like premiumize), on **Continue watching**, **Favorites**, **Movies** and **TV shows** shelves, with resume, favorites and the normal movie player.  Shows open into seasons and episodes, and the next episode is offered when one ends.  Add your own free TMDB token for posters, plots and details in your language.  Trailers and extras are left out.  It joins the menu once you add a source in **Settings > My media**.  Browse it in the phone app too, and tap **Play on TV**.  Thanks to [moritzm784](https://github.com/moritzm784) for building it.
+Your own movies and TV shows next to your playlist: from a home media server (DLNA / UPnP, like a Fritz!Box), a WebDAV cloud (like premiumize) or a Dropbox folder (sign in with the phone app), on **Continue watching**, **Favorites**, **Movies** and **TV shows** shelves, with resume, favorites and the normal movie player.  Shows open into seasons and episodes, and the next episode is offered when one ends.  Add your own free TMDB token for posters, plots and details in your language.  Trailers and extras are left out.  It joins the menu once you add a source in **Settings > My media**.  Browse it in the phone app too, and tap **Play on TV**.  Thanks to [moritzm784](https://github.com/moritzm784) for building it.
 
 <p align="center"><a href="https://tivibro.app/view/#tv-my-media"><img src="docs/screenshots/tv-my-media.png" width="49%" alt="My media"></a> <a href="https://tivibro.app/view/#tv-my-media-all"><img src="docs/screenshots/tv-my-media-all.png" width="49%" alt="My media: All movies"></a></p>
 
@@ -552,7 +553,7 @@ TiviBro checks for a new release when it starts and every 6 hours while it is op
 
 ### The phone app
 
-**TiviBro for Android** turns your phone into a remote and a second screen for the TV: arrows, OK, Back, channel and volume buttons, Play on TV from your own channel list, the web editor full screen, Wake-on-LAN, and a Quick Settings tile.  Browse Movies, Shows and My media on the phone and play them on the TV.  The home screen has shortcuts for each TV (Remote, Guide, On now, Movies and Shows, My media, Reminders, Edit channels, Backups and Settings), the Settings tab has the same sections as the TV with its questions asked on the phone, and a card with **Download** and **What's new** shows up when a newer app is out.
+**TiviBro for Android** turns your phone into a remote and a second screen for the TV: arrows, OK, Back, channel and volume buttons, Play on TV from your own channel list, the web editor full screen, **Turn on** (Wake-on-LAN to every network card the TV has, plus LG's Bluetooth wake, as the ThinQ app does), and a Quick Settings tile.  Browse Movies, Shows and My media on the phone and play them on the TV.  The home screen has shortcuts for each TV (Remote, Guide, On now, Movies and Shows, My media, Reminders, Edit channels, Backups and Settings), the Settings tab has the same sections as the TV with its questions asked on the phone, and when a newer app is out, **Update now** downloads it, checks it against the release and installs it over the old one.
 
 <p align="center"><img src="docs/screenshots/app-my-media.png" width="30%" alt="My media in the phone app"> <img src="docs/screenshots/app-my-media-movie.png" width="30%" alt="Resume on TV"></p>
 
@@ -639,7 +640,7 @@ The [Release workflow](.github/workflows/release.yml) then runs the tests, build
 - Backups are always encrypted with a passphrase you choose.  Without it the file cannot be opened.
 - Logs mask usernames and passwords.  **Report a problem** also replaces every provider, guide and unknown server name before anything leaves the TV, and nothing is sent until you choose to send it (on your phone, or **Send a report now** on the TV after a crash).
 - **Install numbers.**  Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has, and the install script says whether it installed or updated which version.  Nothing else: no address is kept (a network is counted once a day using a hash that is forgotten after two days), no ID, nothing about your channels or playlists.  Switch it off in **Settings > Updates, about and diagnostics > Count this TV in the install numbers**, or run the install script with `TIVIBRO_NO_COUNT=1`.
-- **My media** contacts only the sources you add.  Their logins stay on the TV and out of backups and problem reports.  When movie details are fetched (by you, on their own for new movies once you've saved a token, or for the movies in your guide), only a title and year (or its TMDB id) and your language go to TMDB, with your own token.
+- **My media** contacts only the sources you add.  Their logins stay on the TV and out of backups and problem reports.  For Dropbox, the phone app signs in with Dropbox and hands the TV only the sign-in it needs to read your files; removing the source signs it out.  When movie details are fetched (by you, on their own for new movies once you've saved a token, or for the movies in your guide), only a title and year (or its TMDB id) and your language go to TMDB, with your own token.
 - The logo library, when you turn it on, downloads lists of logo addresses from tivibro.app, one per country in your playlist, then each logo from its project.  Only the country is in the request: no channel names, logins or anything else from your playlist.
 
 ## Special thanks
