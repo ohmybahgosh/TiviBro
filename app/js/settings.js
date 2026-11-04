@@ -134,10 +134,10 @@ var Settings = (function () {
       ['auto', 'off'], ['Automatic', 'Off'], function () { return s.convertAudio === 'off' ? 'off' : 'auto'; }, function (v) { s.convertAudio = v; save(); }));
     out.push(convLine());
     var ready = convSt && convSt.state === 'ready';
-    if (ready && !/TIVIBRO_FFMPEG/.test(convSt.where || '')) out.push(action('Remove the converter', 'Frees about 3 MB of the TV\'s storage.  TiviBro offers it again when a movie needs it.', function () {
+    if (ready && !convSt.bundled && !/TIVIBRO_FFMPEG/.test(convSt.where || '')) out.push(action('Remove the converter', 'Frees about 3 MB of the TV\'s storage.  TiviBro offers it again when a movie needs it.', function () {
       Convert.remove().then(function (x) { convSt = x; s.convertAsked = false; s.convertNever = false; save(); U.toast('Audio converter removed'); build(); }, function (e) { U.toast(e.message, 5000); });
     }));
-    else if (!ready) out.push(action('Get the converter now', 'Downloads it (about 2 MB) from TiviBro\'s releases on GitHub, checks its fingerprint and keeps it on the TV\'s storage, so movies don\'t wait for it.', function () {
+    else if (!ready && !(convSt && convSt.bundled)) out.push(action('Get the converter now', 'Downloads it (about 2 MB) from TiviBro\'s releases on GitHub, checks its fingerprint and keeps it on the TV\'s storage, so movies don\'t wait for it.', function () {
       if (!Net.port) { U.toast('The network helper is not running', 4000); return; }
       U.toast('Getting the audio converter…', 30000);
       Convert.get(function (pc) { convSt = { state: 'downloading', percent: pc }; paint(); }).then(function (x) { convSt = x; U.toast('Audio converter ready', 3000); build(); },

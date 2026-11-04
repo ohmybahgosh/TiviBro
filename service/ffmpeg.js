@@ -1,11 +1,14 @@
-/* The audio converter: a tiny static ffmpeg (docs/FFMPEG.md, scripts/ffmpeg/build.sh) that the helper
-   downloads the first time a movie needs it, or when the viewer asks in Settings > Playback.
+/* The audio converter: a tiny static ffmpeg (docs/FFMPEG.md, scripts/ffmpeg/build.sh).  Release builds of
+   TiviBro carry it (service/ffmpeg-bundle/, put there by scripts/ffmpeg/bundle.sh): the helper unpacks it
+   onto the TV's storage a few seconds after it starts, with no download and nothing to ask.  A build
+   without it downloads the same file the first time a movie needs it, or when the viewer asks in
+   Settings > Playback.
 
    Where it lives: Storage.sub('bin'), on the TV's big app storage (allows running programs, nosuid),
    named with its version (ffmpeg-7.1-tb1-armv7).  Never in memory (/tmp): if the helper's storage is
    only memory, there is no converter.  Older versions are removed when a new one is in place.
 
-   The download: the .gz for this TV's userland from the GitHub release below, checked against the
+   The bundled .gz or the download: the .gz for this TV's userland from the GitHub release below, checked against the
    SHA-256 written here (never run anything whose hash doesn't match), unpacked with Node's zlib,
    chmod 700, and tried with -version before it counts as ready.
 
@@ -15,7 +18,7 @@
    TIVIBRO_FFMPEG=<path> uses that program instead (tests, a computer running the dev helper).
 
    Routes (proxy.js, behind TiviBro's secret):
-     GET  /ffmpeg/status    { state: none | downloading | ready | failed, percent, version, size, where, error }
+     GET  /ffmpeg/status    { state: none | downloading | ready | failed, percent, version, size, where, error, bundled }
      POST /ffmpeg/get       start the download (answers at once with the status)
      POST /ffmpeg/remove    delete it
    Plain ES5 and callbacks for Node 0.12 (webOS 4). */
@@ -34,7 +37,9 @@ var SHA256 = {
 var MAX_BYTES = 16 * 1024 * 1024;           // the .gz is about 1.6 MB; anything far bigger is not it
 
 var st = { state: 'none', percent: 0, error: '' }, busy = false, cbs = [];
-var cfg = { base: BASE, sums: SHA256 };     // tests point these at a local server (_config)
+var BUNDLE = path.join(__dirname, 'ffmpeg-bundle');
+var cfg = { base: BASE, sums: SHA256, bundle: BUNDLE };     // tests point these at a local server and folder (_config)
+function bundled(a) { a = a || thisArch(); if (!a) return ''; var f = path.join(cfg.bundle, 'tivibro-ffmpeg-' + a + '.gz'); try { return fs.statSync(f).isFile() ? f : ''; } catch (e) { return ''; } }
 
 var logFn = null;                           // proxy.js hands over its log (setLog)
 function log(o) { try { if (logFn) logFn(o); } catch (e) {} }
@@ -103,11 +108,12 @@ function status(cb) {
     if (out.state !== 'failed') out.state = 'none';
     if (!override() && !thisArch()) { out.state = 'failed'; out.error = 'this is not an LG TV the converter is built for (' + process.arch + ')'; }
     out.where = where();
+    if (bundled()) out.bundled = true;
     return cb(out);
   }
   version(bin, function (e, v, size) {
     if (e) return cb({ state: 'failed', error: e.message, where: where() });
-    cb({ state: 'ready', version: v, size: size, where: where(), path: bin, arch: override() ? process.arch : thisArch(), machine: unameM() });
+    cb({ state: 'ready', version: v, size: size, where: where(), path: bin, arch: override() ? process.arch : thisArch(), machine: unameM(), bundled: !override() && !!bundled() || undefined });
   });
 }
 function copy(o) { var r = {}; for (var k in o) r[k] = o[k]; return r; }
@@ -192,9 +198,11 @@ function get(cb) {
   var d; try { d = dir(); } catch (e) { return end(e); }
   var final = path.join(d, nameFor(a)), gz = final + '.gz.part', tmp = final + '.part';
   busy = true; st = { state: 'downloading', percent: 0, error: '' };
-  log({ lv: 'info', event: 'converter download', arch: a, tag: TAG });
+  var from = bundled(a);
+  log({ lv: 'info', event: from ? 'converter unpack' : 'converter download', arch: a, tag: TAG });
   var t0 = Date.now();
-  fetchTo(cfg.base + 'tivibro-ffmpeg-' + a + '.gz', gz, 5, function (got, total) { st.percent = total ? Math.min(99, Math.floor(got * 100 / total)) : 0; st.bytes = got; }, function (e) {
+  var fetch = from ? function (u, file, left, onProgress, cb) { copyFile(from, file, cb); } : fetchTo;
+  fetch(cfg.base + 'tivibro-ffmpeg-' + a + '.gz', gz, 5, function (got, total) { st.percent = total ? Math.min(99, Math.floor(got * 100 / total)) : 0; st.bytes = got; }, function (e) {
     if (e) { rm(gz); return end(e); }
     sha256(gz, function (e2, hex) {
       if (e2) { rm(gz); return end(e2); }
@@ -213,6 +221,19 @@ function get(cb) {
       });
     });
   });
+}
+
+function copyFile(a, b, cb) {
+  var done = false, r = fs.createReadStream(a), w = fs.createWriteStream(b);
+  function end(e) { if (!done) { done = true; cb(e || null); } }
+  r.on('error', end); w.on('error', function (e) { end(e.code === 'ENOSPC' ? new Error('the TV is out of storage') : e); }); w.on('finish', function () { end(null); });
+  r.pipe(w);
+}
+// The helper just started: unpack the bundled converter if it isn't on the TV's storage yet.
+function prepare(delayMs) {
+  if (override() || !bundled()) return;
+  var t = setTimeout(function () { if (!binary() && !busy) get(function (e) { if (e) log({ lv: 'warn', event: 'converter unpack failed', e: e.message }); }); }, delayMs == null ? 5000 : delayMs);
+  if (t && t.unref) t.unref();
 }
 
 function remove(cb) {
@@ -248,6 +269,6 @@ function handle(req, res, ALLOW) {
 }
 
 module.exports = {
-  setLog: function (f) { logFn = f; }, TAG: TAG, BASE: BASE, SHA256: SHA256, arch: arch, binary: binary, status: status, get: get, remove: remove, handle: handle,
-  _config: function (o) { if (o.base) cfg.base = o.base; if (o.sums) cfg.sums = o.sums; if (o.arch !== undefined) cfg.arch = o.arch; if (o.reset) { cfg = { base: BASE, sums: SHA256 }; st = { state: 'none', percent: 0, error: '' }; verCache = {}; } }
+  setLog: function (f) { logFn = f; }, TAG: TAG, BASE: BASE, SHA256: SHA256, arch: arch, binary: binary, status: status, get: get, remove: remove, handle: handle, prepare: prepare, bundled: bundled,
+  _config: function (o) { if (o.base) cfg.base = o.base; if (o.sums) cfg.sums = o.sums; if (o.bundle !== undefined) cfg.bundle = o.bundle; if (o.arch !== undefined) cfg.arch = o.arch; if (o.reset) { cfg = { base: BASE, sums: SHA256, bundle: BUNDLE }; st = { state: 'none', percent: 0, error: '' }; verCache = {}; } }
 };

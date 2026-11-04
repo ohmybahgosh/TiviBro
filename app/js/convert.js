@@ -58,8 +58,10 @@ var Convert = (function () {
   // One line for Settings: "Ready: 7.1.1, 3.0 MB, on TV storage".
   function describe(s) {
     if (!s) return 'checking…';
+    if (s.state === 'ready' && s.bundled) return 'Built in, ready' + (s.size ? ', ' + (s.size / 1048576).toFixed(1) + ' MB' : '');
     if (s.state === 'ready') return 'Ready' + (s.size ? ', ' + (s.size / 1048576).toFixed(1) + ' MB' : '') + (s.where ? (/^set by/.test(s.where) ? ', ' : ', kept on ') + s.where : '');
-    if (s.state === 'downloading') return 'Downloading ' + (s.percent || 0) + '%';
+    if (s.state === 'downloading') return (s.bundled ? 'Unpacking ' : 'Downloading ') + (s.percent || 0) + '%';
+    if (s.bundled && s.state !== 'failed') return 'Built in, unpacked the first time a movie needs it';
     if (s.state === 'failed') return 'Not available: ' + (s.error || 'unknown reason');
     return 'Not on this TV yet (about 2 MB, downloaded when a movie needs it)';
   }
@@ -113,6 +115,14 @@ var Convert = (function () {
        { conv: { src, a, fmt, codec, channels, tracks, dur }, notice }   play the conversion
        { track: a, tracks, bad }                                         pick audio track a
        { offer: 'DTS' }                                                  the converter would help but isn't here */
+  /* How a converted movie travels: MPEG-TS into TiviBro's own MSE player where the TV takes AC-3 there
+     (and the video), else MKV for the TV's player.  The TV's player shows no picture from an MKV that
+     arrives as an endless stream (a C2: sound, black screen), while the MSE player reads a stream the way
+     it reads a live channel. */
+  function fmtFor(video) {
+    var c = Caps.probe();
+    return typeof mpegts !== 'undefined' && c.mse && c.mse.ac3 && (!video || c.mse[video] !== false) ? 'ts' : 'mkv';
+  }
   function plan(o) {
     if (!on() || !base() || !o || !o.url || !/^https?:/i.test(o.url)) return Promise.resolve(null);
     var m = o.media || {}, known = m.audio && m.audio.length ? m.audio : null, c = Caps.probe();
@@ -122,6 +132,10 @@ var Convert = (function () {
     var fileLike = FILE.test(o.url) || /^(mkv|mp4|m4v|mov|avi|ts|m2ts|webm)$/i.test(o.container || '');
     if (!bad && !hint && !fileLike) return Promise.resolve(null);
     return status().then(function (s) {
+      // A release carries the converter: unpacking it takes a second, so nothing is asked.
+      if (s.state !== 'ready' && s.bundled && s.state !== 'failed') return get().catch(function () { return s; });
+      return s;
+    }).then(function (s) {
       if (s.state !== 'ready') {
         if (!bad && !hint) return null;
         return { offer: NAMES[bad ? known[0] : 'dts'] || 'DTS', guessed: !bad };
@@ -129,9 +143,9 @@ var Convert = (function () {
       return within(probe(o.url), 12000).then(function (info) {
         var d = decide(info.audio, c, { lang: settings().audioLang || '' });
         if (d.action === 'play') return null;
-        if (d.action === 'track') return { track: d.a, tracks: info.audio, bad: d.bad, dur: info.duration };
+        if (d.action === 'track') return { track: d.a, tracks: info.audio, bad: d.bad, dur: info.duration, video: info.video || '' };
         return ensureKey().then(function () {
-          return { conv: { src: o.url, a: d.a, fmt: 'mkv', codec: d.codec, channels: d.channels || 0, tracks: info.audio, bad: d.bad, dur: info.duration || 0 },
+          return { conv: { src: o.url, a: d.a, fmt: fmtFor(info.video), video: info.video || '', codec: d.codec, channels: d.channels || 0, tracks: info.audio, bad: d.bad, dur: info.duration || 0 },
             notice: 'Converting ' + (NAMES[d.codec] || d.why || d.codec.toUpperCase()) + ' audio for this TV' };
         });
       });
@@ -153,6 +167,8 @@ var Convert = (function () {
   // The offer, on the TV's screen.  cb(true) once the converter is ready, cb(false) otherwise.
   function offer(what, guessed, cb) {
     var s = settings();
+    // Carried by this build: no question, just unpack it.
+    if (st && st.bundled && st.state !== 'failed') return get().then(function () { cb(true); }, function () { cb(false); });
     // Asked every time a movie needs it, until "Don't ask again" (Settings > Playback still gets it).
     if (s.convertNever || typeof UI === 'undefined' || !UI.panel) return cb(false);
     s.convertAsked = true;
@@ -171,6 +187,6 @@ var Convert = (function () {
   }
   function noSound(what) { return what + ' sound, which this TV can\'t play.  Settings > Playback > Audio and subtitles can get the audio converter, or pick another audio track.'; }
 
-  return { on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, offer: offer, noSound: noSound,
+  return { fmtFor: fmtFor, on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, offer: offer, noSound: noSound,
     probe: probe, ensureKey: ensureKey, NAMES: NAMES, get key() { return key; }, _reset: function () { key = ''; st = null; probes = {}; } };
 })();

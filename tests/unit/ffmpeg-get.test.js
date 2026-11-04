@@ -9,6 +9,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-ffmpeg-'));
 process.env.TIVIBRO_KV_DIR = path.join(tmp, 'store');
 delete process.env.TIVIBRO_FFMPEG;
 const F = require('../../service/ffmpeg.js');
+F._config({ bundle: path.join(tmp, 'no-bundle') });   // this checkout may hold a built bundle: start without one
 
 // A stand-in for ffmpeg: answers -version like the real one.
 const fake = '#!/bin/sh\necho "ffmpeg version 7.1.1-tb Copyright (c) 2000-2025 the FFmpeg developers"\n';
@@ -115,6 +116,22 @@ server.listen(0, '127.0.0.1', async () => {
   ok('POST /ffmpeg/remove', rr.code === 200 && JSON.parse(rr.body).state === 'none', rr.body);
   rr = await req('GET', '/ffmpeg/nope');
   ok('unknown route: 404', rr.code === 404);
+
+  // A release carries it (service/ffmpeg-bundle): unpacked from there, nothing downloaded, nothing asked.
+  const bdir = path.join(tmp, 'bundle'); fs.mkdirSync(bdir); fs.writeFileSync(path.join(bdir, 'tivibro-ffmpeg-armv7.gz'), gz);
+  F._config({ base: base + '/nowhere/', sums: { armv7: sum }, bundle: bdir });
+  st = await status();
+  ok('bundled: status says so, not on the TV yet', st.state === 'none' && st.bundled === true, st);
+  hits = [];
+  F.prepare(0);
+  ok('bundled: the helper unpacks it by itself soon after it starts', await (async () => { for (let i = 0; i < 40; i++) { if (F.binary()) return true; await new Promise((r) => setTimeout(r, 50)); } return false; })(), F.binary());
+  st = await status();
+  ok('...ready, marked built in, nothing downloaded', st.state === 'ready' && st.bundled === true && hits.length === 0, [st, hits]);
+  ok('...the same program as a download would give', fs.readFileSync(F.binary(), 'utf8') === fake);
+  fs.writeFileSync(path.join(bdir, 'tivibro-ffmpeg-armv7.gz'), broken);
+  await new Promise((resolve) => F.remove(resolve));
+  r = await get();
+  ok('a bundled file that does not match its SHA-256 is thrown away too', r.e && /did not match/.test(r.e.message) && !F.binary(), r.e && r.e.message);
 
   server.close();
   fs.rmSync(tmp, { recursive: true, force: true });

@@ -917,12 +917,12 @@ var Player = (function () {
     }
     if (r && r.conv) useConv(r.conv, r.notice);
     else if (r && r.track != null) {
-      cur.badTracks = r.bad; cur.probe = { tracks: r.tracks, dur: r.dur || 0 };
+      cur.badTracks = r.bad; cur.probe = { tracks: r.tracks, dur: r.dur || 0, video: r.video || '' };
       var t = r.tracks[r.track] || {};
       // The TV's player switches tracks itself where it can; without that, the helper copies just
       // that track into a stream (no conversion, nearly no work).
       if (video && video.audioTracks) cur.preferTrack = r.track;
-      else useConv({ src: cur.url, a: r.track, fmt: 'mkv', codec: t.codec, channels: t.channels || 0, tracks: r.tracks, bad: r.bad, dur: r.dur || 0 }, '');
+      else useConv({ src: cur.url, a: r.track, fmt: Convert.fmtFor(r.video), codec: t.codec, channels: t.channels || 0, tracks: r.tracks, bad: r.bad, dur: r.dur || 0 }, '');
     }
     start(my);
   }
@@ -1113,7 +1113,7 @@ var Player = (function () {
       // A track this TV can't play, picked by hand: convert it (when the converter is there).
       if (cur && !cur.conv && cur.badTracks && cur.badTracks[i] && cur.probe && window.Convert && Convert.key) {
         var t = cur.probe.tracks[i] || {};
-        useConv({ src: cur.origUrl || cur.url, a: i, fmt: 'mkv', codec: t.codec, channels: t.channels || 0, tracks: cur.probe.tracks, bad: cur.badTracks, dur: cur.probe.dur }, 'Converting ' + (Convert.NAMES[t.codec] || t.codec) + ' audio for this TV');
+        useConv({ src: cur.origUrl || cur.url, a: i, fmt: Convert.fmtFor(cur.probe.video), codec: t.codec, channels: t.channels || 0, tracks: cur.probe.tracks, bad: cur.badTracks, dur: cur.probe.dur }, 'Converting ' + (Convert.NAMES[t.codec] || t.codec) + ' audio for this TV');
         cur.startAt = Math.max(0.1, position()); cur.retries = 0;
         return start(token);
       }

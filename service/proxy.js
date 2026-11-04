@@ -91,6 +91,7 @@ function log(entry) {
 }
 
 Ffmpeg.setLog(log);
+Ffmpeg.prepare();                         // a release carries the converter: onto the TV's storage, no download
 
 function target(reqUrl) {
   var m = /^\/x\/(https?)\/([^/?#]+)(\/[^?#]*)?(\?[^#]*)?/.exec(reqUrl);

@@ -98,7 +98,9 @@ function args(o) {
   var a = ['-hide_banner', '-nostdin', '-loglevel', 'error', '-stats', '-stats_period', '5'];
   var t = o.t > 0 ? String(Math.round(o.t * 1000) / 1000) : '';
   if (!o.pipe) a.push('-protocol_whitelist', 'http,tcp');
-  if (t && !o.pipe) a.push('-ss', t);                 // before -i: ffmpeg asks the server for that part (Range)
+  // Before -i: ffmpeg asks the server for that part (Range).  -noaccurate_seek: the sound starts at the
+  // same keyframe as the picture (the picture can only start on one), not up to a few seconds after it.
+  if (t && !o.pipe) a.push('-noaccurate_seek', '-ss', t);
   a.push('-i', o.pipe ? 'pipe:0' : o.input);
   if (t && o.pipe) a.push('-ss', t);                  // from a pipe: read and drop up to t
   // Movies keep their own times (a seek to 1:00:00 starts the stream at 1:00:00, see app/js/player.js).

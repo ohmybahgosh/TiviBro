@@ -18,6 +18,7 @@ cp "$ROOT/app/js/vodview.js" "$ROOT/service/editor/vodview.js"   # the helper ke
 cp "$ROOT/app/js/plshape.js" "$ROOT/service/editor/plshape.js"   # the helper shapes the channel list (service/live.js)
 rm -rf "$ROOT/service/guide-data" "$ROOT/service/power.json" "$ROOT/service/reminders.json" "$ROOT/service/helper-errors.json" "$ROOT/service/companion.json" "$ROOT/service/companion.json.tmp" "$ROOT"/service/alert-*.json                                # guides stored by a dev relay: not for the package     # the helper's guide reader matches with it
 cp "$ROOT/app/img/tmdb.svg" "$ROOT/service/editor/tmdb.svg"          # the web editor's TMDB credit (My media)
+bash "$ROOT/scripts/ffmpeg/bundle.sh"                              # the audio converter rides along (docs/FFMPEG.md)
 mkdir -p "$ROOT/dist"
 echo "Packaging $APP_ID $VERSION ${MIN:+(dev, unminified)}"
 ares ares-package $MIN -o "$ROOT/dist" "$ROOT/app" "$ROOT/service"

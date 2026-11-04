@@ -1,6 +1,6 @@
 # ffmpeg for audio conversion
 
-TiviBro's network helper can download a tiny, fully static ffmpeg to the TV and use it to convert audio the TV can't decode.  Video is always stream-copied, never decoded or re-encoded, so the TV's hardware video decoder still does the heavy lifting and the CPU cost stays low.
+TiviBro carries a tiny, fully static ffmpeg in its package (or, in a build without it, downloads it to the TV) and use it to convert audio the TV can't decode.  Video is always stream-copied, never decoded or re-encoded, so the TV's hardware video decoder still does the heavy lifting and the CPU cost stays low.
 
 The binary is not part of the `.ipk`.  It lives in its own GitHub pre-release, built by `.github/workflows/ffmpeg.yml` from `scripts/ffmpeg/build.sh`, and the helper fetches it only when a stream needs it.
 
@@ -59,7 +59,7 @@ DNS comes from musl's resolver, which reads `/etc/resolv.conf` directly.  If a T
 
 **Finding it.**  `TIVIBRO_FFMPEG=<path>` uses that program (tests, the dev helper on a computer).  Otherwise it is `Storage.sub('bin')/ffmpeg-7.1-tb1-<arch>`: the helper's private folder on the TV's big app storage (exec allowed, `nosuid`), never memory (`/tmp`).  The arch is `armv7` unless the helper's own Node is a 64-bit ARM program (`process.arch === 'arm64'`); `uname -m` only confirms the TV is ARM, since a C2 reports `aarch64` with a 32-bit userland.
 
-**Getting it.**  On first need (the app offers it once) or from **Settings > Playback > Get the converter now**, the helper downloads `tivibro-ffmpeg-<arch>.gz` (following GitHub's redirect, retrying once with the bundled root certificates on old TVs), checks its SHA-256 against the constant in `service/ffmpeg.js`, unpacks it with Node's zlib, `chmod 700`s it, runs `-version`, and only then renames it into place and deletes older `ffmpeg-*` files.  A hash that doesn't match, or a placeholder hash, means nothing is unpacked or run.
+**Getting it.**  Release packages carry both `.gz` builds in `service/ffmpeg-bundle/` (`scripts/ffmpeg/bundle.sh`, run by `scripts/build.sh`, downloads them from the release in `TAG`, checks them against `SHA256` and adds the licences and `SOURCE.txt`; `TIVIBRO_NO_FFMPEG_BUNDLE=1` leaves them out).  Five seconds after the helper starts it unpacks the one for this TV the same way a download is handled below, with no question asked.  Without a bundle, on first need (the app asks) or from **Settings > Playback > Get the converter now**, the helper downloads `tivibro-ffmpeg-<arch>.gz` (following GitHub's redirect, retrying once with the bundled root certificates on old TVs), checks its SHA-256 against the constant in `service/ffmpeg.js`, unpacks it with Node's zlib, `chmod 700`s it, runs `-version`, and only then renames it into place and deletes older `ffmpeg-*` files.  A hash that doesn't match, or a placeholder hash, means nothing is unpacked or run.
 
 **The release constants** live in one place, at the top of `service/ffmpeg.js`: `TAG` (`ffmpeg-7.1-tb1`) and `SHA256.armv7` / `SHA256.aarch64` (the SHA-256 of the `.gz` files, as in `SHA256SUMS`).  Until they are filled in they read `TODO-SHA256-ARMV7` and `TODO-SHA256-AARCH64`, and the helper refuses to download.  A new `tbN` tag means updating `TAG` and both hashes together.
 
@@ -114,7 +114,7 @@ Building with `ENABLE_TLS=0` drops https and saves roughly 0.3 MB; the helper wo
 
 This is an LGPL build: configure runs without `--enable-gpl` and without `--enable-nonfree`, so no GPL or nonfree code is included.  mbedTLS (Apache-2.0) is only allowed by ffmpeg under the LGPL **version 3**, so the build uses `--enable-version3` and the binary as a whole is LGPL v3 or later.  The workflow checks the built binary's `-buildconf` for `--enable-gpl` and `--enable-nonfree` and fails if either appears.
 
-It ships as a separate download, not inside the TiviBro package, with its licenses and `SOURCE.txt` in the same release.  To get the exact source:
+It is published as its own release, with its licenses and `SOURCE.txt`, and TiviBro's package carries the same files in `service/ffmpeg-bundle/` (on the TV: the helper's folder).  ffmpeg stays a separate program that TiviBro runs, not linked into it.  To get the exact source:
 
 1. Read the ffmpeg version, tarball URL and SHA-256 from `SOURCE.txt` (for 7.1.1: `https://ffmpeg.org/releases/ffmpeg-7.1.1.tar.xz`).  The mbedTLS tarball URL and SHA-256 are listed there too.
 2. The build script and workflow are in this repository at `scripts/ffmpeg/build.sh` and `.github/workflows/ffmpeg.yml`, at the commit named in `SOURCE.txt`.  ffmpeg is built unmodified.

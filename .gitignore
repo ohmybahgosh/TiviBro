@@ -7,6 +7,7 @@ _unpack/
 .superpowers/
 
 # build output and local releases
+service/ffmpeg-bundle/
 dist/
 releases/
 *.ipk
