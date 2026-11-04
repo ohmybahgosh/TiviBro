@@ -41,15 +41,15 @@ var Settings = (function () {
     var s = S(), out = [];
     var P = Player.PRESETS;
     out.push(choice('Buffer profile',
-      'How much video to hold before and during playback.  More buffer means fewer freezes on shaky streams, but channels take a little longer to start.',
+      'How much video to hold before and during playback.  More buffer means fewer freezes on shaky streams, but channels take a little longer to start.  A live channel only banks what the provider sends ahead of real time, often 10 to 40 seconds, so the bigger profiles mostly start safer rather than hold more.  Buffer info shows the most a channel has reached.',
       ['low', 'balanced', 'stable', 'max', 'custom'], [P.low.label, P.balanced.label, P.stable.label, P.max.label, 'Custom'],
       function () { return s.buffer; }, function (v) { s.buffer = v; save(true); }));
     var cur = s.buffer === 'custom' ? null : P[s.buffer];
-    if (cur) out.push(info('Profile details', 'starts at ' + cur.prebuffer + 's, holds ' + cur.ahead + 's, refills to ' + Math.max(2, cur.prebuffer * 1.5) + 's'));
+    if (cur) out.push(info('Profile details', 'starts at ' + cur.prebuffer + 's, holds up to ' + cur.ahead + 's, refills to ' + Math.max(2, cur.prebuffer * 1.5) + 's'));
     if (s.buffer === 'custom') {
       var c = s.custom;
       out.push(choice('Start-up buffer', 'Seconds buffered before a channel starts playing.', [0.5, 1, 2, 3, 4, 6, 8, 10, 15], ['0.5s', '1s', '2s', '3s', '4s', '6s', '8s', '10s', '15s'], function () { return +c.prebuffer; }, function (v) { c.prebuffer = v; save(); }));
-      out.push(choice('Read-ahead', 'How far ahead the player downloads while playing.', [10, 20, 30, 45, 60, 90, 120], ['10s', '20s', '30s', '45s', '60s', '90s', '120s'], function () { return +c.ahead; }, function (v) { c.ahead = v; save(); }));
+      out.push(choice('Read-ahead', 'The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.', [10, 20, 30, 45, 60, 90, 120], ['10s', '20s', '30s', '45s', '60s', '90s', '120s'], function () { return +c.ahead; }, function (v) { c.ahead = v; save(); }));
       out.push(choice('Keep behind playhead', 'Lower saves TV memory on long sessions.', [2, 4, 8, 12, 20, 30], ['2s', '4s', '8s', '12s', '20s', '30s'], function () { return +c.back; }, function (v) { c.back = v; save(); }));
       out.push(choice('Freeze detection', 'How long a frozen picture is tolerated before the player recovers it.', [3, 4, 6, 8, 10, 15, 20], ['3s', '4s', '6s', '8s', '10s', '15s', '20s'], function () { return +c.stall; }, function (v) { c.stall = v; save(); }));
       out.push(choice('Reconnect attempts', 'Tries before giving up on a channel.  The budget resets after 30 seconds of clean playback.', [3, 5, 8, 12, 20, 50], ['3', '5', '8', '12', '20', '50'], function () { return +c.retries; }, function (v) { c.retries = v; save(); }));

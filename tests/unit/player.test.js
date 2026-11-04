@@ -273,6 +273,14 @@ t.last().h.err('NetworkError', 'EarlyEof', {});
 t.run(1000);
 ok('catch-up reconnect asks for the right offset', /timeshift\/(1[89]|20)\.ts$/.test(t.last().src.url), t.last().src.url);
 
+// ---- the most a stream has held, for buffer info (#44): live channels bank less than the profile allows ----
+t = setup();
+t.P.play({ n: 'Most', url: 'http://p/live/u/p/30.ts' });
+t.feed(0, 12); t.run(2500);
+ok('buffer info knows the most held so far', t.P.stats && t.P.stats.most >= 11 && t.P.stats.cap === 30, JSON.stringify(t.P.stats));
+t.video.currentTime = 10; t.run(600);
+ok('and keeps the most, not the latest', t.P.stats.most >= 11 && t.P.stats.ahead < 3, t.P.stats.most + ' / ' + t.P.stats.ahead);
+
 // ---- sloppy streams: a growing cushion, quick reconnect when data stops, timestamp jumps ----
 t = setup();
 t.P.play({ n: 'Sloppy', url: 'http://p/live/u/p/20.ts' });

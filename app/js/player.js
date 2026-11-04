@@ -652,8 +652,11 @@ var Player = (function () {
     var goal = refillGoal();
     var endNow = bufferEnd();
     if (endNow > (st.growEnd || 0) + 0.05) { st.growEnd = endNow; st.growAt = now; } else if (endNow < (st.growEnd || 0) - 1) { st.growEnd = endNow; st.growAt = now; }
+    // The most this stream has held: a live channel only banks what the provider sends ahead of real time
+    // (often well under the profile's read-ahead), so buffer info shows what this one really reaches.
+    if (st.started && ahead > (st.most || 0)) st.most = ahead;
     emit('stats', lastStats = { ahead: ahead, target: st.started ? goal : p.prebuffer, cushion: cur.boost || 0, engine: eng ? eng.name : '', info: eng ? eng.info() : '',
-      res: video.videoHeight ? video.videoHeight + 'p' : '', state: st.state });
+      res: video.videoHeight ? video.videoHeight + 'p' : '', state: st.state, most: st.most || 0, cap: p.ahead });
 
     // 1. Prebuffer before the first frame.
     if (!st.started) {

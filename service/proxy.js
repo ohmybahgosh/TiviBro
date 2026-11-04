@@ -27,6 +27,7 @@ var Live = require('./live');
 var Media = require('./media');
 var Convert = require('./convert');
 var Ffmpeg = require('./ffmpeg');
+var Pace = require('./pace');
 
 /* DNS answers kept for a minute.  Node asks the system for every new connection, and each channel
    start (and each redirect to a provider's streaming server) is a new connection; on a TV with a
@@ -139,6 +140,7 @@ function sameText(a, b) {
 }
 
 function create(opts) {
+  var pace = Pace.create();            // image hosts that said 429 (pace.js)
   opts = opts || {};
   var stats = { requests: 0, errors: 0, active: 0 };
   var agentHttp = new http.Agent({ keepAlive: true, maxSockets: 16 });
@@ -208,9 +210,25 @@ function create(opts) {
       // the forgiving reader in rawhttp.js instead, see onUpError.
       insecureHTTPParser: true, lookup: cachedLookup
     };
-    var up = lib.request(reqOpts, onResponse), triedRaw = false, reading = false;
+    var up = null, triedRaw = false, reading = false, retried429 = false;
+    // Images from a host that said "too many requests" wait their turn (pace.js, issue #45).
+    var img = req.method !== 'HEAD' && pace.isImage(u.pathname), host = u.host;
+    function send() {
+      if (aborted) return finish();
+      up = lib.request(reqOpts, onResponse);
+      up.setTimeout(opts.timeout || 30000, onTimeout);
+      up.on('error', onUpError);
+      up.end();
+    }
     function onResponse(ur) {
       var code = ur.statusCode || 502;
+      // An image the host turned away for asking too often: wait as long as it asks, then ask once more.
+      if (code === 429 && img && !retried429 && !aborted) {
+        retried429 = true; ur.resume();
+        rec.waited = pace.backoff(host, ur.headers['retry-after']);
+        pace.wait(host, true, send);
+        return;
+      }
       /* A movie being read with Range (the TV's player always asks that way) goes quiet for as long as
          the viewer pauses: the player stops reading, so the provider stops sending.  That is not a dead
          server, and cutting it after 30 s made a paused movie fail on play (issue #34).  The player's
@@ -307,11 +325,10 @@ function create(opts) {
       if (!res.headersSent) { res.writeHead(502, Object.assign({ 'Content-Type': 'text/plain' }, ALLOW)); res.end('relay error: ' + e.message); }
       else res.destroy();
     }
-    up.setTimeout(opts.timeout || 30000, onTimeout);
-    up.on('error', onUpError);
     // Viewer zapped away: stop pulling the stream from the provider at once.
-    req.on('close', function () { if (!res.writableEnded && !res.finished) { aborted = true; up.destroy(); } finish(); });
-    up.end();
+    req.on('close', function () { if (!res.writableEnded && !res.finished) { aborted = true; if (up) up.destroy(); } finish(); });
+    var held = pace.wait(host, img, send);
+    if (held) rec.paced = held;
   });
   server.keepAliveTimeout = 30000;
   server.on('close', function () { editor.stop(); });

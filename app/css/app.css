@@ -123,7 +123,7 @@ body.full .vid-error{left:50%;right:auto;bottom:auto;top:40%;transform:translate
 .meter.low .meter-track i{background:var(--warn)}
 .meter.crit .meter-track i{background:var(--air)}
 .meter-res,.meter-rate{flex:none;overflow:hidden;text-overflow:ellipsis;border-left:1px solid rgba(255,255,255,.16);padding:0 14px}
-.meter-res{width:180px;margin-left:16px;text-align:center}
+.meter-res{width:260px;margin-left:16px;text-align:center}
 .meter-rate{width:156px;text-align:right}
 body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 

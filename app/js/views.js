@@ -98,12 +98,23 @@ var Views = (function () {
     if (lib === 'all') return Logos.url(c) || ownLogo(c);
     return ownLogo(c) || (lib === 'fill' ? Logos.url(c) : '');
   }
-  // A logo that fails to load: try the helper, then the library's logo, then hide it.
+  // A logo that fails to load: try the helper, then the library's logo, then hide it.  A hidden one is asked
+  // for once more a minute later: a logo host that said "too many requests" (HTTP 429) usually answers by then,
+  // and the helper paces its images meanwhile (service/pace.js).
   function logoFailed(img, c) {
     if (Net.retryImage(img)) return;
     var alt = c && Logos.mode() !== 'off' ? Logos.url(c) : '';
     if (alt && img._alt !== alt && img.src !== alt) { img._alt = alt; img.src = alt; return; }
     img.style.visibility = 'hidden';
+    var src = img.src;
+    if (!src || img._again === src) return;
+    img._again = src;
+    setTimeout(function () {
+      if (img.src !== src || img.style.visibility !== 'hidden') return;   // the row shows another channel now
+      img.style.visibility = 'visible';
+      img.removeAttribute('src');
+      img.src = src;
+    }, 60000);
   }
 
   function renderChan(row, c) {
@@ -1230,7 +1241,8 @@ var Views = (function () {
     meter.classList.toggle('crit', crit);
     var secs = x.ahead.toFixed(1) + 's';
     if (mSecs.textContent !== secs) { mSecs.textContent = secs; mSecsIn.textContent = secs; }
-    mRes.textContent = [x.res, x.engine].filter(Boolean).join('  ');
+    // "most 34s": how far this stream has got, so a buffer that never reaches the profile's read-ahead shows why.
+    mRes.textContent = [x.res, x.engine, x.most >= 1 ? 'most ' + Math.round(x.most) + 's' : ''].filter(Boolean).join('  ');
     mRate.textContent = x.info || '';
     // The TV player never says its speed: no empty box for it.
     mRate.classList.toggle('hidden', !x.info && x.engine === 'Native');

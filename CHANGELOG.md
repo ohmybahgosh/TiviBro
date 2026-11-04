@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Logos from a busy host fill in.**  Channel logos are often all on one free host, and a guide full of them asked for dozens at once: the host turned most away ("too many requests") and they stayed blank (#45).  The helper now waits as long as the host asks, sends that host's logos one at a time for a minute, and asks for each turned-away logo once more; a logo still missing is tried again a minute later.  Streams are never held back.
+- **Buffer settings say what a live channel can really hold** (#44, thanks ich0x).  A live channel only banks what the provider sends ahead of real time, often 10 to 40 seconds, whatever the profile allows.  The profile help and **Read-ahead** now say so, **Profile details** says "holds up to", and buffer info shows the most this channel has reached (*most 34s*).
+
 ## 0.6.0 (alpha 77, 2026-11-04)
 
 Pre-release: expect rough edges, and keep a backup before installing.
