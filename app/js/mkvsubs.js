@@ -142,7 +142,7 @@ var MkvSubs = (function () {
           var vstart = csz.next, vend = Math.min(vstart + csz.value, cend);
           if (cidr.value === CUETIME) cueTime = bytesToUint(buf, vstart, vend);
           else if (cidr.value === CUETRACKPOSITIONS) {
-            var track = null, clusterPos = null, relativePos = null;
+            var track = null, clusterPos = null, relativePos = null, duration = null;
             var q = vstart;
             while (q < vend) {
               var qidr = readId(buf, q);
@@ -153,11 +153,13 @@ var MkvSubs = (function () {
               if (qidr.value === CUETRACK) track = bytesToUint(buf, qvstart, qvend);
               else if (qidr.value === CUECLUSTERPOSITION) clusterPos = bytesToUint(buf, qvstart, qvend);
               else if (qidr.value === 0xF0) relativePos = bytesToUint(buf, qvstart, qvend);
+              else if (qidr.value === 0xB2) duration = bytesToUint(buf, qvstart, qvend);   // CueDuration
               q = qvend;
             }
             if (track === trackNumber && clusterPos !== null) {
               var cue = { timeSec: cueTime * timecodeScale / 1e9, clusterPos: clusterPos };
               if (relativePos !== null) cue.relativePos = relativePos;
+              if (duration !== null) cue.endSec = (cueTime + duration) * timecodeScale / 1e9;
               cues.push(cue);
             }
           }
@@ -284,28 +286,6 @@ var MkvSubs = (function () {
     return null;
   }
 
-  // Reconnects restart extraction from scratch, and a resumed/seeked movie can be far
-  // into the file -- fetching clusters in file-chronological order would mean subtitles
-  // near "now" only show up after crawling through everything before them.  Order by
-  // distance from the current playback position instead, nearest first, so whatever's
-  // about to be seen populates before anything else.  Dedupes (several cues can share
-  // one cluster), keeping each cluster's first (nearest) occurrence.
-  function clusterFetchOrder(perTrackCues, currentTimeSec, segmentDataStart) {
-    var best = {}; // absolute cluster offset -> smallest distance seen for it
-    for (var i = 0; i < perTrackCues.length; i++) {
-      var cues = perTrackCues[i].cues;
-      for (var j = 0; j < cues.length; j++) {
-        var abs = segmentDataStart + cues[j].clusterPos;
-        var dist = Math.abs(cues[j].timeSec - currentTimeSec);
-        if (!(abs in best) || dist < best[abs]) best[abs] = dist;
-      }
-    }
-    var offsets = [];
-    for (var key in best) offsets.push(+key);
-    offsets.sort(function (a, b) { return best[a] - best[b]; });
-    return offsets;
-  }
-
   // MKV Language tags are raw codes ('dut', 'nl', 'nld' all mean Dutch) -- U.lang()
   // normalizes any of them to the 2-letter code; this looks up the display name the
   // same way settings.js's local langName() does for the same U.LANGS table.
@@ -422,6 +402,7 @@ var MkvSubs = (function () {
   var MKV = {
     id: 'mkv',
     headBytes: 262144,
+    lazy: true,                         // only the tracks being shown, or Line up's reference, are read
     get startupDelayMs() { return startupDelayMs; },
     discover: function (head, range, rec, alive) {
       if (head.length < 4 || head[0] !== 0x1A || head[1] !== 0x45 || head[2] !== 0xDF || head[3] !== 0xA3) return Promise.resolve(null);
@@ -483,21 +464,48 @@ var MkvSubs = (function () {
       }
       return meta;
     },
-    // Reads the subtitle blocks near the playing position, cluster by cluster, from the file's index.
-    candidates: function (rec, now) {
-      var ix = rec.index;
-      var nearby = ix.perTrackCues.map(function (t) {
-        return { cues: t.cues.filter(function (c) { return c.timeSec >= now - 30 && c.timeSec <= now + 60; }) };
-      });
-      return clusterFetchOrder(nearby, now, ix.segmentDataStart).filter(function (o) { return !rec.fetched[o]; })
-        .map(function (o) { return { id: o }; });
+    // Reads the shown tracks' blocks near the playing position (and Line up's window), cluster by
+    // cluster, from the file's index.  A file can carry dozens of languages, each with a block in every
+    // cluster: reading them all can't keep up with the picture, so a track is read only while it is
+    // asked for, as MP4 files are.  Fetched is kept per track and cluster ('track:offset').
+    candidates: function (rec, now, ctx) {
+      var ix = rec.index, byCluster = {}, items = [];
+      for (var i = 0; ctx && i < ix.perTrackCues.length; i++) {
+        var want = ctx.demand(i);
+        if (!want) continue;
+        // The windows are in shown time; the index is in the file's time.
+        var tm = ctx.timing(i) || { scale: 1, off: 0, delay: 0 }, scale = tm.scale > 0 ? tm.scale : 1, shift = (tm.off || 0) + (tm.delay || 0);
+        var wins = [].concat(want), here = (now - shift) / scale, cues = ix.perTrackCues[i].cues;
+        for (var w = 0; w < wins.length; w++) {
+          var from = wins[w] === 'now' ? now - 30 : wins[w].from, to = wins[w] === 'now' ? now + 60 : wins[w].to;
+          var a = (from - shift) / scale, b = (to - shift) / scale;
+          for (var c = 0; c < cues.length; c++) {
+            // A line overlapping the window counts (as for MP4), so one still on screen when its track
+            // is switched on is read too.  Without a CueDuration only the start is known: a line that
+            // started more than 30 s back is then left out (subtitle lines last seconds, not minutes).
+            var s0 = cues[c].timeSec, e0 = cues[c].endSec !== undefined ? cues[c].endSec : s0;
+            if (e0 < a || s0 > b) continue;
+            var abs = ix.segmentDataStart + cues[c].clusterPos, key = i + ':' + abs;
+            if (rec.fetched[key]) continue;
+            var it = byCluster[abs];
+            if (!it) { it = byCluster[abs] = { off: abs, tracks: [], keys: [], dist: Infinity }; items.push(it); }
+            if (it.keys.indexOf(key) < 0) { it.keys.push(key); it.tracks.push(i); }
+            it.dist = Math.min(it.dist, s0 > here ? s0 - here : e0 < here ? here - e0 : 0);
+          }
+        }
+      }
+      items.forEach(function (it) { it.id = it.off + ':' + it.tracks.join(','); });
+      return items.sort(function (x, y) { return x.dist - y.dist || x.off - y.off; });
     },
-    complete: function (rec, now) {
+    complete: function (rec) {
       var ix = rec.index;
-      return clusterFetchOrder(ix.perTrackCues, now, ix.segmentDataStart).every(function (o) { return rec.fetched[o]; });
+      return ix.perTrackCues.every(function (t, i) {
+        return t.cues.every(function (c) { return rec.fetched[i + ':' + (ix.segmentDataStart + c.clusterPos)]; });
+      });
     },
     read: function (rec, item, range, alive) {
-      var ix = rec.index, perTrackCues = ix.perTrackCues, off = item.id, positions = [], indexed = true;
+      var ix = rec.index, off = item.off, positions = [], indexed = true;
+      var perTrackCues = item.tracks.map(function (i) { return ix.perTrackCues[i]; });
       perTrackCues.forEach(function (t) { t.cues.forEach(function (c) {
         if (ix.segmentDataStart + c.clusterPos !== off) return;
         if (c.relativePos === undefined) indexed = false;
@@ -511,7 +519,7 @@ var MkvSubs = (function () {
             if (found[f].track !== perTrackCues[a].track.number) continue;
             var text = subtitleText(found[f].text, perTrackCues[a].track.codecId);
             if (!text.trim()) continue;
-            out.push({ track: a, s: found[f].startSec, e: found[f].endSec, text: text });
+            out.push({ track: item.tracks[a], s: found[f].startSec, e: found[f].endSec, text: text });
           }
         }
         return out;
@@ -532,7 +540,7 @@ var MkvSubs = (function () {
     readCuesForTrack: readCuesForTrack,
     readClusterBlocks: readClusterBlocks,
     readSparseCluster: readSparseCluster,
-    clusterFetchOrder: clusterFetchOrder,
+    MKV: MKV,
     extract: extract,
     get startupDelayMs() { return startupDelayMs; },
     set startupDelayMs(v) { startupDelayMs = v; }

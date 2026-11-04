@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **MKV subtitles keep up in movies with many languages.**  Only the subtitles you are watching are read from the file, as for MP4 files, so a movie with dozens of subtitle languages no longer shows its lines late or not at all.  A language you switch to is read as you pick it.
 - **What's new no longer gets skipped.**  A start that reloaded at once (the TV's helper was slow to answer) marked the new version as seen before the list could show, so the next start skipped it.  It now counts as seen only once it has shown, it waits for a quiet moment (not while a channel is starting or you are pressing buttons), and the list leaves out the release's own heading and the changelog link, on the TV and in the phone app.
 
 ## 0.6.0 (alpha 79, 2026-11-04)

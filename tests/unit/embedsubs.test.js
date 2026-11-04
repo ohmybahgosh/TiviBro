@@ -707,7 +707,10 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     const v = makeVideo();
     const h = MkvSubs.extract('http://p/movie/utf8.mkv', v, () => {});
     await wait(80);
-    const c = v.children[0] && v.children[0].track.cues[0];
+    // MKV tracks are read only while shown.
+    if (v.children[0]) { v.children[0].track.mode = 'showing'; (v.listeners.timeupdate || []).forEach(f => f()); }
+    await wait(80);
+    const c =v.children[0] && v.children[0].track.cues[0];
     ok('MKV cue text "Café 日本" decodes without TextDecoder', c && c.text === 'Café 日本', c && c.text);
     h.cancel();
   }
