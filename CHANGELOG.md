@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 78, 2026-11-04)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 78
 
 - **Live channels start faster, and learn.**  The new **Automatic** buffer profile (now the default; one picked by hand is kept) learns from each provider as you watch.  It starts like Balanced, then a provider whose channels hardly ever run dry starts channels at 0.8 s instead of 2 s (about a second sooner on a provider without a head start), and a shaky one gets a bigger cushion from the start.  **Settings > Playback > Profile details** shows what it learned.
 - **Each channel remembers what it needed, across restarts.**  A channel that only plays as HLS or on the TV's player starts that way at once instead of spending seconds on the others first, and a channel that ran dry keeps the bigger cushion it earned.
@@ -9,11 +13,7 @@
 - **Logos from a busy host fill in.**  Channel logos are often all on one free host, and a guide full of them asked for dozens at once: the host turned most away ("too many requests") and they stayed blank (#45).  The helper now waits as long as the host asks, sends that host's logos one at a time for a minute, and asks for each turned-away logo once more; a logo still missing is tried again a minute later.  Streams are never held back.
 - **Buffer settings say what a live channel can really hold** (#44, thanks ich0x).  A live channel only banks what the provider sends ahead of real time, often 10 to 40 seconds, whatever the profile allows.  The profile help and **Read-ahead** now say so, **Profile details** says "holds up to", and buffer info shows the most this channel has reached (*most 34s*).
 
-## 0.6.0 (alpha 77, 2026-11-04)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 77
+### In alpha 77
 
 - **Seeing the TV come on over Bluetooth is more reliable.**  An LG TV advertises over Bluetooth in standby too, and counts each change of state in its advertisement.  The app now waits for that count to move on (as it did about ten seconds after a Turn on with the phone's Wi-Fi off) instead of guessing from when it first heard the TV, so a TV the phone hears late is no longer taken for one that just came on.
 
