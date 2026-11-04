@@ -1005,7 +1005,7 @@ The TiviBro app for Android is a remote and a second screen for this TV.  Pair a
   - Then **Restore** the new backup on the TV when you're ready.
 - **Add a playlist from a link**: in your provider's email or message, choose **Share**, then **TiviBro**.  The app says what it found (the password stays hidden), you pick the TV, and the TV checks the login and loads the channels.
 
-The app, the web editor and the TV share one colour scheme.  The app also turns the TV on (Wake-on-LAN) and has a Quick Settings tile that opens TiviBro on the TV.
+The app, the web editor and the TV share one colour scheme.  The app also turns the TV on (Wake-on-LAN and Bluetooth) and has a Quick Settings tile that opens TiviBro on the TV.
 
 To get it: [download the newest APK](https://tivibro.app/apk/) on your phone and open it to install (Android asks to allow installs from your browser the first time, and Google Play Protect checks each update).  Then choose **Pair the TiviBro app…** (it turns on **Phone app connection** if it's off) and scan the code with the app.
 
@@ -1018,6 +1018,8 @@ To get it: [download the newest APK](https://tivibro.app/apk/) on your phone and
 | **Address** | (information) | This TV's network address and the port the app uses (47810). |
 
 To turn the TV on from the phone, switch on **Turn on via Wi-Fi** in the TV's own settings (General, Devices, External devices, or Connection, depending on the model).
+
+**Turn on** also wakes the TV over Bluetooth, the way LG's ThinQ app does, at the same time as over the network.  This helps when the network alone doesn't wake it.  It needs the phone's Bluetooth on, **Turn on via Bluetooth** on the TV where the TV has it (next to **Turn on via Wi-Fi**), and on Android 12 and later the **Nearby devices** permission, which the app asks for the first time you press **Turn on**.  There is nothing else to set up: the app registers itself with the TV the next time it finds the TV on, and **Forget this TV** removes it again.  The Quick Settings tile uses Bluetooth too once it is allowed (it never asks).  If Bluetooth is off on the phone, the app says so and wakes the TV over the network only.
 
 **The web editor**
 

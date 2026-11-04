@@ -188,7 +188,14 @@ Promise.resolve(5).finally(() => order.push('f')).then(v => order.push(v))
       // remind.js treats a refused call as "don't know" and still checks the app in front.
       // tvpower/registerScreenSaverRequest and responseScreenSaverRequest (awake.js, issue #37) are open
       // to developer-mode apps without a group; a refusal is logged and playback carries on.
-      'luna://com.webos.service.tvpower'];
+      'luna://com.webos.service.tvpower',
+      // connectionmanager/getinfo (the built-in Wi-Fi and Ethernet cards, for Wake-on-LAN) and
+      // bluetooth2/adapter/getStatus (the TV's Bluetooth address, for waking it over Bluetooth) are read once
+      // for the phone app connection; a refusal leaves them out and the phone wakes the TV with what it has.
+      'luna://com.webos.service.connectionmanager', 'luna://com.webos.service.bluetooth2',
+      // asc (Wake on BLE registration, blewake.js): its methods are in the "public" group; a refusal is
+      // logged and the phone hears "not registered".
+      'luna://com.webos.service.asc'];
     luna.forEach(u => ok('Luna call has a known ACG: ' + u, known.some(k => u.indexOf(k) === 0)));
 
     console.log(fail ? fail + ' failures' : 'all compatibility tests passed');

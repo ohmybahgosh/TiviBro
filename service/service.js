@@ -87,15 +87,23 @@ var companion = require('./companion').create({
   sysinfo: function (cb) {
     lcall('luna://com.webos.service.tv.systemproperty/getSystemInfo', { keys: ['modelName', 'sdkVersion'] }, function (r) {
       var out = { model: r.modelName || '', webos: r.sdkVersion || '' };
-      lcall('luna://com.webos.settingsservice/getSystemSettings', { category: 'network', keys: ['deviceName', 'wolwowlOnOff'] }, function (n) {
+      lcall('luna://com.webos.settingsservice/getSystemSettings', { category: 'network', keys: ['deviceName', 'wolwowlOnOff', 'bleAdvertisingOnOff'] }, function (n) {
         out.name = (n.settings && n.settings.deviceName) || '';
         // "Turn on via Wi-Fi" (Mobile TV On): what lets the phone wake the TV.
         out.wol = n.settings && n.settings.wolwowlOnOff != null ? String(n.settings.wolwowlOnOff) === 'true' : null;
+        // Bluetooth advertising: what lets the phone wake the TV over Bluetooth (blewake.js).
+        out.woble = n.settings && n.settings.bleAdvertisingOnOff != null ? String(n.settings.bleAdvertisingOnOff) === 'on' : null;
         // The built-in Wi-Fi and Ethernet cards, for Wake-on-LAN even when another card (a USB adapter) is in use.
         lcall('luna://com.webos.service.connectionmanager/getinfo', {}, function (c) {
           out.macs = [c.wiredInfo, c.wifiInfo].map(function (x) { return x && x.macAddress ? String(x.macAddress).toLowerCase() : ''; }).filter(Boolean);
-          proxy.log({ lv: 'info', event: 'companion: this TV', model: out.model, webos: out.webos, name: out.name, wol: out.wol, cards: out.macs.length });
-          cb(out);
+          // The TV's own Bluetooth address, which the phone puts in its wake advertisement (as ThinQ does).
+          lcall('luna://com.webos.service.bluetooth2/adapter/getStatus', {}, function (b) {
+            var ad = Array.isArray(b.adapters) && b.adapters[0], bt = String(ad && ad.adapterAddress || '').toLowerCase();
+            out.bt = /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/.test(bt) ? bt : '';
+            proxy.log({ lv: 'info', event: 'companion: this TV', model: out.model, webos: out.webos, name: out.name, wol: out.wol, cards: out.macs.length,
+              bt: !!out.bt, woble: out.woble, btError: b.returnValue === false ? (b.errorText || b.errorCode) : undefined });
+            cb(out);
+          });
         });
       });
     });
@@ -118,6 +126,8 @@ var companion = require('./companion').create({
     }
     lcall(A + (dir === 'up' ? 'volumeUp' : 'volumeDown'), {}, function (r) { if (r.returnValue === false) return cb(new Error(r.errorText || 'refused')); read(); });
   },
+  // Wake on BLE: the phone's made-up Bluetooth address, registered with the TV's asc service (blewake.js).
+  blewake: require('./blewake').create({ call: lcall, log: function (o) { proxy.log(o); } }).handle,
   editor: function () { return relay ? relay.editor : null; },
   onSwitch: function (on) { if (on) { hold(); wake(true); } else { wake(false); if (!subs) release(); } }
 });

@@ -93,20 +93,23 @@ function ips() {
 
 /* opts: dir (where companion.json lives), log, version,
    launch(params, cb(err)): open TiviBro,
-   sysinfo(cb({ model, webos, name })): what the TV says about itself (best effort),
+   sysinfo(cb({ model, webos, name, wol, macs, bt, woble })): what the TV says about itself (best effort),
    app(): { open, visible }: is TiviBro running and on screen,
    editor(): the running web editor (editor.js instance) or null,
+   volume(dir, cb(err, { level, muted })): the TV's own volume,
+   blewake(request, cb(err, answer)): Wake on BLE registration (blewake.js), answered with TiviBro closed,
    onChange(): the state changed (pairing done, phone removed). */
 function create(opts) {
   opts = opts || {};
   var log = opts.log || function () {};
   var FILE = path.join(opts.dir || __dirname, 'companion.json');
   var st = load();
-  var server = null, udp = null, port = 0, pairing = null, nonces = {}, fails = {}, sys = null, wantEditor = 0, udpCount = { t: 0, n: 0 };
+  var server = null, udp = null, port = 0, pairing = null, nonces = {}, fails = {}, sys = null, sysAt = 0, wantEditor = 0, udpCount = { t: 0, n: 0 };
   /* The remote and Play on TV (phase 2).  Phones queue commands, which TiviBro on the TV picks up with
      a long poll (/companion/next) and carries out; TiviBro sends what it is playing (/companion/state)
      and, when a phone asks, its channel list (/companion/lineup).  Phones wait for changes with a
-     long poll too (/v1/state).  Volume goes straight to the TV, with or without TiviBro. */
+     long poll too (/v1/state).  Volume goes straight to the TV, with or without TiviBro, and so does
+     registering the phone to turn the TV on over Bluetooth (/v1/blewake, blewake.js). */
   var asks = {};                       // command id -> a phone waiting for TiviBro's answer (/v1/ask)
   /* Is TiviBro busy?  It waits here for commands between jobs; when it hasn't come back for a while
      (loading a huge playlist, applying a big clean-up), phones are told, so the app can say so instead
@@ -243,8 +246,15 @@ function create(opts) {
     cb(p, key, nonce);
   }
 
+  // What the TV says about itself, asked again now and then (a setting changed, Bluetooth was not ready at start).
+  function readSys() {
+    if (!opts.sysinfo) return;
+    sysAt = Date.now();
+    opts.sysinfo(function (s) { sys = s || {}; });
+  }
   function info(p) {
     var a = ips(), app = opts.app ? opts.app() : {}, ed = opts.editor && opts.editor();
+    if (Date.now() - sysAt > 5 * 60000) readSys();
     return {
       ok: true, app: 'TiviBro', api: API, id: st.id, name: tvName(), version: version(),
       model: sys && sys.model || '', webos: sys && sys.webos || '',
@@ -252,6 +262,9 @@ function create(opts) {
       // Every card above, built-in Wi-Fi and Ethernet too (LG's ThinQ app wakes both): a TV on a USB Ethernet
       // adapter answers from the adapter, which has no power while the TV is off.  wol: Turn on via Wi-Fi.
       wol: sys && sys.wol != null ? sys.wol : undefined,
+      // Wake on BLE (blewake.js): the TV's Bluetooth address, and whether its Bluetooth advertising setting is on.
+      bt: sys && sys.bt || undefined,
+      woble: sys && sys.woble != null ? sys.woble : undefined,
       ips: a.map(function (x) { return x.ip; }), port: port,
       tivibro: { open: !!app.open, visible: !!app.visible, editor: !!(ed && ed.status().running) },
       phone: phoneView(p), now: Date.now()
@@ -376,6 +389,16 @@ function create(opts) {
     });
   }
 
+  // Wake on BLE: register, check or remove this phone's Bluetooth wake address (blewake.js).  TiviBro may be closed.
+  function blewake(j, p, reply) {
+    if (!opts.blewake) return reply(501, { error: 'This TV can\'t be turned on over Bluetooth from here.', code: 'blewake' });
+    opts.blewake(j || {}, function (e, r) {
+      if (e) return reply(400, { error: e.message, code: 'bad' });
+      log({ lv: 'info', event: 'companion: blewake ' + j.op, phone: p.name, result: r });
+      reply(200, Object.assign({ ok: true }, r));
+    });
+  }
+
   function lan(req, res) {
     var u = req.url.split('#')[0], pathOnly = u.split('?')[0], who = String(req.socket.remoteAddress || '?').replace(/^::ffff:/, '');
     if (req.method === 'OPTIONS') return send(res, 204, {});
@@ -404,6 +427,7 @@ function create(opts) {
         if (pathOnly === '/v1/lineup' && req.method === 'GET') return phoneLineup(u, reply);
         if (/^\/v1\/(key|action|play|text)$/.test(pathOnly) && req.method === 'POST') return phoneCommand(pathOnly, buf, p, reply);
         if (pathOnly === '/v1/volume' && req.method === 'POST') return volume((parse(buf) || {}).dir, reply);
+        if (pathOnly === '/v1/blewake' && req.method === 'POST') return blewake(parse(buf), p, reply);
         if (pathOnly === '/v1/forget' && req.method === 'POST') {
           st.phones = st.phones.filter(function (x) { return x.id !== p.id; }); save(); changed();
           log({ lv: 'info', event: 'companion: phone removed itself', phone: p.name });
@@ -446,7 +470,7 @@ function create(opts) {
     cb = cb || function () {};
     if (!st.on) return cb(null, status());
     if (server) return cb(null, status());
-    if (opts.sysinfo && !sys) opts.sysinfo(function (s) { sys = s || {}; });
+    if (!sys) readSys();
     listen(0, function (e) {
       if (e) { log({ lv: 'error', event: 'companion could not start', e: e.message }); return cb(e); }
       startUdp();

@@ -1,14 +1,18 @@
 /* The app's single activity: opens pairing links (tivibro://pair and https://tivibro.app/pair from the TV's
    QR code), catches the Dropbox sign-in's return (https://tivibro.app/dropbox, or tivibro://dropbox from that
    page's button) and shows the Dropbox folder picker, takes a provider's link shared to TiviBro (Share, then
-   TiviBro), runs the code scanner, starts the weekly backups, and moves between the screens (home, add a TV, type the code, one TV on any of its
+   TiviBro), runs the code scanner, asks for the Bluetooth permission the first time Turn on is used (to wake the
+   TV over Bluetooth, ble/BleWaker.kt), starts the weekly backups, and moves between the screens (home, add a TV, type the code, one TV on any of its
    tabs, the editor on any of its pages, adding a shared playlist, backups and restore points, reminders). */
 package app.tivibro.phone
 
+import android.Manifest
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.compose.material3.SnackbarHostState
@@ -19,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -30,6 +35,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import android.net.Uri
+import app.tivibro.phone.ble.BleWaker
 import app.tivibro.phone.ui.AddScreen
 import app.tivibro.phone.ui.BackupsScreen
 import app.tivibro.phone.ui.ShareScreen
@@ -129,6 +135,22 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
         }
     }
 
+    // Turn on: the first time, with a TV that can be woken over Bluetooth, Android 12 and later ask for the
+    // Nearby devices permission; the TV is woken whatever the answer (Wake-on-LAN alone without it).
+    var wakeAfterAsk by rememberSaveable { mutableStateOf<String?>(null) }
+    val askBle = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { _ ->
+        wakeAfterAsk?.let { model.wake(it) }
+        wakeAfterAsk = null
+    }
+    fun turnOn(id: String) {
+        val tv = model.tv(id)
+        if (tv != null && tv.bt.isNotBlank() && BleWaker.shouldAsk(ctx)) {
+            BleWaker.markAsked(ctx)
+            wakeAfterAsk = id
+            askBle.launch(Manifest.permission.BLUETOOTH_ADVERTISE)
+        } else model.wake(id)
+    }
+
     fun scan() {
         val opts = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).enableAutoZoom().build()
         GmsBarcodeScanning.getClient(ctx, opts).startScan()
@@ -148,7 +170,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 onTab = { id, tab -> nav.navigate(tvAt(id, tab)) },
                 onReminders = { id -> go(id, "reminders") },
                 onOpen = { model.openTiviBro(it) },
-                onWake = { model.wake(it) },
+                onWake = { turnOn(it) },
                 onForget = { model.forget(it) },
                 onTile = { model.tileTv = it; tile = it; model.say("The Quick Settings tile now opens TiviBro on this TV") },
                 onRepair = { nav.navigate("add") },

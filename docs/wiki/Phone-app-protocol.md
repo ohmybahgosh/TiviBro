@@ -52,7 +52,7 @@ The TV refuses a time more than 5 minutes off (`clock`, with its `now`), a nonce
 
 | Call | Answer |
 |---|---|
-| `GET /v1/info` | name, `model`, `webos`, `version`, `mac` (for Wake-on-LAN), `ips`, `tivibro: { open, visible, editor }` |
+| `GET /v1/info` | name, `model`, `webos`, `version`, `mac` and `macs` (for Wake-on-LAN), `wol` (Turn on via Wi-Fi), `bt` (the TV's Bluetooth address) and `woble` (its Bluetooth advertising setting is on) for waking over Bluetooth, `ips`, `tivibro: { open, visible, editor }` |
 | `POST /v1/open` | opens TiviBro on the TV |
 | `POST /v1/editor` | `{ "state": "ready", "url" }`: the web editor, signed in for this phone (open it in a WebView).  `starting`: TiviBro is opening or starting it; ask again every two seconds. |
 | `POST /v1/forget` | removes this phone from the TV |
@@ -68,6 +68,7 @@ All signed like the calls above.  TiviBro carries out each command once; if Tivi
 | `POST /v1/play` | `{ "k": "<channel key>" }` | Plays that channel full screen. |
 | `POST /v1/text` | `{ "text": "michigan" }` | Searches for it on the TV. |
 | `POST /v1/volume` | `{ "dir": "up" }` | The TV's own volume: `up`, `down`, `mute`.  Works with TiviBro closed.  Answers `{ "volume": { "level", "muted" } }`. |
+| `POST /v1/blewake` | `{ "op": "register", "address": "aa:bb:cc:dd:ee:ff" }` | Turning the TV on over Bluetooth, as LG's ThinQ app does.  The phone makes up its own Bluetooth address once and registers it with the TV (`luna://com.webos.service.asc/registerDevice`, type `ThinQ`); to wake the TV it advertises LG's manufacturer data (company 0x00C4: its address, then `07 00` and the TV's `bt` address) with service UUID `0000feba-0000-1000-8000-00805f9b34fb`.  `op`: `register` answers `{ registered, msg }`, `status` answers `{ registered, woble }`, `unregister` answers `{ ok }`.  Works with TiviBro closed.  A bad address or op is `400` with `code: "bad"`. |
 | `GET /v1/state?since=<rev>&wait=1` | | What TiviBro shows: `{ rev, open, state: { tab, full, playing: { k, name, num, logo, group }, now: { t, s, e }, next, paused, vod } }`.  With `wait=1` and the current `rev`, the TV answers when it changes, or after 20 seconds. |
 | `GET /v1/lineup?rev=<rev>` | | The channel list as TiviBro shows it: `{ rev, groups: [{ id, name, keys }], channels: [{ k, n, num, logo, fav, now, na, dead }] }` (`na: 1`: a channel only a group shows, not All; `dead: 1`: its last tries on the TV failed while other channels play, shown as "not playing lately" until it plays again).  `pending: true` while TiviBro is making it (ask again in a second), `same: true` when `rev` is current, `closed: true` when TiviBro is closed. |
 

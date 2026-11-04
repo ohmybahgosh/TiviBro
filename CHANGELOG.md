@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **The phone app turns the TV on over Bluetooth too.**  **Turn on** and the Quick Settings tile now also send LG's Bluetooth wake signal, the way LG's ThinQ app does, next to Wake-on-LAN, so a TV that ignores the network wake still comes on.  The app registers itself with the TV by itself while the TV is on, Android 12 and later ask for **Nearby devices** the first time you press **Turn on**, and if Bluetooth is off on the phone the app says so and wakes the TV over the network only.
 - **The phone app updates itself.**  When a new TiviBro app is out, **Update now** on the home screen downloads it with a progress bar, checks it is the release GitHub describes, and installs it over this one (Android asks you to allow TiviBro to install apps the first time, and to confirm).  If anything goes wrong, **Download** still opens the APK in the browser.
 
 ## 0.6.0 (alpha 74, 2026-11-03)

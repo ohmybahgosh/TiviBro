@@ -9,11 +9,13 @@ import android.os.Build
 import android.provider.Settings
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.tivibro.phone.ble.BleWaker
 import app.tivibro.phone.data.BackupStore
 import app.tivibro.phone.data.BackupTools
 import app.tivibro.phone.data.EditorCopies
 import app.tivibro.phone.data.SavedBackup
 import app.tivibro.phone.data.TvStore
+import app.tivibro.phone.proto.BleWake
 import app.tivibro.phone.proto.ChanEdit
 import app.tivibro.phone.proto.BackupFile
 import app.tivibro.phone.proto.GuidePage
@@ -122,12 +124,19 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     private suspend fun check(tv: Tv): Boolean = withContext(Dispatchers.IO) {
         try {
             val info = infoWithClock(tv)
-            val t = tvsLatest(tv).copy(
+            val was = tvsLatest(tv)
+            // The TV's Bluetooth address, for Turn on over Bluetooth; another address means registering again.
+            val bt = info.optString("bt", "").lowercase().takeIf { BleWake.isAddress(it) } ?: was.bt
+            val t = was.copy(
                 name = info.optString("name", tv.name), model = info.optString("model", tv.model),
                 mac = info.optString("mac", "").ifBlank { tv.mac }, version = info.optString("version", tv.version),
                 macs = Tv.macList(info.optJSONArray("macs")).ifEmpty { tv.macs },
+                bt = bt, bleRegistered = was.bleRegistered && bt == was.bt,
             )
-            if (t != tv || t.mac != tv.mac || t.macs != tv.macs || t.model != tv.model || t.version != tv.version) saveTv(t)
+            if (t != tv || t.mac != tv.mac || t.macs != tv.macs || t.model != tv.model || t.version != tv.version || t.bt != tv.bt || t.bleRegistered != tv.bleRegistered) saveTv(t)
+            if (bt != was.bt) bleChecked.remove(tv.id)
+            // Bluetooth advertising not switched off on the TV: make sure this phone may wake it over Bluetooth.
+            if (t.bt.isNotBlank() && !(info.has("woble") && !info.optBoolean("woble", true))) bleRegister(t)
             val open = info.optJSONObject("tivibro")?.optBoolean("open") == true
             // What TiviBro has, for the shortcuts (one quick look, only while it is open).
             val caps = if (open) runCatching { TvClient(t, 4000).state(0, false) }.getOrNull()?.takeIf { it.open } else null
@@ -144,6 +153,38 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun tvsLatest(tv: Tv) = tv(tv.id) ?: tv
+
+    /* ---------- Turn on over Bluetooth (ble/BleWaker.kt, service/blewake.js) ---------- */
+
+    private val bleChecked = java.util.Collections.synchronizedSet(mutableSetOf<String>())
+
+    /**
+     * Registers this phone's wake address with the TV, quietly, once a session per TV: a TV that says it
+     * already has it is asked whether it still does, and registered again if not.  A TV that answered (even
+     * with no, or an older TiviBro without Bluetooth waking) is not asked again until the app restarts; one that
+     * didn't answer is asked at the next check.
+     */
+    private fun bleRegister(tv: Tv) {
+        if (!bleChecked.add(tv.id)) return
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val addr = BleWaker.address(getApplication<Application>())
+                val c = TvClient(tv, 5000)
+                var registered = tv.bleRegistered && c.blewake("status", addr).optBoolean("registered")
+                if (!registered) {
+                    val r = c.blewake("register", addr)
+                    registered = r.optBoolean("registered")
+                    android.util.Log.i("TiviBroBle", "Registered with ${tv.name}: $registered (${r.optString("msg")})")
+                }
+                val now = tv(tv.id) ?: return@launch
+                if (now.bleRegistered != registered && now.bt == tv.bt) saveTv(now.copy(bleRegistered = registered))
+            } catch (e: TbException) {
+                android.util.Log.w("TiviBroBle", "${tv.name} said no: ${e.message}")
+            } catch (e: Exception) {
+                bleChecked.remove(tv.id)
+            }
+        }
+    }
 
     /** Info, correcting this phone's idea of the TV's clock once if the TV says it is off. */
     private fun infoWithClock(tv: Tv) = try {
@@ -164,26 +205,45 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         delay(2500); check(tv)
     }
 
-    /** Wake-on-LAN, then wait for the TV to answer (up to a minute). */
+    /**
+     * Wake-on-LAN and, when the TV has told the app its Bluetooth address, LG's Bluetooth wake packet at the
+     * same time (as ThinQ does), then wait for the TV to answer (up to a minute).  The Bluetooth permission is
+     * asked by the activity before this; without it, or with Bluetooth off, only Wake-on-LAN runs.
+     */
     fun wake(id: String) = viewModelScope.launch {
         val tv = tv(id) ?: return@launch
-        if (tv.wakeMacs().isEmpty()) { say("This TV hasn't told the app its network card yet.  Open it once while it's on."); return@launch }
+        if (!tv.canWake()) { say("This TV hasn't told the app its network card yet.  Open it once while it's on."); return@launch }
         setUi(id) { it.copy(power = Power.WAKING) }
-        val end = System.currentTimeMillis() + 60_000
+        val ble = if (tv.bt.isNotBlank()) withContext(Dispatchers.IO) { BleWaker.start(getApplication<Application>(), tv.bt) } else null
+        if (ble != null) android.util.Log.i("TiviBroBle", "Turn on ${tv.name} over Bluetooth: ${ble.result}")
+        if (ble?.result == BleWaker.Start.OFF) say("Turn on Bluetooth on the phone to wake the TV over Bluetooth too.")
         var on = false
-        while (System.currentTimeMillis() < end && !on) {
-            withContext(Dispatchers.IO) { runCatching { Wol.wakeAll(tv.wakeMacs(), tv.host) } }
-            delay(3000)
-            on = withContext(Dispatchers.IO) { runCatching { Pairing.hello(tv.host, tv.port, 1500); true }.getOrDefault(false) }
+        try {
+            val end = System.currentTimeMillis() + BleWake.ADVERTISE_MS
+            while (System.currentTimeMillis() < end && !on) {
+                if (tv.wakeMacs().isNotEmpty()) withContext(Dispatchers.IO) { runCatching { Wol.wakeAll(tv.wakeMacs(), tv.host) } }
+                delay(3000)
+                on = withContext(Dispatchers.IO) { runCatching { Pairing.hello(tv.host, tv.port, 1500); true }.getOrDefault(false) }
+            }
+        } finally {
+            ble?.stop()
         }
         setUi(id) { it.copy(power = Power.CHECKING) }
         if (on) { check(tv(id) ?: tv); say("${tv.name} is on") }
-        else { setUi(id) { it.copy(power = Power.OFF) }; say("${tv.name} didn't answer.  Is Turn on via Wi-Fi on in the TV's settings?") }
+        else {
+            setUi(id) { it.copy(power = Power.OFF) }
+            say(if (tv.bt.isNotBlank()) "${tv.name} didn't answer.  Is Turn on via Wi-Fi on, and Bluetooth on the phone?"
+                else "${tv.name} didn't answer.  Is Turn on via Wi-Fi on in the TV's settings?")
+        }
     }
 
     fun forget(id: String) = viewModelScope.launch {
         val tv = tv(id) ?: return@launch
-        withContext(Dispatchers.IO) { runCatching { TvClient(tv, 3000).forget() } }
+        withContext(Dispatchers.IO) {
+            // Best effort: this phone's Bluetooth wake address off the TV's list, then the pairing.
+            if (tv.bleRegistered) runCatching { TvClient(tv, 3000).blewake("unregister", BleWaker.address(getApplication<Application>())) }
+            runCatching { TvClient(tv, 3000).forget() }
+        }
         store.remove(id)
         if (store.tileTv == id) store.tileTv = null
         backups.forget(id)

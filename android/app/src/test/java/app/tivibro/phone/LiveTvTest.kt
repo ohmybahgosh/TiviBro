@@ -56,6 +56,14 @@ class LiveTvTest {
         assertEquals("fake|6", c.state(st1.rev, true).channelKey)
         val v = c.volume("up")
         assertTrue("volume answers", v != null && v.level == 13)
+        // Turning the TV on over Bluetooth: the TV's address in info, and this phone's wake address registered.
+        assertEquals("80:5b:65:a8:f5:c1", info.optString("bt"))
+        val wakeAddr = app.tivibro.phone.proto.BleWake.newAddress()
+        assertTrue("registers", c.blewake("register", wakeAddr).optBoolean("registered"))
+        val bs = c.blewake("status", wakeAddr)
+        assertTrue("and is listed, with Bluetooth advertising on", bs.optBoolean("registered") && bs.optBoolean("woble"))
+        assertTrue("unregisters", c.blewake("unregister", wakeAddr).optBoolean("ok") && !c.blewake("status", wakeAddr).optBoolean("registered"))
+        assertEquals("bad", (runCatching { c.blewake("register", "nope") }.exceptionOrNull() as TbException).code)
         val bad = runCatching { c.key("power") }.exceptionOrNull() as TbException
         assertEquals("bad", bad.code)
 

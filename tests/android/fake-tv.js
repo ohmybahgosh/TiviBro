@@ -1,7 +1,7 @@
 /* A stand-in TV for the Android app's tests: the real phone app connection (service/companion.js) with
    pairing open, the real web editor running (port 18787), and a pretend TiviBro on top: it answers the
    helper's long poll like the TV app does, sends a channel list when asked, plays what a phone picks and
-   says so, has a volume, and answers the phone's questions (guide, favorites, movies, typing, backups).  Prints "host:port:CODE:TVID" once
+   says so, has a volume, keeps phones registered to turn it on over Bluetooth, and answers the phone's questions (guide, favorites, movies, typing, backups).  Prints "host:port:CODE:TVID" once
    ready, and keeps running.
      node tests/android/fake-tv.js > /tmp/fake-tv.txt & */
 'use strict';
@@ -11,8 +11,17 @@ const editor = require('../../service/editor.js').create(() => {});
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-fake-tv-'));
 const vol = { level: 12, muted: false };
 const look = { title: 'Appearance', trail: ['Appearance'], rows: [{ i: 0, kind: 'head', label: 'Look' }, { i: 1, kind: 'toggle', label: 'Show clock', sub: '', on: true }, { i: 2, kind: 'choice', label: 'Numbers', sub: 'Even width lines up channel numbers.', options: ['TV font', 'Even width', 'Fixed width, slashed zero'], cur: 0, value: 'TV font' }, { i: 3, kind: 'page', label: 'Manage groups', sub: '', value: '' }] };
-const c = Companion.create({ dir, version: 'fake-tv', log: () => {}, launch: (p, cb) => { console.log('LAUNCHED ' + JSON.stringify(p)); cb(null); }, sysinfo: (cb) => cb({ model: 'FAKE', webos: '0', name: 'Fake TV' }), app: () => ({ open: true }), editor: () => editor,
-  volume: (d, cb) => { if (d === 'up') vol.level++; else if (d === 'down') vol.level--; else vol.muted = !vol.muted; cb(null, Object.assign({}, vol)); } });
+const c = Companion.create({ dir, version: 'fake-tv', log: () => {}, launch: (p, cb) => { console.log('LAUNCHED ' + JSON.stringify(p)); cb(null); }, sysinfo: (cb) => cb({ model: 'FAKE', webos: '0', name: 'Fake TV', bt: '80:5b:65:a8:f5:c1', woble: true }), app: () => ({ open: true }), editor: () => editor,
+  volume: (d, cb) => { if (d === 'up') vol.level++; else if (d === 'down') vol.level--; else vol.muted = !vol.muted; cb(null, Object.assign({}, vol)); },
+  // Wake on BLE (service/blewake.js) over a pretend asc service that keeps the registered addresses.
+  blewake: require('../../service/blewake.js').create({ log: () => {}, call: (uri, p, cb) => setImmediate(() => {
+    const m = uri.split('/').pop();
+    if (m === 'registerDevice') { if (!ble.includes(p.address)) ble.push(p.address); return cb({ returnValue: true }); }
+    if (m === 'unRegisterDevice') { ble = ble.filter((a) => a !== p.address); return cb({ returnValue: true }); }
+    if (m === 'readBleDevices') return cb({ returnValue: true, count: ble.length, devices: ble.map((a) => ({ address: a, name: 'ThinQ' })) });
+    cb({ returnValue: true, settings: { bleAdvertisingOnOff: 'on' } });
+  }) }).handle });
+let ble = [];
 function ctl(u, body) {
   return new Promise((resolve) => {
     const res = Object.assign(new (require('events'))(), { writeHead() {}, end(b) { resolve(JSON.parse(b)); } });

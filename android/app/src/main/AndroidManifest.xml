@@ -6,6 +6,13 @@
     <!-- Updating the app in place (update/Updater.kt): Android still asks the user, and the setting
          "Install unknown apps" has to be on for TiviBro. -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Turning the TV on over Bluetooth (ble/BleWaker.kt), as LG's ThinQ app does: the phone only advertises
+         LG's wake packet, it never scans or connects.  Android 12 and later ask for Nearby devices the first
+         time Turn on is used; up to Android 11 these two are granted at install. -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADVERTISE" />
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
 
     <!-- Paired TVs (with their keys) stay on this phone: no cloud backup, no device-to-device transfer. -->
     <application

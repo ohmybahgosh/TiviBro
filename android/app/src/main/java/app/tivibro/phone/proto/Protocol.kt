@@ -44,16 +44,22 @@ data class Tv(
     val macs: List<String> = emptyList(),
     val version: String = "",
     val added: Long = System.currentTimeMillis(),
+    /** The TV's Bluetooth address, for turning it on over Bluetooth (ble/BleWaker.kt); empty until the TV says. */
+    val bt: String = "",
+    /** This phone's wake address is registered with the TV (POST /v1/blewake). */
+    val bleRegistered: Boolean = false,
 ) {
     fun toJson(): JSONObject = JSONObject()
         .put("id", id).put("name", name).put("host", host).put("port", port).put("phone", phoneId)
         .put("key", b64(key)).put("offset", offset).put("model", model).put("mac", mac).put("macs", org.json.JSONArray(macs)).put("version", version).put("added", added)
+        .put("bt", bt).put("bleRegistered", bleRegistered)
 
     companion object {
         fun fromJson(j: JSONObject) = Tv(
             id = j.getString("id"), name = j.optString("name", "TV"), host = j.getString("host"), port = j.optInt("port", DEFAULT_PORT),
             phoneId = j.getString("phone"), key = unb64(j.getString("key")), offset = j.optLong("offset", 0),
             model = j.optString("model", ""), mac = j.optString("mac", ""), macs = macList(j.optJSONArray("macs")), version = j.optString("version", ""), added = j.optLong("added", 0),
+            bt = j.optString("bt", "").takeIf { BleWake.isAddress(it) }.orEmpty(), bleRegistered = j.optBoolean("bleRegistered", false),
         )
 
         fun macList(a: org.json.JSONArray?): List<String> =
@@ -62,6 +68,9 @@ data class Tv(
 
     /** What to wake: the main card first, then every other one the TV reported. */
     fun wakeMacs(): List<String> = (listOf(mac) + macs).filter { it.isNotBlank() }.map { it.lowercase() }.distinct()
+
+    /** Turn on can try something: Wake-on-LAN to a known card, or Bluetooth to a known TV address. */
+    fun canWake(): Boolean = wakeMacs().isNotEmpty() || bt.isNotBlank()
 
     override fun equals(other: Any?) = other is Tv && other.id == id && other.phoneId == phoneId && other.host == host && other.name == name
     override fun hashCode() = id.hashCode()
@@ -301,6 +310,8 @@ class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
     fun lineup(rev: Int): JSONObject = call("GET", "/v1/lineup?rev=$rev")
     fun open() { call("POST", "/v1/open", JSONObject()) }
     fun forget() { call("POST", "/v1/forget", JSONObject()) }
+    /** Wake on BLE (service/blewake.js): [op] register, status or unregister this phone's wake [address].  Answered by the helper, TiviBro may be closed. */
+    fun blewake(op: String, address: String): JSONObject = call("POST", "/v1/blewake", JSONObject().put("op", op).put("address", address))
     fun editor(): EditorState {
         val j = call("POST", "/v1/editor", JSONObject())
         return when (j.optString("state")) {
