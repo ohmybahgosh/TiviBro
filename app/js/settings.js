@@ -296,7 +296,9 @@ var Settings = (function () {
     }
     out.push(head('This playlist\'s guide, names and events'));
     out.push(page('Guide', 'The provider\'s guide, your guide sources and public fill-in for this playlist', 'Guide: ' + (p.name || 'playlist'), function () { return guideRows(p); }));
-    if (active) out.push(tvOnly(action('Set-up tour', 'Countries, channel names, East or West, your city, event channels, clutter, logos and look, one screen at a time.', function () { Tour.open({ from: 'settings' }); }, function () { return p.tour > 0 ? 'done ' + when(p.tour) : '›'; })));
+    // On the phone it is a page of its own (Tour.phoneRows), the same steps without the TV's screen.
+    if (active) { var tourRow = action('Set-up tour', 'Countries, channel names, East or West, your city, event channels, clutter, logos and look, one screen at a time.', function () { Tour.open({ from: 'settings' }); }, function () { return p.tour > 0 ? 'done ' + when(p.tour) : '›'; });
+      tourRow.phonePage = { title: 'Set-up tour', fn: Tour.phoneRows }; out.push(tourRow); }
     out.push(page('Channel and group names', p.names && p.names.enabled ? 'On' : 'Off', 'Channel and group names', function () { return namesPage(p); }));
     out.push(page('Event channels', p.events && p.events.on === false ? 'Off' : 'On', 'Event channels', function () { return eventsPage(p); }));
     if (s.playlists.length > 1) {
@@ -1222,8 +1224,9 @@ var Settings = (function () {
     var list = FNS[i](), title = title0(SECTIONS[i]), trail = [title];
     (path || []).forEach(function (n) {
       var it = list[n];
-      if (!it || !it.page) throw new Error('That page has changed on the TV.  Go back and open it again.');
-      title = it.page.title; trail.push(title); list = it.page.fn();
+      var pg = it && (it.page || it.phonePage);
+      if (!pg) throw new Error('That page has changed on the TV.  Go back and open it again.');
+      title = pg.title; trail.push(title); list = pg.fn();
     });
     return { title: title, trail: trail, list: list };
   }
@@ -1237,7 +1240,7 @@ var Settings = (function () {
     else if (it.toggle) { r.kind = 'toggle'; r.on = !!it.get(); }
     else if (it.values) { r.kind = 'choice'; r.options = it.labels.map(String); r.cur = it.values.indexOf(it.get()); r.value = v; }
     else if (it.cycle) { r.kind = 'cycle'; r.value = v; }
-    else if (it.page) { r.kind = 'page'; r.value = v === '›' ? '' : v; }
+    else if (it.page || it.phonePage) { r.kind = 'page'; r.value = v === '›' ? '' : v; }
     else if (it.action) { r.kind = 'action'; r.value = v; }
     else { r.kind = 'info'; r.value = v; }
     if (it.swatch) try { r.swatch = it.swatch() || ''; } catch (e) {}

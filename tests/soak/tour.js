@@ -146,7 +146,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('Local channels holds the Detroit stations, network groups hidden', lc && lc.n > 0 && lc.detroit === lc.n - (lc.n - lc.detroit) && lc.detroit > 0 && lc.netsHidden === '', JSON.stringify(lc));
   ok('the lists show what the tour promised', after === promised, 'promised ' + promised + ', shown ' + after + ' (was ' + before.shown + ')');
   ok('hid something', after < before.shown);
-  const snap = await ev(() => Store.idbGet('snaps:' + Store.playlist.id).then(l => (l || []).map(x => x.name)));
+  const snap = await ev(() => Store.bigGet('snaps:' + Store.playlist.id).then(l => (l || []).map(x => x.name)));
   ok('restore point saved first', snap.indexOf('Before the set-up tour') >= 0, snap.join());
   ok('marked done', await ev(() => Store.playlist.tour > 0));
   await shot('tv-tour-after');

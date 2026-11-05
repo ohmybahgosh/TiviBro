@@ -398,6 +398,7 @@ var Tour = (function () {
   function focusable(it) { return it && !it.head && !it.info && !it.custom; }
   function draw() {
     if (!st) return;
+    if (st.phone) { var pl0 = steps(); if (st.step >= pl0.length) st.step = pl0.length - 1; return; }    // the phone asks for the rows itself
     var list = steps(), step = list[st.step];
     st.items = step.rows();
     var foot = [];
@@ -564,6 +565,12 @@ var Tour = (function () {
   function finish(applied) {
     var p = Store.playlist, done = st && st.done, from = st && st.from;
     if (!applied && p && !p.tour) { p.tour = -1; Store.upsertPlaylist(p); }
+    if (st && st.phone) {
+      phoneDone = { at: Date.now(), applied: applied };
+      st = null;
+      if (applied) Views.reload(false);
+      return;
+    }
     if (st && st.remote) WebEdit.onStatus = null;
     st = null;
     root.classList.add('hidden'); root.classList.remove('tourmode'); root.innerHTML = '';
@@ -600,8 +607,15 @@ var Tour = (function () {
   /* opts: { first: true right after connecting, done(applied) } */
   function open(opts) {
     opts = opts || {};
+    init(opts);
+    root.classList.remove('hidden', 'kb');
+    root.classList.add('tourmode');
+    UI.setHandler(keys);
+    draw();
+  }
+  function init(opts) {
     var p = Store.playlist;
-    st = { step: 0, sel: -1, first: !!opts.first, done: opts.done, from: opts.from, sv: survey(), remote: false };
+    st = { step: 0, sel: -1, first: !!opts.first, done: opts.done, from: opts.from, sv: survey(), remote: false, phone: !!opts.phone };
     var region = Tidy.ccOfLocale(navigator.language), cc = {};
     var inList = st.sv.countries.some(function (x) { return x.p === region; });
     // Pre-ticked: the TV's own country when the playlist has it, otherwise every country.
@@ -612,12 +626,44 @@ var Tour = (function () {
     if (st.ch.names.enabled === false && opts.first) st.ch.names.enabled = true;
     if (opts.first && st.sv.idle) st.ch.names.hideIdle = true;
     Logos.load(Library.data).then(function () { if (st && cur().id === 'logos') { st.cov = null; draw(); } });
-    root.classList.remove('hidden', 'kb');
-    root.classList.add('tourmode');
-    UI.setHandler(keys);
     Log.info('tour', 'Set-up tour opened (' + st.sv.channels + ' channels, ' + st.sv.countries.length + ' countries, ' + st.sv.feeds.pairs + ' East/West pairs, ' + st.sv.locals.cities.length + ' local cities, ' + st.sv.events + ' event channels)');
-    draw();
+
   }
 
-  return { open: open, get isOpen() { return !!st; }, get choices() { return st && st.ch; }, keys: function (a) { return keys(a); }, plan: function () { return st && plan(); }, go: function (d) { go(d); }, get step() { return st && cur().id; } };
+  /* The tour from the phone app (issue: it only ran on the TV): Settings > Playlists > the playlist > Set-up
+     tour opens it as a page of rows (Settings.phone).  The same steps and choices; nothing shows on the TV,
+     and Apply does what it does there.  A box it asks (words to hide groups by) comes to the phone too. */
+  var phoneDone = null;
+  function textOf(el) {
+    var parts = [].map.call(el.children || [], function (c) { return String(c.textContent || '').replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+    return parts.length ? parts.join('  ·  ') : String(el.textContent || '').replace(/\s+/g, ' ').trim();
+  }
+  function phoneRows() {
+    if (!st) {
+      if (phoneDone && Date.now() - phoneDone.at < 120000) {
+        return [note(phoneDone.applied ? 'Applied on the TV.  Everything hidden stays one press away in Settings > Channels and groups.' : 'Closed without changes.'),
+          action('Run the set-up tour again', '', function () { phoneDone = null; init({ phone: true }); }, function () { return '›'; })];
+      }
+      init({ phone: true });
+    }
+    var list = steps(), step = list[st.step], out = [];
+    out.push(head('Step ' + (st.step + 1) + ' of ' + list.length + ':  ' + (step.id === 'welcome' ? (st.first ? 'Your playlist is in' : 'Set-up tour') : step.title)));
+    var lead = typeof step.lead === 'function' ? step.lead() : step.lead;
+    if (lead) out.push(note(lead));
+    if (step.id !== 'welcome') { var pl = plan(); out.push(info('Keeps', fmt(pl.chans) + ' of ' + fmt(st.sv.channels) + ' channels')); }
+    step.rows().forEach(function (it) {
+      if (it.custom) { var t = textOf(it.el); if (t) out.push(note(t)); return; }
+      if (it.action === remote || /on a phone or computer/i.test(it.label || '')) return;      // already on the phone
+      out.push(it);
+    });
+    if (step.id !== 'welcome') out.push(head(''));
+    if (step.id !== 'welcome' && step.id !== 'done') out.push(action('Next', '', function () { go(1); }, function () { return '›'; }));
+    if (step.id === 'done') out.push(action('Apply', 'Hides what the summary says, after saving a restore point.', apply));
+    if (step.id !== 'welcome') out.push(action('Back', '', function () { go(-1); }));
+    if (step.id !== 'welcome' && step.id !== 'done') out.push(action('Skip to the summary', '', function () { st.step = steps().length - 1; draw(); }));
+    if (step.id !== 'welcome') out.push(action('Close without changes', '', function () { finish(false); }));
+    return out;
+  }
+
+  return { phoneRows: phoneRows, open: open, get isOpen() { return !!st; }, get choices() { return st && st.ch; }, keys: function (a) { return keys(a); }, plan: function () { return st && plan(); }, go: function (d) { go(d); }, get step() { return st && cur().id; } };
 })();

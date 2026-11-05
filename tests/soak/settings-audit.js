@@ -110,6 +110,30 @@ const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playl
   // Add playlist… opens the web editor's Add a playlist on the phone.
   const ap = (await sa({ op: 'page', sec: 'playlists', path: [] })).rows.find((x) => /^Add playlist/.test(x.label));
   ok('Add playlist on the phone opens the web editor\'s Playlists page', ap && ap.phone === 'editor' && ap.epage === 'playlists', JSON.stringify(ap));
+  // The set-up tour from the phone: a page of its own, step by step, nothing on the TV's screen.
+  {
+    const pls = await sa({ op: 'page', sec: 'playlists', path: [] });
+    const plRow = pls.rows.find((x) => x.kind === 'page');
+    const plPage = await sa({ op: 'page', sec: 'playlists', path: [plRow.i] });
+    const tr = plPage.rows.find((x) => /^Set-up tour/.test(x.label));
+    ok('the set-up tour is a page on the phone', tr && tr.kind === 'page' && !tr.tv, JSON.stringify(tr));
+    const tp = [plRow.i, tr.i];
+    let t = await sa({ op: 'page', sec: 'playlists', path: tp });
+    ok('it opens on step 1, without the TV\'s screen', /^Step 1 of \d+/.test(t.rows[0].label) && !(await ev(() => !!document.querySelector('.tour'))), t.rows.slice(0, 3).map((x) => x.label).join(' | '));
+    const go = async (re) => { const row = t.rows.find((x) => re.test(x.label)); const r2 = await sa({ op: 'action', sec: 'playlists', path: tp, i: row.i }); t = r2.page || await sa({ op: 'page', sec: 'playlists', path: tp }); return row; };
+    await go(/^Tidy up here/);
+    ok('Tidy up here goes to step 2, with how many channels it keeps', /^Step 2 of/.test(t.rows[0].label) && t.rows.some((x) => x.label === 'Keeps'), t.rows.slice(0, 3).map((x) => x.label + ' ' + (x.value || '')).join(' | '));
+    const cyc = t.rows.find((x) => x.kind === 'cycle');
+    if (cyc) { const before2 = cyc.value; t = (await sa({ op: 'cycle', sec: 'playlists', path: tp, i: cyc.i, dir: 1 })).page; ok('a choice on a step changes from the phone', t.rows.find((x) => x.i === cyc.i).value !== before2, before2); }
+    await go(/^Skip to the summary/);
+    ok('the summary has Apply', t.rows.some((x) => x.label === 'Apply'), t.rows.map((x) => x.label).join(' | ').slice(0, 300));
+    await go(/^Close without changes/);
+    ok('closing says so and offers to run it again', t.rows.some((x) => /Closed without changes/.test(x.label)) && t.rows.some((x) => /Run the set-up tour again/.test(x.label)) && !(await ev(() => Tour.isOpen)), t.rows.map((x) => x.label).join(' | '));
+    await go(/^Run the set-up tour again/); await go(/^Tidy up here/); await go(/^Skip to the summary/);
+    const apRow = t.rows.find((x) => x.label === 'Apply');
+    const ar = await sa({ op: 'action', sec: 'playlists', path: tp, i: apRow.i });
+    ok('Apply from the phone applies it on the TV and says what it kept', /^Done\./.test(ar.msg) && await ev(() => Store.playlist.tour > 0), JSON.stringify(ar).slice(0, 200));
+  }
   // An answer after the TV stopped waiting (someone took minutes to copy an API key): asked again behind the scenes, and used.
   r = await sa({ op: 'action', sec: 'names', path: [], i: np.i });
   await ev(() => Settings.phone._timeout());
