@@ -240,7 +240,9 @@ var App = (function () {
           Views.switchTab('settings');
           if (editing) dropOther(test.id);
           else U.toast('"' + (test.name || 'Playlist') + '" added.  Its channels are under its own name in the group list.', 6000);
-          return addOther(test, data);
+          // A new playlist: its own set-up tour, for its channels (as for the first one).
+          if (addOther(test, data) && !editing) setTimeout(function () { if (!Tour.isOpen) Tour.open({ first: true, from: 'settings', pl: test.id }); }, 400);
+          return;
         }
         if (Store.settings.active !== test.id) Store.usePlaylist(test.id);
         Settings.reset();
@@ -339,8 +341,9 @@ var App = (function () {
      kind with categories also needs at least one title: up to three categories are asked on
      their own (small answers), and only if all are empty is the whole list asked for, which is
      then small too. */
-  function checkVod() {
-    var p = Store.playlist;
+  // p: another playlist that is on (several playlists on); the first playlist when not given.
+  function checkVod(p) {
+    p = p || Store.playlist;
     if (p.type !== 'xtream') return;
     var list = function (action, extra) {
       return U.getJSON(Source.api(p, action, extra || ''), extra ? 20000 : 90000).then(function (j) { return Array.isArray(j) ? j : []; }, function () { return null; });
@@ -377,8 +380,20 @@ var App = (function () {
      are attached (Store.attach): Library.setOther puts its groups under its name.  A playlist with no
      kept copy, or one due for a reload, is loaded from the provider in the background, one at a
      time, through the same guard as Reload channels (refresh).  Together they may not pass
-     MULTI_MAX channels: one that would is left out, with a message, so a TV is never run out of memory. */
-  var startGen = 0, MULTI_MAX = 250000, otherQ = [];
+     multiMax() channels: one that would is left out, with a message, so a TV is never run out of memory.
+     On a TV with 1 GB of memory, or one that closed TiviBro while playing this week (Player.memSafe),
+     the limit is lower and background loads wait until nothing plays. */
+  var startGen = 0, otherQ = [];
+  function memSafe() { return !!(window.Player && Player.memSafe); }
+  // webOS closes an app at about 500 MB whatever the TV has, so more memory does not raise it.
+  function multiMax() { return memSafe() ? 120000 : 250000; }
+  // What is in the lists now, for the log (and a problem report).
+  function loadedLog() {
+    var parts = Store.loaded().map(function (p) { var d = Library.partOf(p.id); return (p.name || 'Playlist') + ' ' + (d ? d.channels.length : 0); });
+    var skipped = Store.others().filter(function (p) { return Library.otherIds().indexOf(p.id) < 0; }).map(function (p) { return p.name || 'Playlist'; });
+    if (parts.length > 1 || skipped.length) Log.info('app', 'Playlists in the lists: ' + parts.join(', ') + ' (' + Library.count() + ' channels of at most ' + multiMax() + (memSafe() ? ', memory-safe' : '') + ')' +
+      (skipped.length ? '; not in yet: ' + skipped.join(', ') : ''));
+  }
   function openOthers(gen) {
     var list = Store.others(), chain = Promise.resolve(), fresh = false;
     list.forEach(function (p) {
@@ -396,44 +411,57 @@ var App = (function () {
     });
     return chain.then(function () {
       if (gen !== startGen) return;
-      if (Library.multi) { Logos.load(Library.data); Views.refreshLists(true); if (window.Settings && Settings.live) Settings.live(); }
+      if (Library.multi) {
+        Logos.load(Library.data); Views.refreshLists(true); if (window.Settings && Settings.live) Settings.live();
+        // Their movies and shows (Movies and Shows show every playlist's), checked like the first's.
+        Library.otherIds().forEach(function (id) { var o = Store.byId(id); if (o) { if (noteVod(o, Library.partOf(id))) Views.buildTabs(); checkVod(o); } });
+      }
+      loadedLog();
       if (otherQ.length) setTimeout(nextOther, fresh ? 3000 : 15000);
     });
   }
   // Put another playlist's data in the lists, with its edits.  False when it would be too many channels.
   function useOther(p, data) {
     var now = Library.count() - ((Library.partOf(p.id) || { channels: [] }).channels.length);
-    if (now + data.channels.length > MULTI_MAX) {
+    if (now + data.channels.length > multiMax()) {
       Log.warn('app', 'Left out ' + (p.name || 'a playlist') + ': with its ' + data.channels.length + ' channels the playlists that are on would have ' + (now + data.channels.length) + ', more than a TV holds');
       U.toast('"' + (p.name || 'A playlist') + '" is not shown: together the playlists that are on have too many channels for this TV.  Turn one off in Settings > Playlists.', 9000);
       return false;
     }
     Store.attach(p.id);
-    Source.setTz(data.tz, p.id);
+    if (typeof Vod !== 'undefined') Vod.reset();          // Movies and Shows load again with it
+    Source.setTz(data.tz, p.id); Events.setProviderTz(data.tz, p.id);
     Library.setOther(p.id, data);
     return true;
   }
   // Take another playlist out of the lists (turned off), with its edits.
   function dropOther(id) {
+    // What plays from it stops: its channel (or movie) is no longer in the lists.
+    var pv = Views.vod && Views.vod.meta;
+    if ((Views.playing && Views.playing.p === id) || (Views.mode === 'vod' && pv && pv.p === id)) { Views.stopAll(); Log.info('app', 'Stopped what was playing: its playlist was taken out'); }
     var had = Library.dropOther(id);
     Store.detach(id);
+    if (had && typeof Vod !== 'undefined') Vod.reset();
     otherQ = otherQ.filter(function (x) { return x !== id; });
     return had;
   }
   // A playlist just added from the set-up screen, with its first load.
   function addOther(p, data) {
-    if (!useOther(p, data)) return;
+    if (!useOther(p, data)) return false;
     Logos.load(Library.data);
     Views.refreshLists(true);
     if (window.Settings && Settings.live) Settings.live();
+    checkVod(p); noteVod(p, data);
+    loadedLog();
     setTimeout(function () { Epg.init(Library); }, 300);
+    return true;
   }
   // Background loads of the other playlists, one at a time, never while a reload runs.
   function nextOther() {
     if (!otherQ.length) return;
-    if (reloading || Source.loading) { setTimeout(nextOther, 20000); return; }
+    if (reloading || Source.loading || (memSafe() && Views.playing) || (memSafe() && Views.mode === 'vod')) { setTimeout(nextOther, 20000); return; }
     var id = otherQ.shift();
-    refresh(false, id).then(function () { if (otherQ.length) setTimeout(nextOther, 5000); });
+    refresh(false, id).then(function () { loadedLog(); if (otherQ.length) setTimeout(nextOther, 5000); });
   }
   /* Settings changed which playlists are on: add the ones turned on, take out the ones turned off.
      The first playlist is not touched here (switchPlaylist does that). */
@@ -514,6 +542,8 @@ var App = (function () {
         if (!useOther(p, data)) return;
         Logos.load(Library.data);
         Views.refreshLists(true);
+        if (noteVod(p, data)) Views.buildTabs();
+        checkVod(p);                                  // its movies and shows join Movies and Shows
         if (manual) U.toast((p.name || 'Playlist') + ': ' + data.channels.length + ' channels loaded');
         Epg.init(Library);
       });
@@ -613,7 +643,7 @@ var App = (function () {
      and #25): say so once, with what helps.  Every reload of such a list is a big moment for the TV. */
   var BIG = 100000;
   function bigList(p) {
-    var n = Library.count();
+    var part = Library.partOf(p.id), n = part ? part.channels.length : Library.count();      // that playlist's own, several on
     if (n < BIG || p.bigNoted) return;
     Log.warn('app', 'This playlist has ' + n + ' channels, more than most TVs comfortably hold.  Reloading it is the hardest moment for the TV.');
     p.bigNoted = 1; Store.upsertPlaylist(p);
@@ -688,7 +718,11 @@ var App = (function () {
      gets them in webOSRelaunch.  A reminder for another playlist switches to it first. */
   var pendingRem = Remind.launchParams();
   function openReminder(r) {
-    if (r.pid && r.pid !== Store.settings.active && Store.settings.playlists.some(function (p) { return p.id === r.pid; })) { pendingRem = r; switchPlaylist(r.pid); return; }
+    var other = r.pid && r.pid !== Store.settings.active && Store.byId(r.pid);
+    // Set while another playlist was first, and that playlist is on: its channel is in the lists already,
+    // under the key it has now (several playlists on), so no switching.
+    if (other && !other.off) r = Object.assign({}, r, { k: Store.keyFrom(r.pid, r.k), pid: Store.settings.active });
+    else if (other) { pendingRem = r; switchPlaylist(r.pid); return; }
     Views.openReminder(r);
   }
   document.addEventListener('webOSRelaunch', function (e) {

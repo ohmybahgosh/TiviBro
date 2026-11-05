@@ -31,7 +31,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   try {
     // ---------- one playlist: as before ----------
     const solo = await open({ playlists: [one], active: one.id });
-    const single = await solo.evaluate(() => ({ keys: Library.data.channels.slice(0, 40).map((c) => c.k), groups: Library.data.groups.map((g) => g.id),
+    const single = await solo.evaluate(() => ({ keys: Library.data.channels.slice(0, 40).map((c) => c.k), nums: Library.data.channels.slice(0, 40).map((c) => c.num), groups: Library.data.groups.map((g) => g.id),
       heads: document.querySelectorAll('#groupList .row.ghead').length, multi: Library.multi, p: Library.data.channels.some((c) => c.p) }));
     ok('one playlist: no headings, no playlist marks on channels', !single.heads && !single.multi && !single.p, JSON.stringify(single).slice(0, 200));
     await solo.context().close();
@@ -107,6 +107,68 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('the guide\'s group column has the playlist headings', gcol >= 1, gcol);
     await ev(() => Views.switchTab('live'));
 
+    // Channel numbers: the first playlist keeps its own, the second's come after, none twice.
+    const nums = await ev(() => ({ first: Library.main.channels.slice(0, 40).map((c) => c.num), all: Library.data.channels.map((c) => c.num), p2: Library.data.channels.filter((c) => c.p).map((c) => c.num) }));
+    ok('numbers: the first playlist\'s are unchanged', JSON.stringify(nums.first) === JSON.stringify(single.nums), nums.first.slice(0, 5) + ' vs ' + single.nums.slice(0, 5));
+    ok('numbers: the second playlist\'s start after the first\'s, every number once', nums.p2.every((n) => n > 1000) && new Set(nums.all).size === nums.all.length, nums.p2.slice(0, 5).join());
+    // Number keys reach the second playlist's channel.
+    const n2 = await ev((k) => Library.find(k).num, k2);
+    await ev(() => { Views.switchTab('live'); Views.setZone('channels'); });
+    for (const d of String(n2)) { await tv.keyboard.press('Digit' + d); await tv.waitForTimeout(120); }
+    await tv.waitForTimeout(3500);
+    ok('number keys play the second playlist\'s channel by its number', await ev((k) => !!Views.playing && Views.playing.k === k, k2), n2);
+    await ev(() => Views.stopAll());
+
+    // The same guide ids in both playlists' guides: each channel gets its own playlist's programmes.
+    const ids = await ev(([a, b]) => ({ a: Epg.epgId(Library.find(a)), b: Epg.epgId(Library.find(b)), bn: Library.find(b).epg }), [k1, k2]);
+    const twin = await ev(() => { const c = Library.data.channels.find((x) => x.p && x.epg && Library.data.channels.some((y) => !y.p && y.epg === x.epg)); return c ? { k: c.k, id: Epg.epgId(c), epg: c.epg, has: !!(Epg.nowNext(c) || {}).now } : null; });
+    ok('a guide id both guides have: the second playlist\'s channel reads its own copy', twin && twin.id === 'p2|' + twin.epg && twin.has, JSON.stringify(twin));
+    ok('and the first playlist\'s channel the id itself', ids.a && ids.a.indexOf('|') < 0, ids.a);
+
+    // A reminder for the second playlist's channel opens that channel (as the TV's alert does).
+    const s0 = Date.now() - 60000;
+    await ev(([k, s]) => { document.dispatchEvent(new CustomEvent('webOSRelaunch', { detail: { reminder: { pid: 'p1', k: k, s: s } } })); }, [k2, s0]);
+    await tv.waitForTimeout(3000);
+    ok('a reminder for the second playlist\'s channel opens it', await ev((k) => !!Views.playing && Views.playing.k === k, k2));
+    await ev(() => Views.stopAll());
+    // One kept while the second playlist was first (its own key, its id): the same channel, no switching.
+    await ev(([k, s]) => { document.dispatchEvent(new CustomEvent('webOSRelaunch', { detail: { reminder: { pid: 'p2', k: k.slice(3), s: s } } })); }, [k2, s0]);
+    await tv.waitForTimeout(3000);
+    ok('a reminder kept under the second playlist opens its channel without switching', await ev((k) => !!Views.playing && Views.playing.k === k && Store.settings.active === 'p1', k2));
+    await ev(() => Views.stopAll());
+
+    // Movies and Shows: each playlist's movies, with a heading per playlist, played from its own server.
+    await tv.waitForFunction(() => Vod.offered().indexOf('movie') >= 0 && Store.byId('p2').vod && Store.byId('p2').vod.movies, null, { timeout: 60000 }).catch(() => {});
+    await ev(() => Views.switchTab('movies'));
+    await tv.waitForFunction(() => document.querySelectorAll('#vodCats .row').length > 3, null, { timeout: 60000 }).catch(() => {});
+    await tv.waitForTimeout(800);
+    const vheads = await ev(() => Array.prototype.map.call(document.querySelectorAll('#vodCats .row.ghead'), (r) => r.textContent));
+    ok('Movies: a heading per playlist', vheads.some((t) => /Second provider/.test(t)), JSON.stringify(vheads) + ' ' + JSON.stringify(await ev(() => ({ v1: Store.playlist.vod, v2: Store.byId('p2').vod, off: Vod.offered(), rows: Array.prototype.map.call(document.querySelectorAll('#vodCats .row'), (r) => r.textContent).slice(0, 12) }))));
+    asked.length = 0;
+    tv.on('request', (r) => { if (/\/movie\//.test(r.url())) asked.push(r.url()); });
+    await ev(() => { const it = Vod.allItems().filter((x) => x.kind === 'movie' && x.it.pl === 'p2')[0]; Vod.openItem(it); });
+    await tv.waitForTimeout(4000);
+    ok('Movies: a movie of the second playlist plays from its server', asked.some((u) => u.indexOf(':' + PORT2 + '/movie/second/second/') >= 0), asked.slice(0, 3).join(' | '));
+    await ev(() => { Vod.stopped(); Views.stopAll(); Views.switchTab('live'); });
+
+    // Its own set-up tour, for its own channels.
+    const tour = await ev(() => { const rows = Tour.phoneRows('p2'); const n = Tour.isOpen; return { rows: rows.length, n: n }; });
+    ok('the set-up tour opens for the second playlist', tour.rows > 0);
+    await ev(() => { try { Tour.keys('back'); } catch (e) {} });
+
+    // The web editor: name rules per playlist.
+    await ev(() => WebEdit.stop()); const wst = await ev(() => WebEdit.start()); const wpw = await ev(() => WebEdit.password());
+    const ed = await (await b.newContext({ viewport: { width: 1300, height: 900 } })).newPage(); ed.on('pageerror', (e) => errs.push('editor: ' + e.message));
+    await ed.goto('http://127.0.0.1:' + wst.port + '/#k=' + wpw + '/names'); await ed.waitForSelector('#nPl option', { timeout: 20000 }).catch(() => {}); await ed.waitForTimeout(800);
+    const opts = await ed.evaluate(() => Array.prototype.map.call(document.querySelectorAll('#nPl option'), (o) => o.textContent));
+    ok('web editor: name rules for each playlist', opts.length === 2 && opts[1] === 'Second provider', JSON.stringify(opts));
+    await ed.selectOption('#nPl', 'p2'); await ed.waitForTimeout(300);
+    await ed.fill('#nPre', 'ZZQ '); await ed.waitForTimeout(400);
+    await ed.evaluate(() => send()); await ed.waitForTimeout(3000);
+    const pre = await ev(() => ({ two: (Store.byId('p2').names || {}).prefixes, one: (Store.playlist.names || {}).prefixes }));
+    ok('web editor: the second playlist\'s rules go to it, not the first\'s', JSON.stringify(pre.two) === '["ZZQ "]' && JSON.stringify(pre.one || []) !== '["ZZQ "]', JSON.stringify(pre));
+    await ed.context().close(); await ev(() => WebEdit.stop());
+
     // Settings: the second playlist says it is on, and offers to make it the first.
     const sa = (sec, path, n, op, a) => ev(([sec, path, n, op, a]) => Promise.resolve(n == null ? Settings.phone.page(sec, path) : Settings.phone.change(sec, path, n, op, a || {})), [sec, path, n, op, a]);
     let pls = await sa('playlists', []);
@@ -116,10 +178,12 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('its page offers Make this the first playlist and its own Reload', pg.rows.some((x) => x.label === 'Make this the first playlist') && pg.rows.some((x) => x.label === 'Reload channels now'), pg.rows.map((x) => x.label).join(' | '));
     // Turning it off takes its section out.
     const on = pg.rows.find((x) => x.label === 'Playlist on');
+    await ev((k) => Views.startChannel(Library.find(k), false), k2); await tv.waitForTimeout(1500);
     await sa('playlists', [row2.i], on.i, 'toggle', { on: false });
     await tv.waitForTimeout(1500);
     const off = await ev(() => ({ multi: Library.multi, p2: Library.data.channels.some((c) => c.p), heads: Library.groups(true).filter((g) => g.head).length, keys: Library.data.channels.slice(0, 40).map((c) => c.k) }));
     ok('turned off: its section and channels are gone', !off.multi && !off.p2 && !off.heads, JSON.stringify(off).slice(0, 200));
+    ok('turned off while its channel played: playback stopped', await ev(() => !Views.playing));
     ok('turned off: the first playlist is just as it was alone', JSON.stringify(off.keys) === JSON.stringify(single.keys));
     const kept = await ev(() => JSON.parse(localStorage.getItem('tivibro.edits.p2') || '{}'));
     ok('turned off: its edits are kept', !!kept && typeof kept === 'object' && 'hiddenChannels' in kept);

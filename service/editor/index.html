@@ -595,6 +595,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
       <div class="phead"><div><h1>Channel and group names</h1><p>Strip clutter like "USA | " or " FHD" from every channel and group name at once.  Channels and groups you renamed keep your names.</p></div></div>
       <div class="scroll">
         <div class="note">Rules change how names look on the TV; the provider's names are never touched, so turning a rule off brings the old name back.  The previews update as you type.  <a href="#help/names">Learn more</a></div>
+        <div class="card hidden" id="nPlCard"><label>Rules for the playlist <select id="nPl"></select></label><div class="ex">Several playlists are on: each has its own name rules.  The previews show this playlist's channels and groups.</div></div>
         <h2>Channel names</h2>
         <div class="two">
         <div>
@@ -1120,18 +1121,25 @@ function rerender() {
 function groupExists(id) { return id === ALL || (isCustom(id) && !!customOf(id)) || byGroup.has(id); }
 function isCustom(id) { return String(id).indexOf('c_') === 0; }
 function isProv(id) { return id !== ALL && !isCustom(id); }
-function cleanName(n) { return N && N.enabled !== false ? Names.cleanWith(N, n) : n; }
+/* Several playlists on: the TV sends the other playlists' name rules in N.pl ({ playlist id: rules }),
+   and their channels and groups carry p (the playlist id).  Each is cleaned with its own playlist's
+   rules; the Names page edits the playlist picked in nPl (NC()). */
+var nsel = '';
+function rulesOf(pid) { return pid && N && N.pl && N.pl[pid] ? N.pl[pid] : N; }
+function NC() { return rulesOf(nsel); }
+function cleanName(n, pid) { var R = rulesOf(pid); return R && R.enabled !== false ? Names.cleanWith(R, n) : n; }
 // Group names: the channel rules (when "clean group names too" is on), then your group lists (names.js).
-function cleanGroup(n) {
+function cleanGroup(n, pid) {
+  var N = rulesOf(pid);
   if (!N || N.enabled === false) return n;
   if (Names.cleanGroupWith) return Names.cleanGroupWith(N.enabled === true && N.groups === !!N.groups ? N : Object.assign({}, N, { enabled: true, groups: N.groups !== false }), n);
   return N.groups !== false ? Names.cleanWith(N, n) : n;
 }
-function chName(c) { return E.renames[c.k] || cleanName(c.n); }
+function chName(c) { return E.renames[c.k] || cleanName(c.n, c.p); }
 function customOf(id) { return E.custom.filter(function (g) { return g.id === id; })[0]; }
 function provOf(id) { return D.groups.filter(function (x) { return x.id === id; })[0]; }
 function isFav(k) { var f = customOf(FAV); return !!(f && f.items.indexOf(k) >= 0); }
-function provName(g) { return E.groupRenames[g.id] || cleanGroup(g.name); }
+function provName(g) { return E.groupRenames[g.id] || cleanGroup(g.name, g.p); }
 function providerGroups() {
   var pos = {}; E.groupOrder.forEach(function (id, i) { pos[id] = i; });
   return D.groups.map(function (g, i) { return { id: g.id, name: provName(g), raw: g.name, i: i, renamed: !!E.groupRenames[g.id], pl: g.pl || '' }; })
@@ -1293,8 +1301,8 @@ function sameJ(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
 // Plain-language list of what differs between two states.
 function diffs(A, B) {
   var out = [], a = A.E, b = B.E;
-  function nm(k) { var c = byKey.get(k); return c ? (b.renames[k] || cleanName(c.n)) : k; }
-  function gn(id) { var g = b.custom.filter(function (x) { return x.id === id; })[0] || a.custom.filter(function (x) { return x.id === id; })[0]; if (g) return g.name; var p = provOf(id); return p ? (b.groupRenames[id] || cleanGroup(p.name)) : id; }
+  function nm(k) { var c = byKey.get(k); return c ? (b.renames[k] || cleanName(c.n, c.p)) : k; }
+  function gn(id) { var g = b.custom.filter(function (x) { return x.id === id; })[0] || a.custom.filter(function (x) { return x.id === id; })[0]; if (g) return g.name; var p = provOf(id); return p ? (b.groupRenames[id] || cleanGroup(p.name, p.p)) : id; }
   function keys(x, y) { var s = {}; Object.keys(x).forEach(function (k) { s[k] = 1; }); Object.keys(y).forEach(function (k) { s[k] = 1; }); return Object.keys(s); }
   keys(a.hiddenGroups, b.hiddenGroups).forEach(function (id) { if (!!a.hiddenGroups[id] !== !!b.hiddenGroups[id]) out.push((b.hiddenGroups[id] ? 'Hide group ' : 'Show group ') + gn(id)); });
   keys(a.hiddenChannels, b.hiddenChannels).forEach(function (k) { if (!!a.hiddenChannels[k] !== !!b.hiddenChannels[k]) out.push((b.hiddenChannels[k] ? 'Hide ' : 'Show ') + nm(k)); });
@@ -1739,7 +1747,7 @@ function renameGroup(id) {
     });
     return;
   }
-  var p = provOf(id), def = cleanGroup(p.name);
+  var p = provOf(id), def = cleanGroup(p.name, p.p);
   promptBox('Rename provider group', 'Name on the TV', E.groupRenames[id] || def, 'Rename', function (v) {
     v = v.trim();
     mut(!v || v === def ? 'Group back to the provider\'s name: ' + def : 'Renamed group "' + def + '" to "' + v + '"', function () { if (!v || v === def) delete E.groupRenames[id]; else E.groupRenames[id] = v; });
@@ -1964,8 +1972,8 @@ function popMenu(anchor, items) {
 document.addEventListener('mousedown', function (e) { var m = $('menu'); if (m && !m.contains(e.target)) closeMenu(); }, true);
 $('cspacer').addEventListener('keydown', function (e) { if (!e.target.hasAttribute('data-renbox')) return; if (e.key === 'Enter') finishRename(e.target.value); if (e.key === 'Escape') { renaming = null; drawRows(); } });
 $('cspacer').addEventListener('focusout', function (e) { if (e.target.hasAttribute('data-renbox')) finishRename(e.target.value); });
-function setRename(k, v) { var c = byKey.get(k); v = (v || '').trim(); if (!v || v === cleanName(c.n)) delete E.renames[k]; else E.renames[k] = v; }
-function finishRename(v) { var k = renaming; if (!k) return; renaming = null; var c = byKey.get(k); if (!mut('Renamed ' + cleanName(c.n) + (v.trim() ? ' to "' + v.trim() + '"' : ''), function () { setRename(k, v); })) drawRows(); }
+function setRename(k, v) { var c = byKey.get(k); v = (v || '').trim(); if (!v || v === cleanName(c.n, c.p)) delete E.renames[k]; else E.renames[k] = v; }
+function finishRename(v) { var k = renaming; if (!k) return; renaming = null; var c = byKey.get(k); if (!mut('Renamed ' + cleanName(c.n, c.p) + (v.trim() ? ' to "' + v.trim() + '"' : ''), function () { setRename(k, v); })) drawRows(); }
 var dragK = null;
 $('cspacer').addEventListener('dragstart', function (e) { var r = e.target.closest('.c'); if (!r) return; dragK = r.dataset.k; e.dataTransfer.effectAllowed = 'move'; });
 $('cspacer').addEventListener('dragover', function (e) { if (dragK && e.target.closest('.c')) e.preventDefault(); });
@@ -2764,15 +2772,27 @@ function renderHelp(sub) {
 /* ---------- names ---------- */
 function renderNames() {
   if (!N) return;
-  $('nEnabled').checked = N.enabled !== false; $('nGroups').checked = N.groups !== false;
+  // Several playlists on: pick whose rules this page shows.
+  var pls = N.pl ? Object.keys(N.pl) : [];
+  $('nPlCard').classList.toggle('hidden', !pls.length);
+  if (pls.length) {
+    if (nsel && !N.pl[nsel]) nsel = '';
+    var nameOf = function (id) { var x = (D.playlists || []).filter(function (q) { return q.id === id; })[0]; return x ? x.name : 'Playlist'; };
+    var first = (D.playlist && D.playlist.name) || 'First playlist';
+    $('nPl').innerHTML = '<option value="">' + esc(first) + '</option>' + pls.map(function (id) { return '<option value="' + esc(id) + '"' + (id === nsel ? ' selected' : '') + '>' + esc(nameOf(id)) + '</option>'; }).join('');
+    $('nPl').value = nsel;
+  } else nsel = '';
+  var R = NC();
+  R.rules = R.rules || {};
+  $('nEnabled').checked = R.enabled !== false; $('nGroups').checked = R.groups !== false;
   $('rules').innerHTML = Names.RULES.map(function (r) {
-    return '<label class="rule"><input type="checkbox" class="sw" data-rule="' + r.id + '"' + ((N.rules[r.id] != null ? N.rules[r.id] : r.on) ? ' checked' : '') + '><div><b>' + esc(r.label) + '</b>' +
+    return '<label class="rule"><input type="checkbox" class="sw" data-rule="' + r.id + '"' + ((R.rules[r.id] != null ? R.rules[r.id] : r.on) ? ' checked' : '') + '><div><b>' + esc(r.label) + '</b>' +
       '<div class="ex">' + r.ex.map(function (x) { return esc(x[0]) + ' → ' + esc(x[1]); }).join('   ·   ') + '</div>' + (r.note ? '<div class="ex">' + esc(r.note) + '</div>' : '') + '</div></label>';
   }).join('');
-  if (document.activeElement !== $('nPre')) $('nPre').value = Names.joinList(N.prefixes || []);
-  if (document.activeElement !== $('nSuf')) $('nSuf').value = Names.joinList(N.suffixes || []);
-  if (document.activeElement !== $('nGPre')) $('nGPre').value = Names.joinList(N.gprefixes || []);
-  if (document.activeElement !== $('nGSuf')) $('nGSuf').value = Names.joinList(N.gsuffixes || []);
+  if (document.activeElement !== $('nPre')) $('nPre').value = Names.joinList(R.prefixes || []);
+  if (document.activeElement !== $('nSuf')) $('nSuf').value = Names.joinList(R.suffixes || []);
+  if (document.activeElement !== $('nGPre')) $('nGPre').value = Names.joinList(R.gprefixes || []);
+  if (document.activeElement !== $('nGSuf')) $('nGSuf').value = Names.joinList(R.gsuffixes || []);
   renderPreview();
 }
 function renderNamesPage() { renderPreview(); renderGPreview(); renderGnames(); }
@@ -2781,7 +2801,8 @@ function renderGPreview() {
   if (!D || page !== 'names') return;
   var only = $('onlyGChanged').checked, rows = [], changedCount = 0;
   D.groups.forEach(function (g) {
-    var out = cleanGroup(g.name), same = out === g.name;
+    if ((g.p || '') !== nsel) return;                    // the playlist picked above
+    var out = cleanGroup(g.name, g.p), same = out === g.name;
     if (!same) changedCount++;
     if ((only && same) || rows.length >= 300) return;
     rows.push('<tr class="' + (same ? 'same' : '') + '"><td>' + esc(g.name) + '</td><td>' + esc(out) + (E.groupRenames[g.id] ? ' <span class="dim small">(you renamed it: ' + esc(E.groupRenames[g.id]) + ')</span>' : '') + '</td></tr>');
@@ -2791,25 +2812,28 @@ function renderGPreview() {
 function renderPreview() {
   if (!D || page !== 'names') return;
   var only = $('onlyChanged').checked, rows = [], n = 0, changedCount = 0;
-  D.channels.forEach(function (c) { if (cleanName(c.n) !== c.n) changedCount++; });
+  D.channels.forEach(function (c) { if ((c.p || '') === nsel && cleanName(c.n, c.p) !== c.n) changedCount++; });
   for (var i = 0; i < D.channels.length && n < 300; i++) {
-    var c = D.channels[i], out = cleanName(c.n), same = out === c.n;
+    var c = D.channels[i];
+    if ((c.p || '') !== nsel) continue;                  // the playlist picked above
+    var out = cleanName(c.n, c.p), same = out === c.n;
     if (only && same) continue;
     rows.push('<tr class="' + (same ? 'same' : '') + '"><td>' + esc(c.n) + '</td><td>' + esc(out) + '</td></tr>'); n++;
   }
   $('prev').innerHTML = '<tr><th>From the provider</th><th>On the TV (' + changedCount.toLocaleString() + ' cleaned)</th></tr>' + (rows.join('') || '<tr><td colspan="2">No names change with these rules.</td></tr>');
 }
 function ruleLabel(id) { var r = Names.RULES.filter(function (x) { return x.id === id; })[0]; return r ? r.label : id; }
-$('rules').addEventListener('change', function (e) { var id = e.target.dataset.rule, on = e.target.checked; if (!id) return; mut((on ? 'Turned on: ' : 'Turned off: ') + ruleLabel(id), function () { N.rules[id] = on; }); });
-$('nEnabled').addEventListener('change', function () { var on = this.checked; mut(on ? 'Turned on name clean-up' : 'Turned off name clean-up', function () { N.enabled = on; }); });
-$('nGroups').addEventListener('change', function () { var on = this.checked; mut(on ? 'Clean group names with the rules too' : 'Group names: only your group lists', function () { N.groups = on; }); });
-$('nPre').addEventListener('input', function () { var v = this.value; mut('Edited prefixes to remove', function () { N.prefixes = Names.parseList(v); }, { merge: 'pre' }); });
-$('nSuf').addEventListener('input', function () { var v = this.value; mut('Edited suffixes to remove', function () { N.suffixes = Names.parseList(v); }, { merge: 'suf' }); });
-$('nGPre').addEventListener('input', function () { var v = this.value; mut('Edited group prefixes to remove', function () { N.gprefixes = Names.parseList(v); }, { merge: 'gpre' }); });
-$('nGSuf').addEventListener('input', function () { var v = this.value; mut('Edited group suffixes to remove', function () { N.gsuffixes = Names.parseList(v); }, { merge: 'gsuf' }); });
+$('rules').addEventListener('change', function (e) { var id = e.target.dataset.rule, on = e.target.checked; if (!id) return; mut((on ? 'Turned on: ' : 'Turned off: ') + ruleLabel(id), function () { NC().rules[id] = on; }); });
+$('nEnabled').addEventListener('change', function () { var on = this.checked; mut(on ? 'Turned on name clean-up' : 'Turned off name clean-up', function () { NC().enabled = on; }); });
+$('nGroups').addEventListener('change', function () { var on = this.checked; mut(on ? 'Clean group names with the rules too' : 'Group names: only your group lists', function () { NC().groups = on; }); });
+$('nPre').addEventListener('input', function () { var v = this.value; mut('Edited prefixes to remove', function () { NC().prefixes = Names.parseList(v); }, { merge: 'pre' }); });
+$('nSuf').addEventListener('input', function () { var v = this.value; mut('Edited suffixes to remove', function () { NC().suffixes = Names.parseList(v); }, { merge: 'suf' }); });
+$('nGPre').addEventListener('input', function () { var v = this.value; mut('Edited group prefixes to remove', function () { NC().gprefixes = Names.parseList(v); }, { merge: 'gpre' }); });
+$('nGSuf').addEventListener('input', function () { var v = this.value; mut('Edited group suffixes to remove', function () { NC().gsuffixes = Names.parseList(v); }, { merge: 'gsuf' }); });
 $('onlyGChanged').addEventListener('change', renderGPreview);
-$('nDefaults').onclick = function () { mut('Recommended name rules', function () { N.enabled = true; N.rules = Names.defaults().rules; }); renderNames(); };
-$('nNone').onclick = function () { mut('Turned all name rules off', function () { Names.RULES.forEach(function (r) { N.rules[r.id] = false; }); }); renderNames(); };
+$('nDefaults').onclick = function () { mut('Recommended name rules', function () { NC().enabled = true; NC().rules = Names.defaults().rules; }); renderNames(); };
+$('nNone').onclick = function () { mut('Turned all name rules off', function () { Names.RULES.forEach(function (r) { NC().rules[r.id] = false; }); }); renderNames(); };
+$('nPl').addEventListener('change', function () { nsel = this.value; renderNames(); renderGPreview(); });
 $('onlyChanged').addEventListener('change', renderPreview);
 
 /* ---------- smart clean-up ---------- */
@@ -2999,7 +3023,7 @@ function renderGnames() {
 function prefixDone() {
   var by = {};
   D.groups.forEach(function (g) {
-    var r = E.groupRenames[g.id], n = cleanGroup(g.name), m = /^\s*([A-Za-z]{2,12})(?:\s*[|:\-]\s*|\s+)(?=\S)/.exec(n);
+    var r = E.groupRenames[g.id], n = cleanGroup(g.name, g.p), m = /^\s*([A-Za-z]{2,12})(?:\s*[|:\-]\s*|\s+)(?=\S)/.exec(n);
     if (r && m && trimPrefix(n, m[1]) === r) (by[m[1].toUpperCase()] || (by[m[1].toUpperCase()] = [])).push(g.id);
   });
   return Object.keys(by).map(function (w) { return '<div class="small" style="margin-top:10px">Taken off now: <b>"' + esc(w) + '"</b> from ' + plural(by[w].length, 'group name') + '  <button class="small ghost" data-gback="' + esc(w) + '">Put it back</button></div>'; }).join('');
@@ -3008,7 +3032,7 @@ function trimPrefix(name, w) { var r = name.replace(new RegExp('^\\s*' + w + '(?
 document.addEventListener('click', function (e) {
   var gb = e.target.closest('[data-gback]');
   if (gb) {
-    var w0 = gb.dataset.gback, ids = D.groups.filter(function (g) { var r = E.groupRenames[g.id], n = cleanGroup(g.name); return r && new RegExp('^\\s*' + w0 + '\\b', 'i').test(n) && trimPrefix(n, w0) === r; }).map(function (g) { return g.id; });
+    var w0 = gb.dataset.gback, ids = D.groups.filter(function (g) { var r = E.groupRenames[g.id], n = cleanGroup(g.name, g.p); return r && new RegExp('^\\s*' + w0 + '\\b', 'i').test(n) && trimPrefix(n, w0) === r; }).map(function (g) { return g.id; });
     mut('Put "' + w0 + '" back on ' + plural(ids.length, 'group name'), function () { ids.forEach(function (id) { delete E.groupRenames[id]; }); });
     return;
   }

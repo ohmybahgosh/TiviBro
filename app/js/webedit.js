@@ -67,6 +67,15 @@ var WebEdit = (function () {
   function newRandomPort() { var s = Store.settings; s.editorPort = 'random'; s.editorPortRandom = randomPort(); Store.saveSettings(); return s.editorPortRandom; }
   function host(u) { var m = /^(?:https?:\/\/)?([^/:?#]+)/i.exec(u || ''); return m ? m[1] : ''; }
 
+  /* The first playlist's name rules, with the other playlists' that are on in pl (several playlists on;
+     the editor's Names page edits each, writeEdits puts each back with its own playlist). */
+  function namesOut(p) {
+    var ids = Library.otherIds ? Library.otherIds() : [];
+    if (!ids.length) return p.names || null;
+    var out = JSON.parse(JSON.stringify(p.names || Names.defaults())); out.pl = {};
+    ids.forEach(function (id) { var q = Store.byId(id); if (q) out.pl[id] = q.names || Names.defaults(); });
+    return out;
+  }
   function editsOf() {
     var e = Store.edits, out = {};
     FIELDS.forEach(function (f) { out[f] = e[f] || (f === 'custom' || f === 'groupOrder' || f === 'watchlist' ? [] : {}); });
@@ -74,7 +83,7 @@ var WebEdit = (function () {
   }
   /* Has anything the editor shows changed?  Checked every two seconds, so it compares counters, not the
      edits themselves (megabytes with a huge playlist, issue #14). */
-  function sig() { try { return JSON.stringify(draftInfo) + Store.playlist.id + ':' + Store.editsRev + JSON.stringify(Store.playlist.names || null) + JSON.stringify(playlists()) + (Library.data ? Library.data.channels.length : 0) + ':' + (Epg.status && Epg.status.at) + ':' + (Epg.pubStatus && Epg.pubStatus.at); } catch (e) { return String(Date.now()); } }
+  function sig() { try { return JSON.stringify(draftInfo) + Store.playlist.id + ':' + Store.editsRev + JSON.stringify(namesOut(Store.playlist)) + JSON.stringify(playlists()) + (Library.data ? Library.data.channels.length : 0) + ':' + (Epg.status && Epg.status.at) + ':' + (Epg.pubStatus && Epg.pubStatus.at); } catch (e) { return String(Date.now()); } }
 
   // Playlists as the browser sees them: no username, password or full addresses.
   function fileOf(u) { var m = /^[a-z]+:\/\/[^/]+\/(?:[^?#]*\/)?([^/?#]+)/i.exec(String(u || '')); return m && !/[=@]/.test(m[1]) ? decodeURIComponent(m[1]).slice(0, 60) : ''; }
@@ -97,8 +106,8 @@ var WebEdit = (function () {
     if (chanJson.data === d && chanJson.key === key) return chanJson.json;
     var json = JSON.stringify({
       // Several playlists on: the other playlists' groups say whose they are (pl, the playlist's name).
-      groups: d.groups.map(function (g) { return g.p ? { id: g.id, name: g.name, pl: Library.plName(g) } : { id: g.id, name: g.name }; }),
-      channels: d.channels.map(function (c) { return { k: c.k, n: c.n, g: c.g, num: c.num, logo: c.logo || '', arch: c.arch || 0, epg: Epg.epgId(c) || '', has: !!Epg.hasData(c) }; })
+      groups: d.groups.map(function (g) { return g.p ? { id: g.id, name: g.name, pl: Library.plName(g), p: g.p } : { id: g.id, name: g.name }; }),
+      channels: d.channels.map(function (c) { var x = { k: c.k, n: c.n, g: c.g, num: c.num, logo: c.logo || '', arch: c.arch || 0, epg: (Epg.guideId ? Epg.guideId(c) : Epg.epgId(c)) || '', has: !!Epg.hasData(c) }; if (c.p) x.p = c.p; return x; })
     });
     chanJson = { key: key, data: d, json: json };
     return json;
@@ -119,7 +128,7 @@ var WebEdit = (function () {
       gz: Net.canUnzip,
       lastBackup: Store.settings.lastBackup || 0,
       edits: editsOf(),
-      names: p.names || null,
+      names: namesOut(p),
       drafts: draftInfo,
       appliedRev: appliedRev
     };
@@ -168,7 +177,14 @@ var WebEdit = (function () {
     if (obj(ed.chanOrder)) { e.chanOrder = {}; Object.keys(ed.chanOrder).forEach(function (g) { var l = strs(ed.chanOrder[g]); if (l.length) e.chanOrder[g] = l; }); }
     if (obj(ed.groupSort)) { e.groupSort = {}; Object.keys(ed.groupSort).forEach(function (g) { if (SORTS.indexOf(ed.groupSort[g]) >= 0) e.groupSort[g] = ed.groupSort[g]; }); }
     if (obj(ed.epgMap) && JSON.stringify(ed.epgMap) !== JSON.stringify(e.epgMap || {})) { e.epgMap = ed.epgMap; guideChanged = true; }
-    if (obj(names)) { p.names = names; Store.upsertPlaylist(p); Names.invalidate(); }
+    if (obj(names)) {
+      var more = obj(names.pl) ? names.pl : null, own = {};
+      Object.keys(names).forEach(function (k) { if (k !== 'pl') own[k] = names[k]; });
+      p.names = own; Store.upsertPlaylist(p);
+      // Several playlists on: each other playlist's rules go back to it.
+      if (more) Object.keys(more).forEach(function (id) { var q = Store.byId(id); if (q && obj(more[id]) && id !== p.id) { q.names = more[id]; Store.upsertPlaylist(q); } });
+      Names.invalidate();
+    }
     Store.saveEdits();
     Library.dirty();
     Views.refreshLists(true);
