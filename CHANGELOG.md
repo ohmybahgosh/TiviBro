@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 85, 2026-11-04)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 85
 
 - **A channel whose picture keeps freezing switches to its other format.**  Some live channels' MPEG-TS freezes the picture for seconds at a time with plenty buffered (timestamp jumps in the stream), whatever the buffer profile.  The first freeze is nudged as before; the second within 10 minutes, even after switching away and back, tries the channel's HLS version (or MPEG-TS, from HLS), and TiviBro remembers which one held up.
 - **The screensaver stays off while you watch, also right after an update.**  webOS often starts TiviBro twice within a second, and the second start found its screensaver request still held by the first ("The client is already registered"), so the screensaver could come on over a channel.  It now asks again under a name of its own.
@@ -8,11 +12,7 @@
 - **Drafts are kept on the TV again** (#50).  Since alpha 56 every draft the web editor saved failed on the TV ("Could not keep a draft" in the log), so a reload or another browser couldn't get unsent changes back.
 - **What's new shows soon after an update.**  It waited for the channel list to finish reloading, a minute or two on a big list.  Now it shows within a few seconds of the start, still not over a message, while you're pressing buttons, or while a channel is starting (for 20 seconds at most).
 
-## 0.6.0 (alpha 84, 2026-11-04)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 84
+### In alpha 84
 
 - **One reminder per game for your teams.**  A game carried by several channels got a reminder for each channel's time, plus its "possible Overtime" block and the replays after midnight: five for one Pistons game.  Now the same two teams within 12 hours are one game, with one reminder at its earliest start, and overtime blocks and replays get none.  The extra reminders an earlier version set are cleared on the next start.
 - **Reminders on the phone show their channel while the TV is still starting.**  The phone's Reminders screen could say "Channel not in this playlist" for every reminder when the TV was still loading its channels.  The TV now keeps each reminder's channel name, and says "Channels still loading" if it has none yet.
