@@ -15,7 +15,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x ? '  ' + 
     const ctx = await browser.newContext({ viewport: { width: 1920, height: 1080 } });
     const page = await ctx.newPage();
     await page.addInitScript(([s, relay]) => { localStorage.setItem('tivibro.devRelay', relay); localStorage.setItem('tivibro.settings', s); }, [JSON.stringify(SETTINGS), RELAY]);
-    if (mode === 'broken script') await page.route(/js\/views\.js/, r => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'var Views = (function () { let x = ; })();' }));
+    if (mode === 'broken script') await page.route(/js\/views(\.[0-9a-f]{10})?\.js$/,   // plain, or hashed in the packaged build (test-build.sh)
+      r => r.fulfill({ status: 200, contentType: 'text/javascript', body: 'var Views = (function () { let x = ; })();' }));
     if (mode === 'too old') await page.addInitScript(() => { const F = window.Function; window.Function = function (src) { if (/class K/.test(src)) throw new SyntaxError('Unexpected token let'); return F.apply(this, arguments); }; });
     await page.goto(APP);
     await page.waitForTimeout(5000);

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **An update no longer offers itself again after installing.**  On some TVs, TiviBro kept running parts of the version before an update, so it still said the old version number and asked to install the update it had just installed, again and again.  Each release now packages its changed scripts under new names, so the TV runs the new version right away.
+
 ## 0.6.0 (alpha 90, 2026-11-05)
 
 Pre-release: expect rough edges, and keep a backup before installing.
