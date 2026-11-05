@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 88, 2026-11-05)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 88
 
 - **Several playlists: each one's guide in Settings > Guide.**  Below the first playlist's guide, every other playlist that is on has a page of its own (provider guide, guide sources, public fill-in, reload, and how many of its channels have a guide), on the TV and in the phone app's settings.
 - **Smart clean-up for one playlist or all of them.**  With several playlists on, the web editor's Smart clean-up has a Clean up list: every playlist, or just one.  Each change is still kept by the playlist it belongs to.
@@ -10,11 +14,7 @@
 - **A channel that only plays on another engine gets there sooner.**  When a channel gives no picture twice in a row on one engine, the next engine is tried instead of reconnecting the same way up to nine times (issue #53).
 - **Long problem reports reach GitHub.**  When GitHub turns a long report down (the "GitHub did not take the report (500)" message in the phone app), it is sent again with less of the log, so it still goes through.
 
-## 0.6.0 (alpha 87, 2026-11-05)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 87
+### In alpha 87
 
 - **Several playlists at once: each with its own numbers, guide, names, events and movies.**  Another playlist's channel numbers start after the first's (its channel 1 becomes 2001 after a first playlist ending at 1523), so number keys reach every channel.  Two guides with the same guide ids each give their own channels their own programmes.  Name rules, Hide channels with nothing on, event channels, public guide fill-in and the set-up tour work per playlist, on each playlist's page; the content filter covers them all.  Movies and Shows show every playlist's titles with a heading per playlist.  The web editor edits each playlist's name rules.  Turning a playlist off stops what plays from it, a reminder for another playlist's channel opens it, and on a TV with 1 GB of memory fewer channels are loaded at once and background loads wait until nothing plays.
 - **Several playlists at once, like TiviMate.**  Every playlist that is on is now used at the same time.  The group column on the Channels screen and in the guide has a section for each playlist, with its name as a heading and its groups under it; Favorites, All channels, Recent, My teams and your own groups stay at the top, and **Up** and **Down** step over the headings.  Each channel plays from its own playlist (server, login, User-Agent, catch-up) and gets its own playlist's guide.  Search, reminders, the watchlist, My teams and Movies on now cover them all.  Hiding, renaming or moving a channel of a playlist is kept with that playlist.  **Use this playlist** becomes **Make this the first playlist** (its groups first, and your Favorites and groups are its own), and **Playlist on** adds or removes a playlist's section.  With one playlist on, nothing changes.
