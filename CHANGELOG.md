@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **TiviBro opens again after updating itself.**  The TV closes TiviBro as soon as the update starts installing, so it never got to restart and just disappeared.  Now the Homebrew Channel opens it again once the new version is in.
-
-## 0.6.0 (alpha 88, 2026-11-05)
+## 0.6.0 (alpha 89, 2026-11-05)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 88
+### New in alpha 89
+
+- **TiviBro opens again after updating itself.**  The TV closes TiviBro as soon as the update starts installing, so it never got to restart and just disappeared.  Now the Homebrew Channel opens it again once the new version is in.
+
+### In alpha 88
 
 - **Several playlists: each one's guide in Settings > Guide.**  Below the first playlist's guide, every other playlist that is on has a page of its own (provider guide, guide sources, public fill-in, reload, and how many of its channels have a guide), on the TV and in the phone app's settings.
 - **Smart clean-up for one playlist or all of them.**  With several playlists on, the web editor's Smart clean-up has a Clean up list: every playlist, or just one.  Each change is still kept by the playlist it belongs to.
