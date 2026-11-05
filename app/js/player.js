@@ -622,11 +622,11 @@ var Player = (function () {
       useEngine(cur.swapFrom); cur.swapFrom = null; cur.noSwap = true; cur.tried = null; cur.late = null; cur.retries = 0;
     }
     else if (cur.live && !cur.timeshift && cur.everPlayed && !cur.noSwap && st && (st.kind === 'ts' || st.kind === 'hls') && !/^The provider answered/.test(why)) {
-      var orig = cur.origUrl || cur.url, trickle = /slowed down/.test(why), other = st.kind === 'ts' ? 'hls' : 'ts';
+      var orig = cur.origUrl || cur.url, frozen = /keeps freezing/.test(why), trickle = frozen || /slowed down/.test(why), other = st.kind === 'ts' ? 'hls' : 'ts';
       cur.drops = (cur.drops || []).filter(function (x) { return now - x < 180000; }); cur.drops.push(now);
       cur.swaps = (cur.swaps || []).filter(function (x) { return now - x < 600000; });
       if ((trickle || cur.drops.length >= 2) && cur.swaps.length < 3 && engineOk(other) && !(cur.bad && cur.bad[other]) && (other === 'ts' || hlsVariant(orig) || /\.m3u8(\?|$)/i.test(orig))) {
-        Log.info('player', 'This channel ' + (trickle ? 'is trickling in' : 'dropped ' + cur.drops.length + ' times in 3 minutes') + ' on ' + (st.kind === 'ts' ? 'MPEG-TS' : 'HLS') + '; switching to its ' + (other === 'ts' ? 'MPEG-TS' : 'HLS') + ' version');
+        Log.info('player', 'This channel ' + (frozen ? 'keeps freezing' : trickle ? 'is trickling in' : 'dropped ' + cur.drops.length + ' times in 3 minutes') + ' on ' + (st.kind === 'ts' ? 'MPEG-TS' : 'HLS') + '; switching to its ' + (other === 'ts' ? 'MPEG-TS' : 'HLS') + ' version');
         useEngine(other); cur.swapFrom = st.kind; cur.swapPlayed = false;
         if (other === 'hls') preferHls[orig] = 1; else delete preferHls[orig];
         cur.drops = []; cur.swaps.push(now);
@@ -682,6 +682,7 @@ var Player = (function () {
      counts: data that keeps coming, at under half of real time, with the cushion nearly gone.  A stall
      (nothing for 6 seconds or more) or a slow patch that catches up again is left to the refill, which
      keeps the burst that usually follows (the chaos soak showed reconnecting then loses it). */
+  var freezes = {};             // channel -> when its picture froze with data in hand, the last 10 minutes
   var EARLY_RATE = 0.5, EARLY_WIN = 30000, EARLY_GAP = 6000, EARLY_EVERY = 120000;
   function early(now, ahead, p) {
     if (!st.started || st.refilling || video.seeking || video.paused || st.userPaused) { st.arr = null; return false; }
@@ -878,7 +879,21 @@ var Player = (function () {
     }
     // 4. Clock stopped with data in hand: decoder problem.  Nudge, recover, then reconnect.
     if (stuck > p.stall * 1000) {
-      if (!st.nudged) { Log.warn('player', 'Picture froze for ' + (stuck / 1000).toFixed(1) + 's with ' + ahead.toFixed(1) + 's buffered; nudging the decoder'); st.nudged = 1; video.currentTime = t + 0.1; if (eng) eng.recover(); st.lastMove = now; return; }
+      if (!st.nudged) {
+        var froze = 'Picture froze for ' + (stuck / 1000).toFixed(1) + 's with ' + ahead.toFixed(1) + 's buffered';
+        /* The picture freezing again and again with plenty buffered (a live channel whose MPEG-TS has
+           timestamp jumps, issue: Nick Jr. on a C2 froze on every profile) is the stream, not the buffer:
+           the second time in 10 minutes, even after switching away and back, its other format is tried
+           (reconnect(), as for a channel that keeps dropping). */
+        var fk = (cur.ch && cur.ch.k) || cur.origUrl || cur.url, fl = freezes[fk] = (freezes[fk] || []).filter(function (x) { return now - x < 600000; });
+        fl.push(now);
+        if (fl.length >= 2 && cur.live && !cur.timeshift && !cur.noSwap && (st.kind === 'ts' || st.kind === 'hls')) {
+          Log.warn('player', froze + ', the second time in 10 minutes');
+          freezes[fk] = []; return reconnect(myToken, 'The picture keeps freezing on this channel, reconnecting');
+        }
+        Log.warn('player', froze + '; nudging the decoder');
+        st.nudged = 1; video.currentTime = t + 0.1; if (eng) eng.recover(); st.lastMove = now; return;
+      }
       st.nudged = 0;
       reconnect(myToken, 'Picture froze, reconnecting');
     }

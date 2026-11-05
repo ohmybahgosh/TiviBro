@@ -37,6 +37,19 @@ function setup(opts) {
   ok('no player at all: it may start', A.busy(null, false) === false);
 }
 
+// The name still held by a start a second earlier (webOS starts the app twice): asked again under its own name.
+{
+  const t = setup();
+  t.A.start();
+  t.A._message(JSON.stringify({ returnValue: false, errorCode: -1, errorText: 'The client is already registered' }));
+  const regs = t.calls.filter(c => /registerScreenSaverRequest/.test(c.uri));
+  ok('already registered: asks again under a name of its own', regs.length === 2 && regs[0].params.clientName === 'tivibro' && /^tivibro\.[a-z0-9]+$/.test(regs[1].params.clientName) && !t.logs.some(l => l[0] === 'warn'), [regs, t.logs]);
+  t.A._message(JSON.stringify({ returnValue: true, subscribed: true }));
+  ok('and then holds the screensaver off as usual', t.A.status.state === 'on');
+  t.A._message(JSON.stringify({ returnValue: false, errorText: 'The client is already registered' }));
+  ok('only once: a second refusal is reported', t.A.status.state === 'refused' && t.logs.some(l => l[0] === 'warn'));
+}
+
 // Registering, then the questions.
 {
   const { A, calls, logs, bridges, player, doc } = setup();

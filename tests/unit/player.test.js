@@ -73,7 +73,7 @@ function setup(opts) {
     const end = now + ms;
     while (now < end) {
       now += 100;
-      if (!video.paused && video.readyState >= 2) {
+      if (!video.paused && video.readyState >= 2 && !video._frozen) {
         // Like a real element: play through the buffered range the playhead is in, stop at its end.
         const r = video._ranges, ct = video.currentTime, cur = r.find(x => ct >= x[0] - 0.01 && ct <= x[1] + 0.01);
         if (cur) video.currentTime = Math.min(ct + 0.1 * video.playbackRate, cur[1]);
@@ -206,6 +206,17 @@ ok('never-played channel ends on an error after every pipeline', /^error/.test(t
   for (let i = 0; i < 600 && m.made.length === n0; i++) { e0 += 0.03; m.video._ranges = [[0, e0]]; m.run(100); }
   m.run(1500);
   ok('swap: a stream trickling in on MPEG-TS goes to HLS straight away', m.last().kind === 'hls' && m.logs.some(l => /is trickling in on MPEG-TS; switching to its HLS version/.test(l)), m.made.map(x => x.kind).join(','));
+  // The picture freezing with plenty buffered, twice in 10 minutes (even across switching channels): its HLS version.
+  m = setup();
+  const nick = { k: 'nick', n: 'Nick Jr.', url: 'http://p/live/u/p/198.ts' };
+  m.P.play(nick);
+  m.feed(0, 60); m.run(3000);
+  m.video._frozen = true; m.run(9000); m.video._frozen = false; m.run(2000);
+  ok('freeze: the first freeze with data in hand is nudged', m.logs.some(l => /Picture froze for .* nudging the decoder/.test(l)) && m.last().kind === 'ts', m.logs.filter(l => /froze|switch/.test(l)).join(' | '));
+  m.P.play({ k: 'other', n: 'Other', url: 'http://p/live/u/p/200.ts' }); m.feed(0, 60); m.run(3000);
+  m.P.play(nick); m.feed(0, 60); m.run(3000);
+  m.video._frozen = true; m.run(9000); m.video._frozen = false; m.run(2000);
+  ok('freeze: the second, after switching away and back, tries its HLS version', m.last().kind === 'hls' && m.logs.some(l => /keeps freezing on MPEG-TS; switching to its HLS version/.test(l)), m.made.map(x => x.kind).join(',') + ' ' + m.logs.filter(l => /froze|freez|switch/.test(l)).join(' | '));
 }
 
 // ---- a movie that drops resumes where it was ----

@@ -14,7 +14,7 @@
    refusal is logged.  On by default, no setting. */
 var Awake = (function () {
   'use strict';
-  var NAME = 'tivibro', SVC = 'luna://com.webos.service.tvpower/power/';
+  var BASE = 'tivibro', NAME = BASE, retried = false, SVC = 'luna://com.webos.service.tvpower/power/';
   var ACTIVE = { playing: 1, loading: 1, buffering: 1 };
   var sub = null, state = 'off', why = '', refused = 0, allowed = 0, lastAsk = 0, pending = [];
 
@@ -39,6 +39,14 @@ var Awake = (function () {
     if (typeof r === 'string') { try { r = JSON.parse(r); } catch (e) { r = null; } }
     if (!r) return;
     if (r.returnValue === false) {
+      /* A TiviBro page that started a moment ago (webOS often starts the app twice in a second) still holds
+         the name: register again under a name of this page's own, rather than going without (the screensaver
+         then came on over a channel playing). */
+      if (/already registered/i.test(String(r.errorText || '')) && !retried) {
+        retried = true; NAME = BASE + '.' + (Date.now() % 1000000).toString(36);
+        log('info', 'The TV still had the screensaver request of an earlier start; asking again');
+        sub = null; start(); return;
+      }
       state = 'refused'; why = String(r.errorText || r.errorCode || 'refused');
       log('warn', 'The TV would not let TiviBro hold off its screensaver: ' + why);
       return;
@@ -76,7 +84,7 @@ var Awake = (function () {
 
   return {
     start: start, busy: busy, _message: onMessage,
-    _reset: function () { sub = null; state = 'off'; why = ''; refused = allowed = lastAsk = 0; pending = []; },
+    _reset: function () { sub = null; NAME = BASE; retried = false; state = 'off'; why = ''; refused = allowed = lastAsk = 0; pending = []; },
     get status() { return { state: state, why: why, refused: refused, allowed: allowed, lastAsk: lastAsk }; }
   };
 })();
