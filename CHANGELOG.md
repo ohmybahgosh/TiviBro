@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **An update no longer offers itself again after installing.**  On some TVs, TiviBro kept running parts of the version before an update, so it still said the old version number and asked to install the update it had just installed, again and again.  Each release now packages its changed scripts under new names, so the TV runs the new version right away.
-
-## 0.6.0 (alpha 90, 2026-11-05)
+## 0.6.0 (alpha 91, 2026-11-05)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 90
+### New in alpha 91
+
+- **An update no longer offers itself again after installing.**  On some TVs, TiviBro kept running parts of the version before an update, so it still said the old version number and asked to install the update it had just installed, again and again.  Each release now packages its changed scripts under new names, so the TV runs the new version right away.
+
+### In alpha 90
 
 - **A movie that keeps failing at one spot gets past it.**  When a movie or episode fails three times in a row at the same point, TiviBro skips 10 seconds ahead (then 20, 40, up to 2 minutes) and says so, instead of resuming at the same spot over and over (issue #51).
 - **Your subtitle pick survives a reconnect.**  The subtitle chosen in the Subtitles menu (from the file's own tracks) comes back by its name and language after a reconnect, instead of turning off or switching to another one (issue #51).
