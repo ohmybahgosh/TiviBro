@@ -265,7 +265,7 @@ var Update = (function () {
       if (!ok) throw new Error('Installing from the TV needs a rooted TV with the Homebrew Channel.');
       set({ state: 'installing', progress: 0, status: 'Starting…', error: '' });
       Log.info('update', 'Installing ' + r.version + ' from ' + r.ipkUrl);
-      return new Promise(function (res, rej) {
+      return reopenAfter().then(function () { return new Promise(function (res, rej) {
         Log.closing();                                                 // the install restarts TiviBro: not a crash
         job = luna(HBC + '/install', { ipkUrl: r.ipkUrl, ipkHash: r.sha256, subscribe: true }, function (m) {
           if (m.returnValue === false) {
@@ -286,7 +286,21 @@ var Update = (function () {
             res(st);
           }
         });
-      });
+      }); });
+    });
+  }
+  /* webOS closes TiviBro as soon as the installer starts replacing its files, before the install is
+     finished, so the reload above never runs and TiviBro just disappeared.  A root shell from the
+     Homebrew Channel outlives the app: it waits for the installed version to change, then opens
+     TiviBro again.  If the install fails the version never changes and it gives up after 5 minutes. */
+  function reopenAfter() {
+    var info = 'luna-send -n 1 luna://com.webos.applicationManager/getAppInfo \'{"id":"' + APP_ID + '"}\' | grep -o \'"version":"[^"]*"\' | head -1';
+    var cmd = 'OLD=$(' + info + '); (i=0; while [ $i -lt 150 ]; do sleep 2; i=$((i+1)); NOW=$(' + info + '); ' +
+      'if [ -n "$NOW" ] && [ "$NOW" != "$OLD" ]; then sleep 2; luna-send -n 1 luna://com.webos.applicationManager/launch \'{"id":"' + APP_ID + '"}\'; exit 0; fi; done) </dev/null >/dev/null 2>&1 &';
+    return new Promise(function (res) {
+      var done = false, t = setTimeout(function () { finish('no answer'); }, 3000);
+      function finish(why) { if (done) return; done = true; clearTimeout(t); if (why) Log.warn('update', 'Could not set up the reopen after the update: ' + why); res(); }
+      luna(HBC + '/exec', { command: cmd }, function (r) { finish(r.returnValue === false ? (r.errorText || 'refused') : ''); });
     });
   }
 

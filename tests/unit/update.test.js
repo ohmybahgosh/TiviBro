@@ -42,6 +42,7 @@ function sandbox(opts) {
         calls.push(uri + ' ' + params);
         const reply = m => b.onservicecallback(JSON.stringify(m));
         if (/getAppInfo/.test(uri)) return opts.noHbc ? reply({ returnValue: false, errorCode: -1, errorText: 'Service does not exist: org.webosbrew.hbchannel.service.' }) : reply({ returnValue: true, appInfo: {} });
+        if (/\/exec$/.test(uri)) return opts.noExec ? undefined : reply({ returnValue: true, stdoutString: '' });
         if (/\/install$/.test(uri)) {
           if (opts.installFails) return reply({ returnValue: false, errorText: 'Invalid checksum' });
           reply({ returnValue: true, statusText: 'Downloading', progress: 30 });
@@ -114,6 +115,12 @@ const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), re
   ok('install hands the IPK link and checksum to the Homebrew Channel', /"ipkUrl":"https:\/\/github\.com\/x\/y\/releases\/download\/v0\.7\.0-alpha\.1\/app\.tivibro\.tv_0\.7\.0_all\.ipk"/.test(call) && /"ipkHash":"(ab){32}"/.test(call) && /"subscribe":true/.test(call), call);
   ok('progress is shown while it installs, then it is marked installed', s.Update.state.state === 'installed' && s.Update.state.progress === 100);
   ok('the app reloads into the new version', s.reloads.length === 1);
+  { const ex = s.calls.findIndex(c => /hbchannel\.service\/exec /.test(c)), inst = s.calls.findIndex(c => /hbchannel\.service\/install /.test(c)), cmd = ex >= 0 ? JSON.parse(s.calls[ex].replace(/^\S+ /, '')).command : '';
+    ok('before installing, a root shell is left to open TiviBro again once the new version is in', ex >= 0 && ex < inst && /applicationManager\/launch '\{"id":"app\.tivibro\.tv"\}'/.test(cmd) && /"\$NOW" != "\$OLD"/.test(cmd) && /&$/.test(cmd), cmd); }
+  s = sandbox({ noExec: true });
+  await s.Update.check(false);
+  await s.Update.install();
+  ok('no answer from that shell still installs', s.Update.state.state === 'installed' && s.reloads.length === 1);
 
   s = sandbox({ installFails: true });
   await s.Update.check(false);

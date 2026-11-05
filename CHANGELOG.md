@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **TiviBro opens again after updating itself.**  The TV closes TiviBro as soon as the update starts installing, so it never got to restart and just disappeared.  Now the Homebrew Channel opens it again once the new version is in.
+
 ## 0.6.0 (alpha 88, 2026-11-05)
 
 Pre-release: expect rough edges, and keep a backup before installing.
