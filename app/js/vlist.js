@@ -1,5 +1,7 @@
 /* Virtual list: a fixed pool of row elements repositioned with transforms.
-   A 20,000 channel group costs the same DOM as a 12 channel one. */
+   A 20,000 channel group costs the same DOM as a 12 channel one.
+   Items with head: true are headings (a playlist's name above its groups): drawn, never selected.
+   The arrows, paging, hovering and select() step over them, as menus do (ui.js). */
 function VList(host, opts) {
   'use strict';
   this.host = host;
@@ -31,21 +33,30 @@ function VList(host, opts) {
   }
   host.addEventListener('mousemove', function (e) {
     if (!UI.pointer) return;
-    var i = rowIndex(e); if (i < 0) return;
+    var i = rowIndex(e); if (i < 0 || self.isHead(i)) return;
     if (opts.onHover) opts.onHover(self);
     if (i !== self.sel) { self.sel = i; self.draw(false); self.onSel(i, self.items[i]); }
   });
   host.addEventListener('click', function (e) {
-    var i = rowIndex(e); if (i < 0) return;
+    var i = rowIndex(e); if (i < 0 || self.isHead(i)) return;
     if (opts.onHover) opts.onHover(self);
     if (i !== self.sel) { self.sel = i; self.draw(false); self.onSel(i, self.items[i]); }
     if (opts.onClick) opts.onClick(self.items[i], i);
   });
 }
+VList.prototype.isHead = function (i) { var it = this.items[i]; return !!(it && it.head); };
+// The nearest row at or after s (dir 1) or before it (dir -1) that is not a heading; the other way
+// when there is none that way.
+VList.prototype.skipHead = function (s, dir) {
+  var n = this.items.length, x = s;
+  while (x >= 0 && x < n && this.isHead(x)) x += dir;
+  if (x < 0 || x >= n) { x = s; while (x >= 0 && x < n && this.isHead(x)) x -= dir; }
+  return U.clamp(x, 0, Math.max(0, n - 1));
+};
 VList.prototype.setItems = function (items, sel) {
   this.fit();
   this.items = items || [];
-  this.sel = U.clamp(sel || 0, 0, Math.max(0, this.items.length - 1));
+  this.sel = this.skipHead(U.clamp(sel || 0, 0, Math.max(0, this.items.length - 1)), 1);
   this.top = -1;
   this.ensure(true);
   this.draw(true);
@@ -95,9 +106,11 @@ VList.prototype.move = function (d, wrap) {
     d *= t > 4000 ? 15 : t > 2500 ? 5 : t > 1000 ? 2 : 1;
   } else this._held = 0;
   if (!this._fitH) this.fit();
-  var s = this.sel + d;
+  var s = this.sel + d, dir = d < 0 ? -1 : 1;
+  while (s >= 0 && s < n && this.isHead(s)) s += dir;            // a heading is stepped over
   if (wrap && n > 2 && Math.abs(d) === 1 && !UI.repeating && (s >= n || (s < 0 && wrap !== 'down'))) s = s < 0 ? n - 1 : 0;
   s = U.clamp(s, 0, n - 1);
+  s = this.skipHead(s, dir);
   if (s === this.sel) return false;
   this.sel = s;
   this.ensure(false);
@@ -107,7 +120,7 @@ VList.prototype.move = function (d, wrap) {
 };
 VList.prototype.page = function (dir) { return this.move(dir * (this.visible - 1)); };
 VList.prototype.current = function () { return this.items[this.sel]; };
-VList.prototype.select = function (i) { this.sel = U.clamp(i, 0, Math.max(0, this.items.length - 1)); this.ensure(true); this.draw(false); };
+VList.prototype.select = function (i) { this.sel = this.skipHead(U.clamp(i, 0, Math.max(0, this.items.length - 1)), 1); this.ensure(true); this.draw(false); };
 VList.prototype.refresh = function () { this.draw(true); };
 VList.prototype.refreshWhere = function (test) {
   for (var i = 0; i < this.pool.length; i++) {

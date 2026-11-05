@@ -63,6 +63,8 @@ body.nums-mono,body.nums-mono input{font-family:"TiviBro Mono Digits","LG Smart 
 .row .tag{font-size:19px;color:var(--muted);flex:none}
 .row.playing .name::before{content:"";display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--accent);margin-right:12px;vertical-align:2px}
 .row.hid{opacity:.45}
+/* A playlist's name above its groups (several playlists on): a heading, never focused. */
+.vlist .row.ghead{color:var(--muted);font-size:22px;letter-spacing:.04em;text-transform:uppercase;align-items:flex-end;padding-bottom:10px;border-bottom:1px solid var(--line);background:transparent;cursor:default}
 .vlist .empty{position:absolute;top:24px;left:20px;right:20px;color:var(--muted);white-space:normal}
 
 /* preview + info */

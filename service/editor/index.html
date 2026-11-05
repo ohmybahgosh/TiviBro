@@ -1134,7 +1134,7 @@ function isFav(k) { var f = customOf(FAV); return !!(f && f.items.indexOf(k) >= 
 function provName(g) { return E.groupRenames[g.id] || cleanGroup(g.name); }
 function providerGroups() {
   var pos = {}; E.groupOrder.forEach(function (id, i) { pos[id] = i; });
-  return D.groups.map(function (g, i) { return { id: g.id, name: provName(g), raw: g.name, i: i, renamed: !!E.groupRenames[g.id] }; })
+  return D.groups.map(function (g, i) { return { id: g.id, name: provName(g), raw: g.name, i: i, renamed: !!E.groupRenames[g.id], pl: g.pl || '' }; })
     .sort(function (a, b) { var x = pos[a.id] != null ? pos[a.id] : 1e6 + a.i, y = pos[b.id] != null ? pos[b.id] : 1e6 + b.i; return x - y; });
 }
 function sortList(l, mode, id) {
@@ -1721,7 +1721,8 @@ function renderGroups() {
   E.custom.forEach(function (g) { row(g.id, g.name, g.items.length, 'custom', g.orig && g.orig !== g.name ? '<em title="Was: ' + esc(g.orig) + '">renamed</em>' : ''); });
   html.push('<div class="sec">Provider groups</div>');
   providerGroups().forEach(function (g) {
-    var b = (g.renamed ? '<em title="Provider name: ' + esc(cleanGroup(g.raw)) + '">renamed</em>' : '') + (groupEdited(g.id) ? '<em class="e" title="Channels were copied, moved or taken out">edited</em>' : '') + (E.groupSort[g.id] ? '<em class="e">' + esc(SORT_LABEL[E.groupSort[g.id]]) + '</em>' : '');
+    // Several playlists on (the TV sends pl for the groups of playlists other than the first): whose group it is.
+    var b = (g.pl ? '<em title="From this playlist">' + esc(g.pl) + '</em>' : '') + (g.renamed ? '<em title="Provider name: ' + esc(cleanGroup(g.raw)) + '">renamed</em>' : '') + (groupEdited(g.id) ? '<em class="e" title="Channels were copied, moved or taken out">edited</em>' : '') + (E.groupSort[g.id] ? '<em class="e">' + esc(SORT_LABEL[E.groupSort[g.id]]) + '</em>' : '');
     row(g.id, g.name, channelsOf(g.id, true).length, 'prov', b, g.raw);
   });
   if (!shown) html.push('<div class="empty small">No groups match this filter.</div>');

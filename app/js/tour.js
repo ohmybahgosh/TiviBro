@@ -5,7 +5,8 @@
    first, so the web editor can undo it.  Run it again any time from Settings > Playlists >
    the playlist > Set-up tour.
    Steps: welcome, countries, channel names, East and West, local channels, event channels, clutter,
-   logos, look, and a summary with tips. */
+   logos, look, and a summary with tips.
+   With several playlists on, it looks at and tidies the first playlist only (Library.firstData). */
 var Tour = (function () {
   'use strict';
   var root = U.$('viewSetup');
@@ -32,7 +33,7 @@ var Tour = (function () {
 
   /* ---------- what the playlist has ---------- */
   function survey() {
-    var data = Library.data, t = Tidy.make(data), now = Date.now(), ev = 0, idle = 0, upcoming = [];
+    var data = Library.firstData ? Library.firstData() : Library.data, t = Tidy.make(data), now = Date.now(), ev = 0, idle = 0, upcoming = [];
     data.channels.forEach(function (c) {
       if (Library.idle(c)) idle++;
       var e = Events.parse(c.n, now);
@@ -54,7 +55,7 @@ var Tour = (function () {
     return v;
   }
   function makePlan() {
-    var t = st.sv.t, data = Library.data, E = Store.edits, g = {}, c = {}, ch = st.ch;
+    var t = st.sv.t, data = Library.firstData ? Library.firstData() : Library.data, E = Store.edits, g = {}, c = {}, ch = st.ch;
     var listed = {}; st.sv.countries.forEach(function (x) { listed[x.p] = 1; });
     data.groups.forEach(function (gr) {
       var code = t.groupCountry(gr.id), keep = listed[code] ? ch.cc[code] !== false : ch.ccNone;
@@ -244,7 +245,7 @@ var Tour = (function () {
       box.appendChild(U.el('div', 'tour-note err', 'The logo library could not be reached just now, so channels keep the logos they have.  Check the TV\'s internet; TiviBro tries again each time it starts.'));
       return box;
     }
-    var chans = Library.data.channels, own = function (c) { return Views.ownLogo(c); };
+    var chans = (Library.firstData ? Library.firstData() : Library.data).channels, own = function (c) { return Views.ownLogo(c); };
     var cov = st.cov || (st.cov = Logos.coverage(chans, own));
     box.appendChild(U.el('div', 'tour-note', 'Found ' + plural(cov.found, 'logo') + ' for your ' + fmt(cov.total) + ' channels, ' + fmt(cov.filled) + ' of them for channels with none.'));
     var row = U.el('div', 'tour-logo-row'), shown = 0, seen = {};
@@ -587,7 +588,7 @@ var Tour = (function () {
     var E = Store.edits, hg = E.hiddenGroups || {}, hc = E.hiddenChannels || {}, sv = st.sv, ch = st.ch;
     if (!Object.keys(hg).length && !Object.keys(hc).length && !(E.custom || []).some(function (g) { return g.items && g.items.length; })) return;    // nothing done yet
     sv.countries.forEach(function (x) { ch.cc[x.p] = x.groups.some(function (id) { return !hg[id]; }); });
-    var cm = sv.t.countryMap(), none = Library.data.groups.filter(function (g) { return !cm[g.id]; });
+    var cm = sv.t.countryMap(), none = (Library.firstData ? Library.firstData() : Library.data).groups.filter(function (g) { return !cm[g.id]; });
     ch.ccNone = !none.length || none.some(function (g) { return !hg[g.id]; });
     var vis = function (c) { return !hc[c.k] && !hg[c.g]; };
     if (sv.feeds.pairs) {

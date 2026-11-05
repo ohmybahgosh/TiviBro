@@ -279,26 +279,34 @@ var Settings = (function () {
   /* ---------- playlists ---------- */
   function playlists() {
     var s = S(), out = [];
+    // Several playlists on: all of them are used at once, the first one's groups first.
+    var multi = L.multi;
     s.playlists.forEach(function (raw) {
-      var p = Store.normalize(raw), active = p.id === s.active;
-      out.push(page(p.name || (p.type === 'xtream' ? p.user : 'M3U'), [p.off ? 'Off' : '', Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist', active ? 'in use, ' + L.count() + ' channels' : ''].filter(Boolean).join('   '),
+      var p = Store.normalize(raw), active = p.id === s.active, part = !active && L.partOf(p.id);
+      var use = active ? (multi && L.main ? 'first, ' + L.main.channels.length + ' channels' : 'in use, ' + L.count() + ' channels') : part ? 'on, ' + part.channels.length + ' channels' : '';
+      out.push(page(p.name || (p.type === 'xtream' ? p.user : 'M3U'), [p.off ? 'Off' : '', Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist', use].filter(Boolean).join('   '),
         p.name || 'Playlist', function () { return playlistPage(p); }));
     });
     // From the phone app: its own Add a playlist form (AddPlaylistDialog), with the playlist type to pick.
     var addPl = phoneDoes('add-playlist', action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.  Adding one from the phone app is easier: share your provider\'s link to it.', function () { App.setup('new'); }));
     out.push(addPl);
-    out.push(info('The guide, names and channels of the playlist in use are under Guide, Channel and group names, and Channels and groups.', ''));
+    out.push(info(s.playlists.length > 1 ? 'Every playlist that is on is used at once: each has its own section in the group list, under its name.  The first playlist comes first, and your Favorites, your groups and reminders belong to it.  The guide, names and channels of the first playlist are under Guide, Channel and group names, and Channels and groups.'
+      : 'The guide, names and channels of the playlist in use are under Guide, Channel and group names, and Channels and groups.', ''));
     return out;
   }
 
   function persist(p, reloadGuide) {
     Store.upsertPlaylist(p);
-    if (p.id === S().active && reloadGuide) Epg.refresh(L, true);
+    if ((p.id === S().active || L.otherIds().indexOf(p.id) >= 0) && reloadGuide) Epg.refresh(L, true);
   }
 
   function playlistPage(p) {
-    var s = S(), out = [], active = p.id === s.active, xc = p.type === 'xtream';
-    if (!active && !p.off) out.push(action('Use this playlist', '', function () { stack = []; App.switchPlaylist(p.id); }));
+    var s = S(), out = [], active = p.id === s.active, xc = p.type === 'xtream', part = !active && L.partOf(p.id);
+    // Every playlist that is on is in use: this makes it the first one (its groups first, and your
+    // Favorites, groups and reminders are its own).  With only one on, it is the old "Use this playlist".
+    if (!active && !p.off) out.push(Store.others().length > 1 || L.multi
+      ? action('Make this the first playlist', 'Its groups come first.  Your Favorites, your own groups and reminders are kept with each first playlist.', function () { stack = []; App.switchPlaylist(p.id); })
+      : action('Use this playlist', '', function () { stack = []; App.switchPlaylist(p.id); }));
     /* Off (instead of Delete): its login, groups, favorites and names are all kept, but it is left out of
        everything (switching, the menus offering another playlist) until it is turned on again. */
     out.push(toggle('Playlist on', p.off ? 'Off: kept with everything you set, out of the way.  Turn it on to use it again.' : 'Turn it off to keep it, with its login and everything you set, without deleting it.',
@@ -309,6 +317,7 @@ var Settings = (function () {
           p.off = true; persist(p); stack = []; U.toast('"' + (p.name || 'Playlist') + '" is off.  Switching to "' + (next.name || 'the next playlist') + '".', 5000); App.switchPlaylist(next.id); return;
         }
         p.off = !v; persist(p); build();
+        App.playlistsChanged();          // its channels join the lists, or leave them
       }));
     out.push(action('Name', '', function () { UI.prompt('Playlist name', p.name, function (v) { if (v.trim()) { p.name = v.trim(); persist(p); build(); } }); }, function () { return p.name; }));
     out.push(action('Connection', xc ? 'Server, username and password' : 'Playlist address', function () { App.setup(p.id); }, function () { return xc ? p.server : p.m3u; }));
@@ -323,6 +332,12 @@ var Settings = (function () {
       out.push(info('Last reloaded', when(L.data.at)));
       if (L.data.exp) out.push(info('Subscription expires', new Date(L.data.exp).toLocaleDateString() + (Store.expiry(p) ? '  (' + Store.expiry(p).replace(/^Expire[sd] /, '') + ')' : '')));
       if (L.data.maxConn) out.push(info('Connections allowed', String(L.data.maxConn)));
+    } else if (part) {
+      if (App.reloading) out.push(action('Stop reloading', 'The channels from the last load stay.', function () { App.stopReload(); }));
+      else out.push(action('Reload channels now', 'Your hidden items and renames are kept.', function () { App.refresh(true, p.id); }));
+      out.push(info('Last reloaded', when(part.at)));
+      if (part.exp) out.push(info('Subscription expires', new Date(part.exp).toLocaleDateString() + (Store.expiry(p) ? '  (' + Store.expiry(p).replace(/^Expire[sd] /, '') + ')' : '')));
+      if (part.maxConn) out.push(info('Connections allowed', String(part.maxConn)));
     }
     out.push(head('This playlist\'s guide, names and events'));
     out.push(page('Guide', 'The provider\'s guide, your guide sources and public fill-in for this playlist', 'Guide: ' + (p.name || 'playlist'), function () { return guideRows(p); }));
@@ -337,7 +352,7 @@ var Settings = (function () {
         UI.confirm('Delete ' + (p.name || 'this playlist') + '?', 'Delete', function () {
           stack = [];
           Store.removePlaylist(p.id);
-          if (active) App.switchPlaylist(Store.settings.active); else build();
+          if (active) App.switchPlaylist(Store.settings.active); else { App.playlistsChanged(); build(); }
         });
       }));
     }

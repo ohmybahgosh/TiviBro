@@ -79,13 +79,16 @@ var Views = (function () {
   });
 
   /* ---------- rows ---------- */
+  // A playlist's heading (several playlists on, Library.groups(true)): its name, never focused.
   function renderGroup(row, g) {
     if (!row._n) {
       row._n = U.el('span', 'name'); row._t = U.el('span', 'tag');
       var box = U.el('div', 'txt'); box.appendChild(row._n);
       row.appendChild(box); row.appendChild(row._t);
     }
+    row.classList.toggle('ghead', !!g.head);
     row._n.textContent = g.name;
+    if (g.head) { row._t.textContent = ''; row.classList.remove('hid'); return; }
     row._t.textContent = g.hidden ? 'hidden' : g.blocked ? 'locked' : (g.count != null ? String(g.count) : '');
     row.classList.toggle('hid', !!g.hidden);
   }
@@ -351,17 +354,18 @@ var Views = (function () {
 
   function reload(keepGroup) {
     buildTabs();
-    var gs = L.groups();
+    var gs = L.groups(true);
     var gid = keepGroup && curGroup ? curGroup : (Store.edits.lastGroup || L.ALL);
     if (!gs.some(function (g) { return g.id === gid; })) gid = firstFilled(gs);
     var gi = Math.max(0, gs.findIndex(function (g) { return g.id === gid; }));
     groupsVL.setItems(gs, gi);
-    showGroup(gs[gi] ? gs[gi].id : L.ALL, keepGroup);
+    var g0 = groupsVL.current();
+    showGroup(g0 ? g0.id : L.ALL, keepGroup);
   }
   // First group that actually has channels (an empty Favorites should never be the landing group).
   function firstFilled(gs) {
     gs = gs || L.groups();
-    for (var i = 0; i < gs.length; i++) if (!gs[i].hidden && L.channels(gs[i].id).length) return gs[i].id;
+    for (var i = 0; i < gs.length; i++) if (!gs[i].head && !gs[i].hidden && L.channels(gs[i].id).length) return gs[i].id;
     return gs[0] ? gs[0].id : L.ALL;
   }
   var EMPTY = 'No channels in this group.  Hold OK on any channel and choose "Copy to group" to add some.';
@@ -634,7 +638,7 @@ var Views = (function () {
   function ctxChannel(ctx) { return ctx === 'player' ? playing : (zone === 'channels' ? chansVL.current() : null); }
   function openGroup(gid) {
     if (full) { if (mode !== 'live') return; overlay = true; ovGroup = gid; $('overlay').classList.remove('hidden'); $('osd').classList.add('hidden'); fillOverlay(playing && playing.k); return; }
-    var gs = L.groups(), i = gs.findIndex(function (g) { return g.id === gid; });
+    var gs = L.groups(true), i = gs.findIndex(function (g) { return g.id === gid; });
     if (i < 0) { U.toast(gid === L.RECENT ? 'No recent channels yet' : 'That group is empty'); return; }
     groupsVL.select(i); showGroup(gid); setZone('channels');
   }
@@ -1729,8 +1733,8 @@ var Views = (function () {
 
   function refreshLists(keepSel) {
     L.dirty();
-    var gs = L.groups();
-    if (!gs.some(function (x) { return x.id === curGroup; })) curGroup = gs[0] ? gs[0].id : L.ALL;
+    var gs = L.groups(true);
+    if (!gs.some(function (x) { return x.id === curGroup && !x.head; })) { var g0 = gs.filter(function (x) { return !x.head; })[0]; curGroup = g0 ? g0.id : L.ALL; }
     var gsel = Math.max(0, gs.findIndex(function (x) { return x.id === curGroup; }));
     groupsVL.setItems(gs, gsel);
     var oldSel = chansVL.sel;
@@ -1832,7 +1836,7 @@ var Guide = (function () {
       // The panel covers the channel column and no more than it has to of the programmes.
       var want = document.body.classList.contains('noguidenames') ? 260 : 470;
       $('guideGroupList').parentNode.style.width = Math.max(want, 420) + 'px';
-      var gs = L.groups(), i = gs.findIndex(function (g) { return g.id === gid; });
+      var gs = L.groups(true), i = gs.findIndex(function (g) { return g.id === gid; });
       groupsVL.setItems(gs, Math.max(0, i));
       groupsVL.measure();                // built while the panel was hidden: count the rows that really fit
       groupsVL.setActive(true);
@@ -1847,7 +1851,9 @@ var Guide = (function () {
 
   function renderGroupRow(row, g) {
     if (!row._n) { var nm = U.el('span', 'name'); row._n = U.el('i'); nm.appendChild(row._n); row._t = U.el('span', 'tag'); var b = U.el('div', 'txt'); b.appendChild(nm); row.appendChild(b); row.appendChild(row._t); }
+    row.classList.toggle('ghead', !!g.head);
     row._n.textContent = g.name;
+    if (g.head) { row._t.textContent = ''; row.classList.remove('hid'); return; }
     var n = L.channels(g.id).length;
     row._t.textContent = g.blocked ? 'locked' : String(n);
     row.classList.toggle('hid', !n);

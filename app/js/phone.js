@@ -444,7 +444,9 @@ var Phone = (function () {
       if (g.id === Library.ALL) return;
       var l = Library.channels(g.id);
       if (!l.length) return;
-      groups.push({ id: g.id, name: g.name, keys: l.map(function (c) { return c.k; }) });
+      // Several playlists on: a provider group says whose it is ("Sports" twice would be confusing).
+      var gn = Library.multi && !Library.isVirtual(g.id) && !Library.isCustom(g.id) ? Library.plName(g) + ': ' + g.name : g.name;
+      groups.push({ id: g.id, name: gn, keys: l.map(function (c) { return c.k; }) });
       extra.push(l);
     });
     // Every channel a group shows, also ones All leaves out (a Local channels group keeps stations

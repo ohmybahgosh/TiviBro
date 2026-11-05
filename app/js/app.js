@@ -23,14 +23,15 @@ var App = (function () {
      were not there before get today's date.  Kept in the cached data, so it survives restarts, for
      two weeks at most.  A list that changed almost completely (another server, a provider rebuild)
      marks nothing: every channel would be "new". */
-  function carryAdded(prev, data) {
+  // strip: another playlist's (several playlists on): prev's channel keys carry this prefix, data's don't.
+  function carryAdded(prev, data, strip) {
     var old = prev && prev.channels, now = Date.now(), keep = {}, a = (prev && prev.added) || {};
     var limit = now - 14 * 86400e3, have = {};
     if (!old || !old.length) { data.added = {}; return data; }
     for (var i = 0; i < data.channels.length; i++) have[data.channels[i].k] = 1;
     Object.keys(a).forEach(function (k) { if (a[k] >= limit && have[k]) keep[k] = a[k]; });
     var was = {}, fresh = [];
-    for (var j = 0; j < old.length; j++) was[old[j].k] = 1;
+    for (var j = 0; j < old.length; j++) was[strip && old[j].k.indexOf(strip) === 0 ? old[j].k.slice(strip.length) : old[j].k] = 1;
     for (var n = 0; n < data.channels.length; n++) { var k = data.channels[n].k; if (!was[k]) fresh.push(k); }
     if (fresh.length > 300 && fresh.length > data.channels.length * 0.4) {
       Log.info('app', fresh.length + ' of ' + data.channels.length + ' channels changed; not marking them as recently added');
@@ -231,6 +232,16 @@ var App = (function () {
         return Store.bigSet(cacheKey(test), data).then(function () { return data; });
       }).then(function (data) {
         setupEl.classList.add('hidden');
+        // Another playlist next to the one already in use: it is added beside it, and the first
+        // playlist (with your Favorites and groups) stays first.
+        // A changed connection of another playlist that is on: it opens again beside the first one.
+        if (ready && Store.playlist.id && Store.playlist.id !== test.id && !test.off) {
+          Settings.reset();
+          Views.switchTab('settings');
+          if (editing) dropOther(test.id);
+          else U.toast('"' + (test.name || 'Playlist') + '" added.  Its channels are under its own name in the group list.', 6000);
+          return addOther(test, data);
+        }
         if (Store.settings.active !== test.id) Store.usePlaylist(test.id);
         Settings.reset();
         start(data, false);
@@ -308,10 +319,17 @@ var App = (function () {
     setupEl.classList.add('hidden');
     checkVod();
     setTimeout(function () { bigList(Store.playlist); }, 8000);
-    // Guide loads after first paint so it never delays the channel list.
-    setTimeout(function () { Epg.init(Library); }, fromCache ? 1500 : 300);
-    Views.resume();
-    if (pendingRem) { var pr = pendingRem; pendingRem = null; setTimeout(function () { openReminder(pr); }, 600); }
+    // The other playlists that are on, from their kept copies; then the guide, for all of them.  The
+    // guide loads after first paint so it never delays the channel list.
+    var gen = ++startGen, last = Store.edits.last, later = !!(last && !Library.find(last) && Store.others().length);
+    openOthers(gen).then(function () {
+      if (gen !== startGen) return;
+      if (later) Views.resume();                   // the last channel was one of another playlist's
+      setTimeout(function () { Epg.init(Library); }, fromCache ? 1500 : 300);
+      // A reminder can be for a channel of another playlist: once they are all in.
+      if (pendingRem) { var pr = pendingRem; pendingRem = null; setTimeout(function () { openReminder(pr); }, 600); }
+    });
+    if (!later) Views.resume();
     if (tourNext) { tourNext = false; setTimeout(function () { if (!Tour.isOpen) Tour.open({ first: true }); }, 400); }
   }
 
@@ -353,10 +371,105 @@ var App = (function () {
     });
   }
 
+  /* ---------- the other playlists (several playlists on) ----------
+     The first playlist opens as it always has (open, start).  Then every other playlist that is on is
+     added from the copy kept of its list (Store.bigGet 'playlist:<id>'), one at a time, and its edits
+     are attached (Store.attach): Library.setOther puts its groups under its name.  A playlist with no
+     kept copy, or one due for a reload, is loaded from the provider in the background, one at a
+     time, through the same guard as Reload channels (refresh).  Together they may not pass
+     MULTI_MAX channels: one that would is left out, with a message, so a TV is never run out of memory. */
+  var startGen = 0, MULTI_MAX = 250000, otherQ = [];
+  function openOthers(gen) {
+    var list = Store.others(), chain = Promise.resolve(), fresh = false;
+    list.forEach(function (p) {
+      chain = chain.then(function () {
+        if (gen !== startGen || p.off || p.id === Store.settings.active) return;
+        return Store.bigGet(cacheKey(p)).then(function (cached) {
+          if (gen !== startGen) return;
+          if (cached && cached.sig === Source.sig(p) && cached.channels && cached.channels.length) {
+            if (!useOther(p, cached)) return;
+            Log.info('app', 'Added ' + cached.channels.length + ' channels of ' + (p.name || 'another playlist') + ' kept from its last load');
+            if (plDue(p, cached.at, true)) otherQ.push(p.id);
+          } else { otherQ.push(p.id); fresh = true; }       // never loaded on this TV: soon
+        }).catch(function (e) { Log.warn('app', 'Could not open ' + (p.name || 'another playlist') + ': ' + (e && e.message || e)); });
+      });
+    });
+    return chain.then(function () {
+      if (gen !== startGen) return;
+      if (Library.multi) { Logos.load(Library.data); Views.refreshLists(true); if (window.Settings && Settings.live) Settings.live(); }
+      if (otherQ.length) setTimeout(nextOther, fresh ? 3000 : 15000);
+    });
+  }
+  // Put another playlist's data in the lists, with its edits.  False when it would be too many channels.
+  function useOther(p, data) {
+    var now = Library.count() - ((Library.partOf(p.id) || { channels: [] }).channels.length);
+    if (now + data.channels.length > MULTI_MAX) {
+      Log.warn('app', 'Left out ' + (p.name || 'a playlist') + ': with its ' + data.channels.length + ' channels the playlists that are on would have ' + (now + data.channels.length) + ', more than a TV holds');
+      U.toast('"' + (p.name || 'A playlist') + '" is not shown: together the playlists that are on have too many channels for this TV.  Turn one off in Settings > Playlists.', 9000);
+      return false;
+    }
+    Store.attach(p.id);
+    Source.setTz(data.tz, p.id);
+    Library.setOther(p.id, data);
+    return true;
+  }
+  // Take another playlist out of the lists (turned off), with its edits.
+  function dropOther(id) {
+    var had = Library.dropOther(id);
+    Store.detach(id);
+    otherQ = otherQ.filter(function (x) { return x !== id; });
+    return had;
+  }
+  // A playlist just added from the set-up screen, with its first load.
+  function addOther(p, data) {
+    if (!useOther(p, data)) return;
+    Logos.load(Library.data);
+    Views.refreshLists(true);
+    if (window.Settings && Settings.live) Settings.live();
+    setTimeout(function () { Epg.init(Library); }, 300);
+  }
+  // Background loads of the other playlists, one at a time, never while a reload runs.
+  function nextOther() {
+    if (!otherQ.length) return;
+    if (reloading || Source.loading) { setTimeout(nextOther, 20000); return; }
+    var id = otherQ.shift();
+    refresh(false, id).then(function () { if (otherQ.length) setTimeout(nextOther, 5000); });
+  }
+  /* Settings changed which playlists are on: add the ones turned on, take out the ones turned off.
+     The first playlist is not touched here (switchPlaylist does that). */
+  function playlistsChanged() {
+    if (!ready) return Promise.resolve();
+    var on = {}, changed = false;
+    Store.others().forEach(function (p) { on[p.id] = 1; });
+    Library.otherIds().forEach(function (id) { if (!on[id]) { dropOther(id); changed = true; Log.info('app', 'Took a playlist out of the lists (turned off)'); } });
+    var have = {}; Library.otherIds().forEach(function (id) { have[id] = 1; });
+    var gen = startGen, chain = Promise.resolve();
+    Store.others().forEach(function (p) {
+      if (have[p.id]) return;
+      chain = chain.then(function () {
+        return Store.bigGet(cacheKey(p)).then(function (cached) {
+          if (gen !== startGen) return;
+          if (cached && cached.sig === Source.sig(p) && cached.channels && cached.channels.length) { if (useOther(p, cached)) changed = true; }
+          else if (otherQ.indexOf(p.id) < 0) { otherQ.push(p.id); U.toast('Loading the channels of ' + (p.name || 'the playlist'), 4000); }
+        });
+      });
+    });
+    return chain.then(function () {
+      if (otherQ.length) setTimeout(nextOther, 300);
+      if (!changed) return;
+      Logos.load(Library.data);
+      Views.refreshLists(true);
+      if (window.Settings && Settings.live) Settings.live();
+      Epg.init(Library);
+    });
+  }
+
   /* Reload the channel list.  One at a time: a second ask (Reload channels while the scheduled reload
-     runs) waits for that one, with nothing loaded twice (issue #25). */
+     runs) waits for that one, with nothing loaded twice (issue #25).
+     id: another playlist that is on (several playlists on); the first playlist when not given. */
   var reloading = null;
-  function refresh(manual) {
+  function refresh(manual, id) {
+    if (id && id !== Store.settings.active) return refreshOther(manual, id);
     if (reloading) { if (manual) U.toast('Already reloading the channels'); return reloading; }
     var p = Store.playlist;
     if (manual) U.toast('Reloading channels');
@@ -364,7 +477,7 @@ var App = (function () {
     busyStart(p, 'reloading');
     reloading = Source.load(p).then(function (data) {
       if (data.fixed) Store.upsertPlaylist(adopt(p, data));
-      carryAdded(Library.data, data);
+      carryAdded(Library.main || Library.data, data);
       Store.bigSet(cacheKey(p), data);
       Source.setTz(data.tz); Events.setProviderTz(data.tz);
       Library.set(data);
@@ -379,6 +492,36 @@ var App = (function () {
       busyEnd(0);
       if (e && e.kind === 'stopped') U.toast('Stopped reloading.  The channels from the last load are still here.', 5000);
       else if (manual) U.toast(e.message || 'Reload failed', 4000);
+    }).then(function () { reloading = null; if (window.Settings && Settings.live) Settings.live(); });
+    if (window.Settings && Settings.live) Settings.live();
+    return reloading;
+  }
+  // Another playlist's reload: the same guard, its data saved as its own, then put in the lists.
+  function refreshOther(manual, id) {
+    var p = Store.byId(id);
+    if (!p || p.off) return Promise.resolve();
+    if (reloading) { if (manual) U.toast('Already reloading the channels'); return reloading; }
+    if (manual) U.toast('Reloading ' + (p.name || 'the playlist'));
+    Log.info('app', (manual ? 'Reloading' : 'Background load of') + ' the channel list of ' + (p.name || 'another playlist'));
+    busyStart(p, 'reloading');
+    var gen = startGen;
+    reloading = Source.load(p).then(function (data) {
+      if (data.fixed) Store.upsertPlaylist(adopt(p, data));
+      carryAdded(Library.partOf(id), data, id + ':');
+      // Saved before Library.setOther puts the playlist's id in front of its keys.
+      return Store.bigSet(cacheKey(p), data).then(function () {
+        if (gen !== startGen || p.off || id === Store.settings.active) return;
+        if (!useOther(p, data)) return;
+        Logos.load(Library.data);
+        Views.refreshLists(true);
+        if (manual) U.toast((p.name || 'Playlist') + ': ' + data.channels.length + ' channels loaded');
+        Epg.init(Library);
+      });
+    }).then(function () { busyEnd(10000); }, function (e) {
+      busyEnd(0);
+      if (e && e.kind === 'stopped') U.toast('Stopped reloading.  The channels from the last load are still here.', 5000);
+      else if (manual) U.toast((p.name || 'Playlist') + ': ' + (e.message || 'reload failed'), 5000);
+      else Log.warn('app', 'Could not load ' + (p.name || 'another playlist') + ': ' + (e && e.message || e));
     }).then(function () { reloading = null; if (window.Settings && Settings.live) Settings.live(); });
     if (window.Settings && Settings.live) Settings.live();
     return reloading;
@@ -528,7 +671,11 @@ var App = (function () {
   setInterval(function () {
     if (!ready || document.hidden) return;
     var p = Store.playlist;
-    if (plDue(p, Library.data.at, false)) refresh(false);
+    if (plDue(p, (Library.main || Library.data).at, false)) refresh(false);
+    else Library.otherIds().forEach(function (id) {
+      var o = Store.byId(id), d = Library.partOf(id);
+      if (o && d && plDue(o, d.at, false) && otherQ.indexOf(id) < 0) { otherQ.push(id); setTimeout(nextOther, 1000); }
+    });
     var eh = +p.epgRefresh;
     if (Epg.xml && !Epg.loading && eh > 0 && Date.now() - (Epg.status.at || 0) > eh * 3600e3) Epg.refresh(Library, true);
   }, 30 * 60e3);
@@ -554,9 +701,13 @@ var App = (function () {
     if (ready && Library.count()) openReminder(r); else pendingRem = r;
   });
 
+  /* Another playlist becomes the first one (or the only one): everything opens again, the others
+     beside it. */
   function switchPlaylist(id) {
     if (ready) Views.stopAll();
     setupEl.classList.add('hidden');
+    startGen++; otherQ = [];
+    Library.clearOthers();
     Store.usePlaylist(id);
     Parental.lock();
     open(Store.playlist);
@@ -615,7 +766,9 @@ var App = (function () {
     else if (wasPlaying) { wasPlaying = false; Player.resume(); }
   });
 
-  return { boot: boot, setup: setup, refresh: refresh, stopReload: stopReload, get reloading() { return !!reloading; }, openPlaylistSettings: openPlaylistSettings, bigList: bigList, switchPlaylist: switchPlaylist, tourNext: function () { tourNext = true; } };
+  return { boot: boot, setup: setup, refresh: refresh, stopReload: stopReload, playlistsChanged: playlistsChanged,
+    // Another playlist's login changed (web editor): open it again from its new copy.
+    reopenOther: function (id) { dropOther(id); return playlistsChanged(); }, get reloading() { return !!reloading; }, openPlaylistSettings: openPlaylistSettings, bigList: bigList, switchPlaylist: switchPlaylist, tourNext: function () { tourNext = true; } };
 })();
 
 window.addEventListener('load', function () { App.boot(); });

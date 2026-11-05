@@ -96,7 +96,8 @@ var WebEdit = (function () {
     var key = [Store.playlist.id, d.channels.length, d.groups.length, Math.floor(Date.now() / 60000), Epg.status && Epg.status.at, Epg.pubStatus && Epg.pubStatus.at, gc.length].join(':');
     if (chanJson.data === d && chanJson.key === key) return chanJson.json;
     var json = JSON.stringify({
-      groups: d.groups.map(function (g) { return { id: g.id, name: g.name }; }),
+      // Several playlists on: the other playlists' groups say whose they are (pl, the playlist's name).
+      groups: d.groups.map(function (g) { return g.p ? { id: g.id, name: g.name, pl: Library.plName(g) } : { id: g.id, name: g.name }; }),
       channels: d.channels.map(function (c) { return { k: c.k, n: c.n, g: c.g, num: c.num, logo: c.logo || '', arch: c.arch || 0, epg: Epg.epgId(c) || '', has: !!Epg.hasData(c) }; })
     });
     chanJson = { key: key, data: d, json: json };
@@ -345,6 +346,7 @@ var WebEdit = (function () {
         var vod = data.vodSkipped ? '  Left out ' + data.vodSkipped.toLocaleString() + ' movies and series episodes: a list this big keeps its live channels.' : '';
         activity('Added ' + p.name + ': ' + data.channels.length.toLocaleString() + ' channels.' + vod + (a.use ? '  Opening the guide…' : ''), 'ok');
         if (a.use) App.switchPlaylist(p.id);
+        else App.playlistsChanged();          // it is on: its channels join the lists, under its name
         return { msg: 'Added "' + p.name + '" with ' + data.channels.length + ' channels' + (a.use ? '.  The TV switched to it.' : '.') + vod };
       });
     },
@@ -362,6 +364,7 @@ var WebEdit = (function () {
       return loadAndSave(test).then(function (data) {
         Object.assign(p, test);
         if (p.id === Store.settings.active) App.switchPlaylist(p.id);
+        else if (Library.otherIds().indexOf(p.id) >= 0) App.reopenOther(p.id);
         return { msg: 'New login works: ' + data.channels.length + ' channels.  Saved.' };
       });
     },
@@ -370,24 +373,26 @@ var WebEdit = (function () {
       if (Store.settings.playlists.length < 2) throw new Error('This is the only playlist.  Add another one first.');
       var wasActive = p.id === Store.settings.active;
       Store.removePlaylist(p.id);
-      if (wasActive) App.switchPlaylist(Store.settings.active);
+      if (wasActive) App.switchPlaylist(Store.settings.active); else App.playlistsChanged();
       return { msg: 'Deleted "' + (p.name || 'playlist') + '"' };
     },
     // Off instead of deleted: kept with its login and edits, left out until it is turned on again.
     playlistOff: function (a) {
       var p = find(a.id); if (!p) throw new Error('That playlist no longer exists.');
-      if (a.off === false) { delete p.off; Store.upsertPlaylist(p); return { msg: '"' + (p.name || 'Playlist') + '" is on again' }; }
+      if (a.off === false) { delete p.off; Store.upsertPlaylist(p); App.playlistsChanged(); return { msg: '"' + (p.name || 'Playlist') + '" is on again' }; }
       var next = Store.settings.playlists.filter(function (x) { return x.id !== p.id && !x.off; })[0];
       if (!next) throw new Error('This is the only playlist that is on.  Turn another one on, or add one, first.');
       p.off = true; Store.upsertPlaylist(p);
       if (p.id === Store.settings.active) { App.switchPlaylist(next.id); return { msg: '"' + (p.name || 'Playlist') + '" is off.  The TV now uses "' + (next.name || 'the next playlist') + '".' }; }
+      App.playlistsChanged();
       return { msg: '"' + (p.name || 'Playlist') + '" is off' };
     },
     usePlaylist: function (a) {
       var p = find(a.id); if (!p) throw new Error('That playlist no longer exists.');
       if (p.off) { delete p.off; Store.upsertPlaylist(p); }
       App.switchPlaylist(p.id);
-      return { msg: 'The TV is now using "' + p.name + '"' };
+      // Several playlists on: they are all in use, and this one is now the first.
+      return { msg: Store.others().length ? '"' + p.name + '" is now the first playlist' : 'The TV is now using "' + p.name + '"' };
     },
     refreshPlaylist: function () { return App.refresh(true).then(function () { return { msg: 'Channel list reloaded: ' + Library.count() + ' channels' }; }); },
     addEpgSource: function (a) {
@@ -715,9 +720,9 @@ var Backup = (function () {
   // leaves the TV (service/editor.js), so logins never cross the network in the clear.
   function create() {
     var s = JSON.parse(JSON.stringify(Store.settings)), edits = {}, snaps = {};
+    // Each playlist's edits as its own file holds them (several playlists on: Store keeps them merged).
     s.playlists.forEach(function (p) {
-      if (p.id === Store.settings.active) edits[p.id] = JSON.parse(JSON.stringify(Store.edits));
-      else { try { edits[p.id] = JSON.parse(localStorage.getItem('tivibro.edits.' + p.id) || 'null'); } catch (e) { edits[p.id] = null; } }
+      try { edits[p.id] = Store.fileEdits(p.id); } catch (e) { edits[p.id] = null; }
     });
     KEEP_LOCAL.forEach(function (k) { delete s[k]; });
     return Promise.all(s.playlists.map(function (p) {

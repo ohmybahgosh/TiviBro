@@ -624,7 +624,15 @@ On a row with a choice, **◀ ▶** change it (with the Magic Remote, click the 
 
 ### Settings: Playlists
 
-Your playlists and how often their channel lists reload.  **OK** on a playlist opens its page.  The guide, names and channels of the playlist in use have their own sections: [Guide](#settings-guide), [Channel and group names](#settings-channel-and-group-names) and [Channels and groups](#settings-channels-and-groups).
+Your playlists and how often their channel lists reload.  **OK** on a playlist opens its page.  The guide, names and channels of the first playlist have their own sections: [Guide](#settings-guide), [Channel and group names](#settings-channel-and-group-names) and [Channels and groups](#settings-channels-and-groups).
+
+**Several playlists at once.**  Every playlist that is on is used at the same time, like TiviMate.  In the group column of the Channels screen and the guide, each playlist gets its own section: a heading with the playlist's name, and its groups under it.  Favorites, All channels, Recent, My teams and your own groups stay at the top and can hold channels from any playlist.  **Up** and **Down** step over the headings.  With one playlist on, nothing changes.
+
+- Each channel plays from its own playlist: its server, login, User-Agent and catch-up.  Each playlist's guide (its provider guide, its guide sources, its time offset) covers its own channels, and public fill-in covers the channels nothing else does.  Search, reminders, the watchlist, My teams, catch-up and Movies on now work across all of them.
+- The **first playlist** is the one at the top: its groups come first, and your Favorites, your own groups, Recent and reminders belong to it.  Hiding, renaming or moving a channel or group of another playlist is kept with that playlist, so it is still there when you turn the playlist off and on again, or make it the first.
+- A playlist added from **Add playlist…** joins the others; the first playlist stays first.  Turn a playlist off (**Playlist on**) to take its section out without deleting anything.
+- The other playlists open from the copy the TV keeps of their lists, and reload in the background, one at a time.  Together, the playlists that are on can have up to 250,000 channels; a playlist that would go past that is left out, with a message.
+- The web editor and the phone app's channel editing work on the first playlist's settings; the phone app's channel list shows each group's playlist in front of its name.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-set-playlists"><img src="screenshots/tv-set-playlists.png" width="32%" alt="Playlists"></a>
@@ -634,8 +642,8 @@ Your playlists and how often their channel lists reload.  **OK** on a playlist o
 
 | Setting | Choices | What it does |
 |---|---|---|
-| *(each playlist)* | | Its name and type, and for the one in use, how many channels it has.  **OK** opens its page (below). |
-| **Add playlist…** | | Opens the setup screen for another Xtream Codes or M3U playlist.  Each playlist keeps its own groups, favorites, hidden items, guide and name rules.  From the phone app it's easier: share your provider's link to it. |
+| *(each playlist)* | | Its name and type, whether it is the first playlist or on, and how many channels it has.  **OK** opens its page (below). |
+| **Add playlist…** | | Opens the setup screen for another Xtream Codes or M3U playlist, which is then used next to the ones you have.  Each playlist keeps its own hidden items, renames, guide and name rules.  From the phone app it's easier: share your provider's link to it. |
 
 Each playlist in the list starts with when its subscription ends ("Expires 19 Nov", "Expires in 3 days" in the last two weeks, "Expired 2 Oct"), when the provider reports it.
 
@@ -643,13 +651,13 @@ On a playlist's page:
 
 | Setting | Choices | What it does |
 |---|---|---|
-| **Use this playlist** | | Switches the TV to this playlist (shown when it isn't the one in use). |
-| **Playlist on** | **On** · Off | Off keeps the playlist with its login, groups, favorites and names, and leaves it out of switching until you turn it on again (instead of deleting it).  Turning off the one in use switches to the next one that is on; the last one on stays on.  The web editor's Playlists page has **Turn off** and **Turn on** too. |
+| **Make this the first playlist** | | With several playlists on: its groups come first, and the Favorites, your own groups, Recent and reminders shown are this playlist's.  With only one playlist on, this row is **Use this playlist**, which switches the TV to it. |
+| **Playlist on** | **On** · Off | On: its channels are in the lists, in its own section.  Off keeps the playlist with its login, groups, favorites and names, and takes it out of the lists until you turn it on again (instead of deleting it).  Turning off the first playlist makes the next one that is on the first; the last one on stays on.  The web editor's Playlists page has **Turn off** and **Turn on** too. |
 | **Name** | | The name shown in Settings and the web editor. |
 | **Connection** | | Server, username and password (or the M3U address).  Opens the setup screen, which tests the login before saving. |
 | **User-Agent** | **Default** or your own | Only if your provider asks for a specific one (TiviMate's "User-Agent" setting).  The network helper sends it for this playlist. |
 | **Reload channel list** | Every app start · Every 6 hours · **Every 12 hours** · Every day · Every 2 days · Every week · Only when I ask | How often the channel list is fetched again.  Your groups, renames and hidden items are always kept. |
-| **Reload channels now** | | Fetches the channel list right away.  While it reloads this row is **Stop reloading**, which stops it and keeps the channels from the last load. |
+| **Reload channels now** *(playlists that are on)* | | Fetches the channel list right away.  While it reloads this row is **Stop reloading**, which stops it and keeps the channels from the last load. |
 | **Last reloaded**, **Subscription expires**, **Connections allowed** | (information) | From your provider, when it reports them. |
 | **Guide ›** | | This playlist's guide: the same rows as **Guide for** your playlist in [Settings: Guide](#settings-guide). |
 | **Set-up tour** *(playlist in use, on the TV)* | | Runs the [set-up tour](#the-set-up-tour) again: countries, names, East or West, your city, event channels, clutter, logos and look.  Shows when you last applied it. |
@@ -1286,7 +1294,7 @@ The same reminders are under **Settings > Reminders and watchlist** on the TV an
 
 ### Playlists
 
-Add Xtream Codes or M3U playlists (or paste the provider's **Full link** and let TiviBro fill in the login), switch which one the TV uses, set reload schedules and the User-Agent, or change a login.  The TV tests every new login before saving.  **Logins never reach the editor**: it only ever sees server names.  Each playlist keeps its own groups, names and guide setup.
+Add Xtream Codes or M3U playlists (or paste the provider's **Full link** and let TiviBro fill in the login), choose which one is first (every playlist that is on is used at once, see [Settings: Playlists](#settings-playlists)), turn them on and off, set reload schedules and the User-Agent, or change a login.  The TV tests every new login before saving.  **Logins never reach the editor**: it only ever sees server names.  Each playlist keeps its own groups, names and guide setup.  The editor's channel pages show every playlist that is on; names, guide matching and Smart clean-up rules are the first playlist's.
 
 <p align="center">
   <a href="https://tivibro.app/view/#editor-playlists"><img src="screenshots/editor-playlists.png" width="100%" alt="Playlists in the editor"></a>
