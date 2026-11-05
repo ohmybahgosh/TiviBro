@@ -158,7 +158,7 @@ var UI = (function () {
     for (var i = mTop; i < Math.min(mItems.length, mTop + M_VIS); i++) {
       var it = mItems[i];
       if (it.head) { mBody.appendChild(U.el('div', 'mh', it.label)); continue; }
-      var d = U.el('div', 'mi' + (i === mSel ? ' focus' : ''));
+      var d = U.el('div', 'mi' + (it.stack ? ' stack' : '') + (i === mSel ? ' focus' : ''));
       d.appendChild(U.el('span', '', it.label));
       if (it.sub) d.appendChild(U.el('small', '', it.sub));
       (function (idx) {

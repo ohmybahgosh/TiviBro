@@ -246,6 +246,10 @@ body.guide1 .gp .gs{display:none}
 .mh:first-child{padding-top:4px}
 .mi small{color:var(--muted);flex:none;max-width:42%;text-align:right}
 .mi span{min-width:0}
+/* Its details under it, full width (subtitle search results, discussion #19: a long release name squeezed
+   the downloads and frame rate beside it). */
+.mi.stack{flex-direction:column;gap:4px}
+.mi.stack small{max-width:none;text-align:left}
 .panel-text{color:var(--text);max-width:1100px;margin:0 0 28px;line-height:1.45;font-size:30px}
 .mi.focus small{color:var(--on-accent-dim)}
 .modal input{width:100%;background:var(--ink);border:2px solid var(--accent);color:var(--text);font:inherit;padding:14px 18px;border-radius:8px;outline:none;margin-bottom:18px}

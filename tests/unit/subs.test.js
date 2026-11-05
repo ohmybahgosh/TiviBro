@@ -74,6 +74,15 @@ const KEY = 'a'.repeat(32);
     { attributes: { language: 'en', release: 'no files' } }] } });
   out = await p('search', { key: KEY, query: 'Heat', langs: ['en'] });
   ok('search: follows the redirect, keeps the key, reads the results', out.results && out.results.length === 1 && out.results[0].id === 11 && out.results[0].hi && out.results[0].fps === 23.976 && calls[1].o.headers['Api-Key'] === KEY && /^TiviBro v/.test(calls[1].o.headers['User-Agent']), JSON.stringify(out));
+  // One search per language (discussion #19): English no longer crowds out Spanish.
+  const many = (lang, n) => ({ code: 200, body: { total_count: n, data: Array.from({ length: n }, (_, i) => ({ attributes: { language: lang, release: 'Heat.' + lang + '.' + i, download_count: 1000 - i, files: [{ file_id: (lang === 'en' ? 100 : 200) + i, file_name: 'x.srt' }] } })) } });
+  const before = calls.length;
+  replies.push(many('en', 50), many('es', 3));
+  out = await p('search', { key: KEY, query: 'Heat', langs: ['en', 'es', 'en'] });
+  const asked2 = calls.slice(before).map(c => c.o.path);
+  ok('search: one request per language, each with its own results', asked2.length === 2 && asked2.some(a => /languages=en&/.test(a)) && asked2.some(a => /languages=es&/.test(a)) &&
+    out.results.filter(r => r.lang === 'en').length === 40 && out.results.filter(r => r.lang === 'es').length === 3 && out.perLang.en === 40 && out.perLang.es === 3, JSON.stringify(asked2) + ' ' + JSON.stringify(out.perLang));
+  calls.splice(before, 2);
   replies.push({ code: 200, body: { link: 'https://dl.opensubtitles.com/x/heat.srt', file_name: 'heat.srt', remaining: 4, reset_time: '23 hours' } });
   replies.push({ code: 200, body: 'Caf\xe9 au lait', latin1: true });
   out = await p('get', { key: KEY, token: 'tok', id: 11 });

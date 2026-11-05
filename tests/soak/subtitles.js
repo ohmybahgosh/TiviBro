@@ -54,11 +54,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await pick('^Search for');
   await page.waitForFunction(() => /subtitles for/.test((document.getElementById('modalTitle') || {}).textContent || ''), null, { timeout: 15000 }).catch(() => {});
   m = await modal();
-  ok('results: language, release, downloads, your first language first', /2 subtitles for "Feature Presentation"/.test(m) && /English\s+·\s+Feature\.Presentation\.2024\.WEB.*Spanish/.test(m) && /5,000 downloads/.test(m), m);
+  ok('results: under each language (asked one at a time), release, downloads, your first language first', /2 subtitles for "Feature Presentation"/.test(m) && /English\s+·\s+1 \| Feature\.Presentation\.2024\.WEB.*Spanish\s+·\s+1 \| Feature\.Presentation\.2024\.Latino/.test(m) && /5,000 downloads/.test(m), m);
   await shot('tv-subs-results');
   const asked = await (await fetch(MOCK + '/os-asked')).json();
-  ok('OpenSubtitles is asked with sorted, lower-case parameters', asked.some(a => /GET \/os\/api\/v1\/subtitles\?languages=en,es&order_by=download_count&query=feature\+presentation&type=movie&year=2024$/.test(a)), asked.join(' | '));
-  await pick('^English');
+  ok('OpenSubtitles is asked one language at a time, with sorted, lower-case parameters', ['en', 'es'].every(l => asked.some(a => new RegExp('GET /os/api/v1/subtitles\\?languages=' + l + '&order_by=download_count&query=feature\\+presentation&type=movie&year=2024$').test(a))), asked.join(' | '));
+  await pick('^Feature\\.Presentation\\.2024\\.WEB');
   await page.waitForFunction(() => [].slice.call(document.getElementById('video').textTracks).some(t => /OpenSubtitles/.test(t.label) && t.cues && t.cues.length), null, { timeout: 15000 }).catch(() => {});
   const en = await ev(() => { const t = [].slice.call(document.getElementById('video').textTracks).find(t => /English \(OpenSubtitles\)/.test(t.label)); return t && { mode: t.mode, n: t.cues.length, first: t.cues[0].startTime, text: t.cues[0].text }; });
   ok('the download becomes a subtitle track, on', en && en.mode === 'showing' && en.n > 20 && en.first === 2 && en.text === 'Line 1', JSON.stringify(en));
@@ -88,7 +88,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   // A second, late subtitle, lined up with the first.
   await subsMenu(); await pick('^Find subtitles'); await pick('^Search for');
   await page.waitForFunction(() => /subtitles for/.test((document.getElementById('modalTitle') || {}).textContent || ''), null, { timeout: 15000 }).catch(() => {});
-  await pick('^Spanish');
+  await pick('^Feature\\.Presentation\\.2024\\.Latino');
   await page.waitForFunction(() => [].slice.call(document.getElementById('video').textTracks).some(t => /Spanish/.test(t.label) && t.cues && t.cues.length), null, { timeout: 15000 }).catch(() => {});
   const late = await ev(() => { const tt = [].slice.call(document.getElementById('video').textTracks); const es = tt.find(t => /Spanish/.test(t.label)); return { es: es.mode, en: tt.find(t => /English/.test(t.label)).mode, first: es.cues[0].startTime }; });
   ok('the new one is shown instead, 2.5 s late (with the 1 s timing)', late.es === 'showing' && late.en === 'disabled' && Math.abs(late.first - 5.5) < 0.01, JSON.stringify(late));

@@ -2,7 +2,8 @@
    API key (and login token, if they signed in) with each request, the way it sends the TMDB token;
    only the search words (title, year, season and episode) and the chosen file id leave the TV.
      POST /media/subs/search   { key, token, query, year, season, episode, type, langs: ['en','ea'] }
-       -> { results: [{ id, lang, release, downloads, hi, fps, ai, trusted, title }] } | { error, message }
+       -> { results: [{ id, lang, release, downloads, hi, fps, ai, trusted, title }], perLang } | { error, message }
+          (one search per language, up to 40 each)
      POST /media/subs/get      { key, token, id } -> { text, name, remaining, reset } | { error, message }
      POST /media/subs/login    { key, user, pass } -> { token, allowed, level } | { error, message }
    OpenSubtitles asks for its query parameters sorted and lower case (it redirects otherwise), and an
@@ -71,20 +72,39 @@ function searchUrl(q) {
   p.order_by = 'download_count';
   return HOST + '/subtitles?' + Object.keys(p).sort().map(function (k) { return k + '=' + encodeURIComponent(p[k]).replace(/%20/g, '+').replace(/%2C/g, ','); }).join('&');
 }
+function shape(j) {
+  var out = [];
+  (j && j.data || []).forEach(function (d) {
+    var a = d.attributes || {}, f = (a.files || [])[0], fd = a.feature_details || {};
+    if (!f || !f.file_id) return;
+    out.push({ id: f.file_id, lang: str(a.language, 8), release: str(a.release || f.file_name, 160), downloads: +a.download_count || 0, hi: !!a.hearing_impaired,
+      fps: +a.fps || 0, ai: !!(a.ai_translated || a.machine_translated), trusted: !!a.from_trusted, title: str(fd.title || fd.movie_name, 120),
+      season: +fd.season_number || 0, episode: +fd.episode_number || 0, year: +fd.year || 0 });
+  });
+  return out;
+}
+/* One search per language (discussion #19): OpenSubtitles answers 50 at a time, most downloaded first, so
+   English and Spanish together came back as 49 English and one Spanish.  Asked one language at a time,
+   each gets its own 50 (40 are kept).  At most five languages, asked together. */
+var PER_LANG = 40;
 function search(q, cb) {
   if (!keyOk(q)) return cb({ error: 'key', message: 'Add your OpenSubtitles API key first: Settings > Playback > Subtitles from OpenSubtitles.' });
   if (!str(q.query, 120).trim()) return cb({ error: 'query', message: 'Say what to look for.' });
-  call('GET', searchUrl(q), auth(q), null, function (e, j) {
-    if (e) return cb({ error: 'search', message: e.message });
-    var out = [];
-    (j && j.data || []).forEach(function (d) {
-      var a = d.attributes || {}, f = (a.files || [])[0], fd = a.feature_details || {};
-      if (!f || !f.file_id) return;
-      out.push({ id: f.file_id, lang: str(a.language, 8), release: str(a.release || f.file_name, 160), downloads: +a.download_count || 0, hi: !!a.hearing_impaired,
-        fps: +a.fps || 0, ai: !!(a.ai_translated || a.machine_translated), trusted: !!a.from_trusted, title: str(fd.title || fd.movie_name, 120),
-        season: +fd.season_number || 0, episode: +fd.episode_number || 0, year: +fd.year || 0 });
+  var langs = [];
+  (Array.isArray(q.langs) ? q.langs : []).forEach(function (l) { l = str(l, 8).toLowerCase(); if (/^[a-z]{2}(-[a-z]{2})?$/.test(l) && langs.indexOf(l) < 0) langs.push(l); });
+  langs = langs.slice(0, 5);
+  if (!langs.length) langs = [''];
+  var left = langs.length, got = {}, errs = [], total = 0;
+  langs.forEach(function (l) {
+    var one = {}; Object.keys(q).forEach(function (k) { one[k] = q[k]; }); one.langs = l ? [l] : [];
+    call('GET', searchUrl(one), auth(q), null, function (e, j) {
+      if (e) errs.push(e); else { got[l] = shape(j).slice(0, PER_LANG); total += j && j.total_count || got[l].length; }
+      if (--left) return;
+      if (errs.length === langs.length) return cb({ error: 'search', message: errs[0].message });
+      var out = [], counts = {};
+      langs.forEach(function (x) { (got[x] || []).forEach(function (r) { out.push(r); }); counts[x || 'any'] = (got[x] || []).length; });
+      cb({ results: out, total: total, perLang: counts });
     });
-    cb({ results: out.slice(0, 60), total: j && j.total_count || out.length });
   });
 }
 function get(q, cb) {

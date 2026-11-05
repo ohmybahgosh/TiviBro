@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Find subtitles searches each language on its own** (discussion #19, thanks ich0x).  OpenSubtitles answers 50 results at a time, most downloaded first, so English and Spanish together came back as 49 English and one Spanish.  Each language is now asked separately and shown under its own heading, up to 25 each, best match first: the right year (or season and episode), then the release name closest to what is playing (1080p, WEB, BluRay, the group), then trusted uploaders and downloads.  Machine translations go last.
+- **The downloads and frame rate always show under a result.**  A long release name squeezed them out; names are now cut in the middle and the details sit on their own line.
+
 ## 0.6.0 (alpha 85, 2026-11-04)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -134,5 +134,21 @@ ctx.Store.settings.keepSubs = 0;
 ok('Keep downloaded subtitles Off brings nothing back', Subs.restore({ id: 'm1' }) === 0);
 Subs.reset(); delete ctx.Store.settings.keepSubs;
 
+// Search results (discussion #19): under each language, best match first, names cut in the middle.
+ctx.Subs = Subs;
+const res = [
+  { id: 1, lang: 'en', release: 'Feature.Presentation.2024.720p.HDTV', downloads: 9000, year: 2024 },
+  { id: 2, lang: 'en', release: 'Feature.Presentation.2024.1080p.WEB-DL.x264-GRP', downloads: 300, year: 2024 },
+  { id: 3, lang: 'en', release: 'Feature.Presentation.2019.1080p.WEB-DL', downloads: 20000, year: 2019 },
+  { id: 4, lang: 'es', release: 'Feature.Presentation.2024.Latino', downloads: 50, year: 2024 },
+  { id: 5, lang: 'en', release: 'Feature.Presentation.2024.1080p.WEB-DL.x264-GRP.machine', downloads: 99999, year: 2024, ai: true }
+];
+const menu = T.listed(res, { title: 'Feature Presentation', item: { name: 'Feature Presentation (2024) 1080p WEB-DL x264-GRP' } }, { query: 'Feature Presentation', year: '2024', type: 'movie' });
+const shownRows = menu.map(r => (r.head ? '# ' : '') + r.label);
+ok('results: a heading per language, your languages in order', shownRows[0] === '# English  ·  4' && /^# (Spanish|es)  ·  1$/.test(shownRows[5]), shownRows.join(' | '));
+ok('results: the right year and the release closest to what is playing first, machine translations last', /1080p\.WEB-DL\.x264-GRP$/.test(shownRows[1]) && /720p/.test(shownRows[2]) && /2019/.test(shownRows[3]) && /machine/.test(shownRows[4]), shownRows.join(' | '));
+const long = T.shortName('A.Very.Long.Release.Name.2024.2160p.UHD.BluRay.REMUX.HDR.HEVC.Atmos-SOMEGROUPNAME');
+ok('results: a long release name is cut in the middle, keeping its end', long.length <= 58 && /^A\.Very\.Long/.test(long) && /SOMEGROUPNAME$/.test(long) && /…/.test(long), long);
+
 console.log(fails ? fails + ' FAILED' : 'all subtitle drawing checks passed');
 process.exit(fails ? 1 : 0);

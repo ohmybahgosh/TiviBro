@@ -350,19 +350,45 @@ var Subs = (function () {
       { label: 'Languages…', sub: langs().map(langName).join(', '), action: function () { langMenu(function () { find(meta); }); } }
     ]);
   }
+  /* The results by language (discussion #19), each under its heading and at most 25, best match first:
+     the right year, season and episode, then a release name sharing the most words with what is playing
+     ("1080p", "WEB", "BluRay", the group), then trusted uploaders, then downloads; machine translations last.
+     Release names are cut in the middle so the downloads and frame rate under them always show. */
+  function words(t) { return String(t || '').toLowerCase().split(/[^a-z0-9]+/).filter(function (w) { return w.length > 1; }); }
+  function score(x, q, mine) {
+    var n = 0;
+    if (q.type === 'episode' ? x.season === +q.season && x.episode === +q.episode : q.year && x.year === +q.year) n += 100;
+    var seen = {};
+    words(x.release).forEach(function (w) { if (mine[w] && !seen[w]) { seen[w] = 1; n += 10; } });
+    if (x.trusted) n += 5;
+    if (x.ai) n -= 1000;                                    // machine translations always last
+    return n;
+  }
+  function shortName(t, n) { t = String(t || ''); n = n || 58; return t.length <= n ? t : t.slice(0, Math.ceil(n * 0.6)) + '…' + t.slice(t.length - Math.floor(n * 0.4) + 1); }
+  function listed(r, meta, q) {
+    var mine = {}, it = meta && meta.item || {}, order = langs(), by = {}, out = [];
+    words([it.name, meta && meta.title, meta && meta.file, meta && meta.url && String(meta.url).split('?')[0].split('/').pop()].join(' ')).forEach(function (w) { mine[w] = 1; });
+    words(q.query).forEach(function (w) { delete mine[w]; });       // the title is in every result
+    r.forEach(function (x) { x.score = score(x, q, mine); (by[x.lang] || (by[x.lang] = [])).push(x); });
+    var keys = Object.keys(by).sort(function (a, b) { var i = order.indexOf(a), j = order.indexOf(b); return (i < 0 ? 99 : i) - (j < 0 ? 99 : j); });
+    keys.forEach(function (l) {
+      var list = by[l].sort(function (a, b) { return b.score - a.score || b.downloads - a.downloads; }).slice(0, 25);
+      if (keys.length > 1) out.push({ head: true, label: langName(l) + '  ·  ' + by[l].length });
+      list.forEach(function (x) {
+        var tags = [x.downloads.toLocaleString() + ' downloads'];
+        if (x.fps) tags.push(x.fps + ' fps'); if (x.hi) tags.push('for the deaf and hard of hearing'); if (x.trusted) tags.push('trusted'); if (x.ai) tags.push('machine translated');
+        out.push({ label: (keys.length > 1 ? '' : langName(x.lang) + '  ·  ') + shortName(x.release), sub: tags.join('  ·  '), stack: true, action: function () { fetchOne(x); } });
+      });
+    });
+    return out;
+  }
   function search(meta, q) {
     U.toast('Looking on OpenSubtitles…', 3000);
     token().then(function (tk) { return ask('search', { key: state.key, token: tk, query: q.query, year: q.year, season: q.season, episode: q.episode, type: q.type, langs: langs() }); })
       .then(function (j) {
         var r = j.results || [];
         if (!r.length) { U.toast('Nothing found for "' + q.query + '".  Change the title or the languages.', 6000); return find(meta); }
-        var order = langs();
-        r.sort(function (a, b) { return order.indexOf(a.lang) - order.indexOf(b.lang) || b.downloads - a.downloads; });
-        UI.menu(r.length + ' subtitles for "' + q.query + '"', r.slice(0, 40).map(function (x) {
-          var tags = [x.downloads.toLocaleString() + ' downloads'];
-          if (x.fps) tags.push(x.fps + ' fps'); if (x.hi) tags.push('for the deaf and hard of hearing'); if (x.trusted) tags.push('trusted'); if (x.ai) tags.push('machine translated');
-          return { label: langName(x.lang) + '  ·  ' + x.release, sub: tags.join('  ·  '), action: function () { fetchOne(x); } };
-        }));
+        UI.menu(r.length + ' subtitles for "' + q.query + '"', listed(r, meta, q));
       }, function (e) { U.toast(e.message, 7000); });
   }
   function fetchOne(x) {
@@ -472,5 +498,5 @@ var Subs = (function () {
 
   return { find: find, gone: gone, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, keptCount: keptCount, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
     get delay() { return delay; }, get rate() { return rate; }, get timing() { return timingSummary(); }, setRate: setRate, draw: drawLines, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
-    _test: { keep: keep, parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
+    _test: { listed: listed, shortName: shortName, keep: keep, parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
 })();
