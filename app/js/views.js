@@ -442,7 +442,7 @@ var Views = (function () {
       Store.edits.last = c.k; Store.saveEdits();
       stage.classList.remove('off');
       if (Store.settings.blackSwitch) stage.classList.add('blank');
-      video._subsChoice = false;           // a new playback: subtitles may turn on by themselves again
+      video._subsChoice = false; video._subsWantKey = null;           // a new playback: subtitles may turn on by themselves again
       Player.play(c, { preview: preview, keepTrying: foSwitching === 'back' });
       chansVL.refreshWhere(function (x) { return x && (x.k === c.k || (lastPlayed && x.k === lastPlayed.k)); });
       if (then) then();
@@ -963,6 +963,7 @@ var Views = (function () {
     if (mode === 'vod') {
       if (a === 'back') { if (vs.pending != null) { vodSeekCancel(); return true; } if (!hidden) { $('osd').classList.add('hidden'); return true; } exitFull(); }
       else if (a === 'left') vodSeek(-Store.settings.skip, true);
+      else if (a === 'stop') exitFull();       // discussion #36: Stop on the remote stops the movie (where it got to is kept)
       else if (a === 'right') vodSeek(+Store.settings.skip, true);
       else if (a === 'down' || a === 'chdown') vodSeek(-600);
       else if (a === 'rew') vodSeek(-(+Store.settings.ffStep || 120), true);
@@ -987,7 +988,7 @@ var Views = (function () {
       else if (a === 'ok') { Player.togglePause(); osd(true); }
       else if (a === 'playpause') playPause();
       else if (a === 'red' || a === 'hold') playerMenu();
-      else if (a === 'yellow') backToLive();
+      else if (a === 'yellow' || a === 'stop') backToLive();
       else if (a === 'info') osd(true);
       else if (Keymap.get('player', a) === 'buffer') peekMeter();
       else if (Keymap.get('player', a) === 'streaminfo') streamInfo();
@@ -1054,7 +1055,7 @@ var Views = (function () {
       playing = c; mode = 'catchup';
       cu = { c: c, p: p, off: Math.max(0, offSec || 0), first: true, pending: null };
       stage.classList.remove('off');
-      video._subsChoice = false;
+      video._subsChoice = false; video._subsWantKey = null;
       Player.play(c, { live: false, timeshift: true, urlFn: function () {
         if (!cu) return '';
         if (!cu.first) cu.off += Player.position;     // a reconnect continues from where playback reached
@@ -1120,7 +1121,7 @@ var Views = (function () {
     mode = 'vod'; cu = null; playing = null;
     Subs.reset();
     stage.classList.remove('off');
-    video._subsChoice = false;
+    video._subsChoice = false; video._subsWantKey = null;
     Player.play({ k: 'vod:' + meta.id, n: meta.title, num: '', p: meta.p || undefined }, { url: url, live: false, startAt: startAt || 0, meta: meta });
     Subs.restore(meta);           // subtitles downloaded for it in the last days (discussion #19)
     goFull();
@@ -1644,8 +1645,8 @@ var Views = (function () {
     } else {
       var none = tr.every(function (t) { return t.mode !== 'showing'; });
       // Any choice here (Off too) is the viewer's for the rest of this playback: see the addtrack handler.
-      list.push({ label: 'Off', sub: none ? 'on' : '', current: none, action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = null; tr.forEach(function (t) { t.mode = 'disabled'; }); } });
-      tr.forEach(function (t, i) { list.push({ label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', current: t.mode === 'showing', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = t; tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
+      list.push({ label: 'Off', sub: none ? 'on' : '', current: none, action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = null; video._subsWantKey = ''; tr.forEach(function (t) { t.mode = 'disabled'; }); } });
+      tr.forEach(function (t, i) { list.push({ label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', current: t.mode === 'showing', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = t; video._subsWantKey = (t.label || '') + '|' + (t.language || ''); tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
     }
     if (!settings.length) return UI.menu('Subtitles', list);
     var it = vod && vod.meta && vod.meta.item || {};

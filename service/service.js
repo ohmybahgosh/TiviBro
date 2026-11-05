@@ -78,7 +78,7 @@ function lcall(uri, params, cb) {
   try { service.call(uri, params, function (m) { cb((m && m.payload) || {}); }); } catch (e) { cb({ returnValue: false, errorText: e.message }); }
 }
 var companion = require('./companion').create({
-  dir: __dirname, log: function (o) { proxy.log(o); }, version: require('./package.json').version,
+  dir: __dirname, alt: function () { return require('./kv').sub('companion'); }, log: function (o) { proxy.log(o); }, version: require('./package.json').version,
   launch: function (params, cb) {
     lcall('luna://com.webos.applicationManager/launch', { id: APP, params: params }, function (r) {
       cb(r.returnValue === false ? new Error(r.errorText || 'the TV refused') : null);

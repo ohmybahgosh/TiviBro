@@ -87,7 +87,7 @@ var Net = (function () {
     return true;
   }
   function wrap(url, opts) {
-    if (!url || !useRelay()) return url;
+    if (!url || !(useRelay() || (opts && opts.always && port))) return url;     // always: the channel list even on Direct (source.js)
     var m = /^(https?):\/\/([^/?#]+)([^#]*)/i.exec(url);
     if (!m) return url;
     if (m[2] === '127.0.0.1:' + port || m[2] === 'localhost:' + port) return url;   // already relayed

@@ -142,6 +142,17 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   e = await C.hello(T).catch((x) => x);
   ok('and nothing answers any more', e instanceof Error);
   c.stop();
+
+  // Issue #54: next to the helper is read-only on a TV that isn't rooted; pairing goes in the helper's storage.
+  { const ro = path.join(dir, 'not-a-folder'); fs.writeFileSync(ro, 'x'); const alt = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-companion-alt-'));
+    const mk = () => Companion.create({ dir: ro, alt: () => alt, version: 'test', log: () => {}, launch: (p, cb) => cb(null), sysinfo: (cb) => cb({ model: 'X', webos: '6', name: 'Den' }), app: () => ({ open: false }), editor: () => null });
+    let a = mk();
+    await ctl(a, '/companion/set', { name: 'Bedroom', on: false });
+    ok('read-only next to the helper: saved in the helper\'s storage instead', fs.existsSync(path.join(alt, 'companion.json')));
+    const id = (await ctl(a, '/companion/status')).j.id; a.stop();
+    a = mk(); const st2 = (await ctl(a, '/companion/status')).j; a.stop();
+    ok('and read back from there on the next start (same TV id, same name)', st2.id === id && st2.ownName === 'Bedroom', JSON.stringify(st2).slice(0, 200));
+    fs.rmSync(alt, { recursive: true, force: true }); }
   fs.rmSync(dir, { recursive: true, force: true });
   console.log(fails ? fails + ' FAILED' : 'all phone app connection checks passed');
   process.exit(fails ? 1 : 0);

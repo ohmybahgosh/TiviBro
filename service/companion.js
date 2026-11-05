@@ -102,7 +102,11 @@ function ips() {
 function create(opts) {
   opts = opts || {};
   var log = opts.log || function () {};
+  /* Next to the helper, where it always was.  That folder is read-only on a TV that isn't rooted (issue
+     #54: "could not save  EACCES"), so pairing then goes in the helper's storage (opts.alt()) instead. */
   var FILE = path.join(opts.dir || __dirname, 'companion.json');
+  function altFile() { try { var d = opts.alt && opts.alt(); return d ? path.join(d, 'companion.json') : ''; } catch (e) { return ''; } }
+  (function () { try { fs.accessSync(FILE); } catch (e) { var a = altFile(); try { if (a) { fs.accessSync(a); FILE = a; } } catch (e2) {} } })();
   var st = load();
   var server = null, udp = null, port = 0, pairing = null, nonces = {}, fails = {}, sys = null, sysAt = 0, wantEditor = 0, udpCount = { t: 0, n: 0 };
   /* The remote and Play on TV (phase 2).  Phones queue commands, which TiviBro on the TV picks up with
@@ -129,12 +133,16 @@ function create(opts) {
     return s;
   }
   function save() {
-    var tmp = FILE + '.tmp';
-    try {
+    function write(file) {
+      var tmp = file + '.tmp';
       fs.writeFileSync(tmp, JSON.stringify(st), { mode: 384 });   // 0600: phone keys
-      fs.renameSync(tmp, FILE);
-      return true;
-    } catch (e) { log({ lv: 'error', event: 'companion: could not save', e: e.message }); return false; }
+      fs.renameSync(tmp, file);
+    }
+    try { write(FILE); return true; } catch (e) {
+      var a = altFile();
+      if (a && a !== FILE) { try { write(a); log({ lv: 'info', event: 'companion: saved in the helper\'s storage (' + e.code + ' next to the helper)' }); FILE = a; return true; } catch (e2) {} }
+      log({ lv: 'error', event: 'companion: could not save', e: e.message }); return false;
+    }
   }
   function changed() { if (opts.onChange) try { opts.onChange(); } catch (e) {} }
 

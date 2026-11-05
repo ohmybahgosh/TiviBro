@@ -309,6 +309,10 @@ var EmbedSubs = (function () {
       // views.js leaves these tracks to this.
       // A subtitle already on that isn't one of these (a download from Find subtitles) stays the one shown.
       var intent = liveTracks.map(function (t, i) { return rec && rec.modes && rec.modes[i] || 'disabled'; });
+      /* The viewer's pick in the Subtitles menu, by name and language (issue #51): a reconnect or a new
+         engine makes new track objects, so the pick itself no longer matches any of them. */
+      var wantKey = video._subsChoice && typeof video._subsWantKey === 'string' ? video._subsWantKey : null;
+      if (wantKey != null && !otherShowing()) intent = liveTracks.map(function (t) { return wantKey && keyOf(t) === wantKey ? 'showing' : 'disabled'; });
       if (intent.indexOf('showing') < 0 && !video._subsChoice && !otherShowing() && typeof Subs !== 'undefined' && Subs.autoOn) {
         for (var a = 0; a < liveTracks.length; a++) if (Subs.autoOn(liveTracks[a], video)) { intent[a] = 'showing'; break; }
       }
@@ -317,13 +321,14 @@ var EmbedSubs = (function () {
       var rev0 = video._subsRev;
       function settle() {
         if (cancelled) return;
-        var want = video._subsRev === rev0 ? intent : liveTracks.map(function (t) { return t === video._subsWant ? 'showing' : 'disabled'; });
+        var want = video._subsRev === rev0 ? intent : liveTracks.map(function (t) { return t === video._subsWant || (video._subsWantKey && keyOf(t) === video._subsWantKey) ? 'showing' : 'disabled'; });
         for (var i = 0; i < liveTracks.length; i++) if (liveTracks[i].mode !== want[i]) liveTracks[i].mode = want[i];
         paint();
         if (pump) pump();
       }
       settleTimers.push(setTimeout(settle, 0), setTimeout(settle, 60));
     }
+    function keyOf(t) { return (t.label || '') + '|' + (t.language || ''); }
     function otherShowing() {
       var all = video.textTracks || [];
       for (var i = 0; i < all.length; i++) {

@@ -38,7 +38,7 @@ class FakeXHR {
 }
 const wait = ms => new Promise(r => setTimeout(r, ms));
 const until = async (cond, ms) => { for (let t = 0; t < (ms || 2000) && !cond(); t += 2) await wait(2); return cond(); };
-function makeTrackElement() { const cues = []; return { kind: '', label: '', srclang: '', track: { mode: 'disabled', cues, addCue(c) { cues.push(c); } } }; }
+function makeTrackElement() { const cues = []; const el = { kind: '', label: '', srclang: '', track: { mode: 'disabled', cues, addCue(c) { cues.push(c); }, get label() { return el.label; }, get language() { return el.srclang; } } }; return el; }
 function makeVideo(extra) {
   const listeners = {};
   return Object.assign({
@@ -510,7 +510,7 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
       return v;
     };
     // What the Subtitles menu does (views.js): the choice, counted, and the track chosen (null for Off).
-    const menu = (v, i) => { v._subsChoice = true; v._subsRev = (v._subsRev || 0) + 1; v._subsWant = i >= 0 ? v.children[i].track : null; v.children.forEach((c, k) => { c.track.mode = k === i ? 'showing' : 'disabled'; }); };
+    const menu = (v, i) => { v._subsChoice = true; v._subsRev = (v._subsRev || 0) + 1; v._subsWant = i >= 0 ? v.children[i].track : null; v._subsWantKey = i >= 0 ? v.children[i].label + '|' + v.children[i].srclang : ''; v.children.forEach((c, k) => { c.track.mode = k === i ? 'showing' : 'disabled'; }); };
     const modes = v => v.children.map(c => c.track.mode).join();
     const ad = () => Object.assign(fakeAdapter({ items: [{ id: 'a', s: 1 }] }), { describe: () => [{ label: 'English', srclang: 'en' }, { label: 'Dutch', srclang: 'nl' }] });
     files['race'] = new Uint8Array(64);
@@ -550,7 +550,16 @@ files['f4'] = new Uint8Array(64); files['f5'] = new Uint8Array(64); files['f6'] 
     const h3 = EmbedSubs.run('http://p/movie/life', c, () => {}, ad());
     await wait(120);
     const off = modes(c);
-    h3.cancel(); delete ctx.Subs;
+    h3.cancel();
+    // Issue #51: a reconnect the saved modes don't cover (another session link, so nothing cached for it)
+    // still brings back the track picked, by its name and language, over the browser's pick.
+    files['life-new'] = new Uint8Array(64);
+    const e = browserLike({ _subsChoice: true, _subsRev: 9, _subsWant: { label: 'Dutch' }, _subsWantKey: 'Dutch|nl' });
+    const h4 = EmbedSubs.run('http://p/movie/life-new', e, () => {}, ad());
+    await wait(120);
+    const byName = modes(e);
+    h4.cancel(); delete ctx.Subs;
+    ok('#51: the track picked comes back by name and language when the reconnect has nothing saved', byName === 'disabled,showing', byName);
     ok('a menu choice right after the tracks appear is kept over a late browser pick (Off, or Dutch alone)', race === 'disabled,disabled' && race2 === 'disabled,showing', { race, race2 });
     ok('auto-on, then Dutch and Off each survive a reconnect over the browser\'s pick', auto === 'showing,disabled' && dutch === 'disabled,showing' && off === 'disabled,disabled', { auto, dutch, off });
   }

@@ -599,11 +599,28 @@ var Player = (function () {
     return null;
   }
 
+  /* A movie that fails again and again at the same spot (issue #51: every reconnect resumed at 2835 s and
+     dropped 5 s later, only skipping ahead got past it) has a damaged part, or one the provider can't
+     send.  Tries that fail before they play (the provider gone) don't count.  The third failure within 20 s of the same spot skips 10 s past it, and each one after that
+     twice as far (up to 2 minutes), never into the last 30 s. */
+  function skipBadSpot() {
+    if (!isFile() || !cur.everPlayed || !st || !st.started) return;   // only tries that played, then failed
+    if (cur.badAt != null && Math.abs(cur.pos - cur.badAt) < 20 + (cur.badSkip || 0)) cur.badN = (cur.badN || 0) + 1;
+    else { cur.badAt = cur.pos; cur.badN = 1; cur.badSkip = 0; }
+    if (cur.badN < 3) return;
+    var skip = Math.min(120, 10 * Math.pow(2, cur.badN - 3)), dur = video && isFinite(video.duration) ? video.duration : 0;
+    if (dur && cur.pos + skip > dur - 30) return;
+    cur.badSkip = (cur.badSkip || 0) + skip;
+    cur.startAt = cur.pos + skip;
+    Log.warn('player', 'Failed ' + cur.badN + ' times near ' + Math.round(cur.badAt) + 's; skipping ' + skip + 's ahead');
+    notice('Skipped ' + skip + ' seconds past a part of this video that won\'t play');
+  }
+
   function reconnect(myToken, why) {
     if (myToken !== token || !cur) return;
     var now = Date.now();
     // Movies and catch-up continue from where they got to, not from the start.
-    if (!cur.live && !cur.timeshift && cur.pos > 5) cur.startAt = cur.pos;
+    if (!cur.live && !cur.timeshift && cur.pos > 5) { cur.startAt = cur.pos; skipBadSpot(); }
     if (!holding && cur.everPlayed) holdFrame();
     teardown();
     clearTimeout(cur.timer);              // several error events for one failure = one reconnect

@@ -103,7 +103,11 @@ var Source = (function () {
 
   /* On a TV the helper downloads and shapes the channel list (service/live.js), so the app never
      parses the provider's whole answer; if it can't, the app does it here as before. */
-  function helperLive() { return !!(Net.active && Net.port && Net.info && Net.info.live >= 1); }
+  /* Even with Connection set to Direct (issue #54: a 1 GB TV on Direct closed three times reading a big M3U
+     in the app): the list is the one thing that can run the app out of memory, and the helper reads it in
+     its own process.  If the helper can't, the app reads it as before. */
+  function helperLive() { return !!(Net.port && Net.info && Net.info.live >= 1); }
+  function relayed(u) { return Net.wrap(u, { always: true }); }
   // The helper keeps what it loaded for the playlist's cache (Store.bigSet saves it from there), when it
   // keeps the cache at all.
   function keepIt() { return !!(Net.info && Net.info.kv); }
@@ -131,7 +135,7 @@ var Source = (function () {
       });
     }
     if (!helperLive()) return direct();
-    return viaHelper('/live/xtream', { u: Net.wrap(api(p, 'get_live_streams')), uc: Net.wrap(api(p, 'get_live_categories')), keep: keepIt() }).then(function (j) {
+    return viaHelper('/live/xtream', { u: relayed(api(p, 'get_live_streams')), uc: relayed(api(p, 'get_live_categories')), keep: keepIt() }).then(function (j) {
       if (j._status !== 200 || !Array.isArray(j.channels)) throw new Error(j.error || 'HTTP ' + j._status);
       Log.info('xc', 'The helper loaded ' + j.cats + ' categories and ' + j.channels.length + ' channels in ' + (Date.now() - t0) + 'ms');
       return { groups: j.groups, channels: j.channels, _live: j.live || '' };
@@ -146,11 +150,11 @@ var Source = (function () {
   function loadM3U(p) {
     var t0 = Date.now(), raw = p.m3u.trim();
     var list = hasScheme(raw) ? [raw, swapScheme(raw)] : ['http://' + raw, 'https://' + raw], used = list[0];
-    Log.info('m3u', 'Loading playlist ' + raw + ' via ' + (Net.active ? 'helper :' + Net.port : 'direct'));
+    Log.info('m3u', 'Loading playlist ' + raw + ' via ' + (helperLive() ? 'helper :' + Net.port : 'direct'));
     function fetchList(i) {
       used = list[i];
       if (helperLive()) {
-        return viaHelper('/live/m3u', { u: Net.wrap(list[i]), keep: keepIt(), pl: p.id || '', sig: sig(p) }).then(function (j) {
+        return viaHelper('/live/m3u', { u: relayed(list[i]), keep: keepIt(), pl: p.id || '', sig: sig(p) }).then(function (j) {
           if (j._status === 422) return { notM3u: j.head || '' };
           if (j._status !== 200 || !Array.isArray(j.channels)) throw new Error(j.error || 'HTTP ' + j._status);
           return { shaped: j };

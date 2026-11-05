@@ -243,6 +243,23 @@ ok('reconnect resumes at the same spot', Math.abs(t.video.currentTime - 1800) < 
 t.video.ended = true; t.run(500);
 ok('an early "ended" reconnects instead of finishing', !t.states.some(s => s === 'ended') && t.logs.some(l => /treating it as a dropped connection/.test(l)));
 
+// ---- issue #51: a movie that keeps failing at one spot skips past it ----
+t = setup();
+t.P.play({ n: 'Bad spot', url: 'http://p/movie/u/p/51.mkv' }, { live: false, startAt: 0 });
+t.video.duration = 7200; t.feed(0, 4000); t.run(3000);
+const fails51 = [];
+for (let i = 0; i < 4; i++) {
+  const at = i === 0 ? 2835 : t.video.currentTime + 4;
+  t.video.currentTime = at; t.run(500);
+  t.video.error = { code: 2 }; t.video.l.error.forEach(f => f());
+  t.run(6000); t.video.error = null; t.video.duration = 7200; t.feed(0, 7200); t.run(1500);
+  fails51.push(Math.round(t.video.currentTime));
+}
+ok('#51: the first two failures at a spot resume there', Math.abs(fails51[0] - 2836) < 2 && Math.abs(fails51[1] - (fails51[0] + 5)) < 2, fails51.join(','));
+ok('#51: the third skips 10s past it, the fourth 20s, with a notice', fails51[2] - (fails51[1] + 4) >= 10 && fails51[3] - (fails51[2] + 4) >= 20 && t.notices.some(n => /Skipped 10 seconds/.test(n)) && t.notices.some(n => /Skipped 20 seconds/.test(n)), fails51.join(',') + ' ' + t.notices.join(' | '));
+{ const n0 = t.notices.length; t.video.currentTime = 5000; t.run(500); t.video.error = { code: 2 }; t.video.l.error.forEach(f => f()); t.run(6000); t.video.error = null; t.feed(0, 7200); t.run(1500);
+  ok('#51: a drop somewhere else just resumes there', Math.abs(t.video.currentTime - 5000) < 3 && t.notices.length === n0, t.video.currentTime); }
+
 // ---- issue #34: a paused movie whose connection the provider closed ----
 t = setup();
 t.P.play({ n: 'Paused film', url: 'http://p/movie/u/p/30.mkv' }, { live: false });

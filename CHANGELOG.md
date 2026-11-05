@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- **A movie that keeps failing at one spot gets past it.**  When a movie or episode fails three times in a row at the same point, TiviBro skips 10 seconds ahead (then 20, 40, up to 2 minutes) and says so, instead of resuming at the same spot over and over (issue #51).
+- **Your subtitle pick survives a reconnect.**  The subtitle chosen in the Subtitles menu (from the file's own tracks) comes back by its name and language after a reconnect, instead of turning off or switching to another one (issue #51).
+- **Big playlists load safely with Connection set to Direct.**  The channel list now loads through the network helper whenever it's running, even on Direct, so a big list can't close TiviBro on a TV with little memory (issue #54).
+- **Phone app pairing is saved on TVs that aren't rooted.**  Pairing used to be written next to the helper, which is read-only there ("companion: could not save"); it now goes in the helper's storage (issue #54).
+- **The Stop button stops movies and catch-up.**  Stop on the remote now stops a movie or episode (keeping where you were) and takes catch-up back to live, as it already did for live channels (discussion #36).
 - **Back to exit shows only the TV's question.**  On webOS 6 and later, where the TV itself asks "Do you want to exit the app?", TiviBro no longer shows its own "Press Back again to exit" on the way there.  Older TVs keep it, since TiviBro asks there itself.
 
 ## 0.6.0 (alpha 89, 2026-11-05)
