@@ -96,7 +96,14 @@ const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playl
   ok('the answer typed on the phone is used', after.indexOf('AUDIT: ') >= 0 && after.indexOf('ZZ| ') >= 0, JSON.stringify(after));
   await ev((b4) => { Store.playlist.names.prefixes = b4; Store.upsertPlaylist(Store.playlist); Names.invalidate(); }, before);
   r = await sa({ op: 'answer', sec: 'names', path: [], dialog: 'd999', value: 'x' }).catch((e) => e);
-  ok('a stale answer is refused', r instanceof Error || /gone/.test(r && r.msg || ''), String(r && (r.message || JSON.stringify(r))));
+  ok('a stale answer is refused', r instanceof Error || /stopped waiting/.test(r && r.msg || ''), String(r && (r.message || JSON.stringify(r))));
+  // An answer after the TV stopped waiting (someone took minutes to copy an API key): asked again behind the scenes, and used.
+  r = await sa({ op: 'action', sec: 'names', path: [], i: np.i });
+  await ev(() => Settings.phone._timeout());
+  r = await sa({ op: 'answer', sec: 'names', path: [], dialog: r.dialog.id, value: 'LATE: ' });
+  const late = await ev(() => Store.playlist.names.prefixes.slice());
+  ok('an answer after the TV stopped waiting is still used', late.indexOf('LATE: ') >= 0 && !r.dialog, JSON.stringify(late) + ' ' + JSON.stringify(r).slice(0, 200));
+  await ev((b4) => { Store.playlist.names.prefixes = b4; Store.upsertPlaylist(Store.playlist); Names.invalidate(); }, before);
 
   // 5. A picture of every TV page.
   if (SHOTS) {

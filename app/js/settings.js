@@ -1246,11 +1246,17 @@ var Settings = (function () {
      shows, go to the phone instead of the TV's screen: the answer carries { dialog } and the phone
      shows it, then answers with op "answer".  Nothing appears on the TV.  Rows the phone does all by
      itself carry phone (phoneDoes); rows that only make sense on the TV's screen carry tv: 1. */
-  var cap = null, dlgN = 0;
+  var cap = null, dlgN = 0, asked = {};          // asked: recent questions by id, to answer one that timed out
   function startCapture() {
     endCapture();
     var c = cap = { dialog: null, toasts: [], last: Date.now(), wake: null, orig: { menu: UI.menu, prompt: UI.prompt, confirm: UI.confirm, toast: U.toast } };
-    function got(d) { if (cap !== c) return false; d.id = 'd' + (++dlgN); c.dialog = d; c.last = Date.now(); if (c.wake) c.wake(); return true; }
+    function got(d) {
+      if (cap !== c) return false;
+      d.id = 'd' + (++dlgN); c.dialog = d; c.last = Date.now();
+      var t = Date.now(); Object.keys(asked).forEach(function (k) { if (t - asked[k].at > 3600e3) delete asked[k]; });
+      asked[d.id] = { kind: d.kind, title: d.title, from: c.from, at: t };
+      if (c.wake) c.wake(); return true;
+    }
     UI.menu = function (title, items, onBack) { var list = (items || []).filter(Boolean); if (!got({ kind: 'menu', title: String(title || ''), items: list.map(function (x) { return { label: String(x.label || ''), sub: x.sub ? String(x.sub) : '', current: !!x.current }; }), _items: list, _back: onBack })) c.orig.menu.apply(UI, arguments); };
     UI.prompt = function (title, value, done, hint, secret, okLabel) { if (!got({ kind: 'prompt', title: String(title || ''), value: String(value == null ? '' : value), hint: hint ? String(hint) : '', secret: !!secret, ok: okLabel ? String(okLabel) : '', _done: done })) c.orig.prompt.apply(UI, arguments); };
     UI.confirm = function (title, yesLabel, yes) { if (!got({ kind: 'confirm', title: String(title || ''), ok: String(yesLabel || 'OK'), _yes: yes })) c.orig.confirm.apply(UI, arguments); };
@@ -1287,13 +1293,30 @@ var Settings = (function () {
     });
   }
   var forPhone = {
+    _timeout: function () { endCapture(); },          // tests: as if a minute passed
     sections: function () { return SECTIONS.filter(function (x, i) { return shown(i); }).map(function (x) { return { id: x[0], title: title(x) }; }); },
     page: function (secId, path) { var p = rowsOf(secId, path); return { title: p.title, trail: p.trail, rows: p.list.map(rowData).filter(function (r, n) { return !p.list[n].preview; }) }; },   // pictures (a preview, the TMDB credit) stay on the TV
     // op: 'toggle' (on), 'choice' (v: the choice's index), 'cycle' (dir), 'action', 'answer' (to a dialog).
     change: function (secId, path, n, op, a) {
       if (op === 'answer') {
         var c = cap, d = c && c.dialog;
-        if (!d || d.id !== String(a.dialog || '')) { endCapture(); throw new Error('That question has gone.  Press the button again.'); }
+        if (!d || d.id !== String(a.dialog || '')) {
+          /* The TV stopped waiting after a minute (someone took longer to copy an API key, say): ask the
+             same question again behind the scenes and give it this answer, so it isn't lost. */
+          var was = asked[String(a.dialog || '')];
+          endCapture();
+          if (was && was.from && !a.cancel) {
+            var again = rowsOf(was.from.sec, was.from.path).list[was.from.n];
+            if (again && again.action && !again.page && !again.tv) {
+              var c4 = startCapture(); c4.from = was.from;
+              try { again.action(); } catch (e) { endCapture(); throw e; }
+              var d4 = c4.dialog;
+              if (d4 && d4.kind === was.kind && d4.title === was.title) { a.dialog = d4.id; return forPhone.change(secId, path, n, 'answer', a); }
+              endCapture();
+            }
+          }
+          throw new Error('The TV stopped waiting for that answer.  Press the button again.');
+        }
         c.dialog = null;
         if (!a.cancel) {
           if (d.kind === 'prompt') d._done(String(a.value == null ? '' : a.value).slice(0, 4000));
@@ -1310,7 +1333,7 @@ var Settings = (function () {
       else if (op === 'cycle' && it2.cycle) it2.cycle(+a.dir < 0 ? -1 : 1);
       else if (op === 'action' && it2.action && !it2.page) {
         if (it2.tv) { it2.action(); Store.saveSettings(); return { msg: 'On the TV\'s screen now', page: forPhone.page(secId, path) }; }
-        var c2 = startCapture();
+        var c2 = startCapture(); c2.from = { sec: secId, path: path, n: n };
         try { it2.action(); } catch (e) { endCapture(); throw e; }
         Store.saveSettings();
         return settle(c2, secId, path);

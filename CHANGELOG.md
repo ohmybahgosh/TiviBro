@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A box answered late on the phone still counts.**  Settings on the phone app ask their questions on the phone (like pasting the OpenSubtitles API key), and the TV stopped waiting for the answer after a minute: an answer sent later was dropped with "That question has gone".  The TV now asks the same question again behind the scenes and uses the answer.
+
 ## 0.6.0 (alpha 86, 2026-11-05)
 
 Pre-release: expect rough edges, and keep a backup before installing.
