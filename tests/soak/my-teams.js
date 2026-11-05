@@ -44,7 +44,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
   const order = await ev(() => Library.channels(Library.TEAMS).map(c => c.n));
   ok('My teams: the game on now first', /WPG VS CAR/.test(order[0]), order.join(' / '));
-  ok('then the next game', /Carolina Hurricanes Winnipeg Jets/.test(order[1]), order.join(' / '));
+  ok('then the next game', /Anaheim Ducks Winnipeg Jets/.test(order[1]), order.join(' / '));
   ok('and no team channel without a game soon', order.indexOf('NHL | WINNIPEG JETS') < 0 && order.length === 2, order.join(' / '));
   const gs = await ev(() => Library.groups().map(g => g.name));
   ok('the group sits near the top', gs.indexOf('My teams') >= 0 && gs.indexOf('My teams') <= 2, gs.slice(0, 5).join(', '));

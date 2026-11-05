@@ -210,23 +210,36 @@ var Teams = (function () {
        not found yet" isn't one. */
     function playing(text, ctx, abbrs, title) {
       if (!text || NOGAME.test(title || text)) return [];
-      var hits = named(text, ctx, ALL, abbrs), by = {};
-      hits.forEach(function (x) { by[x.league] = (by[x.league] || 0) + 1; });
+      var hits = named(text, ctx, ALL, abbrs), by = {}, ids = {};
+      hits.forEach(function (x) { by[x.league] = (by[x.league] || 0) + 1; (ids[x.league] || (ids[x.league] = [])).push(x.id); });
+      lastVs = {};
+      Object.keys(ids).forEach(function (l) { lastVs[l] = ids[l].sort().join('/'); });
       return hits.filter(function (x) { return mineIds[x.id] && by[x.league] >= 2; });
     }
     var gname = {};
     Library.data.groups.forEach(function (g) { gname[g.id] = g.name; });
-    var tc = teamChannels(), whose = {};
+    var tc = teamChannels(), whose = {}, lastVs = {};
     Object.keys(tc).forEach(function (id) { tc[id].forEach(function (c) { whose[c.k] = id; }); });
     function take(c, p, team) {
       if (!c || !shown(c) || !p.t || p.e <= now || p.s > to) return;
       // Another team's own channel (the opponent's) shows the same game: yours is enough.
       if (whose[c.k] && !mineIds[whose[c.k]]) return;
-      // One game, however the channels write its start ("12:55 PM" on one, "1:00 PM" on another).
-      var key = one ? team.id + '|' + Math.round(p.s / 2700e3) : c.k + '|' + team.id;
-      if (seen[key]) { if (one && Library.isFav(c.k) && !Library.isFav(seen[key].c.k)) seen[key].c = c; return; }
-      seen[key] = { c: c, p: p, team: team };
-      out.push(seen[key]);
+      if (!one) {
+        var key = c.k + '|' + team.id;
+        if (seen[key]) return;
+        seen[key] = { c: c, p: p, team: team };
+        out.push(seen[key]);
+        return;
+      }
+      /* For reminders, one per game: the same two teams within 12 hours are one game, however the channels
+         write its start ("12:55 PM" on one, "1:00 PM" on another) and whatever airs it again later that night
+         (a replay at 2 AM, a channel whose guide is an hour out).  The earliest start is kept, so it's never
+         missed; a Favorite channel for it is preferred. */
+      var vs = lastVs[team.league] || '', gk = team.id + '|' + vs, same = null;
+      (seen[gk] || (seen[gk] = [])).forEach(function (g) { if (Math.abs(g.p.s - p.s) < SAME_GAME) same = g; });
+      if (!same) { same = { c: c, p: p, team: team }; seen[gk].push(same); out.push(same); return; }
+      if (p.s < same.p.s - 10 * 60000) { same.c = c; same.p = p; }
+      else if (Math.abs(p.s - same.p.s) <= 10 * 60000 && Library.isFav(c.k) && !Library.isFav(same.c.k)) same.c = c;
     }
     // Words of every followed team, for a quick first look at each title.
     var words = [];
@@ -286,17 +299,28 @@ var Teams = (function () {
     return out;
   }
 
-  var MAX_FEEDS = 8;
+  var MAX_FEEDS = 8, SAME_GAME = 12 * 3600e3;
   var SPORTY = /\b(nfl|nba|nhl|mlb|wnba|mls|football|basketball|hockey|baseball|soccer)\b/i;
   // Not the game: placeholders ("not found yet"), and the shows around it.
   // Guide placeholders, never a programme to be reminded of (the helper's remind.js has the same list).
   var PLACEHOLDER = /^\s*next (?:game|event|match)\b|not found|no (?:future |upcoming |more |scheduled )?(?:games?|events?|matches)\b|not scheduled|nothing scheduled/i;
   function placeholder(t) { return PLACEHOLDER.test(t || ''); }
-  var NOGAME = /not found|no (?:future |upcoming |more |scheduled )?(?:games?|events?|matches)\b|not scheduled|nothing scheduled|off ?air|to be (?:announced|determined)|\btb[ad]\b|^\s*next game|\b(?:pre|post)[- ]?game\b|\bhighlights\b|\brecap\b|\bcountdown\b|\bgame ?day\b|\bpreview\b|\bfantasy\b|\bnfl sunday\b|\binside the\b|\bshow\b|\bpodcast\b|\btalk\b|\bpress conference\b/i;
+  var NOGAME = /not found|no (?:future |upcoming |more |scheduled )?(?:games?|events?|matches)\b|not scheduled|nothing scheduled|off ?air|to be (?:announced|determined)|\btb[ad]\b|^\s*next game|\b(?:pre|post)[- ]?game\b|\bhighlights\b|\brecap\b|\bcountdown\b|\bgame ?day\b|\bpreview\b|\bfantasy\b|\bnfl sunday\b|\binside the\b|\bshow\b|\bpodcast\b|\btalk\b|\bpress conference\b|\bovertime\b|\breplay\b|\bre-?airs?\b|\bencore\b|\brebroadcast\b|\(r\)/i;
 
   /* Is this a game?  Two teams of one league named, and not a placeholder or a show around the game.  For
      reminders set by an earlier TiviBro, which put team channels' "Future events for Detroit Tigers not
      found yet" and "Next game: ..." blocks on the reminder list (watch.js tidy()). */
+  /* The game a title names, for telling two reminders of one game apart: the league and the two teams
+     ("nba:det/nba:phi"), or '' when it names no game. */
+  function matchup(title, ctx) {
+    if (!title) return '';
+    var by = {};
+    named(title, ctx || '', ALL, true).forEach(function (x) { (by[x.league] || (by[x.league] = [])).push(x.id); });
+    for (var k in by) if (by[k].length >= 2) return by[k].sort().join('/');
+    return '';
+  }
+  /** Not the game itself: an overtime block, a replay, a show around it. */
+  function aroundGame(title) { return NOGAME.test(title || ''); }
   function isGame(title, ctx) {
     if (!title || NOGAME.test(title)) return false;
     var by = {};
@@ -391,6 +415,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    isGame: isGame, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, dirty: dirty, nextGame: nextGame, emptyText: emptyText
+    isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
 })();

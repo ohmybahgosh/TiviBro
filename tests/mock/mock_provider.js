@@ -132,7 +132,8 @@ if (process.env.MOCK_EVENTS) {
   ];
   // MOCK_TEAMS=1 as well: team channels and league pass games, for My teams (app/js/teams.js).
   if (process.env.MOCK_TEAMS) EV.push(['NHL PASS 1', [
-    [1, t => `NHL 1 | ${md(t)} ${hm(t)} | Carolina Hurricanes Winnipeg Jets`],
+    // The Jets' next game: another opponent, since the same two teams within 12 hours are one game (teams.js).
+    [1, t => `NHL 1 | ${md(t)} ${hm(t)} | Anaheim Ducks Winnipeg Jets`],
     [-1, t => `USA NHL 02: WPG VS CAR (TVAS Feed ) @ ${hm(t).toLowerCase()}`],
     [2, t => `NHL 3 | ${md(t)} ${hm(t)} | Boston Bruins Detroit Red Wings`]]]);
   // East and West feeds, and local stations by city (Smart clean-up).

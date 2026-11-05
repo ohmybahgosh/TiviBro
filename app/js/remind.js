@@ -56,10 +56,16 @@ var Remind = (function () {
      watchlist word or team, empty when you set it yourself). */
   function list(now) {
     now = now || Date.now();
-    return (Store.edits.reminders || []).filter(function (r) { return r && r.e > now; }).sort(function (a, b) { return a.s - b.s; }).map(function (r) {
-      var c = typeof Library !== 'undefined' ? Library.find(r.k) : null;
-      return { k: r.k, ch: c ? Library.name(c) : 'Channel not in this playlist', logo: c && typeof Views !== 'undefined' && Views.logoOf ? Views.logoOf(c) || '' : '', s: r.s, e: r.e, t: r.t || '', w: r.w || '', live: r.s <= now ? 1 : 0 };
+    // The channel's name is kept on the reminder too (cn), for the phone asking while the TV is still
+    // loading its channels, when no channel can be found yet.
+    var named = false, have = typeof Library !== 'undefined' && Library.count() > 0;
+    var out = (Store.edits.reminders || []).filter(function (r) { return r && r.e > now; }).sort(function (a, b) { return a.s - b.s; }).map(function (r) {
+      var c = have ? Library.find(r.k) : null, n = c ? Library.name(c) : '';
+      if (c && r.cn !== n) { r.cn = n; named = true; }
+      return { k: r.k, ch: n || r.cn || (have ? 'Channel not in this playlist' : 'Channels still loading'), logo: c && typeof Views !== 'undefined' && Views.logoOf ? Views.logoOf(c) || '' : '', s: r.s, e: r.e, t: r.t || '', w: r.w || '', live: r.s <= now ? 1 : 0 };
     });
+    if (named) Store.saveEdits();
+    return out;
   }
   function cancel(k, s) {
     var rem = Store.edits.reminders || [], i = rem.findIndex(function (r) { return r.k === k && r.s === s; });

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **One reminder per game for your teams.**  A game carried by several channels got a reminder for each channel's time, plus its "possible Overtime" block and the replays after midnight: five for one Pistons game.  Now the same two teams within 12 hours are one game, with one reminder at its earliest start, and overtime blocks and replays get none.  The extra reminders an earlier version set are cleared on the next start.
+- **Reminders on the phone show their channel while the TV is still starting.**  The phone's Reminders screen could say "Channel not in this playlist" for every reminder when the TV was still loading its channels.  The TV now keeps each reminder's channel name, and says "Channels still loading" if it has none yet.
+- **The phone's Reminders screen shows the whole time.**  "10:00 PM" lost its "PM" in the narrow time column.
+
 ## 0.6.0 (alpha 83, 2026-11-04)
 
 Pre-release: expect rough edges, and keep a backup before installing.

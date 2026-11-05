@@ -76,7 +76,14 @@ let list = Teams.list().map(c => c.n);
 ok('game on now first', /WPG VS CAR/.test(list[0]), list.join(' / '));
 ok('every feed of the game on now, together', /WPG VS CAR/.test(list[1]) && list[0] !== list[1], list.join(' / '));
 ok('then the next game', /Carolina Hurricanes Winnipeg Jets/.test(list[2]), list.join(' / '));
-ok('one channel per game for reminders', Teams.games(0, true).length === 2);
+// For reminders, one per game: the same two teams within 12 hours are one game (the one on now and its
+// later listing here), and the earliest start is kept.
+const one = Teams.games(0, true);
+ok('one reminder per game: the same two teams within 12 hours are one game, the earliest kept', one.length === 1 && one[0].p.s < NOW, one.map(g => g.c.n + ' ' + new Date(g.p.s).toISOString()).join(' / '));
+ok('an overtime block and a replay are not the game', Teams.aroundGame('Philadelphia 76ers at Detroit Pistons possible Overtime') && Teams.aroundGame('Philadelphia 76ers at Detroit Pistons (Replay)') &&
+  !Teams.isGame('Philadelphia 76ers at Detroit Pistons possible Overtime', 'NBA | DETROIT PISTONS') && !Teams.aroundGame('Philadelphia 76ers at Detroit Pistons'));
+ok('the same game however a channel titles it', Teams.matchup('NBA Basketball : Philadelphia 76ers at Detroit Pistons', 'USA | ESPN 2') === 'nba:det/nba:phi' &&
+  Teams.matchup('Philadelphia 76ers at Detroit Pistons', 'NBA | DETROIT PISTONS') === 'nba:det/nba:phi' && Teams.matchup('Detroit Pistons Postgame', '') === '');
 ok('a team channel with no game soon is left out', list.indexOf('NHL | WINNIPEG JETS') < 0, list.join(' / '));
 // Guide titles, including a team channel's "Next game" block.
 const lions = tc['nfl:det'][0], espn = chans.find(c => c.n === 'ESPN');
@@ -158,6 +165,25 @@ Teams.follow('nfl:det', false);
 ok('unfollow removes its reminders', Store.edits.reminders.length === 1 && Store.edits.reminders[0].w === 'Bluey');
 Store.settings.teamsGroup = false; Teams.dirty();
 ok('group off', Teams.list().length === 0);
+
+// Reminders an earlier TiviBro set for one Pistons game (alpha 83, from the TV): the game at 7 PM on the
+// team channel, its "possible Overtime" block, and the same game again on ESPN 2 and a regional channel
+// after midnight.  The game at 7 PM is the one kept.
+global.Search = { find: () => [] }; global.Log = { info() {}, warn() {} }; global.Remind = { sync() {} };
+eval(fs.readFileSync(path.join(__dirname, '../../app/js/watch.js'), 'utf8') + ';global.Watch=Watch;');
+const T0 = NOW + 2 * H, w = 'team:nba:det';
+Store.edits.reminders = [
+  { k: 'kx1', s: T0, e: T0 + 3 * H, t: 'Philadelphia 76ers at Detroit Pistons', w, g: 1 },
+  { k: 'kx1', s: T0 + 3 * H, e: T0 + 4 * H, t: 'Philadelphia 76ers at Detroit Pistons possible Overtime', w, g: 1 },
+  { k: 'kx2', s: T0 + 7 * H, e: T0 + 9 * H, t: 'NBA Basketball : Philadelphia 76ers at Detroit Pistons', w, g: 1 },
+  { k: 'kx3', s: T0 + 8 * H, e: T0 + 9 * H, t: 'Philadelphia 76ers at Detroit Pistons', w, g: 1 },
+  { k: 'kx3', s: T0 + 9 * H, e: T0 + 10 * H, t: 'Philadelphia 76ers at Detroit Pistons', w, g: 1 },
+  { k: 'kx1', s: T0 + 48 * H, e: T0 + 51 * H, t: 'Philadelphia 76ers at Detroit Pistons', w, g: 1 },
+  { k: 'kx9', s: T0 + 3 * H, e: T0 + 4 * H, t: 'Philadelphia 76ers at Detroit Pistons' }
+];
+Watch.tidy();
+const left = Store.edits.reminders.map(r => (r.s - T0) / H + 'h' + (r.w ? '' : ' (yours)')).join(', ');
+ok('one reminder per game: the overtime block and the later airings go, the game and the one two days on stay, and one you set yourself is left alone', left === '0h, 3h (yours), 48h', left);
 
 console.log((fail ? fail + ' of ' : 'all ') + n + ' teams checks ' + (fail ? 'failed' : 'passed'));
 process.exit(fail ? 1 : 0);

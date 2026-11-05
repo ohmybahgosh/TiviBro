@@ -100,13 +100,30 @@ var Watch = (function () {
   function doubtful(r) {
     if (typeof Teams === 'undefined' || !Teams.isGame) return false;
     if (Teams.placeholder(r.t)) return true;
-    if (!/^team:/.test(r.w || '') || r.g) return false;          // g: checked as a game when it was set
+    if (!/^team:/.test(r.w || '')) return false;
+    // A game's overtime block or a replay: an earlier TiviBro set these too (before alpha 84).
+    if (Teams.aroundGame && Teams.aroundGame(r.t)) return true;
+    if (r.g) return false;                                        // g: checked as a game when it was set
     var c = L.find(r.k);
     return !Teams.isGame(r.t, c ? c.n : '');
   }
   function tidy() {
     if (typeof Teams === 'undefined' || !Teams.isGame) return 0;
     var rem = Store.edits.reminders, keep = rem.filter(function (r) { return !doubtful(r); });
+    /* One reminder a game for a team: the same two teams within 12 hours are one game (an earlier TiviBro
+       set one for each channel's time and the replays).  The earliest stays. */
+    if (Teams.matchup) {
+      var firsts = {};
+      keep = keep.slice().sort(function (a, b) { return a.s - b.s; }).filter(function (r) {
+        if (!/^team:/.test(r.w || '')) return true;
+        var c = L.find(r.k), m = Teams.matchup(r.t, c ? c.n : '');
+        if (!m) return true;
+        var key = r.w + '|' + m, l = firsts[key] || (firsts[key] = []);
+        if (l.some(function (s) { return Math.abs(s - r.s) < Teams.SAME_GAME; })) return false;
+        l.push(r.s);
+        return true;
+      });
+    }
     var gone = rem.length - keep.length;
     if (!gone) return 0;
     Store.edits.reminders = keep;

@@ -332,7 +332,7 @@ For now it covers the main North American leagues only: NFL, NBA, NHL, MLB, WNBA
 
 Choose your teams in **Settings > Channels and groups > My teams**.  It lists the leagues in your playlist (NFL, NBA, NHL, MLB, WNBA, MLS); open one and switch on your teams.  Teams with their own channel say so.  Or **hold OK** on a team's channel and choose **Follow the Detroit Red Wings** (in the phone app: press and hold the channel).  Your teams are kept in the settings, so they stay when you switch playlists.
 
-**Remind me before their games** (off at first) sets reminders for their games the way the [watchlist](#watchlist) does.  Unfollowing a team takes its reminders with it.
+**Remind me before their games** (off at first) sets reminders for their games the way the [watchlist](#watchlist) does: one per game, at its earliest start in the guide, however many channels carry it.  Overtime blocks and replays later that night get none.  Unfollowing a team takes its reminders with it.
 
 TiviBro knows the teams by their full names ("Detroit Red Wings"), by short names when the league is clear ("Red Wings" on an NHL channel, or "Heat at Magic"), by city when the league is named ("NHL: Winnipeg vs Carolina"), and by abbreviations in event channel names ("WPG VS CAR" in an NHL group).  So "Magic Mike" on a movie channel is never a game, and junior and minor teams with the same names ("Parkland Rangers U15", "Providence Bruins") are left out.  **Hold OK** on the group for **Choose teams…** or **Turn off My teams**.
 

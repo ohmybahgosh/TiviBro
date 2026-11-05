@@ -150,8 +150,8 @@ private fun ReminderRow(r: Reminder, enabled: Boolean, onCancel: () -> Unit) {
     val (day, time) = whenOf(r.start)
     Surface(color = Panel, shape = MaterialTheme.shapes.medium) {
         Row(Modifier.fillMaxWidth().padding(14.dp, 12.dp, 4.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.width(76.dp)) {
-                Text(time, fontWeight = FontWeight.SemiBold, maxLines = 1)
+            Column(Modifier.width(88.dp)) {
+                Text(time, fontWeight = FontWeight.SemiBold, maxLines = 1, softWrap = false)  // "10:00 PM" whole: 76 dp cut off its PM
                 // Started already: a Live badge, as on the TV.
                 if (r.live) Surface(color = Bad, shape = MaterialTheme.shapes.small, modifier = Modifier.padding(top = 2.dp)) {
                     Text("Live", color = TextHi, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, modifier = Modifier.padding(8.dp, 1.dp))
