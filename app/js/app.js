@@ -399,6 +399,8 @@ var App = (function () {
     list.forEach(function (p) {
       chain = chain.then(function () {
         if (gen !== startGen || p.off || p.id === Store.settings.active) return;
+        // Its size from its last load (p.chans): one that can't fit is not even read into memory.
+        if (+p.chans && !fits(p, +p.chans)) return;
         return Store.bigGet(cacheKey(p)).then(function (cached) {
           if (gen !== startGen) return;
           if (cached && cached.sig === Source.sig(p) && cached.channels && cached.channels.length) {
@@ -421,13 +423,17 @@ var App = (function () {
     });
   }
   // Put another playlist's data in the lists, with its edits.  False when it would be too many channels.
-  function useOther(p, data) {
+  // Would a playlist of n channels fit beside the ones in the lists now?  Says so when it doesn't.
+  function fits(p, n) {
     var now = Library.count() - ((Library.partOf(p.id) || { channels: [] }).channels.length);
-    if (now + data.channels.length > multiMax()) {
-      Log.warn('app', 'Left out ' + (p.name || 'a playlist') + ': with its ' + data.channels.length + ' channels the playlists that are on would have ' + (now + data.channels.length) + ', more than a TV holds');
-      U.toast('"' + (p.name || 'A playlist') + '" is not shown: together the playlists that are on have too many channels for this TV.  Turn one off in Settings > Playlists.', 9000);
-      return false;
-    }
+    if (now + n <= multiMax()) return true;
+    Log.warn('app', 'Left out ' + (p.name || 'a playlist') + ': with its ' + n + ' channels the playlists that are on would have ' + (now + n) + ', more than this TV holds (' + multiMax() + (memSafe() ? ', memory-safe' : '') + ')');
+    U.toast('"' + (p.name || 'A playlist') + '" is not shown: together the playlists that are on have too many channels for this TV.  Turn one off in Settings > Playlists.', 9000);
+    return false;
+  }
+  function useOther(p, data) {
+    if (+p.chans !== data.channels.length) { p.chans = data.channels.length; Store.upsertPlaylist(p); }
+    if (!fits(p, data.channels.length)) return false;
     Store.attach(p.id);
     if (typeof Vod !== 'undefined') Vod.reset();          // Movies and Shows load again with it
     Source.setTz(data.tz, p.id); Events.setProviderTz(data.tz, p.id);
@@ -532,10 +538,16 @@ var App = (function () {
     if (manual) U.toast('Reloading ' + (p.name || 'the playlist'));
     Log.info('app', (manual ? 'Reloading' : 'Background load of') + ' the channel list of ' + (p.name || 'another playlist'));
     busyStart(p, 'reloading');
-    var gen = startGen;
+    var gen = startGen, old = Library.partOf(id), freed = false;
+    /* Memory-safe (1 GB, or closed while playing): a big list leaves the lists while its new copy
+       loads, so the TV never holds both; if the load fails, the kept copy comes back. */
+    if (memSafe() && old && old.channels.length > 30000) {
+      Log.info('app', 'Memory-safe: taking ' + (p.name || 'the playlist') + ' (' + old.channels.length + ' channels) out while it reloads');
+      dropOther(id); Views.refreshLists(true); old = null; freed = true;
+    }
     reloading = Source.load(p).then(function (data) {
       if (data.fixed) Store.upsertPlaylist(adopt(p, data));
-      carryAdded(Library.partOf(id), data, id + ':');
+      carryAdded(old, data, id + ':');
       // Saved before Library.setOther puts the playlist's id in front of its keys.
       return Store.bigSet(cacheKey(p), data).then(function () {
         if (gen !== startGen || p.off || id === Store.settings.active) return;
@@ -549,6 +561,10 @@ var App = (function () {
       });
     }).then(function () { busyEnd(10000); }, function (e) {
       busyEnd(0);
+      // Back from its kept copy (only that: no new load, so a failing provider can't loop).
+      if (freed) Store.bigGet(cacheKey(p)).then(function (c) {
+        if (gen === startGen && !p.off && c && c.channels && c.channels.length && useOther(p, c)) { Views.refreshLists(true); Epg.init(Library); }
+      });
       if (e && e.kind === 'stopped') U.toast('Stopped reloading.  The channels from the last load are still here.', 5000);
       else if (manual) U.toast((p.name || 'Playlist') + ': ' + (e.message || 'reload failed'), 5000);
       else Log.warn('app', 'Could not load ' + (p.name || 'another playlist') + ': ' + (e && e.message || e));
@@ -675,6 +691,19 @@ var App = (function () {
       busyEnd(0);
       if (e && e.kind === 'stopped') return;           // askStop has already moved on
       Log.error('app', 'Could not open playlist "' + (p.name || p.id) + '": ' + (e && e.message));
+      // Other playlists are on: one of them can be first for now (nothing plays by itself).
+      var others = Store.others();
+      if (others.length && !ready) {
+        loading('Could not load ' + (p.name || 'the first playlist') + ': ' + (e.message || 'no answer'));
+        var ask = function () {
+          UI.menu('Could not load ' + (p.name || 'the first playlist'), [
+            { label: 'Try again', action: function () { open(p); } },
+            { label: 'Change the connection', sub: 'the server, login or playlist address', action: function () { setup(p.id); } }
+          ].concat(others.map(function (o) { return { label: 'Make ' + (o.name || 'another playlist') + ' the first playlist', sub: 'your Favorites and groups are each first playlist\'s own', action: function () { switchPlaylist(o.id); } }; })), function () { setTimeout(ask, 0); });
+        };
+        UI.setHandler(function () { ask(); return true; });
+        return ask();
+      }
       setup(p.id);
       U.toast((e.message || 'Could not load the playlist') + '  Test connection shows details.', 7000);
     });

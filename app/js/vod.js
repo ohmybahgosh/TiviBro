@@ -72,6 +72,9 @@ var Vod = (function () {
   // The playlists in use that have this kind (the first one first).
   function sources(k) { var ls = Store.loaded ? Store.loaded() : [Store.playlist]; return ls.filter(function (p) { return offeredBy(p).indexOf(k) >= 0; }); }
   var asking = { movie: null, series: null }, sets = { movie: {}, series: {} }, gen = 0;
+  /* Several playlists: at most this many titles of one kind in memory together (the first playlist's
+     always load, as before); fewer on a TV with 1 GB, or memory-safe after closing while playing. */
+  function vodMax() { return window.Player && Player.memSafe ? 60000 : 200000; }
   function load(k, again) {
     if (data[k] && !again) return Promise.resolve(data[k]);
     if (asking[k] && !again) return asking[k];
@@ -79,10 +82,16 @@ var Vod = (function () {
     var list = sources(k);
     if (!list.length) list = [Store.playlist];
     // One after the other: two big lists at once could run a TV out of memory.
-    var chain = Promise.resolve(), got = {};
+    var chain = Promise.resolve(), got = {}, held = 0, cap = vodMax();
     list.forEach(function (p, n) {
       chain = chain.then(function () {
-        return loadOne(k, p, again).then(function (d) { got[p.id] = d; }, function (e) { if (!n) throw e; Log.warn('vod', 'The ' + (k === 'series' ? 'shows' : 'movies') + ' of ' + (p.name || 'another playlist') + ' did not load: ' + (e && e.message || e)); });
+        // Another playlist's list only while all of them together stay under vodMax() titles.
+        if (n && held >= cap) { Log.warn('vod', 'Left out the ' + (k === 'series' ? 'shows' : 'movies') + ' of ' + (p.name || 'another playlist') + ': ' + held + ' titles are already in memory (at most ' + cap + ' on this TV)'); return; }
+        return loadOne(k, p, again).then(function (d) {
+          if (n && held + d.items.length > cap) { Log.warn('vod', 'Left out the ' + d.items.length + ' ' + (k === 'series' ? 'shows' : 'movies') + ' of ' + (p.name || 'another playlist') + ': with them ' + (held + d.items.length) + ' titles would be in memory (at most ' + cap + ')'); U.toast('Not every playlist\'s ' + (k === 'series' ? 'shows are' : 'movies are') + ' shown: together they are too many for this TV.', 7000); return; }
+          held += d.items.length; got[p.id] = d;
+          if (list.length > 1) Log.info('vod', (p.name || 'Playlist') + ': ' + d.items.length + ' ' + (k === 'series' ? 'shows' : 'movies') + ' (' + held + ' in all)');
+        }, function (e) { if (!n) throw e; Log.warn('vod', 'The ' + (k === 'series' ? 'shows' : 'movies') + ' of ' + (p.name || 'another playlist') + ' did not load: ' + (e && e.message || e)); });
       });
     });
     var job = asking[k] = chain.then(function () {

@@ -954,6 +954,8 @@ var Epg = (function () {
     onUpdate: function (fn) { listeners.push(fn); },
     refresh: function (lib, force) { return init(lib || Library, force); },
     get status() { return status; },
+    // Another playlist's guide (several playlists on): when it loaded and how each file went.
+    statusFor: function (id) { return statusOf[id] || null; },
     get loading() { return !!loading; },
     get progress() { return progress; },
     onProgress: function (fn) { progListeners.push(fn); },

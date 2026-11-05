@@ -361,8 +361,11 @@ var Settings = (function () {
   }
 
   /* One playlist's guide (the Guide section shows the one in use; each playlist's page has its own). */
+  /* One playlist's guide.  Several playlists on: every one that is on is in use, so each shows its own
+     status (Epg.statusFor) and its own channels; Reload guide now reloads every playlist's guide. */
   function guideRows(p) {
     var out = [], active = p.id === S().active, xc = p.type === 'xtream';
+    var inUse = active || L.otherIds().indexOf(p.id) >= 0, mine = L.dataOf(active ? '' : p.id).channels;
     out.push(choice('Provider guide', xc ? 'Per channel is light and loads as you browse.  The full file also enables guide search and manual assignment.' : 'The guide address inside the playlist, if it has one.',
       xc ? ['short', 'xmltv', 'off'] : ['xmltv', 'off'], xc ? ['Per channel', 'Full XMLTV file', 'Off'] : ['From playlist', 'Off'],
       function () { return p.providerEpg; }, function (v) { p.providerEpg = v; persist(p, true); build(); }));
@@ -374,13 +377,13 @@ var Settings = (function () {
     out.push(choice('Keep past days', 'For catch-up browsing.  More days use more TV memory.', [1, 2, 3, 5, 7], ['1 day', '2 days', '3 days', '5 days', '7 days'], function () { return +p.epgDays; }, function (v) { p.epgDays = v; persist(p, true); paint(); }));
     out.push(toggle('Match guide by channel name', 'Links channels that have no guide id to a guide channel with the same name.', function () { return p.nameMatch; }, function (v) { p.nameMatch = v; persist(p, true); paint(); }));
     out.push(page('Public guide fill-in', 'Free guides (epg.pw, iptv-epg.org, and Pluto TV\'s own for Pluto channels), only for channels nothing else covers', 'Public guide fill-in', function () { return pubPage(p); }, function () { return PubEpg.conf(p).on ? 'On' : 'Off'; }));
-    if (active) {
-      out.push(action('Reload guide now', '', function () { Epg.refresh(L, true); U.toast('Reloading guide'); live(); }));
-      var st = Epg.status;
+    if (inUse) {
+      out.push(action('Reload guide now', L.multi ? 'Every playlist\'s guide loads again.' : '', function () { Epg.refresh(L, true); U.toast('Reloading guide'); live(); }));
+      var st = active ? Epg.status : Epg.statusFor(p.id) || { at: 0, sources: [] };
       if (Epg.xml) {
-        out.push(info('Guide last loaded', Epg.loading || (Epg.progress && Epg.progress.active) ? 'loading now' : when(st.at)));
+        out.push(info('Guide last loaded', Epg.loading || (Epg.progress && Epg.progress.active) ? 'loading now' : st.at ? when(st.at) : (active || sourcesOf(p) ? 'not yet' : 'only the per-channel guide')));
         (st.sources || []).forEach(function (r) { out.push(info(r.url.replace(/(password|pass)=[^&]+/i, '$1=…'), r.ok ? r.channels + ' channels, ' + r.programmes + ' programmes' : 'failed: ' + r.error)); });
-        var all = L.data.channels, n = 0, missing = [];
+        var all = mine, n = 0, missing = [];
         all.forEach(function (c) { if (Epg.hasData(c)) n++; else if (!L.noGuide(c) && missing.length < 300) missing.push(c); });
         out.push(info('Channels with guide data', n + ' of ' + all.length));
         if (missing.length) out.push(action('Assign guide to channels without one', 'Or hold OK on any channel and choose Assign guide.  A channel that will never have a guide: hold OK > No guide for this channel.', function () {
@@ -388,10 +391,10 @@ var Settings = (function () {
         }));
       }
       // Channels you said need no guide (Hold OK > No guide for this channel, or Ignore in the web editor).
-      var none = L.data.channels.filter(function (c) { return L.noGuide(c); });
+      var none = mine.filter(function (c) { return L.noGuide(c); });
       if (none.length) out.push(page('Channels with no guide wanted', 'Left out of guide matching and public fill-in, and they don\'t say "No guide information".', 'No guide wanted', function () {
         var o = [info('Select one to look for a guide for it again.', '')];
-        L.data.channels.filter(function (c) { return L.noGuide(c); }).forEach(function (c) {
+        mine.filter(function (c) { return L.noGuide(c); }).forEach(function (c) {
           o.push(action(L.name(c), L.groupName(c.g), function () { L.setNoGuide(c.k, false); relist(); U.toast('Looking for a guide for ' + L.name(c) + ' again'); build(); }, function () { return 'Look again'; }));
         });
         return o;
@@ -400,9 +403,13 @@ var Settings = (function () {
     return out;
   }
 
-  /* Public guide fill-in (pubepg.js): on or off, which countries, and how the last look went. */
+  // Does a playlist have guide files of its own (its sources, or the provider's full XMLTV)?
+  function sourcesOf(p) { return (p.epgSources || []).length > 0 || p.providerEpg === 'xmltv'; }
+  /* Public guide fill-in (pubepg.js): on or off, which countries, and how the last look went.  Several
+     playlists on: one look covers every playlist that has it on, so each shows the same status. */
   function pubPage(p) {
-    var out = [], active = p.id === S().active, cf = PubEpg.conf(p), st = active ? Epg.pubStatus : null;
+    var inUse = p.id === S().active || L.otherIds().indexOf(p.id) >= 0;
+    var out = [], active = inUse, cf = PubEpg.conf(p), st = active ? Epg.pubStatus : null;
     function apply(patch) { PubEpg.set(p, patch); Store.upsertPlaylist(p); if (active) Epg.refresh(L, false); build(); }
     out.push(toggle('Fill in from public guides', 'For channels with no guide from your sources or your provider.  Those always come first.', function () { return PubEpg.conf(p).on; }, function (v) { apply({ on: v }); }));
     if (cf.on) {
@@ -427,7 +434,7 @@ var Settings = (function () {
   function countryMenu(p) {
     var cf = PubEpg.conf(p), pick = {};
     cf.cc.forEach(function (c) { pick[c] = 1; });
-    function save() { PubEpg.set(p, { cc: Object.keys(pick) }); Store.upsertPlaylist(p); if (p.id === S().active) Epg.refresh(L, false); build(); }
+    function save() { PubEpg.set(p, { cc: Object.keys(pick) }); Store.upsertPlaylist(p); if (p.id === S().active || L.otherIds().indexOf(p.id) >= 0) Epg.refresh(L, false); build(); }
     var items = [{ label: 'Automatic', sub: cf.cc.length ? '' : 'current', action: function () { pick = {}; save(); } }];
     PubEpg.all().forEach(function (c) {
       items.push({ label: (pick[c] ? '✓ ' : '') + PubEpg.name(c), sub: PubEpg.SOURCES.filter(function (s) { return s.cc.indexOf(c) >= 0; }).map(function (s) { return s.name; }).join(', '),
@@ -719,6 +726,12 @@ var Settings = (function () {
     out.push(info('A channel that will never have a guide (a radio stream, a camera, an event slot): Hold OK > No guide for this channel.  It drops out of matching and stops saying "No guide information".  The web editor\'s Guide page does many at once (Ignore).', ''));
     out.push(head('Guide for ' + (p.name || 'this playlist')));
     out = out.concat(guideRows(p));
+    // Several playlists on: each other one's guide, a page each (the same rows as on its own page).
+    Store.others().filter(function (q) { return L.otherIds().indexOf(q.id) >= 0; }).forEach(function (q, i) {
+      if (!i) out.push(head('The other playlists\' guides'));
+      out.push(page('Guide for ' + (q.name || 'playlist'), (q.type === 'xtream' ? { short: 'Per channel', xmltv: 'Full XMLTV file', off: 'Provider guide off' } : { xmltv: 'From playlist', off: 'Provider guide off' })[q.providerEpg] + ', ' + (q.epgSources || []).length + ' source(s), public fill-in ' + (PubEpg.conf(q).on ? 'on' : 'off'),
+        'Guide: ' + (q.name || 'playlist'), function () { return guideRows(q); }));
+    });
     out.push(head('Movies in the guide'));
     out.push(toggle('Movie details from TMDB', 'Finds the movies in your guide with your TMDB token: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  Only programme titles go to TMDB.',
       function () { return s.guideMovies !== false; }, function (v) { s.guideMovies = v; save(true); if (typeof Movies !== 'undefined') Movies.poke(); }));

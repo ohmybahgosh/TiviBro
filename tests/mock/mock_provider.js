@@ -47,6 +47,9 @@ const MOVIES = [
   ['Copper Canyon', 1, 2022, 6.9, 'Western'], ['Two Left Feet', 2, 2023, 7.0, 'Comedy'], ['The Kite Festival', 3, 2025, 7.7, 'Family'],
   ['Northern Lights', 0, 2024, 7.9, 'Romance'], ['Breakpoint', 1, 2025, 7.2, 'Action'], ['Grandpa\'s Garage', 3, 2023, 7.5, 'Family, Comedy']
 ];
+// MOCK_BIG_VOD=40000: that many more movies (names like real libraries, a long plot-free row each), in
+// the four categories, for memory checks with several big libraries (tests/soak/multi-big.js).
+for (let i = 0, nb = +process.env.MOCK_BIG_VOD || 0; i < nb; i++) MOVIES.push(['Archive Feature ' + (i + 1) + ' ' + ['Returns', 'Rising', 'Forever', 'Unbound'][i % 4], i % 4, 1980 + i % 45, 5 + (i % 50) / 10, ['Drama', 'Action', 'Comedy', 'Family'][i % 4]]);
 const SERIES = [
   ['Harbor Street', 2, 8.4, 'A small-town harbour and the families who keep it running.'],
   ['Kitchen Showdown', 3, 7.6, 'Home cooks compete for the golden spatula.'],
