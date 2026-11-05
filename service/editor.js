@@ -164,7 +164,7 @@ function create(log) {
       }
       return send(res, 200, { rev: st.snapRev, appliedRev: st.appliedRev, data: st.snapshot });
     }
-    if (u === '/api/rev' && req.method === 'GET') return send(res, 200, { rev: st.snapRev, pendingRev: st.pendingRev, appliedRev: st.appliedRev, progress: st.progress, tvSeen: st.tvSeen || 0, now: Date.now(), draftSeq: st.draftSeq, draftAck: st.draftAck });
+    if (u === '/api/rev' && req.method === 'GET') return send(res, 200, { rev: st.snapRev, pendingRev: st.pendingRev, appliedRev: st.appliedRev, progress: st.progress, tvSeen: st.tvSeen || 0, now: Date.now(), stuck: stuck(), draftSeq: st.draftSeq, draftAck: st.draftAck });
     if (u === '/api/draft' && req.method === 'POST') {
       // Autosaved work that hasn't been sent: the app keeps it on the TV, with a version history,
       // so a reload, a closed tab or another browser never loses it.  Only the newest is held here.
@@ -258,6 +258,13 @@ function create(log) {
     st.pending = null; st.appliedRev = st.pendingRev; st.commands = []; st.results = {}; st.seal = {}; st.progress = null; st.draft = null;
   }
 
+  /* Changes or actions sent from here waiting 90 seconds while TiviBro hasn't looked for any (issue #50):
+     the editor says so, instead of looking as if it worked. */
+  function stuck() {
+    var now = Date.now(), waiting = st.commands.some(function (c) { return now - c.at > 90000; }) || (st.pending && st.pending.rev > st.appliedRev && now - (st.pending.at || now) > 90000);
+    return !!(waiting && now - (st.pollAt || 0) > 90000);
+  }
+
   /* ---------- control from the app (localhost relay only) ---------- */
   function control(req, res, u) {
     st.tvSeen = Date.now();
@@ -292,6 +299,7 @@ function create(log) {
       });
     }
     if (u === '/editor/pending') {
+      st.pollAt = Date.now();
       var since = +((/[?&]since=(\d+)/.exec(req.url) || [])[1] || 0), csince = +((/csince=(\d+)/.exec(req.url) || [])[1] || 0), dsince = +((/dsince=(\d+)/.exec(req.url) || [])[1] || 0);
       var cmds = st.commands.filter(function (c) { return c.id > csince; });
       // The app asks with the newest draft it has stored, which tells the browser it is safe on the TV.

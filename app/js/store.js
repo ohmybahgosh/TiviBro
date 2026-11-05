@@ -326,7 +326,7 @@ var Store = (function () {
   function bigSet(k, v) {
     if (v === null) { if (kvOn()) kv('/kv/del?k=' + encodeURIComponent(k), '').catch(function () {}); return idbSet(k, null); }
     var live = v && v._live;
-    if (v && '_live' in v) delete v._live;
+    if (v && typeof v === 'object' && '_live' in v) delete v._live;      // a draft's state is a string (issue #50)
     if (!kvOn()) return idbSet(k, v);
     /* A channel list the helper loaded and kept (source.js, live.js): only the few other fields go to
        it, and it saves its own copy of the list.  Turning tens of MB of channels into text here was

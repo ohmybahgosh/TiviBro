@@ -30,8 +30,15 @@ var WebEdit = (function () {
   function call(path, body, text) {
     if (!base()) return Promise.reject(new Error('The network helper is not running, so the editor cannot start.  See Settings, Diagnostics.'));
     var post = body || text;
-    return fetch(base() + path, { method: post ? 'POST' : 'GET', cache: 'no-store', headers: Net.ctlHeaders(post ? { 'Content-Type': 'application/json' } : {}), body: text || (body ? JSON.stringify(body) : undefined) })
+    var asked = fetch(base() + path, { method: post ? 'POST' : 'GET', cache: 'no-store', headers: Net.ctlHeaders(post ? { 'Content-Type': 'application/json' } : {}), body: text || (body ? JSON.stringify(body) : undefined) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'helper answered ' + r.status); return j; }); });
+    /* Never wait for ever (issue #50): a request caught by the screensaver or the TV dozing could stay
+       unanswered, and the editor stopped picking up anything sent from the phone or computer until it
+       was switched off and on. */
+    return new Promise(function (resolve, reject) {
+      var t = setTimeout(function () { reject(new Error('the helper did not answer ' + path.split('?')[0] + ' in time')); }, post ? 60000 : 20000);
+      asked.then(function (j) { clearTimeout(t); resolve(j); }, function (e) { clearTimeout(t); reject(e); });
+    });
   }
 
   // 8 characters that can't be misread from across the room (no 0/O, 1/I/L, 2/Z, 5/S, 6/G, 8/B, U/V),
@@ -544,9 +551,13 @@ var WebEdit = (function () {
     return chain;
   }
 
+  var busyAt = 0;
   function tick() {
+    // Something in the last look still hasn't finished after 3 minutes (a stored draft or backup that
+    // never answered): look again rather than stop for good (issue #50).
+    if (busy && Date.now() - busyAt > 180000) { Log.warn('webedit', 'The last look at the editor never finished; looking again'); busy = false; }
     if (!on || busy) return;
-    busy = true;
+    busy = true; busyAt = Date.now();
     call('/editor/pending?since=' + appliedRev + '&csince=' + lastCmd + '&dsince=' + lastDraft).then(function (j) {
       var next = j.draft && j.draft.seq > lastDraft ? saveDraft(j.draft).then(function () { lastDraft = j.draft.seq; }) : Promise.resolve();
       next = next.then(function () { return !j.none && j.rev > appliedRev ? apply(j) : null; });

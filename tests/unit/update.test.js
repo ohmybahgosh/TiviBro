@@ -29,9 +29,10 @@ function sandbox(opts) {
     },
     localStorage: { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = String(v); } },
     location: { reload: () => reloads.push(1), protocol: 'file:' },
-    setTimeout: (fn, ms) => { if (ms <= 3000 || opts.runAll || (opts.run || []).indexOf(ms) >= 0) fn(); return 1; }, clearTimeout() {}, setInterval: () => 1, clearInterval() {},
+    setTimeout: (fn, ms) => { if (opts.only ? opts.only.indexOf(ms) >= 0 : ms <= 3000 || opts.runAll || (opts.run || []).indexOf(ms) >= 0) fn(); return 1; }, clearTimeout() {}, setInterval: () => 1, clearInterval() {},
     UI: { get modalOpen() { return false; }, get lastInput() { return opts.lastInput || 0; }, panel: (title, body, buttons) => panels.push({ title, body, buttons }) },
     Player: opts.playerState ? { state: opts.playerState } : undefined,
+    App: opts.reloading ? { reloading: true } : undefined,
     navigator: { userAgent: opts.ua || 'Mozilla/5.0 (Web0S; Linux/SmartTV) Chrome/87' },
     fetch: opts.fetch || (() => Promise.reject(new Error('no network'))),
     Promise, JSON, Date, Math, String, Array, Object, RegExp, Error,
@@ -168,29 +169,37 @@ const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), re
   ok('start: nothing when checking automatically is off', o.panels.length === 0 && !o.calls.length);
 
   // ---- the first start of a newer version: what's new, once ----
-  o = sandbox({ version: '0.6.0-alpha.5', run: [4000], settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4', 'tivibro.update': JSON.stringify({ pending: { version: '0.6.0-alpha.5', notes: ['Saved line one', 'Saved line two'] } }) } });
+  o = sandbox({ version: '0.6.0-alpha.5', only: [1500], settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4', 'tivibro.update': JSON.stringify({ pending: { version: '0.6.0-alpha.5', notes: ['Saved line one', 'Saved line two'] } }) } });
   o.Update.whatsNew(); await tick();
   ok('after an update: what is new, from the notes saved before installing', o.panels.length === 1 && /What's new in TiviBro 0\.6\.0-alpha\.5/.test(o.panels[0].title) && lines(o.panels[0]).join('|') === 'Saved line one|Saved line two' && !o.calls.length, JSON.stringify(o.panels.map(p => [p.title, lines(p)])));
   o.Update.whatsNew(); await tick();
   ok('after an update: only once', o.panels.length === 1);
-  o = sandbox({ version: '0.6.0-alpha.5', run: [4000], settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.countedVersion': '0.6.0-alpha.3' } });
+  o = sandbox({ version: '0.6.0-alpha.5', only: [1500], settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.countedVersion': '0.6.0-alpha.3' } });
   o.Update.whatsNew(); await tick();
   ok('after an update some other way: the release notes from GitHub', o.panels.length === 1 && lines(o.panels[0])[0] === 'What changed in v0.6.0-alpha.5' && /Updated from 0\.6\.0-alpha\.3/.test(o.panels[0].body.kids[0].text), JSON.stringify(o.panels.map(p => lines(p))));
-  o = sandbox({ version: '0.6.0-alpha.5', run: [4000], settings: { playlists: [{ id: 'p1' }] } });
+  o = sandbox({ version: '0.6.0-alpha.5', only: [1500], settings: { playlists: [{ id: 'p1' }] } });
   o.Update.whatsNew(); await tick();
   ok('a first install shows nothing', o.panels.length === 0 && o.store['tivibro.lastRun'] === '0.6.0-alpha.5');
   // Not while a channel is starting, or someone is pressing buttons.
-  o = sandbox({ version: '0.6.0-alpha.5', run: [4000], playerState: 'loading', settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
+  o = sandbox({ version: '0.6.0-alpha.5', only: [1500], playerState: 'loading', settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
   o.Update.whatsNew(); await tick();
   ok('not while a channel is starting', o.panels.length === 0 && o.store['tivibro.lastRun'] === '0.6.0-alpha.4');
-  o = sandbox({ version: '0.6.0-alpha.5', run: [4000], lastInput: Date.now(), settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
+  o = sandbox({ version: '0.6.0-alpha.5', only: [1500], lastInput: Date.now(), settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
   o.Update.whatsNew(); await tick();
   ok('not while buttons are being pressed', o.panels.length === 0);
-  o = sandbox({ version: '0.6.0-alpha.5', run: [4000], playerState: 'playing', lastInput: Date.now() - 20000, settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
+  o = sandbox({ version: '0.6.0-alpha.5', only: [1500], playerState: 'playing', lastInput: Date.now() - 20000, settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
   o.Update.whatsNew(); await tick();
   ok('over a channel that is playing, once things are quiet', o.panels.length === 1);
+  // A channel list reloading in the background doesn't hold it up (a minute or two on a big list).
+  o = sandbox({ version: '0.6.0-alpha.5', only: [1500], reloading: true, lastInput: Date.now() - 20000, settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
+  o.Update.whatsNew(); await tick();
+  ok('not held up by the channel list reloading', o.panels.length === 1);
+  // A stream that keeps buffering holds it 20 seconds at most.
+  o = sandbox({ version: '0.6.0-alpha.5', only: [1500, 1000], playerState: 'buffering', lastInput: Date.now() - 20000, settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
+  o.Update.whatsNew(); await tick();
+  ok('a stream that keeps buffering holds it up 20 seconds at most', o.panels.length === 1);
   // A start that reloads before the notes show (the helper answered late) shows them next time.
-  o = sandbox({ version: '0.6.0-alpha.5', settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
+  o = sandbox({ version: '0.6.0-alpha.5', only: [], settings: { playlists: [{ id: 'p1' }] }, store: { 'tivibro.lastRun': '0.6.0-alpha.4' } });
   o.Update.whatsNew(); await tick();
   ok('not marked as seen before it shows', o.panels.length === 0 && o.store['tivibro.lastRun'] === '0.6.0-alpha.4', o.store['tivibro.lastRun']);
   ok('release notes: the heading and the changelog link are left out', JSON.stringify(o.Update._test.notes('**New in alpha 79**\n\n- One\n- Two\n\nEvery detail: [changelog](https://x)')) === '["One","Two"]', JSON.stringify(o.Update._test.notes('**New in alpha 79**\n\n- One\n\nEvery detail: [changelog](https://x)')));

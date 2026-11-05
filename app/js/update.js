@@ -170,12 +170,17 @@ var Update = (function () {
   // channels, moving through the guide).  Looks every 3 seconds for up to 5 minutes; what's new that
   // didn't get its moment shows at the next start.
   var QUIET = 6000;
-  function whenFree(fn, tries) {
+  /* A quiet moment: no message box open, no button pressed for a few seconds, no channel starting.
+     notes: What's new, which only shows text, so a channel list reloading in the background doesn't hold
+     it up (on a big list that alone was a minute or two after the update), and after 20 seconds a stream
+     that keeps buffering doesn't either.  The install offer still waits for a reload to finish. */
+  function whenFree(fn, tries, notes) {
     tries = tries || 0;
-    var ps = window.Player && Player.state, busy = UI.modalOpen || !(Store.settings.playlists && Store.settings.playlists.length) ||
-      (window.App && App.reloading) || ps === 'loading' || ps === 'buffering' || Date.now() - (UI.lastInput || 0) < QUIET;
+    var ps = window.Player && Player.state, playerBusy = (ps === 'loading' || ps === 'buffering') && !(notes && tries >= 20);
+    var busy = UI.modalOpen || !(Store.settings.playlists && Store.settings.playlists.length) ||
+      (!notes && window.App && App.reloading) || playerBusy || Date.now() - (UI.lastInput || 0) < QUIET;
     if (!busy) return fn();
-    if (tries < 100) setTimeout(function () { whenFree(fn, tries + 1); }, 3000);
+    if (tries < 300) setTimeout(function () { whenFree(fn, tries + 1, notes); }, notes ? 1000 : 3000);
   }
   function notesBox(lines, intro) {
     var box = U.el('div', 'upd-notes');
@@ -217,14 +222,15 @@ var Update = (function () {
     var saved = (load() || {}).pending;
     var got = saved && saved.version === cur && saved.notes && saved.notes.length ? Promise.resolve(saved.notes)
       : U.getJSON('https://api.github.com/repos/' + REPO + '/releases/tags/v' + cur, 15000, 'release notes').then(function (r) { return notes(r && r.body); }, function () { return []; });
+    var t0 = Date.now();
     got.then(function (lines) {
       setTimeout(function () {
         whenFree(function () {
           seen();
-          Log.info('update', 'Showing what\'s new in ' + cur + ' (was ' + last + ')');
+          Log.info('update', 'Showing what\'s new in ' + cur + ' (was ' + last + '), ' + Math.round((Date.now() - t0) / 1000) + ' s after the start');
           UI.panel('What\'s new in TiviBro ' + cur, notesBox(lines, 'Updated from ' + last + '.'), [{ label: 'OK' }]);
-        });
-      }, 4000);
+        }, 0, true);
+      }, 1500);
     });
   }
 

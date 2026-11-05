@@ -864,7 +864,7 @@ var token = '';
 try { token = sessionStorage.getItem('tivibro.editor.token') || ''; } catch (e) {}
 var D = null, E = null, N = null, BASE = null;            // snapshot, working edits, working names, what the TV has
 var rev = 0, sentRev = 0, sending = false, inflight = 0, sel = new Set(), curGroup = null, query = '', page = 'home';
-var hist = [], redo = [], lastProgress = null, tvLost = false;
+var hist = [], redo = [], lastProgress = null, tvLost = false, tvStuck = false;
 var dT = 0, dFirst = 0, dLast = '', dSeq = 0, dAck = 0, dAt = 0, draftsCache = null;   // draft autosave on the TV
 var FAV = 'c_fav', ALL = '__all';
 var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip', 'guideSkip', 'noGuide'];
@@ -1384,6 +1384,7 @@ function updateBar() {
   $('cbSend').disabled = sending || !n; $('cbUndo').disabled = !hist.length;
   $('cbSend').classList.toggle('spin', sending);
   if (tvLost) setStatus('bad', 'Can\'t reach TiviBro on the TV.  Is it still open?');
+  else if (tvStuck) setStatus('bad', 'TiviBro on the TV isn\'t picking up what you send.  On the TV, turn the web editor off and on, or restart TiviBro.');
   else if (sending) setStatus('busy', 'Sending to the TV…');
   else if (n) setStatus('draft', plural(n, 'change') + ' waiting.  Press Send to TV.');
   else setStatus('ok', 'Everything is on the TV');
@@ -1403,6 +1404,8 @@ setInterval(function () {
   api('/api/rev').then(function (j) {
     var lost = j.tvSeen && j.now - j.tvSeen > 9000;
     if (lost !== tvLost) { tvLost = lost; updateBar(); }
+    // Sent, but TiviBro on the TV hasn't picked anything up for 90 seconds (issue #50).
+    if (j.stuck !== tvStuck) { tvStuck = !!j.stuck; updateBar(); }
     if (j.draftAck != null && j.draftAck !== dAck) { dAck = j.draftAck; if (dSeq && dAck >= dSeq && !dAt) dAt = Date.now(); updateBar(); if (page === 'backups' && dAck >= dSeq) loadDrafts(true); }
     if (j.progress) onProgress(j.progress);
     if (j.rev > rev && !sending && !inflight && j.pendingRev <= j.appliedRev) load(false).catch(function () {});

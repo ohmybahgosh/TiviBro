@@ -51,7 +51,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ed.click('#nav [data-page=backups]'); await ed.waitForTimeout(2500);
   await ed.fill('#dName', 'Five groups hidden'); await ed.click('#dSave'); await ed.waitForTimeout(4000);
   await ed.click('#nav [data-page=gc]'); await ed.waitForTimeout(600);
-  for (const id of ['x14', 'x15']) { await ed.click('input[data-vis="' + id + '"]'); await ed.waitForTimeout(250); }
+  for (const id of ['x14', 'x8']) { await ed.click('input[data-vis="' + id + '"]'); await ed.waitForTimeout(250); }
   await ed.waitForTimeout(4000);
   await ed.click('#nav [data-page=backups]'); await ed.waitForTimeout(3000);
   const rows = await ed.locator('#dList tr').allInnerTexts();
@@ -76,13 +76,13 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
   // 6. send
   await ed.click('#cbSend'); await ed.waitForFunction(() => /Everything is on the TV|on the TV/.test(document.getElementById('status').innerText), null, { timeout: 25000 }); await ed.waitForTimeout(3500);
-  ok('sending applies it on the TV', await tv.evaluate(() => !!Store.edits.hiddenGroups.x9 && !!Store.edits.hiddenGroups.x15));
+  ok('sending applies it on the TV', await tv.evaluate(() => !!Store.edits.hiddenGroups.x9 && !!Store.edits.hiddenGroups.x8));
   await ed.click('#nav [data-page=backups]'); await ed.waitForTimeout(3000);
   ok('the version is marked as sent', /sent to the TV/.test(await ed.innerText('#dList')), (await ed.innerText('#dList')).slice(0, 200));
   await ed.context().close();
   ed = await browser(); await ed.waitForTimeout(2000);
   ok('after sending, a new visit offers nothing', await offer(ed) === 0);
-  const size = await tv.evaluate(() => Store.idbGet('drafts:' + Store.playlist.id).then(l => l.reduce((n, x) => n + x.size, 0)));
+  const size = await tv.evaluate(() => Store.bigGet('drafts:' + Store.playlist.id).then(l => (l || []).reduce((n, x) => n + x.size, 0)));
   ok('drafts take little room on the TV', size < 200000, size + ' bytes');
   ok('no page errors', !errs.length, errs.join(' | '));
   await tv.evaluate(() => WebEdit.stop());

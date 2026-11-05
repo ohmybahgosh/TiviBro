@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **The web editor keeps working after the TV dozes** (#50).  A request to the TV's helper caught by the screensaver could stay unanswered for good, and TiviBro then stopped picking up anything the web editor or phone sent (backups, restore points, saves) until the editor was switched off and on, while the editor looked as if all was well.  Every request now gives up after a while and TiviBro looks again, and if anything sent waits 90 seconds unanswered, the editor says so and what to do.
+- **Drafts are kept on the TV again** (#50).  Since alpha 56 every draft the web editor saved failed on the TV ("Could not keep a draft" in the log), so a reload or another browser couldn't get unsent changes back.
+- **What's new shows soon after an update.**  It waited for the channel list to finish reloading, a minute or two on a big list.  Now it shows within a few seconds of the start, still not over a message, while you're pressing buttons, or while a channel is starting (for 20 seconds at most).
+
 ## 0.6.0 (alpha 84, 2026-11-04)
 
 Pre-release: expect rough edges, and keep a backup before installing.
