@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 87, 2026-11-05)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 87
 
 - **Several playlists at once: each with its own numbers, guide, names, events and movies.**  Another playlist's channel numbers start after the first's (its channel 1 becomes 2001 after a first playlist ending at 1523), so number keys reach every channel.  Two guides with the same guide ids each give their own channels their own programmes.  Name rules, Hide channels with nothing on, event channels, public guide fill-in and the set-up tour work per playlist, on each playlist's page; the content filter covers them all.  Movies and Shows show every playlist's titles with a heading per playlist.  The web editor edits each playlist's name rules.  Turning a playlist off stops what plays from it, a reminder for another playlist's channel opens it, and on a TV with 1 GB of memory fewer channels are loaded at once and background loads wait until nothing plays.
 - **Several playlists at once, like TiviMate.**  Every playlist that is on is now used at the same time.  The group column on the Channels screen and in the guide has a section for each playlist, with its name as a heading and its groups under it; Favorites, All channels, Recent, My teams and your own groups stay at the top, and **Up** and **Down** step over the headings.  Each channel plays from its own playlist (server, login, User-Agent, catch-up) and gets its own playlist's guide.  Search, reminders, the watchlist, My teams and Movies on now cover them all.  Hiding, renaming or moving a channel of a playlist is kept with that playlist.  **Use this playlist** becomes **Make this the first playlist** (its groups first, and your Favorites and groups are its own), and **Playlist on** adds or removes a playlist's section.  With one playlist on, nothing changes.
@@ -12,11 +16,7 @@
 - **The web editor's Add a playlist starts with a Playlist type list** (the full link, Xtream Codes, or an M3U address); on a phone the three buttons that did this looked like tabs.
 - **A box answered late on the phone still counts.**  Settings on the phone app ask their questions on the phone (like pasting the OpenSubtitles API key), and the TV stopped waiting for the answer after a minute: an answer sent later was dropped with "That question has gone".  The TV now asks the same question again behind the scenes and uses the answer.
 
-## 0.6.0 (alpha 86, 2026-11-05)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 86
+### In alpha 86
 
 - **Find subtitles searches each language on its own** (discussion #19, thanks ich0x).  OpenSubtitles answers 50 results at a time, most downloaded first, so English and Spanish together came back as 49 English and one Spanish.  Each language is now asked separately and shown under its own heading, up to 25 each, best match first: the right year (or season and episode), then the release name closest to what is playing (1080p, WEB, BluRay, the group), then trusted uploaders and downloads.  Machine translations go last.
 - **The downloads and frame rate always show under a result.**  A long release name squeezed them out; names are now cut in the middle and the details sit on their own line.
