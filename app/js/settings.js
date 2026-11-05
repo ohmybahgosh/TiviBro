@@ -4,10 +4,10 @@ var Settings = (function () {
   var $ = U.$, S = function () { return Store.settings; }, L = Library;
   var nav = $('setNav'), body = $('setBody');
   var SECTIONS = [['playlists', 'Playlists'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['names', 'Channel and group names'], ['reminders', 'Reminders and watchlist'],
-    ['playback', 'Playback'], ['media', 'My media'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
+    ['playback', 'Playback'], ['media', 'My media'], ['keys', 'API keys'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
     ['backups', 'Backups and restore points'], ['connect', 'Phone app and web editor'], ['about', 'Updates, about and diagnostics']];
   // Old section ids (links in other screens, tests, older phone apps) still land somewhere sensible.
-  var ALIAS = { groups: 'channels', updates: 'about', diag: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders' };
+  var ALIAS = { groups: 'channels', updates: 'about', diag: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys' };
   var sec = 0, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
   // Phone app: test builds only while the Android app is in the works (release builds show the web editor alone).
   function phoneOK() { return /alpha|beta/i.test(TIVIBRO_VERSION); }
@@ -117,22 +117,10 @@ var Settings = (function () {
     out.push(head('Subtitles from OpenSubtitles'));
     out.push(action('Subtitle languages', 'For Find subtitles (Subtitles in a movie or show\'s menu).  Several at once: English and Spanish (Latin America), say.', function () { Subs.langMenu(function () { build(); }); },
       function () { return Subs.langs().map(Subs.langName).join(', '); }));
-    // Not set up yet: the step-by-step setup (subs.js setup()), which also comes to the phone app.
-    if (!Subs.configured) out.push(action('Set up OpenSubtitles (step by step)', 'Free, about two minutes: an account, a key for TiviBro, and you\'re done.  Easiest with the TiviBro phone app open on this page.', function () { Subs.setup(0, function () { build(); }); }, function () { return 'Not set up'; }));
-    else out.push(action('OpenSubtitles API key saved', 'Select to replace it.  It stays on this TV, out of backups.', function () {
-      UI.prompt('OpenSubtitles API key', '', function (k) { try { Subs.setKey(k); U.toast(k.trim() ? 'API key saved' : 'API key removed'); build(); } catch (e) { U.toast(e.message, 7000); } }, 'Empty removes it.  Typing is easier from the phone app.', true);
-    }, function () { return Subs.configured ? 'Saved' : 'Not set'; }));
+    // The key and sign-in are under Settings > API keys, with TMDB's token; here too, as a page.
+    out.push(page('OpenSubtitles key and sign-in', Subs.configured ? (Subs.user ? 'Key saved, signed in as ' + Subs.user : 'Key saved') : 'Not set up yet', 'API keys', apiKeys, function () { return Subs.configured ? 'Saved' : 'Not set up'; }));
     out.push(choice('Keep downloaded subtitles', 'A movie or episode you come back to gets its subtitles and timing again, without another download.  Kept on this TV only.', [0, 1, 3, 7], ['Off', '1 day', '3 days', 'A week'],
       function () { return s.keepSubs === 0 ? 0 : +s.keepSubs > 0 ? +s.keepSubs : 7; }, function (v) { s.keepSubs = v; if (!v) Subs.forgetKept(); save(); }));
-    if (Subs.configured) out.push(action(Subs.user ? 'Signed in as ' + Subs.user : 'Sign in (optional)', 'Without an account OpenSubtitles allows 5 downloads a day; with a free one, 20.', function () {
-      UI.prompt('OpenSubtitles username', Subs.user, function (u) {
-        if (!u.trim()) { Subs.signIn('', ''); U.toast('Signed out'); build(); return; }
-        UI.prompt('Password for ' + u.trim(), '', function (p) {
-          U.toast('Signing in…');
-          Subs.signIn(u, p).then(function (n) { U.toast('Signed in' + (n ? ': ' + n + ' downloads a day' : '')); build(); }, function (e) { U.toast(e.message, 6000); build(); });
-        }, 'Kept on this TV only, to sign in again each day.', true);
-      }, 'Empty signs out.');
-    }, function () { return Subs.user ? (Subs.allowed ? Subs.allowed + ' a day' : 'Signed in') : '5 a day'; }));
     out.push(toggle('Hold notices during movies', 'Watchlist finds and the like wait while a movie or episode plays full screen, and show when you stop or leave full screen.  Reminders you set still come on time.', function () { return s.holdNotices !== false; }, function (v) { s.holdNotices = v; save(); }));
     out.push(toggle('Play next episode automatically', '', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); }));
     return out;
@@ -163,6 +151,9 @@ var Settings = (function () {
       Convert.get(function (pc) { convSt = { state: 'downloading', percent: pc }; paint(); }).then(function (x) { convSt = x; U.toast('Audio converter ready', 3000); build(); },
         function (e) { convAt = 0; convFresh(); U.toast(e.message, 7000); build(); });
     }));
+    // Always three rows, whatever the converter's state (it is read in the background): the phone app opens
+    // the pages further down this page by their place in it.
+    else out.push(info('The converter comes with TiviBro', ''));
     return out;
   }
 
@@ -171,6 +162,34 @@ var Settings = (function () {
   function phoneDoes(name, it) { it.phone = name; return it; }
   // A button that only makes sense on the TV's own screen (it waits for a remote button, or shows a QR code).
   function tvOnly(it) { it.tv = 1; return it; }
+  /* OpenSubtitles: set up step by step, or the saved key (replace, test, remove) and the sign-in. */
+  function osRows() {
+    var out = [];
+    // Not set up yet: the step-by-step setup (subs.js setup()), which also comes to the phone app.
+    if (!Subs.configured) out.push(action('Set up OpenSubtitles (step by step)', 'Free, about two minutes: an account, a key for TiviBro, and you\'re done.  Easiest with the TiviBro phone app open on this page.', function () { Subs.setup(0, function () { build(); }); }, function () { return 'Not set up'; }));
+    else out.push(action('OpenSubtitles API key saved', 'Select to replace it.  It stays on this TV, out of backups.', function () {
+      UI.prompt('OpenSubtitles API key', '', function (k) { try { Subs.setKey(k); U.toast(k.trim() ? 'API key saved' : 'API key removed'); build(); } catch (e) { U.toast(e.message, 7000); } }, 'Empty removes it.  Typing is easier from the phone app.', true);
+    }, function () { return Subs.configured ? 'Saved' : 'Not set'; }));
+    if (Subs.configured) out.push(action('Test OpenSubtitles key', 'Asks OpenSubtitles now whether the saved key (and your sign-in) work.', function () { U.toast('Checking with OpenSubtitles…'); Subs.test().then(function (m) { U.toast(m, 7000); live(); }, function (e) { U.toast(e.message, 8000); }); }));
+    if (Subs.configured) out.push(action(Subs.user ? 'Signed in as ' + Subs.user : 'Sign in (optional)', 'Without an account OpenSubtitles allows 5 downloads a day; with a free one, 20.', function () {
+      UI.prompt('OpenSubtitles username', Subs.user, function (u) {
+        if (!u.trim()) { Subs.signIn('', ''); U.toast('Signed out'); build(); return; }
+        UI.prompt('Password for ' + u.trim(), '', function (p) {
+          U.toast('Signing in…');
+          Subs.signIn(u, p).then(function (n) { U.toast('Signed in' + (n ? ': ' + n + ' downloads a day' : '')); build(); }, function (e) { U.toast(e.message, 6000); build(); });
+        }, 'Kept on this TV only, to sign in again each day.', true);
+      }, 'Empty signs out.');
+    }, function () { return Subs.user ? (Subs.allowed ? Subs.allowed + ' a day' : 'Signed in') : '5 a day'; }));
+    if (Subs.configured) out.push(action('Remove OpenSubtitles key', 'Downloaded subtitles stay where they are.', function () { Subs.setKey(''); Subs.signIn('', ''); U.toast('OpenSubtitles key removed'); build(); }));
+    return out;
+  }
+  /* Settings > API keys: every key you paste in one place (the TMDB token for posters and details, the
+     OpenSubtitles key for Find subtitles), each with Test.  Typing them is easiest from the phone app. */
+  function apiKeys() {
+    return [info('Paste these from the TiviBro phone app (Settings > API keys): a phone keyboard and copy and paste make it quick.', '')]
+      .concat([head('TMDB: movie and show details and posters')]).concat(tmdbRows().filter(Boolean))
+      .concat([head('OpenSubtitles: subtitles for movies and shows')]).concat(osRows());
+  }
   /* Your TMDB token: in Settings > My media and in Settings > Guide > Movies in the guide (Movies on now uses it too). */
   function tmdbRows() {
     var hasToken = MediaStore.preferences().tmdbConfigured;
@@ -265,9 +284,9 @@ var Settings = (function () {
       out.push(page(p.name || (p.type === 'xtream' ? p.user : 'M3U'), [p.off ? 'Off' : '', Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist', active ? 'in use, ' + L.count() + ' channels' : ''].filter(Boolean).join('   '),
         p.name || 'Playlist', function () { return playlistPage(p); }));
     });
-    // From the phone app: the web editor's Add a playlist form, with a real keyboard and a type to pick.
-    var addPl = phoneDoes('editor', action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.  Adding one from the phone app is easier: share your provider\'s link to it.', function () { App.setup('new'); }));
-    addPl.epage = 'playlists'; out.push(addPl);
+    // From the phone app: its own Add a playlist form (AddPlaylistDialog), with the playlist type to pick.
+    var addPl = phoneDoes('add-playlist', action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.  Adding one from the phone app is easier: share your provider\'s link to it.', function () { App.setup('new'); }));
+    out.push(addPl);
     out.push(info('The guide, names and channels of the playlist in use are under Guide, Channel and group names, and Channels and groups.', ''));
     return out;
   }
@@ -1098,7 +1117,7 @@ var Settings = (function () {
     return out.concat(diag());
   }
 
-  var BY_ID = { playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, media: media, remote: remote, look: look, parental: parental, backups: backups, connect: connect, about: about };
+  var BY_ID = { playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, media: media, keys: apiKeys, remote: remote, look: look, parental: parental, backups: backups, connect: connect, about: about };
   var FNS = SECTIONS.map(function (x) { return BY_ID[x[0]]; });
   function build() {
     var top = stack[stack.length - 1];

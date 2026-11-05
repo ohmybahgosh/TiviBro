@@ -565,6 +565,11 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     suspend fun addPlaylist(id: String, link: String, name: String, use: Boolean): String =
         ask(id, "playlist", JSONObject().put("link", link).put("name", name).put("use", use), seal = true, timeoutMs = 140_000, tries = 1).optString("msg", "Added")
 
+    /** A playlist typed in on the phone (AddPlaylistDialog): a full [a] link, or type xtream (server, user,
+        pass) or m3u (m3u), with name, epg and use.  Sealed: it holds the login. */
+    suspend fun addPlaylistWith(id: String, a: JSONObject): String =
+        ask(id, "playlist", a, seal = true, timeoutMs = 140_000, tries = 1).optString("msg", "Added")
+
     /* ---------- reminders and restore points on the TV ---------- */
 
     /** The reminders still to come ([op] list), or cancel one ([op] cancel, with [k] and [start]) or all ([op] clear).

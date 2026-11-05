@@ -248,7 +248,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   // Settings from the phone: every page, the same rows as on the TV, and changes that stick.
   const sa = (o) => ask('settings', o, { seal: true });
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance and start screen') && secs.sections.length === 13, JSON.stringify(secs.sections));
+  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance and start screen') && secs.sections.length === 14, JSON.stringify(secs.sections));
   let pg = await sa({ op: 'page', sec: 'look' });
   const clock = pg.rows.find((r) => r.label === 'Show clock'), nums = pg.rows.find((r) => r.label === 'Numbers');
   ok('a page comes as rows: toggles, choices with their options', clock && clock.kind === 'toggle' && nums && nums.kind === 'choice' && nums.options.length === 3, JSON.stringify(pg.rows.slice(0, 4)));
@@ -309,6 +309,11 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('and the fresh TV opens on it', await p2.evaluate(() => Store.playlist && Store.playlist.type === 'xtream' && Library.count() > 0));
   const bad = await C.ask(cred, 'playlist', { link: 'http://127.0.0.1:8077' }, { seal: true }).catch((e) => e);
   ok('a bare server address is turned down, with the reason', bad.code === 'tv' && /only a server address/.test(bad.message), bad.message);
+  // Typed in on the phone with its type picked (the phone's Add a playlist form).
+  const typed = await ask('playlist', { type: 'xtream', server: 'http://127.0.0.1:8077', user: 'demo', pass: 'demo', name: 'Typed on the phone' }, { seal: true });
+  ok('an Xtream Codes login typed on the phone adds a playlist', typed && /Added/.test(typed.msg) && await p2.evaluate(() => Store.settings.playlists.some((p) => p.name === 'Typed on the phone' && p.type === 'xtream')), JSON.stringify(typed));
+  const half = await C.ask(cred, 'playlist', { type: 'xtream', server: 'http://127.0.0.1:8077', user: 'demo' }, { seal: true }).catch((e) => e);
+  ok('a login with a field missing is turned down, with the reason', half.code === 'tv' && /server, username and password/.test(half.message), half.message);
   ok('no page errors on the fresh TV', !errs2.length, errs2.join(' | '));
   await b2.close();
   await C.call(cred, 'POST', '/v1/forget', {});

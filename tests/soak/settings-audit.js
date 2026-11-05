@@ -17,7 +17,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then((r) => r.json());
 
 const WANT = [['playlists', 'Playlists'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['names', 'Channel and group names'], ['reminders', 'Reminders and watchlist'],
-  ['playback', 'Playback'], ['media', 'My media'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
+  ['playback', 'Playback'], ['media', 'My media'], ['keys', 'API keys'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
   ['backups', 'Backups and restore points'], ['connect', 'Phone app and web editor'], ['about', 'Updates, about and diagnostics']];
 // Page names that are gone: nothing may still send people there.
 const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playlists and guide/, /Channel name editor/, /Settings > Channel names\b/, /Settings > Diagnostics/,
@@ -99,17 +99,19 @@ const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playl
   ok('a stale answer is refused', r instanceof Error || /stopped waiting/.test(r && r.msg || ''), String(r && (r.message || JSON.stringify(r))));
   // OpenSubtitles set up from the phone: the same steps come to the phone, and an answer after a while still counts.
   await ev(() => Subs.setKey(''));
-  const os = (await sa({ op: 'page', sec: 'playback', path: [] })).rows.find((x) => /^Set up OpenSubtitles/.test(x.label));
-  r = await sa({ op: 'action', sec: 'playback', path: [], i: os.i });
+  const keysPage = await sa({ op: 'page', sec: 'keys', path: [] });
+  ok('API keys: TMDB and OpenSubtitles on one page', keysPage.rows.some((x) => /TMDB/.test(x.label)) && keysPage.rows.some((x) => /^Set up OpenSubtitles/.test(x.label)), keysPage.rows.map((x) => x.label).join(' | '));
+  const os = keysPage.rows.find((x) => /^Set up OpenSubtitles/.test(x.label));
+  r = await sa({ op: 'action', sec: 'keys', path: [], i: os.i });
   ok('OpenSubtitles setup comes to the phone, step 1', r.dialog && r.dialog.kind === 'menu' && /step 1 of 3/.test(r.dialog.title), JSON.stringify(r).slice(0, 300));
-  r = await sa({ op: 'answer', sec: 'playback', path: [], dialog: r.dialog.id, choice: r.dialog.items.findIndex((x) => /I have an account/.test(x.label)) });
+  r = await sa({ op: 'answer', sec: 'keys', path: [], dialog: r.dialog.id, choice: r.dialog.items.findIndex((x) => /I have an account/.test(x.label)) });
   await ev(() => Settings.phone._timeout());
-  r = await sa({ op: 'answer', sec: 'playback', path: [], dialog: r.dialog.id, choice: r.dialog.items.findIndex((x) => /I see my API key/.test(x.label)) });
+  r = await sa({ op: 'answer', sec: 'keys', path: [], dialog: r.dialog.id, choice: r.dialog.items.findIndex((x) => /I see my API key/.test(x.label)) });
   ok('step 2 answered after the TV stopped waiting still goes on to step 3', r.dialog && r.dialog.kind === 'prompt' && /step 3 of 3/.test(r.dialog.title) && r.dialog.secret, JSON.stringify(r).slice(0, 300));
-  r = await sa({ op: 'answer', sec: 'playback', path: [], dialog: r.dialog.id, cancel: true });
+  r = await sa({ op: 'answer', sec: 'keys', path: [], dialog: r.dialog.id, cancel: true });
   // Add playlist… opens the web editor's Add a playlist on the phone.
   const ap = (await sa({ op: 'page', sec: 'playlists', path: [] })).rows.find((x) => /^Add playlist/.test(x.label));
-  ok('Add playlist on the phone opens the web editor\'s Playlists page', ap && ap.phone === 'editor' && ap.epage === 'playlists', JSON.stringify(ap));
+  ok('Add playlist on the phone is the phone\'s own form', ap && ap.phone === 'add-playlist', JSON.stringify(ap));
   // The set-up tour from the phone: a page of its own, step by step, nothing on the TV's screen.
   {
     const pls = await sa({ op: 'page', sec: 'playlists', path: [] });

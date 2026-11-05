@@ -334,6 +334,14 @@ var Phone = (function () {
     },
     // A provider link shared to the phone app: added like the web editor's Add a playlist.
     playlist: function (a) {
+      // Typed in on the phone (Add playlist… in its Settings): the type and its fields as they are.
+      if (a.type === 'xtream' || a.type === 'm3u') {
+        var t = a.type === 'xtream' ? { type: 'xtream', server: String(a.server || '').trim(), user: String(a.user || '').trim(), pass: String(a.pass || '') } : { type: 'm3u', m3u: String(a.m3u || '').trim() };
+        if (t.type === 'xtream' && !(t.server && t.user && t.pass)) throw new Error('Fill in the server, username and password.');
+        if (t.type === 'm3u' && !/^https?:\/\//i.test(t.m3u)) throw new Error('Enter the whole playlist address, starting with http:// or https://.');
+        t.name = String(a.name || '').slice(0, 60); t.epg = String(a.epg || ''); if (a.use) t.use = true;
+        return WebEdit.run('addPlaylist', t);
+      }
       var l = Links.parse(a.link);
       if (!l) throw new Error('That isn\'t a link TiviBro can use.');
       if (l.type === 'm3u' && l.bare) throw new Error('That is only a server address, without a login.  Share the full link your provider sent.');

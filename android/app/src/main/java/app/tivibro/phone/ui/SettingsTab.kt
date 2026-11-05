@@ -85,7 +85,7 @@ data class SetRow(
     }
 }
 /** The buttons this app does with its own forms; others run on the TV. */
-private val NATIVE = setOf("media-add", "media-source", "tmdb-token")
+private val NATIVE = setOf("media-add", "media-source", "tmdb-token", "add-playlist")
 /** The buttons that open one of the phone's own screens ([SettingsTab]'s onGo, except the log, shown here). */
 private val SCREENS = setOf("reminders", "backups", "editor")
 private data class SetPage(val title: String, val rows: List<SetRow>)
@@ -211,6 +211,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
             "media-add" -> MediaAddDialog(model, id, done)
             "media-source" -> MediaSourceDialog(model, id, r.sid, done)
             "tmdb-token" -> TmdbTokenDialog(model, id, r.value == "Saved", done)
+            "add-playlist" -> AddPlaylistDialog(model, id, done)
         }
     }
     picking?.let { r ->

@@ -104,6 +104,21 @@ var Subs = (function () {
     ]);
   }
 
+  /** Test the saved key (and the sign-in, if any), as TMDB's Test does: a message saying what works. */
+  function test() {
+    if (!state.key) return Promise.reject(new Error('No OpenSubtitles key is saved yet.'));
+    return ask('search', { key: state.key, token: '', query: 'the matrix', year: '1999', type: 'movie', langs: ['en'] }, 20000).then(function () {
+      if (!state.user) return 'The OpenSubtitles key works.  Not signed in: 5 downloads a day (100 if the key is marked Under dev).';
+      state.token = ''; save();
+      return token().then(function (t) {
+        return t ? 'The key works, and you are signed in as ' + state.user + (state.allowed ? ': ' + state.allowed + ' downloads a day.' : '.') : 'The key works, but OpenSubtitles did not accept the username and password.  Sign in again.';
+      });
+    }, function (e) {
+      if (/refused the API key/.test(e.message)) throw new Error('OpenSubtitles refused this key.  Copy it again from opensubtitles.com/consumers and paste it once more.');
+      throw new Error('Could not check the key just now: ' + e.message);
+    });
+  }
+
   /* ---------- what's playing ---------- */
   // "EN - The Matrix (1999) [4K]" -> "The Matrix"
   function clean(t) {
@@ -544,7 +559,7 @@ var Subs = (function () {
       (!want || U.lang(t.language || t.label) === want));
   }
 
-  return { find: find, gone: gone, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, keptCount: keptCount, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
+  return { find: find, gone: gone, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, test: test, keptCount: keptCount, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
     get delay() { return delay; }, get rate() { return rate; }, get timing() { return timingSummary(); }, setRate: setRate, draw: drawLines, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
     _test: { listed: listed, shortName: shortName, keep: keep, parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
 })();

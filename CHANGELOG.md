@@ -2,10 +2,12 @@
 
 ## Unreleased
 
+- **Settings > API keys.**  Every key you paste, in one place: the TMDB token (movie and show details and posters) and the OpenSubtitles key with its sign-in, each with **Test**, like TMDB's.  Playback and My media still lead there.
+- **Add a playlist entirely on the phone.**  In the phone app, Settings > Playlists > Add playlist… is the phone's own form: pick the playlist type (the full link, Xtream Codes, or an M3U address), fill it in, and the TV tests and adds it.
 - **Turn a playlist off instead of deleting it.**  Settings > Playlists > the playlist > Playlist on (and Turn off in the web editor's Playlists) keeps its login and everything set for it, and leaves it out of switching until it is turned on again.  The playlist in use switches to the next one that is on; the last one on stays on.
 - **The set-up tour runs on the phone.**  Settings > Playlists > the playlist > Set-up tour in the phone app only started it on the TV's screen.  It is now a page in the phone app with the same steps and choices, Next and Back, and Apply; nothing shows on the TV.
 - **OpenSubtitles, set up step by step.**  Settings > Playback > Set up OpenSubtitles (and Find subtitles before it's set up) walks through it: a free account, the key for TiviBro with what to tick on the form, paste it, and TiviBro checks it with OpenSubtitles straight away, then an optional sign-in.  From the phone app's Settings the steps come to the phone, and leaving them for a while (to make the key) carries on where you were.
-- **Adding a playlist from the phone app has a Playlist type to pick.**  Settings > Playlists > Add playlist… on the phone opens the web editor's Add a playlist, which now starts with a Playlist type list (the full link, Xtream Codes, or an M3U address); on a phone the three buttons that did this looked like tabs.
+- **The web editor's Add a playlist starts with a Playlist type list** (the full link, Xtream Codes, or an M3U address); on a phone the three buttons that did this looked like tabs.
 - **A box answered late on the phone still counts.**  Settings on the phone app ask their questions on the phone (like pasting the OpenSubtitles API key), and the TV stopped waiting for the answer after a minute: an answer sent later was dropped with "That question has gone".  The TV now asks the same question again behind the scenes and uses the answer.
 
 ## 0.6.0 (alpha 86, 2026-11-05)

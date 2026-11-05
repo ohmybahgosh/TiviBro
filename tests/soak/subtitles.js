@@ -125,8 +125,12 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('lines that arrive later on the same subtitle are lined up too', Math.abs(again.now - again.first) < 0.06 && Math.abs(again.now - (late.first - 1)) > 0.5, JSON.stringify(again));
   // Settings.
   await ev(() => { Views.runAction('exit', 'player'); Views.switchTab('settings'); Settings.section('playback'); }); await page.waitForTimeout(600);
-  const set = await ev(() => document.body.innerText);
-  ok('Settings has the languages, the key and sign in', /Subtitles from OpenSubtitles/.test(set) && /Subtitle languages/.test(set) && /English, Spanish/.test(set) && /OpenSubtitles API key saved/.test(set) && /Sign in \(optional\)/.test(set), set.slice(0, 200));
+  let set = await ev(() => document.body.innerText);
+  ok('Playback has the languages and a way to the key', /Subtitles from OpenSubtitles/.test(set) && /Subtitle languages/.test(set) && /English, Spanish/.test(set) && /OpenSubtitles key and sign-in/.test(set), set.slice(0, 300));
+  await ev(() => Settings.section('keys')); await page.waitForTimeout(600);
+  set = await ev(() => document.body.innerText);
+  ok('Settings has the languages, the key and sign in', /API keys/.test(set) && /OpenSubtitles API key saved/.test(set) && /Test OpenSubtitles key/.test(set) && /Sign in \(optional\)/.test(set) && /TMDB/.test(set), set.slice(0, 200));
+  ok('Test OpenSubtitles key says it works', /key works/.test(await ev(() => Subs.test().catch((e) => e.message))));
   await shot('tv-subs-settings');
   ok('the key is not in the settings (so not in backups or reports)', await ev(() => JSON.stringify(Store.settings).indexOf('aaaaaaaaaaaaaaaa') < 0));
   ok('no page errors', !errs.length, errs.join(' | '));
