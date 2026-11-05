@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Back to exit shows only the TV's question.**  On webOS 6 and later, where the TV itself asks "Do you want to exit the app?", TiviBro no longer shows its own "Press Back again to exit" on the way there.  Older TVs keep it, since TiviBro asks there itself.
+
 ## 0.6.0 (alpha 89, 2026-11-05)
 
 Pre-release: expect rough edges, and keep a backup before installing.

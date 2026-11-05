@@ -528,7 +528,7 @@ var Views = (function () {
      at once, and the next Back on the menu bar closes TiviBro (two presses, like TiviMate). */
   function tabBar(onBack, armExit) {
     navOnBack = onBack;
-    if (armExit && tab === home() && Store.settings.exitTwice !== false) { backT = Date.now(); U.toast('Press Back again to exit', 2500); }
+    if (armExit && tab === home() && Store.settings.exitTwice !== false) { armBack(); }
     tabSel = Math.max(0, tabs.indexOf(tab));
     var tabEls = function () { return document.querySelectorAll('.tab'); };
     var paint = function () { tabEls().forEach(function (t, i) { t.classList.toggle('focus', i === tabSel); }); };
@@ -549,7 +549,7 @@ var Views = (function () {
       }
       else if (a === 'back') {
         if (tab !== home()) { done(); switchTab(home()); }
-        else if (Store.settings.exitTwice !== false && Date.now() - backT > 2500) { backT = Date.now(); U.toast('Press Back again to exit', 2500); }
+        else if (Store.settings.exitTwice !== false && Date.now() - backT > 2500 && !sysAsks()) { armBack(); }
         else { done(); askExit(); }
       }
       return true;
@@ -557,19 +557,27 @@ var Views = (function () {
   }
 
   // Back to the top of the home screen arms the exit: one more Back closes TiviBro.
-  function armExit() { if (tab === home() && Store.settings.exitTwice !== false) { backT = Date.now(); U.toast('Press Back again to exit', 2500); } }
+  function armExit() { if (tab === home() && Store.settings.exitTwice !== false) { armBack(); } }
+  /* With the TV's own "Do you want to exit the app?" coming (webOS 6 and later), that box is the second
+     step, so TiviBro shows no "Press Back again" of its own on top of it: the press that would have
+     shown it goes straight to the TV's question. */
+  function armBack() { backT = Date.now(); if (!sysAsks()) U.toast('Press Back again to exit', 2500); }
+  function sysBack() {
+    var sys = window.webOSSystem || window.PalmSystem;
+    return window.webOS && webOS.platformBack ? function () { webOS.platformBack(); } : sys && sys.platformBack ? function () { sys.platformBack(); } : null;
+  }
+  function sysAsks() { var ver = typeof Caps !== 'undefined' && Caps.webosVersion ? Caps.webosVersion(navigator.userAgent) : 0; return ver >= 6 && !!sysBack(); }
   function exitArmed() { return tab === home() && Date.now() - backT < 2500; }
   function exitApp(confirmFirst) {
-    if ((confirmFirst || Store.settings.exitTwice) && Date.now() - backT > 2500) { backT = Date.now(); U.toast('Press Back again to exit', 2500); return; }
+    if ((confirmFirst || Store.settings.exitTwice) && Date.now() - backT > 2500 && !sysAsks()) { armBack(); return; }
     askExit();
   }
   /* Leaving from the remote asks first, the way the TV's own apps do.  webOS 6 and later show the TV's
      "Do you want to exit the app?" when the app hands Back to the system (platformBack); on webOS 4 and 5
      that just goes to the home screen, so TiviBro asks the same question itself. */
   function askExit() {
-    var sys = window.webOSSystem || window.PalmSystem, ver = typeof Caps !== 'undefined' && Caps.webosVersion ? Caps.webosVersion(navigator.userAgent) : 0;
-    var back = window.webOS && webOS.platformBack ? function () { webOS.platformBack(); } : sys && sys.platformBack ? function () { sys.platformBack(); } : null;
-    if (ver >= 6 && back) {
+    var back = sysBack();
+    if (sysAsks()) {
       Log.info('views', 'Exit from the remote: the TV asks to confirm');
       try { back(); return; } catch (e) {}
     }

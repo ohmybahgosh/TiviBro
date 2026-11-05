@@ -24,14 +24,17 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const modal = (t) => t.ev(() => { const m = document.getElementById('modal'); return m && !m.classList.contains('hidden') ? m.innerText : ''; });
   // webOS 25 (Chromium 120): the TV's own question.
   let t = await tv(120);
-  await t.ev(() => Views.exitApp(true)); await t.page.waitForTimeout(200);
-  ok('the first Back says press again', /Press Back again to exit/.test(await t.ev(() => document.body.innerText)));
+  await t.ev(() => Views.armExit()); await t.page.waitForTimeout(200);
+  ok('webOS 6 and later: no "Press Back again" of TiviBro\'s own, the TV\'s question is the second step', !/Press Back again/.test(await t.ev(() => document.getElementById('toast').classList.contains('hidden') ? '' : document.getElementById('toast').textContent)) && await t.ev(() => Views.exitArmed()));
   await t.ev(() => Views.exitApp(true)); await t.page.waitForTimeout(500);
-  ok('webOS 6 and later: the second Back hands it to the TV, which asks', await t.ev(() => window.__back) === 1 && await t.ev(() => window.__closed) === 0 && !(await modal(t)));
+  ok('webOS 6 and later: the next Back hands it to the TV, which asks', await t.ev(() => window.__back) === 1 && await t.ev(() => window.__closed) === 0 && !(await modal(t)));
   ok('and TiviBro keeps running if the viewer stays', await t.ev(() => Library.count() > 0 && !!document.querySelector('#viewGuide, #viewLive')));
   await t.ctx.close();
   // webOS 4 (Chromium 53 UA): TiviBro asks.
   t = await tv(53);
+  await t.ev(() => Views.exitApp(true)); await t.page.waitForTimeout(200);
+  ok('webOS 4 and 5: the first Back says press again', /Press Back again to exit/.test(await t.ev(() => document.getElementById('toast').textContent)));
+  await t.page.waitForTimeout(2700);
   await t.ev(() => { Views.exitApp(true); Views.exitApp(true); }); await t.page.waitForTimeout(400);
   let m = await modal(t);
   ok('webOS 4 and 5: TiviBro asks Exit TiviBro?, Cancel picked', /Exit TiviBro\?/.test(m) && /Cancel/.test(m) && await t.ev(() => window.__back) === 0, m);
