@@ -276,19 +276,21 @@ var Source = (function () {
   function sig(p) { return U.hash([p.id, p.type, p.server, p.user, p.pass, p.m3u].join('|')); }
 
   function cred(p) { return encodeURIComponent(p.user) + '/' + encodeURIComponent(p.pass); }
+  /* Every channel plays from its own playlist's server and login (Store.plOf: with several playlists on,
+     the other playlists' channels carry their playlist's id). */
   function streamUrl(ch, fmt) {
     if (ch.url) return ch.url;
-    var p = Store.playlist;
+    var p = Store.plOf(ch);
     return base(p.server) + '/live/' + cred(p) + '/' + ch.id + '.' + (fmt || 'ts');
   }
   function shortEpgUrl(ch, limit) {
-    return api(Store.playlist, 'get_short_epg', '&stream_id=' + ch.id + '&limit=' + (limit || 6));
+    return api(Store.plOf(ch), 'get_short_epg', '&stream_id=' + ch.id + '&limit=' + (limit || 6));
   }
 
   /* ---------- catch-up ---------- */
-  // Xtream wants the start time written in the server's own time zone.
-  var serverTz = '';
-  function setTz(tz) { serverTz = tz || ''; }
+  // Xtream wants the start time written in the server's own time zone (each playlist's server its own).
+  var serverTz = '', tzs = {};
+  function setTz(tz, id) { if (id) tzs[id] = tz || ''; else serverTz = tz || ''; }
   function parts(ms, tz) {
     var d = new Date(ms);
     if (tz && typeof Intl !== 'undefined') {
@@ -306,7 +308,7 @@ var Source = (function () {
     if (!ch.arch) return '';
     var mins = Math.max(1, Math.ceil((end - start) / 60000));
     if (!ch.url) {
-      var p = Store.playlist, t = parts(start, serverTz);
+      var p = Store.plOf(ch), t = parts(start, ch.p ? tzs[ch.p] || '' : serverTz);
       return base(p.server) + '/timeshift/' + cred(p) + '/' + mins + '/' + t.Y + '-' + t.m + '-' + t.d + ':' + t.H + '-' + t.M + '/' + ch.id + '.ts';
     }
     var utc = Math.floor(start / 1000), utcend = Math.floor(end / 1000), now = Math.floor(Date.now() / 1000), lt = parts(start, '');

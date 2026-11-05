@@ -17,26 +17,32 @@ var DeadList = (function () {
   var streaks = null;     // playlist id → { channel key: [failed tries in a row, when the last failed] }
   var listeners = [];
 
-  function forPl() {
-    var id = (Store.playlist && Store.playlist.id) || '';
+  /* Kept per playlist.  With several playlists on, a channel of another playlist counts for that
+     playlist (its id is c.p) under its own key there, so marks stay put whichever playlist is first. */
+  function plId(ch) { return (ch && ch.p) || (Store.playlist && Store.playlist.id) || ''; }
+  function forPl(id) {
+    if (id == null) id = (Store.playlist && Store.playlist.id) || '';
     return seen[id] || (seen[id] = { fails: {}, ok: {} });
   }
-  function keyOf(ch, url) { return ch ? String(ch.k || ch.id || ch.n || '') : String(url || ''); }
+  function keyOf(ch, url) {
+    if (ch && ch.p && ch.k && ch.k.indexOf(ch.p + ':') === 0) return ch.k.slice(ch.p.length + 1);
+    return ch ? String(ch.k || ch.id || ch.n || '') : String(url || '');
+  }
 
   function played(ch, url) {
-    var s = forPl(), k = keyOf(ch, url);
+    var id = plId(ch), s = forPl(id), k = keyOf(ch, url);
     s.ok[k] = 1; delete s.fails[k];
-    var m = mine(), was = isMarked(m[k]);
+    var m = mine(id), was = isMarked(m[k]);
     if (m[k]) { delete m[k]; saveStreaks(); }
-    if (was) changed(k);
+    if (was) changed(ch && ch.k || k);
   }
   // http: the provider's error code, or 0 when it answered but the TV could not play it.
   function failed(ch, url, http) {
-    var s = forPl(), k = keyOf(ch, url);
-    if (ch && k) streak(k, ch.n);
+    var id = plId(ch), s = forPl(id), k = keyOf(ch, url);
+    if (ch && k) streak(k, ch.n, id, ch.k);
     if (!http || s.ok[k]) return;
     s.fails[k] = +http;
-    check();
+    check(id);
   }
 
   /* ---------- one channel that keeps failing ---------- */
@@ -48,13 +54,14 @@ var DeadList = (function () {
     return streaks;
   }
   function saveStreaks() { try { localStorage.setItem(SKEY, JSON.stringify(streaks || {})); } catch (e) {} }
-  function mine() {
-    var all = loadStreaks(), id = (Store.playlist && Store.playlist.id) || '';
+  function mine(id) {
+    var all = loadStreaks();
+    if (id == null) id = (Store.playlist && Store.playlist.id) || '';
     return all[id] || (all[id] = {});
   }
   function isMarked(v) { return !!(v && v[0] >= STREAK && now() - v[1] < RECENT); }
-  function streak(k, name) {
-    var m = mine(), v = m[k], t = now();
+  function streak(k, name, id, mk) {
+    var m = mine(id), v = m[k], t = now();
     // Failures days apart are not a streak: start again.
     v = v && t - v[1] < RECENT ? [v[0] + 1, t] : [1, t];
     var was = isMarked(m[k]);
@@ -65,13 +72,13 @@ var DeadList = (function () {
       for (var i = 0; i < keys.length - CAP; i++) delete m[keys[i]];
     }
     saveStreaks();
-    if (isMarked(v) && !was) { changed(k); if (typeof Log !== 'undefined') Log.info('app', '"' + (name || k) + '" is marked as not playing lately: its last ' + v[0] + ' tries failed'); }
+    if (isMarked(v) && !was) { changed(mk || k); if (typeof Log !== 'undefined') Log.info('app', '"' + (name || k) + '" is marked as not playing lately: its last ' + v[0] + ' tries failed'); }
   }
   function changed(k) { for (var i = 0; i < listeners.length; i++) try { listeners[i](k); } catch (e) {} }
   // Does this channel get the "not playing lately" mark?  Cheap: called for every row drawn.
   function marked(ch) {
     if (!ch) return false;
-    var m = streaks ? streaks[(Store.playlist && Store.playlist.id) || ''] : mine();
+    var id = plId(ch), m = streaks ? streaks[id] : mine(id);
     return !!m && isMarked(m[keyOf(ch)]);
   }
 
@@ -91,11 +98,12 @@ var DeadList = (function () {
   }
   var NAMES = { 401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found', 410: 'Gone', 451: 'Unavailable here', 500: 'Server error', 502: 'Bad Gateway', 503: 'Unavailable', 504: 'Gateway Timeout', 520: 'Unknown error', 521: 'Server down', 522: 'Timed out', 523: 'Unreachable', 524: 'Timed out' };
 
-  function check() {
-    var p = Store.playlist || {}, s = forPl();
+  function check(id) {
+    var p = (id && Store.byId && Store.byId(id)) || Store.playlist || {}, s = forPl(p.id || '');
     if (!bad(s) || Date.now() - noted(p.id) < 24 * 3600e3) return;
     note(p.id);
-    var f = Object.keys(s.fails).length, o = Object.keys(s.ok).length, exp = Library.data && Library.data.exp;
+    var part = Library.partOf ? Library.partOf(p.id) : Library.data;
+    var f = Object.keys(s.fails).length, o = Object.keys(s.ok).length, exp = part && part.exp;
     var name = p.name || 'this playlist';
     Log.warn('app', 'Most channels in ' + name + ' fail: ' + f + ' did not play (' + codes(s).join(', ') + '), ' + o + ' played.  ' + (exp ? 'The account is active until ' + new Date(exp).toISOString().slice(0, 10) + '.' : ''));
     show(name, f, o, codes(s), exp, p.id);
@@ -107,7 +115,7 @@ var DeadList = (function () {
       ' the list itself may be out of date, or its channels only work from another country (with a VPN).';
     UI.panel('Most channels in ' + name + ' aren\'t playing', U.el('p', 'panel-text', why), [
       { label: 'OK' },
-      { label: 'Reload the channel list', action: function () { App.refresh(true); } },
+      { label: 'Reload the channel list', action: function () { App.refresh(true, id); } },
       { label: 'Playlist settings', action: function () { App.openPlaylistSettings(id); } }
     ]);
   }

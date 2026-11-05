@@ -1,6 +1,7 @@
 /* Persistence.  Settings in localStorage, big lists in IndexedDB.
    Multiple playlists: each has its own id, cache and edits (groups, hidden, renames,
-   favorites), so switching playlists never mixes channel ids from two providers. */
+   favorites), so two providers' channel ids never mix.  Every playlist that is on is used at
+   once: see "several playlists at once" below for how their edits are merged and split. */
 var Store = (function () {
   'use strict';
 
@@ -153,8 +154,129 @@ var Store = (function () {
   function loadEdits() {
     editsKey = 'tivibro.edits.' + (settings.active || 'none');
     edits = merge(clone(EDIT_DEFAULTS), read(editsKey));
+    attached = []; own = {};
     editsRev++;
   }
+
+  /* ---------- several playlists at once ----------
+     Every playlist that is on is used at the same time, like TiviMate.  The first playlist
+     (settings.active; Settings > Playlists > the playlist > "Make this the first playlist") loads
+     exactly as it always has: its channel keys and group ids are the provider's own ("x5761"), and its
+     edits are `edits`, read from and saved to tivibro.edits.<its id> as before.  The other playlists'
+     channel keys and group ids get their playlist id and a colon in front ("p1abc:x5761", see
+     Library.setOther).  Keys from a provider never hold a colon, so the two can't collide.
+
+     Edits stay with their own playlist: merged when a playlist is loaded, split again on every save.
+     - attach(id) reads that playlist's edits and adds its per-channel and per-group entries (hidden,
+       renamed, locked, moved, guide links, aspect: the fields in KEY_MAPS, GROUP_MAPS, GROUP_LISTS) to
+       `edits`, under the prefixed keys.  Its other fields stay in own[id], untouched.
+     - Everything else in `edits` belongs to the first playlist: your own groups and Favorites, Recent,
+       reminders, the watchlist, the last channel.  They can hold channels of any playlist.
+     - A save splits `edits` again (split()): an entry whose channel or group key starts with the id of
+       an attached playlist goes to that playlist's file, without the prefix, and the rest to the first
+       playlist's file, as it is.
+     Every file writes keys the same way: the playlist's own keys bare, another playlist's with that
+     playlist's id in front.  So a key names the same channel whichever playlist is first (toMem,
+     toFile), and making another playlist the first only changes which prefix memory leaves off.
+     With one playlist on nothing is attached and none of this runs: the same code path as before. */
+  var KEY_MAPS = ['hiddenChannels', 'renames', 'watch', 'blockedChannels', 'epgMap', 'noGuide', 'display'];
+  var GROUP_MAPS = ['hiddenGroups', 'groupRenames', 'blockedGroups', 'groupSort', 'groupAdd', 'groupRemove', 'chanOrder'];
+  var GROUP_LISTS = ['groupOrder', 'knownGroups'];
+  var KEYED = { groupAdd: 'list', chanOrder: 'list', groupRemove: 'map' };     // group maps whose values hold channel keys
+  var attached = [], own = {};
+  function idSet() { var m = {}; settings.playlists.forEach(function (p) { m[p.id] = 1; }); return m; }
+  // A key as every file and memory understand it: "<playlist id>:<provider key>".
+  function toGlobal(k, home, ids) { var i = k.indexOf(':'); return i > 0 && ids[k.slice(0, i)] ? k : home + ':' + k; }
+  function strip(g, home) { return g.indexOf(home + ':') === 0 ? g.slice(home.length + 1) : g; }
+  function toMem(k, file, ids) { return typeof k === 'string' ? strip(toGlobal(k, file, ids), settings.active) : k; }
+  function toFile(k, file, ids) { return typeof k === 'string' ? strip(toGlobal(k, settings.active, ids), file) : k; }
+  // The attached playlist a key (in memory) belongs to, or '' for the first playlist.
+  function ownerOf(k) {
+    if (!attached.length || typeof k !== 'string') return '';
+    var i = k.indexOf(':');
+    return i > 0 && attached.indexOf(k.slice(0, i)) >= 0 ? k.slice(0, i) : '';
+  }
+  // A group map's value with its channel keys turned by fn.
+  function mapValue(f, v, fn) {
+    var kind = KEYED[f];
+    if (kind === 'list' && Array.isArray(v)) return v.map(fn);
+    if (kind === 'map' && v && typeof v === 'object') { var o = {}; for (var k in v) o[fn(k)] = v[k]; return o; }
+    return v;
+  }
+  function attach(id) {
+    if (!id || id === settings.active || attached.indexOf(id) >= 0) return false;
+    var mine = merge(clone(EDIT_DEFAULTS), read('tivibro.edits.' + id)), ids = idSet();
+    var m = function (k) { return toMem(k, id, ids); };
+    attached.push(id);
+    KEY_MAPS.concat(GROUP_MAPS).forEach(function (f) {
+      var src = mine[f]; delete mine[f];
+      if (!src || typeof src !== 'object') return;
+      var dst = edits[f] && typeof edits[f] === 'object' ? edits[f] : (edits[f] = {});
+      for (var k in src) dst[m(k)] = mapValue(f, src[k], m);
+    });
+    GROUP_LISTS.forEach(function (f) {
+      var src = mine[f]; delete mine[f];
+      if (Array.isArray(src) && src.length) edits[f] = (Array.isArray(edits[f]) ? edits[f] : []).concat(src.map(m));
+    });
+    own[id] = mine;
+    editsRev++;
+    return true;
+  }
+  /* `edits` as the files hold it: { '': the first playlist's, <id>: each attached playlist's }. */
+  function split() {
+    var out = { '': {} }, ids = idSet(), k;
+    for (k in edits) out[''][k] = edits[k];
+    attached.forEach(function (id) { var o = {}; for (var x in own[id]) o[x] = own[id][x]; out[id] = o; });
+    KEY_MAPS.concat(GROUP_MAPS).forEach(function (f) {
+      var src = edits[f];
+      if (!src || typeof src !== 'object') return;
+      var parts = { '': {} };
+      attached.forEach(function (id) { parts[id] = {}; });
+      for (var key in src) {
+        var w = ownerOf(key);
+        if (!w) parts[''][key] = src[key];
+        else parts[w][toFile(key, w, ids)] = mapValue(f, src[key], function (x) { return toFile(x, w, ids); });
+      }
+      for (var p in parts) out[p][f] = parts[p];
+    });
+    GROUP_LISTS.forEach(function (f) {
+      var src = edits[f];
+      if (!Array.isArray(src)) return;
+      var parts = { '': [] };
+      attached.forEach(function (id) { parts[id] = []; });
+      src.forEach(function (key) { var w = ownerOf(key); parts[w].push(w ? toFile(key, w, ids) : key); });
+      for (var p in parts) out[p][f] = parts[p];
+    });
+    return out;
+  }
+  // Take a playlist out again (turned off, deleted, or another playlist became the first).
+  function detach(id) {
+    var i = attached.indexOf(id);
+    if (i < 0) return false;
+    flushEdits();
+    KEY_MAPS.concat(GROUP_MAPS).forEach(function (f) { var o = edits[f]; if (o && typeof o === 'object') for (var k in o) if (ownerOf(k) === id) delete o[k]; });
+    GROUP_LISTS.forEach(function (f) { if (Array.isArray(edits[f])) edits[f] = edits[f].filter(function (k) { return ownerOf(k) !== id; }); });
+    attached.splice(i, 1); delete own[id];
+    editsRev++;
+    return true;
+  }
+  // Write now, without waiting for the pause after the last change.
+  function flushEdits() { if (writeEdits.cancel) writeEdits.cancel(); writeAll(); }
+  function writeAll() {
+    if (frozen) return;
+    if (!attached.length) { lsSet(editsKey, JSON.stringify(edits)); return; }
+    var parts = split();
+    lsSet(editsKey, JSON.stringify(parts['']));
+    attached.forEach(function (id) { lsSet('tivibro.edits.' + id, JSON.stringify(parts[id])); });
+  }
+  // One playlist's edits as its file holds them (backups): from memory when it is loaded.
+  function fileEdits(id) {
+    if (id === settings.active) return attached.length ? split()[''] : JSON.parse(JSON.stringify(edits));
+    if (attached.indexOf(id) >= 0) return split()[id];
+    return read('tivibro.edits.' + id);
+  }
+  // Which playlist a channel (or a key) belongs to, and its key there.
+  function home(k) { var w = ownerOf(k); return w ? { id: w, k: k.slice(w.length + 1) } : { id: settings.active || '', k: k }; }
   loadEdits();
 
   // After a restore has written new data, nothing in this page may save over it before the reload.
@@ -170,7 +292,7 @@ var Store = (function () {
     }
   }
   var saveSettings = U.debounce(function () { if (!frozen) lsSet('tivibro.settings', JSON.stringify(settings)); }, 300);
-  var writeEdits = U.debounce(function () { if (!frozen) lsSet(editsKey, JSON.stringify(edits)); }, 400);
+  var writeEdits = U.debounce(writeAll, 400);
   // A count of edit saves, so the web editor can tell the edits changed without comparing them
   // (with 180,000 channels the hidden lists alone are megabytes; issue #14).
   function saveEdits() { editsRev++; writeEdits(); }
@@ -204,12 +326,18 @@ var Store = (function () {
     p._v = 3;
     return p;
   }
+  function byId(id) { for (var i = 0; i < settings.playlists.length; i++) if (settings.playlists[i].id === id) return normalize(settings.playlists[i]); return null; }
+  /* The playlist a channel plays from: the other playlists' channels carry their id (c.p, see
+     Library.setOther); the first playlist's carry nothing. */
+  function plOf(ch) { return (ch && ch.p && byId(ch.p)) || playlist(); }
+  // The playlists in use: the first, then every other one that is attached, in settings order.
+  function loaded() { var first = playlist(), out = first && first.id ? [first] : []; settings.playlists.forEach(function (p) { if (attached.indexOf(p.id) >= 0) out.push(normalize(p)); }); return out; }
   function playlist() {
     for (var i = 0; i < settings.playlists.length; i++) if (settings.playlists[i].id === settings.active) return normalize(settings.playlists[i]);
     return normalize(settings.playlists[0]) || { id: '', type: 'xtream', server: '', user: '', pass: '', m3u: '', epgSources: [], providerEpg: 'short', epgOffset: 0, plRefresh: 12, epgRefresh: 12, epgDays: 2, nameMatch: true, names: null, name: '' };
   }
   function usePlaylist(id) {
-    lsSet(editsKey, JSON.stringify(edits));     // flush current
+    flushEdits();                               // write what is in memory, to every playlist's own file
     settings.active = id;
     saveSettings();
     loadEdits();
@@ -223,6 +351,7 @@ var Store = (function () {
     return p;
   }
   function removePlaylist(id) {
+    detach(id);
     settings.playlists = settings.playlists.filter(function (x) { return x.id !== id; });
     localStorage.removeItem('tivibro.edits.' + id);
     bigSet('playlist:' + id, null); idbSet('epgpub:' + id, null);
@@ -364,6 +493,10 @@ var Store = (function () {
     get playlist() { return playlist(); },
     normalize: normalize,
     usePlaylist: usePlaylist, upsertPlaylist: upsertPlaylist, removePlaylist: removePlaylist,
+    byId: byId, plOf: plOf, loaded: loaded, attach: attach, detach: detach, ownerOf: ownerOf, home: home, fileEdits: fileEdits, flushEdits: flushEdits,
+    get attached() { return attached.slice(); },
+    // The other playlists that are on (to be loaded beside the first), in settings order.
+    others: function () { return settings.playlists.filter(function (p) { return !p.off && p.id !== settings.active; }).map(normalize); },
     /* When a playlist's subscription ends, as people say it (issue #13): "Expires in 3 days",
        "Expires 19 Nov", "Expired 2 Oct".  Empty when the provider doesn't say. */
     expiry: function (p) {
@@ -375,7 +508,15 @@ var Store = (function () {
       return 'Expires ' + d;
     },
     saveSettings: saveSettings, saveEdits: saveEdits, get editsRev() { return editsRev; },
-    resetEdits: function () { edits = merge(clone(EDIT_DEFAULTS), null); saveEdits(); },
+    // Clear the first playlist's edits; the other playlists keep theirs.
+    resetEdits: function () {
+      if (!attached.length) { edits = merge(clone(EDIT_DEFAULTS), null); saveEdits(); return; }
+      var keep = attached.slice();
+      keep.forEach(detach);
+      edits = merge(clone(EDIT_DEFAULTS), null); flushEdits();
+      keep.forEach(attach);
+      editsRev++;
+    },
     idbGet: idbGet, idbSet: idbSet, bigGet: bigGet, bigSet: bigSet, DEFAULTS: DEFAULTS
   };
 })();

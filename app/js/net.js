@@ -94,13 +94,26 @@ var Net = (function () {
     var rest = m[3] || '/';
     if (rest.charAt(0) !== '/') rest = '/' + rest;
     var unz = opts && opts.unzip ? '/unz/' + String(opts.unzip).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) : '';
-    return 'http://127.0.0.1:' + port + uaPrefix() + unz + '/x/' + m[1].toLowerCase() + '/' + m[2] + rest;
+    return 'http://127.0.0.1:' + port + uaPrefix(opts && opts.pl ? uaFor(opts.pl) : uaOfUrl(m[2])) + unz + '/x/' + m[1].toLowerCase() + '/' + m[2] + rest;
   }
-  // Playlist User-Agent (Settings > Playlists > the playlist): sent by the helper to the provider.
+  /* Playlist User-Agent (Settings > Playlists > the playlist): sent by the helper to the provider.
+     With several playlists on, each sends its own: the player says which playlist a stream is from
+     (opts.pl), and anything else goes by the address's host, the first playlist winning a tie. */
   var uaCache = { ua: null, p: '' };
-  function ua() { var p = Store.playlist; return p && p.ua ? String(p.ua).trim() : ''; }
-  function uaPrefix() {
-    var u = ua(); if (!u) return '';
+  function uaFor(p) { return p && p.ua ? String(p.ua).trim() : ''; }
+  function ua() { return uaFor(Store.playlist); }
+  function hostPart(u) { var m = /^(?:[a-z]+:\/\/)?(?:[^@\/]*@)?([^\/:?#]+)/i.exec(String(u || '')); return m ? m[1].toLowerCase() : ''; }
+  function uaOfUrl(hostPort) {
+    var more = Store.others ? Store.others() : [];
+    if (!more.length) return ua();
+    var list = [Store.playlist].concat(more);
+    var h = String(hostPort || '').split(':')[0].toLowerCase();
+    for (var i = 0; i < list.length; i++) if (h && hostPart(list[i].type === 'm3u' ? list[i].m3u : list[i].server) === h) return uaFor(list[i]);
+    return ua();
+  }
+  function uaPrefix(u) {
+    if (u === undefined) u = ua();
+    if (!u) return '';
     if (uaCache.ua !== u) { uaCache.ua = u; uaCache.p = '/ua/' + btoa(unescape(encodeURIComponent(u))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
     return uaCache.p;
   }
@@ -110,7 +123,7 @@ var Net = (function () {
   }
 
   return {
-    start: start, wrap: wrap, unwrap: unwrap, retryImage: retryImage, get ua() { return ua(); },
+    start: start, wrap: wrap, unwrap: unwrap, retryImage: retryImage, get ua() { return ua(); }, uaFor: uaFor,
     // Guides: the helper unzips .gz on every TV.  Without it, only browsers with DecompressionStream can.
     get canUnzip() { return !!useRelay() || typeof DecompressionStream !== 'undefined'; },
     xfer: function (id) { return port ? 'http://127.0.0.1:' + port + '/xfer/' + id : ''; },

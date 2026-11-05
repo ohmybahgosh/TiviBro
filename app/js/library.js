@@ -1,6 +1,14 @@
 /* The channel library: provider data plus the user's edits.
    Provider data is never mutated; hiding, renaming and custom groups are overlays
-   stored by stable key, so a playlist refresh keeps every edit. */
+   stored by stable key, so a playlist refresh keeps every edit.
+
+   Several playlists at once: set(d) takes the first playlist's data, setOther(id, d) each other
+   playlist that is on.  The others' channel keys and group ids get "<playlist id>:" in front and
+   their channels and groups carry the id (c.p, g.p); the first playlist's stay exactly as they come,
+   so its edits, PlayMemo, reminders and the rest never notice (Store explains how edits are kept per
+   playlist).  `data` is all of them in one list, the first playlist first.  With only one playlist on,
+   `data` is that playlist's data itself, as before.  groups(true) adds a heading row ({ head: true })
+   before each playlist's groups when more than one is on. */
 var Library = (function () {
   'use strict';
 
@@ -46,10 +54,73 @@ var Library = (function () {
     if (fixed && typeof Log !== 'undefined') Log.info('library', 'Ignored ' + fixed + ' guide ids that were placeholders or shared by unrelated channels');
   }
 
+  /* ---------- several playlists ---------- */
+  var main = null, others = [];          // the first playlist's data; [{ id, d }] for the others, in settings order
+  function setOther(id, d) {
+    var pre = id + ':', i;
+    if (!d.prefixed) {
+      for (i = 0; i < d.groups.length; i++) { d.groups[i].id = pre + d.groups[i].id; d.groups[i].p = id; }
+      for (i = 0; i < d.channels.length; i++) { var c = d.channels[i]; c.k = pre + c.k; c.g = pre + c.g; c.p = id; }
+      d.prefixed = id;
+    }
+    var pl = Store.byId(id);
+    if (pl && d.exp && pl.exp !== d.exp) { pl.exp = d.exp; Store.saveSettings(); }
+    others = others.filter(function (x) { return x.id !== id; }).concat([{ id: id, d: d }]);
+    var order = {}; Store.settings.playlists.forEach(function (p, n) { order[p.id] = n; });
+    others.sort(function (a, b) { return (order[a.id] || 0) - (order[b.id] || 0); });
+    if (main) set(main);
+  }
+  function dropOther(id) {
+    var had = others.some(function (x) { return x.id === id; });
+    others = others.filter(function (x) { return x.id !== id; });
+    if (had && main) set(main);
+    return had;
+  }
+  function clearOthers() { others = []; }
+  // One playlist's own data (its at, exp, maxConn, epgUrl, tz...): the first's for '' or its id.
+  function partOf(id) {
+    if (!id || (main && id === Store.settings.active)) return main;
+    for (var i = 0; i < others.length; i++) if (others[i].id === id) return others[i].d;
+    return null;
+  }
+  function merged(d) {
+    if (!others.length) return d;
+    var out = {}, k;
+    for (k in d) out[k] = d[k];
+    out.groups = d.groups.slice(); out.channels = d.channels.slice();
+    var added = {}, a = d.added || {};
+    for (k in a) added[k] = a[k];
+    others.forEach(function (x) {
+      out.groups = out.groups.concat(x.d.groups); out.channels = out.channels.concat(x.d.channels);
+      var b = x.d.added || {};
+      for (var q in b) added[x.id + ':' + q] = b[q];
+    });
+    out.added = added;
+    return out;
+  }
+  // The playlist a channel or group id belongs to ('' = the first one).
+  function plOfKey(k) { return Store.ownerOf ? Store.ownerOf(k) : ''; }
+  function multi() { return others.length > 0; }
+  /* The first playlist's channels and groups as the lists show them (the content filter applied), for
+     what works on one playlist (the set-up tour).  With one playlist on, `data` itself. */
+  var firstMemo = null;
+  function firstData() {
+    if (!others.length) return data;
+    if (firstMemo && firstMemo.of === data) return firstMemo.d;
+    var d = {}, k;
+    for (k in data) d[k] = data[k];
+    d.groups = data.groups.filter(function (g) { return !g.p; });
+    d.channels = data.channels.filter(function (c) { return !c.p; });
+    firstMemo = { of: data, d: d };
+    return d;
+  }
+
   /* The content filter (filter.js) takes its channels and groups out here, so nothing past this point
      ever sees them.  raw keeps the whole list for when the filter changes. */
   var raw = null;
   function set(d) {
+    main = d;
+    d = merged(d);
     raw = d;
     fixIds(d.channels);
     if (typeof Filter !== 'undefined') d = Filter.apply(d);
@@ -64,7 +135,7 @@ var Library = (function () {
     d.groups.forEach(function (g) { groupNames[g.id] = g.name; });
     // Remember when the subscription ends with the playlist, so every playlist can show it (issue #13).
     var pl = typeof Store !== 'undefined' && Store.playlist;
-    if (pl && pl.id && d.exp && pl.exp !== d.exp) { pl.exp = d.exp; Store.saveSettings(); }
+    if (pl && pl.id && main.exp && pl.exp !== main.exp) { pl.exp = main.exp; Store.saveSettings(); }
     trackNewGroups(raw.groups);
     Names.invalidate();
     versionIndex = null;
@@ -90,7 +161,9 @@ var Library = (function () {
     try {
       var e = E(), ids = groups.map(function (g) { return g.id; });
       if (e.knownGroups && e.knownGroups.length && S().newGroups === 'hide') {
-        var added = ids.filter(function (id) { return e.knownGroups.indexOf(id) < 0; });
+        // Per playlist: one seen here for the first time has nothing known yet, and hides nothing.
+        var known = {}; e.knownGroups.forEach(function (id) { known[plOfKey(id)] = 1; });
+        var added = ids.filter(function (id) { return known[plOfKey(id)] && e.knownGroups.indexOf(id) < 0; });
         added.forEach(function (id) { e.hiddenGroups[id] = 1; });
         if (added.length) Log.info('library', added.length + ' new group(s) from the provider were hidden (setting: hide newly added groups)');
       }
@@ -153,8 +226,12 @@ var Library = (function () {
     // Event channels: the short tag ("PPV 03", "NCAAB 001"); the event itself is in the guide.
     var ev = Events.shortNames() ? Events.of(c) : null;
     if (ev) return ev.short || ev.title;
+    if (c.p) return Names.cleanWith(namesOf(c.p), c.n) || '';       // another playlist's: its own name rules
     return Names.clean(c.n) || '';
   }
+  // Another playlist's name rules (Settings > Playlists > the playlist > Channel and group names).
+  function namesOf(id) { var p = Store.byId && Store.byId(id); return (p && p.names) || Names.defaults(); }
+  function cleanGroupOf(gid, n) { var w = gid ? plOfKey(gid) : ''; return w ? Names.cleanGroupWith(namesOf(w), n) : cleanGroup(n); }
   /* Events by time: every shown event channel whose event is on now or in the next two weeks, soonest first.
      Kept for a few minutes, since it reads every channel name. */
   var evCache = null;
@@ -218,11 +295,13 @@ var Library = (function () {
     if (gid === TEAMS) return 'My teams';
     if (gid === MOVIES) return 'Movies on now';
     var c = custom(gid);
-    return c ? c.name : (E().groupRenames && E().groupRenames[gid]) || cleanGroup(groupNames[gid] || '');
+    return c ? c.name : (E().groupRenames && E().groupRenames[gid]) || cleanGroupOf(gid, groupNames[gid] || '');
   }
 
-  // Groups in display order: custom groups, All channels, then provider groups.
-  function groups() {
+  // Groups in display order: custom groups, All channels, then provider groups (each playlist's
+  // together, the first playlist's first).  heads: a heading row before each playlist's groups, for
+  // the group columns, when more than one playlist is on.
+  function groups(heads) {
     var e = E(), s = S(), showHidden = s.showHidden, out = [];
     var customs = [];
     e.custom.forEach(function (g) {
@@ -248,9 +327,22 @@ var Library = (function () {
       e.groupOrder.forEach(function (id, i) { pos[id] = i; });
       prov.sort(function (a, b) { return (pos[a.id] != null ? pos[a.id] : 1e6) - (pos[b.id] != null ? pos[b.id] : 1e6); });
     }
+    if (others.length) {
+      // Each playlist's groups together, in the order the playlists are loaded (a stable sort).
+      var rank = { '': 0 }; others.forEach(function (x, n) { rank[x.id] = n + 1; });
+      prov = prov.map(function (g, n) { return { g: g, n: n, r: rank[g.p || ''] || 0 }; })
+        .sort(function (a, b) { return a.r - b.r || a.n - b.n; }).map(function (x) { return x.g; });
+    }
+    var section = null;
     prov.forEach(function (g) {
       var hid = !!e.hiddenGroups[g.id];
-      if (showHidden || !hid) out.push({ id: g.id, name: (e.groupRenames && e.groupRenames[g.id]) || cleanGroup(g.name), hidden: hid, blocked: !!e.blockedGroups[g.id] });
+      if (!(showHidden || !hid)) return;
+      if (heads && others.length && (g.p || '') !== section) {
+        section = g.p || '';
+        var pl = section ? Store.byId(section) : Store.playlist;
+        out.push({ id: '@' + (section || (pl && pl.id) || 'first'), head: true, p: section, name: (pl && pl.name) || 'Playlist' });
+      }
+      out.push({ id: g.id, name: (e.groupRenames && e.groupRenames[g.id]) || (g.p ? cleanGroupOf(g.id, g.name) : cleanGroup(g.name)), hidden: hid, blocked: !!e.blockedGroups[g.id], p: g.p || '' });
     });
     return out;
   }
@@ -390,12 +482,15 @@ var Library = (function () {
       if (i < 0 || j < 0 || j >= e.custom.length) return;
       var t = e.custom[i]; e.custom[i] = e.custom[j]; e.custom[j] = t;
     } else {
-      var order = (e.groupOrder && e.groupOrder.length) ? e.groupOrder.slice() : data.groups.map(function (g) { return g.id; });
-      data.groups.forEach(function (g) { if (order.indexOf(g.id) < 0) order.push(g.id); });
+      // Only among its own playlist's groups: each playlist's groups show together.
+      var mine = plOfKey(id), same = function (x) { return plOfKey(x) === mine; };
+      var all = (e.groupOrder && e.groupOrder.length) ? e.groupOrder.slice() : data.groups.map(function (g) { return g.id; });
+      var order = all.filter(same);
+      data.groups.forEach(function (g) { if (same(g.id) && order.indexOf(g.id) < 0) order.push(g.id); });
       var a = order.indexOf(id), b = a + dir;
       if (a < 0 || b < 0 || b >= order.length) return;
       order[a] = order[b]; order[b] = id;
-      e.groupOrder = order;
+      e.groupOrder = all.filter(function (x) { return !same(x); }).concat(order);
     }
     commit();
   }
@@ -433,12 +528,18 @@ var Library = (function () {
   }
 
   // The filter changed: the same playlist again, through it.
-  function refilter() { if (raw) set(raw); }
+  function refilter() { if (main) set(main); }
   function find(k) { return byKey.get(k); }
   // A channel you said needs no guide (the web editor's Ignore, Hold OK > No guide for this channel).
   function noGuide(c) { var n = E().noGuide; return !!(c && n && n[c.k]); }
   function setNoGuide(k, on) { var e = E(); if (!e.noGuide) e.noGuide = {}; if (on) e.noGuide[k] = 1; else delete e.noGuide[k]; Store.saveEdits(); }
   function count() { return data.channels.length; }
+  // A playlist's name for a channel or group, when more than one playlist is on ('' otherwise).
+  function plName(x) {
+    if (!others.length || !x) return '';
+    var pl = x.p ? Store.byId(x.p) : Store.playlist;
+    return (pl && pl.name) || 'Playlist';
+  }
   function sample(n) {
     // A spread of real names for the cleanup preview.
     var out = [], ch = data.channels, step = Math.max(1, Math.floor(ch.length / n));
@@ -453,6 +554,8 @@ var Library = (function () {
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,
     createGroup: createGroup, renameGroup: renameGroup, deleteGroup: deleteGroup,
     copyTo: copyTo, removeFrom: removeFrom, moveInGroup: moveInGroup, moveGroup: moveGroup,
+    firstData: firstData, setOther: setOther, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, get main() { return main; }, get multi() { return multi(); }, plName: plName,
+    otherIds: function () { return others.map(function (x) { return x.id; }); },
     hiddenItems: hiddenItems, allGroups: allGroups, versions: versions, versionKey: versionKey, numberCanGrow: numberCanGrow, qualityLabel: qualityLabel, versionTag: versionTag, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
   };
 })();

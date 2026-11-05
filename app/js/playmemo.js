@@ -51,6 +51,8 @@ var PlayMemo = (function () {
   }
   function chKey(ch) {
     var k = ch && (ch.k || ch.id || ch.n);
+    // Another playlist's channel (several playlists on) already has "<its playlist id>:" in its key.
+    if (k && ch.p && ch.k) return ch.k;
     return k ? ((Store.playlist && Store.playlist.id) || '') + ':' + k : '';
   }
   // [engine, extra cushion in seconds, last used]

@@ -9,7 +9,14 @@
    by their guide id, by a manual assignment, or (optionally) by matching names.
    Xtream channels the XMLTV doesn't cover still get the per-channel guide.
    Channels still without a guide after all that are looked up in a free public guide (pubepg.js),
-   in a second, separate pass, so your own guide is on screen first. */
+   in a second, separate pass, so your own guide is on screen first.
+
+   Several playlists on (Library, Store): each playlist's own guide (its sources, its provider guide,
+   its offsets and days) is loaded for its own channels, the first playlist's first, one after the
+   other, into the same cache.  Guide ids are shared: the playlist that loaded an id first keeps it
+   (idPl says which playlist's stored guide holds it, for descriptions).  The per-channel provider
+   guide asks the channel's own playlist.  The public fill-in is one pass over every channel still
+   without a guide, with the first playlist's public guide settings. */
 var Epg = (function () {
   'use strict';
 
@@ -59,6 +66,9 @@ var Epg = (function () {
   }
 
   function P() { return Store.playlist; }
+  // The playlist a channel belongs to (several playlists on), else the first.
+  function PL(ch) { return Store.plOf ? Store.plOf(ch) : P(); }
+  var idPl = {};                // guide id -> the other playlist whose stored guide holds it (the first's are not listed)
   // Does this guide id have anything from now on?  (Lists are in time order: the last one tells.)
   function live(id) { var x = cache.get(id), l = x && x.list; return !!(l && l.length && l[l.length - 1].e > Date.now()); }
   function epgId(ch) {
@@ -76,7 +86,7 @@ var Epg = (function () {
     return ch.k;
   }
   function emit(k) { for (var i = 0; i < listeners.length; i++) listeners[i](k); }
-  function shortAllowed() { var p = P(); return p.type === 'xtream' && p.providerEpg === 'short'; }
+  function shortAllowed(ch) { var p = ch ? PL(ch) : P(); return p.type === 'xtream' && p.providerEpg === 'short'; }
 
   /* ---------- Xtream short EPG ---------- */
   function pump() {
@@ -89,7 +99,7 @@ var Epg = (function () {
   }
   function done() { inflight--; pump(); }
   function run(ch) {
-    var k = ch.k, off = (+P().epgOffset || 0) * 60000;
+    var k = ch.k, off = (+PL(ch).epgOffset || 0) * 60000;
     return U.getJSON(Source.shortEpgUrl(ch, 10), 12000).then(function (r) {
       var arr = (r && r.epg_listings) || [];
       var list = arr.map(function (p) {
@@ -126,8 +136,8 @@ var Epg = (function () {
       var id = epgId(ch);
       var x = id && cache.get(id);
       if (x) return x.list;
-      if (!shortAllowed()) return xmlReady ? [] : null;
-    } else if (!shortAllowed()) return [];
+      if (!shortAllowed(ch)) return xmlReady ? [] : null;
+    } else if (!shortAllowed(ch)) return [];
     var k = ch.k, hit = cache.get(k);
     if (hit && !hit.pending && Date.now() - hit.at < TTL) return hit.list;
     if (!hit || !hit.pending) {
@@ -347,10 +357,12 @@ var Epg = (function () {
     };
   }
 
-  function sources() {
-    var p = P(), list = (p.epgSources || []).filter(function (s) { return s && s.url; }).map(function (s) { return { url: s.url.trim(), offset: +s.offset || 0 }; });
+  function sources(p) {
+    p = p || P();
+    var list = (p.epgSources || []).filter(function (s) { return s && s.url; }).map(function (s) { return { url: s.url.trim(), offset: +s.offset || 0 }; });
     if (p.providerEpg === 'xmltv') {
-      var prov = Library.data.epgUrl;
+      var part = p.id !== P().id && Library.partOf ? Library.partOf(p.id) : null;
+      var prov = part ? part.epgUrl : Library.data.epgUrl;
       if (prov) list.push({ url: prov, offset: +p.epgOffset || 0, provider: true });
     }
     return list;
@@ -366,10 +378,25 @@ var Epg = (function () {
     for (var j = 0; j < list.length - 1; j++) { var a = list[j], b = list[j + 1]; if (a.e > b.s) a.e = Math.max(a.s, b.s); }
     return list;
   }
-  function ingest(c) {
-    var t = Date.now();
-    cache.clear();
-    findMemo = {}; for (var k in c.map) cache.set(k, { at: t + 1e12, list: untangle(c.map[k]) });   // XML data does not expire per row
+  // pl: another playlist's guide, added beside the first playlist's (which starts everything afresh).
+  function ingest(c, pl) {
+    var t = Date.now(), other = pl && pl.id !== P().id ? pl.id : '', k;
+    if (other) {
+      findMemo = {};
+      for (k in c.map) if (!cache.has(k) || idPl[k] === other) { cache.set(k, { at: t + 1e12, list: untangle(c.map[k]) }); idPl[k] = other; }
+      for (k in c.icons || {}) if (!icons[k]) icons[k] = c.icons[k];
+      var seenId = {}; chList.forEach(function (x) { seenId[x[0]] = 1; });
+      (c.channels || []).forEach(function (x) { if (!seenId[x[0]]) chList.push(x); });
+      statusOf[other] = { at: c.at || 0, sources: c.report || [] };
+      if (c.matches && pl.nameMatch) Library.data.channels.forEach(function (ch) {
+        if (ch.p !== other || (ch.epg && cache.has(ch.epg))) return;
+        var mid = c.matches[norm(Library.name(ch))] || c.matches[norm(ch.n)];
+        if (mid) matched[ch.k] = mid;
+      });
+      return;
+    }
+    cache.clear(); idPl = {};
+    findMemo = {}; for (k in c.map) cache.set(k, { at: t + 1e12, list: untangle(c.map[k]) });   // XML data does not expire per row
     icons = c.icons || {};
     chList = c.channels || [];
     status = { at: c.at || 0, sources: c.report || [] };
@@ -377,6 +404,7 @@ var Epg = (function () {
     matched = {};
     if (c.matches && P().nameMatch) {
       Library.data.channels.forEach(function (ch) {
+        if (ch.p) return;                                       // another playlist's: its own guide matches it
         if (ch.epg && cache.has(ch.epg)) return;
         var id = c.matches[norm(Library.name(ch))] || c.matches[norm(ch.n)];
         if (id) matched[ch.k] = id;
@@ -434,17 +462,18 @@ var Epg = (function () {
      about 500 MB, which a big guide read in the app could pass (alpha 24 on a C2).  Without the
      helper, the worker above does it all in the app, within budget(). */
   var hOk = null, hMode = false, descWait = {}, descLRU = [], DESC_KEEP = 80;
-  function hUrl(what, kind) { return 'http://127.0.0.1:' + Net.port + '/guide/' + what + '?pl=' + encodeURIComponent(P().id) + '&kind=' + kind; }
+  // pid: another playlist's stored guide (several playlists on); the first playlist's by default.
+  function hUrl(what, kind, pid) { return 'http://127.0.0.1:' + Net.port + '/guide/' + what + '?pl=' + encodeURIComponent(pid || P().id) + '&kind=' + kind; }
   function useHelper() {
     if (!Net.active || !Net.port || (Store.settings && Store.settings.guideInApp)) return Promise.resolve(false);
     if (hOk !== null) return Promise.resolve(hOk);
     return fetch('http://127.0.0.1:' + Net.port + '/ping', { cache: 'no-store' }).then(function (r) { return r.json(); })
       .then(function (j) { hOk = !!(j && j.guide); return hOk; }, function () { return false; });
   }
-  function hStatus(kind) { return fetch(hUrl('status', kind), { cache: 'no-store' }).then(function (r) { return r.json(); }); }
+  function hStatus(kind, pid) { return fetch(hUrl('status', kind, pid), { cache: 'no-store' }).then(function (r) { return r.json(); }); }
   // A stored guide, shaped like the worker's result (times and titles, no descriptions).
-  function hRead(kind) {
-    function get(what, json) { return fetch(hUrl(what, kind), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('no stored guide'); return json ? r.json() : r.text(); }); }
+  function hRead(kind, pid) {
+    function get(what, json) { return fetch(hUrl(what, kind, pid), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('no stored guide'); return json ? r.json() : r.text(); }); }
     return Promise.all([get('meta', true), get('titles', false)]).then(function (x) {
       var meta = x[0], text = x[1], map = {}, seen = new Map(), i = 0, n = text.length;
       while (i < n) {
@@ -466,18 +495,18 @@ var Epg = (function () {
     });
   }
   // What the helper has stored: the full guide when its signature is sig, else just when it was made.
-  function hCached(kind, sig) {
-    return hStatus(kind).then(function (st) {
+  function hCached(kind, sig, pid) {
+    return hStatus(kind, pid).then(function (st) {
       var at = st.stored;
       if (!at) return null;
       if (at.sig !== sig) return { sig: at.sig, at: at.at };
-      return hRead(kind);
+      return hRead(kind, pid);
     }).catch(function () { return null; });
   }
   // Start a load in the helper (or follow the one already running for this guide) until it is stored.
-  function hRun(kind, sig, msg, onProg, extra) {
-    var body = JSON.stringify({ pl: P().id, kind: kind, sig: sig, msg: msg, extra: extra || null });
-    return hStatus(kind).catch(function () { return {}; }).then(function (st) {
+  function hRun(kind, sig, msg, onProg, extra, pid) {
+    var body = JSON.stringify({ pl: pid || P().id, kind: kind, sig: sig, msg: msg, extra: extra || null });
+    return hStatus(kind, pid).catch(function () { return {}; }).then(function (st) {
       if (st.job && (st.phase === 'download' || st.phase === 'save') && st.job.sig === sig) return;   // the app restarted mid-load
       return fetch('http://127.0.0.1:' + Net.port + '/guide/load', { method: 'POST', body: body, headers: { 'Content-Type': 'application/json' } })
         .then(function (r) { return r.json(); }).then(function (j) { if (!j.ok) throw new Error(j.error || 'the helper could not load the guide'); });
@@ -485,11 +514,11 @@ var Epg = (function () {
       return new Promise(function (resolve, reject) {
         var misses = 0;
         (function poll() {
-          hStatus(kind).then(function (st) {
+          hStatus(kind, pid).then(function (st) {
             misses = 0;
             var jb = st.job || {};
             if (st.phase === 'download' || st.phase === 'save') { onProg(jb, st.phase); return setTimeout(poll, 600); }
-            if (st.phase === 'stored' && st.stored && st.stored.sig === sig) return resolve(hRead(kind));
+            if (st.phase === 'stored' && st.stored && st.stored.sig === sig) return resolve(hRead(kind, pid));
             if (st.phase === 'failed') return resolve({ failed: jb.error || 'every guide file failed', report: jb.report || [], map: {}, icons: {}, channels: [], matches: {}, pubMatch: {} });
             reject(new Error(jb.error || 'the guide did not load'));
           }, function () { if (++misses > 8) reject(new Error('the network helper stopped')); else setTimeout(poll, 1000); });
@@ -506,7 +535,7 @@ var Epg = (function () {
     var id = ch && epgId(ch), x = id && cache.get(id);
     if (!x || descWait[id]) return '';
     descWait[id] = 1;
-    fetch(hUrl('desc', PUB_ID.test(id) ? 'pub' : 'main') + '&id=' + encodeURIComponent(id), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (arr) {
+    fetch(hUrl('desc', PUB_ID.test(id) ? 'pub' : 'main', PUB_ID.test(id) ? '' : idPl[id]) + '&id=' + encodeURIComponent(id), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (arr) {
       var y = cache.get(id);
       if (y && y.list === x.list && Array.isArray(arr)) {
         for (var i = 0; i < x.list.length; i++) x.list[i].d = arr[i] || '';
@@ -547,24 +576,27 @@ var Epg = (function () {
       report: notice.report.concat(reports) });
   }
 
-  function loadXml(force, notice) {
-    var p = P(), srcs = sources();
+  /* p: whose guide (the first playlist's when not given).  Another playlist's guide is added beside the
+     first's (ingest), with its own crash guard ("main@<id>"). */
+  function loadXml(force, notice, p) {
+    p = p || P();
+    var first = p.id === P().id, srcs = sources(p), pid = first ? '' : p.id, gk = first ? 'main' : 'main@' + p.id;
     var ckey = 'epg:' + p.id;
     var sig = U.hash(JSON.stringify(srcs) + '|' + p.epgDays + '|' + p.nameMatch);
     return useHelper().then(function (h) {
       hMode = h;
       if (!h) return Store.idbGet(ckey);
       Store.idbSet(ckey, null);                                        // the helper keeps it now
-      return hCached('main', sig);
+      return hCached('main', sig, pid);
     }).then(function (c) {
       var hours = +p.epgRefresh, age = c ? Date.now() - c.at : Infinity;
-      var stale = !c || c.sig !== sig || (hours > 0 && age > hours * 3600e3) || (hours === -1 && !loadXml.didStart);
-      loadXml.didStart = true;
-      if (c && c.sig === sig) { ingest(c); xmlReady = true; emit(null); }
-      if (!stale && !force) { runSet('main', null); return; }     // a forced reload cut short: the cache is fine
-      var g = guard('main', sig, force); if (!g) return;
+      var stale = !c || c.sig !== sig || (hours > 0 && age > hours * 3600e3) || (hours === -1 && !(loadXml.didStart || {})[p.id]);
+      (loadXml.didStart = loadXml.didStart || {})[p.id] = true;
+      if (c && c.sig === sig) { ingest(c, p); xmlReady = true; emit(null); }
+      if (!stale && !force) { runSet(gk, null); return; }     // a forced reload cut short: the cache is fine
+      var g = guard(gk, sig, force); if (!g) return;
       paused = null;
-      return work(srcs, null, g, sig).then(function (res) {
+      return work(srcs, null, g, sig, null, p).then(function (res) {
         g.done();
         if (res.failed) {                                              // the helper kept the guide it had
           notice.kept = Object.keys(matched).length > 0;               // and it still has listings
@@ -579,7 +611,7 @@ var Epg = (function () {
         }
         setProgress(Object.assign({}, progress, { active: true, phase: 'save' }));
         res.at = res.at || Date.now(); res.sig = sig;
-        ingest(res); xmlReady = true;
+        ingest(res, p); xmlReady = true;
         if (!hMode) Store.idbSet(ckey, res);
         emit(null);
         rememberSizes(res.report);
@@ -599,18 +631,22 @@ var Epg = (function () {
     });
   }
 
-  function work(srcs, pub, g, sig, extra) {
+  // pl: whose guide (several playlists on): only that playlist's channels are looked for.
+  function work(srcs, pub, g, sig, extra, pl) {
+    pl = pl || P();
+    var mine = pl.id === P().id ? '' : pl.id;
     // Past programmes are only reachable on catch-up channels, so only those keep past days
     // (up to their catch-up length); the rest keep the last few hours.  On big playlists, where
     // most channels have no catch-up, this saves a large share of the TV's memory.
-    var days = +P().epgDays || 1;
+    var days = +pl.epgDays || 1;
     var ids = {}, names = {};
     function keep(map, k, c) { var p = c.arch ? Math.min(days, +c.arch || days) : 0; if (!(k in map) || map[k] < p) map[k] = p; }
     if (!pub) Library.data.channels.forEach(function (c) {
+      if ((c.p || '') !== mine) return;
       var m = Store.edits.epgMap[c.k];
       if (m) keep(ids, m, c);
       if (c.epg) keep(ids, c.epg, c);
-      if (P().nameMatch) { keep(names, norm(Library.name(c)), c); keep(names, norm(c.n), c); }
+      if (pl.nameMatch) { keep(names, norm(Library.name(c)), c); keep(names, norm(c.n), c); }
     });
     delete names[''];
     var now = Date.now();
@@ -640,7 +676,7 @@ var Epg = (function () {
         var x = { src: j.src || 1, of: j.of || srcs.length, host: j.host || '', bytes: j.bytes || 0, total: j.total || 0, est: !!j.est, programmes: j.programmes || 0, channels: j.channels || 0 };
         if (phase === 'save') { if (g) g.host(x.host); return setProgress(Object.assign(x, { active: true, phase: 'save', started: started })); }
         onProg(x);
-      }, extra).catch(function (e) { var m = (e && e.message) || 'the guide did not load'; return { failed: m, map: {}, icons: {}, channels: [], matches: {}, pubMatch: {}, report: [{ ok: false, error: m }] }; });
+      }, extra, pub ? '' : mine).catch(function (e) { var m = (e && e.message) || 'the guide did not load'; return { failed: m, map: {}, icons: {}, channels: [], matches: {}, pubMatch: {}, report: [{ ok: false, error: m }] }; });
     }
     return new Promise(function (res) {
       var w, url;
@@ -659,15 +695,26 @@ var Epg = (function () {
     });
   }
 
+  var statusOf = {};             // the other playlists' guide status, by playlist id
   function init(lib, force) {
-    cache.clear(); queue.length = 0; matched = {}; icons = {}; chList = []; status = { at: 0, sources: [] };
+    cache.clear(); queue.length = 0; matched = {}; icons = {}; chList = []; status = { at: 0, sources: [] }; idPl = {}; statusOf = {};
     pubMatched = {}; pubList = []; pubStatus = null; pubGen++;
     var srcs = sources(), pub = pubOn(), gen = pubGen;
-    xmlMode = srcs.length > 0 || pub; xmlReady = false;
+    // The other playlists that are on, with guide files of their own (several playlists on).
+    var more = (Store.loaded ? Store.loaded() : []).slice(1).filter(function (p) { return sources(p).length > 0; });
+    xmlMode = srcs.length > 0 || pub || more.length > 0; xmlReady = false;
     if (!xmlMode) { status.at = Date.now(); emit(null); return Promise.resolve(); }
     var first, notice = { gen: gen, fallback: pub, provider: srcs.length > 0 && srcs.every(function (s) { return !!s.provider; }) };
     if (srcs.length) first = loadXml(force, notice).catch(function () {});
     else { xmlReady = true; status.at = Date.now(); emit(null); first = Promise.resolve(); }
+    // One after the other: two big guides at once could run a TV out of memory.
+    more.forEach(function (p) {
+      first = first.then(function () {
+        if (gen !== pubGen) return;
+        var note = { gen: gen, fallback: false, provider: sources(p).every(function (s) { return !!s.provider; }) };
+        return loadXml(force, note, p).catch(function (e) { Log.warn('epg', 'The guide of ' + (p.name || 'another playlist') + ' did not load: ' + (e && e.message || e)); });
+      });
+    });
     loading = first.then(function () { return pub && gen === pubGen ? loadPub(gen).catch(function (e) { Log.warn('epg', 'Public guide failed: ' + (e && e.message || e)); }) : null; })
       .then(function () { if (gen === pubGen) finishGuideNotice(notice); loading = null; emit(null); });        // done: pages that say "loading now" redraw
     return loading;
@@ -678,7 +725,7 @@ var Epg = (function () {
   // Channels nothing else has a guide for.  Per-channel provider guides can't be checked ahead, so
   // a channel the provider gives a guide id to counts as covered there.
   function missing() {
-    var map = Store.edits.epgMap || {}, short = shortAllowed(), ev = typeof Events !== 'undefined';
+    var map = Store.edits.epgMap || {}, ev = typeof Events !== 'undefined';
     return Library.data.channels.filter(function (ch) {
       if (map[ch.k] && !PUB_ID.test(map[ch.k])) return false;
       if (Library.noGuide(ch)) return false;                    // no guide wanted
@@ -686,7 +733,7 @@ var Epg = (function () {
       if (id && live(id)) return false;
       // Per-channel provider guides can't be checked ahead, except for app channels (Pluto TV), whose
       // own guide is the better one anyway.
-      if (short && ch.epg && !(PubEpg.appId && PubEpg.appId(ch.epg))) return false;
+      if (ch.epg && shortAllowed(ch) && !(PubEpg.appId && PubEpg.appId(ch.epg))) return false;
       if (ev && Events.of(ch)) return false;
       return true;
     });
@@ -841,8 +888,11 @@ var Epg = (function () {
       if (!v.list) return;
       for (var i = 0; i < v.list.length; i++) { var p = v.list[i]; if (p.d && rx.test(p.d)) take(k, p, p.d); }
     });
-    var ask = !hMode ? Promise.resolve() : Promise.all(['main', 'pub'].map(function (kind) {
-      return fetch(hUrl('find', kind) + '&max=' + max + '&q=' + encodeURIComponent(JSON.stringify(words)), { cache: 'no-store' })
+    // Each loaded playlist's stored guide, and the public one.
+    var stores = [['main', ''], ['pub', '']].concat(Object.keys(statusOf).map(function (id) { return ['main', id]; }));
+    var ask = !hMode ? Promise.resolve() : Promise.all(stores.map(function (st) {
+      var kind = st[0];
+      return fetch(hUrl('find', kind, st[1]) + '&max=' + max + '&q=' + encodeURIComponent(JSON.stringify(words)), { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : []; }).then(function (arr) {
           (Array.isArray(arr) ? arr : []).forEach(function (x) { var c = cache.get(x.id); if (c && c.list && c.list[x.i]) take(x.id, c.list[x.i], x.d); });
         }, function () {});

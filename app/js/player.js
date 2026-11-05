@@ -129,12 +129,15 @@ var Player = (function () {
   }
 
   /* ---------- engines ---------- */
+  /* The playlist a stream belongs to: with several playlists on, its User-Agent goes with every
+     request (Net.wrap's pl), whatever host the segments come from. */
+  function plWrap() { return { pl: Store.plOf ? Store.plOf(cur && cur.ch) : Store.playlist }; }
   function hlsEngine(url, p, preview, fail, media, tracks) {
-    var live = cur.live && !cur.timeshift;
-    url = Net.wrap(url);
+    var live = cur.live && !cur.timeshift, pw = plWrap();
+    url = Net.wrap(url, pw);
     var h = new Hls({
       // Every playlist, key and segment request goes through the relay when it is in use.
-      xhrSetup: function (xhr, u) { xhr.open('GET', Net.wrap(u), true); },
+      xhrSetup: function (xhr, u) { xhr.open('GET', Net.wrap(u, pw), true); },
       debug: false, enableWorker: workerOk, lowLatencyMode: false, startFragPrefetch: true,
       liveSyncDurationCount: p.chase ? 2 : Math.round(U.clamp(p.prebuffer / 2 + 2, 3, 6)),
       liveMaxLatencyDurationCount: p.chase ? 5 : Infinity,
@@ -192,7 +195,7 @@ var Player = (function () {
 
   function tsEngine(url, p, preview, fail, media) {
     var live = cur.live || !!cur.timeshift;
-    url = Net.wrap(url);
+    url = Net.wrap(url, plWrap());
     var m = mpegts.createPlayer({ type: 'mpegts', isLive: live, url: url, hasAudio: true, hasVideo: true }, {
       enableWorker: workerOk, enableStashBuffer: true, stashInitialSize: p.stash * 1024,
       lazyLoad: false, deferLoadAfterSourceOpen: false, seekType: 'range',
@@ -237,9 +240,9 @@ var Player = (function () {
     // HTTPS on the TV's own player can fail on self-signed or unusual certificates, which IPTV
     // panels often have.  The helper accepts them and passes Range requests through for seeking.
     // A conversion link (conv) is the helper's already; its subtitles come from the movie itself.
-    var play = url;
-    if (conv) { url = conv.src; if ((/^https:/i.test(url) || Net.ua) && Net.active) url = Net.wrap(url); }
-    else if ((/^https:/i.test(url) || Net.ua) && Net.active) { url = Net.wrap(url); play = url; Log.info('player', 'TV player using the helper' + (Net.ua ? ' (custom User-Agent)' : ' for HTTPS')); }
+    var play = url, pw = plWrap(), ua = Net.uaFor ? Net.uaFor(pw.pl) : Net.ua;
+    if (conv) { url = conv.src; if ((/^https:/i.test(url) || ua) && Net.active) url = Net.wrap(url, pw); }
+    else if ((/^https:/i.test(url) || ua) && Net.active) { url = Net.wrap(url, pw); play = url; Log.info('player', 'TV player using the helper' + (ua ? ' (custom User-Agent)' : ' for HTTPS')); }
     function loadNative(resolved) { video.src = conv ? play : resolved; video.load(); }
     // Resolve the provider entry URL once. Both playback and subtitle ranges use
     // the same resulting session URL; opening the entry separately can evict video.

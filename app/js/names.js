@@ -176,7 +176,8 @@ var Names = (function () {
     var g = groupCleaner(cfg);
     return g ? g(s) : s;
   }
-  var cache = { sig: '', fn: null };
+  // A few compiled rule sets (several playlists on: each playlist's channels use its own rules).
+  var cache = { sig: '', fn: null }, more = {}, moreN = 0;
   function cfgOf() {
     var p = (typeof Store !== 'undefined' && Store.playlist) || {};
     return p.names || defaults();
@@ -184,7 +185,10 @@ var Names = (function () {
   function cleanerFor(cfg) {
     if (!cfg.enabled) return function (n) { return n || ''; };
     var sig = JSON.stringify(cfg);
-    if (sig !== cache.sig) { cache.sig = sig; cache.fn = compile(cfg); }
+    if (sig !== cache.sig) {
+      if (cache.fn) { if (moreN > 6) { more = {}; moreN = 0; } if (!more[cache.sig]) moreN++; more[cache.sig] = cache.fn; }
+      cache.sig = sig; cache.fn = more[sig] || compile(cfg);
+    }
     return cache.fn;
   }
 
@@ -198,7 +202,7 @@ var Names = (function () {
     cleanGroupWith: cleanGroupWith,
     cleanWith: function (cfg, n) { return cleanerFor(cfg)(n); },
     compile: compile,
-    invalidate: function () { cache.sig = ''; gcache.sig = ''; },
+    invalidate: function () { cache.sig = ''; cache.fn = null; more = {}; moreN = 0; gcache.sig = ''; },
     defaults: defaults,
     RULES: RULES,
     COUNTRY: COUNTRY,
