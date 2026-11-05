@@ -34,6 +34,8 @@
    STATS: KV namespace for those totals.  STATS_KEY: secret shared with the workflow and dashboard. */
 
 const PER_HOUR = 5, PER_DAY = 60, MAX_BODY = 400000, ISSUE_MAX = 62000;
+// The sizes a report is tried at, largest first, when GitHub turns a long one down (see report()).
+const SIZES = [ISSUE_MAX, 30000, 12000];
 const AREAS = ['The guide', 'Channels list or groups', 'Watching fullscreen (quick menu, info panel, zapping)', 'Catch-up', 'Movies and shows', 'Search',
   'Set-up tour', 'Settings', 'Channel logos', 'Reminders or parental controls', 'Web editor on a computer', 'Web editor on a phone or tablet',
   'Backup and restore', 'Updates', 'Something else'];
@@ -72,7 +74,7 @@ async function limited(env, ip) {
   return null;
 }
 
-function body(r) {
+function body(r, max) {
   const fence = s => '```text\n' + s.replace(/```/g, "'''") + '\n```';
   const head = [
     '### Where is the problem?', r.area, '',
@@ -88,7 +90,7 @@ function body(r) {
   const foot = '\n\n<sub>Sent from the TV with Report a problem, through the TiviBro report relay.  Logins and server names were masked on the TV and again here.</sub>';
   let text = head.join('\n');
   let log = r.log;
-  const room = ISSUE_MAX - text.length - foot.length - 200;
+  const room = (max || ISSUE_MAX) - text.length - foot.length - 200;
   let cut = '';
   if (log.length > room) { log = log.slice(log.length - room); log = log.slice(log.indexOf('\n') + 1); cut = 'The start of the log was cut to fit; this is the newest part.\n\n'; }
   text += '<details><summary>Full log (app and network helper)</summary>\n\n' + cut + fence(log) + '\n\n</details>' + foot;
@@ -112,12 +114,20 @@ async function report(request, env) {
   if (!/^# TiviBro problem report/.test(r.log)) return json({ error: 'That does not look like a TiviBro report.' }, 400);
   const why = await limited(env, request.headers.get('cf-connecting-ip') || 'unknown');
   if (why) return json({ error: why }, 429);
-  const res = await fetch('https://api.github.com/repos/' + env.REPO + '/issues', {
-    method: 'POST',
-    headers: { Authorization: 'Bearer ' + env.GITHUB_TOKEN, Accept: 'application/vnd.github+json', 'User-Agent': 'tivibro-report-relay', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title: '[Bug]: ' + quiet(r.title || r.area), body: body(r), labels: ['bug', 'triage', 'from-tv'] })
-  });
-  if (!res.ok) { const t = await res.text(); console.log('GitHub ' + res.status + ': ' + t.slice(0, 300)); return json({ error: 'GitHub did not take the report (' + res.status + ').  Please use the GitHub form.' }, 502); }
+  /* GitHub sometimes answers a long report with 500 (issue #53: the phone app showed "GitHub did not take
+     the report (500)") or 422.  Asked again with less of the log (the newest part is kept), the report goes
+     through; only after that does it say so. */
+  let res = null;
+  for (const max of SIZES) {
+    res = await fetch('https://api.github.com/repos/' + env.REPO + '/issues', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + env.GITHUB_TOKEN, Accept: 'application/vnd.github+json', 'User-Agent': 'tivibro-report-relay', 'X-GitHub-Api-Version': '2022-11-28', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: '[Bug]: ' + quiet(r.title || r.area), body: body(r, max), labels: ['bug', 'triage', 'from-tv'] })
+    });
+    if (res.ok || !(res.status >= 500 || res.status === 422)) break;
+    console.log('GitHub ' + res.status + ' with a ' + max + ' character report; trying a shorter one: ' + (await res.text()).slice(0, 200));
+  }
+  if (!res.ok) { const t = await res.text().catch(() => ''); console.log('GitHub ' + res.status + ': ' + t.slice(0, 300)); return json({ error: 'GitHub did not take the report (' + res.status + ').  Please try again in a few minutes, or use the GitHub form.' }, 502); }
   const issue = await res.json();
   return json({ ok: true, url: issue.html_url, number: issue.number, key: await reportKey(env, issue.number) });
 }
@@ -187,13 +197,20 @@ async function followup(request, env) {
   const issue = await st.json();
   if (!(issue.labels || []).some(l => (l.name || l) === 'from-tv')) return json({ error: 'That report is not from a TV.' }, 403);
   const fence = s => '```text\n' + s.replace(/```/g, "'''") + '\n```';
-  let log = r.log, cut = '';
-  const room = ISSUE_MAX - 3000;
-  if (log.length > room) { log = log.slice(log.length - room); log = log.slice(log.indexOf('\n') + 1); cut = 'The start of the log was cut to fit; this is the newest part.\n\n'; }
-  const text = [FOLLOW_MARK, '### Still happening', '', quiet(r.what) || '_No note_', '', 'TiviBro ' + r.version + (r.tv ? ' on ' + r.tv : '') + '.', '',
-    '<details><summary>Log from now (app and network helper)</summary>', '', cut + fence(log), '', '</details>', '',
-    '<sub>Sent from the TV with Still happening, through the TiviBro report relay.  Logins and server names were masked on the TV and again here.</sub>'].join('\n');
-  const c = await gh(env, '/issues/' + n + '/comments', { method: 'POST', body: JSON.stringify({ body: text }) });
+  const textAt = (max) => {
+    let log = r.log, cut = '';
+    const room = max - 3000;
+    if (log.length > room) { log = log.slice(log.length - room); log = log.slice(log.indexOf('\n') + 1); cut = 'The start of the log was cut to fit; this is the newest part.\n\n'; }
+    return [FOLLOW_MARK, '### Still happening', '', quiet(r.what) || '_No note_', '', 'TiviBro ' + r.version + (r.tv ? ' on ' + r.tv : '') + '.', '',
+      '<details><summary>Log from now (app and network helper)</summary>', '', cut + fence(log), '', '</details>', '',
+      '<sub>Sent from the TV with Still happening, through the TiviBro report relay.  Logins and server names were masked on the TV and again here.</sub>'].join('\n');
+  };
+  let c = null;
+  for (const max of SIZES) {
+    c = await gh(env, '/issues/' + n + '/comments', { method: 'POST', body: JSON.stringify({ body: textAt(max) }) });
+    if (c.ok || !(c.status >= 500 || c.status === 422)) break;
+    console.log('GitHub ' + c.status + ' with a ' + max + ' character follow-up; trying a shorter one');
+  }
   if (!c.ok) { console.log('GitHub ' + c.status + ': ' + (await c.text()).slice(0, 300)); return json({ error: 'GitHub did not take it (' + c.status + ').' }, 502); }
   const made = await c.json();
   if (issue.state === 'closed') await gh(env, '/issues/' + n, { method: 'PATCH', body: JSON.stringify({ state: 'open' }) });

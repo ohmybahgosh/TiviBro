@@ -773,6 +773,16 @@ var Player = (function () {
         if (pr && pr.catch) pr.catch(function () {});
       } else if (now - st.at > (cur.swapFrom && !cur.swapPlayed ? 8000 : 15000 + need * 1000)) {
         Log.warn('player', 'No playable video after ' + (now - st.at) + 'ms (readyState ' + video.readyState + ', buffered ' + ahead.toFixed(1) + 's)');
+        /* No picture twice in a row on one pipeline is the stream's format, not the connection (issue #53: a
+           channel whose sound only the TV's own player could play took nine tries, two and a half minutes,
+           before TiviBro tried another pipeline).  The next one is tried straight away; whichever plays is
+           remembered for the channel (playmemo.js). */
+        cur.noPic = cur.noPic || {};
+        cur.noPic[st.kind] = (cur.noPic[st.kind] || 0) + 1;
+        if (cur.noPic[st.kind] >= 2 && !cur.swapFrom) {
+          var np = lateEngine(st.kind);
+          if (np) { Log.info('player', 'No picture twice on the ' + ENGINE_NAMES[st.kind] + '; trying the ' + ENGINE_NAMES[np]); useEngine(np); cur.retries = Math.max(0, cur.retries - 2); }
+        }
         reconnect(myToken, 'No video yet, retrying');
       }
       return;

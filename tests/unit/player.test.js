@@ -149,6 +149,15 @@ ok('an HLS version that is not there sends it back to MPEG-TS at once', t.logs.s
 ok('then keeps retrying slowly with a message, not an error', /still trying/i.test(t.states[t.states.length - 1]) || t.logs.some(l => /retrying every 15s/.test(l)), t.states[t.states.length - 1]);
 ok('no error state yet', !t.states.some(s => /^error/.test(s)));
 
+// ---- issue #53: no picture twice on one pipeline moves to the next one, not nine reconnects later ----
+t = setup();
+t.P.play({ n: 'Odd', url: 'http://p/live/u/p/53.ts' });
+t.run(45000);
+ok('no picture twice on the demuxer tries the TV player', t.logs.some(l => /No picture twice on the built-in demuxer; trying the TV player/.test(l)), t.logs.filter(l => /No playable|No picture/.test(l)).join(' | '));
+ok('and the TV player gets the stream', t.video._src === 'http://p/live/u/p/53.ts', t.video._src);
+{ const at = t.logs.findIndex(l => /No picture twice/.test(l));
+  ok('after only two no-picture timeouts', at > 0 && t.logs.slice(0, at).filter(l => /No playable video/.test(l)).length === 2, at); }
+
 // ---- a channel that never played gives up with a clear error ----
 t = setup({ settings: { buffer: 'custom', custom: { prebuffer: 1, ahead: 10, back: 4, stall: 4, retries: 1 } } });
 t.P.play({ n: 'D', url: 'http://p/live/u/p/5.ts' });

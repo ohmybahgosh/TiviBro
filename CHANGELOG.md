@@ -7,6 +7,8 @@
 - **Restore points say which playlists they cover, and restore only those.**  A restore point made with several playlists on puts back each of their edits; a playlist turned on since keeps its own, and one that is off now is left alone (the restore says so).  Drafts sent from the web editor work the same way.
 - **Safer with big playlists side by side.**  A playlist that can't fit beside the others is no longer read into memory just to be left out, a big playlist leaves the lists while it reloads on a TV in memory-safe mode (and comes back from its kept copy if the reload fails), and Movies and Shows load another playlist's titles only up to a limit (60,000 in memory-safe mode).
 - **When the first playlist can't load at start-up, another one can be made first** from the screen that says so, instead of only the setup screen.
+- **A channel that only plays on another engine gets there sooner.**  When a channel gives no picture twice in a row on one engine, the next engine is tried instead of reconnecting the same way up to nine times (issue #53).
+- **Long problem reports reach GitHub.**  When GitHub turns a long report down (the "GitHub did not take the report (500)" message in the phone app), it is sent again with less of the log, so it still goes through.
 
 ## 0.6.0 (alpha 87, 2026-11-05)
 

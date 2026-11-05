@@ -19,7 +19,7 @@ globalThis.fetch = async (url, o = {}) => {
   calls.push(m + ' ' + p);
   const j = (b, s) => new Response(JSON.stringify(b), { status: s || 200, headers: { 'Content-Type': 'application/json' } });
   let x;
-  if (m === 'POST' && p === '/issues') { const i = issues[nextIssue]; return j(i, 201); }
+  if (m === 'POST' && p === '/issues') { if (JSON.parse(o.body).body.length > (globalThis.GH_MAX || 1e9)) return j({ message: 'Server Error' }, 500); const i = issues[nextIssue]; return j(i, 201); }
   if ((x = /^\/issues\/(\d+)$/.exec(p))) {
     const i = issues[x[1]]; if (!i) return j({ message: 'Not Found' }, 404);
     if (m === 'PATCH') { Object.assign(i, JSON.parse(o.body)); return j(i); }
@@ -75,6 +75,17 @@ ok('the relay\'s own comment is not "a reply from the developer"', s.issues[0].r
 for (let i = 0; i < 6; i++) r = await post('/followup', { n: 7, key, what: 'x', version: '0.6.0-alpha.56', log: LOG }, '3.3.3.3');
 ok('follow-ups share the hourly limit', r.status === 429);
 ok('no token or key leaks into answers', !JSON.stringify(await get('/status?n=7')).includes('ghp_test'));
+
+// 6. GitHub turning a long report down with 500 (issue #53): asked again with less of the log, it goes through.
+globalThis.GH_MAX = 35000; calls = [];
+const big = LOG + '\n' + Array.from({ length: 3000 }, (_, i) => '10:0' + (i % 10) + ':00  WARN  player  line ' + i + ' of a long log').join('\n');
+r = await (await post('/report', { title: 'Long one', area: 'The guide', what: 'it froze', version: '0.6.0-alpha.87', tv: 'OLED', log: big }, '9.9.9.9')).json();
+ok('a long report GitHub refuses with 500 is sent again shorter, keeping the newest lines', r.ok && calls.filter(c => c === 'POST /issues').length === 2, JSON.stringify(r) + ' ' + calls.join(','));
+globalThis.GH_MAX = 100; calls = [];
+const res2 = await post('/report', { title: 'Never', area: 'The guide', what: 'it froze', version: '0.6.0-alpha.87', tv: 'OLED', log: big }, '9.9.9.8');
+r = await res2.json();
+ok('if GitHub keeps refusing, it says so after three tries', res2.status === 502 && /GitHub did not take the report \(500\)/.test(r.error) && calls.filter(c => c === 'POST /issues').length === 3, JSON.stringify(r));
+globalThis.GH_MAX = 0;
 
 console.log(fails ? fails + ' FAILED' : 'all relay follow-up checks passed');
 process.exit(fails ? 1 : 0);
