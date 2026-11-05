@@ -97,6 +97,19 @@ const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playl
   await ev((b4) => { Store.playlist.names.prefixes = b4; Store.upsertPlaylist(Store.playlist); Names.invalidate(); }, before);
   r = await sa({ op: 'answer', sec: 'names', path: [], dialog: 'd999', value: 'x' }).catch((e) => e);
   ok('a stale answer is refused', r instanceof Error || /stopped waiting/.test(r && r.msg || ''), String(r && (r.message || JSON.stringify(r))));
+  // OpenSubtitles set up from the phone: the same steps come to the phone, and an answer after a while still counts.
+  await ev(() => Subs.setKey(''));
+  const os = (await sa({ op: 'page', sec: 'playback', path: [] })).rows.find((x) => /^Set up OpenSubtitles/.test(x.label));
+  r = await sa({ op: 'action', sec: 'playback', path: [], i: os.i });
+  ok('OpenSubtitles setup comes to the phone, step 1', r.dialog && r.dialog.kind === 'menu' && /step 1 of 3/.test(r.dialog.title), JSON.stringify(r).slice(0, 300));
+  r = await sa({ op: 'answer', sec: 'playback', path: [], dialog: r.dialog.id, choice: r.dialog.items.findIndex((x) => /I have an account/.test(x.label)) });
+  await ev(() => Settings.phone._timeout());
+  r = await sa({ op: 'answer', sec: 'playback', path: [], dialog: r.dialog.id, choice: r.dialog.items.findIndex((x) => /I see my API key/.test(x.label)) });
+  ok('step 2 answered after the TV stopped waiting still goes on to step 3', r.dialog && r.dialog.kind === 'prompt' && /step 3 of 3/.test(r.dialog.title) && r.dialog.secret, JSON.stringify(r).slice(0, 300));
+  r = await sa({ op: 'answer', sec: 'playback', path: [], dialog: r.dialog.id, cancel: true });
+  // Add playlist… opens the web editor's Add a playlist on the phone.
+  const ap = (await sa({ op: 'page', sec: 'playlists', path: [] })).rows.find((x) => /^Add playlist/.test(x.label));
+  ok('Add playlist on the phone opens the web editor\'s Playlists page', ap && ap.phone === 'editor' && ap.epage === 'playlists', JSON.stringify(ap));
   // An answer after the TV stopped waiting (someone took minutes to copy an API key): asked again behind the scenes, and used.
   r = await sa({ op: 'action', sec: 'names', path: [], i: np.i });
   await ev(() => Settings.phone._timeout());

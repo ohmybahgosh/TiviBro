@@ -73,6 +73,7 @@ kbd{font:12px ui-monospace,Menlo,monospace;background:var(--raised);border:1px s
 .login p{color:var(--muted);margin:0 0 20px}
 .login input{width:100%;font-size:24px;letter-spacing:4px;text-transform:uppercase;text-align:center;margin-bottom:12px}
 /* Show sits inside the box's right end.  .login button is full width, so it is undone here (discussion #36: Show covered the box on a phone). */
+@media (max-width:700px){ #addSeg.addseg{display:none} }
 .pwwrap{position:relative;margin-bottom:12px}.login .pwwrap input{padding-right:72px;margin-bottom:0}.login .pwshow,.pwshow{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:auto;padding:6px 10px;font-size:13px}
 .login button{width:100%;padding:11px}
 .err{color:#ff9a9d;min-height:22px;margin-top:10px}
@@ -710,9 +711,10 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
         <div class="note">Logins never reach this page: playlists show only their server name.  The TV tests a new login before it saves it.  <a href="#help/playlists">Learn more</a></div>
         <div class="grid plgrid" id="plList"></div>
         <div class="card" style="margin-top:18px;max-width:760px">
-          <div class="row"><h3 class="grow" style="margin:0">Add a playlist</h3><div class="seg" id="addSeg"><button data-t="link" class="on">Full link</button><button data-t="xtream">Xtream Codes</button><button data-t="m3u">M3U</button></div></div>
+          <div class="row"><h3 class="grow" style="margin:0">Add a playlist</h3><div class="seg addseg" id="addSeg"><button data-t="link" class="on">Full link</button><button data-t="xtream">Xtream Codes</button><button data-t="m3u">M3U</button></div></div>
           <p style="margin-top:8px">The TV logs in and loads the channel list before saving, so you know it works.</p>
           <form id="addForm" class="form">
+            <label class="f full">Playlist type<select id="aTypeSel"><option value="link">Paste the full link from your provider</option><option value="xtream">Xtream Codes (server, username, password)</option><option value="m3u">M3U playlist address</option></select></label>
             <label class="f full">Name (optional)<input id="aName" type="text" placeholder="e.g. Living room provider"></label>
             <label class="f full lnk">Full link<input id="aLink" type="url" autocomplete="off" placeholder="http://provider.com:8080/get.php?username=…&password=…&type=m3u_plus"></label>
             <div class="full lnk muted small" id="aLinkNote">Paste the whole link your provider sent, the long one with username and password in it (it often has get.php).  TiviBro fills in the server, username and password for you.</div>
@@ -3377,11 +3379,14 @@ var addType = 'link';
 function addTypeTo(t) {
   addType = t;
   document.querySelectorAll('#addSeg button').forEach(function (b) { b.classList.toggle('on', b.dataset.t === t); });
+  if ($('aTypeSel').value !== t) $('aTypeSel').value = t;
   document.querySelectorAll('#addForm .lnk').forEach(function (x) { x.classList.toggle('hidden', t !== 'link'); });
   document.querySelectorAll('#addForm .xc').forEach(function (x) { x.classList.toggle('hidden', t !== 'xtream'); });
   document.querySelectorAll('#addForm .m3u').forEach(function (x) { x.classList.toggle('hidden', t !== 'm3u'); });
 }
 $('addSeg').addEventListener('click', function (e) { var t = e.target.dataset.t; if (t) addTypeTo(t); });
+// The type as a plain list too (a phone showed the three buttons as tabs nobody noticed).
+$('aTypeSel').addEventListener('change', function () { addTypeTo(this.value); });
 var LINK_HELP = $('aLinkNote').textContent;
 function linkHost(u) { var m = /^https?:\/\/([^\/?#]+)/i.exec(u || ''); return m ? m[1] : u; }
 $('aLink').addEventListener('input', function () {

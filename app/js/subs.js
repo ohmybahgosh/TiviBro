@@ -56,6 +56,54 @@ var Subs = (function () {
     return token().then(function (t) { if (!t) throw new Error('OpenSubtitles did not accept that username and password.'); return state.allowed; });
   }
 
+  /* ---------- setting it up, step by step ----------
+     For anyone, on the TV or from the phone app's Settings (the same menus come to the phone): an account,
+     a key for TiviBro (what to tick on the form), paste it, a quick check that OpenSubtitles takes it, then
+     an optional sign-in.  Coming back within half an hour carries on at the same step, so someone who left
+     the menu open while making the key, or answered from the phone after a while, isn't sent back to the start. */
+  var guideStep = 1, guideAt = 0;
+  function setup(step, after) {
+    if (!step) step = Date.now() - guideAt < 1800000 ? guideStep : 1;
+    guideStep = step; guideAt = Date.now();
+    var go = function (n) { return function () { setup(n, after); }; }, again = go(step);
+    if (step === 1) return UI.menu('Set up OpenSubtitles, step 1 of 3: a free account', [
+      { label: 'On your phone or computer, open opensubtitles.com', sub: 'The .com site (not the old .org one).  Press Sign up, and confirm the email they send.', action: again },
+      { label: 'I have an account', sub: 'Next: make a key for TiviBro', action: go(2) },
+      { label: 'Not now', sub: 'Carry on later from Settings > Playback' }
+    ]);
+    if (step === 2) return UI.menu('Set up OpenSubtitles, step 2 of 3: a key for TiviBro', [
+      { label: 'Signed in, open opensubtitles.com/consumers', sub: 'It is also in your profile, under API consumers.  Press New consumer.', action: again },
+      { label: 'Name: TiviBro.  Keep "Allow anonymous downloads" ticked', sub: '"Under dev" can be ticked too: it allows 100 downloads a day.  Press Save.', action: again },
+      { label: 'I see my API key', sub: 'Next: paste it into TiviBro', action: go(3) },
+      { label: 'Back', action: go(1) }
+    ]);
+    if (step === 3) return UI.prompt('Set up OpenSubtitles, step 3 of 3: paste the API key', '', function (k) {
+      if (!String(k || '').trim()) return setup(2, after);
+      try { setKey(k); } catch (e) { U.toast(e.message, 7000); return setup(3, after); }
+      U.toast('Checking the key with OpenSubtitles…', 4000);
+      ask('search', { key: state.key, token: '', query: 'the matrix', year: '1999', type: 'movie', langs: ['en'] }, 20000).then(function () {
+        guideStep = 4; guideAt = Date.now(); setup(4, after);
+      }, function (e) {
+        if (/refused the API key/.test(e.message)) { setKey(''); U.toast('OpenSubtitles didn\'t take that key.  Copy it again (the long code under API key) and paste it once more.', 8000); return setup(3, after); }
+        Log.warn('subs', 'Could not check the key: ' + e.message);
+        setup(4, after);                                  // no answer just now: keep it, it's checked on the first search
+      });
+    }, 'The long code under "API key" on that page.  Typing it from the TiviBro phone app is easiest: Settings > Playback.', true, 'Save');
+    guideStep = 1; guideAt = 0;
+    UI.menu('OpenSubtitles is set up', [
+      { label: 'Sign in for more downloads (optional)', sub: 'Without signing in: 5 a day (100 with "Under dev" ticked).  Signed in with your free account: 20.', action: function () {
+        UI.prompt('OpenSubtitles username', state.user || '', function (u) {
+          if (!u.trim()) { if (after) after(); return; }
+          UI.prompt('Password for ' + u.trim(), '', function (p) {
+            U.toast('Signing in…');
+            signIn(u, p).then(function (n) { U.toast('Signed in' + (n ? ': ' + n + ' downloads a day' : ''), 5000); if (after) after(); }, function (e) { U.toast(e.message, 6000); if (after) after(); });
+          }, 'Kept on this TV only, to sign in again each day.', true);
+        }, 'The one you signed up with.');
+      } },
+      { label: 'Done', sub: 'Find subtitles is in Subtitles while a movie or episode plays', action: function () { if (after) after(); } }
+    ]);
+  }
+
   /* ---------- what's playing ---------- */
   // "EN - The Matrix (1999) [4K]" -> "The Matrix"
   function clean(t) {
@@ -333,8 +381,8 @@ var Subs = (function () {
   function find(meta) {
     if (!state.key) {
       UI.menu('Find subtitles', [
-        { label: 'Add your OpenSubtitles API key first', sub: 'Free: sign up at opensubtitles.com, then Profile > API consumers > New consumer.  Then Settings > Playback > Subtitles from OpenSubtitles.' },
-        { label: 'Open Settings', action: function () { Views.runAction('exit', 'player'); Views.switchTab('settings'); Settings.section('playback'); } }
+        { label: 'Set up OpenSubtitles first', sub: 'Free, about two minutes, step by step: an account, a key for TiviBro, and you\'re done.', action: function () { setup(1, function () { find(meta); }); } },
+        { label: 'Not now' }
       ]);
       return;
     }
@@ -496,7 +544,7 @@ var Subs = (function () {
       (!want || U.lang(t.language || t.label) === want));
   }
 
-  return { find: find, gone: gone, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, keptCount: keptCount, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
+  return { find: find, gone: gone, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, keptCount: keptCount, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
     get delay() { return delay; }, get rate() { return rate; }, get timing() { return timingSummary(); }, setRate: setRate, draw: drawLines, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
     _test: { listed: listed, shortName: shortName, keep: keep, parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
 })();

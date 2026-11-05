@@ -45,9 +45,22 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('Subtitles: a Settings heading above Find subtitles, an In this movie heading above what the movie has', JSON.stringify(await heads()) === '["Settings","In this movie"]' && /^# Settings,Find subtitles…,# In this movie,No subtitles in this video$/.test((await rows()).join(',')), (await rows()).join(','));
   await pick('^Find subtitles');
   m = await modal();
-  ok('without a key it says where to add one', /Add your OpenSubtitles API key first/.test(m) && /API consumers/.test(m), m);
-  await ev(() => Subs.setKey('a'.repeat(32)));
-  await subsMenu(); await pick('^Find subtitles');
+  ok('without a key it offers the step-by-step setup', /Set up OpenSubtitles first/.test(m) && /step by step/.test(m), m);
+  // The setup, step by step: an account, a key (what to tick), paste it, checked with OpenSubtitles, done.
+  await pick('^Set up OpenSubtitles first');
+  m = await modal();
+  ok('setup step 1: a free account on opensubtitles.com', /step 1 of 3/.test(m) && /opensubtitles\.com/.test(m) && /I have an account/.test(m), m);
+  await pick('^I have an account');
+  m = await modal();
+  ok('setup step 2: the consumers page, the name and what to tick', /step 2 of 3/.test(m) && /opensubtitles\.com\/consumers/.test(m) && /Allow anonymous downloads/.test(m) && /Under dev/.test(m), m);
+  await pick('^I see my API key');
+  m = await modal();
+  ok('setup step 3: paste the key (hidden as typed)', /step 3 of 3/.test(m) && await page.locator('#modal input').getAttribute('type') === 'password', m);
+  await page.locator('#modal input').fill('a'.repeat(32)); await page.keyboard.press('Enter');
+  await page.waitForFunction(() => /is set up/.test((document.getElementById('modalTitle') || {}).textContent || ''), null, { timeout: 15000 }).catch(() => {});
+  m = await modal();
+  ok('the key is checked with OpenSubtitles, then it is set up, with an optional sign-in', /OpenSubtitles is set up/.test(m) && /Sign in for more downloads/.test(m) && await ev(() => Subs.configured), m);
+  await pick('^Done');
   m = await modal();
   ok('the search is filled in from what is playing, in your languages', /Search for "Feature Presentation"\s+\(2024\)/.test(m) && /English, Spanish/.test(m), m);
   await shot('tv-subs-find');

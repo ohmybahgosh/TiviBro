@@ -117,7 +117,9 @@ var Settings = (function () {
     out.push(head('Subtitles from OpenSubtitles'));
     out.push(action('Subtitle languages', 'For Find subtitles (Subtitles in a movie or show\'s menu).  Several at once: English and Spanish (Latin America), say.', function () { Subs.langMenu(function () { build(); }); },
       function () { return Subs.langs().map(Subs.langName).join(', '); }));
-    out.push(action(Subs.configured ? 'OpenSubtitles API key saved' : 'Add your OpenSubtitles API key', 'Free: sign up at opensubtitles.com, then Profile > API consumers > New consumer, and copy its key here.  It stays on this TV, out of backups.', function () {
+    // Not set up yet: the step-by-step setup (subs.js setup()), which also comes to the phone app.
+    if (!Subs.configured) out.push(action('Set up OpenSubtitles (step by step)', 'Free, about two minutes: an account, a key for TiviBro, and you\'re done.  Easiest with the TiviBro phone app open on this page.', function () { Subs.setup(0, function () { build(); }); }, function () { return 'Not set up'; }));
+    else out.push(action('OpenSubtitles API key saved', 'Select to replace it.  It stays on this TV, out of backups.', function () {
       UI.prompt('OpenSubtitles API key', '', function (k) { try { Subs.setKey(k); U.toast(k.trim() ? 'API key saved' : 'API key removed'); build(); } catch (e) { U.toast(e.message, 7000); } }, 'Empty removes it.  Typing is easier from the phone app.', true);
     }, function () { return Subs.configured ? 'Saved' : 'Not set'; }));
     out.push(choice('Keep downloaded subtitles', 'A movie or episode you come back to gets its subtitles and timing again, without another download.  Kept on this TV only.', [0, 1, 3, 7], ['Off', '1 day', '3 days', 'A week'],
@@ -263,7 +265,9 @@ var Settings = (function () {
       out.push(page(p.name || (p.type === 'xtream' ? p.user : 'M3U'), [Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist', active ? 'in use, ' + L.count() + ' channels' : ''].filter(Boolean).join('   '),
         p.name || 'Playlist', function () { return playlistPage(p); }));
     });
-    out.push(action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.  Adding one from the phone app is easier: share your provider\'s link to it.', function () { App.setup('new'); }));
+    // From the phone app: the web editor's Add a playlist form, with a real keyboard and a type to pick.
+    var addPl = phoneDoes('editor', action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.  Adding one from the phone app is easier: share your provider\'s link to it.', function () { App.setup('new'); }));
+    addPl.epage = 'playlists'; out.push(addPl);
     out.push(info('The guide, names and channels of the playlist in use are under Guide, Channel and group names, and Channels and groups.', ''));
     return out;
   }
