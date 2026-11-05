@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 86, 2026-11-05)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 86
 
 - **Find subtitles searches each language on its own** (discussion #19, thanks ich0x).  OpenSubtitles answers 50 results at a time, most downloaded first, so English and Spanish together came back as 49 English and one Spanish.  Each language is now asked separately and shown under its own heading, up to 25 each, best match first: the right year (or season and episode), then the release name closest to what is playing (1080p, WEB, BluRay, the group), then trusted uploaders and downloads.  Machine translations go last.
 - **The downloads and frame rate always show under a result.**  A long release name squeezed them out; names are now cut in the middle and the details sit on their own line.
 
-## 0.6.0 (alpha 85, 2026-11-04)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 85
+### In alpha 85
 
 - **A channel whose picture keeps freezing switches to its other format.**  Some live channels' MPEG-TS freezes the picture for seconds at a time with plenty buffered (timestamp jumps in the stream), whatever the buffer profile.  The first freeze is nudged as before; the second within 10 minutes, even after switching away and back, tries the channel's HLS version (or MPEG-TS, from HLS), and TiviBro remembers which one held up.
 - **The screensaver stays off while you watch, also right after an update.**  webOS often starts TiviBro twice within a second, and the second start found its screensaver request still held by the first ("The client is already registered"), so the screensaver could come on over a channel.  It now asks again under a name of its own.
