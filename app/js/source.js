@@ -327,25 +327,27 @@ var Source = (function () {
     return ch.url + (ch.url.indexOf('?') < 0 ? '?' : '&') + 'utc=' + utc + '&lutc=' + now;   // "shift"
   }
 
-  /* ---------- VOD (Xtream) ---------- */
-  function vodCats(kind) { return U.getJSON(api(Store.playlist, kind === 'series' ? 'get_series_categories' : 'get_vod_categories'), 30000); }
-  function vodList(kind) { return U.getJSON(api(Store.playlist, kind === 'series' ? 'get_series' : 'get_vod_streams'), 90000); }
+  /* ---------- VOD (Xtream) ----------
+     p: the playlist the title is from (several playlists on, Vod passes it); the first playlist when not given. */
+  function P(p) { return p || Store.playlist; }
+  function vodCats(kind, p) { return U.getJSON(api(P(p), kind === 'series' ? 'get_series_categories' : 'get_vod_categories'), 30000); }
+  function vodList(kind, p) { return U.getJSON(api(P(p), kind === 'series' ? 'get_series' : 'get_vod_streams'), 90000); }
   /* An M3U playlist's movies and shows are kept by the network helper (service/vod.js): it answers a show's
      episodes in the shape of Xtream's get_series_info, with each episode's link, and a movie's link. */
-  function m3uVod() { var p = Store.playlist; return p && p.type === 'm3u' && p.vod && p.vod.m3u; }
-  function helperVod(op, id) {
+  function m3uVod(p) { p = P(p); return p && p.type === 'm3u' && p.vod && p.vod.m3u; }
+  function helperVod(op, id, p) {
     if (!(Net.active && Net.port)) return Promise.reject(new Error('Movies and shows from an M3U list need the network helper.'));
-    return viaHelper('/vod/m3u', { pl: Store.playlist.id, op: op, id: String(id) }).then(function (j) {
+    return viaHelper('/vod/m3u', { pl: P(p).id, op: op, id: String(id) }).then(function (j) {
       if (j._status !== 200) throw new Error(j.error || 'HTTP ' + j._status);
       return j;
     });
   }
-  function vodInfo(id) { return m3uVod() ? Promise.resolve({ info: {} }) : U.getJSON(api(Store.playlist, 'get_vod_info', '&vod_id=' + id), 15000); }
-  function seriesInfo(id) { return m3uVod() ? helperVod('series', id) : U.getJSON(api(Store.playlist, 'get_series_info', '&series_id=' + id), 20000); }
+  function vodInfo(id, p) { return m3uVod(p) ? Promise.resolve({ info: {} }) : U.getJSON(api(P(p), 'get_vod_info', '&vod_id=' + id), 15000); }
+  function seriesInfo(id, p) { return m3uVod(p) ? helperVod('series', id, p) : U.getJSON(api(P(p), 'get_series_info', '&series_id=' + id), 20000); }
   // The link to play a movie: built from the login, or for an M3U list the one the list gave.
-  function movieLink(id, ext) { return m3uVod() ? helperVod('url', id).then(function (j) { return j.url; }) : Promise.resolve(movieUrl(id, ext)); }
-  function movieUrl(id, ext) { var p = Store.playlist; return base(p.server) + '/movie/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
-  function episodeUrl(id, ext) { var p = Store.playlist; return base(p.server) + '/series/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
+  function movieLink(id, ext, p) { return m3uVod(p) ? helperVod('url', id, p).then(function (j) { return j.url; }) : Promise.resolve(movieUrl(id, ext, p)); }
+  function movieUrl(id, ext, p) { p = P(p); return base(p.server) + '/movie/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
+  function episodeUrl(id, ext, p) { p = P(p); return base(p.server) + '/series/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
 
   return { load: load, busy: busy, stop: stop, get loading() { return Object.keys(running).length > 0; }, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
     catchupUrl: catchupUrl, setTz: setTz,

@@ -271,7 +271,7 @@ var Teams = (function () {
       playing(r.d, ctx, false, p.t).forEach(function (x) { if (x._full || CODES[x.league].test(norm(ctx + ' ' + r.d))) take(c, p, x); });
     });
     // Event channels: the game is in the channel name.
-    if (Events.on()) for (i = 0; i < all.length; i++) {
+    if (Events.onAny ? Events.onAny() : Events.on()) for (i = 0; i < all.length; i++) {
       var c = all[i], ev = Events.of(c);
       if (!ev || ev.end <= now || ev.start > to) continue;
       // Only a time in the name ("Vikings @ Lions 1:00 PM") means today's game.  Long over, the name reads

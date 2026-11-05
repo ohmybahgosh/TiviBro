@@ -43,12 +43,13 @@ var Views = (function () {
   // Movies and Shows appear only when this playlist actually has them (checked in the background).
   function buildTabs() {
     tabs = home() === 'live' ? ['live', 'guide'] : channelsInMenu() ? ['guide', 'live'] : ['guide'];
-    var pl = Store.playlist, v = pl.vod || {};
     // Movies on now (onnow.js): in the menu while a TMDB token is saved and movie details are on.
     if (typeof Movies !== 'undefined' && Movies.on()) tabs.push('onnow');
-    // Movies and Shows: an Xtream login's, or an M3U list's own (Vod.m3u: kept by the network helper).
-    if ((pl.type === 'xtream' || v.m3u) && v.movies) tabs.push('movies');
-    if ((pl.type === 'xtream' || v.m3u) && v.series) tabs.push('shows');
+    // Movies and Shows: an Xtream login's, or an M3U list's own (Vod.m3u: kept by the network helper);
+    // several playlists on: any of them (Vod.offered).
+    var vk = Vod.offered();
+    if (vk.indexOf('movie') >= 0) tabs.push('movies');
+    if (vk.indexOf('series') >= 0) tabs.push('shows');
     // My media: in the menu once a media source is added (Settings > My media is the way in before that).
     if (typeof MediaStore !== 'undefined' && MediaStore.sources().length) tabs.push('media');
     tabs.push('search', 'editor', 'settings');
@@ -1112,7 +1113,7 @@ var Views = (function () {
     Subs.reset();
     stage.classList.remove('off');
     video._subsChoice = false;
-    Player.play({ k: 'vod:' + meta.id, n: meta.title, num: '' }, { url: url, live: false, startAt: startAt || 0, meta: meta });
+    Player.play({ k: 'vod:' + meta.id, n: meta.title, num: '', p: meta.p || undefined }, { url: url, live: false, startAt: startAt || 0, meta: meta });
     Subs.restore(meta);           // subtitles downloaded for it in the last days (discussion #19)
     goFull();
   }
@@ -1711,7 +1712,9 @@ var Views = (function () {
       !virtual && { label: 'Move down', action: function () { L.moveGroup(g.id, 1); refreshLists(true); groupsVL.move(1); } },
       L.hasOwnOrder(g.id) && { label: 'Back to the provider\'s channel order', sub: 'undo the channels you moved here', action: function () { L.resetOrder(g.id); refreshLists(true); U.toast('Provider order restored'); } },
       g.id === L.EVENTS && { label: 'Turn off Events by time', sub: 'back on in Settings > Channels and groups', action: function () {
-        var p = Store.playlist; p.events = Object.assign({}, p.events, { group: false }); Store.upsertPlaylist(p); refreshLists(); U.toast('Events by time is off');
+        // Several playlists on: off for each of them (each has its own switch).
+        (Store.loaded ? Store.loaded() : [Store.playlist]).forEach(function (p) { p.events = Object.assign({}, p.events, { group: false }); Store.upsertPlaylist(p); });
+        Events.reset(); refreshLists(); U.toast('Events by time is off');
       } },
       g.id === L.TEAMS && { label: 'Choose teams…', sub: 'Settings > Channels and groups > My teams', action: function () { Settings.openTeams(); } },
       g.id === L.TEAMS && { label: 'Turn off My teams', sub: 'back on in Settings > Channels and groups > My teams', action: function () {

@@ -126,6 +126,41 @@ const lsTwo = () => ({ 'tivibro.settings': JSON.stringify({ playlists: [A, B], a
   ok('files unchanged by the swap', JSON.parse(ctx.mem['tivibro.edits.pA']).hiddenChannels.x2 === 1 && JSON.parse(ctx.mem['tivibro.edits.pB']).hiddenChannels.x7 === 1 && !JSON.parse(ctx.mem['tivibro.edits.pB']).hiddenChannels['pA:x2']);
 }
 
+// ---------- numbers, events, name rules and Movies and Shows per playlist ----------
+{
+  const ls = lsTwo(), st = JSON.parse(ls['tivibro.settings']);
+  st.playlists[1].names = { enabled: true, groups: true, rules: {}, prefixes: ['BR: '], suffixes: [], hideIdle: true };
+  st.playlists[1].events = { on: false };
+  ls['tivibro.settings'] = JSON.stringify(st);
+  ls['tivibro.edits.pB'] = JSON.stringify({ resume: { m12: { pos: 100, dur: 900, at: 1 }, s4: { pos: 61, dur: 1e6, at: 2, ep: 'e40', l: 'S1 E2' } }, watched: { e39: 1 }, myList: ['m12'] });
+  const ctx = sandbox(ls), S = ctx.Store, L = ctx.Library;
+  const a = dataA(); a.channels.push({ k: 'x77', id: 77, n: 'Fight 7:00pm', g: 'x1', num: 1523 });
+  const b = dataB(); b.channels.push({ k: 'x78', id: 78, n: 'BR: Fight 7:00pm', g: 'x9', num: 0 }, { k: 'x79', id: 79, n: 'BR: Off Air', g: 'x9', num: 0 });
+  L.set(a); S.attach('pB'); L.setOther('pB', b);
+  ok('numbers: the first playlist keeps its own', L.find('x5761').num === 1 && L.find('x77').num === 1523);
+  ok('numbers: the other playlist starts after the next thousand', L.find('pB:x5761').num === 2001 && L.find('pB:x8').num === 2003 && L.find('pB:x78').num === 2004, [L.find('pB:x5761').num, L.find('pB:x8').num, L.find('pB:x78').num].join());
+  const nums = L.data.channels.map(c => c.num);
+  ok('numbers: every channel has its own number', new Set(nums).size === nums.length, nums.join());
+  L.set(a);
+  ok('numbers: the same after the lists are built again', L.find('pB:x5761').num === 2001);
+  ok('names: each playlist\'s own rules', L.name(L.find('pB:x78')) === 'Fight 7:00pm', L.name(L.find('pB:x78')));
+  ok('events: on for the first playlist\'s channel', !!ctx.Events.of(L.find('x77')));
+  ok('events: off for the other playlist, which turned them off', !ctx.Events.of(L.find('pB:x78')));
+  ok('events: on for some playlist', ctx.Events.onAny() === true);
+  ok('nothing on: hidden by the other playlist\'s own rule', !L.channels('pB:x9').some(c => c.k === 'pB:x79') && L.channels('pB:x9', true).some(c => c.k === 'pB:x79'));
+  const e = S.edits;
+  ok('Movies and Shows: its resume points prefixed', e.resume['pB:m12'] && e.resume['pB:m12'].pos === 100);
+  ok('Movies and Shows: a show\'s episode follows', e.resume['pB:s4'].ep === 'pB:e40', e.resume['pB:s4'].ep);
+  ok('Movies and Shows: watched and My list prefixed', e.watched['pB:e39'] === 1 && e.myList.indexOf('pB:m12') >= 0);
+  e.resume['pB:m13'] = { pos: 5, dur: 9, at: 3 }; e.myList.push('pB:s4'); e.myList.push('m1');
+  S.flushEdits();
+  const fb = JSON.parse(ctx.mem['tivibro.edits.pB']), fa = JSON.parse(ctx.mem['tivibro.edits.pA']);
+  ok('Movies and Shows: written back to its own playlist, bare', fb.resume.m13 && fb.resume.s4.ep === 'e40' && fb.myList.join() === 'm12,s4' && fb.watched.e39 === 1, JSON.stringify(fb.myList));
+  ok('Movies and Shows: the first playlist\'s own stay with it', fa.myList.join() === 'm1' && !fa.resume['pB:m13']);
+  ok('a reminder key kept in another playlist\'s form, in memory\'s', S.keyFrom('pB', 'x7') === 'pB:x7' && S.keyFrom('pB', 'pA:x2') === 'x2');
+  ok('one playlist\'s data alone', L.dataOf('pB').channels.every(c => c.p === 'pB') && L.dataOf('pB').channels.length === 5 && L.dataOf('pA').channels.length === 3);
+}
+
 // ---------- new groups of a playlist seen for the first time are not hidden ----------
 {
   const ls = lsTwo(); const s = JSON.parse(ls['tivibro.settings']); s.newGroups = 'hide'; ls['tivibro.settings'] = JSON.stringify(s);

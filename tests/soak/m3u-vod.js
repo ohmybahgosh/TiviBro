@@ -37,7 +37,8 @@ const LIVE_ONLY = '#EXTM3U\n' + L('News One', 'News', MOCK + '/live/u/p/1.ts') +
   await page.waitForTimeout(1500);
 
   // An M3U playlist with films and series in it.
-  await ev(() => { Store.upsertPlaylist({ id: 'mv1', name: 'M3U with films', type: 'm3u', m3u: 'http://127.0.0.1:8095/list.m3u' }); App.switchPlaylist('mv1'); });
+  // The demo playlist goes off, so this one is the only playlist in use (every playlist that is on is used at once).
+  await ev(() => { const d = Store.byId('p1'); d.off = true; Store.upsertPlaylist(d); Store.upsertPlaylist({ id: 'mv1', name: 'M3U with films', type: 'm3u', m3u: 'http://127.0.0.1:8095/list.m3u' }); App.switchPlaylist('mv1'); });
   await page.waitForFunction(() => Store.settings.active === 'mv1' && window.Library && Library.count() > 0 && document.getElementById('viewSetup').classList.contains('hidden'), null, { timeout: 30000 }).catch(() => {});
   const ch = await ev(() => Library.data.channels.map((c) => c.n));
   ok('the channel list has only the live channels', ch.join() === 'News One,Sports One,Kids One', ch.join());

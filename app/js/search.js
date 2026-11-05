@@ -40,7 +40,7 @@ var Search = (function () {
       take(c, r.p);
     });
     // Event channels (pay-per-view, league passes): the event in the channel name is the programme.
-    if (Events.groupOn()) L.channels(L.EVENTS).forEach(function (c) {
+    if (Events.groupOnAny ? Events.groupOnAny() : Events.groupOn()) L.channels(L.EVENTS).forEach(function (c) {
       var ev = Events.of(c);
       if (ev && test(ev.title)) take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 });
     });

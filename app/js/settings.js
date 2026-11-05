@@ -342,8 +342,9 @@ var Settings = (function () {
     out.push(head('This playlist\'s guide, names and events'));
     out.push(page('Guide', 'The provider\'s guide, your guide sources and public fill-in for this playlist', 'Guide: ' + (p.name || 'playlist'), function () { return guideRows(p); }));
     // On the phone it is a page of its own (Tour.phoneRows), the same steps without the TV's screen.
-    if (active) { var tourRow = action('Set-up tour', 'Countries, channel names, East or West, your city, event channels, clutter, logos and look, one screen at a time.', function () { Tour.open({ from: 'settings' }); }, function () { return p.tour > 0 ? 'done ' + when(p.tour) : '›'; });
-      tourRow.phonePage = { title: 'Set-up tour', fn: Tour.phoneRows }; out.push(tourRow); }
+    // Several playlists on: each playlist that is on has its own tour, for its own channels.
+    if (active || part) { var tourRow = action('Set-up tour', 'Countries, channel names, East or West, your city, event channels, clutter, logos and look, one screen at a time.', function () { Tour.open({ from: 'settings', pl: p.id }); }, function () { return p.tour > 0 ? 'done ' + when(p.tour) : '›'; });
+      tourRow.phonePage = { title: 'Set-up tour', fn: function () { return Tour.phoneRows(p.id); } }; out.push(tourRow); }
     out.push(page('Channel and group names', p.names && p.names.enabled ? 'On' : 'Off', 'Channel and group names', function () { return namesPage(p); }));
     out.push(page('Event channels', p.events && p.events.on === false ? 'Off' : 'On', 'Event channels', function () { return eventsPage(p); }));
     if (s.playlists.length > 1) {
@@ -476,7 +477,8 @@ var Settings = (function () {
   /* ---------- channel name editor ---------- */
   function namesPage(p) {
     var n = p.names || (p.names = Names.defaults()), out = [], active = p.id === S().active;
-    function changed(rebuild) { persist(p); Names.invalidate(); if (active) relist(); if (rebuild) build(); else paint(); }
+    var inUse = active || L.otherIds().indexOf(p.id) >= 0;          // several playlists on: its channels are in the lists too
+    function changed(rebuild) { persist(p); Names.invalidate(); if (inUse) relist(); if (rebuild) build(); else paint(); }
     out.push(toggle('Clean up channel names', 'Your playlist is not changed.  Turn off to see the original names.', function () { return n.enabled; }, function (v) { n.enabled = v; changed(true); }));
     out.push(toggle('Hide channels with nothing on', 'Channels named "Off Air", "Offline" or "No Event Scheduled", empty slots like "PPV 09 |", and events that ended hours ago stay out of the lists until the provider names a new event on them.  Favorites keep theirs.',
       function () { return !!n.hideIdle; }, function (v) { n.hideIdle = v; changed(); }));
@@ -507,7 +509,8 @@ var Settings = (function () {
   /* ---------- event channels ---------- */
   function eventsPage(p) {
     var ev = p.events || (p.events = {}), out = [], active = p.id === S().active;
-    function changed(rebuild) { persist(p); Events.reset(); if (active) relist(); if (rebuild) build(); else paint(); }
+    var inUse = active || L.otherIds().indexOf(p.id) >= 0;          // several playlists on: its channels are in the lists too
+    function changed(rebuild) { persist(p); Events.reset(); if (inUse) relist(); if (rebuild) build(); else paint(); }
     out.push(toggle('Read events from channel names', 'For pay-per-view, league passes and one-off games whose name carries the matchup, date and time.  The guide shows the event at its time, with "Starts 7:30 PM" before it.  A real guide for the channel always wins.',
       function () { return ev.on !== false; }, function (v) { ev.on = v; changed(true); }));
     if (ev.on === false) return out;
@@ -613,8 +616,9 @@ var Settings = (function () {
     out.push(toggle('Show Movies on now', 'A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Guide > Movies in the guide).',
       function () { return s.moviesGroup !== false; }, function (v) { s.moviesGroup = v; apply(); if (typeof Movies !== 'undefined') Movies.poke(); }));
     out.push(page('Event channels', 'Pay-per-view and league pass channels whose names carry the game and its time: read into the guide.', 'Event channels', function () { return eventsPage(Store.playlist); }, function () { var ev = Store.playlist.events; return ev && ev.on === false ? 'Off' : 'On'; }));
-    if (Events.on()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.',
-      function () { return Events.groupOn(); }, function (v) { var p = Store.playlist; p.events = Object.assign({}, p.events, { group: v }); Store.upsertPlaylist(p); Events.reset(); apply(); }));
+    if (Events.onAny()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.',
+      // Several playlists on: the same switch for each of them (each playlist's Event channels page has its own).
+      function () { return Events.groupOnAny(); }, function (v) { Store.loaded().forEach(function (p) { p.events = Object.assign({}, p.events, { group: v }); Store.upsertPlaylist(p); }); Events.reset(); apply(); }));
     out.push(choice('Recently added channels', 'A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.', [0, 3, 7, 14], ['Off', '3 days', '7 days', '14 days'], function () { return s.newDays == null ? 7 : +s.newDays; }, function (v) { s.newDays = v; L.dirty(); apply(); }));
     out.push(choice('Groups your provider adds later', 'Hide keeps a tidy list tidy after "Hide all groups".', ['show', 'hide'], ['Show them', 'Hide them'], function () { return s.newGroups === 'hide' ? 'hide' : 'show'; }, function (v) { s.newGroups = v; save(); }));
     out.push(toggle('All channels includes hidden groups', 'Channels from groups you hid still appear in All channels.', function () { return !!s.allHidden; }, function (v) { s.allHidden = v; apply(); }));

@@ -51,10 +51,26 @@ var Events = (function () {
     if (/^(UTC|Etc\/(UTC|GMT|UCT)|GMT|UCT|Zulu)$/.test(tz)) return 'UTC';
     return 'local';
   }
-  var providerTz = '';
-  function setProviderTz(tz) { providerTz = tz || ''; memo.clear(); }
-  function cfg() { var p = (typeof Store !== 'undefined' && Store.playlist) || {}; return p.events || {}; }
-  function defaultZone() { var z = cfg().tz || 'auto'; return z === 'auto' ? zoneOfIana(providerTz) : z; }
+  /* Several playlists on: each playlist's event settings and its provider's time zone apply to its own
+     channels.  forPl is the playlist whose settings apply while one channel is read (of(c), ended(c),
+     groupOn(c), shortNames(c)); otherwise the first playlist's, as always. */
+  var providerTz = '', tzs = {}, forPl = null;
+  function setProviderTz(tz, id) { if (id) tzs[id] = tz || ''; else providerTz = tz || ''; memo.clear(); }
+  function cfg() { var p = forPl || (typeof Store !== 'undefined' && Store.playlist) || {}; return p.events || {}; }
+  function defaultZone() { var z = cfg().tz || 'auto'; return z === 'auto' ? zoneOfIana(forPl ? tzs[forPl.id] || '' : providerTz) : z; }
+  function within(c, fn) {
+    var pl = c && c.p && typeof Store !== 'undefined' && Store.byId ? Store.byId(c.p) : null;
+    if (!pl) return fn();
+    var was = forPl; forPl = pl;
+    try { return fn(); } finally { forPl = was; }
+  }
+  // Any playlist that is on (the first, or one of the others) with event channels, or Events by time, on.
+  function any(test) {
+    if (test()) return true;
+    var more = typeof Store !== 'undefined' && Store.others ? Store.others() : [];
+    for (var i = 0; i < more.length; i++) { var was = forPl; forPl = more[i]; try { if (test()) return true; } finally { forPl = was; } }
+    return false;
+  }
 
   /* ---------- reading a name ---------- */
   function clean(s) {
@@ -328,15 +344,16 @@ var Events = (function () {
   }
 
   function on() { return cfg().on !== false; }
-  function of(c) { return c && on() ? parse(c.n) : null; }
+  function of(c) { return c ? within(c, function () { return on() ? parse(c.n) : null; }) : null; }
   /* An event that is long over: the provider never renamed the channel ("Peacock 001 | ... (2026-02-08
      03:00:00)" in November).  Six hours after its end, so a game that ran long still counts. */
   var ENDED_MS = 6 * 3600e3;
   function endedName(n, now) { now = now || Date.now(); var e = on() ? parse(n, now) : null; return !!(e && e.end + ENDED_MS < now); }
 
   return {
-    parse: parse, of: of, programmes: programmes, games: games, nextGame: nextGame, ended: function (c, now) { return !!c && endedName(c.n, now); }, endedName: endedName, when: when, setProviderTz: setProviderTz, zoneOfIana: zoneOfIana, toTime: toTime,
-    on: on, shortNames: function () { return on() && cfg().short !== false; }, groupOn: function () { return on() && cfg().group !== false; },
+    parse: parse, of: of, programmes: programmes, games: games, nextGame: nextGame, ended: function (c, now) { return !!c && within(c, function () { return endedName(c.n, now); }); }, endedName: endedName, when: when, setProviderTz: setProviderTz, zoneOfIana: zoneOfIana, toTime: toTime,
+    on: on, shortNames: function (c) { return within(c, function () { return on() && cfg().short !== false; }); }, groupOn: function (c) { return within(c, function () { return on() && cfg().group !== false; }); },
+    onAny: function () { return any(on); }, groupOnAny: function () { return any(function () { return on() && cfg().group !== false; }); },
     zone: defaultZone, reset: function () { memo.clear(); },
     ZONE_CHOICES: ['auto', 'ET', 'CT', 'MT', 'PT', 'UK', 'CET', 'UTC', 'local'],
     ZONE_LABELS: ['The provider\'s time zone', 'US Eastern', 'US Central', 'US Mountain', 'US Pacific', 'UK', 'Central Europe', 'UTC', 'This TV\'s time']

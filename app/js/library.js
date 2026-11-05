@@ -8,7 +8,9 @@
    so its edits, PlayMemo, reminders and the rest never notice (Store explains how edits are kept per
    playlist).  `data` is all of them in one list, the first playlist first.  With only one playlist on,
    `data` is that playlist's data itself, as before.  groups(true) adds a heading row ({ head: true })
-   before each playlist's groups when more than one is on. */
+   before each playlist's groups when more than one is on.  Each playlist's channels use its own name
+   rules ("hide channels with nothing on" included) and event settings (Events), and get numbers after
+   the playlists before it (merged), so number keys always reach one channel. */
 var Library = (function () {
   'use strict';
 
@@ -60,7 +62,8 @@ var Library = (function () {
     var pre = id + ':', i;
     if (!d.prefixed) {
       for (i = 0; i < d.groups.length; i++) { d.groups[i].id = pre + d.groups[i].id; d.groups[i].p = id; }
-      for (i = 0; i < d.channels.length; i++) { var c = d.channels[i]; c.k = pre + c.k; c.g = pre + c.g; c.p = id; }
+      // pn: the provider's own number (or its place in the list), for its number here (see merged).
+      for (i = 0; i < d.channels.length; i++) { var c = d.channels[i]; c.k = pre + c.k; c.g = pre + c.g; c.p = id; c.pn = +c.num || i + 1; }
       d.prefixed = id;
     }
     var pl = Store.byId(id);
@@ -96,6 +99,16 @@ var Library = (function () {
       for (var q in b) added[x.id + ':' + q] = b[q];
     });
     out.added = added;
+    /* Channel numbers stay unique: the first playlist keeps its own, and each other playlist's start at
+       the next thousand after the highest number before it (its channel 1 is 2001 after a first
+       playlist that ends at 1523).  Number keys always reach one channel. */
+    var top = d.channels.length, j;
+    for (j = 0; j < d.channels.length; j++) if (+d.channels[j].num > top) top = +d.channels[j].num;
+    others.forEach(function (x) {
+      var base = Math.ceil((top + 1) / 1000) * 1000, hi = 0, ch = x.d.channels;
+      for (var q = 0; q < ch.length; q++) { ch[q].num = base + ch[q].pn; if (ch[q].pn > hi) hi = ch[q].pn; }
+      top = base + hi;
+    });
     return out;
   }
   // The playlist a channel or group id belongs to ('' = the first one).
@@ -104,14 +117,18 @@ var Library = (function () {
   /* The first playlist's channels and groups as the lists show them (the content filter applied), for
      what works on one playlist (the set-up tour).  With one playlist on, `data` itself. */
   var firstMemo = null;
-  function firstData() {
-    if (!others.length) return data;
-    if (firstMemo && firstMemo.of === data) return firstMemo.d;
+  function firstData() { return dataOf(''); }
+  // One playlist's channels and groups as the lists show them ('' or the first playlist's id: the first).
+  function dataOf(id) {
+    if (id === (Store.settings && Store.settings.active)) id = '';
+    if (!others.length && !id) return data;
+    if (firstMemo && firstMemo.of === data && firstMemo.id === id) return firstMemo.d;
     var d = {}, k;
     for (k in data) d[k] = data[k];
-    d.groups = data.groups.filter(function (g) { return !g.p; });
-    d.channels = data.channels.filter(function (c) { return !c.p; });
-    firstMemo = { of: data, d: d };
+    d.groups = data.groups.filter(function (g) { return (g.p || '') === id; });
+    d.channels = data.channels.filter(function (c) { return (c.p || '') === id; });
+    if (id) { var part = partOf(id); if (part) ['epgUrl', 'at', 'exp', 'tz', 'maxConn', 'sig'].forEach(function (f) { d[f] = part[f]; }); }
+    firstMemo = { of: data, id: id, d: d };
     return d;
   }
 
@@ -220,11 +237,18 @@ var Library = (function () {
 
   // Nothing on: the name says so (Off Air, an empty slot) or names an event that is long over.
   function idle(c) { return Names.idle(c.n) || (typeof Events !== 'undefined' && Events.ended(c)); }
+  // "Hide channels with nothing on" is a name rule, so each playlist has its own (several playlists on).
+  function hideIdleOf(c) { return c && c.p ? !!namesOf(c.p).hideIdle : Names.hideIdle(); }
+  function anyHideIdle() {
+    if (Names.hideIdle()) return true;
+    for (var i = 0; i < others.length; i++) if (namesOf(others[i].id).hideIdle) return true;
+    return false;
+  }
   function name(c) {
     if (!c) return '';
     if (E().renames[c.k]) return E().renames[c.k];
     // Event channels: the short tag ("PPV 03", "NCAAB 001"); the event itself is in the guide.
-    var ev = Events.shortNames() ? Events.of(c) : null;
+    var ev = Events.shortNames(c) ? Events.of(c) : null;
     if (ev) return ev.short || ev.title;
     if (c.p) return Names.cleanWith(namesOf(c.p), c.n) || '';       // another playlist's: its own name rules
     return Names.clean(c.n) || '';
@@ -238,10 +262,12 @@ var Library = (function () {
   function eventList() {
     var now = Date.now();
     if (evCache && now - evCache.at < 300000) return evCache.list;
-    var e = E(), showHidden = S().showHidden, idle = Names.hideIdle(), out = [];
-    if (Events.groupOn()) data.channels.forEach(function (c) {
+    var e = E(), showHidden = S().showHidden, out = [], first = Events.groupOn(), firstIdle = Names.hideIdle();
+    // Several playlists on: each playlist's own Events by time and "hide channels with nothing on".
+    if (Events.groupOnAny ? Events.groupOnAny() : first) data.channels.forEach(function (c) {
+      if (c.p ? !Events.groupOn(c) : !first) return;
       if (!showHidden && (e.hiddenChannels[c.k] || e.hiddenGroups[c.g])) return;
-      if (idle && Names.idle(c.n)) return;
+      if ((c.p ? hideIdleOf(c) : firstIdle) && Names.idle(c.n)) return;
       var ev = Events.of(c);
       if (ev && ev.end > now && ev.start < now + 14 * 86400e3) out.push({ c: c, s: ev.start });
     });
@@ -316,7 +342,7 @@ var Library = (function () {
     if (s.showRecent && e.recent.length) out.push({ id: RECENT, name: 'Recent', count: e.recent.length });
     var fresh = newList().length;
     if (fresh) out.push({ id: NEW, name: 'Recently added', count: fresh });
-    var evs = Events.groupOn() ? eventList().length : 0;
+    var evs = (Events.groupOnAny ? Events.groupOnAny() : Events.groupOn()) ? eventList().length : 0;
     if (evs) out.push({ id: EVENTS, name: 'Events by time', count: evs });
     if (!s.favFirst) out = out.concat(customs);
     if (s.showAll) out.push({ id: ALL, name: 'All channels', count: data.channels.length });
@@ -388,7 +414,7 @@ var Library = (function () {
     if (!showHidden) list = list.filter(function (c) { return !e.hiddenChannels[c.k]; });
     // Hide channels with nothing on (Settings > Channel names): judged on the name the provider sends
     // now, so a channel comes back by itself once an event is named on it.  Favorites keep theirs.
-    if (!showHidden && gid !== FAV && Names.hideIdle()) list = list.filter(function (c) { return !idle(c); });
+    if (!showHidden && gid !== FAV && anyHideIdle()) list = list.filter(function (c) { return !(hideIdleOf(c) && idle(c)); });
     // Your own order for a provider group (moved on the TV or dragged in the web editor): the
     // channels you placed first, in your order, then any the provider added since, in its order.
     var own = e.groupSort && e.groupSort[gid];
@@ -554,7 +580,7 @@ var Library = (function () {
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,
     createGroup: createGroup, renameGroup: renameGroup, deleteGroup: deleteGroup,
     copyTo: copyTo, removeFrom: removeFrom, moveInGroup: moveInGroup, moveGroup: moveGroup,
-    firstData: firstData, setOther: setOther, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, get main() { return main; }, get multi() { return multi(); }, plName: plName,
+    firstData: firstData, dataOf: dataOf, setOther: setOther, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, get main() { return main; }, get multi() { return multi(); }, plName: plName,
     otherIds: function () { return others.map(function (x) { return x.id; }); },
     hiddenItems: hiddenItems, allGroups: allGroups, versions: versions, versionKey: versionKey, numberCanGrow: numberCanGrow, qualityLabel: qualityLabel, versionTag: versionTag, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
   };

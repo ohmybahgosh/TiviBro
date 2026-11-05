@@ -1,6 +1,14 @@
 /* Movies and Shows (Xtream VOD).  Lists are cached per playlist like live channels;
    details load only for the title you rest on.  Files play through the TV's own player,
-   which seeks well and handles MKV/MP4 without any JS demuxing. */
+   which seeks well and handles MKV/MP4 without any JS demuxing.
+
+   Several playlists on: every playlist that is on and has movies or shows is loaded, one after the
+   other, and shown together.  The categories list has a heading per playlist with its categories under
+   it (Continue watching, My list and All stay on top, across all of them).  Another playlist's titles
+   carry its id (it.pl) and their category ids get "<playlist id>:" in front; their keys for resume
+   points, ✓ and My list ("pB:m123") are kept in that playlist's own edits by Store, as channel edits
+   are.  Languages apply to all of them; hiding a category is kept by its own playlist.  With one
+   playlist on, everything is as before (data[k] is that playlist's list itself). */
 var Vod = (function () {
   'use strict';
   var $ = U.$;
@@ -15,9 +23,12 @@ var Vod = (function () {
   var CW = '_cw', MY = '_my', ALL = '_all', LANGS = '_langs';
 
   function E() { return Store.edits; }
-  function key(it) { return (kind === 'series' && !it.ep ? 's' : 'm') + it.id; }
+  function pre(it) { return it && it.pl ? it.pl + ':' : ''; }
+  function key(it) { return pre(it) + (kind === 'series' && !it.ep ? 's' : 'm') + it.id; }
   function resumeOf(id) { return E().resume[id]; }
-  function idOf(it) { return it.ep ? 'e' + it.id : key(it); }
+  function idOf(it) { return it.ep ? pre(it) + 'e' + it.id : key(it); }
+  // The playlist a title is from (the first playlist's titles carry nothing).
+  function plOf(it) { return (it && it.pl && Store.byId && Store.byId(it.pl)) || Store.playlist; }
   /* Watched: a movie or episode played to its last minute (or marked) keeps a ✓, so a finished one never
      looks like one never started.  id -> 1, in the playlist's edits beside resume, so backups carry it. */
   function seen() { var e = E(); if (!e.watched || typeof e.watched !== 'object') e.watched = {}; return e.watched; }
@@ -37,13 +48,13 @@ var Vod = (function () {
      or the next one once that's finished.  pos/dur only keep it in Continue watching; ep and l are what shows. */
   function markShow(k, it, eps) {
     var i = eps ? eps.indexOf(it) : -1, cur = !E().resume['e' + it.id] && isWatched('e' + it.id) && i >= 0 && eps[i + 1] ? eps[i + 1] : it;
-    E().resume[k] = { pos: 61, dur: 1e6, at: Date.now(), ep: 'e' + cur.id, l: 'S' + cur.season + ' E' + (cur.num || '?') };
+    E().resume[k] = { pos: 61, dur: 1e6, at: Date.now(), ep: idOf(cur), l: 'S' + cur.season + ' E' + (cur.num || '?') };
   }
   // A show opens on the episode after the last one watched or started, or on the one in progress.
   function openAt(eps) {
     var res = E().resume;
     for (var i = eps.length - 1; i >= 0; i--) {
-      var id = 'e' + eps[i].id, x = res[id];
+      var id = idOf(eps[i]), x = res[id];
       if (x && !finished(x.pos, x.dur)) return i;
       if (x || isWatched(id)) return Math.min(i + 1, eps.length - 1);
     }
@@ -54,38 +65,79 @@ var Vod = (function () {
      so a 160,000-title library with a dozen languages costs the TV what one language does.  On a TV the
      helper downloads and slims the provider's list (service/vod.js), so the app never parses the
      provider's full answer; without the helper (a browser) the app does it itself. */
-  function cacheKey(k) { return 'vod:' + Store.playlist.id + ':' + k; }
+  function cacheKey(k, p) { return 'vod:' + (p || Store.playlist).id + ':' + k; }
   // On a TV the helper keeps the full lists on the TV's storage and answers with what shows (issue #18:
   // a full list didn't fit an old TV's browser storage).  In a browser the app keeps them itself.
-  function helped() { return !!(Net.active && Net.port && Net.info && Net.info.vod >= 2 && Store.playlist && (Store.playlist.type === 'xtream' || Source.m3uVod())); }
-  var asking = { movie: null, series: null };
+  function helped(p) { p = p || Store.playlist; return !!(Net.active && Net.port && Net.info && Net.info.vod >= 2 && p && (p.type === 'xtream' || Source.m3uVod(p))); }
+  // The playlists in use that have this kind (the first one first).
+  function sources(k) { var ls = Store.loaded ? Store.loaded() : [Store.playlist]; return ls.filter(function (p) { return offeredBy(p).indexOf(k) >= 0; }); }
+  var asking = { movie: null, series: null }, sets = { movie: {}, series: {} }, gen = 0;
   function load(k, again) {
     if (data[k] && !again) return Promise.resolve(data[k]);
-    if (raw[k] && again) return Promise.resolve(data[k] = view(k, raw[k]));
-    if (helped()) {
-      if (asking[k] && !again) return asking[k];
-      var p = asking[k] = fromHelper(k).then(function (d) {
-        if (asking[k] === p) asking[k] = null;
-        Store.idbSet(cacheKey(k), null);            // an older copy in the browser's storage: not needed now
-        return (data[k] = d);
-      }, function (e) {
-        if (asking[k] === p) asking[k] = null;
-        if (Source.m3uVod()) throw e;                // an M3U list's library lives with the helper only
-        Log.warn('vod', 'The helper could not give the ' + (k === 'series' ? 'show' : 'movie') + ' list (' + (e && e.message || e) + '), loading it here');
-        return own(k);
+    if (asking[k] && !again) return asking[k];
+    var g = gen;                                  // reset() meanwhile (a playlist added or taken out): load again
+    var list = sources(k);
+    if (!list.length) list = [Store.playlist];
+    // One after the other: two big lists at once could run a TV out of memory.
+    var chain = Promise.resolve(), got = {};
+    list.forEach(function (p, n) {
+      chain = chain.then(function () {
+        return loadOne(k, p, again).then(function (d) { got[p.id] = d; }, function (e) { if (!n) throw e; Log.warn('vod', 'The ' + (k === 'series' ? 'shows' : 'movies') + ' of ' + (p.name || 'another playlist') + ' did not load: ' + (e && e.message || e)); });
       });
-      return p;
-    }
-    if (Source.m3uVod()) return Promise.reject(new Error('Movies and shows from an M3U list need the network helper.'));
-    return own(k);
+    });
+    var job = asking[k] = chain.then(function () {
+      if (asking[k] === job) asking[k] = null;
+      if (g !== gen) return load(k);
+      sets[k] = got;
+      return (data[k] = merge(k, list.filter(function (p) { return got[p.id]; })));
+    }, function (e) { if (asking[k] === job) asking[k] = null; throw e; });
+    return job;
   }
-  function fromHelper(k) {
-    var p = Store.playlist, h = +p.plRefresh, t0 = Date.now();
-    var body = Source.m3uVod() ? { pl: p.id, sig: Source.sig(p), kind: k, m3u: 1, picked: prefs().langs, navLang: navigator.language, hidden: hiddenCats(k) } : {
+  /* The lists of several playlists as one: the others' titles marked with their playlist (it.pl) and
+     their categories' ids prefixed, so the same category id from two providers stays two categories. */
+  function merge(k, list) {
+    if (list.length < 2) return list.length ? sets[k][list[0].id] : null;
+    var out = { at: 0, cats: [], items: [], langs: {}, keep: {}, total: 0, adultCat: {}, multi: true }, anyAll = false;
+    list.forEach(function (p, n) {
+      var d = sets[k][p.id], pfx = n ? p.id + ':' : '';
+      out.at = Math.max(out.at, d.at || 0); out.total += +d.total || d.items.length;
+      d.cats.forEach(function (c) { out.cats.push({ id: pfx + c.id, name: c.name, pl: n ? p.id : '' }); });
+      if (d.adultCat) for (var a in d.adultCat) out.adultCat[pfx + a] = d.adultCat[a];
+      for (var l in d.langs || {}) out.langs[l] = (out.langs[l] || 0) + d.langs[l];
+      if (!d.keep) anyAll = true; else for (var q in d.keep) out.keep[q] = d.keep[q];
+      d.items.forEach(function (it) {
+        if (n && it.pl !== p.id) { it.pl = p.id; it.cat = pfx + it.cat; }
+        out.items.push(it);
+      });
+    });
+    if (anyAll) out.keep = null;
+    return out;
+  }
+  function loadOne(k, p, again) {
+    var old = sets[k][p.id];
+    if (old && !again) return Promise.resolve(old);
+    var rk = raw[k] && raw[k][p.id];
+    if (rk && again) return Promise.resolve(view(k, rk, p));
+    if (helped(p)) {
+      return fromHelper(k, p).then(function (d) {
+        Store.idbSet(cacheKey(k, p), null);         // an older copy in the browser's storage: not needed now
+        return d;
+      }, function (e) {
+        if (Source.m3uVod(p)) throw e;               // an M3U list's library lives with the helper only
+        Log.warn('vod', 'The helper could not give the ' + (k === 'series' ? 'show' : 'movie') + ' list (' + (e && e.message || e) + '), loading it here');
+        return own(k, p);
+      });
+    }
+    if (Source.m3uVod(p)) return Promise.reject(new Error('Movies and shows from an M3U list need the network helper.'));
+    return own(k, p);
+  }
+  function fromHelper(k, p) {
+    var h = +p.plRefresh, t0 = Date.now();
+    var body = Source.m3uVod(p) ? { pl: p.id, sig: Source.sig(p), kind: k, m3u: 1, picked: prefs(p).langs, navLang: navigator.language, hidden: hiddenCats(k, p) } : {
       pl: p.id, sig: Source.sig(p), kind: k, maxAge: h > 0 ? h * 3600e3 : 0,
-      u: Net.wrap(Source.api(p, k === 'series' ? 'get_series' : 'get_vod_streams')),
-      uc: Net.wrap(Source.api(p, k === 'series' ? 'get_series_categories' : 'get_vod_categories')),
-      picked: prefs().langs, navLang: navigator.language, hidden: hiddenCats(k)
+      u: Net.wrap(Source.api(p, k === 'series' ? 'get_series' : 'get_vod_streams'), { pl: p }),
+      uc: Net.wrap(Source.api(p, k === 'series' ? 'get_series_categories' : 'get_vod_categories'), { pl: p }),
+      picked: prefs(p).langs, navLang: navigator.language, hidden: hiddenCats(k, p)
     };
     return postJSON('http://127.0.0.1:' + Net.port + '/vod/list', body, 240000).then(function (j) {
       if (!j || !Array.isArray(j.rows)) throw new Error((j && j.error) || 'no list');
@@ -94,31 +146,31 @@ var Vod = (function () {
         var it = mk(r); it.lang = r[base] || ''; if (r[base + 1]) it.q = r[base + 1]; if (r[base + 2]) it.adult = 1; if (r[base + 3]) it.p = r[base + 3];
         return it;
       });
-      Log.info('vod', 'The helper gave ' + items.length + ' of ' + j.total + ' ' + (k === 'series' ? 'shows' : 'movies') + ' in ' + (Date.now() - t0) + ' ms');
+      Log.info('vod', 'The helper gave ' + items.length + ' of ' + j.total + ' ' + (k === 'series' ? 'shows' : 'movies') + (p.id !== Store.playlist.id ? ' of ' + (p.name || 'another playlist') : '') + ' in ' + (Date.now() - t0) + ' ms');
       return { at: j.at, cats: j.cats, items: items, langs: j.langs, keep: j.keep, total: j.total, adultCat: j.adultCat };
     });
   }
   // Without the helper: the full list is cached in the browser's storage and kept in memory.
-  function own(k) {
-    var ck = cacheKey(k);
+  function own(k, p) {
+    var ck = cacheKey(k, p);
+    function keepRaw(c) { (raw[k] || (raw[k] = {}))[p.id] = c; return view(k, c, p); }
     return Store.idbGet(ck).then(function (c) {
-      var h = +Store.playlist.plRefresh, fresh = c && c.v === 3 && (h <= 0 || Date.now() - c.at < h * 3600e3);
-      if (c && fresh) { raw[k] = c; return (data[k] = view(k, c)); }
-      return Promise.all([Source.vodCats(k), fetchItems(k)]).then(function (r) {
+      var h = +p.plRefresh, fresh = c && c.v === 3 && (h <= 0 || Date.now() - c.at < h * 3600e3);
+      if (c && fresh) return keepRaw(c);
+      return Promise.all([Source.vodCats(k, p), fetchItems(k, p)]).then(function (r) {
         var cats = (r[0] || []).map(function (x) { return { id: String(x.category_id), name: x.category_name || 'Other' }; });
         var d = { v: 3, at: Date.now(), cats: cats, items: r[1] };
         Store.idbSet(ck, d);
-        raw[k] = d;
-        return (data[k] = view(k, d));
-      }).catch(function (e) { if (c) { raw[k] = c; return (data[k] = view(k, c)); } throw e; });
+        return keepRaw(d);
+      }).catch(function (e) { if (c) return keepRaw(c); throw e; });
     });
   }
   function movieRow(x) { return ({ id: x[0], name: x[1], cover: x[2], rating: x[3], ext: x[4] || 'mp4', cat: x[5], added: x[6] }); }
   function seriesRow(x) { return ({ id: x[0], name: x[1], cover: x[2], plot: x[3], rating: x[4], year: x[5], cat: x[6], added: x[7] }); }
-  function fetchItems(k) {
-    var api = Source.api(Store.playlist, k === 'series' ? 'get_series' : 'get_vod_streams');
+  function fetchItems(k, p) {
+    var api = Source.api(p, k === 'series' ? 'get_series' : 'get_vod_streams');
     function direct() {
-      return Source.vodList(k).then(function (list) {
+      return Source.vodList(k, p).then(function (list) {
         return (list || []).map(function (x) {
           return k === 'series'
             ? seriesRow([x.series_id, x.name || '', x.cover || '', String(x.plot || '').slice(0, 300), x.rating || '', (x.releaseDate || x.release_date || '').slice(0, 4), String(x.category_id), +x.last_modified || 0])
@@ -128,7 +180,7 @@ var Vod = (function () {
     }
     if (!Net.active || !Net.port || !(Net.info && Net.info.vod)) return direct();
     var t0 = Date.now();
-    return postJSON('http://127.0.0.1:' + Net.port + '/vod/slim', { kind: k, u: Net.wrap(api) }, 240000).then(function (j) {
+    return postJSON('http://127.0.0.1:' + Net.port + '/vod/slim', { kind: k, u: Net.wrap(api, { pl: p }) }, 240000).then(function (j) {
       if (!j || !Array.isArray(j.rows)) throw new Error((j && j.error) || 'no list');
       Log.info('vod', 'The helper slimmed the ' + (k === 'series' ? 'show' : 'movie') + ' list: ' + j.rows.length + ' in ' + (Date.now() - t0) + ' ms');
       return j.rows.map(k === 'series' ? seriesRow : movieRow);
@@ -145,10 +197,15 @@ var Vod = (function () {
       .then(function (j) { clearTimeout(t); return j; }, function (e) { clearTimeout(t); throw e; });
   }
 
-  function prefs() { var p = Store.playlist; return p.vodPrefs || (p.vodPrefs = {}); }
-  function hiddenCats(k) { var h = prefs().hide || {}; return h[k] || []; }
+  function prefs(p) { p = p || Store.playlist; return p.vodPrefs || (p.vodPrefs = {}); }
+  function hiddenCats(k, p) { var h = prefs(p).hide || {}; return h[k] || []; }
   var tag = VodView.tag, langName = VodView.langName;
-  function view(k, d) { return VodView.view(d, { picked: prefs().langs, navLang: navigator.language, hidden: hiddenCats(k) }); }
+  function view(k, d, p) { return VodView.view(d, { picked: prefs(p).langs, navLang: navigator.language, hidden: hiddenCats(k, p) }); }
+  // A category's playlist and its id there (several playlists on: "<playlist id>:<id>").
+  function catHome(id) { var w = Store.ownerOf ? Store.ownerOf(String(id)) : ''; return w ? { p: Store.byId(w), id: String(id).slice(w.length + 1) } : { p: Store.playlist, id: String(id) }; }
+  // Languages are chosen once for every playlist with movies or shows.
+  function vodPls() { var l = sources(kind); return l.length ? l : [Store.playlist]; }
+  function saveLangs(next) { vodPls().forEach(function (p) { if (next) prefs(p).langs = next; else delete prefs(p).langs; Store.upsertPlaylist(p); }); }
 
   // After a language or category change: rebuild from the cache, keep the selected category.
   function reshow() {
@@ -170,9 +227,9 @@ var Vod = (function () {
     var counts = d.langs, keep = d.keep;
     var cur = {};
     Object.keys(counts).forEach(function (c) { if (!keep || keep[c]) cur[c] = 1; });
-    function save(next) { prefs().langs = next; Store.upsertPlaylist(Store.playlist); reshow(); }
+    function save(next) { saveLangs(next); reshow(); }
     var items = [
-      { label: 'Automatic', sub: 'your TV\'s language and untagged titles' + (Array.isArray(prefs().langs) ? '' : '   (now)'), action: function () { delete prefs().langs; Store.upsertPlaylist(Store.playlist); reshow(); } },
+      { label: 'Automatic', sub: 'your TV\'s language and untagged titles' + (Array.isArray(prefs().langs) ? '' : '   (now)'), action: function () { saveLangs(null); reshow(); } },
       { label: 'Show every language', action: function () { save(Object.keys(counts)); } }
     ];
     Object.keys(counts).sort(function (a, b) { return counts[b] - counts[a]; }).forEach(function (c) {
@@ -186,14 +243,16 @@ var Vod = (function () {
     UI.menu('Languages', items, function () { langMenu.last = null; });
   }
   function catMenu(c) {
-    if (!c) return;
-    var p = prefs(), h = p.hide || (p.hide = {}), list = h[kind] || (h[kind] = []);
+    if (!c || c.head) return;
+    // Hidden by the category's own playlist (several playlists on).
+    var home = catHome(c.id), p = prefs(home.p), h = p.hide || (p.hide = {}), list = h[kind] || (h[kind] = []);
     var items = [];
     if (c.id !== CW && c.id !== MY && c.id !== ALL && c.id !== LANGS) {
-      items.push({ label: 'Hide this category', sub: 'its titles leave All and Search too', action: function () { list.push(c.id); Store.upsertPlaylist(Store.playlist); U.toast(c.name + ' hidden'); reshow(); } });
+      items.push({ label: 'Hide this category', sub: 'its titles leave All and Search too', action: function () { list.push(home.id); Store.upsertPlaylist(home.p); U.toast(c.name + ' hidden'); reshow(); } });
     }
     if (data[kind] && Object.keys(data[kind].langs).filter(Boolean).length > 1) items.push({ label: 'Languages…', action: langMenu });
-    if (list.length) items.push({ label: 'Show hidden categories (' + list.length + ')', action: function () { h[kind] = []; Store.upsertPlaylist(Store.playlist); U.toast('Hidden categories are back'); reshow(); } });
+    var hidAll = 0; vodPls().forEach(function (q) { hidAll += hiddenCats(kind, q).length; });
+    if (hidAll) items.push({ label: 'Show hidden categories (' + hidAll + ')', action: function () { vodPls().forEach(function (q) { var x = prefs(q).hide; if (x && x[kind] && x[kind].length) { x[kind] = []; Store.upsertPlaylist(q); } }); U.toast('Hidden categories are back'); reshow(); } });
     if (!items.length) return;
     UI.menu(c.name, items);
   }
@@ -208,10 +267,11 @@ var Vod = (function () {
   }
   // 7.634 -> ★ 7.6; nothing for 0 or a missing rating.
   function stars(r) { r = Math.round(parseFloat(r) * 10) / 10; return r > 0 ? '★ ' + r : ''; }
-  function cleanCat(n) { return Names.cleanGroup(n); }
+  function cleanCat(n, pl) { var p = pl && Store.byId ? Store.byId(pl) : null; return p && p.names ? Names.cleanGroupWith(p.names, n) : Names.cleanGroup(n); }
 
   function renderCat(row, c) {
     if (!row._n) { row._n = U.el('span', 'name'); row._t = U.el('span', 'tag'); var b = U.el('div', 'txt'); b.appendChild(row._n); row.appendChild(b); row.appendChild(row._t); }
+    row.classList.toggle('ghead', !!c.head);                    // a playlist's heading (several playlists on)
     row._n.textContent = c.name; row._t.textContent = c.count != null ? String(c.count) : '';
   }
   function renderItem(row, it) {
@@ -247,7 +307,7 @@ var Vod = (function () {
     var d = data[kind], counts = {};
     if (!d) return [];
     d.items.forEach(function (it) { counts[it.cat] = (counts[it.cat] || 0) + 1; });
-    var mine = E().myList.filter(function (k) { return k.charAt(0) === (kind === 'series' ? 's' : 'm'); }).length;
+    var mine = E().myList.filter(function (k) { return k.charAt(k.indexOf(':') + 1) === (kind === 'series' ? 's' : 'm'); }).length;
     var cw = continueList().length;
     var out = [];
     var codes = Object.keys(d.langs || {}).filter(Boolean);
@@ -258,9 +318,16 @@ var Vod = (function () {
     if (cw) out.push({ id: CW, name: 'Continue watching', count: cw });
     out.push({ id: MY, name: 'My list', count: mine });
     out.push({ id: ALL, name: kind === 'series' ? 'All shows' : 'All movies', count: d.items.filter(function (it) { return !it.adult; }).length });
-    var hid = {}; hiddenCats(kind).forEach(function (c) { hid[c] = 1; });
-    var later = [];
-    d.cats.forEach(function (c) { if (counts[c.id] && !hid[c.id]) (d.adultCat && d.adultCat[c.id] ? later : out).push({ id: c.id, name: cleanCat(c.name), count: counts[c.id], adult: !!(d.adultCat && d.adultCat[c.id]) }); });
+    var hid = {}; vodPls().forEach(function (q, n) { hiddenCats(kind, q).forEach(function (c) { hid[(n && d.multi ? q.id + ':' : '') + c] = 1; }); });
+    var later = [], section = null;
+    d.cats.forEach(function (c) {
+      if (!counts[c.id] || hid[c.id]) return;
+      var adult = !!(d.adultCat && d.adultCat[c.id]), row = { id: c.id, name: cleanCat(c.name, c.pl), count: counts[c.id], adult: adult, pl: c.pl || '' };
+      if (adult) { later.push(row); return; }
+      // Several playlists: a heading with the playlist's name above its categories.
+      if (d.multi && (c.pl || '') !== section) { section = c.pl || ''; var pp = section ? Store.byId(section) : Store.playlist; out.push({ id: '@' + (section || 'first'), head: true, name: (pp && pp.name) || 'Playlist' }); }
+      out.push(row);
+    });
     out = out.concat(later);
     return out;
   }
@@ -292,7 +359,13 @@ var Vod = (function () {
   /* Search looks inside Movies and Shows without opening them first: the lists load from the TV's
      cache (or the provider, once) when Search opens.  Only the kinds the provider offers. */
   var preparing = null;
-  function offered() { var p = Store.playlist || {}, v = p.vod || {}; return p.type === 'xtream' || v.m3u ? ['movie', 'series'].filter(function (k) { return k === 'movie' ? v.movies : v.series; }) : []; }
+  function offeredBy(p) { p = p || {}; var v = p.vod || {}; return p.type === 'xtream' || v.m3u ? ['movie', 'series'].filter(function (k) { return k === 'movie' ? v.movies : v.series; }) : []; }
+  // What any playlist in use offers (several playlists on: all of them together).
+  function offered() {
+    var out = [], ls = Store.loaded ? Store.loaded() : [Store.playlist || {}];
+    ls.forEach(function (p) { offeredBy(p).forEach(function (k) { if (out.indexOf(k) < 0) out.push(k); }); });
+    return ['movie', 'series'].filter(function (k) { return out.indexOf(k) >= 0; });
+  }
   function prepare() {
     var want = offered().filter(function (k) { return !data[k]; });
     if (!want.length) return Promise.resolve(false);
@@ -316,7 +389,7 @@ var Vod = (function () {
     pending = null;
     var cats = catsVL.items, ai = cats.findIndex(function (c) { return c.id === ALL; });
     if (ai >= 0) { catsVL.setItems(cats, ai); itemsVL.setItems(itemsFor(ALL), 0); }
-    var at = itemsVL.items.findIndex(function (it) { return it.id === x.it.id; });
+    var at = itemsVL.items.findIndex(function (it) { return it === x.it || (it.id === x.it.id && (it.pl || '') === (x.it.pl || '')); });
     if (at >= 0) itemsVL.setItems(itemsVL.items, at);
     setZone('items'); onItem();
     if (k === 'series') openSeries(x.it, x.ep ? function (eps) {
@@ -327,7 +400,7 @@ var Vod = (function () {
   }
 
   var catDeb = U.debounce(function (c) {
-    if (!c || episodes) return;
+    if (!c || c.head || episodes) return;
     var shut = c.adult && !adultOpen();
     itemsVL.empty = c.id === LANGS ? 'Press OK to pick which languages show' : shut ? 'Press OK and enter the PIN' : 'Nothing here';
     itemsVL.setItems(shut ? [] : itemsFor(c.id), 0); onItem();
@@ -341,21 +414,21 @@ var Vod = (function () {
 
   function fetchInfo() {
     var it = itemsVL.current();
-    if (!it || it.ep || kind !== 'movie' || info.has(it.id)) return;
-    info.set(it.id, null);
-    Source.vodInfo(it.id).then(function (r) {
+    if (!it || it.ep || kind !== 'movie' || info.has(key(it))) return;
+    info.set(key(it), null);
+    Source.vodInfo(it.id, plOf(it)).then(function (r) {
       var i = (r && r.info) || {};
-      info.set(it.id, { plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', media: Caps.fromXtream(i) });
+      info.set(key(it), { plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', media: Caps.fromXtream(i) });
       if (itemsVL.current() === it) showInfo();
     }).catch(function () {});
   }
 
-  function mediaOf(it) { var m = it.ep ? null : (kind === 'movie' ? info.get(it.id) : null); return it.ep ? it.media : m && m.media; }
+  function mediaOf(it) { var m = it.ep ? null : (kind === 'movie' ? info.get(key(it)) : null); return it.ep ? it.media : m && m.media; }
   function showInfo() {
     var it = itemsVL.current(), box = $('vodInfo');
     box.innerHTML = '';
     if (!it) return;
-    var m = it.ep ? null : (kind === 'movie' ? info.get(it.id) : null);
+    var m = it.ep ? null : (kind === 'movie' ? info.get(key(it)) : null);
     var poster = (m && m.poster) || it.cover || (series && series.cover);
     if (poster) { var img = U.el('img', 'vod-poster'); img.src = poster; img.onerror = function () { if (!Net.retryImage(this)) this.remove(); }; box.appendChild(img); }
     box.appendChild(U.el('h2', '', it.ep ? it.label : it.name));
@@ -388,12 +461,12 @@ var Vod = (function () {
   /* ---------- series drill-down ---------- */
   function openSeries(s, then) {
     $('vodTitle').textContent = 'Loading ' + s.name;
-    Source.seriesInfo(s.id).then(function (r) {
+    Source.seriesInfo(s.id, plOf(s)).then(function (r) {
       var eps = [], byS = (r && r.episodes) || {};
       Object.keys(byS).sort(function (a, b) { return +a - +b; }).forEach(function (sn) {
         (byS[sn] || []).forEach(function (e) {
           var inf = e.info || {};
-          eps.push({ ep: true, id: e.id, ext: e.container_extension || 'mp4', url: e.direct_source && Source.m3uVod() ? e.direct_source : '', season: +sn, num: +e.episode_num || 0, media: Caps.fromXtream(inf),
+          eps.push({ ep: true, pl: s.pl, id: e.id, ext: e.container_extension || 'mp4', url: e.direct_source && Source.m3uVod(plOf(s)) ? e.direct_source : '', season: +sn, num: +e.episode_num || 0, media: Caps.fromXtream(inf),
             label: 'S' + sn + ' E' + (e.episode_num || '?') + '   ' + (e.title || '').replace(/^.*? - S\d+E\d+ - /i, ''),
             dur: inf.duration || '', plotEp: inf.plot || '', cover: inf.movie_image || s.cover });
         });
@@ -409,7 +482,7 @@ var Vod = (function () {
   // Open a show's episodes on one of them ('e' + id) and play it from where it stopped.
   function playEpisode(s, epId) {
     openSeries(s, function (eps) {
-      var e = eps.filter(function (y) { return 'e' + y.id === epId; })[0];
+      var e = eps.filter(function (y) { return idOf(y) === epId; })[0];
       if (e) { itemsVL.setItems(eps, eps.indexOf(e)); onItem(); play(e, false); }
     });
   }
@@ -417,7 +490,7 @@ var Vod = (function () {
     var s = series; episodes = null; series = null;
     var c = catsVL.current();
     var list = itemsFor(c ? c.id : ALL);
-    itemsVL.setItems(list, Math.max(0, list.findIndex(function (x) { return x.id === s.id; })));
+    itemsVL.setItems(list, Math.max(0, list.findIndex(function (x) { return x === s || (x.id === s.id && (x.pl || '') === (s.pl || '')); })));
     $('vodTitle').textContent = kind === 'series' ? 'Shows' : 'Movies';
     onItem(); hints();
   }
@@ -426,9 +499,9 @@ var Vod = (function () {
   function play(it, fromStart) {
     var id = idOf(it);
     var r = resumeOf(id), startAt = !fromStart && r && r.pos > 30 && r.pos < r.dur - 60 ? r.pos - 5 : 0;
-    var meta = { id: id, media: mediaOf(it), title: it.ep ? (series ? series.name : '') + '   ' + it.label : it.name, sub: it.ep ? '' : it.year || '', item: it, seriesKey: series ? 's' + series.id : null };
+    var meta = { id: id, media: mediaOf(it), title: it.ep ? (series ? series.name : '') + '   ' + it.label : it.name, sub: it.ep ? '' : it.year || '', item: it, seriesKey: series ? pre(series) + 's' + series.id : null, p: it.pl || '' };
     // An M3U list's episodes carry their own link, and its movies' links are asked for (Source.movieLink).
-    var link = it.ep ? Promise.resolve(it.url || Source.episodeUrl(it.id, it.ext)) : Source.movieLink(it.id, it.ext);
+    var link = it.ep ? Promise.resolve(it.url || Source.episodeUrl(it.id, it.ext, plOf(it))) : Source.movieLink(it.id, it.ext, plOf(it));
     link.then(function (url) {
       playingMeta = meta;
       Views.playVod(meta, url, startAt, function () { open(kind, true); });
@@ -569,8 +642,11 @@ var Vod = (function () {
      Movies and Shows on the phone: categories, titles (a page at a time), details with episodes, and
      playing one on the TV.  Same lists, languages, hidden categories and PIN as the TV shows. */
   function withKind(k, fn) { var was = kind; kind = k; try { return fn(); } finally { kind = was; } }
+  // A title's id for the phone: another playlist's carries "<playlist id>:" (several playlists on).
+  function phoneId(it) { return it.pl ? it.pl + ':' + it.id : it.id; }
+  function byPhoneId(k, id) { return data[k].items.filter(function (x) { return String(phoneId(x)) === String(id); })[0]; }
   function slimItem(k, it) {
-    var r = resumeOf((k === 'series' ? 's' : 'm') + it.id), x = { id: it.id, n: it.name, c: it.cover || '', r: stars(it.rating).replace('★ ', '') };
+    var r = resumeOf(pre(it) + (k === 'series' ? 's' : 'm') + it.id), x = { id: phoneId(it), n: it.name, c: it.cover || '', r: stars(it.rating).replace('★ ', '') };
     if (it.year) x.y = String(it.year).slice(0, 4);
     if (r && r.dur && k === 'movie') x.p = Math.round(100 * r.pos / r.dur);
     return x;
@@ -580,7 +656,11 @@ var Vod = (function () {
     cats: function (k) {
       if (!phoneKind(k)) return Promise.resolve({ none: true, cats: [] });
       return load(k).then(function () {
-        return { cats: withKind(k, catList).filter(function (c) { return c.id !== LANGS; }).map(function (c) { return { id: c.id, n: c.name, count: c.count, adult: c.adult ? 1 : 0, locked: c.adult && !adultOpen() ? 1 : 0 }; }) };
+        // Several playlists: no heading rows; another playlist's categories say whose they are.
+        return { cats: withKind(k, catList).filter(function (c) { return c.id !== LANGS && !c.head; }).map(function (c) {
+          var pp = c.pl && Store.byId(c.pl);
+          return { id: c.id, n: pp ? (pp.name || 'Playlist') + ': ' + c.name : c.name, count: c.count, adult: c.adult ? 1 : 0, locked: c.adult && !adultOpen() ? 1 : 0 };
+        }) };
       });
     },
     items: function (k, cid, q, off, lim) {
@@ -605,35 +685,35 @@ var Vod = (function () {
     info: function (k, id) {
       if (!phoneKind(k)) return Promise.reject(new Error('This playlist has no ' + (k === 'series' ? 'shows' : 'movies') + '.'));
       return load(k).then(function () {
-        var it = data[k].items.filter(function (x) { return String(x.id) === String(id); })[0];
+        var it = byPhoneId(k, id);
         if (!it) throw new Error('That title is no longer in this playlist.');
-        var res = E().resume;
+        var res = E().resume, px = pre(it);
         if (k === 'movie') {
-          return Source.vodInfo(it.id).then(function (r) {
-            var i = (r && r.info) || {}, rr = res['m' + it.id];
-            return { id: it.id, n: it.name, c: i.movie_image || i.cover_big || it.cover || '', plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '',
+          return Source.vodInfo(it.id, plOf(it)).then(function (r) {
+            var i = (r && r.info) || {}, rr = res[px + 'm' + it.id];
+            return { id: phoneId(it), n: it.name, c: i.movie_image || i.cover_big || it.cover || '', plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '',
               year: (i.releasedate || i.release_date || '').slice(0, 4), dur: niceDur(i.duration || ''), r: stars(it.rating).replace('★ ', ''), media: Caps.label(Caps.fromXtream(i)) || '',
-              pos: rr ? Math.round(rr.pos) : 0, len: rr ? Math.round(rr.dur) : 0, mine: E().myList.indexOf('m' + it.id) >= 0 };
-          }, function () { return { id: it.id, n: it.name, c: it.cover || '', plot: '', r: stars(it.rating).replace('★ ', '') }; });
+              pos: rr ? Math.round(rr.pos) : 0, len: rr ? Math.round(rr.dur) : 0, mine: E().myList.indexOf(px + 'm' + it.id) >= 0 };
+          }, function () { return { id: phoneId(it), n: it.name, c: it.cover || '', plot: '', r: stars(it.rating).replace('★ ', '') }; });
         }
-        return Source.seriesInfo(it.id).then(function (r) {
+        return Source.seriesInfo(it.id, plOf(it)).then(function (r) {
           var byS = (r && r.episodes) || {}, seasons = [], inf = (r && r.info) || {};
           Object.keys(byS).sort(function (a, b) { return +a - +b; }).forEach(function (sn) {
             seasons.push({ s: +sn, eps: (byS[sn] || []).map(function (e) {
-              var ei = e.info || {}, rr = res['e' + e.id];
+              var ei = e.info || {}, rr = res[px + 'e' + e.id];
               return { id: e.id, e: +e.episode_num || 0, t: String(e.title || '').replace(/^.*? - S\d+E\d+ - /i, ''), dur: niceDur(ei.duration || ''), plot: ei.plot || '', c: ei.movie_image || '',
                 pos: rr ? Math.round(rr.pos) : 0, len: rr ? Math.round(rr.dur) : 0 };
             }) });
           });
-          return { id: it.id, n: it.name, c: inf.cover || it.cover || '', plot: inf.plot || it.plot || '', genre: inf.genre || '', cast: inf.cast || '', year: String(it.year || inf.releaseDate || '').slice(0, 4),
-            r: stars(it.rating).replace('★ ', ''), seasons: seasons, mine: E().myList.indexOf('s' + it.id) >= 0 };
+          return { id: phoneId(it), n: it.name, c: inf.cover || it.cover || '', plot: inf.plot || it.plot || '', genre: inf.genre || '', cast: inf.cast || '', year: String(it.year || inf.releaseDate || '').slice(0, 4),
+            r: stars(it.rating).replace('★ ', ''), seasons: seasons, mine: E().myList.indexOf(px + 's' + it.id) >= 0 };
         });
       });
     },
     play: function (k, id, ep, fromStart) {
       if (!phoneKind(k)) return Promise.reject(new Error('This playlist has no ' + (k === 'series' ? 'shows' : 'movies') + '.'));
       return load(k).then(function () {
-        var it = data[k].items.filter(function (x) { return String(x.id) === String(id); })[0];
+        var it = byPhoneId(k, id);
         if (!it) throw new Error('That title is no longer in this playlist.');
         if (it.adult && !adultOpen()) throw new Error('That title is locked.  Open it on the TV with the PIN.');
         openItem({ it: it, kind: k, ep: ep || null, fromStart: !!fromStart });
@@ -642,5 +722,5 @@ var Vod = (function () {
     }
   };
 
-  return { _test: { tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, reset: function () { data = { movie: null, series: null }; raw = { movie: null, series: null }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
+  return { _test: { tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, offered: offered, reset: function () { gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
 })();

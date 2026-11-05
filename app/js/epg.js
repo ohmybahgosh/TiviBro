@@ -13,8 +13,11 @@
 
    Several playlists on (Library, Store): each playlist's own guide (its sources, its provider guide,
    its offsets and days) is loaded for its own channels, the first playlist's first, one after the
-   other, into the same cache.  Guide ids are shared: the playlist that loaded an id first keeps it
-   (idPl says which playlist's stored guide holds it, for descriptions).  The per-channel provider
+   other, into the same cache.  An id only another playlist's guide has is shared with every channel
+   that names it.  An id two playlists' guides both have keeps the first playlist's programmes under
+   the id itself; the other playlist's go under "<playlist id>|<guide id>" (alias), so each channel
+   gets its own playlist's programmes.  idPl says which playlist's stored guide holds a key, for
+   descriptions.  The per-channel provider
    guide asks the channel's own playlist.  The public fill-in is one pass over every channel still
    without a guide, with the first playlist's public guide settings. */
 var Epg = (function () {
@@ -68,13 +71,18 @@ var Epg = (function () {
   function P() { return Store.playlist; }
   // The playlist a channel belongs to (several playlists on), else the first.
   function PL(ch) { return Store.plOf ? Store.plOf(ch) : P(); }
-  var idPl = {};                // guide id -> the other playlist whose stored guide holds it (the first's are not listed)
+  var idPl = {};                // guide key -> the other playlist whose stored guide holds it (the first's are not listed)
+  var alias = {};               // playlist id -> { guide id: its own key, where an earlier playlist has that id too }
+  // The guide id as its playlist's own guide holds it (alias), or as it is.
+  function own(ch, id) { var a = id && ch && ch.p && alias[ch.p]; return (a && a[id]) || id; }
+  // A cache key back to the guide id its playlist's stored guide knows.
+  function bare(key) { var w = idPl[key]; return w && key.indexOf(w + '|') === 0 ? key.slice(w.length + 1) : key; }
   // Does this guide id have anything from now on?  (Lists are in time order: the last one tells.)
   function live(id) { var x = cache.get(id), l = x && x.list; return !!(l && l.length && l[l.length - 1].e > Date.now()); }
   function epgId(ch) {
     var m = Store.edits.epgMap && Store.edits.epgMap[ch.k];
     if (m) return m;
-    var id = matched[ch.k] || ch.epg || '';
+    var id = own(ch, matched[ch.k] || ch.epg || '');
     // The public guide only stands in where your sources and the provider's have nothing (or nothing
     // from now on: a provider's Pluto TV entries can stop days early).
     if (pubMatched[ch.k] && !(id && live(id))) return pubMatched[ch.k];
@@ -383,7 +391,12 @@ var Epg = (function () {
     var t = Date.now(), other = pl && pl.id !== P().id ? pl.id : '', k;
     if (other) {
       findMemo = {};
-      for (k in c.map) if (!cache.has(k) || idPl[k] === other) { cache.set(k, { at: t + 1e12, list: untangle(c.map[k]) }); idPl[k] = other; }
+      var mine = alias[other] || (alias[other] = {});
+      for (k in c.map) {
+        var key = !cache.has(k) || idPl[k] === other ? k : other + '|' + k;
+        if (key !== k) mine[k] = key;
+        cache.set(key, { at: t + 1e12, list: untangle(c.map[k]) }); idPl[key] = other;
+      }
       for (k in c.icons || {}) if (!icons[k]) icons[k] = c.icons[k];
       var seenId = {}; chList.forEach(function (x) { seenId[x[0]] = 1; });
       (c.channels || []).forEach(function (x) { if (!seenId[x[0]]) chList.push(x); });
@@ -395,7 +408,7 @@ var Epg = (function () {
       });
       return;
     }
-    cache.clear(); idPl = {};
+    cache.clear(); idPl = {}; alias = {};
     findMemo = {}; for (k in c.map) cache.set(k, { at: t + 1e12, list: untangle(c.map[k]) });   // XML data does not expire per row
     icons = c.icons || {};
     chList = c.channels || [];
@@ -535,7 +548,7 @@ var Epg = (function () {
     var id = ch && epgId(ch), x = id && cache.get(id);
     if (!x || descWait[id]) return '';
     descWait[id] = 1;
-    fetch(hUrl('desc', PUB_ID.test(id) ? 'pub' : 'main', PUB_ID.test(id) ? '' : idPl[id]) + '&id=' + encodeURIComponent(id), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (arr) {
+    fetch(hUrl('desc', PUB_ID.test(id) ? 'pub' : 'main', PUB_ID.test(id) ? '' : idPl[id]) + '&id=' + encodeURIComponent(bare(id)), { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (arr) {
       var y = cache.get(id);
       if (y && y.list === x.list && Array.isArray(arr)) {
         for (var i = 0; i < x.list.length; i++) x.list[i].d = arr[i] || '';
@@ -660,7 +673,7 @@ var Epg = (function () {
     }),
       ids: Object.keys(ids), past: ids, names: names, from: now - days * 86400e3, recent: now - 3 * 3600e3, to: now + 2 * 86400e3,
       // webOS 4 and 5 TVs (2018 to 2020) have the least memory: shorter programme descriptions there.
-      descMax: (function () { var v = Caps.probe().webos; return v && v <= 5 ? 250 : 400; })(), budget: budget(g && g.safe) };
+      descMax: (function () { var v = Caps.probe().webos; return v && v <= 5 ? 250 : 400; })(), budget: budget(g && g.safe) * (mine ? 0.5 : 1) };      // another playlist's guide: half, beside the first's
     if (pub) { msg.pub = true; msg.pk = pub.pk; msg.pubWant = pub.want; }
     var keysFn = typeof PubEpg !== 'undefined' ? PubEpg.keys : function () { return { keys: [], country: '' }; };
     var code = 'self.norm = ' + norm.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\n(' + workerMain.toString() + ')();';
@@ -697,7 +710,7 @@ var Epg = (function () {
 
   var statusOf = {};             // the other playlists' guide status, by playlist id
   function init(lib, force) {
-    cache.clear(); queue.length = 0; matched = {}; icons = {}; chList = []; status = { at: 0, sources: [] }; idPl = {}; statusOf = {};
+    cache.clear(); queue.length = 0; matched = {}; icons = {}; chList = []; status = { at: 0, sources: [] }; idPl = {}; alias = {}; statusOf = {};
     pubMatched = {}; pubList = []; pubStatus = null; pubGen++;
     var srcs = sources(), pub = pubOn(), gen = pubGen;
     // The other playlists that are on, with guide files of their own (several playlists on).
@@ -721,15 +734,22 @@ var Epg = (function () {
   }
 
   /* ---------- public guide fill-in (pubepg.js) ---------- */
-  function pubOn() { return typeof PubEpg !== 'undefined' && PubEpg.conf(P()).on && !!(Library.data && Library.data.channels.length); }
+  // Several playlists on: each playlist's own Public guide fill-in switch decides for its channels;
+  // the one pass uses the first playlist's countries and days.
+  function pubOn() {
+    if (typeof PubEpg === 'undefined' || !(Library.data && Library.data.channels.length)) return false;
+    return (Store.loaded ? Store.loaded() : [P()]).some(function (p) { return PubEpg.conf(p).on; });
+  }
   // Channels nothing else has a guide for.  Per-channel provider guides can't be checked ahead, so
   // a channel the provider gives a guide id to counts as covered there.
   function missing() {
-    var map = Store.edits.epgMap || {}, ev = typeof Events !== 'undefined';
+    var map = Store.edits.epgMap || {}, ev = typeof Events !== 'undefined', first = PubEpg.conf(P()).on;
     return Library.data.channels.filter(function (ch) {
       if (map[ch.k] && !PUB_ID.test(map[ch.k])) return false;
       if (Library.noGuide(ch)) return false;                    // no guide wanted
-      var id = matched[ch.k] || ch.epg || '';
+      if (ch.p && !PubEpg.conf(PL(ch)).on) return false;        // its playlist has public fill-in off
+      if (!ch.p && !first) return false;
+      var id = own(ch, matched[ch.k] || ch.epg || '');
       if (id && live(id)) return false;
       // Per-channel provider guides can't be checked ahead, except for app channels (Pluto TV), whose
       // own guide is the better one anyway.
@@ -894,7 +914,11 @@ var Epg = (function () {
       var kind = st[0];
       return fetch(hUrl('find', kind, st[1]) + '&max=' + max + '&q=' + encodeURIComponent(JSON.stringify(words)), { cache: 'no-store' })
         .then(function (r) { return r.ok ? r.json() : []; }).then(function (arr) {
-          (Array.isArray(arr) ? arr : []).forEach(function (x) { var c = cache.get(x.id); if (c && c.list && c.list[x.i]) take(x.id, c.list[x.i], x.d); });
+          (Array.isArray(arr) ? arr : []).forEach(function (x) {
+            // Another playlist's stored guide: its id may be kept under its own key (alias).
+            var key = st[1] ? (alias[st[1]] && alias[st[1]][x.id]) || (idPl[x.id] === st[1] ? x.id : '') : (idPl[x.id] ? '' : x.id);
+            var c = key && cache.get(key); if (c && c.list && c.list[x.i]) take(key, c.list[x.i], x.d);
+          });
         }, function () {});
     }));
     var pr = ask.then(function () { return out; });
@@ -915,6 +939,8 @@ var Epg = (function () {
   return {
     untangle: untangle, pubPick: function (miss) { return pubPick(miss); }, init: init, request: request, nowNext: nowNext, search: search, during: during, findDesc: findDesc, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc,
     get inHelper() { return hMode; },
+    // A channel's guide id as its own playlist's guide names it (without an alias's playlist id).
+    guideId: function (ch) { var id = epgId(ch); return id ? bare(id) : ''; },
     icon: function (id) { return icons[id] || ''; },
     guideChannels: function () { return pubList.length ? chList.concat(pubList) : chList; },
     // Where a channel's guide comes from when it's the public one: { name, site } or null.

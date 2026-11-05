@@ -179,9 +179,10 @@ var Store = (function () {
      playlist's id in front.  So a key names the same channel whichever playlist is first (toMem,
      toFile), and making another playlist the first only changes which prefix memory leaves off.
      With one playlist on nothing is attached and none of this runs: the same code path as before. */
-  var KEY_MAPS = ['hiddenChannels', 'renames', 'watch', 'blockedChannels', 'epgMap', 'noGuide', 'display'];
+  // resume, watched and myList: Movies and Shows (vod.js), whose other playlists' keys are "<id>:m123".
+  var KEY_MAPS = ['hiddenChannels', 'renames', 'watch', 'blockedChannels', 'epgMap', 'noGuide', 'display', 'resume', 'watched'];
   var GROUP_MAPS = ['hiddenGroups', 'groupRenames', 'blockedGroups', 'groupSort', 'groupAdd', 'groupRemove', 'chanOrder'];
-  var GROUP_LISTS = ['groupOrder', 'knownGroups'];
+  var GROUP_LISTS = ['groupOrder', 'knownGroups', 'myList'];
   var KEYED = { groupAdd: 'list', chanOrder: 'list', groupRemove: 'map' };     // group maps whose values hold channel keys
   var attached = [], own = {};
   function idSet() { var m = {}; settings.playlists.forEach(function (p) { m[p.id] = 1; }); return m; }
@@ -199,6 +200,8 @@ var Store = (function () {
   // A group map's value with its channel keys turned by fn.
   function mapValue(f, v, fn) {
     var kind = KEYED[f];
+    // A show's resume point names the episode it is on ("e45"), a key of the same playlist.
+    if (f === 'resume' && v && typeof v.ep === 'string') { var r = {}; for (var x in v) r[x] = v[x]; r.ep = fn(v.ep); return r; }
     if (kind === 'list' && Array.isArray(v)) return v.map(fn);
     if (kind === 'map' && v && typeof v === 'object') { var o = {}; for (var k in v) o[fn(k)] = v[k]; return o; }
     return v;
@@ -493,6 +496,8 @@ var Store = (function () {
     get playlist() { return playlist(); },
     normalize: normalize,
     usePlaylist: usePlaylist, upsertPlaylist: upsertPlaylist, removePlaylist: removePlaylist,
+    // A key as playlist file's own form has it (a reminder the helper kept for another playlist), in memory's form.
+    keyFrom: function (file, k) { return toMem(k, file, idSet()); },
     byId: byId, plOf: plOf, loaded: loaded, attach: attach, detach: detach, ownerOf: ownerOf, home: home, fileEdits: fileEdits, flushEdits: flushEdits,
     get attached() { return attached.slice(); },
     // The other playlists that are on (to be loaded beside the first), in settings order.

@@ -415,9 +415,8 @@ var Phone = (function () {
     var ins = inputs();
     if (ins.length) out.inputs = ins;
     // Movies and Shows tabs on the phone only when the provider has them.
-    var p = Store.playlist || {}, vd = p.vod || {};
-    var vk = p.type === 'xtream' || !!vd.m3u;
-    out.vod2 = { mediaLibraryVersion:2, movies: vk && !!vd.movies, series: vk && !!vd.series, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0, onnow: typeof Movies !== 'undefined' && Movies.on() };
+    var vk = Vod.offered();          // several playlists on: any of them
+    out.vod2 = { mediaLibraryVersion:2, movies: vk.indexOf('movie') >= 0, series: vk.indexOf('series') >= 0, media: typeof MediaStore !== 'undefined' && MediaStore.sources().length > 0, onnow: typeof Movies !== 'undefined' && Movies.on() };
     return out;
   }
   function pushState(soon) {
@@ -445,8 +444,11 @@ var Phone = (function () {
       var l = Library.channels(g.id);
       if (!l.length) return;
       // Several playlists on: a provider group says whose it is ("Sports" twice would be confusing).
-      var gn = Library.multi && !Library.isVirtual(g.id) && !Library.isCustom(g.id) ? Library.plName(g) + ': ' + g.name : g.name;
-      groups.push({ id: g.id, name: gn, keys: l.map(function (c) { return c.k; }) });
+      // pl: the playlist's name, for a phone app that sections them (older ones read the name only).
+      var own = Library.multi && !Library.isVirtual(g.id) && !Library.isCustom(g.id), gn = own ? Library.plName(g) + ': ' + g.name : g.name;
+      var row = { id: g.id, name: gn, keys: l.map(function (c) { return c.k; }) };
+      if (own) row.pl = Library.plName(g);
+      groups.push(row);
       extra.push(l);
     });
     // Every channel a group shows, also ones All leaves out (a Local channels group keeps stations

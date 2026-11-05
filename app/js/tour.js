@@ -6,11 +6,14 @@
    the playlist > Set-up tour.
    Steps: welcome, countries, channel names, East and West, local channels, event channels, clutter,
    logos, look, and a summary with tips.
-   With several playlists on, it looks at and tidies the first playlist only (Library.firstData). */
+   Several playlists on: it works on one playlist at a time, the one whose page it was opened from
+   (opts.pl; the first playlist when not given): its channels (Library.dataOf), names and event settings. */
 var Tour = (function () {
   'use strict';
   var root = U.$('viewSetup');
-  var st = null;
+  var st = null, tourPl = '';
+  function P() { return (tourPl && Store.byId && Store.byId(tourPl)) || Store.playlist; }
+  function DATA() { return Library.dataOf ? Library.dataOf(tourPl) : Library.data; }
 
   function S() { return Store.settings; }
   function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
@@ -33,7 +36,7 @@ var Tour = (function () {
 
   /* ---------- what the playlist has ---------- */
   function survey() {
-    var data = Library.firstData ? Library.firstData() : Library.data, t = Tidy.make(data), now = Date.now(), ev = 0, idle = 0, upcoming = [];
+    var data = DATA(), t = Tidy.make(data), now = Date.now(), ev = 0, idle = 0, upcoming = [];
     data.channels.forEach(function (c) {
       if (Library.idle(c)) idle++;
       var e = Events.parse(c.n, now);
@@ -55,7 +58,7 @@ var Tour = (function () {
     return v;
   }
   function makePlan() {
-    var t = st.sv.t, data = Library.firstData ? Library.firstData() : Library.data, E = Store.edits, g = {}, c = {}, ch = st.ch;
+    var t = st.sv.t, data = DATA(), E = Store.edits, g = {}, c = {}, ch = st.ch;
     var listed = {}; st.sv.countries.forEach(function (x) { listed[x.p] = 1; });
     data.groups.forEach(function (gr) {
       var code = t.groupCountry(gr.id), keep = listed[code] ? ch.cc[code] !== false : ch.ccNone;
@@ -108,7 +111,7 @@ var Tour = (function () {
   function steps() { return STEPS.filter(function (s) { return !s.when || s.when(); }); }
 
   function welcomeRows() {
-    var sv = st.sv, out = [], p = Store.playlist, cards = U.el('div', 'tour-stats');
+    var sv = st.sv, out = [], p = P(), cards = U.el('div', 'tour-stats');
     function card(v, l) { var d = U.el('div', 'tour-stat'); d.appendChild(U.el('b', '', v)); d.appendChild(U.el('span', '', l)); cards.appendChild(d); }
     card(fmt(sv.channels), 'channels');
     card(fmt(sv.groups), 'groups');
@@ -245,7 +248,7 @@ var Tour = (function () {
       box.appendChild(U.el('div', 'tour-note err', 'The logo library could not be reached just now, so channels keep the logos they have.  Check the TV\'s internet; TiviBro tries again each time it starts.'));
       return box;
     }
-    var chans = (Library.firstData ? Library.firstData() : Library.data).channels, own = function (c) { return Views.ownLogo(c); };
+    var chans = DATA().channels, own = function (c) { return Views.ownLogo(c); };
     var cov = st.cov || (st.cov = Logos.coverage(chans, own));
     box.appendChild(U.el('div', 'tour-note', 'Found ' + plural(cov.found, 'logo') + ' for your ' + fmt(cov.total) + ' channels, ' + fmt(cov.filled) + ' of them for channels with none.'));
     var row = U.el('div', 'tour-logo-row'), shown = 0, seen = {};
@@ -281,7 +284,7 @@ var Tour = (function () {
   }
 
   function guideRows() {
-    var p = Store.playlist, out = [], cf = PubEpg.conf(p), ps = Epg.pubStatus;
+    var p = P(), out = [], cf = PubEpg.conf(p), ps = Epg.pubStatus;
     out.push(toggle('Fill in from public guides', 'Only for channels with no other guide.', function () { return PubEpg.conf(p).on; }, function (v) { PubEpg.set(p, { on: v }); Store.upsertPlaylist(p); Epg.refresh(Library, false); draw(); }));
     if (cf.on) {
       if (ps && ps.at && !ps.none) out.push(info('Filled in so far', plural(ps.filled, 'channel') + ' of ' + ps.asked + ' with no other guide' + (ps.countries.length ? ', from the guides for ' + ps.countries.map(PubEpg.name).join(', ') : '')));
@@ -325,7 +328,7 @@ var Tour = (function () {
       ['OK while watching', 'The quick menu: audio, subtitles, quality, picture, sleep timer, from start.'],
       ['Catch-up', 'Channels marked ↺ replay the last days: go back in the guide and press OK.'],
       ['The web editor', 'Edit on phone in the side menu: Smart clean-up, renaming, your own groups, guide matching, backups.'],
-      ['Run this again', 'Settings > Playlists > ' + (Store.playlist.name || 'the playlist') + ' > Set-up tour.']].forEach(function (x) {
+      ['Run this again', 'Settings > Playlists > ' + (P().name || 'the playlist') + ' > Set-up tour.']].forEach(function (x) {
       var d = U.el('div', 'tour-tip'); d.appendChild(U.el('b', '', x[0])); d.appendChild(U.el('span', '', x[1])); tips.appendChild(d);
     });
     out.push(custom(tips));
@@ -355,7 +358,7 @@ var Tour = (function () {
     if (ch.words.trim()) cl.push('"' + ch.words.trim() + '"');
     out.push(['clutter', 'Clutter', cl.length ? 'Hide ' + cl.join(', ') : 'Nothing hidden']);
     out.push(['logos', 'Logos', !s.logoLib || s.logoLib === 'off' ? 'Playlist and guide logos only' : (s.logoLib === 'all' ? 'Library for every channel' : 'Fill in missing') + ', ' + (s.logoStyle === 'original' ? 'original logos' : 'matching set')]);
-    out.push(['guide', 'Guide', PubEpg.conf(Store.playlist).on ? 'Public guides fill in channels with no guide' : 'Your sources and the provider\'s guide only']);
+    out.push(['guide', 'Guide', PubEpg.conf(P()).on ? 'Public guides fill in channels with no guide' : 'Your sources and the provider\'s guide only']);
     var K = Settings.LOOK, ai = K.ACCENTS.indexOf(s.accent), ti = K.THEMES.indexOf(s.theme || 'dark');
     out.push(['look', 'Look and start', (Views.PALETTES[s.palette] ? Views.PALETTE_NAMES[s.palette] : (ai >= 0 ? K.ACCENT_NAMES[ai] : 'Custom colour') + ' on ' + (ti >= 0 ? K.THEME_NAMES[ti] : 'Midnight')) + ', opens on ' + (s.startTab === 'live' ? 'Channels' : 'Guide')]);
     return out;
@@ -432,7 +435,7 @@ var Tour = (function () {
     var lead = typeof step.lead === 'function' ? step.lead() : step.lead;
     if (lead) main.appendChild(U.el('p', 'lead', lead));
     if (step.id === 'welcome') main.appendChild(U.el('p', 'lead', st.current ? 'Your setup as it is now is filled in on every step: the countries you kept, your feed, your cities.  Change what you like, then Apply.' :
-      (Store.playlist.name || 'Your playlist') + ' loaded.  Here is what it has, and a quick way to make it yours: keep the countries you watch, clean the names, pick East or West and your city, and choose logos and colours.'));
+      (P().name || 'Your playlist') + ' loaded.  Here is what it has, and a quick way to make it yours: keep the countries you watch, clean the names, pick East or West and your city, and choose logos and colours.'));
     var view = U.el('div', 'tour-view'), scroll = U.el('div', 'tour-scroll');
     st.rowEls = st.items.map(function (it, i) {
       if (it.custom) return it.el;
@@ -545,7 +548,7 @@ var Tour = (function () {
 
   /* ---------- apply ---------- */
   function apply() {
-    var pl = plan(), p = Store.playlist, E = Store.edits;
+    var pl = plan(), p = P(), E = Store.edits;
     var save = WebEdit.snap ? WebEdit.snap('Before the set-up tour').catch(function () {}) : Promise.resolve();
     save.then(function () {
       Object.keys(pl.g).forEach(function (id) { E.hiddenGroups[id] = 1; });
@@ -564,7 +567,7 @@ var Tour = (function () {
     });
   }
   function finish(applied) {
-    var p = Store.playlist, done = st && st.done, from = st && st.from;
+    var p = P(), done = st && st.done, from = st && st.from;
     if (!applied && p && !p.tour) { p.tour = -1; Store.upsertPlaylist(p); }
     if (st && st.phone) {
       phoneDone = { at: Date.now(), applied: applied };
@@ -588,7 +591,7 @@ var Tour = (function () {
     var E = Store.edits, hg = E.hiddenGroups || {}, hc = E.hiddenChannels || {}, sv = st.sv, ch = st.ch;
     if (!Object.keys(hg).length && !Object.keys(hc).length && !(E.custom || []).some(function (g) { return g.items && g.items.length; })) return;    // nothing done yet
     sv.countries.forEach(function (x) { ch.cc[x.p] = x.groups.some(function (id) { return !hg[id]; }); });
-    var cm = sv.t.countryMap(), none = (Library.firstData ? Library.firstData() : Library.data).groups.filter(function (g) { return !cm[g.id]; });
+    var cm = sv.t.countryMap(), none = DATA().groups.filter(function (g) { return !cm[g.id]; });
     ch.ccNone = !none.length || none.some(function (g) { return !hg[g.id]; });
     var vis = function (c) { return !hc[c.k] && !hg[c.g]; };
     if (sv.feeds.pairs) {
@@ -615,7 +618,8 @@ var Tour = (function () {
     draw();
   }
   function init(opts) {
-    var p = Store.playlist;
+    tourPl = opts.pl && Store.settings && opts.pl !== Store.settings.active ? opts.pl : '';
+    var p = P();
     st = { step: 0, sel: -1, first: !!opts.first, done: opts.done, from: opts.from, sv: survey(), remote: false, phone: !!opts.phone };
     var region = Tidy.ccOfLocale(navigator.language), cc = {};
     var inList = st.sv.countries.some(function (x) { return x.p === region; });
@@ -639,13 +643,13 @@ var Tour = (function () {
     var parts = [].map.call(el.children || [], function (c) { return String(c.textContent || '').replace(/\s+/g, ' ').trim(); }).filter(Boolean);
     return parts.length ? parts.join('  ·  ') : String(el.textContent || '').replace(/\s+/g, ' ').trim();
   }
-  function phoneRows() {
+  function phoneRows(pl) {
     if (!st) {
       if (phoneDone && Date.now() - phoneDone.at < 120000) {
         return [note(phoneDone.applied ? 'Applied on the TV.  Everything hidden stays one press away in Settings > Channels and groups.' : 'Closed without changes.'),
-          action('Run the set-up tour again', '', function () { phoneDone = null; init({ phone: true }); }, function () { return '›'; })];
+          action('Run the set-up tour again', '', function () { phoneDone = null; init({ phone: true, pl: pl }); }, function () { return '›'; })];
       }
-      init({ phone: true });
+      init({ phone: true, pl: pl });
     }
     var list = steps(), step = list[st.step], out = [];
     out.push(head('Step ' + (st.step + 1) + ' of ' + list.length + ':  ' + (step.id === 'welcome' ? (st.first ? 'Your playlist is in' : 'Set-up tour') : step.title)));
