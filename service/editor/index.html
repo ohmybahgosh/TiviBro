@@ -637,6 +637,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
       <div class="phead"><div><h1>Smart clean-up</h1><p>Bulk tools that find clutter for you.  Each shows what it will do before it does it, and each can be undone.</p></div></div>
       <div class="scroll">
         <div class="note">Hiding never deletes anything.  Hidden groups and channels can be switched back on any time in Channels and groups.  Taking a word off many group names at once is now on <a href="#names">Channel and group names</a>.  <a href="#help/tools">Learn more</a></div>
+        <div class="card hidden" id="tPlCard"><label>Clean up <select id="tPl"></select></label><div class="ex">Several playlists are on.  Each change is kept by the playlist it belongs to, whichever you pick here.</div></div>
         <div class="card tprog" id="toolsProg"></div>
         <div class="card" id="tAdult"></div>
         <div class="card" id="tCountry"></div>
@@ -1142,7 +1143,7 @@ function isFav(k) { var f = customOf(FAV); return !!(f && f.items.indexOf(k) >= 
 function provName(g) { return E.groupRenames[g.id] || cleanGroup(g.name, g.p); }
 function providerGroups() {
   var pos = {}; E.groupOrder.forEach(function (id, i) { pos[id] = i; });
-  return D.groups.map(function (g, i) { return { id: g.id, name: provName(g), raw: g.name, i: i, renamed: !!E.groupRenames[g.id], pl: g.pl || '' }; })
+  return D.groups.map(function (g, i) { return { id: g.id, name: provName(g), raw: g.name, i: i, renamed: !!E.groupRenames[g.id], pl: g.pl || '', p: g.p || '' }; })
     .sort(function (a, b) { var x = pos[a.id] != null ? pos[a.id] : 1e6 + a.i, y = pos[b.id] != null ? pos[b.id] : 1e6 + b.i; return x - y; });
 }
 function sortList(l, mode, id) {
@@ -2840,18 +2841,42 @@ $('onlyChanged').addEventListener('change', renderPreview);
 /* The answers (countries, dividers, East and West feeds, local stations, duplicates) come from tidy.js,
    the same engine the TV's first-run tour uses, so both always agree. */
 var tctx = null;
-function T() { if (!tctx || tctx.data !== D) { tctx = Tidy.make(D); localCache = null; } return tctx; }
+/* Several playlists on: the playlist picker (tPl) picks one playlist ('' is the first, or its id) or all
+   of them ('*').  SD() is the snapshot narrowed to it, and every step here looks only at SD().  What a
+   step changes is kept by each channel's own playlist on the TV, as always. */
+var tsel = '*', sdMemo = null;
+function SD() {
+  if (tsel === '*' || !D || !D.groups.some(function (g) { return g.p; })) return D;
+  if (sdMemo && sdMemo.of === D && sdMemo.sel === tsel) return sdMemo.d;
+  var d = {}; for (var k in D) d[k] = D[k];
+  d.groups = D.groups.filter(function (g) { return (g.p || '') === tsel; });
+  d.channels = D.channels.filter(function (c) { return (c.p || '') === tsel; });
+  sdMemo = { of: D, sel: tsel, d: d };
+  return d;
+}
+function inScope(g) { return tsel === '*' || (g.p || '') === tsel; }
+function scopedGroups() { return providerGroups().filter(inScope); }
+function T() { var d = SD(); if (!tctx || tctx.data !== d) { tctx = Tidy.make(d); localCache = null; } return tctx; }
+function drawToolsPicker() {
+  var others = D ? (D.playlists || []).filter(function (q) { return q.id !== (D.playlist && D.playlist.id) && D.groups.some(function (g) { return g.p === q.id; }); }) : [];
+  $('tPlCard').classList.toggle('hidden', !others.length);
+  if (!others.length) { tsel = '*'; return; }
+  $('tPl').innerHTML = '<option value="*">every playlist that is on</option><option value="">' + esc((D.playlist && D.playlist.name) || 'First playlist') + '</option>' +
+    others.map(function (q) { return '<option value="' + esc(q.id) + '">' + esc(q.name) + '</option>'; }).join('');
+  $('tPl').value = tsel;
+}
+$('tPl').addEventListener('change', function () { tsel = this.value; dupeCache = null; localCache = null; renderTools(); });
 var prefixOf = Tidy.prefixOf, ccNorm = Tidy.ccNorm, ccWord = Tidy.ccWord, isDivider = Tidy.isDivider, CC_NAME = Tidy.CC_NAME;
 var feedOf = Tidy.feedOf, parseLocal = Tidy.parseLocal, titleCase = Tidy.titleCase;
 function countryMap() { return T().countryMap(); }
 function groupCountry(g) { return T().groupCountry(g.id); }
 function countryStats() { return T().countries(E.hiddenGroups); }
 function dividerGroups(hidden) {
-  return providerGroups().filter(function (g) { return !!E.hiddenGroups[g.id] === !!hidden && isDivider(g.raw) && channelsOf(g.id, true).length <= 3; });
+  return scopedGroups().filter(function (g) { return !!E.hiddenGroups[g.id] === !!hidden && isDivider(g.raw) && channelsOf(g.id, true).length <= 3; });
 }
 /* Channels with nothing on: "Off Air", "Offline", "No Event Scheduled".  Event channels are renamed by
    the provider when something is on, so this is a setting checked against the current name, not a hide. */
-function idleChannels() { var now = Date.now(); return D.channels.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g] && (Names.idle(c.n) || Events.endedName(c.n, now)); }); }
+function idleChannels() { var now = Date.now(); return SD().channels.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g] && (Names.idle(c.n) || Events.endedName(c.n, now)); }); }
 /* Groups of old events: every event named in the group ended days ago (the provider stopped updating it,
    like a Winter Olympics group in November).  A hide that stays, unlike nothing-on. */
 var oldCache = null;
@@ -2859,21 +2884,21 @@ function oldEventGroups(hidden) {
   var now = Date.now(), key = D.chanRev + ':' + Math.floor(now / 3600e3);
   if (!oldCache || oldCache.key !== key) {
     var by = {};
-    D.channels.forEach(function (c) {
+    SD().channels.forEach(function (c) {
       var e = Events.parse(c.n, now), x = by[c.g] || (by[c.g] = { n: 0, timed: 0, live: 0 });
       x.n++;
       if (e) { x.timed++; if (e.end + 2 * 86400e3 > now) x.live++; }
     });
     oldCache = { key: key, by: by };
   }
-  return providerGroups().filter(function (g) {
+  return scopedGroups().filter(function (g) {
     var x = oldCache.by[g.id];
     return x && !!E.hiddenGroups[g.id] === !!hidden && x.timed >= 3 && x.timed >= x.n * 0.6 && !x.live;
   });
 }
 function groupFeed(g) { return Tidy.groupFeed(g && g.name); }
 function feedPairs() { return T().feeds(); }
-function feedGroups(feed) { return providerGroups().filter(function (g) { return Tidy.groupFeed(g.raw) === feed && channelsOf(g.id, true).length; }); }
+function feedGroups(feed) { return scopedGroups().filter(function (g) { return Tidy.groupFeed(g.raw) === feed && channelsOf(g.id, true).length; }); }
 function isLocalGroup(g) { return Tidy.isLocalGroup(g.raw || g.name); }
 var localCache = null;
 function localIndex() {
@@ -2884,7 +2909,7 @@ function localIndex() {
   return v;
 }
 function emptyGroups() {
-  return providerGroups().filter(function (g) { if (E.hiddenGroups[g.id]) return false; var l = channelsOf(g.id, true); return !l.length || l.every(function (c) { return E.hiddenChannels[c.k]; }); });
+  return scopedGroups().filter(function (g) { if (E.hiddenGroups[g.id]) return false; var l = channelsOf(g.id, true); return !l.length || l.every(function (c) { return E.hiddenChannels[c.k]; }); });
 }
 function hideEmpty() {
   var l = emptyGroups(); if (!l.length) { toast('No empty groups are shown'); return; }
@@ -2930,13 +2955,14 @@ function drawDupes() {
 function dupeTarget() { return (dupeOpts.q.trim() ? dupeShown().map(function (x) { return x.s; }) : dupeSets()).filter(function (s) { return !s.skip; }); }
 function renderTools() {
   if (!D || page !== 'tools') return;
+  drawToolsPicker();
   /* countries */
   var cs = countryStats(), ck = renderTools.ck || (renderTools.ck = {});
   $('tCountry').innerHTML = '<h3>Keep only the countries you watch</h3><p>Groups by country, read from group names ("US | News", "Canada Sports", "France Cinema"), from the codes their channels start with ("ARG | ..."), and from the divider group they sit under.  Tick the ones to keep, then hide the rest in one go.</p>' +
     (cs.length ? '<div class="row" style="gap:8px;margin-bottom:10px"><button class="small" data-ccset="1">Tick all</button><button class="small" data-ccset="0">Untick all</button><span class="muted small">then tick the few you watch</span></div><div class="row" id="ccList" style="gap:8px">' + cs.map(function (x) {
       var on = ck[x.p] != null ? ck[x.p] : x.shown > 0;
       return '<label class="chip' + (on ? ' acc' : '') + '" style="cursor:pointer;padding:6px 12px;font-size:13px"><input type="checkbox" data-cc="' + esc(x.p) + '"' + (on ? ' checked' : '') + ' style="display:none"><b>' + esc(CC_NAME[x.p] || x.p) + '</b> ' + plural(x.groups.length, 'group') + ' · ' + x.shown + ' shown</label>';
-    }).join('') + '</div><div class="small" style="margin-top:10px">Shown now: <b>' + (cs.filter(function (x) { return x.shown > 0; }).map(function (x) { return esc(CC_NAME[x.p] || x.p); }).join(', ') || 'none') + '</b>' + (Object.keys(ck).length ? '  <span class="muted">(your ticks above are not applied yet)</span>' : '') + '</div><div class="row" style="margin-top:12px"><label class="muted small"><input type="checkbox" id="ccNoPrefix"' + (D.groups.some(function (g) { return !groupCountry(g); }) && D.groups.filter(function (g) { return !groupCountry(g); }).every(function (g) { return E.hiddenGroups[g.id]; }) ? ' checked' : '') + '> Also hide groups with no country (sports and event groups, for example)</label><span class="grow"></span><button class="primary" id="ccGo">Show only the ticked countries</button></div><div class="muted small" id="ccInfo" style="margin-top:8px"></div>'
+    }).join('') + '</div><div class="small" style="margin-top:10px">Shown now: <b>' + (cs.filter(function (x) { return x.shown > 0; }).map(function (x) { return esc(CC_NAME[x.p] || x.p); }).join(', ') || 'none') + '</b>' + (Object.keys(ck).length ? '  <span class="muted">(your ticks above are not applied yet)</span>' : '') + '</div><div class="row" style="margin-top:12px"><label class="muted small"><input type="checkbox" id="ccNoPrefix"' + (SD().groups.some(function (g) { return !groupCountry(g); }) && SD().groups.filter(function (g) { return !groupCountry(g); }).every(function (g) { return E.hiddenGroups[g.id]; }) ? ' checked' : '') + '> Also hide groups with no country (sports and event groups, for example)</label><span class="grow"></span><button class="primary" id="ccGo">Show only the ticked countries</button></div><div class="muted small" id="ccInfo" style="margin-top:8px"></div>'
       : '<div class="muted">No country codes found in your group names.</div>');
   if (cs.length) ccInfo();
   /* duplicates */
@@ -2992,7 +3018,7 @@ function renderTools() {
 // Groups named for adults.  Whole words only, so "Adult Swim" (cartoons) is left alone.
 var ADULT_RE = /\b(?:adults?(?!\s*swim)|xxx|porn\w*|erotic\w*|playboy|hustler|brazzers)\b|\b18\s*\+/i;
 function adultGroups(hidden) {
-  return D.groups.filter(function (g) { return !!E.hiddenGroups[g.id] === !!hidden && ADULT_RE.test(g.name); }).map(function (g) { return { id: g.id, name: groupLabel(g.id), n: (byGroup.get(g.id) || []).length }; });
+  return SD().groups.filter(function (g) { return !!E.hiddenGroups[g.id] === !!hidden && ADULT_RE.test(g.name); }).map(function (g) { return { id: g.id, name: groupLabel(g.id), n: (byGroup.get(g.id) || []).length }; });
 }
 document.addEventListener('click', function (e) {
   if (e.target.id === 'adBack') { var h = adultGroups(true); mut('Showed ' + plural(h.length, 'adult group') + ' again', function () { h.forEach(function (g) { delete E.hiddenGroups[g.id]; }); }); return; }
@@ -3003,7 +3029,7 @@ document.addEventListener('click', function (e) {
 });
 // Words that start several shown provider group names: "USA" in "USA News", "USA | Sports".
 function groupPrefixes() {
-  var by = {}, shown = providerGroups().filter(function (g) { return !E.hiddenGroups[g.id]; });
+  var by = {}, shown = scopedGroups().filter(function (g) { return !E.hiddenGroups[g.id]; });
   shown.forEach(function (g) {
     var m = /^\s*([A-Za-z]{2,12})(?:\s*[|:\-]\s*|\s+)(?=\S)/.exec(g.name); if (!m) return;
     var w = m[1].toUpperCase(); (by[w] || (by[w] = [])).push(g);
@@ -3022,7 +3048,7 @@ function renderGnames() {
 // Prefixes already taken off (your renames that are the provider's name minus a first word).
 function prefixDone() {
   var by = {};
-  D.groups.forEach(function (g) {
+  SD().groups.forEach(function (g) {
     var r = E.groupRenames[g.id], n = cleanGroup(g.name, g.p), m = /^\s*([A-Za-z]{2,12})(?:\s*[|:\-]\s*|\s+)(?=\S)/.exec(n);
     if (r && m && trimPrefix(n, m[1]) === r) (by[m[1].toUpperCase()] || (by[m[1].toUpperCase()] = [])).push(g.id);
   });
@@ -3032,7 +3058,7 @@ function trimPrefix(name, w) { var r = name.replace(new RegExp('^\\s*' + w + '(?
 document.addEventListener('click', function (e) {
   var gb = e.target.closest('[data-gback]');
   if (gb) {
-    var w0 = gb.dataset.gback, ids = D.groups.filter(function (g) { var r = E.groupRenames[g.id], n = cleanGroup(g.name, g.p); return r && new RegExp('^\\s*' + w0 + '\\b', 'i').test(n) && trimPrefix(n, w0) === r; }).map(function (g) { return g.id; });
+    var w0 = gb.dataset.gback, ids = SD().groups.filter(function (g) { var r = E.groupRenames[g.id], n = cleanGroup(g.name, g.p); return r && new RegExp('^\\s*' + w0 + '\\b', 'i').test(n) && trimPrefix(n, w0) === r; }).map(function (g) { return g.id; });
     mut('Put "' + w0 + '" back on ' + plural(ids.length, 'group name'), function () { ids.forEach(function (id) { delete E.groupRenames[id]; }); });
     return;
   }
@@ -3144,7 +3170,7 @@ function localHideList() {
 function ccInfo() {
   var keep = {}, none = $('ccNoPrefix').checked, n = 0, s = 0;
   document.querySelectorAll('[data-cc]').forEach(function (i) { keep[i.dataset.cc] = i.checked; });
-  D.groups.forEach(function (g) { var p = groupCountry(g), show = p ? (keep[p] != null ? keep[p] : true) : !none; if (show) s++; else n++; });
+  SD().groups.forEach(function (g) { var p = groupCountry(g), show = p ? (keep[p] != null ? keep[p] : true) : !none; if (show) s++; else n++; });
   $('ccInfo').textContent = 'This shows ' + plural(s, 'group') + ' and hides ' + plural(n, 'group') + '.';
 }
 $('tCountry').addEventListener('change', function (e) {
@@ -3159,7 +3185,7 @@ $('tCountry').addEventListener('click', function (e) {
   document.querySelectorAll('[data-cc]').forEach(function (i) { keep[i.dataset.cc] = i.checked; if (i.checked) names.push(i.dataset.cc); });
   renderTools.ck = {};            // the redraw that follows shows what is in effect, not pending ticks
   mut('Showed only ' + (names.join(', ') || 'no countries'), function () {
-    D.groups.forEach(function (g) { var p = groupCountry(g), show = p ? (keep[p] != null ? keep[p] : true) : !none; if (show) { if (p) delete E.hiddenGroups[g.id]; } else E.hiddenGroups[g.id] = 1; });
+    SD().groups.forEach(function (g) { var p = groupCountry(g), show = p ? (keep[p] != null ? keep[p] : true) : !none; if (show) { if (p) delete E.hiddenGroups[g.id]; } else E.hiddenGroups[g.id] = 1; });
   });
   toast('Done.  Groups for ' + (names.join(', ') || 'no countries') + ' are shown.', ['Undo', undo]);
 });
@@ -3244,8 +3270,8 @@ function kwMatches() {
   var kw = renderTools.kw || { text: '', target: 'groups' }, words = kw.text.split(',').map(function (w) { return w.trim().toLowerCase(); }).filter(Boolean);
   if (!words.length) return [];
   function hit(n) { n = n.toLowerCase(); return words.some(function (w) { return n.indexOf(w) >= 0; }); }
-  if (kw.target === 'groups') return providerGroups().concat(E.custom.filter(function (g) { return g.id !== FAV; })).filter(function (g) { return !E.hiddenGroups[g.id] && (hit(g.name) || (g.raw && hit(g.raw))); });
-  return D.channels.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g] && (hit(chName(c)) || hit(c.n)); });
+  if (kw.target === 'groups') return scopedGroups().concat(E.custom.filter(function (g) { return g.id !== FAV; })).filter(function (g) { return !E.hiddenGroups[g.id] && (hit(g.name) || (g.raw && hit(g.raw))); });
+  return SD().channels.filter(function (c) { return !E.hiddenChannels[c.k] && !E.hiddenGroups[c.g] && (hit(chName(c)) || hit(c.n)); });
 }
 function kwPreview() {
   var kw = renderTools.kw || { text: '', target: 'groups' }, m = kwMatches(), g = kw.target === 'groups';
@@ -3478,7 +3504,9 @@ function drawSnaps() {
   $('snapList').innerHTML = l.length ? '<table class="t"><tr><th>Restore point</th><th>When</th><th>What it holds</th><th></th></tr>' + l.map(function (s) {
     var st = s.stats || {};
     return '<tr><td><b>' + esc(s.name) + '</b> ' + (s.kind === 'auto' ? '<span class="chip">automatic</span>' : '<span class="chip acc">Saved by you</span>') + '</td><td class="small muted">' + esc(new Date(s.at).toLocaleString()) + '<div class="tiny dim">' + ago(s.at) + '</div></td>' +
-      '<td class="small muted">' + plural(st.hiddenGroups || 0, 'hidden group') + ', ' + plural(st.hiddenChannels || 0, 'hidden channel') + ', ' + plural(st.groups || 0, 'own group') + ', ' + plural(st.renames || 0, 'rename') + '</td>' +
+      '<td class="small muted">' + plural(st.hiddenGroups || 0, 'hidden group') + ', ' + plural(st.hiddenChannels || 0, 'hidden channel') + ', ' + plural(st.groups || 0, 'own group') + ', ' + plural(st.renames || 0, 'rename') +
+      // Several playlists on: the playlists it covers (restoring it leaves the others as they are).
+      (s.pls && s.pls.length > 1 ? '<div class="tiny dim">For ' + esc(s.pls.join(', ')) + '</div>' : '') + '</td>' +
       '<td class="r"><button class="small" data-srestore="' + esc(s.id) + '">Restore</button> <button class="ghost small danger" data-sdel="' + esc(s.id) + '">Delete</button></td></tr>';
   }).join('') + '</table>' : '<div class="muted">No restore points yet.  The TV makes one each time you send changes, or create one above.</div>';
 }

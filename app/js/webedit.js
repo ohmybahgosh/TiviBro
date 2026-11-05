@@ -154,8 +154,34 @@ var WebEdit = (function () {
   /* ---------- browser edits ---------- */
   function obj(x) { return x && typeof x === 'object' && !Array.isArray(x); }
   function strs(a) { return Array.isArray(a) ? a.filter(function (k) { return typeof k === 'string'; }) : []; }
+  /* Several playlists on: what a sender (the editor, a draft, a restore point) holds covers the first
+     playlist and the other playlists in its names.pl (namesOut), the ones in use when it was made.
+     blend() takes the sender's entries for those, keeps today's entries of any playlist in use that it
+     didn't cover (turned on since: its edits are not touched), and drops entries of a playlist that is
+     off now (its own file holds its edits; it gets them back when it is turned on).  No names at all
+     (an old restore point): the sender's maps as they are, as before. */
+  function coverOf(names) {
+    if (!obj(names)) return null;
+    var c = { '': 1 };
+    if (obj(names.pl)) Object.keys(names.pl).forEach(function (id) { c[id] = 1; });
+    return c;
+  }
+  function offKey(k) { var i = typeof k === 'string' ? k.indexOf(':') : -1; return i > 0 && !!Store.byId(k.slice(0, i)) && !Store.ownerOf(k); }
+  var ROUTED = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'groupOrder', 'groupAdd', 'groupRemove', 'noGuide', 'chanOrder', 'groupSort', 'epgMap'];
+  function blend(f, mine, cover, cur) {
+    if (!cover || !Store.attached.length && !Object.keys(cover).some(function (x) { return x; })) return mine;
+    var keep = function (k) { return !cover[Store.ownerOf(k)]; };
+    if (Array.isArray(mine)) {
+      return (Array.isArray(cur) ? cur.filter(keep) : []).concat(mine.filter(function (k) { return !offKey(k) && !keep(k); }));
+    }
+    var out = {}, k;
+    if (obj(cur)) for (k in cur) if (keep(k)) out[k] = cur[k];
+    for (k in mine) if (!offKey(k) && !keep(k)) out[k] = mine[k];
+    return out;
+  }
   function writeEdits(ed, names) {
-    var e = Store.edits, p = Store.playlist, guideChanged = false;
+    var e = Store.edits, p = Store.playlist, guideChanged = false, cover = coverOf(names), was = {};
+    ROUTED.forEach(function (f) { was[f] = e[f]; });            // today's, for blend
     ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames'].forEach(function (f) { if (obj(ed[f])) e[f] = ed[f]; });
     if (Array.isArray(ed.custom)) e.custom = ed.custom.filter(function (g) { return g && typeof g.id === 'string' && g.id.indexOf('c_') === 0 && Array.isArray(g.items); })
       .map(function (g) { var o = { id: g.id, name: String(g.name || 'Group').slice(0, 80), items: strs(g.items) }; if (typeof g.orig === 'string') o.orig = g.orig.slice(0, 80); return o; });
@@ -176,13 +202,15 @@ var WebEdit = (function () {
     if (obj(ed.noGuide)) { e.noGuide = {}; Object.keys(ed.noGuide).forEach(function (k) { if (ed.noGuide[k] && k.length < 200) e.noGuide[k] = 1; }); }
     if (obj(ed.chanOrder)) { e.chanOrder = {}; Object.keys(ed.chanOrder).forEach(function (g) { var l = strs(ed.chanOrder[g]); if (l.length) e.chanOrder[g] = l; }); }
     if (obj(ed.groupSort)) { e.groupSort = {}; Object.keys(ed.groupSort).forEach(function (g) { if (SORTS.indexOf(ed.groupSort[g]) >= 0) e.groupSort[g] = ed.groupSort[g]; }); }
-    if (obj(ed.epgMap) && JSON.stringify(ed.epgMap) !== JSON.stringify(e.epgMap || {})) { e.epgMap = ed.epgMap; guideChanged = true; }
+    if (obj(ed.epgMap)) { var em = blend('epgMap', ed.epgMap, cover, was.epgMap); if (JSON.stringify(em) !== JSON.stringify(e.epgMap || {})) { e.epgMap = em; guideChanged = true; } }
+    // Each playlist's channel and group entries: only the playlists the sender covered (blend).
+    ROUTED.forEach(function (f) { if (f !== 'epgMap' && ed[f] != null && e[f] != null && e[f] !== was[f]) e[f] = blend(f, e[f], cover, was[f]); });
     if (obj(names)) {
       var more = obj(names.pl) ? names.pl : null, own = {};
       Object.keys(names).forEach(function (k) { if (k !== 'pl') own[k] = names[k]; });
       p.names = own; Store.upsertPlaylist(p);
-      // Several playlists on: each other playlist's rules go back to it.
-      if (more) Object.keys(more).forEach(function (id) { var q = Store.byId(id); if (q && obj(more[id]) && id !== p.id) { q.names = more[id]; Store.upsertPlaylist(q); } });
+      // Several playlists on: each other playlist's rules go back to it (only one in use now).
+      if (more) Object.keys(more).forEach(function (id) { var q = Store.byId(id); if (q && !q.off && obj(more[id]) && id !== p.id) { q.names = more[id]; Store.upsertPlaylist(q); } });
       Names.invalidate();
     }
     Store.saveEdits();
@@ -272,10 +300,11 @@ var WebEdit = (function () {
   function snaps() { return Store.bigGet(snapKey()).then(function (l) { return Array.isArray(l) ? l : []; }, function () { return []; }); }
   function snap(kind, name) {
     return snaps().then(function (l) {
-      var cur = { edits: editsOf(), names: Store.playlist.names || null };
+      // Several playlists on: the point covers every playlist in use now (names.pl), and says which.
+      var cur = { edits: editsOf(), names: namesOut(Store.playlist) };
       // Skip an automatic point when nothing changed since the newest one.
       if (kind === 'auto' && l[0] && JSON.stringify(l[0].data) === JSON.stringify(cur)) return l[0];
-      var s = { id: 's' + Date.now().toString(36), at: Date.now(), kind: kind, name: String(name || 'Restore point').slice(0, 80), data: JSON.parse(JSON.stringify(cur)),
+      var s = { id: 's' + Date.now().toString(36), at: Date.now(), kind: kind, name: String(name || 'Restore point').slice(0, 80), data: JSON.parse(JSON.stringify(cur)), pls: Store.loaded().map(function (q) { return q.name || 'Playlist'; }),
         stats: { hiddenGroups: Object.keys(cur.edits.hiddenGroups).length, hiddenChannels: Object.keys(cur.edits.hiddenChannels).length, groups: cur.edits.custom.length, renames: Object.keys(cur.edits.renames).length } };
       l.unshift(s);
       var autos = 0, named = 0;
@@ -283,7 +312,7 @@ var WebEdit = (function () {
       return Store.bigSet(snapKey(), l).then(function () { return s; });
     });
   }
-  function snapList() { return snaps().then(function (l) { return l.map(function (x) { return { id: x.id, at: x.at, kind: x.kind, name: x.name, stats: x.stats }; }); }); }
+  function snapList() { return snaps().then(function (l) { return l.map(function (x) { return { id: x.id, at: x.at, kind: x.kind, name: x.name, stats: x.stats, pls: x.pls || [] }; }); }); }
 
   /* ---------- browser actions ---------- */
   function find(id) { return Store.settings.playlists.filter(function (p) { return p.id === id; })[0]; }
@@ -530,9 +559,11 @@ var WebEdit = (function () {
         if (!s) throw new Error('That restore point no longer exists.');
         return snap('auto', 'Before restoring "' + s.name + '"').then(function () {
           writeEdits(s.data.edits || {}, s.data.names);
-          Log.info('webedit', 'Restored "' + s.name + '" from ' + new Date(s.at).toISOString());
+          Log.info('webedit', 'Restored "' + s.name + '" from ' + new Date(s.at).toISOString() + (s.pls && s.pls.length > 1 ? ' (' + s.pls.length + ' playlists)' : ''));
           U.toast('Restored "' + s.name + '"');
-          return push(true).then(function () { return { msg: 'Restored "' + s.name + '".  The TV is using it now.' }; });
+          // A playlist the point covers that is off now keeps its own edits (blend).
+          var cov = coverOf(s.data.names), off = cov ? Object.keys(cov).filter(function (id) { var q = id && Store.byId(id); return q && q.off; }).map(function (id) { return Store.byId(id).name || 'a playlist'; }) : [];
+          return push(true).then(function () { return { msg: 'Restored "' + s.name + '".  The TV is using it now.' + (off.length ? '  ' + off.join(', ') + (off.length > 1 ? ' are' : ' is') + ' off, so ' + (off.length > 1 ? 'their' : 'its') + ' part was not restored.' : '') }; });
         });
       });
     },

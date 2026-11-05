@@ -167,7 +167,47 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await ed.evaluate(() => send()); await ed.waitForTimeout(3000);
     const pre = await ev(() => ({ two: (Store.byId('p2').names || {}).prefixes, one: (Store.playlist.names || {}).prefixes }));
     ok('web editor: the second playlist\'s rules go to it, not the first\'s', JSON.stringify(pre.two) === '["ZZQ "]' && JSON.stringify(pre.one || []) !== '["ZZQ "]', JSON.stringify(pre));
+    // Smart clean-up: one playlist or all of them.
+    await ed.goto('http://127.0.0.1:' + wst.port + '/#k=' + wpw + '/tools'); await ed.waitForSelector('#tPl option', { timeout: 20000 }).catch(() => {}); await ed.waitForTimeout(800);
+    const topts = await ed.evaluate(() => Array.prototype.map.call(document.querySelectorAll('#tPl option'), (o) => o.value));
+    ok('Smart clean-up: every playlist, or one', JSON.stringify(topts) === '["*","","p2"]', JSON.stringify(topts));
+    await ed.selectOption('#tPl', 'p2'); await ed.waitForTimeout(500);
+    const scoped = await ed.evaluate(() => ({ all: SD().channels.length, mine: SD().channels.every((c) => c.p === 'p2'), groups: scopedGroups().every((g) => g.p === 'p2') }));
+    ok('Smart clean-up: picking the second playlist looks at its channels and groups only', scoped.mine && scoped.groups && scoped.all > 10, JSON.stringify(scoped));
     await ed.context().close(); await ev(() => WebEdit.stop());
+
+    // Settings > Guide: the second playlist's guide on a page of its own, with its own channels.
+    const sg = (path) => ev((pth) => Promise.resolve(Settings.phone.page('guide', pth)), path);
+    const gp = await sg([]);
+    const g2 = gp.rows.find((x) => /^Guide for Second provider/.test(x.label));
+    ok('Settings > Guide: a page for the second playlist\'s guide', !!g2, gp.rows.map((x) => x.label).join(' | '));
+    if (g2) {
+      const g2p = await sg([g2.i]), n2c = await ev(() => Library.dataOf('p2').channels.length);
+      const cnt = g2p.rows.find((x) => x.label === 'Channels with guide data');
+      ok('its page: its own provider guide, reload, and its own channel count', g2p.rows.some((x) => x.label === 'Provider guide') && g2p.rows.some((x) => x.label === 'Reload guide now') && cnt && new RegExp(' of ' + n2c + '$').test(cnt.value || cnt.sub || ''), JSON.stringify(cnt) + ' ' + n2c);
+    }
+
+    // Restore points cover the playlists in use when they were made, and say which.
+    const k1b = await ev(() => Library.data.channels.filter((c) => !c.p)[3].k), k2b = await ev(() => Library.data.channels.filter((c) => c.p === 'p2')[3].k);
+    const hid = () => ev(([a, c]) => [!!Store.edits.hiddenChannels[a], !!Store.edits.hiddenChannels[c]].join(), [k1b, k2b]);
+    const setOff = (off) => ev((o) => { const q = Store.byId('p2'); q.off = o; Store.upsertPlaylist(q); return App.playlistsChanged(); }, off);
+    await ev(([a, c]) => { Library.hideChannel(a, true); Library.hideChannel(c, true); }, [k1b, k2b]);
+    const s1 = await ev(() => WebEdit.runData('makeSnap', { name: 'Both' }).then((r) => r.data.id));
+    const list = await ev(() => WebEdit.runData('listSnaps', {}).then((r) => r.data));
+    ok('a restore point says which playlists it covers', JSON.stringify((list.find((x) => x.id === s1) || {}).pls) === JSON.stringify([one.name, 'Second provider']), JSON.stringify(list[0]));
+    await ev(([a, c]) => { Library.hideChannel(a, false); Library.hideChannel(c, false); }, [k1b, k2b]);
+    await ev((id) => WebEdit.runData('restoreSnap', { id: id }), s1); await tv.waitForTimeout(600);
+    ok('restoring it puts back both playlists\' edits', await hid() === 'true,true', await hid());
+    // Made while the second playlist was off: restoring it leaves the second playlist's edits alone.
+    await setOff(true); await tv.waitForTimeout(800);
+    await ev((a) => Library.hideChannel(a, false), k1b);
+    const s2 = await ev(() => WebEdit.runData('makeSnap', { name: 'First only' }).then((r) => r.data.id));
+    await setOff(false); await tv.waitForFunction(() => Library.multi, null, { timeout: 30000 }).catch(() => {}); await tv.waitForTimeout(800);
+    ok('turned on again, the second playlist has its own edits', await hid() === 'false,true', await hid());
+    await ev(([a, c]) => { Library.hideChannel(a, true); Library.hideChannel(c, false); }, [k1b, k2b]);
+    await ev((id) => WebEdit.runData('restoreSnap', { id: id }), s2); await tv.waitForTimeout(600);
+    ok('a point made without the second playlist restores only the first\'s', await hid() === 'false,false', await hid());
+    await ev(([a, c]) => { Library.hideChannel(a, false); Library.hideChannel(c, false); }, [k1b, k2b]);
 
     // Settings: the second playlist says it is on, and offers to make it the first.
     const sa = (sec, path, n, op, a) => ev(([sec, path, n, op, a]) => Promise.resolve(n == null ? Settings.phone.page(sec, path) : Settings.phone.change(sec, path, n, op, a || {})), [sec, path, n, op, a]);
@@ -192,6 +232,17 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await sa('playlists', [row2.i], pg.rows.find((x) => x.label === 'Playlist on').i, 'toggle', { on: true });
     await tv.waitForFunction(() => Library.multi, null, { timeout: 30000 }).catch(() => {});
     ok('turned on again: back in the lists', await ev(() => Library.multi && Library.groups(true).filter((g) => g.head).length === 2));
+    // The first playlist can't load at start-up: another one that is on can be made first.
+    const bad = await (await b.newContext({ viewport: { width: 1920, height: 1080 } })).newPage();
+    bad.on('pageerror', (e) => errs.push('bad: ' + e.message));
+    await bad.addInitScript(R.init({ time: R.primeTime(), settings: { playlists: [Object.assign({}, one, { id: 'p9', name: 'Broken', server: 'http://127.0.0.1:9' }), two], active: 'p9' } })[0]);
+    await bad.goto(APP);
+    await bad.waitForFunction(() => /Make Second provider the first playlist/.test(document.body.innerText), null, { timeout: 60000 }).catch(() => {});
+    ok('the first playlist fails at start-up: offers to make another one first', /Make Second provider the first playlist/.test(await bad.evaluate(() => document.body.innerText)));
+    await bad.evaluate(() => App.switchPlaylist('p2'));
+    await bad.waitForFunction(() => window.Library && Library.count() > 0 && Store.settings.active === 'p2', null, { timeout: 60000 }).catch(() => {});
+    ok('and opens it', await bad.evaluate(() => Store.settings.active === 'p2' && Library.count() > 0));
+    await bad.context().close();
     ok('no page errors', !errs.length, errs.join(' | '));
   } catch (e) { ok('harness: ' + e.message, false); }
   await b.close();

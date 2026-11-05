@@ -634,9 +634,11 @@ Your playlists and how often their channel lists reload.  **OK** on a playlist o
 - **Movies and Shows** show every playlist's movies and shows together: Continue watching, My list and All at the top, then a heading per playlist with its categories.  Each title plays from its own playlist.  Languages apply to all of them; hiding a category is kept by its playlist.
 - The **first playlist** is the one at the top: its groups come first, and your Favorites, your own groups, Recent and reminders belong to it.  Hiding, renaming or moving a channel or group of another playlist is kept with that playlist, so it is still there when you turn the playlist off and on again, or make it the first.
 - A playlist added from **Add playlist…** joins the others; the first playlist stays first.  Turn a playlist off (**Playlist on**) to take its section out without deleting anything.
-- The other playlists open from the copy the TV keeps of their lists, and reload in the background, one at a time.  Together, the playlists that are on can have up to 250,000 channels (120,000 on a TV with 1 GB of memory, or after TiviBro closed while playing, when background loads also wait until nothing plays); a playlist that would go past that is left out, with a message.
+- The other playlists open from the copy the TV keeps of their lists, and reload in the background, one at a time.  Together, the playlists that are on can have up to 250,000 channels (120,000 on a TV with 1 GB of memory, or after TiviBro closed while playing, when background loads also wait until nothing plays, and a big playlist leaves the lists while it reloads); a playlist that would go past that is left out, with a message.  Movies and Shows load other playlists' titles up to 200,000 of each kind in all (60,000 in that case).
+- **Settings > Guide** shows the first playlist's guide, then a **Guide for** page for each other playlist that is on.
+- If the first playlist can't load when TiviBro starts, the screen that says so offers **Try again**, **Change the connection**, or making another playlist that is on the first one.
 - Turning a playlist off while one of its channels or movies plays stops it.  A reminder for another playlist's channel opens that channel.
-- The web editor shows every playlist's channels, with each group's playlist next to its name; its **Channel and group names** page has a **Rules for the playlist** list to edit each playlist's rules.  Smart clean-up looks at all of them, and every change is kept by the playlist it belongs to.  The phone app's channel list shows each group's playlist in front of its name, and its Movies and Shows each category's.
+- The web editor shows every playlist's channels, with each group's playlist next to its name; its **Channel and group names** page has a **Rules for the playlist** list to edit each playlist's rules.  Smart clean-up has a **Clean up** list: every playlist that is on, or just one; every change is kept by the playlist it belongs to.  Restore points list the playlists they cover (**For ...**): restoring one puts back those playlists' edits, leaves a playlist turned on since as it is, and skips one that is off now.  The phone app's channel list shows each group's playlist in front of its name, and its Movies and Shows each category's.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-set-playlists"><img src="screenshots/tv-set-playlists.png" width="32%" alt="Playlists"></a>
@@ -997,7 +999,7 @@ Two kinds of safety net, on one page.
 <p align="center"><a href="https://tivibro.app/view/#tv-set-backups"><img src="screenshots/tv-set-backups.png" width="60%" alt="Backups and restore points"></a></p>
 
 - **A backup** holds everything: playlists with their logins, groups, favorites, names, guide matches and settings.  It lives off the TV: in the TiviBro phone app, or as a locked file from the web editor (or the phone app).
-- **A restore point** lives on this TV and puts back your channel edits for this playlist: groups, hidden items, names and guide matches.  Your playlists and logins stay as they are.
+- **A restore point** lives on this TV and puts back your channel edits for this playlist: groups, hidden items, names and guide matches.  Your playlists and logins stay as they are.  With several playlists on, a point belongs to the first playlist and covers every playlist that was on when it was made (the web editor lists them); restoring it leaves the others as they are.
 
 | Setting | What it does |
 |---|---|
