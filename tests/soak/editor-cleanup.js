@@ -1,5 +1,7 @@
 /* Web editor fixes found on a real TV and phone (alpha 23):
-     node tests/soak/editor-cleanup.js      (the app on :8078 with the dev relay, mock provider on :8077)
+     MOCK_EVENTS=1 node tests/mock/mock_provider.js &   (on :8077; its local stations by city are only there with MOCK_EVENTS)
+     npm run serve &
+     node tests/soak/editor-cleanup.js
    Smart clean-up as a checklist (done, skipped, to do, and a badge that agrees), tick all / untick all
    countries, numbered event channels not taken for copies and a clear Keep / Hide / Keep all, the
    local city pick remembered and national feeds kept out of "Local channels", adult groups, shorter
@@ -89,6 +91,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
   // Local channels: national feeds stay out of the group; the pick is remembered.
   await ev(() => { renderTools.local = null; renderTools(); });
+  const cities = await ev(() => localIndex().cities.length);
+  if (!cities) { ok('the mock has local stations (start it with MOCK_EVENTS=1)', false); throw new Error('No local stations in the mock playlist: start the mock provider with MOCK_EVENTS=1'); }
   const city = await ev(() => localIndex().cities[0].city);
   await ed.fill('#lcQ', city.slice(0, 4)); await ed.waitForTimeout(300);
   await ed.click('[data-city="' + city + '"]'); await ed.waitForTimeout(200);
