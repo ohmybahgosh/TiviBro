@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 84, 2026-11-04)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 84
 
 - **One reminder per game for your teams.**  A game carried by several channels got a reminder for each channel's time, plus its "possible Overtime" block and the replays after midnight: five for one Pistons game.  Now the same two teams within 12 hours are one game, with one reminder at its earliest start, and overtime blocks and replays get none.  The extra reminders an earlier version set are cleared on the next start.
 - **Reminders on the phone show their channel while the TV is still starting.**  The phone's Reminders screen could say "Channel not in this playlist" for every reminder when the TV was still loading its channels.  The TV now keeps each reminder's channel name, and says "Channels still loading" if it has none yet.
 - **The phone's Reminders screen shows the whole time.**  "10:00 PM" lost its "PM" in the narrow time column.
 
-## 0.6.0 (alpha 83, 2026-11-04)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 83
+### In alpha 83
 
 - **Subtitles look the way you like** (discussion #19, thanks ich0x).  **Settings > Playback** has **Subtitle colour** (white, yellow, gold, light blue or light green), **Subtitle size** (small to extra large) and **Subtitle background** (outline, a see-through box or a black box behind each line).  They apply to downloads, subtitles in the file and the stream's own.
 - **Downloaded subtitles are kept for a week** (discussion #19).  Stop a movie on a work night and finish it at the weekend: its subtitles come back on, with your timing, without using another download.  **Settings > Playback > Keep downloaded subtitles** sets how long, or Off.
