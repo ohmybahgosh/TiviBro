@@ -643,6 +643,7 @@ On a playlist's page:
 | Setting | Choices | What it does |
 |---|---|---|
 | **Use this playlist** | | Switches the TV to this playlist (shown when it isn't the one in use). |
+| **Playlist on** | **On** · Off | Off keeps the playlist with its login, groups, favorites and names, and leaves it out of switching until you turn it on again (instead of deleting it).  Turning off the one in use switches to the next one that is on; the last one on stays on.  The web editor's Playlists page has **Turn off** and **Turn on** too. |
 | **Name** | | The name shown in Settings and the web editor. |
 | **Connection** | | Server, username and password (or the M3U address).  Opens the setup screen, which tests the login before saving. |
 | **User-Agent** | **Default** or your own | Only if your provider asks for a specific one (TiviMate's "User-Agent" setting).  The network helper sends it for this playlist. |
@@ -653,7 +654,7 @@ On a playlist's page:
 | **Set-up tour** *(playlist in use, on the TV)* | | Runs the [set-up tour](#the-set-up-tour) again: countries, names, East or West, your city, event channels, clutter, logos and look.  Shows when you last applied it. |
 | **Channel and group names ›** | | This playlist's name rules: the same page as [Settings: Channel and group names](#settings-channel-and-group-names). |
 | **Event channels ›** | | This playlist's [event channels](#event-channels-pay-per-view-and-sports-passes) (see [Settings: Channels and groups](#settings-channels-and-groups)). |
-| **Delete this playlist** | | Removes the playlist with its groups, favorites, hidden items and cached data.  Shown when you have more than one. |
+| **Delete this playlist** | | Removes the playlist with its groups, favorites, hidden items and cached data.  Shown when you have more than one.  **Playlist on** (off) keeps them instead. |
 
 ### Settings: Guide
 

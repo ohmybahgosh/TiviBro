@@ -262,7 +262,7 @@ var Settings = (function () {
     var s = S(), out = [];
     s.playlists.forEach(function (raw) {
       var p = Store.normalize(raw), active = p.id === s.active;
-      out.push(page(p.name || (p.type === 'xtream' ? p.user : 'M3U'), [Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist', active ? 'in use, ' + L.count() + ' channels' : ''].filter(Boolean).join('   '),
+      out.push(page(p.name || (p.type === 'xtream' ? p.user : 'M3U'), [p.off ? 'Off' : '', Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist', active ? 'in use, ' + L.count() + ' channels' : ''].filter(Boolean).join('   '),
         p.name || 'Playlist', function () { return playlistPage(p); }));
     });
     // From the phone app: the web editor's Add a playlist form, with a real keyboard and a type to pick.
@@ -279,7 +279,18 @@ var Settings = (function () {
 
   function playlistPage(p) {
     var s = S(), out = [], active = p.id === s.active, xc = p.type === 'xtream';
-    if (!active) out.push(action('Use this playlist', '', function () { stack = []; App.switchPlaylist(p.id); }));
+    if (!active && !p.off) out.push(action('Use this playlist', '', function () { stack = []; App.switchPlaylist(p.id); }));
+    /* Off (instead of Delete): its login, groups, favorites and names are all kept, but it is left out of
+       everything (switching, the menus offering another playlist) until it is turned on again. */
+    out.push(toggle('Playlist on', p.off ? 'Off: kept with everything you set, out of the way.  Turn it on to use it again.' : 'Turn it off to keep it, with its login and everything you set, without deleting it.',
+      function () { return !p.off; }, function (v) {
+        if (!v && active) {
+          var next = s.playlists.filter(function (x) { return x.id !== p.id && !x.off; })[0];
+          if (!next) { U.toast('This is the only playlist that is on.  Turn another one on (or add one) first.', 6000); return paint(); }
+          p.off = true; persist(p); stack = []; U.toast('"' + (p.name || 'Playlist') + '" is off.  Switching to "' + (next.name || 'the next playlist') + '".', 5000); App.switchPlaylist(next.id); return;
+        }
+        p.off = !v; persist(p); build();
+      }));
     out.push(action('Name', '', function () { UI.prompt('Playlist name', p.name, function (v) { if (v.trim()) { p.name = v.trim(); persist(p); build(); } }); }, function () { return p.name; }));
     out.push(action('Connection', xc ? 'Server, username and password' : 'Playlist address', function () { App.setup(p.id); }, function () { return xc ? p.server : p.m3u; }));
     out.push(action('User-Agent', 'Only if your provider asks for a specific one.  Sent by the network helper for this playlist.', function () {
@@ -303,7 +314,7 @@ var Settings = (function () {
     out.push(page('Event channels', p.events && p.events.on === false ? 'Off' : 'On', 'Event channels', function () { return eventsPage(p); }));
     if (s.playlists.length > 1) {
       out.push(head(''));
-      out.push(action('Delete this playlist', 'Removes its groups, favorites, hidden items and cached data.', function () {
+      out.push(action('Delete this playlist', 'Removes its groups, favorites, hidden items and cached data.  Turning it off (above) keeps them instead.', function () {
         UI.confirm('Delete ' + (p.name || 'this playlist') + '?', 'Delete', function () {
           stack = [];
           Store.removePlaylist(p.id);

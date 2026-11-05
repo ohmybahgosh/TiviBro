@@ -74,6 +74,7 @@ kbd{font:12px ui-monospace,Menlo,monospace;background:var(--raised);border:1px s
 .login input{width:100%;font-size:24px;letter-spacing:4px;text-transform:uppercase;text-align:center;margin-bottom:12px}
 /* Show sits inside the box's right end.  .login button is full width, so it is undone here (discussion #36: Show covered the box on a phone). */
 @media (max-width:700px){ #addSeg.addseg{display:none} }
+.card.pl.off{opacity:.7}
 .pwwrap{position:relative;margin-bottom:12px}.login .pwwrap input{padding-right:72px;margin-bottom:0}.login .pwshow,.pwshow{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:auto;padding:6px 10px;font-size:13px}
 .login button{width:100%;padding:11px}
 .err{color:#ff9a9d;min-height:22px;margin-top:10px}
@@ -3337,10 +3338,10 @@ function expiryOf(p) {
 function renderPlaylists() {
   var pls = D.playlists || [];
   $('plList').innerHTML = pls.map(function (p) {
-    return '<div class="card pl"><h3>' + esc(p.name) + (p.active ? ' <span class="chip acc">On the TV</span>' : '') + '</h3>' +
+    return '<div class="card pl' + (p.off ? ' off' : '') + '"><h3>' + esc(p.name) + (p.active ? ' <span class="chip acc">On the TV</span>' : '') + (p.off ? ' <span class="chip">Off</span>' : '') + '</h3>' +
       '<div class="meta">' + expiryOf(p) + (p.type === 'm3u' ? 'M3U playlist' : 'Xtream Codes') + '  ·  ' + esc(p.host || 'no address') + '<br>Channels reload: ' + esc(refLabel(p.plRefresh)) + '  ·  Guide reload: ' + esc(refLabel(p.epgRefresh)) + (p.ua ? '<br>User-Agent: ' + esc(p.ua) : '') + '</div>' +
-      '<div class="row">' + (p.active ? '<button data-pl="refresh" data-id="' + p.id + '">Reload channels</button>' : '<button class="primary" data-pl="use" data-id="' + p.id + '">Use on the TV</button>') +
-      '<button data-pl="edit" data-id="' + p.id + '">Edit</button>' + (pls.length > 1 ? '<button class="ghost danger" data-pl="del" data-id="' + p.id + '">Delete</button>' : '') + '</div><div id="plmsg-' + p.id + '"></div></div>';
+      '<div class="row">' + (p.active ? '<button data-pl="refresh" data-id="' + p.id + '">Reload channels</button>' : p.off ? '' : '<button class="primary" data-pl="use" data-id="' + p.id + '">Use on the TV</button>') +
+      '<button data-pl="edit" data-id="' + p.id + '">Edit</button>' + (pls.length > 1 ? '<button data-pl="' + (p.off ? 'on' : 'off') + '" data-id="' + p.id + '">' + (p.off ? 'Turn on' : 'Turn off') + '</button><button class="ghost danger" data-pl="del" data-id="' + p.id + '">Delete</button>' : '') + '</div><div id="plmsg-' + p.id + '"></div></div>';
   }).join('');
 }
 $('plList').addEventListener('click', function (e) {
@@ -3351,9 +3352,11 @@ $('plList').addEventListener('click', function (e) {
   function sw() { busyBtn(b, command('usePlaylist', { id: id }, 60000, cmdMsg(box, 'Switching the TV…'))).then(function (r) { msg(box, 'ok', r.msg + '  Loading its channels…'); setTimeout(function () { load(true).catch(function () {}); }, 3000); }).catch(function (err) { msg(box, 'bad', err.message); }); }
   if (a === 'use') { if (pendingCount()) ask('Switch playlists?', 'You have ' + plural(pendingCount(), 'change') + ' for this playlist that are not on the TV.  Send them first, or they stay as a draft in this browser.', 'Switch anyway', sw); else sw(); }
   if (a === 'refresh') busyBtn(b, command('refreshPlaylist', {}, 300000, cmdMsg(box, 'The TV is reloading from the provider…'))).then(function (r) { msg(box, 'ok', r.msg); }).catch(function (err) { msg(box, 'bad', err.message); });
-  if (a === 'del') ask('Delete "' + p.name + '"?', 'Its groups, favorites and renames go with it.  This cannot be undone here, so download a backup first if unsure.', 'Delete playlist', function () {
+  if (a === 'del') ask('Delete "' + p.name + '"?', 'Its groups, favorites and renames go with it.  This cannot be undone here, so download a backup first if unsure.  Turn off keeps it all instead.', 'Delete playlist', function () {
     busyBtn(b, command('deletePlaylist', { id: id }, 60000, cmdMsg(box, 'Deleting…'))).then(function (r) { toast(r.msg); setTimeout(function () { load(true).catch(function () {}); }, 2500); }).catch(function (err) { msg(box, 'bad', err.message); });
   }, true);
+  // Off instead of Delete: everything typed in is kept.
+  if (a === 'off' || a === 'on') busyBtn(b, command('playlistOff', { id: id, off: a === 'off' }, 60000, cmdMsg(box, a === 'off' ? 'Turning it off…' : 'Turning it on…'))).then(function (r) { toast(r.msg); setTimeout(function () { load(true).catch(function () {}); }, p.active ? 3000 : 800); }).catch(function (err) { msg(box, 'bad', err.message); });
   if (a === 'edit') editPlaylist(p);
 });
 function editPlaylist(p) {

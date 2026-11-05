@@ -82,7 +82,7 @@ var WebEdit = (function () {
     var s = Store.settings;
     return s.playlists.map(function (p) {
       return { id: p.id, name: p.name || (p.type === 'm3u' ? 'M3U playlist' : 'Xtream'), type: p.type, host: host(p.type === 'm3u' ? p.m3u : p.server),
-        active: p.id === s.active, ua: p.ua || '', plRefresh: p.plRefresh, epgRefresh: p.epgRefresh, providerEpg: p.providerEpg,
+        active: p.id === s.active, off: !!p.off, ua: p.ua || '', plRefresh: p.plRefresh, epgRefresh: p.epgRefresh, providerEpg: p.providerEpg,
         // Never the address itself (it can hold a login): the host, the file name, and a fingerprint the
         // editor matches against its list of free guides.
         exp: p.exp || 0,
@@ -373,8 +373,19 @@ var WebEdit = (function () {
       if (wasActive) App.switchPlaylist(Store.settings.active);
       return { msg: 'Deleted "' + (p.name || 'playlist') + '"' };
     },
+    // Off instead of deleted: kept with its login and edits, left out until it is turned on again.
+    playlistOff: function (a) {
+      var p = find(a.id); if (!p) throw new Error('That playlist no longer exists.');
+      if (a.off === false) { delete p.off; Store.upsertPlaylist(p); return { msg: '"' + (p.name || 'Playlist') + '" is on again' }; }
+      var next = Store.settings.playlists.filter(function (x) { return x.id !== p.id && !x.off; })[0];
+      if (!next) throw new Error('This is the only playlist that is on.  Turn another one on, or add one, first.');
+      p.off = true; Store.upsertPlaylist(p);
+      if (p.id === Store.settings.active) { App.switchPlaylist(next.id); return { msg: '"' + (p.name || 'Playlist') + '" is off.  The TV now uses "' + (next.name || 'the next playlist') + '".' }; }
+      return { msg: '"' + (p.name || 'Playlist') + '" is off' };
+    },
     usePlaylist: function (a) {
       var p = find(a.id); if (!p) throw new Error('That playlist no longer exists.');
+      if (p.off) { delete p.off; Store.upsertPlaylist(p); }
       App.switchPlaylist(p.id);
       return { msg: 'The TV is now using "' + p.name + '"' };
     },

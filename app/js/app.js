@@ -450,7 +450,7 @@ var App = (function () {
     }
     // Loading or opening it is what closes TiviBro: ask before trying again.
     loading(title);
-    var others = Store.settings.playlists.filter(function (x) { return x.id !== p.id; });
+    var others = Store.settings.playlists.filter(function (x) { return x.id !== p.id && !x.off; });
     function ask() {
       UI.menu(title, [
         { label: 'Try loading it again', sub: 'it may close TiviBro again', action: function () { open(p); } },
@@ -508,7 +508,7 @@ var App = (function () {
   }
   function askStop(p) {
     if (!Source.loading) return;
-    var others = Store.settings.playlists.filter(function (x) { return x.id !== p.id; });
+    var others = Store.settings.playlists.filter(function (x) { return x.id !== p.id && !x.off; });
     function halt(then) { return function () { Source.stop(p.id); then(); }; }
     UI.menu('Stop loading ' + (p.name || 'this playlist') + '?', [
       { label: 'Keep waiting' },
