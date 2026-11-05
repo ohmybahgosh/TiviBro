@@ -21,11 +21,16 @@ cp "$ROOT/app/img/tmdb.svg" "$ROOT/service/editor/tmdb.svg"          # the web e
 bash "$ROOT/scripts/ffmpeg/bundle.sh"                              # the audio converter rides along (docs/FFMPEG.md)
 mkdir -p "$ROOT/dist"
 echo "Packaging $APP_ID $VERSION ${MIN:+(dev, unminified)}"
-ares ares-package $MIN -o "$ROOT/dist" "$ROOT/app" "$ROOT/service"
+STAGE="$(mktemp -d)"; T="$(mktemp -d)"; trap 'rm -rf "$STAGE" "$T"' EXIT
+stage_app "$STAGE"                                                 # app/ with hashed script names (_common.sh)
+ares ares-package $MIN -o "$ROOT/dist" "$STAGE/app" "$ROOT/service"
 [ -f "$IPK" ] || { echo "Expected $IPK was not produced" >&2; exit 1; }
 # Verify layout: app, service and package manifest all present.
-T="$(mktemp -d)"; ( cd "$T" && ar x "$IPK" && tar xzf data.tar.gz )
+( cd "$T" && ar x "$IPK" && tar xzf data.tar.gz )
 for p in "usr/palm/applications/$APP_ID/appinfo.json" "usr/palm/services/$SVC_ID/services.json" "usr/palm/packages/$APP_ID/packageinfo.json"; do
   [ -f "$T/$p" ] || { echo "IPK is missing $p" >&2; exit 1; }
 done
+if grep -oiE "<script[^>]*[[:space:]]src[[:space:]]*=[[:space:]]*[\"'][^\"']*" "$T/usr/palm/applications/$APP_ID/index.html" | grep -vE '\.[0-9a-f]{10}\.js$' | grep -viE "[\"']([a-z]+:)?//"; then
+  echo "IPK index.html loads the scripts above under their plain names" >&2; exit 1
+fi
 echo "OK  $(du -h "$IPK" | cut -f1)  $IPK"

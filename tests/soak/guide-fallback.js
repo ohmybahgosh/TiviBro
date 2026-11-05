@@ -37,7 +37,7 @@ const upstream=http.createServer((q,s)=>{
       document.addEventListener('DOMContentLoaded',()=>{});
     },relay.server.address().port);
     // Scripts are loaded in order; collect the complete startup sequence before App starts.
-    await page.route('**/js/app.js',async route=>{
+    await page.route(/\/js\/app(\.[0-9a-f]{10})?\.js$/,async route=>{   // plain, or hashed in the packaged build (test-build.sh)
       const r=await route.fetch();const text=await r.text();
       await route.fulfill({response:r,body:'Epg.onProgress(function(p){window.__guideProgress.push(p);}); var oldToast=U.toast; U.toast=function(m){window.__guideToasts.push(m); return oldToast.apply(U,arguments);};\n'+text});
     });

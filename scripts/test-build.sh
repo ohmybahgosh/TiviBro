@@ -7,7 +7,8 @@
 #   bash scripts/test-build.sh
 source "$(dirname "$0")/_common.sh"
 OUT="$(mktemp -d)"; trap 'kill $SRV 2>/dev/null; rm -rf "$OUT"' EXIT
-ares ares-package -o "$OUT" "$ROOT/app" "$ROOT/service" >/dev/null
+stage_app "$OUT"                                                   # what build.sh packages: hashed script names
+ares ares-package -o "$OUT" "$OUT/app" "$ROOT/service" >/dev/null
 ( cd "$OUT" && ar x ./*.ipk && tar xzf data.tar.gz )
 PORT="${BUILD_PORT:-8081}"
 ( cd "$OUT/usr/palm/applications/$APP_ID" && exec python3 -m http.server "$PORT" --bind 127.0.0.1 >/dev/null 2>&1 ) & SRV=$!
