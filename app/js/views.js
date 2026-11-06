@@ -2303,6 +2303,7 @@ var Guide = (function () {
     // A poster at the right: the colour legend moves to its left rather than under it.
     var lgd = $('glegend'); if (lgd) lgd.classList.toggle('beside', detail.classList.contains('has-poster'));
     nowLine(pv);
+    fitDetail(gdEl);
     progMarquee();
   }
   /* The focused programme's title, when it doesn't fit its cell, scrolls across after a moment and
@@ -2321,6 +2322,18 @@ var Guide = (function () {
       pmEl = el; box.classList.add('mq');
       pmStop = UI.marquee(el, over, { speed: 90, pause: 1600 });
     }, 1100);
+  }
+  /* The details above the guide have a fixed height.  With a Series or Movie line, an episode title and
+     bigger text, everything doesn't always fit: the summary gives up lines (three, two, one) until it
+     does, rather than the bottom lines being cut through the middle. */
+  function fitDetail(gdEl) {
+    var kids = detail.children, last = null, i;
+    for (i = kids.length - 1; i >= 0; i--) if (!kids[i].classList.contains('gd-poster')) { last = kids[i]; break; }
+    if (!last || !gdEl) return;
+    var over = function () { return last.getBoundingClientRect().bottom > detail.getBoundingClientRect().bottom + 1; };
+    if (!over()) return;
+    for (var n = 2; n >= 1; n--) { gdEl.style.webkitLineClamp = n; gdEl.style.lineClamp = n; if (!over()) return; }
+    gdEl.style.display = 'none';
   }
   // What's in the window and how to get to it, whatever is highlighted.
   function nowLine(pv) {

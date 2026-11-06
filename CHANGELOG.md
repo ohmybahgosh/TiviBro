@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The details above the guide no longer cut off at the bottom.**  With a Series or Movie line, an episode title, large text and the line about what's in the window, the summary was cut through the middle of a line and squeezed the lines above it.  Now it gives up lines (three, two, one) until everything fits.
+
 ## 0.6.0 (alpha 96, 2026-11-06)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -52,6 +52,23 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const lp = await ev(() => { const g = document.getElementById('glegend'), p = document.querySelector('#guideDetail .gd-poster'); if (!g || !p) return null; const a = g.getBoundingClientRect(), b = p.getBoundingClientRect(); return { overlap: a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom, beside: g.classList.contains('beside') }; });
     ok('a poster in the details: the colour legend sits beside it, not under it', !!lp && !lp.overlap && lp.beside, JSON.stringify(lp));
     await ev(() => { Store.settings.guideTint = false; Guide.draw(); });
+    // Large text, the Series line, an episode title and the window's line: nothing in the details is cut off at the bottom.
+    // The summary gives up lines until it fits, rather than its last line being cut through the middle.
+    await ev(() => Views.startChannel(Library.channels(Library.ALL).find((c) => !/Prime Plaza/.test(c.n)), true)); await wait(1500);
+    const fit = await ev(() => {
+      document.body.classList.add('ts-l');
+      const d = document.getElementById('guideDetail'), desc = Epg.desc;
+      Epg.desc = () => 'The team and the mayor travel to an island for a festival, and during the visit the group discovers that someone has gone missing, so everyone sets off across the island to look, by boat, by air and on foot, before the storm arrives and the festival has to be called off for the night.';
+      Guide.draw();
+      const kids = [].filter.call(d.children, (k) => !k.classList.contains('gd-poster') && k.offsetParent);
+      const g = d.querySelector('.gd-desc'), lh = parseFloat(getComputedStyle(g).lineHeight), gh = g.offsetParent ? g.getBoundingClientRect().height : 0;
+      const r = { cut: kids.filter((k) => k.getBoundingClientRect().bottom > d.getBoundingClientRect().bottom + 1).map((k) => k.className), lines: gh / lh, now: !!d.querySelector('.gd-now'), series: !!d.querySelector('.gd-movie') };
+      window.__desc = desc;
+      return r;
+    });
+    await shot('series-fit');
+    await ev(() => { Epg.desc = window.__desc; document.body.classList.remove('ts-l'); Views.stopAll(); Guide.draw(); });
+    ok('large text with a Series line: the details fit, the summary shortened to whole lines', fit.now && fit.series && !fit.cut.length && Math.abs(fit.lines - Math.round(fit.lines)) < 0.05, JSON.stringify(fit));
     const asked = await ev(() => window.__asked);
     ok('asked about the show once and its season once, nothing about news or sport', asked.filter((a) => a === 'show:' + SHOW + '|strong').length === 1 && asked.filter((a) => /^season:tmdb:tv:501:/.test(a)).length === 1 && !asked.some((a) => /Briefing|World Tonight|Weather|Sports/.test(a)), asked.join(', '));
     // ---- About this show: Info on a series ----

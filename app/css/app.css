@@ -405,6 +405,7 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .guide-detail p.gd-desc{-webkit-line-clamp:3}
 .gd-now{margin-top:auto;font-size:21px;color:var(--muted)}
 .gd-now b{display:inline;font-size:21px;color:var(--accent-text);margin:0}
+.guide-detail>*{flex-shrink:0}  /* nothing squeezed and cut through a line: fitDetail() shortens the summary instead */
 .guide-wrap{flex:1;position:relative;min-height:0}
 .guide-wrap .guide-body{position:absolute;top:0;left:0;right:0;bottom:0}
 :root{--grow:100px}
