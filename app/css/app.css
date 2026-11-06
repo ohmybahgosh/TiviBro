@@ -139,7 +139,7 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .guide-group{width:420px;color:var(--muted);font-size:24px;padding-left:20px;line-height:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .guide-times{flex:1;position:relative;color:var(--muted);font-size:22px}
 .guide-times span{position:absolute;top:14px}
-.guide-body{flex:1;position:relative;overflow:hidden;contain:strict;z-index:0}
+.guide-body{flex:1;position:relative;overflow:hidden;contain:strict}
 .grow{position:absolute;left:0;right:0;height:var(--grow);display:flex;will-change:transform}
 .gch{width:420px;flex:none;display:flex;align-items:center;gap:14px;padding:0 16px;border-radius:10px;white-space:nowrap;overflow:hidden}
 .gch .num{width:56px;text-align:right;color:var(--dim);flex:none}
@@ -165,10 +165,11 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .gp.now{background:var(--raised)}
 .gp.focus{background:var(--accent);color:var(--on-accent)}
 .gp.none{color:var(--dim)}
-/* Now: a thin line that runs behind the programmes (seen between them, never across their text), and a
-   small marker in the time bar. */
-.gnow{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--accent);opacity:.55;z-index:-1;pointer-events:none}
-.gnowh{position:absolute;bottom:-2px;width:0;height:0;margin-left:-7px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--accent);top:auto!important}
+/* Now, as TiviMate draws it: one thin, soft line over the programmes, the whole height of the guide, from a
+   small dot on the time bar.  Thin and a little see-through, so crossing a title doesn't distract. */
+.gnow{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--accent);opacity:.8;z-index:3;pointer-events:none}
+.gnowh{position:absolute;bottom:-5px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--accent);top:auto!important}
+.gnow::after{content:'';position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(255,255,255,.4)}  /* a lighter shade of the accent, so it shows on the selected programme too */
 /* guide top: details left, preview window right */
 .guide-top{display:flex;gap:40px;height:300px;flex:none;padding:6px 0 14px}
 .guide-detail{flex:1;min-width:0;padding:8px 20px;color:var(--muted);font-size:23px;overflow:hidden;display:flex;flex-direction:column}
@@ -406,15 +407,11 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 /* live progress inside "now" programme cells */
 /* What's on now: a slim progress bar under the times, on a faint track. */
 /* What's on now: the part already aired is tinted with the accent colour, under the text. */
-/* What has aired of what's on now: a bar along the bottom ending in a small knob at now, which lines up
-   with the now line running behind the programmes.  No tint over the cell: the line, bar and colour were too busy. */
+/* What has aired of what's on now (Mark what's on now > Line and progress bar): a bar along the bottom,
+   ending at the now line.  No tint over the cell: the line, bar and colour were too busy. */
 .gp .gfill{position:absolute;left:0;top:0;bottom:0;pointer-events:none;border-radius:8px 0 0 8px}
 .gp .gfill::after{content:'';position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--accent);border-radius:0 2px 2px 0}
-.gp .gfill::before{content:'';position:absolute;right:-5px;bottom:-3px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
-.gp.focus .gfill::after,.gp.focus .gfill::before{background:var(--on-accent);opacity:.6}
-/* The now line: brighter, and its marker in the time bar.  It runs behind the programmes (seen between them). */
-.gnow{width:3px!important;margin-left:-1.5px!important;opacity:.9!important}
-.gnowh{border-left-width:9px!important;border-right-width:9px!important;border-top-width:11px!important;margin-left:-9px!important}
+.gp.focus .gfill::after{background:var(--on-accent);opacity:.6}
 /* The day in the time bar when it isn't today ("Tomorrow 8:00pm"), and at midnight. */
 #guideTimes .gday{font-weight:700;color:var(--accent-text);margin-right:10px}
 /* Where a jump landed (Rewind, Fast-forward, Jump to…), for a moment. */

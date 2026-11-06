@@ -4,7 +4,7 @@
 
 - **A calmer, more polished guide.**
   - **The colour by category** is a short rounded bar, and it shows on what's on now too (the aired-so-far shading used to cover it).
-  - **What's on now** has just a slim progress bar along the bottom, no shading over the cell.  The bar ends in a small dot right where the now line is, and the now line runs behind the programmes, between them, never across their titles.  Settings > Guide > Mark what's on now: **Progress bar**, **Coloured cell and bar** or **Off**.
+  - **What's on now is marked TiviMate's way:** one thin line over the programmes in a light shade of your accent colour, from a small dot on the time bar, and nothing inside the cells (how far along it is shows in the details above the guide).  The old shading over the cell is gone.  Settings > Guide > Mark what's on now: **Just the now line** (now the default, also for TVs that had the old default), **Line and progress bar** (a slim bar along the bottom ending at the line), or **Line, coloured cell and bar**.
   - **A programme running on past either edge** of the guide is square on that side and its title fades out, instead of a hard cut or "…".
   - **The row you're on** is a shade lighter all the way across, so your place is easy to follow.
   - **Programmes that have ended** are an outline with quieter text (with Dim past programmes, on by default).
