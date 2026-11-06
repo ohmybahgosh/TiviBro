@@ -190,7 +190,7 @@ var Settings = (function () {
       .concat([head('TMDB: movie and show details and posters')]).concat(tmdbRows().filter(Boolean))
       .concat([head('OpenSubtitles: subtitles for movies and shows')]).concat(osRows());
   }
-  /* Your TMDB token: in Settings > My media and in Settings > Guide > Movies in the guide (Movies on now uses it too). */
+  /* Your TMDB token: in Settings > My media and in Settings > Guide > Movies and series from TMDB (Movies on now uses it too). */
   function tmdbRows() {
     var hasToken = MediaStore.preferences().tmdbConfigured;
     return [
@@ -620,7 +620,7 @@ var Settings = (function () {
     out.push(choice('Recent channels kept', '', [10, 20, 30, 50], ['10', '20', '30', '50'], function () { return +s.recentCount; }, function (v) { s.recentCount = v; save(); }));
     out.push(toggle('Show Favorites group', '', function () { return s.showFav !== false; }, function (v) { s.showFav = v; apply(); }));
     out.push(page('My teams', 'A group with your teams\' own channels and every channel showing one of their games.  For now the NFL, NBA, NHL, MLB, WNBA and MLS only.', 'My teams', teamsPage, function () { var n = Teams.followed().length; return n ? n + ' ›' : '›'; }));
-    out.push(toggle('Show Movies on now', 'A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Guide > Movies in the guide).',
+    out.push(toggle('Show Movies on now', 'A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Guide > Movies and series from TMDB).',
       function () { return s.moviesGroup !== false; }, function (v) { s.moviesGroup = v; apply(); if (typeof Movies !== 'undefined') Movies.poke(); }));
     out.push(page('Event channels', 'Pay-per-view and league pass channels whose names carry the game and its time: read into the guide.', 'Event channels', function () { return eventsPage(Store.playlist); }, function () { var ev = Store.playlist.events; return ev && ev.on === false ? 'Off' : 'On'; }));
     if (Events.onAny()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.',
@@ -732,9 +732,11 @@ var Settings = (function () {
       out.push(page('Guide for ' + (q.name || 'playlist'), (q.type === 'xtream' ? { short: 'Per channel', xmltv: 'Full XMLTV file', off: 'Provider guide off' } : { xmltv: 'From playlist', off: 'Provider guide off' })[q.providerEpg] + ', ' + (q.epgSources || []).length + ' source(s), public fill-in ' + (PubEpg.conf(q).on ? 'on' : 'off'),
         'Guide: ' + (q.name || 'playlist'), function () { return guideRows(q); }));
     });
-    out.push(head('Movies in the guide'));
+    out.push(head('Movies and series from TMDB'));
     out.push(toggle('Movie details from TMDB', 'Finds the movies in your guide with your TMDB token: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  Only programme titles go to TMDB.',
       function () { return s.guideMovies !== false; }, function (v) { s.guideMovies = v; save(true); if (typeof Movies !== 'undefined') Movies.poke(); }));
+    out.push(toggle('Series details from TMDB', 'With your TMDB token, for the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode\'s own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider\'s details leave out.  Only a show\'s name and episode numbers go to TMDB.',
+      function () { return s.guideSeries !== false; }, function (v) { s.guideSeries = v; save(true); if (typeof Series !== 'undefined') Series.poke(); }));
     out = out.concat(tmdbRows());
     if (!MediaStore.preferences().tmdbConfigured) out.push(info('Needs a TMDB token: add one above, free from themoviedb.org.  The same token gives My media its posters.', ''));
     return out;

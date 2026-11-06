@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **TV series from TMDB.**  With your TMDB token, a series in the guide gets its poster and a line with when it started, its network, genres and rating; when the guide gives the season and episode, the episode's own title and summary.  On the Shows screen (and the phone app), TMDB fills in what your provider leaves out: a show's poster, summary, genres, network and cast, an episode's summary, picture and air date.  Settings > Guide > Movies and series from TMDB > Series details from TMDB (on).  A show is looked up only when you land on it, by its name.
 - **Rewind and Fast-forward in the guide jump a screen at a time.**  Two and a half hours per press instead of one programme, and a held button jumps about three times a second instead of racing ahead.  Rewind goes back only as far as the channel's catch-up; Back returns to now.
 - **Jump to…** in the guide's Hold OK menu: tonight, late tonight, tomorrow morning or night, any later day the guide has (then a time of day), and on catch-up channels earlier today and the days before.  It can go on a button too.
 - **The guide says which day it shows.**  The time bar reads "Tomorrow 8:00pm" when it isn't today, and a badge shows where a jump landed.

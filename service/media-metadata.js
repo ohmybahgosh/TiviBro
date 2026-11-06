@@ -144,6 +144,7 @@ function create(opts) {
       out.id = key; out.kind = q.episode != null ? 'episode' : q.season != null ? 'season' : 'show'; out.originalTitle = str(m.original_name,200); out.status = str(m.status,100);
       out.still = image(m.still_path,'w500');
       out.cast = ((m.credits || {}).cast || []).slice(0,20).map(function(person){return str(person.name,100);}).filter(Boolean).join(', ');
+      out.network = Array.isArray(m.networks) && m.networks[0] ? str(m.networks[0].name,100) : '';
       if (Array.isArray(m.seasons)) out.seasons = m.seasons.map(function (season) { return {number:season.season_number,title:str(season.name,200),episodeCount:season.episode_count,airDate:str(season.air_date,10),poster:image(season.poster_path,'w185')}; });
       if (Array.isArray(m.episodes)) out.episodes = m.episodes.map(function (episode) { var en={};((english||{}).episodes||[]).some(function(e){if(e.episode_number===episode.episode_number){en=e;return true;}return false;}); return {id:'tmdb:tv:'+id+':season:'+q.season+':episode:'+episode.episode_number,number:episode.episode_number,season:episode.season_number,title:str(episode.name||en.name,200),plot:str(episode.overview||en.overview,5000),airDate:str(episode.air_date,10),runtime:episode.runtime || null,still:image(episode.still_path,'w500')}; });
       return out;
@@ -181,6 +182,26 @@ function create(opts) {
       });
     });
   }
-  return { cancel:function(){cancelled=true;jobs.forEach(function(job){job.cancel();});jobs=[];}, lookup: function (q, cb) { return q && q.guide ? guideLookup(q, cb) : q && (q.kind === 'tv' || /^tmdb:tv:/.test(q.id || '')) ? tvLookup(q, cb) : lookup(q, cb); }, configured: function () { return !!credential; } };
+  /* A TV series by its name, from the guide or the provider's Shows (app/js/series.js): a show of exactly
+     that name, the best known one when several have it (a US and a UK version), the one that started in
+     q.year when one did.  q.guide 'strong' (the guide gave a season and episode, or it's the provider's
+     own show) takes any such show; 'weak' only one with 25+ votes, so a programme that merely shares a
+     name with an obscure show isn't dressed up as it.  { metadata } (the show) or { miss }. */
+  function guideTvLookup(q, cb) {
+    var language = LOCALES[q.language] ? q.language : 'en', locale = LOCALES[language];
+    var title = str(q.title, 200).trim(), year = /^\d{4}$/.test(q.year || '') ? String(q.year) : '', strong = q.guide === 'strong';
+    if (!title) return cb(null, { miss: true });
+    request('/search/tv?query=' + encodeURIComponent(title) + '&language=' + locale, function (e, r) {
+      if (e) return cb(e);
+      var exact = (r && Array.isArray(r.results) ? r.results : []).filter(function (t) {
+        return t && /^[1-9][0-9]*$/.test(String(t.id)) && (normal(t.name) === normal(title) || normal(t.original_name) === normal(title));
+      });
+      exact.sort(function (a, b) { return (year ? (str(b.first_air_date, 4) === year) - (str(a.first_air_date, 4) === year) : 0) || (b.popularity || 0) - (a.popularity || 0); });
+      var best = exact[0];
+      if (!best || (best.vote_count || 0) < (strong ? 1 : 25)) return cb(null, { miss: true });
+      tvLookup({ id: 'tmdb:tv:' + best.id, language: language }, function (e2, x) { cb(e2, x && x.metadata ? { metadata: x.metadata } : { miss: true }); });
+    });
+  }
+  return { cancel:function(){cancelled=true;jobs.forEach(function(job){job.cancel();});jobs=[];}, lookup: function (q, cb) { return q && q.guide ? (q.kind === 'tv' ? guideTvLookup(q, cb) : guideLookup(q, cb)) : q && (q.kind === 'tv' || /^tmdb:tv:/.test(q.id || '')) ? tvLookup(q, cb) : lookup(q, cb); }, configured: function () { return !!credential; } };
 }
 module.exports = { lookup: function (q, cb) { return create({ credential: q.credential, refresh:!!q.refresh }).lookup(q, cb); }, create: create };

@@ -397,7 +397,7 @@ If your provider offers video on demand, **Movies** and **Shows** appear in the 
 
 ### Movies on now
 
-With your own free TMDB token saved (Settings > Guide > Movies in the guide, or Settings > My media), TiviBro finds the movies in your guide:
+With your own free TMDB token saved (Settings > Guide > Movies and series from TMDB, or Settings > My media), TiviBro finds the movies in your guide:
 
 - **In the guide:** a movie's details show its poster, and a line with the year, runtime, genres and TMDB rating.  When the guide says little about it, TMDB's plot is shown instead.  Movies in the grid say **Movie** next to their time.
 - **The Movies on now group,** near the top of the guide: the movies on now, most time left first, then the ones starting within the hour.  With none, it says so.
@@ -405,6 +405,16 @@ With your own free TMDB token saved (Settings > Guide > Movies in the guide, or 
 - **The Movies on now screen,** in the side menu while a token is saved: big posters of the movies on now and starting in the next three hours, the one you're on large at the top over its backdrop, with its title logo (or its title when TMDB has no logo), its channel, time left, year, genres, rating and plot.  A movie on several channels is there once.  Under **On now** and **Starting soon** come the same movies by genre (**Action**, **Comedy**, **Family**…): a shelf for each genre with two or more of them, the biggest first, up to ten.  **OK** watches it fullscreen (Back lands in the guide on that channel); for one starting later, **OK** asks whether to set a reminder or watch the channel now (the cursor starts on **Cancel**, so a stray press sets nothing).  **Hold OK** or **Red** lists every channel showing it, a reminder on any of them, or the guide.
 
 Which programmes are movies: the guide's own **Movie** category, a year in the title ("Bridesmaids (2011)") or "Movie:", anything 75 minutes or longer on a movie channel (HBO, Cinemax, Starz, TCM, a "Movies" group…), and other programmes 80 minutes to 4 hours long that aren't news, sport or a show.  TMDB has the last word: a movie of exactly that title (and year), and for the last kind also well known and not a TV series of the same name.  Only the programme titles (and years) go to TMDB, with your token.  Answers are kept on the TV for 30 days, so after the first day only a few titles an hour are looked up.  Turn it off with **Movie details from TMDB**, or just the group with **Show Movies on now** (Settings > Channels and groups).
+
+### TV series from TMDB
+
+The same token fills in TV series (Settings > Guide > Movies and series from TMDB > **Series details from TMDB**, on by default):
+
+- **In the guide:** land on a series and its details show its poster and a line with when it started, its network, genres and TMDB rating.  When the guide gives the season and episode (S2 E5), the episode's own title is in front of its summary, and TMDB's summary of that episode is shown when the guide's is short.
+- **On the Shows screen:** whatever your provider's details leave out comes from TMDB: a poster, a summary, genres, network, rating and cast for a show, and for an episode its summary, a picture from it and when it aired.  What your provider has always comes first (its covers, its episode titles).
+- **In the phone app:** a show's details get the same, once the TV has looked it up.
+
+A show is looked up when you land on it, not ahead of time, and only by its name: a show of exactly that name, the best known one when there are several (a US and a UK version).  News, sport, movies and live programmes are never looked up as series.  Answers are kept for 30 days.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-onnow"><img src="screenshots/tv-onnow.png" width="49%" alt="The Movies on now screen"></a>
@@ -710,7 +720,8 @@ With public guides on, if the provider guide fails, the guide status says it is 
 | **Guide last loaded**, each source, **Channels with guide data** | (information) | When the guide loaded, how many channels and programmes each source gave, and how many of your channels have a guide. |
 | **Assign guide to channels without one** | | Lists channels with no guide (leaving out the ones with no guide wanted); pick one and search the guide for the right channel.  Also on any channel: **Hold OK > Assign guide…**. |
 | **Channels with no guide wanted ›** | | Shows once you have some: every channel you marked **No guide for this channel** on the TV, or **Ignore** in the web editor.  They are left out of guide matching and public fill-in, and don't say "No guide information".  **OK** on one (**Look again**) looks for a guide for it again. |
-| **Movie details from TMDB** | **On** · Off | Under **Movies in the guide**.  With a TMDB token: posters and details for movies in the guide, the **Movie** tag, the [Movies on now](#movies-on-now) group and the Movies on now screen.  Only programme titles go to TMDB. |
+| **Movie details from TMDB** | **On** · Off | Under **Movies and series from TMDB**.  With a TMDB token: posters and details for movies in the guide, the **Movie** tag, the [Movies on now](#movies-on-now) group and the Movies on now screen.  Only programme titles go to TMDB. |
+| **Series details from TMDB** | **On** · Off | Under **Movies and series from TMDB**.  With a TMDB token: a series' poster, network, genres and rating in the guide, each episode's own title and summary when the guide gives its season and episode, and what your provider leaves out on the Shows screen ([TV series from TMDB](#tv-series-from-tmdb)).  Only a show's name and episode numbers go to TMDB. |
 | **Add TMDB API token** | Not set | Your own free TMDB API key or Read Access Token, the same one as in [Settings: My media](#settings-my-media).  Once saved the row reads **TMDB API token saved** (select it to replace it), with **Test TMDB token** and **Remove TMDB token** under it. |
 
 ### Settings: Channels and groups

@@ -305,6 +305,8 @@ var Vod = (function () {
   }
 
   function build() {
+    // TMDB's answer for a show came in (series.js): show it if that show is on screen.
+    if (typeof Series !== 'undefined') Series.onChange(function () { if (kind === 'series' && Views.tab === 'shows' && !Views.full && itemsVL) showInfo(); });
     catsVL = new VList($('vodCats'), { render: renderCat, onSel: onCat, empty: 'No categories', visible: 11,
       onHover: function () { if (zone !== 'cats') setZone('cats'); }, onClick: function () { UI.press('ok'); } });
     itemsVL = new VList($('vodItems'), { render: renderItem, onSel: onItem, empty: 'Nothing here', visible: 11,
@@ -438,10 +440,17 @@ var Vod = (function () {
     box.innerHTML = '';
     if (!it) return;
     var m = it.ep ? null : (kind === 'movie' ? info.get(key(it)) : null);
-    var poster = (m && m.poster) || it.cover || (series && series.cover);
-    if (poster) { var img = U.el('img', 'vod-poster'); img.src = poster; img.onerror = function () { if (!Net.retryImage(this)) this.remove(); }; box.appendChild(img); }
-    box.appendChild(U.el('h2', '', it.ep ? it.label : it.name));
-    var meta = [m && m.year || it.year, niceDur(m && m.dur || it.dur), m && m.genre, stars(it.rating)].filter(Boolean).join('   ');
+    /* A show and its episodes, from TMDB (series.js) when you have a token: only what the provider's
+       details leave out (a poster, a summary, the rating, genres, cast, an episode's title, summary and
+       picture).  The provider's own always come first. */
+    var tv = typeof Series !== 'undefined' && kind === 'series' ? (it.ep ? (series ? Series.show(series.name, series.year, 'strong') : null) : Series.show(it.name, it.year, 'strong')) : null;
+    var te = tv && it.ep ? Series.episode(tv, it.season, it.num) : null;
+    var showCover = series && series.cover;
+    var poster = (m && m.poster) || (it.ep ? (it.cover && it.cover !== showCover ? it.cover : (te && te.still) || it.cover) : it.cover || (tv && tv.poster)) || showCover || (tv && tv.poster);
+    if (poster) { var img = U.el('img', 'vod-poster' + (it.ep && te && poster === te.still ? ' still' : '')); img.src = poster; img.onerror = function () { if (!Net.retryImage(this)) this.remove(); }; box.appendChild(img); }
+    box.appendChild(U.el('h2', '', it.ep ? (te && te.t && /^S\d+ E[\d?]+\s*$/.test(it.label) ? it.label + '   ' + te.t : it.label) : it.name));
+    var rating = stars(it.rating) || (tv && !it.ep && tv.rating ? '★ ' + tv.rating + ' TMDB' : '');
+    var meta = [m && m.year || it.year || (!it.ep && tv && tv.year), niceDur(m && m.dur || it.dur), m && m.genre || (!it.ep && tv && tv.genre), !it.ep && tv && tv.network, it.ep && te && te.air ? 'aired ' + new Date(te.air + 'T12:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '', rating].filter(Boolean).join('   ');
     if (meta) box.appendChild(U.el('div', 'vod-meta', meta));
     // What the file is, from the provider's own scan of it: 4K, HDR or Dolby Vision, sound format.
     var md = mediaOf(it);
@@ -452,8 +461,10 @@ var Vod = (function () {
       if (w) box.appendChild(U.el('div', 'vod-meta warn', w));
     }
     var plot = (m && m.plot) || it.plot || (it.ep && it.plotEp) || '';
+    if (tv && plot.length < 40) plot = (it.ep ? te && te.plot : tv.plot) || plot;
     if (plot) box.appendChild(U.el('p', 'vod-plot', plot));
     if (m && m.cast) box.appendChild(U.el('div', 'vod-meta', 'Cast: ' + m.cast));
+    else if (tv && !it.ep && tv.cast) box.appendChild(U.el('div', 'vod-meta', 'Cast: ' + tv.cast));
     if (m && m.director) box.appendChild(U.el('div', 'vod-meta', 'Director: ' + m.director));
     var id = idOf(it), r = resumeOf(id);
     // A show: the episode you're on (its own resume point is only there for Continue watching).
@@ -714,8 +725,15 @@ var Vod = (function () {
                 pos: rr ? Math.round(rr.pos) : 0, len: rr ? Math.round(rr.dur) : 0 };
             }) });
           });
-          return { id: phoneId(it), n: it.name, c: inf.cover || it.cover || '', plot: inf.plot || it.plot || '', genre: inf.genre || '', cast: inf.cast || '', year: String(it.year || inf.releaseDate || '').slice(0, 4),
+          var out = { id: phoneId(it), n: it.name, c: inf.cover || it.cover || '', plot: inf.plot || it.plot || '', genre: inf.genre || '', cast: inf.cast || '', year: String(it.year || inf.releaseDate || '').slice(0, 4),
             r: stars(it.rating).replace('★ ', ''), seasons: seasons, mine: E().myList.indexOf(px + 's' + it.id) >= 0 };
+          // What the provider leaves out, from TMDB when it is already known (series.js): no waiting here.
+          var tv = typeof Series !== 'undefined' ? Series.show(it.name, it.year, 'strong') : null;
+          if (tv) {
+            out.c = out.c || tv.poster || ''; if (String(out.plot || '').length < 40) out.plot = tv.plot || out.plot; out.genre = out.genre || tv.genre || ''; out.cast = out.cast || tv.cast || ''; out.r = out.r || tv.rating || '';
+            seasons.forEach(function (sn) { sn.eps.forEach(function (e) { var te = Series.episode(tv, sn.s, e.e); if (!te) return; e.t = e.t || te.t; if (!e.plot) e.plot = te.plot; e.c = e.c || te.still; }); });
+          }
+          return out;
         });
       });
     },

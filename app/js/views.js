@@ -1834,6 +1834,8 @@ var Guide = (function () {
     var nowLine = U.el('div', 'gnow'); nowLine.id = 'gnow'; body.appendChild(nowLine);
     if (built) return;
     jumpChip = U.el('div', 'gjump hidden'); view.appendChild(jumpChip);
+    // A series' details came back from TMDB: show them if it's the programme you're on.
+    if (typeof Series !== 'undefined') Series.onChange(function () { if (Views.tab === 'guide' && !Views.full && rows.length) drawDetail(); });
     built = true;
     // The groups have rows of their own height: compact, so many more show than channels do.
     var gh = GROUP_ROWS[Store.settings.guideRows] || 70;
@@ -2196,7 +2198,22 @@ var Guide = (function () {
       if (mv.poster) { var pim = U.el('img', 'gd-poster'); pim.src = mv.poster; pim.alt = ''; pim.onerror = function () { this.remove(); detail.classList.remove('has-poster'); }; detail.appendChild(pim); }
       if ((!gd || gd.length < 60) && mv.plot) gd = mv.plot;
     }
-    detail.appendChild(U.el('p', 'gd-desc', gd));
+    /* A series (series.js, TMDB): its poster, a line with when it started, its network, genres and rating,
+       the episode's own title next to its number, and the episode's (else the show's) summary when the
+       guide has little to say. */
+    var sh = !mv && h.p && typeof Series !== 'undefined' ? Series.of(c, h.p) : null;
+    if (sh) {
+      var se = h.p.ep ? Series.episode(sh, h.p.ep) : null;
+      var m4 = U.el('div', 'gd-meta gd-movie');
+      m4.textContent = ['Series', sh.year ? 'since ' + sh.year : '', sh.network, sh.genre, sh.rating ? '★ ' + sh.rating + ' TMDB' : ''].filter(Boolean).join('   ·   ');
+      detail.appendChild(m4);
+      if (sh.poster) { detail.classList.add('has-poster'); var sim = U.el('img', 'gd-poster'); sim.src = sh.poster; sim.alt = ''; sim.onerror = function () { this.remove(); detail.classList.remove('has-poster'); }; detail.appendChild(sim); }
+      if (!gd || gd.length < 60) gd = (se && se.plot) || sh.plot || gd;
+    }
+    var gdEl = U.el('p', 'gd-desc', gd);
+    // The episode's own title from TMDB, in front of the summary (its season and episode are in the line above).
+    if (sh && se && se.t) { gdEl.insertBefore(U.el('span', 'gd-eptitle', se.t), gdEl.firstChild); }
+    detail.appendChild(gdEl);
     if (zone === 'grid') detail.appendChild(U.el('div', 'gd-ok', okMeaning(c, h)));
     nowLine(pv);
     progMarquee();

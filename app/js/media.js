@@ -260,6 +260,19 @@ var Media = (function () {
     return ask('metadata', { credential: token, guide: strength || 'weak', title: title, year: year || '', language: MediaStore.preferences().language }, 25000)
       .then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
+  // A TV series by name, for the guide and the Shows screen (series.js): { metadata } (the show) or { miss }.
+  function tvByName(title, year, strength) {
+    var token = MediaStore.tmdbToken();
+    if (!token) return Promise.reject(new Error('No TMDB token'));
+    return ask('metadata', { credential: token, kind: 'tv', guide: strength || 'weak', title: title, year: year || '', language: MediaStore.preferences().language }, 25000)
+      .then(function (r) { if (r.error) throw new Error(r.message); return r; });
+  }
+  // One season of a show TMDB knows ('tmdb:tv:1399'): { metadata: { episodes: [...] } }.
+  function tvSeason(id, season) {
+    var token = MediaStore.tmdbToken();
+    if (!token) return Promise.reject(new Error('No TMDB token'));
+    return ask('metadata', { credential: token, id: id, season: season, language: MediaStore.preferences().language }, 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
+  }
   function movieById(id) {
     var token = MediaStore.tmdbToken();
     if (!token) return Promise.reject(new Error('No TMDB token'));
@@ -269,12 +282,12 @@ var Media = (function () {
   function setTmdbToken(value) {
     var version = ++tokenVersion;
     value = String(value || '').trim();
-    if (!value) { MediaStore.setTmdbToken(''); refresh(); if (typeof Movies !== 'undefined') Movies.poke(); return Promise.resolve(MediaStore.preferences()); }
+    if (!value) { MediaStore.setTmdbToken(''); refresh(); if (typeof Movies !== 'undefined') Movies.poke(); if (typeof Series !== 'undefined') Series.poke(); return Promise.resolve(MediaStore.preferences()); }
     if (!/^[A-Za-z0-9._-]{24,2048}$/.test(value)) return Promise.reject(new Error('Enter a valid TMDB API key or API Read Access Token.'));
     return ask('metadata', { credential: value, check: true }, 15000).then(function (r) {
       if (version !== tokenVersion) throw new Error('TMDB setup changed while this token was being checked.');
       if (r.error || !r.ok) throw new Error(r.message || 'TMDB did not accept that token.');
-      MediaStore.setTmdbToken(value); refresh(); autoSoon(); if (typeof Movies !== 'undefined') Movies.poke(); return MediaStore.preferences();
+      MediaStore.setTmdbToken(value); refresh(); autoSoon(); if (typeof Movies !== 'undefined') Movies.poke(); if (typeof Series !== 'undefined') Series.poke(); return MediaStore.preferences();
     });
   }
   // Settings > My media > Test TMDB token, and the web editor: is the saved token still accepted?
@@ -663,7 +676,7 @@ var Media = (function () {
 
   return {
     refreshShows:refreshSeries, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, signOut: signOut,
-    rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
+    rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: play, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { addServer: addServer, addAddress: addAddress, addDropbox: addDropbox, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };

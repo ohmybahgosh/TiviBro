@@ -1,5 +1,5 @@
 /* Movies on now: guide programmes that are movies, confirmed and filled in by TMDB with your own token
-   (Settings > Guide > Movies in the guide).
+   (Settings > Guide > Movies and series from TMDB).
    Which programmes might be movies:
      strong  the guide says Movie (its <category>), the title has a year or "Movie:", or a movie
              channel (HBO, Cinemax, TCM, a "Movies" group…) shows something 75 minutes or longer
@@ -204,7 +204,7 @@ var Movies = (function () {
     }, function () {});
   }
   function emptyText() {
-    if (!on()) return 'Save a TMDB token in Settings > Guide > Movies in the guide to find the movies in your guide.';
+    if (!on()) return 'Save a TMDB token in Settings > Guide > Movies and series from TMDB to find the movies in your guide.';
     return queue.length || busy ? 'Looking through the guide for movies…' : 'No movies on now or starting within the hour.';
   }
 

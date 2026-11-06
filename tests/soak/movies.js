@@ -65,7 +65,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
   // Settings: the token in the guide's section too, and the switches.
   const st = await ev(() => { Views.switchTab('settings'); Settings.section('guide'); return document.getElementById('setBody').innerText; });
-  ok('Settings > Guide: Movies in the guide, the token rows', /Movies in the guide/.test(st) && /Movie details from TMDB/.test(st) && /TMDB API token saved/.test(st) && /Test TMDB token/.test(st), st.slice(0, 400));
+  ok('Settings > Guide: Movies and series from TMDB, the token rows', /Movies and series from TMDB/.test(st) && /Movie details from TMDB/.test(st) && /TMDB API token saved/.test(st) && /Test TMDB token/.test(st), st.slice(0, 400));
   const gs = await ev(() => { Settings.section('groups'); return document.getElementById('setBody').innerText; });
   ok('Settings > Groups: Show Movies on now', /Show Movies on now/.test(gs));
   const off = await ev(() => { Store.settings.moviesGroup = false; Movies.poke(); return Library.groups().some((g) => g.id === Library.MOVIES); });
