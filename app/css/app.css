@@ -147,8 +147,13 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .gch .num{width:56px;text-align:right;color:var(--dim);flex:none}
 .gch .logo{width:70px;height:44px;object-fit:contain;flex:none}
 .gch span.n{overflow:hidden;text-overflow:ellipsis}
-.grow.sel .gch{background:var(--panel)}
-.grow.moving .gch{box-shadow:inset 0 0 0 3px var(--accent)}
+.grow.moving .gch::before{box-shadow:inset 0 0 0 3px var(--accent)}
+/* Each channel on a card of its own, the height of the programmes beside it, so a row reads as one strip
+   instead of names stacked down the column.  Drawn behind the channel rather than with a margin, so the
+   schedule, the time bar and the now line keep their places. */
+.gch{position:relative}
+.gch::before{content:'';position:absolute;left:0;right:8px;top:4px;bottom:4px;border-radius:8px;background:rgba(255,255,255,.035);z-index:-1;pointer-events:none}
+.grow.sel .gch::before{background:var(--raised)}
 .grow.moving .gch .n::before{content:"⇅  ";color:var(--accent-text)}
 /* Show or hide channels, in the list itself: a tick on each row, unticked rows dimmed. */
 .vbox{display:none}

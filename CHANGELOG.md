@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+
+- **Each channel in the guide sits on a card of its own,** the height of the programmes beside it, so a row reads as one strip instead of names stacked down the column.
 ## 0.6.0 (alpha 95, 2026-11-06)
 
 Pre-release: expect rough edges, and keep a backup before installing.
