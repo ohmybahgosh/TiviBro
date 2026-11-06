@@ -567,7 +567,7 @@ var Player = (function () {
     cur.failed = true;
     // Counted for the warning that most of a playlist will not play, and for the "not playing lately"
     // mark on a channel that fails again and again (deadlist.js).  Once per try.
-    if (cur.live && !cur.timeshift && !cur.deadCounted && window.DeadList) { cur.deadCounted = true; try { DeadList.failed(cur.ch, cur.origUrl || cur.url, cur.lastHttp || 0); } catch (e) {} }
+    if (cur.live && !cur.timeshift && !cur.deadCounted && window.DeadList) { cur.deadCounted = cur.deadFailed = true; try { DeadList.failed(cur.ch, cur.origUrl || cur.url, cur.lastHttp || 0); } catch (e) {} }
     // A movie that was playing here a moment ago is not a format the TV can't decode (issue #34).
     if (isFile() && cur.everPlayed) return state('error', CLOSED);
     if (cur.lastHttp) return state('error', 'The provider is not sending this ' + (isFile() ? 'video' : 'channel') + ' right now (error ' + cur.lastHttp + ').  Press OK to try again, or try ' + (isFile() ? 'again later.' : 'another channel.'));
@@ -775,7 +775,9 @@ var Player = (function () {
         if (!cur.audioPicked) { cur.audioPicked = true; preferAudio(); }
         if (cur.conv) Log.info('player', 'Converted sound playing from ' + Math.round(cur.conv.t) + 's');
         if (cur.slow) { Log.info('player', 'Channel is back after ' + Math.round((now - cur.slowSince) / 1000) + 's'); notice('Back on air'); }
-        if (cur.live && !cur.everPlayed && window.DeadList) DeadList.played(cur.ch, cur.origUrl || cur.url);
+        // Playing: clears the "not playing lately" mark.  Also when it plays again after a failure was counted in
+        // this same session (OK on "try again", or it came back by itself), not only on the first start (#36).
+        if (cur.live && (!cur.everPlayed || cur.deadFailed) && window.DeadList) { DeadList.played(cur.ch, cur.origUrl || cur.url); cur.deadFailed = false; }
         if (cur.swapFrom) cur.swapPlayed = true;
         cur.slow = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0; cur.starved = false; cur.lastFailHttp = false;
         cur.startMs = now - st.at; cur.dataMs = st.tData ? st.tData - st.at : 0; cur.picMs = st.tPic ? st.tPic - st.at : 0;
@@ -1216,7 +1218,7 @@ var Player = (function () {
   function retryNow() {
     if (!cur) return;
     if (cur.origUrl) cur.url = cur.origUrl;
-    cur.retries = 0; cur.triedNative = false; cur.failed = false; cur.slowSince = 0; cur.slow = '';
+    cur.retries = 0; cur.triedNative = false; cur.failed = false; cur.slowSince = 0; cur.slow = ''; cur.deadCounted = false;   // a try of its own
     cur.tried = null; cur.late = null; cur.forceKind = null; cur.forceNative = false; cur.routed = false; cur.httpFails = 0; cur.lastHttp = 0;
     if (isFile() && !cur.startAt && cur.pos > 5) cur.startAt = cur.pos;      // a movie tries again where it was
     start(token);
