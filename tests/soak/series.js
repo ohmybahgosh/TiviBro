@@ -47,6 +47,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('a series in the guide: the Series line (when it started, network, genres, rating) and its poster', /^Series\s+·\s+since 2016\s+·\s+Travel Plus\s+·\s+Documentary, Travel\s+·\s+★ 7\.8 TMDB$/.test(d.line) && d.poster, JSON.stringify(d));
     ok('the guide gave its season and episode: TMDB\'s title for that episode in front of its summary', /^S\d+ E\d+$/.test(d.ep) && /^TMDB episode \d+\.\d+$/.test(d.et), JSON.stringify(d));
     await shot('series-guide');
+    // Colour by category on: its legend moves to the left of the poster rather than under it.
+    await ev(() => { Store.settings.guideTint = true; Guide.draw(); }); await wait(300);
+    const lp = await ev(() => { const g = document.getElementById('glegend'), p = document.querySelector('#guideDetail .gd-poster'); if (!g || !p) return null; const a = g.getBoundingClientRect(), b = p.getBoundingClientRect(); return { overlap: a.right > b.left && a.left < b.right && a.bottom > b.top && a.top < b.bottom, beside: g.classList.contains('beside') }; });
+    ok('a poster in the details: the colour legend sits beside it, not under it', !!lp && !lp.overlap && lp.beside, JSON.stringify(lp));
+    await ev(() => { Store.settings.guideTint = false; Guide.draw(); });
     const asked = await ev(() => window.__asked);
     ok('asked about the show once and its season once, nothing about news or sport', asked.filter((a) => a === 'show:' + SHOW + '|strong').length === 1 && asked.filter((a) => /^season:tmdb:tv:501:/.test(a)).length === 1 && !asked.some((a) => /Briefing|World Tonight|Weather|Sports/.test(a)), asked.join(', '));
     // ---- About this show: Info on a series ----

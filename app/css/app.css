@@ -431,6 +431,7 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
    Sports on Everforest) still shows. */
 .gp.focus.k-m::after,.gp.focus.k-s::after,.gp.focus.k-n::after,.gp.focus.k-c::after,.gp.focus.k-d::after{box-shadow:0 0 0 2px var(--on-accent)}
 .glegend{position:absolute;right:56px;top:300px;z-index:2;font-size:19px;color:var(--muted);white-space:nowrap}
+.glegend.beside{right:264px}
 .glegend em{font-style:normal;margin-left:20px}
 .glegend em::before{content:'';display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:0}
 .glegend .k-m::before{background:#b48cff}.glegend .k-s::before{background:#3ddc97}.glegend .k-n::before{background:#f2b33d}.glegend .k-c::before{background:#ff7eb6}.glegend .k-d::before{background:#33c9e1}
@@ -909,3 +910,6 @@ body.gr-xl .gch .n{white-space:normal;display:-webkit-box;-webkit-box-orient:ver
 /* A list row's name scrolling across while it's focused (vlist.js marquee). */
 .row .name.mqn{text-overflow:initial;white-space:nowrap}
 .row .name .mqi{display:inline-block;white-space:nowrap}
+/* Bigger guide rows: the cut-off row under the last whole one fades out, so it's clear there are more channels
+   below (views.js PEEK). */
+.guide-body.more-down::after{content:'';position:absolute;left:0;right:0;bottom:0;height:var(--peek);z-index:4;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,0),var(--ink))}

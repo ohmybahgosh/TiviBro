@@ -19,7 +19,10 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await page.keyboard.press('ArrowRight'); await page.keyboard.press('ArrowDown'); await page.keyboard.press('ArrowDown'); await page.waitForTimeout(600);
   const look = () => page.evaluate(() => {
     const r = document.querySelector('.guide-body .grow'), t = document.querySelector('.guide-body .gp .gt'), sel = document.querySelector('.grow.sel .gch .n');
-    return { rows: document.querySelectorAll('.guide-body .grow').length, h: r.getBoundingClientRect().height, title: parseFloat(getComputedStyle(t).fontSize), sel: sel && sel.textContent, fits: r.getBoundingClientRect().height * document.querySelectorAll('.guide-body .grow').length <= document.querySelector('.guide-body').clientHeight + 1 };
+    // Whole rows, plus (with room for most of another) one cut off and faded under them, never the one you're on.
+    const all = document.querySelectorAll('.guide-body .grow').length, bh = document.querySelector('.guide-body').clientHeight, rh = r.getBoundingClientRect().height, whole = Math.floor((bh + 1) / rh);
+    const peek = all - whole, faded = document.querySelector('.guide-body').classList.contains('more-down');
+    return { rows: whole, all, peek, faded, h: rh, title: parseFloat(getComputedStyle(t).fontSize), sel: sel && sel.textContent, fits: peek === 0 || (peek === 1 && faded && bh - whole * rh > 24) };
   });
   const m = await look();
   const out = {};
@@ -29,7 +32,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     if (SHOTS) await page.screenshot({ path: path.join(SHOTS, 'tv-guide-rows-' + v + '.png') });
   }
   ok('Normal: 100 px rows', m.h === 100 && m.fits, JSON.stringify(m));
-  ok('Bigger: taller rows, bigger titles, fewer rows that still fit', out.l.h === 112 && out.l.title > m.title && out.l.rows < m.rows && out.l.fits, JSON.stringify(out.l));
+  ok('Bigger: taller rows, bigger titles, fewer whole rows (the room left: one more, cut off and faded)', out.l.h === 112 && out.l.title > m.title && out.l.rows < m.rows && out.l.fits, JSON.stringify(out.l));
   ok('Biggest: taller again', out.xl.h === 124 && out.xl.title > out.l.title && out.xl.rows <= out.l.rows && out.xl.fits, JSON.stringify(out.xl));
   ok('the same channel stays selected', out.l.sel === m.sel && out.xl.sel === m.sel, [m.sel, out.l.sel, out.xl.sel].join(' / '));
   await page.keyboard.press('ArrowDown'); await page.waitForTimeout(300);

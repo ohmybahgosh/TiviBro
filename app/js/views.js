@@ -1803,7 +1803,7 @@ var Guide = (function () {
   'use strict';
   var $ = U.$, L = Library;
   var view = $('viewGuide'), body = $('guideBody'), timesEl = $('guideTimes'), detail = $('guideDetail'), ghead = $('guideGroup');
-  var ROW = 100, VIS = 0, WIN = 2.5 * 3600e3, PXW = 0, CHW = 470, MINCELL = 220;      // narrowest a programme is drawn (px)
+  var PEEK = 0, ROW = 100, VIS = 0, WIN = 2.5 * 3600e3, PXW = 0, CHW = 470, MINCELL = 220;      // narrowest a programme is drawn (px)
   var list = [], gid = null, loaded = null, sel = 0, top = 0, t0 = 0, focusT = 0, rows = [], zone = 'groups', groupsVL = null;
   var moving = null;              // the channel being moved up or down its group (Hold OK > Move…)
   var jumpChip = null, jumpChipT = 0;
@@ -1819,7 +1819,11 @@ var Guide = (function () {
     PXW = (body.clientWidth || 1808) - CHW;
     body.innerHTML = '';
     rows = [];
-    for (var i = 0; i < VIS; i++) {
+    /* Room left under the last whole row (bigger rows leave most of one): one more row there, cut off and
+       faded, so it's clear there are more channels below.  It's never the one you're on. */
+    PEEK = body.clientHeight ? body.clientHeight - VIS * ROW : 0;
+    body.style.setProperty('--peek', Math.max(0, PEEK) + 'px');
+    for (var i = 0; i < VIS + (PEEK > 24 ? 1 : 0); i++) {
       var r = U.el('div', 'grow'), ch = U.el('div', 'gch'), pr = U.el('div', 'gprogs'), pin = U.el('div', 'gpin');
       pr.appendChild(pin);                       // the programmes, in a layer that can slide when the guide scrolls in time
       ch.appendChild(U.el('span', 'num'));
@@ -2039,6 +2043,30 @@ var Guide = (function () {
     for (var i = 0; i < l.length; i++) if (l[i].s <= t && l[i].e > t) return { p: l[i], i: i, l: l };
     return { p: null, i: -1, l: l };
   }
+  /* A programme's kind (m s n c d) when the guide doesn't say, as on providers' per-channel guides (a local
+     channel's): from its title (news; a sport, or a game between two teams), else from what the channel plainly
+     is, by its name or its group (ESPN, CNN, Disney Junior, Discovery; a "Sports" or "Kids" group).  Anything
+     else stays plain: better no colour than a wrong one. */
+  var KIND_NEWS = /\b(news|newscast|noticias|noticiero|nachrichten|journal t[eé]l[eé]vis[eé])\b/i,
+    KIND_SPORT = /\b(nfl|nba|wnba|nhl|mlb|mls|ncaa[bf]?|nascar|ufc|wwe|pga|f1|formula 1|football|f[uú]tbol|basketball|baseball|hockey|soccer|golf|tennis|boxing|cricket|rugby|sportscenter|pregame|postgame|kickoff|grand prix|playoffs?)\b/i,
+    KIND_CH = [['n', /\b(news|cnn|msnbc|cnbc|fox news|newsmax|bbc world|sky news|euronews|al jazeera|bloomberg|noticias)\b/i],
+      ['s', /\b(sports?|espn\w*|fs[12]|tsn|sportsnet|bein|dazn|nfl network|nba tv|nhl network|mlb network|golf channel|tennis channel|deportes)\b/i],
+      ['c', /\b(kids|children|cartoon|nick(elodeon|jr)?|disney (junior|jr|channel|xd)|boomerang|baby ?tv|pbs kids|universal kids|infantil)\b/i],
+      ['d', /\b(discovery|history|nat ?geo|national geographic|smithsonian|science|animal planet|documentar(y|ies)|docu\w*)\b/i],
+      ['m', /\b(movies?|cinema|cin[eé]|films?|cinemax|tcm)\b/i]], kindCh = {};
+  function kindOf(c, p) {
+    if (p.k) return p.k;
+    var t = p.t || '';
+    if (KIND_NEWS.test(t)) return 'n';
+    if (KIND_SPORT.test(t) || (typeof Teams !== 'undefined' && Teams.isGame && Teams.isGame(t, c.n))) return 's';
+    if (!(c.k in kindCh)) {
+      var n = L.name(c) + ' ' + (c.n || ''), g = L.groupName(c.g) || '', k = '';
+      for (var i = 0; i < KIND_CH.length && !k; i++) if (KIND_CH[i][1].test(n)) k = KIND_CH[i][0];
+      for (var j = 0; j < KIND_CH.length && !k; j++) if (KIND_CH[j][1].test(g)) k = KIND_CH[j][0];
+      kindCh[c.k] = k;
+    }
+    return kindCh[c.k];
+  }
   function hasReminder(c, p) { return Store.edits.reminders.some(function (r) { return r.k === c.k && r.s === p.s; }); }
   function isPlaying(c) { var p = Views.playing; return !!(p && c && p.k === c.k && Views.mode === 'live'); }
   function previewing() { var p = Views.playing; return p && Views.mode === 'live' && !Views.full ? p : null; }
@@ -2093,7 +2121,7 @@ var Guide = (function () {
     segs.forEach(function (sg) {
       var p = sg.p, a = sg.a, w = Math.max(4, sg.b - sg.a);
       var past = p.e <= nowT, now = p.s <= nowT && p.e > nowT, from = Math.max(p.s, t0);
-      var mv = typeof Movies !== 'undefined' && Movies.of(c, p), kind = tint ? (mv ? 'm' : p.k || '') : '';
+      var mv = typeof Movies !== 'undefined' && Movies.of(c, p), kind = tint ? (mv ? 'm' : kindOf(c, p)) : '';
       // How much of what's on now has aired, shown inside its cell (by time, as the cell may be wider), up to
       // the window's end for one running on past it, so the bar meets the now line.
       // Running on past either edge of the window: that side is square and its text fades out, so it reads as
@@ -2139,6 +2167,7 @@ var Guide = (function () {
     ext = px ? { a: Math.min(t0, slideFrom), b: Math.max(t0, slideFrom) + WIN } : null;
     slideFrom = null;
     for (var i = 0; i < rows.length; i++) drawRow(rows[i], top + i);
+    moreDown();
     var tk = t0 + '|' + CHW + '|' + new Date().toDateString() + (ext ? '|s' : '');
     if (timesKey !== tk) {
       timesKey = tk;
@@ -2221,8 +2250,8 @@ var Guide = (function () {
       // What else the guide says (#9 in the ideas): a new episode, a reminder set, its kind, its episode.
       if (h.p.n && !past) meta.appendChild(U.el('span', 'gd-badge new', 'NEW'));
       if (!past && hasReminder(c, h.p)) meta.appendChild(U.el('span', 'gd-badge rem', '◷ REMINDER'));
-      var kn = { s: 'Sports', n: 'News', c: 'Kids', d: 'Documentary' }[h.p.k];
-      if (kn) meta.appendChild(U.el('span', 'gd-badge kind k-' + h.p.k, kn));
+      var hk = kindOf(c, h.p), kn = { s: 'Sports', n: 'News', c: 'Kids', d: 'Documentary' }[hk];
+      if (kn) meta.appendChild(U.el('span', 'gd-badge kind k-' + hk, kn));
       if (h.p.ep) meta.appendChild(U.el('span', 'gd-ep', h.p.ep));
       meta.appendChild(document.createTextNode((dayName(h.p.s) === 'Today' ? '' : dayName(h.p.s) + '  ') + U.hhmm(h.p.s) + ' – ' + U.hhmm(h.p.e)));
       part(mins(h.p.e - h.p.s));
@@ -2270,6 +2299,8 @@ var Guide = (function () {
     if (sh && se && se.t && !spoil) { gdEl.insertBefore(U.el('span', 'gd-eptitle', se.t), gdEl.firstChild); }
     detail.appendChild(gdEl);
     if (zone === 'grid') detail.appendChild(U.el('div', 'gd-ok', okMeaning(c, h)));
+    // A poster at the right: the colour legend moves to its left rather than under it.
+    var lgd = $('glegend'); if (lgd) lgd.classList.toggle('beside', detail.classList.contains('has-poster'));
     nowLine(pv);
     progMarquee();
   }
@@ -2330,9 +2361,12 @@ var Guide = (function () {
     else if (d) { draw(); return s !== old; }
     if (old >= top && old < top + VIS) drawRow(rows[old - top], old);
     drawRow(rows[sel - top], sel);
+    moreDown();
     detailSoon();
     return s !== old;
   }
+  // The fade over the cut-off row at the bottom (build PEEK): only while there are channels below.
+  function moreDown() { body.classList.toggle('more-down', rows.length > VIS && top + VIS < list.length); }
   // Scrolling by a few rows: the rows that left the screen move to the other end and only they are
   // drawn again.  The rest just move (each row is its own layer, so moving costs no repaint).
   function shift(d) {
@@ -2342,7 +2376,7 @@ var Guide = (function () {
     for (i = 0; i < rows.length; i++) if (rows[i].slot !== i) {
       rows[i].slot = i; rows[i].el.style.transform = 'translateY(' + (i * ROW) + 'px)'; rows[i].el.setAttribute('data-slot', i);
     }
-    if (d > 0) for (i = VIS - d; i < VIS; i++) drawRow(rows[i], top + i);
+    if (d > 0) for (i = rows.length - d; i < rows.length; i++) drawRow(rows[i], top + i);
     else for (i = 0; i < -d; i++) drawRow(rows[i], top + i);
   }
   // While an arrow is held the details wait until the remote rests: the rows keep up instead.
@@ -2366,7 +2400,13 @@ var Guide = (function () {
   function moveTime(dir) {
     var c = list[sel]; if (!c) return false;
     var h = progAt(c, focusT), now = Date.now(), target;
-    if (h.p) { var nb = h.l[h.i + dir]; target = nb ? nb.s + 60e3 : (dir > 0 ? h.p.e + 60e3 : h.p.s - 60e3); }
+    if (h.p) {
+      // The next programme that has time of its own: a guide listing one twice leaves the copy with none, and
+      // stepping onto it went nowhere, so Left seemed stuck until you changed rows.
+      var j = h.i + dir, nb = h.l[j];
+      while (nb && (nb.e <= nb.s || (dir < 0 ? nb.s >= h.p.s : nb.s <= h.p.s))) { j += dir; nb = h.l[j]; }
+      target = nb ? nb.s + 60e3 : (dir > 0 ? h.p.e + 60e3 : h.p.s - 60e3);
+    }
     else target = focusT + dir * 30 * 60e3;
     var cur = progAt(c, now).p;
     var earliest = c.arch ? now - c.arch * 86400e3 : (cur ? cur.s : now);

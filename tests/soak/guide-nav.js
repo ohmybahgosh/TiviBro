@@ -101,6 +101,38 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     // ---- 7, 9: colours, legend, episode and NEW ----
     const look = await ev(() => ({ news: document.querySelectorAll('#guideBody .gp.k-n').length, legend: (document.getElementById('glegend') || {}).textContent || '' }));
     ok('colour by category: news programmes get their colour, and the legend says what each means', look.news > 0 && /Sports/.test(look.legend), JSON.stringify(look));
+    // A guide that gives no categories (a provider's per-channel guide, as for local channels): a news title
+    // still gets the news colour, and a channel's ordinary programme stays plain.
+    const back0 = await ev(() => (Guide.__list()[Guide.__sel()] || {}).k);
+    const gk = await ev(() => { const L = Library, c = L.channels(L.ALL).find((x) => /Prime Plaza/.test(x.n)); Guide.open(L.ALL, c.k); return c.k; }); await wait(700);
+    if ((await st()).zone !== 'grid') { await code(RIGHT); await wait(400); }
+    const guess = await ev((k) => {
+      const c = Library.data.channels.find((x) => x.k === k), l = Epg.request(c) || [], now = Date.now(), p = l.find((q) => q.s <= now && q.e > now);
+      if (!p) return null;
+      const keep = { t: p.t, k: p.k }; p.k = ''; p.t = 'Channel 7 Action News at Noon'; Guide.draw();
+      const news = !!document.querySelector('#guideBody .grow.sel .gp.now.k-n');
+      p.t = 'The Talk'; Guide.draw();
+      const plain = !document.querySelector('#guideBody .grow.sel .gp.now[class*=" k-"]');
+      p.t = keep.t; p.k = keep.k; Guide.draw();
+      return { news, plain, ch: c.n };
+    }, gk);
+    ok('no category from the guide: a news title still gets the news colour, a talk show stays plain', !!guess && guess.news && guess.plain, JSON.stringify(guess));
+    // A guide listing the next programme twice (the copy left with no time of its own): Right then Left comes
+    // back to what's on now, rather than Left doing nothing until you change rows.
+    const dup = await ev((k) => {
+      const c = Library.data.channels.find((x) => x.k === k), l = Epg.request(c) || [], now = Date.now(), i = l.findIndex((q) => q.s <= now && q.e > now);
+      if (i < 0 || !l[i + 1]) return null;
+      l.splice(i + 1, 0, { s: l[i + 1].s, e: l[i + 1].s, t: l[i + 1].t }); Guide.draw();
+      return { s: l[i].s, e: l[i].e };
+    }, gk);
+    await code(RIGHT); await wait(300);
+    const afterRight = await ev(() => Guide.__focusT());
+    await code(LEFT); await wait(300);
+    const afterLeft = await ev(() => Guide.__focusT());
+    await ev((k) => { const c = Library.data.channels.find((x) => x.k === k), l = Epg.request(c) || []; const j = l.findIndex((q) => q.e <= q.s); if (j >= 0) l.splice(j, 1); Guide.draw(); }, gk);
+    ok('the next programme listed twice: Right, then Left comes back to what\'s on now', !!dup && afterRight >= dup.e && afterLeft >= dup.s && afterLeft < dup.e, JSON.stringify({ dup, afterRight, afterLeft }));
+    await ev((k) => Guide.open(Library.ALL, k), back0); await wait(700);
+    if ((await st()).zone !== 'grid') { await code(RIGHT); await wait(400); }
     // What's on now has its aired-so-far shading over the cell's left side: the stripe is drawn above it.
     const live = await ev(() => { const d = document.querySelector('#guideBody .gp.now.k-n'); if (!d) return null; const r = d.getBoundingClientRect(), a = getComputedStyle(d, '::after');
       const top = document.elementFromPoint(r.left + 4, r.top + r.height / 2); return { bg: a.backgroundColor, w: a.width, z: getComputedStyle(d.querySelector('.gfill')).display, inCell: !!top && d.contains(top) }; });
