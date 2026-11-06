@@ -2262,7 +2262,8 @@ var Guide = (function () {
     }
     /* Hide spoilers (Settings > Appearance and start screen, discussion #36): a new episode, or anything not aired yet, keeps only its
        title, season and episode, and when it airs; its summary and episode title stay hidden. */
-    var spoil = Store.settings.noSpoilers && h.p && !h.p.up && (h.p.n || h.p.s > now);
+    // Only a story: a series episode or a movie (not news, sport or the like), or anything marked NEW.
+    var spoil = Store.settings.noSpoilers && h.p && !h.p.up && (h.p.n || (h.p.s > now && !!(sh || mv || h.p.ep) && h.p.k !== 'n' && h.p.k !== 's'));
     if (spoil && gd) gd = h.p.s > now ? 'Summary hidden until it airs (Hide spoilers is on).' : 'Summary hidden, a new episode (Hide spoilers is on).';
     var gdEl = U.el('p', 'gd-desc' + (spoil ? ' spoil' : ''), gd);
     // The episode's own title from TMDB, in front of the summary (its season and episode are in the line above).
