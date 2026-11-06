@@ -269,7 +269,7 @@ var Epg = (function () {
         self.postMessage({ progress: { src: i + 1, of: d.sources.length, host: src.host, bytes: bytes, total: est ? Math.max(src.known, bytes) : size, est: est, programmes: total, channels: chans.length } });
       }
       function one(src, i) {
-        var got = {}, buf = '', n = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {};
+        var got = {}, buf = '', n = 0, inFile = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {};
         var RE = /<programme\b([^>]*)>([\s\S]*?)<\/programme>/g;
         var CH = /<channel\b[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/channel>/g;
         function eat(final) {
@@ -281,6 +281,7 @@ var Epg = (function () {
             if (!id.trim()) continue;            // <channel id="">: no programme can point at it
             var dn = /<display-name[^>]*>([\s\S]*?)<\/display-name>/.exec(c[2]);
             var name = dn ? unesc(dn[1]).trim() : id;
+            inFile++;
             if (chans.length < 30000) chans.push([id, name]);
             if (P) {
               var pid = P.prefix + id;
@@ -365,7 +366,7 @@ var Epg = (function () {
             });
           }
           return step();
-        }).then(function () { if (poll) { clearInterval(poll); poll = 0; } report.push({ url: src.label || src.url, key: src.key, bytes: done, ok: true, programmes: n, channels: Object.keys(got).length, filled: settle() }); },
+        }).then(function () { if (poll) { clearInterval(poll); poll = 0; } report.push({ url: src.label || src.url, key: src.key, bytes: done, ok: true, programmes: n, channels: Object.keys(got).length, inFile: inFile, filled: settle() }); },
           function (e) { clearInterval(poll); if (rd) { try { rd.cancel(); } catch (x) {} }      // stop the download too
             report.push({ url: src.label || src.url, ok: false, error: String(e && e.message || e), filled: settle() }); });
         // Public pass: fix this source's matches (only those with programmes count).
@@ -726,7 +727,7 @@ var Epg = (function () {
         var progs = res.report.reduce(function (a, r) { return a + (r.programmes || 0); }, 0);
         setProgress({ active: false, phase: 'done', error: bad.length ? bad[0].error : '',
           at: Date.now(), programmes: progs, channels: Object.keys(res.map || {}).length, took: Date.now() - (progress.started || Date.now()),
-          report: res.report.map(function (r) { return { host: r.provider ? 'provider guide' : hostOf(r.url), ok: r.ok, programmes: r.programmes || 0, channels: r.channels || 0, error: r.error || '' }; }) });
+          report: res.report.map(function (r) { return { host: r.provider ? 'provider guide' : hostOf(r.url), key: r.key || '', ok: r.ok, programmes: r.programmes || 0, channels: r.channels || 0, inFile: r.inFile || 0, error: r.error || '' }; }) });
       }, function (e) { g.done(); mainGuideFailure(notice, (e && e.message) || 'failed', []); throw e; });
     });
   }

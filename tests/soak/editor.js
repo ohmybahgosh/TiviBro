@@ -93,6 +93,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('test a guide source', /Works/.test(await ed.innerText('#srcMsg')), await ed.innerText('#srcMsg'));
     await ed.click('#srcAdd'); await ed.waitForTimeout(4000);
     ok('add a guide source reaches the TV', await tvState(() => (Store.playlist.epgSources || []).some(s => /guide\.xml\.gz/.test(s.url))), await ed.innerText('#srcMsg'));
+    // Once the TV has loaded it, the source says what it matched.
+    await ed.waitForFunction(() => [].some.call(document.querySelectorAll('.src-res'), (e) => /Matched \d+ of your channels/.test(e.textContent)), null, { timeout: 90000 }).catch(() => {});
+    ok('the source says how many channels it matched', await ed.evaluate(() => [].map.call(document.querySelectorAll('.src-res'), (e) => e.textContent).join(' | ')).then((t) => /Matched \d+ of your channels of the \d+ it has/.test(t)), await ed.evaluate(() => [].map.call(document.querySelectorAll('.src-res'), (e) => e.textContent).join(' | ')));
   });
 
   await step('smart clean-up', async () => {

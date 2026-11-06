@@ -237,6 +237,8 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 .prog .top{display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-size:14px}
 .prog .nums{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
 .prog.ok{border-color:#1f6049} .prog.bad{border-color:#6b2a2e}
+/* A guide source's result at the last load (srcResult). */
+.src-res{margin-top:4px;line-height:1.4} .src-res.ok{color:#7fe0ae} .src-res.warn{color:var(--warn)} .src-res.bad{color:#ff9a9d}
 #mList{max-height:min(70vh,900px);overflow:auto;overscroll-behavior:contain}
 .mrow .logo{width:44px;height:26px;object-fit:contain;vertical-align:middle;margin-right:8px}
 .conf{font-variant-numeric:tabular-nums}
@@ -2235,6 +2237,11 @@ $('gReload').onclick = function () {
 function onProgress(p) {
   var was = lastProgress; lastProgress = p;
   if (page === 'guide') drawProgress(p);
+  // A load of your own sources finished: each source's row says what it found (the public fill-in's report has no keys).
+  if (!p.active && p.phase === 'done' && D && D.guide && (p.report || []).some(function (r) { return r.key; })) {
+    D.guide.status = Object.assign({}, D.guide.status, { at: p.at, sources: p.report.map(function (r) { return { key: r.key || '', ok: !!r.ok, programmes: r.programmes || 0, channels: r.channels || 0, inFile: r.inFile || 0, error: r.error || '' }; }) });
+    if (page === 'guide') renderSources();
+  }
   if (!p.active && p.phase === 'done' && ((was && was.active) || (p.message && was && (was.active || was.phase === 'fallback' || was.message !== p.message)))) toast(p.message || ('Guide loaded on the TV: ' + (p.programmes || 0).toLocaleString() + ' programmes'));
 }
 function drawProgress(p) {
@@ -2244,7 +2251,7 @@ function drawProgress(p) {
   if (!p.active) {
     var ok = p.phase === 'done', pending = p.phase === 'fallback';
     box.innerHTML = '<div class="prog ' + (ok ? 'ok' : pending ? '' : 'bad') + '"><div class="top"><b>' + (p.message ? esc(p.message) : ok ? '✓ Guide loaded' : '✕ The guide did not load') + '</b><span class="nums">' +
-      (ok ? (p.programmes || 0).toLocaleString() + ' programmes for ' + (p.channels || 0).toLocaleString() + ' guide channels' + (p.took ? ' in ' + fmtTime(p.took) : '') : pending ? '' : esc(p.error || '')) + '  ·  ' + ago(p.at) + '</span></div>' +
+      (ok ? (p.channels ? (p.programmes || 0).toLocaleString() + ' programmes for ' + (p.channels || 0).toLocaleString() + ' guide channels' + (p.took ? ' in ' + fmtTime(p.took) : '') : 'but none of your channels matched it: each source below says what it found') : pending ? '' : esc(p.error || '')) + '  ·  ' + ago(p.at) + '</span></div>' +
       (p.report && p.report.length > 1 ? '<div class="nums" style="margin-top:6px">' + p.report.map(function (r) { return esc(r.host) + ': ' + (r.ok ? r.programmes.toLocaleString() + ' programmes' : 'failed (' + esc(r.error) + ')'); }).join('  ·  ') + '</div>' : '') + '</div>';
     return;
   }
@@ -2314,8 +2321,19 @@ function renderSources() {
   var pl = activePl(), l = pl.epgSources || [];
   $('srcList').innerHTML = l.length ? '<table class="t"><tr><th>Order</th><th>Source</th><th>Offset</th><th></th></tr>' + l.map(function (s, i) {
     return '<tr><td style="width:80px"><button class="ghost small" data-mv="' + i + ':-1"' + (i ? '' : ' disabled') + ' title="Earlier">↑</button><button class="ghost small" data-mv="' + i + ':1"' + (i < l.length - 1 ? '' : ' disabled') + ' title="Later">↓</button></td>' +
-      '<td>' + srcLabel(s) + '</td><td>' + (s.offset || 0) + ' min</td><td class="r"><button class="ghost danger small" data-rmsrc="' + i + '">Remove</button></td></tr>';
+      '<td>' + srcLabel(s) + srcResult(s) + '</td><td>' + (s.offset || 0) + ' min</td><td class="r"><button class="ghost danger small" data-rmsrc="' + i + '">Remove</button></td></tr>';
   }).join('') + '</table>' : '<p class="muted small">No extra guide sources yet.  Add one below, or pick a recommended free guide.</p>';
+}
+/* What a source gave at the TV's last guide load: how many of your channels it matched (out of how many it
+   has) and its programmes, or why it gave nothing. */
+function srcResult(s) {
+  var st = D && D.guide && D.guide.status, l = (st && st.sources) || [], r = null;
+  for (var i = 0; i < l.length; i++) if (l[i].key && l[i].key === s.id) { r = l[i]; break; }
+  if (!r) return '<div class="muted small src-res">' + (st && st.at ? 'Not in the last guide load.  It is read the next time the guide loads.' : 'Not loaded yet.') + '</div>';
+  if (!r.ok) return '<div class="small src-res bad">✕ Could not be read' + (r.error ? ': ' + esc(r.error) : '') + '</div>';
+  var has = r.inFile ? ' of the ' + r.inFile.toLocaleString() + ' it has' : '';
+  if (!r.channels) return '<div class="small src-res warn">Matched none of your channels' + has + '.  Its channel ids differ from your playlist\'s: turn on matching by name, or match channels to it in step 4 (Smart match).</div>';
+  return '<div class="small src-res ok">✓ Matched ' + r.channels.toLocaleString() + ' of your channels' + has + '  ·  ' + r.programmes.toLocaleString() + ' programmes</div>';
 }
 // A source as you'd recognise it: the free guide's name and size, or the server and file name.
 function srcLabel(s) {

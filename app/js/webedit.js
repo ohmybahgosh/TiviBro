@@ -122,7 +122,9 @@ var WebEdit = (function () {
       tz: d.tz || '',     // fresh TV: the editor offers restore or add a playlist
       playlist: { id: p.id, name: p.name || 'Playlist', type: p.type },
       playlists: playlists(),
-      guide: { channels: gc.slice(0, 30000).map(function (x) { return [x[0], x[1], Epg.hasId && Epg.hasId(x[0]) ? 1 : 0]; }), mode: p.providerEpg, sources: (p.epgSources || []).length, xml: !!Epg.xml, loading: !!Epg.loading, status: Epg.status ? { at: Epg.status.at } : null, nameMatch: !!p.nameMatch,
+      guide: { channels: gc.slice(0, 30000).map(function (x) { return [x[0], x[1], Epg.hasId && Epg.hasId(x[0]) ? 1 : 0]; }), mode: p.providerEpg, sources: (p.epgSources || []).length, xml: !!Epg.xml, loading: !!Epg.loading, status: Epg.status ? { at: Epg.status.at,
+          // Each source's own count (discussion: "show what each one matched"): by the key the editor knows it by.
+          sources: (Epg.status.sources || []).map(function (r) { return { key: r.key || '', url: r.provider ? '' : String(r.url || '').slice(0, 300), ok: !!r.ok, programmes: r.programmes || 0, channels: r.channels || 0, inFile: r.inFile || 0, skipped: !!r.skipped, error: String(r.error || '').slice(0, 200) }; }) } : null, nameMatch: !!p.nameMatch,
         pub: (function () { var cf = PubEpg.conf(p), ps = Epg.pubStatus; return { on: cf.on, cc: cf.cc, helper: !!Net.active, all: PubEpg.all().map(function (c) { return [c, PubEpg.name(c)]; }),
           status: ps ? { at: ps.at, countries: ps.countries, filled: ps.filled, asked: ps.asked, took: ps.took, none: ps.none || '', sources: ps.sources } : null }; })() },
       gz: Net.canUnzip,

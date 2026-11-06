@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Your own guide sources say what they matched.**  In the web editor's guide step, each source shows how many of your channels it matched, of how many it has, and how many programmes came in, or why it couldn't be read.  One that matched none says so and points at matching by name or Smart match.  When the whole guide finds nothing for your channels, the progress line says so instead of only "0 programmes".
 - **No more Documentary colour.**  Guides file most reality shows under it (Ax Men, American Pickers), so it was on nearly everything.  Movies, sports, news and kids' programmes keep theirs.
 - **More series in the guide find their TMDB details.**  A show a handful of people know (a cable reality show) now counts as a match, not only the well known ones; what guides tack on the end ("Special Presentation", "Marathon", "(Encore)", "Season Finale") comes off the name; a name with the episode after a colon or dash ("Modern Marvels: Ink") falls back to the show.  Shows with "Live" in the name are looked up now ("Jimmy Kimmel Live!", "Saturday Night Live", "Live with Kelly and Mark"), while sport, "Live:" broadcasts and team channels' "Next game" listings are left alone even when the guide doesn't say what they are.  Shows that missed before are asked about again.
 - **TMDB answers kept on the TV are read before anything is asked,** so a show already known isn't looked up again on every start.

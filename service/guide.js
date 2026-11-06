@@ -152,7 +152,7 @@ function start(body, log) {
   function slot(id) { var i = idx[id]; if (i === undefined) { i = idx[id] = ids.length; ids.push(id); count.push(0); firstSrc.push(-1); } return i; }
 
   function one(src, si, next) {
-    var got = {}, buf = '', n = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {};
+    var got = {}, buf = '', n = 0, inFile = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {};
     var RE = /<programme\b([^>]*)>([\s\S]*?)<\/programme>/g;
     var CH = /<channel\b[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/channel>/g;
     function eat(final) {
@@ -164,6 +164,7 @@ function start(body, log) {
         if (!id.trim()) continue;              // <channel id="">: no programme can point at it
         var dn = /<display-name[^>]*>([\s\S]*?)<\/display-name>/.exec(c[2]);
         var name = dn ? unesc(dn[1]).trim() : id;
+        inFile++;                                  // how many channels this source has (its report says so)
         if (chans.length < 30000) chans.push([id, name]);
         if (P) {
           var pid = P.prefix + id;
@@ -221,7 +222,8 @@ function start(body, log) {
       if (err) report.push({ url: src.label || src.url, ok: false, error: String(err && err.message || err), filled: settle() });
       else {
         var x = unz && Unzip.progress(unz), bytes = x ? (x.total || x.raw) : job.bytes;
-        report.push({ url: src.label || src.url, key: src.key, bytes: bytes, ok: true, programmes: n, channels: Object.keys(got).length, filled: settle() });
+        // channels: its guide channels that matched one of yours (and so kept programmes); inFile: all it has.
+        report.push({ url: src.label || src.url, key: src.key, bytes: bytes, ok: true, programmes: n, channels: Object.keys(got).length, inFile: inFile, filled: settle() });
       }
       next();
     }
