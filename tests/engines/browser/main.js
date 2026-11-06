@@ -135,7 +135,13 @@ var seq = [
   function tour(next) {
     js('Tour.open({ first: true }); return Tour.step;', val(function (st) {
       setTimeout(function () {
-        keys(['Down', 'Return'], function () {
+        // Down to "Tidy up on a phone or computer" by its label (rows above it come and go, like Hide adult channels), then OK.
+        (function toPhone(n, done) {
+          js('var r = document.querySelector("#viewSetup .focus"); return r ? r.innerText : "";', val(function (t) {
+            if (/on a phone or computer/i.test(t || '') || n > 8) return key('Return', done);
+            key('Down', function () { setTimeout(function () { toPhone(n + 1, done); }, 150); });
+          }));
+        })(0, function () {
           setTimeout(function () {
             js('return { qr: !!document.querySelector(".tour-qr svg"), w: document.querySelector(".tour-qr") ? document.querySelector(".tour-qr").offsetWidth : 0 };', val(function (q) {
               step('set-up tour: the QR code for the phone is drawn', q && q.qr && q.w > 100, JSON.stringify(q));

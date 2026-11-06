@@ -17,12 +17,21 @@ const SETTINGS = { meter: 'off', playlists: [{ id: 'p1', name: 'Demo', type: 'xt
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
   await page.addInitScript(([s, relay]) => { if (!sessionStorage.getItem('z')) { localStorage.clear(); localStorage.setItem('tivibro.settings', s); sessionStorage.setItem('z', '1'); } localStorage.setItem('tivibro.devRelay', relay); }, [JSON.stringify(SETTINGS), RELAY]);
+  // Blob URLs and workers still alive (issue #52: mpegts made a new worker Blob URL on every channel change and
+  // never revoked it, so hours of zapping filled the TV's memory outside the app's own heap figures).
+  await page.addInitScript(() => {
+    const urls = new Set(), cU = URL.createObjectURL, rU = URL.revokeObjectURL, W = window.Worker; let workers = 0;
+    URL.createObjectURL = function (o) { const u = cU.call(URL, o); urls.add(u); return u; };
+    URL.revokeObjectURL = function (u) { urls.delete(u); return rU.call(URL, u); };
+    window.Worker = function (u, o) { const w = new W(u, o); workers++; const t = w.terminate; w.terminate = function () { workers--; return t.call(w); }; return w; };
+    window.__alive = () => ({ blobs: urls.size, workers });
+  });
   await page.goto(APP);
   await page.waitForFunction(() => window.Library && Library.count && Library.count() > 20, null, { timeout: 30000 });
   await page.evaluate(() => { const c = Library.channels(Library.ALL)[0]; Views.startChannel(c, false, function () { Views.goFull(); }); });
   await page.waitForTimeout(4000);
   const mem = () => page.evaluate(() => { if (window.gc) window.gc(); return performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : 0; });
-  const heap0 = await mem();
+  const heap0 = await mem(), alive0 = await page.evaluate(() => window.__alive());
   let seed = 7; const rand = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
   const t0 = Date.now();
   for (let i = 0; i < ZAPS; i++) {
@@ -35,7 +44,7 @@ const SETTINGS = { meter: 'off', playlists: [{ id: 'p1', name: 'Demo', type: 'xt
     name: Player.current && Player.current.n, workers: performance.getEntriesByType ? 0 : 0 }));
   await page.waitForTimeout(2000);
   const pos2 = await page.evaluate(() => Player.position);
-  const heap1 = await mem();
+  const heap1 = await mem(), alive1 = await page.evaluate(() => window.__alive());
   const t1 = Date.now();
   await page.keyboard.press('Enter');                       // quick menu should still open promptly
   const qm = await page.waitForFunction(() => !document.getElementById('qpanel') || !document.getElementById('qpanel').classList.contains('hidden'), null, { timeout: 3000 }).then(() => Date.now() - t1, () => -1);
@@ -46,5 +55,7 @@ const SETTINGS = { meter: 'off', playlists: [{ id: 'p1', name: 'Demo', type: 'xt
   console.log('last channel: ' + end.name + ', state ' + end.state + ', moving ' + (pos2 > end.pos + 0.5 ? 'yes' : 'NO') + ' (' + end.pos.toFixed(1) + ' -> ' + pos2.toFixed(1) + ')');
   console.log('video elements: ' + end.videos + ', JS heap ' + heap0 + ' MB -> ' + heap1 + ' MB, quick menu answered in ' + qm + ' ms');
   console.log('page errors: ' + errors.length + (errors.length ? '  ' + errors.slice(0, 5).join(' | ') : '') + ';  logged errors: ' + errs.length + (errs.length ? '  ' + errs.slice(0, 5).join(' | ') : ''));
-  process.exit(errors.length || errs.length || !(pos2 > end.pos + 0.5) ? 1 : 0);
+  const leak = alive1.blobs > alive0.blobs + 3 || alive1.workers > alive0.workers + 2;
+  console.log('blob URLs ' + alive0.blobs + ' -> ' + alive1.blobs + ', workers ' + alive0.workers + ' -> ' + alive1.workers + (leak ? '  LEAK: they should not grow with each channel change' : ''));
+  process.exit(errors.length || errs.length || !(pos2 > end.pos + 0.5) || leak ? 1 : 0);
 })();

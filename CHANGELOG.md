@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Long sessions of channel flipping no longer use up the TV's memory.**  Every channel change on the built-in demuxer left a copy of its decoder behind in the TV's memory, outside what TiviBro's own memory figures show, so a couple of hours of zapping could run a TV with little memory out and close TiviBro (issue #52).  The decoder is now set up once and reused.
+
 ## 0.6.0 (alpha 91, 2026-11-05)
 
 Pre-release: expect rough edges, and keep a backup before installing.

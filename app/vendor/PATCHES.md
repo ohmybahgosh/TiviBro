@@ -11,6 +11,12 @@ Closed captions: `parseH264Payload` hands every H.264 SEI that carries "GA94" ca
 CEA-608) to `onPESPrivateData` as `{ pid: -608, data, pts }`, a copy of just that NAL, so it reaches the
 page as `PES_PRIVATE_DATA_ARRIVED` (from the worker too).  `app/js/captions.js` decodes it.
 
+Worker URL made once (issue #52): mpegts builds its demux worker with webworkify, which turned the whole
+library's source into a new Blob and Blob URL on every player and never revoked it.  Every channel change
+left one behind, in the browser's blob storage where the app's own memory figures don't see it, so hours of
+zapping on a TV with little memory ran it out.  The URL is now made the first time and kept in
+`self.__tbWorkerURL<module>`, and every later worker starts from it (mpegts never revokes `objectURL`).
+
 Re-apply after upgrading mpegts.js.  `hls.min.js` (1.5.20) is unmodified.
 
 ## qrcode.js
