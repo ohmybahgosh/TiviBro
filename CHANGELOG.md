@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 94, 2026-11-06)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 94
 
 - **A calmer, more polished guide.**
   - **The colour by category** is a short rounded bar, and it shows on what's on now too (the aired-so-far shading used to cover it).
@@ -27,11 +31,7 @@
 - **The screensaver no longer comes on over a channel that is reconnecting or browsing with the phone app** (#58).  It also waits for a minute and a half after something last played, and for 3 minutes after the last button press, the phone app's included (the TV doesn't count those).  Each answer to the TV is in the log, so a report shows why.
 - **Movies on now: Hold OK on a movie on many channels** lists its showings soonest first, and past four shows **All N showings…** for the rest, so **Watch the channel now** and **Show in the guide** are never pushed out of view.
 
-## 0.6.0 (alpha 93, 2026-11-05)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 93
+### In alpha 93
 
 - **About this show.**  Info on a series in the guide (or Hold OK > About this show…) opens a panel from TMDB: poster, when it started, network, seasons, whether it's still running, rating, genres, summary, cast, and its next showings on that channel this week with each episode's title.  Watch it, or set a reminder for the next one.  Info on anything else still opens the options menu.
 - **TV series from TMDB.**  With your TMDB token, a series in the guide gets its poster and a line with when it started, its network, genres and rating; when the guide gives the season and episode, the episode's own title and summary.  On the Shows screen (and the phone app), TMDB fills in what your provider leaves out: a show's poster, summary, genres, network and cast, an episode's summary, picture and air date.  Settings > Guide > Movies and series from TMDB > Series details from TMDB (on).  A show is looked up only when you land on it, by its name.
