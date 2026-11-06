@@ -426,7 +426,7 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 /* Colour by category (Settings > Guide): an edge in the programme's colour, and the legend in the time bar. */
 /* The category stripe is its own layer after the cell's contents, so the aired-so-far shading on what's on
    now (.gfill) never covers it. */
-.gp.k-m::after,.gp.k-s::after,.gp.k-n::after,.gp.k-c::after,.gp.k-d::after{content:'';position:absolute;left:0;top:0;bottom:0;width:7px;pointer-events:none}
+.gp.k-m::after,.gp.k-s::after,.gp.k-n::after,.gp.k-c::after,.gp.k-d::after{content:'';position:absolute;left:7px;top:14px;bottom:14px;width:5px;border-radius:3px;pointer-events:none}
 .gp.k-m::after{background:#b48cff}.gp.k-s::after{background:#3ddc97}.gp.k-n::after{background:#f2b33d}.gp.k-c::after{background:#ff7eb6}.gp.k-d::after{background:#33c9e1}
 .gp.k-m,.gp.k-s,.gp.k-n,.gp.k-c,.gp.k-d{padding-left:22px}
 .glegend{position:absolute;right:56px;top:300px;z-index:2;font-size:19px;color:var(--muted);white-space:nowrap}

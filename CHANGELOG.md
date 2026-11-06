@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Colour by category: the stripe shows on what's on now.**  The aired-so-far shading on a programme that's on was drawn over its colour stripe, so the colour of what's on now never showed.  The stripe is drawn above it now, and a little wider.
+- **Colour by category: the colour shows on what's on now.**  The aired-so-far shading on a programme that's on was drawn over its colour stripe, so the colour of what's on now never showed.  It's a short rounded bar now, drawn above that shading and clear of the progress line along the bottom.
 - **Movies on now: Hold OK on a movie on many channels** lists its showings soonest first, and past four shows **All N showings…** for the rest, so **Watch the channel now** and **Show in the guide** are never pushed out of view.
 
 ## 0.6.0 (alpha 93, 2026-11-05)
