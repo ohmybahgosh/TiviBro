@@ -30,7 +30,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
       window.__asked = [];
       Series.reset(); MediaStore.setTmdbToken('mock-user-token-123456789012345');
       const shows = {
-        'Road Trip Diaries': { id: 'tmdb:tv:501', title: 'Road Trip Diaries', year: '2016', poster: mock + '/poster/s2.svg', plot: 'Two friends drive every back road in America.', genre: 'Documentary, Travel', rating: '7.8', network: 'Travel Plus', cast: 'Ana Ruiz, Sam Cole' },
+        'Road Trip Diaries': { id: 'tmdb:tv:501', title: 'Road Trip Diaries', year: '2016', poster: mock + '/poster/s2.svg', plot: 'Two friends drive every back road in America.', genre: 'Documentary, Travel', rating: '7.8', network: 'Travel Plus', cast: 'Ana Ruiz, Sam Cole', status: 'Returning Series', seasons: [{ number: 0 }, { number: 1 }, { number: 2 }, { number: 3 }, { number: 4 }] },
         'Harbor Street': { id: 'tmdb:tv:502', title: 'Harbor Street', year: '2019', poster: mock + '/poster/s5.svg', plot: 'TMDB: a harbour town and its families, over two seasons.', genre: 'Drama', rating: '8.2', network: 'Coastline', cast: 'Mia Park, Leo Brandt, Ada Moss' }
       };
       Media.tvByName = (t, y, st) => { window.__asked.push('show:' + t + '|' + st); return Promise.resolve(shows[t] ? { metadata: shows[t] } : { miss: true }); };
@@ -47,6 +47,17 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await shot('series-guide');
     const asked = await ev(() => window.__asked);
     ok('asked about the show once and its season once, nothing about news or sport', asked.filter((a) => /^show:Road Trip Diaries\|strong$/.test(a)).length === 1 && asked.filter((a) => /^season:tmdb:tv:501:/.test(a)).length === 1 && !asked.some((a) => /Briefing|World Tonight|Weather|Sports/.test(a)), asked.join(', '));
+    // ---- About this show: Info on a series ----
+    await ev(() => { document.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 457, bubbles: true })); document.dispatchEvent(new KeyboardEvent('keyup', { keyCode: 457, bubbles: true })); });
+    await wait(1500);
+    const pn = await ev(() => ({ title: document.getElementById('modalTitle').textContent, line: (document.querySelector('#modal .sp-line') || {}).textContent || '', poster: !!document.querySelector('#modal .sp-poster'),
+      head: (document.querySelector('#modal .sp-head') || {}).textContent || '', eps: [].slice.call(document.querySelectorAll('#modal .sp-ep')).map((r) => r.textContent.replace(/\s+/g, ' ').trim()),
+      buttons: [].slice.call(document.querySelectorAll('#modal .mbtns .btn')).map((b) => b.textContent) }));
+    ok('Info on a series: About this show, with when it started, network, seasons, still running and rating', pn.title === 'Road Trip Diaries' && /^Since 2016\s+·\s+Travel Plus\s+·\s+4 seasons\s+·\s+still running\s+·\s+★ 7\.8 TMDB$/.test(pn.line) && pn.poster, JSON.stringify(pn).slice(0, 300));
+    ok('its next showings on this channel, with TMDB\'s episode titles', /Coming up on Prime Plaza/i.test(pn.head) && pn.eps.length >= 1 && pn.eps.some((e) => /^Now\s*S\d+ E\d+\s*TMDB episode/.test(e)), JSON.stringify(pn.eps));
+    ok('and Watch now, a reminder for the next one, Close', pn.buttons[0] === 'Watch now' && pn.buttons[pn.buttons.length - 1] === 'Close', JSON.stringify(pn.buttons));
+    await shot('series-panel');
+    await ev(() => UI.close()); await wait(300);
     // A news channel: nothing asked, no Series line.
     await ev(() => { const L = Library, c = L.channels(L.ALL).find((x) => /Nova News 24/.test(x.n)); Guide.open(L.ALL, c.k); }); await wait(800);
     ok('news is never looked up as a series', !(await ev(() => window.__asked)).some((a) => /World Tonight|Morning Briefing|Business Hour/.test(a)) && !(await ev(() => !!document.querySelector('#guideDetail .gd-movie'))));

@@ -837,3 +837,19 @@ body.gr-xl .gch .n{white-space:normal;display:-webkit-box;-webkit-box-orient:ver
    episode's picture (wide, 16:9) on the Shows screen in place of the show's poster. */
 .gd-desc .gd-eptitle{font-weight:700;margin-right:12px;color:var(--text)}
 .vod-poster.still{float:none;display:block;width:100%;height:324px;object-fit:cover;border-radius:12px;margin:0 0 20px}
+/* About this show (views.js showPanel): the poster at the left, the details and the next showings beside it. */
+.sp{display:flex;align-items:flex-start;margin-bottom:22px}
+.sp-poster{flex:none;width:250px;height:375px;object-fit:cover;border-radius:16px;margin-right:34px;box-shadow:0 14px 34px rgba(0,0,0,.5);background:var(--raised)}
+.sp-col{flex:1;min-width:0}
+.sp-line{color:var(--accent-text);font-size:24px}
+.sp-genre{color:var(--muted);font-size:22px;margin-top:4px}
+.sp-plot{margin:14px 0 10px;font-size:24px;line-height:1.4;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:4;overflow:hidden}
+.sp-cast{color:var(--muted);font-size:21px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-head{margin-top:20px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:19px;letter-spacing:.07em;text-transform:uppercase}
+.sp-ep{display:flex;align-items:baseline;padding:8px 0;font-size:22px;border-bottom:1px solid rgba(255,255,255,.04)}
+.sp-ep.now .sp-when{color:var(--accent-text);font-weight:700}
+.sp-when{flex:none;width:210px;color:var(--muted)}
+.sp-num{flex:none;width:100px;font-weight:600}
+.sp-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sp-rem{flex:none;margin-left:14px;color:var(--accent-text);font-size:19px}
+.sp-none{color:var(--muted);font-size:21px;padding-top:8px}

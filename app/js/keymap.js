@@ -24,7 +24,7 @@ var Keymap = (function () {
     fav: 'Add or remove favorite', favorites: 'Open Favorites', recents: 'Open Recent channels',
     picture: 'Change the aspect', audio: 'Audio track', cc: 'Closed captions on or off', subs: 'Subtitles menu', sleep: 'Sleep timer',
     movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect stream', buffer: 'Show buffer info', streaminfo: 'Stream info and buffer',
-    full: 'Watch fullscreen (the channel in the window, else the highlighted one)', now: 'Jump to now', jump: 'Jump to a day and time', groups: 'Open the groups', stopwin: 'Stop the window'
+    full: 'Watch fullscreen (the channel in the window, else the highlighted one)', now: 'Jump to now', jump: 'Jump to a day and time', details: 'About this show (a series), else the options menu', groups: 'Open the groups', stopwin: 'Stop the window'
   };
   // Short names for the on-screen button legend.
   var SHORT = {
@@ -32,13 +32,13 @@ var Keymap = (function () {
     rewind: 'Rewind', restart: 'Watch from start', playpause: 'Pause', guide: 'Guide', search: 'Search', settings: 'Settings', editor: 'Phone editor',
     live: 'Channels', exit: 'Exit fullscreen', fav: 'Favorite', favorites: 'Favorites', recents: 'Recent',
     picture: 'Aspect', audio: 'Audio track', cc: 'Captions', subs: 'Subtitles', sleep: 'Sleep timer', movies: 'Movies', shows: 'Shows', reconnect: 'Reconnect', buffer: 'Buffer info', streaminfo: 'Stream info',
-    full: 'Fullscreen', now: 'Now', jump: 'Jump to', groups: 'Groups', stopwin: 'Stop window'
+    full: 'Fullscreen', now: 'Now', jump: 'Jump to', details: 'Details', groups: 'Groups', stopwin: 'Stop window'
   };
   var CONTEXT_ACTIONS = {
     player: ['none', 'panel', 'list', 'osd', 'menu', 'chnext', 'chprev', 'last', 'rewind', 'restart', 'playpause', 'guide', 'search', 'settings', 'editor', 'exit',
       'fav', 'favorites', 'recents', 'picture', 'audio', 'cc', 'subs', 'sleep', 'reconnect', 'buffer', 'streaminfo'],
     list: ['none', 'menu', 'last', 'guide', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows', 'playpause'],
-    guide: ['none', 'full', 'menu', 'groups', 'now', 'jump', 'last', 'stopwin', 'live', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows']
+    guide: ['none', 'full', 'menu', 'details', 'groups', 'now', 'jump', 'last', 'stopwin', 'live', 'search', 'settings', 'editor', 'fav', 'favorites', 'recents', 'movies', 'shows']
   };
 
   var DEFAULTS = {
@@ -49,7 +49,7 @@ var Keymap = (function () {
     },
     list: { 'long:ok': 'menu', red: 'menu', green: 'guide', yellow: 'last', blue: 'settings', playpause: 'none', info: 'menu', stop: 'none', rew: 'none', ff: 'none' },
     // What the guide always did with these buttons, now changeable.
-    guide: { 'long:ok': 'menu', red: 'menu', info: 'menu', green: 'live', blue: 'settings', yellow: 'groups', playpause: 'full', stop: 'stopwin' }
+    guide: { 'long:ok': 'menu', red: 'menu', info: 'details', green: 'live', blue: 'settings', yellow: 'groups', playpause: 'full', stop: 'stopwin' }
   };
 
   var ctx = 'list';

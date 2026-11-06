@@ -1835,7 +1835,10 @@ var Guide = (function () {
     if (built) return;
     jumpChip = U.el('div', 'gjump hidden'); view.appendChild(jumpChip);
     // A series' details came back from TMDB: show them if it's the programme you're on.
-    if (typeof Series !== 'undefined') Series.onChange(function () { if (Views.tab === 'guide' && !Views.full && rows.length) drawDetail(); });
+    if (typeof Series !== 'undefined') Series.onChange(function () {
+      if (Views.tab === 'guide' && !Views.full && rows.length) drawDetail();
+      if (panelFill && UI.menuOpen(panelTitle)) panelFill();       // an episode's title came in
+    });
     built = true;
     // The groups have rows of their own height: compact, so many more show than channels do.
     var gh = GROUP_ROWS[Store.settings.guideRows] || 70;
@@ -2454,6 +2457,8 @@ var Guide = (function () {
       items.push({ label: 'Other showings…', icon: 'search', sub: 'search the guide for "' + title + '"', action: function () { Views.switchTab('search'); Search.open(title); } });
       if (!Watch.has(title)) items.push({ label: 'Add to watchlist', icon: 'watch', sub: 'remind me whenever it is on', action: function () { Watch.add(title); } });
     }
+    var shw = h.p && typeof Series !== 'undefined' ? Series.of(c, h.p) : null;
+    if (shw) items.splice(Math.min(items.length, isPlaying(c) ? 1 : 2), 0, { label: 'About this show…', icon: 'info', sub: [shw.network, shw.seasons ? shw.seasons + (shw.seasons === 1 ? ' season' : ' seasons') : ''].filter(Boolean).join(', '), action: function () { showPanel(c, h.p, shw); } });
     items.push({ label: 'Jump to…', icon: 'jump', sub: 'a day and time', action: jumpMenu });
     if (Math.abs(focusT - now) > 60e3) items.push({ label: 'Jump to now', icon: 'now', sub: U.hhmm(now), action: function () { jumpNow(); flashJump(Date.now()); } });
     if (previewing()) items.push({ label: 'Stop the window', icon: 'stop', sub: L.name(previewing()), action: function () { Views.stopAll(); draw(); hints(); } });
@@ -2463,6 +2468,53 @@ var Guide = (function () {
     // What it is about under the title: the channel, and the programme's day and time.
     var when2 = h.p && !h.p.up && !h.p.ended ? (dayName(h.p.s) === 'Today' ? '' : dayName(h.p.s) + '  ') + U.hhmm(h.p.s) + ' – ' + U.hhmm(h.p.e) : '';
     UI.menu(h.p ? h.p.t : L.name(c), items, null, { sub: L.name(c) + (when2 ? '   ·   ' + when2 : '') });
+  }
+
+  /* About this show (Info on a series, or Hold OK > About this show…): TMDB's poster, when it started,
+     its network, genres, rating, seasons and whether it's still running, its summary and cast, and its
+     next showings on this channel this week, each with its episode and TMDB's title for it.  Watch it
+     when it's on, or a reminder for the next one.  Episode titles fill in as their season comes back. */
+  var panelFill = null, panelTitle = '';
+  function same(a, b) { return Series.clean(a).t.toLowerCase() === Series.clean(b).t.toLowerCase(); }
+  function showPanel(c, p, sh) {
+    var now = Date.now(), list2 = (Epg.request(c) || []).filter(function (q) { return q.e > now && q.s < now + 7 * 86400e3 && same(q.t, p.t); });
+    var body = U.el('div', 'sp'), col = U.el('div', 'sp-col');
+    if (sh.poster) { var im = U.el('img', 'sp-poster'); im.src = sh.poster; im.alt = ''; im.onerror = function () { this.remove(); }; body.appendChild(im); }
+    var status = /ended|canceled/i.test(sh.status || '') ? 'ended' : /returning|production|planned/i.test(sh.status || '') ? 'still running' : '';
+    col.appendChild(U.el('div', 'sp-line', [sh.year ? 'Since ' + sh.year : '', sh.network, sh.seasons ? sh.seasons + (sh.seasons === 1 ? ' season' : ' seasons') : '', status, sh.rating ? '★ ' + sh.rating + ' TMDB' : ''].filter(Boolean).join('   ·   ')));
+    if (sh.genre) col.appendChild(U.el('div', 'sp-genre', sh.genre));
+    col.appendChild(U.el('p', 'sp-plot', sh.plot || 'TMDB has no summary for this show.'));
+    if (sh.cast) col.appendChild(U.el('div', 'sp-cast', 'With ' + sh.cast));
+    col.appendChild(U.el('div', 'sp-head', 'Coming up on ' + L.name(c)));
+    var eps = U.el('div', 'sp-eps'); col.appendChild(eps);
+    body.appendChild(col);
+    function fill() {
+      eps.innerHTML = '';
+      var t = Date.now();
+      list2.filter(function (q) { return q.e > t; }).slice(0, 6).forEach(function (q) {
+        var se = q.ep ? Series.episode(sh, q.ep) : null, row = U.el('div', 'sp-ep' + (q.s <= t ? ' now' : ''));
+        row.appendChild(U.el('span', 'sp-when', q.s <= t ? 'Now' : (dayName(q.s) === 'Today' ? '' : dayName(q.s) + '  ') + U.hhmm(q.s)));
+        row.appendChild(U.el('span', 'sp-num', q.ep || ''));
+        row.appendChild(U.el('span', 'sp-t', se && se.t ? se.t : q.n ? 'New episode' : ''));
+        if (hasReminder(c, q)) row.appendChild(U.el('span', 'sp-rem', '◷ reminder'));
+        eps.appendChild(row);
+      });
+      if (!eps.children.length) eps.appendChild(U.el('div', 'sp-none', 'Nothing more of it in the guide on this channel this week.'));
+    }
+    fill();
+    var onNow = list2.filter(function (q) { return q.s <= now; })[0], next = list2.filter(function (q) { return q.s > now; })[0], buttons = [];
+    if (onNow) buttons.push({ label: isPlaying(c) ? 'Watch fullscreen' : 'Watch now', action: function () { watch(c); } });
+    if (next) buttons.push({ label: hasReminder(c, next) ? 'Cancel the reminder for ' + U.hhmm(next.s) : 'Remind me: ' + (dayName(next.s) === 'Today' ? '' : dayName(next.s) + ' ') + U.hhmm(next.s), action: function () { toggleReminder(c, next); } });
+    buttons.push({ label: 'Close' });
+    panelFill = fill; panelTitle = sh.title || p.t;
+    UI.panel(panelTitle, body, buttons, null, { sub: L.name(c) + '   ·   TMDB' });
+    UI.onClose = function () { panelFill = null; };
+  }
+  // Info on a series opens its panel; on anything else, the options menu as before.
+  function details() {
+    var c = list[sel]; if (!c) return;
+    var h = progAt(c, focusT), sh = h.p && typeof Series !== 'undefined' ? Series.of(c, h.p) : null;
+    if (sh) showPanel(c, h.p, sh); else menu();
   }
 
   // Number keys jump to that channel number (1, 2, 3 for 123).
@@ -2609,6 +2661,7 @@ var Guide = (function () {
     else if (act === 'groups') setZone('groups');
     else if (act === 'now') { jumpNow(); flashJump(Date.now()); }
     else if (act === 'jump') jumpMenu();
+    else if (act === 'details') details();
     else if (act === 'stopwin') { if (previewing()) { Views.stopAll(); draw(); hints(); } }
     else if (act === 'favorites' || act === 'recents') { load(act === 'favorites' ? L.FAV : L.RECENT, null); setZone('grid'); draw(); }
     else if (act === 'fav') { if (c) { L.toggleFav(c.k); U.toast(L.isFav(c.k) ? 'Added to Favorites' : 'Removed from Favorites'); draw(); } }

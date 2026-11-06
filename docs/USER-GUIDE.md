@@ -411,6 +411,7 @@ Which programmes are movies: the guide's own **Movie** category, a year in the t
 The same token fills in TV series (Settings > Guide > Movies and series from TMDB > **Series details from TMDB**, on by default):
 
 - **In the guide:** land on a series and its details show its poster and a line with when it started, its network, genres and TMDB rating.  When the guide gives the season and episode (S2 E5), the episode's own title is in front of its summary, and TMDB's summary of that episode is shown when the guide's is short.
+- **About this show:** **Info** on a series (or **Hold OK > About this show…**) opens a panel with its poster, when it started, its network, how many seasons, whether it's still running, its rating, genres, summary and cast, and its next showings on that channel this week, each with its episode and title.  **Watch now** when it's on, or **Remind me** for the next one.  On anything that isn't a series, **Info** opens the options menu as before.
 - **On the Shows screen:** whatever your provider's details leave out comes from TMDB: a poster, a summary, genres, network, rating and cast for a show, and for an episode its summary, a picture from it and when it aired.  What your provider has always comes first (its covers, its episode titles).
 - **In the phone app:** a show's details get the same, once the TV has looked it up.
 
@@ -940,10 +941,10 @@ The buttons and their defaults:
 | **Stop** | Leave fullscreen | Stop the window | Nothing |
 | **⏪ Rewind** | Rewind (catch-up), else last channel | (fixed: a screen earlier) | Nothing |
 | **⏩ Fast forward** | Nothing | (fixed: a screen later) | Nothing |
-| **Info** | Show info panel | Options menu | Options menu |
+| **Info** | Show info panel | About this show (a series), else Options menu | Options menu |
 | **Back** | (fixed: leaves fullscreen) | (fixed) | (fixed) |
 
-Actions you can give a button in the player: nothing, quick menu, channel guide over the video, info panel, options menu, next, previous or last channel, rewind, watch from start, play/pause, TV guide, search, Settings, leave fullscreen, add or remove favorite, open Favorites, open Recent channels, change the aspect, audio track, closed captions on or off, sleep timer and reconnect.  In the guide: nothing, watch fullscreen (the channel in the window, else the highlighted one), options menu, groups, jump to now, jump to a day and time, last channel, stop the window, Channels screen, search, Settings, the web editor, favorite, open Favorites or Recent channels, Movies and Shows.  On the Channels screen: nothing, options menu, last channel, TV guide, search, Settings, favorite, open Favorites, open Recent channels, Movies, Shows and play/pause.  Catch-up and movie playback keep fixed seek buttons so they always behave the same.
+Actions you can give a button in the player: nothing, quick menu, channel guide over the video, info panel, options menu, next, previous or last channel, rewind, watch from start, play/pause, TV guide, search, Settings, leave fullscreen, add or remove favorite, open Favorites, open Recent channels, change the aspect, audio track, closed captions on or off, sleep timer and reconnect.  In the guide: nothing, watch fullscreen (the channel in the window, else the highlighted one), options menu, about this show, groups, jump to now, jump to a day and time, last channel, stop the window, Channels screen, search, Settings, the web editor, favorite, open Favorites or Recent channels, Movies and Shows.  On the Channels screen: nothing, options menu, last channel, TV guide, search, Settings, favorite, open Favorites, open Recent channels, Movies, Shows and play/pause.  Catch-up and movie playback keep fixed seek buttons so they always behave the same.
 
 ### Settings: Appearance and start screen
 

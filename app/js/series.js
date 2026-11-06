@@ -59,7 +59,8 @@ var Series = (function () {
   // What is kept of a show: enough for the details, small enough for thousands.
   function lite(m) {
     return { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, plot: String(m.plot || '').slice(0, 900), genre: m.genre, rating: m.rating,
-      network: m.network || '', status: m.status || '', cast: String(m.cast || '').split(', ').slice(0, 5).join(', ') };
+      network: m.network || '', status: m.status || '', cast: String(m.cast || '').split(', ').slice(0, 5).join(', '),
+      seasons: (m.seasons || []).filter(function (x) { return x && x.number > 0; }).length };
   }
 
   /* ---------- asking ---------- */
