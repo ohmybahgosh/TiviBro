@@ -40,7 +40,10 @@ function logo(title, [color, font]) {
   const b = await chromium.launch();
   const page = await (await b.newContext({ viewport: { width: 1920, height: 1080 } })).newPage();
   const errs = []; page.on('pageerror', (e) => errs.push(e.message));
-  await page.addInitScript(R.init({ time: Date.now() })[0]);
+  // A movie a minute from starting is tuned on OK rather than asked about, so a run that begins just before
+  // the hour or half hour has its clock set a few minutes back, clear of that.
+  const NOW = Date.now(), MIN = new Date(NOW).getMinutes() % 30;
+  await page.addInitScript(R.init({ time: MIN >= 24 ? NOW - (MIN - 18) * 60000 : NOW })[0]);
   await page.goto(APP);
   const ev = (f, a) => page.evaluate(f, a);
   const key = async (k, w) => { await page.keyboard.press(k); await page.waitForTimeout(w == null ? 300 : w); };
@@ -69,8 +72,8 @@ function logo(title, [color, font]) {
   ok('then a shelf for each genre with two or more movies, after On now and Starting soon', gr.got.join() === gr.want.join() && (!gr.got.length || gr.first >= 1), JSON.stringify(gr));
   ok('big posters (300 x 450)', st.w === 300 && st.h === 450, JSON.stringify(st));
   ok('a movie once, however many channels show it', await ev(() => OnNow.rows.every((r) => new Set(r.items.map((g) => g.m.id)).size === r.items.length)), await ev(() => OnNow.rows.map((r) => r.items.map((g) => g.m.id + '@' + g.p.s).join(',')).join(' | ')));
-  const hero = await ev(() => ({ logo: !!document.querySelector('#onInfo img.on-logo'), bd: getComputedStyle(document.getElementById('onBd')).backgroundImage, meta: document.querySelector('#onInfo .on-meta').textContent, where: document.querySelector('#onInfo .on-where').textContent }));
-  ok('the focused movie: its title logo over its backdrop', hero.logo && /\/b\/\d+\.png/.test(hero.bd), JSON.stringify(hero));
+  const hero = await ev(() => ({ has: !!OnNow.rows[0].items[0].m.logo, title: !!document.querySelector('#onInfo h1.on-title'), logo: !!document.querySelector('#onInfo img.on-logo'), bd: getComputedStyle(document.getElementById('onBd')).backgroundImage, meta: document.querySelector('#onInfo .on-meta').textContent, where: document.querySelector('#onInfo .on-where').textContent }));
+  ok('the focused movie: its title logo (or its title, when it has none) over its backdrop', (hero.has ? hero.logo : hero.title && !hero.logo) && /\/b\/\d+\.png/.test(hero.bd), JSON.stringify(hero));
   ok('LIVE, the times, what is left, and the channel', /LIVE/.test(hero.meta) && /left/.test(hero.meta) && /^On /.test(hero.where), JSON.stringify(hero));
   await page.waitForTimeout(800);
   await shot('tv-onnow');
@@ -105,6 +108,26 @@ function logo(title, [color, font]) {
     ok('Hold OK on one starting later: a reminder on its channel', /Remind me on /.test(menu) && /Show in the guide/.test(menu), menu);
     await key('Enter', 300);
     ok('the reminder is set', await ev((n) => Store.edits.reminders.length >= n, before));
+    // Along Starting soon: however many channels show a movie, the last rows stay in view, soonest first.
+    const all = await ev(() => OnNow.rows[1].items.length);
+    let fits = true, sorted = true, many = 0, bad = '';
+    for (let n = 0; n < all; n++) {
+      if (n) await key('ArrowRight', 250);
+      await ev(() => UI.press('hold')); await page.waitForTimeout(250);
+      const m = await ev(() => { const rows = [...document.querySelectorAll('#modalBody .mi')], h = document.getElementById('modalBody').clientHeight + 2;
+        const last = rows[rows.length - 1]; return { last: last.textContent, seen: last.style.visibility !== 'hidden' && last.offsetTop + last.offsetHeight <= h, all: rows.some((r) => /^All \d+ showings/.test(r.textContent)), subs: rows.map((r) => (r.querySelector('.sub') || {}).textContent || '') }; });
+      if (!/Show in the guide/.test(m.last) || !m.seen) { fits = false; bad = JSON.stringify(m); }
+      if (m.all) {
+        many++;
+        await ev(() => { for (let i = 0; i < 9; i++) UI.press('down'); }); await page.waitForTimeout(100);
+        const pick = await ev(() => document.querySelector('#modalBody .mi.focus').textContent);
+        if (/^All \d+ showings/.test(pick)) { await key('Enter', 300); const full = await ev(() => document.querySelectorAll('#modalBody .mi').length); const want = +/All (\d+)/.exec(pick)[1]; if (full !== want) { sorted = false; bad = pick + ' -> ' + full; } }
+      }
+      await key('Escape', 200);
+      if (await ev(() => UI.modalOpen)) await key('Escape', 200);
+    }
+    ok('Hold OK on every Starting soon movie: Show in the guide in view', fits, bad);
+    ok('a movie on many channels: All N showings lists every one (' + many + ' here)', sorted, bad);
     await key('ArrowUp', 400);
     await ev(() => OnNow.render(true)); await page.waitForTimeout(300);
     ok('Up to On now stays on On now (also when the screen re-draws)', await ev(() => document.querySelector('#onStage .on-shelf.active h3').textContent.indexOf('On now') === 0));

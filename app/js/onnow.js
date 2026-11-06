@@ -155,14 +155,20 @@ var OnNow = (function () {
     if (typeof Remind !== 'undefined' && Remind.sync) Remind.sync(true);
   }
   function has(x) { return Store.edits.reminders.some(function (r) { return r.k === x.c.k && r.s === x.p.s; }); }
+  // Hold OK: a row per showing (soonest first), then watching the channel and the guide.  A movie on many
+  // channels shows the first few and a row for the rest, so the last rows are never pushed out of view.
+  var SHOW_MAX = 4;
   function options() {
     var g = current(); if (!g) return;
-    var items = g.list.map(function (x) {
+    function row(x) {
       return { label: (g.live ? 'Watch on ' : has(x) ? 'Cancel the reminder on ' : 'Remind me on ') + Library.name(x.c), sub: U.hhmm(x.p.s) + ' – ' + U.hhmm(x.p.e) + (g.live ? ',  ' + mins(x.p.e - Date.now()) + ' left' : ''),
-        action: function () { if (g.live) watch(g, x); else remind(x); } };
-    });
-    if (!g.live) items.push({ label: 'Watch the channel now', sub: Library.name(g.c) + ' (the movie starts at ' + U.hhmm(g.p.s) + ')', action: function () { Views.startChannel(g.c, false, function () { Views.goFull(); }); } });
-    items.push({ label: 'Show in the guide', action: function () { Views.switchTab('guide'); Guide.open(Library.MOVIES, g.c.k); } });
+        icon: g.live ? 'play' : has(x) ? 'belloff' : 'bell', action: function () { if (g.live) watch(g, x); else remind(x); } };
+    }
+    var list = g.list.slice().sort(function (a, b) { return a.p.s - b.p.s || Library.name(a.c).localeCompare(Library.name(b.c)); });
+    var items = (list.length > SHOW_MAX + 1 ? list.slice(0, SHOW_MAX) : list).map(row);
+    if (list.length > SHOW_MAX + 1) items.push({ label: 'All ' + list.length + ' showings…', icon: 'list', action: function () { UI.menu(g.m.title + ': every showing', list.map(row)); } });
+    if (!g.live) items.push({ label: 'Watch the channel now', sub: Library.name(g.c) + ' (the movie starts at ' + U.hhmm(g.p.s) + ')', icon: 'play', action: function () { Views.startChannel(g.c, false, function () { Views.goFull(); }); } });
+    items.push({ label: 'Show in the guide', icon: 'grid', action: function () { Views.switchTab('guide'); Guide.open(Library.MOVIES, g.c.k); } });
     UI.menu(g.m.title + (g.m.year ? ' (' + g.m.year + ')' : ''), items);
   }
 

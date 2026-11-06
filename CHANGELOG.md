@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Movies on now: Hold OK on a movie on many channels** lists its showings soonest first, and past four shows **All N showings…** for the rest, so **Watch the channel now** and **Show in the guide** are never pushed out of view.
+
 ## 0.6.0 (alpha 93, 2026-11-05)
 
 Pre-release: expect rough edges, and keep a backup before installing.
