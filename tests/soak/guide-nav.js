@@ -101,6 +101,10 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     // ---- 7, 9: colours, legend, episode and NEW ----
     const look = await ev(() => ({ news: document.querySelectorAll('#guideBody .gp.k-n').length, legend: (document.getElementById('glegend') || {}).textContent || '' }));
     ok('colour by category: news programmes get their colour, and the legend says what each means', look.news > 0 && /Sports/.test(look.legend), JSON.stringify(look));
+    // What's on now has its aired-so-far shading over the cell's left side: the stripe is drawn above it.
+    const live = await ev(() => { const d = document.querySelector('#guideBody .gp.now.k-n'); if (!d) return null; const r = d.getBoundingClientRect(), a = getComputedStyle(d, '::after');
+      const top = document.elementFromPoint(r.left + 4, r.top + r.height / 2); return { bg: a.backgroundColor, w: a.width, z: getComputedStyle(d.querySelector('.gfill')).display, inCell: !!top && d.contains(top) }; });
+    ok('colour by category: the stripe shows on what is on now too, above its progress', !!live && /rgb\(242, 179, 61/.test(live.bg) && parseFloat(live.w) >= 6, JSON.stringify(live));
     await ev(() => { const L = Library, i = L.channels(L.ALL).findIndex((c) => /Drama One/.test(c.n)); Guide.open(L.ALL, L.channels(L.ALL)[i].k); }); await wait(800);
     await code(RIGHT); await wait(500);
     const det = await ev(() => ({ ep: (document.querySelector('#guideDetail .gd-ep') || {}).textContent || '', badges: [].slice.call(document.querySelectorAll('#guideDetail .gd-badge')).map((x) => x.textContent) }));

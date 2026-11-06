@@ -424,7 +424,10 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .gp .gt.mq{text-overflow:initial}
 .gp .gt.mq b{display:inline-block}
 /* Colour by category (Settings > Guide): an edge in the programme's colour, and the legend in the time bar. */
-.gp.k-m{box-shadow:inset 6px 0 0 #b48cff}.gp.k-s{box-shadow:inset 6px 0 0 #3ddc97}.gp.k-n{box-shadow:inset 6px 0 0 #f2b33d}.gp.k-c{box-shadow:inset 6px 0 0 #ff7eb6}.gp.k-d{box-shadow:inset 6px 0 0 #33c9e1}
+/* The category stripe is its own layer after the cell's contents, so the aired-so-far shading on what's on
+   now (.gfill) never covers it. */
+.gp.k-m::after,.gp.k-s::after,.gp.k-n::after,.gp.k-c::after,.gp.k-d::after{content:'';position:absolute;left:0;top:0;bottom:0;width:7px;pointer-events:none}
+.gp.k-m::after{background:#b48cff}.gp.k-s::after{background:#3ddc97}.gp.k-n::after{background:#f2b33d}.gp.k-c::after{background:#ff7eb6}.gp.k-d::after{background:#33c9e1}
 .gp.k-m,.gp.k-s,.gp.k-n,.gp.k-c,.gp.k-d{padding-left:22px}
 .glegend{position:absolute;right:56px;top:300px;z-index:2;font-size:19px;color:var(--muted);white-space:nowrap}
 .glegend em{font-style:normal;margin-left:20px}
