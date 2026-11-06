@@ -10,6 +10,13 @@
   - **Programmes that have ended** are an outline with quieter text (with Dim past programmes, on by default).
   - **A selected catch-up programme** keeps its title readable on the highlight.
   - **Every theme:** the now line, the shade, the category colour on the selected programme, past programmes' outlines and Coloured cell all read on all 21 themes, including Black and white (a white highlight), Gruvbox (a yellow one, next to News) and High contrast.
+  - **The day and time above the channels** (as TiviMate has it), or the day you're looking at when it isn't today, with the group and how many channels under it.
+  - **Catch-up titles in the normal colour,** with just the ↺ in green, so the past half of the guide isn't a wall of green.
+  - **The preview window before anything plays** shows the channel you're on, its logo large, instead of an empty box.
+  - **Moving past the screen's edge glides** the programmes and times over instead of snapping.
+  - **Loading** shows a soft shimmer, and a channel with no guide says **No information**, smaller and quieter.
+  - **A short programme whose title won't fit** gets its title on both lines (the times are in the details above).
+- **The screensaver no longer comes on over a channel that is reconnecting or browsing with the phone app** (#58).  It also waits for a minute and a half after something last played, and for 3 minutes after the last button press, the phone app's included (the TV doesn't count those).  Each answer to the TV is in the log, so a report shows why.
 - **Movies on now: Hold OK on a movie on many channels** lists its showings soonest first, and past four shows **All N showings…** for the rest, so **Watch the channel now** and **Show in the guide** are never pushed out of view.
 
 ## 0.6.0 (alpha 93, 2026-11-05)

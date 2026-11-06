@@ -168,7 +168,7 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 /* Now, as TiviMate draws it: one thin, soft line over the programmes, the whole height of the guide, from a
    small dot on the time bar.  Thin and a little see-through, so crossing a title doesn't distract. */
 .gnow{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--accent);opacity:.8;z-index:3;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
-.gnowh{position:absolute;bottom:-5px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--accent);top:auto!important}
+.gnowh{position:absolute;bottom:3px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--accent);top:auto!important}
 .gnow::after{content:'';position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(255,255,255,.4)}  /* a lighter shade of the accent, so it shows on the selected programme too */
 /* guide top: details left, preview window right */
 .guide-top{display:flex;gap:40px;height:300px;flex:none;padding:6px 0 14px}
@@ -452,8 +452,11 @@ body.dimpast .gp.past.focus{color:var(--on-accent)}
 .gd-badge.kind.k-s{color:#3ddc97}.gd-badge.kind.k-n{color:#f2b33d}.gd-badge.kind.k-c{color:#ff7eb6}.gd-badge.kind.k-d{color:#33c9e1}
 .gd-ep{display:inline-block;margin-right:14px;color:var(--text);font-weight:600}
 .gp .gt,.gp .gs{position:relative}
-.gp .gcu{color:#7fe0ae}
-.gp.focus .gcu{color:inherit}
+.gp .gcu{color:inherit}
+/* Catch-up: just the mark in green, the title in the normal colour (as TiviMate has it), so the past half of
+   the guide isn't a wall of green. */
+.gp .gt.gcu::before{content:'↺ ';color:#7fe0ae}
+.gp.focus .gt.gcu::before{color:inherit}
 /* groups panel, over the channel column */
 .guide-groups{position:absolute;top:0;bottom:0;left:0;width:470px;background:var(--ink);z-index:3;display:none;flex-direction:column;padding-right:20px;border-right:1px solid var(--line)}
 #viewGuide.groups-open .guide-groups{display:flex}
@@ -868,3 +871,28 @@ body.gr-xl .gch .n{white-space:normal;display:-webkit-box;-webkit-box-orient:ver
 .sp-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sp-rem{flex:none;margin-left:14px;color:var(--accent-text);font-size:19px}
 .sp-none{color:var(--muted);font-size:21px;padding-top:8px}
+/* ---------- guide polish (alpha 94) ---------- */
+/* Above the channels: the day and time, and under it the group. */
+.guide-group{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;text-align:left;line-height:1.15}
+.guide-group .gh-when{font-size:22px;font-weight:600;color:var(--accent-text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.guide-group .gh-grp{font-size:18px;color:var(--muted);white-space:pre;overflow:hidden;text-overflow:ellipsis}
+/* The programmes and times are layers that slide when the guide scrolls in time; the time bar clips its own
+   (with room under it for the now dot). */
+.gpin,.gtin{position:absolute;left:0;top:0;right:0;bottom:0}
+.guide-times{overflow:hidden;padding-bottom:8px;margin-bottom:-8px}
+/* Still loading: a soft shimmer.  No information: quiet and smaller. */
+.gp.loading,.gp.nodata{color:var(--dim);font-size:20px}
+.gp.loading::before{content:'';position:absolute;top:0;bottom:0;left:0;width:40%;pointer-events:none;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.07),rgba(255,255,255,0));animation:gshim 1.6s ease-in-out infinite}
+@keyframes gshim{from{transform:translateX(-100%)}to{transform:translateX(250%)}}
+.gp.focus.loading,.gp.focus.nodata{color:var(--on-accent-dim)}
+/* A narrow programme (a short filler): the title on both lines, no times. */
+.gp.nar{padding-left:14px;padding-right:10px}
+.gp.nar.k-m,.gp.nar.k-s,.gp.nar.k-n,.gp.nar.k-c,.gp.nar.k-d{padding-left:22px}
+.gp.nar .gs{display:none}
+.gp.nar .gt{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.15;font-size:21px;overflow-wrap:break-word}
+/* The preview window before anything plays: the channel's logo large, its name, and what OK does. */
+.gpv-idle{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;width:100%;height:100%;padding:0 24px}
+.gpv-idle img{max-width:62%;max-height:120px;object-fit:contain;opacity:.92}
+.gpv-idle b{color:var(--text);font-size:26px;font-weight:600;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gpv-idle.nologo b{font-size:34px}
+.gpv-idle small{color:var(--dim);font-size:19px}

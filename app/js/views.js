@@ -1820,7 +1820,8 @@ var Guide = (function () {
     body.innerHTML = '';
     rows = [];
     for (var i = 0; i < VIS; i++) {
-      var r = U.el('div', 'grow'), ch = U.el('div', 'gch'), pr = U.el('div', 'gprogs');
+      var r = U.el('div', 'grow'), ch = U.el('div', 'gch'), pr = U.el('div', 'gprogs'), pin = U.el('div', 'gpin');
+      pr.appendChild(pin);                       // the programmes, in a layer that can slide when the guide scrolls in time
       ch.appendChild(U.el('span', 'num'));
       var img = U.el('img', 'logo'); img.decoding = 'async'; img.onerror = function () { Views.logoFailed(this, this._c); }; ch.appendChild(img);
       ch.appendChild(U.el('span', 'n'));
@@ -1832,7 +1833,7 @@ var Guide = (function () {
       r.style.transform = 'translateY(' + (i * ROW) + 'px)';
       r.setAttribute('data-slot', i);
       body.appendChild(r);
-      rows.push({ el: r, ch: ch, pr: pr, img: img, k: null, slot: i, cells: [], cuEl: cuEl, qEl: qEl, dEl: dEl });
+      rows.push({ el: r, ch: ch, pr: pr, pin: pin, img: img, k: null, slot: i, cells: [], cuEl: cuEl, qEl: qEl, dEl: dEl });
     }
     var nowLine = U.el('div', 'gnow'); nowLine.id = 'gnow'; body.appendChild(nowLine);
     if (built) return;
@@ -1920,7 +1921,7 @@ var Guide = (function () {
     marquee();
     if (!g || g.id === gid) return;
     gid = g.id; remember();
-    ghead.textContent = L.groupName(gid);
+    setHead(L.groupName(gid));
     groupDeb();
   }
   function remember() { Views.group = gid; Store.edits.lastGroup = gid; Store.saveEdits(); }
@@ -1975,7 +1976,21 @@ var Guide = (function () {
     body.setAttribute('data-empty', gid === L.TEAMS || gid === L.MOVIES ? Views.emptyFor(gid) : 'No channels in ' + L.groupName(gid) + '.');
   }
   function head() {
-    ghead.textContent = L.groupName(gid) + '   ' + (vis ? list.filter(function (c) { return vis.on[c.k]; }).length + ' of ' + list.length + ' shown' : list.length);
+    setHead(L.groupName(gid) + '   ' + (vis ? list.filter(function (c) { return vis.on[c.k]; }).length + ' of ' + list.length + ' shown' : list.length));
+  }
+  /* Above the channels, as TiviMate has it: the day and time (the day you're looking at when it isn't today),
+     and under it the group and how many channels. */
+  var ghWhen = null, ghGrp = null;
+  function setHead(t) {
+    if (!ghWhen || ghWhen.parentNode !== ghead) { ghead.innerHTML = ''; ghWhen = U.el('b', 'gh-when'); ghGrp = U.el('span', 'gh-grp'); ghead.appendChild(ghWhen); ghead.appendChild(ghGrp); }
+    ghGrp.textContent = t; headWhen();
+  }
+  function headWhen() {
+    if (!ghWhen) return;
+    var now = Date.now(), at = t0 || now, dn = dayName(at);
+    var date = new Date(at).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    var t = dn === 'Today' ? date + ', ' + U.hhmm(now) : dn === 'Tomorrow' || dn === 'Yesterday' ? dn + ', ' + date : date;
+    if (ghWhen.textContent !== t) ghWhen.textContent = t;
   }
   // From the menu: groups panel first.  With a channel playing: straight into the grid on it.
   /* Rows made while the guide was hidden (a row size changed in Settings, or the guide built before it
@@ -2065,10 +2080,12 @@ var Guide = (function () {
     var locked = !Parental.blockedOk(c);
     var l = locked ? [] : Epg.request(c), t1 = t0 + WIN, n = 0, nowT = Date.now();
     var segs = [];
+    // While the guide slides over (draw), the stretch it's leaving is drawn too, so nothing blank slides in.
+    var r0 = ext ? ext.a : t0, r1 = ext ? ext.b : t1, xa = x(r0), xb = x(r1);
     if (l) for (var i = 0; i < l.length; i++) {
       var p = l[i];
-      if (p.e <= t0 || p.s >= t1 || p.e <= p.s) continue;              // p.e <= p.s: overlapped by the next (Epg.untangle)
-      segs.push({ p: p, a: Math.max(0, x(p.s)), b: Math.min(PXW, x(p.e)) });
+      if (p.e <= r0 || p.s >= r1 || p.e <= p.s) continue;              // p.e <= p.s: overlapped by the next (Epg.untangle)
+      segs.push({ p: p, a: Math.max(xa, x(p.s)), b: Math.min(xb, x(p.e)) });
     }
     // A programme with only minutes showing (one ending just after the guide's start, a short filler)
     // would be a sliver with its title cut to "J…": it borrows width from the next one, which has room.
@@ -2076,7 +2093,7 @@ var Guide = (function () {
       var sg = segs[q], need = MINCELL - (sg.b - sg.a), nx2 = segs[q + 1];
       if (need <= 0) continue;
       if (nx2 && nx2.a <= sg.b + 1) { var give = Math.min(need, Math.max(0, nx2.b - nx2.a - MINCELL)); sg.b += give; nx2.a += give; }
-      else sg.b = Math.min(PXW, sg.b + need);
+      else sg.b = Math.min(xb, sg.b + need);
     }
     var tint = !!Store.settings.guideTint;
     segs.forEach(function (sg) {
@@ -2088,10 +2105,12 @@ var Guide = (function () {
       // Running on past either edge of the window: that side is square and its text fades out, so it reads as
       // carrying on rather than cut off.
       var edge = (p.s < t0 && a <= 0 ? ' cl' : '') + (p.e > t1 && sg.b >= PXW ? ' cr' : '');
-      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (mv ? ' mv' : '') + (kind ? ' k-' + kind : '') + edge, a, w,
-        (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, Math.min(p.e, t1) - from)), 0, w) : -1, p.s);
+      // A narrow one (a short filler) whose title won't fit on a line: the title gets both lines, without the times.
+      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (mv ? ' mv' : '') + (kind ? ' k-' + kind : '') + edge + (w < 240 && p.t.length * 12 > w - 40 ? ' nar' : ''), a, w,
+        (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, Math.min(p.e, t1) - from)), 0, w) : -1, p.s);
     });
-    if (!n) cell(r, n++, 'gp none' + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : Library.noGuide(c) ? Library.name(c) : l ? 'No guide information' : 'Loading…', false, null, -1, '');
+    // Nothing to show: still loading (a soft shimmer), or no information (quiet, as TiviMate has it).
+    if (!n) cell(r, n++, 'gp none' + (!locked && !Library.noGuide(c) ? (l ? ' nodata' : ' loading') : '') + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : Library.noGuide(c) ? Library.name(c) : l ? 'No information' : 'Loading…', false, null, -1, '');
     for (var j = n; j < r.cells.length; j++) if (!r.cells[j].off) { r.cells[j].d.style.display = 'none'; r.cells[j].off = true; }
   }
   // Programme cells are kept per row and reused, so scrolling the guide creates no new elements.
@@ -2101,7 +2120,7 @@ var Guide = (function () {
       c = { d: U.el('div', 'gp'), f: U.el('i', 'gfill'), t: U.el('span', 'gt'), ti: U.el('b'), s: U.el('small', 'gs') };
       c.t.appendChild(c.ti);                     // the title in its own element, so a long one can scroll (marquee)
       c.d.appendChild(c.f); c.d.appendChild(c.t); c.d.appendChild(c.s);
-      r.pr.appendChild(c.d); r.cells[i] = c;
+      r.pin.appendChild(c.d); r.cells[i] = c;
     }
     var d = c.d;
     if (c.off) { d.style.display = ''; c.off = false; }
@@ -2119,20 +2138,34 @@ var Guide = (function () {
     // Logos-only guide (Settings) gives the schedule the room the names used.
     var want = document.body.classList.contains('noguidenames') ? 260 : 470;
     if (want !== CHW || !PXW) { CHW = want; PXW = (body.clientWidth || 1808) - CHW; }
+    // Moving along the schedule past the screen's edge: the programmes and times slide over (a short glide
+    // from where they were), not a snap.  Not while a button is held, and not for a jump.
+    var px = slideFrom != null && !UI.repeating ? (t0 - slideFrom) * PXW / WIN : 0;
+    if (Math.abs(px) > PXW / 2) px = 0;
+    ext = px ? { a: Math.min(t0, slideFrom), b: Math.max(t0, slideFrom) + WIN } : null;
+    slideFrom = null;
     for (var i = 0; i < rows.length; i++) drawRow(rows[i], top + i);
-    var tk = t0 + '|' + CHW + '|' + new Date().toDateString();
+    var tk = t0 + '|' + CHW + '|' + new Date().toDateString() + (ext ? '|s' : '');
     if (timesKey !== tk) {
       timesKey = tk;
-      timesEl.innerHTML = '';
-      for (var t = t0; t < t0 + WIN; t += 30 * 60e3) {
+      if (!timesIn) { timesIn = U.el('div', 'gtin'); timesEl.appendChild(timesIn); }
+      timesIn.innerHTML = '';
+      for (var t = ext ? ext.a : t0; t < (ext ? ext.b : t0 + WIN); t += 30 * 60e3) {
         // The day in front of the first time when it isn't today, and at midnight (#1 and #2 in the ideas).
         var s = U.el('span'), dt = new Date(t), dn = dayName(t);
         if ((t === t0 && dn !== 'Today') || (dt.getHours() === 0 && dt.getMinutes() === 0)) s.appendChild(U.el('b', 'gday', dn));
         s.appendChild(document.createTextNode(U.hhmm(t)));
-        s.style.left = (x(t) + 16) + 'px'; timesEl.appendChild(s);
+        s.style.left = (x(t) + 16) + 'px'; timesIn.appendChild(s);
       }
-      var mk = U.el('span', 'gnowh'); mk.id = 'gnowh'; timesEl.appendChild(mk);
+      if (!$('gnowh')) { var mk = U.el('span', 'gnowh'); mk.id = 'gnowh'; timesEl.appendChild(mk); }
     }
+    if (px) {
+      var lay = rows.map(function (r) { return r.pin; }).concat([timesIn]);
+      lay.forEach(function (e) { e.style.transition = 'none'; e.style.transform = 'translateX(' + px + 'px)'; });
+      void body.offsetWidth;                       // start from there
+      lay.forEach(function (e) { e.style.transition = 'transform .18s ease-out'; e.style.transform = ''; });
+    }
+    headWhen();
     // Colour by category: what each colour means, at the right above the guide.
     var lg = $('glegend');
     if (Store.settings.guideTint && !lg) {
@@ -2141,12 +2174,12 @@ var Guide = (function () {
       view.appendChild(lg);
     } else if (!Store.settings.guideTint && lg) lg.remove();
     var nl = $('gnow'), nx = x(Date.now());
-    if (nl) { nl.style.display = nx >= 0 && nx <= PXW ? '' : 'none'; nl.style.transform = 'translateX(' + (CHW + nx) + 'px)'; }
-    var nh = $('gnowh'); if (nh) { nh.style.display = nx >= 0 && nx <= PXW ? '' : 'none'; nh.style.left = nx + 'px'; }
+    if (nl) { nl.style.transition = px ? 'transform .18s ease-out' : 'none'; nl.style.display = nx >= 0 && nx <= PXW ? '' : 'none'; nl.style.transform = 'translateX(' + (CHW + nx) + 'px)'; }
+    var nh = $('gnowh'); if (nh) { nh.style.transition = px ? 'left .18s ease-out' : 'none'; nh.style.display = nx >= 0 && nx <= PXW ? '' : 'none'; nh.style.left = nx + 'px'; }
     drawDetail();
   }
 
-  var timesKey = '';
+  var timesKey = '', timesIn = null, slideFrom = null, ext = null;
   function mins(ms) { var m = Math.max(1, Math.round(ms / 60000)); return m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min'; }
 
   // What OK will do for the focused cell, in plain words.
@@ -2161,9 +2194,22 @@ var Guide = (function () {
     return hasReminder(c, h.p) ? 'OK  cancel the reminder' : 'OK  remind me when it starts';
   }
 
+  /* The preview window before anything plays in it: the channel you're on, its logo large, rather than a
+     blank box.  Whatever plays sits over it. */
+  var pvIdle = null;
+  function previewIdle(c) {
+    var box = $('guidePreview'); if (!box) return;
+    if (!pvIdle) { box.innerHTML = ''; pvIdle = { el: U.el('div', 'gpv-idle'), img: U.el('img'), n: U.el('b'), h: U.el('small', '', 'OK plays it here, OK again for fullscreen') }; pvIdle.img.alt = ''; pvIdle.img.onerror = function () { this.style.display = 'none'; }; pvIdle.el.appendChild(pvIdle.img); pvIdle.el.appendChild(pvIdle.n); pvIdle.el.appendChild(pvIdle.h); box.appendChild(pvIdle.el); }
+    var lg = c ? Views.logoOf(c) : '', name = c ? L.name(c) : '';
+    if (pvIdle.src !== lg) { pvIdle.src = lg; pvIdle.img.style.display = lg ? '' : 'none'; if (lg) pvIdle.img.src = lg; }
+    if (pvIdle.n.textContent !== name) pvIdle.n.textContent = name;
+    pvIdle.el.classList.toggle('nologo', !lg);
+    pvIdle.h.style.display = c ? '' : 'none';
+  }
   function drawDetail() {
     detail.innerHTML = '';
     var c = zone === 'grid' || list.length ? list[sel] : null;
+    previewIdle(c);
     var pv = previewing();
     if (!c) { detail.appendChild(U.el('b', '', L.groupName(gid))); detail.appendChild(U.el('div', 'gd-meta', list.length + ' channels.  ▶ or OK to browse them.')); nowLine(pv); return; }
     var h = progAt(c, focusT), now = Date.now();
@@ -2333,8 +2379,10 @@ var Guide = (function () {
     var earliest = c.arch ? now - c.arch * 86400e3 : (cur ? cur.s : now);
     if (target < earliest) { if (dir < 0 && !c.arch && h.p && h.p.e <= now) U.toast('This channel has no catch-up'); return false; }
     focusT = target;
+    var was = t0;
     if (focusT >= t0 + WIN - 10 * 60e3) t0 += 30 * 60e3 * Math.ceil((focusT - (t0 + WIN - 10 * 60e3)) / (30 * 60e3) + 0.01);
     if (focusT < t0) t0 -= 30 * 60e3 * Math.ceil((t0 - focusT) / (30 * 60e3) + 0.01);
+    if (t0 !== was) slideFrom = was;
     draw();
     return true;
   }

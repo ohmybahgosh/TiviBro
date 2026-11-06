@@ -209,7 +209,7 @@ The **Channels** screen (in the side menu when **Channels screen in the menu** i
 ### Watching fullscreen
 
 - **▲ ▼** or **CH + / CH −** change channel.  An info bar shows the channel, what's on now and next, and how far into the programme you are.
-- **The screensaver waits.**  While a channel, a movie or episode, My media or catch-up plays, TiviBro asks the TV to hold off its screensaver (a homebrew one such as Aerial too).  When nothing plays, playback is paused, or you are in another app, the screensaver comes on as usual.  There is nothing to set.
+- **The screensaver waits.**  While a channel, a movie or episode, My media or catch-up plays, TiviBro asks the TV to hold off its screensaver (a homebrew one such as Aerial too).  It also waits for a minute and a half after something last played (so a reconnect or a channel that won't play doesn't let it in), and for 3 minutes after you last pressed a button, including on the phone app, whose presses the TV doesn't count.  When nothing plays, playback is paused, or you are in another app, the screensaver comes on as usual.  There is nothing to set.
 - **▶** shows the full programme info.  **Yellow** jumps back to the last channel.  **Green** goes back to the TV guide.
 - **Hold OK** (or **OK > Channel guide**) lays the channel guide over the video: the group's channels with what's on now.  **OK** on another channel switches to it and keeps the channel guide open so you can keep browsing; **OK** on the channel that's already playing closes it.  **◀ ▶** change group.
 - **OK** opens the **quick menu**: Channel guide, From start (catch-up channels), Favorite, TV guide, Other versions (when the channel has them), Captions, Aspect, Sleep timer, Stream info and Reconnect.

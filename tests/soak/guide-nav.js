@@ -121,6 +121,31 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await ev(() => { Store.settings.nowStyle = 'line'; Views.applyLook(); }); await wait(200);
     ok('past the right edge: square, and its title fades out', pol.cr === 'none' || (pol.cr === '0px' && /gradient/.test(pol.fade)), JSON.stringify(pol));
     ok('the row you are on is a shade lighter', /inset/.test(pol.lift), JSON.stringify(pol));
+    // Above the channels: the day and time, then the group.  The preview window before anything plays: the
+    // channel you're on.  Catch-up: the mark in green, the title in the normal colour.
+    const corner = await ev(() => ({ when: (document.querySelector('#guideGroup .gh-when') || {}).textContent || '', grp: (document.querySelector('#guideGroup .gh-grp') || {}).textContent || '',
+      idle: (document.querySelector('#guidePreview .gpv-idle b') || {}).textContent || '', name: (document.querySelector('.grow.sel .gch .n') || {}).textContent || '' }));
+    ok('above the channels: the day and time, then the group', /\d:\d\d[ap]m$/.test(corner.when) && /\S/.test(corner.grp), JSON.stringify(corner));
+    ok('the preview window before anything plays shows the channel you are on', !!corner.idle && corner.idle === corner.name, JSON.stringify(corner));
+    // Moving past the screen's edge slides the guide over, with no blank strip while it glides.
+    if ((await st()).zone !== 'grid') { await code(RIGHT); await wait(400); }
+    const glide = await ev(async () => {
+      const step = () => { document.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 39, which: 39, bubbles: true })); document.dispatchEvent(new KeyboardEvent('keyup', { keyCode: 39, which: 39, bubbles: true })); };
+      for (let n = 0; n < 14; n++) {
+        const t = document.querySelector('#guideTimes .gtin span').textContent; step();
+        const pin = document.querySelector('.grow.sel .gpin');
+        const m = getComputedStyle(pin).transform;
+        if (m && m !== 'none' && !/matrix\(1, 0, 0, 1, 0, 0\)/.test(m)) {
+          const r = pin.parentNode.getBoundingClientRect(), cells = [].slice.call(pin.querySelectorAll('.gp')).filter((d) => d.style.display !== 'none').map((d) => d.getBoundingClientRect());
+          const covers = cells.some((c) => c.left <= r.left + 2 && c.right > r.left + 40);
+          return { slid: true, covers, from: t };
+        }
+        await new Promise((ok) => setTimeout(ok, 260));
+      }
+      return { slid: false };
+    });
+    ok('past the edge the guide slides over, with no blank strip while it glides', glide.slid && glide.covers, JSON.stringify(glide));
+    await wait(400);
     await ev(() => { const L = Library, i = L.channels(L.ALL).findIndex((c) => /Drama One/.test(c.n)); Guide.open(L.ALL, L.channels(L.ALL)[i].k); }); await wait(800);
     await code(RIGHT); await wait(500);
     const det = await ev(() => ({ ep: (document.querySelector('#guideDetail .gd-ep') || {}).textContent || '', badges: [].slice.call(document.querySelectorAll('#guideDetail .gd-badge')).map((x) => x.textContent) }));

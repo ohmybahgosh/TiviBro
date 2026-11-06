@@ -34,3 +34,4 @@
 .nogap .on-meta > * + *{margin-left:14px}
 .nogap .on-track > * + *{margin-left:24px}
 .nogap .on-cap > * + *{margin-left:10px}
+.nogap .gpv-idle > * + *{margin-top:10px}
