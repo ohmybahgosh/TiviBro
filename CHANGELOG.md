@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 93, 2026-11-05)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 93
 
 - **About this show.**  Info on a series in the guide (or Hold OK > About this show…) opens a panel from TMDB: poster, when it started, network, seasons, whether it's still running, rating, genres, summary, cast, and its next showings on that channel this week with each episode's title.  Watch it, or set a reminder for the next one.  Info on anything else still opens the options menu.
 - **TV series from TMDB.**  With your TMDB token, a series in the guide gets its poster and a line with when it started, its network, genres and rating; when the guide gives the season and episode, the episode's own title and summary.  On the Shows screen (and the phone app), TMDB fills in what your provider leaves out: a show's poster, summary, genres, network and cast, an episode's summary, picture and air date.  Settings > Guide > Movies and series from TMDB > Series details from TMDB (on).  A show is looked up only when you land on it, by its name.
@@ -15,11 +19,7 @@
 - **Modern pop-up menus.**  Icons on each row, a line under the title saying what it's about (the guide's says the channel and time), longer notes under the row instead of squeezed beside it, a fade when there's more to scroll, and a short rise as it opens.
 - **A cleaner group column.**  Compact rounded rows (many more fit), the channel count in a pill, icons on Favorites, Recent, All channels, Events, My teams and Movies on now, and the number of groups at the top.
 
-## 0.6.0 (alpha 92, 2026-11-05)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 92
+### In alpha 92
 
 - **Long sessions of channel flipping no longer use up the TV's memory.**  Every channel change on the built-in demuxer left a copy of its decoder behind in the TV's memory, outside what TiviBro's own memory figures show, so a couple of hours of zapping could run a TV with little memory out and close TiviBro (issue #52).  The decoder is now set up once and reused.
 
