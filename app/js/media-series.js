@@ -283,6 +283,8 @@ var MediaSeries = (function () {
       (r.mergedFrom||[]).forEach(function(m){options.push({label:'Separate '+m.title,action:function(){request('edit',{operation:'unmergeShows',handle:r.handle,mergeHandle:m.operation,expectedRevision:r.revision},open);}});});
       options.push({label:'Find show details',action:function () { match(r,function () { show({handle:r.handle},back); }); }});
       if (r.metadata) options.push({label:'Remove show details',action:function () { edit(r,'setMetadata',{metadata:null},function () { show(item,back); }); }});
+      // The same screen-wide shortcut a movie's options have: files that need a look, when there are any.
+      if (Media.reviewCount && Media.reviewCount() > 0) options.push({label:'Needs review',action:function(){review();}});
       options.push({label:'Back',action:back}); UI.menu(r.metadata && r.metadata.title || r.title,options,back);
     });
   }

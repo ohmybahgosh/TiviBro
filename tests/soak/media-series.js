@@ -76,13 +76,13 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
     ok('removing a favorite takes it off Favorites',await page.evaluate(()=>document.querySelectorAll('.media-shelf')[1].querySelector('.media-shelf-count').textContent===''));
     ok('empty Needs review shelf is hidden',!await page.locator('.media-shelf').nth(4).isVisible());
     await page.keyboard.press('m');await page.waitForTimeout(100);
-    ok('empty Needs review is absent from options',!/Needs review/.test(await page.innerText('#modal')));
+    ok('empty Needs review is absent from options',!(await page.evaluate(()=>UI.menuLabels.join('|'))).includes('Needs review'));
     await page.keyboard.press('Escape');
     needsReview=true;await page.evaluate(()=>Media._test.rescanCurrent());
     await page.waitForFunction(()=>!document.querySelectorAll('.media-shelf')[4].classList.contains('hidden'));
     ok('Needs review appears when a conflicting file is discovered',/Needs review/.test(await page.locator('.media-shelf').nth(4).innerText()));
     await page.keyboard.press('m');await page.waitForTimeout(100);
-    ok('Needs review is offered in options for a nonempty queue',/Needs review/.test(await page.innerText('#modal')));
+    ok('Needs review is offered in options for a nonempty queue',(await page.evaluate(()=>UI.menuLabels.join('|'))).includes('Needs review'),await page.evaluate(()=>UI.menuLabels));
     await page.keyboard.press('Escape');
     await page.evaluate(async()=>{
       const r=await Media.request('library/query',{kind:'review',limit:1},30000),item=r.items[0];
