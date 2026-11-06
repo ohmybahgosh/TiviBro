@@ -445,8 +445,12 @@ var Vod = (function () {
        picture).  The provider's own always come first. */
     var tv = typeof Series !== 'undefined' && kind === 'series' ? (it.ep ? (series ? Series.show(series.name, series.year, 'strong') : null) : Series.show(it.name, it.year, 'strong')) : null;
     var te = tv && it.ep ? Series.episode(tv, it.season, it.num) : null;
+    /* Hide spoilers (Settings > Guide, discussion #36): an episode you haven't started keeps its number and air
+       date, without its summary, its own title from TMDB, or a picture from it (the show's cover instead). */
+    var spoil = !!(Store.settings.noSpoilers && it.ep && !isWatched(idOf(it)) && !resumeOf(idOf(it)));
+    if (spoil && te) te = { air: te.air };
     var showCover = series && series.cover;
-    var poster = (m && m.poster) || (it.ep ? (it.cover && it.cover !== showCover ? it.cover : (te && te.still) || it.cover) : it.cover || (tv && tv.poster)) || showCover || (tv && tv.poster);
+    var poster = (m && m.poster) || (it.ep ? (spoil ? showCover || (tv && tv.poster) : it.cover && it.cover !== showCover ? it.cover : (te && te.still) || it.cover) : it.cover || (tv && tv.poster)) || showCover || (tv && tv.poster);
     if (poster) { var img = U.el('img', 'vod-poster' + (it.ep && te && poster === te.still ? ' still' : '')); img.src = poster; img.onerror = function () { if (!Net.retryImage(this)) this.remove(); }; box.appendChild(img); }
     box.appendChild(U.el('h2', '', it.ep ? (te && te.t && /^S\d+ E[\d?]+\s*$/.test(it.label) ? it.label + '   ' + te.t : it.label) : it.name));
     var rating = stars(it.rating) || (tv && !it.ep && tv.rating ? '★ ' + tv.rating + ' TMDB' : '');
@@ -462,7 +466,8 @@ var Vod = (function () {
     }
     var plot = (m && m.plot) || it.plot || (it.ep && it.plotEp) || '';
     if (tv && plot.length < 40) plot = (it.ep ? te && te.plot : tv.plot) || plot;
-    if (plot) box.appendChild(U.el('p', 'vod-plot', plot));
+    if (spoil && plot) plot = 'Summary hidden until you watch it (Hide spoilers is on).';
+    if (plot) box.appendChild(U.el('p', 'vod-plot' + (spoil ? ' spoil' : ''), plot));
     if (m && m.cast) box.appendChild(U.el('div', 'vod-meta', 'Cast: ' + m.cast));
     else if (tv && !it.ep && tv.cast) box.appendChild(U.el('div', 'vod-meta', 'Cast: ' + tv.cast));
     if (m && m.director) box.appendChild(U.el('div', 'vod-meta', 'Director: ' + m.director));

@@ -691,6 +691,12 @@ body.noguidenames .gch,body.noguidenames .guide-group{width:260px}
 .rep-state{font-size:30px;font-weight:600;color:var(--accent);margin-bottom:6px}
 .rep-title{font-size:24px;color:var(--muted);margin-bottom:22px}
 .rep-reply{font-size:24px;line-height:1.45;white-space:pre-line;max-height:430px;overflow:hidden;margin-top:6px}
+/* A long reply scrolls (Up and Down), with fades where there's more. */
+.pscroll{position:relative;overflow:hidden}
+.pscroll.more-down{-webkit-mask-image:linear-gradient(to top,transparent,#000 56px);mask-image:linear-gradient(to top,transparent,#000 56px)}
+.pscroll.more-up{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 56px);mask-image:linear-gradient(to bottom,transparent,#000 56px)}
+.pscroll.more-up.more-down{-webkit-mask-image:linear-gradient(to bottom,transparent,#000 56px,#000 calc(100% - 56px),transparent);mask-image:linear-gradient(to bottom,transparent,#000 56px,#000 calc(100% - 56px),transparent)}
+.rep-again{font-size:19px;color:var(--dim);margin-top:14px}
 .rep-qr{flex:none;width:220px;margin-left:40px;text-align:center}
 .rep-qr svg{width:220px;height:220px;display:block;background:#fff;border-radius:12px;padding:8px;box-sizing:border-box}
 .rep-qr .remote-s{margin-top:10px}
@@ -896,3 +902,8 @@ body.gr-xl .gch .n{white-space:normal;display:-webkit-box;-webkit-box-orient:ver
 .gpv-idle b{color:var(--text);font-size:26px;font-weight:600;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .gpv-idle.nologo b{font-size:34px}
 .gpv-idle small{color:var(--dim);font-size:19px}
+/* Hide spoilers: the line saying a summary is hidden, quieter. */
+.gd-desc.spoil,.vod-plot.spoil{color:var(--dim);font-style:italic}
+/* A list row's name scrolling across while it's focused (vlist.js marquee). */
+.row .name.mqn{text-overflow:initial;white-space:nowrap}
+.row .name .mqi{display:inline-block;white-space:nowrap}

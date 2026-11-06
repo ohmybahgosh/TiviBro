@@ -1847,7 +1847,7 @@ var Guide = (function () {
     // The groups have rows of their own height: compact, so many more show than channels do.
     var gh = GROUP_ROWS[Store.settings.guideRows] || 70;
     $('guideGroups').style.setProperty('--row', (gh - 8) + 'px');
-    groupsVL = new VList($('guideGroupList'), { render: renderGroupRow, onSel: onGroupSel, empty: 'No groups', visible: 10, rowH: gh,
+    groupsVL = new VList($('guideGroupList'), { render: renderGroupRow, onSel: onGroupSel, empty: 'No groups', visible: 10, rowH: gh, noMarquee: true,
       onHover: function () { if (zone !== 'groups') setZone('groups'); }, onClick: function () { enterGrid(); } });
     pointerSetup();
     ghead.addEventListener('click', function () { if (mine()) setZone('groups'); });
@@ -1896,10 +1896,11 @@ var Guide = (function () {
   }
   var groupDeb = U.debounce(function () { if (loaded !== gid) { load(gid, null); draw(); } }, 240);
   // A group name too long for the panel scrolls across while its row is focused.
-  var mqT = 0, mqEl = null;
+  var mqT = 0, mqEl = null, mqStop = null;
   function marquee() {
     clearTimeout(mqT);
-    if (mqEl) { mqEl.style.transition = 'none'; mqEl.style.transform = ''; mqEl.classList.remove('mq'); mqEl = null; }
+    if (mqStop) { mqStop(); mqStop = null; }
+    if (mqEl) { mqEl.classList.remove('mq'); mqEl = null; }
     if (zone !== 'groups') return;
     mqT = setTimeout(function () {
       var el = $('guideGroupList').querySelector('.row.sel .name i');
@@ -1907,14 +1908,7 @@ var Guide = (function () {
       var over = el.scrollWidth - el.clientWidth;
       if (over <= 2) return;
       mqEl = el; el.classList.add('mq');
-      var secs = Math.max(2, over / 80);
-      (function go() {
-        el.style.transition = 'transform ' + secs + 's linear'; el.style.transform = 'translateX(-' + over + 'px)';
-        mqT = setTimeout(function () {
-          el.style.transition = 'none'; el.style.transform = '';
-          mqT = setTimeout(go, 1600);
-        }, secs * 1000 + 1600);
-      })();
+      mqStop = UI.marquee(el, over, { speed: 80 });
     }, 900);
   }
   function onGroupSel(i, g) {
@@ -2266,9 +2260,13 @@ var Guide = (function () {
       if (sh.poster) { detail.classList.add('has-poster'); var sim = U.el('img', 'gd-poster'); sim.src = sh.poster; sim.alt = ''; sim.onerror = function () { this.remove(); detail.classList.remove('has-poster'); }; detail.appendChild(sim); }
       if (!gd || gd.length < 60) gd = (se && se.plot) || sh.plot || gd;
     }
-    var gdEl = U.el('p', 'gd-desc', gd);
+    /* Hide spoilers (Settings > Guide, discussion #36): a new episode, or anything not aired yet, keeps only its
+       title, season and episode, and when it airs; its summary and episode title stay hidden. */
+    var spoil = Store.settings.noSpoilers && h.p && !h.p.up && (h.p.n || h.p.s > now);
+    if (spoil && gd) gd = h.p.s > now ? 'Summary hidden until it airs (Hide spoilers is on).' : 'Summary hidden, a new episode (Hide spoilers is on).';
+    var gdEl = U.el('p', 'gd-desc' + (spoil ? ' spoil' : ''), gd);
     // The episode's own title from TMDB, in front of the summary (its season and episode are in the line above).
-    if (sh && se && se.t) { gdEl.insertBefore(U.el('span', 'gd-eptitle', se.t), gdEl.firstChild); }
+    if (sh && se && se.t && !spoil) { gdEl.insertBefore(U.el('span', 'gd-eptitle', se.t), gdEl.firstChild); }
     detail.appendChild(gdEl);
     if (zone === 'grid') detail.appendChild(U.el('div', 'gd-ok', okMeaning(c, h)));
     nowLine(pv);
@@ -2276,10 +2274,11 @@ var Guide = (function () {
   }
   /* The focused programme's title, when it doesn't fit its cell, scrolls across after a moment and
      comes back (#8 in the ideas; ich0x in discussion #36).  Only that one: the rest stay still, cut off. */
-  var pmT = 0, pmEl = null;
+  var pmT = 0, pmEl = null, pmStop = null;
   function progMarquee() {
     clearTimeout(pmT);
-    if (pmEl) { pmEl.parentNode.classList.remove('mq'); pmEl.style.transition = 'none'; pmEl.style.transform = ''; pmEl = null; }
+    if (pmStop) { pmStop(); pmStop = null; }
+    if (pmEl) { pmEl.parentNode.classList.remove('mq'); pmEl = null; }
     if (zone !== 'grid' || UI.repeating) return;
     pmT = setTimeout(function () {
       var el = body.querySelector('.grow.sel .gp.focus .gt b');
@@ -2287,14 +2286,7 @@ var Guide = (function () {
       var box = el.parentNode, over = box.scrollWidth - box.clientWidth;     // (an inline element's own width reads 0)
       if (over <= 4) return;
       pmEl = el; box.classList.add('mq');
-      var secs = Math.max(2, over / 90);
-      (function go() {
-        el.style.transition = 'transform ' + secs + 's linear'; el.style.transform = 'translateX(-' + over + 'px)';
-        pmT = setTimeout(function () {
-          el.style.transition = 'none'; el.style.transform = '';
-          pmT = setTimeout(go, 1800);
-        }, secs * 1000 + 1500);
-      })();
+      pmStop = UI.marquee(el, over, { speed: 90, pause: 1600 });
     }, 1100);
   }
   // What's in the window and how to get to it, whatever is highlighted.
@@ -2550,7 +2542,7 @@ var Guide = (function () {
         var se = q.ep ? Series.episode(sh, q.ep) : null, row = U.el('div', 'sp-ep' + (q.s <= t ? ' now' : ''));
         row.appendChild(U.el('span', 'sp-when', q.s <= t ? 'Now' : (dayName(q.s) === 'Today' ? '' : dayName(q.s) + '  ') + U.hhmm(q.s)));
         row.appendChild(U.el('span', 'sp-num', q.ep || ''));
-        row.appendChild(U.el('span', 'sp-t', se && se.t ? se.t : q.n ? 'New episode' : ''));
+        row.appendChild(U.el('span', 'sp-t', se && se.t && !Store.settings.noSpoilers ? se.t : q.n ? 'New episode' : ''));
         if (hasReminder(c, q)) row.appendChild(U.el('span', 'sp-rem', '◷ reminder'));
         eps.appendChild(row);
       });

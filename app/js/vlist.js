@@ -8,6 +8,7 @@ function VList(host, opts) {
   this.rowH = opts.rowH || 76;
   this.renderRow = opts.render;
   this.onSel = opts.onSel || function () {};
+  this.noMarquee = !!opts.noMarquee;     // a list with a scroller of its own (the guide's groups)
   this.empty = opts.empty || 'Nothing here';
   this.items = [];
   this.sel = 0;
@@ -89,6 +90,33 @@ VList.prototype.draw = function (force) {
     if (slot.on !== on) { slot.el.classList.toggle('sel', on); slot.on = on; }
   }
   for (i = 0; i < P; i++) if (!used[i] && !this.pool[i].hidden) { this.pool[i].el.style.display = 'none'; this.pool[i].hidden = true; this.pool[i].idx = -1; }
+  this.marquee();
+};
+/* The focused row's name, when it doesn't fit, scrolls across after a moment (discussion #36), in the list
+   you're in.  Its text is wrapped in a span that moves; the next render of the row puts it back as it was. */
+VList.prototype.marquee = function () {
+  var self = this;
+  clearTimeout(this._mqT);
+  if (this._mqStop) { this._mqStop(); this._mqStop = null; }
+  if (this._mqName && this._mqName._mqi && this._mqName._mqi.parentNode === this._mqName) {
+    var nm0 = this._mqName, sp = nm0._mqi;
+    while (sp.firstChild) nm0.insertBefore(sp.firstChild, sp);
+    nm0.removeChild(sp); nm0._mqi = null; nm0.classList.remove('mqn');
+  }
+  this._mqName = null;
+  if (this.noMarquee || typeof UI === 'undefined' || !UI.marquee) return;
+  this._mqT = setTimeout(function () {
+    if (!self.host.classList.contains('active') || (UI.repeating)) return;
+    var row = self.host.querySelector('.row.sel'), nm = row && row.querySelector('.name');
+    if (!nm || nm.querySelector('.mq')) return;
+    var over = nm.scrollWidth - nm.clientWidth;
+    if (over <= 4) return;
+    var sp = document.createElement('span'); sp.className = 'mqi';
+    while (nm.firstChild) sp.appendChild(nm.firstChild);
+    nm.appendChild(sp); nm._mqi = sp; nm.classList.add('mqn');
+    self._mqName = nm;
+    self._mqStop = UI.marquee(sp, nm.scrollWidth - nm.clientWidth || over);
+  }, 1000);
 };
 // wrap: one press past either end goes round to the other end, like a TV channel list.  wrap 'down':
 // only Down on the last row goes round to the first; Up on the first row stays put.  Never while an

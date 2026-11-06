@@ -32,6 +32,7 @@ var Store = (function () {
     epgOffset: 0,               // minutes added to every guide time
     epgHours: 12,               // XMLTV refresh interval
     dimPast: true,
+    noSpoilers: false,          // Hide spoilers (discussion #36): no summary or episode title for new and not-yet-aired episodes
     accent: '#5b8cff',
     fontScale: 1,
     osdTimeout: 5,
