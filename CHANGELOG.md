@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 95, 2026-11-06)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 95
 
 - **Left works again after Right on a programme the guide lists twice.**  The copy has no time of its own, so Left stepped onto it and went nowhere until you changed rows.
 - **Colour by category on guides that don't give categories,** such as a provider's per-channel guide for local channels: a programme's kind comes from its title (news, a sport or a game) or from what the channel plainly is (ESPN, CNN, Disney Junior, Discovery, or a Sports or Kids group).  Anything else stays plain.
@@ -8,11 +12,7 @@
 - **Bigger guide rows show there are more channels below:** the room under the last whole row shows the next channel, cut off and faded, until the end of the list.
 - **Guide titles without tiny raised tags.**  Some guides add "ᴺᵉʷ", "ᴸᶦᵛᵉ" or "ᴴᴰ" to titles in small raised letters, which read oddly ("General Hospital ᴺᵉʷ").  They now come off the title, and "New" shows as the NEW badge instead.
 
-## 0.6.0 (alpha 94, 2026-11-06)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 94
+### In alpha 94
 
 - **A calmer, more polished guide.**
   - **The colour by category** is a short rounded bar, and it shows on what's on now too (the aired-so-far shading used to cover it).
