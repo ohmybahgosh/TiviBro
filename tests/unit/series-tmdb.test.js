@@ -33,6 +33,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('a weak guess at an obscure show is a miss', r.miss === true, JSON.stringify(r));
   r = await look({ guide: 'strong', title: 'Obscure' });
   ok('a strong one (the guide gave an episode) takes it', !!(r.metadata || r instanceof Error) && !r.miss, JSON.stringify(r).slice(0, 120));
+  const n0 = asked.length;
+  r = await look({ guide: 'strong', title: 'Друзья' });
+  ok('a name in another script is never matched to whatever comes first', r.miss === true && asked.length === n0, JSON.stringify(r));
   ok('only the name went to TMDB (no logins, no links)', asked.every((u) => /^https:\/\/api\.themoviedb\.org\/3\/(search\/tv|tv\/\d+)\?/.test(u)), asked.join(' '));
 
   // ---- the app: Series ----
@@ -71,6 +74,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await wait(400);
   ok('the answers are kept (misses too)', await wait(5200).then(() => store.tvseries && store.tvseries.shows && Object.keys(store.tvseries.shows).length >= 4 && Object.keys(store.tvseries.seasons).length === 1), JSON.stringify(Object.keys((store.tvseries || {}).shows || {})));
   ctx.Store.settings.guideSeries = false;
+  ok('nor asked about by the app, where all of them would share one answer', S.show('مسلسل', '', 'strong') === null && S.show('Друзья', '', 'strong') === null);
   ok('Series details off: nothing', S.of(c, { t: 'Severance', s: now, e: now + 3600e3, ep: 'S1 E1' }) === null);
   console.log(fails ? fails + ' FAILED' : 'all TMDB series checks passed');
   process.exit(fails ? 1 : 0);

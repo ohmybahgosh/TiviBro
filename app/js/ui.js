@@ -336,7 +336,8 @@ var UI = (function () {
 
   // Focus starts on Cancel, so a second press of OK by mistake never deletes or restores anything.
   function confirm(title, yesLabel, yes) {
-    menu(title, [{ label: yesLabel, action: yes }, { label: 'Cancel', current: true }]);
+    // Deleting, removing or clearing something shows in red.
+    menu(title, [{ label: yesLabel, action: yes, danger: /^(delete|remove|forget|erase|reset|clear|unpair)\b/i.test(yesLabel || '') }, { label: 'Cancel', current: true }]);
   }
 
   /* ---------- chrome ---------- */

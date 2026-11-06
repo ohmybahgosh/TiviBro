@@ -102,7 +102,8 @@ var Series = (function () {
     if (!on()) return null;
     load();
     var ct = clean(name), y = year ? String(year).slice(0, 4) : ct.y;
-    if (!ct.t) return null;
+    // A name in another script has no letters norm() keeps: all of them would share one answer.
+    if (!ct.t || !norm(ct.t)) return null;
     var k = keyOf(ct.t, y), hit = shows[k];
     if (hit && (hit.m || hit.s === 'strong' || strength !== 'strong')) return hit.m || null;
     want({ k: k, t: ct.t, y: y, st: strength || 'weak' });

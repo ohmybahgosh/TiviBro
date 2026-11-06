@@ -163,7 +163,7 @@ function create(opts) {
   function guideLookup(q, cb) {
     var language = LOCALES[q.language] ? q.language : 'en', locale = LOCALES[language];
     var title = str(q.title, 200).trim(), year = /^\d{4}$/.test(q.year || '') ? String(q.year) : '', weak = q.guide !== 'strong';
-    if (!title) return cb(null, { miss: true });
+    if (!title || !normal(title)) return cb(null, { miss: true });            // (see guideTvLookup)
     request('/search/movie?query=' + encodeURIComponent(title) + '&language=' + locale + (year ? '&year=' + year : ''), function (e, r) {
       if (e) return cb(e);
       var exact = (r && Array.isArray(r.results) ? r.results : []).filter(function (m) {
@@ -190,7 +190,8 @@ function create(opts) {
   function guideTvLookup(q, cb) {
     var language = LOCALES[q.language] ? q.language : 'en', locale = LOCALES[language];
     var title = str(q.title, 200).trim(), year = /^\d{4}$/.test(q.year || '') ? String(q.year) : '', strong = q.guide === 'strong';
-    if (!title) return cb(null, { miss: true });
+    // normal() keeps only a-z and 0-9: a title in another script would compare equal to every other one.
+    if (!title || !normal(title)) return cb(null, { miss: true });
     request('/search/tv?query=' + encodeURIComponent(title) + '&language=' + locale, function (e, r) {
       if (e) return cb(e);
       var exact = (r && Array.isArray(r.results) ? r.results : []).filter(function (t) {
