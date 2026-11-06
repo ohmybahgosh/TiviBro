@@ -326,8 +326,19 @@ var UI = (function () {
     function paint() { els.forEach(function (d, i) { d.classList.toggle('focus', i === f); }); }
     paint();
     modal.classList.remove('hidden');
+    /* Text longer than the box (a .pscroll inside it, discussion #36): Up and Down scroll it, Left and Right
+       move between the buttons, and fades at the top and bottom say there's more. */
+    var sc = body.querySelector && body.querySelector('.pscroll');
+    function fades() { if (!sc) return; sc.classList.toggle('more-up', sc.scrollTop > 2); sc.classList.toggle('more-down', sc.scrollTop + sc.clientHeight < sc.scrollHeight - 2); }
+    if (sc) setTimeout(fades, 0);
+    function scrollBy(d) {
+      if (!sc || sc.scrollHeight <= sc.clientHeight + 2) return false;
+      sc.scrollTop = Math.max(0, Math.min(sc.scrollHeight - sc.clientHeight, sc.scrollTop + d * Math.round(sc.clientHeight * 0.6)));
+      fades(); return true;
+    }
     modalH = function (a) {
-      if (a === 'left' || a === 'up') { f = Math.max(0, f - 1); paint(); }
+      if ((a === 'up' || a === 'down') && scrollBy(a === 'down' ? 1 : -1)) {}
+      else if (a === 'left' || a === 'up') { f = Math.max(0, f - 1); paint(); }
       else if (a === 'right' || a === 'down') { f = Math.min(els.length - 1, f + 1); paint(); }
       else if (a === 'ok') { var b = buttons[f]; close(); if (b.action) b.action(); }
       else if (a === 'back') { close(); if (onBack) onBack(); }
@@ -362,7 +373,35 @@ var UI = (function () {
     });
   }
 
+  /* Scrolling a line that doesn't fit (discussion #36): el moves left by `over` px, waits, comes back, again.
+     Text in Japanese, Chinese or Korean steps a few characters at a time, which reads better than a glide.
+     Returns a stop function. */
+  var CJK = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af\uff00-\uffef]/;
+  function marquee(el, over, o) {
+    o = o || {};
+    var t = 0, speed = o.speed || 85, pause = o.pause || 1600, stepped = CJK.test(el.textContent || '');
+    var fs = parseFloat(getComputedStyle(el).fontSize) || 24, step = fs * 3;
+    function back() { el.style.transition = 'none'; el.style.transform = ''; t = setTimeout(go, pause); }
+    function go() {
+      if (!stepped) {
+        var secs = Math.max(2, over / speed);
+        el.style.transition = 'transform ' + secs + 's linear'; el.style.transform = 'translateX(-' + over + 'px)';
+        t = setTimeout(back, secs * 1000 + pause);
+        return;
+      }
+      var x = 0;
+      (function hop() {
+        x = Math.min(over, x + step);
+        el.style.transition = 'transform .25s ease-out'; el.style.transform = 'translateX(-' + x + 'px)';
+        t = setTimeout(x >= over ? back : hop, x >= over ? 250 + pause : 900);
+      })();
+    }
+    t = setTimeout(go, o.delay || 0);
+    return function () { clearTimeout(t); el.style.transition = 'none'; el.style.transform = ''; };
+  }
+
   return {
+    marquee: marquee,
     setHandler: function (fn) { handler = fn; },
     getHandler: function () { return handler; },
     get modalOpen() { return !!modalH; },

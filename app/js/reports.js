@@ -94,7 +94,8 @@ var Reports = (function () {
     if (r.title) txt.appendChild(U.el('div', 'rep-title', r.title));
     if (r.reply) {
       txt.appendChild(U.el('div', 'remote-l', 'The developer wrote' + (r.reply.at ? ' on ' + when(r.reply.at) : '')));
-      txt.appendChild(U.el('div', 'rep-reply', r.reply.text.length > 700 ? r.reply.text.slice(0, 690).replace(/\s+\S*$/, '') + '…' : r.reply.text));
+      // All of it: Up and Down scroll a long reply (discussion #36).
+      txt.appendChild(U.el('div', 'rep-reply pscroll', r.reply.text));
     } else if (r.state === 'closed') txt.appendChild(U.el('div', 'rep-reply', 'The report was closed without a note.'));
     body.appendChild(txt);
     if (r.url) {
@@ -104,6 +105,12 @@ var Reports = (function () {
     if (behind) buttons.push({ label: 'Update to ' + r.fixed, action: function () { showing = false; update(); } });
     buttons.push({ label: 'Still happening', action: function () { showing = false; still(r); } });
     buttons.push({ label: 'OK', action: function () { showing = false; setTimeout(next, 1500); } });
+    // Where to find it again, to read it or say it still happens later (discussion #36).
+    var again = U.el('div', 'rep-again'), hint = U.el('b', '', '▲▼ scroll   ·   ');
+    hint.style.display = 'none'; again.appendChild(hint);
+    again.appendChild(document.createTextNode('Read it again, or press Still happening later, in Settings > Updates, about and diagnostics > Your problem reports'));
+    txt.appendChild(again);
+    setTimeout(function () { var p = txt.querySelector('.pscroll'); if (p && p.scrollHeight > p.clientHeight + 2) hint.style.display = ''; }, 0);
     UI.panel('Your problem report #' + r.n, body, buttons, function () { showing = false; setTimeout(next, 1500); });
   }
 
