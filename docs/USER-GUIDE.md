@@ -161,7 +161,7 @@ The guide is the home screen.  The channel you are on plays in the window at the
 - **Hold OK** opens: Watch fullscreen, Play in the window, Earlier programmes, Remind me, **Jump to…**, Jump to now, and Channel options (favorite, copy to group, hide, rename).  The channel and time are under its title.
 - **Jump to…** goes straight to tonight, late tonight, tomorrow morning or tomorrow night, or any later day the guide has (then a time: morning, midday, afternoon, evening, prime time or late night).  On a channel with catch-up it also lists earlier today and the days before.  It can be put on a button too (Settings > Remote and buttons).
 - The details above the guide show the season and episode, and **NEW**, **REMINDER** and the kind of programme (Sports, News, Kids, Documentary) when your guide says so.  A title too long for its box scrolls across on the programme you are on.
-- **Colour by category** (Settings > Appearance and start screen) gives movies, sports, news, kids and documentaries a coloured edge in the guide, with what each colour means at the top right.
+- **Colour by category** (Settings > Appearance and start screen) gives movies, sports, news, kids and documentaries a short coloured bar in the guide, with what each colour means at the top right.
 - **No guide for this channel** (in **Hold OK** on a channel with no guide) is for a channel that will never have one: a radio stream, a camera, an event slot.  It stops saying "No guide information" and guide matching and public fill-in leave it out.  **Look for a guide again**, in the same place, undoes it, and **Settings > Guide > Channels with no guide wanted** lists them all.
 
 <p align="center"><a href="media/guide.mp4"><img src="media/guide.gif" width="100%" alt="Moving around the guide"></a></p>
@@ -963,9 +963,9 @@ Which screen TiviBro opens on, how the guide looks, colours, sizes and what's on
 | **OK on a channel in the Guide** | **Preview first, then fullscreen** · Fullscreen right away | Under **The guide**.  Like TiviMate: the first **OK** plays the channel in the window, the second goes fullscreen.  Or go straight to fullscreen. |
 | **Guide row size** | **Normal** · Bigger · Biggest | A little taller rows with bigger channel names and titles (Biggest wraps long names to two lines).  For smaller TVs or reading from across the room; one channel fewer fits at once. |
 | **Two-line programmes** | **On** · Off | Each programme's time under its title in the grid. |
-| **Dim past programmes** | **On** · Off | Programmes that already ended look dimmer. |
-| **Mark what's on now** | **Tint what has aired** · Colour and tint · Off | How the guide shows programmes airing right now: the part already aired tinted in your accent colour, a coloured cell with that tint, or nothing.  The time of day is a thin line in the accent colour with a marker in the time bar. |
-| **Colour by category** | On · **Off** | A coloured edge on movies, sports, news, kids and documentaries, from what your guide says each programme is, with what each colour means at the top right.  Guides that don't say leave programmes plain. |
+| **Dim past programmes** | **On** · Off | Programmes that already ended are an outline with quieter text, so past and still to come read differently at a glance. |
+| **Mark what's on now** | **Progress bar** · Coloured cell and bar · Off | How the guide shows programmes airing right now: a bar along the bottom for the part already aired, ending where the now line is; that and a coloured cell; or nothing.  The time of day is a thin line in the accent colour, behind the programmes (between them, never across their text), with a marker in the time bar. |
+| **Colour by category** | On · **Off** | A short coloured bar on movies, sports, news, kids and documentaries, from what your guide says each programme is, with what each colour means at the top right.  Guides that don't say leave programmes plain. |
 | **Channel names in the guide** | **On** · Off | Off shows logos only, leaving more room for programmes. |
 | **Two-line channel names** | On · **Off** | Long channel names wrap instead of being cut off. |
 | **Mark catch-up channels** | **On** · Off | Shows **↺** on channels and programmes you can replay. |

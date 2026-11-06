@@ -2080,9 +2080,13 @@ var Guide = (function () {
       var p = sg.p, a = sg.a, w = Math.max(4, sg.b - sg.a);
       var past = p.e <= nowT, now = p.s <= nowT && p.e > nowT, from = Math.max(p.s, t0);
       var mv = typeof Movies !== 'undefined' && Movies.of(c, p), kind = tint ? (mv ? 'm' : p.k || '') : '';
-      // How much of what's on now has aired, shown inside its cell (by time, as the cell may be wider).
-      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (mv ? ' mv' : '') + (kind ? ' k-' + kind : ''), a, w,
-        (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, p.e - from)), 0, w) : -1, p.s);
+      // How much of what's on now has aired, shown inside its cell (by time, as the cell may be wider), up to
+      // the window's end for one running on past it, so the bar meets the now line.
+      // Running on past either edge of the window: that side is square and its text fades out, so it reads as
+      // carrying on rather than cut off.
+      var edge = (p.s < t0 && a <= 0 ? ' cl' : '') + (p.e > t1 && sg.b >= PXW ? ' cr' : '');
+      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (mv ? ' mv' : '') + (kind ? ' k-' + kind : '') + edge, a, w,
+        (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, Math.min(p.e, t1) - from)), 0, w) : -1, p.s);
     });
     if (!n) cell(r, n++, 'gp none' + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : Library.noGuide(c) ? Library.name(c) : l ? 'No guide information' : 'Loading…', false, null, -1, '');
     for (var j = n; j < r.cells.length; j++) if (!r.cells[j].off) { r.cells[j].d.style.display = 'none'; r.cells[j].off = true; }

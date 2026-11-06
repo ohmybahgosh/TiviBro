@@ -2,7 +2,13 @@
 
 ## Unreleased
 
-- **Colour by category: the colour shows on what's on now.**  The aired-so-far shading on a programme that's on was drawn over its colour stripe, so the colour of what's on now never showed.  It's a short rounded bar now, drawn above that shading and clear of the progress line along the bottom.
+- **A calmer, more polished guide.**
+  - **The colour by category** is a short rounded bar, and it shows on what's on now too (the aired-so-far shading used to cover it).
+  - **What's on now** has just a slim progress bar along the bottom, no shading over the cell.  The bar ends in a small dot right where the now line is, and the now line runs behind the programmes, between them, never across their titles.  Settings > Guide > Mark what's on now: **Progress bar**, **Coloured cell and bar** or **Off**.
+  - **A programme running on past either edge** of the guide is square on that side and its title fades out, instead of a hard cut or "…".
+  - **The row you're on** is a shade lighter all the way across, so your place is easy to follow.
+  - **Programmes that have ended** are an outline with quieter text (with Dim past programmes, on by default).
+  - **A selected catch-up programme** keeps its title readable on the highlight.
 - **Movies on now: Hold OK on a movie on many channels** lists its showings soonest first, and past four shows **All N showings…** for the rest, so **Watch the channel now** and **Show in the guide** are never pushed out of view.
 
 ## 0.6.0 (alpha 93, 2026-11-05)

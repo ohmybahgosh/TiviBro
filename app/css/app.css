@@ -139,7 +139,7 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .guide-group{width:420px;color:var(--muted);font-size:24px;padding-left:20px;line-height:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .guide-times{flex:1;position:relative;color:var(--muted);font-size:22px}
 .guide-times span{position:absolute;top:14px}
-.guide-body{flex:1;position:relative;overflow:hidden;contain:strict}
+.guide-body{flex:1;position:relative;overflow:hidden;contain:strict;z-index:0}
 .grow{position:absolute;left:0;right:0;height:var(--grow);display:flex;will-change:transform}
 .gch{width:420px;flex:none;display:flex;align-items:center;gap:14px;padding:0 16px;border-radius:10px;white-space:nowrap;overflow:hidden}
 .gch .num{width:56px;text-align:right;color:var(--dim);flex:none}
@@ -167,7 +167,7 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .gp.none{color:var(--dim)}
 /* Now: a thin line that runs behind the programmes (seen between them, never across their text), and a
    small marker in the time bar. */
-.gnow{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--accent);opacity:.55;z-index:3;pointer-events:none}
+.gnow{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--accent);opacity:.55;z-index:-1;pointer-events:none}
 .gnowh{position:absolute;bottom:-2px;width:0;height:0;margin-left:-7px;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--accent);top:auto!important}
 /* guide top: details left, preview window right */
 .guide-top{display:flex;gap:40px;height:300px;flex:none;padding:6px 0 14px}
@@ -406,14 +406,14 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 /* live progress inside "now" programme cells */
 /* What's on now: a slim progress bar under the times, on a faint track. */
 /* What's on now: the part already aired is tinted with the accent colour, under the text. */
-/* What has aired of what's on now: a light tint, and a solid bar along the bottom (#6 in the ideas). */
+/* What has aired of what's on now: a bar along the bottom ending in a small knob at now, which lines up
+   with the now line running behind the programmes.  No tint over the cell: the line, bar and colour were too busy. */
 .gp .gfill{position:absolute;left:0;top:0;bottom:0;pointer-events:none;border-radius:8px 0 0 8px}
-.gp .gfill::before{content:'';position:absolute;left:0;top:0;right:0;bottom:0;background:var(--accent);opacity:.14;border-radius:inherit}
-.gp .gfill::after{content:'';position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--accent);border-radius:0 2px 2px 0;opacity:.95}
-.gp.focus .gfill::before{background:#000;opacity:.12}
-.gp.focus .gfill::after{background:var(--on-accent);opacity:.55}
-/* The now line: brighter, with a soft glow, and its marker in the time bar. */
-.gnow{width:3px!important;margin-left:-1.5px!important;opacity:.9!important;box-shadow:0 0 10px var(--accent)}
+.gp .gfill::after{content:'';position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--accent);border-radius:0 2px 2px 0}
+.gp .gfill::before{content:'';position:absolute;right:-5px;bottom:-3px;width:10px;height:10px;border-radius:50%;background:var(--accent)}
+.gp.focus .gfill::after,.gp.focus .gfill::before{background:var(--on-accent);opacity:.6}
+/* The now line: brighter, and its marker in the time bar.  It runs behind the programmes (seen between them). */
+.gnow{width:3px!important;margin-left:-1.5px!important;opacity:.9!important}
 .gnowh{border-left-width:9px!important;border-right-width:9px!important;border-top-width:11px!important;margin-left:-9px!important}
 /* The day in the time bar when it isn't today ("Tomorrow 8:00pm"), and at midnight. */
 #guideTimes .gday{font-weight:700;color:var(--accent-text);margin-right:10px}
@@ -433,6 +433,19 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .glegend em{font-style:normal;margin-left:20px}
 .glegend em::before{content:'';display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:0}
 .glegend .k-m::before{background:#b48cff}.glegend .k-s::before{background:#3ddc97}.glegend .k-n::before{background:#f2b33d}.glegend .k-c::before{background:#ff7eb6}.glegend .k-d::before{background:#33c9e1}
+/* A programme running on past the window's edge: that side square, its text fading out (no "…"). */
+.gp.cl{border-top-left-radius:0;border-bottom-left-radius:0}
+.gp.cr{border-top-right-radius:0;border-bottom-right-radius:0}
+.gp.cr .gt,.gp.cr .gs{text-overflow:initial;-webkit-mask-image:linear-gradient(to left,transparent,#000 64px);mask-image:linear-gradient(to left,transparent,#000 64px)}
+.gp.cr .gt.mq{-webkit-mask-image:none;mask-image:none}
+/* The row you're on: its programmes a shade lighter, so your place is easy to follow across the guide. */
+.grow.sel .gp:not(.focus){box-shadow:inset 0 0 0 999px rgba(255,255,255,.045)}
+/* Over (Dim past programmes): an outline instead of a filled cell, its text and colour quieter. */
+body.dimpast .gp.past:not(.focus){background:transparent;box-shadow:inset 0 0 0 2px var(--panel)}
+body.dimpast .grow.sel .gp.past:not(.focus){box-shadow:inset 0 0 0 2px var(--raised)}
+body.dimpast .gp.past:not(.focus) .gs{color:var(--dim)}
+body.dimpast .gp.past:not(.focus)::after{opacity:.45}
+body.dimpast .gp.past.focus{color:var(--on-accent)}
 /* Badges in the details above the guide: a new episode, a reminder, the kind, the episode. */
 .gd-badge.new{background:#3b2a12;color:#ffc56b}
 .gd-badge.rem{background:var(--raised);color:var(--accent-text)}
@@ -441,7 +454,7 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .gd-ep{display:inline-block;margin-right:14px;color:var(--text);font-weight:600}
 .gp .gt,.gp .gs{position:relative}
 .gp .gcu{color:#7fe0ae}
-.gp.focus .gcu{color:#1d5c3c}
+.gp.focus .gcu{color:inherit}
 /* groups panel, over the channel column */
 .guide-groups{position:absolute;top:0;bottom:0;left:0;width:470px;background:var(--ink);z-index:3;display:none;flex-direction:column;padding-right:20px;border-right:1px solid var(--line)}
 #viewGuide.groups-open .guide-groups{display:flex}

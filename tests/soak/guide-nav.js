@@ -105,6 +105,17 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const live = await ev(() => { const d = document.querySelector('#guideBody .gp.now.k-n'); if (!d) return null; const r = d.getBoundingClientRect(), a = getComputedStyle(d, '::after');
       const top = document.elementFromPoint(r.left + 4, r.top + r.height / 2); return { bg: a.backgroundColor, w: a.width, z: getComputedStyle(d.querySelector('.gfill')).display, inCell: !!top && d.contains(top) }; });
     ok('colour by category: the stripe shows on what is on now too, above its progress', !!live && /rgb\(242, 179, 61/.test(live.bg) && parseFloat(live.w) >= 4, JSON.stringify(live));
+    // What's on now: its bar ends at the now line (also on one running past the window), the line runs behind
+    // the programmes, past either edge a cell is square, and the row you're on is a shade lighter.
+    const pol = await ev(() => {
+      const nl = document.getElementById('gnow'), lx = nl.getBoundingClientRect().left + nl.offsetWidth / 2, off = [];
+      [].forEach.call(document.querySelectorAll('#guideBody .gp.now'), (d) => { const f = d.querySelector('.gfill'); if (f.style.display === 'none') return; const end = d.getBoundingClientRect().left + f.offsetWidth; if (Math.abs(end - lx) > 4 && d.offsetWidth > 120) off.push(Math.round(end - lx)); });
+      const cr = document.querySelector('#guideBody .gp.cr'), sel = document.querySelector('#guideBody .grow.sel .gp:not(.focus)');
+      return { off, behind: getComputedStyle(nl).zIndex, cr: cr ? getComputedStyle(cr).borderTopRightRadius : 'none', fade: cr ? getComputedStyle(cr.querySelector('.gt')).webkitMaskImage || getComputedStyle(cr.querySelector('.gt')).maskImage : '', lift: sel ? getComputedStyle(sel).boxShadow : '' };
+    });
+    ok('what is on now: its progress ends at the now line, which runs behind the programmes', !pol.off.length && pol.behind === '-1', JSON.stringify(pol));
+    ok('past the right edge: square, and its title fades out', pol.cr === 'none' || (pol.cr === '0px' && /gradient/.test(pol.fade)), JSON.stringify(pol));
+    ok('the row you are on is a shade lighter', /inset/.test(pol.lift), JSON.stringify(pol));
     await ev(() => { const L = Library, i = L.channels(L.ALL).findIndex((c) => /Drama One/.test(c.n)); Guide.open(L.ALL, L.channels(L.ALL)[i].k); }); await wait(800);
     await code(RIGHT); await wait(500);
     const det = await ev(() => ({ ep: (document.querySelector('#guideDetail .gd-ep') || {}).textContent || '', badges: [].slice.call(document.querySelectorAll('#guideDetail .gd-badge')).map((x) => x.textContent) }));
