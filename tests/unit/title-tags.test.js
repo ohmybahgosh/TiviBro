@@ -1,0 +1,30 @@
+/* Tags some guides put in titles in tiny raised or small-capital letters ("General Hospital ᴺᵉʷ"): they come
+   off the title, and "New" becomes the programme's NEW mark (app/js/epg.js tidyTitles, run on every list).
+     node tests/unit/title-tags.test.js */
+'use strict';
+const fs = require('fs'), path = require('path');
+let fails = 0;
+const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined && !c ? '  ' + JSON.stringify(x) : '')); if (!c) fails++; };
+const src = fs.readFileSync(path.join(__dirname, '../../app/js/epg.js'), 'utf8');
+const i = src.indexOf('  function tidyTitles('), j = src.indexOf('\n  }\n', i);
+const tidy = new Function('return (' + src.slice(i, j + 4).trim() + ')')();
+const run = (t) => { const l = [{ s: 0, e: 1, t: t }]; tidy(l); return l[0]; };
+
+let p = run('General Hospital ᴺᵉʷ');
+ok('"General Hospital ᴺᵉʷ": the tag comes off, and it is marked NEW', p.t === 'General Hospital' && p.n === 1, p);
+p = run('Show ɴᴇᴡ');
+ok('small capitals "ɴᴇᴡ" too', p.t === 'Show' && p.n === 1, p);
+p = run('ᴺᴱᵂ Series Premiere');
+ok('in front of the title too', p.t === 'Series Premiere' && p.n === 1, p);
+p = run('NBA ᴸᶦᵛᵉ: Lakers at Celtics');
+ok('other tags ("ᴸᶦᵛᵉ") come off without a NEW mark', p.t === 'NBA: Lakers at Celtics' && !p.n, p);
+p = run('Movie Night ᴴᴰ');
+ok('"ᴴᴰ" too', p.t === 'Movie Night' && !p.n, p);
+for (const t of ['CO₂ Rising', 'H₂O: The Molecule', 'Hawaiʻi Five-0', 'Beyond the Gates', 'Ελληνικά Νέα', 'Новости']) {
+  p = run(t);
+  ok('left as it is: "' + t + '"', p.t === t && !p.n, p);
+}
+p = run('ᴺᵉʷ');
+ok('a title that is only a tag keeps its text rather than going blank', p.t === 'ᴺᵉʷ', p);
+console.log(fails ? fails + ' failures' : 'all title tag tests passed');
+process.exit(fails ? 1 : 0);

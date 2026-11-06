@@ -416,7 +416,24 @@ var Epg = (function () {
      one (FX with National Treasure 10:00pm-1:00am and X-Men 10:25pm-12:55am, X-Men airing).  The later
      start is what airs, so the earlier one ends there.  Only ends move: descriptions the helper keeps
      are found by a programme's place in the list. */
+  /* Tags some guides put in titles in tiny raised or small-capital letters: "General Hospital ᴺᵉʷ", "ᴸᶦᵛᵉ",
+     "ɴᴇᴡ", "ᴴᴰ".  Shown as they are they read oddly, so they come off the title, and "New" becomes the
+     programme's NEW mark (the badge in the details).  Only runs of two or more, so a lone ₂ in "CO₂" or the ʻ in
+     "Hawaiʻi" stay. */
+  function tidyTitles(list) {
+    var TAG = /\s*[\u02b0-\u02b8\u02e0-\u02e4\u1d00-\u1d22\u1d2c-\u1d6a\u1d9c-\u1dbf\u2070-\u209f\u0274\u0280\u029f]{2,}/g,
+      TAG_NEW = /[\u1d3a\u0274\u1d0e][\u1d49\u1d31\u1d07][\u02b7\u1d42\u1d21]/;
+    for (var i = 0; i < list.length; i++) {
+      var p = list[i], t = p.t;
+      if (!t || !TAG.test(t)) continue;
+      TAG.lastIndex = 0;
+      if (TAG_NEW.test(t)) p.n = 1;
+      var c = t.replace(TAG, '').replace(/\s{2,}/g, ' ').trim();
+      p.t = c || t;
+    }
+  }
   function untangle(list) {
+    if (list && list.length && typeof tidyTitles === 'function') tidyTitles(list);     // (tests take untangle out on its own)
     if (!list || list.length < 2) return list;
     for (var i = 1; i < list.length; i++) if (list[i].s < list[i - 1].s) { list.sort(function (a, b) { return a.s - b.s; }); break; }   // read in the app: no positions to keep
     for (var j = 0; j < list.length - 1; j++) { var a = list[j], b = list[j + 1]; if (a.e > b.s) a.e = Math.max(a.s, b.s); }
