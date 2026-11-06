@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- **Rewind and Fast-forward in the guide jump a screen at a time.**  Two and a half hours per press instead of one programme, and a held button jumps about three times a second instead of racing ahead.  Rewind goes back only as far as the channel's catch-up; Back returns to now.
+- **Jump to…** in the guide's Hold OK menu: tonight, late tonight, tomorrow morning or night, any later day the guide has (then a time of day), and on catch-up channels earlier today and the days before.  It can go on a button too.
+- **The guide says which day it shows.**  The time bar reads "Tomorrow 8:00pm" when it isn't today, and a badge shows where a jump landed.
+- **Held buttons in the guide stay in hand.**  ◀ and ▶ step slowly for the first second so you can stop where you want, then speed up; a held ◀ stops at now instead of opening the groups.  Held ▲ ▼ move three channels at a time after a second and a half.
+- **Each group remembers your place.**  Leave a group and come back, and you're on the same channel, and the same time if you were looking ahead.
+- **Easier to see what's on now.**  A brighter now line, and a bar along the bottom of each programme airing now showing how much has aired.
+- **Colour by category** (Settings > Appearance and start screen, off by default): movies, sports, news, kids and documentaries get a coloured edge, from what your guide says, with a legend.
+- **More in the programme details:** season and episode, NEW for a new episode, REMINDER when one is set, and the kind of programme.  A title too long for its box scrolls across on the programme you're on.
+- **Modern pop-up menus.**  Icons on each row, a line under the title saying what it's about (the guide's says the channel and time), longer notes under the row instead of squeezed beside it, a fade when there's more to scroll, and a short rise as it opens.
+- **A cleaner group column.**  Compact rounded rows (many more fit), the channel count in a pill, icons on Favorites, Recent, All channels, Events, My teams and Movies on now, and the number of groups at the top.
+
 ## 0.6.0 (alpha 92, 2026-11-05)
 
 Pre-release: expect rough edges, and keep a backup before installing.

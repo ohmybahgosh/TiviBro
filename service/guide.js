@@ -49,13 +49,45 @@ function unesc(s) {
     .replace(/&apos;/g, "'").replace(/&#x([0-9a-f]+);/gi, function (a, n) { return String.fromCharCode(parseInt(n, 16)); })
     .replace(/&#(\d+);/g, function (a, n) { return String.fromCharCode(+n); }).replace(/&amp;/g, '&');
 }
-/* The guide says it's a movie: <category>Movie</category> (Film, Feature Film, TV Movie, Movies), with
-   its year from <date> when there is one.  "m" or "m2011" goes after the title in titles.tsv; nothing else. */
+/* What the guide says about a programme, in a few letters after its title in titles.tsv:
+     its kind  m movie (with its year from <date>: "m2011"), s sports, n news, c kids, d documentary,
+               from its <category>, for the guide's colours (Settings > Guide);
+     !         <new/>: a new episode;
+     ~S2 E5    its season and episode, from <episode-num> (onscreen, or xmltv_ns counted from 0).
+   "m2011", "s!~S1 E3" or "" (nothing to say).  app/js/epg.js progFlag() makes the same from the same XML
+   (tests/unit/progflag.test.js) and readFlag() reads it back. */
 var MOVIE_CAT = /<category[^>]*>\s*(?:(?:tv |feature )?(?:movies?|films?)|spielfilm|película|cine|kino)\s*<\/category>/i;
+var KINDS = [
+  ['s', /\b(sports?|football|soccer|basketball|baseball|hockey|tennis|golf|rugby|cricket|boxing|wrestling|mma|ufc|motorsports?|racing|nfl|nba|nhl|mlb|deportes?|f[uú]tbol|futebol|esportes?|calcio)\b/],
+  ['n', /\b(news|noticias|not[ií]cias|noticiero|nachrichten|informativos?|current affairs|weather)\b/],
+  ['c', /\b(children|childrens|child|kids|infantil|infantiles|animation|animated|cartoons?|jeunesse|kinder)\b/],
+  ['d', /\b(documentar(?:y|ies)|documental|document[aá]rio|documentaire|dokumentation|nature|history|science)\b/]
+];
+function episodeOf(body) {
+  var on = /<episode-num[^>]*system="onscreen"[^>]*>\s*([^<]*?)\s*<\/episode-num>/i.exec(body);
+  if (on) {
+    var se = /S\s*(\d{1,4})\s*[.:\-]?\s*E\s*(\d{1,5})/i.exec(on[1]);
+    if (se) return 'S' + +se[1] + ' E' + +se[2];
+    var eo = /^(?:E|Ep\.?\s*)?(\d{1,5})$/i.exec(on[1]);
+    if (eo) return 'E' + +eo[1];
+  }
+  var ns = /<episode-num[^>]*system="xmltv_ns"[^>]*>\s*([^<]*?)\s*<\/episode-num>/i.exec(body);
+  if (ns) {
+    var p = ns[1].split('.'), sn = parseInt(p[0], 10), en = parseInt(p[1], 10);
+    if (!isNaN(en)) return (isNaN(sn) ? '' : 'S' + (sn + 1) + ' ') + 'E' + (en + 1);
+  }
+  return '';
+}
 function movieFlag(body) {
-  if (!MOVIE_CAT.test(body)) return '';
-  var y = /<date[^>]*>\s*((?:19|20)\d\d)\s*<\/date>/.exec(body);
-  return 'm' + (y ? y[1] : '');
+  var k = '', y = null;
+  if (MOVIE_CAT.test(body)) { k = 'm'; y = /<date[^>]*>\s*((?:19|20)\d\d)\s*<\/date>/.exec(body); }
+  else {
+    var cats = '', re = /<category[^>]*>([^<]*)<\/category>/gi, m;
+    while ((m = re.exec(body))) cats += ' ' + m[1].toLowerCase();
+    for (var i = 0; cats && i < KINDS.length; i++) if (KINDS[i][1].test(cats)) { k = KINDS[i][0]; break; }
+  }
+  var ep = episodeOf(body);
+  return k + (y ? y[1] : '') + (/<new\s*\/?>/i.test(body) ? '!' : '') + (ep ? '~' + ep : '');
 }
 function flat(s) { return String(s || '').replace(/[\t\r\n]+/g, ' '); }
 

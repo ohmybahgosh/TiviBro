@@ -237,20 +237,44 @@ body.guide1 .gp .gs{display:none}
 .setup .msg.err{color:var(--air)}
 
 /* modal */
-.modal{position:absolute;top:0;right:0;bottom:0;left:0;z-index:30;background:rgba(7,9,18,.72);display:flex;align-items:center;justify-content:center}
-.modal-box{width:900px;max-height:860px;background:var(--panel);border-radius:18px;padding:36px 28px;display:flex;flex-direction:column}
-.modal-title{font-size:32px;font-weight:700;padding:0 20px 20px}
-.modal-body{overflow:hidden;position:relative;flex:1;min-height:0}
-.mi{padding:16px 22px;border-radius:10px;display:flex;justify-content:space-between;gap:20px}
-.mi.focus{background:var(--accent);color:var(--on-accent)}
+.modal{position:absolute;top:0;right:0;bottom:0;left:0;z-index:30;background:radial-gradient(ellipse at center,rgba(7,9,18,.62),rgba(7,9,18,.86));display:flex;align-items:center;justify-content:center}
+/* A floating card: a lighter top edge, a deep shadow and a short rise as it opens. */
+.modal-box{width:900px;max-height:860px;background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,0) 140px),var(--panel);border-radius:26px;padding:34px 22px 22px;display:flex;flex-direction:column;
+  box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.07),inset 0 1px 0 rgba(255,255,255,.08)}
+.modal-box.enter{animation:menuIn .16s ease-out}
+@keyframes menuIn{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+.modal-title{font-size:32px;font-weight:700;padding:0 22px 4px;line-height:1.2}
+.modal-sub{font-size:22px;color:var(--muted);padding:0 22px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.modal-title+.modal-sub{margin-top:2px}
+.modal-body{overflow:hidden;position:relative;flex:1;min-height:0;margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.07)}
+/* More of the list above or below: a fade at that edge. */
+.modal-body.more-up{-webkit-mask-image:linear-gradient(transparent,#000 46px);mask-image:linear-gradient(transparent,#000 46px)}
+.modal-body.more-down{-webkit-mask-image:linear-gradient(#000 calc(100% - 56px),rgba(0,0,0,.22));mask-image:linear-gradient(#000 calc(100% - 56px),transparent)}
+.modal-body.more-up.more-down{-webkit-mask-image:linear-gradient(transparent,#000 46px,#000 calc(100% - 56px),rgba(0,0,0,.22));mask-image:linear-gradient(transparent,#000 46px,#000 calc(100% - 56px),rgba(0,0,0,.22))}
+.mi{padding:15px 22px;border-radius:14px;display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;transition:background-color .08s}
+.mi span{min-width:0;flex:1;margin-right:20px}
+.mi.focus{background:var(--accent);color:var(--on-accent);box-shadow:0 8px 22px rgba(0,0,0,.35)}
+/* An icon in front of each row, when the menu has them (ui.js MICONS). */
+.mi .mic{flex:none;width:42px;height:42px;margin-right:18px;border-radius:12px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:var(--accent-text)}
+.mi .mic svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.mi .mic svg .fill{fill:currentColor}
+.mi.focus .mic{background:rgba(0,0,0,.14);color:var(--on-accent)}
+.mi.danger span{color:var(--air)}
+.mi.danger.focus{background:var(--air)}
+.mi.danger.focus span{color:#fff}
 /* A heading in a menu: the look of a Settings section heading (.opt.head) */
-.mh{color:var(--muted);font-size:22px;padding:24px 22px 8px}
-.mh:first-child{padding-top:4px}
-.mi small{color:var(--muted);flex:none;max-width:42%;text-align:right}
-.mi span{min-width:0}
+.mh{color:var(--muted);font-size:20px;letter-spacing:.06em;text-transform:uppercase;padding:22px 22px 8px}
+.mh.ind{padding-left:22px}
+.mh:first-child{padding-top:2px}
+.mi small{color:var(--muted);flex:none;max-width:42%;text-align:right;font-size:21px}
+/* A longer note goes under the label (it used to wrap into a narrow column at the right). */
+.mi.two{flex-wrap:wrap}
+.mi.two small{flex:none;width:100%;max-width:none;text-align:left;margin-top:2px;line-height:1.3}
+.mi.two.ind small{padding-left:60px}
 /* Its details under it, full width (subtitle search results, discussion #19: a long release name squeezed
    the downloads and frame rate beside it). */
-.mi.stack{flex-direction:column;gap:4px}
+.mi.stack{flex-direction:column;align-items:stretch}
+.mi.stack small{margin-top:4px}
 .mi.stack small{max-width:none;text-align:left}
 .panel-text{color:var(--text);max-width:1100px;margin:0 0 28px;line-height:1.45;font-size:30px}
 .mi.focus small{color:var(--on-accent-dim)}
@@ -382,8 +406,36 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 /* live progress inside "now" programme cells */
 /* What's on now: a slim progress bar under the times, on a faint track. */
 /* What's on now: the part already aired is tinted with the accent colour, under the text. */
-.gp .gfill{position:absolute;left:0;top:0;bottom:0;background:var(--accent);opacity:.16;pointer-events:none}
-.gp.focus .gfill{background:#000;opacity:.12}
+/* What has aired of what's on now: a light tint, and a solid bar along the bottom (#6 in the ideas). */
+.gp .gfill{position:absolute;left:0;top:0;bottom:0;pointer-events:none;border-radius:8px 0 0 8px}
+.gp .gfill::before{content:'';position:absolute;left:0;top:0;right:0;bottom:0;background:var(--accent);opacity:.14;border-radius:inherit}
+.gp .gfill::after{content:'';position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--accent);border-radius:0 2px 2px 0;opacity:.95}
+.gp.focus .gfill::before{background:#000;opacity:.12}
+.gp.focus .gfill::after{background:var(--on-accent);opacity:.55}
+/* The now line: brighter, with a soft glow, and its marker in the time bar. */
+.gnow{width:3px!important;margin-left:-1.5px!important;opacity:.9!important;box-shadow:0 0 10px var(--accent)}
+.gnowh{border-left-width:9px!important;border-right-width:9px!important;border-top-width:11px!important;margin-left:-9px!important}
+/* The day in the time bar when it isn't today ("Tomorrow 8:00pm"), and at midnight. */
+#guideTimes .gday{font-weight:700;color:var(--accent-text);margin-right:10px}
+/* Where a jump landed (Rewind, Fast-forward, Jump to…), for a moment. */
+.gjump{position:absolute;left:60px;top:352px;z-index:6;padding:6px 22px;border-radius:24px;background:var(--accent);color:var(--on-accent);font-size:24px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.5);pointer-events:none;white-space:pre}
+/* A long title on the focused programme scrolls across (views.js progMarquee). */
+.gp .gt b{font-weight:inherit}
+.gp .gt.mq{text-overflow:initial}
+.gp .gt.mq b{display:inline-block}
+/* Colour by category (Settings > Guide): an edge in the programme's colour, and the legend in the time bar. */
+.gp.k-m{box-shadow:inset 6px 0 0 #b48cff}.gp.k-s{box-shadow:inset 6px 0 0 #3ddc97}.gp.k-n{box-shadow:inset 6px 0 0 #f2b33d}.gp.k-c{box-shadow:inset 6px 0 0 #ff7eb6}.gp.k-d{box-shadow:inset 6px 0 0 #33c9e1}
+.gp.k-m,.gp.k-s,.gp.k-n,.gp.k-c,.gp.k-d{padding-left:22px}
+.glegend{position:absolute;right:56px;top:300px;z-index:2;font-size:19px;color:var(--muted);white-space:nowrap}
+.glegend em{font-style:normal;margin-left:20px}
+.glegend em::before{content:'';display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:0}
+.glegend .k-m::before{background:#b48cff}.glegend .k-s::before{background:#3ddc97}.glegend .k-n::before{background:#f2b33d}.glegend .k-c::before{background:#ff7eb6}.glegend .k-d::before{background:#33c9e1}
+/* Badges in the details above the guide: a new episode, a reminder, the kind, the episode. */
+.gd-badge.new{background:#3b2a12;color:#ffc56b}
+.gd-badge.rem{background:var(--raised);color:var(--accent-text)}
+.gd-badge.kind{background:var(--raised);color:var(--muted)}
+.gd-badge.kind.k-s{color:#3ddc97}.gd-badge.kind.k-n{color:#f2b33d}.gd-badge.kind.k-c{color:#ff7eb6}.gd-badge.kind.k-d{color:#33c9e1}
+.gd-ep{display:inline-block;margin-right:14px;color:var(--text);font-weight:600}
 .gp .gt,.gp .gs{position:relative}
 .gp .gcu{color:#7fe0ae}
 .gp.focus .gcu{color:#1d5c3c}
@@ -396,6 +448,19 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 #viewGuide.groups-open #guideBody,#viewGuide.groups-open #guideTimes{opacity:.4;transition:opacity .15s}
 body:not(.nav-hidden) #viewGuide .guide-groups{left:96px}
 .guide-groups .vlist{flex:1;position:relative}
+/* The group column: a raised card with compact rounded rows, a small icon on TiviBro's own groups and
+   each group's channel count in a pill.  The list fades out at the bottom when there are more. */
+#viewGuide.groups-open .guide-groups{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0) 160px),var(--panel);border-right:2px solid var(--accent);border-radius:0 22px 22px 0;padding:0 10px 10px 8px}
+.guide-groups .col-title{height:auto;padding:16px 16px 12px;font-size:19px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.guide-groups::after{content:'';position:absolute;left:0;right:12px;bottom:0;height:56px;background:linear-gradient(transparent,var(--panel));border-radius:0 0 22px 0;pointer-events:none}
+#guideGroupList .row{left:4px;right:4px;border-radius:14px;padding:0 14px 0 16px;font-size:25px}
+#guideGroupList .row .gic{flex:none;width:36px;height:36px;margin-right:2px;border-radius:10px;background:rgba(255,255,255,.06);display:flex;align-items:center;justify-content:center;color:var(--accent-text);font-style:normal}
+#guideGroupList .row .gic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+#guideGroupList .row .tag{min-width:46px;padding:3px 12px;border-radius:20px;background:rgba(255,255,255,.07);text-align:center;font-size:18px;font-variant-numeric:tabular-nums;color:var(--muted)}
+#guideGroupList.active .row.sel{box-shadow:0 8px 22px rgba(0,0,0,.4)}
+#guideGroupList.active .row.sel .gic{background:rgba(0,0,0,.14);color:var(--on-accent)}
+#guideGroupList.active .row.sel .tag{background:rgba(0,0,0,.16);color:var(--on-accent)}
+#guideGroupList .row.ghead{font-size:17px;letter-spacing:.08em;color:var(--accent-text);border-bottom:1px solid rgba(255,255,255,.08);border-radius:0;padding-bottom:8px}
 .guide-group{color:var(--muted)}
 
 /* ---------- quick panel (OK in fullscreen) ---------- */

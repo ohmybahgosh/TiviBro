@@ -202,7 +202,12 @@ function xmltv() {
     if (!sched.has(s.stream_id)) return;
     const id = s.epg_channel_id || s.base.replace(/\W+/g, '') + '.guide';
     if (done.has(id)) return; done.add(id);
-    sched.get(s.stream_id).forEach(p => o += `<programme start="${xd(p.s)}" stop="${xd(p.e)}" channel="${esc(id)}"><title>${esc(p.t)}</title><desc>${esc(p.d)}</desc></programme>\n`);
+    // What a real guide says about its programmes: a category by kind of channel, and for the
+    // entertainment channels an episode number with every third one new (the guide's colours and badges).
+    const CAT = { news: 'News', sports: 'Sports', movies: 'Movie', kids: 'Children', docs: 'Documentary', ent: 'Series' };
+    sched.get(s.stream_id).forEach((p, i) => o += `<programme start="${xd(p.s)}" stop="${xd(p.e)}" channel="${esc(id)}"><title>${esc(p.t)}</title><desc>${esc(p.d)}</desc>` +
+      (CAT[s.clip] ? `<category lang="en">${CAT[s.clip]}</category>` : '') +
+      (s.clip === 'ent' ? `<episode-num system="onscreen">S${1 + (i >> 3)}E${1 + (i % 8)}</episode-num>` + (i % 3 === 0 ? '<new />' : '') : '') + '</programme>\n');
   });
   return o + '</tv>\n';
 }

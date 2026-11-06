@@ -60,6 +60,44 @@ var Epg = (function () {
       '<i style="width:' + (pct >= 0 ? pct : 100) + '%"' + (pct < 0 ? ' class="indet"' : '') + '></i>';
   }
 
+  /* What the guide says about a programme, as a few letters (the same as service/guide.js movieFlag, which
+     the helper writes into titles.tsv): m movie with its year ("m2011"), s sports, n news, c kids,
+     d documentary, ! new, ~S2 E5 season and episode.  Made in the worker (injected as source) and read
+     back into the programme by readFlag: mv, y, k, n, ep. */
+  function progFlag(body) {
+    var k = '', y = null;
+    if (/<category[^>]*>\s*(?:(?:tv |feature )?(?:movies?|films?)|spielfilm|película|cine|kino)\s*<\/category>/i.test(body)) { k = 'm'; y = /<date[^>]*>\s*((?:19|20)\d\d)\s*<\/date>/.exec(body); }
+    else {
+      var cats = '', re = /<category[^>]*>([^<]*)<\/category>/gi, m;
+      while ((m = re.exec(body))) cats += ' ' + m[1].toLowerCase();
+      if (cats) {
+        if (/\b(sports?|football|soccer|basketball|baseball|hockey|tennis|golf|rugby|cricket|boxing|wrestling|mma|ufc|motorsports?|racing|nfl|nba|nhl|mlb|deportes?|f[uú]tbol|futebol|esportes?|calcio)\b/.test(cats)) k = 's';
+        else if (/\b(news|noticias|not[ií]cias|noticiero|nachrichten|informativos?|current affairs|weather)\b/.test(cats)) k = 'n';
+        else if (/\b(children|childrens|child|kids|infantil|infantiles|animation|animated|cartoons?|jeunesse|kinder)\b/.test(cats)) k = 'c';
+        else if (/\b(documentar(?:y|ies)|documental|document[aá]rio|documentaire|dokumentation|nature|history|science)\b/.test(cats)) k = 'd';
+      }
+    }
+    var ep = '', on = /<episode-num[^>]*system="onscreen"[^>]*>\s*([^<]*?)\s*<\/episode-num>/i.exec(body);
+    if (on) {
+      var se = /S\s*(\d{1,4})\s*[.:\-]?\s*E\s*(\d{1,5})/i.exec(on[1]), eo = /^(?:E|Ep\.?\s*)?(\d{1,5})$/i.exec(on[1]);
+      ep = se ? 'S' + +se[1] + ' E' + +se[2] : eo ? 'E' + +eo[1] : '';
+    }
+    if (!ep) {
+      var ns = /<episode-num[^>]*system="xmltv_ns"[^>]*>\s*([^<]*?)\s*<\/episode-num>/i.exec(body);
+      if (ns) { var pp = ns[1].split('.'), sn = parseInt(pp[0], 10), en = parseInt(pp[1], 10); if (!isNaN(en)) ep = (isNaN(sn) ? '' : 'S' + (sn + 1) + ' ') + 'E' + (en + 1); }
+    }
+    return k + (y ? y[1] : '') + (/<new\s*\/?>/i.test(body) ? '!' : '') + (ep ? '~' + ep : '');
+  }
+  function readFlag(f, pg) {
+    var m = /^([mscnd]?)(\d{4})?(!?)(?:~(.*))?$/.exec(f || '');
+    if (!m) return pg;
+    if (m[1] === 'm') pg.mv = 1; else if (m[1]) pg.k = m[1];
+    if (m[2]) pg.y = m[2];
+    if (m[3]) pg.n = 1;
+    if (m[4]) pg.ep = m[4];
+    return pg;
+  }
+
   // Same normaliser in the page and in the worker (injected as source).
   function norm(s) {
     return String(s || '').toLowerCase()
@@ -233,8 +271,6 @@ var Epg = (function () {
       function one(src, i) {
         var got = {}, buf = '', n = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {};
         var RE = /<programme\b([^>]*)>([\s\S]*?)<\/programme>/g;
-        // The guide says Movie (as service/guide.js movieFlag): for Movies on now (movies.js).
-        var MOVIE_CAT = /<category[^>]*>\s*(?:(?:tv |feature )?(?:movies?|films?)|spielfilm|película|cine|kino)\s*<\/category>/i;
         var CH = /<channel\b[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/channel>/g;
         function eat(final) {
           CH.lastIndex = 0;
@@ -288,7 +324,7 @@ var Epg = (function () {
             used += 60 + tt.length + dd.length;
             got[ch] = 1;
             var pg = { s: s, e: e, t: tt, d: dd };
-            if (MOVIE_CAT.test(m[2])) { pg.mv = 1; var yr = /<date[^>]*>\s*((?:19|20)\d\d)\s*<\/date>/.exec(m[2]); if (yr) pg.y = yr[1]; }
+            var fl = self.progFlag(m[2]); if (fl) self.readFlag(fl, pg);
             (out[ch] || (out[ch] = [])).push(pg);
             n++; total++;
           }
@@ -497,7 +533,7 @@ var Epg = (function () {
           var id = text.slice(i, a), t = text.slice(c + 1, te), one = seen.get(t);
           if (one === undefined) { seen.set(t, t); one = t; }              // a title repeated all week is kept once
           var pg = { s: +text.slice(a + 1, b), e: +text.slice(b + 1, c), t: one };
-          if (te < j && text.charAt(te + 1) === 'm') { pg.mv = 1; if (j - te > 2) pg.y = text.slice(te + 2, j); }
+          if (te < j) readFlag(text.slice(te + 1, j), pg);
           (map[id] || (map[id] = [])).push(pg);
         }
         i = j + 1;
@@ -676,7 +712,7 @@ var Epg = (function () {
       descMax: (function () { var v = Caps.probe().webos; return v && v <= 5 ? 250 : 400; })(), budget: budget(g && g.safe) * (mine ? 0.5 : 1) };      // another playlist's guide: half, beside the first's
     if (pub) { msg.pub = true; msg.pk = pub.pk; msg.pubWant = pub.want; }
     var keysFn = typeof PubEpg !== 'undefined' ? PubEpg.keys : function () { return { keys: [], country: '' }; };
-    var code = 'self.norm = ' + norm.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\n(' + workerMain.toString() + ')();';
+    var code = 'self.norm = ' + norm.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\nself.progFlag = ' + progFlag.toString() + ';\nself.readFlag = ' + readFlag.toString() + ';\n(' + workerMain.toString() + ')();';
     var started = Date.now();
     function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; if (g) g.host(p.host); setProgress(p); }
     var k0 = msg.sources[0] ? msg.sources[0].known : 0;
@@ -936,7 +972,7 @@ var Epg = (function () {
     emit(null);
   }
 
-  return {
+  return { _flag: { progFlag: progFlag, readFlag: readFlag },
     untangle: untangle, pubPick: function (miss) { return pubPick(miss); }, init: init, request: request, nowNext: nowNext, search: search, during: during, findDesc: findDesc, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc,
     get inHelper() { return hMode; },
     // A channel's guide id as its own playlist's guide names it (without an alias's playlist id).

@@ -152,10 +152,16 @@ Buttons can be remapped under **Settings > Remote and buttons**, including keys 
 The guide is the home screen.  The channel you are on plays in the window at the top left, with the programme details beside it.
 
 - **OK** on a channel previews it in the window.  **OK again** (or **▶ Play**) goes fullscreen.  If you prefer one press, set **Settings > Appearance and start screen > OK on a channel in the Guide** to *Fullscreen right away*.
-- **▶** moves forward in time; **◀** moves back, and on "now" it opens the groups.
+- **▶** moves forward in time; **◀** moves back, and on "now" it opens the groups.  Held, they step slowly for the first second so you can stop where you want, then speed up; a held **◀** stops at now instead of opening the groups.  Held **▲ ▼** speed up too, three channels at a time after a second and a half.
+- **⏩ Fast forward** and **⏪ Rewind** jump a whole screen of the guide (two and a half hours) at a time.  Rewind goes back only as far as the channel's catch-up.  **Back** returns to now.
+- When the guide shows another day, the time bar says which ("Tomorrow 8:00pm"), and the day shows at midnight.
+- Each group remembers where you were: leave it and come back, and you are on the same channel (and the same time, if you were looking ahead).
 - Programmes you can replay carry a **↺** catch-up mark.
 - **OK** on a future programme sets a reminder; on a past catch-up programme it replays it.
-- **Hold OK** opens: Watch fullscreen, Play in the window, Earlier programmes, Remind me, Jump to now, and Channel options (favorite, copy to group, hide, rename).
+- **Hold OK** opens: Watch fullscreen, Play in the window, Earlier programmes, Remind me, **Jump to…**, Jump to now, and Channel options (favorite, copy to group, hide, rename).  The channel and time are under its title.
+- **Jump to…** goes straight to tonight, late tonight, tomorrow morning or tomorrow night, or any later day the guide has (then a time: morning, midday, afternoon, evening, prime time or late night).  On a channel with catch-up it also lists earlier today and the days before.  It can be put on a button too (Settings > Remote and buttons).
+- The details above the guide show the season and episode, and **NEW**, **REMINDER** and the kind of programme (Sports, News, Kids, Documentary) when your guide says so.  A title too long for its box scrolls across on the programme you are on.
+- **Colour by category** (Settings > Appearance and start screen) gives movies, sports, news, kids and documentaries a coloured edge in the guide, with what each colour means at the top right.
 - **No guide for this channel** (in **Hold OK** on a channel with no guide) is for a channel that will never have one: a radio stream, a camera, an event slot.  It stops saying "No guide information" and guide matching and public fill-in leave it out.  **Look for a guide again**, in the same place, undoes it, and **Settings > Guide > Channels with no guide wanted** lists them all.
 
 <p align="center"><a href="media/guide.mp4"><img src="media/guide.gif" width="100%" alt="Moving around the guide"></a></p>
@@ -921,12 +927,12 @@ The buttons and their defaults:
 | **Blue** | Audio track | Settings | Settings |
 | **Play / Pause** | Play / pause | Watch fullscreen | Nothing |
 | **Stop** | Leave fullscreen | Stop the window | Nothing |
-| **⏪ Rewind** | Rewind (catch-up), else last channel | (fixed: earlier) | Nothing |
-| **⏩ Fast forward** | Nothing | (fixed: later) | Nothing |
+| **⏪ Rewind** | Rewind (catch-up), else last channel | (fixed: a screen earlier) | Nothing |
+| **⏩ Fast forward** | Nothing | (fixed: a screen later) | Nothing |
 | **Info** | Show info panel | Options menu | Options menu |
 | **Back** | (fixed: leaves fullscreen) | (fixed) | (fixed) |
 
-Actions you can give a button in the player: nothing, quick menu, channel guide over the video, info panel, options menu, next, previous or last channel, rewind, watch from start, play/pause, TV guide, search, Settings, leave fullscreen, add or remove favorite, open Favorites, open Recent channels, change the aspect, audio track, closed captions on or off, sleep timer and reconnect.  In the guide: nothing, watch fullscreen (the channel in the window, else the highlighted one), options menu, groups, jump to now, last channel, stop the window, Channels screen, search, Settings, the web editor, favorite, open Favorites or Recent channels, Movies and Shows.  On the Channels screen: nothing, options menu, last channel, TV guide, search, Settings, favorite, open Favorites, open Recent channels, Movies, Shows and play/pause.  Catch-up and movie playback keep fixed seek buttons so they always behave the same.
+Actions you can give a button in the player: nothing, quick menu, channel guide over the video, info panel, options menu, next, previous or last channel, rewind, watch from start, play/pause, TV guide, search, Settings, leave fullscreen, add or remove favorite, open Favorites, open Recent channels, change the aspect, audio track, closed captions on or off, sleep timer and reconnect.  In the guide: nothing, watch fullscreen (the channel in the window, else the highlighted one), options menu, groups, jump to now, jump to a day and time, last channel, stop the window, Channels screen, search, Settings, the web editor, favorite, open Favorites or Recent channels, Movies and Shows.  On the Channels screen: nothing, options menu, last channel, TV guide, search, Settings, favorite, open Favorites, open Recent channels, Movies, Shows and play/pause.  Catch-up and movie playback keep fixed seek buttons so they always behave the same.
 
 ### Settings: Appearance and start screen
 
@@ -947,6 +953,7 @@ Which screen TiviBro opens on, how the guide looks, colours, sizes and what's on
 | **Two-line programmes** | **On** · Off | Each programme's time under its title in the grid. |
 | **Dim past programmes** | **On** · Off | Programmes that already ended look dimmer. |
 | **Mark what's on now** | **Tint what has aired** · Colour and tint · Off | How the guide shows programmes airing right now: the part already aired tinted in your accent colour, a coloured cell with that tint, or nothing.  The time of day is a thin line in the accent colour with a marker in the time bar. |
+| **Colour by category** | On · **Off** | A coloured edge on movies, sports, news, kids and documentaries, from what your guide says each programme is, with what each colour means at the top right.  Guides that don't say leave programmes plain. |
 | **Channel names in the guide** | **On** · Off | Off shows logos only, leaving more room for programmes. |
 | **Two-line channel names** | On · **Off** | Long channel names wrap instead of being cut off. |
 | **Mark catch-up channels** | **On** · Off | Shows **↺** on channels and programmes you can replay. |

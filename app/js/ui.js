@@ -144,21 +144,72 @@ var UI = (function () {
     mTop = U.clamp(mTop, Math.max(0, mSel - M_VIS + 1), mSel > 0 && mItems[mSel - 1].head ? mSel - 1 : mSel);
     fillMenu();
     // 2 px of slack: sizes are rounded to whole pixels, so a row that fits exactly can read 1 px over.
-    var h = mBody.clientHeight + 2, f = mBody.children[mSel - mTop];
-    if (!h || !f || mBody.scrollHeight <= h) return;           // everything fits: nothing to do
-    while (mTop < mSel && f.offsetTop + f.offsetHeight > h) { mTop++; fillMenu(); f = mBody.children[mSel - mTop]; }
-    for (var k = mBody.children.length - 1; k > 0; k--) {
-      var e = mBody.children[k];
-      if (e === f || e.offsetTop + e.offsetHeight <= h) break;
-      e.style.visibility = 'hidden';
+    var h = mBody.clientHeight + 2, f = mBody.children[mSel - mTop], cut = false;
+    if (h && f && mBody.scrollHeight > h) {
+      while (mTop < mSel && f.offsetTop + f.offsetHeight > h) { mTop++; fillMenu(); f = mBody.children[mSel - mTop]; }
+      // A row cut off at the bottom peeks through the fade there, so it's clear there's more; any after it
+      // are left out.
+      var peek = true;
+      for (var k = mBody.children.length - 1; k > 0; k--) {
+        var e = mBody.children[k];
+        if (e === f || e.offsetTop + e.offsetHeight <= h) break;
+        cut = true;
+        if (e.offsetTop < h - 24 && peek) { peek = false; continue; }
+        e.style.visibility = 'hidden';
+      }
     }
+    // Fades at the top and bottom when there is more of the list that way.
+    var shown = 0; for (var c = 0; c < mBody.children.length; c++) if (mBody.children[c].style.visibility !== 'hidden' && mBody.children[c].offsetTop + mBody.children[c].offsetHeight <= h) shown++;
+    mBody.classList.toggle('more-up', mTop > 0);
+    mBody.classList.toggle('more-down', cut || mTop + shown < mItems.length);
   }
+  /* Line icons for menu rows ({ icon: 'play' }), drawn like the side menu's: 24 x 24, stroked. */
+  var MICONS = {
+    play: '<path d="M8 5.5v13l10.5-6.5z"/>',
+    full: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
+    window: '<rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="6" rx="1"/>',
+    start: '<path d="M6 5v14M19 5l-9 7 9 7z"/>',
+    replay: '<path d="M4 12a8 8 0 1 0 2.3-5.7"/><path d="M4 4v5h5"/>',
+    history: '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+    bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+    belloff: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0M4 4l16 16"/>',
+    search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+    watch: '<path d="M6 3.5h12v17l-6-4-6 4z"/>',
+    jump: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13.5v3.5M10.3 15.3l1.7 1.7 1.7-1.7"/>',
+    now: '<circle cx="12" cy="12" r="8.5"/><circle class="fill" cx="12" cy="12" r="3"/>',
+    stop: '<rect x="6" y="6" width="12" height="12" rx="2"/>',
+    move: '<path d="M12 3v18M8 7l4-4 4 4M8 17l4 4 4-4"/>',
+    eye: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+    more: '<circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/>',
+    star: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.5 9.7l5.9-.9z"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    hide: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><path d="M4 4l16 16"/>',
+    copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5.5A1.5 1.5 0 0 0 14.5 4h-9A1.5 1.5 0 0 0 4 5.5v9A1.5 1.5 0 0 0 5.5 16H8"/>',
+    lock: '<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+    sort: '<path d="M4 6h10M4 12h7M4 18h4M18 5v14M15 16l3 3 3-3"/>',
+    list: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    trash: '<path d="M4 7h16M9.5 7V4.5h5V7M6 7l1 13h10l1-13"/>',
+    day: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>',
+    moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+    back: '<path d="M15 5l-7 7 7 7"/>',
+    trophy: '<path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4.5a2.5 2.5 0 0 0 2.6 4M17 6h2.5a2.5 2.5 0 0 1-2.6 4M12 14v3.5M8.5 20.5h7M9.5 17.5h5v3h-5z"/>',
+    film: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+    sparkle: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M18.5 16l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z"/>',
+    folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+    grid: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'
+  };
   function fillMenu() {
     mBody.innerHTML = '';
+    var icons = mItems.some(function (x) { return x.icon; });
     for (var i = mTop; i < Math.min(mItems.length, mTop + M_VIS); i++) {
       var it = mItems[i];
-      if (it.head) { mBody.appendChild(U.el('div', 'mh', it.label)); continue; }
-      var d = U.el('div', 'mi' + (it.stack ? ' stack' : '') + (i === mSel ? ' focus' : ''));
+      if (it.head) { mBody.appendChild(U.el('div', 'mh' + (icons ? ' ind' : ''), it.label)); continue; }
+      // A short note sits at the right ("on", "catch-up"); a longer one goes under the label instead of
+      // wrapping into a narrow column there.
+      var two = it.sub && (it.stack || String(it.sub).length > 24);
+      var d = U.el('div', 'mi' + (it.stack ? ' stack' : '') + (two ? ' two' : '') + (icons ? ' ind' : '') + (it.danger ? ' danger' : '') + (i === mSel ? ' focus' : ''));
+      if (icons) { var ic = U.el('i', 'mic'); if (it.icon && MICONS[it.icon]) ic.innerHTML = '<svg viewBox="0 0 24 24">' + MICONS[it.icon] + '</svg>'; d.appendChild(ic); }
       d.appendChild(U.el('span', '', it.label));
       if (it.sub) d.appendChild(U.el('small', '', it.sub));
       (function (idx) {
@@ -169,7 +220,17 @@ var UI = (function () {
     }
   }
 
-  function menu(title, items, onBack) {
+  /* A line under the title (opts.sub: what the menu is about, like the channel and time) and the box
+     opening with a short rise. */
+  var mSub = null;
+  function heading(title, sub) {
+    mTitle.textContent = title;
+    if (!mSub) { mSub = U.el('div', 'modal-sub'); mTitle.parentNode.insertBefore(mSub, mTitle.nextSibling); }
+    mSub.textContent = sub || '';
+    mSub.style.display = sub ? '' : 'none';
+    if (modal.classList.contains('hidden')) { mBox.classList.remove('enter'); void mBox.offsetWidth; mBox.classList.add('enter'); }
+  }
+  function menu(title, items, onBack, opts) {
     mItems = items.filter(Boolean); mTop = 0;
     if (!mItems.length) mItems = [{ label: 'Nothing to choose from' }];      // an empty list is never a dead end
     var rows = [];
@@ -177,7 +238,7 @@ var UI = (function () {
     if (!rows.length) { mItems.push({ label: 'Nothing to choose from' }); rows.push(mItems.length - 1); }
     mSel = mItems.findIndex(function (x) { return x.current && !x.head; });
     if (mSel < 0) mSel = rows[0];
-    mTitle.textContent = title;
+    heading(title, opts && opts.sub);
     mBox.classList.remove('panel');
     modal.classList.remove('hidden');
     drawMenu();
@@ -193,7 +254,7 @@ var UI = (function () {
   }
 
   function prompt(title, value, done, hint, secret, okLabel) {
-    mTitle.textContent = title;
+    heading(title);
     mBody.innerHTML = '';
     var inp = U.el('input');
     inp.type = secret ? 'password' : 'text'; inp.value = value || ''; inp.spellcheck = false;
@@ -222,7 +283,7 @@ var UI = (function () {
 
   // Four digit PIN pad.  Number keys type; Up/Down change a digit for remotes without numbers.
   function pin(title, done, cancel) {
-    mTitle.textContent = title;
+    heading(title);
     mBody.innerHTML = '';
     var row = U.el('div', 'pinrow'), boxes = [], digits = ['', '', '', ''], pos = 0;
     for (var i = 0; i < 4; i++) { var b = U.el('span', 'pinbox'); boxes.push(b); row.appendChild(b); }
@@ -247,8 +308,8 @@ var UI = (function () {
   /* A box with your own content and a row of buttons (◀ ▶ between them, OK presses one).
      buttons: [{ label, action }]; the first is focused.  Back closes it and calls onBack. */
   var mBox = modal.querySelector('.modal-box');
-  function panel(title, body, buttons, onBack) {
-    mTitle.textContent = title;
+  function panel(title, body, buttons, onBack, opts) {
+    heading(title, opts && opts.sub);
     mBody.innerHTML = '';
     mBox.classList.add('wide');
     // Long text gives way to the buttons, which always show whole at the bottom (discussion #36).
@@ -310,6 +371,7 @@ var UI = (function () {
     // A menu that shows live values (Stream info) redraws itself while it is the one open.
     menuOpen: function (title) { return !!modalH && !modal.classList.contains('hidden') && mTitle.textContent === title; },
     redrawMenu: function () { if (modalH) drawMenu(); },
+    icon: function (n) { return MICONS[n] ? '<svg viewBox="0 0 24 24">' + MICONS[n] + '</svg>' : ''; },
     menu: menu, prompt: prompt, confirm: confirm, pin: pin, clock: clock, panel: panel, set onClose(f) { onClose = f; },
     captureNext: function (fn) { capture = fn; }, close: close, hints: hints
   };

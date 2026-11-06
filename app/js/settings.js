@@ -822,6 +822,8 @@ var Settings = (function () {
     out.push(toggle('Two-line programmes', 'Shows each programme\'s time under its title in the grid.', function () { return s.guideLines !== 1; }, function (v) { s.guideLines = v ? 2 : 1; Views.applyLook(); save(); }));
     out.push(toggle('Dim past programmes', '', function () { return s.dimPast; }, function (v) { s.dimPast = v; Views.applyLook(); save(); }));
     out.push(choice('Mark what\'s on now', 'How the guide shows programmes airing right now.', ['fill', 'color', 'off'], ['Tint what has aired', 'Colour and tint', 'Off'], function () { return s.nowStyle || 'fill'; }, function (v) { s.nowStyle = v; Views.applyLook(); save(); }));
+    out.push(toggle('Colour by category', 'A coloured edge on movies, sports, news, kids and documentaries, from what your guide says each programme is.  Guides that don\'t say leave programmes plain.',
+      function () { return !!s.guideTint; }, function (v) { s.guideTint = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));
     out.push(toggle('Channel names in the guide', 'Off shows logos only, leaving more room.', function () { return s.guideNames !== false; }, function (v) { s.guideNames = v; Views.applyLook(); save(); }));
     out.push(toggle('Two-line channel names', 'Long names wrap instead of being cut off.', function () { return !!s.twoLineNames; }, function (v) { s.twoLineNames = v; Views.applyLook(); save(); }));
     out.push(toggle('Mark catch-up channels', 'Shows ↺ on channels and programmes you can replay.', function () { return s.showCatchupMark !== false; }, function (v) { s.showCatchupMark = v; save(); relist(); }));

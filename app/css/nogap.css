@@ -11,7 +11,6 @@
 .nogap .opt > * + *{margin-left:24px}
 .nogap .prev-table div > * + *{margin-left:18px}
 .nogap .field > * + *{margin-left:24px}
-.nogap .mi > * + *{margin-left:20px}
 .nogap .pinrow > * + *{margin-left:24px}
 .nogap .osd-keys > *{margin-right:34px;margin-bottom:12px}
 .nogap .osd-keys{margin-bottom:-12px}

@@ -89,6 +89,26 @@ var seq = [
       });
     }));
   },
+  // The guide's Hold OK menu (icons, the channel and time under its title) and Jump to…, on this engine.
+  function guideMenu(next) {
+    js('var l = Guide.__list(); Guide.open(Views.group, l[1] && l[1].k); UI.press("hold"); return true;', val(function () {
+      setTimeout(function () {
+        js('return { icons: document.querySelectorAll("#modal .mi .mic svg").length, sub: (document.querySelector("#modal .modal-sub") || {}).textContent || "", w: (document.querySelector("#modal .mi .mic svg") || { getBoundingClientRect: function () { return {}; } }).getBoundingClientRect().width };', val(function (m) {
+          step('guide menu: icons and the channel and time under the title', m && m.icons >= 4 && m.w > 10 && /·/.test(m.sub), JSON.stringify(m));
+          shot('2b-guide-menu', function () {
+            js('var x = [].slice.call(document.querySelectorAll("#modal .mi")).filter(function (y) { return /^Jump to/.test(y.textContent); })[0]; if (x) x.click(); return !!x;', val(function () {
+              setTimeout(function () {
+                js('return { title: document.getElementById("modalTitle").textContent, rows: document.querySelectorAll("#modal .mi").length };', val(function (j) {
+                  step('guide menu: Jump to… opens its days and times', j && j.title === 'Jump to' && j.rows >= 2, JSON.stringify(j));
+                  shot('2c-jump-to', function () { js('UI.close(); return true;', val(function () { next(); })); });
+                }));
+              }, 500);
+            }));
+          });
+        }));
+      }, 1200);
+    }));
+  },
   function preview(next) {
     js('var c = Library.find("x1") || Library.all && Library.all()[0]; Views.startChannel(c, false); return c && c.n;', val(function (n) {
       R.previewChannel = n;

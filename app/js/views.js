@@ -1803,10 +1803,13 @@ var Guide = (function () {
   var ROW = 100, VIS = 0, WIN = 2.5 * 3600e3, PXW = 0, CHW = 470, MINCELL = 220;      // narrowest a programme is drawn (px)
   var list = [], gid = null, loaded = null, sel = 0, top = 0, t0 = 0, focusT = 0, rows = [], zone = 'groups', groupsVL = null;
   var moving = null;              // the channel being moved up or down its group (Hold OK > Move…)
+  var jumpChip = null, jumpChipT = 0;
+  var places = {};                // each group's channel and time when you left it, for coming back (this session)
+  var held = { a: '', since: 0, last: 0 }, stepAt = 0, jumpAt = 0;    // a button held down (keys())
   var vis = null;                 // Show or hide channels, right in the list: { gid, was: { k: shown }, on: { k: shown } }
 
   /* Guide row size (Settings > Guide): taller rows with bigger text, for smaller TVs and across the room. */
-  var ROW_SIZES = { m: 100, l: 112, xl: 124 }, built = false;
+  var ROW_SIZES = { m: 100, l: 112, xl: 124 }, GROUP_ROWS = { m: 70, l: 78, xl: 86 }, built = false;
   function build() {
     ROW = ROW_SIZES[Store.settings.guideRows] || 100;
     VIS = Math.max(3, Math.floor(body.clientHeight / ROW) || 6);
@@ -1830,8 +1833,12 @@ var Guide = (function () {
     }
     var nowLine = U.el('div', 'gnow'); nowLine.id = 'gnow'; body.appendChild(nowLine);
     if (built) return;
+    jumpChip = U.el('div', 'gjump hidden'); view.appendChild(jumpChip);
     built = true;
-    groupsVL = new VList($('guideGroupList'), { render: renderGroupRow, onSel: onGroupSel, empty: 'No groups', visible: 7, rowH: ROW,
+    // The groups have rows of their own height: compact, so many more show than channels do.
+    var gh = GROUP_ROWS[Store.settings.guideRows] || 70;
+    $('guideGroups').style.setProperty('--row', (gh - 8) + 'px');
+    groupsVL = new VList($('guideGroupList'), { render: renderGroupRow, onSel: onGroupSel, empty: 'No groups', visible: 10, rowH: gh,
       onHover: function () { if (zone !== 'groups') setZone('groups'); }, onClick: function () { enterGrid(); } });
     pointerSetup();
     ghead.addEventListener('click', function () { if (mine()) setZone('groups'); });
@@ -1849,6 +1856,7 @@ var Guide = (function () {
       var want = document.body.classList.contains('noguidenames') ? 260 : 470;
       $('guideGroupList').parentNode.style.width = Math.max(want, 420) + 'px';
       var gs = L.groups(true), i = gs.findIndex(function (g) { return g.id === gid; });
+      $('guideGroups').querySelector('.col-title').textContent = 'Groups   ' + gs.filter(function (g) { return !g.head; }).length;
       groupsVL.setItems(gs, Math.max(0, i));
       groupsVL.measure();                // built while the panel was hidden: count the rows that really fit
       groupsVL.setActive(true);
@@ -1861,10 +1869,17 @@ var Guide = (function () {
   function enterGrid() { if (loaded !== gid) load(gid, null); setZone('grid'); draw(); }
   function leave() { if (vis) endVis(true); document.body.classList.remove('nav-hidden'); view.classList.remove('groups-open'); }
 
+  // The groups TiviBro makes itself get a small icon in front; the provider's groups are names only.
+  var GROUP_ICONS = { c_fav: 'star', recent: 'history', all: 'grid', events: 'day', teams: 'trophy', moviesnow: 'film', 'new': 'sparkle' };
   function renderGroupRow(row, g) {
-    if (!row._n) { var nm = U.el('span', 'name'); row._n = U.el('i'); nm.appendChild(row._n); row._t = U.el('span', 'tag'); var b = U.el('div', 'txt'); b.appendChild(nm); row.appendChild(b); row.appendChild(row._t); }
+    if (!row._n) {
+      row._ic = U.el('i', 'gic'); var nm = U.el('span', 'name'); row._n = U.el('i'); nm.appendChild(row._n); row._t = U.el('span', 'tag');
+      var b = U.el('div', 'txt'); b.appendChild(nm); row.appendChild(row._ic); row.appendChild(b); row.appendChild(row._t);
+    }
     row.classList.toggle('ghead', !!g.head);
     row._n.textContent = g.name;
+    var ic = g.head ? '' : GROUP_ICONS[g.id] || (g.custom ? 'folder' : '');
+    if (row._icn !== ic) { row._icn = ic; row._ic.innerHTML = ic ? UI.icon(ic) : ''; row._ic.style.display = ic ? '' : 'none'; }
     if (g.head) { row._t.textContent = ''; row.classList.remove('hid'); return; }
     var n = L.channels(g.id).length;
     row._t.textContent = g.blocked ? 'locked' : String(n);
@@ -1930,7 +1945,12 @@ var Guide = (function () {
 
   /* ---------- open / refresh ---------- */
   function load(groupId, key) {
-    gid = groupId || L.ALL; moving = null;
+    var to = groupId || L.ALL, pl = null;
+    // Leaving a group keeps its place: the channel, and the time when it was looking ahead (#4 in the
+    // guide ideas).  Coming back without a channel to show lands there again.
+    if (loaded && loaded !== to && list[sel]) places[loaded] = { k: list[sel].k, t: focusT > Date.now() + 90e3 ? focusT : 0, t0: t0 };
+    if (!key && loaded !== to && places[to]) { pl = places[to]; key = pl.k; }
+    gid = to; moving = null;
     if (vis && vis.gid !== gid) vis = null;
     list = L.channels(gid, !!vis);
     if (!list.length && zone === 'grid' && gid !== L.TEAMS && gid !== L.MOVIES && !vis) {      // My teams between games says when the next one is
@@ -1941,6 +1961,7 @@ var Guide = (function () {
     var i = key ? list.findIndex(function (c) { return c.k === key; }) : -1;
     sel = i >= 0 ? i : 0;
     top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS));
+    if (pl && pl.t > Date.now() + 60e3) { focusT = pl.t; t0 = pl.t0; }
     head();
     body.classList.toggle('empty', !list.length);
     body.setAttribute('data-empty', gid === L.TEAMS || gid === L.MOVIES ? Views.emptyFor(gid) : 'No channels in ' + L.groupName(gid) + '.');
@@ -2049,11 +2070,13 @@ var Guide = (function () {
       if (nx2 && nx2.a <= sg.b + 1) { var give = Math.min(need, Math.max(0, nx2.b - nx2.a - MINCELL)); sg.b += give; nx2.a += give; }
       else sg.b = Math.min(PXW, sg.b + need);
     }
+    var tint = !!Store.settings.guideTint;
     segs.forEach(function (sg) {
       var p = sg.p, a = sg.a, w = Math.max(4, sg.b - sg.a);
       var past = p.e <= nowT, now = p.s <= nowT && p.e > nowT, from = Math.max(p.s, t0);
+      var mv = typeof Movies !== 'undefined' && Movies.of(c, p), kind = tint ? (mv ? 'm' : p.k || '') : '';
       // How much of what's on now has aired, shown inside its cell (by time, as the cell may be wider).
-      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (typeof Movies !== 'undefined' && Movies.of(c, p) ? ' mv' : ''), a, w,
+      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (mv ? ' mv' : '') + (kind ? ' k-' + kind : ''), a, w,
         (past && cuMark ? '↺ ' : '') + (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, p.e - from)), 0, w) : -1, p.s);
     });
     if (!n) cell(r, n++, 'gp none' + (focus ? ' focus' : ''), 0, PXW, locked ? 'Locked' : Library.noGuide(c) ? Library.name(c) : l ? 'No guide information' : 'Loading…', false, null, -1, '');
@@ -2063,7 +2086,8 @@ var Guide = (function () {
   function cell(r, i, cls, left, w, title, cu, time, fill, start) {
     var c = r.cells[i];
     if (!c) {
-      c = { d: U.el('div', 'gp'), f: U.el('i', 'gfill'), t: U.el('span', 'gt'), s: U.el('small', 'gs') };
+      c = { d: U.el('div', 'gp'), f: U.el('i', 'gfill'), t: U.el('span', 'gt'), ti: U.el('b'), s: U.el('small', 'gs') };
+      c.t.appendChild(c.ti);                     // the title in its own element, so a long one can scroll (marquee)
       c.d.appendChild(c.f); c.d.appendChild(c.t); c.d.appendChild(c.s);
       r.pr.appendChild(c.d); r.cells[i] = c;
     }
@@ -2072,7 +2096,7 @@ var Guide = (function () {
     if (c.cls !== cls) { d.className = cls; c.cls = cls; }
     if (c.l !== left) { d.style.left = left + 'px'; c.l = left; }
     if (c.w !== w) { d.style.width = w + 'px'; c.w = w; }
-    if (c.tt !== title) { c.t.textContent = title; c.tt = title; }
+    if (c.tt !== title) { c.ti.textContent = title; c.tt = title; }
     if (c.cu !== cu) { c.t.className = cu ? 'gt gcu' : 'gt'; c.cu = cu; }
     if (c.ts !== time) { c.s.textContent = time || ''; c.s.style.display = time == null ? 'none' : ''; c.ts = time; }
     if (c.fw !== fill) { c.f.style.display = fill < 0 ? 'none' : ''; if (fill >= 0) c.f.style.width = fill + 'px'; c.fw = fill; }
@@ -2084,14 +2108,26 @@ var Guide = (function () {
     var want = document.body.classList.contains('noguidenames') ? 260 : 470;
     if (want !== CHW || !PXW) { CHW = want; PXW = (body.clientWidth || 1808) - CHW; }
     for (var i = 0; i < rows.length; i++) drawRow(rows[i], top + i);
-    if (timesKey !== t0 + '|' + CHW) {
-      timesKey = t0 + '|' + CHW;
+    var tk = t0 + '|' + CHW + '|' + new Date().toDateString();
+    if (timesKey !== tk) {
+      timesKey = tk;
       timesEl.innerHTML = '';
       for (var t = t0; t < t0 + WIN; t += 30 * 60e3) {
-        var s = U.el('span', '', U.hhmm(t)); s.style.left = (x(t) + 16) + 'px'; timesEl.appendChild(s);
+        // The day in front of the first time when it isn't today, and at midnight (#1 and #2 in the ideas).
+        var s = U.el('span'), dt = new Date(t), dn = dayName(t);
+        if ((t === t0 && dn !== 'Today') || (dt.getHours() === 0 && dt.getMinutes() === 0)) s.appendChild(U.el('b', 'gday', dn));
+        s.appendChild(document.createTextNode(U.hhmm(t)));
+        s.style.left = (x(t) + 16) + 'px'; timesEl.appendChild(s);
       }
       var mk = U.el('span', 'gnowh'); mk.id = 'gnowh'; timesEl.appendChild(mk);
     }
+    // Colour by category: what each colour means, at the right above the guide.
+    var lg = $('glegend');
+    if (Store.settings.guideTint && !lg) {
+      lg = U.el('div', 'glegend'); lg.id = 'glegend';
+      [['m', 'Movies'], ['s', 'Sports'], ['n', 'News'], ['c', 'Kids'], ['d', 'Documentary']].forEach(function (k) { lg.appendChild(U.el('em', 'k-' + k[0], k[1])); });
+      view.appendChild(lg);
+    } else if (!Store.settings.guideTint && lg) lg.remove();
     var nl = $('gnow'), nx = x(Date.now());
     if (nl) { nl.style.display = nx >= 0 && nx <= PXW ? '' : 'none'; nl.style.transform = 'translateX(' + (CHW + nx) + 'px)'; }
     var nh = $('gnowh'); if (nh) { nh.style.display = nx >= 0 && nx <= PXW ? '' : 'none'; nh.style.left = nx + 'px'; }
@@ -2130,11 +2166,17 @@ var Guide = (function () {
     } else if (h.p) {
       var live = h.p.s <= now && h.p.e > now, past = h.p.e <= now;
       meta.appendChild(U.el('span', 'gd-badge' + (live ? ' live' : past && c.arch ? ' cu' : ''), live ? 'LIVE' : past ? (c.arch ? 'CATCH-UP' : 'AIRED') : 'UPCOMING'));
-      meta.appendChild(document.createTextNode(new Date(h.p.s).toLocaleDateString(undefined, { weekday: 'short' }) + '  ' + U.hhmm(h.p.s) + ' – ' + U.hhmm(h.p.e)));
+      // What else the guide says (#9 in the ideas): a new episode, a reminder set, its kind, its episode.
+      if (h.p.n && !past) meta.appendChild(U.el('span', 'gd-badge new', 'NEW'));
+      if (!past && hasReminder(c, h.p)) meta.appendChild(U.el('span', 'gd-badge rem', '◷ REMINDER'));
+      var kn = { s: 'Sports', n: 'News', c: 'Kids', d: 'Documentary' }[h.p.k];
+      if (kn) meta.appendChild(U.el('span', 'gd-badge kind k-' + h.p.k, kn));
+      if (h.p.ep) meta.appendChild(U.el('span', 'gd-ep', h.p.ep));
+      meta.appendChild(document.createTextNode((dayName(h.p.s) === 'Today' ? '' : dayName(h.p.s) + '  ') + U.hhmm(h.p.s) + ' – ' + U.hhmm(h.p.e)));
       part(mins(h.p.e - h.p.s));
       // TiviMate style: a short bar between the times and what is left.
       if (live) { var mini = U.el('span', 'gd-mini'), mf = U.el('i'); mf.style.width = Math.round(100 * (now - h.p.s) / (h.p.e - h.p.s)) + '%'; mini.appendChild(mf); meta.appendChild(mini); meta.appendChild(document.createTextNode(mins(h.p.e - now) + ' left')); }
-      else if (!past) part('starts in ' + mins(h.p.s - now));
+      else if (!past) part(h.p.s - now < 48 * 3600e3 ? 'starts in ' + mins(h.p.s - now) : 'in ' + Math.round((h.p.s - now) / 86400e3) + ' days');
       var ps = Epg.pubSource(c);
       if (ps) part('public guide, ' + ps.name);
     } else meta.appendChild(document.createTextNode(Library.noGuide(c) ? 'No guide wanted for this channel' : Epg.request(c) ? 'No guide information for this time' : 'Loading guide…'));
@@ -2157,6 +2199,30 @@ var Guide = (function () {
     detail.appendChild(U.el('p', 'gd-desc', gd));
     if (zone === 'grid') detail.appendChild(U.el('div', 'gd-ok', okMeaning(c, h)));
     nowLine(pv);
+    progMarquee();
+  }
+  /* The focused programme's title, when it doesn't fit its cell, scrolls across after a moment and
+     comes back (#8 in the ideas; ich0x in discussion #36).  Only that one: the rest stay still, cut off. */
+  var pmT = 0, pmEl = null;
+  function progMarquee() {
+    clearTimeout(pmT);
+    if (pmEl) { pmEl.parentNode.classList.remove('mq'); pmEl.style.transition = 'none'; pmEl.style.transform = ''; pmEl = null; }
+    if (zone !== 'grid' || UI.repeating) return;
+    pmT = setTimeout(function () {
+      var el = body.querySelector('.grow.sel .gp.focus .gt b');
+      if (!el) return;
+      var box = el.parentNode, over = box.scrollWidth - box.clientWidth;     // (an inline element's own width reads 0)
+      if (over <= 4) return;
+      pmEl = el; box.classList.add('mq');
+      var secs = Math.max(2, over / 90);
+      (function go() {
+        el.style.transition = 'transform ' + secs + 's linear'; el.style.transform = 'translateX(-' + over + 'px)';
+        pmT = setTimeout(function () {
+          el.style.transition = 'none'; el.style.transform = '';
+          pmT = setTimeout(go, 1800);
+        }, secs * 1000 + 1500);
+      })();
+    }, 1100);
   }
   // What's in the window and how to get to it, whatever is highlighted.
   function nowLine(pv) {
@@ -2254,6 +2320,83 @@ var Guide = (function () {
   }
   function jumpNow() { focusT = Date.now(); t0 = focusT - (focusT % (30 * 60e3)); draw(); }
 
+  /* ---------- jumping through time (Rewind / Fast-forward, Jump to…) ---------- */
+  function dayName(t) {
+    var d = new Date(t), n = new Date(); d.setHours(0, 0, 0, 0); n.setHours(0, 0, 0, 0);
+    var diff = Math.round((d.getTime() - n.getTime()) / 86400e3);
+    if (diff === 0) return 'Today';
+    if (diff === 1) return 'Tomorrow';
+    if (diff === -1) return 'Yesterday';
+    return new Date(t).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+  // As far ahead as the channels on screen have a guide (at least three hours from now).
+  function guideEnd() {
+    var end = 0;
+    for (var i = 0; i < VIS; i++) { var c = list[top + i], l = c && Parental.blockedOk(c) ? Epg.request(c) : null; if (l && l.length) end = Math.max(end, l[l.length - 1].e); }
+    return Math.max(end, Date.now() + 3 * 3600e3);
+  }
+  // A day and time: the focus goes there, with half an hour before it in view.  Never before what the
+  // focused channel can play (now, or as far back as its catch-up), never past the guide.
+  function jumpTo(t) {
+    var c = list[sel], now = Date.now(), half = 30 * 60e3;
+    var lo = c && c.arch ? now - c.arch * 86400e3 : now, hi = Math.max(now, guideEnd() - half);
+    t = Math.max(lo, Math.min(hi, t));
+    if (Math.abs(t - now) < 60e3) { jumpNow(); flashJump(Date.now()); return; }
+    focusT = t;
+    t0 = t - (t % half) - half;
+    if (t >= now && t0 < now - (now % half)) t0 = now - (now % half);
+    draw();
+    flashJump(t);
+  }
+  // Rewind and Fast-forward: a screen of the guide at a time.
+  function screenJump(dir) {
+    var was = focusT, c = list[sel];
+    jumpTo(focusT + dir * WIN);
+    if (Math.abs(focusT - was) > 60e3) return;
+    if (dir < 0) U.toast(c && c.arch ? 'Catch-up on this channel goes back ' + c.arch + (c.arch === 1 ? ' day' : ' days') : 'This channel has no catch-up');
+    else U.toast('That is as far as the guide goes');
+  }
+  // Where a jump landed, for a moment over the guide.
+  function flashJump(t) {
+    if (!jumpChip) return;
+    jumpChip.textContent = dayName(t) + '   ' + U.hhmm(t);
+    jumpChip.classList.remove('hidden');
+    clearTimeout(jumpChipT);
+    jumpChipT = setTimeout(function () { jumpChip.classList.add('hidden'); }, 1400);
+  }
+  function at(dayOff, h) { var d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() + dayOff); d.setHours(h, 0, 0, 0); return d.getTime(); }
+  // Hold OK > Jump to…: now, tonight, tomorrow, then each day the guide has, and catch-up days.
+  function jumpMenu() {
+    var now = Date.now(), c = list[sel], end = guideEnd(), items = [], soon = now + 20 * 60e3;
+    function go(t) { return function () { jumpTo(t); }; }
+    if (Math.abs(focusT - now) > 60e3) items.push({ label: 'Now', icon: 'now', sub: U.hhmm(now), action: function () { jumpNow(); flashJump(Date.now()); } });
+    if (at(0, 20) > soon) items.push({ label: 'Tonight', icon: 'moon', sub: U.hhmm(at(0, 20)), action: go(at(0, 20)) });
+    if (at(0, 23) > soon && at(0, 23) < end) items.push({ label: 'Late tonight', icon: 'moon', sub: U.hhmm(at(0, 23)), action: go(at(0, 23)) });
+    if (at(1, 8) < end) items.push({ label: 'Tomorrow morning', icon: 'sun', sub: U.hhmm(at(1, 8)), action: go(at(1, 8)) });
+    if (at(1, 20) < end) items.push({ label: 'Tomorrow night', icon: 'moon', sub: U.hhmm(at(1, 20)), action: go(at(1, 20)) });
+    var later = [];
+    for (var d = 2; d < 15 && at(d, 0) < end; d++) later.push(d);
+    if (later.length) {
+      items.push({ head: true, label: 'Later' });
+      later.forEach(function (dd) { items.push({ label: dayName(at(dd, 12)), icon: 'day', sub: 'choose a time', action: function () { timesMenu(dd); } }); });
+    }
+    if (c && c.arch) {
+      items.push({ head: true, label: 'Catch-up on ' + L.name(c) });
+      if (now - at(0, 6) > 2 * 3600e3) items.push({ label: 'Earlier today', icon: 'history', sub: 'choose a time', action: function () { timesMenu(0, true); } });
+      for (var b = 1; b <= Math.min(c.arch, 7); b++) (function (bb) { items.push({ label: dayName(at(-bb, 12)), icon: 'history', sub: 'choose a time', action: function () { timesMenu(-bb, true); } }); })(b);
+    }
+    UI.menu('Jump to', items, null, { sub: 'Now showing ' + dayName(focusT) + ', ' + U.hhmm(focusT) });
+  }
+  // A day's times: morning to late night, only the ones that can be shown (ahead of now, or in catch-up).
+  function timesMenu(day, past) {
+    var now = Date.now(), c = list[sel], lo = past && c && c.arch ? now - c.arch * 86400e3 : now, end = guideEnd(), items = [];
+    [[8, 'Morning', 'sun'], [12, 'Midday', 'sun'], [15, 'Afternoon', 'sun'], [18, 'Evening', 'moon'], [20, 'Prime time', 'moon'], [23, 'Late night', 'moon']].forEach(function (x) {
+      var t = at(day, x[0]);
+      if (past ? t >= lo && t < now : t > now && t < end) items.push({ label: x[1], icon: x[2], sub: U.hhmm(t), action: function () { jumpTo(t); } });
+    });
+    UI.menu(dayName(at(day, 12)), items, jumpMenu, { sub: past ? 'catch-up' : 'jump to a time' });
+  }
+
   function toggleReminder(c, p) {
     var r = Store.edits.reminders, i = r.findIndex(function (x) { return x.k === c.k && x.s === p.s; });
     if (i >= 0) { r.splice(i, 1); U.toast('Reminder removed'); }
@@ -2282,23 +2425,27 @@ var Guide = (function () {
   function menu() {
     var c = list[sel]; if (!c) return;
     var h = progAt(c, focusT), now = Date.now(), items = [];
-    if (h.p && h.p.e <= now && c.arch) items.push({ label: 'Replay this programme', action: function () { Views.playCatchup(c, h.p, 0); } });
-    items.push({ label: 'Watch fullscreen', action: function () { if (isPlaying(c)) Views.goFull(); else Views.startChannel(c, false, Views.goFull); } });
-    if (!isPlaying(c)) items.push({ label: 'Play in the window', action: function () { preview(c); } });
-    if (h.p && h.p.s <= now && h.p.e > now && c.arch) items.push({ label: 'Watch from the start', sub: 'catch-up', action: function () { Views.playCatchup(c, h.p, 0); } });
-    if (c.arch) items.push({ label: 'Earlier programmes…', sub: 'catch-up ' + c.arch + ' days', action: function () { Views.catchupList(c); } });
-    if (h.p && h.p.s > now) items.push({ label: hasReminder(c, h.p) ? 'Cancel reminder' : 'Remind me', action: function () { toggleReminder(c, h.p); } });
+    if (h.p && h.p.e <= now && c.arch) items.push({ label: 'Replay this programme', icon: 'replay', action: function () { Views.playCatchup(c, h.p, 0); } });
+    items.push({ label: 'Watch fullscreen', icon: 'full', action: function () { if (isPlaying(c)) Views.goFull(); else Views.startChannel(c, false, Views.goFull); } });
+    if (!isPlaying(c)) items.push({ label: 'Play in the window', icon: 'window', action: function () { preview(c); } });
+    if (h.p && h.p.s <= now && h.p.e > now && c.arch) items.push({ label: 'Watch from the start', icon: 'start', sub: 'catch-up', action: function () { Views.playCatchup(c, h.p, 0); } });
+    if (c.arch) items.push({ label: 'Earlier programmes…', icon: 'history', sub: 'catch-up ' + c.arch + (c.arch === 1 ? ' day' : ' days'), action: function () { Views.catchupList(c); } });
+    if (h.p && h.p.s > now) items.push(hasReminder(c, h.p) ? { label: 'Cancel reminder', icon: 'belloff', sub: U.hhmm(h.p.s), action: function () { toggleReminder(c, h.p); } }
+      : { label: 'Remind me', icon: 'bell', sub: U.hhmm(h.p.s), action: function () { toggleReminder(c, h.p); } });
     if (h.p && h.p.t && !h.p.up && !h.p.ended) {
       var title = h.p.t;
-      items.push({ label: 'Other showings…', sub: 'search the guide for "' + title + '"', action: function () { Views.switchTab('search'); Search.open(title); } });
-      if (!Watch.has(title)) items.push({ label: 'Add to watchlist', sub: 'remind me whenever it is on', action: function () { Watch.add(title); } });
+      items.push({ label: 'Other showings…', icon: 'search', sub: 'search the guide for "' + title + '"', action: function () { Views.switchTab('search'); Search.open(title); } });
+      if (!Watch.has(title)) items.push({ label: 'Add to watchlist', icon: 'watch', sub: 'remind me whenever it is on', action: function () { Watch.add(title); } });
     }
-    if (Math.abs(focusT - now) > 60e3) items.push({ label: 'Jump to now', action: jumpNow });
-    if (previewing()) items.push({ label: 'Stop the window', sub: L.name(previewing()), action: function () { Views.stopAll(); draw(); hints(); } });
-    if (L.canReorder(gid) && list.length > 1) items.push({ label: 'Move…', sub: 'change its place in ' + L.groupName(gid), action: function () { startMove(c); } });
-    if (Views.canManage(gid)) items.push({ label: 'Show or hide channels…', sub: 'tick the channels to keep in ' + L.groupName(gid), action: function () { Views.manageVisibility(gid, c); } });
-    items.push({ label: 'Channel options…', sub: 'favorite, copy to group, hide, rename', action: function () { Views.chanMenu(c, gid); } });
-    UI.menu(h.p ? h.p.t : L.name(c), items);
+    items.push({ label: 'Jump to…', icon: 'jump', sub: 'a day and time', action: jumpMenu });
+    if (Math.abs(focusT - now) > 60e3) items.push({ label: 'Jump to now', icon: 'now', sub: U.hhmm(now), action: function () { jumpNow(); flashJump(Date.now()); } });
+    if (previewing()) items.push({ label: 'Stop the window', icon: 'stop', sub: L.name(previewing()), action: function () { Views.stopAll(); draw(); hints(); } });
+    if (L.canReorder(gid) && list.length > 1) items.push({ label: 'Move…', icon: 'move', sub: 'change its place in ' + L.groupName(gid), action: function () { startMove(c); } });
+    if (Views.canManage(gid)) items.push({ label: 'Show or hide channels…', icon: 'eye', sub: 'tick the channels to keep in ' + L.groupName(gid), action: function () { Views.manageVisibility(gid, c); } });
+    items.push({ label: 'Channel options…', icon: 'more', sub: 'favorite, copy to group, hide, rename', action: function () { Views.chanMenu(c, gid); } });
+    // What it is about under the title: the channel, and the programme's day and time.
+    var when2 = h.p && !h.p.up && !h.p.ended ? (dayName(h.p.s) === 'Today' ? '' : dayName(h.p.s) + '  ') + U.hhmm(h.p.s) + ' – ' + U.hhmm(h.p.e) : '';
+    UI.menu(h.p ? h.p.t : L.name(c), items, null, { sub: L.name(c) + (when2 ? '   ·   ' + when2 : '') });
   }
 
   // Number keys jump to that channel number (1, 2, 3 for 123).
@@ -2398,14 +2545,27 @@ var Guide = (function () {
     if (zone === 'groups') return groupKeys(a);
     if (moving) return moveKeys(a);
     if (vis) return visKeys(a);
-    if (a === 'up') moveSel(-1);
-    else if (a === 'down') moveSel(1);
+    if (a === 'up' || a === 'down') {
+      // Held: a row at a time, then three at a time after a second and a half (#3 in the ideas).
+      var d = a === 'up' ? -1 : 1, ms = heldFor(a);
+      if (ms > 1500) selectIdx(sel + d * 3); else moveSel(d);
+    }
     else if (a === 'chup') selectIdx(sel - (VIS - 1));
     else if (a === 'chdown') selectIdx(sel + (VIS - 1));
-    else if (a === 'left') { if (when() === 'now') setZone('groups'); else moveTime(-1); }
-    else if (a === 'right') moveTime(1);
-    else if (a === 'rew') moveTime(-1);
-    else if (a === 'ff') moveTime(1);
+    else if (a === 'left' || a === 'right') {
+      // Held: at most about eight programmes a second for the first second, so it can be stopped where
+      // you want, then as fast as the remote repeats.  A held Left stops at now; only a fresh press
+      // there opens the groups.
+      var ms2 = heldFor(a), t = Date.now();
+      if (ms2 > 0 && ms2 < 1000 && t - stepAt < 120) return true;
+      stepAt = t;
+      if (a === 'right') moveTime(1);
+      else if (when() !== 'now') moveTime(-1);
+      else if (!ms2) setZone('groups');
+    }
+    // Rewind and Fast-forward: a whole screen of the guide (two and a half hours), not one programme;
+    // held, one jump about every third of a second (#1 in the ideas).
+    else if (a === 'rew' || a === 'ff') { var tj = Date.now(); if (tj - jumpAt < 320) return true; jumpAt = tj; screenJump(a === 'ff' ? 1 : -1); }
     else if (a === 'ok') activate();
     else if (a !== 'back' && a.indexOf('num') !== 0) {
       // Every other button does what Settings > Remote control > In the guide says.
@@ -2417,12 +2577,21 @@ var Guide = (function () {
     return true;
   }
 
+  // How long this button has been held: 0 for a fresh press, else the time since the hold began.  A
+  // repeat is the same button again within a quarter of a second (some TVs don't flag repeats).
+  function heldFor(a) {
+    var t = Date.now(), fresh = held.a !== a || t - held.last > 250;
+    if (fresh) { held.a = a; held.since = t; }
+    held.last = t;
+    return fresh ? 0 : Math.max(1, t - held.since);
+  }
   function mapped(act) {
     var c = list[sel];
     if (act === 'full') { if (!watchPreview()) { if (c) Views.startChannel(c, false, Views.goFull); } }
     else if (act === 'menu') menu();
     else if (act === 'groups') setZone('groups');
-    else if (act === 'now') jumpNow();
+    else if (act === 'now') { jumpNow(); flashJump(Date.now()); }
+    else if (act === 'jump') jumpMenu();
     else if (act === 'stopwin') { if (previewing()) { Views.stopAll(); draw(); hints(); } }
     else if (act === 'favorites' || act === 'recents') { load(act === 'favorites' ? L.FAV : L.RECENT, null); setZone('grid'); draw(); }
     else if (act === 'fav') { if (c) { L.toggleFav(c.k); U.toast(L.isFav(c.k) ? 'Added to Favorites' : 'Removed from Favorites'); draw(); } }
@@ -2433,5 +2602,5 @@ var Guide = (function () {
   }
 
   return { open: open, resume: resume, refresh: refresh, draw: draw, resize: resize, rowUpdated: rowUpdated, leave: leave, hints: hints, startVis: startVis, endVis: endVis, get vis() { return !!vis; },
-    __sel: function () { return sel; }, __gsel: function () { return groupsVL ? groupsVL.sel : 0; } };
+    __sel: function () { return sel; }, __gsel: function () { return groupsVL ? groupsVL.sel : 0; }, __focusT: function () { return focusT; }, __gid: function () { return gid; }, __zone: function () { return zone; }, __list: function () { return list; } };
 })();
