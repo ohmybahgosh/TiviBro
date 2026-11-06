@@ -192,16 +192,23 @@ function create(opts) {
     var title = str(q.title, 200).trim(), year = /^\d{4}$/.test(q.year || '') ? String(q.year) : '', strong = q.guide === 'strong';
     // normal() keeps only a-z and 0-9: a title in another script would compare equal to every other one.
     if (!title || !normal(title)) return cb(null, { miss: true });
-    request('/search/tv?query=' + encodeURIComponent(title) + '&language=' + locale, function (e, r) {
-      if (e) return cb(e);
-      var exact = (r && Array.isArray(r.results) ? r.results : []).filter(function (t) {
-        return t && /^[1-9][0-9]*$/.test(String(t.id)) && (normal(t.name) === normal(title) || normal(t.original_name) === normal(title));
+    /* Only a show of exactly that name.  A guide that said nothing of season and episode (weak) needs a show
+       some people know (5 votes), a guide that did (strong) any.  No such show: the part before a colon or a
+       dash, as guides often put the episode there ("Modern Marvels: Ink", "Ax Men - Timber Wars"). */
+    var main = title.split(/\s*:\s+|\s+[-–]\s+/)[0];
+    function ask(name, last) {
+      request('/search/tv?query=' + encodeURIComponent(name) + '&language=' + locale, function (e, r) {
+        if (e) return cb(e);
+        var exact = (r && Array.isArray(r.results) ? r.results : []).filter(function (t) {
+          return t && /^[1-9][0-9]*$/.test(String(t.id)) && (normal(t.name) === normal(name) || normal(t.original_name) === normal(name));
+        });
+        exact.sort(function (a, b) { return (year ? (str(b.first_air_date, 4) === year) - (str(a.first_air_date, 4) === year) : 0) || (b.popularity || 0) - (a.popularity || 0); });
+        var best = exact[0];
+        if (!best || (best.vote_count || 0) < (strong ? 1 : 5)) return last ? cb(null, { miss: true }) : ask(main, true);
+        tvLookup({ id: 'tmdb:tv:' + best.id, language: language }, function (e2, x) { cb(e2, x && x.metadata ? { metadata: x.metadata } : { miss: true }); });
       });
-      exact.sort(function (a, b) { return (year ? (str(b.first_air_date, 4) === year) - (str(a.first_air_date, 4) === year) : 0) || (b.popularity || 0) - (a.popularity || 0); });
-      var best = exact[0];
-      if (!best || (best.vote_count || 0) < (strong ? 1 : 25)) return cb(null, { miss: true });
-      tvLookup({ id: 'tmdb:tv:' + best.id, language: language }, function (e2, x) { cb(e2, x && x.metadata ? { metadata: x.metadata } : { miss: true }); });
-    });
+    }
+    ask(title, !main || main === title || normal(main).length < 3);
   }
   return { cancel:function(){cancelled=true;jobs.forEach(function(job){job.cancel();});jobs=[];}, lookup: function (q, cb) { return q && q.guide ? (q.kind === 'tv' ? guideTvLookup(q, cb) : guideLookup(q, cb)) : q && (q.kind === 'tv' || /^tmdb:tv:/.test(q.id || '')) ? tvLookup(q, cb) : lookup(q, cb); }, configured: function () { return !!credential; } };
 }

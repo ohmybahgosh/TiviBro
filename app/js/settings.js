@@ -824,7 +824,7 @@ var Settings = (function () {
     out.push(toggle('Two-line programmes', 'Shows each programme\'s time under its title in the grid.', function () { return s.guideLines !== 1; }, function (v) { s.guideLines = v ? 2 : 1; Views.applyLook(); save(); }));
     out.push(toggle('Dim past programmes', '', function () { return s.dimPast; }, function (v) { s.dimPast = v; Views.applyLook(); save(); }));
     out.push(choice('Mark what\'s on now', 'How the guide shows programmes airing right now.', ['line', 'fill', 'color'], ['Line and shade', 'Line, shade and progress bar', 'Coloured cell, shade and bar'], function () { return s.nowStyle === 'fill' || s.nowStyle === 'color' ? s.nowStyle : 'line'; }, function (v) { s.nowStyle = v; Views.applyLook(); save(); }));
-    out.push(toggle('Colour by category', 'A coloured edge on movies, sports, news, kids and documentaries, from what your guide says each programme is.  Guides that don\'t say leave programmes plain.',
+    out.push(toggle('Colour by category', 'A coloured bar on movies, sports, news and kids\' programmes, from what your guide says each programme is, or its title or channel.  Anything else stays plain.',
       function () { return !!s.guideTint; }, function (v) { s.guideTint = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));
     out.push(toggle('Hide spoilers', 'In the guide, new episodes and episodes or movies that haven\'t aired yet (not news or sport), and on the Shows screen, episodes you haven\'t started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode.',
       function () { return !!s.noSpoilers; }, function (v) { s.noSpoilers = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));

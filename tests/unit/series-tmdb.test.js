@@ -19,6 +19,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     asked.push(url.replace(/[?&]api_key=[^&]+/, ''));
     if (/\/search\/tv\?query=The%20Office/.test(url)) return cb(null, SEARCH);
     if (/\/search\/tv\?query=Obscure/.test(url)) return cb(null, { results: [{ id: 44, name: 'Obscure', popularity: 1, vote_count: 3 }] });
+    if (/\/search\/tv\?query=Ax%20Men&/.test(url)) return cb(null, { results: [{ id: 55, name: 'Ax Men', popularity: 9, vote_count: 12 }] });
+    if (/\/search\/tv\?query=Modern%20Marvels%3A%20Ink&/.test(url)) return cb(null, { results: [{ id: 99, name: 'Ink Master', popularity: 30, vote_count: 400 }] });
+    if (/\/search\/tv\?query=Modern%20Marvels&/.test(url)) return cb(null, { results: [{ id: 66, name: 'Modern Marvels', popularity: 12, vote_count: 30 }] });
     const m = /\/tv\/(\d+)\?/.exec(url);
     if (m) return cb(null, { id: +m[1], name: 'The Office', overview: 'Office life.', first_air_date: m[1] === '22' ? '2005-03-24' : '2001-07-09', genres: [{ name: 'Comedy' }], vote_average: 8.6, networks: [{ name: m[1] === '22' ? 'NBC' : 'BBC Two' }], credits: { cast: [{ name: 'Steve Carell' }] } });
     cb(new Error('unexpected ' + url));
@@ -31,6 +34,10 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('the one that started in the year given, when one did', r.metadata && r.metadata.id === 'tmdb:tv:11' && r.metadata.network === 'BBC Two');
   r = await look({ guide: 'weak', title: 'Obscure' });
   ok('a weak guess at an obscure show is a miss', r.miss === true, JSON.stringify(r));
+  r = await look({ guide: 'weak', title: 'Ax Men' });
+  ok('a weak guess at a show a few people know (a cable reality show, 12 votes) is a match', r.metadata && r.metadata.id === 'tmdb:tv:55', JSON.stringify(r).slice(0, 120));
+  r = await look({ guide: 'weak', title: 'Modern Marvels: Ink' });
+  ok('no show of the whole name: the part before the colon ("Modern Marvels: Ink")', r.metadata && r.metadata.id === 'tmdb:tv:66', JSON.stringify(r).slice(0, 120));
   r = await look({ guide: 'strong', title: 'Obscure' });
   ok('a strong one (the guide gave an episode) takes it', !!(r.metadata || r instanceof Error) && !r.miss, JSON.stringify(r).slice(0, 120));
   const n0 = asked.length;
@@ -52,11 +59,15 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/series.js'), 'utf8') + ';this.Series = Series;', ctx);
   const S = ctx.Series, wait = (ms) => new Promise((res) => setTimeout(res, ms));
   ok('names cleaned of what providers put around them', S.clean('EN - Breaking Bad (2008) [4K]').t === 'Breaking Bad' && S.clean('EN - Breaking Bad (2008)').y === '2008' && S.clean('|US| The Office').t === 'The Office' && S.clean('CSI: Miami').t === 'CSI: Miami' && S.clean('Slow Horses S03').t === 'Slow Horses');
+  ok('what guides tack on the end comes off too', S.clean('The UnXplained Special Presentation').t === 'The UnXplained' && S.clean('Ax Men Marathon').t === 'Ax Men' && S.clean('American Pickers (Encore)').t === 'American Pickers' && S.clean('Counting Cars - Season Finale').t === 'Counting Cars' && S.clean('Special Victims Unit').t === 'Special Victims Unit',
+    [S.clean('The UnXplained Special Presentation').t, S.clean('Ax Men Marathon').t, S.clean('American Pickers (Encore)').t, S.clean('Counting Cars - Season Finale').t].join(' | '));
   const c = { n: 'Drama One', k: 'x1' }, now = Date.now();
   ok('with an episode from the guide it is surely a series', S.strength(c, { t: 'Severance', s: now, e: now + 3600e3, ep: 'S1 E1' }) === 'strong');
   ok('news, sport, a movie, a long programme and the channel\'s own name are not', ['n', 's'].every((k) => S.strength(c, { t: 'X', s: now, e: now + 1800e3, k: k }) === '') && S.strength(c, { t: 'X', s: now, e: now + 1800e3, mv: 1 }) === '' &&
     S.strength(c, { t: 'Big Thing', s: now, e: now + 3 * 3600e3 }) === '' && S.strength(c, { t: 'Drama One', s: now, e: now + 1800e3 }) === '' && S.strength(c, { t: 'Live at Five', s: now, e: now + 1800e3 }) === '');
-  ok('nothing known yet: null, and it asks', S.of(c, { t: 'Severance', s: now, e: now + 3600e3, ep: 'S1 E1' }) === null);
+  ok('nothing known yet: null (what was kept is still being read)', S.of(c, { t: 'Severance', s: now, e: now + 3600e3, ep: 'S1 E1' }) === null);
+  await wait(30);
+  ok('once it is read: still null, and now it asks', S.of(c, { t: 'Severance', s: now, e: now + 3600e3, ep: 'S1 E1' }) === null);
   await wait(50);
   const sh = S.of(c, { t: 'Severance', s: now, e: now + 3600e3, ep: 'S1 E1' });
   ok('then the show: network, year, rating', sh && sh.network === 'Apple TV+' && sh.year === '2022' && sh.rating === '8.4', JSON.stringify(sh));
@@ -76,6 +87,17 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ctx.Store.settings.guideSeries = false;
   ok('nor asked about by the app, where all of them would share one answer', S.show('مسلسل', '', 'strong') === null && S.show('Друзья', '', 'strong') === null);
   ok('Series details off: nothing', S.of(c, { t: 'Severance', s: now, e: now + 3600e3, ep: 'S1 E1' }) === null);
+  // Kept from an older version, with stricter matching: its misses are asked again, what it found stays.
+  {
+    const now2 = Date.now(), ctx2 = Object.assign({}, ctx), asks2 = [];
+    ctx2.Store = { settings: {}, bigGet: () => Promise.resolve({ shows: { 'axmen|': { at: now2, s: 'weak', m: 0 }, 'severance|': { at: now2, s: 'strong', m: { id: 'tmdb:tv:95396', title: 'Severance' } } }, seasons: {} }), bigSet: () => {} };
+    ctx2.Media = { tvByName: (t) => { asks2.push(t); return Promise.resolve({ miss: true }); }, tvSeason: () => Promise.resolve({ metadata: { episodes: [] } }) };
+    vm.createContext(ctx2);
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/series.js'), 'utf8') + ';this.Series = Series;', ctx2);
+    ctx2.Series.show('Severance'); await wait(30);
+    const sev = ctx2.Series.show('Severance'), ax = ctx2.Series.show('Ax Men'); await wait(60);
+    ok('an older miss is asked again with today\'s matching; an older match is kept', !!sev && sev.title === 'Severance' && ax === null && asks2.indexOf('Ax Men') >= 0 && asks2.indexOf('Severance') < 0, JSON.stringify({ sev, asks2 }));
+  }
   console.log(fails ? fails + ' FAILED' : 'all TMDB series checks passed');
   process.exit(fails ? 1 : 0);
 })().catch((e) => { console.error(e); process.exit(1); });

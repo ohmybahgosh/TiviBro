@@ -10,8 +10,8 @@
    What it gives: Series.of(c, p) for a guide programme, Series.show(name, year) for a provider's show,
    Series.episode(show, 'S2 E5'), each null until known; onChange(fn) when an answer comes in. */
 var Series = (function () {
-  var KEY = 'tvseries', KEEP = 30 * 86400e3, MAX_SHOWS = 3000, MAX_SEASONS = 400, GAP = 350, QUEUE = 4;
-  var shows = {}, seasons = {}, loaded = null, queue = [], queued = {}, busy = false, saveT = null, listeners = [], paused = 0;
+  var KEY = 'tvseries', VER = 2, KEEP = 30 * 86400e3, MAX_SHOWS = 3000, MAX_SEASONS = 400, GAP = 350, QUEUE = 4;
+  var shows = {}, seasons = {}, loaded = null, ready = false, queue = [], queued = {}, busy = false, saveT = null, listeners = [], paused = 0;
   function S() { return Store.settings; }
   function on() { return S().guideSeries !== false && typeof MediaStore !== 'undefined' && !!MediaStore.tmdbToken(); }
   function norm(t) { return String(t || '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, ''); }
@@ -19,6 +19,9 @@ var Series = (function () {
   /* The show's own name from what providers and guides put around it:
      "EN - Breaking Bad (2008) [4K]", "|US| The Office", "NEW: Severance ᴺᵉʷ", "Slow Horses S03" */
   var SUP = /[ʰ-˿ᴬ-ᵪᶜ-ᶿ⁰-₟]+/g;
+  // What guides tack on the end of a show's name: "The UnXplained Special Presentation", "Ax Men Marathon",
+  // "American Pickers (Encore)", "Counting Cars - Season Finale".
+  var TAIL = /\s*[-–:(]?\s*(?:special presentation|marathon|encore|(?:mid-?)?season (?:premiere|finale)|series (?:premiere|finale)|new episodes?|all[- ]new|uncut|extended|special edition)\s*\)?\s*$/i;
   function clean(t) {
     t = String(t || '').replace(SUP, ' ');
     var m = /\(((?:19|20)\d\d)\)/.exec(t), y = m ? m[1] : '';
@@ -27,6 +30,7 @@ var Series = (function () {
       .replace(/^\s*(?:new|premiere|season premiere|series premiere)\s*[:\-–]\s*/i, '')
       .replace(/\((?:19|20)\d\d\)/g, ' ').replace(/\[[^\]]*\]/g, ' ')
       .replace(/\s+S\d{1,2}(?:\s*E\d{1,3})?\s*$/i, '').replace(/\s*[-–|]\s*(?:u?hd|sd|4k|fhd|multi[- ]?sub)\s*$/i, '').replace(/\s+(?:u?hd|cc|4k)\s*$/i, '')
+      .replace(TAIL, '').replace(TAIL, '')
       .replace(/\s{2,}/g, ' ').trim();
     return { t: x, y: y };
   }
@@ -37,11 +41,12 @@ var Series = (function () {
     loaded = (Store.bigGet ? Store.bigGet(KEY) : Promise.resolve(null)).then(function (v) {
       var now = Date.now();
       if (v && typeof v === 'object') {
-        Object.keys(v.shows || {}).forEach(function (k) { var e = v.shows[k]; if (e && now - e.at < KEEP) shows[k] = e; });
+        // A miss from older, stricter matching (before VER) is asked again; what was found stays.
+        Object.keys(v.shows || {}).forEach(function (k) { var e = v.shows[k]; if (e && now - e.at < KEEP && (e.m || e.v === VER)) shows[k] = e; });
         Object.keys(v.seasons || {}).forEach(function (k) { var e = v.seasons[k]; if (e && now - e.at < KEEP) seasons[k] = e; });
       }
-      changed();
-    }, function () {});
+      ready = true; changed();
+    }, function () { ready = true; changed(); });
     return loaded;
   }
   function trim(map, max) {
@@ -86,7 +91,7 @@ var Series = (function () {
       } else {
         // A strong ask (the guide gave a season and episode, or the provider says it's a show) replaces an
         // earlier weak miss.
-        shows[job.k] = { at: Date.now(), s: job.st, m: m ? lite(m) : 0 };
+        shows[job.k] = { at: Date.now(), s: job.st, m: m ? lite(m) : 0, v: VER };
       }
       save(); changed();
     }, function (e) {
@@ -101,6 +106,9 @@ var Series = (function () {
   function show(name, year, strength) {
     if (!on()) return null;
     load();
+    // Not before what was kept has been read: asking then would ask again about shows already known, and a
+    // miss could replace what was found.  The guide draws again once it's read (changed).
+    if (!ready) return null;
     var ct = clean(name), y = year ? String(year).slice(0, 4) : ct.y;
     // A name in another script has no letters norm() keeps: all of them would share one answer.
     if (!ct.t || !norm(ct.t)) return null;
@@ -115,6 +123,7 @@ var Series = (function () {
     var s = se, n = num;
     if (typeof se === 'string') { var m = /S(\d+)\s*E(\d+)/i.exec(se); if (!m) return null; s = +m[1]; n = +m[2]; }
     if (!(s >= 0) || !(n >= 1)) return null;
+    if (!ready) return null;
     var k = sh.id + ':' + s, hit = seasons[k];
     if (hit) return hit.eps[n] || null;
     want({ k: k, id: sh.id, season: s });
@@ -132,7 +141,7 @@ var Series = (function () {
     var ct = clean(p.t);
     if (!ct.t || norm(ct.t) === norm(c.n)) return '';
     if (p.ep) return 'strong';
-    if (NOT.test(ct.t) || p.e - p.s > 75 * 60000) return '';
+    if (NOT.test(ct.t) || p.e - p.s > 125 * 60000) return '';      // longer: a movie or a sports event, not a show
     if (typeof Teams !== 'undefined' && Teams.isGame && Teams.isGame(ct.t, c.n)) return '';
     return 'weak';
   }
@@ -146,7 +155,7 @@ var Series = (function () {
   function onChange(f) { listeners.push(f); }
   function poke() { paused = 0; changed(); }
   // Forget every answer (the tests start from nothing; a different token or language could use it too).
-  function reset() { shows = {}; seasons = {}; loaded = Promise.resolve(); queue = []; queued = {}; if (Store.bigSet) Store.bigSet(KEY, {}); changed(); }
+  function reset() { shows = {}; seasons = {}; loaded = Promise.resolve(); ready = true; queue = []; queued = {}; if (Store.bigSet) Store.bigSet(KEY, {}); changed(); }
   return { on: on, of: of, show: show, episode: episode, clean: clean, strength: strength, onChange: onChange, poke: poke, reset: reset,
     get pending() { return queue.length + (busy ? 1 : 0); } };
 })();

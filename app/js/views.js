@@ -2052,9 +2052,10 @@ var Guide = (function () {
     KIND_CH = [['n', /\b(news|cnn|msnbc|cnbc|fox news|newsmax|bbc world|sky news|euronews|al jazeera|bloomberg|noticias)\b/i],
       ['s', /\b(sports?|espn\w*|fs[12]|tsn|sportsnet|bein|dazn|nfl network|nba tv|nhl network|mlb network|golf channel|tennis channel|deportes)\b/i],
       ['c', /\b(kids|children|cartoon|nick(elodeon|jr)?|disney (junior|jr|channel|xd)|boomerang|baby ?tv|pbs kids|universal kids|infantil)\b/i],
-      ['d', /\b(discovery|history|nat ?geo|national geographic|smithsonian|science|animal planet|documentar(y|ies)|docu\w*)\b/i],
       ['m', /\b(movies?|cinema|cin[eé]|films?|cinemax|tcm)\b/i]], kindCh = {};
   function kindOf(c, p) {
+    // Documentary isn't coloured: guides file most reality shows under it (Ax Men, American Pickers).
+    if (p.k === 'd') return '';
     if (p.k) return p.k;
     var t = p.t || '';
     if (KIND_NEWS.test(t)) return 'n';
@@ -2193,7 +2194,7 @@ var Guide = (function () {
     var lg = $('glegend');
     if (Store.settings.guideTint && !lg) {
       lg = U.el('div', 'glegend'); lg.id = 'glegend';
-      [['m', 'Movies'], ['s', 'Sports'], ['n', 'News'], ['c', 'Kids'], ['d', 'Documentary']].forEach(function (k) { lg.appendChild(U.el('em', 'k-' + k[0], k[1])); });
+      [['m', 'Movies'], ['s', 'Sports'], ['n', 'News'], ['c', 'Kids']].forEach(function (k) { lg.appendChild(U.el('em', 'k-' + k[0], k[1])); });
       view.appendChild(lg);
     } else if (!Store.settings.guideTint && lg) lg.remove();
     var nl = $('gnow'), nx = x(Date.now());
@@ -2250,7 +2251,7 @@ var Guide = (function () {
       // What else the guide says (#9 in the ideas): a new episode, a reminder set, its kind, its episode.
       if (h.p.n && !past) meta.appendChild(U.el('span', 'gd-badge new', 'NEW'));
       if (!past && hasReminder(c, h.p)) meta.appendChild(U.el('span', 'gd-badge rem', '◷ REMINDER'));
-      var hk = kindOf(c, h.p), kn = { s: 'Sports', n: 'News', c: 'Kids', d: 'Documentary' }[hk];
+      var hk = kindOf(c, h.p), kn = { s: 'Sports', n: 'News', c: 'Kids' }[hk];
       if (kn) meta.appendChild(U.el('span', 'gd-badge kind k-' + hk, kn));
       if (h.p.ep) meta.appendChild(U.el('span', 'gd-ep', h.p.ep));
       meta.appendChild(document.createTextNode((dayName(h.p.s) === 'Today' ? '' : dayName(h.p.s) + '  ') + U.hhmm(h.p.s) + ' – ' + U.hhmm(h.p.e)));

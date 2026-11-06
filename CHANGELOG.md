@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **No more Documentary colour.**  Guides file most reality shows under it (Ax Men, American Pickers), so it was on nearly everything.  Movies, sports, news and kids' programmes keep theirs.
+- **More series in the guide find their TMDB details.**  A show a handful of people know (a cable reality show) now counts as a match, not only the well known ones; what guides tack on the end ("Special Presentation", "Marathon", "(Encore)", "Season Finale") comes off the name; a name with the episode after a colon or dash ("Modern Marvels: Ink") falls back to the show; and specials up to two hours are looked up too.  Shows that missed before are asked about again.
+- **TMDB answers kept on the TV are read before anything is asked,** so a show already known isn't looked up again on every start.
 - **Each channel in the guide sits on a card of its own,** the height of the programmes beside it, so a row reads as one strip instead of names stacked down the column.
 ## 0.6.0 (alpha 95, 2026-11-06)
 
