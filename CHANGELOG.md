@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **The details above the guide no longer cut off at the bottom.**  With a Series or Movie line, an episode title, large text and the line about what's in the window, the summary was cut through the middle of a line and squeezed the lines above it.  Now it gives up lines (three, two, one) until everything fits.
-
-## 0.6.0 (alpha 96, 2026-11-06)
+## 0.6.0 (alpha 97, 2026-11-06)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 96
+### New in alpha 97
+
+- **The details above the guide no longer cut off at the bottom.**  With a Series or Movie line, an episode title, large text and the line about what's in the window, the summary was cut through the middle of a line and squeezed the lines above it.  Now it gives up lines (three, two, one) until everything fits.
+
+### In alpha 96
 
 - **Your own guide sources say what they matched.**  In the web editor's guide step, each source shows how many of your channels it matched, of how many it has, and how many programmes came in, or why it couldn't be read.  One that matched none says so and points at matching by name or Smart match.  When the whole guide finds nothing for your channels, the progress line says so instead of only "0 programmes".
 - **No more Documentary colour.**  Guides file most reality shows under it (Ax Men, American Pickers), so it was on nearly everything.  Movies, sports, news and kids' programmes keep theirs.
