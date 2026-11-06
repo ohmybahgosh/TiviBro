@@ -4,7 +4,7 @@
 
 - **A calmer, more polished guide.**
   - **The colour by category** is a short rounded bar, and it shows on what's on now too (the aired-so-far shading used to cover it).
-  - **What's on now is marked TiviMate's way:** one thin line over the programmes in a light shade of your accent colour, from a small dot on the time bar, and each programme on now a touch lighter up to the line.  Settings > Guide > Mark what's on now: **Line and shade** (now the default, also for TVs that had the old default), **Line, shade and progress bar** (a slim bar along the bottom ending at the line), or **Coloured cell, shade and bar**.
+  - **What's on now is marked TiviMate's way:** one thin line over the programmes in a light shade of your accent colour, from a small dot on the time bar, and each programme on now a touch lighter up to the line.  Settings > Appearance and start screen > Mark what's on now: **Line and shade** (now the default, also for TVs that had the old default), **Line, shade and progress bar** (a slim bar along the bottom ending at the line), or **Coloured cell, shade and bar**.
   - **A programme running on past either edge** of the guide is square on that side and its title fades out, instead of a hard cut or "…".
   - **The row you're on** is a shade lighter all the way across, so your place is easy to follow.
   - **Programmes that have ended** are an outline with quieter text (with Dim past programmes, on by default).
@@ -16,7 +16,7 @@
   - **Moving past the screen's edge glides** the programmes and times over instead of snapping.
   - **Loading** shows a soft shimmer, and a channel with no guide says **No information**, smaller and quieter.
   - **A short programme whose title won't fit** gets its title on both lines (the times are in the details above).
-- **Hide spoilers** (Settings > Guide, off by default): new episodes and programmes that haven't aired yet in the guide, and episodes you haven't started on the Shows screen, show only their title, season and episode, and when they air (discussion #36).
+- **Hide spoilers** (Settings > Appearance and start screen, off by default): new episodes and programmes that haven't aired yet in the guide, and episodes you haven't started on the Shows screen, show only their title, season and episode, and when they air (discussion #36).
 - **A developer's reply to your problem report shows in full** and scrolls with **▲ ▼**, instead of being cut off.  The reply also says where to find it again later (Settings > Updates, about and diagnostics > Your problem reports), to read it or press **Still happening** (discussion #36).
 - **Long names scroll** across while focused in the channel lists, search and other lists, as they already did in the guide.  Japanese, Chinese and Korean text steps a few characters at a time instead of gliding (discussion #36).
 - **The custom accent's hues have names:** "210°  Azure", "330°  Rose" (discussion #36).

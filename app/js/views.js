@@ -2260,7 +2260,7 @@ var Guide = (function () {
       if (sh.poster) { detail.classList.add('has-poster'); var sim = U.el('img', 'gd-poster'); sim.src = sh.poster; sim.alt = ''; sim.onerror = function () { this.remove(); detail.classList.remove('has-poster'); }; detail.appendChild(sim); }
       if (!gd || gd.length < 60) gd = (se && se.plot) || sh.plot || gd;
     }
-    /* Hide spoilers (Settings > Guide, discussion #36): a new episode, or anything not aired yet, keeps only its
+    /* Hide spoilers (Settings > Appearance and start screen, discussion #36): a new episode, or anything not aired yet, keeps only its
        title, season and episode, and when it airs; its summary and episode title stay hidden. */
     var spoil = Store.settings.noSpoilers && h.p && !h.p.up && (h.p.n || h.p.s > now);
     if (spoil && gd) gd = h.p.s > now ? 'Summary hidden until it airs (Hide spoilers is on).' : 'Summary hidden, a new episode (Hide spoilers is on).';

@@ -445,7 +445,7 @@ var Vod = (function () {
        picture).  The provider's own always come first. */
     var tv = typeof Series !== 'undefined' && kind === 'series' ? (it.ep ? (series ? Series.show(series.name, series.year, 'strong') : null) : Series.show(it.name, it.year, 'strong')) : null;
     var te = tv && it.ep ? Series.episode(tv, it.season, it.num) : null;
-    /* Hide spoilers (Settings > Guide, discussion #36): an episode you haven't started keeps its number and air
+    /* Hide spoilers (Settings > Appearance and start screen, discussion #36): an episode you haven't started keeps its number and air
        date, without its summary, its own title from TMDB, or a picture from it (the show's cover instead). */
     var spoil = !!(Store.settings.noSpoilers && it.ep && !isWatched(idOf(it)) && !resumeOf(idOf(it)));
     if (spoil && te) te = { air: te.air };
