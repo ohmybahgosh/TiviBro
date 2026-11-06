@@ -16,11 +16,13 @@
   - **Moving past the screen's edge glides** the programmes and times over instead of snapping.
   - **Loading** shows a soft shimmer, and a channel with no guide says **No information**, smaller and quieter.
   - **A short programme whose title won't fit** gets its title on both lines (the times are in the details above).
-- **Hide spoilers** (Settings > Appearance and start screen, off by default): new episodes and programmes that haven't aired yet in the guide, and episodes you haven't started on the Shows screen, show only their title, season and episode, and when they air (discussion #36).
+- **Hide spoilers** (Settings > Appearance and start screen, off by default): in the guide, new episodes and episodes or movies that haven't aired yet (not news or sport), and on the Shows screen, episodes you haven't started, show only their title, season and episode, and when they air (discussion #36).
 - **A developer's reply to your problem report shows in full** and scrolls with **▲ ▼**, instead of being cut off.  The reply also says where to find it again later (Settings > Updates, about and diagnostics > Your problem reports), to read it or press **Still happening** (discussion #36).
 - **Long names scroll** across while focused in the channel lists, search and other lists, as they already did in the guide.  Japanese, Chinese and Korean text steps a few characters at a time instead of gliding (discussion #36).
 - **The custom accent's hues have names:** "210°  Azure", "330°  Rose" (discussion #36).
 - **"Not playing lately" goes as soon as the channel plays again,** also when it comes back in the same session (OK on "try again", or by itself), not only after restarting TiviBro (#36).
+- **The playing dot shows on the highlighted row** in the channel lists.  It was in the accent colour on an accent background, so the row just looked indented.
+- **My media: Needs review is in a TV show's options too,** as it was in a movie's, when there are files to look at.
 - **The screensaver no longer comes on over a channel that is reconnecting or browsing with the phone app** (#58).  It also waits for a minute and a half after something last played, and for 3 minutes after the last button press, the phone app's included (the TV doesn't count those).  Each answer to the TV is in the log, so a report shows why.
 - **Movies on now: Hold OK on a movie on many channels** lists its showings soonest first, and past four shows **All N showings…** for the rest, so **Watch the channel now** and **Show in the guide** are never pushed out of view.
 
