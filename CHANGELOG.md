@@ -9,6 +9,7 @@
   - **The row you're on** is a shade lighter all the way across, so your place is easy to follow.
   - **Programmes that have ended** are an outline with quieter text (with Dim past programmes, on by default).
   - **A selected catch-up programme** keeps its title readable on the highlight.
+  - **Every theme:** the now line, the shade, the category colour on the selected programme, past programmes' outlines and Coloured cell all read on all 21 themes, including Black and white (a white highlight), Gruvbox (a yellow one, next to News) and High contrast.
 - **Movies on now: Hold OK on a movie on many channels** lists its showings soonest first, and past four shows **All N showings…** for the rest, so **Watch the channel now** and **Show in the guide** are never pushed out of view.
 
 ## 0.6.0 (alpha 93, 2026-11-05)

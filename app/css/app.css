@@ -167,7 +167,7 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .gp.none{color:var(--dim)}
 /* Now, as TiviMate draws it: one thin, soft line over the programmes, the whole height of the guide, from a
    small dot on the time bar.  Thin and a little see-through, so crossing a title doesn't distract. */
-.gnow{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--accent);opacity:.8;z-index:3;pointer-events:none}
+.gnow{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--accent);opacity:.8;z-index:3;pointer-events:none;box-shadow:0 0 0 1px rgba(0,0,0,.35)}
 .gnowh{position:absolute;bottom:-5px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:var(--accent);top:auto!important}
 .gnow::after{content:'';position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(255,255,255,.4)}  /* a lighter shade of the accent, so it shows on the selected programme too */
 /* guide top: details left, preview window right */
@@ -408,7 +408,7 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
    text and the category colour; with Line and progress bar, also a bar along the bottom ending at the line. */
 .gp .gfill{position:absolute;left:0;top:0;bottom:0;pointer-events:none;border-radius:inherit;border-top-right-radius:0;border-bottom-right-radius:0}
 .gp .gfill::before{content:'';position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(255,255,255,.06);border-radius:inherit}
-.gp.focus .gfill::before{background:rgba(255,255,255,.14)}
+.gp.focus .gfill::before{background:var(--on-accent);opacity:.1}
 .gp .gfill::after{content:'';position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--accent);border-radius:0 2px 2px 0}
 .gp.focus .gfill::after{background:var(--on-accent);opacity:.6}
 /* The day in the time bar when it isn't today ("Tomorrow 8:00pm"), and at midnight. */
@@ -425,6 +425,9 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .gp.k-m::after,.gp.k-s::after,.gp.k-n::after,.gp.k-c::after,.gp.k-d::after{content:'';position:absolute;left:7px;top:14px;bottom:14px;width:5px;border-radius:3px;pointer-events:none}
 .gp.k-m::after{background:#b48cff}.gp.k-s::after{background:#3ddc97}.gp.k-n::after{background:#f2b33d}.gp.k-c::after{background:#ff7eb6}.gp.k-d::after{background:#33c9e1}
 .gp.k-m,.gp.k-s,.gp.k-n,.gp.k-c,.gp.k-d{padding-left:22px}
+/* On the selected programme, an edge in the accent's text colour, so a colour close to the accent (News on Gruvbox,
+   Sports on Everforest) still shows. */
+.gp.focus.k-m::after,.gp.focus.k-s::after,.gp.focus.k-n::after,.gp.focus.k-c::after,.gp.focus.k-d::after{box-shadow:0 0 0 2px var(--on-accent)}
 .glegend{position:absolute;right:56px;top:300px;z-index:2;font-size:19px;color:var(--muted);white-space:nowrap}
 .glegend em{font-style:normal;margin-left:20px}
 .glegend em::before{content:'';display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:0}
@@ -437,8 +440,8 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 /* The row you're on: its programmes a shade lighter, so your place is easy to follow across the guide. */
 .grow.sel .gp:not(.focus){box-shadow:inset 0 0 0 999px rgba(255,255,255,.045)}
 /* Over (Dim past programmes): an outline instead of a filled cell, its text and colour quieter. */
-body.dimpast .gp.past:not(.focus){background:transparent;box-shadow:inset 0 0 0 2px var(--panel)}
-body.dimpast .grow.sel .gp.past:not(.focus){box-shadow:inset 0 0 0 2px var(--raised)}
+body.dimpast .gp.past:not(.focus){background:transparent;box-shadow:inset 0 0 0 2px var(--line)}
+body.dimpast .grow.sel .gp.past:not(.focus){box-shadow:inset 0 0 0 2px var(--line),inset 0 0 0 999px rgba(255,255,255,.045)}
 body.dimpast .gp.past:not(.focus) .gs{color:var(--dim)}
 body.dimpast .gp.past:not(.focus)::after{opacity:.45}
 body.dimpast .gp.past.focus{color:var(--on-accent)}
@@ -574,7 +577,7 @@ body.ov-h .osd,body.ov-h .qpanel{background:linear-gradient(transparent,rgba(7,9
 body.ov-l .overlay{background:rgba(7,9,18,.98)}
 body.ov-h .overlay{background:rgba(7,9,18,.72)}
 /* what's on now in the guide */
-body.now-color .gp.now{background:#1c2d5c}
+body.now-color .gp.now:not(.focus)::before{content:'';position:absolute;left:0;top:0;right:0;bottom:0;background:var(--accent);opacity:.2;pointer-events:none}
 body.now-off .gp .gfill::after{display:none}
 /* guide channel names */
 body.noguidenames .gch .n{display:none}
