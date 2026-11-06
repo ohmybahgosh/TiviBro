@@ -65,6 +65,13 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('with an episode from the guide it is surely a series', S.strength(c, { t: 'Severance', s: now, e: now + 3600e3, ep: 'S1 E1' }) === 'strong');
   ok('news, sport, a movie, a long programme and the channel\'s own name are not', ['n', 's'].every((k) => S.strength(c, { t: 'X', s: now, e: now + 1800e3, k: k }) === '') && S.strength(c, { t: 'X', s: now, e: now + 1800e3, mv: 1 }) === '' &&
     S.strength(c, { t: 'Big Thing', s: now, e: now + 3 * 3600e3 }) === '' && S.strength(c, { t: 'Drama One', s: now, e: now + 1800e3 }) === '' && S.strength(c, { t: 'Live at Five', s: now, e: now + 1800e3 }) === '');
+  // From a real guide's titles: "Live" in a name can be a show; sport and placeholders are not.
+  const st = (t, mins) => S.strength(c, { t: t, s: now, e: now + (mins || 60) * 60000 });
+  ok('shows with "Live" in the name are looked up', ['Jimmy Kimmel Live!', 'Saturday Night Live', 'Live with Kelly and Mark', 'TMZ Live', 'The Walking Dead: The Ones Who Live'].every((t) => st(t) === 'weak'),
+    ['Jimmy Kimmel Live!', 'Saturday Night Live', 'Live with Kelly and Mark', 'TMZ Live'].map((t) => t + '=' + st(t)).join(' '));
+  ok('broadcasts, sport, team-channel listings and placeholders are not', ['Live: College Football', 'College Football', 'College Football : BYU at Utah', 'NWSL Soccer', 'Next game: Detroit Lions at Miami Dolphins at 11/08/2026 01:00 PM EST', 'Movie', 'Live!', 'News 12 Long Island'].every((t) => st(t) === ''),
+    ['Live: College Football', 'College Football', 'NWSL Soccer', 'Next game: X', 'Movie', 'Live!'].map((t) => t + '=' + st(t)).join(' '));
+  ok('": Season 3" comes off the name', S.clean('Bronx Buds : Season 3').t === 'Bronx Buds', S.clean('Bronx Buds : Season 3').t);
   ok('nothing known yet: null (what was kept is still being read)', S.of(c, { t: 'Severance', s: now, e: now + 3600e3, ep: 'S1 E1' }) === null);
   await wait(30);
   ok('once it is read: still null, and now it asks', S.of(c, { t: 'Severance', s: now, e: now + 3600e3, ep: 'S1 E1' }) === null);

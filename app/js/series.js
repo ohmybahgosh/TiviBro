@@ -21,7 +21,7 @@ var Series = (function () {
   var SUP = /[ʰ-˿ᴬ-ᵪᶜ-ᶿ⁰-₟]+/g;
   // What guides tack on the end of a show's name: "The UnXplained Special Presentation", "Ax Men Marathon",
   // "American Pickers (Encore)", "Counting Cars - Season Finale".
-  var TAIL = /\s*[-–:(]?\s*(?:special presentation|marathon|encore|(?:mid-?)?season (?:premiere|finale)|series (?:premiere|finale)|new episodes?|all[- ]new|uncut|extended|special edition)\s*\)?\s*$/i;
+  var TAIL = /\s*[-–:(]?\s*(?:special presentation|marathon|encore|(?:mid-?)?season (?:premiere|finale)|series (?:premiere|finale)|season \d{1,2}|new episodes?|all[- ]new|uncut|extended|special edition)\s*\)?\s*$/i;
   function clean(t) {
     t = String(t || '').replace(SUP, ' ');
     var m = /\(((?:19|20)\d\d)\)/.exec(t), y = m ? m[1] : '';
@@ -132,7 +132,11 @@ var Series = (function () {
 
   /* ---------- the guide ---------- */
   // Not a series: news, sport, live and paid programming, a game (My teams, event channels), a movie.
-  var NOT = /\b(news|noticias|live|en vivo|weather|paid program(?:ming)?|infomercial|sign.?off|off.?air|to be announced|tba|highlights|pregame|postgame|countdown|worship)\b/i;
+  /* From a real guide's titles (a US provider, 6,900 of them): "Live" inside a name is often a show ("Jimmy
+     Kimmel Live!", "Saturday Night Live", "Live with Kelly and Mark"), so only "Live:" in front marks a broadcast;
+     guides without categories leave sport unmarked ("College Football", "NWSL Soccer"), so sport is told by its
+     words; team channels list "Next game: …"; and a bare "Movie" is a placeholder. */
+  var NOT = /\b(news|noticias|weather|paid program(?:ming)?|infomercial|sign.?off|off.?air|to be announced|tba|highlights|pregame|postgame|countdown|worship|football|f[uú]tbol|soccer|basketball|baseball|hockey|nfl|nba|wnba|nhl|mlb|mls|ncaa[bf]?|nascar|ufc|boxing|golf|tennis|racing|formula 1|grand prix|kickoff)\b|^\s*(?:live|en vivo|en directo)\s*[:!\-]|^\s*next game\s*:|^\s*live at\b|^\s*(?:movie|film|programming|live|en vivo)\s*!?\s*$/i;
   function strength(c, p) {
     if (!p || !p.t || p.up || p.ended || p.mv) return '';
     if (p.k === 'n' || p.k === 's' || p.k === 'm') return '';
@@ -141,7 +145,7 @@ var Series = (function () {
     var ct = clean(p.t);
     if (!ct.t || norm(ct.t) === norm(c.n)) return '';
     if (p.ep) return 'strong';
-    if (NOT.test(ct.t) || p.e - p.s > 125 * 60000) return '';      // longer: a movie or a sports event, not a show
+    if (NOT.test(ct.t) || p.e - p.s > 75 * 60000) return '';      // longer: most likely a movie (from a real guide: Godzilla, Serendipity), not a show
     if (typeof Teams !== 'undefined' && Teams.isGame && Teams.isGame(ct.t, c.n)) return '';
     return 'weak';
   }
