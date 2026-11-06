@@ -21,6 +21,7 @@
 - **Long names scroll** across while focused in the channel lists, search and other lists, as they already did in the guide.  Japanese, Chinese and Korean text steps a few characters at a time instead of gliding (discussion #36).
 - **The custom accent's hues have names:** "210°  Azure", "330°  Rose" (discussion #36).
 - **"Not playing lately" goes as soon as the channel plays again,** also when it comes back in the same session (OK on "try again", or by itself), not only after restarting TiviBro (#36).
+- **Channels your provider adds get their guide right away.**  The stored guide only covers the channels it was loaded for, so new ones showed "No information" until the next guide reload (every 12 hours by default).  Now a channel list with a guide id (or, with matching by name, a name) the stored guide wasn't loaded for downloads the guide again.  Another copy of a channel already in the guide, or channels taken away, don't.
 - **The playing dot shows on the highlighted row** in the channel lists.  It was in the accent colour on an accent background, so the row just looked indented.
 - **My media: Needs review is in a TV show's options too,** as it was in a movie's, when there are files to look at.
 - **The screensaver no longer comes on over a channel that is reconnecting or browsing with the phone app** (#58).  It also waits for a minute and a half after something last played, and for 3 minutes after the last button press, the phone app's included (the TV doesn't count those).  Each answer to the TV is in the log, so a report shows why.

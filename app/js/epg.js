@@ -625,12 +625,39 @@ var Epg = (function () {
       report: notice.report.concat(reports) });
   }
 
+  /* Channels added to the list: the helper keeps programmes only for the guide ids (and, with name matching,
+     the names) it was asked for, so a stored guide knows nothing of a channel added since.  What a guide was
+     asked for is remembered as short hashes; a guide id or name in the list that wasn't asked for loads the
+     guide again.  A channel added with an id already asked for (another copy of a channel) changes nothing,
+     and neither does one taken away. */
+  function wanted(pl) {
+    var mine = pl.id === P().id ? '' : pl.id, days = +pl.epgDays || 1;
+    var ids = {}, names = {};
+    function keep(map, k, c) { var p = c.arch ? Math.min(days, +c.arch || days) : 0; if (!(k in map) || map[k] < p) map[k] = p; }
+    Library.data.channels.forEach(function (c) {
+      if ((c.p || '') !== mine) return;
+      var m = Store.edits.epgMap[c.k];
+      if (m) keep(ids, m, c);
+      if (c.epg) keep(ids, c.epg, c);
+      if (pl.nameMatch) { keep(names, norm(Library.name(c)), c); keep(names, norm(c.n), c); }
+    });
+    delete names[''];
+    return { ids: ids, names: names };
+  }
+  function askedOf(w) { return Object.keys(w.ids).concat(Object.keys(w.names).map(function (n) { return 'n:' + n; })).map(U.hash); }
+  function addedSince(a, now) {
+    var had = {}, n = 0;
+    a.forEach(function (h) { had[h] = 1; });
+    now.forEach(function (h) { if (!had[h]) n++; });
+    return n;
+  }
+
   /* p: whose guide (the first playlist's when not given).  Another playlist's guide is added beside the
      first's (ingest), with its own crash guard ("main@<id>"). */
   function loadXml(force, notice, p) {
     p = p || P();
     var first = p.id === P().id, srcs = sources(p), pid = first ? '' : p.id, gk = first ? 'main' : 'main@' + p.id;
-    var ckey = 'epg:' + p.id;
+    var ckey = 'epg:' + p.id, akey = 'epgAsked:' + p.id;
     var sig = U.hash(JSON.stringify(srcs) + '|' + p.epgDays + '|' + p.nameMatch);
     return useHelper().then(function (h) {
       hMode = h;
@@ -638,8 +665,14 @@ var Epg = (function () {
       Store.idbSet(ckey, null);                                        // the helper keeps it now
       return hCached('main', sig, pid);
     }).then(function (c) {
+      return Store.idbGet(akey).then(function (a) { return [c, a]; }, function () { return [c, null]; });
+    }).then(function (ca) {
+      var c = ca[0], a = ca[1], asked = askedOf(wanted(p)), added = 0;
+      if (a && a.sig === sig && a.h) added = addedSince(a.h, asked);
+      else if (c && c.sig === sig) Store.idbSet(akey, { sig: sig, h: asked });     // first time: the list as it is now
+      if (added) Log.info('epg', added + ' guide id' + (added === 1 ? '' : 's') + ' or name' + (added === 1 ? '' : 's') + ' new in the channel list since the guide loaded; loading it again');
       var hours = +p.epgRefresh, age = c ? Date.now() - c.at : Infinity;
-      var stale = !c || c.sig !== sig || (hours > 0 && age > hours * 3600e3) || (hours === -1 && !(loadXml.didStart || {})[p.id]);
+      var stale = !c || c.sig !== sig || added > 0 || (hours > 0 && age > hours * 3600e3) || (hours === -1 && !(loadXml.didStart || {})[p.id]);
       (loadXml.didStart = loadXml.didStart || {})[p.id] = true;
       if (c && c.sig === sig) { ingest(c, p); xmlReady = true; emit(null); }
       if (!stale && !force) { runSet(gk, null); return; }     // a forced reload cut short: the cache is fine
@@ -660,6 +693,7 @@ var Epg = (function () {
         }
         setProgress(Object.assign({}, progress, { active: true, phase: 'save' }));
         res.at = res.at || Date.now(); res.sig = sig;
+        Store.idbSet(akey, { sig: sig, h: askedOf(wanted(p)) });              // what this guide was asked for
         ingest(res, p); xmlReady = true;
         if (!hMode) Store.idbSet(ckey, res);
         emit(null);
@@ -688,16 +722,7 @@ var Epg = (function () {
     // (up to their catch-up length); the rest keep the last few hours.  On big playlists, where
     // most channels have no catch-up, this saves a large share of the TV's memory.
     var days = +pl.epgDays || 1;
-    var ids = {}, names = {};
-    function keep(map, k, c) { var p = c.arch ? Math.min(days, +c.arch || days) : 0; if (!(k in map) || map[k] < p) map[k] = p; }
-    if (!pub) Library.data.channels.forEach(function (c) {
-      if ((c.p || '') !== mine) return;
-      var m = Store.edits.epgMap[c.k];
-      if (m) keep(ids, m, c);
-      if (c.epg) keep(ids, c.epg, c);
-      if (pl.nameMatch) { keep(names, norm(Library.name(c)), c); keep(names, norm(c.n), c); }
-    });
-    delete names[''];
+    var w = pub ? { ids: {}, names: {} } : wanted(pl), ids = w.ids, names = w.names;
     var now = Date.now();
     var run = Date.now().toString(36);
     var msg = { sources: srcs.map(function (s, i) {
