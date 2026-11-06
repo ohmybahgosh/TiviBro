@@ -13,15 +13,16 @@ function setup(opts) {
   PalmServiceBridge.prototype.call = function (uri, params) { calls.push({ uri, params: JSON.parse(params), bridge: this.n }); };
   const player = { current: null, state: 'idle', userPaused: false };
   const doc = { hidden: false };
+  const clock = { t: 1700000000000 };
   const ctx = {
-    console, JSON, Date, document: doc,
+    console, JSON, Date: { now: () => clock.t }, document: doc,
     Log: { info: (t, m) => logs.push(['info', m]), warn: (t, m) => logs.push(['warn', m]) },
     Player: player
   };
   if (!opts.noBridge) ctx.PalmServiceBridge = PalmServiceBridge;
   vm.createContext(ctx);
   vm.runInContext(SRC + '\nthis.Awake = Awake;', ctx);
-  return { A: ctx.Awake, calls, logs, bridges, player, doc };
+  return { A: ctx.Awake, calls, logs, bridges, player, doc, clock };
 }
 
 // The decision on its own.
@@ -35,6 +36,40 @@ function setup(opts) {
   ok('TiviBro in the background: it may start', A.busy({ current: ch, state: 'playing' }, true) === false);
   ok('a channel that would not play: it may start', A.busy({ current: ch, state: 'error' }, false) === false && A.busy({ current: ch, state: 'ended' }, false) === false);
   ok('no player at all: it may start', A.busy(null, false) === false);
+}
+
+// The grace periods (issue #58): a reconnect, a channel failing over, and the phone app as the remote.
+{
+  const { A } = setup();
+  const ch = { n: 'News' }, now = 1700000000000;
+  const idle = { current: null, state: 'idle' }, err = { current: ch, state: 'error' };
+  ok('played 5 seconds ago (a reconnect): it waits', A.wait(idle, false, now, now - 5e3, 0) === true);
+  ok('a channel that would not play, a moment after another played: it waits', A.wait(err, false, now, now - 20e3, 0) === true);
+  ok('played 2 minutes ago, nothing since: it may start', A.wait(idle, false, now, now - 120e3, 0) === false);
+  ok('a button 1 minute ago (the phone app as the remote), nothing playing: it waits', A.wait(idle, false, now, 0, now - 60e3) === true);
+  ok('the last button 4 minutes ago: it may start', A.wait(idle, false, now, 0, now - 240e3) === false);
+  ok('paused by you a moment after playing: it may start (no grace for a pause)', A.wait({ current: ch, state: 'playing', userPaused: true }, false, now, now - 5e3, 0) === false);
+  ok('in the background, whatever happened: it may start', A.wait({ current: ch, state: 'playing' }, true, now, now, now) === false);
+}
+{
+  const t = setup();
+  t.A.start(); t.bridges[0].onservicecallback({ returnValue: true, subscribed: true });
+  t.player.current = { n: 'Sports' }; t.player.state = 'playing'; t.A._player();
+  t.clock.t += 60e3; t.player.state = 'loading'; t.A._player();          // reconnecting
+  t.player.current = null; t.player.state = 'idle'; t.A._player();        // a moment between attempts
+  t.clock.t += 4e3;
+  t.bridges[0].onservicecallback({ returnValue: true, timestamp: 9 });
+  const r = t.calls.filter(c => /responseScreenSaverRequest/.test(c.uri)).pop();
+  ok('asked in the middle of a reconnect: it waits, and says why', r.params.ack === false && t.logs.some(l => /something played 4 s ago/.test(l[1])), [r, t.logs]);
+  t.clock.t += 200e3; t.A.touch(); t.clock.t += 30e3;
+  t.bridges[0].onservicecallback({ returnValue: true, timestamp: 10 });
+  const r2 = t.calls.filter(c => /responseScreenSaverRequest/.test(c.uri)).pop();
+  ok('browsing with the phone app, nothing playing: it waits, and says why', r2.params.ack === false && t.logs.some(l => /TiviBro is in use \(a button 30 s ago\)/.test(l[1])), [r2, t.logs.slice(-2)]);
+  t.clock.t += 400e3;
+  t.bridges[0].onservicecallback({ returnValue: true, timestamp: 11 });
+  const r3 = t.calls.filter(c => /responseScreenSaverRequest/.test(c.uri)).pop();
+  ok('and once it has all gone quiet: it may start, and that is logged too', r3.params.ack === true && t.logs.some(l => /Screensaver allowed/.test(l[1])), r3);
+  ok('every button reaches it: the remote and the phone app both go through UI dispatch', /Awake\.touch\(\)/.test(fs.readFileSync(path.join(__dirname, '../../app/js/ui.js'), 'utf8')));
 }
 
 // The name still held by a start a second earlier (webOS starts the app twice): asked again under its own name.
@@ -52,7 +87,7 @@ function setup(opts) {
 
 // Registering, then the questions.
 {
-  const { A, calls, logs, bridges, player, doc } = setup();
+  const { A, calls, logs, bridges, player, doc, clock } = setup();
   A.start();
   ok('registers with the TV power service, subscribed, as tivibro', calls.length === 1 && calls[0].uri === 'luna://com.webos.service.tvpower/power/registerScreenSaverRequest' && calls[0].params.subscribe === true && calls[0].params.clientName === 'tivibro', calls);
   A.start();
@@ -79,6 +114,7 @@ function setup(opts) {
   sub.onservicecallback({ returnValue: true, timestamp: 5 });
   ok('paused: ack true', calls[3].params.ack === true && calls[3].params.timestamp === 5, calls[3]);
   player.userPaused = false; player.current = null; player.state = 'idle';
+  clock.t += 100e3;                                   // stopped a while ago (90 seconds of grace after playing)
   sub.onservicecallback({ returnValue: true, timestamp: 6 });
   ok('nothing playing: ack true', calls[4].params.ack === true);
   player.current = { n: 'News' }; player.state = 'buffering'; doc.hidden = true;

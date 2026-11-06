@@ -58,6 +58,7 @@ var UI = (function () {
   function dispatch(a, e) {
     var h = modalH || handler;
     if (!h || typeof a !== 'string' || !a) return;
+    if (typeof Awake !== 'undefined' && Awake.touch) Awake.touch();       // in use: the screensaver waits (issue #58)
     if (Log.sinking) Log.debug('key', a + (modalH ? '  (dialog)' : '') + '  tab=' + (window.Views ? Views.tab : '?') + (window.Views && Views.zone ? ' zone=' + Views.zone : '') + (window.Views && Views.full ? ' fullscreen' : ''));
     try { h(a, e); }
     catch (err) {

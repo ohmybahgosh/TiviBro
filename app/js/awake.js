@@ -11,18 +11,36 @@
 
    TiviBro says no while live TV, a movie or episode, My media or catch-up plays (also while it loads or
    buffers), and yes when nothing plays, playback is paused, or TiviBro is in the background.  Each
-   refusal is logged.  On by default, no setting. */
+   refusal is logged.  On by default, no setting.
+   Two grace periods (issue #58): the screensaver also waits for 90 seconds after something last played,
+   so a reconnect or a channel that fails over to the next isn't "nothing playing", and for 3 minutes
+   after the last button press, as presses from the phone app reach TiviBro but not the TV's idle timer. */
 var Awake = (function () {
   'use strict';
   var BASE = 'tivibro', NAME = BASE, retried = false, SVC = 'luna://com.webos.service.tvpower/power/';
   var ACTIVE = { playing: 1, loading: 1, buffering: 1 };
   var sub = null, state = 'off', why = '', refused = 0, allowed = 0, lastAsk = 0, pending = [];
+  var PLAY_GRACE = 90e3, INPUT_GRACE = 180e3, playedAt = 0, inputAt = 0, wasBusy = false;
 
   /* Should the screensaver wait?  p: { current, state, userPaused }, hidden: TiviBro in the background.
      A pure function, for the tests. */
   function busy(p, hidden) {
     if (!p || hidden || !p.current || p.userPaused) return false;
     return !!ACTIVE[p.state];
+  }
+  /* The answer, with the grace periods: what busy() says, or something played in the last 90 seconds, or a
+     button was pressed in the last 3 minutes.  Never while TiviBro is in the background.  Pure, for the tests. */
+  function wait(p, hidden, now, played, input) {
+    if (hidden) return false;
+    if (busy(p, false)) return true;
+    var paused = !!(p && p.current && p.userPaused);
+    return (!paused && played > 0 && now - played < PLAY_GRACE) || (input > 0 && now - input < INPUT_GRACE);
+  }
+  // The player changed state: remember when it was last playing, loading or buffering.
+  function onPlayer() {
+    var b = busy(playerNow(), false);
+    if (b || wasBusy) playedAt = Date.now();
+    wasBusy = b;
   }
   function playerNow() {
     if (typeof Player === 'undefined') return null;
@@ -54,12 +72,14 @@ var Awake = (function () {
     if (state !== 'on') { state = 'on'; why = ''; log('info', 'Holding off the TV screensaver while something plays'); }
     if (r.timestamp == null) return;
     lastAsk = Date.now();
-    var p = playerNow(), no = busy(p, hiddenNow());
+    var p = playerNow(), now = Date.now(), hid = hiddenNow(), playing = busy(p, hid);
+    if (playing) playedAt = now;
+    var no = wait(p, hid, now, playedAt, inputAt);
     if (no) {
       refused++;
-      var ch = p.current, what = ch && (ch.n || ch.title) ? '"' + (ch.n || ch.title) + '"' : 'a video';
-      log('info', 'Screensaver held off: ' + what + ' is playing (' + p.state + ')');
-    } else allowed++;
+      var ch = p && p.current, what = ch && (ch.n || ch.title) ? '"' + (ch.n || ch.title) + '"' : 'a video';
+      log('info', 'Screensaver held off: ' + (playing ? what + ' is playing (' + p.state + ')' : now - inputAt < INPUT_GRACE ? 'TiviBro is in use (a button ' + Math.round((now - inputAt) / 1000) + ' s ago)' : 'something played ' + Math.round((now - playedAt) / 1000) + ' s ago'));
+    } else { allowed++; log('info', 'Screensaver allowed: nothing playing' + (hid ? ' (TiviBro in the background)' : '')); }
     respond(r.timestamp, !no);
   }
   function respond(timestamp, ack) {
@@ -74,6 +94,7 @@ var Awake = (function () {
 
   function start() {
     if (sub) return;
+    if (!start.hooked && typeof Player !== 'undefined' && Player.on) { start.hooked = true; Player.on('state', onPlayer); }
     sub = bridge();
     if (!sub) { state = 'unavailable'; return; }        // a desktop browser, the simulator
     state = 'starting';
@@ -83,8 +104,10 @@ var Awake = (function () {
   }
 
   return {
-    start: start, busy: busy, _message: onMessage,
-    _reset: function () { sub = null; NAME = BASE; retried = false; state = 'off'; why = ''; refused = allowed = lastAsk = 0; pending = []; },
+    start: start, busy: busy, wait: wait, _message: onMessage,
+    touch: function () { inputAt = Date.now(); },        // a button pressed (the remote or the phone app)
+    _reset: function () { sub = null; NAME = BASE; retried = false; state = 'off'; why = ''; refused = allowed = lastAsk = 0; pending = []; playedAt = inputAt = 0; wasBusy = false; },
+    _player: onPlayer,
     get status() { return { state: state, why: why, refused: refused, allowed: allowed, lastAsk: lastAsk }; }
   };
 })();
