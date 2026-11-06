@@ -60,7 +60,7 @@ var Store = (function () {
     clockDate: false,           // show the date next to the clock
     numFont: 'tv',              // tv | even (every digit the same width) | mono (fixed width, slashed zero)
     overlay: 'm',               // l | m | h  transparency of panels over video
-    nowStyle: 'line',           // line | fill | color  how what's on now is marked in the guide (the now line, also a progress bar, also a coloured cell)
+    nowStyle: 'line',           // line | fill | color  how what's on now is marked in the guide (the now line and a shade up to it, also a progress bar, also a coloured cell)
     guideNames: true,           // channel names in the guide (off = logos only)
     twoLineNames: false,        // channel names may wrap to two lines
     showCatchupMark: true,      // ↺ marks for catch-up channels and programmes
@@ -140,7 +140,7 @@ var Store = (function () {
   if (!settings.buf2) { if (!raw.buffer || raw.buffer === 'balanced') settings.buffer = 'auto'; settings.buf2 = 1; }
   // 0.6 look: the old amber default becomes Midnight Electric blue (a chosen colour other than the old default is kept).
   if (!settings.look2) { if (!raw.accent || raw.accent === '#f2b33d') settings.accent = '#5b8cff'; settings.look2 = 1; }
-  // Alpha 94: what's on now is marked TiviMate's way, with just the now line.  The old default (a tint or bar in
+  // Alpha 94: what's on now is marked TiviMate's way, with the now line and a light shade up to it.  The old default (a tint or bar in
   // the cell) and Off both become that; a coloured cell chosen by hand is kept.
   if (!settings.now2) { if (settings.nowStyle !== 'color') settings.nowStyle = 'line'; settings.now2 = 1; }
   // v0.1 had a single "playlist" object.

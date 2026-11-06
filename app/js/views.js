@@ -271,8 +271,8 @@ var Views = (function () {
     b.toggle('focus-ring', s.focusStyle === 'ring' || (!pal && s.theme === 'contrast'));
     if (s.textSize === 's' || s.textSize === 'l') b.add('ts-' + s.textSize);
     if (s.overlay === 'l' || s.overlay === 'h') b.add('ov-' + s.overlay);
-    // What's on now: just the now line (as TiviMate draws it; 'off' from before means the same), or also a
-    // progress bar in the cell ('fill'), or that and a coloured cell ('color').
+    // What's on now: the now line and a light shade up to it (as TiviMate draws it; 'off' from before means the
+    // same), or also a progress bar in the cell ('fill'), or that and a coloured cell ('color').
     var nst = s.nowStyle === 'fill' || s.nowStyle === 'color' ? s.nowStyle : 'line';
     if (nst === 'line') b.add('now-off'); else if (nst === 'color') b.add('now-color');
     b.toggle('nums-even', s.numFont === 'even');

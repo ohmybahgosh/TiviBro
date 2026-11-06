@@ -404,12 +404,11 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .gch .logo{width:104px;height:62px;object-fit:contain;flex:none}
 .gch{gap:16px}
 .gch .cu{flex:none;font-size:18px;color:#7fe0ae;border:1px solid #2f6b50;border-radius:6px;padding:0 6px;margin-left:auto}
-/* live progress inside "now" programme cells */
-/* What's on now: a slim progress bar under the times, on a faint track. */
-/* What's on now: the part already aired is tinted with the accent colour, under the text. */
-/* What has aired of what's on now (Mark what's on now > Line and progress bar): a bar along the bottom,
-   ending at the now line.  No tint over the cell: the line, bar and colour were too busy. */
-.gp .gfill{position:absolute;left:0;top:0;bottom:0;pointer-events:none;border-radius:8px 0 0 8px}
+/* What has aired of what's on now: a slight lighter shade up to the now line, as TiviMate does, under the
+   text and the category colour; with Line and progress bar, also a bar along the bottom ending at the line. */
+.gp .gfill{position:absolute;left:0;top:0;bottom:0;pointer-events:none;border-radius:inherit;border-top-right-radius:0;border-bottom-right-radius:0}
+.gp .gfill::before{content:'';position:absolute;left:0;top:0;right:0;bottom:0;background:rgba(255,255,255,.06);border-radius:inherit}
+.gp.focus .gfill::before{background:rgba(255,255,255,.14)}
 .gp .gfill::after{content:'';position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--accent);border-radius:0 2px 2px 0}
 .gp.focus .gfill::after{background:var(--on-accent);opacity:.6}
 /* The day in the time bar when it isn't today ("Tomorrow 8:00pm"), and at midnight. */
@@ -576,7 +575,7 @@ body.ov-l .overlay{background:rgba(7,9,18,.98)}
 body.ov-h .overlay{background:rgba(7,9,18,.72)}
 /* what's on now in the guide */
 body.now-color .gp.now{background:#1c2d5c}
-body.now-off .gp .gfill{display:none}
+body.now-off .gp .gfill::after{display:none}
 /* guide channel names */
 body.noguidenames .gch .n{display:none}
 body.twolinenames .gch .n{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.15}
