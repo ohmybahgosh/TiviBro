@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Even more guide shows find their TMDB details.**  A name with more on the end than TMDB has falls back to the shorter name when that's a show people know ("Hannah Montana Forever" is "Hannah Montana").  A season or episode inside the name comes off with what follows it ("Shark Tank :Season 4 :2026: Ep 4", "Brave Wilderness S2E2 -Face-to-Face…"), and counts as a sure match like a guide that gave the episode.  "The" in front and "&" for "and" make no difference.  Shows that missed before are asked about again.
+
 ## 0.6.0 (alpha 97, 2026-11-06)
 
 Pre-release: expect rough edges, and keep a backup before installing.

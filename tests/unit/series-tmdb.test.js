@@ -22,6 +22,13 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     if (/\/search\/tv\?query=Ax%20Men&/.test(url)) return cb(null, { results: [{ id: 55, name: 'Ax Men', popularity: 9, vote_count: 12 }] });
     if (/\/search\/tv\?query=Modern%20Marvels%3A%20Ink&/.test(url)) return cb(null, { results: [{ id: 99, name: 'Ink Master', popularity: 30, vote_count: 400 }] });
     if (/\/search\/tv\?query=Modern%20Marvels&/.test(url)) return cb(null, { results: [{ id: 66, name: 'Modern Marvels', popularity: 12, vote_count: 30 }] });
+    if (/\/search\/tv\?query=Hannah%20Montana&/.test(url)) return cb(null, { results: [{ id: 77, name: 'Hannah Montana', popularity: 60, vote_count: 2600 }] });
+    if (/\/search\/tv\?query=Hannah%20Montana%20Forever&/.test(url)) return cb(null, { results: [] });
+    if (/\/search\/tv\?query=Tiny%20Show(%20Extra)?&/.test(url)) return cb(null, { results: [{ id: 78, name: 'Tiny Show', popularity: 1, vote_count: 6 }] });
+    if (/\/search\/tv\?query=(Night|Night%20of%20the|Night%20of)&/.test(url)) return cb(null, { results: [{ id: 79, name: 'Night of', vote_count: 900 }] });
+    if (/\/search\/tv\?query=Night%20of%20the%20Living&/.test(url)) return cb(null, { results: [] });
+    if (/\/search\/tv\?query=Big%20Bang%20Theory&/.test(url)) return cb(null, { results: [{ id: 81, name: 'The Big Bang Theory', vote_count: 9000 }] });
+    if (/\/search\/tv\?query=Rubble%20and%20Crew&/.test(url)) return cb(null, { results: [{ id: 82, name: 'Rubble & Crew', vote_count: 40 }] });
     const m = /\/tv\/(\d+)\?/.exec(url);
     if (m) return cb(null, { id: +m[1], name: 'The Office', overview: 'Office life.', first_air_date: m[1] === '22' ? '2005-03-24' : '2001-07-09', genres: [{ name: 'Comedy' }], vote_average: 8.6, networks: [{ name: m[1] === '22' ? 'NBC' : 'BBC Two' }], credits: { cast: [{ name: 'Steve Carell' }] } });
     cb(new Error('unexpected ' + url));
@@ -38,6 +45,16 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('a weak guess at a show a few people know (a cable reality show, 12 votes) is a match', r.metadata && r.metadata.id === 'tmdb:tv:55', JSON.stringify(r).slice(0, 120));
   r = await look({ guide: 'weak', title: 'Modern Marvels: Ink' });
   ok('no show of the whole name: the part before the colon ("Modern Marvels: Ink")', r.metadata && r.metadata.id === 'tmdb:tv:66', JSON.stringify(r).slice(0, 120));
+  r = await look({ guide: 'weak', title: 'Hannah Montana Forever' });
+  ok('no show of the whole name: the name without its last word, a show people know ("Hannah Montana Forever")', r.metadata && r.metadata.id === 'tmdb:tv:77', JSON.stringify(r).slice(0, 120));
+  r = await look({ guide: 'weak', title: 'Big Bang Theory' });
+  const r2 = await look({ guide: 'weak', title: 'Rubble and Crew' });
+  ok('"The" in front and "&" for "and" make no difference', r.metadata && r.metadata.id === 'tmdb:tv:81' && r2.metadata && r2.metadata.id === 'tmdb:tv:82', JSON.stringify([r, r2]).slice(0, 200));
+  r = await look({ guide: 'strong', title: 'Tiny Show Extra' });
+  ok('but not a shorter name only a few people know', r.miss === true, JSON.stringify(r).slice(0, 120));
+  const n1 = asked.length;
+  r = await look({ guide: 'weak', title: 'Night of the Living' });
+  ok('never cut down to a name ending on "the" or "of", or to one word', r.miss === true && asked.slice(n1).every((u) => !/query=(Night|Night%20of%20the|Night%20of)&/.test(u)), asked.slice(n1).join(' '));
   r = await look({ guide: 'strong', title: 'Obscure' });
   ok('a strong one (the guide gave an episode) takes it', !!(r.metadata || r instanceof Error) && !r.miss, JSON.stringify(r).slice(0, 120));
   const n0 = asked.length;
@@ -59,6 +76,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/series.js'), 'utf8') + ';this.Series = Series;', ctx);
   const S = ctx.Series, wait = (ms) => new Promise((res) => setTimeout(res, ms));
   ok('names cleaned of what providers put around them', S.clean('EN - Breaking Bad (2008) [4K]').t === 'Breaking Bad' && S.clean('EN - Breaking Bad (2008)').y === '2008' && S.clean('|US| The Office').t === 'The Office' && S.clean('CSI: Miami').t === 'CSI: Miami' && S.clean('Slow Horses S03').t === 'Slow Horses');
+  ok('a season or episode inside the name comes off, with what follows it', ['Deal or No Deal Australia Season 12 (Reboot Season 01)', 'Brave Wilderness S2E2 -Face-to-Face with Cheetahs', 'Shark Tank :Season 4 :2026: Ep   4', 'Chasing Speed: Episode 1', 'Bronx Buds : Season 3'].map((t) => S.clean(t).t).join('|') === 'Deal or No Deal Australia|Brave Wilderness|Shark Tank|Chasing Speed|Bronx Buds',
+    ['Deal or No Deal Australia Season 12 (Reboot Season 01)', 'Brave Wilderness S2E2 -Face-to-Face with Cheetahs', 'Shark Tank :Season 4 :2026: Ep   4', 'Chasing Speed: Episode 1', 'Bronx Buds : Season 3'].map((t) => S.clean(t).t).join('|'));
+  ok('and makes it a sure ask, like a guide that gave the episode', S.strength({ n: 'x' }, { t: 'Shark Tank :Season 4 :2026: Ep   4', s: 0, e: 3600e3 }) === 'strong' && S.strength({ n: 'x' }, { t: 'Shark Tank', s: 0, e: 3600e3 }) === 'weak' && S.clean('Epic Meal Time').t === 'Epic Meal Time');
   ok('what guides tack on the end comes off too', S.clean('The UnXplained Special Presentation').t === 'The UnXplained' && S.clean('Ax Men Marathon').t === 'Ax Men' && S.clean('American Pickers (Encore)').t === 'American Pickers' && S.clean('Counting Cars - Season Finale').t === 'Counting Cars' && S.clean('Special Victims Unit').t === 'Special Victims Unit',
     [S.clean('The UnXplained Special Presentation').t, S.clean('Ax Men Marathon').t, S.clean('American Pickers (Encore)').t, S.clean('Counting Cars - Season Finale').t].join(' | '));
   const c = { n: 'Drama One', k: 'x1' }, now = Date.now();

@@ -29,6 +29,9 @@ function networkJson(url, headers, cb) {
 var json = require('./media-metadata-cache').create(networkJson);
 function str(v, n) { return typeof v === 'string' ? v.slice(0, n) : ''; }
 function normal(v) { return str(v, 200).toLowerCase().replace(/[^a-z0-9]/g, ''); }
+// A show's name for comparing: also without "The" in front and with "&" read as "and" ("Big Bang Theory" is
+// "The Big Bang Theory" on TMDB, "Rubble and Crew" is "Rubble & Crew").
+function showName(v) { return normal(str(v, 200).replace(/&/g, ' and ').replace(/^\s*the\s+/i, '')); }
 function image(path, size) { return /^\/[a-zA-Z0-9._-]+$/.test(path || '') ? 'https://image.tmdb.org/t/p/' + size + path : ''; }
 function art(list, language, fallback) {
   list = Array.isArray(list) ? list : [];
@@ -185,7 +188,7 @@ function create(opts) {
   /* A TV series by its name, from the guide or the provider's Shows (app/js/series.js): a show of exactly
      that name, the best known one when several have it (a US and a UK version), the one that started in
      q.year when one did.  q.guide 'strong' (the guide gave a season and episode, or it's the provider's
-     own show) takes any such show; 'weak' only one with 25+ votes, so a programme that merely shares a
+     own show) takes any such show; 'weak' only one with 5+ votes, so a programme that merely shares a
      name with an obscure show isn't dressed up as it.  { metadata } (the show) or { miss }. */
   function guideTvLookup(q, cb) {
     var language = LOCALES[q.language] ? q.language : 'en', locale = LOCALES[language];
@@ -196,19 +199,29 @@ function create(opts) {
        some people know (5 votes), a guide that did (strong) any.  No such show: the part before a colon or a
        dash, as guides often put the episode there ("Modern Marvels: Ink", "Ax Men - Timber Wars"). */
     var main = title.split(/\s*:\s+|\s+[-–]\s+/)[0];
-    function ask(name, last) {
+    /* Then the name without its last word or two, when a show of exactly that shorter name is one people
+       know (20+ votes): guides add to a name what TMDB doesn't have ("Hannah Montana Forever", the name its
+       last season went by, is "Hannah Montana" there).  Never shorter than two words. */
+    var words = main.split(/\s+/), names = [{ n: title, min: strong ? 1 : 5 }];
+    if (main !== title && normal(main).length >= 3) names.push({ n: main, min: strong ? 1 : 5 });
+    for (var cut = 1; cut <= 2 && words.length - cut >= 2; cut++) {
+      var shorter = words.slice(0, words.length - cut).join(' ').replace(/[\s,:;&\-–]+$/, '');
+      if (normal(shorter).length >= 6 && !/^(the|a|an|and|of|in|on|at|to|for|with|my|your|our)$/i.test(words[words.length - cut - 1])) names.push({ n: shorter, min: 20 });
+    }
+    function ask(i) {
+      var name = names[i].n;
       request('/search/tv?query=' + encodeURIComponent(name) + '&language=' + locale, function (e, r) {
         if (e) return cb(e);
         var exact = (r && Array.isArray(r.results) ? r.results : []).filter(function (t) {
-          return t && /^[1-9][0-9]*$/.test(String(t.id)) && (normal(t.name) === normal(name) || normal(t.original_name) === normal(name));
+          return t && /^[1-9][0-9]*$/.test(String(t.id)) && (showName(t.name) === showName(name) || showName(t.original_name) === showName(name));
         });
         exact.sort(function (a, b) { return (year ? (str(b.first_air_date, 4) === year) - (str(a.first_air_date, 4) === year) : 0) || (b.popularity || 0) - (a.popularity || 0); });
         var best = exact[0];
-        if (!best || (best.vote_count || 0) < (strong ? 1 : 5)) return last ? cb(null, { miss: true }) : ask(main, true);
+        if (!best || (best.vote_count || 0) < names[i].min) return i + 1 < names.length ? ask(i + 1) : cb(null, { miss: true });
         tvLookup({ id: 'tmdb:tv:' + best.id, language: language }, function (e2, x) { cb(e2, x && x.metadata ? { metadata: x.metadata } : { miss: true }); });
       });
     }
-    ask(title, !main || main === title || normal(main).length < 3);
+    ask(0);
   }
   return { cancel:function(){cancelled=true;jobs.forEach(function(job){job.cancel();});jobs=[];}, lookup: function (q, cb) { return q && q.guide ? (q.kind === 'tv' ? guideTvLookup(q, cb) : guideLookup(q, cb)) : q && (q.kind === 'tv' || /^tmdb:tv:/.test(q.id || '')) ? tvLookup(q, cb) : lookup(q, cb); }, configured: function () { return !!credential; } };
 }

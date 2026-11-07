@@ -10,7 +10,7 @@
    What it gives: Series.of(c, p) for a guide programme, Series.show(name, year) for a provider's show,
    Series.episode(show, 'S2 E5'), each null until known; onChange(fn) when an answer comes in. */
 var Series = (function () {
-  var KEY = 'tvseries', VER = 2, KEEP = 30 * 86400e3, MAX_SHOWS = 3000, MAX_SEASONS = 400, GAP = 350, QUEUE = 4;
+  var KEY = 'tvseries', VER = 3, KEEP = 30 * 86400e3, MAX_SHOWS = 3000, MAX_SEASONS = 400, GAP = 350, QUEUE = 4;
   var shows = {}, seasons = {}, loaded = null, ready = false, queue = [], queued = {}, busy = false, saveT = null, listeners = [], paused = 0;
   function S() { return Store.settings; }
   function on() { return S().guideSeries !== false && typeof MediaStore !== 'undefined' && !!MediaStore.tmdbToken(); }
@@ -22,6 +22,10 @@ var Series = (function () {
   // What guides tack on the end of a show's name: "The UnXplained Special Presentation", "Ax Men Marathon",
   // "American Pickers (Encore)", "Counting Cars - Season Finale".
   var TAIL = /\s*[-–:(]?\s*(?:special presentation|marathon|encore|(?:mid-?)?season (?:premiere|finale)|series (?:premiere|finale)|season \d{1,2}|new episodes?|all[- ]new|uncut|extended|special edition)\s*\)?\s*$/i;
+  /* A season and episode inside the name, and whatever follows it, from a real guide: "Brave Wilderness S2E2
+     -Face-to-Face with Cheetahs", "Deal or No Deal Australia Season 12 (Reboot Season 01)", "Shark Tank :Season 4
+     :2026: Ep 4", "Chasing Speed: Episode 1".  (Something has to come before it: never the whole name.) */
+  var EPIN = /(\S)\s*[:(\-–|]?\s*\b(?:S\d{1,2}\s*E\d{1,3}|(?:reboot\s+)?season\s*\d{1,2}|ep(?:isode)?\.?\s*\d{1,4})\b.*$/i;
   function clean(t) {
     t = String(t || '').replace(SUP, ' ');
     var m = /\(((?:19|20)\d\d)\)/.exec(t), y = m ? m[1] : '';
@@ -30,7 +34,9 @@ var Series = (function () {
       .replace(/^\s*(?:new|premiere|season premiere|series premiere)\s*[:\-–]\s*/i, '')
       .replace(/\((?:19|20)\d\d\)/g, ' ').replace(/\[[^\]]*\]/g, ' ')
       .replace(/\s+S\d{1,2}(?:\s*E\d{1,3})?\s*$/i, '').replace(/\s*[-–|]\s*(?:u?hd|sd|4k|fhd|multi[- ]?sub)\s*$/i, '').replace(/\s+(?:u?hd|cc|4k)\s*$/i, '')
+      .replace(EPIN, '$1')
       .replace(TAIL, '').replace(TAIL, '')
+      .replace(/\s*[:\-–|]+\s*$/, '')
       .replace(/\s{2,}/g, ' ').trim();
     return { t: x, y: y };
   }
@@ -144,7 +150,7 @@ var Series = (function () {
     if (typeof Events !== 'undefined' && Events.of && Events.of(c)) return '';
     var ct = clean(p.t);
     if (!ct.t || norm(ct.t) === norm(c.n)) return '';
-    if (p.ep) return 'strong';
+    if (p.ep || EPIN.test(String(p.t).replace(SUP, ' '))) return 'strong';     // the guide gave a season or episode, in its own field or the name
     if (NOT.test(ct.t) || p.e - p.s > 75 * 60000) return '';      // longer: most likely a movie (from a real guide: Godzilla, Serendipity), not a show
     if (typeof Teams !== 'undefined' && Teams.isGame && Teams.isGame(ct.t, c.n)) return '';
     return 'weak';
