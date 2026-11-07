@@ -80,6 +80,9 @@ data class DropboxStep(val tv: String, val stage: String, val error: String? = n
 
 /** How long a Dropbox sign-in may take in the browser. */
 private const val DROPBOX_WAIT_MS = 10 * 60_000L
+/** Turn on: how long to look for a TV woken over Bluetooth on the network.  From fully off, with a USB network
+    adapter (LG-USB-2-ETH0), a TV can take two minutes or more to join the network. */
+private const val WAKE_LONG_MS = 180_000L
 
 data class Pairing0(val busy: Boolean = false, val error: String? = null, val done: Tv? = null)
 
@@ -271,19 +274,37 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         } else null
         if (watch != null) log.add("Watching for the TV over Bluetooth: ${watch.result}.")
         var on = false
+        var host = tv.host; var port = tv.port
         try {
-            val end = System.currentTimeMillis() + BleWake.ADVERTISE_MS
-            var nextWol = 0L
+            val start = System.currentTimeMillis()
+            val bleEnd = start + BleWake.ADVERTISE_MS
+            /* A TV woken over Bluetooth from fully off starts from scratch, and a USB network adapter
+               (LG-USB-2-ETH0) only comes up after that: it can take two minutes or more to answer on the
+               network.  So after the minute of Bluetooth wake, keep looking for it a while longer, and by
+               discovery too, in case it came back on another address. */
+            val end = start + if (ble?.result == BleWaker.Start.STARTED || tv.bt.isNotBlank()) WAKE_LONG_MS else BleWake.ADVERTISE_MS
+            var nextWol = 0L; var nextFind = start + 20_000; var bleStopped = false
             while (System.currentTimeMillis() < end && !on) {
-                if (System.currentTimeMillis() >= nextWol) {
-                    if (tv.wakeMacs().isNotEmpty()) withContext(Dispatchers.IO) { runCatching { Wol.wakeAll(tv.wakeMacs(), tv.host) } }
-                    nextWol = System.currentTimeMillis() + 3000
+                val now = System.currentTimeMillis()
+                if (!bleStopped && now >= bleEnd) { ble?.stop(); bleStopped = true; log.add("Bluetooth wake sent for a minute; still looking for the TV on the network.") }
+                if (now >= nextWol) {
+                    if (tv.wakeMacs().isNotEmpty()) withContext(Dispatchers.IO) { runCatching { Wol.wakeAll(tv.wakeMacs(), host) } }
+                    nextWol = now + 3000
                 }
                 delay(1000)
                 // Without Wi-Fi, the TV's Bluetooth advertisement is the only sign it came on.
                 if (bleOn.get() && !onLan(null)) break
-                if (System.currentTimeMillis() >= nextWol - 500) on = withContext(Dispatchers.IO) { runCatching { Pairing.hello(tv.host, tv.port, 1500); true }.getOrDefault(false) }
+                if (System.currentTimeMillis() >= nextWol - 500) on = withContext(Dispatchers.IO) { runCatching { Pairing.hello(host, port, 1500); true }.getOrDefault(false) }
+                if (!on && System.currentTimeMillis() >= nextFind && onLan(null)) {
+                    nextFind = System.currentTimeMillis() + 10_000
+                    val f = withContext(Dispatchers.IO) { runCatching { Discovery.find(1500) }.getOrDefault(emptyList()) }.firstOrNull { it.id == tv.id }
+                    if (f != null) {
+                        if (f.host != host || f.port != port) { log.add("Found the TV at a new address."); host = f.host; port = f.port; saveTv((tv(id) ?: tv).copy(host = host, port = port)) }
+                        on = true
+                    }
+                }
             }
+            log.add("Waited ${(System.currentTimeMillis() - start) / 1000} s.")
         } finally {
             ble?.stop()
             log.add(if (on) "The TV answered over Wi-Fi." else "Stopped the Bluetooth wake.")
