@@ -53,7 +53,8 @@ function unesc(s) {
      its kind  m movie (with its year from <date>: "m2011"), s sports, n news, c kids, d documentary,
                from its <category>, for the guide's colours (Settings > Guide);
      !         <new/>: a new episode;
-     ~S2 E5    its season and episode, from <episode-num> (onscreen, or xmltv_ns counted from 0).
+     ~S2 E5    its season and episode, from <episode-num> (onscreen, or xmltv_ns counted from 0), else from
+               the start of <desc> ("S04 E07 …"),
    "m2011", "s!~S1 E3" or "" (nothing to say).  app/js/epg.js progFlag() makes the same from the same XML
    (tests/unit/progflag.test.js) and readFlag() reads it back. */
 var MOVIE_CAT = /<category[^>]*>\s*(?:(?:tv |feature )?(?:movies?|films?)|spielfilm|película|cine|kino)\s*<\/category>/i;
@@ -76,8 +77,11 @@ function episodeOf(body) {
     var p = ns[1].split('.'), sn = parseInt(p[0], 10), en = parseInt(p[1], 10);
     if (!isNaN(en)) return (isNaN(sn) ? '' : 'S' + (sn + 1) + ' ') + 'E' + (en + 1);
   }
-  return '';
+  // No <episode-num>: some guides start the description with it ("S04 E07 Love That Lets Go Lilly finally…").
+  var d = DESC_SE.exec(body);
+  return d ? 'S' + +d[1] + ' E' + +d[2] : '';
 }
+var DESC_SE = /<desc[^>]*>\s*(?:<!\[CDATA\[)?\s*S(\d{1,3})\s*[.:\-]?\s*E(\d{1,4})\b/i;
 function movieFlag(body) {
   var k = '', y = null;
   if (MOVIE_CAT.test(body)) { k = 'm'; y = /<date[^>]*>\s*((?:19|20)\d\d)\s*<\/date>/.exec(body); }

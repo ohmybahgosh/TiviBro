@@ -86,6 +86,8 @@ var Epg = (function () {
       var ns = /<episode-num[^>]*system="xmltv_ns"[^>]*>\s*([^<]*?)\s*<\/episode-num>/i.exec(body);
       if (ns) { var pp = ns[1].split('.'), sn = parseInt(pp[0], 10), en = parseInt(pp[1], 10); if (!isNaN(en)) ep = (isNaN(sn) ? '' : 'S' + (sn + 1) + ' ') + 'E' + (en + 1); }
     }
+    // No <episode-num>: some guides start the description with it ("S04 E07 Love That Lets Go Lilly finally…").
+    if (!ep) { var dse = /<desc[^>]*>\s*(?:<!\[CDATA\[)?\s*S(\d{1,3})\s*[.:\-]?\s*E(\d{1,4})\b/i.exec(body); if (dse) ep = 'S' + +dse[1] + ' E' + +dse[2]; }
     return k + (y ? y[1] : '') + (/<new\s*\/?>/i.test(body) ? '!' : '') + (ep ? '~' + ep : '');
   }
   function readFlag(f, pg) {
@@ -596,9 +598,12 @@ var Epg = (function () {
   /* A programme's description.  From the worker it is already there; from the helper it is asked for
      the first time a channel's description is shown (the grid's detail, the info panel), and the
      last DESC_KEEP channels keep theirs. */
+  // A description that starts with the season and episode ("S04 E07 Love That…"): it's shown beside the
+  // times already (p.ep, from the same words), so it comes off here.
+  function seOff(d, p) { return p.ep && /^\s*S\d/i.test(d) ? d.replace(/^\s*S\d{1,3}\s*[.:\-]?\s*E\d{1,4}\b\s*[-:.|]?\s*/i, '') : d; }
   function desc(ch, p) {
     if (!p) return '';
-    if (p.d != null || !hMode) return p.d || '';
+    if (p.d != null || !hMode) return seOff(p.d || '', p);
     var id = ch && epgId(ch), x = id && cache.get(id);
     if (!x || descWait[id]) return '';
     descWait[id] = 1;

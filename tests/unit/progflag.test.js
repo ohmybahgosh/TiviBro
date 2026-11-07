@@ -23,6 +23,10 @@ const CASES = [
   ['<episode-num system="xmltv_ns">0.4.0/1</episode-num>', '~S1 E5'],
   ['<episode-num system="xmltv_ns">.9.</episode-num>', '~E10'],
   ['<episode-num system="onscreen">S1 E3</episode-num><episode-num system="xmltv_ns">7.7.</episode-num>', '~S1 E3'],
+  ['<title>Hannah Montana Forever</title><desc>S04 E07 Love That Lets Go Lilly finally works up the nerve</desc>', '~S4 E7'],
+  ['<desc><![CDATA[S2E15 The one]]></desc>', '~S2 E15'],
+  ['<episode-num system="onscreen">S1 E3</episode-num><desc>S9 E9 other</desc>', '~S1 E3'],
+  ['<desc>Season 4 of the show; S04 E07 later on</desc>', ''],
   ['<category>Drama</category><new/>', '!'],
   ['<category>Series</category>', ''],
   ['<title>Plain</title>', '']
@@ -36,5 +40,7 @@ ok('readFlag: kind, new, episode', r.k === 's' && r.n === 1 && r.ep === 'S2 E5' 
 const m = readFlag('m2011', {});
 ok('readFlag: a movie and its year, as before', m.mv === 1 && m.y === '2011' && !m.k, JSON.stringify(m));
 ok('readFlag: nothing from nothing, or from a flag it does not know', JSON.stringify(readFlag('', {})) === '{}' && JSON.stringify(readFlag('zz9', {})) === '{}');
+const seOff = new Function('return (' + /function seOff\(d, p\) \{.*\}/.exec(src)[0] + ')')();
+ok('a description that starts with the season and episode loses it (shown beside the times already)', seOff('S04 E07 Love That Lets Go Lilly finally', { ep: 'S4 E7' }) === 'Love That Lets Go Lilly finally' && seOff('S04 E07 Love', {}) === 'S04 E07 Love' && seOff('Summer camp S1 E2', { ep: 'S1 E2' }) === 'Summer camp S1 E2');
 console.log(fails ? fails + ' FAILED' : 'all programme flag checks passed');
 process.exit(fails ? 1 : 0);

@@ -150,8 +150,10 @@ var Series = (function () {
     if (typeof Events !== 'undefined' && Events.of && Events.of(c)) return '';
     var ct = clean(p.t);
     if (!ct.t || norm(ct.t) === norm(c.n)) return '';
+    // News and sport are left alone even with a season and episode: guides number those too ("Today", "S74 E210").
+    if (NOT.test(ct.t)) return '';
     if (p.ep || EPIN.test(String(p.t).replace(SUP, ' '))) return 'strong';     // the guide gave a season or episode, in its own field or the name
-    if (NOT.test(ct.t) || p.e - p.s > 75 * 60000) return '';      // longer: most likely a movie (from a real guide: Godzilla, Serendipity), not a show
+    if (p.e - p.s > 75 * 60000) return '';      // longer: most likely a movie (from a real guide: Godzilla, Serendipity), not a show
     if (typeof Teams !== 'undefined' && Teams.isGame && Teams.isGame(ct.t, c.n)) return '';
     return 'weak';
   }

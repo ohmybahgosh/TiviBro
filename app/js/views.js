@@ -2297,7 +2297,12 @@ var Guide = (function () {
     if (spoil && gd) gd = h.p.s > now ? 'Summary hidden until it airs (Hide spoilers is on).' : 'Summary hidden, a new episode (Hide spoilers is on).';
     var gdEl = U.el('p', 'gd-desc' + (spoil ? ' spoil' : ''), gd);
     // The episode's own title from TMDB, in front of the summary (its season and episode are in the line above).
-    if (sh && se && se.t && !spoil) { gdEl.insertBefore(U.el('span', 'gd-eptitle', se.t), gdEl.firstChild); }
+    if (sh && se && se.t && !spoil) {
+      // Guides that run the episode's title into the summary ("Love That Lets Go Lilly finally…"): shown once.
+      var low = gdEl.textContent.toLowerCase(), et = se.t.toLowerCase();
+      if (low.indexOf(et) === 0 && gdEl.textContent.length > et.length + 20) gdEl.textContent = gdEl.textContent.slice(se.t.length).replace(/^[\s:.\-–]+/, '');
+      gdEl.insertBefore(U.el('span', 'gd-eptitle', se.t), gdEl.firstChild);
+    }
     detail.appendChild(gdEl);
     if (zone === 'grid') detail.appendChild(U.el('div', 'gd-ok', okMeaning(c, h)));
     // A poster at the right: the colour legend moves to its left rather than under it.
