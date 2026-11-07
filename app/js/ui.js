@@ -3,6 +3,8 @@
    OK is split into a tap ("ok") and a hold ("hold", 600ms) for the options menu. */
 var UI = (function () {
   'use strict';
+  // Text in the language chosen (app/js/i18n.js); English when it isn't translated yet.
+  function T(x) { return typeof I18n !== 'undefined' ? I18n.t(x) : x; }
   var K = U.KEY;
   var handler = null, modalH = null, capture = null;
   var held = null;            // { btn, timer, fired } for the button currently down with a long action
@@ -207,14 +209,14 @@ var UI = (function () {
     var icons = mItems.some(function (x) { return x.icon; });
     for (var i = mTop; i < Math.min(mItems.length, mTop + M_VIS); i++) {
       var it = mItems[i];
-      if (it.head) { mBody.appendChild(U.el('div', 'mh' + (icons ? ' ind' : ''), it.label)); continue; }
+      if (it.head) { mBody.appendChild(U.el('div', 'mh' + (icons ? ' ind' : ''), T(it.label))); continue; }
       // A short note sits at the right ("on", "catch-up"); a longer one goes under the label instead of
       // wrapping into a narrow column there.
       var two = it.sub && (it.stack || String(it.sub).length > 24);
       var d = U.el('div', 'mi' + (it.stack ? ' stack' : '') + (two ? ' two' : '') + (icons ? ' ind' : '') + (it.danger ? ' danger' : '') + (i === mSel ? ' focus' : ''));
       if (icons) { var ic = U.el('i', 'mic'); if (it.icon && MICONS[it.icon]) ic.innerHTML = '<svg viewBox="0 0 24 24">' + MICONS[it.icon] + '</svg>'; d.appendChild(ic); }
-      d.appendChild(U.el('span', '', it.label));
-      if (it.sub) d.appendChild(U.el('small', '', it.sub));
+      d.appendChild(U.el('span', '', it.raw ? it.label : T(it.label)));
+      if (it.sub) d.appendChild(U.el('small', '', it.raw ? it.sub : T(it.sub)));
       (function (idx) {
         d.addEventListener('mousemove', function () { if (pointer && mSel !== idx) { mSel = idx; drawMenu(); } });
         d.addEventListener('click', function () { mSel = idx; dispatch('ok', null); });
@@ -227,9 +229,9 @@ var UI = (function () {
      opening with a short rise. */
   var mSub = null;
   function heading(title, sub) {
-    mTitle.textContent = title;
+    mTitle.textContent = T(title);
     if (!mSub) { mSub = U.el('div', 'modal-sub'); mTitle.parentNode.insertBefore(mSub, mTitle.nextSibling); }
-    mSub.textContent = sub || '';
+    mSub.textContent = sub ? T(sub) : '';
     mSub.style.display = sub ? '' : 'none';
     if (modal.classList.contains('hidden')) { mBox.classList.remove('enter'); void mBox.offsetWidth; mBox.classList.add('enter'); }
   }
@@ -262,8 +264,8 @@ var UI = (function () {
     var inp = U.el('input');
     inp.type = secret ? 'password' : 'text'; inp.value = value || ''; inp.spellcheck = false;
     mBody.appendChild(inp);
-    if (hint) mBody.appendChild(U.el('div', 'mi', hint));
-    var ok = U.el('div', 'mi', okLabel || 'Save'), cancel = U.el('div', 'mi', 'Cancel');
+    if (hint) mBody.appendChild(U.el('div', 'mi', T(hint)));
+    var ok = U.el('div', 'mi', T(okLabel || 'Save')), cancel = U.el('div', 'mi', T('Cancel'));
     ok.addEventListener('click', function () { var v = inp.value; close(); done(v); });
     cancel.addEventListener('click', function () { close(); });
     mBody.appendChild(ok); mBody.appendChild(cancel);
@@ -291,7 +293,7 @@ var UI = (function () {
     var row = U.el('div', 'pinrow'), boxes = [], digits = ['', '', '', ''], pos = 0;
     for (var i = 0; i < 4; i++) { var b = U.el('span', 'pinbox'); boxes.push(b); row.appendChild(b); }
     mBody.appendChild(row);
-    mBody.appendChild(U.el('div', 'mi', 'Number keys to type, or Up and Down to pick a digit'));
+    mBody.appendChild(U.el('div', 'mi', T('Number keys to type, or Up and Down to pick a digit')));
     modal.classList.remove('hidden');
     function paint() { boxes.forEach(function (b, i) { b.textContent = digits[i] ? '•' : ''; b.classList.toggle('focus', i === pos); }); }
     function finish() { var v = digits.join(''); close(); done(v); }
@@ -320,7 +322,7 @@ var UI = (function () {
     mBody.appendChild(body);
     var row = U.el('div', 'mbtns'), els = [], f = 0;
     buttons.forEach(function (b, i) {
-      var d = U.el('div', 'btn', b.label); els.push(d); row.appendChild(d);
+      var d = U.el('div', 'btn', T(b.label)); els.push(d); row.appendChild(d);
       d.addEventListener('click', function () { f = i; dispatch('ok', null); });
     });
     mBody.appendChild(row);
@@ -356,12 +358,14 @@ var UI = (function () {
   /* ---------- chrome ---------- */
   function clock() {
     var c = U.$('clock'), now = new Date();
-    c.textContent = (Store.settings.clockDate ? now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + '  ' : '') + U.hhmm(Date.now());
+    c.textContent = (Store.settings.clockDate ? now.toLocaleDateString(typeof I18n !== 'undefined' && I18n.lang() !== 'en' ? I18n.locale() : undefined, { weekday: 'short', month: 'short', day: 'numeric' }) + '  ' : '') + U.hhmm(Date.now());
     c.style.display = Store.settings.showClock ? '' : 'none';
   }
   setInterval(clock, 15000); clock();
 
+  var lastHints = [];
   function hints(list) {
+    lastHints = list;
     var h = U.$('hints');
     h.innerHTML = '';
     list.forEach(function (x) {
@@ -369,7 +373,7 @@ var UI = (function () {
       var key = x[2] || x[0];
       if (key) { s.setAttribute('data-key', key); s.className = 'clickable'; }
       if (x[0]) { var b = U.el('b', 'k-' + x[0]); s.appendChild(b); }
-      s.appendChild(document.createTextNode(x[1]));
+      s.appendChild(document.createTextNode(T(x[1])));
       h.appendChild(s);
     });
   }
@@ -416,6 +420,7 @@ var UI = (function () {
     menuOpen: function (title) { return !!modalH && !modal.classList.contains('hidden') && mTitle.textContent === title; },
     redrawMenu: function () { if (modalH) drawMenu(); },
     icon: function (n) { return MICONS[n] ? '<svg viewBox="0 0 24 24">' + MICONS[n] + '</svg>' : ''; },
+    rehint: function () { hints(lastHints); },   // again in a new language
     menu: menu, prompt: prompt, confirm: confirm, pin: pin, clock: clock, panel: panel, set onClose(f) { onClose = f; },
     captureNext: function (fn) { capture = fn; }, close: close, hints: hints
   };

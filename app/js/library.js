@@ -341,13 +341,16 @@ var Library = (function () {
   }
   function splitGroup(target) { var e = E(), m = e.groupMerge || {}; Object.keys(m).forEach(function (s2) { if (m[s2] === target) delete m[s2]; }); commit(); }
   function cleanGroup(n) { return Names.cleanGroup(n); }
+  // TiviBro's own groups in the language chosen (app/js/i18n.js); yours and the provider's as they are.
+  var T = function (x) { return typeof I18n !== 'undefined' ? I18n.t(x) : x; };
   function groupName(gid) {
-    if (gid === ALL) return 'All channels';
-    if (gid === RECENT) return 'Recent';
-    if (gid === NEW) return 'Recently added';
-    if (gid === EVENTS) return 'Events by time';
-    if (gid === TEAMS) return 'My teams';
-    if (gid === MOVIES) return 'Movies on now';
+    if (gid === ALL) return T('All channels');
+    if (gid === RECENT) return T('Recent');
+    if (gid === NEW) return T('Recently added');
+    if (gid === EVENTS) return T('Events by time');
+    if (gid === TEAMS) return T('My teams');
+    if (gid === MOVIES) return T('Movies on now');
+    if (gid === FAV && custom(gid) && custom(gid).name === 'Favorites') return T('Favorites');
     var c = custom(gid);
     if (!c && mergedInto(gid)) return groupName(mergedInto(gid));
     return c ? c.name : (E().groupRenames && E().groupRenames[gid]) || cleanGroupOf(gid, groupNames[gid] || '');
@@ -360,7 +363,7 @@ var Library = (function () {
     var e = E(), s = S(), showHidden = s.showHidden, out = [];
     var customs = [];
     e.custom.forEach(function (g) {
-      if (showHidden || !e.hiddenGroups[g.id]) customs.push({ id: g.id, name: g.name, custom: true, hidden: !!e.hiddenGroups[g.id], count: g.items.length, blocked: !!e.blockedGroups[g.id] });
+      if (showHidden || !e.hiddenGroups[g.id]) customs.push({ id: g.id, name: g.id === FAV && g.name === 'Favorites' ? T('Favorites') : g.name, custom: true, hidden: !!e.hiddenGroups[g.id], count: g.items.length, blocked: !!e.blockedGroups[g.id] });
     });
     if (s.showFav === false) customs = customs.filter(function (g) { return g.id !== FAV; });
     if (s.favFirst) out = out.concat(customs);
@@ -368,15 +371,15 @@ var Library = (function () {
        Empty (between games, nothing starting soon) they move down under your groups and All channels,
        still there to open (My teams says when the next game is), but not in the way of the groups above. */
     var later = [];
-    if (typeof Teams !== 'undefined' && Teams.groupOn()) { var tn = Teams.list().length; (tn ? out : later).push({ id: TEAMS, name: 'My teams', count: tn }); }
-    if (typeof Movies !== 'undefined' && Movies.groupOn()) { var mn = Movies.list().length; (mn ? out : later).push({ id: MOVIES, name: 'Movies on now', count: mn }); }
-    if (s.showRecent && e.recent.length) out.push({ id: RECENT, name: 'Recent', count: e.recent.length });
+    if (typeof Teams !== 'undefined' && Teams.groupOn()) { var tn = Teams.list().length; (tn ? out : later).push({ id: TEAMS, name: T('My teams'), count: tn }); }
+    if (typeof Movies !== 'undefined' && Movies.groupOn()) { var mn = Movies.list().length; (mn ? out : later).push({ id: MOVIES, name: T('Movies on now'), count: mn }); }
+    if (s.showRecent && e.recent.length) out.push({ id: RECENT, name: T('Recent'), count: e.recent.length });
     var fresh = newList().length;
-    if (fresh) out.push({ id: NEW, name: 'Recently added', count: fresh });
+    if (fresh) out.push({ id: NEW, name: T('Recently added'), count: fresh });
     var evs = (Events.groupOnAny ? Events.groupOnAny() : Events.groupOn()) ? eventList().length : 0;
-    if (evs) out.push({ id: EVENTS, name: 'Events by time', count: evs });
+    if (evs) out.push({ id: EVENTS, name: T('Events by time'), count: evs });
     if (!s.favFirst) out = out.concat(customs);
-    if (s.showAll) out.push({ id: ALL, name: 'All channels', count: data.channels.length });
+    if (s.showAll) out.push({ id: ALL, name: T('All channels'), count: data.channels.length });
     out = out.concat(later);
     var prov = data.groups.slice();
     if (s.sortGroups === 'name') prov.sort(function (a, b) { return cleanGroup(a.name).localeCompare(cleanGroup(b.name)); });

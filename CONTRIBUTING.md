@@ -40,6 +40,15 @@ Ground rules:
 
 Open a pull request against `main`; the template lists what to check.  Don't target the `homebrew` branch: it only holds the files the Homebrew Channel and the installer read, and the release workflow writes it.
 
+## Translations
+
+TiviBro's English is the key: `app/js/lang/es.js` and `ru.js` map each English text to its translation (`app/js/i18n.js` explains the patterns for text with numbers or names in it, and plural forms).  Text that isn't in a dictionary shows in English, so a language can be filled in a little at a time.
+
+- `node scripts/i18n-check.js` shows how far each language is and which files have the most left.
+- `node scripts/i18n-check.js es` lists the Spanish still missing, ready to paste into `es.js`.
+- A new language: copy `es.js`, change the code, add it to `LANGS` in `i18n.js` and a `<script>` line in `app/index.html`.
+- Keep `{n}` and `{x}` in every translation (`npm test` checks), and translate text where it's drawn: the settings rows, menus, boxes, toasts and hints already go through `I18n.t`, so new code there needs nothing extra.
+
 ## Releases
 
 Maintainers cut releases with `npm run release -- alpha.N` after moving "## Unreleased" in CHANGELOG.md under a version heading.  GitHub Actions builds the IPK, publishes the release, updates the Homebrew Channel repository and the website.

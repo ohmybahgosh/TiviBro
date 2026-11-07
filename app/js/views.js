@@ -60,7 +60,7 @@ var Views = (function () {
     tabs.forEach(function (t) {
       var s = U.el('div', 'tab' + (t === tab ? ' on' : '')); s.setAttribute('data-tab', t);
       s.innerHTML = '<svg viewBox="0 0 24 24" class="ico">' + ICONS[t] + '</svg>';
-      s.appendChild(U.el('span', 'lbl', TAB_LABELS[t]));
+      s.appendChild(U.el('span', 'lbl', I18n.t(TAB_LABELS[t])));
       s.addEventListener('click', function () { closeNav(); if (full) exitFull(); UI.close(); if (t === 'editor') WebEdit.showJoin(); else if (t === 'report') Diag.openReport(); else switchTab(t); });
       s.addEventListener('mousemove', function () { if (UI.pointer && !document.body.classList.contains('nav-open') && !full) openNavFromPointer(); });
       nav.appendChild(s);

@@ -38,6 +38,17 @@ Restoring a backup onto a fresh TV, start to finish:
 <p align="center"><a href="media/restore.mp4"><img src="media/restore.gif" width="100%" alt="Restoring a backup onto a brand-new TV"></a></p>
 <p align="center"><sub><a href="media/restore.mp4">Watch the MP4</a></sub></p>
 
+### Language
+
+TiviBro shows in your TV's own language: the language of the TV's menus (on webOS, the TV's **Menu Language** setting), read when TiviBro starts and again whenever you change it on the TV.  English, Spanish and Russian are in so far.  Spanish and Russian are new: the menus, the side menu, Settings' sections and most of their rows are translated, and anything not translated yet shows in English.  A TV in a language TiviBro doesn't have yet gets English.
+
+If it picked the wrong one, choose another:
+
+- **Settings > Language**, at the top of Settings.  It always says "Language" in English too, beside the name in the language TiviBro is in, so you can find it whatever you're reading.  The languages are listed in their own names (English, Español, Русский).  **Automatic** goes back to the TV's language.
+- On a brand-new TV, the first row of **Add your playlist** is **Language**: **◀ ▶** goes round Automatic and each language.
+
+The first time TiviBro starts in a language other than English, a message says which language it chose and where to change it.  In Spanish and Russian, times are on the 24-hour clock (19:30).
+
 ### The set-up tour
 
 Right after a new playlist connects, TiviBro shows what it has and walks you through making it yours, one screen at a time with the remote.  It only asks about what your playlist actually has, so a list with no local stations never shows the city step.  Nothing changes until the last screen, and a restore point is saved first, so the web editor can put everything back.
@@ -642,6 +653,13 @@ Set a PIN under **Settings > Parental controls**, then **Hold OK** on any channe
 Every option in **Settings**, section by section, in the order the TV lists them, with its choices and what it does.  The default is in **bold**.  Changes take effect straight away; nothing needs a restart.  The phone app's **Settings** tab has the same sections in the same order.
 
 On a row with a choice, **◀ ▶** change it (with the Magic Remote, click the **‹ ›** arrows).  **OK** opens a row that leads to a page (marked **›**) or runs an action.  **Back** goes up a page, then to the section list, then to the menu.
+
+### Settings: Language
+
+- **Automatic: the TV's language** (default): the language of the TV's menus.  The line under it says which that is.
+- **English**, **Español**, **Русский**: TiviBro in that language, whatever the TV is set to.
+
+See [Language](#language).
 
 ### Settings: Playlists
 

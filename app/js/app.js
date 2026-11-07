@@ -53,7 +53,13 @@ var App = (function () {
     var p = existing ? JSON.parse(JSON.stringify(existing)) : { id: '', name: '', type: 'link', link: '', server: '', user: '', pass: '', m3u: '', guide: '' };
     var canCancel = !!target && Store.settings.playlists.length > 0;
     setupEl.classList.remove('hidden');
-    var fields = [], f = 0, msg;
+    var fields = [], f = 0, msg, firstDraw = true;
+    // Language on the setup screen: Automatic (the TV's), then each one, round.
+    function nextLang(d) {
+      var l = ['auto'].concat(I18n.langs().map(function (x) { return x.code; })), i = l.indexOf(I18n.setting());
+      I18n.set(l[(i + (d || 1) + l.length) % l.length]);
+      render();
+    }
 
     function render() {
       setupEl.innerHTML = '';
@@ -62,6 +68,16 @@ var App = (function () {
       setupEl.appendChild(U.el('h1', '', editing ? 'Edit playlist' : target === 'new' ? 'Add a playlist' : 'Add your playlist'));
       setupEl.appendChild(U.el('p', 'lead', 'Paste the full link your provider sent, or choose Xtream Codes or M3U as the type.  A Dispatcharr or other proxy address works with either.'));
       fields = [];
+      /* A brand-new TV: the language first, in its own name and "Language" in English too, for when the
+         TV's language was read wrong (Settings > Language later). */
+      if (!target) {
+        var ld = U.el('div', 'field lang');
+        ld.appendChild(U.el('label', '', 'Language'));
+        ld.appendChild(U.el('div', 'val', I18n.name(I18n.lang()) + (I18n.setting() === 'auto' ? '  (TV)' : '') + '   ◀ ▶'));
+        setupEl.appendChild(ld); fields.push({ el: ld, kind: 'lang' });
+        if (firstDraw) f = 1;
+      }
+      firstDraw = false;
       function row(label, key, type) {
         var d = U.el('div', 'field'), l = U.el('label', '', label);
         d.appendChild(l);
@@ -80,7 +96,7 @@ var App = (function () {
           if (type === 'password') {
             // Show/hide so a pasted or typed password can be checked.  Left/Right or click toggles.
             var eye = U.el('span', 'eye', 'Show');
-            fx.toggle = function () { var shown = i.type === 'text'; i.type = shown ? 'password' : 'text'; eye.textContent = shown ? 'Show' : 'Hide'; };
+            fx.toggle = function () { var shown = i.type === 'text'; i.type = shown ? 'password' : 'text'; eye.textContent = I18n.t(shown ? 'Show' : 'Hide'); };
             eye.addEventListener('mousedown', function (e) { e.preventDefault(); fx.toggle(); });
             d.appendChild(eye);
           }
@@ -118,6 +134,9 @@ var App = (function () {
       if (!editing) { var rm = U.el('div', 'btn', 'Set up or restore from a phone or computer'); setupEl.appendChild(rm); fields.push({ el: rm, kind: 'remote' }); }
       if (canCancel) { var cancel = U.el('div', 'btn', 'Cancel'); setupEl.appendChild(cancel); fields.push({ el: cancel, kind: 'cancel' }); }
       msg = U.el('div', 'msg'); setupEl.appendChild(msg);
+      I18n.page(setupEl);
+      var lv = setupEl.querySelector('.field.lang label');
+      if (lv && lv.textContent !== 'Language') lv.textContent += '  ·  Language';
       // Magic Remote: click a field or button to use it.
       fields.forEach(function (x, i) {
         x.el.addEventListener('click', function (e) { if (e.target.classList.contains('eye')) return; f = i; paint(); if (x.kind !== 'input' || e.target !== x.input) UI.press('ok'); });
@@ -141,7 +160,7 @@ var App = (function () {
       card.appendChild(U.el('div', 'join-p', 'Scan with your phone\'s camera to type your login there, or restore a backup.'));
       card.appendChild(qr); card.appendChild(txt);
       setupEl.appendChild(card);
-      function show(s) { if (setupEl.contains(card)) WebEdit.drawJoin(qr, txt, '', s, 'Or open the address on a computer.', 'A phone or computer is connected.  Finish there; this screen moves on by itself.'); }
+      function show(s) { if (setupEl.contains(card)) { WebEdit.drawJoin(qr, txt, '', s, 'Or open the address on a computer.', 'A phone or computer is connected.  Finish there; this screen moves on by itself.'); I18n.page(card); } }
       txt.appendChild(U.el('div', 'remote-s', 'Starting…'));
       WebEdit.onStatus = show;
       (WebEdit.on ? Promise.resolve(WebEdit.status) : WebEdit.start()).then(show, function (e) { txt.innerHTML = ''; txt.appendChild(U.el('div', 'remote-s', 'The phone option is not available: ' + e.message)); });
@@ -264,6 +283,7 @@ var App = (function () {
       }
       else if (a === 'left' || a === 'right') {
         if (cur.kind === 'net') toggleNet();
+        else if (cur.kind === 'lang') nextLang(a === 'left' ? -1 : 1);
         else if (cur.toggle && document.activeElement !== cur.input) cur.toggle();
         else if (cur.kind === 'type') nextType();
         else if ((cur.kind === 'go' || cur.kind === 'test' || cur.kind === 'log' || cur.kind === 'report') && a === 'right' && fields[f + 1]) { f++; paint(); }
@@ -272,6 +292,7 @@ var App = (function () {
       else if (a === 'ok') {
         if (cur.kind === 'input') cur.input.focus();
         else if (cur.kind === 'type') nextType();
+        else if (cur.kind === 'lang') nextLang(1);
         else if (cur.kind === 'go') connect();
         else if (cur.kind === 'net') toggleNet();
         else if (cur.kind === 'test') { if (useLink()) Diag.run(current()); }
@@ -796,6 +817,7 @@ var App = (function () {
   function boot() {
     loading('Starting…');
     Log.info('app', 'TiviBro ' + TIVIBRO_VERSION + ' starting.  ' + navigator.userAgent);
+    langStart();
     Caps.loadSystemInfo();
     Awake.start();                 // the TV's screensaver waits while something plays (issue #37)
     Net.start(6000).then(function () {
@@ -818,6 +840,30 @@ var App = (function () {
       if (guard) return guarded(guard);
       open(Store.playlist);
     });
+  }
+
+  /* Languages (app/js/i18n.js): the fixed titles in the page, the TV's menu language asked and watched,
+     everything drawn again after a change, and once, the first time TiviBro starts in a language other
+     than English, where to change it. */
+  var STATIC = '.col.groups > .col-title, #guideGroups > .col-title, #guidePreview > span, .media-heading, #spinnerText, .meter-label';
+  function langStart() {
+    try { document.documentElement.lang = I18n.lang(); } catch (e) {}
+    var redo = function () { [].forEach.call(document.querySelectorAll(STATIC), function (el) { I18n.page(el); }); };
+    redo();
+    I18n.onChange(function (l) {
+      Log.info('lang', 'Language: ' + l + (I18n.setting() === 'auto' ? ' (the TV\'s)' : ' (chosen)'));
+      redo();
+      if (ready) { Views.buildTabs(); Views.refreshLists(true); }
+      Settings.redraw();
+      UI.rehint();
+    });
+    I18n.askTV();
+    setTimeout(function () {
+      var s = Store.settings;
+      if (s.langTold || I18n.lang() === 'en' || I18n.setting() !== 'auto') return;
+      s.langTold = 1; Store.saveSettings();
+      U.toast(I18n.t('TiviBro is in {x}, your TV\'s language.  Settings > Language changes it.', { x: I18n.name(I18n.lang()) }), 9000);
+    }, 6000);
   }
 
   // Free the decoder when the TV sends the app to the background; resume on return.

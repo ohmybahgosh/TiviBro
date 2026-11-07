@@ -30,6 +30,8 @@ var U = (function () {
   function hhmm(ts) {
     var d = new Date(ts);
     var h = d.getHours(), m = d.getMinutes();
+    // English: 7:30pm.  Spanish and Russian: 19:30.
+    if (typeof I18n !== 'undefined' && I18n.lang() !== 'en') return h + ':' + pad(m);
     var ampm = h >= 12 ? 'pm' : 'am';
     h = h % 12 || 12;
     return h + ':' + pad(m) + ampm;
@@ -38,7 +40,8 @@ var U = (function () {
   function day(ts) {
     var d = new Date(ts), t = new Date(), y = new Date(t.getFullYear(), t.getMonth(), t.getDate()).getTime();
     var n = Math.floor((new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() - y) / 86400e3 + 0.5);
-    return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n === -1 ? 'Yesterday' : d.toLocaleDateString(undefined, { weekday: 'short', month: n > 6 || n < -6 ? 'short' : undefined, day: n > 6 || n < -6 ? 'numeric' : undefined });
+    var tr = typeof I18n !== 'undefined' ? I18n.t : function (x) { return x; }, loc = typeof I18n !== 'undefined' && I18n.lang() !== 'en' ? I18n.locale() : undefined;
+    return n === 0 ? tr('Today') : n === 1 ? tr('Tomorrow') : n === -1 ? tr('Yesterday') : d.toLocaleDateString(loc, { weekday: 'short', month: n > 6 || n < -6 ? 'short' : undefined, day: n > 6 || n < -6 ? 'numeric' : undefined });
   }
   /* Languages for audio and subtitle choices.  Streams name tracks every way ("eng", "en-US",
      "English", "ENG 5.1"), so lang() reads any of them as a two-letter code. */
@@ -134,7 +137,7 @@ var U = (function () {
   var toastT = 0;
   function toast(msg, ms) {
     var t = $('toast');
-    t.textContent = msg;
+    t.textContent = typeof I18n !== 'undefined' ? I18n.t(msg) : msg;
     t.classList.remove('hidden');
     clearTimeout(toastT);
     toastT = setTimeout(function () { t.classList.add('hidden'); }, ms || 2600);

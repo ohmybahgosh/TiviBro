@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **TiviBro in Spanish and Russian, in your TV's own language.**  TiviBro reads the TV's menu language (and follows it when you change it on the TV), and shows in Spanish or Russian when that's the TV's language.  The side menu, Settings' sections and most of their rows, menus, questions, messages and the hints at the bottom are translated so far; anything not translated yet stays English, and more comes in later builds.  If it chose wrong, **Settings > Language** (at the top of Settings, always also saying "Language") picks another, or Automatic again; a new TV has it as the first row of Add your playlist.  The first start in another language says which it chose and where to change it.  In Spanish and Russian times are on the 24-hour clock.
+
 ## 0.6.0 (alpha 101, 2026-11-07)
 
 Pre-release: expect rough edges, and keep a backup before installing.

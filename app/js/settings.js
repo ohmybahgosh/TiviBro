@@ -2,17 +2,25 @@
 var Settings = (function () {
   'use strict';
   var $ = U.$, S = function () { return Store.settings; }, L = Library;
+  // Shown in the language chosen (app/js/i18n.js); the rows themselves are written in English.
+  function T(x) { return x && typeof x === 'string' && typeof I18n !== 'undefined' ? I18n.t(x) : x; }
   var nav = $('setNav'), body = $('setBody');
-  var SECTIONS = [['playlists', 'Playlists'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['names', 'Channel and group names'], ['reminders', 'Reminders and watchlist'],
+  var SECTIONS = [['language', 'Language'], ['playlists', 'Playlists'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['names', 'Channel and group names'], ['reminders', 'Reminders and watchlist'],
     ['playback', 'Playback'], ['media', 'My media'], ['keys', 'API keys'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
     ['backups', 'Backups and restore points'], ['connect', 'Phone app and web editor'], ['about', 'Updates, about and diagnostics']];
   // Old section ids (links in other screens, tests, older phone apps) still land somewhere sensible.
-  var ALIAS = { groups: 'channels', updates: 'about', diag: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys' };
-  var sec = 0, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
+  var ALIAS = { lang: 'language', groups: 'channels', updates: 'about', diag: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys' };
+  var sec = 1, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
   // Phone app: test builds only while the Android app is in the works (release builds show the web editor alone).
   function phoneOK() { return /alpha|beta/i.test(TIVIBRO_VERSION); }
   function shown(i) { return !!SECTIONS[i]; }
   function title(sct) { return sct[0] === 'connect' && !phoneOK() ? 'Web editor' : sct[0] === 'about' && typeof Update !== 'undefined' && Update.state && Update.state.state === 'available' ? sct[1] + '  ·  update ready' : sct[1]; }
+  /* In the menu: the section's name in the language, and Language always says "Language" in English too,
+     so whoever can't read the language TiviBro is in can still find it. */
+  function navTitle(s) {
+    var tr = title(s).split('  ·  ').map(T).join('  ·  ');
+    return s[0] === 'language' && tr.indexOf('Language') !== 0 ? tr + '  ·  Language' : tr;
+  }
   function nextSec(d) { var i = sec + d; while (SECTIONS[i] && !shown(i)) i += d; return SECTIONS[i] ? i : sec; }
   var stack = [];               // sub-pages: [{ title, fn, sel }]
 
@@ -1155,17 +1163,41 @@ var Settings = (function () {
   }
 
   /* ---------- updates, about and diagnostics ---------- */
+  /* ---------- Language (app/js/i18n.js) ----------
+     Automatic is the TV's menu language.  The languages are listed in their own names (and in English), so
+     the right one can be found whatever TiviBro is showing. */
+  function language() {
+    var out = [], d = I18n.detected(), cur = I18n.setting();
+    function pickIt(code) {
+      I18n.set(code);
+      U.toast(code === 'auto' ? 'Language: automatic, the TV\'s language' : 'Language: ' + I18n.name(I18n.lang()));
+      build();
+    }
+    out.push(info('TiviBro is in the TV\'s own language unless you choose one here.  Spanish and Russian are new: anything not translated yet shows in English.', ''));
+    var tvName = d.supported ? I18n.name(d.code) : d.locale + ' (English: not in TiviBro yet)';
+    var auto = action('Automatic: the TV\'s language', 'The TV is set to ' + tvName + '.', function () { pickIt('auto'); }, function () { return cur === 'auto' ? '✓' : ''; });
+    out.push(auto);
+    out.push(head('Languages'));
+    I18n.langs().forEach(function (l) {
+      var it = action(l.name, l.code === I18n.lang() ? '' : T(l.english), function () { pickIt(l.code); }, function () { return cur === l.code ? '✓' : ''; });
+      it.raw = true;                  // "Español" stays "Español" whatever TiviBro is in
+      out.push(it);
+    });
+    out.push(info('Something reads wrong, or you\'d like TiviBro in your language?  Settings > Updates, about and diagnostics > Report a problem, or a discussion on GitHub.', ''));
+    return out;
+  }
+
   function about() {
     var out = updates();
     out.push(head('Diagnostics'));
     return out.concat(diag());
   }
 
-  var BY_ID = { playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, media: media, keys: apiKeys, remote: remote, look: look, parental: parental, backups: backups, connect: connect, about: about };
+  var BY_ID = { language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, media: media, keys: apiKeys, remote: remote, look: look, parental: parental, backups: backups, connect: connect, about: about };
   var FNS = SECTIONS.map(function (x) { return BY_ID[x[0]]; });
   function build() {
     var top = stack[stack.length - 1];
-    items = top ? [head(stack.map(function (x) { return x.title; }).join('  ›  '))].concat(top.fn()) : FNS[sec]();
+    items = top ? [head(stack.map(function (x) { return T(x.title); }).join('  ›  '))].concat(top.fn()) : FNS[sec]();
     items = items.filter(Boolean);
     sel = U.clamp(sel, 0, Math.max(0, items.length - 1));
     if (!focusable(sel)) { var i = sel; while (i < items.length && !focusable(i)) i++; if (i >= items.length) { i = sel; while (i > 0 && !focusable(i)) i--; } sel = i; }
@@ -1175,8 +1207,8 @@ var Settings = (function () {
     rowEls = items.map(function (it, i) {
       if (it.preview) return it.el;
       var d = U.el('div', 'opt' + (it.head ? ' head' : '') + (it.big ? ' big' : it.info ? ' dim' : ''));
-      var l = U.el('div', 'ol', it.label);
-      if (it.sub) l.appendChild(U.el('small', '', it.sub));
+      var l = U.el('div', 'ol', it.raw ? it.label : T(it.label));
+      if (it.sub) l.appendChild(U.el('small', '', it.raw ? it.sub : T(it.sub)));
       d.appendChild(l);
       if (!it.head) {
         d._v = U.el('div', 'ov'); d.appendChild(d._v);
@@ -1206,7 +1238,7 @@ var Settings = (function () {
     nav.innerHTML = '';
     SECTIONS.forEach(function (s, i) {
       if (!shown(i)) return;
-      var n = U.el('div', i === sec ? 'on' : '', title(s));
+      var n = U.el('div', i === sec ? 'on' : '', navTitle(s));
       n.addEventListener('click', function () { stack = []; sec = i; sel = 0; zone = 'nav'; build(); });
       nav.appendChild(n);
     });
@@ -1214,11 +1246,11 @@ var Settings = (function () {
     rowEls.forEach(function (e, i) {
       var it = items[i];
       if (e._t) {
-        e._t.textContent = it.value ? it.value() : '';
+        e._t.textContent = it.value ? T(it.value()) : '';
         var sw = it.swatch && it.swatch();
         e._sw.classList.toggle('hidden', !sw);
         if (sw) e._sw.style.background = sw;
-      } else if (e._v) e._v.textContent = it.value ? it.value() : '';
+      } else if (e._v) e._v.textContent = it.value ? (it.raw ? it.value() : T(it.value())) : '';
       e.classList.toggle('focus', zone === 'body' && i === sel && focusable(i));
     });
     var f = rowEls[sel];
@@ -1425,6 +1457,8 @@ var Settings = (function () {
     }
   };
 
-  return { open: open, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
+  // Drawn again in a new language (I18n.onChange in app.js).
+  function redraw() { if (!document.getElementById('viewSettings').classList.contains('hidden')) build(); }
+  return { open: open, redraw: redraw, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

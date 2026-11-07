@@ -2,7 +2,7 @@
 # Syntax-check every JS file (app, service, tests).
 source "$(dirname "$0")/_common.sh"
 fail=0
-for f in "$ROOT"/app/js/*.js "$ROOT"/service/*.js "$ROOT"/scripts/*.js "$ROOT"/tests/unit/*.js "$ROOT"/tests/mock/*.js "$ROOT"/tests/engines/*.js "$ROOT"/tests/engines/browser/*.js; do
+for f in "$ROOT"/app/js/*.js "$ROOT"/app/js/lang/*.js "$ROOT"/service/*.js "$ROOT"/scripts/*.js "$ROOT"/tests/unit/*.js "$ROOT"/tests/mock/*.js "$ROOT"/tests/engines/*.js "$ROOT"/tests/engines/browser/*.js; do
   node --check "$f" || { echo "syntax error: $f"; fail=1; }
 done
 # Scripts written inside HTML pages (the web editor is one big inline script): a syntax error there
