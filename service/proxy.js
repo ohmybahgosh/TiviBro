@@ -329,7 +329,9 @@ function create(opts) {
         up.on('error', onUpError);
         return;
       }
-      if (!aborted) { stats.errors++; rec.e = (e.code ? e.code + ' ' : '') + e.message; }
+      // Node's parser errors (HPE_INVALID_CONSTANT, "Expected HTTP/"): the provider's server sent something that
+      // wasn't an HTTP reply.  Said plainly in the log, with the code kept for anyone looking it up (issue #57).
+      if (!aborted) { stats.errors++; rec.e = /^HPE_/.test(e.code || '') ? 'the provider\'s server sent a broken reply (not HTTP; ' + e.code + ')' : (e.code ? e.code + ' ' : '') + e.message; }
       if (!aborted && /^(ECONNREFUSED|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|ECONNRESET)$/.test(e.code || '')) forgetHost(u.hostname);
       finish();
       if (!res.headersSent) { res.writeHead(502, Object.assign({ 'Content-Type': 'text/plain' }, ALLOW)); res.end('relay error: ' + e.message); }

@@ -582,7 +582,8 @@ var Views = (function () {
     var back = sysBack();
     if (sysAsks()) {
       Log.info('views', 'Exit from the remote: the TV asks to confirm');
-      try { back(); return; } catch (e) {}
+      Log.closing(true);          // if the answer is yes, the TV closes TiviBro without telling it (issue #62)
+      try { back(); return; } catch (e) { Log.stillHere(); }
     }
     UI.menu('Exit TiviBro?', [{ label: 'Exit', action: exitNow }, { label: 'Cancel', current: true }]);
   }

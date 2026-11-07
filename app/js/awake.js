@@ -69,7 +69,7 @@ var Awake = (function () {
       log('warn', 'The TV would not let TiviBro hold off its screensaver: ' + why);
       return;
     }
-    if (state !== 'on') { state = 'on'; why = ''; log('info', 'Holding off the TV screensaver while something plays'); }
+    if (state !== 'on') { state = 'on'; why = ''; log('info', 'The TV will ask before its screensaver starts: TiviBro holds it off only while something plays'); }
     if (r.timestamp == null) return;
     lastAsk = Date.now();
     var p = playerNow(), now = Date.now(), hid = hiddenNow(), playing = busy(p, hid);

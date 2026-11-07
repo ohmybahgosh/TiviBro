@@ -64,8 +64,13 @@ var Log = (function () {
       return Math.round(m.usedJSHeapSize / 1048576);
     } catch (e) { return 0; }
   }
+  /* Leaving through the TV's own "exit the app?" question (webOS 6 and later, Back from the home screen): the
+     TV closes TiviBro if you say yes, without TiviBro hearing about it, and that read as a crash next time
+     (issue #62).  So from asking until you press a button again (No, or anything else), it counts as closing. */
+  var leaving = 0;
   function mark(open) {
     lastMark = Date.now();
+    if (leaving && Date.now() - leaving < 10 * 60000) open = false;
     try { localStorage.setItem(MARK, JSON.stringify({ s: session, v: TIVIBRO_VERSION, t0: started, t: lastMark, open: open !== false, doing: doing, heap: heapMB(), boot: bootAt })); } catch (e) {}
   }
   function state(key, text) {
@@ -191,7 +196,9 @@ var Log = (function () {
     // What the app is doing, kept for the next start if TiviBro closes unexpectedly: state('guide', 'loading ...'), state('guide', '') when done.
     state: state,
     // Closing on purpose (Back twice, the update installer): not a crash.
-    closing: function () { mark(false); persistNow(); },
+    closing: function (asked) { if (asked) leaving = Date.now(); mark(false); persistNow(); },
+    // A button pressed after the TV asked about exiting: still here (the answer was no).
+    stillHere: function () { if (leaving) { leaving = 0; mark(!document.hidden); } },
     // The last session ended unexpectedly: { text, doing, heap, at, recent (how many in the last hour) } or null.
     get unclean() { return unclean; },
     // Decide about the last session once the helper answered (sys: its /ping sys, or null without it).

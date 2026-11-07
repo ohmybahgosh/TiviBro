@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **A movie that reconnects no longer goes back** (#57).  The TV player could report a time far behind what had played (a resume at 51:50 reported 47:08), and every reconnect went back there.  Now a reconnect is never behind where that try started, and goes by how long it has played when the TV player's time lags.  The 10, 20, 40 s skip past a bad spot is unchanged.
+- **Channels that won't play are told sooner** (#56).  A channel the provider answers 404 for is given up at once (its HLS version is tried once), instead of three MPEG-TS tries, the TV player and HLS, about 15 s each.  An .m3u8 that isn't a playlist isn't retried as HLS.  On MPEG-TS, a stream whose details came but nothing could be buffered after 8 s goes to the TV player at once (it was 17 s, twice).
+- **Leaving through the TV's "exit the app?" question is no longer reported as a crash** next time (#62).
+- **Plainer log lines:** the provider's server sending a broken reply (HPE_INVALID_CONSTANT) says so, and the screensaver line at start says what it is.
+
 ## 0.6.0 (alpha 99, 2026-11-07)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -173,6 +173,12 @@ var Player = (function () {
       }
       // A response code of 0 is a request the browser blocked (CORS), not the provider failing.
       var code = d.response && d.response.code;
+      /* An answer that isn't an HLS playlist (manifestParsingError with HTTP 200: a web page, an error text, a
+         TS stream at an .m3u8 address) won't become one on a retry (issue #56): not HLS, on to the next. */
+      if (!(st && st.started) && /^(manifestParsingError|levelEmptyError|manifestIncompatibleCodecsError)$/.test(d.details) && !(code >= 400)) {
+        if (cur) { cur.bad = cur.bad || {}; cur.bad.hls = 1; }
+        return fail('media', 'not an HLS playlist (' + d.details + (code ? ', HTTP ' + code : '') + ')', false, false, 0);
+      }
       fail(d.type === Hls.ErrorTypes.NETWORK_ERROR ? 'net' : 'media', d.details + (code ? ' (HTTP ' + code + ')' : ''), code === 0, false, code >= 400 ? code : 0);
     });
     h.loadSource(url);
@@ -204,7 +210,7 @@ var Player = (function () {
       fixAudioTimestampGap: true, reuseRedirectedURL: true
     });
     var gotData = false;
-    m.on(mpegts.Events.MEDIA_INFO, function (mi) { gotData = true; if (mi && mi.mimeType) Log.debug('player', 'Stream codecs: ' + mi.mimeType); media(Caps.fromMpegts(mi)); });
+    m.on(mpegts.Events.MEDIA_INFO, function (mi) { gotData = true; if (st) st.gotInfo = true; if (mi && mi.mimeType) Log.debug('player', 'Stream codecs: ' + mi.mimeType); media(Caps.fromMpegts(mi)); });
     m.on(mpegts.Events.ERROR, function (type, detail, info) {
       // Only a fetch the browser refused outright ("Exception": CORS, TLS) says the host needs the
       // TV player.  An HTTP error before data is usually the provider's connection limit while
@@ -398,6 +404,19 @@ var Player = (function () {
       // A channel that has played here before and now gets an HTTP error is the provider having
       // trouble (outage, connection limit), not the pipeline: keep retrying the same way.
       if (http && cur.everPlayed) { cur.lastHttp = http; return reconnect(myToken, 'The provider answered ' + http + ', retrying'); }
+      /* "Not found" for a live channel that hasn't played: the provider doesn't have it, and asking again,
+         or with another player for the same address, gets the same answer (issue #56: three MPEG-TS tries,
+         the TV player and two HLS tries, about 15 s each, before "No player could open this channel").  Its
+         HLS version is another address, so that is tried once; otherwise it's marked not playing at once. */
+      if ((http === 404 || http === 410) && !st.started && cur.live && !cur.timeshift && !cur.everPlayed) {
+        cur.lastHttp = http; cur.tried = cur.tried || {};
+        cur.tried.ts = cur.tried.native = 1;
+        if (kind !== 'hls' && !(cur.bad && cur.bad.hls) && window.Hls && Hls.isSupported() && hlsVariant(cur.origUrl || cur.url) && !cur.tried.hls) {
+          Log.info('player', 'HTTP ' + http + ': the provider doesn\'t have this channel at that address; trying its HLS version once'); useEngine('hls'); return start(myToken);
+        }
+        Log.warn('player', 'HTTP ' + http + ': the provider doesn\'t have this channel; not retrying');
+        return giveUp(myToken);
+      }
       if (http && !st.started && kind !== 'native') {
         cur.httpFails = (cur.httpFails || 0) + 1;
         cur.lastHttp = http;
@@ -620,6 +639,13 @@ var Player = (function () {
     if (myToken !== token || !cur) return;
     var now = Date.now();
     // Movies and catch-up continue from where they got to, not from the start.
+    if (!cur.live && !cur.timeshift && isFile() && !cur.conv && st && st.started && st.from != null) {
+      // Never behind where this try started (a reconnect went back 280 s, issue #57), and by the clock when
+      // the TV player's own time lags far behind what has played.
+      var clock = st.from + (st.playMs || 0) / 1000;
+      if (clock > cur.pos + 20) { Log.warn('player', 'The TV player says ' + Math.round(cur.pos) + 's but it has played to about ' + Math.round(clock) + 's; continuing from there'); cur.pos = clock; }
+      if (cur.floor && cur.pos < cur.floor) cur.pos = cur.floor;
+    }
     if (!cur.live && !cur.timeshift && cur.pos > 5) { cur.startAt = cur.pos; skipBadSpot(); }
     if (!holding && cur.everPlayed) holdFrame();
     teardown();
@@ -744,6 +770,13 @@ var Player = (function () {
       if (cur.conv.t > 5 && t > cur.conv.t / 2) { cur.conv.base = 0; video._tbOffset = 0; Log.info('player', 'The TV player shows the movie\'s own times'); }
     }
     if (st.started && video.readyState > 0 && !video.seeking) cur.pos = t + base();
+    /* A movie's place by the clock too: how long it has been playing since this try started there.  The TV
+       player can report a time that lags far behind on a file it can't seek in precisely (issue #57: a
+       resume at 3110 s reported 2828 s, and every reconnect after went back there), or stop updating it. */
+    if (isFile() && !cur.conv && st.started && st.from != null) {
+      if (st.lastTick && !video.paused && !st.userPaused && video.readyState >= 3 && now - st.lastTick < 2000) st.playMs = (st.playMs || 0) + (now - st.lastTick);
+      st.lastTick = now;
+    }
     applyDisplay();               // the picture's own size arrives with the first frame (Aspect)
     var goal = refillGoal();
     var endNow = bufferEnd();
@@ -786,11 +819,17 @@ var Player = (function () {
         if (cur.live && !cur.timeshift && window.PlayMemo) { PlayMemo.worked(cur.ch, st.kind, cur.usual); PlayMemo.started(memoHost()); }
         if (bf.length && video.currentTime < first && !cur.startAt) { try { video.currentTime = first + 0.05; } catch (e) {} }
         st.growAt = now;
-        if (cur.startAt && !cur.live) { try { video.currentTime = cur.startAt; } catch (e) {} cur.pos = cur.startAt; cur.startAt = 0; }
+        if (!cur.live) { st.from = cur.startAt || cur.pos || 0; st.playMs = 0; }
+        if (cur.startAt && !cur.live) { try { video.currentTime = cur.startAt; } catch (e) {} cur.pos = cur.startAt; cur.floor = Math.max(cur.floor || 0, cur.startAt); cur.startAt = 0; }
         if (st.userPaused) return;
         var pr = video.play();
         if (pr && pr.catch) pr.catch(function () {});
-      } else if (now - st.at > (cur.swapFrom && !cur.swapPlayed ? 8000 : 15000 + need * 1000)) {
+      } else if (now - st.at > (cur.swapFrom && !cur.swapPlayed ? 8000 : 15000 + need * 1000) ||
+          // The demuxer knows what the stream is (its codecs came) but after 8 s nothing it made could be
+          // buffered: a format this pipeline can't play here, not a slow connection (issue #56: ESPN 3 ARG,
+          // MP3 sound, 17 s twice on MPEG-TS, then the TV player played it in 1.3 s).
+          (st.kind === 'ts' && st.gotInfo && video.readyState >= 1 && ahead === 0 && !video.buffered.length && now - st.at > 8000)) {
+        if (st.kind === 'ts' && st.gotInfo && !video.buffered.length) { cur.noPic = cur.noPic || {}; cur.noPic.ts = Math.max(1, cur.noPic.ts || 0); }
         Log.warn('player', 'No playable video after ' + (now - st.at) + 'ms (readyState ' + video.readyState + ', buffered ' + ahead.toFixed(1) + 's)');
         /* No picture twice in a row on one pipeline is the stream's format, not the connection (issue #53: a
            channel whose sound only the TV's own player could play took nine tries, two and a half minutes,
@@ -1168,7 +1207,8 @@ var Player = (function () {
     var d = cur.conv ? cur.conv.dur : video.duration;
     if (isFinite(d) && d > 0) t = U.clamp(t, 0, Math.max(0, d - 2));
     t = Math.max(0, t);
-    cur.pos = t;
+    cur.pos = t; cur.floor = t;                          // you chose the place: reconnects start from here
+    if (st) { st.from = t; st.playMs = 0; }
     if (!playing()) { cur.startAt = t; return; }        // reconnecting: the new connection starts there
     // Converted sound is a stream: a new conversion from there.
     if (cur.conv) { cur.startAt = Math.max(0.1, t); cur.retries = 0; Log.info('player', 'Seek to ' + Math.round(t) + 's: restarting the converted stream there'); start(token); return; }
