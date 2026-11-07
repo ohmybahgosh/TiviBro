@@ -12,10 +12,18 @@ var PubEpg = (function () {
   var PW = 'AU BR CA CN DE FR GB HK ID IN JP MY NZ PH RU SG TW US VN ZA'.split(' ');
   var IE = ('AL AR AM AU AT BY BE BO BA BR BG CA CL CO CR HR CW CZ DK DO SV FI FR GE DE GH GR GT HN HK HU IS IN ID IL IT JP LV LU MY MT MX ME ' +
     'NL NZ NI NG NO PA PY PE PL PT RO RU RS SG ZA ES SE CH TW TH TR UG GB US UY VE ZW').split(' ');
+  // epgshare01's files per country (its index, 2026-11-07): mostly "<code>1", a few in several parts.
+  var ES = {};
+  ('AE AL AR AT AU BA BB BG CH CL CO CR CY CZ DE DK DO EC EG ES FI FR GR HK HR HU ID IE IL IT JM KE KR KZ LT LU LV MN MT MX MY NG NL NO NZ PA PE PK PL PT RS SE SG SK SV TH UA UY VN ZA').split(' ').forEach(function (c) { ES[c] = [c + '1']; });
+  ES.GB = ['UK1']; ES.CA = ['CA2']; ES.BE = ['BE2']; ES.BR = ['BR1', 'BR2']; ES.IN = ['IN1', 'IN2', 'IN4']; ES.JP = ['JP1', 'JP2']; ES.PH = ['PH1', 'PH2']; ES.RO = ['RO1', 'RO2']; ES.SA = ['SA1', 'SA2']; ES.TR = ['TR1', 'TR3'];
   var SOURCES = [
     { id: 'epgpw', name: 'epg.pw', site: 'https://epg.pw', cc: PW, base: 'https://epg.pw/xmltv/', file: function (c, gz) { return 'epg_' + c + (gz ? '.xml.gz' : '.xml'); } },
     // No CORS headers: only reachable through the helper (or the dev relay).
-    { id: 'iptvepg', name: 'iptv-epg.org', site: 'https://iptv-epg.org', cc: IE, helper: true, base: 'https://iptv-epg.org/files/', file: function (c) { return 'epg-' + c.toLowerCase() + '.xml.gz'; } }
+    { id: 'iptvepg', name: 'iptv-epg.org', site: 'https://iptv-epg.org', cc: IE, helper: true, base: 'https://iptv-epg.org/files/', file: function (c) { return 'epg-' + c.toLowerCase() + '.xml.gz'; } },
+    /* epgshare01, third: measured on a real playlist (2026-11-07) it filled 67 more channels the two above
+       left without a guide (Greece 27, India 15, Portugal 14, Jamaica 7, Italy 4).  Some countries come in
+       several files.  The US is left to the sports guides (its general file is one of them).  Helper only. */
+    { id: 'epgshare01', name: 'epgshare01', site: 'https://epgshare01.online', cc: Object.keys(ES), helper: true, base: 'https://epgshare01.online/epgshare01/', files: function (c) { return ES[c].map(function (f) { return 'epg_ripper_' + f + '.xml.gz'; }); } }
   ];
   /* Free streaming-app channels (Pluto TV) carry the app's own channel id in their guide id
      ("US_5ca525b650be2571e3943c63"), and providers' guides for them are often empty.  i.mjh.nz publishes
@@ -87,7 +95,7 @@ var PubEpg = (function () {
     IS: 'Iceland', IN: 'India', ID: 'Indonesia', IL: 'Israel', IT: 'Italy', JP: 'Japan', LV: 'Latvia', LU: 'Luxembourg', MY: 'Malaysia', MT: 'Malta', MX: 'Mexico', ME: 'Montenegro',
     NL: 'Netherlands', NZ: 'New Zealand', NI: 'Nicaragua', NG: 'Nigeria', NO: 'Norway', PA: 'Panama', PY: 'Paraguay', PE: 'Peru', PH: 'Philippines', PL: 'Poland', PT: 'Portugal',
     RO: 'Romania', RU: 'Russia', RS: 'Serbia', SG: 'Singapore', ZA: 'South Africa', ES: 'Spain', SE: 'Sweden', CH: 'Switzerland', TW: 'Taiwan', TH: 'Thailand', TR: 'Turkey',
-    UG: 'Uganda', GB: 'United Kingdom', US: 'United States', UY: 'Uruguay', VE: 'Venezuela', VN: 'Vietnam', ZW: 'Zimbabwe' };
+    UG: 'Uganda', UA: 'Ukraine', AE: 'United Arab Emirates', BB: 'Barbados', CY: 'Cyprus', EC: 'Ecuador', EG: 'Egypt', JM: 'Jamaica', KE: 'Kenya', KR: 'South Korea', KZ: 'Kazakhstan', LT: 'Lithuania', MN: 'Mongolia', PK: 'Pakistan', SA: 'Saudi Arabia', SK: 'Slovakia', GB: 'United Kingdom', US: 'United States', UY: 'Uruguay', VE: 'Venezuela', VN: 'Vietnam', ZW: 'Zimbabwe' };
   function name(c) { c = code(c); return NAMES[c] || c; }
 
   // Per-playlist settings: { on, cc: [codes] }.  Missing means on, countries picked automatically.
@@ -158,10 +166,13 @@ var PubEpg = (function () {
   function files(ccs, helper, gz) {
     // Tests point this at the mock provider (settings.pubEpgBase): <base><source id>/<file>.
     var test = typeof Store !== 'undefined' && Store.settings && Store.settings.pubEpgBase, out = [];
-    function url(s, c) { return (test ? String(test).replace(/\/?$/, '/') + s.id + '/' : s.base) + s.file(c, gz !== false); }
+    function url(s, f) { return (test ? String(test).replace(/\/?$/, '/') + s.id + '/' : s.base) + f; }
     SOURCES.forEach(function (s) {
       if (s.helper && !helper) return;
-      ccs.forEach(function (c) { if (s.cc.indexOf(c) >= 0) out.push({ url: url(s, c), cc: c, src: s.id, name: s.name, prefix: s.id + ':' + c + '/' }); });
+      ccs.forEach(function (c) {
+        if (s.cc.indexOf(c) < 0) return;
+        (s.files ? s.files(c) : [s.file(c, gz !== false)]).forEach(function (f) { out.push({ url: url(s, f), cc: c, src: s.id, name: s.name, prefix: s.id + ':' + c + '/' }); });
+      });
     });
     return out;
   }

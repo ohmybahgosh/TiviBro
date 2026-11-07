@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **epgshare01 joins the public guide fill-in,** after epg.pw and iptv-epg.org, for the channels those two leave without a guide (about 70 countries, with the helper).  On a real playlist with 5,000 channels and no guide it filled 67 more (Greece, India, Portugal, Jamaica, Italy).  open-epg.com and epg.lat were looked at and left out: epg.lat's files are an old copy of epgshare01's, and open-epg is in the middle of reworking its files.
+
 ## 0.6.0 (alpha 100, 2026-11-07)
 
 Pre-release: expect rough edges, and keep a backup before installing.

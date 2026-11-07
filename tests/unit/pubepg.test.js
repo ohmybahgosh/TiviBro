@@ -53,12 +53,20 @@ t('on unless turned off', () => {
 });
 t('files: lighter project first; iptv-epg.org only through the helper; plain files when the TV can\'t unzip', () => {
   const f = P.files(['US', 'AR'], true, true);
-  assert.deepStrictEqual(f.map(x => x.name + ' ' + x.cc), ['epg.pw US', 'iptv-epg.org US', 'iptv-epg.org AR']);
+  assert.deepStrictEqual(f.map(x => x.name + ' ' + x.cc), ['epg.pw US', 'iptv-epg.org US', 'iptv-epg.org AR', 'epgshare01 AR']);
   assert.strictEqual(f[0].url, 'https://epg.pw/xmltv/epg_US.xml.gz');
   assert.strictEqual(f[1].url, 'https://iptv-epg.org/files/epg-us.xml.gz');
   assert.deepStrictEqual(P.files(['US'], false, false).map(x => x.url), ['https://epg.pw/xmltv/epg_US.xml']);
   assert.strictEqual(P.sourceOf('iptvepg:US/AMC.us').name, 'iptv-epg.org');
   assert.strictEqual(P.sourceOf('AMC.us'), null);
+});
+t('epgshare01: third, through the helper, a country in several files gets each, the UK is UK1, not the US', () => {
+  const f = P.files(['IN', 'GB', 'US'], true, true).filter(x => x.src === 'epgshare01');
+  assert.deepStrictEqual(f.map(x => x.url.split('/').pop()), ['epg_ripper_IN1.xml.gz', 'epg_ripper_IN2.xml.gz', 'epg_ripper_IN4.xml.gz', 'epg_ripper_UK1.xml.gz']);
+  assert.strictEqual(f[0].prefix, 'epgshare01:IN/');
+  assert.strictEqual(P.files(['IN'], false, true).filter(x => x.src === 'epgshare01').length, 0, 'not without the helper');
+  assert.strictEqual(P.sourceOf('epgshare01:GR/ERT1.gr').name, 'epgshare01');
+  assert.strictEqual(P.supported('JM'), true);
 });
 t('the helper\'s guide reader normalises names exactly like the app (service/guide.js and epg.js)', () => {
   const src = require('fs').readFileSync(require('path').join(__dirname, '../../app/js/epg.js'), 'utf8');

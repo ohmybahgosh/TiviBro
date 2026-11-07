@@ -376,7 +376,7 @@ var Settings = (function () {
     out.push(choice('Reload guide', '', REFRESH, REFRESH_L, function () { return +p.epgRefresh; }, function (v) { p.epgRefresh = v; persist(p); paint(); }));
     out.push(choice('Keep past days', 'For catch-up browsing.  More days use more TV memory.', [1, 2, 3, 5, 7], ['1 day', '2 days', '3 days', '5 days', '7 days'], function () { return +p.epgDays; }, function (v) { p.epgDays = v; persist(p, true); paint(); }));
     out.push(toggle('Match guide by channel name', 'Links channels that have no guide id to a guide channel with the same name.', function () { return p.nameMatch; }, function (v) { p.nameMatch = v; persist(p, true); paint(); }));
-    out.push(page('Public guide fill-in', 'Free guides (epg.pw, iptv-epg.org, Pluto TV\'s own, and sports guides), for channels nothing else covers and longer sports listings', 'Public guide fill-in', function () { return pubPage(p); }, function () { return PubEpg.conf(p).on ? 'On' : 'Off'; }));
+    out.push(page('Public guide fill-in', 'Free guides (epg.pw, iptv-epg.org, epgshare01, Pluto TV\'s own, and sports guides), for channels nothing else covers and longer sports listings', 'Public guide fill-in', function () { return pubPage(p); }, function () { return PubEpg.conf(p).on ? 'On' : 'Off'; }));
     if (inUse) {
       out.push(action('Reload guide now', L.multi ? 'Every playlist\'s guide loads again.' : '', function () { Epg.refresh(L, true); U.toast('Reloading guide'); live(); }));
       var st = active ? Epg.status : Epg.statusFor(p.id) || { at: 0, sources: [] };
@@ -723,7 +723,7 @@ var Settings = (function () {
     out.push(head('How your guide is built, in this order'));
     out.push(info('1.  Your provider\'s guide.', ''));
     out.push(info('2.  Your own guide sources, the first one first.  They win over the provider\'s.', ''));
-    out.push(info('3.  Public fill-in, only for channels nothing else covers: epg.pw, iptv-epg.org, and Pluto TV\'s own guide from i.mjh.nz for Pluto channels.', ''));
+    out.push(info('3.  Public fill-in, only for channels nothing else covers: epg.pw, iptv-epg.org, epgshare01, and Pluto TV\'s own guide from i.mjh.nz for Pluto channels.', ''));
     out.push(info('4.  Matching: each channel is linked to a guide channel by its guide id, then its name.  A wrong one: Hold OK > Assign guide.', ''));
     out.push(info('A channel that will never have a guide (a radio stream, a camera, an event slot): Hold OK > No guide for this channel.  It drops out of matching and stops saying "No guide information".  The web editor\'s Guide page does many at once (Ignore).', ''));
     out.push(head('Guide for ' + (p.name || 'this playlist')));

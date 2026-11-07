@@ -915,7 +915,7 @@ var Epg = (function () {
     var files = sfiles.concat(PubEpg.files(ccs, !!Net.active, gz), apps);
     miss = miss.concat(sport);
     var want = Object.keys(map).map(function (k) { return map[k]; }).filter(function (v) { return PUB_ID.test(v); });
-    var ckey = 'epgpub:' + p.id, sig = U.hash(ccs.join() + '|' + p.epgDays + (apps.length ? '|' + apps.map(function (f) { return f.prefix; }).join() : '') + (sfiles.length ? '|sports' : ''));
+    var ckey = 'epgpub:' + p.id, sig = U.hash(ccs.join() + '|' + p.epgDays + (apps.length ? '|' + apps.map(function (f) { return f.prefix; }).join() : '') + (sfiles.length ? '|sports' : '') + '|es1');
     return useHelper().then(function (h) {
       hMode = h;
       if (!h) return Store.idbGet(ckey);
