@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 98, 2026-11-06)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 98
 
 - **Even more guide shows find their TMDB details.**  A name with more on the end than TMDB has falls back to the shorter name when that's a show people know ("Hannah Montana Forever" is "Hannah Montana").  A season or episode inside the name comes off with what follows it ("Shark Tank :Season 4 :2026: Ep 4", "Brave Wilderness S2E2 -Face-to-Face…"), and counts as a sure match like a guide that gave the episode.  "The" in front and "&" for "and" make no difference.  Shows that missed before are asked about again.
 - **Guides that put the season and episode at the start of the description now count it** ("S04 E07 Love That Lets Go Lilly finally…", as some Xtream guides do).  The episode shows beside the times and its TMDB title and summary are looked up, and the "S04 E07" comes off the description.  News stays left alone even when the guide numbers it.  It takes effect at the next guide load.
 - **Phone app: Turn on waits longer for a TV woken over Bluetooth.**  From fully off, a TV can take two minutes or more to join the network (longer with a USB network adapter), so the app kept saying it didn't answer when it had come on.  It now looks for up to three minutes, and by discovery too in case the TV came back on another address.
 
-## 0.6.0 (alpha 97, 2026-11-06)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 97
+### In alpha 97
 
 - **The details above the guide no longer cut off at the bottom.**  With a Series or Movie line, an episode title, large text and the line about what's in the window, the summary was cut through the middle of a line and squeezed the lines above it.  Now it gives up lines (three, two, one) until everything fits.
 
