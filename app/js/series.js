@@ -143,6 +143,8 @@ var Series = (function () {
      guides without categories leave sport unmarked ("College Football", "NWSL Soccer"), so sport is told by its
      words; team channels list "Next game: …"; and a bare "Movie" is a placeholder. */
   var NOT = /\b(news|noticias|weather|paid program(?:ming)?|infomercial|sign.?off|off.?air|to be announced|tba|highlights|pregame|postgame|countdown|worship|football|f[uú]tbol|soccer|basketball|baseball|hockey|nfl|nba|wnba|nhl|mlb|mls|ncaa[bfmw]?|nascar|ufc|boxing|golf|tennis|racing|formula 1|grand prix|kickoff)\b|^\s*(?:live|en vivo|en directo)\s*[:!\-]|^\s*next game\s*:|^\s*live at\b|^\s*(?:movie|film|programming|live|en vivo)\s*!?\s*$/i;
+  // News programmes without "news" in the name (views.js KIND_NEWS_SHOWS, the same list): not looked up as series.
+  var NEWS_SHOWS = /^\s*(good morning america\b|gma3?\b|cbs (saturday|sunday) morning|cbs mornings|today(\s+3rd hour)?\s*$|early today|first look\s*$|nightline|20\/20|dateline|48 hours|60 minutes|face the nation|meet the press|this week with|fox (&|and) friends|morning joe|way too early|squawk box|top story with|hallie jackson now|stay tuned now|livenow from fox|the 11th hour|the last word with|the briefing with|the world today|business today|investigatetv\+|public affairs|world news tonight|nbc nightly)/i;
   function strength(c, p) {
     if (!p || !p.t || p.up || p.ended || p.mv) return '';
     if (p.k === 'n' || p.k === 's' || p.k === 'm') return '';
@@ -151,7 +153,7 @@ var Series = (function () {
     var ct = clean(p.t);
     if (!ct.t || norm(ct.t) === norm(c.n)) return '';
     // News and sport are left alone even with a season and episode: guides number those too ("Today", "S74 E210").
-    if (NOT.test(ct.t)) return '';
+    if (NOT.test(ct.t) || NEWS_SHOWS.test(ct.t)) return '';
     if (p.ep || EPIN.test(String(p.t).replace(SUP, ' '))) return 'strong';     // the guide gave a season or episode, in its own field or the name
     if (p.e - p.s > 75 * 60000) return '';      // longer: most likely a movie (from a real guide: Godzilla, Serendipity), not a show
     if (typeof Teams !== 'undefined' && Teams.isGame && Teams.isGame(ct.t, c.n)) return '';

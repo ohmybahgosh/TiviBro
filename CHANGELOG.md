@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **News shows without "news" in the name get the news colour** when the guide gives no categories: Good Morning America, GMA3, CBS Saturday and Sunday Morning, CBS Mornings, Today, Early Today, Nightline, 20/20, Dateline, 48 Hours, 60 Minutes, Face the Nation, Meet the Press and the like.  They're no longer looked up as TV series either.  Entertainment shows (Entertainment Tonight, Inside Edition) stay plain.
 - **epgshare01 joins the public guide fill-in,** after epg.pw and iptv-epg.org, for the channels those two leave without a guide (about 70 countries, with the helper).  On a real playlist with 5,000 channels and no guide it filled 67 more (Greece, India, Portugal, Jamaica, Italy).  open-epg.com and epg.lat were looked at and left out: epg.lat's files are an old copy of epgshare01's, and open-epg is in the middle of reworking its files.
 
 ## 0.6.0 (alpha 100, 2026-11-07)

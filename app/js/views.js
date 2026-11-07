@@ -2096,6 +2096,9 @@ var Guide = (function () {
      is, by its name or its group (ESPN, CNN, Disney Junior, Discovery; a "Sports" or "Kids" group).  Anything
      else stays plain: better no colour than a wrong one. */
   var KIND_NEWS = /\b(news|newscast|noticias|noticiero|nachrichten|journal t[eé]l[eé]vis[eé])\b/i,
+    /* News programmes without "news" in the name, from a real US guide with no categories: the networks'
+       morning, evening and Sunday shows and the news magazines (not entertainment ones like Inside Edition). */
+    KIND_NEWS_SHOWS = /^\s*(good morning america\b|gma3?\b|cbs (saturday|sunday) morning|cbs mornings|today(\s+3rd hour)?\s*$|early today|first look\s*$|nightline|20\/20|dateline|48 hours|60 minutes|face the nation|meet the press|this week with|fox (&|and) friends|morning joe|way too early|squawk box|top story with|hallie jackson now|stay tuned now|livenow from fox|the 11th hour|the last word with|the briefing with|the world today|business today|investigatetv\+|public affairs|world news tonight|nbc nightly)/i,
     KIND_SPORT = /\b(nfl|nba|wnba|nhl|mlb|mls|ncaa[bfmw]?|nascar|ufc|wwe|pga|f1|formula 1|football|f[uú]tbol|basketball|baseball|hockey|soccer|golf|tennis|boxing|cricket|rugby|sportscenter|pregame|postgame|kickoff|grand prix|playoffs?)\b/i,
     KIND_CH = [['n', /\b(news|cnn|msnbc|cnbc|fox news|newsmax|bbc world|sky news|euronews|al jazeera|bloomberg|noticias)\b/i],
       ['s', /\b(sports?|ncaa[bfmw]?|nfl|nba|wnba|nhl|mlb|mls|espn\w*|fs[12]|tsn|sportsnet|bein|dazn|nfl network|nba tv|nhl network|mlb network|golf channel|tennis channel|deportes)\b/i],
@@ -2106,7 +2109,7 @@ var Guide = (function () {
     if (p.k === 'd') return '';
     if (p.k) return p.k;
     var t = p.t || '';
-    if (KIND_NEWS.test(t)) return 'n';
+    if (KIND_NEWS.test(t) || KIND_NEWS_SHOWS.test(t)) return 'n';
     if (/^\s*next game\b/i.test(t) || KIND_SPORT.test(t) || (typeof Teams !== 'undefined' && Teams.isGame && Teams.isGame(t, c.n))) return 's';
     if (!(c.k in kindCh)) {
       var n = L.name(c) + ' ' + (c.n || ''), g = L.groupName(c.g) || '', k = '';

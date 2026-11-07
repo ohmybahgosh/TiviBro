@@ -117,12 +117,14 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
       if (!p) return null;
       const keep = { t: p.t, k: p.k }; p.k = ''; p.t = 'Channel 7 Action News at Noon'; Guide.draw();
       const news = !!document.querySelector('#guideBody .grow.sel .gp.now.k-n');
+      const shows = ['CBS Saturday Morning', 'Good Morning America', 'Today', 'Nightline'].map((t) => { p.t = t; Guide.draw(); return !!document.querySelector('#guideBody .grow.sel .gp.now.k-n'); });
       p.t = 'The Talk'; Guide.draw();
       const plain = !document.querySelector('#guideBody .grow.sel .gp.now[class*=" k-"]');
       p.t = keep.t; p.k = keep.k; Guide.draw();
-      return { news, plain, ch: c.n };
+      return { news, shows, plain, ch: c.n };
     }, gk);
     ok('no category from the guide: a news title still gets the news colour, a talk show stays plain', !!guess && guess.news && guess.plain, JSON.stringify(guess));
+    ok('and news shows without "news" in the name too (CBS Saturday Morning, Good Morning America, Today, Nightline)', !!guess && guess.shows.every(Boolean), JSON.stringify(guess));
     // A guide listing the next programme twice (the copy left with no time of its own): Right then Left comes
     // back to what's on now, rather than Left doing nothing until you change rows.
     const dup = await ev((k) => {
