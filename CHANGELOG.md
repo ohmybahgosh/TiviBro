@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- **Merge groups.**  Several provider groups as one (four NHL groups as one NHL group): **Hold OK** on a group > **Merge groups into this…** on the TV, or **⋯ > Merge groups into this…** in the web editor and phone app.  Groups with a word in common are listed first.  New channels the provider adds to them come along, and **Split** undoes it.
+- **A group opens on the channel playing** (in the window or fullscreen) when it's in it, else at the top, no longer where you last were in that group.
+- **Into the guide's programmes at what's on now.**  Coming from the groups after a while, the focus could land on a programme that had ended, and Left went nowhere from it.
+- **Hold ◀ in the guide to look back in time,** on any channel: it pauses at now, then shows what was on.  Back returns to now.
+- **My teams moves down between games,** under your groups and All channels, still there and saying when the next game is.  In it, a channel carrying your team's game later (a regional sports network) says **Next game 9:00pm: …** up to it, like team channels.
+- **Team channels ("NHL | Detroit Red Wings") and their Next game listings get the sports colour.**
 - **The web editor no longer undoes what you change on the TV meanwhile.**  Hide a group with the remote while changes on the phone aren't sent yet, and sending used to put it back.  Now the editor brings the TV's changes in (and says so), and sending only sends what you changed there.  Lists merge: a channel added to Favorites on the TV and another on the phone both stay.
 - **Channel and group names in the web editor: the previews show eight names,** with Show more for the rest, so the group name settings below aren't lost under a long list on a phone.
 - **"NCAAM" and "NCAAW" mark sports,** like NCAAB and NCAAF: the guide's sports colour, and never looked up as a movie or series.

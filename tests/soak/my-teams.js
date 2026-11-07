@@ -46,6 +46,24 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('My teams: the game on now first', /WPG VS CAR/.test(order[0]), order.join(' / '));
   ok('then the next game', /Anaheim Ducks Winnipeg Jets/.test(order[1]), order.join(' / '));
   ok('and no team channel without a game soon', order.indexOf('NHL | WINNIPEG JETS') < 0 && order.length === 2, order.join(' / '));
+  // In the guide's My teams, a channel whose game is later says "Next game …" up to it, like team channels,
+  // in the sports colour; the same channel elsewhere keeps its guide.
+  const ng = await ev(async () => {
+    // A channel like a regional sports network: its own programmes on now, the game later tonight.
+    const now = Date.now(), c = Library.data.channels.find((x) => { const l = Epg.request(x) || []; return !Events.of(x) && l.filter((p) => p.s > now + 3600e3).length >= 2 && l.some((p) => p.s <= now && p.e > now && !p.up); });
+    if (!c) return { none: true };
+    const l = Epg.request(c), game = l.find((p) => p.s > now + 3600e3), keepL = Teams.list, keepG = Teams.gameOn;
+    Teams.list = () => [c]; Teams.gameOn = (x) => (x.k === c.k ? game : null);
+    Store.settings.guideTint = true; Views.switchTab('guide'); Guide.open(Library.TEAMS, c.k); await new Promise((r) => setTimeout(r, 900));
+    const cell = document.querySelector('.grow.sel .gp.focus'), t = cell ? cell.textContent : '';
+    const green = cell ? /\bk-s\b/.test(cell.className) : false, gameCell = [].some.call(document.querySelectorAll('.grow.sel .gp'), (x) => x.textContent.indexOf(game.t) === 0);
+    Guide.open(Library.ALL, c.k); await new Promise((r) => setTimeout(r, 900));
+    const plain = (document.querySelector('.grow.sel .gp.focus') || {}).textContent || '';
+    Teams.list = keepL; Teams.gameOn = keepG;
+    return { name: c.n, game: game.t, t, green, gameCell, plain };
+  });
+  ok('My teams in the guide: a channel with a game later says Next game up to it, in the sports colour', !ng.none && /^Next game .+: /.test(ng.t) && ng.t.indexOf(ng.game) >= 0 && ng.green, JSON.stringify(ng));
+  ok('and in other groups it keeps its own guide', !ng.none && !/^Next game/.test(ng.plain), JSON.stringify(ng));
   const gs = await ev(() => Library.groups().map(g => g.name));
   ok('the group sits near the top', gs.indexOf('My teams') >= 0 && gs.indexOf('My teams') <= 2, gs.slice(0, 5).join(', '));
 
@@ -115,11 +133,13 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const keep = Teams.list; Teams.list = () => [];
     Teams.dirty();
     const inList = Library.groups().some((g) => g.id === Library.TEAMS);
+    const ids = Library.groups().map((g) => g.id), pos = ids.indexOf(Library.TEAMS), all = ids.indexOf(Library.ALL), fav = ids.indexOf('c_fav');
     const text = Views.emptyFor(Library.TEAMS);
     Teams.list = keep; Teams.dirty();
-    return { inList, text, next: Teams.nextGame() && Teams.nextGame().p.t };
+    return { inList, text, next: Teams.nextGame() && Teams.nextGame().p.t, below: pos > all && pos > fav };
   });
   ok('with no game in the window the group stays', between.inList, JSON.stringify(between));
+  ok('but moves down, under your groups and All channels, out of the way', between.below, JSON.stringify(between));
   ok('and says when the next game is', /^No games on now or in the next 6 hours\.  Next: .+, (Today|Tomorrow|\w{3}) \d+:\d\d[ap]m on .+\.$/.test(between.text), between.text);
   ok('other groups keep their own empty text', /Copy to group/.test(await ev(() => Views.emptyFor('nope'))));
 

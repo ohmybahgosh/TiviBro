@@ -53,12 +53,16 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const back = await st();
     ok('Back goes to now', Math.abs(back.t - back.now) < 120e3);
 
-    // ---- 3: held Left stops at now, a fresh press opens the groups ----
+    // ---- 3: held Left goes back in time (to look), a fresh press at now opens the groups ----
     await code(FF); await wait(400);
     for (let n = 0; n < 60; n++) { await code(LEFT, true); await wait(45); }
     await wait(300);
     const hl = await st();
-    ok('a held Left runs back to now and stops there: the groups stay shut', hl.zone === 'grid' && hl.t < hl.now + 3 * 3600e3, JSON.stringify(hl).slice(0, 160));
+    ok('a held Left runs back past now, to what was on: the groups stay shut', hl.zone === 'grid' && hl.t < hl.now - 30 * 60e3, JSON.stringify(hl).slice(0, 160));
+    const hint = await ev(() => document.getElementById('hints').innerText);
+    ok('the hints say Hold ◀ goes earlier', /Hold ◀\s+earlier/.test(hint), hint);
+    await code(BACK); await wait(400);
+    const bk = await st(); ok('Back comes back to now', Math.abs(bk.t - bk.now) < 120e3);
     await wait(400);
     // Held Down: a row at a time, then three at a time after a second and a half.
     const s0 = (await st()).sel;
@@ -68,7 +72,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('a held Down speeds up after a second and a half (more rows than presses)', moved > 44, moved + ' rows for 40 presses');
     await wait(400);
 
-    // ---- 4: each group keeps its place ----
+    // ---- 4: opening a group ----
     await ev(() => { Views.switchTab('guide'); }); await wait(500);
     if ((await st()).zone !== 'grid') { await code(RIGHT); await wait(400); }
     const g1 = (await st()).gid;
@@ -80,7 +84,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const other = await st();
     await code(LEFT); await wait(400); await code(UP); await wait(500); await code(RIGHT); await wait(500);
     const again = await st();
-    ok('coming back to a group lands on the channel you left it on', other.gid !== g1 && again.gid === g1 && again.k === kept, JSON.stringify({ g1, other: other.gid, again: again.gid, kept, k: again.k }));
+    // Not where you were in it: on the channel playing (in the window or fullscreen), else the top.
+    const wantK = await ev((g) => { const l = Library.channels(g), p = Views.playing ? Views.playing.k : Store.edits.recent[0]; return p && l.some((c) => c.k === p) ? p : l[0].k; }, g1);
+    ok('coming back to a group lands on the channel playing (or the top), not where you were in it', other.gid !== g1 && again.gid === g1 && again.k === wantK, JSON.stringify({ g1, other: other.gid, again: again.gid, kept, k: again.k, wantK }));
 
     // ---- 2: Jump to… ----
     await ev(() => { document.dispatchEvent(new KeyboardEvent('keydown', { keyCode: 13, bubbles: true })); }); await wait(800);
@@ -195,6 +201,15 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const gc = await ev(() => ({ title: document.querySelector('#guideGroups .col-title').textContent, icons: document.querySelectorAll('#guideGroupList .row .gic svg').length, rowH: document.querySelector('#guideGroupList .row').offsetHeight, pills: document.querySelectorAll('#guideGroupList .row .tag').length }));
     ok('the group column: its count in the title, compact rows, icons on TiviBro\'s own groups', /^Groups\s+\d+$/.test(gc.title) && gc.icons >= 1 && gc.rowH <= 66, JSON.stringify(gc));
     await shot('nav-groups');
+    // Into the programmes again after a while: at what's on now, not the programme that was on before (it
+    // has ended, and Left went nowhere from it).  The clock moves two hours on while the groups are open.
+    await ev(() => { const f = Date.now; window.__realNow = f; Date.now = () => f() + 2 * 3600e3; });
+    await code(RIGHT); await wait(500);
+    const late = await st();
+    ok('into the programmes after a while: at what is on now', late.zone === 'grid' && Math.abs(late.t - late.now) < 120e3, JSON.stringify({ t: new Date(late.t).toTimeString().slice(0, 5), now: new Date(late.now).toTimeString().slice(0, 5) }));
+    await code(LEFT); await wait(400);
+    ok('and a Left from there opens the groups', (await st()).zone === 'groups');
+    await ev(() => { Date.now = window.__realNow; });
     ok('no page errors', !errs.length, errs.join(' | '));
   } catch (e) { ok('harness: ' + e.message, false); }
   await b.close();

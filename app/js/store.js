@@ -110,6 +110,7 @@ var Store = (function () {
     groupRemove: {},         // provider group id -> { chanKey: 1 } taken out of it
     groupSort: {},           // group id -> provider | az | za | number | custom
     chanOrder: {},           // provider group id -> [chanKeys] in your order (groupSort 'custom')
+    groupMerge: {},          // provider group id -> the provider group it's merged into (library.js mergedInto)
     watchlist: [],           // [{ q, at }] words and names to look for in the guide (watch.js)
     toolSkip: {},            // Smart clean-up steps skipped in the web editor
     guideSkip: {},           // "Clean up your guide" steps skipped in the web editor
@@ -185,9 +186,9 @@ var Store = (function () {
      With one playlist on nothing is attached and none of this runs: the same code path as before. */
   // resume, watched and myList: Movies and Shows (vod.js), whose other playlists' keys are "<id>:m123".
   var KEY_MAPS = ['hiddenChannels', 'renames', 'watch', 'blockedChannels', 'epgMap', 'noGuide', 'display', 'resume', 'watched'];
-  var GROUP_MAPS = ['hiddenGroups', 'groupRenames', 'blockedGroups', 'groupSort', 'groupAdd', 'groupRemove', 'chanOrder'];
+  var GROUP_MAPS = ['hiddenGroups', 'groupRenames', 'blockedGroups', 'groupSort', 'groupAdd', 'groupRemove', 'chanOrder', 'groupMerge'];
   var GROUP_LISTS = ['groupOrder', 'knownGroups', 'myList'];
-  var KEYED = { groupAdd: 'list', chanOrder: 'list', groupRemove: 'map' };     // group maps whose values hold channel keys
+  var KEYED = { groupAdd: 'list', chanOrder: 'list', groupRemove: 'map', groupMerge: 'one' };     // group maps whose values hold keys (groupMerge: a group id)
   var attached = [], own = {};
   function idSet() { var m = {}; settings.playlists.forEach(function (p) { m[p.id] = 1; }); return m; }
   // A key as every file and memory understand it: "<playlist id>:<provider key>".
@@ -208,6 +209,7 @@ var Store = (function () {
     if (f === 'resume' && v && typeof v.ep === 'string') { var r = {}; for (var x in v) r[x] = v[x]; r.ep = fn(v.ep); return r; }
     if (kind === 'list' && Array.isArray(v)) return v.map(fn);
     if (kind === 'map' && v && typeof v === 'object') { var o = {}; for (var k in v) o[fn(k)] = v[k]; return o; }
+    if (kind === 'one' && typeof v === 'string') return fn(v);
     return v;
   }
   function attach(id) {

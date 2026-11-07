@@ -12,7 +12,7 @@
 var WebEdit = (function () {
   'use strict';
   var on = false, timer = 0, appliedRev = 0, lastCmd = 0, lastDraft = 0, lastSig = '', status = null, busy = false, onStatus = null;
-  var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip', 'guideSkip', 'noGuide'];
+  var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip', 'guideSkip', 'noGuide', 'groupMerge'];
   var SORTS = ['provider', 'az', 'za', 'number', 'custom'];
   var SNAP_AUTO = 15, SNAP_NAMED = 30;
   /* Ports for the editor.  High ones (one per ten thousand) for networks that block the common ones,
@@ -169,7 +169,7 @@ var WebEdit = (function () {
     return c;
   }
   function offKey(k) { var i = typeof k === 'string' ? k.indexOf(':') : -1; return i > 0 && !!Store.byId(k.slice(0, i)) && !Store.ownerOf(k); }
-  var ROUTED = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'groupOrder', 'groupAdd', 'groupRemove', 'noGuide', 'chanOrder', 'groupSort', 'epgMap'];
+  var ROUTED = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'groupOrder', 'groupAdd', 'groupRemove', 'noGuide', 'chanOrder', 'groupSort', 'epgMap', 'groupMerge'];
   function blend(f, mine, cover, cur) {
     if (!cover || !Store.attached.length && !Object.keys(cover).some(function (x) { return x; })) return mine;
     var keep = function (k) { return !cover[Store.ownerOf(k)]; };
@@ -203,6 +203,8 @@ var WebEdit = (function () {
     // Channels you don't want a guide for: out of guide matching, and the TV doesn't say "No guide information".
     if (obj(ed.noGuide)) { e.noGuide = {}; Object.keys(ed.noGuide).forEach(function (k) { if (ed.noGuide[k] && k.length < 200) e.noGuide[k] = 1; }); }
     if (obj(ed.chanOrder)) { e.chanOrder = {}; Object.keys(ed.chanOrder).forEach(function (g) { var l = strs(ed.chanOrder[g]); if (l.length) e.chanOrder[g] = l; }); }
+    // Merged groups: { provider group: the provider group it shows in } (library.js mergedInto).
+    if (obj(ed.groupMerge)) { e.groupMerge = {}; Object.keys(ed.groupMerge).forEach(function (g) { var t = ed.groupMerge[g]; if (typeof t === 'string' && t && t !== g && g.length < 300 && t.length < 300) e.groupMerge[g] = t; }); }
     if (obj(ed.groupSort)) { e.groupSort = {}; Object.keys(ed.groupSort).forEach(function (g) { if (SORTS.indexOf(ed.groupSort[g]) >= 0) e.groupSort[g] = ed.groupSort[g]; }); }
     if (obj(ed.epgMap)) { var em = blend('epgMap', ed.epgMap, cover, was.epgMap); if (JSON.stringify(em) !== JSON.stringify(e.epgMap || {})) { e.epgMap = em; guideChanged = true; } }
     // Each playlist's channel and group entries: only the playlists the sender covered (blend).

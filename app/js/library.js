@@ -266,7 +266,7 @@ var Library = (function () {
     // Several playlists on: each playlist's own Events by time and "hide channels with nothing on".
     if (Events.groupOnAny ? Events.groupOnAny() : first) data.channels.forEach(function (c) {
       if (c.p ? !Events.groupOn(c) : !first) return;
-      if (!showHidden && (e.hiddenChannels[c.k] || e.hiddenGroups[c.g])) return;
+      if (!showHidden && (e.hiddenChannels[c.k] || e.hiddenGroups[homeOf(c)])) return;
       if ((c.p ? hideIdleOf(c) : firstIdle) && Names.idle(c.n)) return;
       var ev = Events.of(c);
       if (ev && ev.end > now && ev.start < now + 14 * 86400e3) out.push({ c: c, s: ev.start });
@@ -288,7 +288,7 @@ var Library = (function () {
     Object.keys(a).forEach(function (k) {
       if (a[k] < since) return;
       var c = byKey.get(k);
-      if (!c || (!showHidden && (e.hiddenChannels[k] || e.hiddenGroups[c.g]))) return;
+      if (!c || (!showHidden && (e.hiddenChannels[k] || e.hiddenGroups[homeOf(c)]))) return;
       out.push(c);
     });
     out.sort(function (x, y) { return a[y.k] - a[x.k] || x.num - y.num; });
@@ -301,7 +301,7 @@ var Library = (function () {
   function shownAnywhere(c) {
     var e = E();
     if (!c || (!S().showHidden && e.hiddenChannels[c.k])) return false;
-    if (S().showHidden || !e.hiddenGroups[c.g]) return true;
+    if (S().showHidden || !e.hiddenGroups[homeOf(c)]) return true;
     if (!inShown) {
       inShown = {};
       e.custom.forEach(function (g) { if (!e.hiddenGroups[g.id]) g.items.forEach(function (k) { inShown[k] = 1; }); });
@@ -312,6 +312,34 @@ var Library = (function () {
   function isVirtual(gid) { return gid === ALL || gid === RECENT || gid === EVENTS || gid === NEW || gid === TEAMS || gid === MOVIES; }
   function isCustom(gid) { return gid && gid.indexOf('c_') === 0; }
   function custom(gid) { return E().custom.filter(function (g) { return g.id === gid; })[0]; }
+  /* Merged groups (Hold OK on a group > Merge groups into this, or the web editor): E().groupMerge maps a
+     provider group to the provider group it is shown in.  Its channels join that one, it leaves the group
+     list, and it comes back when split.  One level only, within one playlist; a target that's gone (the
+     provider dropped it) leaves its groups as they were. */
+  function mergedInto(gid) {
+    var m = E().groupMerge, t = m && gid && m[gid];
+    return t && t !== gid && groupNames[t] != null && !m[t] ? t : null;
+  }
+  function homeOf(c) { return mergedInto(c.g) || c.g; }
+  function mergedFrom(gid) {
+    var m = E().groupMerge || {}, out = [];
+    data.groups.forEach(function (g) { if (m[g.id] === gid && mergedInto(g.id) === gid) out.push(g.id); });
+    return out;
+  }
+  function mergeGroups(target, ids) {
+    var e = E(); if (!e.groupMerge) e.groupMerge = {};
+    var n = 0;
+    ids.forEach(function (id) {
+      if (!id || id === target || isCustom(id) || isVirtual(id) || groupNames[id] == null) return;
+      // Groups merged into the one being merged come along to the new target.
+      Object.keys(e.groupMerge).forEach(function (s2) { if (e.groupMerge[s2] === id) e.groupMerge[s2] = target; });
+      e.groupMerge[id] = target; n++;
+    });
+    delete e.groupMerge[target];
+    commit();
+    return n;
+  }
+  function splitGroup(target) { var e = E(), m = e.groupMerge || {}; Object.keys(m).forEach(function (s2) { if (m[s2] === target) delete m[s2]; }); commit(); }
   function cleanGroup(n) { return Names.cleanGroup(n); }
   function groupName(gid) {
     if (gid === ALL) return 'All channels';
@@ -321,6 +349,7 @@ var Library = (function () {
     if (gid === TEAMS) return 'My teams';
     if (gid === MOVIES) return 'Movies on now';
     var c = custom(gid);
+    if (!c && mergedInto(gid)) return groupName(mergedInto(gid));
     return c ? c.name : (E().groupRenames && E().groupRenames[gid]) || cleanGroupOf(gid, groupNames[gid] || '');
   }
 
@@ -335,10 +364,12 @@ var Library = (function () {
     });
     if (s.showFav === false) customs = customs.filter(function (g) { return g.id !== FAV; });
     if (s.favFirst) out = out.concat(customs);
-    // My teams (app/js/teams.js): near the top while it's on, empty between games (it says when the next one is).
-    if (typeof Teams !== 'undefined' && Teams.groupOn()) out.push({ id: TEAMS, name: 'My teams', count: Teams.list().length });
-    // Movies on now (app/js/movies.js): with a TMDB token, the guide's movies on now and starting within the hour.
-    if (typeof Movies !== 'undefined' && Movies.groupOn()) out.push({ id: MOVIES, name: 'Movies on now', count: Movies.list().length });
+    /* My teams (app/js/teams.js) and Movies on now (app/js/movies.js): near the top while something is on.
+       Empty (between games, nothing starting soon) they move down under your groups and All channels,
+       still there to open (My teams says when the next game is), but not in the way of the groups above. */
+    var later = [];
+    if (typeof Teams !== 'undefined' && Teams.groupOn()) { var tn = Teams.list().length; (tn ? out : later).push({ id: TEAMS, name: 'My teams', count: tn }); }
+    if (typeof Movies !== 'undefined' && Movies.groupOn()) { var mn = Movies.list().length; (mn ? out : later).push({ id: MOVIES, name: 'Movies on now', count: mn }); }
     if (s.showRecent && e.recent.length) out.push({ id: RECENT, name: 'Recent', count: e.recent.length });
     var fresh = newList().length;
     if (fresh) out.push({ id: NEW, name: 'Recently added', count: fresh });
@@ -346,6 +377,7 @@ var Library = (function () {
     if (evs) out.push({ id: EVENTS, name: 'Events by time', count: evs });
     if (!s.favFirst) out = out.concat(customs);
     if (s.showAll) out.push({ id: ALL, name: 'All channels', count: data.channels.length });
+    out = out.concat(later);
     var prov = data.groups.slice();
     if (s.sortGroups === 'name') prov.sort(function (a, b) { return cleanGroup(a.name).localeCompare(cleanGroup(b.name)); });
     if (e.groupOrder && e.groupOrder.length) {
@@ -361,6 +393,7 @@ var Library = (function () {
     }
     var section = null;
     prov.forEach(function (g) {
+      if (mergedInto(g.id)) return;                 // shown inside the group it was merged into
       var hid = !!e.hiddenGroups[g.id];
       if (!(showHidden || !hid)) return;
       if (heads && others.length && (g.p || '') !== section) {
@@ -387,6 +420,7 @@ var Library = (function () {
     if (gid === NEW) return newList();
     if (gid === TEAMS) return typeof Teams !== 'undefined' ? Teams.list() : [];
     if (gid === MOVIES) return typeof Movies !== 'undefined' ? Movies.channels() : [];
+    if (!isCustom(gid) && mergedInto(gid)) return channels(mergedInto(gid), withHidden);
     var hit = !withHidden && groupCache.get(gid);
     if (hit) return hit;
     var e = E(), showHidden = withHidden || S().showHidden, list;
@@ -400,12 +434,14 @@ var Library = (function () {
       sortable = true;
       list = data.channels;
       // "All" also skips channels whose whole group is hidden.
-      if (!showHidden && !S().allHidden) list = list.filter(function (c) { return !e.hiddenGroups[c.g]; });
+      if (!showHidden && !S().allHidden) list = list.filter(function (c) { return !e.hiddenGroups[homeOf(c)]; });
     } else {
       sortable = true;
       // Provider group, minus channels taken out of it, plus channels copied or moved into it.
       var out = (e.groupRemove && e.groupRemove[gid]) || {}, add = (e.groupAdd && e.groupAdd[gid]) || [];
       list = data.channels.filter(function (c) { return c.g === gid && !out[c.k]; });
+      // Groups merged into it: their channels after its own, in the order the groups are listed.
+      mergedFrom(gid).forEach(function (src) { var o2 = (e.groupRemove && e.groupRemove[src]) || {}; list = list.concat(data.channels.filter(function (c) { return c.g === src && !out[c.k] && !o2[c.k]; })); });
       if (add.length) {
         var seen = {}; list.forEach(function (c) { seen[c.k] = 1; });
         add.forEach(function (k) { var c = byKey.get(k); if (c && !seen[k] && !out[k]) { list.push(c); seen[k] = 1; } });
@@ -582,6 +618,6 @@ var Library = (function () {
     copyTo: copyTo, removeFrom: removeFrom, moveInGroup: moveInGroup, moveGroup: moveGroup,
     firstData: firstData, dataOf: dataOf, setOther: setOther, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, get main() { return main; }, get multi() { return multi(); }, plName: plName,
     otherIds: function () { return others.map(function (x) { return x.id; }); },
-    hiddenItems: hiddenItems, allGroups: allGroups, versions: versions, versionKey: versionKey, numberCanGrow: numberCanGrow, qualityLabel: qualityLabel, versionTag: versionTag, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
+    hiddenItems: hiddenItems, allGroups: allGroups, mergedInto: mergedInto, mergedFrom: mergedFrom, mergeGroups: mergeGroups, splitGroup: splitGroup, homeOf: homeOf, versions: versions, versionKey: versionKey, numberCanGrow: numberCanGrow, qualityLabel: qualityLabel, versionTag: versionTag, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
   };
 })();

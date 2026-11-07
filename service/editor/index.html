@@ -875,7 +875,7 @@ var rev = 0, sentRev = 0, sending = false, inflight = 0, sel = new Set(), curGro
 var hist = [], redo = [], lastProgress = null, tvLost = false, tvStuck = false;
 var dT = 0, dFirst = 0, dLast = '', dSeq = 0, dAck = 0, dAt = 0, draftsCache = null;   // draft autosave on the TV
 var FAV = 'c_fav', ALL = '__all';
-var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip', 'guideSkip', 'noGuide'];
+var FIELDS = ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames', 'custom', 'groupOrder', 'epgMap', 'groupAdd', 'groupRemove', 'groupSort', 'chanOrder', 'watchlist', 'toolSkip', 'guideSkip', 'noGuide', 'groupMerge'];
 var byKey = new Map(), byGroup = new Map(), guideName = new Map();
 var TOUCH = !!(window.matchMedia && matchMedia('(hover: none)').matches);   // phones and tablets: no hover, no drag and drop
 /* Inside the TiviBro phone app (EditorScreen.kt injects window.TiviBroApp).  Older apps have no open():
@@ -1172,19 +1172,26 @@ function sortList(l, mode, id) {
   return l;
 }
 // Channels in a group as the TV shows them (hidden channels included; the TV filters those).
+/* Merged groups (E.groupMerge, the same as the TV's library.js): a provider group shown inside another.
+   Its channels join that one and it leaves the group list until it's split again. */
+function mergedInto(id) { var m = E.groupMerge || {}, t = id && m[id]; return t && t !== id && provOf(t) && !m[t] ? t : null; }
+function mergedFrom(id) { var m = E.groupMerge || {}; return D.groups.filter(function (g) { return m[g.id] === id && mergedInto(g.id) === id; }).map(function (g) { return g.id; }); }
+function homeG(c) { return mergedInto(c.g) || c.g; }
 function channelsOf(id, raw) {
   var l;
-  if (id === ALL) return D.channels.filter(function (c) { return !E.hiddenGroups[c.g]; });
+  if (id === ALL) return D.channels.filter(function (c) { return !E.hiddenGroups[homeG(c)]; });
+  if (!isCustom(id) && mergedInto(id)) return channelsOf(mergedInto(id), raw);
   if (isCustom(id)) { var g = customOf(id); l = g ? g.items.map(function (k) { return byKey.get(k); }).filter(Boolean) : []; }
   else {
     var out = E.groupRemove[id] || {}, add = E.groupAdd[id] || [], seen = {};
     l = (byGroup.get(id) || []).filter(function (c) { return !out[c.k]; });
+    mergedFrom(id).forEach(function (src) { var o2 = E.groupRemove[src] || {}; l = l.concat((byGroup.get(src) || []).filter(function (c) { return !out[c.k] && !o2[c.k]; })); });
     l.forEach(function (c) { seen[c.k] = 1; });
     add.forEach(function (k) { var c = byKey.get(k); if (c && !seen[k] && !out[k]) { l.push(c); seen[k] = 1; } });
   }
   return raw ? l : sortList(l, E.groupSort[id], id);
 }
-function groupLabel(id) { if (id === ALL) return 'All channels'; var g = customOf(id); if (g) return g.name; var p = provOf(id); return p ? provName(p) : id; }
+function groupLabel(id) { if (id === ALL) return 'All channels'; var g = customOf(id); if (g) return g.name; if (mergedInto(id)) return groupLabel(mergedInto(id)); var p = provOf(id); return p ? provName(p) : id; }
 function groupEdited(id) { return !!((E.groupAdd[id] && E.groupAdd[id].length) || (E.groupRemove[id] && Object.keys(E.groupRemove[id]).length)); }
 function guideOf(c) { return E.epgMap[c.k] || c.epg || ''; }
 // Only known with an XMLTV guide; with the provider's per-channel guide every channel counts as covered.
@@ -1374,6 +1381,7 @@ function diffs(A, B) {
   keys(a.groupAdd, b.groupAdd).concat(keys(a.groupRemove, b.groupRemove)).filter(function (v, i, s) { return s.indexOf(v) === i; }).forEach(function (id) {
     if (!sameJ(a.groupAdd[id] || [], b.groupAdd[id] || []) || !sameJ(a.groupRemove[id] || {}, b.groupRemove[id] || {})) out.push('Channels copied, moved or taken out: ' + gn(id));
   });
+  keys(a.groupMerge || {}, b.groupMerge || {}).forEach(function (id) { var x = (a.groupMerge || {})[id], y = (b.groupMerge || {})[id]; if (x !== y) out.push(y ? 'Merge ' + (provOf(id) ? provName(provOf(id)) : id) + ' into ' + (provOf(y) ? provName(provOf(y)) : y) : 'Split ' + (provOf(id) ? provName(provOf(id)) : id) + ' out again'); });
   keys(a.groupSort, b.groupSort).forEach(function (id) { if (a.groupSort[id] !== b.groupSort[id]) out.push('Sort ' + gn(id) + ': ' + (SORT_LABEL[b.groupSort[id] || 'provider'] || '')); });
   if (!sameJ((a.watchlist || []).map(function (w) { return w.q; }), (b.watchlist || []).map(function (w) { return w.q; }))) out.push('Watchlist');
   keys(a.chanOrder || {}, b.chanOrder || {}).forEach(function (id) { if (!sameJ((a.chanOrder || {})[id] || [], (b.chanOrder || {})[id] || [])) out.push('New channel order in ' + gn(id)); });
@@ -1779,8 +1787,11 @@ function renderGroups() {
   E.custom.forEach(function (g) { row(g.id, g.name, g.items.length, 'custom', g.orig && g.orig !== g.name ? '<em title="Was: ' + esc(g.orig) + '">renamed</em>' : ''); });
   html.push('<div class="sec">Provider groups</div>');
   providerGroups().forEach(function (g) {
+    if (mergedInto(g.id)) return;                       // shown inside the group it's merged into
+    var mf = mergedFrom(g.id);
     // Several playlists on (the TV sends pl for the groups of playlists other than the first): whose group it is.
-    var b = (g.pl ? '<em title="From this playlist">' + esc(g.pl) + '</em>' : '') + (g.renamed ? '<em title="Provider name: ' + esc(cleanGroup(g.raw)) + '">renamed</em>' : '') + (groupEdited(g.id) ? '<em class="e" title="Channels were copied, moved or taken out">edited</em>' : '') + (E.groupSort[g.id] ? '<em class="e">' + esc(SORT_LABEL[E.groupSort[g.id]]) + '</em>' : '');
+    var b = (g.pl ? '<em title="From this playlist">' + esc(g.pl) + '</em>' : '') + (g.renamed ? '<em title="Provider name: ' + esc(cleanGroup(g.raw)) + '">renamed</em>' : '') + (groupEdited(g.id) ? '<em class="e" title="Channels were copied, moved or taken out">edited</em>' : '') + (E.groupSort[g.id] ? '<em class="e">' + esc(SORT_LABEL[E.groupSort[g.id]]) + '</em>' : '') +
+      (mf.length ? '<em class="e" title="Merged in: ' + esc(mf.map(function (x) { var p = provOf(x); return p ? provName(p) : x; }).join(', ')) + '">+' + mf.length + ' merged</em>' : '');
     row(g.id, g.name, channelsOf(g.id, true).length, 'prov', b, g.raw);
   });
   if (!shown) html.push('<div class="empty small">No groups match this filter.</div>');
@@ -1871,8 +1882,43 @@ function groupMenu(anchor, id) {
     n > 2 ? ['Move to position… (' + (pos + 1) + ' of ' + n + ')', function () {
       promptBox('Move ' + groupLabel(id), 'New position among ' + (isCustom(id) ? 'your groups' : 'provider groups') + ' (1 to ' + n + ')', String(pos + 1), 'Move', function (v) { v = Math.round(+v); if (v >= 1) moveGroup(id, Math.min(n, v) - 1); });
     }] : null,
-    id !== FAV ? ['Rename', function () { renameGroup(id); }] : null
+    id !== FAV ? ['Rename', function () { renameGroup(id); }] : null,
+    isProv(id) ? ['Merge groups into this…', function () { mergeDialog(id); }] : null,
+    isProv(id) && mergedFrom(id).length ? ['Split back into ' + (mergedFrom(id).length + 1) + ' groups', function () { mut('Split ' + groupLabel(id) + ' back into its groups', function () { Object.keys(E.groupMerge).forEach(function (k) { if (E.groupMerge[k] === id) delete E.groupMerge[k]; }); }); }] : null
   ]);
+}
+/* Merge groups: tick provider groups (of the same playlist) to show inside this one, like four NHL groups
+   as one.  Groups that share a word with it come first. */
+function mergeDialog(id) {
+  var me = provOf(id), mine = groupLabel(id), words = {};
+  mine.toLowerCase().split(/[^a-z0-9+]+/).forEach(function (w) { w = w.replace(/s$/, ''); if (w.length > 1 && !/^(us|usa|uk|ca|hd|fhd|tv|the|and|of|en|vip)$/.test(w)) words[w] = 1; });
+  var like = function (g) { return g.name.toLowerCase().split(/[^a-z0-9+]+/).some(function (w) { return words[w.replace(/s$/, '')]; }); };
+  var cands = providerGroups().filter(function (g) { return g.id !== id && !mergedInto(g.id) && (g.p || '') === ((me && me.p) || ''); });
+  cands = cands.filter(like).concat(cands.filter(function (g) { return !like(g); }));
+  var pre = {}; mergedFrom(id).forEach(function (x) { pre[x] = 1; });
+  modal('Merge into ' + mine, '<p class="muted small" style="margin-top:0">Ticked groups show inside ' + esc(mine) + ' on the TV, their channels after its own.  New channels the provider adds to them come along.  Split undoes it.</p>' +
+    '<input id="mgQ" type="text" placeholder="Filter groups" style="width:100%;margin-bottom:8px"><div id="mgList" class="col" style="max-height:50vh;overflow:auto"></div>', function () {
+      var picked = {};
+      function draw() {
+        var q = $('mgQ').value.trim().toLowerCase();
+        $('mgList').innerHTML = cands.filter(function (g) { return !q || g.name.toLowerCase().indexOf(q) >= 0; }).map(function (g) {
+          return '<label class="rule" style="padding:6px 2px"><input type="checkbox" data-mg="' + esc(g.id) + '"' + (picked[g.id] ? ' checked' : '') + '><div><b>' + esc(g.name) + '</b> <span class="dim small">' + channelsOf(g.id, true).length + ' channels' + (E.hiddenGroups[g.id] ? ', hidden' : '') + (like(g) ? ', similar name' : '') + '</span></div></label>';
+        }).join('') || '<div class="empty small">No other groups.</div>';
+        var n = Object.keys(picked).length; $('mgGo').disabled = !n; $('mgGo').textContent = n ? 'Merge ' + plural(n, 'group') : 'Merge';
+      }
+      $('mgList').addEventListener('change', function (e) { var k = e.target.getAttribute('data-mg'); if (!k) return; if (e.target.checked) picked[k] = 1; else delete picked[k]; draw(); });
+      $('mgQ').addEventListener('input', draw);
+      $('mgGo')._picked = picked;
+      draw();
+    }, [['Cancel', 'ghost', closeModal], ['Merge', 'primary', function () {
+      var ids = Object.keys($('mgGo')._picked); if (!ids.length) return; closeModal();
+      mut('Merged ' + plural(ids.length, 'group') + ' into ' + mine, function () {
+        if (!E.groupMerge) E.groupMerge = {};
+        ids.forEach(function (x) { Object.keys(E.groupMerge).forEach(function (k) { if (E.groupMerge[k] === x) E.groupMerge[k] = id; }); E.groupMerge[x] = id; });
+        delete E.groupMerge[id];
+      });
+      toast(plural(ids.length, 'group') + ' merged into ' + mine + '.  Send to TV to use it.');
+    }, 'mgGo']], false);
 }
 function hideAll() { mut('Hid every group', function () { D.groups.forEach(function (g) { E.hiddenGroups[g.id] = 1; }); E.custom.forEach(function (g) { if (g.id !== FAV) E.hiddenGroups[g.id] = 1; }); }); toast('All groups hidden.  Switch on the ones you watch.', ['Undo', undo]); }
 $('showAll').onclick = function () { mut('Showed every group', function () { E.hiddenGroups = {}; }); toast('Every group is shown', ['Undo', undo]); };

@@ -366,11 +366,13 @@ var Teams = (function () {
     if (!groupOn()) return [];
     var now = Date.now();
     if (listCache && now - listCache.at < 60000 && listCache.of === Library.data.channels) return listCache.list;
-    var out = [], have = {};
-    games().forEach(function (g) { if (!have[g.c.k]) { have[g.c.k] = 1; out.push(g.c); } });
-    listCache = { at: now, of: Library.data.channels, list: out };
+    var out = [], have = {}, first = {};
+    games().forEach(function (g) { if (!have[g.c.k]) { have[g.c.k] = 1; out.push(g.c); } if (!first[g.c.k] || g.p.s < first[g.c.k].s) first[g.c.k] = g.p; });
+    listCache = { at: now, of: Library.data.channels, list: out, first: first };
     return out;
   }
+  // The soonest game of yours on a channel in My teams (its programme), or null.
+  function gameOn(c) { list(); return c && listCache && listCache.first ? listCache.first[c.k] || null : null; }
   function dirty() { listCache = null; nextCache = null; desc.at = 0; }
   /* With no game in the window, the group stays and says when the next one is: the soonest game in the
      guide within a week (team channels' "Next game" blocks count). */
@@ -415,6 +417,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, dirty: dirty, nextGame: nextGame, emptyText: emptyText
+    isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
 })();

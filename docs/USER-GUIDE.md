@@ -122,7 +122,7 @@ TiviBro works with the standard LG remote and the Magic Remote.  With the Magic 
 | **Info** | Programme and channel options | Programme details |
 | **Hold Info** | | Buffer info: how many seconds are banked and, when the player reports it, the stream's speed.  No Info button (most Magic Remotes): **OK**, then **Stream info** |
 | **▲ ▼** | Move between channels | Channel up and down |
-| **◀ ▶** | Move through time (◀ on "now" opens the groups) | ◀ rewind or last channel, ▶ info |
+| **◀ ▶** | Move through time (◀ on "now" opens the groups; hold ◀ to look back) | ◀ rewind or last channel, ▶ info |
 | **CH + / CH −** | Page up and down | Channel up and down |
 | **⏪ ⏩** | Jump through time, into the past on catch-up channels | Skip in catch-up and movies |
 | **▶ Play** / **❙❙ Pause** | Watch the previewed channel fullscreen | Play only plays and Pause only pauses; a single Play/Pause button switches between them.  Live TV can be paused too. |
@@ -152,7 +152,7 @@ Buttons can be remapped under **Settings > Remote and buttons**, including keys 
 The guide is the home screen.  The channel you are on plays in the window at the top left, with the programme details beside it.
 
 - **OK** on a channel previews it in the window.  **OK again** (or **▶ Play**) goes fullscreen.  If you prefer one press, set **Settings > Appearance and start screen > OK on a channel in the Guide** to *Fullscreen right away*.
-- **▶** moves forward in time; **◀** moves back, and on "now" it opens the groups.  Held, they step slowly for the first second so you can stop where you want, then speed up; a held **◀** stops at now instead of opening the groups.  Held **▲ ▼** speed up too, three channels at a time after a second and a half.
+- **▶** moves forward in time; **◀** moves back, and on "now" it opens the groups.  Held, they step slowly for the first second so you can stop where you want, then speed up; a held **◀** never opens the groups: it pauses at now, then keeps going back to show what was on, on any channel (playing it needs catch-up).  **Back** returns to now.  Held **▲ ▼** speed up too, three channels at a time after a second and a half.
 - **⏩ Fast forward** and **⏪ Rewind** jump a whole screen of the guide (two and a half hours) at a time.  Rewind goes back only as far as the channel's catch-up.  **Back** returns to now.
 - When the guide shows another day, the time bar says which ("Tomorrow 8:00pm"), and the day shows at midnight.
 - Each group remembers where you were: leave it and come back, and you are on the same channel (and the same time, if you were looking ahead).
@@ -181,7 +181,11 @@ Where the guide comes from (your provider, your own sources, public fill-in, and
 
 ### Groups and the menu
 
-Your groups sit right beside the guide: **Favorites** and your own groups first, then **All channels**, then your provider's groups.  Moving through the list updates the guide behind it.  **OK** or **▶** opens a group; **Hold OK** gives group options (rename, hide, sort, block).
+Your groups sit right beside the guide: **Favorites** and your own groups first, then **All channels**, then your provider's groups.  Moving through the list updates the guide behind it.  **OK** or **▶** opens a group, on the channel playing when it's in it, else at the top, at what's on now; **Hold OK** gives group options (rename, hide, sort, block).
+
+**Merge groups.**  Providers often split one thing over several groups (four NHL groups).  **Hold OK** on a provider group > **Merge groups into this…** lists the other groups, the ones with a word in common first: tick them with **OK** and choose **Merge**.  Their channels show in that group, after its own, and new channels the provider adds to them come along.  **Split back into N groups** undoes it.  In the web editor (on the phone too), it's **⋯ > Merge groups into this…** on a group.
+
+**My teams** sits near the top while a game is on or coming up.  Between games it moves down under your groups and **All channels**, still there to open (it says when the next game is).  In it, a channel that carries your team's game later, like a regional sports network, says **Next game 9:00pm: …** up to the game, the way team channels do.
 
 **Recently added** lists channels that are new in your playlist since it last loaded, newest first, and they carry a **NEW** tag in the lists for a week (change it, or turn it off, under **Settings > Channels and groups > Recently added channels**).
 

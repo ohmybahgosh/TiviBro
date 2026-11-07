@@ -1720,6 +1720,8 @@ var Views = (function () {
         UI.prompt('Name the new group', '', function (n) { if (n.trim()) { L.createGroup(n); refreshLists(true); U.toast('Group created.  Hold OK on any channel to copy it in.'); } });
       } },
       custom && { label: 'Rename group…', action: function () { UI.prompt('Rename group', g.name, function (n) { L.renameGroup(g.id, n); refreshLists(true); }); } },
+      !virtual && !custom && { label: 'Merge groups into this…', sub: 'several provider groups as one, like four NHL groups', action: function () { mergeMenu(g); } },
+      !virtual && !custom && L.mergedFrom(g.id).length && { label: 'Split back into ' + (L.mergedFrom(g.id).length + 1) + ' groups', sub: 'undo the merge', action: function () { L.splitGroup(g.id); refreshLists(true); U.toast('Split back into its groups'); } },
       !virtual && { label: 'Move up', action: function () { L.moveGroup(g.id, -1); refreshLists(true); groupsVL.move(-1); } },
       !virtual && { label: 'Move down', action: function () { L.moveGroup(g.id, 1); refreshLists(true); groupsVL.move(1); } },
       L.hasOwnOrder(g.id) && { label: 'Back to the provider\'s channel order', sub: 'undo the channels you moved here', action: function () { L.resetOrder(g.id); refreshLists(true); U.toast('Provider order restored'); } },
@@ -1744,6 +1746,25 @@ var Views = (function () {
       custom && { label: 'Delete group', action: function () { UI.confirm('Delete ' + g.name + '?', 'Delete', function () { L.deleteGroup(g.id); refreshLists(); }); } },
       { label: 'Edit on a phone or computer…', sub: 'scan a QR code: rename, hide and sort with a real keyboard', action: function () { WebEdit.showJoin(); } }
     ]);
+  }
+
+  /* Merge groups (Hold OK on a provider group): tick the provider groups to show inside this one.  Groups
+     that share a word with it come first ("NHL" for "NHL | Teams").  OK on Merge does it; Back cancels. */
+  function mergeMenu(g, picked, at) {
+    picked = picked || {};
+    var words = {};
+    L.groupName(g.id).toLowerCase().split(/[^a-z0-9+]+/).forEach(function (w) { w = w.replace(/s$/, ''); if (w.length > 1 && !/^(us|usa|uk|ca|hd|fhd|tv|the|and|of|en|vip|24\/7)$/.test(w)) words[w] = 1; });
+    var like = function (x) { return L.groupName(x.id).toLowerCase().split(/[^a-z0-9+]+/).some(function (w) { return words[w.replace(/s$/, '')]; }); };
+    var cands = L.allGroups().filter(function (x) { return !x.head && !L.isCustom(x.id) && x.id !== g.id && !L.mergedInto(x.id) && (x.p || '') === (g.p || ''); });
+    cands = cands.filter(like).concat(cands.filter(function (x) { return !like(x); }));
+    var n = Object.keys(picked).length;
+    UI.menu('Merge into ' + L.groupName(g.id), [
+      { label: n ? 'Merge ' + n + (n === 1 ? ' group' : ' groups') + ' into ' + L.groupName(g.id) : 'Tick the groups to merge', sub: n ? 'their channels show here; Split undoes it' : 'groups with the same words come first', current: at == null,
+        action: function () { if (!n) { mergeMenu(g, picked); return; } var done = L.mergeGroups(g.id, Object.keys(picked)); refreshLists(true); U.toast(done + (done === 1 ? ' group' : ' groups') + ' merged into ' + L.groupName(g.id)); } }
+    ].concat(cands.map(function (x) {
+      return { label: (picked[x.id] ? '✓ ' : '') + L.groupName(x.id), sub: L.channels(x.id, true).length + ' channels' + (x.hidden ? ', hidden' : ''), current: at === x.id,
+        action: function () { if (picked[x.id]) delete picked[x.id]; else picked[x.id] = 1; mergeMenu(g, picked, x.id); } };
+    })));
   }
 
   function refreshLists(keepSel) {
@@ -1807,7 +1828,6 @@ var Guide = (function () {
   var list = [], gid = null, loaded = null, sel = 0, top = 0, t0 = 0, focusT = 0, rows = [], zone = 'groups', groupsVL = null;
   var moving = null;              // the channel being moved up or down its group (Hold OK > Move…)
   var jumpChip = null, jumpChipT = 0;
-  var places = {};                // each group's channel and time when you left it, for coming back (this session)
   var held = { a: '', since: 0, last: 0 }, stepAt = 0, jumpAt = 0;    // a button held down (keys())
   var vis = null;                 // Show or hide channels, right in the list: { gid, was: { k: shown }, on: { k: shown } }
 
@@ -1879,7 +1899,15 @@ var Guide = (function () {
     drawDetail();
     hints();
   }
-  function enterGrid() { if (loaded !== gid) load(gid, null); setZone('grid'); draw(); }
+  function enterGrid() { if (loaded !== gid) load(gid, null); toNow(); setZone('grid'); draw(); }
+  /* Into the programmes from the groups: at what's on now.  A time looked at earlier had often passed by
+     then, and the focus landed on a programme that had ended (and Left went nowhere from there). */
+  function toNow() {
+    var now = Date.now();
+    if (focusT > now + 60e3) return;               // looking ahead: still ahead, kept
+    focusT = now;
+    if (now < t0 || now >= t0 + WIN - 10 * 60e3) t0 = now - (now % (30 * 60e3));
+  }
   function leave() { if (vis) endVis(true); document.body.classList.remove('nav-hidden'); view.classList.remove('groups-open'); }
 
   // The groups TiviBro makes itself get a small icon in front; the provider's groups are names only.
@@ -1952,11 +1980,10 @@ var Guide = (function () {
 
   /* ---------- open / refresh ---------- */
   function load(groupId, key) {
-    var to = groupId || L.ALL, pl = null;
-    // Leaving a group keeps its place: the channel, and the time when it was looking ahead (#4 in the
-    // guide ideas).  Coming back without a channel to show lands there again.
-    if (loaded && loaded !== to && list[sel]) places[loaded] = { k: list[sel].k, t: focusT > Date.now() + 90e3 ? focusT : 0, t0: t0 };
-    if (!key && loaded !== to && places[to]) { pl = places[to]; key = pl.k; }
+    var to = groupId || L.ALL;
+    /* A group opens on the channel playing (in the window or fullscreen) when it's in it, else at the top:
+       not where you last were in that group, which was more confusing than useful. */
+    if (!key && loaded !== to) key = Views.playing ? Views.playing.k : (Store.edits.recent && Store.edits.recent[0]) || null;
     gid = to; moving = null;
     if (vis && vis.gid !== gid) vis = null;
     list = L.channels(gid, !!vis);
@@ -1968,7 +1995,6 @@ var Guide = (function () {
     var i = key ? list.findIndex(function (c) { return c.k === key; }) : -1;
     sel = i >= 0 ? i : 0;
     top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS));
-    if (pl && pl.t > Date.now() + 60e3) { focusT = pl.t; t0 = pl.t0; }
     head();
     body.classList.toggle('empty', !list.length);
     body.setAttribute('data-empty', gid === L.TEAMS || gid === L.MOVIES ? Views.emptyFor(gid) : 'No channels in ' + L.groupName(gid) + '.');
@@ -2038,8 +2064,29 @@ var Guide = (function () {
   }
 
   /* ---------- drawing ---------- */
+  /* A channel's programmes in the guide.  In My teams, a channel that isn't a team's own (a regional sports
+     network, ESPN) says what's coming the way team channels do, up to the game: "Next game 9:00pm: Detroit Red
+     Wings at Colorado Avalanche", instead of the surfing on before it.  Everywhere else, the guide as it is. */
+  var teamCache = {};
+  function progsOf(c) {
+    var l = Epg.request(c);
+    if (gid !== L.TEAMS || !l || !l.length || typeof Teams === 'undefined' || !Teams.gameOn) return l;
+    var g = Teams.gameOn(c), now = Date.now();
+    if (!g || g.s <= now) return l;
+    var hit = teamCache[c.k];
+    if (hit && hit.l === l && hit.g === g && now - hit.at < 60000) return hit.out;
+    var cur = null, i;
+    for (i = 0; i < l.length; i++) if (l[i].s <= now && l[i].e > now) { cur = l[i]; break; }
+    if (cur && (cur.up || cur.ev || /^\s*next game/i.test(cur.t || '') || cur === g)) return l;     // a team or event channel already says so
+    var out = [], from = cur ? cur.s : now;
+    l.forEach(function (p) { if (p.e <= from) out.push(p); });
+    out.push({ s: from, e: g.s, t: 'Next game ' + Events.when(g.s) + ': ' + g.t, k: 's', up: 1, d: 'Then: ' + g.t + ' on ' + L.name(c) + '.' });
+    l.forEach(function (p) { if (p.s >= g.s) out.push(p); else if (p.e > g.s && p.s < g.s && p !== cur) { var q = {}; for (var f in p) q[f] = p[f]; q.s = g.s; out.push(q); } });
+    teamCache[c.k] = { l: l, g: g, at: now, out: out };
+    return out;
+  }
   function progAt(c, t) {
-    var l = Epg.request(c) || [];
+    var l = progsOf(c) || [];
     for (var i = 0; i < l.length; i++) if (l[i].s <= t && l[i].e > t) return { p: l[i], i: i, l: l };
     return { p: null, i: -1, l: l };
   }
@@ -2050,7 +2097,7 @@ var Guide = (function () {
   var KIND_NEWS = /\b(news|newscast|noticias|noticiero|nachrichten|journal t[eé]l[eé]vis[eé])\b/i,
     KIND_SPORT = /\b(nfl|nba|wnba|nhl|mlb|mls|ncaa[bfmw]?|nascar|ufc|wwe|pga|f1|formula 1|football|f[uú]tbol|basketball|baseball|hockey|soccer|golf|tennis|boxing|cricket|rugby|sportscenter|pregame|postgame|kickoff|grand prix|playoffs?)\b/i,
     KIND_CH = [['n', /\b(news|cnn|msnbc|cnbc|fox news|newsmax|bbc world|sky news|euronews|al jazeera|bloomberg|noticias)\b/i],
-      ['s', /\b(sports?|ncaa[bfmw]?|espn\w*|fs[12]|tsn|sportsnet|bein|dazn|nfl network|nba tv|nhl network|mlb network|golf channel|tennis channel|deportes)\b/i],
+      ['s', /\b(sports?|ncaa[bfmw]?|nfl|nba|wnba|nhl|mlb|mls|espn\w*|fs[12]|tsn|sportsnet|bein|dazn|nfl network|nba tv|nhl network|mlb network|golf channel|tennis channel|deportes)\b/i],
       ['c', /\b(kids|children|cartoon|nick(elodeon|jr)?|disney (junior|jr|channel|xd)|boomerang|baby ?tv|pbs kids|universal kids|infantil)\b/i],
       ['m', /\b(movies?|cinema|cin[eé]|films?|cinemax|tcm)\b/i]], kindCh = {};
   function kindOf(c, p) {
@@ -2059,7 +2106,7 @@ var Guide = (function () {
     if (p.k) return p.k;
     var t = p.t || '';
     if (KIND_NEWS.test(t)) return 'n';
-    if (KIND_SPORT.test(t) || (typeof Teams !== 'undefined' && Teams.isGame && Teams.isGame(t, c.n))) return 's';
+    if (/^\s*next game\b/i.test(t) || KIND_SPORT.test(t) || (typeof Teams !== 'undefined' && Teams.isGame && Teams.isGame(t, c.n))) return 's';
     if (!(c.k in kindCh)) {
       var n = L.name(c) + ' ' + (c.n || ''), g = L.groupName(c.g) || '', k = '';
       for (var i = 0; i < KIND_CH.length && !k; i++) if (KIND_CH[i][1].test(n)) k = KIND_CH[i][0];
@@ -2101,7 +2148,7 @@ var Guide = (function () {
     r.img._c = c;
     if (r.img._src !== lg) { r.img._src = lg; r.img.style.visibility = lg ? 'visible' : 'hidden'; if (lg) r.img.src = lg; }
     var locked = !Parental.blockedOk(c);
-    var l = locked ? [] : Epg.request(c), t1 = t0 + WIN, n = 0, nowT = Date.now();
+    var l = locked ? [] : progsOf(c), t1 = t0 + WIN, n = 0, nowT = Date.now();
     var segs = [];
     // While the guide slides over (draw), the stretch it's leaving is drawn too, so nothing blank slides in.
     var r0 = ext ? ext.a : t0, r1 = ext ? ext.b : t1, xa = x(r0), xb = x(r1);
@@ -2362,7 +2409,7 @@ var Guide = (function () {
     var full = ['playpause', 'red', 'green', 'yellow', 'blue', 'info', 'stop'].filter(function (b) { return g(b) === 'full'; })[0];
     // Same order everywhere: the moves, Back, then the colour buttons (a coloured square and what it does).
     var grp = g('yellow') === 'groups';
-    UI.hints([['', '◀ on now  groups', grp ? 'yellow' : ''], ['', 'Hold OK  options', 'hold'],
+    UI.hints([['', '◀ on now  groups', grp ? 'yellow' : ''], ['', 'Hold ◀  earlier', 'left'], ['', 'Hold OK  options', 'hold'],
       pv && full ? ['', Keymap.label(full) + '  watch ' + L.name(pv), full] : null, ['', 'Back  groups', 'back']]
       .concat(['red', 'green', 'yellow', 'blue'].map(function (b) { var a = g(b); return a && a !== 'full' && !(b === 'yellow' && grp) ? [b, Keymap.SHORT[a] || Keymap.ACTIONS[a]] : null; })).filter(Boolean));
   }
@@ -2416,7 +2463,7 @@ var Guide = (function () {
   }
 
   // Through the schedule.  Programmes that already aired only on channels with catch-up.
-  function moveTime(dir) {
+  function moveTime(dir, past) {
     var c = list[sel]; if (!c) return false;
     var h = progAt(c, focusT), now = Date.now(), target;
     if (h.p) {
@@ -2428,8 +2475,12 @@ var Guide = (function () {
     }
     else target = focusT + dir * 30 * 60e3;
     var cur = progAt(c, now).p;
-    var earliest = c.arch ? now - c.arch * 86400e3 : (cur ? cur.s : now);
-    if (target < earliest) { if (dir < 0 && !c.arch && h.p && h.p.e <= now) U.toast('This channel has no catch-up'); return false; }
+    /* How far back: a channel with catch-up, as far as it keeps; any other only to look at what was on
+       (a held Left from now, or already looking back), as far as the guide goes back, at most a day. */
+    var back = past || (h.p ? h.p.e <= now : focusT < now - 60e3);
+    var earliest = c.arch ? now - c.arch * 86400e3 : back ? now - 86400e3 : (cur ? cur.s : now);
+    if (dir < 0 && !c.arch && back && h.p && !h.l[h.i - 1] && target < h.p.s) return false;     // the guide has nothing earlier
+    if (target < earliest) return false;
     focusT = target;
     var was = t0;
     if (focusT >= t0 + WIN - 10 * 60e3) t0 += 30 * 60e3 * Math.ceil((focusT - (t0 + WIN - 10 * 60e3)) / (30 * 60e3) + 0.01);
@@ -2459,7 +2510,7 @@ var Guide = (function () {
   // As far ahead as the channels on screen have a guide (at least three hours from now).
   function guideEnd() {
     var end = 0;
-    for (var i = 0; i < VIS; i++) { var c = list[top + i], l = c && Parental.blockedOk(c) ? Epg.request(c) : null; if (l && l.length) end = Math.max(end, l[l.length - 1].e); }
+    for (var i = 0; i < VIS; i++) { var c = list[top + i], l = c && Parental.blockedOk(c) ? progsOf(c) : null; if (l && l.length) end = Math.max(end, l[l.length - 1].e); }
     return Math.max(end, Date.now() + 3 * 3600e3);
   }
   // A day and time: the focus goes there, with half an hour before it in view.  Never before what the
@@ -2730,13 +2781,14 @@ var Guide = (function () {
     else if (a === 'chdown') selectIdx(sel + (VIS - 1));
     else if (a === 'left' || a === 'right') {
       // Held: at most about eight programmes a second for the first second, so it can be stopped where
-      // you want, then as fast as the remote repeats.  A held Left stops at now; only a fresh press
-      // there opens the groups.
+      // you want, then as fast as the remote repeats.  A held Left pauses at now, then keeps going back
+      // to what was on (any channel, catch-up or not); only a fresh press at now opens the groups.
       var ms2 = heldFor(a), t = Date.now();
       if (ms2 > 0 && ms2 < 1000 && t - stepAt < 120) return true;
       stepAt = t;
       if (a === 'right') moveTime(1);
       else if (when() !== 'now') moveTime(-1);
+      else if (ms2 > 400) moveTime(-1, true);      // held at now: back in time, to see what was on
       else if (!ms2) setZone('groups');
     }
     // Rewind and Fast-forward: a whole screen of the guide (two and a half hours), not one programme;
