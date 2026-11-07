@@ -81,6 +81,17 @@ function episodeOf(body) {
   var d = DESC_SE.exec(body);
   return d ? 'S' + +d[1] + ' E' + +d[2] : '';
 }
+/* A game whose two sides are only in the sub-title ("College Football", "Dartmouth at Princeton"):
+   into the title, so it reads as the game and My teams finds it (app/js/epg.js has the same). */
+var GAME_T = /football|basketball|hockey|baseball|soccer|\bncaa|\bnfl\b|\bnba\b|\bnhl\b|\bmlb\b|\bmls\b/i, GAME_SUB = /\s(?:at|vs\.?|v\.?|versus)\s|@/i;
+function withSub(t, block) {
+  if (!t || !GAME_T.test(t) || block.indexOf('<sub-title') < 0) return t;
+  var st = /<sub-title[^>]*>([\s\S]*?)<\/sub-title>/.exec(block);
+  st = st ? unesc(st[1]).replace(/\s+/g, ' ').trim() : '';
+  if (!st || st.length > 80 || !GAME_SUB.test(' ' + st + ' ') || t.indexOf(st) >= 0) return t;
+  var m = /^([\s\S]*?)(\s*\[[^\]]*\]\s*)?$/.exec(t);
+  return m[1] + ': ' + st + (m[2] || '');
+}
 var DESC_SE = /<desc[^>]*>\s*(?:<!\[CDATA\[)?\s*S(\d{1,3})\s*[.:\-]?\s*E(\d{1,4})\b/i;
 function movieFlag(body) {
   var k = '', y = null;
@@ -211,7 +222,7 @@ function start(body, log) {
         ix = slot(ch); firstSrc[ix] = si; count[ix]++;
         got[ch] = 1;
         var bw = buckets[ix % NB];
-        if (!bw.write(ix + '\t' + s + '\t' + e + '\t' + flat(t ? unesc(t[1]) : '') + '\t' + flat(de ? unesc(de[1]).slice(0, DESC_MAX) : '') + '\t' + movieFlag(m[2]) + '\n') && !bw.full) { bw.full = true; waiting++; }
+        if (!bw.write(ix + '\t' + s + '\t' + e + '\t' + flat(t ? withSub(unesc(t[1]), m[2]) : '') + '\t' + flat(de ? unesc(de[1]).slice(0, DESC_MAX) : '') + '\t' + movieFlag(m[2]) + '\n') && !bw.full) { bw.full = true; waiting++; }
         if (bw.full) full = true;
         n++; total++;
       }
@@ -492,4 +503,4 @@ function handle(req, res, allow, log) {
   send(res, 404, { ok: false, error: 'unknown guide request' }, null, allow);
 }
 
-module.exports = { movieFlag: movieFlag, handle: handle, norm: norm, start: start, status: status, keyOf: keyOf, root: root, find: find };
+module.exports = { movieFlag: movieFlag, withSub: withSub, handle: handle, norm: norm, start: start, status: status, keyOf: keyOf, root: root, find: find };

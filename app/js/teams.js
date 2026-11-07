@@ -8,7 +8,7 @@
 var Teams = (function () {
   'use strict';
 
-  var LEAGUES = [['nfl', 'NFL'], ['nba', 'NBA'], ['nhl', 'NHL'], ['mlb', 'MLB'], ['wnba', 'WNBA'], ['mls', 'MLS']];
+  var LEAGUES = [['nfl', 'NFL'], ['nba', 'NBA'], ['nhl', 'NHL'], ['mlb', 'MLB'], ['wnba', 'WNBA'], ['mls', 'MLS'], ['ncaaf', 'College Football']];
   // [abbreviation, full name, nicknames (comma separated, the first is how it's shown short), other full names]
   var DATA = {
     nfl: [['ARI', 'Arizona Cardinals', 'Cardinals'], ['ATL', 'Atlanta Falcons', 'Falcons'], ['BAL', 'Baltimore Ravens', 'Ravens'], ['BUF', 'Buffalo Bills', 'Bills'],
@@ -56,8 +56,51 @@ var Teams = (function () {
       ['SJ', 'San Jose Earthquakes', 'Earthquakes'], ['SEA', 'Seattle Sounders', 'Sounders', 'Seattle Sounders FC'], ['SKC', 'Sporting Kansas City', 'Sporting KC'], ['STL', 'St Louis City SC', 'St Louis City', 'Saint Louis City SC'],
       ['TOR', 'Toronto FC', 'Toronto FC'], ['VAN', 'Vancouver Whitecaps', 'Whitecaps', 'Vancouver Whitecaps FC']]
   };
+  /* College football: the FBS schools (and North Dakota State and Sacramento State).  "abbreviation|school|
+     nickname|other names of the school".  Nicknames alone never count (dozens of schools are the Tigers or
+     the Bulldogs); the school alone ("Alabama at LSU") counts where it's college football. */
+  var COLLEGE = ('BC|Boston College|Eagles;CAL|California|Golden Bears|Cal;CLEM|Clemson|Tigers;DUKE|Duke|Blue Devils;FSU|Florida State|Seminoles;' +
+    'GT|Georgia Tech|Yellow Jackets;LOU|Louisville|Cardinals;MIA|Miami|Hurricanes|Miami FL,Miami Florida;NCST|NC State|Wolfpack|North Carolina State;' +
+    'UNC|North Carolina|Tar Heels;PITT|Pittsburgh|Panthers|Pitt;SMU|SMU|Mustangs|Southern Methodist;STAN|Stanford|Cardinal;SYR|Syracuse|Orange;' +
+    'UVA|Virginia|Cavaliers;VT|Virginia Tech|Hokies;WAKE|Wake Forest|Demon Deacons;' +
+    'ILL|Illinois|Fighting Illini;IND|Indiana|Hoosiers;IOWA|Iowa|Hawkeyes;MD|Maryland|Terrapins|;MICH|Michigan|Wolverines;MSU|Michigan State|Spartans;' +
+    'MINN|Minnesota|Golden Gophers;NEB|Nebraska|Cornhuskers;NW|Northwestern|Wildcats;OSU|Ohio State|Buckeyes;ORE|Oregon|Ducks;PSU|Penn State|Nittany Lions;' +
+    'PUR|Purdue|Boilermakers;RUTG|Rutgers|Scarlet Knights;UCLA|UCLA|Bruins;USC|USC|Trojans|Southern California;WASH|Washington|Huskies;WIS|Wisconsin|Badgers;' +
+    'ARIZ|Arizona|Wildcats;ASU|Arizona State|Sun Devils;BAY|Baylor|Bears;BYU|BYU|Cougars|Brigham Young;CIN|Cincinnati|Bearcats;COLO|Colorado|Buffaloes;' +
+    'HOU|Houston|Cougars;ISU|Iowa State|Cyclones;KU|Kansas|Jayhawks;KSU|Kansas State|Wildcats;OKST|Oklahoma State|Cowboys;TCU|TCU|Horned Frogs;' +
+    'TTU|Texas Tech|Red Raiders;UCF|UCF|Knights|Central Florida;UTAH|Utah|Utes;WVU|West Virginia|Mountaineers;' +
+    'ALA|Alabama|Crimson Tide;ARK|Arkansas|Razorbacks;AUB|Auburn|Tigers;FLA|Florida|Gators;UGA|Georgia|Bulldogs;UK|Kentucky|Wildcats;LSU|LSU|Tigers;' +
+    'MSST|Mississippi State|Bulldogs;MIZ|Missouri|Tigers;OU|Oklahoma|Sooners;MISS|Ole Miss|Rebels|Mississippi;SC|South Carolina|Gamecocks;' +
+    'TENN|Tennessee|Volunteers;TEX|Texas|Longhorns;TAMU|Texas A&M|Aggies;VAN|Vanderbilt|Commodores;' +
+    'ORST|Oregon State|Beavers;WSU|Washington State|Cougars;ND|Notre Dame|Fighting Irish;CONN|UConn|Huskies|Connecticut;' +
+    'ARMY|Army|Black Knights;CLT|Charlotte|49ers;ECU|East Carolina|Pirates;FAU|FAU|Owls|Florida Atlantic;MEM|Memphis|Tigers;NAVY|Navy|Midshipmen;' +
+    'UNT|North Texas|Mean Green;RICE|Rice|Owls;USF|South Florida|Bulls|USF;TEM|Temple|Owls;TUL|Tulane|Green Wave;TLSA|Tulsa|Golden Hurricane;' +
+    'UAB|UAB|Blazers;UTSA|UTSA|Roadrunners;' +
+    'AF|Air Force|Falcons;BSU|Boise State|Broncos;CSU|Colorado State|Rams;FRES|Fresno State|Bulldogs;HAW|Hawaii|Rainbow Warriors;NEV|Nevada|Wolf Pack;' +
+    'UNM|New Mexico|Lobos;SDSU|San Diego State|Aztecs;SJSU|San Jose State|Spartans;UNLV|UNLV|Rebels;USU|Utah State|Aggies;WYO|Wyoming|Cowboys;' +
+    'APP|Appalachian State|Mountaineers|App State;ARST|Arkansas State|Red Wolves;CCU|Coastal Carolina|Chanticleers;GASO|Georgia Southern|Eagles;' +
+    'GAST|Georgia State|Panthers;JMU|James Madison|Dukes;ULL|Louisiana|Ragin Cajuns|Louisiana Lafayette,UL Lafayette;ULM|Louisiana Monroe|Warhawks|UL Monroe,ULM;' +
+    'MRSH|Marshall|Thundering Herd;ODU|Old Dominion|Monarchs;SALA|South Alabama|Jaguars;USM|Southern Miss|Golden Eagles|Southern Mississippi;' +
+    'TXST|Texas State|Bobcats;TROY|Troy|Trojans;' +
+    'AKR|Akron|Zips;BALL|Ball State|Cardinals;BGSU|Bowling Green|Falcons;BUFF|Buffalo|Bulls;CMU|Central Michigan|Chippewas;EMU|Eastern Michigan|Eagles;' +
+    'KENT|Kent State|Golden Flashes;MOH|Miami OH|RedHawks|Miami Ohio;NIU|Northern Illinois|Huskies;OHIO|Ohio|Bobcats;TOL|Toledo|Rockets;' +
+    'WMU|Western Michigan|Broncos;MASS|UMass|Minutemen|Massachusetts;' +
+    'DEL|Delaware|Blue Hens;FIU|FIU|Panthers|Florida International;JVST|Jacksonville State|Gamecocks;KENN|Kennesaw State|Owls;LIB|Liberty|Flames;' +
+    'LT|Louisiana Tech|Bulldogs;MTSU|Middle Tennessee|Blue Raiders|Middle Tennessee State;MOST|Missouri State|Bears;NMSU|New Mexico State|Aggies;' +
+    'SHSU|Sam Houston|Bearkats|Sam Houston State;UTEP|UTEP|Miners;WKU|Western Kentucky|Hilltoppers;' +
+    'NDSU|North Dakota State|Bison;SAC|Sacramento State|Hornets').split(';');
+  DATA.ncaaf = COLLEGE.map(function (r) {
+    var f = r.split('|'), sch = [f[1]].concat(f[3] ? f[3].split(',').filter(Boolean) : []);
+    // [abbreviation, full name, nickname, other full names, schools]
+    return [f[0], f[1] + ' ' + f[2], f[2], sch.slice(1).map(function (x) { return x + ' ' + f[2]; }).join(','), sch];
+  });
+  // College football, and the other sports a school plays (a basketball game of your school isn't one).
+  var CFB = /\bncaaf\b|college football|ncaa (?:football|fb)\b|\bcfb\b|\bcfp\b|\bfbs\b|\bfcs\b|\b(?!super |pro |puppy )\w+ bowl\b/;
+  var OTHER = /\bncaa ?[bmwh]\b|\bncaa(?:b|m|w|bb|mb|wb|h)\b|basketball|hoops|\bhockey|baseball|softball|volleyball|soccer|lacrosse|wrestling|gymnastics|swimming|tennis|\bgolf|\bwomen s\b|\bwbb\b|\bmbb\b|march madness|final four/;
+  var NOT_BEFORE = /(?:^| )(?:north|south|east|west|central|northern|southern|eastern|western|northeastern|southeastern|northwestern|southwestern|southeast|northwest|southwest|new|middle|little|upper)$/;
+  var NOT_AFTER = /^(?:state|st|tech|a and m|southern|christian|baptist|pine|valley|wesleyan|lutheran|international|atlantic|poly|mines|central|northern|western|eastern|methodist|tennessee|martin|chattanooga|monroe|lafayette|pacific)(?: |$)/;
   // Words that put a name in a league: "NHL", "Hockey".  Football and soccer stay out (they mean both).
-  var LEAGUE_WORDS = { nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|hockey|center ice/, mlb: /\bmlb\b|baseball|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|season pass/ };
+  var LEAGUE_WORDS = { nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|hockey|center ice/, mlb: /\bmlb\b|baseball|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|season pass/, ncaaf: CFB };
 
   // "WPG VS CAR", "WPG vs. CAR", "WPG @ CAR": two abbreviations facing each other.
   var MATCHUP = /\b[A-Z]{2,4}\s+(?:[Vv][Ss]?\.?|AT|at)\s+[A-Z]{2,4}\b|\b[A-Z]{2,4}\s*@\s*[A-Z]{2,4}\b/;
@@ -67,15 +110,21 @@ var Teams = (function () {
   }
 
   var ALL = [], BY_ID = {}, NICKS = {};      // nickname -> [team]
+  var SCHOOLS = [];                          // [' michigan state ', team], longest first
   LEAGUES.forEach(function (lg) {
     DATA[lg[0]].forEach(function (r) {
       var t = { id: lg[0] + ':' + r[0].toLowerCase(), league: lg[0], abbr: r[0], name: r[1], nicks: r[2].split(','), full: (/ /.test(r[1]) ? [norm(r[1])] : []).concat(r[3] ? r[3].split(',').map(norm) : []) };
       t.short = t.nicks[0];
       t.nk = t.nicks.map(norm);
+      if (r[4]) {                                // a school: by its name, never its nickname alone
+        t.short = r[4][0]; t.nk = []; t.schools = r[4].map(norm);
+        t.schools.forEach(function (n) { SCHOOLS.push([n, t]); });
+      }
       ALL.push(t); BY_ID[t.id] = t;
       t.nk.forEach(function (n) { (NICKS[n] || (NICKS[n] = [])).push(t); });
     });
   });
+  SCHOOLS.sort(function (a, b) { return b[0].length - a[0].length; });
 
   function S() { return Store.settings; }
   function mine() { var s = S(); if (!Array.isArray(s.myTeams)) s.myTeams = []; return s.myTeams; }
@@ -95,12 +144,13 @@ var Teams = (function () {
        when only one team of that league has that city.
      - Abbreviations ("WPG VS CAR") count only in event titles, with the league in the context.
      - Junior, minor and youth hockey and the like ("U15", "AAA", "OJHL", "flohockey") only by full name. */
-  var CODES = { nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|center ice/, mlb: /\bmlb\b|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|major league soccer/ };
+  var CODES = { nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|center ice/, mlb: /\bmlb\b|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|major league soccer/, ncaaf: CFB };
   var MINOR = /u(?:[89]|1\d|2[01])\b|\baaa\b|\d+aaa\b|\b(?:ojhl|ahl|echl|ohl|whl|qmjhl|bchl|ajhl|sjhl|mjhl|nahl|ushl|nwhl|pwhl|sphl|fphl|junior|jr|midget|bantam|minor|youth|college|ncaa\w*|flohockey|flo ?sports|g ?league|nbl|cfl|xfl|ufl|usl|nwsl)\b/i;
   var BEFORE_OK = /^(vs|v|at|and|the|versus|vs\.|nfl|nba|nhl|mlb|wnba|mls|hockey|football|basketball|baseball|soccer|game|live|watch|preview|pregame|postgame|replay|on|in|night|day|sunday|monday|tuesday|wednesday|thursday|friday|saturday|tonight|today|pass|ticket)$/i;
   function esc(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
   // City words: the full name less the nickname ("winnipeg"), or for clubs less FC, SC, United ("atlanta").
   ALL.forEach(function (x) {
+    if (x.schools) { x.city = ''; x.words = {}; x.rx = []; return; }
     var f = x.full[0] ? x.full[0].trim() : '', n = x.nk[0].trim();
     var city = f && f.slice(-n.length) === n ? f.slice(0, f.length - n.length).trim() : f;
     if (x.league === 'mls') city = (' ' + (city || f) + ' ').replace(/ (fc|sc|cf|united|city|inter|real|sporting|club de foot) /g, ' ').replace(/\s+/g, ' ').trim();
@@ -131,17 +181,37 @@ var Teams = (function () {
     for (k in CODES) if (CODES[k].test(c)) code[k] = 1;
     var seen = {}, seenCity = {};                    // league -> teams of it named in the text
     function note(m, team) { (m[team.league] || (m[team.league] = {}))[team.id] = 1; }
+    // College football: not when the text (or, if it doesn't say football, the channel) is another sport.
+    var tn = norm(text), cn = norm(ctx || ''), other = OTHER.test(tn) || (!CFB.test(tn) && OTHER.test(cn)), rest = t;
     ALL.forEach(function (x) {
+      x._school = 0;
+      if (x.schools) {
+        x._full = x._nick = x._city = 0;
+        if (!other && x.full.some(function (f) { return t.indexOf(f) >= 0; })) { x._full = 1; note(seen, x); note(seenCity, x); }
+        return;
+      }
       x._full = x.full.some(function (f) { return t.indexOf(f) >= 0; }) ? 1 : 0;
+      if (x._full) x.full.forEach(function (f) { rest = rest.split(f).join(' # '); });    // "Kansas City Chiefs" names no Kansas
       x._nick = !minor && !x._full && x.nk.some(function (n) { return t.indexOf(n) >= 0; }) && nickAlone(x, text) ? 1 : 0;
       x._city = !minor && !x._full && !x._nick && x.city && CITY_N[x.league + '|' + x.city] === 1 && t.indexOf(' ' + x.city + ' ') >= 0 ? 1 : 0;
       if (x._full || x._nick) note(seen, x);
       if (x._full || x._nick || x._city) note(seenCity, x);
     });
+    /* A school by its name, where it's college football: "College Football: Alabama at LSU".  The longest
+       name first, so "Michigan State" isn't Michigan too. */
+    if (!other && CFB.test(c)) for (var si = 0; si < SCHOOLS.length; si++) {
+      var sn = SCHOOLS[si][0], sx = SCHOOLS[si][1], at = rest.indexOf(sn);
+      if (at < 0) continue;
+      var parts = rest.split(sn), own = false;
+      // Another school with that name in it: "Central Connecticut", "Alabama State", "Arkansas Pine Bluff".
+      for (var pi = 0; pi < parts.length - 1; pi++) if (!NOT_BEFORE.test(parts[pi]) && !NOT_AFTER.test(parts[pi + 1])) own = true;
+      rest = parts.join(' # ');
+      if (own && !sx._full) { sx._school = 1; note(seen, sx); note(seenCity, sx); }
+    }
     function n(m, l) { return m[l] ? Object.keys(m[l]).length : 0; }
     var up = abbrs ? ' ' + text.replace(/[^A-Za-z0-9]+/g, ' ') + ' ' : '';
     teams.forEach(function (x) {
-      var l = x.league, hit = x._full ||
+      var l = x.league, hit = x._full || x._school ||
         (x._nick && (word[l] || n(seen, l) >= 2)) ||
         (x._city && (code[l] || n(seen, l) >= 1) && n(seenCity, l) >= 2);
       if (!hit && abbrs && !minor && word[l] && up.indexOf(' ' + x.abbr + ' ') >= 0 && MATCHUP.test(text)) hit = 1;
@@ -152,7 +222,7 @@ var Teams = (function () {
 
   /* Team channels: a channel whose whole name, less the league, country and quality tags, is a team
      ("NFL | DETROIT LIONS", "USA NHL Carolina Hurricanes", "Detroit Red Wings HD").  Built once per list. */
-  var TAGS = /\b(usa|us|ca|uk|nfl|nba|nhl|mlb|wnba|mls|hd|fhd|uhd|sd|4k|hevc|raw|backup|tv|team|teams|network|live|east|west)\b/g;
+  var TAGS = /\b(usa|us|ca|uk|nfl|nba|nhl|mlb|wnba|mls|ncaaf|ncaa|cfb|hd|fhd|uhd|sd|4k|hevc|raw|backup|tv|team|teams|network|live|east|west)\b/g;
   var chanCache = null;
   function teamChannels() {
     var chans = Library.data.channels;
@@ -187,7 +257,7 @@ var Teams = (function () {
     }
     LEAGUES.forEach(function (lg) {
       var own = DATA[lg[0]].filter(function (r) { return tc[lg[0] + ':' + r[0].toLowerCase()]; }).length;
-      if (own || new RegExp(' ' + lg[0] + ' ').test(names) || chanCache.named[lg[0]]) out.push({ id: lg[0], name: lg[1], own: own });
+      if (own || new RegExp(' ' + lg[0] + ' ').test(names) || CODES[lg[0]].test(names) || chanCache.named[lg[0]]) out.push({ id: lg[0], name: lg[1], own: own });
     });
     return out;
   }
@@ -214,7 +284,7 @@ var Teams = (function () {
       hits.forEach(function (x) { by[x.league] = (by[x.league] || 0) + 1; (ids[x.league] || (ids[x.league] = [])).push(x.id); });
       lastVs = {};
       Object.keys(ids).forEach(function (l) { lastVs[l] = ids[l].sort().join('/'); });
-      return hits.filter(function (x) { return mineIds[x.id] && by[x.league] >= 2; });
+      return hits.filter(function (x) { return mineIds[x.id] && (by[x.league] >= 2 || oneSide(x, by, text)); });
     }
     var gname = {};
     Library.data.groups.forEach(function (g) { gname[g.id] = g.name; });
@@ -243,7 +313,7 @@ var Teams = (function () {
     }
     // Words of every followed team, for a quick first look at each title.
     var words = [];
-    teams.forEach(function (x) { words = words.concat(x.full, x.nk, x.city ? [x.city] : []); });
+    teams.forEach(function (x) { words = words.concat(x.full, x.nk, x.city ? [x.city] : [], x.schools || []); });
     // For descriptions, names only: a city ("Detroit") is in every local news programme.
     var dwords = [];
     teams.forEach(function (x) { dwords = dwords.concat(x.full, x.nk).map(function (w) { return w.trim(); }); });
@@ -314,19 +384,24 @@ var Teams = (function () {
      ("nba:det/nba:phi"), or '' when it names no game. */
   function matchup(title, ctx) {
     if (!title) return '';
-    var by = {};
-    named(title, ctx || '', ALL, true).forEach(function (x) { (by[x.league] || (by[x.league] = [])).push(x.id); });
+    var by = {}, n = {}, hits = named(title, ctx || '', ALL, true);
+    hits.forEach(function (x) { (by[x.league] || (by[x.league] = [])).push(x.id); n[x.league] = by[x.league].length; });
     for (var k in by) if (by[k].length >= 2) return by[k].sort().join('/');
+    for (var i = 0; i < hits.length; i++) if (oneSide(hits[i], n, title)) return hits[i].id;
     return '';
   }
+  /* A school against one that isn't in the list (an FCS school: "Michigan vs Central Connecticut"): one
+     school is a game when the title has the two sides ("at", "vs", "@"). */
+  var VS = /\s(?:at|vs\.?|v\.?|versus)\s|@/i;
+  function oneSide(x, by, text) { return !!x.schools && by[x.league] === 1 && VS.test(' ' + text + ' '); }
   /** Not the game itself: an overtime block, a replay, a show around it. */
   function aroundGame(title) { return NOGAME.test(title || ''); }
   function isGame(title, ctx) {
     if (!title || NOGAME.test(title)) return false;
-    var by = {};
-    named(title, ctx || '', ALL, true).forEach(function (x) { by[x.league] = (by[x.league] || 0) + 1; });
+    var by = {}, hits = named(title, ctx || '', ALL, true);
+    hits.forEach(function (x) { by[x.league] = (by[x.league] || 0) + 1; });
     for (var k in by) if (by[k] >= 2) return true;
-    return false;
+    return hits.some(function (x) { return oneSide(x, by, title); });
   }
 
   /* Descriptions: looked through in the background (Epg.findDesc, the helper for a big guide), every few

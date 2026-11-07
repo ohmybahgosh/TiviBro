@@ -185,6 +185,18 @@ Watch.tidy();
 const left = Store.edits.reminders.map(r => (r.s - T0) / H + 'h' + (r.w ? '' : ' (yours)')).join(', ');
 ok('one reminder per game: the overtime block and the later airings go, the game and the one two days on stay, and one you set yourself is left alone', left === '0h, 3h (yours), 48h', left);
 
+// College football: full names anywhere, school names where it's college football, never nicknames alone.
+ok('college: full names in an event channel', ids(Teams.named('SMU Mustangs Virginia Tech Hokies', 'NCAAF 1 | ⬬ NCAA Football', all, true)) === 'ncaaf:smu,ncaaf:vt');
+ok('college: schools in a college football title', ids(Teams.named('College Football : Alabama at LSU ᴸᶦᵛᵉ', 'ESPN', all)) === 'ncaaf:ala,ncaaf:lsu');
+ok('college: the longest school name', ids(Teams.named('College Football: Michigan State at Michigan', '', all)) === 'ncaaf:mich,ncaaf:msu' && ids(Teams.named('College Football: Miami (OH) at Ohio', '', all)) === 'ncaaf:moh,ncaaf:ohio');
+ok('college: schools need college football', ids(Teams.named('Michigan at Ohio State', 'ESPN', all)) === '');
+ok('college: not another school with the name in it', ids(Teams.named('College Football: Alabama State at Alabama', '', all)) === 'ncaaf:ala' && ids(Teams.named('College Football: Michigan vs. Central Connecticut', '', all)) === 'ncaaf:mich');
+ok('college: not the basketball game', ids(Teams.named('Michigan Wolverines vs Duke Blue Devils', 'NCAAB 3 | ⬬ NCAA Basketball', all, true)) === '' && ids(Teams.named('NCAAM: Michigan Wolverines vs Duke Blue Devils', '', all)) === '');
+ok('college: no Kansas in Kansas City', ids(Teams.named('Super Bowl LX: Kansas City Chiefs vs Philadelphia Eagles', '', all)) === 'nfl:kc,nfl:phi');
+ok('college: Louisville Cardinals are not Arizona\'s', ids(Teams.named('Louisville Cardinals at Clemson Tigers', 'ACC Network', all)) === 'ncaaf:clem,ncaaf:lou');
+ok('college: one school against an FCS one is a game', Teams.isGame('College Football: Michigan vs. Central Connecticut', 'BTN') && Teams.matchup('College Football: Michigan vs. Central Connecticut', 'BTN') === 'ncaaf:mich');
+ok('college: shows are no games', !Teams.isGame('College Football Live', 'ESPN') && !Teams.isGame('College GameDay', 'ESPN') && !Teams.isGame('College Football Scoreboard', 'CBSSN'));
+
 console.log((fail ? fail + ' of ' : 'all ') + n + ' teams checks ' + (fail ? 'failed' : 'passed'));
 process.exit(fail ? 1 : 0);
 })();

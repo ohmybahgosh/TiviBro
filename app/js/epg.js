@@ -251,6 +251,17 @@ var Epg = (function () {
         .replace(/&apos;/g, "'").replace(/&#x([0-9a-f]+);/gi, function (a, n) { return String.fromCharCode(parseInt(n, 16)); })
         .replace(/&#(\d+);/g, function (a, n) { return String.fromCharCode(+n); }).replace(/&amp;/g, '&');
     }
+    /* A game whose two sides are only in the sub-title ("College Football", "Dartmouth at Princeton"):
+       into the title, so it reads as the game and My teams finds it (service/guide.js has the same). */
+    var GAME_T = /football|basketball|hockey|baseball|soccer|\bncaa|\bnfl\b|\bnba\b|\bnhl\b|\bmlb\b|\bmls\b/i, GAME_SUB = /\s(?:at|vs\.?|v\.?|versus)\s|@/i;
+    function withSub(t, block) {
+      if (!t || !GAME_T.test(t) || block.indexOf('<sub-title') < 0) return t;
+      var st = /<sub-title[^>]*>([\s\S]*?)<\/sub-title>/.exec(block);
+      st = st ? unesc(st[1]).replace(/\s+/g, ' ').trim() : '';
+      if (!st || st.length > 80 || !GAME_SUB.test(' ' + st + ' ') || t.indexOf(st) >= 0) return t;
+      var m = /^([\s\S]*?)(\s*\[[^\]]*\]\s*)?$/.exec(t);
+      return m[1] + ': ' + st + (m[2] || '');
+    }
     self.onmessage = function (ev) {
       var d = ev.data, want = {}, names = d.names || {}, from = d.from, to = d.to, past = d.past || {}, recent = d.recent || from, descMax = d.descMax || 400;
       // Memory budget (characters held, roughly): past half, descriptions get short; near the end no new
@@ -327,7 +338,7 @@ var Epg = (function () {
             var t = /<title[^>]*>([\s\S]*?)<\/title>/.exec(m[2]);
             var de = /<desc[^>]*>([\s\S]*?)<\/desc>/.exec(m[2]);
             if (budget && (used > budget || (!out[ch] && used > budget * 0.85))) { left[ch] = 1; continue; }
-            var tt = t ? unesc(t[1]) : '', dd = de ? unesc(de[1]).slice(0, budget && used > budget / 2 ? 100 : descMax) : '';
+            var tt = t ? withSub(unesc(t[1]), m[2]) : '', dd = de ? unesc(de[1]).slice(0, budget && used > budget / 2 ? 100 : descMax) : '';
             used += 60 + tt.length + dd.length;
             got[ch] = 1;
             var pg = { s: s, e: e, t: tt, d: dd };

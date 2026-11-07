@@ -34,5 +34,14 @@ p = run('[HD] Movie Night');
 ok('"[HD]" in front is not taken for a league', p.t === '[HD] Movie Night', p);
 p = run('ᴺᵉʷ');
 ok('a title that is only a tag keeps its text rather than going blank', p.t === 'ᴺᵉʷ', p);
+// A game's two sides only in the sub-title (EPGTalk's sports guide): into the title, in the helper and the app.
+const G = require('../../service/guide.js');
+const wi = src.indexOf('    var GAME_T ='), wj = src.indexOf('\n    }\n', src.indexOf('function withSub', wi));
+const appSub = new Function('unesc', src.slice(wi, wj + 6) + '; return withSub;')((x) => x.replace(/&amp;/g, '&'));
+[['helper', G.withSub], ['app', appSub]].forEach(([who, f]) => {
+  ok(who + ': "College Football" and "Dartmouth at Princeton" make the game', f('🏈🎓 [NCAAF] College Football', '<title>x</title><sub-title>Dartmouth at Princeton</sub-title>') === '🏈🎓 [NCAAF] College Football: Dartmouth at Princeton');
+  ok(who + ': before a [Live] tag at the end', f('College Football [Live]', '<sub-title>Texas A&amp;M at Texas</sub-title>') === 'College Football: Texas A&M at Texas [Live]');
+  ok(who + ': an episode title is left out', f('Friends', '<sub-title>The One at the Beach</sub-title>') === 'Friends' && f('College Football Live', '<sub-title>Week 10 preview</sub-title>') === 'College Football Live');
+});
 console.log(fails ? fails + ' failures' : 'all title tag tests passed');
 process.exit(fails ? 1 : 0);

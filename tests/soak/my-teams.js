@@ -30,7 +30,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   // Settings > Channels and groups > My teams
   await H.section('Channels and groups', true, true); await H.row('My teams'); await H.quiet('Enter', 900);
   let st = await page.innerText('#setBody');
-  ok('the My teams page lists the leagues found', /NHL/.test(st) && /NFL/.test(st) && !/\bMLB\b/.test(st.split('Leagues')[1] || '') && /main North American leagues only/.test(st) && /4 teams have their own channel/.test(st), st.replace(/\s+/g, ' ').slice(0, 300));
+  ok('the My teams page lists the leagues found', /NHL/.test(st) && /NFL/.test(st) && !/\bMLB\b/.test(st.split('Leagues')[1] || '') && /and college football \(the FBS schools\)/.test(st) && /College Football\s*Games only/.test(st) && /4 teams have their own channel/.test(st), st.replace(/\s+/g, ' ').slice(0, 300));
   await shot('tv-teams-page');
   await H.row('NHL'); await H.quiet('Enter', 900);
   st = await page.innerText('#setBody');
@@ -150,6 +150,18 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('turned off, the group goes', await ev(() => !Library.groups().some(g => g.id === Library.TEAMS)));
   await ev(() => { Store.settings.teamsGroup = true; Views.refreshLists(); });
   ok('the phone app sees the same pages', await ev(() => { const i = Settings.phone.page('groups', []).rows.findIndex(x => x.label === 'My teams'); const r = Settings.phone.page('groups', [i]).rows; return r.some(x => x.label === 'Remind me before their games') && r.some(x => x.kind === 'page' && x.label === 'NHL'); }).catch(e => e.message));
+
+  // College football: a school's games by its full name in event channels, not its basketball games.
+  const cf = await ev(() => {
+    Teams.follow('nhl:wpg', false); Teams.follow('ncaaf:mich', true); Teams.dirty(); Views.refreshLists(true);
+    const l = Library.channels(Library.TEAMS).map(c => c.n);
+    const lg = Teams.leagues().map(x => x.name), names = Teams.inLeague('ncaaf').length;
+    Teams.follow('ncaaf:mich', false); Teams.dirty();
+    return { l, lg, names, game: Teams.isGame('College Football : Alabama at LSU', 'ESPN'), fcs: Teams.isGame('College Football: Michigan vs. Central Connecticut', 'BTN') };
+  });
+  ok('college football: the league is offered, with the FBS schools', cf.lg.indexOf('College Football') >= 0 && cf.names > 130, JSON.stringify(cf));
+  ok('a followed school\'s game is in My teams, its basketball game is not', cf.l.length === 1 && /Ohio State Buckeyes Michigan Wolverines/.test(cf.l[0]), JSON.stringify(cf.l));
+  ok('guide titles by school name are games, against an FCS school too', cf.game && cf.fcs, JSON.stringify(cf));
 
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();

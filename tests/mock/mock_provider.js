@@ -139,6 +139,12 @@ if (process.env.MOCK_EVENTS) {
     [1, t => `NHL 1 | ${md(t)} ${hm(t)} | Anaheim Ducks Winnipeg Jets`],
     [-1, t => `USA NHL 02: WPG VS CAR (TVAS Feed ) @ ${hm(t).toLowerCase()}`],
     [2, t => `NHL 3 | ${md(t)} ${hm(t)} | Boston Bruins Detroit Red Wings`]]]);
+  // College football the way a real provider lists it (full names, no "vs"), and a basketball game of the
+  // same school, which a football fan's My teams leaves out.
+  if (process.env.MOCK_TEAMS) EV.push(['⬬ NCAA Football', [
+    [1.5, t => `NCAAF 1 | ${md(t)} ${hm(t)} | SMU Mustangs Virginia Tech Hokies`],
+    [3, t => `NCAAF 2 | ${md(t)} ${hm(t)} | Ohio State Buckeyes Michigan Wolverines`]]],
+  ['⬬ NCAA Basketball', [[2.5, t => `NCAAB 9 | ${md(t)} ${hm(t)} | Michigan Wolverines Duke Blue Devils`]]]);
   // East and West feeds, and local stations by city (Smart clean-up).
   const usEnt = streams.filter(x => /^US\| /.test(x.name)).slice(0, 6);
   const CITIES = [['DETROIT', 'MI'], ['LANSING', 'MI'], ['CHICAGO', 'IL'], ['BOSTON', 'MA'], ['DENVER', 'CO'], ['SEATTLE', 'WA'], ['AUSTIN', 'TX'], ['TAMPA', 'FL']];
