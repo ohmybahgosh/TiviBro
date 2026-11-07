@@ -229,7 +229,7 @@ var UI = (function () {
      opening with a short rise. */
   var mSub = null;
   function heading(title, sub) {
-    mTitle.textContent = T(title);
+    mTitle.textContent = T(title); mTitle._en = title;
     if (!mSub) { mSub = U.el('div', 'modal-sub'); mTitle.parentNode.insertBefore(mSub, mTitle.nextSibling); }
     mSub.textContent = sub ? T(sub) : '';
     mSub.style.display = sub ? '' : 'none';
@@ -373,10 +373,25 @@ var UI = (function () {
       var key = x[2] || x[0];
       if (key) { s.setAttribute('data-key', key); s.className = 'clickable'; }
       if (x[0]) { var b = U.el('b', 'k-' + x[0]); s.appendChild(b); }
-      s.appendChild(document.createTextNode(T(x[1])));
+      // A whole hint in the language, else its parts ("Back  Guide": the button, then what it does).
+      var tx = T(x[1]);
+      if (tx === x[1] && String(x[1]).indexOf('  ') > 0) tx = String(x[1]).split('  ').map(T).join('  ');
+      s.appendChild(document.createTextNode(tx));
       h.appendChild(s);
     });
+    fitHints(h);
   }
+  /* Longer languages: hints that don't fit in one line close up and get a little smaller, then the last
+     ones go, rather than run off the screen. */
+  function fitHints(h) {
+    h.classList.remove('tight');
+    [].forEach.call(h.children, function (c) { c.style.display = ''; });
+    if (!h.clientWidth || h.scrollWidth <= h.clientWidth + 1) return;
+    h.classList.add('tight');
+    for (var i = h.children.length - 1; i > 0 && h.scrollWidth > h.clientWidth + 1; i--) h.children[i].style.display = 'none';
+  }
+  // The room for them changes with the menu (open, hidden in the guide grid): fit them again then.
+  if (typeof MutationObserver !== 'undefined') new MutationObserver(function () { var h = U.$('hints'); if (h && lastHints.length) fitHints(h); }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
   /* Scrolling a line that doesn't fit (discussion #36): el moves left by `over` px, waits, comes back, again.
      Text in Japanese, Chinese or Korean steps a few characters at a time, which reads better than a glide.
@@ -417,7 +432,7 @@ var UI = (function () {
     get playKey() { return playKey; },
     press: function (a) { dispatch(a, null); },
     // A menu that shows live values (Stream info) redraws itself while it is the one open.
-    menuOpen: function (title) { return !!modalH && !modal.classList.contains('hidden') && mTitle.textContent === title; },
+    menuOpen: function (title) { return !!modalH && !modal.classList.contains('hidden') && (mTitle._en || mTitle.textContent) === title; },
     redrawMenu: function () { if (modalH) drawMenu(); },
     icon: function (n) { return MICONS[n] ? '<svg viewBox="0 0 24 24">' + MICONS[n] + '</svg>' : ''; },
     rehint: function () { hints(lastHints); },   // again in a new language

@@ -112,7 +112,7 @@ var Tour = (function () {
 
   function welcomeRows() {
     var sv = st.sv, out = [], p = P(), cards = U.el('div', 'tour-stats');
-    function card(v, l) { var d = U.el('div', 'tour-stat'); d.appendChild(U.el('b', '', v)); d.appendChild(U.el('span', '', l)); cards.appendChild(d); }
+    function card(v, l) { var d = U.el('div', 'tour-stat'); d.appendChild(U.el('b', '', v)); d.appendChild(U.el('span', '', cardLabel(v, l))); cards.appendChild(d); }
     card(fmt(sv.channels), 'channels');
     card(fmt(sv.groups), 'groups');
     if (sv.countries.length) card(fmt(sv.countries.length), sv.countries.length === 1 ? 'country' : 'countries');
@@ -147,6 +147,7 @@ var Tour = (function () {
 
   function preview() {
     var box = U.el('div', 'prev-table tour-prev'), sample = Library.sample(40);
+    box.setAttribute('data-raw', '');              // channel names: never translated
     var changed = sample.filter(function (c) { return Names.cleanWith(st.ch.names, c.n) !== c.n; }).slice(0, 7);
     if (!changed.length) changed = sample.slice(0, 5);
     changed.forEach(function (c) {
@@ -257,7 +258,7 @@ var Tour = (function () {
       if (!u || seen[u]) continue; seen[u] = 1; shown++;
       var cell = U.el('div', 'tour-logo'), img = U.el('img');
       img.src = u; img.onerror = function () { if (!Net.retryImage(this)) this.parentNode.style.display = 'none'; };
-      cell.appendChild(img); cell.appendChild(U.el('span', '', Library.name(c)));
+      cell.appendChild(img); var cn = U.el('span', '', Library.name(c)); cn.setAttribute('data-raw', ''); cell.appendChild(cn);
       row.appendChild(cell);
     }
     box.appendChild(row);
@@ -315,7 +316,7 @@ var Tour = (function () {
 
   function doneRows() {
     var pl = plan(), out = [], cards = U.el('div', 'tour-stats');
-    function card(v, l) { var d = U.el('div', 'tour-stat'); d.appendChild(U.el('b', '', v)); d.appendChild(U.el('span', '', l)); cards.appendChild(d); }
+    function card(v, l) { var d = U.el('div', 'tour-stat'); d.appendChild(U.el('b', '', v)); d.appendChild(U.el('span', '', cardLabel(v, l))); cards.appendChild(d); }
     card(fmt(pl.chans), 'channels to watch'); card(fmt(pl.groups), 'groups');
     if (pl.hidC) card(fmt(pl.hidC), 'channels hidden');
     if (pl.hidG) card(fmt(pl.hidG), 'groups hidden');
@@ -399,6 +400,12 @@ var Tour = (function () {
 
   /* ---------- drawing ---------- */
   function cur() { return steps()[st.step]; }
+  /* A card's label in the language, agreeing with its number ("22 группы", "5 групп"): from the plural key
+     '{n} groups', the number then left off since the card shows it big. */
+  function cardLabel(v, l) {
+    var s = String(v).replace(/[^\d]/g, ''), whole = s ? I18n.t(s + ' ' + l) : '';
+    return whole && whole !== s + ' ' + l ? whole.replace(s, '').replace(/^[\s:]+|[\s:]+$/g, '') : l;
+  }
   function focusable(it) { return it && !it.head && !it.info && !it.custom; }
   function draw() {
     if (!st) return;
@@ -471,6 +478,7 @@ var Tour = (function () {
     main.appendChild(bar);
     wrap.appendChild(main);
     root.appendChild(wrap);
+    I18n.page(wrap);              // in the language chosen; channel names (data-raw) stay as they are
     st.scroll = scroll; st.view = view;
     paint();
   }

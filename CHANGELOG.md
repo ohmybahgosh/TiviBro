@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Spanish and Russian almost complete.**  Settings with their explanations, the set-up tour, menus, the guide's details and badges, the fullscreen info panel, the button legends, subtitles, My media and movies and shows: about 95% of TiviBro's text.  What's left is mostly text put together on the fly, and it comes in later builds.
+- **Fixes for longer languages, and a few for English too.**  The hints along the bottom close up and drop the last ones rather than run off the screen; long section names in Settings were shortened in Spanish and Russian so they show whole; the side menu's labels fit; a group name no longer peeks out from under the open side menu; and a fact in Settings that's too long for one line (a folder, a command) wraps instead of being cut off.
 - **TiviBro in Spanish and Russian, in your TV's own language.**  TiviBro reads the TV's menu language (and follows it when you change it on the TV), and shows in Spanish or Russian when that's the TV's language.  The side menu, Settings' sections and most of their rows, menus, questions, messages and the hints at the bottom are translated so far; anything not translated yet stays English, and more comes in later builds.  If it chose wrong, **Settings > Language** (at the top of Settings, always also saying "Language") picks another, or Automatic again; a new TV has it as the first row of Add your playlist.  The first start in another language says which it chose and where to change it.  In Spanish and Russian times are on the 24-hour clock.
 
 ## 0.6.0 (alpha 101, 2026-11-07)

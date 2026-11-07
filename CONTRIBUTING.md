@@ -47,6 +47,7 @@ TiviBro's English is the key: `app/js/lang/es.js` and `ru.js` map each English t
 - `node scripts/i18n-check.js` shows how far each language is and which files have the most left.
 - `node scripts/i18n-check.js es` lists the Spanish still missing, ready to paste into `es.js`.
 - A new language: copy `es.js`, change the code, add it to `LANGS` in `i18n.js` and a `<script>` line in `app/index.html`.
+- `node tests/soak/i18n-layout.js --shots dir` draws every screen, Settings page, menu and box in each language and fails on text that's cut off, overlapping or off the screen where English isn't, and lists the text that still shows in English.
 - Keep `{n}` and `{x}` in every translation (`npm test` checks), and translate text where it's drawn: the settings rows, menus, boxes, toasts and hints already go through `I18n.t`, so new code there needs nothing extra.
 
 ## Releases

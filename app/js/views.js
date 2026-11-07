@@ -19,6 +19,8 @@ var Views = (function () {
   var overlay = false, ovGroup = null;
   var backT = 0, sleepAt = 0, sleepWarned = false, playStart = 0, recentDone = false;
 
+  // In the language chosen (app/js/i18n.js).
+  function T(x, v) { return I18n.t(x, v); }
   var TAB_LABELS = { live: 'Channels', guide: 'Guide', onnow: 'Movies on now', movies: 'Movies', shows: 'Shows', media: 'My media', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
   // The guide is home: the app opens on it and Back from any other screen comes back to it.
   function home() { return Store.settings.startTab === 'live' ? 'live' : 'guide'; }
@@ -418,7 +420,7 @@ var Views = (function () {
     now.appendChild(U.el('div', '', nn && nn.now ? nn.now.t : L.name(c)));
     if (nn && nn.now) {
       var pg = Epg.pubSource(c);
-      now.appendChild(U.el('small', '', (nn.now.up ? 'Starts ' + Events.when(nn.now.e) : nn.now.ended ? 'Ended ' + Events.when(nn.now.s) : U.hhmm(nn.now.s) + ' to ' + U.hhmm(nn.now.e)) + '   ' + L.name(c) + (c.arch ? '   catch-up ' + c.arch + ' days' : '') + (pg ? '   public guide, ' + pg.name : '')));
+      now.appendChild(U.el('small', '', (nn.now.up ? T('Starts {x}', { x: Events.when(nn.now.e) }) : nn.now.ended ? T('Ended {x}', { x: Events.when(nn.now.s) }) : T('{x} to {y}', { x: U.hhmm(nn.now.s), y: U.hhmm(nn.now.e) })) + '   ' + L.name(c) + (c.arch ? '   ' + T('catch-up {n} days', { n: c.arch }) : '') + (pg ? '   ' + T('public guide, {x}', { x: pg.name }) : '')));
       var nd = Epg.desc(c, nn.now); if (nd) now.appendChild(U.el('p', '', nd));
     } else {
       // No guide: what the provider wrote in the channel name (often the game or show) is the next best thing.
@@ -426,7 +428,7 @@ var Views = (function () {
       if (ex) { now.firstChild.textContent = ex; now.appendChild(U.el('small', '', L.name(c) + '   from the channel name, no guide information')); }
       else now.appendChild(U.el('small', '', Library.noGuide(c) ? '' : nn ? 'No guide information' : 'Loading guide'));
     }
-    if (nn && nn.next) next.textContent = 'Next  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t;
+    if (nn && nn.next) next.textContent = T('Next') + '  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t;
   }
 
   function placePreview() {
@@ -861,10 +863,10 @@ var Views = (function () {
       $('osdGroup').textContent = L.groupName(c.g) + (L.isFav(c.k) ? '   ★' : '') + media;
       var nn = Epg.nowNext(c);
       if (nn && nn.now) {
-        $('osdNow').textContent = (nn.now.up || nn.now.ended ? '' : U.hhmm(nn.now.s) + ' to ' + U.hhmm(nn.now.e) + '   ') + nn.now.t;
+        $('osdNow').textContent = (nn.now.up || nn.now.ended ? '' : T('{x} to {y}', { x: U.hhmm(nn.now.s), y: U.hhmm(nn.now.e) }) + '   ') + nn.now.t;
         $('osdBar').style.width = nn.now.up || nn.now.ended ? '0' : Math.round(100 * (Date.now() - nn.now.s) / (nn.now.e - nn.now.s)) + '%';
       } else { $('osdNow').textContent = Search.extra(c) || (nn && !Library.noGuide(c) ? 'No guide information' : ''); $('osdBar').style.width = '0'; }
-      $('osdNext').textContent = nn && nn.next ? 'Next  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t : '';
+      $('osdNext').textContent = nn && nn.next ? T('Next') + '  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t : '';
     }
     osdLegend();
     if (show) {
@@ -892,12 +894,13 @@ var Views = (function () {
       chip('back', 'Back  ' + (fullFrom === 'live' ? 'Channels' : 'Guide'));
     }
     var sig = JSON.stringify(items);
-    if (el._sig === sig) return;
-    el._sig = sig; el.innerHTML = '';
+    if (el._sig === sig + I18n.lang()) return;
+    el._sig = sig + I18n.lang(); el.innerHTML = '';
     items.forEach(function (x) {
       var s = U.el('span', 'clickable'); s.setAttribute('data-key', x[0]);
       if (x[2]) s.appendChild(U.el('b', 'k-' + x[2]));
-      s.appendChild(document.createTextNode(x[1]));
+      // The button ("OK", "▲ ▼", "Back") and what it does, each in the language.
+      s.appendChild(document.createTextNode(String(x[1]).split('  ').map(function (p) { return T(p); }).join('  ')));
       el.appendChild(s);
     });
   }
@@ -1661,7 +1664,7 @@ var Views = (function () {
      buffer gauge shows at the top right (as Show buffer info does).  From the quick menu, or any button
      set to "Stream info and buffer", so Magic Remotes without an Info button get there too. */
   function streamInfo() {
-    var T = 'Stream info', live = mode === 'live';
+    var TT = 'Stream info', live = mode === 'live';
     var rows = {
       name: { label: mode === 'vod' ? 'Playing' : 'Channel' }, engine: { label: 'Player' }, pic: { label: 'Picture' },
       buf: { label: 'Buffered ahead' }, start: { label: 'Started in' }, prof: { label: 'Buffer profile' }, info: { label: 'Details' }, cc: live && { label: 'Closed captions' },
@@ -1682,11 +1685,11 @@ var Views = (function () {
       if (rows.cc) { var c = Player.cc; rows.cc.sub = (c.found ? 'in this stream' : c.possible ? (c.waited ? 'none in this stream' : 'looking…') : 'not with the TV player') + ', ' + (c.on ? 'shown' : 'off'); }
     }
     fill();
-    UI.menu(T, [rows.name, rows.buf, rows.start, rows.prof, rows.engine, rows.pic, rows.info, rows.arch, rows.cc, rows.how]);
+    UI.menu(TT, [rows.name, rows.buf, rows.start, rows.prof, rows.engine, rows.pic, rows.info, rows.arch, rows.cc, rows.how]);
     if (full && Player.stats) peekMeter(true);
     clearInterval(streamInfo.t);
     streamInfo.t = setInterval(function () {
-      if (!UI.menuOpen(T)) { clearInterval(streamInfo.t); return; }
+      if (!UI.menuOpen(TT)) { clearInterval(streamInfo.t); return; }
       fill(); UI.redrawMenu();
       if (full && Player.stats && Date.now() >= peekUntil) peekMeter(true);
     }, 1000);
@@ -1823,6 +1826,7 @@ var Views = (function () {
    Back always means "up one level" so it never surprises anyone). */
 var Guide = (function () {
   'use strict';
+  function T(x, v) { return I18n.t(x, v); }
   var $ = U.$, L = Library;
   var view = $('viewGuide'), body = $('guideBody'), timesEl = $('guideTimes'), detail = $('guideDetail'), ghead = $('guideGroup');
   var PEEK = 0, ROW = 100, VIS = 0, WIN = 2.5 * 3600e3, PXW = 0, CHW = 470, MINCELL = 220;      // narrowest a programme is drawn (px)
@@ -1890,7 +1894,7 @@ var Guide = (function () {
       var want = document.body.classList.contains('noguidenames') ? 260 : 470;
       $('guideGroupList').parentNode.style.width = Math.max(want, 420) + 'px';
       var gs = L.groups(true), i = gs.findIndex(function (g) { return g.id === gid; });
-      $('guideGroups').querySelector('.col-title').textContent = 'Groups   ' + gs.filter(function (g) { return !g.head; }).length;
+      $('guideGroups').querySelector('.col-title').textContent = T('Groups') + '   ' + gs.filter(function (g) { return !g.head; }).length;
       groupsVL.setItems(gs, Math.max(0, i));
       groupsVL.measure();                // built while the panel was hidden: count the rows that really fit
       groupsVL.setActive(true);
@@ -2255,7 +2259,7 @@ var Guide = (function () {
   }
 
   var timesKey = '', timesIn = null, slideFrom = null, ext = null;
-  function mins(ms) { var m = Math.max(1, Math.round(ms / 60000)); return m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min'; }
+  function mins(ms) { var m = Math.max(1, Math.round(ms / 60000)); return m >= 60 ? Math.floor(m / 60) + ' ' + T('h') + (m % 60 ? ' ' + (m % 60) + ' ' + T('min') : '') : m + ' ' + T('min'); }
 
   // What OK will do for the focused cell, in plain words.
   function okMeaning(c, h) {
@@ -2274,8 +2278,9 @@ var Guide = (function () {
   var pvIdle = null;
   function previewIdle(c) {
     var box = $('guidePreview'); if (!box) return;
-    if (!pvIdle) { box.innerHTML = ''; pvIdle = { el: U.el('div', 'gpv-idle'), img: U.el('img'), n: U.el('b'), h: U.el('small', '', 'OK plays it here, OK again for fullscreen') }; pvIdle.img.alt = ''; pvIdle.img.onerror = function () { this.style.display = 'none'; }; pvIdle.el.appendChild(pvIdle.img); pvIdle.el.appendChild(pvIdle.n); pvIdle.el.appendChild(pvIdle.h); box.appendChild(pvIdle.el); }
+    if (!pvIdle) { box.innerHTML = ''; pvIdle = { el: U.el('div', 'gpv-idle'), img: U.el('img'), n: U.el('b'), h: U.el('small', '', T('OK plays it here, OK again for fullscreen')) }; pvIdle.img.alt = ''; pvIdle.img.onerror = function () { this.style.display = 'none'; }; pvIdle.el.appendChild(pvIdle.img); pvIdle.el.appendChild(pvIdle.n); pvIdle.el.appendChild(pvIdle.h); box.appendChild(pvIdle.el); }
     var lg = c ? Views.logoOf(c) : '', name = c ? L.name(c) : '';
+    pvIdle.h.textContent = T('OK plays it here, OK again for fullscreen');
     if (pvIdle.src !== lg) { pvIdle.src = lg; pvIdle.img.style.display = lg ? '' : 'none'; if (lg) pvIdle.img.src = lg; }
     if (pvIdle.n.textContent !== name) pvIdle.n.textContent = name;
     pvIdle.el.classList.toggle('nologo', !lg);
@@ -2298,7 +2303,7 @@ var Guide = (function () {
       if (h.p.up && h.p.e > now) part('in ' + (h.p.e - now > 48 * 3600e3 ? Math.round((h.p.e - now) / 86400e3) + ' days' : mins(h.p.e - now)));
     } else if (h.p) {
       var live = h.p.s <= now && h.p.e > now, past = h.p.e <= now;
-      meta.appendChild(U.el('span', 'gd-badge' + (live ? ' live' : past && c.arch ? ' cu' : ''), live ? 'LIVE' : past ? (c.arch ? 'CATCH-UP' : 'AIRED') : 'UPCOMING'));
+      meta.appendChild(U.el('span', 'gd-badge' + (live ? ' live' : past && c.arch ? ' cu' : ''), T(live ? 'LIVE' : past ? (c.arch ? 'CATCH-UP' : 'AIRED') : 'UPCOMING')));
       // What else the guide says (#9 in the ideas): a new episode, a reminder set, its kind, its episode.
       if (h.p.n && !past) meta.appendChild(U.el('span', 'gd-badge new', 'NEW'));
       if (!past && hasReminder(c, h.p)) meta.appendChild(U.el('span', 'gd-badge rem', '◷ REMINDER'));
@@ -2308,7 +2313,7 @@ var Guide = (function () {
       meta.appendChild(document.createTextNode((dayName(h.p.s) === 'Today' ? '' : dayName(h.p.s) + '  ') + U.hhmm(h.p.s) + ' – ' + U.hhmm(h.p.e)));
       part(mins(h.p.e - h.p.s));
       // TiviMate style: a short bar between the times and what is left.
-      if (live) { var mini = U.el('span', 'gd-mini'), mf = U.el('i'); mf.style.width = Math.round(100 * (now - h.p.s) / (h.p.e - h.p.s)) + '%'; mini.appendChild(mf); meta.appendChild(mini); meta.appendChild(document.createTextNode(mins(h.p.e - now) + ' left')); }
+      if (live) { var mini = U.el('span', 'gd-mini'), mf = U.el('i'); mf.style.width = Math.round(100 * (now - h.p.s) / (h.p.e - h.p.s)) + '%'; mini.appendChild(mf); meta.appendChild(mini); meta.appendChild(document.createTextNode(T('{x} left', { x: mins(h.p.e - now) }))); }
       else if (!past) part(h.p.s - now < 48 * 3600e3 ? 'starts in ' + mins(h.p.s - now) : 'in ' + Math.round((h.p.s - now) / 86400e3) + ' days');
       var ps = Epg.pubSource(c);
       if (ps) part('public guide, ' + ps.name);
@@ -2316,7 +2321,7 @@ var Guide = (function () {
     detail.appendChild(meta);
     var meta2 = U.el('div', 'gd-meta');
     var dq = L.versionTag(c);
-    meta2.textContent = (Store.settings.showNumbers ? c.num + '  ' : '') + L.name(c) + (dq ? ' ' + dq : '') + '   ·   ' + L.groupName(c.g) + (c.arch ? '   ·   ↺ catch-up ' + c.arch + ' days' : '');
+    meta2.textContent = (Store.settings.showNumbers ? c.num + '  ' : '') + L.name(c) + (dq ? ' ' + dq : '') + '   ·   ' + L.groupName(c.g) + (c.arch ? '   ·   ↺ ' + T('catch-up {n} days', { n: c.arch }) : '');
     detail.appendChild(meta2);
     // A movie (movies.js, TMDB): its poster at the right, a line with the year, genres and rating, and
     // TMDB's plot when the guide has little to say.
@@ -2611,7 +2616,7 @@ var Guide = (function () {
     items.push({ label: 'Watch fullscreen', icon: 'full', action: function () { if (isPlaying(c)) Views.goFull(); else Views.startChannel(c, false, Views.goFull); } });
     if (!isPlaying(c)) items.push({ label: 'Play in the window', icon: 'window', action: function () { preview(c); } });
     if (h.p && h.p.s <= now && h.p.e > now && c.arch) items.push({ label: 'Watch from the start', icon: 'start', sub: 'catch-up', action: function () { Views.playCatchup(c, h.p, 0); } });
-    if (c.arch) items.push({ label: 'Earlier programmes…', icon: 'history', sub: 'catch-up ' + c.arch + (c.arch === 1 ? ' day' : ' days'), action: function () { Views.catchupList(c); } });
+    if (c.arch) items.push({ label: 'Earlier programmes…', icon: 'history', sub: T('catch-up {n} days', { n: c.arch }), action: function () { Views.catchupList(c); } });
     if (h.p && h.p.s > now) items.push(hasReminder(c, h.p) ? { label: 'Cancel reminder', icon: 'belloff', sub: U.hhmm(h.p.s), action: function () { toggleReminder(c, h.p); } }
       : { label: 'Remind me', icon: 'bell', sub: U.hhmm(h.p.s), action: function () { toggleReminder(c, h.p); } });
     if (h.p && h.p.t && !h.p.up && !h.p.ended) {

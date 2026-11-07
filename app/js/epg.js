@@ -46,17 +46,19 @@ var Epg = (function () {
   function chip(p) {
     var el = document.getElementById('epgProg'); if (!el) return;
     if (!p.active) {
-      if (p.message) { el.textContent = p.message; el.className = 'epgprog' + (p.phase === 'error' ? ' bad' : p.phase === 'done' ? ' ok' : ''); }
-      else if (p.phase === 'error') { el.textContent = 'Guide did not load: ' + (p.error || 'error'); el.className = 'epgprog bad'; }
-      else if (p.phase === 'done') { el.textContent = 'Guide loaded'; el.className = 'epgprog ok'; }
+      var T = function (x, v) { return typeof I18n !== 'undefined' ? I18n.t(x, v) : x; };
+      if (p.message) { el.textContent = T(p.message); el.className = 'epgprog' + (p.phase === 'error' ? ' bad' : p.phase === 'done' ? ' ok' : ''); }
+      else if (p.phase === 'error') { el.textContent = T('Guide did not load: {x}', { x: p.error || 'error' }); el.className = 'epgprog bad'; }
+      else if (p.phase === 'done') { el.textContent = T('Guide loaded'); el.className = 'epgprog ok'; }
       clearTimeout(chip.t); chip.t = setTimeout(function () { el.className = 'epgprog hidden'; }, 3500);
       return;
     }
     clearTimeout(chip.t);
     var pct = p.total ? Math.min(99, Math.floor(100 * p.bytes / p.total)) : -1;
     el.className = 'epgprog';
-    el.innerHTML = '<b>Loading guide' + (p.of > 1 ? ' ' + p.src + '/' + p.of : '') + '</b> ' +
-      (p.phase === 'save' ? 'saving…' : pct >= 0 ? pct + '%' : mb(p.bytes || 0)) +
+    var T2 = function (x) { return typeof I18n !== 'undefined' ? I18n.t(x) : x; };
+    el.innerHTML = '<b>' + T2('Loading guide') + (p.of > 1 ? ' ' + p.src + '/' + p.of : '') + '</b> ' +
+      (p.phase === 'save' ? T2('saving…') : pct >= 0 ? pct + '%' : mb(p.bytes || 0)) +
       '<i style="width:' + (pct >= 0 ? pct : 100) + '%"' + (pct < 0 ? ' class="indet"' : '') + '></i>';
   }
 

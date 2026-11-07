@@ -21,7 +21,7 @@ var I18n = (function () {
   'use strict';
   // code, name in its own language, name in English
   var LANGS = [['en', 'English', 'English'], ['es', 'Español', 'Spanish'], ['ru', 'Русский', 'Russian']];
-  var dicts = {}, pats = {}, cache = {}, cacheN = 0, tv = '', tvAsked = false, listeners = [];
+  var dicts = {}, pats = {}, cache = {}, cacheN = 0, misses = {}, missN = 0, tv = '', tvAsked = false, listeners = [];
 
   function has(code) { for (var i = 0; i < LANGS.length; i++) if (LANGS[i][0] === code) return true; return false; }
   // "es-MX", "ru_RU", "spa" -> "es", "ru"; anything else -> ''
@@ -115,8 +115,13 @@ var I18n = (function () {
       best.names.forEach(function (nm, j) { var x = bm[j + 1]; v[nm] = nm === 'n' ? x : (d.hasOwnProperty(x) ? pick(code, d[x]) : x); });
       out = pick(code, best.v, v);
     }
+    // Spaces around it ("…keyboard.  ") or parts set apart by three spaces ("Expires Sep 3   Xtream Codes   in use, 108 channels").
+    else if (s !== s.trim()) { var core = s.trim(), tc = t(core); if (tc !== core) out = s.slice(0, s.indexOf(core)) + tc + s.slice(s.indexOf(core) + core.length); }
+    else if (/\S {3,}\S/.test(s)) { var parts = s.split(/( {3,})/), tp = parts.map(function (x) { return /^ +$/.test(x) ? x : t(x); }); if (tp.join('') !== s) out = tp.join(''); }
     if (cacheN > 3000) { cache = {}; cacheN = 0; }
     cache[s] = out; cacheN++;
+    // Text that stayed English (tests/soak/i18n-layout.js lists it): the first few hundred.
+    if (out === s && missN < 400 && /[a-z]{3}/.test(s)) { misses[s] = 1; missN++; }
     return out;
   }
 
@@ -129,6 +134,7 @@ var I18n = (function () {
     list.forEach(function (x) {
       if (x._en == null) {
         if (!/[A-Za-z]/.test(x.nodeValue) || /^(SCRIPT|STYLE|TEXTAREA)$/.test(x.parentNode.nodeName)) return;
+        if (x.parentNode.closest && x.parentNode.closest('[data-raw]')) return;      // names: channels, groups
         x._en = x.nodeValue;
       }
       var lead = /^\s*/.exec(x._en)[0], trail = /\s*$/.exec(x._en)[0], core = x._en.trim();
@@ -175,6 +181,6 @@ var I18n = (function () {
   return {
     t: t, add: add, lang: lang, locale: locale, set: set, setting: function () { return chosen() || 'auto'; }, detected: detected, base: base,
     plural: plural, page: page, onChange: onChange, askTV: askTV, name: name, langs: langs, has: has, changed: changed,
-    _dicts: dicts, _setTV: function (l) { tv = l; changed(); }
+    misses: function () { return Object.keys(misses); }, _dicts: dicts, _setTV: function (l) { tv = l; changed(); }
   };
 })();

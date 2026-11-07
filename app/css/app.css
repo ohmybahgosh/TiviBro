@@ -22,6 +22,8 @@ body.full #app{visibility:hidden}
 .view{flex:1;display:flex;min-height:0;padding:40px 56px 0 152px}
 .hints{height:64px;flex:none;display:flex;align-items:center;gap:36px;padding:0 56px 0 152px;color:var(--dim);font-size:22px}
 .hints b{display:inline-block;width:18px;height:18px;border-radius:4px;margin-right:10px;vertical-align:-2px}
+.hints{overflow:hidden}
+.hints.tight{gap:22px;font-size:20px}
 .k-red{background:#d6453d}.k-green{background:#3fa85f}.k-yellow{background:#e0b630}.k-blue{background:#3d79d6}
 
 /* columns */
@@ -214,6 +216,8 @@ body.guide1 .gp .gs{display:none}
 .opt .ol{flex:1;min-width:0}
 .opt .ol small{display:block;color:var(--muted);font-size:21px;margin-top:4px;white-space:normal}
 .opt .ov{color:var(--accent-text);flex:none;max-width:640px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* A value you don't change with ◀ ▶ (facts: a folder, a command, a longer translation) wraps rather than being cut off. */
+.opt:not(.cyc) .ov{white-space:normal;overflow-wrap:break-word;word-break:break-word;max-width:560px}
 .opt.focus{background:var(--raised);box-shadow:inset 6px 0 0 var(--accent)}
 .opt.focus .ov{color:var(--text)}
 /* ◀ ▶ values: arrows on the focused row say "change me with left and right" */
@@ -363,13 +367,15 @@ body.pointer .set-nav>div:hover{color:var(--text)}
 .sidenav{position:absolute;left:0;top:0;bottom:0;width:104px;z-index:4;display:flex;flex-direction:column;padding:36px 0 28px;
   background:linear-gradient(90deg,#080b16 0%,#080b16 70%,rgba(8,11,22,0) 100%);overflow:hidden}
 body.nav-open .sidenav{width:360px;background:#080b16}
+/* The groups column under the open menu: hidden, so a long group name doesn't peek out beside it. */
+body.nav-open #viewLive .col.groups{visibility:hidden}
 body.nav-hidden .sidenav,body.full .sidenav{visibility:hidden}
 .sidenav .brand{display:flex;align-items:center;gap:18px;padding:0 0 0 43px;height:56px;font-size:32px;font-weight:700;white-space:nowrap;margin-bottom:28px}
 .sidenav .brand .dot{width:18px;height:18px;border-radius:50%;background:var(--accent);display:inline-block;flex:none}
 .sidenav .brand .mark{width:44px;height:38px;object-fit:contain;flex:none;margin-left:-13px}
 .loadbrand{display:block;height:110px;margin:0 auto 28px}
 .sidenav .tabs{display:flex;flex-direction:column;gap:6px}
-.sidenav .lbl{white-space:nowrap;opacity:0}
+.sidenav .lbl{white-space:nowrap;opacity:0;overflow:hidden;text-overflow:ellipsis;max-width:250px}
 body.nav-open .sidenav .lbl{opacity:1}
 .tab{display:flex;align-items:center;gap:22px;height:68px;margin:0 16px;padding:0 20px;border-radius:14px;color:var(--muted);font-size:28px;white-space:nowrap}
 .tab .ico{width:32px;height:32px;flex:none;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
