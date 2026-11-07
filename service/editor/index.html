@@ -22,6 +22,7 @@ button.danger{color:#ff9a9d}
 button.ghost{background:none;border-color:transparent;padding:5px 7px}
 button.ghost:hover{background:var(--raised)}
 button.small{padding:4px 10px;font-size:13px}
+#prevMore,#gprevMore{margin-top:8px;color:var(--accent);font-weight:600}
 button:disabled{opacity:.45;cursor:default}
 button.spin{color:transparent!important}
 button.spin::after{content:'';position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-9px 0 0 -9px;border-radius:50%;border:2px solid rgba(255,255,255,.25);border-top-color:var(--text)}
@@ -615,9 +616,9 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
           </div>
         </div>
         <div class="card"><div class="row"><h3 class="grow" style="margin:0">Preview</h3><label class="muted small"><input type="checkbox" id="onlyChanged" checked> Only names that change</label></div>
-          <table class="t" id="prev" style="margin-top:10px"></table></div>
+          <table class="t" id="prev" style="margin-top:10px"></table><button class="ghost small hidden" id="prevMore"></button></div>
         </div>
-        <h2>Group names</h2>
+        <h2 id="gnamesHead">Group names</h2>
         <div class="two">
         <div>
           <div class="card">
@@ -629,7 +630,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
           <div class="card" id="tGnames"></div>
         </div>
         <div class="card"><div class="row"><h3 class="grow" style="margin:0">Group preview</h3><label class="muted small"><input type="checkbox" id="onlyGChanged" checked> Only names that change</label></div>
-          <table class="t" id="gprev" style="margin-top:10px"></table></div>
+          <table class="t" id="gprev" style="margin-top:10px"></table><button class="ghost small hidden" id="gprevMore"></button></div>
         </div>
       </div>
     </section>
@@ -1072,10 +1073,16 @@ function load(first) {
     if (same) { j.data.channels = had.channels; j.data.groups = had.groups; }
     D = j.data; rev = j.rev;
     if (D.tz) Events.setProviderTz(D.tz);              // event times in names are in the provider's zone
+    var oldBase = BASE, keep = !first && pendingCount() > 0;
     BASE = { E: pickE(D.edits), N: clone(D.names || Names.defaults()) };
     BASE.N.rules = BASE.N.rules || {};
-    var keep = !first && pendingCount() > 0;
     if (!keep) { E = clone(BASE.E); N = clone(BASE.N); }
+    else if (oldBase && !sameJ(oldBase, BASE)) {
+      /* Changed on the TV (a group hidden with the remote) while changes here weren't sent yet: what was
+         changed here goes on top of the TV's new state, so sending doesn't undo what was done on the TV. */
+      E = pickE(merge3(oldBase.E, E, BASE.E)); N = merge3(oldBase.N, N, BASE.N);
+      toast('Changes made on the TV were brought in.  Yours are kept, and sending won\'t undo them.');
+    }
     if (same) { readGuide(); dupeCache = null; }
     else index();
     var wasSetup = document.body.classList.contains('setup');
@@ -1301,6 +1308,44 @@ function showOffer(d) {
     }]]);
 }
 function sameJ(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+/* Three-way merge of the edits: b what both started from (the TV's state when this page last read it),
+   m what was changed here, t the TV's state now.  What was changed here wins where it was changed;
+   everything else is the TV's.  Lists merge their additions and removals (a channel added to Favorites
+   on the TV and another here: both stay); lists of groups merge by id. */
+function merge3(b, m, t) {
+  if (sameJ(m, b)) return clone(t);
+  if (sameJ(t, b) || t == null) return clone(m);
+  if (m == null) return b == null ? clone(t) : null;
+  var isObj = function (x) { return x && typeof x === 'object' && !Array.isArray(x); };
+  if (Array.isArray(m) && Array.isArray(t)) {
+    var bb = Array.isArray(b) ? b : [];
+    var idOf = function (x) { return x && typeof x === 'object' ? (x.id != null ? 'i' + x.id : x.q != null ? 'q' + x.q : null) : typeof x === 'string' || typeof x === 'number' ? 's' + x : null; };
+    if (m.concat(t, bb).some(function (x) { return idOf(x) == null; })) return clone(m);
+    var B = {}, M = {}, T = {};
+    bb.forEach(function (x) { B[idOf(x)] = x; }); m.forEach(function (x) { M[idOf(x)] = x; }); t.forEach(function (x) { T[idOf(x)] = x; });
+    var out = [], seen = {};
+    var take = function (k) {
+      if (seen[k]) return; seen[k] = 1;
+      var inB = k in B, inM = k in M, inT = k in T;
+      if (inB && (!inM || !inT)) return;                   // removed here or on the TV
+      var v = inM && inT ? (typeof M[k] === 'object' ? merge3(B[k], M[k], T[k]) : M[k]) : inM ? M[k] : T[k];
+      if (v != null) out.push(clone(v));
+    };
+    m.forEach(function (x) { take(idOf(x)); });             // this page's order, then what only the TV has
+    t.forEach(function (x) { take(idOf(x)); });
+    return out;
+  }
+  if (isObj(m) && isObj(t)) {
+    var o = {}, bo = isObj(b) ? b : {}, ks = {};
+    Object.keys(bo).concat(Object.keys(m), Object.keys(t)).forEach(function (k) { ks[k] = 1; });
+    Object.keys(ks).forEach(function (k) {
+      var v = sameJ(m[k], bo[k]) ? t[k] : sameJ(t[k], bo[k]) ? m[k] : merge3(bo[k], m[k], t[k]);
+      if (v !== undefined && v !== null) o[k] = clone(v);
+    });
+    return o;
+  }
+  return clone(m);
+}
 // Plain-language list of what differs between two states.
 function diffs(A, B) {
   var out = [], a = A.E, b = B.E;
@@ -1349,9 +1394,11 @@ function pendingList() { return D && BASE ? diffs(BASE, { E: E, N: N }) : []; }
 function pendingCount() { return E && BASE ? pendingList().length : 0; }
 
 /* ---------- sending ---------- */
-function send() {
+function send(fresh) {
   if (sending) { clearTimeout(autoT); autoT = setTimeout(send, 500); return Promise.resolve(); }
   var n = pendingCount(); if (!n) { updateBar(); return Promise.resolve(); }
+  // Something changed on the TV since this page read it: bring that in first (load merges), then send.
+  if (!fresh) return api('/api/rev').then(function (j) { return j.rev > rev && j.pendingRev <= j.appliedRev ? load(false) : null; }, function () {}).then(function () { return send(true); });
   sending = true; updateBar(); busy(1);
   saveDraftToTV('checkpoint', 'Before sending', null, n);
   var sentState = { E: clone(E), N: clone(N) };
@@ -1404,7 +1451,7 @@ function updateBar() {
   else setStatus('ok', 'Everything is on the TV');
   if (page === 'backups') renderDiff();
 }
-$('cbSend').onclick = send; $('hSend').onclick = send;
+$('cbSend').onclick = function () { send(); }; $('hSend').onclick = function () { send(); };
 $('cbUndo').onclick = undo; $('hUndo').onclick = undo; $('hRedo').onclick = redoIt;
 $('cbDiscard').onclick = discard; $('hDiscard').onclick = discard;
 $('cbReview').onclick = function () { show('backups', 'changes'); };
@@ -2818,28 +2865,42 @@ function renderNamesPage() { renderPreview(); renderGPreview(); renderGnames(); 
 // Group names before and after: the rules (when they clean groups too) and your group lists.
 function renderGPreview() {
   if (!D || page !== 'names') return;
-  var only = $('onlyGChanged').checked, rows = [], changedCount = 0;
+  var only = $('onlyGChanged').checked, rows = [], changedCount = 0, more = 0;
   D.groups.forEach(function (g) {
     if ((g.p || '') !== nsel) return;                    // the playlist picked above
     var out = cleanGroup(g.name, g.p), same = out === g.name;
     if (!same) changedCount++;
-    if ((only && same) || rows.length >= 300) return;
+    if ((only && same) || rows.length >= (gprevAll ? 300 : PREV_FEW)) { if (!(only && same)) more++; return; }
     rows.push('<tr class="' + (same ? 'same' : '') + '"><td>' + esc(g.name) + '</td><td>' + esc(out) + (E.groupRenames[g.id] ? ' <span class="dim small">(you renamed it: ' + esc(E.groupRenames[g.id]) + ')</span>' : '') + '</td></tr>');
   });
   $('gprev').innerHTML = '<tr><th>From the provider</th><th>On the TV (' + changedCount.toLocaleString() + ' cleaned)</th></tr>' + (rows.join('') || '<tr><td colspan="2">No group names change with these settings.</td></tr>');
+  moreBtn('gprevMore', gprevAll, more);
 }
+/* The previews show a few names until you ask for more: on a phone, a long list hid the group name
+   settings under it. */
+var PREV_FEW = 8, prevAll = false, gprevAll = false;
+function moreBtn(id, all, more) {
+  var b = $(id);
+  b.classList.toggle('hidden', !all && !more);
+  b.textContent = all ? 'Show fewer' : 'Show ' + more.toLocaleString() + ' more';
+}
+$('prevMore').onclick = function () { prevAll = !prevAll; renderPreview(); if (!prevAll) $('prev').scrollIntoView({ block: 'nearest' }); };
+$('gprevMore').onclick = function () { gprevAll = !gprevAll; renderGPreview(); if (!gprevAll) $('gprev').scrollIntoView({ block: 'nearest' }); };
 function renderPreview() {
   if (!D || page !== 'names') return;
   var only = $('onlyChanged').checked, rows = [], n = 0, changedCount = 0;
   D.channels.forEach(function (c) { if ((c.p || '') === nsel && cleanName(c.n, c.p) !== c.n) changedCount++; });
-  for (var i = 0; i < D.channels.length && n < 300; i++) {
+  var cap = prevAll ? 300 : PREV_FEW, more = 0;
+  for (var i = 0; i < D.channels.length; i++) {
     var c = D.channels[i];
     if ((c.p || '') !== nsel) continue;                  // the playlist picked above
     var out = cleanName(c.n, c.p), same = out === c.n;
     if (only && same) continue;
+    if (n >= cap) { if (prevAll) break; more++; continue; }
     rows.push('<tr class="' + (same ? 'same' : '') + '"><td>' + esc(c.n) + '</td><td>' + esc(out) + '</td></tr>'); n++;
   }
   $('prev').innerHTML = '<tr><th>From the provider</th><th>On the TV (' + changedCount.toLocaleString() + ' cleaned)</th></tr>' + (rows.join('') || '<tr><td colspan="2">No names change with these rules.</td></tr>');
+  moreBtn('prevMore', prevAll, more);
 }
 function ruleLabel(id) { var r = Names.RULES.filter(function (x) { return x.id === id; })[0]; return r ? r.label : id; }
 $('rules').addEventListener('change', function (e) { var id = e.target.dataset.rule, on = e.target.checked; if (!id) return; mut((on ? 'Turned on: ' : 'Turned off: ') + ruleLabel(id), function () { NC().rules[id] = on; }); });

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **The web editor no longer undoes what you change on the TV meanwhile.**  Hide a group with the remote while changes on the phone aren't sent yet, and sending used to put it back.  Now the editor brings the TV's changes in (and says so), and sending only sends what you changed there.  Lists merge: a channel added to Favorites on the TV and another on the phone both stay.
+- **Channel and group names in the web editor: the previews show eight names,** with Show more for the rest, so the group name settings below aren't lost under a long list on a phone.
+- **"NCAAM" and "NCAAW" mark sports,** like NCAAB and NCAAF: the guide's sports colour, and never looked up as a movie or series.
+
 ## 0.6.0 (alpha 98, 2026-11-06)
 
 Pre-release: expect rough edges, and keep a backup before installing.

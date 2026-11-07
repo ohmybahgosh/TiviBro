@@ -71,6 +71,25 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('hidden channel reaches the TV', s.hid.length >= 3, s.hid.join(','));
   });
 
+  // Changed on the TV while changes here aren't sent yet: sending must not undo what was done on the TV.
+  await step('TV changes while editing', async () => {
+    await go('gc');
+    const ids = await ed.evaluate(() => [].map.call(document.querySelectorAll('input[data-vis]'), (x) => x.getAttribute('data-vis')));
+    const vis = await tvState(() => Object.keys(Store.edits.hiddenGroups));
+    const free = ids.filter((x) => vis.indexOf(x) < 0 && x !== 'x10');
+    const mine = free[0], theirs = free[1];
+    await ed.click('input[data-vis="' + mine + '"]'); await ed.waitForTimeout(300);
+    const favBefore = await tvState(() => (Store.edits.custom.find((g) => g.id === 'c_fav') || { items: [] }).items.length);
+    await tv.evaluate(([g]) => { Store.edits.hiddenGroups[g] = 1; const f = Store.edits.custom.find((x) => x.id === 'c_fav'); if (f) f.items.push(Library.data.channels[40].k); Store.saveEdits(); Library.dirty(); }, [theirs]);
+    const told = await ed.waitForFunction(() => /brought in/.test(document.getElementById('toast').textContent), null, { timeout: 10000 }).then(() => true, () => false);
+    ok('the editor says the TV\'s changes were brought in', told);
+    await sendAndWait();
+    const r = await tv.evaluate(([a, b]) => ({ a: !!Store.edits.hiddenGroups[a], b: !!Store.edits.hiddenGroups[b], x9: !!Store.edits.hiddenGroups.x9, fav: (Store.edits.custom.find((g) => g.id === 'c_fav') || { items: [] }).items.length }), [mine, theirs]);
+    ok('sending keeps what was hidden on the TV meanwhile, and adds what was hidden here', r.a && r.b && r.x9 && r.fav === favBefore + 1, JSON.stringify(r) + ' fav before ' + favBefore);
+    // and the group hidden on the TV doesn't count as a change here
+    ok('nothing left to send', !(await ed.isVisible('#cbSend:not([disabled])')) || /Everything is on the TV|on the TV/.test(await ed.innerText('#status')), await ed.innerText('#status'));
+  });
+
   await step('channel rename and sort', async () => {
     await ed.locator('#clist [data-ren]').first().click(); await ed.waitForTimeout(300);
     const box = ed.locator('#clist [data-renbox]'); await box.fill('Renamed Channel'); await box.press('Enter'); await ed.waitForTimeout(300);

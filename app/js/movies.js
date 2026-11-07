@@ -30,7 +30,7 @@ var Movies = (function () {
     return { t: x, y: y };
   }
   var MOVIE_CH = /\b(hbo|cinemax|starz|encore|showtime|mgm\+?|epix|tcm|turner classic|amc|fxm|fx movies?|hallmark (?:movies|mystery)|lifetime movies?|lmn|ifc|sundance|flix|reelz|sony movies?|movies?|cinema|cine|films?|filmes|peliculas|kino)\b/i;
-  var NOT = /\b(news|live|tonight|today|morning|show|radio|tv|report|update|countdown|marathon|concert|awards?|idol|dancing|island|vs\.?|football|basketball|hockey|baseball|soccer|volleyball|softball|tennis|cricket|rugby|skating|wrestling|world series|grand prix|gp|qualif\w*|nfl|nba|nhl|mlb|mls|wnba|ncaa|ufc|wwe|aew|boxing|golf|nascar|racing|paid program(?:ming)?|infomercial|worship|church|sign.?off|off.?air|to be announced|tba|episode|season \d|s\d+\s?e\d+|highlights|weather|next game|pregame|postgame|rewind)\b/i;
+  var NOT = /\b(news|live|tonight|today|morning|show|radio|tv|report|update|countdown|marathon|concert|awards?|idol|dancing|island|vs\.?|football|basketball|hockey|baseball|soccer|volleyball|softball|tennis|cricket|rugby|skating|wrestling|world series|grand prix|gp|qualif\w*|nfl|nba|nhl|mlb|mls|wnba|ncaa[bfmw]?|ufc|wwe|aew|boxing|golf|nascar|racing|paid program(?:ming)?|infomercial|worship|church|sign.?off|off.?air|to be announced|tba|episode|season \d|s\d+\s?e\d+|highlights|weather|next game|pregame|postgame|rewind)\b/i;
   var LIVE_TAG = /\u1d38\u1da6\u1d5b\u1d49/;          // ᴸᶦᵛᵉ
   function strength(c, p, gname) {
     if (!p || !p.t || (typeof Events !== 'undefined' && Events.of && Events.of(c))) return '';

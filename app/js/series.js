@@ -142,7 +142,7 @@ var Series = (function () {
      Kimmel Live!", "Saturday Night Live", "Live with Kelly and Mark"), so only "Live:" in front marks a broadcast;
      guides without categories leave sport unmarked ("College Football", "NWSL Soccer"), so sport is told by its
      words; team channels list "Next game: …"; and a bare "Movie" is a placeholder. */
-  var NOT = /\b(news|noticias|weather|paid program(?:ming)?|infomercial|sign.?off|off.?air|to be announced|tba|highlights|pregame|postgame|countdown|worship|football|f[uú]tbol|soccer|basketball|baseball|hockey|nfl|nba|wnba|nhl|mlb|mls|ncaa[bf]?|nascar|ufc|boxing|golf|tennis|racing|formula 1|grand prix|kickoff)\b|^\s*(?:live|en vivo|en directo)\s*[:!\-]|^\s*next game\s*:|^\s*live at\b|^\s*(?:movie|film|programming|live|en vivo)\s*!?\s*$/i;
+  var NOT = /\b(news|noticias|weather|paid program(?:ming)?|infomercial|sign.?off|off.?air|to be announced|tba|highlights|pregame|postgame|countdown|worship|football|f[uú]tbol|soccer|basketball|baseball|hockey|nfl|nba|wnba|nhl|mlb|mls|ncaa[bfmw]?|nascar|ufc|boxing|golf|tennis|racing|formula 1|grand prix|kickoff)\b|^\s*(?:live|en vivo|en directo)\s*[:!\-]|^\s*next game\s*:|^\s*live at\b|^\s*(?:movie|film|programming|live|en vivo)\s*!?\s*$/i;
   function strength(c, p) {
     if (!p || !p.t || p.up || p.ended || p.mv) return '';
     if (p.k === 'n' || p.k === 's' || p.k === 'm') return '';
