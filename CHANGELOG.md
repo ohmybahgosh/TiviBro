@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 99, 2026-11-07)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 99
 
 - **Sports guides.**  Settings > Guide > Public guide fill-in > **Sports guides** (on, with the helper): US sports networks (Big Ten, SEC, ACC, ESPN, FS1, NFL Network, regional sports networks) and team channels from EPGTalk and epgshare01, downloaded by the TV straight from them.  They fill sports channels with no guide, and stand in for a sports channel's own guide when theirs reaches further ahead: two days of Big Ten Network become as many as Guide days allows.  The helper reads the files as they come in and keeps only the channels it matched (a 132 MB guide took about 15 MB more memory for 5 seconds).
 - **Guide titles from community guides read cleanly:** emoji in front come off, "[NCAAF] College Football" reads "NCAAF: College Football", and "[NEW]" becomes the NEW mark.
@@ -14,11 +18,7 @@
 - **Channel and group names in the web editor: the previews show eight names,** with Show more for the rest, so the group name settings below aren't lost under a long list on a phone.
 - **"NCAAM" and "NCAAW" mark sports,** like NCAAB and NCAAF: the guide's sports colour, and never looked up as a movie or series.
 
-## 0.6.0 (alpha 98, 2026-11-06)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 98
+### In alpha 98
 
 - **Even more guide shows find their TMDB details.**  A name with more on the end than TMDB has falls back to the shorter name when that's a show people know ("Hannah Montana Forever" is "Hannah Montana").  A season or episode inside the name comes off with what follows it ("Shark Tank :Season 4 :2026: Ep 4", "Brave Wilderness S2E2 -Face-to-Face…"), and counts as a sure match like a guide that gave the episode.  "The" in front and "&" for "and" make no difference.  Shows that missed before are asked about again.
 - **Guides that put the season and episode at the start of the description now count it** ("S04 E07 Love That Lets Go Lilly finally…", as some Xtream guides do).  The episode shows beside the times and its TMDB title and summary are looked up, and the "S04 E07" comes off the description.  News stays left alone even when the guide numbers it.  It takes effect at the next guide load.
