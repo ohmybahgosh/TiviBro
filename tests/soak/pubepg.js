@@ -16,7 +16,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const b = await chromium.launch();
   const page = await (await b.newContext({ viewport: { width: 1920, height: 1080 }, locale: 'en-US' })).newPage();
   const errs = []; page.on('pageerror', e => errs.push(e.message));
-  const pl = Object.assign({}, R.SETTINGS.playlists[0], { server: MOCK });
+  const pl = Object.assign({}, R.SETTINGS.playlists[0], { server: MOCK, pubEpg: { sports: false } });
   await page.addInitScript(R.init({ time: Date.now(), settings: { playlists: [pl], pubEpgBase: MOCK + '/pubepg/', guideInApp: !!process.env.GUIDE_IN_APP } })[0]);
   await page.goto(APP);
   await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 30000 });

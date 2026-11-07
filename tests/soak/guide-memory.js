@@ -24,6 +24,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const ev = (f, a) => page.evaluate(f, a);
   const ready = () => page.waitForFunction(() => window.Library && Library.count() > 0 && window.Epg && !Epg.loading && Epg.progress && !Epg.progress.active, null, { timeout: 60000 });
   await ready(); await page.waitForTimeout(1500);
+  // The in-app reader hands channels over in batches after the load says done: wait for them to settle.
+  await page.waitForFunction(() => Library.data.channels.filter(c => Epg.hasData(c)).length > 20, null, { timeout: 30000 }).catch(() => {});
   const full = await ev(() => Library.data.channels.filter(c => Epg.hasData(c)).length);
   ok('the guide loads normally', full > 20, full);
 

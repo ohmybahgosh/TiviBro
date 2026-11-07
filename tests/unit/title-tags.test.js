@@ -24,6 +24,14 @@ for (const t of ['CO₂ Rising', 'H₂O: The Molecule', 'Hawaiʻi Five-0', 'Beyo
   p = run(t);
   ok('left as it is: "' + t + '"', p.t === t && !p.n, p);
 }
+p = run('🏈🎓 [NCAAF] College Football');
+ok('EPGTalk: emoji off, the league in brackets in front becomes "NCAAF: "', p.t === 'NCAAF: College Football' && !p.n, p);
+p = run('SEC Now [NEW]');
+ok('"[NEW]" at the end becomes the NEW mark', p.t === 'SEC Now' && p.n === 1, p);
+p = run('Game Night [LIVE]');
+ok('"[LIVE]" comes off without a NEW mark', p.t === 'Game Night' && !p.n, p);
+p = run('[HD] Movie Night');
+ok('"[HD]" in front is not taken for a league', p.t === '[HD] Movie Night', p);
 p = run('ᴺᵉʷ');
 ok('a title that is only a tag keeps its text rather than going blank', p.t === 'ᴺᵉʷ', p);
 console.log(fails ? fails + ' failures' : 'all title tag tests passed');

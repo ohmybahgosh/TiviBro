@@ -25,6 +25,30 @@ var PubEpg = (function () {
     { id: 'mjhpluto', name: 'i.mjh.nz Pluto TV', site: 'https://i.mjh.nz', re: /^([A-Z]{2})_([0-9a-f]{24})$/i, base: 'https://i.mjh.nz/PlutoTV/',
       regions: { US: 'us', CA: 'ca', GB: 'gb', UK: 'gb', DE: 'de', FR: 'fr', ES: 'es', IT: 'it', BR: 'br', MX: 'mx', AR: 'ar', CL: 'cl', DK: 'dk', SE: 'se', NO: 'no' } }
   ];
+  /* Sports guides (Settings > Guide > Sports guides): US sports networks and team channels, from two
+     community projects.  Fetched by the helper only (big files, read as they come in, keeping only the
+     channels matched), straight from them: TiviBro hosts nothing.  Unlike the rest of the fill-in they
+     also stand in for a sports channel that has a guide, when theirs reaches further ahead (epg.js
+     epgId): a provider's two days of Big Ten Network become six.
+       EPGTalk US guide     Big Ten, SEC, ACC, ESPN, FS1, NFL Network, regional sports networks: about 6 days
+       epgshare01 US2       the same networks again (and the Overflow channels): about 3 days
+       EPGTalk Sports       one channel per team (NFL, NBA, NHL, MLB, NCAA): the next game, about 7 days */
+  var SPORTS = [
+    { id: 'epgtalkus', name: 'EPGTalk', site: 'https://epgtalk.com', helper: true, url: 'https://raw.githubusercontent.com/acidjesuz/EPGTalk/master/US_guide.xml.gz', file: 'US_guide.xml.gz' },
+    { id: 'epgshare', name: 'epgshare01', site: 'https://epgshare01.online', helper: true, url: 'https://epgshare01.online/epgshare01/epg_ripper_US2.xml.gz', file: 'epg_ripper_US2.xml.gz' },
+    { id: 'epgtalkteams', name: 'EPGTalk Sports', site: 'https://epgtalk.com', helper: true, fillOnly: true, url: 'https://raw.githubusercontent.com/acidjesuz/EPGTalk/master/Sports_guide.xml.gz', file: 'Sports_guide.xml.gz' }
+  ];
+  // A sports channel by its name or group: the networks, leagues and team channels ("NHL | Detroit Red Wings").
+  var SPORTY = /\b(sports?|espn\w*|fs[12]|fox sports|big ?ten|btn|sec ?network|acc ?network|pac-?12|big 12|longhorn|cbs ?sports|nbc ?sports|golf|tennis|bein|tudn|nfl|nba|wnba|nhl|mlb|mls|ncaa[bfmw]?|nascar|ufc|wwe|redzone|marquee|altitude|nesn|msg|sny|yes network|bally|fanduel|monumental|root sports|spectrum sports|space city|tsn|sportsnet|dazn)\b/i;
+  function isSports(name, group) { return SPORTY.test(name || '') || SPORTY.test(group || ''); }
+  function sportsOn(p) { var x = (p && p.pubEpg) || {}; return x.sports !== false; }
+  function sportsFiles() {
+    var test = typeof Store !== 'undefined' && Store.settings && Store.settings.pubEpgBase;
+    return SPORTS.map(function (s) { return { url: test ? String(test).replace(/\/?$/, '/') + s.id + '/' + s.file : s.url, cc: 'US', src: s.id, name: s.name, prefix: s.id + ':US/', sports: true }; });
+  }
+  // A sports network guide's id (the team guide only fills channels with none: a provider's own "Next game" listings read better).
+  function isSportsId(id) { var m = /^(\w+):/.exec(id || ''); return !!(m && SPORTS.some(function (s) { return s.id === m[1] && !s.fillOnly; })); }
+
   // The id the app's own guide uses for a channel's guide id, or ''.
   function appId(epg) {
     for (var i = 0; i < BY_ID.length; i++) { var m = BY_ID[i].re.exec(epg || ''); if (m && BY_ID[i].regions[m[1].toUpperCase()]) return m[2].toLowerCase(); }
@@ -141,8 +165,8 @@ var PubEpg = (function () {
     });
     return out;
   }
-  function sourceOf(id) { var m = /^(\w+):/.exec(id || ''); return m ? SOURCES.concat(BY_ID).filter(function (s) { return s.id === m[1]; })[0] || null : null; }
+  function sourceOf(id) { var m = /^(\w+):/.exec(id || ''); return m ? SOURCES.concat(BY_ID, SPORTS).filter(function (s) { return s.id === m[1]; })[0] || null : null; }
 
-  return { SOURCES: SOURCES, BY_ID: BY_ID, appId: appId, appFiles: appFiles, conf: conf, set: set, keys: keys, countriesFor: countriesFor, countryOf: countryOf, files: files, supported: supported, all: all, name: name, code: code, sourceOf: sourceOf };
+  return { SOURCES: SOURCES, BY_ID: BY_ID, SPORTS: SPORTS, isSports: isSports, sportsOn: sportsOn, sportsFiles: sportsFiles, isSportsId: isSportsId, appId: appId, appFiles: appFiles, conf: conf, set: set, keys: keys, countriesFor: countriesFor, countryOf: countryOf, files: files, supported: supported, all: all, name: name, code: code, sourceOf: sourceOf };
 })();
 if (typeof module !== 'undefined') module.exports = PubEpg;

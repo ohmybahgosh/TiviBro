@@ -376,7 +376,7 @@ var Settings = (function () {
     out.push(choice('Reload guide', '', REFRESH, REFRESH_L, function () { return +p.epgRefresh; }, function (v) { p.epgRefresh = v; persist(p); paint(); }));
     out.push(choice('Keep past days', 'For catch-up browsing.  More days use more TV memory.', [1, 2, 3, 5, 7], ['1 day', '2 days', '3 days', '5 days', '7 days'], function () { return +p.epgDays; }, function (v) { p.epgDays = v; persist(p, true); paint(); }));
     out.push(toggle('Match guide by channel name', 'Links channels that have no guide id to a guide channel with the same name.', function () { return p.nameMatch; }, function (v) { p.nameMatch = v; persist(p, true); paint(); }));
-    out.push(page('Public guide fill-in', 'Free guides (epg.pw, iptv-epg.org, and Pluto TV\'s own for Pluto channels), only for channels nothing else covers', 'Public guide fill-in', function () { return pubPage(p); }, function () { return PubEpg.conf(p).on ? 'On' : 'Off'; }));
+    out.push(page('Public guide fill-in', 'Free guides (epg.pw, iptv-epg.org, Pluto TV\'s own, and sports guides), for channels nothing else covers and longer sports listings', 'Public guide fill-in', function () { return pubPage(p); }, function () { return PubEpg.conf(p).on ? 'On' : 'Off'; }));
     if (inUse) {
       out.push(action('Reload guide now', L.multi ? 'Every playlist\'s guide loads again.' : '', function () { Epg.refresh(L, true); U.toast('Reloading guide'); live(); }));
       var st = active ? Epg.status : Epg.statusFor(p.id) || { at: 0, sources: [] };
@@ -416,6 +416,8 @@ var Settings = (function () {
       var auto = st && st.countries && st.countries.length && !cf.cc.length ? st.countries.map(PubEpg.name).join(', ') : '';
       out.push(action('Countries', cf.cc.length ? 'Your choice' : 'Automatic: the countries of the channels that need a guide' + (auto ? ' (' + auto + ')' : ''), function () { countryMenu(p); },
         function () { return cf.cc.length ? cf.cc.map(PubEpg.name).join(', ') : 'Automatic'; }));
+      out.push(toggle('Sports guides', 'US sports networks (Big Ten, SEC, ACC, ESPN, FS1, regional sports networks) and team channels, from EPGTalk and epgshare01.  They also stand in for a sports channel\'s own guide when theirs reaches further ahead.  Needs the helper.',
+        function () { return PubEpg.sportsOn(p); }, function (v) { apply({ sports: v }); }));
       if (active) {
         if (Epg.loading && (!st || !st.at)) out.push(info('Looking', 'after your own guide loads'));
         else if (st && st.none) out.push(info('Last look', st.none));
@@ -423,7 +425,7 @@ var Settings = (function () {
           out.push(info('Channels filled in', st.filled + ' of ' + st.asked + ' with no other guide'));
           out.push(info('Last looked', when(st.at) + (st.took ? ', took ' + Math.max(1, Math.round(st.took / 1000)) + ' s' : '')));
           (st.sources || []).forEach(function (r) { out.push(info(r.url, r.skipped ? 'not needed' : r.ok ? r.filled + ' channels' : 'failed: ' + r.error)); });
-          if (!Net.active) out.push(info('iptv-epg.org', 'needs Settings > Playback > Connection set to Automatic'));
+          if (!Net.active) out.push(info('iptv-epg.org and the sports guides', 'need Settings > Playback > Connection set to Automatic'));
         }
         out.push(action('Look again now', 'Downloads the public guides again.', function () { Epg.pubAgain(); U.toast('Looking in the public guides'); live(); }));
       }

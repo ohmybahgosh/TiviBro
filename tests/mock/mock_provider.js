@@ -232,6 +232,21 @@ function pubGuide(kind) {
   return o + progs + '</tv>\n';
 }
 
+/* ---------- sports guides (pubepg.js SPORTS), in EPGTalk's and epgshare01's styles ----------
+   Six days for two of the sports channels (the provider's guide has two), schedulesdirect-style ids and
+   "<name> HD" names; epgshare01 another channel for three days; the team guide one team. */
+function sportsGuide(kind) {
+  const H = 3600e3, t0 = Date.now() - Date.now() % H - 6 * H;
+  const chans = kind === 'epgtalkus' ? [['I610.58321.schedulesdirect.org', 'Summit Sports 1 HD', 6], ['I611.89535.schedulesdirect.org', 'Arena Live', 6], ['I1.news.schedulesdirect.org', 'Some Other Network', 6]]
+    : kind === 'epgshare' ? [['Fastbreak.TV.HD.us2', 'Fastbreak TV HD', 3]] : [['DetroitRedWings.nhl', 'NHL - Detroit Red Wings', 7]];
+  let o = '<?xml version="1.0" encoding="UTF-8"?>\n<tv generator-info-name="mock ' + kind + '">\n', progs = '';
+  chans.forEach(([id, name, days]) => {
+    o += `<channel id="${esc(id)}"><display-name>${esc(name)}</display-name></channel>\n`;
+    for (let h = 0; h < days * 24; h += 2) progs += `<programme start="${xd(t0 + h * H)}" stop="${xd(t0 + (h + 2) * H)}" channel="${esc(id)}"><title>${esc('Sports guide ' + kind + ' ' + h)}</title><desc>From the ${kind} sports guide.</desc><category lang="en">Sports</category></programme>\n`;
+  });
+  return o + progs + '</tv>\n';
+}
+
 /* ---------- server ---------- */
 function send(res, code, body, type) { res.writeHead(code, { 'Content-Type': type || 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }); res.end(typeof body === 'string' || Buffer.isBuffer(body) ? body : JSON.stringify(body)); }
 // MOCK_ONE_REQUEST=1: an account allowed one connection at a time.  A stream request while another
@@ -374,6 +389,10 @@ const server = http.createServer((req, res) => {
     const h = { 'Content-Type': gz ? 'application/gzip' : 'application/xml', 'Cache-Control': 'no-store' };
     if (m[1] === 'epgpw') h['Access-Control-Allow-Origin'] = '*';
     res.writeHead(200, h); return res.end(gz ? require('zlib').gzipSync(body) : body);
+  }
+  if ((m = /^\/pubepg\/(epgtalkus|epgshare|epgtalkteams)\/[\w.]+\.xml\.gz$/.exec(p))) {
+    // Like raw.githubusercontent.com and epgshare01: gzip files, no Content-Encoding.
+    res.writeHead(200, { 'Content-Type': 'application/octet-stream', 'Cache-Control': 'no-store' }); return res.end(require('zlib').gzipSync(sportsGuide(m[1])));
   }
   if ((m = /^\/logo\/(\d+)\.svg$/.exec(p))) { const s = streams.find(x => x.stream_id === +m[1]); return s ? send(res, 200, logo(s), 'image/svg+xml') : send(res, 404, ''); }
   if ((m = /^\/poster\/([ms])(\d+)\.svg$/.exec(p))) { const t = m[1] === 'm' ? (MOVIES[+m[2]] || [''])[0] : (SERIES[+m[2]] || [''])[0]; return send(res, 200, poster(t, +m[2] + (m[1] === 's' ? 5 : 0)), 'image/svg+xml'); }

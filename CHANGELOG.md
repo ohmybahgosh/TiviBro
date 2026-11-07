@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Sports guides.**  Settings > Guide > Public guide fill-in > **Sports guides** (on, with the helper): US sports networks (Big Ten, SEC, ACC, ESPN, FS1, NFL Network, regional sports networks) and team channels from EPGTalk and epgshare01, downloaded by the TV straight from them.  They fill sports channels with no guide, and stand in for a sports channel's own guide when theirs reaches further ahead: two days of Big Ten Network become as many as Guide days allows.  The helper reads the files as they come in and keeps only the channels it matched (a 132 MB guide took about 15 MB more memory for 5 seconds).
+- **Guide titles from community guides read cleanly:** emoji in front come off, "[NCAAF] College Football" reads "NCAAF: College Football", and "[NEW]" becomes the NEW mark.
 - **Merge groups.**  Several provider groups as one (four NHL groups as one NHL group): **Hold OK** on a group > **Merge groups into this…** on the TV, or **⋯ > Merge groups into this…** in the web editor and phone app.  Groups with a word in common are listed first.  New channels the provider adds to them come along, and **Split** undoes it.
 - **A group opens on the channel playing** (in the window or fullscreen) when it's in it, else at the top, no longer where you last were in that group.
 - **Into the guide's programmes at what's on now.**  Coming from the groups after a while, the focus could land on a programme that had ended, and Left went nowhere from it.

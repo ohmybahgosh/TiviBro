@@ -126,8 +126,12 @@ var Epg = (function () {
     // The public guide only stands in where your sources and the provider's have nothing (or nothing
     // from now on: a provider's Pluto TV entries can stop days early).
     if (pubMatched[ch.k] && !(id && live(id))) return pubMatched[ch.k];
+    // A sports guide (Settings > Guide > Sports guides) stands in for a sports channel's own guide when it
+    // reaches at least half a day further ahead: the provider's two days of Big Ten Network become six.
+    if (pubMatched[ch.k] && typeof PubEpg !== 'undefined' && PubEpg.isSportsId && PubEpg.isSportsId(pubMatched[ch.k]) && endOf(pubMatched[ch.k]) > endOf(id) + 12 * 3600e3) return pubMatched[ch.k];
     return id;
   }
+  function endOf(id) { var x = id && cache.get(id), l = x && x.list; return l && l.length ? l[l.length - 1].e : 0; }
   // Guide data for a channel lives under its XMLTV id when the XMLTV has it, otherwise under the channel key.
   function keyOf(ch) {
     if (xmlMode) { var id = epgId(ch); if (id && cache.has(id)) return id; }
@@ -425,13 +429,22 @@ var Epg = (function () {
      "Hawaiʻi" stay. */
   function tidyTitles(list) {
     var TAG = /\s*[\u02b0-\u02b8\u02e0-\u02e4\u1d00-\u1d22\u1d2c-\u1d6a\u1d9c-\u1dbf\u2070-\u209f\u0274\u0280\u029f]{2,}/g,
-      TAG_NEW = /[\u1d3a\u0274\u1d0e][\u1d49\u1d31\u1d07][\u02b7\u1d42\u1d21]/;
+      TAG_NEW = /[\u1d3a\u0274\u1d0e][\u1d49\u1d31\u1d07][\u02b7\u1d42\u1d21]/,
+      // Community guides (EPGTalk): emoji in front ("🏈🎓 [NCAAF] College Football"), a league in brackets,
+      // and "[NEW]" or "[LIVE]" at the end.
+      EMO = /(?:\ud83c[\udc00-\udfff]|\ud83d[\udc00-\udfff]|\ud83e[\udc00-\udfff]|[\u2600-\u27bf])\ufe0f?/g,
+      END = /\s*\[(new|live|premiere)\]\s*$/i, LEAD = /^\s*\[(?!(?:HD|SD|FHD|UHD|4K|CC|LIVE|NEW)\])([A-Z][A-Z0-9+&]{1,9})\]\s*/,
+      QUICK = /[\u02b0-\u02e4\u1d00-\u1dbf\u2070-\u209f\u0274\u0280\u029f\ud83c-\ud83e\u2600-\u27bf\[]/;
     for (var i = 0; i < list.length; i++) {
       var p = list[i], t = p.t;
-      if (!t || !TAG.test(t)) continue;
+      if (!t || !QUICK.test(t)) continue;
+      var c = t;
+      if (TAG.test(c)) { TAG.lastIndex = 0; if (TAG_NEW.test(c)) p.n = 1; c = c.replace(TAG, ''); }
       TAG.lastIndex = 0;
-      if (TAG_NEW.test(t)) p.n = 1;
-      var c = t.replace(TAG, '').replace(/\s{2,}/g, ' ').trim();
+      c = c.replace(EMO, ' ');
+      var e = END.exec(c); if (e) { if (/new|premiere/i.test(e[1])) p.n = 1; c = c.slice(0, e.index); }
+      c = c.replace(LEAD, function (a, x) { return x + ': '; });
+      c = c.replace(/\s{2,}/g, ' ').trim();
       p.t = c || t;
     }
   }
@@ -842,6 +855,21 @@ var Epg = (function () {
       return true;
     });
   }
+  /* Sports channels that have a guide of their own (missing() has the ones without), for the sports guides:
+     on with the helper, its playlist's Sports guides switch on, not pointed at a guide by hand, not an
+     event channel.  At most 2,000 (a big sports playlist: your groups first, as pubPick). */
+  function sportsChannels(miss) {
+    if (!Net.active || !PubEpg.isSports) return [];
+    var map = Store.edits.epgMap || {}, ev = typeof Events !== 'undefined', inMiss = {}, out = [], gs = {};
+    miss.forEach(function (ch) { inMiss[ch.k] = 1; });
+    Library.data.channels.forEach(function (ch) {
+      if (inMiss[ch.k] || (map[ch.k] && !PUB_ID.test(map[ch.k])) || Library.noGuide(ch)) return;
+      if (!PubEpg.sportsOn(ch.p ? PL(ch) : P()) || (ev && Events.of(ch))) return;
+      if (!(ch.g in gs)) gs[ch.g] = PubEpg.isSports('', Library.groupName(ch.g));       // once per group (big playlists)
+      if (gs[ch.g] || PubEpg.isSports(ch.n, '')) out.push(ch);
+    });
+    return out.length > 2000 ? pubPick(out).slice(0, 2000) : out;
+  }
   function ingestPub(c) {
     var t = Date.now();
     findMemo = {}; for (var k in c.map) cache.set(k, { at: t + 1e12, list: untangle(c.map[k]) });
@@ -880,9 +908,14 @@ var Epg = (function () {
     var ccs = PubEpg.countriesFor(p, miss, Library.data);
     var gz = !!Net.active || typeof DecompressionStream !== 'undefined';
     var apps = PubEpg.appFiles ? PubEpg.appFiles(miss, gz) : [];
-    var files = PubEpg.files(ccs, !!Net.active, gz).concat(apps);
+    // Sports guides: the sports channels too, guide or not, from the sports files first (helper only: the
+    // files are big, and only the helper reads them as they come in).
+    var sport = sportsChannels(miss), sfiles = sport.length >= 3 ? PubEpg.sportsFiles() : [];
+    if (!sfiles.length) sport = [];
+    var files = sfiles.concat(PubEpg.files(ccs, !!Net.active, gz), apps);
+    miss = miss.concat(sport);
     var want = Object.keys(map).map(function (k) { return map[k]; }).filter(function (v) { return PUB_ID.test(v); });
-    var ckey = 'epgpub:' + p.id, sig = U.hash(ccs.join() + '|' + p.epgDays + (apps.length ? '|' + apps.map(function (f) { return f.prefix; }).join() : ''));
+    var ckey = 'epgpub:' + p.id, sig = U.hash(ccs.join() + '|' + p.epgDays + (apps.length ? '|' + apps.map(function (f) { return f.prefix; }).join() : '') + (sfiles.length ? '|sports' : ''));
     return useHelper().then(function (h) {
       hMode = h;
       if (!h) return Store.idbGet(ckey);
