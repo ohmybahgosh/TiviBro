@@ -363,10 +363,13 @@ var UI = (function () {
   }
   setInterval(clock, 15000); clock();
 
-  var lastHints = [];
+  var lastHints = [], lastSig = '', lastFirst = null;
   function hints(list) {
+    // The guide asks on every move: the same hints again change nothing (no rebuilding, no measuring).
+    var sig = (typeof I18n !== 'undefined' ? I18n.lang() : '') + JSON.stringify(list), h = U.$('hints');
+    if (sig === lastSig && h.firstChild === lastFirst) return;           // (the side menu puts back what it covered)
+    lastSig = sig;
     lastHints = list;
-    var h = U.$('hints');
     h.innerHTML = '';
     list.forEach(function (x) {
       var s = U.el('span');
@@ -379,7 +382,16 @@ var UI = (function () {
       s.appendChild(document.createTextNode(tx));
       h.appendChild(s);
     });
-    fitHints(h);
+    lastFirst = h.firstChild;
+    fitSoon();
+  }
+  /* Measured once the key's work is done, just before the screen is drawn (a frame), not in the middle of it:
+     measuring there makes the TV lay out the whole page twice per key. */
+  var fitting = 0;
+  function fitSoon() {
+    if (fitting) return;
+    var go = function () { fitting = 0; var h = U.$('hints'); if (h && lastHints.length) fitHints(h); };
+    fitting = typeof requestAnimationFrame !== 'undefined' ? requestAnimationFrame(go) : setTimeout(go, 16);
   }
   /* Longer languages: hints that don't fit in one line close up and get a little smaller, then the last
      ones go, rather than run off the screen. */
@@ -391,7 +403,7 @@ var UI = (function () {
     for (var i = h.children.length - 1; i > 0 && h.scrollWidth > h.clientWidth + 1; i--) h.children[i].style.display = 'none';
   }
   // The room for them changes with the menu (open, hidden in the guide grid): fit them again then.
-  if (typeof MutationObserver !== 'undefined') new MutationObserver(function () { var h = U.$('hints'); if (h && lastHints.length) fitHints(h); }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  if (typeof MutationObserver !== 'undefined') new MutationObserver(function () { if (lastHints.length) fitSoon(); }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
   /* Scrolling a line that doesn't fit (discussion #36): el moves left by `over` px, waits, comes back, again.
      Text in Japanese, Chinese or Korean steps a few characters at a time, which reads better than a glide.
