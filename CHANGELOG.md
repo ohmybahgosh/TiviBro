@@ -1,9 +1,5 @@
 # Changelog
 
-## Unreleased
-
-- **Settings > Guide says how sources and your provider's guide share the work.**  Its "How your guide is built" list still said your own guide sources win over the provider's, which alpha 104 changed: they fill the channels your provider's guide leaves empty, and take over one it has only where their programmes agree.  The user guide says the same now.
-
 ## 0.6.0 (alpha 106, 2026-11-08)
 
 Pre-release: expect rough edges, and keep a backup before installing.
@@ -20,6 +16,7 @@ Pre-release: expect rough edges, and keep a backup before installing.
 - **The helper does less work per channel**: HLS segments pass straight through, and live MPEG-TS no longer copies every chunk it realigns.
 - **One reminder per game.**  A team's game listed twice at the same time (the team's own channel and the local station's "Live: NFL Football") set two reminders; now it's one, the listing that names the game.  Reminders already set twice are tidied up.
 - **The phone app opens TiviBro on the TV again for changes, as before alpha 105.**  Keeping TiviBro closed while you changed a setting or a channel from the phone can't work yet: pressing Home leaves TiviBro paused by the TV, and a paused TiviBro can't take the change.  Back for now, until it can be done properly.  And with TiviBro in the background (after Home), the phone now brings it back instead of waiting for ever ("Starting the editor on the TV…").
+- **Settings > Guide says how sources and your provider's guide share the work.**  Its "How your guide is built" list still said your own guide sources win over the provider's, which alpha 104 changed: they fill the channels your provider's guide leaves empty, and take over one it has only where their programmes agree.  The user guide says the same now.
 
 ### In alpha 105
 
