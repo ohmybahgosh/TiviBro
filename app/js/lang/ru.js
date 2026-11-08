@@ -9,7 +9,7 @@ I18n.add('ru', {
   "MY MEDIA": "МОИ МЕДИА", "Buffering": "Загрузка", "Buffer": "Буфер",
   "OK on a channel plays it here.": "OK на канале включает его здесь.", "OK again for fullscreen.": "Ещё раз OK: на весь экран.",
   // TiviBro's own groups
-  "All channels": "Все каналы", "Recent": "Недавние", "Recently added": "Недавно добавленные", "Events by time": "События",
+  "All channels": "Все каналы", "Recent": "Недавние", "Recently added": "Новые каналы", "Events by time": "События",
   "My teams": "Мои команды", "Favorites": "Избранное", "Favorite": "Избранное",
   // Days and times
   "Today": "Сегодня", "Tomorrow": "Завтра", "Yesterday": "Вчера", "Now": "Сейчас", "Next": "Далее", "Later": "Позже",
@@ -1003,5 +1003,6 @@ I18n.add('ru', {
   "none yet": "пока нет", "Before the set-up tour": "До мастера настройки", "Before changes sent from the computer": "До изменений с компьютера",
   "{x}   saved by itself": "{x}   сохранено автоматически", "Before restoring \"{x}\"": "До восстановления «{x}»", "Not checked yet": "Ещё не проверялось",
   "Yes, through the Homebrew Channel": "Да, через Homebrew Channel", "Off.  It also switches off whenever TiviBro closes.": "Выкл.  Также выключается при закрытии TiviBro.",
-  "running on port {n}": "работает на порту {n}"
+  "running on port {n}": "работает на порту {n}",
+  "Rename, move, empty or delete them.": "Переименуйте, переместите, очистите или удалите их.", "Hidden": "Скрытое", "Restore them one by one, or all at once.": "Верните их по одному или все сразу.", "None hidden.": "Ничего не скрыто.", "Tidy up": "Навести порядок", "East or West feeds": "Восток или Запад", "Hide the groups of countries you never watch.": "Скройте группы стран, которые вы не смотрите.", "Channels that come twice, on East and West time: keep the one you watch.": "Каналы, которые идут дважды, по времени Востока и Запада: оставьте тот, что смотрите.", "Keep your city's stations, together in one Local channels group.": "Оставьте станции своего города, вместе в группе «Местные каналы».", "Divider and empty groups, extra copies of the same channel, groups with words you pick.": "Группы-разделители и пустые группы, лишние копии одного канала, группы с выбранными словами.", "Words, groups and channels in the filter": "Слова, группы и каналы в фильтре", "Select one to stop hiding it.": "Выберите, чтобы больше не скрывать.", "In the filter": "В фильтре", "Nothing in the filter": "В фильтре ничего нет", "Blocked groups and channels": "Заблокированные группы и каналы", "Select one to unblock it.": "Выберите, чтобы разблокировать.", "Blocked": "Заблокировано", "Again": "Ещё раз", "This playlist has channels from one country only.": "В этом плейлисте каналы только одной страны.", "No channel in this playlist comes in both an East and a West feed.": "Ни один канал этого плейлиста не идёт сразу в версии для Востока и для Запада.", "This playlist has no local stations for more than one city.": "В этом плейлисте нет местных станций больше чем одного города.", "Nothing to do here for this playlist.": "Для этого плейлиста здесь нечего делать."
 });

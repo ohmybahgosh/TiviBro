@@ -8,7 +8,7 @@ I18n.add('es', {
   "MY MEDIA": "MIS MEDIOS", "Buffering": "Cargando", "Buffer": "Búfer",
   "OK on a channel plays it here.": "OK en un canal lo reproduce aquí.", "OK again for fullscreen.": "OK otra vez para pantalla completa.",
   // TiviBro's own groups
-  "All channels": "Todos los canales", "Recent": "Recientes", "Recently added": "Añadidos recientemente", "Events by time": "Eventos por hora",
+  "All channels": "Todos los canales", "Recent": "Recientes", "Recently added": "Recién añadidos", "Events by time": "Eventos por hora",
   "My teams": "Mis equipos", "Favorites": "Favoritos", "Favorite": "Favorito",
   // Days and times
   "Today": "Hoy", "Tomorrow": "Mañana", "Yesterday": "Ayer", "Now": "Ahora", "Next": "Siguiente", "Later": "Más tarde",
@@ -991,5 +991,6 @@ I18n.add('es', {
   "none yet": "ninguno todavía", "Before the set-up tour": "Antes del recorrido de configuración", "Before changes sent from the computer": "Antes de los cambios enviados desde la computadora",
   "{x}   saved by itself": "{x}   guardado automáticamente", "Before restoring \"{x}\"": "Antes de restaurar «{x}»", "Not checked yet": "Aún sin comprobar",
   "Yes, through the Homebrew Channel": "Sí, mediante Homebrew Channel", "Off.  It also switches off whenever TiviBro closes.": "No.  También se desactiva cuando TiviBro se cierra.",
-  "running on port {n}": "en marcha en el puerto {n}"
+  "running on port {n}": "en marcha en el puerto {n}",
+  "Rename, move, empty or delete them.": "Renómbralos, muévelos, vacíalos o elimínalos.", "Hidden": "Ocultos", "Restore them one by one, or all at once.": "Recupéralos uno a uno, o todos a la vez.", "None hidden.": "Nada oculto.", "Tidy up": "Ordenar", "East or West feeds": "Señales Este u Oeste", "Hide the groups of countries you never watch.": "Oculta los grupos de los países que nunca ves.", "Channels that come twice, on East and West time: keep the one you watch.": "Canales que llegan dos veces, con horario del Este y del Oeste: quédate con el que ves.", "Keep your city's stations, together in one Local channels group.": "Quédate con las emisoras de tu ciudad, juntas en un grupo Canales locales.", "Divider and empty groups, extra copies of the same channel, groups with words you pick.": "Grupos separadores y vacíos, copias de un mismo canal, grupos con las palabras que elijas.", "Words, groups and channels in the filter": "Palabras, grupos y canales del filtro", "Select one to stop hiding it.": "Elige uno para dejar de ocultarlo.", "In the filter": "En el filtro", "Nothing in the filter": "Nada en el filtro", "Blocked groups and channels": "Grupos y canales bloqueados", "Select one to unblock it.": "Elige uno para desbloquearlo.", "Blocked": "Bloqueados", "Again": "Otra vez", "This playlist has channels from one country only.": "Esta lista solo tiene canales de un país.", "No channel in this playlist comes in both an East and a West feed.": "Ningún canal de esta lista llega con señal del Este y del Oeste.", "This playlist has no local stations for more than one city.": "Esta lista no tiene emisoras locales de más de una ciudad.", "Nothing to do here for this playlist.": "Nada que hacer aquí con esta lista."
 });

@@ -777,8 +777,9 @@ Which groups show, in what order, the special groups (Recent, Favorites, My team
 | **All channels includes hidden groups** | On · **Off** | Channels from groups you hid still appear in All channels. |
 | **Reset watch time** | | Clears the statistics behind *Most watched*. |
 | **New group…** | | Under **Your groups**.  Creates one of your own groups.  Then **Hold OK** on any channel and choose **Copy to group…**. |
-| *(each of your groups)* | | **OK** for Rename, Move up, Move down, Empty this group and Delete group (Favorites can't be renamed or deleted). |
-| **Hidden groups**, **Hidden channels** | | Everything you hid, with **Restore** on each and **Restore all groups** / **Restore all channels**. |
+| **Your groups ›** | | A page with each of your groups: **OK** for Rename, Move up, Move down, Empty this group and Delete group (Favorites can't be renamed or deleted). |
+| **Hidden groups ›**, **Hidden channels ›** | | Pages with everything you hid, **Restore** on each and **Restore all groups** / **Restore all channels**.  Pages of their own, so a long list doesn't make this page (or the phone app's) hard to scroll past. |
+| **Keep the countries you watch**, **East or West feeds**, **Your local channels**, **Clear the clutter** | | Under **Tidy up**: the set-up tour's clean-up steps, one at a time, whenever you like.  Each opens that step and its summary, and **Apply** hides only what that step says (after a restore point).  A step this playlist has nothing for says so.  In the phone app each is a page. |
 | **Clear all edits for this playlist** | | Under **Reset**.  Removes your groups, renames, guide assignments and hidden items for this playlist.  It asks first.  The web editor's **Backups and restore points > Start over** does the same, can be undone, and waits for **Send to TV**. |
 
 **Event channels.**  For pay-per-view, league passes and one-off games whose name carries the matchup, date and time (see [Event channels](#event-channels-pay-per-view-and-sports-passes)).  The same page is on each playlist's page under [Playlists](#settings-playlists).
@@ -1029,7 +1030,7 @@ A content filter that needs no PIN, and a 4-digit PIN for blocked channels and g
 | **PIN required for** | **Blocked channels** · Settings · Both | What the PIN guards. |
 | **Stay unlocked until the app restarts** | **On** · Off | On: after the PIN once, it isn't asked again until TiviBro restarts.  Off: asked every time. |
 | **Lock now** | | Locks again straight away. |
-| **Blocked in this playlist** | | Every blocked group and channel.  **OK** unblocks one. |
+| **Blocked in this playlist** | | Every blocked group and channel.  **OK** unblocks one.  More than three: a page of their own, **Blocked groups and channels ›**. |
 | **Remove PIN** | | Turns parental controls off (asks for the PIN). |
 
 Five wrong PINs in a row lock the PIN for 30 seconds.

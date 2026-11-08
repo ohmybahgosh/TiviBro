@@ -645,7 +645,26 @@ var Settings = (function () {
     out.push(choice('Groups your provider adds later', 'Hide keeps a tidy list tidy after "Hide all groups".', ['show', 'hide'], ['Show them', 'Hide them'], function () { return s.newGroups === 'hide' ? 'hide' : 'show'; }, function (v) { s.newGroups = v; save(); }));
     out.push(toggle('All channels includes hidden groups', 'Channels from groups you hid still appear in All channels.', function () { return !!s.allHidden; }, function (v) { s.allHidden = v; apply(); }));
     out.push(action('Reset watch time', 'Clears the "Most watched" statistics.', function () { UI.confirm('Reset watch time for every channel?', 'Reset', function () { Store.edits.watch = {}; Store.saveEdits(); relist(); U.toast('Watch time reset'); }); }));
+    // Lists that can run to hundreds of rows (your groups, what's hidden) are pages of their own, so this
+    // page stays short enough to scroll past them, on the TV and in the phone app.
     out.push(head('Your groups'));
+    out.push(action('New group…', 'Then hold OK on any channel and choose Copy to group.', function () {
+      UI.prompt('Name the new group', '', function (n) { if (n.trim()) { L.createGroup(n); relist(); build(); } });
+    }));
+    out.push(page('Your groups', 'Rename, move, empty or delete them.', 'Your groups', yourGroups, function () { return L.customGroups().length + ' ›'; }));
+    out.push(head('Hidden'));
+    out.push(page('Hidden groups', hid.groups.length ? 'Restore them one by one, or all at once.' : 'None hidden.', 'Hidden groups', hiddenGroupsPage, function () { return L.hiddenItems().groups.length + ' ›'; }));
+    out.push(page('Hidden channels', hid.channels.length ? 'Restore them one by one, or all at once.' : 'None hidden.', 'Hidden channels', hiddenChannelsPage, function () { return L.hiddenItems().channels.length + ' ›'; }));
+    tidyRows(out);
+    out.push(head('Reset'));
+    out.push(action('Clear all edits for this playlist', 'Removes your groups, renames, guide assignments and hidden items.', function () {
+      UI.confirm('Clear every group, rename and hidden item for this playlist?', 'Clear all edits', function () { Store.resetEdits(); relist(); build(); });
+    }));
+    return out;
+  }
+
+  function yourGroups() {
+    var out = [];
     out.push(action('New group…', 'Then hold OK on any channel and choose Copy to group.', function () {
       UI.prompt('Name the new group', '', function (n) { if (n.trim()) { L.createGroup(n); relist(); build(); } });
     }));
@@ -660,23 +679,38 @@ var Settings = (function () {
         ]);
       }, function () { return Store.edits.hiddenGroups[g.id] ? 'hidden' : ''; }));
     });
-    out.push(head('Hidden groups'));
-    if (!hid.groups.length) out.push(info('No hidden groups', ''));
-    else {
-      out.push(action('Restore all groups', hid.groups.length + ' hidden', function () { hid.groups.forEach(function (g) { L.hideGroup(g.id, false); }); relist(); build(); }));
-      hid.groups.forEach(function (g) { out.push(action(I18n.raw(g.name), '', function () { L.hideGroup(g.id, false); U.toast(g.name + ' restored'); relist(); build(); }, function () { return 'Restore'; })); });
-    }
-    out.push(head('Hidden channels'));
-    if (!hid.channels.length) out.push(info('No hidden channels', ''));
-    else {
-      out.push(action('Restore all channels', hid.channels.length + ' hidden', function () { hid.channels.forEach(function (c) { L.hideChannel(c.k, false); }); relist(); build(); }));
-      hid.channels.forEach(function (c) { out.push(action(I18n.raw(L.name(c)), I18n.raw(L.groupName(c.g)), function () { L.hideChannel(c.k, false); U.toast(L.name(c) + ' restored'); relist(); build(); }, function () { return 'Restore'; })); });
-    }
-    out.push(head('Reset'));
-    out.push(action('Clear all edits for this playlist', 'Removes your groups, renames, guide assignments and hidden items.', function () {
-      UI.confirm('Clear every group, rename and hidden item for this playlist?', 'Clear all edits', function () { Store.resetEdits(); relist(); build(); });
-    }));
     return out;
+  }
+  function hiddenGroupsPage() {
+    var out = [], hid = L.hiddenItems();
+    if (!hid.groups.length) return [info('No hidden groups', '')];
+    out.push(action('Restore all groups', hid.groups.length + ' hidden', function () { hid.groups.forEach(function (g) { L.hideGroup(g.id, false); }); relist(); build(); }));
+    out.push(head(''));
+    hid.groups.forEach(function (g) { out.push(action(I18n.raw(g.name), '', function () { L.hideGroup(g.id, false); U.toast(g.name + ' restored'); relist(); build(); }, function () { return 'Restore'; })); });
+    return out;
+  }
+  function hiddenChannelsPage() {
+    var out = [], hid = L.hiddenItems();
+    if (!hid.channels.length) return [info('No hidden channels', '')];
+    out.push(action('Restore all channels', hid.channels.length + ' hidden', function () { hid.channels.forEach(function (c) { L.hideChannel(c.k, false); }); relist(); build(); }));
+    out.push(head(''));
+    hid.channels.forEach(function (c) { out.push(action(I18n.raw(L.name(c)), I18n.raw(L.groupName(c.g)), function () { L.hideChannel(c.k, false); U.toast(L.name(c) + ' restored'); relist(); build(); }, function () { return 'Restore'; })); });
+    return out;
+  }
+  /* The set-up tour's clean-up steps, one at a time, any time (they were only in the tour): each opens that
+     step and its summary, and Apply hides only what that step says.  On the phone each is a page. */
+  var TIDY = [['countries', 'Keep the countries you watch', 'Hide the groups of countries you never watch.'],
+    ['feeds', 'East or West feeds', 'Channels that come twice, on East and West time: keep the one you watch.'],
+    ['locals', 'Your local channels', 'Keep your city\'s stations, together in one Local channels group.'],
+    ['clutter', 'Clear the clutter', 'Divider and empty groups, extra copies of the same channel, groups with words you pick.']];
+  function tidyRows(out) {
+    var p = Store.playlist;
+    out.push(head('Tidy up'));
+    TIDY.forEach(function (t) {
+      var it = action(t[1], t[2], function () { Tour.open({ from: 'settings', pl: p.id, only: t[0] }); }, function () { return '›'; });
+      it.phonePage = { title: t[1], fn: function () { return Tour.phoneRows(p.id, t[0]); } };
+      out.push(it);
+    });
   }
 
   /* ---------- My teams (app/js/teams.js) ---------- */
@@ -915,9 +949,15 @@ var Settings = (function () {
       UI.prompt('Hide channels and groups with this word', '', function (w) { if (!w.trim()) return; Filter.addWord(w); Views.filterChanged(); build(); U.toast(Filter.last.channels + ' channels and ' + Filter.last.groups + ' groups left out now', 5000); },
         'A word, a call sign or a few words together.  Upper or lower case doesn\'t matter.');
     }, function () { return '›'; }));
-    (f.words || []).forEach(function (w) { out.push(action('Word: ' + w, 'Select to stop hiding it', function () { Filter.remove('words', w); Views.filterChanged(); build(); }, function () { return 'Remove'; })); });
-    (f.groups || []).forEach(function (n) { out.push(action('Group: ' + n, 'Hidden with the filter.  Select to bring it back', function () { Filter.remove('groups', n); Views.filterChanged(); build(); }, function () { return 'Remove'; })); });
-    (f.chans || []).forEach(function (n) { out.push(action('Channel: ' + n, 'Hidden with the filter.  Select to bring it back', function () { Filter.remove('chans', n); Views.filterChanged(); build(); }, function () { return 'Remove'; })); });
+    // What the filter hides by name: a page of its own when there's more than a few (it can be a long list).
+    var fl = function () { var g = Filter.conf(), o = [];
+      (g.words || []).forEach(function (w) { o.push(action('Word: ' + w, 'Select to stop hiding it', function () { Filter.remove('words', w); Views.filterChanged(); build(); }, function () { return 'Remove'; })); });
+      (g.groups || []).forEach(function (n) { o.push(action('Group: ' + n, 'Hidden with the filter.  Select to bring it back', function () { Filter.remove('groups', n); Views.filterChanged(); build(); }, function () { return 'Remove'; })); });
+      (g.chans || []).forEach(function (n) { o.push(action('Channel: ' + n, 'Hidden with the filter.  Select to bring it back', function () { Filter.remove('chans', n); Views.filterChanged(); build(); }, function () { return 'Remove'; })); });
+      return o; };
+    var nf = (f.words || []).length + (f.groups || []).length + (f.chans || []).length;
+    if (nf > 3) out.push(page('Words, groups and channels in the filter', 'Select one to stop hiding it.', 'In the filter', function () { var o = fl(); return o.length ? o : [info('Nothing in the filter', '')]; }, function () { var g = Filter.conf(); return ((g.words || []).length + (g.groups || []).length + (g.chans || []).length) + ' ›'; }));
+    else fl().forEach(function (x) { out.push(x); });
     var l = Filter.last;
     out.push(info('Left out of this playlist', Filter.active() ? l.channels.toLocaleString() + ' channels, ' + l.groups.toLocaleString() + ' groups' : 'nothing, the filter is off'));
     out.push(info('Hide a channel or group while watching', 'Its options (Red, or hold OK) > Hide with the content filter'));
@@ -933,10 +973,14 @@ var Settings = (function () {
     out.push(action('Lock now', '', function () { Parental.lock(); relist(); U.toast('Locked'); }));
     var e = Store.edits;
     out.push(head('Blocked in this playlist'));
-    var any = false;
-    Object.keys(e.blockedGroups).forEach(function (id) { any = true; out.push(action(I18n.raw(L.groupName(id) || id), 'group', function () { L.block('group', id, false); relist(); build(); }, function () { return 'Unblock'; })); });
-    Object.keys(e.blockedChannels).forEach(function (k) { var c = L.find(k); if (!c) return; any = true; out.push(action(I18n.raw(L.name(c)), 'channel', function () { L.block('channel', k, false); relist(); build(); }, function () { return 'Unblock'; })); });
-    if (!any) out.push(info('Nothing blocked yet', ''));
+    var blocked = function () { var o = [];
+      Object.keys(e.blockedGroups).forEach(function (id) { o.push(action(I18n.raw(L.groupName(id) || id), 'group', function () { L.block('group', id, false); relist(); build(); }, function () { return 'Unblock'; })); });
+      Object.keys(e.blockedChannels).forEach(function (k) { var c = L.find(k); if (!c) return; o.push(action(I18n.raw(L.name(c)), 'channel', function () { L.block('channel', k, false); relist(); build(); }, function () { return 'Unblock'; })); });
+      return o; };
+    var bl = blocked();
+    if (!bl.length) out.push(info('Nothing blocked yet', ''));
+    else if (bl.length > 3) out.push(page('Blocked groups and channels', 'Select one to unblock it.', 'Blocked', function () { var o = blocked(); return o.length ? o : [info('Nothing blocked yet', '')]; }, function () { return blocked().length + ' ›'; }));
+    else bl.forEach(function (x) { out.push(x); });
     out.push(head(''));
     out.push(action('Remove PIN', 'Turns parental controls off.', function () { Parental.remove(build); }));
     return out;
