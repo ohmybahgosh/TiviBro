@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 107, 2026-11-08)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 107
 
 - **Small TVs hold less video from the start.**  LG's HD and Full HD sets (like the 32LM6300) have about 1 GB of memory, but on webOS 4 and older the TV doesn't say so, so TiviBro only went memory-safe after one closed it while playing (issue #64).  Now it knows them by their model name.
 - **When the provider's per-channel guide keeps failing, TiviBro stops asking for a while** instead of trying every channel in view: a panel answering "502" for every channel meant about a hundred failed requests in seconds, on a TV already struggling, and a log full of them (issue #64).  It asks again after 2 minutes, then less often while it still fails.
 - **The phone app's Audio converter row shows its state** instead of "checking…" for good, and no longer offers **Get the converter now** on TVs where it comes with TiviBro (pressing it said "That can't be changed that way").  A row that changed on the TV meanwhile now just shows the page as it is.
 - The network helper no longer stops when a request arrives while it is restarting ("Cannot read property 'port' of null").
 
-## 0.6.0 (alpha 106, 2026-11-08)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 106
+### In alpha 106
 
 - **Steadier live TV, like TiviMate underneath.**  When your provider's connection drops, stalls or hangs up mid-programme, the network helper now connects again by itself and carries on into the same stream from the next whole picture, so a short drop shows as a short pause (or nothing, with a few seconds buffered) instead of a black screen and a restart that threw away everything buffered.  On a test stream cut every half minute, the picture moved 97% of the time instead of 92%, with no restarts at all.  If the provider restarted the channel meanwhile (its clock went back), or the trouble goes on for a minute, the player starts it afresh as before.
 - **The guide no longer downloads the public guides at every start.**  Which countries' guides it needs depends on the channels your provider's guide leaves empty, which shifted a little from one start to the next (more when your provider's guide failed to load once), and every shift meant reading them all again: about 100 MB and a minute of the TV's time.  Now it reads them again only when one it needs is missing, twice a day at most, or when you ask.
