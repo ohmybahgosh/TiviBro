@@ -1,12 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **A stream format for one channel.**  Hold OK on a channel (or Options while it plays) > **Stream format…**: Automatic, HLS or MPEG-TS for that channel, whatever Settings > Playback > Stream format says.  Handy for the one channel that stutters as MPEG-TS, or won't start as HLS.  The channel playing starts again in the new format; Settings > Playback lists the channels that have their own and clears them.  Xtream Codes channels.
+
 ## 0.6.0 (alpha 102, 2026-11-07)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
 ### New in alpha 102
 
-- **A stream format for one channel.**  Hold OK on a channel (or Options while it plays) > **Stream format…**: Automatic, HLS or MPEG-TS for that channel, whatever Settings > Playback > Stream format says.  Handy for the one channel that stutters as MPEG-TS, or won't start as HLS.  The channel playing starts again in the new format; Settings > Playback lists the channels that have their own and clears them.  Xtream Codes channels.
 - **Names stay as they are in every language:** a group called "Sports", a channel called "News" or a show called "Today" is never translated, in menus, Settings or the set-up tour.  Dates follow the language chosen in Settings > Language, not just the TV's.
 - **Spanish and Russian almost complete.**  Settings with their explanations, the set-up tour, menus, the guide's details and badges, the fullscreen info panel, the button legends, subtitles, My media and movies and shows: about 95% of TiviBro's text.  What's left is mostly text put together on the fly, and it comes in later builds.
 - **Fixes for longer languages, and a few for English too.**  The hints along the bottom close up and drop the last ones rather than run off the screen; long section names in Settings were shortened in Spanish and Russian so they show whole; the side menu's labels fit; a group name no longer peeks out from under the open side menu; and a fact in Settings that's too long for one line (a folder, a command) wraps instead of being cut off.
