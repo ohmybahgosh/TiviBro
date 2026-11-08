@@ -243,12 +243,17 @@ function pubGuide(kind) {
    "<name> HD" names; epgshare01 another channel for three days; the team guide one team. */
 function sportsGuide(kind) {
   const H = 3600e3, t0 = Date.now() - Date.now() % H - 6 * H;
-  const chans = kind === 'epgtalkus' ? [['I610.58321.schedulesdirect.org', 'Summit Sports 1 HD', 6], ['I611.89535.schedulesdirect.org', 'Arena Live', 6], ['I1.news.schedulesdirect.org', 'Some Other Network', 6]]
-    : kind === 'epgshare' ? [['Fastbreak.TV.HD.us2', 'Fastbreak TV HD', 3]] : [['DetroitRedWings.nhl', 'NHL - Detroit Red Wings', 7]];
+  // [id, name, days, the mock channel whose schedule it agrees with (the provider's programmes, then more)]
+  const chans = kind === 'epgtalkus' ? [['I610.58321.schedulesdirect.org', 'Summit Sports 1 HD', 6, 'Summit Sports 1'], ['I611.89535.schedulesdirect.org', 'Arena Live', 6, 'Arena Live'], ['I1.news.schedulesdirect.org', 'Some Other Network', 6],
+    ['I612.40001.schedulesdirect.org', 'Goal Line HD', 6]]                      // six days, but another channel's programmes
+    : kind === 'epgshare' ? [['Fastbreak.TV.HD.us2', 'Fastbreak TV HD', 3, 'Fastbreak TV']] : [['DetroitRedWings.nhl', 'NHL - Detroit Red Wings', 7]];
   let o = '<?xml version="1.0" encoding="UTF-8"?>\n<tv generator-info-name="mock ' + kind + '">\n', progs = '';
-  chans.forEach(([id, name, days]) => {
+  chans.forEach(([id, name, days, same]) => {
     o += `<channel id="${esc(id)}"><display-name>${esc(name)}</display-name></channel>\n`;
-    for (let h = 0; h < days * 24; h += 2) progs += `<programme start="${xd(t0 + h * H)}" stop="${xd(t0 + (h + 2) * H)}" channel="${esc(id)}"><title>${esc('Sports guide ' + kind + ' ' + h)}</title><desc>From the ${kind} sports guide.</desc><category lang="en">Sports</category></programme>\n`;
+    const st = same && streams.find((x) => x.base === same), mine = st && sched.get(st.stream_id);
+    let from = t0;
+    if (mine) mine.forEach((p) => { if (p.e > t0) { progs += `<programme start="${xd(p.s)}" stop="${xd(p.e)}" channel="${esc(id)}"><title>${esc(p.t)}</title><desc>From the ${kind} sports guide.</desc><category lang="en">Sports</category></programme>\n`; from = p.e; } });
+    for (let h = 0; t0 + h * H < t0 + days * 24 * H; h += 2) if (t0 + h * H >= from) progs += `<programme start="${xd(t0 + h * H)}" stop="${xd(t0 + (h + 2) * H)}" channel="${esc(id)}"><title>${esc('Sports guide ' + kind + ' ' + h)}</title><desc>From the ${kind} sports guide.</desc><category lang="en">Sports</category></programme>\n`;
   });
   return o + progs + '</tv>\n';
 }
@@ -321,6 +326,20 @@ const server = http.createServer((req, res) => {
   // A big guide, streamed as it is made (tests/soak/guide-big.js): ?ch=N channels big.0 to big.N-1
   // (the MOCK_BIG playlist's ids), ?days=D of half-hour programmes from 6 hours ago, ?desc=L characters
   // of description.  ?ch=4000&days=3&desc=400 is about 300 MB of XML.
+  // An extra guide for two channels the provider's guide has (tests/soak/guide-priority.js): the first agrees
+  // with the provider's programmes and goes three days further; the second has five days of other ones.
+  if (p === '/agreeguide.xml') {
+    const seenId = {}, two = streams.filter((s) => s.epg_channel_id && sched.has(s.stream_id) && !/^big\./.test(s.epg_channel_id) && !seenId[s.epg_channel_id] && (seenId[s.epg_channel_id] = 1)).slice(0, 2), H = 3600e3;
+    let o = '<?xml version="1.0" encoding="UTF-8"?>\n<tv generator-info-name="TiviBro agree mock">\n', progs = '';
+    two.forEach((s, k) => {
+      o += `<channel id="${esc(s.epg_channel_id)}"><display-name>${esc(s.base)}</display-name></channel>\n`;
+      const mine = sched.get(s.stream_id), t0 = Date.now() - Date.now() % H - 6 * H;
+      let t = k ? t0 : mine[mine.length - 1].e;
+      if (!k) mine.forEach((x) => progs += `<programme start="${xd(x.s)}" stop="${xd(x.e)}" channel="${esc(s.epg_channel_id)}"><title>${esc(x.t)}</title></programme>\n`);
+      for (let i = 0; t < Date.now() + 5 * 86400e3; i++, t += H) progs += `<programme start="${xd(t)}" stop="${xd(t + H)}" channel="${esc(s.epg_channel_id)}"><title>${esc((k ? 'Wrong show ' : 'Extra show ') + i)}</title></programme>\n`;
+    });
+    return send(res, 200, o + progs + '</tv>\n', 'application/xml');
+  }
   if (p === '/bigguide.xml') {
     const q = new URL(req.url, 'http://x').searchParams, nCh = +q.get('ch') || 1000, days = +q.get('days') || 2, dl = +q.get('desc') || 300;
     const H = 3600e3, t0 = Date.now() - Date.now() % H - 6 * H, per = Math.round(days * 48), filler = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. '.repeat(Math.ceil(dl / 57)).slice(0, dl);

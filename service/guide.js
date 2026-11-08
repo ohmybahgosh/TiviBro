@@ -165,6 +165,27 @@ function start(body, log) {
   var keys = PubEpg ? PubEpg.keys : function () { return { keys: [], country: '' }; };
 
   function slot(id) { var i = idx[id]; if (i === undefined) { i = idx[id] = ids.length; ids.push(id); count.push(0); firstSrc.push(-1); } return i; }
+  /* The provider's guide comes first (as in the worker).  A channel it has is taken over by a later source
+     only when that source's programmes agree with it (PubEpg.alike): rows from every source are written with
+     their source's number, a few hours of each are kept here (look), and build() keeps one source's rows
+     per channel (winner). */
+  var winner = {}, look = {}, LOOK_FROM = Date.now() - 3 * 3600e3, LOOK_TO = Date.now() + 26 * 3600e3;
+  function keepLook(ix, si, s, e, t) {
+    if (e <= LOOK_FROM || s >= LOOK_TO) return;
+    var l = look[ix] || (look[ix] = {}), a = l[si] || (l[si] = []);
+    if (a.length < 80) a.push({ s: s, e: e, t: t.slice(0, 80) });
+  }
+  function judge(si) {
+    var over = 0, kept = 0;
+    for (var ix in look) {
+      var l = look[ix];
+      if (!l[si] || +firstSrc[ix] === si) continue;
+      if (winner[ix] === undefined && srcs[firstSrc[ix]] && srcs[firstSrc[ix]].provider && PubEpg && PubEpg.alike && PubEpg.alike(l[firstSrc[ix]] || [], l[si], Date.now())) { winner[ix] = si; over++; }
+      else kept++;
+      delete l[si];
+    }
+    return { over: over, kept: kept };
+  }
 
   function one(src, si, next) {
     var got = {}, buf = '', n = 0, inFile = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {};
@@ -213,16 +234,21 @@ function start(body, log) {
         var ch = /channel="([^"]*)"/.exec(a); ch = ch && unesc(ch[1]);
         if (!ch) continue;
         if (P) { if (!wantP[ch]) continue; ch = P.prefix + ch; } else if (!want[ch]) continue;
-        var ix = idx[ch];
-        if (ix !== undefined && firstSrc[ix] !== -1 && firstSrc[ix] !== si) continue;     // a higher-priority source has it
+        var ix = idx[ch], alt = false;
+        if (ix !== undefined && firstSrc[ix] !== -1 && firstSrc[ix] !== si) {     // a higher-priority source has it
+          if (P || src.provider || !srcs[firstSrc[ix]].provider || winner[ix] !== undefined) continue;
+          alt = true;                                                              // in its place, if they agree
+        }
         var s = ts((/start="([^"]*)"/.exec(a) || [])[1]) + off, e = ts((/stop="([^"]*)"/.exec(a) || [])[1]) + off;
         if (!s || !e || e < sinceOf(ch) || s > to) continue;
         var t = /<title[^>]*>([\s\S]*?)<\/title>/.exec(m[2]);
         var de = /<desc[^>]*>([\s\S]*?)<\/desc>/.exec(m[2]);
-        ix = slot(ch); firstSrc[ix] = si; count[ix]++;
-        got[ch] = 1;
+        ix = slot(ch);
+        if (!alt) { firstSrc[ix] = si; count[ix]++; got[ch] = 1; }
+        var title = t ? withSub(unesc(t[1]), m[2]) : '';
+        if (!P && (alt || src.provider)) keepLook(ix, si, s, e, title);
         var bw = buckets[ix % NB];
-        if (!bw.write(ix + '\t' + s + '\t' + e + '\t' + flat(t ? withSub(unesc(t[1]), m[2]) : '') + '\t' + flat(de ? unesc(de[1]).slice(0, DESC_MAX) : '') + '\t' + movieFlag(m[2]) + '\n') && !bw.full) { bw.full = true; waiting++; }
+        if (!bw.write(ix + '\t' + s + '\t' + e + '\t' + flat(title) + '\t' + flat(de ? unesc(de[1]).slice(0, DESC_MAX) : '') + '\t' + movieFlag(m[2]) + '\t' + si + '\n') && !bw.full) { bw.full = true; waiting++; }
         if (bw.full) full = true;
         n++; total++;
       }
@@ -234,11 +260,12 @@ function start(body, log) {
     function finish(err) {
       if (done) return;
       done = true; current = null;
-      if (err) report.push({ url: src.label || src.url, ok: false, error: String(err && err.message || err), filled: settle() });
+      if (err) { for (var lx in look) delete look[lx][si]; report.push({ url: src.label || src.url, ok: false, error: String(err && err.message || err), filled: settle() }); }
       else {
-        var x = unz && Unzip.progress(unz), bytes = x ? (x.total || x.raw) : job.bytes;
+        var x = unz && Unzip.progress(unz), bytes = x ? (x.total || x.raw) : job.bytes, jd = judge(si);
         // channels: its guide channels that matched one of yours (and so kept programmes); inFile: all it has.
-        report.push({ url: src.label || src.url, key: src.key, bytes: bytes, ok: true, programmes: n, channels: Object.keys(got).length, inFile: inFile, filled: settle() });
+        // over: channels the provider's guide has that this one took over; kept: ones it didn't (they disagree).
+        report.push({ url: src.label || src.url, key: src.key, bytes: bytes, ok: true, programmes: n, channels: Object.keys(got).length + jd.over, inFile: inFile, filled: settle(), over: jd.over, kept: jd.kept });
       }
       next();
     }
@@ -336,7 +363,8 @@ function start(body, log) {
         text = null;
         for (var i = 0; i < lines.length; i++) {
           var l = lines[i]; if (!l) continue;
-          var p = l.split('\t'), ix = +p[0];
+          var p = l.split('\t'), ix = +p[0], from = p[6] === undefined ? firstSrc[ix] : +p[6];
+          if (from !== (winner[ix] !== undefined ? winner[ix] : firstSrc[ix])) continue;      // a source that didn't win this channel
           (by[ix] || (by[ix] = [])).push([+p[1], +p[2], p[3] || '', p[4] || '', p[5] || '']);
         }
         lines = null;

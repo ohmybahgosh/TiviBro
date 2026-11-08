@@ -54,6 +54,51 @@ var PubEpg = (function () {
     var test = typeof Store !== 'undefined' && Store.settings && Store.settings.pubEpgBase;
     return SPORTS.map(function (s) { return { url: test ? String(test).replace(/\/?$/, '/') + s.id + '/' + s.file : s.url, cc: 'US', src: s.id, name: s.name, prefix: s.id + ':US/', sports: true }; });
   }
+  /* May another guide stand in for a channel's own (the provider's)?  Only when they tell the same story:
+     over the hours both cover (from two hours ago to a day ahead), most of the provider's programmes have
+     one in the other guide at the same time with a similar title.  A guide that reaches more days ahead
+     but has another channel's schedule, or the right one hours off, is not taken for that.
+     It may when the provider has nothing from now on, nothing in those hours, or only a filler title
+     ("ESPN" all day long).  base and alt: [{ s, e, t }], in any order.  Self-contained: the guide worker
+     gets it as source text, and the helper (service/guide.js) requires this file. */
+  function alike(base, alt, now) {
+    now = now || Date.now();
+    var H = 3600e3, from = now - 2 * H, to = now + 24 * H, STOP = /\b(new|live|hd|uhd|fhd|4k|the|a|an|at|vs|v|of|and|in|on|with|en|vivo|el|la|los|las|de|del|y)\b/g;
+    function words(t) { return String(t || '').toLowerCase().replace(/[^a-z0-9À-￿]+/g, ' ').replace(STOP, ' ').split(/\s+/).filter(function (w) { return w; }); }
+    function same(x, y) {
+      var a = words(x), b = words(y);
+      if (!a.length || !b.length) return false;
+      var ja = a.join(''), jb = b.join('');
+      if (ja === jb || (Math.min(ja.length, jb.length) >= 4 && (ja.indexOf(jb) >= 0 || jb.indexOf(ja) >= 0))) return true;
+      var set = {}, hit = 0, i;
+      for (i = 0; i < a.length; i++) set[a[i]] = 1;
+      for (i = 0; i < b.length; i++) if (set[b[i]] === 1) { hit++; set[b[i]] = 2; }
+      return hit / Math.min(a.length, b.length) >= 0.6;
+    }
+    function inHours(l, lo, hi) { return (l || []).filter(function (p) { return p && p.e > lo && p.s < hi && p.e - p.s >= 5 * 60000; }).sort(function (x, y) { return x.s - y.s; }); }
+    var b = base || [], a = alt || [], bEnd = 0, aEnd = 0, aStart = Infinity, i;
+    for (i = 0; i < b.length; i++) if (b[i] && b[i].e > bEnd) bEnd = b[i].e;
+    for (i = 0; i < a.length; i++) if (a[i]) { if (a[i].e > aEnd) aEnd = a[i].e; if (a[i].s < aStart) aStart = a[i].s; }
+    if (bEnd <= now) return true;                                       // the provider has nothing from now on
+    if (aEnd <= now) return false;
+    var lo = Math.max(from, aStart), hi = Math.min(to, bEnd, aEnd);
+    var bp = inHours(b, lo, hi);
+    if (!bp.length) return hi > lo;                                     // nothing of the provider's in those hours
+    var titles = {}, nt = 0;
+    bp.forEach(function (p) { var k = words(p.t).join(' '); if (!titles[k]) { titles[k] = 1; nt++; } });
+    if (bp.length >= 3 && nt <= 1) return true;                         // one title all day: a filler
+    var ap = inHours(a, lo - H, hi + H), hit = 0;
+    bp.forEach(function (p) {
+      for (var j = 0; j < ap.length; j++) {
+        var q = ap[j];
+        if (q.s >= p.e) break;
+        var ov = Math.min(p.e, q.e) - Math.max(p.s, q.s);
+        if (ov >= Math.min(15 * 60000, 0.5 * Math.min(p.e - p.s, q.e - q.s)) && same(p.t, q.t)) { hit++; return; }
+      }
+    });
+    return bp.length < 3 ? hit === bp.length : hit / bp.length >= 0.6;
+  }
+
   // A sports network guide's id (the team guide only fills channels with none: a provider's own "Next game" listings read better).
   function isSportsId(id) { var m = /^(\w+):/.exec(id || ''); return !!(m && SPORTS.some(function (s) { return s.id === m[1] && !s.fillOnly; })); }
 
@@ -178,6 +223,6 @@ var PubEpg = (function () {
   }
   function sourceOf(id) { var m = /^(\w+):/.exec(id || ''); return m ? SOURCES.concat(BY_ID, SPORTS).filter(function (s) { return s.id === m[1]; })[0] || null : null; }
 
-  return { SOURCES: SOURCES, BY_ID: BY_ID, SPORTS: SPORTS, isSports: isSports, sportsOn: sportsOn, sportsFiles: sportsFiles, isSportsId: isSportsId, appId: appId, appFiles: appFiles, conf: conf, set: set, keys: keys, countriesFor: countriesFor, countryOf: countryOf, files: files, supported: supported, all: all, name: name, code: code, sourceOf: sourceOf };
+  return { SOURCES: SOURCES, BY_ID: BY_ID, SPORTS: SPORTS, isSports: isSports, sportsOn: sportsOn, sportsFiles: sportsFiles, isSportsId: isSportsId, alike: alike, appId: appId, appFiles: appFiles, conf: conf, set: set, keys: keys, countriesFor: countriesFor, countryOf: countryOf, files: files, supported: supported, all: all, name: name, code: code, sourceOf: sourceOf };
 })();
 if (typeof module !== 'undefined') module.exports = PubEpg;

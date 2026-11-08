@@ -2332,7 +2332,7 @@ function onProgress(p) {
   if (page === 'guide') drawProgress(p);
   // A load of your own sources finished: each source's row says what it found (the public fill-in's report has no keys).
   if (!p.active && p.phase === 'done' && D && D.guide && (p.report || []).some(function (r) { return r.key; })) {
-    D.guide.status = Object.assign({}, D.guide.status, { at: p.at, sources: p.report.map(function (r) { return { key: r.key || '', ok: !!r.ok, programmes: r.programmes || 0, channels: r.channels || 0, inFile: r.inFile || 0, error: r.error || '' }; }) });
+    D.guide.status = Object.assign({}, D.guide.status, { at: p.at, sources: p.report.map(function (r) { return { key: r.key || '', ok: !!r.ok, programmes: r.programmes || 0, channels: r.channels || 0, inFile: r.inFile || 0, over: r.over || 0, kept: r.kept || 0, error: r.error || '' }; }) });
     if (page === 'guide') renderSources();
   }
   if (!p.active && p.phase === 'done' && ((was && was.active) || (p.message && was && (was.active || was.phase === 'fallback' || was.message !== p.message)))) toast(p.message || ('Guide loaded on the TV: ' + (p.programmes || 0).toLocaleString() + ' programmes'));
@@ -2426,7 +2426,9 @@ function srcResult(s) {
   if (!r.ok) return '<div class="small src-res bad">✕ Could not be read' + (r.error ? ': ' + esc(r.error) : '') + '</div>';
   var has = r.inFile ? ' of the ' + r.inFile.toLocaleString() + ' it has' : '';
   if (!r.channels) return '<div class="small src-res warn">Matched none of your channels' + has + '.  Its channel ids differ from your playlist\'s: turn on matching by name, or match channels to it in step 4 (Smart match).</div>';
-  return '<div class="small src-res ok">✓ Matched ' + r.channels.toLocaleString() + ' of your channels' + has + '  ·  ' + r.programmes.toLocaleString() + ' programmes</div>';
+  // Channels the provider's guide has too: this one is used for them only where the two agree.
+  var vs = r.over || r.kept ? '<div class="muted small">' + (r.over ? r.over.toLocaleString() + ' in place of the provider\'s guide (they agree)' : '') + (r.over && r.kept ? '  ·  ' : '') + (r.kept ? r.kept.toLocaleString() + ' left to the provider\'s guide (different programmes)' : '') + '</div>' : '';
+  return '<div class="small src-res ok">✓ Matched ' + r.channels.toLocaleString() + ' of your channels' + has + '  ·  ' + r.programmes.toLocaleString() + ' programmes</div>' + vs;
 }
 // A source as you'd recognise it: the free guide's name and size, or the server and file name.
 function srcLabel(s) {
@@ -2827,7 +2829,7 @@ var HELP = [
     '<ul><li><b>Per channel</b> (default).  The TV asks the provider for each channel\'s next few shows as you browse.  Nothing to download, so it is fast and light on the TV.  The catch: there is no full list, so channels can\'t be matched by hand, and some providers only send a few hours.</li>' +
     '<li><b>Full XMLTV file</b>.  The TV downloads the provider\'s complete guide and keeps it, refreshing on the schedule set in Playlists.  You see days ahead, and you can match channels by hand.  These files are often 20 to 200 MB, so the first load can take a few minutes.  A progress bar shows in the editor and in the corner of the TV; the editor keeps working meanwhile.</li>' +
     '<li><b>Off</b>.  Ignore the provider\'s guide and use only your own sources.</li></ul>' +
-    '<p>M3U playlists may carry their own guide address (url-tvg); "Playlist\'s guide" uses it.</p><p>When several guides cover the same channel, the first one wins: your sources in their order, then the provider\'s full guide.  Channels no XMLTV covers still get the per-channel guide when that mode is on.</p>'],
+    '<p>M3U playlists may carry their own guide address (url-tvg); "Playlist\'s guide" uses it.</p><p>The provider\'s guide comes first.  Your sources fill the channels it doesn\'t have, and take over one it has only where their programmes agree with the provider\'s (the same titles at the same times), so a guide with more days but the wrong schedule doesn\'t win.  Between your sources, the first one wins.</p>'],
   ['sources', 'Your own guide sources', '<p>Add any XMLTV address ending in <code>.xml</code> or <code>.xml.gz</code>.  <b>Test</b> lets the TV try the address first and reports its size.  Use the arrows to change the order; the first source wins when two cover the same channel.</p>' +
     '<p><b>Offset</b> shifts one source\'s times, in minutes, for guides that are an hour off.</p>' +
     '<p><b>Recommended free guides</b> lists community-run guides by region, such as epgshare01, iptv-epg.org, i.mjh.nz (Pluto, Samsung TV Plus, Plex, Roku) and projects on GitHub.  They were working when this version was made, but free services can change or go offline, so <b>Test</b> before adding.  Smaller files load faster; add only the regions you watch.  Zipped <code>.gz</code> guides work on every TV: the network helper unzips them, which is also quicker than the browser on the TV.  Only with Network set to Direct can older TVs (webOS 6 and before) not read them; the editor warns when that is the case.</p>'],

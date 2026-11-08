@@ -1,9 +1,11 @@
 /* Program guide, built so the UI thread never parses anything large.
 
    Sources, per playlist (Settings > Guide > Guide sources):
-   - Your XMLTV addresses, in priority order, each with its own time offset.
-   - The provider's guide: for Xtream either per-channel ("short", fast and light) or the
+   - The provider's guide, first: for Xtream either per-channel ("short", fast and light) or the
      full XMLTV file; for M3U the address inside the playlist.
+   - Your XMLTV addresses, in priority order, each with its own time offset.  They fill the channels the
+     provider's guide hasn't, and take over one it has only where their programmes agree with it
+     (PubEpg.alike): a guide with more days but another channel's schedule doesn't win.
    XMLTV is streamed and parsed in a Web Worker, trimmed to a time window and to channels
    that exist in the playlist, then cached in IndexedDB.  Channels are linked to guide data
    by their guide id, by a manual assignment, or (optionally) by matching names.
@@ -125,13 +127,51 @@ var Epg = (function () {
     var m = Store.edits.epgMap && Store.edits.epgMap[ch.k];
     if (m) return m;
     var id = own(ch, matched[ch.k] || ch.epg || '');
+    // Per-channel provider guide: an XMLTV source's listings that disagree with it give way to it (vote).
+    if (id && votes[ch.k] && votes[ch.k][0] === 'p' && votes[ch.k][2] === id && shortAllowed(ch)) return '';
     // The public guide only stands in where your sources and the provider's have nothing (or nothing
     // from now on: a provider's Pluto TV entries can stop days early).
     if (pubMatched[ch.k] && !(id && live(id))) return pubMatched[ch.k];
     // A sports guide (Settings > Guide > Sports guides) stands in for a sports channel's own guide when it
-    // reaches at least half a day further ahead: the provider's two days of Big Ten Network become six.
-    if (pubMatched[ch.k] && typeof PubEpg !== 'undefined' && PubEpg.isSportsId && PubEpg.isSportsId(pubMatched[ch.k]) && endOf(pubMatched[ch.k]) > endOf(id) + 12 * 3600e3) return pubMatched[ch.k];
+    // reaches at least half a day further ahead, and only where the two agree on what's on: the provider's
+    // two days of Big Ten Network become six, but a sports guide with another channel's games doesn't win.
+    if (pubMatched[ch.k] && typeof PubEpg !== 'undefined' && PubEpg.isSportsId && PubEpg.isSportsId(pubMatched[ch.k]) && endOf(pubMatched[ch.k]) > endOf(id) + 12 * 3600e3 && agree(id, pubMatched[ch.k])) return pubMatched[ch.k];
     return id;
+  }
+  // Do two guide ids' lists agree (PubEpg.alike)?  Remembered while both lists stay the same ones.
+  var agreed = {};
+  function agree(id, other) {
+    var a = cache.get(id), b = cache.get(other), k = id + '\n' + other, m = agreed[k];
+    if (!a || !b) return !a;
+    if (m && m.a === a.list && m.b === b.list && Date.now() - m.at < 3600e3) return m.v;
+    var v = !PubEpg.alike || PubEpg.alike(a.list, b.list, Date.now());
+    agreed[k] = { a: a.list, b: b.list, v: v, at: Date.now() };
+    return v;
+  }
+
+  /* Xtream with the per-channel provider guide: an XMLTV source's channel is checked against the provider's own
+     listings for it the first time it's shown (and again after a day).  Where they disagree the provider's
+     are used.  votes: channel key -> ['x' (the source's) or 'p' (the provider's), when, the guide id], kept
+     in localStorage so it's settled once, not every start. */
+  var votes = (function () { try { return JSON.parse(localStorage.getItem('tivibro.guideVotes') || '{}') || {}; } catch (e) { return {}; } })(), voteSave = 0;
+  function vote(ch, list) {
+    var id = own(ch, matched[ch.k] || ch.epg || ''), x = id && cache.get(id);
+    if (!x || !list || !list.length || !(typeof PubEpg !== 'undefined' && PubEpg.alike)) return;
+    var v = PubEpg.alike(list, x.list, Date.now()) ? 'x' : 'p', was = votes[ch.k];
+    votes[ch.k] = [v, Date.now(), id];
+    if (!was || was[0] !== v) { if (v === 'p') Log.info('epg', Library.name(ch) + ': the guide source\'s listings differ from the provider\'s; using the provider\'s'); emit(ch.k); emit(id); }
+    clearTimeout(voteSave);
+    voteSave = setTimeout(function () {
+      var ks = Object.keys(votes);
+      if (ks.length > 4000) ks.sort(function (p, q) { return votes[p][1] - votes[q][1]; }).slice(0, ks.length - 4000).forEach(function (k) { delete votes[k]; });
+      try { localStorage.setItem('tivibro.guideVotes', JSON.stringify(votes)); } catch (e) {}
+    }, 1000);
+  }
+  // Is this channel's XMLTV guide still to be checked against the provider's (no vote, an old one, another id)?
+  function toVote(ch, id) {
+    if (!shortAllowed(ch) || (Store.edits.epgMap && Store.edits.epgMap[ch.k]) || (pubMatched[ch.k] && id === pubMatched[ch.k])) return false;
+    var w = votes[ch.k];
+    return !w || w[2] !== id || Date.now() - w[1] > 86400e3;
   }
   function endOf(id) { var x = id && cache.get(id), l = x && x.list; return l && l.length ? l[l.length - 1].e : 0; }
   // Guide data for a channel lives under its XMLTV id when the XMLTV has it, otherwise under the channel key.
@@ -162,6 +202,7 @@ var Epg = (function () {
         return { s: s + off, e: e + off, t: U.b64utf8(p.title), d: U.b64utf8(p.description) };
       }).filter(function (p) { return p.e > p.s && isFinite(p.s); }).sort(function (a, b) { return a.s - b.s; });
       cache.set(k, { at: Date.now(), list: untangle(list) });
+      if (xmlMode) vote(ch, list);
       emit(k);
     }).catch(function () { cache.set(k, { at: Date.now() - TTL + 60000, list: [] }); });
   }
@@ -189,18 +230,23 @@ var Epg = (function () {
     if (xmlMode) {
       var id = epgId(ch);
       var x = id && cache.get(id);
-      if (x) return x.list;
+      if (x) { if (toVote(ch, id)) ask(ch); return x.list; }
       if (!shortAllowed(ch)) return xmlReady ? [] : null;
     } else if (!shortAllowed(ch)) return [];
     var k = ch.k, hit = cache.get(k);
     if (hit && !hit.pending && Date.now() - hit.at < TTL) return hit.list;
-    if (!hit || !hit.pending) {
-      cache.set(k, { at: hit ? hit.at : 0, list: hit ? hit.list : [], pending: true });
-      queue.push({ ch: ch, t: Date.now() });
-      if (queue.length > 60) queue.splice(0, queue.length - 60);
-      pump();
-    }
+    ask(ch);
     return hit ? hit.list : null;
+  }
+  // The per-channel provider guide for a channel, asked for (once at a time).
+  function ask(ch) {
+    var k = ch.k, hit = cache.get(k);
+    if (hit && hit.pending) return;
+    if (hit && Date.now() - hit.at < TTL && hit.list.length) { if (xmlMode) vote(ch, hit.list); return; }
+    cache.set(k, { at: hit ? hit.at : 0, list: hit ? hit.list : [], pending: true });
+    queue.push({ ch: ch, t: Date.now() });
+    if (queue.length > 60) queue.splice(0, queue.length - 60);
+    pump();
   }
 
   /* What is on now and next from what the guide already has, without asking for more (the phone
@@ -274,6 +320,10 @@ var Epg = (function () {
       var since = {};
       function sinceOf(id) { var v = since[id]; if (v === undefined) v = since[id] = past[id] ? Math.max(from, Date.now() - past[id] * 86400e3) : recent; return v; }
       var out = {}, icons = {}, chans = [], matches = {}, report = [], total = 0, lastPost = 0;
+      // The provider's guide comes first.  A channel it has (prov) is taken over by a later source only when
+      // that source's programmes agree with it (self.alike: the same titles at the same times), not just
+      // because it reaches more days ahead.  The first source that agrees takes it.
+      var prov = {};
       // Public guide pass: pk maps matching keys to [channel key, past days] for the channels with no
       // guide.  Each guide channel's keys are looked up there; a channel takes its best-ranked match
       // within a source, and a channel matched by one source is not looked up in the next.
@@ -288,9 +338,17 @@ var Epg = (function () {
         self.postMessage({ progress: { src: i + 1, of: d.sources.length, host: src.host, bytes: bytes, total: est ? Math.max(src.known, bytes) : size, est: est, programmes: total, channels: chans.length } });
       }
       function one(src, i) {
-        var got = {}, buf = '', n = 0, inFile = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {};
+        var got = {}, buf = '', n = 0, inFile = 0, off = (+src.offset || 0) * 60000, P = src.pub, wantP = {}, cand = {}, over = 0, kept = 0;
         var RE = /<programme\b([^>]*)>([\s\S]*?)<\/programme>/g;
         var CH = /<channel\b[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/channel>/g;
+        // This source's programmes for channels the provider's guide has: in place of the provider's if they agree.
+        function judge() {
+          for (var ck in cand) {
+            if (self.alike(out[ck], cand[ck], Date.now())) { out[ck] = cand[ck]; delete prov[ck]; got[ck] = 1; over++; }
+            else { kept++; for (var q = 0; q < cand[ck].length; q++) used -= 60 + cand[ck][q].t.length + cand[ck][q].d.length; }
+          }
+          cand = {};
+        }
         function eat(final) {
           CH.lastIndex = 0;
           var c, lastC = 0;
@@ -334,7 +392,11 @@ var Epg = (function () {
             var ch = /channel="([^"]*)"/.exec(a); ch = ch && unesc(ch[1]);
             if (!ch) continue;
             if (P) { if (!wantP[ch]) continue; ch = P.prefix + ch; } else if (!want[ch]) continue;
-            if (out[ch] && !got[ch]) continue;                            // a higher-priority source already has this channel
+            var alt = !!cand[ch];
+            if (!alt && out[ch] && !got[ch]) {                            // a higher-priority source already has this channel
+              if (P || src.provider || !prov[ch]) continue;
+              alt = true; cand[ch] = [];
+            }
             var s = ts((/start="([^"]*)"/.exec(a) || [])[1]) + off, e = ts((/stop="([^"]*)"/.exec(a) || [])[1]) + off;
             if (!s || !e || e < sinceOf(ch) || s > to) continue;
             var t = /<title[^>]*>([\s\S]*?)<\/title>/.exec(m[2]);
@@ -342,9 +404,11 @@ var Epg = (function () {
             if (budget && (used > budget || (!out[ch] && used > budget * 0.85))) { left[ch] = 1; continue; }
             var tt = t ? withSub(unesc(t[1]), m[2]) : '', dd = de ? unesc(de[1]).slice(0, budget && used > budget / 2 ? 100 : descMax) : '';
             used += 60 + tt.length + dd.length;
-            got[ch] = 1;
             var pg = { s: s, e: e, t: tt, d: dd };
             var fl = self.progFlag(m[2]); if (fl) self.readFlag(fl, pg);
+            if (alt) { cand[ch].push(pg); n++; total++; continue; }
+            got[ch] = 1;
+            if (src.provider) prov[ch] = 1;
             (out[ch] || (out[ch] = [])).push(pg);
             n++; total++;
           }
@@ -385,8 +449,9 @@ var Epg = (function () {
             });
           }
           return step();
-        }).then(function () { if (poll) { clearInterval(poll); poll = 0; } report.push({ url: src.label || src.url, key: src.key, bytes: done, ok: true, programmes: n, channels: Object.keys(got).length, inFile: inFile, filled: settle() }); },
+        }).then(function () { if (poll) { clearInterval(poll); poll = 0; } judge(); report.push({ url: src.label || src.url, key: src.key, bytes: done, ok: true, programmes: n, channels: Object.keys(got).length, inFile: inFile, filled: settle(), over: over, kept: kept }); },
           function (e) { clearInterval(poll); if (rd) { try { rd.cancel(); } catch (x) {} }      // stop the download too
+            cand = {};
             report.push({ url: src.label || src.url, ok: false, error: String(e && e.message || e), filled: settle() }); });
         // Public pass: fix this source's matches (only those with programmes count).
         function settle() {
@@ -427,7 +492,9 @@ var Epg = (function () {
     if (p.providerEpg === 'xmltv') {
       var part = p.id !== P().id && Library.partOf ? Library.partOf(p.id) : null;
       var prov = part ? part.epgUrl : Library.data.epgUrl;
-      if (prov) list.push({ url: prov, offset: +p.epgOffset || 0, provider: true });
+      // First: your provider's guide is the one to go by; your sources fill what it lacks, and take over a
+      // channel only where they agree with it (alike, in the worker and the helper).
+      if (prov) list.unshift({ url: prov, offset: +p.epgOffset || 0, provider: true });
     }
     return list;
   }
@@ -778,7 +845,7 @@ var Epg = (function () {
       // Through the helper, guides arrive already unzipped (.gz, gzip-encoded, or gzipped without saying so).
       var id = Net.active ? 'g' + run + i : '';
       var label = s.provider ? 'provider guide' : s.prefix ? s.name + ' ' + s.cc : s.url;
-      return { url: Net.wrap(s.url, id ? { unzip: id } : null), xfer: id ? Net.xfer(id) : '', label: label, key: U.hash(s.url), known: sizes()[U.hash(s.url)] || 0, host: s.provider ? label : s.prefix ? 'public guide, ' + label : hostOf(s.url), offset: s.offset || 0,
+      return { url: Net.wrap(s.url, id ? { unzip: id } : null), xfer: id ? Net.xfer(id) : '', label: label, provider: !!s.provider, key: U.hash(s.url), known: sizes()[U.hash(s.url)] || 0, host: s.provider ? label : s.prefix ? 'public guide, ' + label : hostOf(s.url), offset: s.offset || 0,
         pub: s.prefix ? { prefix: s.prefix, cc: s.cc, name: s.name } : null };
     }),
       ids: Object.keys(ids), past: ids, names: names, from: now - days * 86400e3, recent: now - 3 * 3600e3, to: now + 2 * 86400e3,
@@ -786,7 +853,8 @@ var Epg = (function () {
       descMax: (function () { var v = Caps.probe().webos; return v && v <= 5 ? 250 : 400; })(), budget: budget(g && g.safe) * (mine ? 0.5 : 1) };      // another playlist's guide: half, beside the first's
     if (pub) { msg.pub = true; msg.pk = pub.pk; msg.pubWant = pub.want; }
     var keysFn = typeof PubEpg !== 'undefined' ? PubEpg.keys : function () { return { keys: [], country: '' }; };
-    var code = 'self.norm = ' + norm.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\nself.progFlag = ' + progFlag.toString() + ';\nself.readFlag = ' + readFlag.toString() + ';\n(' + workerMain.toString() + ')();';
+    var alikeFn = typeof PubEpg !== 'undefined' && PubEpg.alike ? PubEpg.alike : function () { return false; };
+    var code = 'self.norm = ' + norm.toString() + ';\nself.alike = ' + alikeFn.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\nself.progFlag = ' + progFlag.toString() + ';\nself.readFlag = ' + readFlag.toString() + ';\n(' + workerMain.toString() + ')();';
     var started = Date.now();
     function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; if (g) g.host(p.host); setProgress(p); }
     var k0 = msg.sources[0] ? msg.sources[0].known : 0;

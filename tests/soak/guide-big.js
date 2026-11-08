@@ -16,7 +16,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const b = await chromium.launch({ args: ['--enable-precise-memory-info', '--js-flags=--expose-gc'] });
   const page = await (await b.newContext({ viewport: { width: 1920, height: 1080 } })).newPage();
   const errs = []; page.on('pageerror', e => errs.push(e.message));
-  const settings = { meter: 'off', active: 'p1', playlists: [{ id: 'p1', name: 'Big', type: 'xtream', server: MOCK, user: 'demo', pass: 'demo', providerEpg: 'xmltv', epgDays: 1,
+  const settings = { meter: 'off', active: 'p1', playlists: [{ id: 'p1', name: 'Big', type: 'xtream', server: MOCK, user: 'demo', pass: 'demo', providerEpg: 'off', epgDays: 1,         // the big guide alone (the provider's comes first, and its titles differ)
     epgSources: [{ url: MOCK + '/bigguide.xml?ch=' + N + '&days=3&desc=400', offset: 0 }], pubEpg: { on: false } }] };
   await page.addInitScript(([s]) => {
     if (!sessionStorage.getItem('gb')) { localStorage.clear(); localStorage.setItem('tivibro.settings', s); sessionStorage.setItem('gb', '1'); }
@@ -47,7 +47,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const hits = await ev(n => Epg.search('Big show ' + (n - 1) + '-20', 5).map(r => r.key + ' ' + r.p.t), N);
   ok('search finds a programme on the last channel', hits.length && hits[0].indexOf('big.' + (N - 1)) === 0, JSON.stringify(hits));
   // The grid shows it.
-  await ev(() => Views.switchTab('guide')); await page.waitForTimeout(1500);
+  await ev(() => { Views.switchTab('guide'); Guide.open(Library.data.channels.find(x => x.epg === 'big.10').g); }); await page.waitForTimeout(1500);
   const cells = await ev(() => [].slice.call(document.querySelectorAll('.gp')).filter(e => e.style.display !== 'none' && e.textContent.trim()).length);
   ok('the guide grid fills', cells > 10, cells);
   // Start again: from the helper's storage, no download.

@@ -995,7 +995,7 @@ I18n.add('ru', {
   "Add a prefix…": "Добавить префикс…", "Add a suffix…": "Добавить суффикс…", "Add a group prefix…": "Добавить префикс группы…", "Add a group suffix…": "Добавить суффикс группы…",
   "Show or hide each group in one list, like TiviMate.  {n} hidden now.": "Показывайте и скрывайте группы в одном списке, как в TiviMate.  Сейчас скрыто: {n}.",
   "{n} channels, {y} programmes": "Каналов: {n}, передач: {y}", "Every {n} hours": "Каждые {n} ч", "Guide for {x}": "Телегид для {x}",
-  "{n} XMLTV addresses, checked before the provider guide": "Адресов XMLTV: {n}, проверяются до телегида провайдера", "tick the channels to keep in {x}": "отметьте каналы, которые остаются в {x}",
+  "{n} XMLTV addresses, after the provider guide": "Адресов XMLTV: {n}, после телегида провайдера", "tick the channels to keep in {x}": "отметьте каналы, которые остаются в {x}",
   "provider guide": "телегид провайдера", "Full XMLTV file": "Полный файл XMLTV", "Not set": "Не задано", "Not set up": "Не настроено", "Not set up yet": "Пока не настроено",
   "Add TMDB API token": "Добавить токен API TMDB", "running": "работает", "checking…": "проверка…", "Outline": "Контур", "Stream's choice": "Как в потоке",
   "Choose Add media above": "Выберите «Добавить медиа» выше", "Your own mix": "Свой вариант", "Electric blue": "Электрик", "Midnight": "Полночь",

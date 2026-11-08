@@ -4,8 +4,9 @@
      npm run serve &
      node tests/soak/sports-guides.js
    The provider's guide has two days; a sports guide with more stands in for a sports channel (six days
-   from EPGTalk, three from epgshare01), other channels keep theirs, and switching it off brings the
-   provider's back.  Only the channels matched are kept. */
+   from EPGTalk, three from epgshare01) where the two agree on what's on, other channels keep theirs, a
+   sports guide with another channel's programmes doesn't win however many days it has, and switching
+   it off brings the provider's back.  Only the channels matched are kept. */
 'use strict';
 const { chromium } = require('playwright');
 const R = require('../../scripts/demo/record.js');
@@ -30,11 +31,12 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
         const c = Library.data.channels.find((x) => x.n === n), id = Epg.epgId(c), l = Epg.request(c) || [];
         return { n, id, days: l.length ? Math.round((l[l.length - 1].e - now) / 86400e3 * 10) / 10 : 0, t: (l.find((p) => p.s <= now && p.e > now) || {}).t || '' };
       };
-      return { s1: one('US| Summit Sports 1 FHD'), arena: one('US| Arena Live HD'), fast: one('US| Fastbreak TV HD'), news: one('US| Nova News 24 FHD'), sources: Epg.pubStatus.sources };
+      return { s1: one('US| Summit Sports 1 FHD'), arena: one('US| Arena Live HD'), fast: one('US| Fastbreak TV HD'), news: one('US| Nova News 24 FHD'), goal: one('US| Goal Line FHD'), sources: Epg.pubStatus.sources };
     });
     let r = await look();
     ok('the sports guides were read by the helper', r.sources.some((x) => /EPGTalk US/.test(x.url) && x.ok && x.filled >= 2), JSON.stringify(r.sources));
-    ok('a sports channel with two days of provider guide gets EPGTalk\'s, as far as Guide days goes', /^epgtalkus:US\//.test(r.s1.id) && r.s1.days > 2.5 && /^Sports guide epgtalkus/.test(r.s1.t), JSON.stringify(r.s1));
+    ok('a sports channel with two days of provider guide gets EPGTalk\'s, as far as Guide days goes', /^epgtalkus:US\//.test(r.s1.id) && r.s1.days > 2.5 && r.s1.t, JSON.stringify(r.s1));
+    ok('a sports guide with six days of another channel\'s programmes does not win', !/:US\//.test(r.goal.id) && r.goal.days <= 2.2, JSON.stringify(r.goal));
     ok('matched by its group too (Arena Live in a Sports group)', /^epgtalkus:US\//.test(r.arena.id) && r.arena.days > 2.5, JSON.stringify(r.arena));
     ok('epgshare01\'s three days beat two as well', /^epgshare:US\//.test(r.fast.id) && r.fast.days > 2, JSON.stringify(r.fast));
     ok('a channel that is not sports keeps its own guide', !/:US\//.test(r.news.id) && r.news.days <= 2.2, JSON.stringify(r.news));

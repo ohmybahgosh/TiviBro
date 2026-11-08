@@ -983,7 +983,7 @@ I18n.add('es', {
   "Add a prefix…": "Añadir un prefijo…", "Add a suffix…": "Añadir un sufijo…", "Add a group prefix…": "Añadir un prefijo de grupo…", "Add a group suffix…": "Añadir un sufijo de grupo…",
   "Show or hide each group in one list, like TiviMate.  {n} hidden now.": "Muestra u oculta cada grupo en una sola lista, como TiviMate.  Ocultos ahora: {n}.",
   "{n} channels, {y} programmes": "{n} canales, {y} programas", "Every {n} hours": ["Cada {n} hora", "Cada {n} horas"], "Guide for {x}": "Guía de {x}",
-  "{n} XMLTV addresses, checked before the provider guide": "Direcciones XMLTV: {n}, consultadas antes de la guía del proveedor", "tick the channels to keep in {x}": "marca los canales que se quedan en {x}",
+  "{n} XMLTV addresses, after the provider guide": "Direcciones XMLTV: {n}, después de la guía del proveedor", "tick the channels to keep in {x}": "marca los canales que se quedan en {x}",
   "provider guide": "guía del proveedor", "Full XMLTV file": "Archivo XMLTV completo", "Not set": "Sin configurar", "Not set up": "Sin configurar", "Not set up yet": "Aún sin configurar",
   "Add TMDB API token": "Añadir token de API de TMDB", "running": "en marcha", "checking…": "comprobando…", "Outline": "Contorno", "Stream's choice": "Lo que elija la transmisión",
   "Choose Add media above": "Elige Añadir medios arriba", "Your own mix": "Tu propia mezcla", "Electric blue": "Azul eléctrico", "Midnight": "Medianoche",

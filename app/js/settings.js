@@ -385,7 +385,7 @@ var Settings = (function () {
     var offs = [], offl = [];
     for (var m = -720; m <= 720; m += 30) { offs.push(m); offl.push((m > 0 ? '+' : m < 0 ? '-' : '') + Math.floor(Math.abs(m) / 60) + ':' + U.pad(Math.abs(m) % 60)); }
     if (p.providerEpg !== 'off') out.push(choice('Provider guide time offset', 'Use when every programme is too early or too late.', offs, offl, function () { return +p.epgOffset; }, function (v) { p.epgOffset = v; persist(p, true); paint(); }));
-    out.push(page('Guide sources', (p.epgSources || []).length + ' XMLTV address' + ((p.epgSources || []).length === 1 ? '' : 'es') + ', checked before the provider guide', 'Guide sources', function () { return sourcesPage(p); }));
+    out.push(page('Guide sources', (p.epgSources || []).length + ' XMLTV address' + ((p.epgSources || []).length === 1 ? '' : 'es') + ', after the provider guide', 'Guide sources', function () { return sourcesPage(p); }));
     out.push(choice('Reload guide', '', REFRESH, REFRESH_L, function () { return +p.epgRefresh; }, function (v) { p.epgRefresh = v; persist(p); paint(); }));
     out.push(choice('Keep past days', 'For catch-up browsing.  More days use more TV memory.', [1, 2, 3, 5, 7], ['1 day', '2 days', '3 days', '5 days', '7 days'], function () { return +p.epgDays; }, function (v) { p.epgDays = v; persist(p, true); paint(); }));
     out.push(toggle('Match guide by channel name', 'Links channels that have no guide id to a guide channel with the same name.', function () { return p.nameMatch; }, function (v) { p.nameMatch = v; persist(p, true); paint(); }));
