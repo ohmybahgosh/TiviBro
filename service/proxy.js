@@ -17,7 +17,7 @@ var https = require('https');
 var URL_ = require('url');
 var Editor = require('./editor');
 var Unzip = require('./unzip');
-var TsSync = require('./tssync').TsSync;
+var TsSync = require('./tssync').TsSync, FrameHold = require('./tssync').FrameHold;
 var dns = require('dns');
 var RawHttp = require('./rawhttp');
 var Guide = require('./guide');
@@ -149,6 +149,52 @@ function sameText(a, b) {
   return x.length === y.length && require('crypto').timingSafeEqual(x, y);
 }
 
+/* A live Xtream channel's account: "host|user" from http://host/live/user/pass/123.ts (or the short
+   http://host/user/pass/123.ts, or without .ts).  TiviBro plays one live channel at a time, so a new one
+   on the same account replaces an older one still open (see liveOf in create). */
+function liveKey(u) {
+  var m = /^\/(?:live\/)?([^\/]+)\/[^\/]+\/\d+(?:\.ts)?$/.exec(u.pathname || '');
+  return m && !/^(movie|series|hls|timeshift|streaming)$/i.test(m[1]) ? (u.host || '').toLowerCase() + '|' + m[1] : '';
+}
+/* Where a picture can start in a TS stream: a packet that starts a PES (payload_unit_start) carrying an
+   H.264 SPS (NAL type 7) or an H.265 VPS/SPS (32, 33), which encoders send just before every keyframe.  Joined
+   anywhere else (the middle of a group of pictures), the TV's decoder errs on frames that need the ones it never
+   got.  -1: none in buf (whole packets only where it can tell: a 0x47 every 188 bytes). */
+function keyStart(buf) {
+  for (var i = 0; i + 188 <= buf.length; i++) {
+    if (buf[i] !== 0x47 || !(buf[i + 1] & 0x40) || (i + 188 < buf.length && buf[i + 188] !== 0x47)) continue;
+    var end = i + 188;
+    for (var j = i + 4; j + 4 < end; j++) {
+      if (buf[j] !== 0 || buf[j + 1] !== 0 || buf[j + 2] !== 1) continue;
+      var n = buf[j + 3], h264 = n & 0x1f, h265 = (n >> 1) & 0x3f;
+      if ((h264 === 7 && !(n & 0x80)) || ((h265 === 32 || h265 === 33) && !(n & 0x81))) return i;
+    }
+  }
+  return -1;
+}
+
+/* The presentation time (90 kHz) of the PES that the packet at i starts, or -1. */
+function pesPts(b, i) {
+  if (b[i] !== 0x47 || !(b[i + 1] & 0x40)) return -1;
+  var p = i + 4;
+  if (b[i + 3] & 0x20) p += 1 + b[i + 4];
+  if (p + 14 > i + 188 || p + 14 > b.length || b[p] !== 0 || b[p + 1] !== 0 || b[p + 2] !== 1 || !(b[p + 7] & 0x80)) return -1;
+  var x = p + 9;
+  return ((b[x] >> 1) & 7) * 1073741824 + b[x + 1] * 4194304 + (b[x + 2] >> 1) * 32768 + b[x + 3] * 128 + (b[x + 4] >> 1);
+}
+// The latest presentation time in buf (whole packets, found by their sync bytes from the end), or -1.
+function lastPts(b) {
+  for (var i = b.length - 188; i >= 0; i--) {
+    if (b[i] !== 0x47 || (i + 188 < b.length && b[i + 188] !== 0x47)) continue;
+    var t = pesPts(b, i);
+    if (t >= 0) return t;
+  }
+  return -1;
+}
+
+// A whole file (an HLS segment, a movie) rather than a live stream: it says how long it is, and isn't huge.
+var SEGMENT_MAX = 64 * 1024 * 1024;
+
 function create(opts) {
   var pace = Pace.create();            // image hosts that said 429 (pace.js)
   opts = opts || {};
@@ -156,6 +202,17 @@ function create(opts) {
   var agentHttp = new http.Agent({ keepAlive: true, maxSockets: 16 });
   var agentHttps = new https.Agent({ keepAlive: true, maxSockets: 16 });
   var editor = Editor.create(log);      // web editor: LAN server is off until the app turns it on
+  /* Live channels being relayed now, by account (liveKey).  When a new one starts, an older one on the same
+     account that has gone quiet (nothing from the provider for 3 s, or still not answered) is let go first:
+     a stalled stream the app is reconnecting, whose request the TV's browser hasn't closed yet.  Left open, it
+     holds one of the provider's connections while the new one asks for another, and a provider that allows
+     one or two answers "busy".  One still streaming is left alone: someone is watching it (a second window,
+     another device on this helper), and the app closes its own when it zaps. */
+  var liveOf = {};
+  /* Where a live channel's tokenized address came from (a panel that answers /live/... with a redirect to an
+     edge server): its account, and the address to ask again when the helper reconnects it (feed below). */
+  var originOf = {}, originList = [];
+  function rememberOrigin(next, o) { originOf[next] = o; originList.push(next); if (originList.length > 50) delete originOf[originList.shift()]; }
 
   var server = http.createServer(function (req, res) {
     if (req.method === 'OPTIONS') { res.writeHead(204, ALLOW); return res.end(); }
@@ -220,13 +277,26 @@ function create(opts) {
       // the forgiving reader in rawhttp.js instead, see onUpError.
       insecureHTTPParser: true, lookup: cachedLookup
     };
-    var up = null, triedRaw = false, reading = false, retried429 = false;
+    var up = null, firstUp = null, triedRaw = false, reading = false, retried429 = false;
+    // A live channel: let go of an older one on the same account, and give up on it sooner when it goes quiet.
+    var og = originOf[t];
+    var lk = req.method === 'GET' && !req.headers.range && !unz ? (liveKey(u) || (og && og.lk) || '') : '';
+    var idle = lk ? (opts.liveTimeout || 15000) : (opts.timeout || 30000);
+    function stale() { return Date.now() - (lastData || t0) > 3000; }
+    function release() { aborted = true; rec.replaced = true; clearTimeout(feedTimer); if (up) up.destroy(); if (!res.headersSent) { res.writeHead(409, ALLOW); res.end(); } else res.destroy(); finish(); }
+    if (lk) {
+      var mine = { release: release, stale: stale }, list = liveOf[lk] || (liveOf[lk] = []);
+      list.slice().forEach(function (o) { if (o.stale()) { rec.replacedOlder = (rec.replacedOlder || 0) + 1; o.release(); } });
+      list.push(mine);
+      var drop = function () { var l = liveOf[lk]; if (!l) return; var i = l.indexOf(mine); if (i >= 0) l.splice(i, 1); if (!l.length) delete liveOf[lk]; };
+      res.on('close', drop); res.on('finish', drop);
+    }
     // Images from a host that said "too many requests" wait their turn (pace.js, issue #45).
     var img = req.method !== 'HEAD' && pace.isImage(u.pathname), host = u.host;
     function send() {
       if (aborted) return finish();
-      up = lib.request(reqOpts, onResponse);
-      up.setTimeout(opts.timeout || 30000, onTimeout);
+      up = firstUp = lib.request(reqOpts, onResponse);
+      up.setTimeout(idle, onTimeout);
       up.on('error', onUpError);
       up.end();
     }
@@ -249,6 +319,7 @@ function create(opts) {
       if (code >= 300 && code < 400 && ur.headers.location) {
         var next = URL_.resolve(t, ur.headers.location);
         rec.redirect = redact(next);
+        if (lk) rememberOrigin(next, { lk: lk, url: og ? og.url : t });
         res.writeHead(code === 301 || code === 308 ? 307 : code, Object.assign({ Location: relayed(base, next) }, ALLOW));
         ur.resume(); res.end(); return finish();
       }
@@ -256,12 +327,16 @@ function create(opts) {
       PASS.forEach(function (k) { if (ur.headers[k] != null) h[k] = ur.headers[k]; });
       if (code >= 400) rec.lv = 'error';
       var xfer = unz ? Unzip.track(unz, +ur.headers['content-length'] || 0) : null;
-      ur.on('data', function (d) { bytes += d.length; if (xfer) xfer.raw = bytes; });
-      ur.on('error', function (e) { if (!aborted) { stats.errors++; rec.e = 'response: ' + (e.code || e.message); } finish(); res.destroy(); });
+      ur.on('data', function (d) { bytes += d.length; lastData = Date.now(); if (xfer) xfer.raw = bytes; });
+      ur.on('error', function (e) { if (feedSync) return; if (!aborted) { stats.errors++; rec.e = 'response: ' + (e.code || e.message); } finish(); res.destroy(); });
       // Live MPEG-TS: keep it aligned if stray bytes get in (see tssync.js).  Whole-file and Range
       // requests (movies, seeking) are left alone.
-      var ts = !unz && code === 200 && req.method !== 'HEAD' && !req.headers.range &&
+      // HLS segments say how long they are and come whole, aligned: those pass straight through, keeping their
+      // length (resyncing them only cost the TV's CPU).
+      var len = +ur.headers['content-length'] || 0;
+      var ts = !unz && code === 200 && req.method !== 'HEAD' && !req.headers.range && !(len > 0 && len < SEGMENT_MAX) &&
         (/mp2t|mpegts|mpeg-ts/i.test(ur.headers['content-type'] || '') || /\.ts$/i.test((u.pathname || '')));
+      if (ts && lk && !opts.noLiveFeed) { delete h['content-length']; res.writeHead(code, h); return feed(ur); }
       if (ts) {
         delete h['content-length'];
         var sync = new TsSync(function (n) { rec.tsDropped = (rec.tsDropped || 0) + n; if (!rec.lv) rec.lv = 'warn'; });
@@ -319,13 +394,119 @@ function create(opts) {
         body.pipe(res);
       });
     }
+    /* A live channel, kept going through trouble upstream (TiviMate's player does the same underneath).
+       When the provider's connection ends, errs or goes quiet, the helper connects again by itself and carries
+       on into the same response: the app sees a short gap in the data, which its buffer usually covers, not
+       an ended stream it has to tear down and rebuild (losing its whole buffer).  TsSync realigns the packets
+       where the two connections meet, and the app follows the timestamps if the provider restarted them.
+       Up to 6 reconnects a minute, sooner first (0.25, 0.5, 1, 2, 3 s); if nothing comes for 12 s or the
+       budget runs out, the response ends and the app reconnects itself, as before. */
+    var feedTimes = [], feedSync = null, feedUr = null, feedFirst = null, feedDown = false, lastData = 0, feedTimer = 0, feedTries = 0;
+    /* After a reconnect the new connection starts anywhere in the picture stream: what comes before its first
+       keyframe (keyStart) is left out, so the app's decoder carries on from a picture it can show.  Not for
+       ever: after 4 MB or 6 s without one (an encoder that doesn't send SPS with keyframes), everything passes. */
+    var gate = null, tail = [], feedHold = null;
+    function feed(first) {
+      feedFirst = first;
+      feedSync = new TsSync(function (n) { rec.tsDropped = (rec.tsDropped || 0) + n; if (!rec.lv) rec.lv = 'warn'; });
+      feedSync.on('error', function () { res.destroy(); });
+      feedHold = new FrameHold();
+      feedHold.on('error', function () { res.destroy(); });
+      feedSync.pipe(feedHold).pipe(res);
+      feedSync.on('drain', function () { if (feedUr) feedUr.resume(); });
+      lastData = Date.now();
+      attach(first);
+    }
+    function attach(ur) {
+      feedUr = ur; feedDown = false;
+      ur.on('data', function (d) {
+        if (feedUr !== ur || aborted) return;
+        if (ur !== feedFirst) bytes += d.length;
+        lastData = Date.now(); feedTries = 0;
+        if (gate) {
+          var buf = gate.held ? Buffer.concat([gate.held, d]) : d, k = keyStart(buf);
+          /* A provider's new connection usually starts a few seconds back (its restreamer hands out a burst of
+             the recent past): keyframes from before where the last connection left off are passed over too,
+             so the stream carries on from the next new picture instead of repeating seconds. */
+          while (k >= 0 && gate.last >= 0) {
+            var pk = pesPts(buf, k), back = pk >= 0 ? gate.last - pk : 0;
+            if (back > 8589934592 / 2) back -= 8589934592;
+            if (pk < 0 || back <= 0.2 * 90000 || back > 30 * 90000) break;
+            var nk = keyStart(buf.slice(k + 188));
+            k = nk < 0 ? -1 : k + 188 + nk;
+          }
+          if (k < 0) {
+            gate.n += d.length;
+            if (gate.n < 4 * 1048576 && Date.now() - gate.t < 6000) { gate.held = buf.slice(Math.max(0, buf.length - 400)); return; }
+            k = 0; rec.noKeyframe = true;
+          }
+          /* Carry on only if the new connection picks up where the last left off, later by up to two minutes
+             (the time it was away).  Timestamps that went back, or leapt, mean the provider restarted the
+             channel: then the response ends and the app starts it afresh, as it always did; appending them
+             to what it has buffered makes the TV's decoder fail. */
+          var now2 = pesPts(buf, k), d90 = gate.last >= 0 && now2 >= 0 ? now2 - gate.last : 0;
+          if (d90 < -8589934592 / 2) d90 += 8589934592;               // the 33-bit clock wrapped
+          if (gate.last >= 0 && now2 >= 0 && (d90 < -0.2 * 90000 || d90 > 120 * 90000)) {
+            rec.e = 'live: the provider restarted the channel (timestamps ' + (d90 < 0 ? 'went back ' : 'leapt ') + Math.round(Math.abs(d90) / 90000) + ' s)'; rec.lv = 'warn';
+            gate = null; feedDown = true; feedUr = null; try { up.destroy(); } catch (e) {}
+            feedSync.end(); finish(); return;
+          }
+          rec.skippedToKeyframe = (rec.skippedToKeyframe || 0) + gate.n;
+          gate = null; d = buf.slice(k);
+        }
+        tail = [tail[tail.length - 1], d];
+        if (!feedSync.write(d)) ur.pause();
+      });
+      ur.on('end', function () { if (feedUr === ur) feedLost('ended'); });
+      ur.on('error', function (e) { if (feedUr === ur) feedLost(e.code || e.message); });
+    }
+    function feedLost(why) {
+      if (aborted || done || feedDown) return;
+      feedDown = true; feedUr = null;
+      try { if (up) up.destroy(); } catch (e) {}
+      var now = Date.now();
+      feedTimes = feedTimes.filter(function (x) { return now - x < 60000; });
+      if (feedTimes.length >= 6 || now - lastData > (opts.liveGiveUp || 12000)) {
+        rec.e = 'live: gave up reconnecting (' + why + ')'; rec.lv = 'warn';
+        feedSync.end(); finish(); return;
+      }
+      feedTimes.push(now);
+      rec.reconnects = (rec.reconnects || 0) + 1; rec.lastLoss = why;
+      // The frame that was coming in when it broke is incomplete: not sent on (see FrameHold).  What TsSync still
+      // holds of a half packet goes too.
+      if (feedSync) feedSync.carry = null;
+      if (feedHold) rec.halfFrames = (rec.halfFrames || 0) + (feedHold.drop() ? 1 : 0);
+      var wait = [250, 500, 1000, 2000, 3000][Math.min(feedTries, 4)];
+      feedTries++;
+      clearTimeout(feedTimer);
+      feedTimer = setTimeout(function () { if (!aborted && !done) again(og ? og.url : t, 0); }, wait);
+    }
+    // Ask the provider again (following its redirects here: the app has its answer already).
+    function again(addr, hops) {
+      var uu = URL_.parse(addr), l2 = uu.protocol === 'https:' ? https : http;
+      var o2 = Object.assign({}, reqOpts, { protocol: uu.protocol, hostname: uu.hostname, port: uu.port, path: uu.path, agent: uu.protocol === 'https:' ? agentHttps : agentHttp });
+      var r2 = up = l2.request(o2, function (ur) {
+        var c = ur.statusCode || 0;
+        if (c >= 300 && c < 400 && ur.headers.location && hops < 3) { ur.resume(); return again(URL_.resolve(addr, ur.headers.location), hops + 1); }
+        if (c !== 200) { ur.resume(); return feedLost('HTTP ' + c); }
+        if (aborted || done) { ur.resume(); r2.destroy(); return; }
+        var tb = tail.filter(Boolean);
+        gate = { n: 0, t: Date.now(), held: null, last: tb.length ? lastPts(tb.length > 1 ? Buffer.concat(tb) : tb[0]) : -1 };
+        attach(ur);
+      });
+      r2.setTimeout(idle, function () { r2.destroy(new Error('quiet')); });
+      r2.on('error', function (e) { if (up === r2) feedLost(e.code || e.message); });
+      r2.end();
+    }
     function onTimeout() { if (!reading) up.destroy(new Error('upstream timeout')); }
     function onUpError(e) {
+      // Feeding a live channel: only the request in use now counts (an earlier one let go errs late).
+      if (feedSync) { if (!aborted && up === firstUp) feedLost(e.code || e.message); return; }
       // Node's parser refused the reply: ask again with the forgiving reader.
       if (!aborted && !triedRaw && !res.headersSent && /^HPE_/.test(e.code || '')) {
         triedRaw = true; rec.lenient = e.code;
-        up = RawHttp.request(reqOpts, onResponse);
-        up.setTimeout(opts.timeout || 30000, onTimeout);
+        up = firstUp = RawHttp.request(reqOpts, onResponse);
+        up.setTimeout(idle, onTimeout);
         up.on('error', onUpError);
         return;
       }
@@ -338,7 +519,7 @@ function create(opts) {
       else res.destroy();
     }
     // Viewer zapped away: stop pulling the stream from the provider at once.
-    req.on('close', function () { if (!res.writableEnded && !res.finished) { aborted = true; if (up) up.destroy(); } finish(); });
+    req.on('close', function () { if (!res.writableEnded && !res.finished) { aborted = true; clearTimeout(feedTimer); if (up) up.destroy(); } finish(); });
     var held = pace.wait(host, img, send);
     if (held) rec.paced = held;
   });
@@ -347,5 +528,5 @@ function create(opts) {
   return { server: server, stats: stats, editor: editor };
 }
 
-module.exports = { SYS: SYS, sys: sys, create: create, target: target, relayed: relayed, rewriteHls: rewriteHls, log: log, redact: redact, LOG: LOG,
+module.exports = { SYS: SYS, sys: sys, create: create, target: target, liveKey: liveKey, keyStart: keyStart, pesPts: pesPts, lastPts: lastPts, relayed: relayed, rewriteHls: rewriteHls, log: log, redact: redact, LOG: LOG,
   _dns: { lookup: cachedLookup, cache: dnsCache, forget: forgetHost } };

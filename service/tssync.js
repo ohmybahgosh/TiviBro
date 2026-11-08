@@ -36,6 +36,18 @@ function lined(b, i) {
 
 TsSync.prototype._transform = function (chunk, enc, cb) {
   if (this.passthrough) { this.push(chunk); return cb(); }
+  // The usual case: the last chunk ended mid-packet and this one carries on in step.  Finish that packet
+  // on its own, rather than copying the whole chunk onto it (most chunks, on every live channel).
+  var c = this.carry;
+  if (c && this.synced && c[0] === SYNC && c.length < PKT) {
+    var need = PKT - c.length;
+    if (chunk.length >= need && (chunk.length === need || chunk[need] === SYNC)) {
+      this.push(Buffer.concat([c, chunk.slice(0, need)]));
+      this.carry = null;
+      chunk = chunk.slice(need);
+      if (!chunk.length) return cb();
+    }
+  }
   var b = this.carry ? Buffer.concat([this.carry, chunk]) : chunk;
   this.carry = null;
   var i = 0, n = b.length, runStart = -1;
@@ -89,4 +101,48 @@ TsSync.prototype._flush = function (cb) {
   cb();
 };
 
-module.exports = { TsSync: TsSync, PKT: PKT };
+/* For a live channel the helper keeps going across reconnects (proxy.js feed): holds back the packets since the
+   last start of a video frame (a PES on the video PID), about one frame's worth, and passes them on when the
+   next frame starts.  When the provider's connection breaks mid-frame, drop() throws that half frame away: the
+   app's demuxer would otherwise hand the TV's decoder a frame with a piece missing, and the decoder fails
+   ("PIPELINE_ERROR_DECODE") instead of carrying on from the next connection's keyframe.  Takes TsSync's whole
+   packets; anything not in step passes straight through. */
+function FrameHold() {
+  stream.Transform.call(this);
+  this.vpid = -1; this.held = []; this.passthrough = false;
+}
+util.inherits(FrameHold, stream.Transform);
+function pidOf(b, i) { return ((b[i + 1] & 0x1f) << 8) | b[i + 2]; }
+function videoStart(b, i) {
+  if (!(b[i + 1] & 0x40)) return false;
+  var p = i + 4;
+  if (b[i + 3] & 0x20) p += 1 + b[i + 4];
+  return p + 4 <= i + PKT && b[p] === 0 && b[p + 1] === 0 && b[p + 2] === 1 && b[p + 3] >= 0xe0 && b[p + 3] <= 0xef;
+}
+FrameHold.prototype._transform = function (b, enc, cb) {
+  if (this.passthrough || b.length % PKT) { this.flushHeld(); this.passthrough = true; this.push(b); return cb(); }
+  var start = 0;
+  for (var i = 0; i < b.length; i += PKT) {
+    if (b[i] !== SYNC) { this.flushHeld(); this.passthrough = true; this.push(b); return cb(); }
+    var pid = pidOf(b, i);
+    if (this.vpid < 0 && videoStart(b, i)) this.vpid = pid;
+    if (pid === this.vpid && videoStart(b, i)) {
+      // A new frame starts here: the one before it is whole.
+      this.flushHeld();
+      if (i > start) this.push(b.slice(start, i));
+      start = i;
+    }
+  }
+  if (this.vpid < 0) { this.push(b); return cb(); }
+  if (start < b.length) this.held.push(b.slice(start));
+  // Never more than a few hundred KB held (a stream whose video PID changed): let it go.
+  var n = 0; for (var k = 0; k < this.held.length; k++) n += this.held[k].length;
+  if (n > 512 * 1024) this.flushHeld();
+  cb();
+};
+FrameHold.prototype.flushHeld = function () { for (var k = 0; k < this.held.length; k++) this.push(this.held[k]); this.held = []; };
+// The connection broke: the frame being received will never be whole.
+FrameHold.prototype.drop = function () { var n = 0; this.held.forEach(function (x) { n += x.length; }); this.held = []; return n; };
+FrameHold.prototype._flush = function (cb) { this.flushHeld(); cb(); };
+
+module.exports = { TsSync: TsSync, FrameHold: FrameHold, PKT: PKT };
