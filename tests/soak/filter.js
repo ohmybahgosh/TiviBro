@@ -47,7 +47,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await page.keyboard.press('Enter'); await page.waitForTimeout(500);
   };
   await pick('^Channel options');
-  const menu = await ev(() => { const m = document.getElementById('modal'); return m && !m.classList.contains('hidden') ? m.innerText : ''; });
+  // Every item, not just the ones drawn (a long menu scrolls).
+  const menu = await ev(() => { const m = document.getElementById('modal'); return m && !m.classList.contains('hidden') ? (UI.menuLabels.length ? UI.menuLabels.join('\n') : m.innerText) : ''; });
   ok('the options menu has Hide with the content filter', /Hide with the content filter/.test(menu), menu.slice(0, 300));
   await pick('Hide with the content filter');
   const ask = await ev(() => document.getElementById('modal').innerText);

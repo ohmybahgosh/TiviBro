@@ -4,7 +4,8 @@
 #   bash scripts/soak-all.sh [name ...]        all of tests/soak, or the ones named (without .js)
 # Writes a line per test and a log per test to $OUT (default /tmp/soak-all), and a summary at the end.
 #   SKIP="chaos monkey"   leave some out          TIME=600   seconds each test may take
-#   FRESH=1   a new app server for every test (slower; no test sees another's web editor or phone pairing)
+#   FRESH=1   a new app server for every test, with its own empty storage (slower; no test sees another's web
+#             editor, phone pairing or the playlist a test before it stored, from a mock with other channels)
 set -u
 cd "$(dirname "$0")/.."
 export NODE_PATH=${NODE_PATH:-/opt/node-tools/node_modules}
@@ -24,7 +25,7 @@ pass=0; fail=0
 for n in "${names[@]}"; do
   case "$SKIP" in *" $n "*) echo "SKIP $n" | tee -a "$OUT/summary.txt"; continue;; esac
   f=tests/soak/$n.js
-  if [ -n "${FRESH:-}" ]; then stop_all; start_serve; else stop_mocks; fi
+  if [ -n "${FRESH:-}" ]; then stop_all; export TIVIBRO_KV_DIR="$OUT/kv-$n"; rm -rf "$TIVIBRO_KV_DIR"; mkdir -p "$TIVIBRO_KV_DIR"; start_serve; else stop_mocks; fi
   mocks=$(head -25 "$f" | grep -o '\([A-Z_0-9]*=[^ ]* \)*node tests/mock/mock_provider.js' | sed 's/ *node tests\/mock\/mock_provider.js//' | sort -u)
   [ -z "$(head -25 "$f" | grep -o 'node tests/mock/mock_provider.js')" ] && mocks="PLAIN"
   i=0
