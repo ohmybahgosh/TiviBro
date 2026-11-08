@@ -142,8 +142,11 @@ var Player = (function () {
       liveSyncDurationCount: p.chase ? 2 : Math.round(U.clamp(p.prebuffer / 2 + 2, 3, 6)),
       liveMaxLatencyDurationCount: p.chase ? 5 : Infinity,
       maxBufferLength: p.ahead, maxMaxBufferLength: p.ahead * 2, backBufferLength: p.back,
-      maxBufferSize: 80 * 1000 * 1000, maxBufferHole: 0.5, nudgeMaxRetry: 6, highBufferWatchdogPeriod: 2,
-      capLevelToPlayerSize: preview, capLevelOnFPSDrop: true,
+      // Memory-safe TVs (1 GB) keep less in memory here too.
+      maxBufferSize: (memSafe() ? 40 : 80) * 1000 * 1000, maxBufferHole: 0.5, nudgeMaxRetry: 6, highBufferWatchdogPeriod: 2,
+      /* Not capped on dropped frames: TVs report drops that aren't (the decoder is the TV's), and the picture
+         then stayed at a low quality for the rest of the channel. */
+      capLevelToPlayerSize: preview, capLevelOnFPSDrop: false,
       manifestLoadingMaxRetry: 4, levelLoadingMaxRetry: 6, fragLoadingMaxRetry: 8, fragLoadingRetryDelay: 400,
       manifestLoadingTimeOut: 12000, levelLoadingTimeOut: 10000, fragLoadingTimeOut: 20000,
       liveDurationInfinity: live, enableWebVTT: true, enableCEA708Captions: true, renderTextTracksNatively: true
@@ -151,7 +154,28 @@ var Player = (function () {
     // Media errors: recover, then recover with the audio codec swapped.  The count resets once
     // playback has run clean for a while, so one bad patch an hour in still gets recovered.
     var mediaErrs = 0, lastMediaErr = 0, netRecovers = 0, lastNetErr = 0;
-    h.on(Hls.Events.MANIFEST_PARSED, function (e, d) { media(Caps.bestHlsLevel(d && d.levels)); });
+    /* Start where it played last time, or at the best picture that fits the screen (1080 lines, and not
+       Dolby Vision, which this pipeline can't play), like TiviMate: hls.js would start from a bandwidth
+       guess, usually low, and climb.  Automatic quality carries on from there. */
+    var chMemo = cur.ch;
+    h.on(Hls.Events.MANIFEST_PARSED, function (e, d) {
+      var lv = (d && d.levels) || [];
+      if (!preview && lv.length > 1) {
+        var want = window.PlayMemo && PlayMemo.level ? PlayMemo.level(chMemo) : 0, pick = -1, best = -1;
+        lv.forEach(function (l, i) {
+          var ht = +l.height || 0, hdr = /^(dvh|dvav)/i.test(l.videoCodec || '');
+          if (want && ht === want) pick = i;
+          if (!hdr && ht <= 1080 && (best < 0 || ht > (+lv[best].height || 0) || (ht === (+lv[best].height || 0) && (l.bitrate || 0) > (lv[best].bitrate || 0)))) best = i;
+        });
+        var start = pick >= 0 ? pick : best;
+        if (start >= 0) { h.startLevel = start; Log.debug('player', 'HLS starting at ' + (lv[start].height || '?') + 'p' + (pick >= 0 ? ' (as last time)' : '')); }
+      }
+      media(Caps.bestHlsLevel(lv));
+    });
+    h.on(Hls.Events.LEVEL_SWITCHED, function (e, d) {
+      var l = h.levels && h.levels[d.level];
+      if (l && l.height && !preview && window.PlayMemo && PlayMemo.setLevel && st && st.started) PlayMemo.setLevel(chMemo, l.height);
+    });
     h.on(Hls.Events.AUDIO_TRACKS_UPDATED, function () { tracks(); });
     h.on(Hls.Events.ERROR, function (e, d) {
       if (!d.fatal) return;
@@ -202,15 +226,31 @@ var Player = (function () {
   function tsEngine(url, p, preview, fail, media) {
     var live = cur.live || !!cur.timeshift;
     url = Net.wrap(url, plWrap());
-    var m = mpegts.createPlayer({ type: 'mpegts', isLive: live, url: url, hasAudio: true, hasVideo: true }, {
-      enableWorker: workerOk, enableStashBuffer: true, stashInitialSize: p.stash * 1024,
+    /* Audio-only (radio) or video-only channels: mpegts waits for the missing track for ever, and the picture
+       never started until a fallback 8 to 15 s later.  The tracks the stream really has (its media info) go
+       into a new player at once (cur.tsTracks), kept for this channel's reconnects. */
+    var tr = cur.tsTracks || { a: true, v: true };
+    /* Live: start dispatching data almost at once.  mpegts holds the first bytes until its stash fills (up to
+       1.5 MB with the bigger buffer settings, seconds of a low-bitrate channel) and sizes it from the speed
+       after the first half second anyway; the app's own prebuffer is what keeps the cushion. */
+    var m = mpegts.createPlayer({ type: 'mpegts', isLive: live, url: url, hasAudio: tr.a, hasVideo: tr.v }, {
+      enableWorker: workerOk, enableStashBuffer: true, stashInitialSize: (live ? Math.min(p.stash, 64) : p.stash) * 1024,
       lazyLoad: false, deferLoadAfterSourceOpen: false, seekType: 'range',
       autoCleanupSourceBuffer: true, autoCleanupMaxBackwardDuration: p.back, autoCleanupMinBackwardDuration: Math.max(2, p.back / 2),
       liveBufferLatencyChasing: p.chase, liveBufferLatencyMaxLatency: p.chase ? 3 : 60, liveBufferLatencyMinRemain: p.chase ? 0.8 : 3,
       fixAudioTimestampGap: true, reuseRedirectedURL: true
     });
     var gotData = false;
-    m.on(mpegts.Events.MEDIA_INFO, function (mi) { gotData = true; if (st) st.gotInfo = true; if (mi && mi.mimeType) Log.debug('player', 'Stream codecs: ' + mi.mimeType); media(Caps.fromMpegts(mi)); });
+    m.on(mpegts.Events.MEDIA_INFO, function (mi) {
+      gotData = true; if (st) st.gotInfo = true; if (mi && mi.mimeType) Log.debug('player', 'Stream codecs: ' + mi.mimeType);
+      var has = { a: !!(mi && mi.hasAudio !== false), v: !!(mi && mi.hasVideo !== false) };
+      if (mi && (has.a || has.v) && (has.a !== tr.a || has.v !== tr.v) && !cur.tsTracks) {
+        cur.tsTracks = has;
+        Log.info('player', 'This stream has ' + (has.v ? 'no sound' : 'no picture') + ': playing what it has');
+        return fail('net', 'tracks', false, true);
+      }
+      media(Caps.fromMpegts(mi));
+    });
     m.on(mpegts.Events.ERROR, function (type, detail, info) {
       // Only a fetch the browser refused outright ("Exception": CORS, TLS) says the host needs the
       // TV player.  An HTTP error before data is usually the provider's connection limit while
@@ -435,7 +475,11 @@ var Player = (function () {
       if ((earlyNet || type === 'media') && kind !== 'native' && !st.started && !(isFile() && cur.everPlayed)) {
         // A fetch the demuxer could not make is about the host (CORS etc.), so remember it for
         // the host.  A codec problem is about this one channel only.
-        if (earlyNet) fallbackHosts[hostOf(url)] = 'native';
+        // Not when the fetch went through the helper: then it is the helper that didn't answer (it is started
+        // again, Net.restart), and pinning the provider to the TV player would move every channel there for the
+        // rest of the session.  This channel tries the next pipeline all the same.
+        if (earlyNet && !Net.active) fallbackHosts[hostOf(url)] = 'native';
+        else if (earlyNet) Net.ping(3000).then(function (ok) { if (!ok) Net.restart('a stream could not reach it'); });
         var alt = nextEngine(kind);
         if (alt) { Log.info('player', 'Trying the ' + ENGINE_NAMES[alt] + ' after a ' + type + ' error'); useEngine(alt); return start(myToken); }
         return giveUp(myToken);
@@ -948,8 +992,11 @@ var Player = (function () {
       state('buffering', 'Buffering');
       return;
     }
-    // 4. Clock stopped with data in hand: decoder problem.  Nudge, recover, then reconnect.
-    if (stuck > p.stall * 1000) {
+    /* 4. Clock stopped with data in hand: decoder problem.  Nudge, recover, then reconnect.  With a second or
+       more buffered it is the decoder, not the network, so 3 s is enough to say so (the stall setting, up to
+       12 s, is for a buffer that is running low). */
+    var frozeAfter = (ahead > 1 ? Math.min(p.stall, 3) : p.stall) * 1000;
+    if (stuck > frozeAfter) {
       if (!st.nudged) {
         var froze = 'Picture froze for ' + (stuck / 1000).toFixed(1) + 's with ' + ahead.toFixed(1) + 's buffered';
         /* The picture freezing again and again with plenty buffered (a live channel whose MPEG-TS has
@@ -1285,6 +1332,9 @@ var Player = (function () {
     if (isFile() && !cur.startAt && cur.pos > 5) cur.startAt = cur.pos;      // a movie tries again where it was
     start(token);
   }
+
+  // The helper started again after it stopped answering (net.js): what was playing through it starts again.
+  if (typeof Net !== 'undefined' && Net.onRestart) Net.onRestart(function () { if (cur && Net.active) { Log.info('player', 'The network helper is back: starting the stream again'); retryNow(); } });
 
   /* The app going to the background (Home, another input): let the stream go so the decoder and
      the provider connection are free, and pick up where it was on return. */

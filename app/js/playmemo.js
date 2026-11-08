@@ -55,7 +55,7 @@ var PlayMemo = (function () {
     if (k && ch.p && ch.k) return ch.k;
     return k ? ((Store.playlist && Store.playlist.id) || '') + ':' + k : '';
   }
-  // [engine, extra cushion in seconds, last used]
+  // [engine, extra cushion in seconds, last used, HLS picture height it played at]
   function entry(ch, create) {
     var k = chKey(ch), d = load();
     if (!k) return null;
@@ -75,7 +75,7 @@ var PlayMemo = (function () {
     if (!e) return;
     if (e[0] === want && now() - e[2] < 86400e3) return;
     e[0] = want; e[2] = now();
-    if (!e[0] && !e[1]) delete load().ch[chKey(ch)];
+    if (!e[0] && !e[1] && !e[3]) delete load().ch[chKey(ch)];
     save();
   }
   /** The extra cushion this channel has now (0 once it has calmed down). */
@@ -84,7 +84,17 @@ var PlayMemo = (function () {
     var e = entry(ch, secs > 0);
     if (!e || (e[1] === secs && now() - e[2] < 86400e3)) return;
     e[1] = secs; e[2] = now();
-    if (!e[0] && !e[1]) delete load().ch[chKey(ch)];
+    if (!e[0] && !e[1] && !e[3]) delete load().ch[chKey(ch)];
+    save();
+  }
+
+  /** An HLS channel's picture height last time (1080, 720...), so it starts there, not low and climbing. */
+  function level(ch) { var e = entry(ch); return e && now() - e[2] < OLD ? +e[3] || 0 : 0; }
+  function setLevel(ch, height) {
+    height = +height || 0;
+    var e = entry(ch, height > 0);
+    if (!e || (+e[3] === height && now() - e[2] < 86400e3)) return;
+    e[3] = height; e[2] = now();
     save();
   }
 
@@ -133,6 +143,6 @@ var PlayMemo = (function () {
   /** For tests: write now. */
   function flush() { if (timer) { clearTimeout(timer); timer = 0; } trim(); try { localStorage.setItem(KEY, JSON.stringify(load())); } catch (e) {} }
 
-  return { get: get, worked: worked, boost: boost, started: started, ranDry: ranDry, watched: watched, dryRate: dryRate, auto: auto,
+  return { get: get, worked: worked, boost: boost, level: level, setLevel: setLevel, started: started, ranDry: ranDry, watched: watched, dryRate: dryRate, auto: auto,
     summary: summary, reset: reset, flush: flush, LEVELS: LEVELS, LEARNING: LEARNING };
 })();
