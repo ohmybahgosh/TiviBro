@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 109, 2026-11-08)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 109
 
 - **Guide series from TMDB: checked with real lookups against a real guide's 600 most-aired shows, and fixed where it went wrong.**
   - Of two shows with one name, the channel's country's: "Cheaters" and "Deal or No Deal" on US channels are the US shows, not the British ones.
@@ -12,11 +16,7 @@
   - "Classic Doctor Who" is the 1963 series, "Cops Reloaded" is Cops, "Best of Dr. Phil" is Dr. Phil, and "America's Test Kitchen" is TMDB's "America's Test Kitchen From Cook's Illustrated".
   - All in, of the guide's 600 most-aired shows about 435 are found now, 359 before this pass.
 
-## 0.6.0 (alpha 108, 2026-11-08)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 108
+### In alpha 108
 
 - **More guide programmes find their series on TMDB, and fewer the wrong one.**  Checked against a real guide's 108,000 programmes:
   - Series in long slots are looked up now (Midsomer Murders, Columbo, Married at First Sight, Survivor, Yellowstone): a programme over 75 minutes still counts as a movie, unless the channel airs it with a different story each time.
