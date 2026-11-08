@@ -717,7 +717,7 @@ Where the programme guide comes from, for the playlist in use, and the movies in
 **How your guide is built.**  The page starts with the order TiviBro builds your guide in:
 
 1. **Your provider's guide.**
-2. **Your own guide sources**, the first one first.  They win over the provider's.
+2. **Your own guide sources**, the first one first.  They fill the channels your provider's guide leaves empty, and take over one it has only where their programmes agree (similar titles at the same times), so a source with more days but the wrong schedule doesn't win.
 3. **Public fill-in**, only for channels nothing else covers: epg.pw, iptv-epg.org, epgshare01, and Pluto TV's own guide from i.mjh.nz for Pluto channels.
 4. **Matching:** each channel is linked to a guide channel by its guide id, then its name.  A wrong one: **Hold OK > Assign guide**.
 

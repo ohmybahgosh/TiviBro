@@ -197,7 +197,7 @@ I18n.add('es', {
   "12 hours": "12 horas",
   "14 days": "14 días",
   "2 days": "2 días",
-  "2.  Your own guide sources, the first one first.  They win over the provider's.": "2.  Tus propias fuentes de guía, la primera primero.  Tienen prioridad sobre las del proveedor.",
+  "2.  Your own guide sources, the first one first.  They fill the channels your provider's guide leaves empty, and take over one it has only where their programmes agree.": "2.  Tus propias fuentes de guía, la primera primero.  Completan los canales que la guía de tu proveedor deja vacíos, y solo sustituyen uno que ya tiene cuando sus programas coinciden.",
   "24 hours": "24 horas",
   "3 days": "3 días",
   "3 hours": "3 horas",

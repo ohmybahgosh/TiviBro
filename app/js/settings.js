@@ -769,7 +769,7 @@ var Settings = (function () {
     var s = S(), p = Store.playlist, out = [];
     out.push(head('How your guide is built, in this order'));
     out.push(info('1.  Your provider\'s guide.', ''));
-    out.push(info('2.  Your own guide sources, the first one first.  They win over the provider\'s.', ''));
+    out.push(info('2.  Your own guide sources, the first one first.  They fill the channels your provider\'s guide leaves empty, and take over one it has only where their programmes agree.', ''));
     out.push(info('3.  Public fill-in, only for channels nothing else covers: epg.pw, iptv-epg.org, epgshare01, and Pluto TV\'s own guide from i.mjh.nz for Pluto channels.', ''));
     out.push(info('4.  Matching: each channel is linked to a guide channel by its guide id, then its name.  A wrong one: Hold OK > Assign guide.', ''));
     out.push(info('A channel that will never have a guide (a radio stream, a camera, an event slot): Hold OK > No guide for this channel.  It drops out of matching and stops saying "No guide information".  The web editor\'s Guide page does many at once (Ignore).', ''));

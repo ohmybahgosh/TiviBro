@@ -202,7 +202,7 @@ I18n.add('ru', {
   "14 days": "14 дней",
   "2 days": "2 дня",
   "2 min": "2 мин",
-  "2.  Your own guide sources, the first one first.  They win over the provider's.": "2.  Ваши источники телегида, по порядку.  Они важнее телегида провайдера.",
+  "2.  Your own guide sources, the first one first.  They fill the channels your provider's guide leaves empty, and take over one it has only where their programmes agree.": "2.  Ваши источники телегида, по порядку.  Они заполняют каналы, для которых у провайдера нет телегида, а канал с телегидом провайдера берут, только если их передачи совпадают.",
   "24 hours": "24 часа",
   "3 days": "3 дня",
   "3 hours": "3 часа",
