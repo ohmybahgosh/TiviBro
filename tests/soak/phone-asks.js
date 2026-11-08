@@ -248,7 +248,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   // Settings from the phone: every page, the same rows as on the TV, and changes that stick.
   const sa = (o) => ask('settings', o, { seal: true });
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance and start screen') && secs.sections.length === 14, JSON.stringify(secs.sections));
+  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance and start screen') && secs.sections.length === 15, JSON.stringify(secs.sections));
   let pg = await sa({ op: 'page', sec: 'look' });
   const clock = pg.rows.find((r) => r.label === 'Show clock'), nums = pg.rows.find((r) => r.label === 'Numbers');
   ok('a page comes as rows: toggles, choices with their options', clock && clock.kind === 'toggle' && nums && nums.kind === 'choice' && nums.options.length === 3, JSON.stringify(pg.rows.slice(0, 4)));

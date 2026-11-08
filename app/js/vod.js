@@ -11,6 +11,8 @@
    playlist on, everything is as before (data[k] is that playlist's list itself). */
 var Vod = (function () {
   'use strict';
+  // A name, never translated (app/js/i18n.js); plain text where there's no I18n (unit tests).
+  var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
   var $ = U.$;
   var kind = 'movie', built = false, zone = 'items';
   var catsVL, itemsVL;
@@ -263,7 +265,7 @@ var Vod = (function () {
     var hidAll = 0; vodPls().forEach(function (q) { hidAll += hiddenCats(kind, q).length; });
     if (hidAll) items.push({ label: 'Show hidden categories (' + hidAll + ')', action: function () { vodPls().forEach(function (q) { var x = prefs(q).hide; if (x && x[kind] && x[kind].length) { x[kind] = []; Store.upsertPlaylist(q); } }); U.toast('Hidden categories are back'); reshow(); } });
     if (!items.length) return;
-    UI.menu(c.name, items);
+    UI.menu(RAW(c.name), items);
   }
 
   // Providers send 01:25:00, 85 (minutes) or 0; show 1 h 25 min, 43 min, or nothing.
@@ -454,7 +456,7 @@ var Vod = (function () {
     if (poster) { var img = U.el('img', 'vod-poster' + (it.ep && te && poster === te.still ? ' still' : '')); img.src = poster; img.onerror = function () { if (!Net.retryImage(this)) this.remove(); }; box.appendChild(img); }
     box.appendChild(U.el('h2', '', it.ep ? (te && te.t && /^S\d+ E[\d?]+\s*$/.test(it.label) ? it.label + '   ' + te.t : it.label) : it.name));
     var rating = stars(it.rating) || (tv && !it.ep && tv.rating ? '★ ' + tv.rating + ' TMDB' : '');
-    var meta = [m && m.year || it.year || (!it.ep && tv && tv.year), niceDur(m && m.dur || it.dur), m && m.genre || (!it.ep && tv && tv.genre), !it.ep && tv && tv.network, it.ep && te && te.air ? 'aired ' + new Date(te.air + 'T12:00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '', rating].filter(Boolean).join('   ');
+    var meta = [m && m.year || it.year || (!it.ep && tv && tv.year), niceDur(m && m.dur || it.dur), m && m.genre || (!it.ep && tv && tv.genre), !it.ep && tv && tv.network, it.ep && te && te.air ? 'aired ' + new Date(te.air + 'T12:00:00').toLocaleDateString(U.loc ? U.loc() : undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : '', rating].filter(Boolean).join('   ');
     if (meta) box.appendChild(U.el('div', 'vod-meta', meta));
     // What the file is, from the provider's own scan of it: 4K, HDR or Dolby Vision, sound format.
     var md = mediaOf(it);
@@ -567,7 +569,7 @@ var Vod = (function () {
     var id = idOf(it);
     var r = resumeOf(id), mine = E().myList.indexOf(key(it)) >= 0, playable = kind === 'movie' || it.ep, w = isWatched(id);
     var er = !playable && r && r.ep ? resumeOf(r.ep) : null;
-    UI.menu(it.ep ? it.label : it.name, [
+    UI.menu(RAW(it.ep ? it.label : it.name), [
       playable && r && { label: 'Resume', sub: Math.floor(r.pos / 60) + ' min', action: function () { play(it, false); } },
       // A show: straight into the episode you're on, or the next one.
       !playable && r && r.ep && { label: (er ? 'Resume ' : 'Play ') + r.l, sub: er ? Math.floor(er.pos / 60) + ' min' : '', action: function () { playEpisode(it, r.ep); } },

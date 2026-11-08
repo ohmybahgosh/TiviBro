@@ -7,6 +7,8 @@
    - Guide data is requested only for rows on screen. */
 var Views = (function () {
   'use strict';
+  // A name, never translated (app/js/i18n.js); plain text where there's no I18n (unit tests).
+  var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
   var $ = U.$, L = Library;
   var stage = $('stage'), video = $('video');
   var tab = 'live', zone = 'channels', full = false, liveZone = 'channels';
@@ -20,7 +22,7 @@ var Views = (function () {
   var backT = 0, sleepAt = 0, sleepWarned = false, playStart = 0, recentDone = false;
 
   // In the language chosen (app/js/i18n.js).
-  function T(x, v) { return I18n.t(x, v); }
+  function T(x, v) { return typeof I18n !== 'undefined' ? I18n.t(x, v) : v ? String(x).replace(/\{([a-z]+)\}/g, function (a, k) { return v[k] != null ? v[k] : a; }) : x; }
   var TAB_LABELS = { live: 'Channels', guide: 'Guide', onnow: 'Movies on now', movies: 'Movies', shows: 'Shows', media: 'My media', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
   // The guide is home: the app opens on it and Back from any other screen comes back to it.
   function home() { return Store.settings.startTab === 'live' ? 'live' : 'guide'; }
@@ -62,7 +64,7 @@ var Views = (function () {
     tabs.forEach(function (t) {
       var s = U.el('div', 'tab' + (t === tab ? ' on' : '')); s.setAttribute('data-tab', t);
       s.innerHTML = '<svg viewBox="0 0 24 24" class="ico">' + ICONS[t] + '</svg>';
-      s.appendChild(U.el('span', 'lbl', I18n.t(TAB_LABELS[t])));
+      s.appendChild(U.el('span', 'lbl', T(TAB_LABELS[t])));
       s.addEventListener('click', function () { closeNav(); if (full) exitFull(); UI.close(); if (t === 'editor') WebEdit.showJoin(); else if (t === 'report') Diag.openReport(); else switchTab(t); });
       s.addEventListener('mousemove', function () { if (UI.pointer && !document.body.classList.contains('nav-open') && !full) openNavFromPointer(); });
       nav.appendChild(s);
@@ -894,8 +896,9 @@ var Views = (function () {
       chip('back', 'Back  ' + (fullFrom === 'live' ? 'Channels' : 'Guide'));
     }
     var sig = JSON.stringify(items);
-    if (el._sig === sig + I18n.lang()) return;
-    el._sig = sig + I18n.lang(); el.innerHTML = '';
+    var lg = typeof I18n !== 'undefined' ? I18n.lang() : '';
+    if (el._sig === sig + lg) return;
+    el._sig = sig + lg; el.innerHTML = '';
     items.forEach(function (x) {
       var s = U.el('span', 'clickable'); s.setAttribute('data-key', x[0]);
       if (x[2]) s.appendChild(U.el('b', 'k-' + x[2]));
@@ -1117,7 +1120,7 @@ var Views = (function () {
     var list = (Epg.request(c) || []).filter(function (p) { return p.e < Date.now() && p.s > Date.now() - c.arch * 86400e3; }).reverse();
     if (!list.length) { U.toast(Epg.xml ? 'No past programmes in the guide' : 'Open the Guide and go left to browse older programmes'); return; }
     UI.menu('Catch-up: ' + L.name(c), list.slice(0, 40).map(function (p) {
-      return { label: p.t || 'Programme', sub: new Date(p.s).toLocaleDateString(undefined, { weekday: 'short' }) + ' ' + U.hhmm(p.s), action: function () { playCatchup(c, p, 0); } };
+      return { label: p.t ? RAW(p.t) : 'Programme', sub: new Date(p.s).toLocaleDateString(U.loc ? U.loc() : undefined, { weekday: 'short' }) + ' ' + U.hhmm(p.s), action: function () { playCatchup(c, p, 0); } };
     }));
   }
 
@@ -1213,7 +1216,7 @@ var Views = (function () {
   function versionsMenu(c) {
     var v = L.versions(c);
     UI.menu('Other versions of ' + L.name(c), v.map(function (x) {
-      return { label: L.name(x), sub: versionSub(x), action: function () { startChannel(x, false, function () { if (!full) goFull(); else osd(true); }); } };
+      return { label: RAW(L.name(x)), sub: versionSub(x), action: function () { startChannel(x, false, function () { if (!full) goFull(); else osd(true); }); } };
     }));
   }
 
@@ -1280,7 +1283,7 @@ var Views = (function () {
   /* ---------- menus ---------- */
   function copyMenu(keys, label) {
     var items = L.customGroups().map(function (g) {
-      return { label: g.name, sub: g.items.length + ' channels', action: function () {
+      return { label: RAW(g.name), sub: g.items.length + ' channels', action: function () {
         var n = L.copyTo(g.id, keys);
         U.toast(n ? 'Copied ' + (n === 1 ? label : n + ' channels') + ' to ' + g.name : 'Already in ' + g.name);
         refreshLists(true);
@@ -1362,7 +1365,7 @@ var Views = (function () {
     var team = Teams.ofChannel(c), follow = team && Teams.follows(team.id);
     return [
       { label: fav ? 'Remove from Favorites' : 'Add to Favorites', action: function () { var on = L.toggleFav(c.k); U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); } },
-      team && { label: follow ? 'Stop following the ' + team.name : 'Follow the ' + team.name, sub: follow ? '' : 'in My teams, with its games', action: function () {
+      team && { label: RAW(T(follow ? 'Stop following the {x}' : 'Follow the {x}', { x: team.name })), sub: follow ? '' : 'in My teams, with its games', action: function () {
         Teams.follow(team.id, !follow); refreshLists(true);
         U.toast(follow ? 'Stopped following the ' + team.name : 'Following the ' + team.name + '.  Find them in My teams.');
       } },
@@ -1413,7 +1416,7 @@ var Views = (function () {
   }
   function chanMenu(c, gid) {
     if (!c) return;
-    UI.menu(L.name(c), [{ label: 'Watch', action: function () { startChannel(c, false, function () { if (!full) goFull(); else osd(true); }); } }].concat(chanItems(c, gid)));
+    UI.menu(RAW(L.name(c)), [{ label: 'Watch', action: function () { startChannel(c, false, function () { if (!full) goFull(); else osd(true); }); } }].concat(chanItems(c, gid)));
   }
 
   /* ---------- quick panel (OK in fullscreen, like TiviMate) ----------
@@ -1484,7 +1487,7 @@ var Views = (function () {
   function qualityMenu() {
     var q = Player.qualities();
     UI.menu('Video quality', [{ label: 'Automatic', sub: Player.qualityAuto() ? 'on' : 'adapts to your connection', action: function () { Player.setQuality(-1); } }]
-      .concat(q.map(function (x) { return { label: x.label, sub: x.on ? 'on' : '', action: function () { Player.setQuality(x.id); } }; })));
+      .concat(q.map(function (x) { return { label: RAW(x.label), sub: x.on ? 'on' : '', action: function () { Player.setQuality(x.id); } }; })));
   }
   /* Aspect for this channel or video only, or for everything (TiviMate's "Apply to all channels").
      The shapes past Zoom scale the picture with CSS; the TV player draws some streams on its own
@@ -1653,7 +1656,7 @@ var Views = (function () {
       var none = tr.every(function (t) { return t.mode !== 'showing'; });
       // Any choice here (Off too) is the viewer's for the rest of this playback: see the addtrack handler.
       list.push({ label: 'Off', sub: none ? 'on' : '', current: none, action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = null; video._subsWantKey = ''; tr.forEach(function (t) { t.mode = 'disabled'; }); } });
-      tr.forEach(function (t, i) { list.push({ label: t.label || t.language || 'Track ' + (i + 1), sub: t.mode === 'showing' ? 'on' : '', current: t.mode === 'showing', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = t; video._subsWantKey = (t.label || '') + '|' + (t.language || ''); tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
+      tr.forEach(function (t, i) { list.push({ label: RAW(t.label || t.language || 'Track ' + (i + 1)), sub: t.mode === 'showing' ? 'on' : '', current: t.mode === 'showing', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = t; video._subsWantKey = (t.label || '') + '|' + (t.language || ''); tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
     }
     if (!settings.length) return UI.menu('Subtitles', list);
     var it = vod && vod.meta && vod.meta.item || {};
@@ -1711,14 +1714,14 @@ var Views = (function () {
     if (mode !== 'vod') items.push({ label: 'Closed captions', sub: ccLabel(), action: ccToggle });
     items.push({ label: 'Sleep timer', sub: sleepAt ? 'stops at ' + U.hhmm(sleepAt) : 'off', action: sleepMenu });
     items.push({ label: 'Reconnect stream', action: function () { Player.retryNow(); } });
-    UI.menu(mode === 'vod' && vod ? vod.meta.title : playing ? L.name(playing) : 'Player', items);
+    UI.menu(mode === 'vod' && vod ? RAW(vod.meta.title) : playing ? RAW(L.name(playing)) : 'Player', items);
   }
 
   function groupMenu(g) {
     if (!g) return;
     var custom = L.isCustom(g.id), virtual = L.isVirtual(g.id);
     var hidden = !!Store.edits.hiddenGroups[g.id], blocked = !!Store.edits.blockedGroups[g.id];
-    UI.menu(g.name, [
+    UI.menu(RAW(g.name), [
       !virtual && { label: 'Copy all channels to group…', action: function () { copyMenu(L.channels(g.id).map(function (c) { return c.k; }), g.name); } },
       { label: 'New group…', action: function () {
         UI.prompt('Name the new group', '', function (n) { if (n.trim()) { L.createGroup(n); refreshLists(true); U.toast('Group created.  Hold OK on any channel to copy it in.'); } });
@@ -1766,7 +1769,7 @@ var Views = (function () {
       { label: n ? 'Merge ' + n + (n === 1 ? ' group' : ' groups') + ' into ' + L.groupName(g.id) : 'Tick the groups to merge', sub: n ? 'their channels show here; Split undoes it' : 'groups with the same words come first', current: at == null,
         action: function () { if (!n) { mergeMenu(g, picked); return; } var done = L.mergeGroups(g.id, Object.keys(picked)); refreshLists(true); U.toast(done + (done === 1 ? ' group' : ' groups') + ' merged into ' + L.groupName(g.id)); } }
     ].concat(cands.map(function (x) {
-      return { label: (picked[x.id] ? '✓ ' : '') + L.groupName(x.id), sub: L.channels(x.id, true).length + ' channels' + (x.hidden ? ', hidden' : ''), current: at === x.id,
+      return { label: RAW((picked[x.id] ? '✓ ' : '') + L.groupName(x.id)), sub: L.channels(x.id, true).length + ' channels' + (x.hidden ? ', hidden' : ''), current: at === x.id,
         action: function () { if (picked[x.id]) delete picked[x.id]; else picked[x.id] = 1; mergeMenu(g, picked, x.id); } };
     })));
   }
@@ -1826,7 +1829,9 @@ var Views = (function () {
    Back always means "up one level" so it never surprises anyone). */
 var Guide = (function () {
   'use strict';
-  function T(x, v) { return I18n.t(x, v); }
+  // A name, never translated (app/js/i18n.js); plain text where there's no I18n (unit tests).
+  var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
+  function T(x, v) { return typeof I18n !== 'undefined' ? I18n.t(x, v) : v ? String(x).replace(/\{([a-z]+)\}/g, function (a, k) { return v[k] != null ? v[k] : a; }) : x; }
   var $ = U.$, L = Library;
   var view = $('viewGuide'), body = $('guideBody'), timesEl = $('guideTimes'), detail = $('guideDetail'), ghead = $('guideGroup');
   var PEEK = 0, ROW = 100, VIS = 0, WIN = 2.5 * 3600e3, PXW = 0, CHW = 470, MINCELL = 220;      // narrowest a programme is drawn (px)
@@ -2017,7 +2022,7 @@ var Guide = (function () {
   function headWhen() {
     if (!ghWhen) return;
     var now = Date.now(), at = t0 || now, dn = dayName(at);
-    var date = new Date(at).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    var date = new Date(at).toLocaleDateString(U.loc ? U.loc() : undefined, { weekday: 'short', day: 'numeric', month: 'short' });
     var t = dn === 'Today' ? date + ', ' + U.hhmm(now) : dn === 'Tomorrow' || dn === 'Yesterday' ? dn + ', ' + date : date;
     if (ghWhen.textContent !== t) ghWhen.textContent = t;
   }
@@ -2266,11 +2271,11 @@ var Guide = (function () {
     var now = Date.now();
     if (!c) return '';
     if (!h.p || (h.p.s <= now && h.p.e > now)) {
-      if (isPlaying(c)) return 'OK  watch fullscreen';
-      return Store.settings.guideOk === 'full' ? 'OK  watch fullscreen' : 'OK  play in the window, OK again for fullscreen';
+      if (isPlaying(c)) return T('OK  watch fullscreen');
+      return T(Store.settings.guideOk === 'full' ? 'OK  watch fullscreen' : 'OK  play in the window, OK again for fullscreen');
     }
-    if (h.p.e <= now) return c.arch ? 'OK  replay this programme' : 'Already aired.  This channel has no catch-up.';
-    return hasReminder(c, h.p) ? 'OK  cancel the reminder' : 'OK  remind me when it starts';
+    if (h.p.e <= now) return T(c.arch ? 'OK  replay this programme' : 'Already aired.  This channel has no catch-up.');
+    return T(hasReminder(c, h.p) ? 'OK  cancel the reminder' : 'OK  remind me when it starts');
   }
 
   /* The preview window before anything plays in it: the channel you're on, its logo large, rather than a
@@ -2514,7 +2519,7 @@ var Guide = (function () {
     if (diff === 0) return 'Today';
     if (diff === 1) return 'Tomorrow';
     if (diff === -1) return 'Yesterday';
-    return new Date(t).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    return new Date(t).toLocaleDateString(U.loc ? U.loc() : undefined, { weekday: 'short', day: 'numeric', month: 'short' });
   }
   // As far ahead as the channels on screen have a guide (at least three hours from now).
   function guideEnd() {
@@ -2634,7 +2639,7 @@ var Guide = (function () {
     items.push({ label: 'Channel options…', icon: 'more', sub: 'favorite, copy to group, hide, rename', action: function () { Views.chanMenu(c, gid); } });
     // What it is about under the title: the channel, and the programme's day and time.
     var when2 = h.p && !h.p.up && !h.p.ended ? (dayName(h.p.s) === 'Today' ? '' : dayName(h.p.s) + '  ') + U.hhmm(h.p.s) + ' – ' + U.hhmm(h.p.e) : '';
-    UI.menu(h.p ? h.p.t : L.name(c), items, null, { sub: L.name(c) + (when2 ? '   ·   ' + when2 : '') });
+    UI.menu(RAW(h.p ? h.p.t : L.name(c)), items, null, { sub: RAW(L.name(c) + (when2 ? '   ·   ' + when2 : '')) });
   }
 
   /* About this show (Info on a series, or Hold OK > About this show…): TMDB's poster, when it started,
@@ -2674,7 +2679,7 @@ var Guide = (function () {
     if (next) buttons.push({ label: hasReminder(c, next) ? 'Cancel the reminder for ' + U.hhmm(next.s) : 'Remind me: ' + (dayName(next.s) === 'Today' ? '' : dayName(next.s) + ' ') + U.hhmm(next.s), action: function () { toggleReminder(c, next); } });
     buttons.push({ label: 'Close' });
     panelFill = fill; panelTitle = sh.title || p.t;
-    UI.panel(panelTitle, body, buttons, null, { sub: L.name(c) + '   ·   TMDB' });
+    UI.panel(panelTitle, body, buttons, null, { sub: RAW(L.name(c) + '   ·   TMDB') });
     UI.onClose = function () { panelFill = null; };
   }
   // Info on a series opens its panel; on anything else, the options menu as before.

@@ -425,7 +425,7 @@ var UI = (function () {
     setHandler: function (fn) { handler = fn; },
     getHandler: function () { return handler; },
     get modalOpen() { return !!modalH; },
-    get menuLabels() { return modalH ? mItems.map(function (x) { return x.label; }) : []; },   // every row of the open menu, also those scrolled out of view (tests)
+    get menuLabels() { return modalH ? mItems.map(function (x) { return x.label == null ? x.label : String(x.label); }) : []; },   // every row of the open menu, also those scrolled out of view (tests)
     get pointer() { return pointer; },
     get lastInput() { return lastInput; },
     get repeating() { return repeating; },     // true while a held arrow is auto-repeating

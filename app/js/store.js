@@ -512,11 +512,11 @@ var Store = (function () {
        "Expires 19 Nov", "Expired 2 Oct".  Empty when the provider doesn't say. */
     expiry: function (p) {
       var t = p && +p.exp; if (!t) return '';
-      var days = Math.ceil((t - Date.now()) / 86400000), d = new Date(t).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: new Date(t).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
+      var days = Math.ceil((t - Date.now()) / 86400000), d = new Date(t).toLocaleDateString(U.loc ? U.loc() : undefined, { day: 'numeric', month: 'short', year: new Date(t).getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
       if (days < 0) return 'Expired ' + d;
       if (days === 0) return 'Expires today';
       if (days <= 14) return 'Expires in ' + days + (days === 1 ? ' day' : ' days');
-      return 'Expires ' + d;
+      return typeof I18n !== 'undefined' ? I18n.t('Expires {x}', { x: d }) : 'Expires ' + d;
     },
     saveSettings: saveSettings, saveEdits: saveEdits, get editsRev() { return editsRev; },
     // Clear the first playlist's edits; the other playlists keep theirs.

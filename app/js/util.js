@@ -26,6 +26,8 @@ var U = (function () {
     d.cancel = function () { clearTimeout(t); };
     return d;
   }
+  // The locale for dates in the language chosen (Settings > Language), else the TV's own.
+  function loc() { return typeof I18n !== 'undefined' && I18n.lang() !== 'en' ? I18n.locale() : undefined; }
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
   function hhmm(ts) {
     var d = new Date(ts);
@@ -213,5 +215,5 @@ var U = (function () {
   return {
     lines: lines, notice: notice, hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
     secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, day: day, LANGS: LANGS, lang: lang, hash: hash,
-    b64utf8: b64utf8, request: request, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad };
+    b64utf8: b64utf8, request: request, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad, loc: loc };
 })();

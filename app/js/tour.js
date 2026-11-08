@@ -137,7 +137,7 @@ var Tour = (function () {
     out.push(action('Keep only ' + (st.sv.countries[0] ? st.sv.countries[0].name : ''), 'The biggest one in this playlist.', function () { st.sv.countries.forEach(function (x, i) { ch.cc[x.p] = i === 0; }); draw(); }));
     out.push(head('Countries and regions, biggest first'));
     st.sv.countries.forEach(function (x) {
-      out.push(toggle(x.name, plural(x.chans, 'channel') + ' in ' + plural(x.groups.length, 'group'), function () { return ch.cc[x.p] !== false; }, function (v) { ch.cc[x.p] = v; draw(); }, 'Keep', 'Hide'));
+      out.push(toggle(I18n.raw(x.name), plural(x.chans, 'channel') + ' in ' + plural(x.groups.length, 'group'), function () { return ch.cc[x.p] !== false; }, function (v) { ch.cc[x.p] = v; draw(); }, 'Keep', 'Hide'));
     });
     out.push(head('Everything else'));
     out.push(toggle('Groups with no country', 'Sports, pay-per-view and event groups, 24/7 channels and the like.', function () { return ch.ccNone; }, function (v) { ch.ccNone = v; draw(); }, 'Keep', 'Hide'));
@@ -183,7 +183,7 @@ var Tour = (function () {
     if (ch.feed !== 'both' && gs.length) out.push(toggle('Also hide groups named ' + (drop === 'west' ? 'West' : 'East'), gs.slice(0, 4).map(function (g) { return g.name; }).join(', '), function () { return ch.feedGroups; }, function (v) { ch.feedGroups = v; draw(); }));
     if (ch.feed !== 'both') out.push(note('The ' + (drop === 'west' ? 'West' : 'East') + ' feed is not a backup: it runs hours apart, so TiviBro never switches to it by itself.  Your other qualities of the same feed still are.'));
     out.push(head(plural(fp.pairs, 'channel') + ' come in both feeds, for example'));
-    fp.examples.forEach(function (x) { out.push(info(x.east.n + '    ⇄    ' + x.west.n, '')); });
+    fp.examples.forEach(function (x) { out.push(info(I18n.raw(x.east.n + '    ⇄    ' + x.west.n), '')); });
     return out;
   }
 
@@ -447,7 +447,10 @@ var Tour = (function () {
     st.rowEls = st.items.map(function (it, i) {
       if (it.custom) return it.el;
       var d = U.el('div', 'opt' + (it.head ? ' head' : '') + (it.info ? ' dim' : '') + (it.note ? ' note' : ''));
-      var l = U.el('div', 'ol', it.label);
+      var l = U.el('div', 'ol');
+      // A name (I18n.raw: a country, a channel) is left as it is; the line under it is translated.
+      if (typeof it.label === 'object') { var nm = U.el('span', '', it.label); nm.setAttribute('data-raw', ''); l.appendChild(nm); }
+      else l.appendChild(document.createTextNode(it.label));
       if (it.sub) l.appendChild(U.el('small', '', it.sub));
       d.appendChild(l);
       if (!it.head) {

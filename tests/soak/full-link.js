@@ -18,7 +18,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await page.waitForFunction(() => document.querySelector('#viewSetup input'), null, { timeout: 30000 });
   const rows = () => ev(() => [].slice.call(document.querySelectorAll('#viewSetup .field label')).map(l => l.textContent));
   const r0 = await rows();
-  ok('a new playlist starts on Full link', await ev(() => /Full link/.test(document.querySelector('#viewSetup .field .val').textContent)) && r0.indexOf('Full link') >= 0, r0.join(', '));
+  ok('a new playlist starts on Full link', await ev(() => /Full link/.test(document.querySelector('#viewSetup .field:not(.lang) .val').textContent)) && r0.indexOf('Full link') >= 0, r0.join(', '));
   await ev((l) => { const i = [].slice.call(document.querySelectorAll('#viewSetup .field')).find(d => d.querySelector('label').textContent === 'Full link').querySelector('input'); i.value = l; i.dispatchEvent(new Event('input')); }, LINK);
   const note = await ev(() => document.querySelector('#viewSetup .linknote').textContent);
   ok('the TV says what it found as you paste', /Found an Xtream Codes login for 127\.0\.0\.1:8077 \(username demo\)/.test(note), note);

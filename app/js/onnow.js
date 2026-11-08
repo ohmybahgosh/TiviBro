@@ -3,6 +3,8 @@
    focused one large at the top over its backdrop, with its title logo.  OK watches it; Hold OK or Red
    lists every channel showing it, a reminder for one starting later, or the guide on it. */
 var OnNow = (function () {
+  // A name, never translated (app/js/i18n.js); plain text where there's no I18n (unit tests).
+  var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
   var $ = function (id) { return document.getElementById(id); };
   var built = false, rows = [], row = 0, pos = {}, timer = null, open_ = false, sig = '';
   var CARD = 324;                                        // a poster and the gap after it, px (app.css .on-card)
@@ -169,7 +171,7 @@ var OnNow = (function () {
     if (list.length > SHOW_MAX + 1) items.push({ label: 'All ' + list.length + ' showings…', icon: 'list', action: function () { UI.menu(g.m.title + ': every showing', list.map(row)); } });
     if (!g.live) items.push({ label: 'Watch the channel now', sub: Library.name(g.c) + ' (the movie starts at ' + U.hhmm(g.p.s) + ')', icon: 'play', action: function () { Views.startChannel(g.c, false, function () { Views.goFull(); }); } });
     items.push({ label: 'Show in the guide', icon: 'grid', action: function () { Views.switchTab('guide'); Guide.open(Library.MOVIES, g.c.k); } });
-    UI.menu(g.m.title + (g.m.year ? ' (' + g.m.year + ')' : ''), items);
+    UI.menu(RAW(g.m.title + (g.m.year ? ' (' + g.m.year + ')' : '')), items);
   }
 
   function keys(a) {

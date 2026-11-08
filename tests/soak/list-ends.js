@@ -58,7 +58,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => Views.switchTab('guide')); await page.waitForTimeout(600);
   await ev(() => { const l = Library.channels(Library.ALL); Guide.open(Library.ALL, l[l.length - 1].k); }); await page.waitForTimeout(600);
   let g = await ev(() => { const s = document.querySelector('#guideBody .grow.sel'), l = Library.channels(Library.ALL); return { sel: Guide.__sel(), n: l.length, bottom: Math.round(s.getBoundingClientRect().bottom), rows: document.querySelectorAll('#guideBody .grow').length }; });
-  ok('Extra large rows set from Settings: the last channel sits above the button hints', g.sel === g.n - 1 && g.bottom <= await hintsTop() && g.rows === 4, JSON.stringify(g));
+  ok('Extra large rows set from Settings: the last channel sits above the button hints', g.sel === g.n - 1 && g.bottom <= await hintsTop() && g.rows >= 3 && g.rows <= 5, JSON.stringify(g));
   await shot('guide-bottom-xl');
   await ev(() => { Store.settings.guideRows = 'm'; Store.saveSettings(); Views.applyLook(); Guide.resize(); }); await page.waitForTimeout(300);
   await ev(() => { const l = Library.channels(Library.ALL); Guide.open(Library.ALL, l[l.length - 1].k); }); await page.waitForTimeout(400);

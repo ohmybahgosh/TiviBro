@@ -28,6 +28,8 @@ const KEYS = {
 };
 const CODES = { play: [415, '▶❙❙ PLAY'], rew: [412, '◀◀ REW'], ff: [417, '▶▶ FF'], red: [403, '<i style="background:#d6453d"></i>RED'], green: [404, '<i style="background:#3fa85f"></i>GREEN'], yellow: [405, '<i style="background:#e0b630"></i>YELLOW'], blue: [406, '<i style="background:#3d79d6"></i>BLUE'], info: [457, 'INFO'] };
 
+// TB_LANG=ru node tests/soak/<test>.js: the same test with TiviBro in another language (for page errors
+// and layout; checks that read English text then fail, which is expected).
 function init(opts) {
   // Runs in the page before the app: fixed prime-time clock, demo data, and the key banner.
   return [`(() => {
@@ -36,7 +38,7 @@ function init(opts) {
     window.Date = D;
     window.close = function () { window.__exitTried = (window.__exitTried || 0) + 1; };   // Back twice must not end a recording
     ${opts.fresh ? `if (!sessionStorage.getItem('demoInit')) { localStorage.clear(); sessionStorage.setItem('demoInit', '1'); }` : `if (!sessionStorage.getItem('demoInit')) { localStorage.clear();
-      localStorage.setItem('tivibro.settings', ${JSON.stringify(JSON.stringify(Object.assign({}, SETTINGS, opts.settings || {})))});
+      localStorage.setItem('tivibro.settings', ${JSON.stringify(JSON.stringify(Object.assign({}, SETTINGS, process.env.TB_LANG ? { lang: process.env.TB_LANG } : {}, opts.settings || {})))});
       localStorage.setItem('tivibro.edits.p1', ${JSON.stringify(JSON.stringify(EDITS))});
       sessionStorage.setItem('demoInit', '1'); }`}
     localStorage.setItem('tivibro.devRelay', '47811');

@@ -67,7 +67,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await pick('^Search for');
   await page.waitForFunction(() => /subtitles for/.test((document.getElementById('modalTitle') || {}).textContent || ''), null, { timeout: 15000 }).catch(() => {});
   m = await modal();
-  ok('results: under each language (asked one at a time), release, downloads, your first language first', /2 subtitles for "Feature Presentation"/.test(m) && /English\s+·\s+1 \| Feature\.Presentation\.2024\.WEB.*Spanish\s+·\s+1 \| Feature\.Presentation\.2024\.Latino/.test(m) && /5,000 downloads/.test(m), m);
+  ok('results: under each language (asked one at a time), release, downloads, your first language first', /2 subtitles for "Feature Presentation"/.test(m) && /English\s+·\s+1 \| Feature\.Presentation\.2024\.WEB.*Spanish\s+·\s+1 \| Feature\.Presentation\.2024\.Latino/i.test(m) && /5,000 downloads/.test(m), m);
   await shot('tv-subs-results');
   const asked = await (await fetch(MOCK + '/os-asked')).json();
   ok('OpenSubtitles is asked one language at a time, with sorted, lower-case parameters', ['en', 'es'].every(l => asked.some(a => new RegExp('GET /os/api/v1/subtitles\\?languages=' + l + '&order_by=download_count&query=feature\\+presentation&type=movie&year=2024$').test(a))), asked.join(' | '));

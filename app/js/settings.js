@@ -40,7 +40,7 @@ var Settings = (function () {
   function push(title, fn) { stack.push({ title: title, fn: fn, sel: sel }); sel = 0; build(); }
   function pop() { var p = stack.pop(); sel = p ? p.sel : 0; build(); }
   function relist() { L.dirty(); Views.refreshLists(true); }
-  function when(t) { if (!t) return 'never'; var d = new Date(t); return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + ' ' + U.hhmm(t); }
+  function when(t) { if (!t) return 'never'; var d = new Date(t); return d.toLocaleDateString(U.loc ? U.loc() : undefined, { month: 'short', day: 'numeric' }) + ' ' + U.hhmm(t); }
 
   var REFRESH = [-1, 6, 12, 24, 48, 168, 0], REFRESH_L = ['Every app start', 'Every 6 hours', 'Every 12 hours', 'Every day', 'Every 2 days', 'Every week', 'Only when I ask'];
 
@@ -226,7 +226,7 @@ var Settings = (function () {
       choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); }),
       head('Media sources')]);
     MediaStore.publicSources().forEach(function (s) {
-      var row = phoneDoes('media-source', action(s.name, (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' : 'WebDAV') + ' · rescan, content, details or remove', function () { Media.sourceMenu(s); }, function () { return MediaStore.movies(s.id).length + ' movies'+(s.episodeFiles?' · '+s.episodeFiles+' episode files':''); }));
+      var row = phoneDoes('media-source', action(I18n.raw(s.name), (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' : 'WebDAV') + ' · rescan, content, details or remove', function () { Media.sourceMenu(s); }, function () { return MediaStore.movies(s.id).length + ' movies'+(s.episodeFiles?' · '+s.episodeFiles+' episode files':''); }));
       row.sid = s.id; out.push(row);
     });
     if (!MediaStore.sources().length) out.push(info('No media sources yet', 'Choose Add media above'));
@@ -292,8 +292,8 @@ var Settings = (function () {
     s.playlists.forEach(function (raw) {
       var p = Store.normalize(raw), active = p.id === s.active, part = !active && L.partOf(p.id);
       var use = active ? (multi && L.main ? 'first, ' + L.main.channels.length + ' channels' : 'in use, ' + L.count() + ' channels') : part ? 'on, ' + part.channels.length + ' channels' : '';
-      out.push(page(p.name || (p.type === 'xtream' ? p.user : 'M3U'), [p.off ? 'Off' : '', Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist', use].filter(Boolean).join('   '),
-        p.name || 'Playlist', function () { return playlistPage(p); }));
+      out.push(page(I18n.raw(p.name || (p.type === 'xtream' ? p.user : 'M3U')), [p.off ? 'Off' : '', Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist', use].filter(Boolean).join('   '),
+        p.name ? I18n.raw(p.name) : 'Playlist', function () { return playlistPage(p); }));
     });
     // From the phone app: its own Add a playlist form (AddPlaylistDialog), with the playlist type to pick.
     var addPl = phoneDoes('add-playlist', action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.  Adding one from the phone app is easier: share your provider\'s link to it.', function () { App.setup('new'); }));
@@ -327,7 +327,7 @@ var Settings = (function () {
         p.off = !v; persist(p); build();
         App.playlistsChanged();          // its channels join the lists, or leave them
       }));
-    out.push(action('Name', '', function () { UI.prompt('Playlist name', p.name, function (v) { if (v.trim()) { p.name = v.trim(); persist(p); build(); } }); }, function () { return p.name; }));
+    out.push(action('Name', '', function () { UI.prompt('Playlist name', p.name, function (v) { if (v.trim()) { p.name = v.trim(); persist(p); build(); } }); }, function () { return I18n.raw(p.name); }));
     out.push(action('Connection', xc ? 'Server, username and password' : 'Playlist address', function () { App.setup(p.id); }, function () { return xc ? p.server : p.m3u; }));
     out.push(action('User-Agent', 'Only if your provider asks for a specific one.  Sent by the network helper for this playlist.', function () {
       UI.prompt('User-Agent (empty = default)', p.ua || '', function (v) { p.ua = v.trim(); persist(p); build(); U.toast(p.ua ? 'User-Agent set.  Reload channels to use it everywhere.' : 'Default User-Agent'); });
@@ -395,7 +395,7 @@ var Settings = (function () {
         all.forEach(function (c) { if (Epg.hasData(c)) n++; else if (!L.noGuide(c) && missing.length < 300) missing.push(c); });
         out.push(info('Channels with guide data', n + ' of ' + all.length));
         if (missing.length) out.push(action('Assign guide to channels without one', 'Or hold OK on any channel and choose Assign guide.  A channel that will never have a guide: hold OK > No guide for this channel.', function () {
-          UI.menu('Channels without guide', missing.map(function (c) { return { label: L.name(c), sub: L.groupName(c.g), action: function () { assignGuide(c); } }; }));
+          UI.menu('Channels without guide', missing.map(function (c) { return { label: I18n.raw(L.name(c)), sub: I18n.raw(L.groupName(c.g)), action: function () { assignGuide(c); } }; }));
         }));
       }
       // Channels you said need no guide (Hold OK > No guide for this channel, or Ignore in the web editor).
@@ -403,7 +403,7 @@ var Settings = (function () {
       if (none.length) out.push(page('Channels with no guide wanted', 'Left out of guide matching and public fill-in, and they don\'t say "No guide information".', 'No guide wanted', function () {
         var o = [info('Select one to look for a guide for it again.', '')];
         mine.filter(function (c) { return L.noGuide(c); }).forEach(function (c) {
-          o.push(action(L.name(c), L.groupName(c.g), function () { L.setNoGuide(c.k, false); relist(); U.toast('Looking for a guide for ' + L.name(c) + ' again'); build(); }, function () { return 'Look again'; }));
+          o.push(action(I18n.raw(L.name(c)), I18n.raw(L.groupName(c.g)), function () { L.setNoGuide(c.k, false); relist(); U.toast('Looking for a guide for ' + L.name(c) + ' again'); build(); }, function () { return 'Look again'; }));
         });
         return o;
       }, function () { return none.length + ' ›'; }));
@@ -487,7 +487,7 @@ var Settings = (function () {
       var items = hits.map(function (x) { var ps = PubEpg.sourceOf(x[0]); return { label: x[1], sub: ps ? 'public guide, ' + ps.name + ' ' + x[0].split(':')[1].slice(0, 2) : x[0], action: function () { Epg.assign(c, x[0]); U.toast('Guide assigned'); Views.refreshLists(true); } }; });
       if (cur) items.unshift({ label: 'Remove assignment', sub: cur, action: function () { Epg.assign(c, ''); Views.refreshLists(true); } });
       if (!items.length) { U.toast('No guide channels match "' + q + '"'); return; }
-      UI.menu('Guide for ' + L.name(c), items);
+      UI.menu(I18n.raw(I18n.t('Guide for {x}', { x: L.name(c) })), items);
     }, 'Part of a name is enough.');
   }
 
@@ -556,7 +556,7 @@ var Settings = (function () {
     }));
     arr.forEach(function (e, i) {
       out.push(action(show(e), '', function () {
-        UI.menu(show(e), [
+        UI.menu(I18n.raw(show(e)), [
           { label: 'Edit…', action: function () { UI.prompt('Edit ' + kind, e, function (v) { if (v.trim()) arr[i] = v; else arr.splice(i, 1); changed(true); }); } },
           { label: 'Delete', action: function () { arr.splice(i, 1); changed(true); } }
         ]);
@@ -608,7 +608,7 @@ var Settings = (function () {
     }));
     out.push(head('OK, ◀ or ▶ switches a group on or off'));
     all.forEach(function (g) {
-      out.push({ label: g.name, sub: g.custom ? 'your group' : '',
+      out.push({ label: I18n.raw(g.name), sub: g.custom ? 'your group' : '',
         value: function () { return Store.edits.hiddenGroups[g.id] ? 'Hidden' : 'Shown'; },
         cycle: function () { set(g, !!Store.edits.hiddenGroups[g.id]); relist(); paint(); } });
     });
@@ -645,8 +645,8 @@ var Settings = (function () {
       UI.prompt('Name the new group', '', function (n) { if (n.trim()) { L.createGroup(n); relist(); build(); } });
     }));
     L.customGroups().forEach(function (g) {
-      out.push(action(g.name, g.items.length + ' channels', function () {
-        UI.menu(g.name, [
+      out.push(action(I18n.raw(g.name), g.items.length + ' channels', function () {
+        UI.menu(I18n.raw(g.name), [
           g.id !== L.FAV && { label: 'Rename…', action: function () { UI.prompt('Rename group', g.name, function (n) { L.renameGroup(g.id, n); relist(); build(); }); } },
           { label: 'Move up', action: function () { L.moveGroup(g.id, -1); relist(); build(); } },
           { label: 'Move down', action: function () { L.moveGroup(g.id, 1); relist(); build(); } },
@@ -659,13 +659,13 @@ var Settings = (function () {
     if (!hid.groups.length) out.push(info('No hidden groups', ''));
     else {
       out.push(action('Restore all groups', hid.groups.length + ' hidden', function () { hid.groups.forEach(function (g) { L.hideGroup(g.id, false); }); relist(); build(); }));
-      hid.groups.forEach(function (g) { out.push(action(g.name, '', function () { L.hideGroup(g.id, false); U.toast(g.name + ' restored'); relist(); build(); }, function () { return 'Restore'; })); });
+      hid.groups.forEach(function (g) { out.push(action(I18n.raw(g.name), '', function () { L.hideGroup(g.id, false); U.toast(g.name + ' restored'); relist(); build(); }, function () { return 'Restore'; })); });
     }
     out.push(head('Hidden channels'));
     if (!hid.channels.length) out.push(info('No hidden channels', ''));
     else {
       out.push(action('Restore all channels', hid.channels.length + ' hidden', function () { hid.channels.forEach(function (c) { L.hideChannel(c.k, false); }); relist(); build(); }));
-      hid.channels.forEach(function (c) { out.push(action(L.name(c), L.groupName(c.g), function () { L.hideChannel(c.k, false); U.toast(L.name(c) + ' restored'); relist(); build(); }, function () { return 'Restore'; })); });
+      hid.channels.forEach(function (c) { out.push(action(I18n.raw(L.name(c)), I18n.raw(L.groupName(c.g)), function () { L.hideChannel(c.k, false); U.toast(L.name(c) + ' restored'); relist(); build(); }, function () { return 'Restore'; })); });
     }
     out.push(head('Reset'));
     out.push(action('Clear all edits for this playlist', 'Removes your groups, renames, guide assignments and hidden items.', function () {
@@ -693,13 +693,13 @@ var Settings = (function () {
     if (!lgs.length) out.push(info('No NFL, NBA, NHL, MLB, WNBA, MLS or college football channels found in this playlist.', ''));
     lgs.forEach(function (lg) {
       var n = Teams.inLeague(lg.id).filter(function (x) { return Teams.follows(x.id); }).length;
-      out.push(page(lg.name, lg.own ? lg.own + ' teams have their own channel' : 'Games only, no team channels', lg.name + ' teams', function () { return leaguePage(lg.id); },
+      out.push(page(lg.name, lg.own ? lg.own + ' teams have their own channel' : 'Games only, no team channels', I18n.raw(I18n.t('{x} teams', { x: I18n.t(lg.name) })), function () { return leaguePage(lg.id); },
         function () { return n ? n + ' followed ›' : '›'; }));
     });
     if (mine.length) {
       out.push(head('Following'));
       mine.forEach(function (x) {
-        out.push(action(x.name, x.league.toUpperCase() + (Teams.hasChannel(x.id) ? '' : '   ·   no channel of its own here, games only'), function () {
+        out.push(action(I18n.raw(x.name), x.league.toUpperCase() + (Teams.hasChannel(x.id) ? '' : '   ·   no channel of its own here, games only'), function () {
           Teams.follow(x.id, false); U.toast('Stopped following the ' + x.name); relist(); build();
         }, function () { return 'Unfollow'; }));
       });
@@ -710,7 +710,7 @@ var Settings = (function () {
     var out = [];
     out.push(info('Tick the teams you follow.  Teams with their own channel in this playlist say so.', ''));
     Teams.inLeague(lg).slice().sort(function (a, b) { return a.name.localeCompare(b.name); }).forEach(function (x) {
-      out.push(toggle(x.name, Teams.hasChannel(x.id) ? 'Has its own channel' : '', function () { return Teams.follows(x.id); }, function (v) {
+      out.push(toggle(I18n.raw(x.name), Teams.hasChannel(x.id) ? 'Has its own channel' : '', function () { return Teams.follows(x.id); }, function (v) {
         Teams.follow(x.id, v); relist();
         if (v && Store.settings.teamsRemind) Watch.scan(true);
         paint();
@@ -734,12 +734,12 @@ var Settings = (function () {
     out.push(info('3.  Public fill-in, only for channels nothing else covers: epg.pw, iptv-epg.org, epgshare01, and Pluto TV\'s own guide from i.mjh.nz for Pluto channels.', ''));
     out.push(info('4.  Matching: each channel is linked to a guide channel by its guide id, then its name.  A wrong one: Hold OK > Assign guide.', ''));
     out.push(info('A channel that will never have a guide (a radio stream, a camera, an event slot): Hold OK > No guide for this channel.  It drops out of matching and stops saying "No guide information".  The web editor\'s Guide page does many at once (Ignore).', ''));
-    out.push(head('Guide for ' + (p.name || 'this playlist')));
+    out.push(head(I18n.raw(p.name ? I18n.t('Guide for {x}', { x: p.name }) : I18n.t('Guide for this playlist'))));
     out = out.concat(guideRows(p));
     // Several playlists on: each other one's guide, a page each (the same rows as on its own page).
     Store.others().filter(function (q) { return L.otherIds().indexOf(q.id) >= 0; }).forEach(function (q, i) {
       if (!i) out.push(head('The other playlists\' guides'));
-      out.push(page('Guide for ' + (q.name || 'playlist'), (q.type === 'xtream' ? { short: 'Per channel', xmltv: 'Full XMLTV file', off: 'Provider guide off' } : { xmltv: 'From playlist', off: 'Provider guide off' })[q.providerEpg] + ', ' + (q.epgSources || []).length + ' source(s), public fill-in ' + (PubEpg.conf(q).on ? 'on' : 'off'),
+      out.push(page(I18n.raw(I18n.t('Guide for {x}', { x: q.name || I18n.t('playlist') })), (q.type === 'xtream' ? { short: 'Per channel', xmltv: 'Full XMLTV file', off: 'Provider guide off' } : { xmltv: 'From playlist', off: 'Provider guide off' })[q.providerEpg] + ', ' + (q.epgSources || []).length + ' source(s), public fill-in ' + (PubEpg.conf(q).on ? 'on' : 'off'),
         'Guide: ' + (q.name || 'playlist'), function () { return guideRows(q); }));
     });
     out.push(head('Movies and series from TMDB'));
@@ -763,7 +763,7 @@ var Settings = (function () {
     out.push(head('Coming up  (' + rem.length + ')'));
     if (!rem.length) out.push(info('No reminders.  Pick a future programme in the Guide and press OK, or add to the watchlist.  The phone app and the web editor list them too.', ''));
     rem.forEach(function (r) {
-      out.push(action(r.t || 'Programme', U.day(r.s) + ' ' + U.hhmm(r.s) + '   ' + r.ch + (r.live ? '   on now' : '') + (r.w ? '   from your watchlist: ' + r.w.replace(/^team:/, 'team ') : ''), function () {
+      out.push(action(r.t ? I18n.raw(r.t) : 'Programme', U.day(r.s) + ' ' + U.hhmm(r.s) + '   ' + r.ch + (r.live ? '   on now' : '') + (r.w ? '   from your watchlist: ' + r.w.replace(/^team:/, 'team ') : ''), function () {
         UI.confirm('Cancel the reminder for ' + (r.t || 'this programme') + '?', 'Cancel the reminder', function () { Remind.cancel(r.k, r.s); U.toast('Reminder cancelled'); build(); });
       }, function () { return 'Cancel'; }));
     });
@@ -790,8 +790,8 @@ var Settings = (function () {
     out.push(head('Your watchlist'));
     words.forEach(function (w) {
       var n = Watch.upcoming(w.q).length;
-      out.push(action(w.q, n ? n + ' coming up' : 'nothing coming up yet', function () {
-        UI.menu(w.q, [
+      out.push(action(I18n.raw(w.q), n ? n + ' coming up' : 'nothing coming up yet', function () {
+        UI.menu(I18n.raw(w.q), [
           { label: 'Show in Search', action: function () { Views.switchTab('search'); Search.open(w.q); } },
           { label: 'Remove from watchlist', sub: 'and the reminders it set', action: function () { Watch.remove(w.q); U.toast('Removed "' + w.q + '"'); build(); } }
         ]);
@@ -802,7 +802,7 @@ var Settings = (function () {
       out.push(head('Coming up'));
       up.forEach(function (r) {
         var set = Store.edits.reminders.some(function (x) { return x.k === r.c.k && x.s === r.p.s; });
-        out.push(action(r.p.t, U.day(r.p.s) + ' ' + U.hhmm(r.p.s) + '   ' + L.name(r.c), function () {
+        out.push(action(I18n.raw(r.p.t), U.day(r.p.s) + ' ' + U.hhmm(r.p.s) + '   ' + L.name(r.c), function () {
           var rem = Store.edits.reminders, i = rem.findIndex(function (x) { return x.k === r.c.k && x.s === r.p.s; });
           if (i >= 0) { rem.splice(i, 1); Store.edits.watchSeen = Store.edits.watchSeen || {}; Store.edits.watchSeen[r.p.t.toLowerCase() + '|' + r.p.s] = r.p.e; U.toast('Reminder cancelled'); } else { rem.push({ k: r.c.k, s: r.p.s, e: r.p.e, t: r.p.t, w: r.w, g: /^team:/.test(r.w || '') ? 1 : undefined }); U.toast('Reminder set'); }
           Store.saveEdits(); build();
@@ -929,8 +929,8 @@ var Settings = (function () {
     var e = Store.edits;
     out.push(head('Blocked in this playlist'));
     var any = false;
-    Object.keys(e.blockedGroups).forEach(function (id) { any = true; out.push(action(L.groupName(id) || id, 'group', function () { L.block('group', id, false); relist(); build(); }, function () { return 'Unblock'; })); });
-    Object.keys(e.blockedChannels).forEach(function (k) { var c = L.find(k); if (!c) return; any = true; out.push(action(L.name(c), 'channel', function () { L.block('channel', k, false); relist(); build(); }, function () { return 'Unblock'; })); });
+    Object.keys(e.blockedGroups).forEach(function (id) { any = true; out.push(action(I18n.raw(L.groupName(id) || id), 'group', function () { L.block('group', id, false); relist(); build(); }, function () { return 'Unblock'; })); });
+    Object.keys(e.blockedChannels).forEach(function (k) { var c = L.find(k); if (!c) return; any = true; out.push(action(I18n.raw(L.name(c)), 'channel', function () { L.block('channel', k, false); relist(); build(); }, function () { return 'Unblock'; })); });
     if (!any) out.push(info('Nothing blocked yet', ''));
     out.push(head(''));
     out.push(action('Remove PIN', 'Turns parental controls off.', function () { Parental.remove(build); }));
@@ -1059,8 +1059,8 @@ var Settings = (function () {
     if (on) {
       if (!ps.phones.length) out.push(info('Paired phones', 'none yet'));
       ps.phones.forEach(function (p) {
-        out.push(action(p.name, (p.model ? p.model + '  ·  ' : '') + 'Added ' + when(p.added) + '  ·  Last seen ' + Phone.ago(p.seen), function () {
-          UI.menu(p.name, [
+        out.push(action(I18n.raw(p.name), (p.model ? p.model + '  ·  ' : '') + 'Added ' + when(p.added) + '  ·  Last seen ' + Phone.ago(p.seen), function () {
+          UI.menu(I18n.raw(p.name), [
             { label: 'Remove this phone', sub: 'it can no longer reach this TV, until you pair it again', action: function () {
               Phone.forget(p.id).then(function () { build(); U.toast(p.name + ' removed'); }, function (e) { U.toast(e.message, 5000); });
             } },
@@ -1149,8 +1149,8 @@ var Settings = (function () {
     if (snapsCache === null) out.push(info('Loading…', ''));
     else if (!snapsCache.length) out.push(info('No restore points yet', ''));
     else snapsCache.slice(0, 40).forEach(function (x) {
-      out.push(action(x.name || 'Restore point', when(x.at) + (x.kind === 'auto' ? '   saved by itself' : ''), function () {
-        UI.menu(x.name || 'Restore point', [
+      out.push(action(x.name ? I18n.raw(x.name) : 'Restore point', when(x.at) + (x.kind === 'auto' ? '   saved by itself' : ''), function () {
+        UI.menu(x.name ? I18n.raw(x.name) : 'Restore point', [
           { label: 'Restore it', sub: 'your current edits are saved as a restore point first', action: function () {
             UI.confirm('Put back "' + (x.name || 'this restore point') + '"?', 'Restore', function () { WebEdit.runData('restoreSnap', { id: x.id }).then(function (r) { U.toast(r.msg, 5000); snapsAt = 0; loadSnaps(); }, function (e) { U.toast(e.message, 5000); }); });
           } },
@@ -1170,7 +1170,7 @@ var Settings = (function () {
     var out = [], d = I18n.detected(), cur = I18n.setting();
     function pickIt(code) {
       I18n.set(code);
-      U.toast(code === 'auto' ? 'Language: automatic, the TV\'s language' : 'Language: ' + I18n.name(I18n.lang()));
+      U.toast(code === 'auto' ? 'Language: automatic, the TV\'s language' : I18n.t('Language: {x}', { x: I18n.name(I18n.lang()) }));
       build();
     }
     out.push(info('TiviBro is in the TV\'s own language unless you choose one here.  Spanish and Russian are new: anything not translated yet shows in English.', ''));
@@ -1308,7 +1308,7 @@ var Settings = (function () {
     var raw = S().playlists.filter(function (x) { return x.id === id; })[0];
     if (!raw || !section('playlists')) return false;
     var p = Store.normalize(raw);
-    push(p.name || 'Playlist', function () { return playlistPage(p); });
+    push(p.name ? I18n.raw(p.name) : 'Playlist', function () { return playlistPage(p); });
     return true;
   }
 

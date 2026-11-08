@@ -195,7 +195,7 @@ var seq = [
 app.on('ready', function () {
   try { fs.mkdirSync(OUT); } catch (e) {}
   // preload.js reads this: not every Electron passes the main process's environment on to the page.
-  fs.writeFileSync(path.join(require('os').tmpdir(), 'tivibro-engines.json'), JSON.stringify({ settings: SETTINGS, relay: process.env.TB_RELAY || '47811' }));
+  fs.writeFileSync(path.join(require('os').tmpdir(), 'tivibro-engines.json'), JSON.stringify({ settings: process.env.TB_LANG ? JSON.stringify(Object.assign(JSON.parse(SETTINGS), { lang: process.env.TB_LANG })) : SETTINGS, relay: process.env.TB_RELAY || '47811' }));
   win = new BrowserWindow({ width: 1920, height: 1080, show: true, useContentSize: true, webPreferences: { nodeIntegration: false, contextIsolation: false, preload: path.join(__dirname, 'preload.js') } });
   wc = win.webContents;
   wc.on('console-message', function (e, level, msg) { if (level >= 2) R.console.push(String(msg).slice(0, 300)); });

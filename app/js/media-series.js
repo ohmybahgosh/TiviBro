@@ -2,6 +2,8 @@
    Movie-only phone endpoints remain separate.  Chromium 53-compatible. */
 var MediaSeries = (function () {
   'use strict';
+  // A name, never translated (app/js/i18n.js); plain text where there's no I18n (unit tests).
+  var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
   var generation = 0, nextTimer = null, pageFocus = {};
   var fetchingMetadata = false, metadataToken = '', metadataLanguage = '', queuedMetadata = false;
   // Background work has its own lifetime: browsing seasons must not cancel it.
@@ -248,7 +250,7 @@ var MediaSeries = (function () {
       var options = r.versions.map(function (v) { return {label:'Play: ' + ((MediaStore.source(v.sourceId) || {}).name || 'Source'),sub:v.label,action:function () { playVersion(v,r); }}; });
       r.versions.forEach(function (v) { options.push({label:'Episode start: '+((MediaStore.source(v.sourceId) || {}).name || 'Version'),action:function () { boundaries(v,r,function () { showEpisode(item,back); }); }}); });
       options.push({label:r.watchState === 'watched' ? 'Mark unwatched' : 'Mark watched',action:function () { edit(r,'setWatched',{watched:r.watchState !== 'watched'},function () { showEpisode(item,back); }); }});
-      options.push({label:'Back',action:back}); UI.menu(episodeLabel(r),options,back);
+      options.push({label:'Back',action:back}); UI.menu(RAW(episodeLabel(r)),options,back);
     });
   }
   function mergeShow(item, back) {
@@ -285,7 +287,7 @@ var MediaSeries = (function () {
       if (r.metadata) options.push({label:'Remove show details',action:function () { edit(r,'setMetadata',{metadata:null},function () { show(item,back); }); }});
       // The same screen-wide shortcut a movie's options have: files that need a look, when there are any.
       if (Media.reviewCount && Media.reviewCount() > 0) options.push({label:'Needs review',action:function(){review();}});
-      options.push({label:'Back',action:back}); UI.menu(r.metadata && r.metadata.title || r.title,options,back);
+      options.push({label:'Back',action:back}); UI.menu(RAW(r.metadata && r.metadata.title || r.title),options,back);
     });
   }
   function open() { page('TV shows',MediaStore.preferences().favoritesInLists===false?{kind:'show',favourite:false,limit:60}:{kind:'show',limit:60},show,Media.restore); }
@@ -331,7 +333,7 @@ var MediaSeries = (function () {
       {label:'Back',action:back}
     ],back);
   }
-  function review() { page('Needs review',{kind:'review',limit:60},function (item,back) { UI.menu(item.label || item.title,[{label:(item.review || []).join(', ')},item.availability==='missing'&&{label:'Locate file',action:function(){locate(item,back);}},{label:'Correct details',action:function () { correct(item,back); }},{label:'Back',action:back}],back); },Media.restore); }
+  function review() { page('Needs review',{kind:'review',limit:60},function (item,back) { UI.menu(RAW(item.label || item.title),[{label:(item.review || []).join(', ')},item.availability==='missing'&&{label:'Locate file',action:function(){locate(item,back);}},{label:'Correct details',action:function () { correct(item,back); }},{label:'Back',action:back}],back); },Media.restore); }
   function phoneRequest(route,q) { return Media.request('library/'+route,q,30000).then(function (r) { if (r.error) throw new Error(r.message); return r; }); }
   function recordCompletion(file) {
     function commit(retry) {

@@ -7,6 +7,8 @@
    localhost stream is resolved for every WebDAV play. */
 var Media = (function () {
   'use strict';
+  // A name, never translated (app/js/i18n.js); plain text where there's no I18n (unit tests).
+  var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
   var $ = U.$;
   var built = false, playingMeta = null, scanning = {}, scanRuns = {}, pausedScans = {}, playToken = 0, loaded = null, progressTimer = null;
 
@@ -179,7 +181,7 @@ var Media = (function () {
     U.toast('Looking for media servers on your network…');
     discover().then(function (servers) {
       if (!servers.length) { U.toast('No media servers answered.  Is media sharing on, and is the server on this network?', 6000); return; }
-      UI.menu('Media servers', servers.map(function (s) { return { label: s.name, action: function () { addServer(s); } }; }));
+      UI.menu('Media servers', servers.map(function (s) { return { label: RAW(s.name), action: function () { addServer(s); } }; }));
     }, function (e) { U.toast(why(e), 5000); });
   }
   function nameFor(address) {
@@ -310,7 +312,7 @@ var Media = (function () {
         U.toast('Looking for movie details…');
         metadataRequest({ title: title }).then(function (r) {
           if (!r.matches || !r.matches.length) return U.toast('No matching movies found.  Try a different title.', 5000);
-          UI.menu('Choose the matching movie', r.matches.map(function (x) { return { label: x.title + (x.year ? ' (' + x.year + ')' : ''), action: function () {
+          UI.menu('Choose the matching movie', r.matches.map(function (x) { return { label: RAW(x.title + (x.year ? ' (' + x.year + ')' : '')), action: function () {
             metadataRequest({ id: x.id }).then(function (r) { return MediaStore.setMetadata(m.id, r.metadata); }).then(function () { refresh(); U.toast('Movie details saved'); }, function (e) { U.toast(why(e), 6000); });
           } }; }));
         }, function (e) { U.toast(why(e), 6000); });
@@ -430,7 +432,7 @@ var Media = (function () {
   }
   function sourceMenu(s) {
     if (!s) return;s=MediaStore.source(s.id)||s;
-    UI.menu(s.name, [
+    UI.menu(RAW(s.name), [
       scanning[s.id]&&{label:'Pause scan',action:function(){pausedScans[s.id]=true;ask('scan/control',{sourceId:s.id},15000).then(function(){U.toast('Scan will pause after the current request.');});}},
       !scanning[s.id]&&{label:'Restart scan',action:function(){rescan(s.id,true);}},
       { label: 'Fetch movie details', sub: 'TMDB · uses your saved API token', action: function () { sourceDetails(s); } },
@@ -586,7 +588,7 @@ var Media = (function () {
     if (m.kind === 'show') return MediaSeries.showItem(m,restore);
     if (m.review && m.review.length) return MediaSeries.correct(m,restore);
     var r = MediaStore.resume(m.id);
-    UI.menu(label(m), [
+    UI.menu(RAW(label(m)), [
       { label: MediaStore.isFavorite(m.id) ? 'Remove from Favorites' : 'Add to Favorites', action: function () { MediaStore.toggleFavorite(m.id); refresh(); } },
       r && { label: 'Resume', sub: Math.floor(r.pos / 60) + ' min', action: function () { play(m, false); } },
       { label: r ? 'Play from beginning' : 'Play', action: function () { play(m, true); } },
@@ -594,7 +596,7 @@ var Media = (function () {
       m.metadata && { label: 'Remove movie details', action: function () { MediaStore.setMetadata(m.id, null); refresh(); } },
       { label:'TV shows',action:function () { MediaSeries.open(); } },
       reviewCards.length > 0 && { label:'Needs review',action:function () { MediaSeries.review(); } },
-      { label: 'File information', sub: fileInfo(m) + (m.size ? ' · ' + size(m.size) : ''), action: function () { UI.menu('File information', [{ label: m.file, sub: (MediaStore.source(m.src) || {}).name || '' }]); } },
+      { label: 'File information', sub: fileInfo(m) + (m.size ? ' · ' + size(m.size) : ''), action: function () { UI.menu('File information', [{ label: RAW(m.file), sub: (MediaStore.source(m.src) || {}).name || '' }]); } },
       r && { label: 'Mark as watched', action: function () { MediaStore.clearResume(m.id); itemsVL.refresh(); showInfo(); } }
     ]);
   }

@@ -70,7 +70,11 @@ var I18n = (function () {
       if (m) { names.push(m[1]); src += m[1] === 'n' ? '(-?\\d[\\d,.  ]*)' : '([\\s\\S]+?)'; }
       else src += esc(p);
     });
-    return { rx: new RegExp('^' + src + '$'), names: names, v: v, lit: parts.join('').replace(/\{[nxyz]\}/g, '').length };
+    var lit = parts.join('').replace(/\{[nxyz]\}/g, '').length;
+    /* Matched against text on its own only with a number in it, or enough fixed words that it can't be a
+       name by chance ("{x} to {y}" would turn "Welcome to Paradise" into Spanish); the others are used
+       with their values given (I18n.t('{x} to {y}', { x: …, y: … })). */
+    return { rx: new RegExp('^' + src + '$'), names: names, v: v, lit: lit, auto: names.indexOf('n') >= 0 || lit >= 14 };
   }
 
   /* Plural forms (CLDR): Spanish one/other, Russian one/few/many. */
@@ -91,8 +95,16 @@ var I18n = (function () {
     return String(v).replace(/\{([a-z]+)\}/g, function (a, k) { return vars && vars[k] != null ? vars[k] : a; });
   }
 
+  /* A name (a channel, group, playlist, programme or team), never translated even when it's a word the
+     dictionaries have: a group called "Sports" or a show called "Today" stay as they are.  I18n.raw(name)
+     where a name goes into a menu, a box's title or a Settings row; it reads as the plain text anywhere. */
+  function Raw(s) { this.s = String(s == null ? '' : s); }
+  Raw.prototype.toString = Raw.prototype.valueOf = function () { return this.s; };
+  function raw(s) { return s instanceof Raw ? s : new Raw(s); }
+
   /** The text in the language chosen.  vars fill {n}, {x}... in the translation (and in English). */
   function t(s, vars) {
+    if (s instanceof Raw) return s.s;
     if (s == null || s === '') return s;
     s = String(s);
     var code = lang();
@@ -106,7 +118,7 @@ var I18n = (function () {
     var out = s, p = pats[code] || [], best = null, bm = null;
     // Patterns: the one with the most fixed text that matches ("{n} channels hidden" over "{x} hidden").
     if (/\S\s+\S/.test(s) || /\d/.test(s)) for (var i = 0; i < p.length; i++) {
-      if (best && p[i].lit <= best.lit) continue;
+      if (!p[i].auto || (best && p[i].lit <= best.lit)) continue;
       var m = p[i].rx.exec(s);
       if (m) { best = p[i]; bm = m; }
     }
@@ -179,7 +191,7 @@ var I18n = (function () {
   function langs() { return LANGS.map(function (x) { return { code: x[0], name: x[1], english: x[2] }; }); }
 
   return {
-    t: t, add: add, lang: lang, locale: locale, set: set, setting: function () { return chosen() || 'auto'; }, detected: detected, base: base,
+    t: t, raw: raw, add: add, lang: lang, locale: locale, set: set, setting: function () { return chosen() || 'auto'; }, detected: detected, base: base,
     plural: plural, page: page, onChange: onChange, askTV: askTV, name: name, langs: langs, has: has, changed: changed,
     misses: function () { return Object.keys(misses); }, _dicts: dicts, _setTV: function (l) { tv = l; changed(); }
   };
