@@ -996,7 +996,17 @@ var Epg = (function () {
     var files = sfiles.concat(PubEpg.files(ccs, !!Net.active, gz), apps);
     miss = miss.concat(sport);
     var want = Object.keys(map).map(function (k) { return map[k]; }).filter(function (v) { return PUB_ID.test(v); });
-    var ckey = 'epgpub:' + p.id, sig = U.hash(ccs.join() + '|' + p.epgDays + (apps.length ? '|' + apps.map(function (f) { return f.prefix; }).join() : '') + (sfiles.length ? '|sports' : '') + '|es1');
+    /* The stored public guide is still good when it read every file needed now (and they read fine).  The
+       countries and app guides needed follow the channels with no guide, which change with every load of
+       your own guide (one that failed, or loaded a moment later): with those in the signature the public
+       guides (100 MB and a minute of the TV's time) were read again at almost every start. */
+    // What you chose (the days kept, countries picked by hand, sports guides on or off) still makes it a new guide.
+    var ckey = 'epgpub:' + p.id, sig = U.hash(p.epgDays + '|' + PubEpg.conf(p).cc.join() + '|' + PubEpg.sportsOn(p) + '|es2');
+    var labels = files.map(function (s) { return s.prefix ? s.name + ' ' + s.cc : s.url; });
+    function covers(c) {
+      var had = {}; (c.report || []).forEach(function (r) { if (r.ok) had[r.url] = 1; });
+      return labels.every(function (l) { return had[l]; });
+    }
     return useHelper().then(function (h) {
       hMode = h;
       if (!h) return Store.idbGet(ckey);
@@ -1016,7 +1026,8 @@ var Epg = (function () {
       var age = c ? Date.now() - c.at : Infinity, hours = +p.epgRefresh, every = hours === 0 ? Infinity : Math.max(12, hours > 0 ? hours : 12) * 3600e3;
       var need = want.some(function (w) { return !cache.has(w); });
       var failed = c && (c.report || []).some(function (r) { return !r.ok; });
-      var stale = !c || c.sig !== sig || age > every || miss.length > (c.asked || 0) + 20 || need || (failed && age > 3600e3) || (c.retry && Date.now() > c.retry);
+      var stale = !c || c.sig !== sig || age > every || !covers(c) || miss.length > (c.asked || 0) + 20 || need || (failed && age > 3600e3) || (c.retry && Date.now() > c.retry);
+      if (stale && c && c.sig === sig) Log.info('epg', 'Public guide: reading it again (' + (age > every ? 'due' : !covers(c) ? 'a guide file it hasn\'t read yet' : miss.length > (c.asked || 0) + 20 ? (miss.length - (c.asked || 0)) + ' more channels with no guide' : need ? 'a channel points at one of its channels' : failed ? 'a file failed last time' : 'asked to') + ')');
       var forced = pubForce;
       if (pubForce) { pubForce = false; stale = true; }
       if (!stale) { runSet('pub', null); return; }
