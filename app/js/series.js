@@ -100,7 +100,7 @@ var Series = (function () {
     if (busy || !queue.length || !on() || typeof Media === 'undefined' || !Media.tvByName || Date.now() < paused) return;
     busy = true;
     var job = queue.shift();
-    var ask = job.season != null ? Media.tvSeason(job.id, job.season) : Media.tvByName(job.t, job.y, job.st);
+    var ask = job.season != null ? Media.tvSeason(job.id, job.season) : Media.tvByName(job.t, job.y, job.st, job.cc);
     ask.then(function (r) {
       var m = r && r.metadata;
       if (job.season != null) {
@@ -122,7 +122,7 @@ var Series = (function () {
   }
 
   // A show by name (and year): its details, or null while unknown (it is asked for) or not found.
-  function show(name, year, strength) {
+  function show(name, year, strength, cc) {
     if (!on()) return null;
     load();
     // Not before what was kept has been read: asking then would ask again about shows already known, and a
@@ -131,9 +131,10 @@ var Series = (function () {
     var ct = clean(name), y = year ? String(year).slice(0, 4) : ct.y;
     // A name in another script has no letters norm() keeps: all of them would share one answer.
     if (!ct.t || !norm(ct.t)) return null;
-    var k = keyOf(ct.t, y), hit = shows[k];
+    cc = /^[A-Z]{2}$/.test(cc || '') ? cc : '';
+    var k = keyOf(ct.t, y) + (cc ? '|' + cc : ''), hit = shows[k];
     if (hit && (hit.m || hit.s === 'strong' || strength !== 'strong')) return hit.m || null;
-    want({ k: k, t: ct.t, y: y, st: strength || 'weak' });
+    want({ k: k, t: ct.t, y: y, st: strength || 'weak', cc: cc });
     return null;
   }
   // An episode of a show ('S2 E5', or season and number): { t, plot, still, air }, or null.
@@ -203,7 +204,17 @@ var Series = (function () {
   function of(c, p) {
     if (!on()) return null;
     var st = strength(c, p);
-    return st ? show(p.t, '', st) : null;
+    return st ? show(p.t, '', st, countryOf(c)) : null;
+  }
+  /* The channel's country ('US', 'GB'), as the public guides read it (its group's country, a "US |" before its
+     name, its guide id's ending): of two shows of one name, TMDB's answer is that country's. */
+  var ccCtx = null, ccData = null;
+  function countryOf(c) {
+    try {
+      if (typeof PubEpg === 'undefined' || typeof Tidy === 'undefined' || typeof Library === 'undefined' || !c || !c.k) return '';
+      if (ccData !== Library.data) { ccData = Library.data; ccCtx = Tidy.make(ccData); }
+      return PubEpg.code(PubEpg.countryOf(ccCtx, c) || '');
+    } catch (e) { return ''; }
   }
 
   function onChange(f) { listeners.push(f); }

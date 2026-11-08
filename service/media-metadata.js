@@ -193,15 +193,25 @@ function create(opts) {
   function guideTvLookup(q, cb) {
     var language = LOCALES[q.language] ? q.language : 'en', locale = LOCALES[language];
     var title = str(q.title, 200).trim(), year = /^\d{4}$/.test(q.year || '') ? String(q.year) : '', strong = q.guide === 'strong';
+    // The channel's country ('US', 'GB'): of two shows with the name, that country's ("Cheaters" and "Deal or No
+    // Deal" on a US channel are the US shows, not the better known British ones).
+    var cc = /^[A-Za-z]{2}$/.test(q.country || '') ? String(q.country).toUpperCase().replace(/^UK$/, 'GB') : '';
     // normal() keeps only a-z and 0-9: a title in another script would compare equal to every other one.
     if (!title || !normal(title)) return cb(null, { miss: true });
     /* Only a show of exactly that name.  A guide that said nothing of season and episode (weak) needs a show
        some people know (5 votes), a guide that did (strong) any.  No such show: the part before a colon or a
        dash, as guides often put the episode there ("Modern Marvels: Ink", "Ax Men - Timber Wars"). */
     var main = title.split(/\s*:\s+|\s+[-–]\s+/)[0];
-    /* Then the name without its last word or two, when a show of exactly that shorter name is one people
-       know (20+ votes): guides add to a name what TMDB doesn't have ("Hannah Montana Forever", the name its
-       last season went by, is "Hannah Montana" there).  Never shorter than two words. */
+    // A host's name after the show's ("Unsolved Mysteries With Robert Stack", "The Joy of Painting with Bob Ross").
+    var host = /^(.+?)\s+with\s+[A-Z][a-z]/.exec(main);
+    host = host && (/\s/.test(host[1].replace(/^\s*(the|a|an)\s+/i, '')) || normal(host[1]).length >= 6) ? host[1] : '';
+    /* Then the name without what guides add at its end that TMDB doesn't have, when a show of exactly that shorter
+       name is one people know (20+ votes): "Hannah Montana Forever" (the name its last season went by), "Cops
+       Reloaded", "Ghost Adventures Classics".  A country at the end is the country's own show ("Deal or No Deal
+       Australia" is the Australian one, never NBC's).  Any other word stays: "Second Chance Pets" is not "Second
+       Chance".  Never down to one word. */
+    var ADDS = /^(forever|reloaded|classics?|favou?rites|revisited|uncut|remastered|redux|extra|presents|unleashed|tonight|weekend|weekly|daily|marathon|encore|special|specials|rewind|replay|vault|collection)$/i;
+    var LANDS = { usa: 'US', us: 'US', america: 'US', american: 'US', uk: 'GB', britain: 'GB', british: 'GB', australia: 'AU', aus: 'AU', canada: 'CA', 'new zealand': 'NZ', nz: 'NZ', ireland: 'IE', india: 'IN', south_africa: 'ZA' };
     var words = main.split(/\s+/), names = [{ n: title, min: strong ? 1 : 5 }];
     /* A season number after the name, as some guides give it ("Świnka Peppa 7", "Przyjaciele 8", "Ojciec Mateusz
        2"): the name without it, once a show of the whole name ("Teen Mom 2", "Catch 21") isn't found.  Not down
@@ -209,23 +219,55 @@ function create(opts) {
     var bare = /^(.*\D)\s+\d{1,2}$/.exec(title);
     if (bare && (/\s/.test(bare[1].trim()) || normal(bare[1]).length >= 8 || /[^\x00-\x7f]/.test(bare[1]))) names.push({ n: bare[1].trim(), min: strong ? 1 : 5 });
     if (main !== title && normal(main).length >= 3) names.push({ n: main, min: strong ? 1 : 5 });
-    for (var cut = 1; cut <= 2 && words.length - cut >= 2; cut++) {
-      var shorter = words.slice(0, words.length - cut).join(' ').replace(/[\s,:;&\-–]+$/, '');
-      if (normal(shorter).length >= 6 && !/^(the|a|an|and|of|in|on|at|to|for|with|my|your|our)$/i.test(words[words.length - cut - 1])) names.push({ n: shorter, min: 20 });
+    if (host) names.push({ n: host, min: strong ? 1 : 5 });
+    // ("The" in front doesn't count: "The Great American Journey" is never cut down to "The Great".)
+    var lead = /^(the|a|an)$/i.test(words[0]) ? 1 : 0;
+    for (var cut = 1; cut <= 2 && words.length - cut - lead >= 2; cut++) {
+      var shorter = words.slice(0, words.length - cut).join(' ').replace(/[\s,:;&\-–]+$/, ''), gone = words.slice(words.length - cut).map(function (w) { return w.replace(/[^\w]/g, ''); });
+      var land = LANDS[gone.join(' ').toLowerCase()] || (cut === 1 && LANDS[gone[0].toLowerCase()]) || '';
+      if (!land && !gone.every(function (w) { return ADDS.test(w); })) continue;
+      if (normal(shorter).length >= 6 && !/^(the|a|an|and|of|in|on|at|to|for|with|my|your|our)$/i.test(words[words.length - cut - 1])) names.push({ n: shorter, min: 20, cc: land });
     }
     // The same name twice (the season number cut, then the last word cut): asked once, at the lower bar.
     var seenName = {};
     names = names.filter(function (x) { var k = showName(x.n); if (seenName[k]) return false; seenName[k] = 1; return true; });
+    /* The same show under the name TMDB gives it: with its owner in front ("Tyler Perry's House of Payne", "Lauren
+       Lake's Paternity Court") or as "The ... Show" ("The Tamron Hall Show"), when the guide leaves that out. */
+    function sameShow(t, name) {
+      var want = showName(name);
+      return [t.name, t.original_name].some(function (n) {
+        n = str(n, 200);
+        if (showName(n) === want) return true;
+        var owner = /^[A-Z][A-Za-z.\-]+(?:\s+[A-Z][A-Za-z.\-]+){0,2}['’]s\s+(.+)$/.exec(n);
+        if (owner && !/['’]s\s/.test(name) && showName(owner[1]) === want) return true;
+        var sh = /^(?:the\s+)?(.+?)\s+show$/i.exec(n);
+        return !!(sh && !/\bshow$/i.test(name) && showName(sh[1]) === want);
+      });
+    }
+    // Spelled the same, "The" and all ("War" is WAR before PBS's "The War").
+    function literal(t, name) { return normal(t.name) === normal(name) || normal(t.original_name) === normal(name); }
+    function exactName(t, name) { return showName(t.name) === showName(name) || showName(t.original_name) === showName(name); }
     function ask(i) {
       var name = names[i].n;
       request('/search/tv?query=' + encodeURIComponent(name) + '&language=' + locale, function (e, r) {
         if (e) return cb(e);
-        var exact = (r && Array.isArray(r.results) ? r.results : []).filter(function (t) {
-          return t && /^[1-9][0-9]*$/.test(String(t.id)) && (showName(t.name) === showName(name) || showName(t.original_name) === showName(name));
+        var all = (r && Array.isArray(r.results) ? r.results : []).filter(function (t) { return t && /^[1-9][0-9]*$/.test(String(t.id)); });
+        // Only when TMDB has no show of exactly this name: one only like it ("Looney Tunes" is the old cartoons, even
+        // with few votes, not "The Looney Tunes Show").
+        var exact = all.filter(function (t) { return exactName(t, name); });
+        if (!exact.length) exact = exact.concat(all.filter(function (t) { return !exactName(t, name) && sameShow(t, name); }));
+        /* Of those: one people know (the bar for this name), then the one that started in the year given, then the
+           channel's country's, then the best known. */
+        var known = exact.filter(function (t) { return (t.vote_count || 0) >= names[i].min && (!names[i].cc || (t.origin_country || []).indexOf(names[i].cc) >= 0); });
+        known.sort(function (a, b) {
+          return (year ? (str(b.first_air_date, 4) === year) - (str(a.first_air_date, 4) === year) : 0) || (literal(b, name) - literal(a, name)) || (exactName(b, name) - exactName(a, name)) ||
+            (cc ? ((b.origin_country || []).indexOf(cc) >= 0) - ((a.origin_country || []).indexOf(cc) >= 0) : 0) || (b.popularity || 0) - (a.popularity || 0);
         });
-        exact.sort(function (a, b) { return (year ? (str(b.first_air_date, 4) === year) - (str(a.first_air_date, 4) === year) : 0) || (b.popularity || 0) - (a.popularity || 0); });
-        var best = exact[0];
-        if (!best || (best.vote_count || 0) < names[i].min) return i + 1 < names.length ? ask(i + 1) : cb(null, { miss: true });
+        var best = known[0];
+        // A show of exactly this name that few know: this is it, too obscure to be sure, so no shorter name is tried
+        // ("The Great American Journey" is not "The Great").
+        if (!best && all.some(function (t) { return exactName(t, name); })) return cb(null, { miss: true });
+        if (!best) return i + 1 < names.length ? ask(i + 1) : cb(null, { miss: true });
         tvLookup({ id: 'tmdb:tv:' + best.id, language: language }, function (e2, x) { cb(e2, x && x.metadata ? { metadata: x.metadata } : { miss: true }); });
       });
     }

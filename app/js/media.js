@@ -263,10 +263,10 @@ var Media = (function () {
       .then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
   // A TV series by name, for the guide and the Shows screen (series.js): { metadata } (the show) or { miss }.
-  function tvByName(title, year, strength) {
+  function tvByName(title, year, strength, country) {
     var token = MediaStore.tmdbToken();
     if (!token) return Promise.reject(new Error('No TMDB token'));
-    return ask('metadata', { credential: token, kind: 'tv', guide: strength || 'weak', title: title, year: year || '', language: MediaStore.preferences().language }, 25000)
+    return ask('metadata', { credential: token, kind: 'tv', guide: strength || 'weak', title: title, year: year || '', country: country || '', language: MediaStore.preferences().language }, 25000)
       .then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
   // One season of a show TMDB knows ('tmdb:tv:1399'): { metadata: { episodes: [...] } }.

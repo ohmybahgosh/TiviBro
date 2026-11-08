@@ -24,6 +24,15 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     if (/\/search\/tv\?query=Modern%20Marvels&/.test(url)) return cb(null, { results: [{ id: 66, name: 'Modern Marvels', popularity: 12, vote_count: 30 }] });
     if (/\/search\/tv\?query=Hannah%20Montana&/.test(url)) return cb(null, { results: [{ id: 77, name: 'Hannah Montana', popularity: 60, vote_count: 2600 }] });
     if (/\/search\/tv\?query=Hannah%20Montana%20Forever&/.test(url)) return cb(null, { results: [] });
+    if (/\/search\/tv\?query=(Second%20Chance%20Pets|Deal%20or%20No%20Deal%20Australia|Tamron%20Hall|House%20Of%20Payne|Looney%20Tunes|The%20Great%20American%20Journey|Cheaters)&/.test(url)) return cb(null, { results: ({
+      'Second%20Chance%20Pets': [], 'Deal%20or%20No%20Deal%20Australia': [], 'Tamron%20Hall': [{ id: 90, name: 'The Tamron Hall Show', vote_count: 20 }],
+      'House%20Of%20Payne': [{ id: 91, name: 'Tyler Perry\'s House of Payne', vote_count: 67 }], 'Looney%20Tunes': [{ id: 92, name: 'The Looney Tunes Show', vote_count: 592 }, { id: 93, name: 'Looney Tunes', vote_count: 2 }],
+      'The%20Great%20American%20Journey': [{ id: 94, name: 'The Great American Journey', vote_count: 0 }],
+      'Cheaters': [{ id: 95, name: 'Cheaters', origin_country: ['GB'], popularity: 9, vote_count: 12 }, { id: 96, name: 'Cheaters', origin_country: ['US'], popularity: 4, vote_count: 10 }] })[/query=([^&]+)&/.exec(url)[1]] });
+    if (/\/search\/tv\?query=War&/.test(url)) return cb(null, { results: [{ id: 101, name: 'The War', origin_country: ['US'], popularity: 20, vote_count: 300 }, { id: 102, name: 'WAR', origin_country: ['GB'], popularity: 10, vote_count: 30 }] });
+    if (/\/search\/tv\?query=Second%20Chance&/.test(url)) return cb(null, { results: [{ id: 97, name: 'Second Chance', vote_count: 300 }] });
+    if (/\/search\/tv\?query=Deal%20or%20No%20Deal&/.test(url)) return cb(null, { results: [{ id: 98, name: 'Deal or No Deal', origin_country: ['US'], popularity: 30, vote_count: 400 }, { id: 99, name: 'Deal or No Deal', origin_country: ['AU'], popularity: 5, vote_count: 25 }] });
+    if (/\/search\/tv\?query=The%20Great&/.test(url)) return cb(null, { results: [{ id: 100, name: 'The Great', vote_count: 900 }] });
     if (/\/search\/tv\?query=Tiny%20Show(%20Extra)?&/.test(url)) return cb(null, { results: [{ id: 78, name: 'Tiny Show', popularity: 1, vote_count: 6 }] });
     if (/\/search\/tv\?query=(Night|Night%20of%20the|Night%20of)&/.test(url)) return cb(null, { results: [{ id: 79, name: 'Night of', vote_count: 900 }] });
     if (/\/search\/tv\?query=Night%20of%20the%20Living&/.test(url)) return cb(null, { results: [] });
@@ -74,6 +83,22 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('never cut down to a short single word ("Blue 3" is not "Blue")', r.miss === true && asked.slice(n3).every((u) => !/query=Blue&/.test(u)), asked.slice(n3).join(' '));
   r = await look({ guide: 'weak', title: 'Przyjaciele 8' });
   ok('and only a show of exactly that name ("Przyjaciele" is not "Friends" to an English TMDB)', r.miss === true, JSON.stringify(r).slice(0, 120));
+  // ---- checked with real lookups against a real guide ----
+  const id = (x) => x && x.metadata && x.metadata.id;
+  r = await look({ guide: 'weak', title: 'Second Chance Pets' });
+  ok('words are only cut off the end when guides add them ("Second Chance Pets" is not "Second Chance")', r.miss === true, JSON.stringify(r).slice(0, 120));
+  r = await look({ guide: 'strong', title: 'Deal or No Deal Australia' });
+  ok('a country at the end is that country\'s show ("Deal or No Deal Australia")', id(r) === 'tmdb:tv:99', JSON.stringify(r).slice(0, 120));
+  const tam = await look({ guide: 'weak', title: 'Tamron Hall' }), pay = await look({ guide: 'weak', title: 'House Of Payne' });
+  ok('TMDB\'s "The ... Show" and an owner in front match ("The Tamron Hall Show", "Tyler Perry\'s House of Payne")', id(tam) === 'tmdb:tv:90' && id(pay) === 'tmdb:tv:91', JSON.stringify([tam, pay]).slice(0, 200));
+  r = await look({ guide: 'weak', title: 'Looney Tunes' });
+  ok('but not when a show of exactly the name exists ("Looney Tunes" is not "The Looney Tunes Show")', r.miss === true, JSON.stringify(r).slice(0, 120));
+  r = await look({ guide: 'weak', title: 'The Great American Journey' });
+  ok('a show of exactly the name that few know is a miss, not a shorter name ("The Great")', r.miss === true, JSON.stringify(r).slice(0, 120));
+  const us = await look({ guide: 'weak', title: 'Cheaters', country: 'US' }), any = await look({ guide: 'weak', title: 'Cheaters' });
+  ok('of two shows of one name, the channel\'s country\'s', id(us) === 'tmdb:tv:96' && id(any) === 'tmdb:tv:95', JSON.stringify([us, any]).slice(0, 200));
+  r = await look({ guide: 'weak', title: 'War', country: 'US' });
+  ok('spelled the same comes first ("War" is WAR, not "The War", whatever the country)', id(r) === 'tmdb:tv:102', JSON.stringify(r).slice(0, 120));
   ok('only the name went to TMDB (no logins, no links)', asked.every((u) => /^https:\/\/api\.themoviedb\.org\/3\/(search\/tv|tv\/\d+)\?/.test(u)), asked.join(' '));
 
   // ---- the app: Series ----

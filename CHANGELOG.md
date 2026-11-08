@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Guide series from TMDB: checked with real lookups against a real guide's 400 most-aired shows, and fixed where it went wrong.**
+  - Of two shows with one name, the channel's country's: "Cheaters" and "Deal or No Deal" on US channels are the US shows, not the British ones.
+  - Found now: shows TMDB knows with their owner in front or as "The ... Show" ("Tyler Perry's House of Payne", "Lauren Lake's Paternity Court", "The Tamron Hall Show"), shows with their host's name after ("The Joy of Painting with Bob Ross"), and the best-known of several versions ("Supermarket Sweep").
+  - No more wrong guesses from a shortened name: "The Great American Journey" was "The Great", "Second Chance Pets" was "Second Chance".  Only words guides add ("Forever", "Reloaded", "Classics") are left off now, and a country at the end means that country's show.
+  - "Looney Tunes" is the old cartoons, not "The Looney Tunes Show", and "War" is WAR, not "The War".
+
 ## 0.6.0 (alpha 108, 2026-11-08)
 
 Pre-release: expect rough edges, and keep a backup before installing.
