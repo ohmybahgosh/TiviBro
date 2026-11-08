@@ -203,11 +203,19 @@ function create(opts) {
        know (20+ votes): guides add to a name what TMDB doesn't have ("Hannah Montana Forever", the name its
        last season went by, is "Hannah Montana" there).  Never shorter than two words. */
     var words = main.split(/\s+/), names = [{ n: title, min: strong ? 1 : 5 }];
+    /* A season number after the name, as some guides give it ("Świnka Peppa 7", "Przyjaciele 8", "Ojciec Mateusz
+       2"): the name without it, once a show of the whole name ("Teen Mom 2", "Catch 21") isn't found.  Not down
+       to a short single word ("Blue 3" is not the show "Blue"). */
+    var bare = /^(.*\D)\s+\d{1,2}$/.exec(title);
+    if (bare && (/\s/.test(bare[1].trim()) || normal(bare[1]).length >= 8 || /[^\x00-\x7f]/.test(bare[1]))) names.push({ n: bare[1].trim(), min: strong ? 1 : 5 });
     if (main !== title && normal(main).length >= 3) names.push({ n: main, min: strong ? 1 : 5 });
     for (var cut = 1; cut <= 2 && words.length - cut >= 2; cut++) {
       var shorter = words.slice(0, words.length - cut).join(' ').replace(/[\s,:;&\-–]+$/, '');
       if (normal(shorter).length >= 6 && !/^(the|a|an|and|of|in|on|at|to|for|with|my|your|our)$/i.test(words[words.length - cut - 1])) names.push({ n: shorter, min: 20 });
     }
+    // The same name twice (the season number cut, then the last word cut): asked once, at the lower bar.
+    var seenName = {};
+    names = names.filter(function (x) { var k = showName(x.n); if (seenName[k]) return false; seenName[k] = 1; return true; });
     function ask(i) {
       var name = names[i].n;
       request('/search/tv?query=' + encodeURIComponent(name) + '&language=' + locale, function (e, r) {

@@ -10,7 +10,7 @@
    What it gives: Series.of(c, p) for a guide programme, Series.show(name, year) for a provider's show,
    Series.episode(show, 'S2 E5'), each null until known; onChange(fn) when an answer comes in. */
 var Series = (function () {
-  var KEY = 'tvseries', VER = 3, KEEP = 30 * 86400e3, MAX_SHOWS = 3000, MAX_SEASONS = 400, GAP = 350, QUEUE = 4;
+  var KEY = 'tvseries', VER = 4, KEEP = 30 * 86400e3, MAX_SHOWS = 3000, MAX_SEASONS = 400, GAP = 350, QUEUE = 4;
   var shows = {}, seasons = {}, loaded = null, ready = false, queue = [], queued = {}, busy = false, saveT = null, listeners = [], paused = 0;
   function S() { return Store.settings; }
   function on() { return S().guideSeries !== false && typeof MediaStore !== 'undefined' && !!MediaStore.tmdbToken(); }
@@ -26,11 +26,24 @@ var Series = (function () {
      -Face-to-Face with Cheetahs", "Deal or No Deal Australia Season 12 (Reboot Season 01)", "Shark Tank :Season 4
      :2026: Ep 4", "Chasing Speed: Episode 1".  (Something has to come before it: never the whole name.) */
   var EPIN = /(\S)\s*[:(\-–|]?\s*\b(?:S\d{1,2}\s*E\d{1,3}|(?:reboot\s+)?season\s*\d{1,2}|ep(?:isode)?\.?\s*\d{1,4})\b.*$/i;
+  /* A provider's language or country in front ("EN - ", "US| ", "|US|", "[US]"), from a list: a show's own short
+     name ("JAG - Wojskowe Biuro Śledcze", "ER - Love's Labor Lost") is not a country, nor is a colon in a
+     title ("IT: Welcome to Derry"). */
+  var CC = '(?:EN|ENG|US|USA|UK|GB|CA|AU|NZ|IE|IN|FR|FRA|DE|GER|ES|ESP|SPA|IT|ITA|PT|POR|BR|NL|BE|PL|POL|RU|RUS|TR|TUR|AR|ARA|MX|LAT|LATAM|SE|SWE|NO|NOR|DK|DAN|FI|FIN|GR|RO|HU|CZ|SK|AL|EX|AF|PK|PH|KR|JP|CN|HK|TW|ZA|NG|IL)';
+  var PREFIX = new RegExp('^\\s*(?:\\|' + CC + '\\||\\[' + CC + '\\]|' + CC + '\\s*[|\\-–]\\s+)');
+  // How a dubbed or subtitled copy is marked: "Naruto (English Dubbed)", "Yu-Gi-Oh! Zexal (English Dub)", "Acapulco Shore (ENG)".
+  var VERSION = /\s*\((?:english\s+)?(?:dub(?:bed)?|sub(?:bed|titled|s)?)\)|\s*\((?:eng|english|us|uk)\)/ig;
+  /* A title read with the wrong character set: "Worldâs Funniest Videos" (UTF-8 read as Latin-1), "espaÃ±ol".
+     Read again as UTF-8 when that gives sensible text. */
+  function mend(t) {
+    if (!/[ÂÃâ][\u0080-\u00bf]/.test(t)) return t;
+    try { var x = decodeURIComponent(escape(t)); return /\ufffd/.test(x) ? t : x; } catch (e) { return t; }
+  }
   function clean(t) {
-    t = String(t || '').replace(SUP, ' ');
+    t = mend(String(t || '')).replace(SUP, ' ');
     var m = /\(((?:19|20)\d\d)\)/.exec(t), y = m ? m[1] : '';
     // A provider's language or country in front ("EN - ", "US| "), never a title's own colon ("CSI: Miami").
-    var x = t.replace(/^\s*(?:\|[^|]{1,12}\||\[[^\]]{1,12}\]|[A-Z]{2,3}\s*[|\-–]\s+)/, '')
+    var x = t.replace(PREFIX, '').replace(VERSION, ' ')
       .replace(/^\s*(?:new|premiere|season premiere|series premiere)\s*[:\-–]\s*/i, '')
       .replace(/\((?:19|20)\d\d\)/g, ' ').replace(/\[[^\]]*\]/g, ' ')
       .replace(/\s+S\d{1,2}(?:\s*E\d{1,3})?\s*$/i, '').replace(/\s*[-–|]\s*(?:u?hd|sd|4k|fhd|multi[- ]?sub)\s*$/i, '').replace(/\s+(?:u?hd|cc|4k)\s*$/i, '')
@@ -142,9 +155,32 @@ var Series = (function () {
      Kimmel Live!", "Saturday Night Live", "Live with Kelly and Mark"), so only "Live:" in front marks a broadcast;
      guides without categories leave sport unmarked ("College Football", "NWSL Soccer"), so sport is told by its
      words; team channels list "Next game: …"; and a bare "Movie" is a placeholder. */
-  var NOT = /\b(news|noticias|weather|paid program(?:ming)?|infomercial|sign.?off|off.?air|to be announced|tba|highlights|pregame|postgame|countdown|worship|football|f[uú]tbol|soccer|basketball|baseball|hockey|nfl|nba|wnba|nhl|mlb|mls|ncaa[bfmw]?|nascar|ufc|boxing|golf|tennis|racing|formula 1|grand prix|kickoff)\b|^\s*(?:live|en vivo|en directo)\s*[:!\-]|^\s*next game\s*:|^\s*live at\b|^\s*(?:movie|film|programming|live|en vivo)\s*!?\s*$/i;
+  var NOT = /\b(news\d*|noticias|noticiero|nouvelles|nachrichten|notizie|telediario|informacyjn\w*|wiadomo\S*|weather|paid program(?:ming)?|infomercial|sign.?off|off.?air|to be announced|tba|highlights|pregame|postgame|worship|football|f[uú]tbol|soccer|basketball|baseball|hockey|nfl|nba|wnba|nhl|mlb|mls|ncaa[bfmw]?|nascar|ufc|boxing|golf|tennis|tenis|racing|formula 1|grand prix|kickoff|premier league|champions league|europa league|la liga|bundesliga|serie a|ligue 1|cricket|rugby|curling|pickleball|rodeo|mma|bellator|pfl|pbr|fight cards?|full fights?|super league|pi[lł]ka no[zż]na)\b|\b(?:college|nfl|nba|race|game ?day|sports?) countdown\b|^\s*countdown\b|^\s*(?:live|en vivo|en directo)\s*[:!\-]|^\s*next game\s*:|^\s*live at\b|^\s*(?:movie|film|cin[eé]ma|programming|live|en vivo)\s*!?\s*$/i;
   // News programmes without "news" in the name (views.js KIND_NEWS_SHOWS, the same list): not looked up as series.
-  var NEWS_SHOWS = /^\s*(good morning america\b|gma3?\b|cbs (saturday|sunday) morning|cbs mornings|today(\s+3rd hour)?\s*$|early today|first look\s*$|nightline|20\/20|dateline|48 hours|60 minutes|face the nation|meet the press|this week with|fox (&|and) friends|morning joe|way too early|squawk box|top story with|hallie jackson now|stay tuned now|livenow from fox|the 11th hour|the last word with|the briefing with|the world today|business today|investigatetv\+|public affairs|world news tonight|nbc nightly)/i;
+  var NEWS_SHOWS = /^\s*(good morning\b|gma3?\b|cbs (saturday|sunday) morning|cbs mornings|today(\s+3rd hour)?\s*$|early today|first look\s*$|nightline|20\/20|dateline|48 hours|60 minutes|face the nation|meet the press|this week with|fox (&|and) friends|morning joe|way too early|squawk box|top story with|hallie jackson now|stay tuned now|livenow from fox|the 11th hour|the last word with|the briefing with|the world today|business today|investigatetv\+|public affairs|world news tonight|nbc nightly)/i;
+  // A fight on a boxing or MMA channel: "Benn vs. Dobson (2024)", "Canelo vs. Mbilli (2026)".
+  var BOUT = /^[^\s:]+(?:\s+[^\s:]+)?\s+vs?\.?\s+[^\s:]+(?:\s+[^\s:]+)?\s+\((?:19|20)\d\d\)$/i;
+  /* How many different stories the channel's guide gives a programme of this name (the first words of each
+     description).  Kept per guide list. */
+  var storyCache = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+  function varied(c, name) {
+    var list = null;
+    try { list = typeof Epg !== 'undefined' && Epg.request ? Epg.request(c) : null; } catch (e) {}
+    if (!list || !list.length) return 0;
+    var by = storyCache && storyCache.get(list);
+    if (!by) {
+      by = {};
+      for (var i = 0; i < list.length; i++) {
+        var q = list[i], d = String(q.d || '').replace(/\s+/g, ' ').trim().slice(0, 40).toLowerCase();
+        if (!d) continue;
+        var k = norm(clean(q.t).t), o = by[k] || (by[k] = {});
+        o[d] = 1;
+      }
+      Object.keys(by).forEach(function (k) { by[k] = Object.keys(by[k]).length; });
+      if (storyCache) storyCache.set(list, by);
+    }
+    return by[norm(name)] || 0;
+  }
   function strength(c, p) {
     if (!p || !p.t || p.up || p.ended || p.mv) return '';
     if (p.k === 'n' || p.k === 's' || p.k === 'm') return '';
@@ -155,7 +191,11 @@ var Series = (function () {
     // News and sport are left alone even with a season and episode: guides number those too ("Today", "S74 E210").
     if (NOT.test(ct.t) || NEWS_SHOWS.test(ct.t)) return '';
     if (p.ep || EPIN.test(String(p.t).replace(SUP, ' '))) return 'strong';     // the guide gave a season or episode, in its own field or the name
-    if (p.e - p.s > 75 * 60000) return '';      // longer: most likely a movie (from a real guide: Godzilla, Serendipity), not a show
+    if (BOUT.test(ct.t + (ct.y ? ' (' + ct.y + ')' : ''))) return '';
+    // Longer: most likely a movie (from a real guide: Godzilla, Serendipity), not a show.  Unless the channel airs
+    // it again and again with a different story each time: a series in long slots (Midsomer Murders, Columbo,
+    // Married at First Sight, Mystery Science Theater 3000, all over 90 minutes with the ads).
+    if (p.e - p.s > 75 * 60000 && varied(c, ct.t) < 3) return '';
     if (typeof Teams !== 'undefined' && Teams.isGame && Teams.isGame(ct.t, c.n)) return '';
     return 'weak';
   }

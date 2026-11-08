@@ -29,6 +29,10 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     if (/\/search\/tv\?query=Night%20of%20the%20Living&/.test(url)) return cb(null, { results: [] });
     if (/\/search\/tv\?query=Big%20Bang%20Theory&/.test(url)) return cb(null, { results: [{ id: 81, name: 'The Big Bang Theory', vote_count: 9000 }] });
     if (/\/search\/tv\?query=Rubble%20and%20Crew&/.test(url)) return cb(null, { results: [{ id: 82, name: 'Rubble & Crew', vote_count: 40 }] });
+    if (/\/search\/tv\?query=(Ojciec%20Mateusz%202|Blue%203|Przyjaciele%208)&/.test(url)) return cb(null, { results: [] });
+    if (/\/search\/tv\?query=Ojciec%20Mateusz&/.test(url)) return cb(null, { results: [{ id: 83, name: 'Ojciec Mateusz', original_name: 'Ojciec Mateusz', vote_count: 40 }] });
+    if (/\/search\/tv\?query=Teen%20Mom%202&/.test(url)) return cb(null, { results: [{ id: 84, name: 'Teen Mom 2', vote_count: 60 }] });
+    if (/\/search\/tv\?query=Przyjaciele&/.test(url)) return cb(null, { results: [{ id: 85, name: 'Friends', original_name: 'Friends', vote_count: 9000 }] });
     const m = /\/tv\/(\d+)\?/.exec(url);
     if (m) return cb(null, { id: +m[1], name: 'The Office', overview: 'Office life.', first_air_date: m[1] === '22' ? '2005-03-24' : '2001-07-09', genres: [{ name: 'Comedy' }], vote_average: 8.6, networks: [{ name: m[1] === '22' ? 'NBC' : 'BBC Two' }], credits: { cast: [{ name: 'Steve Carell' }] } });
     cb(new Error('unexpected ' + url));
@@ -60,6 +64,16 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const n0 = asked.length;
   r = await look({ guide: 'strong', title: 'Друзья' });
   ok('a name in another script is never matched to whatever comes first', r.miss === true && asked.length === n0, JSON.stringify(r));
+  r = await look({ guide: 'weak', title: 'Ojciec Mateusz 2' });
+  ok('a season number after the name (a Polish guide\'s "Ojciec Mateusz 2"): the show without it', r.metadata && r.metadata.id === 'tmdb:tv:83', JSON.stringify(r).slice(0, 120));
+  const n2 = asked.length;
+  r = await look({ guide: 'weak', title: 'Teen Mom 2' });
+  ok('but a show whose name ends in a number is itself ("Teen Mom 2"), asked once', r.metadata && r.metadata.id === 'tmdb:tv:84' && asked.slice(n2).filter((u) => /search/.test(u)).length === 1, asked.slice(n2).join(' '));
+  const n3 = asked.length;
+  r = await look({ guide: 'weak', title: 'Blue 3' });
+  ok('never cut down to a short single word ("Blue 3" is not "Blue")', r.miss === true && asked.slice(n3).every((u) => !/query=Blue&/.test(u)), asked.slice(n3).join(' '));
+  r = await look({ guide: 'weak', title: 'Przyjaciele 8' });
+  ok('and only a show of exactly that name ("Przyjaciele" is not "Friends" to an English TMDB)', r.miss === true, JSON.stringify(r).slice(0, 120));
   ok('only the name went to TMDB (no logins, no links)', asked.every((u) => /^https:\/\/api\.themoviedb\.org\/3\/(search\/tv|tv\/\d+)\?/.test(u)), asked.join(' '));
 
   // ---- the app: Series ----
@@ -116,6 +130,26 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ctx.Store.settings.guideSeries = false;
   ok('nor asked about by the app, where all of them would share one answer', S.show('مسلسل', '', 'strong') === null && S.show('Друзья', '', 'strong') === null);
   ok('Series details off: nothing', S.of(c, { t: 'Severance', s: now, e: now + 3600e3, ep: 'S1 E1' }) === null);
+  // ---- issue: one more pass over a real guide's 20,000 titles ----
+  {
+    const cl = (t) => S.clean(t).t;
+    ok('a show\'s own short name in front is not a country ("JAG - ...", "ER - ...")', cl('JAG - Wojskowe Biuro Śledcze') === 'JAG - Wojskowe Biuro Śledcze' && cl('ER - Love\'s Labor Lost') === 'ER - Love\'s Labor Lost' && cl('EN - Breaking Bad') === 'Breaking Bad' && cl('US - The Office') === 'The Office' && cl('IT: Welcome to Derry') === 'IT: Welcome to Derry', [cl('JAG - Wojskowe Biuro Śledcze'), cl('IT: Welcome to Derry')].join(' | '));
+    ok('dubbed and subtitled copies are the show ("Naruto (English Dubbed)", "(English Dub)", "(ENG)", "(US)")', cl('Naruto (English Dubbed)') === 'Naruto' && cl('Inuyasha  (English Dubbed)') === 'Inuyasha' && cl('Yu-Gi-Oh! Zexal (English Dub)') === 'Yu-Gi-Oh! Zexal' && cl('Acapulco Shore (ENG)') === 'Acapulco Shore' && cl('Four Weddings (US)') === 'Four Weddings');
+    ok('a title read with the wrong character set is mended ("Worldâs")', cl('World\u00e2\u0080\u0099s Funniest Videos') === 'World\u2019s Funniest Videos' && cl('Caf\u00c3\u00a9 Society') === 'Caf\u00e9 Society' && cl('Café Society') === 'Café Society', cl('World\u00e2\u0080\u0099s Funniest Videos'));
+    const st = (t, min, ch) => S.strength(ch || { n: 'x' }, { t, s: now, e: now + min * 60000 });
+    ok('not series: boxing bouts, local news, sport in other words', ['Benn vs. Dobson (2024)', 'Canelo vs. Mbilli (2026)', 'NEWS4 AT 11P', 'TVA nouvelles', 'Good Morning Augusta', 'College Countdown', 'Premier League Goal Zone', 'W rytmie dnia - serwis informacyjny', 'Piłka nożna: PKO BP Ekstraklasa'].every((t) => st(t, 30) === ''),
+      ['Benn vs. Dobson (2024)', 'NEWS4 AT 11P', 'TVA nouvelles', 'Good Morning Augusta', 'College Countdown'].map((t) => t + ':' + st(t, 30)).join(' '));
+    ok('but shows with those words are ("Man vs. Wild", "World\'s Funniest Videos Top 10 Countdown", "Jack Hanna\'s Wild Countdown")', ['Man vs. Wild', 'World\'s Funniest Videos Top 10 Countdown', 'Jack Hanna\'s Wild Countdown'].every((t) => st(t, 30) === 'weak'));
+    const lst = [];
+    for (let i = 0; i < 6; i++) lst.push({ t: 'Midsomer Murders', s: now + i * 7200e3, e: now + i * 7200e3 + 110 * 60000, d: 'Barnaby investigates case number ' + i + ' in the village.' });
+    for (let i = 0; i < 4; i++) lst.push({ t: 'Elli and Her Monster Team', s: now + i * 9000e3, e: now + i * 9000e3 + 90 * 60000, d: 'A little ghost moves into a ghost train.' });
+    ctx.Epg = { request: () => lst };
+    const ch = { n: 'Drama Channel' };
+    ok('a series in long slots (the channel tells a different story each time) is looked up', st('Midsomer Murders', 110, ch) === 'weak' && st('Midsomer Murders', 110, { n: 'other' }) === 'weak');
+    ok('a long programme with the same story every time is a movie, not looked up', st('Elli and Her Monster Team', 90, ch) === '');
+    delete ctx.Epg;
+    ok('without the channel\'s guide, a long programme is still taken for a movie', st('Midsomer Murders', 110, ch) === '');
+  }
   // Kept from an older version, with stricter matching: its misses are asked again, what it found stays.
   {
     const now2 = Date.now(), ctx2 = Object.assign({}, ctx), asks2 = [];

@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **More guide programmes find their series on TMDB, and fewer the wrong one.**  Checked against a real guide's 108,000 programmes:
+  - Series in long slots are looked up now (Midsomer Murders, Columbo, Married at First Sight, Survivor, Yellowstone): a programme over 75 minutes still counts as a movie, unless the channel airs it with a different story each time.
+  - Dubbed and subtitled copies find their show ("Naruto (English Dubbed)", "(English Dub)", "(ENG)", "Four Weddings (US)"), and titles garbled by the wrong character set are mended first ("Worldâs Funniest Videos").
+  - A season number after the name, as some guides give it ("Ojciec Mateusz 2"), is tried without it when no show has the whole name.
+  - A show's own short name in front is no longer taken for a country ("JAG - ...", "IT: Welcome to Derry").
+  - Not looked up: boxing bouts ("Benn vs. Dobson (2024)"), local news ("NEWS4 AT 11P", "Good Morning Augusta", "TVA nouvelles") and football, rugby, cricket, pickleball and rodeo shows.  Shows that only sound like sport stay in ("Man vs. Wild", "World's Funniest Videos Top 10 Countdown").
+  - Shows TMDB didn't find before are asked about again once.
+
 ## 0.6.0 (alpha 107, 2026-11-08)
 
 Pre-release: expect rough edges, and keep a backup before installing.
