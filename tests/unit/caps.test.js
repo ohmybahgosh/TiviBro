@@ -85,5 +85,12 @@ ok('no warning when another track plays', !r.warn);
 r = C.route({ video: 'h264', range: 'SDR', audio: ['flac'], channels: 6 }, 'auto', tv);
 ok('surround FLAC warns', /FLAC/.test(r.warn), r.warn);
 
+// AAC above 48 kHz (a live channel sent AAC 96 kHz mono, silent on the TV): unplayable, so the converter takes it.
+m = C.fromMpegts({ videoCodec: 'avc1.640028', audioCodec: 'mp4a.40.2', height: 1080, audioChannelCount: 1, audioSampleRate: 96000 });
+ok('the sample rate comes through from mpegts.js', m.rate === 96000 && m.channels === 1, JSON.stringify(m));
+r = C.route(m, 'auto', tv);
+ok('AAC at 96 kHz is sound this TV can\'t play', r.unplayable === 'aac' && C.unplayable('aac', 1, tv, 96000) === 'AAC at 96 kHz', JSON.stringify(r));
+ok('AAC at 48 kHz plays', !C.route({ video: 'h264', range: 'SDR', audio: ['aac'], rate: 48000, channels: 2 }, 'auto', tv).unplayable && !C.unplayable('aac', 2, tv, 48000) && !C.unplayable('aac', 2, tv));
+
 if (fail) { console.log(fail + ' caps test(s) failed'); process.exit(1); }
 console.log('all caps tests passed');

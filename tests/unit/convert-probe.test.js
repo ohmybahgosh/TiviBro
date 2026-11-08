@@ -63,5 +63,13 @@ ok('a link that is the helper\'s already is read as it is', C.inputFor('http://1
 ok('anything but http(s) is refused', C.inputFor('file:///etc/passwd', '', 47811) === null && C.inputFor('', '', 47811) === null);
 ok('stream links are recognised by shape', C.isStream('/convert/' + 'a'.repeat(32) + '/movie.mkv?u=x') && !C.isStream('/convert/probe?u=x') && !C.isStream('/convert/key'));
 
+// AAC above 48 kHz (a live college football channel sent AAC 96 kHz mono, which the TV plays silent).
+let hz = C.parseProbe('Input #0, mpegts, from \'x\':\n  Duration: N/A, start: 1.0, bitrate: N/A\n  Stream #0:0[0x100]: Video: h264 (High) ([27][0][0][0] / 0x001B), yuv420p, 1920x1080\n  Stream #0:1[0x101]: Audio: aac (LC) ([15][0][0][0] / 0x000F), 96000 Hz, mono, fltp, 101 kb/s\n');
+ok('the probe reads the sample rate', hz.audio[0].rate === 96000 && hz.audio[0].channels === 1 && hz.audio[0].codec === 'aac', JSON.stringify(hz.audio));
+let aa = C.audioArgs({ codec: 'aac', channels: 1, rate: 96000 });
+ok('AAC at 96 kHz: AC-3 at 48 kHz, not copied', aa.args.join(' ') === '-c:a ac3 -b:a 224k -ar 48000' && /96 kHz to 48 kHz/.test(aa.out), JSON.stringify(aa));
+ok('AAC at 48 kHz: copied as before', C.audioArgs({ codec: 'aac', channels: 2, rate: 48000 }).args.join(' ') === '-c:a copy');
+ok('DTS at 96 kHz: AC-3 at 48 kHz too', /-ar 48000/.test(C.audioArgs({ codec: 'dts', channels: 6, rate: 96000 }).args.join(' ')));
+
 console.log(fail ? fail + ' failed' : 'all passed');
 process.exit(fail ? 1 : 0);

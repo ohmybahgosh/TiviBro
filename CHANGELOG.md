@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Sound on channels sent as AAC above 48 kHz.**  A college football game came as AAC at 96 kHz (mono), which the TV played with no sound.  TiviBro now spots that rate as the channel starts and plays it through the audio converter, which turns it into Dolby Digital at 48 kHz; it says "Converting AAC at 96 kHz audio for this TV".  Movies and episodes with sound above 48 kHz get the same.
 - **A stream format for one channel.**  Hold OK on a channel (or Options while it plays) > **Stream format…**: Automatic, HLS or MPEG-TS for that channel, whatever Settings > Playback > Stream format says.  Handy for the one channel that stutters as MPEG-TS, or won't start as HLS.  The channel playing starts again in the new format; Settings > Playback lists the channels that have their own and clears them.  Xtream Codes channels.
 
 ## 0.6.0 (alpha 102, 2026-11-07)

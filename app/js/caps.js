@@ -168,6 +168,7 @@ var Caps = (function () {
     else out.range = v.tenBit && (v.video === 'hevc' || v.video === 'av1') ? 'HDR?' : 'SDR';
     var au = audioCodec(mi.audioCodec); if (au) out.audio.push(au);
     if (mi.audioChannelCount) out.channels = mi.audioChannelCount;
+    if (mi.audioSampleRate) out.rate = +mi.audioSampleRate || 0;
     return out;
   }
   // Xtream get_vod_info: info.video / info.audio are ffprobe stream records.
@@ -228,8 +229,8 @@ var Caps = (function () {
       }
     }
     var au = m.audio || [];
-    if (au.length && au.every(function (a) { return unplayable(a, m.channels, c); })) {
-      out.warn = (NAMES[au[0]] || au[0]) + (au[0] === 'flac' ? ' surround' : '') + ' sound, which this TV can\'t play.  If there is no sound, pick another audio track.';
+    if (au.length && au.every(function (a) { return unplayable(a, m.channels, c, m.rate); })) {
+      out.warn = (unplayable(au[0], m.channels, c, m.rate) || NAMES[au[0]] || au[0]) + ' sound, which this TV can\'t play.  If there is no sound, pick another audio track.';
       out.unplayable = au[0];
     }
     return out;
@@ -238,13 +239,16 @@ var Caps = (function () {
   /* Sound this TV can't play at all, through either player: the reason ('DTS', 'Dolby TrueHD',
      'FLAC surround'), or '' when it plays.  The audio converter (convert.js) turns these into AC-3.
      codec: a Caps name or ffmpeg's (dca, mlp, truehd, pcm_s24le...); channels: 0 when unknown. */
-  function unplayable(codec, channels, c) {
+  function unplayable(codec, channels, c, rate) {
     c = c || probe();
     var a = audioCodec(codec);
     if (a === 'dca') a = 'dts';
     if (a === 'dts' && !c.dts) return 'DTS';
     if ((a === 'truehd' || a === 'mlp') && !c.tv.truehd) return 'Dolby TrueHD';
     if (a === 'flac' && channels > 2) return 'FLAC surround';
+    /* AAC above 48 kHz: the TV's decoders stop at 48 kHz and the picture plays silent.  Seen on a real
+       channel (a college football game sent as AAC 96 kHz mono, November 2026). */
+    if (a === 'aac' && rate > 48000) return 'AAC at ' + Math.round(rate / 1000) + ' kHz';
     return '';
   }
 

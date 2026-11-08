@@ -455,11 +455,11 @@ var Player = (function () {
       // A live channel whose sound this TV can't play: the converter, if it's on.
       if (r.unplayable && cur.live && !cur.timeshift && !cur.convTried && window.Convert && Convert.on()) {
         cur.convTried = true;
-        Convert.planLive(cur.origUrl || cur.url, r.unplayable, cur.media.channels).then(function (pl) { livePlan(pl, myToken, r.unplayable); });
+        Convert.planLive(cur.origUrl || cur.url, r.unplayable, cur.media.channels, cur.media.rate).then(function (pl) { livePlan(pl, myToken, r.unplayable); });
         return;
       }
       if (r.warn && r.unplayable && !cur.warned && lateConvert(r.unplayable, myToken)) cur.warned = true;
-      if (r.warn && !cur.warned) { cur.warned = true; Log.warn('player', r.warn); notice(r.unplayable && window.Convert ? Convert.noSound(Caps.unplayable(r.unplayable, cur.media.channels) || r.unplayable) : r.warn); }
+      if (r.warn && !cur.warned) { cur.warned = true; Log.warn('player', r.warn); notice(r.unplayable && window.Convert ? Convert.noSound(Caps.unplayable(r.unplayable, cur.media.channels, null, cur.media.rate) || r.unplayable) : r.warn); }
       if (r.engine === 'native' && kind !== 'native' && !st.started && !cur.routed && !(cur.tried && cur.tried.native)) {
         cur.routed = true;
         Log.info('player', r.reason + '; switching to the TV player');
@@ -489,7 +489,7 @@ var Player = (function () {
       if (cur.convNotice) { notice(cur.convNotice); cur.convNotice = ''; }
     }
     if (cur.noSound && !cur.warned) { cur.warned = true; Log.warn('player', 'No converter: ' + cur.noSound + ' sound will be silent'); notice(Convert.noSound(cur.noSound)); }
-    if (kind === 'native' && cur.media && !conv) { var rn = Caps.route(cur.media, hdrPolicy()); if (rn.warn && rn.unplayable && !cur.warned && lateConvert(rn.unplayable, myToken)) cur.warned = true; if (rn.warn && !cur.warned) { cur.warned = true; notice(rn.unplayable && window.Convert ? Convert.noSound(Caps.unplayable(rn.unplayable, cur.media.channels) || rn.unplayable) : rn.warn); } }
+    if (kind === 'native' && cur.media && !conv) { var rn = Caps.route(cur.media, hdrPolicy()); if (rn.warn && rn.unplayable && !cur.warned && lateConvert(rn.unplayable, myToken)) cur.warned = true; if (rn.warn && !cur.warned) { cur.warned = true; notice(rn.unplayable && window.Convert ? Convert.noSound(Caps.unplayable(rn.unplayable, cur.media.channels, null, cur.media.rate) || rn.unplayable) : rn.warn); } }
     wd = setInterval(function () { tick(myToken); }, 400);
     // Until the first frame, check every 50ms: the video is often ready to play within 100-200ms
     // of a channel change, and waiting for the 400ms watchdog added up to a third of a second.
@@ -1073,7 +1073,7 @@ var Player = (function () {
   function lateConvert(codec, my) {
     if (!cur || cur.live || cur.timeshift || cur.preview || cur.conv || cur.lateConv || cur.noSound || !window.Convert || !Convert.on()) return false;
     cur.lateConv = true;
-    var what = Caps.unplayable(codec, cur.media && cur.media.channels) || String(codec).toUpperCase(), item = cur.meta && cur.meta.item || {};
+    var what = Caps.unplayable(codec, cur.media && cur.media.channels, null, cur.media && cur.media.rate) || String(codec).toUpperCase(), item = cur.meta && cur.meta.item || {};
     function silent() { if (my === token && cur) notice(Convert.noSound(what)); }
     function again() {
       if (my !== token || !cur) return;
@@ -1137,7 +1137,7 @@ var Player = (function () {
     var conv = cur.conv;
     Log.warn('player', 'Converted sound did not start (' + why + '); playing the movie as it is');
     if (!conv.played && conv.t && !cur.startAt) cur.startAt = conv.t;
-    cur.conv = null; cur.convNotice = ''; cur.noSound = Caps.unplayable(conv.codec, conv.channels) || '';
+    cur.conv = null; cur.convNotice = ''; cur.noSound = Caps.unplayable(conv.codec, conv.channels, null, conv.rate) || '';
     if (cur.live) cur.convTried = true;
     start(my);
   }
@@ -1147,11 +1147,11 @@ var Player = (function () {
     if (pl && pl.offer) {
       return Convert.offer(pl.offer, false, function (got) {
         if (my !== token || !cur) return;
-        if (got) return Convert.planLive(cur.origUrl || cur.url, codec, cur.media && cur.media.channels).then(function (p2) { livePlan(p2 && p2.conv ? p2 : null, my, codec); });
-        if (!cur.warned) { cur.warned = true; notice(Convert.noSound(Caps.unplayable(codec, cur.media && cur.media.channels) || codec)); }
+        if (got) return Convert.planLive(cur.origUrl || cur.url, codec, cur.media && cur.media.channels, cur.media && cur.media.rate).then(function (p2) { livePlan(p2 && p2.conv ? p2 : null, my, codec); });
+        if (!cur.warned) { cur.warned = true; notice(Convert.noSound(Caps.unplayable(codec, cur.media && cur.media.channels, null, cur.media && cur.media.rate) || codec)); }
       });
     }
-    if (!cur.warned) { cur.warned = true; notice(Convert.noSound(Caps.unplayable(codec, cur.media && cur.media.channels) || codec)); }
+    if (!cur.warned) { cur.warned = true; notice(Convert.noSound(Caps.unplayable(codec, cur.media && cur.media.channels, null, cur.media && cur.media.rate) || codec)); }
   }
   /* Aspect (discussion #31): this channel's or movie's own choice if it has one (Store.edits.display,
      by channel key, or "vod:<id>" for a movie or episode), otherwise the global setting.

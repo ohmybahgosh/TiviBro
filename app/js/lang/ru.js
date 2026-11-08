@@ -974,6 +974,7 @@ I18n.add('ru', {
   "Channels with their own format": "Каналы со своим форматом", "Use the setting above for every channel?": "Использовать настройку выше для всех каналов?", "Every channel uses the setting above": "Все каналы используют настройку выше",
   "Clear {n} channels": ["Сбросить {n} канал", "Сбросить {n} канала", "Сбросить {n} каналов"], "Clear {n} channel": "Сбросить {n} канал",
   "MPEG-TS usually switches channels faster.  HLS copes better with a weak connection.  One channel can have its own: hold OK on it > Stream format.": "MPEG-TS обычно быстрее переключает каналы.  HLS лучше при слабом соединении.  У канала может быть свой формат: удерживайте OK на нём > Формат потока.",
+  "Converting {x} audio for this TV": "Преобразование звука {x} для этого телевизора",
   "Guide loaded": "Телегид загружен", "Loading guide": "Загрузка телегида", "saving…": "сохранение…", "Guide did not load: {x}": "Телегид не загрузился: {x}",
   "{x} to {y}": "{x}–{y}", "Starts {x}": "Начало {x}", "Ended {x}": "Закончилось {x}", "catch-up {n} days": ["архив {n} день", "архив {n} дня", "архив {n} дней"],
   "public guide, {x}": "открытый телегид, {x}", "{x} left": "осталось {x}",

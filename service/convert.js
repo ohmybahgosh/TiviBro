@@ -68,7 +68,8 @@ function parseProbe(text) {
       if (s[3] === 'Video' && !out.video && !/attached pic/.test(s[5])) out.video = s[4].toLowerCase();
       else if (s[3] === 'Audio') {
         var rest = s[5], prof = /^\s*\(([^)]*)\)/.exec(rest);
-        last = { index: out.audio.length, stream: +s[1], codec: s[4].toLowerCase(), profile: prof && !/\//.test(prof[1]) ? prof[1] : '', channels: channelsOf(rest),
+        var hz = /, (\d{4,6}) Hz/.exec(rest);
+        last = { index: out.audio.length, stream: +s[1], codec: s[4].toLowerCase(), profile: prof && !/\//.test(prof[1]) ? prof[1] : '', channels: channelsOf(rest), rate: hz ? +hz[1] : 0,
           lang: s[2] && s[2] !== 'und' ? s[2].toLowerCase() : '', def: /\(default\)/.test(rest), title: '' };
         out.audio.push(last);
       } else if (s[3] === 'Subtitle') out.subs++;
@@ -86,12 +87,14 @@ function parseProbe(text) {
 /* What the chosen track becomes: copied when the TV plays it already, otherwise AC-3.  ffmpeg's E-AC-3
    encoder can't make 7.1 (it quietly drops channels), so 7.1 is mixed down to 5.1 AC-3. */
 function audioArgs(track) {
-  var codec = track && track.codec || '';
-  if (PLAYABLE[codec]) return { args: ['-c:a', 'copy'], out: codec + ' (copied)' };
+  var codec = track && track.codec || '', rate = track && track.rate || 0;
+  // Above 48 kHz (AAC at 96 kHz on a live channel): the TV can't decode it, and AC-3 has no such rate.
+  var hi = rate > 48000, ar = hi ? ['-ar', '48000'] : [], note = hi ? ', ' + Math.round(rate / 1000) + ' kHz to 48 kHz' : '';
+  if (PLAYABLE[codec] && !hi) return { args: ['-c:a', 'copy'], out: codec + ' (copied)' };
   var ch = track && track.channels || 6;
-  if (ch > 6) return { args: ['-c:a', 'ac3', '-b:a', '640k', '-ac', '6'], out: 'ac3 640k 5.1 (mixed down from ' + ch + ' channels)' };
-  if (ch <= 2) return { args: ['-c:a', 'ac3', '-b:a', '224k'], out: 'ac3 224k ' + (ch === 1 ? 'mono' : 'stereo') };
-  return { args: ['-c:a', 'ac3', '-b:a', '640k'], out: 'ac3 640k ' + ch + ' channels' };
+  if (ch > 6) return { args: ['-c:a', 'ac3', '-b:a', '640k', '-ac', '6'].concat(ar), out: 'ac3 640k 5.1 (mixed down from ' + ch + ' channels)' + note };
+  if (ch <= 2) return { args: ['-c:a', 'ac3', '-b:a', '224k'].concat(ar), out: 'ac3 224k ' + (ch === 1 ? 'mono' : 'stereo') + note };
+  return { args: ['-c:a', 'ac3', '-b:a', '640k'].concat(ar), out: 'ac3 640k ' + ch + ' channels' + note };
 }
 // o: { input, pipe, t, a, fmt, track }
 function args(o) {
@@ -362,7 +365,7 @@ function stream(req, res, ALLOW, log, port, redact) {
   if (dir) clearSpool(dir);
   // What the track is: from the probe, else as the app says (&c=dts&ch=6), else taken as 5.1 to convert.
   var info = probes[q.u + '|' + (q.ua || '')], track = info && info.audio[a];
-  if (!track && /^[a-z0-9_]{1,20}$/i.test(q.c || '')) track = { codec: q.c.toLowerCase(), channels: Math.max(0, Math.min(16, +q.ch | 0)) };
+  if (!track && /^[a-z0-9_]{1,20}$/i.test(q.c || '')) track = { codec: q.c.toLowerCase(), channels: Math.max(0, Math.min(16, +q.ch | 0)), rate: Math.max(0, Math.min(384000, +q.sr | 0)) };
   var list = args({ input: input, pipe: pipe, t: t, a: a, fmt: fmt, track: track });
   var p;
   try { p = spawn(bin, list); } catch (e) { res.writeHead(500, ALLOW); return res.end('could not start the converter'); }

@@ -963,6 +963,7 @@ I18n.add('es', {
   "Channels with their own format": "Canales con su propio formato", "Use the setting above for every channel?": "¿Usar el ajuste de arriba en todos los canales?", "Every channel uses the setting above": "Todos los canales usan el ajuste de arriba",
   "Clear {n} channels": ["Quitar {n} canal", "Quitar {n} canales"], "Clear {n} channel": "Quitar {n} canal",
   "MPEG-TS usually switches channels faster.  HLS copes better with a weak connection.  One channel can have its own: hold OK on it > Stream format.": "MPEG-TS suele cambiar de canal más rápido.  HLS funciona mejor con una conexión débil.  Un canal puede tener el suyo: mantén OK en él > Formato de transmisión.",
+  "Converting {x} audio for this TV": "Convirtiendo el audio {x} para esta TV",
   "Guide loaded": "Guía cargada", "Loading guide": "Cargando guía", "saving…": "guardando…", "Guide did not load: {x}": "La guía no se cargó: {x}",
   "{x} to {y}": "{x} a {y}", "Starts {x}": "Empieza {x}", "Ended {x}": "Terminó {x}", "catch-up {n} days": ["catch-up {n} día", "catch-up {n} días"],
   "public guide, {x}": "guía pública, {x}", "{x} left": "quedan {x}",

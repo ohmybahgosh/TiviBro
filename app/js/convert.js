@@ -72,7 +72,7 @@ var Convert = (function () {
   function decide(tracks, c, prefs) {
     prefs = prefs || {};
     if (!tracks || !tracks.length) return { action: 'play', bad: [] };
-    var bad = tracks.map(function (t) { return Caps.unplayable(t.codec, t.channels, c); });
+    var bad = tracks.map(function (t) { return Caps.unplayable(t.codec, t.channels, c, t.rate); });
     var def = 0;
     tracks.forEach(function (t, i) { if (t.def && !tracks[def].def) def = i; });
     if (!bad[def]) return { action: 'play', a: def, bad: bad };
@@ -100,7 +100,7 @@ var Convert = (function () {
     var ua = typeof Net !== 'undefined' ? Net.ua : '';
     return base() + '/convert/' + key + '/movie.' + (conv.fmt === 'ts' ? 'ts' : 'mkv') + '?u=' + encodeURIComponent(conv.src) +
       '&t=' + (Math.round((conv.t || 0) * 1000) / 1000) + '&a=' + (conv.a | 0) +
-      (conv.codec ? '&c=' + encodeURIComponent(conv.codec) + '&ch=' + (conv.channels | 0) : '') + (ua ? '&ua=' + encodeURIComponent(ua) : '');
+      (conv.codec ? '&c=' + encodeURIComponent(conv.codec) + '&ch=' + (conv.channels | 0) + (conv.rate ? '&sr=' + (conv.rate | 0) : '') : '') + (ua ? '&ua=' + encodeURIComponent(ua) : '');
   }
   function probe(url) {
     var k = url + '|' + (typeof Net !== 'undefined' ? Net.ua : '');
@@ -145,19 +145,21 @@ var Convert = (function () {
         if (d.action === 'play') return null;
         if (d.action === 'track') return { track: d.a, tracks: info.audio, bad: d.bad, dur: info.duration, video: info.video || '' };
         return ensureKey().then(function () {
-          return { conv: { src: o.url, a: d.a, fmt: fmtFor(info.video), video: info.video || '', codec: d.codec, channels: d.channels || 0, tracks: info.audio, bad: d.bad, dur: info.duration || 0 },
+          return { conv: { src: o.url, a: d.a, fmt: fmtFor(info.video), video: info.video || '', codec: d.codec, channels: d.channels || 0, rate: (info.audio[d.a] || {}).rate || 0, tracks: info.audio, bad: d.bad, dur: info.duration || 0 },
             notice: 'Converting ' + (NAMES[d.codec] || d.why || d.codec.toUpperCase()) + ' audio for this TV' };
         });
       });
     }).catch(function (e) { if (typeof Log !== 'undefined') Log.warn('convert', 'Could not check the sound: ' + e.message); return null; });
   }
   // A live channel whose sound turned out to be unplayable (Player's media callback).
-  function planLive(url, codec, channels) {
+  function planLive(url, codec, channels, rate) {
     if (!on() || !base()) return Promise.resolve(null);
+    // What it is, for the notice: "DTS", or "AAC at 96 kHz" (Caps.unplayable).
+    var what = NAMES[codec] || (typeof Caps !== 'undefined' && Caps.unplayable(codec, channels, null, rate)) || String(codec).toUpperCase();
     return status().then(function (s) {
-      if (s.state !== 'ready') return { offer: NAMES[codec] || String(codec).toUpperCase() };
+      if (s.state !== 'ready') return { offer: what };
       return ensureKey().then(function () {
-        return { conv: { src: url, a: 0, fmt: 'ts', codec: codec, channels: channels || 0, tracks: [], bad: [], dur: 0 }, notice: 'Converting ' + (NAMES[codec] || codec) + ' audio for this TV' };
+        return { conv: { src: url, a: 0, fmt: 'ts', codec: codec, channels: channels || 0, rate: rate || 0, tracks: [], bad: [], dur: 0 }, notice: 'Converting ' + what + ' audio for this TV' };
       });
     }).catch(function () { return null; });
   }
