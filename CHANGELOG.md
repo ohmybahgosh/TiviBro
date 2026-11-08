@@ -6,6 +6,7 @@
 - **The TV, the web editor and the phone app stay in step.**  A save from the web editor (on a computer or in the phone app) now puts only its own changes on top of what the TV has: a channel or group hidden, or shown again, on the TV a moment before is no longer undone.  What changes on the TV reaches an open web editor within a second or two, and the phone app's channel list follows by itself instead of when you leave and come back.
 - **The set-up tour's clean-up steps in Settings.**  Settings > Channels and groups > **Tidy up**: Keep the countries you watch, East or West feeds, Your local channels and Clear the clutter, one at a time, whenever you like, on the TV and in the phone app.  Apply hides only what that step says.
 - **Shorter Settings pages.**  Hidden groups, hidden channels, your groups, and long lists of blocked items or content-filter words are pages of their own, so a long list no longer makes a page hard to scroll past, especially in the phone app.
+- **Back after watching a channel from Search** (issue #63) lands on that channel in its own group, in the guide or the channel list (whichever is your start screen), instead of an empty list or a channel from the group you looked at before; zapping goes through its neighbours; and going back to Search shows your results, at the one you picked, rather than the keyboard.
 - **Quicker to move around in the guide.**  The button hints at the bottom were rebuilt and measured on every move; now only when they change, and measured once per frame.
 
 ## 0.6.0 (alpha 103, 2026-11-07)

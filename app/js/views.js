@@ -794,8 +794,23 @@ var Views = (function () {
     if (c && (!playing || playing.k !== c.k || mode !== 'live')) startChannel(c, false);
   }, 300);
 
+  /* A channel started from somewhere else (Search, Movies on now, the phone, a reminder): the channel list and
+     the guide follow it to its own group, so zapping goes through its neighbours and Back lands on it there,
+     not on an empty list or a channel from the group looked at before (issue #63). */
+  function followPlaying() {
+    if (!playing || mode !== 'live') return;
+    var k = playing.k, has = function (gid) { return L.channels(gid).some(function (c) { return c.k === k; }); };
+    if (curGroup && has(curGroup)) return;
+    var g = playing.g && !Store.edits.hiddenGroups[playing.g] && has(playing.g) ? playing.g : L.ALL;
+    showGroup(g);
+    Store.edits.lastGroup = g; Store.saveEdits();
+    var gi = groupsVL.items.findIndex(function (x) { return x && x.id === g; });
+    if (gi >= 0) groupsVL.select(gi);
+  }
   function goFull() {
-    if (!full) fullFrom = tab === 'live' ? 'live' : 'guide';
+    // From another screen (Search, Movies on now...): Back goes to the start screen, the guide or Channels.
+    if (!full) fullFrom = tab === 'live' || tab === 'guide' ? tab : home() === 'live' ? 'live' : 'guide';
+    followPlaying();
     full = true;
     document.body.classList.add('full');
     stage.classList.remove('preview', 'off'); stage.classList.add('full');
@@ -825,6 +840,7 @@ var Views = (function () {
     if (mode === 'catchup' && playing) { mode = 'live'; cu = null; Player.play(playing, { preview: true }); }
     Player.upgrade(true);
     // Back from fullscreen returns to where you came from, with the picture still playing there.
+    followPlaying();
     if (fullFrom === 'guide') { if (tab !== 'guide') doSwitch('guide'); else { Guide.resume(playing && playing.k); placePreview(); } return; }
     if (tab !== 'live') doSwitch('live');
     placePreview();

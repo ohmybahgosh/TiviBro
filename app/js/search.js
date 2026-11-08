@@ -122,6 +122,7 @@ var Search = (function () {
     v.appendChild(wrap);
     vl = new VList(list, { render: render, empty: 'Type a channel, movie or show name.', visible: 9,
       onHover: function () { if (zone !== 'list') { zone = 'list'; paint(); } }, onClick: function () { UI.press('ok'); } });
+    input.addEventListener('input', function () { picked = -1; });
     input.addEventListener('input', U.debounce(run, 300));
     built = true;
   }
@@ -257,8 +258,10 @@ var Search = (function () {
     Store.saveSettings();
   }
 
+  var picked = -1;
   function activate(it) {
     if (it.hist) { input.value = it.hist; run(); return; }
+    picked = vl.items.indexOf(it);
     remember(input.value.trim());
     if (it.v) { Vod.openItem({ it: it.v, kind: it.vkind }); return; }
     var c = it.c, p = it.p, now = Date.now();
@@ -341,6 +344,9 @@ var Search = (function () {
     UI.setHandler(keys);
     if (typeof q === 'string') { input.value = q; filter = 'later'; zone = 'list'; }
     if (!input.value) history(); else run();
+    // Back to Search after watching something from it: on the results, at the one picked, not in the
+    // keyboard again (issue #63).
+    if (typeof q !== 'string' && input.value && picked >= 0 && vl.items.length) { zone = 'list'; vl.select(Math.min(picked, vl.items.length - 1)); }
     if (zone === 'list' && !vl.items.length) zone = 'chips';
     paint();
     // Movies and shows load in the background; results update when they arrive.
