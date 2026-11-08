@@ -11,8 +11,8 @@ let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined && !c ? '  ' + String(x).slice(0, 300) : '')); if (!c) fails++; };
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-ask-'));
 const launched = [];
-let open = true;
-const c = Companion.create({ dir, version: 'test', log: () => {}, launch: (p, cb) => { launched.push(p); cb(null); }, sysinfo: (cb) => cb({ model: 'X', webos: '1', name: 'Den' }), app: () => ({ open }), editor: () => null });
+let open = true, visible = true;
+const c = Companion.create({ dir, version: 'test', log: () => {}, launch: (p, cb) => { launched.push(p); cb(null); }, sysinfo: (cb) => cb({ model: 'X', webos: '1', name: 'Den' }), app: () => ({ open, visible }), editor: () => null });
 function ctl(u, body) {
   return new Promise((resolve) => {
     const res = Object.assign(new (require('events'))(), { code: 0, writeHead(x) { this.code = x; }, end(b) { resolve({ code: this.code, j: JSON.parse(b) }); } });
@@ -73,6 +73,13 @@ async function tivibro() {
   r = await C.ask(cred, 'backup', {}, { seal: true, noOpen: true });
   ok('automatic backups never open TiviBro', r.ok && r.closed === true && launched.length === before, JSON.stringify(r));
   open = true;
+  // In the background webOS pauses TiviBro: running, but nothing answers.  A question brings it back.
+  visible = false;
+  const bg = launched.length;
+  C.ask(cred, 'settings', { op: 'sections' }, { seal: true }).catch(() => {});
+  await new Promise((res) => setTimeout(res, 400));
+  ok('TiviBro in the background: a question from the phone brings it back (it would never be answered)', launched.length === bg + 1, JSON.stringify(launched.slice(bg)));
+  visible = true;
 
   const t0 = Date.now();
   stop = true;

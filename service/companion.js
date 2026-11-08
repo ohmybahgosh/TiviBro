@@ -294,8 +294,7 @@ function create(opts) {
     }
     wantEditor = Date.now();
     changed();
-    var app = opts.app ? opts.app() : {};
-    if (app.open) return cb(null, { ok: true, state: 'starting', message: 'Starting the editor on the TV…' });
+    if (appOpen()) return cb(null, { ok: true, state: 'starting', message: 'Starting the editor on the TV…' });
     openApp({ companion: { editor: true } }, function (e) {
       if (e) return cb(null, { ok: false, state: 'off', error: 'Could not open TiviBro on the TV: ' + e.message });
       cb(null, { ok: true, state: 'starting', message: 'Opening TiviBro on the TV…' });
@@ -309,7 +308,11 @@ function create(opts) {
   var ACTIONS = ['guide', 'search', 'settings', 'live', 'movies', 'shows', 'last', 'fav', 'favorites', 'recents', 'audio', 'picture', 'exit', 'restart', 'reconnect', 'list', 'panel', 'osd', 'menu'];
   var CMD_TTL = 40000, HOLD = 20000;
 
-  function appOpen() { var a = opts.app ? opts.app() : {}; return !!a.open; }
+  /* TiviBro running and on screen.  Sent to the background (Home, another input or app), webOS soon pauses it:
+     still running, but it answers nothing until it is brought back.  So in the background it is opened
+     (brought back) like a closed one, or the phone waits for ever ("Starting the editor on the TV…").
+     visible is what TiviBro last said (remind.js); unknown counts as on screen. */
+  function appOpen() { var a = opts.app ? opts.app() : {}; return !!a.open && a.visible !== false; }
   function flushApp() {
     var w = appWait; appWait = [];
     w.forEach(function (x) { clearTimeout(x.timer); x.go(); });
