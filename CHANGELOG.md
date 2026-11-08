@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 103, 2026-11-07)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 103
 
 - **Sound on channels sent as AAC above 48 kHz.**  A college football game came as AAC at 96 kHz (mono), which the TV played with no sound.  TiviBro now spots that rate as the channel starts and plays it through the audio converter, which turns it into Dolby Digital at 48 kHz; it says "Converting AAC at 96 kHz audio for this TV".  Movies and episodes with sound above 48 kHz get the same.
 - **A stream format for one channel.**  Hold OK on a channel (or Options while it plays) > **Stream format…**: Automatic, HLS or MPEG-TS for that channel, whatever Settings > Playback > Stream format says.  Handy for the one channel that stutters as MPEG-TS, or won't start as HLS.  The channel playing starts again in the new format; Settings > Playback lists the channels that have their own and clears them.  Xtream Codes channels.
 
-## 0.6.0 (alpha 102, 2026-11-07)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 102
+### In alpha 102
 
 - **Names stay as they are in every language:** a group called "Sports", a channel called "News" or a show called "Today" is never translated, in menus, Settings or the set-up tour.  Dates follow the language chosen in Settings > Language, not just the TV's.
 - **Spanish and Russian almost complete.**  Settings with their explanations, the set-up tour, menus, the guide's details and badges, the fullscreen info panel, the button legends, subtitles, My media and movies and shows: about 95% of TiviBro's text.  What's left is mostly text put together on the fly, and it comes in later builds.
