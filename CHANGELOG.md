@@ -2,11 +2,15 @@
 
 ## Unreleased
 
-- **Guide series from TMDB: checked with real lookups against a real guide's 400 most-aired shows, and fixed where it went wrong.**
+- **Guide series from TMDB: checked with real lookups against a real guide's 600 most-aired shows, and fixed where it went wrong.**
   - Of two shows with one name, the channel's country's: "Cheaters" and "Deal or No Deal" on US channels are the US shows, not the British ones.
   - Found now: shows TMDB knows with their owner in front or as "The ... Show" ("Tyler Perry's House of Payne", "Lauren Lake's Paternity Court", "The Tamron Hall Show"), shows with their host's name after ("The Joy of Painting with Bob Ross"), and the best-known of several versions ("Supermarket Sweep").
   - No more wrong guesses from a shortened name: "The Great American Journey" was "The Great", "Second Chance Pets" was "Second Chance".  Only words guides add ("Forever", "Reloaded", "Classics") are left off now, and a country at the end means that country's show.
   - "Looney Tunes" is the old cartoons, not "The Looney Tunes Show", and "War" is WAR, not "The War".
+  - A long name spelled exactly like a show on TMDB is that show, however few people voted for it ("Funny You Should Ask", "Earth Odyssey With Dylan Dreyer", "Tiny House, Big Living").
+  - Shows on a channel from another country are searched in its language too: "Świnka Peppa" on a Polish channel is Peppa Pig, "Oggy E I Maledetti Scarafaggi" is Oggy and the Cockroaches.  Accents no longer stop a match ("Amélie" and "Amelie").
+  - "Classic Doctor Who" is the 1963 series, "Cops Reloaded" is Cops, "Best of Dr. Phil" is Dr. Phil, and "America's Test Kitchen" is TMDB's "America's Test Kitchen From Cook's Illustrated".
+  - All in, of the guide's 600 most-aired shows about 435 are found now, 359 before this pass.
 
 ## 0.6.0 (alpha 108, 2026-11-08)
 

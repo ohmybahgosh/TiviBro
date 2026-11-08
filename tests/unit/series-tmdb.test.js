@@ -29,6 +29,14 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
       'House%20Of%20Payne': [{ id: 91, name: 'Tyler Perry\'s House of Payne', vote_count: 67 }], 'Looney%20Tunes': [{ id: 92, name: 'The Looney Tunes Show', vote_count: 592 }, { id: 93, name: 'Looney Tunes', vote_count: 2 }],
       'The%20Great%20American%20Journey': [{ id: 94, name: 'The Great American Journey', vote_count: 0 }],
       'Cheaters': [{ id: 95, name: 'Cheaters', origin_country: ['GB'], popularity: 9, vote_count: 12 }, { id: 96, name: 'Cheaters', origin_country: ['US'], popularity: 4, vote_count: 10 }] })[/query=([^&]+)&/.exec(url)[1]] });
+    if (/\/search\/tv\?query=(Classic%20Doctor%20Who|Cops%20Reloaded|Funny%20You%20Should%20Ask|On%20the%20Fly|America's%20Test%20Kitchen|%C5%9Awinka%20Peppa)&/.test(url)) {
+      const q = decodeURIComponent(/query=([^&]+)&/.exec(url)[1]), pl = /language=pl-PL/.test(url);
+      return cb(null, { results: ({ 'Funny You Should Ask': [{ id: 110, name: 'Funny You Should Ask', vote_count: 0, poster_path: '/f.jpg' }], 'On the Fly': [{ id: 116, name: 'On the Fly', vote_count: 1, poster_path: '/o.jpg' }],
+        "America's Test Kitchen": [{ id: 111, name: "America's Test Kitchen From Cook's Illustrated", vote_count: 13 }],
+        'Świnka Peppa': pl ? [{ id: 112, name: 'Świnka Peppa', original_name: 'Peppa Pig', vote_count: 400 }] : [] })[q] || [] });
+    }
+    if (/\/search\/tv\?query=Doctor%20Who&/.test(url)) return cb(null, { results: [{ id: 113, name: 'Doctor Who', first_air_date: '2005-03-26', popularity: 90, vote_count: 3000 }, { id: 114, name: 'Doctor Who', first_air_date: '1963-11-23', popularity: 30, vote_count: 700 }] });
+    if (/\/search\/tv\?query=Cops&/.test(url)) return cb(null, { results: [{ id: 115, name: 'Cops', vote_count: 200 }] });
     if (/\/search\/tv\?query=War&/.test(url)) return cb(null, { results: [{ id: 101, name: 'The War', origin_country: ['US'], popularity: 20, vote_count: 300 }, { id: 102, name: 'WAR', origin_country: ['GB'], popularity: 10, vote_count: 30 }] });
     if (/\/search\/tv\?query=Second%20Chance&/.test(url)) return cb(null, { results: [{ id: 97, name: 'Second Chance', vote_count: 300 }] });
     if (/\/search\/tv\?query=Deal%20or%20No%20Deal&/.test(url)) return cb(null, { results: [{ id: 98, name: 'Deal or No Deal', origin_country: ['US'], popularity: 30, vote_count: 400 }, { id: 99, name: 'Deal or No Deal', origin_country: ['AU'], popularity: 5, vote_count: 25 }] });
@@ -99,6 +107,16 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('of two shows of one name, the channel\'s country\'s', id(us) === 'tmdb:tv:96' && id(any) === 'tmdb:tv:95', JSON.stringify([us, any]).slice(0, 200));
   r = await look({ guide: 'weak', title: 'War', country: 'US' });
   ok('spelled the same comes first ("War" is WAR, not "The War", whatever the country)', id(r) === 'tmdb:tv:102', JSON.stringify(r).slice(0, 120));
+  r = await look({ guide: 'weak', title: 'Funny You Should Ask' });
+  ok('a long name spelled exactly the same is the show however few voted', id(r) === 'tmdb:tv:110', JSON.stringify(r).slice(0, 120));
+  r = await look({ guide: 'weak', title: 'On the Fly' });
+  ok('but not a short one ("On the Fly" on a hockey channel is not TLC\'s show)', r.miss === true, JSON.stringify(r).slice(0, 120));
+  r = await look({ guide: 'weak', title: 'America\'s Test Kitchen' });
+  ok('TMDB\'s longer "... From ..." name matches ("America\'s Test Kitchen From Cook\'s Illustrated")', id(r) === 'tmdb:tv:111', JSON.stringify(r).slice(0, 120));
+  const dw = await look({ guide: 'weak', title: 'Classic Doctor Who' }), cops = await look({ guide: 'weak', title: 'Cops Reloaded' });
+  ok('"Classic Doctor Who" is the first Doctor Who; "Cops Reloaded" is Cops', id(dw) === 'tmdb:tv:114' && id(cops) === 'tmdb:tv:115', JSON.stringify([dw, cops]).slice(0, 200));
+  const pp = await look({ guide: 'weak', title: 'Świnka Peppa', country: 'PL' }), pp2 = await look({ guide: 'weak', title: 'Świnka Peppa' });
+  ok('on a Polish channel a Polish name is searched in Polish ("Świnka Peppa" is Peppa Pig); without the country it isn\'t', id(pp) === 'tmdb:tv:112' && pp2.miss === true, JSON.stringify([pp, pp2]).slice(0, 200));
   ok('only the name went to TMDB (no logins, no links)', asked.every((u) => /^https:\/\/api\.themoviedb\.org\/3\/(search\/tv|tv\/\d+)\?/.test(u)), asked.join(' '));
 
   // ---- the app: Series ----

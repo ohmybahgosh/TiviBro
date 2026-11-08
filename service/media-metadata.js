@@ -28,7 +28,11 @@ function networkJson(url, headers, cb) {
 }
 var json = require('./media-metadata-cache').create(networkJson);
 function str(v, n) { return typeof v === 'string' ? v.slice(0, n) : ''; }
-function normal(v) { return str(v, 200).toLowerCase().replace(/[^a-z0-9]/g, ''); }
+/* Accents folded ("Świnka Peppa" is "swinka peppa", "Amélie" is "amelie"), by a table: the helper runs on Node 0.12
+   on old TVs, which may have no String.prototype.normalize.  Other scripts have no letters here. */
+var FOLD = {};
+'àáâãäåāăą:a|çćĉċč:c|ďđ:d|èéêëēĕėęě:e|ĝğġģ:g|ĥħ:h|ìíîïĩīĭįı:i|ĵ:j|ķ:k|ĺļľŀł:l|ñńņňŉ:n|òóôõöøōŏő:o|ŕŗř:r|śŝşšș:s|ţťŧț:t|ùúûüũūŭůűų:u|ŵ:w|ýÿŷ:y|źżž:z|æ:ae|œ:oe|ß:ss|þ:th'.split('|').forEach(function (g) { var p = g.split(':'); p[0].split('').forEach(function (ch) { FOLD[ch] = p[1]; }); });
+function normal(v) { return str(v, 200).toLowerCase().replace(/[^\x00-\x7f]/g, function (ch) { return FOLD[ch] || ''; }).replace(/[^a-z0-9]/g, ''); }
 // A show's name for comparing: also without "The" in front and with "&" read as "and" ("Big Bang Theory" is
 // "The Big Bang Theory" on TMDB, "Rubble and Crew" is "Rubble & Crew").
 function showName(v) { return normal(str(v, 200).replace(/&/g, ' and ').replace(/^\s*the\s+/i, '')); }
@@ -222,11 +226,16 @@ function create(opts) {
     if (host) names.push({ n: host, min: strong ? 1 : 5 });
     // ("The" in front doesn't count: "The Great American Journey" is never cut down to "The Great".)
     var lead = /^(the|a|an)$/i.test(words[0]) ? 1 : 0;
-    for (var cut = 1; cut <= 2 && words.length - cut - lead >= 2; cut++) {
+    // A word guides put in front: "Classic Doctor Who", "Best of Cops".
+    var front = /^(?:classic|the best of|best of|vintage|retro)\s+(.{4,})$/i.exec(main);
+    if (front) names.push({ n: front[1], min: 20, old: /classic|vintage|retro/i.test(main) });
+    for (var cut = 1; cut <= 2 && words.length - cut - lead >= 1; cut++) {
       var shorter = words.slice(0, words.length - cut).join(' ').replace(/[\s,:;&\-–]+$/, ''), gone = words.slice(words.length - cut).map(function (w) { return w.replace(/[^\w]/g, ''); });
       var land = LANDS[gone.join(' ').toLowerCase()] || (cut === 1 && LANDS[gone[0].toLowerCase()]) || '';
       if (!land && !gone.every(function (w) { return ADDS.test(w); })) continue;
-      if (normal(shorter).length >= 6 && !/^(the|a|an|and|of|in|on|at|to|for|with|my|your|our)$/i.test(words[words.length - cut - 1])) names.push({ n: shorter, min: 20, cc: land });
+      // Down to one word only for a name guides add to ("Cops Reloaded" is "Cops"), never for a country.
+      if (words.length - cut - lead < 2 && (land || normal(words.slice(0, words.length - cut).join(' ')).length < 4)) continue;
+      if (normal(shorter).length >= (land ? 6 : 4) && !/^(the|a|an|and|of|in|on|at|to|for|with|my|your|our)$/i.test(words[words.length - cut - 1])) names.push({ n: shorter, min: 20, cc: land });
     }
     // The same name twice (the season number cut, then the last word cut): asked once, at the lower bar.
     var seenName = {};
@@ -240,6 +249,8 @@ function create(opts) {
         if (showName(n) === want) return true;
         var owner = /^[A-Z][A-Za-z.\-]+(?:\s+[A-Z][A-Za-z.\-]+){0,2}['’]s\s+(.+)$/.exec(n);
         if (owner && !/['’]s\s/.test(name) && showName(owner[1]) === want) return true;
+        var from = /^(.+?)\s+from\s+\S.*$/i.exec(n);
+        if (from && showName(from[1]) === want && want.length >= 10) return true;
         var sh = /^(?:the\s+)?(.+?)\s+show$/i.exec(n);
         return !!(sh && !/\bshow$/i.test(name) && showName(sh[1]) === want);
       });
@@ -247,9 +258,14 @@ function create(opts) {
     // Spelled the same, "The" and all ("War" is WAR before PBS's "The War").
     function literal(t, name) { return normal(t.name) === normal(name) || normal(t.original_name) === normal(name); }
     function exactName(t, name) { return showName(t.name) === showName(name) || showName(t.original_name) === showName(name); }
+    /* Names on a channel from another country are in its language ("Świnka Peppa" on a Polish channel): when no
+       show is found in yours, they are searched again in the channel's (the details still come in yours). */
+    var BY_CC = { PL: 'pl-PL', DE: 'de-DE', AT: 'de-AT', CH: 'de-CH', FR: 'fr-FR', ES: 'es-ES', MX: 'es-MX', AR: 'es-AR', IT: 'it-IT', NL: 'nl-NL', PT: 'pt-PT', BR: 'pt-BR',
+      TR: 'tr-TR', SE: 'sv-SE', NO: 'no-NO', DK: 'da-DK', FI: 'fi-FI', RO: 'ro-RO', HU: 'hu-HU', CZ: 'cs-CZ', SK: 'sk-SK', HR: 'hr-HR', RS: 'sr-RS', AL: 'sq-AL', GR: 'el-GR' };
+    var search = locale;
     function ask(i) {
       var name = names[i].n;
-      request('/search/tv?query=' + encodeURIComponent(name) + '&language=' + locale, function (e, r) {
+      request('/search/tv?query=' + encodeURIComponent(name) + '&language=' + search, function (e, r) {
         if (e) return cb(e);
         var all = (r && Array.isArray(r.results) ? r.results : []).filter(function (t) { return t && /^[1-9][0-9]*$/.test(String(t.id)); });
         // Only when TMDB has no show of exactly this name: one only like it ("Looney Tunes" is the old cartoons, even
@@ -258,8 +274,17 @@ function create(opts) {
         if (!exact.length) exact = exact.concat(all.filter(function (t) { return !exactName(t, name) && sameShow(t, name); }));
         /* Of those: one people know (the bar for this name), then the one that started in the year given, then the
            channel's country's, then the best known. */
-        var known = exact.filter(function (t) { return (t.vote_count || 0) >= names[i].min && (!names[i].cc || (t.origin_country || []).indexOf(names[i].cc) >= 0); });
+        /* A long name spelled exactly the same (three words or more besides "The", or 16 letters) is the show
+           however few have voted, when TMDB has something to show for it ("Funny You Should Ask", "The Great
+           American Journey"): a name that long is not shared by chance.  ("On the Fly" and "Odd One Out" are short.) */
+        var long = (name.replace(/^\s*(the|a|an)\s+/i, '').split(/\s+/).length >= 3 && normal(name).length >= 12) || normal(name).length >= 16;
+        var known = exact.filter(function (t) {
+          var bar = long && literal(t, name) && (t.poster_path || t.overview) ? 0 : names[i].min;
+          return (t.vote_count || 0) >= bar && (!names[i].cc || (t.origin_country || []).indexOf(names[i].cc) >= 0);
+        });
         known.sort(function (a, b) {
+          // "Classic Doctor Who" is the first one.
+          if (names[i].old && a.first_air_date && b.first_air_date && a.first_air_date !== b.first_air_date) return a.first_air_date < b.first_air_date ? -1 : 1;
           return (year ? (str(b.first_air_date, 4) === year) - (str(a.first_air_date, 4) === year) : 0) || (literal(b, name) - literal(a, name)) || (exactName(b, name) - exactName(a, name)) ||
             (cc ? ((b.origin_country || []).indexOf(cc) >= 0) - ((a.origin_country || []).indexOf(cc) >= 0) : 0) || (b.popularity || 0) - (a.popularity || 0);
         });
@@ -267,9 +292,14 @@ function create(opts) {
         // A show of exactly this name that few know: this is it, too obscure to be sure, so no shorter name is tried
         // ("The Great American Journey" is not "The Great").
         if (!best && all.some(function (t) { return exactName(t, name); })) return cb(null, { miss: true });
-        if (!best) return i + 1 < names.length ? ask(i + 1) : cb(null, { miss: true });
+        if (!best) return i + 1 < names.length ? ask(i + 1) : again();
         tvLookup({ id: 'tmdb:tv:' + best.id, language: language }, function (e2, x) { cb(e2, x && x.metadata ? { metadata: x.metadata } : { miss: true }); });
       });
+    }
+    function again() {
+      var other = BY_CC[cc];
+      if (!other || other === search || other.slice(0, 2) === locale.slice(0, 2)) return cb(null, { miss: true });
+      search = other; ask(0);
     }
     ask(0);
   }
