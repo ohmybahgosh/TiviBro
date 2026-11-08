@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TiviBro: the IPTV player LG TVs never got</title>
-<meta name="description" content="TiviBro is a free, guide-first IPTV player for LG webOS TVs.  Set it up from your phone, then get a real TV guide, catch-up, movies and shows, sports and PPV read from channel names, and a web editor for thousands of channels.  Built to feel like TiviMate and go further.">
+<title>TiviBro: Free IPTV Player for LG webOS TVs, TiviMate-style</title>
+<meta name="description" content="TiviBro is a free, open-source IPTV player for LG webOS TVs, built to feel like TiviMate and go further.  Bring your own Xtream Codes or M3U: a real TV guide, catch-up, movies and shows, sports and PPV, all set up from your phone.">
 <meta name="theme-color" content="#0B0E1A">
 <meta name="color-scheme" content="dark">
 <!-- Google Analytics 4: put the measurement ID here (G-XXXXXXXXXX) to turn it on.  See site/analytics.js. -->
@@ -27,6 +27,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="img/guide-poster.webp">
 <link rel="stylesheet" href="style.css?v=7">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+ {"@type":"WebSite","@id":"https://tivibro.app/#website","url":"https://tivibro.app/","name":"TiviBro","publisher":{"@id":"https://ohmybahgosh.dev/#person"}},
+ {"@type":"SoftwareApplication","@id":"https://tivibro.app/#app","name":"TiviBro","alternateName":"TiviBro for LG webOS","url":"https://tivibro.app/",
+  "description":"A free, open-source IPTV player for LG webOS TVs, built to feel like TiviMate.  Plays your own Xtream Codes or M3U subscription with an XMLTV guide.",
+  "applicationCategory":"MultimediaApplication","applicationSubCategory":"IPTV player","operatingSystem":"LG webOS 4 and newer",
+  "offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},
+  "image":"https://tivibro.app/img/social-preview.png","screenshot":"https://tivibro.app/img/guide-poster.webp",
+  "downloadUrl":"https://github.com/ohmybahgosh/TiviBro/releases","installUrl":"https://tivibro.app/#install",
+  "license":"https://opensource.org/licenses/MIT","isAccessibleForFree":true,
+  "featureList":["TV guide with live preview","Catch-up","Movies and shows","Sports and PPV events","Xtream Codes and M3U playlists","XMLTV guides","Set up from your phone","Web editor for channels and groups","Android remote app"],
+  "author":{"@type":"Person","@id":"https://ohmybahgosh.dev/#person","name":"OhMyBahGosh","url":"https://ohmybahgosh.dev/"},
+  "sameAs":["https://github.com/ohmybahgosh/TiviBro","https://ohmybahgosh.dev/tivibro/"]}
+]}
+</script>
+<!-- seo:faq -->
 </head>
 <body>
 
@@ -443,6 +459,8 @@
     <details class="reveal"><summary>Is it really free?</summary><p>Yes.  It's MIT licensed open source, with no accounts, ads or paid tiers, and the app on your TV doesn't track you.  It only sends an anonymous daily count of TVs by version, which you can switch off.</p></details>
     <details class="reveal"><summary>Are my logins safe?</summary><p>Logins stay on the TV.  The web editor only ever sees server names, it needs the password shown on the TV, and backups are always encrypted with a passphrase you choose.</p></details>
     <details class="reveal"><summary>Something isn't working.  How do I report it?</summary><p>On the TV, open <b>Report a problem</b> (at the bottom of the menu in test builds, in <b>Settings &gt; Updates, about and diagnostics</b>, and on the first screen) and scan the QR code.  Your phone opens a short form; the TV adds its version, model and log with logins and server names taken out, and the report goes to GitHub with one press, no account needed.  If TiviBro closed by itself, the next start asks right away and can send the report straight from the TV.</p></details>
+    <details class="reveal"><summary>Can I get TiviMate on an LG TV?</summary><p>No.  TiviMate is an Android app, and LG TVs run webOS, so it can't be installed on them.  TiviBro is a webOS app built to feel like TiviMate: a guide-first layout, catch-up, groups you make yourself and clean channel names, and it goes further with phone set-up and a web editor.</p></details>
+    <details class="reveal"><summary>Do I need to root my LG TV?</summary><p>No.  A rooted TV with the Homebrew Channel gets updates by itself, but TiviBro also installs in Developer Mode with LG's own tools, no root needed.  The install steps above cover both.</p></details>
     <details class="reveal"><summary>Where's the full manual?</summary><p>The <a href="https://github.com/ohmybahgosh/TiviBro/wiki">user guide</a> covers every remote button, every screen and every setting, with videos and screenshots.</p></details>
   </div>
 </section>

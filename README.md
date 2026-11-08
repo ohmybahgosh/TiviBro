@@ -7,7 +7,8 @@
 
 <p align="center">
   <b>The IPTV player LG TVs never got.</b><br>
-  A free, guide-first IPTV player for LG webOS, built to feel like TiviMate and go further.
+  A free, open-source IPTV player for LG webOS TVs, built to feel like TiviMate and go further.<br>
+  Bring your own Xtream Codes or M3U subscription.
 </p>
 
 <p align="center">
@@ -33,6 +34,8 @@
 </p>
 
 ## Get TiviBro
+
+> **Looking for TiviMate on an LG TV?**  TiviMate is Android only, so it can't run on webOS.  TiviBro is the webOS IPTV player built to feel like it: a guide-first layout, catch-up, your own groups and clean channel names, set up from your phone.
 
 | | |
 |---|---|

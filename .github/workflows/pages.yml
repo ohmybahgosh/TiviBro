@@ -5,7 +5,7 @@ name: Website
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'README.md', 'docs/**', 'app/js/**', 'service/*.js', 'android/app/src/main/java/**', 'CHANGELOG.md', 'CONTRIBUTING.md', 'AGENTS.md', 'scripts/gen-ai-context.js', 'docs/USER-GUIDE.md', 'scripts/gen-viewer.js', 'docs/media/guide.mp4', 'docs/media/live-edit.mp4', '.github/workflows/pages.yml', 'scripts/logos/**', 'scripts/tv/install.sh', 'app/js/tidy.js', 'app/js/names.js']
+    paths: ['site/**', 'README.md', 'docs/**', 'app/js/**', 'service/*.js', 'android/app/src/main/java/**', 'CHANGELOG.md', 'CONTRIBUTING.md', 'AGENTS.md', 'scripts/gen-ai-context.js', 'docs/USER-GUIDE.md', 'scripts/gen-viewer.js', 'docs/media/guide.mp4', 'docs/media/live-edit.mp4', '.github/workflows/pages.yml', 'scripts/logos/**', 'scripts/site/**', 'scripts/tv/install.sh', 'app/js/tidy.js', 'app/js/names.js']
   workflow_run:                 # after a release, so tivibro.app/repo has the new version
     workflows: [Release]
     types: [completed]
@@ -24,6 +24,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history, no file contents: the sitemap's dates come from git log
+          filter: blob:none
       - name: Assemble the site
         run: |
           mkdir -p _site/media
@@ -52,6 +55,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/logos/build-index.js _site/logos
+      - name: Search engines (FAQ structured data and sitemap.xml)
+        run: node scripts/site/seo.js _site
       - name: List the site
         run: |
           ls -R _site | head -50
