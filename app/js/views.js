@@ -322,10 +322,10 @@ var Views = (function () {
       var late = r.s < now - 120000;
       // Over while TiviBro was away: offer it from catch-up, otherwise let it go.
       if (r.e <= now) {
-        if (c.arch && r.s > now - c.arch * 86400e3) UI.menu('You missed it:  ' + r.t, [
+        if (c.arch && r.s > now - c.arch * 86400e3) { UI.menu('You missed it:  ' + r.t, [
           { label: 'Watch it from the start', sub: 'catch-up on ' + L.name(c) + ', aired ' + U.hhmm(r.s), action: function () { playCatchup(c, p, 0); } },
           { label: 'Dismiss' }
-        ]);
+        ]); closeSoon(r.t); }
         return;
       }
       var watchIt = function () { startChannel(c, false, function () { if (!full) goFull(); else osd(true); }); };
@@ -335,10 +335,13 @@ var Views = (function () {
         late && c.arch && { label: 'Watch from the start', sub: 'catch-up', action: function () { playCatchup(c, p, 0); } },
         { label: 'Dismiss' }
       ]);
-      var closeAfter = (+Store.settings.remindTimeout || 20) * 1000;
-      setTimeout(function () { if (UI.modalOpen && document.getElementById('modalTitle').textContent.indexOf(r.t) >= 0) UI.close(); }, closeAfter);
+      closeSoon(r.t);
       return;
     }
+  }
+  // The reminder question closes by itself after "Reminder question stays for" (10 s unless set), if still up.
+  function closeSoon(t) {
+    setTimeout(function () { var mt = document.getElementById('modalTitle'); if (UI.modalOpen && mt && mt.textContent.indexOf(t) >= 0) UI.close(); }, (+Store.settings.remindTimeout || 10) * 1000);
   }
   /* Watch pressed on the TV's reminder alert (TiviBro opened or brought forward with launch params). */
   function openReminder(q) {

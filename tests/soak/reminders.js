@@ -57,7 +57,10 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => { Object.defineProperty(UI, 'lastInput', window.__li); });
   await page.keyboard.press('ArrowDown'); await page.waitForTimeout(5600);
   ok('the next press brings it', await ev(() => UI.modalOpen && /Idle Show/.test(document.getElementById('modal').innerText)));
-  await ev(() => UI.close());
+  ok('the TV\'s alert is told to close after 10 s too', await ev(() => window.__luna.some(x => /\/reminders$/.test(x.uri) && x.p.close === 10)));
+  // Left alone, the question closes by itself after "Reminder question stays for" (10 s).
+  await page.waitForTimeout(10500);
+  ok('left alone, the reminder closes by itself after 10 s', await ev(() => !UI.modalOpen));
 
   // 3. Over while away, on a catch-up channel.
   await ev(([k, H]) => { Store.edits.reminders = [{ k: k, s: Date.now() - 2 * H, e: Date.now() - H, t: 'Missed Show' }]; Store.saveEdits(); }, [live, H]);

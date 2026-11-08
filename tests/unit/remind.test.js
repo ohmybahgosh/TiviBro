@@ -5,7 +5,8 @@ let fail = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined ? '  ' + x : '')); if (!c) fail++; };
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tbrem-')), file = path.join(dir, 'r.json');
 let now = Date.UTC(2026, 9, 30, 22, 0, 0), calls = [], answer = {};
-const make = () => require('../../service/remind.js').create({ files: [file], now: () => now, log() {},
+let timers = [];
+const make = () => require('../../service/remind.js').create({ files: [file], now: () => now, log() {}, later: (f, ms) => timers.push({ f, ms }),
   call: (uri, params, cb) => { calls.push({ uri, params }); cb(answer[uri.split('/').pop()] || { returnValue: true }); } });
 let R = make();
 const H = 3600e3;
@@ -37,6 +38,18 @@ const fire = p => new Promise(res => R.fire(p, res));
   const al = calls.find(c => /createAlert$/.test(c.uri));
   ok('closed: an alert with Watch and Dismiss', w === 'shown' && al && al.params.buttons[0].label === 'Watch' && al.params.buttons[1].label === 'Dismiss', w);
   ok('Watch launches TiviBro on the channel', al.params.buttons[0].onclick === 'luna://com.webos.applicationManager/launch' && al.params.buttons[0].params.id === 'app.tivibro.tv' && al.params.buttons[0].params.params.reminder.k === 'x2');
+  {
+    // The TV's answer carries the alert's id; it is closed after "Reminder question stays for" (10 s unless set).
+    const f2 = path.join(dir, 'c.json'), cl = [], tm = [];
+    const R2 = require('../../service/remind.js').create({ files: [f2], now: () => now, log() {}, later: (f, ms) => tm.push({ f, ms }),
+      call: (uri, params, cb) => { cl.push({ uri, params }); cb(/createAlert$/.test(uri) ? { returnValue: true, alertId: 'al7' } : { returnValue: true }); } });
+    R2.set({ pid: 'p1', before: 0, list: list.slice(1), visible: false });
+    await new Promise(res => R2.fire(Object.assign({ pid: 'p1' }, list[1]), res));
+    ok('the alert closes by itself after 10 s', tm.length === 1 && tm[0].ms === 10000 && (tm[0].f(), cl.some(c => /closeAlert$/.test(c.uri) && c.params.alertId === 'al7')), JSON.stringify(tm.map(t => t.ms)));
+    R2.set({ pid: 'p1', before: 0, close: 30, list: list.slice(1), visible: false }); tm.length = 0;
+    await new Promise(res => R2.fire(Object.assign({ pid: 'p1' }, list[1]), res));
+    ok('or after the app\'s "Reminder question stays for"', tm.length === 1 && tm[0].ms === 30000, JSON.stringify(tm.map(t => t.ms)));
+  }
   ok('it says when and where', /Starts at/.test(al.params.message) && /News/.test(al.params.message) && /CNN/.test(al.params.message), al.params.message);
   answer.createAlert = { returnValue: false, errorText: 'Denied method call' }; calls = [];
   w = await fire(Object.assign({ pid: 'p1' }, list[1]));

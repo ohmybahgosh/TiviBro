@@ -643,6 +643,7 @@ I18n.add('es', {
   "Reconnect attempts": "Intentos de reconexión",
   "Remind me before start": "Recordarme antes del inicio",
   "Reminder question stays for": "La pregunta del recordatorio dura",
+  "Then it closes by itself, in TiviBro and on the TV's own alert when TiviBro isn't on screen.": "Luego se cierra solo, en TiviBro y en el aviso del propio televisor cuando TiviBro no está en pantalla.",
   "Reminder set for": "Recordatorio para",
   "Reminder: switching to": "Recordatorio: cambiando a",
   "Remove OpenSubtitles key": "Quitar clave de OpenSubtitles",

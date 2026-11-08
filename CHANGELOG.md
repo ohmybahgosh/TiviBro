@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Reminders close by themselves after 10 seconds.**  The TV's own reminder alert (shown when TiviBro is in the background or another input is on) stayed on the screen until someone pressed Dismiss; now it goes away after Settings > Reminders > "Reminder question stays for", like the question inside TiviBro, which now also defaults to 10 seconds instead of 20 (a time you picked is kept).  A "You missed it" question closes the same way.
+
 ## 0.6.0 (alpha 109, 2026-11-08)
 
 Pre-release: expect rough edges, and keep a backup before installing.

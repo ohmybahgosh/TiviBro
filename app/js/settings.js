@@ -796,7 +796,7 @@ var Settings = (function () {
     var s = S(), out = [], rem = Remind.list();
     out.push(choice('Remind me before start', '', [0, 1, 2, 5, 10], ['At start', '1 min', '2 min', '5 min', '10 min'], function () { return +s.remindBefore; }, function (v) { s.remindBefore = v; save(); }));
     out.push(choice('When a reminder starts', '', ['ask', 'switch'], ['Ask me', 'Switch to the channel'], function () { return s.remindAction === 'switch' ? 'switch' : 'ask'; }, function (v) { s.remindAction = v; save(); }));
-    out.push(choice('Reminder question stays for', '', [10, 20, 30, 60], ['10s', '20s', '30s', '1 min'], function () { return +s.remindTimeout || 20; }, function (v) { s.remindTimeout = v; save(); }));
+    out.push(choice('Reminder question stays for', 'Then it closes by itself, in TiviBro and on the TV\'s own alert when TiviBro isn\'t on screen.', [10, 20, 30, 60], ['10s', '20s', '30s', '1 min'], function () { return +s.remindTimeout || 10; }, function (v) { s.remindTimeout = v; save(); }));
     out.push(head('Watchlist'));
     out.push(page('Watchlist', 'Shows, teams and names to look for in the guide.  TiviBro sets a reminder when one is coming up.', 'Watchlist', watchlist, function () { var n = Watch.list().length; return n ? n + ' ›' : '›'; }));
     out.push(head('Coming up  (' + rem.length + ')'));

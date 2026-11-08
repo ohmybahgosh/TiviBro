@@ -28,6 +28,7 @@ function create(opts) {
   var files = (opts.files || [path.join(__dirname, 'reminders.json'), path.join(os.tmpdir(), 'tivibro-reminders.json')]);
   var state = { lists: {}, names: {} };      // lists: pid -> [reminder]; names: activity name -> 1
   var visible = false, alertRefused = false;
+  var later = opts.later || setTimeout;
 
   function load() {
     for (var i = 0; i < files.length; i++) {
@@ -71,6 +72,8 @@ function create(opts) {
   function set(p) {
     var pid = clean(p.pid, 40), before = Math.max(0, Math.min(60, +p.before || 0)) * 60000, t = now();
     if (typeof p.visible === 'boolean') visible = p.visible;
+    // How long the TV's alert stays up (the app's "Reminder question stays for"), 10 s unless set.
+    if (+p.close) state.close = Math.max(5, Math.min(120, +p.close));
     var list = (Array.isArray(p.list) ? p.list : []).filter(function (r) { return r && r.k && +r.s && +r.e > t && !PLACEHOLDER.test(r.t || ''); }).slice(0, 200).map(function (r) {
       return { k: clean(r.k, 80), s: +r.s, e: +r.e, t: clean(r.t), ch: clean(r.ch, 80), at: +r.s - before };
     });
@@ -136,6 +139,16 @@ function create(opts) {
     var msg = '<h3>' + title + ': ' + html(clean(p.t)) + '</h3>' + (p.ch ? 'On ' + html(clean(p.ch, 80)) + ' in TiviBro' : 'In TiviBro');
     var launch = { id: APP, params: { reminder: { pid: p.pid, k: p.k, s: +p.s } } };
     var alert = { sourceId: APP, message: msg, buttons: [{ label: 'Watch', onclick: 'luna://com.webos.applicationManager/launch', params: launch }, { label: 'Dismiss' }] };
+    /* The alert closes by itself after the app's "Reminder question stays for" (10 s unless set): left alone it
+       stayed on the screen until someone pressed Dismiss. */
+    function closeLater(id, asRoot) {
+      if (!id) return;
+      later(function () {
+        call('luna://com.webos.notification/closeAlert', { alertId: id }, function (r) {
+          if (r && r.returnValue === false && asRoot && opts.rootClose) opts.rootClose(id, function () {});
+        });
+      }, (state.close || 10) * 1000);
+    }
     function toast() {
       call('luna://com.webos.notification/createToast', { sourceId: APP, message: msg + '<br>Select to watch', onclick: { appId: APP, params: launch.params }, noaction: false, persistent: true }, function (r2) {
         if (r2 && r2.returnValue === false) log({ lv: 'error', event: 'toast refused', e: r2.errorText || r2.errorCode });
@@ -146,15 +159,15 @@ function create(opts) {
     // (opts.rootAlert, through the Homebrew Channel); otherwise, or if that fails, a notification.
     function viaRoot(why) {
       if (!opts.rootAlert) { log({ lv: 'warn', event: 'alert refused, using a toast', e: why }); return toast(); }
-      opts.rootAlert(alert, function (ok, e) {
-        if (ok) return finish('shown (as root)');
+      opts.rootAlert(alert, function (ok, e, id) {
+        if (ok) { closeLater(id, true); return finish('shown (as root)'); }
         log({ lv: 'warn', event: 'alert refused, using a toast', e: why + '; as root: ' + (e || 'failed') });
         toast();
       });
     }
     if (alertRefused && opts.rootAlert) return viaRoot('refused before');
     call('luna://com.webos.notification/createAlert', alert, function (res) {
-      if (res && res.returnValue !== false) return finish('shown');
+      if (res && res.returnValue !== false) { closeLater(res.alertId, false); return finish('shown'); }
       alertRefused = true;
       viaRoot(res && (res.errorText || res.errorCode) || 'refused');
     });

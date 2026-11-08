@@ -651,6 +651,7 @@ I18n.add('ru', {
   "Reconnect attempts": "Попытки переподключения",
   "Remind me before start": "Напомнить до начала",
   "Reminder question stays for": "Вопрос о напоминании виден",
+  "Then it closes by itself, in TiviBro and on the TV's own alert when TiviBro isn't on screen.": "Потом закрывается сам, и в TiviBro, и в уведомлении телевизора, когда TiviBro не на экране.",
   "Reminder set for": "Напоминание на",
   "Reminder: switching to": "Напоминание: переключаем на",
   "Remove OpenSubtitles key": "Удалить ключ OpenSubtitles",

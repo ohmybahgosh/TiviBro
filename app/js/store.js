@@ -79,7 +79,7 @@ var Store = (function () {
     newGroups: 'show',          // show | hide  groups the provider adds later
     allHidden: false,           // All channels includes channels from hidden groups
     remindAction: 'ask',        // ask | switch
-    remindTimeout: 20,          // seconds the reminder question stays up
+    remindTimeout: 10,          // seconds the reminder question (and the TV's alert) stays up
     qpHidden: {},               // quick menu buttons switched off
     newDays: 7,                 // days a channel stays in Recently added (0 = no such group)
     audioLang: '',              // preferred audio language ('' = the stream's own choice), see U.lang
@@ -140,6 +140,8 @@ var Store = (function () {
   if (!settings.filter || typeof settings.filter !== 'object') settings.filter = { adult: !((raw.playlists && raw.playlists.length) || (raw.playlist && (raw.playlist.server || raw.playlist.m3u))), words: [], chans: [], groups: [], asked: !!(raw.playlists && raw.playlists.length) };
   // Alpha 78: Automatic becomes the buffer profile for TVs still on the old default, Balanced (one chosen by hand is kept).
   if (!settings.buf2) { if (!raw.buffer || raw.buffer === 'balanced') settings.buffer = 'auto'; settings.buf2 = 1; }
+  // Alpha 110: reminders close after 10 s, not 20 (a time picked by hand is kept).
+  if (!settings.remind10) { if (!raw.remindTimeout || +raw.remindTimeout === 20) settings.remindTimeout = 10; settings.remind10 = 1; }
   // 0.6 look: the old amber default becomes Midnight Electric blue (a chosen colour other than the old default is kept).
   if (!settings.look2) { if (!raw.accent || raw.accent === '#f2b33d') settings.accent = '#5b8cff'; settings.look2 = 1; }
   // Alpha 94: what's on now is marked TiviMate's way, with the now line and a light shade up to it.  The old default (a tint or bar in

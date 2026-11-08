@@ -30,8 +30,14 @@ var reminders = require('./remind').create({
     lcallP('luna://org.webosbrew.hbchannel.service/exec', { command: 'sh ' + JSON.stringify(require('path').join(__dirname, 'alert.sh')) + ' ' + n }, function (res) {
       var out = String(res && (res.stdoutString || res.stdout) || '');
       try { require('fs').unlinkSync(f); } catch (e) {}
-      cb(res && res.returnValue !== false && /"returnValue"\s*:\s*true/.test(out), (res && res.errorText) || out.slice(0, 200));
+      var id = /"alertId"\s*:\s*"([A-Za-z0-9._\-]{1,80})"/.exec(out);
+      cb(res && res.returnValue !== false && /"returnValue"\s*:\s*true/.test(out), (res && res.errorText) || out.slice(0, 200), id ? id[1] : '');
     });
+  },
+  // And closed again as root after a few seconds (an alert made as root may only be closed by root).
+  rootClose: function (id, cb) {
+    if (!/^[A-Za-z0-9._\-]{1,80}$/.test(id || '')) return cb(false);
+    lcallP('luna://org.webosbrew.hbchannel.service/exec', { command: 'sh ' + JSON.stringify(require('path').join(__dirname, 'alert.sh')) + ' close ' + id }, function (res) { cb(res && res.returnValue !== false); });
   }
 });
 

@@ -27,9 +27,10 @@ var Remind = (function () {
   // Send when the list (or how early to remind) changed; cheap to call often.
   function sync(force) {
     var l = list(), before = +Store.settings.remindBefore || 0;
-    var sig = Store.settings.active + '|' + before + '|' + l.map(function (r) { return r.k + '@' + r.s; }).join(',');
+    var close = +Store.settings.remindTimeout || 10;
+    var sig = Store.settings.active + '|' + before + '|' + close + '|' + l.map(function (r) { return r.k + '@' + r.s; }).join(',');
     if (!force && sig === lastSig) return;
-    if (luna('reminders', { pid: Store.settings.active, before: before, list: l, visible: !document.hidden })) lastSig = sig;
+    if (luna('reminders', { pid: Store.settings.active, before: before, close: close, list: l, visible: !document.hidden })) lastSig = sig;
   }
   function visible() { luna('visible', { visible: !document.hidden }); }
 
