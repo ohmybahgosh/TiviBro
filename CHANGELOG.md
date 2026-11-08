@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 108, 2026-11-08)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 108
 
 - **More guide programmes find their series on TMDB, and fewer the wrong one.**  Checked against a real guide's 108,000 programmes:
   - Series in long slots are looked up now (Midsomer Murders, Columbo, Married at First Sight, Survivor, Yellowstone): a programme over 75 minutes still counts as a movie, unless the channel airs it with a different story each time.
@@ -10,11 +14,7 @@
   - Not looked up: boxing bouts ("Benn vs. Dobson (2024)"), local news ("NEWS4 AT 11P", "Good Morning Augusta", "TVA nouvelles") and football, rugby, cricket, pickleball and rodeo shows.  Shows that only sound like sport stay in ("Man vs. Wild", "World's Funniest Videos Top 10 Countdown").
   - Shows TMDB didn't find before are asked about again once.
 
-## 0.6.0 (alpha 107, 2026-11-08)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 107
+### In alpha 107
 
 - **Small TVs hold less video from the start.**  LG's HD and Full HD sets (like the 32LM6300) have about 1 GB of memory, but on webOS 4 and older the TV doesn't say so, so TiviBro only went memory-safe after one closed it while playing (issue #64).  Now it knows them by their model name.
 - **When the provider's per-channel guide keeps failing, TiviBro stops asking for a while** instead of trying every channel in view: a panel answering "502" for every channel meant about a hundred failed requests in seconds, on a TV already struggling, and a log full of them (issue #64).  It asks again after 2 minutes, then less often while it still fails.
