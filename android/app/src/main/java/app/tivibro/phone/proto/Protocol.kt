@@ -312,11 +312,9 @@ class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
     fun forget() { call("POST", "/v1/forget", JSONObject()) }
     /** Wake on BLE (service/blewake.js): [op] register, status or unregister this phone's wake [address].  Answered by the helper, TiviBro may be closed. */
     fun blewake(op: String, address: String): JSONObject = call("POST", "/v1/blewake", JSONObject().put("op", op).put("address", address))
-    /** [open]: TiviBro may be opened for it (the person pressed Open TiviBro); otherwise a closed TiviBro says so. */
-    fun editor(open: Boolean = false): EditorState {
-        val j = call("POST", "/v1/editor", JSONObject().apply { if (open) put("open", true) })
+    fun editor(): EditorState {
+        val j = call("POST", "/v1/editor", JSONObject())
         return when (j.optString("state")) {
-            "closed" -> throw TbException(j.optString("error", "TiviBro is closed on the TV.  Open it, then try again."), "closed")
             "ready" -> EditorState.Ready(j.getString("url"))
             "starting" -> EditorState.Starting(j.optString("message", "Starting the editor on the TV…"))
             else -> throw TbException(j.optString("error", "The TV could not start the editor."), "editor")

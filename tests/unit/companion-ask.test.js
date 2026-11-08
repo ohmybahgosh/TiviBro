@@ -72,14 +72,6 @@ async function tivibro() {
   const before = launched.length;
   r = await C.ask(cred, 'backup', {}, { seal: true, noOpen: true });
   ok('automatic backups never open TiviBro', r.ok && r.closed === true && launched.length === before, JSON.stringify(r));
-  // Changing settings or channels from the phone never opens TiviBro; playing something does.
-  r = await C.ask(cred, 'settings', { op: 'sections' }, { seal: true });
-  ok('a setting from the phone with TiviBro closed: "closed", TiviBro not opened', r.ok && r.closed === true && /closed/.test(r.msg || '') && launched.length === before, JSON.stringify(r));
-  r = await C.ask(cred, 'vis', { op: 'list', group: 'x' });
-  ok('showing or hiding channels too', r.ok && r.closed === true && launched.length === before, JSON.stringify(r));
-  C.ask(cred, 'vodplay', { id: 1 }).catch(() => {});
-  await new Promise((res) => setTimeout(res, 400));
-  ok('playing a movie from the phone opens TiviBro', launched.length === before + 1 && launched[before].companion.open, JSON.stringify(launched));
   open = true;
 
   const t0 = Date.now();

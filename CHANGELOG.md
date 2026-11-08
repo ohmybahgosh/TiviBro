@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The phone app opens TiviBro on the TV again for changes, as before alpha 105.**  Keeping TiviBro closed while you changed a setting or a channel from the phone can't work yet: pressing Home leaves TiviBro paused by the TV, and a paused TiviBro can't take the change.  Back for now, until it can be done properly.
+
 ## 0.6.0 (alpha 105, 2026-11-07)
 
 Pre-release: expect rough edges, and keep a backup before installing.
