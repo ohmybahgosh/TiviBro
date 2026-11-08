@@ -450,11 +450,16 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     suspend fun watchState(id: String) = withContext(Dispatchers.IO) {
         _now.value = null
         var rev = -1
+        var asked = 0
         while (isActive) {
             val tv = tv(id) ?: break
             try {
                 val st = TvClient(tv, 26_000).state(maxOf(rev, 0), rev >= 0)
                 _now.value = st; rev = st.rev
+                // The TV sent a new channel list (something hidden, shown again or renamed there, or in the
+                // web editor): the one here follows, if it has one to replace.
+                val l = _lineup.value
+                if (st.lineupRev > 0 && l != null && lineupFor == id && l.rev != st.lineupRev && asked != st.lineupRev) { asked = st.lineupRev; loadLineup(id) }
             } catch (e: Exception) {
                 rev = -1
                 delay(3000)

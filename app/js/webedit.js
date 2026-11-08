@@ -181,7 +181,58 @@ var WebEdit = (function () {
     for (k in mine) if (!offKey(k) && !keep(k)) out[k] = mine[k];
     return out;
   }
-  function writeEdits(ed, names) {
+  /* Three-way merge, as the editor's (service/editor/index.html merge3): b what the sender started from
+     (the TV's state when it last read it), m what it sends, t the TV's state now.  What the sender changed
+     wins where it changed it; everything else stays as the TV has it now, so a channel hidden with the
+     remote (or from the phone) a moment before a save from the editor stays hidden.  Lists merge their
+     additions and removals; lists of groups merge by id. */
+  function sameJ(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+  function clone(x) { return x == null ? x : JSON.parse(JSON.stringify(x)); }
+  function merge3(b, m, t) {
+    if (sameJ(m, b)) return clone(t);
+    if (sameJ(t, b) || t == null) return clone(m);
+    if (m == null) return b == null ? clone(t) : null;
+    if (Array.isArray(m) && Array.isArray(t)) {
+      var bb = Array.isArray(b) ? b : [];
+      var idOf = function (x) { return x && typeof x === 'object' ? (x.id != null ? 'i' + x.id : x.q != null ? 'q' + x.q : null) : typeof x === 'string' || typeof x === 'number' ? 's' + x : null; };
+      if (m.concat(t, bb).some(function (x) { return idOf(x) == null; })) return clone(m);
+      var B = {}, M = {}, T = {}, out = [], seen = {};
+      bb.forEach(function (x) { B[idOf(x)] = x; }); m.forEach(function (x) { M[idOf(x)] = x; }); t.forEach(function (x) { T[idOf(x)] = x; });
+      var take = function (k) {
+        if (seen[k]) return; seen[k] = 1;
+        var inB = k in B, inM = k in M, inT = k in T;
+        if (inB && (!inM || !inT)) return;                   // removed by the sender or on the TV
+        var v = inM && inT ? (typeof M[k] === 'object' ? merge3(B[k], M[k], T[k]) : M[k]) : inM ? M[k] : T[k];
+        if (v != null) out.push(clone(v));
+      };
+      m.forEach(function (x) { take(idOf(x)); });             // the sender's order, then what only the TV has
+      t.forEach(function (x) { take(idOf(x)); });
+      return out;
+    }
+    if (obj(m) && obj(t)) {
+      var o = {}, bo = obj(b) ? b : {}, ks = {};
+      Object.keys(bo).concat(Object.keys(m), Object.keys(t)).forEach(function (k) { ks[k] = 1; });
+      Object.keys(ks).forEach(function (k) {
+        var v = sameJ(m[k], bo[k]) ? t[k] : sameJ(t[k], bo[k]) ? m[k] : merge3(bo[k], m[k], t[k]);
+        if (v !== undefined && v !== null) o[k] = clone(v);
+      });
+      return o;
+    }
+    return clone(m);
+  }
+  // A save that says what it started from (base, nbase): only its own changes go on top of the TV's state now.
+  function onTop(ed, names, base, nbase) {
+    var out = { ed: ed, names: names };
+    if (obj(base)) {
+      var cur = editsOf(), m = {};
+      Object.keys(ed).forEach(function (f) { m[f] = FIELDS.indexOf(f) >= 0 && base[f] !== undefined ? merge3(base[f], ed[f], cur[f]) : ed[f]; });
+      out.ed = m;
+    }
+    if (obj(nbase) && obj(names)) out.names = merge3(nbase, names, namesOut(Store.playlist));
+    return out;
+  }
+  function writeEdits(ed, names, base, nbase) {
+    if (base || nbase) { var mo = onTop(ed, names, base, nbase); ed = mo.ed; names = mo.names; }
     var e = Store.edits, p = Store.playlist, guideChanged = false, cover = coverOf(names), was = {};
     ROUTED.forEach(function (f) { was[f] = e[f]; });            // today's, for blend
     ['hiddenGroups', 'hiddenChannels', 'renames', 'groupRenames'].forEach(function (f) { if (obj(ed[f])) e[f] = ed[f]; });
@@ -226,7 +277,7 @@ var WebEdit = (function () {
   function breathe(v) { return new Promise(function (r) { setTimeout(function () { r(v); }, 30); }); }
   function apply(j) {
     return snap('auto', 'Before changes sent from the computer').catch(function () {}).then(breathe).then(function () {
-      writeEdits(j.edits || {}, j.names);
+      writeEdits(j.edits || {}, j.names, j.base, j.nbase);
       return breathe();
     }).then(function () {
       markSent(j.edits || {});
@@ -643,6 +694,15 @@ var WebEdit = (function () {
     lastDraft = Math.max(lastDraft, s.draftAck || 0);
     if (Epg.progress && Epg.progress.phase) sendProgress(Epg.progress, true);
     clearInterval(timer); timer = setInterval(tick, 2000);
+    // Something hidden, renamed or moved on the TV (or from the phone): to the editor in half a second, not
+    // at the next look, so a page open there brings it in before its own changes go out.
+    var seenRev = Store.editsRev;
+    clearInterval(begin.fast); begin.fast = setInterval(function () {
+      if (!on) { clearInterval(begin.fast); return; }
+      if (busy || Store.editsRev === seenRev) return;
+      seenRev = Store.editsRev; busy = true; busyAt = Date.now();
+      push(false).then(function () { busy = false; }, function () { busy = false; });
+    }, 500);
     return loadDraftInfo().catch(function () {}).then(function () { return push(true); }).then(function () { return s; });
   }
   function start() {

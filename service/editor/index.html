@@ -871,7 +871,7 @@ var LS = { get: function (k, d) { try { var v = localStorage.getItem(k); return 
 var token = '';
 try { token = sessionStorage.getItem('tivibro.editor.token') || ''; } catch (e) {}
 var D = null, E = null, N = null, BASE = null;            // snapshot, working edits, working names, what the TV has
-var rev = 0, sentRev = 0, sending = false, inflight = 0, sel = new Set(), curGroup = null, query = '', page = 'home';
+var TVREAD = null, rev = 0, sentRev = 0, sending = false, inflight = 0, sel = new Set(), curGroup = null, query = '', page = 'home';
 var hist = [], redo = [], lastProgress = null, tvLost = false, tvStuck = false;
 var dT = 0, dFirst = 0, dLast = '', dSeq = 0, dAck = 0, dAt = 0, draftsCache = null;   // draft autosave on the TV
 var FAV = 'c_fav', ALL = '__all';
@@ -1076,6 +1076,7 @@ function load(first) {
     var oldBase = BASE, keep = !first && pendingCount() > 0;
     BASE = { E: pickE(D.edits), N: clone(D.names || Names.defaults()) };
     BASE.N.rules = BASE.N.rules || {};
+    TVREAD = clone(BASE);                              // what the TV had when this page last read it (sent with a save)
     if (!keep) { E = clone(BASE.E); N = clone(BASE.N); }
     else if (oldBase && !sameJ(oldBase, BASE)) {
       /* Changed on the TV (a group hidden with the remote) while changes here weren't sent yet: what was
@@ -1410,7 +1411,9 @@ function send(fresh) {
   sending = true; updateBar(); busy(1);
   saveDraftToTV('checkpoint', 'Before sending', null, n);
   var sentState = { E: clone(E), N: clone(N) };
-  var body = { edits: {}, names: N };
+  // With what this page started from: the TV puts only these changes on top of what it has now, so
+  // something hidden on the TV (or from the phone) since this page last read it stays hidden.
+  var body = { edits: {}, names: N, base: TVREAD ? TVREAD.E : null, nbase: TVREAD ? TVREAD.N : null };
   FIELDS.forEach(function (f) { body.edits[f] = E[f]; });
   return api('/api/save', { method: 'POST', body: body }).then(function (j) {
     sentRev = j.pendingRev; BASE = sentState;
@@ -1479,7 +1482,7 @@ setInterval(function () {
     if (j.progress) onProgress(j.progress);
     if (j.rev > rev && !sending && !inflight && j.pendingRev <= j.appliedRev) load(false).catch(function () {});
   }).catch(function (err) { if (err.message !== 'auth') { tvLost = true; setStatus('bad', 'Lost the connection to the TV.'); } });
-}, 2000);
+}, 1000);
 
 /* ---------- pages and routing ---------- */
 /* Back on a phone (the TiviBro phone app calls tbBack()): close what is open, then go back through

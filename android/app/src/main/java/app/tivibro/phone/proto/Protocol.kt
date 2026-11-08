@@ -350,6 +350,8 @@ data class NowState(
     val mediaLibraryVersion: Int = 0,
     /** Whether the TV finds the movies on now (a TMDB token saved there): the On now tab. */
     val onnow: Boolean = false,
+    /** The newest channel list the TV has sent (it sends one again after channels are hidden, renamed or moved). */
+    val lineupRev: Int = 0,
 ) {
     companion object {
         fun from(j: JSONObject): NowState {
@@ -367,6 +369,7 @@ data class NowState(
                 media = s?.optJSONObject("vod2")?.takeIf { it.has("media") }?.optBoolean("media"),
                 mediaLibraryVersion = s?.optJSONObject("vod2")?.optInt("mediaLibraryVersion") ?: 0,
                 onnow = s?.optJSONObject("vod2")?.optBoolean("onnow") == true,
+                lineupRev = j.optInt("lineupRev"),
                 inputs = s?.optJSONArray("inputs")?.let { a -> (0 until a.length()).mapNotNull { TvInput.from(a.optJSONObject(it)) } }.orEmpty(),
             )
         }

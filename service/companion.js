@@ -562,6 +562,8 @@ function create(opts) {
       if (u === '/companion/lineup' && req.method === 'POST') {
         lineupRev++;
         lineup = { rev: lineupRev, at: Date.now(), data: { groups: Array.isArray(j.groups) ? j.groups : [], channels: Array.isArray(j.channels) ? j.channels : [] } };
+        // Phones following the TV (GET /v1/state) hear of it at once (lineupRev), and fetch the new list.
+        tvState = { rev: tvState.rev + 1, data: tvState.data, at: tvState.at }; flushPhones();
         wantLineup = false;
         return reply(200, { ok: true, rev: lineupRev });
       }

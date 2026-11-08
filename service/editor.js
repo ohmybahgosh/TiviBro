@@ -180,7 +180,8 @@ function create(log) {
       return readJSON(req, function (err, j) {
         if (err || !j || !j.edits) return send(res, 400, { error: 'bad request' });
         st.pendingRev++;
-        st.pending = { rev: st.pendingRev, edits: j.edits, names: j.names || null, at: Date.now() };
+        // base, nbase: the TV's state the browser started from, so the app puts only its changes on top.
+        st.pending = { rev: st.pendingRev, edits: j.edits, names: j.names || null, base: j.base || null, nbase: j.nbase || null, at: Date.now() };
         log({ lv: 'info', event: 'editor save', rev: st.pendingRev, from: who });
         send(res, 200, { ok: true, pendingRev: st.pendingRev });
       });

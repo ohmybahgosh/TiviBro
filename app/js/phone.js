@@ -430,6 +430,18 @@ var Phone = (function () {
     call('/companion/state', { state: s }).catch(function () { if (lastState === k) lastState = ''; });
   }
   setInterval(function () { if (st && st.on) pushState(false); }, 1500);
+  /* Channels hidden or shown again, renamed, moved or added to a group, on the TV or from the web editor:
+     the phone's channel list follows a couple of seconds later (it reloads when the helper says it's new),
+     instead of keeping what it had until you leave and come back. */
+  var editsSeen = -1, editsT = 0;
+  setInterval(function () {
+    if (!(st && st.on && st.phones && st.phones.length) || !base() || !lineupAt) return;     // no phone, or none has asked yet
+    if (editsSeen < 0) { editsSeen = Store.editsRev; return; }
+    if (Store.editsRev === editsSeen) return;
+    editsSeen = Store.editsRev;
+    clearTimeout(editsT);
+    editsT = setTimeout(function () { lineupAt = 0; sendLineup(); }, 2000);
+  }, 1000);
 
   /* The channel list for the phone: the groups as shown on the TV and every shown channel, with
      what is on now from what the guide already has.  At most once a minute. */
@@ -437,7 +449,7 @@ var Phone = (function () {
   function sendLineup() {
     if (!ready()) { setTimeout(sendLineup, 1000); return; }
     if (Date.now() - lineupAt < 60000 && lineupAt) return;
-    lineupAt = Date.now();
+    lineupAt = Date.now(); editsSeen = Store.editsRev;
     var groups = [], seen = {}, chans = [], extra = [];
     Library.groups().forEach(function (g) {
       if (g.id === Library.ALL) return;
