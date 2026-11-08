@@ -430,6 +430,11 @@ The same token fills in TV series (Settings > Guide > Movies and series from TMD
 - **On the Shows screen:** whatever your provider's details leave out comes from TMDB: a poster, a summary, genres, network, rating and cast for a show, and for an episode its summary, a picture from it and when it aired.  What your provider has always comes first (its covers, its episode titles).
 - **In the phone app:** a show's details get the same, once the TV has looked it up.
 
+<p align="center">
+  <a href="https://tivibro.app/view/#tv-guide-movie"><img src="screenshots/tv-guide-movie.png" width="49%" alt="A movie in the guide with its TMDB details"></a>
+  <a href="https://tivibro.app/view/#tv-guide-series"><img src="screenshots/tv-guide-series.png" width="49%" alt="A series in the guide with its TMDB details"></a>
+</p>
+
 A show is looked up when you land on it, not ahead of time, and only by its name: a show of exactly that name, the best known one when there are several (a US and a UK version).  News, sport, movies and live programmes are never looked up as series.  Answers are kept for 30 days.
 
 <p align="center">

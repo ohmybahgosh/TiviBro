@@ -300,7 +300,14 @@ The logo library matches your channels to [iptv-org](https://github.com/iptv-org
 
 ### Movies on now
 
-Save your own free TMDB token (**Settings > Guide > Movies in the guide**, or **Settings > My media**) and TiviBro finds the movies in your guide: the guide's Movie category, a year in the title, long programmes on movie channels, and other long programmes that TMDB knows well as films.  They get a poster, year, runtime, genres and rating in the guide, a **Movie** tag in the grid, and a **Movies on now** group: what's on (most left first), then what starts within the hour.  **Movies on now** in the menu shows them as big posters: **On now**, **Starting soon**, then a shelf for each genre (Action, Comedy, Family…).  Only titles go to TMDB, and answers are kept on the TV for 30 days.
+Save your own free TMDB token (**Settings > Guide > Movies and series from TMDB**, or **Settings > My media**) and TiviBro finds the movies in your guide: the guide's Movie category, a year in the title, long programmes on movie channels, and other long programmes that TMDB knows well as films.  They get a poster, year, runtime, genres and rating in the guide, a **Movie** tag in the grid, and a **Movies on now** group: what's on (most left first), then what starts within the hour.  **Movies on now** in the menu shows them as big posters: **On now**, **Starting soon**, then a shelf for each genre (Action, Comedy, Family…).  Only titles go to TMDB, and answers are kept on the TV for 30 days.
+
+TV series get the same in the guide: a poster, when the show started, its network, genres and rating, and the episode's own title and summary when the guide gives the season and episode.  **Info** on a series opens **About this show**, with its seasons, cast and next showings.
+
+<p align="center">
+  <a href="https://tivibro.app/view/#tv-guide-movie"><img src="docs/screenshots/tv-guide-movie.png" width="49%" alt="A movie in the guide with its TMDB details"></a>
+  <a href="https://tivibro.app/view/#tv-guide-series"><img src="docs/screenshots/tv-guide-series.png" width="49%" alt="A series in the guide with its TMDB details"></a>
+</p>
 
 <p align="center"><a href="https://tivibro.app/view/#tv-onnow-genre"><img src="docs/screenshots/tv-onnow-genre.png" width="80%" alt="Movies on now, a genre shelf"></a></p>
 
