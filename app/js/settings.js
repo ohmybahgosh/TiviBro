@@ -73,8 +73,13 @@ var Settings = (function () {
     out.push(choice('Player engine',
       'Automatic uses the built-in demuxer for fine buffer control and falls back to the TV player when a server blocks it.  TV player uses the least CPU but ignores buffer settings.',
       ['auto', 'mse', 'native'], ['Automatic', 'Built-in demuxer', 'TV player'], function () { return s.engine; }, function (v) { s.engine = v; save(); }));
-    if (Store.playlist.type === 'xtream') out.push(choice('Stream format', 'MPEG-TS usually switches channels faster.  HLS copes better with a weak connection.',
+    if (Store.playlist.type === 'xtream') out.push(choice('Stream format', 'MPEG-TS usually switches channels faster.  HLS copes better with a weak connection.  One channel can have its own: hold OK on it > Stream format.',
       ['ts', 'm3u8'], ['MPEG-TS', 'HLS'], function () { return s.format; }, function (v) { s.format = v; save(); }));
+    // Channels with a stream format of their own (Hold OK on a channel > Stream format).
+    var own = Object.keys(Store.edits.streamFmt || {});
+    if (own.length) out.push(action('Channels with their own format', own.slice(0, 4).map(function (k) { var c = L.find(k); return c ? L.name(c) + ': ' + (Store.edits.streamFmt[k] === 'hls' ? 'HLS' : 'MPEG-TS') : ''; }).filter(Boolean).join(',  ') + (own.length > 4 ? '  …' : ''), function () {
+      UI.confirm('Use the setting above for every channel?', 'Clear ' + own.length + (own.length === 1 ? ' channel' : ' channels'), function () { Store.edits.streamFmt = {}; Store.saveEdits(); build(); U.toast('Every channel uses the setting above'); });
+    }, function () { return String(own.length); }));
     out.push(choice('Connection', 'Automatic uses the network helper: a part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams for the app.  webOS needs it for most providers.  Direct asks the provider straight from the app, which only works with servers that allow it.  Channel lists still load through the helper when it runs, so a big one can\'t close TiviBro.',
       ['auto', 'direct'], ['Automatic (recommended)', 'Direct'], function () { return s.network || 'auto'; }, function (v) { s.network = v; save(); }));
     out.push(info('Network helper', Net.port ? 'running' : 'not running'));

@@ -1372,6 +1372,7 @@ var Views = (function () {
       { label: 'Copy to group…', action: function () { copyMenu([c.k], L.name(c)); } },
       !full && tab === 'live' && { label: 'Select multiple…', sub: 'copy, favorite or hide several', action: function () { startPick(c.k); } },
       L.versions(c).length && { label: 'Other versions…', sub: versionsSummary(c), action: function () { versionsMenu(c); } },
+      Player.canSwitchFormat(c) && { label: 'Stream format…', sub: FORMAT_NAMES[Player.streamFormat(c)], action: function () { formatMenu(c); } },
       c.arch && { label: 'Watch from start', action: function () { watchFromStart(c); } },
       c.arch && { label: 'Catch-up…', sub: c.arch + ' days', action: function () { catchupList(c); } },
       inCustom && gid !== L.FAV && { label: 'Remove from ' + L.groupName(gid), action: function () { L.removeFrom(gid, c.k); refreshLists(true); } },
@@ -1413,6 +1414,22 @@ var Views = (function () {
     refreshLists(true);
     if (typeof Movies !== 'undefined' && Movies.poke) Movies.poke();
     if (window.Guide && Guide.refresh && tab === 'guide') Guide.refresh();
+  }
+  /* Stream format for one channel (Player.streamFormat): HLS for a channel that stutters as MPEG-TS, or the
+     other way round.  Playing it now: it starts again in that format. */
+  var FORMAT_NAMES = { '': 'Automatic', hls: 'HLS', ts: 'MPEG-TS' };
+  function formatMenu(c) {
+    var on = Player.streamFormat(c), dflt = Store.settings.format === 'm3u8' ? 'HLS' : 'MPEG-TS';
+    function use(v) {
+      Player.setStreamFormat(c, v);
+      U.toast(v ? T('{x} for this channel', { x: FORMAT_NAMES[v] }) : T('Stream format back to automatic'));
+      if (playing && playing.k === c.k && mode === 'live') startChannel(c, !full);
+    }
+    UI.menu('Stream format', [
+      { label: 'Automatic', sub: T('the playlist\'s setting ({x}), and what plays best here', { x: dflt }), current: !on, action: function () { use(''); } },
+      { label: 'HLS', sub: 'copes better with a weak connection', current: on === 'hls', action: function () { use('hls'); } },
+      { label: 'MPEG-TS', sub: 'usually switches channels faster', current: on === 'ts', action: function () { use('ts'); } }
+    ], null, { sub: RAW(L.name(c)) });
   }
   function chanMenu(c, gid) {
     if (!c) return;

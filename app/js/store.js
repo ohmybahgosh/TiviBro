@@ -185,7 +185,7 @@ var Store = (function () {
      toFile), and making another playlist the first only changes which prefix memory leaves off.
      With one playlist on nothing is attached and none of this runs: the same code path as before. */
   // resume, watched and myList: Movies and Shows (vod.js), whose other playlists' keys are "<id>:m123".
-  var KEY_MAPS = ['hiddenChannels', 'renames', 'watch', 'blockedChannels', 'epgMap', 'noGuide', 'display', 'resume', 'watched'];
+  var KEY_MAPS = ['hiddenChannels', 'renames', 'watch', 'blockedChannels', 'epgMap', 'noGuide', 'display', 'streamFmt', 'resume', 'watched'];
   var GROUP_MAPS = ['hiddenGroups', 'groupRenames', 'blockedGroups', 'groupSort', 'groupAdd', 'groupRemove', 'chanOrder', 'groupMerge'];
   var GROUP_LISTS = ['groupOrder', 'knownGroups', 'myList'];
   var KEYED = { groupAdd: 'list', chanOrder: 'list', groupRemove: 'map', groupMerge: 'one' };     // group maps whose values hold keys (groupMerge: a group id)

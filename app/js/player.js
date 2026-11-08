@@ -1028,11 +1028,18 @@ var Player = (function () {
     releaseFrame();                         // a new channel never shows the last one's picture
     if (video) video.playbackRate = 1;
     cur.usual = pickEngine(cur.url);
-    if (cur.live && !cur.timeshift && preferHls[cur.url] && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) { Log.info('player', 'Using the HLS version of this channel, which played better earlier'); useEngine('hls'); }
-    // What this channel needed last time (playmemo.js): its pipeline, and the cushion it earned.
+    // Stream format chosen for this channel (Hold OK > Stream format): HLS or MPEG-TS whatever the
+    // playlist's setting, before what playback learnt.  The other pipelines stay as fallbacks.
+    var want = cur.live && !cur.timeshift ? streamFormat(ch) : '';
+    if (want === 'ts' && /\/live\/[^?]+\.m3u8(\?|$)/i.test(cur.url)) { cur.url = cur.url.replace(/\.m3u8(\?|$)/i, '.ts$1'); cur.usual = pickEngine(cur.url); }
+    if (want) Log.info('player', 'Stream format for this channel: ' + (want === 'hls' ? 'HLS' : 'MPEG-TS') + ' (chosen for it)');
+    if (want === 'hls' && !/\.m3u8(\?|$)/i.test(cur.url) && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) useEngine('hls');
+    if (!want && cur.live && !cur.timeshift && preferHls[cur.url] && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) { Log.info('player', 'Using the HLS version of this channel, which played better earlier'); useEngine('hls'); }
+    // What this channel needed last time (playmemo.js): its pipeline (unless a format was chosen for it),
+    // and the cushion it earned.
     else if (cur.live && !cur.timeshift && window.PlayMemo && Store.settings.engine !== 'native') {
       var memo = PlayMemo.get(ch);
-      if (memo.engine && memo.engine !== cur.usual && engineOk(memo.engine)) { Log.info('player', 'Starting with the ' + (memo.engine === 'hls' ? 'HLS version' : ENGINE_NAMES[memo.engine]) + ', which played this channel last time'); useEngine(memo.engine); }
+      if (!want && memo.engine && memo.engine !== cur.usual && engineOk(memo.engine)) { Log.info('player', 'Starting with the ' + (memo.engine === 'hls' ? 'HLS version' : ENGINE_NAMES[memo.engine]) + ', which played this channel last time'); useEngine(memo.engine); }
       if (memo.boost && !cur.preview) { cur.boost = memo.boost; cur.boostAt = Date.now(); }
     }
     // Movies, episodes and My media files: is the sound one this TV plays?  (convert.js)
@@ -1159,6 +1166,21 @@ var Player = (function () {
   function filmShape(mode) { var m = /^film:(\d(?:\.\d{1,3})?)$/.exec(String(mode || '')), r = m ? +m[1] : 0; return r >= 1.5 && r <= 3 ? r : 0; }
   function validAspect(mode) { return !!(ASPECT_NAMES[mode] || filmShape(mode)); }
   function aspectName(mode) { var r = filmShape(mode); return r ? 'Film ' + r.toFixed(2) + ':1' : ASPECT_NAMES[mode] || ''; }
+  /* Stream format per channel: '' (the playlist's setting and what playback learns), 'hls' or 'ts'.
+     Kept with the playlist's edits (backups too), by channel. */
+  function streamFormat(ch) { var m = ch && Store.edits.streamFmt; return m && (m[ch.k] === 'hls' || m[ch.k] === 'ts') ? m[ch.k] : ''; }
+  function setStreamFormat(ch, v) {
+    if (!ch) return;
+    var m = Store.edits.streamFmt || (Store.edits.streamFmt = {});
+    if (v === 'hls' || v === 'ts') m[ch.k] = v; else delete m[ch.k];
+    Store.saveEdits();
+  }
+  /** Whether a channel comes both ways: an Xtream Codes live channel (/live/…/123.ts or .m3u8). */
+  function canSwitchFormat(ch) {
+    if (!ch) return false;
+    var u = ch.url || (Source.streamUrl ? Source.streamUrl(ch, Store.settings.format) : '');
+    return /\/live\/[^?]+\.(ts|m3u8)(\?|$)/i.test(u || '');
+  }
   function displayFor(ch) { var d = ch && Store.edits.display && Store.edits.display[ch.k]; d = d || Store.settings.display; return validAspect(d) ? d : 'contain'; }
   /* How to draw a vw x vh picture on a W x H screen for an aspect mode: { fit, sx, sy }.  The element
      always fills the screen; sx and sy scale it from its centre. */
@@ -1302,6 +1324,7 @@ var Player = (function () {
     setQuality: function (i) { if (eng && eng.setLevel) eng.setLevel(i); },
     setRate: function (r) { if (video) video.playbackRate = r; },
     get rate() { return video ? video.playbackRate : 1; },
+    streamFormat: streamFormat, setStreamFormat: setStreamFormat, canSwitchFormat: canSwitchFormat,
     displayFor: displayFor, setAspect: setAspect, aspectName: aspectName, filmShape: filmShape, aspectFit: aspectFit, ASPECTS: ASPECTS, ASPECT_NAMES: ASPECT_NAMES,
     setAudio: function (i) {
       if (!eng || !eng.setAudio) return;
