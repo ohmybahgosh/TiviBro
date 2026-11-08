@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 106, 2026-11-08)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 106
 
 - **Steadier live TV, like TiviMate underneath.**  When your provider's connection drops, stalls or hangs up mid-programme, the network helper now connects again by itself and carries on into the same stream from the next whole picture, so a short drop shows as a short pause (or nothing, with a few seconds buffered) instead of a black screen and a restart that threw away everything buffered.  On a test stream cut every half minute, the picture moved 97% of the time instead of 92%, with no restarts at all.  If the provider restarted the channel meanwhile (its clock went back), or the trouble goes on for a minute, the player starts it afresh as before.
 - **The guide no longer downloads the public guides at every start.**  Which countries' guides it needs depends on the channels your provider's guide leaves empty, which shifted a little from one start to the next (more when your provider's guide failed to load once), and every shift meant reading them all again: about 100 MB and a minute of the TV's time.  Now it reads them again only when one it needs is missing, twice a day at most, or when you ask.
@@ -13,11 +17,7 @@
 - **One reminder per game.**  A team's game listed twice at the same time (the team's own channel and the local station's "Live: NFL Football") set two reminders; now it's one, the listing that names the game.  Reminders already set twice are tidied up.
 - **The phone app opens TiviBro on the TV again for changes, as before alpha 105.**  Keeping TiviBro closed while you changed a setting or a channel from the phone can't work yet: pressing Home leaves TiviBro paused by the TV, and a paused TiviBro can't take the change.  Back for now, until it can be done properly.  And with TiviBro in the background (after Home), the phone now brings it back instead of waiting for ever ("Starting the editor on the TV…").
 
-## 0.6.0 (alpha 105, 2026-11-07)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 105
+### In alpha 105
 
 - **The phone app no longer opens TiviBro on the TV just to change something.**  Changing a setting, showing or hiding channels, renaming, favorites, reminders, backups and the web editor wait for TiviBro to be open, and the phone says so with an **Open TiviBro on the TV** button, instead of bringing TiviBro up over whatever the TV is showing.  Playing something from the phone (a channel, a movie or show, My media), finding something to watch, and the phone's remote still open it.
 
