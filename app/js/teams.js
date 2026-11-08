@@ -307,7 +307,15 @@ var Teams = (function () {
          missed; a Favorite channel for it is preferred. */
       var vs = lastVs[team.league] || '', gk = team.id + '|' + vs, same = null;
       (seen[gk] || (seen[gk] = [])).forEach(function (g) { if (Math.abs(g.p.s - p.s) < SAME_GAME) same = g; });
-      if (!same) { same = { c: c, p: p, team: team }; seen[gk].push(same); out.push(same); return; }
+      /* And whatever the listing says about the opponent: one team's games starting within 90 minutes of each
+         other are the same game ("Detroit Lions at Miami Dolphins" on the team's channel and "Live: NFL
+         Football" on the local CBS station, both at 1:00).  No league plays a team twice that close, a
+         baseball doubleheader included.  The listing that names the game is kept. */
+      var tk = 'team|' + team.id;
+      if (!same) (seen[tk] || []).forEach(function (g) { if (Math.abs(g.p.s - p.s) < CLOSE) same = g; });
+      if (!same) { same = { c: c, p: p, team: team }; seen[gk].push(same); (seen[tk] || (seen[tk] = [])).push(same); out.push(same); return; }
+      var named = function (x) { return !!matchup(x.p.t, x.c ? x.c.n : ''); };
+      if (Math.abs(p.s - same.p.s) <= 10 * 60000 && !named(same) && named({ c: c, p: p })) { same.c = c; same.p = p; return; }
       if (p.s < same.p.s - 10 * 60000) { same.c = c; same.p = p; }
       else if (Math.abs(p.s - same.p.s) <= 10 * 60000 && Library.isFav(c.k) && !Library.isFav(same.c.k)) same.c = c;
     }
@@ -369,7 +377,7 @@ var Teams = (function () {
     return out;
   }
 
-  var MAX_FEEDS = 8, SAME_GAME = 12 * 3600e3;
+  var MAX_FEEDS = 8, SAME_GAME = 12 * 3600e3, CLOSE = 90 * 60000;
   var SPORTY = /\b(nfl|nba|nhl|mlb|wnba|mls|football|basketball|hockey|baseball|soccer)\b/i;
   // Not the game: placeholders ("not found yet"), and the shows around it.
   // Guide placeholders, never a programme to be reminded of (the helper's remind.js has the same list).
@@ -492,6 +500,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
+    isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
 })();

@@ -34,7 +34,13 @@ var Watch = (function () {
     return out;
   }
 
-  function reminded(c, p) { return Store.edits.reminders.some(function (x) { return (x.k === c.k || x.t === p.t) && x.s === p.s; }); }
+  // Already reminded: this programme, or (for a team) any of its games starting within 90 minutes: the same game.
+  function reminded(c, p, w) {
+    var close = typeof Teams !== 'undefined' && Teams.CLOSE ? Teams.CLOSE : 90 * 60000;
+    return Store.edits.reminders.some(function (x) {
+      return ((x.k === c.k || x.t === p.t) && x.s === p.s) || (/^team:/.test(w || '') && x.w === w && Math.abs(x.s - p.s) < close);
+    });
+  }
 
   // Look now.  quiet: no message (the first look after adding a word says its own thing).
   function scan(quiet) {
@@ -53,7 +59,7 @@ var Watch = (function () {
       if (s[k] || !Parental.blockedOk(r.c)) return;
       if (remind) {
         if ((pending[r.w] || 0) >= PER_WORD) return;
-        if (!reminded(r.c, r.p)) { Store.edits.reminders.push(mark({ k: r.c.k, s: r.p.s, e: r.p.e, t: r.p.t, w: r.w })); pending[r.w] = (pending[r.w] || 0) + 1; }
+        if (!reminded(r.c, r.p, r.w)) { Store.edits.reminders.push(mark({ k: r.c.k, s: r.p.s, e: r.p.e, t: r.p.t, w: r.w })); pending[r.w] = (pending[r.w] || 0) + 1; }
       } else if (found.length >= PER_WORD * 2) return;
       s[k] = r.p.e;
       found.push(r);
@@ -113,14 +119,26 @@ var Watch = (function () {
     /* One reminder a game for a team: the same two teams within 12 hours are one game (an earlier TiviBro
        set one for each channel's time and the replays).  The earliest stays. */
     if (Teams.matchup) {
-      var firsts = {};
-      keep = keep.slice().sort(function (a, b) { return a.s - b.s; }).filter(function (r) {
+      var firsts = {}, near = {}, close = Teams.CLOSE || 90 * 60000;
+      var named = function (r) { var c = L.find(r.k); return Teams.matchup(r.t, c ? c.n : ''); };
+      // The listing that names the game first, then the earliest.
+      keep = keep.slice().sort(function (a, b) {
+        var ta = /^team:/.test(a.w || ''), tb = /^team:/.test(b.w || '');
+        if (ta && tb && a.w === b.w && Math.abs(a.s - b.s) < close) { var na = !!named(a), nb = !!named(b); if (na !== nb) return na ? -1 : 1; }
+        return a.s - b.s;
+      }).filter(function (r) {
         if (!/^team:/.test(r.w || '')) return true;
-        var c = L.find(r.k), m = Teams.matchup(r.t, c ? c.n : '');
-        if (!m) return true;
-        var key = r.w + '|' + m, l = firsts[key] || (firsts[key] = []);
-        if (l.some(function (s) { return Math.abs(s - r.s) < Teams.SAME_GAME; })) return false;
-        l.push(r.s);
+        /* Two of a team's games starting within 90 minutes are one game, whatever the listing says ("Live: NFL
+           Football" on the local CBS station and "Detroit Lions at Miami Dolphins" on the team's channel). */
+        var nl = near[r.w] || (near[r.w] = []);
+        if (nl.some(function (s) { return Math.abs(s - r.s) < close; })) return false;
+        var m = named(r);
+        if (m) {
+          var key = r.w + '|' + m, l = firsts[key] || (firsts[key] = []);
+          if (l.some(function (s) { return Math.abs(s - r.s) < Teams.SAME_GAME; })) return false;
+          l.push(r.s);
+        }
+        nl.push(r.s);
         return true;
       });
     }

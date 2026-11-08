@@ -185,6 +185,18 @@ Watch.tidy();
 const left = Store.edits.reminders.map(r => (r.s - T0) / H + 'h' + (r.w ? '' : ' (yours)')).join(', ');
 ok('one reminder per game: the overtime block and the later airings go, the game and the one two days on stay, and one you set yourself is left alone', left === '0h, 3h (yours), 48h', left);
 
+// Bob's TV (Nov 8): the Lions game twice, "Detroit Lions at Miami Dolphins" on the team's channel and
+// "Live: NFL Football" on the local CBS station, both at 1:00.  One reminder: the listing that names the game.
+const T1 = NOW + 3 * H, wl = 'team:nfl:det';
+Store.edits.reminders = [
+  { k: 'cbs', s: T1, e: T1 + 3 * H, t: 'Live: NFL Football', w: wl, g: 1 },
+  { k: 'lions', s: T1, e: T1 + 3 * H, t: 'Detroit Lions at Miami Dolphins', w: wl, g: 1 },
+  { k: 'pistons', s: T1 + 5 * H, e: T1 + 8 * H, t: 'Los Angeles Lakers at Detroit Pistons', w: 'team:nba:det', g: 1 }
+];
+Watch.tidy();
+const left2 = Store.edits.reminders.map(r => r.t).join(' | ');
+ok('one team, two listings of one game at the same time: one reminder, the one that names the game', left2 === 'Detroit Lions at Miami Dolphins | Los Angeles Lakers at Detroit Pistons', left2);
+
 // College football: full names anywhere, school names where it's college football, never nicknames alone.
 ok('college: full names in an event channel', ids(Teams.named('SMU Mustangs Virginia Tech Hokies', 'NCAAF 1 | ⬬ NCAA Football', all, true)) === 'ncaaf:smu,ncaaf:vt');
 ok('college: schools in a college football title', ids(Teams.named('College Football : Alabama at LSU ᴸᶦᵛᵉ', 'ESPN', all)) === 'ncaaf:ala,ncaaf:lsu');
