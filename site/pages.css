@@ -1,0 +1,69 @@
+/* tivibro.app inner pages (guides, comparisons, videos), built by scripts/site/build-pages.js.
+   Loads after style.css and uses its colours and buttons. */
+.top { background: rgba(7, 9, 26, 0.82); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); border-bottom-color: rgba(45, 55, 96, 0.55); }
+.page { padding: 112px 0 40px; }
+.page .wrap { max-width: 880px; }
+.page.wide .wrap { max-width: var(--max); }
+.crumbs { display: flex; flex-wrap: wrap; gap: 8px; font-size: 14px; color: var(--dim); margin: 0 0 22px; padding: 0; list-style: none; }
+.crumbs li + li::before { content: "/"; margin-right: 8px; color: var(--line2); }
+.crumbs a { color: var(--mute); }
+.page-head .kicker { color: var(--acc2); font-weight: 700; font-size: 13px; letter-spacing: .14em; text-transform: uppercase; margin: 0 0 10px; }
+.page-head h1 { font-size: clamp(32px, 5vw, 50px); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 18px; }
+.page-head .lead { font-size: 20px; color: var(--mute); margin: 0 0 14px; }
+.byline { font-size: 14px; color: var(--dim); margin: 0 0 30px; }
+.byline a { color: var(--mute); }
+.answer { border: 1px solid var(--line2); border-left: 4px solid var(--acc2); background: var(--panel); border-radius: 16px; padding: 18px 22px; margin: 0 0 34px; }
+.answer p { margin: 0; }
+.answer b:first-child { color: var(--acc2); }
+.prose h2 { font-size: 30px; line-height: 1.2; letter-spacing: -0.01em; margin: 52px 0 14px; }
+.prose h3 { font-size: 21px; margin: 32px 0 10px; }
+.prose p, .prose li { color: #d3d9ee; }
+.prose ul, .prose ol { padding-left: 24px; }
+.prose li { margin: 6px 0; }
+.prose figure { margin: 28px 0; }
+.prose figure img, .prose figure video { width: 100%; border-radius: 14px; border: 1px solid var(--line); background: #000; }
+.prose figcaption { font-size: 14px; color: var(--dim); margin-top: 10px; text-align: center; }
+.prose .pair { display: flex; gap: 14px; }
+.prose .pair figure { flex: 1; margin: 0; }
+.tbl { overflow-x: auto; margin: 22px 0; border: 1px solid var(--line); border-radius: 14px; }
+.tbl table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 560px; }
+.tbl th, .tbl td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl thead th { background: var(--panel2); color: var(--text); font-weight: 600; }
+.tbl tr:last-child td { border-bottom: 0; }
+.tbl td:first-child { color: var(--text); font-weight: 600; }
+.tbl .us td { background: rgba(91, 140, 255, .08); }
+.yes { color: var(--ok); font-weight: 600; }
+.no { color: var(--dim); }
+.steps-list { counter-reset: s; list-style: none; padding: 0 !important; }
+.steps-list > li { counter-increment: s; position: relative; padding: 4px 0 18px 56px; }
+.steps-list > li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 38px; height: 38px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 700; background: linear-gradient(135deg, var(--acc), var(--violet)); color: #fff; }
+.steps-list > li b:first-child { display: block; color: var(--text); font-size: 18px; margin-bottom: 2px; }
+.callout { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 16px 20px; margin: 22px 0; font-size: 15px; color: var(--mute); }
+.copy { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0; }
+.copy button { border: 1px solid var(--line2); background: var(--panel2); color: var(--text); border-radius: 10px; padding: 6px 12px; cursor: pointer; font: inherit; font-size: 14px; }
+.faq-list details { border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px; margin: 10px 0; background: var(--bg2); }
+.faq-list summary { cursor: pointer; font-weight: 600; color: var(--text); }
+.faq-list details p { margin: 10px 0 2px; color: #d3d9ee; }
+.related { display: flex; flex-wrap: wrap; gap: 12px; margin: 18px 0 0; }
+.related a { flex: 1 1 240px; border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: var(--panel); color: var(--text); }
+.related a:hover { border-color: var(--acc); text-decoration: none; }
+.related a small { display: block; color: var(--dim); font-size: 13px; }
+.page-cta { margin: 56px 0 10px; padding: 30px; border-radius: var(--radius); border: 1px solid var(--line2); background: radial-gradient(120% 140% at 0% 0%, rgba(91, 140, 255, .22), transparent 60%), var(--panel); text-align: center; }
+.page-cta h2 { margin: 0 0 8px; font-size: 28px; }
+.page-cta p { color: var(--mute); margin: 0 0 18px; }
+.page-cta .cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.vgrid { display: flex; flex-wrap: wrap; gap: 18px; margin: 24px 0; }
+.vcard { flex: 1 1 260px; max-width: calc(33.33% - 12px); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--panel); color: var(--text); }
+.vcard:hover { border-color: var(--acc); text-decoration: none; }
+.vcard img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; }
+.vcard span { display: block; padding: 12px 14px 4px; font-weight: 600; }
+.vcard small { display: block; padding: 0 14px 14px; color: var(--dim); }
+.player video { width: 100%; border-radius: 16px; border: 1px solid var(--line); background: #000; }
+.disclose { font-size: 14px; color: var(--dim); }
+@media (max-width: 760px) {
+  .page { padding-top: 92px; }
+  .prose .pair { flex-direction: column; }
+  .vcard { max-width: 100%; }
+  .links { display: none; }
+  .menu-open .links { display: flex; position: absolute; top: 64px; left: 12px; right: 12px; flex-direction: column; gap: 14px; padding: 18px; border-radius: 16px; background: var(--panel); border: 1px solid var(--line2); }
+}

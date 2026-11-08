@@ -76,7 +76,8 @@ var urls = pages(out, '').filter(function (rel) {
   return indexable(fs.readFileSync(path.join(out, rel), 'utf8'));
 }).sort(function (a, b) { return a.length - b.length || (a < b ? -1 : 1); }).map(function (rel) {
   var loc = ORIGIN + '/' + rel.replace(/index\.html$/, '');
-  var mod = lastmod(rel);
+  // Pages built by build-pages.js have no file in site/: their words live in scripts/site/.
+  var mod = fs.existsSync(path.join('site', rel)) ? lastmod(rel) : lastmod('../scripts/site');
   return '  <url><loc>' + loc + '</loc>' + (mod ? '<lastmod>' + mod + '</lastmod>' : '') + '</url>';
 });
 fs.writeFileSync(path.join(out, 'sitemap.xml'),

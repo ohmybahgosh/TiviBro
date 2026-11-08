@@ -31,7 +31,7 @@ jobs:
         run: |
           mkdir -p _site/media
           cp -r site/. _site/
-          cp docs/media/guide.mp4 docs/media/live-edit.mp4 _site/media/
+          cp docs/media/*.mp4 _site/media/   # every demo clip: the home page and tivibro.app/videos/
       - name: Short addresses for the Homebrew Channel and the installer
         # tivibro.app/repo, /testing and /install serve the files on the homebrew branch as they are
         # (no redirect: the Homebrew Channel and curl read them straight).  .json and .sh copies too.
@@ -55,6 +55,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/logos/build-index.js _site/logos
+      - name: Guides, comparisons and video pages (scripts/site/pages.js, videos.js)
+        run: node scripts/site/build-pages.js _site
       - name: Search engines (FAQ structured data and sitemap.xml)
         run: node scripts/site/seo.js _site
       - name: List the site
