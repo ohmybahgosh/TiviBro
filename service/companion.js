@@ -285,7 +285,7 @@ function create(opts) {
   }
 
   // The web editor for this phone, signed in.  Starts TiviBro (which starts the editor) if needed.
-  function editor(req, p, cb) {
+  function editor(req, p, cb, body) {
     var ed = opts.editor && opts.editor(), s = ed && ed.status();
     if (s && s.running) {
       var host = String(req.headers.host || '').replace(/:\d+$/, '') || (addresses()[0] || '');
@@ -296,6 +296,8 @@ function create(opts) {
     changed();
     var app = opts.app ? opts.app() : {};
     if (app.open) return cb(null, { ok: true, state: 'starting', message: 'Starting the editor on the TV…' });
+    // The editor runs inside TiviBro: opened only when the phone says so (its Open TiviBro), not by itself.
+    if (!(body && body.open)) { wantEditor = 0; changed(); return cb(null, { ok: true, state: 'closed', error: 'TiviBro is closed on the TV, and the web editor runs inside it.  Open TiviBro, then try again.' }); }
     openApp({ companion: { editor: true } }, function (e) {
       if (e) return cb(null, { ok: false, state: 'off', error: 'Could not open TiviBro on the TV: ' + e.message });
       cb(null, { ok: true, state: 'starting', message: 'Opening TiviBro on the TV…' });
@@ -318,7 +320,14 @@ function create(opts) {
     var w = phoneWait; phoneWait = [];
     w.forEach(function (x) { clearTimeout(x.timer); x.go(); });
   }
-  // A command for TiviBro.  If TiviBro is closed, it is opened first and finds the command waiting.
+  /* A command for TiviBro.  If TiviBro is closed, it is opened first and finds the command waiting: the
+     remote's buttons and Play on TV (/v1/key, action, text, play) are meant for it, and so is finding
+     something to watch (the guide, movies and shows, My media).  Changing things (Settings, channels,
+     favorites, reminders, playlists, backups) and the web editor don't open it: they answer "closed", and
+     the phone offers Open TiviBro.  A setting changed from the phone never brings TiviBro up over what the
+     TV is showing. */
+  var CHANGES = { settings: 1, chan: 1, vis: 1, fav: 1, remind: 1, reminders: 1, snaps: 1, playlist: 1, input: 1, backup: 1, restore: 1, logs: 1, mymedia: 1, mediaedit: 1 };
+  var CLOSED = 'TiviBro is closed on the TV.  It opens by itself only to watch something: open it (Open TiviBro), then try again.';
   function queue(cmd, from) {
     var t = Date.now();
     cmds = cmds.filter(function (c) { return t - c.at < CMD_TTL; });
@@ -373,7 +382,7 @@ function create(opts) {
     if (!j || typeof j.what !== 'string' || !Object.prototype.hasOwnProperty.call(ASKS, j.what)) return reply(400, { error: 'unknown question', code: 'bad' });
     if (SEALED[j.what] && !sealed) return reply(400, { error: 'This needs a sealed request.', code: 'sealed' });
     var args = j.args && typeof j.args === 'object' ? j.args : {};
-    if (j.noOpen && !appOpen()) return reply(200, { ok: true, closed: true });
+    if ((j.noOpen || CHANGES[j.what]) && !appOpen()) return reply(200, { ok: true, closed: true, msg: CLOSED });
     var cmd = { type: 'ask', what: j.what, args: args };
     var how = queue(cmd, p.name);
     var w = asks[cmd.id] = { reply: reply };
@@ -430,7 +439,7 @@ function create(opts) {
         if (pathOnly === '/v1/open' && req.method === 'POST') {
           return openApp({ companion: { open: true } }, function (e) { if (e) return reply(502, { error: 'Could not open TiviBro on the TV: ' + e.message, code: 'launch' }); reply(200, { ok: true }); });
         }
-        if (pathOnly === '/v1/editor' && req.method === 'POST') return editor(req, p, function (e, r) { reply(r.ok ? 200 : 502, r); });
+        if (pathOnly === '/v1/editor' && req.method === 'POST') return editor(req, p, function (e, r) { reply(r.ok ? 200 : 502, r); }, parse(buf));
         if (pathOnly === '/v1/state' && req.method === 'GET') return phoneState(res, u, reply);
         if (pathOnly === '/v1/lineup' && req.method === 'GET') return phoneLineup(u, reply);
         if (/^\/v1\/(key|action|play|text)$/.test(pathOnly) && req.method === 'POST') return phoneCommand(pathOnly, buf, p, reply);

@@ -276,7 +276,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
             val page = e.arguments?.getString("page").orEmpty()
             val tv = model.tv(id)
             if (tv == null) { LaunchedEffect(Unit) { nav.popBackStack() }; return@composable }
-            EditorScreen(name = tv.name, host = tv.host, load = { progress -> model.editorUrl(id, progress) }, onBack = { nav.popBackStack() }, say = { model.say(it) },
+            EditorScreen(name = tv.name, host = tv.host, load = { progress, open -> model.editorUrl(id, progress, open) }, onBack = { nav.popBackStack() }, say = { model.say(it) },
                 keeper = remember(id) { model.editorKeeper(id) }, page = page,
                 // The editor's My media, Backups, Reminders or Settings: close the editor and open the phone's own screen.
                 onOpen = { where -> if (nav.currentBackStackEntry?.id == e.id) { nav.popBackStack(); go(id, where) } })

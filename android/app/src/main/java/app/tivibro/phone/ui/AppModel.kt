@@ -386,12 +386,13 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     /* ---------- the web editor ---------- */
 
     /** The editor's address for this phone: asks until TiviBro has started it (up to about a minute). */
-    suspend fun editorUrl(id: String, progress: (String) -> Unit): String = withContext(Dispatchers.IO) {
+    /** [open]: TiviBro may be opened for it (Open TiviBro was pressed); otherwise a closed TiviBro is an error ("closed"). */
+    suspend fun editorUrl(id: String, progress: (String) -> Unit, open: Boolean = false): String = withContext(Dispatchers.IO) {
         val tv = tv(id) ?: throw TbException("This TV is no longer paired.")
         val end = System.currentTimeMillis() + 60_000
         var url: String? = null
         while (url == null) {
-            when (val s = TvClient(tv).editor()) {
+            when (val s = TvClient(tv).editor(open)) {
                 is EditorState.Ready -> {
                     if (!editorUrlOk(s.url, tv)) throw TbException("The TV sent an editor address this app doesn't trust.")
                     url = s.url
@@ -492,6 +493,8 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         var busy = false
         repeat(tries) { i ->
             val r = TvClient(tv, timeoutMs).ask(what, args, seal)
+            // TiviBro closed: the TV opens it by itself only to play something, not to change a setting or a channel.
+            if (r.optBoolean("closed")) throw TbException(r.optString("msg").ifBlank { "TiviBro is closed on the TV.  Open it, then try again." }, "closed")
             if (!r.optBoolean("pending")) return@withContext r.optJSONObject("data") ?: JSONObject()
             busy = r.optBoolean("busy")
             if (i < tries - 1) delay(1200)

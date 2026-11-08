@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The phone app no longer opens TiviBro on the TV just to change something.**  Changing a setting, showing or hiding channels, renaming, favorites, reminders, backups and the web editor wait for TiviBro to be open, and the phone says so with an **Open TiviBro on the TV** button, instead of bringing TiviBro up over whatever the TV is showing.  Playing something from the phone (a channel, a movie or show, My media), finding something to watch, and the phone's remote still open it.
+
 ## 0.6.0 (alpha 104, 2026-11-07)
 
 Pre-release: expect rough edges, and keep a backup before installing.

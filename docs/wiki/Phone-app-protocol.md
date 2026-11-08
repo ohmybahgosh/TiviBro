@@ -74,7 +74,7 @@ All signed like the calls above.  TiviBro carries out each command once; if Tivi
 
 ## Questions for TiviBro
 
-`POST /v1/ask` with `{ "what": "...", "args": { ... } }`, signed like every call.  TiviBro on the TV answers (it is opened first when closed), and the phone waits for it: `{ ok: true, data }`.  TiviBro's own refusals come back as `409` with `code: "tv"` and a reason to show.  `{ pending: true }` means TiviBro didn't answer in time (it may still be opening); ask again.  With `"noOpen": true` and TiviBro closed, the answer is `{ closed: true }` and nothing opens (the app's automatic backups).
+`POST /v1/ask` with `{ "what": "...", "args": { ... } }`, signed like every call.  TiviBro on the TV answers, and the phone waits for it: `{ ok: true, data }`.  When TiviBro is closed, questions about something to watch (the guide, movies and shows, My media, playing them) open it first; changes (`settings`, `chan`, `vis`, `fav`, `remind`, `reminders`, `snaps`, `playlist`, `input`, `backup`, `restore`, `logs`, `mymedia`, `mediaedit`) don't, and answer `{ closed: true, msg }` so the phone can offer Open TiviBro.  `POST /v1/editor` likewise answers `state: "closed"` unless the body says `{ "open": true }`.  TiviBro's own refusals come back as `409` with `code: "tv"` and a reason to show.  `{ pending: true }` means TiviBro didn't answer in time (it may still be opening); ask again.  With `"noOpen": true` and TiviBro closed, the answer is `{ closed: true }` and nothing opens (the app's automatic backups).
 
 | what | args | data |
 |---|---|---|

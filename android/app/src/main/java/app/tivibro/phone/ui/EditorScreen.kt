@@ -127,7 +127,7 @@ interface Keeper {
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun EditorScreen(
-    name: String, host: String, load: suspend ((String) -> Unit) -> String, onBack: () -> Unit, say: (String) -> Unit, keeper: Keeper? = null,
+    name: String, host: String, load: suspend ((String) -> Unit, Boolean) -> String, onBack: () -> Unit, say: (String) -> Unit, keeper: Keeper? = null,
     /** An editor page to open on (its id, such as "names"), or "" for the first page. */
     page: String = "",
     /** The editor asked for one of the phone's own screens: media, backups, reminders or settings. */
@@ -138,6 +138,9 @@ fun EditorScreen(
     var status by remember { mutableStateOf("Asking the TV for the editor…") }
     var error by remember { mutableStateOf<String?>(null) }
     var attempt by remember { mutableIntStateOf(0) }
+    // TiviBro closed on the TV: it isn't opened just for the editor, only when you press Open TiviBro here.
+    var closed by remember { mutableStateOf(false) }
+    var openIt by remember { mutableStateOf(false) }
     var progress by remember { mutableIntStateOf(0) }
     var web by remember { mutableStateOf<WebView?>(null) }
     var pendingFile by remember { mutableStateOf<ValueCallback<Array<Uri>>?>(null) }
@@ -155,8 +158,9 @@ fun EditorScreen(
     }
 
     LaunchedEffect(attempt) {
-        error = null; url = null; status = "Asking the TV for the editor…"
-        try { url = editorPageUrl(load { status = it }, page) } catch (e: TbException) { error = e.message } catch (e: Exception) { error = "$name didn't answer.  Is it on, and on the same network?" }
+        error = null; url = null; status = "Asking the TV for the editor…"; closed = false
+        val open = openIt; openIt = false
+        try { url = editorPageUrl(load({ status = it }, open), page) } catch (e: TbException) { error = e.message; closed = e.code == "closed" } catch (e: Exception) { error = "$name didn't answer.  Is it on, and on the same network?" }
     }
     // Back closes what is open in the editor, then goes back through its pages (tbBack in the editor),
     // and only then leaves it.  An older TiviBro's editor has no tbBack: back leaves.
@@ -183,6 +187,7 @@ fun EditorScreen(
                 error != null -> Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                     Text(error ?: "", textAlign = TextAlign.Center, style = MaterialTheme.typography.bodyLarge)
                     Spacer(Modifier.height(20.dp))
+                    if (closed) { Button(onClick = { openIt = true; attempt++ }) { Text("Open TiviBro on the TV") }; Spacer(Modifier.height(8.dp)) }
                     Button(onClick = { attempt++ }) { Text("Try again") }
                 }
                 u == null -> Column(Modifier.fillMaxSize().padding(28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {

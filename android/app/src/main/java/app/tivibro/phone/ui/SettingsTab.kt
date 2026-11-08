@@ -62,6 +62,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.tivibro.phone.proto.TbException
 import app.tivibro.phone.proto.TvDialog
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
@@ -103,6 +104,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
     var path by remember { mutableStateOf(listOf<Int>()) }
     var page by remember { mutableStateOf<SetPage?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    var closed by remember { mutableStateOf(false) }               // TiviBro is closed on the TV (it isn't opened just for Settings)
     var busy by remember { mutableStateOf(false) }
     var picking by remember { mutableStateOf<SetRow?>(null) }
     var showLog by remember { mutableStateOf(false) }
@@ -112,7 +114,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
 
     // Every request carries where we are and the PIN (if one was typed); the answer may say "locked".
     fun send(op: String, extra: JSONObject = JSONObject(), timeoutMs: Int = 45_000, tries: Int = 2, then: (JSONObject) -> Unit) {
-        busy = true; error = null
+        busy = true; error = null; closed = false
         scope.launch {
             try {
                 val a = extra.put("op", op)
@@ -121,7 +123,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
                 if (pin.isNotEmpty()) a.put("pin", pin)
                 val r = model.ask(id, "settings", a, seal = true, timeoutMs = timeoutMs, tries = tries)
                 if (r.optBoolean("locked")) { askPin = r.optString("msg"); pin = "" } else then(r)
-            } catch (e: TbException) { error = e.message }
+            } catch (e: TbException) { error = e.message; closed = e.code == "closed" }
             catch (e: Exception) { error = "The TV didn't answer.  Is it on, and on the same network?" }
             busy = false
         }
@@ -164,6 +166,10 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
             Spacer(Modifier.width(12.dp))
         }
         error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 6.dp)) }
+        if (closed) Button(onClick = {
+            closed = false; model.openTiviBro(id)
+            scope.launch { delay(5000); if (sec == null) loadSections() else loadPage() }
+        }, modifier = Modifier.padding(16.dp, 4.dp)) { Text("Open TiviBro on the TV") }
         when {
             sec == null -> {
                 val l = sections
