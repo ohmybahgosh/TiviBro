@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **The phone app no longer opens TiviBro on the TV just to change something.**  Changing a setting, showing or hiding channels, renaming, favorites, reminders, backups and the web editor wait for TiviBro to be open, and the phone says so with an **Open TiviBro on the TV** button, instead of bringing TiviBro up over whatever the TV is showing.  Playing something from the phone (a channel, a movie or show, My media), finding something to watch, and the phone's remote still open it.
-
-## 0.6.0 (alpha 104, 2026-11-07)
+## 0.6.0 (alpha 105, 2026-11-07)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 104
+### New in alpha 105
+
+- **The phone app no longer opens TiviBro on the TV just to change something.**  Changing a setting, showing or hiding channels, renaming, favorites, reminders, backups and the web editor wait for TiviBro to be open, and the phone says so with an **Open TiviBro on the TV** button, instead of bringing TiviBro up over whatever the TV is showing.  Playing something from the phone (a channel, a movie or show, My media), finding something to watch, and the phone's remote still open it.
+
+### In alpha 104
 
 - **Your provider's guide comes first.**  An extra guide source used to win over your provider's guide for any channel it had, and a sports guide stood in whenever it reached half a day further, even when its programmes were wrong.  Now the provider's guide is read first, and another guide takes a channel over only where their programmes agree (similar titles at the same times over the next day); then its extra days are welcome.  More days of another channel's schedule, or the right one hours off, don't win.  Sources still fill the channels your provider has no guide for.  The web editor says per source how many channels it took over and how many it left to the provider.
 - **The TV, the web editor and the phone app stay in step.**  A save from the web editor (on a computer or in the phone app) now puts only its own changes on top of what the TV has: a channel or group hidden, or shown again, on the TV a moment before is no longer undone.  What changes on the TV reaches an open web editor within a second or two, and the phone app's channel list follows by itself instead of when you leave and come back.
