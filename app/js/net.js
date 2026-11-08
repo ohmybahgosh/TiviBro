@@ -57,7 +57,7 @@ var Net = (function () {
             lastError = 'helper refused: ' + (r.errorText || r.errorCode || 'no reason given');
             Log.error('net', lastError);
             if (state === 'starting') { state = 'off'; clearTimeout(timer); settle(); }
-            else if (state === 'on') { Log.error('net', 'Helper subscription dropped while running'); }
+            else if (state === 'on') { Log.error('net', 'Helper subscription dropped while running'); restart('its subscription dropped'); }
           }
         };
         Log.info('net', 'Starting network helper (luna://app.tivibro.tv.service/start)');
@@ -65,6 +65,35 @@ var Net = (function () {
       } catch (e) { lastError = 'could not call the helper: ' + e.message; state = 'off'; clearTimeout(timer); settle(); }
     });
   }
+
+  /* The helper carries every stream, so it must not stay gone: while it runs it is asked how it is every
+     15 s (and the moment its subscription drops).  Two pings in a row unanswered: start it again, and tell
+     whoever listens (the player starts the channel again through it). */
+  var misses = 0, restarting = false, restartListeners = [];
+  function ping(ms) {
+    if (!port) return Promise.resolve(false);
+    return Promise.race([
+      fetch('http://127.0.0.1:' + port + '/ping', { cache: 'no-store' }).then(function (r) { return r.ok; }, function () { return false; }),
+      new Promise(function (r) { setTimeout(function () { r(false); }, ms || 4000); })
+    ]);
+  }
+  function restart(why) {
+    if (restarting || +localStorage.getItem('tivibro.devRelay')) return;
+    restarting = true; misses = 0;
+    Log.warn('net', 'Starting the network helper again (' + why + ')');
+    try { if (bridge) bridge.cancel(); } catch (e) {}
+    bridge = null; port = 0; state = 'off';
+    start(10000).then(function (p) {
+      restarting = false;
+      if (!p) { Log.error('net', 'The network helper did not start again: ' + lastError); return; }
+      Log.info('net', 'The network helper is back on port ' + p);
+      restartListeners.forEach(function (f) { try { f(p); } catch (e) {} });
+    });
+  }
+  setInterval(function () {
+    if (state !== 'on' || restarting || !bridge || document.hidden) return;
+    ping(4000).then(function (ok) { if (ok) misses = 0; else if (++misses >= 2) restart('no answer to two pings'); });
+  }, 15000);
 
   function useRelay() {
     var m = Store.settings.network || 'auto';
@@ -123,7 +152,7 @@ var Net = (function () {
   }
 
   return {
-    start: start, wrap: wrap, unwrap: unwrap, retryImage: retryImage, get ua() { return ua(); }, uaFor: uaFor,
+    start: start, wrap: wrap, unwrap: unwrap, ping: ping, restart: restart, onRestart: function (f) { restartListeners.push(f); }, retryImage: retryImage, get ua() { return ua(); }, uaFor: uaFor,
     // Guides: the helper unzips .gz on every TV.  Without it, only browsers with DecompressionStream can.
     get canUnzip() { return !!useRelay() || typeof DecompressionStream !== 'undefined'; },
     xfer: function (id) { return port ? 'http://127.0.0.1:' + port + '/xfer/' + id : ''; },

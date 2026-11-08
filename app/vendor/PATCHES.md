@@ -17,6 +17,13 @@ left one behind, in the browser's blob storage where the app's own memory figure
 zapping on a TV with little memory ran it out.  The URL is now made the first time and kept in
 `self.__tbWorkerURL<module>`, and every later worker starts from it (mpegts never revokes `objectURL`).
 
+Letting go of a stalled stream: `FetchStreamLoader.abort` never aborted a fetch that was buffering on Chrome
+(it waited for the next chunk to cancel it), and Chrome 53 (webOS 4) has no AbortController at all.  So a
+stream that had stopped sending, the usual reason to reconnect, kept its connection to the provider open
+until the helper's idle timeout, and the reconnect needed a second connection (refused by providers that
+allow one).  The loader now keeps its reader (`_reader`, set in `open`) and `abort` cancels it whenever it
+doesn't call the AbortController; `_pump` stops at once after an abort (no "complete" or error after it).
+
 Re-apply after upgrading mpegts.js.  `hls.min.js` (1.5.20) is unmodified.
 
 ## qrcode.js
