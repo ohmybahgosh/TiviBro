@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 104, 2026-11-07)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 104
 
 - **Your provider's guide comes first.**  An extra guide source used to win over your provider's guide for any channel it had, and a sports guide stood in whenever it reached half a day further, even when its programmes were wrong.  Now the provider's guide is read first, and another guide takes a channel over only where their programmes agree (similar titles at the same times over the next day); then its extra days are welcome.  More days of another channel's schedule, or the right one hours off, don't win.  Sources still fill the channels your provider has no guide for.  The web editor says per source how many channels it took over and how many it left to the provider.
 - **The TV, the web editor and the phone app stay in step.**  A save from the web editor (on a computer or in the phone app) now puts only its own changes on top of what the TV has: a channel or group hidden, or shown again, on the TV a moment before is no longer undone.  What changes on the TV reaches an open web editor within a second or two, and the phone app's channel list follows by itself instead of when you leave and come back.
@@ -9,11 +13,7 @@
 - **Back after watching a channel from Search** (issue #63) lands on that channel in its own group, in the guide or the channel list (whichever is your start screen), instead of an empty list or a channel from the group you looked at before; zapping goes through its neighbours; and going back to Search shows your results, at the one you picked, rather than the keyboard.
 - **Quicker to move around in the guide.**  The button hints at the bottom were rebuilt and measured on every move; now only when they change, and measured once per frame.
 
-## 0.6.0 (alpha 103, 2026-11-07)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 103
+### In alpha 103
 
 - **Sound on channels sent as AAC above 48 kHz.**  A college football game came as AAC at 96 kHz (mono), which the TV played with no sound.  TiviBro now spots that rate as the channel starts and plays it through the audio converter, which turns it into Dolby Digital at 48 kHz; it says "Converting AAC at 96 kHz audio for this TV".  Movies and episodes with sound above 48 kHz get the same.
 - **A stream format for one channel.**  Hold OK on a channel (or Options while it plays) > **Stream format…**: Automatic, HLS or MPEG-TS for that channel, whatever Settings > Playback > Stream format says.  Handy for the one channel that stutters as MPEG-TS, or won't start as HLS.  The channel playing starts again in the new format; Settings > Playback lists the channels that have their own and clears them.  Xtream Codes channels.
