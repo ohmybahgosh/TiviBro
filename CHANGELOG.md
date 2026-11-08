@@ -1,9 +1,5 @@
 # Changelog
 
-## Unreleased
-
-- **The phone app's web editor no longer hangs on "Starting the editor on the TV…".**  With TiviBro in the background (Home, another input or app), webOS pauses it, so it never started the editor and the phone waited for ever.  The phone now says TiviBro is closed or in the background, with **Open TiviBro on the TV**; the same for changing a setting or a channel from the phone.
-
 ## 0.6.0 (alpha 105, 2026-11-07)
 
 Pre-release: expect rough edges, and keep a backup before installing.

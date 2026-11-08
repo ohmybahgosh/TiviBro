@@ -294,9 +294,10 @@ function create(opts) {
     }
     wantEditor = Date.now();
     changed();
-    if (appOpen()) return cb(null, { ok: true, state: 'starting', message: 'Starting the editor on the TV…' });
+    var app = opts.app ? opts.app() : {};
+    if (app.open) return cb(null, { ok: true, state: 'starting', message: 'Starting the editor on the TV…' });
     // The editor runs inside TiviBro: opened only when the phone says so (its Open TiviBro), not by itself.
-    if (!(body && body.open)) { wantEditor = 0; changed(); return cb(null, { ok: true, state: 'closed', error: 'TiviBro is closed on the TV (or in the background, where the TV pauses it), and the web editor runs inside it.  Open TiviBro, then try again.' }); }
+    if (!(body && body.open)) { wantEditor = 0; changed(); return cb(null, { ok: true, state: 'closed', error: 'TiviBro is closed on the TV, and the web editor runs inside it.  Open TiviBro, then try again.' }); }
     openApp({ companion: { editor: true } }, function (e) {
       if (e) return cb(null, { ok: false, state: 'off', error: 'Could not open TiviBro on the TV: ' + e.message });
       cb(null, { ok: true, state: 'starting', message: 'Opening TiviBro on the TV…' });
@@ -310,11 +311,7 @@ function create(opts) {
   var ACTIONS = ['guide', 'search', 'settings', 'live', 'movies', 'shows', 'last', 'fav', 'favorites', 'recents', 'audio', 'picture', 'exit', 'restart', 'reconnect', 'list', 'panel', 'osd', 'menu'];
   var CMD_TTL = 40000, HOLD = 20000;
 
-  /* TiviBro running and on screen.  Sent to the background (Home, another input or app), webOS soon freezes
-     it: it is still running but answers nothing until it is brought back, so for the phone it counts as
-     closed (a phone waiting on it waited for ever: "Starting the editor on the TV…").  visible is what
-     TiviBro last said (remind.js); unknown counts as on screen. */
-  function appOpen() { var a = opts.app ? opts.app() : {}; return !!a.open && a.visible !== false; }
+  function appOpen() { var a = opts.app ? opts.app() : {}; return !!a.open; }
   function flushApp() {
     var w = appWait; appWait = [];
     w.forEach(function (x) { clearTimeout(x.timer); x.go(); });
@@ -330,7 +327,7 @@ function create(opts) {
      the phone offers Open TiviBro.  A setting changed from the phone never brings TiviBro up over what the
      TV is showing. */
   var CHANGES = { settings: 1, chan: 1, vis: 1, fav: 1, remind: 1, reminders: 1, snaps: 1, playlist: 1, input: 1, backup: 1, restore: 1, logs: 1, mymedia: 1, mediaedit: 1 };
-  var CLOSED = 'TiviBro is closed on the TV, or in the background, where the TV pauses it.  It comes up by itself only to watch something: open it (Open TiviBro), then try again.';
+  var CLOSED = 'TiviBro is closed on the TV.  It opens by itself only to watch something: open it (Open TiviBro), then try again.';
   function queue(cmd, from) {
     var t = Date.now();
     cmds = cmds.filter(function (c) { return t - c.at < CMD_TTL; });

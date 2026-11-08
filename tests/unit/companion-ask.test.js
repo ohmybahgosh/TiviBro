@@ -11,8 +11,8 @@ let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined && !c ? '  ' + String(x).slice(0, 300) : '')); if (!c) fails++; };
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-ask-'));
 const launched = [];
-let open = true, visible = true;
-const c = Companion.create({ dir, version: 'test', log: () => {}, launch: (p, cb) => { launched.push(p); cb(null); }, sysinfo: (cb) => cb({ model: 'X', webos: '1', name: 'Den' }), app: () => ({ open, visible }), editor: () => null });
+let open = true;
+const c = Companion.create({ dir, version: 'test', log: () => {}, launch: (p, cb) => { launched.push(p); cb(null); }, sysinfo: (cb) => cb({ model: 'X', webos: '1', name: 'Den' }), app: () => ({ open }), editor: () => null });
 function ctl(u, body) {
   return new Promise((resolve) => {
     const res = Object.assign(new (require('events'))(), { code: 0, writeHead(x) { this.code = x; }, end(b) { resolve({ code: this.code, j: JSON.parse(b) }); } });
@@ -81,11 +81,6 @@ async function tivibro() {
   await new Promise((res) => setTimeout(res, 400));
   ok('playing a movie from the phone opens TiviBro', launched.length === before + 1 && launched[before].companion.open, JSON.stringify(launched));
   open = true;
-  // In the background webOS pauses TiviBro: running, but nothing answers.  That counts as closed.
-  visible = false;
-  r = await C.ask(cred, 'settings', { op: 'sections' }, { seal: true });
-  ok('TiviBro in the background: a setting answers "closed" at once (it would never be picked up)', r.ok && r.closed === true && /background/.test(r.msg || ''), JSON.stringify(r));
-  visible = true;
 
   const t0 = Date.now();
   stop = true;
