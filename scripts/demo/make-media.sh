@@ -42,6 +42,11 @@ if [ ! -s "$OUT/chaos.ts" ]; then
     -vf "drawtext=fontfile=$FONT:text='%{pts\\:hms}':fontcolor=white:fontsize=48:x=40:y=40:box=1:boxcolor=black@0.6" \
     -c:v libx264 -preset ultrafast -profile:v main -pix_fmt yuv420p -g 50 -b:v 1200k -c:a aac -b:a 64k -shortest -f mpegts "$OUT/chaos.ts"
 fi
+# A radio station: sound only (tests/soak/radio.js, MOCK_RADIO=1).
+if [ ! -s "$OUT/radio.ts" ]; then
+  echo "making radio.ts"
+  ffmpeg -hide_banner -loglevel error -y -f lavfi -i "sine=f=330:r=48000" -t 120 -c:a aac -b:a 64k -f mpegts "$OUT/radio.ts"
+fi
 # Closed captions (tests/soak/captions.js): CEA-608 in the video, the way US channels carry them, and
 # the time on screen so you can see the captions keep up.
 if [ ! -s "$OUT/cc.ts" ]; then

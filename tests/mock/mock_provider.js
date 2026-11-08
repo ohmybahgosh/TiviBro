@@ -89,6 +89,12 @@ if (process.env.MOCK_CC) {
   cats.push({ category_id: String(ci + 1), category_name: 'TEST | Captions', parent_id: 0 });
   streams.push({ num: 990, name: 'Caption Test', stream_type: 'live', stream_id: 990, stream_icon: '', epg_channel_id: '', added: '1761000000', category_id: String(ci + 1), tv_archive: 0, tv_archive_duration: 0, clip: 'cc', base: 'Caption Test', ci });
 }
+// MOCK_RADIO=1: a "TEST | Radio" group with a station that is sound only (tests/soak/radio.js).
+if (process.env.MOCK_RADIO) {
+  const ci = cats.length;
+  cats.push({ category_id: String(ci + 1), category_name: 'TEST | Radio', parent_id: 0 });
+  streams.push({ num: 980, name: 'Radio Test FM', stream_type: 'live', stream_id: 980, stream_icon: '', epg_channel_id: '', added: '1761000000', category_id: String(ci + 1), tv_archive: 0, tv_archive_duration: 0, clip: 'radio', base: 'Radio Test FM', ci });
+}
 // MOCK_CHAOS=1: a "TEST | Chaos" group of deliberately sloppy streams (tests/mock/chaos.js).
 const CHAOS = process.env.MOCK_CHAOS ? require('./chaos') : null;
 if (CHAOS) {
