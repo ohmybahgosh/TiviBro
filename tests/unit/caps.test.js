@@ -17,6 +17,9 @@ ok('not webOS on a desktop browser', C.webosVersion('Mozilla/5.0 (X11; Linux x86
 ok('OLED65C2PUA is a 2022 model', C.modelYear('OLED65C2PUA') === 2022);
 ok('OLED55CXPUA is a 2020 model', C.modelYear('OLED55CXPUA') === 2020);
 ok('OLED77G4WUA is a 2024 model', C.modelYear('OLED77G4WUA') === 2024);
+// Issue #64: HD and Full HD sets count as small (about 1 GB), 4K ones don't.
+['32LM6300PLA', '43LK5900PLA', '32LQ63006LA', '43LJ5500'].forEach((m) => ok(m + ' is a small TV', C.smallTv(m)));
+['OLED65C2PUA', '65UM7300PUA', '55SM8600PUA', '43UN7300', '50NANO75UPA', ''].forEach((m) => ok((m || 'no model') + ' is not', !C.smallTv(m)));
 ok('OLED65C9PUA is a 2019 model', C.modelYear('OLED65C9PUA') === 2019);
 ok('65UQ7570PUJ is a 2022 model', C.modelYear('65UQ7570PUJ') === 2022);
 ok('unknown model gives 0', C.modelYear('') === 0);

@@ -1456,6 +1456,14 @@ var Settings = (function () {
   }
   var forPhone = {
     _timeout: function () { endCapture(); },          // tests: as if a minute passed
+    _convUnknown: function () { convSt = null; convAt = 0; },     // tests: as if Settings had just started
+    /* Before a page goes to the phone: the audio converter's state, read in the background, is known (up to 3 s).
+       Without it the phone got "checking…" for good and a "Get the converter now" that, by the time it was
+       pressed, had become "The converter comes with TiviBro": "That can't be changed that way". */
+    ready: function () {
+      if (typeof Convert === 'undefined' || convSt || typeof Net === 'undefined' || !Net.port) return Promise.resolve();
+      return Promise.race([Convert.status(true).then(function (x) { convSt = x; convAt = Date.now(); }), new Promise(function (r) { setTimeout(r, 3000); })]);
+    },
     sections: function () { return SECTIONS.filter(function (x, i) { return shown(i); }).map(function (x) { return { id: x[0], title: title(x) }; }); },
     page: function (secId, path) { var p = rowsOf(secId, path); return { title: p.title, trail: p.trail, rows: p.list.map(rowData).filter(function (r, n) { return !p.list[n].preview; }) }; },   // pictures (a preview, the TMDB credit) stay on the TV
     // op: 'toggle' (on), 'choice' (v: the choice's index), 'cycle' (dir), 'action', 'answer' (to a dialog).
@@ -1500,7 +1508,8 @@ var Settings = (function () {
         Store.saveSettings();
         return settle(c2, secId, path);
       }
-      else throw new Error('That can\'t be changed that way');
+      // The row isn't what the phone showed (it changed on the TV meanwhile): the page as it is now.
+      else return { msg: 'That changed on the TV.  Here it is now.', page: forPhone.page(secId, path) };
       Store.saveSettings();
       return { msg: msg, page: forPhone.page(secId, path) };
     }

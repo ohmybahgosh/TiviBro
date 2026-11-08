@@ -183,8 +183,22 @@ var Epg = (function () {
   function shortAllowed(ch) { var p = ch ? PL(ch) : P(); return p.type === 'xtream' && p.providerEpg === 'short'; }
 
   /* ---------- Xtream short EPG ---------- */
+  /* When the provider's per-channel guide keeps failing (a panel answering 502 for every channel), stop asking for
+     a while instead of going through every channel in view: about a hundred failed requests in a few seconds on
+     a TV that was already struggling, all in the log (issue #64).  Five failures in a row pause it for 2 minutes,
+     then twice that each time it's still failing (at most 20 minutes); one answer starts it again at once. */
+  var fails = 0, pausedTill = 0, pauseMs = 0, pauseTimer = null;
+  function failed() {
+    if (++fails < 5) return;
+    pauseMs = Math.min(pauseMs ? pauseMs * 2 : 120000, 20 * 60000);
+    pausedTill = Date.now() + pauseMs; fails = 0;
+    Log.warn('guide', 'The provider\'s per-channel guide keeps failing; asking again in ' + Math.round(pauseMs / 60000) + ' min');
+    clearTimeout(pauseTimer); pauseTimer = setTimeout(pump, pauseMs + 50);
+  }
+  function answered() { fails = 0; pauseMs = 0; pausedTill = 0; }
   function pump() {
-    while (inflight < MAX && queue.length) {
+    if (Date.now() < pausedTill) return;
+    while (inflight < MAX && queue.length && Date.now() >= pausedTill) {
       var job = queue.pop();                        // LIFO: what you are looking at now wins
       if (Date.now() - job.t > 4000) { var j = cache.get(job.ch.k); if (j && j.pending) cache.delete(job.ch.k); continue; }
       inflight++;
@@ -201,10 +215,11 @@ var Epg = (function () {
         var e = +p.stop_timestamp ? +p.stop_timestamp * 1000 : Date.parse((p.end || p.stop || '').replace(' ', 'T') + 'Z');
         return { s: s + off, e: e + off, t: U.b64utf8(p.title), d: U.b64utf8(p.description) };
       }).filter(function (p) { return p.e > p.s && isFinite(p.s); }).sort(function (a, b) { return a.s - b.s; });
+      answered();
       cache.set(k, { at: Date.now(), list: untangle(list) });
       if (xmlMode) vote(ch, list);
       emit(k);
-    }).catch(function () { cache.set(k, { at: Date.now() - TTL + 60000, list: [] }); });
+    }).catch(function () { failed(); cache.set(k, { at: Date.now() - TTL + 60000, list: [] }); });
   }
 
   /* Event channels (events.js): when the guide has nothing for a channel whose name carries the

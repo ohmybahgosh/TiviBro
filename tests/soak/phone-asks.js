@@ -268,7 +268,12 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
     for (const r of top.rows.filter((x) => x.kind === 'page')) { await sa({ op: 'page', sec: sc.id, path: [r.i] }).then(() => pages++, (x) => badPages.push(sc.id + ' > ' + r.label + ': ' + x.message)); }
   }
   ok('every settings page and the pages inside them open on the phone (' + pages + ')', !badPages.length && pages > 15, badPages.join(' | '));
+  await ev(() => Settings.phone._convUnknown());
   const pb = await sa({ op: 'page', sec: 'playback', path: [] });
+  const conv = (((pb.page || pb).rows) || []).find((r) => r.label === 'Audio converter') || {};
+  ok('the phone sees the converter\'s state, not "checking…" for good', conv.value && !/checking/.test(conv.value), JSON.stringify(conv));
+  const row3 = (((pb.page || pb).rows) || [])[(((pb.page || pb).rows) || []).indexOf(conv) + 1] || {};
+  if (row3.kind === 'action' && /Get the converter/.test(row3.label)) ok('and only offers to get it when it isn\'t there', !/Built in/.test(conv.value), JSON.stringify([conv, row3]));
   const pbl = (((pb.page || pb).rows) || []).map((r) => r.label);
   ok('the phone\'s Playback page has the audio converter', pbl.indexOf('Convert audio the TV can\'t play') >= 0 && pbl.indexOf('Audio converter') >= 0, pbl.filter((l) => /onver|udio/.test(l)).join(' | '));
   const e = await C.ask(cred, 'settings', { op: 'sections' }).catch((x) => x);

@@ -214,11 +214,15 @@ function create(opts) {
   var originOf = {}, originList = [];
   function rememberOrigin(next, o) { originOf[next] = o; originList.push(next); if (originList.length > 50) delete originOf[originList.shift()]; }
 
+  /* The port this helper listens on.  server.address() is null once the server is closing (a restart), and a
+     request still arriving then threw "Cannot read property 'port' of null" and took the helper down (issue #64). */
+  var myPort = 0;
+  function ownPort() { var a = server.address(); if (a && a.port) myPort = a.port; return myPort; }
   var server = http.createServer(function (req, res) {
     if (req.method === 'OPTIONS') { res.writeHead(204, ALLOW); return res.end(); }
     if (req.url.indexOf('/media-stream/') === 0) return require('./media-stream').handle(req, res, ALLOW);
     // Converted sound (convert.js): the link carries its own key, since the TV's player can't send the secret.
-    if (Convert.isStream(req.url)) return Convert.stream(req, res, ALLOW, log, server.address().port, redact);
+    if (Convert.isStream(req.url)) return Convert.stream(req, res, ALLOW, log, ownPort(), redact);
     if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, node: process.version, stats: stats, guide: 2, vod: 2, kv: 1, live: 1, convert: 1, sys: sys(), store: require('./storage').info() })); }
     /* The web editor and the phone app connection are switched on and off from TiviBro only.  On the
        TV the helper hands TiviBro a secret with its start reply (service.js, over luna, which only
@@ -230,15 +234,15 @@ function create(opts) {
       if (opts.ctl && !sameText(req.headers['x-tivibro-ctl'], opts.ctl)) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end('{"error":"not allowed"}'); }
       if (ctlRoute === 'editor') return editor.control(req, res, req.url.split('?')[0]);
       if (ctlRoute === 'kv') return Kv.handle(req, res, ALLOW, log);
-      if (ctlRoute === 'live') return Live.handle(req, res, ALLOW, log, server.address().port);
+      if (ctlRoute === 'live') return Live.handle(req, res, ALLOW, log, ownPort());
       if (ctlRoute === 'media') return Media.handle(req, res, ALLOW, log);
-      if (ctlRoute === 'convert') return Convert.control(req, res, ALLOW, log, server.address().port, redact);
+      if (ctlRoute === 'convert') return Convert.control(req, res, ALLOW, log, ownPort(), redact);
       if (ctlRoute === 'ffmpeg') return Ffmpeg.handle(req, res, ALLOW);
       if (!opts.companion) { res.writeHead(404, { 'Content-Type': 'application/json' }); return res.end('{"error":"no phone app connection in this helper"}'); }
       return opts.companion.control(req, res, req.url.split('?')[0]);
     }
     if (req.url.indexOf('/guide/') === 0) return Guide.handle(req, res, ALLOW, log);
-    if (req.url.indexOf('/vod/') === 0) return Vod.handle(req, res, ALLOW, log, server.address().port);
+    if (req.url.indexOf('/vod/') === 0) return Vod.handle(req, res, ALLOW, log, ownPort());
     if (req.url === '/log') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ node: process.version, stats: stats, log: LOG, earlier: EARLIER })); }
     var xm = /^\/xfer\/([A-Za-z0-9_-]{1,40})$/.exec(req.url);
     if (xm) { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, ALLOW)); return res.end(JSON.stringify(Unzip.progress(xm[1]) || { raw: 0, total: 0, done: false, unknown: true })); }
@@ -251,7 +255,7 @@ function create(opts) {
     var t = target(path);
     if (!t) { res.writeHead(404, ALLOW); return res.end('not a relay address'); }
     stats.requests++; stats.active++;
-    var base = 'http://' + (req.headers.host || ('127.0.0.1:' + server.address().port)) + prefix;
+    var base = 'http://' + (req.headers.host || ('127.0.0.1:' + ownPort())) + prefix;
     var u = URL_.parse(t);
     var lib = u.protocol === 'https:' ? https : http;
     var headers = { 'User-Agent': ua || opts.userAgent || 'Mozilla/5.0 (Web0S; Linux/SmartTV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0 Safari/537.36', 'Accept': '*/*' };
@@ -524,6 +528,7 @@ function create(opts) {
     if (held) rec.paced = held;
   });
   server.keepAliveTimeout = 30000;
+  server.on('listening', ownPort);
   server.on('close', function () { editor.stop(); });
   return { server: server, stats: stats, editor: editor };
 }

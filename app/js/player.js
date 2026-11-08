@@ -78,7 +78,11 @@ var Player = (function () {
     return p;
   }
   var safeWhy = '';
-  function lowMemory() { var m = typeof navigator !== 'undefined' && navigator.deviceMemory; return !!(m && m <= 1); }
+  function lowMemory() {
+    var m = typeof navigator !== 'undefined' && navigator.deviceMemory;
+    if (m) return m <= 1;
+    return !!(typeof Caps !== 'undefined' && Caps.small);       // not reported: an LG HD or Full HD set (caps.js)
+  }
   function memSafe() { return !!safeWhy || lowMemory(); }
   /** Called at start when TiviBro closed while playing lately (app.js). */
   function memorySafe(why) { safeWhy = why || ''; if (why) Log.warn('player', 'Holding less video in memory: ' + why); }
@@ -1366,7 +1370,7 @@ var Player = (function () {
 
   return {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
-    PRESETS: PRESETS, memorySafe: memorySafe, get memSafe() { return memSafe() ? (safeWhy || 'this TV has 1 GB of memory or less') : ''; }, bind: bind, play: play, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, on: on,
+    PRESETS: PRESETS, memorySafe: memorySafe, get memSafe() { return memSafe() ? (safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, on: on,
     seek: seek, seekTo: seekTo, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; },
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },

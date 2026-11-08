@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Small TVs hold less video from the start.**  LG's HD and Full HD sets (like the 32LM6300) have about 1 GB of memory, but on webOS 4 and older the TV doesn't say so, so TiviBro only went memory-safe after one closed it while playing (issue #64).  Now it knows them by their model name.
+- **When the provider's per-channel guide keeps failing, TiviBro stops asking for a while** instead of trying every channel in view: a panel answering "502" for every channel meant about a hundred failed requests in seconds, on a TV already struggling, and a log full of them (issue #64).  It asks again after 2 minutes, then less often while it still fails.
+- **The phone app's Audio converter row shows its state** instead of "checking…" for good, and no longer offers **Get the converter now** on TVs where it comes with TiviBro (pressing it said "That can't be changed that way").  A row that changed on the TV meanwhile now just shows the page as it is.
+- The network helper no longer stops when a request arrives while it is restarting ("Cannot read property 'port' of null").
+
 ## 0.6.0 (alpha 106, 2026-11-08)
 
 Pre-release: expect rough edges, and keep a backup before installing.

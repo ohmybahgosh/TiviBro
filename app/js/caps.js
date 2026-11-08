@@ -64,6 +64,11 @@ var Caps = (function () {
     return y || 0;
   }
 
+  /* LG's HD and Full HD sets (32LM6300PLA, 43LK5900, 32LQ63006LA: size, then L and the series letter) have about
+     1 GB of memory.  Their browsers before Chrome 63 (webOS 4 and older) don't report it, so TiviBro took them for
+     big TVs until one closed it while playing (issue #64). */
+  function smallTv(model) { return /^\d{2}L[A-Z]\d/i.test(String(model || '').trim()); }
+
   var probed = null, sysInfo = { model: '', sdk: '' };
 
   function test(fn, type) { try { return !!fn(type); } catch (e) { return false; } }
@@ -265,7 +270,8 @@ var Caps = (function () {
     return rows;
   }
 
-  return { probe: probe, apply: apply, loadSystemInfo: loadSystemInfo, webosVersion: webosVersion, modelYear: modelYear,
+  return { probe: probe, apply: apply, loadSystemInfo: loadSystemInfo, webosVersion: webosVersion, modelYear: modelYear, smallTv: smallTv,
+    get small() { return smallTv(sysInfo.model); },
     videoCodec: videoCodec, audioCodec: audioCodec, fromHlsLevel: fromHlsLevel, bestHlsLevel: bestHlsLevel, fromMpegts: fromMpegts, fromXtream: fromXtream,
     label: label, route: route, report: report, unplayable: unplayable,
     // Tests: pretend to be a given TV model (OLED65C2PUA is a 2022 C2, no DTS).
