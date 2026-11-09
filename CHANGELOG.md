@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Provider status: is it your provider, or TiviBro?**  When your provider's server keeps failing (a minute or more of errors with nothing getting through) TiviBro now says so, once, in plain words: "Your provider has a problem, not TiviBro: their server is offline behind Cloudflare."  **Settings > Updates, about and diagnostics > Provider status** has the details any time: what the error means (Cloudflare can't reach their server, login refused, server down or overloaded, "busy" on every channel, channels missing on their side, an address that no longer exists), whether other sites answer (so the TV's internet works), and a message ready to send them, with the time it started, the error codes and your account's connections and expiry (never your login).  **Check now** asks their server and another site on the spot.  A problem report includes it too.  A "busy" or two while changing channels, or one channel the provider doesn't have, isn't counted.
+
 ## 0.6.0 (alpha 111, 2026-11-08)
 
 Pre-release: expect rough edges, and keep a backup before installing.

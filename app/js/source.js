@@ -2,6 +2,7 @@
    channel = { k: stable key, id, n: raw name, g: group id, logo, num, epg, url, arch }
    Kept deliberately flat and short-keyed: a 20k channel list is a lot of objects on a TV. */
 var Source = (function () {
+  var account = null;      // the login's account facts (status, expiry, connections), for Provider status
   'use strict';
 
   /* ---------- server address ----------
@@ -85,6 +86,8 @@ var Source = (function () {
       if (String(ui.auth) !== '1') throw Object.assign(new Error('Login rejected.  Check the username and password.'), { kind: 'auth' });
       if (ui.status && ui.status !== 'Active') throw Object.assign(new Error('Account status is ' + ui.status + '.'), { kind: 'auth' });
       if (ui.exp_date && +ui.exp_date * 1000 < Date.now()) Log.warn('xc', 'Subscription expiry date is in the past');
+      // For Provider status (provstatus.js): what the account looks like, for the message to the provider.
+      account = { status: ui.status || '', exp: ui.exp_date ? new Date(+ui.exp_date * 1000).toISOString().slice(0, 10) : '', active: +ui.active_cons || 0, max: +ui.max_connections || 0 };
       if (+ui.max_connections && +ui.active_cons >= +ui.max_connections) Log.warn('xc', 'All ' + ui.max_connections + ' connections are already in use; streams may be refused');
       var fmts = ui.allowed_output_formats || [];
       if (fmts.length && fmts.indexOf(Store.settings.format) < 0) Log.warn('xc', 'Provider does not list "' + Store.settings.format + '" as an allowed format (allows ' + fmts.join(', ') + ').  Change Stream format in Settings if channels fail.');
@@ -353,7 +356,7 @@ var Source = (function () {
   function movieUrl(id, ext, p) { p = P(p); return base(p.server) + '/movie/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
   function episodeUrl(id, ext, p) { p = P(p); return base(p.server) + '/series/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
 
-  return { load: load, busy: busy, stop: stop, get loading() { return Object.keys(running).length > 0; }, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
+  return { get account() { return account; }, load: load, busy: busy, stop: stop, get loading() { return Object.keys(running).length > 0; }, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
     catchupUrl: catchupUrl, setTz: setTz,
     vodCats: vodCats, vodList: vodList, vodInfo: vodInfo, seriesInfo: seriesInfo, movieUrl: movieUrl, movieLink: movieLink, episodeUrl: episodeUrl, m3uVod: m3uVod };
 })();

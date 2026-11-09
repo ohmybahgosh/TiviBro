@@ -1239,7 +1239,33 @@ var Settings = (function () {
   function about() {
     var out = updates();
     out.push(head('Diagnostics'));
-    return out.concat(diag());
+    return out.concat(diag(), [provRow()]);
+  }
+  /* Provider status (provstatus.js): is it the provider?  What's wrong with it in plain words, and what to send
+     them.  Last on the page: the phone app opens the pages above it by their place. */
+  function provRow() {
+    return page('Provider status', 'Whether your provider\'s server answers, and what to tell them when it doesn\'t.', 'Provider status', provPage, function () {
+      return typeof ProvStatus !== 'undefined' && ProvStatus.now().length ? 'Problem' : 'OK';
+    });
+  }
+  function provPage() {
+    var out = [], list = typeof ProvStatus !== 'undefined' ? ProvStatus.now() : [];
+    if (!list.length) out.push(info('Your provider answers normally', 'Nothing failing in the last few minutes'));
+    list.forEach(function (d) {
+      out.push(head(I18n.raw(d.host)));
+      out.push(info(d.title, U.hhmm(d.since)));
+      out.push({ label: d.text, sub: (d.netOk ? T('Other sites answer, so the TV\'s internet works: this is on your provider\'s side.') : T('Other sites haven\'t been checked yet: Check now looks.')) + '  ' + d.n + ' ' + T('failed requests'), info: true, value: function () { return ''; } });
+      out.push({ label: 'What to tell your provider', sub: I18n.raw(d.tell), info: true, value: function () { return ''; } });
+    });
+    out.push(action('Check now', 'Asks your provider\'s server and another site on the internet, then says what it found.', function () {
+      U.toast('Checking…', 3000);
+      ProvStatus.checkNow().then(function (r) {
+        var bad = r.providers.filter(function (x) { return !x.ok; });
+        U.toast(bad.length ? (r.internet ? T('Your internet works; your provider\'s server doesn\'t answer') + ' (' + bad.map(function (x) { return x.code; }).join(', ') + ')' : T('Neither your provider nor other sites answer: check the TV\'s internet connection')) : T('Your provider answers normally'), 7000);
+        build();
+      });
+    }));
+    return out;
   }
 
   var BY_ID = { language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, media: media, keys: apiKeys, remote: remote, look: look, parental: parental, backups: backups, connect: connect, about: about };

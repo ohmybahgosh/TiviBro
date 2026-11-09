@@ -97,6 +97,8 @@ var U = (function () {
       var e = new Error(msg);
       e.kind = kind; e.via = via; e.ms = Date.now() - t0;
       if (extra) for (var k in extra) e[k] = extra[k];
+      // Is it the provider?  (provstatus.js: the status code, or what went wrong on the way.)
+      if (typeof ProvStatus !== 'undefined') ProvStatus.note(url, false, e.status && kind === 'http' ? e.status : kind === 'parse' && /web page/.test(msg) ? 'html' : kind === 'timeout' ? 'timeout' : ((/E[A-Z]{3,}[A-Z_]*/.exec(msg) || [])[0] || ''), opts.label === 'guide' ? 'guide' : 'api');
       if (typeof Log !== 'undefined') Log.warn('http', tag + ' FAILED ' + kind + ' after ' + e.ms + 'ms via ' + via + ': ' + msg + '  url=' + url + (e.body ? '  body=' + JSON.stringify(e.body.slice(0, 200)) : ''));
       throw e;
     }
@@ -121,6 +123,7 @@ var U = (function () {
           fail('http', why, { status: r.status, body: txt.slice(0, 300), ctype: ct });
         }
         if (typeof Log !== 'undefined') Log.debug('http', tag + ' <- ' + r.status + ' ' + ct + ' ' + txt.length + ' bytes in ' + ms + 'ms');
+        if (typeof ProvStatus !== 'undefined' && !/^\s*</.test(txt)) ProvStatus.note(url, true);
         if (opts.text) return txt;
         try { return JSON.parse(txt); }
         catch (e) {

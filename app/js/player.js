@@ -438,6 +438,8 @@ var Player = (function () {
     state(cur.slow ? 'buffering' : 'loading', cur.slow ? cur.slow : holding ? 'Reconnecting' : undefined);
 
     var fail = function (type, detail, earlyNet, ended, http) {
+      // Provider status (provstatus.js): a stream the provider's server refused, errored or never answered.
+      if (window.ProvStatus && cur.live && (http || /timeout|upstream|ENOTFOUND|ECONNREFUSED/i.test(String(detail || '')))) ProvStatus.note(cur.origUrl || cur.url, false, http || ((/E[A-Z]{3,}[A-Z_]*/.exec(String(detail)) || [])[0] || 'timeout'), 'stream');
       if (myToken !== token || gen !== cur.gen) return;
       if (conv && !st.started && !conv.played) return convFailed(myToken, kind + ' ' + type + ': ' + detail);
       Log.warn('player', kind + ' engine ' + type + ' error: ' + (detail && detail.message ? detail.message : detail) + (st.started ? '' : ' (before first frame)') + '  ' + cur.url);
@@ -862,6 +864,7 @@ var Player = (function () {
         if (cur.swapFrom) cur.swapPlayed = true;
         cur.slow = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0; cur.starved = false; cur.lastFailHttp = false;
         cur.startMs = now - st.at; cur.dataMs = st.tData ? st.tData - st.at : 0; cur.picMs = st.tPic ? st.tPic - st.at : 0;
+        if (window.ProvStatus) ProvStatus.note(cur.origUrl || cur.url, true);
         Log.info('player', 'Playing after ' + (now - st.at) + 'ms with ' + ahead.toFixed(1) + 's buffered' + (ahead < p.prebuffer ? ' (prebuffer timed out)' : '') + (video.videoHeight ? ', ' + video.videoWidth + 'x' + video.videoHeight : '') +
           (cur.dataMs ? ' (first data ' + cur.dataMs + 'ms, first picture ' + (cur.picMs || cur.dataMs) + 'ms)' : ''));
         if (cur.live && !cur.timeshift && window.PlayMemo) { PlayMemo.worked(cur.ch, st.kind, cur.usual); PlayMemo.started(memoHost()); }
