@@ -258,6 +258,10 @@ function create(opts) {
     var base = 'http://' + (req.headers.host || ('127.0.0.1:' + ownPort())) + prefix;
     var u = URL_.parse(t);
     var lib = u.protocol === 'https:' ? https : http;
+    /* A live channel asked for "from the start" (the audio converter's reader sends Range: bytes=0-): a live
+       stream has no start, and some providers refuse the Range (416).  Asked as the player asks, it is the live
+       channel like any other. */
+    if (/^bytes=0-$/i.test(req.headers.range || '') && liveKey(u)) delete req.headers.range;
     var headers = { 'User-Agent': ua || opts.userAgent || 'Mozilla/5.0 (Web0S; Linux/SmartTV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0 Safari/537.36', 'Accept': '*/*' };
     if (unz) headers['Accept-Encoding'] = 'gzip, deflate';      // the helper unzips, so ask for the smallest transfer
     else {
@@ -281,7 +285,7 @@ function create(opts) {
       // the forgiving reader in rawhttp.js instead, see onUpError.
       insecureHTTPParser: true, lookup: cachedLookup
     };
-    var up = null, firstUp = null, triedRaw = false, reading = false, retried429 = false;
+    var up = null, firstUp = null, triedRaw = false, reading = false, retried429 = false, busyTries = 0;
     // A live channel: let go of an older one on the same account, and give up on it sooner when it goes quiet.
     var og = originOf[t];
     var lk = req.method === 'GET' && !req.headers.range && !unz ? (liveKey(u) || (og && og.lk) || '') : '';
@@ -306,6 +310,15 @@ function create(opts) {
     }
     function onResponse(ur) {
       var code = ur.statusCode || 502;
+      /* A live channel the provider says it's too busy for (503 and the like) right after another one: it is
+         still counting the connection just let go, for a second or two.  Asked again here, quietly, for up to
+         about 5 s, so the app gets its channel a moment later instead of "Connection dropped" over and over. */
+      if (lk && !aborted && [429, 456, 458, 503, 509].indexOf(code) >= 0 && busyTries < 6 && Date.now() - t0 < 5000) {
+        ur.resume();
+        rec.busy = ++busyTries;
+        setTimeout(function () { if (!aborted) send(); else finish(); }, [300, 500, 700, 900, 1200, 1500][busyTries - 1]);
+        return;
+      }
       // An image the host turned away for asking too often: wait as long as it asks, then ask once more.
       if (code === 429 && img && !retried429 && !aborted) {
         retried429 = true; ur.resume();

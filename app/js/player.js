@@ -466,7 +466,7 @@ var Player = (function () {
         cur.lastHttp = http;
         // "Busy" answers (connection limit, rate limit, overloaded) clear once the last channel's
         // connection is let go, which can take a few seconds: give those more tries than a 404.
-        var busy = [403, 429, 456, 458, 502, 503, 504, 509, 551].indexOf(http) >= 0;
+        var busy = busyHttp(http);
         if (cur.httpFails > (busy ? 5 : 2)) {
           var nx = nextEngine(kind);
           if (nx) { Log.info('player', 'Trying the ' + ENGINE_NAMES[nx] + ' after HTTP ' + http); useEngine(nx); return start(myToken); }
@@ -491,7 +491,7 @@ var Player = (function () {
       // Provider hung up but we still hold a good cushion: keep watching it and reconnect only
       // when it runs low, instead of throwing away buffered video.
       if (ended && st.started && bufferedAhead() > 4) { st.pendingReconnect = true; Log.info('player', 'Provider closed the stream; playing the remaining ' + bufferedAhead().toFixed(1) + 's then reconnecting'); return; }
-      reconnect(myToken, ended ? 'Stream ended, reconnecting' : 'Connection dropped, reconnecting');
+      reconnect(myToken, ended ? 'Stream ended, reconnecting' : busyHttp(http) ? 'Provider busy (still counting the last channel), trying again' : 'Connection dropped, reconnecting');
     };
     // Codec facts from the stream itself, before the first frame: the HLS master playlist or the
     // TS demuxer's media info.  Switch pipeline once if the stream belongs on the TV player.
@@ -1219,6 +1219,8 @@ var Player = (function () {
   function aspectName(mode) { var r = filmShape(mode); return r ? 'Film ' + r.toFixed(2) + ':1' : ASPECT_NAMES[mode] || ''; }
   /* Stream format per channel: '' (the playlist's setting and what playback learns), 'hls' or 'ts'.
      Kept with the playlist's edits (backups too), by channel. */
+  // "Busy" answers: connection limit, rate limit, overloaded.
+  function busyHttp(code) { return [403, 429, 456, 458, 502, 503, 504, 509, 551].indexOf(+code) >= 0; }
   function streamFormat(ch) { var m = ch && Store.edits.streamFmt; return m && (m[ch.k] === 'hls' || m[ch.k] === 'ts') ? m[ch.k] : ''; }
   function setStreamFormat(ch, v) {
     if (!ch) return;

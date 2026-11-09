@@ -46,6 +46,11 @@ function packets(n, seq, shift) {
     if (/\/seg\.ts$/.test(p)) { const b = SEG; res.writeHead(200, { 'Content-Type': 'video/mp2t', 'Content-Length': b.length }); return res.end(b); }
     open[p] = (open[p] || 0) + 1;
     req.on('close', () => { closed[p] = (closed[p] || 0) + 1; });
+    // Busy for the first two asks (the provider still counting the channel just left), then streaming.
+    if (/\/live\/busy\//.test(p) && open[p] <= 2) { res.writeHead(503, { 'Content-Type': 'text/plain' }); return res.end('busy'); }
+    if (/\/live\/always\//.test(p)) { res.writeHead(503, { 'Content-Type': 'text/plain' }); return res.end('busy'); }
+    // Refuses a Range on a live channel, as some providers do.
+    if (/\/live\/norange\//.test(p) && req.headers.range) { res.writeHead(416); return res.end(); }
     if (/\/live\/redir\//.test(p)) { res.writeHead(302, { Location: '/edge/tok' + open[p] + '.ts' }); return res.end(); }
     if (/\/edge\//.test(p)) { res.writeHead(200, { 'Content-Type': 'video/mp2t' }); res.write(packets(10, 7)); res.write(packets(10, 7)); res.write(packets(10, 7)); return setTimeout(() => res.end(), 150); }
     res.writeHead(200, { 'Content-Type': 'video/mp2t' });
@@ -102,6 +107,15 @@ function packets(n, seq, shift) {
   ok('and the older one\'s client sees it end', a.ended);
   ok('the new one streams', b.status === 200 && b.bytes > 0 && !b.ended, JSON.stringify({ s: b.status, b: b.bytes }));
   ok('another account\'s channel is left alone', !closed['/live/amy/pw/7.ts'] && !other.ended && other.bytes > 0, JSON.stringify(closed));
+
+  // The provider says it's busy right after another channel: the helper asks again by itself.
+  { const t0 = Date.now(), w = watch(B + '/live/busy/pw/31.ts'); await wait(1600);
+    ok('a live channel the provider is busy for (503 twice): the helper asks again, the app just gets it', w.status === 200 && w.bytes > 0 && open['/live/busy/pw/31.ts'] === 3, JSON.stringify({ s: w.status, b: w.bytes, opens: open['/live/busy/pw/31.ts'] }));
+    try { w.req.destroy(); } catch (e) {}
+    const z = watch(B + '/live/always/pw/32.ts'); await wait(6500);
+    ok('busy for good: after about 5 s the app gets the 503, to try its own way', z.status === 503 && open['/live/always/pw/32.ts'] >= 3 && open['/live/always/pw/32.ts'] <= 7, JSON.stringify({ s: z.status, opens: open['/live/always/pw/32.ts'] }));
+    const rr = await new Promise((f) => { const q = http.get(B + '/live/norange/pw/33.ts', { headers: { Range: 'bytes=0-' } }, (rs) => { let n = 0; rs.on('data', (d2) => { n += d2.length; if (n > 2000) { f({ s: rs.statusCode, n }); q.destroy(); } }); rs.on('end', () => f({ s: rs.statusCode, n })); }); q.on('error', () => f({ s: 0, n: 0 })); });
+    ok('a live channel asked "from the start" (the audio converter): no Range to a provider that refuses it', rr.s === 200 && rr.n > 0, JSON.stringify(rr)); }
 
   // The provider hangs up: the helper connects again by itself and the app's response carries on.
   const d = watch(B + '/live/drop/pw/5.ts');

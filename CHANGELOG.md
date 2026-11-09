@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **No more "Connection dropped, reconnecting" over and over when changing channels.**  Many providers answer "busy" (HTTP 503) for a second or two after a channel change, still counting the channel you just left; TiviBro took that as a dropped connection and showed it up to five times before the picture came.  Now the network helper asks again by itself for a few seconds, so the channel just starts a moment later; if the provider is still busy after that, it says so ("Provider busy") instead of "Connection dropped".
+- **Live channels whose sound is converted start on providers that refuse a byte range (HTTP 416).**  The converter asked for the live stream "from the start", which some providers refuse; now it is asked for like any live channel, and it waits out a "busy" answer the same way.
+
 - **Steadier on 1 GB TVs (issues #61 and #64).**  A long test session the way those TVs closed TiviBro (zapping through good channels and ones that fail, the guide, fullscreen, guide reloads, update checks, with a 6,000-channel playlist and a big guide) showed nothing left behind from one round to the next, but showed where the peaks are: reading the guide again held the old guide and the new one at once, nearly three times the guide's size, and one of the TVs closed just after such a reload started while it zapped.  On a TV short of memory (1 GB, or one that closed TiviBro while playing lately):
   - The guide, the public guide and the channel list are no longer read again by themselves while something plays.  The guide you have stays on screen; they are read soon after playback stops.  Reload channels and Reload guide still work at once.
   - When the guide is read again, the old one goes just before the new one comes in, not after: the peak of a reload is about half what it was.
