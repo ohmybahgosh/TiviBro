@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 111, 2026-11-08)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 111
 
 - **No more "Connection dropped, reconnecting" over and over when changing channels.**  Many providers answer "busy" (HTTP 503) for a second or two after a channel change, still counting the channel you just left; TiviBro took that as a dropped connection and showed it up to five times before the picture came.  Now the network helper asks again by itself for a few seconds, so the channel just starts a moment later; if the provider is still busy after that, it says so ("Provider busy") instead of "Connection dropped".
 - **Live channels whose sound is converted start on providers that refuse a byte range (HTTP 416).**  The converter asked for the live stream "from the start", which some providers refuse; now it is asked for like any live channel, and it waits out a "busy" answer the same way.
@@ -10,11 +14,7 @@
   - When the guide is read again, the old one goes just before the new one comes in, not after: the peak of a reload is about half what it was.
 - **The update check reads the newest 20 releases from GitHub, not 100**: about 1 MB of text by now, and growing with every release, for a 1 GB TV to read.
 
-## 0.6.0 (alpha 110, 2026-11-08)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 110
+### In alpha 110
 
 - **Reminders close by themselves after 10 seconds.**  The TV's own reminder alert (shown when TiviBro is in the background or another input is on) stayed on the screen until someone pressed Dismiss; now it goes away after Settings > Reminders > "Reminder question stays for", like the question inside TiviBro, which now also defaults to 10 seconds instead of 20 (a time you picked is kept).  A "You missed it" question closes the same way.
 
