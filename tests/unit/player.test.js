@@ -30,7 +30,7 @@ function setup(opts) {
   };
   function Hls(cfg) { this.cfg = cfg; this.kind = 'hls'; this.h = {}; this.levels = []; made.push(this); }
   Hls.isSupported = () => true;
-  Hls.Events = { ERROR: 'hlsError', MANIFEST_PARSED: 'hlsManifestParsed' };
+  Hls.Events = { ERROR: 'hlsError', MANIFEST_PARSED: 'hlsManifestParsed', FRAG_PARSING_INIT_SEGMENT: 'hlsInit' };
   Hls.ErrorTypes = { NETWORK_ERROR: 'networkError', MEDIA_ERROR: 'mediaError' };
   Hls.prototype = { on(e, f) { this.h[e] = f; }, loadSource(u) { this.src = u; }, attachMedia() {}, recoverMediaError() {}, swapAudioCodec() {}, destroy() { this.dead = true; } };
   const settings = Object.assign({ buffer: 'balanced', engine: 'auto', format: 'ts', hdrRoute: 'auto', display: 'contain' }, opts.settings);
@@ -157,6 +157,35 @@ ok('no picture twice on the demuxer tries the TV player', t.logs.some(l => /No p
 ok('and the TV player gets the stream', t.video._src === 'http://p/live/u/p/53.ts', t.video._src);
 { const at = t.logs.findIndex(l => /No picture twice/.test(l));
   ok('after only two no-picture timeouts', at > 0 && t.logs.slice(0, at).filter(l => /No playable video/.test(l)).length === 2, at); }
+
+// ---- issue #65: HLS that reads its first piece but never shows a picture goes to the TV player after 8 s, not 34 ----
+t = setup();
+t.P.play({ n: 'HLS odd', url: 'http://p/live/u/p/65.m3u8' });
+ok('#65: a live .m3u8 starts on HLS', t.last().kind === 'hls');
+(t.last().h.hlsInit || (() => {}))('e', {}); t.video.readyState = 1; t.run(9500);
+ok('#65: no picture on HLS with its first piece read moves to the TV player at once', t.logs.some(l => /No picture twice on the HLS version of this channel; trying the TV player/.test(l)) && t.video._src === 'http://p/live/u/p/65.m3u8',
+  t.logs.filter(l => /No playable|No picture/.test(l)).join(' | '));
+{ const np = t.logs.filter(l => /No playable video after/.test(l)); ok('#65: after one 8 s wait', np.length === 1 && +/after (\d+)ms/.exec(np[0])[1] < 9000, np.join(' | ')); }
+// An HLS stream still waiting for its first piece is the connection: the long wait stays.
+t = setup();
+t.P.play({ n: 'HLS slow', url: 'http://p/live/u/p/66.m3u8' });
+t.video.readyState = 0; t.run(9500);
+ok('#65: HLS with nothing read yet keeps waiting past 8 s', !t.logs.some(l => /No playable video/.test(l)) && t.last().kind === 'hls');
+
+// ---- issue #66: a channel back from its other versions (keepTrying) whose format the demuxer can't show ----
+t = setup();
+t.P.play({ n: 'TYC', url: 'http://p/live/u/p/355126.ts' }, { keepTrying: true });
+t.last().h.mi({ mimeType: 'video/mp2t; codecs="avc1.640028,ac-3"', videoCodec: 'avc1.640028', audioCodec: 'ac-3', height: 1080 });
+t.video.readyState = 1; t.run(9500);
+ok('#66: no picture with the codecs known goes to the TV player, not HLS', t.video._src === 'http://p/live/u/p/355126.ts' && !t.made.slice(1).some(x => x.kind === 'hls'),
+  t.made.map(x => x.kind).join(',') + ' ' + t.logs.filter(l => /No picture|switching|trying/.test(l)).join(' | '));
+// A try that never showed a picture is not a "drop" that flips between MPEG-TS and HLS: the no-picture steps go on to
+// the TV player (before, HLS no picture went back to MPEG-TS, which had just shown none either).
+t = setup();
+t.P.play({ n: 'TYC2', url: 'http://p/live/u/p/355127.ts' }, { keepTrying: true });
+t.run(80000);
+ok('#66: no picture anywhere ends on the TV player without flipping formats', t.video._src === 'http://p/live/u/p/355127.ts' && !t.logs.some(l => /switching to its|back to MPEG-TS|back to HLS/.test(l)),
+  t.made.map(x => x.kind).join(',') + ' ' + t.logs.filter(l => /No picture|switching|back to/.test(l)).join(' | '));
 
 // ---- a channel that never played gives up with a clear error ----
 t = setup({ settings: { buffer: 'custom', custom: { prebuffer: 1, ahead: 10, back: 4, stall: 4, retries: 1 } } });

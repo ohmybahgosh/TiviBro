@@ -181,6 +181,9 @@ var Player = (function () {
       if (l && l.height && !preview && window.PlayMemo && PlayMemo.setLevel && st && st.started) PlayMemo.setLevel(chMemo, l.height);
     });
     h.on(Hls.Events.AUDIO_TRACKS_UPDATED, function () { tracks(); });
+    // The first piece was read and its tracks are known (like the demuxer's media info): from here, nothing
+    // buffered after 8 s is the format, not the connection (issue #65).
+    h.on(Hls.Events.FRAG_PARSING_INIT_SEGMENT, function () { if (st) st.gotInfo = true; });
     h.on(Hls.Events.ERROR, function (e, d) {
       if (!d.fatal) return;
       if (d.type === Hls.ErrorTypes.MEDIA_ERROR) {
@@ -651,13 +654,13 @@ var Player = (function () {
   // be back within seconds of the provider), then every 15s.
   var CLOSED = 'The provider closed the connection to this video and did not let TiviBro back in.  Press OK to try again from where you were.';
   var SLOW_EVERY = 15000, SLOW_FAST = 6000, SLOW_FAST_FOR = 3 * 60000, SLOW_FOR = 20 * 60000;
-  function lateEngine(failed) {
+  function lateEngine(failed, format) {
     if (isFile() && !/\.m3u8(\?|$)/i.test(cur.origUrl || cur.url)) return null;   // a movie file has one pipeline
     cur.late = cur.late || {};
     cur.late[failed] = 1;
     var isHlsUrl = /\.m3u8(\?|$)/i.test(cur.origUrl || cur.url);
     // After a channel has played, a pipeline failing is mostly the connection: its HLS version before the TV player.
-    var order = isHlsUrl ? ['hls', 'native'] : cur.live && !cur.timeshift && cur.everPlayed && hlsVariant(cur.origUrl || cur.url) ? ['ts', 'hls', 'native'] : ['ts', 'native', 'hls'];
+    var order = isHlsUrl ? ['hls', 'native'] : !format && cur.live && !cur.timeshift && cur.everPlayed && hlsVariant(cur.origUrl || cur.url) ? ['ts', 'hls', 'native'] : ['ts', 'native', 'hls'];
     for (var i = 0; i < order.length; i++) {
       var k = order[i];
       if (cur.late[k] || (cur.tried && cur.tried[k]) || (cur.bad && cur.bad[k])) continue;
@@ -717,11 +720,14 @@ var Player = (function () {
       cur.bad = cur.bad || {}; cur.bad[st.kind] = 1;
       useEngine(cur.swapFrom); cur.swapFrom = null; cur.noSwap = true; cur.tried = null; cur.late = null; cur.retries = 0;
     }
-    else if (cur.live && !cur.timeshift && cur.everPlayed && !cur.noSwap && st && (st.kind === 'ts' || st.kind === 'hls') && !/^The provider answered/.test(why)) {
+    /* (Nor a try that never showed a picture: the no-picture steps in tick() pick the next pipeline, and a
+       format that had no picture on this channel is not switched back to (issue #66: HLS no picture counted as
+       a drop and went back to MPEG-TS, which had just shown no picture either).) */
+    else if (cur.live && !cur.timeshift && cur.everPlayed && !cur.noSwap && st && (st.kind === 'ts' || st.kind === 'hls') && !/^The provider answered/.test(why) && !(!st.started && /^No video yet/.test(why))) {
       var orig = cur.origUrl || cur.url, frozen = /keeps freezing/.test(why), trickle = frozen || /slowed down/.test(why), other = st.kind === 'ts' ? 'hls' : 'ts';
       cur.drops = (cur.drops || []).filter(function (x) { return now - x < 180000; }); cur.drops.push(now);
       cur.swaps = (cur.swaps || []).filter(function (x) { return now - x < 600000; });
-      if ((trickle || cur.drops.length >= 2) && cur.swaps.length < 3 && engineOk(other) && !(cur.bad && cur.bad[other]) && (other === 'ts' || hlsVariant(orig) || /\.m3u8(\?|$)/i.test(orig))) {
+      if ((trickle || cur.drops.length >= 2) && cur.swaps.length < 3 && engineOk(other) && !(cur.bad && cur.bad[other]) && !(cur.noPic && cur.noPic[other]) && (other === 'ts' || hlsVariant(orig) || /\.m3u8(\?|$)/i.test(orig))) {
         Log.info('player', 'This channel ' + (frozen ? 'keeps freezing' : trickle ? 'is trickling in' : 'dropped ' + cur.drops.length + ' times in 3 minutes') + ' on ' + (st.kind === 'ts' ? 'MPEG-TS' : 'HLS') + '; switching to its ' + (other === 'ts' ? 'MPEG-TS' : 'HLS') + ' version');
         useEngine(other); cur.swapFrom = st.kind; cur.swapPlayed = false;
         if (other === 'hls') preferHls[orig] = 1; else delete preferHls[orig];
@@ -878,9 +884,11 @@ var Player = (function () {
       } else if (now - st.at > (cur.swapFrom && !cur.swapPlayed ? 8000 : 15000 + need * 1000) ||
           // The demuxer knows what the stream is (its codecs came) but after 8 s nothing it made could be
           // buffered: a format this pipeline can't play here, not a slow connection (issue #56: ESPN 3 ARG,
-          // MP3 sound, 17 s twice on MPEG-TS, then the TV player played it in 1.3 s).
-          (st.kind === 'ts' && st.gotInfo && video.readyState >= 1 && ahead === 0 && !video.buffered.length && now - st.at > 8000)) {
-        if (st.kind === 'ts' && st.gotInfo && !video.buffered.length) { cur.noPic = cur.noPic || {}; cur.noPic.ts = Math.max(1, cur.noPic.ts || 0); }
+          // MP3 sound, 17 s twice on MPEG-TS, then the TV player played it in 1.3 s).  The same for HLS once its
+          // first piece is read (issue #65: 17 s twice on HLS for each of several channels, then the TV player in 1.5 s).
+          ((st.kind === 'ts' || st.kind === 'hls') && st.gotInfo && video.readyState >= 1 && ahead === 0 && !video.buffered.length && now - st.at > 8000)) {
+        var fmtFail = (st.kind === 'ts' || st.kind === 'hls') && st.gotInfo && !video.buffered.length;
+        if (fmtFail) { cur.noPic = cur.noPic || {}; cur.noPic[st.kind] = Math.max(1, cur.noPic[st.kind] || 0); }
         Log.warn('player', 'No playable video after ' + (now - st.at) + 'ms (readyState ' + video.readyState + ', buffered ' + ahead.toFixed(1) + 's)');
         /* No picture twice in a row on one pipeline is the stream's format, not the connection (issue #53: a
            channel whose sound only the TV's own player could play took nine tries, two and a half minutes,
@@ -889,7 +897,9 @@ var Player = (function () {
         cur.noPic = cur.noPic || {};
         cur.noPic[st.kind] = (cur.noPic[st.kind] || 0) + 1;
         if (cur.noPic[st.kind] >= 2 && !cur.swapFrom) {
-          var np = lateEngine(st.kind);
+          // A format the built-in pipelines can't show goes to the TV player first, also for a channel that is
+          // back from its other versions (issue #66: HLS, MPEG-TS and HLS again, 53 s, before the TV player).
+          var np = lateEngine(st.kind, fmtFail);
           if (np) { Log.info('player', 'No picture twice on the ' + ENGINE_NAMES[st.kind] + '; trying the ' + ENGINE_NAMES[np]); useEngine(np); cur.retries = Math.max(0, cur.retries - 2); }
         }
         reconnect(myToken, 'No video yet, retrying');
