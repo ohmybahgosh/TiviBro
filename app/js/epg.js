@@ -695,7 +695,16 @@ var Epg = (function () {
             misses = 0;
             var jb = st.job || {};
             if (st.phase === 'download' || st.phase === 'save') { onProg(jb, st.phase); return setTimeout(poll, 600); }
-            if (st.phase === 'stored' && st.stored && st.stored.sig === sig) return resolve(hRead(kind, pid));
+            if (st.phase === 'stored' && st.stored && st.stored.sig === sig) {
+              /* A TV short of memory: the old guide goes before the new one is read in, not after (both at once
+                 was the biggest peak of a session, nearly three times the guide's own size).  It's only the last
+                 seconds of a reload; while the helper downloads, the old guide is still shown. */
+              if (typeof Player !== 'undefined' && Player.memSafe) {
+                if (kind === 'main' && !pid) { cache.clear(); findMemo = {}; }
+                else if (kind === 'pub') { pubKeys.forEach(function (k) { cache.delete(k); }); pubKeys = []; findMemo = {}; }
+              }
+              return resolve(hRead(kind, pid));
+            }
             if (st.phase === 'failed') return resolve({ failed: jb.error || 'every guide file failed', report: jb.report || [], map: {}, icons: {}, channels: [], matches: {}, pubMatch: {} });
             reject(new Error(jb.error || 'the guide did not load'));
           }, function () { if (++misses > 8) reject(new Error('the network helper stopped')); else setTimeout(poll, 1000); });
@@ -807,6 +816,7 @@ var Epg = (function () {
       (loadXml.didStart = loadXml.didStart || {})[p.id] = true;
       if (c && c.sig === sig) { ingest(c, p); xmlReady = true; emit(null); }
       if (!stale && !force) { runSet(gk, null); return; }     // a forced reload cut short: the cache is fine
+      if (!force && c && c.sig === sig && holdOff()) { holdBack('guide'); runSet(gk, null); return; }
       var g = guard(gk, sig, force); if (!g) return;
       paused = null;
       return work(srcs, null, g, sig, null, p).then(function (res) {
@@ -902,6 +912,25 @@ var Epg = (function () {
   }
 
   var statusOf = {};             // the other playlists' guide status, by playlist id
+  /* On a TV short of memory (Player.memSafe: 1 GB, or TiviBro closed while playing lately), the guide is not read
+     again by itself while something plays: reading it holds the guide twice for a while, on top of the video, and
+     a TV in issue #61 closed TiviBro just after such a reload started during zapping.  The guide it has stays on
+     screen; it is read again once nothing plays (or when asked: Settings, a forced reload). */
+  var heldBack = null, pubKeys = [];         // pubKeys: the public guide's entries in the cache (ingestPub)
+  function holdOff() {
+    var safe = typeof Player !== 'undefined' && !!Player.memSafe, playing = typeof Views !== 'undefined' && !!Views.playing;
+    return safe && playing;
+  }
+  function holdBack(what) {
+    if (heldBack) return;
+    Log.info('epg', 'Reading the ' + what + ' again once nothing plays (this TV is short of memory)');
+    heldBack = setInterval(function () {
+      if (holdOff() || loading) return;
+      clearInterval(heldBack); heldBack = null;
+      Log.info('epg', 'Nothing playing: reading the guide again now');
+      init(Library);
+    }, 15000);
+  }
   function init(lib, force) {
     cache.clear(); queue.length = 0; matched = {}; icons = {}; chList = []; status = { at: 0, sources: [] }; idPl = {}; alias = {}; statusOf = {};
     pubMatched = {}; pubList = []; pubStatus = null; pubGen++;
@@ -968,7 +997,7 @@ var Epg = (function () {
   }
   function ingestPub(c) {
     var t = Date.now();
-    findMemo = {}; for (var k in c.map) cache.set(k, { at: t + 1e12, list: untangle(c.map[k]) });
+    findMemo = {}; pubKeys = []; for (var k in c.map) { cache.set(k, { at: t + 1e12, list: untangle(c.map[k]) }); pubKeys.push(k); }
     for (var i in c.icons) if (!icons[i]) icons[i] = c.icons[i];
     pubMatched = c.pubMatch || {};
     pubList = c.channels || [];
@@ -1046,6 +1075,7 @@ var Epg = (function () {
       var forced = pubForce;
       if (pubForce) { pubForce = false; stale = true; }
       if (!stale) { runSet('pub', null); return; }
+      if (!forced && c && c.sig === sig && holdOff()) { holdBack('public guide'); runSet('pub', null); return; }
       var pk = {}, days = +p.epgDays || 1, ctx = Tidy.make(Library.data);
       miss.forEach(function (ch) {
         // A channel with a known country only matches in that country's guides ("Mega" in a Greek

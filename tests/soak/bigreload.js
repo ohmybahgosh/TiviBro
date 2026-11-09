@@ -76,7 +76,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('phone app: at most 30,000 channels of a huge list, its groups trimmed to match', lineup && lineup.n === 30000 && lineup.keys === 30000 && lineup.na === 0, JSON.stringify(lineup));
 
   // The big-playlist note: once, with what helps.
-  const note = await ev(() => { const n0 = Library.count; Library.count = () => 186928; const p = Store.playlist; delete p.bigNoted; let said = ''; const t0 = U.toast; U.toast = (m) => { said = m; }; App.bigList(p); const first = said; said = ''; App.bigList(p); U.toast = t0; Library.count = n0; return { first, second: said }; });
+  const note = await ev(() => { const n0 = Library.count, pt0 = Library.partOf; Library.count = () => 186928; Library.partOf = () => null; const p = Store.playlist; delete p.bigNoted; let said = ''; const t0 = U.toast; U.toast = (m) => { said = m; }; App.bigList(p); const first = said; said = ''; App.bigList(p); U.toast = t0; Library.count = n0; Library.partOf = pt0; return { first, second: said }; });
   ok('a playlist over 100,000 channels: a note once, naming the setting', /186,928 channels/.test(note.first) && /Reload channel list/.test(note.first) && !note.second, JSON.stringify(note));
 
   ok('no page errors', !errs.length, errs.join(' | '));

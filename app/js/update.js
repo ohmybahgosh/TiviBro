@@ -7,7 +7,9 @@
 var Update = (function () {
   'use strict';
   var REPO = 'ohmybahgosh/TiviBro', APP_ID = 'app.tivibro.tv';
-  var API = 'https://api.github.com/repos/' + REPO + '/releases?per_page=100';   // listed by tag name, not date, so ask for all of them
+  /* The newest 20 releases (GitHub lists them newest first; pick() still compares versions among them).  All 100
+     was about 1 MB of JSON by alpha 110, and growing with every release, read and parsed by a 1 GB TV (issue #61). */
+  var API = 'https://api.github.com/repos/' + REPO + '/releases?per_page=20';
   var HBC = 'luna://org.webosbrew.hbchannel.service';
   var KEY = 'tivibro.update';
   var DAY = 24 * 3600e3;

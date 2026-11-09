@@ -406,6 +406,10 @@ var App = (function () {
      the limit is lower and background loads wait until nothing plays. */
   var startGen = 0, otherQ = [];
   function memSafe() { return !!(window.Player && Player.memSafe); }
+  /* A TV short of memory with something playing: the channel list and the guide aren't read again by themselves
+     (both hold the old and the new copy for a while, on top of the video; issues #61 and #64).  They are read
+     once nothing plays; Reload channels and Reload guide still work at once. */
+  function busyTV() { return memSafe() && !!Views.playing; }
   // webOS closes an app at about 500 MB whatever the TV has, so more memory does not raise it.
   function multiMax() { return memSafe() ? 120000 : 250000; }
   // What is in the lists now, for the log (and a problem report).
@@ -696,7 +700,7 @@ var App = (function () {
         if (big) busyStart(p, 'opening');
         start(cached, true);
         if (big) busyEnd(10000);
-        if (plDue(p, cached.at, true)) setTimeout(function () { refresh(false); }, 15000);
+        if (plDue(p, cached.at, true)) setTimeout(function due() { if (busyTV()) { setTimeout(due, 60000); return; } refresh(false); }, 15000);
         return;
       }
       // Downloading the list: Back offers to stop (a list that is too big, or a server that never answers).
@@ -747,9 +751,10 @@ var App = (function () {
     if (h <= 0) return false;
     return Date.now() - (at || 0) > h * 3600e3;
   }
-  // While the app stays open (TVs rarely restart apps), check the schedules every 30 minutes.
+  // While the app stays open (TVs rarely restart apps), check the schedules every 5 minutes (a due reload held
+  // back while something played then follows soon after it stops).
   setInterval(function () {
-    if (!ready || document.hidden) return;
+    if (!ready || document.hidden || busyTV()) return;
     var p = Store.playlist;
     if (plDue(p, (Library.main || Library.data).at, false)) refresh(false);
     else Library.otherIds().forEach(function (id) {
@@ -758,7 +763,7 @@ var App = (function () {
     });
     var eh = +p.epgRefresh;
     if (Epg.xml && !Epg.loading && eh > 0 && Date.now() - (Epg.status.at || 0) > eh * 3600e3) Epg.refresh(Library, true);
-  }, 30 * 60e3);
+  }, 5 * 60e3);
 
   // Launch params as an object: webOS hands them over as an object or as JSON text.
   function rawParams(p) { if (typeof p === 'string') { try { p = JSON.parse(p || '{}'); } catch (e) { p = {}; } } return p && typeof p === 'object' ? p : {}; }

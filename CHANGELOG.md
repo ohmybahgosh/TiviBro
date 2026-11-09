@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Steadier on 1 GB TVs (issues #61 and #64).**  A long test session the way those TVs closed TiviBro (zapping through good channels and ones that fail, the guide, fullscreen, guide reloads, update checks, with a 6,000-channel playlist and a big guide) showed nothing left behind from one round to the next, but showed where the peaks are: reading the guide again held the old guide and the new one at once, nearly three times the guide's size, and one of the TVs closed just after such a reload started while it zapped.  On a TV short of memory (1 GB, or one that closed TiviBro while playing lately):
+  - The guide, the public guide and the channel list are no longer read again by themselves while something plays.  The guide you have stays on screen; they are read soon after playback stops.  Reload channels and Reload guide still work at once.
+  - When the guide is read again, the old one goes just before the new one comes in, not after: the peak of a reload is about half what it was.
+- **The update check reads the newest 20 releases from GitHub, not 100**: about 1 MB of text by now, and growing with every release, for a 1 GB TV to read.
+
 ## 0.6.0 (alpha 110, 2026-11-08)
 
 Pre-release: expect rough edges, and keep a backup before installing.
