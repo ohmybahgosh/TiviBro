@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 116, 2026-11-10)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 116
 
 - **A channel the TV player refused once gets another try on it before two minutes of retries (issue #73).**  When the TV player turned a channel down once (a hiccup at the provider can do that) and the built-in player then showed no picture, TiviBro kept retrying the built-in player ten times, about two minutes, before trying a backup version, and only after that went back to the TV player, which played it in 2 seconds.  Now it goes back to the TV player once more after the first 8 second wait.  If the TV player turns it down a second time, the backup versions are tried straight away.
 - **Back in the guide on the channel you picked, after it switched to a backup version (issue #73).**  When a channel stopped working and TiviBro switched to another version of it that isn't in that group (hidden, or in another group), leaving the guide for Settings and coming back put you at the top of the group.  Now you're back on the channel you picked.
 - **No more "TiviBro hit an error" after a channel moves from the built-in player to the TV player (issue #74).**  When the TV dropped the built-in player's video buffers and TiviBro moved the channel to the TV player, a late message from the closed built-in player still arrived and showed as an error, so the next start said TiviBro had hit one, though the channel played fine.  The built-in player now lets go of those buffers completely when it closes.
 
-## 0.6.0 (alpha 115, 2026-11-10)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 115
+### In alpha 115
 
 - **The guide no longer downloads again on most starts when the provider keeps adding channels.**  When the channel list has guide ids the guide wasn't read for, TiviBro reads the whole guide again, which for a provider adding event channels every day meant about 10 MB on most starts.  Now that happens at most once every 3 hours; in between, the new channels wait for the next load.  The log says when that's the case.
 - **Closing TiviBro while the guide loads no longer counts as running out of memory.**  The next start said "The last guide load did not finish… Loading again with less memory" even when you had just closed it or put it in the background, and two of those in a row paused the guide.  Now only a load cut short by TiviBro closing unexpectedly counts; one cut short by closing it, or by an update, just loads again as before.
