@@ -30,6 +30,11 @@ loading, each piece throwing again.  `flush` now catches per buffer, `_needClean
 `_doCleanupSourceBuffer` skip a buffer whose `buffered` can't be read, and `Transmuxer._onWorkerMessage` drops a
 message that arrives after destroy (`!this._emitter`, "Cannot read property 'emit' of null").
 
+A late "updateend" after shutdown (issue #74): when the browser had removed a SourceBuffer, the MediaSource is "closed" and
+`MSEController.shutdown` skipped taking the SourceBuffer listeners off along with `removeSourceBuffer`.  A queued "updateend" then ran
+`_onSourceBufferUpdateEnd` on the emptied queues ("Cannot read property 'length' of null").  The listeners now come off whatever the
+MediaSource's state, and `_onSourceBufferUpdateEnd` returns at once when the controller has been shut down or destroyed.
+
 Re-apply after upgrading mpegts.js.  `hls.min.js` (1.5.20) is unmodified.
 
 ## qrcode.js

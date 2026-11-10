@@ -713,6 +713,25 @@ ok('other files play directly, without subtitle extraction', mp4.calls.length ==
   ok('mpegts flush never throws', /prototype\.flush=function\(\)\{for\(var e in this\._sourceBuffers\)if\(this\._sourceBuffers\[e\]\)try\{/.test(v) && /catch\(x\)\{r\.a\.e\(this\.TAG,"flush: "/.test(v));
   ok('mpegts cleanup checks skip a removed buffer', /try\{var n=i\.buffered\}catch\(x\)\{return!1\}/.test(v) && /try\{i\.buffered\}catch\(x\)\{continue\}/.test(v));
   ok('mpegts ignores worker messages after destroy', v.indexOf('this._workerDestroying||!this._emitter)return this._workerDestroying=!1,this._worker&&this._worker.terminate()') > 0);
+  // issue #74: after the browser removed a SourceBuffer, shutdown skipped taking off its listeners (the
+  // MediaSource was "closed"), so a late "updateend" read the emptied queues: "Cannot read property 'length' of null".
+  ok('issue #74: shutdown always takes the SourceBuffer listeners off', /if\("closed"!==e\.readyState\)try\{e\.removeSourceBuffer\(n\)\}catch\(e\)\{r\.a\.e\(this\.TAG,e\.message\)\}n\.removeEventListener\("error"/.test(v));
+  const ue = v.match(/e\.prototype\._onSourceBufferUpdateEnd=(function\(\)\{[^]*?this\._emitter\.emit\(s\.a\.UPDATE_END\)\})/);
+  ok('issue #74: updateend handler found', !!ue);
+  if (ue) {
+    const fn = new Function('s', 'return ' + ue[1])({ a: { UPDATE_END: 'x' } });
+    const gone = { _mediaSource: null, _pendingSegments: { video: null, audio: null }, _pendingRemoveRanges: { video: null, audio: null }, _emitter: null };
+    let threw = null; try { fn.call(gone); } catch (e) { threw = e.message; }
+    ok('issue #74: a late updateend after shutdown does nothing', threw === null, threw);
+    const audioOnly = { _mediaSource: {}, _pendingSegments: { video: [], audio: null }, _pendingRemoveRanges: { video: [], audio: null }, _emitter: { emit() {} } };
+    threw = null; try { fn.call(audioOnly); } catch (e) { threw = e.message; }
+    ok('issue #74: nor after an audio-only shutdown', threw === null, threw);
+    let emitted = 0, appended = 0;
+    const live = { _mediaSource: {}, _pendingSegments: { video: [1], audio: [] }, _pendingRemoveRanges: { video: [], audio: [] }, _emitter: { emit() { emitted++; } },
+      _hasPendingRemoveRanges() { return false; }, _hasPendingSegments() { return true; }, _doAppendSegments() { appended++; } };
+    fn.call(live);
+    ok('issue #74: a live player still appends and reports updateend', appended === 1 && emitted === 1);
+  }
 }
 
 if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }

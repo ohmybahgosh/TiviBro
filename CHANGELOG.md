@@ -4,6 +4,7 @@
 
 - **A channel the TV player refused once gets another try on it before two minutes of retries (issue #73).**  When the TV player turned a channel down once (a hiccup at the provider can do that) and the built-in player then showed no picture, TiviBro kept retrying the built-in player ten times, about two minutes, before trying a backup version, and only after that went back to the TV player, which played it in 2 seconds.  Now it goes back to the TV player once more after the first 8 second wait.  If the TV player turns it down a second time, the backup versions are tried straight away.
 - **Back in the guide on the channel you picked, after it switched to a backup version (issue #73).**  When a channel stopped working and TiviBro switched to another version of it that isn't in that group (hidden, or in another group), leaving the guide for Settings and coming back put you at the top of the group.  Now you're back on the channel you picked.
+- **No more "TiviBro hit an error" after a channel moves from the built-in player to the TV player (issue #74).**  When the TV dropped the built-in player's video buffers and TiviBro moved the channel to the TV player, a late message from the closed built-in player still arrived and showed as an error, so the next start said TiviBro had hit one, though the channel played fine.  The built-in player now lets go of those buffers completely when it closes.
 
 ## 0.6.0 (alpha 115, 2026-11-10)
 
