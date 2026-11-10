@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 115, 2026-11-10)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 115
 
 - **The guide no longer downloads again on most starts when the provider keeps adding channels.**  When the channel list has guide ids the guide wasn't read for, TiviBro reads the whole guide again, which for a provider adding event channels every day meant about 10 MB on most starts.  Now that happens at most once every 3 hours; in between, the new channels wait for the next load.  The log says when that's the case.
 - **Closing TiviBro while the guide loads no longer counts as running out of memory.**  The next start said "The last guide load did not finish… Loading again with less memory" even when you had just closed it or put it in the background, and two of those in a row paused the guide.  Now only a load cut short by TiviBro closing unexpectedly counts; one cut short by closing it, or by an update, just loads again as before.
@@ -8,11 +12,7 @@
 - **Back presses that waited while the TV was busy no longer close TiviBro (discussion #36).**  On a TV short of memory, TiviBro can be busy for a second or more, and the remote's presses wait and then arrive together.  Two Backs pressed during that went straight from "Press Back again to exit" to the exit question before you had seen the first.  Now the second Back only counts if you pressed it after "Press Back again to exit" (or the menu bar) was on screen, and the 2.5 seconds to press it start once it shows.
 - **The log says when buttons waited.**  When a press is handled more than 0.4 seconds after you pressed it, the log says how many and how long, so a report shows how busy the TV was.
 
-## 0.6.0 (alpha 114, 2026-11-10)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 114
+### In alpha 114
 
 - **A 14:9 aspect, a little wider than 4:3 (issue #69).**  For a picture that looks squeezed, but not by a whole 16:9: it is drawn 14:9, full height, with thin bars at the sides.  It's in the Aspect menu and in Settings, next to 4:3.
 - **The Aspect menu says when two shapes look the same on the picture playing (issue #69).**  On a 4:3 picture, Fill, 16:9 and 4:3 to 16:9 all fill the screen, so picking one after another changed nothing and looked broken.  The menu now says "looks the same as Fill on this picture", and the Aspect button skips those shapes.
