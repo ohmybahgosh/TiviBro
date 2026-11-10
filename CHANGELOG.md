@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **A channel the TV player refused once gets another try on it before two minutes of retries (issue #73).**  When the TV player turned a channel down once (a hiccup at the provider can do that) and the built-in player then showed no picture, TiviBro kept retrying the built-in player ten times, about two minutes, before trying a backup version, and only after that went back to the TV player, which played it in 2 seconds.  Now it goes back to the TV player once more after the first 8 second wait.  If the TV player turns it down a second time, the backup versions are tried straight away.
+- **Back in the guide on the channel you picked, after it switched to a backup version (issue #73).**  When a channel stopped working and TiviBro switched to another version of it that isn't in that group (hidden, or in another group), leaving the guide for Settings and coming back put you at the top of the group.  Now you're back on the channel you picked.
+
 ## 0.6.0 (alpha 115, 2026-11-10)
 
 Pre-release: expect rough edges, and keep a backup before installing.
@@ -11,8 +16,6 @@ Pre-release: expect rough edges, and keep a backup before installing.
 - **Stretch wider, in the Aspect menu (issue #69).**  For a picture squeezed sideways whatever its own shape says: each pixel is drawn wider by a factor (×1.10 to ×1.78, or one you type from 1.05 to 2.00), the height kept at the screen's, and past the screen's width the sides are cropped.  The other shapes keep the picture's proportions or fill the screen; this one only widens it.
 - **Back presses that waited while the TV was busy no longer close TiviBro (discussion #36).**  On a TV short of memory, TiviBro can be busy for a second or more, and the remote's presses wait and then arrive together.  Two Backs pressed during that went straight from "Press Back again to exit" to the exit question before you had seen the first.  Now the second Back only counts if you pressed it after "Press Back again to exit" (or the menu bar) was on screen, and the 2.5 seconds to press it start once it shows.
 - **The log says when buttons waited.**  When a press is handled more than 0.4 seconds after you pressed it, the log says how many and how long, so a report shows how busy the TV was.
-- **A channel the TV player refused once gets another try on it before two minutes of retries (issue #73).**  When the TV player turned a channel down once (a hiccup at the provider can do that) and the built-in player then showed no picture, TiviBro kept retrying the built-in player ten times, about two minutes, before trying a backup version, and only after that went back to the TV player, which played it in 2 seconds.  Now it goes back to the TV player once more after the first 8 second wait.  If the TV player turns it down a second time, the backup versions are tried straight away.
-- **Back in the guide on the channel you picked, after it switched to a backup version (issue #73).**  When a channel stopped working and TiviBro switched to another version of it that isn't in that group (hidden, or in another group), leaving the guide for Settings and coming back put you at the top of the group.  Now you're back on the channel you picked.
 
 ### In alpha 114
 
