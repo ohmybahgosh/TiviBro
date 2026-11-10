@@ -1563,6 +1563,9 @@ var Views = (function () {
     // A film shape of your own: IMAX 1.90, 2.39 scope and so on, cropped to fill the screen (discussion #31).
     var film = Player.filmShape(on);
     items.push({ label: 'Film shape…', sub: film ? 'on: ' + Player.aspectName(on) : 'a wide film inside the picture fills the screen: 1.90 IMAX, 2.39 and others', action: function () { filmMenu(c, tv, what); } });
+    // Wider by a factor, the height kept: for a picture squeezed sideways (issue #69).
+    var wide = Player.wideBy(on);
+    items.push({ label: 'Stretch wider…', sub: wide ? 'on: ' + Player.aspectName(on) : 'each pixel drawn wider, the height kept, for a squeezed picture', action: function () { wideMenu(c, tv, what); } });
     items.push({ label: 'Use this aspect for everything', sub: 'currently ' + Player.aspectName(Player.displayFor(null)), action: function () {
       Store.settings.display = Player.displayFor(c); Store.saveSettings(); Store.edits.display = {}; Store.saveEdits(); Player.setAspect(Store.settings.display, null); U.toast('Aspect set for every channel and video');
     } });
@@ -1584,6 +1587,22 @@ var Views = (function () {
         if (!(r >= 1.5 && r <= 3)) { U.toast('A shape from 1.50 to 3.00, like 2.39 or 64:27', 5000); return; }
         use(r);
       }, 'Width over height: 2.39, 1.90, or 64:27.', false, 'OK');
+    } }]));
+  }
+  function wideMenu(c, tv, what) {
+    var on = Player.wideBy(Player.displayFor(c));
+    function use(r) {
+      Player.setAspect('wide:' + r, c);
+      if (tv) U.toast('Wider ×' + r.toFixed(2) + '.  This ' + what + ' plays with the TV player, which some TVs keep at its own shape.', 6000);
+    }
+    UI.menu('Stretch wider', [[1.1, 'a little'], [1.2, ''], [1.25, ''], [1.33, '4:3 to 16:9'], [1.5, 'a lot: 4:3 becomes 2:1, sides cropped'], [1.78, '']].map(function (x) {
+      return { label: '×' + x[0].toFixed(2), sub: Math.abs(on - x[0]) < 0.001 ? 'on' : x[1], action: function () { use(x[0]); } };
+    }).concat([{ label: 'Type a factor…', sub: 'From 1.05 to 2.00', action: function () {
+      UI.prompt('Stretch wider', on ? on.toFixed(2) : '', function (v) {
+        var r = Math.round(parseFloat(String(v).replace(',', '.').replace(/^\s*[x×]/i, '')) * 100) / 100;
+        if (!(r >= 1.05 && r <= 2)) { U.toast('A factor from 1.05 to 2.00, like 1.5', 5000); return; }
+        use(r);
+      }, 'How much wider to draw each pixel: 1.5 makes it half again as wide.', false, 'OK');
     } }]));
   }
   function speedMenu() {

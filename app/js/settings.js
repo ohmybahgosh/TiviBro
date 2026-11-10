@@ -94,8 +94,8 @@ var Settings = (function () {
       ['auto', 'tv', 'builtin'], ['Automatic', 'TV player for all HDR', 'Built-in player'], function () { return s.hdrRoute || 'auto'; }, function (v) { s.hdrRoute = v; save(); }));
     // A film shape set from the quick menu (Aspect > Film shape…) shows by its name and stays in the cycle.
     var aspV = Player.ASPECTS.map(function (a) { return a[0]; }), aspL = Player.ASPECTS.map(function (a) { return a[1]; }), aspOn = Player.displayFor(null);
-    if (Player.filmShape(aspOn)) { aspV.push(aspOn); aspL.push(Player.aspectName(aspOn)); }
-    out.push(choice('Aspect', 'The shape of the picture for every channel and video: Original, Fill (stretched to the screen), Zoom (fills it, edges cropped), 4:3, 14:9 (a little wider than 4:3), 16:9 (for a squashed picture), 21:9 (a 2.35:1 film fills the screen) or 4:3 to 16:9.  A channel or video can have its own from the quick menu, which also has Film shape for any wide film (IMAX 1.90, 2.39 and so on).',
+    if (Player.filmShape(aspOn) || Player.wideBy(aspOn)) { aspV.push(aspOn); aspL.push(Player.aspectName(aspOn)); }
+    out.push(choice('Aspect', 'The shape of the picture for every channel and video: Original, Fill (stretched to the screen), Zoom (fills it, edges cropped), 4:3, 14:9 (a little wider than 4:3), 16:9 (for a squashed picture), 21:9 (a 2.35:1 film fills the screen) or 4:3 to 16:9.  A channel or video can have its own from the quick menu, which also has Film shape for any wide film (IMAX 1.90, 2.39 and so on) and Stretch wider for a picture squeezed sideways.',
       aspV, aspL, function () { return Player.displayFor(null); }, function (v) { Player.setAspect(v, null); save(); }));
     out.push(head('Catch-up, movies and shows'));
     out.push(choice('Skip step', 'For Left and Right while watching catch-up or a movie.', [10, 15, 30, 60, 120], ['10s', '15s', '30s', '1 min', '2 min'], function () { return +s.skip; }, function (v) { s.skip = v; save(); }));

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Stretch wider, in the Aspect menu (issue #69).**  For a picture squeezed sideways whatever its own shape says: each pixel is drawn wider by a factor (×1.10 to ×1.78, or one you type from 1.05 to 2.00), the height kept at the screen's, and past the screen's width the sides are cropped.  The other shapes keep the picture's proportions or fill the screen; this one only widens it.
 - **Back presses that waited while the TV was busy no longer close TiviBro (discussion #36).**  On a TV short of memory, TiviBro can be busy for a second or more, and the remote's presses wait and then arrive together.  Two Backs pressed during that went straight from "Press Back again to exit" to the exit question before you had seen the first.  Now the second Back only counts if you pressed it after "Press Back again to exit" (or the menu bar) was on screen, and the 2.5 seconds to press it start once it shows.
 - **The log says when buttons waited.**  When a press is handled more than 0.4 seconds after you pressed it, the log says how many and how long, so a report shows how busy the TV was.
 

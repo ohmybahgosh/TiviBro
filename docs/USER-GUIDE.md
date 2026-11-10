@@ -236,6 +236,7 @@ The **Channels** screen (in the side menu when **Channels screen in the menu** i
   - *21:9*: a 2.35:1 film with black bars above and below fills the screen; the sides are cropped.
   - *4:3 to 16:9*: a 4:3 picture, or a 4:3 picture with black bars at the sides, stretched out to fill a 16:9 screen.
   - *Film shape…*: any other wide film inside the picture fills the screen, sides cropped: 1.85, 1.90 (IMAX), 2.00, 2.20, 2.39 (most wide films) or 2.76, or type your own (from 1.50 to 3.00, or like 64:27).
+  - *Stretch wider…*: each pixel drawn wider by a factor (×1.10 to ×1.78, or type your own from 1.05 to 2.00), the height kept, for a picture squeezed sideways whatever its shape says.  Past the screen's width the sides are cropped.
   - Each channel, movie and episode remembers its own choice; **Use this aspect for everything** makes it the default.  The shapes past Zoom need the picture to be scaled by TiviBro; with the TV player (Stream info says which player is in use) some TVs keep the picture as it was, and the menu says so.  On some pictures two shapes come out the same (on a 4:3 picture, Fill, 16:9 and 4:3 to 16:9 all fill the screen); the menu says which, and the Aspect button skips them.
 
 <p align="center"><a href="media/zap.mp4"><img src="media/zap.gif" width="100%" alt="Changing channels, info and the quick menu"></a></p>

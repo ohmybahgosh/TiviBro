@@ -1238,8 +1238,12 @@ var Player = (function () {
   /* A film shape of your own (discussion #31): 'film:2.39' grows a letterboxed film of that shape until it
      fills the screen's height, sides cropped, as 21:9 does for 2.35.  From 1.5 to 3. */
   function filmShape(mode) { var m = /^film:(\d(?:\.\d{1,3})?)$/.exec(String(mode || '')), r = m ? +m[1] : 0; return r >= 1.5 && r <= 3 ? r : 0; }
-  function validAspect(mode) { return !!(ASPECT_NAMES[mode] || filmShape(mode)); }
-  function aspectName(mode) { var r = filmShape(mode); return r ? 'Film ' + r.toFixed(2) + ':1' : ASPECT_NAMES[mode] || ''; }
+  /* Wider by a factor (issue #69): 'wide:1.5' draws each pixel 1.5 times as wide, the height kept at the
+     screen's.  For a picture squeezed sideways whatever its own shape says; past the screen's width the sides
+     are cropped.  From 1.05 to 2. */
+  function wideBy(mode) { var m = /^wide:(\d(?:\.\d{1,3})?)$/.exec(String(mode || '')), r = m ? +m[1] : 0; return r >= 1.05 && r <= 2 ? r : 0; }
+  function validAspect(mode) { return !!(ASPECT_NAMES[mode] || filmShape(mode) || wideBy(mode)); }
+  function aspectName(mode) { var r = filmShape(mode), w = wideBy(mode); return r ? 'Film ' + r.toFixed(2) + ':1' : w ? 'Wider ×' + w.toFixed(2) : ASPECT_NAMES[mode] || ''; }
   /* Stream format per channel: '' (the playlist's setting and what playback learns), 'hls' or 'ts'.
      Kept with the playlist's edits (backups too), by channel. */
   // "Busy" answers: connection limit, rate limit, overloaded.
@@ -1274,6 +1278,9 @@ var Player = (function () {
       // fills the screen's height and crop the sides.  A picture already that wide fills the screen the same way.
       var band = Math.max(filmShape(mode) || 2.35, A);
       fw = band >= S ? band * H : W; fh = fw / A;
+    } else if (wideBy(mode)) {
+      // Each pixel drawn wider, the picture as tall as the screen: a squeezed picture's own shape put right.
+      fh = H; fw = H * A * wideBy(mode);
     } else if (mode === 'stretch43') {
       // A 4:3 picture (or a 4:3 picture with black bars at the sides) stretched out to 16:9.
       var r = Math.min(4 / 3, A), wide = box(16 / 9);
@@ -1414,7 +1421,7 @@ var Player = (function () {
     setRate: function (r) { if (video) video.playbackRate = r; },
     get rate() { return video ? video.playbackRate : 1; },
     streamFormat: streamFormat, setStreamFormat: setStreamFormat, canSwitchFormat: canSwitchFormat,
-    displayFor: displayFor, setAspect: setAspect, aspectName: aspectName, filmShape: filmShape, aspectFit: aspectFit, aspectLooks: aspectLooks, ASPECTS: ASPECTS, ASPECT_NAMES: ASPECT_NAMES,
+    displayFor: displayFor, setAspect: setAspect, aspectName: aspectName, filmShape: filmShape, wideBy: wideBy, aspectFit: aspectFit, aspectLooks: aspectLooks, ASPECTS: ASPECTS, ASPECT_NAMES: ASPECT_NAMES,
     setAudio: function (i) {
       if (!eng || !eng.setAudio) return;
       if (cur) cur.userAudio = true;

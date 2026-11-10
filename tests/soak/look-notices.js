@@ -84,6 +84,13 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await clickRow('^14:9'); await page.waitForTimeout(600);
     const w = await ev(() => ({ d: Player.displayFor(Player.current), tr: document.getElementById('video').style.transform }));
     ok('14:9 draws the 4:3 picture a little wider, thin bars at the sides', w.d === '14:9' && /^scale\(0\.875, ?1\)$/.test(w.tr), JSON.stringify(w));
+    await ev(() => { UI.close(); Views.runAction('menu', 'player'); }); await page.waitForTimeout(400);
+    await clickRow('^Aspect'); await page.waitForTimeout(400);
+    await page.keyboard.press('ArrowUp'); await page.waitForTimeout(300);
+    await clickRow('^Stretch wider'); await page.waitForTimeout(400);
+    await clickRow('^×1\\.50'); await page.waitForTimeout(600);
+    const sw = await ev(() => ({ d: Player.displayFor(Player.current), tr: document.getElementById('video').style.transform }));
+    ok('Stretch wider ×1.50 widens the picture only, the height kept (issue #69)', sw.d === 'wide:1.5' && /^scale\(1\.125, ?1\)$/.test(sw.tr), JSON.stringify(sw));
     await ev(() => { UI.close(); Player.setAspect('fill', Player.current); });
     const cyc = await ev(() => { const out = []; for (let n = 0; n < 7; n++) { Views.runAction('picture', 'player'); out.push(Player.displayFor(Player.current)); } return out; });
     ok('the Aspect button skips shapes that look the same as the one on', cyc.indexOf('16:9') < 0 && cyc.indexOf('stretch43') < 0 && cyc.indexOf('14:9') >= 0, cyc.join(','));
