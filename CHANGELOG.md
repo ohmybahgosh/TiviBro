@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **No more "TiviBro hit an error last time" after quick channel changes (issue #70).**  When the built-in player lost its picture buffer during a channel change, the old channel could keep loading in the background, holding a second connection to the provider and throwing an error for every piece it read.  The old channel is now always let go, and the built-in player no longer throws when a channel it already closed sends one last piece.
 - **Channels that only the TV player can show start in about 10 seconds, not 35 to 50 (issues #65 and #66).**  When the HLS version of a channel reads its first piece but shows no picture for 8 seconds, TiviBro now goes to the TV player at once, as it already did for MPEG-TS, instead of waiting 17 seconds twice.  A channel coming back from its other versions whose picture the built-in player can't show goes to the TV player next, not to HLS and back to MPEG-TS again.
 
 ## 0.6.0 (alpha 112, 2026-11-09)

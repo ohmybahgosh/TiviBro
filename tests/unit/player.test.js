@@ -637,5 +637,32 @@ t = setup({ mp4Subs: fakeMp4(mp4) });
 t.P.play({ n: 'Clip', url: 'http://provider/movie/u/p/4.avi' }, { live: false });
 ok('other files play directly, without subtitle extraction', mp4.calls.length === 0 && t.video.src === 'http://provider/movie/u/p/4.avi');
 
+// ---- issue #70: an MPEG-TS player whose unload throws still lets go of its stream ----
+{
+  const t = setup();
+  t.P.play({ n: 'First', url: 'http://p/live/u/p/70.ts' });
+  t.feed(0, 30); t.run(3000);
+  const old = t.last(), calls = [];
+  old.unload = () => { calls.push('unload'); throw new Error("Failed to read the 'buffered' property from 'SourceBuffer'"); };
+  old.detachMediaElement = () => calls.push('detach');
+  old.destroy = function () { calls.push('destroy'); this.dead = true; };
+  t.P.play({ n: 'Second', url: 'http://p/live/u/p/71.ts' });
+  t.run(200);
+  ok('issue #70: detach still runs after unload throws', calls.indexOf('detach') > calls.indexOf('unload'), calls.join(','));
+  ok('issue #70: and the old player is destroyed (its stream closed)', old.dead && calls[calls.length - 1] === 'destroy', calls.join(','));
+  ok('issue #70: the next channel starts', t.last() !== old && t.last().kind === 'ts' && /71\.ts/.test(t.last().src.url));
+  const later = t.last(); later.destroy = () => { throw new Error('x'); };
+  t.P.play({ n: 'Third', url: 'http://p/live/u/p/72.ts' });
+  ok('issue #70: a destroy that throws is logged, not thrown', /did not close/.test(t.logs.join('\n')) && /72\.ts/.test(t.last().src.url));
+}
+
+// ---- issue #70: the patched mpegts.js lets go cleanly after the browser dropped its buffers ----
+{
+  const v = fs.readFileSync(path.join(__dirname, '../../app/vendor/mpegts.js'), 'utf8');
+  ok('mpegts flush never throws', /prototype\.flush=function\(\)\{for\(var e in this\._sourceBuffers\)if\(this\._sourceBuffers\[e\]\)try\{/.test(v) && /catch\(x\)\{r\.a\.e\(this\.TAG,"flush: "/.test(v));
+  ok('mpegts cleanup checks skip a removed buffer', /try\{var n=i\.buffered\}catch\(x\)\{return!1\}/.test(v) && /try\{i\.buffered\}catch\(x\)\{continue\}/.test(v));
+  ok('mpegts ignores worker messages after destroy', v.indexOf('this._workerDestroying||!this._emitter)return this._workerDestroying=!1,this._worker&&this._worker.terminate()') > 0);
+}
+
 if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }
 console.log('all player tests passed');

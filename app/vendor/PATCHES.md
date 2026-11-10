@@ -24,6 +24,12 @@ until the helper's idle timeout, and the reconnect needed a second connection (r
 allow one).  The loader now keeps its reader (`_reader`, set in `open`) and `abort` cancels it whenever it
 doesn't call the AbortController; `_pump` stops at once after an abort (no "complete" or error after it).
 
+Letting go after the browser dropped the buffers (issue #70): `MSEController.flush` read `buffered` from a
+SourceBuffer the browser had already removed and threw, so the player's unload stopped halfway and its stream kept
+loading, each piece throwing again.  `flush` now catches per buffer, `_needCleanupSourceBuffer` and
+`_doCleanupSourceBuffer` skip a buffer whose `buffered` can't be read, and `Transmuxer._onWorkerMessage` drops a
+message that arrives after destroy (`!this._emitter`, "Cannot read property 'emit' of null").
+
 Re-apply after upgrading mpegts.js.  `hls.min.js` (1.5.20) is unmodified.
 
 ## qrcode.js

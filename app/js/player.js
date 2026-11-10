@@ -279,7 +279,17 @@ var Player = (function () {
         if (b.length) { var end = b.end(b.length - 1); if (end - video.currentTime > 1.5) video.currentTime = end - 1; }
       },
       info: function () { var s = m.statisticsInfo; return s && s.speed ? Math.round(s.speed * 8) + ' kbps' : ''; },
-      destroy: function () { try { m.pause(); m.unload(); m.detachMediaElement(); m.destroy(); } catch (e) {} }
+      /* Every step on its own (issue #70): one try for all four left the player half alive when unload threw (a
+         sound or picture buffer the browser had already dropped).  Its stream kept loading from the provider
+         after the channel changed, a second connection, and each piece it read threw an error.  Letting go of
+         the picture first (detach) means destroy's own unload has nothing left to trip on. */
+      destroy: function () {
+        try { m.pause(); } catch (e) {}
+        var fine = true;
+        try { m.unload(); } catch (e) { fine = false; Log.debug('player', 'MPEG-TS player unload: ' + e.message); }
+        try { m.detachMediaElement(); } catch (e) { fine = false; Log.debug('player', 'MPEG-TS player detach: ' + e.message); }
+        try { m.destroy(); } catch (e) { Log.warn('player', 'MPEG-TS player did not close' + (fine ? '' : ' after an error') + ': ' + e.message); }
+      }
     };
   }
 
