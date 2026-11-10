@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 114, 2026-11-10)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 114
 
 - **A 14:9 aspect, a little wider than 4:3 (issue #69).**  For a picture that looks squeezed, but not by a whole 16:9: it is drawn 14:9, full height, with thin bars at the sides.  It's in the Aspect menu and in Settings, next to 4:3.
 - **The Aspect menu says when two shapes look the same on the picture playing (issue #69).**  On a 4:3 picture, Fill, 16:9 and 4:3 to 16:9 all fill the screen, so picking one after another changed nothing and looked broken.  The menu now says "looks the same as Fill on this picture", and the Aspect button skips those shapes.
 
-## 0.6.0 (alpha 113, 2026-11-09)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 113
+### In alpha 113
 
 - **No more "TiviBro hit an error last time" after quick channel changes (issue #70).**  When the built-in player lost its picture buffer during a channel change, the old channel could keep loading in the background, holding a second connection to the provider and throwing an error for every piece it read.  The old channel is now always let go, and the built-in player no longer throws when a channel it already closed sends one last piece.
 - **Channels that only the TV player can show start in about 10 seconds, not 35 to 50 (issues #65 and #66).**  When the HLS version of a channel reads its first piece but shows no picture for 8 seconds, TiviBro now goes to the TV player at once, as it already did for MPEG-TS, instead of waiting 17 seconds twice.  A channel coming back from its other versions whose picture the built-in player can't show goes to the TV player next, not to HLS and back to MPEG-TS again.
