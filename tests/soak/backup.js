@@ -3,7 +3,8 @@
    Two cases on the mock's "Nova News 24" (FHD, HD, SD):
      never starts    the FHD stream answers 404 from the first try
      dies later      the FHD stream plays, then answers 404 for good
-   Each should end up playing another version, with a message saying so.
+   Each should end up playing another version, with a message saying so, and the guide comes back on the
+   channel you picked even when the version playing isn't in its group (issue #73).
      provider down   every version answers 404 for a while: back on FHD, still retrying, and playing
                      again by itself once the provider returns */
 'use strict';
@@ -32,6 +33,18 @@ async function run(browser, label, deadFrom) {
   const r = await page.evaluate(() => ({ k: Views.playing && Views.playing.n, pos: Player.position, toasts: window.__toasts.join(' / ') }));
   ok(label + ': now playing another version', /Nova News 24 HD/.test(r.k || '') && r.pos > 1, (r.k || 'nothing') + ' after ' + Math.round((Date.now() - t0) / 1000) + 's');
   ok(label + ': says so', /isn't working\.  Switched to .*HD/.test(r.toasts), r.toasts.slice(0, 120));
+  if (!deadFrom) {
+    // Issue #73: the version switched to isn't in the group showing (Favorites holds another channel, then the one
+    // you picked).  Back in the guide (after Settings), the row is the channel you picked, not the top of the group.
+    const g = await page.evaluate(() => {
+      const hd = Views.playing, other = Library.channels(Library.ALL).find(c => !/Nova News/.test(c.n));
+      Library.toggleFav(other.k); Library.toggleFav('x1');
+      Guide.open(Library.FAV, hd.k);
+      const l = Guide.__list(), i = Guide.__sel();
+      return { playing: hd.k, inList: l.some(c => c.k === hd.k), at: l[i] && l[i].k, i };
+    });
+    ok(label + ': back in the guide, on the channel you picked', g.playing !== 'x1' && !g.inList && g.at === 'x1' && g.i === 1, JSON.stringify(g));
+  }
   ok(label + ': no page errors', !errors.length, errors.join(' | '));
   if (process.env.LOG) console.log((await page.evaluate(() => Log.lines(false))).filter(l => /player/.test(l)).slice(-40).join('\n'));
   await ctx.close();
@@ -68,8 +81,8 @@ async function outage(browser) {
 (async () => {
   const browser = await chromium.launch({ args: ['--autoplay-policy=no-user-gesture-required'] });
   if (!process.env.ONLY_LATE && !process.env.ONLY_OUTAGE) await run(browser, 'never starts', 0);
-  if (!process.env.ONLY_OUTAGE) await run(browser, 'dies later', 8);
-  await outage(browser);
+  if (!process.env.ONLY_OUTAGE && !process.env.ONLY_NEVER) await run(browser, 'dies later', 8);
+  if (!process.env.ONLY_NEVER) await outage(browser);
   await browser.close();
   console.log(fails ? fails + ' failed' : 'all backup tests passed');
   process.exit(fails ? 1 : 0);

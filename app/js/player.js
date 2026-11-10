@@ -628,6 +628,7 @@ var Player = (function () {
     for (var i = 0; i < order.length; i++) {
       var k = order[i];
       if (cur.tried[k]) continue;
+      if (cur.late && cur.late[k]) continue;      // it already showed no picture for this channel (issue #73)
       if (k === 'ts' && !(window.mpegts && mse())) continue;
       if (k === 'hls' && !(window.Hls && Hls.isSupported() && (isHlsUrl || hlsVariant(cur.origUrl || cur.url)))) continue;
       return k;
@@ -673,9 +674,16 @@ var Player = (function () {
     var order = isHlsUrl ? ['hls', 'native'] : !format && cur.live && !cur.timeshift && cur.everPlayed && hlsVariant(cur.origUrl || cur.url) ? ['ts', 'hls', 'native'] : ['ts', 'native', 'hls'];
     for (var i = 0; i < order.length; i++) {
       var k = order[i];
-      if (cur.late[k] || (cur.tried && cur.tried[k]) || (cur.bad && cur.bad[k])) continue;
+      if (cur.late[k] || (cur.bad && cur.bad[k])) continue;
+      /* The TV player refusing a channel once, before anything played, can be a hiccup at the provider: a
+         channel the built-in pipelines then show no picture for gets one more try on the TV player before
+         ten reconnects on a pipeline that can't show it (issue #73: AR | TYC SPORTS HD, AC-3 sound, the TV
+         player refused it once, then HLS showed nothing eleven times over two minutes; the TV player
+         played it in 2 s afterwards). */
+      if (cur.tried && cur.tried[k] && !(k === 'native' && format && !cur.nativeAgain)) continue;
       if (k === 'ts' && !(window.mpegts && mse())) continue;
       if (k === 'hls' && !(window.Hls && Hls.isSupported() && (isHlsUrl || hlsVariant(cur.origUrl || cur.url)))) continue;
+      if (k === 'native' && cur.tried && cur.tried.native) cur.nativeAgain = 1;
       return k;
     }
     return null;
@@ -910,7 +918,7 @@ var Player = (function () {
           // A format the built-in pipelines can't show goes to the TV player first, also for a channel that is
           // back from its other versions (issue #66: HLS, MPEG-TS and HLS again, 53 s, before the TV player).
           var np = lateEngine(st.kind, fmtFail);
-          if (np) { Log.info('player', 'No picture twice on the ' + ENGINE_NAMES[st.kind] + '; trying the ' + ENGINE_NAMES[np]); useEngine(np); cur.retries = Math.max(0, cur.retries - 2); }
+          if (np) { Log.info('player', 'No picture twice on the ' + ENGINE_NAMES[st.kind] + '; trying the ' + ENGINE_NAMES[np] + (cur.nativeAgain && np === 'native' ? ' again' : '')); useEngine(np); cur.retries = Math.max(0, cur.retries - 2); }
         }
         reconnect(myToken, 'No video yet, retrying');
       }

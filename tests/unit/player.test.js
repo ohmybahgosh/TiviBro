@@ -187,6 +187,44 @@ t.run(80000);
 ok('#66: no picture anywhere ends on the TV player without flipping formats', t.video._src === 'http://p/live/u/p/355127.ts' && !t.logs.some(l => /switching to its|back to MPEG-TS|back to HLS/.test(l)),
   t.made.map(x => x.kind).join(',') + ' ' + t.logs.filter(l => /No picture|switching|back to/.test(l)).join(' | '));
 
+// ---- issue #73: the TV player refused a channel once, then HLS shows no picture: the TV player again, not ten HLS reconnects ----
+{
+  const ls = {};
+  let m = setup({ memo: ls });
+  const ch = { k: 'tyc73', n: 'AR | TYC SPORTS HD', url: 'http://p/live/u/p/73.m3u8' };
+  // First day: HLS shows no picture, the TV player plays it, and that is remembered.
+  m.P.play(ch);
+  (m.last().h.hlsInit || (() => {}))('e', {}); m.video.readyState = 1; m.run(9500);
+  ok('#73 setup: HLS no picture goes to the TV player', m.video._src === 'http://p/live/u/p/73.m3u8', m.logs.filter(l => /No picture|trying/.test(l)).join(' | '));
+  m.feed(0, 30); m.run(1500);
+  m.ctx.PlayMemo.flush();
+  // Next time: it starts on the TV player, which refuses it once (a hiccup at the provider).
+  m = setup({ memo: ls });
+  m.P.play(ch);
+  ok('#73: starts on the TV player, which played it last time', m.logs.some(l => /Starting with the TV player/.test(l)) && m.video._src === 'http://p/live/u/p/73.m3u8');
+  m.video.error = { code: 4, message: 'MEDIA_ELEMENT_ERROR: Format error' }; m.video.l.error.forEach(f => f());
+  m.run(100);
+  ok('#73: refused, so HLS', m.last().kind === 'hls' && !m.last().dead, m.made.map(x => x.kind).join(','));
+  const hlsCount = m.made.length;
+  m.video.error = null; m.video._src = '';
+  (m.last().h.hlsInit || (() => {}))('e', {}); m.video.readyState = 1; m.run(9500);
+  ok('#73: HLS with no picture goes back to the TV player once more', m.logs.some(l => /No picture twice on the HLS version of this channel; trying the TV player again/.test(l)) && m.video._src === 'http://p/live/u/p/73.m3u8',
+    m.logs.filter(l => /No picture|trying|Reconnect/.test(l)).join(' | '));
+  ok('#73: after one 8 s wait, not ten reconnects on HLS', m.made.length === hlsCount && m.logs.filter(l => /No playable video after/.test(l)).length === 1, m.made.map(x => x.kind).join(','));
+  m.feed(0, 30); m.run(1500);
+  ok('#73: and the TV player plays it', m.P.playing && m.logs.filter(l => /Playing after/.test(l)).length === 1);
+  // If the TV player refuses it a second time, give up at once (so a backup version is tried), not back to HLS.
+  m = setup({ memo: ls });
+  m.P.play(ch);
+  m.video.error = { code: 4 }; m.video.l.error.forEach(f => f()); m.run(100);
+  m.video.error = null; m.video._src = '';
+  (m.last().h.hlsInit || (() => {}))('e', {}); m.video.readyState = 1; m.run(9500);
+  const n2 = m.made.length;
+  m.video.error = { code: 4 }; m.video.l.error.forEach(f => f()); m.run(2000);
+  ok('#73: refused twice ends the try instead of HLS again', m.made.length === n2 && m.logs.some(l => /No player could open this channel/.test(l)),
+    m.made.map(x => x.kind).join(',') + ' ' + m.logs.filter(l => /No player|trying|Reconnect/.test(l)).join(' | '));
+}
+
 // ---- a channel that never played gives up with a clear error ----
 t = setup({ settings: { buffer: 'custom', custom: { prebuffer: 1, ahead: 10, back: 4, stall: 4, retries: 1 } } });
 t.P.play({ n: 'D', url: 'http://p/live/u/p/5.ts' });

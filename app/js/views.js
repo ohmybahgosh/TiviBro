@@ -2077,12 +2077,26 @@ var Guide = (function () {
       if (alt !== gid && L.channels(alt).length) { U.toast(L.groupName(gid) + ' is empty, showing ' + L.groupName(alt)); gid = alt; list = L.channels(gid); remember(); }
     }
     loaded = gid;
-    var i = key ? list.findIndex(function (c) { return c.k === key; }) : -1;
+    var i = rowOf(key);
     sel = i >= 0 ? i : 0;
     top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS));
     head();
     body.classList.toggle('empty', !list.length);
     body.setAttribute('data-empty', gid === L.TEAMS || gid === L.MOVIES ? Views.emptyFor(gid) : 'No channels in ' + L.groupName(gid) + '.');
+  }
+  /* The row of a channel in the group showing.  A version of it that isn't in this group (hidden, or in
+     another group) is on the row of the version that is: the channel switched to by itself when the one you
+     picked stopped working, so the guide comes back to where you were, not to the top (issue #73). */
+  function rowOf(key) {
+    if (!key) return -1;
+    var i = list.findIndex(function (c) { return c.k === key; });
+    if (i >= 0) return i;
+    var c = L.find(key), vs = c ? L.versions(c) : [];
+    for (var v = 0; v < vs.length; v++) {
+      var vk = vs[v].k, j = list.findIndex(function (x) { return x.k === vk; });
+      if (j >= 0) return j;
+    }
+    return -1;
   }
   function head() {
     setHead(L.groupName(gid) + '   ' + (vis ? list.filter(function (c) { return vis.on[c.k]; }).length + ' of ' + list.length + ' shown' : list.length));
@@ -2127,7 +2141,7 @@ var Guide = (function () {
     if (!rows.length) return open(Views.group, key);
     fit();
     UI.setHandler(keys);
-    if (key) { var i = list.findIndex(function (c) { return c.k === key; }); if (i >= 0) { sel = i; top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS)); } }
+    if (key) { var i = rowOf(key); if (i >= 0) { sel = i; top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS)); } }
     focusT = Date.now(); t0 = focusT - (focusT % (30 * 60e3));
     setZone('grid');
     draw();
