@@ -559,6 +559,7 @@ var Views = (function () {
       }
       else if (a === 'back') {
         if (tab !== home()) { done(); switchTab(home()); }
+        else if (bankedBack()) { /* pressed before the menu bar and its message showed */ }
         else if (Store.settings.exitTwice !== false && Date.now() - backT > 2500 && !sysAsks()) { armBack(); }
         else { done(); askExit(); }
       }
@@ -571,7 +572,16 @@ var Views = (function () {
   /* With the TV's own "Do you want to exit the app?" coming (webOS 6 and later), that box is the second
      step, so TiviBro shows no "Press Back again" of its own on top of it: the press that would have
      shown it goes straight to the TV's question. */
-  function armBack() { backT = Date.now(); if (!sysAsks()) U.toast('Press Back again to exit', 2500); }
+  /* A Back pressed before "Press Back again to exit" (or the menu bar it comes with) was on screen was
+     waiting in the queue while the TV was busy: it doesn't count as the second press (discussion #36).
+     The 2.5 seconds start once it shows. */
+  var backSeen = 0;
+  function armBack() {
+    backT = Date.now(); backSeen = Infinity;
+    if (!sysAsks()) U.toast('Press Back again to exit', 2500);
+    UI.afterPaint(function (t) { backSeen = t; backT = Date.now(); });
+  }
+  function bankedBack() { return Date.now() - backT < 2500 && UI.keyAt() < backSeen; }
   function sysBack() {
     var sys = window.webOSSystem || window.PalmSystem;
     return window.webOS && webOS.platformBack ? function () { webOS.platformBack(); } : sys && sys.platformBack ? function () { sys.platformBack(); } : null;
@@ -579,6 +589,7 @@ var Views = (function () {
   function sysAsks() { var ver = typeof Caps !== 'undefined' && Caps.webosVersion ? Caps.webosVersion(navigator.userAgent) : 0; return ver >= 6 && !!sysBack(); }
   function exitArmed() { return tab === home() && Date.now() - backT < 2500; }
   function exitApp(confirmFirst) {
+    if (bankedBack()) return;
     if ((confirmFirst || Store.settings.exitTwice) && Date.now() - backT > 2500 && !sysAsks()) { armBack(); return; }
     askExit();
   }
@@ -635,7 +646,7 @@ var Views = (function () {
         if (groupLocked(g)) Parental.gate('channels', { k: '', g: g.id }, go);
         else { if (g.id !== curGroup) showGroup(g.id); setZone('channels'); }
       }
-      else if (a === 'back') { if (exitArmed()) exitApp(true); else tabBar(function () { UI.setHandler(liveKeys); setZone(liveZone); }, true); }
+      else if (a === 'back') { if (bankedBack()) { /* pressed before the screen caught up */ } else if (exitArmed()) exitApp(true); else tabBar(function () { UI.setHandler(liveKeys); setZone(liveZone); }, true); }
       return true;
     }
     if (a === 'up') chansVL.move(-1, true);
@@ -1851,7 +1862,7 @@ var Views = (function () {
   return {
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
-    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     filterChanged: filterChanged,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; }, get vod() { return vod; }, runAction: runAction,
@@ -2761,7 +2772,7 @@ var Guide = (function () {
     else if (a === 'chdown') groupsVL.page(1);
     else if (a === 'right' || a === 'ok') enterGrid();
     else if (a === 'left') backToMenu();
-    else if (a === 'back') { if (Views.exitArmed()) Views.exitApp(true); else backToMenu(); }
+    else if (a === 'back') { if (Views.bankedBack()) { /* pressed before the screen caught up */ } else if (Views.exitArmed()) Views.exitApp(true); else backToMenu(); }
     else if (a === 'hold' || a === 'red' || a === 'info') { var g = groupsVL.current(); if (g) Views.groupMenu(g); }
     else if (a === 'playpause') watchPreview();
     else if (a.indexOf('num') === 0) numJump(a.slice(3));

@@ -35,14 +35,33 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await t.ev(() => Views.exitApp(true)); await t.page.waitForTimeout(200);
   ok('webOS 4 and 5: the first Back says press again', /Press Back again to exit/.test(await t.ev(() => document.getElementById('toast').textContent)));
   await t.page.waitForTimeout(2700);
-  await t.ev(() => { Views.exitApp(true); Views.exitApp(true); }); await t.page.waitForTimeout(400);
+  await t.ev(() => Views.exitApp(true)); await t.page.waitForTimeout(150); await t.ev(() => Views.exitApp(true)); await t.page.waitForTimeout(400);
   let m = await modal(t);
   ok('webOS 4 and 5: TiviBro asks Exit TiviBro?, Cancel picked', /Exit TiviBro\?/.test(m) && /Cancel/.test(m) && await t.ev(() => window.__back) === 0, m);
   await t.page.keyboard.press('Enter'); await t.page.waitForTimeout(300);
   ok('Cancel stays', await t.ev(() => window.__closed) === 0 && !(await modal(t)));
-  await t.ev(() => { Views.exitApp(true); Views.exitApp(true); }); await t.page.waitForTimeout(300);
+  await t.ev(() => Views.exitApp(true)); await t.page.waitForTimeout(150); await t.ev(() => Views.exitApp(true)); await t.page.waitForTimeout(300);
   await t.page.keyboard.press('ArrowUp'); await t.page.keyboard.press('Enter'); await t.page.waitForTimeout(500);
   ok('Exit closes', await t.ev(() => window.__closed) === 1);
+  await t.ctx.close();
+  // A TV busy for a moment (discussion #36): Back pressed twice while nothing moves on screen.  The presses
+  // arrive together once it's free; the ones made before "Press Back again to exit" showed don't close TiviBro.
+  t = await tv(53);
+  const busy = (ms) => t.page.evaluate((ms) => { setTimeout(() => { const e = Date.now() + ms; while (Date.now() < e) { /* busy */ } }, 0); }, ms);
+  await busy(1500); await t.page.waitForTimeout(100);
+  // Sent without waiting for each to be handled, the way a remote's presses queue up behind a busy page.
+  const cdp = await t.ctx.newCDPSession(t.page);
+  const key = (type) => cdp.send('Input.dispatchKeyEvent', { type, key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27, nativeVirtualKeyCode: 27 });
+  const sent = [];
+  for (let n = 0; n < 2; n++) { sent.push(key('keyDown'), key('keyUp')); await new Promise((r) => setTimeout(r, 120)); }
+  await Promise.all(sent);
+  await t.page.waitForTimeout(1800);
+  const after = { m: await modal(t), toast: await t.ev(() => document.getElementById('toast').textContent), nav: await t.ev(() => document.body.classList.contains('nav-open')) };
+  ok('Back presses made while the TV was busy don\'t close TiviBro: "Press Back again" shows', !/Exit TiviBro\?/.test(after.m) && /Press Back again to exit/.test(after.toast), JSON.stringify(after));
+  await t.page.keyboard.press('Escape'); await t.page.waitForTimeout(400);
+  ok('a Back pressed once that shows is the second press: TiviBro asks', /Exit TiviBro\?/.test(await modal(t)), await modal(t));
+  const late = await t.ev(() => (Log.lines ? Log.lines() : []).map((l) => l.msg || l).filter((l) => /Buttons waited/.test(l)));
+  ok('the log says buttons waited, and how long', late.length === 1 && /up to \d+ ms/.test(late[0]), JSON.stringify(late));
   ok('no page errors', !t.errs.length, t.errs.join(' | '));
   await b.close();
   console.log(fails ? fails + ' FAILED' : 'all exit checks passed');

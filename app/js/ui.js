@@ -57,9 +57,34 @@ var UI = (function () {
     return null;
   }
 
+  /* When the button now being handled was pressed, on performance.now()'s clock.  A TV short of memory can
+     be busy for a second or more: presses wait in a queue and arrive together, so a press made before the
+     screen showed the last one's result is told apart from one made after (discussion #36). */
+  var keyAt = 0, inKey = false, lateN = 0, lateMax = 0, lateLog = 0;
+  function pnow() { return window.performance && performance.now ? performance.now() : Date.now(); }
+  function pressedAt(e) {
+    var ts = e && +e.timeStamp, now = pnow();
+    if (!ts) return now;
+    if (ts > 1e12) ts -= Date.now() - now;               // an older engine's time since 1970
+    return ts > now + 50 || ts < now - 60000 ? now : ts;
+  }
+  // fn(t) once what was just drawn is on screen: the next frame, then that frame's work done.
+  function afterPaint(fn) {
+    var go = function () { setTimeout(function () { fn(pnow()); }, 0); };
+    if (window.requestAnimationFrame) requestAnimationFrame(go); else setTimeout(go, 16);
+  }
   function dispatch(a, e) {
     var h = modalH || handler;
     if (!h || typeof a !== 'string' || !a) return;
+    keyAt = pressedAt(e); inKey = true;
+    var late = Math.round(pnow() - keyAt);
+    if (late > 400) {
+      lateN++; lateMax = Math.max(lateMax, late);
+      if (Date.now() - lateLog > 30000 && typeof Log !== 'undefined') {
+        Log.info('key', 'Buttons waited: ' + lateN + ' press' + (lateN === 1 ? '' : 'es') + ' handled late, up to ' + lateMax + ' ms after the press (the TV was busy)');
+        lateLog = Date.now(); lateN = 0; lateMax = 0;
+      }
+    }
     if (typeof Awake !== 'undefined' && Awake.touch) Awake.touch();       // in use: the screensaver waits (issue #58)
     if (typeof Log !== 'undefined' && Log.stillHere) Log.stillHere();  // a button after the TV asked about exiting: the answer was no
     if (Log.sinking) Log.debug('key', a + (modalH ? '  (dialog)' : '') + '  tab=' + (window.Views ? Views.tab : '?') + (window.Views && Views.zone ? ' zone=' + Views.zone : '') + (window.Views && Views.full ? ' fullscreen' : ''));
@@ -69,6 +94,7 @@ var UI = (function () {
       Log.error('ui', 'Key handler error on "' + a + '": ' + (err && err.message) + (err && err.stack ? '  ' + String(err.stack).split('\n').slice(1, 4).join(' | ') : ''));
       U.toast('Something went wrong.  That action was cancelled.');
     }
+    inKey = false;
   }
 
   // Key repeat on webOS fires ~30/s.  Coalesce arrows to one move per animation frame so a
@@ -436,6 +462,8 @@ var UI = (function () {
     marquee: marquee,
     setHandler: function (fn) { handler = fn; },
     getHandler: function () { return handler; },
+    // When the button being handled was pressed (performance.now()'s clock), and fn(t) once the screen shows the change.
+    keyAt: function () { return inKey ? keyAt : pnow(); }, now: pnow, afterPaint: afterPaint,
     get modalOpen() { return !!modalH; },
     get menuLabels() { return modalH ? mItems.map(function (x) { return x.label == null ? x.label : String(x.label); }) : []; },   // every row of the open menu, also those scrolled out of view (tests)
     get pointer() { return pointer; },
