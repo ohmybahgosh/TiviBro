@@ -620,6 +620,14 @@ var Epg = (function () {
   function guard(kind, sig, force) {
     var prev = runGet(kind), tries = prev && prev.sig === sig ? prev.tries || 0 : 0;
     if (force) tries = 0;
+    /* A load cut short because TiviBro was closed or updated, not because it ran out of memory: start it
+       again as before, not in the low-memory way, and it doesn't count toward pausing the guide. */
+    var end = typeof Log !== 'undefined' ? Log.lastEnd : '';
+    if (tries && (end === 'closed' || end === 'updated') && !(guard.seen || {})[kind]) {
+      Log.info('epg', 'The last guide load was cut short when TiviBro was ' + (end === 'updated' ? 'updated' : 'closed') + '; loading it again');
+      tries = 0;
+    }
+    (guard.seen = guard.seen || {})[kind] = true;
     if (tries >= 2) {
       paused = { kind: kind, host: prev.host || '', at: Date.now() };
       var why = 'TiviBro closed twice while loading the guide' + (prev.host ? ' (' + prev.host + ')' : '') + ', probably out of memory.  Guide loading is paused: remove a big guide source, then use Reload guide now.';
@@ -794,6 +802,7 @@ var Epg = (function () {
 
   /* p: whose guide (the first playlist's when not given).  Another playlist's guide is added beside the
      first's (ingest), with its own crash guard ("main@<id>"). */
+  var ADDED_WAIT = 3 * 3600e3;
   function loadXml(force, notice, p) {
     p = p || P();
     var first = p.id === P().id, srcs = sources(p), pid = first ? '' : p.id, gk = first ? 'main' : 'main@' + p.id;
@@ -810,8 +819,16 @@ var Epg = (function () {
       var c = ca[0], a = ca[1], asked = askedOf(wanted(p)), added = 0;
       if (a && a.sig === sig && a.h) added = addedSince(a.h, asked);
       else if (c && c.sig === sig) Store.idbSet(akey, { sig: sig, h: asked });     // first time: the list as it is now
-      if (added) Log.info('epg', added + ' guide id' + (added === 1 ? '' : 's') + ' or name' + (added === 1 ? '' : 's') + ' new in the channel list since the guide loaded; loading it again');
       var hours = +p.epgRefresh, age = c ? Date.now() - c.at : Infinity;
+      /* Channels with guide ids the guide wasn't read for: read it again, but not more than every 3 hours.  A
+         provider adding a few event channels every day would otherwise mean the whole guide again on most
+         starts.  In between they wait for the next load. */
+      if (added && age >= ADDED_WAIT) Log.info('epg', added + ' guide id' + (added === 1 ? '' : 's') + ' or name' + (added === 1 ? '' : 's') + ' new in the channel list since the guide loaded; loading it again');
+      if (added && age < ADDED_WAIT) {
+        if (!(loadXml.waitSaid || {})[p.id]) Log.info('epg', added + ' guide id' + (added === 1 ? '' : 's') + ' or name' + (added === 1 ? '' : 's') + ' new since the guide loaded ' + Math.round(age / 60000) + ' min ago; the guide is read again for them once it is 3 hours old');
+        (loadXml.waitSaid = loadXml.waitSaid || {})[p.id] = true;
+        added = 0;
+      }
       var stale = !c || c.sig !== sig || added > 0 || (hours > 0 && age > hours * 3600e3) || (hours === -1 && !(loadXml.didStart || {})[p.id]);
       (loadXml.didStart = loadXml.didStart || {})[p.id] = true;
       if (c && c.sig === sig) { ingest(c, p); xmlReady = true; emit(null); }
@@ -1207,6 +1224,7 @@ var Epg = (function () {
     hasData: function (ch) { var id = epgId(ch); return !!(id && cache.has(id)) || !!(typeof Events !== 'undefined' && Events.of(ch)); },
     onUpdate: function (fn) { listeners.push(fn); },
     refresh: function (lib, force) { return init(lib || Library, force); },
+    set _addedWait(ms) { ADDED_WAIT = ms; },
     get status() { return status; },
     // Another playlist's guide (several playlists on): when it loaded and how each file went.
     statusFor: function (id) { return statusOf[id] || null; },

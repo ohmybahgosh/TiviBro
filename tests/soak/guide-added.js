@@ -6,7 +6,8 @@
    would show "No information" until the guide's next refresh.  Now:
    - the list reloaded as it was: the stored guide is used, nothing is downloaded;
    - another copy of a channel (an id the guide already has): still nothing downloaded;
-   - a channel with a new guide id: the guide loads again, and that channel gets its programmes. */
+   - a channel with a new guide id: the guide loads again once it is 3 hours old (not on every start while a
+     provider keeps adding channels), and that channel gets its programmes. */
 'use strict';
 const { chromium } = require('playwright');
 const R = require('../../scripts/demo/record.js');
@@ -51,8 +52,13 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   before = await ev(() => window.__loads);
   await ev((id) => { const c = Library.data.channels.find((x) => x.epg); Library.data.channels.push(Object.assign({}, c, { k: 'x-new-' + id, id: 'new' + id, n: 'Newly added', epg: id })); Epg.refresh(Library, false); }, unknown);
   await settled(); await page.waitForTimeout(1200);
+  const held = await ev(() => window.__loads), said = await ev(() => Log.lines().filter((l) => /once it is 3 hours old/.test(l)).length);
+  ok('a channel with a new guide id, the guide minutes old: not read again yet, and the log says when', held === before && said === 1, held + ' vs ' + before + ', said ' + said);
+  // Three hours on (the wait made short): the next start reads it again for the new channel.
+  await ev(() => { Epg._addedWait = 0; Epg.refresh(Library, false); });
+  await settled(); await page.waitForTimeout(1200);
   const after = await ev(() => window.__loads);
-  ok('a channel with a new guide id: the guide loads again', after > before, after + ' vs ' + before);
+  ok('once the guide is 3 hours old: it loads again for the new channel', after > before, after + ' vs ' + before);
   ok('and the new channel has its programmes', await ev((id) => Epg.hasData(Library.data.channels.find((c) => c.k === 'x-new-' + id)), unknown), unknown);
 
   ok('no page errors', !errs.length, errs.join(' | '));

@@ -5,7 +5,8 @@
      node tests/soak/guide-memory.js
    The in-app reader (no helper: Settings guideInApp stands in for a TV without one).
    - Over the memory budget the guide is trimmed (channels left out, a notice), not loaded whole.
-   - A load cut short by the app closing is retried once with less memory; after a second one the
+   - A load cut short by TiviBro being closed normally just loads again.  One cut short by a crash is
+     retried once with less memory; after a second one the
      guide is paused with a notice naming the source, and "Reload guide now" tries again. */
 'use strict';
 const { chromium } = require('playwright');
@@ -43,7 +44,20 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(m => { Store.playlist.epgSources = [{ url: m + '/stall.xml', offset: 0 }]; Store.saveSettings(); return Epg.refresh(Library, true) && null; }, MOCK);
   await page.waitForFunction(() => { try { return (JSON.parse(localStorage.getItem('tivibro.guideRun') || '{}').main || {}).host; } catch (e) { return false; } }, null, { timeout: 15000 });
   await page.waitForTimeout(800);
+  // Closed normally (the page hidden and unloaded): not a crash, loads again as before.
   await page.reload();
+  await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 30000 });
+  await page.waitForFunction(() => Log.lines().some(l => /cut short when TiviBro was closed/.test(l)), null, { timeout: 30000 }).catch(() => {});
+  const cut = await ev(() => ({ cut: Log.lines().filter(l => /cut short/.test(l)).length, safe: Log.lines().filter(l => /did not finish/.test(l)).length }));
+  ok('closed normally mid-load: loads again as before, not with less memory', cut.cut === 1 && cut.safe === 0, JSON.stringify(cut));
+  const r0 = await runOf();
+  ok('and it isn\'t counted toward pausing the guide', r0 && r0.tries === 1, JSON.stringify(r0));
+  await page.waitForFunction(() => { try { return (JSON.parse(localStorage.getItem('tivibro.guideRun') || '{}').main || {}).host; } catch (e) { return false; } }, null, { timeout: 15000 });
+  await page.waitForTimeout(800);
+  // Closed under it, the way webOS closes an app out of memory: nothing is told.
+  // The page can't be crashed and reloaded here, so the "still open" mark is kept as a crash leaves it.
+  const crash = async () => { await ev(() => { const set = Storage.prototype.setItem; Storage.prototype.setItem = function (k, v) { if (k !== 'tivibro.alive') return set.call(this, k, v); }; }); await page.reload(); };
+  await crash();
   await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 30000 });
   await page.waitForFunction(() => Log.lines().some(l => /did not finish/.test(l)), null, { timeout: 30000 }).catch(() => {});
   const safe = await ev(() => Log.lines().filter(l => /did not finish/.test(l)));
@@ -51,7 +65,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const r1 = await runOf();
   ok('the second try is noted too', r1 && r1.tries === 2, JSON.stringify(r1));
   await page.waitForTimeout(800);
-  await page.reload();
+  await crash();
   await page.waitForFunction(() => window.Library && Library.count() > 0 && window.Epg && Epg.paused, null, { timeout: 30000 }).catch(() => {});
   const pz = await ev(() => ({ paused: Epg.paused, prog: Epg.progress, loading: Epg.loading }));
   ok('after two closes: guide loading paused, not tried again', !!pz.paused && pz.prog.phase === 'error' && /paused/.test(pz.prog.error), JSON.stringify(pz));

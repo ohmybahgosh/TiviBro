@@ -201,6 +201,9 @@ var Log = (function () {
     stillHere: function () { if (leaving) { leaving = 0; mark(!document.hidden); } },
     // The last session ended unexpectedly: { text, doing, heap, at, recent (how many in the last hour) } or null.
     get unclean() { return unclean; },
+    /* How the last session ended, known at once: 'closed' (left, or put in the background), 'updated'
+       (another version), 'open' (still open when it ended: a crash, or the TV going off) or '' (no last session). */
+    get lastEnd() { return !prevRun || prevRun.s === session ? '' : !prevRun.open ? 'closed' : prevRun.v && prevRun.v !== TIVIBRO_VERSION ? 'updated' : 'open'; },
     // Decide about the last session once the helper answered (sys: its /ping sys, or null without it).
     settle: settle,
     // The last earlier session's uncaught error, if it had one: { s: session, m: message }.
