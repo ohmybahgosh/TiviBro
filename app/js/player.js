@@ -1232,7 +1232,7 @@ var Player = (function () {
      Original, Fill and Zoom are object-fit.  The others draw the picture stretched to the screen
      (object-fit: fill) and scale it with a CSS transform to the shape wanted; the stage clips what
      falls outside.  Works on Chromium 53. */
-  var ASPECTS = [['contain', 'Original'], ['fill', 'Fill'], ['cover', 'Zoom'], ['4:3', '4:3'], ['16:9', '16:9'], ['21:9', '21:9'], ['stretch43', '4:3 to 16:9']];
+  var ASPECTS = [['contain', 'Original'], ['fill', 'Fill'], ['cover', 'Zoom'], ['4:3', '4:3'], ['14:9', '14:9'], ['16:9', '16:9'], ['21:9', '21:9'], ['stretch43', '4:3 to 16:9']];
   var ASPECT_NAMES = {};
   ASPECTS.forEach(function (a) { ASPECT_NAMES[a[0]] = a[1]; });
   /* A film shape of your own (discussion #31): 'film:2.39' grows a letterboxed film of that shape until it
@@ -1265,9 +1265,10 @@ var Player = (function () {
     if (!W || !H) { W = 1920; H = 1080; }
     var A = vw > 0 && vh > 0 ? vw / vh : 16 / 9, S = W / H, fw, fh;
     function box(a) { return a > S ? { w: W, h: W / a } : { w: H * a, h: H }; }
-    if (mode === '4:3' || mode === '16:9') {
-      // Show the whole picture as this shape: a squashed 16:9 film sent as 4:3, or the other way.
-      var b = box(mode === '4:3' ? 4 / 3 : 16 / 9); fw = b.w; fh = b.h;
+    if (mode === '4:3' || mode === '14:9' || mode === '16:9') {
+      // Show the whole picture as this shape: a squashed 16:9 film sent as 4:3, or the other way.  14:9 is
+      // the broadcasters' in-between: a squeezed 4:3 picture a little wider, thin bars at the sides (issue #69).
+      var b = box(mode === '4:3' ? 4 / 3 : mode === '14:9' ? 14 / 9 : 16 / 9); fw = b.w; fh = b.h;
     } else if (mode === '21:9' || filmShape(mode)) {
       // A 2.35:1 film (or the film shape chosen) letterboxed inside the picture: grow it until the film
       // fills the screen's height and crop the sides.  A picture already that wide fills the screen the same way.
@@ -1281,6 +1282,15 @@ var Player = (function () {
     out.fit = 'fill';
     out.sx = Math.round(fw / W * 10000) / 10000; out.sy = Math.round(fh / H * 10000) / 10000;
     return out;
+  }
+  /* How a mode looks on the picture playing now, to tell shapes that come out the same (on a 4:3 picture,
+     Fill, 16:9 and 4:3 to 16:9 are all the full screen, issue #69).  '' before the picture's size is known. */
+  function aspectLooks(mode) {
+    if (!video || !video.videoWidth || !video.videoHeight || !validAspect(mode)) return '';
+    var W = video.clientWidth || 1920, H = video.clientHeight || 1080, f = aspectFit(mode, video.videoWidth, video.videoHeight, W, H);
+    // A picture the screen's own shape: Original and Zoom are the full screen too.
+    if (f.fit !== 'fill' && Math.abs(video.videoWidth / video.videoHeight - W / H) < 0.01) f.fit = 'fill';
+    return f.fit + ' ' + f.sx + ' ' + f.sy;
   }
   var fitKey = '';
   function applyDisplay() {
@@ -1404,7 +1414,7 @@ var Player = (function () {
     setRate: function (r) { if (video) video.playbackRate = r; },
     get rate() { return video ? video.playbackRate : 1; },
     streamFormat: streamFormat, setStreamFormat: setStreamFormat, canSwitchFormat: canSwitchFormat,
-    displayFor: displayFor, setAspect: setAspect, aspectName: aspectName, filmShape: filmShape, aspectFit: aspectFit, ASPECTS: ASPECTS, ASPECT_NAMES: ASPECT_NAMES,
+    displayFor: displayFor, setAspect: setAspect, aspectName: aspectName, filmShape: filmShape, aspectFit: aspectFit, aspectLooks: aspectLooks, ASPECTS: ASPECTS, ASPECT_NAMES: ASPECT_NAMES,
     setAudio: function (i) {
       if (!eng || !eng.setAudio) return;
       if (cur) cur.userAudio = true;

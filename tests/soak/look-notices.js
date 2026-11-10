@@ -66,6 +66,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const clickRow = re => ev(r => { const x = [].slice.call(document.querySelectorAll('#modal .mi')).find(y => new RegExp(r).test(y.textContent)); if (x) x.click(); return !!x; }, re);
     await ev(() => { UI.close(); Views.runAction('menu', 'player'); }); await page.waitForTimeout(400);
     await clickRow('^Aspect'); await page.waitForTimeout(400);
+    await page.keyboard.press('ArrowUp'); await page.waitForTimeout(300);     // to the end of the list, where Film shape is
     const pm = await ev(() => document.getElementById('modal').innerText);
     ok('Aspect has Film shape…', /Film shape…/.test(pm), pm);
     await clickRow('^Film shape'); await page.waitForTimeout(400);
@@ -73,6 +74,20 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const fs = await ev(() => ({ d: Player.displayFor(Player.current), tr: document.getElementById('video').style.transform }));
     ok('picking 2.39:1 crops a letterboxed scope film to fill the screen', fs.d === 'film:2.39' && /^scale\(1\.34/.test(fs.tr), JSON.stringify(fs));
     await ev(() => Player.setAspect('contain', Player.current));
+
+    // ---- A 4:3 picture: shapes that come out the same, and 14:9 (issue #69) ----
+    await ev(() => { const v = document.getElementById('video'); Object.defineProperty(v, 'videoWidth', { configurable: true, get: () => 768 }); Object.defineProperty(v, 'videoHeight', { configurable: true, get: () => 576 }); Player.setAspect('fill', Player.current); });
+    await ev(() => { UI.close(); Views.runAction('menu', 'player'); }); await page.waitForTimeout(400);
+    await clickRow('^Aspect'); await page.waitForTimeout(400);
+    const am = await ev(() => document.getElementById('modal').innerText);
+    ok('on a 4:3 picture the menu says 16:9 and 4:3 to 16:9 look the same as Fill, and has 14:9', /16:9\s*looks the same as Fill/.test(am) && /4:3 to 16:9\s*looks the same as Fill/.test(am) && /14:9\s*(a little wider|may not change with the TV player)/.test(am), am);
+    await clickRow('^14:9'); await page.waitForTimeout(600);
+    const w = await ev(() => ({ d: Player.displayFor(Player.current), tr: document.getElementById('video').style.transform }));
+    ok('14:9 draws the 4:3 picture a little wider, thin bars at the sides', w.d === '14:9' && /^scale\(0\.875, ?1\)$/.test(w.tr), JSON.stringify(w));
+    await ev(() => { UI.close(); Player.setAspect('fill', Player.current); });
+    const cyc = await ev(() => { const out = []; for (let n = 0; n < 7; n++) { Views.runAction('picture', 'player'); out.push(Player.displayFor(Player.current)); } return out; });
+    ok('the Aspect button skips shapes that look the same as the one on', cyc.indexOf('16:9') < 0 && cyc.indexOf('stretch43') < 0 && cyc.indexOf('14:9') >= 0, cyc.join(','));
+    await ev(() => { const v = document.getElementById('video'); delete v.videoWidth; delete v.videoHeight; Player.setAspect('contain', Player.current); UI.close(); });
 
     // ---- Buffer pill: "most" right after the bar (#36) ----
     await ev(() => { Store.settings.meter = 'always'; }); await page.waitForTimeout(1500);

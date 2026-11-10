@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **A 14:9 aspect, a little wider than 4:3 (issue #69).**  For a picture that looks squeezed, but not by a whole 16:9: it is drawn 14:9, full height, with thin bars at the sides.  It's in the Aspect menu and in Settings, next to 4:3.
+- **The Aspect menu says when two shapes look the same on the picture playing (issue #69).**  On a 4:3 picture, Fill, 16:9 and 4:3 to 16:9 all fill the screen, so picking one after another changed nothing and looked broken.  The menu now says "looks the same as Fill on this picture", and the Aspect button skips those shapes.
+
 ## 0.6.0 (alpha 113, 2026-11-09)
 
 Pre-release: expect rough edges, and keep a backup before installing.

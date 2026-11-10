@@ -712,7 +712,14 @@ var Views = (function () {
   function aspectTarget() { return mode === 'live' ? playing : mode === 'vod' ? Player.current : null; }
   function cyclePicture() {
     var k = Player.ASPECTS.map(function (a) { return a[0]; });
-    var c = aspectTarget(), nk = k[(k.indexOf(Player.displayFor(c)) + 1) % k.length];
+    var c = aspectTarget(), on = Player.displayFor(c), i = k.indexOf(on), nk = on, first = {}, look = Player.aspectLooks(on);
+    // Skip shapes that come out the same on this picture as one before them, or as the one on (Fill, 16:9 and
+    // 4:3 to 16:9 on a 4:3 picture, issue #69).
+    k.forEach(function (m) { var l = Player.aspectLooks(m); if (l && !first[l]) first[l] = m; });
+    for (var n = 0; n < k.length; n++) {
+      nk = k[(i + 1 + n) % k.length]; var l = Player.aspectLooks(nk);
+      if (!l || (first[l] === nk && l !== look)) break;
+    }
     Player.setAspect(nk, c);
     U.toast('Aspect: ' + Player.aspectName(nk) + (c ? (mode === 'vod' ? ' for this video' : ' for this channel') : ''));
   }
@@ -1529,13 +1536,15 @@ var Views = (function () {
      The shapes past Zoom scale the picture with CSS; the TV player draws some streams on its own
      video plane, and some TVs then keep the picture as it was, which the menu says. */
   var ASPECT_SUB = { contain: 'the picture\'s own shape', fill: 'stretched to the screen', cover: 'fills the screen, edges cropped', '4:3': 'shown 4:3, bars at the sides',
-    '16:9': 'a squashed 16:9 picture sent as 4:3', '21:9': 'a 2.35:1 film fills the screen, sides cropped', stretch43: 'a 4:3 picture stretched wide' };
+    '14:9': 'a little wider than 4:3, thin bars at the sides', '16:9': 'a squashed 16:9 picture sent as 4:3', '21:9': 'a 2.35:1 film fills the screen, sides cropped', stretch43: 'a 4:3 picture stretched wide' };
   function pictureMenu() {
     var c = aspectTarget(), own = c && Store.edits.display && Store.edits.display[c.k], what = mode === 'vod' ? 'video' : 'channel';
-    var tv = Player.engine === 'TV player', on = Player.displayFor(c);
+    var tv = Player.engine === 'TV player', on = Player.displayFor(c), looks = {};
     var items = Player.ASPECTS.map(function (a) {
-      var k = a[0], shaped = k !== 'contain' && k !== 'fill' && k !== 'cover';
-      return { label: a[1], sub: k === on ? 'on' : tv && shaped ? 'may not change with the TV player' : ASPECT_SUB[k], action: function () {
+      var k = a[0], shaped = k !== 'contain' && k !== 'fill' && k !== 'cover', look = Player.aspectLooks(k);
+      // On this picture some shapes come out the same (a 4:3 picture: Fill, 16:9 and 4:3 to 16:9, issue #69).
+      var same = look && looks[look]; if (look && !same) looks[look] = a[1];
+      return { label: a[1], sub: k === on ? 'on' + (same ? ', looks the same as ' + same + ' on this picture' : '') : same ? 'looks the same as ' + same + ' on this picture' : tv && shaped ? 'may not change with the TV player' : ASPECT_SUB[k], action: function () {
         Player.setAspect(k, c);
         if (tv && shaped) U.toast('Aspect ' + a[1] + '.  This ' + what + ' plays with the TV player, which some TVs keep at its own shape.', 6000);
       } };
