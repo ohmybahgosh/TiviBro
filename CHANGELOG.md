@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A college basketball game is no longer a football reminder for your school.**  "Marquette Golden Eagles vs Michigan Wolverines" on an event channel was taken as Michigan football, since a school's full name doesn't say the sport (and Marquette has no football team).  Now, with no football in the title or the channel, a school counts only against another FBS school during the football season, and one against any other school needs football in sight.  A reminder an earlier version set this way goes at the next look.
+
 ## 0.6.0 (alpha 117, 2026-11-11)
 
 Pre-release: expect rough edges, and keep a backup before installing.

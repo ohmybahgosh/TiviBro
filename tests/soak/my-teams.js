@@ -108,7 +108,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     Store.edits.reminders.push({ k, s: t, e: t + 3600e3, t: 'Future Events for Detroit Tigers not found yet', w: 'team:mlb:det' },
       { k, s: t + 60e3, e: t + 3600e3, t: 'Next game: Detroit Red Wings at Florida Panthers at 11/02/2026 07:00 PM (US/Eastern)', w: 'team:nhl:det' },
       { k, s: t + 120e3, e: t + 3600e3, t: 'Boston Bruins at Detroit Red Wings', w: 'team:nhl:det' },
-      { k, s: t + 180e3, e: t + 3600e3, t: 'Live: NFL Football', w: 'team:nfl:det', g: 1 },
+      { k, s: t + 180e3, e: t + 3600e3, t: 'Live: NFL Football', w: 'team:nfl:det', g: Teams.RULES },
+      // Set under older rules: a school's basketball game taken for football.  Looked at again, and it goes.
+      { k, s: t + 200e3, e: t + 3600e3, t: 'Marquette Golden Eagles vs Michigan Wolverines', w: 'team:ncaaf:mich', g: 1 },
       // Started while TiviBro was closed: these came up on opening alpha 51.
       { k, s: t - 2 * 3600e3, e: t + 3600e3, t: 'Next game: Detroit Pistons at Charlotte Hornets at 11/02/2026 07:30 PM EST', w: 'team:nba:det' },
       // Set by hand on a placeholder.
@@ -126,7 +128,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     return { got, left: Store.edits.reminders.filter((r) => /Florida Panthers/.test(r.t)).length };
   });
   ok('placeholder reminders are not asked about on opening', !asked.got.some((x) => /Next game/.test(x)), JSON.stringify(asked));
-  ok('placeholder and "Next game" reminders removed, started or not, games kept', tidied.gone === 4 && tidied.left.indexOf('Boston Bruins at Detroit Red Wings') >= 0 && tidied.left.indexOf('Live: NFL Football') >= 0, JSON.stringify(tidied));
+  ok('placeholder and "Next game" reminders removed, started or not, and one set under older rules that is no game; games kept', tidied.gone === 5 && tidied.left.indexOf('Marquette Golden Eagles vs Michigan Wolverines') < 0 && tidied.left.indexOf('Boston Bruins at Detroit Red Wings') >= 0 && tidied.left.indexOf('Live: NFL Football') >= 0, JSON.stringify(tidied));
 
   // Between games the group stays, empty, and says when the next game is.
   const between = await ev(() => {

@@ -56,6 +56,10 @@ ok('nickname after its own city', ids(Teams.named('Hockey: Wild vs. Capitals (Ca
 ok('a game is a game', Teams.isGame('Minnesota Vikings at Detroit Lions', 'NFL | DETROIT LIONS') && Teams.isGame('WPG VS CAR (TVAS Feed )', 'USA NHL 02'));
 ok('a placeholder is no game', !Teams.isGame('Future Events for Detroit Tigers not found yet', 'MLB | DETROIT TIGERS') && !Teams.isGame('No Future Events Scheduled', 'NHL | DETROIT RED WINGS'));
 ok('a "Next game" block is no game to remind at', !Teams.isGame('Next game: Detroit Red Wings at Florida Panthers at 11/02/2026 07:00 PM (US/Eastern)', 'NHL | FLORIDA PANTHERS'));
+// A school's full name doesn't say the sport (a FOX ONE event channel, Nov 11: basketball, Marquette has no football).
+ok('a school against a non-FBS school with no football in sight is no football game', ids(Teams.named('Marquette Golden Eagles vs Michigan Wolverines', 'Marquette Golden Eagles vs Michigan Wolverines @ Nov 11 19:00 :FOX ONE  12 | FOX ONE', all, true)) === '' && !Teams.isGame('Marquette Golden Eagles vs Michigan Wolverines', 'Marquette Golden Eagles vs Michigan Wolverines @ Nov 11 19:00 :FOX ONE  12'));
+ok('the same with football in the channel is', ids(Teams.named('Sacramento State Hornets at Michigan Wolverines', 'NCAAF 2 | Sacramento State Hornets at Michigan Wolverines', all, true)) === 'ncaaf:mich,ncaaf:sac' && Teams.isGame('Sacramento State Hornets at Michigan Wolverines', 'NCAAF 2'));
+ok('basketball in the channel is not', ids(Teams.named('Michigan Wolverines vs Ohio State Buckeyes', 'NCAAB 08', all, true)) === '');
 ok('Athletics alone are no team', ids(Teams.named('World Athletics Championships', '', all)) === '');
 
 // Team channels and leagues

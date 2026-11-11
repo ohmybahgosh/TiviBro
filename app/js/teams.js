@@ -183,10 +183,15 @@ var Teams = (function () {
     function note(m, team) { (m[team.league] || (m[team.league] = {}))[team.id] = 1; }
     // College football: not when the text (or, if it doesn't say football, the channel) is another sport.
     var tn = norm(text), cn = norm(ctx || ''), other = OTHER.test(tn) || (!CFB.test(tn) && OTHER.test(cn)), rest = t;
+    /* A school's full name says nothing of the sport: "Marquette Golden Eagles vs Michigan Wolverines" on a
+       FOX ONE event channel was basketball (Marquette has no football team).  Without football in the text or
+       the channel, a school counts only against another FBS school during the football season (issue: a
+       basketball game as a football reminder).  cfb is kept for oneSide(). */
+    var cfb = CFB.test(c);
     ALL.forEach(function (x) {
       x._school = 0;
       if (x.schools) {
-        x._full = x._nick = x._city = 0;
+        x._full = x._nick = x._city = 0; x._cfb = cfb;
         if (!other && x.full.some(function (f) { return t.indexOf(f) >= 0; })) { x._full = 1; note(seen, x); note(seenCity, x); }
         return;
       }
@@ -211,7 +216,7 @@ var Teams = (function () {
     function n(m, l) { return m[l] ? Object.keys(m[l]).length : 0; }
     var up = abbrs ? ' ' + text.replace(/[^A-Za-z0-9]+/g, ' ') + ' ' : '';
     teams.forEach(function (x) {
-      var l = x.league, hit = x._full || x._school ||
+      var l = x.league, hit = (x._full && (!x.schools || cfb || (n(seen, l) >= 2 && footballSeason()))) || x._school ||
         (x._nick && (word[l] || n(seen, l) >= 2)) ||
         (x._city && (code[l] || n(seen, l) >= 1) && n(seenCity, l) >= 2);
       if (!hit && abbrs && !minor && word[l] && up.indexOf(' ' + x.abbr + ' ') >= 0 && MATCHUP.test(text)) hit = 1;
@@ -401,7 +406,10 @@ var Teams = (function () {
   /* A school against one that isn't in the list (an FCS school: "Michigan vs Central Connecticut"): one
      school is a game when the title has the two sides ("at", "vs", "@"). */
   var VS = /\s(?:at|vs\.?|v\.?|versus)\s|@/i;
-  function oneSide(x, by, text) { return !!x.schools && by[x.league] === 1 && VS.test(' ' + text + ' '); }
+  // And only where it's college football: a school against one that isn't FBS is often another sport.
+  function oneSide(x, by, text) { return !!x.schools && x._cfb && by[x.league] === 1 && VS.test(' ' + text + ' '); }
+  // Mid-August to the end of the year: the season, conference championships and most bowls.
+  function footballSeason(t) { var d = new Date(t || Date.now()), m = d.getMonth(); return m >= 8 || m === 7 && d.getDate() >= 15; }
   /** Not the game itself: an overtime block, a replay, a show around it. */
   function aroundGame(title) { return NOGAME.test(title || ''); }
   function isGame(title, ctx) {
@@ -500,6 +508,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
+    RULES: 2, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
 })();

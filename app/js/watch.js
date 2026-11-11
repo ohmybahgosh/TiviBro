@@ -100,7 +100,10 @@ var Watch = (function () {
      channels' placeholders ("Future events for Detroit Tigers not found yet", "No future events scheduled")
      and their "Next game: ..." blocks.  Those go, here and on the helper, at every start and look. */
   // A team reminder set now was checked as a game (Teams.games): say so, so tidy() never doubts it.
-  function mark(r) { if (/^team:/.test(r.w || '')) r.g = 1; return r; }
+  /* g is the version of Teams' rules it was checked with: one set under older rules is looked at again (a
+     basketball game of a school was a football reminder before rules 2), and if it's still a game the
+     next look sets it again. */
+  function mark(r) { if (/^team:/.test(r.w || '')) r.g = Teams.RULES || 1; return r; }
   // Not worth a reminder: a guide placeholder, or a team reminder that isn't a game.  Started or not:
   // one that began while TiviBro was closed would otherwise come up the moment it opens.
   function doubtful(r) {
@@ -109,9 +112,9 @@ var Watch = (function () {
     if (!/^team:/.test(r.w || '')) return false;
     // A game's overtime block or a replay: an earlier TiviBro set these too (before alpha 84).
     if (Teams.aroundGame && Teams.aroundGame(r.t)) return true;
-    if (r.g) return false;                                        // g: checked as a game when it was set
-    var c = L.find(r.k);
-    return !Teams.isGame(r.t, c ? c.n : '');
+    if (r.g && r.g >= (Teams.RULES || 1)) return false;          // g: checked as a game when it was set
+    var c = L.find(r.k), g = c && L.data.groups ? L.data.groups.filter(function (x) { return x.id === c.g; })[0] : null;
+    return !Teams.isGame(r.t, c ? c.n + (g ? ' | ' + g.name : '') : '');
   }
   function tidy() {
     if (typeof Teams === 'undefined' || !Teams.isGame) return 0;
