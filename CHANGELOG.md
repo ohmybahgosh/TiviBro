@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 117, 2026-11-11)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 117
 
 - **A channel that sends video faster than real time no longer fills the TV's memory (issue #76).**  Some "channels" are really a file the provider sends as fast as it can (a "no event streaming" placeholder, say).  The built-in player read all of it, minutes of video within seconds, and a TV with 1 GB closed TiviBro.  Now, once it holds a minute ahead (three minutes on TVs with more memory), it stops reading, plays what it has and reconnects when that runs low, the same as when a provider hangs up.
 - **Problem reports no longer show the username of a playlist being added (issue #76).**  The log now writes a username as its first two letters and its shape, as it already did for passwords, and no longer writes the address a provider's panel gives for itself.  Before, a report sent while a new playlist was being added (not saved yet) could show both.
 
-## 0.6.0 (alpha 116, 2026-11-10)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 116
+### In alpha 116
 
 - **A channel the TV player refused once gets another try on it before two minutes of retries (issue #73).**  When the TV player turned a channel down once (a hiccup at the provider can do that) and the built-in player then showed no picture, TiviBro kept retrying the built-in player ten times, about two minutes, before trying a backup version, and only after that went back to the TV player, which played it in 2 seconds.  Now it goes back to the TV player once more after the first 8 second wait.  If the TV player turns it down a second time, the backup versions are tried straight away.
 - **Back in the guide on the channel you picked, after it switched to a backup version (issue #73).**  When a channel stopped working and TiviBro switched to another version of it that isn't in that group (hidden, or in another group), leaving the guide for Settings and coming back put you at the top of the group.  Now you're back on the channel you picked.
