@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **A college basketball game is no longer a football reminder for your school.**  "Marquette Golden Eagles vs Michigan Wolverines" on an event channel was taken as Michigan football, since a school's full name doesn't say the sport (and Marquette has no football team).  Now, with no football in the title or the channel, a school counts only against another FBS school during the football season, and one against any other school needs football in sight.  A reminder an earlier version set this way goes at the next look.
-
-## 0.6.0 (alpha 117, 2026-11-11)
+## 0.6.0 (alpha 118, 2026-11-11)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 117
+### New in alpha 118
+
+- **A college basketball game is no longer a football reminder for your school.**  "Marquette Golden Eagles vs Michigan Wolverines" on an event channel was taken as Michigan football, since a school's full name doesn't say the sport (and Marquette has no football team).  Now, with no football in the title or the channel, a school counts only against another FBS school during the football season, and one against any other school needs football in sight.  A reminder an earlier version set this way goes at the next look.
+
+### In alpha 117
 
 - **A channel that sends video faster than real time no longer fills the TV's memory (issue #76).**  Some "channels" are really a file the provider sends as fast as it can (a "no event streaming" placeholder, say).  The built-in player read all of it, minutes of video within seconds, and a TV with 1 GB closed TiviBro.  Now, once it holds a minute ahead (three minutes on TVs with more memory), it stops reading, plays what it has and reconnects when that runs low, the same as when a provider hangs up.
 - **Problem reports no longer show the username of a playlist being added (issue #76).**  The log now writes a username as its first two letters and its shape, as it already did for passwords, and no longer writes the address a provider's panel gives for itself.  Before, a report sent while a new playlist was being added (not saved yet) could show both.
