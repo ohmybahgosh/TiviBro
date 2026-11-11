@@ -14,8 +14,26 @@ var Search = (function () {
     var rx = new RegExp('(^|[^a-z0-9À-￿])' + esc(q) + '($|[^a-z0-9À-￿])', 'i');
     return function (t) { return rx.test(t); };
   }
-  // In the lists somewhere: its group shown, or in one of your groups (Library.shownAnywhere).
-  function visible(c) { return L.shownAnywhere(c); }
+  /* In the lists somewhere: its group shown, or in one of your groups (Library.shownAnywhere), and not
+     behind the parental lock.  An adult channel (its name or group says so) whose own group is hidden stays
+     out even with Show hidden on: hiding the Adult group in Cleanup takes it out of Search too. */
+  var ADULT = typeof Filter !== 'undefined' && Filter.ADULT ? Filter.ADULT : /\b(?:adults?(?!\s*swim)|xxx+|porn\w*)\b|(?:^|[^\w])18\s*\+/i;
+  function adult(c) { return !!(c.adult || ADULT.test(c.n || '') || ADULT.test(L.groupName(c.g) || '')); }
+  function visible(c) {
+    if (!c || !L.shownAnywhere(c)) return false;
+    if (typeof Parental !== 'undefined' && Parental.blockedOk && !Parental.blockedOk(c)) return false;
+    if (Store.settings.showHidden && adult(c) && Store.edits.hiddenGroups[c.g]) return false;
+    return true;
+  }
+  // Yours: a Favorite or in one of your groups.  Ahead of the same programme on channels you never watch.
+  var mineSet = null, mineAt = 0;
+  function mine(c) {
+    if (!mineSet || Date.now() - mineAt > 5000) {
+      mineSet = {}; mineAt = Date.now();
+      (Store.edits.custom || []).forEach(function (g) { (g.items || []).forEach(function (k) { mineSet[k] = 1; }); });
+    }
+    return !!(c && (mineSet[c.k] || L.isFav(c.k)));
+  }
 
   /* Programmes whose title matches q: [{ c, p }], one per programme even when several channels
      carry it (the HD and SD copies share a start time; East and West do not), on now first, then
@@ -44,8 +62,10 @@ var Search = (function () {
       var ev = Events.of(c);
       if (ev && test(ev.title)) take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 });
     });
+    // On now first, then soonest, then replays newest first; your channels ahead within each, so a long
+    // list ("Family Feud" airs on dozens of channels) keeps the one on BET when it's cut short.
     var rank = function (x) { return x.p.s <= now && x.p.e > now ? 0 : x.p.s > now ? 1 : 2; };
-    out.sort(function (a, b) { var d = rank(a) - rank(b); return d || (rank(a) === 2 ? b.p.s - a.p.s : a.p.s - b.p.s); });
+    out.sort(function (a, b) { var d = rank(a) - rank(b); return d || (mine(b.c) - mine(a.c)) || (rank(a) === 2 ? b.p.s - a.p.s : a.p.s - b.p.s); });
     return opts.limit ? out.slice(0, opts.limit) : out;
   }
 
@@ -157,7 +177,12 @@ var Search = (function () {
     function add(item, title, type, sub) {
       var m = quality(title, q, word);
       if (m < 0) m = 3;                         // matched on the provider's name or a cleaned word: weakest
-      cand.push({ it: item, m: m, t: TYPE[type], sub: sub || 0, i: n++ });
+      /* b: the title exactly, or something on now on one of your channels with the words in its title
+         ("Celebrity Family Feud" on BET right now, for "family feud"); then the rest that has the words; then
+         a match inside a word. */
+      var own = item.c && mine(item.c) ? 0 : 1;
+      var b = m === 0 || (type === 'now' && m <= 2 && !own) ? 0 : m <= 2 ? 1 : 2;
+      cand.push({ it: item, b: b, m: m, t: TYPE[type], own: own, sub: sub || 0, i: n++ });
     }
     /* Channels by the name shown, then channels whose provider name carries what you typed (a game in
        "BIG10 10: Michigan vs Ohio State"): those show that text, and its time when the name has one,
@@ -167,7 +192,7 @@ var Search = (function () {
       var all = L.data.channels;
       for (var i = 0; i < all.length && nCh + nIn < 300; i++) {
         var c = all[i];
-        if (Store.edits.hiddenChannels[c.k] && !Store.settings.showHidden) continue;
+        if (!visible(c)) continue;                // hidden groups (Adult), hidden channels, the parental lock
         var nm = L.name(c);
         if (nm.toLowerCase().indexOf(q) >= 0) { if (nCh < 150) { nCh++; add({ c: c }, nm, 'channel'); } continue; }
         if (c.n.toLowerCase().indexOf(q) < 0) continue;
@@ -180,7 +205,7 @@ var Search = (function () {
       }
     }
     if (filter !== 'channels' && filter !== 'movies') {
-      find(q).slice(0, 300).forEach(function (r) {
+      find(q).slice(0, 600).forEach(function (r) {
         if (r.p.ev && seenEv[r.p.t.toLowerCase() + '|' + r.p.s]) return;
         var p = r.p, on = p.s <= now && p.e > now;
         if (filter === 'now' && !on) return;
@@ -199,8 +224,8 @@ var Search = (function () {
       vs.sort(function (a, b) { return a.m - b.m || a.len - b.len; });
       vs.slice(0, 200).forEach(function (v) { add({ v: v.x.it, vkind: v.x.kind }, v.x.it.name, 'vod', v.len); });
     }
-    cand.sort(function (a, b) { return a.m - b.m || a.t - b.t || a.sub - b.sub || a.i - b.i; });
-    var out = cand.slice(0, 400).map(function (x) { return x.it; });
+    cand.sort(function (a, b) { return a.b - b.b || a.t - b.t || a.own - b.own || a.m - b.m || a.sub - b.sub || a.i - b.i; });
+    var out = cand.slice(0, 500).map(function (x) { return x.it; });
     var vst = Vod.searchState;
     vl.empty = filter === 'channels' ? 'No channel has that name.' :
       filter === 'movies' ? (vst === 'loading' ? 'Loading your movies and shows…' : vst === 'none' ? 'This provider has no movies or shows.' : 'No movie or show has that name.') :
@@ -356,5 +381,5 @@ var Search = (function () {
   // Text typed on the phone: searches everything for it.
   function query(q) { open(); input.value = String(q || ''); filter = 'all'; paintChips(); run(); zone = vl.items.length ? 'list' : 'input'; paint(); }
 
-  return { open: open, query: query, find: find, matcher: matcher, extra: extra };
+  return { open: open, query: query, find: find, matcher: matcher, extra: extra, visible: visible };
 })();

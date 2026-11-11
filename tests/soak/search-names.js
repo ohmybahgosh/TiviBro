@@ -51,6 +51,39 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const plain = await ev(() => Search.extra({ n: 'US: ESPN HD', k: 'x', g: '' }));
   ok('a name that only adds a country and quality adds nothing', plain === '', plain);
 
+  // A hidden Adult group stays out of Search, also with Show hidden on (Bob: search brought up blocked adult channels).
+  const setQ = (q) => ev((q) => { if (Views.tab !== 'search') Views.switchTab('search'); const i = document.querySelector('.search-input'); i.value = q; i.dispatchEvent(new Event('input')); }, q);
+  const shown = () => ev(() => [].slice.call(document.querySelectorAll('.search-list .row')).filter((r) => r.offsetHeight).map((r) => r.innerText.replace(/\n+/g, ' | ')));
+  await ev(() => {
+    const c = Library.data.channels[Library.data.channels.length - 1], g = Library.data.groups.find((x) => x.id === c.g);
+    g.name = 'Adult'; c.n = 'XXX Zebrafire HD'; Store.edits.renames[c.k] = 'XXX Zebrafire HD';
+    Store.edits.hiddenGroups[g.id] = 1; Library.dirty && Library.dirty();
+  });
+  await setQ('zebrafire'); await page.waitForTimeout(1000);
+  const a1 = await shown();
+  ok('a channel of the hidden Adult group is not in Search', !a1.some((r) => /Zebrafire/.test(r)), JSON.stringify(a1));
+  await ev(() => { Store.settings.showHidden = true; Library.dirty && Library.dirty(); });
+  await setQ('zebrafir'); await page.waitForTimeout(1000);
+  const a2 = await shown();
+  ok('nor with Show hidden on', !a2.some((r) => /Zebrafire/.test(r)), JSON.stringify(a2));
+  await ev(() => { Store.settings.showHidden = false; Library.dirty && Library.dirty(); });
+
+  // "family feud": dozens of "Family Feud" airings elsewhere, and "Celebrity Family Feud" on now on your BET.
+  const top = await ev(() => {
+    const ch = Library.data.channels.filter((c) => Search.visible(c)), bet = ch[0], now = Date.now(), list = [];
+    if (!Library.isFav(bet.k)) Library.toggleFav(bet.k);
+    for (let i = 1; i < 60 && i < ch.length; i++) list.push({ key: ch[i].k, p: { s: now + i * 1800e3, e: now + i * 1800e3 + 1800e3, t: 'Family Feud' } });
+    list.push({ key: bet.k, p: { s: now - 600e3, e: now + 3000e3, t: 'Celebrity Family Feud' } });
+    const keep = Epg.search; Epg.search = () => list.map((r) => ({ key: r.key, p: r.p }));
+    if (Views.tab !== 'search') Views.switchTab('search');
+    const i = document.querySelector('.search-input'); i.value = 'family feud'; i.dispatchEvent(new Event('input'));
+    window.__restore = () => { Epg.search = keep; };
+    return Library.name(bet);
+  });
+  await page.waitForTimeout(1000);
+  const ff = await shown(); await ev(() => window.__restore());
+  ok('"Celebrity Family Feud" on now on a channel of yours is at the top for "family feud"', /Celebrity Family Feud/.test(ff[0] || '') && (ff[0] || '').indexOf(top) >= 0 && /on now/.test(ff[0] || ''), JSON.stringify(ff.slice(0, 3)));
+  ok('and the other airings are still there', ff.filter((r) => /^Family Feud/.test(r)).length >= 5, ff.length);
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();
   console.log(fails ? fails + ' FAILED' : 'all search-by-name checks passed');
