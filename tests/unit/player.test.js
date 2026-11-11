@@ -26,7 +26,7 @@ function setup(opts) {
   const mpegts = {
     Events: { MEDIA_INFO: 'mi', ERROR: 'err', LOADING_COMPLETE: 'lc' }, ErrorTypes: { NETWORK_ERROR: 'NetworkError', MEDIA_ERROR: 'MediaError' },
     getFeatureList: () => ({ mseLivePlayback: true }),
-    createPlayer(src) { const p = { kind: 'ts', src, h: handlers(), dead: false, on(e, f) { this.h[e] = f; }, attachMediaElement() {}, load() {}, pause() {}, unload() {}, detachMediaElement() {}, destroy() { this.dead = true; }, statisticsInfo: {} }; made.push(p); return p; }
+    createPlayer(src) { const p = { kind: 'ts', src, h: handlers(), dead: false, on(e, f) { this.h[e] = f; }, attachMediaElement() {}, load() {}, pause() {}, unload() {}, detachMediaElement() {}, destroy() { this.dead = true; }, statisticsInfo: {}, held: 0, _player_engine: { _onRequestPauseTransmuxer() { p.held++; } } }; made.push(p); return p; }
   };
   function Hls(cfg) { this.cfg = cfg; this.kind = 'hls'; this.h = {}; this.levels = []; made.push(this); }
   Hls.isSupported = () => true;
@@ -732,6 +732,36 @@ ok('other files play directly, without subtitle extraction', mp4.calls.length ==
     fn.call(live);
     ok('issue #74: a live player still appends and reports updateend', appended === 1 && emitted === 1);
   }
+}
+
+// ---- issue #76: a live "channel" sent far faster than real time stops being read on a small TV ----
+{
+  let t = setup();
+  t.nav.deviceMemory = 1;
+  t.P.play({ n: 'Placeholder', url: 'http://p/live/u/p/76.ts' });
+  t.feed(0, 105); t.run(1000);
+  const eng = t.last(), n0 = t.made.length;
+  ok('issue #76: 105 s ahead on a 1 GB TV stops reading', eng.held === 1, eng.held);
+  ok('issue #76: and says so in the log', t.logs.some(l => /faster than real time; stopped reading/.test(l)));
+  t.run(20000);
+  ok('issue #76: keeps playing what is buffered, no reconnect yet', t.made.length === n0 && !t.video.paused);
+  ok('issue #76: stops reading only once', eng.held === 1, eng.held);
+  t.run(90000);
+  ok('issue #76: reconnects when the buffer runs low', t.made.length === n0 + 1 && t.logs.some(l => /^Reconnect/.test(l) || /Reconnecting/.test(l)), t.made.length - n0);
+
+  t = setup();
+  t.nav.deviceMemory = 1;
+  t.P.play({ n: 'Burst', url: 'http://p/live/u/p/77.ts' });
+  t.feed(0, 36); t.run(3000);
+  ok('issue #76: a normal 36 s burst at the start is left alone', t.last().held === 0);
+
+  t = setup();
+  t.nav.deviceMemory = 4;
+  t.P.play({ n: 'Big TV', url: 'http://p/live/u/p/78.ts' });
+  t.feed(0, 105); t.run(3000);
+  ok('issue #76: a TV with more memory allows more ahead', t.last().held === 0);
+  t.feed(0, 200); t.run(1000);
+  ok('issue #76: but not without limit', t.last().held === 1);
 }
 
 if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }

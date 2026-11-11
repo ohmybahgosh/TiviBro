@@ -279,6 +279,16 @@ var Player = (function () {
         if (b.length) { var end = b.end(b.length - 1); if (end - video.currentTime > 1.5) video.currentTime = end - 1; }
       },
       info: function () { var s = m.statisticsInfo; return s && s.speed ? Math.round(s.speed * 8) + ' kbps' : ''; },
+      /* Stop reading from the provider but keep what is buffered (issue #76).  mpegts reads a live stream as fast as it
+         comes, with no limit ahead (its own limit, lazyLoad, is only for files).  A "channel" that is really a file
+         sent faster than real time (a "no event streaming" placeholder) put minutes of 1080p in memory within
+         seconds, and a TV with 1 GB closed TiviBro.  This is the pause mpegts uses for lazyLoad (internal in 1.8:
+         the player engine's _onRequestPauseTransmuxer, on the page or in its worker); it closes the connection. */
+      hold: function () {
+        var e = m._player_engine;
+        if (!e || typeof e._onRequestPauseTransmuxer !== 'function') return false;
+        try { e._onRequestPauseTransmuxer(); return true; } catch (x) { Log.debug('player', 'MPEG-TS hold: ' + x.message); return false; }
+      },
       /* Every step on its own (issue #70): one try for all four left the player half alive when unload threw (a
          sound or picture buffer the browser had already dropped).  Its stream kept loading from the provider
          after the channel changed, a second connection, and each piece it read threw an error.  Letting go of
@@ -795,6 +805,9 @@ var Player = (function () {
 
   /* The cushion a refill aims for: the profile's refill target plus what this channel has earned
      by running dry before (kept across reconnects of the same channel). */
+  // How far ahead a live stream may get before TiviBro stops reading it (issue #76).  A real live channel sends a
+  // burst of 10 to 40 s at the start and then real time, so this only catches streams faster than real time.
+  function aheadLimit(p) { return memSafe() ? Math.max(60, p.ahead * 3) : Math.max(180, p.ahead * 4); }
   function capFor(p) { return Math.max(p.refill, Math.min(p.ahead * 0.6, 20)); }
   function refillGoal() { var p = cur.p; return Math.min(capFor(p), p.refill + (cur.boost || 0)); }
   /* Is the stream trickling in too slowly to ever keep up?  The end of what is buffered is sampled every
@@ -858,6 +871,15 @@ var Player = (function () {
     // The most this stream has held: a live channel only banks what the provider sends ahead of real time
     // (often well under the profile's read-ahead), so buffer info shows what this one really reaches.
     if (st.started && ahead > (st.most || 0)) st.most = ahead;
+    /* Far more buffered than any live channel sends ahead (issue #76): the stream comes faster than real time.  Stop
+       reading, play what is buffered, and reconnect when it runs low, the same as when the provider hangs up. */
+    if (cur.live && !cur.timeshift && st.started && !st.pendingReconnect && !st.held && eng && eng.hold && ahead > aheadLimit(p)) {
+      st.held = true;
+      if (eng.hold()) {
+        st.pendingReconnect = true;
+        Log.info('player', 'The provider sent ' + Math.round(ahead) + 's ahead, faster than real time; stopped reading to save memory, playing it, then reconnecting');
+      }
+    }
     emit('stats', lastStats = { ahead: ahead, target: st.started ? goal : p.prebuffer, cushion: cur.boost || 0, engine: eng ? eng.name : '', info: eng ? eng.info() : '',
       res: video.videoHeight ? video.videoHeight + 'p' : '', state: st.state, most: st.most || 0, cap: p.ahead,
       profile: p.label, startMs: cur.startMs || 0, dataMs: cur.dataMs || 0, picMs: cur.picMs || 0 });

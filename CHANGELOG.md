@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **A channel that sends video faster than real time no longer fills the TV's memory (issue #76).**  Some "channels" are really a file the provider sends as fast as it can (a "no event streaming" placeholder, say).  The built-in player read all of it, minutes of video within seconds, and a TV with 1 GB closed TiviBro.  Now, once it holds a minute ahead (three minutes on TVs with more memory), it stops reading, plays what it has and reconnects when that runs low, the same as when a provider hangs up.
+- **Problem reports no longer show the username of a playlist being added (issue #76).**  The log now writes a username as its first two letters and its shape, as it already did for passwords, and no longer writes the address a provider's panel gives for itself.  Before, a report sent while a new playlist was being added (not saved yet) could show both.
+
 ## 0.6.0 (alpha 116, 2026-11-10)
 
 Pre-release: expect rough edges, and keep a backup before installing.

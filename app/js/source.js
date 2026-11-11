@@ -28,6 +28,13 @@ var Source = (function () {
     return m && n ? { user: decodeURIComponent(m[1]), pass: decodeURIComponent(n[1]) } : null;
   }
 
+  function userShape(u) { u = String(u || ''); return u ? u.slice(0, 2) + '*** (' + U.secretShape(u) + ')' : 'no username'; }
+  // The address the panel says it is, for the log: "same" when it is the one we logged in to, never the name itself.
+  function panelHost(h, found) {
+    if (!h) return '?';
+    var m = /^[a-z]+:\/\/([^\/:?#]+)/i.exec(found || '');
+    return m && m[1].toLowerCase() === String(h).toLowerCase() ? 'same' : 'another address';
+  }
   function base(server) {
     server = clean(server);
     if (server && !/^https?:\/\//i.test(server)) server = 'http://' + server;
@@ -66,7 +73,9 @@ var Source = (function () {
     var t0 = Date.now();
     var linked = credsFromLink(p.server);
     if (linked && (!p.user || !p.pass)) { p = Object.assign({}, p, linked); Log.info('xc', 'Took the username and password from the pasted link'); }
-    Log.info('xc', 'Login to ' + clean(p.server) + ' as ' + p.user + ' (password ' + U.secretShape(p.pass) + ') via ' + (Net.active ? 'helper :' + Net.port : 'direct') + (hasScheme(clean(p.server)) ? '' : ' (no http/https given: trying both)'));
+    // The username as its first two letters and its shape, like the password (issue #76): a report sent while a
+    // new playlist was being added (not saved yet, so the report's own masking didn't know it) showed it whole.
+    Log.info('xc', 'Login to ' + clean(p.server) + ' as ' + userShape(p.user) + ' (password ' + U.secretShape(p.pass) + ') via ' + (Net.active ? 'helper :' + Net.port : 'direct') + (hasScheme(clean(p.server)) ? '' : ' (no http/https given: trying both)'));
     var found = '';
     return detect(p, 'login').then(function (d) {
       found = d.base;
@@ -82,7 +91,7 @@ var Source = (function () {
       if (si.server_protocol && found.indexOf(si.server_protocol + ':') !== 0) Log.info('xc', 'Panel says it prefers ' + si.server_protocol + (si.https_port ? ' (https port ' + si.https_port + ')' : '') + '; connected with ' + found.split(':')[0] + ', which works.');
       Log.info('xc', 'Login answer: auth=' + ui.auth + ' status=' + ui.status + ' exp=' + (ui.exp_date ? new Date(+ui.exp_date * 1000).toISOString().slice(0, 10) : 'none') +
         ' connections=' + ui.active_cons + '/' + ui.max_connections + ' formats=' + JSON.stringify(ui.allowed_output_formats || []) +
-        ' server=' + (si.url || '?') + ':' + (si.port || '?') + ' https=' + (si.https_port || '-') + ' protocol=' + (si.server_protocol || '?') + ' tz=' + (si.timezone || '?') + ' (' + (Date.now() - t0) + 'ms)');
+        ' server=' + panelHost(si.url, found) + ':' + (si.port || '?') + ' https=' + (si.https_port || '-') + ' protocol=' + (si.server_protocol || '?') + ' tz=' + (si.timezone || '?') + ' (' + (Date.now() - t0) + 'ms)');
       if (String(ui.auth) !== '1') throw Object.assign(new Error('Login rejected.  Check the username and password.'), { kind: 'auth' });
       if (ui.status && ui.status !== 'Active') throw Object.assign(new Error('Account status is ' + ui.status + '.'), { kind: 'auth' });
       if (ui.exp_date && +ui.exp_date * 1000 < Date.now()) Log.warn('xc', 'Subscription expiry date is in the past');
@@ -356,7 +365,7 @@ var Source = (function () {
   function movieUrl(id, ext, p) { p = P(p); return base(p.server) + '/movie/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
   function episodeUrl(id, ext, p) { p = P(p); return base(p.server) + '/series/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
 
-  return { get account() { return account; }, load: load, busy: busy, stop: stop, get loading() { return Object.keys(running).length > 0; }, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
+  return { get account() { return account; }, load: load, busy: busy, stop: stop, get loading() { return Object.keys(running).length > 0; }, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, userShape: userShape, panelHost: panelHost, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
     catchupUrl: catchupUrl, setTz: setTz,
     vodCats: vodCats, vodList: vodList, vodInfo: vodInfo, seriesInfo: seriesInfo, movieUrl: movieUrl, movieLink: movieLink, episodeUrl: episodeUrl, m3uVod: m3uVod };
 })();
