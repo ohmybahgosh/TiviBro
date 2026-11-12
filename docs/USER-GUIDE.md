@@ -21,7 +21,7 @@ Everything TiviBro does, on the TV and from your computer.  Every picture here c
 A brand-new TiviBro opens on **Add your playlist**.  You have two ways in:
 
 - **Scan the QR code with your phone.**  It sits beside the form and opens the web editor on your phone, already signed in: type your login there with a real keyboard, or restore a backup from another TV.  The address and password are under the code, for a computer on the same network.  While you work there, a big banner along the bottom of the TV shows what it receives ("Checking the login and loading the channels…", then how many channels it added, or why it didn't work).  Any button on the TV remote clears it.  The TV moves on by itself when you finish, then shows the [set-up tour](#the-set-up-tour).  Nothing starts playing on its own.  (**Set up or restore from a phone or computer** shows the same code on a screen of its own.)
-- **Type it on the TV.**  The type starts on **Full link**: paste the whole link your provider sent (the long one with username and password in it, often with get.php) and TiviBro says what it found, then fills in the Xtream Codes login when you press **Connect**.  Or pick Xtream Codes or M3U and fill in the server, username and password (or the M3U address) yourself.  A guide address is optional.  **Test connection** checks everything before you save; **Connect** saves and loads your channels.
+- **Type it on the TV.**  The type starts on **Full link**: paste the whole link your provider sent (the long one with username and password in it, often with get.php) and TiviBro says what it found, then fills in the Xtream Codes login when you press **Connect**.  Or pick Xtream Codes or M3U and fill in the server, username and password (or the M3U address) yourself.  For a **Stalker portal** (the "MAC address" logins of MAG boxes), pick **Stalker portal (MAC address)** and type the portal address your provider gave for a MAG box (it often ends in `/c/`) and the MAC address they registered, like `00:1A:79:12:34:56`; the network helper logs in as the box, the portal makes each channel's link as it starts, and its guide comes per channel.  A guide address is optional.  **Test connection** checks everything before you save; **Connect** saves and loads your channels.
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-first-run"><img src="screenshots/tv-first-run.png" width="49%" alt="First-run screen"></a>
@@ -705,7 +705,7 @@ Your playlists and how often their channel lists reload.  **OK** on a playlist o
 | Setting | Choices | What it does |
 |---|---|---|
 | *(each playlist)* | | Its name and type, whether it is the first playlist or on, and how many channels it has.  **OK** opens its page (below). |
-| **Add playlist…** | | Opens the setup screen for another Xtream Codes or M3U playlist, which is then used next to the ones you have.  Each playlist keeps its own hidden items, renames, guide and name rules.  From the phone app it's easier: share your provider's link to it. |
+| **Add playlist…** | | Opens the setup screen for another Xtream Codes, M3U or Stalker portal playlist, which is then used next to the ones you have.  Each playlist keeps its own hidden items, renames, guide and name rules.  From the phone app it's easier: share your provider's link to it. |
 
 Each playlist in the list starts with when its subscription ends ("Expires 19 Nov", "Expires in 3 days" in the last two weeks, "Expired 2 Oct"), when the provider reports it.
 
@@ -1361,7 +1361,7 @@ The same reminders are under **Settings > Reminders and watchlist** on the TV an
 
 ### Playlists
 
-Add Xtream Codes or M3U playlists (or paste the provider's **Full link** and let TiviBro fill in the login), choose which one is first (every playlist that is on is used at once, see [Settings: Playlists](#settings-playlists)), turn them on and off, set reload schedules and the User-Agent, or change a login.  The TV tests every new login before saving.  **Logins never reach the editor**: it only ever sees server names.  Each playlist keeps its own groups, names and guide setup.  The editor's channel pages show every playlist that is on; names, guide matching and Smart clean-up rules are the first playlist's.
+Add Xtream Codes, M3U or Stalker portal playlists (or paste the provider's **Full link** and let TiviBro fill in the login), choose which one is first (every playlist that is on is used at once, see [Settings: Playlists](#settings-playlists)), turn them on and off, set reload schedules and the User-Agent, or change a login.  The TV tests every new login before saving.  **Logins never reach the editor**: it only ever sees server names.  Each playlist keeps its own groups, names and guide setup.  The editor's channel pages show every playlist that is on; names, guide matching and Smart clean-up rules are the first playlist's.
 
 <p align="center">
   <a href="https://tivibro.app/view/#editor-playlists"><img src="screenshots/editor-playlists.png" width="100%" alt="Playlists in the editor"></a>

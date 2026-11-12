@@ -24,6 +24,7 @@ var Guide = require('./guide');
 var Vod = require('./vod');
 var Kv = require('./kv');
 var Live = require('./live');
+var Stalker = require('./stalker');
 var Media = require('./media');
 var Convert = require('./convert');
 var Ffmpeg = require('./ffmpeg');
@@ -79,7 +80,7 @@ function escRx(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 function redact(u) {
   var s = String(u);
   (Media.signedHosts || []).forEach(function (h) { s = s.replace(new RegExp('(' + escRx(h) + ')[/?][^\\s"\'<>\\\\]*', 'gi'), '$1/***'); });
-  return s.replace(/\/media-stream\/[a-f0-9]{48}/gi, '/media-stream/***').replace(/([?&](?:sig|signature|token|auth|key|expires|hash)=)[^&\s]*/gi, '$1***')
+  return s.replace(/\/media-stream\/[a-f0-9]{48}/gi, '/media-stream/***').replace(/([?&](?:sig|signature|token|auth|key|expires|hash|stb|play_token|stream_token)=)[^&\s]*/gi, '$1***')
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s]*/gi, '$1***').replace(/(username=)([^&\s]{0,2})[^&\s]*/gi, '$1$2***')
     .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/')
     // The short Xtream link, http://server/user/pass/12345.ts (issue #25); the same rule as app/js/log.js.
@@ -235,7 +236,10 @@ function create(opts) {
     /* The web editor and the phone app connection are switched on and off from TiviBro only.  On the
        TV the helper hands TiviBro a secret with its start reply (service.js, over luna, which only
        TiviBro may call); without it, a web page in the TV's browser could reach these over localhost. */
-    var ctlRoute = req.url.indexOf('/editor/') === 0 ? 'editor' : req.url.indexOf('/companion/') === 0 ? 'companion' : req.url.indexOf('/kv/') === 0 ? 'kv' : req.url.indexOf('/live/') === 0 ? 'live' : req.url.indexOf('/media/') === 0 ? 'media' :
+    // Stalker portals (stalker.js): the channel list with the secret like /live/; a channel's link and guide
+    // without it, since the TV's player can't send one (they carry the login, and only reach the portal).
+    if (req.url.indexOf('/stalker/') === 0 && req.method !== 'POST') return Stalker.handle(req, res, ALLOW, log, ownPort());
+    var ctlRoute = req.url.indexOf('/stalker/') === 0 ? 'stalker' : req.url.indexOf('/editor/') === 0 ? 'editor' : req.url.indexOf('/companion/') === 0 ? 'companion' : req.url.indexOf('/kv/') === 0 ? 'kv' : req.url.indexOf('/live/') === 0 ? 'live' : req.url.indexOf('/media/') === 0 ? 'media' :
       req.url.indexOf('/convert/') === 0 ? 'convert' : req.url.indexOf('/ffmpeg/') === 0 ? 'ffmpeg' : '';
     if (ctlRoute) {
       res.setHeader('Access-Control-Allow-Origin', '*');
@@ -243,6 +247,7 @@ function create(opts) {
       if (ctlRoute === 'editor') return editor.control(req, res, req.url.split('?')[0]);
       if (ctlRoute === 'kv') return Kv.handle(req, res, ALLOW, log);
       if (ctlRoute === 'live') return Live.handle(req, res, ALLOW, log, ownPort());
+      if (ctlRoute === 'stalker') return Stalker.handle(req, res, ALLOW, log, ownPort());
       if (ctlRoute === 'media') return Media.handle(req, res, ALLOW, log);
       if (ctlRoute === 'convert') return Convert.control(req, res, ALLOW, log, ownPort(), redact);
       if (ctlRoute === 'ffmpeg') return Ffmpeg.handle(req, res, ALLOW);

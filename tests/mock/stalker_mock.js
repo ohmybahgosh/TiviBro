@@ -1,0 +1,46 @@
+/* A small Stalker (Ministra) portal for tests (service/stalker.js): handshake, get_profile, genres, the
+   channel list, create_link and the short guide, answering only a registered MAC with its token, as a
+   portal does.  Links point at the mock provider's streams.
+     node tests/mock/stalker_mock.js            (port 8095; STALKER_PORT, MOCK=<the mock provider>)
+   Or require() it: create({ mac, stream }) -> { server, seen } */
+'use strict';
+var http = require('http'), url = require('url');
+
+function create(o) {
+  o = o || {};
+  var MAC = (o.mac || '00:1A:79:00:00:01').toUpperCase(), TOKEN = 'TOK' + Date.now().toString(36);
+  var stream = o.stream || ((process.env.MOCK || 'http://127.0.0.1:8077') + '/live/demo/demo/1.ts');
+  var seen = { ua: '', xua: '', actions: [], links: 0, profile: false, refused: 0 };
+  var chans = [
+    { id: '101', name: 'Portal News', number: '1', cmd: 'ffmpeg http://localhost/ch/101', tv_genre_id: '1', logo: '', xmltv_id: 'news.portal' },
+    { id: '102', name: 'Portal Sports', number: '2', cmd: 'ffmpeg http://localhost/ch/102', tv_genre_id: '2', logo: '', xmltv_id: '' },
+    { id: '103', name: 'Portal Movies', number: '3', cmd: 'auto http://localhost/ch/103', tv_genre_id: '2', logo: '', xmltv_id: '' }
+  ];
+  function js(res, v) { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ js: v })); }
+  var server = http.createServer(function (req, res) {
+    var u = url.parse(req.url, true), q = u.query;
+    if (!/\/server\/load\.php$/.test(u.pathname)) { res.writeHead(404); return res.end('no portal here'); }
+    seen.ua = req.headers['user-agent'] || ''; seen.xua = req.headers['x-user-agent'] || '';
+    seen.actions.push(q.action);
+    var mac = decodeURIComponent((/mac=([^;]+)/.exec(req.headers.cookie || '') || [])[1] || '').toUpperCase();
+    if (mac !== MAC) { seen.refused++; res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end('Authorization failed.'); }
+    if (q.action === 'handshake') return js(res, { token: TOKEN, random: 'x' });
+    if (req.headers.authorization !== 'Bearer ' + TOKEN) { seen.refused++; res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end('Authorization failed.'); }
+    if (q.action === 'get_profile') { seen.profile = true; return js(res, { id: 1, status: 0, name: 'box' }); }
+    if (q.action === 'get_genres') return js(res, [{ id: '*', title: 'All' }, { id: '1', title: 'News' }, { id: '2', title: 'Sports' }]);
+    if (q.action === 'get_all_channels') return js(res, { total_items: chans.length, data: chans });
+    if (q.action === 'create_link') { seen.links++; seen.lastCmd = q.cmd; return js(res, { id: 1, cmd: 'ffmpeg ' + stream }); }
+    if (q.action === 'get_short_epg') {
+      var now = Math.floor(Date.now() / 1000);
+      return js(res, [0, 1, 2].map(function (i) { return { id: i, name: 'Show ' + (i + 1) + ' on ' + q.ch_id, descr: 'About show ' + (i + 1), start_timestamp: String(now - 1800 + i * 3600), stop_timestamp: String(now + 1800 + i * 3600) }; }));
+    }
+    js(res, null);
+  });
+  return { server: server, seen: seen, MAC: MAC };
+}
+
+if (require.main === module) {
+  var m = create(), port = +process.env.STALKER_PORT || 8095;
+  m.server.listen(port, '127.0.0.1', function () { console.log('Mock Stalker portal on http://127.0.0.1:' + port + '/stalker_portal/c/  MAC ' + m.MAC); });
+}
+module.exports = { create: create };

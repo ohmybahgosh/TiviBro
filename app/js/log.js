@@ -28,7 +28,8 @@ var Log = (function () {
     signed.forEach(function (h) { s = s.replace(new RegExp('(' + esc(h) + ')[/?][^\\s"\'<>\\\\]*', 'gi'), '$1/***'); });
     return s
       .replace(/\/media-stream\/[a-f0-9]{48}/gi, '/media-stream/***')
-      .replace(/([?&](?:sig|signature|token|auth|key|expires|hash)=)[^&\s"']*/gi, '$1***')
+      .replace(/([?&](?:sig|signature|token|auth|key|expires|hash|stb|play_token|stream_token)=)[^&\s"']*/gi, '$1***')
+      .replace(/\b([0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b/gi, function (m) { return m.slice(0, 8) + ':**:**:**'; })     // a box's MAC (Stalker portals)
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s"']*/gi, '$1***')
       .replace(/(username=)([^&\s"']{0,2})[^&\s"']*/gi, '$1$2***')
       .replace(/("ctl"\s*:\s*")[0-9a-f]{8,}(")/gi, '$1***$2')             // the helper's control key (issue #26)

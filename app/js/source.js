@@ -240,8 +240,31 @@ var Source = (function () {
     job.then(done, done);
     return job;
   }
+  /* ---------- Stalker portals (service/stalker.js, discussion #60) ----------
+     The helper talks to the portal as a MAG box would: a browser can't send the box's User-Agent and MAC
+     cookie.  Each channel's url is "stalker:<the box's command>", turned into a link at play time (streamUrl). */
+  function stalkerMac(m) { m = String(m || '').trim().toUpperCase().replace(/-/g, ':'); if (/^[0-9A-F]{12}$/.test(m)) m = m.replace(/(..)(?!$)/g, '$1:'); return /^([0-9A-F]{2}:){5}[0-9A-F]{2}$/.test(m) ? m : ''; }
+  function stb(p) {
+    var o = { portal: String(p.portal || '').trim(), mac: stalkerMac(p.mac) };
+    ['sn', 'id1', 'id2', 'sig'].forEach(function (k) { if (p[k]) o[k] = String(p[k]).trim(); });
+    try { o.tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch (e) { o.tz = 'UTC'; }
+    return btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function loadStalker(p) {
+    var t0 = Date.now();
+    if (!Net.port) return Promise.reject(Object.assign(new Error('A Stalker portal needs the network helper, which is not running.  Restart TiviBro, or set Connection to Automatic.'), { kind: 'helper' }));
+    Log.info('stalker', 'Loading the portal\'s channels via the helper :' + Net.port + ' (MAC ' + String(stalkerMac(p.mac)).slice(0, 8) + ':**:**:**)');
+    return viaHelper('/stalker/channels', { stb: stb(p) }).then(function (j) {
+      if (j._status === 401) throw Object.assign(new Error('The portal turned this MAC address down: ' + (j.error || 'not allowed') + '.  Check the MAC address with your provider.'), { kind: 'auth' });
+      if (j._status !== 200 || !Array.isArray(j.channels)) throw Object.assign(new Error(j.error ? 'The portal: ' + j.error : 'HTTP ' + j._status), { kind: 'http' });
+      Log.info('stalker', 'The helper loaded ' + j.channels.length + ' channels in ' + j.groups.length + ' groups in ' + (Date.now() - t0) + 'ms');
+      if (!j.channels.length) throw Object.assign(new Error('The portal answered but has no channels for this MAC address.'), { kind: 'parse' });
+      return { groups: j.groups, channels: j.channels, epgUrl: '', _live: '' };
+    });
+  }
+
   function load1(p) {
-    var job = p.type === 'm3u' ? loadM3U(p) : loadXtream(p);
+    var job = p.type === 'stalker' ? loadStalker(p) : p.type === 'm3u' ? loadM3U(p) : loadXtream(p);
     return job.then(function (data) {
       // Remember the address that actually worked (and credentials taken from a pasted link).
       var q = Object.assign({}, p);
@@ -256,7 +279,7 @@ var Source = (function () {
       if (stopping || (e && e.kind === 'stopped')) throw stopped();
       var msg = friendly(e);
       var tried = e && e.tried && e.tried.length > 1 ? e.tried : null;
-      Log.error(p.type === 'm3u' ? 'm3u' : 'xc', 'Load failed: ' + msg + (e && e.kind ? '  [kind=' + e.kind + (e.status ? ' status=' + e.status : '') + ' via=' + e.via + ']' : '') + (tried ? '  tried: ' + tried.join(' | ') : ''));
+      Log.error(p.type === 'm3u' ? 'm3u' : p.type === 'stalker' ? 'stalker' : 'xc', 'Load failed: ' + msg + (e && e.kind ? '  [kind=' + e.kind + (e.status ? ' status=' + e.status : '') + ' via=' + e.via + ']' : '') + (tried ? '  tried: ' + tried.join(' | ') : ''));
       if (tried && e.kind !== 'auth') msg = 'Tried both http and https.  ' + msg;
       throw Object.assign(new Error(msg), { kind: e && e.kind, tried: e && e.tried });
     });
@@ -289,17 +312,24 @@ var Source = (function () {
     return e.message || String(e);
   }
 
-  function sig(p) { return U.hash([p.id, p.type, p.server, p.user, p.pass, p.m3u].join('|')); }
+  function sig(p) { return U.hash([p.id, p.type, p.server, p.user, p.pass, p.m3u].concat(p.type === 'stalker' ? [p.portal, p.mac, p.sn] : []).join('|')); }
 
   function cred(p) { return encodeURIComponent(p.user) + '/' + encodeURIComponent(p.pass); }
   /* Every channel plays from its own playlist's server and login (Store.plOf: with several playlists on,
      the other playlists' channels carry their playlist's id). */
   function streamUrl(ch, fmt) {
+    if (ch.url && ch.url.indexOf('stalker:') === 0) {
+      // The portal makes a link when the channel starts (create_link): the helper asks, then sends the player on.
+      var cmd = ch.url.slice(8), ext = (/\.(m3u8|ts|mp4|mkv)(\?|$|\s)/i.exec(cmd) || [])[1] || 'ts';
+      return 'http://127.0.0.1:' + Net.port + '/stalker/play/' + String(ch.sid || ch.id).replace(/[^A-Za-z0-9_-]/g, '') + '.' + ext.toLowerCase() + '?stb=' + stb(Store.plOf(ch)) + '&cmd=' + encodeURIComponent(cmd);
+    }
     if (ch.url) return ch.url;
     var p = Store.plOf(ch);
     return base(p.server) + '/live/' + cred(p) + '/' + ch.id + '.' + (fmt || 'ts');
   }
   function shortEpgUrl(ch, limit) {
+    var sp = Store.plOf(ch);
+    if (sp && sp.type === 'stalker') return 'http://127.0.0.1:' + Net.port + '/stalker/epg?stb=' + stb(sp) + '&ch=' + encodeURIComponent(ch.sid || '') + '&limit=' + (limit || 6);
     return api(Store.plOf(ch), 'get_short_epg', '&stream_id=' + ch.id + '&limit=' + (limit || 6));
   }
 
@@ -365,7 +395,7 @@ var Source = (function () {
   function movieUrl(id, ext, p) { p = P(p); return base(p.server) + '/movie/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
   function episodeUrl(id, ext, p) { p = P(p); return base(p.server) + '/series/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
 
-  return { get account() { return account; }, load: load, busy: busy, stop: stop, get loading() { return Object.keys(running).length > 0; }, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, userShape: userShape, panelHost: panelHost, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U,
+  return { get account() { return account; }, load: load, busy: busy, stop: stop, get loading() { return Object.keys(running).length > 0; }, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, userShape: userShape, panelHost: panelHost, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U, stalkerMac: stalkerMac,
     catchupUrl: catchupUrl, setTz: setTz,
     vodCats: vodCats, vodList: vodList, vodInfo: vodInfo, seriesInfo: seriesInfo, movieUrl: movieUrl, movieLink: movieLink, episodeUrl: episodeUrl, m3uVod: m3uVod };
 })();

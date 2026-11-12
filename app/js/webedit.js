@@ -90,7 +90,7 @@ var WebEdit = (function () {
   function playlists() {
     var s = Store.settings;
     return s.playlists.map(function (p) {
-      return { id: p.id, name: p.name || (p.type === 'm3u' ? 'M3U playlist' : 'Xtream'), type: p.type, host: host(p.type === 'm3u' ? p.m3u : p.server),
+      return { id: p.id, name: p.name || (p.type === 'm3u' ? 'M3U playlist' : p.type === 'stalker' ? 'Stalker portal' : 'Xtream'), type: p.type, host: host(p.type === 'm3u' ? p.m3u : p.type === 'stalker' ? p.portal : p.server),
         active: p.id === s.active, off: !!p.off, ua: p.ua || '', plRefresh: p.plRefresh, epgRefresh: p.epgRefresh, providerEpg: p.providerEpg,
         // Never the address itself (it can hold a login): the host, the file name, and a fingerprint the
         // editor matches against its list of free guides.
@@ -434,11 +434,14 @@ var WebEdit = (function () {
     },
     addPlaylist: function (a) {
       activity('Your phone or computer sent a playlist.  Checking the login and loading the channels…');
-      var xc = a.type !== 'm3u';
-      var p = { id: '', name: clean(a.name), type: xc ? 'xtream' : 'm3u', server: clean(a.server), user: clean(a.user), pass: clean(a.pass), m3u: clean(a.m3u) };
+      var stk = a.type === 'stalker', xc = !stk && a.type !== 'm3u';
+      var p = stk ? { id: '', name: clean(a.name), type: 'stalker', portal: clean(a.portal), mac: Source.stalkerMac(a.mac), sn: clean(a.sn) }
+        : { id: '', name: clean(a.name), type: xc ? 'xtream' : 'm3u', server: clean(a.server), user: clean(a.user), pass: clean(a.pass), m3u: clean(a.m3u) };
+      if (stk && !(/^https?:\/\//i.test(p.portal) && p.mac)) throw new Error('Enter the portal address (starting with http) and the MAC address, like 00:1A:79:12:34:56.');
+      if (stk && !p.sn) delete p.sn;
       if (xc && !(p.server && p.user && p.pass) && !Source.credsFromLink(p.server)) throw new Error('Enter the server, username and password.');
-      if (!xc && !p.m3u) throw new Error('Enter the playlist address.');
-      if (!p.name) p.name = xc ? (p.user || 'Xtream') : 'M3U playlist';
+      if (!xc && !stk && !p.m3u) throw new Error('Enter the playlist address.');
+      if (!p.name) p.name = xc ? (p.user || 'Xtream') : stk ? 'Stalker portal' : 'M3U playlist';
       if (clean(a.epg)) p.epgSources = [{ url: clean(a.epg), offset: 0 }];
       p.id = 'p' + Date.now().toString(36);
       return loadAndSave(p).then(function (data) {
@@ -456,10 +459,14 @@ var WebEdit = (function () {
       if (typeof a.ua === 'string') p.ua = a.ua.trim();
       if (a.plRefresh != null) p.plRefresh = +a.plRefresh;
       if (a.epgRefresh != null) p.epgRefresh = +a.epgRefresh;
-      var login = p.type === 'm3u' ? clean(a.m3u) : (clean(a.server) || clean(a.user) || clean(a.pass));
+      var login = p.type === 'm3u' ? clean(a.m3u) : p.type === 'stalker' ? (clean(a.portal) || clean(a.mac)) : (clean(a.server) || clean(a.user) || clean(a.pass));
       if (!login) { Store.upsertPlaylist(p); return Promise.resolve({ msg: 'Saved "' + p.name + '"' }); }
       var test = JSON.parse(JSON.stringify(p));
       if (p.type === 'm3u') test.m3u = clean(a.m3u);
+      else if (p.type === 'stalker') {
+        if (clean(a.portal)) test.portal = clean(a.portal);
+        if (clean(a.mac)) { test.mac = Source.stalkerMac(a.mac); if (!test.mac) throw new Error('That is not a MAC address: like 00:1A:79:12:34:56.'); }
+      }
       else { if (clean(a.server)) test.server = clean(a.server); if (clean(a.user)) test.user = clean(a.user); if (clean(a.pass)) test.pass = clean(a.pass); }
       return loadAndSave(test).then(function (data) {
         Object.assign(p, test);

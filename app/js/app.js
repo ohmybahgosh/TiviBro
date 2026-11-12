@@ -14,8 +14,8 @@ var App = (function () {
     var f = data && data.fixed;
     if (!f) return p;
     ['server', 'user', 'pass', 'm3u'].forEach(function (k) { p[k] = f[k]; });
-    Log.info('app', 'Saved working address ' + (p.type === 'm3u' ? p.m3u : p.server));
-    U.toast(p.type === 'm3u' ? 'Connected using ' + p.m3u.split(':')[0] : 'Connected using ' + p.server, 4000);
+    Log.info('app', 'Saved working address ' + (p.type === 'm3u' ? p.m3u : p.type === 'stalker' ? p.portal : p.server));
+    U.toast(p.type === 'm3u' ? 'Connected using ' + p.m3u.split(':')[0] : 'Connected using ' + (p.type === 'stalker' ? p.portal : p.server), 4000);
     return p;
   }
 
@@ -112,6 +112,12 @@ var App = (function () {
         linkNote = U.el('div', 'net linknote'); setupEl.appendChild(linkNote); showLink();
       }
       else if (p.type === 'xtream') { row('Server', 'server', 'url'); row('Username', 'user'); row('Password', 'pass', 'password'); }
+      else if (p.type === 'stalker') {
+        // A Stalker (Ministra) portal: the address a MAG box is given and the MAC the provider registered.
+        row('Portal address', 'portal', 'url'); row('MAC address', 'mac');
+        setupEl.appendChild(U.el('div', 'net', 'The portal address your provider gave for a MAG box (it often ends in /c/), and the MAC address they registered, like 00:1A:79:12:34:56.'));
+        row('Serial number (optional)', 'sn');
+      }
       else row('Playlist URL', 'm3u', 'url');
       if (!editing) row('Guide URL (optional)', 'guide', 'url');
       // Network: reachable here so a helper problem can never lock you out of the app.
@@ -197,7 +203,7 @@ var App = (function () {
     }
 
     /* Full link: what TiviBro found in it, as you type or paste. */
-    var TYPES = { link: 'Full link (paste from your provider)', xtream: 'Xtream Codes', m3u: 'M3U playlist' };
+    var TYPES = { link: 'Full link (paste from your provider)', xtream: 'Xtream Codes', m3u: 'M3U playlist', stalker: 'Stalker portal (MAC address)' };
     var linkNote = null;
     function host(u) { var m = /^https?:\/\/([^\/?#]+)/i.exec(u || ''); return m ? m[1] : u; }
     function showLink() {
@@ -221,10 +227,10 @@ var App = (function () {
       render();
       return true;
     }
-    function nextType() { var order = editing ? ['xtream', 'm3u'] : ['link', 'xtream', 'm3u']; p.type = order[(order.indexOf(p.type) + 1) % order.length]; render(); }
+    function nextType() { var order = editing ? ['xtream', 'm3u', 'stalker'] : ['link', 'xtream', 'm3u', 'stalker']; p.type = order[(order.indexOf(p.type) + 1) % order.length]; render(); }
     function current() {
       var t = Object.assign({}, p);
-      ['server', 'user', 'pass', 'm3u'].forEach(function (k) { if (t[k]) t[k] = String(t[k]).trim(); });
+      ['server', 'user', 'pass', 'm3u', 'portal', 'mac', 'sn'].forEach(function (k) { if (t[k]) t[k] = String(t[k]).trim(); });
       if (t.guide && t.guide.trim()) t.epgSources = [{ url: t.guide.trim(), offset: 0 }];
       return Store.normalize(t);
     }
@@ -238,10 +244,12 @@ var App = (function () {
       if (!useLink()) return;
       msg.className = 'msg'; msg.textContent = 'Connecting…';
       var test = Object.assign({}, p);
-      if (!test.name) test.name = test.type === 'xtream' ? (test.user || 'Xtream') : 'M3U playlist';
+      if (!test.name) test.name = test.type === 'xtream' ? (test.user || 'Xtream') : test.type === 'stalker' ? 'Stalker portal' : 'M3U playlist';
       if (test.guide && test.guide.trim()) test.epgSources = [{ url: test.guide.trim(), offset: 0 }];
       delete test.guide;
-      ['server', 'user', 'pass', 'm3u'].forEach(function (k) { if (test[k]) test[k] = String(test[k]).trim(); });
+      ['server', 'user', 'pass', 'm3u', 'portal', 'mac', 'sn'].forEach(function (k) { if (test[k]) test[k] = String(test[k]).trim(); });
+      if (test.type === 'stalker' && !(/^https?:\/\//i.test(test.portal || '') && Source.stalkerMac(test.mac))) { msg.className = 'msg err'; msg.textContent = 'Enter the portal address (starting with http) and the MAC address, like 00:1A:79:12:34:56.'; return; }
+      if (test.type === 'stalker') test.mac = Source.stalkerMac(test.mac);
       if (test.type === 'xtream' && !(test.server && ((test.user && test.pass) || Source.credsFromLink(test.server)))) { msg.className = 'msg err'; msg.textContent = 'Enter the server, username and password.'; return; }
       if (test.type === 'm3u' && !test.m3u) { msg.className = 'msg err'; msg.textContent = 'Enter the playlist address.'; return; }
       if (!test.id) test.id = 'p' + Date.now().toString(36);

@@ -137,7 +137,7 @@ var Diag = (function () {
       ['TiviBro', TIVIBRO_VERSION], ['TV', tv], ['Browser engine', engine ? 'Chromium ' + engine : navigator.userAgent.slice(0, 80)],
       ['Network', (s.network || 'auto') === 'direct' ? 'Direct' : 'Automatic (' + Net.status() + ')'],
       ['Storage', (function () { var st = Net.info && Net.info.store; if (!st) return 'the TV app\'s own'; return st.where + (st.freeMB >= 0 ? ', ' + st.freeMB.toLocaleString() + ' MB free' : ''); })()],
-      ['Playlist', (p.type === 'm3u' ? 'M3U' : 'Xtream Codes') + ', ' + Library.count() + ' channels, ' + (Store.settings.playlists || []).length + ' playlist(s)'],
+      ['Playlist', (p.type === 'm3u' ? 'M3U' : p.type === 'stalker' ? 'Stalker portal' : 'Xtream Codes') + ', ' + Library.count() + ' channels, ' + (Store.settings.playlists || []).length + ' playlist(s)'],
       // Several playlists on: each one in use (type, channels, guide), with no names or addresses.
       ['Playlists on', (function () {
         var ls = Store.loaded ? Store.loaded() : [p], skip = Store.others ? Store.others().filter(function (q) { return !Library.partOf(q.id) || Library.otherIds().indexOf(q.id) < 0; }).length : 0;
@@ -246,7 +246,7 @@ var Diag = (function () {
     busy = true;
     p = p || Store.playlist;
     var xc = p.type === 'xtream';
-    show('Connection test: ' + (p.name || (xc ? p.user + ' @ ' + p.server : p.m3u)), [], function () { run(p); });
+    show('Connection test: ' + (p.name || (xc ? p.user + ' @ ' + p.server : p.type === 'stalker' ? p.portal : p.m3u)), [], function () { run(p); });
     push('TiviBro ' + (window.TIVIBRO_VERSION || '') + '   ' + navigator.userAgent.replace(/^.*?(Web0S|Chrome\/[\d.]+).*?(Chrome\/[\d.]+)?.*$/, '$1 $2'));
     push('Network setting: ' + (Store.settings.network || 'auto') + '   helper: ' + Net.status());
     push('');
@@ -332,6 +332,24 @@ var Diag = (function () {
             var warn = !i.bytes || d.kind === 'a web page (not video)' || d.kind === 'unknown data';
             if (!i.bytes) det.push('No video data arrived.  The channel may be offline, or the provider may refuse this format.');
             return { warn: warn, msg: i.bytes ? 'video is flowing' : 'connected but no data', detail: det };
+          });
+        }).catch(function () {});
+      });
+    } else if (p.type === 'stalker') {
+      // A Stalker portal: the helper logs in as the box, lists the channels, then the first one's link plays.
+      chain = chain.then(function () {
+        return step('Portal login and channel list', function () {
+          var t0 = Date.now();
+          return Source.load(p).then(function (d) {
+            ctx.first = d.channels[0];
+            return { msg: d.channels.length + ' channels, ' + d.groups.length + ' groups in ' + ms(t0) };
+          });
+        });
+      }).then(function () {
+        if (!ctx.first) return;
+        return step('Stream test: ' + Names.clean(ctx.first.n), function () {
+          return probeStream(Source.streamUrl(ctx.first), 5).then(function (i) {
+            return { warn: !i.bytes, msg: i.bytes ? 'video is flowing' : 'connected but no data', detail: ['HTTP ' + i.status + ', ' + (i.ctype || 'no content type') + ', ' + Math.round(i.bytes / 1024) + ' KB'] };
           });
         }).catch(function () {});
       });

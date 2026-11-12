@@ -297,7 +297,7 @@ var Settings = (function () {
     s.playlists.forEach(function (raw) {
       var p = Store.normalize(raw), active = p.id === s.active, part = !active && L.partOf(p.id);
       var use = active ? (multi && L.main ? 'first, ' + L.main.channels.length + ' channels' : 'in use, ' + L.count() + ' channels') : part ? 'on, ' + part.channels.length + ' channels' : '';
-      out.push(page(I18n.raw(p.name || (p.type === 'xtream' ? p.user : 'M3U')), [p.off ? 'Off' : '', Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : 'M3U playlist', use].filter(Boolean).join('   '),
+      out.push(page(I18n.raw(p.name || (p.type === 'xtream' ? p.user : 'M3U')), [p.off ? 'Off' : '', Store.expiry(p), p.type === 'xtream' ? 'Xtream Codes' : p.type === 'stalker' ? 'Stalker portal' : 'M3U playlist', use].filter(Boolean).join('   '),
         p.name ? I18n.raw(p.name) : 'Playlist', function () { return playlistPage(p); }));
     });
     // From the phone app: its own Add a playlist form (AddPlaylistDialog), with the playlist type to pick.
@@ -333,7 +333,8 @@ var Settings = (function () {
         App.playlistsChanged();          // its channels join the lists, or leave them
       }));
     out.push(action('Name', '', function () { UI.prompt('Playlist name', p.name, function (v) { if (v.trim()) { p.name = v.trim(); persist(p); build(); } }); }, function () { return I18n.raw(p.name); }));
-    out.push(action('Connection', xc ? 'Server, username and password' : 'Playlist address', function () { App.setup(p.id); }, function () { return xc ? p.server : p.m3u; }));
+    var stk = p.type === 'stalker';
+    out.push(action('Connection', xc ? 'Server, username and password' : stk ? 'Portal address and MAC address' : 'Playlist address', function () { App.setup(p.id); }, function () { return xc ? p.server : stk ? p.portal : p.m3u; }));
     out.push(action('User-Agent', 'Only if your provider asks for a specific one.  Sent by the network helper for this playlist.', function () {
       UI.prompt('User-Agent (empty = default)', p.ua || '', function (v) { p.ua = v.trim(); persist(p); build(); U.toast(p.ua ? 'User-Agent set.  Reload channels to use it everywhere.' : 'Default User-Agent'); });
     }, function () { return p.ua ? p.ua.slice(0, 28) + (p.ua.length > 28 ? '…' : '') : 'Default'; }));
@@ -381,8 +382,9 @@ var Settings = (function () {
   function guideRows(p) {
     var out = [], active = p.id === S().active, xc = p.type === 'xtream';
     var inUse = active || L.otherIds().indexOf(p.id) >= 0, mine = L.dataOf(active ? '' : p.id).channels;
-    out.push(choice('Provider guide', xc ? 'Per channel is light and loads as you browse.  The full file also enables guide search and manual assignment.' : 'The guide address inside the playlist, if it has one.',
-      xc ? ['short', 'xmltv', 'off'] : ['xmltv', 'off'], xc ? ['Per channel', 'Full XMLTV file', 'Off'] : ['From playlist', 'Off'],
+    var stk = p.type === 'stalker';
+    out.push(choice('Provider guide', xc ? 'Per channel is light and loads as you browse.  The full file also enables guide search and manual assignment.' : stk ? 'The portal\'s own guide, per channel as you browse.  Your guide sources and the public guide fill in the rest.' : 'The guide address inside the playlist, if it has one.',
+      xc ? ['short', 'xmltv', 'off'] : stk ? ['short', 'off'] : ['xmltv', 'off'], xc ? ['Per channel', 'Full XMLTV file', 'Off'] : stk ? ['Per channel', 'Off'] : ['From playlist', 'Off'],
       function () { return p.providerEpg; }, function (v) { p.providerEpg = v; persist(p, true); build(); }));
     var offs = [], offl = [];
     for (var m = -720; m <= 720; m += 30) { offs.push(m); offl.push((m > 0 ? '+' : m < 0 ? '-' : '') + Math.floor(Math.abs(m) / 60) + ':' + U.pad(Math.abs(m) % 60)); }

@@ -717,10 +717,10 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
         <div class="note">Logins never reach this page: playlists show only their server name.  The TV tests a new login before it saves it.  <a href="#help/playlists">Learn more</a></div>
         <div class="grid plgrid" id="plList"></div>
         <div class="card" style="margin-top:18px;max-width:760px">
-          <div class="row"><h3 class="grow" style="margin:0">Add a playlist</h3><div class="seg addseg" id="addSeg"><button data-t="link" class="on">Full link</button><button data-t="xtream">Xtream Codes</button><button data-t="m3u">M3U</button></div></div>
+          <div class="row"><h3 class="grow" style="margin:0">Add a playlist</h3><div class="seg addseg" id="addSeg"><button data-t="link" class="on">Full link</button><button data-t="xtream">Xtream Codes</button><button data-t="m3u">M3U</button><button data-t="stalker">Stalker portal</button></div></div>
           <p style="margin-top:8px">The TV logs in and loads the channel list before saving, so you know it works.</p>
           <form id="addForm" class="form">
-            <label class="f full">Playlist type<select id="aTypeSel"><option value="link">Paste the full link from your provider</option><option value="xtream">Xtream Codes (server, username, password)</option><option value="m3u">M3U playlist address</option></select></label>
+            <label class="f full">Playlist type<select id="aTypeSel"><option value="link">Paste the full link from your provider</option><option value="xtream">Xtream Codes (server, username, password)</option><option value="m3u">M3U playlist address</option><option value="stalker">Stalker portal (portal address and MAC address)</option></select></label>
             <label class="f full">Name (optional)<input id="aName" type="text" placeholder="e.g. Living room provider"></label>
             <label class="f full lnk">Full link<input id="aLink" type="url" autocomplete="off" placeholder="http://provider.com:8080/get.php?username=…&password=…&type=m3u_plus"></label>
             <div class="full lnk muted small" id="aLinkNote">Paste the whole link your provider sent, the long one with username and password in it (it often has get.php).  TiviBro fills in the server, username and password for you.</div>
@@ -728,6 +728,10 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
             <label class="f xc hidden">Username<input id="aUser" type="text" autocomplete="off"></label>
             <label class="f xc hidden">Password<input id="aPass" type="password" autocomplete="new-password"></label>
             <label class="f full m3u hidden">Playlist address<input id="aM3u" type="url" placeholder="http://provider.com/get.php?username=…&type=m3u_plus"></label>
+            <label class="f full stk hidden">Portal address<input id="aPortal" type="url" placeholder="http://provider.com:8080/c/"></label>
+            <label class="f stk hidden">MAC address<input id="aMac" type="text" autocomplete="off" placeholder="00:1A:79:12:34:56"></label>
+            <label class="f stk hidden">Serial number (optional)<input id="aSn" type="text" autocomplete="off"></label>
+            <div class="full stk hidden muted small">The portal address your provider gave for a MAG box, and the MAC address they registered.  Like any login, it stays on the TV.</div>
             <label class="f full">Guide address (optional)<input id="aEpg" type="url" placeholder="XMLTV link, .xml or .xml.gz"></label>
             <label class="muted small full"><input type="checkbox" id="aUse"> Switch the TV to this playlist when it is added</label>
             <div class="full row"><button class="primary" id="aGo">Add and test</button></div>
@@ -1197,7 +1201,7 @@ function groupEdited(id) { return !!((E.groupAdd[id] && E.groupAdd[id].length) |
 function guideOf(c) { return E.epgMap[c.k] || c.epg || ''; }
 // Only known with an XMLTV guide; with the provider's per-channel guide every channel counts as covered.
 function guideKnown() { return guideName.size > 0; }
-function perChannel() { var pl = activePl(); return D.playlist && D.playlist.type !== 'm3u' && (pl.providerEpg || 'short') === 'short'; }
+function perChannel() { var pl = activePl(); return D.playlist && D.playlist.type !== 'm3u' && (pl.providerEpg || 'short') === 'short'; }   // Xtream and Stalker
 /* Channels you told TiviBro to ignore for the guide (E.noGuide): left out of Smart match, the
    "needs a guide" counts and public fill-in, and the TV stops saying "No guide information". */
 function wantsGuide(c) { return !(E.noGuide && E.noGuide[c.k]); }
@@ -2292,7 +2296,9 @@ function renderGuide() {
   renderWatch();
   var pl = activePl(), m3u = D.playlist && D.playlist.type === 'm3u', mode = pl.providerEpg || (m3u ? 'xmltv' : 'short');
   $('provIntro').textContent = m3u ? 'Your playlist may carry its own guide address.' : 'Xtream providers offer their guide two ways.  Pick one; you can change it any time.';
-  $('provChoices').innerHTML = (m3u ? PROV_M3U : PROV_XC).map(function (c) {
+  var stk = D.playlist && D.playlist.type === 'stalker';
+  if (stk) $('provIntro').textContent = 'A Stalker portal gives its guide per channel.  Your guide sources below fill in the rest.';
+  $('provChoices').innerHTML = (m3u ? PROV_M3U : stk ? PROV_XC.filter(function (c) { return c[0] !== 'xmltv'; }) : PROV_XC).map(function (c) {
     return '<button type="button" class="choice' + (c[0] === mode ? ' on' : '') + '" data-mode="' + c[0] + '"><h4>' + esc(c[1]) + (c[0] === mode ? ' <span class="chip acc">In use</span>' : ' <span class="chip">' + esc(c[2]) + '</span>') + '</h4><p>' + esc(c[3]) + '</p>' + (c[4] ? '<div class="pros">' + esc(c[4]) + '</div>' : '') + '</button>';
   }).join('');
   renderSources();
@@ -3520,7 +3526,7 @@ function renderPlaylists() {
   var pls = D.playlists || [];
   $('plList').innerHTML = pls.map(function (p) {
     return '<div class="card pl' + (p.off ? ' off' : '') + '"><h3>' + esc(p.name) + (p.active ? ' <span class="chip acc">On the TV</span>' : '') + (p.off ? ' <span class="chip">Off</span>' : '') + '</h3>' +
-      '<div class="meta">' + expiryOf(p) + (p.type === 'm3u' ? 'M3U playlist' : 'Xtream Codes') + '  ·  ' + esc(p.host || 'no address') + '<br>Channels reload: ' + esc(refLabel(p.plRefresh)) + '  ·  Guide reload: ' + esc(refLabel(p.epgRefresh)) + (p.ua ? '<br>User-Agent: ' + esc(p.ua) : '') + '</div>' +
+      '<div class="meta">' + expiryOf(p) + (p.type === 'm3u' ? 'M3U playlist' : p.type === 'stalker' ? 'Stalker portal' : 'Xtream Codes') + '  ·  ' + esc(p.host || 'no address') + '<br>Channels reload: ' + esc(refLabel(p.plRefresh)) + '  ·  Guide reload: ' + esc(refLabel(p.epgRefresh)) + (p.ua ? '<br>User-Agent: ' + esc(p.ua) : '') + '</div>' +
       '<div class="row">' + (p.active ? '<button data-pl="refresh" data-id="' + p.id + '">Reload channels</button>' : p.off ? '' : '<button class="primary" data-pl="use" data-id="' + p.id + '">Use on the TV</button>') +
       '<button data-pl="edit" data-id="' + p.id + '">Edit</button>' + (pls.length > 1 ? '<button data-pl="' + (p.off ? 'on' : 'off') + '" data-id="' + p.id + '">' + (p.off ? 'Turn on' : 'Turn off') + '</button><button class="ghost danger" data-pl="del" data-id="' + p.id + '">Delete</button>' : '') + '</div><div id="plmsg-' + p.id + '"></div></div>';
   }).join('');
@@ -3547,6 +3553,7 @@ function editPlaylist(p) {
     '<label class="f full">User-Agent (only if your provider asks for one)<input id="eUa" type="text" value="' + esc(p.ua) + '" placeholder="Default"></label>' +
     '<div class="full muted small" style="margin-top:6px"><b>Change the login</b>.  Leave these empty to keep the current one.  A new login is tested before it is saved.</div>' +
     (p.type === 'm3u' ? '<label class="f full">Playlist address<input id="eM3u" type="url"></label>' :
+      p.type === 'stalker' ? '<label class="f full">Portal address<input id="ePortal" type="url" placeholder="' + esc(p.host) + '"></label><label class="f">MAC address<input id="eMac" type="text" autocomplete="off" placeholder="00:1A:79:12:34:56"></label>' :
       '<label class="f full">Server<input id="eServer" type="text" placeholder="' + esc(p.host) + '"></label><label class="f">Username<input id="eUser" type="text" autocomplete="off"></label><label class="f">Password<input id="ePass" type="password" autocomplete="new-password"></label>') +
     '<button class="hidden"></button></form><div id="eMsg"></div>', function () {
     var ro = REF.map(function (x) { return { v: x[0], l: x[1] }; });
@@ -3554,7 +3561,7 @@ function editPlaylist(p) {
     $('epf').addEventListener('submit', function (e) { e.preventDefault(); $('eGo').click(); });
   }, [['Cancel', 'ghost', closeModal], ['Save', 'primary', function () {
     var args = { id: p.id, name: $('eName').value, ua: $('eUa').value, plRefresh: $('eRef')._dd.value, epgRefresh: $('eGRef')._dd.value };
-    if ($('eM3u')) args.m3u = $('eM3u').value; else { args.server = $('eServer').value; args.user = $('eUser').value; args.pass = $('ePass').value; }
+    if ($('eM3u')) args.m3u = $('eM3u').value; else if ($('ePortal')) { args.portal = $('ePortal').value; args.mac = $('eMac').value; } else { args.server = $('eServer').value; args.user = $('eUser').value; args.pass = $('ePass').value; }
     busyBtn($('eGo'), command('updatePlaylist', args, 300000, cmdMsg('eMsg', 'Saving on the TV…'))).then(function (r) { msg('eMsg', 'ok', r.msg); setTimeout(function () { closeModal(); load(false).catch(function () {}); }, 1200); }).catch(function (err) { msg('eMsg', 'bad', err.message); });
   }, 'eGo']]);
 }
@@ -3567,6 +3574,7 @@ function addTypeTo(t) {
   document.querySelectorAll('#addForm .lnk').forEach(function (x) { x.classList.toggle('hidden', t !== 'link'); });
   document.querySelectorAll('#addForm .xc').forEach(function (x) { x.classList.toggle('hidden', t !== 'xtream'); });
   document.querySelectorAll('#addForm .m3u').forEach(function (x) { x.classList.toggle('hidden', t !== 'm3u'); });
+  document.querySelectorAll('#addForm .stk').forEach(function (x) { x.classList.toggle('hidden', t !== 'stalker'); });
 }
 $('addSeg').addEventListener('click', function (e) { var t = e.target.dataset.t; if (t) addTypeTo(t); });
 // The type as a plain list too (a phone showed the three buttons as tabs nobody noticed).
@@ -3593,7 +3601,7 @@ function useLink() {
 $('addForm').addEventListener('submit', function (e) {
   e.preventDefault();
   if (!useLink()) return;
-  var args = { type: addType, name: $('aName').value, server: $('aServer').value, user: $('aUser').value, pass: $('aPass').value, m3u: $('aM3u').value, epg: $('aEpg').value, use: $('aUse').checked };
+  var args = { type: addType, name: $('aName').value, server: $('aServer').value, user: $('aUser').value, pass: $('aPass').value, m3u: $('aM3u').value, portal: $('aPortal').value, mac: $('aMac').value, sn: $('aSn').value, epg: $('aEpg').value, use: $('aUse').checked };
   busyBtn($('aGo'), command('addPlaylist', args, 300000, cmdMsg('addMsg', 'The TV is logging in and loading the channel list.  This can take a minute…'))).then(function (r) {
     msg('addMsg', 'ok', r.msg); $('addForm').reset(); addTypeTo('link'); setTimeout(function () { load(!!args.use).catch(function () {}); }, 2500);
   }).catch(function (err) { msg('addMsg', 'bad', err.message); });
@@ -3767,7 +3775,7 @@ function readBackup(file) {
         var sm = j.summary;
         msg('rMsg', '', '');
         $('rSum').innerHTML = '<div class="msg ok" style="display:block">✓ ' + (locked ? 'Unlocked.  ' : '') + 'This backup holds ' + plural(sm.playlists.length, 'playlist') + ':<br>' +
-          sm.playlists.map(function (p) { return '• ' + esc(p.name) + ' <span class="dim">(' + (p.type === 'm3u' ? 'M3U' : 'Xtream') + (p.host ? ', ' + esc(p.host) : '') + ')</span>'; }).join('<br>') +
+          sm.playlists.map(function (p) { return '• ' + esc(p.name) + ' <span class="dim">(' + (p.type === 'm3u' ? 'M3U' : p.type === 'stalker' ? 'Stalker' : 'Xtream') + (p.host ? ', ' + esc(p.host) : '') + ')</span>'; }).join('<br>') +
           (sm.restorePoints ? '<br>plus ' + plural(sm.restorePoints, 'restore point') : '') + '</div>' +
           '<div class="row" style="margin-top:12px"><button class="primary" id="rGo">Restore to the TV</button></div>';
         $('rGo').onclick = function () {

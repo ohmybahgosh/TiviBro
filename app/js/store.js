@@ -151,7 +151,7 @@ var Store = (function () {
   // v0.1 had a single "playlist" object.
   if (raw.playlist && (raw.playlist.server || raw.playlist.m3u) && !settings.playlists.length) {
     var p0 = raw.playlist; p0.id = 'p' + Date.now().toString(36);
-    p0.name = p0.type === 'm3u' ? 'M3U playlist' : (p0.user || 'Xtream');
+    p0.name = p0.type === 'm3u' ? 'M3U playlist' : p0.type === 'stalker' ? 'Stalker portal' : (p0.user || 'Xtream');
     settings.playlists = [p0]; settings.active = p0.id;
     var oldEdits = read('tivibro.edits');
     if (oldEdits) lsSet('tivibro.edits.' + p0.id, JSON.stringify(oldEdits));

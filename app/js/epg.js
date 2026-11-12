@@ -180,7 +180,7 @@ var Epg = (function () {
     return ch.k;
   }
   function emit(k) { for (var i = 0; i < listeners.length; i++) listeners[i](k); }
-  function shortAllowed(ch) { var p = ch ? PL(ch) : P(); return p.type === 'xtream' && p.providerEpg === 'short'; }
+  function shortAllowed(ch) { var p = ch ? PL(ch) : P(); return (p.type === 'xtream' || p.type === 'stalker') && p.providerEpg === 'short'; }
 
   /* ---------- Xtream short EPG ---------- */
   /* When the provider's per-channel guide keeps failing (a panel answering 502 for every channel), stop asking for
