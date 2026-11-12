@@ -224,6 +224,7 @@ var Views = (function () {
     setInterval(heartbeat, 5000);
     setInterval(function () {
       if (!full) return;
+      slowAsk();
       if (mode !== 'live' && !$('osd').classList.contains('hidden')) osd(false);
       if (mode === 'catchup' && cu) cuTick();
     }, 1000);
@@ -291,6 +292,32 @@ var Views = (function () {
   }
 
   // Watch time, recents, reminders and the sleep timer share one slow timer.
+  /* A channel taking longer than usual to start, fullscreen (discussion #36): after 20 seconds without a
+     picture, say what TiviBro has seen and ask: keep trying, start over, its other versions, or stop.  Once per
+     start, then again a while after "Keep trying".  Off in Settings > Playback > Ask when a channel is slow. */
+  var slowAt = { k: '', next: 0 }, slowOpen = null;
+  function slowAsk() {
+    if (mode !== 'live' || !playing || UI.modalOpen || Store.settings.slowAsk === false) return;
+    var s = Player.startStatus, now = Date.now();
+    if (!s || s.ms < 20000) return;
+    var key = playing.k + '|' + (now - s.ms);           // this start of this channel
+    if (slowAt.k === key && now < slowAt.next) return;
+    if (slowAt.k !== key) { slowAt.k = key; slowAt.next = 0; }
+    if (slowAt.next && now < slowAt.next) return;
+    slowAt.next = Infinity;                              // until answered
+    var c = playing, seen = s.http ? 'The provider answers with an error (HTTP ' + s.http + ').' : s.data ? 'Video arrives, but this TV shows no picture for it yet.' : 'Nothing has come from the provider yet.';
+    var sub = seen + (s.tried.length ? '  Tried: ' + s.tried.join(', ') + '.' : '') + (s.retries ? '  ' + s.retries + ' reconnect' + (s.retries === 1 ? '' : 's') + '.' : '');
+    var items = [
+      { label: 'Keep trying', sub: 'Asks again in a minute if it still hasn\'t started', action: function () { slowAt.next = Date.now() + 60000; } },
+      { label: 'Start over', sub: 'From the first player again, as if just picked', action: function () { slowAt.next = Date.now() + 25000; Player.retryNow(); } }
+    ];
+    if (L.versions && L.versions(c).length) items.push({ label: 'Other versions of this channel', sub: L.versions(c).length + ' more', action: function () { slowAt.next = Date.now() + 60000; versionsMenu(c); } });
+    items.push({ label: 'Stop', sub: 'Stops trying this channel', action: function () { Player.stop(); U.toast(L.name(c) + ': stopped trying.', 4000); } });
+    Log.info('player', 'Still starting after ' + Math.round(s.ms / 1000) + 's: ' + seen + (s.tried.length ? '  tried ' + s.tried.join(', ') : ''));
+    slowOpen = c;
+    items.forEach(function (it) { var a = it.action; it.action = function () { slowOpen = null; a(); }; });
+    UI.menu(I18n.t('Still starting: {x}', { x: L.name(c) }), items, function () { slowOpen = null; slowAt.next = Date.now() + 60000; }, { sub: sub });
+  }
   function heartbeat() {
     var now = Date.now();
     if (playing && mode === 'live' && Player.playing) {
@@ -1260,6 +1287,8 @@ var Views = (function () {
   /* ---------- player feedback ---------- */
   var spin = $('spinner'), spinText = $('spinnerText'), verr = $('vidError');
   function onPlayerState(s, msg) {
+    // The question about a slow start goes once the channel plays, or another one is picked.
+    if (slowOpen && (s === 'playing' || playing !== slowOpen)) { slowOpen = null; if (UI.modalOpen) UI.close(); }
     if (s === 'playing' || s === 'error' || s === 'idle') stage.classList.remove('blank');
     spin.classList.toggle('hidden', !(s === 'loading' || s === 'buffering'));
     spinText.textContent = s === 'loading' ? (msg || 'Tuning') : (msg || 'Buffering');

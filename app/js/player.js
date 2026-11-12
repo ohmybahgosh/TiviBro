@@ -1234,7 +1234,7 @@ var Player = (function () {
     lastStats = null;                       // no stale numbers from the last channel in Stream info
     var fmt = Store.settings.format, url0 = opts.url || Source.streamUrl(ch, fmt);
     notePlayed();                                    // the channel left behind may still be counted
-    cur = { ch: ch, url: url0, p: cfg(opts.preview, url0), preview: !!opts.preview, retries: 0,
+    cur = { ch: ch, url: url0, p: cfg(opts.preview, url0), preview: !!opts.preview, retries: 0, t0: Date.now(),
       forceNative: false, triedNative: false, live: opts.live !== false, startAt: opts.startAt || 0, meta: opts.meta || null,
       timeshift: !!opts.timeshift, urlFn: opts.urlFn || null, pos: opts.startAt || 0,
       media: opts.media || (opts.meta && opts.meta.media) || null, opts: opts };
@@ -1518,8 +1518,16 @@ var Player = (function () {
   var LONG_PAUSE = 3 * 60000;
   function togglePause() { if (video && st) setPaused(!st.userPaused); }
   // A fresh go from the top: every pipeline gets another chance.
+  /* A channel still starting, for the "taking longer than usual" question (views.js, discussion #36): how long,
+     what was tried, and what TiviBro has seen.  null once it plays, for files, and while nothing is asked for. */
+  function startStatus() {
+    if (!cur || isFile() || cur.preview || (st && st.started) || cur.failed) return null;
+    var tried = Object.keys(cur.tried || {}).concat(st && st.kind && !(cur.tried || {})[st.kind] ? [st.kind] : []);
+    return { ms: Date.now() - (cur.t0 || Date.now()), tried: tried.map(function (k) { return ENGINE_NAMES[k] || k; }), http: cur.lastHttp || 0, data: !!(st && st.gotInfo), retries: cur.retries || 0, slow: cur.slow || '' };
+  }
   function retryNow() {
     if (!cur) return;
+    cur.t0 = Date.now();
     if (cur.origUrl) cur.url = cur.origUrl;
     cur.retries = 0; cur.triedNative = false; cur.failed = false; cur.slowSince = 0; cur.slow = ''; cur.deadCounted = false;   // a try of its own
     cur.tried = null; cur.late = null; cur.forceKind = null; cur.forceNative = false; cur.routed = false; cur.httpFails = 0; cur.lastHttp = 0;
@@ -1560,7 +1568,7 @@ var Player = (function () {
 
   return {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
-    PRESETS: PRESETS, memorySafe: memorySafe, get memSafe() { return memSafe() ? (safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, on: on,
+    PRESETS: PRESETS, memorySafe: memorySafe, get memSafe() { return memSafe() ? (safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, get startStatus() { return startStatus(); }, on: on,
     seek: seek, seekTo: seekTo, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; },
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },

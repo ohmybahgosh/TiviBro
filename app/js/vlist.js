@@ -76,7 +76,9 @@ VList.prototype.draw = function (force) {
   this.emptyEl.textContent = this.empty;
   this.emptyEl.classList.toggle('hidden', n > 0);
   var used = {};
-  for (var idx = this.top; idx < Math.min(n, this.top + P); idx++) {
+  /* Whole rows only: a last row cut in half by the list's bottom edge looked like it ran under the button
+     hints (discussion #36).  The pool keeps one spare row for the ring. */
+  for (var idx = this.top; idx < Math.min(n, this.top + Math.min(P, this.visible)); idx++) {
     slot = this.pool[idx % P];
     used[idx % P] = 1;
     if (force || slot.idx !== idx) {

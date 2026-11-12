@@ -14,6 +14,21 @@ var Settings = (function () {
   // Phone app: test builds only while the Android app is in the works (release builds show the web editor alone).
   function phoneOK() { return /alpha|beta/i.test(TIVIBRO_VERSION); }
   function shown(i) { return !!SECTIONS[i]; }
+  /* Everyday or All (Appearance > Settings shown, discussion #36): Everyday leaves out what most people set
+     once, or only to troubleshoot.  A heading left with nothing under it goes too, and the page says how many
+     more there are in All.  The phone and the web editor see the same rows (rowsOf). */
+  var ADV = ['Profile details', 'Start learning again', 'Start-up buffer', 'Read-ahead', 'Keep behind playhead', 'Freeze detection', 'Reconnect attempts',
+    'Player engine', 'Stream format', 'Channels with their own format', 'Network helper', 'Buffer meter', 'Buffer info on demand', 'When a channel stops working',
+    'HDR and Dolby Vision', 'Keep the picture while reconnecting', 'Black screen while switching', 'Show stream details in the info panel', 'Fallback audio language',
+    'Keep downloaded subtitles', 'OpenSubtitles key and sign-in', 'Learn a button', 'Button tester', 'Restore default buttons', 'Detailed logging', 'User-Agent'];
+  function lean(list) {
+    if (S().setLevel !== 'basic' || !list) return list;
+    var out = [], hid = 0;
+    list.forEach(function (it) { if (it && !it.head && !it.preview && ADV.indexOf(it.label) >= 0 && !it.keep) hid++; else out.push(it); });
+    out = out.filter(function (it, i) { if (!it || !it.head) return true; var nx = out[i + 1]; return !!(it.label === '' || (nx && !nx.head)); });
+    if (hid) out.push(info(I18n.t('{n} more in All settings', { n: hid }) , 'Appearance and start screen > Settings shown'));
+    return out;
+  }
   function title(sct) { return sct[0] === 'connect' && !phoneOK() ? 'Web editor' : sct[0] === 'about' && typeof Update !== 'undefined' && Update.state && Update.state.state === 'available' ? sct[1] + '  ·  update ready' : sct[1]; }
   /* In the menu: the section's name in the language, and Language always says "Language" in English too,
      so whoever can't read the language TiviBro is in can still find it. */
@@ -89,6 +104,7 @@ var Settings = (function () {
     out.push(toggle('Preview on the Channels screen', 'Plays the channel you rest on.  Turn off on very slow TVs for the snappiest list.', function () { return s.previewPlay; }, function (v) { s.previewPlay = v; save(); }));
     out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',
       ['auto', 'ask', 'off'], ['Switch to another version', 'Ask me', 'Keep retrying'], function () { return s.backups || 'auto'; }, function (v) { s.backups = v; save(); }));
+    out.push(toggle('Ask when a channel is slow to start', 'After 20 seconds without a picture: says what TiviBro has seen, and asks whether to keep trying, start over, try another version or stop.', function () { return s.slowAsk !== false; }, function (v) { s.slowAsk = v; save(); }));
     out.push(toggle('Turn on last channel at launch', '', function () { return s.resumeLast; }, function (v) { s.resumeLast = v; save(); }));
     out.push(choice('HDR and Dolby Vision', 'Automatic plays Dolby Vision through the TV player, which switches the screen into Dolby Vision itself, and keeps HDR10 and HLG on the built-in player for its steadier buffering.  Choose TV player for all HDR if HDR pictures look washed out or grey.',
       ['auto', 'tv', 'builtin'], ['Automatic', 'TV player for all HDR', 'Built-in player'], function () { return s.hdrRoute || 'auto'; }, function (v) { s.hdrRoute = v; save(); }));
@@ -865,6 +881,8 @@ var Settings = (function () {
   var THEME_INK = { dark: '#141a2e', black: '#000', slate: '#263342', ocean: '#0f2a3a', forest: '#14271d', plum: '#2a1830', mocha: '#2b2019', contrast: '#000', classic: '#18222e' };
   function look() {
     var s = S(), out = [];
+    out.push(choice('Settings shown', 'Everyday leaves out the settings most people set once, or only to troubleshoot (buffer details, the player engine, the network helper, learning buttons and the like).  All shows every one.',
+      ['all', 'basic'], ['All', 'Everyday'], function () { return s.setLevel === 'basic' ? 'basic' : 'all'; }, function (v) { s.setLevel = v; save(true); }));
     out.push(choice('Start screen', 'What TiviBro opens on, and where Back from other screens leads.', ['guide', 'live'], ['Guide', 'Channels screen'],
       function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; save(); Views.buildTabs(); }));
     out.push(toggle('Channels screen in the menu', s.startTab === 'live' ? 'Always there while TiviBro starts on it.' : 'The plain list of channels, without the guide.  Off, it stays one press away: Green in the guide.',
@@ -1278,7 +1296,7 @@ var Settings = (function () {
   var FNS = SECTIONS.map(function (x) { return BY_ID[x[0]]; });
   function build() {
     var top = stack[stack.length - 1];
-    items = top ? [head(stack.map(function (x) { return T(x.title); }).join('  ›  '))].concat(top.fn()) : FNS[sec]();
+    items = top ? [head(stack.map(function (x) { return T(x.title); }).join('  ›  '))].concat(lean(top.fn())) : lean(FNS[sec]());
     items = items.filter(Boolean);
     sel = U.clamp(sel, 0, Math.max(0, items.length - 1));
     if (!focusable(sel)) { var i = sel; while (i < items.length && !focusable(i)) i++; if (i >= items.length) { i = sel; while (i > 0 && !focusable(i)) i--; } sel = i; }
@@ -1408,12 +1426,12 @@ var Settings = (function () {
     if (ALIAS[secId]) secId = ALIAS[secId];
     var i = -1; for (var x = 0; x < SECTIONS.length; x++) if (SECTIONS[x][0] === secId) i = x;
     if (i < 0) throw new Error('No such settings page');
-    var list = FNS[i](), title = title0(SECTIONS[i]), trail = [title];
+    var list = lean(FNS[i]()), title = title0(SECTIONS[i]), trail = [title];
     (path || []).forEach(function (n) {
       var it = list[n];
       var pg = it && (it.page || it.phonePage);
       if (!pg) throw new Error('That page has changed on the TV.  Go back and open it again.');
-      title = pg.title; trail.push(title); list = pg.fn();
+      title = pg.title; trail.push(title); list = lean(pg.fn());
     });
     return { title: title, trail: trail, list: list };
   }
