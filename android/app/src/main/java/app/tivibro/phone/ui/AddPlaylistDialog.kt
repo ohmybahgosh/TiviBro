@@ -1,5 +1,5 @@
 /* Add a playlist from the phone, all of it here (Settings > Playlists > Add playlist…): pick the playlist
-   type, fill in the full link, an Xtream Codes login or an M3U address, and the TV tests and adds it the way
+   type, fill in the full link, an Xtream Codes login, an M3U address or a Stalker portal and MAC, and the TV tests and adds it the way
    the web editor's Add a playlist does.  The login is sealed on its way to the TV. */
 package app.tivibro.phone.ui
 
@@ -44,6 +44,7 @@ private val TYPES = listOf(
     "link" to "Paste the full link from your provider",
     "xtream" to "Xtream Codes (server, username, password)",
     "m3u" to "M3U playlist address",
+    "stalker" to "Stalker portal (portal address and MAC address)",
 )
 
 @Composable
@@ -57,11 +58,13 @@ fun AddPlaylistDialog(model: AppModel, id: String, onDone: (added: Boolean) -> U
     var user by remember { mutableStateOf("") }
     var pass by remember { mutableStateOf("") }
     var m3u by remember { mutableStateOf("") }
+    var portal by remember { mutableStateOf("") }
+    var mac by remember { mutableStateOf("") }
     var epg by remember { mutableStateOf("") }
     var use by remember { mutableStateOf(true) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    val ready = when (type) { "xtream" -> server.isNotBlank() && user.isNotBlank() && pass.isNotBlank(); "m3u" -> m3u.isNotBlank(); else -> link.isNotBlank() }
+    val ready = when (type) { "xtream" -> server.isNotBlank() && user.isNotBlank() && pass.isNotBlank(); "m3u" -> m3u.isNotBlank(); "stalker" -> portal.isNotBlank() && mac.isNotBlank(); else -> link.isNotBlank() }
 
     fun add() {
         busy = true; error = null
@@ -69,6 +72,7 @@ fun AddPlaylistDialog(model: AppModel, id: String, onDone: (added: Boolean) -> U
         when (type) {
             "xtream" -> a.put("type", "xtream").put("server", server.trim()).put("user", user.trim()).put("pass", pass)
             "m3u" -> a.put("type", "m3u").put("m3u", m3u.trim())
+            "stalker" -> a.put("type", "stalker").put("portal", portal.trim()).put("mac", mac.trim())
             else -> a.put("link", link.trim())
         }
         scope.launch {
@@ -105,6 +109,12 @@ fun AddPlaylistDialog(model: AppModel, id: String, onDone: (added: Boolean) -> U
                     }
                     "m3u" -> OutlinedTextField(m3u, { m3u = it.trim() }, label = { Text("Playlist address") }, placeholder = { Text("http://provider.com/get.php?…&type=m3u_plus") }, enabled = !busy,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
+                    "stalker" -> {
+                        OutlinedTextField(portal, { portal = it.trim() }, label = { Text("Portal address") }, placeholder = { Text("http://provider.com:8080/c/") }, singleLine = true, enabled = !busy,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
+                        OutlinedTextField(mac, { mac = it.trim() }, label = { Text("MAC address") }, placeholder = { Text("00:1A:79:12:34:56") }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth())
+                        Text("The portal address your provider gave for a MAG box, and the MAC address they registered.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                    }
                     else -> {
                         OutlinedTextField(link, { link = it.trim() }, label = { Text("Full link") }, placeholder = { Text("http://provider.com:8080/get.php?username=…") }, enabled = !busy,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
