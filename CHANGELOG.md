@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 122, 2026-11-12)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 122
 
 - **A channel having trouble says so.**  While a channel struggles to start or reconnects, the screen said only "Tuning".  Now it says what went wrong (no video yet, the provider refused it, the connection dropped) and what TiviBro is trying now: again, and how many times, or another player.
 - **The Add a playlist screen shows ◀ ▶ on what you pick with them.**  Type, Connection and Language had no sign that ◀ ▶ changes them.  Now arrows on both sides say so, and with the Magic Remote each can be clicked.
@@ -14,11 +18,7 @@
 - **Films that share a name: the guide's description picks the right one.**  "Black Sheep" on a movie channel was matched with the 2006 horror film (the better known one on TMDB) though the guide described the 1996 Chris Farley comedy.  With no year to go on, TiviBro now picks the film whose summary tells the same story.  Guide movies are looked up again once with this.
 - **TVs with 1 GB: the last channel starts once your other playlists are in (issue #81).**  With several playlists on, putting a big second playlist in the lists while the last channel started held both at once, and a 1 GB TV closed TiviBro then.
 
-## 0.6.0 (alpha 121, 2026-11-12)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 121
+### In alpha 121
 
 - **M3U channels with their own User-Agent play (issue #78).**  Some playlists end each channel's address with `|User-Agent=...`.  TiviBro sent that text as part of the address, so the provider answered with an error and every channel said "Provider busy".  The channel now uses that User-Agent and the address is sent clean.  Reload channels to pick it up.
 - **A channel's own Referer and Origin are sent too (issue #78).**  Besides `|User-Agent=...`, M3U lines can end with `|Referer=...` and `|Origin=...`, which some providers check.  TiviBro now sends those with the channel as well (nothing else after the `|`, like cookies).
