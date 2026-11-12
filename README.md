@@ -663,10 +663,12 @@ Everyone who has helped build TiviBro with code, ideas or bug reports.  This lis
 <p>
   <a href="https://github.com/moritzm784" title="moritzm784: 14 pull requests, 1 idea or bug report"><img src="https://avatars.githubusercontent.com/u/202101620?v=4&amp;s=96" width="48" height="48" alt="moritzm784"></a>
   <a href="https://github.com/ich0x" title="ich0x: 15 ideas and bug reports"><img src="https://avatars.githubusercontent.com/u/25590184?v=4&amp;s=96" width="48" height="48" alt="ich0x"></a>
+  <a href="https://github.com/chathurabuddi" title="chathurabuddi: 1 idea or bug report"><img src="https://avatars.githubusercontent.com/u/10394110?v=4&amp;s=96" width="48" height="48" alt="chathurabuddi"></a>
 </p>
 
 - **[moritzm784](https://github.com/moritzm784)**: 14 pull requests, 1 idea or bug report
 - **[ich0x](https://github.com/ich0x)**: 15 ideas and bug reports
+- **[chathurabuddi](https://github.com/chathurabuddi)**: 1 idea or bug report
 <!-- thanks:end -->
 
 ## Credits
