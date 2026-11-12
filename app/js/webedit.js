@@ -459,13 +459,14 @@ var WebEdit = (function () {
       if (typeof a.ua === 'string') p.ua = a.ua.trim();
       if (a.plRefresh != null) p.plRefresh = +a.plRefresh;
       if (a.epgRefresh != null) p.epgRefresh = +a.epgRefresh;
-      var login = p.type === 'm3u' ? clean(a.m3u) : p.type === 'stalker' ? (clean(a.portal) || clean(a.mac)) : (clean(a.server) || clean(a.user) || clean(a.pass));
+      var login = p.type === 'm3u' ? clean(a.m3u) : p.type === 'stalker' ? (clean(a.portal) || clean(a.mac) || clean(a.sn)) : (clean(a.server) || clean(a.user) || clean(a.pass));
       if (!login) { Store.upsertPlaylist(p); return Promise.resolve({ msg: 'Saved "' + p.name + '"' }); }
       var test = JSON.parse(JSON.stringify(p));
       if (p.type === 'm3u') test.m3u = clean(a.m3u);
       else if (p.type === 'stalker') {
         if (clean(a.portal)) test.portal = clean(a.portal);
         if (clean(a.mac)) { test.mac = Source.stalkerMac(a.mac); if (!test.mac) throw new Error('That is not a MAC address: like 00:1A:79:12:34:56.'); }
+        if (clean(a.sn)) test.sn = clean(a.sn);
       }
       else { if (clean(a.server)) test.server = clean(a.server); if (clean(a.user)) test.user = clean(a.user); if (clean(a.pass)) test.pass = clean(a.pass); }
       return loadAndSave(test).then(function (data) {

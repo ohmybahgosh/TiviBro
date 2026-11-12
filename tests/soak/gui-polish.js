@@ -47,6 +47,11 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     // A channel slow to start, fullscreen: after 20 s it asks.
     await ev((u) => { const c = Library.data.channels[2]; c.url = u; Views.startChannel(c, false, Views.goFull); }, 'http://127.0.0.1:' + hang.address().port + '/live/x/y/1.ts');
     await page.waitForTimeout(800);
+    // Each try after the first says what went wrong and what is tried now, not just "Tuning".
+    const first = await ev(() => document.getElementById('spinnerText').textContent);
+    await page.waitForFunction(() => /having trouble starting/.test(document.getElementById('spinnerText').textContent), null, { timeout: 40000 }).catch(() => {});
+    const tune = await ev(() => document.getElementById('spinnerText').textContent);
+    ok('a channel with trouble says so, and what it tries now', /^Tuning/.test(first) && /^This channel is having trouble starting: .+\.\nTrying (?:again \(\d+ of \d+\)|the .+)…$/.test(tune), JSON.stringify({ first, tune }));
     await page.waitForFunction(() => { const m = document.getElementById('modal'); return m && !m.classList.contains('hidden') && /Still starting/.test(m.innerText); }, null, { timeout: 45000 }).catch(() => {});
     const q = await ev(() => document.getElementById('modal').innerText);
     ok('after 20 seconds without a picture it asks, saying what it has seen', /Still starting/.test(q) && /Nothing has come from the provider yet|The provider answers with an error \(HTTP 5\d\d\)/.test(q) && /Keep trying/.test(q) && /Start over/.test(q) && /Stop/.test(q), q.slice(0, 300));

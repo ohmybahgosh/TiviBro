@@ -1038,5 +1038,9 @@ I18n.add('ru', {
   "Asks your provider's server and another site on the internet, then says what it found.": "Опрашивает сервер провайдера и другой сайт в интернете, затем сообщает результат.",
   "Your internet works; your provider's server doesn't answer": "Ваш интернет работает; сервер провайдера не отвечает",
   "Neither your provider nor other sites answer: check the TV's internet connection": "Не отвечают ни провайдер, ни другие сайты: проверьте подключение телевизора к интернету",
-  "Up and Down to read the rest": "Вверх и вниз, чтобы прочитать остальное"
+  "Up and Down to read the rest": "Вверх и вниз, чтобы прочитать остальное",
+  "Trying the {x}": "Пробуем: {x}",
+  "Trying again ({n} of {m})": "Пробуем снова ({n} из {m})",
+  "The channel dropped: {x}.": "Канал прервался: {x}.",
+  "This channel is having trouble starting: {x}.": "Канал не запускается: {x}."
 });

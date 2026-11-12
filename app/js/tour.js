@@ -24,9 +24,9 @@ var Tour = (function () {
   /* ---------- rows (the same kinds the Settings screen uses) ---------- */
   function choice(label, sub, values, labels, get, set, swatch) {
     return { label: label, sub: sub, swatch: swatch, value: function () { var i = values.indexOf(get()); return i >= 0 ? labels[i] : String(get()); },
-      cycle: function (d) { set(cyc(values, get(), d)); } };
+      cycle: function (d) { set(cyc(values, get(), d)); }, values: values, labels: labels, get: get, set: set };     // values, toggle: the phone shows a picker, a switch
   }
-  function toggle(label, sub, get, set, on, off) { return { label: label, sub: sub, value: function () { return get() ? on || 'On' : off || 'Off'; }, cycle: function () { set(!get()); } }; }
+  function toggle(label, sub, get, set, on, off) { return { label: label, sub: sub, value: function () { return get() ? on || 'On' : off || 'Off'; }, cycle: function () { set(!get()); }, toggle: true, get: get, set: set }; }
   function action(label, sub, fn, value) { return { label: label, sub: sub, action: fn, value: value || function () { return ''; } }; }
   function head(t) { return { head: true, label: t }; }
   function info(label, value) { return { label: label, info: true, value: function () { return value || ''; } }; }

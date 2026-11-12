@@ -48,9 +48,18 @@ private val TYPES = listOf(
 )
 
 @Composable
-fun AddPlaylistDialog(model: AppModel, id: String, onDone: (added: Boolean) -> Unit) {
+fun AddPlaylistDialog(model: AppModel, id: String, onDone: (added: Boolean) -> Unit) = PlaylistDialog(model, id, null, "", "", onDone)
+
+/** A playlist's connection changed from the phone (Settings > Playlists > the playlist > Connection): its type stays,
+    and a field left blank keeps what the TV has.  [now]: the server, list or portal it uses now. */
+@Composable
+fun EditPlaylistDialog(model: AppModel, id: String, plId: String, plType: String, now: String, onDone: (changed: Boolean) -> Unit) = PlaylistDialog(model, id, plId, plType, now, onDone)
+
+@Composable
+private fun PlaylistDialog(model: AppModel, id: String, editId: String?, editType: String, now: String, onDone: (added: Boolean) -> Unit) {
     val scope = rememberCoroutineScope()
-    var type by remember { mutableStateOf("link") }
+    val editing = editId != null
+    var type by remember { mutableStateOf(if (editing) editType.ifBlank { "xtream" } else "link") }
     var open by remember { mutableStateOf(false) }
     var name by remember { mutableStateOf("") }
     var link by remember { mutableStateOf("") }
@@ -60,19 +69,21 @@ fun AddPlaylistDialog(model: AppModel, id: String, onDone: (added: Boolean) -> U
     var m3u by remember { mutableStateOf("") }
     var portal by remember { mutableStateOf("") }
     var mac by remember { mutableStateOf("") }
+    var sn by remember { mutableStateOf("") }
     var epg by remember { mutableStateOf("") }
     var use by remember { mutableStateOf(true) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
-    val ready = when (type) { "xtream" -> server.isNotBlank() && user.isNotBlank() && pass.isNotBlank(); "m3u" -> m3u.isNotBlank(); "stalker" -> portal.isNotBlank() && mac.isNotBlank(); else -> link.isNotBlank() }
+    val ready = if (editing) listOf(name, server, user, pass, m3u, portal, mac, sn).any { it.isNotBlank() } else when (type) { "xtream" -> server.isNotBlank() && user.isNotBlank() && pass.isNotBlank(); "m3u" -> m3u.isNotBlank(); "stalker" -> portal.isNotBlank() && mac.isNotBlank(); else -> link.isNotBlank() }
 
     fun add() {
         busy = true; error = null
         val a = JSONObject().put("name", name.trim()).put("use", use).put("epg", epg.trim())
+        if (editing) a.put("edit", editId)
         when (type) {
             "xtream" -> a.put("type", "xtream").put("server", server.trim()).put("user", user.trim()).put("pass", pass)
             "m3u" -> a.put("type", "m3u").put("m3u", m3u.trim())
-            "stalker" -> a.put("type", "stalker").put("portal", portal.trim()).put("mac", mac.trim())
+            "stalker" -> a.put("type", "stalker").put("portal", portal.trim()).put("mac", mac.trim()).put("sn", sn.trim())
             else -> a.put("link", link.trim())
         }
         scope.launch {
@@ -85,13 +96,14 @@ fun AddPlaylistDialog(model: AppModel, id: String, onDone: (added: Boolean) -> U
 
     AlertDialog(
         onDismissRequest = { if (!busy) onDone(false) }, containerColor = Panel,
-        title = { Text("Add a playlist") },
+        title = { Text(if (editing) "Change the connection" else "Add a playlist") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text("The TV logs in and loads the channel list before saving it, so you know it works.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                Text("The TV logs in and loads the channel list before saving it, so you know it works." + if (editing) "  Leave a box empty to keep what the TV has." else "", color = Muted, style = MaterialTheme.typography.bodySmall)
+                if (editing && now.isNotBlank()) Text("Now: " + now, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 4.dp))
                 Spacer(Modifier.size(10.dp))
-                Text("Playlist type", style = MaterialTheme.typography.labelMedium, color = Muted)
-                Row(Modifier.fillMaxWidth().clickable(enabled = !busy) { open = true }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                if (!editing) Text("Playlist type", style = MaterialTheme.typography.labelMedium, color = Muted)
+                if (!editing) Row(Modifier.fillMaxWidth().clickable(enabled = !busy) { open = true }.padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(TYPES.first { it.first == type }.second, modifier = Modifier.weight(1f))
                     Icon(Icons.Rounded.ArrowDropDown, "Choose")
                     DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
@@ -113,7 +125,8 @@ fun AddPlaylistDialog(model: AppModel, id: String, onDone: (added: Boolean) -> U
                         OutlinedTextField(portal, { portal = it.trim() }, label = { Text("Portal address") }, placeholder = { Text("http://provider.com:8080/c/") }, singleLine = true, enabled = !busy,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
                         OutlinedTextField(mac, { mac = it.trim() }, label = { Text("MAC address") }, placeholder = { Text("00:1A:79:12:34:56") }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth())
-                        Text("The portal address your provider gave for a MAG box, and the MAC address they registered.", color = Muted, style = MaterialTheme.typography.bodySmall)
+                        OutlinedTextField(sn, { sn = it.trim() }, label = { Text("Serial number (optional)") }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth())
+                        Text("The portal address your provider gave for a MAG box, and the MAC address they registered.  A serial number only if your provider gave you one.", color = Muted, style = MaterialTheme.typography.bodySmall)
                     }
                     else -> {
                         OutlinedTextField(link, { link = it.trim() }, label = { Text("Full link") }, placeholder = { Text("http://provider.com:8080/get.php?username=…") }, enabled = !busy,
@@ -121,9 +134,9 @@ fun AddPlaylistDialog(model: AppModel, id: String, onDone: (added: Boolean) -> U
                         Text("The whole link your provider sent, the long one with the username and password in it (it often has get.php).", color = Muted, style = MaterialTheme.typography.bodySmall)
                     }
                 }
-                OutlinedTextField(epg, { epg = it.trim() }, label = { Text("Guide address (optional)") }, placeholder = { Text("XMLTV link, .xml or .xml.gz") }, singleLine = true, enabled = !busy,
+                if (!editing) OutlinedTextField(epg, { epg = it.trim() }, label = { Text("Guide address (optional)") }, placeholder = { Text("XMLTV link, .xml or .xml.gz") }, singleLine = true, enabled = !busy,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
-                Row(Modifier.fillMaxWidth().clickable(enabled = !busy) { use = !use }, verticalAlignment = Alignment.CenterVertically) {
+                if (!editing) Row(Modifier.fillMaxWidth().clickable(enabled = !busy) { use = !use }, verticalAlignment = Alignment.CenterVertically) {
                     Checkbox(checked = use, onCheckedChange = { use = it }, enabled = !busy)
                     Text("Switch the TV to it when it is added")
                 }
@@ -135,7 +148,7 @@ fun AddPlaylistDialog(model: AppModel, id: String, onDone: (added: Boolean) -> U
                 }
             }
         },
-        confirmButton = { TextButton(enabled = !busy && ready, onClick = { add() }) { Text("Add and test") } },
+        confirmButton = { TextButton(enabled = !busy && ready, onClick = { add() }) { Text(if (editing) "Test and save" else "Add and test") } },
         dismissButton = { TextButton(enabled = !busy, onClick = { onDone(false) }) { Text("Cancel") } },
     )
 }

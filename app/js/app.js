@@ -61,19 +61,28 @@ var App = (function () {
       render();
     }
 
+    /* A value picked with ◀ ▶ (the language, the type, the connection): arrows on both sides say so, and
+       can be clicked. */
+    function pick(text, step) {
+      var v = U.el('div', 'val pick'), a = U.el('span', 'arr', '◀'), b = U.el('span', 'arr', '▶');
+      a.addEventListener('click', function (e) { e.stopPropagation(); step(-1); });
+      b.addEventListener('click', function (e) { e.stopPropagation(); step(1); });
+      v.appendChild(a); v.appendChild(U.el('span', 'pv', text)); v.appendChild(b);
+      return v;
+    }
     function render() {
       setupEl.innerHTML = '';
       setupEl.classList.toggle('withjoin', !target);
       if (!target) { var wb = U.el('img', 'setupbrand'); wb.src = 'img/wordmark.png'; wb.alt = 'TiviBro'; setupEl.appendChild(wb); joinPanel(); }
       setupEl.appendChild(U.el('h1', '', editing ? 'Edit playlist' : target === 'new' ? 'Add a playlist' : 'Add your playlist'));
-      setupEl.appendChild(U.el('p', 'lead', 'Paste the full link your provider sent, or choose Xtream Codes or M3U as the type.  A Dispatcharr or other proxy address works with either.'));
+      setupEl.appendChild(U.el('p', 'lead', 'Paste the full link your provider sent, or pick the type with ◀ ▶: Xtream Codes, an M3U playlist or a Stalker portal.  A Dispatcharr or other proxy address works with Xtream Codes or M3U.'));
       fields = [];
       /* A brand-new TV: the language first, in its own name and "Language" in English too, for when the
          TV's language was read wrong (Settings > Language later). */
       if (!target) {
         var ld = U.el('div', 'field lang');
         ld.appendChild(U.el('label', '', 'Language'));
-        ld.appendChild(U.el('div', 'val', I18n.name(I18n.lang()) + (I18n.setting() === 'auto' ? '  (TV)' : '') + '   ◀ ▶'));
+        ld.appendChild(pick(I18n.name(I18n.lang()) + (I18n.setting() === 'auto' ? '  (TV)' : ''), nextLang));
         setupEl.appendChild(ld); fields.push({ el: ld, kind: 'lang' });
         if (firstDraw) f = 1;
       }
@@ -82,7 +91,7 @@ var App = (function () {
         var d = U.el('div', 'field'), l = U.el('label', '', label);
         d.appendChild(l);
         if (key === 'type') {
-          d.appendChild(U.el('div', 'val', TYPES[p.type] || 'Xtream Codes'));
+          d.appendChild(pick(TYPES[p.type] || 'Xtream Codes', nextType));
           fields.push({ el: d, kind: 'type' });
         } else {
           var i = U.el('input');
@@ -125,7 +134,7 @@ var App = (function () {
       // provider for the app.  Most people never need to touch it, so it is explained here in plain words.
       var direct = Store.settings.network === 'direct';
       var nd = U.el('div', 'field'); nd.appendChild(U.el('label', '', 'Connection'));
-      nd.appendChild(U.el('div', 'val', direct ? 'Direct (without the network helper)' : 'Automatic (recommended)'));
+      nd.appendChild(pick(direct ? 'Direct (without the network helper)' : 'Automatic (recommended)', function () { toggleNet(); }));
       setupEl.appendChild(nd); fields.push({ el: nd, kind: 'net' });
       setupEl.appendChild(U.el('div', 'net' + (Net.port || direct ? '' : ' err'),
         direct ? 'Direct asks your provider straight from the app.  Most providers block that on webOS; switch back to Automatic if Connect fails.'
@@ -227,7 +236,7 @@ var App = (function () {
       render();
       return true;
     }
-    function nextType() { var order = editing ? ['xtream', 'm3u', 'stalker'] : ['link', 'xtream', 'm3u', 'stalker']; p.type = order[(order.indexOf(p.type) + 1) % order.length]; render(); }
+    function nextType(d) { var order = editing ? ['xtream', 'm3u', 'stalker'] : ['link', 'xtream', 'm3u', 'stalker']; p.type = order[(order.indexOf(p.type) + (d || 1) + order.length) % order.length]; render(); }
     function current() {
       var t = Object.assign({}, p);
       ['server', 'user', 'pass', 'm3u', 'portal', 'mac', 'sn'].forEach(function (k) { if (t[k]) t[k] = String(t[k]).trim(); });
@@ -293,7 +302,7 @@ var App = (function () {
         if (cur.kind === 'net') toggleNet();
         else if (cur.kind === 'lang') nextLang(a === 'left' ? -1 : 1);
         else if (cur.toggle && document.activeElement !== cur.input) cur.toggle();
-        else if (cur.kind === 'type') nextType();
+        else if (cur.kind === 'type') nextType(a === 'left' ? -1 : 1);
         else if ((cur.kind === 'go' || cur.kind === 'test' || cur.kind === 'log' || cur.kind === 'report') && a === 'right' && fields[f + 1]) { f++; paint(); }
         else if ((cur.kind === 'test' || cur.kind === 'log' || cur.kind === 'report' || cur.kind === 'cancel') && a === 'left') { f--; paint(); }
       }

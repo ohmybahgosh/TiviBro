@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **A channel having trouble says so.**  While a channel struggles to start or reconnects, the screen said only "Tuning".  Now it says what went wrong (no video yet, the provider refused it, the connection dropped) and what TiviBro is trying now: again, and how many times, or another player.
+- **The Add a playlist screen shows ◀ ▶ on what you pick with them.**  Type, Connection and Language had no sign that ◀ ▶ changes them.  Now arrows on both sides say so, and with the Magic Remote each can be clicked.
+- **The phone app: a playlist's Connection is changed on the phone.**  It opened the set-up screen on the TV.  Now it opens a form on the phone: leave a box empty to keep what the TV has.  The phone's Add a playlist also has the Stalker serial number.
+- **The phone app: switches and pickers where the TV has ◀ ▶.**  Groups shown or hidden, and the Clean up steps (countries, empty groups, duplicates, groups added later), showed ‹ › arrows on the phone.  Now they are switches and lists to pick from, like the rest of the phone's settings.
 - **Stalker portals: movies, shows and catch-up.**  A Stalker portal's movies and shows are in Movies and Shows, with their details, seasons and episodes, and channels the portal keeps an archive for have catch-up (for as many days as the portal keeps).
 - **Long update notes scroll.**  When an update has many changes, the list in the update question was cut off at the bottom.  Up and Down now scroll it, a line under it says so, and at the end of the list Down moves to the buttons.
 - **The helper is asked again when the TV turns it down for a moment (issues #75 and #82).**  Just after the TV starts or wakes, webOS sometimes says the helper "is not running".  TiviBro went on without it until the next start; now it asks again, up to four times.

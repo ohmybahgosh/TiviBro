@@ -337,6 +337,9 @@ var Phone = (function () {
     // A provider link shared to the phone app: added like the web editor's Add a playlist.
     playlist: function (a) {
       // Typed in on the phone (Add playlist… in its Settings): the type and its fields as they are.
+      // Its connection changed from the phone (Settings > Playlists > the playlist > Connection): blank keeps what it has.
+      if (a.edit) return WebEdit.run('updatePlaylist', { id: String(a.edit), name: String(a.name || '').slice(0, 60), server: String(a.server || '').trim(), user: String(a.user || '').trim(), pass: String(a.pass || ''),
+        m3u: String(a.m3u || '').trim(), portal: String(a.portal || '').trim(), mac: String(a.mac || '').trim(), sn: String(a.sn || '').trim() });
       if (a.type === 'stalker') return WebEdit.run('addPlaylist', { type: 'stalker', name: String(a.name || '').slice(0, 60), portal: String(a.portal || '').trim(), mac: String(a.mac || '').trim(), sn: String(a.sn || '').trim(), epg: String(a.epg || ''), use: !!a.use });
       if (a.type === 'xtream' || a.type === 'm3u') {
         var t = a.type === 'xtream' ? { type: 'xtream', server: String(a.server || '').trim(), user: String(a.user || '').trim(), pass: String(a.pass || '') } : { type: 'm3u', m3u: String(a.m3u || '').trim() };

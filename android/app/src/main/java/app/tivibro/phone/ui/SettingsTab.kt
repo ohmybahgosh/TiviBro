@@ -75,17 +75,19 @@ data class SetRow(
     val phone: String = "", val sid: String = "", val epage: String = "",
     /** It happens on the TV's screen (the button tester, learning a button, the set-up tour). */
     val tv: Boolean = false,
+    /** edit-playlist: the playlist's type (its id is [sid]). */
+    val ptype: String = "",
 ) {
     companion object {
         fun from(j: JSONObject) = SetRow(
             j.optInt("i"), j.optString("kind"), j.optString("label"), j.optString("sub"), j.optString("value"),
             j.optBoolean("on"), j.optJSONArray("options")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty(), j.optInt("cur", -1), j.optString("swatch"),
-            j.optString("phone"), j.optString("sid"), j.optString("epage"), j.optInt("tv") == 1 || j.optBoolean("tv"),
+            j.optString("phone"), j.optString("sid"), j.optString("epage"), j.optInt("tv") == 1 || j.optBoolean("tv"), j.optString("ptype"),
         )
     }
 }
 /** The buttons this app does with its own forms; others run on the TV. */
-private val NATIVE = setOf("media-add", "media-source", "tmdb-token", "add-playlist")
+private val NATIVE = setOf("media-add", "media-source", "tmdb-token", "add-playlist", "edit-playlist")
 /** The buttons that open one of the phone's own screens ([SettingsTab]'s onGo, except the log, shown here). */
 private val SCREENS = setOf("reminders", "backups", "editor")
 private data class SetPage(val title: String, val rows: List<SetRow>)
@@ -212,6 +214,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
             "media-source" -> MediaSourceDialog(model, id, r.sid, done)
             "tmdb-token" -> TmdbTokenDialog(model, id, r.value == "Saved", done)
             "add-playlist" -> AddPlaylistDialog(model, id, done)
+            "edit-playlist" -> EditPlaylistDialog(model, id, r.sid, r.ptype, r.value, done)
         }
     }
     picking?.let { r ->

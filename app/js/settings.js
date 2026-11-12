@@ -350,7 +350,10 @@ var Settings = (function () {
       }));
     out.push(action('Name', '', function () { UI.prompt('Playlist name', p.name, function (v) { if (v.trim()) { p.name = v.trim(); persist(p); build(); } }); }, function () { return I18n.raw(p.name); }));
     var stk = p.type === 'stalker';
-    out.push(action('Connection', xc ? 'Server, username and password' : stk ? 'Portal address and MAC address' : 'Playlist address', function () { App.setup(p.id); }, function () { return xc ? p.server : stk ? p.portal : p.m3u; }));
+    // On the phone: its own form (AddPlaylistDialog in edit mode), not the TV's setup screen.
+    var conn = phoneDoes('edit-playlist', action('Connection', xc ? 'Server, username and password' : stk ? 'Portal address and MAC address' : 'Playlist address', function () { App.setup(p.id); }, function () { return xc ? p.server : stk ? p.portal : p.m3u; }));
+    conn.sid = p.id; conn.ptype = p.type;
+    out.push(conn);
     out.push(action('User-Agent', 'Only if your provider asks for a specific one.  Sent by the network helper for this playlist.', function () {
       UI.prompt('User-Agent (empty = default)', p.ua || '', function (v) { p.ua = v.trim(); persist(p); build(); U.toast(p.ua ? 'User-Agent set.  Reload channels to use it everywhere.' : 'Default User-Agent'); });
     }, function () { return p.ua ? p.ua.slice(0, 28) + (p.ua.length > 28 ? '…' : '') : 'Default'; }));
@@ -635,7 +638,9 @@ var Settings = (function () {
     all.forEach(function (g) {
       out.push({ label: I18n.raw(g.name), sub: g.custom ? 'your group' : '',
         value: function () { return Store.edits.hiddenGroups[g.id] ? 'Hidden' : 'Shown'; },
-        cycle: function () { set(g, !!Store.edits.hiddenGroups[g.id]); relist(); paint(); } });
+        cycle: function () { set(g, !!Store.edits.hiddenGroups[g.id]); relist(); paint(); },
+        // On the phone: a switch, on for shown.
+        toggle: true, get: function () { return !Store.edits.hiddenGroups[g.id]; }, set: function (v) { if (v === !!Store.edits.hiddenGroups[g.id]) { set(g, v); relist(); paint(); } } });
     });
     return out;
   }
@@ -1449,7 +1454,7 @@ var Settings = (function () {
     else if (it.action) { r.kind = 'action'; r.value = v; }
     else { r.kind = 'info'; r.value = v; }
     if (it.swatch) try { r.swatch = it.swatch() || ''; } catch (e) {}
-    if (it.phone) { r.phone = it.phone; if (it.sid) r.sid = it.sid; if (it.epage) r.epage = it.epage; }
+    if (it.phone) { r.phone = it.phone; if (it.sid) r.sid = it.sid; if (it.epage) r.epage = it.epage; if (it.ptype) r.ptype = it.ptype; }
     if (it.tv) r.tv = 1;
     return r;
   }

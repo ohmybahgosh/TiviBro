@@ -564,7 +564,7 @@ var Player = (function () {
     ccDec = window.Captions ? Captions.create() : null; ccStarted = Date.now();
     st = { state: 'loading', started: false, lastT: -1, lastMove: Date.now(), refilling: false, refillSince: 0,
       kind: kind, at: Date.now(), healthySince: 0, userPaused: isFile() && !!cur.userPaused };
-    state(cur.slow ? 'buffering' : 'loading', cur.slow ? cur.slow : holding ? 'Reconnecting' : undefined);
+    state(cur.slow ? 'buffering' : 'loading', cur.slow ? cur.slow : attemptText(kind) || (holding ? 'Reconnecting' : undefined));
 
     var fail = function (type, detail, earlyNet, ended, http) {
       // Provider status (provstatus.js): a stream the provider's server refused, errored or never answered.
@@ -760,6 +760,16 @@ var Player = (function () {
     }
     return null;
   }
+  /* While a channel has trouble, the spinner says what went wrong and what is being tried now, instead of just
+     "Tuning": a try after a failure, or on another player than the usual one.  The first try says nothing more. */
+  function attemptText(kind) {
+    if (!cur || !cur.lastWhy) return '';
+    var problem = String(cur.lastWhy).replace(/,?\s*(?:retrying|reconnecting|trying again)\.?$/i, '').replace(/\s+$/, '');
+    problem = (problem.charAt(0).toLowerCase() + problem.slice(1)).replace(/\.$/, '');
+    var doing = kind !== cur.usual ? T('Trying the {x}', { x: ENGINE_NAMES[kind] || kind }) : T('Trying again ({n} of {m})', { n: Math.max(1, cur.retries || 1), m: cur.p.retries });
+    return (cur.everPlayed ? T('The channel dropped: {x}.', { x: problem }) : T('This channel is having trouble starting: {x}.', { x: problem })) + '\n' + doing + '…';
+  }
+  function T(s, o) { var t = typeof I18n !== 'undefined' ? I18n.t(s) : s; return t.replace(/\{(\w+)\}/g, function (a, k) { return o && o[k] != null ? o[k] : a; }); }
   function useEngine(k) {
     if (!cur.origUrl) cur.origUrl = cur.url;
     if (k === 'hls' && !/\.m3u8(\?|$)/i.test(cur.url)) cur.url = hlsVariant(cur.origUrl);
@@ -891,6 +901,7 @@ var Player = (function () {
       return;
     }
     cur.offline = false;
+    cur.lastWhy = why;                     // for the spinner on the next try (attemptText)
     cur.retries++;
     Log.warn('player', 'Reconnect ' + cur.retries + '/' + cur.p.retries + ': ' + why);
     var delay;
@@ -1027,7 +1038,7 @@ var Player = (function () {
         // this same session (OK on "try again", or it came back by itself), not only on the first start (#36).
         if (cur.live && (!cur.everPlayed || cur.deadFailed) && window.DeadList) { DeadList.played(cur.ch, cur.origUrl || cur.url); cur.deadFailed = false; }
         if (cur.swapFrom) cur.swapPlayed = true;
-        cur.slow = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0; cur.starved = false; cur.lastFailHttp = false;
+        cur.slow = ''; cur.lastWhy = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0; cur.starved = false; cur.lastFailHttp = false;
         cur.startMs = now - st.at; cur.dataMs = st.tData ? st.tData - st.at : 0; cur.picMs = st.tPic ? st.tPic - st.at : 0;
         if (window.ProvStatus) ProvStatus.note(cur.origUrl || cur.url, true);
         lastPlay[plKey(cur && cur.ch)] = now;
@@ -1539,7 +1550,7 @@ var Player = (function () {
     if (!cur) return;
     cur.t0 = Date.now();
     if (cur.origUrl) cur.url = cur.origUrl;
-    cur.retries = 0; cur.triedNative = false; cur.failed = false; cur.slowSince = 0; cur.slow = ''; cur.deadCounted = false;   // a try of its own
+    cur.retries = 0; cur.triedNative = false; cur.failed = false; cur.slowSince = 0; cur.slow = ''; cur.lastWhy = ''; cur.deadCounted = false;   // a try of its own
     cur.tried = null; cur.late = null; cur.forceKind = null; cur.forceNative = false; cur.routed = false; cur.httpFails = 0; cur.lastHttp = 0;
     if (isFile() && !cur.startAt && cur.pos > 5) cur.startAt = cur.pos;      // a movie tries again where it was
     start(token);

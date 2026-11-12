@@ -1026,5 +1026,9 @@ I18n.add('es', {
   "Asks your provider's server and another site on the internet, then says what it found.": "Pregunta al servidor de tu proveedor y a otro sitio de internet, y dice lo que encontró.",
   "Your internet works; your provider's server doesn't answer": "Tu internet funciona; el servidor de tu proveedor no responde",
   "Neither your provider nor other sites answer: check the TV's internet connection": "No responden ni tu proveedor ni otros sitios: revisa la conexión a internet del televisor",
-  "Up and Down to read the rest": "Arriba y Abajo para leer el resto"
+  "Up and Down to read the rest": "Arriba y Abajo para leer el resto",
+  "Trying the {x}": "Probando con {x}",
+  "Trying again ({n} of {m})": "Probando otra vez ({n} de {m})",
+  "The channel dropped: {x}.": "El canal se cortó: {x}.",
+  "This channel is having trouble starting: {x}.": "Este canal tiene problemas para empezar: {x}."
 });

@@ -319,6 +319,13 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('an Xtream Codes login typed on the phone adds a playlist', typed && /Added/.test(typed.msg) && await p2.evaluate(() => Store.settings.playlists.some((p) => p.name === 'Typed on the phone' && p.type === 'xtream')), JSON.stringify(typed));
   const half = await C.ask(cred, 'playlist', { type: 'xtream', server: 'http://127.0.0.1:8077', user: 'demo' }, { seal: true }).catch((e) => e);
   ok('a login with a field missing is turned down, with the reason', half.code === 'tv' && /server, username and password/.test(half.message), half.message);
+  // Its connection changed from the phone (Settings > Playlists > the playlist > Connection): a row the phone does itself.
+  const pid = await p2.evaluate(() => Store.settings.playlists.find((p) => p.name === 'Typed on the phone').id);
+  const rows = await p2.evaluate((id) => { const r = Settings.phone.page('playlists', []).rows; const i = r.findIndex((x) => x.kind === 'page' && /Typed on the phone/.test(x.label)); return i >= 0 ? Settings.phone.page('playlists', [r[i].i]).rows : []; }, pid);
+  const conn = rows.find((r) => r.label === 'Connection');
+  ok('Connection is a form on the phone, with the playlist and its type', conn && conn.phone === 'edit-playlist' && conn.sid === pid && conn.ptype === 'xtream', JSON.stringify(conn));
+  const edited = await ask('playlist', { edit: pid, server: '', user: 'demo', pass: 'demo', name: 'Renamed on the phone' }, { seal: true });
+  ok('changing it from the phone tests the login and saves it', edited && /New login works/.test(edited.msg) && await p2.evaluate(() => Store.settings.playlists.some((p) => p.name === 'Renamed on the phone')), JSON.stringify(edited));
   ok('no page errors on the fresh TV', !errs2.length, errs2.join(' | '));
   await b2.close();
   await C.call(cred, 'POST', '/v1/forget', {});
