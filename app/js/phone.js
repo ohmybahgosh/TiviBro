@@ -117,6 +117,11 @@ var Phone = (function () {
     // A movie (movies.js, TMDB): its poster and a few facts for the phone's guide and schedule.
     var m = c && typeof Movies !== 'undefined' ? Movies.of(c, p) : null;
     if (m) x.m = { i: m.poster || '', y: m.year || '', g: m.genre || '', r: m.rating || '' };
+    // Else a TV show TMDB knows (series.js), as the TV's guide shows it: its poster and facts, marked as a series.
+    else {
+      var sh = c && typeof Series !== 'undefined' && Series.of ? Series.of(c, p) : null;
+      if (sh) x.m = { k: 's', i: sh.poster || '', y: sh.year || '', g: sh.genre || '', r: sh.rating || '', n: sh.network || '' };
+    }
     return x;
   }
   function hasReminder(k, s) { return (Store.edits.reminders || []).some(function (r) { return r.k === k && r.s === s; }); }

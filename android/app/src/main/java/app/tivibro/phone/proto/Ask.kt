@@ -14,14 +14,16 @@ data class Programme(val title: String, val start: Long, val end: Long, val desc
     companion object {
         fun from(j: JSONObject) = j.optString("t").takeIf { it.isNotBlank() }?.let {
             Programme(it, j.optLong("s"), j.optLong("e"), j.optString("d", ""), j.optInt("r") == 1,
-                j.optJSONObject("m")?.let { m -> ProgMovie(m.optString("i"), m.optString("y"), m.optString("g"), m.optString("r")) })
+                j.optJSONObject("m")?.let { m -> ProgMovie(m.optString("i"), m.optString("y"), m.optString("g"), m.optString("r"), m.optString("k") == "s", m.optString("n")) })
         }
     }
 }
 
 /** A guide programme the TV found to be a movie (TMDB, with its token): poster, year, genres, rating. */
-data class ProgMovie(val poster: String, val year: String, val genre: String, val rating: String) {
-    val facts get() = listOf("Movie", year, genre, if (rating.isNotBlank()) "★ $rating" else "").filter { it.isNotBlank() }.joinToString("  ·  ")
+/** TMDB's facts for a guide programme: a movie, or a TV show ([series], with its [network]). */
+data class ProgMovie(val poster: String, val year: String, val genre: String, val rating: String, val series: Boolean = false, val network: String = "") {
+    val facts get() = (if (series) listOf("Series", if (year.isNotBlank()) "since $year" else "", network, genre, if (rating.isNotBlank()) "★ $rating" else "")
+        else listOf("Movie", year, genre, if (rating.isNotBlank()) "★ $rating" else "")).filter { it.isNotBlank() }.joinToString("  ·  ")
 }
 
 /** Movies on now: one movie, and the channels showing it ([OnNowChan]). */
