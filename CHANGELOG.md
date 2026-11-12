@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 119, 2026-11-11)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 119
 
 - **Search leaves out hidden and locked channels, adult ones above all.**  Channels whose group is hidden (an Adult group hidden in Cleanup, for one) came up in Search by name, since only channels hidden one by one were left out.  Now a channel shows in Search only where it shows in your lists, never behind the parental lock, and an adult channel in a hidden group stays out even with Show hidden on.
 - **Search puts what's on now on your channels first.**  Searching "family feud" listed dozens of plain "Family Feud" airings on other channels before "Celebrity Family Feud", on now on BET.  Now something on now on one of your Favorites or groups with the words in its title comes first, your channels come ahead of others within each kind of result, and more results are kept, so a long list no longer cuts yours off.
 
-## 0.6.0 (alpha 118, 2026-11-11)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 118
+### In alpha 118
 
 - **A college basketball game is no longer a football reminder for your school.**  "Marquette Golden Eagles vs Michigan Wolverines" on an event channel was taken as Michigan football, since a school's full name doesn't say the sport (and Marquette has no football team).  Now, with no football in the title or the channel, a school counts only against another FBS school during the football season, and one against any other school needs football in sight.  A reminder an earlier version set this way goes at the next look.
 
