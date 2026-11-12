@@ -11,7 +11,8 @@
    tag in the grid, and the Movies on now group (Library.MOVIES): movies on now, most left first, then
    the ones starting within the hour. */
 var Movies = (function () {
-  var KEY = 'tvmovies', KEEP = 30 * 86400e3, MAX = 4000, SOON = 3600e3, LOOK = 3 * 3600e3, PER_SCAN = 150, GAP = 400;
+  // tvmovies2: looked up again with the guide's description (films of one name, issue: Black Sheep was 2006's).
+  var KEY = 'tvmovies2', KEEP = 30 * 86400e3, MAX = 4000, SOON = 3600e3, LOOK = 3 * 3600e3, PER_SCAN = 150, GAP = 400;
   var cache = {}, loaded = null, ver = 1, queue = [], queued = {}, busy = false, timer = null, saveT = null, hooked = false;
   var found = [], foundAt = 0, lastScan = 0;
   function S() { return Store.settings; }
@@ -92,7 +93,11 @@ var Movies = (function () {
           if (hit.m && (p.mv || p.e - p.s >= 75 * 60000)) fresh.push({ c: c, p: p, m: hit.m });
           return;
         }
-        if (!queued[key]) { queued[key] = 1; var ct = clean(p.t); want.push({ key: key, t: ct.t, y: p.y || ct.y, st: st, rank: (p.s <= now ? 0 : 2) + (st === 'strong' ? 0 : 1) }); }
+        if (!queued[key]) {
+          queued[key] = 1; var ct = clean(p.t);
+          if (Epg.desc) Epg.desc(c, p);                  // asks the helper for it now, so it's there when this is looked up
+          want.push({ key: key, t: ct.t, y: p.y || ct.y, st: st, c: c, p: p, rank: (p.s <= now ? 0 : 2) + (st === 'strong' ? 0 : 1) });
+        }
       });
       found = fresh; foundAt = Date.now();
       want.sort(function (a, b) { return a.rank - b.rank; });
@@ -106,7 +111,8 @@ var Movies = (function () {
     if (busy || !queue.length || !on() || typeof Media === 'undefined' || !Media.guideLookup) return;
     busy = true;
     var w = queue.shift();
-    Media.guideLookup(w.t, w.y, w.st).then(function (r) {
+    var d = w.c && Epg.desc ? Epg.desc(w.c, w.p) : '';
+    Media.guideLookup(w.t, w.y, w.st, d).then(function (r) {
       var m = r && r.metadata;
       cache[w.key] = { at: Date.now(), s: w.st, m: m ? lite(m) : 0 };
       ver++; save();

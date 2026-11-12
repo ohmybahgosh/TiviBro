@@ -167,6 +167,17 @@ function create(opts) {
      guide is (q.guide: 'strong' when it says Movie or the channel shows films, 'weak' for any long
      programme).  A movie of exactly that title (and year) is the answer; for a weak one it must also be
      well known (200+ votes) and not a better-known TV series of the same name.  { metadata } or { miss }. */
+  // The telling words of a description: four letters or more, without the common ones, each once.
+  var COMMON = /^(that|this|with|from|they|their|them|then|than|when|what|where|which|while|who|whose|into|onto|about|after|before|over|under|have|has|had|been|being|were|will|would|could|should|must|just|only|also|very|more|most|some|such|each|every|other|their|there|these|those|your|yours|ours|his|hers|film|movie|story|life|lives|finds|find|tries|must|gets|takes|make|makes|turns|when|year|years|young|first|last|back|down|even|ever|much|many|one|two)$/;
+  function words(t) {
+    var out = [];
+    String(t || '').toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').split(/\s+/).forEach(function (w) {
+      if (w.length < 4 || COMMON.test(w)) return;
+      w = w.replace(/(?:ies)$/, 'y').replace(/(?:es|s)$/, '');
+      if (w.length >= 4 && out.indexOf(w) < 0) out.push(w);
+    });
+    return out.slice(0, 60);
+  }
   function guideLookup(q, cb) {
     var language = LOCALES[q.language] ? q.language : 'en', locale = LOCALES[language];
     var title = str(q.title, 200).trim(), year = /^\d{4}$/.test(q.year || '') ? String(q.year) : '', weak = q.guide !== 'strong';
@@ -178,6 +189,15 @@ function create(opts) {
       });
       exact.sort(function (a, b) { return (b.popularity || 0) - (a.popularity || 0); });
       var best = exact[0];
+      /* Several films of that name and no year: the guide's own description says which ("helping his brother win the
+         race for governor" is 1996's Black Sheep, not 2006's horror one).  The one whose TMDB summary shares the
+         most words with it, when that is clearly the most (2 words, and more than any other). */
+      var told = words(q.description);
+      if (!year && exact.length > 1 && told.length >= 4) {
+        var scored = exact.map(function (m) { var w = words(m.overview), n = 0; told.forEach(function (t) { if (w.indexOf(t) >= 0) n++; }); return { m: m, n: n }; });
+        scored.sort(function (a, b) { return b.n - a.n; });
+        if (scored[0].n >= 2 && scored[0].n > scored[1].n) best = scored[0].m;
+      }
       if (!best || (weak && (best.vote_count || 0) < 200)) return cb(null, { miss: true });
       function take() { lookup({ id: 'tmdb:' + best.id, language: language }, function (e2, x) { cb(e2, x && x.metadata ? { metadata: x.metadata } : { miss: true }); }); }
       if (!weak) return take();

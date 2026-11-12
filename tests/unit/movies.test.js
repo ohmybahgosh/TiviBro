@@ -54,6 +54,16 @@ const ask = (routes, q) => new Promise((res) => MM.create({ credential: 'a'.repe
   ok('not the exact title: not a movie', r.miss === true);
   r = await ask([[/search\/movie/, { results: [movie] }]], { guide: 'strong', title: 'Mrs. Doubtfire', year: '2001' });
   ok('a year that doesn\'t match: not that movie', r.miss === true);
+  // Two films of one name and no year: the guide's description says which (Black Sheep, 1996's not 2006's).
+  const farley = Object.assign({}, movie, { id: 11, title: 'Black Sheep', original_title: 'Black Sheep', release_date: '1996-02-02', popularity: 12, overview: 'Mike Donnelly keeps getting in the way of his brother Al, who is running for governor of Washington, so the campaign sends an aide to keep him out of trouble.' });
+  const horror = Object.assign({}, movie, { id: 12, title: 'Black Sheep', original_title: 'Black Sheep', release_date: '2006-08-04', popularity: 25, overview: 'A man afraid of sheep comes home to his family farm in New Zealand, where genetic experiments have turned the flock into killers.' });
+  const sheep = [[/search\/movie/, { results: [horror, farley] }], [/movie\/11/, Object.assign({}, farley)], [/movie\/12/, Object.assign({}, horror)]];
+  r = await ask(sheep, { guide: 'strong', title: 'Black Sheep', description: 'Dedicated to helping his brother win the race for governor, Mike turns every opportunity into a disaster.' });
+  ok('two films of one name: the guide\'s description picks the one it tells of', r.metadata && /1996/.test(r.metadata.year || r.metadata.releaseDate || JSON.stringify(r.metadata)), JSON.stringify(r.metadata && { title: r.metadata.title, year: r.metadata.year }));
+  r = await ask(sheep, { guide: 'strong', title: 'Black Sheep' });
+  ok('with no description, the better known one as before', r.metadata && /2006/.test(r.metadata.year || JSON.stringify(r.metadata)), JSON.stringify(r.metadata && { title: r.metadata.title, year: r.metadata.year }));
+  r = await ask(sheep, { guide: 'strong', title: 'Black Sheep', description: 'A comedy about a family and what happens next in the summer.' });
+  ok('a description that tells neither: the better known one', r.metadata && /2006/.test(r.metadata.year || JSON.stringify(r.metadata)));
   console.log(fail ? fail + ' FAILED' : 'all movie checks passed');
   process.exit(fail ? 1 : 0);
 })();

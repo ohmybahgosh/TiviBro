@@ -256,10 +256,11 @@ var Media = (function () {
     return ask('metadata', q, 25000).then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
   // A guide programme that may be a movie (movies.js): { metadata } or { miss }.
-  function guideLookup(title, year, strength) {
+  // description: the guide's, which tells apart films of one name when there's no year (media-metadata.js).
+  function guideLookup(title, year, strength, description) {
     var token = MediaStore.tmdbToken();
     if (!token) return Promise.reject(new Error('No TMDB token'));
-    return ask('metadata', { credential: token, guide: strength || 'weak', title: title, year: year || '', language: MediaStore.preferences().language }, 25000)
+    return ask('metadata', { credential: token, guide: strength || 'weak', title: title, year: year || '', description: String(description || '').slice(0, 1500), language: MediaStore.preferences().language }, 25000)
       .then(function (r) { if (r.error) throw new Error(r.message); return r; });
   }
   // A TV series by name, for the guide and the Shows screen (series.js): { metadata } (the show) or { miss }.
