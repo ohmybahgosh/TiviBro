@@ -706,7 +706,7 @@ On a playlist's page:
 | **Playlist on** | **On** · Off | On: its channels are in the lists, in its own section.  Off keeps the playlist with its login, groups, favorites and names, and takes it out of the lists until you turn it on again (instead of deleting it).  Turning off the first playlist makes the next one that is on the first; the last one on stays on.  The web editor's Playlists page has **Turn off** and **Turn on** too. |
 | **Name** | | The name shown in Settings and the web editor. |
 | **Connection** | | Server, username and password (or the M3U address).  Opens the setup screen, which tests the login before saving. |
-| **User-Agent** | **Default** or your own | Only if your provider asks for a specific one (TiviMate's "User-Agent" setting).  The network helper sends it for this playlist. |
+| **User-Agent** | **Default** or your own | Only if your provider asks for a specific one (TiviMate's "User-Agent" setting).  The network helper sends it for this playlist.  A channel whose line in an M3U playlist ends with `\|User-Agent=...` sends its own instead. |
 | **Reload channel list** | Every app start · Every 6 hours · **Every 12 hours** · Every day · Every 2 days · Every week · Only when I ask | How often the channel list is fetched again.  Your groups, renames and hidden items are always kept. |
 | **Reload channels now** *(playlists that are on)* | | Fetches the channel list right away.  While it reloads this row is **Stop reloading**, which stops it and keeps the channels from the last load. |
 | **Last reloaded**, **Subscription expires**, **Connections allowed** | (information) | From your provider, when it reports them. |
