@@ -62,10 +62,10 @@ var Search = (function () {
       var ev = Events.of(c);
       if (ev && test(ev.title)) take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 });
     });
-    // On now first, then soonest, then replays newest first; your channels ahead within each, so a long
-    // list ("Family Feud" airs on dozens of channels) keeps the one on BET when it's cut short.
+    // On now first, then soonest, then replays newest first.  opts.mine (Search): your channels ahead within
+    // each, so a long list ("Family Feud" airs on dozens of channels) keeps the one on BET when it's cut short.
     var rank = function (x) { return x.p.s <= now && x.p.e > now ? 0 : x.p.s > now ? 1 : 2; };
-    out.sort(function (a, b) { var d = rank(a) - rank(b); return d || (mine(b.c) - mine(a.c)) || (rank(a) === 2 ? b.p.s - a.p.s : a.p.s - b.p.s); });
+    out.sort(function (a, b) { var d = rank(a) - rank(b); return d || (opts.mine ? mine(b.c) - mine(a.c) : 0) || (rank(a) === 2 ? b.p.s - a.p.s : a.p.s - b.p.s); });
     return opts.limit ? out.slice(0, opts.limit) : out;
   }
 
@@ -205,7 +205,7 @@ var Search = (function () {
       }
     }
     if (filter !== 'channels' && filter !== 'movies') {
-      find(q).slice(0, 600).forEach(function (r) {
+      find(q, { mine: true }).slice(0, 600).forEach(function (r) {
         if (r.p.ev && seenEv[r.p.t.toLowerCase() + '|' + r.p.s]) return;
         var p = r.p, on = p.s <= now && p.e > now;
         if (filter === 'now' && !on) return;

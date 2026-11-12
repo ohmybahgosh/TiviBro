@@ -54,7 +54,10 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     // English: nothing changes for English.
     await ev(() => I18n.set('en')); await page.waitForTimeout(400);
     nav = await navText();
-    ok('English: the menu as it always was', nav[0] === 'Language' && nav[1] === 'Playlists' && await ev(() => /[ap]m$/.test(U.hhmm(Date.now()))), nav.join(' | '));
+    // The clock follows the TV's region, not the menu language (Settings > Appearance > Clock, discussion #71):
+    // English menus on this Spanish TV keep 19:30, and 12 hours is one setting away.
+    ok('English: the menu as it always was', nav[0] === 'Language' && nav[1] === 'Playlists', nav.join(' | '));
+    ok('the clock goes by the TV\'s region (24 hours here), 12 hours when set', await ev(() => { const t = new Date(2026, 0, 1, 19, 30).getTime(), a = U.hhmm(t); Store.settings.clock = '12'; const b = U.hhmm(t); Store.settings.clock = 'auto'; return a === '19:30' && b === '7:30pm'; }));
   } catch (e) { ok('harness: ' + e.message, false); }
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();
