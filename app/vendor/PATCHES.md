@@ -35,6 +35,11 @@ A late "updateend" after shutdown (issue #74): when the browser had removed a So
 `_onSourceBufferUpdateEnd` on the emptied queues ("Cannot read property 'length' of null").  The listeners now come off whatever the
 MediaSource's state, and `_onSourceBufferUpdateEnd` returns at once when the controller has been shut down or destroyed.
 
+A big jump in the sound's timestamps (issue #81): `_remuxAudio` filled any gap in the sound with silent frames, one per
+21 ms, and added them with `T.push.apply(T,C)`.  A channel whose sound timestamps jumped by hours made hundreds of thousands of
+frames and threw "Maximum call stack size exceeded" (shown as "ts engine net error: Exception").  Gaps are now filled only up to
+10 s (`s<=1e4`); a bigger jump is joined up like on Safari, and the frames are added with `concat`.
+
 Re-apply after upgrading mpegts.js.  `hls.min.js` (1.5.20) is unmodified.
 
 ## qrcode.js

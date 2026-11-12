@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Channels whose sound jumps ahead keep playing (issue #81).**  When a channel's sound skipped ahead by a long time (by minutes or hours), TiviBro tried to fill the whole gap with silence, one tiny piece at a time.  That ran out of room, the channel dropped with "Connection dropped", and it could add up to a lot of memory.  Gaps of up to 10 seconds are still filled with silence; a bigger jump is now simply joined up.
+
 ## 0.6.0 (alpha 122, 2026-11-12)
 
 Pre-release: expect rough edges, and keep a backup before installing.
