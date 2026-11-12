@@ -123,7 +123,7 @@ var Net = (function () {
     var rest = m[3] || '/';
     if (rest.charAt(0) !== '/') rest = '/' + rest;
     var unz = opts && opts.unzip ? '/unz/' + String(opts.unzip).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) : '';
-    return 'http://127.0.0.1:' + port + uaPrefix(opts && opts.ua ? String(opts.ua) : opts && opts.pl ? uaFor(opts.pl) : uaOfUrl(m[2])) + unz + '/x/' + m[1].toLowerCase() + '/' + m[2] + rest;
+    return 'http://127.0.0.1:' + port + uaPrefix(opts && opts.ua ? String(opts.ua) : opts && opts.pl ? uaFor(opts.pl) : uaOfUrl(m[2])) + hdrPrefix(opts && opts.hdr) + unz + '/x/' + m[1].toLowerCase() + '/' + m[2] + rest;
   }
   /* Playlist User-Agent (Settings > Playlists > the playlist): sent by the helper to the provider.
      With several playlists on, each sends its own: the player says which playlist a stream is from
@@ -147,8 +147,15 @@ var Net = (function () {
     if (uaCache.ua !== u) { uaCache.ua = u; uaCache.p = '/ua/' + btoa(unescape(encodeURIComponent(u))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
     return uaCache.p;
   }
+  /* A channel's own Referer and Origin (an M3U line ending "|Referer=...", plshape.js): /hd/<base64url of
+     their JSON>, after /ua/.  The helper sends only those two. */
+  function hdrPrefix(h) {
+    if (!h || (!h.Referer && !h.Origin)) return '';
+    var o = {}; if (h.Referer) o.Referer = String(h.Referer); if (h.Origin) o.Origin = String(h.Origin);
+    return '/hd/' + btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
   function unwrap(url) {
-    var m = /^http:\/\/127\.0\.0\.1:\d+(?:\/ua\/[A-Za-z0-9_-]+)?(?:\/unz\/[A-Za-z0-9_-]+)?\/x\/(https?)\/(.*)$/.exec(url || '');
+    var m = /^http:\/\/127\.0\.0\.1:\d+(?:\/ua\/[A-Za-z0-9_-]+)?(?:\/hd\/[A-Za-z0-9_-]+)?(?:\/unz\/[A-Za-z0-9_-]+)?\/x\/(https?)\/(.*)$/.exec(url || '');
     return m ? m[1] + '://' + m[2] : url;
   }
 

@@ -38,7 +38,12 @@ const proxy = require('../../service/proxy.js'), Convert = require('../../servic
 // Small spool pieces, so the tests cross them; the player's minute away shortened to 1.5 s.
 Convert._sizes(65536, 1048576, 262144, 1500, 5000);
 const relay = proxy.create({ ctl: 'secret' });
-const alive = (pid) => { try { process.kill(pid, 0); return !/^Z/.test((fs.readFileSync('/proc/' + pid + '/stat', 'utf8').split(') ')[1] || '')); } catch (e) { return false; } };
+// Running and not a zombie.  Linux reads /proc; macOS (no /proc, PR #80's notes) asks ps.
+const alive = (pid) => {
+  try { process.kill(pid, 0); } catch (e) { return false; }
+  try { return !/^Z/.test((fs.readFileSync('/proc/' + pid + '/stat', 'utf8').split(') ')[1] || '')); } catch (e) {}
+  try { return !/^Z/.test(cp.execSync('ps -o stat= -p ' + pid).toString().trim()); } catch (e) { return false; }
+};
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 async function until(fn, ms) { const t0 = Date.now(); while (Date.now() - t0 < ms) { if (await fn()) return true; await wait(100); } return false; }
 function ffprobe(file, args) { return String(cp.execFileSync(probeBin, ['-v', 'error'].concat(args, [file]))).trim(); }
@@ -165,8 +170,10 @@ src.listen(0, '127.0.0.1', () => relay.server.listen(0, '127.0.0.1', async () =>
     fs.writeFileSync(out, Buffer.from(await r.arrayBuffer()));
     if (probeBin) { const a = ffprobe(out, ['-select_streams', 'a:0', '-show_entries', 'stream=codec_name,channels', '-of', 'csv=p=0']).split('\n')[0]; ok('FLAC 7.1: AC-3 5.1 in MPEG-TS', a === 'ac3,6', a); }
 
-    await wait(300);
-    const left = cp.execSync('ps -eo pid,args').toString().split('\n').filter((l) => l.indexOf(tmp) < 0 && /ffmpeg .*-f (matroska|mpegts) /.test(l) && l.indexOf(String(src.address().port)) >= 0);
+    // A conversion whose player has gone stops within a few seconds (on a slower computer too).
+    const running = () => cp.execSync('ps -eo pid,args').toString().split('\n').filter((l) => l.indexOf(tmp) < 0 && /ffmpeg .*-f (matroska|mpegts) /.test(l) && l.indexOf(String(src.address().port)) >= 0);
+    await until(() => !running().length, 5000);
+    const left = running();
     ok('no ffmpeg left running', left.length === 0, left);
   } catch (e) { ok('no exception', false, e.stack); }
   relay.server.close(); src.close();

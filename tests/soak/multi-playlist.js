@@ -74,6 +74,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('Up steps back over it', sel === before, sel);
 
     // Playing a channel of the second playlist asks the second playlist's server.
+    // Whatever was playing (the first playlist's channel, from the start) is stopped first, so its last
+    // requests on a slower computer aren't counted (PR #80's notes: one :8077 request on a Mac).
+    await ev(() => { if (Views.stopAll) Views.stopAll(); else Player.stop(); }); await tv.waitForTimeout(800);
     const asked = [];
     tv.on('request', (r) => { if (/\/live\//.test(r.url())) asked.push(r.url()); });
     const k2 = await ev(() => { const c = Library.data.channels.find((x) => x.p === 'p2' && !x.url); Views.startChannel(c, false); return c.k; });

@@ -35,9 +35,11 @@ async function netFor(port, playlist) {
   ok('a User-Agent written with % codes is read, other options are dropped', list[1].url === 'http://tv.example/two.ts' && list[1].ua === 'My Agent/1.0', list[1].url + ' ' + list[1].ua);
   ok('options without a User-Agent: just the address', list[2].url === 'http://tv.example/three.ts' && !('ua' in list[2]), JSON.stringify(list[2]));
   ok('a plain address is untouched, with no User-Agent field', list[3].url === 'http://tv.example/four.ts' && !('ua' in list[3]));
+  ok('Referer goes with the channel (issue #78 follow-up)', list[1].hdr && list[1].hdr.Referer === 'http://tv.example/' && list[2].hdr && list[2].hdr.Referer === 'http://tv.example/', JSON.stringify([list[1].hdr, list[2].hdr]));
+  ok('a plain address has no headers field', !('hdr' in list[3]));
   ok('a "|" that is part of the address stays', list[4].url === 'http://tv.example/a|b/five.ts?x=1|2', list[4].url);
 
-  const up = http.createServer((req, res) => { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end(req.url + ' ' + (req.headers['user-agent'] || '')); });
+  const up = http.createServer((req, res) => { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end(req.url + ' ' + (req.headers['user-agent'] || '') + (req.headers.referer ? ' R=' + req.headers.referer : '') + (req.headers.origin ? ' O=' + req.headers.origin : '') + (req.headers.cookie ? ' C=' + req.headers.cookie : '')); });
   await new Promise(f => up.listen(0, '127.0.0.1', f));
   const U = 'http://127.0.0.1:' + up.address().port;
   const r = proxy.create({}); await new Promise(f => r.server.listen(0, '127.0.0.1', f));
@@ -49,6 +51,12 @@ async function netFor(port, playlist) {
   ok('the provider gets the clean address and the channel\'s User-Agent', a.status === 200 && a.body === '/one.ts viu', a.body);
   a = await get(Net.wrap(ch[1].url, { pl: pl, ua: ch[1].ua }));
   ok('a channel without its own keeps the playlist\'s User-Agent', a.body === '/two.ts PlaylistAgent', a.body);
+
+  const ch2 = PlShape.parseM3U('#EXTM3U\n#EXTINF:-1,Three\n' + U + '/three.ts|User-Agent=viu&Referer=https%3A%2F%2Fsite.example%2Fplay&Origin=https://site.example&Cookie=x=1\n').channels;
+  ok('Origin is kept, anything else (a cookie) is not', ch2[0].hdr && ch2[0].hdr.Origin === 'https://site.example' && !ch2[0].hdr.Cookie, JSON.stringify(ch2[0].hdr));
+  a = await get(Net.wrap(ch2[0].url, { pl: pl, ua: ch2[0].ua, hdr: ch2[0].hdr }));
+  ok('the helper sends the channel\'s Referer and Origin, nothing else', a.body === '/three.ts viu R=https://site.example/play O=https://site.example', a.body);
+  ok('and the address unwraps back to the provider\'s', Net.unwrap(Net.wrap(ch2[0].url, { pl: pl, hdr: ch2[0].hdr })) === ch2[0].url);
 
   r.server.close(); up.close();
   console.log(fail ? fail + ' failures' : 'all M3U address option tests passed');

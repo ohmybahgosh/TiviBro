@@ -3,6 +3,8 @@
 ## Unreleased
 
 - **M3U channels with their own User-Agent play (issue #78).**  Some playlists end each channel's address with `|User-Agent=...`.  TiviBro sent that text as part of the address, so the provider answered with an error and every channel said "Provider busy".  The channel now uses that User-Agent and the address is sent clean.  Reload channels to pick it up.
+- **A channel's own Referer and Origin are sent too (issue #78).**  Besides `|User-Agent=...`, M3U lines can end with `|Referer=...` and `|Origin=...`, which some providers check.  TiviBro now sends those with the channel as well (nothing else after the `|`, like cookies).
+- **"Provider busy" only when it can be.**  A 503 right after another channel of the playlist played is the provider still counting it, and TiviBro waits that out as before.  With nothing of that playlist played in the last few minutes it says the provider refused the channel, and moves on after three tries instead of six.
 
 ## 0.6.0 (alpha 120, 2026-11-11)
 

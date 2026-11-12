@@ -589,9 +589,19 @@ for (let i = 0; i < 6; i++) { t.last().h.err('NetworkError', 'HttpStatusCodeInva
 ok('a channel that played and now gets HTTP errors keeps the same pipeline', t.made.every(e => e.kind === 'ts') && t.video._src === '' && !t.logs.some(l => /Trying the/.test(l)));
 
 t = setup();
+t.P.play({ n: 'Before', url: 'http://p/live/u/p/24.ts' });
+t.feed(0, 30); t.run(2500);
 t.P.play({ n: 'Busy', url: 'http://p/live/u/p/23.ts' });
 for (let i = 0; i < 4; i++) { t.last().h.err('NetworkError', 'HttpStatusCodeInvalid', { code: 503 }); t.run(3000); }
-ok('busy answers (503) get more tries on the same pipeline before anything else', t.last().kind === 'ts' && !t.states.some(x => /^error/.test(x)));
+ok('busy answers (503) right after a channel played get more tries on the same pipeline before anything else', t.last().kind === 'ts' && !t.states.some(x => /^error/.test(x)) && t.logs.some(l => /still counting the last channel/.test(l)), t.logs.filter(l => /503|busy|refused/i.test(l)).slice(-2).join(' | '));
+
+// Nothing of this playlist has played: no last channel to wait for, so a 503 is the provider refusing the
+// address (issue #78), said so, and not tried five times.
+t = setup();
+t.P.play({ n: 'Refused', url: 'http://p/live/u/p/25.ts' });
+for (let i = 0; i < 3; i++) { t.last().h.err('NetworkError', 'HttpStatusCodeInvalid', { code: 503 }); t.run(3000); }
+ok('a 503 with nothing played lately says the provider refused the channel, not busy', t.logs.some(l => /refused this channel \(HTTP 503\)/.test(l)) && !t.logs.some(l => /still counting/.test(l)), t.logs.filter(l => /503|busy|refused/i.test(l)).slice(-2).join(' | '));
+ok('and moves on after three tries, not six', t.logs.some(l => /Trying the .* after HTTP 503/.test(l)), t.made.map(e => e.kind).join(','));
 
 // Native MKV playback must share the subtitle resolver's session URL.
 let resolveMkv, cancelledMkv = 0;

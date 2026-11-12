@@ -246,10 +246,16 @@ function create(opts) {
     if (req.url === '/log') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ node: process.version, stats: stats, log: LOG, earlier: EARLIER })); }
     var xm = /^\/xfer\/([A-Za-z0-9_-]{1,40})$/.exec(req.url);
     if (xm) { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, ALLOW)); return res.end(JSON.stringify(Unzip.progress(xm[1]) || { raw: 0, total: 0, done: false, unknown: true })); }
-    // Optional prefixes, in this order: /ua/<base64url user agent>, then /unz/<id> (unzip, see unzip.js).
+    // Optional prefixes, in this order: /ua/<base64url user agent>, /hd/<base64url Referer and Origin>, then /unz/<id> (unzip, see unzip.js).
     var ua = null, unz = null, path = req.url, prefix = '';
     var um = /^\/ua\/([A-Za-z0-9_-]+)(\/.*)$/.exec(path);
     if (um) { try { ua = Buffer.from(um[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'); } catch (e) { ua = null; } path = um[2]; prefix += '/ua/' + um[1]; }
+    // /hd/<base64url JSON>: a channel's own Referer and Origin (an M3U line's "|Referer=...", issue #78).
+    var hd = null, hm = /^\/hd\/([A-Za-z0-9_-]{1,2000})(\/.*)$/.exec(path);
+    if (hm) {
+      try { var hj = JSON.parse(Buffer.from(hm[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')); hd = {}; ['Referer', 'Origin'].forEach(function (k) { if (typeof hj[k] === 'string' && /^https?:\/\//i.test(hj[k])) hd[k] = hj[k].slice(0, 500); }); } catch (e) { hd = null; }
+      path = hm[2]; prefix += '/hd/' + hm[1];
+    }
     var zm = /^\/unz\/([A-Za-z0-9_-]{1,40})(\/.*)$/.exec(path);
     if (zm) { unz = zm[1]; path = zm[2]; prefix += '/unz/' + unz; }
     var t = target(path);
@@ -263,6 +269,7 @@ function create(opts) {
        channel like any other. */
     if (/^bytes=0-$/i.test(req.headers.range || '') && liveKey(u)) delete req.headers.range;
     var headers = { 'User-Agent': ua || opts.userAgent || 'Mozilla/5.0 (Web0S; Linux/SmartTV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0 Safari/537.36', 'Accept': '*/*' };
+    if (hd) Object.keys(hd).forEach(function (k) { headers[k] = hd[k]; });
     if (unz) headers['Accept-Encoding'] = 'gzip, deflate';      // the helper unzips, so ask for the smallest transfer
     else {
       if (req.headers.range) headers.Range = req.headers.range;

@@ -136,7 +136,7 @@ var Player = (function () {
   /* The playlist a stream belongs to: with several playlists on, its User-Agent goes with every
      request (Net.wrap's pl), whatever host the segments come from.  A channel with its own
      User-Agent (an M3U line ending "|User-Agent=...") sends that one instead (Net.wrap's ua). */
-  function plWrap() { var ch = cur && cur.ch; return { pl: Store.plOf ? Store.plOf(ch) : Store.playlist, ua: ch && ch.ua ? ch.ua : '' }; }
+  function plWrap() { var ch = cur && cur.ch; return { pl: Store.plOf ? Store.plOf(ch) : Store.playlist, ua: ch && ch.ua ? ch.ua : '', hdr: ch && ch.hdr ? ch.hdr : null }; }
   function hlsEngine(url, p, preview, fail, media, tracks) {
     var live = cur.live && !cur.timeshift, pw = plWrap();
     url = Net.wrap(url, pw);
@@ -315,8 +315,8 @@ var Player = (function () {
     // panels often have.  The helper accepts them and passes Range requests through for seeking.
     // A conversion link (conv) is the helper's already; its subtitles come from the movie itself.
     var play = url, pw = plWrap(), ua = pw.ua || (Net.uaFor ? Net.uaFor(pw.pl) : Net.ua);
-    if (conv) { url = conv.src; if ((/^https:/i.test(url) || ua) && Net.active) url = Net.wrap(url, pw); }
-    else if ((/^https:/i.test(url) || ua) && Net.active) { url = Net.wrap(url, pw); play = url; Log.info('player', 'TV player using the helper' + (ua ? ' (custom User-Agent)' : ' for HTTPS')); }
+    if (conv) { url = conv.src; if ((/^https:/i.test(url) || ua || pw.hdr) && Net.active) url = Net.wrap(url, pw); }
+    else if ((/^https:/i.test(url) || ua || pw.hdr) && Net.active) { url = Net.wrap(url, pw); play = url; Log.info('player', 'TV player using the helper' + (ua ? ' (custom User-Agent)' : pw.hdr ? ' (the channel\'s own Referer)' : ' for HTTPS')); }
     function loadNative(resolved) { video.src = conv ? play : resolved; video.load(); }
     // Resolve the provider entry URL once. Both playback and subtitle ranges use
     // the same resulting session URL; opening the entry separately can evict video.
@@ -492,7 +492,9 @@ var Player = (function () {
         cur.lastHttp = http;
         // "Busy" answers (connection limit, rate limit, overloaded) clear once the last channel's
         // connection is let go, which can take a few seconds: give those more tries than a 404.
-        var busy = busyHttp(http);
+        // Only after something of this playlist played lately: else there is no last channel to wait for, and a
+        // 503 is the provider refusing this address (issue #78: "|User-Agent=" in the path).
+        var busy = busyHttp(http) && playedLately();
         if (cur.httpFails > (busy ? 5 : 2)) {
           var nx = nextEngine(kind);
           if (nx) { Log.info('player', 'Trying the ' + ENGINE_NAMES[nx] + ' after HTTP ' + http); useEngine(nx); return start(myToken); }
@@ -517,7 +519,7 @@ var Player = (function () {
       // Provider hung up but we still hold a good cushion: keep watching it and reconnect only
       // when it runs low, instead of throwing away buffered video.
       if (ended && st.started && bufferedAhead() > 4) { st.pendingReconnect = true; Log.info('player', 'Provider closed the stream; playing the remaining ' + bufferedAhead().toFixed(1) + 's then reconnecting'); return; }
-      reconnect(myToken, ended ? 'Stream ended, reconnecting' : busyHttp(http) ? 'Provider busy (still counting the last channel), trying again' : 'Connection dropped, reconnecting');
+      reconnect(myToken, ended ? 'Stream ended, reconnecting' : busyHttp(http) ? (playedLately() ? 'Provider busy (still counting the last channel), trying again' : 'The provider refused this channel (HTTP ' + http + '), trying again') : 'Connection dropped, reconnecting');
     };
     // Codec facts from the stream itself, before the first frame: the HLS master playlist or the
     // TS demuxer's media info.  Switch pipeline once if the stream belongs on the TV player.
@@ -912,6 +914,7 @@ var Player = (function () {
         cur.slow = ''; cur.everPlayed = true; cur.failed = false; cur.httpFails = 0; cur.lastHttp = 0; cur.starved = false; cur.lastFailHttp = false;
         cur.startMs = now - st.at; cur.dataMs = st.tData ? st.tData - st.at : 0; cur.picMs = st.tPic ? st.tPic - st.at : 0;
         if (window.ProvStatus) ProvStatus.note(cur.origUrl || cur.url, true);
+        lastPlay[plKey(cur && cur.ch)] = now;
         Log.info('player', 'Playing after ' + (now - st.at) + 'ms with ' + ahead.toFixed(1) + 's buffered' + (ahead < p.prebuffer ? ' (prebuffer timed out)' : '') + (video.videoHeight ? ', ' + video.videoWidth + 'x' + video.videoHeight : '') +
           (cur.dataMs ? ' (first data ' + cur.dataMs + 'ms, first picture ' + (cur.picMs || cur.dataMs) + 'ms)' : ''));
         if (cur.live && !cur.timeshift && window.PlayMemo) { PlayMemo.worked(cur.ch, st.kind, cur.usual); PlayMemo.started(memoHost()); }
@@ -1122,6 +1125,7 @@ var Player = (function () {
     if (cur) clearTimeout(cur.timer);
     lastStats = null;                       // no stale numbers from the last channel in Stream info
     var fmt = Store.settings.format, url0 = opts.url || Source.streamUrl(ch, fmt);
+    notePlayed();                                    // the channel left behind may still be counted
     cur = { ch: ch, url: url0, p: cfg(opts.preview, url0), preview: !!opts.preview, retries: 0,
       forceNative: false, triedNative: false, live: opts.live !== false, startAt: opts.startAt || 0, meta: opts.meta || null,
       timeshift: !!opts.timeshift, urlFn: opts.urlFn || null, pos: opts.startAt || 0,
@@ -1278,6 +1282,11 @@ var Player = (function () {
   /* Stream format per channel: '' (the playlist's setting and what playback learns), 'hls' or 'ts'.
      Kept with the playlist's edits (backups too), by channel. */
   // "Busy" answers: connection limit, rate limit, overloaded.
+  // Something of this channel's playlist played in the last 3 minutes (its connection may still be counted).
+  var lastPlay = {};
+  function plKey(ch) { var p = ch && Store.plOf ? Store.plOf(ch) : Store.playlist; return (p && p.id) || ''; }
+  function notePlayed() { if (cur && cur.ch && st && st.started) lastPlay[plKey(cur.ch)] = Date.now(); }
+  function playedLately() { return Date.now() - (lastPlay[plKey(cur && cur.ch)] || 0) < 180000; }
   function busyHttp(code) { return [403, 429, 456, 458, 502, 503, 504, 509, 551].indexOf(+code) >= 0; }
   function streamFormat(ch) { var m = ch && Store.edits.streamFmt; return m && (m[ch.k] === 'hls' || m[ch.k] === 'ts') ? m[ch.k] : ''; }
   function setStreamFormat(ch, v) {
@@ -1369,7 +1378,7 @@ var Player = (function () {
     cur.preview = preview;
     cur.p = cfg(preview, cur.origUrl || cur.url);
   }
-  function stop() { token++; if (cur) clearTimeout(cur.timer); cur = null; held = null; teardown(); state('idle'); Log.state('player', ''); }
+  function stop() { notePlayed(); token++; if (cur) clearTimeout(cur.timer); cur = null; held = null; teardown(); state('idle'); Log.state('player', ''); }
 
   function setPaused(want) {
     if (!video || !st || !cur) return;

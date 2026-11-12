@@ -96,15 +96,20 @@ var PlShape = (function () {
   var ATTR = /([a-zA-Z0-9\-_]+)="([^"]*)"/g;
   /* Request options after the address, the Kodi and TiviMate way: "http://host/1.ts|User-Agent=Agent&Referer=...".
      They are not part of the address (a provider answers it with an error), so they come off; the
-     User-Agent stays with the channel for the helper to send (Net.wrap's ua). */
+     User-Agent, Referer and Origin stay with the channel for the helper to send (Net.wrap's ua and hdr). */
   var OPTS = /^[A-Za-z][A-Za-z0-9-]*=/;
   function options(url) {
     var bar = url.indexOf('|');
     if (bar < 0 || !OPTS.test(url.slice(bar + 1))) return null;
-    var out = { url: url.slice(0, bar).trim(), ua: '' }, parts = url.slice(bar + 1).split('&');
+    var out = { url: url.slice(0, bar).trim(), ua: '', hdr: null }, parts = url.slice(bar + 1).split('&');
+    function val(v) { try { return decodeURIComponent(v).trim(); } catch (e) { return v.trim(); } }
     for (var i = 0; i < parts.length; i++) {
-      var m = /^user-agent=(.*)$/i.exec(parts[i]);
-      if (m) { try { out.ua = decodeURIComponent(m[1]).trim(); } catch (e) { out.ua = m[1].trim(); } }
+      var m = /^(user-agent|referr?er|origin)=(.*)$/i.exec(parts[i]);
+      if (!m) continue;
+      var k = m[1].toLowerCase(), v = val(m[2]);
+      if (k === 'user-agent') out.ua = v;
+      // Referer and Origin go with the channel too, for the helper to send (issue #78's follow-up).
+      else if (v && /^https?:\/\//i.test(v)) (out.hdr || (out.hdr = {}))[k === 'origin' ? 'Origin' : 'Referer'] = v.slice(0, 500);
     }
     return out;
   }
@@ -155,6 +160,7 @@ var PlShape = (function () {
           cu: cur.attrs['catchup'] || cur.attrs['catchup-type'] || '', cus: cur.attrs['catchup-source'] || ''
         };
         if (opt && opt.ua) ch.ua = opt.ua;
+        if (opt && opt.hdr) ch.hdr = opt.hdr;
         chans.push(ch);
         cur = null;
       }
