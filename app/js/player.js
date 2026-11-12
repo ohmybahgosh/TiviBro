@@ -1529,7 +1529,9 @@ var Player = (function () {
   /* A channel still starting, for the "taking longer than usual" question (views.js, discussion #36): how long,
      what was tried, and what TiviBro has seen.  null once it plays, for files, and while nothing is asked for. */
   function startStatus() {
-    if (!cur || isFile() || cur.preview || (st && st.started) || cur.failed) return null;
+    // Only before the first picture: a reconnect after playing has its own messages, and timed from the start
+    // it asked at once and closed again as the picture came back (a flash of "Still starting").
+    if (!cur || isFile() || cur.preview || (st && st.started) || cur.failed || cur.everPlayed) return null;
     var tried = Object.keys(cur.tried || {}).concat(st && st.kind && !(cur.tried || {})[st.kind] ? [st.kind] : []);
     return { ms: Date.now() - (cur.t0 || Date.now()), tried: tried.map(function (k) { return ENGINE_NAMES[k] || k; }), http: cur.lastHttp || 0, data: !!(st && st.gotInfo), retries: cur.retries || 0, slow: cur.slow || '' };
   }

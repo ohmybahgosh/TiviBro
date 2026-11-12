@@ -53,6 +53,18 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await page.keyboard.press('Enter'); await page.waitForTimeout(500);       // Keep trying (first)
     const closed = await ev(() => document.getElementById('modal').classList.contains('hidden'));
     ok('Keep trying closes it and goes on', closed);
+
+    // A channel that played, then reconnects more than 20 s after it was picked: no question (it flashed open and
+    // shut as the picture came back).
+    await ev(() => Views.startChannel(Library.data.channels[0], false, Views.goFull));
+    await page.waitForFunction(() => Player.playing, null, { timeout: 30000 }).catch(() => {});
+    await page.waitForTimeout(21000);
+    let asked = false;
+    // What the question goes by, read every 20 ms through the reconnect (it is over in a moment against the mock).
+    await ev(() => { window.__slow = []; const t = setInterval(() => { const x = Player.startStatus; if (x) window.__slow.push(x.ms); }, 20); setTimeout(() => clearInterval(t), 3000); Player._test.reconnect('test drop'); });
+    for (let i = 0; i < 12 && !asked; i++) { await page.waitForTimeout(250); asked = await ev(() => { const m = document.getElementById('modal'); return !!m && !m.classList.contains('hidden') && /Still starting/.test(m.innerText); }); }
+    const ss = await ev(() => window.__slow);
+    ok('a reconnect after playing does not ask "Still starting"', !asked && !ss.some((ms) => ms >= 20000), JSON.stringify({ asked, slow: ss.slice(0, 5) }));
   } catch (e) { ok('harness: ' + e.message, false); }
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close(); hang.close();
