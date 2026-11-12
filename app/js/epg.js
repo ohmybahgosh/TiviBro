@@ -529,6 +529,7 @@ var Epg = (function () {
       // and "[NEW]" or "[LIVE]" at the end.
       EMO = /(?:\ud83c[\udc00-\udfff]|\ud83d[\udc00-\udfff]|\ud83e[\udc00-\udfff]|[\u2600-\u27bf])\ufe0f?/g,
       END = /\s*\[(new|live|premiere)\]\s*$/i, LEAD = /^\s*\[(?!(?:HD|SD|FHD|UHD|4K|CC|LIVE|NEW)\])([A-Z][A-Z0-9+&]{1,9})\]\s*/,
+      MID = /\s*\[(?!(?:HD|SD|FHD|UHD|4K|CC|LIVE|NEW)\])([A-Z][A-Z0-9+&]{1,9})\]\s*(?=\S)/g,
       QUICK = /[\u02b0-\u02e4\u1d00-\u1dbf\u2070-\u209f\u0274\u0280\u029f\ud83c-\ud83e\u2600-\u27bf\[]/;
     for (var i = 0; i < list.length; i++) {
       var p = list[i], t = p.t;
@@ -536,9 +537,15 @@ var Epg = (function () {
       var c = t;
       if (TAG.test(c)) { TAG.lastIndex = 0; if (TAG_NEW.test(c)) p.n = 1; c = c.replace(TAG, ''); }
       TAG.lastIndex = 0;
+      var emo = EMO.test(c); EMO.lastIndex = 0;
       c = c.replace(EMO, ' ');
       var e = END.exec(c); if (e) { if (/new|premiere/i.test(e[1])) p.n = 1; c = c.slice(0, e.index); }
-      c = c.replace(LEAD, function (a, x) { return x + ': '; });
+      // The league once, in front: EPGTalk also tags each team ("🏒 [NHL] Bruins at 🏒🐙 [NHL] Detroit Red
+      // Wings"), so in such a title the other tags inside come off too.
+      var lead = '';
+      c = c.replace(LEAD, function (a, x) { lead = x; return ''; });
+      if (lead || emo) c = c.replace(MID, function (a, x) { if (!lead) lead = x; return ' '; });
+      if (lead) c = lead + ': ' + c.trim();
       c = c.replace(/\s{2,}/g, ' ').trim();
       p.t = c || t;
     }

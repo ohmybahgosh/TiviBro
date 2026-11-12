@@ -40,7 +40,7 @@ async function netFor(port, playlist) {
   ok('a "|" that is part of the address stays', list[4].url === 'http://tv.example/a|b/five.ts?x=1|2', list[4].url);
 
   const up = http.createServer((req, res) => {
-    if (req.method === 'POST') { let n = 0; req.on('data', (d) => n += d.length); req.on('end', () => { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('POST ' + req.url + ' ' + n + ' ' + (req.headers['user-agent'] || '')); }); return; }
+    if (req.method === 'POST') { let n = 0; req.on('data', (d) => n += d.length); req.on('end', () => { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('POST ' + req.url + ' ' + n + ' ' + (req.headers['user-agent'] || '') + (req.headers['x-custom-data'] ? ' X=' + req.headers['x-custom-data'] : '') + (req.headers.host && !/^127\.0\.0\.1:/.test(req.headers.host) ? ' HOST=' + req.headers.host : '')); }); return; }
     res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end(req.url + ' ' + (req.headers['user-agent'] || '') + (req.headers.referer ? ' R=' + req.headers.referer : '') + (req.headers.origin ? ' O=' + req.headers.origin : '') + (req.headers.cookie ? ' C=' + req.headers.cookie : '')); });
   await new Promise(f => up.listen(0, '127.0.0.1', f));
   const U = 'http://127.0.0.1:' + up.address().port;
@@ -67,6 +67,13 @@ async function netFor(port, playlist) {
     q.on('error', bad); q.end(body);
   });
   ok('a licence request is relayed as a POST with its body and the User-Agent', lic.status === 200 && lic.body === 'POST /license?id=2 6 LicAgent', lic.body);
+
+  // A licence server's own headers (license_key "URL|X-Custom-Data=..."): carried by the helper, not the browser.
+  const lic2 = await new Promise((done, bad) => {
+    const q = http.request(Net.wrap(U + '/license?id=3', { pl: pl, ua: 'LicAgent', hdr: { H: { 'X-Custom-Data': 'token=abc', Host: 'evil.example' } } }), { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': 2 } }, (rs) => { let b = ''; rs.on('data', (d) => b += d); rs.on('end', () => done({ status: rs.statusCode, body: b })); });
+    q.on('error', bad); q.end(Buffer.from([7, 8]));
+  });
+  ok('the licence server\'s own header goes through the helper, a Host header does not', lic2.status === 200 && lic2.body === 'POST /license?id=3 2 LicAgent X=token=abc', lic2.body);
 
   r.server.close(); up.close();
   console.log(fail ? fail + ' failures' : 'all M3U address option tests passed');

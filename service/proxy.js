@@ -264,9 +264,17 @@ function create(opts) {
     var um = /^\/ua\/([A-Za-z0-9_-]+)(\/.*)$/.exec(path);
     if (um) { try { ua = Buffer.from(um[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'); } catch (e) { ua = null; } path = um[2]; prefix += '/ua/' + um[1]; }
     // /hd/<base64url JSON>: a channel's own Referer and Origin (an M3U line's "|Referer=...", issue #78).
-    var hd = null, hm = /^\/hd\/([A-Za-z0-9_-]{1,2000})(\/.*)$/.exec(path);
+    // H: a DRM licence server's own headers (#KODIPROP license_key "URL|X-Custom-Data=..."), by name, but never
+    // the ones that steer the connection itself.
+    var hd = null, hm = /^\/hd\/([A-Za-z0-9_-]{1,8000})(\/.*)$/.exec(path);
     if (hm) {
-      try { var hj = JSON.parse(Buffer.from(hm[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')); hd = {}; ['Referer', 'Origin'].forEach(function (k) { if (typeof hj[k] === 'string' && /^https?:\/\//i.test(hj[k])) hd[k] = hj[k].slice(0, 500); }); } catch (e) { hd = null; }
+      try {
+        var hj = JSON.parse(Buffer.from(hm[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8')); hd = {};
+        ['Referer', 'Origin'].forEach(function (k) { if (typeof hj[k] === 'string' && /^https?:\/\//i.test(hj[k])) hd[k] = hj[k].slice(0, 500); });
+        if (hj.H && typeof hj.H === 'object') Object.keys(hj.H).slice(0, 20).forEach(function (k) {
+          if (/^[A-Za-z0-9-]{1,60}$/.test(k) && !/^(host|content-length|connection|transfer-encoding|te|trailer|upgrade|keep-alive|expect|range|accept-encoding|proxy-.*)$/i.test(k) && typeof hj.H[k] === 'string') hd[k] = hj.H[k].replace(/[\r\n]/g, '').slice(0, 4000);
+        });
+      } catch (e) { hd = null; }
       path = hm[2]; prefix += '/hd/' + hm[1];
     }
     var zm = /^\/unz\/([A-Za-z0-9_-]{1,40})(\/.*)$/.exec(path);

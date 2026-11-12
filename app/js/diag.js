@@ -141,7 +141,7 @@ var Diag = (function () {
       // Several playlists on: each one in use (type, channels, guide), with no names or addresses.
       ['Playlists on', (function () {
         var ls = Store.loaded ? Store.loaded() : [p], skip = Store.others ? Store.others().filter(function (q) { return !Library.partOf(q.id) || Library.otherIds().indexOf(q.id) < 0; }).length : 0;
-        return ls.map(function (q, i) { var d = Library.partOf ? Library.partOf(q.id) : null; return (i ? 'other' : 'first') + ': ' + (q.type === 'm3u' ? 'M3U' : 'Xtream Codes') + ', ' + (d ? d.channels.length : 0) + ' channels, guide ' + (q.providerEpg || 'auto') + ' + ' + (q.epgSources || []).length + ' source(s)'; }).join('; ') +
+        return ls.map(function (q, i) { var d = Library.partOf ? Library.partOf(q.id) : null; return (i ? 'other' : 'first') + ': ' + (q.type === 'm3u' ? 'M3U' : q.type === 'stalker' ? 'Stalker portal' : 'Xtream Codes') + ', ' + (d ? d.channels.length : 0) + ' channels, guide ' + (q.providerEpg || 'auto') + ' + ' + (q.epgSources || []).length + ' source(s)'; }).join('; ') +
           (skip ? '; ' + skip + ' on but not loaded' : '');
       })()],
       ['Guide', (p.epgSources || []).length + ' extra source(s), provider guide ' + (p.providerEpg || 'auto')],

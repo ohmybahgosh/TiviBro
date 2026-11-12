@@ -83,9 +83,9 @@ function make(dir, enc) {
     ok('and given the playlist\'s key (kid and key in base64url)', keyAsked && keyAsked.kid === 'ASNFZ4mrze8BI0VniavN7w' && keyAsked.k === '_ty6mHZUMhD-3LqYdlQyEA', JSON.stringify(c.lic));
 
     // Widevine: a licence server from license_key, its User-Agent through the helper, its Content-Type to the browser.
-    const wv = await ev(() => Player._dashProtection({ type: 'widevine', key: 'https://lic.example/wv?id=2|User-Agent=LicUA&Content-Type=application%2Foctet-stream|R{SSM}|R' }, { pl: null }));
+    const wv = await ev(() => Player._dashProtection({ type: 'widevine', key: 'https://lic.example/wv?id=2|User-Agent=LicUA&Content-Type=application%2Foctet-stream&X-Custom-Data=t%3D1|R{SSM}|R' }, { pl: null }));
     const s = wv && wv['com.widevine.alpha'];
-    ok('Widevine: the licence server goes through the helper with its User-Agent, and its Content-Type is sent', s && /^http:\/\/127\.0\.0\.1:\d+\/ua\/[A-Za-z0-9_-]+\/x\/https\/lic\.example\/wv\?id=2$/.test(s.serverURL) && s.httpRequestHeaders && s.httpRequestHeaders['Content-Type'] === 'application/octet-stream' && !s.httpRequestHeaders['User-Agent'], JSON.stringify(wv));
+    ok('Widevine: the licence server goes through the helper with its User-Agent and own headers, and its Content-Type is sent', s && /^http:\/\/127\.0\.0\.1:\d+\/ua\/[A-Za-z0-9_-]+\/hd\/[A-Za-z0-9_-]+\/x\/https\/lic\.example\/wv\?id=2$/.test(s.serverURL) && JSON.parse(Buffer.from(/\/hd\/([A-Za-z0-9_-]+)/.exec(s.serverURL)[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString()).H['X-Custom-Data'] === 't=1' && !s.httpRequestHeaders['X-Custom-Data'] && s.httpRequestHeaders && s.httpRequestHeaders['Content-Type'] === 'application/octet-stream' && !s.httpRequestHeaders['User-Agent'], JSON.stringify(wv));
     // A protected channel that doesn't play: it says it's protected (not "Provider busy").
     const logsBefore = await ev(() => Log.lines().length);
     await ev(() => { window.__perr = ''; });

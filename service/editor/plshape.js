@@ -164,7 +164,7 @@ var PlShape = (function () {
         if (opt) url = opt.url;
         if ((lib || liveOnly) && VOD.test(url)) {
           if (lib) lib.add(cur.name || cur.attrs['tvg-name'] || 'Untitled', cur.attrs['group-title'] || 'Other', cur.attrs['tvg-logo'] || '', url); else skipped++;
-          cur = null; continue;
+          cur = null; props = {}; continue;           // its #KODIPROP lines were its own, not the next channel's
         }
         var gname = cur.attrs['group-title'] || 'Ungrouped';
         var gid = gmap[gname];

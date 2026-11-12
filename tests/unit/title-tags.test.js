@@ -26,6 +26,12 @@ for (const t of ['CO₂ Rising', 'H₂O: The Molecule', 'Hawaiʻi Five-0', 'Beyo
 }
 p = run('🏈🎓 [NCAAF] College Football');
 ok('EPGTalk: emoji off, the league in brackets in front becomes "NCAAF: "', p.t === 'NCAAF: College Football' && !p.n, p);
+p = run('🏒🐙 [NHL] Detroit Red Wings at 🏒 [NHL] Florida Panthers');
+ok('EPGTalk: a league tag on each team comes off, the league once in front', p.t === 'NHL: Detroit Red Wings at Florida Panthers', p);
+p = run('Boston 🏒 [NHL] Bruins at 🏒🐙 [NHL] Detroit Red Wings');
+ok('and when the first team\'s tag sits after its city', p.t === 'NHL: Boston Bruins at Detroit Red Wings', p);
+p = run('Movie [IMAX] Night');
+ok('a bracket inside a title with no emoji or league in front stays', p.t === 'Movie [IMAX] Night', p);
 p = run('SEC Now [NEW]');
 ok('"[NEW]" at the end becomes the NEW mark', p.t === 'SEC Now' && p.n === 1, p);
 p = run('Game Night [LIVE]');

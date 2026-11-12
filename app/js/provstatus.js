@@ -14,7 +14,7 @@ var ProvStatus = (function () {
   function providers() {
     var out = {};
     ((typeof Store !== 'undefined' && Store.loaded ? Store.loaded() : []) || []).forEach(function (p) {
-      [p.server, p.m3u, p.url].forEach(function (u) { var h = hostOf(u); if (h) out[h] = p; });
+      [p.server, p.m3u, p.portal, p.url].forEach(function (u) { var h = hostOf(u); if (h) out[h] = p; });
     });
     return out;
   }
@@ -116,7 +116,7 @@ var ProvStatus = (function () {
     var probe = function (u) { return U.request(u, { timeout: 15000, text: true, label: 'provider check' }).promise.then(function () { return { ok: true }; }, function (e) { return { ok: false, code: e.status || (e.kind === 'timeout' ? 'timeout' : (e.message || '').match(/E[A-Z_]+/) ? (e.message || '').match(/E[A-Z_]+/)[0] : e.kind) }; }); };
     var other = probe('https://api.github.com/zen').then(function (r) { if (r.ok) otherOk = Date.now(); return r.ok; });
     return Promise.all(list.map(function (h) {
-      var p = ps[h], base = String(p.server || p.m3u || p.url || '').replace(/\/+$/, '');
+      var p = ps[h], base = String(p.server || p.m3u || p.portal || p.url || '').replace(/\/+$/, '');
       var u = p.type === 'xtream' && p.user ? base + '/player_api.php?username=' + encodeURIComponent(p.user) + '&password=' + encodeURIComponent(p.pass || '') : base;
       return probe(u).then(function (r) { note(u, r.ok, r.code, 'api'); return { host: h, ok: r.ok, code: r.code }; });
     }).concat([other])).then(function (rs) { emit(); return { providers: rs.slice(0, -1), internet: rs[rs.length - 1] }; });

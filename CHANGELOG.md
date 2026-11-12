@@ -12,6 +12,10 @@
 - **Lists show whole rows (discussion #36).**  The last row of the Channels screen's lists and of Search was drawn cut in half by the bottom of the list, which looked like it ran under the button hints.  Lists now show only whole rows.
 - **Settings shown: Everyday or All (discussion #36).**  Settings > Appearance and start screen > Settings shown.  Everyday leaves out what most people set once or only to troubleshoot (buffer details, the player engine, the network helper, learning buttons, detailed logging and the like), and each page says how many more are in All.  All, as before, is the default.
 - **A channel slow to start asks what to do (discussion #36, issue #67).**  Fullscreen, after 20 seconds without a picture, TiviBro says what it has seen (nothing from the provider yet, an error from the provider, or video the TV shows no picture for, and which players it tried) and asks: Keep trying, Start over, Other versions of this channel, or Stop.  It goes away by itself once the channel plays.  Settings > Playback > Ask when a channel is slow to start turns it off.
+- **A Widevine or PlayReady licence server's own headers are sent.**  A `license_key` like `https://.../licence|X-Custom-Data=...` gives the licence server headers of its own.  The TV's browser may not send those to the helper, so the licence was refused; the helper now carries them, and sends them on to the licence server.
+- **Stalker portals: one sign-in when the guide asks for many channels at once.**  Each guide request signed in on its own, and a portal that keeps only the newest sign-in for a MAC turned the others down.
+- **Sports guide titles without a league tag in the middle.**  EPGTalk's sports guide tags each team ("🏒 [NHL] Detroit Red Wings at 🏒 [NHL] Florida Panthers"), and the second tag stayed in the title.  Now it reads "NHL: Detroit Red Wings at Florida Panthers".
+- **`#KODIPROP` lines of a movie left out of a big live list stay with that movie,** rather than going to the next channel.
 
 ## 0.6.0 (alpha 120, 2026-11-11)
 

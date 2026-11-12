@@ -148,10 +148,12 @@ var Net = (function () {
     return uaCache.p;
   }
   /* A channel's own Referer and Origin (an M3U line ending "|Referer=...", plshape.js): /hd/<base64url of
-     their JSON>, after /ua/.  The helper sends only those two. */
+     their JSON>, after /ua/.  The helper sends only those two, and for a DRM licence server its own headers
+     (h.H, from #KODIPROP license_key, player.js): the browser can't send those to the helper itself. */
   function hdrPrefix(h) {
-    if (!h || (!h.Referer && !h.Origin)) return '';
-    var o = {}; if (h.Referer) o.Referer = String(h.Referer); if (h.Origin) o.Origin = String(h.Origin);
+    var extra = h && h.H && typeof h.H === 'object' && Object.keys(h.H).length ? h.H : null;
+    if (!h || (!h.Referer && !h.Origin && !extra)) return '';
+    var o = {}; if (h.Referer) o.Referer = String(h.Referer); if (h.Origin) o.Origin = String(h.Origin); if (extra) o.H = extra;
     return '/hd/' + btoa(unescape(encodeURIComponent(JSON.stringify(o)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
   }
   function unwrap(url) {

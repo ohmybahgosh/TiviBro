@@ -88,12 +88,18 @@ function call(L, s, params, cb) {
 }
 
 /* A session per portal and MAC: the handshake's token, then get_profile (which many portals need before
-   anything else).  Kept 30 minutes, made again when the portal stops taking it. */
-var sessions = {}, SESSION_FOR = 30 * 60000;
+   anything else).  Kept 30 minutes, made again when the portal stops taking it.
+   Requests at the same moment (the guide asks for many channels at once) share one sign-in: a portal often
+   keeps one token per MAC, so parallel handshakes would undo each other.  fresh: the session that failed
+   (its time), made again only if no newer one came meanwhile. */
+var sessions = {}, pending = {}, SESSION_FOR = 30 * 60000;
 function keyOf(L) { return L.portal + '|' + L.mac; }
-function session(L, fresh, cb) {
+function session(L, fresh, cb0) {
   var k = keyOf(L), s = sessions[k];
-  if (s && !fresh && Date.now() - s.at < SESSION_FOR) return cb(null, s);
+  if (s && (!fresh || s.at > fresh) && Date.now() - s.at < SESSION_FOR) return cb0(null, s);
+  if (pending[k]) return pending[k].push(cb0);
+  pending[k] = [cb0];
+  function cb(e, t) { var l = pending[k] || []; delete pending[k]; for (var n = 0; n < l.length; n++) l[n](e, t); }
   var list = s && s.api ? [s.api] : apis(L.portal), i = 0, lastErr = null;
   (function next() {
     if (i >= list.length) return cb(lastErr || new Error('no Stalker portal at that address'));
@@ -114,11 +120,11 @@ function session(L, fresh, cb) {
 }
 // An action, with the session made again once when the portal stopped taking the old token.
 function act(L, params, cb) {
-  session(L, false, function (e, s) {
+  session(L, 0, function (e, s) {
     if (e) return cb(e);
     call(L, s, params, function (e2, js) {
       if (!e2 || !e2.auth) return cb(e2, js);
-      session(L, true, function (e3, s2) { if (e3) return cb(e3); call(L, s2, params, cb); });
+      session(L, s.at, function (e3, s2) { if (e3) return cb(e3); call(L, s2, params, cb); });
     });
   });
 }

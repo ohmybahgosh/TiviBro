@@ -47,6 +47,15 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('a MAC the portal doesn\'t know: said so, as a login problem', a.status === 401 && JSON.parse(a.body).auth === true, a.status + ' ' + a.body);
   a = await req('GET', H + '/stalker/play/1.ts?stb=nonsense&cmd=x');
   ok('a link without a login is refused', a.status === 400);
+  // The guide asking for many channels at once on a portal it hasn't signed in to yet: one sign-in for all of
+  // them, on a portal that keeps only the newest token.
+  const m2 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', oneToken: true });
+  await new Promise((f) => m2.server.listen(0, '127.0.0.1', f));
+  const login2 = b64({ portal: 'http://127.0.0.1:' + m2.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+  const many = await Promise.all([101, 102, 103, 101, 102, 103, 101, 102].map((c) => req('GET', H + '/stalker/epg?stb=' + login2 + '&ch=' + c + '&limit=2')));
+  ok('many guide requests at once share one sign-in', many.every((x) => x.status === 200) && m2.seen.handshakes === 1 && !m2.seen.refused, JSON.stringify({ st: many.map((x) => x.status), hs: m2.seen.handshakes, refused: m2.seen.refused }));
+  m2.server.close();
+
   r.server.close(); m.server.close();
   console.log(fail ? fail + ' failures' : 'all Stalker portal tests passed');
   process.exit(fail ? 1 : 0);

@@ -278,7 +278,15 @@ var Player = (function () {
         else if (/^[A-Za-z0-9-]+$/.test(k)) hdr[k] = v;          // Content-Type and the provider's own headers
       });
       // Through the helper: the browser can't send a User-Agent or Referer itself, and the server may not allow CORS.
-      o.serverURL = Net.active ? Net.wrap(url, { pl: pw.pl, ua: ua || pw.ua, hdr: ref || pw.hdr }) : url;
+      // The licence server's own headers go with the helper too (the browser may only send it a Content-Type);
+      // the Content-Type stays the browser's, which the helper passes on.
+      if (Net.active) {
+        var own = {}, ct = {};
+        Object.keys(hdr).forEach(function (k) { if (/^content-type$/i.test(k)) ct[k] = hdr[k]; else own[k] = hdr[k]; });
+        var h2 = Object.assign({}, ref || pw.hdr || {}); if (Object.keys(own).length) h2.H = own;
+        o.serverURL = Net.wrap(url, { pl: pw.pl, ua: ua || pw.ua, hdr: h2 });
+        hdr = ct;
+      } else o.serverURL = url;
       if (Object.keys(hdr).length) o.httpRequestHeaders = hdr;
     }
     out[sys] = o;

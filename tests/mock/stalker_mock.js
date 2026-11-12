@@ -2,13 +2,14 @@
    channel list, create_link and the short guide, answering only a registered MAC with its token, as a
    portal does.  Links point at the mock provider's streams.
      node tests/mock/stalker_mock.js            (port 8095; STALKER_PORT, MOCK=<the mock provider>)
-   Or require() it: create({ mac, stream }) -> { server, seen } */
+   Or require() it: create({ mac, stream, oneToken }) -> { server, seen } */
 'use strict';
 var http = require('http'), url = require('url');
 
 function create(o) {
   o = o || {};
-  var MAC = (o.mac || '00:1A:79:00:00:01').toUpperCase(), TOKEN = 'TOK' + Date.now().toString(36);
+  // oneToken: a new token on every handshake, the older ones refused from then on (as many portals do).
+  var MAC = (o.mac || '00:1A:79:00:00:01').toUpperCase(), TOKEN = 'TOK' + Date.now().toString(36), n = 0;
   var stream = o.stream || ((process.env.MOCK || 'http://127.0.0.1:8077') + '/live/demo/demo/1.ts');
   var seen = { ua: '', xua: '', actions: [], links: 0, profile: false, refused: 0 };
   var chans = [
@@ -24,7 +25,7 @@ function create(o) {
     seen.actions.push(q.action);
     var mac = decodeURIComponent((/mac=([^;]+)/.exec(req.headers.cookie || '') || [])[1] || '').toUpperCase();
     if (mac !== MAC) { seen.refused++; res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end('Authorization failed.'); }
-    if (q.action === 'handshake') return js(res, { token: TOKEN, random: 'x' });
+    if (q.action === 'handshake') { seen.handshakes = (seen.handshakes || 0) + 1; if (o.oneToken) TOKEN = 'TOK' + (++n); return js(res, { token: TOKEN, random: 'x' }); }
     if (req.headers.authorization !== 'Bearer ' + TOKEN) { seen.refused++; res.writeHead(200, { 'Content-Type': 'text/html' }); return res.end('Authorization failed.'); }
     if (q.action === 'get_profile') { seen.profile = true; return js(res, { id: 1, status: 0, name: 'box' }); }
     if (q.action === 'get_genres') return js(res, [{ id: '*', title: 'All' }, { id: '1', title: 'News' }, { id: '2', title: 'Sports' }]);
