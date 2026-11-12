@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 121, 2026-11-12)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 121
 
 - **M3U channels with their own User-Agent play (issue #78).**  Some playlists end each channel's address with `|User-Agent=...`.  TiviBro sent that text as part of the address, so the provider answered with an error and every channel said "Provider busy".  The channel now uses that User-Agent and the address is sent clean.  Reload channels to pick it up.
 - **A channel's own Referer and Origin are sent too (issue #78).**  Besides `|User-Agent=...`, M3U lines can end with `|Referer=...` and `|Origin=...`, which some providers check.  TiviBro now sends those with the channel as well (nothing else after the `|`, like cookies).
@@ -17,11 +21,7 @@
 - **Sports guide titles without a league tag in the middle.**  EPGTalk's sports guide tags each team ("🏒 [NHL] Detroit Red Wings at 🏒 [NHL] Florida Panthers"), and the second tag stayed in the title.  Now it reads "NHL: Detroit Red Wings at Florida Panthers".
 - **`#KODIPROP` lines of a movie left out of a big live list stay with that movie,** rather than going to the next channel.
 
-## 0.6.0 (alpha 120, 2026-11-11)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 120
+### In alpha 120
 
 - **A Clock setting: 12 or 24 hours (discussion #71).**  Settings > Appearance and start screen > Clock: Automatic, 12 hours (7:30pm) or 24 hours (19:30).  Automatic now follows the TV's region, so a TV in Poland or the UK with English menus shows 19:30 instead of 7:30pm.
 - **Your only playlist can be deleted on the TV (discussion #36).**  An expired playlist could only be deleted from the web editor or the phone when it was the only one.  Its page now has Delete this playlist too, and TiviBro starts again on the screen that adds a playlist.
