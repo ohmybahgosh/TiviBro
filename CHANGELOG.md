@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **Stalker portals: movies, shows and catch-up.**  A Stalker portal's movies and shows are in Movies and Shows, with their details, seasons and episodes, and channels the portal keeps an archive for have catch-up (for as many days as the portal keeps).
+- **Long update notes scroll.**  When an update has many changes, the list in the update question was cut off at the bottom.  Up and Down now scroll it, a line under it says so, and at the end of the list Down moves to the buttons.
+- **The helper is asked again when the TV turns it down for a moment (issues #75 and #82).**  Just after the TV starts or wakes, webOS sometimes says the helper "is not running".  TiviBro went on without it until the next start; now it asks again, up to four times.
+- **The TV switched off is not taken for a crash (issue #82).**  When the helper can't say whether the TV went off (it isn't running), a session that ended long before the next start is no longer reported as TiviBro closing unexpectedly.
+- **"Still starting" no longer flashes up during a reconnect.**  The question about a channel slow to start counted from when the channel was picked, so a short reconnect later on opened it and closed it again a moment after.  It now only asks before a channel's first picture.
+- **Films that share a name: the guide's description picks the right one.**  "Black Sheep" on a movie channel was matched with the 2006 horror film (the better known one on TMDB) though the guide described the 1996 Chris Farley comedy.  With no year to go on, TiviBro now picks the film whose summary tells the same story.  Guide movies are looked up again once with this.
+- **TVs with 1 GB: the last channel starts once your other playlists are in (issue #81).**  With several playlists on, putting a big second playlist in the lists while the last channel started held both at once, and a 1 GB TV closed TiviBro then.
+
 ## 0.6.0 (alpha 121, 2026-11-12)
 
 Pre-release: expect rough edges, and keep a backup before installing.

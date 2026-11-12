@@ -38,9 +38,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('the next start knows the last session closed unexpectedly', await c.ev(() => !!Log.unclean && Log.unclean.checked && /iptv-epg\.org/.test(Log.unclean.text)), await c.ev(() => JSON.stringify(Log.unclean)));
   const m = await menuText(c.ev);
   ok('it asks to report it, saying what it was doing', /closed unexpectedly/.test(m) && /Send a report now/.test(m) && /Report with my phone/.test(m) && /iptv-epg/.test(m), m);
-  ok('the log says so too', await c.ev(() => Log.lines().some(l => /ERROR .*closed unexpectedly last time, while loading the guide from iptv-epg\.org/.test(l))));
+  ok('the log says so too', await c.ev(() => Log.lines().some(l => /ERROR .*closed unexpectedly last time, while .*loading the guide from iptv-epg\.org/.test(l))));
   const rep = await c.ev(() => Diag.report().then(r => ({ facts: r.facts.map(f => f.join(': ')).join(' | '), log: /closed unexpectedly/.test(r.text) })));
-  ok('the report carries it', /Last session: closed unexpectedly, while loading the guide/.test(rep.facts) && rep.log, rep.facts.slice(0, 300));
+  ok('the report carries it', /Last session: closed unexpectedly, while .*loading the guide/.test(rep.facts) && rep.log, rep.facts.slice(0, 300));
   // Send a report now: straight from the TV through the relay (the mock stands in for it).
   await c.ev(m => { Store.settings.relayConfig = m + '/relay.json'; }, MOCK);
   await c.page.keyboard.press('Enter');
