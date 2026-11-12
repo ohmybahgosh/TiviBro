@@ -1025,5 +1025,6 @@ I18n.add('es', {
   "What to tell your provider": "Qué decirle a tu proveedor",
   "Asks your provider's server and another site on the internet, then says what it found.": "Pregunta al servidor de tu proveedor y a otro sitio de internet, y dice lo que encontró.",
   "Your internet works; your provider's server doesn't answer": "Tu internet funciona; el servidor de tu proveedor no responde",
-  "Neither your provider nor other sites answer: check the TV's internet connection": "No responden ni tu proveedor ni otros sitios: revisa la conexión a internet del televisor"
+  "Neither your provider nor other sites answer: check the TV's internet connection": "No responden ni tu proveedor ni otros sitios: revisa la conexión a internet del televisor",
+  "Up and Down to read the rest": "Arriba y Abajo para leer el resto"
 });

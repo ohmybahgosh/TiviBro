@@ -869,8 +869,10 @@ body.gr-xl .gch .num{font-size:28px;width:62px}
 body.gr-xl .gch .logo{width:112px;height:66px}
 body.gr-xl .gch .n{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-height:1.12}
 /* What's new (update.js): the release's lines as a short list over the buttons. */
-.upd-notes p{margin:0 0 14px}
-.upd-notes ul{margin:0;padding-left:1.2em;line-height:1.35}
+.upd-notes{display:flex;flex-direction:column}
+.upd-notes p{margin:0 0 14px;flex:none}
+.upd-notes ul{margin:0;padding-left:1.2em;line-height:1.35;flex:0 1 auto;min-height:0}
+.upd-more{flex:none;margin-top:8px;font-size:22px;color:var(--muted)}
 .upd-notes li{margin:0 0 8px}
 /* TV series from TMDB (series.js): the episode's title in front of its summary in the guide, and an
    episode's picture (wide, 16:9) on the Shows screen in place of the show's poster. */

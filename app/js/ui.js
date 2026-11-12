@@ -362,6 +362,8 @@ var UI = (function () {
     if (sc) setTimeout(fades, 0);
     function scrollBy(d) {
       if (!sc || sc.scrollHeight <= sc.clientHeight + 2) return false;
+      // Already at that end: the press moves between the buttons instead.
+      if (d > 0 ? sc.scrollTop + sc.clientHeight >= sc.scrollHeight - 2 : sc.scrollTop <= 0) return false;
       sc.scrollTop = Math.max(0, Math.min(sc.scrollHeight - sc.clientHeight, sc.scrollTop + d * Math.round(sc.clientHeight * 0.6)));
       fades(); return true;
     }

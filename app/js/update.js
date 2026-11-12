@@ -187,9 +187,14 @@ var Update = (function () {
   function notesBox(lines, intro) {
     var box = U.el('div', 'upd-notes');
     if (intro) box.appendChild(U.el('p', 'panel-text', intro));
-    var ul = U.el('ul');
+    // A long list scrolls with Up and Down (UI.panel's .pscroll); the buttons stay where they are.
+    var ul = U.el('ul', 'pscroll');
     (lines && lines.length ? lines : ['No notes for this release.']).forEach(function (n) { ul.appendChild(U.el('li', '', n)); });
     box.appendChild(ul);
+    var more = 'Up and Down to read the rest', hint = U.el('div', 'upd-more', typeof I18n !== 'undefined' ? I18n.t(more) : more);
+    if (hint.style) hint.style.display = 'none';
+    box.appendChild(hint);
+    setTimeout(function () { if (hint.style && ul.scrollHeight > ul.clientHeight + 2) hint.style.display = ''; }, 0);
     return box;
   }
   function offerSoon(r) {
@@ -323,6 +328,6 @@ var Update = (function () {
     check: check, autoCheck: autoCheck, whatsNew: whatsNew, countMe: countMe, install: install, installer: installer, describe: describe,
     onChange: function (f) { listeners.push(f); }, get state() { return st; }, get current() { return current(); },
     get wantPre() { return wantPre(); }, REPO: REPO, isPre: isPre,
-    _test: { parse: parse, compare: compare, pick: pick, notes: notes, isPre: isPre }
+    _test: { parse: parse, compare: compare, pick: pick, notes: notes, isPre: isPre, notesBox: notesBox }
   };
 })();
