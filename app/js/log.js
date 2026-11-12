@@ -141,6 +141,13 @@ var Log = (function () {
     else if (sys && run.boot && Math.abs(sys.bootAt - run.boot) > 120000) why = 'the TV restarted';
     else if (sys && (sys.power || []).some(function (p) { return p.t >= (run.t || 0) - 20000; })) why = 'the TV was turned off';
     if (why) { add('info', 'app', 'The last session ended when ' + why + ', ' + describe(run)); return null; }
+    /* Without the helper there is no telling whether the TV went off (issue #82: the helper didn't start, and
+       the session before ended five hours earlier).  A long gap then is most likely the TV switched off at
+       the wall or losing power; a close that interrupts someone gets TiviBro opened again soon. */
+    if (!sys && run.t && Date.now() - run.t > 45 * 60000) {
+      add('info', 'app', 'The last session ended without TiviBro closing, ' + describe(run) + ' (' + Math.round((Date.now() - run.t) / 60000) + ' min ago).  TiviBro could not check whether the TV was turned off, so this is not counted as a crash.');
+      return null;
+    }
     var hist = []; try { hist = JSON.parse(localStorage.getItem('tivibro.crashes') || '[]') || []; } catch (e) {}
     hist = hist.filter(function (t) { return Date.now() - t < 3600e3; }); hist.push(run.t || Date.now());
     try { localStorage.setItem('tivibro.crashes', JSON.stringify(hist.slice(-10))); } catch (e) {}

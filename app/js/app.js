@@ -352,7 +352,9 @@ var App = (function () {
     setTimeout(function () { bigList(Store.playlist); }, 8000);
     // The other playlists that are on, from their kept copies; then the guide, for all of them.  The
     // guide loads after first paint so it never delays the channel list.
-    var gen = ++startGen, last = Store.edits.last, later = !!(last && !Library.find(last) && Store.others().length);
+    // On a TV short of memory the last channel also waits for them: putting a big second playlist in the lists
+    // while a channel starts holds both at once, and a 1 GB TV closed TiviBro just then (issue #81).
+    var gen = ++startGen, last = Store.edits.last, later = !!(Store.others().length && (last && !Library.find(last) || memSafe()));
     openOthers(gen).then(function () {
       if (gen !== startGen) return;
       if (later) Views.resume();                   // the last channel was one of another playlist's
@@ -373,7 +375,8 @@ var App = (function () {
   // p: another playlist that is on (several playlists on); the first playlist when not given.
   function checkVod(p) {
     p = p || Store.playlist;
-    if (p.type !== 'xtream') return;
+    if (p.type !== 'xtream' && p.type !== 'stalker') return;
+    if (p.type === 'stalker' && !(Net.active && Net.port)) return;       // a portal's titles come through the helper
     var list = function (action, extra) {
       return U.getJSON(Source.api(p, action, extra || ''), extra ? 20000 : 90000).then(function (j) { return Array.isArray(j) ? j : []; }, function () { return null; });
     };

@@ -38,7 +38,7 @@ var Net = (function () {
       if (port) return resolve(port);
       waiters.push(resolve);
       if (state === 'starting') return;
-      state = 'starting'; t0 = Date.now(); lastError = '';
+      state = 'starting'; t0 = Date.now(); lastError = ''; var tries = 0;
       var dev = +localStorage.getItem('tivibro.devRelay');     // browser testing only
       if (dev) { Log.info('net', 'Using development relay on port ' + dev); port = dev; state = 'on'; return settle(); }
       if (typeof PalmServiceBridge === 'undefined') { lastError = 'PalmServiceBridge is missing (not running on webOS?)'; state = 'off'; return settle(); }
@@ -56,6 +56,19 @@ var Net = (function () {
             // Typical texts: "Service does not exist", "Denied method call", "Unknown method".
             lastError = 'helper refused: ' + (r.errorText || r.errorCode || 'no reason given');
             Log.error('net', lastError);
+            /* Just after the TV starts or wakes, webOS can turn the helper down for a moment ("... is not
+               running", "Message status unknown"; issues #75 and #82): asked again a little later, it starts. */
+            if (state === 'starting' && tries < 3 && /not running|status unknown|timeout|try again|busy/i.test(lastError)) {
+              tries++; clearTimeout(timer);
+              var wait = tries * 2000;
+              Log.info('net', 'Asking the helper again in ' + (wait / 1000) + 's (try ' + (tries + 1) + ' of 4)');
+              setTimeout(function () {
+                if (state !== 'starting') return;
+                timer = setTimeout(function () { if (state === 'starting') { lastError = 'no answer from luna://app.tivibro.tv.service within ' + ((timeoutMs || 6000) / 1000) + 's'; state = 'off'; settle(); } }, timeoutMs || 6000);
+                try { bridge.call('luna://app.tivibro.tv.service/start', JSON.stringify({ subscribe: true })); } catch (e) { lastError = 'could not call the helper: ' + e.message; state = 'off'; clearTimeout(timer); settle(); }
+              }, wait);
+              return;
+            }
             if (state === 'starting') { state = 'off'; clearTimeout(timer); settle(); }
             else if (state === 'on') { Log.error('net', 'Helper subscription dropped while running'); restart('its subscription dropped'); }
           }
