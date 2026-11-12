@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **M3U channels with their own User-Agent play (issue #78).**  Some playlists end each channel's address with `|User-Agent=...`.  TiviBro sent that text as part of the address, so the provider answered with an error and every channel said "Provider busy".  The channel now uses that User-Agent and the address is sent clean.  Reload channels to pick it up.
+
 ## 0.6.0 (alpha 120, 2026-11-11)
 
 Pre-release: expect rough edges, and keep a backup before installing.
