@@ -29,11 +29,30 @@ var U = (function () {
   // The locale for dates in the language chosen (Settings > Language), else the TV's own.
   function loc() { return typeof I18n !== 'undefined' && I18n.lang() !== 'en' ? I18n.locale() : undefined; }
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  /* 12 or 24 hours (Settings > Appearance > Clock, discussion #71).  Automatic follows the TV's region:
+     en-US is 7:30pm, en-GB, pl-PL and most others are 19:30. */
+  var h24Memo = { k: '', v: false };
+  function h24() {
+    var c = typeof Store !== 'undefined' && Store.settings ? Store.settings.clock : '';
+    if (c === '24') return true;
+    if (c === '12') return false;
+    var loc = '';
+    try { loc = typeof I18n !== 'undefined' && I18n.detected ? String(I18n.detected().locale || '').replace('_', '-') : navigator.language; } catch (e) {}
+    var lang = typeof I18n !== 'undefined' ? I18n.lang() : 'en', k = loc + '|' + lang;
+    if (h24Memo.k === k) return h24Memo.v;
+    var v = lang !== 'en';
+    try {
+      var o = new Intl.DateTimeFormat(loc || 'en-US', { hour: 'numeric' }).resolvedOptions();
+      if (typeof o.hour12 === 'boolean') v = !o.hour12;
+      else v = !/\s?[AaPp]\.?[Mm]\.?/.test(new Date(2020, 0, 1, 15).toLocaleTimeString(loc || 'en-US'));
+    } catch (e) {}
+    h24Memo = { k: k, v: v };
+    return v;
+  }
   function hhmm(ts) {
     var d = new Date(ts);
     var h = d.getHours(), m = d.getMinutes();
-    // English: 7:30pm.  Spanish and Russian: 19:30.
-    if (typeof I18n !== 'undefined' && I18n.lang() !== 'en') return h + ':' + pad(m);
+    if (h24()) return h + ':' + pad(m);
     var ampm = h >= 12 ? 'pm' : 'am';
     h = h % 12 || 12;
     return h + ':' + pad(m) + ampm;

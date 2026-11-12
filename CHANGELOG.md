@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **A Clock setting: 12 or 24 hours (discussion #71).**  Settings > Appearance and start screen > Clock: Automatic, 12 hours (7:30pm) or 24 hours (19:30).  Automatic now follows the TV's region, so a TV in Poland or the UK with English menus shows 19:30 instead of 7:30pm.
+- **Your only playlist can be deleted on the TV (discussion #36).**  An expired playlist could only be deleted from the web editor or the phone when it was the only one.  Its page now has Delete this playlist too, and TiviBro starts again on the screen that adds a playlist.
+
 ## 0.6.0 (alpha 119, 2026-11-11)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -360,16 +360,18 @@ var Settings = (function () {
       tourRow.phonePage = { title: 'Set-up tour', fn: function () { return Tour.phoneRows(p.id); } }; out.push(tourRow); }
     out.push(page('Channel and group names', p.names && p.names.enabled ? 'On' : 'Off', 'Channel and group names', function () { return namesPage(p); }));
     out.push(page('Event channels', p.events && p.events.on === false ? 'Off' : 'On', 'Event channels', function () { return eventsPage(p); }));
-    if (s.playlists.length > 1) {
-      out.push(head(''));
-      out.push(action('Delete this playlist', 'Removes its groups, favorites, hidden items and cached data.  Turning it off (above) keeps them instead.', function () {
-        UI.confirm('Delete ' + (p.name || 'this playlist') + '?', 'Delete', function () {
-          stack = [];
-          Store.removePlaylist(p.id);
-          if (active) App.switchPlaylist(Store.settings.active); else { App.playlistsChanged(); build(); }
-        });
-      }));
-    }
+    out.push(head(''));
+    /* The only playlist too (an expired one, discussion #36): TiviBro then starts again on the screen that
+       adds a playlist, as on a new TV. */
+    var only = s.playlists.length < 2;
+    out.push(action('Delete this playlist', only ? 'It is your only playlist: removes it with its groups, favorites, hidden items and cached data, and TiviBro starts again on the screen that adds a playlist.' : 'Removes its groups, favorites, hidden items and cached data.  Turning it off (above) keeps them instead.', function () {
+      UI.confirm('Delete ' + (p.name || 'this playlist') + '?' + (only ? '  It is your only one.' : ''), 'Delete', function () {
+        stack = [];
+        Store.removePlaylist(p.id);
+        if (only) { if (window.Views && Views.stopAll) Views.stopAll(); setTimeout(function () { location.reload(); }, 1500); return; }      // after the settings are written (300 ms)
+        if (active) App.switchPlaylist(Store.settings.active); else { App.playlistsChanged(); build(); }
+      });
+    }));
     return out;
   }
 
@@ -865,6 +867,8 @@ var Settings = (function () {
       function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; save(); Views.buildTabs(); }));
     out.push(toggle('Channels screen in the menu', s.startTab === 'live' ? 'Always there while TiviBro starts on it.' : 'The plain list of channels, without the guide.  Off, it stays one press away: Green in the guide.',
       function () { return s.startTab === 'live' || s.channelsTab === true; }, function (v) { if (s.startTab === 'live') { U.toast('TiviBro starts on the Channels screen, so it stays in the menu'); return; } s.channelsTab = v; save(); Views.buildTabs(); }));
+    out.push(choice('Clock', 'How times show everywhere in TiviBro: the guide, the info panel, reminders.  Automatic follows the TV\'s region.', ['auto', '12', '24'], ['Automatic', '12 hours (7:30pm)', '24 hours (19:30)'],
+      function () { return s.clock === '12' || s.clock === '24' ? s.clock : 'auto'; }, function (v) { s.clock = v; save(); if (window.Guide && Guide.draw) Guide.draw(); relist(); }));
     out.push(head('The guide'));
     out.push(choice('OK on a channel in the Guide', 'Preview first works like TiviMate: the first OK plays it in the corner window, the second goes fullscreen.',
       ['preview', 'full'], ['Preview first, then fullscreen', 'Fullscreen right away'], function () { return s.guideOk === 'full' ? 'full' : 'preview'; }, function (v) { s.guideOk = v; save(); }));

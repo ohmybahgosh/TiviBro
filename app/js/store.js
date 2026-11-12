@@ -18,6 +18,7 @@ var Store = (function () {
     previewPlay: true,
     resumeLast: true,
     showHidden: false,
+    clock: 'auto',             // auto (the TV's region) | 12 | 24
     display: 'contain',      // Aspect: contain (Original) | fill | cover | 4:3 | 16:9 | 21:9 | stretch43
     names: {
       enabled: true, groups: true,

@@ -714,7 +714,7 @@ On a playlist's page:
 | **Set-up tour** *(playlist in use, on the TV)* | | Runs the [set-up tour](#the-set-up-tour) again: countries, names, East or West, your city, event channels, clutter, logos and look.  Shows when you last applied it. |
 | **Channel and group names ›** | | This playlist's name rules: the same page as [Settings: Channel and group names](#settings-channel-and-group-names). |
 | **Event channels ›** | | This playlist's [event channels](#event-channels-pay-per-view-and-sports-passes) (see [Settings: Channels and groups](#settings-channels-and-groups)). |
-| **Delete this playlist** | | Removes the playlist with its groups, favorites, hidden items and cached data.  Shown when you have more than one.  **Playlist on** (off) keeps them instead. |
+| **Delete this playlist** | | Removes the playlist with its groups, favorites, hidden items and cached data.  **Playlist on** (off) keeps them instead.  Your only playlist can be deleted too (an expired one, say): TiviBro then starts again on the screen that adds a playlist. |
 
 ### Settings: Guide
 
@@ -988,6 +988,7 @@ Which screen TiviBro opens on, how the guide looks, colours, sizes and what's on
 | Setting | Choices | What it does |
 |---|---|---|
 | **Start screen** | **Guide** · Channels screen | What TiviBro opens on, and where **Back** from other screens leads. |
+| **Clock** | **Automatic** · 12 hours (7:30pm) · 24 hours (19:30) | How times show everywhere in TiviBro.  Automatic follows the TV's region: 12 hours in the US, 24 hours in most of Europe. |
 | **Channels screen in the menu** | On · **Off** | The plain channel list (without the guide) in the side menu.  Off, **Green** in the guide still opens it.  Always there while TiviBro starts on it. |
 | **OK on a channel in the Guide** | **Preview first, then fullscreen** · Fullscreen right away | Under **The guide**.  Like TiviMate: the first **OK** plays the channel in the window, the second goes fullscreen.  Or go straight to fullscreen. |
 | **Guide row size** | **Normal** · Bigger · Biggest | A little taller rows with bigger channel names and titles (Biggest wraps long names to two lines).  For smaller TVs or reading from across the room; one channel fewer fits at once. |
