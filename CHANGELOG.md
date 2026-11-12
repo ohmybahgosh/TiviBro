@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-- **The phone app's guide shows posters for TV shows too.**  The TV's guide gives a show TMDB knows its poster, network and rating, but the phone only got them for movies.  Now a show in the phone's guide has its poster and "Series · since 2009 · NBC" like the TV.
+- **Guide movies and shows take less memory.**  The movie and show details TiviBro keeps from TMDB had no limit on a summary's length, and up to 400 seasons of episodes.  Summaries are now cut to what the guide shows, fewer seasons are kept, and a TV with 1 GB keeps about a third as many.  The copy of the movie list from before alpha 122 (up to 2 MB) is removed from the TV's storage.
+- **Shows with an owner's name in front are found.**  "Marvel's Spidey and His Amazing Friends" is "Spidey and His Amazing Friends" on TMDB, so it had no poster.  When a show isn't found by its full name, TiviBro now tries it without a name like that in front (never down to a single word: "Grey's Anatomy" stays itself).
+- **The phone app's guide shows posters for TV shows too.**  The TV's guide gives a show TMDB knows its poster, network and rating, but the phone only got them for movies.  Now a show in the phone's guide has its poster and "Series · since 2009 · NBC" like the TV, from what the TV already knows (the phone's guide doesn't send TMDB a lookup for each channel).
 - **Channels whose sound jumps ahead keep playing (issue #81).**  When a channel's sound skipped ahead by a long time (by minutes or hours), TiviBro tried to fill the whole gap with silence, one tiny piece at a time.  That ran out of room, the channel dropped with "Connection dropped", and it could add up to a lot of memory.  Gaps of up to 10 seconds are still filled with silence; a bigger jump is now simply joined up.
 
 ## 0.6.0 (alpha 122, 2026-11-12)

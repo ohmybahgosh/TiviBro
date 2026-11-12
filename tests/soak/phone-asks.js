@@ -42,9 +42,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const r2 = g2.rows.find((r) => r.p && r.p.length);
   ok('and at a later time', r2 && r2.p[0].e > later, JSON.stringify(r2));
   // A TV show TMDB knows (series.js) comes with its poster and facts, marked as a series, as on the TV.
-  await ev(() => { window.__seriesOf = Series.of; window.__moviesOf = Movies.of; Movies.of = () => null; Series.of = (c, p) => (p && p.t ? { poster: 'http://img.example/show.jpg', year: '2009', network: 'NBC', genre: 'Comedy', rating: '8.1' } : null); });
+  await ev(() => { window.__seriesOf = Series.known; window.__moviesOf = Movies.of; Movies.of = () => null; Series.known = (c, p) => (p && p.t ? { poster: 'http://img.example/show.jpg', year: '2009', network: 'NBC', genre: 'Comedy', rating: '8.1' } : null); });
   const g3 = await ask('guide', { offset: 0, limit: 20 });
-  await ev(() => { Series.of = window.__seriesOf; Movies.of = window.__moviesOf; });
+  await ev(() => { Series.known = window.__seriesOf; Movies.of = window.__moviesOf; });
   const shp = g3.rows.map((r) => r.p && r.p[0]).find((p) => p && p.m);
   ok('a TV show in the guide has its poster and facts for the phone', shp && shp.m.k === 's' && shp.m.i === 'http://img.example/show.jpg' && shp.m.n === 'NBC' && shp.m.y === '2009', JSON.stringify(shp));
 

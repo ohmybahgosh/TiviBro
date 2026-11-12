@@ -36,6 +36,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
         'Świnka Peppa': pl ? [{ id: 112, name: 'Świnka Peppa', original_name: 'Peppa Pig', vote_count: 400 }] : [] })[q] || [] });
     }
     if (/\/search\/tv\?query=Doctor%20Who&/.test(url)) return cb(null, { results: [{ id: 113, name: 'Doctor Who', first_air_date: '2005-03-26', popularity: 90, vote_count: 3000 }, { id: 114, name: 'Doctor Who', first_air_date: '1963-11-23', popularity: 30, vote_count: 700 }] });
+    if (/\/search\/tv\?query=Marvel's%20Spidey%20and%20His%20Amazing%20Friends&/.test(url) || /\/search\/tv\?query=Marvel%27s%20Spidey/.test(url)) return cb(null, { results: [] });
+    if (/\/search\/tv\?query=Spidey%20and%20His%20Amazing%20Friends&/.test(url)) return cb(null, { results: [{ id: 120, name: 'Spidey and His Amazing Friends', vote_count: 90, poster_path: '/s.jpg' }] });
+    if (/\/search\/tv\?query=Grey's%20Anatomy&|\/search\/tv\?query=Grey%27s%20Anatomy&/.test(url)) return cb(null, { results: [{ id: 121, name: "Grey's Anatomy", vote_count: 9000 }] });
     if (/\/search\/tv\?query=Cops&/.test(url)) return cb(null, { results: [{ id: 115, name: 'Cops', vote_count: 200 }] });
     if (/\/search\/tv\?query=War&/.test(url)) return cb(null, { results: [{ id: 101, name: 'The War', origin_country: ['US'], popularity: 20, vote_count: 300 }, { id: 102, name: 'WAR', origin_country: ['GB'], popularity: 10, vote_count: 30 }] });
     if (/\/search\/tv\?query=Second%20Chance&/.test(url)) return cb(null, { results: [{ id: 97, name: 'Second Chance', vote_count: 300 }] });
@@ -99,6 +102,10 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('a country at the end is that country\'s show ("Deal or No Deal Australia")', id(r) === 'tmdb:tv:99', JSON.stringify(r).slice(0, 120));
   const tam = await look({ guide: 'weak', title: 'Tamron Hall' }), pay = await look({ guide: 'weak', title: 'House Of Payne' });
   ok('TMDB\'s "The ... Show" and an owner in front match ("The Tamron Hall Show", "Tyler Perry\'s House of Payne")', id(tam) === 'tmdb:tv:90' && id(pay) === 'tmdb:tv:91', JSON.stringify([tam, pay]).slice(0, 200));
+  r = await look({ guide: 'weak', title: "Marvel's Spidey and His Amazing Friends" });
+  ok('an owner in front that TMDB leaves out ("Marvel\'s Spidey and His Amazing Friends")', id(r) === 'tmdb:tv:120', JSON.stringify(r).slice(0, 160));
+  r = await look({ guide: 'weak', title: "Grey's Anatomy" });
+  ok('but a show whose own name has it stays itself ("Grey\'s Anatomy")', id(r) === 'tmdb:tv:121', JSON.stringify(r).slice(0, 160));
   r = await look({ guide: 'weak', title: 'Looney Tunes' });
   ok('but not when a show of exactly the name exists ("Looney Tunes" is not "The Looney Tunes Show")', r.miss === true, JSON.stringify(r).slice(0, 120));
   r = await look({ guide: 'weak', title: 'The Great American Journey' });

@@ -10,7 +10,8 @@
    What it gives: Series.of(c, p) for a guide programme, Series.show(name, year) for a provider's show,
    Series.episode(show, 'S2 E5'), each null until known; onChange(fn) when an answer comes in. */
 var Series = (function () {
-  var KEY = 'tvseries', VER = 4, KEEP = 30 * 86400e3, MAX_SHOWS = 3000, MAX_SEASONS = 400, GAP = 350, QUEUE = 4;
+  // Fewer kept on a TV short of memory (1 GB, or TiviBro closed while playing lately): MAX_LOW.
+  var KEY = 'tvseries', VER = 4, KEEP = 30 * 86400e3, MAX_SHOWS = 3000, MAX_SEASONS = 200, MAX_LOW = { shows: 1200, seasons: 60 }, GAP = 350, QUEUE = 4;
   var shows = {}, seasons = {}, loaded = null, ready = false, queue = [], queued = {}, busy = false, saveT = null, listeners = [], paused = 0;
   function S() { return Store.settings; }
   function on() { return S().guideSeries !== false && typeof MediaStore !== 'undefined' && !!MediaStore.tmdbToken(); }
@@ -63,6 +64,7 @@ var Series = (function () {
         // A miss from older, stricter matching (before VER) is asked again; what was found stays.
         Object.keys(v.shows || {}).forEach(function (k) { var e = v.shows[k]; if (e && now - e.at < KEEP && (e.m || e.v === VER)) shows[k] = e; });
         Object.keys(v.seasons || {}).forEach(function (k) { var e = v.seasons[k]; if (e && now - e.at < KEEP) seasons[k] = e; });
+        trimAll();
       }
       ready = true; changed();
     }, function () { ready = true; changed(); });
@@ -76,13 +78,15 @@ var Series = (function () {
   }
   function save() {
     clearTimeout(saveT);
-    saveT = setTimeout(function () { trim(shows, MAX_SHOWS); trim(seasons, MAX_SEASONS); if (Store.bigSet) Store.bigSet(KEY, { shows: shows, seasons: seasons }); }, 5000);
+    saveT = setTimeout(function () { trimAll(); if (Store.bigSet) Store.bigSet(KEY, { shows: shows, seasons: seasons }); }, 5000);
   }
+  function low() { return typeof Player !== 'undefined' && !!Player.memSafe; }
+  function trimAll() { trim(shows, low() ? MAX_LOW.shows : MAX_SHOWS); trim(seasons, low() ? MAX_LOW.seasons : MAX_SEASONS); }
   function changed() { listeners.forEach(function (f) { try { f(); } catch (e) {} }); }
 
   // What is kept of a show: enough for the details, small enough for thousands.
   function lite(m) {
-    return { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, plot: String(m.plot || '').slice(0, 900), genre: m.genre, rating: m.rating,
+    return { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, plot: String(m.plot || '').slice(0, 600), genre: m.genre, rating: m.rating,
       network: m.network || '', status: m.status || '', cast: String(m.cast || '').split(', ').slice(0, 5).join(', '),
       seasons: (m.seasons || []).filter(function (x) { return x && x.number > 0; }).length };
   }
@@ -105,7 +109,7 @@ var Series = (function () {
       var m = r && r.metadata;
       if (job.season != null) {
         var eps = {};
-        ((m && m.episodes) || []).forEach(function (e) { if (e && e.number) eps[e.number] = { t: e.title || '', plot: String(e.plot || '').slice(0, 600), still: e.still || '', air: e.airDate || '' }; });
+        ((m && m.episodes) || []).forEach(function (e) { if (e && e.number) eps[e.number] = { t: e.title || '', plot: String(e.plot || '').slice(0, 400), still: e.still || '', air: e.airDate || '' }; });
         seasons[job.k] = { at: Date.now(), eps: eps };
       } else {
         // A strong ask (the guide gave a season and episode, or the provider says it's a show) replaces an
@@ -206,6 +210,15 @@ var Series = (function () {
     var st = strength(c, p);
     return st ? show(p.t, '', st, countryOf(c)) : null;
   }
+  /* What is already known of a guide programme's show, without asking TMDB (the phone's guide: a page of 60
+     channels shouldn't send a lookup for each, nor work out each channel's stories).  null when not known. */
+  function known(c, p) {
+    if (!on() || !ready || !p || !p.t || p.mv || p.k === 'n' || p.k === 's' || p.k === 'm') return null;
+    var ct = clean(p.t);
+    if (!ct.t || !norm(ct.t)) return null;
+    var cc = countryOf(c), base = keyOf(ct.t, ct.y), hit = (cc && shows[base + '|' + cc]) || shows[base];
+    return hit && hit.m || null;
+  }
   /* The channel's country ('US', 'GB'), as the public guides read it (its group's country, a "US |" before its
      name, its guide id's ending): of two shows of one name, TMDB's answer is that country's. */
   var ccCtx = null, ccData = null;
@@ -221,6 +234,6 @@ var Series = (function () {
   function poke() { paused = 0; changed(); }
   // Forget every answer (the tests start from nothing; a different token or language could use it too).
   function reset() { shows = {}; seasons = {}; loaded = Promise.resolve(); ready = true; queue = []; queued = {}; if (Store.bigSet) Store.bigSet(KEY, {}); changed(); }
-  return { on: on, of: of, show: show, episode: episode, clean: clean, strength: strength, onChange: onChange, poke: poke, reset: reset,
+  return { on: on, of: of, known: known, show: show, episode: episode, clean: clean, strength: strength, onChange: onChange, poke: poke, reset: reset,
     get pending() { return queue.length + (busy ? 1 : 0); } };
 })();

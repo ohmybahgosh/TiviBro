@@ -244,6 +244,10 @@ function create(opts) {
     if (bare && (/\s/.test(bare[1].trim()) || normal(bare[1]).length >= 8 || /[^\x00-\x7f]/.test(bare[1]))) names.push({ n: bare[1].trim(), min: strong ? 1 : 5 });
     if (main !== title && normal(main).length >= 3) names.push({ n: main, min: strong ? 1 : 5 });
     if (host) names.push({ n: host, min: strong ? 1 : 5 });
+    /* An owner in front that TMDB leaves out ("Marvel's Spidey and His Amazing Friends" is "Spidey and His Amazing
+       Friends" there): the rest, when it is two words or more ("Grey's Anatomy" never becomes "Anatomy"). */
+    var owned = /^[A-Z][A-Za-z.\-]+(?:\s+[A-Z][A-Za-z.\-]+){0,2}['’]s\s+(\S+\s+\S.{2,})$/.exec(main);
+    if (owned) names.push({ n: owned[1], min: strong ? 1 : 5 });
     // ("The" in front doesn't count: "The Great American Journey" is never cut down to "The Great".)
     var lead = /^(the|a|an)$/i.test(words[0]) ? 1 : 0;
     // A word guides put in front: "Classic Doctor Who", "Best of Cops".

@@ -12,7 +12,7 @@
    the ones starting within the hour. */
 var Movies = (function () {
   // tvmovies2: looked up again with the guide's description (films of one name, issue: Black Sheep was 2006's).
-  var KEY = 'tvmovies2', KEEP = 30 * 86400e3, MAX = 4000, SOON = 3600e3, LOOK = 3 * 3600e3, PER_SCAN = 150, GAP = 400;
+  var KEY = 'tvmovies2', KEEP = 30 * 86400e3, MAX = 4000, MAX_LOW = 1500, SOON = 3600e3, LOOK = 3 * 3600e3, PER_SCAN = 150, GAP = 400;
   var cache = {}, loaded = null, ver = 1, queue = [], queued = {}, busy = false, timer = null, saveT = null, hooked = false;
   var found = [], foundAt = 0, lastScan = 0;
   function S() { return Store.settings; }
@@ -51,15 +51,17 @@ var Movies = (function () {
     loaded = (Store.bigGet ? Store.bigGet(KEY) : Promise.resolve(null)).then(function (v) {
       var now = Date.now();
       if (v && typeof v === 'object') Object.keys(v).forEach(function (k) { if (v[k] && now - v[k].at < KEEP) cache[k] = v[k]; });
+      trimCache();
       ver++;
+      // The copy from before tvmovies2 (up to 2 MB on the TV's storage): not read any more.
+      if (Store.bigSet) try { Store.bigSet('tvmovies', null); } catch (e) {}
     }, function () {});
     return loaded;
   }
   function save() {
     clearTimeout(saveT);
     saveT = setTimeout(function () {
-      var keys = Object.keys(cache);
-      if (keys.length > MAX) { keys.sort(function (a, b) { return cache[a].at - cache[b].at; }); keys.slice(0, keys.length - MAX).forEach(function (k) { delete cache[k]; }); }
+      trimCache();
       if (Store.bigSet) Store.bigSet(KEY, cache);
     }, 5000);
   }
@@ -155,7 +157,16 @@ var Movies = (function () {
     return onNow.concat(next).filter(function (x) { if (seen[x.c.k]) return false; seen[x.c.k] = 1; return true; });
   }
   function channels() { return list().map(function (x) { return x.c; }); }
-  function lite(m) { return { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, backdropHd: m.backdropHd || '', logo: m.logo || '', plot: m.plot, genre: m.genre, runtime: m.runtime, rating: m.rating }; }
+  // What is kept of a movie: the details shown, the summary cut to what the guide's panel shows.
+  function lite(m) { return { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, backdropHd: m.backdropHd || '', logo: m.logo || '', plot: String(m.plot || '').slice(0, 600), genre: m.genre, runtime: m.runtime, rating: m.rating }; }
+  /* At most MAX answers, the oldest going first; fewer on a TV short of memory (1 GB, or TiviBro closed while
+     playing lately), where every MB counts. */
+  function cap() { return window.Player && Player.memSafe ? MAX_LOW : MAX; }
+  function trimCache() {
+    var keys = Object.keys(cache), max = cap();
+    if (keys.length <= max) return;
+    keys.sort(function (a, b) { return cache[a].at - cache[b].at; }).slice(0, keys.length - max).forEach(function (k) { delete cache[k]; });
+  }
 
   /* The Movies on now screen (onnow.js): each movie once, with every channel showing it (the one to
      tune first: a favorite, then the soonest / longest left).  on: playing now, most left first;
