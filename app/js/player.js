@@ -134,8 +134,9 @@ var Player = (function () {
 
   /* ---------- engines ---------- */
   /* The playlist a stream belongs to: with several playlists on, its User-Agent goes with every
-     request (Net.wrap's pl), whatever host the segments come from. */
-  function plWrap() { return { pl: Store.plOf ? Store.plOf(cur && cur.ch) : Store.playlist }; }
+     request (Net.wrap's pl), whatever host the segments come from.  A channel with its own
+     User-Agent (an M3U line ending "|User-Agent=...") sends that one instead (Net.wrap's ua). */
+  function plWrap() { var ch = cur && cur.ch; return { pl: Store.plOf ? Store.plOf(ch) : Store.playlist, ua: ch && ch.ua ? ch.ua : '' }; }
   function hlsEngine(url, p, preview, fail, media, tracks) {
     var live = cur.live && !cur.timeshift, pw = plWrap();
     url = Net.wrap(url, pw);
@@ -313,7 +314,7 @@ var Player = (function () {
     // HTTPS on the TV's own player can fail on self-signed or unusual certificates, which IPTV
     // panels often have.  The helper accepts them and passes Range requests through for seeking.
     // A conversion link (conv) is the helper's already; its subtitles come from the movie itself.
-    var play = url, pw = plWrap(), ua = Net.uaFor ? Net.uaFor(pw.pl) : Net.ua;
+    var play = url, pw = plWrap(), ua = pw.ua || (Net.uaFor ? Net.uaFor(pw.pl) : Net.ua);
     if (conv) { url = conv.src; if ((/^https:/i.test(url) || ua) && Net.active) url = Net.wrap(url, pw); }
     else if ((/^https:/i.test(url) || ua) && Net.active) { url = Net.wrap(url, pw); play = url; Log.info('player', 'TV player using the helper' + (ua ? ' (custom User-Agent)' : ' for HTTPS')); }
     function loadNative(resolved) { video.src = conv ? play : resolved; video.load(); }

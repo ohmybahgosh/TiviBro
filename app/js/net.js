@@ -123,11 +123,12 @@ var Net = (function () {
     var rest = m[3] || '/';
     if (rest.charAt(0) !== '/') rest = '/' + rest;
     var unz = opts && opts.unzip ? '/unz/' + String(opts.unzip).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) : '';
-    return 'http://127.0.0.1:' + port + uaPrefix(opts && opts.pl ? uaFor(opts.pl) : uaOfUrl(m[2])) + unz + '/x/' + m[1].toLowerCase() + '/' + m[2] + rest;
+    return 'http://127.0.0.1:' + port + uaPrefix(opts && opts.ua ? String(opts.ua) : opts && opts.pl ? uaFor(opts.pl) : uaOfUrl(m[2])) + unz + '/x/' + m[1].toLowerCase() + '/' + m[2] + rest;
   }
   /* Playlist User-Agent (Settings > Playlists > the playlist): sent by the helper to the provider.
      With several playlists on, each sends its own: the player says which playlist a stream is from
-     (opts.pl), and anything else goes by the address's host, the first playlist winning a tie. */
+     (opts.pl), and anything else goes by the address's host, the first playlist winning a tie.
+     A channel whose M3U line gives its own ("|User-Agent=...", plshape.js) sends that one (opts.ua). */
   var uaCache = { ua: null, p: '' };
   function uaFor(p) { return p && p.ua ? String(p.ua).trim() : ''; }
   function ua() { return uaFor(Store.playlist); }

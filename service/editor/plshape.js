@@ -94,6 +94,20 @@ var PlShape = (function () {
   // Single pass line parser.  No regex per attribute; one regex over the EXTINF line.  Lines are read in
   // place, not split into an array first: on a 90 MB list that array alone was hundreds of MB.
   var ATTR = /([a-zA-Z0-9\-_]+)="([^"]*)"/g;
+  /* Request options after the address, the Kodi and TiviMate way: "http://host/1.ts|User-Agent=Agent&Referer=...".
+     They are not part of the address (a provider answers it with an error), so they come off; the
+     User-Agent stays with the channel for the helper to send (Net.wrap's ua). */
+  var OPTS = /^[A-Za-z][A-Za-z0-9-]*=/;
+  function options(url) {
+    var bar = url.indexOf('|');
+    if (bar < 0 || !OPTS.test(url.slice(bar + 1))) return null;
+    var out = { url: url.slice(0, bar).trim(), ua: '' }, parts = url.slice(bar + 1).split('&');
+    for (var i = 0; i < parts.length; i++) {
+      var m = /^user-agent=(.*)$/i.exec(parts[i]);
+      if (m) { try { out.ua = decodeURIComponent(m[1]).trim(); } catch (e) { out.ua = m[1].trim(); } }
+    }
+    return out;
+  }
   function parseM3U(text, opts) {
     var lib = opts && opts.vod ? library() : null;
     var groups = [], gmap = {}, chans = [], cur = null, epgUrl = '';
@@ -123,7 +137,8 @@ var PlShape = (function () {
         continue;
       }
       if (cur) {
-        var url = L.trim();
+        var url = L.trim(), opt = options(url);
+        if (opt) url = opt.url;
         if ((lib || liveOnly) && VOD.test(url)) {
           if (lib) lib.add(cur.name || cur.attrs['tvg-name'] || 'Untitled', cur.attrs['group-title'] || 'Other', cur.attrs['tvg-logo'] || '', url); else skipped++;
           cur = null; continue;
@@ -132,13 +147,15 @@ var PlShape = (function () {
         var gid = gmap[gname];
         if (!gid) { gid = 'm' + hash(gname); gmap[gname] = gid; groups.push({ id: gid, name: gname }); }
         var key = 'm' + hash((cur.attrs['tvg-id'] || '') + '|' + (cur.attrs['tvg-name'] || cur.name) + '|' + gname);
-        chans.push({
+        var ch = {
           k: key, id: key, n: cur.name || cur.attrs['tvg-name'] || 'Channel', g: gid,
           logo: cur.attrs['tvg-logo'] || '', num: +cur.attrs['tvg-chno'] || 0,
           epg: cur.attrs['tvg-id'] || '', url: url,
           arch: cur.attrs['catchup'] || cur.attrs['catchup-type'] || cur.attrs['tvg-rec'] ? (+cur.attrs['catchup-days'] || +cur.attrs['tvg-rec'] || 3) : 0,
           cu: cur.attrs['catchup'] || cur.attrs['catchup-type'] || '', cus: cur.attrs['catchup-source'] || ''
-        });
+        };
+        if (opt && opt.ua) ch.ua = opt.ua;
+        chans.push(ch);
         cur = null;
       }
     }
