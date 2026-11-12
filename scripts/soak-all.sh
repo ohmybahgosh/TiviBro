@@ -37,7 +37,10 @@ for n in "${names[@]}"; do
   echo "$mocks" | grep -qv 'MOCK_PORT' || nohup node tests/mock/mock_provider.js > "$OUT/$n.mock0.log" 2>&1 &
   sleep 3
   start=$(date +%s)
-  timeout "$TIME" node "$f" > "$OUT/$n.log" 2>&1; rc=$?
+  # A test whose header runs it with the converter (TIVIBRO_FFMPEG=... node tests/soak/<name>.js) gets it.
+  ff=""; head -25 "$f" | grep -q "TIVIBRO_FFMPEG=[^ ]* node tests/soak/$n.js" && ff="TIVIBRO_FFMPEG=${TIVIBRO_FFMPEG:-/usr/local/bin/ffmpeg}"
+  gcx=""; head -25 "$f" | grep -q "node --expose-gc tests/soak/$n.js" && gcx="--expose-gc"   # a memory test's header asks for it
+  env $ff timeout "$TIME" node $gcx "$f" > "$OUT/$n.log" 2>&1; rc=$?
   secs=$(( $(date +%s) - start ))
   if [ $rc = 0 ]; then pass=$((pass+1)); line="PASS $n (${secs}s)"; else fail=$((fail+1)); line="FAIL $n (exit $rc, ${secs}s): $(grep -m3 -E '^FAIL|Error|harness' "$OUT/$n.log" | tr '\n' ' ' | cut -c1-300)"; fi
   echo "$line" | tee -a "$OUT/summary.txt"

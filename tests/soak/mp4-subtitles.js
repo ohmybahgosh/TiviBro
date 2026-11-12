@@ -110,11 +110,15 @@ function region(f, trackIndex) {
     ok('only the selected track\'s samples are requested', await overlay() === 'dan one' && reads.length > 0 && reads.every(r => r.start >= dan[0] && r.end <= dan[1]),
       { overlay: await overlay(), reads: reads.slice(0, 5), dan });
 
-    // Three tracks switched on one after another in the same moment (as a menu does): only the last is read.
+    // Three tracks switched on one after another in the same moment, the way the Subtitles menu does (it also
+    // keeps the pick for a reconnect or a seek, issue #51): only the last is read.
     const before = log.length;
     await page.evaluate(() => {
-      var t = document.getElementById('video').textTracks, by = function (l) { return Array.prototype.filter.call(t, function (x) { return x.label === l; })[0]; };
-      ['Finnish · BTM', 'Hungarian · BTM', 'Swedish · BTM'].forEach(function (l) { Array.prototype.forEach.call(t, function (x) { x.mode = x === by(l) ? 'showing' : 'disabled'; }); });
+      var v = document.getElementById('video'), t = v.textTracks, by = function (l) { return Array.prototype.filter.call(t, function (x) { return x.label === l; })[0]; };
+      ['Finnish · BTM', 'Hungarian · BTM', 'Swedish · BTM'].forEach(function (l) {
+        var p = by(l); v._subsChoice = true; v._subsRev = (v._subsRev || 0) + 1; v._subsWant = p; v._subsWantKey = (p.label || '') + '|' + (p.language || '');
+        Array.prototype.forEach.call(t, function (x) { x.mode = x === p ? 'showing' : 'disabled'; });
+      });
     });
     await page.waitForFunction(() => (document.querySelector('.mkv-captions') || {}).textContent === 'swe one', null, { timeout: 10000 }).catch(() => {});
     const swe = region(many, LANGS.indexOf('swe')), switched = log.slice(before);

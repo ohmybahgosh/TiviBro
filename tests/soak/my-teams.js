@@ -19,7 +19,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const page = await (await b.newContext({ viewport: { width: 1920, height: 1080 }, timezoneId: 'America/Detroit' })).newPage();
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   const pl = Object.assign({}, R.SETTINGS.playlists[0], { server: MOCK });
-  await page.addInitScript(R.init({ time: Date.now(), settings: { playlists: [pl] } })[0]);
+  // The public sports guides off (a closed port): real games from the internet's guides would join the mock's.
+  await page.addInitScript(R.init({ time: Date.now(), settings: { playlists: [pl], pubEpgBase: 'http://127.0.0.1:9/pubepg/' } })[0]);
   await page.goto(APP);
   await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 30000 }); await page.waitForTimeout(3000);
   const shot = async n => { if (SHOTS) await page.screenshot({ path: path.join(SHOTS, n + '.png') }); };

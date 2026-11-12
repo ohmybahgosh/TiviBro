@@ -119,6 +119,8 @@ const OVER = () => {
     }
     // Smart match: long channel names must not push the confidence and approve buttons off screen.
     await ed.evaluate(() => { location.hash = '#guide'; }); await ed.waitForTimeout(800);
+    // Every mock channel has a guide now, so a few lose theirs (as if the provider sent none) to have something to match.
+    await ed.evaluate(() => { channelsOf(ALL).slice(0, 6).forEach(c => { c.has = false; c.epg = ''; delete E.epgMap[c.k]; }); });
     await ed.evaluate(() => document.getElementById('smartBtn').click());
     await ed.waitForSelector('#smBody table, #smBody .empty', { timeout: 30000 });
     const sm = await ed.evaluate(() => {
