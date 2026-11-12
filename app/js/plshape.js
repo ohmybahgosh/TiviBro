@@ -113,13 +113,26 @@ var PlShape = (function () {
     }
     return out;
   }
+  /* #KODIPROP and #EXTVLCOPT lines onto the channel: DASH (an .mpd address, or Kodi's manifest_type or
+     mimetype), its licence (inputstream.adaptive.license_type and license_key: Widevine, PlayReady or
+     ClearKey, player.js dashEngine), and VLC's http-user-agent and http-referrer. */
+  var DRM = { 'com.widevine.alpha': 'widevine', widevine: 'widevine', 'com.microsoft.playready': 'playready', playready: 'playready', 'org.w3.clearkey': 'clearkey', clearkey: 'clearkey' };
+  function withProps(ch, pr) {
+    var mt = (pr['inputstream.adaptive.manifest_type'] || '').toLowerCase(), mime = (pr.mimetype || '').toLowerCase();
+    if (mt === 'mpd' || /dash\+xml/.test(mime) || /\.mpd(\?|$)/i.test(ch.url)) ch.dash = 1;
+    var lt = DRM[(pr['inputstream.adaptive.license_type'] || '').toLowerCase()], lk = pr['inputstream.adaptive.license_key'] || '';
+    if (lt) ch.drm = { type: lt, key: lk.slice(0, 4000) };
+    if (!ch.ua && pr['http-user-agent']) ch.ua = pr['http-user-agent'].slice(0, 300);
+    var ref = pr['http-referrer'] || pr['http-referer'];
+    if (ref && /^https?:\/\//i.test(ref) && !(ch.hdr && ch.hdr.Referer)) (ch.hdr || (ch.hdr = {})).Referer = ref.slice(0, 500);
+  }
   function parseM3U(text, opts) {
     var lib = opts && opts.vod ? library() : null;
     var groups = [], gmap = {}, chans = [], cur = null, epgUrl = '';
     var nl0 = text.indexOf('\n'), head = nl0 < 0 ? text : text.slice(0, nl0);
     var m = head.match(/(?:url-tvg|x-tvg-url)="([^"]+)"/);
     if (m) epgUrl = m[1].split(',')[0];
-    var liveOnly = !lib && count(text, '#EXTINF') > BIG, skipped = 0;
+    var liveOnly = !lib && count(text, '#EXTINF') > BIG, skipped = 0, props = {};
     for (var pos = 0, len = text.length; pos < len;) {
       var nl = text.indexOf('\n', pos);
       if (nl < 0) nl = len;
@@ -138,6 +151,11 @@ var PlShape = (function () {
           while ((a = ATTR.exec(meta))) cur.attrs[a[1].toLowerCase()] = a[2];
         } else if (L.indexOf('#EXTGRP:') === 0 && cur) {
           cur.attrs['group-title'] = cur.attrs['group-title'] || L.slice(8).trim();
+        } else if (L.indexOf('#KODIPROP:') === 0 || L.indexOf('#EXTVLCOPT:') === 0) {
+          // Kodi's and VLC's per-channel options, before or after #EXTINF: DASH and its licence (discussion
+          // #79), a User-Agent or Referer.  Kept until the channel's address.
+          var eq = L.indexOf('='), pk = eq > 0 ? L.slice(L.indexOf(':') + 1, eq).trim().toLowerCase() : '';
+          if (pk) props[pk] = L.slice(eq + 1).trim();
         }
         continue;
       }
@@ -161,6 +179,8 @@ var PlShape = (function () {
         };
         if (opt && opt.ua) ch.ua = opt.ua;
         if (opt && opt.hdr) ch.hdr = opt.hdr;
+        withProps(ch, props);
+        props = {};
         chans.push(ch);
         cur = null;
       }

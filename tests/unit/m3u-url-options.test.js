@@ -39,7 +39,9 @@ async function netFor(port, playlist) {
   ok('a plain address has no headers field', !('hdr' in list[3]));
   ok('a "|" that is part of the address stays', list[4].url === 'http://tv.example/a|b/five.ts?x=1|2', list[4].url);
 
-  const up = http.createServer((req, res) => { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end(req.url + ' ' + (req.headers['user-agent'] || '') + (req.headers.referer ? ' R=' + req.headers.referer : '') + (req.headers.origin ? ' O=' + req.headers.origin : '') + (req.headers.cookie ? ' C=' + req.headers.cookie : '')); });
+  const up = http.createServer((req, res) => {
+    if (req.method === 'POST') { let n = 0; req.on('data', (d) => n += d.length); req.on('end', () => { res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end('POST ' + req.url + ' ' + n + ' ' + (req.headers['user-agent'] || '')); }); return; }
+    res.writeHead(200, { 'Content-Type': 'text/plain' }); res.end(req.url + ' ' + (req.headers['user-agent'] || '') + (req.headers.referer ? ' R=' + req.headers.referer : '') + (req.headers.origin ? ' O=' + req.headers.origin : '') + (req.headers.cookie ? ' C=' + req.headers.cookie : '')); });
   await new Promise(f => up.listen(0, '127.0.0.1', f));
   const U = 'http://127.0.0.1:' + up.address().port;
   const r = proxy.create({}); await new Promise(f => r.server.listen(0, '127.0.0.1', f));
@@ -57,6 +59,14 @@ async function netFor(port, playlist) {
   a = await get(Net.wrap(ch2[0].url, { pl: pl, ua: ch2[0].ua, hdr: ch2[0].hdr }));
   ok('the helper sends the channel\'s Referer and Origin, nothing else', a.body === '/three.ts viu R=https://site.example/play O=https://site.example', a.body);
   ok('and the address unwraps back to the provider\'s', Net.unwrap(Net.wrap(ch2[0].url, { pl: pl, hdr: ch2[0].hdr })) === ch2[0].url);
+
+  // A DRM licence request (a DASH channel's #KODIPROP licence server) is a POST: the helper relays its body.
+  const lic = await new Promise((done, bad) => {
+    const body = Buffer.from([1, 2, 3, 4, 5, 250]);
+    const q = http.request(Net.wrap(U + '/license?id=2', { pl: pl, ua: 'LicAgent' }), { method: 'POST', headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': body.length } }, (rs) => { let b = ''; rs.on('data', (d) => b += d); rs.on('end', () => done({ status: rs.statusCode, body: b })); });
+    q.on('error', bad); q.end(body);
+  });
+  ok('a licence request is relayed as a POST with its body and the User-Agent', lic.status === 200 && lic.body === 'POST /license?id=2 6 LicAgent', lic.body);
 
   r.server.close(); up.close();
   console.log(fail ? fail + ' failures' : 'all M3U address option tests passed');

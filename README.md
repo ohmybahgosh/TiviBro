@@ -593,7 +593,7 @@ app/              The webOS web app (what runs on the TV)
   appinfo.json    App manifest (id, version, icons, splash)
   js/             App modules (see docs/ARCHITECTURE.md)
   css/  img/      Styles, icons, splash and logo
-  vendor/         hls.js and mpegts.js, unmodified
+  vendor/         hls.js, mpegts.js (patched, see PATCHES.md) and dash.js (loaded only for DASH channels)
 service/          webOS JS service: localhost relay + LAN web editor (service/editor/)
 tests/            Unit tests (Node), Playwright suites, dev relay
 scripts/          build, install, launch, sim, inspect, serve, lint, bump-version
@@ -675,7 +675,7 @@ Everyone who has helped build TiviBro with code, ideas or bug reports.  This lis
 
 Made by **[OhMyBahGosh](https://github.com/ohmybahgosh)**.
 
-Playback uses [hls.js](https://github.com/video-dev/hls.js) and [mpegts.js](https://github.com/xqq/mpegts.js).  QR codes by [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator).  Channel logos in the logo library come from [iptv-org/database](https://github.com/iptv-org/database) and [tv-logo/tv-logos](https://github.com/tv-logo/tv-logos), loaded from those projects; the logos belong to their channels.  Thanks to the [webOS Homebrew](https://www.webosbrew.org/) community.
+Playback uses [hls.js](https://github.com/video-dev/hls.js), [mpegts.js](https://github.com/xqq/mpegts.js) and, for DASH channels, [dash.js](https://github.com/Dash-Industry-Forum/dash.js) (BSD-3-Clause).  QR codes by [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator).  Channel logos in the logo library come from [iptv-org/database](https://github.com/iptv-org/database) and [tv-logo/tv-logos](https://github.com/tv-logo/tv-logos), loaded from those projects; the logos belong to their channels.  Thanks to the [webOS Homebrew](https://www.webosbrew.org/) community.
 
 TiviBro is an independent project.  It is not affiliated with LG Electronics or with TiviMate; those names belong to their owners.
 

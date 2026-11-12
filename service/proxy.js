@@ -218,8 +218,16 @@ function create(opts) {
      request still arriving then threw "Cannot read property 'port' of null" and took the helper down (issue #64). */
   var myPort = 0;
   function ownPort() { var a = server.address(); if (a && a.port) myPort = a.port; return myPort; }
-  var server = http.createServer(function (req, res) {
+  var server = http.createServer(function handle(req, res) {
     if (req.method === 'OPTIONS') { res.writeHead(204, ALLOW); return res.end(); }
+    /* A POST through the relay: a DRM licence request (a DASH channel's #KODIPROP licence server, player.js).
+       The body is small (a licence challenge): read it whole, then relay it like any request. */
+    if (req.method === 'POST' && req.body === undefined && /^\/(?:ua|hd|x)\//.test(req.url)) {
+      var chunks = [], size = 0;
+      req.on('data', function (c) { size += c.length; if (size > 262144) { res.writeHead(413, ALLOW); res.end(); req.destroy(); return; } chunks.push(c); });
+      req.on('end', function () { if (size > 262144) return; req.body = Buffer.concat(chunks); handle(req, res); });
+      return;
+    }
     if (req.url.indexOf('/media-stream/') === 0) return require('./media-stream').handle(req, res, ALLOW);
     // Converted sound (convert.js): the link carries its own key, since the TV's player can't send the secret.
     if (Convert.isStream(req.url)) return Convert.stream(req, res, ALLOW, log, ownPort(), redact);
@@ -270,6 +278,7 @@ function create(opts) {
     if (/^bytes=0-$/i.test(req.headers.range || '') && liveKey(u)) delete req.headers.range;
     var headers = { 'User-Agent': ua || opts.userAgent || 'Mozilla/5.0 (Web0S; Linux/SmartTV) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0 Safari/537.36', 'Accept': '*/*' };
     if (hd) Object.keys(hd).forEach(function (k) { headers[k] = hd[k]; });
+    if (req.body) { headers['Content-Type'] = req.headers['content-type'] || 'application/octet-stream'; headers['Content-Length'] = req.body.length; }
     if (unz) headers['Accept-Encoding'] = 'gzip, deflate';      // the helper unzips, so ask for the smallest transfer
     else {
       if (req.headers.range) headers.Range = req.headers.range;
@@ -284,7 +293,7 @@ function create(opts) {
       log(rec);
     }
     var reqOpts = {
-      protocol: u.protocol, hostname: u.hostname, port: u.port, path: u.path, method: req.method === 'HEAD' ? 'HEAD' : 'GET',
+      protocol: u.protocol, hostname: u.hostname, port: u.port, path: u.path, method: req.method === 'HEAD' ? 'HEAD' : req.body ? 'POST' : 'GET',
       headers: headers, agent: u.protocol === 'https:' ? agentHttps : agentHttp, rejectUnauthorized: false,
       // Node 12.15 and newer (webOS 22 on) reject sloppy replies unless asked for the lenient parser:
       // stray control characters in headers, bare LF line endings.  Older Node ignores the option.
@@ -313,7 +322,7 @@ function create(opts) {
       up = firstUp = lib.request(reqOpts, onResponse);
       up.setTimeout(idle, onTimeout);
       up.on('error', onUpError);
-      up.end();
+      up.end(req.body || undefined);
     }
     function onResponse(ur) {
       var code = ur.statusCode || 502;
@@ -543,7 +552,9 @@ function create(opts) {
       else res.destroy();
     }
     // Viewer zapped away: stop pulling the stream from the provider at once.
-    req.on('close', function () { if (!res.writableEnded && !res.finished) { aborted = true; clearTimeout(feedTimer); if (up) up.destroy(); } finish(); });
+    /* The player hanging up.  A POST's request was read whole before (a licence request), and newer Node
+       says 'close' for it then: the answer's connection is what tells. */
+    (req.body ? res : req).on('close', function () { if (!res.writableEnded && !res.finished) { aborted = true; clearTimeout(feedTimer); if (up) up.destroy(); } finish(); });
     var held = pace.wait(host, img, send);
     if (held) rec.paced = held;
   });

@@ -5,6 +5,9 @@
 - **M3U channels with their own User-Agent play (issue #78).**  Some playlists end each channel's address with `|User-Agent=...`.  TiviBro sent that text as part of the address, so the provider answered with an error and every channel said "Provider busy".  The channel now uses that User-Agent and the address is sent clean.  Reload channels to pick it up.
 - **A channel's own Referer and Origin are sent too (issue #78).**  Besides `|User-Agent=...`, M3U lines can end with `|Referer=...` and `|Origin=...`, which some providers check.  TiviBro now sends those with the channel as well (nothing else after the `|`, like cookies).
 - **"Provider busy" only when it can be.**  A 503 right after another channel of the playlist played is the provider still counting it, and TiviBro waits that out as before.  With nothing of that playlist played in the last few minutes it says the provider refused the channel, and moves on after three tries instead of six.
+- **DASH channels play (discussion #79).**  M3U channels whose address ends in `.mpd`, or whose `#KODIPROP` lines say DASH, play in a DASH player (dash.js), loaded the first time one plays so TVs that never need it don't carry it.  Every request goes through the network helper with the channel's User-Agent and Referer.  Without a licence, the TV player is tried next.
+- **Protected DASH channels: ClearKey, Widevine and PlayReady from `#KODIPROP` (discussion #79).**  A playlist's `license_type` and `license_key` go to the TV's browser: ClearKey keys written in the playlist, or a licence server (its request goes through the helper with the User-Agent and headers the playlist gives).  Widevine and PlayReady depend on what the TV supports.  When one won't play, TiviBro says the channel is protected instead of reconnecting and saying "Provider busy".
+- **VLC's `#EXTVLCOPT:http-user-agent` and `http-referrer` lines are used too.**
 
 ## 0.6.0 (alpha 120, 2026-11-11)
 

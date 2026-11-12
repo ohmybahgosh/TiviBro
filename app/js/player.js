@@ -126,6 +126,7 @@ var Player = (function () {
     var isHls = /\.m3u8(\?|$)/i.test(url);
     // Files (movies, episodes) belong to the TV's own player: it seeks and handles MKV/MP4 natively.
     if (cur && !cur.live && !cur.timeshift && !isHls && !/\.ts(\?|$)/i.test(url)) return 'native';
+    if (isDash(url)) return mse() && s !== 'native' ? 'dash' : 'native';
     if (s === 'native' || !mse() || fallbackHosts[hostOf(url)] === 'native') return 'native';
     if (isHls) return window.Hls && Hls.isSupported() ? 'hls' : 'native';
     if (window.mpegts && mpegts.getFeatureList().mseLivePlayback) return 'ts';
@@ -229,6 +230,102 @@ var Player = (function () {
       edge: function () { var e = h.liveSyncPosition; if (e && video.currentTime < e - 30) video.currentTime = e; },
       destroy: function () { try { h.destroy(); } catch (e) {} }
     };
+  }
+
+  /* ---------- DASH (discussion #79) ----------
+     MPEG-DASH channels (.mpd, or Kodi's #KODIPROP manifest_type) play in dash.js, loaded the first time one
+     is asked for (about 800 KB: 1 GB TVs don't carry it otherwise).  Every manifest and segment request goes
+     through the helper, with the channel's User-Agent and Referer.  A licence from #KODIPROP (plshape.js) is
+     given to the browser's EME: ClearKey keys written in the playlist, or a Widevine or PlayReady licence
+     server, which this TV may or may not support. */
+  var DASH_JS = 'vendor/dash-4.7.4.min.js', dashLoading = null;
+  function isDash(url) { return /\.mpd(\?|$)/i.test(url || '') || !!(cur && cur.ch && cur.ch.dash && !cur.timeshift); }
+  function dashLoad() {
+    if (window.dashjs) return Promise.resolve(window.dashjs);
+    if (dashLoading) return dashLoading;
+    dashLoading = new Promise(function (ok, no) {
+      var sc = document.createElement('script');
+      sc.src = DASH_JS;
+      sc.onload = function () { if (window.dashjs) ok(window.dashjs); else { dashLoading = null; no(new Error('the DASH player did not start')); } };
+      sc.onerror = function () { dashLoading = null; no(new Error('the DASH player could not be loaded')); };
+      document.head.appendChild(sc);
+    });
+    return dashLoading;
+  }
+  function b64url(hex) {
+    var bin = ''; for (var i = 0; i + 1 < hex.length; i += 2) bin += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  /* Kodi's licence_key: "URL|Header=v&Header2=v|R{SSM}|R" for a licence server; for ClearKey also
+     "kid:key,kid:key" in hex, or the JSON a ClearKey server would answer. */
+  var DRM_SYS = { widevine: 'com.widevine.alpha', playready: 'com.microsoft.playready', clearkey: 'org.w3.clearkey' };
+  function dashProtection(drm, pw) {
+    var key = String(drm.key || '').trim(), sys = DRM_SYS[drm.type], out = {}, o = {};
+    if (!sys) return null;
+    if (drm.type === 'clearkey' && !/^https?:\/\//i.test(key)) {
+      var keys = {};
+      if (/^\s*\{/.test(key)) { try { (JSON.parse(key).keys || []).forEach(function (k) { if (k.kid && k.k) keys[k.kid] = k.k; }); } catch (e) {} }
+      else key.split(/[,\s]+/).forEach(function (pair) { var m = /^([0-9a-f]{32}):([0-9a-f]{32})$/i.exec(pair); if (m) keys[b64url(m[1])] = b64url(m[2]); });
+      if (!Object.keys(keys).length) return null;
+      o.clearkeys = keys;
+    } else {
+      var parts = key.split('|'), url = parts[0], hdr = {}, ua = '', ref = null;
+      if (!/^https?:\/\//i.test(url)) return null;
+      (parts[1] || '').split('&').forEach(function (kv) {
+        var i = kv.indexOf('='); if (i <= 0) return;
+        var k = kv.slice(0, i).trim(), v = kv.slice(i + 1); try { v = decodeURIComponent(v); } catch (e) {}
+        if (/^user-agent$/i.test(k)) ua = v; else if (/^referr?er$/i.test(k)) (ref || (ref = {})).Referer = v; else if (/^origin$/i.test(k)) (ref || (ref = {})).Origin = v;
+        else if (/^[A-Za-z0-9-]+$/.test(k)) hdr[k] = v;          // Content-Type and the provider's own headers
+      });
+      // Through the helper: the browser can't send a User-Agent or Referer itself, and the server may not allow CORS.
+      o.serverURL = Net.active ? Net.wrap(url, { pl: pw.pl, ua: ua || pw.ua, hdr: ref || pw.hdr }) : url;
+      if (Object.keys(hdr).length) o.httpRequestHeaders = hdr;
+    }
+    out[sys] = o;
+    return out;
+  }
+  function dashEngine(url, p, preview, fail, media, tracks) {
+    var pw = plWrap(), drm = cur.ch && cur.ch.drm, live = cur.live && !cur.timeshift, dead = false, pl = null, E = null;
+    var api = {
+      name: 'DASH',
+      info: function () { try { var q = pl.getBitrateInfoListFor('video')[pl.getQualityFor('video')]; return q ? Math.round(q.bitrate / 1000) + ' kbps' : ''; } catch (e) { return ''; } },
+      audio: function () { try { var cur2 = pl.getCurrentTrackFor('audio'); return (pl.getTracksFor('audio') || []).map(function (t, i) { return { id: i, label: t.lang || ('Track ' + (i + 1)), lang: t.lang || '', ch: 0, on: t === cur2 }; }); } catch (e) { return []; } },
+      setAudio: function (i) { try { pl.setCurrentTrack(pl.getTracksFor('audio')[i]); } catch (e) {} },
+      levels: function () { try { var q = pl.getQualityFor('video'), auto = pl.getSettings().streaming.abr.autoSwitchBitrate.video; return pl.getBitrateInfoListFor('video').map(function (l, i) { return { id: i, label: (l.height ? l.height + 'p' : 'Level ' + (i + 1)) + (l.bitrate ? '  ' + (l.bitrate / 1e6).toFixed(1) + ' Mbps' : ''), on: !auto && i === q }; }); } catch (e) { return []; } },
+      auto: function () { try { return pl.getSettings().streaming.abr.autoSwitchBitrate.video; } catch (e) { return true; } },
+      setLevel: function (i) { try { if (i < 0) pl.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: true } } } }); else { pl.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } } } }); pl.setQualityFor('video', i); } } catch (e) {} },
+      destroy: function () { dead = true; if (pl) { try { pl.reset(); } catch (e) {} pl = null; } }
+    };
+    var prot = drm ? dashProtection(drm, pw) : null;
+    if (drm && !prot) { setTimeout(function () { if (!dead) fail('media', 'the ' + drm.type + ' licence in the playlist could not be read', false, false, 0); }, 0); return api; }
+    dashLoad().then(function (dj) {
+      if (dead) return;
+      E = dj.MediaPlayer.events;
+      pl = dj.MediaPlayer().create();
+      pl.updateSettings({
+        debug: { logLevel: dj.Debug.LOG_LEVEL_NONE },
+        streaming: {
+          buffer: { bufferTimeAtTopQuality: p.ahead, bufferTimeAtTopQualityLongForm: p.ahead, bufferToKeep: p.back, stableBufferTime: Math.max(4, Math.min(p.ahead, p.prebuffer * 3)), fastSwitchEnabled: false },
+          delay: { liveDelayFragmentCount: live ? Math.round(U.clamp(p.prebuffer / 2 + 2, 3, 6)) : NaN },
+          retryAttempts: { MPD: 4, MediaSegment: 6 },
+          abr: { limitBitrateByPortal: !!preview }
+        }
+      });
+      // Every request through the helper (the channel's User-Agent and Referer; CORS).
+      pl.extend('RequestModifier', function () { return { modifyRequestHeader: function (x) { return x; }, modifyRequestURL: function (u) { return Net.active ? Net.wrap(u, pw) : u; } }; }, true);
+      if (prot) pl.setProtectionData(prot);
+      pl.on(E.ERROR, function (ev) {
+        if (dead) return;
+        var er = ev && ev.error || {}, code = +er.code || 0, msg = er.message || 'DASH error';
+        var drmErr = code >= 100 && code < 120 || /key|licen|drm|protect|mediakey/i.test(msg);
+        if (drmErr) return fail('media', 'the ' + (drm ? drm.type : 'DRM') + ' licence was not accepted (' + msg + ')', false, false, 0);
+        var http = (/(\d{3})/.exec(msg) || [])[1];
+        fail(code >= 10 && code < 40 ? 'net' : 'media', msg, false, false, http ? +http : 0);
+      });
+      pl.on(E.STREAM_INITIALIZED, function () { if (st) st.gotInfo = true; tracks(); });
+      pl.initialize(video, Net.active ? Net.wrap(url, pw) : url, true);
+    }, function (e) { if (!dead) fail('media', e.message, false, false, 0); });
+    return api;
   }
 
   function tsEngine(url, p, preview, fail, media) {
@@ -465,6 +562,8 @@ var Player = (function () {
       // Provider status (provstatus.js): a stream the provider's server refused, errored or never answered.
       if (window.ProvStatus && cur.live && (http || /timeout|upstream|ENOTFOUND|ECONNREFUSED/i.test(String(detail || '')))) ProvStatus.note(cur.origUrl || cur.url, false, http || ((/E[A-Z]{3,}[A-Z_]*/.exec(String(detail)) || [])[0] || 'timeout'), 'stream');
       if (myToken !== token || gen !== cur.gen) return;
+      // What dash.js said, for the message if nothing plays (addresses taken out: a licence link can carry a token).
+      if (kind === 'dash' && detail) cur.dashWhy = String(detail.message || detail).replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim().slice(0, 120);
       if (conv && !st.started && !conv.played) return convFailed(myToken, kind + ' ' + type + ': ' + detail);
       Log.warn('player', kind + ' engine ' + type + ' error: ' + (detail && detail.message ? detail.message : detail) + (st.started ? '' : ' (before first frame)') + '  ' + cur.url);
       // The server answered with an error before any video.  Twice is worth a quick retry (a
@@ -547,7 +646,8 @@ var Player = (function () {
     // Audio tracks known: pick the preferred language (Settings > Playback).
     var tracks = function () { if (myToken === token && cur && gen === cur.gen) preferAudio(); };
     try {
-      if (kind === 'hls') eng = hlsEngine(url, p, cur.preview, fail, media, tracks);
+      if (kind === 'dash') eng = dashEngine(url, p, cur.preview, fail, media, tracks);
+      else if (kind === 'hls') eng = hlsEngine(url, p, cur.preview, fail, media, tracks);
       else if (kind === 'ts') eng = tsEngine(url, p, cur.preview, fail, media);
       else eng = nativeEngine(url, tracks, conv);
     } catch (e) {
@@ -621,12 +721,14 @@ var Player = (function () {
   /* Before the first frame each pipeline gets one try: built-in demuxer (ts), the TV player
      (native, decodes AC-3 and raw TS), and for Xtream live channels the provider's HLS version
      of the same channel.  Once all have failed there is no point in eight reconnects. */
-  var ENGINE_NAMES = { ts: 'built-in demuxer', native: 'TV player', hls: 'HLS version of this channel' };
+  var ENGINE_NAMES = { ts: 'built-in demuxer', native: 'TV player', hls: 'HLS version of this channel', dash: 'DASH player' };
   function hlsVariant(url) { return cur && cur.live && !cur.timeshift && /\/live\/[^?]+\.ts(\?|$)/i.test(url) ? url.replace(/\.ts(\?|$)/i, '.m3u8$1') : null; }
   /** Can this TV use pipeline [k] for the current channel? */
   function engineOk(k) {
     var u = cur.origUrl || cur.url, isHlsUrl = /\.m3u8(\?|$)/i.test(u);
-    if (k === 'native') return true;
+    if (k === 'native') return !(cur.ch && cur.ch.drm);          // the TV player has no way to the licence
+    if (k === 'dash') return isDash(u) && mse();
+    if (isDash(u)) return false;
     if (k === 'ts') return !isHlsUrl && !!(window.mpegts && mse());
     if (k === 'hls') return !!(window.Hls && Hls.isSupported() && (isHlsUrl || hlsVariant(u)));
     return false;
@@ -637,12 +739,14 @@ var Player = (function () {
     cur.tried = cur.tried || {};
     cur.tried[failed] = 1;
     var isHlsUrl = /\.m3u8(\?|$)/i.test(cur.url);
-    var order = isHlsUrl ? ['hls', 'native'] : ['ts', 'native', 'hls'];
+    // DASH: dash.js, then (without a licence) the TV player, which reads DASH itself.
+    var order = isDash(cur.origUrl || cur.url) ? (cur.ch && cur.ch.drm ? ['dash'] : ['dash', 'native']) : isHlsUrl ? ['hls', 'native'] : ['ts', 'native', 'hls'];
     for (var i = 0; i < order.length; i++) {
       var k = order[i];
       if (cur.tried[k]) continue;
       if (cur.late && cur.late[k]) continue;      // it already showed no picture for this channel (issue #73)
       if (k === 'ts' && !(window.mpegts && mse())) continue;
+      if (k === 'dash' && !mse()) continue;
       if (k === 'hls' && !(window.Hls && Hls.isSupported() && (isHlsUrl || hlsVariant(cur.origUrl || cur.url)))) continue;
       return k;
     }
@@ -666,7 +770,10 @@ var Player = (function () {
     if (cur.live && !cur.timeshift && !cur.deadCounted && window.DeadList) { cur.deadCounted = cur.deadFailed = true; try { DeadList.failed(cur.ch, cur.origUrl || cur.url, cur.lastHttp || 0); } catch (e) {} }
     // A movie that was playing here a moment ago is not a format the TV can't decode (issue #34).
     if (isFile() && cur.everPlayed) return state('error', CLOSED);
+    var dr = cur.ch && cur.ch.drm;
+    if (dr && !cur.lastHttp) return state('error', 'This channel is protected (' + ({ widevine: 'Widevine', playready: 'PlayReady', clearkey: 'ClearKey' }[dr.type] || dr.type) + '), and this TV could not play it' + (cur.dashWhy ? ': ' + cur.dashWhy : '') + '.  It plays in apps the provider supports.');
     if (cur.lastHttp) return state('error', 'The provider is not sending this ' + (isFile() ? 'video' : 'channel') + ' right now (error ' + cur.lastHttp + ').  Press OK to try again, or try ' + (isFile() ? 'again later.' : 'another channel.'));
+    if (isDash(cur.origUrl || cur.url)) return state('error', 'This channel uses DASH, and this TV could not play it' + (cur.dashWhy ? ' (' + cur.dashWhy + ')' : '') + '.');
     state('error', isFile() ? 'This video will not play on this TV.  It may use a format the TV cannot decode.' : 'This channel will not play on this TV.  It may use a format the TV cannot decode, or the provider may be having trouble with it.');
   }
 
@@ -695,6 +802,7 @@ var Player = (function () {
          played it in 2 s afterwards). */
       if (cur.tried && cur.tried[k] && !(k === 'native' && format && !cur.nativeAgain)) continue;
       if (k === 'ts' && !(window.mpegts && mse())) continue;
+      if (k === 'dash' && !mse()) continue;
       if (k === 'hls' && !(window.Hls && Hls.isSupported() && (isHlsUrl || hlsVariant(cur.origUrl || cur.url)))) continue;
       if (k === 'native' && cur.tried && cur.tried.native) cur.nativeAgain = 1;
       return k;
@@ -1452,7 +1560,7 @@ var Player = (function () {
 
   return {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
-    PRESETS: PRESETS, memorySafe: memorySafe, get memSafe() { return memSafe() ? (safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, on: on,
+    PRESETS: PRESETS, memorySafe: memorySafe, get memSafe() { return memSafe() ? (safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, on: on,
     seek: seek, seekTo: seekTo, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; },
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },

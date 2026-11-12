@@ -286,6 +286,17 @@ It tries hard never to just stop:
 - **DTS, Dolby TrueHD and FLAC surround:** some sound the TV can't play at all.  TiviBro converts it for you, see [Sound the TV can't play](#sound-the-tv-cant-play).
 - **Settings > Updates, about and diagnostics > What this TV can play** lists every format and which player handles it on your TV.
 
+### DASH channels and protected channels
+
+Some M3U playlists, the ones made for Kodi or TiviMate, have MPEG-DASH channels: an address ending in `.mpd`, or `#KODIPROP` lines saying `manifest_type=mpd`.  TiviBro plays them with its DASH player, which it loads the first time such a channel plays, and falls back to the TV player.
+
+A DASH channel can also be protected, with its licence in `#KODIPROP:inputstream.adaptive.license_type` and `license_key` lines:
+
+- **ClearKey** with the keys in the playlist (`license_key=` a key ID and key in hex, `kid:key`) plays on any TV that plays DASH.
+- **Widevine** and **PlayReady** send TiviBro to the licence server in the playlist, with the headers it gives (User-Agent and Referer through the network helper).  Whether it plays depends on the TV: many LG TVs support Widevine in apps, some don't, and some providers only give licences to their own apps.
+
+When a protected channel won't play, TiviBro says so ("This channel is protected (Widevine), and this TV could not play it") instead of trying again and again.
+
 ### Sound the TV can't play
 
 LG TVs from 2020, 2021 and 2022 (webOS 5, 6 and 22, including the C1 and C2) can't play **DTS** sound at all.  No LG TV plays **Dolby TrueHD**, and **FLAC** with more than two channels doesn't play either.  Many movie files have one of those as their only sound, so they play with no sound.
@@ -706,7 +717,7 @@ On a playlist's page:
 | **Playlist on** | **On** · Off | On: its channels are in the lists, in its own section.  Off keeps the playlist with its login, groups, favorites and names, and takes it out of the lists until you turn it on again (instead of deleting it).  Turning off the first playlist makes the next one that is on the first; the last one on stays on.  The web editor's Playlists page has **Turn off** and **Turn on** too. |
 | **Name** | | The name shown in Settings and the web editor. |
 | **Connection** | | Server, username and password (or the M3U address).  Opens the setup screen, which tests the login before saving. |
-| **User-Agent** | **Default** or your own | Only if your provider asks for a specific one (TiviMate's "User-Agent" setting).  The network helper sends it for this playlist.  A channel whose line in an M3U playlist ends with `\|User-Agent=...` sends its own instead. |
+| **User-Agent** | **Default** or your own | Only if your provider asks for a specific one (TiviMate's "User-Agent" setting).  The network helper sends it for this playlist.  A channel whose line in an M3U playlist ends with `\|User-Agent=...` sends its own instead, and `\|Referer=...` and `\|Origin=...` go with it too (VLC's `#EXTVLCOPT:http-user-agent` and `http-referrer` lines as well). |
 | **Reload channel list** | Every app start · Every 6 hours · **Every 12 hours** · Every day · Every 2 days · Every week · Only when I ask | How often the channel list is fetched again.  Your groups, renames and hidden items are always kept. |
 | **Reload channels now** *(playlists that are on)* | | Fetches the channel list right away.  While it reloads this row is **Stop reloading**, which stops it and keeps the channels from the last load. |
 | **Last reloaded**, **Subscription expires**, **Connections allowed** | (information) | From your provider, when it reports them. |
