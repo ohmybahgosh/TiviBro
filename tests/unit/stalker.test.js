@@ -47,6 +47,35 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('a MAC the portal doesn\'t know: said so, as a login problem', a.status === 401 && JSON.parse(a.body).auth === true, a.status + ' ' + a.body);
   a = await req('GET', H + '/stalker/play/1.ts?stb=nonsense&cmd=x');
   ok('a link without a login is refused', a.status === 400);
+  // Catch-up: the channel's archive days, and a programme's link from the portal's archive.
+  ok('a channel with a week of archive has catch-up for 7 days', d.channels[0].arch === 7 && d.channels[1].arch === 0, JSON.stringify(d.channels.map((c) => c.arch)));
+  const hourAgo = Math.floor(Date.now() / 1000 / 3600) * 3600 - 3600;
+  a = await req('GET', H + '/stalker/archive/101.ts?stb=' + login + '&start=' + hourAgo + '&end=' + (hourAgo + 3600));
+  ok('a programme of the archive: the portal links it, the player goes there through the relay', a.status === 302 && m.seen.archive === 'auto /media/9' + hourAgo + '.mpg' && /\/x\/http\/127\.0\.0\.1:1\/archive\//.test(a.headers.location || ''), a.status + ' ' + m.seen.archive + ' ' + a.headers.location);
+  a = await req('GET', H + '/stalker/archive/101.ts?stb=' + login + '&start=' + (Math.floor(Date.now() / 1000) - 30 * 86400));
+  ok('a time the archive no longer has: said so', a.status === 404, a.status);
+
+  // Movies and shows, as an Xtream panel's.
+  const X = (q) => req('GET', H + '/stalker/xc/player_api.php?stb=' + login + '&action=' + q).then((r) => ({ status: r.status, j: JSON.parse(r.body || 'null') }));
+  let x = await X('get_vod_categories');
+  ok('movie categories', x.status === 200 && x.j.map((c) => c.category_id + ':' + c.category_name).join() === '10:Films,11:More films', JSON.stringify(x.j));
+  const pagesBefore = m.seen.vodPages || 0;
+  x = await X('get_vod_streams');
+  ok('every movie, from every page (shows left out)', x.status === 200 && x.j.length === 28 && x.j[0].stream_id && x.j[0].container_extension === 'mp4' && x.j[0].stream_icon === 'http://img.example/1.jpg' && (m.seen.vodPages - pagesBefore) === 3, x.j.length + ' ' + (m.seen.vodPages - pagesBefore));
+  x = await X('get_vod_streams&category_id=11');
+  ok('one category\'s movies', x.j.length === 14 && x.j.every((t) => t.category_id === '11'), x.j.length);
+  x = await X('get_series');
+  ok('the shows', x.j.map((t) => t.series_id).join() === '505,520', JSON.stringify(x.j.map((t) => t.series_id)));
+  x = await X('get_vod_info&vod_id=503');
+  ok('a movie\'s details', x.status === 200 && x.j.info.plot === 'About title 3' && x.j.movie_data.stream_id === '503', JSON.stringify(x.j).slice(0, 200));
+  x = await X('get_series_info&series_id=505');
+  const eps = x.j && x.j.episodes;
+  ok('a show\'s seasons and episodes', x.status === 200 && x.j.seasons.length === 2 && eps['1'].length === 3 && eps['2'].length === 2 && eps['2'][1].episode_num === 2, JSON.stringify(x.j).slice(0, 300));
+  a = await req('GET', H + '/stalker/vod/503.mp4?stb=' + login);
+  ok('a movie plays from its own command', a.status === 302 && m.seen.vodLinks.slice(-1)[0] === 'eyJ0eXBlIjoibW92aWUiLCJpZCI6NTAzfQ==|' && /\/x\/http\/127\.0\.0\.1:1\/vod\//.test(a.headers.location || ''), a.status + ' ' + m.seen.vodLinks);
+  a = await req('GET', H + '/stalker/vod/' + eps['2'][1].id + '.mp4?stb=' + login);
+  ok('an episode is its season\'s command with its number', a.status === 302 && m.seen.vodLinks.slice(-1)[0] === 'eyJzZWFzb24iOjJ9|2', m.seen.vodLinks.slice(-1)[0]);
+
   // The guide asking for many channels at once on a portal it hasn't signed in to yet: one sign-in for all of
   // them, on a portal that keeps only the newest token.
   const m2 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', oneToken: true });

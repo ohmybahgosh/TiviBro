@@ -70,7 +70,7 @@ var Vod = (function () {
   function cacheKey(k, p) { return 'vod:' + (p || Store.playlist).id + ':' + k; }
   // On a TV the helper keeps the full lists on the TV's storage and answers with what shows (issue #18:
   // a full list didn't fit an old TV's browser storage).  In a browser the app keeps them itself.
-  function helped(p) { p = p || Store.playlist; return !!(Net.active && Net.port && Net.info && Net.info.vod >= 2 && p && (p.type === 'xtream' || Source.m3uVod(p))); }
+  function helped(p) { p = p || Store.playlist; return !!(Net.active && Net.port && Net.info && Net.info.vod >= 2 && p && (p.type === 'xtream' || p.type === 'stalker' || Source.m3uVod(p))); }
   // The playlists in use that have this kind (the first one first).
   function sources(k) { var ls = Store.loaded ? Store.loaded() : [Store.playlist]; return ls.filter(function (p) { return offeredBy(p).indexOf(k) >= 0; }); }
   var asking = { movie: null, series: null }, sets = { movie: {}, series: {} }, gen = 0;
@@ -372,7 +372,7 @@ var Vod = (function () {
   /* Search looks inside Movies and Shows without opening them first: the lists load from the TV's
      cache (or the provider, once) when Search opens.  Only the kinds the provider offers. */
   var preparing = null;
-  function offeredBy(p) { p = p || {}; var v = p.vod || {}; return p.type === 'xtream' || v.m3u ? ['movie', 'series'].filter(function (k) { return k === 'movie' ? v.movies : v.series; }) : []; }
+  function offeredBy(p) { p = p || {}; var v = p.vod || {}; return p.type === 'xtream' || p.type === 'stalker' || v.m3u ? ['movie', 'series'].filter(function (k) { return k === 'movie' ? v.movies : v.series; }) : []; }
   // What any playlist in use offers (several playlists on: all of them together).
   function offered() {
     var out = [], ls = Store.loaded ? Store.loaded() : [Store.playlist || {}];

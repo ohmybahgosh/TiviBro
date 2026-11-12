@@ -41,6 +41,8 @@ var Source = (function () {
     return server;
   }
   function api(p, action, extra) {
+    // A Stalker portal's movies and shows: the helper answers Xtream's actions for it (service/stalker.js).
+    if (p && p.type === 'stalker') return 'http://127.0.0.1:' + Net.port + '/stalker/xc/player_api.php?stb=' + stb(p) + (action ? '&action=' + action : '') + (extra || '');
     return base(p.server) + '/player_api.php?username=' + encodeURIComponent(p.user) +
       '&password=' + encodeURIComponent(p.pass) + (action ? '&action=' + action : '') + (extra || '');
   }
@@ -353,6 +355,8 @@ var Source = (function () {
   function catchupUrl(ch, start, end) {
     if (!ch.arch) return '';
     var mins = Math.max(1, Math.ceil((end - start) / 60000));
+    // A Stalker portal's archive: the helper finds the programme at that time and asks the portal for its link.
+    if (ch.url && ch.url.indexOf('stalker:') === 0) return 'http://127.0.0.1:' + Net.port + '/stalker/archive/' + String(ch.sid || '').replace(/[^A-Za-z0-9_-]/g, '') + '.ts?stb=' + stb(Store.plOf(ch)) + '&start=' + Math.floor(start / 1000) + '&end=' + Math.floor(end / 1000);
     if (!ch.url) {
       var p = Store.plOf(ch), t = parts(start, ch.p ? tzs[ch.p] || '' : serverTz);
       return base(p.server) + '/timeshift/' + cred(p) + '/' + mins + '/' + t.Y + '-' + t.m + '-' + t.d + ':' + t.H + '-' + t.M + '/' + ch.id + '.ts';
@@ -392,8 +396,9 @@ var Source = (function () {
   function seriesInfo(id, p) { return m3uVod(p) ? helperVod('series', id, p) : U.getJSON(api(P(p), 'get_series_info', '&series_id=' + id), 20000); }
   // The link to play a movie: built from the login, or for an M3U list the one the list gave.
   function movieLink(id, ext, p) { return m3uVod(p) ? helperVod('url', id, p).then(function (j) { return j.url; }) : Promise.resolve(movieUrl(id, ext, p)); }
-  function movieUrl(id, ext, p) { p = P(p); return base(p.server) + '/movie/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
-  function episodeUrl(id, ext, p) { p = P(p); return base(p.server) + '/series/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
+  function stalkerVod(id, ext, p) { return 'http://127.0.0.1:' + Net.port + '/stalker/vod/' + String(id).replace(/[^A-Za-z0-9_-]/g, '') + '.' + (ext || 'mp4') + '?stb=' + stb(p); }
+  function movieUrl(id, ext, p) { p = P(p); if (p.type === 'stalker') return stalkerVod(id, ext, p); return base(p.server) + '/movie/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
+  function episodeUrl(id, ext, p) { p = P(p); if (p.type === 'stalker') return stalkerVod(id, ext, p); return base(p.server) + '/series/' + cred(p) + '/' + id + '.' + (ext || 'mp4'); }
 
   return { get account() { return account; }, load: load, busy: busy, stop: stop, get loading() { return Object.keys(running).length > 0; }, sig: sig, friendly: friendly, api: api, base: base, clean: clean, candidates: candidates, detect: detect, credsFromLink: credsFromLink, userShape: userShape, panelHost: panelHost, streamUrl: streamUrl, shortEpgUrl: shortEpgUrl, parseM3U: parseM3U, stalkerMac: stalkerMac,
     catchupUrl: catchupUrl, setTz: setTz,

@@ -185,7 +185,7 @@ function list(q, res, ALLOW, log, port) {
       send(res, ALLOW, 200, shown(kind, d, q));
     });
   }
-  var mine = new RegExp('^http://127\\.0\\.0\\.1:' + port + '/(?:ua/[A-Za-z0-9_-]+/)?x/https?/');
+  var mine = new RegExp('^http://127\\.0\\.0\\.1:' + port + '/(?:(?:ua/[A-Za-z0-9_-]+/)?x/https?/|stalker/xc/player_api\\.php\\?)');   // a Stalker portal's, as Xtream (stalker.js)
   if (!pl || !mine.test(str(q.u)) || !mine.test(str(q.uc))) return send(res, ALLOW, 400, { error: 'not a relay address' });
   readList(pl, kind, function (d) { got(d && d.sig === sig ? d : null); });
   function got(d) {
@@ -227,7 +227,7 @@ function handle(req, res, ALLOW, log, port) {
     try { q = JSON.parse(body); } catch (e) { return send(res, ALLOW, 400, { error: 'bad request' }); }
     var kind = q && q.kind === 'series' ? 'series' : 'movie', u = str(q && q.u);
     // Only this helper's own relay addresses: never a way to reach anything else.
-    var mine = new RegExp('^http://127\\.0\\.0\\.1:' + port + '/(?:ua/[A-Za-z0-9_-]+/)?x/https?/');
+    var mine = new RegExp('^http://127\\.0\\.0\\.1:' + port + '/(?:(?:ua/[A-Za-z0-9_-]+/)?x/https?/|stalker/xc/player_api\\.php\\?)');   // a Stalker portal's, as Xtream (stalker.js)
     if (!mine.test(u)) return send(res, ALLOW, 400, { error: 'not a relay address' });
     var t0 = Date.now();
     getJSON(u, function (e, j) {

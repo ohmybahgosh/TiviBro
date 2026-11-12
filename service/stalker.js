@@ -10,6 +10,7 @@
           (create_link) every time a channel starts, as a box does.
      GET  /stalker/epg?stb=<login>&ch=<channel id>&limit=<n>
        -> the next programmes, in Xtream's get_short_epg shape (epg.js reads it as it is).
+     Movies, shows and catch-up: /stalker/xc/, /stalker/vod/ and /stalker/archive/ (below).
    <login> is base64url JSON { portal, mac, sn, id1, id2, sig }: the portal address and the box's MAC,
    with the serial and device ids some portals check.  Logs never carry it (proxy.js and log.js redact
    "stb=").  Plain ES5 for Node 0.12 (webOS 4). */
@@ -164,13 +165,182 @@ function shape(list, gname) {
     if (!g) { g = gid[gn] = 'k' + hash(gn); groups.push({ id: g, name: gn }); }
     var k = 'k' + hash(String(c.id) + '|' + (c.name || '') + '|' + gn);
     var ch = { k: k, id: k, n: String(c.name || 'Channel'), g: g, logo: /^https?:/i.test(c.logo || '') ? c.logo : '', num: +c.number || 0,
-      epg: String(c.xmltv_id || ''), url: 'stalker:' + String(c.cmd), sid: String(c.id), arch: 0 };          // a portal's archive has its own API (not yet)
+      epg: String(c.xmltv_id || ''), url: 'stalker:' + String(c.cmd), sid: String(c.id), arch: archDays(c) };
     chans.push(ch);
   });
   return { groups: groups, channels: chans };
 }
 
+// Catch-up days: tv_archive_duration is in hours on Ministra portals (168 for a week).
+function archDays(c) {
+  if (!(+c.tv_archive || +c.enable_tv_archive || c.tv_archive === 'true')) return 0;
+  var h = +c.tv_archive_duration || 0;
+  return h > 0 ? Math.max(1, Math.min(30, Math.round(h / 24))) : 3;
+}
+
 function b64(s) { return buf(String(s || ''), 'utf8').toString('base64'); }
+function b64u(s) { return buf(String(s || ''), 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+function unb64u(s) { try { return buf(String(s || '').replace(/-/g, '+').replace(/_/g, '/'), 'base64').toString('utf8'); } catch (e) { return ''; } }
+
+/* ---------- Movies, shows and catch-up ----------
+   The app reads a portal's movies and shows as an Xtream panel's (vod.js, the helper's service/vod.js): these
+   answer Xtream's player_api.php actions from the portal's VOD lists.  A title the portal marks is_series is a
+   show; its seasons each carry one command, and an episode is that command with its number (create_link's
+   "series"), as on a MAG box.  An episode's id carries its season's command, so it plays without the list.
+     GET /stalker/xc/player_api.php?stb=<login>&action=get_vod_categories|get_vod_streams|get_series_categories|
+         get_series|get_vod_info&vod_id=|get_series_info&series_id=  [&category_id=]
+     GET /stalker/vod/<id>.<ext>?stb=<login>         a movie (its portal id) or an episode ("e<n>x<season cmd>")
+     GET /stalker/archive/<channel id>.ts?stb=<login>&start=<unix s>&end=<unix s>   a programme of the archive */
+var vodMem = {}, VOD_FOR = 3 * 3600e3, PAGES_MAX = 700;
+function vodOf(L) { var k = keyOf(L); return vodMem[k] || (vodMem[k] = { cats: null, catsAt: 0, lists: {}, cmd: {} }); }
+function when(s) { var t = Date.parse(String(s || '').replace(' ', 'T')); return isNaN(t) ? (+s || 0) : Math.floor(t / 1000); }
+function extOf(cmd) { var m = /\.(mp4|mkv|avi|m4v|mov|ts|m3u8|mpg)(?:[?\s]|$)/i.exec(String(cmd || '')); return m && !/mpg/i.test(m[1]) ? m[1].toLowerCase() : 'mp4'; }
+function slim(x) {
+  return { id: String(x.id), name: String(x.name || x.o_name || 'Untitled'), cover: /^https?:/i.test(x.screenshot_uri || '') ? x.screenshot_uri : /^https?:/i.test(x.cover || '') ? x.cover : '',
+    rating: String(x.rating_imdb || x.rating_kinopoisk || x.rating || ''), cat: String(x.category_id || ''), added: when(x.added), series: +x.is_series === 1 || x.is_series === true,
+    year: String(x.year || '').slice(0, 4), plot: String(x.description || '').slice(0, 1500), cmd: String(x.cmd || ''), director: String(x.director || ''), cast: String(x.actors || ''),
+    genre: String(x.genres_str || x.genre || ''), mins: +x.time || 0 };
+}
+function vodCats(L, cb) {
+  var V = vodOf(L);
+  if (V.cats && Date.now() - V.catsAt < VOD_FOR) return cb(null, V.cats);
+  act(L, { type: 'vod', action: 'get_categories' }, function (e, js) {
+    if (e) return cb(e);
+    V.cats = (Array.isArray(js) ? js : []).filter(function (c) { return c && c.id != null && String(c.id) !== '*'; })
+      .map(function (c) { return { category_id: String(c.id), category_name: String(c.title || c.name || 'Movies'), parent_id: 0 }; });
+    V.catsAt = Date.now(); cb(null, V.cats);
+  });
+}
+// A category's titles ('*': every one), page by page (a portal sends a dozen or so at a time), four at once.
+function vodPages(L, cat, cb) {
+  function page(n, then) { act(L, { type: 'vod', action: 'get_ordered_list', category: cat, genre: cat, sortby: 'added', fav: 0, p: n }, then); }
+  page(1, function (e, js) {
+    if (e) return cb(e);
+    var first = js && Array.isArray(js.data) ? js.data : [], total = +(js && js.total_items) || first.length, per = +(js && js.max_page_items) || first.length || 1;
+    var pages = Math.min(PAGES_MAX, Math.ceil(total / per)), got = {}, next = 2, running = 0, stop = false, finished = false;
+    if (pages <= 1 || !first.length) return cb(null, first);
+    (function pump() {
+      while (running < 4 && next <= pages && !stop) {
+        (function (n) {
+          running++;
+          page(n, function (e2, j2) { running--; if (e2) stop = true; else got[n] = j2 && Array.isArray(j2.data) ? j2.data : []; pump(); });
+        })(next++);
+      }
+      if (running || finished || (next <= pages && !stop)) return;
+      finished = true;
+      var out = first; for (var i = 2; i < next; i++) if (got[i]) out = out.concat(got[i]);   // a page that failed: the rest still count
+      cb(null, out);
+    })();
+  });
+}
+function vodItems(L, cat, cb) {
+  var V = vodOf(L), key = cat || '*', hit = V.lists[key];
+  if (hit && Date.now() - hit.at < VOD_FOR) return cb(null, hit.items);
+  vodPages(L, key, function (e, list) {
+    if (e) return cb(e);
+    var items = list.filter(function (x) { return x && x.id != null; }).map(slim);
+    items.forEach(function (x) { if (x.cmd) V.cmd[x.id] = x.cmd; });
+    V.lists[key] = { at: Date.now(), items: items };
+    cb(null, items);
+  });
+}
+function findItem(L, id) {
+  var V = vodOf(L), hit = null;
+  Object.keys(V.lists).some(function (k) { return V.lists[k].items.some(function (x) { if (x.id === id) { hit = x; return true; } return false; }); });
+  return hit;
+}
+function asMovie(x) { return { stream_id: x.id, num: 0, name: x.name, stream_type: 'movie', stream_icon: x.cover, rating: x.rating, added: String(x.added || ''), category_id: x.cat, container_extension: extOf(x.cmd) }; }
+function asShow(x) { return { series_id: x.id, num: 0, name: x.name, cover: x.cover, plot: x.plot, rating: x.rating, releaseDate: x.year, category_id: x.cat, last_modified: String(x.added || '') }; }
+function infoOf(x) {
+  return { name: x.name, plot: x.plot, description: x.plot, movie_image: x.cover, cover_big: x.cover, cover: x.cover, rating: x.rating, releasedate: x.year, director: x.director, cast: x.cast,
+    genre: x.genre, duration_secs: x.mins * 60, duration: x.mins ? Math.floor(x.mins / 60) + ':' + ('0' + x.mins % 60).slice(-2) + ':00' : '' };
+}
+// A show's seasons (get_ordered_list with its movie_id), as Xtream's get_series_info.
+function seasons(L, x, cb) {
+  act(L, { type: 'vod', action: 'get_ordered_list', movie_id: x.id, season_id: 0, episode_id: 0, category: x.cat || '*', fav: 0, p: 1 }, function (e, js) {
+    if (e) return cb(e);
+    var list = js && Array.isArray(js.data) ? js.data : [], eps = {}, out = [];
+    list.forEach(function (sz, i) {
+      if (!sz || !sz.cmd) return;
+      var n = +((/(\d+)/.exec(String(sz.name || '')) || [])[1]) || i + 1, nums = Array.isArray(sz.series) ? sz.series : [];
+      out.push({ season_number: n, name: String(sz.name || 'Season ' + n), cover: x.cover });
+      eps[n] = nums.map(function (en) {
+        en = +en;
+        return { id: 'e' + en + 'x' + b64u(sz.cmd), episode_num: en, title: 'Episode ' + en, container_extension: extOf(sz.cmd), season: n, info: {} };
+      });
+    });
+    cb(null, { seasons: out, info: infoOf(x), episodes: eps });
+  });
+}
+function xc(L, q, res, ALLOW) {
+  var a = String(q.action || ''), cat = q.category_id ? String(q.category_id) : '*';
+  function fail(e) { send(res, ALLOW, e.auth ? 401 : 502, { error: e.message }); }
+  if (a === 'get_vod_categories' || a === 'get_series_categories') return vodCats(L, function (e, c) { e ? fail(e) : send(res, ALLOW, 200, c); });
+  if (a === 'get_vod_streams' || a === 'get_series') {
+    return vodItems(L, cat, function (e, items) {
+      if (e) return fail(e);
+      var show = a === 'get_series';
+      send(res, ALLOW, 200, items.filter(function (x) { return x.series === show; }).map(show ? asShow : asMovie));
+    });
+  }
+  if (a === 'get_vod_info' || a === 'get_series_info') {
+    var id = String(q.vod_id || q.series_id || ''), x = findItem(L, id);
+    var answer = function (it) {
+      if (a === 'get_vod_info') return send(res, ALLOW, 200, { info: infoOf(it), movie_data: { stream_id: it.id, name: it.name, container_extension: extOf(it.cmd), category_id: it.cat } });
+      seasons(L, it, function (e, d) { e ? fail(e) : send(res, ALLOW, 200, d); });
+    };
+    if (x) return answer(x);
+    return vodItems(L, '*', function (e) { if (e) return fail(e); var y = findItem(L, id); y ? answer(y) : send(res, ALLOW, 404, { error: 'no such title' }); });
+  }
+  send(res, ALLOW, 400, { error: 'not a Stalker action TiviBro knows' });
+}
+// To the stream the portal linked, through the relay with the box's User-Agent.
+function sendOn(res, ALLOW, port, to) {
+  var m = /^(https?):\/\/(.*)$/i.exec(to), ua = b64u(UA);
+  var h = { 'Location': 'http://127.0.0.1:' + port + '/ua/' + ua + '/x/' + m[1].toLowerCase() + '/' + m[2], 'Cache-Control': 'no-store' };
+  for (var k in ALLOW) h[k] = ALLOW[k];
+  res.writeHead(302, h); res.end();
+}
+function linkFail(res, ALLOW, log, e, what) {
+  if (log) log({ lv: 'warn', event: 'stalker ' + what + ' failed', e: e ? e.message : 'no link' });
+  res.writeHead(e && e.auth ? 403 : e && e.missing ? 404 : 502, ALLOW); res.end(e ? e.message : 'the portal gave no link');
+}
+function vodPlay(L, id, res, ALLOW, log, port) {
+  var em = /^e(\d+)x([A-Za-z0-9_-]+)$/.exec(id), cmd, series = '';
+  if (em) { cmd = unb64u(em[2]); series = em[1]; }
+  else cmd = vodOf(L).cmd[id] || '/media/file_' + id + '.mpg';         // the usual command when the list is gone (a helper restart)
+  act(L, { type: 'vod', action: 'create_link', cmd: cmd, series: series, forced_storage: 'undefined', disable_ad: 0, download: 0 }, function (e, js) {
+    var to = linkOf(js && js.cmd);
+    if (e || !to) return linkFail(res, ALLOW, log, e, 'movie link');
+    sendOn(res, ALLOW, port, to);
+  });
+}
+/* Catch-up: the programme of the channel's archive that starts at that time (the portal's own guide, by day:
+   the day in UTC and the ones each side, since the portal's days are in its own time zone), then its link. */
+function archive(L, sid, start, res, ALLOW, log, port) {
+  var days = [-1, 0, 1].map(function (d) { return new Date((start + d * 86400) * 1000).toISOString().slice(0, 10); }), i = 0;
+  (function day() {
+    if (i >= days.length) { var e = err('the portal\'s archive has no programme at that time'); e.missing = true; return linkFail(res, ALLOW, log, e, 'archive'); }
+    var date = days[i++], pg = 1;
+    (function page() {
+      act(L, { type: 'epg', action: 'get_simple_data_table', ch_id: sid, date: date, p: pg }, function (e, js) {
+        if (e) return linkFail(res, ALLOW, log, e, 'archive');
+        var d = js && Array.isArray(js.data) ? js.data : [], hit = null;
+        d.forEach(function (p) { var s = +p.start_timestamp || when(p.time), en = +p.stop_timestamp || when(p.time_to); if (!hit && s <= start + 90 && en > start) hit = p; });
+        if (hit) {
+          return act(L, { type: 'tv_archive', action: 'create_link', cmd: 'auto /media/' + hit.id + '.mpg', series: '', forced_storage: 'undefined', disable_ad: 0, download: 0 }, function (e2, j2) {
+            var to = linkOf(j2 && j2.cmd);
+            if (e2 || !to) return linkFail(res, ALLOW, log, e2, 'archive');
+            sendOn(res, ALLOW, port, to);
+          });
+        }
+        var total = +(js && js.total_items) || 0, per = +(js && js.max_page_items) || d.length || 1;
+        if (d.length && pg * per < total && pg < 20) { pg++; return page(); }
+        day();
+      });
+    })();
+  })();
+}
 
 function handle(req, res, ALLOW, log, port) {
   var u = URL_.parse(req.url, true), route = u.pathname;
@@ -203,13 +373,15 @@ function handle(req, res, ALLOW, log, port) {
         if (log) log({ lv: 'warn', event: 'stalker link failed', e: e ? e.message : 'no link' });
         res.writeHead(e && e.auth ? 403 : 502, ALLOW); return res.end(e ? e.message : 'the portal gave no link');
       }
-      var m = /^(https?):\/\/(.*)$/i.exec(to), ua = buf(UA, 'utf8').toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-      var h = { 'Location': 'http://127.0.0.1:' + port + '/ua/' + ua + '/x/' + m[1].toLowerCase() + '/' + m[2], 'Cache-Control': 'no-store' };
-      for (var k in ALLOW) h[k] = ALLOW[k];
-      res.writeHead(302, h); res.end();
+      sendOn(res, ALLOW, port, to);
     });
     return;
   }
+  if (route === '/stalker/xc/player_api.php') return xc(L2, u.query, res, ALLOW);
+  var vm = /^\/stalker\/vod\/([A-Za-z0-9_-]{1,1200})\.[a-z0-9]{2,5}$/.exec(route);
+  if (vm) return vodPlay(L2, vm[1], res, ALLOW, log, port);
+  var am = /^\/stalker\/archive\/([A-Za-z0-9_-]{1,40})\.[a-z0-9]{2,5}$/.exec(route);
+  if (am) { var st = +u.query.start || 0; if (!st) return send(res, ALLOW, 400, { error: 'no start time' }); return archive(L2, am[1], st, res, ALLOW, log, port); }
   if (route === '/stalker/epg') {
     var limit = Math.max(1, Math.min(48, +u.query.limit || 10));
     act(L2, { type: 'itv', action: 'get_short_epg', ch_id: String(u.query.ch || ''), size: limit }, function (e, js) {
@@ -225,4 +397,4 @@ function handle(req, res, ALLOW, log, port) {
   send(res, ALLOW, 404, { error: 'unknown stalker route' });
 }
 
-module.exports = { handle: handle, _login: login, _apis: apis, _linkOf: linkOf };
+module.exports = { handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _archDays: archDays };
