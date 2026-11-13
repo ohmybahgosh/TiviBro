@@ -40,7 +40,7 @@ Restoring a backup onto a fresh TV, start to finish:
 
 ### Language
 
-TiviBro shows in your TV's own language: the language of the TV's menus (on webOS, the TV's **Menu Language** setting), read when TiviBro starts and again whenever you change it on the TV.  English, Spanish and Russian are in so far.  Spanish and Russian are new: the menus, the side menu, Settings' sections and most of their rows are translated, and anything not translated yet shows in English.  A TV in a language TiviBro doesn't have yet gets English.
+TiviBro shows in your TV's own language: the language of the TV's menus (on webOS, the TV's **Menu Language** setting), read when TiviBro starts and again whenever you change it on the TV.  English, Spanish (Latin American, and Spain's), and Russian are in so far.  Spanish and Russian are new: the menus, the side menu, Settings' sections and most of their rows are translated, and anything not translated yet shows in English.  A TV in a language TiviBro doesn't have yet gets English.
 
 If it picked the wrong one, choose another:
 
@@ -674,7 +674,7 @@ On a row with a choice, **◀ ▶** change it (with the Magic Remote, click the 
 ### Settings: Language
 
 - **Automatic: the TV's language** (default): the language of the TV's menus.  The line under it says which that is.
-- **English**, **Español**, **Русский**: TiviBro in that language, whatever the TV is set to.
+- **English**, **Español**, **Español (España)**, **Русский**: TiviBro in that language, whatever the TV is set to.  **Español** is Latin American Spanish; **Español (España)** is the same with Spain's words (ordenador, mando a distancia, en directo, pulsa).  A TV set to Spain's Spanish gets it automatically.
 
 See [Language](#language).
 
@@ -706,6 +706,7 @@ Your playlists and how often their channel lists reload.  **OK** on a playlist o
 |---|---|---|
 | *(each playlist)* | | Its name and type, whether it is the first playlist or on, and how many channels it has.  **OK** opens its page (below). |
 | **Add playlist…** | | Opens the setup screen for another Xtream Codes, M3U or Stalker portal playlist, which is then used next to the ones you have.  Each playlist keeps its own hidden items, renames, guide and name rules.  From the phone app it's easier: share your provider's link to it. |
+| **DNS** *(under Finding your provider)* | **The TV's own** · Cloudflare (1.1.1.1) · Google (8.8.8.8) · Quad9 (9.9.9.9) · Cloudflare over HTTPS · Google over HTTPS · A DNS server I type | Which DNS the network helper uses to find your providers' servers.  The TV's own is right for most.  Try another when a provider's address isn't found, or your internet provider blocks it.  Over HTTPS also hides the names you look up from your internet provider.  If the one you pick doesn't answer, the TV's own is used.  Your network's own names (like a server at home) always use the TV's.  **A DNS server I type** adds a **DNS server** row for its address (like 192.168.1.1). |
 
 Each playlist in the list starts with when its subscription ends ("Expires 19 Nov", "Expires in 3 days" in the last two weeks, "Expired 2 Oct"), when the provider reports it.
 

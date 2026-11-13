@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Pick the DNS that finds your provider (discussion #60).**  Settings > Playlists > DNS.  The TV's own DNS is still the default; the others are Cloudflare, Google or Quad9, Cloudflare or Google over HTTPS (which also hides the names you look up from your internet provider), or a DNS server you type.  For a provider whose address the TV's DNS doesn't find, or that your internet provider blocks.  If the one you pick doesn't answer, the TV's own is used.
+- **Español (España) (discussion #21).**  Spain's Spanish is its own language in Settings > Language: the same translation with Spain's words (ordenador, mando a distancia, en directo, pulsa, añadir, vídeo).  A TV set to Spain's Spanish gets it automatically; other Spanish stays Latin American.
+- **The phone app: the keyboard no longer covers a box you type in (discussion #83).**  In the phone app's boxes (Add a playlist, a connection, searches and the rest), the keyboard came up over the lower fields.  Now the box moves up above it.
+- **The starting screen is centered (discussion #36).**  "Loading your channels" and the logo sat off to one side on some TVs.
+- **The screensaver waits while you type or use the phone (discussion #36).**  It could start over the Add a playlist screen while you typed a login with a keyboard, or while you sent it from the phone app.  Typing, the Magic Remote's pointer and anything from the phone app now count as using the TV.
+
 ## 0.6.0 (alpha 124, 2026-11-13)
 
 Pre-release: expect rough edges, and keep a backup before installing.
