@@ -20,7 +20,7 @@
 var I18n = (function () {
   'use strict';
   // code, name in its own language, name in English
-  var LANGS = [['en', 'English', 'English'], ['es', 'Español', 'Spanish'], ['es-ES', 'Español (España)', 'Spanish (Spain)'], ['ru', 'Русский', 'Russian']];
+  var LANGS = [['en', 'English', 'English'], ['es', 'Español', 'Spanish'], ['es-ES', 'Español (España)', 'Spanish (Spain)'], ['pt-BR', 'Português (Brasil)', 'Portuguese (Brazil)'], ['ru', 'Русский', 'Russian']];
   var dicts = {}, pats = {}, cache = {}, cacheN = 0, misses = {}, missN = 0, tv = '', tvAsked = false, listeners = [];
 
   function has(code) { for (var i = 0; i < LANGS.length; i++) if (LANGS[i][0] === code) return true; return false; }
@@ -28,7 +28,7 @@ var I18n = (function () {
   function base(loc) {
     var m = /^([a-z]{2,3})/i.exec(String(loc || '').trim());
     if (!m) return '';
-    var c = m[1].toLowerCase(), three = { spa: 'es', rus: 'ru', eng: 'en' };
+    var c = m[1].toLowerCase(), three = { spa: 'es', rus: 'ru', eng: 'en', por: 'pt' };
     return three[c] || c;
   }
   /* The TV's language, best first.  settingsservice's answer (tv) is the TV menu's own setting; the others
@@ -42,6 +42,7 @@ var I18n = (function () {
     for (var i = 0; i < l.length; i++) {
       var c = base(l[i]);
       if (c === 'es' && /^es[-_]es\b/i.test(String(l[i]))) c = 'es-ES';        // Spain's Spanish (lang/es-ES.js)
+      if (c === 'pt') c = 'pt-BR';                                              // Portuguese: Brazil's, the one TiviBro has
       if (c) return { code: c, locale: String(l[i]), supported: has(c) };
     }
     return { code: 'en', locale: 'en-US', supported: true };
@@ -108,6 +109,7 @@ var I18n = (function () {
       if (i !== n) return 1;
       return m10 === 1 && m100 !== 11 ? 0 : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 1 : 2;
     }
+    if (code === 'pt-BR') return Math.floor(n) <= 1 ? 0 : 1;     // Portuguese: 0 and 1 are singular ("0 hora", "1 hora")
     return n === 1 ? 0 : 1;
   }
   function pick(code, v, vars) {

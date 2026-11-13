@@ -58,7 +58,7 @@ html.replace(/>([^<>]*[A-Za-z][^<>]*)</g, (a, s) => { s.split(/<br>/).forEach((x
 global.window = global;
 const dicts = {};
 global.I18n = { add(code, d) { dicts[code] = Object.assign(dicts[code] || {}, d); } };
-for (const f of fs.readdirSync(path.join(APP, 'lang'))) if (/^[a-z]{2}\.js$/.test(f)) eval(fs.readFileSync(path.join(APP, 'lang', f), 'utf8'));
+for (const f of fs.readdirSync(path.join(APP, 'lang'))) if (/^[a-z]{2}(-BR)?\.js$/.test(f)) eval(fs.readFileSync(path.join(APP, 'lang', f), 'utf8'));
 // Covered: the text is a key.  (Patterns, '{n} hours', are for text put together while the app runs, and
 // would match text found here only by chance.)
 function covered(d, s) { return Object.prototype.hasOwnProperty.call(d, s); }

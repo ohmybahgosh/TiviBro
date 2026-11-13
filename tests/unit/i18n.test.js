@@ -12,7 +12,7 @@ function load(nav, settings, extra) {
   const vm = require('vm');
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(APP, 'i18n.js'), 'utf8') + ';this.I18n = I18n;', ctx);
-  ['es', 'es-ES', 'ru'].forEach((l) => vm.runInContext(fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'), ctx));
+  ['es', 'es-ES', 'pt-BR', 'ru'].forEach((l) => vm.runInContext(fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'), ctx));
   return ctx.I18n;
 }
 
@@ -50,6 +50,9 @@ ok('Spain\'s words: ordenador, mando a distancia, en directo', I.t('Or open the 
 ok('Spain: the rest is the same Spanish', I.t('3 hours') === '3 horas' && I._dicts['es-ES'].Guide === I._dicts.es.Guide);
 ok('Mexico stays Latin American Spanish', load({ language: 'es-MX' }).lang() === 'es' && /computadora/.test(load({ language: 'es-MX' }).t('Or open the address on a computer.')));
 ok('Spain\'s Spanish can be chosen in Settings', load({ language: 'en-US' }, { lang: 'es-ES' }).lang() === 'es-ES' && load({}, {}).langs().some((l) => l.code === 'es-ES'));
+I = load({ language: 'pt-BR' });
+ok('Portuguese (discussion #84): a Brazilian TV gets it', I.lang() === 'pt-BR' && I.t('Settings') === 'Configurações' && I.t('3 hours') === '3 horas' && I.t('1 hours') === '1 hora');
+ok('Portugal\'s Portuguese gets it too, and 0 is singular', load({ language: 'pt-PT' }).lang() === 'pt-BR' && I.plural('pt-BR', 0) === 0 && I.plural('pt-BR', 2) === 1);
 I = load({ language: 'ru' });
 ok('Russian plurals: 1 час, 3 часа, 5 часов, 21 час, 12 часов', ['1 hours', '3 hours', '5 hours', '21 hours', '12 hours'].map((x) => I.t(x)).join(',') === '1 час,3 часа,5 часов,21 час,12 часов', ['1 hours', '3 hours', '5 hours', '21 hours', '12 hours'].map((x) => I.t(x)));
 ok('Russian plural rule', [1, 2, 4, 5, 11, 14, 21, 22, 25, 111].map((n) => I.plural('ru', n)).join('') === '0112220122');
@@ -58,7 +61,7 @@ ok('Spanish plural rule', [0, 1, 2].map((n) => I.plural('es', n)).join('') === '
 // Every translation keeps the placeholders of its English, and no key is an empty translation.
 const dicts = {};
 const fake = { add(code, d) { dicts[code] = Object.assign(dicts[code] || {}, d); } };
-['es', 'ru'].forEach((l) => new Function('I18n', fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'))(fake));
+['es', 'pt-BR', 'ru'].forEach((l) => new Function('I18n', fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'))(fake));
 Object.keys(dicts).forEach((code) => {
   const bad = [];
   Object.keys(dicts[code]).forEach((k) => {
