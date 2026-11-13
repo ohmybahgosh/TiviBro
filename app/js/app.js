@@ -141,6 +141,14 @@ var App = (function () {
         direct ? 'Direct asks your provider straight from the app.  Most providers block that on webOS; switch back to Automatic if Connect fails.'
           : Net.port ? 'Automatic uses the network helper, a part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams for the app.  Leave it on.'
           : 'The network helper (the part of TiviBro that talks to your provider) is not running: ' + (Net.lastError || 'no reason given') + '.  Restart TiviBro; if it keeps happening, press View log.'));
+      /* DNS for finding the provider (discussion #60): here too, for a provider the TV's own DNS can't find
+         before there is any playlist (Settings > Playlists > DNS later).  Needs the network helper. */
+      if (!direct) {
+        var dn = U.el('div', 'field'), dm = Store.settings.dns || 'tv', dk = Settings.dns.ids.indexOf(dm);
+        dn.appendChild(U.el('label', '', dm === 'custom' ? 'DNS server' : 'DNS'));
+        dn.appendChild(pick(dm === 'custom' ? (Store.settings.dnsServer || 'Not set') : Settings.dns.names[dk < 0 ? 0 : dk], nextDns));
+        setupEl.appendChild(dn); fields.push({ el: dn, kind: 'dns' });
+      }
       var go = U.el('div', 'btn', 'Connect');
       setupEl.appendChild(go);
       fields.push({ el: go, kind: 'go' });
@@ -250,6 +258,13 @@ var App = (function () {
       Log.info('app', 'Network set to ' + Store.settings.network + ' from the setup screen');
       if (Store.settings.network === 'auto') Net.start(6000).then(render); else render();
     }
+    // ◀ ▶ on DNS: the next choice, saved and told to the helper straight away.  Typing your own asks for it.
+    function nextDns(d) {
+      var s = Store.settings, ids = Settings.dns.ids, i = ids.indexOf(s.dns || 'tv');
+      s.dns = ids[(Math.max(i, 0) + (d || 1) + ids.length) % ids.length];
+      Store.saveSettings(); Net.setDns(); render();
+      if (s.dns === 'custom' && !s.dnsServer) Settings.dns.ask(render);
+    }
     function connect() {
       if (!useLink()) return;
       msg.className = 'msg'; msg.textContent = 'Connecting…';
@@ -301,6 +316,7 @@ var App = (function () {
       }
       else if (a === 'left' || a === 'right') {
         if (cur.kind === 'net') toggleNet();
+        else if (cur.kind === 'dns') nextDns(a === 'left' ? -1 : 1);
         else if (cur.kind === 'lang') nextLang(a === 'left' ? -1 : 1);
         else if (cur.toggle && document.activeElement !== cur.input) cur.toggle();
         else if (cur.kind === 'type') nextType(a === 'left' ? -1 : 1);
@@ -313,6 +329,7 @@ var App = (function () {
         else if (cur.kind === 'lang') nextLang(1);
         else if (cur.kind === 'go') connect();
         else if (cur.kind === 'net') toggleNet();
+        else if (cur.kind === 'dns') { if (Store.settings.dns === 'custom') Settings.dns.ask(render); else nextDns(1); }
         else if (cur.kind === 'test') { if (useLink()) Diag.run(current()); }
         else if (cur.kind === 'log') Diag.showLog(true);
         else if (cur.kind === 'report') Diag.openReport(true);

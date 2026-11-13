@@ -132,14 +132,14 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('holding Down for 3 seconds goes a long way', +moved - s0 > 60, moved);
 
   /* ---------- audio and subtitles ---------- */
-  await section('Playback'); await H.row('Audio language'); await H.quiet('Enter', 600);
+  await section('Audio and subtitles'); await H.row('Audio language'); await H.quiet('Enter', 600);
   await H.pick('Spanish', '', 500);
   ok('audio language is saved', await ev(() => Store.settings.audioLang === 'es'));
   await H.row('Subtitles automatically'); await H.quiet('Enter', 600);
   await H.pick('English only', '', 500);
   ok('subtitles in one language', await ev(() => Store.settings.autoSubs === true && Store.settings.subsLang === 'en'));
   const pb = await page.innerText('#setBody');
-  ok('the Playback page shows both', /Audio language[\s\S]*Spanish/.test(pb) && /Subtitles automatically[\s\S]*English/.test(pb), pb.replace(/\s+/g, ' ').slice(0, 200));
+  ok('the Audio and subtitles page shows both', /Audio language[\s\S]*Spanish/.test(pb) && /Subtitles automatically[\s\S]*English/.test(pb), pb.replace(/\s+/g, ' ').slice(0, 200));
   await shot('tv-set-audio');
 
   /* ---------- speed test ---------- */

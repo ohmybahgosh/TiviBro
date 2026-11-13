@@ -1,4 +1,4 @@
-/* Settings, all of it: the 15 sections in their order, on the TV and on the phone (ask "settings"),
+/* Settings, all of it: the 17 sections in their order, on the TV and on the phone (ask "settings"),
    every page and the pages inside them, no row that still names an old page, the phone's own and
    TV-only rows marked, and a button's question going to the phone instead of the TV's screen.
      node tests/mock/mock_provider.js &  (on :8077)
@@ -17,7 +17,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then((r) => r.json());
 
 const WANT = [['language', 'Language'], ['playlists', 'Playlists'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['names', 'Channel and group names'], ['reminders', 'Reminders and watchlist'],
-  ['playback', 'Playback'], ['media', 'My media'], ['keys', 'API keys'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
+  ['playback', 'Playback'], ['audio', 'Audio and subtitles'], ['vod', 'Movies and shows'], ['media', 'My media'], ['keys', 'API keys'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
   ['backups', 'Backups and restore points'], ['connect', 'Phone app and web editor'], ['about', 'Updates, about and diagnostics']];
 // Page names that are gone: nothing may still send people there.
 const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playlists and guide/, /Channel name editor/, /Settings > Channel names\b/, /Settings > Diagnostics/,
@@ -44,9 +44,9 @@ const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playl
 
   // 1. The sections, in order, on the TV and the phone.
   const nav = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
-  ok('the TV shows the 15 sections in order', nav.join('|') === WANT.map((w) => w[1]).join('|'), nav.join(' | '));
+  ok('the TV shows the 17 sections in order', nav.join('|') === WANT.map((w) => w[1]).join('|'), nav.join(' | '));
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the same 15, with their ids', JSON.stringify(secs.sections.map((x) => [x.id, x.title])) === JSON.stringify(WANT), JSON.stringify(secs.sections));
+  ok('the phone gets the same 17, with their ids', JSON.stringify(secs.sections.map((x) => [x.id, x.title])) === JSON.stringify(WANT), JSON.stringify(secs.sections));
   ok('old section ids still lead somewhere', await ev(() => ['groups', 'updates', 'diag', 'phone', 'editor'].every((id) => Settings.section(id))));
 
   // 2. Every page and the pages inside them, on the phone (the same code builds them for the TV).

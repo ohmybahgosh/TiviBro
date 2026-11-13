@@ -195,7 +195,7 @@ var Views = (function () {
     // clicking the picture shows or hides it.
     stage.addEventListener('click', function () { if (!full) { if (playing && mode === 'live') goFull(); return; } var o = $('osd'); if (o.classList.contains('hidden')) osd(true); else o.classList.add('hidden'); });
     document.addEventListener('mousemove', U.debounce(function () { if (full && UI.pointer && !overlay) osd(true); }, 120));
-    // Subtitles on automatically when a stream brings them (Settings > Playback), in the chosen language,
+    // Subtitles on automatically when a stream brings them (Settings > Audio and subtitles), in the chosen language,
     // until the viewer picks in the Subtitles menu: a reconnect's tracks then keep that choice, Off too.
     // Tracks read from MKV and MP4 files (_embedded) are turned on by their reader (embedsubs.js),
     // which also undoes the browser's own pick.
@@ -2518,7 +2518,7 @@ var Guide = (function () {
       if (sh.poster) { detail.classList.add('has-poster'); var sim = U.el('img', 'gd-poster'); sim.src = sh.poster; sim.alt = ''; sim.onerror = function () { this.remove(); detail.classList.remove('has-poster'); }; detail.appendChild(sim); }
       if (!gd || gd.length < 60) gd = (se && se.plot) || sh.plot || gd;
     }
-    /* Hide spoilers (Settings > Appearance and start screen, discussion #36): a new episode, or anything not aired yet, keeps only its
+    /* Hide spoilers (Settings > Movies and shows, discussion #36): a new episode, or anything not aired yet, keeps only its
        title, season and episode, and when it airs; its summary and episode title stay hidden. */
     // Only a story: a series episode or a movie (not news, sport or the like), or anything marked NEW.
     var spoil = Store.settings.noSpoilers && h.p && !h.p.up && (h.p.n || (h.p.s > now && !!(sh || mv || h.p.ep) && h.p.k !== 'n' && h.p.k !== 's'));

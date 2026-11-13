@@ -293,7 +293,14 @@ var Teams = (function () {
     }
     var gname = {};
     Library.data.groups.forEach(function (g) { gname[g.id] = g.name; });
-    var tc = teamChannels(), whose = {}, lastVs = {};
+    var tc = teamChannels(), whose = {}, lastVs = {}, curCfb = false;
+    /* A school's other games this week, as proof (issue: "Purdue Boilermakers vs Michigan State Spartans" on a
+       FOX ONE event channel, a Friday basketball game, in My teams for Michigan State football).  A school plays
+       football once a week, so a game that doesn't say football is left out when the same school has another
+       opponent within six days that does say football, or that one is on a Saturday and this one isn't.  So
+       the guide is looked through a week ahead when a school is followed, whatever the window. */
+    var schools = teams.some(function (x) { return !!x.schools; }), far = schools ? Math.max(to, now + 7 * 86400e3) : to, proof = {};
+    function prove(hits, s) { hits.forEach(function (x) { if (x.schools) (proof[x.id] || (proof[x.id] = [])).push({ s: s, vs: lastVs[x.league] || '', cfb: curCfb }); }); return hits; }
     Object.keys(tc).forEach(function (id) { tc[id].forEach(function (c) { whose[c.k] = id; }); });
     function take(c, p, team) {
       if (!c || !shown(c) || !p.t || p.e <= now || p.s > to) return;
@@ -302,7 +309,7 @@ var Teams = (function () {
       if (!one) {
         var key = c.k + '|' + team.id;
         if (seen[key]) return;
-        seen[key] = { c: c, p: p, team: team };
+        seen[key] = { c: c, p: p, team: team, vs: lastVs[team.league] || '', cfb: curCfb };
         out.push(seen[key]);
         return;
       }
@@ -318,7 +325,7 @@ var Teams = (function () {
          baseball doubleheader included.  The listing that names the game is kept. */
       var tk = 'team|' + team.id;
       if (!same) (seen[tk] || []).forEach(function (g) { if (Math.abs(g.p.s - p.s) < CLOSE) same = g; });
-      if (!same) { same = { c: c, p: p, team: team }; seen[gk].push(same); (seen[tk] || (seen[tk] = [])).push(same); out.push(same); return; }
+      if (!same) { same = { c: c, p: p, team: team, vs: vs, cfb: curCfb }; seen[gk].push(same); (seen[tk] || (seen[tk] = [])).push(same); out.push(same); return; }
       var named = function (x) { return !!matchup(x.p.t, x.c ? x.c.n : ''); };
       if (Math.abs(p.s - same.p.s) <= 10 * 60000 && !named(same) && named({ c: c, p: p })) { same.c = c; same.p = p; return; }
       if (p.s < same.p.s - 10 * 60000) { same.c = c; same.p = p; }
@@ -341,8 +348,10 @@ var Teams = (function () {
         if (!g) return;
         p = { s: g.start, e: g.start + 3 * 3600e3, t: g.title, ev: 1 };
       }
-      if (!c || p.e <= now || p.s > to) return;
-      playing(p.t, c.n + ' | ' + (gname[c.g] || ''), false).forEach(function (x) { take(c, p, x); });
+      if (!c || p.e <= now || p.s > far) return;
+      var ctx = c.n + ' | ' + (gname[c.g] || '');
+      curCfb = CFB.test(norm(p.t + ' | ' + ctx));
+      prove(playing(p.t, ctx, false), p.s).forEach(function (x) { take(c, p, x); });
     });
     // Programmes that name the game only in the description ("NFL Football" on a local station).
     descHits(dwords).forEach(function (r) {
@@ -351,18 +360,22 @@ var Teams = (function () {
       // A description is loose talk: the team by its full name, or the league named ("NFL Football"), so a
       // college game between the Tigers and the Cardinals isn't the Detroit Tigers.
       var ctx = p.t + ' | ' + c.n + ' | ' + (gname[c.g] || '');
+      curCfb = CFB.test(norm(ctx));
       playing(r.d, ctx, false, p.t).forEach(function (x) { if (x._full || CODES[x.league].test(norm(ctx + ' ' + r.d))) take(c, p, x); });
     });
     // Event channels: the game is in the channel name.
     if (Events.onAny ? Events.onAny() : Events.on()) for (i = 0; i < all.length; i++) {
       var c = all[i], ev = Events.of(c);
-      if (!ev || ev.end <= now || ev.start > to) continue;
+      if (!ev || ev.end <= now || ev.start > far) continue;
       // Only a time in the name ("Vikings @ Lions 1:00 PM") means today's game.  Long over, the name reads
       // as tomorrow's: a channel the provider hasn't renamed yet, not a game.
       if (ev.guess && ev.start - now > 6 * 3600e3 && new Date(ev.start).getDate() !== new Date(now).getDate()) continue;
       if (!quick.test(norm(ev.title)) && !MATCHUP.test(ev.title)) continue;
-      playing(ev.title, c.n + ' | ' + (gname[c.g] || ''), true).forEach(function (x) { take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 }, x); });
+      var ectx = c.n + ' | ' + (gname[c.g] || '');
+      curCfb = CFB.test(norm(ev.title + ' | ' + ectx));
+      prove(playing(ev.title, ectx, true), ev.start).forEach(function (x) { take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 }, x); });
     }
+    if (schools) out = out.filter(function (g) { return !(g.team.schools && !g.cfb && notFootball(g, proof[g.team.id] || [])); });
     // A game: its team and start (to the half hour); its first start orders it.
     var first = {};
     out.forEach(function (g) { g.gk = g.team.id + '|' + Math.round(g.p.s / 2700e3); if (first[g.gk] == null || g.p.s < first[g.gk]) first[g.gk] = g.p.s; });
@@ -408,6 +421,14 @@ var Teams = (function () {
   var VS = /\s(?:at|vs\.?|v\.?|versus)\s|@/i;
   // And only where it's college football: a school against one that isn't FBS is often another sport.
   function oneSide(x, by, text) { return !!x.schools && x._cfb && by[x.league] === 1 && VS.test(' ' + text + ' '); }
+  // A school's game that doesn't say football, against the school's other games that week (games(), above).
+  function notFootball(g, others) {
+    function sat(t) { return new Date(t).getDay() === 6; }
+    return others.some(function (o) {
+      var gap = Math.abs(o.s - g.p.s);
+      return o.vs !== g.vs && gap > CLOSE && gap < 6 * 86400e3 && (o.cfb || (sat(o.s) && !sat(g.p.s)));
+    });
+  }
   // Mid-August to the end of the year: the season, conference championships and most bowls.
   function footballSeason(t) { var d = new Date(t || Date.now()), m = d.getMonth(); return m >= 8 || m === 7 && d.getDate() >= 15; }
   /** Not the game itself: an overtime block, a replay, a show around it. */

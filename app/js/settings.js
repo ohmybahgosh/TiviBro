@@ -6,10 +6,10 @@ var Settings = (function () {
   function T(x) { return x && typeof x === 'string' && typeof I18n !== 'undefined' ? I18n.t(x) : x; }
   var nav = $('setNav'), body = $('setBody');
   var SECTIONS = [['language', 'Language'], ['playlists', 'Playlists'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['names', 'Channel and group names'], ['reminders', 'Reminders and watchlist'],
-    ['playback', 'Playback'], ['media', 'My media'], ['keys', 'API keys'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
+    ['playback', 'Playback'], ['audio', 'Audio and subtitles'], ['vod', 'Movies and shows'], ['media', 'My media'], ['keys', 'API keys'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
     ['backups', 'Backups and restore points'], ['connect', 'Phone app and web editor'], ['about', 'Updates, about and diagnostics']];
   // Old section ids (links in other screens, tests, older phone apps) still land somewhere sensible.
-  var ALIAS = { lang: 'language', groups: 'channels', updates: 'about', diag: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys' };
+  var ALIAS = { lang: 'language', groups: 'channels', updates: 'about', diag: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys', subtitles: 'audio', movies: 'vod', shows: 'vod' };
   var sec = 1, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
   // Phone app: test builds only while the Android app is in the works (release builds show the web editor alone).
   function phoneOK() { return /alpha|beta/i.test(TIVIBRO_VERSION); }
@@ -84,6 +84,9 @@ var Settings = (function () {
       out.push(choice('Freeze detection', 'How long a frozen picture is tolerated before the player recovers it.', [3, 4, 6, 8, 10, 15, 20], ['3s', '4s', '6s', '8s', '10s', '15s', '20s'], function () { return +c.stall; }, function (v) { c.stall = v; save(); }));
       out.push(choice('Reconnect attempts', 'Tries before giving up on a channel.  The budget resets after 30 seconds of clean playback.', [3, 5, 8, 12, 20, 50], ['3', '5', '8', '12', '20', '50'], function () { return +c.retries; }, function (v) { c.retries = v; save(); }));
     }
+    out.push(choice('Buffer meter', 'Shows how many seconds of video are banked, in fullscreen.', ['auto', 'always', 'off'], ['When low', 'Always', 'Off'], function () { return s.meter; }, function (v) { s.meter = v; save(); }));
+    out.push(choice('Buffer info on demand', Keymap.bufferHint() + ' shows the buffer meter and stream info, even with the meter off.  Press again to hide it.  Any button can do this: Settings > Remote and buttons.',
+      [5, 10, 30, 0], ['5 seconds', '10 seconds', '30 seconds', 'Until pressed again'], function () { return s.meterPeek == null ? 10 : +s.meterPeek; }, function (v) { s.meterPeek = v; save(); }));
     out.push(head('Player'));
     out.push(choice('Player engine',
       'Automatic uses the built-in demuxer for fine buffer control and falls back to the TV player when a server blocks it.  TV player uses the least CPU but ignores buffer settings.',
@@ -98,14 +101,6 @@ var Settings = (function () {
     out.push(choice('Connection', 'Automatic uses the network helper: a part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams for the app.  webOS needs it for most providers.  Direct asks the provider straight from the app, which only works with servers that allow it.  Channel lists still load through the helper when it runs, so a big one can\'t close TiviBro.',
       ['auto', 'direct'], ['Automatic (recommended)', 'Direct'], function () { return s.network || 'auto'; }, function (v) { s.network = v; save(); }));
     out.push(info('Network helper', Net.port ? 'running' : 'not running'));
-    out.push(choice('Buffer meter', 'Shows how many seconds of video are banked, in fullscreen.', ['auto', 'always', 'off'], ['When low', 'Always', 'Off'], function () { return s.meter; }, function (v) { s.meter = v; save(); }));
-    out.push(choice('Buffer info on demand', Keymap.bufferHint() + ' shows the buffer meter and stream info, even with the meter off.  Press again to hide it.  Any button can do this: Settings > Remote and buttons.',
-      [5, 10, 30, 0], ['5 seconds', '10 seconds', '30 seconds', 'Until pressed again'], function () { return s.meterPeek == null ? 10 : +s.meterPeek; }, function (v) { s.meterPeek = v; save(); }));
-    out.push(toggle('Preview on the Channels screen', 'Plays the channel you rest on.  Turn off on very slow TVs for the snappiest list.', function () { return s.previewPlay; }, function (v) { s.previewPlay = v; save(); }));
-    out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',
-      ['auto', 'ask', 'off'], ['Switch to another version', 'Ask me', 'Keep retrying'], function () { return s.backups || 'auto'; }, function (v) { s.backups = v; save(); }));
-    out.push(toggle('Ask when a channel is slow to start', 'After 20 seconds without a picture: says what TiviBro has seen, and asks whether to keep trying, start over, try another version or stop.', function () { return s.slowAsk !== false; }, function (v) { s.slowAsk = v; save(); }));
-    out.push(toggle('Turn on last channel at launch', '', function () { return s.resumeLast; }, function (v) { s.resumeLast = v; save(); }));
     out.push(choice('HDR and Dolby Vision', 'Automatic plays Dolby Vision through the TV player, which switches the screen into Dolby Vision itself, and keeps HDR10 and HLG on the built-in player for its steadier buffering.  Choose TV player for all HDR if HDR pictures look washed out or grey.',
       ['auto', 'tv', 'builtin'], ['Automatic', 'TV player for all HDR', 'Built-in player'], function () { return s.hdrRoute || 'auto'; }, function (v) { s.hdrRoute = v; save(); }));
     // A film shape set from the quick menu (Aspect > Film shape…) shows by its name and stays in the cycle.
@@ -113,16 +108,24 @@ var Settings = (function () {
     if (Player.filmShape(aspOn) || Player.wideBy(aspOn)) { aspV.push(aspOn); aspL.push(Player.aspectName(aspOn)); }
     out.push(choice('Aspect', 'The shape of the picture for every channel and video: Original, Fill (stretched to the screen), Zoom (fills it, edges cropped), 4:3, 14:9 (a little wider than 4:3), 16:9 (for a squashed picture), 21:9 (a 2.35:1 film fills the screen) or 4:3 to 16:9.  A channel or video can have its own from the quick menu, which also has Film shape for any wide film (IMAX 1.90, 2.39 and so on) and Stretch wider for a picture squeezed sideways.',
       aspV, aspL, function () { return Player.displayFor(null); }, function (v) { Player.setAspect(v, null); save(); }));
-    out.push(head('Catch-up, movies and shows'));
+    out.push(head('Catch-up and seeking'));
     out.push(choice('Skip step', 'For Left and Right while watching catch-up or a movie.', [10, 15, 30, 60, 120], ['10s', '15s', '30s', '1 min', '2 min'], function () { return +s.skip; }, function (v) { s.skip = v; save(); }));
     out.push(choice('Rewind / fast forward step', 'For the ◀◀ and ▶▶ buttons while watching catch-up or a movie.', [30, 60, 120, 300, 600], ['30s', '1 min', '2 min', '5 min', '10 min'], function () { return +s.ffStep || 120; }, function (v) { s.ffStep = v; save(); }));
     out.push(choice('◀ on a live channel with catch-up', 'Without catch-up, ◀ always goes to the last channel.', ['rewind', 'last'], ['Rewind', 'Last channel'], function () { return s.rewindLeft === false ? 'last' : 'rewind'; }, function (v) { s.rewindLeft = v === 'rewind'; save(); }));
     out.push(head('Switching channels'));
+    out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',
+      ['auto', 'ask', 'off'], ['Switch to another version', 'Ask me', 'Keep retrying'], function () { return s.backups || 'auto'; }, function (v) { s.backups = v; save(); }));
+    out.push(toggle('Ask when a channel is slow to start', 'After 20 seconds without a picture: says what TiviBro has seen, and asks whether to keep trying, start over, try another version or stop.', function () { return s.slowAsk !== false; }, function (v) { s.slowAsk = v; save(); }));
     out.push(toggle('Info panel when switching channels', 'Off shows just the number and name.', function () { return s.osdOnZap !== false; }, function (v) { s.osdOnZap = v; save(); }));
     out.push(toggle('Show stream details in the info panel', 'Resolution and which player is in use.', function () { return s.osdMedia !== false; }, function (v) { s.osdMedia = v; save(); }));
     out.push(toggle('Keep the picture while reconnecting', 'When a channel drops for a moment, the last picture stays on screen with a small Reconnecting notice instead of going black.  Not every stream allows it (the TV player draws some itself).', function () { return s.holdFrame !== false; }, function (v) { s.holdFrame = v; save(); }));
     out.push(toggle('Black screen while switching', 'Hides the last picture until the next channel starts.', function () { return !!s.blackSwitch; }, function (v) { s.blackSwitch = v; save(); }));
-    out.push(head('Audio and subtitles'));
+    return out;
+  }
+
+  /* ---------- Audio and subtitles (out of Playback in the reorganisation) ---------- */
+  function audioSubs() {
+    var s = S(), out = [];
     out.push(action('Audio language', 'Try this language first when a channel or movie has several audio tracks.  If it is missing, the fallback language below, else the stream\'s own track.  Track language labels must be supplied by the file or stream.', function () {
       langMenu('Audio language', 'The stream\'s own choice', s.audioLang, function (v) { s.audioLang = v; save(); });
     }, function () { return langName(s.audioLang, 'Stream\'s choice'); }));
@@ -150,8 +153,6 @@ var Settings = (function () {
     out.push(page('OpenSubtitles key and sign-in', Subs.configured ? (Subs.user ? 'Key saved, signed in as ' + Subs.user : 'Key saved') : 'Not set up yet', 'API keys', apiKeys, function () { return Subs.configured ? 'Saved' : 'Not set up'; }));
     out.push(choice('Keep downloaded subtitles', 'A movie or episode you come back to gets its subtitles and timing again, without another download.  Kept on this TV only.', [0, 1, 3, 7], ['Off', '1 day', '3 days', 'A week'],
       function () { return s.keepSubs === 0 ? 0 : +s.keepSubs > 0 ? +s.keepSubs : 7; }, function (v) { s.keepSubs = v; if (!v) Subs.forgetKept(); save(); }));
-    out.push(toggle('Hold notices during movies', 'Watchlist finds and the like wait while a movie or episode plays full screen, and show when you stop or leave full screen.  Reminders you set still come on time.', function () { return s.holdNotices !== false; }, function (v) { s.holdNotices = v; save(); }));
-    out.push(toggle('Play next episode automatically', '', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); }));
     return out;
   }
 
@@ -219,7 +220,7 @@ var Settings = (function () {
       .concat([head('TMDB: movie and show details and posters')]).concat(tmdbRows().filter(Boolean))
       .concat([head('OpenSubtitles: subtitles for movies and shows')]).concat(osRows());
   }
-  /* Your TMDB token: in Settings > My media and in Settings > Guide > Movies and series from TMDB (Movies on now uses it too). */
+  /* Your TMDB token: in Settings > API keys, linked from My media and Movies and shows (Movies on now uses it too). */
   function tmdbRows() {
     var hasToken = MediaStore.preferences().tmdbConfigured;
     return [
@@ -227,6 +228,11 @@ var Settings = (function () {
       hasToken && action('Test TMDB token', 'Asks TMDB now whether the saved token works.', function () { U.toast('Checking the TMDB token…'); Media.testTmdbToken().then(function (m) { U.toast(m, 5000); }, function (e) { U.toast(e.message, 7000); }); }),
       hasToken && action('Remove TMDB token', 'Saved movie details remain available.', function () { Media.setTmdbToken('').then(function () { if (typeof Movies !== 'undefined') Movies.poke(); live(); }); })
     ].filter(Boolean);
+  }
+  // My media and Movies and shows point to the one place the token lives (API keys).
+  function tmdbLink() {
+    var has = MediaStore.preferences().tmdbConfigured;
+    return page('TMDB API token', has ? 'Saved on this TV.  Test or replace it under API keys.' : 'Not set yet.  It\'s under API keys, with the OpenSubtitles key.', 'API keys', apiKeys);
   }
   /* ---------- My media: source management and preferences live outside the movie browser ---------- */
   var mediaLoaded = false;
@@ -240,7 +246,7 @@ var Settings = (function () {
       tvOnly(action('Edit on a computer', 'Shows a code for a computer or phone browser: the web editor\'s My media page, for typing server logins and fixing TV show episodes.', function () { WebEdit.showJoin('media'); })),
       action('Rescan media sources', 'Look for movies and episodes.  Green on the My media screen.', function () { Media.rescanAll(); }),
       action('Fetch media details', 'Look up movies, shows and owned episodes.  Refresh outdated language details.  Yellow on My media.', function () { Media.fetchMissingDetails(); }),
-      head('Preferences')].concat(tmdbRows(), [
+      head('Preferences'), tmdbLink()].concat([
       choice('Sort movies by', 'Applies to Movies and Favorites.  Continue watching stays ordered by recent playback.', ['name', 'release', 'added'], ['Name (A–Z)', 'Release date (newest first)', 'Date added (newest first)'], function () { return MediaStore.preferences().sort; }, function (v) { Media.updatePreferences({ sort: v }); paint(); }),
       choice('Sort TV shows by', 'Applies to TV shows and favorite shows, on the TV and the phone.  Continue watching stays ordered by recent playback.', ['name', 'release', 'added'], ['Name (A–Z)', 'First aired (newest first)', 'Date added (newest first)'], function () { return MediaStore.preferences().showSort; }, function (v) { Media.updatePreferences({ showSort: v }); Media.refreshShows(); paint(); }),
       toggle('Favorites also in lists', 'On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.', function () { return MediaStore.preferences().favoritesInLists; }, function (v) { Media.updatePreferences({ favoritesInLists: v }); paint(); }),
@@ -328,8 +334,7 @@ var Settings = (function () {
        one you type, or DNS over HTTPS, for a provider the TV's DNS doesn't find or blocks. */
     out.push(head('Finding your provider'));
     out.push(choice('DNS', 'Which DNS finds your providers\' servers.  The TV\'s own is right for most.  Try another when a provider\'s address isn\'t found, or is blocked by your internet provider.  Over HTTPS also hides the names you look up from it.  Needs the network helper.',
-      ['tv', 'cloudflare', 'google', 'quad9', 'controld', 'controld-uncensored', 'doh-cloudflare', 'doh-google', 'doh-controld', 'doh-controld-uncensored', 'custom'],
-      ['The TV\'s own', 'Cloudflare (1.1.1.1, 1.0.0.1)', 'Google (8.8.8.8)', 'Quad9 (9.9.9.9)', 'ControlD Unfiltered (76.76.2.0)', 'ControlD Uncensored (76.76.2.5)', 'Cloudflare over HTTPS', 'Google over HTTPS', 'ControlD Unfiltered over HTTPS', 'ControlD Uncensored over HTTPS', 'A DNS server I type'],
+      DNS_IDS, DNS_NAMES,
       function () { return s.dns || 'tv'; },
       function (v) { if (v === 'custom' && !s.dnsServer) return askDns(); s.dns = v; save(); Net.setDns(); build(); }));
     if (s.dns === 'custom') out.push(action('DNS server', 'Its address, like 192.168.1.1 (your router) or a public one.', askDns, function () { return s.dnsServer || 'Not set'; }));
@@ -338,12 +343,16 @@ var Settings = (function () {
     return out;
   }
 
-  function askDns() {
-    var s = S();
+  /* The DNS choices (Settings > Playlists > DNS, and the first setup screen, discussion #60). */
+  var DNS_IDS = ['tv', 'cloudflare', 'google', 'quad9', 'controld', 'controld-uncensored', 'doh-cloudflare', 'doh-google', 'doh-controld', 'doh-controld-uncensored', 'custom'];
+  var DNS_NAMES = ['The TV\'s own', 'Cloudflare (1.1.1.1, 1.0.0.1)', 'Google (8.8.8.8)', 'Quad9 (9.9.9.9)', 'ControlD Unfiltered (76.76.2.0)', 'ControlD Uncensored (76.76.2.5)', 'Cloudflare over HTTPS', 'Google over HTTPS', 'ControlD Unfiltered over HTTPS', 'ControlD Uncensored over HTTPS', 'A DNS server I type'];
+  // after: what to redraw once it is saved (the settings page, or the setup screen).
+  function askDns(after) {
+    var s = S(); if (typeof after !== 'function') after = build;
     UI.prompt('DNS server', s.dnsServer || '', function (v) {
       v = String(v || '').trim();
       if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(v) || v.split('.').some(function (n) { return +n > 255; })) { U.toast('That isn\'t an address like 192.168.1.1', 5000); return; }
-      s.dnsServer = v; s.dns = 'custom'; save(); Net.setDns(); build();
+      s.dnsServer = v; s.dns = 'custom'; save(); Net.setDns(); after();
     }, 'Like 192.168.1.1');
   }
   function persist(p, reloadGuide) {
@@ -677,20 +686,25 @@ var Settings = (function () {
     out.push(choice('Channel order', 'For provider groups and All channels.  Your own groups keep the order you set.', ['playlist', 'number', 'name', 'watch'], ['Playlist order', 'Channel number', 'Name', 'Most watched'], function () { return s.sortChannels; }, function (v) { s.sortChannels = v; apply(); }));
     out.push(choice('Group order', 'Groups you moved by hand stay where you put them.', ['playlist', 'name'], ['Playlist order', 'Name'], function () { return s.sortGroups; }, function (v) { s.sortGroups = v; apply(); }));
     out.push(toggle('Your groups first', 'Favorites and your groups above the provider groups.', function () { return s.favFirst; }, function (v) { s.favFirst = v; apply(); }));
-    out.push(toggle('Show All channels', '', function () { return s.showAll; }, function (v) { s.showAll = v; apply(); }));
-    out.push(toggle('Show Recent channels', '', function () { return s.showRecent; }, function (v) { s.showRecent = v; apply(); }));
-    out.push(choice('Recent channels kept', '', [10, 20, 30, 50], ['10', '20', '30', '50'], function () { return +s.recentCount; }, function (v) { s.recentCount = v; save(); }));
-    out.push(toggle('Show Favorites group', '', function () { return s.showFav !== false; }, function (v) { s.showFav = v; apply(); }));
+    function inList() {
+      var out = [];
+      out.push(toggle('Show All channels', '', function () { return s.showAll; }, function (v) { s.showAll = v; apply(); }));
+      out.push(toggle('Show Recent channels', '', function () { return s.showRecent; }, function (v) { s.showRecent = v; apply(); }));
+      out.push(choice('Recent channels kept', '', [10, 20, 30, 50], ['10', '20', '30', '50'], function () { return +s.recentCount; }, function (v) { s.recentCount = v; save(); }));
+      out.push(toggle('Show Favorites group', '', function () { return s.showFav !== false; }, function (v) { s.showFav = v; apply(); }));
+      out.push(toggle('Show Movies on now', 'A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > API keys).',
+        function () { return s.moviesGroup !== false; }, function (v) { s.moviesGroup = v; apply(); if (typeof Movies !== 'undefined') Movies.poke(); }));
+      if (Events.onAny()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.',
+        // Several playlists on: the same switch for each of them (each playlist's Event channels page has its own).
+        function () { return Events.groupOnAny(); }, function (v) { Store.loaded().forEach(function (p) { p.events = Object.assign({}, p.events, { group: v }); Store.upsertPlaylist(p); }); Events.reset(); apply(); }));
+      out.push(choice('Recently added channels', 'A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.', [0, 3, 7, 14], ['Off', '3 days', '7 days', '14 days'], function () { return s.newDays == null ? 7 : +s.newDays; }, function (v) { s.newDays = v; L.dirty(); apply(); }));
+      out.push(choice('Groups your provider adds later', 'Hide keeps a tidy list tidy after "Hide all groups".', ['show', 'hide'], ['Show them', 'Hide them'], function () { return s.newGroups === 'hide' ? 'hide' : 'show'; }, function (v) { s.newGroups = v; save(); }));
+      out.push(toggle('All channels includes hidden groups', 'Channels from groups you hid still appear in All channels.', function () { return !!s.allHidden; }, function (v) { s.allHidden = v; apply(); }));
+      return out;
+    }
+    out.push(page('Groups in the list', 'All channels, Recent, Favorites, Movies on now, events by time and new channels: which show, and how.', 'Groups in the list', inList));
     out.push(page('My teams', 'A group with your teams\' own channels and every channel showing one of their games.  For now the NFL, NBA, NHL, MLB, WNBA and MLS only.', 'My teams', teamsPage, function () { var n = Teams.followed().length; return n ? n + ' ›' : '›'; }));
-    out.push(toggle('Show Movies on now', 'A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Guide > Movies and series from TMDB).',
-      function () { return s.moviesGroup !== false; }, function (v) { s.moviesGroup = v; apply(); if (typeof Movies !== 'undefined') Movies.poke(); }));
     out.push(page('Event channels', 'Pay-per-view and league pass channels whose names carry the game and its time: read into the guide.', 'Event channels', function () { return eventsPage(Store.playlist); }, function () { var ev = Store.playlist.events; return ev && ev.on === false ? 'Off' : 'On'; }));
-    if (Events.onAny()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.',
-      // Several playlists on: the same switch for each of them (each playlist's Event channels page has its own).
-      function () { return Events.groupOnAny(); }, function (v) { Store.loaded().forEach(function (p) { p.events = Object.assign({}, p.events, { group: v }); Store.upsertPlaylist(p); }); Events.reset(); apply(); }));
-    out.push(choice('Recently added channels', 'A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.', [0, 3, 7, 14], ['Off', '3 days', '7 days', '14 days'], function () { return s.newDays == null ? 7 : +s.newDays; }, function (v) { s.newDays = v; L.dirty(); apply(); }));
-    out.push(choice('Groups your provider adds later', 'Hide keeps a tidy list tidy after "Hide all groups".', ['show', 'hide'], ['Show them', 'Hide them'], function () { return s.newGroups === 'hide' ? 'hide' : 'show'; }, function (v) { s.newGroups = v; save(); }));
-    out.push(toggle('All channels includes hidden groups', 'Channels from groups you hid still appear in All channels.', function () { return !!s.allHidden; }, function (v) { s.allHidden = v; apply(); }));
     out.push(action('Reset watch time', 'Clears the "Most watched" statistics.', function () { UI.confirm('Reset watch time for every channel?', 'Reset', function () { Store.edits.watch = {}; Store.saveEdits(); relist(); U.toast('Watch time reset'); }); }));
     // Lists that can run to hundreds of rows (your groups, what's hidden) are pages of their own, so this
     // page stays short enough to scroll past them, on the TV and in the phone app.
@@ -828,13 +842,38 @@ var Settings = (function () {
       out.push(page(I18n.raw(I18n.t('Guide for {x}', { x: q.name || I18n.t('playlist') })), (q.type === 'xtream' ? { short: 'Per channel', xmltv: 'Full XMLTV file', off: 'Provider guide off' } : { xmltv: 'From playlist', off: 'Provider guide off' })[q.providerEpg] + ', ' + (q.epgSources || []).length + ' source(s), public fill-in ' + (PubEpg.conf(q).on ? 'on' : 'off'),
         'Guide: ' + (q.name || 'playlist'), function () { return guideRows(q); }));
     });
-    out.push(head('Movies and series from TMDB'));
+    out.push(head('How it looks'));
+    out.push(choice('OK on a channel in the Guide', 'Preview first works like TiviMate: the first OK plays it in the corner window, the second goes fullscreen.',
+      ['preview', 'full'], ['Preview first, then fullscreen', 'Fullscreen right away'], function () { return s.guideOk === 'full' ? 'full' : 'preview'; }, function (v) { s.guideOk = v; save(); }));
+    out.push(choice('Guide row size', 'A little taller rows with bigger channel names and titles, for smaller TVs or reading from across the room.  One channel fewer fits at once.', ['m', 'l', 'xl'], ['Normal', 'Bigger', 'Biggest'],
+      function () { return s.guideRows || 'm'; }, function (v) { s.guideRows = v; Views.applyLook(); if (window.Guide && Guide.resize) Guide.resize(); save(); }));
+    out.push(toggle('Two-line programmes', 'Shows each programme\'s time under its title in the grid.', function () { return s.guideLines !== 1; }, function (v) { s.guideLines = v ? 2 : 1; Views.applyLook(); save(); }));
+    out.push(toggle('Dim past programmes', '', function () { return s.dimPast; }, function (v) { s.dimPast = v; Views.applyLook(); save(); }));
+    out.push(choice('Mark what\'s on now', 'How the guide shows programmes airing right now.', ['line', 'fill', 'color'], ['Line and shade', 'Line, shade and progress bar', 'Coloured cell, shade and bar'], function () { return s.nowStyle === 'fill' || s.nowStyle === 'color' ? s.nowStyle : 'line'; }, function (v) { s.nowStyle = v; Views.applyLook(); save(); }));
+    out.push(toggle('Colour by category', 'A coloured bar on movies, sports, news and kids\' programmes, from what your guide says each programme is, or its title or channel.  Anything else stays plain.',
+      function () { return !!s.guideTint; }, function (v) { s.guideTint = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));
+    out.push(toggle('Channel names in the guide', 'Off shows logos only, leaving more room.', function () { return s.guideNames !== false; }, function (v) { s.guideNames = v; Views.applyLook(); save(); }));
+    out.push(toggle('Two-line channel names', 'Long names wrap instead of being cut off.', function () { return !!s.twoLineNames; }, function (v) { s.twoLineNames = v; Views.applyLook(); save(); }));
+    out.push(toggle('Mark catch-up channels', 'Shows ↺ on channels and programmes you can replay.', function () { return s.showCatchupMark !== false; }, function (v) { s.showCatchupMark = v; save(); relist(); }));
+    return out;
+  }
+
+  /* ---------- Movies and shows: the Movies and Shows screens, and TMDB details for them and the guide ---------- */
+  function vodSettings() {
+    var s = S(), out = [];
+    out.push(choice('Order movies and shows', 'In each category and My list.  All movies and All shows are newest first in the provider\'s order.  Recently added is always newest first.',
+      ['provider', 'added', 'name', 'rating'], ['The provider\'s order', 'Recently added first', 'Name (A–Z)', 'Rating (highest first)'],
+      function () { return s.vodSort || 'provider'; }, function (v) { s.vodSort = v; save(); }));
+    out.push(toggle('Play next episode automatically', '', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); }));
+    out.push(toggle('Hide spoilers', 'In the guide, new episodes and episodes or movies that haven\'t aired yet (not news or sport), and on the Shows screen, episodes you haven\'t started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode.',
+      function () { return !!s.noSpoilers; }, function (v) { s.noSpoilers = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));
+    out.push(head('Details from TMDB'));
     out.push(toggle('Movie details from TMDB', 'Finds the movies in your guide with your TMDB token: a poster, year, genres and rating in the guide, a Movie tag on them, the Movies on now group and the Movies on now screen.  Only programme titles go to TMDB.',
       function () { return s.guideMovies !== false; }, function (v) { s.guideMovies = v; save(true); if (typeof Movies !== 'undefined') Movies.poke(); }));
     out.push(toggle('Series details from TMDB', 'With your TMDB token, for the series in your guide and on the Shows screen: a poster, when it started, its network, genres and rating, and each episode\'s own title and summary (in the guide when it gives the season and episode).  On the Shows screen it fills in what your provider\'s details leave out.  Only a show\'s name and episode numbers go to TMDB.',
       function () { return s.guideSeries !== false; }, function (v) { s.guideSeries = v; save(true); if (typeof Series !== 'undefined') Series.poke(); }));
-    out = out.concat(tmdbRows());
-    if (!MediaStore.preferences().tmdbConfigured) out.push(info('Needs a TMDB token: add one above, free from themoviedb.org.  The same token gives My media its posters.', ''));
+    out.push(tmdbLink());
+    if (!MediaStore.preferences().tmdbConfigured) out.push(info('Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.', ''));
     return out;
   }
 
@@ -844,6 +883,7 @@ var Settings = (function () {
     out.push(choice('Remind me before start', '', [0, 1, 2, 5, 10], ['At start', '1 min', '2 min', '5 min', '10 min'], function () { return +s.remindBefore; }, function (v) { s.remindBefore = v; save(); }));
     out.push(choice('When a reminder starts', '', ['ask', 'switch'], ['Ask me', 'Switch to the channel'], function () { return s.remindAction === 'switch' ? 'switch' : 'ask'; }, function (v) { s.remindAction = v; save(); }));
     out.push(choice('Reminder question stays for', 'Then it closes by itself, in TiviBro and on the TV\'s own alert when TiviBro isn\'t on screen.', [10, 20, 30, 60], ['10s', '20s', '30s', '1 min'], function () { return +s.remindTimeout || 10; }, function (v) { s.remindTimeout = v; save(); }));
+    out.push(toggle('Hold notices during movies', 'Watchlist finds and the like wait while a movie or episode plays full screen, and show when you stop or leave full screen.  Reminders you set still come on time.', function () { return s.holdNotices !== false; }, function (v) { s.holdNotices = v; save(); }));
     out.push(head('Watchlist'));
     out.push(page('Watchlist', 'Shows, teams and names to look for in the guide.  TiviBro sets a reminder when one is coming up.', 'Watchlist', watchlist, function () { var n = Watch.list().length; return n ? n + ' ›' : '›'; }));
     out.push(head('Coming up  (' + rem.length + ')'));
@@ -917,6 +957,7 @@ var Settings = (function () {
     var s = S(), out = [];
     out.push(choice('Settings shown', 'Everyday leaves out the settings most people set once, or only to troubleshoot (buffer details, the player engine, the network helper, learning buttons and the like).  All shows every one.',
       ['all', 'basic'], ['All', 'Everyday'], function () { return s.setLevel === 'basic' ? 'basic' : 'all'; }, function (v) { s.setLevel = v; save(true); }));
+    out.push(head('Start and navigation'));
     out.push(choice('Start screen', 'What TiviBro opens on, and where Back from other screens leads.', ['guide', 'live'], ['Guide', 'Channels screen'],
       function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; save(); Views.buildTabs(); }));
     // Where the lists open (views.js startGroup): where you left off, the top of the first group, or a group you pick.
@@ -926,27 +967,12 @@ var Settings = (function () {
     if (s.openOn === 'group') out.push(action('Group to open on', 'TiviBro opens on the top of this group.', pickOpenGroup, function () { var g = s.openGroup && L.groups().filter(function (x) { return x.id === s.openGroup; })[0]; return g ? I18n.raw(g.name) : 'Pick one'; }));
     out.push(toggle('Channels screen in the menu', s.startTab === 'live' ? 'Always there while TiviBro starts on it.' : 'The plain list of channels, without the guide.  Off, it stays one press away: Green in the guide.',
       function () { return s.startTab === 'live' || s.channelsTab === true; }, function (v) { if (s.startTab === 'live') { U.toast('TiviBro starts on the Channels screen, so it stays in the menu'); return; } s.channelsTab = v; save(); Views.buildTabs(); }));
+    out.push(toggle('Turn on last channel at launch', '', function () { return s.resumeLast; }, function (v) { s.resumeLast = v; save(); }));
+    out.push(toggle('Preview on the Channels screen', 'Plays the channel you rest on.  Turn off on very slow TVs for the snappiest list.', function () { return s.previewPlay; }, function (v) { s.previewPlay = v; save(); }));
+    out.push(toggle('Press Back twice to exit', 'Then the TV asks whether to exit.', function () { return s.exitTwice; }, function (v) { s.exitTwice = v; save(); }));
+    out.push(head('Colours and text'));
     out.push(choice('Clock', 'How times show everywhere in TiviBro: the guide, the info panel, reminders.  Automatic follows the TV\'s region.', ['auto', '12', '24'], ['Automatic', '12 hours (7:30pm)', '24 hours (19:30)'],
       function () { return s.clock === '12' || s.clock === '24' ? s.clock : 'auto'; }, function (v) { s.clock = v; save(); if (window.Guide && Guide.draw) Guide.draw(); relist(); }));
-    out.push(choice('Order movies and shows', 'In each category and My list.  All movies and All shows are newest first in the provider\'s order.  Recently added is always newest first.',
-      ['provider', 'added', 'name', 'rating'], ['The provider\'s order', 'Recently added first', 'Name (A–Z)', 'Rating (highest first)'],
-      function () { return s.vodSort || 'provider'; }, function (v) { s.vodSort = v; save(); }));
-    out.push(head('The guide'));
-    out.push(choice('OK on a channel in the Guide', 'Preview first works like TiviMate: the first OK plays it in the corner window, the second goes fullscreen.',
-      ['preview', 'full'], ['Preview first, then fullscreen', 'Fullscreen right away'], function () { return s.guideOk === 'full' ? 'full' : 'preview'; }, function (v) { s.guideOk = v; save(); }));
-    out.push(choice('Guide row size', 'A little taller rows with bigger channel names and titles, for smaller TVs or reading from across the room.  One channel fewer fits at once.', ['m', 'l', 'xl'], ['Normal', 'Bigger', 'Biggest'],
-      function () { return s.guideRows || 'm'; }, function (v) { s.guideRows = v; Views.applyLook(); if (window.Guide && Guide.resize) Guide.resize(); save(); }));
-    out.push(toggle('Two-line programmes', 'Shows each programme\'s time under its title in the grid.', function () { return s.guideLines !== 1; }, function (v) { s.guideLines = v ? 2 : 1; Views.applyLook(); save(); }));
-    out.push(toggle('Dim past programmes', '', function () { return s.dimPast; }, function (v) { s.dimPast = v; Views.applyLook(); save(); }));
-    out.push(choice('Mark what\'s on now', 'How the guide shows programmes airing right now.', ['line', 'fill', 'color'], ['Line and shade', 'Line, shade and progress bar', 'Coloured cell, shade and bar'], function () { return s.nowStyle === 'fill' || s.nowStyle === 'color' ? s.nowStyle : 'line'; }, function (v) { s.nowStyle = v; Views.applyLook(); save(); }));
-    out.push(toggle('Colour by category', 'A coloured bar on movies, sports, news and kids\' programmes, from what your guide says each programme is, or its title or channel.  Anything else stays plain.',
-      function () { return !!s.guideTint; }, function (v) { s.guideTint = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));
-    out.push(toggle('Hide spoilers', 'In the guide, new episodes and episodes or movies that haven\'t aired yet (not news or sport), and on the Shows screen, episodes you haven\'t started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode.',
-      function () { return !!s.noSpoilers; }, function (v) { s.noSpoilers = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));
-    out.push(toggle('Channel names in the guide', 'Off shows logos only, leaving more room.', function () { return s.guideNames !== false; }, function (v) { s.guideNames = v; Views.applyLook(); save(); }));
-    out.push(toggle('Two-line channel names', 'Long names wrap instead of being cut off.', function () { return !!s.twoLineNames; }, function (v) { s.twoLineNames = v; Views.applyLook(); save(); }));
-    out.push(toggle('Mark catch-up channels', 'Shows ↺ on channels and programmes you can replay.', function () { return s.showCatchupMark !== false; }, function (v) { s.showCatchupMark = v; save(); relist(); }));
-    out.push(head('Colours and text'));
     var PIDS = [''].concat(Object.keys(Views.PALETTES)), PNAMES = ['Your own mix'].concat(Object.keys(Views.PALETTES).map(function (k) { return Views.PALETTE_NAMES[k]; }));
     var th = choice('Theme', 'Every colour at once: Black and white, Tokyo Night, Dracula, Nord, Gruvbox and more.  Your own mix: choose a background and an accent below.', PIDS, PNAMES,
       function () { return Views.PALETTES[s.palette] ? s.palette : ''; }, function (v) { s.palette = v; Views.applyLook(); save(true); });
@@ -1001,7 +1027,6 @@ var Settings = (function () {
     out.push(toggle('Show the date with the clock', '', function () { return !!s.clockDate; }, function (v) { s.clockDate = v; UI.clock(); save(); }));
     out.push(toggle('Show channel numbers', '', function () { return s.showNumbers; }, function (v) { s.showNumbers = v; Store.saveSettings(); relist(); build(); }));
     out.push(choice('Info panel stays for', '', [3, 5, 8, 12], ['3s', '5s', '8s', '12s'], function () { return +s.osdTimeout; }, function (v) { s.osdTimeout = v; save(); }));
-    out.push(toggle('Press Back twice to exit', 'Then the TV asks whether to exit.', function () { return s.exitTwice; }, function (v) { s.exitTwice = v; save(); }));
     return out;
   }
 
@@ -1334,7 +1359,7 @@ var Settings = (function () {
     return out;
   }
 
-  var BY_ID = { language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, media: media, keys: apiKeys, remote: remote, look: look, parental: parental, backups: backups, connect: connect, about: about };
+  var BY_ID = { language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, audio: audioSubs, vod: vodSettings, media: media, keys: apiKeys, remote: remote, look: look, parental: parental, backups: backups, connect: connect, about: about };
   var FNS = SECTIONS.map(function (x) { return BY_ID[x[0]]; });
   function build() {
     var top = stack[stack.length - 1];
@@ -1609,6 +1634,6 @@ var Settings = (function () {
 
   // Drawn again in a new language (I18n.onChange in app.js).
   function redraw() { if (!document.getElementById('viewSettings').classList.contains('hidden')) build(); }
-  return { open: open, redraw: redraw, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
+  return { dns: { ids: DNS_IDS, names: DNS_NAMES, ask: askDns }, open: open, redraw: redraw, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

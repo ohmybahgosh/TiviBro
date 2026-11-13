@@ -124,9 +124,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const t2 = v.addTextTrack('subtitles', es.label, es.language); t2.mode = 'hidden'; t2.addCue(new VTTCue(raw, raw + 1.5, 'otra vez')); Subs.fresh(t2); return { now: t2.cues[0].startTime, first: es.cues[0].startTime }; }, late.first - 1);
   ok('lines that arrive later on the same subtitle are lined up too', Math.abs(again.now - again.first) < 0.06 && Math.abs(again.now - (late.first - 1)) > 0.5, JSON.stringify(again));
   // Settings.
-  await ev(() => { Views.runAction('exit', 'player'); Views.switchTab('settings'); Settings.section('playback'); }); await page.waitForTimeout(600);
+  await ev(() => { Views.runAction('exit', 'player'); Views.switchTab('settings'); Settings.section('audio'); }); await page.waitForTimeout(600);
   let set = await ev(() => document.body.innerText);
-  ok('Playback has the languages and a way to the key', /Subtitles from OpenSubtitles/.test(set) && /Subtitle languages/.test(set) && /English, Spanish/.test(set) && /OpenSubtitles key and sign-in/.test(set), set.slice(0, 300));
+  ok('Audio and subtitles has the languages and a way to the key', /Subtitles from OpenSubtitles/.test(set) && /Subtitle languages/.test(set) && /English, Spanish/.test(set) && /OpenSubtitles key and sign-in/.test(set), set.slice(0, 300));
   await ev(() => Settings.section('keys')); await page.waitForTimeout(600);
   set = await ev(() => document.body.innerText);
   ok('Settings has the languages, the key and sign in', /API keys/.test(set) && /OpenSubtitles API key saved/.test(set) && /Test OpenSubtitles key/.test(set) && /Sign in \(optional\)/.test(set) && /TMDB/.test(set), set.slice(0, 200));

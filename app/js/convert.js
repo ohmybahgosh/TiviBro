@@ -12,7 +12,7 @@
        is told once ("Converting DTS audio for this TV");
      - no converter yet: TiviBro offers it once.  Declined, the movie plays as before and says why
        there is no sound.
-   Settings > Playback > Convert audio the TV can't play: Automatic or Off. */
+   Settings > Audio and subtitles > Convert audio the TV can't play: Automatic or Off. */
 var Convert = (function () {
   'use strict';
   var NAMES = { dts: 'DTS', truehd: 'Dolby TrueHD', mlp: 'Dolby TrueHD', flac: 'FLAC' };
@@ -171,12 +171,12 @@ var Convert = (function () {
     var s = settings();
     // Carried by this build: no question, just unpack it.
     if (st && st.bundled && st.state !== 'failed') return get().then(function () { cb(true); }, function () { cb(false); });
-    // Asked every time a movie needs it, until "Don't ask again" (Settings > Playback still gets it).
+    // Asked every time a movie needs it, until "Don't ask again" (Settings > Audio and subtitles still gets it).
     if (s.convertNever || typeof UI === 'undefined' || !UI.panel) return cb(false);
     s.convertAsked = true;
     try { Store.saveSettings(); } catch (e) {}
     var body = U.el('p', 'panel-text', (guessed ? 'This movie\'s sound looks like ' + what + ', which this TV can\'t play.' : 'This movie\'s sound is ' + what + ', which this TV can\'t play.') +
-      '  Get the audio converter (2 MB, kept on the TV\'s storage)?  It turns the sound into Dolby Digital, which every LG TV plays.  Settings > Playback can remove it again.');
+      '  Get the audio converter (2 MB, kept on the TV\'s storage)?  It turns the sound into Dolby Digital, which every LG TV plays.  Settings > Audio and subtitles can remove it again.');
     UI.panel('Sound this TV can\'t play', body, [
       { label: 'Get', action: function () {
         U.toast('Getting the audio converter…', 30000);
@@ -187,7 +187,7 @@ var Convert = (function () {
       { label: 'Don\'t ask again', action: function () { s.convertNever = true; try { Store.saveSettings(); } catch (e) {} cb(false); } }
     ], function () { cb(false); });
   }
-  function noSound(what) { return what + ' sound, which this TV can\'t play.  Settings > Playback > Audio and subtitles can get the audio converter, or pick another audio track.'; }
+  function noSound(what) { return what + ' sound, which this TV can\'t play.  Settings > Audio and subtitles can get the audio converter, or pick another audio track.'; }
 
   return { fmtFor: fmtFor, on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, offer: offer, noSound: noSound,
     probe: probe, ensureKey: ensureKey, NAMES: NAMES, get key() { return key; }, _reset: function () { key = ''; st = null; probes = {}; } };

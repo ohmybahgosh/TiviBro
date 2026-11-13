@@ -213,6 +213,30 @@ ok('college: Louisville Cardinals are not Arizona\'s', ids(Teams.named('Louisvil
 ok('college: one school against an FCS one is a game', Teams.isGame('College Football: Michigan vs. Central Connecticut', 'BTN') && Teams.matchup('College Football: Michigan vs. Central Connecticut', 'BTN') === 'ncaaf:mich');
 ok('college: shows are no games', !Teams.isGame('College Football Live', 'ESPN') && !Teams.isGame('College GameDay', 'ESPN') && !Teams.isGame('College Football Scoreboard', 'CBSSN'));
 
+// From Bob's TV (a Friday in November): "Purdue Boilermakers vs Michigan State Spartans" on a FOX ONE channel was
+// basketball.  A school plays football once a week, so with its football game this week elsewhere, it's left out.
+const foxOne = ch('FOX ONE 15', 'g5'), btn = ch('BTN', 'g5'); chans.push(foxOne, btn);
+progs[foxOne.k] = [{ s: NOW + H, e: NOW + 3 * H, t: 'Purdue Boilermakers vs Michigan State Spartans' }];
+progs[btn.k] = [{ s: NOW + 50 * H, e: NOW + 53 * H, t: 'College Football: Michigan State at Washington' }];
+['nhl:wpg', 'nfl:det', 'mlb:det'].forEach(id => Teams.follow(id, false));
+Teams.follow('ncaaf:msu', true); Teams.dirty();
+const msu = Teams.games().filter(x => x.team.id === 'ncaaf:msu').map(x => x.c.n);
+ok('college: a school\'s other game, with football its football game this week elsewhere, is left out', msu.indexOf('FOX ONE 15') < 0, msu.join(' / '));
+const msuWeek = Teams.games(7 * 24 * H, true).filter(x => x.team.id === 'ncaaf:msu').map(x => x.p.t);
+ok('college: and the football game is kept', msuWeek.some(t => /Michigan State at Washington/.test(t)) && !msuWeek.some(t => /Purdue/.test(t)), msuWeek.join(' / '));
+// Without that football game, a weekday game is still out when the school's other one this week is on a Saturday.
+const sat = new Date(NOW + H); sat.setDate(sat.getDate() + ((6 - sat.getDay() + 7) % 7 || 7)); sat.setHours(15, 30, 0, 0);
+progs[btn.k] = [{ s: +sat, e: +sat + 3 * H, t: 'Michigan State Spartans at Washington Huskies' }];
+Teams.dirty();
+if (new Date(NOW + H).getDay() !== 6) {
+  const msu2 = Teams.games().filter(x => x.team.id === 'ncaaf:msu').map(x => x.c.n);
+  ok('college: a weekday game, with the school on a Saturday this week too, is left out', msu2.indexOf('FOX ONE 15') < 0, msu2.join(' / '));
+}
+progs[btn.k] = []; Teams.dirty();
+const msu3 = Teams.games().filter(x => x.team.id === 'ncaaf:msu').map(x => x.c.n);
+const d1 = new Date(NOW + H), inSeason = d1.getMonth() >= 8 || (d1.getMonth() === 7 && d1.getDate() >= 15);
+if (inSeason) ok('college: alone, two FBS schools in season still count', msu3.indexOf('FOX ONE 15') >= 0, msu3.join(' / '));
+
 console.log((fail ? fail + ' of ' : 'all ') + n + ' teams checks ' + (fail ? 'failed' : 'passed'));
 process.exit(fail ? 1 : 0);
 })();

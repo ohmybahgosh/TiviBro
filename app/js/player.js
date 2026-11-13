@@ -486,7 +486,7 @@ var Player = (function () {
      CEA-608 captions in the video (US channels).  The built-in demuxer: decoded by Captions
      (captions.js) and drawn here over the picture.  The HLS engine: hls.js makes a "captions" text
      track that the TV draws; this shows or hides it.  The TV player: not possible from an app.
-     Shown only fullscreen, when Settings > Playback > Closed captions (or the quick menu) is on. */
+     Shown only fullscreen, when Settings > Audio and subtitles > Closed captions (or the quick menu) is on. */
   var ccDec = null, ccEl = null, ccLast = '', ccStarted = 0;
   var CC_SIZE = { s: 0.040, m: 0.048, l: 0.060 };
   function ccOn() { return !!Store.settings.cc; }
@@ -653,7 +653,7 @@ var Player = (function () {
       }
     };
 
-    // Audio tracks known: pick the preferred language (Settings > Playback).
+    // Audio tracks known: pick the preferred language (Settings > Audio and subtitles).
     var tracks = function () { if (myToken === token && cur && gen === cur.gen) preferAudio(); };
     try {
       if (kind === 'dash') eng = dashEngine(url, p, cur.preview, fail, media, tracks);
@@ -684,7 +684,7 @@ var Player = (function () {
       tick(myToken);
     }, 50);
   }
-  /* Preferred audio: the language chosen in Settings > Playback, and with "Prefer surround sound"
+  /* Preferred audio: the language chosen in Settings > Audio and subtitles, and with "Prefer surround sound"
      a 5.1 or Dolby track in it.  When that language is missing, the fallback language (Settings >
      Playback, off by default), else the track already playing stays.  Audio description tracks only when nothing else matches.  A
      track picked by hand from the quick menu wins until the channel changes. */

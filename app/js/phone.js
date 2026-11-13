@@ -212,7 +212,7 @@ var Phone = (function () {
     /* Movies on now (onnow.js on the TV): the movies on now and starting in the next three hours, each
        once with the channels showing it.  { off } when there's no TMDB token or it's switched off. */
     onnow: function () {
-      if (typeof Movies === 'undefined' || !Movies.on()) return { off: true, msg: 'Save a TMDB token (Settings > Guide > Movies and series from TMDB, or Settings > My media) to see the movies on now.' };
+      if (typeof Movies === 'undefined' || !Movies.on()) return { off: true, msg: 'Save a TMDB token (Settings > API keys) to see the movies on now.' };
       var sh = Movies.shelves();
       function one(g) {
         var m = g.m;

@@ -217,7 +217,7 @@ I18n.add('ru', {
   "A channel that will never have a guide (a radio stream, a camera, an event slot): Hold OK > No guide for this channel.  It drops out of matching and stops saying \"No guide information\".  The web editor's Guide page does many at once (Ignore).": "Для канала, у которого телегида не будет (радио, камера, слот события): удерживайте OK > Без телегида для канала.  Он исключается из сопоставления и не пишет «Нет данных телегида».  Страница Телегид в веб-редакторе делает это сразу для многих (Игнорировать).",
   "A coloured bar on movies, sports, news and kids' programmes, from what your guide says each programme is, or its title or channel.  Anything else stays plain.": "Цветная полоса у фильмов, спорта, новостей и детских передач: по данным телегида, названию или каналу.  Остальное без отметки.",
   "A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.": "Группа каналов, появившихся в плейлисте с последней загрузки, сначала новые, с меткой NEW в списках.",
-  "A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Guide > Movies and series from TMDB).": "Группа фильмов, идущих сейчас (сначала те, где осталось больше), затем начинающихся в течение часа.  Нужен токен TMDB (Настройки > Телегид > Фильмы и сериалы из TMDB).",
+  "A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > API keys).": "Группа фильмов, идущих сейчас (сначала те, где осталось больше), затем начинающихся в течение часа.  Нужен токен TMDB (Настройки > Ключи API).",
   "A group with every event channel that is on now or starts in the next two weeks, soonest first.": "Группа со всеми каналами событий, которые идут сейчас или начнутся в ближайшие две недели, сначала ближайшие.",
   "A group with every event on now or in the next two weeks, soonest first.": "Группа со всеми событиями сейчас или в ближайшие две недели, сначала ближайшие.",
   "A group with your teams' own channels and every channel showing one of their games.  For now the NFL, NBA, NHL, MLB, WNBA and MLS only.": "Группа с каналами ваших команд и всеми каналами, где идут их игры.  Пока только NFL, NBA, NHL, MLB, WNBA и MLS.",
@@ -288,7 +288,7 @@ I18n.add('ru', {
   "Bulgarian": "Болгарский",
   "Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Кнопки появляются, только когда нужны: например, «Аудио»: при двух и более дорожках.",
   "Cancel the reminder for": "Отменить напоминание для",
-  "Carry on later from Settings > Playback": "Продолжить позже: Настройки > Воспроизведение",
+  "Carry on later from Settings > Audio and subtitles": "Продолжить позже: Настройки > Звук и субтитры",
   "Catalan": "Каталанский",
   "Catch-up on": "Архив канала",
   "Catch-up, movies and shows": "Архив, фильмы и сериалы",
@@ -1042,5 +1042,17 @@ I18n.add('ru', {
   "Trying the {x}": "Пробуем: {x}",
   "Trying again ({n} of {m})": "Пробуем снова ({n} из {m})",
   "The channel dropped: {x}.": "Канал прервался: {x}.",
-  "This channel is having trouble starting: {x}.": "Канал не запускается: {x}."
+  "This channel is having trouble starting: {x}.": "Канал не запускается: {x}.",
+  // Settings sections reorganised
+  "All channels, Recent, Favorites, Movies on now, events by time and new channels: which show, and how.": "Все каналы, Недавние, Избранное, Фильмы сейчас, события по времени и новые каналы: какие показывать и как.",
+  "Catch-up and seeking": "Архив и перемотка",
+  "Details from TMDB": "Данные из TMDB",
+  "Groups in the list": "Группы в списке",
+  "How it looks": "Внешний вид",
+  "Movies and shows": "Фильмы и сериалы",
+  "Start and navigation": "Запуск и навигация",
+  "TMDB API token": "Токен API TMDB",
+  "Saved on this TV.  Test or replace it under API keys.": "Сохранён на этом ТВ.  Проверить или заменить можно в разделе «Ключи API».",
+  "Not set yet.  It's under API keys, with the OpenSubtitles key.": "Ещё не задан.  Он в разделе «Ключи API», вместе с ключом OpenSubtitles.",
+  "Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.": "Нужен токен TMDB: добавьте его в разделе «Ключи API» (выше), бесплатно на themoviedb.org.  Этот же токен даёт постеры для «Мои медиа»."
 });

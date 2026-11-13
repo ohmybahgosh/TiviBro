@@ -169,7 +169,7 @@ var U = (function () {
 
   /* A notice nobody asked for just now (the watchlist setting a reminder, say).  While a movie or episode
      plays full screen it waits, so nothing covers the subtitles (discussion #35), and shows once you're back:
-     "While you watched: …".  Settings > Playback > Hold notices during movies (on unless switched off). */
+     "While you watched: …".  Settings > Reminders and watchlist > Hold notices during movies (on unless switched off). */
   var held = [], heldT = 0;
   function watching() {
     return typeof Views !== 'undefined' && Views.full && Views.mode === 'vod' &&

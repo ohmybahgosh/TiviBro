@@ -94,6 +94,8 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   await key('Enter');
   ok('Add media in Settings offers generic protocols', /DLNA \/ UPnP/.test(await text('#modal')) && /WebDAV/.test(await text('#modal')));
   await key('Escape');
+  ok('My media links to the TMDB token under API keys', /TMDB API token/.test(await text('#setBody')));
+  await ev(() => Settings.section('keys')); await page.waitForTimeout(300);
   await page.locator('#setBody .opt').filter({ hasText: /^Add TMDB API token/ }).click();
   ok('TMDB token entry is masked', await page.locator('#modal input').getAttribute('type') === 'password');
   await page.locator('#modal input').fill('mock-user-token-123456789012345'); await key('Enter');
@@ -104,7 +106,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   await ev(() => Views.switchTab('media')); await page.waitForTimeout(300);
 
   // Audio preferences apply to My media through the common movie player.
-  await ev(() => { Views.switchTab('settings'); Settings.section('playback'); });
+  await ev(() => { Views.switchTab('settings'); Settings.section('audio'); });
   await page.locator('#setBody .opt').filter({ hasText: /^Audio language/ }).click();
   await pick('Dutch');
   ok('preferred audio language can be saved as Dutch', await ev(() => Store.settings.audioLang === 'nl'));

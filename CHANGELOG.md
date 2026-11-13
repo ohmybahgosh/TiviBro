@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- **My teams leaves out a school's basketball game that doesn't say what sport it is.**  An event channel named "Purdue Boilermakers vs Michigan State Spartans" (a Friday basketball game) showed up for Michigan State football.  A school plays football once a week, so a game that doesn't say football is now left out when the same school has another opponent within six days whose game does say football, or is on a Saturday when this one isn't.
+- **Settings, reorganised so each thing is where you'd look for it.**  Nothing was removed; some settings moved:
+  - New **Audio and subtitles** section: audio language, fallback language, surround sound, converting sound the TV can't play, subtitles automatically, closed captions and caption size, subtitle colour, size and background, and the OpenSubtitles rows (all from Playback).
+  - New **Movies and shows** section: Order movies and shows and Hide spoilers (from Appearance), Play next episode automatically (from Playback), and Movie details and Series details from TMDB (from Guide).
+  - **Guide** now has a **How it looks** part: OK on a channel in the Guide, row size, two-line programmes, dim past programmes, mark what's on now, colour by category, channel names and catch-up marks (from Appearance).
+  - **Playback** keeps the buffer, player, catch-up steps (now **Catch-up and seeking**) and switching channels; **When a channel stops working** and **Ask when a channel is slow to start** joined **Switching channels**, and the buffer meter rows sit with the buffer.
+  - **Appearance and start screen** starts with **Start and navigation**: start screen, where lists open, the Channels screen in the menu, **Turn on last channel at launch** and **Preview on the Channels screen** (from Playback), and **Press Back twice to exit**.
+  - **Reminders and watchlist** has **Hold notices during movies** (from Playback).
+  - **Channels and groups** keeps sorting at the top; the switches for the special groups (All, Recent, Favorites, Movies on now, Events by time, Recently added, groups your provider adds later) are on a **Groups in the list** page, with **My teams** and **Event channels** still pages of their own beside it.
+  - The TMDB token lives only in **API keys**; My media and Movies and shows link to it.
+- **DNS on the first setup screen (discussion #60).**  The setup screen has the same DNS choice as Settings > Playlists, so a provider the TV's own DNS can't find can be reached before there is any playlist.  ◀ ▶ pick one; typing your own server asks for its address.
 - **Adding a playlist that won't log in says the same thing every time, and shows what each try got (issue #87).**  When both http and https fail, the server's own answer (like "Not found" or "refused access") is the one shown, whichever you typed, instead of whichever was tried last.  A port that only speaks http is no longer called a certificate problem.  The message on the TV, in the web editor and in the phone app also lists what http and https each said, with the port but not the server's name.
 - **The phone app finds a TV that moved to another address (discussion #36).**  When the router gives the TV a new address and the TV doesn't answer the app's broadcast (some routers and mesh systems block them), the app now asks every address on your network directly, at most every two minutes, and keeps the pairing.  And the TV card's menu has **The TV's address** to type it by hand: only an address where the same TV answers is kept, so nothing has to be paired again.
 

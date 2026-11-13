@@ -1,6 +1,6 @@
 /* Requests from discussion #60: Recently added in Movies and Shows, an order for them, each title's category on its
    row where categories mix, the provider's trailer in a movie's options (on YouTube), Up and Down in fullscreen the
-   other way round, and zapping from the channel playing after switching to a recent one.
+   other way round, and zapping from the channel playing after switching to a recent one, and DNS on the setup screen.
      MOCK_EVENTS=1 node tests/mock/mock_provider.js &
      npm run serve &
      node tests/soak/discussion-60.js */
@@ -38,8 +38,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('Settings > Remote and buttons has Up and Down in fullscreen', /Up and Down in fullscreen/.test(ud), ud.slice(0, 300));
     const k = await ev(() => { const b0 = [Keymap.get('player', 'up'), Keymap.get('player', 'down')]; Keymap.set('player', 'up', 'chnext'); Keymap.set('player', 'down', 'chprev'); const b1 = [Keymap.get('player', 'up'), Keymap.get('player', 'down')]; Keymap.reset('player'); return { b0, b1 }; });
     ok('the default is Up to the channel above, and it swaps', k.b0.join() === 'chprev,chnext' && k.b1.join() === 'chnext,chprev', JSON.stringify(k));
-    const st = await ev(() => { Settings.section('look'); return document.getElementById('setBody').innerText; });
-    ok('Settings has Order movies and shows', /Order movies and shows/.test(st), st.slice(0, 200));
+    const st = await ev(() => { Settings.section('vod'); return document.getElementById('setBody').innerText; });
+    ok('Settings > Movies and shows has Order movies and shows', /Order movies and shows/.test(st), st.slice(0, 200));
 
     // Movies: Recently added, categories on mixed rows, the order setting, the trailer.
     await ev(() => Vod.prepare());
@@ -56,6 +56,23 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('a title knows its category\'s name (for rows in All, Recently added, My list)', !!v.catOf, v.catOf);
     ok('Name (A–Z) orders a category', v.byName.join('|') === v.byName.slice().sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base', numeric: true })).join('|') && v.byName.length > 1, v.byName.join('|'));
     ok('Rating orders highest first', v.byRating.every((r, i) => !i || r <= v.byRating[i - 1]), v.byRating.join(','));
+    // DNS on the setup screen, before there is a playlist to reach Settings with.
+    const d = await ev(async () => {
+      const was = Store.settings.dns || 'tv';
+      App.setup('new');
+      const field = () => [...document.querySelectorAll('#viewSetup .field')].find((f) => /^(DNS|DNS server)/.test(f.querySelector('label').textContent));
+      const f0 = field(); if (!f0) return { none: true };
+      const t0 = f0.innerText;
+      f0.click();                                       // OK: the next choice
+      await new Promise((r) => setTimeout(r, 300));
+      const after = Store.settings.dns, t1 = field().innerText;
+      field().querySelector('.arr').click();             // ◀: back again
+      await new Promise((r) => setTimeout(r, 300));
+      const back = Store.settings.dns;
+      UI.press('back');
+      return { was, t0, after, t1, back };
+    });
+    ok('the setup screen has DNS, and ◀ ▶ change it', !d.none && d.was === 'tv' && d.after === 'cloudflare' && /Cloudflare/.test(d.t1) && d.back === 'tv', JSON.stringify(d));
   } catch (e) { ok('harness: ' + e.message, false); }
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();

@@ -598,7 +598,7 @@ I18n.add('pt-BR', {
   "A channel that will never have a guide (a radio stream, a camera, an event slot): Hold OK > No guide for this channel.  It drops out of matching and stops saying \"No guide information\".  The web editor's Guide page does many at once (Ignore).": "Um canal que nunca terá guia (uma rádio, uma câmera, um espaço de eventos): Segure OK > Sem guia para este canal.  Ele sai da correspondência e deixa de dizer \"Sem informações de guia\".  A página Guia do editor web marca vários de uma vez (Ignorar).",
   "A coloured bar on movies, sports, news and kids' programmes, from what your guide says each programme is, or its title or channel.  Anything else stays plain.": "Uma barra colorida em filmes, esportes, notícias e programas infantis, conforme o que seu guia diz de cada programa, ou pelo título ou canal.  O resto fica sem cor.",
   "A group of channels that are new in your playlist since it last loaded, newest first, with a NEW tag in the lists.": "Um grupo com os canais novos na sua lista desde o último carregamento, os mais novos primeiro, marcados como novos nas listas.",
-  "A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Guide > Movies and series from TMDB).": "Um grupo com os filmes passando agora, os que têm mais pela frente primeiro, e depois os que começam dentro de uma hora.  Precisa de um token do TMDB (Configurações > Guia > Filmes e séries do TMDB).",
+  "A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > API keys).": "Um grupo com os filmes passando agora, os que têm mais pela frente primeiro, e depois os que começam dentro de uma hora.  Precisa de um token do TMDB (Configurações > Chaves de API).",
   "A group with every event channel that is on now or starts in the next two weeks, soonest first.": "Um grupo com cada canal de eventos passando ou começando nas próximas duas semanas, os mais próximos primeiro.",
   "A group with every event on now or in the next two weeks, soonest first.": "Um grupo com cada evento passando ou nas próximas duas semanas, os mais próximos primeiro.",
   "A group with your teams' own channels and every channel showing one of their games.  For now the NFL, NBA, NHL, MLB, WNBA and MLS only.": "Um grupo com os canais dos seus times e cada canal que passa um dos jogos deles.  Por enquanto só NFL, NBA, NHL, MLB, WNBA e MLS.",
@@ -669,7 +669,7 @@ I18n.add('pt-BR', {
   "Bulgarian": "Búlgaro",
   "Buttons only appear when they apply, e.g. Audio needs two or more tracks.": "Os botões só aparecem quando fazem sentido, por exemplo Áudio precisa de duas ou mais faixas.",
   "Cancel the reminder for": "Cancelar o lembrete de",
-  "Carry on later from Settings > Playback": "Continue mais tarde em Configurações > Reprodução",
+  "Carry on later from Settings > Audio and subtitles": "Continue mais tarde em Configurações > Áudio e legendas",
   "Catalan": "Catalão",
   "Catch-up on": "Catch-up em",
   "Catch-up, movies and shows": "Catch-up, filmes e séries",
@@ -1546,5 +1546,17 @@ I18n.add('pt-BR', {
   "Trying the {x}": "Tentando com {x}",
   "Trying again ({n} of {m})": "Tentando de novo ({n} de {m})",
   "The channel dropped: {x}.": "O canal caiu: {x}.",
-  "This channel is having trouble starting: {x}.": "Este canal está com problemas para começar: {x}."
+  "This channel is having trouble starting: {x}.": "Este canal está com problemas para começar: {x}.",
+  // Settings sections reorganised
+  "All channels, Recent, Favorites, Movies on now, events by time and new channels: which show, and how.": "Todos os canais, Recentes, Favoritos, Filmes passando agora, eventos por horário e canais novos: quais aparecem e como.",
+  "Catch-up and seeking": "Catch-up e avanço",
+  "Details from TMDB": "Detalhes do TMDB",
+  "Groups in the list": "Grupos da lista",
+  "How it looks": "Aparência",
+  "Movies and shows": "Filmes e séries",
+  "Start and navigation": "Início e navegação",
+  "TMDB API token": "Token de API do TMDB",
+  "Saved on this TV.  Test or replace it under API keys.": "Salvo nesta TV.  Teste ou troque em Chaves de API.",
+  "Not set yet.  It's under API keys, with the OpenSubtitles key.": "Ainda não configurado.  Fica em Chaves de API, com a chave do OpenSubtitles.",
+  "Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.": "Precisa de um token do TMDB: adicione um em Chaves de API (acima), grátis em themoviedb.org.  O mesmo token dá os pôsteres de Minhas mídias."
 });

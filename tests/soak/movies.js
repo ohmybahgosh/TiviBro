@@ -63,11 +63,14 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('the grid marks it Movie', await ev(() => !!document.querySelector('#guideBody .gp.mv')));
   await shot('tv-movies-on-now');
 
-  // Settings: the token in the guide's section too, and the switches.
-  const st = await ev(() => { Views.switchTab('settings'); Settings.section('guide'); return document.getElementById('setBody').innerText; });
-  ok('Settings > Guide: Movies and series from TMDB, the token rows', /Movies and series from TMDB/.test(st) && /Movie details from TMDB/.test(st) && /TMDB API token saved/.test(st) && /Test TMDB token/.test(st), st.slice(0, 400));
-  const gs = await ev(() => { Settings.section('groups'); return document.getElementById('setBody').innerText; });
-  ok('Settings > Groups: Show Movies on now', /Show Movies on now/.test(gs));
+  // Settings: the switches under Movies and shows, with the way to the token; the token rows under API keys.
+  const st = await ev(() => { Views.switchTab('settings'); Settings.section('vod'); return document.getElementById('setBody').innerText; });
+  ok('Settings > Movies and shows: Details from TMDB and the way to the token', /Details from TMDB/.test(st) && /Movie details from TMDB/.test(st) && /TMDB API token/.test(st), st.slice(0, 400));
+  const kt = await ev(() => { Settings.section('keys'); return document.getElementById('setBody').innerText; });
+  ok('Settings > API keys: the token rows', /TMDB API token saved/.test(kt) && /Test TMDB token/.test(kt), kt.slice(0, 400));
+  const gs = await ev(() => Settings.phone.page('channels', []).rows.find((r) => r.label === 'Groups in the list'));
+  const gl = gs && await ev((i) => Settings.phone.page('channels', [i]).rows.map((r) => r.label).join('|'), gs.i);
+  ok('Settings > Channels and groups > Groups in the list: Show Movies on now', /Show Movies on now/.test(gl || ''), gl);
   const off = await ev(() => { Store.settings.moviesGroup = false; Movies.poke(); return Library.groups().some((g) => g.id === Library.MOVIES); });
   ok('turned off, the group goes', !off);
   const offAll = await ev(() => { Store.settings.moviesGroup = true; Store.settings.guideMovies = false; Movies.poke(); return { g: Library.groups().some((g) => g.id === Library.MOVIES), of: Movies.of({ k: 'x' }, { t: window.__pick, s: 0, e: 7200e3 }) }; });

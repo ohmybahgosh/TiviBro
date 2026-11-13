@@ -306,7 +306,7 @@ var EmbedSubs = (function () {
       }
       // Chromium switches on a newly added track by itself (the browser's language) once any track was
       // shown on this video, whatever the script set, so the saved choice comes back just after it.
-      // With no saved choice and none made in this playback, Subs.autoOn picks (Settings > Playback);
+      // With no saved choice and none made in this playback, Subs.autoOn picks (Settings > Audio and subtitles);
       // views.js leaves these tracks to this.
       // A subtitle already on that isn't one of these (a download from Find subtitles) stays the one shown.
       var intent = liveTracks.map(function (t, i) { return rec && rec.modes && rec.modes[i] || 'disabled'; });
