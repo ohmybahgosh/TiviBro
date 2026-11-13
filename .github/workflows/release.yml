@@ -69,6 +69,8 @@ jobs:
         run: cp scripts/tv/install.sh dist/install.sh
 
       - name: Homebrew Channel manifest
+        env:
+          UPDATE_SIGNING_KEY: ${{ secrets.UPDATE_SIGNING_KEY }}
         run: node scripts/gen-manifest.js "dist/app.tivibro.tv_${PKG_VERSION}_all.ipk" dist "$GITHUB_REPOSITORY" "$TAG"
 
       - name: Release notes from CHANGELOG.md

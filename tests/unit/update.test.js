@@ -8,12 +8,12 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 
 function sandbox(opts) {
   opts = opts || {};
-  const store = Object.assign({}, opts.store || {}), toasts = [], calls = [], reloads = [], panels = [];
+  const store = Object.assign({}, opts.store || {}), toasts = [], calls = [], reloads = [], panels = [], sigAsked = [];
   const sb = {
     TIVIBRO_VERSION: opts.version || '0.6.0-alpha.2',
     Store: { settings: Object.assign({}, opts.settings || {}) },
     Log: { info() {}, warn() {}, error() {}, state() {}, closing() {} },
-    Net: { wrap: u => u },
+    Net: { wrap: u => u, active: !opts.noHelper, port: opts.noHelper ? 0 : 47811 },
     U: {
       toast: (m) => toasts.push(m),
       el: (tag, cls, text) => ({ tag, cls, text, kids: [], appendChild(c) { this.kids.push(c); } }),
@@ -23,7 +23,7 @@ function sandbox(opts) {
         const tm = /\/releases\/tags\/(v[^?]+)$/.exec(url);
         if (tm) return Promise.resolve(rel(tm[1], { body: '- **What changed in ' + tm[1] + '**\n- **Another thing**' }));
         if (/api\.github/.test(url)) return Promise.resolve(opts.releases || RELEASES);
-        if (/manifest\.json$/.test(url)) return Promise.resolve({ version: '0.7.0', ipkUrl: 'app.tivibro.tv_0.7.0_all.ipk', ipkHash: { sha256: 'ab'.repeat(32) }, ipkSize: 700000 });
+        if (/manifest\.json$/.test(url)) return Promise.resolve(Object.assign({ version: '0.7.0', ipkUrl: opts.ipkUrl || 'app.tivibro.tv_0.7.0_all.ipk', ipkHash: { sha256: 'ab'.repeat(32) }, ipkSize: 700000 }, opts.unsigned ? {} : { tivibroSig: 'c2ln'.repeat(40) }));
         return Promise.reject(new Error('unexpected ' + url));
       }
     },
@@ -34,7 +34,8 @@ function sandbox(opts) {
     Player: opts.playerState ? { state: opts.playerState } : undefined,
     App: opts.reloading ? { reloading: true } : undefined,
     navigator: { userAgent: opts.ua || 'Mozilla/5.0 (Web0S; Linux/SmartTV) Chrome/87' },
-    fetch: opts.fetch || (() => Promise.reject(new Error('no network'))),
+    // The helper's signature check (service/updatesig.js): yes unless the test says otherwise.
+    fetch: opts.fetch || ((url, o) => /\/update\/verify$/.test(url) ? (sigAsked.push(JSON.parse(o.body)), Promise.resolve({ json: () => ({ ok: !opts.badSig }) })) : Promise.reject(new Error('no network'))),
     Promise, JSON, Date, Math, String, Array, Object, RegExp, Error,
     PalmServiceBridge: opts.noBridge ? undefined : function () {
       const b = this;
@@ -55,11 +56,11 @@ function sandbox(opts) {
   sb.window = sb;
   vm.createContext(sb);
   vm.runInContext(SRC, sb);
-  return { Update: vm.runInContext('Update', sb), toasts, calls, reloads, store, sb, panels };
+  return { Update: vm.runInContext('Update', sb), toasts, calls, reloads, store, sb, panels, sigAsked };
 }
-const rel = (tag, extra) => Object.assign({ tag_name: tag, name: 'TiviBro ' + tag, html_url: 'https://github.com/x/y/releases/tag/' + tag, published_at: '2026-10-27T23:00:00Z',
+const rel = (tag, extra) => Object.assign({ tag_name: tag, name: 'TiviBro ' + tag, html_url: 'https://github.com/ohmybahgosh/TiviBro/releases/tag/' + tag, published_at: '2026-10-27T23:00:00Z',
   body: '### New\n\n- **Faster** guides with `gz`\n- See [docs](https://x)\n\n### Install\n\n- ignore me',
-  assets: [{ name: 'app.tivibro.tv.manifest.json', browser_download_url: 'https://github.com/x/y/releases/download/' + tag + '/app.tivibro.tv.manifest.json' }, { name: 'app.tivibro.tv_' + tag.replace(/^v|-.*$/g, '') + '_all.ipk', size: 650000 }] }, extra || {});
+  assets: [{ name: 'app.tivibro.tv.manifest.json', browser_download_url: 'https://github.com/ohmybahgosh/TiviBro/releases/download/' + tag + '/app.tivibro.tv.manifest.json' }, { name: 'app.tivibro.tv_' + tag.replace(/^v|-.*$/g, '') + '_all.ipk', size: 650000 }] }, extra || {});
 const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), rel('v0.6.0-alpha.3', { prerelease: true }), rel('v0.9.0', { draft: true }), rel('v0.5.0', { assets: [] })];
 
 (async () => {
@@ -84,7 +85,7 @@ const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), re
   await s.Update.check(false);
   let st = s.Update.state;
   ok('check finds the newer test version for an alpha build', st.state === 'available' && st.latest.version === '0.7.0-alpha.1', st.state);
-  ok('IPK address comes from the manifest, next to it', st.latest.ipkUrl === 'https://github.com/x/y/releases/download/v0.7.0-alpha.1/app.tivibro.tv_0.7.0_all.ipk', st.latest.ipkUrl);
+  ok('IPK address comes from the manifest, next to it', st.latest.ipkUrl === 'https://github.com/ohmybahgosh/TiviBro/releases/download/v0.7.0-alpha.1/app.tivibro.tv_0.7.0_all.ipk', st.latest.ipkUrl);
   ok('the checksum comes from the manifest', st.latest.sha256 === 'ab'.repeat(32));
   ok('the result is remembered for the next start', /0\.7\.0-alpha\.1/.test(s.store['tivibro.update'] || ''));
 
@@ -112,7 +113,7 @@ const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), re
   ok('the Homebrew Channel is detected', await s.Update.installer() === true && s.Update.state.installer === 'hbchannel');
   await s.Update.install();
   const call = s.calls.filter(c => /hbchannel\.service\/install/.test(c))[0] || '';
-  ok('install hands the IPK link and checksum to the Homebrew Channel', /"ipkUrl":"https:\/\/github\.com\/x\/y\/releases\/download\/v0\.7\.0-alpha\.1\/app\.tivibro\.tv_0\.7\.0_all\.ipk"/.test(call) && /"ipkHash":"(ab){32}"/.test(call) && /"subscribe":true/.test(call), call);
+  ok('install hands the IPK link and checksum to the Homebrew Channel', /"ipkUrl":"https:\/\/github\.com\/ohmybahgosh\/TiviBro\/releases\/download\/v0\.7\.0-alpha\.1\/app\.tivibro\.tv_0\.7\.0_all\.ipk"/.test(call) && /"ipkHash":"(ab){32}"/.test(call) && /"subscribe":true/.test(call), call);
   ok('progress is shown while it installs, then it is marked installed', s.Update.state.state === 'installed' && s.Update.state.progress === 100);
   ok('the app reloads into the new version', s.reloads.length === 1);
   { const ex = s.calls.findIndex(c => /hbchannel\.service\/exec /.test(c)), inst = s.calls.findIndex(c => /hbchannel\.service\/install /.test(c)), cmd = ex >= 0 ? JSON.parse(s.calls[ex].replace(/^\S+ /, '')).command : '';
@@ -126,6 +127,20 @@ const RELEASES = [rel('v0.7.0-alpha.1', { prerelease: true }), rel('v0.6.0'), re
   await s.Update.check(false);
   let err = null; try { await s.Update.install(); } catch (e) { err = e; }
   ok('an install error is reported, nothing reloads', err && /checksum/i.test(err.message) && s.Update.state.state === 'error' && s.reloads.length === 0);
+
+  // Signed by the release build (service/updatesig.js), checked by the helper before anything installs.
+  s = sandbox();
+  await s.Update.check(false); await s.Update.install();
+  ok('the helper checks the signature over the version, the IPK link and its checksum first', s.sigAsked.length === 1 && s.sigAsked[0].version === '0.7.0' && /\/releases\/download\//.test(s.sigAsked[0].ipkUrl) && s.sigAsked[0].sha256 === 'ab'.repeat(32) && s.sigAsked[0].sig, JSON.stringify(s.sigAsked));
+  for (const [what, o, rx] of [['an unsigned update', { unsigned: true }, /no valid signature/], ['a signature that does not check out', { badSig: true }, /no valid signature/], ['no helper to check it', { noHelper: true }, /network helper/]]) {
+    s = sandbox(o);
+    await s.Update.check(false);
+    err = null; try { await s.Update.install(); } catch (e) { err = e; }
+    ok(what + ': not installed, and says why', err && rx.test(err.message) && !s.calls.some((c) => /hbchannel\.service\/install/.test(c)), err && err.message);
+  }
+  s = sandbox({ ipkUrl: 'https://evil.example/app.tivibro.tv_0.7.0_all.ipk' });
+  await s.Update.check(false);
+  ok('an IPK anywhere but this project\'s releases is refused', s.Update.state.state === 'error' || s.Update.state.state !== 'available', s.Update.state.state + ' ' + s.Update.state.error);
 
   s = sandbox({ noHbc: true });
   await s.Update.check(false);

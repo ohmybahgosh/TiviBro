@@ -98,7 +98,10 @@ var Update = (function () {
         if (!m || !m.ipkHash || !m.ipkHash.sha256) throw new Error('The release has no checksum');
         var base = r.manifest.replace(/[^/]*$/, '');
         r.ipkUrl = /^https?:/.test(m.ipkUrl) ? m.ipkUrl : base + (m.ipkUrl || r.ipkName);
+        // Only an IPK from this project's own releases, over HTTPS.
+        if (r.ipkUrl.indexOf('https://github.com/' + REPO + '/releases/download/') !== 0) throw new Error('The release names a file somewhere else: not installing it');
         r.sha256 = m.ipkHash.sha256;
+        r.pkgVer = m.version || ''; r.sig = m.tivibroSig || '';
         if (m.ipkSize) r.size = m.ipkSize;
         set({ state: 'available', latest: r, checked: Date.now() });
         // Said once per version (issue #33: a TV that stays on never saw it); Settings marks it after that.
@@ -264,12 +267,28 @@ var Update = (function () {
     });
     return probe;
   }
+  /* The release build's signature over the version, the IPK's address and its SHA-256 (service/updatesig.js),
+     checked by the helper before anything is installed: the manifest came through the relay, which can't check
+     GitHub's certificate, so without it someone on the network could swap in another IPK with a matching checksum. */
+  function signed(r) {
+    var bad = new Error('This update could not be checked as one of TiviBro\'s own (no valid signature), so it isn\'t installed.  Install it from the releases page on GitHub instead.');
+    if (!r.sig) return Promise.reject(bad);
+    if (!(Net.active && Net.port)) return Promise.reject(new Error('Checking an update needs the network helper, which isn\'t running.  Restart TiviBro and try again.'));
+    return fetch('http://127.0.0.1:' + Net.port + '/update/verify', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ version: r.pkgVer, ipkUrl: r.ipkUrl, sha256: r.sha256, sig: r.sig }) })
+      .then(function (x) { return x.json(); }).then(function (j) {
+        if (!j || j.ok !== true) { Log.error('update', 'The signature of ' + r.version + ' did not check out; not installing it'); throw bad; }
+        Log.info('update', 'The signature of ' + r.version + ' checks out');
+      });
+  }
   var job = null;
   function install() {
     var r = st.latest;
     if (!r || !r.ipkUrl || !r.sha256) return Promise.reject(new Error('Check for updates first.'));
     return installer().then(function (ok) {
       if (!ok) throw new Error('Installing from the TV needs a rooted TV with the Homebrew Channel.');
+      return signed(r);
+    }).then(function () {
       set({ state: 'installing', progress: 0, status: 'Starting…', error: '' });
       Log.info('update', 'Installing ' + r.version + ' from ' + r.ipkUrl);
       return reopenAfter().then(function () { return new Promise(function (res, rej) {
@@ -328,6 +347,6 @@ var Update = (function () {
     check: check, autoCheck: autoCheck, whatsNew: whatsNew, countMe: countMe, install: install, installer: installer, describe: describe,
     onChange: function (f) { listeners.push(f); }, get state() { return st; }, get current() { return current(); },
     get wantPre() { return wantPre(); }, REPO: REPO, isPre: isPre,
-    _test: { parse: parse, compare: compare, pick: pick, notes: notes, isPre: isPre, notesBox: notesBox }
+    _test: { signed: signed, parse: parse, compare: compare, pick: pick, notes: notes, isPre: isPre, notesBox: notesBox }
   };
 })();

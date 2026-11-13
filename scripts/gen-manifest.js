@@ -36,6 +36,15 @@ const manifest = {
   ipkSize: buf.length,
   ipkHash: { sha256: crypto.createHash('sha256').update(buf).digest('hex') }
 };
+/* The signature the in-app updater checks before installing (service/updatesig.js): over the version, the IPK's
+   address and its SHA-256, with the release key (the UPDATE_SIGNING_KEY secret).  Without the key (a local
+   build) the manifest goes out unsigned, and TVs on TiviBro alpha 124 or later won't install it by themselves. */
+if (process.env.UPDATE_SIGNING_KEY) {
+  const sig = require(path.join(root, 'service/updatesig.js'));
+  manifest.tivibroSig = sig.sign({ version: manifest.version, ipkUrl: manifest.ipkUrl, sha256: manifest.ipkHash.sha256 }, process.env.UPDATE_SIGNING_KEY);
+  if (!sig.verify({ version: manifest.version, ipkUrl: manifest.ipkUrl, sha256: manifest.ipkHash.sha256, sig: manifest.tivibroSig })) { console.error('The signing key does not match the public key in service/updatesig.js'); process.exit(1); }
+  console.log('Signed the manifest');
+} else console.warn('UPDATE_SIGNING_KEY is not set: the manifest is not signed');
 const manifestName = `${app.id}.manifest.json`;
 const entry = {
   id: app.id,
