@@ -361,7 +361,7 @@ var Teams = (function () {
       /* For reminders, one per game: the same two teams within 12 hours are one game, however the channels
          write its start ("12:55 PM" on one, "1:00 PM" on another) and whatever airs it again later that night
          (a replay at 2 AM, a channel whose guide is an hour out).  The earliest start is kept, so it's never
-         missed; a Favorite channel for it is preferred. */
+         missed, unless more channels agree on another (vote(), below); a Favorite channel for it is preferred. */
       var vs = lastVs[team.league] || '', gk = team.id + '|' + vs, same = null;
       (seen[gk] || (seen[gk] = [])).forEach(function (g) { if (Math.abs(g.p.s - p.s) < SAME_GAME) same = g; });
       /* And whatever the listing says about the opponent: one team's games starting within 90 minutes of each
@@ -370,7 +370,8 @@ var Teams = (function () {
          baseball doubleheader included.  The listing that names the game is kept. */
       var tk = 'team|' + team.id;
       if (!same) (seen[tk] || []).forEach(function (g) { if (Math.abs(g.p.s - p.s) < CLOSE) same = g; });
-      if (!same) { same = { c: c, p: p, team: team, pair: pairOf(team), tag: curTag }; seen[gk].push(same); (seen[tk] || (seen[tk] = [])).push(same); out.push(same); return; }
+      if (!same) { same = { c: c, p: p, team: team, pair: pairOf(team), tag: curTag, votes: [{ c: c, p: p }] }; seen[gk].push(same); (seen[tk] || (seen[tk] = [])).push(same); out.push(same); return; }
+      same.votes.push({ c: c, p: p });
       var named = function (x) { return !!matchup(x.p.t, x.c ? x.c.n : ''); };
       if (Math.abs(p.s - same.p.s) <= 10 * 60000 && !named(same) && named({ c: c, p: p })) { same.c = c; same.p = p; return; }
       if (p.s < same.p.s - 10 * 60000) { same.c = c; same.p = p; }
@@ -428,6 +429,7 @@ var Teams = (function () {
       if (!g.team.schools || g.tag) return true;
       return sportOf(g, proof[g.team.abbr] || []) !== (g.team.league === 'ncaab' ? 'f' : 'b');
     });
+    if (one) out.forEach(vote);
     // A game: its team and start (to the half hour); its first start orders it.
     var first = {};
     out.forEach(function (g) { g.gk = g.team.id + '|' + Math.round(g.p.s / 2700e3); if (first[g.gk] == null || g.p.s < first[g.gk]) first[g.gk] = g.p.s; });
@@ -447,6 +449,30 @@ var Teams = (function () {
     return out;
   }
 
+  /* Channels that disagree on when a game starts: the time most of them give wins (one says 7:00, two say
+     8:00: a guide an hour out is the odd one).  Each channel counts once; starts within 10 minutes are one
+     time; only times within 2.5 hours of the earliest count (not the replay later that night).  A tie keeps
+     the earliest, so it's never missed.  Of the listings at that time: one that names the game, then a
+     Favorite, then the earliest. */
+  function vote(g) {
+    var v = g.votes;
+    if (!v || v.length < 3) return;
+    var t0 = Math.min.apply(null, v.map(function (x) { return x.p.s; })), groups = [];
+    v.forEach(function (x) {
+      if (x.p.s - t0 >= 150 * 60000) return;
+      var gr = groups.filter(function (y) { return Math.abs(y.s - x.p.s) <= 10 * 60000; })[0];
+      if (!gr) groups.push(gr = { s: x.p.s, ks: {}, n: 0, l: [] });
+      if (!gr.ks[x.c.k]) { gr.ks[x.c.k] = 1; gr.n++; }
+      gr.l.push(x);
+    });
+    groups.sort(function (a, b) { return b.n - a.n || a.s - b.s; });
+    if (groups.length < 2 || groups[0].n === groups[1].n) return;
+    var win = groups[0], cur = win.l.filter(function (x) { return x.c === g.c && x.p === g.p; })[0];
+    if (cur) return;                                   // what was kept is already at that time
+    var pick = win.l.filter(function (x) { return !!matchup(x.p.t, x.c.n); })[0] || win.l.filter(function (x) { return Library.isFav(x.c.k); })[0] ||
+      win.l.slice().sort(function (a, b) { return a.p.s - b.p.s; })[0];
+    g.c = pick.c; g.p = pick.p;
+  }
   var MAX_FEEDS = 8, SAME_GAME = 12 * 3600e3, CLOSE = 90 * 60000;
   var SPORTY = /\b(nfl|nba|nhl|mlb|wnba|mls|football|basketball|hockey|baseball|soccer)\b/i;
   // Not the game: placeholders ("not found yet"), and the shows around it.

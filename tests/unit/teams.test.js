@@ -266,6 +266,26 @@ const hoops2 = Teams.games(7 * 24 * H, true).filter(x => x.team.id === 'ncaab:ms
 ok('college basketball: a bare listing of the football game is left out', !hoops2.some(t => /Oregon/.test(t)), hoops2.join(' / '));
 Teams.follow('ncaab:msu', false);
 
+// Reminders: three channels with one game, one of them an hour out: the time two of them give wins.
+{
+  const fa = ch('FOX 13 Seattle', 'g5'), fb2 = ch('NFL Network', 'g5'), fc = ch('CBS Sports HQ', 'g5'); chans.push(fa, fb2, fc);
+  const t1 = NOW + 2 * H, t2 = NOW + 3 * H;
+  progs[fa.k] = [{ s: t1, e: t1 + 3 * H, t: 'Denver Broncos at Las Vegas Raiders' }];
+  progs[fb2.k] = [{ s: t2, e: t2 + 3 * H, t: 'Denver Broncos at Las Vegas Raiders' }];
+  progs[fc.k] = [{ s: t2 + 5 * 60e3, e: t2 + 3 * H, t: 'NFL Football: Broncos at Raiders' }];
+  Teams.follow('nfl:den', true); Teams.dirty();
+  let g1 = Teams.games(6 * H, true).filter(x => x.team.id === 'nfl:den');
+  ok('reminders: the start most channels agree on wins over an odd one out', g1.length === 1 && Math.abs(g1[0].p.s - t2) <= 5 * 60e3, JSON.stringify(g1.map(x => [x.c.n, (x.p.s - NOW) / H])));
+  // Two against two: a tie keeps the earliest, so it's never missed.
+  const fd = ch('FOX 10 Phoenix', 'g5'); chans.push(fd);
+  progs[fd.k] = [{ s: t1, e: t1 + 3 * H, t: 'Denver Broncos at Las Vegas Raiders' }];
+  Teams.dirty();
+  g1 = Teams.games(6 * H, true).filter(x => x.team.id === 'nfl:den');
+  ok('reminders: a tie keeps the earliest', g1.length === 1 && g1[0].p.s === t1, JSON.stringify(g1.map(x => [x.c.n, (x.p.s - NOW) / H])));
+  Teams.follow('nfl:den', false);
+  [fa, fb2, fc, fd].forEach(c => { delete progs[c.k]; });
+}
+
 console.log((fail ? fail + ' of ' : 'all ') + n + ' teams checks ' + (fail ? 'failed' : 'passed'));
 process.exit(fail ? 1 : 0);
 })();

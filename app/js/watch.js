@@ -59,6 +59,13 @@ var Watch = (function () {
       if (s[k] || !Parental.blockedOk(r.c)) return;
       if (remind) {
         if ((pending[r.w] || 0) >= PER_WORD) return;
+        // A team's game set earlier at another time, when the channels now agree on this one (Teams' vote): moved.
+        if (/^team:/.test(r.w)) Store.edits.reminders.forEach(function (x) {
+          if (x.w === r.w && x.s > now && x.s !== r.p.s && Math.abs(x.s - r.p.s) < (Teams.CLOSE || 90 * 60000) && Math.abs(x.s - r.p.s) > 10 * 60000) {
+            Log.info('watch', 'Moved the reminder for "' + r.p.t + '" to ' + U.hhmm(r.p.s) + ': most channels list it then');
+            x.k = r.c.k; x.s = r.p.s; x.e = r.p.e; x.t = r.p.t; mark(x);
+          }
+        });
         if (!reminded(r.c, r.p, r.w)) { Store.edits.reminders.push(mark({ k: r.c.k, s: r.p.s, e: r.p.e, t: r.p.t, w: r.w })); pending[r.w] = (pending[r.w] || 0) + 1; }
       } else if (found.length >= PER_WORD * 2) return;
       s[k] = r.p.e;

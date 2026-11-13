@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A team's reminder goes by the time most channels give.**  When channels carrying the same game disagree on its start (one says 7:00, two say 8:00, usually a guide an hour out), the reminder is set for the time most of them agree on, on one of those channels, and one already set at the odd time is moved.  A tie keeps the earliest, so a game is never missed.
+
 ## 0.6.0 (alpha 130, 2026-11-13)
 
 Pre-release: expect rough edges, and keep a backup before installing.
