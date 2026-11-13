@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 130, 2026-11-13)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 130
 
 - **Closed captions come back after a jump in the stream's clock.**  When a channel's timestamps jumped (the provider restarting its encoder, a gap, the clock wrapping), the picture's timeline carried on but the captions kept the stream's new clock, so none showed until the stream was reconnected.  Captions are now lined up with the picture again when the two drift more than 10 seconds apart.
 - **The phone app's guide gets posters for every TV show it lists.**  The TV only looked a show up on TMDB once it was focused on the TV's own screen, so the phone showed posters only for shows you'd already landed on there.  Now the shows the phone lists are looked up in the background, after whatever the TV's screen asks for, and their posters are there the next time the phone loads that part of the guide.
 - **College basketball in My teams.**  Men's college basketball is a league of its own in Settings > Channels and groups > My teams: every FBS school, and the main Division I programs without FBS football (the Big East, the West Coast Conference, the Atlantic 10, the Missouri Valley, the Horizon League, the Ivy League and more).  Football and basketball are followed separately.  A listing like "Purdue Boilermakers vs Michigan State Spartans" that doesn't say the sport goes to the sport in season.  When both are in season, the same game listed elsewhere with its sport decides first, then the school's other games that week (a school plays football once a week, usually on a Saturday).  When nothing tells them apart, it counts for both.  Women's games, hockey and other sports stay out.
 
-## 0.6.0 (alpha 129, 2026-11-13)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 129
+### In alpha 129
 
 - **My teams leaves out a school's basketball game that doesn't say what sport it is.**  An event channel named "Purdue Boilermakers vs Michigan State Spartans" (a Friday basketball game) showed up for Michigan State football.  A school plays football once a week, so a game that doesn't say football is now left out when the same school has another opponent within six days whose game does say football, or is on a Saturday when this one isn't.
 - **Settings, reorganised so each thing is where you'd look for it.**  Nothing was removed; some settings moved:
