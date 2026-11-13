@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 126, 2026-11-13)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 126
 
 - **DASH channels go back inside their own last minutes (issue #85).**  A DASH channel that keeps the last minutes itself (most do) now rewinds inside them with **◀**, at once and on the same connection, instead of asking the provider for a catch-up address, which many DASH providers answer with an error.  **◀ ▶** and **⏪ ⏩** move in it, the screen says how far behind live you are, and **Back**, **Stop**, yellow or **▶** past the end are live again.  Going back further than the channel keeps uses catch-up when it has it.
 - **DASH channels hold less in memory on TVs with 1 GB (issue #85).**  On memory-safe TVs a DASH channel keeps a smaller cushion, lets go of what has played sooner, and stays at the screen's own resolution.
@@ -10,11 +14,7 @@
 - **The phone app knows the TV is on before TiviBro is opened.**  After the TV was turned on, the phone app said it was off until TiviBro was opened, or for up to five minutes.  The TV now starts TiviBro's phone connection as soon as it comes on, and meanwhile the phone app says the TV is on and that TiviBro's connection is starting, instead of off.
 - **A problem report says how long TiviBro had been open** ("94 s after TiviBro started"), not "after it started", which read as the channel.
 
-## 0.6.0 (alpha 125, 2026-11-12)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 125
+### In alpha 125
 
 - **Pick the DNS that finds your provider (discussion #60).**  Settings > Playlists > DNS.  The TV's own DNS is still the default; the others are Cloudflare, Google or Quad9, Cloudflare or Google over HTTPS (which also hides the names you look up from your internet provider), or a DNS server you type.  For a provider whose address the TV's DNS doesn't find, or that your internet provider blocks.  If the one you pick doesn't answer, the TV's own is used.
 - **Español (España) (discussion #21).**  Spain's Spanish is its own language in Settings > Language: the same translation with Spain's words (ordenador, mando a distancia, en directo, pulsa, añadir, vídeo).  A TV set to Spain's Spanish gets it automatically; other Spanish stays Latin American.
