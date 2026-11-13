@@ -20,7 +20,7 @@
 var I18n = (function () {
   'use strict';
   // code, name in its own language, name in English
-  var LANGS = [['en', 'English', 'English'], ['es', 'Español', 'Spanish'], ['ru', 'Русский', 'Russian']];
+  var LANGS = [['en', 'English', 'English'], ['es', 'Español', 'Spanish'], ['es-ES', 'Español (España)', 'Spanish (Spain)'], ['ru', 'Русский', 'Russian']];
   var dicts = {}, pats = {}, cache = {}, cacheN = 0, misses = {}, missN = 0, tv = '', tvAsked = false, listeners = [];
 
   function has(code) { for (var i = 0; i < LANGS.length; i++) if (LANGS[i][0] === code) return true; return false; }
@@ -39,7 +39,11 @@ var I18n = (function () {
     try { if (typeof PalmSystem !== 'undefined' && PalmSystem.locale) l.push(PalmSystem.locale); } catch (e) {}
     try { if (navigator.languages && navigator.languages.length) l = l.concat([].slice.call(navigator.languages)); } catch (e) {}
     l.push(navigator.language, navigator.userLanguage);
-    for (var i = 0; i < l.length; i++) { var c = base(l[i]); if (c) return { code: c, locale: String(l[i]), supported: has(c) }; }
+    for (var i = 0; i < l.length; i++) {
+      var c = base(l[i]);
+      if (c === 'es' && /^es[-_]es\b/i.test(String(l[i]))) c = 'es-ES';        // Spain's Spanish (lang/es-ES.js)
+      if (c) return { code: c, locale: String(l[i]), supported: has(c) };
+    }
     return { code: 'en', locale: 'en-US', supported: true };
   }
   function chosen() { var s = typeof Store !== 'undefined' && Store.settings; return s && s.lang && s.lang !== 'auto' && has(s.lang) ? s.lang : ''; }
@@ -52,6 +56,25 @@ var I18n = (function () {
   }
   // A locale for dates and numbers: the TV's own when it's this language ("es-MX"), else the language.
   function locale() { var l = lang(), d = detected(); return d.code === l ? d.locale.replace('_', '-') : l; }
+
+  /* A language made from another one with its own words (Spain's Spanish from the Latin American one: "ordenador"
+     for "computadora", "pulsa" for "presiona"…): every translation of `from`, with each word in `words` swapped
+     (whole words, keeping a capital), then `extra` on top.  Built when the file loads, so it's an ordinary
+     dictionary after that. */
+  var L_ = 'A-Za-zÀ-ÖØ-öø-ÿ';
+  function variant(code, from, words, extra) {
+    var rules = words.map(function (w) { return { rx: new RegExp('(^|[^' + L_ + '])(' + esc(w[0]) + ')(?=[^' + L_ + ']|$)', 'gi'), to: w[1] }; });
+    function swap(v) {
+      if (Object.prototype.toString.call(v) === '[object Array]') return v.map(swap);
+      var x = String(v);
+      rules.forEach(function (r) { x = x.replace(r.rx, function (a, pre, word) { var to = word === word.toUpperCase() && word !== word.toLowerCase() ? r.to.toUpperCase() : word.charAt(0) !== word.charAt(0).toLowerCase() ? r.to.charAt(0).toUpperCase() + r.to.slice(1) : r.to; return pre + to; }); });
+      return x;
+    }
+    var src = dicts[from] || {}, out = {};
+    for (var k in src) if (src.hasOwnProperty(k)) out[k] = swap(src[k]);
+    for (var k2 in extra || {}) if (extra.hasOwnProperty(k2)) out[k2] = extra[k2];
+    add(code, out);
+  }
 
   function add(code, dict) {
     var d = dicts[code] || (dicts[code] = {}), p = pats[code] || (pats[code] = []);
@@ -192,7 +215,7 @@ var I18n = (function () {
 
   return {
     t: t, raw: raw, add: add, lang: lang, locale: locale, set: set, setting: function () { return chosen() || 'auto'; }, detected: detected, base: base,
-    plural: plural, page: page, onChange: onChange, askTV: askTV, name: name, langs: langs, has: has, changed: changed,
+    plural: plural, page: page, onChange: onChange, variant: variant, askTV: askTV, name: name, langs: langs, has: has, changed: changed,
     misses: function () { return Object.keys(misses); }, _dicts: dicts, _setTV: function (l) { tv = l; changed(); }
   };
 })();

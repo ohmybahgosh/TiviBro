@@ -12,7 +12,7 @@ function load(nav, settings, extra) {
   const vm = require('vm');
   vm.createContext(ctx);
   vm.runInContext(fs.readFileSync(path.join(APP, 'i18n.js'), 'utf8') + ';this.I18n = I18n;', ctx);
-  ['es', 'ru'].forEach((l) => vm.runInContext(fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'), ctx));
+  ['es', 'es-ES', 'ru'].forEach((l) => vm.runInContext(fs.readFileSync(path.join(APP, 'lang', l + '.js'), 'utf8'), ctx));
   return ctx.I18n;
 }
 
@@ -45,6 +45,11 @@ ok('a short pattern only with its values given: no "Welcome to Paradise" in Span
 ok('a name is never translated', I.t(I.raw('Sports')) === 'Sports' && I.t('Sports') === 'Deportes' && String(I.raw('News')) === 'News' && 'x' + I.raw('News') === 'xNews');
 ok('vars fill the translation', I.t('Language: {x}', { x: 'Español' }) === 'Idioma: Español');
 ok('vars fill English too', load({ language: 'en' }).t('Language: {x}', { x: 'English' }) === 'Language: English');
+ok('Spain: TV set to es-ES gets Spain\'s Spanish', I.lang() === 'es-ES' && I.locale() === 'es-ES');
+ok('Spain\'s words: ordenador, mando a distancia, en directo', I.t('Or open the address on a computer.') === 'O abre la dirección en un ordenador.' && /mando a distancia/i.test(I.t('Remote and buttons')) && I.t('LIVE') === 'EN DIRECTO');
+ok('Spain: the rest is the same Spanish', I.t('3 hours') === '3 horas' && I._dicts['es-ES'].Guide === I._dicts.es.Guide);
+ok('Mexico stays Latin American Spanish', load({ language: 'es-MX' }).lang() === 'es' && /computadora/.test(load({ language: 'es-MX' }).t('Or open the address on a computer.')));
+ok('Spain\'s Spanish can be chosen in Settings', load({ language: 'en-US' }, { lang: 'es-ES' }).lang() === 'es-ES' && load({}, {}).langs().some((l) => l.code === 'es-ES'));
 I = load({ language: 'ru' });
 ok('Russian plurals: 1 час, 3 часа, 5 часов, 21 час, 12 часов', ['1 hours', '3 hours', '5 hours', '21 hours', '12 hours'].map((x) => I.t(x)).join(',') === '1 час,3 часа,5 часов,21 час,12 часов', ['1 hours', '3 hours', '5 hours', '21 hours', '12 hours'].map((x) => I.t(x)));
 ok('Russian plural rule', [1, 2, 4, 5, 11, 14, 21, 22, 25, 111].map((n) => I.plural('ru', n)).join('') === '0112220122');
