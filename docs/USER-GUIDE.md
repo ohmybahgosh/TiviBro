@@ -40,7 +40,7 @@ Restoring a backup onto a fresh TV, start to finish:
 
 ### Language
 
-TiviBro shows in your TV's own language: the language of the TV's menus (on webOS, the TV's **Menu Language** setting), read when TiviBro starts and again whenever you change it on the TV.  English, Spanish (Latin American, and Spain's), and Russian are in so far.  Spanish and Russian are new: the menus, the side menu, Settings' sections and most of their rows are translated, and anything not translated yet shows in English.  A TV in a language TiviBro doesn't have yet gets English.
+TiviBro shows in your TV's own language: the language of the TV's menus (on webOS, the TV's **Menu Language** setting), read when TiviBro starts and again whenever you change it on the TV.  English, Spanish (Latin American, and Spain's), Portuguese (Brazil) and Russian are in so far.  Spanish and Russian are new: the menus, the side menu, Settings' sections and most of their rows are translated, and anything not translated yet shows in English.  A TV in a language TiviBro doesn't have yet gets English.
 
 If it picked the wrong one, choose another:
 
@@ -674,7 +674,7 @@ On a row with a choice, **◀ ▶** change it (with the Magic Remote, click the 
 ### Settings: Language
 
 - **Automatic: the TV's language** (default): the language of the TV's menus.  The line under it says which that is.
-- **English**, **Español**, **Español (España)**, **Русский**: TiviBro in that language, whatever the TV is set to.  **Español** is Latin American Spanish; **Español (España)** is the same with Spain's words (ordenador, mando a distancia, en directo, pulsa).  A TV set to Spain's Spanish gets it automatically.
+- **English**, **Español**, **Español (España)**, **Português (Brasil)**, **Русский**: TiviBro in that language, whatever the TV is set to.  **Español** is Latin American Spanish; **Español (España)** is the same with Spain's words (ordenador, mando a distancia, en directo, pulsa).  A TV set to Spain's Spanish gets it automatically.
 
 See [Language](#language).
 
@@ -706,7 +706,7 @@ Your playlists and how often their channel lists reload.  **OK** on a playlist o
 |---|---|---|
 | *(each playlist)* | | Its name and type, whether it is the first playlist or on, and how many channels it has.  **OK** opens its page (below). |
 | **Add playlist…** | | Opens the setup screen for another Xtream Codes, M3U or Stalker portal playlist, which is then used next to the ones you have.  Each playlist keeps its own hidden items, renames, guide and name rules.  From the phone app it's easier: share your provider's link to it. |
-| **DNS** *(under Finding your provider)* | **The TV's own** · Cloudflare (1.1.1.1) · Google (8.8.8.8) · Quad9 (9.9.9.9) · Cloudflare over HTTPS · Google over HTTPS · A DNS server I type | Which DNS the network helper uses to find your providers' servers.  The TV's own is right for most.  Try another when a provider's address isn't found, or your internet provider blocks it.  Over HTTPS also hides the names you look up from your internet provider.  If the one you pick doesn't answer, the TV's own is used.  Your network's own names (like a server at home) always use the TV's.  **A DNS server I type** adds a **DNS server** row for its address (like 192.168.1.1). |
+| **DNS** *(under Finding your provider)* | **The TV's own** · Cloudflare (1.1.1.1, 1.0.0.1) · Google (8.8.8.8) · Quad9 (9.9.9.9) · ControlD Unfiltered (76.76.2.0) · ControlD Uncensored (76.76.2.5) · Cloudflare, Google, Quad9, ControlD Unfiltered or ControlD Uncensored over HTTPS · A DNS server I type | Which DNS the network helper uses to find your providers' servers.  The TV's own is right for most.  Try another when a provider's address isn't found, or your internet provider blocks it.  Over HTTPS also hides the names you look up from your internet provider; each is tried at its second address when the first is blocked (1.0.0.1 for Cloudflare).  If the one you pick doesn't answer, the TV's own is used.  Your network's own names (like a server at home) always use the TV's.  **A DNS server I type** adds a **DNS server** row for its address (like 192.168.1.1). |
 
 Each playlist in the list starts with when its subscription ends ("Expires 19 Nov", "Expires in 3 days" in the last two weeks, "Expired 2 Oct"), when the provider reports it.
 
@@ -887,7 +887,7 @@ How channels start, how much video TiviBro holds, which player it uses, what it 
 | **Aspect** | **Original** · Fill · Zoom · 4:3 · 16:9 · 21:9 · 4:3 to 16:9 | The shape of the picture for every channel and video.  *Fill* stretches it to the screen, *Zoom* fills the screen and crops the edges, *16:9* fixes a picture squashed into 4:3, *21:9* fills the screen with a letterboxed 2.35:1 film, *4:3 to 16:9* stretches a 4:3 picture wide.  A channel, movie or episode can have its own from the quick menu (**Aspect**). |
 | **Skip step** | 10 s · 15 s · **30 s** · 1 min · 2 min | Under **Catch-up, movies and shows**.  How far **◀ ▶** jump while watching catch-up or a movie.  Pressing again quickly jumps further each time. |
 | **Rewind / fast forward step** | 30 s · 1 min · **2 min** · 5 min · 10 min | How far **⏪ ⏩** jump while watching catch-up or a movie. |
-| **◀ on a live channel with catch-up** | **Rewind** · Last channel | On a catch-up channel, **◀** rewinds into the current programme.  Without catch-up, **◀** always goes to the last channel. |
+| **◀ on a live channel with catch-up** | **Rewind** · Last channel | On a catch-up channel, **◀** rewinds into the current programme.  Without catch-up, **◀** always goes to the last channel.  A DASH channel that keeps the last minutes itself (most do) goes back inside them instead, at once: **◀ ▶** and **⏪ ⏩** move in it, and **Back**, **Stop**, yellow or **▶** past the end are live again; going back further than it keeps uses catch-up when the channel has it. |
 | **Info panel when switching channels** | **On** · Off | Under **Switching channels**.  Off shows just the channel number and name when you change channel. |
 | **Show stream details in the info panel** | **On** · Off | Adds the resolution, codecs and which player is in use. |
 | **Keep the picture while reconnecting** | **On** · Off | When a channel drops for a moment, the last picture stays on screen with a small notice in the corner instead of a black screen and "Tuning".  Some streams the TV player draws itself can't be held; those go black as before.  A channel that drops three times in three minutes on MPEG-TS also tries the provider's HLS version of it straight away, and keeps using it while TiviBro is open. |

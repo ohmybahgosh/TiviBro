@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **DASH channels go back inside their own last minutes (issue #85).**  A DASH channel that keeps the last minutes itself (most do) now rewinds inside them with **◀**, at once and on the same connection, instead of asking the provider for a catch-up address, which many DASH providers answer with an error.  **◀ ▶** and **⏪ ⏩** move in it, the screen says how far behind live you are, and **Back**, **Stop**, yellow or **▶** past the end are live again.  Going back further than the channel keeps uses catch-up when it has it.
+- **DASH channels hold less in memory on TVs with 1 GB (issue #85).**  On memory-safe TVs a DASH channel keeps a smaller cushion, lets go of what has played sooner, and stays at the screen's own resolution.
+- **Subtitles that switch themselves off come back on (issue #86).**  A subtitle could stop showing partway through a movie while the menu still said it was on, until another language was picked and then this one again.  TiviBro now keeps the subtitle you're watching on, unless you pick Off or another one.  A subtitle read from the movie file that never gets an answer no longer stops the ones after it, and the reader is less fussy about what the TV says it has buffered.
+- **More DNS choices, and DNS over HTTPS that gets past a blocked address (discussion #60).**  Settings > Playlists > DNS adds ControlD's free Unfiltered and Uncensored DNS, and Quad9 and both ControlD ones over HTTPS.  Over HTTPS now tries each service's second address when the first is blocked (1.0.0.1 when 1.1.1.1 is), and uses the standard way of asking that every service answers.
+- **Português (Brasil) (discussion #84).**  Brazilian Portuguese is a new language in Settings > Language, about 90% of TiviBro's text.  A TV set to Portuguese gets it automatically.
+- **The phone app knows the TV is on before TiviBro is opened.**  After the TV was turned on, the phone app said it was off until TiviBro was opened, or for up to five minutes.  The TV now starts TiviBro's phone connection as soon as it comes on, and meanwhile the phone app says the TV is on and that TiviBro's connection is starting, instead of off.
+- **A problem report says how long TiviBro had been open** ("94 s after TiviBro started"), not "after it started", which read as the channel.
+
 ## 0.6.0 (alpha 125, 2026-11-12)
 
 Pre-release: expect rough edges, and keep a backup before installing.
