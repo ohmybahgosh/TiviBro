@@ -162,7 +162,8 @@ var EmbedSubs = (function () {
       if (!video.buffered) return true; // non-media test hosts
       if (video.seeking || video.readyState < 3) return false;
       for (var b = 0; b < video.buffered.length; b++) {
-        if (video.buffered.start(b) <= video.currentTime && video.buffered.end(b) - video.currentTime >= 2) return true;
+        // (half a second of slack: some TV players report a range starting a hair after the playing position)
+        if (video.buffered.start(b) <= video.currentTime + 0.5 && video.buffered.end(b) - video.currentTime >= 2) return true;
       }
       return video.ended || (isFinite(video.duration) && video.duration - video.currentTime < 2 && video.readyState >= 3);
     }
@@ -408,7 +409,11 @@ var EmbedSubs = (function () {
           return true;
         }, function (e) { wrapped = old; throw e; });
       }
+      /* A read that never ends (no answer, no error, no timeout: seen as subtitles stopping partway, issue #86)
+         would hold every later read for the rest of the play.  After two minutes it is let go of. */
+      var busyAt = 0, gen = 0;
       pump = function () {
+        if (busy && Date.now() - busyAt > 120000) { Log.warn(tag, 'A subtitle read never finished; reading on'); busy = false; gen++; if (activeRequest) { try { activeRequest.abort(); } catch (e) {} } }
         if (cancelled || busy || (rec && rec.failed)) return;
         clearTimeout(retryTimer); retryTimer = null;
         if (!hasBuffer()) { retryTimer = setTimeout(pump, 1000); return; }
@@ -424,19 +429,21 @@ var EmbedSubs = (function () {
           return false;
         });
         if (!items.length) { retryTimer = setTimeout(pump, Math.max(1, earliest - clock)); return; }
-        busy = true;
+        busy = true; busyAt = Date.now();
         // The renewal stays owed until it is answered: a seek that cancels it asks again.
+        var mine = ++gen;
         if (R.fresh) {
           newSession().then(function (same) {
+            if (mine !== gen) return;
             busy = false;
             if (cancelled) return;
             if (same) pump(); else stop();
-          }, refusedBy);
+          }, function (e) { if (mine === gen) refusedBy(e); });
           return;
         }
         var item = items[0];
         adapter.read(rec, item, function (start, end) { return fetchRange(wrapped, start, end); }, alive).then(function (found) {
-          if (cancelled) return;
+          if (cancelled || mine !== gen) return;
           // An item's lines are kept for replays whole or not at all, so one that didn't fit the text
           // cap can be read again after a seek without doubling the lines that were kept.
           var chars = 0;
@@ -462,6 +469,7 @@ var EmbedSubs = (function () {
           checkLoads();
           pump();
         }).catch(function (e) {
+          if (mine !== gen) return;
           busy = false;
           if (cancelled) return;
           if (e && e.refused) return refusedBy(e);

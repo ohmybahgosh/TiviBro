@@ -150,5 +150,28 @@ ok('results: the right year and the release closest to what is playing first, ma
 const long = T.shortName('A.Very.Long.Release.Name.2024.2160p.UHD.BluRay.REMUX.HDR.HEVC.Atmos-SOMEGROUPNAME');
 ok('results: a long release name is cut in the middle, keeping its end', long.length <= 58 && /^A\.Very\.Long/.test(long) && /SOMEGROUPNAME$/.test(long) && /…/.test(long), long);
 
+// Issue #86: a subtitle that turns itself off comes back on; Off picked in the menu stays off.
+{
+  const v = { textTracks: [makeTrack('subtitles', 'English', 'en'), makeTrack('subtitles', 'Spanish', 'es')], _subsRev: 3 };
+  Subs.forget();
+  v.textTracks[0].mode = 'showing'; T.keepOn(v);
+  v.textTracks[0].mode = 'disabled'; T.keepOn(v);
+  ok('a subtitle that turned itself off is on again', v.textTracks[0].mode === 'showing' && v.textTracks[1].mode === 'disabled');
+  // The same track, made again (a reconnect): found by its name and language.
+  v.textTracks = [makeTrack('subtitles', 'Spanish', 'es'), makeTrack('subtitles', 'English', 'en')];
+  T.keepOn(v);
+  ok('also when the track list was made again', v.textTracks[1].mode === 'showing' && v.textTracks[0].mode === 'disabled');
+  // Off in the menu (a new pick: _subsRev moves on, the wanted key empty).
+  v._subsRev = 4; v._subsChoice = true; v._subsWantKey = ''; v.textTracks[1].mode = 'disabled';
+  T.keepOn(v); T.keepOn(v);
+  ok('Off picked in the menu stays off', v.textTracks.every((t) => t.mode !== 'showing'));
+  // Another language picked in the menu: that one is kept from then on.
+  v._subsRev = 5; v._subsWantKey = 'Spanish|es'; v.textTracks[0].mode = 'showing'; T.keepOn(v);
+  v.textTracks[0].mode = 'disabled'; T.keepOn(v);
+  ok('a new pick is the one kept', v.textTracks[0].mode === 'showing' && v.textTracks[1].mode === 'disabled');
+  Subs.forget(); v.textTracks[0].mode = 'disabled'; T.keepOn(v);
+  ok('a new movie or channel starts with nothing to keep', v.textTracks.every((t) => t.mode !== 'showing'));
+}
+
 console.log(fails ? fails + ' FAILED' : 'all subtitle drawing checks passed');
 process.exit(fails ? 1 : 0);

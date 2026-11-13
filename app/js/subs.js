@@ -176,6 +176,7 @@ var Subs = (function () {
   }
   function gone(t) { return dead.indexOf(t) >= 0; }
   function reset() {
+    forget();
     keepTiming();
     subject = '';
     added.forEach(function (t) { try { t.mode = 'disabled'; } catch (e) {} dead.push(t); });
@@ -333,7 +334,30 @@ var Subs = (function () {
     var text = lines.join('\n').replace(/<\/?(?:b|i|u|font)(?:\s[^>]*)?>/gi, '');
     if (text !== boardText) { if (U.lines) U.lines(board, text); else board.textContent = text; board.style.display = text ? '' : 'none'; boardText = text; }
   }
-  function startDrawing() { if (!drawTimer && typeof document !== 'undefined') drawTimer = setInterval(function () { try { drawLines(); } catch (e) {} }, 250); }
+  /* Subtitles that turn themselves off (issue #86: on for a while, then gone, still on in the menu, back after
+     picking another language and this one again).  The subtitle on is remembered while it shows; if none shows
+     any more and nobody picked anything in the menu since (Off included), it is put back on.  Whatever turned it
+     off (the TV's player, a track list changing under it), the viewer's choice wins. */
+  var kept = { key: null, rev: null, told: 0 };
+  function keyOf(t) { return (t.label || '') + '|' + (t.language || ''); }
+  function keepOn(v) {
+    var list = v.textTracks, on = null, subsList = [];
+    for (var i = 0; list && i < list.length; i++) {
+      var t = list[i];
+      if (t.kind !== 'subtitles' || gone(t)) continue;
+      subsList.push(t);
+      if (t.mode === 'showing' && !on) on = t;
+    }
+    if (on) { kept.key = keyOf(on); kept.rev = v._subsRev || 0; return; }
+    if (!kept.key || (v._subsRev || 0) !== kept.rev || (v._subsChoice && v._subsWantKey === '')) { if ((v._subsRev || 0) !== kept.rev) kept.key = null; return; }
+    for (var j = 0; j < subsList.length; j++) if (keyOf(subsList[j]) === kept.key) {
+      subsList[j].mode = 'showing';
+      if (Date.now() - kept.told > 300000) { kept.told = Date.now(); if (typeof Log !== 'undefined') Log.warn('subs', 'The subtitle turned itself off; on again (' + (subsList[j].label || subsList[j].language || 'track') + ')'); }
+      return;
+    }
+  }
+  function forget() { kept.key = null; }
+  function startDrawing() { if (!drawTimer && typeof document !== 'undefined') drawTimer = setInterval(function () { try { var v = video(); if (v && v.textTracks) keepOn(v); } catch (e) {} try { drawLines(); } catch (e) {} }, 250); }
 
   /* ---------- line up with a subtitle already in time ----------
      For each frame rate ratio, the shift (to 0.1 s) that makes the two tracks' lines overlap most. */
@@ -559,7 +583,7 @@ var Subs = (function () {
       (!want || U.lang(t.language || t.label) === want));
   }
 
-  return { find: find, gone: gone, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, test: test, keptCount: keptCount, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
+  return { find: find, gone: gone, forget: forget, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, test: test, keptCount: keptCount, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
     get delay() { return delay; }, get rate() { return rate; }, get timing() { return timingSummary(); }, setRate: setRate, draw: drawLines, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
-    _test: { listed: listed, shortName: shortName, keep: keep, parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
+    _test: { keepOn: keepOn, listed: listed, shortName: shortName, keep: keep, parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
 })();
