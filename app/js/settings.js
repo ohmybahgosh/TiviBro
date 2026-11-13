@@ -257,6 +257,11 @@ var Settings = (function () {
   /* ---------- remote ---------- */
   function remote() {
     var out = [];
+    // Which way Up and Down change channel in fullscreen (discussion #60): the two buttons of In the player, swapped.
+    out.push(choice('Up and Down in fullscreen', 'Up goes to the channel above in the list (a lower number) unless you change it here.  In the player lets you set each button yourself.',
+      ['prev', 'next'], ['Up: the channel above', 'Up: the channel below'],
+      function () { return Keymap.get('player', 'up') === 'chnext' ? 'next' : 'prev'; },
+      function (v) { Keymap.set('player', 'up', v === 'next' ? 'chnext' : 'chprev'); Keymap.set('player', 'down', v === 'next' ? 'chprev' : 'chnext'); }));
     out.push(page('In the player', 'Fullscreen live TV.', 'Buttons in the player', function () { return keysPage('player'); }));
     out.push(page('In the guide', 'The colour buttons, Play, Info, Stop and Hold OK.  Arrows, OK and Back stay fixed so you can always get around.', 'Buttons in the guide', function () { return keysPage('guide'); }));
     out.push(page('On the Channels screen', 'The plain channel browser.  Arrows, OK and Back stay fixed.', 'Buttons on the Channels screen', function () { return keysPage('list'); }));
@@ -923,6 +928,9 @@ var Settings = (function () {
       function () { return s.startTab === 'live' || s.channelsTab === true; }, function (v) { if (s.startTab === 'live') { U.toast('TiviBro starts on the Channels screen, so it stays in the menu'); return; } s.channelsTab = v; save(); Views.buildTabs(); }));
     out.push(choice('Clock', 'How times show everywhere in TiviBro: the guide, the info panel, reminders.  Automatic follows the TV\'s region.', ['auto', '12', '24'], ['Automatic', '12 hours (7:30pm)', '24 hours (19:30)'],
       function () { return s.clock === '12' || s.clock === '24' ? s.clock : 'auto'; }, function (v) { s.clock = v; save(); if (window.Guide && Guide.draw) Guide.draw(); relist(); }));
+    out.push(choice('Order movies and shows', 'In each category and My list.  All movies and All shows are newest first in the provider\'s order.  Recently added is always newest first.',
+      ['provider', 'added', 'name', 'rating'], ['The provider\'s order', 'Recently added first', 'Name (A–Z)', 'Rating (highest first)'],
+      function () { return s.vodSort || 'provider'; }, function (v) { s.vodSort = v; save(); }));
     out.push(head('The guide'));
     out.push(choice('OK on a channel in the Guide', 'Preview first works like TiviMate: the first OK plays it in the corner window, the second goes fullscreen.',
       ['preview', 'full'], ['Preview first, then fullscreen', 'Fullscreen right away'], function () { return s.guideOk === 'full' ? 'full' : 'preview'; }, function (v) { s.guideOk = v; save(); }));

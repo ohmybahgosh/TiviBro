@@ -989,7 +989,17 @@ var Views = (function () {
     var z = $('zapNum'); z.textContent = (Store.settings.showNumbers ? c.num + '  ' : '') + L.name(c); z.classList.remove('hidden');
     clearTimeout(zapShow.t); zapShow.t = setTimeout(function () { z.classList.add('hidden'); }, 1500);
   }
+  /* Zapping goes from the channel playing (discussion #60: after switching to a recent channel, CH+ went on from the
+     channel before it).  Between presses of a burst it goes from the one shown, which hasn't started yet. */
+  var zapAt = 0;
   function zap(d) {
+    var now = Date.now(), burst = now - zapAt < 1500;
+    zapAt = now;
+    if (!burst && playing && mode === 'live') {
+      followPlaying();
+      var at = L.channels(curGroup).findIndex(function (c) { return c.k === playing.k; });
+      if (at >= 0) zapIdx = at;
+    }
     var list = L.channels(curGroup);
     if (!list.length) return;
     if (zapIdx < 0) zapIdx = 0;
