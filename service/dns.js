@@ -1,6 +1,6 @@
 /* Finding the provider's server: the TV's own DNS (the default), or one picked in Settings > Playlists > DNS
    (discussion #60): a public DNS server (Cloudflare, Google, Quad9, ControlD or one you type), or DNS over HTTPS
-   (Cloudflare, Google, Quad9 or ControlD), for a provider whose name the TV's DNS doesn't find or blocks.  Every request the helper makes looks
+   (Cloudflare, Google or ControlD; Quad9's answers only HTTP/2 there, which old Node can't speak), for a provider whose name the TV's DNS doesn't find or blocks.  Every request the helper makes looks
    names up through dns.lookup, so that is what is replaced; addresses, local names and IPv6-only asks go to the
    TV's DNS as before, and so does a name the chosen DNS can't answer (better a blocked answer than none).
    Answers are kept for their TTL (1 to 30 minutes).
@@ -21,11 +21,15 @@ var PRESET = {
 var DOH = {
   'doh-cloudflare': { hosts: ['1.1.1.1', '1.0.0.1'], path: '/dns-query' },
   'doh-google': { hosts: ['8.8.8.8', '8.8.4.4'], path: '/dns-query' },
-  'doh-quad9': { hosts: ['9.9.9.9', '149.112.112.112'], path: '/dns-query' },
   'doh-controld': { hosts: ['freedns.controld.com'], path: '/p0' },
   'doh-controld-uncensored': { hosts: ['freedns.controld.com'], path: '/uncensored' }
 };
-var BOOT = { 'freedns.controld.com': 1 };
+// The DoH services' own names are always found by the TV's DNS: looked up here, they would ask themselves.
+function isBoot(h) {
+  var all = [testDoh].concat(Object.keys(DOH).map(function (k) { return DOH[k]; }));
+  for (var i = 0; i < all.length; i++) if (all[i] && all[i].hosts.indexOf(h) >= 0) return true;
+  return false;
+}
 var mode = 'tv', custom = '', cache = {}, stats = { ok: 0, failed: 0, last: '' };
 var IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/;
 
@@ -108,7 +112,7 @@ function lookup(host, opts, cb) {
   if (typeof opts === 'function') { cb = opts; opts = {}; }
   if (typeof opts === 'number') opts = { family: opts };
   opts = opts || {};
-  if (mode === 'tv' || typeof host !== 'string' || !host || isAddress(host) || isLocal(host) || BOOT[host.toLowerCase()] || opts.family === 6) return orig.apply(dns, args);
+  if (mode === 'tv' || typeof host !== 'string' || !host || isAddress(host) || isLocal(host) || isBoot(host.toLowerCase()) || opts.family === 6) return orig.apply(dns, args);
   resolve(host, function (e, ip) {
     if (e) { stats.failed++; stats.last = host + ': ' + (e.code || e.message) + ', the TV\'s DNS instead'; return orig.call(dns, host, opts, cb); }
     stats.ok++;

@@ -323,8 +323,8 @@ var Settings = (function () {
        one you type, or DNS over HTTPS, for a provider the TV's DNS doesn't find or blocks. */
     out.push(head('Finding your provider'));
     out.push(choice('DNS', 'Which DNS finds your providers\' servers.  The TV\'s own is right for most.  Try another when a provider\'s address isn\'t found, or is blocked by your internet provider.  Over HTTPS also hides the names you look up from it.  Needs the network helper.',
-      ['tv', 'cloudflare', 'google', 'quad9', 'controld', 'controld-uncensored', 'doh-cloudflare', 'doh-google', 'doh-quad9', 'doh-controld', 'doh-controld-uncensored', 'custom'],
-      ['The TV\'s own', 'Cloudflare (1.1.1.1, 1.0.0.1)', 'Google (8.8.8.8)', 'Quad9 (9.9.9.9)', 'ControlD Unfiltered (76.76.2.0)', 'ControlD Uncensored (76.76.2.5)', 'Cloudflare over HTTPS', 'Google over HTTPS', 'Quad9 over HTTPS', 'ControlD Unfiltered over HTTPS', 'ControlD Uncensored over HTTPS', 'A DNS server I type'],
+      ['tv', 'cloudflare', 'google', 'quad9', 'controld', 'controld-uncensored', 'doh-cloudflare', 'doh-google', 'doh-controld', 'doh-controld-uncensored', 'custom'],
+      ['The TV\'s own', 'Cloudflare (1.1.1.1, 1.0.0.1)', 'Google (8.8.8.8)', 'Quad9 (9.9.9.9)', 'ControlD Unfiltered (76.76.2.0)', 'ControlD Uncensored (76.76.2.5)', 'Cloudflare over HTTPS', 'Google over HTTPS', 'ControlD Unfiltered over HTTPS', 'ControlD Uncensored over HTTPS', 'A DNS server I type'],
       function () { return s.dns || 'tv'; },
       function (v) { if (v === 'custom' && !s.dnsServer) return askDns(); s.dns = v; save(); Net.setDns(); build(); }));
     if (s.dns === 'custom') out.push(action('DNS server', 'Its address, like 192.168.1.1 (your router) or a public one.', askDns, function () { return s.dnsServer || 'Not set'; }));

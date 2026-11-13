@@ -86,9 +86,13 @@ function server() {
     D._doh({ hosts: ['127.0.0.1'], port: hs.address().port, path: '/dns-query' });
     r = await look('doh2.example');
     ok('a server whose certificate isn\'t trusted is not believed (the TV\'s DNS instead)', r.a !== '10.1.2.3', r);
+    // A DoH service known only by name is found with the TV's DNS (looked up through itself, it would loop).
+    D._doh({ hosts: ['localhost'], port: hs.address().port, path: '/dns-query', ca: tls.cert });
+    r = await look('doh3.example');
+    ok('a DoH service at a name doesn\'t look itself up', !!r && (r.a !== undefined || r.e !== undefined), r);
     D._doh(null); D.set('tv'); hs.close();
   }
-  ok('ControlD and Quad9 can be picked', ['controld', 'controld-uncensored', 'doh-quad9', 'doh-controld', 'doh-controld-uncensored'].every((m) => D.set(m).mode === m));
+  ok('ControlD can be picked', ['controld', 'controld-uncensored', 'doh-controld', 'doh-controld-uncensored'].every((m) => D.set(m).mode === m));
   D.set('tv');
   console.log(fail ? fail + ' failures' : 'all DNS checks passed');
   process.exit(fail ? 1 : 0);
