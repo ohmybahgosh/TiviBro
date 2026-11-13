@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 127, 2026-11-13)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 127
 
 - **TiviBro's phone connection starts right after the TV restarts.**  Alpha 126 started it the moment the TV's power state said it was on, but most TVs don't let an app watch that, so after a full restart the phone app waited up to five minutes.  Where the power state can't be watched, it now starts as soon as the TV's network is up.
 - **The phone app says a TV in standby is off.**  A TV that stays on the network while off (Quick Start+, or a USB network adapter's Wi-Fi standby) kept answering the phone app, which showed it as on.  The TV now tells the app its power state, so standby shows as "Off (standby)", and Turn on waits for the TV to really be on.
 - **Português (Portugal).**  Portugal's Portuguese is its own language in Settings > Language: the Brazilian translation with Portugal's words (ecrã, telemóvel, Definições, ficheiro, utilizador, "A carregar").  A TV set to Portugal's Portuguese gets it automatically; other Portuguese stays Brazilian.
 
-## 0.6.0 (alpha 126, 2026-11-13)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 126
+### In alpha 126
 
 - **DASH channels go back inside their own last minutes (issue #85).**  A DASH channel that keeps the last minutes itself (most do) now rewinds inside them with **◀**, at once and on the same connection, instead of asking the provider for a catch-up address, which many DASH providers answer with an error.  **◀ ▶** and **⏪ ⏩** move in it, the screen says how far behind live you are, and **Back**, **Stop**, yellow or **▶** past the end are live again.  Going back further than the channel keeps uses catch-up when it has it.
 - **DASH channels hold less in memory on TVs with 1 GB (issue #85).**  On memory-safe TVs a DASH channel keeps a smaller cushion, lets go of what has played sooner, and stays at the screen's own resolution.
