@@ -686,3 +686,5 @@ TiviBro is an independent project.  It is not affiliated with LG Electronics or 
 ## License
 
 [MIT](LICENSE)
+
+The players bundled in `app/vendor` keep their own licenses: [hls.js](https://github.com/video-dev/hls.js) 1.5.20 ([Apache-2.0](app/vendor/hls-1.5.20.LICENSE.txt)), [mpegts.js](https://github.com/xqq/mpegts.js) 1.8.0 ([Apache-2.0](app/vendor/mpegts-1.8.0.LICENSE.txt), with the changes listed in [PATCHES.md](app/vendor/PATCHES.md)), [dash.js](https://github.com/Dash-Industry-Forum/dash.js) 4.7.4 ([BSD-3-Clause](app/vendor/dash-4.7.4.LICENSE.txt)) and Kazuhiko Arase's QR code generator (MIT, in its file header).  The fonts' licenses are in `app/fonts`.
