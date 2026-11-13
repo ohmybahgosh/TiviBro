@@ -299,7 +299,7 @@ private fun TvCard(
         Power.WAKING -> Accent to "Turning on…"
         Power.ON -> Good to (if (u.tivibroOpen) "On · TiviBro open" else "On")
         Power.STARTING -> Accent to "On · TiviBro's connection starting"
-        Power.OFF -> Muted to "Off or not reachable"
+        Power.OFF -> Muted to (if (u.standby) "Off (standby)" else "Off or not reachable")
         Power.UNPAIRED -> Bad to "This TV no longer knows this phone"
     }
     ElevatedCard(colors = CardDefaults.elevatedCardColors(containerColor = Panel), modifier = Modifier.fillMaxWidth()) {

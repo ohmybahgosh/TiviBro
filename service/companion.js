@@ -275,6 +275,8 @@ function create(opts) {
       woble: sys && sys.woble != null ? sys.woble : undefined,
       ips: a.map(function (x) { return x.ip; }), port: port,
       tivibro: { open: !!app.open, visible: !!app.visible, editor: !!(ed && ed.status().running) },
+      // The TV's power state (service.js): "Active" or "Screen Off" is on; anything else ("Active Standby") is off to the person.
+      power: opts.power ? opts.power() || undefined : undefined,
       phone: phoneView(p), now: Date.now()
     };
   }

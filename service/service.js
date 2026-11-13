@@ -52,6 +52,9 @@ proxy.log({ lv: 'info', event: 'service loaded', node: process.version });
 /* The TV's power changes (turned off, standby), kept in power.json, so the app can tell that its last
    session ended because the TV went off, not because it crashed.  Best effort: the call may be refused. */
 var fs = require('fs'), path = require('path'), POWER = path.join(__dirname, 'power.json'), powerSub = null;
+/* The TV's power state now ("Active", "Screen Off", "Active Standby"…), for the phone app: a TV kept on the network in
+   standby (Quick Start+, a USB network adapter's Wi-Fi standby) still answers it, and is off to whoever holds the phone. */
+var powerNow = '';
 try { proxy.SYS.power = JSON.parse(fs.readFileSync(POWER, 'utf8')) || []; } catch (e) {}
 function watchPower() {
   if (powerSub) return;
@@ -59,6 +62,7 @@ function watchPower() {
     powerSub = service.subscribe('luna://com.webos.service.tvpower/power/getPowerState', { subscribe: true });
     powerSub.on('response', function (m) {
       var st = m && m.payload && m.payload.state;
+      if (st) powerNow = String(st).slice(0, 40);
       if (!st || st === 'Active' || st === 'Screen Off') return;
       proxy.SYS.power.push({ t: Date.now(), state: String(st).slice(0, 40) });
       proxy.SYS.power = proxy.SYS.power.slice(-10);
@@ -115,6 +119,7 @@ var companion = require('./companion').create({
     });
   },
   app: function () { return { open: subs > 0, visible: reminders.visible }; },
+  power: function () { return powerNow; },
   // The TV's own volume, for the phone's remote (works whether TiviBro is open or not).
   volume: function (dir, cb) {
     var A = 'luna://com.webos.service.audio/master/';
@@ -135,7 +140,7 @@ var companion = require('./companion').create({
   // Wake on BLE: the phone's made-up Bluetooth address, registered with the TV's asc service (blewake.js).
   blewake: require('./blewake').create({ call: lcall, log: function (o) { proxy.log(o); } }).handle,
   editor: function () { return relay ? relay.editor : null; },
-  onSwitch: function (on) { if (on) { hold(); wake(true); } else { wake(false); if (!subs) release(); } }
+  onSwitch: function (on) { if (on) { hold(); wake(true); watchPower(); } else { wake(false); if (!subs) release(); } }
 });
 /* Every 5 minutes the activity manager calls "wake", which starts the helper if it isn't running
    (after the TV restarted, or webOS stopped it).  Persistent, so it outlives a restart.  That alone left the
@@ -165,7 +170,7 @@ function wake(on) {
 }
 if (companion.on) {
   companion.start(function () {});
-  hold(); wake(true);
+  hold(); wake(true); watchPower();
 }
 
 function hold() {
@@ -215,7 +220,7 @@ service.register('fire', function (message) {
 // Called by the activity manager every 5 minutes while the phone app connection is on (and by install.sh).
 service.register('wake', function (message) {
   var act = message.payload && message.payload.$activity && message.payload.$activity.activityId;
-  if (companion.on) { hold(); companion.start(function () {}); }
+  if (companion.on) { hold(); companion.start(function () {}); watchPower(); }
   if (act) lcall(AM + '/complete', { activityId: act, restart: companion.on }, function () {});
   message.respond({ returnValue: true, on: companion.on, running: companion.running });
 });

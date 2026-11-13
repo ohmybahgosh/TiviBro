@@ -72,6 +72,9 @@ data class TvUi(
     val tv: Tv,
     val power: Power = Power.CHECKING,
     val tivibroOpen: Boolean = false,
+    /** Off to the person, but still on the network: standby that keeps the TV reachable (Quick Start+, a USB network
+     *  adapter's Wi-Fi standby).  The TV's helper says so with its power state. */
+    val standby: Boolean = false,
     val busy: String? = null,
     /** What TiviBro on the TV said it has (movies, shows, My media, On now), for the home screen's shortcuts; null until known. */
     val caps: NowState? = null,
@@ -90,6 +93,11 @@ data class Pairing0(val busy: Boolean = false, val error: String? = null, val do
 
 /** LG's own network service (the one LG's apps use to control the TV) answers on 3000 or 3001 whenever the TV is on,
  *  TiviBro or not: how the app tells "on, TiviBro's connection not up yet" from "off". */
+/** The TV's power states that mean it is on for the person watching (webOS tvpower: "Active", "Screen Off" while
+ *  sound plays, the screensaver).  Anything else ("Active Standby", "Suspend") is off. */
+private val TV_ON_STATES = listOf("Active", "Screen Off", "Screen Saver")
+private fun String.isStandby() = this.isNotEmpty() && !TV_ON_STATES.any { this.startsWith(it) && !this.startsWith("Active Standby") }
+
 object LgPorts {
     fun up(host: String, timeoutMs: Int = 800): Boolean = listOf(3001, 3000).any { p ->
         runCatching { java.net.Socket().use { it.connect(java.net.InetSocketAddress(host, p), timeoutMs) }; true }.getOrDefault(false)
@@ -189,10 +197,16 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             if (bt != was.bt) bleChecked.remove(tv.id)
             // Bluetooth advertising not switched off on the TV: make sure this phone may wake it over Bluetooth.
             if (t.bt.isNotBlank() && !(info.has("woble") && !info.optBoolean("woble", true))) bleRegister(t)
+            // A TV in standby that stays on the network still answers; its power state says it is off.
+            val pw = info.optString("power", "")
+            if (pw.isStandby()) {
+                setUi(tv.id) { it.copy(power = Power.OFF, standby = true, tivibroOpen = false) }
+                return@withContext true
+            }
             val open = info.optJSONObject("tivibro")?.optBoolean("open") == true
             // What TiviBro has, for the shortcuts (one quick look, only while it is open).
             val caps = if (open) runCatching { TvClient(t, 4000).state(0, false) }.getOrNull()?.takeIf { it.open } else null
-            setUi(tv.id) { it.copy(power = Power.ON, tivibroOpen = open, caps = caps ?: it.caps) }
+            setUi(tv.id) { it.copy(power = Power.ON, standby = false, tivibroOpen = open, caps = caps ?: it.caps) }
             if (open && backups.due(tv.id) && backingUp.add(tv.id)) viewModelScope.launch { try { runCatching { autoBackup(t) } } finally { backingUp.remove(tv.id) } }
             true
         } catch (e: TbException) {
@@ -302,6 +316,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         } else null
         if (watch != null) log.add("Watching for the TV over Bluetooth: ${watch.result}.")
         var on = false; var tvUp = false
+        var said = 0            // the last look: 0 no answer, 1 answers but in standby, 2 on
         var host = tv.host; var port = tv.port
         try {
             val start = System.currentTimeMillis()
@@ -322,9 +337,14 @@ class AppModel(app: Application) : AndroidViewModel(app) {
                 delay(1000)
                 // Without Wi-Fi, the TV's Bluetooth advertisement is the only sign it came on.
                 if (bleOn.get() && !onLan(null)) break
-                if (System.currentTimeMillis() >= nextWol - 500) on = withContext(Dispatchers.IO) { runCatching { Pairing.hello(host, port, 1500); true }.getOrDefault(false) }
-                // The TV itself is up (LG's own service answers) while TiviBro's connection is still starting.
-                if (!on && !tvUp && withContext(Dispatchers.IO) { LgPorts.up(host) }) { tvUp = true; log.add("The TV is on; waiting for TiviBro's connection."); setUi(id) { it.copy(power = Power.STARTING) } }
+                // Answering isn't enough: a TV in network standby answers too.  On is its power state saying so.
+                if (System.currentTimeMillis() >= nextWol - 500) {
+                    said = withContext(Dispatchers.IO) { runCatching { Pairing.hello(host, port, 1500); if (TvClient(tv(id) ?: tv).info().optString("power", "").isStandby()) 1 else 2 }.getOrDefault(0) }
+                    on = said == 2
+                }
+                // The TV itself is up (LG's own service answers) while TiviBro's connection is still starting.  Not when
+                // TiviBro's helper answered: then its power state is what counts (LG's service answers in standby too).
+                if (!on && said == 0 && !tvUp && withContext(Dispatchers.IO) { LgPorts.up(host) }) { tvUp = true; log.add("The TV is on; waiting for TiviBro's connection."); setUi(id) { it.copy(power = Power.STARTING) } }
                 if (!on && System.currentTimeMillis() >= nextFind && onLan(null)) {
                     nextFind = System.currentTimeMillis() + 10_000
                     val f = withContext(Dispatchers.IO) { runCatching { Discovery.find(1500) }.getOrDefault(emptyList()) }.firstOrNull { it.id == tv.id }
@@ -352,6 +372,10 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             // Without Wi-Fi, and not seen over Bluetooth either: the phone can't tell whether the wake worked.
             setUi(id) { it.copy(power = Power.OFF) }
             say("Sent the Bluetooth wake to ${tv.name}.  The phone isn't on Wi-Fi, so it can't see the TV: turn Wi-Fi on to check.")
+        }
+        else if (said == 1) {
+            setUi(id) { it.copy(power = Power.OFF, standby = true) }
+            say("${tv.name} answered but stayed in standby.  Is Turn on via Wi-Fi on in the TV's settings?")
         }
         else if (tvUp) {
             setUi(id) { it.copy(power = Power.STARTING) }
