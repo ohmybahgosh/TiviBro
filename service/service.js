@@ -138,9 +138,21 @@ var companion = require('./companion').create({
   onSwitch: function (on) { if (on) { hold(); wake(true); } else { wake(false); if (!subs) release(); } }
 });
 /* Every 5 minutes the activity manager calls "wake", which starts the helper if it isn't running
-   (after the TV restarted, or webOS stopped it).  Persistent, so it outlives a restart. */
+   (after the TV restarted, or webOS stopped it).  Persistent, so it outlives a restart.  That alone left the
+   phone app saying the TV was off for up to five minutes after it was turned on, until TiviBro was opened.  So a
+   second one is called the moment the TV's power state says it is on: at start-up, and on waking from standby. */
+var WAKE_ON = 'tivibro-companion-on';
 function wake(on) {
-  if (!on) return lcall(AM + '/cancel', { activityName: WAKE }, function () {});
+  if (!on) { lcall(AM + '/cancel', { activityName: WAKE_ON }, function () {}); return lcall(AM + '/cancel', { activityName: WAKE }, function () {}); }
+  lcall(AM + '/create', {
+    activity: {
+      name: WAKE_ON, description: 'TiviBro: the phone app connection, as soon as the TV is on',
+      type: { background: true, persist: true, explicit: true },
+      trigger: { method: 'luna://com.webos.service.tvpower/power/getPowerState', params: { subscribe: true }, where: { prop: 'state', op: '=', val: 'Active' } },
+      callback: { method: 'luna://app.tivibro.tv.service/wake', params: { on: true } }
+    },
+    start: true, replace: true
+  }, function (r) { proxy.log({ lv: r.returnValue === false ? 'warn' : 'info', event: 'companion wake at power-on ' + (r.returnValue === false ? 'refused: ' + (r.errorText || r.errorCode) : 'set') }); });
   lcall(AM + '/create', {
     activity: {
       name: WAKE, description: 'TiviBro: keep the phone app connection available',

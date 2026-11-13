@@ -100,7 +100,7 @@ fun ShareScreen(model: AppModel, text: String, tvs: List<TvUi>, onBack: () -> Un
                     RadioButton(selected = pick == u.tv.id, onClick = { pick = u.tv.id })
                     Column {
                         Text(u.tv.name)
-                        Text(if (u.power == Power.ON) "On" else if (u.power == Power.OFF) "Off or not reachable" else "…", color = Muted, style = MaterialTheme.typography.labelSmall)
+                        Text(if (u.power == Power.ON) "On" else if (u.power == Power.STARTING) "On, connection starting" else if (u.power == Power.OFF) "Off or not reachable" else "…", color = Muted, style = MaterialTheme.typography.labelSmall)
                     }
                 }
             }

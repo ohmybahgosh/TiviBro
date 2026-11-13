@@ -64,7 +64,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-enum class Power { CHECKING, ON, OFF, WAKING, UNPAIRED }
+/** STARTING: the TV is on (its own network service answers) but TiviBro's connection isn't up yet, as for a minute
+ *  or so after the TV turns on, before TiviBro has been opened. */
+enum class Power { CHECKING, ON, STARTING, OFF, WAKING, UNPAIRED }
 
 data class TvUi(
     val tv: Tv,
@@ -85,6 +87,14 @@ private const val DROPBOX_WAIT_MS = 10 * 60_000L
 private const val WAKE_LONG_MS = 180_000L
 
 data class Pairing0(val busy: Boolean = false, val error: String? = null, val done: Tv? = null)
+
+/** LG's own network service (the one LG's apps use to control the TV) answers on 3000 or 3001 whenever the TV is on,
+ *  TiviBro or not: how the app tells "on, TiviBro's connection not up yet" from "off". */
+object LgPorts {
+    fun up(host: String, timeoutMs: Int = 800): Boolean = listOf(3001, 3000).any { p ->
+        runCatching { java.net.Socket().use { it.connect(java.net.InetSocketAddress(host, p), timeoutMs) }; true }.getOrDefault(false)
+    }
+}
 
 class AppModel(app: Application) : AndroidViewModel(app) {
     private val store = TvStore(app)
@@ -189,8 +199,26 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             if (e.code == "unpaired") { setUi(tv.id) { it.copy(power = Power.UNPAIRED) }; true }
             else { setUi(tv.id) { if (it.power == Power.WAKING) it else it.copy(power = Power.OFF, tivibroOpen = false) }; false }
         } catch (e: Exception) {
-            setUi(tv.id) { if (it.power == Power.WAKING) it else it.copy(power = Power.OFF, tivibroOpen = false) }
+            val tvUp = LgPorts.up(tv.host)
+            setUi(tv.id) { if (it.power == Power.WAKING) it else it.copy(power = if (tvUp) Power.STARTING else Power.OFF, tivibroOpen = false) }
+            if (tvUp) soon(tv.id)
             false
+        }
+    }
+    /** A TV that is on with TiviBro's connection still starting: looked at every 5 s for two minutes, not every 15. */
+    private val soonFor = java.util.concurrent.ConcurrentHashMap<String, Long>()
+    private fun soon(id: String) {
+        val now = System.currentTimeMillis()
+        if ((soonFor[id] ?: 0L) > now) return
+        soonFor[id] = now + 120_000
+        viewModelScope.launch {
+            while (System.currentTimeMillis() < (soonFor[id] ?: 0L)) {
+                delay(5000)
+                val u = _tvs.value.firstOrNull { it.tv.id == id } ?: break
+                if (u.power != Power.STARTING) break
+                check(u.tv)
+            }
+            soonFor.remove(id)
         }
     }
 
@@ -273,7 +301,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             if (seen.saw(ad) && bleOn.compareAndSet(false, true)) log.add("Counts as on: ${seen.why}.")
         } else null
         if (watch != null) log.add("Watching for the TV over Bluetooth: ${watch.result}.")
-        var on = false
+        var on = false; var tvUp = false
         var host = tv.host; var port = tv.port
         try {
             val start = System.currentTimeMillis()
@@ -295,6 +323,8 @@ class AppModel(app: Application) : AndroidViewModel(app) {
                 // Without Wi-Fi, the TV's Bluetooth advertisement is the only sign it came on.
                 if (bleOn.get() && !onLan(null)) break
                 if (System.currentTimeMillis() >= nextWol - 500) on = withContext(Dispatchers.IO) { runCatching { Pairing.hello(host, port, 1500); true }.getOrDefault(false) }
+                // The TV itself is up (LG's own service answers) while TiviBro's connection is still starting.
+                if (!on && !tvUp && withContext(Dispatchers.IO) { LgPorts.up(host) }) { tvUp = true; log.add("The TV is on; waiting for TiviBro's connection."); setUi(id) { it.copy(power = Power.STARTING) } }
                 if (!on && System.currentTimeMillis() >= nextFind && onLan(null)) {
                     nextFind = System.currentTimeMillis() + 10_000
                     val f = withContext(Dispatchers.IO) { runCatching { Discovery.find(1500) }.getOrDefault(emptyList()) }.firstOrNull { it.id == tv.id }
@@ -322,6 +352,11 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             // Without Wi-Fi, and not seen over Bluetooth either: the phone can't tell whether the wake worked.
             setUi(id) { it.copy(power = Power.OFF) }
             say("Sent the Bluetooth wake to ${tv.name}.  The phone isn't on Wi-Fi, so it can't see the TV: turn Wi-Fi on to check.")
+        }
+        else if (tvUp) {
+            setUi(id) { it.copy(power = Power.STARTING) }
+            soon(id)
+            say("${tv.name} is on.  TiviBro's connection is still starting; opening TiviBro on the TV brings it at once.")
         }
         else {
             setUi(id) { it.copy(power = Power.OFF) }

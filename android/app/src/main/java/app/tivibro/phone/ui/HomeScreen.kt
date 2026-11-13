@@ -298,6 +298,7 @@ private fun TvCard(
         Power.CHECKING -> Muted to "Checking…"
         Power.WAKING -> Accent to "Turning on…"
         Power.ON -> Good to (if (u.tivibroOpen) "On · TiviBro open" else "On")
+        Power.STARTING -> Accent to "On · TiviBro's connection starting"
         Power.OFF -> Muted to "Off or not reachable"
         Power.UNPAIRED -> Bad to "This TV no longer knows this phone"
     }
@@ -305,7 +306,7 @@ private fun TvCard(
         Column(Modifier.padding(18.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(48.dp).clip(CircleShape).background(Panel2), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.Tv, null, tint = if (u.power == Power.ON) Accent else Muted)
+                    Icon(Icons.Rounded.Tv, null, tint = if (u.power == Power.ON || u.power == Power.STARTING) Accent else Muted)
                 }
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
@@ -317,7 +318,7 @@ private fun TvCard(
                     }
                     if (isTile) Text("Quick Settings tile", style = MaterialTheme.typography.labelSmall, color = Accent)
                 }
-                if (u.busy != null || u.power == Power.WAKING || u.power == Power.CHECKING) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                if (u.busy != null || u.power == Power.WAKING || u.power == Power.CHECKING || u.power == Power.STARTING) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
                 Box {
                     IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, "More") }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
@@ -332,6 +333,15 @@ private fun TvCard(
             Spacer(Modifier.height(16.dp))
             when (u.power) {
                 Power.UNPAIRED -> Button(onClick = { onRepair(tv.id) }, modifier = Modifier.fillMaxWidth()) { Text("Pair again") }
+                Power.STARTING -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // The TV is on, but the helper TiviBro talks through hasn't started yet (it starts by itself
+                    // shortly after the TV turns on, or at once when TiviBro is opened).
+                    Text("The TV is on.  TiviBro's connection starts by itself within a minute or so, or at once when you open TiviBro on the TV.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        OutlinedButton(onClick = { onEditor(tv.id) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("Edit channels anyway", maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                        OutlinedButton(onClick = { onBackups(tv.id) }, modifier = Modifier.weight(1f).height(48.dp)) { Text("Backups", maxLines = 1) }
+                    }
+                }
                 Power.OFF -> Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     if (tv.canWake()) Button(onClick = { onWake(tv.id) }, modifier = Modifier.fillMaxWidth().height(48.dp)) {
                         Icon(Icons.Rounded.PowerSettingsNew, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Turn on")
