@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The phone app: a TV turned off shows as off, not as starting.**  A TV that stays on Wi-Fi while off still answers on LG's own service, which the app took for a TV turning on ("TiviBro's connection starting").  Now a TV that was on and stops answering shows as "Off (standby)", and only a TV that was off and starts answering shows as starting.
+
 ## 0.6.0 (alpha 127, 2026-11-13)
 
 Pre-release: expect rough edges, and keep a backup before installing.

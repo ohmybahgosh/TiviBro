@@ -213,9 +213,18 @@ class AppModel(app: Application) : AndroidViewModel(app) {
             if (e.code == "unpaired") { setUi(tv.id) { it.copy(power = Power.UNPAIRED) }; true }
             else { setUi(tv.id) { if (it.power == Power.WAKING) it else it.copy(power = Power.OFF, tivibroOpen = false) }; false }
         } catch (e: Exception) {
+            /* LG's own service answers both while the TV starts up (before TiviBro's helper has) and in network standby
+               (a TV kept on Wi-Fi while off, where the helper stops answering).  Which one is told by what came before:
+               a TV that was on and stops answering went to standby; one that was off and starts answering is coming on.
+               Starting that never gets past starting in two minutes is standby too. */
             val tvUp = LgPorts.up(tv.host)
-            setUi(tv.id) { if (it.power == Power.WAKING) it else it.copy(power = if (tvUp) Power.STARTING else Power.OFF, tivibroOpen = false) }
-            if (tvUp) soon(tv.id)
+            val now = System.currentTimeMillis()
+            val prev = tvsLatestUi(tv.id)
+            val started = startingSince[tv.id]
+            val starting = tvUp && prev?.power != Power.ON && !(prev?.power == Power.STARTING && started != null && now - started > 120_000) && !(prev?.standby == true)
+            if (starting) startingSince.putIfAbsent(tv.id, now) else startingSince.remove(tv.id)
+            setUi(tv.id) { if (it.power == Power.WAKING) it else it.copy(power = if (starting) Power.STARTING else Power.OFF, standby = tvUp && !starting, tivibroOpen = false) }
+            if (starting) soon(tv.id)
             false
         }
     }
@@ -237,6 +246,9 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun tvsLatest(tv: Tv) = tv(tv.id) ?: tv
+    private fun tvsLatestUi(id: String) = _tvs.value.firstOrNull { it.tv.id == id }
+    /** When each TV first showed as starting (LG's service up, TiviBro's helper not yet). */
+    private val startingSince = java.util.concurrent.ConcurrentHashMap<String, Long>()
 
     /* ---------- Turn on over Bluetooth (ble/BleWaker.kt, service/blewake.js) ---------- */
 
@@ -297,6 +309,8 @@ class AppModel(app: Application) : AndroidViewModel(app) {
     fun wake(id: String) = viewModelScope.launch {
         val tv = tv(id) ?: return@launch
         if (!tv.canWake()) { say("This TV hasn't told the app its network card yet.  Open it once while it's on."); return@launch }
+        // In network standby LG's service already answers, so it can't say the TV came on: only TiviBro's helper can.
+        val wasStandby = tvsLatestUi(id)?.standby == true
         setUi(id) { it.copy(power = Power.WAKING) }
         val app = getApplication<Application>()
         val log = WakeLog(tv.name)
@@ -344,7 +358,7 @@ class AppModel(app: Application) : AndroidViewModel(app) {
                 }
                 // The TV itself is up (LG's own service answers) while TiviBro's connection is still starting.  Not when
                 // TiviBro's helper answered: then its power state is what counts (LG's service answers in standby too).
-                if (!on && said == 0 && !tvUp && withContext(Dispatchers.IO) { LgPorts.up(host) }) { tvUp = true; log.add("The TV is on; waiting for TiviBro's connection."); setUi(id) { it.copy(power = Power.STARTING) } }
+                if (!on && said == 0 && !tvUp && !wasStandby && withContext(Dispatchers.IO) { LgPorts.up(host) }) { tvUp = true; log.add("The TV is on; waiting for TiviBro's connection."); setUi(id) { it.copy(power = Power.STARTING) } }
                 if (!on && System.currentTimeMillis() >= nextFind && onLan(null)) {
                     nextFind = System.currentTimeMillis() + 10_000
                     val f = withContext(Dispatchers.IO) { runCatching { Discovery.find(1500) }.getOrDefault(emptyList()) }.firstOrNull { it.id == tv.id }
