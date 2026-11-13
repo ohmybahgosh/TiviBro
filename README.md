@@ -8,7 +8,7 @@
 <p align="center">
   <b>The IPTV player LG TVs never got.</b><br>
   A free, open-source IPTV player for LG webOS TVs, built to feel like TiviMate and go further.<br>
-  Bring your own Xtream Codes or M3U subscription.
+  Bring your own Xtream Codes, M3U or Stalker portal subscription.
 </p>
 
 <p align="center">
@@ -50,7 +50,7 @@
 <p align="center"><a href="docs/media/guide.mp4"><img src="docs/media/guide.gif" width="100%" alt="The TiviBro guide, preview and fullscreen"></a></p>
 <p align="center"><sub>The guide is home: browse, preview in the window, OK again for fullscreen.  <a href="docs/media/guide.mp4">Watch the full-quality MP4</a>.  Every picture here is clickable.</sub></p>
 
-TiviBro plays your own IPTV subscription (Xtream Codes or M3U with XMLTV) on LG webOS TVs.  The guide is the home screen, the Magic Remote works everywhere, and a companion web editor lets you clean up hundreds of groups from your phone or computer instead of with a TV remote.
+TiviBro plays your own IPTV subscription (Xtream Codes, M3U with XMLTV, or a Stalker portal) on LG webOS TVs, in English, Spanish, Portuguese or Russian.  The guide is the home screen, the Magic Remote works everywhere, and a companion web editor lets you clean up hundreds of groups from your phone or computer instead of with a TV remote.
 
 ### 📱 Set it up from your phone
 
@@ -73,7 +73,9 @@ No typing logins with a remote.  The first screen shows a QR code: scan it with 
 | 🎮 **A remote in your pocket** | The TiviBro app for Android pairs with the TV: a remote, Play on TV from your channel list, volume, the editor full screen, and **Turn on**, which wakes the TV over every network card and over Bluetooth, the way LG's ThinQ app does.  It updates itself when a new version is out.  Each TV gets shortcuts on the home screen (Remote, Guide, On now, Movies and Shows, My media, Reminders, Edit channels, Backups, Settings), and when a setting asks something, the question comes up on the phone.  [Get the APK](https://tivibro.app/apk/). |
 | 📺 **Guide first** | Live preview top left, details top right, groups one press away.  OK previews, OK again goes fullscreen, just like TiviMate. |
 | ⏪ **Catch-up done right** | Rewind the guide into the past and replay what you missed, or restart the show you just tuned into. |
-| 🎬 **Movies and shows** | Your provider's VOD with posters, seasons, episodes, My list and resume, and a ✓ on what you watched to the end.  A **Languages** row keeps a 160,000-title, twelve-language library to the ones you watch, categories can be hidden, adult ones stay out of the way, and MKV files bring their subtitles. |
+| 🎬 **Movies and shows** | Your provider's VOD with posters, seasons, episodes, My list and resume, Recently added, your choice of order, trailers on YouTube, and a ✓ on what you watched to the end.  A **Languages** row keeps a 160,000-title, twelve-language library to the ones you watch, categories can be hidden, adult ones stay out of the way, and MKV files bring their subtitles. |
+| 🌍 **In your language** | TiviBro follows the TV's own language: English, Spanish (Latin American or Spain's), Portuguese (Brazil's or Portugal's) or Russian, or pick one in **Settings > Language**. |
+| 📡 **Stalker portals and DASH** | Stalker portals with their movies, shows and catch-up, next to Xtream Codes and M3U.  MPEG-DASH channels play too, including ones protected with ClearKey or Widevine from `#KODIPROP` lines.  **DNS** in Settings finds a provider the TV's own DNS can't: Cloudflare, Google, Quad9, ControlD or DNS over HTTPS. |
 | 🧭 **Set up in two minutes** | A new playlist starts a tour that shows what it has (countries, East and West copies, local cities, event channels, duplicates) and tidies it with the remote, or with your phone by scanning a code. |
 | 🔊 **Sound the TV can't play** | LG TVs from 2020 to 2022 can't play DTS, and no LG TV plays Dolby TrueHD.  TiviBro picks another track in your language if the file has one, or converts the sound to Dolby Digital while you watch, picture untouched.  The converter comes with TiviBro: nothing to download or set up. |
 | 🖼️ **Logos for every channel** | Missing logos filled in from two open logo projects, matched by guide id, name, country and call sign.  Or one matching style for the whole list. |
