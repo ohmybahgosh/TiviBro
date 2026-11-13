@@ -31,6 +31,10 @@ var Log = (function () {
       .replace(/([?&](?:sig|signature|token|auth|key|expires|hash|stb|play_token|stream_token)=)[^&\s"']*/gi, '$1***')
       .replace(/\b([0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b/gi, function (m) { return m.slice(0, 8) + ':**:**:**'; })     // a box's MAC (Stalker portals)
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s"']*/gi, '$1***')
+      // Tokens in headers and JSON: "Bearer …", a JWT (TMDB's read token is one), and named fields.
+      .replace(/(Bearer\s+)[A-Za-z0-9._~+\/-]{8,}=*/gi, '$1***')
+      .replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{4,}/g, 'eyJ***')
+      .replace(/("(?:credential|token|access_token|refresh_token|password|pass|secret|api_key)"\s*:\s*")[^"]{4,}(")/gi, '$1***$2')
       .replace(/(username=)([^&\s"']{0,2})[^&\s"']*/gi, '$1$2***')
       .replace(/("ctl"\s*:\s*")[0-9a-f]{8,}(")/gi, '$1***$2')             // the helper's control key (issue #26)
       .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/')

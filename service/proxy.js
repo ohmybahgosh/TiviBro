@@ -77,11 +77,24 @@ function sys() { return { bootAt: Math.round(Date.now() - require('os').uptime()
 /* Like Log.redact in the app.  Hosts whose links are signed (My media's file servers, learned as
    service/media.js resolves a movie) keep only their host. */
 function escRx(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+// Who may use the relay (create's server): TiviBro's own pages and the TV's player, at the TV's own address.
+function ownOrigin(o) {
+  if (o == null || o === '') return true;                    // the player, the helper's own requests, curl
+  o = String(o);
+  return o === 'null' || o === 'file://' || /^https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d{1,5})?$/i.test(o);
+}
+function sameHost(h) {
+  if (!h) return true;                                       // HTTP/1.0 tools send none
+  return /^(?:127\.0\.0\.1|localhost|\[::1\])(?::\d{1,5})?$/i.test(String(h));
+}
 function redact(u) {
   var s = String(u);
   (Media.signedHosts || []).forEach(function (h) { s = s.replace(new RegExp('(' + escRx(h) + ')[/?][^\\s"\'<>\\\\]*', 'gi'), '$1/***'); });
   return s.replace(/\/media-stream\/[a-f0-9]{48}/gi, '/media-stream/***').replace(/([?&](?:sig|signature|token|auth|key|expires|hash|stb|play_token|stream_token)=)[^&\s]*/gi, '$1***')
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s]*/gi, '$1***').replace(/(username=)([^&\s]{0,2})[^&\s]*/gi, '$1$2***')
+      // Tokens in headers and JSON: "Bearer …", a JWT (TMDB's read token is one), and named fields.
+      .replace(/(Bearer\s+)[A-Za-z0-9._~+\/-]{8,}=*/gi, '$1***').replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{4,}/g, 'eyJ***')
+      .replace(/("(?:credential|token|access_token|refresh_token|password|pass|secret|api_key)"\s*:\s*")[^"]{4,}(")/gi, '$1***$2')
     .replace(/\/(live|movie|series|timeshift)\/([^/\s]{0,2})[^/\s]*\/[^/\s]+\//gi, '/$1/$2***/***/')
     // The short Xtream link, http://server/user/pass/12345.ts (issue #25); the same rule as app/js/log.js.
     .replace(/(\b[a-z][a-z0-9+.-]*:\/\/[^\/\s"'<>]+)\/([^\/\s"'<>?#]{0,2})[^\/\s"'<>?#]*\/[^\/\s"'<>?#]+\/(\d+(?:\.[a-z0-9]{2,5})?)(?=[\s"'<>?#]|$)/gi, '$1/$2***/***/$3');
@@ -220,6 +233,14 @@ function create(opts) {
   var myPort = 0;
   function ownPort() { var a = server.address(); if (a && a.port) myPort = a.port; return myPort; }
   var server = http.createServer(function handle(req, res) {
+    /* Only TiviBro itself (a file:// page: Origin "null"; tests on 127.0.0.1) and the TV's player (no Origin).  A web
+       page opened in the TV's browser could otherwise use the relay to reach the home network through the TV and
+       read the answers, or read the log; and a name made to point at 127.0.0.1 (DNS rebinding) is turned away by
+       its Host. */
+    if (req.body === undefined && (!sameHost(req.headers.host) || !ownOrigin(req.headers.origin))) {
+      log({ lv: 'warn', event: 'refused a request from elsewhere', origin: String(req.headers.origin || '').slice(0, 80), host: String(req.headers.host || '').slice(0, 80), u: redact(req.url).slice(0, 120) });
+      res.writeHead(403, { 'Content-Type': 'text/plain' }); return res.end('Not from TiviBro');
+    }
     if (req.method === 'OPTIONS') { res.writeHead(204, ALLOW); return res.end(); }
     /* A POST through the relay: a DRM licence request (a DASH channel's #KODIPROP licence server, player.js).
        The body is small (a licence challenge): read it whole, then relay it like any request. */
@@ -255,6 +276,8 @@ function create(opts) {
       return opts.companion.control(req, res, req.url.split('?')[0]);
     }
     if (req.url.indexOf('/guide/') === 0) return Guide.handle(req, res, ALLOW, log);
+    // An update's signature, checked before the app installs it (updatesig.js).
+    if (req.url === '/update/verify' && req.method === 'POST') return require('./updatesig').handle(req, res, ALLOW);
     if (req.url.indexOf('/vod/') === 0) return Vod.handle(req, res, ALLOW, log, ownPort());
     if (req.url === '/log') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ node: process.version, stats: stats, log: LOG, earlier: EARLIER })); }
     var xm = /^\/xfer\/([A-Za-z0-9_-]{1,40})$/.exec(req.url);
@@ -577,5 +600,5 @@ function create(opts) {
   return { server: server, stats: stats, editor: editor };
 }
 
-module.exports = { SYS: SYS, sys: sys, create: create, target: target, liveKey: liveKey, keyStart: keyStart, pesPts: pesPts, lastPts: lastPts, relayed: relayed, rewriteHls: rewriteHls, log: log, redact: redact, LOG: LOG,
+module.exports = { _ownOrigin: ownOrigin, _sameHost: sameHost, SYS: SYS, sys: sys, create: create, target: target, liveKey: liveKey, keyStart: keyStart, pesPts: pesPts, lastPts: lastPts, relayed: relayed, rewriteHls: rewriteHls, log: log, redact: redact, LOG: LOG,
   _dns: { lookup: cachedLookup, cache: dnsCache, forget: forgetHost } };

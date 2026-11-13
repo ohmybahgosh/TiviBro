@@ -27,6 +27,8 @@ function req(url, method, body, token) {
   const L = 'http://127.0.0.1:' + port;
   a = await req(L + '/');
   ok('serves the editor page', a.status === 200 && /TiviBro Editor/.test(a.text));
+  const hdr = await new Promise((res) => http.get(L + '/', (rs) => { rs.resume(); res(rs.headers); }));
+  ok('never inside another site\'s frame, and no address sent on to links', hdr['x-frame-options'] === 'DENY' && /frame-ancestors 'none'/.test(hdr['content-security-policy'] || '') && hdr['referrer-policy'] === 'no-referrer', JSON.stringify(hdr));
   a = await req(L + '/api/state');
   ok('API refuses without login', a.status === 401);
   a = await req(L + '/api/login', 'POST', { password: 'abcdefgh' });

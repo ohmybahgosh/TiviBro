@@ -28,7 +28,7 @@ var crypto = require('crypto');
    AES-256-GCM with a key from PBKDF2-SHA256 (200,000 rounds) over a passphrase the user picks.
    The browser only ever sees the encrypted file; on restore it sends the file and the passphrase,
    and the helper decrypts and hands the backup to the app over localhost. */
-var KDF_ITER = 200000;
+var KDF_ITER = 200000, TOKEN_MS = 24 * 3600e3;
 function b64(b) { return b.toString('base64'); }
 function seal(obj, pass, cb) {
   var salt = crypto.randomBytes(16), iv = crypto.randomBytes(12);
@@ -102,7 +102,9 @@ function create(log) {
 
   function send(res, code, obj, type) {
     var body = typeof obj === 'string' || Buffer.isBuffer(obj) ? obj : JSON.stringify(obj);
-    res.writeHead(code, { 'Content-Type': type || 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+    // Never inside another site's frame (a page could trick a click through it), no address sent on to links.
+    res.writeHead(code, { 'Content-Type': type || 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY', 'Content-Security-Policy': "frame-ancestors 'none'", 'Referrer-Policy': 'no-referrer' });
     res.end(body);
   }
   function readJSON(req, cb) {
@@ -131,13 +133,17 @@ function create(log) {
       return fs.readFile(path.join(dir, f[0]), function (err, buf) { if (err) return send(res, 404, 'missing ' + f[0], 'text/plain'); send(res, 200, buf, f[1]); });
     }
     if (u === '/api/login' && req.method === 'POST') {
-      var fl = st.fails[who] || { n: 0, until: 0 };
-      if (fl.until > Date.now()) return send(res, 429, { error: 'Too many wrong passwords.  Wait ' + Math.ceil((fl.until - Date.now()) / 1000) + ' seconds.' });
+      var fl = st.fails[who] || { n: 0, until: 0 }, all = st.allFails || (st.allFails = { n: 0, at: Date.now(), until: 0 });
+      // Every address together too: guesses from many addresses at once (or a changing one) slow down as well.
+      if (Date.now() - all.at > 600000) { all.n = 0; all.at = Date.now(); }
+      var wait = Math.max(fl.until, all.until) - Date.now();
+      if (wait > 0) return send(res, 429, { error: 'Too many wrong passwords.  Wait ' + Math.ceil(wait / 1000) + ' seconds.' });
       return readJSON(req, function (err, j) {
         if (err || !j || typeof j.password !== 'string') return send(res, 400, { error: 'bad request' });
         var typed = fold(j.password), real = fold(st.password);
         if (!real || !same(typed, real)) {
           fl.n++; if (fl.n >= 5) { fl.until = Date.now() + 60000; fl.n = 0; }
+          all.n++; if (all.n >= 30) { all.until = Date.now() + 300000; all.n = 0; all.at = Date.now(); }
           st.fails[who] = fl;
           log({ lv: 'warn', event: 'editor login failed', from: who });
           return send(res, 401, { error: 'Wrong password.  It is shown on the TV under Settings, Edit on a phone or computer.' });
@@ -151,6 +157,8 @@ function create(log) {
       });
     }
     var tok = req.headers['x-token'];
+    // A login lasts a day; then the password again (a browser left logged in on a shared computer).
+    if (tok && st.tokens[tok] && Date.now() - st.tokens[tok] > TOKEN_MS) { delete st.tokens[tok]; delete st.seen[tok]; }
     if (!tok || !st.tokens[tok]) return send(res, 401, { error: 'Please log in' });
     st.seen[tok] = Date.now();
     if (u === '/api/state' && req.method === 'GET') {
