@@ -47,10 +47,28 @@ var Source = (function () {
       '&password=' + encodeURIComponent(p.pass) + (action ? '&action=' + action : '') + (extra || '');
   }
 
+  /* Which failure to show when both http and https failed (issue #87): the same server gave a different error
+     depending on which scheme was typed, because the last one tried won.  An answer from the server itself
+     (HTTP 404, 403...) says more than a port that doesn't speak https, so it wins whichever order they ran in. */
+  function mismatch(e) { return !!(e && /wrong version number|EPROTO|unknown protocol|packet length too long/i.test(e.message || '')); }
+  function pick(errs) {
+    var said = errs.filter(function (e) { return e && e.kind === 'http' && e.status > 0 && !/^helper: /.test(e.message || ''); })[0];
+    if (said) return said;
+    var last = errs[errs.length - 1];
+    return mismatch(last) && errs.length > 1 ? errs[0] : last;
+  }
+  // "http, port 8080": what was tried, without the server's name (it can show on the TV's screen).
+  function where(b) {
+    var m = /^(https?):\/\/[^\/:?#]+(?::(\d+))?/i.exec(b || '');
+    if (!m) return 'that address';
+    var sc = m[1].toLowerCase();
+    return sc + ', port ' + (m[2] || (sc === 'https' ? '443' : '80'));
+  }
+
   // Find the address that really answers as an Xtream panel: as typed first, then the other
   // scheme (http <-> https).  Wrong passwords stop the search; anything network-ish moves on.
   function detect(p, label) {
-    var list = candidates(p.server), tried = [];
+    var list = candidates(p.server), tried = [], errs = [], each = [];
     if (!list.length) return Promise.reject(Object.assign(new Error('Enter the server address.'), { kind: 'auth' }));
     function attempt(i) {
       var b = list[i];
@@ -63,7 +81,9 @@ var Source = (function () {
         return { base: b, info: info, tried: tried };
       }).catch(function (e) {
         tried.push(b + '  →  ' + friendly(e));
-        if (e.kind === 'auth' || i + 1 >= list.length) { e.tried = tried; throw e; }
+        errs.push(e);
+        each.push(where(b) + ': ' + String(friendly(e)).split('.  ')[0].replace(/([^.!?])$/, '$1.'));
+        if (e.kind === 'auth' || i + 1 >= list.length) { e = pick(errs); e.tried = tried; e.each = each; throw e; }
         Log.warn('xc', b + ' did not work (' + (e.message || e) + '); trying ' + list[i + 1]);
         return attempt(i + 1);
       });
@@ -282,8 +302,9 @@ var Source = (function () {
       var msg = friendly(e);
       var tried = e && e.tried && e.tried.length > 1 ? e.tried : null;
       Log.error(p.type === 'm3u' ? 'm3u' : p.type === 'stalker' ? 'stalker' : 'xc', 'Load failed: ' + msg + (e && e.kind ? '  [kind=' + e.kind + (e.status ? ' status=' + e.status : '') + ' via=' + e.via + ']' : '') + (tried ? '  tried: ' + tried.join(' | ') : ''));
-      if (tried && e.kind !== 'auth') msg = 'Tried both http and https.  ' + msg;
-      throw Object.assign(new Error(msg), { kind: e && e.kind, tried: e && e.tried });
+      // Each attempt's answer goes with the message, so the set-up screen, the web editor and the phone app show it (issue #87).
+      if (tried && e.kind !== 'auth') msg = 'Tried both http and https.  ' + msg + (e.each && e.each.length > 1 ? '  What each one said: ' + e.each.join('  ') : '');
+      throw Object.assign(new Error(msg), { kind: e && e.kind, tried: e && e.tried, each: e && e.each });
     });
   }
   // One readable sentence per failure type, shown on screen; the log keeps the details.
@@ -301,6 +322,8 @@ var Source = (function () {
         if (/ENOTFOUND|EAI_AGAIN/.test(m)) return 'The server name could not be found (DNS).  Check the address.';
         if (/ECONNREFUSED/.test(m)) return 'The server refused the connection.  Check the address and port.';
         if (/ETIMEDOUT|timeout/i.test(m)) return 'The server did not answer in time.';
+        // A plain http port asked for https: not a certificate problem (issue #87).
+        if (mismatch(e)) return 'This port doesn\'t use https (it answered in plain http).  Try http:// instead of https://.';
         if (/CERT|SSL|TLS|certificate/i.test(m)) return 'Secure connection failed (certificate problem).  Try http:// instead of https://.';
         if (/ECONNRESET|socket hang up/i.test(m)) return 'The server dropped the connection.  It may be blocking this TV or overloaded.';
         return 'Connection failed: ' + m.replace(/^helper: /, '');

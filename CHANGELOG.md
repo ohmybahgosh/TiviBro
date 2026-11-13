@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Adding a playlist that won't log in says the same thing every time, and shows what each try got (issue #87).**  When both http and https fail, the server's own answer (like "Not found" or "refused access") is the one shown, whichever you typed, instead of whichever was tried last.  A port that only speaks http is no longer called a certificate problem.  The message on the TV, in the web editor and in the phone app also lists what http and https each said, with the port but not the server's name.
 - **The phone app finds a TV that moved to another address (discussion #36).**  When the router gives the TV a new address and the TV doesn't answer the app's broadcast (some routers and mesh systems block them), the app now asks every address on your network directly, at most every two minutes, and keeps the pairing.  And the TV card's menu has **The TV's address** to type it by hand: only an address where the same TV answers is kept, so nothing has to be paired again.
 
 ## 0.6.0 (alpha 128, 2026-11-13)
