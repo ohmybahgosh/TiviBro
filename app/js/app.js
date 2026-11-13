@@ -71,6 +71,7 @@ var App = (function () {
       return v;
     }
     function render() {
+      setupEl.classList.remove('loadscreen');
       setupEl.innerHTML = '';
       setupEl.classList.toggle('withjoin', !target);
       if (!target) { var wb = U.el('img', 'setupbrand'); wb.src = 'img/wordmark.png'; wb.alt = 'TiviBro'; setupEl.appendChild(wb); joinPanel(); }
@@ -327,6 +328,7 @@ var App = (function () {
 
   function loading(text) {
     setupEl.classList.remove('hidden');
+    setupEl.classList.add('loadscreen');      // centred on the whole screen, not the set-up screen's column (discussion #36)
     setupEl.innerHTML = '';
     var lb = U.el('img', 'loadbrand'); lb.src = 'img/wordmark.png'; lb.alt = 'TiviBro'; setupEl.appendChild(lb);
     setupEl.appendChild(U.el('p', 'lead', text));

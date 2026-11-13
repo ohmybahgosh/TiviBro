@@ -12,7 +12,7 @@ function setup(opts) {
   function PalmServiceBridge() { this.n = bridges.length; bridges.push(this); }
   PalmServiceBridge.prototype.call = function (uri, params) { calls.push({ uri, params: JSON.parse(params), bridge: this.n }); };
   const player = { current: null, state: 'idle', userPaused: false };
-  const doc = { hidden: false };
+  const doc = { hidden: false, on: {}, addEventListener(ev, f) { (this.on[ev] = this.on[ev] || []).push(f); } };
   const clock = { t: 1700000000000 };
   const ctx = {
     console, JSON, Date: { now: () => clock.t }, document: doc,
@@ -69,6 +69,12 @@ function setup(opts) {
   t.bridges[0].onservicecallback({ returnValue: true, timestamp: 11 });
   const r3 = t.calls.filter(c => /responseScreenSaverRequest/.test(c.uri)).pop();
   ok('and once it has all gone quiet: it may start, and that is logged too', r3.params.ack === true && t.logs.some(l => /Screensaver allowed/.test(l[1])), r3);
+  // Typing (the TV's keyboard, or the phone filling a box) and the pointer count as use too (discussion #36).
+  t.clock.t += 400e3; t.doc.on.input.forEach((f) => f({}));
+  t.clock.t += 20e3; t.bridges[0].onservicecallback({ returnValue: true, timestamp: 12 });
+  const r4 = t.calls.filter(c => /responseScreenSaverRequest/.test(c.uri)).pop();
+  ok('typing in a box with nothing playing: it waits', r4.params.ack === false && t.doc.on.mousemove && t.doc.on.wheel, r4);
+  ok('anything from the phone app counts as use (its commands, not only its buttons)', /function run\(c, tries\) \{[\s\S]{0,400}Awake\.touch\(\)/.test(fs.readFileSync(path.join(__dirname, '../../app/js/phone.js'), 'utf8')));
   ok('every button reaches it: the remote and the phone app both go through UI dispatch', /Awake\.touch\(\)/.test(fs.readFileSync(path.join(__dirname, '../../app/js/ui.js'), 'utf8')));
 }
 

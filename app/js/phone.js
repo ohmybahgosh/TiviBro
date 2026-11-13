@@ -74,6 +74,9 @@ var Phone = (function () {
   function ready() { return typeof Library !== 'undefined' && Library.count() > 0 && Views.tab; }
   var EARLY = { playlist: 1, input: 1, backup: 1, restore: 1, mymedia: 1, reminders: 1, snaps: 1 };
   function run(c, tries) {
+    // Anything from the phone (typing into a box, the touchpad, a question) is someone using TiviBro: the TV's
+    // screensaver waits, as for a button press (discussion #36: it came up over the set-up screen while typing).
+    if (typeof Awake !== 'undefined' && Awake.touch) Awake.touch();
     if (c.type === 'ask' && EARLY[c.what]) return answer(c);
     if (!ready()) {
       if ((tries || 0) < 60) setTimeout(function () { run(c, (tries || 0) + 1); }, 500);

@@ -92,7 +92,15 @@ var Awake = (function () {
     catch (e) { log('warn', 'Could not answer the TV screensaver: ' + e.message); }
   }
 
+  /* Typing (the TV's own keyboard, or the phone filling a box) and the Magic Remote's pointer count as use too,
+     not only buttons: they never reach the TV's idle timer as a press. */
+  var seen = 0;
+  function used() { var t = Date.now(); if (t - seen > 2000) { seen = t; inputAt = t; } }
   function start() {
+    if (!start.listening && typeof document !== 'undefined' && document.addEventListener) {
+      start.listening = true;
+      ['input', 'mousemove', 'wheel', 'touchstart'].forEach(function (ev) { document.addEventListener(ev, used, true); });
+    }
     if (sub) return;
     if (!start.hooked && typeof Player !== 'undefined' && Player.on) { start.hooked = true; Player.on('state', onPlayer); }
     sub = bridge();

@@ -380,6 +380,9 @@ body.nav-hidden .sidenav,body.full .sidenav{visibility:hidden}
 .sidenav .brand .dot{width:18px;height:18px;border-radius:50%;background:var(--accent);display:inline-block;flex:none}
 .sidenav .brand .mark{width:44px;height:38px;object-fit:contain;flex:none;margin-left:-13px}
 .loadbrand{display:block;height:110px;margin:0 auto 28px}
+/* The loading screen (app.js loading): the logo and its line centred on the whole screen. */
+.setup.loadscreen{padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.setup.loadscreen p.lead{margin:0 auto;max-width:1300px}
 .sidenav .tabs{display:flex;flex-direction:column;gap:6px}
 .sidenav .lbl{white-space:nowrap;opacity:0;overflow:hidden;text-overflow:ellipsis;max-width:250px}
 body.nav-open .sidenav .lbl{opacity:1}
