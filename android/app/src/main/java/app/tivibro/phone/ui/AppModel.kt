@@ -34,6 +34,7 @@ import android.net.Network
 import android.net.NetworkCapabilities
 import kotlinx.coroutines.Job
 import app.tivibro.phone.proto.Discovery
+import app.tivibro.phone.proto.Sweep
 import app.tivibro.phone.proto.Dropbox
 import app.tivibro.phone.proto.EditorState
 import app.tivibro.phone.proto.Found
