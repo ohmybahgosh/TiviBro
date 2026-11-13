@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 129, 2026-11-13)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 129
 
 - **My teams leaves out a school's basketball game that doesn't say what sport it is.**  An event channel named "Purdue Boilermakers vs Michigan State Spartans" (a Friday basketball game) showed up for Michigan State football.  A school plays football once a week, so a game that doesn't say football is now left out when the same school has another opponent within six days whose game does say football, or is on a Saturday when this one isn't.
 - **Settings, reorganised so each thing is where you'd look for it.**  Nothing was removed; some settings moved:
@@ -16,11 +20,7 @@
 - **Adding a playlist that won't log in says the same thing every time, and shows what each try got (issue #87).**  When both http and https fail, the server's own answer (like "Not found" or "refused access") is the one shown, whichever you typed, instead of whichever was tried last.  A port that only speaks http is no longer called a certificate problem.  The message on the TV, in the web editor and in the phone app also lists what http and https each said, with the port but not the server's name.
 - **The phone app finds a TV that moved to another address (discussion #36).**  When the router gives the TV a new address and the TV doesn't answer the app's broadcast (some routers and mesh systems block them), the app now asks every address on your network directly, at most every two minutes, and keeps the pairing.  And the TV card's menu has **The TV's address** to type it by hand: only an address where the same TV answers is kept, so nothing has to be paired again.
 
-## 0.6.0 (alpha 128, 2026-11-13)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 128
+### In alpha 128
 
 - **Zapping goes on from the channel you switched to (discussion #60).**  After switching to a channel from the recent channels row (or anywhere but the list), CH+ and Up went on from the channel before it.  Now they go on from the one playing.
 - **Up and Down in fullscreen can go the other way (discussion #60).**  Settings > Remote and buttons > Up and Down in fullscreen: Up to the channel above (as before) or the channel below.
