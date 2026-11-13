@@ -957,6 +957,7 @@ Remap any button, choose the quick menu's buttons, and teach TiviBro keys it doe
 
 | Setting | What it does |
 |---|---|
+| **Up and Down in fullscreen** | Which way Up and Down change channel in fullscreen: **Up: the channel above** (the default) or Up: the channel below.  The same as setting Up and Down under **In the player**. |
 | **In the player ›** | What each button does while watching live TV fullscreen.  Every button has a press and a **Hold** action.  **OK** opens a list of actions to pick from. |
 | **In the guide ›** | The same for the guide: the colour buttons, **Play / Pause**, **Info**, **Stop** and **Hold OK**.  Give any of them **Watch fullscreen** if your remote has no Play button.  Arrows, **OK**, **Back**, **CH + / −** and ⏪ ⏩ stay fixed there. |
 | **On the Channels screen ›** | The same for the Channels screen.  Arrows, **OK**, **Back** and **CH + / −** stay fixed there. |
@@ -1000,6 +1001,7 @@ Which screen TiviBro opens on, how the guide looks, colours, sizes and what's on
 
 | Setting | Choices | What it does |
 |---|---|---|
+| **Order movies and shows** | **The provider's order** · Recently added first · Name (A–Z) · Rating (highest first) | The order of titles in each Movies and Shows category and My list.  All movies and All shows stay newest first in the provider's order; Recently added is always newest first. |
 | **Start screen** | **Guide** · Channels screen | What TiviBro opens on, and where **Back** from other screens leads. |
 | **Lists open on** | **Where I left off** · The first group · A group I pick | Where the selection is when TiviBro opens.  Where I left off is the group and channel you were on last; the other two start at the top of that group (unless a channel is already playing).  With **A group I pick**, **Group to open on** chooses it: any group, Favorites and All channels too. |
 | **Settings shown** | **All** · Everyday | Everyday leaves out what most people set once, or only to troubleshoot: the buffer details, the player engine and stream format, the network helper, the buffer meter, HDR routing, learning buttons, detailed logging and the like.  Each page then says how many more there are in All.  The phone app and the web editor show the same. |

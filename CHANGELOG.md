@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- **Zapping goes on from the channel you switched to (discussion #60).**  After switching to a channel from the recent channels row (or anywhere but the list), CH+ and Up went on from the channel before it.  Now they go on from the one playing.
+- **Up and Down in fullscreen can go the other way (discussion #60).**  Settings > Remote and buttons > Up and Down in fullscreen: Up to the channel above (as before) or the channel below.
+- **Movies and Shows: Recently added (discussion #60).**  A Recently added category with the newest 100 titles, newest first, when the provider says when each was added.
+- **Movies and Shows: pick the order (discussion #60).**  Settings > Appearance and start screen > Order movies and shows: the provider's order, recently added first, name A to Z, or rating.
+- **Movies and Shows: each title's category where they mix (discussion #60).**  In All, Recently added, My list and Continue watching, each title's row says which category it's from.
+- **Trailers (discussion #60).**  A movie whose provider gives a trailer has Watch the trailer in its options (hold OK), which opens it in the TV's YouTube app.
+
 - **The phone app: a TV turned off shows as off, not as starting.**  A TV that stays on Wi-Fi while off still answers on LG's own service, which the app took for a TV turning on ("TiviBro's connection starting").  Now a TV that was on and stops answering shows as "Off (standby)", and only a TV that was off and starts answering shows as starting.
 
 ## 0.6.0 (alpha 127, 2026-11-13)
