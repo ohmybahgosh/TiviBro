@@ -40,7 +40,7 @@ Restoring a backup onto a fresh TV, start to finish:
 
 ### Language
 
-TiviBro shows in your TV's own language: the language of the TV's menus (on webOS, the TV's **Menu Language** setting), read when TiviBro starts and again whenever you change it on the TV.  English, Spanish (Latin American, and Spain's), Portuguese (Brazil) and Russian are in so far.  Spanish and Russian are new: the menus, the side menu, Settings' sections and most of their rows are translated, and anything not translated yet shows in English.  A TV in a language TiviBro doesn't have yet gets English.
+TiviBro shows in your TV's own language: the language of the TV's menus (on webOS, the TV's **Menu Language** setting), read when TiviBro starts and again whenever you change it on the TV.  English, Spanish (Latin American, and Spain's), Portuguese (Brazil's, and Portugal's) and Russian are in so far.  Spanish and Russian are new: the menus, the side menu, Settings' sections and most of their rows are translated, and anything not translated yet shows in English.  A TV in a language TiviBro doesn't have yet gets English.
 
 If it picked the wrong one, choose another:
 
@@ -674,7 +674,7 @@ On a row with a choice, **◀ ▶** change it (with the Magic Remote, click the 
 ### Settings: Language
 
 - **Automatic: the TV's language** (default): the language of the TV's menus.  The line under it says which that is.
-- **English**, **Español**, **Español (España)**, **Português (Brasil)**, **Русский**: TiviBro in that language, whatever the TV is set to.  **Español** is Latin American Spanish; **Español (España)** is the same with Spain's words (ordenador, mando a distancia, en directo, pulsa).  A TV set to Spain's Spanish gets it automatically.
+- **English**, **Español**, **Español (España)**, **Português (Brasil)**, **Português (Portugal)**, **Русский**: TiviBro in that language, whatever the TV is set to.  **Español** is Latin American Spanish; **Español (España)** is the same with Spain's words (ordenador, mando a distancia, en directo, pulsa).  A TV set to Spain's Spanish gets it automatically.  **Português (Portugal)** is the Brazilian translation with Portugal's words (ecrã, telemóvel, Definições, "A carregar"), and a TV set to Portugal's Portuguese gets it.
 
 See [Language](#language).
 

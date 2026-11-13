@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Português (Portugal).**  Portugal's Portuguese is its own language in Settings > Language: the Brazilian translation with Portugal's words (ecrã, telemóvel, Definições, ficheiro, utilizador, "A carregar").  A TV set to Portugal's Portuguese gets it automatically; other Portuguese stays Brazilian.
+
 ## 0.6.0 (alpha 126, 2026-11-13)
 
 Pre-release: expect rough edges, and keep a backup before installing.

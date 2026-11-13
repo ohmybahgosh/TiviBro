@@ -20,7 +20,7 @@
 var I18n = (function () {
   'use strict';
   // code, name in its own language, name in English
-  var LANGS = [['en', 'English', 'English'], ['es', 'Español', 'Spanish'], ['es-ES', 'Español (España)', 'Spanish (Spain)'], ['pt-BR', 'Português (Brasil)', 'Portuguese (Brazil)'], ['ru', 'Русский', 'Russian']];
+  var LANGS = [['en', 'English', 'English'], ['es', 'Español', 'Spanish'], ['es-ES', 'Español (España)', 'Spanish (Spain)'], ['pt-BR', 'Português (Brasil)', 'Portuguese (Brazil)'], ['pt-PT', 'Português (Portugal)', 'Portuguese (Portugal)'], ['ru', 'Русский', 'Russian']];
   var dicts = {}, pats = {}, cache = {}, cacheN = 0, misses = {}, missN = 0, tv = '', tvAsked = false, listeners = [];
 
   function has(code) { for (var i = 0; i < LANGS.length; i++) if (LANGS[i][0] === code) return true; return false; }
@@ -42,7 +42,7 @@ var I18n = (function () {
     for (var i = 0; i < l.length; i++) {
       var c = base(l[i]);
       if (c === 'es' && /^es[-_]es\b/i.test(String(l[i]))) c = 'es-ES';        // Spain's Spanish (lang/es-ES.js)
-      if (c === 'pt') c = 'pt-BR';                                              // Portuguese: Brazil's, the one TiviBro has
+      if (c === 'pt') c = /^pt[-_]pt\b/i.test(String(l[i])) ? 'pt-PT' : 'pt-BR';   // Portugal's (lang/pt-PT.js), else Brazil's
       if (c) return { code: c, locale: String(l[i]), supported: has(c) };
     }
     return { code: 'en', locale: 'en-US', supported: true };
