@@ -319,11 +319,27 @@ var Settings = (function () {
     // From the phone app: its own Add a playlist form (AddPlaylistDialog), with the playlist type to pick.
     var addPl = phoneDoes('add-playlist', action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.  Adding one from the phone app is easier: share your provider\'s link to it.', function () { App.setup('new'); }));
     out.push(addPl);
+    /* How the helper finds your providers' servers (service/dns.js, discussion #60): the TV's DNS, a public one,
+       one you type, or DNS over HTTPS, for a provider the TV's DNS doesn't find or blocks. */
+    out.push(head('Finding your provider'));
+    out.push(choice('DNS', 'Which DNS finds your providers\' servers.  The TV\'s own is right for most.  Try another when a provider\'s address isn\'t found, or is blocked by your internet provider.  Over HTTPS also hides the names you look up from it.  Needs the network helper.',
+      ['tv', 'cloudflare', 'google', 'quad9', 'doh-cloudflare', 'doh-google', 'custom'], ['The TV\'s own', 'Cloudflare (1.1.1.1)', 'Google (8.8.8.8)', 'Quad9 (9.9.9.9)', 'Cloudflare over HTTPS', 'Google over HTTPS', 'A DNS server I type'],
+      function () { return s.dns || 'tv'; },
+      function (v) { if (v === 'custom' && !s.dnsServer) return askDns(); s.dns = v; save(); Net.setDns(); build(); }));
+    if (s.dns === 'custom') out.push(action('DNS server', 'Its address, like 192.168.1.1 (your router) or a public one.', askDns, function () { return s.dnsServer || 'Not set'; }));
     out.push(info(s.playlists.length > 1 ? 'Every playlist that is on is used at once: each has its own section in the group list, under its name.  The first playlist comes first, and your Favorites, your groups and reminders belong to it.  The guide, names and channels of the first playlist are under Guide, Channel and group names, and Channels and groups.'
       : 'The guide, names and channels of the playlist in use are under Guide, Channel and group names, and Channels and groups.', ''));
     return out;
   }
 
+  function askDns() {
+    var s = S();
+    UI.prompt('DNS server', s.dnsServer || '', function (v) {
+      v = String(v || '').trim();
+      if (!/^\d{1,3}(?:\.\d{1,3}){3}$/.test(v) || v.split('.').some(function (n) { return +n > 255; })) { U.toast('That isn\'t an address like 192.168.1.1', 5000); return; }
+      s.dnsServer = v; s.dns = 'custom'; save(); Net.setDns(); build();
+    }, 'Like 192.168.1.1');
+  }
   function persist(p, reloadGuide) {
     Store.upsertPlaylist(p);
     if ((p.id === S().active || L.otherIds().indexOf(p.id) >= 0) && reloadGuide) Epg.refresh(L, true);

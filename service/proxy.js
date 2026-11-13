@@ -261,7 +261,7 @@ function create(opts) {
     // without it, since the TV's player can't send one (they carry the login, and only reach the portal).
     if (req.url.indexOf('/stalker/') === 0 && req.method !== 'POST') return Stalker.handle(req, res, ALLOW, log, ownPort());
     var ctlRoute = req.url.indexOf('/stalker/') === 0 ? 'stalker' : req.url.indexOf('/editor/') === 0 ? 'editor' : req.url.indexOf('/companion/') === 0 ? 'companion' : req.url.indexOf('/kv/') === 0 ? 'kv' : req.url.indexOf('/live/') === 0 ? 'live' : req.url.indexOf('/media/') === 0 ? 'media' :
-      req.url.indexOf('/convert/') === 0 ? 'convert' : req.url.indexOf('/ffmpeg/') === 0 ? 'ffmpeg' : '';
+      req.url.indexOf('/convert/') === 0 ? 'convert' : req.url.indexOf('/ffmpeg/') === 0 ? 'ffmpeg' : req.url.indexOf('/net/dns') === 0 ? 'dns' : '';
     if (ctlRoute) {
       res.setHeader('Access-Control-Allow-Origin', '*');
       if (opts.ctl && !sameText(req.headers['x-tivibro-ctl'], opts.ctl)) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end('{"error":"not allowed"}'); }
@@ -269,6 +269,7 @@ function create(opts) {
       if (ctlRoute === 'kv') return Kv.handle(req, res, ALLOW, log);
       if (ctlRoute === 'live') return Live.handle(req, res, ALLOW, log, ownPort());
       if (ctlRoute === 'stalker') return Stalker.handle(req, res, ALLOW, log, ownPort());
+      if (ctlRoute === 'dns') return require('./dns').handle(req, res, ALLOW, log);      // the DNS for providers (dns.js)
       if (ctlRoute === 'media') return Media.handle(req, res, ALLOW, log);
       if (ctlRoute === 'convert') return Convert.control(req, res, ALLOW, log, ownPort(), redact);
       if (ctlRoute === 'ffmpeg') return Ffmpeg.handle(req, res, ALLOW);

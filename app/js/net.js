@@ -16,6 +16,17 @@ var Net = (function () {
       .then(function (j) { info = j || null; Log.info('net', 'Helper answered ping on port ' + p + ' (' + (Date.now() - t0) + 'ms after start)', j && j.node ? 'node ' + j.node : ''); return true; })
       .catch(function (e) { lastError = 'helper started but does not answer on port ' + p + ': ' + (e && e.message); Log.error('net', lastError); return false; });
   }
+  /* The DNS for providers (Settings > Playlists > DNS, service/dns.js): told to the helper when it starts, again
+     after it restarts, and when the setting changes.  The TV's own needs nothing said, except after a change. */
+  var dnsSaid = 'tv';
+  function setDns() {
+    var s = Store.settings || {}, m = s.dns || 'tv', srv = m === 'custom' ? String(s.dnsServer || '') : '';
+    if (!port || (m === 'tv' && dnsSaid === 'tv')) return Promise.resolve();
+    var h = { 'Content-Type': 'application/json' }; if (ctl) h['X-TiviBro-Ctl'] = ctl;
+    return fetch('http://127.0.0.1:' + port + '/net/dns', { method: 'POST', cache: 'no-store', headers: h, body: JSON.stringify({ mode: m, server: srv }) })
+      .then(function (r) { return r.json(); }).then(function (j) { dnsSaid = j && j.mode || m; if (m !== 'tv') Log.info('net', 'Providers are found with ' + (j && j.mode) + (j && j.server ? ' (' + j.server + ')' : '')); },
+        function (e) { Log.warn('net', 'Could not set the DNS: ' + (e && e.message)); });
+  }
   function settle() {
     var finish = function () { var w = waiters; waiters = []; w.forEach(function (f) { f(port); }); };
     if (!port) {
@@ -29,7 +40,7 @@ var Net = (function () {
         finish();
       });
     }
-    verify(port).then(function (ok) { if (!ok) { port = 0; state = 'off'; } finish(); });
+    verify(port).then(function (ok) { if (!ok) { port = 0; state = 'off'; } else { dnsSaid = 'tv'; setDns(); } finish(); });
   }
 
   // Start the helper and keep a subscription open: that is what keeps the service alive.
@@ -182,6 +193,7 @@ var Net = (function () {
     // The helper's /ping answer: Node version, and sys { bootAt, power } (see service/proxy.js).
     get info() { return info; },
     // Headers for the helper's control routes (web editor, phone app connection): see service/proxy.js.
+    setDns: setDns,
     ctlHeaders: function (h) { h = h || {}; if (ctl) h['X-TiviBro-Ctl'] = ctl; return h; },
     get port() { return port; }, get active() { return !!useRelay(); }, get state() { return state; }, get lastError() { return lastError; },
     status: function () { return port ? 'running on port ' + port : 'not running' + (lastError ? ': ' + lastError : ''); },
