@@ -778,7 +778,7 @@ var Settings = (function () {
   function teamsPage() {
     var s = S(), out = [], lgs = Teams.leagues(), mine = Teams.followed();
     function apply() { Teams.dirty(); Store.saveSettings(); relist(); paint(); }
-    out.push(info('The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS) and college football (the FBS schools).  Other college sports, junior and minor league teams, and other countries\' leagues, aren\'t in it yet.', ''));
+    out.push(info('The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men\'s college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women\'s college games, junior and minor league teams, and other countries\' leagues, aren\'t in it yet.', ''));
     out.push(toggle('Show the My teams group', 'Near the top of the guide: their games on now at the top, then the ones starting within the time below.  A team\'s own channel is there while it shows a game.',
       function () { return s.teamsGroup !== false; }, function (v) { s.teamsGroup = v; apply(); }));
     out.push(choice('Games starting within', 'How soon a game has to start to be in the group.', [3, 6, 12, 24], ['3 hours', '6 hours', '12 hours', '24 hours'],
@@ -790,7 +790,7 @@ var Settings = (function () {
         Store.saveSettings(); if (v) Watch.scan(false); paint();
       }));
     out.push(head('Leagues'));
-    if (!lgs.length) out.push(info('No NFL, NBA, NHL, MLB, WNBA, MLS or college football channels found in this playlist.', ''));
+    if (!lgs.length) out.push(info('No NFL, NBA, NHL, MLB, WNBA, MLS, college football or college basketball channels found in this playlist.', ''));
     lgs.forEach(function (lg) {
       var n = Teams.inLeague(lg.id).filter(function (x) { return Teams.follows(x.id); }).length;
       out.push(page(lg.name, lg.own ? lg.own + ' teams have their own channel' : 'Games only, no team channels', I18n.raw(I18n.t('{x} teams', { x: I18n.t(lg.name) })), function () { return leaguePage(lg.id); },

@@ -67,6 +67,17 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   // Off again, from the Red options menu.
   await ev(() => Player.setCC(false)); await page.waitForTimeout(500);
   ok('off: gone at once', !(await ccText()));
+  // On again from the Red (or hold OK) options menu: they show without reconnecting.
+  const before = await ev(() => Player.retries || 0), gen0 = await ev(() => document.getElementById('video').currentSrc);
+  await ev(() => Views.runAction('menu', 'player')); await page.waitForTimeout(500);
+  const opts = await ev(() => UI.menuLabels);
+  const oi = opts.findIndex((t) => /^Closed captions/.test(t || ''));
+  ok('the options menu has Closed captions', oi >= 0, JSON.stringify(opts));
+  for (let k = 0; k < oi; k++) { await page.keyboard.press('ArrowDown'); await page.waitForTimeout(100); }
+  await page.keyboard.press('Enter'); await page.waitForTimeout(400);
+  if (await ev(() => !document.getElementById('modal').classList.contains('hidden'))) { await page.keyboard.press('Escape'); await page.waitForTimeout(300); }
+  await page.waitForTimeout(4000);
+  ok('on from the options menu: they show, no reconnect', await ev(() => Store.settings.cc === true) && !!(await ccText()) && await ev(() => document.getElementById('video').currentSrc) === gen0, JSON.stringify({ cc: await ev(() => Store.settings.cc), text: await ccText() }));
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();
   console.log(fails ? fails + ' FAILED' : 'all caption checks passed');

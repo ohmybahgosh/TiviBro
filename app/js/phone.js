@@ -122,7 +122,9 @@ var Phone = (function () {
     if (m) x.m = { i: m.poster || '', y: m.year || '', g: m.genre || '', r: m.rating || '' };
     // Else a TV show TMDB knows (series.js), as the TV's guide shows it: its poster and facts, marked as a series.
     else {
-      var sh = c && typeof Series !== 'undefined' && Series.known ? Series.known(c, p) : null;
+      // Not known yet: asked for in the background (the TV only asks about what its own screen shows), so
+      // the phone has the poster when it asks again.
+      var sh = c && typeof Series !== 'undefined' ? (Series.soon ? Series.soon(c, p) : Series.known && Series.known(c, p)) : null;
       if (sh) x.m = { k: 's', i: sh.poster || '', y: sh.year || '', g: sh.genre || '', r: sh.rating || '', n: sh.network || '' };
     }
     return x;

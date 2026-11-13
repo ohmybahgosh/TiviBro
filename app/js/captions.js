@@ -155,7 +155,7 @@ var Captions = (function () {
 
   /* One stream's captions.  B-frames: captions arrive in decode order, so they wait a moment and are
      decoded in presentation order. */
-  var HOLD = 600, STALE = 15000, FLICKER = 350;
+  var HOLD = 600, STALE = 15000, FLICKER = 350, JUMP = 10000;
   function create() {
     var d = new Decoder(), lastFeed = -Infinity;
     function drain(upto) {
@@ -178,6 +178,18 @@ var Captions = (function () {
         if (t > d.maxPts) d.maxPts = t;
         drain(d.maxPts - HOLD);
         return pairs.length;
+      },
+      /* The stream's clock and the picture's can part: after a jump in the stream's timestamps (the provider
+         restarting its encoder, a gap, the clock wrapping), the player keeps the picture's timeline going on
+         while the captions carry the new clock, and none of them showed again until a reconnect.  A caption
+         is sent with the frame being read, which lands at the end of what's buffered: when the two are more
+         than 10 s apart, the captions' clock is lined up with the picture's again from here.
+         feedAt(sei, pts, bufferedEnd): both in ms; bufferedEnd null when nothing is buffered yet. */
+      shift: 0,
+      feedAt: function (sei, t, end) {
+        if (t == null || isNaN(t)) return 0;
+        if (end != null && Math.abs(t - api.shift - end) > JUMP) { api.shift = t - end; d = new Decoder(); api.realigned = (api.realigned || 0) + 1; }
+        return api.feed(sei, t - api.shift);
       },
       flush: function () { drain(Infinity); },
       /* What to show at video time t (ms): the lines, or null.  Pop-on captions are cleared just

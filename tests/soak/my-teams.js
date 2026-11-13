@@ -31,7 +31,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   // Settings > Channels and groups > My teams
   await H.section('Channels and groups', true, true); await H.row('My teams'); await H.quiet('Enter', 900);
   let st = await page.innerText('#setBody');
-  ok('the My teams page lists the leagues found', /NHL/.test(st) && /NFL/.test(st) && !/\bMLB\b/.test(st.split('Leagues')[1] || '') && /and college football \(the FBS schools\)/.test(st) && /College Football\s*Games only/.test(st) && /4 teams have their own channel/.test(st), st.replace(/\s+/g, ' ').slice(0, 300));
+  ok('the My teams page lists the leagues found', /NHL/.test(st) && /NFL/.test(st) && !/\bMLB\b/.test(st.split('Leagues')[1] || '') && /college football \(the FBS schools\) and men's college basketball/.test(st) && /College Football\s*Games only/.test(st) && /4 teams have their own channel/.test(st), st.replace(/\s+/g, ' ').slice(0, 300));
   await shot('tv-teams-page');
   await H.row('NHL'); await H.quiet('Enter', 900);
   st = await page.innerText('#setBody');

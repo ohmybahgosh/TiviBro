@@ -83,5 +83,18 @@ cc = Captions.create(); for (let k = 0; k < 300; k++) run([...ctl(0x14, 0x20), .
 cc.flush(); cc.trim(299000 - 5000);
 ok('trim forgets what has passed', cc.screens.length < 20, cc.screens.length);
 
+// The stream's clock jumps ahead (the provider restarted its encoder) while the picture's timeline goes on:
+// the captions are lined up with the picture again, not lost until a reconnect.
+{
+  const j = Captions.create(), fed = (t0, end0) => pop.forEach((p, i) => j.feedAt(sei(p[0], p[1], i % 2 === 0), t0 + i * 33, end0 + i * 33));
+  fed(1000, 1400); j.flush();
+  ok('in step: the stream\'s clock is the picture\'s', j.shift === 0 && lines(j.screenAt(eoc + 10)) === '15:Hello there.', lines(j.screenAt(eoc + 10)));
+  const jump = 7200000;                       // two hours ahead in the stream; the picture is at 60 s
+  fed(60000 + jump, 60000); j.flush();         // the frame a caption comes with is the newest buffered
+  const at = 60000 + (pop.length - 1) * 33 + 10;
+  ok('after a jump in the stream\'s clock they still show, at the picture\'s time', lines(j.screenAt(at)) === '15:Hello there.' && j.realigned === 1, JSON.stringify({ shift: j.shift, l: lines(j.screenAt(at)) }));
+  ok('a few seconds of read-ahead is not a jump', (() => { const k = Captions.create(); k.feedAt(sei(0x14, 0x20), 1000, 9000); return k.shift === 0; })());
+}
+
 console.log(fails ? fails + ' FAILED' : 'all caption decoder checks passed');
 process.exit(fails ? 1 : 0);

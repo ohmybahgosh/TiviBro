@@ -32,6 +32,7 @@ eval(fs.readFileSync(path.join(__dirname, '../../app/js/teams.js'), 'utf8') + ';
 // Names
 const ids = l => l.map(x => x.id).sort().join(',');
 const all = Teams.all();
+const fb = l => ids(l.filter(x => x.league === 'ncaaf')), bb = l => ids(l.filter(x => x.league === 'ncaab'));
 ok('full name', ids(Teams.named('Detroit Lions at Minnesota Vikings', '', all)) === 'nfl:det,nfl:min');
 ok('nicknames need the league: Magic Mike is no game', ids(Teams.named('Magic Mike', 'HBO', all)) === '');
 ok('two nicknames of one league', ids(Teams.named('Heat at Magic', '', all)) === 'nba:mia,nba:orl');
@@ -57,9 +58,10 @@ ok('a game is a game', Teams.isGame('Minnesota Vikings at Detroit Lions', 'NFL |
 ok('a placeholder is no game', !Teams.isGame('Future Events for Detroit Tigers not found yet', 'MLB | DETROIT TIGERS') && !Teams.isGame('No Future Events Scheduled', 'NHL | DETROIT RED WINGS'));
 ok('a "Next game" block is no game to remind at', !Teams.isGame('Next game: Detroit Red Wings at Florida Panthers at 11/02/2026 07:00 PM (US/Eastern)', 'NHL | FLORIDA PANTHERS'));
 // A school's full name doesn't say the sport (a FOX ONE event channel, Nov 11: basketball, Marquette has no football).
-ok('a school against a non-FBS school with no football in sight is no football game', ids(Teams.named('Marquette Golden Eagles vs Michigan Wolverines', 'Marquette Golden Eagles vs Michigan Wolverines @ Nov 11 19:00 :FOX ONE  12 | FOX ONE', all, true)) === '' && !Teams.isGame('Marquette Golden Eagles vs Michigan Wolverines', 'Marquette Golden Eagles vs Michigan Wolverines @ Nov 11 19:00 :FOX ONE  12'));
+ok('a school against a non-FBS school with no football in sight is no football game', fb(Teams.named('Marquette Golden Eagles vs Michigan Wolverines', 'Marquette Golden Eagles vs Michigan Wolverines @ Nov 11 19:00 :FOX ONE  12 | FOX ONE', all, true)) === '' && !Teams.isGame('Marquette Golden Eagles vs Michigan Wolverines', 'Marquette Golden Eagles vs Michigan Wolverines @ Nov 11 19:00 :FOX ONE  12', 'ncaaf'));
 ok('the same with football in the channel is', ids(Teams.named('Sacramento State Hornets at Michigan Wolverines', 'NCAAF 2 | Sacramento State Hornets at Michigan Wolverines', all, true)) === 'ncaaf:mich,ncaaf:sac' && Teams.isGame('Sacramento State Hornets at Michigan Wolverines', 'NCAAF 2'));
-ok('basketball in the channel is not', ids(Teams.named('Michigan Wolverines vs Ohio State Buckeyes', 'NCAAB 08', all, true)) === '');
+ok('basketball in the channel is not', fb(Teams.named('Michigan Wolverines vs Ohio State Buckeyes', 'NCAAB 08', all, true)) === '');
+ok('it is college basketball', bb(Teams.named('Michigan Wolverines vs Ohio State Buckeyes', 'NCAAB 08', all, true)) === 'ncaab:mich,ncaab:osu');
 ok('Athletics alone are no team', ids(Teams.named('World Athletics Championships', '', all)) === '');
 
 // Team channels and leagues
@@ -207,11 +209,24 @@ ok('college: schools in a college football title', ids(Teams.named('College Foot
 ok('college: the longest school name', ids(Teams.named('College Football: Michigan State at Michigan', '', all)) === 'ncaaf:mich,ncaaf:msu' && ids(Teams.named('College Football: Miami (OH) at Ohio', '', all)) === 'ncaaf:moh,ncaaf:ohio');
 ok('college: schools need college football', ids(Teams.named('Michigan at Ohio State', 'ESPN', all)) === '');
 ok('college: not another school with the name in it', ids(Teams.named('College Football: Alabama State at Alabama', '', all)) === 'ncaaf:ala' && ids(Teams.named('College Football: Michigan vs. Central Connecticut', '', all)) === 'ncaaf:mich');
-ok('college: not the basketball game', ids(Teams.named('Michigan Wolverines vs Duke Blue Devils', 'NCAAB 3 | ⬬ NCAA Basketball', all, true)) === '' && ids(Teams.named('NCAAM: Michigan Wolverines vs Duke Blue Devils', '', all)) === '');
+ok('college: not the basketball game', fb(Teams.named('Michigan Wolverines vs Duke Blue Devils', 'NCAAB 3 | ⬬ NCAA Basketball', all, true)) === '' && fb(Teams.named('NCAAM: Michigan Wolverines vs Duke Blue Devils', '', all)) === '');
 ok('college: no Kansas in Kansas City', ids(Teams.named('Super Bowl LX: Kansas City Chiefs vs Philadelphia Eagles', '', all)) === 'nfl:kc,nfl:phi');
-ok('college: Louisville Cardinals are not Arizona\'s', ids(Teams.named('Louisville Cardinals at Clemson Tigers', 'ACC Network', all)) === 'ncaaf:clem,ncaaf:lou');
+ok('college: Louisville Cardinals are not Arizona\'s', fb(Teams.named('Louisville Cardinals at Clemson Tigers', 'ACC Network', all)) === 'ncaaf:clem,ncaaf:lou');
 ok('college: one school against an FCS one is a game', Teams.isGame('College Football: Michigan vs. Central Connecticut', 'BTN') && Teams.matchup('College Football: Michigan vs. Central Connecticut', 'BTN') === 'ncaaf:mich');
 ok('college: shows are no games', !Teams.isGame('College Football Live', 'ESPN') && !Teams.isGame('College GameDay', 'ESPN') && !Teams.isGame('College Football Scoreboard', 'CBSSN'));
+
+// College basketball: the same schools and the Division I ones without FBS football, in its own season.
+{
+  const nb = Teams.inLeague ? Teams.inLeague('ncaab') : all.filter(x => x.league === 'ncaab');
+  const ab = {}; nb.forEach(x => { ab[x.abbr] = (ab[x.abbr] || 0) + 1; });
+  ok('college basketball: one abbreviation per school', !Object.keys(ab).some(k => ab[k] > 1), Object.keys(ab).filter(k => ab[k] > 1).join());
+  ok('college basketball: schools in a basketball title', bb(Teams.named('NCAAB: Purdue at Michigan State', '', all)) === 'ncaab:msu,ncaab:pur' && fb(Teams.named('NCAAB: Purdue at Michigan State', '', all)) === '');
+  ok('college basketball: schools without FBS football', bb(Teams.named('Gonzaga Bulldogs vs Saint Mary\'s Gaels', 'NCAAB 4', all, true)) === 'ncaab:gonz,ncaab:smc');
+  ok('college basketball: Penn and Penn State apart', bb(Teams.named('College Basketball: Penn State at Penn', '', all)) === 'ncaab:penn,ncaab:psu');
+  ok('college basketball: not the women\'s game', bb(Teams.named('NCAAW: Michigan State Spartans vs Purdue Boilermakers', '', all)) === '' && bb(Teams.named('Michigan State Spartans vs Purdue Boilermakers', 'NCAA Women\'s Basketball', all)) === '');
+  ok('college basketball: not the hockey game', bb(Teams.named('Michigan State Spartans vs Michigan Wolverines', 'Big Ten Hockey', all)) === '');
+  ok('college basketball: a game is a game of its league', Teams.isGame('NCAAB: Purdue at Michigan State', '', 'ncaab') && !Teams.isGame('NCAAB: Purdue at Michigan State', '', 'ncaaf'));
+}
 
 // From Bob's TV (a Friday in November): "Purdue Boilermakers vs Michigan State Spartans" on a FOX ONE channel was
 // basketball.  A school plays football once a week, so with its football game this week elsewhere, it's left out.
@@ -236,6 +251,20 @@ progs[btn.k] = []; Teams.dirty();
 const msu3 = Teams.games().filter(x => x.team.id === 'ncaaf:msu').map(x => x.c.n);
 const d1 = new Date(NOW + H), inSeason = d1.getMonth() >= 8 || (d1.getMonth() === 7 && d1.getDate() >= 15);
 if (inSeason) ok('college: alone, two FBS schools in season still count', msu3.indexOf('FOX ONE 15') >= 0, msu3.join(' / '));
+
+// The same Friday game, for Michigan State basketball: it's that game, and the football one isn't.
+progs[btn.k] = [{ s: NOW + 50 * H, e: NOW + 53 * H, t: 'College Football: Michigan State at Washington' }];
+Teams.follow('ncaaf:msu', false); Teams.follow('ncaab:msu', true); Teams.dirty();
+const hoops = Teams.games(7 * 24 * H, true).filter(x => x.team.id === 'ncaab:msu').map(x => x.p.t);
+ok('college basketball: the Friday game is basketball, the football game isn\'t', hoops.some(t => /Purdue/.test(t)) && !hoops.some(t => /Washington/.test(t)), hoops.join(' / '));
+// A game listed bare and again with its sport at the same time: that sport.
+const sat2 = new Date(NOW + H); sat2.setDate(sat2.getDate() + ((6 - sat2.getDay() + 7) % 7 || 7)); sat2.setHours(15, 30, 0, 0);
+progs[foxOne.k] = [{ s: +sat2 - 5 * 60e3, e: +sat2 + 3 * H, t: 'Oregon Ducks Michigan State Spartans' }];
+progs[btn.k] = [{ s: +sat2, e: +sat2 + 3 * H, t: 'NCAAF: College Football: Michigan State at Oregon' }];
+Teams.dirty();
+const hoops2 = Teams.games(7 * 24 * H, true).filter(x => x.team.id === 'ncaab:msu').map(x => x.p.t);
+ok('college basketball: a bare listing of the football game is left out', !hoops2.some(t => /Oregon/.test(t)), hoops2.join(' / '));
+Teams.follow('ncaab:msu', false);
 
 console.log((fail ? fail + ' of ' : 'all ') + n + ' teams checks ' + (fail ? 'failed' : 'passed'));
 process.exit(fail ? 1 : 0);

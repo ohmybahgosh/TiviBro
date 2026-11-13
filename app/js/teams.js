@@ -8,7 +8,7 @@
 var Teams = (function () {
   'use strict';
 
-  var LEAGUES = [['nfl', 'NFL'], ['nba', 'NBA'], ['nhl', 'NHL'], ['mlb', 'MLB'], ['wnba', 'WNBA'], ['mls', 'MLS'], ['ncaaf', 'College Football']];
+  var LEAGUES = [['nfl', 'NFL'], ['nba', 'NBA'], ['nhl', 'NHL'], ['mlb', 'MLB'], ['wnba', 'WNBA'], ['mls', 'MLS'], ['ncaaf', 'College Football'], ['ncaab', 'College Basketball']];
   // [abbreviation, full name, nicknames (comma separated, the first is how it's shown short), other full names]
   var DATA = {
     nfl: [['ARI', 'Arizona Cardinals', 'Cardinals'], ['ATL', 'Atlanta Falcons', 'Falcons'], ['BAL', 'Baltimore Ravens', 'Ravens'], ['BUF', 'Buffalo Bills', 'Bills'],
@@ -94,13 +94,46 @@ var Teams = (function () {
     // [abbreviation, full name, nickname, other full names, schools]
     return [f[0], f[1] + ' ' + f[2], f[2], sch.slice(1).map(function (x) { return x + ' ' + f[2]; }).join(','), sch];
   });
+  /* College basketball (men's): every school above, and the Division I programs that play no FBS football:
+     the Big East, the West Coast Conference, the Atlantic 10, the Missouri Valley, the Horizon League and the
+     other schools that are often on TV. */
+  var HOOPS = ('BUT|Butler|Bulldogs;CREI|Creighton|Bluejays;DEP|DePaul|Blue Demons;GTWN|Georgetown|Hoyas;MARQ|Marquette|Golden Eagles;' +
+    'PROV|Providence|Friars;HALL|Seton Hall|Pirates;SJU|St Johns|Red Storm|Saint Johns,St John s,Saint John s;NOVA|Villanova|Wildcats;XAV|Xavier|Musketeers;' +
+    'GONZ|Gonzaga|Bulldogs;SMC|Saint Marys|Gaels|St Marys,Saint Mary s,St Mary s;SFD|San Francisco|Dons;SCU|Santa Clara|Broncos;' +
+    'LMU|Loyola Marymount|Lions;PEPP|Pepperdine|Waves;PORT|Portland|Pilots;PAC|Pacific|Tigers;SEAU|Seattle U|Redhawks|Seattle;' +
+    'DAY|Dayton|Flyers;VCU|VCU|Rams|Virginia Commonwealth;SLU|Saint Louis|Billikens|St Louis;SJOE|Saint Josephs|Hawks|St Josephs,Saint Joseph s,St Joseph s;' +
+    'RICH|Richmond|Spiders;GMU|George Mason|Patriots;GW|George Washington|Revolutionaries;DAV|Davidson|Wildcats;DUQ|Duquesne|Dukes;' +
+    'FOR|Fordham|Rams;LUC|Loyola Chicago|Ramblers;URI|Rhode Island|Rams;SBU|St Bonaventure|Bonnies|Saint Bonaventure;LAS|La Salle|Explorers;' +
+    'DRKE|Drake|Bulldogs;BRAD|Bradley|Braves;UNI|Northern Iowa|Panthers;ILST|Illinois State|Redbirds;INST|Indiana State|Sycamores;' +
+    'SIU|Southern Illinois|Salukis;BEL|Belmont|Bruins;EVAN|Evansville|Purple Aces;VALP|Valparaiso|Beacons;MURR|Murray State|Racers;' +
+    'UIC|UIC|Flames|Illinois Chicago;WICH|Wichita State|Shockers;' +
+    'OAK|Oakland|Golden Grizzlies;DETM|Detroit Mercy|Titans;WRST|Wright State|Raiders;MILW|Milwaukee|Panthers;GB|Green Bay|Phoenix;' +
+    'CLEV|Cleveland State|Vikings;NKU|Northern Kentucky|Norse;YSU|Youngstown State|Penguins;PFW|Purdue Fort Wayne|Mastodons;IUI|IU Indianapolis|Jaguars;' +
+    'RMU|Robert Morris|Colonials;GCU|Grand Canyon|Antelopes|Grand Canyon Lopes;ORU|Oral Roberts|Golden Eagles;' +
+    'PRIN|Princeton|Tigers;YALE|Yale|Bulldogs;HARV|Harvard|Crimson;COR|Cornell|Big Red;PENN|Penn|Quakers;BRWN|Brown|Bears;DART|Dartmouth|Big Green;COLU|Columbia|Lions;' +
+    'VER|Vermont|Catamounts;FUR|Furman|Paladins;WOF|Wofford|Terriers;UTC|Chattanooga|Mocs;UNCW|UNC Wilmington|Seahawks;COFC|Charleston|Cougars|College of Charleston;' +
+    'HOF|Hofstra|Pride;NE|Northeastern|Huskies;IONA|Iona|Gaels;FAIR|Fairfield|Stags;SIE|Siena|Saints;SPU|Saint Peters|Peacocks|St Peters,Saint Peter s,St Peter s;' +
+    'BUCK|Bucknell|Bison;COLG|Colgate|Raiders;LEH|Lehigh|Mountain Hawks;UCI|UC Irvine|Anteaters;UCSB|UC Santa Barbara|Gauchos;UCSD|UC San Diego|Tritons;' +
+    'LBSU|Long Beach State|Beach;UVU|Utah Valley|Wolverines;MCN|McNeese|Cowboys|McNeese State;SFA|Stephen F Austin|Lumberjacks;UTA|UT Arlington|Mavericks;' +
+    'LR|Little Rock|Trojans;HPU|High Point|Panthers;WIN|Winthrop|Eagles;LIP|Lipscomb|Bisons;FGCU|Florida Gulf Coast|Eagles;NAU|Northern Arizona|Lumberjacks;' +
+    'MONT|Montana|Grizzlies;MTST|Montana State|Bobcats;EWU|Eastern Washington|Eagles;WEB|Weber State|Wildcats;SDST|South Dakota State|Jackrabbits;' +
+    'SDAK|South Dakota|Coyotes;UND|North Dakota|Fighting Hawks;OMA|Omaha|Mavericks;DEN|Denver|Pioneers;STMN|St Thomas|Tommies').split(';');
+  DATA.ncaab = COLLEGE.concat(HOOPS).map(function (r) {
+    var f = r.split('|'), sch = [f[1]].concat(f[3] ? f[3].split(',').filter(Boolean) : []);
+    return [f[0], f[1] + ' ' + f[2], f[2], sch.slice(1).map(function (x) { return x + ' ' + f[2]; }).join(','), sch];
+  });
+  // Men's college basketball by name.  Women's games and other sports are told apart below.
+  var CBB = /\bncaab\b|\bncaam\b|\bncaa ?m?bb?\b|college basketball|men s (?:college )?basketball|\bmbb\b|\bcbb\b|march madness|final four|sweet 16|elite eight/;
+  var WOMEN = /\bwomen s\b|\bwomen\b|\bwbb\b|\bncaaw\b|\bncaa ?w\b|\bncaawbb\b/;
+  // Not a men's basketball game: another sport, a women's game, football.
+  var NOT_CBB = /\bncaa ?h\b|\bncaah\b|\bhockey|baseball|softball|volleyball|soccer|lacrosse|wrestling|gymnastics|swimming|tennis|\bgolf/;
   // College football, and the other sports a school plays (a basketball game of your school isn't one).
   var CFB = /\bncaaf\b|college football|ncaa (?:football|fb)\b|\bcfb\b|\bcfp\b|\bfbs\b|\bfcs\b|\b(?!super |pro |puppy )\w+ bowl\b/;
   var OTHER = /\bncaa ?[bmwh]\b|\bncaa(?:b|m|w|bb|mb|wb|h)\b|basketball|hoops|\bhockey|baseball|softball|volleyball|soccer|lacrosse|wrestling|gymnastics|swimming|tennis|\bgolf|\bwomen s\b|\bwbb\b|\bmbb\b|march madness|final four/;
   var NOT_BEFORE = /(?:^| )(?:north|south|east|west|central|northern|southern|eastern|western|northeastern|southeastern|northwestern|southwestern|southeast|northwest|southwest|new|middle|little|upper)$/;
   var NOT_AFTER = /^(?:state|st|tech|a and m|southern|christian|baptist|pine|valley|wesleyan|lutheran|international|atlantic|poly|mines|central|northern|western|eastern|methodist|tennessee|martin|chattanooga|monroe|lafayette|pacific)(?: |$)/;
   // Words that put a name in a league: "NHL", "Hockey".  Football and soccer stay out (they mean both).
-  var LEAGUE_WORDS = { nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|hockey|center ice/, mlb: /\bmlb\b|baseball|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|season pass/, ncaaf: CFB };
+  var LEAGUE_WORDS = { nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|hockey|center ice/, mlb: /\bmlb\b|baseball|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|season pass/, ncaaf: CFB, ncaab: CBB };
 
   // "WPG VS CAR", "WPG vs. CAR", "WPG @ CAR": two abbreviations facing each other.
   var MATCHUP = /\b[A-Z]{2,4}\s+(?:[Vv][Ss]?\.?|AT|at)\s+[A-Z]{2,4}\b|\b[A-Z]{2,4}\s*@\s*[A-Z]{2,4}\b/;
@@ -110,7 +143,7 @@ var Teams = (function () {
   }
 
   var ALL = [], BY_ID = {}, NICKS = {};      // nickname -> [team]
-  var SCHOOLS = [];                          // [' michigan state ', team], longest first
+  var SCHOOLS = [], SCHOOL_T = {};           // [' michigan state ', [its teams]], longest first
   LEAGUES.forEach(function (lg) {
     DATA[lg[0]].forEach(function (r) {
       var t = { id: lg[0] + ':' + r[0].toLowerCase(), league: lg[0], abbr: r[0], name: r[1], nicks: r[2].split(','), full: (/ /.test(r[1]) ? [norm(r[1])] : []).concat(r[3] ? r[3].split(',').map(norm) : []) };
@@ -118,7 +151,7 @@ var Teams = (function () {
       t.nk = t.nicks.map(norm);
       if (r[4]) {                                // a school: by its name, never its nickname alone
         t.short = r[4][0]; t.nk = []; t.schools = r[4].map(norm);
-        t.schools.forEach(function (n) { SCHOOLS.push([n, t]); });
+        t.schools.forEach(function (n) { if (!SCHOOL_T[n]) SCHOOLS.push([n, SCHOOL_T[n] = []]); SCHOOL_T[n].push(t); });
       }
       ALL.push(t); BY_ID[t.id] = t;
       t.nk.forEach(function (n) { (NICKS[n] || (NICKS[n] = [])).push(t); });
@@ -144,7 +177,7 @@ var Teams = (function () {
        when only one team of that league has that city.
      - Abbreviations ("WPG VS CAR") count only in event titles, with the league in the context.
      - Junior, minor and youth hockey and the like ("U15", "AAA", "OJHL", "flohockey") only by full name. */
-  var CODES = { nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|center ice/, mlb: /\bmlb\b|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|major league soccer/, ncaaf: CFB };
+  var CODES = { nfl: /\bnfl\b|sunday ticket|red ?zone/, nba: /\bnba\b|league pass/, nhl: /\bnhl\b|center ice/, mlb: /\bmlb\b|extra innings/, wnba: /\bwnba\b/, mls: /\bmls\b|major league soccer/, ncaaf: CFB, ncaab: CBB };
   var MINOR = /u(?:[89]|1\d|2[01])\b|\baaa\b|\d+aaa\b|\b(?:ojhl|ahl|echl|ohl|whl|qmjhl|bchl|ajhl|sjhl|mjhl|nahl|ushl|nwhl|pwhl|sphl|fphl|junior|jr|midget|bantam|minor|youth|college|ncaa\w*|flohockey|flo ?sports|g ?league|nbl|cfl|xfl|ufl|usl|nwsl)\b/i;
   var BEFORE_OK = /^(vs|v|at|and|the|versus|vs\.|nfl|nba|nhl|mlb|wnba|mls|hockey|football|basketball|baseball|soccer|game|live|watch|preview|pregame|postgame|replay|on|in|night|day|sunday|monday|tuesday|wednesday|thursday|friday|saturday|tonight|today|pass|ticket)$/i;
   function esc(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
@@ -183,16 +216,21 @@ var Teams = (function () {
     function note(m, team) { (m[team.league] || (m[team.league] = {}))[team.id] = 1; }
     // College football: not when the text (or, if it doesn't say football, the channel) is another sport.
     var tn = norm(text), cn = norm(ctx || ''), other = OTHER.test(tn) || (!CFB.test(tn) && OTHER.test(cn)), rest = t;
+    /* Basketball the same way: not a women's game, another sport or football (in the text, or in the channel
+       when the text doesn't say basketball). */
+    var bb = CBB.test(c) || (/basketball|hoops/.test(c) && !WOMEN.test(c)), otherB = WOMEN.test(tn) || NOT_CBB.test(tn) || CFB.test(tn) ||
+      (!CBB.test(tn) && !/basketball/.test(tn) && (WOMEN.test(cn) || NOT_CBB.test(cn) || CFB.test(cn)));
+    var tagged = { ncaaf: CFB.test(c), ncaab: bb }, no = { ncaaf: other, ncaab: otherB };
     /* A school's full name says nothing of the sport: "Marquette Golden Eagles vs Michigan Wolverines" on a
        FOX ONE event channel was basketball (Marquette has no football team).  Without football in the text or
        the channel, a school counts only against another FBS school during the football season (issue: a
-       basketball game as a football reminder).  cfb is kept for oneSide(). */
-    var cfb = CFB.test(c);
+       basketball game as a football reminder).  College basketball works the same, in its own season.  The
+       sport's tag is kept for oneSide(). */
     ALL.forEach(function (x) {
       x._school = 0;
       if (x.schools) {
-        x._full = x._nick = x._city = 0; x._cfb = cfb;
-        if (!other && x.full.some(function (f) { return t.indexOf(f) >= 0; })) { x._full = 1; note(seen, x); note(seenCity, x); }
+        x._full = x._nick = x._city = 0; x._tag = tagged[x.league];
+        if (!no[x.league] && x.full.some(function (f) { return t.indexOf(f) >= 0; })) { x._full = 1; note(seen, x); note(seenCity, x); }
         return;
       }
       x._full = x.full.some(function (f) { return t.indexOf(f) >= 0; }) ? 1 : 0;
@@ -204,19 +242,19 @@ var Teams = (function () {
     });
     /* A school by its name, where it's college football: "College Football: Alabama at LSU".  The longest
        name first, so "Michigan State" isn't Michigan too. */
-    if (!other && CFB.test(c)) for (var si = 0; si < SCHOOLS.length; si++) {
-      var sn = SCHOOLS[si][0], sx = SCHOOLS[si][1], at = rest.indexOf(sn);
+    if ((tagged.ncaaf && !other) || (tagged.ncaab && !otherB)) for (var si = 0; si < SCHOOLS.length; si++) {
+      var sn = SCHOOLS[si][0], sxs = SCHOOLS[si][1], at = rest.indexOf(sn);
       if (at < 0) continue;
       var parts = rest.split(sn), own = false;
       // Another school with that name in it: "Central Connecticut", "Alabama State", "Arkansas Pine Bluff".
       for (var pi = 0; pi < parts.length - 1; pi++) if (!NOT_BEFORE.test(parts[pi]) && !NOT_AFTER.test(parts[pi + 1])) own = true;
       rest = parts.join(' # ');
-      if (own && !sx._full) { sx._school = 1; note(seen, sx); note(seenCity, sx); }
+      if (own) sxs.forEach(function (sx) { if (tagged[sx.league] && !no[sx.league] && !sx._full) { sx._school = 1; note(seen, sx); note(seenCity, sx); } });
     }
     function n(m, l) { return m[l] ? Object.keys(m[l]).length : 0; }
     var up = abbrs ? ' ' + text.replace(/[^A-Za-z0-9]+/g, ' ') + ' ' : '';
     teams.forEach(function (x) {
-      var l = x.league, hit = (x._full && (!x.schools || cfb || (n(seen, l) >= 2 && footballSeason()))) || x._school ||
+      var l = x.league, hit = (x._full && (!x.schools || x._tag || (n(seen, l) >= 2 && season(l)))) || x._school ||
         (x._nick && (word[l] || n(seen, l) >= 2)) ||
         (x._city && (code[l] || n(seen, l) >= 1) && n(seenCity, l) >= 2);
       if (!hit && abbrs && !minor && word[l] && up.indexOf(' ' + x.abbr + ' ') >= 0 && MATCHUP.test(text)) hit = 1;
@@ -227,7 +265,7 @@ var Teams = (function () {
 
   /* Team channels: a channel whose whole name, less the league, country and quality tags, is a team
      ("NFL | DETROIT LIONS", "USA NHL Carolina Hurricanes", "Detroit Red Wings HD").  Built once per list. */
-  var TAGS = /\b(usa|us|ca|uk|nfl|nba|nhl|mlb|wnba|mls|ncaaf|ncaa|cfb|hd|fhd|uhd|sd|4k|hevc|raw|backup|tv|team|teams|network|live|east|west)\b/g;
+  var TAGS = /\b(usa|us|ca|uk|nfl|nba|nhl|mlb|wnba|mls|ncaaf|ncaab|ncaam|ncaa|cfb|cbb|hd|fhd|uhd|sd|4k|hevc|raw|backup|tv|team|teams|network|live|east|west)\b/g;
   var chanCache = null;
   function teamChannels() {
     var chans = Library.data.channels;
@@ -243,7 +281,9 @@ var Teams = (function () {
       var tag = norm(chans[i].n + ' | ' + (gname[chans[i].g] || ''));
       l = l.filter(function (x) { return LEAGUE_WORDS[x.league].test(tag) || /\b(sports?|teams?)\b/.test(tag); });
       if (!l.length) continue;
-      (map[l[0].id] || (map[l[0].id] = [])).push(chans[i]);
+      // A school's own channel ("Sports | Michigan State Spartans") is its channel in each sport it fits.
+      var named = l.filter(function (x) { return LEAGUE_WORDS[x.league].test(tag); });
+      (l[0].schools ? (named.length ? named : l.filter(function (x) { return x.schools; })) : [l[0]]).forEach(function (x) { (map[x.id] || (map[x.id] = [])).push(chans[i]); });
     }
     chanCache = { of: chans, map: map };
     return map;
@@ -287,29 +327,34 @@ var Teams = (function () {
       if (!text || NOGAME.test(title || text)) return [];
       var hits = named(text, ctx, ALL, abbrs), by = {}, ids = {};
       hits.forEach(function (x) { by[x.league] = (by[x.league] || 0) + 1; (ids[x.league] || (ids[x.league] = [])).push(x.id); });
-      lastVs = {};
+      lastVs = {}; lastAll = hits;
       Object.keys(ids).forEach(function (l) { lastVs[l] = ids[l].sort().join('/'); });
       return hits.filter(function (x) { return mineIds[x.id] && (by[x.league] >= 2 || oneSide(x, by, text)); });
     }
     var gname = {};
     Library.data.groups.forEach(function (g) { gname[g.id] = g.name; });
-    var tc = teamChannels(), whose = {}, lastVs = {}, curCfb = false;
-    /* A school's other games this week, as proof (issue: "Purdue Boilermakers vs Michigan State Spartans" on a
-       FOX ONE event channel, a Friday basketball game, in My teams for Michigan State football).  A school plays
-       football once a week, so a game that doesn't say football is left out when the same school has another
-       opponent within six days that does say football, or that one is on a Saturday and this one isn't.  So
-       the guide is looked through a week ahead when a school is followed, whatever the window. */
+    var tc = teamChannels(), whose = {}, lastVs = {}, lastAll = [], curTag = '';
+    /* College games that don't say their sport ("Purdue Boilermakers vs Michigan State Spartans" on a FOX ONE
+       event channel, a Friday basketball game, was in My teams for Michigan State football).  The school's
+       other games this week decide (sportOf, below), so the guide is looked through a week ahead when a school
+       is followed, whatever the window.  curTag: the sport the listing names, 'f', 'b' or ''. */
     var schools = teams.some(function (x) { return !!x.schools; }), far = schools ? Math.max(to, now + 7 * 86400e3) : to, proof = {};
-    function prove(hits, s) { hits.forEach(function (x) { if (x.schools) (proof[x.id] || (proof[x.id] = [])).push({ s: s, vs: lastVs[x.league] || '', cfb: curCfb }); }); return hits; }
-    Object.keys(tc).forEach(function (id) { tc[id].forEach(function (c) { whose[c.k] = id; }); });
+    function tagOf(text) { var t = norm(text); return CFB.test(t) ? 'f' : CBB.test(t) || (/basketball|hoops/.test(t) && !WOMEN.test(t)) ? 'b' : ''; }
+    function pairOf(x) { return (lastVs[x.league] || '').replace(/ncaa[fb]:/g, ''); }
+    function prove(s) {
+      var did = {};
+      lastAll.forEach(function (x) { if (x.schools && !did[x.abbr]) { did[x.abbr] = 1; (proof[x.abbr] || (proof[x.abbr] = [])).push({ s: s, pair: pairOf(x), tag: curTag }); } });
+    }
+    Object.keys(tc).forEach(function (id) { tc[id].forEach(function (c) { (whose[c.k] || (whose[c.k] = [])).push(id); }); });
+    function theirs(k) { return whose[k] && !whose[k].some(function (id) { return mineIds[id]; }); }
     function take(c, p, team) {
       if (!c || !shown(c) || !p.t || p.e <= now || p.s > to) return;
       // Another team's own channel (the opponent's) shows the same game: yours is enough.
-      if (whose[c.k] && !mineIds[whose[c.k]]) return;
+      if (theirs(c.k)) return;
       if (!one) {
         var key = c.k + '|' + team.id;
         if (seen[key]) return;
-        seen[key] = { c: c, p: p, team: team, vs: lastVs[team.league] || '', cfb: curCfb };
+        seen[key] = { c: c, p: p, team: team, pair: pairOf(team), tag: curTag };
         out.push(seen[key]);
         return;
       }
@@ -325,7 +370,7 @@ var Teams = (function () {
          baseball doubleheader included.  The listing that names the game is kept. */
       var tk = 'team|' + team.id;
       if (!same) (seen[tk] || []).forEach(function (g) { if (Math.abs(g.p.s - p.s) < CLOSE) same = g; });
-      if (!same) { same = { c: c, p: p, team: team, vs: vs, cfb: curCfb }; seen[gk].push(same); (seen[tk] || (seen[tk] = [])).push(same); out.push(same); return; }
+      if (!same) { same = { c: c, p: p, team: team, pair: pairOf(team), tag: curTag }; seen[gk].push(same); (seen[tk] || (seen[tk] = [])).push(same); out.push(same); return; }
       var named = function (x) { return !!matchup(x.p.t, x.c ? x.c.n : ''); };
       if (Math.abs(p.s - same.p.s) <= 10 * 60000 && !named(same) && named({ c: c, p: p })) { same.c = c; same.p = p; return; }
       if (p.s < same.p.s - 10 * 60000) { same.c = c; same.p = p; }
@@ -350,8 +395,10 @@ var Teams = (function () {
       }
       if (!c || p.e <= now || p.s > far) return;
       var ctx = c.n + ' | ' + (gname[c.g] || '');
-      curCfb = CFB.test(norm(p.t + ' | ' + ctx));
-      prove(playing(p.t, ctx, false), p.s).forEach(function (x) { take(c, p, x); });
+      curTag = tagOf(p.t + ' | ' + ctx);
+      var mineHits = playing(p.t, ctx, false);
+      if (schools) prove(p.s);
+      mineHits.forEach(function (x) { take(c, p, x); });
     });
     // Programmes that name the game only in the description ("NFL Football" on a local station).
     descHits(dwords).forEach(function (r) {
@@ -360,7 +407,7 @@ var Teams = (function () {
       // A description is loose talk: the team by its full name, or the league named ("NFL Football"), so a
       // college game between the Tigers and the Cardinals isn't the Detroit Tigers.
       var ctx = p.t + ' | ' + c.n + ' | ' + (gname[c.g] || '');
-      curCfb = CFB.test(norm(ctx));
+      curTag = tagOf(ctx);
       playing(r.d, ctx, false, p.t).forEach(function (x) { if (x._full || CODES[x.league].test(norm(ctx + ' ' + r.d))) take(c, p, x); });
     });
     // Event channels: the game is in the channel name.
@@ -372,10 +419,15 @@ var Teams = (function () {
       if (ev.guess && ev.start - now > 6 * 3600e3 && new Date(ev.start).getDate() !== new Date(now).getDate()) continue;
       if (!quick.test(norm(ev.title)) && !MATCHUP.test(ev.title)) continue;
       var ectx = c.n + ' | ' + (gname[c.g] || '');
-      curCfb = CFB.test(norm(ev.title + ' | ' + ectx));
-      prove(playing(ev.title, ectx, true), ev.start).forEach(function (x) { take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 }, x); });
+      curTag = tagOf(ev.title + ' | ' + ectx);
+      var evHits = playing(ev.title, ectx, true);
+      if (schools) prove(ev.start);
+      evHits.forEach(function (x) { take(c, { s: ev.start, e: ev.end, t: ev.title, ev: 1 }, x); });
     }
-    if (schools) out = out.filter(function (g) { return !(g.team.schools && !g.cfb && notFootball(g, proof[g.team.id] || [])); });
+    if (schools) out = out.filter(function (g) {
+      if (!g.team.schools || g.tag) return true;
+      return sportOf(g, proof[g.team.abbr] || []) !== (g.team.league === 'ncaab' ? 'f' : 'b');
+    });
     // A game: its team and start (to the half hour); its first start orders it.
     var first = {};
     out.forEach(function (g) { g.gk = g.team.id + '|' + Math.round(g.p.s / 2700e3); if (first[g.gk] == null || g.p.s < first[g.gk]) first[g.gk] = g.p.s; });
@@ -383,7 +435,7 @@ var Teams = (function () {
        channel, your Favorites and groups and event channels first, then by number.  Yours are all kept. */
     var mineK = {}, per = {};
     if (Library.customGroups) Library.customGroups().forEach(function (g) { g.items.forEach(function (k) { mineK[k] = 1; }); });
-    var rank = function (g) { return whose[g.c.k] ? 0 : mineK[g.c.k] ? 1 : g.p.ev ? 2 : 3; };
+    var rank = function (g) { return whose[g.c.k] && !theirs(g.c.k) ? 0 : mineK[g.c.k] ? 1 : g.p.ev ? 2 : 3; };
     if (!one) {
       out.sort(function (a, b) { return rank(a) - rank(b) || a.c.num - b.c.num; });
       out = out.filter(function (g) { per[g.gk] = (per[g.gk] || 0) + 1; return rank(g) <= 1 || per[g.gk] <= MAX_FEEDS; });
@@ -420,22 +472,38 @@ var Teams = (function () {
      school is a game when the title has the two sides ("at", "vs", "@"). */
   var VS = /\s(?:at|vs\.?|v\.?|versus)\s|@/i;
   // And only where it's college football: a school against one that isn't FBS is often another sport.
-  function oneSide(x, by, text) { return !!x.schools && x._cfb && by[x.league] === 1 && VS.test(' ' + text + ' '); }
-  // A school's game that doesn't say football, against the school's other games that week (games(), above).
-  function notFootball(g, others) {
+  function oneSide(x, by, text) { return !!x.schools && x._tag && by[x.league] === 1 && VS.test(' ' + text + ' '); }
+  /* The sport of a school's game that doesn't say it, from the school's other listings this week (games(),
+     above): 'f' football, 'b' basketball, '' can't tell (then it counts for both).
+     - The same game listed elsewhere with its sport ("NCAAF: Michigan at Oregon"): that sport.
+     - A school plays football once a week.  Another opponent within six days whose game says football, or
+       one on a Saturday when this one isn't (in the football season): this one is basketball.
+     - The other way round, in the football season: a Saturday game when the school's other opponent that
+       week says basketball, or plays on a weekday: this one is football. */
+  function sportOf(g, others) {
     function sat(t) { return new Date(t).getDay() === 6; }
-    return others.some(function (o) {
-      var gap = Math.abs(o.s - g.p.s);
-      return o.vs !== g.vs && gap > CLOSE && gap < 6 * 86400e3 && (o.cfb || (sat(o.s) && !sat(g.p.s)));
+    var s = g.p.s, out = '';
+    others.forEach(function (o) {
+      var gap = Math.abs(o.s - s);
+      if (out || gap >= 6 * 86400e3) return;
+      if (o.pair === g.pair) { if (gap < SAME_GAME && o.tag) out = o.tag; return; }
+      if (gap <= CLOSE) return;
+      if (o.tag === 'f' || (sat(o.s) && !sat(s) && footballSeason(s))) out = 'b';
+      else if (sat(s) && footballSeason(s) && (o.tag === 'b' || !sat(o.s))) out = 'f';
     });
+    return out;
   }
   // Mid-August to the end of the year: the season, conference championships and most bowls.
   function footballSeason(t) { var d = new Date(t || Date.now()), m = d.getMonth(); return m >= 8 || m === 7 && d.getDate() >= 15; }
+  // Basketball: November to the national championship in early April.
+  function hoopsSeason(t) { var d = new Date(t || Date.now()), m = d.getMonth(); return m >= 10 || m <= 2 || m === 3 && d.getDate() <= 10; }
+  function season(l, t) { return l === 'ncaab' ? hoopsSeason(t) : footballSeason(t); }
   /** Not the game itself: an overtime block, a replay, a show around it. */
   function aroundGame(title) { return NOGAME.test(title || ''); }
-  function isGame(title, ctx) {
+  // league: a game of that league only (a team reminder is for its own team's sport).
+  function isGame(title, ctx, league) {
     if (!title || NOGAME.test(title)) return false;
-    var by = {}, hits = named(title, ctx || '', ALL, true);
+    var by = {}, hits = named(title, ctx || '', ALL, true).filter(function (x) { return !league || x.league === league; });
     hits.forEach(function (x) { by[x.league] = (by[x.league] || 0) + 1; });
     for (var k in by) if (by[k] >= 2) return true;
     return hits.some(function (x) { return oneSide(x, by, title); });
@@ -529,6 +597,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    RULES: 2, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
+    RULES: 3, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
 })();

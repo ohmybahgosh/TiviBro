@@ -570,7 +570,7 @@ I18n.add('es', {
   "Next episode in 5 seconds.  Back cancels.": "Siguiente episodio en 5 segundos.  Atrás cancela.",
   "Next: make a key for TiviBro": "Siguiente: crea una clave para TiviBro",
   "Next: paste it into TiviBro": "Siguiente: pégala en TiviBro",
-  "No NFL, NBA, NHL, MLB, WNBA, MLS or college football channels found in this playlist.": "No se encontraron canales de NFL, NBA, NHL, MLB, WNBA, MLS ni fútbol americano universitario en esta lista.",
+  "No NFL, NBA, NHL, MLB, WNBA, MLS, college football or college basketball channels found in this playlist.": "No se encontraron canales de NFL, NBA, NHL, MLB, WNBA, MLS, fútbol americano universitario ni básquetbol universitario en esta lista.",
   "No matching movies found.  Try a different title.": "No se encontraron películas.  Prueba otro título.",
   "No media servers answered.  Is media sharing on, and is the server on this network?": "Ningún servidor de medios respondió.  ¿Está activado el uso compartido de medios y el servidor está en esta red?",
   "No newer version found yet.  It may still be on its way.": "Aún no hay una versión nueva.  Puede que esté en camino.",
@@ -768,7 +768,7 @@ I18n.add('es', {
   "The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.": "El grupo de canales de eventos en curso o que empiezan en las próximas dos semanas, los más próximos primero.  El mismo interruptor que en Canales de eventos.",
   "The guide": "La guía",
   "The guide shows the event at its time, with \"Starts 7:30 PM\" before it.  A real guide always wins.": "La guía muestra el evento a su hora, con \"Empieza 7:30 PM\" antes.  Una guía real siempre tiene prioridad.",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS) and college football (the FBS schools).  Other college sports, junior and minor league teams, and other countries' leagues, aren't in it yet.": "Las principales ligas de Norteamérica (NFL, NBA, NHL, MLB, WNBA y MLS) y el fútbol americano universitario (las escuelas FBS).  Otros deportes universitarios, equipos juveniles y de ligas menores, y ligas de otros países, aún no están.",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "Las principales ligas de Norteamérica (NFL, NBA, NHL, MLB, WNBA y MLS), el fútbol americano universitario (las escuelas FBS) y el básquetbol universitario masculino (esas escuelas y las principales de la División I sin fútbol americano FBS).  Otros deportes universitarios, los partidos universitarios femeninos, equipos juveniles y de ligas menores, y ligas de otros países, aún no están.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "Lo máximo que el reproductor descarga por adelantado.  Las películas pueden llenarlo; los canales en vivo suelen quedar más bajo, ya que el proveedor solo envía un poco por delante del tiempo real.",
   "The network helper is not running": "El asistente de red no está en ejecución",
   "The other playlists' guides": "Las guías de las otras listas",
@@ -1042,5 +1042,6 @@ I18n.add('es', {
   "TMDB API token": "Token de API de TMDB",
   "Saved on this TV.  Test or replace it under API keys.": "Guardado en esta TV.  Pruébalo o cámbialo en Claves de API.",
   "Not set yet.  It's under API keys, with the OpenSubtitles key.": "Todavía no está.  Está en Claves de API, con la clave de OpenSubtitles.",
-  "Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.": "Necesita un token de TMDB: agrega uno en Claves de API (arriba), gratis en themoviedb.org.  El mismo token da los pósteres de Mis medios."
+  "Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.": "Necesita un token de TMDB: agrega uno en Claves de API (arriba), gratis en themoviedb.org.  El mismo token da los pósteres de Mis medios.",
+  "College Basketball": "Básquetbol universitario"
 });

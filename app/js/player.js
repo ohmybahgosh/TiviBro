@@ -376,7 +376,13 @@ var Player = (function () {
     // Live TS that "completes" means the server hung up.  Reconnect right away.
     if (live) m.on(mpegts.Events.LOADING_COMPLETE, function () { fail('net', 'server closed stream', false, true); });
     // Closed captions: the caption SEIs the patched demuxer hands over (vendor/PATCHES.md).
-    m.on(mpegts.Events.PES_PRIVATE_DATA_ARRIVED, function (d) { if (d && d.pid === -608 && ccDec) ccDec.feed(d.data, d.pts); });
+    // Lined up with the picture's timeline (captions.js feedAt): a jump in the stream's clock left them unseen until a reconnect.
+    m.on(mpegts.Events.PES_PRIVATE_DATA_ARRIVED, function (d) {
+      if (!d || d.pid !== -608 || !ccDec) return;
+      var b = video && video.buffered, end = b && b.length ? b.end(b.length - 1) * 1000 : null, n = ccDec.realigned || 0;
+      ccDec.feedAt(d.data, d.pts, end);
+      if ((ccDec.realigned || 0) > n) Log.info('player', 'Captions lined up with the picture again after a jump in the stream\'s clock');
+    });
     m.attachMediaElement(video);
     m.load();
     return {

@@ -578,7 +578,7 @@ I18n.add('ru', {
   "Next episode in 5 seconds.  Back cancels.": "Следующая серия через 5 секунд.  Назад: отмена.",
   "Next: make a key for TiviBro": "Далее: создайте ключ для TiviBro",
   "Next: paste it into TiviBro": "Далее: вставьте его в TiviBro",
-  "No NFL, NBA, NHL, MLB, WNBA, MLS or college football channels found in this playlist.": "В этом плейлисте нет каналов NFL, NBA, NHL, MLB, WNBA, MLS или студенческого футбола.",
+  "No NFL, NBA, NHL, MLB, WNBA, MLS, college football or college basketball channels found in this playlist.": "В этом плейлисте нет каналов NFL, NBA, NHL, MLB, WNBA, MLS, студенческого футбола или студенческого баскетбола.",
   "No matching movies found.  Try a different title.": "Подходящих фильмов не найдено.  Попробуйте другое название.",
   "No media servers answered.  Is media sharing on, and is the server on this network?": "Ни один медиасервер не ответил.  Включён ли общий доступ к медиа и в этой ли сети сервер?",
   "No newer version found yet.  It may still be on its way.": "Новая версия пока не найдена.  Возможно, она ещё в пути.",
@@ -778,7 +778,7 @@ I18n.add('ru', {
   "The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.": "Группа каналов событий, идущих сейчас или в ближайшие две недели, ближайшие первыми.  Тот же переключатель, что и в «Каналах событий».",
   "The guide": "Телегид",
   "The guide shows the event at its time, with \"Starts 7:30 PM\" before it.  A real guide always wins.": "Телегид показывает событие в его время с пометкой «Начало в 19:30».  Настоящий телегид всегда в приоритете.",
-  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS) and college football (the FBS schools).  Other college sports, junior and minor league teams, and other countries' leagues, aren't in it yet.": "Основные лиги Северной Америки (NFL, NBA, NHL, MLB, WNBA и MLS) и студенческий футбол (школы FBS).  Другие студенческие виды спорта, юниорские и низшие лиги, а также лиги других стран пока не включены.",
+  "The main North American leagues (NFL, NBA, NHL, MLB, WNBA and MLS), college football (the FBS schools) and men's college basketball (those schools and the main Division I ones without FBS football).  Other college sports, women's college games, junior and minor league teams, and other countries' leagues, aren't in it yet.": "Основные лиги Северной Америки (NFL, NBA, NHL, MLB, WNBA и MLS), студенческий футбол (школы FBS) и мужской студенческий баскетбол (эти школы и основные школы Дивизиона I без футбола FBS).  Другие студенческие виды спорта, женские студенческие игры, юниорские и низшие лиги, а также лиги других стран пока не включены.",
   "The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.": "Максимум, который плеер загружает вперёд при воспроизведении.  Фильмы могут заполнить его; у живых каналов обычно меньше, так как провайдер отправляет данные лишь немного раньше реального времени.",
   "The network helper is not running": "Сетевой помощник не запущен",
   "The other playlists' guides": "Телегиды других плейлистов",
@@ -1054,5 +1054,6 @@ I18n.add('ru', {
   "TMDB API token": "Токен API TMDB",
   "Saved on this TV.  Test or replace it under API keys.": "Сохранён на этом ТВ.  Проверить или заменить можно в разделе «Ключи API».",
   "Not set yet.  It's under API keys, with the OpenSubtitles key.": "Ещё не задан.  Он в разделе «Ключи API», вместе с ключом OpenSubtitles.",
-  "Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.": "Нужен токен TMDB: добавьте его в разделе «Ключи API» (выше), бесплатно на themoviedb.org.  Этот же токен даёт постеры для «Мои медиа»."
+  "Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.": "Нужен токен TMDB: добавьте его в разделе «Ключи API» (выше), бесплатно на themoviedb.org.  Этот же токен даёт постеры для «Мои медиа».",
+  "College Basketball": "Студенческий баскетбол (NCAA)"
 });

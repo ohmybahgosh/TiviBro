@@ -177,6 +177,17 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('a weak miss is asked again only when a strong reason comes', (() => { const n = asks.length; S.show('Show 19', '', 'weak'); const a = asks.length === n; S.show('Show 19', '', 'strong'); return a; })());
   await wait(400);
   ok('the answers are kept (misses too)', await wait(5200).then(() => store.tvseries && store.tvseries.shows && Object.keys(store.tvseries.shows).length >= 4 && Object.keys(store.tvseries.seasons).length === 1), JSON.stringify(Object.keys((store.tvseries || {}).shows || {})));
+  // The phone app's guide: shows not known yet are asked for in the background, every one of them, after
+  // what the TV's own screen asks for, so the phone has their posters when it asks again.
+  asks.length = 0;
+  const pc = { n: 'Kids One', k: 'p1' }, pg = (t) => ({ t, s: now, e: now + 1800e3 });
+  for (let i = 0; i < 12; i++) S.soon(pc, pg('Phone Show ' + i));
+  S.show('Screen Show', '', 'weak');
+  ok('nothing known yet: null for the phone', S.soon(pc, pg('Phone Show 0')) === null);
+  await wait(9000);
+  const ph = asks.filter((a) => /Phone Show/.test(a));
+  ok('all twelve the phone listed are asked about, oldest first, not just the last few', ph.length === 12 && /Phone Show 0\|/.test(ph[0]), asks.join(' '));
+  ok('the TV\'s own screen goes ahead of them', asks.indexOf('show:Screen Show||weak') >= 0 && asks.indexOf('show:Screen Show||weak') < 3, asks.join(' '));
   ctx.Store.settings.guideSeries = false;
   ok('nor asked about by the app, where all of them would share one answer', S.show('مسلسل', '', 'strong') === null && S.show('Друзья', '', 'strong') === null);
   ok('Series details off: nothing', S.of(c, { t: 'Severance', s: now, e: now + 3600e3, ep: 'S1 E1' }) === null);

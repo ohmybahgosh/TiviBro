@@ -100,10 +100,13 @@ var Series = (function () {
     while (queue.length > QUEUE) delete queued[queue.pop().k];
     pump();
   }
+  /* Shows the phone app's guide lists (Series.soon): asked in the background, oldest first, after what the
+     TV's own screen asks for.  The phone then has their posters when it asks again. */
+  var later = [], LATER = 150;
   function pump() {
-    if (busy || !queue.length || !on() || typeof Media === 'undefined' || !Media.tvByName || Date.now() < paused) return;
+    if (busy || !(queue.length || later.length) || !on() || typeof Media === 'undefined' || !Media.tvByName || Date.now() < paused) return;
     busy = true;
-    var job = queue.shift();
+    var job = queue.length ? queue.shift() : later.shift();
     var ask = job.season != null ? Media.tvSeason(job.id, job.season) : Media.tvByName(job.t, job.y, job.st, job.cc);
     ask.then(function (r) {
       var m = r && r.metadata;
@@ -120,13 +123,14 @@ var Series = (function () {
     }, function (e) {
       // TMDB refused or can't be reached: wait a minute before asking again.
       paused = Date.now() + 60000;
-      queue.forEach(function (x) { delete queued[x.k]; }); queue = [];
+      queue.concat(later).forEach(function (x) { delete queued[x.k]; }); queue = []; later = [];
       if (typeof Log !== 'undefined') Log.warn('series', 'TMDB lookups paused: ' + (e && e.message));
     }).then(function () { delete queued[job.k]; busy = false; setTimeout(pump, GAP); });
   }
 
   // A show by name (and year): its details, or null while unknown (it is asked for) or not found.
-  function show(name, year, strength, cc) {
+  // bg: ask in the background (the phone's guide), not ahead of what the TV is showing.
+  function show(name, year, strength, cc, bg) {
     if (!on()) return null;
     load();
     // Not before what was kept has been read: asking then would ask again about shows already known, and a
@@ -138,7 +142,9 @@ var Series = (function () {
     cc = /^[A-Z]{2}$/.test(cc || '') ? cc : '';
     var k = keyOf(ct.t, y) + (cc ? '|' + cc : ''), hit = shows[k];
     if (hit && (hit.m || hit.s === 'strong' || strength !== 'strong')) return hit.m || null;
-    want({ k: k, t: ct.t, y: y, st: strength || 'weak', cc: cc });
+    var job = { k: k, t: ct.t, y: y, st: strength || 'weak', cc: cc };
+    if (!bg) want(job);
+    else if (!queued[k] && later.length < LATER) { queued[k] = 1; later.push(job); pump(); }
     return null;
   }
   // An episode of a show ('S2 E5', or season and number): { t, plot, still, air }, or null.
@@ -212,6 +218,13 @@ var Series = (function () {
   }
   /* What is already known of a guide programme's show, without asking TMDB (the phone's guide: a page of 60
      channels shouldn't send a lookup for each, nor work out each channel's stories).  null when not known. */
+  // A guide programme the phone app lists: its show if known, else asked for in the background.
+  function soon(c, p) {
+    var k = known(c, p);
+    if (k || !on()) return k;
+    var st = strength(c, p);
+    return st ? show(p.t, '', st, countryOf(c), true) : null;
+  }
   function known(c, p) {
     if (!on() || !ready || !p || !p.t || p.mv || p.k === 'n' || p.k === 's' || p.k === 'm') return null;
     var ct = clean(p.t);
@@ -234,6 +247,6 @@ var Series = (function () {
   function poke() { paused = 0; changed(); }
   // Forget every answer (the tests start from nothing; a different token or language could use it too).
   function reset() { shows = {}; seasons = {}; loaded = Promise.resolve(); ready = true; queue = []; queued = {}; if (Store.bigSet) Store.bigSet(KEY, {}); changed(); }
-  return { on: on, of: of, known: known, show: show, episode: episode, clean: clean, strength: strength, onChange: onChange, poke: poke, reset: reset,
-    get pending() { return queue.length + (busy ? 1 : 0); } };
+  return { on: on, of: of, known: known, soon: soon, show: show, episode: episode, clean: clean, strength: strength, onChange: onChange, poke: poke, reset: reset,
+    get pending() { return queue.length + later.length + (busy ? 1 : 0); } };
 })();

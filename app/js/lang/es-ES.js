@@ -12,5 +12,6 @@ I18n.variant('es-ES', 'es', [
   ['en vivo', 'en directo'],
   ['prender', 'encender'], ['prende', 'enciende'], ['prendido', 'encendido'], ['prendida', 'encendida'],
   ['ícono', 'icono'], ['íconos', 'iconos'],
-  ['celular', 'móvil'], ['celulares', 'móviles']
+  ['celular', 'móvil'], ['celulares', 'móviles'],
+  ['básquetbol', 'baloncesto']
 ], {});
