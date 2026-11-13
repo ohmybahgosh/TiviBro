@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **TiviBro's phone connection starts right after the TV restarts.**  Alpha 126 started it the moment the TV's power state said it was on, but most TVs don't let an app watch that, so after a full restart the phone app waited up to five minutes.  Where the power state can't be watched, it now starts as soon as the TV's network is up.
 - **The phone app says a TV in standby is off.**  A TV that stays on the network while off (Quick Start+, or a USB network adapter's Wi-Fi standby) kept answering the phone app, which showed it as on.  The TV now tells the app its power state, so standby shows as "Off (standby)", and Turn on waits for the TV to really be on.
 - **Português (Portugal).**  Portugal's Portuguese is its own language in Settings > Language: the Brazilian translation with Portugal's words (ecrã, telemóvel, Definições, ficheiro, utilizador, "A carregar").  A TV set to Portugal's Portuguese gets it automatically; other Portuguese stays Brazilian.
 

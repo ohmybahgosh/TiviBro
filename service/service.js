@@ -61,6 +61,7 @@ function watchPower() {
   try {
     powerSub = service.subscribe('luna://com.webos.service.tvpower/power/getPowerState', { subscribe: true });
     powerSub.on('response', function (m) {
+      if (m && m.payload && m.payload.returnValue === false) { proxy.log({ lv: 'warn', event: 'power state refused', e: m.payload.errorText || m.payload.errorCode }); return; }
       var st = m && m.payload && m.payload.state;
       if (st) powerNow = String(st).slice(0, 40);
       if (!st || st === 'Active' || st === 'Screen Off') return;
@@ -149,15 +150,28 @@ var companion = require('./companion').create({
 var WAKE_ON = 'tivibro-companion-on';
 function wake(on) {
   if (!on) { lcall(AM + '/cancel', { activityName: WAKE_ON }, function () {}); return lcall(AM + '/cancel', { activityName: WAKE }, function () {}); }
-  lcall(AM + '/create', {
-    activity: {
-      name: WAKE_ON, description: 'TiviBro: the phone app connection, as soon as the TV is on',
-      type: { background: true, persist: true, explicit: true },
-      trigger: { method: 'luna://com.webos.service.tvpower/power/getPowerState', params: { subscribe: true }, where: { prop: 'state', op: '=', val: 'Active' } },
-      callback: { method: 'luna://app.tivibro.tv.service/wake', params: { on: true } }
-    },
-    start: true, replace: true
-  }, function (r) { proxy.log({ lv: r.returnValue === false ? 'warn' : 'info', event: 'companion wake at power-on ' + (r.returnValue === false ? 'refused: ' + (r.errorText || r.errorCode) : 'set') }); });
+  /* The trigger: the TV's power state turning "Active" where TiviBro may read it (a rooted TV, after grant.js), else
+     the network coming up, which every TV lets an app watch: after a restart that is moments after the TV is on.
+     (webOS refuses a trigger on a service the app has no rights to: "doesn't have rights to call callback/trigger".) */
+  var triggers = [
+    { method: 'luna://com.webos.service.tvpower/power/getPowerState', params: { subscribe: true }, where: { prop: 'state', op: '=', val: 'Active' } },
+    { method: 'luna://com.webos.service.connectionmanager/getStatus', params: { subscribe: true }, where: { prop: 'isInternetConnectionAvailable', op: '=', val: true } }
+  ];
+  (function tryOne(i, why) {
+    if (i >= triggers.length) return proxy.log({ lv: 'error', event: 'companion wake at power-on refused', e: why });
+    lcall(AM + '/create', {
+      activity: {
+        name: WAKE_ON, description: 'TiviBro: the phone app connection, as soon as the TV is on',
+        type: { background: true, persist: true, explicit: true },
+        trigger: triggers[i],
+        callback: { method: 'luna://app.tivibro.tv.service/wake', params: { on: true } }
+      },
+      start: true, replace: true
+    }, function (r) {
+      if (r.returnValue === false) return tryOne(i + 1, (why ? why + '; ' : '') + (r.errorText || r.errorCode));
+      proxy.log({ lv: 'info', event: 'companion wake at power-on set', on: triggers[i].method.split('/').pop() });
+    });
+  })(0, '');
   lcall(AM + '/create', {
     activity: {
       name: WAKE, description: 'TiviBro: keep the phone app connection available',
