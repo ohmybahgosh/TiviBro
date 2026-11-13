@@ -212,7 +212,7 @@ Channels, programmes now, later and on catch-up, and your movies and shows, as y
 
 ### Make it yours
 
-Twelve full themes (Black and white, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin Mocha, Solarized Dark, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai), or your own mix: twelve accent colours or your own from a hue and brightness, nine backgrounds (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), a white focus outline for distance viewing, text size, panel transparency, clock, logos and more, all live.
+Sixteen full themes (Black and white, Graphite, GitHub Dark, Ayu Dark, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin Mocha, Solarized Dark, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai, Terminal), or your own mix: twelve accent colours or your own from a hue and brightness, nine backgrounds (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), a white focus outline for distance viewing, text size, panel transparency, clock, logos and more, all live.
 
 Settings has thirteen sections, named the same on the TV, in the phone app and in the web editor.  Plus remote remapping, parental controls, reminders, buffering profiles and on-TV diagnostics.
 

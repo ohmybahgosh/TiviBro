@@ -75,7 +75,11 @@
   <!-- SETTINGS -->
   <section id="viewSettings" class="view hidden">
     <div id="setNav" class="set-nav"></div>
-    <div id="setBody" class="set-body"></div>
+    <div class="set-main">
+      <!-- The channel playing keeps playing here, in the top corner (views.js pip) -->
+      <div id="setNow" class="set-now"><div class="set-now-info" data-raw></div><div id="setPreview" class="set-preview"></div></div>
+      <div id="setBody" class="set-body"></div>
+    </div>
   </section>
 
   <footer class="hints" id="hints"></footer>

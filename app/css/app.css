@@ -210,6 +210,16 @@ body.guide1 .gp .gs{display:none}
 .set-nav div.on{color:var(--text);background:var(--panel)}
 .set-nav.active div.on{background:var(--accent);color:var(--on-accent)}
 .set-body{flex:1;overflow:hidden;position:relative}
+/* Settings with the channel still playing (views.js pip): the picture in the top corner, what's on beside it,
+   the settings below at full width, so no row is narrower or hidden behind the picture. */
+.set-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.set-now{display:none;flex:none;height:252px;margin-bottom:20px;gap:32px;align-items:stretch}
+#viewSettings.pip .set-now{display:flex}
+.set-now-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;padding:0 0 8px 24px;overflow:hidden}
+.set-now-info .sn-l{color:var(--muted);font-size:22px}
+.set-now-info .sn-c{font-size:34px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.set-now-info .sn-p{color:var(--muted);font-size:24px;margin-top:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.set-preview{width:448px;height:252px;flex:none;border-radius:12px;background:#000}
 /* Room for the clock (top right): a focused row at the top must not cover it. */
 #viewSettings{padding-top:84px}
 .set-scroll{position:absolute;left:0;right:0;top:0;will-change:transform}
@@ -936,3 +946,12 @@ body.gr-xl .gch .n{white-space:normal;display:-webkit-box;-webkit-box-orient:ver
 /* Bigger guide rows: the cut-off row under the last whole one fades out, so it's clear there are more channels
    below (views.js PEEK). */
 .guide-body.more-down::after{content:'';position:absolute;left:0;right:0;bottom:0;height:var(--peek);z-index:4;pointer-events:none;background:linear-gradient(to bottom,rgba(0,0,0,0),var(--ink))}
+/* Theme: Terminal (views.js PALETTES.terminal).  Green phosphor on black, a monospace clock with a blinking
+   cursor, "$" before Settings headings and a soft glow on what's focused.  Nothing that changes a row's
+   width or adds a layer over the picture, so it costs a small TV nothing. */
+body.pal-terminal #clock,body.pal-terminal .sidenav .clock{font-family:"DejaVu Sans Mono","Roboto Mono",monospace;color:var(--accent)}
+body.pal-terminal #clock::after{content:"";display:inline-block;width:.55em;height:1em;margin-left:6px;vertical-align:-3px;background:var(--accent);animation:tb-cursor 1.1s steps(1) infinite}
+@keyframes tb-cursor{50%{opacity:0}}
+body.pal-terminal .opt.head{font-family:"DejaVu Sans Mono","Roboto Mono",monospace;letter-spacing:.02em}
+body.pal-terminal .opt.head::before{content:"$ ";color:var(--accent)}
+body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.pal-terminal .tab.on{text-shadow:0 0 10px rgba(57,255,122,.45)}

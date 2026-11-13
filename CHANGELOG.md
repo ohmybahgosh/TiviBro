@@ -1,14 +1,19 @@
 # Changelog
 
-## Unreleased
-
-- **A team's reminder goes by the time most channels give.**  When channels carrying the same game disagree on its start (one says 7:00, two say 8:00, usually a guide an hour out), the reminder is set for the time most of them agree on, on one of those channels, and one already set at the odd time is moved.  A tie keeps the earliest, so a game is never missed.
-
-## 0.6.0 (alpha 130, 2026-11-13)
+## 0.6.0 (alpha 131, 2026-11-13)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 130
+### New in alpha 131
+
+- **Stream info shows an HLS channel's real bitrate.**  Many providers' playlists don't state it, so Details said "0 kbps".  It's now measured from the stream itself, the size of each piece over how long it plays.
+- **Settings keep the channel playing.**  Like TiviMate, the channel you were watching carries on in the top corner of Settings, with its name and what's on beside it, and the settings sit below at full width, so no row is narrower or hidden.  Changing the buffer profile, player engine, stream format, connection or HDR starts the picture again with the new setting.  It stops, as Settings used to, for the set-up screen, the tour and the speed test, and on a TV short of memory for a channel list or guide reload or a My media rescan.
+- **Search settings (discussion #60).**  Yellow anywhere in Settings: type a word ("subtitle", "clock", "DNS") and every setting with it in its name or note is listed, with where it lives.  OK on one goes straight there.  Words in your language and in English both work.
+- **Four more themes.**  Graphite, GitHub Dark and Ayu Dark are crisp near-black themes with bright text, and Terminal is green phosphor on black, with a monospace clock, a blinking cursor and $ before the Settings headings.
+- **Holding ◀ in the guide goes back in time again.**  At now, the first press opened the groups straight away, so a held ◀ went on to the side menu.  A press at now now waits a moment to see whether it's a hold: a press opens the groups, a hold goes back through what was on.
+- **A team's reminder goes by the time most channels give.**  When channels carrying the same game disagree on its start (one says 7:00, two say 8:00, usually a guide an hour out), the reminder is set for the time most of them agree on, on one of those channels, and one already set at the odd time is moved.  A tie keeps the earliest, so a game is never missed.
+
+### In alpha 130
 
 - **Closed captions come back after a jump in the stream's clock.**  When a channel's timestamps jumped (the provider restarting its encoder, a gap, the clock wrapping), the picture's timeline carried on but the captions kept the stream's new clock, so none showed until the stream was reconnected.  Captions are now lined up with the picture again when the two drift more than 10 seconds apart.
 - **The phone app's guide gets posters for every TV show it lists.**  The TV only looked a show up on TMDB once it was focused on the TV's own screen, so the phone showed posters only for shows you'd already landed on there.  Now the shows the phone lists are looked up in the background, after whatever the TV's screen asks for, and their posters are there the next time the phone loads that part of the guide.

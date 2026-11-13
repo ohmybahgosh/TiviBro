@@ -1559,5 +1559,16 @@ I18n.add('pt-BR', {
   "Saved on this TV.  Test or replace it under API keys.": "Salvo nesta TV.  Teste ou troque em Chaves de API.",
   "Not set yet.  It's under API keys, with the OpenSubtitles key.": "Ainda não configurado.  Fica em Chaves de API, com a chave do OpenSubtitles.",
   "Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.": "Precisa de um token do TMDB: adicione um em Chaves de API (acima), grátis em themoviedb.org.  O mesmo token dá os pôsteres de Minhas mídias.",
-  "College Basketball": "Basquete universitário"
+  "College Basketball": "Basquete universitário",
+  "Now playing": "Reproduzindo",
+  "Graphite": "Grafite",
+  "Terminal": "Terminal",
+  "GitHub Dark": "GitHub escuro",
+  "Ayu Dark": "Ayu escuro",
+  "Search settings": "Buscar nas configurações",
+  "Type a word: buffer, subtitles, clock, DNS…": "Digite uma palavra: buffer, legendas, relógio, DNS…",
+  "{n} setting": "{n} opção",
+  "{n} settings": "{n} opções",
+  "No setting has that in its name or its note.": "Nenhuma opção tem isso no nome ou na nota.",
+  "A word from its name": "Uma palavra do nome"
 });

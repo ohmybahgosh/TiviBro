@@ -186,6 +186,13 @@ var Player = (function () {
     // The first piece was read and its tracks are known (like the demuxer's media info): from here, nothing
     // buffered after 8 s is the format, not the connection (issue #65).
     h.on(Hls.Events.FRAG_PARSING_INIT_SEGMENT, function () { if (st) st.gotInfo = true; });
+    /* The stream's own rate, from the pieces it sends (size over how long each plays): many providers' playlists
+       don't say it (no BANDWIDTH), and Stream info said "0 kbps". */
+    var rate = 0;
+    h.on(Hls.Events.FRAG_LOADED, function (e, d) {
+      var f = d && d.frag, st2 = (f && f.stats) || (d && d.stats), n = (st2 && (st2.total || st2.loaded)) || (d && d.payload && d.payload.byteLength) || 0, dur = f && f.duration;
+      if (f && f.type === 'main' && n > 0 && dur > 0.5) { var r = n * 8 / dur; rate = rate ? rate * 0.7 + r * 0.3 : r; }
+    });
     h.on(Hls.Events.ERROR, function (e, d) {
       if (!d.fatal) return;
       if (d.type === Hls.ErrorTypes.MEDIA_ERROR) {
@@ -219,7 +226,7 @@ var Player = (function () {
     return {
       name: 'HLS',
       recover: function () { h.recoverMediaError(); },
-      info: function () { var l = h.levels && h.levels[h.currentLevel]; return l ? Math.round((l.bitrate || 0) / 1000) + ' kbps' : ''; },
+      info: function () { var l = h.levels && h.levels[h.currentLevel], b = (l && l.bitrate) || rate; return b ? Math.round(b / 1000) + ' kbps' : ''; },
       audio: function () { return (h.audioTracks || []).map(function (t, i) { return { id: i, label: t.name || t.lang || ('Track ' + (i + 1)), lang: t.lang || '', ch: +(t.attrs && t.attrs.CHANNELS || '').split('/')[0] || 0, on: i === h.audioTrack }; }); },
       setAudio: function (i) { h.audioTrack = i; },
       // Video quality (TiviMate's "Video tracks"): the HLS variants, or Automatic.

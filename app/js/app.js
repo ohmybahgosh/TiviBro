@@ -47,6 +47,8 @@ var App = (function () {
      target: undefined (first run), 'new' (add another), or a playlist id (edit). */
   function setup(target) {
     window.__tbBooted = true;              // the setup screen counts as started
+    // Opened from Settings while a channel played in its corner: the setup screen covers it, so it stops.
+    if (window.Views && Views.pipStop) Views.pipStop('the set-up screen');
     var editing = target && target !== 'new';
     var existing = editing ? Store.settings.playlists.filter(function (x) { return x.id === target; })[0] : null;
     // A new playlist starts on Full link: paste what the provider sent and TiviBro fills in the rest (#11).

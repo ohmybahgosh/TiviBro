@@ -1055,5 +1055,16 @@ I18n.add('ru', {
   "Saved on this TV.  Test or replace it under API keys.": "Сохранён на этом ТВ.  Проверить или заменить можно в разделе «Ключи API».",
   "Not set yet.  It's under API keys, with the OpenSubtitles key.": "Ещё не задан.  Он в разделе «Ключи API», вместе с ключом OpenSubtitles.",
   "Needs a TMDB token: add one under API keys (above), free from themoviedb.org.  The same token gives My media its posters.": "Нужен токен TMDB: добавьте его в разделе «Ключи API» (выше), бесплатно на themoviedb.org.  Этот же токен даёт постеры для «Мои медиа».",
-  "College Basketball": "Студенческий баскетбол (NCAA)"
+  "College Basketball": "Студенческий баскетбол (NCAA)",
+  "Now playing": "Сейчас идёт",
+  "Graphite": "Графит",
+  "Terminal": "Терминал",
+  "GitHub Dark": "GitHub тёмная",
+  "Ayu Dark": "Ayu тёмная",
+  "Search settings": "Поиск в настройках",
+  "Type a word: buffer, subtitles, clock, DNS…": "Введите слово: буфер, субтитры, часы, DNS…",
+  "{n} setting": "Найдено: {n}",
+  "{n} settings": "Найдено: {n}",
+  "No setting has that in its name or its note.": "Ни в одной настройке этого нет ни в названии, ни в описании.",
+  "A word from its name": "Слово из названия"
 });

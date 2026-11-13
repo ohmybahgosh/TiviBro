@@ -634,6 +634,7 @@ var Tour = (function () {
 
   /* opts: { first: true right after connecting, done(applied), only: one step's id } */
   function open(opts) {
+    if (window.Views && Views.pipStop) Views.pipStop('the set-up tour');       // it covers the screen
     opts = opts || {};
     init(opts);
     if (st.only && steps().length < 2) { var why = NONE[st.only] || 'Nothing to do here for this playlist.'; st = null; U.toast(why, 5000); return; }

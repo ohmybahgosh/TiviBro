@@ -124,7 +124,7 @@ var Phone = (function () {
     else {
       // Not known yet: asked for in the background (the TV only asks about what its own screen shows), so
       // the phone has the poster when it asks again.
-      var sh = c && typeof Series !== 'undefined' ? (Series.soon ? Series.soon(c, p) : Series.known && Series.known(c, p)) : null;
+      var sh = c && typeof Series !== 'undefined' ? (Series.known(c, p) || (Series.soon ? Series.soon(c, p) : null)) : null;
       if (sh) x.m = { k: 's', i: sh.poster || '', y: sh.year || '', g: sh.genre || '', r: sh.rating || '', n: sh.network || '' };
     }
     return x;

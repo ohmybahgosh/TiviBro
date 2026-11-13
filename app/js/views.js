@@ -237,6 +237,10 @@ var Views = (function () {
   var V = ['ink', 'panel', 'raised', 'line', 'text', 'muted', 'dim', 'accent', 'accent2', 'warn', 'air', 'ok', 'side'];
   var PALETTES = {
     mono:       ['#000000', '#0e0e0e', '#1c1c1c', '#3a3a3a', '#ffffff', '#c4c4c4', '#8a8a8a', '#ffffff', '#d6d6d6', '#e6e6e6', '#ffffff', '#d6d6d6', '#000000'],
+    // Crisp darks: near-black grounds, bright text and one clear accent.
+    graphite:   ['#0a0a0c', '#141417', '#1f1f24', '#2e2e35', '#f5f5f7', '#c7c7cc', '#8e8e93', '#0a84ff', '#64d2ff', '#ffd60a', '#ff453a', '#30d158', '#000000'],
+    github:     ['#0d1117', '#161b22', '#21262d', '#30363d', '#f0f6fc', '#c9d1d9', '#8b949e', '#2f81f7', '#79c0ff', '#d29922', '#f85149', '#3fb950', '#010409'],
+    ayu:        ['#0b0e14', '#11151c', '#191e28', '#262c38', '#e6e1cf', '#b3b1ad', '#6c7380', '#e6b450', '#39bae6', '#ffb454', '#f07178', '#aad94c', '#05070a'],
     tokyo:      ['#1a1b26', '#1f2335', '#292e42', '#3b4261', '#c0caf5', '#a9b1d6', '#565f89', '#7aa2f7', '#7dcfff', '#e0af68', '#f7768e', '#9ece6a', '#16161e'],
     dracula:    ['#282a36', '#303341', '#44475a', '#525670', '#f8f8f2', '#c5c8de', '#6272a4', '#bd93f9', '#ff79c6', '#f1fa8c', '#ff5555', '#50fa7b', '#21222c'],
     nord:       ['#2e3440', '#3b4252', '#434c5e', '#4c566a', '#eceff4', '#d8dee9', '#7b88a1', '#88c0d0', '#81a1c1', '#ebcb8b', '#bf616a', '#a3be8c', '#272c36'],
@@ -247,10 +251,13 @@ var Views = (function () {
     rosepine:   ['#191724', '#1f1d2e', '#26233a', '#403d52', '#e0def4', '#908caa', '#6e6a86', '#c4a7e7', '#ebbcba', '#f6c177', '#eb6f92', '#9ccfd8', '#13111e'],
     everforest: ['#2d353b', '#343f44', '#3d484d', '#475258', '#d3c6aa', '#9da9a0', '#7a8478', '#a7c080', '#83c092', '#dbbc7f', '#e67e80', '#a7c080', '#272e33'],
     kanagawa:   ['#1f1f28', '#2a2a37', '#363646', '#54546d', '#dcd7ba', '#c8c093', '#727169', '#7e9cd8', '#7fb4ca', '#e6c384', '#ff5d62', '#98bb6c', '#16161d'],
-    monokai:    ['#272822', '#2f302a', '#3e3d32', '#49483e', '#f8f8f2', '#cfcfc2', '#75715e', '#a6e22e', '#66d9ef', '#e6db74', '#f92672', '#a6e22e', '#1e1f1c']
+    monokai:    ['#272822', '#2f302a', '#3e3d32', '#49483e', '#f8f8f2', '#cfcfc2', '#75715e', '#a6e22e', '#66d9ef', '#e6db74', '#f92672', '#a6e22e', '#1e1f1c'],
+    // Terminal: green phosphor on black, with a few extras in app.css (body.pal-terminal).
+    terminal:   ['#000000', '#03120a', '#062414', '#0e3a20', '#4dff88', '#2fd16a', '#1d8a46', '#39ff7a', '#00e5ff', '#ffcc33', '#ff4d6d', '#39ff7a', '#000000']
   };
   var PALETTE_NAMES = { mono: 'Black and white', tokyo: 'Tokyo Night', dracula: 'Dracula', nord: 'Nord', gruvbox: 'Gruvbox', catppuccin: 'Catppuccin Mocha', solarized: 'Solarized Dark',
-    onedark: 'One Dark', rosepine: 'Rosé Pine', everforest: 'Everforest', kanagawa: 'Kanagawa', monokai: 'Monokai' };
+    onedark: 'One Dark', rosepine: 'Rosé Pine', everforest: 'Everforest', kanagawa: 'Kanagawa', monokai: 'Monokai',
+    graphite: 'Graphite', github: 'GitHub Dark', ayu: 'Ayu Dark', terminal: 'Terminal' };
   function palette(id) { var p = PALETTES[id]; if (!p) return null; var o = {}; V.forEach(function (k, i) { o[k] = p[i]; }); return o; }
   function applyLook() {
     var pal = palette(Store.settings.palette), root = document.documentElement.style;
@@ -274,6 +281,7 @@ var Views = (function () {
     if (s.guideRows === 'l' || s.guideRows === 'xl') b.add('gr-' + s.guideRows);
     if (!pal && s.theme && s.theme !== 'dark') b.add('theme-' + s.theme);
     b.toggle('pal', !!pal);
+    b.toggle('pal-terminal', s.palette === 'terminal');
     b.toggle('focus-ring', s.focusStyle === 'ring' || (!pal && s.theme === 'contrast'));
     if (s.textSize === 's' || s.textSize === 'l') b.add('ts-' + s.textSize);
     if (s.overlay === 'l' || s.overlay === 'h') b.add('ov-' + s.overlay);
@@ -474,7 +482,7 @@ var Views = (function () {
   }
 
   function placePreview() {
-    var r = $(tab === 'guide' ? 'guidePreview' : 'previewSlot').getBoundingClientRect();
+    var r = $(tab === 'guide' ? 'guidePreview' : tab === 'settings' ? 'setPreview' : 'previewSlot').getBoundingClientRect();
     stage.style.left = r.left + 'px'; stage.style.top = r.top + 'px';
     stage.style.width = r.width + 'px'; stage.style.height = r.height + 'px';
   }
@@ -555,11 +563,14 @@ var Views = (function () {
         guideSeen = true;
         Guide.open(curGroup, startKey); placePreview();
       }
+    } else if (t === 'settings' && pipOK()) {
+      // Settings: the channel keeps playing in the top corner, like TiviMate (pip, below).
+      Settings.open(); pipUpdate();
     } else {
       // Other screens get the whole CPU: no preview decoding behind them.
       stage.classList.add('off');
       if (!full) { Player.stop(); playing = null; }
-      if (t === 'settings') Settings.open();
+      if (t === 'settings') { Settings.open(); pipUpdate(); }
       else if (t === 'movies' || t === 'shows') Vod.open(t === 'shows' ? 'series' : 'movie');
       else if (t === 'media') Media.open();
       else if (t === 'onnow') OnNow.open();
@@ -1954,9 +1965,50 @@ var Views = (function () {
 
   // Blocking what is playing (the preview, say) stops it, so OK can't take it fullscreen without the PIN.
   function stopIfBlocked() { if (playing && mode === 'live' && !Parental.blockedOk(playing)) stopAll(); }
-  function stopAll() { Subs.reset(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off'); }
+  /* ---------- Settings with the channel still playing ----------
+     The same picture as the guide's corner window, moved to the top corner of Settings, with the channel
+     and what's on beside it; the settings list sits below it at full width.  Live TV and catch-up only.
+     It stops (as Settings always did) when something there needs the whole TV: the set-up screen and
+     the tour, the speed test, and on a TV short of memory a channel list or guide reload (pipStop). */
+  function pipOK() { return !!playing && (mode === 'live' || mode === 'catchup') && !full; }
+  function pipOn() { return tab === 'settings' && pipOK() && !stage.classList.contains('off'); }
+  function pipUpdate() {
+    var v = $('viewSettings'), on = tab === 'settings' && pipOK();
+    if (!v) return;
+    v.classList.toggle('pip', on);
+    if (!on) { if (tab === 'settings') stage.classList.add('off'); return; }
+    var c = playing, nn = Epg.nowNext ? Epg.nowNext(c) : null, now = nn && nn.now, box = v.querySelector('.set-now-info');
+    var lines = [['sn-l', T(mode === 'catchup' ? 'Catch-up' : 'Now playing')], ['sn-c', (c.num ? c.num + '  ' : '') + L.name(c)]];
+    if (now && mode === 'live') lines.push(['sn-p', now.t + '   ' + U.hhmm(now.s) + '–' + U.hhmm(now.e)]);
+    var key = JSON.stringify(lines);
+    if (box._k !== key) {
+      box._k = key; box.innerHTML = '';
+      lines.forEach(function (l) { box.appendChild(U.el('div', l[0], l[1])); });
+    }
+    stage.classList.remove('off');
+    placePreview();
+  }
+  // Something in Settings needs the whole TV (or the memory): the corner picture stops, as Settings used to.
+  function pipStop(why) {
+    if (!pipOn()) return false;
+    Log.info('views', 'Stopped the channel in Settings' + (why ? ': ' + why : ''));
+    stage.classList.add('off'); Player.stop(); playing = null;
+    pipUpdate();
+    return true;
+  }
+  // A player setting changed (buffer profile, engine, format...): the corner picture starts again with it.
+  var pipT = 0;
+  function pipRestart() {
+    if (!pipOn()) return;
+    clearTimeout(pipT);
+    pipT = setTimeout(function () { if (pipOn()) Player.retryNow(); }, 1500);
+  }
+  setInterval(function () { if (tab === 'settings') try { pipUpdate(); } catch (e) {} }, 15000);
+
+  function stopAll() { Subs.reset(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off');  if (tab === 'settings') pipUpdate(); }
 
   return {
+    pipUpdate: pipUpdate, pipStop: pipStop, pipRestart: pipRestart, get pipOn() { return pipOn(); },
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
     manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
@@ -2875,6 +2927,7 @@ var Guide = (function () {
     }, L.numberCanGrow(numBuf) ? 1200 : 0);
   }
 
+  var leftTap = 0, leftGroups = 0;
   function backToMenu() { Views.tabBar(function () { UI.setHandler(keys); setZone('groups'); }, true); }
   function groupKeys(a) {
     if (a === 'up') groupsVL.move(-1, true);              // past the first group: round to the last
@@ -2882,7 +2935,12 @@ var Guide = (function () {
     else if (a === 'chup') groupsVL.page(-1);
     else if (a === 'chdown') groupsVL.page(1);
     else if (a === 'right' || a === 'ok') enterGrid();
-    else if (a === 'left') backToMenu();
+    else if (a === 'left') {
+      // Still the Left that opened the groups, held past the wait above (a slow remote): back to the guide,
+      // going back in time as a held Left should.
+      if (leftGroups && Date.now() - leftGroups < 4000 && heldFor('left') > 0) { leftGroups = 0; setZone('grid'); moveTime(-1, true); return true; }
+      leftGroups = 0; backToMenu();
+    }
     else if (a === 'back') { if (Views.bankedBack()) { /* pressed before the screen caught up */ } else if (Views.exitArmed()) Views.exitApp(true); else backToMenu(); }
     else if (a === 'hold' || a === 'red' || a === 'info') { var g = groupsVL.current(); if (g) Views.groupMenu(g); }
     else if (a === 'playpause') watchPreview();
@@ -2965,12 +3023,21 @@ var Guide = (function () {
       // you want, then as fast as the remote repeats.  A held Left pauses at now, then keeps going back
       // to what was on (any channel, catch-up or not); only a fresh press at now opens the groups.
       var ms2 = heldFor(a), t = Date.now();
+      // A Left still held after the first press: a hold, so the groups it was about to open don't.
+      if (ms2 > 0 && leftTap) { clearTimeout(leftTap); leftTap = 0; }
       if (ms2 > 0 && ms2 < 1000 && t - stepAt < 120) return true;
       stepAt = t;
       if (a === 'right') moveTime(1);
       else if (when() !== 'now') moveTime(-1);
       else if (ms2 > 400) moveTime(-1, true);      // held at now: back in time, to see what was on
-      else if (!ms2) setZone('groups');
+      /* A fresh Left at now: the groups, but only once it's clear it was a press and not the start of a
+         hold (the remote's repeats start after about half a second).  Opened at once, a held Left went
+         to the groups and then, with its repeats, on to the side menu, never back in time. */
+      else if (!ms2) {
+        // A second press before the first was settled: both presses, the groups and then the menu.
+        if (leftTap) { clearTimeout(leftTap); leftTap = 0; setZone('groups'); backToMenu(); return true; }
+        leftTap = setTimeout(function () { leftTap = 0; if (zone === 'grid' && when() === 'now') { setZone('groups'); leftGroups = Date.now(); } }, 450);
+      }
     }
     // Rewind and Fast-forward: a whole screen of the guide (two and a half hours), not one programme;
     // held, one jump about every third of a second (#1 in the ideas).

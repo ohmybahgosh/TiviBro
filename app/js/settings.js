@@ -49,6 +49,9 @@ var Settings = (function () {
   }
   function action(label, sub, fn, value) { return { label: label, sub: sub, action: fn, value: value || function () { return ''; } }; }
   function head(t) { return { head: true, label: t }; }
+  /* A reload or rescan while the channel plays in Settings' corner (views.js pip): on a TV short of memory
+     (Player.memSafe) the channel stops first, as Settings always did, so the two never fill it together. */
+  function heavy(fn) { return function () { if (Player.memSafe && Views.pipOn) Views.pipStop('a reload, on a TV short of memory'); return fn.apply(this, arguments); }; }
   function info(label, value) { return { label: label, info: true, value: function () { return value; } }; }
   function page(label, sub, title, fn, value) { var it = action(label, sub, function () { push(title, fn); }, value || function () { return '›'; }); it.page = { title: title, fn: fn }; return it; }
   function save(rebuild) { Store.saveSettings(); if (rebuild) build(); else paint(); }
@@ -66,7 +69,7 @@ var Settings = (function () {
     out.push(choice('Buffer profile',
       'How much video to hold before and during playback.  More buffer means fewer freezes on shaky streams, but channels take a little longer to start.  Automatic learns from each provider: channels start fast where its streams are steady, and with a bigger cushion where they run dry.  A live channel only banks what the provider sends ahead of real time, often 10 to 40 seconds, so the bigger profiles mostly start safer rather than hold more.  Buffer info shows the most a channel has reached.',
       ['auto', 'low', 'balanced', 'stable', 'max', 'custom'], ['Automatic', P.low.label, P.balanced.label, P.stable.label, P.max.label, 'Custom'],
-      function () { return s.buffer; }, function (v) { s.buffer = v; save(true); }));
+      function () { return s.buffer; }, function (v) { s.buffer = v; save(true); Views.pipRestart(); }));
     var cur = s.buffer === 'custom' || s.buffer === 'auto' ? null : P[s.buffer];
     if (s.buffer === 'auto' && window.PlayMemo) {
       var known = PlayMemo.summary();
@@ -78,11 +81,11 @@ var Settings = (function () {
     if (cur) out.push(info('Profile details', 'starts at ' + cur.prebuffer + 's, holds up to ' + cur.ahead + 's, refills to ' + Math.max(2, cur.prebuffer * 1.5) + 's'));
     if (s.buffer === 'custom') {
       var c = s.custom;
-      out.push(choice('Start-up buffer', 'Seconds buffered before a channel starts playing.', [0.5, 1, 2, 3, 4, 6, 8, 10, 15], ['0.5s', '1s', '2s', '3s', '4s', '6s', '8s', '10s', '15s'], function () { return +c.prebuffer; }, function (v) { c.prebuffer = v; save(); }));
-      out.push(choice('Read-ahead', 'The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.', [10, 20, 30, 45, 60, 90, 120], ['10s', '20s', '30s', '45s', '60s', '90s', '120s'], function () { return +c.ahead; }, function (v) { c.ahead = v; save(); }));
-      out.push(choice('Keep behind playhead', 'Lower saves TV memory on long sessions.', [2, 4, 8, 12, 20, 30], ['2s', '4s', '8s', '12s', '20s', '30s'], function () { return +c.back; }, function (v) { c.back = v; save(); }));
-      out.push(choice('Freeze detection', 'How long a frozen picture is tolerated before the player recovers it.', [3, 4, 6, 8, 10, 15, 20], ['3s', '4s', '6s', '8s', '10s', '15s', '20s'], function () { return +c.stall; }, function (v) { c.stall = v; save(); }));
-      out.push(choice('Reconnect attempts', 'Tries before giving up on a channel.  The budget resets after 30 seconds of clean playback.', [3, 5, 8, 12, 20, 50], ['3', '5', '8', '12', '20', '50'], function () { return +c.retries; }, function (v) { c.retries = v; save(); }));
+      out.push(choice('Start-up buffer', 'Seconds buffered before a channel starts playing.', [0.5, 1, 2, 3, 4, 6, 8, 10, 15], ['0.5s', '1s', '2s', '3s', '4s', '6s', '8s', '10s', '15s'], function () { return +c.prebuffer; }, function (v) { c.prebuffer = v; save(); Views.pipRestart(); }));
+      out.push(choice('Read-ahead', 'The most the player downloads ahead while playing.  Movies can fill it; live channels usually stay lower, since the provider only sends a little ahead of real time.', [10, 20, 30, 45, 60, 90, 120], ['10s', '20s', '30s', '45s', '60s', '90s', '120s'], function () { return +c.ahead; }, function (v) { c.ahead = v; save(); Views.pipRestart(); }));
+      out.push(choice('Keep behind playhead', 'Lower saves TV memory on long sessions.', [2, 4, 8, 12, 20, 30], ['2s', '4s', '8s', '12s', '20s', '30s'], function () { return +c.back; }, function (v) { c.back = v; save(); Views.pipRestart(); }));
+      out.push(choice('Freeze detection', 'How long a frozen picture is tolerated before the player recovers it.', [3, 4, 6, 8, 10, 15, 20], ['3s', '4s', '6s', '8s', '10s', '15s', '20s'], function () { return +c.stall; }, function (v) { c.stall = v; save(); Views.pipRestart(); }));
+      out.push(choice('Reconnect attempts', 'Tries before giving up on a channel.  The budget resets after 30 seconds of clean playback.', [3, 5, 8, 12, 20, 50], ['3', '5', '8', '12', '20', '50'], function () { return +c.retries; }, function (v) { c.retries = v; save(); Views.pipRestart(); }));
     }
     out.push(choice('Buffer meter', 'Shows how many seconds of video are banked, in fullscreen.', ['auto', 'always', 'off'], ['When low', 'Always', 'Off'], function () { return s.meter; }, function (v) { s.meter = v; save(); }));
     out.push(choice('Buffer info on demand', Keymap.bufferHint() + ' shows the buffer meter and stream info, even with the meter off.  Press again to hide it.  Any button can do this: Settings > Remote and buttons.',
@@ -90,19 +93,19 @@ var Settings = (function () {
     out.push(head('Player'));
     out.push(choice('Player engine',
       'Automatic uses the built-in demuxer for fine buffer control and falls back to the TV player when a server blocks it.  TV player uses the least CPU but ignores buffer settings.',
-      ['auto', 'mse', 'native'], ['Automatic', 'Built-in demuxer', 'TV player'], function () { return s.engine; }, function (v) { s.engine = v; save(); }));
+      ['auto', 'mse', 'native'], ['Automatic', 'Built-in demuxer', 'TV player'], function () { return s.engine; }, function (v) { s.engine = v; save(); Views.pipRestart(); }));
     if (Store.playlist.type === 'xtream') out.push(choice('Stream format', 'MPEG-TS usually switches channels faster.  HLS copes better with a weak connection.  One channel can have its own: hold OK on it > Stream format.',
-      ['ts', 'm3u8'], ['MPEG-TS', 'HLS'], function () { return s.format; }, function (v) { s.format = v; save(); }));
+      ['ts', 'm3u8'], ['MPEG-TS', 'HLS'], function () { return s.format; }, function (v) { s.format = v; save(); Views.pipRestart(); }));
     // Channels with a stream format of their own (Hold OK on a channel > Stream format).
     var own = Object.keys(Store.edits.streamFmt || {});
     if (own.length) out.push(action('Channels with their own format', own.slice(0, 4).map(function (k) { var c = L.find(k); return c ? L.name(c) + ': ' + (Store.edits.streamFmt[k] === 'hls' ? 'HLS' : 'MPEG-TS') : ''; }).filter(Boolean).join(',  ') + (own.length > 4 ? '  …' : ''), function () {
       UI.confirm('Use the setting above for every channel?', 'Clear ' + own.length + (own.length === 1 ? ' channel' : ' channels'), function () { Store.edits.streamFmt = {}; Store.saveEdits(); build(); U.toast('Every channel uses the setting above'); });
     }, function () { return String(own.length); }));
     out.push(choice('Connection', 'Automatic uses the network helper: a part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams for the app.  webOS needs it for most providers.  Direct asks the provider straight from the app, which only works with servers that allow it.  Channel lists still load through the helper when it runs, so a big one can\'t close TiviBro.',
-      ['auto', 'direct'], ['Automatic (recommended)', 'Direct'], function () { return s.network || 'auto'; }, function (v) { s.network = v; save(); }));
+      ['auto', 'direct'], ['Automatic (recommended)', 'Direct'], function () { return s.network || 'auto'; }, function (v) { s.network = v; save(); Views.pipRestart(); }));
     out.push(info('Network helper', Net.port ? 'running' : 'not running'));
     out.push(choice('HDR and Dolby Vision', 'Automatic plays Dolby Vision through the TV player, which switches the screen into Dolby Vision itself, and keeps HDR10 and HLG on the built-in player for its steadier buffering.  Choose TV player for all HDR if HDR pictures look washed out or grey.',
-      ['auto', 'tv', 'builtin'], ['Automatic', 'TV player for all HDR', 'Built-in player'], function () { return s.hdrRoute || 'auto'; }, function (v) { s.hdrRoute = v; save(); }));
+      ['auto', 'tv', 'builtin'], ['Automatic', 'TV player for all HDR', 'Built-in player'], function () { return s.hdrRoute || 'auto'; }, function (v) { s.hdrRoute = v; save(); Views.pipRestart(); }));
     // A film shape set from the quick menu (Aspect > Film shape…) shows by its name and stays in the cycle.
     var aspV = Player.ASPECTS.map(function (a) { return a[0]; }), aspL = Player.ASPECTS.map(function (a) { return a[1]; }), aspOn = Player.displayFor(null);
     if (Player.filmShape(aspOn) || Player.wideBy(aspOn)) { aspV.push(aspOn); aspL.push(Player.aspectName(aspOn)); }
@@ -244,8 +247,8 @@ var Settings = (function () {
       info('Movies and TV shows from your own media servers (DLNA / UPnP, a WebDAV folder, or Dropbox).  Files can be at the top level or in folders.  Choose what each source holds: movies, TV shows or both.  The phone app does all of this too, with the typing on the phone.', ''),
       phoneDoes('media-add', action('Add media', 'Find a DLNA / UPnP server, or enter a WebDAV folder address and login.  Dropbox signs in from the phone app.  Subfolders are scanned too.', function () { Media.addMenu(); })),
       tvOnly(action('Edit on a computer', 'Shows a code for a computer or phone browser: the web editor\'s My media page, for typing server logins and fixing TV show episodes.', function () { WebEdit.showJoin('media'); })),
-      action('Rescan media sources', 'Look for movies and episodes.  Green on the My media screen.', function () { Media.rescanAll(); }),
-      action('Fetch media details', 'Look up movies, shows and owned episodes.  Refresh outdated language details.  Yellow on My media.', function () { Media.fetchMissingDetails(); }),
+      action('Rescan media sources', 'Look for movies and episodes.  Green on the My media screen.', heavy(function () { Media.rescanAll(); })),
+      action('Fetch media details', 'Look up movies, shows and owned episodes.  Refresh outdated language details.  Yellow on My media.', heavy(function () { Media.fetchMissingDetails(); })),
       head('Preferences'), tmdbLink()].concat([
       choice('Sort movies by', 'Applies to Movies and Favorites.  Continue watching stays ordered by recent playback.', ['name', 'release', 'added'], ['Name (A–Z)', 'Release date (newest first)', 'Date added (newest first)'], function () { return MediaStore.preferences().sort; }, function (v) { Media.updatePreferences({ sort: v }); paint(); }),
       choice('Sort TV shows by', 'Applies to TV shows and favorite shows, on the TV and the phone.  Continue watching stays ordered by recent playback.', ['name', 'release', 'added'], ['Name (A–Z)', 'First aired (newest first)', 'Date added (newest first)'], function () { return MediaStore.preferences().showSort; }, function (v) { Media.updatePreferences({ showSort: v }); Media.refreshShows(); paint(); }),
@@ -392,13 +395,13 @@ var Settings = (function () {
     out.push(choice('Reload channel list', '', REFRESH, REFRESH_L, function () { return +p.plRefresh; }, function (v) { p.plRefresh = v; persist(p); paint(); }));
     if (active) {
       if (App.reloading) out.push(action('Stop reloading', 'The channels from the last load stay.', function () { App.stopReload(); }));
-      else out.push(action('Reload channels now', 'Your groups, renames and hidden items are kept.', function () { App.refresh(true); }));
+      else out.push(action('Reload channels now', 'Your groups, renames and hidden items are kept.', heavy(function () { App.refresh(true); })));
       out.push(info('Last reloaded', when(L.data.at)));
       if (L.data.exp) out.push(info('Subscription expires', new Date(L.data.exp).toLocaleDateString() + (Store.expiry(p) ? '  (' + Store.expiry(p).replace(/^Expire[sd] /, '') + ')' : '')));
       if (L.data.maxConn) out.push(info('Connections allowed', String(L.data.maxConn)));
     } else if (part) {
       if (App.reloading) out.push(action('Stop reloading', 'The channels from the last load stay.', function () { App.stopReload(); }));
-      else out.push(action('Reload channels now', 'Your hidden items and renames are kept.', function () { App.refresh(true, p.id); }));
+      else out.push(action('Reload channels now', 'Your hidden items and renames are kept.', heavy(function () { App.refresh(true, p.id); })));
       out.push(info('Last reloaded', when(part.at)));
       if (part.exp) out.push(info('Subscription expires', new Date(part.exp).toLocaleDateString() + (Store.expiry(p) ? '  (' + Store.expiry(p).replace(/^Expire[sd] /, '') + ')' : '')));
       if (part.maxConn) out.push(info('Connections allowed', String(part.maxConn)));
@@ -445,7 +448,7 @@ var Settings = (function () {
     out.push(toggle('Match guide by channel name', 'Links channels that have no guide id to a guide channel with the same name.', function () { return p.nameMatch; }, function (v) { p.nameMatch = v; persist(p, true); paint(); }));
     out.push(page('Public guide fill-in', 'Free guides (epg.pw, iptv-epg.org, epgshare01, Pluto TV\'s own, and sports guides), for channels nothing else covers and longer sports listings', 'Public guide fill-in', function () { return pubPage(p); }, function () { return PubEpg.conf(p).on ? 'On' : 'Off'; }));
     if (inUse) {
-      out.push(action('Reload guide now', L.multi ? 'Every playlist\'s guide loads again.' : '', function () { Epg.refresh(L, true); U.toast('Reloading guide'); live(); }));
+      out.push(action('Reload guide now', L.multi ? 'Every playlist\'s guide loads again.' : '', heavy(function () { Epg.refresh(L, true); U.toast('Reloading guide'); live(); })));
       var st = active ? Epg.status : Epg.statusFor(p.id) || { at: 0, sources: [] };
       if (Epg.xml) {
         out.push(info('Guide last loaded', Epg.loading || (Epg.progress && Epg.progress.active) ? 'loading now' : st.at ? when(st.at) : (active || sourcesOf(p) ? 'not yet' : 'only the per-channel guide')));
@@ -1443,8 +1446,10 @@ var Settings = (function () {
       else if (a === 'right' || a === 'ok') { zone = 'body'; paint(); }      // pages of facts only scroll
       else if (a === 'left' || a === 'back') Views.tabBar(function () { UI.setHandler(keys); paint(); });
       else if (a === 'green') Views.switchTab('live');
+      else if (a === 'yellow' || a === 'search') openFind();
       return true;
     }
+    if (a === 'yellow' || a === 'search') { openFind(); return true; }
     var it = items[sel];
     if (a === 'up' || a === 'down') {
       var d = a === 'up' ? -1 : 1, i = sel + d;
@@ -1462,10 +1467,70 @@ var Settings = (function () {
     return true;
   }
 
+  /* ---------- Search settings (discussion #60) ----------
+     Yellow anywhere in Settings: type a word, and every setting whose name or note has it is listed with
+     where it lives; OK on one goes there, focused.  Every section and the pages in them are looked
+     through (what the phone app sees too), in your language and in English.  Long lists of your own
+     things (groups, reminders, sources) are left out: they're not settings. */
+  var findQ = '', findIx = null, findAt = 0;
+  function findIndex() {
+    if (findIx && Date.now() - findAt < 60000) return findIx;
+    var out = [];
+    function walk(secId, list, chain, trail, depth) {
+      list = (list || []).filter(Boolean);
+      if (list.length > 80) return;                          // a list of your own things, not settings
+      list.forEach(function (it) {
+        if (it.head || it.info || it.preview || it.raw || !it.label) return;
+        out.push({ sec: secId, chain: chain, trail: trail, label: it.label, sub: it.sub || '' });
+        if (it.page && depth < 3) { var l2; try { l2 = lean(it.page.fn()); } catch (e) { l2 = null; } walk(secId, l2, chain.concat([it.page]), trail.concat([it.page.title]), depth + 1); }
+      });
+    }
+    SECTIONS.forEach(function (x, i) { if (!shown(i)) return; var l; try { l = lean(FNS[i]()); } catch (e) { l = null; } walk(x[0], l, [], [title(x)], 0); });
+    findIx = out; findAt = Date.now();
+    return out;
+  }
+  function norm1(t) { return ' ' + String(t || '').toLowerCase().replace(/[^0-9a-z\u00c0-\u024f\u0400-\u04ff]+/g, ' ').trim() + ' '; }
+  function findPage() {
+    var out = [action('Search for', findQ ? '' : 'Type a word: buffer, subtitles, clock, DNS…', askFind, function () { return findQ || '…'; })];
+    if (!findQ) return out;
+    var q = norm1(findQ).trim(), hits = [], seen = {};
+    findIndex().forEach(function (r) {
+      var name = norm1(T(r.label)) + norm1(r.label), note = norm1(r.sub ? T(r.sub) : '') + norm1(r.sub), key = r.sec + '|' + r.trail.join('>') + '|' + r.label;
+      if (seen[key]) return;
+      var w = name.indexOf(q) >= 0 ? 0 : note.indexOf(q) >= 0 ? 1 : -1;
+      if (w < 0) return;
+      seen[key] = 1; hits.push({ r: r, w: w });
+    });
+    hits.sort(function (a, b) { return a.w - b.w; });
+    out.push(head(I18n.raw(I18n.t(hits.length === 1 ? '{n} setting' : '{n} settings', { n: hits.length }))));
+    if (!hits.length) out.push(info('No setting has that in its name or its note.', ''));
+    hits.slice(0, 60).forEach(function (h) {
+      var r = h.r, it = action(I18n.raw(T(r.label)), I18n.raw(r.trail.map(function (x) { return T(x); }).join('  ›  ')), function () { goFound(r); }, function () { return '›'; });
+      it.raw = true; out.push(it);
+    });
+    return out;
+  }
+  function askFind() {
+    UI.prompt('Search settings', findQ, function (v) { findQ = String(v || '').trim().slice(0, 60); sel = 0; build(); }, 'A word from its name');
+  }
+  function openFind() {
+    findIx = null;
+    if (!(stack.length && stack[stack.length - 1].find)) { push('Search settings', findPage); stack[stack.length - 1].find = true; }
+    zone = 'body'; paint();
+    askFind();
+  }
+  // To a setting found: its section, the pages above it, and the row itself focused.
+  function goFound(r) {
+    if (!section(r.sec)) return;
+    r.chain.forEach(function (pg) { push(pg.title, pg.fn); });
+    for (var i = 0; i < items.length; i++) if (items[i] && items[i].label === r.label && focusable(i)) { sel = i; break; }
+    zone = 'body'; paint();
+  }
+
   function open() {
     if (!stack.length) zone = 'nav';
     UI.setHandler(keys);
-    UI.hints([['', '◀ ▶  change value'], ['', 'OK  select'], ['', 'Back  up one level, then menu bar']]);
+    UI.hints([['', '◀ ▶  change value'], ['', 'OK  select'], ['', 'Back  up one level, then menu bar'], ['yellow', 'Search settings']]);
     build();
   }
 
