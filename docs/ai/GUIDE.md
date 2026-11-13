@@ -12,7 +12,7 @@ The rest of this page is written to the assistant.
 
 ## What TiviBro is
 
-A free, open-source IPTV player for LG webOS TVs, built to feel like TiviMate and go further.  People bring their own Xtream Codes or M3U subscription with an XMLTV guide; TiviBro provides no channels, streams or playlists.
+A free, open-source IPTV player for LG webOS TVs, built to feel like TiviMate and go further.  People bring their own Xtream Codes, M3U (with an XMLTV guide) or Stalker portal subscription; TiviBro provides no channels, streams or playlists.
 
 Four parts live in this repository:
 
