@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 128, 2026-11-13)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 128
 
 - **Zapping goes on from the channel you switched to (discussion #60).**  After switching to a channel from the recent channels row (or anywhere but the list), CH+ and Up went on from the channel before it.  Now they go on from the one playing.
 - **Up and Down in fullscreen can go the other way (discussion #60).**  Settings > Remote and buttons > Up and Down in fullscreen: Up to the channel above (as before) or the channel below.
@@ -8,14 +12,9 @@
 - **Movies and Shows: pick the order (discussion #60).**  Settings > Appearance and start screen > Order movies and shows: the provider's order, recently added first, name A to Z, or rating.
 - **Movies and Shows: each title's category where they mix (discussion #60).**  In All, Recently added, My list and Continue watching, each title's row says which category it's from.
 - **Trailers (discussion #60).**  A movie whose provider gives a trailer has Watch the trailer in its options (hold OK), which opens it in the TV's YouTube app.
-
 - **The phone app: a TV turned off shows as off, not as starting.**  A TV that stays on Wi-Fi while off still answers on LG's own service, which the app took for a TV turning on ("TiviBro's connection starting").  Now a TV that was on and stops answering shows as "Off (standby)", and only a TV that was off and starts answering shows as starting.
 
-## 0.6.0 (alpha 127, 2026-11-13)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 127
+### In alpha 127
 
 - **TiviBro's phone connection starts right after the TV restarts.**  Alpha 126 started it the moment the TV's power state said it was on, but most TVs don't let an app watch that, so after a full restart the phone app waited up to five minutes.  Where the power state can't be watched, it now starts as soon as the TV's network is up.
 - **The phone app says a TV in standby is off.**  A TV that stays on the network while off (Quick Start+, or a USB network adapter's Wi-Fi standby) kept answering the phone app, which showed it as on.  The TV now tells the app its power state, so standby shows as "Off (standby)", and Turn on waits for the TV to really be on.
