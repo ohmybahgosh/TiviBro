@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 125, 2026-11-12)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 125
 
 - **Pick the DNS that finds your provider (discussion #60).**  Settings > Playlists > DNS.  The TV's own DNS is still the default; the others are Cloudflare, Google or Quad9, Cloudflare or Google over HTTPS (which also hides the names you look up from your internet provider), or a DNS server you type.  For a provider whose address the TV's DNS doesn't find, or that your internet provider blocks.  If the one you pick doesn't answer, the TV's own is used.
 - **Español (España) (discussion #21).**  Spain's Spanish is its own language in Settings > Language: the same translation with Spain's words (ordenador, mando a distancia, en directo, pulsa, añadir, vídeo).  A TV set to Spain's Spanish gets it automatically; other Spanish stays Latin American.
@@ -8,11 +12,7 @@
 - **The starting screen is centered (discussion #36).**  "Loading your channels" and the logo sat off to one side on some TVs.
 - **The screensaver waits while you type or use the phone (discussion #36).**  It could start over the Add a playlist screen while you typed a login with a keyboard, or while you sent it from the phone app.  Typing, the Magic Remote's pointer and anything from the phone app now count as using the TV.
 
-## 0.6.0 (alpha 124, 2026-11-13)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 124
+### In alpha 124
 
 - **Updates install only when signed by TiviBro's release build.**  The in-app updater read the update's details (which file, and its checksum) through the network helper, which can't check a server's certificate (many providers' are broken).  Someone able to intercept the TV's connection could have swapped in another file with a matching checksum.  Each release's details are now signed, the helper checks the signature before anything installs, and only files from TiviBro's own GitHub releases are accepted.
 - **The network helper only answers TiviBro.**  A web page opened in the TV's browser could use the helper to reach other devices on your home network through the TV and read the answers, or read TiviBro's log.  The helper now turns away requests from any other page, and from names made to point at the TV (DNS rebinding).
