@@ -1,10 +1,18 @@
 # Changelog
 
-## 0.6.0 (alpha 123, 2026-11-12)
+## 0.6.0 (alpha 124, 2026-11-13)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 123
+### New in alpha 124
+
+- **Updates install only when signed by TiviBro's release build.**  The in-app updater read the update's details (which file, and its checksum) through the network helper, which can't check a server's certificate (many providers' are broken).  Someone able to intercept the TV's connection could have swapped in another file with a matching checksum.  Each release's details are now signed, the helper checks the signature before anything installs, and only files from TiviBro's own GitHub releases are accepted.
+- **The network helper only answers TiviBro.**  A web page opened in the TV's browser could use the helper to reach other devices on your home network through the TV and read the answers, or read TiviBro's log.  The helper now turns away requests from any other page, and from names made to point at the TV (DNS rebinding).
+- **The web editor: logins last a day, guessing is slowed for everyone at once, and it can't be framed.**  Wrong passwords already locked one address out for a minute; now 30 wrong passwords from any addresses lock logins for 5 minutes.  A login ends after a day.  The editor's pages can't be shown inside another site's frame.
+- **Logs and problem reports mask more kinds of secrets:** "Bearer" tokens, TMDB's read token and other JWTs, and secret fields like a token or credential in JSON.
+- **Lists open on: where you left off, the first group, or a group you pick.**  Settings > Appearance and start screen > Lists open on.  TiviBro always opened on the last group and channel; now it can open on the top of the first group, or of a group you choose (Favorites and All channels too).
+
+### In alpha 123
 
 - **Guide movies and shows take less memory.**  The movie and show details TiviBro keeps from TMDB had no limit on a summary's length, and up to 400 seasons of episodes.  Summaries are now cut to what the guide shows, fewer seasons are kept, and a TV with 1 GB keeps about a third as many.  The copy of the movie list from before alpha 122 (up to 2 MB) is removed from the TV's storage.
 - **Shows with an owner's name in front are found.**  "Marvel's Spidey and His Amazing Friends" is "Spidey and His Amazing Friends" on TMDB, so it had no poster.  When a show isn't found by its full name, TiviBro now tries it without a name like that in front (never down to a single word: "Grey's Anatomy" stays itself).
