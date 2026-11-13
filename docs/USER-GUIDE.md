@@ -1000,6 +1000,7 @@ Which screen TiviBro opens on, how the guide looks, colours, sizes and what's on
 | Setting | Choices | What it does |
 |---|---|---|
 | **Start screen** | **Guide** · Channels screen | What TiviBro opens on, and where **Back** from other screens leads. |
+| **Lists open on** | **Where I left off** · The first group · A group I pick | Where the selection is when TiviBro opens.  Where I left off is the group and channel you were on last; the other two start at the top of that group (unless a channel is already playing).  With **A group I pick**, **Group to open on** chooses it: any group, Favorites and All channels too. |
 | **Settings shown** | **All** · Everyday | Everyday leaves out what most people set once, or only to troubleshoot: the buffer details, the player engine and stream format, the network helper, the buffer meter, HDR routing, learning buttons, detailed logging and the like.  Each page then says how many more there are in All.  The phone app and the web editor show the same. |
 | **Clock** | **Automatic** · 12 hours (7:30pm) · 24 hours (19:30) | How times show everywhere in TiviBro.  Automatic follows the TV's region: 12 hours in the US, 24 hours in most of Europe. |
 | **Channels screen in the menu** | On · **Off** | The plain channel list (without the guide) in the side menu.  Off, **Green** in the guide still opens it.  Always there while TiviBro starts on it. |

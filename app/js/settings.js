@@ -884,12 +884,24 @@ var Settings = (function () {
   var THEMES = ['dark', 'black', 'slate', 'ocean', 'forest', 'plum', 'mocha', 'contrast', 'classic'];
   var THEME_NAMES = ['Midnight', 'Black (OLED)', 'Slate', 'Ocean', 'Forest', 'Plum', 'Mocha', 'High contrast', 'Classic (1.0)'];
   var THEME_INK = { dark: '#141a2e', black: '#000', slate: '#263342', ocean: '#0f2a3a', forest: '#14271d', plum: '#2a1830', mocha: '#2b2019', contrast: '#000', classic: '#18222e' };
+  // The group the lists open on (Lists open on > A group I pick): any group shown, Favorites and All channels too.
+  function pickOpenGroup() {
+    var s = S(), gs = L.groups().filter(function (g) { return !g.head && !g.hidden; });
+    UI.menu('Group to open on', gs.map(function (g) {
+      return { label: I18n.raw(g.name), sub: L.channels(g.id).length + ' channels', current: g.id === s.openGroup, action: function () { s.openGroup = g.id; s.openOn = 'group'; save(); build(); } };
+    }));
+  }
   function look() {
     var s = S(), out = [];
     out.push(choice('Settings shown', 'Everyday leaves out the settings most people set once, or only to troubleshoot (buffer details, the player engine, the network helper, learning buttons and the like).  All shows every one.',
       ['all', 'basic'], ['All', 'Everyday'], function () { return s.setLevel === 'basic' ? 'basic' : 'all'; }, function (v) { s.setLevel = v; save(true); }));
     out.push(choice('Start screen', 'What TiviBro opens on, and where Back from other screens leads.', ['guide', 'live'], ['Guide', 'Channels screen'],
       function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; save(); Views.buildTabs(); }));
+    // Where the lists open (views.js startGroup): where you left off, the top of the first group, or a group you pick.
+    out.push(choice('Lists open on', 'Where the selection is when TiviBro opens: the group and channel you were on last, the top of the first group, or the top of a group you pick.',
+      ['last', 'first', 'group'], ['Where I left off', 'The first group', 'A group I pick'], function () { return s.openOn === 'first' || s.openOn === 'group' ? s.openOn : 'last'; },
+      function (v) { s.openOn = v; save(); if (v === 'group' && !s.openGroup) pickOpenGroup(); else build(); }));
+    if (s.openOn === 'group') out.push(action('Group to open on', 'TiviBro opens on the top of this group.', pickOpenGroup, function () { var g = s.openGroup && L.groups().filter(function (x) { return x.id === s.openGroup; })[0]; return g ? I18n.raw(g.name) : 'Pick one'; }));
     out.push(toggle('Channels screen in the menu', s.startTab === 'live' ? 'Always there while TiviBro starts on it.' : 'The plain list of channels, without the guide.  Off, it stays one press away: Green in the guide.',
       function () { return s.startTab === 'live' || s.channelsTab === true; }, function (v) { if (s.startTab === 'live') { U.toast('TiviBro starts on the Channels screen, so it stays in the menu'); return; } s.channelsTab = v; save(); Views.buildTabs(); }));
     out.push(choice('Clock', 'How times show everywhere in TiviBro: the guide, the info panel, reminders.  Automatic follows the TV\'s region.', ['auto', '12', '24'], ['Automatic', '12 hours (7:30pm)', '24 hours (19:30)'],

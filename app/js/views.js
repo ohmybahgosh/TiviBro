@@ -393,12 +393,21 @@ var Views = (function () {
   function reload(keepGroup) {
     buildTabs();
     var gs = L.groups(true);
-    var gid = keepGroup && curGroup ? curGroup : (Store.edits.lastGroup || L.ALL);
+    var gid = keepGroup && curGroup ? curGroup : startGroup(gs);
     if (!gs.some(function (g) { return g.id === gid; })) gid = firstFilled(gs);
     var gi = Math.max(0, gs.findIndex(function (g) { return g.id === gid; }));
     groupsVL.setItems(gs, gi);
     var g0 = groupsVL.current();
     showGroup(g0 ? g0.id : L.ALL, keepGroup);
+  }
+  /* The group the lists open on (Settings > Appearance > Lists open on): where you left off, the first group with
+     channels, or the one picked (the first one with channels when it's gone or empty). */
+  function openOn() { var o = Store.settings.openOn; return o === 'first' || o === 'group' ? o : 'last'; }
+  function startGroup(gs) {
+    var o = openOn(), want = Store.settings.openGroup;
+    if (o === 'first') return firstFilled(gs);
+    if (o === 'group') return want && gs.some(function (g) { return g.id === want; }) && L.channels(want).length ? want : firstFilled(gs);
+    return Store.edits.lastGroup || L.ALL;
   }
   // First group that actually has channels (an empty Favorites should never be the landing group).
   function firstFilled(gs) {
@@ -540,7 +549,8 @@ var Views = (function () {
       else {
         // First visit after start-up: straight into the grid, on the last channel watched (like
         // TiviMate), so OK previews at once.  Later visits from the menu land on the groups.
-        var startKey = playing && mode === 'live' ? playing.k : !guideSeen ? (Store.edits.last || '-') : null;
+        // (Lists open on the first or a picked group: its top, unless a channel already plays.)
+        var startKey = playing && mode === 'live' ? playing.k : !guideSeen ? (openOn() === 'last' && Store.edits.last || '-') : null;
         guideSeen = true;
         Guide.open(curGroup, startKey); placePreview();
       }
