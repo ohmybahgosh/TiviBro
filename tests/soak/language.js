@@ -22,7 +22,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const shot = async (n) => { if (SHOTS) await page.screenshot({ path: path.join(SHOTS, n + '.png') }); };
   const navText = () => ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
   try {
-    ok('a Spanish TV: TiviBro in Spanish', await ev(() => I18n.lang() === 'es' && I18n.setting() === 'auto'));
+    ok('a Spanish TV: TiviBro in Spain\'s Spanish', await ev(() => I18n.lang() === 'es-ES' && I18n.setting() === 'auto'));
     const tabs = await ev(() => [].map.call(document.querySelectorAll('.tabs .lbl'), (x) => x.textContent));
     ok('the side menu in Spanish', tabs.indexOf('Guía') >= 0 && tabs.indexOf('Configuración') >= 0, tabs.join(', '));
     ok('the fixed titles too', await ev(() => document.querySelector('.col.groups > .col-title').textContent === 'Grupos'));
@@ -50,7 +50,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     // Back to Automatic: the TV's (Spanish).
     await ev(() => { const rows = [].slice.call(document.querySelectorAll('.set-scroll .opt')); rows.find((x) => /^Автоматически/.test(x.innerText)).click(); });
     await page.waitForTimeout(600);
-    ok('Automatic again: Spanish, the TV\'s', await ev(() => I18n.lang() === 'es' && I18n.setting() === 'auto'));
+    ok('Automatic again: Spanish, the TV\'s', await ev(() => I18n.lang() === 'es-ES' && I18n.setting() === 'auto'));
     // English: nothing changes for English.
     await ev(() => I18n.set('en')); await page.waitForTimeout(400);
     nav = await navText();
