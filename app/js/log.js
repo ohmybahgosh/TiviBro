@@ -87,7 +87,7 @@ var Log = (function () {
   function describe(run) {
     var d = run.doing || {}, what = Object.keys(d).map(function (k) { return d[k]; }).join('; ');
     return (what ? 'while ' + what : 'doing nothing in particular') + (run.heap ? ', using ' + run.heap + ' MB' : '') +
-      ', ' + Math.round((run.t - run.t0) / 1000) + ' s after it started (' + (run.v || '?') + ')';
+      ', ' + Math.round((run.t - run.t0) / 1000) + ' s after TiviBro started (' + (run.v || '?') + ')';
   }
 
   /* Development log sink: when a log receiver answers on 127.0.0.1:47812 (scripts/logsink.js,

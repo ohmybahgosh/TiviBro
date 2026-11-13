@@ -313,10 +313,12 @@ var Player = (function () {
       pl.updateSettings({
         debug: { logLevel: dj.Debug.LOG_LEVEL_NONE },
         streaming: {
-          buffer: { bufferTimeAtTopQuality: p.ahead, bufferTimeAtTopQualityLongForm: p.ahead, bufferToKeep: p.back, stableBufferTime: Math.max(4, Math.min(p.ahead, p.prebuffer * 3)), fastSwitchEnabled: false },
+          /* Memory-safe TVs (issue #85: a 1 GB TV closed TiviBro on a DASH channel): a smaller cushion, what's
+             been played let go of sooner, and no more than 1080p (a 4K level on a TV that can't show it). */
+          buffer: { bufferTimeAtTopQuality: p.ahead, bufferTimeAtTopQualityLongForm: p.ahead, bufferToKeep: p.back, stableBufferTime: Math.max(4, Math.min(p.ahead, p.prebuffer * 3, memSafe() ? 8 : 60)), fastSwitchEnabled: false, bufferPruningInterval: memSafe() ? 4 : 10 },
           delay: { liveDelayFragmentCount: live ? Math.round(U.clamp(p.prebuffer / 2 + 2, 3, 6)) : NaN },
           retryAttempts: { MPD: 4, MediaSegment: 6 },
-          abr: { limitBitrateByPortal: !!preview }
+          abr: { limitBitrateByPortal: !!preview || memSafe(), usePixelRatioInLimitBitrateByPortal: false }
         }
       });
       // Every request through the helper (the channel's User-Agent and Referer; CORS).
@@ -1499,6 +1501,24 @@ var Player = (function () {
     if (eng && eng.reanchor) eng.reanchor();
   }
   function seek(delta) { if (cur && !cur.live) seekTo(position() + delta); }
+  /* A DASH live stream that keeps the last minutes itself (its time-shift window, issue #85): ◀ goes back inside
+     it, at once and from the same connection, instead of asking the provider for a catch-up address (which many
+     DASH providers answer with an error, or protect without saying how).  null when there's no such window. */
+  function liveWindow() {
+    if (!video || !cur || !cur.live || cur.timeshift || !st || st.kind !== 'dash' || !playing()) return null;
+    var r = video.seekable;
+    if (!r || !r.length) return null;
+    var a = r.start(0), b = r.end(r.length - 1);
+    if (!(b - a >= 30)) return null;
+    return { start: a, end: b, at: video.currentTime, behind: Math.max(0, b - video.currentTime) };
+  }
+  function liveSeek(delta) {
+    var w = liveWindow();
+    if (!w) return null;
+    var t = U.clamp(w.at + delta, w.start + 3, w.end - 1);
+    try { video.currentTime = t; } catch (e) { return null; }
+    return { behind: Math.round(w.end - t), first: t <= w.start + 3.5, edge: t >= w.end - 1.5, size: Math.round(w.end - w.start) };
+  }
   // Same channel, new mode (preview -> fullscreen): keep the stream, just widen the policy.
   function upgrade(preview) {
     if (!cur) return;
@@ -1590,7 +1610,7 @@ var Player = (function () {
   return {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
     PRESETS: PRESETS, memorySafe: memorySafe, get memSafe() { return memSafe() ? (safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, get startStatus() { return startStatus(); }, on: on,
-    seek: seek, seekTo: seekTo, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
+    seek: seek, seekTo: seekTo, liveWindow: liveWindow, liveSeek: liveSeek, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; },
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },
     qualityAuto: function () { return !!(eng && eng.auto && eng.auto()); },

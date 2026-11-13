@@ -16,6 +16,7 @@ var Views = (function () {
   var osdT = 0, zapBuf = '', zapT = 0, tabSel = 0, tabs = [];
   var mode = 'live';            // fullscreen mode: live | catchup | vod
   var cu = null;                // catch-up: { c, p, off }
+  var lw = false;               // behind live inside a DASH channel's own time-shift window (issue #85)
   var vod = null;               // { meta, onExit }
   var pick = null;              // multi-select: Set of chanKeys, or null
   var overlay = false, ovGroup = null;
@@ -483,12 +484,12 @@ var Views = (function () {
     Parental.gate('channels', c, function () {
       if (!foSwitching) fo = null;            // picking a channel yourself ends a backup chain
       if (playing && playing.k !== c.k) lastPlayed = playing;
-      playing = c; mode = 'live'; cu = null; vod = null;
+      playing = c; mode = 'live'; cu = null; vod = null; lw = false;
       playStart = Date.now(); recentDone = false;
       Store.edits.last = c.k; Store.saveEdits();
       stage.classList.remove('off');
       if (Store.settings.blackSwitch) stage.classList.add('blank');
-      video._subsChoice = false; video._subsWantKey = null;           // a new playback: subtitles may turn on by themselves again
+      video._subsChoice = false; video._subsWantKey = null; Subs.forget();           // a new playback: subtitles may turn on by themselves again
       Player.play(c, { preview: preview, keepTrying: foSwitching === 'back' });
       chansVL.refreshWhere(function (x) { return x && (x.k === c.k || (lastPlayed && x.k === lastPlayed.k)); });
       if (then) then();
@@ -723,7 +724,7 @@ var Views = (function () {
       case 'chprev': if (full) zap(-1); else chansVL.move(-1); return;
       case 'last': if (!lastPlayed) { U.toast('No previous channel yet'); return; } if (full) lastChannel(); else startChannel(lastPlayed, false, goFull); return;
       case 'rewind':
-        if (playing && playing.arch && full && Store.settings.rewindLeft !== false) rewindLive();
+        if (playing && full && Store.settings.rewindLeft !== false && (playing.arch || Player.liveWindow())) rewindLive();
         else if (full) lastChannel();
         return;
       case 'restart': if (c && c.arch) watchFromStart(c); else U.toast('No catch-up on this channel'); return;
@@ -1061,6 +1062,17 @@ var Views = (function () {
       else if (Keymap.get('player', a) === 'streaminfo') streamInfo();
       return true;
     }
+    if (lw && mode === 'live') {
+      var step = 0;
+      if (a === 'left') step = -Store.settings.skip * seekAccel(-1);
+      else if (a === 'right') step = +Store.settings.skip * seekAccel(1);
+      else if (a === 'rew') step = -(+Store.settings.ffStep || 120) * seekAccel(-1);
+      else if (a === 'ff') step = (+Store.settings.ffStep || 120) * seekAccel(1);
+      else if (a === 'back' && !hidden) { $('osd').classList.add('hidden'); return true; }
+      else if (a === 'back' || a === 'yellow' || a === 'stop') { lwLive(); return true; }
+      else if (a === 'ok') { Player.togglePause(); osd(true); return true; }
+      if (step) { lwSeek(step); return true; }
+    }
     if (mode === 'catchup') {
       if (a === 'back') { if (!hidden) { $('osd').classList.add('hidden'); return true; } backToLive(); }
       else if (a === 'left') cuSeek(-Store.settings.skip * seekAccel(-1));
@@ -1139,7 +1151,7 @@ var Views = (function () {
       playing = c; mode = 'catchup';
       cu = { c: c, p: p, off: Math.max(0, offSec || 0), first: true, pending: null };
       stage.classList.remove('off');
-      video._subsChoice = false; video._subsWantKey = null;
+      video._subsChoice = false; video._subsWantKey = null; Subs.forget();
       Player.play(c, { live: false, timeshift: true, urlFn: function () {
         if (!cu) return '';
         if (!cu.first) cu.off += Player.position;     // a reconnect continues from where playback reached
@@ -1174,12 +1186,29 @@ var Views = (function () {
       if (nx && nx.s < Date.now() - 60000) playCatchup(cu.c, nx, 0); else backToLive();
     }
   }
+  /* Behind live inside a DASH channel's own window (issue #85): ◀ ▶ (and ⏪ ⏩) move in it, Back, Stop or yellow go
+     back to live, and ▶ past the end is live again.  Leaving the window's start falls through to catch-up when the
+     channel has it. */
+  function lwSeek(delta) {
+    if (!playing || mode !== 'live' || !Player.liveWindow()) { lw = false; return false; }
+    var w = Player.liveWindow();
+    if (delta < 0 && w.at <= w.start + 4 && playing.arch) { lw = false; return false; }
+    var r = Player.liveSeek(delta);
+    if (!r) { lw = false; return false; }
+    lw = !r.edge;
+    if (r.edge) U.toast(T('Live'));
+    else U.toast(T('{n} s behind live', { n: r.behind }) + (r.first ? '  ·  ' + T('as far back as this channel keeps') : ''), 2500);
+    osd(true);
+    return true;
+  }
+  function lwLive() { lw = false; Player.liveSeek(1e6); U.toast(T('Live')); osd(true); }
   function backToLive() {
     var c = cu ? cu.c : playing;
     cu = null; mode = 'live';
     if (c) startChannel(c, !full, function () { osd(true); });
   }
   function rewindLive() {
+    if (lwSeek(-Store.settings.skip)) return;
     var nn = Epg.nowNext(playing);
     var p = nn && nn.now ? nn.now : { s: Date.now() - 3600e3, e: Date.now() + 3600e3, t: L.name(playing) };
     var off = Math.max(0, (Date.now() - p.s) / 1000 - Store.settings.skip);
@@ -1205,7 +1234,7 @@ var Views = (function () {
     mode = 'vod'; cu = null; playing = null;
     Subs.reset();
     stage.classList.remove('off');
-    video._subsChoice = false; video._subsWantKey = null;
+    video._subsChoice = false; video._subsWantKey = null; Subs.forget();
     Player.play({ k: 'vod:' + meta.id, n: meta.title, num: '', p: meta.p || undefined }, { url: url, live: false, startAt: startAt || 0, meta: meta });
     Subs.restore(meta);           // subtitles downloaded for it in the last days (discussion #19)
     goFull();
