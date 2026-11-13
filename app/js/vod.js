@@ -22,7 +22,7 @@ var Vod = (function () {
   var episodes = null, series = null;      // drill-down into a show
   var playingMeta = null;
 
-  var CW = '_cw', MY = '_my', ALL = '_all', LANGS = '_langs';
+  var CW = '_cw', MY = '_my', ALL = '_all', LANGS = '_langs', NEW = '_new';
 
   function E() { return Store.edits; }
   function pre(it) { return it && it.pl ? it.pl + ':' : ''; }
@@ -258,7 +258,7 @@ var Vod = (function () {
     // Hidden by the category's own playlist (several playlists on).
     var home = catHome(c.id), p = prefs(home.p), h = p.hide || (p.hide = {}), list = h[kind] || (h[kind] = []);
     var items = [];
-    if (c.id !== CW && c.id !== MY && c.id !== ALL && c.id !== LANGS) {
+    if (c.id !== CW && c.id !== MY && c.id !== ALL && c.id !== NEW && c.id !== LANGS) {
       items.push({ label: 'Hide this category', sub: 'its titles leave All and Search too', action: function () { list.push(home.id); Store.upsertPlaylist(home.p); U.toast(c.name + ' hidden'); reshow(); } });
     }
     if (data[kind] && Object.keys(data[kind].langs).filter(Boolean).length > 1) items.push({ label: 'Languages…', action: langMenu });
@@ -300,7 +300,8 @@ var Vod = (function () {
     var id = idOf(it), r = resumeOf(id), show = kind === 'series' && !it.ep;
     // A show's row: the episode you're on, and that episode's progress (none before you start it).
     var at = show ? r && r.l : '', bar = show ? r && r.ep && resumeOf(r.ep) : r;
-    row._s.textContent = it.ep ? niceDur(it.dur) : [at, it.year, stars(it.rating), it.q, many && it.lang].filter(Boolean).join('   ');
+    var cc = catsVL && catsVL.current(), mixed = !it.ep && cc && (cc.id === ALL || cc.id === NEW || cc.id === MY || cc.id === CW);
+    row._s.textContent = it.ep ? niceDur(it.dur) : [at, it.year, stars(it.rating), it.q, many && it.lang, mixed && catName(it)].filter(Boolean).join('   ');
     if (bar && bar.dur) { row._p.style.display = ''; row._pi.style.width = Math.round(100 * bar.pos / bar.dur) + '%'; } else row._p.style.display = 'none';
     // ✓ for watched (not while it's being watched again: the bar shows then), ★ for My list.
     row._t.textContent = [!r && isWatched(id) && '✓', !it.ep && E().myList.indexOf(key(it)) >= 0 && '★'].filter(Boolean).join('  ');
@@ -331,6 +332,9 @@ var Vod = (function () {
     if (cw) out.push({ id: CW, name: 'Continue watching', count: cw });
     out.push({ id: MY, name: 'My list', count: mine });
     out.push({ id: ALL, name: kind === 'series' ? 'All shows' : 'All movies', count: d.items.filter(function (it) { return !it.adult; }).length });
+    // Recently added (discussion #60): the newest titles across every category, when the provider says when each was added.
+    var fresh = recentList().length;
+    if (fresh) out.push({ id: NEW, name: 'Recently added', count: fresh });
     var hid = {}; vodPls().forEach(function (q, n) { hiddenCats(kind, q).forEach(function (c) { hid[(n && d.multi ? q.id + ':' : '') + c] = 1; }); });
     var later = [], section = null;
     d.cats.forEach(function (c) {
@@ -355,9 +359,32 @@ var Vod = (function () {
     if (!d) return [];
     if (cid === CW) return continueList();
     if (cid === LANGS) return [];
-    if (cid === MY) { var m = E().myList; return d.items.filter(function (it) { return m.indexOf(key(it)) >= 0; }); }
-    if (cid === ALL) return d.items.filter(function (it) { return !it.adult; }).sort(function (a, b) { return b.added - a.added; });
-    return d.items.filter(function (it) { return it.cat === cid; });
+    if (cid === NEW) return recentList();
+    if (cid === MY) { var m = E().myList; return sorted(d.items.filter(function (it) { return m.indexOf(key(it)) >= 0; })); }
+    if (cid === ALL) return sorted(d.items.filter(function (it) { return !it.adult; }), 'added');
+    return sorted(d.items.filter(function (it) { return it.cat === cid; }));
+  }
+  // The newest 100 titles, newest first: what Recently added shows.
+  function recentList() {
+    var d = data[kind]; if (!d) return [];
+    return d.items.filter(function (it) { return !it.adult && it.added > 0; }).sort(function (a, b) { return b.added - a.added; }).slice(0, 100);
+  }
+  /* Settings > Appearance and start screen > Order movies and shows (discussion #60): the provider's own order (All:
+     newest first, as always), recently added, A to Z, or rating. */
+  function sorted(list, dflt) {
+    var how = Store.settings.vodSort || 'provider';
+    if (how === 'provider') how = dflt || '';
+    if (how === 'added') return list.sort(function (a, b) { return (b.added || 0) - (a.added || 0); });
+    if (how === 'name') return list.sort(function (a, b) { return String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base', numeric: true }); });
+    if (how === 'rating') return list.sort(function (a, b) { return (+b.rating || 0) - (+a.rating || 0); });
+    return list;
+  }
+  // A title's category name, shown on its row in All, Recently added, My list and Continue watching (discussion #60).
+  var catNames = null, catNamesFor = null;
+  function catName(it) {
+    var d = data[kind]; if (!d) return '';
+    if (catNamesFor !== d) { catNames = {}; catNamesFor = d; d.cats.forEach(function (c) { catNames[c.id] = cleanCat(c.name, c.pl); }); }
+    return catNames[it.cat] || '';
   }
 
   // Movies and shows for Search: whatever is loaded (prepare() loads them when Search opens).
@@ -431,7 +458,9 @@ var Vod = (function () {
     info.set(key(it), null);
     Source.vodInfo(it.id, plOf(it)).then(function (r) {
       var i = (r && r.info) || {};
-      info.set(key(it), { plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', media: Caps.fromXtream(i) });
+      // The provider's trailer: a YouTube id, or a whole YouTube link.
+      var yt = String(i.youtube_trailer || i.trailer || '').trim(), ym = /(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/.exec(yt);
+      info.set(key(it), { trailer: ym ? ym[1] : /^[A-Za-z0-9_-]{11}$/.test(yt) ? yt : '', plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', media: Caps.fromXtream(i) });
       if (itemsVL.current() === it) showInfo();
     }).catch(function () {});
   }
@@ -574,6 +603,7 @@ var Vod = (function () {
       // A show: straight into the episode you're on, or the next one.
       !playable && r && r.ep && { label: (er ? 'Resume ' : 'Play ') + r.l, sub: er ? Math.floor(er.pos / 60) + ' min' : '', action: function () { playEpisode(it, r.ep); } },
       playable ? { label: r ? 'Play from beginning' : 'Play', action: function () { play(it, true); } } : { label: 'Open episodes', action: function () { openSeries(it); } },
+      trailerOf(it) && { label: 'Watch the trailer', sub: 'YouTube', action: function () { watchTrailer(trailerOf(it)); } },
       !it.ep && { label: mine ? 'Remove from My list' : 'Add to My list', action: function () {
         var l = E().myList, k = key(it);
         if (mine) E().myList = l.filter(function (x) { return x !== k; }); else l.push(k);
@@ -583,6 +613,21 @@ var Vod = (function () {
       (playable ? r || !w : r) && { label: 'Mark as watched', action: function () { if (playable) mark(id, true); else { delete E().resume[id]; Store.saveEdits(); } relist(); } },
       playable && w && !r && { label: 'Mark unwatched', action: function () { mark(id, false); relist(); } }
     ]);
+  }
+
+  /* Trailers (discussion #60): the provider's YouTube trailer, opened in the TV's YouTube app; TiviBro comes back
+     with the Back button there.  Only on the TV, where TiviBro can ask webOS to open another app. */
+  function trailerOf(it) { var m = it && !it.ep && kind === 'movie' ? info.get(key(it)) : null; return m && m.trailer && typeof PalmServiceBridge !== 'undefined' ? m.trailer : ''; }
+  function watchTrailer(id) {
+    try {
+      var b = new PalmServiceBridge();
+      b.onservicecallback = function (msg) {
+        var r = {}; try { r = JSON.parse(msg); } catch (e) {}
+        if (r.returnValue === false) { Log.warn('vod', 'YouTube did not open: ' + (r.errorText || r.errorCode)); U.toast('The TV\'s YouTube app didn\'t open'); }
+      };
+      b.call('luna://com.webos.applicationManager/launch', JSON.stringify({ id: 'youtube.leanback.v4', params: { contentTarget: 'https://www.youtube.com/tv?v=' + id } }));
+      Log.info('vod', 'Trailer on YouTube: ' + id);
+    } catch (e) { U.toast('The TV\'s YouTube app didn\'t open'); }
   }
 
   // After marking: Continue watching and its count follow (a title marked watched leaves it).
@@ -756,5 +801,5 @@ var Vod = (function () {
     }
   };
 
-  return { _test: { tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, offered: offered, reset: function () { gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
+  return { _test: { catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, offered: offered, reset: function () { gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
 })();
