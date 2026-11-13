@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The phone app finds a TV that moved to another address (discussion #36).**  When the router gives the TV a new address and the TV doesn't answer the app's broadcast (some routers and mesh systems block them), the app now asks every address on your network directly, at most every two minutes, and keeps the pairing.  And the TV card's menu has **The TV's address** to type it by hand: only an address where the same TV answers is kept, so nothing has to be paired again.
+
 ## 0.6.0 (alpha 128, 2026-11-13)
 
 Pre-release: expect rough edges, and keep a backup before installing.

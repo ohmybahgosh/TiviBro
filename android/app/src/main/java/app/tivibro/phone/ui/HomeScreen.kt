@@ -77,6 +77,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarHost
@@ -123,6 +124,8 @@ fun HomeScreen(
     onTile: (String) -> Unit,
     onRepair: (String) -> Unit,
     onBackups: (String) -> Unit,
+    /** Sets a TV's address by hand: its id and what was typed. */
+    onAddress: (String, String) -> Unit = { _, _ -> },
     /** The last Bluetooth wake's log (ble/WakeLog.kt), and listening for a TV for 20 seconds into it. */
     bleLog: () -> String = { "" },
     onBleListen: (String) -> Unit = {},
@@ -205,7 +208,7 @@ fun HomeScreen(
                     // The App update tile goes on the first TV's card only (it is about this phone's app, not a TV).
                     val first = u.tv.id == tvs.first().tv.id
                     TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups,
-                        bleLog = bleLog, onBleListen = onBleListen,
+                        bleLog = bleLog, onBleListen = onBleListen, onAddress = onAddress,
                         appUpdate = if (first) AppUpdateTile(checking, rel != null && relHidden.not(), ::checkNow) else null)
                 }
             }
@@ -289,7 +292,9 @@ private fun TvCard(
     onForget: (String) -> Unit, onTile: (String) -> Unit, onRepair: (String) -> Unit, onBackups: (String) -> Unit,
     bleLog: () -> String = { "" }, onBleListen: (String) -> Unit = {},
     appUpdate: AppUpdateTile? = null,
+    onAddress: (String, String) -> Unit = { _, _ -> },
 ) {
+    var addressing by remember { mutableStateOf<String?>(null) }
     val tv = u.tv
     var menu by remember { mutableStateOf(false) }
     var logText by remember { mutableStateOf<String?>(null) }
@@ -325,6 +330,7 @@ private fun TvCard(
                         if (tv.canWake()) DropdownMenuItem(text = { Text("Turn on") }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) }, onClick = { menu = false; onWake(tv.id) })
                         if (u.power == Power.ON) DropdownMenuItem(text = { Text(if (u.tivibroOpen) "Show TiviBro on the TV" else "Open TiviBro on the TV") }, leadingIcon = { Icon(Icons.Rounded.PlayArrow, null) }, onClick = { menu = false; onOpen(tv.id) })
                         if (tv.bt.isNotBlank()) DropdownMenuItem(text = { Text("Bluetooth log") }, leadingIcon = { Icon(Icons.Rounded.Bluetooth, null) }, onClick = { menu = false; logText = bleLog() })
+                        DropdownMenuItem(text = { Text("The TV's address") }, leadingIcon = { Icon(Icons.Rounded.Edit, null) }, onClick = { menu = false; addressing = tv.host + if (tv.port != 47810) ":" + tv.port else "" })
                         DropdownMenuItem(text = { Text("Use for the Quick Settings tile") }, leadingIcon = { Icon(Icons.Rounded.Tv, null) }, onClick = { menu = false; onTile(tv.id) })
                         DropdownMenuItem(text = { Text("Forget this TV") }, leadingIcon = { Icon(Icons.Rounded.LinkOff, null) }, onClick = { menu = false; confirm = true })
                     }
@@ -413,6 +419,22 @@ private fun TvCard(
                     TextButton(onClick = { logText = null }) { Text("Close") }
                 }
             },
+            containerColor = Panel,
+        )
+    }
+    addressing?.let { cur ->
+        AlertDialog(
+            onDismissRequest = { addressing = null },
+            title = { Text("The TV's address") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("The app finds the TV again by itself when your router gives it another address.  If it doesn't, type the new one here (the TV shows it in Settings > Phone app and web editor).  The pairing stays: nothing to pair again.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                    OutlinedTextField(value = cur, onValueChange = { addressing = it }, singleLine = true, label = { Text("Address") },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri))
+                }
+            },
+            confirmButton = { TextButton(onClick = { val v = cur; addressing = null; onAddress(tv.id, v) }) { Text("Save") } },
+            dismissButton = { TextButton(onClick = { addressing = null }) { Text("Cancel") } },
             containerColor = Panel,
         )
     }

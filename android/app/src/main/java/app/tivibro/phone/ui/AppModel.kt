@@ -171,7 +171,14 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         val off = mutableListOf<Tv>()
         list.forEach { u -> if (!check(u.tv)) off += u.tv }
         if (off.isNotEmpty()) {
-            val seen = withContext(Dispatchers.IO) { runCatching { Discovery.find(1500) }.getOrDefault(emptyList()) }
+            var seen = withContext(Dispatchers.IO) { runCatching { Discovery.find(1500) }.getOrDefault(emptyList()) }
+            /* Not heard by broadcast: ask every address on this network directly, at most every two minutes, in case
+               the router gave the TV another address and broadcasts don't get through (discussion #36). */
+            val lost = off.filter { tv -> seen.none { it.id == tv.id } }
+            if (lost.isNotEmpty() && onLan(null) && System.currentTimeMillis() - lastSweep > 120_000) {
+                lastSweep = System.currentTimeMillis()
+                seen = seen + withContext(Dispatchers.IO) { runCatching { Sweep.find() }.getOrDefault(emptyList()) }
+            }
             off.forEach { tv ->
                 val f = seen.firstOrNull { it.id == tv.id && (it.host != tv.host || it.port != tv.port) } ?: return@forEach
                 saveTv(tv.copy(host = f.host, port = f.port))
@@ -242,6 +249,26 @@ class AppModel(app: Application) : AndroidViewModel(app) {
                 check(u.tv)
             }
             soonFor.remove(id)
+        }
+    }
+
+    private var lastSweep = 0L
+
+    /**
+     * The TV's address typed by hand (discussion #36: the router moved it).  Only an address where this same TV
+     * answers is kept, so the pairing (its keys) carries on: nothing to pair again.  "host" or "host:port".
+     */
+    fun setAddress(id: String, typed: String) = viewModelScope.launch {
+        val tv = tv(id) ?: return@launch
+        val t = typed.trim()
+        val m = Regex("^([0-9A-Za-z.\\-]+)(?::(\\d{2,5}))?$").find(t)
+        if (m == null) { say("That doesn't look like an address.  Like 192.168.1.50"); return@launch }
+        val host = m.groupValues[1]; val port = m.groupValues[2].toIntOrNull() ?: tv.port
+        val h = withContext(Dispatchers.IO) { runCatching { Pairing.hello(host, port, 4000) }.getOrNull() }
+        when {
+            h == null -> say("No TiviBro answered at $host.  Is the TV on, with TiviBro's phone connection on?")
+            h.id != tv.id -> say("That address is a different TV (${h.name}).")
+            else -> { saveTv(tv.copy(host = host, port = port)); say("${tv.name} is now at $host"); check(tv(id) ?: tv) }
         }
     }
 

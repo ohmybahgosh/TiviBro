@@ -171,6 +171,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 onOpen = { model.openTiviBro(it) },
                 onWake = { turnOn(it) },
                 onForget = { model.forget(it) },
+                onAddress = { id, a -> model.setAddress(id, a) },
                 onTile = { model.tileTv = it; tile = it; model.say("The Quick Settings tile now opens TiviBro on this TV") },
                 onRepair = { nav.navigate("add") },
                 onBackups = { id -> go(id, "backups") },

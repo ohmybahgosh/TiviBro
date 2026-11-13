@@ -62,6 +62,40 @@ object Discovery {
     }
 }
 
+/**
+ * Every address of this phone's own networks (a /24 at most), asked for TiviBro directly: for a router that
+ * moved the TV to another address overnight while broadcasts don't get through (Wi-Fi client isolation, some
+ * mesh systems), so discovery found nothing.  Up to 254 quick asks, 32 at a time.
+ */
+object Sweep {
+    fun lanHosts(): List<String> {
+        val out = LinkedHashSet<String>()
+        runCatching {
+            NetworkInterface.getNetworkInterfaces()?.toList().orEmpty().filter { it.isUp && !it.isLoopback }.forEach { nif ->
+                nif.interfaceAddresses.forEach { a ->
+                    val ip = a.address as? Inet4Address ?: return@forEach
+                    if (!ip.isSiteLocalAddress) return@forEach
+                    val b = ip.address
+                    for (i in 1..254) if (i != (b[3].toInt() and 0xff)) out += "${b[0].toInt() and 0xff}.${b[1].toInt() and 0xff}.${b[2].toInt() and 0xff}.$i"
+                }
+            }
+        }
+        return out.toList()
+    }
+    /** The TiviBros that answer, by id. */
+    fun find(port: Int = DEFAULT_PORT, hosts: List<String> = lanHosts(), timeoutMs: Int = 600): List<Found> {
+        val pool = java.util.concurrent.Executors.newFixedThreadPool(32)
+        try {
+            val jobs = hosts.map { h -> pool.submit<Found?> {
+                // A quick connect first: most addresses have nothing there, and this spares a full request.
+                val open = runCatching { java.net.Socket().use { it.connect(java.net.InetSocketAddress(h, port), timeoutMs) }; true }.getOrDefault(false)
+                if (!open) null else runCatching { val hi = Pairing.hello(h, port, 1500); Found(hi.id, hi.name, h, port, hi.version) }.getOrNull()
+            } }
+            return jobs.mapNotNull { runCatching { it.get(5, java.util.concurrent.TimeUnit.SECONDS) }.getOrNull() }
+        } finally { pool.shutdownNow() }
+    }
+}
+
 object Wol {
     /** "aa:bb:cc:dd:ee:ff" to 6 bytes, or null. */
     fun macBytes(mac: String): ByteArray? {
