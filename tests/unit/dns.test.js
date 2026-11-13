@@ -56,6 +56,40 @@ function server() {
   D.set('tv');
   ok('and back to the TV\'s own puts the TV\'s lookup back', D.mode === 'tv');
   r2.server.close(); srv.s.close();
+
+  // DNS over HTTPS, the standard form (RFC 8484), the next address when the first doesn't answer (discussion #60:
+  // 1.1.1.1 blocked, 1.0.0.1 answering).  A local HTTPS server with its own certificate (skipped without openssl).
+  const q = D._question('provider.example'), qb = Buffer.from(q.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+  ok('the question is a DNS message for one A record', qb.readUInt16BE(4) === 1 && qb.slice(12).toString('latin1').indexOf('provider') > 0 && qb.readUInt16BE(qb.length - 4) === 1);
+  const reply = (qq, ip) => { const h = Buffer.from(qq.slice(0, 12)); h[2] = 0x81; h[3] = 0x80; h.writeUInt16BE(2, 6); return Buffer.concat([h, qq.slice(12), Buffer.from([0xc0, 0x0c, 0, 5, 0, 1, 0, 0, 0, 9, 0, 2, 0xc0, 0x0c, 0xc0, 0x0c, 0, 1, 0, 1, 0, 0, 1, 44, 0, 4].concat(ip))]); };
+  const a1 = D._answer(reply(qb, [10, 9, 8, 7]).slice(0)) ;
+  ok('the answer is read: the A record past another record, with its TTL', a1 && a1.ip === '10.9.8.7' && a1.ttl === 300, a1);
+  let tls = null;
+  try {
+    const os = require('os'), fs = require('fs'), cp = require('child_process'), dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-doh-'));
+    cp.execFileSync('openssl', ['req', '-x509', '-newkey', 'rsa:2048', '-nodes', '-days', '1', '-subj', '/CN=127.0.0.1', '-addext', 'subjectAltName=IP:127.0.0.1',
+      '-keyout', path.join(dir, 'k.pem'), '-out', path.join(dir, 'c.pem')], { stdio: 'ignore' });
+    tls = { key: fs.readFileSync(path.join(dir, 'k.pem')), cert: fs.readFileSync(path.join(dir, 'c.pem')) };
+    fs.rmSync(dir, { recursive: true, force: true });
+  } catch (e) { console.log('SKIP DoH server: no openssl'); }
+  if (tls) {
+    const asked = [];
+    const hs = require('https').createServer(tls, (req, res) => {
+      const m = /[?&]dns=([A-Za-z0-9_-]+)/.exec(req.url); asked.push(req.url.split('?')[0] + ' ' + req.headers.accept);
+      const qq = Buffer.from(m[1].replace(/-/g, '+').replace(/_/g, '/'), 'base64');
+      res.writeHead(200, { 'Content-Type': 'application/dns-message' }); res.end(reply(qq, [10, 1, 2, 3]));
+    });
+    await new Promise((f) => hs.listen(0, '127.0.0.1', f));
+    D.set('doh-cloudflare'); D._doh({ hosts: ['127.0.0.2', '127.0.0.1'], port: hs.address().port, path: '/dns-query', ca: tls.cert });
+    r = await look('doh.example');
+    ok('over HTTPS: the first address refuses, the next one answers', r.a === '10.1.2.3' && asked[0] === '/dns-query application/dns-message', { r, asked });
+    D._doh({ hosts: ['127.0.0.1'], port: hs.address().port, path: '/dns-query' });
+    r = await look('doh2.example');
+    ok('a server whose certificate isn\'t trusted is not believed (the TV\'s DNS instead)', r.a !== '10.1.2.3', r);
+    D._doh(null); D.set('tv'); hs.close();
+  }
+  ok('ControlD and Quad9 can be picked', ['controld', 'controld-uncensored', 'doh-quad9', 'doh-controld', 'doh-controld-uncensored'].every((m) => D.set(m).mode === m));
+  D.set('tv');
   console.log(fail ? fail + ' failures' : 'all DNS checks passed');
   process.exit(fail ? 1 : 0);
 })();

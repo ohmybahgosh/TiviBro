@@ -1,6 +1,6 @@
 /* Finding the provider's server: the TV's own DNS (the default), or one picked in Settings > Playlists > DNS
-   (discussion #60): a public DNS server (Cloudflare, Google, Quad9 or one you type), or DNS over HTTPS (Cloudflare
-   or Google), for a provider whose name the TV's DNS doesn't find or blocks.  Every request the helper makes looks
+   (discussion #60): a public DNS server (Cloudflare, Google, Quad9, ControlD or one you type), or DNS over HTTPS
+   (Cloudflare, Google, Quad9 or ControlD), for a provider whose name the TV's DNS doesn't find or blocks.  Every request the helper makes looks
    names up through dns.lookup, so that is what is replaced; addresses, local names and IPv6-only asks go to the
    TV's DNS as before, and so does a name the chosen DNS can't answer (better a blocked answer than none).
    Answers are kept for their TTL (1 to 30 minutes).
@@ -10,14 +10,28 @@
 'use strict';
 var dns = require('dns'), https = require('https');
 var orig = dns.lookup;
-var PRESET = { cloudflare: ['1.1.1.1', '1.0.0.1'], google: ['8.8.8.8', '8.8.4.4'], quad9: ['9.9.9.9', '149.112.112.112'] };
-var DOH = { 'doh-cloudflare': { host: '1.1.1.1', path: '/dns-query' }, 'doh-google': { host: '8.8.8.8', path: '/resolve' } };
+var PRESET = {
+  cloudflare: ['1.1.1.1', '1.0.0.1'], google: ['8.8.8.8', '8.8.4.4'], quad9: ['9.9.9.9', '149.112.112.112'],
+  controld: ['76.76.2.0', '76.76.10.0'], 'controld-uncensored': ['76.76.2.5', '76.76.10.5']
+};
+/* DNS over HTTPS, the standard form (RFC 8484: the DNS message itself, sent as ?dns=), which all of these answer.
+   Each is tried at its addresses in turn: 1.1.1.1 is blocked in some places, and 1.0.0.1 then answers (discussion
+   #60).  ControlD's is only at a name, which the TV's own DNS finds (never this file's lookup: that would ask
+   itself). */
+var DOH = {
+  'doh-cloudflare': { hosts: ['1.1.1.1', '1.0.0.1'], path: '/dns-query' },
+  'doh-google': { hosts: ['8.8.8.8', '8.8.4.4'], path: '/dns-query' },
+  'doh-quad9': { hosts: ['9.9.9.9', '149.112.112.112'], path: '/dns-query' },
+  'doh-controld': { hosts: ['freedns.controld.com'], path: '/p0' },
+  'doh-controld-uncensored': { hosts: ['freedns.controld.com'], path: '/uncensored' }
+};
+var BOOT = { 'freedns.controld.com': 1 };
 var mode = 'tv', custom = '', cache = {}, stats = { ok: 0, failed: 0, last: '' };
 var IPV4 = /^\d{1,3}(?:\.\d{1,3}){3}$/;
 
 function isAddress(h) { return IPV4.test(h) || h.indexOf(':') >= 0; }
 function isLocal(h) { return h === 'localhost' || !/\./.test(h) || /\.(?:local|lan|home|internal)$/i.test(h); }
-var testServers = null;        // tests: a DNS server on another port
+var testServers = null, testDoh = null;        // tests: a DNS server on another port, a DoH server
 function servers() { return testServers || (mode === 'custom' ? (IPV4.test(custom) ? [custom] : []) : PRESET[mode] || []); }
 
 // A plain DNS server: dns.Resolver (Node 8 on), or on Node 0.12 the module's own servers, which dns.lookup doesn't use.
@@ -31,27 +45,58 @@ function viaServer(host, cb) {
   } catch (e) { cb(e); }
   function done(e, ips) { if (e || !ips || !ips.length) return cb(e || new Error('no answer')); cb(null, ips[0], 300); }
 }
-// DNS over HTTPS: the JSON form both services answer, asked at their address (no name to look up first).
+// DNS over HTTPS.  The question: one A record for host, as a DNS message (RFC 1035), in base64url.
+function buf(x, enc) { return Buffer.from(x, enc); }      // compat.js gives Node 0.12 Buffer.from
+function question(host) {
+  var b = [0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0];             // id 0, recursion wanted, one question
+  host.split('.').forEach(function (l) { if (!l) return; b.push(l.length); for (var i = 0; i < l.length; i++) b.push(l.charCodeAt(i) & 0x7f); });
+  b.push(0, 0, 1, 0, 1);                                     // end of name, type A, class IN
+  return buf(b).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+// The answer: the first A record and its TTL, or null.
+function skipName(m, i) {
+  while (i < m.length) { var n = m[i]; if (n === 0) return i + 1; if ((n & 0xc0) === 0xc0) return i + 2; i += n + 1; }
+  return -1;
+}
+function answer(m) {
+  if (!m || m.length < 12 || (m[3] & 0x0f) !== 0) return null;
+  var qd = m.readUInt16BE(4), an = m.readUInt16BE(6), i = 12;
+  for (var q = 0; q < qd; q++) { i = skipName(m, i); if (i < 0) return null; i += 4; }
+  for (var a = 0; a < an && i < m.length; a++) {
+    i = skipName(m, i); if (i < 0 || i + 10 > m.length) return null;
+    var type = m.readUInt16BE(i), ttl = m.readUInt32BE(i + 4), len = m.readUInt16BE(i + 8); i += 10;
+    if (type === 1 && len === 4 && i + 4 <= m.length) return { ip: m[i] + '.' + m[i + 1] + '.' + m[i + 2] + '.' + m[i + 3], ttl: ttl };
+    i += len;
+  }
+  return null;
+}
 function viaHttps(host, cb) {
-  var d = DOH[mode], finished = false;
-  function end(e, ip, ttl) { if (!finished) { finished = true; cb(e, ip, ttl); } }
-  var req = https.get({ host: d.host, path: d.path + '?name=' + encodeURIComponent(host) + '&type=A', headers: { Accept: 'application/dns-json' }, rejectUnauthorized: true }, function (res) {
-    var body = '';
-    res.on('data', function (c) { if (body.length < 65536) body += c; });
-    res.on('end', function () {
-      var j = null; try { j = JSON.parse(body); } catch (e) {}
-      var a = j && Array.isArray(j.Answer) ? j.Answer.filter(function (x) { return x && x.type === 1 && IPV4.test(String(x.data)); }) : [];
-      if (!a.length) return end(new Error('no answer'));
-      end(null, String(a[0].data), +a[0].TTL || 300);
+  var d = testDoh || DOH[mode], hosts = d.hosts.slice(), q = question(host), why = null;
+  (function next() {
+    var h = hosts.shift();
+    if (!h) return cb(why || new Error('no answer'));
+    var finished = false;
+    function end(e, r) { if (finished) return; finished = true; if (e || !r) { why = e || new Error('no answer'); return next(); } cb(null, r.ip, r.ttl || 300); }
+    var o = { host: h, path: d.path + (d.path.indexOf('?') < 0 ? '?' : '&') + 'dns=' + q, headers: { Accept: 'application/dns-message' }, rejectUnauthorized: true };
+    if (d.port) o.port = d.port;
+    if (d.ca) o.ca = d.ca;
+    var req = https.get(o, function (res) {
+      var parts = [], n = 0;
+      res.on('data', function (c) { if (n < 65536) { parts.push(c); n += c.length; } });
+      res.on('end', function () {
+        if (res.statusCode !== 200) return end(new Error('HTTP ' + res.statusCode));
+        var r = null; try { r = answer(Buffer.concat(parts)); } catch (e) {}
+        end(r ? null : new Error('no answer'), r);
+      });
     });
-  });
-  req.on('error', end);
-  req.setTimeout(6000, function () { req.abort(); end(new Error('timed out')); });
+    req.on('error', function (e) { end(e); });
+    req.setTimeout(5000, function () { req.abort(); end(new Error('timed out')); });
+  })();
 }
 function resolve(host, cb) {
   var k = host.toLowerCase(), hit = cache[k];
   if (hit && hit.until > Date.now()) return cb(null, hit.ip);
-  (DOH[mode] ? viaHttps : viaServer)(k, function (e, ip, ttl) {
+  (DOH[mode] || testDoh ? viaHttps : viaServer)(k, function (e, ip, ttl) {
     if (e) return cb(e);
     var keys = Object.keys(cache); if (keys.length > 500) cache = {};
     cache[k] = { ip: ip, until: Date.now() + Math.max(60, Math.min(1800, ttl || 300)) * 1000 };
@@ -63,7 +108,7 @@ function lookup(host, opts, cb) {
   if (typeof opts === 'function') { cb = opts; opts = {}; }
   if (typeof opts === 'number') opts = { family: opts };
   opts = opts || {};
-  if (mode === 'tv' || typeof host !== 'string' || !host || isAddress(host) || isLocal(host) || opts.family === 6) return orig.apply(dns, args);
+  if (mode === 'tv' || typeof host !== 'string' || !host || isAddress(host) || isLocal(host) || BOOT[host.toLowerCase()] || opts.family === 6) return orig.apply(dns, args);
   resolve(host, function (e, ip) {
     if (e) { stats.failed++; stats.last = host + ': ' + (e.code || e.message) + ', the TV\'s DNS instead'; return orig.call(dns, host, opts, cb); }
     stats.ok++;
@@ -92,4 +137,4 @@ function handle(req, res, ALLOW, log) {
     send(res, ALLOW, 200, r);
   });
 }
-module.exports = { set: set, handle: handle, lookup: lookup, _resolve: resolve, _servers: function (l) { testServers = l; cache = {}; }, get mode() { return mode; } };
+module.exports = { set: set, handle: handle, lookup: lookup, _resolve: resolve, _servers: function (l) { testServers = l; cache = {}; }, _doh: function (d) { testDoh = d; cache = {}; }, _answer: answer, _question: question, get mode() { return mode; } };
