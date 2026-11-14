@@ -34,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import app.tivibro.phone.proto.TbException
 import kotlinx.coroutines.launch
@@ -117,8 +116,7 @@ private fun PlaylistDialog(model: AppModel, id: String, editId: String?, editTyp
                         OutlinedTextField(server, { server = it.trim() }, label = { Text("Server") }, placeholder = { Text("http://provider.com:8080") }, singleLine = true, enabled = !busy,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
                         OutlinedTextField(user, { user = it.trim() }, label = { Text("Username") }, singleLine = true, enabled = !busy, modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(pass, { pass = it }, label = { Text("Password") }, singleLine = true, enabled = !busy,
-                            visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+                        SecretField(pass, { pass = it }, "Password", enabled = !busy)
                     }
                     "m3u" -> OutlinedTextField(m3u, { m3u = it.trim() }, label = { Text("Playlist address") }, placeholder = { Text("http://provider.com/get.php?…&type=m3u_plus") }, enabled = !busy,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())

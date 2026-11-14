@@ -66,7 +66,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import app.tivibro.phone.data.BackupTools
 import app.tivibro.phone.data.SavedBackup
@@ -93,6 +92,7 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
     var restoring by remember { mutableStateOf<Pair<SavedBackup, String>?>(null) }
     var exporting by remember { mutableStateOf<SavedBackup?>(null) }
     var pass by remember { mutableStateOf("") }
+    var passAgain by remember { mutableStateOf("") }
     var renaming by remember { mutableStateOf<SavedBackup?>(null) }
     var newName by remember { mutableStateOf("") }
     var merging by remember { mutableStateOf<SavedBackup?>(null) }
@@ -104,6 +104,7 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
     // A backup file: saving one (asks a passphrase first), and opening one (a passphrase when it is locked).
     var fileOut by remember { mutableStateOf(false) }
     var filePass by remember { mutableStateOf("") }
+    var fileAgain by remember { mutableStateOf("") }
     var fileIn by remember { mutableStateOf<android.net.Uri?>(null) }
     var fileBusy by remember { mutableStateOf(false) }
     // Restore points on the TV.
@@ -138,7 +139,7 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
     }
     val save = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         val b = exporting; val p = pass
-        exporting = null; pass = ""
+        exporting = null; pass = ""; passAgain = ""
         if (uri != null && b != null) scope.launch {
             try { model.exportBackup(b, p, uri); model.say("Saved.  Restore it here with Restore a file, or in the web editor.") } catch (e: Exception) { model.say(e.message ?: "Couldn't save the file.") }
         }
@@ -146,7 +147,7 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
 
     val saveFile = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
         val p = filePass
-        filePass = ""
+        filePass = ""; fileAgain = ""
         if (uri != null) { fileBusy = true; scope.launch {
             try { model.say(model.exportNow(id, p, uri)) } catch (e: Exception) { model.say(e.message ?: "Couldn't save the file.") }
             fileBusy = false
@@ -164,7 +165,7 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
     }
     val openFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) scope.launch {
-            try { if (model.backupFileLocked(uri)) { filePass = ""; fileIn = uri } else importFrom(uri, null) }
+            try { if (model.backupFileLocked(uri)) { filePass = ""; fileAgain = ""; fileIn = uri } else importFrom(uri, null) }
             catch (e: TbException) { model.say(e.message ?: "Couldn't open the file.") }
             catch (e: Exception) { model.say("Couldn't open the file.") }
         }
@@ -242,7 +243,7 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
             }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(onClick = { filePass = ""; fileOut = true }, enabled = !fileBusy, modifier = Modifier.weight(1f).height(48.dp)) {
+                    OutlinedButton(onClick = { filePass = ""; fileAgain = ""; fileOut = true }, enabled = !fileBusy, modifier = Modifier.weight(1f).height(48.dp)) {
                         Icon(Icons.Rounded.Save, null, Modifier.size(18.dp)); Spacer(Modifier.width(8.dp)); Text("Save a file", maxLines = 1)
                     }
                     OutlinedButton(onClick = { runCatching { openFile.launch(arrayOf("application/json", "application/octet-stream", "text/plain", "*/*")) } }, enabled = !fileBusy, modifier = Modifier.weight(1f).height(48.dp)) {
@@ -297,31 +298,31 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
         )
     }
     if (fileOut) AlertDialog(
-        onDismissRequest = { fileOut = false; filePass = "" }, containerColor = Panel,
+        onDismissRequest = { fileOut = false; filePass = ""; fileAgain = "" }, containerColor = Panel,
         title = { Text("Save a backup file") },
         text = {
             Column {
                 Text("A backup of ${tv.name} as it is now.  Pick a passphrase to lock the file: you'll need it to restore the file.", color = Muted, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(12.dp))
-                OutlinedTextField(filePass, { filePass = it }, singleLine = true, label = { Text("Passphrase, 8 or more characters") }, visualTransformation = PasswordVisualTransformation())
+                NewPassphrase(filePass, { filePass = it }, fileAgain, { fileAgain = it })
             }
         },
-        confirmButton = { TextButton(onClick = { fileOut = false; saveFile.launch("tivibro-backup-" + SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()) + ".json") }, enabled = filePass.length >= 8) { Text("Save") } },
-        dismissButton = { TextButton(onClick = { fileOut = false; filePass = "" }) { Text("Cancel") } },
+        confirmButton = { TextButton(onClick = { fileOut = false; saveFile.launch("tivibro-backup-" + SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()) + ".json") }, enabled = passphraseOk(filePass, fileAgain)) { Text("Save") } },
+        dismissButton = { TextButton(onClick = { fileOut = false; filePass = ""; fileAgain = "" }) { Text("Cancel") } },
     )
     fileIn?.let { uri ->
         AlertDialog(
-            onDismissRequest = { fileIn = null; filePass = "" }, containerColor = Panel,
+            onDismissRequest = { fileIn = null; filePass = ""; fileAgain = "" }, containerColor = Panel,
             title = { Text("This file is locked") },
             text = {
                 Column {
                     Text("Type the passphrase it was saved with.", color = Muted, style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(filePass, { filePass = it }, singleLine = true, label = { Text("Passphrase") }, visualTransformation = PasswordVisualTransformation())
+                    SecretField(filePass, { filePass = it }, "Passphrase", onDone = { if (filePass.isNotEmpty()) { val p = filePass; fileIn = null; filePass = ""; fileAgain = ""; importFrom(uri, p) } })
                 }
             },
-            confirmButton = { TextButton(onClick = { val p = filePass; fileIn = null; filePass = ""; importFrom(uri, p) }, enabled = filePass.isNotEmpty()) { Text("Open") } },
-            dismissButton = { TextButton(onClick = { fileIn = null; filePass = "" }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = { val p = filePass; fileIn = null; filePass = ""; fileAgain = ""; importFrom(uri, p) }, enabled = filePass.isNotEmpty()) { Text("Open") } },
+            dismissButton = { TextButton(onClick = { fileIn = null; filePass = ""; fileAgain = "" }) { Text("Cancel") } },
         )
     }
     if (making) AlertDialog(
@@ -357,17 +358,17 @@ fun BackupsScreen(model: AppModel, id: String, tvs: List<TvUi>, snack: SnackbarH
     }
     exporting?.let { b ->
         AlertDialog(
-            onDismissRequest = { exporting = null; pass = "" }, containerColor = Panel,
+            onDismissRequest = { exporting = null; pass = ""; passAgain = "" }, containerColor = Panel,
             title = { Text("Save a copy") },
             text = {
                 Column {
                     Text("Pick a passphrase to protect the file (it holds your logins).  You'll need it to restore the file.", color = Muted, style = MaterialTheme.typography.bodySmall)
                     Spacer(Modifier.height(12.dp))
-                    OutlinedTextField(pass, { pass = it }, singleLine = true, label = { Text("Passphrase, 8 or more characters") }, visualTransformation = PasswordVisualTransformation())
+                    NewPassphrase(pass, { pass = it }, passAgain, { passAgain = it })
                 }
             },
-            confirmButton = { TextButton(onClick = { save.launch("tivibro-backup-" + SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(b.at)) + ".json") }, enabled = pass.length >= 8) { Text("Save") } },
-            dismissButton = { TextButton(onClick = { exporting = null; pass = "" }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = { save.launch("tivibro-backup-" + SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date(b.at)) + ".json") }, enabled = passphraseOk(pass, passAgain)) { Text("Save") } },
+            dismissButton = { TextButton(onClick = { exporting = null; pass = ""; passAgain = "" }) { Text("Cancel") } },
         )
     }
     renaming?.let { b ->

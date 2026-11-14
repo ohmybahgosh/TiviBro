@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Phone app: passwords and passphrases are easier to get right.**  Every password, passphrase and key box has an eye to show what you typed, uses the phone's password keyboard (no suggestions, autocorrect or added spaces) and drops a line break.  A new backup file's passphrase is typed twice and must match, and the box's hint no longer runs out of it.
+
 ## 0.6.0 (alpha 136, 2026-11-14)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -40,7 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import app.tivibro.phone.proto.TbException
 import kotlinx.coroutines.CancellationException
@@ -130,8 +129,7 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
                         OutlinedTextField(address, { address = it.trim() }, label = { Text("Folder address (https://…)") }, singleLine = true, enabled = busy == null,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri), modifier = Modifier.fillMaxWidth())
                         OutlinedTextField(user, { user = it }, label = { Text(if (premiumize) "Customer ID" else "User name or customer ID") }, singleLine = true, enabled = busy == null, modifier = Modifier.fillMaxWidth())
-                        OutlinedTextField(pass, { pass = it }, label = { Text(if (premiumize) "API key" else "Password or API key") }, singleLine = true, enabled = busy == null,
-                            visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth())
+                        SecretField(pass, { pass = it }, if (premiumize) "API key" else "Password or API key", enabled = busy == null)
                         busy?.let { Busy(it) }
                     }
                 }
@@ -236,8 +234,7 @@ fun TmdbTokenDialog(model: AppModel, id: String, saved: Boolean, onDone: (change
                 Text("Your own free API key or Read Access Token, from themoviedb.org/settings/api.  It gives My media its posters and details, and finds the movies on your channels.  The TV checks it, and keeps it out of backups.",
                     color = Muted, style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.size(8.dp))
-                OutlinedTextField(t, { t = it.trim() }, label = { Text("API key or Read Access Token") }, singleLine = true, enabled = !busy,
-                    visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+                SecretField(t, { t = it.trim() }, "API key or Read Access Token", enabled = !busy)
                 error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp)) }
                 if (busy) Busy("Checking it with TMDB…")
             }
