@@ -20,6 +20,8 @@ const get = (port, p, headers) => new Promise((res) => {
   ok('another checksum does not', !Sig.verify(Object.assign({}, m, { sha256: 'cd'.repeat(32) }), publicKey));
   ok('another version does not', !Sig.verify(Object.assign({}, m, { version: '0.5.10999' }), publicKey));
   ok('nor a signature from another key (the one built in)', !Sig.verify(m));
+  const pub = (k) => crypto.createPublicKey(k).export({ type: 'spki', format: 'der' }).toString('hex');
+  ok('the backup key is a real key, and not the build\'s', pub(Sig.BACKUP_KEY).length > 300 && pub(Sig.BACKUP_KEY) !== pub(Sig.PUBLIC_KEY));
   ok('nor no signature', !Sig.verify(Object.assign({}, m, { sig: '' }), publicKey) && !Sig.verify(null));
 
   // Secrets never reach a log or a problem report: the helper's redaction and the app's (log.js, the same rules).
