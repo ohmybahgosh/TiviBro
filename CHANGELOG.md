@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 132, 2026-11-13)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 132
 
 - **Search settings in the Settings menu.**  The first row of the menu, with a magnifier, for anyone who doesn't know about Yellow.  It opens your last search, or asks what to look for.
 - **The channel keeps playing in Search too.**  In the corner right of the results, with what's on.  Hold OK on the filters (or a past search) goes back to it in fullscreen; on a channel or programme result Hold OK is still its options.
@@ -8,11 +12,7 @@
 - **Holding ◀ in the guide, take two.**  On the TV a held ◀ at now still went to the groups first: its repeats only start after more than half a second.  Now TiviBro looks whether ◀ is still down a quarter second after the press: still down, it goes back in time; let go, the groups open.
 - **A team's reminder follows its game.**  A reminder set for a game on one channel (often an event channel slot) fired for whatever that channel showed by then, after the provider had given the slot to another game.  Now team reminders are checked against the guide as it is: a game that moved goes with its new channel and time, and one that's nowhere in the guide any more is dropped, with a message saying so if it was due.
 
-## 0.6.0 (alpha 131, 2026-11-13)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 131
+### In alpha 131
 
 - **Stream info shows an HLS channel's real bitrate.**  Many providers' playlists don't state it, so Details said "0 kbps".  It's now measured from the stream itself, the size of each piece over how long it plays.
 - **Settings keep the channel playing.**  Like TiviMate, the channel you were watching carries on in the top corner of Settings, with its name and what's on beside it, and the settings sit below at full width, so no row is narrower or hidden.  Changing the buffer profile, player engine, stream format, connection or HDR starts the picture again with the new setting.  It stops, as Settings used to, for the set-up screen, the tour and the speed test, and on a TV short of memory for a channel list or guide reload or a My media rescan.
