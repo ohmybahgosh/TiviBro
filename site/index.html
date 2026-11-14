@@ -25,7 +25,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="img/guide-poster.webp">
+<link rel="preload" as="image" href="img/promo-poster.webp">
 <link rel="stylesheet" href="style.css?v=7">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
@@ -73,6 +73,7 @@
     <symbol id="i-part" viewBox="0 0 24 24"><path d="M7 12h10"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20"/></symbol>
     <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3.8l2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></symbol>
     <symbol id="i-expand" viewBox="0 0 24 24"><path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
     <symbol id="i-github" viewBox="0 0 16 16"><path fill="currentColor" stroke="none" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></symbol>
@@ -85,6 +86,7 @@
   <div class="wrap bar">
     <a class="brand" href="#top" aria-label="TiviBro home"><img src="img/wordmark.webp" alt="tiviBro" width="140" height="36"></a>
     <nav class="links" id="links" aria-label="Main">
+      <a href="#new">New</a>
       <a href="#features">Features</a>
       <a href="#phone">Phone setup</a>
       <a href="#different">Only in TiviBro</a>
@@ -122,8 +124,9 @@
     </div>
     <div class="hero-stage" aria-label="TiviBro on a TV, set up from a phone">
       <div class="tv">
-        <div class="tv-screen"><button class="expand" type="button" aria-label="Watch full screen"><svg class="i"><use href="#i-expand"/></svg></button><video class="bigvid" src="media/guide.mp4" poster="img/guide-poster.webp" autoplay muted loop playsinline preload="metadata" aria-label="The TiviBro guide: browsing, previewing and going fullscreen"></video><i class="glare"></i></div>
+        <div class="tv-screen"><button class="expand" type="button" aria-label="Watch full screen"><svg class="i"><use href="#i-expand"/></svg></button><video class="bigvid" src="media/promo.mp4" poster="img/promo-poster.webp" autoplay muted loop playsinline preload="metadata" aria-label="TiviBro in a minute: the guide, My teams, themes, settings, the phone app and the web editor"></video><i class="glare"></i></div>
         <div class="tv-stand"></div>
+        <button class="sound-btn" type="button" data-sound><svg class="i" width="16" height="16"><use href="#i-play"/></svg> Watch the 1-minute tour with sound</button>
       </div>
       <div class="phone hero-phone" data-depth="0.08">
         <div class="phone-screen"><img src="img/shots/editor-phone-welcome.webp" alt="TiviBro's editor on a phone, opened by scanning the QR code" width="390" height="844"></div>
@@ -136,10 +139,43 @@
 <!-- ========== TICKER ========== -->
 <div class="ticker" aria-hidden="true">
   <div class="ticker-track">
-    <span>Guide first</span><span>Catch-up</span><span>Movies and shows</span><span>A guide for every channel</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>A phone remote</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
-    <span>Guide first</span><span>Catch-up</span><span>Movies and shows</span><span>A guide for every channel</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>A phone remote</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
+    <span>Guide first</span><span>My teams</span><span>16 themes</span><span>Catch-up</span><span>Movies and shows</span><span>A guide for every channel</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>A phone remote</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
+    <span>Guide first</span><span>My teams</span><span>16 themes</span><span>Catch-up</span><span>Movies and shows</span><span>A guide for every channel</span><span>Sports and PPV from channel names</span><span>Set up from your phone</span><span>A phone remote</span><span>Logos for every channel</span><span>East or West feeds</span><span>Your city's locals</span><span>Locked backups</span><span>HDR · Dolby Vision · Atmos</span><span>Free and open source</span>
   </div>
 </div>
+
+<!-- ========== NEW LATELY ========== -->
+<section id="new" class="section">
+  <div class="wrap">
+    <div class="head reveal">
+      <p class="kicker">New lately</p>
+      <h2>Getting ready for the first beta.</h2>
+      <p class="sub">TiviBro is in alpha, with a new build most weeks.  Here's what landed lately.  The <a href="/changelog/">changelog</a> has every change.</p>
+    </div>
+    <div class="bento">
+      <article class="tile wide reveal spot">
+        <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-trophy"/></svg></span><h3>My teams</h3><p>Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams, college football and college basketball.  Their games on now sit at the top of the guide, tinted in the theme's colour, on every channel showing them, and one game reads the same everywhere.</p></div>
+        <img loading="lazy" src="img/shots/tv-teams-guide.webp" alt="My teams in the guide: a game on now, tinted, and the next ones" width="1280" height="720">
+      </article>
+      <article class="tile wide reveal spot">
+        <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-palette"/></svg></span><h3>Sixteen themes</h3><p>Tokyo Night, Dracula, Catppuccin, Nord, Gruvbox, Rosé Pine and more, down to a green-phosphor Terminal.  The guide's category colours follow the theme.</p></div>
+        <img loading="lazy" src="img/shots/tv-theme-terminal.webp" alt="The guide in the Terminal theme" width="1280" height="720">
+      </article>
+      <article class="tile wide reveal spot">
+        <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-monitor"/></svg></span><h3>Settings that keep playing</h3><p>The channel carries on in the corner while you change things, and Hold OK takes you back to it in fullscreen.  Settings are grouped where you'd look for them.</p></div>
+        <img loading="lazy" src="img/shots/tv-settings-corner.webp" alt="Settings with the channel playing in the corner" width="1280" height="720">
+      </article>
+      <article class="tile wide reveal spot">
+        <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-search"/></svg></span><h3>Search settings</h3><p>Press Yellow anywhere in Settings and type "subtitle", "clock" or "DNS".  Every setting with that word is listed, and OK goes straight to it.</p></div>
+        <img loading="lazy" src="img/shots/tv-search-settings.webp" alt="Search settings, looking for subtitle" width="1280" height="720">
+      </article>
+      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-phone"/></svg></span><h3>A better phone app</h3><p>The Android app finds a TV that moved to another address, knows when the TV is in standby, and shows <b>What the TV tried</b> when a playlist won't add.  Passwords have an eye to show them, use the password keyboard, and a backup's passphrase is typed twice.</p></article>
+      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-shield"/></svg></span><h3>Signed updates</h3><p>Every release is signed, and the TV only installs an update signed by TiviBro's release build, with a second key kept offline in case the first is ever lost.</p></article>
+      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-globe"/></svg></span><h3>Errors in plain words</h3><p>"HTTP 502" and "helper answered 403" now say what happened and what to try, in your language.  Empty groups say why they're empty.</p></article>
+      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-monitor"/></svg></span><h3>Stalker, DASH and DNS</h3><p>Stalker portals whose links leave out the channel now play, DASH channels rewind inside their own last minutes, and you can pick the DNS that finds your provider, over HTTPS if you like.</p></article>
+    </div>
+  </div>
+</section>
 
 <!-- ========== FEATURES (bento) ========== -->
 <section id="features" class="section">
@@ -174,7 +210,7 @@
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-bell"/></svg></span><h3>Reminders that find you</h3><p>Even with TiviBro closed, on another app or input.  Never over the screensaver.</p></article>
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-search"/></svg></span><h3>Search everything</h3><p>Every showing in the guide, plus your movies and shows, best match first.  On now, Coming up and Replays one press away.</p></article>
       <article class="tile reveal spot"><span class="ico"><svg class="i"><use href="#i-star"/></svg></span><h3>A watchlist</h3><p>Add "Yankees" or "Bluey" once.  TiviBro reminds you whenever it's on, and every reminder still to come waits in one list to cancel.</p></article>
-      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-trophy"/></svg></span><h3>My teams</h3><p>Follow your NFL, NBA, NHL, MLB, WNBA, MLS and college football teams.  One group near the top of the guide has their games on now, on every channel showing them, then the next ones, with reminders if you want them.</p></article>
+      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-trophy"/></svg></span><h3>My teams</h3><p>Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams, college football and college basketball.  One group near the top of the guide has their games on now, tinted, on every channel showing them, then the next ones, with reminders if you want them.</p></article>
       <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-movie"/></svg></span><h3>My media</h3><p>Your own movies and TV shows from a home media server (DLNA), a WebDAV cloud like premiumize, or Dropbox, on poster shelves with resume and favorites, details from TMDB with your own free token, and browsing from the phone app.</p></article>
       <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-phone"/></svg></span><h3>A remote in your pocket</h3><p>The TiviBro app for Android: a remote, Play on TV from your channel list, volume, the editor full screen, and <b>Turn on</b>, over the network and over Bluetooth like LG's ThinQ app.  It updates itself.  <a href="/apk/">Get the APK</a>.</p></article>
       <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-hdr"/></svg></span><h3>DTS and TrueHD with sound</h3><p>Movies whose sound the TV can't play get another track in your language, or are converted to Dolby Digital as you watch, picture untouched.  The converter comes built in.</p></article>
@@ -182,7 +218,7 @@
       <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-monitor"/></svg></span><h3>A buffer that learns</h3><p>Automatic learns each provider: channels start after under a second of buffer where streams are steady, with a bigger cushion where they run dry.  Each channel remembers the player it needs.  Hold Info to see how much is banked and how fast it's coming in.</p></article>
       <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-globe"/></svg></span><h3>In your language</h3><p>English, Spanish (Latin American or Spain's), Portuguese (Brazil's or Portugal's) or Russian, following the TV's own language.</p></article>
       <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-monitor"/></svg></span><h3>Stalker portals and DASH</h3><p>Stalker portals with movies, shows and catch-up, MPEG-DASH channels (ClearKey and Widevine from <code>#KODIPROP</code>), and your pick of DNS for a provider your internet provider blocks.</p></article>
-      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-palette"/></svg></span><h3>Make it yours</h3><p>Nine backgrounds including true black for OLED, twelve accents or your own.</p></article>
+      <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-palette"/></svg></span><h3>Make it yours</h3><p>Sixteen themes, from Tokyo Night to Terminal, or your own mix of background and accent, with true black for OLED.  Text size too.</p></article>
       <article class="tile half reveal spot"><span class="ico"><svg class="i"><use href="#i-heart"/></svg></span><h3>Free and open</h3><p>MIT licensed.  No accounts, no ads, no tracking, just an anonymous count of installs you can switch off.  Logins never leave the TV, and a PIN locks channels, groups or Settings.</p></article>
     </div>
   </div>
@@ -275,6 +311,8 @@
   </div>
   <div class="carousel" id="gallery">
     <figure><img loading="lazy" src="img/shots/tv-guide-preview.webp" alt="The guide with a live preview" width="1280" height="720"><figcaption>The guide is home, with a live preview</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-teams-guide.webp" alt="My teams in the guide" width="1280" height="720"><figcaption>My teams: games on now, tinted</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-theme-tokyo.webp" alt="The guide in Tokyo Night" width="1280" height="720"><figcaption>Tokyo Night, one of sixteen themes</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-fullscreen.webp" alt="Fullscreen with the info bar" width="1280" height="720"><figcaption>Fullscreen with the info bar</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-quick-menu.webp" alt="The quick menu" width="1280" height="720"><figcaption>OK opens the quick menu</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-channels.webp" alt="The Channels screen" width="1280" height="720"><figcaption>The classic channel list</figcaption></figure>
@@ -285,6 +323,8 @@
     <figure><img loading="lazy" src="img/shots/tv-search.webp" alt="Search" width="1280" height="720"><figcaption>Search channels and programmes</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-versions.webp" alt="Other versions of a channel" width="1280" height="720"><figcaption>Other versions of a channel</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-reminder.webp" alt="A reminder" width="1280" height="720"><figcaption>Reminders</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-settings-corner.webp" alt="Settings with the channel in the corner" width="1280" height="720"><figcaption>Settings keep the channel playing</figcaption></figure>
+    <figure><img loading="lazy" src="img/shots/tv-theme-catppuccin.webp" alt="The guide in Catppuccin Mocha" width="1280" height="720"><figcaption>Catppuccin Mocha</figcaption></figure>
     <figure><img loading="lazy" src="img/shots/tv-settings-look.webp" alt="Appearance settings" width="1280" height="720"><figcaption>Make it yours</figcaption></figure>
   </div>
 </section>
@@ -620,8 +660,10 @@
     }
     v.addEventListener('click', big);
     var b = v.parentNode.querySelector('.expand'); if (b) b.addEventListener('click', big);
+    var sb = v.closest('.tv') && v.closest('.tv').querySelector('[data-sound]');
+    if (sb) sb.addEventListener('click', function () { v.currentTime = 0; v.muted = false; big(); v.play(); });
   });
-  document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement) $$('.bigvid').forEach(function (v) { v.controls = false; v.play(); }); });
+  document.addEventListener('fullscreenchange', function () { if (!document.fullscreenElement) $$('.bigvid').forEach(function (v) { v.controls = false; v.muted = true; v.play(); }); });
 
   // Gallery carousel buttons
   var car = $('#gallery');

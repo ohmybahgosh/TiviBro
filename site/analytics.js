@@ -76,7 +76,7 @@
       return track('copy_install', { install_method: METHOD[m] || m || 'unknown', copied_text: ((t.parentNode.querySelector('code') || {}).textContent || '').slice(0, 100) });
     }
     if (t.getAttribute('role') === 'tab') return track('select_install_method', { install_method: METHOD[t.getAttribute('data-tab')] || t.getAttribute('data-tab') });
-    if (t.classList.contains('expand') || t.classList.contains('bigvid')) return track('open_video_fullscreen', { video_name: /live-edit/.test((t.parentNode.querySelector('video') || {}).src || '') ? 'web_editor' : 'guide' });
+    if (t.classList.contains('expand') || t.classList.contains('bigvid')) return track('open_video_fullscreen', { video_name: (function (u) { return /live-edit/.test(u) ? 'web_editor' : /promo/.test(u) ? 'promo' : 'guide'; })((t.parentNode.querySelector('video') || {}).src || '') });
     var h = t.getAttribute('href') || '';
     if (/github\.com/.test(h)) {
       var path = h.replace(/^https:\/\/github\.com\//, '').split(/[?#]/)[0];
@@ -87,7 +87,7 @@
     if (h === '#install') return track('click_install_button', { button_location: t.closest('.top, header') ? 'nav' : t.closest('#hero') ? 'hero' : 'footer_cta' });
   }, true);
   // Videos are tapped directly too (they open full screen).
-  document.addEventListener('click', function (e) { if (e.target.classList && e.target.classList.contains('bigvid')) track('open_video_fullscreen', { video_name: /live-edit/.test(e.target.src) ? 'web_editor' : 'guide' }); }, true);
+  document.addEventListener('click', function (e) { if (e.target.classList && e.target.classList.contains('bigvid')) track('open_video_fullscreen', { video_name: /live-edit/.test(e.target.src) ? 'web_editor' : /promo/.test(e.target.src) ? 'promo' : 'guide' }); }, true);
   // How far people get: each main section once per page view.
   if ('IntersectionObserver' in window) {
     // Counted after a second on screen, so scrolling past (or jumping to #install) doesn't count.

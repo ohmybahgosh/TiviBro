@@ -45,10 +45,23 @@
 | 🤖 **Building a feature with AI?** | [Download the knowledge base](https://tivibro.app/ai/tivibro-for-ai.md) for Claude, ChatGPT or Gemini |
 
 > [!WARNING]
-> **TiviBro is in alpha testing.**  It runs every day on real LG TVs, from a 2019 webOS 4 OLED to webOS 5, 22 and 25 sets, along with the Android phone app, and beta is next.  Expect some rough edges, and settings or features may still change between builds.  Keep a backup before updating (**Backups and restore points** in the phone app or the [web editor](#the-web-editor)).  Found a bug?  On the TV, **Settings > Updates, about and diagnostics > Report a problem** (also on the first screen) fills in a [GitHub issue](https://github.com/ohmybahgosh/TiviBro/issues) for you from your phone: see [Report a problem](#report-a-problem).
+> **TiviBro is in alpha testing, getting ready for its first beta.**  It runs every day on real LG TVs, from a 2019 webOS 4 OLED to webOS 5, 22 and 25 sets, along with the Android phone app.  Expect some rough edges, and settings or features may still change between builds.  Keep a backup before updating (**Backups and restore points** in the phone app or the [web editor](#the-web-editor)).  Found a bug?  On the TV, **Settings > Updates, about and diagnostics > Report a problem** (also on the first screen) fills in a [GitHub issue](https://github.com/ohmybahgosh/TiviBro/issues) for you from your phone: see [Report a problem](#report-a-problem).
+
+<p align="center"><a href="https://tivibro.app/media/promo.mp4"><img src="docs/media/promo-poster.jpg" width="100%" alt="TiviBro in a minute: play the promo video"></a></p>
+<p align="center"><sub><b><a href="https://tivibro.app/media/promo.mp4">▶ Watch TiviBro in a minute</a></b> (with sound): the guide, My teams, themes, settings, the phone app and the web editor.  Every picture here is clickable.</sub></p>
+
+### ✨ New lately
+
+- **My teams** gathers your teams' games at the top of the guide, now with college basketball.  Games on now are tinted in the theme's colour, and one game reads the same on every channel.
+- **Sixteen themes**, from Tokyo Night and Dracula to a green-phosphor Terminal, and the guide's category colours follow the theme.
+- **Settings keep the channel playing** in the corner, and **Search settings** (Yellow) finds any setting by a word.
+- **The phone app** finds a TV that moved to another address, shows **What the TV tried** when a playlist won't add, and has passwords with an eye to show them.
+- **Signed updates**, with a second key kept offline, and errors in plain words instead of "HTTP 502".
+
+Every change is in the [changelog](CHANGELOG.md).
 
 <p align="center"><a href="docs/media/guide.mp4"><img src="docs/media/guide.gif" width="100%" alt="The TiviBro guide, preview and fullscreen"></a></p>
-<p align="center"><sub>The guide is home: browse, preview in the window, OK again for fullscreen.  <a href="docs/media/guide.mp4">Watch the full-quality MP4</a>.  Every picture here is clickable.</sub></p>
+<p align="center"><sub>The guide is home: browse, preview in the window, OK again for fullscreen.  <a href="docs/media/guide.mp4">Watch the full-quality MP4</a>.</sub></p>
 
 TiviBro plays your own IPTV subscription (Xtream Codes, M3U with XMLTV, or a Stalker portal) on LG webOS TVs, in English, Spanish, Portuguese or Russian.  The guide is the home screen, the Magic Remote works everywhere, and a companion web editor lets you clean up hundreds of groups from your phone or computer instead of with a TV remote.
 
@@ -80,7 +93,7 @@ No typing logins with a remote.  The first screen shows a QR code: scan it with 
 | 🔊 **Sound the TV can't play** | LG TVs from 2020 to 2022 can't play DTS, and no LG TV plays Dolby TrueHD.  TiviBro picks another track in your language if the file has one, or converts the sound to Dolby Digital while you watch, picture untouched.  The converter comes with TiviBro: nothing to download or set up. |
 | 🖼️ **Logos for every channel** | Missing logos filled in from two open logo projects, matched by guide id, name, country and call sign.  Or one matching style for the whole list. |
 | 🖥️ **A real editor** | Hide, sort, rename, copy and match guides for hundreds of channels from any browser.  Drafts, undo and restore points. |
-| ⚙️ **Settings that match everywhere** | The TV, the phone app and the web editor share one layout with the same names: Playlists, Guide, Channels and groups, Channel and group names, Reminders and watchlist, Playback, My media, Remote and buttons, Appearance and start screen, Parental controls, Backups and restore points, Phone app and web editor, and Updates, about and diagnostics. |
+| ⚙️ **Settings that keep playing** | The channel carries on in the corner of Settings, and Hold OK goes back to it in fullscreen.  **Search settings** (Yellow) finds any setting by a word, in your language or English.  The TV, the phone app and the web editor share one layout with the same names: Language, Playlists, Guide, Channels and groups, Channel and group names, Reminders and watchlist, Playback, Audio and subtitles, Movies and shows, My media, API keys, Remote and buttons, Appearance and start screen, Parental controls, Backups and restore points, Phone app and web editor, and Updates, about and diagnostics. |
 | 🔒 **Locked backups** | Everything in one AES-256-GCM file.  Restore onto a brand-new TV straight from the first screen.  **Backups and restore points** keeps backups, the locked file and the TV's restore points in one place, on the TV, in the phone app and in the web editor. |
 | 🔁 **Backup versions** | Playlists often carry a channel in FHD, HD and SD.  TiviBro tags each copy, lets you switch between them, and if one dies it moves to the next by itself and tells you, even to copies you hid to tidy your lists. |
 | 🏟️ **Event channels** | Pay-per-view and sports passes that cram the whole listing into the channel name ("NCAAB 001 \| NORTH FLORIDA @ CHARLESTON SOUTHERN (M) \| 12.18 11:00 AM") show as **NCAAB 001**, with the game in the guide at its real time, in your time zone.  **Events by time** lists what's on next across all of them. |
@@ -90,7 +103,7 @@ No typing logins with a remote.  The first screen shows a QR code: scan it with 
 | ⚡ **A buffer that learns** | The **Automatic** buffer profile learns each provider as you watch: channels start after under a second of buffer where its streams are steady, with a bigger cushion where they run dry.  Each channel remembers what it needed, after a restart too: the player it plays on, and the cushion it earned.  **Stream info** shows how long a start took and where the time went. |
 | 📐 **The right shape, the right timing** | **Aspect** in the quick menu fixes pictures with the wrong shape (Original, Fill, Zoom, 4:3, 16:9, 21:9, 4:3 to 16:9), remembered per channel, movie and episode.  **Subtitles > Timing > Frame rate** fixes subtitles made for a copy at another frame rate. |
 | 🌈 **HDR, Dolby Vision and Atmos** | Reads each stream's format before the picture starts and sends Dolby Vision to the TV's own player, HDR10 and HLG to the steadier built-in one.  The info panel shows *4K  HEVC  Dolby Vision  E-AC-3 5.1 Atmos*. |
-| 🎨 **Midnight Electric** | A dark, calm look, or a full theme (Black and white, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin and more).  Nine backgrounds (true black for OLED, high contrast), twelve accents or your own, and an outline focus style for across the room. |
+| 🎨 **Sixteen themes** | Midnight Electric by default, or a full theme: Black and white, Graphite, GitHub Dark, Ayu Dark, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin Mocha, Solarized Dark, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai or Terminal.  Or your own mix of nine backgrounds (true black for OLED, high contrast) and twelve accents, an outline focus style for across the room, and larger text. |
 | 💸 **Free and open** | MIT licensed, no accounts, no ads, no tracking: just an anonymous daily count of installs by version, which you can switch off. |
 
 ## What no other IPTV player does
@@ -104,7 +117,7 @@ TiviMate set the bar for IPTV on a TV, and TiviBro follows its layout on purpose
 | 🖼️ **Fills in missing logos, without hosting a single one** | A small index points at iptv-org's and tv-logos' own logos.  Matched by guide id, cleaned name and country, and local call sign; a broken provider logo is swapped too.  Pick each channel's own logo or one matching style for dark screens. |
 | 🏟️ **Reads sports and PPV listings from channel names** | When a provider writes the event into the name instead of the guide, TiviBro turns it into a short channel name, a guide entry at the real time in your time zone, and an **Events by time** list across all your passes.  Dozens of naming styles, tested on 1,250 real event channels. |
 | 🖥️ **A full editor on your computer** | Clean up 10,000 channels with a keyboard and mouse instead of a remote: hide, sort, rename, copy and move, then **Send to TV**.  Unsent work is autosaved on the TV within seconds, with a version history, so a refresh never costs you an hour. |
-| 🏈 **Your teams, wherever they're playing** | Follow your NFL, NBA, NHL, MLB, WNBA, MLS and college football teams and **My teams** gathers their games near the top of the guide: on now first, then the ones starting soon, from league passes, event channels, your local station (even when the teams are only in the guide's description) and the team's own channel.  Optional reminders. |
+| 🏈 **Your teams, wherever they're playing** | Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams, college football and college basketball, and **My teams** gathers their games near the top of the guide, tinted while they're on: on now first, then the ones starting soon, from league passes, event channels, your local station (even when the teams are only in the guide's description) and the team's own channel.  Optional reminders. |
 | 🎬 **Movies on now** | With your own free TMDB token, the movies in your guide get posters, years, genres and ratings.  The **Movies on now** screen shows them as big posters: on now, starting soon, then a shelf for each genre. |
 | 🔁 **Switches to a working copy by itself** | Same channel in FHD, HD and SD?  When one dies, TiviBro moves to the next version on its own and tells you. |
 | 🧹 **Clean-up that already knows IPTV** | Pick your city once and every local group (ABC, CBS, NBC, FOX, CW, PBS…) keeps only your stations.  Keep East or West feeds in one click.  Name rules preloaded for about 250 country codes, quality tags, symbols and emoji (no typing prefix lists by hand), countries read from any naming style, duplicates in different qualities, and **Smart match** for channels without a guide. |
@@ -214,7 +227,7 @@ Channels, programmes now, later and on catch-up, and your movies and shows, as y
 
 Sixteen full themes (Black and white, Graphite, GitHub Dark, Ayu Dark, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin Mocha, Solarized Dark, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai, Terminal), or your own mix: twelve accent colours or your own from a hue and brightness, nine backgrounds (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), a white focus outline for distance viewing, text size, panel transparency, clock, logos and more, all live.
 
-Settings has thirteen sections, named the same on the TV, in the phone app and in the web editor.  Plus remote remapping, parental controls, reminders, buffering profiles and on-TV diagnostics.
+Settings has seventeen sections, named the same on the TV, in the phone app and in the web editor, and **Search settings** (Yellow) finds any of them by a word.  Plus remote remapping, parental controls, reminders, buffering profiles and on-TV diagnostics.
 
 </td>
 </tr>
@@ -315,7 +328,9 @@ TV series get the same in the guide: a poster, when the show started, its networ
 
 ### My teams
 
-Follow your NFL, NBA, NHL, MLB, WNBA, MLS and college football teams in **Settings > Channels and groups > My teams**, or hold OK on a team's channel and choose **Follow**.  The **My teams** group near the top of the guide lists only games: the ones on now first, every channel showing them together, then the ones starting within the next few hours.  It reads league passes, event channels, guide titles and descriptions (a local station's "NFL Football" counts when its description names the teams), and leaves out pregame shows, replays and minor league teams with the same names.  The main North American leagues and college football (the FBS schools) for now.
+Follow your NFL, NBA, NHL, MLB, WNBA and MLS teams, college football and men's college basketball in **Settings > Channels and groups > My teams**, or hold OK on a team's channel and choose **Follow**.  The **My teams** group near the top of the guide lists only games: the ones on now first, every channel showing them together, then the ones starting within the next few hours.  It reads league passes, event channels, guide titles and descriptions (a local station's "NFL Football" counts when its description names the teams), and leaves out pregame shows, replays and minor league teams with the same names.  A game on now is tinted in the theme's sports colour, and a game on several channels has the same title and start on each.  The main North American leagues, college football (the FBS schools) and men's college basketball for now.
+
+<p align="center"><a href="https://tivibro.app/view/#tv-teams-guide"><img src="docs/screenshots/tv-teams-guide.png" width="70%" alt="My teams in the guide"></a></p>
 
 ### My media
 

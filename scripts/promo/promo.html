@@ -1,0 +1,232 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>TiviBro promo</title>
+<style>
+@font-face{font-family:SG;src:url(fonts/sg.woff2) format("woff2");font-weight:300 700}
+@font-face{font-family:JBM;src:url(fonts/jbm.woff2) format("woff2");font-weight:100 900}
+:root{--bg:#07091a;--acc:#5b8cff;--cy:#33e1ff;--vi:#8b5cf6;--ok:#3ddc97;--wh:#e8ecf8;--dim:#9aa4c4;--line:#222a47}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;overflow:hidden;background:var(--bg);color:var(--wh);font-family:SG,sans-serif}
+#stage{position:absolute;inset:0;overflow:hidden}
+.bggrid{position:absolute;inset:-200px;background-image:linear-gradient(rgba(91,140,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(91,140,255,.06) 1px,transparent 1px);background-size:80px 80px}
+.glow{position:absolute;border-radius:50%;filter:blur(130px);opacity:.33}
+.scene{position:absolute;inset:0;opacity:0}
+.mono{font-family:JBM,monospace}
+.eyebrow{font-family:JBM,monospace;font-size:26px;letter-spacing:.12em;text-transform:uppercase;color:var(--cy)}
+.big{font-weight:700;letter-spacing:-.03em;line-height:1.04}
+.sub{font-size:34px;color:var(--dim);line-height:1.4}
+.grad{background:linear-gradient(100deg,#fff 0%,var(--cy) 40%,var(--acc) 72%,var(--vi));-webkit-background-clip:text;background-clip:text;color:transparent}
+.tv{position:absolute;border-radius:22px;padding:14px;background:linear-gradient(#1a1e2e,#0b0d18);border:2px solid #2a3150;box-shadow:0 40px 120px rgba(0,0,0,.7),0 0 90px rgba(91,140,255,.18)}
+.tv video,.tv img{display:block;width:100%;height:100%;border-radius:10px;object-fit:cover;background:#000}
+.tv .stand{position:absolute;left:50%;bottom:-46px;width:22%;height:30px;transform:translateX(-50%);background:linear-gradient(#20263a,#0d1018);border-radius:0 0 10px 10px}
+.tv .layer{position:absolute;inset:14px;width:calc(100% - 28px);height:calc(100% - 28px);opacity:0}
+.phone{position:absolute;width:330px;height:733px;border-radius:46px;padding:12px;background:#0b0d18;border:2px solid #2d3760;box-shadow:0 40px 100px rgba(0,0,0,.7),0 0 70px rgba(51,225,255,.15)}
+.phone img{display:block;width:100%;height:100%;border-radius:36px;object-fit:cover}
+.card{position:relative;border-radius:22px;border:1.5px solid var(--line);background:linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015));padding:24px 30px;font-size:32px}
+.chip{display:inline-block;font-family:JBM,monospace;font-size:28px;padding:12px 22px;border-radius:14px;border:1.5px solid var(--line);background:rgba(17,22,43,.75);color:var(--wh);margin:0 14px 16px 0}
+.tag{position:absolute;font-family:JBM,monospace;font-size:24px;padding:8px 16px;border-radius:10px;background:rgba(7,9,26,.85);border:1.5px solid var(--acc);color:var(--wh)}
+.new{display:inline-block;font-family:JBM,monospace;font-size:22px;padding:4px 12px;border-radius:8px;background:var(--ok);color:#04150d;font-weight:700;letter-spacing:.06em;vertical-align:middle;margin-left:14px}
+</style></head>
+<body><div id="stage">
+  <div class="bggrid" id="grid"></div>
+  <div class="glow" id="g1" style="width:900px;height:900px;background:var(--acc);left:-300px;top:-300px"></div>
+  <div class="glow" id="g2" style="width:800px;height:800px;background:var(--vi);right:-300px;bottom:-300px"></div>
+
+  <!-- S1 hook -->
+  <div class="scene" id="s1">
+    <div style="position:absolute;left:0;right:0;top:300px;text-align:center">
+      <img id="s1w" src="img/wordmark.png" style="width:640px">
+      <div class="big" id="s1a" style="font-size:84px;margin-top:50px">The IPTV player</div>
+      <div class="big grad" id="s1b" style="font-size:84px">your LG TV deserves.</div>
+    </div>
+  </div>
+
+  <!-- S2 guide -->
+  <div class="scene" id="s2">
+    <div class="tv" id="tv2" style="left:720px;top:170px;width:1080px;height:636px"><video id="v2" src="clips/guide.webm" muted preload="auto"></video><div class="stand"></div></div>
+    <div style="position:absolute;left:140px;top:230px;width:540px">
+      <div class="eyebrow" id="s2e">the guide</div>
+      <div class="big" id="s2t" style="font-size:76px;margin:18px 0 34px">A real TV guide.</div>
+      <div class="card" id="c21" style="margin-bottom:16px">Picture keeps playing</div>
+      <div class="card" id="c22" style="margin-bottom:16px">Catch-up and reminders</div>
+      <div class="card" id="c23">Every channel gets a logo</div>
+    </div>
+  </div>
+
+  <!-- S3 my teams -->
+  <div class="scene" id="s3">
+    <div class="tv" id="tv3" style="left:720px;top:170px;width:1080px;height:636px"><img src="img/tv-teams-guide-moved.jpg"><img class="layer" id="s3b" src="img/tv-teams-page.jpg"><div class="stand"></div></div>
+    <div style="position:absolute;left:140px;top:220px;width:540px">
+      <div class="eyebrow" style="color:var(--ok)">my teams <span class="new">NEW</span></div>
+      <div class="big" style="font-size:72px;margin:18px 0 28px">Your teams' games, top of the guide.</div>
+      <div class="sub" id="s3s">NFL, NBA, NHL, MLB, MLS, WNBA and college.  Games on now are tinted, and one game reads the same on every channel.</div>
+    </div>
+  </div>
+
+  <!-- S4 themes -->
+  <div class="scene" id="s4">
+    <div style="position:absolute;left:0;right:0;top:80px;text-align:center">
+      <div class="eyebrow" style="color:var(--vi)">appearance</div>
+      <div class="big" style="font-size:80px;margin-top:14px"><span class="grad" id="n16">16</span> themes.  Make it yours.</div>
+    </div>
+    <div class="tv" id="tv4" style="left:420px;top:300px;width:1080px;height:636px">
+      <img src="img/promo-theme-mono.jpg">
+      <img class="layer" id="th1" src="img/promo-theme-tokyo.jpg"><img class="layer" id="th2" src="img/promo-theme-dracula.jpg"><img class="layer" id="th3" src="img/promo-theme-terminal.jpg">
+      <img class="layer" id="th4" src="img/promo-theme-catppuccin.jpg"><img class="layer" id="th5" src="img/promo-theme-gruvbox.jpg"><img class="layer" id="th6" src="img/promo-theme-nord.jpg"><img class="layer" id="th7" src="img/promo-theme-rosepine.jpg">
+      <div class="stand"></div>
+      <div class="tag" id="thn" style="right:30px;top:30px">Black and white</div>
+    </div>
+  </div>
+
+  <!-- S5 settings -->
+  <div class="scene" id="s5">
+    <div class="tv" id="tv5" style="left:720px;top:170px;width:1080px;height:636px"><img src="img/promo-settings.jpg"><img class="layer" id="s5b" src="img/promo-search-settings.jpg"><div class="stand"></div></div>
+    <div id="f51" style="position:absolute;left:140px;top:250px;width:540px">
+      <div class="eyebrow">settings</div>
+      <div class="big" style="font-size:72px;margin:18px 0 28px">The show goes on in the corner.</div>
+      <div class="sub">Change anything while the channel keeps playing.  Hold OK and you're back in fullscreen.</div>
+    </div>
+    <div id="f52" style="position:absolute;left:140px;top:250px;width:540px;opacity:0">
+      <div class="eyebrow">search settings</div>
+      <div class="big" style="font-size:72px;margin:18px 0 28px">Every setting, one word away.</div>
+      <div class="sub">Press Yellow, type "subtitle", "clock" or "DNS", and go straight there.</div>
+    </div>
+  </div>
+
+  <!-- S6 phone -->
+  <div class="scene" id="s6">
+    <div style="position:absolute;left:140px;top:250px;width:620px">
+      <div class="eyebrow" style="color:var(--ok)">android app</div>
+      <div class="big" style="font-size:72px;margin:18px 0 28px">Put the remote down.</div>
+      <div class="sub">A remote, the guide, playlists, backups and settings, on your phone.  Type logins with a real keyboard.</div>
+    </div>
+    <div class="phone" id="ph1" style="left:820px;top:200px"><img src="img/phone-2-paired.jpg"></div>
+    <div class="phone" id="ph2" style="left:1180px;top:170px"><img src="img/phone-4-remote.jpg"></div>
+    <div class="phone" id="ph3" style="left:1540px;top:200px"><img src="img/phone-8-guide.jpg"></div>
+  </div>
+
+  <!-- S7 web editor -->
+  <div class="scene" id="s7">
+    <div style="position:absolute;left:0;right:0;top:110px;text-align:center">
+      <div class="eyebrow">web editor</div>
+      <div class="big" style="font-size:76px;margin-top:14px">Clean up 10,000 channels from your computer.</div>
+      <div class="sub" style="margin-top:18px">Hide groups, rename, sort and match guides.  The TV follows as you go.</div>
+    </div>
+    <div class="tv" id="tv7" style="left:160px;top:430px;width:1600px;height:528px"><video id="v7" src="clips/live-edit.webm" muted preload="auto"></video></div>
+  </div>
+
+  <!-- S8 movies, shows, my media -->
+  <div class="scene" id="s8">
+    <div style="position:absolute;left:140px;top:110px;width:1640px">
+      <div class="eyebrow" style="color:var(--vi)">movies, shows and my media</div>
+      <div class="big" style="font-size:72px;margin-top:14px">Your provider's films.  <span class="grad">And your own.</span></div>
+    </div>
+    <div class="tv" id="m1" style="left:140px;top:360px;width:800px;height:470px"><img src="img/tv-movies.jpg"></div>
+    <div class="tv" id="m2" style="left:980px;top:360px;width:800px;height:470px"><img src="img/tv-my-media.jpg"></div>
+    <div class="sub" id="s8s" style="position:absolute;left:140px;right:140px;top:900px;text-align:center">TMDB posters and ratings, Continue watching, trailers, and movies from your NAS or a USB drive.</div>
+  </div>
+
+  <!-- S9 everything else -->
+  <div class="scene" id="s9">
+    <div style="position:absolute;left:0;right:0;top:150px;text-align:center">
+      <div class="big" style="font-size:80px">And everything you'd expect.</div>
+    </div>
+    <div id="chips" style="position:absolute;left:180px;right:180px;top:340px;text-align:center">
+      <span class="chip">Xtream Codes</span><span class="chip">M3U</span><span class="chip">Stalker portals</span><span class="chip">Several playlists</span>
+      <span class="chip">Catch-up</span><span class="chip">DASH and HLS</span><span class="chip">Event channels</span><span class="chip">Reminders</span>
+      <span class="chip">Favorites and your own groups</span><span class="chip">Parental controls</span><span class="chip">Backups</span>
+      <span class="chip">DNS over HTTPS</span><span class="chip">Subtitles</span><span class="chip">Signed updates</span><span class="chip">Sleep timer</span>
+      <span class="chip">English, Español, Português, Русский</span>
+    </div>
+  </div>
+
+  <!-- S10 end -->
+  <div class="scene" id="s10">
+    <div style="position:absolute;left:0;right:0;top:200px;text-align:center">
+      <img id="eicon" src="img/icon-512.png" style="width:200px;height:200px;border-radius:44px;box-shadow:0 30px 90px rgba(91,140,255,.35)">
+      <div style="margin-top:40px"><img src="img/wordmark.png" style="width:560px"></div>
+      <div style="font-size:48px;margin-top:30px">Free and open source.  No ads, no account.</div>
+      <div class="mono" style="font-size:40px;color:var(--cy);margin-top:46px">tivibro.app</div>
+      <div class="mono" style="font-size:28px;color:var(--dim);margin-top:16px">github.com/ohmybahgosh/TiviBro</div>
+    </div>
+  </div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const ease = (x) => { x = clamp(x); return 1 - Math.pow(1 - x, 3); };
+const p = (t, a, d) => clamp((t - a) / d);
+function rise(el, t, a, d = .6, dist = 40) { const k = ease(p(t, a, d)); el.style.opacity = k; el.style.transform = `translateY(${(1 - k) * dist}px)`; }
+function scene(id, t, a, b, f = .45) {
+  const el = $(id);
+  const o = Math.min(p(t, a, f), 1 - p(t, b - f, f));
+  el.style.opacity = t < a || t > b ? 0 : o;
+  return t >= a - .05 && t <= b + .05;
+}
+async function vid(v, ct) {
+  ct = Math.max(0, Math.min(ct, v.duration - .05));
+  if (Math.abs(v.currentTime - ct) < .001) return;
+  await new Promise((r) => { v.addEventListener('seeked', r, { once: true }); v.currentTime = ct; });
+}
+const tvIn = (el, t, a, y = 0) => { const k = ease(p(t, a, 1)); el.style.transform = `perspective(2000px) rotateY(${-12 * (1 - k) - 3}deg) translateX(${(1 - k) * 180}px) scale(${.94 + .06 * k})`; };
+const T = { s1: [0, 5], s2: [5, 13], s3: [13, 20.5], s4: [20.5, 27.5], s5: [27.5, 35], s6: [35, 41.5], s7: [41.5, 48], s8: [48, 53.5], s9: [53.5, 57], s10: [57, 61] };
+window.DURATION = 61;
+const THEMES = ['Black and white', 'Tokyo Night', 'Dracula', 'Terminal', 'Catppuccin Mocha', 'Gruvbox', 'Nord', 'Rosé Pine'];
+window.seek = async function (t) {
+  $('grid').style.transform = `translate(${-(t * 6) % 80}px,${-(t * 4) % 80}px)`;
+  $('g1').style.transform = `translate(${Math.sin(t / 3) * 120}px,${Math.cos(t / 4) * 80}px)`;
+  $('g2').style.transform = `translate(${Math.cos(t / 3.5) * 120}px,${Math.sin(t / 5) * 90}px)`;
+  if (scene('s1', t, ...T.s1)) {
+    const k = ease(p(t, .2, 1)); $('s1w').style.opacity = k; $('s1w').style.transform = `scale(${.85 + .15 * k})`;
+    rise($('s1a'), t, 1.3); rise($('s1b'), t, 1.9, .7, 50);
+  }
+  if (scene('s2', t, ...T.s2)) {
+    const a = T.s2[0]; tvIn($('tv2'), t, a);
+    rise($('s2e'), t, a + .2); rise($('s2t'), t, a + .4);
+    rise($('c21'), t, a + 1.6, .5, 30); rise($('c22'), t, a + 2.8, .5, 30); rise($('c23'), t, a + 4, .5, 30);
+    await vid($('v2'), .3 + (t - a) * 1.6);
+  }
+  if (scene('s3', t, ...T.s3)) {
+    const a = T.s3[0]; tvIn($('tv3'), t, a);
+    rise($('s3s'), t, a + 1.2);
+    $('s3b').style.opacity = ease(p(t, a + 4.2, .5));
+  }
+  if (scene('s4', t, ...T.s4)) {
+    const a = T.s4[0];
+    const k = ease(p(t, a, .9)); $('tv4').style.transform = `translateY(${(1 - k) * 60}px)`;
+    const L = .78, i = clamp(Math.floor((t - a - .9) / L), 0, 7);
+    for (let j = 1; j <= 7; j++) $('th' + j).style.opacity = j <= i ? (j === i ? ease(p(t, a + .9 + j * L, .25)) : 1) : 0;
+    $('thn').textContent = THEMES[i];
+    $('n16').textContent = Math.round(16 * ease(p(t, a + .3, 1.2)));
+  }
+  if (scene('s5', t, ...T.s5)) {
+    const a = T.s5[0]; tvIn($('tv5'), t, a);
+    const sw = p(t, a + 3.8, .4);
+    $('f51').style.opacity = ease(p(t, a + .2, .5)) * (1 - sw); $('f52').style.opacity = sw;
+    $('s5b').style.opacity = ease(p(t, a + 3.7, .5));
+  }
+  if (scene('s6', t, ...T.s6)) {
+    const a = T.s6[0];
+    ['ph1', 'ph2', 'ph3'].forEach((id, i) => rise($(id), t, a + .3 + i * .35, .8, 140));
+    $('ph2').style.transform += ` translateY(${Math.sin((t - a) / 1.3) * 8}px)`;
+  }
+  if (scene('s7', t, ...T.s7)) {
+    const a = T.s7[0];
+    rise($('tv7'), t, a + .3, .8, 60);
+    await vid($('v7'), 1 + (t - a) * 2.6);
+  }
+  if (scene('s8', t, ...T.s8)) {
+    const a = T.s8[0];
+    rise($('m1'), t, a + .3, .7, 60); rise($('m2'), t, a + .7, .7, 60); rise($('s8s'), t, a + 1.4);
+  }
+  if (scene('s9', t, ...T.s9)) {
+    const a = T.s9[0];
+    [...$('chips').children].forEach((c, i) => rise(c, t, a + .2 + i * .09, .4, 24));
+  }
+  if (scene('s10', t, T.s10[0], T.s10[1] + 1, .6)) {
+    const a = T.s10[0];
+    const k = ease(p(t, a + .2, .9)); $('eicon').style.transform = `scale(${.7 + .3 * k})`;
+  }
+};
+window.ready = Promise.all([document.fonts.ready, ...[...document.querySelectorAll('video')].map((v) => new Promise((r) => { if (v.readyState >= 2) r(); else v.addEventListener('loadeddata', r, { once: true }); })), ...[...document.querySelectorAll('img')].map((i) => i.decode().catch(() => {}))]);
+</script>
+</body></html>
