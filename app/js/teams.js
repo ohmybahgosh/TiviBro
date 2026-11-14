@@ -598,9 +598,95 @@ var Teams = (function () {
     if (!groupOn()) return [];
     var now = Date.now();
     if (listCache && now - listCache.at < 60000 && listCache.of === Library.data.channels) return listCache.list;
-    var out = [], have = {}, first = {};
-    games().forEach(function (g) { if (!have[g.c.k]) { have[g.c.k] = 1; out.push(g.c); } if (!first[g.c.k] || g.p.s < first[g.c.k].s) first[g.c.k] = g.p; });
-    listCache = { at: now, of: Library.data.channels, list: out, first: first };
+    var out = [], have = {}, first = {}, all = games();
+    all.forEach(function (g) { if (!have[g.c.k]) { have[g.c.k] = 1; out.push(g.c); } if (!first[g.c.k] || g.p.s < first[g.c.k].s) first[g.c.k] = g.p; });
+    listCache = { at: now, of: Library.data.channels, list: out, first: first, canon: canonOf(all) };
+    return out;
+  }
+  /* One game on several channels reads differently on each ("Michigan Wolverines vs Oregon Ducks" at 3:30,
+     "Oregon Ducks Michigan Wolverines" at 3:25, "NCAAF: College Football: Michigan at Oregon"): in My teams
+     they all read the same, the two teams in full with the visitors first ("Michigan Wolverines at Oregon
+     Ducks"), at the start most channels give (vote(), the reminders' rule).  Each channel keeps its row.
+     A title that names which team is home ("at", "@") decides the order; without one, the order most
+     channels use.  canon: channel key -> [{ s0: its own start, s: the game's start, t: the game's title }]. */
+  function posIn(x, text) {
+    var best = -1;
+    [norm(x.name)].concat(x.full || [], x.schools || [], x.nk || [], [' ' + x.abbr.toLowerCase() + ' ']).forEach(function (w) {
+      var i = text.indexOf(w); if (i >= 0 && (best < 0 || i < best)) best = i;
+    });
+    return best;
+  }
+  function canonOf(all) {
+    var by = {}, out = {};
+    all.forEach(function (g) {
+      var ids = (g.pair || '').split('/');
+      if (ids.length !== 2) return;
+      var key = g.team.league + ':' + ids.join('/'), cl = (by[key] || (by[key] = [])), hit = null;
+      cl.forEach(function (x) { if (!hit && Math.abs(x.s - g.p.s) < CLOSE) hit = x; });
+      if (!hit) cl.push(hit = { s: g.p.s, ids: ids.map(function (i) { return BY_ID[(/:/.test(i) ? '' : g.team.league + ':') + i] || BY_ID[i]; }), l: [] });
+      hit.l.push(g);
+    });
+    Object.keys(by).forEach(function (key) {
+      by[key].forEach(function (cl) {
+        var A = cl.ids[0], B = cl.ids[1];
+        if (!A || !B) return;
+        var at = {}, first = {}, starts = [], one = {};
+        cl.l.forEach(function (g) {
+          if (!one[g.c.k]) { one[g.c.k] = 1; starts.push(g.p.s); }
+          var t = norm(String(g.p.t || '').replace(/@/g, ' at ')), a = posIn(A, t), b = posIn(B, t);
+          if (a < 0 || b < 0) return;
+          var lo = Math.min(a, b), hi = Math.max(a, b), firstId = a < b ? A.id : B.id;
+          if (/ at /.test(t.slice(lo, hi + 1))) at[firstId] = (at[firstId] || 0) + 1;
+          else first[firstId] = (first[firstId] || 0) + 1;
+        });
+        var pick = function (m) { var x = m[A.id] || 0, y = m[B.id] || 0; return x > y ? [A, B] : y > x ? [B, A] : null; };
+        var order = pick(at), home = !!order;
+        if (!order) order = pick(first) || [A, B];
+        var title = order[0].name + (home ? ' at ' : ' vs ') + order[1].name;
+        // The start: most channels' (each once; within 10 minutes is the same), a tie the earliest.
+        // Within the 10 minutes most agree on, the time most give to the five minutes (3:30 on two, 3:25 on one).
+        starts.sort(function (x, y) { return x - y; });
+        var near = starts, nearN = 0;
+        starts.forEach(function (s0) { var l = starts.filter(function (x) { return Math.abs(x - s0) <= 10 * 60000; }); if (l.length > nearN) { nearN = l.length; near = l; } });
+        var cnt = {}, best = near[0], bestN = 0;
+        near.forEach(function (x) { var b = Math.round(x / 300000); cnt[b] = (cnt[b] || 0) + 1; });
+        near.forEach(function (x) { var n = cnt[Math.round(x / 300000)]; if (n > bestN) { bestN = n; best = x; } });
+        cl.l.forEach(function (g) { (out[g.c.k] || (out[g.c.k] = [])).push({ s0: g.p.s, s: best, t: title }); });
+      });
+    });
+    return out;
+  }
+  /* A channel's guide as My teams shows it: the game, and the "Starts …" or "Next game …" before it, with the
+     game's one title and time.  A real programme keeps its own times; only its title changes.  The blocks
+     stay the guide's own objects underneath (descriptions loaded later still reach them). */
+  var uniformed = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
+  function uniform(c, list) {
+    if (!c || !list || !list.length || !groupOn() || !listCache || !listCache.canon) return list;
+    var E = listCache.canon[c.k];
+    if (!E) return list;
+    var memo = uniformed && uniformed.get(list);
+    if (memo && memo.at === listCache.at) return memo.out;
+    function as(p, over) {
+      var q = Object.create(p);
+      ['s', 'e', 't', 'up', 'ev'].forEach(function (k) { if (p[k] !== undefined) q[k] = p[k]; });
+      Object.defineProperty(q, 'd', { get: function () { return p.d; }, set: function (v) { p.d = v; }, enumerable: true });
+      for (var k in over) q[k] = over[k];
+      return q;
+    }
+    var changed = false, out = list.map(function (p) {
+      for (var i = 0; i < E.length; i++) {
+        var g = E[i];
+        if (p.up && Math.abs(p.e - g.s0) < CLOSE && /^\s*(?:starts|next game)\b/i.test(p.t || '')) {
+          changed = true;
+          return as(p, { e: Math.max(p.s + 60000, g.s), t: (/^\s*next/i.test(p.t) ? 'Next game ' : 'Starts ') + Events.when(g.s) + ': ' + g.t });
+        }
+        if (p.ev && Math.abs(p.s - g.s0) < CLOSE) { changed = true; return as(p, { s: g.s, e: g.s + (p.e - p.s), t: g.t }); }
+        if (!p.up && !p.ev && !p.ended && Math.abs(p.s - g.s0) <= 10 * 60000 && p.t !== g.t && isGame(p.t, c.n)) { changed = true; return as(p, { t: g.t }); }
+      }
+      return p;
+    });
+    if (!changed) out = list;
+    if (uniformed) uniformed.set(list, { at: listCache.at, out: out });
     return out;
   }
   // The soonest game of yours on a channel in My teams (its programme), or null.
@@ -649,6 +735,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    RULES: 3, recheck: recheck, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
+    RULES: 3, recheck: recheck, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, uniform: uniform, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
 })();

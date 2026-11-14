@@ -236,9 +236,19 @@ var Epg = (function () {
   }
   function request(ch) {
     var list = shape(guideFor(ch));
-    if (list && list.length) return list;
-    var ev = ch && typeof Events !== 'undefined' ? Events.of(ch) : null;
-    return ev ? Events.programmes(ev) : list;
+    if (!(list && list.length)) { var ev = ch && typeof Events !== 'undefined' ? Events.of(ch) : null; if (ev) list = evProgs(ch, ev); }
+    // My teams: one game reads the same on every channel showing it (teams.js).
+    return list && list.length && typeof Teams !== 'undefined' && Teams.uniform ? Teams.uniform(ch, list) : list;
+  }
+  // An event channel's programmes, made once per name (the same list object, so My teams' one title holds).
+  var evMade = {};
+  function evProgs(ch, ev) {
+    var k = ch.k + '|' + ev.raw + '|' + ev.start, hit = evMade[k];
+    if (hit && Date.now() - hit.at < 600000) return hit.list;
+    var l = Events.programmes(ev);
+    evMade[k] = { at: Date.now(), list: l };
+    var ks = Object.keys(evMade); if (ks.length > 2000) evMade = {};
+    return l;
   }
   function guideFor(ch) {
     if (!ch) return null;

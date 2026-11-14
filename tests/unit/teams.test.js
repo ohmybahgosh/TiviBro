@@ -310,6 +310,37 @@ Teams.follow('ncaab:msu', false);
   delete Epg.request;
 }
 
+// One game on several channels reads the same in My teams (Bob's guide, Nov 14: Michigan at Oregon on three
+// channels, two ways round and at 3:25 and 3:30).
+{
+  const a = ch('NCAAF 01: Michigan Wolverines vs Oregon Ducks @ ' + hm(NOW + 4 * H), 'g8'), b = ch('FOX ONE 12', 'g8'), c3 = ch('BTN', 'g8');
+  groups.push({ id: 'g8', name: 'USA NCAAF' });
+  chans.push(a, b, c3);
+  const t = NOW + 4 * H, t5 = t - 5 * 60e3;
+  progs[b.k] = [{ s: t5, e: t5 + 3 * H, t: 'NCAAF: Oregon Ducks Michigan Wolverines' }];
+  progs[c3.k] = [{ s: t, e: t + 3 * H, t: 'NCAAF: College Football: Michigan at Oregon' }];
+  const wasGroup = Store.settings.teamsGroup; Store.settings.teamsGroup = true;
+  Teams.follow('ncaaf:mich', true); Teams.dirty();
+  const inList = Teams.list();
+  ok('my teams: every channel with the game keeps its row', [a, b, c3].every(x => inList.indexOf(x) >= 0), inList.map(x => x.n).join(' | '));
+  const want = 'Michigan Wolverines at Oregon Ducks';
+  const shown = (x, l) => Teams.uniform(x, l).filter(p => !p.up && !p.ended);
+  const ga = shown(a, Events.programmes(Events.of(a))), gb = shown(b, progs[b.k]), gc = shown(c3, progs[c3.k]);
+  ok('my teams: one title on every channel, visitors first (the "at" title decides)', ga[0].t === want && gb[0].t === want && gc[0].t === want, [ga[0].t, gb[0].t, gc[0].t].join(' | '));
+  ok('my teams: an event channel\'s game at the time most channels give', Math.abs(ga[0].s - t) < 60e3, (ga[0].s - t) / 60e3);
+  ok('my teams: a real programme keeps its own times', gb[0].s === t5 && gc[0].s === t);
+  const up = Teams.uniform(a, Events.programmes(Events.of(a))).filter(p => p.up)[0];
+  ok('my teams: "Starts …" says the same', up && up.t === 'Starts ' + Events.when(ga[0].s) + ': ' + want && up.e === ga[0].s && Events.when(ga[0].s) === Events.when(t), up && up.t);
+  const desc = progs[b.k][0]; desc.d = 'later'; 
+  ok('my teams: descriptions loaded later still show', Teams.uniform(b, progs[b.k])[0].d === 'later');
+  progs[c3.k] = [{ s: t, e: t + 3 * H, t: 'NCAAF: Michigan Wolverines vs Oregon Ducks' }];
+  Teams.dirty(); Teams.list();
+  ok('my teams: no title says who is home: the order most use, with vs', Teams.uniform(c3, progs[c3.k])[0].t === 'Michigan Wolverines vs Oregon Ducks', Teams.uniform(c3, progs[c3.k])[0].t);
+  ok('my teams: other channels are left alone', Teams.uniform(chans[0], [{ s: t, e: t + H, t: 'News' }])[0].t === 'News');
+  Teams.follow('ncaaf:mich', false); Store.settings.teamsGroup = wasGroup; Teams.dirty();
+  [a, b, c3].forEach(x => { delete progs[x.k]; chans.splice(chans.indexOf(x), 1); });
+}
+
 console.log((fail ? fail + ' of ' : 'all ') + n + ' teams checks ' + (fail ? 'failed' : 'passed'));
 process.exit(fail ? 1 : 0);
 })();
