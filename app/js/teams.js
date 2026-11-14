@@ -644,13 +644,13 @@ var Teams = (function () {
         if (!order) order = pick(first) || [A, B];
         var title = order[0].name + (home ? ' at ' : ' vs ') + order[1].name;
         // The start: most channels' (each once; within 10 minutes is the same), a tie the earliest.
-        // Within the 10 minutes most agree on, the time most give to the five minutes (3:30 on two, 3:25 on one).
+        // Within the 10 minutes most agree on, the time most give (3:30 on two, 3:25 on one)
         starts.sort(function (x, y) { return x - y; });
         var near = starts, nearN = 0;
         starts.forEach(function (s0) { var l = starts.filter(function (x) { return Math.abs(x - s0) <= 10 * 60000; }); if (l.length > nearN) { nearN = l.length; near = l; } });
-        var cnt = {}, best = near[0], bestN = 0;
-        near.forEach(function (x) { var b = Math.round(x / 300000); cnt[b] = (cnt[b] || 0) + 1; });
-        near.forEach(function (x) { var n = cnt[Math.round(x / 300000)]; if (n > bestN) { bestN = n; best = x; } });
+        // (each start counts the ones within two minutes of it, so 3:29 and 3:31 agree; a tie keeps the earliest)
+        var best = near[0], bestN = 0;
+        near.forEach(function (x) { var n = near.filter(function (y) { return Math.abs(y - x) <= 120000; }).length; if (n > bestN) { bestN = n; best = x; } });
         cl.l.forEach(function (g) { (out[g.c.k] || (out[g.c.k] = [])).push({ s0: g.p.s, s: best, t: title }); });
       });
     });
