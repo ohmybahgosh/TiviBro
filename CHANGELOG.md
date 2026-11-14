@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 135, 2026-11-14)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 135
 
 - **My teams: the same title on sports networks too.**  A channel that isn't a team's own (ESPN, a regional sports network, a local station) says **Next game …** before the game, and that line still had the guide's own wording ("NCAAF: College Football: Michigan at Oregon") and time.  It now uses the game's one title and start, like the other channels showing it.
 - **What the TV tried, in the phone app too (issue #87).**  Adding a playlist from the phone app that fails now has **What the TV tried** under the message, like the web editor: the TV's log of each try, with logins masked.
 
-## 0.6.0 (alpha 134, 2026-11-14)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 134
+### In alpha 134
 
 - **No "TiviBro hit an error" when a channel moves to the TV player (issue #91).**  When the built-in player lost its picture buffer and TiviBro moved the channel to the TV's own player, the built-in player could still try to say "done" after it was closed, and that showed as an error, on webOS 4 especially.  The channel always went on playing; now there's no error either.
 - **My teams: one game reads the same on every channel.**  A game on several channels kept each channel's own wording and time ("Michigan Wolverines vs Oregon Ducks" at 3:30, "Oregon Ducks Michigan Wolverines" at 3:25, "NCAAF: College Football: Michigan at Oregon").  Each channel keeps its row, but now they all say the two teams in full with the visitors first ("Michigan Wolverines at Oregon Ducks"), and "Starts …" uses the time most channels give.  A real programme keeps its own times.
