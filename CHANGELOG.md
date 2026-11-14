@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **My teams: every channel says "Starts …" the same way.**  Event channels said "Starts 8:00pm: …" while team channels and sports networks said "Next game 8:00pm: …" for the same game.  Now they all say **Starts**.  A channel whose guide has the game as a real programme says its own start, so "Starts 4:15pm" never sits over a block that ends at 4:15.
+
 ## 0.6.0 (alpha 135, 2026-11-14)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -63,7 +63,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     Teams.list = keepL; Teams.gameOn = keepG;
     return { name: c.n, game: game.t, t, green, gameCell, plain };
   });
-  ok('My teams in the guide: a channel with a game later says Next game up to it, in the sports colour', !ng.none && /^Next game .+: /.test(ng.t) && ng.t.indexOf(ng.game) >= 0 && ng.green, JSON.stringify(ng));
+  ok('My teams in the guide: a channel with a game later says Next game up to it, in the sports colour', !ng.none && /^Starts .+: /.test(ng.t) && ng.t.indexOf(ng.game) >= 0 && ng.green, JSON.stringify(ng));
   ok('and in other groups it keeps its own guide', !ng.none && !/^Next game/.test(ng.plain), JSON.stringify(ng));
   const gs = await ev(() => Library.groups().map(g => g.name));
   ok('the group sits near the top', gs.indexOf('My teams') >= 0 && gs.indexOf('My teams') <= 2, gs.slice(0, 5).join(', '));

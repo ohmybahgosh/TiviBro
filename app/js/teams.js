@@ -651,7 +651,8 @@ var Teams = (function () {
         // (each start counts the ones within two minutes of it, so 3:29 and 3:31 agree; a tie keeps the earliest)
         var best = near[0], bestN = 0;
         near.forEach(function (x) { var n = near.filter(function (y) { return Math.abs(y - x) <= 120000; }).length; if (n > bestN) { bestN = n; best = x; } });
-        cl.l.forEach(function (g) { (out[g.c.k] || (out[g.c.k] = [])).push({ s0: g.p.s, s: best, t: title }); });
+        // real: the channel's own programme for the game (not a guess from a channel name or a Next game line): its own time stays.
+        cl.l.forEach(function (g) { (out[g.c.k] || (out[g.c.k] = [])).push({ s0: g.p.s, s: best, t: title, real: !g.p.ev }); });
       });
     });
     return out;
@@ -662,7 +663,7 @@ var Teams = (function () {
   // A game on a channel, as My teams writes it (its one title and start), for blocks made elsewhere (views.js).
   function gameTitle(c, p) {
     var E = c && p && listCache && listCache.canon && listCache.canon[c.k];
-    for (var i = 0; E && i < E.length; i++) if (Math.abs(E[i].s0 - p.s) < CLOSE) return { t: E[i].t, s: E[i].s };
+    for (var i = 0; E && i < E.length; i++) if (Math.abs(E[i].s0 - p.s) < CLOSE) return { t: E[i].t, s: E[i].real ? E[i].s0 : E[i].s };
     return { t: p.t, s: p.s };
   }
   var uniformed = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
@@ -684,7 +685,9 @@ var Teams = (function () {
         var g = E[i];
         if (p.up && Math.abs(p.e - g.s0) < CLOSE && /^\s*(?:starts|next game)\b/i.test(p.t || '')) {
           changed = true;
-          return as(p, { e: Math.max(p.s + 60000, g.s), t: (/^\s*next/i.test(p.t) ? 'Next game ' : 'Starts ') + Events.when(g.s) + ': ' + g.t });
+          // Every channel says it the same way: "Starts 8:00pm: …" (a team channel's "Next game" too).
+          var at = g.real ? g.s0 : g.s;
+          return as(p, { e: Math.max(p.s + 60000, at), t: 'Starts ' + Events.when(at) + ': ' + g.t });
         }
         if (p.ev && Math.abs(p.s - g.s0) < CLOSE) { changed = true; return as(p, { s: g.s, e: g.s + (p.e - p.s), t: g.t }); }
         if (!p.up && !p.ev && !p.ended && Math.abs(p.s - g.s0) <= 10 * 60000 && p.t !== g.t && isGame(p.t, c.n)) { changed = true; return as(p, { t: g.t }); }
