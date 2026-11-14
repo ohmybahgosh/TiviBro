@@ -17,6 +17,10 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('no login without a portal address or a MAC', !S._login({ portal: 'p.example', mac: '00:1A:79:00:00:01' }) && !S._login({ portal: 'http://p.example', mac: 'nope' }));
   ok('"/c/" is the box address for /server/load.php', S._apis('http://p.example/stalker_portal/c/')[0] === 'http://p.example/stalker_portal/server/load.php' && S._apis('http://p.example:8080/c/')[0] === 'http://p.example:8080/server/load.php');
   ok('a box command to its address', S._linkOf('ffmpeg http://h.example/ch/1?play_token=x') === 'http://h.example/ch/1?play_token=x' && S._linkOf('auto https://h.example/a.m3u8') === 'https://h.example/a.m3u8');
+  const F = S._fillStream;
+  ok('a link with the channel left out gets it from the command (issue #88)', F('http://h.example/play/live.php?mac=00:1A&stream=&extension=ts&play_token=t', 'ffrt http://localhost/ch/12345_', '9') === 'http://h.example/play/live.php?mac=00:1A&stream=12345&extension=ts&play_token=t');
+  ok('…or from the channel when the command has none', F('http://h.example/play/live.php?stream=', 'ffrt http://localhost/x', '777') === 'http://h.example/play/live.php?stream=777');
+  ok('a link with its channel is left alone', F('http://h.example/play/live.php?stream=55&x=1', 'ffrt http://localhost/ch/1', '2') === 'http://h.example/play/live.php?stream=55&x=1' && F('http://h.example/a.ts', '', '2') === 'http://h.example/a.ts');
 
   const m = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts' });
   await new Promise((f) => m.server.listen(0, '127.0.0.1', f));

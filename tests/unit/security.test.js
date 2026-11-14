@@ -43,6 +43,10 @@ const get = (port, p, headers) => new Promise((res) => {
   ok('TiviBro\'s own page (a file:// page, Origin null) is served', a.status === 200, a.status);
   a = await get(port, '/log', { Origin: 'http://127.0.0.1:8078' });
   ok('and a page on this TV itself', a.status === 200, a.status);
+  for (const o of ['file://', 'app://app.tivibro.tv', 'webos-app://app.tivibro.tv', 'http://127.0.0.1/']) {
+    a = await get(port, '/log', { Origin: o });
+    ok('TiviBro\'s own page as some webOS versions name it (' + o + ') is served (issue #89)', a.status === 200, a.status);
+  }
   a = await get(port, '/log', { Origin: 'https://evil.example' });
   ok('a web page opened in the TV\'s browser is turned away', a.status === 403, a.status);
   a = await get(port, '/x/http/192.168.1.1/', { Origin: 'http://192.168.1.50:8080' });

@@ -80,8 +80,12 @@ function escRx(x) { return x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 // Who may use the relay (create's server): TiviBro's own pages and the TV's player, at the TV's own address.
 function ownOrigin(o) {
   if (o == null || o === '') return true;                    // the player, the helper's own requests, curl
-  o = String(o);
-  return o === 'null' || o === 'file://' || /^https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d{1,5})?$/i.test(o);
+  o = String(o).trim();
+  /* Only web sites are turned away: a page opened in the TV's browser has an http(s) Origin.  TiviBro's own
+     page says "null" or "file://" on most TVs, but some webOS versions name an app scheme of their own
+     (issue #89: a webOS 6 TV got "helper answered 403" for the web editor and Report a problem). */
+  if (!/^https?:/i.test(o)) return true;
+  return /^https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\])(?::\d{1,5})?\/?$/i.test(o);
 }
 function sameHost(h) {
   if (!h) return true;                                       // HTTP/1.0 tools send none
@@ -239,7 +243,9 @@ function create(opts) {
        its Host. */
     if (req.body === undefined && (!sameHost(req.headers.host) || !ownOrigin(req.headers.origin))) {
       log({ lv: 'warn', event: 'refused a request from elsewhere', origin: String(req.headers.origin || '').slice(0, 80), host: String(req.headers.host || '').slice(0, 80), u: redact(req.url).slice(0, 120) });
-      res.writeHead(403, { 'Content-Type': 'text/plain' }); return res.end('Not from TiviBro');
+      // As JSON with the reason, so TiviBro shows it rather than "helper answered 403".
+      res.writeHead(403, { 'Content-Type': 'application/json' });
+      return res.end(JSON.stringify({ error: 'The network helper turned this request away (from ' + (!sameHost(req.headers.host) ? 'host ' + String(req.headers.host).slice(0, 60) : 'origin ' + String(req.headers.origin).slice(0, 60)) + ').  Please report it with this message.' }));
     }
     if (req.method === 'OPTIONS') { res.writeHead(204, ALLOW); return res.end(); }
     /* A POST through the relay: a DRM licence request (a DASH channel's #KODIPROP licence server, player.js).

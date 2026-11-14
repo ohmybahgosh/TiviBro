@@ -132,6 +132,14 @@ function act(L, params, cb) {
 
 // A box command ("ffmpeg http://host/ch/123", sometimes "auto http://...") to the address in it.
 function linkOf(cmd) { var m = /(https?:\/\/\S+)/i.exec(String(cmd || '')); return m ? m[1] : ''; }
+/* Many Ministra portals answer create_link with the channel left out: "...live.php?mac=...&stream=&extension=ts&
+   play_token=...".  That link ends at once ("Stream ended, reconnecting" on every channel, issue #88); other
+   players fill in the channel's id, from the command (".../ch/12345") or the channel itself. */
+function fillStream(to, cmd, sid) {
+  if (!/[?&]stream=(?=&|$)/.test(to)) return to;
+  var m = /\/ch\/(\d+)/.exec(String(cmd || '')), id = m ? m[1] : /^\d+$/.test(String(sid || '')) ? String(sid) : '';
+  return id ? to.replace(/([?&]stream=)(?=&|$)/, '$1' + id) : to;
+}
 function hash(s) { var h = 5381; s = String(s); for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0; return h.toString(36); }
 
 /* Channels: every channel (get_all_channels, or page by page with get_ordered_list on portals without it),
@@ -369,6 +377,7 @@ function handle(req, res, ALLOW, log, port) {
     if (!cmd) return send(res, ALLOW, 400, { error: 'no channel' });
     act(L2, { type: 'itv', action: 'create_link', cmd: cmd, series: '', forced_storage: 'undefined', disable_ad: 0, download: 0 }, function (e, js) {
       var to = linkOf(js && js.cmd) || (/^https?:\/\//i.test(linkOf(cmd)) && !/localhost|127\.0\.0\.1/.test(linkOf(cmd)) ? linkOf(cmd) : '');
+      if (to) { var was = to; to = fillStream(to, cmd, (/^\/stalker\/play\/([A-Za-z0-9_-]+)\./.exec(route) || [])[1]); if (to !== was && log) log({ lv: 'info', event: 'stalker link had no channel; filled it in' }); }
       if (e || !to) {
         if (log) log({ lv: 'warn', event: 'stalker link failed', e: e ? e.message : 'no link' });
         res.writeHead(e && e.auth ? 403 : 502, ALLOW); return res.end(e ? e.message : 'the portal gave no link');
@@ -397,4 +406,4 @@ function handle(req, res, ALLOW, log, port) {
   send(res, ALLOW, 404, { error: 'unknown stalker route' });
 }
 
-module.exports = { handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _archDays: archDays };
+module.exports = { handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _fillStream: fillStream, _archDays: archDays };

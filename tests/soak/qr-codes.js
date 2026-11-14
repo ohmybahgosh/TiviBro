@@ -102,11 +102,14 @@ const editorLink = (s) => /^drawn$|^http:\/\/[0-9.]+:\d+\/#k=[A-Z0-9]{4}-[A-Z0-9
   })));
   await page.goto(APP);
   await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 60000 });
+  // Pairing is offered once the phone app connection is on (Settings > Phone app and web editor).
+  await page.evaluate(() => fetch('http://127.0.0.1:47811/companion/set', { method: 'POST', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ on: true }) }));
   await page.evaluate(() => Phone.showPair());
-  await page.waitForSelector('#modal .pair-qr svg', { timeout: 15000 }).catch(() => {});
+  await page.waitForSelector('#modal .pair-qr svg', { timeout: 30000 }).catch(() => {});
   q = await read(page, '#modal .pair-qr svg');
   const code = await page.evaluate(() => ((document.querySelector('#modal .pair-code') || {}).textContent || '').replace(/-/g, ''));
-  ok('Pair a phone: the code reads back as a pairing link with the code shown', q === 'drawn' || (!!q && q.replace(/-/g, '').indexOf(code) >= 0 && code.length >= 8), q + '  code ' + code);
+  const stat = await page.evaluate(() => ((document.querySelector('#modal .pair-stat') || {}).textContent || ''));
+  ok('Pair a phone: the code reads back as a pairing link with the code shown', q === 'drawn' || (!!q && q.replace(/-/g, '').indexOf(code) >= 0 && code.length >= 8), q + '  code ' + code + '  says ' + stat);
   await page.keyboard.press('Escape');
   await page.evaluate(() => WebEdit.showJoin(''));
   await page.waitForSelector('#modal .join-qr svg', { timeout: 15000 }).catch(() => {});
