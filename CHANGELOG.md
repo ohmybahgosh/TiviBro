@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **No "TiviBro hit an error" when a channel moves to the TV player (issue #91).**  When the built-in player lost its picture buffer and TiviBro moved the channel to the TV's own player, the built-in player could still try to say "done" after it was closed, and that showed as an error, on webOS 4 especially.  The channel always went on playing; now there's no error either.
+
 ## 0.6.0 (alpha 134, 2026-11-14)
 
 Pre-release: expect rough edges, and keep a backup before installing.

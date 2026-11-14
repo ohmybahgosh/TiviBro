@@ -40,6 +40,11 @@ A big jump in the sound's timestamps (issue #81): `_remuxAudio` filled any gap i
 frames and threw "Maximum call stack size exceeded" (shown as "ts engine net error: Exception").  Gaps are now filled only up to
 10 s (`s<=1e4`); a bigger jump is joined up like on Safari, and the frames are added with `concat`.
 
+A player closed from inside its own error (issue #91): when a SourceBuffer append fails, `_doAppendSegments` reports the
+error, and TiviBro closes that player and tries the next one before the report returns.  `_onSourceBufferUpdateEnd` and
+`_onSourceOpen` then went on to announce "updateend" or "sourceopen" on the player that was already closed ("Cannot read
+property 'emit' of null").  Both now check `this._emitter` first.
+
 Re-apply after upgrading mpegts.js.  `hls.min.js` (1.5.20) is unmodified.
 
 ## qrcode.js

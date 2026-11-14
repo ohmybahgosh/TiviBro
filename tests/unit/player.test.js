@@ -741,6 +741,30 @@ ok('other files play directly, without subtitle extraction', mp4.calls.length ==
       _hasPendingRemoveRanges() { return false; }, _hasPendingSegments() { return true; }, _doAppendSegments() { appended++; } };
     fn.call(live);
     ok('issue #74: a live player still appends and reports updateend', appended === 1 && emitted === 1);
+    // issue #91: the append fails, the error closes the player (TiviBro moves on before the report returns), and
+    // updateend must not then announce itself on the closed player ("Cannot read property 'emit' of null").
+    const closing = { _mediaSource: {}, _pendingSegments: { video: [1], audio: [] }, _pendingRemoveRanges: { video: [], audio: [] }, _emitter: { emit() {} },
+      _hasPendingRemoveRanges() { return false; }, _hasPendingSegments() { return true; }, _doAppendSegments() { this._emitter = null; } };
+    threw = null; try { fn.call(closing); } catch (e) { threw = e.message; }
+    ok('issue #91: updateend after the append error closed the player does not throw', threw === null, threw);
+  }
+}
+
+// ---- issue #91: sourceopen after the first append closed the player ----
+{
+  const v = fs.readFileSync(path.join(__dirname, '../../app/vendor/mpegts.js'), 'utf8');
+  const so = v.match(/e\.prototype\._onSourceOpen=(function\(\)\{[^]*?\.emit\(s\.a\.SOURCE_OPEN\)\})/);
+  ok('issue #91: sourceopen handler found', !!so);
+  if (so) {
+    const fn = new Function('s', 'r', 'return ' + so[1])({ a: { SOURCE_OPEN: 'o' } }, { a: { v() {} } });
+    let opened = 0;
+    const live = { e: {}, _mediaSource: { removeEventListener() {} }, _pendingSourceBufferInit: [], _emitter: { emit() { opened++; } },
+      _hasPendingSegments() { return true; }, _doAppendSegments() {} };
+    fn.call(live);
+    ok('issue #91: a live player still reports sourceopen', opened === 1);
+    const closing = Object.assign({}, live, { _doAppendSegments() { this._emitter = null; } });
+    let threw = null; try { fn.call(closing); } catch (e) { threw = e.message; }
+    ok('issue #91: sourceopen after the append error closed the player does not throw', threw === null, threw);
   }
 }
 
