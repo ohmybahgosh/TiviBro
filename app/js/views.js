@@ -305,7 +305,12 @@ var Views = (function () {
     // Accent used as text on the dark background: lift very dark accents so they stay readable.
     root.setProperty('--accent-text', U.luminance(acc) < 0.12 ? U.mix(acc, '#ffffff', 0.45) : acc);
     // The guide's category colours (movies, sports, news, kids, documentaries) from the theme, apart from its accent.
-    kindColours(pal, acc).forEach(function (c, i) { root.setProperty('--k-' + 'msncd'.charAt(i), c); });
+    kindColours(pal, acc).forEach(function (c, i) {
+      root.setProperty('--k-' + 'msncd'.charAt(i), c);
+      // The same colour, see-through, for a cell's background (My teams' games on now).
+      var m = /^#?([0-9a-f]{6})$/i.exec(c), n = m ? parseInt(m[1], 16) : 0;
+      if (m) root.setProperty('--k-' + 'msncd'.charAt(i) + '-tint', 'rgba(' + (n >> 16 & 255) + ',' + (n >> 8 & 255) + ',' + (n & 255) + ',.22)');
+    });
     document.body.classList.toggle('dimpast', !!Store.settings.dimPast);
     document.body.classList.toggle('guide1', Store.settings.guideLines === 1);
     var s = Store.settings, b = document.body.classList;
@@ -2492,6 +2497,8 @@ var Guide = (function () {
       // Running on past either edge of the window: that side is square and its text fades out, so it reads as
       // carrying on rather than cut off.
       var edge = (p.s < t0 && a <= 0 ? ' cl' : '') + (p.e > t1 && sg.b >= PXW ? ' cr' : '');
+      // My teams: a game on now stands out in the theme's sports colour; one still to come is quieter.
+      if (gid === L.TEAMS) edge += p.up ? ' tm-soon' : now ? ' tm-live' : '';
       // A narrow one (a short filler) whose title won't fit on a line: the title gets both lines, without the times.
       cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (mv ? ' mv' : '') + (kind ? ' k-' + kind : '') + edge + (w < 240 && p.t.length * 12 > w - 40 ? ' nar' : ''), a, w,
         (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, Math.min(p.e, t1) - from)), 0, w) : -1, p.s);
@@ -2790,6 +2797,9 @@ var Guide = (function () {
       var j = h.i + dir, nb = h.l[j];
       while (nb && (nb.e <= nb.s || (dir < 0 ? nb.s >= h.p.s : nb.s <= h.p.s))) { j += dir; nb = h.l[j]; }
       target = nb ? nb.s + 60e3 : (dir > 0 ? h.p.e + 60e3 : h.p.s - 60e3);
+      // Back onto what's on now: now, not its start.  A long block (an event channel's "Starts …" from days
+      // before) took the guide back to its first day, and Right then Left no longer lined up.
+      if (nb && nb.s <= now && nb.e > now) target = now;
     }
     else target = focusT + dir * 30 * 60e3;
     var cur = progAt(c, now).p;
@@ -3171,5 +3181,5 @@ var Guide = (function () {
   }
 
   return { open: open, resume: resume, refresh: refresh, draw: draw, resize: resize, rowUpdated: rowUpdated, leave: leave, hints: hints, startVis: startVis, endVis: endVis, get vis() { return !!vis; },
-    __sel: function () { return sel; }, __gsel: function () { return groupsVL ? groupsVL.sel : 0; }, __focusT: function () { return focusT; }, __gid: function () { return gid; }, __zone: function () { return zone; }, __list: function () { return list; } };
+    __sel: function () { return sel; }, __gsel: function () { return groupsVL ? groupsVL.sel : 0; }, __focusT: function () { return focusT; }, __t0: function () { return t0; }, __gid: function () { return gid; }, __zone: function () { return zone; }, __list: function () { return list; } };
 })();

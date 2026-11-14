@@ -95,6 +95,18 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const grid = (await page.innerText('#viewGuide').catch(() => '')).replace(/\s+/g, ' ');
   ok('the guide shows My teams', /My teams/.test(grid) && /WPG vs CAR|Hurricanes/.test(grid), grid.slice(0, 300));
   await shot('tv-teams-guide');
+  // Right onto the game, then Left: back where it was, not days back at the start of a "Starts …" line.
+  const row = await ev(() => { const l = Guide.__list(), now = Date.now(); return l.findIndex(c => (Epg.request(c) || []).some(p => p.up && p.s < now - 86400e3 && p.e > now)); });
+  if (row >= 0) {
+    const zone = await ev(() => Guide.__zone());
+    if (zone !== 'grid') await H.quiet('ArrowRight', 500);
+    for (let n = 0; n < 20 && (await ev(() => Guide.__sel())) !== row; n++) await H.quiet((await ev(() => Guide.__sel())) < row ? 'ArrowDown' : 'ArrowUp', 250);
+    const before = await ev(() => ({ t0: Guide.__t0(), f: Guide.__focusT() }));
+    await H.quiet('ArrowRight', 500); await H.quiet('ArrowLeft', 600);
+    const after = await ev(() => ({ t0: Guide.__t0(), f: Guide.__focusT(), now: Date.now() }));
+    await shot('tv-teams-guide-moved');
+    ok('Right onto a game and back Left: the guide is where it was', after.t0 === before.t0 && Math.abs(after.f - after.now) < 120e3, JSON.stringify({ before, after }));
+  } else ok('a row with a long "Starts …" line to test Right and Left on', false);
 
   // Reminders for the games: off by default, then on.
   ok('no reminders while that is off', await ev(() => Store.edits.reminders.filter(r => /^team:/.test(r.w || '')).length === 0 && (Watch.scan(true), Store.edits.reminders.filter(r => /^team:/.test(r.w || '')).length === 0)));

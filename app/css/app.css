@@ -464,6 +464,15 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .gp.k-m::after,.gp.k-s::after,.gp.k-n::after,.gp.k-c::after,.gp.k-d::after{content:'';position:absolute;left:7px;top:14px;bottom:14px;width:5px;border-radius:3px;pointer-events:none}
 .gp.k-m::after{background:var(--k-m)}.gp.k-s::after{background:var(--k-s)}.gp.k-n::after{background:var(--k-n)}.gp.k-c::after{background:var(--k-c)}.gp.k-d::after{background:var(--k-d)}
 .gp.k-m,.gp.k-s,.gp.k-n,.gp.k-c,.gp.k-d{padding-left:22px}
+/* My teams: a game on now in the theme's sports colour (a tint and its bar); one still to come quieter, with a
+   faded bar.  Both keep the bar whether or not the guide colours programmes by kind.  Focus wins, as everywhere. */
+.gp.tm-live,.gp.tm-soon{padding-left:22px}
+.gp.tm-live::after,.gp.tm-soon::after{content:'';position:absolute;left:7px;top:14px;bottom:14px;width:5px;border-radius:3px;pointer-events:none;background:var(--k-s)}
+.gp.tm-live:not(.focus){background:linear-gradient(var(--k-s-tint,rgba(61,220,151,.22)),var(--k-s-tint,rgba(61,220,151,.22))),var(--raised)}
+.gp.tm-soon:not(.focus){background:var(--panel)}
+.gp.tm-soon:not(.focus) .gt{color:var(--muted)}
+.gp.tm-soon::after{opacity:.4}
+.gp.tm-live.focus::after,.gp.tm-soon.focus::after{background:var(--on-accent);opacity:.7}
 /* On the selected programme, an edge in the accent's text colour, so a colour close to the accent (News on Gruvbox,
    Sports on Everforest) still shows. */
 .gp.focus.k-m::after,.gp.focus.k-s::after,.gp.focus.k-n::after,.gp.focus.k-c::after,.gp.focus.k-d::after{box-shadow:0 0 0 2px var(--on-accent)}
