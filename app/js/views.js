@@ -354,6 +354,10 @@ var Views = (function () {
       rem.splice(i, 1); Store.saveEdits();
       if (typeof Watch !== 'undefined' && Watch.doubtful && Watch.doubtful(r)) { Log.info('views', 'Dropped a reminder that was not a programme: ' + r.t); i--; continue; }
       var c = L.find(r.k), p = { s: r.s, e: r.e, t: r.t };
+      // A team's game: still on that channel?  Moved: there.  Its slot given to another game: said so.
+      var mv = moved(r, now);
+      if (mv === 'gone') return;
+      if (mv) { c = mv.c; p = mv.p; r = { k: c.k, s: p.s, e: p.e, t: p.t, w: r.w }; }
       if (!c) return;
       var late = r.s < now - 120000;
       // Over while TiviBro was away: offer it from catch-up, otherwise let it go.
@@ -380,11 +384,26 @@ var Views = (function () {
     setTimeout(function () { var mt = document.getElementById('modalTitle'); if (UI.modalOpen && mt && mt.textContent.indexOf(t) >= 0) UI.close(); }, (+Store.settings.remindTimeout || 10) * 1000);
   }
   /* Watch pressed on the TV's reminder alert (TiviBro opened or brought forward with launch params). */
+  /* A team reminder at its time: the game, where it is now (Teams.recheck).  'gone' when the channel lists
+     another game and this one is nowhere in the guide (it was said so), else { c, p } or null. */
+  function moved(r, now) {
+    if (!r || !/^team:/.test(r.w || '') || typeof Teams === 'undefined' || !Teams.recheck) return null;
+    var x = null;
+    try { x = Teams.recheck(r, now); } catch (e) {}
+    if (!x) return null;
+    if (x.c) { Log.info('views', 'Reminder: "' + r.t + '" is on ' + L.name(x.c) + ' now'); U.toast(RAW(I18n.t('{x} is on {y} now', { x: x.p.t, y: L.name(x.c) })), 5000); return x; }
+    Log.info('views', 'Reminder: "' + r.t + '" is no longer in the guide' + (x.now ? '; its channel lists ' + x.now : ''));
+    U.toast(RAW(I18n.t('{x} is no longer in the guide', { x: r.t }) + (x.now ? '.  ' + I18n.t('The channel lists {x} now.', { x: x.now }) : '')), 7000);
+    return 'gone';
+  }
   function openReminder(q) {
     var now = Date.now(), rem = Store.edits.reminders;
     var i = rem.findIndex(function (r) { return r.k === q.k && r.s === +q.s; });
     var r = i >= 0 ? rem.splice(i, 1)[0] : null;
     if (r) Store.saveEdits();
+    var mv = moved(r, now);
+    if (mv === 'gone') return;
+    if (mv) { r = { k: mv.c.k, s: mv.p.s, e: mv.p.e, t: mv.p.t, w: r.w }; q = { k: r.k, s: r.s }; }
     var c = L.find(q.k);
     if (!c) { U.toast('That channel is not in this playlist any more'); return; }
     Log.info('views', 'Opened from a reminder: ' + (r ? r.t : q.k));

@@ -43,8 +43,25 @@ var Watch = (function () {
   }
 
   // Look now.  quiet: no message (the first look after adding a word says its own thing).
+  /* Team reminders against the guide as it is now: a game the provider moved to another channel moves with
+     it, and one its channel no longer carries (another game in its slot) and that's nowhere else goes. */
+  function recheck(now) {
+    if (typeof Teams === 'undefined' || !Teams.recheck) return;
+    var rem = Store.edits.reminders, changed = false;
+    for (var i = rem.length - 1; i >= 0; i--) {
+      var r = rem[i];
+      if (!/^team:/.test(r.w || '') || r.s < now - 60000) continue;
+      var x = null;
+      try { x = Teams.recheck(r, now); } catch (e) {}
+      if (!x) continue;
+      if (x.c) { Log.info('watch', 'Reminder for "' + r.t + '" moved to ' + L.name(x.c) + ' at ' + U.hhmm(x.p.s) + ': its channel lists ' + (x.now || 'something else') + ' now'); r.k = x.c.k; r.s = x.p.s; r.e = x.p.e; r.t = x.p.t; mark(r); changed = true; }
+      else if (x.gone) { Log.info('watch', 'Dropped the reminder for "' + r.t + '": no longer in the guide' + (x.now ? ' (its channel lists ' + x.now + ')' : '')); rem.splice(i, 1); changed = true; }
+    }
+    if (changed) { Store.saveEdits(); if (typeof Remind !== 'undefined') Remind.sync(true); }
+  }
   function scan(quiet) {
     tidy();
+    recheck(Date.now());
     var teams = typeof Teams !== 'undefined' && Teams.remindOn();
     if ((!list().length && !teams) || !L.data.channels.length) return [];
     lastScan = Date.now();
@@ -172,5 +189,5 @@ var Watch = (function () {
     Epg.onUpdate(function (k) { if (!k) soon(); });
   }
 
-  return { tidy: tidy, doubtful: doubtful, list: list, add: add, remove: remove, has: has, upcoming: upcoming, scan: scan, start: start };
+  return { recheck: function () { recheck(Date.now()); }, tidy: tidy, doubtful: doubtful, list: list, add: add, remove: remove, has: has, upcoming: upcoming, scan: scan, start: start };
 })();

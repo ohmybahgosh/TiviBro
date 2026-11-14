@@ -1570,5 +1570,8 @@ I18n.add('pt-BR', {
   "{n} setting": "{n} opção",
   "{n} settings": "{n} opções",
   "No setting has that in its name or its note.": "Nenhuma opção tem isso no nome ou na nota.",
-  "A word from its name": "Uma palavra do nome"
+  "A word from its name": "Uma palavra do nome",
+  "{x} is on {y} now": "{x} agora está em {y}",
+  "{x} is no longer in the guide": "{x} não está mais no guia",
+  "The channel lists {x} now.": "O canal agora mostra {x}."
 });

@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A team's reminder follows its game.**  A reminder set for a game on one channel (often an event channel slot) fired for whatever that channel showed by then, after the provider had given the slot to another game.  Now team reminders are checked against the guide as it is: a game that moved goes with its new channel and time, and one that's nowhere in the guide any more is dropped, with a message saying so if it was due.
+
 ## 0.6.0 (alpha 131, 2026-11-13)
 
 Pre-release: expect rough edges, and keep a backup before installing.

@@ -286,6 +286,30 @@ Teams.follow('ncaab:msu', false);
   [fa, fb2, fc, fd].forEach(c => { delete progs[c.k]; });
 }
 
+// A reminder whose channel was given to another game (issue: an event channel slot the provider reused):
+// moved to where the game is now, or gone when it's nowhere.
+{
+  const slot = ch('NBA 07', 'g6'), slot2 = ch('NBA 09', 'g6'); chans.push(slot, slot2);
+  Epg.request = (c) => progs[c.k] || null;
+  const t = NOW + 4 * H, g = 'Detroit Pistons at Washington Wizards';
+  progs[slot.k] = [{ s: t, e: t + 3 * H, t: g }];
+  Teams.follow('nba:det', true); Teams.dirty();
+  const r = { k: slot.k, s: t, e: t + 3 * H, t: g, w: 'team:nba:det' };
+  ok('reminders: still on its channel, nothing to do', Teams.recheck(r) === null);
+  progs[slot.k] = [{ s: t, e: t + 3 * H, t: 'Boston Celtics at Miami Heat' }];
+  progs[slot2.k] = [{ s: t + 30 * 60e3, e: t + 3 * H, t: g }];
+  Teams.dirty();
+  const x = Teams.recheck(r);
+  ok('reminders: its channel lists another game now, so it moves to where the game is', x && x.c === slot2 && x.p.s === t + 30 * 60e3, JSON.stringify(x && { c: x.c && x.c.n, s: x.p && x.p.s - t, gone: x.gone }));
+  progs[slot2.k] = [{ s: t, e: t + 3 * H, t: 'Utah Jazz at Denver Nuggets' }];
+  Teams.dirty();
+  const y = Teams.recheck(r);
+  ok('reminders: nowhere in the guide any more: gone, with what the channel lists', y && y.gone && /Celtics/.test(y.now || ''), JSON.stringify(y));
+  Teams.follow('nba:det', false);
+  [slot, slot2].forEach(c => { delete progs[c.k]; });
+  delete Epg.request;
+}
+
 console.log((fail ? fail + ' of ' : 'all ') + n + ' teams checks ' + (fail ? 'failed' : 'passed'));
 process.exit(fail ? 1 : 0);
 })();

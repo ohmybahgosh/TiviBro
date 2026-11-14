@@ -519,6 +519,32 @@ var Teams = (function () {
     });
     return out;
   }
+  /* A team's reminder against the guide as it is now (issue: a Pistons reminder on an event channel that the
+     provider had since given to another game).  What the channel lists at the reminder's time, checked
+     against the game the reminder was set for: the same game, null.  Another game there, or nothing that
+     names a game: where that game is now ({ c, p }, moved), or { gone: true } when it's nowhere in the
+     guide.  Nothing known yet about the channel at that time (its guide still loading): null. */
+  function recheck(r, now) {
+    now = now || Date.now();
+    var id = /^team:(.+)$/.exec((r && r.w) || ''), team = id && BY_ID[id[1]];
+    if (!team) return null;
+    var c = Library.find(r.k), was = matchup(r.t, c ? c.n : '');
+    if (!was) return null;
+    var l = c && typeof Epg !== 'undefined' && Epg.request ? Epg.request(c) : null, cur = null;
+    if (c && l && l.length) for (var i = 0; i < l.length; i++) if (l[i].s <= r.s + 10 * 60000 && l[i].e > r.s) { cur = l[i]; break; }
+    // An event channel: the game is its name.
+    var ev = c && typeof Events !== 'undefined' ? Events.of(c) : null;
+    if (ev && ev.title) cur = { s: ev.start, e: ev.end, t: ev.title };
+    if (!c || !cur) { if (c) return null; }
+    else if (matchup(cur.t, c.n) === was) return null;
+    // Elsewhere now: the same two teams within 12 hours of when it was set for.
+    var far = Math.max(r.s - now, 0) + SAME_GAME, found = null;
+    games(far, true).forEach(function (g) {
+      if (found || g.team.id !== team.id || g.p.e <= now || Math.abs(g.p.s - r.s) >= SAME_GAME) return;
+      if (matchup(g.p.t, g.c.n) === was) found = g;
+    });
+    return found ? { c: found.c, p: { s: found.p.s, e: found.p.e, t: found.p.t } } : { gone: true, now: cur && cur.t };
+  }
   // Mid-August to the end of the year: the season, conference championships and most bowls.
   function footballSeason(t) { var d = new Date(t || Date.now()), m = d.getMonth(); return m >= 8 || m === 7 && d.getDate() >= 15; }
   // Basketball: November to the national championship in early April.
@@ -623,6 +649,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    RULES: 3, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
+    RULES: 3, recheck: recheck, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
 })();

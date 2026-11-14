@@ -1066,5 +1066,8 @@ I18n.add('ru', {
   "{n} setting": "Найдено: {n}",
   "{n} settings": "Найдено: {n}",
   "No setting has that in its name or its note.": "Ни в одной настройке этого нет ни в названии, ни в описании.",
-  "A word from its name": "Слово из названия"
+  "A word from its name": "Слово из названия",
+  "{x} is on {y} now": "{x} теперь на {y}",
+  "{x} is no longer in the guide": "{x} больше нет в телегиде",
+  "The channel lists {x} now.": "Сейчас на канале: {x}."
 });
