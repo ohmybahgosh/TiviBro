@@ -4,7 +4,7 @@ function world() {
   const timers = [], notices = [];
   let token = '';
   const c = { Promise, setTimeout: f => { timers.push(f); return timers.length; }, clearTimeout() {},
-    Net: { port: 1, ctlHeaders: h => h }, U: { toast: s => notices.push(s) },
+    Net: { port: 1, ctlHeaders: h => h, ctlFetch: (u, i) => c.fetch(u, i) }, U: { toast: s => notices.push(s) },
     MediaStore: { load: () => Promise.resolve(), setTmdbToken: v => { token = v; }, preferences: () => ({ tmdbConfigured: !!token }) },
     fetch: () => new Promise(() => {}) };
   vm.createContext(c); vm.runInContext(fs.readFileSync('app/js/media.js', 'utf8'), c);

@@ -202,7 +202,7 @@ service.register('start', function (message) {
     if (err) return message.respond({ returnValue: false, errorText: err.message });
     if (message.isSubscription) { subs++; hold(); watchPower(); grant.ensure(); }
     proxy.log({ lv: 'info', event: 'start', subscribers: subs, port: p });
-    message.respond({ returnValue: true, port: p, subscribed: !!message.isSubscription, ctl: CTL });
+    message.respond({ returnValue: true, port: p, subscribed: !!message.isSubscription, ctl: CTL, key: crypto.createHash('sha256').update('tivibro-ctl-tag\n' + CTL).digest('hex').slice(0, 16) });
   });
 }, function cancel() {
   subs = Math.max(0, subs - 1);

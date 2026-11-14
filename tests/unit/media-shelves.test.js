@@ -16,7 +16,7 @@ const ids = { viewMedia: el('div'), mediaShelfStage: el('div'), mediaItems: el('
 const movie = (id, title) => ({ id, src: 's', title });
 let lib = [], favorites = {}, continuing = [], handler = null, prefs = { language: 'en', sort: 'name', showSort: 'name', favoritesInLists: true }, showQueries = [];
 const c = { Promise, setTimeout, clearTimeout, console, document: { body: el('body'), hidden: false },
-  Net: { port: 1, ctlHeaders: h => h },
+  Net: { port: 1, ctlHeaders: h => h, ctlFetch: (u, i) => c.fetch(u, i) },
   U: { $: id => ids[id], el, toast() {} },
   UI: { setHandler: h => { handler = h; }, hints() {}, pointer: false },
   Views: { tabBar() {} }, MediaSeries: new Proxy({}, { get: () => function () {} }),

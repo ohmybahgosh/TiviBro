@@ -234,6 +234,9 @@ function create(opts) {
 
   /* The port this helper listens on.  server.address() is null once the server is closing (a restart), and a
      request still arriving then threw "Cannot read property 'port' of null" and took the helper down (issue #64). */
+  /* Which secret this helper holds, without giving it away: TiviBro compares it with the one it has, and asks
+     the helper again when they differ (the helper was restarted by webOS and made a new one). */
+  var ctlTag = opts.ctl ? require('crypto').createHash('sha256').update('tivibro-ctl-tag\n' + opts.ctl).digest('hex').slice(0, 16) : '';
   var myPort = 0;
   function ownPort() { var a = server.address(); if (a && a.port) myPort = a.port; return myPort; }
   var server = http.createServer(function handle(req, res) {
@@ -259,7 +262,7 @@ function create(opts) {
     if (req.url.indexOf('/media-stream/') === 0) return require('./media-stream').handle(req, res, ALLOW);
     // Converted sound (convert.js): the link carries its own key, since the TV's player can't send the secret.
     if (Convert.isStream(req.url)) return Convert.stream(req, res, ALLOW, log, ownPort(), redact);
-    if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, node: process.version, stats: stats, guide: 2, vod: 2, kv: 1, live: 1, convert: 1, sys: sys(), store: require('./storage').info() })); }
+    if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, key: ctlTag, node: process.version, stats: stats, guide: 2, vod: 2, kv: 1, live: 1, convert: 1, sys: sys(), store: require('./storage').info() })); }
     /* The web editor and the phone app connection are switched on and off from TiviBro only.  On the
        TV the helper hands TiviBro a secret with its start reply (service.js, over luna, which only
        TiviBro may call); without it, a web page in the TV's browser could reach these over localhost. */
@@ -270,7 +273,7 @@ function create(opts) {
       req.url.indexOf('/convert/') === 0 ? 'convert' : req.url.indexOf('/ffmpeg/') === 0 ? 'ffmpeg' : req.url.indexOf('/net/dns') === 0 ? 'dns' : '';
     if (ctlRoute) {
       res.setHeader('Access-Control-Allow-Origin', '*');
-      if (opts.ctl && !sameText(req.headers['x-tivibro-ctl'], opts.ctl)) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end('{"error":"not allowed"}'); }
+      if (opts.ctl && !sameText(req.headers['x-tivibro-ctl'], opts.ctl)) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end('{"error":"not allowed","code":"ctl"}'); }
       if (ctlRoute === 'editor') return editor.control(req, res, req.url.split('?')[0]);
       if (ctlRoute === 'kv') return Kv.handle(req, res, ALLOW, log);
       if (ctlRoute === 'live') return Live.handle(req, res, ALLOW, log, ownPort());

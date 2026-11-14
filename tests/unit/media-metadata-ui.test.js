@@ -3,7 +3,7 @@ const fs = require('fs'), vm = require('vm'), assert = require('assert');
 let language = 'nl', requests = [], fail = false;
 const movies = [{ id: 'local1', src: 's', title: 'Original file title', metadata: { provider: 'Cinemeta', id: 'tt1', language: 'en' } }, { id: 'local2', src: 's', title: 'Another file', metadata: { provider: 'TMDB', id: 'tmdb:8', language: 'en', requestedLanguage: 'en' } }];
 const notices = [];
-const c = { Promise, setTimeout, clearTimeout, Net: { port: 1, ctlHeaders: h => h }, U: { toast: s => notices.push(s) },
+const c = { Promise, setTimeout, clearTimeout, Net: { port: 1, ctlHeaders: h => h, ctlFetch: (u, i) => c.fetch(u, i) }, U: { toast: s => notices.push(s) },
   MediaStore: { tmdbToken: () => 'mock-user-token-123456789012345', load: () => Promise.resolve(), movies: () => movies, source: () => ({ id: 's' }), preferences: n => { if (n) language = n.language; return { language }; }, setMetadata: (id, m) => { movies.find(x => x.id === id).metadata = m; return Promise.resolve(); } },
   fetch: (url, opts) => { const q = JSON.parse(opts.body); requests.push(q); return Promise.resolve({ json: () => Promise.resolve(fail ? { error: 'metadata', message: 'Mock provider unavailable' } : { metadata: { provider: 'TMDB', id: q.id === 'tt1' ? 'tmdb:7' : q.id, title: 'Localized movie', language: q.language, requestedLanguage: q.language } }) }); }
 };

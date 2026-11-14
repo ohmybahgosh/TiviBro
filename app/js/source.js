@@ -148,7 +148,7 @@ var Source = (function () {
   function viaHelper(path, body) {
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null, t = setTimeout(function () { if (ctl) ctl.abort(); }, 240000);
     if (ctl) { aborts.push(ctl); if (aborts.length > 8) aborts.shift(); }
-    return fetch('http://127.0.0.1:' + Net.port + path, { method: 'POST', cache: 'no-store', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
+    return Net.ctlFetch('http://127.0.0.1:' + Net.port + path, { method: 'POST', cache: 'no-store', headers: ({ 'Content-Type': 'application/json' }), body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
       .then(function (r) { return r.json().then(function (j) { clearTimeout(t); j._status = r.status; return j; }); }, function (e) { clearTimeout(t); e.dropped = true; throw e; });
   }
   /* The helper read the list and then went quiet (it ran out of memory: a 93 MB list on a 2020 TV, issue
@@ -278,7 +278,7 @@ var Source = (function () {
     Log.info('stalker', 'Loading the portal\'s channels via the helper :' + Net.port + ' (MAC ' + String(stalkerMac(p.mac)).slice(0, 8) + ':**:**:**)');
     return viaHelper('/stalker/channels', { stb: stb(p) }).then(function (j) {
       if (j._status === 401) throw Object.assign(new Error('The portal turned this MAC address down: ' + (j.error || 'not allowed') + '.  Check the MAC address with your provider.'), { kind: 'auth' });
-      if (j._status !== 200 || !Array.isArray(j.channels)) throw Object.assign(new Error(j.error ? 'The portal: ' + j.error : 'HTTP ' + j._status), { kind: 'http' });
+      if (j._status !== 200 || !Array.isArray(j.channels)) throw Object.assign(new Error(j.error ? 'The portal: ' + j.error : U.httpSays(j._status)), { kind: 'http' });
       Log.info('stalker', 'The helper loaded ' + j.channels.length + ' channels in ' + j.groups.length + ' groups in ' + (Date.now() - t0) + 'ms');
       if (!j.channels.length) throw Object.assign(new Error('The portal answered but has no channels for this MAC address.'), { kind: 'parse' });
       return { groups: j.groups, channels: j.channels, epgUrl: '', _live: '' };
@@ -326,12 +326,13 @@ var Source = (function () {
         if (mismatch(e)) return 'This port doesn\'t use https (it answered in plain http).  Try http:// instead of https://.';
         if (/CERT|SSL|TLS|certificate/i.test(m)) return 'Secure connection failed (certificate problem).  Try http:// instead of https://.';
         if (/ECONNRESET|socket hang up/i.test(m)) return 'The server dropped the connection.  It may be blocking this TV or overloaded.';
-        return 'Connection failed: ' + m.replace(/^helper: /, '');
+        var code = (/\bE[A-Z][A-Z_]{2,}\b/.exec(m) || [])[0];
+        return 'The connection to the server failed' + (code ? ' (' + code + ')' : '') + '.  Check the address, or try again in a minute.';
       }
       if (e.status === 401 || e.status === 403) return 'The server refused access (HTTP ' + e.status + ').  Check the username and password, or whether the provider blocks this IP.';
       if (e.status === 404) return 'Not found (HTTP 404).  Check the server address and port.';
       if (e.status === 512 || e.status === 884) return 'The provider rejected this login (HTTP ' + e.status + ').';
-      return 'The server returned an error (' + e.message + ').';
+      return e.status ? U.httpSays(e.status) : 'The server returned an error (' + e.message + ').';
     }
     if (e.kind === 'parse') return e.message;
     return e.message || String(e);
@@ -411,7 +412,7 @@ var Source = (function () {
   function helperVod(op, id, p) {
     if (!(Net.active && Net.port)) return Promise.reject(new Error('Movies and shows from an M3U list need the network helper.'));
     return viaHelper('/vod/m3u', { pl: P(p).id, op: op, id: String(id) }).then(function (j) {
-      if (j._status !== 200) throw new Error(j.error || 'HTTP ' + j._status);
+      if (j._status !== 200) throw new Error(j.error || U.httpSays(j._status, 'helper'));
       return j;
     });
   }

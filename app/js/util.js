@@ -155,6 +155,25 @@ var U = (function () {
       .finally(function () { clearTimeout(timer); });
     return { promise: p, abort: function () { if (ctl) ctl.abort(); } };
   }
+  /* An HTTP status in plain words, for messages people read (who: 'helper' for TiviBro's network helper,
+     'report' for the report service, anything else for the provider's server). */
+  function httpSays(status, who) {
+    var n = +status || 0;
+    if (who === 'helper') {
+      if (n === 403) return 'The network helper refused this request.  Close TiviBro and open it again; if it keeps happening, send a report from Settings > Updates, about and diagnostics.';
+      if (n === 404) return 'The network helper doesn\'t know this request (HTTP 404).  Update TiviBro, then try again.';
+      if (n === 413) return 'That was too big for the network helper to take.';
+      if (n >= 500) return 'The network helper had a problem (HTTP ' + n + ').  Try again; if it keeps happening, send a report.';
+      return 'The network helper answered with an error (HTTP ' + n + ').';
+    }
+    var w = who === 'report' ? 'The report service' : 'The server';
+    if (n === 401 || n === 403) return w + ' refused access (HTTP ' + n + ').';
+    if (n === 404) return w + ' has nothing at that address (HTTP 404).';
+    if (n === 429) return w + ' says there were too many requests (HTTP 429).  Wait a minute and try again.';
+    if (n === 502 || n === 503 || n === 504) return w + ' is down or too busy right now (HTTP ' + n + ').  Try again later.';
+    if (n >= 500) return w + ' had a problem (HTTP ' + n + ').  Try again later.';
+    return w + ' answered with an error (HTTP ' + n + ').';
+  }
   /* A JSON answer read as text first, so an empty or web-page answer says what it was, not the browser's
      "Unexpected token < in JSON at position 0" (which said nothing to whoever saw it). */
   function readJSON(r, what) {
@@ -250,5 +269,5 @@ var U = (function () {
   return {
     lines: lines, notice: notice, hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
     secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, day: day, LANGS: LANGS, lang: lang, hash: hash,
-    b64utf8: b64utf8, request: request, readJSON: readJSON, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad, loc: loc };
+    b64utf8: b64utf8, request: request, readJSON: readJSON, httpSays: httpSays, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad, loc: loc };
 })();

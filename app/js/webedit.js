@@ -30,8 +30,8 @@ var WebEdit = (function () {
   function call(path, body, text) {
     if (!base()) return Promise.reject(new Error('The network helper is not running, so the editor cannot start.  See Settings, Diagnostics.'));
     var post = body || text;
-    var asked = fetch(base() + path, { method: post ? 'POST' : 'GET', cache: 'no-store', headers: Net.ctlHeaders(post ? { 'Content-Type': 'application/json' } : {}), body: text || (body ? JSON.stringify(body) : undefined) })
-      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || 'helper answered ' + r.status); return j; }); });
+    var asked = Net.ctlFetch(base() + path, { method: post ? 'POST' : 'GET', cache: 'no-store', headers: (post ? { 'Content-Type': 'application/json' } : {}), body: text || (body ? JSON.stringify(body) : undefined) })
+      .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || U.httpSays(r.status, 'helper')); return j; }); });
     /* Never wait for ever (issue #50): a request caught by the screensaver or the TV dozing could stay
        unanswered, and the editor stopped picking up anything sent from the phone or computer until it
        was switched off and on. */

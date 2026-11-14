@@ -30,7 +30,7 @@ vm.runInContext(src.slice(src.indexOf('  function mediaSource(a)'), end + 5), c)
   await assert.rejects(() => c.RUN.mediaAdd({ address: 'https://example.invalid' }), /Wrong login/);
   await c.RUN.mediaRemove({ id: 's' }); assert.equal(c.removed, 's'); assert.equal(c.libraryRequest.route,'library/source'); assert.equal(JSON.stringify(c.libraryRequest.args),JSON.stringify({sourceId:'s',action:'remove'}));
   assert.throws(() => c.RUN.mediaRemove({ id: 'missing' }), /no longer/);
-  c.Net = { port: 1, ctlHeaders: h => h };
+  c.Net = { port: 1, ctlHeaders: h => h, ctlFetch: (u, i) => c.fetch(u, i) };
   c.Media.rescan = () => c.fetch().then(r => r.json());
   c.fetch = () => Promise.resolve({ json: () => Promise.resolve({ error: 'login', message: 'Wrong login' }) });
   await assert.rejects(() => c.RUN.mediaRescan({ id: 's' }), /Wrong login/);

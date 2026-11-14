@@ -11,7 +11,7 @@ const movies = [
   { id: 'e', src: 's', title: 'Nothing Found Here' }                                                              // will miss now
 ];
 const notices = [];
-const c = { Promise, setTimeout, clearTimeout, Date, Net: { port: 1, ctlHeaders: h => h }, U: { toast: s => notices.push(s) },
+const c = { Promise, setTimeout, clearTimeout, Date, Net: { port: 1, ctlHeaders: h => h, ctlFetch: (u, i) => c.fetch(u, i) }, U: { toast: s => notices.push(s) },
   MediaStore: { tmdbToken: () => token, sources: () => [{ id: 's' }], load: () => Promise.resolve(), movies: () => movies, source: () => ({ id: 's' }), preferences: () => ({ language: 'en' }),
     setMetadata: (id, m) => { movies.find(x => x.id === id).metadata = m; return Promise.resolve(); },
     markMissed: (id) => { movies.find(x => x.id === id).tmdbMiss = Date.now(); return Promise.resolve(); } },

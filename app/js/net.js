@@ -8,7 +8,7 @@
    or Direct (for providers or proxies like Dispatcharr that already send CORS headers). */
 var Net = (function () {
   'use strict';
-  var port = 0, bridge = null, state = 'off', waiters = [], lastError = '', t0 = 0, info = null, ctl = '';
+  var port = 0, bridge = null, state = 'off', waiters = [], lastError = '', t0 = 0, info = null, ctl = '', key = '';
 
   // Before trusting the helper, prove it answers.  A port with nothing behind it is worse than none.
   function verify(p) {
@@ -63,7 +63,7 @@ var Net = (function () {
           try { r = JSON.parse(msg); } catch (e) { Log.error('net', 'Helper sent something unreadable', String(msg).slice(0, 200)); }
           Log.info('net', 'Helper replied after ' + (Date.now() - t0) + 'ms', msg && String(msg).slice(0, 300));
           if (r.returnValue && r.port) {
-            if (r.ctl) ctl = String(r.ctl);
+            if (r.ctl) { ctl = String(r.ctl); key = String(r.key || ''); }
             if (state === 'starting') { port = r.port; state = 'on'; clearTimeout(timer); settle(); }
             /* It answered after TiviBro stopped waiting (a TV just switched on or woken can take longer than
                the wait): take it now rather than run the whole session without it, which left the first
@@ -134,6 +134,56 @@ var Net = (function () {
     if (state !== 'on' || restarting || !bridge || document.hidden) return;
     ping(4000).then(function (ok) { if (ok) misses = 0; else if (++misses >= 2) restart('no answer to two pings'); });
   }, 15000);
+
+  /* The helper's secret for its control routes (web editor, phone app, channel lists, My media).  webOS can
+     restart the helper on its own; it then has a new secret, and every control request was refused until
+     TiviBro was opened again.  The helper says which secret it holds (a fingerprint, in /ping and the start
+     answer); when it isn't ours, or a request is refused for it, TiviBro asks the helper for it again. */
+  var fixing = null;
+  function fixCtl(why) {
+    if (fixing) return fixing;
+    if (typeof PalmServiceBridge === 'undefined') return Promise.resolve(false);
+    fixing = new Promise(function (resolve) {
+      var b, done = false, t = setTimeout(function () { finish(false); }, 6000);
+      function finish(ok) { if (done) return; done = true; clearTimeout(t); fixing = null; resolve(ok); }
+      try {
+        b = new PalmServiceBridge();
+        b.onservicecallback = function (msg) {
+          var r = {}; try { r = JSON.parse(msg); } catch (e) {}
+          if (r.returnValue && r.ctl) {
+            var changed = String(r.ctl) !== ctl;
+            ctl = String(r.ctl); key = String(r.key || '');
+            if (r.port && r.port !== port) { Log.warn('net', 'The network helper moved to port ' + r.port); port = r.port; }
+            Log.info('net', changed ? 'The network helper had a new secret (' + why + '); using it now' : 'Asked the network helper for its secret (' + why + '); it had not changed');
+            if (changed) setDns();
+            finish(changed);
+          } else finish(false);
+        };
+        b.call('luna://app.tivibro.tv.service/start', JSON.stringify({}));
+      } catch (e) { finish(false); }
+    });
+    return fixing;
+  }
+  // The helper's own check-in, every 15 s while it runs: its secret's fingerprint against ours.
+  setInterval(function () {
+    if (state !== 'on' || !port || !key || document.hidden || fixing) return;
+    fetch('http://127.0.0.1:' + port + '/ping', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+      if (j && j.key && j.key !== key) fixCtl('its fingerprint changed');
+    }, function () {});
+  }, 15000);
+  /* fetch for the helper's control routes: the secret added, and asked for again once when the helper
+     refuses it.  init.headers is a plain object. */
+  function ctlFetch(url, init) {
+    init = init || {};
+    var go = function () { var h = {}, k; for (k in (init.headers || {})) h[k] = init.headers[k]; if (ctl) h['X-TiviBro-Ctl'] = ctl; return fetch(url, Object.assign({}, init, { headers: h })); };
+    return go().then(function (r) {
+      if (r.status !== 403) return r;
+      return r.clone().json().then(function (j) { return j && j.code === 'ctl'; }, function () { return false; }).then(function (mine) {
+        if (!mine) return r;
+        return fixCtl('a request was refused').then(function (changed) { return changed ? go() : r; });
+      });
+    });
+  }
 
   function useRelay() {
     var m = Store.settings.network || 'auto';
@@ -210,6 +260,7 @@ var Net = (function () {
     get info() { return info; },
     // Headers for the helper's control routes (web editor, phone app connection): see service/proxy.js.
     setDns: setDns,
+    ctlFetch: ctlFetch, fixCtl: fixCtl,
     ctlHeaders: function (h) { h = h || {}; if (ctl) h['X-TiviBro-Ctl'] = ctl; return h; },
     get port() { return port; }, get active() { return !!useRelay(); }, get state() { return state; }, get lastError() { return lastError; },
     status: function () { return port ? 'running on port ' + port : 'not running' + (lastError ? ': ' + lastError : ''); },

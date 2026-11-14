@@ -65,7 +65,7 @@ ok('no tracks known: play', d.action === 'play', d);
 ok('bad list per track', JSON.stringify(Convert.decide([T(0, 'dts', 6, '', true), T(1, 'ac3', 6, '')], c2022).bad) === '["DTS",""]');
 
 // links
-ctx.Net = { port: 47811, ua: 'TiviMate/4.7', ctlHeaders: (h) => h || {} };
+ctx.Net = { port: 47811, ua: 'TiviMate/4.7', ctlHeaders: (h) => h || {}, ctlFetch: (u, i) => ctx.fetch(u, i) };
 const link = Convert.link({ src: 'http://prov.invalid/movie/u/p/7.mkv', a: 1, t: 600.25, fmt: 'mkv', codec: 'dts', channels: 6 });
 ok('conversion link: helper, key, movie.mkv, url, time, track, codec, User-Agent',
   /^http:\/\/127\.0\.0\.1:47811\/convert\/[a-f0-9]*\/movie\.mkv\?u=http%3A%2F%2Fprov\.invalid%2Fmovie%2Fu%2Fp%2F7\.mkv&t=600\.25&a=1&c=dts&ch=6&ua=TiviMate%2F4\.7$/.test(link), link);

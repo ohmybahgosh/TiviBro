@@ -235,7 +235,7 @@ function reset() { Object.keys(Dropbox._tokens).forEach((k) => delete Dropbox._t
   // The phone's My media asks (phone.js), answered through a pretend helper.
   const answers = [], queue = [];
   let seq = 0;
-  ctx.Net = { port: 1, ctlHeaders: (h) => h };
+  ctx.Net = { port: 1, ctlHeaders: (h) => h, ctlFetch: (u, i) => ctx.fetch(u, i) };
   ctx.Log = { info() {}, warn() {} };
   ctx.U = { toast() {} };
   ctx.Media = {

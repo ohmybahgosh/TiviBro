@@ -449,7 +449,7 @@ var Store = (function () {
   function kv(path, body) {
     var b = body;
     if (typeof b === 'string' && b.length > 32768 && typeof Blob !== 'undefined') { try { b = new Blob([b], { type: 'application/json' }); } catch (e) { b = body; } }
-    return fetch('http://127.0.0.1:' + Net.port + path, { method: body === undefined ? 'GET' : 'POST', cache: 'no-store', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: b });
+    return Net.ctlFetch('http://127.0.0.1:' + Net.port + path, { method: body === undefined ? 'GET' : 'POST', cache: 'no-store', headers: ({ 'Content-Type': 'application/json' }), body: b });
   }
   function bigGet(k) {
     if (!kvOn()) return idbGet(k);

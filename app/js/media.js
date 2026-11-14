@@ -22,7 +22,7 @@ var Media = (function () {
       var done = false;
       function finish(error, result) { if (done) return; done = true; clearTimeout(timer); if (error) reject(error); else resolve(result); }
       var timer = setTimeout(function () { finish(new Error('The media request timed out.  Please try again.')); if (ctl) ctl.abort(); }, ms);
-      fetch('http://127.0.0.1:' + Net.port + '/media/' + route, { method: 'POST', cache: 'no-store', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
+      Net.ctlFetch('http://127.0.0.1:' + Net.port + '/media/' + route, { method: 'POST', cache: 'no-store', headers: ({ 'Content-Type': 'application/json' }), body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
         .then(function (r) { return r.json(); }).then(function (j) { finish(null, j); }, function () { finish(new Error('Could not reach the media helper.  Please try again.')); });
     });
   }

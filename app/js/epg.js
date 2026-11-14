@@ -432,7 +432,7 @@ var Epg = (function () {
         }
         var poll = 0, rd = null, seen = 0, done = 0;
         return fetch(src.url, { cache: 'no-store' }).then(function (r) {
-          if (!r.ok) throw new Error('HTTP ' + r.status);
+          if (!r.ok) throw Object.assign(new Error(U.httpSays(r.status)), { status: r.status });
           var unzipped = !!r.headers.get('x-unzipped');                 // the helper did it
           var gz = !src.xfer && /\.gz($|\?)/.test(src.url);              // direct connection: unzip here
           if (gz && typeof DecompressionStream === 'undefined') { try { r.body.cancel(); } catch (e) {} throw new Error('This TV can only read .gz guides through the network helper.  Set Settings > Playback > Connection to Automatic, or use the plain .xml address.'); }

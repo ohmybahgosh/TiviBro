@@ -26,8 +26,8 @@ var Convert = (function () {
   function ask(path, method) {
     var b = base();
     if (!b) return Promise.reject(new Error('The network helper is not running.'));
-    return fetch(b + path, { method: method || 'GET', cache: 'no-store', headers: Net.ctlHeaders() }).then(function (r) {
-      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || ('helper answered ' + r.status)); return j; });
+    return Net.ctlFetch(b + path, { method: method || 'GET', cache: 'no-store', headers: {} }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.error || U.httpSays(r.status, 'helper')); return j; });
     });
   }
 

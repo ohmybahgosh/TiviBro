@@ -32,7 +32,7 @@ var Subs = (function () {
     if (!Net.port) return Promise.reject(new Error('The TiviBro helper is not running.  Close TiviBro and open it again.'));
     return new Promise(function (resolve, reject) {
       var done = false, timer = setTimeout(function () { if (!done) { done = true; reject(new Error('OpenSubtitles did not answer in time.')); } }, ms || 30000);
-      fetch('http://127.0.0.1:' + Net.port + '/media/subs/' + route, { method: 'POST', cache: 'no-store', headers: Net.ctlHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(body) })
+      Net.ctlFetch('http://127.0.0.1:' + Net.port + '/media/subs/' + route, { method: 'POST', cache: 'no-store', headers: ({ 'Content-Type': 'application/json' }), body: JSON.stringify(body) })
         .then(function (r) { return r.json(); })
         .then(function (j) { if (done) return; done = true; clearTimeout(timer); if (j && j.error) reject(new Error(j.message || j.error)); else resolve(j); },
           function () { if (done) return; done = true; clearTimeout(timer); reject(new Error('Could not reach the helper.')); });
