@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 136, 2026-11-14)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 136
 
 - **My teams: games on now stand out.**  In the guide's My teams, a game that has started is tinted in the theme's sports colour, and the **Starts …** line before a game still to come is quieter, so you can tell at a glance which games are on.  It follows the theme, like the guide's category colours.
 - **Right onto a game, then Left, puts the guide back where it was.**  Back onto a programme that's on now, the guide stays at now instead of jumping to where that programme began: an event channel's **Starts …** line begins days earlier, so the guide went back to that day.
 - **My teams: every channel says "Starts …" the same way.**  Event channels said "Starts 8:00pm: …" while team channels and sports networks said "Next game 8:00pm: …" for the same game.  Now they all say **Starts**.  A channel whose guide has the game as a real programme says its own start, so "Starts 4:15pm" never sits over a block that ends at 4:15.
 
-## 0.6.0 (alpha 135, 2026-11-14)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 135
+### In alpha 135
 
 - **My teams: the same title on sports networks too.**  A channel that isn't a team's own (ESPN, a regional sports network, a local station) says **Next game …** before the game, and that line still had the guide's own wording ("NCAAF: College Football: Michigan at Oregon") and time.  It now uses the game's one title and start, like the other channels showing it.
 - **What the TV tried, in the phone app too (issue #87).**  Adding a playlist from the phone app that fails now has **What the TV tried** under the message, like the web editor: the TV's log of each try, with logins masked.
