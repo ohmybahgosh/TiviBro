@@ -327,7 +327,7 @@ var Source = (function () {
         if (/CERT|SSL|TLS|certificate/i.test(m)) return 'Secure connection failed (certificate problem).  Try http:// instead of https://.';
         if (/ECONNRESET|socket hang up/i.test(m)) return 'The server dropped the connection.  It may be blocking this TV or overloaded.';
         var code = (/\bE[A-Z][A-Z_]{2,}\b/.exec(m) || [])[0];
-        return 'The connection to the server failed' + (code ? ' (' + code + ')' : '') + '.  Check the address, or try again in a minute.';
+        return code ? (typeof I18n !== 'undefined' ? I18n.t('The connection to the server failed ({x}).  Check the address, or try again in a minute.', { x: I18n.raw ? I18n.raw(code) : code }) : 'The connection to the server failed (' + code + ').  Check the address, or try again in a minute.') : 'The connection to the server failed.  Check the address, or try again in a minute.';
       }
       if (e.status === 401 || e.status === 403) return 'The server refused access (HTTP ' + e.status + ').  Check the username and password, or whether the provider blocks this IP.';
       if (e.status === 404) return 'Not found (HTTP 404).  Check the server address and port.';

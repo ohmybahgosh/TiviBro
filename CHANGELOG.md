@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+- **My teams: one game reads the same on every channel.**  A game on several channels kept each channel's own wording and time ("Michigan Wolverines vs Oregon Ducks" at 3:30, "Oregon Ducks Michigan Wolverines" at 3:25, "NCAAF: College Football: Michigan at Oregon").  Each channel keeps its row, but now they all say the two teams in full with the visitors first ("Michigan Wolverines at Oregon Ducks"), and "Starts …" uses the time most channels give.  A real programme keeps its own times.
+- **The network helper's secret, after webOS restarts the helper.**  webOS can restart TiviBro's network helper on its own, and it then has a new secret.  TiviBro kept the old one, so the web editor, the phone app and channel lists were refused until TiviBro was opened again.  Now TiviBro notices and asks the helper again.
+- **Errors in plain words.**  "helper answered 403", "HTTP 502" and raw connection errors now say what happened and what to try, in your language.
+- **What the TV tried, for a playlist that won't add (issue #87).**  Adding a playlist from the web editor that fails now has **What the TV tried** under the message: the TV's log of each try, with logins masked.
+- **Empty groups say why.**  An empty Favorites says how to add one, a group whose channels are all hidden says where to show them again, and a group your provider sends empty says so.
+- **Larger text on small TVs.**  On a 32-inch or smaller TV, whose screen shows TiviBro smaller, the lists' text starts at Large the first time.  Settings > Appearance > Text size changes it.
+- **A backup update-signing key.**  Updates now also install when signed with a second key kept offline, so losing the build's key can't leave TVs stuck on an old version.
+
 ## 0.6.0 (alpha 133, 2026-11-14)
 
 Pre-release: expect rough edges, and keep a backup before installing.

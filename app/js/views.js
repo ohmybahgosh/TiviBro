@@ -1329,18 +1329,6 @@ var Views = (function () {
     goFull();
   }
 
-  /* A channel number: with several playlists on, each can have it, so TiviBro asks which (the one playing
-     now's playlist first).  One playlist with it: straight there. */
-  function pickNumber(n, go) {
-    var l = L.byNumber(n);
-    if (!l.length) { U.toast(I18n.t('No channel {n}', { n: n })); return; }
-    if (l.length === 1) return go(l[0]);
-    var cur = Player.current, mine = cur && cur.p || '';
-    l.sort(function (a, b) { return ((b.p || '') === mine) - ((a.p || '') === mine); });
-    UI.menu(I18n.t('Channel {n}', { n: n }), l.map(function (c, i) {
-      return { label: L.name(c), sub: Store.plOf(c).name || I18n.t('Playlist'), current: i === 0, action: function () { go(c); } };
-    }), null, { sub: I18n.t('More than one playlist has this number.') });
-  }
   function zapDigit(d) {
     zapBuf = (zapBuf + d).slice(-5);
     var z = $('zapNum'); z.textContent = zapBuf; z.classList.remove('hidden');
@@ -1350,11 +1338,12 @@ var Views = (function () {
     zapT = setTimeout(function () {
       if (done) setTimeout(function () { z.classList.add('hidden'); }, 700); else z.classList.add('hidden');
       var n = +zapBuf; zapBuf = '';
-      pickNumber(n, function (c) {
-        startChannel(c, false, function () {
-          if (!L.channels(curGroup).some(function (x) { return x.k === c.k; })) { curGroup = L.ALL; showGroup(L.ALL); }
-          if (!full) goFull(); else { zapIdx = L.channels(curGroup).findIndex(function (x) { return x.k === c.k; }); osd(true); }
-        });
+      var all = L.data.channels, c = null;
+      for (var i = 0; i < all.length; i++) if (all[i].num === n && !Store.edits.hiddenChannels[all[i].k]) { c = all[i]; break; }
+      if (!c) { U.toast('No channel ' + n); return; }
+      startChannel(c, false, function () {
+        if (!L.channels(curGroup).some(function (x) { return x.k === c.k; })) { curGroup = L.ALL; showGroup(L.ALL); }
+        if (!full) goFull(); else { zapIdx = L.channels(curGroup).findIndex(function (x) { return x.k === c.k; }); osd(true); }
       });
     }, done ? 0 : 1400);
   }
@@ -2103,7 +2092,7 @@ var Views = (function () {
   function stopAll() { Subs.reset(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off');  if (pipTab()) pipUpdate(); }
 
   return {
-    pickNumber: pickNumber, pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
+    pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
     manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
@@ -3011,16 +3000,14 @@ var Guide = (function () {
     numT = setTimeout(function () {
       z.classList.add('hidden');
       var n = +numBuf; numBuf = '';
-      var at = function (c) {
-        var i = list.indexOf(c);
-        if (i < 0) { load(c.g, c.k); setZone('grid'); draw(); return; }
-        if (zone !== 'grid') setZone('grid');
-        selectIdx(i);
-      };
-      var l = L.byNumber(n), here = l.filter(function (c) { return list.indexOf(c) >= 0; });
-      // In the group shown, one with that number: there.  Otherwise, as fullscreen does (asks when it must).
-      if (here.length === 1) return at(here[0]);
-      Views.pickNumber(n, at);
+      var i = list.findIndex(function (c) { return +c.num === n; });
+      if (i < 0) {
+        var c = L.channels(L.ALL).filter(function (x) { return +x.num === n; })[0];
+        if (c) { load(c.g, c.k); setZone('grid'); draw(); return; }
+        U.toast('No channel ' + n); return;
+      }
+      if (zone !== 'grid') setZone('grid');
+      selectIdx(i);
     }, L.numberCanGrow(numBuf) ? 1200 : 0);
   }
 
