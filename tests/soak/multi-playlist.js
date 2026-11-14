@@ -212,6 +212,18 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('a point made without the second playlist restores only the first\'s', await hid() === 'false,false', await hid());
     await ev(([a, c]) => { Library.hideChannel(a, false); Library.hideChannel(c, false); }, [k1b, k2b]);
 
+    // A channel number both playlists have: TiviBro asks which, with the playlist's name on each.
+    const both = await ev(() => { const n = Library.data.channels.filter((c) => !c.p && c.num).map((c) => +c.num).find((n) => Library.byNumber(n).length > 1); return n || 0; });
+    if (both) {
+      await ev((n) => { window._picked = ''; Views.pickNumber(n, (c) => { window._picked = c.k; }); }, both);
+      await tv.waitForTimeout(400);
+      const txt = await ev(() => document.body.innerText);
+      ok('a number in both playlists: asks which, naming the playlists', /More than one playlist has this number/.test(txt) && /Second provider/.test(txt), txt.slice(0, 200));
+      await tv.keyboard.press('Enter'); await tv.waitForTimeout(300);
+      ok('…and goes to the one picked', !!(await ev(() => window._picked)));
+    } else ok('a number in both playlists (the mocks share numbers)', false);
+    const solo = await ev(() => { const c = Library.data.channels.find((x) => x.num && Library.byNumber(x.num).length === 1); if (!c) return 'none'; let got = ''; Views.pickNumber(c.num, (x) => { got = x.k; }); return got === c.k ? 'ok' : 'no'; });
+    ok('a number only one playlist has: straight there', solo === 'ok' || solo === 'none', solo);
     // Settings: the second playlist says it is on, and offers to make it the first.
     const sa = (sec, path, n, op, a) => ev(([sec, path, n, op, a]) => Promise.resolve(n == null ? Settings.phone.page(sec, path) : Settings.phone.change(sec, path, n, op, a || {})), [sec, path, n, op, a]);
     let pls = await sa('playlists', []);

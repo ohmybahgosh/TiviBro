@@ -31,12 +31,17 @@ function req(url, method, body, token) {
   const shot = (n) => page.screenshot({ path: '/tmp/setup-' + n + '.png' });
 
   // A server that doesn't answer: the TV says so.
-  await req(E + '/api/command', 'POST', { type: 'addPlaylist', args: { server: 'http://127.0.0.1:9', user: 'nobody', pass: 'wrong' } }, T);
+  const cmd = (await req(E + '/api/command', 'POST', { type: 'addPlaylist', args: { server: 'http://127.0.0.1:9', user: 'nobody', pass: 'wrong' } }, T)).json;
   await page.waitForFunction(() => /busy|ok|err/.test((document.querySelector('.join-banner') || {}).className || ''), null, { timeout: 15000 }).catch(() => {});
   let seen = await card();
   if (/busy/.test(seen)) { await page.waitForFunction(() => /err|ok/.test((document.querySelector('.join-banner') || {}).className || ''), null, { timeout: 30000 }).catch(() => {}); seen = await card(); }
   await shot('error');
   ok('a failed playlist shows on the TV, with the reason', /join-banner err/.test(seen) && /didn't work/.test(seen), seen);
+  // The phone or computer gets what the TV tried, from its log, masked (issue #87).
+  let res = null;
+  for (let i = 0; i < 40 && !(res && res.done); i++) { res = (await req(E + '/api/result?id=' + cmd.id, 'GET', null, T)).json; if (!(res && res.done)) await page.waitForTimeout(500); }
+  const tried = res && res.data && res.data.log || [];
+  ok('the phone or computer gets what the TV tried', tried.length > 0 && tried.some((l) => /xc|http/.test(l)) && !tried.some((l) => /wrong/.test(l)), JSON.stringify(res).slice(0, 300));
   ok('the banner is big enough to read across the room', await ev(() => parseFloat(getComputedStyle(document.querySelector('.join-banner')).fontSize) >= 36));
   await page.keyboard.press('ArrowDown'); await page.waitForTimeout(300);
   ok('a press on the TV remote clears it', /hidden/.test(await card()), await card());

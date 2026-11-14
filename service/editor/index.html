@@ -409,6 +409,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 @media (max-width:360px){ .changebar{gap:6px} .changebar button{padding:6px 8px;font-size:13px} .changebar .lbl{font-size:13px} }
 /* Touch screens have no hover: show the row actions that otherwise appear under the mouse. */
 @media (hover:none){ .g .acts{display:flex} .g .grip{display:none} }
+.tried{margin-top:8px}.tried summary{cursor:pointer;color:var(--muted,#9aa3b8)}.tried pre{white-space:pre-wrap;word-break:break-all;font-size:12px;line-height:1.45;max-height:260px;overflow:auto;margin:6px 0 0;padding:8px;border-radius:6px;background:rgba(0,0,0,.25)}
 </style>
 </head>
 <body>
@@ -933,7 +934,7 @@ function command(type, args, timeoutMs, onTick) {
     return new Promise(function (res, rej) {
       (function poll() {
         api('/api/result?id=' + id).then(function (r) {
-          if (r.done) return r.ok ? res(r) : rej(new Error(r.msg || 'The TV could not do that.'));
+          if (r.done) return r.ok ? res(r) : rej(Object.assign(new Error(r.msg || 'The TV could not do that.'), { log: r.data && Array.isArray(r.data.log) ? r.data.log : null }));
           var waited = Date.now() - t0;
           if (onTick) onTick(Math.round(waited / 1000));
           if (waited > (timeoutMs || 60000)) return rej(new Error('The TV did not answer.  Is TiviBro still open on the TV?'));
@@ -3604,7 +3605,11 @@ $('addForm').addEventListener('submit', function (e) {
   var args = { type: addType, name: $('aName').value, server: $('aServer').value, user: $('aUser').value, pass: $('aPass').value, m3u: $('aM3u').value, portal: $('aPortal').value, mac: $('aMac').value, sn: $('aSn').value, epg: $('aEpg').value, use: $('aUse').checked };
   busyBtn($('aGo'), command('addPlaylist', args, 300000, cmdMsg('addMsg', 'The TV is logging in and loading the channel list.  This can take a minute…'))).then(function (r) {
     msg('addMsg', 'ok', r.msg); $('addForm').reset(); addTypeTo('link'); setTimeout(function () { load(!!args.use).catch(function () {}); }, 2500);
-  }).catch(function (err) { msg('addMsg', 'bad', err.message); });
+  }).catch(function (err) {
+    msg('addMsg', 'bad', err.message);
+    // What the TV tried, from its log (issue #87): folded away under the message.
+    if (err.log && err.log.length) $('addMsg').insertAdjacentHTML('beforeend', '<details class="tried"><summary>What the TV tried</summary><pre>' + esc(err.log.join('\n')) + '</pre></details>');
+  });
 });
 
 /* ---------- changes and restore points ---------- */

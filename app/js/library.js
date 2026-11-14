@@ -297,6 +297,17 @@ var Library = (function () {
      of your groups (or copied into a provider group) that is shown: the local station you put in "Local
      channels" while its provider group is hidden.  For Search and My teams. */
   var inShown = null;
+  /* Channels with a number, one per playlist that has it (several playlists on: the same number can be in
+     each).  Within a playlist the first shown one, as before. */
+  function byNumber(n) {
+    var out = [], seen = {}, all = data.channels;
+    for (var i = 0; i < all.length; i++) {
+      var c = all[i];
+      if (+c.num !== +n || seen[c.p || ''] || !shownAnywhere(c)) continue;
+      seen[c.p || ''] = 1; out.push(c);
+    }
+    return out;
+  }
   function shownAnywhere(c) {
     var e = E();
     if (!c || (!S().showHidden && e.hiddenChannels[c.k])) return false;
@@ -613,7 +624,7 @@ var Library = (function () {
 
   return {
     hideChannels: hideChannels, isHidden: isHidden, refilter: refilter, get raw() { return raw; }, idle: idle, ALL: ALL, RECENT: RECENT, FAV: FAV, EVENTS: EVENTS, NEW: NEW, TEAMS: TEAMS, MOVIES: MOVIES, set: set, isNew: isNew, isVirtual: isVirtual, canReorder: canReorder, resetOrder: resetOrder, hasOwnOrder: hasOwnOrder, isFav: isFav, toggleFav: toggleFav, touchRecent: touchRecent, addWatch: addWatch,
-    shownAnywhere: shownAnywhere, isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
+    shownAnywhere: shownAnywhere, byNumber: byNumber, isBlocked: isBlocked, block: block, get data() { return data; }, dirty: dirty, name: name, groups: groups, channels: channels, groupName: groupName,
     noGuide: noGuide, setNoGuide: setNoGuide, isCustom: isCustom, customGroups: function () { return E().custom; }, find: find, count: count, sample: sample,
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,
     createGroup: createGroup, renameGroup: renameGroup, deleteGroup: deleteGroup,

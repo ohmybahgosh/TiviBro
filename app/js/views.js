@@ -481,7 +481,16 @@ var Views = (function () {
     return gs[0] ? gs[0].id : L.ALL;
   }
   var EMPTY = 'No channels in this group.  Hold OK on any channel and choose "Copy to group" to add some.';
-  function emptyFor(gid) { return gid === L.TEAMS && typeof Teams !== 'undefined' ? Teams.emptyText() : gid === L.MOVIES && typeof Movies !== 'undefined' ? Movies.emptyText() : EMPTY; }
+  // An empty group says why, and what to do about it.
+  function emptyFor(gid) {
+    if (gid === L.TEAMS && typeof Teams !== 'undefined') return Teams.emptyText();
+    if (gid === L.MOVIES && typeof Movies !== 'undefined') return Movies.emptyText();
+    if (gid === L.FAV) return 'No Favorites yet.  Hold OK on a channel and choose "Add to Favorites".';
+    if (L.isCustom(gid)) return EMPTY;
+    var all = L.channels(gid, true);
+    if (all.length) return 'Every channel in this group is hidden.  Settings > Channels and groups > Hidden channels shows them again.';
+    return 'Your provider sends no channels in this group right now.';
+  }
   function showGroup(gid, keepSel) {
     var prev = chansVL.current();
     curGroup = gid;
@@ -1320,6 +1329,18 @@ var Views = (function () {
     goFull();
   }
 
+  /* A channel number: with several playlists on, each can have it, so TiviBro asks which (the one playing
+     now's playlist first).  One playlist with it: straight there. */
+  function pickNumber(n, go) {
+    var l = L.byNumber(n);
+    if (!l.length) { U.toast(I18n.t('No channel {n}', { n: n })); return; }
+    if (l.length === 1) return go(l[0]);
+    var cur = Player.current, mine = cur && cur.p || '';
+    l.sort(function (a, b) { return ((b.p || '') === mine) - ((a.p || '') === mine); });
+    UI.menu(I18n.t('Channel {n}', { n: n }), l.map(function (c, i) {
+      return { label: L.name(c), sub: Store.plOf(c).name || I18n.t('Playlist'), current: i === 0, action: function () { go(c); } };
+    }), null, { sub: I18n.t('More than one playlist has this number.') });
+  }
   function zapDigit(d) {
     zapBuf = (zapBuf + d).slice(-5);
     var z = $('zapNum'); z.textContent = zapBuf; z.classList.remove('hidden');
@@ -1329,12 +1350,11 @@ var Views = (function () {
     zapT = setTimeout(function () {
       if (done) setTimeout(function () { z.classList.add('hidden'); }, 700); else z.classList.add('hidden');
       var n = +zapBuf; zapBuf = '';
-      var all = L.data.channels, c = null;
-      for (var i = 0; i < all.length; i++) if (all[i].num === n && !Store.edits.hiddenChannels[all[i].k]) { c = all[i]; break; }
-      if (!c) { U.toast('No channel ' + n); return; }
-      startChannel(c, false, function () {
-        if (!L.channels(curGroup).some(function (x) { return x.k === c.k; })) { curGroup = L.ALL; showGroup(L.ALL); }
-        if (!full) goFull(); else { zapIdx = L.channels(curGroup).findIndex(function (x) { return x.k === c.k; }); osd(true); }
+      pickNumber(n, function (c) {
+        startChannel(c, false, function () {
+          if (!L.channels(curGroup).some(function (x) { return x.k === c.k; })) { curGroup = L.ALL; showGroup(L.ALL); }
+          if (!full) goFull(); else { zapIdx = L.channels(curGroup).findIndex(function (x) { return x.k === c.k; }); osd(true); }
+        });
       });
     }, done ? 0 : 1400);
   }
@@ -2083,7 +2103,7 @@ var Views = (function () {
   function stopAll() { Subs.reset(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off');  if (pipTab()) pipUpdate(); }
 
   return {
-    pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
+    pickNumber: pickNumber, pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
     manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
@@ -2287,7 +2307,7 @@ var Guide = (function () {
     top = U.clamp(sel - 2, 0, Math.max(0, list.length - VIS));
     head();
     body.classList.toggle('empty', !list.length);
-    body.setAttribute('data-empty', gid === L.TEAMS || gid === L.MOVIES ? Views.emptyFor(gid) : 'No channels in ' + L.groupName(gid) + '.');
+    body.setAttribute('data-empty', I18n.t(Views.emptyFor(gid)));
   }
   /* The row of a channel in the group showing.  A version of it that isn't in this group (hidden, or in
      another group) is on the row of the version that is: the channel switched to by itself when the one you
@@ -2991,14 +3011,16 @@ var Guide = (function () {
     numT = setTimeout(function () {
       z.classList.add('hidden');
       var n = +numBuf; numBuf = '';
-      var i = list.findIndex(function (c) { return +c.num === n; });
-      if (i < 0) {
-        var c = L.channels(L.ALL).filter(function (x) { return +x.num === n; })[0];
-        if (c) { load(c.g, c.k); setZone('grid'); draw(); return; }
-        U.toast('No channel ' + n); return;
-      }
-      if (zone !== 'grid') setZone('grid');
-      selectIdx(i);
+      var at = function (c) {
+        var i = list.indexOf(c);
+        if (i < 0) { load(c.g, c.k); setZone('grid'); draw(); return; }
+        if (zone !== 'grid') setZone('grid');
+        selectIdx(i);
+      };
+      var l = L.byNumber(n), here = l.filter(function (c) { return list.indexOf(c) >= 0; });
+      // In the group shown, one with that number: there.  Otherwise, as fullscreen does (asks when it must).
+      if (here.length === 1) return at(here[0]);
+      Views.pickNumber(n, at);
     }, L.numberCanGrow(numBuf) ? 1200 : 0);
   }
 

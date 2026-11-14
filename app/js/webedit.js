@@ -664,19 +664,26 @@ var WebEdit = (function () {
       chain = chain.then(function () {
         Log.info('webedit', 'Running "' + c.type + '" from the web editor');
         Log.state('editor', 'running "' + c.type + '" from the web editor');
-        var fn = RUN[c.type];
+        var fn = RUN[c.type], seen = Log.lines().length;
         return Promise.resolve().then(function () { if (!fn) throw new Error('Unknown action ' + c.type); return fn(c.args || {}); })
           .then(function (r) { return call('/editor/result', { id: c.id, ok: true, msg: r && r.msg, data: r && r.data }); },
             function (e) {
               Log.warn('webedit', '"' + c.type + '" failed: ' + (e && e.message));
               if (c.type === 'addPlaylist' || c.type === 'restore') activity('That didn\'t work: ' + String((e && e.message) || 'it failed').replace(/([^.!?])$/, '$1.') + '  Fix it on your phone or computer and send it again.', 'err');
-              return call('/editor/result', { id: c.id, ok: false, msg: (e && e.message) || 'failed' }); })
+              // Adding a playlist: what the TV tried, for the "What the TV tried" box (issue #87).
+              var tried = c.type === 'addPlaylist' ? triedLog(seen) : null;
+              return call('/editor/result', { id: c.id, ok: false, msg: (e && e.message) || 'failed', data: tried ? { log: tried } : undefined }); })
           .then(function () { lastSig = ''; Log.state('editor', ''); });
       });
     });
     return chain;
   }
 
+  // The log lines about logging in and loading since a command started: masked, the last 20.
+  function triedLog(from) {
+    var l = Log.lines().slice(from).filter(function (x) { return /^\S+\s+(?:WARN|ERROR|debug)?\s*(?:xc|m3u|http|stalker|app|net|source)\b/.test(x.replace(/^\s+/, '')); });
+    return l.slice(-20).map(function (x) { return Log.redact ? Log.redact(x) : x; });
+  }
   var busyAt = 0;
   function tick() {
     // Something in the last look still hasn't finished after 3 minutes (a stored draft or backup that
