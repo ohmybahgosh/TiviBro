@@ -9,7 +9,8 @@ ARES_BIN="$ROOT/node_modules/.bin"
 # A copy of app/ in $1/app to package, with each script under a name with its hash (js/log.<hash>.js),
 # so webOS's code cache can't keep running a changed script of the same length after an update
 # (scripts/script-versions.js).  build.sh and test-build.sh package this, never app/ itself.
-stage_app() { cp -R "$ROOT/app" "$1/app" && node "$ROOT/scripts/script-versions.js" "$1/app"; }
+# The app, with TiviBro's license and the third-party notices beside index.html (THIRD-PARTY-NOTICES.md).
+stage_app() { cp -R "$ROOT/app" "$1/app" && cp "$ROOT/LICENSE" "$1/app/LICENSE.txt" && cp "$ROOT/THIRD-PARTY-NOTICES.md" "$1/app/THIRD-PARTY-NOTICES.md" && node "$ROOT/scripts/script-versions.js" "$1/app"; }
 ares() { local c="$1"; shift; if [ -x "$ARES_BIN/$c" ]; then "$ARES_BIN/$c" "$@"; else command -v "$c" >/dev/null || { echo "webOS CLI not found. Run: npm install" >&2; exit 1; }; "$c" "$@"; fi; }
 # Target TV: pass -d <name> or set TIVIBRO_DEVICE.  Configure devices with: npx ares-setup-device
 DEVICE="${TIVIBRO_DEVICE:-}"

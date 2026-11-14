@@ -317,7 +317,7 @@ var Settings = (function () {
       var arrowish = { up: 1, down: 1, left: 1, right: 1, chup: 1, chdown: 1, back: 1 };
       if (!Keymap.fixed(ctx, b[0])) out.push(slot(b[0], b[1]));
       // Long presses on arrows would break held scrolling in lists.
-      if (b[0] !== 'back' && !((ctx === 'list' || ctx === 'guide') && arrowish[b[0]]) && !(ctx === 'guide' && (b[0] === 'rew' || b[0] === 'ff'))) out.push(slot('long:' + b[0], 'Hold ' + b[1]));
+      if (b[0] !== 'back' && !((ctx === 'list' || ctx === 'guide') && arrowish[b[0]]) && !(ctx === 'guide' && (b[0] === 'rew' || b[0] === 'ff'))) out.push(slot('long:' + b[0], I18n.raw(I18n.t('Hold {x}', { x: I18n.t(b[1]) }))));
     });
     out.push(head(''));
     out.push(action('Restore defaults for this screen', '', function () { Keymap.reset(ctx); U.toast('Defaults restored'); build(); }));
@@ -1263,8 +1263,36 @@ var Settings = (function () {
     credit.appendChild(logo); credit.appendChild(U.el('span', '', 'This product uses the TMDB API but is not endorsed or certified by TMDB.'));
     out.push({ preview: true, el: credit });
     out.push(info('Made by OhMyBahGosh', 'github.com/' + Update.REPO));
-    out.push(info('Playback libraries', 'hls.js ' + (window.Hls ? Hls.version : '') + '   mpegts.js'));
+    out.push(page('Open-source licenses and credits', 'TiviBro is MIT licensed.  What it is built with, and the services it uses.', 'Open-source licenses and credits', licenses));
     return out;
+  }
+
+  /* What TiviBro is built with and their licenses, the same list as THIRD-PARTY-NOTICES.md (which ships beside
+     index.html with the license texts it names). */
+  function licenses() {
+    var L2 = function (name, lic) { var it = info(I18n.raw(name), ''); it.value = function () { return lic; }; it.raw = true; return it; };
+    return [
+      info('TiviBro is free software under the MIT License, copyright (c) 2026 OhMyBahGosh.  The full texts of every license below are in the app\'s package (THIRD-PARTY-NOTICES.md) and at github.com/' + Update.REPO + '.', ''),
+      head('In the app'),
+      L2('hls.js ' + (window.Hls && Hls.version || '1.5.20'), 'Apache-2.0'),
+      L2('mpegts.js 1.8.0 (with TiviBro\'s changes)', 'Apache-2.0'),
+      L2('dash.js 4.7.4', 'BSD-3-Clause'),
+      L2('QR Code Generator, Kazuhiko Arase', 'MIT'),
+      L2('Roboto and Roboto Mono (digits)', 'Apache-2.0'),
+      L2('DejaVu Sans (symbols)', 'Bitstream Vera'),
+      head('In the network helper'),
+      L2('FFmpeg 7.1.1 (the audio converter)', 'LGPL v3+'),
+      L2('Mbed TLS 3.6.5', 'Apache-2.0'),
+      info('FFmpeg is unmodified, built from ffmpeg.org/releases/ffmpeg-7.1.1.tar.xz by scripts/ffmpeg/build.sh in TiviBro\'s repository.  It runs as a separate program, which you can replace with your own build.', ''),
+      head('Services and data, with thanks'),
+      L2('TMDB', 'Movie and show details and posters'),
+      info('This product uses the TMDB API but is not endorsed or certified by TMDB.', ''),
+      L2('OpenSubtitles.com', 'Subtitles'),
+      L2('tv-logo/tv-logos', 'Logos, CC BY-SA / BY-NC-SA'),
+      L2('iptv-org/database', 'Logos, Unlicense'),
+      info('Channel logos are trademarks of their owners.', ''),
+      L2('epg.pw, iptv-epg.org, epgshare01, i.mjh.nz, EPGTalk', 'Public guides')
+    ];
   }
 
   // Each section's page, by id, so reordering SECTIONS can never show one section under another's name.
@@ -1491,8 +1519,12 @@ var Settings = (function () {
       if (list.length > 80) return;                          // a list of your own things, not settings
       list.forEach(function (it) {
         if (it.head || it.info || it.preview || it.raw || !it.label) return;
-        out.push({ sec: secId, chain: chain, trail: trail, label: it.label, sub: it.sub || '' });
-        if (it.page && depth < 3) { var l2; try { l2 = lean(it.page.fn()); } catch (e) { l2 = null; } walk(secId, l2, chain.concat([it.page]), trail.concat([it.page.title]), depth + 1); }
+        /* Only TiviBro's own settings: a row named after one of your channels, teams, sources or groups (a page
+           of them, like No guide wanted or a league's teams) isn't one (I18n.known: the translations have it). */
+        var own = typeof it.label === 'string' && (!I18n.known || I18n.known(it.label));
+        if (own) out.push({ sec: secId, chain: chain, trail: trail, label: it.label, sub: it.sub || '' });
+        // A page that is another section (API keys from My media) is found under that section, once.
+        if (it.page && depth < 3 && own && FNS.indexOf(it.page.fn) < 0) { var l2; try { l2 = lean(it.page.fn()); } catch (e) { l2 = null; } walk(secId, l2, chain.concat([it.page]), trail.concat([it.page.title]), depth + 1); }
       });
     }
     SECTIONS.forEach(function (x, i) { if (!shown(i)) return; var l; try { l = lean(FNS[i]()); } catch (e) { l = null; } walk(x[0], l, [], [title(x)], 0); });
@@ -1504,14 +1536,15 @@ var Settings = (function () {
     var out = [action('Search for', findQ ? '' : 'Type a word: buffer, subtitles, clock, DNS…', askFind, function () { return findQ || '…'; })];
     if (!findQ) return out;
     var q = norm1(findQ).trim(), hits = [], seen = {};
-    findIndex().forEach(function (r) {
-      var name = norm1(T(r.label)) + norm1(r.label), note = norm1(r.sub ? T(r.sub) : '') + norm1(r.sub), key = r.sec + '|' + r.trail.join('>') + '|' + r.label;
+    // The shortest way to each first (Guide before a playlist's own guide page).
+    findIndex().slice().sort(function (a, b) { return a.trail.length - b.trail.length; }).forEach(function (r) {
+      var name = norm1(T(r.label)) + norm1(r.label), note = norm1(r.sub ? T(r.sub) : '') + norm1(r.sub), key = r.label + '|' + r.sub;
       if (seen[key]) return;
       var w = name.indexOf(q) >= 0 ? 0 : note.indexOf(q) >= 0 ? 1 : -1;
       if (w < 0) return;
       seen[key] = 1; hits.push({ r: r, w: w });
     });
-    hits.sort(function (a, b) { return a.w - b.w; });
+    hits.sort(function (a, b) { return a.w - b.w || a.r.trail.length - b.r.trail.length; });
     out.push(head(I18n.raw(I18n.t(hits.length === 1 ? '{n} setting' : '{n} settings', { n: hits.length }))));
     if (!hits.length) out.push(info('No setting has that in its name or its note.', ''));
     hits.slice(0, 60).forEach(function (h) {

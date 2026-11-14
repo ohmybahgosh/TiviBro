@@ -38,7 +38,6 @@ var MkvSubs = (function () {
     for (var i = 1; i < len; i++) value = value * 256 + buf[pos + i];
     return { value: value, next: pos + len };
   }
-  function idHex(v) { return v.toString(16).toUpperCase(); }
 
   var TRACKNUMBER = 0xD7, TRACKTYPE = 0x83, CODECID = 0x86, LANGUAGE = 0x22B59C, FLAGFORCED = 0x55AA;
   var TRACKENTRY = 0xAE;

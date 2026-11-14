@@ -216,6 +216,16 @@ var I18n = (function () {
   function langs() { return LANGS.map(function (x) { return { code: x[0], name: x[1], english: x[2] }; }); }
 
   return {
+    // A string of TiviBro's own (any language has it), not a name from your channels or teams: Search settings.
+    known: function (s) {
+      s = String(s);
+      for (var c in dicts) {
+        if (dicts[c].hasOwnProperty(s)) return true;
+        // Or built from one ("Hold " + a button: "Hold {x}").
+        for (var i = 0, p = pats[c] || []; i < p.length; i++) if (p[i].auto && p[i].rx.test(s)) return true;
+      }
+      return false;
+    },
     t: t, raw: raw, add: add, lang: lang, locale: locale, set: set, setting: function () { return chosen() || 'auto'; }, detected: detected, base: base,
     plural: plural, page: page, onChange: onChange, variant: variant, askTV: askTV, name: name, langs: langs, has: has, changed: changed,
     misses: function () { return Object.keys(misses); }, _dicts: dicts, _setTV: function (l) { tv = l; changed(); }

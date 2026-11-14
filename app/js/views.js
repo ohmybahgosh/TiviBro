@@ -258,6 +258,41 @@ var Views = (function () {
   var PALETTE_NAMES = { mono: 'Black and white', tokyo: 'Tokyo Night', dracula: 'Dracula', nord: 'Nord', gruvbox: 'Gruvbox', catppuccin: 'Catppuccin Mocha', solarized: 'Solarized Dark',
     onedark: 'One Dark', rosepine: 'Rosé Pine', everforest: 'Everforest', kanagawa: 'Kanagawa', monokai: 'Monokai',
     graphite: 'Graphite', github: 'GitHub Dark', ayu: 'Ayu Dark', terminal: 'Terminal' };
+  /* Category colours for a theme: the theme's own colours first (its second accent, warning, live and ok
+     colours), then a fixed set; each category gets the one whose hue is furthest from the accent (the focused
+     programme's colour) and from those already taken, so no two sit close together. */
+  var KIND_DEFAULT = ['#b48cff', '#3ddc97', '#f2b33d', '#ff7eb6', '#33c9e1'], KIND_MORE = ['#ff9f43', '#5b8cff', '#a3e635', '#e5484d', '#f472b6', '#14b8a6'];
+  function hsl(hex) {
+    var m = /^#?([0-9a-f]{6})$/i.exec(String(hex || '')); if (!m) return null;
+    var n = parseInt(m[1], 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+    var mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn, h = 0, s = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+    if (d) h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+    return { h: h * 60, s: s, l: l };
+  }
+  function hueGap(a, b) { var d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
+  function kindColours(pal, acc) {
+    var own = pal ? [pal.accent2, pal.warn, pal.air, pal.ok] : [];
+    var pool = own.concat(KIND_DEFAULT, KIND_MORE).map(function (c) { return { c: c, x: hsl(c) }; })
+      .filter(function (p, i, all) { return p.x && p.x.s > 0.3 && p.x.l > 0.35 && p.x.l < 0.85 && all.findIndex(function (q) { return q.c.toLowerCase() === p.c.toLowerCase(); }) === i; });
+    var a = hsl(acc), taken = [], out = [];
+    for (var k = 0; k < 5; k++) {
+      var best = null, bs = -1;
+      // Your own mix: each category keeps its usual colour unless the accent (or one taken) is close to it.
+      if (!pal) {
+        var d = pool.findIndex(function (p) { return p.c === KIND_DEFAULT[k]; });
+        if (d >= 0 && taken.indexOf(d) < 0 && (!a || a.s <= 0.2 || hueGap(pool[d].x.h, a.h) >= 35) && taken.every(function (t) { return hueGap(pool[d].x.h, pool[t].x.h) >= 30; })) { taken.push(d); out.push(pool[d].c); continue; }
+      }
+      pool.forEach(function (p, i) {
+        if (taken.indexOf(i) >= 0) return;
+        var gap = Math.min.apply(null, [a && a.s > 0.2 ? hueGap(p.x.h, a.h) : 180].concat(taken.map(function (t) { return hueGap(p.x.h, pool[t].x.h); })));
+        var score = Math.min(gap, 60) + (i < own.length ? 8 : 0);       // apart enough; then the theme's own
+        if (score > bs) { bs = score; best = i; }
+      });
+      if (best == null) { out.push(KIND_DEFAULT[k]); continue; }
+      taken.push(best); out.push(pool[best].c);
+    }
+    return out;
+  }
   function palette(id) { var p = PALETTES[id]; if (!p) return null; var o = {}; V.forEach(function (k, i) { o[k] = p[i]; }); return o; }
   function applyLook() {
     var pal = palette(Store.settings.palette), root = document.documentElement.style;
@@ -269,6 +304,8 @@ var Views = (function () {
     root.setProperty('--on-accent-dim', on.dim);
     // Accent used as text on the dark background: lift very dark accents so they stay readable.
     root.setProperty('--accent-text', U.luminance(acc) < 0.12 ? U.mix(acc, '#ffffff', 0.45) : acc);
+    // The guide's category colours (movies, sports, news, kids, documentaries) from the theme, apart from its accent.
+    kindColours(pal, acc).forEach(function (c, i) { root.setProperty('--k-' + 'msncd'.charAt(i), c); });
     document.body.classList.toggle('dimpast', !!Store.settings.dimPast);
     document.body.classList.toggle('guide1', Store.settings.guideLines === 1);
     var s = Store.settings, b = document.body.classList;
@@ -2049,7 +2086,7 @@ var Views = (function () {
     pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
-    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
+    manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, kindColours: kindColours, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
     filterChanged: filterChanged,
     get group() { return curGroup; }, set group(g) { curGroup = g; },
     get full() { return full; }, get tab() { return tab; }, get zone() { return zone; }, get playing() { return playing; }, get vod() { return vod; }, runAction: runAction,

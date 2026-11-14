@@ -117,7 +117,6 @@ var Library = (function () {
   /* The first playlist's channels and groups as the lists show them (the content filter applied), for
      what works on one playlist (the set-up tour).  With one playlist on, `data` itself. */
   var firstMemo = null;
-  function firstData() { return dataOf(''); }
   // One playlist's channels and groups as the lists show them ('' or the first playlist's id: the first).
   function dataOf(id) {
     if (id === (Store.settings && Store.settings.active)) id = '';
@@ -619,7 +618,7 @@ var Library = (function () {
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,
     createGroup: createGroup, renameGroup: renameGroup, deleteGroup: deleteGroup,
     copyTo: copyTo, removeFrom: removeFrom, moveInGroup: moveInGroup, moveGroup: moveGroup,
-    firstData: firstData, dataOf: dataOf, setOther: setOther, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, get main() { return main; }, get multi() { return multi(); }, plName: plName,
+    dataOf: dataOf, setOther: setOther, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, get main() { return main; }, get multi() { return multi(); }, plName: plName,
     otherIds: function () { return others.map(function (x) { return x.id; }); },
     hiddenItems: hiddenItems, allGroups: allGroups, mergedInto: mergedInto, mergedFrom: mergedFrom, mergeGroups: mergeGroups, splitGroup: splitGroup, homeOf: homeOf, versions: versions, versionKey: versionKey, numberCanGrow: numberCanGrow, qualityLabel: qualityLabel, versionTag: versionTag, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
   };

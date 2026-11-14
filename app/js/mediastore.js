@@ -92,7 +92,6 @@ var MediaStore = (function () {
     });
   }
   // What a source is, in words: Settings, the phone app and the web editor say the same.
-  function typeLabel(type) { return type === 'dlna' ? 'DLNA / UPnP' : type === 'dropbox' ? 'Dropbox' : 'WebDAV'; }
 
   function sourceMode(id, mode) { var s = source(id); if (!s || !/^(automatic|movies|shows)$/.test(mode)) throw new Error('Choose a valid source mode.'); s.contentMode = mode; save(); }
   function stamp(srcId, m) {
@@ -186,7 +185,7 @@ var MediaStore = (function () {
   function clearResume(id) { delete state.resume[id]; save(); }
 
   return {
-    preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, typeLabel: typeLabel, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
+    preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
     tmdbToken: function () { return state.tmdbToken || ''; }, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
     resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, clearResume: clearResume
   };

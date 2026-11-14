@@ -225,7 +225,6 @@ function reset() { Object.keys(Dropbox._tokens).forEach((k) => delete Dropbox._t
   const sid = M.addSource({ type: 'dropbox', name: 'Movies', root: '/Media/Movies', refresh: REFRESH, account: 'Test Viewer (viewer@example.com)', contentMode: 'automatic' });
   ok('the app keeps the token with the source', M.source(sid).refresh === REFRESH && M.source(sid).root === '/Media/Movies');
   ok('the list for screens and the web editor leaves it out', JSON.stringify(M.publicSources()).indexOf(REFRESH) < 0 && M.publicSources()[0].root === '/Media/Movies' && M.publicSources()[0].type === 'dropbox');
-  ok('Dropbox has its own label', M.typeLabel('dropbox') === 'Dropbox' && M.typeLabel('dlna') === 'DLNA / UPnP' && M.typeLabel('webdav') === 'WebDAV');
   ok('only in the media store, not the settings', Object.keys(ls).join() === 'tivibro.media');
   // A backup (webedit.js Backup) carries the settings, not the media store.
   const web = fs.readFileSync(path.join(__dirname, '../../app/js/webedit.js'), 'utf8');

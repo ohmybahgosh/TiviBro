@@ -35,7 +35,7 @@ const dataB = () => ({ groups: [{ id: 'x1', name: 'Movies' }, { id: 'x9', name: 
   ok('one playlist: the data is the playlist\'s own object', L.data === d);
   ok('one playlist: keys stay the provider\'s', L.find('x5761') && !L.find('x5761').p);
   ok('one playlist: no headings in the group column', !L.groups(true).some(g => g.head));
-  ok('one playlist: the first playlist\'s data is the data', L.firstData() === L.data);
+  ok('one playlist: the first playlist\'s data is the data', L.dataOf('') === L.data);
   L.hideChannel('x5761', true);
   ok('one playlist: edits saved to its own file as before', JSON.parse(ctx.mem['tivibro.edits.pA']).hiddenChannels.x5761 === 1);
   ok('one playlist: nothing written for the playlist that is off', !ctx.mem['tivibro.edits.pB']);
@@ -70,7 +70,7 @@ const lsTwo = () => ({ 'tivibro.settings': JSON.stringify({ playlists: [A, B], a
   const ids = gs.map(g => g.head ? '#' + g.name : g.id).join();
   ok('special groups first, then each playlist\'s groups under its heading', ids === 'c_fav,all,#Alpha,x2,x1,#Bravo,pB:x9,pB:x1', ids);
   ok('no headings without asking', !L.groups().some(g => g.head));
-  ok('the first playlist\'s data alone, for the set-up tour', L.firstData().channels.map(c => c.k).join() === 'x5761,x2' && L.firstData().groups.length === 2);
+  ok('the first playlist\'s data alone, for the set-up tour', L.dataOf('').channels.map(c => c.k).join() === 'x5761,x2' && L.dataOf('').groups.length === 2);
   // Its own channel copied in and your order there; the first playlist's x2 is copied in too, but hidden.
   ok('copied in, and your order, inside the other playlist\'s group', L.channels('pB:x9').map(c => c.k).join() === 'pB:x7,pB:x5761', L.channels('pB:x9').map(c => c.k).join());
   ok('with hidden ones, a channel of the first playlist copied in', L.channels('pB:x9', true).map(c => c.k).join() === 'pB:x8,pB:x7,pB:x5761,x2', L.channels('pB:x9', true).map(c => c.k).join());

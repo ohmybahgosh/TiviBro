@@ -7,6 +7,7 @@
   /* Midnight Electric */
   --ink:#0b0e1a; --panel:#141a2e; --raised:#1d2540; --line:#2a3352;
   --text:#e8ecf8; --muted:#8f9bbf; --dim:#5e6886;
+  --k-m:#b48cff; --k-s:#3ddc97; --k-n:#f2b33d; --k-c:#ff7eb6; --k-d:#33c9e1;
   --accent:#5b8cff; --accent2:#33e1ff; --on-accent:#0b0e1a; --on-accent-dim:rgba(11,14,26,.7); --accent-text:#5b8cff; --warn:#f2b33d; --air:#e5484d; --ok:#3ddc97;
   --row:76px; --grow:80px;
 }
@@ -17,7 +18,6 @@ html,body{width:1920px;height:1080px;overflow:hidden;background:var(--ink);color
 #app{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column}
 body.full #app{visibility:hidden}
 
-.brand .dot{width:18px;height:18px;border-radius:50%;background:var(--accent);display:inline-block}
 
 .view{flex:1;display:flex;min-height:0;padding:40px 56px 0 152px}
 .hints{height:64px;flex:none;display:flex;align-items:center;gap:36px;padding:0 56px 0 152px;color:var(--dim);font-size:22px}
@@ -198,11 +198,6 @@ body.guide1 .gp .gs{display:none}
 /* group switcher above the channel column */
 .guide-group{display:flex;align-items:center;gap:10px;padding:0 12px;border-radius:28px;margin:4px 0;color:var(--text);line-height:1.2}
 .guide-group.focus{background:var(--accent);color:var(--on-accent)}
-.gbar-btn{flex:none;width:40px;text-align:center;color:var(--muted);font-size:20px}
-.guide-group.focus .gbar-btn{color:var(--on-accent)}
-.gbar-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:25px}
-.gbar-count{flex:none;font-size:18px;color:var(--muted)}
-.guide-group.focus .gbar-count{color:var(--on-accent-dim)}
 
 /* settings */
 .set-nav{width:450px;margin-right:36px;display:flex;flex-direction:column;gap:6px}
@@ -385,7 +380,7 @@ body.dimpast .gp.past{color:var(--dim)}
 .osd-keys{display:flex;flex-wrap:wrap;gap:12px 34px;margin-top:22px;font-size:22px;color:var(--muted)}
 .osd-keys b,.hints b{display:inline-block;width:18px;height:18px;border-radius:4px;margin-right:10px;vertical-align:-2px}
 /* pointer (Magic Remote) */
-body.pointer .clickable,body.pointer .tab,body.pointer .row,body.pointer .opt,body.pointer .mi,body.pointer .grow,body.pointer .btn,body.pointer .set-nav>div,body.pointer .gbar-btn{cursor:pointer}
+body.pointer .clickable,body.pointer .tab,body.pointer .row,body.pointer .opt,body.pointer .mi,body.pointer .grow,body.pointer .btn,body.pointer .set-nav>div{cursor:pointer}
 body.pointer .clickable:hover{color:var(--text)}
 body.pointer .tab:hover{color:var(--text)}
 body.pointer .set-nav>div:hover{color:var(--text)}
@@ -399,7 +394,6 @@ body.nav-open .sidenav{width:360px;background:#080b16}
 body.nav-open #viewLive .col.groups{visibility:hidden}
 body.nav-hidden .sidenav,body.full .sidenav{visibility:hidden}
 .sidenav .brand{display:flex;align-items:center;gap:18px;padding:0 0 0 43px;height:56px;font-size:32px;font-weight:700;white-space:nowrap;margin-bottom:28px}
-.sidenav .brand .dot{width:18px;height:18px;border-radius:50%;background:var(--accent);display:inline-block;flex:none}
 .sidenav .brand .mark{width:44px;height:38px;object-fit:contain;flex:none;margin-left:-13px}
 .loadbrand{display:block;height:110px;margin:0 auto 28px}
 /* The loading screen (app.js loading): the logo and its line centred on the whole screen. */
@@ -468,7 +462,7 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 /* The category stripe is its own layer after the cell's contents, so the aired-so-far shading on what's on
    now (.gfill) never covers it. */
 .gp.k-m::after,.gp.k-s::after,.gp.k-n::after,.gp.k-c::after,.gp.k-d::after{content:'';position:absolute;left:7px;top:14px;bottom:14px;width:5px;border-radius:3px;pointer-events:none}
-.gp.k-m::after{background:#b48cff}.gp.k-s::after{background:#3ddc97}.gp.k-n::after{background:#f2b33d}.gp.k-c::after{background:#ff7eb6}.gp.k-d::after{background:#33c9e1}
+.gp.k-m::after{background:var(--k-m)}.gp.k-s::after{background:var(--k-s)}.gp.k-n::after{background:var(--k-n)}.gp.k-c::after{background:var(--k-c)}.gp.k-d::after{background:var(--k-d)}
 .gp.k-m,.gp.k-s,.gp.k-n,.gp.k-c,.gp.k-d{padding-left:22px}
 /* On the selected programme, an edge in the accent's text colour, so a colour close to the accent (News on Gruvbox,
    Sports on Everforest) still shows. */
@@ -477,7 +471,7 @@ body:not(.nav-hidden) #viewGuide .guide-top{padding-left:96px}
 .glegend.beside{right:264px}
 .glegend em{font-style:normal;margin-left:20px}
 .glegend em::before{content:'';display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:7px;vertical-align:0}
-.glegend .k-m::before{background:#b48cff}.glegend .k-s::before{background:#3ddc97}.glegend .k-n::before{background:#f2b33d}.glegend .k-c::before{background:#ff7eb6}.glegend .k-d::before{background:#33c9e1}
+.glegend .k-m::before{background:var(--k-m)}.glegend .k-s::before{background:var(--k-s)}.glegend .k-n::before{background:var(--k-n)}.glegend .k-c::before{background:var(--k-c)}.glegend .k-d::before{background:var(--k-d)}
 /* A programme running on past the window's edge: that side square, its text fading out (no "…"). */
 .gp.cl{border-top-left-radius:0;border-bottom-left-radius:0}
 .gp.cr{border-top-right-radius:0;border-bottom-right-radius:0}
@@ -495,7 +489,7 @@ body.dimpast .gp.past.focus{color:var(--on-accent)}
 .gd-badge.new{background:#3b2a12;color:#ffc56b}
 .gd-badge.rem{background:var(--raised);color:var(--accent-text)}
 .gd-badge.kind{background:var(--raised);color:var(--muted)}
-.gd-badge.kind.k-s{color:#3ddc97}.gd-badge.kind.k-n{color:#f2b33d}.gd-badge.kind.k-c{color:#ff7eb6}.gd-badge.kind.k-d{color:#33c9e1}
+.gd-badge.kind.k-s{color:var(--k-s)}.gd-badge.kind.k-n{color:var(--k-n)}.gd-badge.kind.k-c{color:var(--k-c)}.gd-badge.kind.k-d{color:var(--k-d)}
 .gd-ep{display:inline-block;margin-right:14px;color:var(--text);font-weight:600}
 .gp .gt,.gp .gs{position:relative}
 .gp .gcu{color:inherit}
@@ -547,7 +541,9 @@ body:not(.nav-hidden) #viewGuide .guide-groups{left:96px}
 .qp-ch .pg{font-size:18px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .qp-ch.focus{background:var(--accent);color:var(--on-accent)}
 .qp-ch.focus .pg{color:var(--on-accent-dim)}
-.qp-ch.on{outline:2px solid var(--air)}
+/* The channel playing: a ▶ before its name, in the theme's colour.  Not an outline, which read as the selection. */
+.qp-ch.on .nm::before{content:"\25B6  ";color:var(--accent-text);font-size:.8em}
+.qp-ch.on.focus .nm::before{color:var(--on-accent)}
 /* guide header: current group above the channel column */
 .guide-head{height:50px}
 .guide-group{width:470px;flex:none;display:block;padding:0 0 0 20px;margin:0;border-radius:0;line-height:50px;font-size:24px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:none}

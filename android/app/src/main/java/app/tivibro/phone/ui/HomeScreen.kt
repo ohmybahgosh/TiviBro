@@ -47,6 +47,7 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Theaters
 import androidx.compose.material.icons.rounded.VideoLibrary
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LinkOff
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -166,6 +167,9 @@ fun HomeScreen(
             containerColor = Panel,
         )
     }
+    // About: the version, TiviBro's license and what the app is built with (THIRD-PARTY-NOTICES.md).
+    var about by remember { mutableStateOf(false) }
+    if (about) AboutDialog(current, onDismiss = { about = false }, onOpen = { url -> runCatching { ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) } })
     val list = rememberLazyListState()
     fun checkNow() {
         if (checking) return
@@ -185,6 +189,7 @@ fun HomeScreen(
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Image(painterResource(R.drawable.wordmark), contentDescription = "TiviBro", modifier = Modifier.height(26.dp)) },
+                actions = { IconButton(onClick = { about = true }) { Icon(Icons.Rounded.Info, contentDescription = "About and licenses", tint = Muted) } },
                 colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Ink),
             )
         },
@@ -525,3 +530,36 @@ private fun AppUpdateCard(rel: AppRelease, onLater: () -> Unit) {
 }
 
 private fun mb(bytes: Long) = "%.1f".format(bytes / 1_048_576.0)
+
+/* About the app: its version, TiviBro's MIT license, and the open-source parts it is built with and their
+   licenses (the phone app's part of THIRD-PARTY-NOTICES.md in the repository). */
+private val APP_PARTS = listOf(
+    "AndroidX: Jetpack Compose, Material 3 and its icons, Activity, Core, Lifecycle, Navigation, WorkManager, Browser" to "Apache-2.0",
+    "Kotlin standard library and kotlinx.coroutines" to "Apache-2.0",
+    "Coil" to "Apache-2.0",
+    "Google code scanner (Google Play services)" to "Google APIs Terms of Service",
+)
+
+@Composable
+private fun AboutDialog(version: String, onDismiss: () -> Unit, onOpen: (String) -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("TiviBro app" + if (version.isNotBlank()) " $version" else "") },
+        text = {
+            Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
+                Text("Free software under the MIT License, copyright (c) 2026 OhMyBahGosh.", style = MaterialTheme.typography.bodyMedium)
+                Spacer(Modifier.height(16.dp))
+                Text("Built with", fontWeight = FontWeight.SemiBold)
+                APP_PARTS.forEach { (name, lic) ->
+                    Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))
+                    Text(lic, style = MaterialTheme.typography.bodySmall, color = Muted)
+                }
+                Spacer(Modifier.height(16.dp))
+                Text("The TV app's own list is on the TV: Settings > Updates, about and diagnostics > Open-source licenses and credits.  The full license texts are in the repository.", style = MaterialTheme.typography.bodySmall, color = Muted)
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } },
+        dismissButton = { TextButton(onClick = { onOpen("https://github.com/ohmybahgosh/TiviBro/blob/main/THIRD-PARTY-NOTICES.md") }) { Text("Full texts") } },
+        containerColor = Panel,
+    )
+}

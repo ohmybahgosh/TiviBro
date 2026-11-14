@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- **The guide's category colours follow the theme.**  Movies, sports, news, kids and documentaries take their colours from the theme, and none is close to the theme's accent (the focused programme) or to another category, so a green sports bar never sits next to a green focus on Terminal.  Your own mix keeps the usual colours unless your accent is close to one.
+- **The quick menu no longer outlines the channel playing in red.**  The red frame looked like the selection and ignored the theme; the channel playing now has a ▶ before its name, in the theme's colour.
+- **Search settings finds settings only.**  Your channels (No guide wanted), your teams and the like were listed as settings, and API keys showed up again under every page that links to them.  Now each setting is listed once, by the shortest way to it.
+- **Open-source licenses and credits.**  Settings > Updates, about and diagnostics has a page listing TiviBro's own license (MIT), every library it is built with and its license, FFmpeg's source for the audio converter, and the services and data it credits.  The phone app has the same for its own parts behind the ⓘ at the top of its first screen.  `THIRD-PARTY-NOTICES.md` (in the repository and inside the TV app's package, with TiviBro's license) holds the details.
+- **More of TiviBro in Spanish, Portuguese and Russian.**  About seventy settings and messages added since alpha 120 (the clock, where lists open, Up and Down in fullscreen, the DNS choice, the order of movies and shows, asking when a channel is slow, and others) were still in English.
+- **Tidying.**  Code nothing used any more is gone (an unused setting, four helper functions and some old styles), and translations of text the app no longer shows.
+
 ## 0.6.0 (alpha 132, 2026-11-13)
 
 Pre-release: expect rough edges, and keep a backup before installing.

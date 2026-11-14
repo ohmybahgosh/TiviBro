@@ -128,7 +128,7 @@ ok('the movie played again gets its download back, on, with its timing', Subs.re
   JSON.stringify(video.textTracks[before] && video.textTracks[before].cues));
 Subs.reset();
 store['tivibro.subsKept'] = JSON.stringify(Object.assign(JSON.parse(store['tivibro.subsKept']), { 'v:old': { at: Date.now() - 8 * 86400e3, subs: [{ label: 'x', lang: 'en', c: [[1, 2, 'a']] }] } }));
-ok('anything older than a week is let go', Subs.restore({ id: 'old' }) === 0 && Subs.keptCount() === 1);
+ok('anything older than a week is let go', Subs.restore({ id: 'old' }) === 0);
 Subs.reset();
 ctx.Store.settings.keepSubs = 0;
 ok('Keep downloaded subtitles Off brings nothing back', Subs.restore({ id: 'm1' }) === 0);

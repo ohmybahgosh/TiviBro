@@ -20,7 +20,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await page.waitForFunction(() => window.Library && Library.count() > 0, null, { timeout: 60000 }); await page.waitForTimeout(1500);
   const ev = (f, a) => page.evaluate(f, a);
   const shot = async (n) => { if (SHOTS) await page.screenshot({ path: path.join(SHOTS, n + '.png') }); };
-  const navText = () => ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
+  const navText = () => ev(() => [].map.call(document.querySelectorAll('#setNav > div:not(.nav-find)'), (d) => d.innerText.trim()));
   try {
     ok('a Spanish TV: TiviBro in Spain\'s Spanish', await ev(() => I18n.lang() === 'es-ES' && I18n.setting() === 'auto'));
     const tabs = await ev(() => [].map.call(document.querySelectorAll('.tabs .lbl'), (x) => x.textContent));

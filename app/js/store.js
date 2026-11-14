@@ -35,7 +35,6 @@ var Store = (function () {
     dimPast: true,
     noSpoilers: false,          // Hide spoilers (discussion #36): no summary or episode title for new and not-yet-aired episodes
     accent: '#5b8cff',
-    fontScale: 1,
     osdTimeout: 5,
     showNumbers: true,
     showClock: true,
