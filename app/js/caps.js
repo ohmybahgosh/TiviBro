@@ -100,13 +100,28 @@ var Caps = (function () {
     return c;
   }
 
+  /* LG model names start with the screen size ("32LQ630BPSA", "OLED65C2PUA").  A 32-inch or smaller TV has an
+     HD panel, where TiviBro's 1080p layout is shown smaller: the first time, the lists' text starts at Large
+     (Settings > Appearance > Text size can change it back; it's only done once, never over a choice). */
+  function inches(model) { var m = /^(?:OLED|QNED|NANO)?(\d{2})(?=[A-Z])/i.exec(String(model || '')); return m ? +m[1] : 0; }
+  function textForSize(model) {
+    try {
+      if (localStorage.getItem('tivibro.sizeLooked')) return;
+      localStorage.setItem('tivibro.sizeLooked', '1');
+      var n = inches(model), S = typeof Store !== 'undefined' && Store.settings;
+      if (!n || n > 32 || !S || (S.textSize && S.textSize !== 'm')) return;
+      S.textSize = 'l'; Store.saveSettings();
+      if (typeof Views !== 'undefined' && Views.applyLook) Views.applyLook();
+      if (window.Log) Log.info('caps', 'A ' + n + '-inch TV: the lists\' text starts at Large');
+    } catch (e) {}
+  }
   // Model name from the TV, for the DTS rule.  Optional: without it the TV's own answer is used.
   function loadSystemInfo() {
     if (typeof PalmServiceBridge === 'undefined') return;
     try {
       var b = new PalmServiceBridge();
       b.onservicecallback = function (msg) {
-        try { var r = JSON.parse(msg); if (r && r.returnValue) { sysInfo.model = r.modelName || ''; sysInfo.sdk = r.sdkVersion || ''; probed = null; if (window.Log) Log.info('caps', 'TV model ' + sysInfo.model + ', webOS ' + sysInfo.sdk); } } catch (e) {}
+        try { var r = JSON.parse(msg); if (r && r.returnValue) { sysInfo.model = r.modelName || ''; sysInfo.sdk = r.sdkVersion || ''; probed = null; if (window.Log) Log.info('caps', 'TV model ' + sysInfo.model + ', webOS ' + sysInfo.sdk); textForSize(sysInfo.model); } } catch (e) {}
       };
       b.call('luna://com.webos.service.tv.systemproperty/getSystemInfo', JSON.stringify({ keys: ['modelName', 'sdkVersion'] }));
     } catch (e) {}
@@ -270,7 +285,8 @@ var Caps = (function () {
     return rows;
   }
 
-  return { probe: probe, apply: apply, loadSystemInfo: loadSystemInfo, webosVersion: webosVersion, modelYear: modelYear, smallTv: smallTv,
+  return {
+    _inches: inches, probe: probe, apply: apply, loadSystemInfo: loadSystemInfo, webosVersion: webosVersion, modelYear: modelYear, smallTv: smallTv,
     get small() { return smallTv(sysInfo.model); },
     videoCodec: videoCodec, audioCodec: audioCodec, fromHlsLevel: fromHlsLevel, bestHlsLevel: bestHlsLevel, fromMpegts: fromMpegts, fromXtream: fromXtream,
     label: label, route: route, report: report, unplayable: unplayable,
