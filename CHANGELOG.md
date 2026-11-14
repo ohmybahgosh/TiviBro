@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 134, 2026-11-14)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 134
 
 - **My teams: one game reads the same on every channel.**  A game on several channels kept each channel's own wording and time ("Michigan Wolverines vs Oregon Ducks" at 3:30, "Oregon Ducks Michigan Wolverines" at 3:25, "NCAAF: College Football: Michigan at Oregon").  Each channel keeps its row, but now they all say the two teams in full with the visitors first ("Michigan Wolverines at Oregon Ducks"), and "Starts …" uses the time most channels give.  A real programme keeps its own times.
 - **The network helper's secret, after webOS restarts the helper.**  webOS can restart TiviBro's network helper on its own, and it then has a new secret.  TiviBro kept the old one, so the web editor, the phone app and channel lists were refused until TiviBro was opened again.  Now TiviBro notices and asks the helper again.
@@ -10,11 +14,7 @@
 - **Larger text on small TVs.**  On a 32-inch or smaller TV, whose screen shows TiviBro smaller, the lists' text starts at Large the first time.  Settings > Appearance > Text size changes it.
 - **A backup update-signing key.**  Updates now also install when signed with a second key kept offline, so losing the build's key can't leave TVs stuck on an old version.
 
-## 0.6.0 (alpha 133, 2026-11-14)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 133
+### In alpha 133
 
 - **The guide's category colours follow the theme.**  Movies, sports, news, kids and documentaries take their colours from the theme, and none is close to the theme's accent (the focused programme) or to another category, so a green sports bar never sits next to a green focus on Terminal.  Your own mix keeps the usual colours unless your accent is close to one.
 - **The quick menu no longer outlines the channel playing in red.**  The red frame looked like the selection and ignored the theme; the channel playing now has a ▶ before its name, in the theme's colour.

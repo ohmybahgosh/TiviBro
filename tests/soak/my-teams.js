@@ -144,7 +144,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('with no game in the window the group stays', between.inList, JSON.stringify(between));
   ok('but moves down, under your groups and All channels, out of the way', between.below, JSON.stringify(between));
   ok('and says when the next game is', /^No games on now or in the next 6 hours\.  Next: .+, (Today|Tomorrow|\w{3}) \d+:\d\d[ap]m on .+\.$/.test(between.text), between.text);
-  ok('other groups keep their own empty text', /Copy to group/.test(await ev(() => Views.emptyFor('nope'))));
+  ok('other groups keep their own empty text', /Copy to group/.test(await ev(() => Views.emptyFor('c_nope'))));
 
   // The group's menu: turn it off.
   const items = await ev(() => { let got = null; const m = UI.menu; UI.menu = (t, l) => { got = l.filter(Boolean).map(x => x.label); }; Views.groupMenu({ id: Library.TEAMS, name: 'My teams' }); UI.menu = m; return got; });

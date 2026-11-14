@@ -10,7 +10,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
 function req(url, method, body, token) {
   return new Promise((res, rej) => {
     const u = new URL(url), data = body ? JSON.stringify(body) : null;
-    const r = http.request({ hostname: u.hostname, port: u.port, path: u.pathname, method: method || 'GET', headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { 'X-Token': token } : {}) }, (resp) => {
+    const r = http.request({ hostname: u.hostname, port: u.port, path: u.pathname + u.search, method: method || 'GET', headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { 'X-Token': token } : {}) }, (resp) => {
       let b = ''; resp.on('data', d => b += d); resp.on('end', () => { let j = null; try { j = JSON.parse(b); } catch (e) {} res({ status: resp.statusCode, json: j }); });
     });
     r.on('error', rej); if (data) r.write(data); r.end();
