@@ -155,6 +155,19 @@ var U = (function () {
       .finally(function () { clearTimeout(timer); });
     return { promise: p, abort: function () { if (ctl) ctl.abort(); } };
   }
+  /* A JSON answer read as text first, so an empty or web-page answer says what it was, not the browser's
+     "Unexpected token < in JSON at position 0" (which said nothing to whoever saw it). */
+  function readJSON(r, what) {
+    return r.text().then(function (t) {
+      try { return JSON.parse(t); }
+      catch (e) {
+        var w = what || 'The server';
+        throw Object.assign(new Error(!t.trim() ? w + ' sent an empty answer (HTTP ' + r.status + ').'
+          : /^\s*</.test(t) ? w + ' sent a web page instead of data (HTTP ' + r.status + ').  A firewall, proxy or sign-in page may be in the way.'
+          : w + ' sent something TiviBro could not read (HTTP ' + r.status + ').'), { kind: 'parse', status: r.status });
+      }
+    });
+  }
   function getJSON(url, timeout, label) { return request(url, { timeout: timeout, label: label }).promise; }
   function getText(url, timeout, label) { return request(url, { timeout: timeout, text: true, label: label }).promise; }
 
@@ -237,5 +250,5 @@ var U = (function () {
   return {
     lines: lines, notice: notice, hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
     secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, day: day, LANGS: LANGS, lang: lang, hash: hash,
-    b64utf8: b64utf8, request: request, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad, loc: loc };
+    b64utf8: b64utf8, request: request, readJSON: readJSON, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad, loc: loc };
 })();

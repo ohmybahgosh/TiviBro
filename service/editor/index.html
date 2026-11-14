@@ -1601,7 +1601,7 @@ $('rpSend').onclick = function () {
   if (!$('rpWhat').value.trim()) { $('rpWhat').focus(); msg('rpSendMsg', 'err', 'Say what happened first.'); return; }
   var b = $('rpSend');
   msg('rpSendMsg', 'busy', 'Sending…');
-  busyBtn(b, fetch(RELAY_CONFIG, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('The report service could not be found.'); return r.json(); })
+  busyBtn(b, fetch(RELAY_CONFIG, { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('The report service could not be found.'); return r.json().catch(function () { throw new Error('The report service sent something this page could not read.  A firewall, proxy or sign-in page may be in the way.'); }); })
     .then(function (c) {
       if (!c || !c.url) throw new Error('The report service is not available right now.');
       return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rpFields()) });

@@ -81,7 +81,7 @@ var Diag = (function () {
     var scrub = scrubber(); what = scrub(what);
     var cfgUrl = (Store.settings && Store.settings.relayConfig) || RELAY_CONFIG;          // tests point it at the mock
     return report().then(function (r) {
-      return fetch(Net.wrap(cfgUrl), { cache: 'no-store' }).then(function (x) { if (!x.ok) throw new Error('report service not found'); return x.json(); }).then(function (c) {
+      return fetch(Net.wrap(cfgUrl), { cache: 'no-store' }).then(function (x) { if (!x.ok) throw new Error('report service not found'); return U.readJSON(x, 'The report service'); }).then(function (c) {
         if (!c || !c.url) throw new Error('report service not available');
         // The helper relays GET only; the report relay sends CORS headers, so this goes straight there.
         return fetch(c.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
@@ -95,7 +95,7 @@ var Diag = (function () {
   function followup(n, key, what) {
     var scrub = scrubber(), cfgUrl = (Store.settings && Store.settings.relayConfig) || RELAY_CONFIG;
     return report().then(function (r) {
-      return fetch(Net.wrap(cfgUrl), { cache: 'no-store' }).then(function (x) { if (!x.ok) throw new Error('report service not found'); return x.json(); }).then(function (c) {
+      return fetch(Net.wrap(cfgUrl), { cache: 'no-store' }).then(function (x) { if (!x.ok) throw new Error('report service not found'); return U.readJSON(x, 'The report service'); }).then(function (c) {
         if (!c || !c.url) throw new Error('report service not available');
         return fetch(String(c.url).replace(/\/report$/, '/followup'), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
           n: n, key: key, what: scrub(what || ''), version: r.version, tv: r.tv, log: r.text }) });

@@ -244,19 +244,36 @@ function create(log) {
      were left out of new ones. */
   var LOOK = { O: '0', Q: '0', I: '1', L: '1', S: '5', Z: '2', B: '8', G: '6', V: 'U' };
   function fold(p) { return String(p || '').replace(/[\s-]/g, '').toUpperCase().replace(/[OQILSZBGV]/g, function (c) { return LOOK[c]; }); }
+  /* One start at a time.  Two at once (TiviBro starting twice in a second, or the first screen and a
+     resume together) used to listen twice: the second failed with "already in use" and forgot the
+     first, which kept the port with nobody tracking it, so every later start failed the same way until
+     the helper restarted (no QR code for the phone, the web editor never came back). */
+  var starting = null;
   function start(port, password, cb) {
     if (!/^[A-Z0-9]{6,16}$/i.test(String(password || '').replace(/-/g, ''))) return cb(new Error('password missing'));
+    if (starting) { starting.push(function () { start(port, password, cb); }); return; }
     st.password = String(password);
     if (st.server && st.port === port) return cb(null, status());
     stop();
+    starting = [];
     var srv = http.createServer(function (req, res) {
       try { lan(req, res); } catch (e) { log({ lv: 'error', event: 'editor request failed', e: e.message }); try { send(res, 500, { error: 'server error' }); } catch (x) {} }
     });
-    srv.once('error', function (e) { log({ lv: 'error', event: 'editor listen failed', port: port, e: e.code || e.message }); st.server = null; cb(new Error(e.code === 'EADDRINUSE' ? 'Port ' + port + ' is already in use.  Pick another port.' : e.message)); });
+    function settled(e) {
+      var later = starting; starting = null;
+      if (e) cb(e); else cb(null, status());
+      (later || []).forEach(function (f) { f(); });
+    }
+    srv.once('error', function (e) {
+      log({ lv: 'error', event: 'editor listen failed', port: port, e: e.code || e.message });
+      if (st.server === srv) st.server = null;
+      try { srv.close(); } catch (x) {}
+      settled(new Error(e.code === 'EADDRINUSE' ? 'Port ' + port + ' is already in use by another app on the TV.  Pick another port in Settings, Phone app and web editor.' : e.message));
+    });
     srv.listen(port, '0.0.0.0', function () {
       st.server = srv; st.port = port;
       log({ lv: 'info', event: 'editor listening', port: port, ips: ips() });
-      cb(null, status());
+      settled(null);
     });
   }
   function stop() {

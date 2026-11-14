@@ -62,7 +62,14 @@ var Net = (function () {
           var r = {};
           try { r = JSON.parse(msg); } catch (e) { Log.error('net', 'Helper sent something unreadable', String(msg).slice(0, 200)); }
           Log.info('net', 'Helper replied after ' + (Date.now() - t0) + 'ms', msg && String(msg).slice(0, 300));
-          if (r.returnValue && r.port) { if (r.ctl) ctl = String(r.ctl); if (state === 'starting') { port = r.port; state = 'on'; clearTimeout(timer); settle(); } }
+          if (r.returnValue && r.port) {
+            if (r.ctl) ctl = String(r.ctl);
+            if (state === 'starting') { port = r.port; state = 'on'; clearTimeout(timer); settle(); }
+            /* It answered after TiviBro stopped waiting (a TV just switched on or woken can take longer than
+               the wait): take it now rather than run the whole session without it, which left the first
+               screen with no QR code for the phone and the guide unloaded. */
+            else if (state === 'off' && !port && !restarting) late(r.port);
+          }
           else if (r.returnValue === false) {
             // Typical texts: "Service does not exist", "Denied method call", "Unknown method".
             lastError = 'helper refused: ' + (r.errorText || r.errorCode || 'no reason given');
@@ -100,6 +107,15 @@ var Net = (function () {
       fetch('http://127.0.0.1:' + port + '/ping', { cache: 'no-store' }).then(function (r) { return r.ok; }, function () { return false; }),
       new Promise(function (r) { setTimeout(function () { r(false); }, ms || 4000); })
     ]);
+  }
+  function late(p) {
+    state = 'starting';
+    verify(p).then(function (ok) {
+      if (!ok || port) { if (!port) state = 'off'; return; }
+      port = p; state = 'on'; lastError = ''; dnsSaid = 'tv'; setDns();
+      Log.info('net', 'The network helper answered late, after ' + (Date.now() - t0) + 'ms; using it now');
+      restartListeners.forEach(function (f) { try { f(p); } catch (e) {} });
+    });
   }
   function restart(why) {
     if (restarting || +localStorage.getItem('tivibro.devRelay')) return;

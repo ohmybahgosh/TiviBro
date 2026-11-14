@@ -124,6 +124,21 @@ function req(url, method, body, token) {
   ok('stopping drops unapplied saves and actions', a.json.none === true && !(a.json.commands || []).length, JSON.stringify(a.json).slice(0, 120));
   a = await req(C + '/editor/status');
   ok('and reports them as applied, so a new start skips them', a.json.appliedRev === a.json.pendingRev, a.json.appliedRev + ' / ' + a.json.pendingRev);
+  /* Two starts at once (TiviBro starting twice in a second): both get it, and it isn't lost.  It used to
+     listen twice, fail the second with "already in use" and forget the first, so every later start failed
+     too until the helper restarted (discussion #60: no QR code for the phone). */
+  const E = require(path.join(__dirname, '../../service/editor.js')).create(() => {});
+  const free = await new Promise((f) => { const s = http.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => f(p)); }); });
+  const both = await Promise.all([0, 1].map(() => new Promise((f) => E.start(free, 'ABCD-EFGH', (e, st) => f(e ? e.message : st.running)))));
+  ok('two starts at once: both get it', both[0] === true && both[1] === true, both.join(' | '));
+  ok('and it is still known to be running', E.status().running && E.status().port === free);
+  const third = await new Promise((f) => E.start(free, 'ABCD-EFGH', (e, st) => f(e ? e.message : st.running)));
+  ok('a later start finds it, not "already in use"', third === true, third);
+  E.stop();
+  const busy = http.createServer(); await new Promise((f) => busy.listen(0, '0.0.0.0', f));
+  const taken = await new Promise((f) => E.start(busy.address().port, 'ABCD-EFGH', (e) => f(e ? e.message : 'started')));
+  ok('a port another app holds: says so, and where to pick another', /already in use by another app/.test(taken) && /Settings/.test(taken), taken);
+  busy.close();
   r.server.close();
   console.log(fail ? fail + ' failures' : 'all web editor tests passed');
   process.exit(fail ? 1 : 0);

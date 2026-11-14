@@ -1139,5 +1139,12 @@ I18n.add('ru', {
   "DNS": "DNS",
   "User-Agent": "User-Agent",
   "Set a PIN": "Задать PIN-код",
-  "Hold {x}": "Удерживать {x}"
+  "Hold {x}": "Удерживать {x}",
+  "Port {n} is already in use by another app on the TV.  Pick another port in Settings, Phone app and web editor.": "Порт {n} уже занят другим приложением на телевизоре.  Выберите другой порт в Настройки, Приложение для телефона и веб-редактор.",
+  "The report service sent an empty answer (HTTP {n}).": "Служба отчётов прислала пустой ответ (HTTP {n}).",
+  "The report service sent a web page instead of data (HTTP {n}).  A firewall, proxy or sign-in page may be in the way.": "Служба отчётов прислала веб-страницу вместо данных (HTTP {n}).  Возможно, мешает брандмауэр, прокси или страница входа.",
+  "The report service sent something TiviBro could not read (HTTP {n}).": "Служба отчётов прислала то, что TiviBro не смог прочитать (HTTP {n}).",
+  "The network helper sent an empty answer (HTTP {n}).": "Сетевой помощник прислал пустой ответ (HTTP {n}).",
+  "The network helper sent something TiviBro could not read (HTTP {n}).": "Сетевой помощник прислал то, что TiviBro не смог прочитать (HTTP {n}).",
+  "The phone option is not available: {x}": "Вариант с телефоном недоступен: {x}"
 });

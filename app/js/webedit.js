@@ -713,13 +713,18 @@ var WebEdit = (function () {
     }, 500);
     return loadDraftInfo().catch(function () {}).then(function () { return push(true); }).then(function () { return s; });
   }
+  // One start at a time: the first screen, the phone app and a resume can all ask at once.
+  var starting = null;
   function start() {
-    return call('/editor/start', { port: port(), password: password() }).then(function (s) {
+    if (starting) return starting;
+    starting = call('/editor/start', { port: port(), password: password() }).then(function (s) {
+      starting = null;
       Log.info('webedit', 'Web editor on port ' + s.port + ' at ' + (s.ips || []).join(', '));
       // Saves from an earlier editor session are not ours to apply.
       appliedRev = Math.max(appliedRev, s.pendingRev || 0);
       return begin(s);
-    });
+    }, function (e) { starting = null; Log.warn('webedit', 'Web editor could not start: ' + e.message); throw e; });
+    return starting;
   }
   // After a reload (restore restarts the page), carry on if the helper still runs the editor.
   function resume() {

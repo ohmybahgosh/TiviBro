@@ -14,7 +14,7 @@ var Reports = (function () {
   function save() { try { localStorage.setItem(KEY, JSON.stringify(list)); } catch (e) {} }
   function find(n) { n = +n; for (var i = 0; i < list.length; i++) if (list[i].n === n) return list[i]; return null; }
   function relay() {
-    return fetch((Store.settings.relayConfig || 'https://tivibro.app/relay.json'), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('report service not found'); return r.json(); })
+    return fetch((Store.settings.relayConfig || 'https://tivibro.app/relay.json'), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('report service not found'); return U.readJSON(r, 'The report service'); })
       .then(function (c) { var u = String(c && c.url || ''); if (!/^https:\/\//.test(u) && !/^http:\/\/127\.0\.0\.1/.test(u)) throw new Error('report service not available'); return u.replace(/\/report$/, ''); });
   }
 
@@ -40,7 +40,7 @@ var Reports = (function () {
     try { localStorage.setItem(KEY + '.checked', String(Date.now())); } catch (e) {}
     return relay().then(function (base) {
       return fetch(base + '/status?n=' + want.map(function (r) { return r.n; }).join(','), { cache: 'no-store' });
-    }).then(function (x) { return x.json(); }).then(function (j) {
+    }).then(function (x) { return U.readJSON(x, 'The report service'); }).then(function (j) {
       if (!j || !j.ok) throw new Error(j && j.error || 'no answer');
       j.issues.forEach(function (i) {
         var r = find(i.n); if (!r || i.error) return;

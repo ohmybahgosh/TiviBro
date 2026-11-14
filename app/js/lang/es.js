@@ -1136,5 +1136,12 @@ I18n.add('es', {
   "DNS": "DNS",
   "User-Agent": "User-Agent",
   "Set a PIN": "Poner un PIN",
-  "Hold {x}": "Mantener {x}"
+  "Hold {x}": "Mantener {x}",
+  "Port {n} is already in use by another app on the TV.  Pick another port in Settings, Phone app and web editor.": "El puerto {n} ya lo usa otra app de la TV.  Elige otro puerto en Configuración, App del teléfono y editor web.",
+  "The report service sent an empty answer (HTTP {n}).": "El servicio de informes envió una respuesta vacía (HTTP {n}).",
+  "The report service sent a web page instead of data (HTTP {n}).  A firewall, proxy or sign-in page may be in the way.": "El servicio de informes envió una página web en lugar de datos (HTTP {n}).  Puede haber un firewall, un proxy o una página de inicio de sesión en medio.",
+  "The report service sent something TiviBro could not read (HTTP {n}).": "El servicio de informes envió algo que TiviBro no pudo leer (HTTP {n}).",
+  "The network helper sent an empty answer (HTTP {n}).": "El ayudante de red envió una respuesta vacía (HTTP {n}).",
+  "The network helper sent something TiviBro could not read (HTTP {n}).": "El ayudante de red envió algo que TiviBro no pudo leer (HTTP {n}).",
+  "The phone option is not available: {x}": "La opción del teléfono no está disponible: {x}"
 });

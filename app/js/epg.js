@@ -662,7 +662,7 @@ var Epg = (function () {
     return fetch('http://127.0.0.1:' + Net.port + '/ping', { cache: 'no-store' }).then(function (r) { return r.json(); })
       .then(function (j) { hOk = !!(j && j.guide); return hOk; }, function () { return false; });
   }
-  function hStatus(kind, pid) { return fetch(hUrl('status', kind, pid), { cache: 'no-store' }).then(function (r) { return r.json(); }); }
+  function hStatus(kind, pid) { return fetch(hUrl('status', kind, pid), { cache: 'no-store' }).then(function (r) { return U.readJSON(r, 'The network helper'); }); }
   // A stored guide, shaped like the worker's result (times and titles, no descriptions).
   function hRead(kind, pid) {
     function get(what, json) { return fetch(hUrl(what, kind, pid), { cache: 'no-store' }).then(function (r) { if (!r.ok) throw new Error('no stored guide'); return json ? r.json() : r.text(); }); }
@@ -701,7 +701,7 @@ var Epg = (function () {
     return hStatus(kind, pid).catch(function () { return {}; }).then(function (st) {
       if (st.job && (st.phase === 'download' || st.phase === 'save') && st.job.sig === sig) return;   // the app restarted mid-load
       return fetch('http://127.0.0.1:' + Net.port + '/guide/load', { method: 'POST', body: body, headers: { 'Content-Type': 'application/json' } })
-        .then(function (r) { return r.json(); }).then(function (j) { if (!j.ok) throw new Error(j.error || 'the helper could not load the guide'); });
+        .then(function (r) { return U.readJSON(r, 'The network helper'); }).then(function (j) { if (!j.ok) throw new Error(j.error || 'the helper could not load the guide'); });
     }).then(function () {
       return new Promise(function (resolve, reject) {
         var misses = 0;

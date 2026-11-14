@@ -189,7 +189,15 @@ var App = (function () {
       function show(s) { if (setupEl.contains(card)) { WebEdit.drawJoin(qr, txt, '', s, 'Or open the address on a computer.', 'A phone or computer is connected.  Finish there; this screen moves on by itself.'); I18n.page(card); } }
       txt.appendChild(U.el('div', 'remote-s', 'Starting…'));
       WebEdit.onStatus = show;
-      (WebEdit.on ? Promise.resolve(WebEdit.status) : WebEdit.start()).then(show, function (e) { txt.innerHTML = ''; txt.appendChild(U.el('div', 'remote-s', 'The phone option is not available: ' + e.message)); });
+      editorFor(card, show, function (e) { txt.innerHTML = ''; txt.appendChild(U.el('div', 'remote-s', 'The phone option is not available: ' + e.message)); });
+    }
+    /* The web editor for a QR code screen, started again by itself when the network helper comes (back)
+       while that screen is still up: on a TV that was just switched on the helper can answer late. */
+    function editorFor(el, show, fail) {
+      var go = function () { (WebEdit.on ? Promise.resolve(WebEdit.status) : WebEdit.start()).then(show, fail); };
+      go();
+      if (!editorFor.hooked) { editorFor.hooked = true; Net.onRestart(function () { if (editorFor.again) editorFor.again(); }); }
+      editorFor.again = function () { if (setupEl.contains(el)) { Log.info('app', 'The network helper is up: showing the QR code again'); go(); } };
     }
     function kbFocus(row) {
       setupEl.classList.add('kb');
@@ -215,7 +223,7 @@ var App = (function () {
       function show(s) { WebEdit.drawJoin(qrEl, info, '', s, 'Waiting for a phone or computer…', 'Connected.  Finish there; this screen moves on by itself.'); }
       info.appendChild(U.el('div', 'remote-s', 'Starting the editor…'));
       WebEdit.onStatus = function (s) { if (setupEl.contains(box)) show(s); };
-      (WebEdit.on ? Promise.resolve(WebEdit.status) : WebEdit.start()).then(show, function (e) { box.innerHTML = ''; box.appendChild(U.el('div', 'msg err', e.message)); });
+      editorFor(box, show, function (e) { info.innerHTML = ''; info.appendChild(U.el('div', 'msg err', e.message)); });
       UI.setHandler(function (a) {
         if (a === 'back' || a === 'ok') { WebEdit.onStatus = null; setup(target); }
         return true;
@@ -866,6 +874,8 @@ var App = (function () {
     langStart();
     Caps.loadSystemInfo();
     Awake.start();                 // the TV's screensaver waits while something plays (issue #37)
+    // A helper that answers late, or starts again: the web editor and the phone app connection carry on.
+    Net.onRestart(function () { WebEdit.resume(); Phone.start(); });
     Net.start(6000).then(function () {
       WebEdit.resume();
       Phone.start();
