@@ -536,7 +536,7 @@ Playback contacts servers you add and their playback servers.  Fetching details 
 
 ### Search
 
-**Search** in the menu finds channels and programmes in the guide (now, later today, the coming days and on catch-up) as you type, and also your Movies and Shows.  Below the box, **Everything**, **On now**, **Coming up**, **Replays**, **Channels** and **Movies & Shows** narrow the results (**◀ ▶** on that row).  Each programme shows once, even when several copies of the channel carry it, with **Today**, **Tomorrow** or the day and its time.  **OK** watches, replays, opens a show's episodes, or sets a reminder (**OK** again cancels it); **Hold OK** gives channel options.  **Yellow** adds what you typed to your [watchlist](#watchlist).
+**Search** in the menu finds channels and programmes in the guide (now, later today, the coming days and on catch-up) as you type, and also your Movies and Shows.  Below the box, **Everything**, **On now**, **Coming up**, **Replays**, **Channels** and **Movies & Shows** narrow the results (**◀ ▶** on that row).  Each programme shows once, even when several copies of the channel carry it, with **Today**, **Tomorrow** or the day and its time.  **OK** watches, replays, opens a show's episodes, or sets a reminder (**OK** again cancels it); **Hold OK** gives channel options.  **Yellow** adds what you typed to your [watchlist](#watchlist).  A channel you were watching keeps playing in the top corner; **Hold OK** on the filters goes back to it in fullscreen.
 
 Programmes that have what you typed only in their **description** come after the rest, a moment later, with the words around it: **lions** finds the local station whose "NFL Football" is "Minnesota Vikings at Detroit Lions".
 
@@ -601,7 +601,7 @@ The watchlist needs the guide to know what's on: with an XMLTV guide it sees eve
 
 ### Settings
 
-**Blue** in the guide, or **Settings** in the menu.  The channel you're watching keeps playing in the top corner, with what's on beside it, and the settings sit below it at full width (on a TV short of memory it stops for a channel list or guide reload, and it always stops for the set-up screen, the tour and the speed test).  **Yellow** searches every setting: type a word ("subtitle", "clock", "DNS") and pick one to go straight to it.  On a row with a choice, the focused row shows **‹ ›**: **◀ ▶** change it.  Colour rows show a swatch of the colour.  Every option is explained, with its default, in [Every setting](#every-setting).  The sections:
+**Blue** in the guide, or **Settings** in the menu.  The channel you're watching keeps playing in the top corner, with what's on beside it, and the settings sit below it at full width.  **Hold OK** (or click the picture) goes back to it in fullscreen (on a TV short of memory it stops for a channel list or guide reload, and it always stops for the set-up screen, the tour and the speed test).  **Search settings** (the first row of the menu) or **Yellow** searches every setting: type a word ("subtitle", "clock", "DNS") and pick one to go straight to it.  On a row with a choice, the focused row shows **‹ ›**: **◀ ▶** change it.  Colour rows show a swatch of the colour.  Every option is explained, with its default, in [Every setting](#every-setting).  The sections:
 
 | Section | What's in it |
 |---|---|

@@ -1069,5 +1069,7 @@ I18n.add('ru', {
   "A word from its name": "Слово из названия",
   "{x} is on {y} now": "{x} теперь на {y}",
   "{x} is no longer in the guide": "{x} больше нет в телегиде",
-  "The channel lists {x} now.": "Сейчас на канале: {x}."
+  "The channel lists {x} now.": "Сейчас на канале: {x}.",
+  "Hold OK  back to fullscreen": "Удерживайте OK  на весь экран",
+  "Hold OK on the filters  back to fullscreen": "Удерживайте OK на фильтрах  на весь экран"
 });

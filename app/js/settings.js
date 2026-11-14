@@ -36,7 +36,12 @@ var Settings = (function () {
     var tr = title(s).split('  ·  ').map(T).join('  ·  ');
     return s[0] === 'language' && tr.indexOf('Language') !== 0 ? tr + '  ·  Language' : tr;
   }
-  function nextSec(d) { var i = sec + d; while (SECTIONS[i] && !shown(i)) i += d; return SECTIONS[i] ? i : sec; }
+  /* sec -1: Search settings, the first row of the menu (findPage). */
+  function nextSec(d) {
+    var i = sec + d; while (SECTIONS[i] && !shown(i)) i += d;
+    if (SECTIONS[i]) return i;
+    return sec >= 0 && d < 0 ? -1 : sec;
+  }
   var stack = [];               // sub-pages: [{ title, fn, sel }]
 
   function cyc(list, cur, dir) { var i = list.indexOf(cur); if (i < 0) i = 0; return list[(i + dir + list.length) % list.length]; }
@@ -1128,7 +1133,7 @@ var Settings = (function () {
   /* ---------- edit on a computer ---------- */
   function editor(out) {
     var s = S(), on = WebEdit.on, st = WebEdit.status;
-    WebEdit.onStatus = function () { if (Views.tab === 'settings' && SECTIONS[sec][0] === 'connect' && !stack.length) build(); };
+    WebEdit.onStatus = function () { if (Views.tab === 'settings' && (SECTIONS[sec] || [])[0] === 'connect' && !stack.length) build(); };
     out.push(head('Web editor  ·  any browser'));
     out.push(info('Groups, channels, names, Smart clean-up, guide matching, reminders and backups from a web browser on a computer, tablet or phone, with a real keyboard.  ' +
       (phoneOK() ? 'The TiviBro app opens it for you (Edit channels) and switches it on by itself: this switch is only for a browser.' : ''), ''));
@@ -1185,7 +1190,7 @@ var Settings = (function () {
   /* ---------- the TiviBro phone app ---------- */
   function phone(out) {
     var ps = Phone.status, on = !!(ps && ps.on);
-    Phone.onChange = function () { if (Views.tab === 'settings' && SECTIONS[sec][0] === 'connect' && !stack.length) build(); };
+    Phone.onChange = function () { if (Views.tab === 'settings' && (SECTIONS[sec] || [])[0] === 'connect' && !stack.length) build(); };
     out.push(head('TiviBro phone app  ·  Android'));
     if (!ps) { Phone.refresh().catch(function (e) { U.toast(e.message, 5000); }); out.push(info('Checking…', '')); return out; }
     out.push(info('Finds this TV, works as a remote with the guide, On now, Movies, Shows and My media, changes every setting here (questions are asked on the phone), lists and cancels reminders, keeps backups, types into the TV, opens the web editor and wakes the TV.  Pair a phone once; it stays paired.', ''));
@@ -1224,7 +1229,7 @@ var Settings = (function () {
   /* ---------- updates and about ---------- */
   var lastUpd = '';
   Update.onChange(function (st) {
-    if (Views.tab !== 'settings' || SECTIONS[sec][0] !== 'about' || stack.length) return;
+    if (Views.tab !== 'settings' || (SECTIONS[sec] || [])[0] !== 'about' || stack.length) return;
     var k = st.state + '|' + st.installer;
     if (k !== lastUpd) { lastUpd = k; build(); } else paint();
   });
@@ -1366,7 +1371,7 @@ var Settings = (function () {
   var FNS = SECTIONS.map(function (x) { return BY_ID[x[0]]; });
   function build() {
     var top = stack[stack.length - 1];
-    items = top ? [head(stack.map(function (x) { return T(x.title); }).join('  ›  '))].concat(lean(top.fn())) : lean(FNS[sec]());
+    items = top ? [head(stack.map(function (x) { return T(x.title); }).join('  ›  '))].concat(lean(top.fn())) : sec < 0 ? findPage() : lean(FNS[sec]());
     items = items.filter(Boolean);
     sel = U.clamp(sel, 0, Math.max(0, items.length - 1));
     if (!focusable(sel)) { var i = sel; while (i < items.length && !focusable(i)) i++; if (i >= items.length) { i = sel; while (i > 0 && !focusable(i)) i--; } sel = i; }
@@ -1405,6 +1410,9 @@ var Settings = (function () {
   }
   function paint() {
     nav.innerHTML = '';
+    var sn = U.el('div', 'nav-find' + (sec < 0 ? ' on' : ''), T('Search settings'));
+    sn.addEventListener('click', function () { stack = []; sec = -1; sel = 0; zone = 'body'; build(); if (!findQ) askFind(); });
+    nav.appendChild(sn);
     SECTIONS.forEach(function (s, i) {
       if (!shown(i)) return;
       var n = U.el('div', i === sec ? 'on' : '', navTitle(s));
@@ -1440,10 +1448,12 @@ var Settings = (function () {
   function focusable(i) { var it = items[i]; return !!(it && !it.head && !it.info && !it.preview); }
 
   function keys(a) {
+    // The channel playing in the corner (views.js pip): Hold OK goes back to it in fullscreen.
+    if (a === 'hold' && Views.pipOn) { Views.pipFull(); return true; }
     if (zone === 'nav') {
       if (a === 'up') { if (nextSec(-1) !== sec) { sec = nextSec(-1); sel = 0; build(); } else Views.tabBar(function () { UI.setHandler(keys); paint(); }); }
       else if (a === 'down') { if (nextSec(1) !== sec) { sec = nextSec(1); sel = 0; build(); } }
-      else if (a === 'right' || a === 'ok') { zone = 'body'; paint(); }      // pages of facts only scroll
+      else if (a === 'right' || a === 'ok') { zone = 'body'; paint(); if (sec < 0 && !findQ) askFind(); }      // pages of facts only scroll
       else if (a === 'left' || a === 'back') Views.tabBar(function () { UI.setHandler(keys); paint(); });
       else if (a === 'green') Views.switchTab('live');
       else if (a === 'yellow' || a === 'search') openFind();
@@ -1514,9 +1524,7 @@ var Settings = (function () {
     UI.prompt('Search settings', findQ, function (v) { findQ = String(v || '').trim().slice(0, 60); sel = 0; build(); }, 'A word from its name');
   }
   function openFind() {
-    findIx = null;
-    if (!(stack.length && stack[stack.length - 1].find)) { push('Search settings', findPage); stack[stack.length - 1].find = true; }
-    zone = 'body'; paint();
+    findIx = null; stack = []; sec = -1; sel = 0; zone = 'body'; build();
     askFind();
   }
   // To a setting found: its section, the pages above it, and the row itself focused.

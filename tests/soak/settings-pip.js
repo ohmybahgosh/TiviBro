@@ -52,6 +52,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => { window.__r = 0; const r = Player.retryNow; Player.retryNow = function () { window.__r++; return r.apply(this, arguments); }; Views.pipRestart(); });
   await page.waitForTimeout(1900);
   ok('a player setting changed: the picture starts again with it', await ev(() => window.__r) === 1);
+  ok('the corner says how to get back', /Hold OK/.test(await ev(() => document.querySelector('.set-now-info').innerText)));
   // Search settings.
   await ev(() => UI.press('yellow')); await page.waitForTimeout(300);
   ok('Yellow asks what to look for', await ev(() => !!document.querySelector('#modal input')));
@@ -73,12 +74,37 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   // The guide: a held ◀ at now goes back in time.
   await ev(() => { Views.switchTab('guide'); }); await page.waitForTimeout(1200);
   await ev(() => { Views.closeNav(); UI.press('right'); }); await page.waitForTimeout(500);
-  for (let i = 0; i < 25; i++) { await page.keyboard.down('ArrowLeft'); await page.waitForTimeout(40); }
+  // A remote whose repeats start late: ◀ held down 900 ms before the first repeat.
+  await page.keyboard.down('ArrowLeft'); await page.waitForTimeout(900);
+  for (let i = 0; i < 10; i++) { await page.keyboard.down('ArrowLeft'); await page.waitForTimeout(60); }
   await page.keyboard.up('ArrowLeft'); await page.waitForTimeout(700);
   ok('a held ◀ at now goes back in time, not to the menu', await ev(() => !document.body.classList.contains('nav-open') && !/groups-open/.test(document.getElementById('viewGuide').className) && document.getElementById('gnowh').style.display === 'none'));
-  await page.keyboard.press('ArrowRight'); await page.waitForTimeout(200);
-  await ev(() => UI.press('yellow') || true);
-  await ev(() => { Views.closeNav(); }); 
+  // A quick press of ◀ at now still opens the groups.
+  await ev(() => UI.press('back')); await page.waitForTimeout(600);        // Back in the past: to now
+  await page.keyboard.press('ArrowLeft'); await page.waitForTimeout(700);
+  ok('a press of ◀ at now opens the groups', /groups-open/.test(await ev(() => document.getElementById('viewGuide').className)));
+  // Hold OK in Settings: back to the channel in fullscreen.
+  await ev(() => { Views.closeNav(); Views.startChannel(Library.channels(Library.ALL)[2], true); }); await page.waitForTimeout(2500);
+  await ev(() => Views.switchTab('settings')); await page.waitForTimeout(800);
+  await page.keyboard.down('Enter'); await page.waitForTimeout(800); await page.keyboard.up('Enter'); await page.waitForTimeout(800);
+  ok('Hold OK in Settings goes back to the channel in fullscreen', await ev(() => Views.full && Views.tab === 'guide' && !!Views.playing), JSON.stringify(await ev(() => ({ full: Views.full, tab: Views.tab }))));
+
+  // Search settings is the first row of the Settings menu too.
+  await ev(() => { Views.runAction('exit', 'player'); }); await page.waitForTimeout(500);
+  await ev(() => Views.switchTab('settings')); await page.waitForTimeout(500);
+  const first = await ev(() => document.querySelector('#setNav > div').innerText.trim());
+  ok('the Settings menu starts with Search settings', first === 'Search settings', first);
+  await ev(() => document.querySelector('#setNav .nav-find').click()); await page.waitForTimeout(300);
+  ok('picking it opens the search (the last one, here)', /Search for/.test(await ev(() => document.getElementById('setBody').innerText)) && await ev(() => document.querySelector('#setNav .nav-find').classList.contains('on')));
+  if (await ev(() => !!document.querySelector('#modal input'))) { await page.keyboard.press('Escape'); await page.waitForTimeout(200); }
+  // Search keeps the channel in its corner too, right of the results, and Hold OK on the box goes back.
+  await ev(() => Views.switchTab('search')); await page.waitForTimeout(800);
+  const sr = await ev(() => ({ pip: Views.pipOn, st: document.getElementById('stage').getBoundingClientRect().toJSON(), wrap: document.querySelector('.search-wrap').getBoundingClientRect().toJSON() }));
+  ok('Search: the channel plays in the corner, clear of the results', sr.pip && sr.st.left >= sr.wrap.right, JSON.stringify(sr));
+  await page.keyboard.press('ArrowDown'); await page.waitForTimeout(300);        // the box to the filters
+  const b4 = await ev(() => ({ el: document.activeElement && document.activeElement.tagName, modal: UI.modalOpen }));
+  await page.keyboard.down('Enter'); await page.waitForTimeout(800); await page.keyboard.up('Enter'); await page.waitForTimeout(800);
+  ok('Hold OK on the filters goes back to it in fullscreen', await ev(() => Views.full && !!Views.playing), JSON.stringify(Object.assign(b4, await ev(() => ({ full: Views.full, tab: Views.tab, playing: !!Views.playing, el: document.activeElement && document.activeElement.tagName })))));
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close();
   process.exit(fails ? 1 : 0);

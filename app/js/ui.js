@@ -147,7 +147,14 @@ var UI = (function () {
     dispatch(a, e);
   }, true);
 
+  /* Buttons down right now, by action (isDown): a press can be told from the start of a hold before the
+     remote's repeats begin, which on some TVs is well over half a second. */
+  var downs = {};
+  document.addEventListener('keydown', function (e) { var a = e.keyCode === K.OK ? 'ok' : action(e); if (a) downs[a] = Date.now(); }, true);
+  window.addEventListener('blur', function () { downs = {}; });
   document.addEventListener('keyup', function (e) {
+    var a0 = e.keyCode === K.OK ? 'ok' : action(e);
+    if (a0) delete downs[a0];
     if (!held) return;
     var a = e.keyCode === K.OK ? 'ok' : action(e);
     if (a !== held.btn) return;
@@ -461,6 +468,8 @@ var UI = (function () {
   }
 
   return {
+    // Still held: down, and not for so long without a repeat that its keyup must have been lost.
+    isDown: function (a) { var t = downs[a]; return !!t && Date.now() - t < 1500; },
     marquee: marquee,
     setHandler: function (fn) { handler = fn; },
     getHandler: function () { return handler; },

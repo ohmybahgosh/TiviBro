@@ -338,6 +338,10 @@ var Search = (function () {
 
   function keys(a) {
     if (a === 'yellow') { addWatch(); return true; }
+    /* The channel playing in the corner (views.js pip): Hold OK on the filters (or a past search) goes back to
+       it in fullscreen.  Not in the box: OK there types (the TV keyboard), and on a channel or programme
+       result Hold OK stays its options. */
+    if (a === 'hold' && Views.pipOn && (zone !== 'list' || !(vl.current() && vl.current().c))) { Views.pipFull(); return true; }
     if (zone === 'input') {
       if (a === 'down' || a === 'submit') { zone = 'chips'; paint(); }
       else if (a === 'up') { input.blur(); Views.tabBar(function () { UI.setHandler(keys); zone = 'input'; paint(); }); }

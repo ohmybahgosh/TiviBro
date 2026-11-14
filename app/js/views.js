@@ -193,7 +193,7 @@ var Views = (function () {
     Player.on('trouble', function () { downSoon(); });
     // Magic Remote in fullscreen: moving the pointer shows the info panel and its button legend,
     // clicking the picture shows or hides it.
-    stage.addEventListener('click', function () { if (!full) { if (playing && mode === 'live') goFull(); return; } var o = $('osd'); if (o.classList.contains('hidden')) osd(true); else o.classList.add('hidden'); });
+    stage.addEventListener('click', function () { if (!full) { if (pipFull()) return; if (playing && mode === 'live') goFull(); return; } var o = $('osd'); if (o.classList.contains('hidden')) osd(true); else o.classList.add('hidden'); });
     document.addEventListener('mousemove', U.debounce(function () { if (full && UI.pointer && !overlay) osd(true); }, 120));
     // Subtitles on automatically when a stream brings them (Settings > Audio and subtitles), in the chosen language,
     // until the viewer picks in the Subtitles menu: a reconnect's tracks then keep that choice, Off too.
@@ -501,7 +501,7 @@ var Views = (function () {
   }
 
   function placePreview() {
-    var r = $(tab === 'guide' ? 'guidePreview' : tab === 'settings' ? 'setPreview' : 'previewSlot').getBoundingClientRect();
+    var r = $(tab === 'guide' ? 'guidePreview' : tab === 'settings' ? 'setPreview' : tab === 'search' ? 'searchPreview' : 'previewSlot').getBoundingClientRect();
     stage.style.left = r.left + 'px'; stage.style.top = r.top + 'px';
     stage.style.width = r.width + 'px'; stage.style.height = r.height + 'px';
   }
@@ -556,6 +556,7 @@ var Views = (function () {
     if (lvis && t !== 'live') endListVis(true);
     if (tab === 'media' && t !== 'media') Media.leave();
     if (tab === 'onnow' && t !== 'onnow') OnNow.leave();
+    if ((t === 'settings' || t === 'search') && (tab === 'guide' || tab === 'live')) pipFrom = tab;
     tab = t;
     Keymap.setContext(t === 'live' ? 'list' : t === 'guide' ? 'guide' : 'other');
     document.querySelectorAll('.tab').forEach(function (el, i) {
@@ -582,14 +583,16 @@ var Views = (function () {
         guideSeen = true;
         Guide.open(curGroup, startKey); placePreview();
       }
-    } else if (t === 'settings' && pipOK()) {
-      // Settings: the channel keeps playing in the top corner, like TiviMate (pip, below).
-      Settings.open(); pipUpdate();
+    } else if ((t === 'settings' || t === 'search') && pipOK()) {
+      // Settings and Search: the channel keeps playing in the top corner, like TiviMate (pip, below).
+      if (t === 'settings') Settings.open(); else Search.open();
+      pipUpdate();
     } else {
       // Other screens get the whole CPU: no preview decoding behind them.
       stage.classList.add('off');
       if (!full) { Player.stop(); playing = null; }
       if (t === 'settings') { Settings.open(); pipUpdate(); }
+      else if (t === 'search') { Search.open(); pipUpdate(); }
       else if (t === 'movies' || t === 'shows') Vod.open(t === 'shows' ? 'series' : 'movie');
       else if (t === 'media') Media.open();
       else if (t === 'onnow') OnNow.open();
@@ -1989,16 +1992,32 @@ var Views = (function () {
      and what's on beside it; the settings list sits below it at full width.  Live TV and catch-up only.
      It stops (as Settings always did) when something there needs the whole TV: the set-up screen and
      the tour, the speed test, and on a TV short of memory a channel list or guide reload (pipStop). */
+  var pipFrom = '';
+  // Hold OK in Settings (or a click on the picture): back to the screen it came from, in fullscreen.
+  function pipFull() {
+    if (!pipOn()) return false;
+    switchTab(pipFrom || (tabs.indexOf('guide') >= 0 ? 'guide' : 'live'));
+    if (playing) goFull();
+    return true;
+  }
   function pipOK() { return !!playing && (mode === 'live' || mode === 'catchup') && !full; }
-  function pipOn() { return tab === 'settings' && pipOK() && !stage.classList.contains('off'); }
+  function pipTab() { return tab === 'settings' || tab === 'search'; }
+  function pipOn() { return pipTab() && pipOK() && !stage.classList.contains('off'); }
+  /* Search's corner: right of the search column (1300 px wide), which leaves 400 px at 1920. */
+  function searchNow() {
+    var v = $('viewSearch'), w = $('srchNow');
+    if (!w && v) { w = U.el('div', 'srch-now'); w.id = 'srchNow'; var pv = U.el('div', 'set-preview'); pv.id = 'searchPreview'; w.appendChild(pv); var inf = U.el('div', 'set-now-info'); inf.setAttribute('data-raw', ''); w.appendChild(inf); v.appendChild(w); }
+    return w;
+  }
   function pipUpdate() {
-    var v = $('viewSettings'), on = tab === 'settings' && pipOK();
+    ['viewSettings', 'viewSearch'].forEach(function (id) { var e = $(id); if (e) e.classList.toggle('pip', tab === (id === 'viewSearch' ? 'search' : 'settings') && pipOK()); });
+    var on = pipTab() && pipOK(), v = tab === 'search' ? searchNow() : $('viewSettings');
     if (!v) return;
-    v.classList.toggle('pip', on);
-    if (!on) { if (tab === 'settings') stage.classList.add('off'); return; }
+    if (!on) { if (pipTab()) stage.classList.add('off'); return; }
     var c = playing, nn = Epg.nowNext ? Epg.nowNext(c) : null, now = nn && nn.now, box = v.querySelector('.set-now-info');
     var lines = [['sn-l', T(mode === 'catchup' ? 'Catch-up' : 'Now playing')], ['sn-c', (c.num ? c.num + '  ' : '') + L.name(c)]];
     if (now && mode === 'live') lines.push(['sn-p', now.t + '   ' + U.hhmm(now.s) + '–' + U.hhmm(now.e)]);
+    lines.push(['sn-h', T(tab === 'search' ? 'Hold OK on the filters  back to fullscreen' : 'Hold OK  back to fullscreen')]);
     var key = JSON.stringify(lines);
     if (box._k !== key) {
       box._k = key; box.innerHTML = '';
@@ -2022,12 +2041,12 @@ var Views = (function () {
     clearTimeout(pipT);
     pipT = setTimeout(function () { if (pipOn()) Player.retryNow(); }, 1500);
   }
-  setInterval(function () { if (tab === 'settings') try { pipUpdate(); } catch (e) {} }, 15000);
+  setInterval(function () { if (pipTab()) try { pipUpdate(); } catch (e) {} }, 15000);
 
-  function stopAll() { Subs.reset(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off');  if (tab === 'settings') pipUpdate(); }
+  function stopAll() { Subs.reset(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off');  if (pipTab()) pipUpdate(); }
 
   return {
-    pipUpdate: pipUpdate, pipStop: pipStop, pipRestart: pipRestart, get pipOn() { return pipOn(); },
+    pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },
     init: init, reload: reload, switchTab: switchTab, setZone: setZone, resume: resume, refreshLists: refreshLists,
     closeNav: closeNav, chanMenu: chanMenu, startChannel: startChannel, goFull: goFull, playCatchup: playCatchup, refreshVodMeta:function(){if(mode==='vod')osd(true);}, playVod: playVod,
     manageVisibility: manageVisibility, canManage: canManage, PALETTES: PALETTES, PALETTE_NAMES: PALETTE_NAMES, palette: palette, emptyFor: emptyFor, QP_BUTTONS: QP_BUTTONS, openReminder: openReminder, dueReminder: dueReminder, exitApp: exitApp, armExit: armExit, exitArmed: exitArmed, bankedBack: bankedBack, logoOf: logoOf, ownLogo: ownLogo, logoFailed: logoFailed, tabBar: tabBar, firstFilled: firstFilled, groupMenu: groupMenu, catchupList: catchupList, home: home, get mode() { return mode; }, applyLook: applyLook, buildTabs: buildTabs, placePreview: placePreview, stopAll: stopAll,
@@ -3050,12 +3069,19 @@ var Guide = (function () {
       else if (when() !== 'now') moveTime(-1);
       else if (ms2 > 400) moveTime(-1, true);      // held at now: back in time, to see what was on
       /* A fresh Left at now: the groups, but only once it's clear it was a press and not the start of a
-         hold (the remote's repeats start after about half a second).  Opened at once, a held Left went
+         hold.  Opened at once, a held Left went
          to the groups and then, with its repeats, on to the side menu, never back in time. */
       else if (!ms2) {
         // A second press before the first was settled: both presses, the groups and then the menu.
         if (leftTap) { clearTimeout(leftTap); leftTap = 0; setZone('groups'); backToMenu(); return true; }
-        leftTap = setTimeout(function () { leftTap = 0; if (zone === 'grid' && when() === 'now') { setZone('groups'); leftGroups = Date.now(); } }, 450);
+        /* A quarter second on: let go, it was a press (the groups); still down, it's a hold, going back in
+           time at once (some TVs' repeats only start after more than half a second). */
+        leftTap = setTimeout(function () {
+          leftTap = 0;
+          if (zone !== 'grid' || when() !== 'now') return;
+          if (UI.isDown && UI.isDown('left')) { moveTime(-1, true); return; }
+          setZone('groups'); leftGroups = Date.now();
+        }, 250);
       }
     }
     // Rewind and Fast-forward: a whole screen of the guide (two and a half hours), not one programme;

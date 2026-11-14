@@ -43,7 +43,7 @@ const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playl
   await page.waitForTimeout(600);
 
   // 1. The sections, in order, on the TV and the phone.
-  const nav = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
+  const nav = await ev(() => [].map.call(document.querySelectorAll('#setNav > div:not(.nav-find)'), (d) => d.innerText.trim()));
   ok('the TV shows the 17 sections in order', nav.join('|') === WANT.map((w) => w[1]).join('|'), nav.join(' | '));
   const secs = await sa({ op: 'sections' });
   ok('the phone gets the same 17, with their ids', JSON.stringify(secs.sections.map((x) => [x.id, x.title])) === JSON.stringify(WANT), JSON.stringify(secs.sections));

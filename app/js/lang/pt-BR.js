@@ -1573,5 +1573,7 @@ I18n.add('pt-BR', {
   "A word from its name": "Uma palavra do nome",
   "{x} is on {y} now": "{x} agora está em {y}",
   "{x} is no longer in the guide": "{x} não está mais no guia",
-  "The channel lists {x} now.": "O canal agora mostra {x}."
+  "The channel lists {x} now.": "O canal agora mostra {x}.",
+  "Hold OK  back to fullscreen": "Segure OK  tela cheia",
+  "Hold OK on the filters  back to fullscreen": "Segure OK nos filtros  tela cheia"
 });

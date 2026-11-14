@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Search settings in the Settings menu.**  The first row of the menu, with a magnifier, for anyone who doesn't know about Yellow.  It opens your last search, or asks what to look for.
+- **The channel keeps playing in Search too.**  In the corner right of the results, with what's on.  Hold OK on the filters (or a past search) goes back to it in fullscreen; on a channel or programme result Hold OK is still its options.
+- **Back to fullscreen from Settings.**  With the channel playing in the corner of Settings, **Hold OK** (or a click on the picture) goes back to it in fullscreen, on the screen you came from.  The corner says so under what's on.
+- **Holding ◀ in the guide, take two.**  On the TV a held ◀ at now still went to the groups first: its repeats only start after more than half a second.  Now TiviBro looks whether ◀ is still down a quarter second after the press: still down, it goes back in time; let go, the groups open.
 - **A team's reminder follows its game.**  A reminder set for a game on one channel (often an event channel slot) fired for whatever that channel showed by then, after the provider had given the slot to another game.  Now team reminders are checked against the guide as it is: a game that moved goes with its new channel and time, and one that's nowhere in the guide any more is dropped, with a message saying so if it was due.
 
 ## 0.6.0 (alpha 131, 2026-11-13)

@@ -1057,5 +1057,7 @@ I18n.add('es', {
   "A word from its name": "Una palabra de su nombre",
   "{x} is on {y} now": "{x} está ahora en {y}",
   "{x} is no longer in the guide": "{x} ya no está en la guía",
-  "The channel lists {x} now.": "El canal ahora muestra {x}."
+  "The channel lists {x} now.": "El canal ahora muestra {x}.",
+  "Hold OK  back to fullscreen": "Mantén OK  pantalla completa",
+  "Hold OK on the filters  back to fullscreen": "Mantén OK en los filtros  pantalla completa"
 });
