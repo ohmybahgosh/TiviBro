@@ -100,7 +100,7 @@ function fakeTv(o) {
   tv = fakeTv();
   const c = Companion.create({
     dir, version: 'test', log: () => {}, launch: (p, cb) => cb(null), app: () => ({ open: false }), editor: () => null,
-    sysinfo: (cb) => cb({ model: 'OLED55C2', webos: '25', name: 'Livingroom TV', wol: true, macs: [], bt: '80:5b:65:a8:f5:c1', woble: true }),
+    sysinfo: (cb) => cb({ model: 'OLED55C2', webos: '25', name: 'Livingroom TV', wol: true, macs: [], bt: 'a8:23:fe:6b:4d:2e', woble: true }),
     blewake: tv.bw.handle,
   });
   const ctl = (u, body) => new Promise((resolve) => {
@@ -113,7 +113,7 @@ function fakeTv(o) {
   const s = (await ctl('/companion/pair', { open: true })).j;
   const cred = await C.pair({ host: '127.0.0.1', port: s.port }, s.pairing.code, { name: 'Pixel' });
   const info = await C.call(cred, 'GET', '/v1/info');
-  ok('info has the TV\'s Bluetooth address and setting', info.bt === '80:5b:65:a8:f5:c1' && info.woble === true, JSON.stringify(info));
+  ok('info has the TV\'s Bluetooth address and setting', info.bt === 'a8:23:fe:6b:4d:2e' && info.woble === true, JSON.stringify(info));
   r = await C.call(cred, 'POST', '/v1/blewake', { op: 'register', address: '02:11:22:33:44:55' });
   ok('a paired phone registers with TiviBro closed', r.ok === true && r.registered === true, JSON.stringify(r));
   r = await C.call(cred, 'POST', '/v1/blewake', { op: 'status', address: '02:11:22:33:44:55' });

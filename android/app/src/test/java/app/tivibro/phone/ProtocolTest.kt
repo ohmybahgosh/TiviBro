@@ -46,9 +46,9 @@ class ProtocolTest {
     }
 
     @Test fun pairLinks() {
-        val l = PairLink.parse("https://tivibro.app/pair#v=1&h=192.168.50.96%3A47810&id=3f9c0a7d12e4b6c8&c=ABCDEFGHJKMN&n=Living%20room")
+        val l = PairLink.parse("https://tivibro.app/pair#v=1&h=192.168.1.20%3A47810&id=3f9c0a7d12e4b6c8&c=ABCDEFGHJKMN&n=Living%20room")
         assertNotNull(l)
-        assertEquals("192.168.50.96", l!!.host); assertEquals(47810, l.port); assertEquals("ABCDEFGHJKMN", l.code); assertEquals("Living room", l.name)
+        assertEquals("192.168.1.20", l!!.host); assertEquals(47810, l.port); assertEquals("ABCDEFGHJKMN", l.code); assertEquals("Living room", l.name)
         val l2 = PairLink.parse("tivibro://pair?v=1&h=10.0.0.5%3A47816&id=3f9c0a7d12e4b6c8&c=ABCDEFGHJKMN&n=Den")
         assertEquals(47816, l2!!.port)
         assertNull(PairLink.parse("https://example.com/pair#h=1.2.3.4&id=3f9c0a7d12e4b6c8&c=ABCDEFGHJKMN"))

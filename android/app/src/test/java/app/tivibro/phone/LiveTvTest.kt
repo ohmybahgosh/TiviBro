@@ -57,7 +57,7 @@ class LiveTvTest {
         val v = c.volume("up")
         assertTrue("volume answers", v != null && v.level == 13)
         // Turning the TV on over Bluetooth: the TV's address in info, and this phone's wake address registered.
-        assertEquals("80:5b:65:a8:f5:c1", info.optString("bt"))
+        assertEquals("a8:23:fe:6b:4d:2e", info.optString("bt"))
         val wakeAddr = app.tivibro.phone.proto.BleWake.newAddress()
         assertTrue("registers", c.blewake("register", wakeAddr).optBoolean("registered"))
         val bs = c.blewake("status", wakeAddr)

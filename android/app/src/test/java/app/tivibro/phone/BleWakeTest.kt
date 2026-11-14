@@ -17,16 +17,16 @@ class BleWakeTest {
 
     @Test fun manufacturerData() {
         assertArrayEquals(
-            bytes(0x02, 0x11, 0x22, 0x33, 0x44, 0x55, 0x07, 0x00, 0x80, 0x5b, 0x65, 0xa8, 0xf5, 0xc1),
-            BleWake.manufacturerData("02:11:22:33:44:55", "80:5b:65:a8:f5:c1"),
+            bytes(0x02, 0x11, 0x22, 0x33, 0x44, 0x55, 0x07, 0x00, 0xa8, 0x23, 0xfe, 0x6b, 0x4d, 0x2e),
+            BleWake.manufacturerData("02:11:22:33:44:55", "a8:23:fe:6b:4d:2e"),
         )
         // The TV's address as the helper may send it, in capitals.
-        assertEquals(14, BleWake.manufacturerData("02:11:22:33:44:55", "80:5B:65:A8:F5:C1")!!.size)
+        assertEquals(14, BleWake.manufacturerData("02:11:22:33:44:55", "A8:23:FE:6B:4D:2E")!!.size)
     }
 
     @Test fun badAddressesGiveNothing() {
-        assertNull(BleWake.manufacturerData("02:11:22:33:44", "80:5b:65:a8:f5:c1"))
-        assertNull(BleWake.manufacturerData("02:11:22:33:44:55", "80-5b-65-a8-f5-c1"))
+        assertNull(BleWake.manufacturerData("02:11:22:33:44", "a8:23:fe:6b:4d:2e"))
+        assertNull(BleWake.manufacturerData("02:11:22:33:44:55", "a8-23-fe-6b-4d-2e"))
         assertNull(BleWake.manufacturerData("02:11:22:33:44:55", ""))
         assertNull(BleWake.addressBytes("zz:11:22:33:44:55"))
     }
@@ -68,13 +68,13 @@ class BleWakeTest {
 
     @Test fun readsTheAddressInTheScanRecord() {
         // Flags, then AD type 0x1B: address type byte, then the address backwards.
-        val rec = bytes(0x02, 0x01, 0x06, 0x08, 0x1b, 0x00, 0xc1, 0xf5, 0xa8, 0x65, 0x5b, 0x80, 0x00)
-        assertEquals("80:5b:65:a8:f5:c1", BleWake.addressFromRecord(rec))
+        val rec = bytes(0x02, 0x01, 0x06, 0x08, 0x1b, 0x00, 0x2e, 0x4d, 0x6b, 0xfe, 0x23, 0xa8, 0x00)
+        assertEquals("a8:23:fe:6b:4d:2e", BleWake.addressFromRecord(rec))
         assertNull(BleWake.addressFromRecord(bytes(0x02, 0x01, 0x06)))
         assertNull(BleWake.addressFromRecord(bytes(0x09, 0x1b, 0x00)))
     }
 
-    /** Bob's C2 woken with the phone's Wi-Fi off: 04 in standby, 05 about ten seconds later, modules unchanged. */
+    /** An LG C2 woken with the phone's Wi-Fi off: 04 in standby, 05 about ten seconds later, modules unchanged. */
     @Test fun tellsTheTvCameOn() {
         fun ad(u: Int) = BleWake.parseAdvert(bytes(u, 0x34, 0x14, 0x12, 0x16, 0xfd, 0x80))
         val woke = TvSeen()

@@ -1,4 +1,4 @@
-/* Search finds what providers write into channel names, and says so (Bob: searching "michigan" listed
+/* Search finds what providers write into channel names, and says so (searching "michigan" listed
    BigTen 10, 14, 19... with nothing about Michigan, and opening one didn't say it either).
      node tests/soak/search-names.js      (mock provider on :8077, npm run serve) */
 'use strict';
@@ -20,7 +20,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   // Two channels whose provider names carry a game: one without a time, one with a time.
   const ks = await ev(() => {
     const a = Library.data.channels[3], b = Library.data.channels[4];
-    // As on Bob's TV: the name shown is short ("BigTen 10"), the provider's name carries the game.
+    // As on a real TV: the name shown is short ("BigTen 10"), the provider's name carries the game.
     Store.edits.renames[a.k] = 'BigTen 10'; Store.edits.renames[b.k] = 'BigTen 14';
     a.n = 'BIG10 10: Michigan vs Ohio State';
     const t = new Date(Date.now() + 3 * 3600e3), h = t.getHours();
@@ -51,7 +51,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const plain = await ev(() => Search.extra({ n: 'US: ESPN HD', k: 'x', g: '' }));
   ok('a name that only adds a country and quality adds nothing', plain === '', plain);
 
-  // A hidden Adult group stays out of Search, also with Show hidden on (Bob: search brought up blocked adult channels).
+  // A hidden Adult group stays out of Search, also with Show hidden on (search brought up blocked adult channels).
   const setQ = (q) => ev((q) => { if (Views.tab !== 'search') Views.switchTab('search'); const i = document.querySelector('.search-input'); i.value = q; i.dispatchEvent(new Event('input')); }, q);
   const shown = () => ev(() => [].slice.call(document.querySelectorAll('.search-list .row')).filter((r) => r.offsetHeight).map((r) => r.innerText.replace(/\n+/g, ' | ')));
   await ev(() => {

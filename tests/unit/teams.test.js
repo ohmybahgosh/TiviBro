@@ -128,7 +128,7 @@ Teams.dirty();
 list = Teams.list().map(c => c.n);
 ok('a game named only in the description', list.indexOf('FOX 2 Detroit') >= 0, list.join(' / '));
 ok('the news after it is not one', Teams.games().filter(x => x.c === fox).length === 1);
-// From Bob's TV: the opponent's own channel, a team channel's "Next game" block for tomorrow whose
+// From a real TV: the opponent's own channel, a team channel's "Next game" block for tomorrow whose
 // description names the game, a postgame show, and a local station in your own group while its provider
 // group is hidden.
 const vik = tc['nfl:min'][0];
@@ -191,7 +191,7 @@ Watch.tidy();
 const left = Store.edits.reminders.map(r => (r.s - T0) / H + 'h' + (r.w ? '' : ' (yours)')).join(', ');
 ok('one reminder per game: the overtime block and the later airings go, the game and the one two days on stay, and one you set yourself is left alone', left === '0h, 3h (yours), 48h', left);
 
-// Bob's TV (Nov 8): the Lions game twice, "Detroit Lions at Miami Dolphins" on the team's channel and
+// A real TV (Nov 8): the Lions game twice, "Detroit Lions at Miami Dolphins" on the team's channel and
 // "Live: NFL Football" on the local CBS station, both at 1:00.  One reminder: the listing that names the game.
 const T1 = NOW + 3 * H, wl = 'team:nfl:det';
 Store.edits.reminders = [
@@ -228,7 +228,7 @@ ok('college: shows are no games', !Teams.isGame('College Football Live', 'ESPN')
   ok('college basketball: a game is a game of its league', Teams.isGame('NCAAB: Purdue at Michigan State', '', 'ncaab') && !Teams.isGame('NCAAB: Purdue at Michigan State', '', 'ncaaf'));
 }
 
-// From Bob's TV (a Friday in November): "Purdue Boilermakers vs Michigan State Spartans" on a FOX ONE channel was
+// From a real TV (a Friday in November): "Purdue Boilermakers vs Michigan State Spartans" on a FOX ONE channel was
 // basketball.  A school plays football once a week, so with its football game this week elsewhere, it's left out.
 const foxOne = ch('FOX ONE 15', 'g5'), btn = ch('BTN', 'g5'); chans.push(foxOne, btn);
 progs[foxOne.k] = [{ s: NOW + H, e: NOW + 3 * H, t: 'Purdue Boilermakers vs Michigan State Spartans' }];
@@ -310,7 +310,7 @@ Teams.follow('ncaab:msu', false);
   delete Epg.request;
 }
 
-// One game on several channels reads the same in My teams (Bob's guide, Nov 14: Michigan at Oregon on three
+// One game on several channels reads the same in My teams (a real guide, Nov 14: Michigan at Oregon on three
 // channels, two ways round and at 3:25 and 3:30).
 {
   const a = ch('NCAAF 01: Michigan Wolverines vs Oregon Ducks @ ' + hm(NOW + 4 * H), 'g8'), b = ch('FOX ONE 12', 'g8'), c3 = ch('BTN', 'g8');
@@ -319,7 +319,7 @@ Teams.follow('ncaab:msu', false);
   const t = NOW + 4 * H, t5 = t - 5 * 60e3;
   progs[b.k] = [{ s: t5, e: t5 + 3 * H, t: 'NCAAF: Oregon Ducks Michigan Wolverines' }];
   progs[c3.k] = [{ s: t, e: t + 3 * H, t: 'NCAAF: College Football: Michigan at Oregon' }];
-  // A team channel whose guide only says "Next game: …" (Bob's TV, Nov 14).
+  // A team channel whose guide only says "Next game: …" (a real TV, Nov 14).
   const tc = ch('NCAAF | MICHIGAN WOLVERINES', 'g8'); chans.push(tc);
   const d = new Date(NOW + 4 * H), mdy = String(d.getMonth() + 1).padStart(2, '0') + '/' + String(d.getDate()).padStart(2, '0') + '/' + d.getFullYear();
   const hh = d.getHours() % 12 || 12, ap = d.getHours() < 12 ? 'AM' : 'PM', mm = String(d.getMinutes()).padStart(2, '0');

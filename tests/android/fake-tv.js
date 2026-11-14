@@ -11,7 +11,7 @@ const editor = require('../../service/editor.js').create(() => {});
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-fake-tv-'));
 const vol = { level: 12, muted: false };
 const look = { title: 'Appearance', trail: ['Appearance'], rows: [{ i: 0, kind: 'head', label: 'Look' }, { i: 1, kind: 'toggle', label: 'Show clock', sub: '', on: true }, { i: 2, kind: 'choice', label: 'Numbers', sub: 'Even width lines up channel numbers.', options: ['TV font', 'Even width', 'Fixed width, slashed zero'], cur: 0, value: 'TV font' }, { i: 3, kind: 'page', label: 'Manage groups', sub: '', value: '' }] };
-const c = Companion.create({ dir, version: 'fake-tv', log: () => {}, launch: (p, cb) => { console.log('LAUNCHED ' + JSON.stringify(p)); cb(null); }, sysinfo: (cb) => cb({ model: 'FAKE', webos: '0', name: 'Fake TV', bt: '80:5b:65:a8:f5:c1', woble: true }), app: () => ({ open: true }), editor: () => editor,
+const c = Companion.create({ dir, version: 'fake-tv', log: () => {}, launch: (p, cb) => { console.log('LAUNCHED ' + JSON.stringify(p)); cb(null); }, sysinfo: (cb) => cb({ model: 'FAKE', webos: '0', name: 'Fake TV', bt: 'a8:23:fe:6b:4d:2e', woble: true }), app: () => ({ open: true }), editor: () => editor,
   volume: (d, cb) => { if (d === 'up') vol.level++; else if (d === 'down') vol.level--; else vol.muted = !vol.muted; cb(null, Object.assign({}, vol)); },
   // Wake on BLE (service/blewake.js) over a pretend asc service that keeps the registered addresses.
   blewake: require('../../service/blewake.js').create({ log: () => {}, call: (uri, p, cb) => setImmediate(() => {

@@ -50,6 +50,6 @@ if (item) out.push(item);
 if (!out.length) { console.error('No changes listed for ' + arg + ' in CHANGELOG.md.'); process.exit(1); }
 
 const title = stage ? `**New in ${stage} ${num}**` : `**New in ${ver}**`;
-// Alpha builds lead up to the first beta (Bob, Nov 14): the notes say so first.
+// Alpha builds lead up to the first beta: the notes say so first.
 const lead = stage === 'alpha' ? ['These updates are in preparation for the first beta.', ''] : [];
 process.stdout.write([...lead, title, '', ...out.map(t => '- ' + short(t)), '', `Every detail: [changelog](${FULL})`].join('\n') + '\n');

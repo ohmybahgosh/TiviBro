@@ -1,4 +1,4 @@
-/* The guide's navigation and look (Bob's guide ideas 1 to 9, the menus and the group column):
+/* The guide's navigation and look (guide ideas 1 to 9, the menus and the group column):
    Rewind / Fast-forward a screen at a time and held at most about three a second, Jump to…, the day in the
    time bar, held arrows that stay in hand (Left held never opens the groups), each group's place kept,
    colour by category with its legend, season / episode and NEW in the details, a long title scrolling on
