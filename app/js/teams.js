@@ -659,6 +659,12 @@ var Teams = (function () {
   /* A channel's guide as My teams shows it: the game, and the "Starts …" or "Next game …" before it, with the
      game's one title and time.  A real programme keeps its own times; only its title changes.  The blocks
      stay the guide's own objects underneath (descriptions loaded later still reach them). */
+  // A game on a channel, as My teams writes it (its one title and start), for blocks made elsewhere (views.js).
+  function gameTitle(c, p) {
+    var E = c && p && listCache && listCache.canon && listCache.canon[c.k];
+    for (var i = 0; E && i < E.length; i++) if (Math.abs(E[i].s0 - p.s) < CLOSE) return { t: E[i].t, s: E[i].s };
+    return { t: p.t, s: p.s };
+  }
   var uniformed = typeof WeakMap !== 'undefined' ? new WeakMap() : null;
   function uniform(c, list) {
     if (!c || !list || !list.length || !groupOn() || !listCache || !listCache.canon) return list;
@@ -735,6 +741,6 @@ var Teams = (function () {
   return {
     LEAGUES: LEAGUES, all: function () { return ALL; }, team: function (id) { return BY_ID[id]; }, named: named, norm: norm,
     leagues: leagues, inLeague: inLeague, hasChannel: hasChannel, teamChannels: teamChannels, ofChannel: ofChannel,
-    RULES: 3, recheck: recheck, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, uniform: uniform, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
+    RULES: 3, recheck: recheck, isGame: isGame, matchup: matchup, aroundGame: aroundGame, SAME_GAME: SAME_GAME, CLOSE: CLOSE, placeholder: placeholder, follows: follows, followed: followed, follow: follow, groupOn: groupOn, remindOn: remindOn, games: games, list: list, uniform: uniform, gameTitle: gameTitle, gameOn: gameOn, dirty: dirty, nextGame: nextGame, emptyText: emptyText
   };
 })();

@@ -2393,7 +2393,8 @@ var Guide = (function () {
     if (cur && (cur.up || cur.ev || /^\s*next game/i.test(cur.t || '') || cur === g)) return l;     // a team or event channel already says so
     var out = [], from = cur ? cur.s : now;
     l.forEach(function (p) { if (p.e <= from) out.push(p); });
-    out.push({ s: from, e: g.s, t: 'Next game ' + Events.when(g.s) + ': ' + g.t, k: 's', up: 1, d: 'Then: ' + g.t + ' on ' + L.name(c) + '.' });
+    var gt = Teams.gameTitle ? Teams.gameTitle(c, g) : g;          // the game's one title and start in My teams
+    out.push({ s: from, e: g.s, t: 'Next game ' + Events.when(gt.s) + ': ' + gt.t, k: 's', up: 1, d: 'Then: ' + gt.t + ' on ' + L.name(c) + '.' });
     l.forEach(function (p) { if (p.s >= g.s) out.push(p); else if (p.e > g.s && p.s < g.s && p !== cur) { var q = {}; for (var f in p) q[f] = p[f]; q.s = g.s; out.push(q); } });
     teamCache[c.k] = { l: l, g: g, at: now, out: out };
     return out;

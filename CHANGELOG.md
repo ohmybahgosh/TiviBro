@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **My teams: the same title on sports networks too.**  A channel that isn't a team's own (ESPN, a regional sports network, a local station) says **Next game …** before the game, and that line still had the guide's own wording ("NCAAF: College Football: Michigan at Oregon") and time.  It now uses the game's one title and start, like the other channels showing it.
 - **What the TV tried, in the phone app too (issue #87).**  Adding a playlist from the phone app that fails now has **What the TV tried** under the message, like the web editor: the TV's log of each try, with logins masked.
 
 ## 0.6.0 (alpha 134, 2026-11-14)
