@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 133, 2026-11-14)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 133
 
 - **The guide's category colours follow the theme.**  Movies, sports, news, kids and documentaries take their colours from the theme, and none is close to the theme's accent (the focused programme) or to another category, so a green sports bar never sits next to a green focus on Terminal.  Your own mix keeps the usual colours unless your accent is close to one.
 - **The quick menu no longer outlines the channel playing in red.**  The red frame looked like the selection and ignored the theme; the channel playing now has a ▶ before its name, in the theme's colour.
@@ -12,11 +16,7 @@
 - **Clearer messages when an answer can't be read.**  The report service and the network helper answering with an empty reply or a web page used to show the browser's own "Unexpected token in JSON at position 0".  Now it says which it was, and that a firewall or sign-in page may be in the way.
 - **Tidying.**  Code nothing used any more is gone (an unused setting, four helper functions and some old styles), and translations of text the app no longer shows.
 
-## 0.6.0 (alpha 132, 2026-11-13)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 132
+### In alpha 132
 
 - **Search settings in the Settings menu.**  The first row of the menu, with a magnifier, for anyone who doesn't know about Yellow.  It opens your last search, or asks what to look for.
 - **The channel keeps playing in Search too.**  In the corner right of the results, with what's on.  Hold OK on the filters (or a past search) goes back to it in fullscreen; on a channel or programme result Hold OK is still its options.
