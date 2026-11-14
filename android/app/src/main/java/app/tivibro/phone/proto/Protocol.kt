@@ -27,7 +27,8 @@ const val DEFAULT_PORT = 47810
 const val DISCOVER = "tivibro-discover-v1"
 private const val KDF_ITER = 100_000
 
-class TbException(message: String, val code: String = "", val unsigned: Boolean = false) : Exception(message)
+/** [details]: what the TV tried, from its log (Add a playlist that failed), already masked by the TV. */
+class TbException(message: String, val code: String = "", val unsigned: Boolean = false, val details: List<String> = emptyList()) : Exception(message)
 
 /** A paired TV, as the app keeps it. */
 data class Tv(
@@ -278,7 +279,8 @@ class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
         val j = if (raw != null && open != null && raw.has("sealed")) open(raw.getJSONObject("sealed")) else raw
         if (j == null) throw TbException("The TV gave an answer TiviBro doesn't understand.", "bad")
         if (r.status == 401 && j.optString("code") == "clock" && j.optLong("now") > 0) skew[tv.id] = j.optLong("now") - System.currentTimeMillis()
-        if (r.status >= 400) throw TbException(j.optString("error", "Failed (${r.status})."), j.optString("code"))
+        if (r.status >= 400) throw TbException(j.optString("error", "Failed (${r.status})."), j.optString("code"),
+            details = j.optJSONArray("log")?.let { a -> (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() } } ?: emptyList())
         return j
     }
 

@@ -825,8 +825,11 @@ var WebEdit = (function () {
     addresses: function () { return status && status.ips && status.ips.length ? status.ips.map(function (ip) { return 'http://' + ip + ':' + status.port; }) : []; },
     // The phone app runs the same actions (adding a playlist from a shared link), with the same banner.
     run: function (type, args) {
+      var seen = Log.lines().length;
       return Promise.resolve().then(function () { if (!RUN[type]) throw new Error('Unknown action ' + type); return RUN[type](args || {}); })
         .then(function (r) { return { msg: r && r.msg }; }, function (e) {
+          // The phone app's Add a playlist: what the TV tried, like the web editor's (issue #87).
+          if (type === 'addPlaylist' && e && typeof e === 'object') e.tried = triedLog(seen);
           if (type === 'addPlaylist' || type === 'restore') activity('That didn\'t work: ' + String((e && e.message) || 'it failed').replace(/([^.!?])$/, '$1.') + '  Fix it on your phone and send it again.', 'err');
           throw e;
         });

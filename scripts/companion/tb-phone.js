@@ -120,7 +120,7 @@ async function ask(cred, what, args, opts) {
   if (!r.signed) { const e = new Error('The answer was not signed by this TV' + (r.json && r.json.error ? ': ' + r.json.error : ' (' + r.status + ')')); e.code = r.json && r.json.code; e.unsigned = true; throw e; }
   // Errors before the TV could open the request come back plain; everything after, sealed.
   const j = r.json && r.json.sealed ? unseal(r.json.sealed, key, 'res', cred.phone, nonce) : r.json;
-  if (r.status >= 400) { const e = new Error((j && j.error) || 'failed (' + r.status + ')'); e.code = j && j.code; throw e; }
+  if (r.status >= 400) { const e = new Error((j && j.error) || 'failed (' + r.status + ')'); e.code = j && j.code; e.log = j && j.log; throw e; }
   return j;
 }
 

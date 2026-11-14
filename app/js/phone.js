@@ -111,7 +111,7 @@ var Phone = (function () {
     }).then(function (data) { return call('/companion/answer', { id: c.id, ok: true, data: data === undefined ? null : data }); },
       function (e) {
         Log.warn('phone', c.what + ' for the phone failed: ' + (e && e.message));
-        return call('/companion/answer', { id: c.id, ok: false, error: (e && e.message) || 'failed' });
+        return call('/companion/answer', { id: c.id, ok: false, error: (e && e.message) || 'failed', log: e && e.tried && e.tried.length ? e.tried : undefined });
       })
       .then(function () { pushState(true); }, function () {});
   }

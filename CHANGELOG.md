@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **What the TV tried, in the phone app too (issue #87).**  Adding a playlist from the phone app that fails now has **What the TV tried** under the message, like the web editor: the TV's log of each try, with logins masked.
+
 ## 0.6.0 (alpha 134, 2026-11-14)
 
 Pre-release: expect rough edges, and keep a backup before installing.

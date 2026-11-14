@@ -320,6 +320,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('and the fresh TV opens on it', await p2.evaluate(() => Store.playlist && Store.playlist.type === 'xtream' && Library.count() > 0));
   const bad = await C.ask(cred, 'playlist', { link: 'http://127.0.0.1:8077' }, { seal: true }).catch((e) => e);
   ok('a bare server address is turned down, with the reason', bad.code === 'tv' && /only a server address/.test(bad.message), bad.message);
+  // A login the server turns down: the reason, and what the TV tried, masked (issue #87).
+  const wrong = await C.ask(cred, 'playlist', { type: 'xtream', server: 'http://127.0.0.1:9', user: 'demo', pass: 'nottheword' }, { seal: true }).catch((e) => e);
+  ok('a login that fails comes back with what the TV tried, masked', wrong.code === 'tv' && Array.isArray(wrong.log) && wrong.log.length > 0 && !wrong.log.some((l) => /nottheword/.test(l)), JSON.stringify({ m: wrong.message, log: wrong.log }).slice(0, 400));
   // Typed in on the phone with its type picked (the phone's Add a playlist form).
   const typed = await ask('playlist', { type: 'xtream', server: 'http://127.0.0.1:8077', user: 'demo', pass: 'demo', name: 'Typed on the phone' }, { seal: true });
   ok('an Xtream Codes login typed on the phone adds a playlist', typed && /Added/.test(typed.msg) && await p2.evaluate(() => Store.settings.playlists.some((p) => p.name === 'Typed on the phone' && p.type === 'xtream')), JSON.stringify(typed));

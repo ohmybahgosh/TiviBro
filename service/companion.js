@@ -388,7 +388,9 @@ function create(opts) {
     var w = asks[j.id];
     if (!w) return false;
     delete asks[j.id]; clearTimeout(w.timer);
-    if (j.ok === false) w.reply(409, { error: cleanText(j.error, 300) || 'TiviBro on the TV could not do that.', code: 'tv' });
+    if (j.ok === false) w.reply(409, { error: cleanText(j.error, 300) || 'TiviBro on the TV could not do that.', code: 'tv',
+      // What the TV tried (Add a playlist): its log lines, as the TV masked them.
+      log: Array.isArray(j.log) ? j.log.slice(-20).map(function (x) { return String(x).replace(/[\u0000-\u001f]/g, ' ').slice(0, 400); }) : undefined });
     else w.reply(200, { ok: true, data: j.data === undefined ? null : j.data });
     return true;
   }

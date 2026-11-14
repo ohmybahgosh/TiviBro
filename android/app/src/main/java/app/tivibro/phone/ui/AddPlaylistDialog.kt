@@ -4,6 +4,7 @@
 package app.tivibro.phone.ui
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -73,10 +74,11 @@ private fun PlaylistDialog(model: AppModel, id: String, editId: String?, editTyp
     var use by remember { mutableStateOf(true) }
     var busy by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var tried by remember { mutableStateOf<List<String>>(emptyList()) }
     val ready = if (editing) listOf(name, server, user, pass, m3u, portal, mac, sn).any { it.isNotBlank() } else when (type) { "xtream" -> server.isNotBlank() && user.isNotBlank() && pass.isNotBlank(); "m3u" -> m3u.isNotBlank(); "stalker" -> portal.isNotBlank() && mac.isNotBlank(); else -> link.isNotBlank() }
 
     fun add() {
-        busy = true; error = null
+        busy = true; error = null; tried = emptyList()
         val a = JSONObject().put("name", name.trim()).put("use", use).put("epg", epg.trim())
         if (editing) a.put("edit", editId)
         when (type) {
@@ -87,7 +89,7 @@ private fun PlaylistDialog(model: AppModel, id: String, editId: String?, editTyp
         }
         scope.launch {
             try { model.say(model.addPlaylistWith(id, a)); onDone(true) }
-            catch (e: TbException) { error = e.message }
+            catch (e: TbException) { error = e.message; tried = e.details }
             catch (e: Exception) { error = "The TV didn't answer.  Is it on, and on the same network?" }
             busy = false
         }
@@ -140,6 +142,7 @@ private fun PlaylistDialog(model: AppModel, id: String, editId: String?, editTyp
                     Text("Switch the TV to it when it is added")
                 }
                 error?.let { Text(it, color = Bad, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 6.dp)) }
+                if (error != null) TriedLog(tried)
                 if (busy) Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(18.dp), strokeWidth = 2.dp, color = Accent)
                     Spacer(Modifier.size(10.dp))
@@ -150,4 +153,16 @@ private fun PlaylistDialog(model: AppModel, id: String, editId: String?, editTyp
         confirmButton = { TextButton(enabled = !busy && ready, onClick = { add() }) { Text(if (editing) "Test and save" else "Add and test") } },
         dismissButton = { TextButton(enabled = !busy, onClick = { onDone(false) }) { Text("Cancel") } },
     )
+}
+
+/** What the TV tried, from its log, for a playlist that wouldn't add (issue #87): folded away under the
+    message, the way the web editor shows it.  The TV masked the logins before sending it. */
+@Composable
+fun TriedLog(lines: List<String>) {
+    if (lines.isEmpty()) return
+    var shown by remember { mutableStateOf(false) }
+    Text(if (shown) "Hide what the TV tried" else "What the TV tried", color = Accent, style = MaterialTheme.typography.labelLarge,
+        modifier = Modifier.clickable { shown = !shown }.padding(vertical = 8.dp))
+    if (shown) Text(lines.joinToString("\n"), color = Muted, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+        style = MaterialTheme.typography.bodySmall, modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()))
 }

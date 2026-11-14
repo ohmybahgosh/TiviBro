@@ -33,7 +33,7 @@ async function tivibro() {
       seen.push(cmd);
       if (cmd.type !== 'ask') continue;
       if (cmd.what === 'fav') await ctl('/companion/answer', { id: cmd.id, ok: true, data: { on: cmd.args.on } });
-      else if (cmd.what === 'playlist') await ctl('/companion/answer', { id: cmd.id, ok: false, error: 'The provider said the login is wrong.' });
+      else if (cmd.what === 'playlist') await ctl('/companion/answer', { id: cmd.id, ok: false, error: 'The provider said the login is wrong.', log: ['12:00:01  WARN  http  #3 login FAILED http: HTTP 404', '12:00:02  ERROR xc  Load failed'] });
       else if (cmd.what === 'backup') await ctl('/companion/answer', { id: cmd.id, ok: true, data: { backup: { app: 'TiviBro', kind: 'backup', settings: { playlists: [{ pass: 'secret' }] } } } });
       else if (cmd.what === 'guide') { /* never answers: the phone gets "pending" */ }
     }
@@ -66,6 +66,7 @@ async function tivibro() {
 
   e = await C.ask(cred, 'playlist', { link: 'http://h/get.php?username=a&password=b' }, { seal: true }).catch((x) => x);
   ok('TiviBro\'s reason comes back when it can\'t do it', e.code === 'tv' && /login is wrong/.test(e.message), e.message);
+  ok('with what the TV tried, sealed with the answer (issue #87)', Array.isArray(e.log) && e.log.length === 2 && /login FAILED/.test(e.log[0]), JSON.stringify(e.log));
   ok('and the link reached TiviBro whole', seen.some((x) => x.what === 'playlist' && /password=b/.test(x.args.link)));
 
   open = false;

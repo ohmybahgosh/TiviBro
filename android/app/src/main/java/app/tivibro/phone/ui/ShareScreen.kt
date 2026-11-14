@@ -59,6 +59,7 @@ fun ShareScreen(model: AppModel, text: String, tvs: List<TvUi>, onBack: () -> Un
     var busy by remember { mutableStateOf(false) }
     var done by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    var tried by remember { mutableStateOf<List<String>>(emptyList()) }
     val scope = rememberCoroutineScope()
 
     Scaffold(
@@ -109,13 +110,14 @@ fun ShareScreen(model: AppModel, text: String, tvs: List<TvUi>, onBack: () -> Un
                 Checkbox(use, { use = it }); Text("Switch the TV to it when it's added")
             }
             error?.let { Text(it, color = Bad) }
+            if (error != null) TriedLog(tried)
             Button(
                 onClick = {
                     val id = pick ?: return@Button
-                    busy = true; error = null
+                    busy = true; error = null; tried = emptyList()
                     scope.launch {
                         try { done = model.addPlaylist(id, link.link, name.trim(), use) }
-                        catch (e: TbException) { error = e.message }
+                        catch (e: TbException) { error = e.message; tried = e.details }
                         catch (e: Exception) { error = "The TV didn't answer.  Is it on, and on the same network?" }
                         finally { busy = false }
                     }
