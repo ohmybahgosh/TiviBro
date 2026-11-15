@@ -48,7 +48,7 @@ function fetchIdeas() {
       'nodes{number title url body createdAt closed closedAt stateReason upvoteCount author{login} category{name} labels(first:10){nodes{name}} comments{totalCount}' +
       ' reactions(content:THUMBS_UP){totalCount}}}}}', { o: REPO[0], n: REPO[1], a: after }).then(function (d) {
       var ds = d.repository.discussions;
-      ds.nodes.forEach(function (x) { if (x.category && x.category.name === 'Ideas' && !/^Start here/i.test(x.title)) all.push(x); });   // the how-to post isn't an idea
+      ds.nodes.forEach(function (x) { if (x.category && x.category.name === 'Ideas' && !/^Start here/i.test(x.title) && x.stateReason !== 'DUPLICATE') all.push(x); });   // not the how-to post, nor duplicates
       after = ds.pageInfo.hasNextPage ? ds.pageInfo.endCursor : null;
       return after ? page() : all;
     });
