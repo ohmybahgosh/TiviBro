@@ -15,12 +15,12 @@ val forPlay = tbStore == "play"
 
 android {
     namespace = "app.tivibro.phone"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "app.tivibro.phone"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = tbVersionCode
         versionName = tbVersionName
         buildConfigField("boolean", "SELF_UPDATE", if (forPlay) "false" else "true")
