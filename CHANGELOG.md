@@ -1,14 +1,14 @@
 # Changelog
 
-## Unreleased
-
-- **Stalker portals whose channels are HLS play (issue #88).**  Some portals link each channel to an HLS playlist (".../mono.m3u8") while the channel's own command doesn't say so.  TiviBro asked for MPEG-TS, got a playlist, and every channel ended at once, in the built-in player and the TV's.  Now the helper notices the link is HLS and TiviBro plays the channel that way straight off, and remembers it for that channel.
-
-## 0.6.0 (alpha 137, 2026-11-14)
+## 0.6.0 (alpha 138, 2026-11-15)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 137
+### New in alpha 138
+
+- **Stalker portals whose channels are HLS play (issue #88).**  Some portals link each channel to an HLS playlist (".../mono.m3u8") while the channel's own command doesn't say so.  TiviBro asked for MPEG-TS, got a playlist, and every channel ended at once, in the built-in player and the TV's.  Now the helper notices the link is HLS and TiviBro plays the channel that way straight off, and remembers it for that channel.
+
+### In alpha 137
 
 - **Movies on now: what's on now stands out.**  Each poster says whether the movie is on: the guide's **LIVE** badge and a progress bar for one playing now, or how soon it starts ("IN 35 MIN", or its time) on a quieter poster for one starting later.  The shelves say what's in them in plain words ("Playing now · 9 movies, join in progress", "Comedy · 3 playing now, 2 starting soon"), and in a genre shelf the ones playing now come first.  The top says "Playing now · 25 min left" or "Starts at 8:30pm · in 35 min".  The phone app's On now tab says it the same way.
 - **Back from a movie goes back to Movies on now.**  Watching a movie from Movies on now and pressing **Back** went to the guide; now it comes back to Movies on now, on the same movie.
