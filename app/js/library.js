@@ -187,7 +187,44 @@ var Library = (function () {
       Store.saveEdits();
     } catch (err) { Log.warn('library', 'Could not track new groups: ' + err.message); }
   }
-  function dirty() { groupCache.clear(); evCache = null; newCache = null; inShown = null; if (typeof Teams !== 'undefined') Teams.dirty(); }
+  function dirty() { groupCache.clear(); evCache = null; newCache = null; inShown = null; mixCache = {}; offMemo = {}; if (typeof Teams !== 'undefined') Teams.dirty(); }
+
+  /* ---------- mixing playlists (Settings > Playlists > a playlist > Mix into the first playlist) ----------
+     With several playlists on, each other playlist's channels join the first playlist's All channels,
+     Favorites and your groups, My teams, Events by time, Movies on now, Recently added and Search, unless that
+     playlist's switch for it is off (playlist.mix[what] === false; on when not set, as before these switches).
+     Off only leaves them out: a channel already in one of your groups stays there, out of sight, and is back
+     when the switch is on again.  Its own groups, under its heading, are always shown. */
+  var MIX = ['all', 'groups', 'teams', 'events', 'movies', 'added', 'search'];
+  var mixCache = {}, mixRev = 0;
+  function mixOffIds(what) {
+    var off = null;
+    for (var i = 0; i < others.length; i++) {
+      var pl = Store.byId && Store.byId(others[i].id);
+      if (pl && pl.mix && pl.mix[what] === false) (off || (off = {}))[others[i].id] = 1;
+    }
+    return off;
+  }
+  // Is this channel in `what`?  The first playlist's always are.
+  var offMemo = {};                     // what -> the playlists left out of it (or null), until the lists change
+  function mixed(c, what) {
+    if (!c || !c.p) return true;
+    var off = offMemo.hasOwnProperty(what) ? offMemo[what] : (offMemo[what] = mixOffIds(what));
+    return !(off && off[c.p]);
+  }
+  // Every channel `what` looks through: all of them unless a playlist is left out of it (kept until the
+  // lists change, so nothing is filtered twice).
+  function mixList(what) {
+    if (!others.length) return data.channels;
+    var hit = mixCache[what];
+    if (hit && hit.of === data.channels) return hit.list;
+    var off = mixOffIds(what);
+    var list = off ? data.channels.filter(function (c) { return !c.p || !off[c.p]; }) : data.channels;
+    mixCache[what] = { of: data.channels, list: list };
+    return list;
+  }
+  // A switch changed: everything built from the lists is built again.
+  function mixChanged() { mixRev++; dirty(); if (typeof Movies !== 'undefined' && Movies.poke) Movies.poke(); }
 
   /* ---------- other versions of a channel ----------
      The same channel in another quality, group or copy ("ESPN FHD", "ESPN HD", "US| ESPN (Backup)"),
@@ -261,10 +298,10 @@ var Library = (function () {
   function eventList() {
     var now = Date.now();
     if (evCache && now - evCache.at < 300000) return evCache.list;
-    var e = E(), showHidden = S().showHidden, out = [], first = Events.groupOn(), firstIdle = Names.hideIdle();
+    var e = E(), showHidden = S().showHidden, out = [], first = Events.groupOn(), firstIdle = Names.hideIdle(), evOff = mixOffIds('events');
     // Several playlists on: each playlist's own Events by time and "hide channels with nothing on".
     if (Events.groupOnAny ? Events.groupOnAny() : first) data.channels.forEach(function (c) {
-      if (c.p ? !Events.groupOn(c) : !first) return;
+      if (c.p ? (evOff && evOff[c.p]) || !Events.groupOn(c) : !first) return;
       if (!showHidden && (e.hiddenChannels[c.k] || e.hiddenGroups[homeOf(c)])) return;
       if ((c.p ? hideIdleOf(c) : firstIdle) && Names.idle(c.n)) return;
       var ev = Events.of(c);
@@ -283,11 +320,11 @@ var Library = (function () {
     var a = data.added, d = newDays();
     if (!a || !d) return [];
     if (newCache) return newCache;
-    var e = E(), showHidden = S().showHidden, since = Date.now() - d * 86400e3, out = [];
+    var e = E(), showHidden = S().showHidden, since = Date.now() - d * 86400e3, out = [], adOff = mixOffIds('added');
     Object.keys(a).forEach(function (k) {
       if (a[k] < since) return;
       var c = byKey.get(k);
-      if (!c || (!showHidden && (e.hiddenChannels[k] || e.hiddenGroups[homeOf(c)]))) return;
+      if (!c || (adOff && c.p && adOff[c.p]) || (!showHidden && (e.hiddenChannels[k] || e.hiddenGroups[homeOf(c)]))) return;
       out.push(c);
     });
     out.sort(function (x, y) { return a[y.k] - a[x.k] || x.num - y.num; });
@@ -360,9 +397,11 @@ var Library = (function () {
   // the group columns, when more than one playlist is on.
   function groups(heads) {
     var e = E(), s = S(), showHidden = s.showHidden, out = [];
-    var customs = [];
+    var customs = [], gOff = others.length ? mixOffIds('groups') : null;
+    // A playlist left out of Favorites and your groups: its channels in them aren't counted (they're kept, unseen).
+    var shownIn = function (g) { return gOff ? g.items.filter(function (k) { var c = byKey.get(k); return !c || !c.p || !gOff[c.p]; }).length : g.items.length; };
     e.custom.forEach(function (g) {
-      if (showHidden || !e.hiddenGroups[g.id]) customs.push({ id: g.id, name: g.id === FAV && g.name === 'Favorites' ? T('Favorites') : g.name, custom: true, hidden: !!e.hiddenGroups[g.id], count: g.items.length, blocked: !!e.blockedGroups[g.id] });
+      if (showHidden || !e.hiddenGroups[g.id]) customs.push({ id: g.id, name: g.id === FAV && g.name === 'Favorites' ? T('Favorites') : g.name, custom: true, hidden: !!e.hiddenGroups[g.id], count: shownIn(g), blocked: !!e.blockedGroups[g.id] });
     });
     if (s.showFav === false) customs = customs.filter(function (g) { return g.id !== FAV; });
     if (s.favFirst) out = out.concat(customs);
@@ -378,7 +417,7 @@ var Library = (function () {
     var evs = (Events.groupOnAny ? Events.groupOnAny() : Events.groupOn()) ? eventList().length : 0;
     if (evs) out.push({ id: EVENTS, name: T('Events by time'), count: evs });
     if (!s.favFirst) out = out.concat(customs);
-    if (s.showAll) out.push({ id: ALL, name: T('All channels'), count: data.channels.length });
+    if (s.showAll) out.push({ id: ALL, name: T('All channels'), count: mixList('all').length });
     out = out.concat(later);
     var prov = data.groups.slice();
     if (s.sortGroups === 'name') prov.sort(function (a, b) { return cleanGroup(a.name).localeCompare(cleanGroup(b.name)); });
@@ -431,10 +470,11 @@ var Library = (function () {
       list = e.recent.map(function (k) { return byKey.get(k); }).filter(Boolean);
     } else if (isCustom(gid)) {
       var g = custom(gid);
-      list = g ? g.items.map(function (k) { return byKey.get(k); }).filter(Boolean) : [];
+      var gOff = mixOffIds('groups');
+      list = g ? g.items.map(function (k) { return byKey.get(k); }).filter(function (c) { return c && (!gOff || !c.p || !gOff[c.p]); }) : [];
     } else if (gid === ALL) {
       sortable = true;
-      list = data.channels;
+      list = mixList('all');
       // "All" also skips channels whose whole group is hidden.
       if (!showHidden && !S().allHidden) list = list.filter(function (c) { return !e.hiddenGroups[homeOf(c)]; });
     } else {
@@ -499,8 +539,15 @@ var Library = (function () {
     commit();
   }
   // Copy, never move: the channel stays in its provider group too.
+  function offToast(c) {
+    var pl = Store.byId(c.p);
+    var msg = '"{x}" isn\'t mixed into Favorites and your groups.  Settings > Playlists > {x} > Mix into the first playlist.', v = { x: (pl && pl.name) || 'Playlist' };
+    if (typeof U !== 'undefined' && U.toast) U.toast(typeof I18n !== 'undefined' ? I18n.t(msg, v) : msg.replace(/\{x\}/g, v.x), 7000);
+  }
   function copyTo(gid, keys) {
     var g = custom(gid); if (!g) return 0;
+    var left = keys.filter(function (k) { var c = byKey.get(k); return !c || canGroup(c); });
+    if (left.length < keys.length) { offToast(byKey.get(keys.filter(function (k) { return left.indexOf(k) < 0; })[0])); keys = left; }
     var have = {}, added = 0;
     g.items.forEach(function (k) { have[k] = 1; });
     keys.forEach(function (k) { if (!have[k]) { g.items.push(k); have[k] = 1; added++; } });
@@ -560,7 +607,12 @@ var Library = (function () {
   }
 
   function isFav(k) { var g = custom(FAV); return !!(g && g.items.indexOf(k) >= 0); }
+  /* Can this channel go into Favorites or one of your groups?  Not one of another playlist whose
+     "Favorites and your groups" switch is off. */
+  function canGroup(c) { return mixed(c, 'groups'); }
   function toggleFav(k) {
+    var c0 = byKey.get(k);
+    if (c0 && !isFav(k) && !canGroup(c0)) { offToast(c0); return null; }    // null: nothing changed (callers say nothing more)
     var g = custom(FAV);
     if (!g) { g = { id: FAV, name: 'Favorites', items: [] }; E().custom.unshift(g); }
     var on = g.items.indexOf(k) < 0;
@@ -618,7 +670,7 @@ var Library = (function () {
     hideChannel: hideChannel, hideGroup: hideGroup, renameChannel: renameChannel,
     createGroup: createGroup, renameGroup: renameGroup, deleteGroup: deleteGroup,
     copyTo: copyTo, removeFrom: removeFrom, moveInGroup: moveInGroup, moveGroup: moveGroup,
-    dataOf: dataOf, setOther: setOther, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, get main() { return main; }, get multi() { return multi(); }, plName: plName,
+    dataOf: dataOf, setOther: setOther, MIX: MIX, mixed: mixed, mixList: mixList, mixChanged: mixChanged, canGroup: canGroup, get mixRev() { return mixRev; }, dropOther: dropOther, clearOthers: clearOthers, partOf: partOf, get main() { return main; }, get multi() { return multi(); }, plName: plName,
     otherIds: function () { return others.map(function (x) { return x.id; }); },
     hiddenItems: hiddenItems, allGroups: allGroups, mergedInto: mergedInto, mergedFrom: mergedFrom, mergeGroups: mergeGroups, splitGroup: splitGroup, homeOf: homeOf, versions: versions, versionKey: versionKey, numberCanGrow: numberCanGrow, qualityLabel: qualityLabel, versionTag: versionTag, hideGroups: hideGroups, get epgUrl() { return data.epgUrl; }, get type() { return Store.playlist.type; }
   };

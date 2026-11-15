@@ -267,8 +267,10 @@ var Teams = (function () {
      ("NFL | DETROIT LIONS", "USA NHL Carolina Hurricanes", "Detroit Red Wings HD").  Built once per list. */
   var TAGS = /\b(usa|us|ca|uk|nfl|nba|nhl|mlb|wnba|mls|ncaaf|ncaab|ncaam|ncaa|cfb|cbb|hd|fhd|uhd|sd|4k|hevc|raw|backup|tv|team|teams|network|live|east|west)\b/g;
   var chanCache = null;
+  // The channels My teams looks through: every playlist mixed into it (library.js mixList).
+  function looked() { return Library.mixList ? Library.mixList('teams') : Library.data.channels; }
   function teamChannels() {
-    var chans = Library.data.channels;
+    var chans = looked();
     if (chanCache && chanCache.of === chans) return chanCache.map;
     var full = {}, map = {}, gname = {};
     ALL.forEach(function (x) { x.full.forEach(function (f) { (full[f.trim()] || (full[f.trim()] = [])).push(x); }); });
@@ -293,7 +295,7 @@ var Teams = (function () {
     var tc = teamChannels(), out = [];
     var names = norm(Library.data.groups.map(function (g) { return g.name; }).join(' | '));
     if (!chanCache.named) {                      // league codes in channel names ("Major League Soccer: ...")
-      var chans = Library.data.channels, got = {}, left = LEAGUES.length;
+      var chans = looked(), got = {}, left = LEAGUES.length;
       for (var i = 0; i < chans.length && left; i++) {
         var n = norm(chans[i].n);
         for (var k in CODES) if (!got[k] && CODES[k].test(n)) { got[k] = 1; left--; }
@@ -384,10 +386,11 @@ var Teams = (function () {
     var dwords = [];
     teams.forEach(function (x) { dwords = dwords.concat(x.full, x.nk).map(function (w) { return w.trim(); }); });
     var quick = new RegExp(words.map(function (w) { return w.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }).join('|'));
-    var byEpg = {}, all = Library.data.channels, i;
+    var byEpg = {}, all = looked(), i;
     if (Epg.xml) for (i = 0; i < all.length; i++) { var id = Epg.epgId(all[i]); if (id && (!byEpg[id] || (!shown(byEpg[id]) && shown(all[i])))) byEpg[id] = all[i]; }   // one in the lists, if any
     Epg.search(function (t) { return quick.test(norm(t)); }, 4000).forEach(function (r) {
       var c = Library.find(r.key) || byEpg[r.key], p = r.p;
+      if (c && Library.mixed && !Library.mixed(c, 'teams')) c = byEpg[r.key] || null;     // a playlist not mixed into My teams
       // Team channels' "Next game: Lions at Vikings at 11/02/2026 01:00 PM" blocks: the game is at that time.
       if (/^\s*next game/i.test(p.t)) {
         var g = Events.nextGame(p.t);
@@ -404,6 +407,7 @@ var Teams = (function () {
     // Programmes that name the game only in the description ("NFL Football" on a local station).
     descHits(dwords).forEach(function (r) {
       var c = Library.find(r.key) || byEpg[r.key], p = r.p;
+      if (c && Library.mixed && !Library.mixed(c, 'teams')) c = byEpg[r.key] || null;     // a playlist not mixed into My teams
       if (!c || p.e <= now || p.s > to || !SPORTY.test(p.t) || /\breplay\b/i.test(p.t)) return;
       // A description is loose talk: the team by its full name, or the league named ("NFL Football"), so a
       // college game between the Tigers and the Cardinals isn't the Detroit Tigers.

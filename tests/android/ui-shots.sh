@@ -80,7 +80,12 @@ shot 7-remote-after 3
 tap "Guide"
 shot 8-guide 6
 tap "World Tonight"
-shot 9-schedule 5
+shot 9-details 5
+[ -n "$(find_text "Channel schedule")" ] || { echo "Tapping a programme did not open its details"; exit 1; }
+echo "Tapping a programme opens its details"
+tap "Channel schedule"
+shot 9a-schedule 5
+[ -n "$(find_text "Today")" ] || { echo "Channel schedule did not open the schedule"; exit 1; }
 adb shell input keyevent KEYCODE_BACK; sleep 2
 # Press and hold a channel in the guide: its options.
 xy=$(find_text "World Tonight"); [ -n "$xy" ] && adb shell input swipe $xy $xy 1000

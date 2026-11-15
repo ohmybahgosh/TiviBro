@@ -76,6 +76,8 @@ async function tivibro() {
 
 // Questions from the phone (POST /v1/ask), answered like app/js/phone.js does.
 const progs = (i) => [0, 1, 2].map((n) => ({ t: SHOWS[(i + n) % 10], s: t0 + n * 60 * 60000, e: t0 + (n + 1) * 60 * 60000 }));
+// What's on now in the guide: a few lines of its description and the guide's marks, as TiviBro sends them.
+const withNow = (l, i) => l.map((p, n) => n ? p : Object.assign({ d: 'Tonight on ' + p.t + ': the day\'s stories, explained by the people who were there, with the weather after.', c: i % 3 ? 'n' : 'd', ep: i % 2 ? 'S2 E5' : '' }, i % 4 === 1 ? { nw: 1 } : {}, p));
 // Posters (posters.js) from this machine, which the emulator reaches as 10.0.2.2.
 const POSTERS = 18788, art = (n) => 'http://10.0.2.2:' + POSTERS + '/p/' + n + '.png';
 const movies = Array.from({ length: 30 }, (_, i) => ({ id: 5000 + i, n: 'Movie ' + (i + 1), c: art(i), r: '7.1', y: '2024' }));
@@ -95,7 +97,12 @@ const mine = FILMS.map((f, i) => ({ id: 'w:/Movies/' + i, n: f[0], c: art(i), r:
 let typed = '';
 async function answer(cmd) {
   const a = cmd.args || {}, say = (data) => ctl('/companion/answer', { id: cmd.id, ok: true, data }), no = (error) => ctl('/companion/answer', { id: cmd.id, ok: false, error });
-  if (cmd.what === 'guide') { const list = a.group ? (groups.find((g) => g.id === a.group) || { keys: [] }).keys : chans.map((c) => c.k); const off = a.offset || 0, lim = a.limit || 60; return say({ total: list.length, offset: off, pending: 0, rows: list.slice(off, off + lim).map((k) => ({ k, p: progs(chans.findIndex((c) => c.k === k)), a: 1 })) }); }
+  if (cmd.what === 'guide') { const list = a.group ? (groups.find((g) => g.id === a.group) || { keys: [] }).keys : chans.map((c) => c.k); const off = a.offset || 0, lim = a.limit || 60; return say({ total: list.length, offset: off, pending: 0, rows: list.slice(off, off + lim).map((k) => { const i = chans.findIndex((c) => c.k === k); return { k, p: withNow(progs(i), i), a: 1 }; }) }); }
+  // One programme in full (the phone's details sheet).
+  if (cmd.what === 'prog') { const i = Math.max(0, chans.findIndex((c) => c.k === a.k)), p = withNow(progs(i), i).find((x) => x.s === a.s); if (!p) return no('That programme is no longer in the guide.');
+    return say(Object.assign({}, p, { k: a.k, ch: chans[i].n, arch: 3, cu: p.s <= Date.now() ? 1 : 0, d: (p.d || 'About ' + p.t) + '  A longer description, as the guide has it, with everything the programme covers tonight.',
+      more: [{ k: chans[(i + 1) % chans.length].k, ch: chans[(i + 1) % chans.length].n, s: p.s + 3 * 3600e3, e: p.e + 3 * 3600e3 }] })); }
+  if (cmd.what === 'catchup') { console.log('CATCHUP ' + a.k + ' ' + a.s); return say({ ok: true }); }
   if (cmd.what === 'schedule') return say({ k: a.k, arch: 3, progs: progs(1).map((p) => Object.assign({ d: 'About ' + p.t }, p)) });
   if (cmd.what === 'fav') { const c = chans.find((x) => x.k === a.k); if (!c) return no('That channel isn\'t in this playlist.'); c.fav = a.on ? 1 : 0; return say({ on: !!c.fav }); }
   if (cmd.what === 'remind') return say({ on: a.on !== false });

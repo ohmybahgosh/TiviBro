@@ -83,7 +83,7 @@ var Movies = (function () {
     load().then(function () {
       var now = Date.now(), byKey = {}, gname = {}, want = [], fresh = [];
       Library.data.groups.forEach(function (g) { gname[g.id] = g.name; });
-      Library.data.channels.forEach(function (c) {
+      (Library.mixList ? Library.mixList('movies') : Library.data.channels).forEach(function (c) {
         if (Library.shownAnywhere && !Library.shownAnywhere(c)) return;
         var k = Epg.keyOf(c); if (k && !byKey[k]) byKey[k] = c;
       });
@@ -130,7 +130,7 @@ var Movies = (function () {
   // The group from what is known, without a new look (after lookups come back).
   function refound() {
     var now = Date.now(), byKey = {}, out = [];
-    Library.data.channels.forEach(function (c) { if (Library.shownAnywhere && !Library.shownAnywhere(c)) return; var k = Epg.keyOf(c); if (k && !byKey[k]) byKey[k] = c; });
+    (Library.mixList ? Library.mixList('movies') : Library.data.channels).forEach(function (c) { if (Library.shownAnywhere && !Library.shownAnywhere(c)) return; var k = Epg.keyOf(c); if (k && !byKey[k]) byKey[k] = c; });
     Epg.during(now, now + LOOK, function (k, p) { var c = byKey[k]; if (!c) return; var m = of(c, p); if (m) out.push({ c: c, p: p, m: m }); });
     found = out; foundAt = now;
   }

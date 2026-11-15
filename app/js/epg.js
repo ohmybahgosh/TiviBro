@@ -762,6 +762,37 @@ var Epg = (function () {
     return '';
   }
 
+  /* A few lines of the description of one programme on each of many channels, for the phone app's guide
+     (what's on now on a page of channels): one helper request per guide store, not one per channel, and only
+     the programme asked about, cut to `cut` characters.  Kept on the programme as p.dx ('' for none), so a
+     page asked for again costs nothing.  Resolves when they're in (or the helper didn't answer). */
+  function snippets(items, cut) {
+    cut = cut || 200;
+    var F = cut > 400 ? 'dl' : 'dx';                     // a whole description (one programme opened) is kept apart from the guide's few lines
+    var groups = {}, keys = [];
+    (items || []).forEach(function (it) {
+      var c = it.c, p = it.p;
+      if (!p || p[F] != null) return;
+      if (p.d != null || !hMode) { p[F] = seOff(p.d || '', p).slice(0, cut); return; }
+      var id = c && epgId(c), x = id && cache.get(id);
+      if (!x || !x.list) return;
+      var i = x.list.indexOf(p);
+      if (i < 0) for (var n = 0; n < x.list.length; n++) if (x.list[n].s === p.s && x.list[n].t === p.t) { i = n; break; }
+      if (i < 0) return;
+      if (x.list[i][F] != null) { p[F] = x.list[i][F]; return; }
+      var pub = PUB_ID.test(id), kind = pub ? 'pub' : 'main', pid = pub ? '' : (idPl[id] || ''), gk = kind + '|' + pid;
+      var g = groups[gk] || (groups[gk] = { kind: kind, pid: pid, want: [], back: [] });
+      if (!groups[gk].n) { groups[gk].n = 1; keys.push(gk); }
+      g.want.push([bare(id), i]); g.back.push({ id: bare(id), p: p, q: x.list[i] });
+    });
+    return Promise.all(keys.map(function (gk) {
+      var g = groups[gk];
+      return fetch(hUrl('descs', g.kind, g.pid) + '&cut=' + (cut + 40) + '&q=' + encodeURIComponent(JSON.stringify(g.want)), { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : {}; })
+        .then(function (map) { g.back.forEach(function (b) { var d = map && map[b.id]; b.p[F] = b.q[F] = d ? seOff(String(d), b.p).slice(0, cut) : ''; }); }, function () {});
+    }));
+  }
+
   // Keep a source failure distinct from the outcome of the public-guide pass.
   // Only say we are using public guides once there are current matching listings,
   // including a saved guide when a fresh download is unnecessary or unavailable.
@@ -1225,7 +1256,7 @@ var Epg = (function () {
   }
 
   return { _flag: { progFlag: progFlag, readFlag: readFlag },
-    untangle: untangle, pubPick: function (miss) { return pubPick(miss); }, init: init, request: request, nowNext: nowNext, search: search, during: during, findDesc: findDesc, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc,
+    untangle: untangle, pubPick: function (miss) { return pubPick(miss); }, init: init, request: request, nowNext: nowNext, search: search, during: during, findDesc: findDesc, keyOf: keyOf, epgId: epgId, assign: assign, norm: norm, desc: desc, snippets: snippets,
     get inHelper() { return hMode; },
     // A channel's guide id as its own playlist's guide names it (without an alias's playlist id).
     guideId: function (ch) { var id = epgId(ch); return id ? bare(id) : ''; },

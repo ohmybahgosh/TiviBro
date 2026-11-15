@@ -67,14 +67,14 @@ function logo(title, [color, font]) {
   ok('with a token, Movies on now joins the menu', await ev(() => !!document.querySelector('.tab[data-tab="onnow"]')));
   await ev(() => Views.switchTab('onnow')); await page.waitForTimeout(1500);
   const st = await ev(() => ({ rows: OnNow.rows.map((r) => r.title + ':' + r.items.length), cards: document.querySelectorAll('#onStage .on-card').length, w: document.querySelector('#onStage .on-art').offsetWidth, h: document.querySelector('#onStage .on-art').offsetHeight }));
-  ok('shelves: On now and Starting soon', st.rows.length >= 1 && /^On now:/.test(st.rows[0]), JSON.stringify(st));
+  ok('shelves: Playing now and Starting soon', st.rows.length >= 1 && /^Playing now:/.test(st.rows[0]), JSON.stringify(st));
   const gr = await ev(() => { const sh = Movies.shelves(), want = Movies.genres(sh).map((r) => r.title); return { want, got: OnNow.rows.filter((r) => /^g:/.test(r.id)).map((r) => r.title), first: OnNow.rows.findIndex((r) => /^g:/.test(r.id)) }; });
   ok('then a shelf for each genre with two or more movies, after On now and Starting soon', gr.got.join() === gr.want.join() && (!gr.got.length || gr.first >= 1), JSON.stringify(gr));
   ok('big posters (300 x 450)', st.w === 300 && st.h === 450, JSON.stringify(st));
   ok('a movie once, however many channels show it', await ev(() => OnNow.rows.every((r) => new Set(r.items.map((g) => g.m.id)).size === r.items.length)), await ev(() => OnNow.rows.map((r) => r.items.map((g) => g.m.id + '@' + g.p.s).join(',')).join(' | ')));
   const hero = await ev(() => ({ has: !!OnNow.rows[0].items[0].m.logo, title: !!document.querySelector('#onInfo h1.on-title'), logo: !!document.querySelector('#onInfo img.on-logo'), bd: getComputedStyle(document.getElementById('onBd')).backgroundImage, meta: document.querySelector('#onInfo .on-meta').textContent, where: document.querySelector('#onInfo .on-where').textContent }));
   ok('the focused movie: its title logo (or its title, when it has none) over its backdrop', (hero.has ? hero.logo : hero.title && !hero.logo) && /\/b\/\d+\.png/.test(hero.bd), JSON.stringify(hero));
-  ok('LIVE, the times, what is left, and the channel', /LIVE/.test(hero.meta) && /left/.test(hero.meta) && /^On /.test(hero.where), JSON.stringify(hero));
+  ok('Playing now, the times, what is left, and the channel', /Playing now/.test(hero.meta) && /left/.test(hero.meta) && /^On /.test(hero.where), JSON.stringify(hero));
   await page.waitForTimeout(800);
   await shot('tv-onnow');
   // Along the shelf: to the one without a logo (its title instead).
@@ -84,12 +84,12 @@ function logo(title, [color, font]) {
     await shot('tv-onnow-title'); }
   // Pictures arriving (a re-draw) keep you where you are, on either shelf.
   await ev(() => OnNow.render(true)); await page.waitForTimeout(200);
-  ok('opens on On now and stays there through a re-draw', await ev(() => document.querySelector('#onStage .on-shelf.active h3').textContent.indexOf('On now') === 0));
+  ok('opens on On now and stays there through a re-draw', await ev(() => document.querySelector('#onStage .on-shelf.active h3').textContent.indexOf('Playing now') === 0));
   // Down to Starting soon.
   if (st.rows.length > 1) {
     await key('ArrowDown', 600);
     const soon = await ev(() => document.querySelector('#onInfo .on-meta').textContent);
-    ok('Starting soon: when it starts', /STARTS/.test(soon) && /in /.test(soon), soon);
+    ok('Starting soon: when it starts', /Starts at/.test(soon) && /in /.test(soon), soon);
     await shot('tv-onnow-soon');
     // OK asks first, on Cancel: a stray press sets nothing.
     const before = await ev(() => Store.edits.reminders.length);
@@ -130,7 +130,7 @@ function logo(title, [color, font]) {
     ok('a movie on many channels: All N showings lists every one (' + many + ' here)', sorted, bad);
     await key('ArrowUp', 400);
     await ev(() => OnNow.render(true)); await page.waitForTimeout(300);
-    ok('Up to On now stays on On now (also when the screen re-draws)', await ev(() => document.querySelector('#onStage .on-shelf.active h3').textContent.indexOf('On now') === 0));
+    ok('Up to On now stays on On now (also when the screen re-draws)', await ev(() => document.querySelector('#onStage .on-shelf.active h3').textContent.indexOf('Playing now') === 0));
   }
   // Down to the first genre shelf, and back up.
   if (gr.got.length) {
@@ -148,7 +148,12 @@ function logo(title, [color, font]) {
   await key('Enter', 1500);
   ok('OK: the movie fullscreen', await ev((k) => Views.full && Views.playing && Views.playing.k === k, want));
   for (let n = 0; n < 3 && await ev(() => Views.full); n++) await key('Escape', 700);
-  ok('Back: the guide, on that channel', await ev(() => Views.tab === 'guide' && !Views.full), await ev(() => Views.tab + ' full=' + Views.full + ' modal=' + UI.modalOpen));
+  ok('Back: Movies on now again, on the same movie', await ev((k) => Views.tab === 'onnow' && !Views.full && OnNow.rows[0].items[0].c.k === k && document.querySelector('#onStage .on-shelf.active .on-card.focus') === document.querySelector('#onStage .on-card'), want), await ev(() => Views.tab + ' full=' + Views.full + ' modal=' + UI.modalOpen));
+  ok('…with the picture stopped, as when the screen opens', await ev(() => !Views.playing && document.getElementById('stage').classList.contains('off')));
+  // Watched again, then the side menu to the guide: the guide, not Movies on now.
+  await key('Enter', 1500);
+  await ev(() => Views.runAction('guide', 'player')); await page.waitForTimeout(1200);
+  ok('from fullscreen to another screen: that screen', await ev(() => !Views.full && Views.tab === 'guide'), await ev(() => Views.tab + ' full=' + Views.full));
 
   // Turned off (or no token): out of the menu.
   await ev(() => { Store.settings.guideMovies = false; Movies.poke(); });

@@ -48,6 +48,33 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const shp = g3.rows.map((r) => r.p && r.p[0]).find((p) => p && p.m);
   ok('a TV show in the guide has its poster and facts for the phone', shp && shp.m.k === 's' && shp.m.i === 'http://img.example/show.jpg' && shp.m.n === 'NBC' && shp.m.y === '2009', JSON.stringify(shp));
 
+  // What's on now comes with a few lines of its description (the mock's guide has them), and the guide's marks.
+  let gdx = null;
+  for (let i = 0; i < 5; i++) { gdx = await ask('guide', { offset: 0, limit: 20 }); if (gdx.rows.some((r) => r.p && r.p[0] && r.p[0].d)) break; await wait(800); }
+  const wdx = gdx.rows.map((r) => r.p && r.p[0]).filter((p) => p && p.d);
+  ok('the guide: what\'s on now has a few lines of its description', wdx.length > 0 && wdx.every((p) => p.d.length <= 200), JSON.stringify(gdx.rows.slice(0, 2)));
+  ok('…only what\'s on now (the next ones stay short)', gdx.rows.every((r) => !r.p || r.p.slice(1).every((p) => !p.d)));
+  ok('…and no working fields leak out', gdx.rows.every((r) => !r.p || r.p.every((p) => !('_p' in p) && !('_c' in p))));
+
+  // One programme in full, for the phone's details sheet.
+  const k0 = withProg[0].k, p0 = withProg[0].p[0];
+  const det = await ask('prog', { k: k0, s: p0.s });
+  ok('a programme in full: its title, times, channel and description', det.t === p0.t && det.s === p0.s && det.k === k0 && det.ch && typeof det.d === 'string' && det.d.length > 0, JSON.stringify(det).slice(0, 300));
+  ok('…and other showings, as a list', Array.isArray(det.more));
+  const gone = await ask('prog', { k: k0, s: 1 }).then(() => 'answered', (e) => e.message);
+  ok('a programme no longer in the guide: said so', /no longer in the guide/.test(gone), gone);
+  const cuK = await ev(() => { const c = Library.channels(Library.ALL).find((x) => x.arch); return c && c.k; });
+  if (cuK) {
+    const cs = await ask('schedule', { k: cuK });
+    const nowP = cs.progs.find((p) => p.s <= Date.now() && p.e > Date.now());
+    const cd = await ask('prog', { k: cuK, s: nowP.s });
+    ok('on a catch-up channel, a programme on now can be watched from the start', cd.cu === 1 && cd.arch > 0, JSON.stringify(cd).slice(0, 200));
+    await ask('catchup', { k: cuK, s: nowP.s });
+    await wait(1500);
+    ok('…and Watch from the start plays it on the TV from its start', await ev((k) => Views.playing && Views.playing.k === k, cuK));
+    await ev(() => { if (Views.full) Views.runAction('exit', 'player'); });
+  }
+
   // One channel's schedule, and a reminder.
   const k = withProg[0].k;
   const sch = await ask('schedule', { k });
@@ -208,7 +235,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   // A group with channels All leaves out (a Local channels group keeps stations whose network group is
   // hidden): the phone gets those channels too, marked as not in All, so the group isn't empty there.
   const loc = await ev(() => {
-    var pg = Library.groups().filter(function (g) { return g.id !== Library.ALL && !Library.isCustom(g.id); })[0];
+    var pg = Library.groups().filter(function (g) { return !Library.isVirtual(g.id) && !Library.isCustom(g.id); })[0];
     var keys = Library.channels(pg.id).slice(0, 2).map(function (c) { return c.k; });
     var g = Library.createGroup('Local channels'); Library.copyTo(g.id, keys); Library.hideGroup(pg.id, true);
     Phone.sendLineup();

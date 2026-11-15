@@ -66,7 +66,7 @@ var Views = (function () {
       var s = U.el('div', 'tab' + (t === tab ? ' on' : '')); s.setAttribute('data-tab', t);
       s.innerHTML = '<svg viewBox="0 0 24 24" class="ico">' + ICONS[t] + '</svg>';
       s.appendChild(U.el('span', 'lbl', T(TAB_LABELS[t])));
-      s.addEventListener('click', function () { closeNav(); if (full) exitFull(); UI.close(); if (t === 'editor') WebEdit.showJoin(); else if (t === 'report') Diag.openReport(); else switchTab(t); });
+      s.addEventListener('click', function () { closeNav(); if (full) exitFull(true); UI.close(); if (t === 'editor') WebEdit.showJoin(); else if (t === 'report') Diag.openReport(); else switchTab(t); });
       s.addEventListener('mousemove', function () { if (UI.pointer && !document.body.classList.contains('nav-open') && !full) openNavFromPointer(); });
       nav.appendChild(s);
     });
@@ -795,7 +795,7 @@ var Views = (function () {
     if (i < 0) { U.toast(gid === L.RECENT ? 'No recent channels yet' : 'That group is empty'); return; }
     groupsVL.select(i); showGroup(gid); setZone('channels');
   }
-  function leaveTo(t) { if (full) exitFull(); switchTab(t); }
+  function leaveTo(t) { if (full) exitFull(true); switchTab(t); }
   function runAction(act, ctx) {
     var c = ctxChannel(ctx);
     switch (act) {
@@ -819,9 +819,9 @@ var Views = (function () {
       case 'editor': WebEdit.showJoin(); return;
       case 'movies': if (tabs.indexOf('movies') >= 0) leaveTo('movies'); return;
       case 'shows': if (tabs.indexOf('shows') >= 0) leaveTo('shows'); return;
-      case 'live': if (full) exitFull(); else switchTab('live'); return;
+      case 'live': if (full && fullFrom === 'onnow') leaveTo('live'); else if (full) exitFull(); else switchTab('live'); return;
       case 'exit': if (full) exitFull(); return;
-      case 'fav': if (c) { var on = L.toggleFav(c.k); U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); if (full) osd(true); } return;
+      case 'fav': if (c) { var on = L.toggleFav(c.k); if (on == null) return; U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); if (full) osd(true); } return;
       case 'favorites': openGroup(L.FAV); return;
       case 'recents': openGroup(L.RECENT); return;
       case 'picture': cyclePicture(); return;
@@ -951,8 +951,9 @@ var Views = (function () {
     if (gi >= 0) groupsVL.select(gi);
   }
   function goFull() {
-    // From another screen (Search, Movies on now...): Back goes to the start screen, the guide or Channels.
-    if (!full) fullFrom = tab === 'live' || tab === 'guide' ? tab : home() === 'live' ? 'live' : 'guide';
+    // From another screen (Search...): Back goes to the start screen, the guide or Channels.  From Movies on
+    // now, Back goes back to it, on the same movie.
+    if (!full) fullFrom = tab === 'live' || tab === 'guide' || tab === 'onnow' ? tab : home() === 'live' ? 'live' : 'guide';
     followPlaying();
     full = true;
     document.body.classList.add('full');
@@ -963,7 +964,9 @@ var Views = (function () {
     Keymap.setContext('player');
     osd(true);
   }
-  function exitFull() {
+  /* away: leaving fullscreen for another screen (the side menu, a button for another screen), not Back. */
+  function exitFull(away) {
+    if (fullFrom === 'onnow' && (away || tab !== 'onnow')) fullFrom = home() === 'live' ? 'live' : 'guide';
     closePanel();
     peekUntil = 0; clearTimeout(peekT);
     full = false; overlay = false;
@@ -978,6 +981,15 @@ var Views = (function () {
       Vod.stopped(); Media.stopped();
       vod = null; mode = 'live'; Player.stop(); playing = null; stage.classList.add('off');
       if (v && v.onExit) v.onExit();
+      return;
+    }
+    // Back to Movies on now: it has no window for the picture, so the channel stops, as when it opens.
+    if (fullFrom === 'onnow') {
+      mode = 'live'; cu = null; Player.stop();
+      if (playing) lastPlayed = playing;
+      playing = null; stage.classList.add('off');
+      Keymap.setContext('other');
+      OnNow.resume();
       return;
     }
     if (mode === 'catchup' && playing) { mode = 'live'; cu = null; Player.play(playing, { preview: true }); }
@@ -1052,7 +1064,7 @@ var Views = (function () {
       if (g('left')) chip('left', '◀  ' + (Keymap.get('player', 'left') === 'rewind' && !(playing && playing.arch) ? 'Last channel' : g('left')));
       if (g('right')) chip('right', '▶  ' + g('right'));
       ['red', 'green', 'yellow', 'blue'].forEach(function (b) { if (g(b)) chip(b, g(b), b); });
-      chip('back', 'Back  ' + (fullFrom === 'live' ? 'Channels' : 'Guide'));
+      chip('back', 'Back  ' + (fullFrom === 'live' ? 'Channels' : fullFrom === 'onnow' ? 'Movies on now' : 'Guide'));
     }
     var sig = JSON.stringify(items);
     var lg = typeof I18n !== 'undefined' ? I18n.lang() : '';
@@ -1483,8 +1495,8 @@ var Views = (function () {
   function copyMenu(keys, label) {
     var items = L.customGroups().map(function (g) {
       return { label: RAW(g.name), sub: g.items.length + ' channels', action: function () {
-        var n = L.copyTo(g.id, keys);
-        U.toast(n ? 'Copied ' + (n === 1 ? label : n + ' channels') + ' to ' + g.name : 'Already in ' + g.name);
+        var n = L.copyTo(g.id, keys), left = keys.some(function (k) { var c = L.find(k); return c && !L.canGroup(c); });
+        if (n || !left) U.toast(n ? 'Copied ' + (n === 1 ? label : n + ' channels') + ' to ' + g.name : 'Already in ' + g.name);   // else copyTo said why
         refreshLists(true);
       } };
     });
@@ -1563,12 +1575,13 @@ var Views = (function () {
     var blocked = !!Store.edits.blockedChannels[c.k];
     var team = Teams.ofChannel(c), follow = team && Teams.follows(team.id);
     return [
-      { label: fav ? 'Remove from Favorites' : 'Add to Favorites', action: function () { var on = L.toggleFav(c.k); U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); } },
+      // Another playlist not mixed into Favorites and your groups: neither is offered (one already a favorite can still be taken out).
+      (fav || L.canGroup(c)) && { label: fav ? 'Remove from Favorites' : 'Add to Favorites', action: function () { var on = L.toggleFav(c.k); if (on == null) return; U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); } },
       team && { label: RAW(T(follow ? 'Stop following the {x}' : 'Follow the {x}', { x: team.name })), sub: follow ? '' : 'in My teams, with its games', action: function () {
         Teams.follow(team.id, !follow); refreshLists(true);
         U.toast(follow ? 'Stopped following the ' + team.name : 'Following the ' + team.name + '.  Find them in My teams.');
       } },
-      { label: 'Copy to group…', action: function () { copyMenu([c.k], L.name(c)); } },
+      L.canGroup(c) && { label: 'Copy to group…', action: function () { copyMenu([c.k], L.name(c)); } },
       !full && tab === 'live' && { label: 'Select multiple…', sub: 'copy, favorite or hide several', action: function () { startPick(c.k); } },
       L.versions(c).length && { label: 'Other versions…', sub: versionsSummary(c), action: function () { versionsMenu(c); } },
       Player.canSwitchFormat(c) && { label: 'Stream format…', sub: FORMAT_NAMES[Player.streamFormat(c)], action: function () { formatMenu(c); } },
@@ -1665,7 +1678,7 @@ var Views = (function () {
     function add(id, it) { if (!off[id]) { it.id = id; a.push(it); } }
     add('list', { label: 'Channel guide', icon: 'list', run: function () { closePanel(); openOverlay(); } });
     if (c && c.arch && nn && nn.now && nn.now.s <= now) add('start', { label: 'From start', icon: 'start', v: 'catch-up', run: function () { closePanel(); watchFromStart(c); } });
-    if (c) add('fav', { label: L.isFav(c.k) ? 'Favorite' : 'Add favorite', icon: L.isFav(c.k) ? 'faved' : 'fav', run: function () { var on = L.toggleFav(c.k); U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); renderPanel(); } });
+    if (c) add('fav', { label: L.isFav(c.k) ? 'Favorite' : 'Add favorite', icon: L.isFav(c.k) ? 'faved' : 'fav', run: function () { var on = L.toggleFav(c.k); if (on == null) return; U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); renderPanel(); } });
     add('guide', { label: 'TV guide', icon: 'guide', run: function () { closePanel(); leaveTo('guide'); } });
     if (c && L.versions(c).length) add('versions', { label: 'Other versions', icon: 'versions', v: versionsSummary(c), run: function () { closePanel(); versionsMenu(c); } });
     var tracks = Player.audioTracks();
@@ -3173,7 +3186,7 @@ var Guide = (function () {
     else if (act === 'details') details();
     else if (act === 'stopwin') { if (previewing()) { Views.stopAll(); draw(); hints(); } }
     else if (act === 'favorites' || act === 'recents') { load(act === 'favorites' ? L.FAV : L.RECENT, null); setZone('grid'); draw(); }
-    else if (act === 'fav') { if (c) { L.toggleFav(c.k); U.toast(L.isFav(c.k) ? 'Added to Favorites' : 'Removed from Favorites'); draw(); } }
+    else if (act === 'fav') { if (c && L.toggleFav(c.k) != null) { U.toast(L.isFav(c.k) ? 'Added to Favorites' : 'Removed from Favorites'); draw(); } }
     else if (act !== 'none') Views.runAction(act, 'guide');
   }
   function rowUpdated(k) {

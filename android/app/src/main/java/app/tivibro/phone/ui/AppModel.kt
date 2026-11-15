@@ -23,6 +23,7 @@ import app.tivibro.phone.proto.ChanEdit
 import app.tivibro.phone.proto.BackupFile
 import app.tivibro.phone.proto.GuidePage
 import app.tivibro.phone.proto.Schedule
+import app.tivibro.phone.proto.ProgDetail
 import app.tivibro.phone.proto.VisList
 import app.tivibro.phone.proto.OnNow
 import app.tivibro.phone.proto.VodCat
@@ -622,6 +623,17 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         }
         return s
     }
+
+    /** One programme in full (the details sheet).  Its description is asked for again once if the TV is still reading it. */
+    suspend fun prog(id: String, k: String, start: Long): ProgDetail {
+        val args = JSONObject().put("k", k).put("s", start)
+        var d = ProgDetail.from(ask(id, "prog", args)) ?: throw TbException("That programme is no longer in the guide.")
+        if (d.descPending && d.prog.desc.isBlank()) { delay(1500); ProgDetail.from(ask(id, "prog", args))?.let { d = it } }
+        return d
+    }
+
+    /** Watch a programme from its start on the TV (catch-up). */
+    suspend fun catchup(id: String, k: String, start: Long) { ask(id, "catchup", JSONObject().put("k", k).put("s", start), tries = 1) }
 
     suspend fun remind(id: String, k: String, start: Long, on: Boolean): Boolean =
         ask(id, "remind", JSONObject().put("k", k).put("s", start).put("on", on), tries = 1).optBoolean("on")

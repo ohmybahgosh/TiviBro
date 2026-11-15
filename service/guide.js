@@ -444,6 +444,27 @@ function desc(k, id, cb) {
   });
 }
 
+/* One programme's description for each of several channels (the phone app's guide: what's on now on a
+   page of channels), cut to `cut` characters: { id: text }.  [[id, i], ...], i the programme's place in that
+   channel's list.  One file, read a channel at a time; at most 200 asked. */
+function descs(k, want, cut, cb) {
+  var ix = descIdx[k];
+  if (!ix) { try { ix = descIdx[k] = JSON.parse(fs.readFileSync(path.join(dirOf(k), 'desc.idx'), 'utf8')); } catch (e) { return cb(null, {}); } }
+  var list = (want || []).filter(function (w) { return w && ix[w[0]] && +w[1] >= 0; }).slice(0, 200), out = {}, n = 0;
+  if (!list.length) return cb(null, out);
+  fs.open(path.join(dirOf(k), 'desc.json'), 'r', function (err, fd) {
+    if (err) return cb(null, out);
+    (function next() {
+      if (n >= list.length) { fs.close(fd, function () {}); return cb(null, out); }
+      var w = list[n++], at = ix[w[0]], b = new Buffer(at[1]);   // eslint-disable-line no-buffer-constructor
+      fs.read(fd, b, 0, at[1], at[0], function (e2) {
+        if (!e2) { try { var arr = JSON.parse(b.toString('utf8')), d = arr[+w[1]]; if (d) out[w[0]] = String(d).slice(0, cut); } catch (e3) {} }
+        next();
+      });
+    })();
+  });
+}
+
 /* Programmes whose description has one of the words (whole words, any case): [{ id, i, d }], i the
    programme's place in that channel's list (the same order as titles), d the description cut to 400
    characters.  For Search and My teams: a local station's "NFL Football" says the teams only there.
@@ -525,10 +546,14 @@ function handle(req, res, allow, log) {
       var words; try { words = JSON.parse(q.q || '[]'); } catch (e) { words = []; }
       return find(k, Array.isArray(words) ? words : [], Math.min(+q.max || 500, 3000), function (err, list) { send(res, err ? 500 : 200, err ? { ok: false, error: err.message } : list, null, allow); });
     }
+    if (p === '/guide/descs') {
+      var want; try { want = JSON.parse(q.q || '[]'); } catch (e) { want = []; }
+      return descs(k, Array.isArray(want) ? want : [], Math.min(Math.max(+q.cut || 300, 40), 1000), function (err, map) { send(res, 200, map, null, allow); });
+    }
     if (p === '/guide/desc') return desc(k, q.id || '', function (err, list) { send(res, err ? 500 : 200, err ? { ok: false, error: err.message } : list, null, allow); });
     if (p === '/guide/drop') { if (jobs[k] && jobs[k].cancel) jobs[k].cancel(); delete jobs[k]; rmdir(dirOf(k)); delete descIdx[k]; return send(res, 200, { ok: true }, null, allow); }
   } catch (e) { return send(res, 500, { ok: false, error: e.message }, null, allow); }
   send(res, 404, { ok: false, error: 'unknown guide request' }, null, allow);
 }
 
-module.exports = { movieFlag: movieFlag, withSub: withSub, handle: handle, norm: norm, start: start, status: status, keyOf: keyOf, root: root, find: find };
+module.exports = { movieFlag: movieFlag, withSub: withSub, handle: handle, norm: norm, start: start, status: status, keyOf: keyOf, root: root, find: find, descs: descs };

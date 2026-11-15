@@ -177,5 +177,33 @@ const lsTwo = () => ({ 'tivibro.settings': JSON.stringify({ playlists: [A, B], a
   ok('Clear all edits: the other playlist keeps its own', S.edits.hiddenChannels['pB:x7'] === 1);
 }
 
+// ---------- mixing: each other playlist's switches (Settings > Playlists > the playlist > Mix into the first playlist) ----------
+{
+  const ctx = sandbox(lsTwo());
+  const S = ctx.Store, L = ctx.Library;
+  L.set(dataA()); S.attach('pB'); L.setOther('pB', dataB());
+  delete S.edits.hiddenChannels['pB:x8']; L.dirty();
+  const all = () => L.channels('all').map(c => c.k).join();
+  ok('mixing: on unless switched off, as before (All channels has both)', all() === 'x5761,pB:x5761,pB:x7,pB:x8', all());
+  ok('mixing: the lists are the same array when nothing is off (no copy)', L.mixList('all') === L.data.channels && L.mixList('teams') === L.data.channels);
+  const b = S.byId('pB'); b.mix = { all: false }; S.upsertPlaylist(b); L.mixChanged();
+  ok('mixing: All channels off: only the first playlist\'s', all() === 'x5761', all());
+  ok('mixing: the All channels count follows', L.groups().filter(g => g.id === 'all')[0].count === 2);
+  ok('mixing: its own groups still show, under its heading', L.groups(true).some(g => g.id === 'pB:x9') && L.channels('pB:x9').length > 0);
+  ok('mixing: other switches unaffected', L.mixList('teams') === L.data.channels && L.mixed(L.find('pB:x7'), 'search'));
+  b.mix = { groups: false }; S.upsertPlaylist(b); L.mixChanged();
+  ok('mixing: groups off: its channel in Favorites is kept but not shown', L.channels('c_fav').map(c => c.k).join() === 'x5761' && S.edits.custom[0].items.indexOf('pB:x8') >= 0);
+  ok('mixing: …and not counted', L.groups().filter(g => g.id === 'c_fav')[0].count === 1);
+  ok('mixing: can\'t be added to Favorites (nothing changes)', L.toggleFav('pB:x7') === null && !L.isFav('pB:x7'));
+  ok('mixing: can\'t be copied into your groups', L.copyTo('c_fav', ['pB:x7']) === 0);
+  ok('mixing: one already a favorite can still be taken out', L.toggleFav('pB:x8') === false && S.edits.custom[0].items.indexOf('pB:x8') < 0);
+  L.toggleFav('x2');
+  ok('mixing: the first playlist\'s channels always can', L.isFav('x2'));
+  delete b.mix; S.upsertPlaylist(b); L.mixChanged();
+  ok('mixing: switched on again: back as before', all() === 'x5761,pB:x5761,pB:x7,pB:x8' && L.canGroup(L.find('pB:x7')));
+  b.mix = { added: false, events: false }; S.upsertPlaylist(b); L.mixChanged();
+  ok('mixing: a switch off is kept with the playlist', JSON.parse(ctx.mem['tivibro.settings']).playlists.filter(p => p.id === 'pB')[0].mix.added === false);
+}
+
 console.log(fail ? fail + ' multi-playlist check(s) FAILED' : 'all multi-playlist checks passed');
 process.exit(fail ? 1 : 0);

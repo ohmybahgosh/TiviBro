@@ -9,12 +9,39 @@ import org.json.JSONObject
 private inline fun <T> JSONArray?.list(f: (JSONObject) -> T?): List<T> = if (this == null) emptyList() else (0 until length()).mapNotNull { optJSONObject(it)?.let(f) }
 
 /** A programme in the guide.  [reminder] when a reminder is set for it on the TV. */
-data class Programme(val title: String, val start: Long, val end: Long, val desc: String = "", val reminder: Boolean = false, val movie: ProgMovie? = null) {
+/** A programme in the guide.  [reminder] when a reminder is set for it on the TV.  [kind], as the TV's guide
+ *  colours it: m movie, s sports, n news, c kids, d documentary ('' unknown); [isNew] a new episode; [ep] "S2 E5".
+ *  An older TV sends none of these, and [desc] only in a schedule. */
+data class Programme(val title: String, val start: Long, val end: Long, val desc: String = "", val reminder: Boolean = false, val movie: ProgMovie? = null,
+                     val kind: String = "", val isNew: Boolean = false, val ep: String = "") {
     fun on(now: Long) = start <= now && end > now
     companion object {
         fun from(j: JSONObject) = j.optString("t").takeIf { it.isNotBlank() }?.let {
             Programme(it, j.optLong("s"), j.optLong("e"), j.optString("d", ""), j.optInt("r") == 1,
-                j.optJSONObject("m")?.let { m -> ProgMovie(m.optString("i"), m.optString("y"), m.optString("g"), m.optString("r"), m.optString("k") == "s", m.optString("n")) })
+                j.optJSONObject("m")?.let { m -> ProgMovie(m.optString("i"), m.optString("y"), m.optString("g"), m.optString("r"), m.optString("k") == "s", m.optString("n")) },
+                j.optString("c", ""), j.optInt("nw") == 1, j.optString("ep", ""))
+        }
+    }
+}
+
+/** Everything the TV knows about one programme (ask "prog"), for the phone's details sheet. */
+data class ProgTmdb(val series: Boolean, val poster: String, val backdrop: String, val plot: String, val year: String, val genre: String, val rating: String,
+                    val runtime: String, val network: String, val epTitle: String, val epPlot: String, val epStill: String) {
+    val facts get() = listOf(if (series) "Series" else "Movie", year, runtime, network, genre, if (rating.isNotBlank()) "★ $rating" else "").filter { it.isNotBlank() }.joinToString("  ·  ")
+}
+data class Showing(val key: String, val channel: String, val start: Long, val end: Long)
+data class ProgDetail(val prog: Programme, val key: String, val channel: String, val catchupDays: Int, val fromStart: Boolean, val tmdb: ProgTmdb?,
+                      val more: List<Showing>, val descPending: Boolean) {
+    companion object {
+        fun from(j: JSONObject): ProgDetail? {
+            val p = Programme.from(j) ?: return null
+            val t = j.optJSONObject("tm")?.let { m ->
+                val e = m.optJSONObject("ep")
+                ProgTmdb(m.optString("k") == "s", m.optString("poster"), m.optString("backdrop"), m.optString("plot"), m.optString("year"), m.optString("genre"),
+                    m.optString("rating"), m.optString("runtime"), m.optString("network"), e?.optString("t").orEmpty(), e?.optString("plot").orEmpty(), e?.optString("still").orEmpty())
+            }
+            return ProgDetail(p, j.optString("k"), j.optString("ch"), j.optInt("arch"), j.optInt("cu") == 1, t,
+                j.optJSONArray("more").list { Showing(it.optString("k"), it.optString("ch"), it.optLong("s"), it.optLong("e")) }, j.optInt("dp") == 1)
         }
     }
 }

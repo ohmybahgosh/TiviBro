@@ -1,11 +1,12 @@
 /* Movies on now, on the phone: the TV's Movies on now (onnow.js, TMDB with the TV's own token) as big
-   posters in shelves: On now, Starting soon, then the same movies by genre (the TV picks the genres).
+   posters in shelves: Playing now, Starting soon, then the same movies by genre (the TV picks the genres).
    A tap opens the movie: its backdrop with the title logo, the facts and plot, and every channel
    showing it.  Watch on TV for one that's on; for one that starts later, a reminder on the TV (asked
    first) or the channel now. */
 package app.tivibro.phone.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,6 +72,9 @@ import kotlinx.coroutines.launch
 
 private fun time(t: Long): String = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT).format(java.util.Date(t))
 private fun mins(ms: Long): String { val m = maxOf(1L, ms / 60_000); return if (m >= 60) "${m / 60} h" + (if (m % 60 > 0) " ${m % 60} min" else "") else "$m min" }
+/** When a movie starting later starts, as the TV says it: "in 35 min" within the hour, else the clock time. */
+private fun whenStarts(start: Long, now: Long): String = if (start - now < 3_600_000) "in " + mins(start - now) else time(start)
+private fun count(n: Int, one: String, many: String) = if (n == 1) one else many.replace("{n}", n.toString())
 
 @Composable
 fun OnNowTab(model: AppModel, id: String, playing: String, now: Long) {
@@ -98,17 +102,25 @@ fun OnNowTab(model: AppModel, id: String, playing: String, now: Long) {
         d.on.isEmpty() && d.soon.isEmpty() -> Text(if (d.looking) "The TV is looking through its guide for movies…" else "No movies on right now.  New ones show up here as the TV finds them.",
             color = Muted, modifier = Modifier.padding(24.dp))
         else -> LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
-            if (d.on.isNotEmpty()) item { Shelf("On now", d.on, now) { open = it } }
-            if (d.soon.isNotEmpty()) item { Shelf("Starting soon", d.soon, now) { open = it } }
-            items(d.genreShelves(), key = { "g:" + it.first }) { (title, list) -> Shelf(title, list, now) { open = it } }
+            if (d.on.isNotEmpty()) item { Shelf("Playing now", count(d.on.size, "1 movie, join in progress", "{n} movies, join in progress"), d.on, now) { open = it } }
+            if (d.soon.isNotEmpty()) item { Shelf("Starting soon", count(d.soon.size, "1 movie in the next 3 hours", "{n} movies in the next 3 hours"), d.soon, now) { open = it } }
+            items(d.genreShelves(), key = { "g:" + it.first }) { (title, list) ->
+                val on = list.count { it.live }
+                val sub = listOfNotNull(if (on > 0) count(on, "1 playing now", "{n} playing now") else null,
+                    if (list.size > on) count(list.size - on, "1 starting soon", "{n} starting soon") else null).joinToString(",  ")
+                Shelf(title, sub, list, now) { open = it }
+            }
         }
     }
     open?.let { m -> MovieSheet(model, id, m, now, playing, onDone = { open = null; attempt++ }) }
 }
 
 @Composable
-private fun Shelf(title: String, list: List<OnNowMovie>, now: Long, onOpen: (OnNowMovie) -> Unit) {
-    Text("$title   ${list.size}", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(16.dp, 14.dp, 16.dp, 8.dp))
+private fun Shelf(title: String, sub: String, list: List<OnNowMovie>, now: Long, onOpen: (OnNowMovie) -> Unit) {
+    Column(Modifier.padding(16.dp, 14.dp, 16.dp, 8.dp)) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        if (sub.isNotBlank()) Text(sub, color = Muted, style = MaterialTheme.typography.labelMedium)
+    }
     LazyRow(contentPadding = PaddingValues(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         items(list, key = { it.id + it.live }) { m -> PosterCard(m, now) { onOpen(m) } }
     }
@@ -123,11 +135,25 @@ private fun PosterCard(m: OnNowMovie, now: Long, onClick: () -> Unit) {
             if (m.poster.isNotBlank()) AsyncImage(model = m.poster, contentDescription = m.title, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
             if (m.live) LinearProgressIndicator(progress = { ((now - c.start).toFloat() / (c.end - c.start)).coerceIn(0f, 1f) }, color = Accent, trackColor = Color(0x99000000),
                 modifier = Modifier.fillMaxWidth().height(4.dp).align(Alignment.BottomCenter))
+            // Starting later: a quieter poster, so the ones playing now stand out.
+            if (!m.live) Box(Modifier.fillMaxSize().background(Color(0x66000000)))
+            StatusTag(m.live, if (m.live) "LIVE" else whenStarts(c.start, now).uppercase(), Modifier.align(Alignment.TopStart).padding(8.dp))
         }
         Spacer(Modifier.height(6.dp))
         Text(c.name + (if (m.chans.size > 1) "  +${m.chans.size - 1}" else ""), style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        Text(if (m.live) mins(c.end - now) + " left" else if (c.start - now < 3_600_000) "in " + mins(c.start - now) else "at " + time(c.start),
-            color = Muted, style = MaterialTheme.typography.labelSmall)
+        Text(if (m.live) mins(c.end - now) + " left" else "Starts " + time(c.start),
+            color = if (m.live) TextHi else Muted, style = MaterialTheme.typography.labelSmall)
+    }
+}
+
+/** The TV's badges: LIVE outlined in the accent with a dot, or how soon a later one starts. */
+@Composable
+fun StatusTag(live: Boolean, text: String, modifier: Modifier = Modifier) {
+    Row(modifier.clip(RoundedCornerShape(6.dp)).background(Color(0xB8000000))
+        .then(if (live) Modifier.border(1.5.dp, Accent, RoundedCornerShape(6.dp)) else Modifier).padding(horizontal = 7.dp, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically) {
+        if (live) { Box(Modifier.size(6.dp).clip(RoundedCornerShape(3.dp)).background(Accent)); Spacer(Modifier.width(5.dp)) }
+        Text(text, color = if (live) Accent else TextHi, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1)
     }
 }
 
@@ -153,7 +179,7 @@ private fun MovieSheet(model: AppModel, id: String, m: OnNowMovie, now: Long, pl
             if (m.logo.isNotBlank()) Text(m.title, color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(16.dp, 0.dp))
             Text(m.facts, color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 4.dp))
             if (m.plot.isNotBlank()) Text(m.plot, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(16.dp, 8.dp))
-            Text(if (m.live) "On now" else "Starting soon", color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(16.dp, 12.dp, 16.dp, 4.dp))
+            Text(if (m.live) "Playing now" else "Starting soon", color = Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.padding(16.dp, 12.dp, 16.dp, 4.dp))
             m.chans.forEach { c ->
                 val set = c.key in reminded
                 Row(Modifier.fillMaxWidth().clickable { if (m.live) { model.playOnTv(id, c.key, c.name); onDone() } else ask = c }.padding(16.dp, 10.dp), verticalAlignment = Alignment.CenterVertically) {

@@ -21,6 +21,7 @@ var Search = (function () {
   function adult(c) { return !!(c.adult || ADULT.test(c.n || '') || ADULT.test(L.groupName(c.g) || '')); }
   function visible(c) {
     if (!c || !L.shownAnywhere(c)) return false;
+    if (L.mixed && !L.mixed(c, 'search')) return false;          // a playlist not mixed into Search
     if (typeof Parental !== 'undefined' && Parental.blockedOk && !Parental.blockedOk(c)) return false;
     if (Store.settings.showHidden && adult(c) && Store.edits.hiddenGroups[c.g]) return false;
     return true;
@@ -41,7 +42,7 @@ var Search = (function () {
   function find(q, opts) {
     opts = opts || {};
     var test = matcher(q, opts.word), now = Date.now(), out = [], seen = {};
-    var all = L.data.channels, byEpg = {};
+    var all = (L.mixList ? L.mixList('search') : L.data.channels), byEpg = {};
     if (Epg.xml) for (var i = 0; i < all.length; i++) { var id = Epg.epgId(all[i]); if (id && (!byEpg[id] || (!visible(byEpg[id]) && visible(all[i])))) byEpg[id] = all[i]; }   // one in the lists, if any
     function take(c, p) {
       if (!c || !visible(c) || !p.t) return;
@@ -189,7 +190,7 @@ var Search = (function () {
        so it is clear why they matched. */
     var seenEv = {}, nCh = 0, nIn = 0;
     if (filter === 'all' || filter === 'channels') {
-      var all = L.data.channels;
+      var all = (L.mixList ? L.mixList('search') : L.data.channels);
       for (var i = 0; i < all.length && nCh + nIn < 300; i++) {
         var c = all[i];
         if (!visible(c)) continue;                // hidden groups (Adult), hidden channels, the parental lock
@@ -241,7 +242,7 @@ var Search = (function () {
     var gen = ++descGen, now = Date.now();
     Epg.findDesc([q], 300).then(function (res) {
       if (gen !== descGen || input.value.trim().toLowerCase() !== q) return;
-      var seen = {}, more = [], all = L.data.channels, byEpg = {};
+      var seen = {}, more = [], all = (L.mixList ? L.mixList('search') : L.data.channels), byEpg = {};
       shown.forEach(function (it) { if (it.p) seen[it.p.t.toLowerCase() + '|' + it.p.s] = 1; });
       if (Epg.xml) for (var i = 0; i < all.length; i++) { var id = Epg.epgId(all[i]); if (id && (!byEpg[id] || (!visible(byEpg[id]) && visible(all[i])))) byEpg[id] = all[i]; }   // one in the lists, if any
       res.forEach(function (r) {

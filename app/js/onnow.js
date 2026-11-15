@@ -5,6 +5,7 @@
 var OnNow = (function () {
   // A name, never translated (app/js/i18n.js); plain text where there's no I18n (unit tests).
   var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
+  var T = function (s, v) { return typeof I18n !== 'undefined' ? I18n.t(s, v) : String(s).replace(/\{([a-z])\}/g, function (a, k) { return v && v[k] != null ? v[k] : a; }); };
   var $ = function (id) { return document.getElementById(id); };
   var built = false, rows = [], row = 0, pos = {}, timer = null, open_ = false, sig = '';
   var CARD = 324;                                        // a poster and the gap after it, px (app.css .on-card)
@@ -17,12 +18,25 @@ var OnNow = (function () {
       '<div class="on-shelves" id="onShelves"><div class="on-stage" id="onStage"></div></div><div class="on-empty hidden" id="onEmpty"></div>';
   }
   function mins(ms) { var m = Math.max(1, Math.round(ms / 60000)); return m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min'; }
+  /* When a movie starting later starts, said the same way on its poster, under it and at the top: "in 35 min"
+     within the hour, else the clock time. */
+  function when(g, now) { return g.p.s - now < 3600e3 ? T('in {x}', { x: mins(g.p.s - now) }) : U.hhmm(g.p.s); }
+  function left(g, now) { return T('{x} left', { x: mins(g.p.e - now) }); }
   function chName(g) { return Library.name(g.c) + (g.list.length > 1 ? '  +' + (g.list.length - 1) : ''); }
 
+  /* The shelves, each with a line under its name saying what's in it: Playing now, Starting soon, then the
+     same movies by genre (playing now first, then the later ones: Movies.genres keeps that order). */
+  function count(n, one, many) { return n === 1 ? T(one) : T(many, { n: n }); }
   function data() {
     var sh = Movies.shelves();
-    return [{ id: 'on', title: 'On now', items: sh.on }, { id: 'soon', title: 'Starting soon', items: sh.soon }].filter(function (r) { return r.items.length; })
-      .concat(Movies.genres(sh).map(function (r) { return { id: 'g:' + r.title.toLowerCase(), title: r.title, items: r.items }; }));
+    var out = [];
+    if (sh.on.length) out.push({ id: 'on', title: T('Playing now'), sub: count(sh.on.length, '1 movie, join in progress', '{n} movies, join in progress'), items: sh.on });
+    if (sh.soon.length) out.push({ id: 'soon', title: T('Starting soon'), sub: count(sh.soon.length, '1 movie in the next 3 hours', '{n} movies in the next 3 hours'), items: sh.soon });
+    return out.concat(Movies.genres(sh).map(function (r) {
+      var on = r.items.filter(function (g) { return g.live; }).length, later = r.items.length - on;
+      var sub = [on ? count(on, '1 playing now', '{n} playing now') : '', later ? count(later, '1 starting soon', '{n} starting soon') : ''].filter(Boolean).join(',  ');
+      return { id: 'g:' + r.title.toLowerCase(), title: r.title, sub: sub, items: r.items };
+    }));
   }
   function signature(rs) { return rs.map(function (r) { return r.id + ':' + r.items.map(function (g) { return g.m.id + '@' + g.c.k + (g.m.logo ? 'L' : ''); }).join(','); }).join('|'); }
 
@@ -47,12 +61,15 @@ var OnNow = (function () {
     }
     rows.forEach(function (r, ri) {
       var shelf = U.el('div', 'on-shelf'), track = U.el('div', 'on-track');
-      shelf.appendChild(U.el('h3', '', r.title + '   ' + r.items.length));
+      var h = U.el('h3', '', r.title); h.appendChild(U.el('span', 'on-sub', r.sub)); shelf.appendChild(h);
       r.items.forEach(function (g, i) {
-        var card = U.el('div', 'on-card'), art = U.el('div', 'on-art');
+        // Playing now or later, at a glance: the guide's LIVE badge and a progress bar, or the start time on a
+        // quieter poster.
+        var card = U.el('div', 'on-card' + (g.live ? ' on-live' : ' on-later')), art = U.el('div', 'on-art');
         if (g.m.poster) { var im = U.el('img'); im.src = g.m.poster; im.alt = ''; im.decoding = 'async'; im.onerror = function () { this.remove(); }; art.appendChild(im); }
         art.appendChild(U.el('span', 'on-ph', g.m.title));
         if (g.live) { var bar = U.el('i', 'on-bar'), f = U.el('b'); bar.appendChild(f); art.appendChild(bar); card._bar = f; }
+        card._tag = U.el('span', 'on-tag' + (g.live ? ' live' : ''), g.live ? T('LIVE') : ''); art.appendChild(card._tag);
         card.appendChild(art);
         var cap = U.el('div', 'on-cap');
         cap.appendChild(U.el('span', 'on-ch', chName(g)));
@@ -83,7 +100,8 @@ var OnNow = (function () {
     var now = Date.now();
     document.querySelectorAll('#onStage .on-card').forEach(function (card) {
       var g = card._g; if (!g) return;
-      card._t.textContent = g.live ? mins(g.p.e - now) + ' left' : (g.p.s - now < 3600e3 ? 'in ' + mins(g.p.s - now) : 'at ' + U.hhmm(g.p.s));
+      card._t.textContent = g.live ? left(g, now) : U.hhmm(g.p.s);          // later: the badge says how soon
+      if (!g.live) card._tag.textContent = when(g, now).toUpperCase();
       if (card._bar) card._bar.style.width = Math.round(100 * U.clamp((now - g.p.s) / (g.p.e - g.p.s), 0, 1)) + '%';
     });
   }
@@ -116,14 +134,15 @@ var OnNow = (function () {
       info.appendChild(lg);
     } else info.appendChild(U.el('h1', 'on-title', m.title));
     var meta = U.el('div', 'on-meta');
-    meta.appendChild(U.el('span', 'gd-badge' + (g.live ? ' live' : ''), g.live ? 'LIVE' : 'STARTS ' + U.hhmm(g.p.s).toUpperCase()));
-    meta.appendChild(document.createTextNode(U.hhmm(g.p.s) + ' – ' + U.hhmm(g.p.e)));
+    // "Playing now · 8:00pm – 9:30pm · 25 min left", or "Starts at 8:30pm · in 35 min".
+    meta.appendChild(U.el('span', 'gd-badge' + (g.live ? ' live' : ' up'), g.live ? T('Playing now') : T('Starts at {x}', { x: U.hhmm(g.p.s) })));
     if (g.live) {
+      meta.appendChild(document.createTextNode(U.hhmm(g.p.s) + ' – ' + U.hhmm(g.p.e)));
       var mini = U.el('span', 'gd-mini'), mf = U.el('i'); mf.style.width = Math.round(100 * (now - g.p.s) / (g.p.e - g.p.s)) + '%'; mini.appendChild(mf); meta.appendChild(mini);
-      meta.appendChild(document.createTextNode(mins(g.p.e - now) + ' left'));
-    } else meta.appendChild(document.createTextNode('   ·   in ' + mins(g.p.s - now)));
+      meta.appendChild(document.createTextNode(left(g, now)));
+    } else meta.appendChild(document.createTextNode(T('in {x}', { x: mins(g.p.s - now) })));
     info.appendChild(meta);
-    info.appendChild(U.el('div', 'on-where', 'On ' + Library.name(g.c) + (g.list.length > 1 ? ' and ' + (g.list.length - 1) + ' more channel' + (g.list.length > 2 ? 's' : '') : '')));
+    info.appendChild(U.el('div', 'on-where', g.list.length > 1 ? T('On {x} and {n} more', { x: Library.name(g.c), n: g.list.length - 1 }) : T('On {x}', { x: Library.name(g.c) })));
     info.appendChild(U.el('div', 'on-facts', [m.year, m.runtime, m.genre, m.rating ? '★ ' + m.rating : ''].filter(Boolean).join('   ·   ')));
     if (m.plot) info.appendChild(U.el('p', 'on-plot', m.plot));
   }
@@ -190,6 +209,8 @@ var OnNow = (function () {
     return true;
   }
   function restore() { UI.setHandler(keys); hints(); }
+  /* Back from a movie watched in fullscreen (views.js exitFull): the same shelf and movie, brought up to date. */
+  function resume() { if (!open_) return open(); UI.setHandler(keys); render(true); }
   function open() {
     build(); open_ = true;
     rows = []; row = 0; pos = {};                                 // each visit starts at the top: On now, first movie
@@ -203,5 +224,5 @@ var OnNow = (function () {
   function leave() { open_ = false; clearInterval(timer); document.body.classList.remove('onnow-open'); }
   function changed() { if (open_ && Views.tab === 'onnow' && !Views.full && !UI.modalOpen) render(false); }
 
-  return { open: open, leave: leave, changed: changed, render: render, get rows() { return rows; } };
+  return { open: open, resume: resume, leave: leave, changed: changed, render: render, get rows() { return rows; } };
 })();

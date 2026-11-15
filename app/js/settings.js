@@ -338,6 +338,9 @@ var Settings = (function () {
     // From the phone app: its own Add a playlist form (AddPlaylistDialog), with the playlist type to pick.
     var addPl = phoneDoes('add-playlist', action('Add playlist…', 'Each playlist keeps its own groups, favorites, hidden items, guide and name rules.  Adding one from the phone app is easier: share your provider\'s link to it.', function () { App.setup('new'); }));
     out.push(addPl);
+    // Several playlists on: where the others' channels show up (mixPage).
+    if (mixable().length) out.push(page('Mixing playlists', 'Where your other playlists\' channels show up: All channels, Favorites and your groups, My teams, Events by time, Movies on now, Recently added and Search.',
+      'Mixing playlists', mixOverview, function () { return mixSummary(); }));
     /* How the helper finds your providers' servers (service/dns.js, discussion #60): the TV's DNS, a public one,
        one you type, or DNS over HTTPS, for a provider the TV's DNS doesn't find or blocks. */
     out.push(head('Finding your provider'));
@@ -366,6 +369,44 @@ var Settings = (function () {
   function persist(p, reloadGuide) {
     Store.upsertPlaylist(p);
     if ((p.id === S().active || L.otherIds().indexOf(p.id) >= 0) && reloadGuide) Epg.refresh(L, true);
+  }
+
+  /* ---------- mixing playlists (library.js mixList) ---------- */
+  var MIX_ROWS = [
+    ['all', 'In All channels', 'Its channels are in All channels, with the first playlist\'s.  Off: All channels has only the first playlist\'s channels.'],
+    ['groups', 'In Favorites and your groups', 'Its channels can go into Favorites and the groups you made.  Off: they can\'t be added, and any already there are kept but not shown until this is on again.'],
+    ['teams', 'In My teams', 'Your teams\' games on its channels are in My teams, with one title for each game.'],
+    ['events', 'In Events by time', 'The games and pay-per-view on its event channels are in Events by time.'],
+    ['movies', 'In Movies on now', 'Movies on its channels are on the Movies on now screen.'],
+    ['added', 'In Recently added', 'Channels it added lately are in Recently added.'],
+    ['search', 'In Search', 'Search looks through its channels and guide too.']];
+  // The other playlists that are on (the first playlist is what they mix into).
+  function mixable() { var s = S(); return s.playlists.filter(function (p) { return !p.off && p.id !== s.active; }).length && s.playlists.filter(function (p) { return !p.off; }).length > 1 ? s.playlists.filter(function (p) { return !p.off && p.id !== s.active; }) : []; }
+  function mixCount(p) { return MIX_ROWS.filter(function (r) { return !(p.mix && p.mix[r[0]] === false); }).length; }
+  function mixValue(p) { var n = mixCount(p); return n === MIX_ROWS.length ? 'All' : n ? I18n.t('{n} of {y}', { n: n, y: MIX_ROWS.length }) : 'Off'; }
+  function mixSummary() {
+    var l = mixable(), full = l.filter(function (p) { return mixCount(p) === MIX_ROWS.length; }).length, none = l.filter(function (p) { return !mixCount(p); }).length;
+    return full === l.length ? 'All mixed in' : none === l.length ? 'Not mixed in' : 'Partly mixed in';
+  }
+  function mixOverview() {
+    var first = Store.byId(S().active), out = [];
+    out.push(info(I18n.t('Your other playlists\' channels always have their own section in the group list, under each playlist\'s name.  Here you choose where else they show up, with the channels of your first playlist, {x}.', { x: (first && first.name) || 'Playlist' }), ''));
+    mixable().forEach(function (p) { out.push(page(I18n.raw(p.name || 'Playlist'), 'Where its channels show up', I18n.raw(p.name || 'Playlist'), function () { return mixRows(p); }, function () { return mixValue(p); })); });
+    return out;
+  }
+  function mixRows(p) {
+    var out = [];
+    out.push(info(I18n.t('{x}\'s channels always have their own section in the group list, under its name.  These switches choose where else they show up.  Off only leaves them out: nothing is deleted.', { x: p.name || 'Playlist' }), ''));
+    MIX_ROWS.forEach(function (r) {
+      out.push(toggle(r[1], r[2], function () { return !(p.mix && p.mix[r[0]] === false); }, function (v) {
+        p.mix = p.mix || {};
+        if (v) delete p.mix[r[0]]; else p.mix[r[0]] = false;
+        if (!Object.keys(p.mix).length) delete p.mix;
+        Store.upsertPlaylist(p);
+        L.mixChanged(); Views.refreshLists(true); paint();
+      }));
+    });
+    return out;
   }
 
   function playlistPage(p) {
@@ -410,6 +451,11 @@ var Settings = (function () {
       out.push(info('Last reloaded', when(part.at)));
       if (part.exp) out.push(info('Subscription expires', new Date(part.exp).toLocaleDateString() + (Store.expiry(p) ? '  (' + Store.expiry(p).replace(/^Expire[sd] /, '') + ')' : '')));
       if (part.maxConn) out.push(info('Connections allowed', String(part.maxConn)));
+    }
+    // Another playlist that is on: where its channels show up besides its own groups (mixRows).
+    if (!active && !p.off && mixable().some(function (x) { return x.id === p.id; })) {
+      out.push(head('Mix into the first playlist'));
+      out = out.concat(mixRows(p));
     }
     out.push(head('This playlist\'s guide, names and events'));
     out.push(page('Guide', 'The provider\'s guide, your guide sources and public fill-in for this playlist', 'Guide: ' + (p.name || 'playlist'), function () { return guideRows(p); }));

@@ -872,7 +872,8 @@ video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;backgroun
 .on-shelves{position:absolute;top:470px;left:152px;right:0;bottom:0;overflow:hidden}
 .on-stage{transition:transform .18s ease-out}
 .on-shelf{padding:0 0 26px 0}
-.on-shelf h3{font-size:28px;color:var(--muted);font-weight:600;margin:0 0 14px 4px}
+.on-shelf h3{font-size:28px;color:var(--muted);font-weight:600;margin:0 0 14px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.on-shelf h3 .on-sub{font-size:22px;font-weight:400;color:var(--muted);margin-left:18px;opacity:.85}
 .on-shelf.active h3{color:var(--text)}
 .on-track{display:flex;gap:24px;padding:6px 4px;transition:transform .18s ease-out}
 .on-card{flex:none;width:300px}
@@ -882,6 +883,16 @@ video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;backgroun
 .on-art img + .on-ph{display:none}
 .on-bar{position:absolute;left:0;right:0;bottom:0;height:8px;background:rgba(0,0,0,.55)}
 .on-bar b{display:block;height:100%;background:var(--accent)}
+/* Playing now or later: the guide's LIVE badge in the poster's corner, or the start time on a quieter poster. */
+.on-tag{position:absolute;top:12px;left:12px;padding:3px 12px;border-radius:8px;font-size:20px;font-weight:700;letter-spacing:.04em;background:rgba(0,0,0,.72);color:var(--text);white-space:nowrap}
+.on-tag:empty{display:none}
+.on-tag.live{color:var(--accent-text);box-shadow:inset 0 0 0 2px var(--accent);padding-left:30px}
+.on-tag.live::before{content:'';position:absolute;left:12px;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:var(--accent)}
+.on-later .on-art img,.on-later .on-ph{opacity:.62}
+.on-later.focus .on-art img,.on-later.focus .on-ph{opacity:1}
+.on-later .on-cap .on-t{color:var(--muted)}
+.on-live .on-cap .on-t{color:var(--text)}
+.gd-badge.up{background:var(--raised);color:var(--muted)}
 .on-card.focus .on-art{box-shadow:0 0 0 5px var(--accent)}
 body.focus-ring .on-card.focus .on-art{box-shadow:0 0 0 5px var(--accent),0 0 0 9px #fff}
 .on-cap{display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:22px;color:var(--muted);white-space:nowrap}

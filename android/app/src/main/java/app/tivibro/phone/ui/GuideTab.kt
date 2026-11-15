@@ -106,6 +106,7 @@ fun GuideTab(model: AppModel, id: String, lineup: Lineup?, lineupNote: String, p
     var error by remember(at, group) { mutableStateOf<String?>(null) }
     var open by remember { mutableStateOf<Chan?>(null) }
     var options by remember { mutableStateOf<Chan?>(null) }
+    var details by remember { mutableStateOf<Pair<Chan, Programme>?>(null) }
     val scope = rememberCoroutineScope()
     val list = remember(lineup, group) { if (group.isBlank()) lineup.all else lineup.groups.firstOrNull { it.id == group }?.keys?.mapNotNull { lineup.byKey[it] } ?: lineup.all }
     val state = rememberLazyListState()
@@ -140,12 +141,13 @@ fun GuideTab(model: AppModel, id: String, lineup: Lineup?, lineupNote: String, p
         LazyColumn(state = state, contentPadding = PaddingValues(bottom = 24.dp), modifier = Modifier.fillMaxSize()) {
             itemsIndexed(list, key = { _, c -> c.k }) { i, c ->
                 LaunchedEffect(i / PAGE) { load(i / PAGE) }
-                GuideChannelRow(c, rows[c.k], c.k == playing, at ?: now, now, onPlay = { onPlay(c) }, onLong = { options = c }) { open = c }
+                GuideChannelRow(c, rows[c.k], c.k == playing, at ?: now, now, onPlay = { onPlay(c) }, onLong = { options = c }, onSchedule = { open = c }) { p -> details = c to p }
                 HorizontalDivider(color = Line.copy(alpha = 0.5f), thickness = 0.5.dp, modifier = Modifier.padding(start = 74.dp))
             }
         }
     }
     open?.let { c -> ScheduleSheet(model, id, c, at, c.k == playing, onPlay = { onPlay(c); open = null }, onDismiss = { open = null }) }
+    details?.let { (c, p) -> ProgrammeSheet(model, id, c.k, p.start, p, playing, onPlay = { k -> lineup.byKey[k]?.let(onPlay) }, onSchedule = { open = c }, onDismiss = { details = null }) }
     options?.let { c -> ChannelSheet(model, id, c, c.k == playing, onPlay = { onPlay(c) }, onSchedule = { open = c }, onDismiss = { options = null }, group = group) }
 }
 
@@ -160,18 +162,21 @@ fun LineupWaiting(note: String, onOpen: () -> Unit, onRetry: () -> Unit) {
     }
 }
 
-// Tap: the channel's schedule.  The play button: straight to the TV.  Long press: the channel's options.
+// Tap: what's on, in full (ProgrammeSheet, with the channel's schedule one tap on).  The logo: the schedule
+// (a tap on the name would reach the title too: Compose makes small tap targets 48 dp tall).  The play button:
+// straight to the TV.  Long press: the channel's options.
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long, now: Long, onPlay: () -> Unit, onLong: () -> Unit, onClick: () -> Unit) {
+private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long, now: Long, onPlay: () -> Unit, onLong: () -> Unit, onSchedule: () -> Unit, onDetails: (Programme) -> Unit) {
     val progs = row?.progs
     val first = progs?.firstOrNull { it.end > at }
     val after = progs?.filter { it.start >= (first?.end ?: Long.MAX_VALUE) }?.take(2).orEmpty()
     Row(
-        Modifier.fillMaxWidth().combinedClickable(onClickLabel = "Schedule", onLongClickLabel = "Channel options", onLongClick = onLong, onClick = onClick).background(if (playing) Panel else Color.Transparent).padding(16.dp, 12.dp),
+        Modifier.fillMaxWidth().combinedClickable(onClickLabel = if (first != null) "Details" else "Schedule", onLongClickLabel = "Channel options", onLongClick = onLong,
+            onClick = { if (first != null) onDetails(first) else onSchedule() }).background(if (playing) Panel else Color.Transparent).padding(16.dp, 12.dp),
         verticalAlignment = Alignment.Top,
     ) {
-        Logo(c.logo, c.number, 44.dp)
+        Box(Modifier.clickable(onClickLabel = "Schedule", onClick = onSchedule)) { Logo(c.logo, c.number, 44.dp) }
         Spacer(Modifier.width(14.dp))
         Column(Modifier.weight(1f)) {
             Text((if (c.number.isNotBlank()) c.number + "  " else "") + c.name, color = if (playing) Accent else Muted, style = MaterialTheme.typography.labelMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -186,6 +191,9 @@ private fun GuideChannelRow(c: Chan, row: GuideRow?, playing: Boolean, at: Long,
                     }
                     Text(time(first.start) + " – " + time(first.end), color = Muted, style = MaterialTheme.typography.labelSmall)
                     first.movie?.let { mv -> Text(mv.facts, color = Accent, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                    KindTags(first, Modifier.padding(top = 3.dp))
+                    // A taste of it: two lines of its description (the guide's, else TMDB's summary).
+                    if (first.desc.isNotBlank()) Text(first.desc, color = Muted, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 3.dp))
                     if (first.on(now)) {
                         Spacer(Modifier.height(4.dp))
                         LinearProgressIndicator(progress = { ((now - first.start).toFloat() / (first.end - first.start)).coerceIn(0f, 1f) }, color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth(0.7f).height(3.dp))
@@ -214,7 +222,7 @@ private fun ScheduleSheet(model: AppModel, id: String, c: Chan, at: Long?, playi
     var sch by remember { mutableStateOf<Schedule?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     val reminders = remember { mutableStateMapOf<Long, Boolean>() }
-    var expanded by remember { mutableStateOf<Long?>(null) }
+    var details by remember { mutableStateOf<Programme?>(null) }
     val scope = rememberCoroutineScope()
     val now = System.currentTimeMillis()
     LaunchedEffect(c.k) {
@@ -253,7 +261,7 @@ private fun ScheduleSheet(model: AppModel, id: String, c: Chan, at: Long?, playi
                         // Keys stay unique even if two programmes ever share a start (Schedule.clean leaves out such pairs).
                         itemsIndexed(list, key = { i, p -> "${p.start}:$i" }) { _, p ->
                             val set = reminders[p.start] ?: p.reminder
-                            ProgrammeRow(p, now, set, expanded == p.start, onClick = { expanded = if (expanded == p.start) null else p.start },
+                            ProgrammeRow(p, now, set, onClick = { details = p },
                                 onWatch = if (p.on(now)) onPlay else null,
                                 onRemind = if (p.start > now) ({
                                     scope.launch {
@@ -268,10 +276,11 @@ private fun ScheduleSheet(model: AppModel, id: String, c: Chan, at: Long?, playi
             }
         }
     }
+    details?.let { p -> ProgrammeSheet(model, id, c.k, p.start, p, if (playing) c.k else "", onPlay = { onPlay() }, onSchedule = null, onDismiss = { details = null }) }
 }
 
 @Composable
-private fun ProgrammeRow(p: Programme, now: Long, reminder: Boolean, open: Boolean, onClick: () -> Unit, onWatch: (() -> Unit)?, onRemind: (() -> Unit)?) {
+private fun ProgrammeRow(p: Programme, now: Long, reminder: Boolean, onClick: () -> Unit, onWatch: (() -> Unit)?, onRemind: (() -> Unit)?) {
     val on = p.on(now)
     val past = p.end <= now
     Column(Modifier.fillMaxWidth().clickable(onClick = onClick).background(if (on) Panel else Color.Transparent).padding(16.dp, 10.dp)) {
@@ -279,11 +288,13 @@ private fun ProgrammeRow(p: Programme, now: Long, reminder: Boolean, open: Boole
             Text(time(p.start), color = if (on) Accent else Muted, style = MaterialTheme.typography.labelMedium, modifier = Modifier.width(72.dp))
             p.movie?.poster?.takeIf { it.isNotBlank() }?.let { url ->
                 AsyncImage(model = url, contentDescription = null, contentScale = ContentScale.Crop,
-                    modifier = Modifier.padding(end = 10.dp).width(if (open) 80.dp else 36.dp).height(if (open) 120.dp else 54.dp).clip(RoundedCornerShape(6.dp)))
+                    modifier = Modifier.padding(end = 10.dp).width(36.dp).height(54.dp).clip(RoundedCornerShape(6.dp)))
             }
             Column(Modifier.weight(1f)) {
-                Text(p.title, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, color = if (past) Muted else TextHi, maxLines = if (open) 3 else 1, overflow = TextOverflow.Ellipsis)
+                Text(p.title, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, color = if (past) Muted else TextHi, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 p.movie?.let { mv -> Text(mv.facts, color = Accent, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                KindTags(p, Modifier.padding(top = 2.dp))
+                if (p.desc.isNotBlank()) Text(p.desc, color = Muted, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 2.dp))
                 if (on) {
                     Spacer(Modifier.height(4.dp))
                     LinearProgressIndicator(progress = { ((now - p.start).toFloat() / (p.end - p.start)).coerceIn(0f, 1f) }, color = Accent, trackColor = Panel2, modifier = Modifier.fillMaxWidth().height(3.dp))
@@ -295,10 +306,6 @@ private fun ProgrammeRow(p: Programme, now: Long, reminder: Boolean, open: Boole
                     Icon(if (reminder) Icons.Rounded.NotificationsActive else Icons.Rounded.Notifications, if (reminder) "Remove the reminder" else "Remind me", tint = if (reminder) Accent else Muted)
                 }
             }
-        }
-        if (open) {
-            Text(time(p.start) + " – " + time(p.end), color = Muted, style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(start = 72.dp, top = 4.dp))
-            Text(p.desc.ifBlank { "No description." }, color = if (p.desc.isBlank()) Muted else TextHi, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(start = 72.dp, top = 4.dp))
         }
     }
 }

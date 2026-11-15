@@ -117,6 +117,11 @@ var Phone = (function () {
   }
   function prog(p, c) {
     var x = { t: p.t, s: p.s, e: p.e };
+    // What the TV's guide marks it with: its kind (m movie, s sports, n news, c kids, d documentary, the theme's
+    // colours on the TV), new, and the season and episode.
+    if (p.mv || p.k) x.c = p.mv ? 'm' : p.k;
+    if (p.n) x.nw = 1;
+    if (p.ep) x.ep = p.ep;
     // A movie (movies.js, TMDB): its poster and a few facts for the phone's guide and schedule.
     var m = c && typeof Movies !== 'undefined' ? Movies.of(c, p) : null;
     if (m) x.m = { i: m.poster || '', y: m.year || '', g: m.genre || '', r: m.rating || '' };
@@ -128,6 +133,13 @@ var Phone = (function () {
       if (sh) x.m = { k: 's', i: sh.poster || '', y: sh.year || '', g: sh.genre || '', r: sh.rating || '', n: sh.network || '' };
     }
     return x;
+  }
+  // TMDB's summary of a movie or show, where the guide says nothing about it.
+  function plotOf(c, p) {
+    var m = typeof Movies !== 'undefined' ? Movies.of(c, p) : null;
+    if (m && m.plot) return m.plot;
+    var sh = typeof Series !== 'undefined' && Series.known ? Series.known(c, p) : null;
+    return sh && sh.plot || '';
   }
   function hasReminder(k, s) { return (Store.edits.reminders || []).some(function (r) { return r.k === k && r.s === s; }); }
   function chan(k) {
@@ -149,12 +161,67 @@ var Phone = (function () {
         var l = Epg.request(c);
         if (!l) { pending++; return typeof DeadList !== 'undefined' && DeadList.marked(c) ? { k: c.k, dead: 1 } : { k: c.k }; }
         var out = [];
-        for (var i = 0; i < l.length && out.length < 3; i++) if (l[i].e > at && l[i].e > l[i].s) { var x = prog(l[i], c); if (hasReminder(c.k, l[i].s)) x.r = 1; out.push(x); }
+        for (var i = 0; i < l.length && out.length < 3; i++) if (l[i].e > at && l[i].e > l[i].s) { var x = prog(l[i], c); if (hasReminder(c.k, l[i].s)) x.r = 1; if (!out.length) { x._p = l[i]; x._c = c; } out.push(x); }
         var row = { k: c.k, p: out, a: c.arch ? 1 : 0 };
         if (typeof DeadList !== 'undefined' && DeadList.marked(c)) row.dead = 1;      // not playing lately (issue #37)
         return row;
       });
-      return { total: list.length, offset: off, rows: rows, pending: pending };
+      /* What's on now on each channel gets a few lines of its description (the guide's, else TMDB's summary):
+         one helper request for the page, waited for at most 2.5 s (a page asked for again has them). */
+      var want = [];
+      rows.forEach(function (row) { var x = row.p && row.p[0]; if (x && x._p) want.push({ c: x._c, p: x._p, x: x }); });
+      var fill = function () { want.forEach(function (w) { var d = w.p.dx || plotOf(w.c, w.p); if (d) w.x.d = String(d).slice(0, 200); }); };
+      var tidy = function () { rows.forEach(function (row) { (row.p || []).forEach(function (x) { delete x._p; delete x._c; }); }); return { total: list.length, offset: off, rows: rows, pending: pending }; };
+      if (!want.length || !Epg.snippets) return tidy();
+      return Promise.race([Epg.snippets(want, 200), new Promise(function (r) { setTimeout(r, 2500); })]).then(function () { fill(); return tidy(); });
+    },
+    /* One programme, everything the TV knows (the phone's details sheet): its description in full, TMDB's
+       picture and facts for a movie or show (and the episode's own title, summary and still), the channel's
+       catch-up, and other showings of it in the next week. */
+    prog: function (a) {
+      var c = chan(a.k), l = Epg.request(c) || [], s = +a.s, p = null;
+      for (var i = 0; i < l.length; i++) if (l[i].s === s) { p = l[i]; break; }
+      if (!p) throw new Error('That programme is no longer in the guide.');
+      var x = prog(p, c), now = Date.now();
+      x.k = c.k; x.ch = Library.name(c); x.arch = c.arch || 0;
+      if (hasReminder(c.k, p.s)) x.r = 1;
+      // Watch from the start: the channel keeps it (catch-up), and it has started.
+      if (c.arch && p.s <= now && p.s > now - c.arch * 86400e3) x.cu = 1;
+      var m = typeof Movies !== 'undefined' ? Movies.of(c, p) : null, sh = !m && typeof Series !== 'undefined' ? (Series.known(c, p) || null) : null;
+      var t = m || sh;
+      if (t) {
+        x.tm = { k: m ? 'm' : 's', poster: t.poster || '', backdrop: t.backdropHd || t.backdrop || '', plot: t.plot || '', year: t.year || '', genre: t.genre || '', rating: t.rating || '', runtime: t.runtime || '', network: t.network || '' };
+        var e = sh && p.ep && Series.episode ? Series.episode(sh, p.ep) : null;
+        if (e) x.tm.ep = { t: e.t || '', plot: e.plot || '', still: e.still || '' };
+      }
+      // Other showings: the same title on any channel, from now to a week ahead (not this one).
+      var others = [], hits = Epg.search ? Epg.search(function (tt) { return tt === p.t; }, 40).filter(function (r) { return r.p.e > now && r.p.s < now + 7 * 86400e3; }) : [];
+      if (hits.length) {
+        // The guide's ids to channels in the lists (one channel for each).
+        var want = {}, byId = {}; hits.forEach(function (r) { want[r.key] = 1; });
+        var all = Library.mixList ? Library.mixList('search') : Library.data.channels;
+        for (var j = 0; j < all.length; j++) { var id = Epg.epgId(all[j]); if (id && want[id] && !byId[id] && Library.shownAnywhere(all[j])) byId[id] = all[j]; }
+        hits.forEach(function (r) {
+          var oc = byId[r.key] || Library.find(r.key);
+          if (!oc || (oc.k === c.k && r.p.s === p.s) || others.length >= 8) return;
+          others.push({ k: oc.k, ch: Library.name(oc), s: r.p.s, e: r.p.e });
+        });
+      }
+      others.sort(function (u, v) { return u.s - v.s; });
+      x.more = others;
+      var done = function () { var d = p.dl || p.d || plotOf(c, p); if (d) x.d = String(d).slice(0, 2000); x.dp = !d && !!Epg.inHelper ? 1 : 0; return x; };
+      if (p.d != null || !Epg.snippets) return done();
+      return Promise.race([Epg.snippets([{ c: c, p: p }], 2000), new Promise(function (r) { setTimeout(r, 3000); })]).then(done);
+    },
+    // Watch a programme from its start on the TV (catch-up): one that's on now, or one that has aired.
+    catchup: function (a) {
+      var c = chan(a.k), l = Epg.request(c) || [], s = +a.s, p = null;
+      for (var i = 0; i < l.length; i++) if (l[i].s === s) { p = l[i]; break; }
+      if (!p) throw new Error('That programme is no longer in the guide.');
+      if (!c.arch) throw new Error('This channel has no catch-up.');
+      if (UI.modalOpen) UI.close();
+      Views.playCatchup(c, p, 0);
+      return { ok: true };
     },
     // One channel's programmes, from as far back as catch-up goes to a week ahead, with descriptions.
     schedule: function (a) {
@@ -181,7 +248,7 @@ var Phone = (function () {
     },
     fav: function (a) {
       var c = chan(a.k), want = a.on !== false;
-      if (Library.isFav(c.k) !== want) Library.toggleFav(c.k);
+      if (Library.isFav(c.k) !== want && Library.toggleFav(c.k) == null) throw new Error('This playlist isn\'t mixed into Favorites and your groups.  On the TV: Settings > Playlists > the playlist > Mix into the first playlist.');
       Views.refreshLists(true);
       lineupAt = 0; sendLineup();
       return { on: Library.isFav(c.k) };
@@ -198,9 +265,10 @@ var Phone = (function () {
       else if (op === 'group') {
         var g = Library.customGroups().filter(function (x) { return x.id === a.group; })[0];
         if (!g) throw new Error('That group isn\'t on the TV any more.');
-        if (a.on !== false) { Library.copyTo(g.id, [c.k]); msg = 'Added to ' + g.name; } else { Library.removeFrom(g.id, c.k); msg = 'Taken out of ' + g.name; }
+        if (a.on !== false) { if (!Library.canGroup(c)) throw new Error('This playlist isn\'t mixed into Favorites and your groups.  On the TV: Settings > Playlists > the playlist > Mix into the first playlist.'); Library.copyTo(g.id, [c.k]); msg = 'Added to ' + g.name; } else { Library.removeFrom(g.id, c.k); msg = 'Taken out of ' + g.name; }
       } else if (op === 'newgroup') {
         var nm = String(a.name || '').trim().slice(0, 80); if (!nm) throw new Error('Give the group a name.');
+        if (!Library.canGroup(c)) throw new Error('This playlist isn\'t mixed into Favorites and your groups.  On the TV: Settings > Playlists > the playlist > Mix into the first playlist.');
         var ng = Library.createGroup(nm); Library.copyTo(ng.id, [c.k]); msg = 'New group ' + nm + ', with this channel';
       } else if (op === 'follow') {
         var tm = Teams.ofChannel(c); if (!tm) throw new Error('That isn\'t a team\'s channel.');
