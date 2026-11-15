@@ -385,3 +385,9 @@ h3 { letter-spacing: -0.01em; }
 .sound-btn { position: absolute; left: 4%; bottom: -92px; display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line2); background: rgba(17, 22, 43, .8); color: var(--text); font: 600 14px Inter, system-ui, sans-serif; white-space: nowrap; cursor: pointer; transition: border-color .2s, transform .2s var(--ease); z-index: 3; }
 .sound-btn:hover { border-color: var(--acc); transform: translateY(-2px); }
 .sound-btn .i { color: var(--acc2); }
+
+/* Sixteen themes: the guide changes theme while it is on screen (index.html). */
+.tile.wide img.theme-shot { transition: opacity .35s var(--ease), transform .5s var(--ease); }
+.tile.wide img.theme-shot.fading { opacity: 0; }
+.theme-now { margin-top: 10px; font-size: .92em; color: var(--mute); }
+.theme-now b { color: var(--text); font-weight: 600; }

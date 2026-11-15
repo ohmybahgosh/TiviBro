@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="preload" as="image" href="img/promo-poster.webp">
-<link rel="stylesheet" href="style.css?v=7">
+<link rel="stylesheet" href="style.css?v=8">
 <script type="application/ld+json">
 {"@context":"https://schema.org","@graph":[
  {"@type":"WebSite","@id":"https://tivibro.app/#website","url":"https://tivibro.app/","name":"TiviBro","publisher":{"@id":"https://ohmybahgosh.dev/#person"}},
@@ -158,8 +158,8 @@
         <img loading="lazy" src="img/shots/tv-teams-guide.webp" alt="My teams in the guide: a game on now, tinted, and the next ones" width="1280" height="720">
       </article>
       <article class="tile wide reveal spot">
-        <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-palette"/></svg></span><h3>Sixteen themes</h3><p>Tokyo Night, Dracula, Catppuccin, Nord, Gruvbox, Rosé Pine and more, down to a green-phosphor Terminal.  The guide's category colours follow the theme.</p></div>
-        <img loading="lazy" src="img/shots/tv-theme-terminal.webp" alt="The guide in the Terminal theme" width="1280" height="720">
+        <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-palette"/></svg></span><h3>Sixteen themes</h3><p>Tokyo Night, Dracula, Catppuccin, Nord, Gruvbox, Rosé Pine and more, down to a green-phosphor Terminal.  The guide's category colours follow the theme.</p><p class="theme-now">Showing <b id="themeName">Tokyo Night</b></p></div>
+        <img id="themeShot" class="theme-shot" loading="lazy" src="img/shots/themes/tokyo.webp" alt="The guide in the Tokyo Night theme" width="1280" height="720">
       </article>
       <article class="tile wide reveal spot">
         <div class="tile-copy"><span class="ico"><svg class="i"><use href="#i-monitor"/></svg></span><h3>Settings that keep playing</h3><p>The channel carries on in the corner while you change things, and Hold OK takes you back to it in fullscreen.  Settings are grouped where you'd look for them.</p></div>
@@ -671,6 +671,31 @@
 
   // Pictures that open: each gets a badge ("Enlarge" on hover), which pulses once when it first
   // scrolls into view, and opens in a lightbox that grows out of the picture.
+  /* Sixteen themes: the guide in each, one after another, while the picture is on screen.  Tokyo Night stays
+     put for anyone who asked for less motion. */
+  (function () {
+    var img = document.getElementById('themeShot'), name = document.getElementById('themeName');
+    if (!img || !name || reduce) return;
+    var T = [['tokyo', 'Tokyo Night'], ['dracula', 'Dracula'], ['catppuccin', 'Catppuccin Mocha'], ['nord', 'Nord'], ['gruvbox', 'Gruvbox'], ['rosepine', 'Rosé Pine'],
+      ['onedark', 'One Dark'], ['kanagawa', 'Kanagawa'], ['everforest', 'Everforest'], ['monokai', 'Monokai'], ['solarized', 'Solarized Dark'], ['ayu', 'Ayu Dark'],
+      ['github', 'GitHub Dark'], ['graphite', 'Graphite'], ['mono', 'Black and white'], ['terminal', 'Terminal']];
+    var i = 0, timer = 0, seen = false;
+    function src(k) { return 'img/shots/themes/' + T[k][0] + '.webp'; }
+    function step() {
+      var n = (i + 1) % T.length, pre = new Image();
+      pre.onload = function () {
+        img.classList.add('fading');
+        setTimeout(function () {
+          i = n; img.src = src(n); img.alt = 'The guide in the ' + T[n][1] + ' theme'; name.textContent = T[n][1];
+          img.classList.remove('fading');
+        }, 350);
+      };
+      pre.src = src(n);
+    }
+    function run(on) { clearInterval(timer); timer = on ? setInterval(step, 2600) : 0; }
+    if ('IntersectionObserver' in window) new IntersectionObserver(function (es) { es.forEach(function (e) { seen = e.isIntersecting; run(seen && !document.hidden); }); }, { threshold: 0.35 }).observe(img);
+    document.addEventListener('visibilitychange', function () { run(seen && !document.hidden); });
+  })();
   var zoom = $$('#gallery img, .thumbs img, .zoomable, .bento img');
   zoom.forEach(function (img) {
     var w = document.createElement('span'); w.className = 'zw';
