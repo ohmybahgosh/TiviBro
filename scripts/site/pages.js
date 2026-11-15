@@ -363,6 +363,33 @@ module.exports = [
     ['Does TiviBro record?', 'Not yet.']
   ],
   related: ['tivimate-for-lg-tv', 'how-to-install', 'videos']
+},
+
+// ------------------------------------------------------------------------------------------------
+{
+  slug: 'android-test', crumb: 'Test the Android app',
+  title: 'Test the TiviBro Android app on Google Play',
+  description: 'Help test TiviBro for Android on Google Play: join the tester group, opt in, and install the remote, TV guide and setup app for TiviBro on LG webOS TVs.',
+  short: 'Join the Google Play test of TiviBro for Android in three steps.',
+  kicker: 'Android app', h1: 'Test the TiviBro app on Google Play',
+  published: '2026-11-15', image: 'img/shots/tv-tour-phone.webp',
+  lead: 'TiviBro for Android, the remote, TV guide and setup app for TiviBro on your LG TV, is coming to Google Play.  Before it can be public, Google asks for at least 12 people to test it for 14 days.  It takes a minute to join.',
+  answer: '<b>Three steps:</b>  join the tester group, opt in to the test on Google Play, then install TiviBro from Play.  Keep it installed for 14 days and you\'ve helped it get published for everyone.',
+  body: [
+    '<ol class="steps-list">',
+    '<li id="step-1"><b>Join the tester group.</b>  With the Google account your phone uses, open <a href="https://groups.google.com/g/tivibro-testers">TiviBro Android testers</a> and choose <b>Join group</b>.  If you\'re signed in to more than one Google account, check the picture at the top right is the right one first.  Nobody else in the group sees your address, and the group sends no mail.</li>',
+    '<li id="step-2"><b>Opt in on Google Play.</b>  Open <a href="https://play.google.com/apps/testing/app.tivibro.phone">the TiviBro test page on Google Play</a> and choose <b>Become a tester</b>, signed in with that same account.  It can take a few minutes after joining the group before this works.</li>',
+    '<li id="step-3"><b>Install TiviBro.</b>  From <a href="https://play.google.com/store/apps/details?id=app.tivibro.phone">TiviBro on Google Play</a>, on your Android phone.  Then pair it with the TV: on the TV, open TiviBro, <b>Settings &gt; Phone app and web editor &gt; Pair a phone</b>, and scan the code.</li>',
+    '</ol>',
+    '<h2>What to know</h2><ul>',
+    '<li><b>Keep it installed for 14 days.</b>  That\'s what Google counts.  You don\'t have to use it every day.</li>',
+    '<li><b>Already using the APK from GitHub?</b>  The Play version is the same app, signed with the same key, so it installs over it and keeps your paired TVs.  The only difference is that updates then come from Google Play.</li>',
+    '<li><b>Found something?</b>  <a href="https://github.com/ohmybahgosh/TiviBro/issues/new/choose">Report it on GitHub</a>, or use <b>Report a problem</b> in TiviBro on the TV.</li>',
+    '<li><b>Leaving the test</b> is the same page as step 2: choose <b>Leave the program</b>.</li>',
+    '</ul>',
+    '<p class="callout">No Google account on your phone, or rather not?  <a href="/apk/">Get the APK from GitHub</a> instead.  It\'s the same app and updates itself.</p>'
+  ].join('\n'),
+  related: ['how-to-install', 'features']
 }
 
 ];
