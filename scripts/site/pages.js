@@ -367,7 +367,7 @@ module.exports = [
 
 // ------------------------------------------------------------------------------------------------
 {
-  slug: 'android-test', crumb: 'Test the Android app',
+  slug: 'android-test', footer: 'Test on Google Play', crumb: 'Test the Android app',
   title: 'Test the TiviBro Android app on Google Play',
   description: 'Help test TiviBro for Android on Google Play: join the tester group, opt in, and install the remote, TV guide and setup app for TiviBro on LG webOS TVs.',
   short: 'Join the Google Play test of TiviBro for Android in three steps.',

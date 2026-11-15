@@ -41,6 +41,7 @@
 |---|---|
 | 📺 **On your LG TV** | [How to install](#install).  Homebrew Channel repository: `https://tivibro.app/repo` |
 | 📱 **Phone app for Android** | [**Download the newest APK**](https://tivibro.app/apk/), then [pair it with your TV](#the-phone-app) |
+| 🧪 **Help get it on Google Play** | [**Join the Play test**](https://tivibro.app/android-test/): Google needs testers to keep it installed for 14 days before it can be published.  The APK stays either way. |
 | 📦 **Every build and its notes** | [Releases page](https://github.com/ohmybahgosh/TiviBro/releases) |
 | 🤖 **Building a feature with AI?** | [Download the knowledge base](https://tivibro.app/ai/tivibro-for-ai.md) for Claude, ChatGPT or Gemini |
 
@@ -589,6 +590,8 @@ TiviBro checks for a new release every time it starts and every 6 hours while it
 1. [Download the newest APK](https://tivibro.app/apk/) on your phone and open it to install.  Android asks to allow installs from your browser the first time, and Google Play Protect checks the app each time you update it.
 2. On the TV, open **Settings > Phone app and web editor**, turn on **Phone app connection** and choose **Pair the TiviBro app…**.
 3. In the app, scan the QR code on the TV (or pick the TV from the list and type the code).
+
+**Rather get it from Google Play?**  The app is in a test there, and Google needs testers to keep it installed for 14 days before it can be published for everyone.  [Join the Play test](https://tivibro.app/android-test/) in three steps.  It's the same app, signed with the same key, so it installs over the APK and keeps your paired TVs.  The APK on GitHub isn't going anywhere.
 
 The app only talks to your TVs on your home network.  See [Settings: Phone app and web editor](docs/USER-GUIDE.md#settings-phone-app-and-web-editor) for the details.
 
