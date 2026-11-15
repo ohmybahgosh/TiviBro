@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 140, 2026-11-15)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 140
 
 - **A 1 GB TV with Network set to Direct no longer reads the whole guide while a channel plays (issue #93).**  With Direct, TiviBro reads the guide itself instead of the helper, and on a TV short of memory that is too much on top of the video: one closed at 59% of the guide.  Now that load waits until nothing plays (Reload guide still works at once), and the guide the helper saved while the network was on Automatic stays on screen meanwhile.
 - **Problem reports leave out a few more details of your connection.**
 
-## 0.6.0 (alpha 139, 2026-11-15)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 139
+### In alpha 139
 
 - **Quicker moving around on big playlists.**  Going down the guide's groups, down and across the guide and paging through it, Settings and Search do less work on each press: a group's channels are found without looking through the whole playlist, the date at the top of the guide is written out once a day instead of on every move, the details above the guide are measured once per frame, the language is worked out once, and rows only change the words that changed.  On a 15,000 channel playlist with the CPU slowed to a TV's, the app's own work per press dropped by about half in the guide.
 
