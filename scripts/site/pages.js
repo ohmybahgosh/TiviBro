@@ -374,7 +374,7 @@ module.exports = [
   kicker: 'Android app', h1: 'Test the TiviBro app on Google Play',
   published: '2026-11-15', image: 'img/shots/tv-tour-phone.webp',
   lead: 'TiviBro for Android, the remote, TV guide and setup app for TiviBro on your LG TV, is coming to Google Play.  Before it can be public, Google asks for at least 12 people to test it for 14 days.  It takes a minute to join.',
-  answer: '<b>Three steps:</b>  join the tester group, opt in to the test on Google Play, then install TiviBro from Play.  Keep it installed for 14 days and you\'ve helped it get published for everyone.',
+  answer: '<b>Three steps:</b>  join the tester group, opt in to the test on Google Play, then install TiviBro from Play.  Keep it installed for 14 days and you\'ve helped it get published for everyone.  <b>Don\'t want Google Play?</b>  The <a href="/apk/">APK from GitHub</a> is still here and always will be: same app, same features, updates itself.',
   body: [
     '<ol class="steps-list">',
     '<li id="step-1"><b>Join the tester group.</b>  With the Google account your phone uses, open <a href="https://groups.google.com/g/tivibro-testers">TiviBro Android testers</a> and choose <b>Join group</b>.  If you\'re signed in to more than one Google account, check the picture at the top right is the right one first.  Nobody else in the group sees your address, and the group sends no mail.</li>',
