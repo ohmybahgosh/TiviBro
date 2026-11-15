@@ -58,7 +58,8 @@ function create(o) {
     }
     js(res, null);
   });
-  return { server: server, seen: seen, MAC: MAC };
+  // setStream: what create_link links from then on (a portal whose links are HLS playlists, issue #88).
+  return { server: server, seen: seen, MAC: MAC, setStream: function (x) { stream = x; } };
 }
 
 if (require.main === module) {

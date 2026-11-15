@@ -600,6 +600,13 @@ var Player = (function () {
          or with another player for the same address, gets the same answer (issue #56: three MPEG-TS tries,
          the TV player and two HLS tries, about 15 s each, before "No player could open this channel").  Its
          HLS version is another address, so that is tried once; otherwise it's marked not playing at once. */
+      /* 415 from the helper: the Stalker portal linked an HLS playlist for a channel asked for as MPEG-TS
+         (issue #88).  Straight to its HLS version, and that channel starts as HLS from then on. */
+      if (http === 415 && kind !== 'hls' && !st.started && window.Hls && Hls.isSupported() && hlsVariant(cur.origUrl || cur.url) && !(cur.tried && cur.tried.hls)) {
+        preferHls[cur.origUrl || cur.url] = 1;
+        Log.info('player', 'The portal sends this channel as HLS; playing it that way');
+        useEngine('hls'); return start(myToken);
+      }
       if ((http === 404 || http === 410) && !st.started && cur.live && !cur.timeshift && !cur.everPlayed) {
         cur.lastHttp = http; cur.tried = cur.tried || {};
         cur.tried.ts = cur.tried.native = 1;
@@ -745,7 +752,8 @@ var Player = (function () {
      (native, decodes AC-3 and raw TS), and for Xtream live channels the provider's HLS version
      of the same channel.  Once all have failed there is no point in eight reconnects. */
   var ENGINE_NAMES = { ts: 'built-in demuxer', native: 'TV player', hls: 'HLS version of this channel', dash: 'DASH player' };
-  function hlsVariant(url) { return cur && cur.live && !cur.timeshift && /\/live\/[^?]+\.ts(\?|$)/i.test(url) ? url.replace(/\.ts(\?|$)/i, '.m3u8$1') : null; }
+  // A live channel's HLS address: Xtream's /live/.../1.ts as 1.m3u8, and a Stalker channel's (the helper asks the portal either way).
+  function hlsVariant(url) { return cur && cur.live && !cur.timeshift && /\/(?:live|stalker\/play)\/[^?]+\.ts(\?|$)/i.test(url) ? url.replace(/\.ts(\?|$)/i, '.m3u8$1') : null; }
   /** Can this TV use pipeline [k] for the current channel? */
   function engineOk(k) {
     var u = cur.origUrl || cur.url, isHlsUrl = /\.m3u8(\?|$)/i.test(u);

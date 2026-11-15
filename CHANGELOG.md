@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Stalker portals whose channels are HLS play (issue #88).**  Some portals link each channel to an HLS playlist (".../mono.m3u8") while the channel's own command doesn't say so.  TiviBro asked for MPEG-TS, got a playlist, and every channel ended at once, in the built-in player and the TV's.  Now the helper notices the link is HLS and TiviBro plays the channel that way straight off, and remembers it for that channel.
+
 ## 0.6.0 (alpha 137, 2026-11-14)
 
 Pre-release: expect rough edges, and keep a backup before installing.

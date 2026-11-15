@@ -52,6 +52,16 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const st = await ev(() => ({ playing: Player.playing, engine: Player.engine }));
     ok('a portal channel plays, from a link the portal made when it started', st.playing && m.seen.links > before, JSON.stringify(st) + ' links ' + m.seen.links);
 
+    // Issue #88: a portal whose links are HLS playlists, for channels whose command doesn't say so.  (The mock has
+    // no real HLS, so this checks the player goes to the channel's HLS version at once, not that it plays.)
+    m.setStream((process.env.MOCK || 'http://127.0.0.1:8077') + '/live/demo/demo/2.m3u8');
+    await ev(() => Views.startChannel(Library.data.channels.find((c) => c.n === 'Portal Sports'), false));
+    await page.waitForFunction(() => Player._test.kind === 'hls', null, { timeout: 15000 }).catch(() => {});
+    const sh = await ev(() => ({ engine: Player._test.kind, said: Log.lines().slice(-20).some((l) => /sends this channel as HLS/.test(l)) }));
+    ok('a portal that links HLS playlists: the channel goes straight to HLS (issue #88)', sh.engine === 'hls' && sh.said, JSON.stringify(sh));
+    await ev(() => Player.stop());
+    m.setStream((process.env.MOCK || 'http://127.0.0.1:8077') + '/live/demo/demo/1.ts');
+
     // The portal's own guide, per channel.
     await page.waitForFunction(() => { const c = Library.data.channels.find((x) => x.n === 'Portal News'); const n = c && Epg.nowNext(c); return n && n.now; }, null, { timeout: 20000 }).catch(() => {});
     const g = await ev(() => { const c = Library.data.channels.find((x) => x.n === 'Portal News'); const n = Epg.nowNext(c); return n && n.now ? n.now.t : ''; });

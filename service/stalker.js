@@ -302,6 +302,8 @@ function xc(L, q, res, ALLOW) {
   }
   send(res, ALLOW, 400, { error: 'not a Stalker action TiviBro knows' });
 }
+// An HLS playlist link: .m3u8 in its path (not in a query string's value).
+function isHlsLink(to) { return /^[^?]*\.m3u8(?:[?#]|$)/i.test(String(to || '')); }
 // To the stream the portal linked, through the relay with the box's User-Agent.
 function sendOn(res, ALLOW, port, to) {
   var m = /^(https?):\/\/(.*)$/i.exec(to), ua = b64u(UA);
@@ -382,6 +384,15 @@ function handle(req, res, ALLOW, log, port) {
         if (log) log({ lv: 'warn', event: 'stalker link failed', e: e ? e.message : 'no link' });
         res.writeHead(e && e.auth ? 403 : 502, ALLOW); return res.end(e ? e.message : 'the portal gave no link');
       }
+      /* Issue #88: a portal whose links are HLS playlists (".../mono.m3u8?token=...") for channels whose command
+         doesn't say so.  The player asked for MPEG-TS and got a playlist, so every channel "ended" at once.
+         415 tells it to ask again for the .m3u8 (player.js), which comes back here and goes on as HLS. */
+      var asked = (/\.([a-z0-9]{2,5})$/.exec(route) || [])[1];
+      if (asked !== 'm3u8' && isHlsLink(to)) {
+        if (log) log({ lv: 'info', event: 'stalker link is HLS; the player asked for ' + asked });
+        var h415 = { 'Content-Type': 'text/plain', 'X-TiviBro-Format': 'm3u8' }; for (var hk in ALLOW) h415[hk] = ALLOW[hk];
+        res.writeHead(415, h415); return res.end('hls');
+      }
       sendOn(res, ALLOW, port, to);
     });
     return;
@@ -406,4 +417,4 @@ function handle(req, res, ALLOW, log, port) {
   send(res, ALLOW, 404, { error: 'unknown stalker route' });
 }
 
-module.exports = { handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _fillStream: fillStream, _archDays: archDays };
+module.exports = { handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _fillStream: fillStream, _archDays: archDays, _isHlsLink: isHlsLink };

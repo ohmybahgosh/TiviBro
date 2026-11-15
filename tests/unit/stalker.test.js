@@ -89,6 +89,18 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('many guide requests at once share one sign-in', many.every((x) => x.status === 200) && m2.seen.handshakes === 1 && !m2.seen.refused, JSON.stringify({ st: many.map((x) => x.status), hs: m2.seen.handshakes, refused: m2.seen.refused }));
   m2.server.close();
 
+  // Issue #88: a portal whose links are HLS playlists for channels whose command doesn't say so.
+  ok('an HLS link is told apart from one with ".m3u8" only in its query', S._isHlsLink('http://h.example/abc/mono.m3u8?token=x') && !S._isHlsLink('http://h.example/live.php?u=a.m3u8') && !S._isHlsLink('http://h.example/1.ts'));
+  const m3 = Mock.create({ stream: 'http://127.0.0.1:1/5defb/mono.m3u8?token=abc' });
+  await new Promise((f) => m3.server.listen(0, '127.0.0.1', f));
+  const login3 = b64({ portal: 'http://127.0.0.1:' + m3.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+  const cmd3 = encodeURIComponent('ffrt http://localhost/ch/3426');
+  a = await req('GET', H + '/stalker/play/3275.ts?stb=' + login3 + '&cmd=' + cmd3);
+  ok('an HLS link for a channel asked for as MPEG-TS: 415, so the player asks for the .m3u8', a.status === 415 && a.headers['x-tivibro-format'] === 'm3u8', a.status);
+  a = await req('GET', H + '/stalker/play/3275.m3u8?stb=' + login3 + '&cmd=' + cmd3);
+  ok('…and the .m3u8 goes on to the playlist through the relay', a.status === 302 && /\/x\/http\/127\.0\.0\.1:1\/5defb\/mono\.m3u8\?token=abc$/.test(a.headers.location || ''), a.status + ' ' + a.headers.location);
+  m3.server.close();
+
   r.server.close(); m.server.close();
   console.log(fail ? fail + ' failures' : 'all Stalker portal tests passed');
   process.exit(fail ? 1 : 0);
