@@ -3,7 +3,7 @@
 ## Unreleased
 
 - **A 1 GB TV with Network set to Direct no longer reads the whole guide while a channel plays (issue #93).**  With Direct, TiviBro reads the guide itself instead of the helper, and on a TV short of memory that is too much on top of the video: one closed at 59% of the guide.  Now that load waits until nothing plays (Reload guide still works at once), and the guide the helper saved while the network was on Automatic stays on screen meanwhile.
-- **Problem reports no longer show server names from connection errors.**  A server name or address in an error like "server name not found" or "connection refused" (often one typed on the first screen and not saved) is now masked as <server> on the TV and again when the report is posted.
+- **Problem reports leave out a few more details of your connection.**
 
 ## 0.6.0 (alpha 139, 2026-11-15)
 

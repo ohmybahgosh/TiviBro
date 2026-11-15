@@ -16,6 +16,8 @@ same('Helper replied  {"returnValue":true,"port":47811,"ctl":"197ba610decdd091e5
 same('body="relay error: getaddrinfo ENOTFOUND line.example-panel.top"', 'body="relay error: getaddrinfo ENOTFOUND <server>"', 'a server name in a DNS error from the helper (issue #93)');
 same('helper: connect ECONNREFUSED 203.0.113.7:443  url=https://<provider>/get.php', 'helper: connect ECONNREFUSED <server>:443  url=https://<provider>/get.php', 'an address and port in a refused connection (issue #93)');
 same("Hostname/IP does not match certificate's altnames: Host: tv.example.net. is not in the cert's altnames: DNS:*.cdn.example.org, DNS:cdn.example.org", "Hostname/IP does not match certificate's altnames: Host: <server>. is not in the cert's altnames: DNS:<server>, DNS:<server>", 'server names in a certificate error');
+same('dns 198.51.100.23 answered nothing; tv at 203.0.113.9', 'dns <address> answered nothing; tv at <address>', 'any public IPv4 address');
+for (const keep of ['Mozilla/5.0 Chrome/87.0.4280.88 Safari/537.36', 'TV 192.168.50.96 on 10.0.0.1', 'webOS 6.3.1.2-x']) same(keep, keep, 'left alone: ' + keep);
 for (const keep of ['getaddrinfo ENOTFOUND <provider>', 'connect ECONNREFUSED 127.0.0.1:47811', 'ETIMEDOUT after 15001ms', 'getaddrinfo EAI_AGAIN api.github.com'])
   same(keep, keep, 'left alone: ' + keep);
 for (const keep of ['https://github.com/ohmybahgosh/TiviBro/issues/25', 'https://raw.githubusercontent.com/a/b/refs/heads/master/list.m3u8', 'https://www.reddit.com/r/IPTV/12345', 'Fixed in 0.6.0-alpha.58, see #24', 'https://tivibro.app/apk/'])
