@@ -881,7 +881,7 @@ var Epg = (function () {
       (loadXml.didStart = loadXml.didStart || {})[p.id] = true;
       if (c && c.sig === sig) { ingest(c, p); xmlReady = true; emit(null); }
       if (!stale && !force) { runSet(gk, null); return; }     // a forced reload cut short: the cache is fine
-      if (waitIdle(force, c, sig, h)) {
+      if (waitIdle(force, c, sig, hMode)) {
         if (!xmlReady) { xmlReady = true; emit(null); }                 // nothing to show yet: the guide isn't stuck loading
         holdBack('guide'); runSet(gk, null); return;
       }

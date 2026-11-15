@@ -1,10 +1,14 @@
 # Changelog
 
-## 0.6.0 (alpha 140, 2026-11-15)
+## 0.6.0 (alpha 141, 2026-11-15)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 140
+### New in alpha 141
+
+- **The guide loads again.**  In alpha 140 the guide stopped short whenever it had to be read (the first start, or once it was due to be read again), and the listings never came.
+
+### In alpha 140
 
 - **A 1 GB TV with Network set to Direct no longer reads the whole guide while a channel plays (issue #93).**  With Direct, TiviBro reads the guide itself instead of the helper, and on a TV short of memory that is too much on top of the video: one closed at 59% of the guide.  Now that load waits until nothing plays (Reload guide still works at once), and the guide the helper saved while the network was on Automatic stays on screen meanwhile.
 - **Problem reports leave out a few more details of your connection.**
