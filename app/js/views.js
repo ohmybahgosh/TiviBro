@@ -126,6 +126,8 @@ var Views = (function () {
     }, 60000);
   }
 
+  // Only what changed: writing the same words again still makes the TV lay the row out again.
+  function txt(el, s) { s = s == null ? '' : String(s); if (el.textContent !== s) el.textContent = s; }
   function renderChan(row, c) {
     if (!row._n) {
       row._num = U.el('span', 'num'); row._img = U.el('img', 'logo');
@@ -141,7 +143,7 @@ var Views = (function () {
       row.appendChild(U.el('span', 'vbox'));
     }
     var showNum = Store.settings.showNumbers;
-    row._num.textContent = showNum ? c.num : '';
+    txt(row._num, showNum ? c.num : '');
     row._num.style.display = showNum ? '' : 'none';
     row._c = c;
     var lg = logoOf(c);
@@ -151,14 +153,14 @@ var Views = (function () {
       if (lg) row._img.src = lg; else row._img.removeAttribute('src');
     }
     var locked = !Parental.blockedOk(c);
-    row._n.textContent = L.name(c);
+    txt(row._n, L.name(c));
     var nn = locked ? null : Epg.nowNext(c);
-    if (locked) { row._s.textContent = 'Locked'; row._p.style.display = 'none'; }
+    if (locked) { txt(row._s, 'Locked'); row._p.style.display = 'none'; }
     else if (nn && nn.now) {
-      row._s.textContent = nn.now.t;
-      row._pi.style.width = Math.round(100 * (Date.now() - nn.now.s) / (nn.now.e - nn.now.s)) + '%';
+      txt(row._s, nn.now.t);
+      var w = Math.round(100 * (Date.now() - nn.now.s) / (nn.now.e - nn.now.s)) + '%'; if (row._pi.style.width !== w) row._pi.style.width = w;
       row._p.style.display = nn.now.up || nn.now.ended ? 'none' : '';
-    } else { row._s.textContent = nn ? '' : ' '; row._p.style.display = 'none'; }
+    } else { txt(row._s, nn ? '' : ' '); row._p.style.display = 'none'; }
     var qt = L.versionTag(c);
     if (row._qt !== qt) { row._qt = qt; row._q.textContent = qt; row._q.style.display = qt ? '' : 'none'; }
     // Its last tries failed while other channels play (issue #37); gone once it plays again.
@@ -169,7 +171,7 @@ var Views = (function () {
     if (c.arch && Store.settings.showCatchupMark !== false) tags.push('↺');
     if (L.isBlocked(c)) tags.push('lock');
     if (L.isNew(c)) tags.push('NEW');
-    row._t.textContent = tags.join(' ');
+    txt(row._t, tags.join(' '));
     row.classList.toggle('playing', !!(playing && playing.k === c.k));
     row.classList.toggle('hid', !!Store.edits.hiddenChannels[c.k]);
     row.classList.toggle('picked', !!(pick && pick.has(c.k)));
@@ -2340,10 +2342,15 @@ var Guide = (function () {
     if (!ghWhen || ghWhen.parentNode !== ghead) { ghead.innerHTML = ''; ghWhen = U.el('b', 'gh-when'); ghGrp = U.el('span', 'gh-grp'); ghead.appendChild(ghWhen); ghead.appendChild(ghGrp); }
     ghGrp.textContent = t; headWhen();
   }
+  // Dates are slow to write out on a TV (toLocaleDateString), and this runs on every move: once a day is enough.
+  var hwKey = '', hwDate = '';
   function headWhen() {
     if (!ghWhen) return;
     var now = Date.now(), at = t0 || now, dn = dayName(at);
-    var date = new Date(at).toLocaleDateString(U.loc ? U.loc() : undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    var day = new Date(at); day.setHours(0, 0, 0, 0);
+    var key = day.getTime() + '|' + (U.loc ? U.loc() : '');
+    if (key !== hwKey) { hwKey = key; hwDate = new Date(at).toLocaleDateString(U.loc ? U.loc() : undefined, { weekday: 'short', day: 'numeric', month: 'short' }); }
+    var date = hwDate;
     var t = dn === 'Today' ? date + ', ' + U.hhmm(now) : dn === 'Tomorrow' || dn === 'Yesterday' ? dn + ', ' + date : date;
     if (ghWhen.textContent !== t) ghWhen.textContent = t;
   }
@@ -2570,7 +2577,7 @@ var Guide = (function () {
     if (px) {
       var lay = rows.map(function (r) { return r.pin; }).concat([timesIn]);
       lay.forEach(function (e) { e.style.transition = 'none'; e.style.transform = 'translateX(' + px + 'px)'; });
-      void body.offsetWidth;                       // start from there
+      void getComputedStyle(lay[0]).transform;     // start from there (styles only: no need to lay the page out)
       lay.forEach(function (e) { e.style.transition = 'transform .18s ease-out'; e.style.transform = ''; });
     }
     headWhen();
@@ -2693,7 +2700,7 @@ var Guide = (function () {
     // A poster at the right: the colour legend moves to its left rather than under it.
     var lgd = $('glegend'); if (lgd) lgd.classList.toggle('beside', detail.classList.contains('has-poster'));
     nowLine(pv);
-    fitDetail(gdEl);
+    fitSoon(gdEl);
     progMarquee();
   }
   /* The focused programme's title, when it doesn't fit its cell, scrolls across after a moment and
@@ -2716,6 +2723,13 @@ var Guide = (function () {
   /* The details above the guide have a fixed height.  With a Series or Movie line, an episode title and
      bigger text, everything doesn't always fit: the summary gives up lines (three, two, one) until it
      does, rather than the bottom lines being cut through the middle. */
+  // Measured just before the next frame is drawn, so the page lays out once per frame and not once per move
+  // (a held button builds the details many times between two frames on a slow TV).
+  var fitEl = null, fitRaf = 0;
+  function fitSoon(el) {
+    fitEl = el;
+    if (!fitRaf) fitRaf = requestAnimationFrame(function () { fitRaf = 0; var e = fitEl; fitEl = null; if (e && e.parentNode === detail) fitDetail(e); });
+  }
   function fitDetail(gdEl) {
     var kids = detail.children, last = null, i;
     for (i = kids.length - 1; i >= 0; i--) if (!kids[i].classList.contains('gd-poster')) { last = kids[i]; break; }
@@ -2840,13 +2854,16 @@ var Guide = (function () {
   function jumpNow() { focusT = Date.now(); t0 = focusT - (focusT % (30 * 60e3)); draw(); }
 
   /* ---------- jumping through time (Rewind / Fast-forward, Jump to…) ---------- */
+  var dnKey = '', dnVal = '';
   function dayName(t) {
     var d = new Date(t), n = new Date(); d.setHours(0, 0, 0, 0); n.setHours(0, 0, 0, 0);
     var diff = Math.round((d.getTime() - n.getTime()) / 86400e3);
     if (diff === 0) return 'Today';
     if (diff === 1) return 'Tomorrow';
     if (diff === -1) return 'Yesterday';
-    return new Date(t).toLocaleDateString(U.loc ? U.loc() : undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    var key = d.getTime() + '|' + (U.loc ? U.loc() : '');
+    if (key !== dnKey) { dnKey = key; dnVal = new Date(t).toLocaleDateString(U.loc ? U.loc() : undefined, { weekday: 'short', day: 'numeric', month: 'short' }); }
+    return dnVal;
   }
   // As far ahead as the channels on screen have a guide (at least three hours from now).
   function guideEnd() {

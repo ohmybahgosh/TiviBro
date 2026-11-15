@@ -60,11 +60,13 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
       const d = document.getElementById('guideDetail'), desc = Epg.desc;
       Epg.desc = () => 'The team and the mayor travel to an island for a festival, and during the visit the group discovers that someone has gone missing, so everyone sets off across the island to look, by boat, by air and on foot, before the storm arrives and the festival has to be called off for the night.';
       Guide.draw();
-      const kids = [].filter.call(d.children, (k) => !k.classList.contains('gd-poster') && k.offsetParent);
-      const g = d.querySelector('.gd-desc'), lh = parseFloat(getComputedStyle(g).lineHeight), gh = g.offsetParent ? g.getBoundingClientRect().height : 0;
-      const r = { cut: kids.filter((k) => k.getBoundingClientRect().bottom > d.getBoundingClientRect().bottom + 1).map((k) => k.className), lines: gh / lh, now: !!d.querySelector('.gd-now'), series: !!d.querySelector('.gd-movie') };
       window.__desc = desc;
-      return r;
+      // The details are fitted just before the next frame is drawn (views.js fitSoon): look then.
+      return new Promise((res) => requestAnimationFrame(() => {
+        const kids = [].filter.call(d.children, (k) => !k.classList.contains('gd-poster') && k.offsetParent);
+        const g = d.querySelector('.gd-desc'), lh = parseFloat(getComputedStyle(g).lineHeight), gh = g.offsetParent ? g.getBoundingClientRect().height : 0;
+        res({ cut: kids.filter((k) => k.getBoundingClientRect().bottom > d.getBoundingClientRect().bottom + 1).map((k) => k.className), lines: gh / lh, now: !!d.querySelector('.gd-now'), series: !!d.querySelector('.gd-movie') });
+      }));
     });
     await shot('series-fit');
     await ev(() => { Epg.desc = window.__desc; document.body.classList.remove('ts-l'); Views.stopAll(); Guide.draw(); });

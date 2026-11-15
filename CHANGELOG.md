@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Quicker moving around on big playlists.**  Going down the guide's groups, down and across the guide and paging through it, Settings and Search do less work on each press: a group's channels are found without looking through the whole playlist, the date at the top of the guide is written out once a day instead of on every move, the details above the guide are measured once per frame, the language is worked out once, and rows only change the words that changed.  On a 15,000 channel playlist with the CPU slowed to a TV's, the app's own work per press dropped by about half in the guide.
+
 ## 0.6.0 (alpha 138, 2026-11-15)
 
 Pre-release: expect rough edges, and keep a backup before installing.

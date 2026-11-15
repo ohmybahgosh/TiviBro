@@ -33,7 +33,9 @@ var I18n = (function () {
   }
   /* The TV's language, best first.  settingsservice's answer (tv) is the TV menu's own setting; the others
      are what the web engine was started with, which on webOS follows it too. */
-  function detected() {
+  var seen = null;                 // the answer, until the TV tells us its language (changed() forgets it)
+  function detected() { return seen || (seen = look()); }
+  function look() {
     var l = [tv];
     try { if (typeof webOSSystem !== 'undefined' && webOSSystem.locale) l.push(webOSSystem.locale); } catch (e) {}
     try { if (typeof PalmSystem !== 'undefined' && PalmSystem.locale) l.push(PalmSystem.locale); } catch (e) {}
@@ -186,7 +188,7 @@ var I18n = (function () {
     changed();
   }
   function changed() {
-    var was = cur; cur = null; cache = {}; cacheN = 0;
+    var was = cur; cur = null; seen = null; cache = {}; cacheN = 0;
     if (lang() === was) return;
     try { document.documentElement.lang = lang(); } catch (e) {}
     listeners.forEach(function (f) { try { f(lang()); } catch (e) {} });

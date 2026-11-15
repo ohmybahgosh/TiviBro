@@ -73,7 +73,8 @@ VList.prototype.draw = function (force) {
   // Ring buffer: index i always lives in slot i % P, so scrolling one row re-renders
   // exactly one element and only moves the rest.
   var n = this.items.length, P = this.pool.length, i, slot;
-  this.emptyEl.textContent = typeof I18n !== 'undefined' ? I18n.t(this.empty) : this.empty;
+  var et = typeof I18n !== 'undefined' ? I18n.t(this.empty) : this.empty;
+  if (this.emptyEl.textContent !== et) this.emptyEl.textContent = et;
   this.emptyEl.classList.toggle('hidden', n > 0);
   var used = {};
   /* Whole rows only: a last row cut in half by the list's bottom edge looked like it ran under the button

@@ -16,6 +16,8 @@ var Library = (function () {
 
   var data = { groups: [], channels: [] };
   var byKey = new Map();
+  var byGroup = {};               // groupId -> its channels in playlist order (so a group doesn't scan them all)
+  function inGroup(g) { return byGroup[g] || []; }
   var groupCache = new Map();     // groupId -> channel array (built on demand)
   var groupNames = {};
   var ALL = 'all', RECENT = 'recent', FAV = 'c_fav', EVENTS = 'events', NEW = 'new', TEAMS = 'teams', MOVIES = 'moviesnow';
@@ -142,11 +144,13 @@ var Library = (function () {
     if (typeof Filter !== 'undefined') d = Filter.apply(d);
     data = d;
     byKey = new Map();
+    byGroup = {};
     groupNames = {};
     for (var i = 0; i < d.channels.length; i++) {
       var c = d.channels[i];
       if (!c.num) c.num = i + 1;
       byKey.set(c.k, c);
+      (byGroup[c.g] || (byGroup[c.g] = [])).push(c);
     }
     d.groups.forEach(function (g) { groupNames[g.id] = g.name; });
     // Remember when the subscription ends with the playlist, so every playlist can show it (issue #13).
@@ -481,9 +485,9 @@ var Library = (function () {
       sortable = true;
       // Provider group, minus channels taken out of it, plus channels copied or moved into it.
       var out = (e.groupRemove && e.groupRemove[gid]) || {}, add = (e.groupAdd && e.groupAdd[gid]) || [];
-      list = data.channels.filter(function (c) { return c.g === gid && !out[c.k]; });
+      list = inGroup(gid).filter(function (c) { return !out[c.k]; });
       // Groups merged into it: their channels after its own, in the order the groups are listed.
-      mergedFrom(gid).forEach(function (src) { var o2 = (e.groupRemove && e.groupRemove[src]) || {}; list = list.concat(data.channels.filter(function (c) { return c.g === src && !out[c.k] && !o2[c.k]; })); });
+      mergedFrom(gid).forEach(function (src) { var o2 = (e.groupRemove && e.groupRemove[src]) || {}; list = list.concat(inGroup(src).filter(function (c) { return !out[c.k] && !o2[c.k]; })); });
       if (add.length) {
         var seen = {}; list.forEach(function (c) { seen[c.k] = 1; });
         add.forEach(function (k) { var c = byKey.get(k); if (c && !seen[k] && !out[k]) { list.push(c); seen[k] = 1; } });

@@ -1482,7 +1482,16 @@ var Settings = (function () {
     body.appendChild(scrollEl);
     paint();
   }
+  var navKey = '';
   function paint() {
+    // The section list only changes with the section, what's shown or the language: rebuilding it on every
+    // move made the page lay out again each time (slow on a TV).
+    var key = [sec, typeof I18n !== 'undefined' ? I18n.lang() : ''].concat(SECTIONS.map(function (s, i) { return shown(i) ? navTitle(s) : ''; })).join('|');
+    if (key !== navKey || !nav.firstChild) { navKey = key; navList(); }
+    nav.classList.toggle('active', zone === 'nav');
+    rows();
+  }
+  function navList() {
     nav.innerHTML = '';
     var sn = U.el('div', 'nav-find' + (sec < 0 ? ' on' : ''), T('Search settings'));
     sn.addEventListener('click', function () { stack = []; sec = -1; sel = 0; zone = 'body'; build(); if (!findQ) askFind(); });
@@ -1493,15 +1502,18 @@ var Settings = (function () {
       n.addEventListener('click', function () { stack = []; sec = i; sel = 0; zone = 'nav'; build(); });
       nav.appendChild(n);
     });
-    nav.classList.toggle('active', zone === 'nav');
+  }
+  function put(el, s) { s = s == null ? '' : String(s); if (el.textContent !== s) el.textContent = s; }
+  function rows() {
     rowEls.forEach(function (e, i) {
       var it = items[i];
+      // Only the words that changed: writing them all again on every move made the page lay out again.
       if (e._t) {
-        e._t.textContent = it.value ? T(it.value()) : '';
+        put(e._t, it.value ? T(it.value()) : '');
         var sw = it.swatch && it.swatch();
         e._sw.classList.toggle('hidden', !sw);
-        if (sw) e._sw.style.background = sw;
-      } else if (e._v) e._v.textContent = it.value ? (it.raw ? it.value() : T(it.value())) : '';
+        if (sw && e._swc !== sw) { e._sw.style.background = sw; e._swc = sw; }
+      } else if (e._v) put(e._v, it.value ? (it.raw ? it.value() : T(it.value())) : '');
       e.classList.toggle('focus', zone === 'body' && i === sel && focusable(i));
     });
     var f = rowEls[sel];
