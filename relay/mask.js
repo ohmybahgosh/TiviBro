@@ -19,16 +19,18 @@ const CTL = /("ctl"\s*:\s*")[0-9a-f]{8,}(")/gi;
 const NETERR = /\b(ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|EADDRNOTAVAIL)\s+([a-z0-9-]+(?:\.[a-z0-9-]+)+)(:\d+)?/gi;
 const CERT = /(\b(?:Host|IP):\s*)([a-z0-9-]+(?:\.[a-z0-9-]+)+)(\.?\s+is not in the cert)/gi;
 const ALT = /\b(DNS|IP Address):([a-z0-9*-]+(?:\.[a-z0-9-]+)+)/gi;
-/* Any other public IPv4 address, wherever it is (a server typed as an address, a DNS server, the TV's own
-   public address in an error).  Not a version number: "Chrome/87.0.4280.88" has a slash or letter in front. */
+/* Any other public IPv4 address (a server typed as an address, the TV's own public address in an error), in
+   problem reports only ({ addresses: true }): people post public DNS servers on purpose (discussion #60), and
+   the well-known ones stay even in reports.  Not a version number: "Chrome/87.0.4280.88" has a slash or letter in front. */
 const IPV4 = /(^|[^\w./:-])((?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3})(?![\w.-])/g;
 // Our own sites and well-known places keep their name: a link to them is never a login.
 const KEEP = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|(.*\.)?(tivibro\.app|ohmybahgosh\.dev|github\.com|githubusercontent\.com|jsdelivr\.net|iptv-org\.github\.io)(:\d+)?$)/i;
+const DNS = /^(1\.1\.1\.1|1\.0\.0\.1|8\.8\.8\.8|8\.8\.4\.4|9\.9\.9\.9|149\.112\.112\.112|208\.67\.22[02]\.22[02]|94\.140\.1[45]\.1[45]|76\.76\.(2|10)\.\d+)$/;
 // A name already masked keeps its port, so masking again changes nothing.
 function host(h) { return KEEP.test(h) || h.charAt(0) === '<' ? h : '<provider>'; }
 
-export function maskSecrets(s) {
-  return String(s == null ? '' : s)
+export function maskSecrets(s, opt) {
+  const out = String(s == null ? '' : s)
     .replace(QUERY, '$1***')
     .replace(USERINFO, '//***:***@')
     .replace(XTREAM, (m, scheme, h, kind) => scheme + host(h) + '/' + kind + '/***/***/')
@@ -38,6 +40,6 @@ export function maskSecrets(s) {
     .replace(CTL, '$1***$2')
     .replace(NETERR, (m, code, h, port) => KEEP.test(h) ? m : code + ' <server>' + (port || ''))
     .replace(CERT, (m, a, h, b) => KEEP.test(h) ? m : a + '<server>' + b)
-    .replace(ALT, (m, a, h) => KEEP.test(h.replace(/^\*\./, '')) ? m : a + ':<server>')
-    .replace(IPV4, (m, pre, ip) => KEEP.test(ip) || /^(0\.|169\.254\.|255\.)/.test(ip) ? m : pre + '<address>');
+    .replace(ALT, (m, a, h) => KEEP.test(h.replace(/^\*\./, '')) ? m : a + ':<server>');
+  return opt && opt.addresses ? out.replace(IPV4, (m, pre, ip) => KEEP.test(ip) || DNS.test(ip) || /^(0\.|169\.254\.|255\.)/.test(ip) ? m : pre + '<address>') : out;
 }

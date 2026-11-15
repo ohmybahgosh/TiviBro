@@ -130,7 +130,7 @@ var Diag = (function () {
         .replace(/(\b(?:Host|IP):\s*)([a-z0-9-]+(?:\.[a-z0-9-]+)+)(\.?\s+is not in the cert)/gi, function (m, a, host, b) { return KEEP.test(host) ? m : a + '<server>' + b; })
         .replace(/\b(DNS|IP Address):([a-z0-9*-]+(?:\.[a-z0-9-]+)+)/gi, function (m, a, host) { return KEEP.test(host.replace(/^\*\./, '')) ? m : a + ':<server>'; })
         // Any other public IPv4 address (not a version number like Chrome/87.0.4280.88).
-        .replace(/(^|[^\w.\/:-])((?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3})(?![\w.-])/g, function (m, pre, ip) { return KEEP.test(ip) || /^(0\.|169\.254\.|255\.)/.test(ip) ? m : pre + '<address>'; });
+        .replace(/(^|[^\w.\/:-])((?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3})(?![\w.-])/g, function (m, pre, ip) { return KEEP.test(ip) || /^(0\.|169\.254\.|255\.|1\.1\.1\.1$|1\.0\.0\.1$|8\.8\.8\.8$|8\.8\.4\.4$|9\.9\.9\.9$|149\.112\.112\.112$|208\.67\.22[02]\.22[02]$|94\.140\.1[45]\.1[45]$|76\.76\.(2|10)\.\d+$)/.test(ip) ? m : pre + '<address>'; });
       return s
         .replace(/((?:token|key|auth|sig|signature|hash|session|sid|user|username|u|p)=)[^&\s"']+/gi, '$1***')
         .replace(/\/\/([^/\s:@]+):([^/\s@]+)@/g, '//***:***@');

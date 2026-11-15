@@ -50,7 +50,7 @@ import { maskSecrets } from './mask.js';
 // Logins and servers, once more: query logins and tokens, user:pass@, Xtream stream paths (the short form
 // too: mask.js), the helper's control key, and any server we don't know.
 function scrub(s) {
-  return maskSecrets(s)
+  return maskSecrets(s, { addresses: true })
     .replace(/((?:password|pass|pwd|token|key|auth|sig|signature|hash|session|sid|user|username|u|p)=)[^&\s"'<>]+/gi, '$1***')
     .replace(/\/\/([^/\s:@]+):([^/\s@]+)@/g, '//***:***@')
     .replace(/\/(live|movie|series|timeshift)\/[^/\s]+\/[^/\s]+\//gi, '/$1/***/***/')

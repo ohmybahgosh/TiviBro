@@ -11,7 +11,7 @@ const TOKEN = process.env.GITHUB_TOKEN, REPO = process.env.GITHUB_REPOSITORY || 
 const DRY = process.argv.includes('--dry');
 if (!TOKEN) { console.error('GITHUB_TOKEN is needed'); process.exit(1); }
 const H = { Authorization: 'Bearer ' + TOKEN, Accept: 'application/vnd.github+json', 'User-Agent': 'tivibro-mask' };
-let changed = 0;
+let changed = 0, failed = 0;
 
 async function rest(method, path, body) {
   const r = await fetch('https://api.github.com' + path, { method, headers: Object.assign({ 'Content-Type': 'application/json' }, H), body: body ? JSON.stringify(body) : undefined });
@@ -30,15 +30,20 @@ async function pages(path) {
   return all;
 }
 // One text: masked and saved back when that changed anything.
-async function fix(what, body, save) {
-  const m = maskSecrets(body || '');
+// report: a problem report from a TV (label from-tv, or the relay's follow-up comment), where any public
+// address is masked too; people's own posts keep theirs (a DNS server named on purpose).
+// One that can't be saved is reported and the rest carry on.
+async function fix(what, body, save, report) {
+  const m = maskSecrets(body || '', { addresses: !!report });
   if (m === (body || '')) return;
   changed++;
   console.log('Masked logins in ' + what + (DRY ? ' (dry run, not saved)' : ''));
-  if (!DRY) await save(m);
+  if (!DRY) try { await save(m); } catch (e) { failed++; console.error('Could not save ' + what + ': ' + (e.message || e)); }
 }
-const issue = (i) => fix('issue #' + i.number, i.body, (b) => rest('PATCH', `/repos/${REPO}/issues/${i.number}`, { body: b }));
-const comment = (c, n) => fix('a comment on #' + n, c.body, (b) => rest('PATCH', `/repos/${REPO}/issues/comments/${c.id}`, { body: b }));
+const fromTv = (i) => (i.labels || []).some((l) => (l.name || l) === 'from-tv');
+const followup = (c) => /<!-- tivibro-followup -->/.test(c.body || '');
+const issue = (i) => fix('issue #' + i.number, i.body, (b) => rest('PATCH', `/repos/${REPO}/issues/${i.number}`, { body: b }), fromTv(i));
+const comment = (c, n) => fix('a comment on #' + n, c.body, (b) => rest('PATCH', `/repos/${REPO}/issues/comments/${c.id}`, { body: b }), followup(c));
 const discussion = (d) => fix('discussion #' + d.number, d.body, (b) => gql('mutation($id:ID!,$b:String!){updateDiscussion(input:{discussionId:$id,body:$b}){discussion{id}}}', { id: d.node_id || d.id, b }));
 const dcomment = (c, n) => fix('a comment in discussion #' + n, c.body, (b) => gql('mutation($id:ID!,$b:String!){updateDiscussionComment(input:{commentId:$id,body:$b}){comment{id}}}', { id: c.node_id || c.id, b }));
 
@@ -70,5 +75,5 @@ async function one() {
 }
 
 (process.argv.includes('--all') || !process.env.GITHUB_EVENT_PATH ? all() : one())
-  .then(() => console.log(changed ? changed + ' text(s) masked' : 'Nothing to mask'))
+  .then(() => { console.log(changed ? changed + ' text(s) masked' : 'Nothing to mask'); if (failed) { console.error(failed + ' could not be saved'); process.exit(1); } })
   .catch((e) => { console.error(e.message || e); process.exit(1); });
