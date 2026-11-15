@@ -243,7 +243,8 @@ ok('college: and the football game is kept', msuWeek.some(t => /Michigan State a
 const sat = new Date(NOW + H); sat.setDate(sat.getDate() + ((6 - sat.getDay() + 7) % 7 || 7)); sat.setHours(15, 30, 0, 0);
 progs[btn.k] = [{ s: +sat, e: +sat + 3 * H, t: 'Michigan State Spartans at Washington Huskies' }];
 Teams.dirty();
-if (new Date(NOW + H).getDay() !== 6) {
+// Only for a weekday game (Monday to Friday): on a Sunday the next Saturday is more than six days on, outside "this week".
+if (new Date(NOW + H).getDay() >= 1 && new Date(NOW + H).getDay() <= 5) {
   const msu2 = Teams.games().filter(x => x.team.id === 'ncaaf:msu').map(x => x.c.n);
   ok('college: a weekday game, with the school on a Saturday this week too, is left out', msu2.indexOf('FOX ONE 15') < 0, msu2.join(' / '));
 }
