@@ -13,6 +13,11 @@ same('http://prov.example/movie/bob/secret/77.mkv', 'http://<provider>/movie/***
 same('http://prov.example/get.php?username=bob&password=pw&type=m3u_plus', 'http://prov.example/get.php?username=***&password=***&type=m3u_plus', 'logins in a query');
 same('http://bob:pw@prov.example/x', 'http://***:***@prov.example/x', 'user:pass@');
 same('Helper replied  {"returnValue":true,"port":47811,"ctl":"197ba610decdd091e5d4a0c0634f6a65"}', 'Helper replied  {"returnValue":true,"port":47811,"ctl":"***"}', "the helper's control key (issue #26)");
+same('body="relay error: getaddrinfo ENOTFOUND line.example-panel.top"', 'body="relay error: getaddrinfo ENOTFOUND <server>"', 'a server name in a DNS error from the helper (issue #93)');
+same('helper: connect ECONNREFUSED 203.0.113.7:443  url=https://<provider>/get.php', 'helper: connect ECONNREFUSED <server>:443  url=https://<provider>/get.php', 'an address and port in a refused connection (issue #93)');
+same("Hostname/IP does not match certificate's altnames: Host: tv.example.net. is not in the cert's altnames: DNS:*.cdn.example.org, DNS:cdn.example.org", "Hostname/IP does not match certificate's altnames: Host: <server>. is not in the cert's altnames: DNS:<server>, DNS:<server>", 'server names in a certificate error');
+for (const keep of ['getaddrinfo ENOTFOUND <provider>', 'connect ECONNREFUSED 127.0.0.1:47811', 'ETIMEDOUT after 15001ms', 'getaddrinfo EAI_AGAIN api.github.com'])
+  same(keep, keep, 'left alone: ' + keep);
 for (const keep of ['https://github.com/ohmybahgosh/TiviBro/issues/25', 'https://raw.githubusercontent.com/a/b/refs/heads/master/list.m3u8', 'https://www.reddit.com/r/IPTV/12345', 'Fixed in 0.6.0-alpha.58, see #24', 'https://tivibro.app/apk/'])
   same(keep, keep, 'left alone: ' + keep);
 ok('masking twice changes nothing more', m(m('http://prov.example:80/u1/p1/5.ts')) === m('http://prov.example:80/u1/p1/5.ts'));

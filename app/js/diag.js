@@ -124,6 +124,11 @@ var Diag = (function () {
       s = Log.redact(s);
       hosts.forEach(function (h) { s = s.split(h[0]).join(h[1]); s = s.split(h[0].toUpperCase()).join(h[1]); });
       s = s.replace(/(\b[a-z][a-z0-9+.-]*:\/\/)(?:[^\/\s@]*@)?([^\/\s:'"?#<>]+)/gi, function (m, scheme, host) { return KEEP.test(host) ? m : scheme + '<server>'; });
+      /* And server names in the helper's network errors ("getaddrinfo ENOTFOUND name", "connect ECONNREFUSED
+         address:443", certificate names): a server typed on the first screen and not saved went out so (issue #93). */
+      s = s.replace(/\b(ENOTFOUND|EAI_AGAIN|ECONNREFUSED|ECONNRESET|ETIMEDOUT|EHOSTUNREACH|ENETUNREACH|EADDRNOTAVAIL)\s+([a-z0-9-]+(?:\.[a-z0-9-]+)+)(:\d+)?/gi, function (m, code, host, port) { return KEEP.test(host) ? m : code + ' <server>' + (port || ''); })
+        .replace(/(\b(?:Host|IP):\s*)([a-z0-9-]+(?:\.[a-z0-9-]+)+)(\.?\s+is not in the cert)/gi, function (m, a, host, b) { return KEEP.test(host) ? m : a + '<server>' + b; })
+        .replace(/\b(DNS|IP Address):([a-z0-9*-]+(?:\.[a-z0-9-]+)+)/gi, function (m, a, host) { return KEEP.test(host.replace(/^\*\./, '')) ? m : a + ':<server>'; });
       return s
         .replace(/((?:token|key|auth|sig|signature|hash|session|sid|user|username|u|p)=)[^&\s"']+/gi, '$1***')
         .replace(/\/\/([^/\s:@]+):([^/\s@]+)@/g, '//***:***@');

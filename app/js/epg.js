@@ -858,7 +858,7 @@ var Epg = (function () {
     var sig = U.hash(JSON.stringify(srcs) + '|' + p.epgDays + '|' + p.nameMatch);
     return useHelper().then(function (h) {
       hMode = h;
-      if (!h) return Store.idbGet(ckey);
+      if (!h) return appCopy(ckey, sig, pid);
       Store.idbSet(ckey, null);                                        // the helper keeps it now
       return hCached('main', sig, pid);
     }).then(function (c) {
@@ -881,7 +881,10 @@ var Epg = (function () {
       (loadXml.didStart = loadXml.didStart || {})[p.id] = true;
       if (c && c.sig === sig) { ingest(c, p); xmlReady = true; emit(null); }
       if (!stale && !force) { runSet(gk, null); return; }     // a forced reload cut short: the cache is fine
-      if (!force && c && c.sig === sig && holdOff()) { holdBack('guide'); runSet(gk, null); return; }
+      if (waitIdle(force, c, sig, h)) {
+        if (!xmlReady) { xmlReady = true; emit(null); }                 // nothing to show yet: the guide isn't stuck loading
+        holdBack('guide'); runSet(gk, null); return;
+      }
       var g = guard(gk, sig, force); if (!g) return;
       paused = null;
       return work(srcs, null, g, sig, null, p).then(function (res) {
@@ -995,6 +998,23 @@ var Epg = (function () {
       Log.info('epg', 'Nothing playing: reading the guide again now');
       init(Library);
     }, 15000);
+  }
+  /* Whether a load nobody asked for waits until nothing plays (holdOff: a TV short of memory, playing).  With a
+     guide on screen it always waited.  Read in the app itself (h false: Network set to Direct, or a helper that
+     can't keep guides), it waits even with no guide to show: the whole file is then parsed in the app's own
+     memory, on top of the video, and a 1 GB TV closed TiviBro at 59% of such a load while playing (issue #93). */
+  function waitIdle(force, c, sig, h) {
+    if (force || !holdOff()) return false;
+    return !!(c && c.sig === sig) || !h;
+  }
+  /* The guide read in the app (Network set to Direct): its saved copy, or else the one the helper stored while
+     the network was on Automatic (reading that back is light), so switching to Direct doesn't leave the guide
+     empty and read the whole file again at the next start (issue #93). */
+  function appCopy(ckey, sig, pid) {
+    return Store.idbGet(ckey).then(function (c) {
+      if (c || !Net.port) return c;
+      return hCached('main', sig, pid);
+    });
   }
   function init(lib, force) {
     cache.clear(); queue.length = 0; matched = {}; icons = {}; chList = []; status = { at: 0, sources: [] }; idPl = {}; alias = {}; statusOf = {};
