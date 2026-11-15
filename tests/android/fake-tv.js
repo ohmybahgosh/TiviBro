@@ -11,7 +11,7 @@ const editor = require('../../service/editor.js').create(() => {});
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-fake-tv-'));
 const vol = { level: 12, muted: false };
 const look = { title: 'Appearance', trail: ['Appearance'], rows: [{ i: 0, kind: 'head', label: 'Look' }, { i: 1, kind: 'toggle', label: 'Show clock', sub: '', on: true }, { i: 2, kind: 'choice', label: 'Numbers', sub: 'Even width lines up channel numbers.', options: ['TV font', 'Even width', 'Fixed width, slashed zero'], cur: 0, value: 'TV font' }, { i: 3, kind: 'page', label: 'Manage groups', sub: '', value: '' }] };
-const c = Companion.create({ dir, version: 'fake-tv', log: () => {}, launch: (p, cb) => { console.log('LAUNCHED ' + JSON.stringify(p)); cb(null); }, sysinfo: (cb) => cb({ model: 'FAKE', webos: '0', name: 'Fake TV', bt: 'a8:23:fe:6b:4d:2e', woble: true }), app: () => ({ open: true }), editor: () => editor,
+const c = Companion.create({ dir, version: 'fake-tv', log: () => {}, launch: (p, cb) => { console.log('LAUNCHED ' + JSON.stringify(p)); cb(null); }, sysinfo: (cb) => cb({ model: 'FAKE', webos: '0', name: 'Living room TV', bt: 'a8:23:fe:6b:4d:2e', woble: true }), app: () => ({ open: true }), editor: () => editor,
   volume: (d, cb) => { if (d === 'up') vol.level++; else if (d === 'down') vol.level--; else vol.muted = !vol.muted; cb(null, Object.assign({}, vol)); },
   // Wake on BLE (service/blewake.js) over a pretend asc service that keeps the registered addresses.
   blewake: require('../../service/blewake.js').create({ log: () => {}, call: (uri, p, cb) => setImmediate(() => {
@@ -57,7 +57,7 @@ const t0 = Date.now() - 20 * 60000;
 const chans = Array.from({ length: 40 }, (_, i) => ({ k: 'fake|' + (i + 1), n: NAMES[i % 10] + (i >= 10 ? ' ' + (Math.floor(i / 10) + 1) : ''), num: i + 1, logo: '', fav: i < 3 ? 1 : 0, now: { t: SHOWS[i % 10], s: t0, e: t0 + 60 * 60000 }, ...(i === 2 ? { dead: 1 } : {}) }));      // one "not playing lately" (issue #37)
 const groups = [{ id: 'fav', name: 'Favorites', keys: chans.slice(0, 3).map((x) => x.k) }, { id: 'news', name: 'News', keys: chans.filter((x, i) => i % 10 < 4).map((x) => x.k) }, { id: 'sports', name: 'Sports', keys: chans.filter((x, i) => i % 10 >= 4 && i % 10 < 8).map((x) => x.k) }];
 let seq = 0, playing = chans[0], paused = false;
-function sendState() { return ctl('/companion/state', { state: { tab: 'live', full: true, playing: { k: playing.k, name: playing.n, num: playing.num, logo: '', group: 'News' }, now: playing.now, next: { t: 'Late Edition', s: t0 + 60 * 60000 }, paused, inputs: [{ id: 1, label: 'Rename group', type: 'text', value: 'Sports', submit: 1 }], vod2: { movies: true, series: true, media: true, onnow: true } } }); }
+function sendState() { return ctl('/companion/state', { state: { tab: 'live', full: true, playing: { k: playing.k, name: playing.n, num: playing.num, logo: '', group: 'News' }, now: playing.now, next: { t: 'Late Edition', s: t0 + 60 * 60000 }, paused, inputs: [], vod2: { movies: true, series: true, media: true, onnow: true } } }); }
 async function tivibro() {
   await sendState();
   for (;;) {
