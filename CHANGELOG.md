@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 137, 2026-11-14)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 137
 
 - **Movies on now: what's on now stands out.**  Each poster says whether the movie is on: the guide's **LIVE** badge and a progress bar for one playing now, or how soon it starts ("IN 35 MIN", or its time) on a quieter poster for one starting later.  The shelves say what's in them in plain words ("Playing now · 9 movies, join in progress", "Comedy · 3 playing now, 2 starting soon"), and in a genre shelf the ones playing now come first.  The top says "Playing now · 25 min left" or "Starts at 8:30pm · in 35 min".  The phone app's On now tab says it the same way.
 - **Back from a movie goes back to Movies on now.**  Watching a movie from Movies on now and pressing **Back** went to the guide; now it comes back to Movies on now, on the same movie.
@@ -8,11 +12,7 @@
 - **The phone app's guide tells you what's on.**  What's on now on each channel has two lines of its description (the guide's, or TMDB's summary), and the guide's marks: Movie, Sports, News, Kids or Documentary, **NEW**, and the season and episode.  A tap opens the programme in full: the picture, the episode's own title, playing now or when it starts, its facts, the whole description, **Watch on TV**, **Watch from the start** on a catch-up channel, a reminder, other showings in the week ahead, and the channel's schedule (also the channel's logo).  A channel's schedule shows two lines of each programme's description, and a tap opens it in full.  The TV sends descriptions for a whole page at once, so the guide doesn't get slower.
 - **Phone app: passwords and passphrases are easier to get right.**  Every password, passphrase and key box has an eye to show what you typed, uses the phone's password keyboard (no suggestions, autocorrect or added spaces) and drops a line break.  A new backup file's passphrase is typed twice and must match, and the box's hint no longer runs out of it.
 
-## 0.6.0 (alpha 136, 2026-11-14)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 136
+### In alpha 136
 
 - **My teams: games on now stand out.**  In the guide's My teams, a game that has started is tinted in the theme's sports colour, and the **Starts …** line before a game still to come is quieter, so you can tell at a glance which games are on.  It follows the theme, like the guide's category colours.
 - **Right onto a game, then Left, puts the guide back where it was.**  Back onto a programme that's on now, the guide stays at now instead of jumping to where that programme began: an event channel's **Starts …** line begins days earlier, so the guide went back to that day.
