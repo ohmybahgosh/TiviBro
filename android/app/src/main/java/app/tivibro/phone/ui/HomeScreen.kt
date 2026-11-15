@@ -101,6 +101,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.tivibro.phone.BuildConfig
 import app.tivibro.phone.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -139,7 +140,8 @@ fun HomeScreen(
     var relHidden by remember { mutableStateOf(false) }
     var checking by remember { mutableStateOf(false) }
     val current = remember { runCatching { ctx.packageManager.getPackageInfo(ctx.packageName, 0).versionName }.getOrNull().orEmpty() }
-    LaunchedEffect(Unit) { rel = withContext(Dispatchers.IO) { AppUpdate.check(current) } }
+    // The Play build leaves updates to Play (BuildConfig.SELF_UPDATE, app/build.gradle.kts).
+    LaunchedEffect(Unit) { if (BuildConfig.SELF_UPDATE) rel = withContext(Dispatchers.IO) { AppUpdate.check(current) } }
     // The first start of a newer version (after Update now, or an APK installed by hand): what's new, once.
     var news by remember { mutableStateOf<Pair<String, List<String>>?>(null) }
     LaunchedEffect(Unit) {
@@ -214,7 +216,7 @@ fun HomeScreen(
                     val first = u.tv.id == tvs.first().tv.id
                     TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups,
                         bleLog = bleLog, onBleListen = onBleListen, onAddress = onAddress,
-                        appUpdate = if (first) AppUpdateTile(checking, rel != null && relHidden.not(), ::checkNow) else null)
+                        appUpdate = if (first && BuildConfig.SELF_UPDATE) AppUpdateTile(checking, rel != null && relHidden.not(), ::checkNow) else null)
                 }
             }
         }
@@ -548,7 +550,9 @@ private fun AboutDialog(version: String, onDismiss: () -> Unit, onOpen: (String)
         text = {
             Column(Modifier.heightIn(max = 460.dp).verticalScroll(rememberScrollState())) {
                 Text("Free software under the MIT License, copyright (c) 2026 OhMyBahGosh.", style = MaterialTheme.typography.bodyMedium)
-                Spacer(Modifier.height(16.dp))
+                // The privacy policy (Google Play asks for it inside the app too).
+                TextButton(onClick = { onOpen("https://tivibro.app/privacy/") }, contentPadding = PaddingValues(0.dp)) { Text("Privacy policy") }
+                Spacer(Modifier.height(8.dp))
                 Text("Built with", fontWeight = FontWeight.SemiBold)
                 APP_PARTS.forEach { (name, lic) ->
                     Text(name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 8.dp))

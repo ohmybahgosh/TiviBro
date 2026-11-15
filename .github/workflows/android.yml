@@ -1,7 +1,8 @@
 name: Android app
 
 # The TiviBro phone app (android/).  Tests it against the TV's real helper code (tests/android/fake-tv.js
-# runs service/companion.js), builds the APKs, and on a TiviBro release adds the APK to that release.
+# runs service/companion.js), builds the APKs and the Google Play bundle (.aab), and on a TiviBro release adds
+# the APK to that release.
 on:
   push:
     branches: [main]
@@ -66,17 +67,24 @@ jobs:
         run: |
           if [ -n "$TB_KEYSTORE_B64" ]; then printf '%s' "$TB_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"; export TB_KEYSTORE="$RUNNER_TEMP/release.jks"; echo "Signing with the release key"; else echo "No release key: signing with the test key"; fi
           gradle --no-daemon assembleRelease assembleDebug
-          if [ -n "${TB_KEYSTORE:-}" ]; then "$(ls -d "$ANDROID_HOME"/build-tools/* | tail -1)/apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk 2>/dev/null | grep -i "SHA-256" | head -1 || true; rm -f "$TB_KEYSTORE"; fi
+          if [ -n "${TB_KEYSTORE:-}" ]; then "$(ls -d "$ANDROID_HOME"/build-tools/* | tail -1)/apksigner" verify --print-certs app/build/outputs/apk/release/app-release.apk 2>/dev/null | grep -i "SHA-256" | head -1 || true; fi
           mkdir -p ../dist-apk
           cp app/build/outputs/apk/release/app-release.apk "../dist-apk/tivibro-phone-${{ steps.v.outputs.name }}.apk"
           cp app/build/outputs/apk/debug/app-debug.apk "../dist-apk/tivibro-phone-${{ steps.v.outputs.name }}-debug.apk"
+          # The Google Play build (an app bundle, signed with the same key as the upload key): no updating in
+          # place from GitHub, and no permission to install apps (app/build.gradle.kts, TB_STORE).
+          TB_STORE=play gradle --no-daemon bundleRelease
+          cp app/build/outputs/bundle/release/app-release.aab "../dist-apk/tivibro-phone-${{ steps.v.outputs.name }}-play.aab"
+          rm -f "${TB_KEYSTORE:-/nonexistent}"
           ls -la ../dist-apk
 
       - name: Keep the APKs
         uses: actions/upload-artifact@v7
         with:
           name: tivibro-phone-${{ steps.v.outputs.name }}
-          path: dist-apk/*.apk
+          path: |
+            dist-apk/*.apk
+            dist-apk/*.aab
           retention-days: 30
 
       - name: Add the APK to the release

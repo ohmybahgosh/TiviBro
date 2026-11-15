@@ -8,6 +8,10 @@ plugins {
 val tbVersionName = System.getenv("TB_VERSION_NAME") ?: "0.1.0-dev"
 val tbVersionCode = (System.getenv("TB_VERSION_CODE") ?: "1").toInt()
 val releaseStore = System.getenv("TB_KEYSTORE")
+// TB_STORE=play: the Google Play build.  Play updates the app itself, so it leaves out updating in place from
+// GitHub (update/Updater.kt) and the permission to install apps.  Everything else is the same as the APK.
+val tbStore = System.getenv("TB_STORE") ?: "github"
+val forPlay = tbStore == "play"
 
 android {
     namespace = "app.tivibro.phone"
@@ -19,6 +23,8 @@ android {
         targetSdk = 35
         versionCode = tbVersionCode
         versionName = tbVersionName
+        buildConfigField("boolean", "SELF_UPDATE", if (forPlay) "false" else "true")
+        buildConfigField("String", "STORE", "\"$tbStore\"")
     }
 
     signingConfigs {
@@ -58,12 +64,13 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     packaging { resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" } }
     testOptions { unitTests.isReturnDefaultValues = true }
     // The web editor, for editing a backup on the phone without the TV (OfflineEditorScreen.kt): the
     // same files the TV's helper serves (service/editor), copied in at build time.
     sourceSets["main"].assets.srcDir("build/generated/editorAssets")
+    if (forPlay) sourceSets["release"].manifest.srcFile("src/play/AndroidManifest.xml")
 }
 
 val copyEditor by tasks.registering(Copy::class) {

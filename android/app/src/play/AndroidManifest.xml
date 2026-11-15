@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Google Play build (TB_STORE=play, app/build.gradle.kts): Play installs the updates, so the app doesn't
+     ask to install apps itself.  Merged over the main manifest for release builds only. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove" />
+</manifest>

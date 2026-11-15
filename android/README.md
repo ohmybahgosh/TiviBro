@@ -19,3 +19,5 @@ node ../tests/android/fake-tv.js > /tmp/tv.txt &  TB_FAKE_TV=$(cat /tmp/tv.txt) 
 ```
 
 The debug key in `app/debug.keystore` is public on purpose, like Android's own: it only lets one test build install over another.  Release builds from this repository are signed with TiviBro's own key, from the repository's secrets (`TB_KEYSTORE_B64`, `TB_KEYSTORE_PASS`, `TB_KEY_ALIAS`, `TB_KEY_PASS`); its fingerprint is in `site/.well-known/assetlinks.json`, which lets the TV's QR code open the app.  Builds without the secrets (pull requests from forks) use the test key.
+
+Two builds come out of CI: the APK on GitHub releases, which can update itself in place, and the Google Play bundle (`TB_STORE=play gradle bundleRelease`, `tivibro-phone-<version>-play.aab`), which leaves updates to Play and doesn't ask to install apps (`app/src/play/AndroidManifest.xml`, `BuildConfig.SELF_UPDATE`).  Both are signed with the same key, so they install over each other.
