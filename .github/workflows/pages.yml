@@ -10,10 +10,11 @@ on:
     workflows: [Release]
     types: [completed]
   schedule:
-    - cron: '17 6 * * 1'
+    - cron: '17 6 * * *'          # daily: the votes on tivibro.app/ideas (the logo index only changes weekly)
   workflow_dispatch:
 permissions:
   contents: read
+  discussions: read             # tivibro.app/ideas reads the Ideas category
   pages: write
   id-token: write
 concurrency:
@@ -57,6 +58,11 @@ jobs:
         run: node scripts/logos/build-index.js _site/logos
       - name: Guides, comparisons and video pages (scripts/site/pages.js, videos.js)
         run: node scripts/site/build-pages.js _site
+      - name: Ideas and their votes (tivibro.app/ideas, scripts/site/ideas.js)
+        continue-on-error: true       # the page still goes out, pointing to GitHub, if GitHub doesn't answer
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/site/ideas.js _site
       - name: Search engines (FAQ structured data and sitemap.xml)
         run: node scripts/site/seo.js _site
       - name: List the site

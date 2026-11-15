@@ -53,7 +53,7 @@ function head(p, url, graph) {
     '<meta name="twitter:card" content="summary_large_image">\n' +
     '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
     '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">\n' +
-    '<link rel="stylesheet" href="/style.css?v=7">\n<link rel="stylesheet" href="/pages.css?v=1">\n' +
+    '<link rel="stylesheet" href="/style.css?v=7">\n<link rel="stylesheet" href="/pages.css?v=2">\n' +
     ld({ '@context': 'https://schema.org', '@graph': graph }) + '\n</head>\n';
 }
 
@@ -73,7 +73,7 @@ function footer() {
     '    <div><img src="/img/wordmark.webp" alt="tiviBro" width="120" height="31"><p>Made by <a href="https://ohmybahgosh.dev/">OhMyBahGosh</a>.  MIT licensed.</p></div>\n' +
     '    <nav aria-label="Footer">\n' + PAGES.filter(function (p) { return p.footer; }).map(function (p) {
       return '      <a href="/' + p.slug + '/">' + esc(p.footer) + '</a>\n'; }).join('') +
-    '      <a href="/videos/">Videos</a>\n      <a href="https://github.com/ohmybahgosh/TiviBro">GitHub</a>\n      <a href="https://github.com/ohmybahgosh/TiviBro/wiki">User guide</a>\n      <a href="/privacy/">Privacy</a>\n' +
+    '      <a href="/videos/">Videos</a>\n      <a href="/ideas/">Vote on ideas</a>\n      <a href="https://github.com/ohmybahgosh/TiviBro">GitHub</a>\n      <a href="https://github.com/ohmybahgosh/TiviBro/wiki">User guide</a>\n      <a href="/privacy/">Privacy</a>\n' +
     '      <a href="#" id="consentLink" hidden>Cookie settings</a>\n    </nav>\n' +
     '    <p class="legal">TiviBro is an independent project.  It is not affiliated with LG Electronics or TiviMate, and it provides no channels, streams or playlists.</p>\n  </div>\n</footer>\n' +
     '<script src="/analytics.js?v=7" defer></script>\n<script>\n(function () {\n' +

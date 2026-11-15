@@ -5,6 +5,9 @@
 - Problem reports come straight from the TVs (Settings > Diagnostics > Report a problem) and land in GitHub issues; fixes ship in the next alpha.
 - Next: beta.
 
+## What people want next
+- Ideas and their votes: [tivibro.app/ideas](https://tivibro.app/ideas/), most voted first, updated daily from [Discussions > Ideas](https://github.com/ohmybahgosh/TiviBro/discussions/categories/ideas).  Each idea is labelled planned, in progress, shipped or not planned as it moves along.
+
 ## Known gaps
 - **Mock provider incomplete.**  `tests/mock/mock_provider.js` is now in the repo, but it is the demo provider: plain http on 127.0.0.1:8077, any login, about 60 made-up channels.  The original used by `tests/e2e/*` and `tests/unit/proxy.test.js` lived only in the old chat sandbox and was not in the source zip.  Those suites also expect :8443 (self-signed https), 2000 channels, 3 live categories, `guide2.xml`, `/hls/`, `/redir.m3u8`, timeshift/movie paths and test users `goodu`, `bad`, `html`, `empty`, `full`.  Until the mock covers that, CI runs the unit tests only and `npm run test:relay` and the e2e suites can't run.
 - tests/e2e were written before the Back/Left navigation changes and will need updating when the mock provider is rebuilt.

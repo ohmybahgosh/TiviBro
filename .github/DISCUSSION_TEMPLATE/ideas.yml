@@ -6,6 +6,8 @@ body:
       value: |
         Ideas and feature requests live here in Discussions, where they're collected and discussed until work on one starts (then it becomes an issue).  Bugs still go to [Issues](https://github.com/ohmybahgosh/TiviBro/issues/new/choose).
 
+        One idea per post, so each can be voted on with ▲.  If yours is already in [the list on tivibro.app/ideas](https://tivibro.app/ideas/), vote for it instead.
+
         Check the [roadmap](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/ROADMAP.md) and the [TiviMate comparison](https://github.com/ohmybahgosh/TiviBro/blob/main/docs/TIVIMATE-PARITY.md) first; it may already be planned.
   - type: textarea
     id: problem
