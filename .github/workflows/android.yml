@@ -2,7 +2,7 @@ name: Android app
 
 # The TiviBro phone app (android/).  Tests it against the TV's real helper code (tests/android/fake-tv.js
 # runs service/companion.js), builds the APKs and the Google Play bundle (.aab), and on a TiviBro release adds
-# the APK to that release.
+# the APK to that release and sends the same build to the Google Play test (when PLAY_SERVICE_ACCOUNT_JSON is set).
 on:
   push:
     branches: [main]
@@ -42,7 +42,10 @@ jobs:
       - name: Version
         id: v
         run: |
-          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then n="${GITHUB_REF_NAME#v}"; else n="0.1.0-dev.${GITHUB_RUN_NUMBER}"; fi
+          # A release: its tag (0.6.0-alpha.142).  Otherwise the next version, marked dev (0.6.0-dev.231).  The APK and the
+          # Play bundle of one run share the name and the build number (the run number), so a release is the same
+          # release on GitHub and on Google Play.
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then n="${GITHUB_REF_NAME#v}"; else n="$(node -p 'require("./package.json").version')-dev.${GITHUB_RUN_NUMBER}"; fi
           echo "name=$n" >> "$GITHUB_OUTPUT"
 
       - name: Unit tests, and pairing with the TV's real helper
@@ -94,6 +97,42 @@ jobs:
         run: |
           for i in $(seq 1 30); do gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 && break; sleep 20; done
           gh release upload "$GITHUB_REF_NAME" "dist-apk/tivibro-phone-${{ steps.v.outputs.name }}.apk" --clobber
+
+      # The same release on Google Play: the bundle goes to the closed test ("alpha" track), with "What's new" from
+      # the changelog.  Needs a service account with release rights in Play Console, its JSON key in the secret
+      # PLAY_SERVICE_ACCOUNT_JSON.  Without it, upload dist-apk/*-play.aab from this run's artifact by hand.
+      - name: What's new, for Google Play
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: play
+        env:
+          HAS_KEY: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        run: |
+          echo "send=$HAS_KEY" >> "$GITHUB_OUTPUT"
+          mkdir -p whatsnew
+          node -e '
+            const fs = require("fs"), v = process.argv[1], m = v.match(/alpha\.(\d+)$/);
+            const md = fs.readFileSync("CHANGELOG.md", "utf8");
+            let part = "";
+            if (m) { const i = md.indexOf("### New in alpha " + m[1]); if (i >= 0) { part = md.slice(i).split("\n").slice(1).join("\n"); part = part.slice(0, part.search(/\n##/) >>> 0); } }
+            let t = part.split("\n").filter(l => /^- /.test(l)).map(l => "• " + (l.match(/\*\*(.+?)\*\*/) || [, l.slice(2)])[1]).join("\n");
+            if (!t) t = "TiviBro " + v + ".  What changed: tivibro.app/changelog/";
+            if (t.length > 490) t = t.slice(0, t.lastIndexOf("\n", 470)) + "\n• More: tivibro.app/changelog/";
+            fs.writeFileSync("whatsnew/whatsnew-en-US", t);
+            console.log(t);
+          ' "${{ steps.v.outputs.name }}"
+          [ "$HAS_KEY" = true ] || echo "::notice::No PLAY_SERVICE_ACCOUNT_JSON: upload tivibro-phone-${{ steps.v.outputs.name }}-play.aab to Google Play by hand"
+
+      - name: Send it to the Google Play test
+        if: startsWith(github.ref, 'refs/tags/v') && steps.play.outputs.send == 'true'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: app.tivibro.phone
+          releaseFiles: dist-apk/tivibro-phone-${{ steps.v.outputs.name }}-play.aab
+          releaseName: ${{ steps.v.outputs.name }}
+          track: alpha
+          status: completed
+          whatsNewDirectory: whatsnew
 
   screens:
     name: Run it on an emulator
