@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 142, 2026-11-15)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 142
 
 - **My media, redone like Movies on now.**  The title you're on fills the top: its backdrop, its title logo, the year, running time, genres, TMDB rating and picture quality, the plot, and where you stopped.  Posters are bigger, and each shelf says what's in it and how it's sorted.
 - **My media: sort any way, and turn it round.**  Red > Sort: movies by title, release date, date added, rating or running time, TV shows by title, first aired, date added or rating, and **Reverse the order** for each.  Also in Settings > My media, the phone app and the web editor.
@@ -13,11 +17,7 @@
 - **Movies and Shows: order by release year, and Reverse the order.**  In Settings > Movies and shows and Red on the home.
 - **The movie player's bar runs the full width.**  For My media, movies and catch-up.  My media movies show their name once, then the year, running time, genres and rating, with the poster.
 
-## 0.6.0 (alpha 141, 2026-11-15)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 141
+### In alpha 141
 
 - **The guide loads again.**  In alpha 140 the guide stopped short whenever it had to be read (the first start, or once it was due to be read again), and the listings never came.
 
