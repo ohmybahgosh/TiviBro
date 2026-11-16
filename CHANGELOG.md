@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Connecting Trakt shows a QR code.**  Scan it with your phone's camera: Trakt opens with the code already filled in, so you only sign in and choose Yes.  The code itself is larger too.
+- **All of your Trakt history comes in.**  Trakt now sends its watched lists a page at a time and without the episodes, so only your first 100 movies and none of your episodes were marked.  Now every page is read, and each of your shows that Trakt says you watched is asked for its episodes (on one TV: 249 more movies and 35 episodes).  Long Trakt lists and watchlists come in whole too.
+- **Settings > My media counts your TV shows straight away**, not 0 until My media was opened.
+
 ## 0.6.0 (alpha 146, 2026-11-16)
 
 Pre-release: expect rough edges, and keep a backup before installing.

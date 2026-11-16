@@ -9,6 +9,8 @@
 .nogap .guide-group > * + *{margin-left:10px}
 .nogap .set-nav > * + *{margin-top:6px}
 .nogap .opt > * + *{margin-left:24px}
+.nogap .trakt-qr > * + *{margin-left:28px}
+.nogap .trakt-qr-t > * + *{margin-top:8px}
 .nogap .prev-table div > * + *{margin-left:18px}
 .nogap .field > * + *{margin-left:24px}
 .nogap .field .val.pick > * + *{margin-left:18px}

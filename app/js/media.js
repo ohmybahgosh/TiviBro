@@ -35,7 +35,7 @@ var Media = (function () {
      plot.  Shelves: Continue watching, holiday lists, Favorites, Recently added, TMDB's lists (what you
      can watch of them), Movies and TV shows in the order you choose (Red sorts, and can turn it round), a
      shelf per genre and Top rated; Red > Arrange shelves moves them and switches them off.  Long shelves draw only the posters on screen (TILE_POOL). */
-  var seriesCards = [], reviewCards = [], continuingShows = [], favouriteShows = [], seriesLoading = false, seriesAgain = false;
+  var seriesLoaded = false, seriesCards = [], reviewCards = [], continuingShows = [], favouriteShows = [], seriesLoading = false, seriesAgain = false;
   var shelves = [], shelfAt = 0, shelfPos = {}, shelfViews = [], posterQueue = [], posterBusy = 0, hero = null;
   // Opening My media focuses the first item on screen; shelves that fill in later (shows and episodes come
   // from the helper) still move it there, until the viewer presses a key.
@@ -888,10 +888,13 @@ var Media = (function () {
   }
   /* Settings > My media's libraries (settings.js): what each holds and how it's going. */
   function libraryStats(id) {
-    var s = MediaStore.source(id) || {}, mv = MediaStore.movies(id), unmatched = mv.filter(function (m) { return !(m.metadata && m.metadata.id); });
+    var s = MediaStore.source(id) || {};
+    // Shows are read from the helper when My media opens; Settings can be first (straight after an update), so it asks itself.
+    if ((s.contentMode === 'shows' || s.contentMode === 'automatic') && !seriesLoaded && !seriesLoading) refreshSeries();
+    var mv = MediaStore.movies(id), unmatched = mv.filter(function (m) { return !(m.metadata && m.metadata.id); });
     var shows = seriesCards.concat(favouriteShows).filter(function (x) { return (x.sourceIds || []).indexOf(id) >= 0 || x.sourceId === id; });
     return { movies: mv.length, unmatched: unmatched, shows: shows.length, unmatchedShows: shows.filter(function (x) { return !(x.metadata && x.metadata.id); }).length, episodes: (MediaStore.publicSources().filter(function (x) { return x.id === id; })[0] || {}).episodeFiles || 0,
-      scanning: !!scanning[id], kind: s.contentMode || 'movies', homeOff: !!s.homeOff, fourK: mv.filter(function (m) { return (m.vf && m.vf.h >= 1600) || /2160|\b4k\b|uhd/i.test(fileInfo(m) + ' ' + (m.file || '')); }).length };
+      showsLoading: !seriesLoaded, scanning: !!scanning[id], kind: s.contentMode || 'movies', homeOff: !!s.homeOff, fourK: mv.filter(function (m) { return (m.vf && m.vf.h >= 1600) || /2160|\b4k\b|uhd/i.test(fileInfo(m) + ' ' + (m.file || '')); }).length };
   }
   function sourceMenu(s) {
     if (!s) return;s=MediaStore.source(s.id)||s;
@@ -1194,7 +1197,8 @@ var Media = (function () {
       reviewCards = (results[1].items || []).map(function (r) { r.id = r.handle; return r; });
       continuingShows = (results[2].items || []).map(function(r){r.id=r.handle;return r;});
       favouriteShows=(results[3].items||[]).map(function(r){r.id=r.handle;return r;});
-      seriesLoading = false; refresh();
+      seriesLoading = false; seriesLoaded = true; refresh();
+      if (typeof Settings !== 'undefined' && Settings.live) Settings.live();   // Settings > My media's show counts
       if (seriesAgain) refreshSeries();
     },function () { seriesLoading = false; if (seriesAgain) refreshSeries(); });
   }

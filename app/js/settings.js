@@ -278,7 +278,7 @@ var Settings = (function () {
     if (st.scanning) return 'Scanning…';
     var parts = [];
     if (st.kind !== 'shows') parts.push(st.movies + ' movies' + (st.unmatched.length ? ', ' + st.unmatched.length + ' unmatched' : ''));
-    if (st.kind !== 'movies') parts.push(st.shows + ' shows' + (st.episodes ? ', ' + st.episodes + ' files' : ''));
+    if (st.kind !== 'movies') parts.push((st.showsLoading ? 'Counting shows' : st.shows + ' shows') + (st.episodes ? ', ' + st.episodes + ' files' : ''));
     return parts.join('  ·  ');
   }
   // One library's page: what it holds, scanning, matching, Home and removing.
@@ -338,8 +338,16 @@ var Settings = (function () {
     out.push(head('Account'));
     if (code) {
       var go = action('1.  On a phone or computer, open', 'Then sign in to Trakt.  In the phone app, select this to open it.', function () { U.toast('Open ' + code.url.replace(/^https?:\/\//, '') + ' and enter ' + code.user, 8000); }, function () { return code.url.replace(/^https?:\/\//, ''); });
-      go.phone = 'open-url'; go.epage = code.url; out.push(go);
-      out.push(info('2.  Enter this code', code.user), info('Waiting for Trakt…', 'This page updates by itself'),
+      var link = code.url.replace(/\/+$/, '') + '/' + encodeURIComponent(code.user);   // Trakt fills the code in from this
+      go.phone = 'open-url'; go.epage = link;
+      // On the TV: a QR code for the phone's camera, opening Trakt with the code already in.
+      if (typeof qrcode !== 'undefined') {
+        var qb = U.el('div', 'trakt-qr'), qi = U.el('div', 'trakt-qr-img');
+        try { var q = qrcode(0, 'M'); q.addData(link); q.make(); qi.innerHTML = q.createSvgTag({ cellSize: 6, margin: 2, scalable: true }); } catch (e) { qi = null; }
+        if (qi) { qb.appendChild(qi); var qt = U.el('div', 'trakt-qr-t'); qt.appendChild(U.el('b', '', T('Scan with your phone\'s camera'))); qt.appendChild(U.el('span', '', T('Trakt opens with the code filled in.  Sign in and choose Yes.'))); qb.appendChild(qt); out.push({ preview: true, el: qb }); }
+      }
+      out.push(go);
+      var cd = info('2.  Enter this code', code.user); cd.cls = 'trakt-code'; out.push(cd, info('Waiting for Trakt…', 'This page updates by itself'),
         action('Stop connecting', '', function () { Trakt.cancel(); build(); }));
     } else if (!Trakt.connected()) {
       out.push(action('Connect Trakt', 'Shows a code to enter at trakt.tv/activate on your phone or computer.  No password is typed on the TV.', function () {
