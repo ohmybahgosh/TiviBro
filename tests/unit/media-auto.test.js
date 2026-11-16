@@ -7,7 +7,7 @@ const movies = [
   { id: 'a', src: 's', title: 'Paper Planes', year: '2025' },                                                    // nothing yet
   { id: 'b', src: 's', title: 'Copper Canyon', metadata: { provider: 'Cinemeta', id: 'tt9', poster: '' } },        // details, no poster
   { id: 'c', src: 's', title: 'Signal Lost', metadata: { provider: 'TMDB', id: 'tmdb:3', poster: 'https://image.tmdb.org/x.jpg', requestedLanguage: 'en', v: 2 } },  // complete
-  { id: 'd', src: 's', title: 'Unknown Home Video', tmdbMiss: now - 86400e3, missV: 2 },                                  // missed yesterday
+  { id: 'd', src: 's', title: 'Unknown Home Video', tmdbMiss: now - 86400e3, missV: 3 },                                  // missed yesterday
   { id: 'e', src: 's', title: 'Nothing Found Here' },                                                             // will miss now
   { id: 'f', src: 's', title: 'Old Details', metadata: { provider: 'TMDB', id: 'tmdb:4', poster: 'https://image.tmdb.org/y.jpg', requestedLanguage: 'en' } },  // before collections and directors: again, by its ID
   { id: 'g', src: 's', title: 'Old Miss', tmdbMiss: now - 86400e3 }                                                // missed by the older matcher: tried again
@@ -16,7 +16,7 @@ const notices = [];
 const c = { Promise, setTimeout, clearTimeout, Date, Net: { port: 1, ctlHeaders: h => h, ctlFetch: (u, i) => c.fetch(u, i) }, U: { toast: s => notices.push(s) },
   MediaStore: { tmdbToken: () => token, sources: () => [{ id: 's' }], load: () => Promise.resolve(), movies: () => movies, source: () => ({ id: 's' }), preferences: () => ({ language: 'en' }),
     setMetadata: (id, m) => { movies.find(x => x.id === id).metadata = m; return Promise.resolve(); },
-    markMissed: (id) => { const x = movies.find(x => x.id === id); x.tmdbMiss = Date.now(); x.missV = 2; return Promise.resolve(); } },
+    markMissed: (id) => { const x = movies.find(x => x.id === id); x.tmdbMiss = Date.now(); x.missV = 3; return Promise.resolve(); } },
   fetch: (url, opts) => { const q = JSON.parse(opts.body); requests.push(q);
     if (q.check) return Promise.resolve({ json: () => Promise.resolve(refuse ? { error: 'metadata', message: 'TMDB refused the token.  Check it in Settings > My media.' } : { ok: true }) });
     const miss = q.title === 'Nothing Found Here';

@@ -16,6 +16,7 @@ var MediaSeries = (function () {
     m=/[{[(]\s*tvdb(?:id)?[-=: ]\s*([1-9][0-9]{0,9})\s*[}\])]/i.exec(t);if(m)q.tvdb=m[1];
     m=/[{[(]\s*imdb(?:id)?[-=: ]\s*(tt[0-9]{5,10})\s*[}\])]/i.exec(t);if(m)q.imdb=m[1];
     t=t.replace(/[{[][^}\]]*[}\]]/g,' ');
+    m=/^(.*?)\s*\((US|UK|GB|AU|CA|NZ|IE)\)\s*$/.exec(t.trim());if(m&&m[1].trim()){q.cc=m[2];t=m[1];}   // "Big Brother (US)"
     m=/^(.*?)[\s._-]*\(((?:19|20)\d\d)\)\s*$/.exec(t.trim());
     if(m&&m[1].trim()){q.year=m[2];t=m[1];}
     q.title=t.replace(/\s+/g,' ').trim()||String(arguments[0]||'');
@@ -50,7 +51,7 @@ var MediaSeries = (function () {
         var id=show.metadata&&show.metadata.id,handle=show.handle;
         var q=id?{id:id}:showQuery(show.title);
         return lookup(q).then(function(result){
-          if(!result.metadata){missed++;return save(handle,'markMetadataChecked',{language:language,startedAt:started,missed:true,missV:2},id);}
+          if(!result.metadata){missed++;return save(handle,'markMetadataChecked',{language:language,startedAt:started,missed:true,missV:3},id);}
           return save(handle,'setMetadata',{metadata:result.metadata},id).then(function(saved){
             handle=saved.mergedInto||handle;id=result.metadata.id;
             return detail(handle);
@@ -85,7 +86,7 @@ var MediaSeries = (function () {
           if(++streak>=2)throw e;
           missed++;
           if(typeof Log!=='undefined'&&Log.warn)Log.warn('media','Show details for one show failed: '+(e&&e.message));
-          return detail(item.handle).then(function(show){return save(show.handle,'markMetadataChecked',{language:language,startedAt:started,missed:true,missV:2},show.metadata&&show.metadata.id);});
+          return detail(item.handle).then(function(show){return save(show.handle,'markMetadataChecked',{language:language,startedAt:started,missed:true,missV:3},show.metadata&&show.metadata.id);});
         }).then(function(){return new Promise(function(resolve){setTimeout(resolve,350);});}).then(next);
       });
     }

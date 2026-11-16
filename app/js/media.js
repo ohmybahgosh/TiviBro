@@ -729,8 +729,8 @@ var Media = (function () {
   var WEEK = 7 * 86400e3, autoTimer = null;
   function note(lv, m) { if (typeof Log !== 'undefined' && Log[lv]) Log[lv]('media', m); }
   function needsDetails(m, now) {
-    // (missV 2: missed by the matcher that also tries the file's name and a year off by one; older misses try again)
-    if (m.tmdbMiss && m.missV >= 2 && now - m.tmdbMiss < WEEK) return false;
+    // (missV 3: missed by the matcher of alpha 145, which also reads TMDB's year filter right; older misses try again)
+    if (m.tmdbMiss && m.missV >= 3 && now - m.tmdbMiss < WEEK) return false;
     // Details from before collections, directors and plain backdrops (v 2) are fetched again by their ID.
     return !m.metadata || (!m.metadata.poster && m.metadata.provider !== 'TMDB') || (m.metadata.provider === 'TMDB' && /^tmdb:[0-9]+$/.test(m.metadata.id || '') && (m.metadata.v || 1) < 2);
   }

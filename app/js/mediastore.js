@@ -147,7 +147,7 @@ var MediaStore = (function () {
   var later = null;
   function saveSoon() { if (!later) later = setTimeout(function () { later = null; saveLib(); }, 5000); return Promise.resolve(); }
   function flush() { if (later) { clearTimeout(later); later = null; return saveLib(); } return saving || Promise.resolve(); }
-  function markMissed(id, batch) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.tmdbMiss = Date.now(); m.missV = 2; return batch ? saveSoon() : saveLib(); } return Promise.resolve(); }
+  function markMissed(id, batch) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.tmdbMiss = Date.now(); m.missV = 3; return batch ? saveSoon() : saveLib(); } return Promise.resolve(); }
   // A movie's picture read from its file (media-vformat.js): { h: height, r: 'DV'|'HDR10'|'HLG'|'SDR'|'' }, or { e: when it failed }.
   function setFormat(id, vf) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.vf = vf; return saveSoon(); } return Promise.resolve(); }
   function setMetadata(id, metadata, batch) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { if (metadata) m.metadata = metadata; else delete m.metadata; return batch ? saveSoon() : saveLib(); } return Promise.resolve(); }

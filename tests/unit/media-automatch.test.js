@@ -8,6 +8,8 @@ const DB = {
   'a minecraft movie': [{ id: 950387, title: 'A Minecraft Movie', release_date: '2025-03-31', vote_count: 2500 }],
   moana: [{ id: 1167307, title: 'Moana', release_date: '2026-07-10', vote_count: 40 }, { id: 277834, title: 'Moana', release_date: '2016-10-13', vote_count: 13000 }],
   superman: [{ id: 1061474, title: 'Superman', release_date: '2025-07-09', vote_count: 3000 }, { id: 9999, title: 'Superman', release_date: '2025-01-01', vote_count: 2 }, { id: 1924, title: 'Superman', release_date: '1978-12-14', vote_count: 4000 }],
+  'the evil dead': [{ id: 764, title: 'The Evil Dead', release_date: '1983-04-15', vote_count: 4800, also: '1981' }],
+  hag: [{ id: 2, title: 'Hag', release_date: '2025-05-01', vote_count: 8 }, { id: 3, title: 'HAG', release_date: '2025-01-01', vote_count: 0 }],
   twins: [{ id: 1, title: 'Twins', release_date: '1988-12-09', vote_count: 30 }, { id: 2, title: 'Twins', release_date: '1988-01-01', vote_count: 25 }]
 };
 const calls = [];
@@ -16,7 +18,7 @@ const client = M.create({ credential: 'demo', read: (url, h, cb) => {
   const m = /\/movie\/([0-9]+)/.exec(url);
   if (m && !url.includes('/search/')) return cb(null, { id: +m[1], title: 't' + m[1], release_date: '2025-01-01', genres: [], images: { posters: [] } });
   const q = decodeURIComponent(/query=([^&]*)/.exec(url)[1]).replace(/\+/g, ' ').toLowerCase(), y = (/year=(\d{4})/.exec(url) || [])[1];
-  cb(null, { results: (DB[q] || []).filter((r) => !y || r.release_date.slice(0, 4) === y) });
+  cb(null, { results: (DB[q] || []).filter((r) => !y || r.release_date.slice(0, 4) === y || r.also === y) });   // TMDB's year: any release that year
 } });
 (async () => {
   let r = await lookup(client, { title: 'Minecraft The Movie', year: '2025', alts: [{ title: 'A Minecraft Movie', year: '2025' }], auto: true });
@@ -27,6 +29,10 @@ const client = M.create({ credential: 'demo', read: (url, h, cb) => {
   assert.equal(r.metadata && r.metadata.id, 'tmdb:1167307', 'a year off by one: the 2026 film, not the 2016 one');
   r = await lookup(client, { title: 'Superman', year: '2025', auto: true });
   assert.equal(r.metadata && r.metadata.id, 'tmdb:1061474', 'two of that name and year: the far better known one');
+  r = await lookup(client, { title: 'The Evil Dead', year: '1981', auto: true });
+  assert.equal(r.metadata && r.metadata.id, 'tmdb:764', 'TMDB found it for 1981, though its own date is 1983');
+  r = await lookup(client, { title: 'Hag', year: '2025', auto: true });
+  assert.equal(r.metadata && r.metadata.id, 'tmdb:2', 'the only one anyone has voted on');
   r = await lookup(client, { title: 'Twins', year: '1988', auto: true });
   assert(!r.metadata && r.matches.length === 2, 'two about as well known: chosen by hand');
   // The app: IDs in a Radarr name are used as they are; else the file's title is a second name.
@@ -51,6 +57,9 @@ const client = M.create({ credential: 'demo', read: (url, h, cb) => {
       const q = decodeURIComponent(/query=([^&]*)/.exec(url)[1]).toLowerCase(), y = (/first_air_date_year=(\d{4})/.exec(url) || [])[1];
       const all = { severance: [{ id: 95396, name: 'Severance', first_air_date: '2022-02-17', vote_count: 2000 }, { id: 5, name: 'Severance', first_air_date: '2006-01-01', vote_count: 9 }],
         'the office': [{ id: 2316, name: 'The Office', first_air_date: '2005-03-24', vote_count: 4000 }, { id: 2996, name: 'The Office', first_air_date: '2001-07-09', vote_count: 900 }],
+        'big brother': [{ id: 10160, name: 'Big Brother', first_air_date: '2000-07-05', vote_count: 300, origin_country: ['US'] }, { id: 2, name: 'Big Brother', first_air_date: '2000-07-18', vote_count: 250, origin_country: ['GB'] }],
+        'cold case - the tylenol murder': [{ id: 7, name: 'Cold Case: The Tylenol Murders', first_air_date: '2025-05-01', vote_count: 5 }],
+        'ann droid': [{ id: 8, name: 'Ann Droid', first_air_date: '2026-01-01', vote_count: 0 }, { id: 9, name: 'AnnDroid', first_air_date: '2020-01-01', vote_count: 0 }],
         'doctor who': [{ id: 57243, name: 'Doctor Who', first_air_date: '2005-03-26', vote_count: 3000 }] }[q] || [];
       return cb(null, { results: all.filter((x) => !y || x.first_air_date.slice(0, 4) === y) });
     }
@@ -61,6 +70,10 @@ const client = M.create({ credential: 'demo', read: (url, h, cb) => {
   s1 = await lookup(tv, { kind: 'tv', title: 'Severance', auto: true }); assert.equal(s1.metadata.id, 'tmdb:tv:95396', 'no year: the far better known');
   s1 = await lookup(tv, { kind: 'tv', title: 'The Office', year: '2005', auto: true }); assert.equal(s1.metadata.id, 'tmdb:tv:2316', 'the US one by its year');
   s1 = await lookup(tv, { kind: 'tv', title: 'Doctor Who', year: '2006', auto: true }); assert.equal(s1.metadata.id, 'tmdb:tv:57243', 'a year off by one: searched again without it');
+  assert.equal(showQuery('Big Brother (US)').cc, 'US');
+  s1 = await lookup(tv, Object.assign(showQuery('Big Brother (US)'), {})); assert.equal(s1.metadata.id, 'tmdb:tv:10160', 'the US one');
+  s1 = await lookup(tv, { kind: 'tv', title: 'Cold Case - The Tylenol Murder', auto: true }); assert.equal(s1.metadata.id, 'tmdb:tv:7', 'plural or not');
+  s1 = await lookup(tv, { kind: 'tv', title: 'Ann Droid', auto: true }); assert.equal(s1.metadata.id, 'tmdb:tv:8', 'written exactly so');
   s1 = await lookup(tv, { kind: 'tv', title: 'Shogun', year: '2024', tvdb: '392573', auto: true }); assert.equal(s1.metadata.id, 'tmdb:tv:126308', 'a TVDB ID');
   console.log('PASS media automatch (' + calls.length + ' requests)');
 })().catch((e) => { console.error('FAIL ' + e.message); process.exit(1); });

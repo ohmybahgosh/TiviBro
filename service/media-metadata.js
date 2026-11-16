@@ -182,7 +182,7 @@ function create(opts) {
           if (e) return done(e);
           var ms = shapeMatches(r);
           if (!first) first = ms;
-          var id = pickMovie(ms, s.t, s.y);
+          var id = pickMovie(ms, s.t, s.y, s.withYear);
           if (id) return done(null, id);
           next(i + 1);
         });
@@ -191,13 +191,16 @@ function create(opts) {
   }
   // Without "A", "An" or "The" in front and without "Movie"/"The Movie" ("A Minecraft Movie" and "Minecraft The Movie").
   function loose(v) { return normal(str(v, 200).replace(/&/g, ' and ').replace(/^\s*(the|a|an)\s+/i, '').replace(/\b(the\s+)?movie\b/ig, ' ')); }
-  function pickMovie(ms, t, y) {
-    var n = normal(t), l = loose(t), yy = +y || 0;
+  /* yearAsked: TMDB was asked for that year, and its year filter counts any release that year (The Evil Dead
+     is 1981 in Radarr's name and on its first release, 1983 as TMDB's own date): every result is that year. */
+  function pickMovie(ms, t, y, yearAsked) {
+    var n = normal(t), l = loose(t), yy = yearAsked ? 0 : +y || 0;
     function one(list) {
       if (!list.length) return '';
       if (list.length === 1) return list[0].id;
       var s = list.slice().sort(function (a, b) { return b.votes - a.votes; });
-      return s[0].votes >= 20 && s[0].votes >= 3 * s[1].votes ? s[0].id : '';
+      // The far better known one; or, with the others never voted on, a film some people have seen ("Hag", 8 to 0).
+      return (s[0].votes >= 20 && s[0].votes >= 3 * s[1].votes) || (s[0].votes >= 3 && !s[1].votes) ? s[0].id : '';
     }
     var same = ms.filter(function (m) { return normal(m.title) === n || normal(m.original) === n; });
     var near = function (list, d) { return list.filter(function (m) { return !yy || (m.year && Math.abs(+m.year - yy) <= d); }); };
@@ -227,15 +230,25 @@ function create(opts) {
       return request('/search/tv?query='+encodeURIComponent(query)+'&language='+locale+(q.year && !q._noYear ? '&first_air_date_year='+encodeURIComponent(q.year) : ''),function (e,r) {
         if (e) return cb(e);
         var matches = (r && Array.isArray(r.results) ? r.results : []).filter(function (m) { return m && /^[1-9][0-9]*$/.test(String(m.id)); }).slice(0,20).map(function (m) { return {id:'tmdb:tv:'+m.id,title:str(m.name || m.original_name,200),original:str(m.original_name,200),year:str(m.first_air_date,4),poster:image(m.poster_path,'w185')}; });
-        var votes = {}; (r && Array.isArray(r.results) ? r.results : []).forEach(function (m) { if (m) votes['tmdb:tv:' + m.id] = +m.vote_count || 0; });
+        var votes = {}, ccs = {}; (r && Array.isArray(r.results) ? r.results : []).forEach(function (m) { if (m) { votes['tmdb:tv:' + m.id] = +m.vote_count || 0; ccs['tmdb:tv:' + m.id] = Array.isArray(m.origin_country) ? m.origin_country : []; } });
+        // Plural or not ("The Tylenol Murder" is TMDB's "The Tylenol Murders"): only when it's the one show so named.
+        var plain = function (v) { return normal(str(v, 200).replace(/&/g, ' and ').replace(/^\s*the\s+/i, '').replace(/s\b/ig, '')); };
         // The name exactly (or as showName reads it: "The Office" is "Office"), in that year, else a year either side
         // (a folder's year and the first airing can differ by one), else any year; of several, the far better known.
         var named = matches.filter(function (m) { return normal(m.title) === normal(query) || normal(m.original) === normal(query) || (showName(m.title) && showName(m.title) === showName(query)); });
+        if (!named.length) { var pl = matches.filter(function (m) { return plain(m.title) && plain(m.title) === plain(query); }); if (pl.length === 1) named = pl; }
+        // "Big Brother (US)": the one from that country.
+        var cc = /^[A-Z]{2}$/.test(String(q.cc || '')) ? (q.cc === 'UK' ? 'GB' : q.cc) : '';
+        if (cc && named.length > 1) { var inCc = named.filter(function (m) { return (ccs[m.id] || []).indexOf(cc) >= 0; }); if (inCc.length) named = inCc; }
         var yr = +q.year || 0, near = function (d) { return named.filter(function (m) { return !yr || (m.year && Math.abs(+m.year - yr) <= d); }); };
         function one(list) {
           if (list.length === 1) return list[0];
-          var s = list.slice().sort(function (a, b) { return (votes[b.id] || 0) - (votes[a.id] || 0); });
-          return s.length > 1 && (votes[s[0].id] || 0) >= 20 && (votes[s[0].id] || 0) >= 3 * (votes[s[1].id] || 0) ? s[0] : null;
+          if (list.length < 2) return null;
+          var s = list.slice().sort(function (a, b) { return (votes[b.id] || 0) - (votes[a.id] || 0); }), v0 = votes[s[0].id] || 0, v1 = votes[s[1].id] || 0;
+          if ((v0 >= 20 && v0 >= 3 * v1) || (v0 >= 3 && !v1)) return s[0];
+          // Written exactly as the folder has it, and only one is ("Ann Droid", not "AnnDroid").
+          var lit = list.filter(function (m) { return m.title.toLowerCase() === query.toLowerCase(); });
+          return lit.length === 1 ? lit[0] : null;
         }
         var pick = q.auto ? (one(near(0)) || one(near(1)) || (yr ? null : one(named))) : null;
         if (pick) { var next = {}; Object.keys(q).forEach(function (k) { next[k] = q[k]; }); next.id = pick.id; return tvLookup(next,cb); }
