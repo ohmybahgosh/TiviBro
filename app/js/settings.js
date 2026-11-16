@@ -1806,6 +1806,6 @@ var Settings = (function () {
 
   // Drawn again in a new language (I18n.onChange in app.js).
   function redraw() { if (!document.getElementById('viewSettings').classList.contains('hidden')) build(); }
-  return { dns: { ids: DNS_IDS, names: DNS_NAMES, ask: askDns }, open: open, redraw: redraw, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
+  return { capturing: function () { return !!cap; }, dns: { ids: DNS_IDS, names: DNS_NAMES, ask: askDns }, open: open, redraw: redraw, assignGuide: assignGuide, section: section, openPlaylist: openPlaylist, openTeams: openTeams, live: live, reset: function () { stack = []; sel = 0; }, phone: forPhone,
     LOOK: { ACCENTS: ACCENTS, ACCENT_NAMES: ACCENT_NAMES, THEMES: THEMES, THEME_NAMES: THEME_NAMES, THEME_INK: THEME_INK } };
 })();

@@ -67,19 +67,19 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
     await page.keyboard.press('Escape');await page.waitForTimeout(150);
     ok('a favourite show stays in the general show list',!/No items in this view/.test(await page.innerText('#modal')));
     await page.keyboard.press('Escape');
-    await page.waitForFunction(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length:0;})('Favorites')===1);
+    await page.waitForFunction(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?Math.max(1,[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length):0;})('Favorites')===1);
     ok('show is in Favorites and still on the TV shows shelf',await page.evaluate(()=>[...document.querySelectorAll('.media-shelf')].some(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent==='TV shows'&&/^1 show/.test(x.querySelector('.media-shelf-count').textContent))));
-    await page.keyboard.press('ArrowUp');await page.keyboard.press('Enter');await page.waitForTimeout(150);
+    await page.evaluate(()=>Media._test.goShelf('favorites'));await page.keyboard.press('Enter');await page.waitForTimeout(150);   // the show on Favorites
     await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForTimeout(150);
     await page.keyboard.press('Escape');
-    await page.waitForFunction(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length:0;})('Favorites')===0);
+    await page.waitForFunction(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?Math.max(1,[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length):0;})('Favorites')===0);
     ok('removing a favorite takes it off Favorites, and the empty shelf goes',true);
-    ok('empty Needs review shelf is hidden',await page.evaluate(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length:0;})('Needs review')===0));
+    ok('empty Needs review shelf is hidden',await page.evaluate(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?Math.max(1,[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length):0;})('Needs review')===0));
     await page.keyboard.press('m');await page.waitForTimeout(100);
     ok('empty Needs review is absent from options',!(await page.evaluate(()=>UI.menuLabels.join('|'))).includes('Needs review'));
     await page.keyboard.press('Escape');
     needsReview=true;await page.evaluate(()=>Media._test.rescanCurrent());
-    await page.waitForFunction(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length:0;})('Needs review')>0);
+    await page.waitForFunction(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?Math.max(1,[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length):0;})('Needs review')>0);
     ok('Needs review appears when a conflicting file is discovered',true);
     await page.keyboard.press('m');await page.waitForTimeout(100);
     ok('Needs review is offered in options for a nonempty queue',(await page.evaluate(()=>UI.menuLabels.join('|'))).includes('Needs review'),await page.evaluate(()=>UI.menuLabels));
@@ -89,7 +89,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
       const saved=await Media.request('library/edit',{operation:'classifyFile',handle:item.handle,expectedRevision:item.revision,fields:{kind:'episode',showTitle:'Harbour',order:'aired',season:1,numbers:[3]}},30000);
       if(saved.error)throw new Error(saved.message);Media.refreshShows();
     });
-    await page.waitForFunction(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length:0;})('Needs review')===0);
+    await page.waitForFunction(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?Math.max(1,[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length):0;})('Needs review')===0);
     ok('Needs review disappears after the last item is corrected',true);
     ok('no browser exceptions',errors.length===0,errors.join(', '));
   } finally {

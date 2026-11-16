@@ -251,6 +251,13 @@ var VodHome = (function () {
   function setOrder(order, off) { var c = cfg(); c.order = order; c.off = off; save(); changed(); }
   function arrangeMenu(focus) {
     var ar = arrangement(), c = cfg();
+    var phone = typeof Settings !== 'undefined' && Settings.capturing && Settings.capturing();
+    if (!phone && typeof Arrange !== 'undefined') {
+      return Arrange.open({ title: 'Arrange the ' + (kind === 'series' ? 'Shows' : 'Movies') + ' home', focus: focus,
+        rows: ar.order.map(function (k) { return { key: k, name: RAW(names(k)), off: ar.off(k) }; }).concat([{ name: 'Pin a category…', action: pinMenu }]),
+        save: function (order, off) { setOrder(order, off); }, reset: function () { setOrder([], {}); },
+        done: function () { if (open_) restore(); else if (typeof Settings !== 'undefined' && Settings.redraw) Settings.redraw(); } });
+    }
     UI.menu('Arrange ' + (kind === 'series' ? 'Shows' : 'Movies') + ' shelves', ar.order.map(function (k, i) {
       var cat = k.indexOf('cat:') === 0;
       return { label: (ar.off(k) ? '○  ' : '●  ') + RAW(names(k)), sub: ar.off(k) ? 'Off' : 'Shelf ' + (i + 1), current: k === focus, action: function () {

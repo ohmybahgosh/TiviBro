@@ -187,7 +187,7 @@ var MediaStore = (function () {
   // Same rule as Movies: short videos and the first seconds don't count, and the end clears it.
   function saveResume(id, pos, dur) {
     if (!(dur > 60)) return;
-    if (pos > dur - 60) delete state.resume[id];
+    if (pos > dur - 60) { delete state.resume[id]; markWatched(id, true, true); }
     else if (pos > 30) state.resume[id] = { pos: pos, dur: dur, at: Date.now() };
     else return;
     save();
@@ -198,10 +198,17 @@ var MediaStore = (function () {
   }
   function sourcePreference(id) { state.preferredMediaSource=id;save(); }
   function clearResume(id) { delete state.resume[id]; save(); }
+  /* Watched: played to the end (or marked), for the Haven't watched shelves.  Kept by id, with when. */
+  function markWatched(id, on, quiet) {
+    var w = state.watched || (state.watched = {});
+    if (on) { w[id] = Date.now(); delete state.resume[id]; } else delete w[id];
+    if (!quiet) save();
+  }
+  function isWatched(id) { return !!(state.watched && state.watched[id]); }
 
   return {
     preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
     tmdbToken: function () { return state.tmdbToken || ''; }, sortList: sortList, compare: compare, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
-    resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, clearResume: clearResume
+    resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, clearResume: clearResume, markWatched: markWatched, isWatched: isWatched
   };
 })();

@@ -269,6 +269,23 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   ok('Down moves to the Favorites shelf', await ev(() => /Favorites/.test(document.querySelector('.media-tile.sel').closest('.media-shelf').querySelector('h2').textContent)));
   await shot('media-shelves');
 
+  // Arrange shelves: a board moved with the remote; with movies only, no TV shelves on it.
+  await ev(() => { MediaStore.sources().forEach(x => MediaStore.sourceMode(x.id, 'movies')); Media.arrangeShelves(); });
+  await page.waitForTimeout(300);
+  const board = await ev(() => [...document.querySelectorAll('.arrange:not(.hidden) .arrange-name')].map(n => n.firstChild.textContent));
+  ok('Arrange shelves opens as a board', board.length > 5, board);
+  ok('with movies only, no TV shows or TV lists on it', !board.some(n => /TV shows|Popular TV|Airing today|Top rated TV/.test(n)), board);
+  const before = await ev(() => MediaStore.preferences().shelfOrder.slice(0, 2).join(','));
+  await ev(() => { UI.press('ok'); UI.press('down'); UI.press('ok'); });
+  const after = await ev(() => Media.shelfList().slice(0, 2).map(x => x.key).join(','));
+  ok('OK, Down, OK moves the first shelf down one, saved at once', after.split(',')[1] === 'continue' && after.split(',')[0] !== 'continue', before + ' -> ' + after);
+  await ev(() => UI.press('right'));
+  ok('Right switches the shelf it is on off', await ev(() => Media.shelfList()[1].off === true));
+  await ev(() => UI.press('right'));
+  await ev(() => UI.press('back')); await page.waitForTimeout(200);
+  ok('Back closes the board and My media has the keys again', await ev(() => document.querySelector('.arrange').classList.contains('hidden') && Views.tab === 'media'));
+  await ev(() => Media.updatePreferences({ shelfOrder: [], shelfOff: {} }));
+
   // Back cancels a cloud play request before its signed URL arrives.
   let delayedResolve;
   await page.route('**/media/resolve', async route => {

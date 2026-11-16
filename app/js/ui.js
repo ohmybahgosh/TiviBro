@@ -472,6 +472,7 @@ var UI = (function () {
     isDown: function (a) { var t = downs[a]; return !!t && Date.now() - t < 1500; },
     marquee: marquee,
     setHandler: function (fn) { handler = fn; },
+    get handler() { return handler; },
     getHandler: function () { return handler; },
     // When the button being handled was pressed (performance.now()'s clock), and fn(t) once the screen shows the change.
     keyAt: function () { return inKey ? keyAt : pnow(); }, now: pnow, afterPaint: afterPaint,

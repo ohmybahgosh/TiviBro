@@ -864,6 +864,30 @@ body.media-open:not(.full) #clock{text-shadow:0 2px 10px rgba(0,0,0,.85),0 0 2px
 .tmdb-credit{display:flex;align-items:center;padding:18px 24px;color:var(--muted);font-size:20px}
 .tmdb-credit img{flex:none;margin-right:24px;width:120px;height:auto}
 
+/* ---------- Arrange shelves (arrange.js): a list moved with the remote ---------- */
+.arrange{position:fixed;top:0;left:0;right:0;bottom:0;z-index:60;background:rgba(5,7,14,.72);display:flex;align-items:center;justify-content:center}
+.arrange.hidden{display:none}
+.arrange-panel{width:960px;background:var(--panel);border-radius:20px;padding:30px 0 22px;box-shadow:0 24px 90px rgba(0,0,0,.6)}
+.arrange-title{font-size:34px;padding:0 40px}
+.arrange-help{font-size:22px;color:var(--muted);padding:6px 40px 16px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.arrange-list{list-style:none;margin:0;padding:0}
+.arrange-row{display:flex;align-items:center;gap:18px;padding:10px 40px;font-size:26px;cursor:pointer}
+.arrange-row small{display:block;font-size:19px;color:var(--muted)}
+.arrange-grip{width:28px;color:var(--dim);font-size:26px;text-align:center}
+.arrange-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.arrange-pos{width:54px;text-align:right;font-size:21px;color:var(--muted)}
+.arrange-switch{width:56px;height:30px;border-radius:15px;background:var(--raised);position:relative;flex:none}
+.arrange-switch::after{content:'';position:absolute;top:4px;left:4px;width:22px;height:22px;border-radius:50%;background:var(--muted)}
+.arrange-switch.on{background:var(--accent)}
+.arrange-switch.on::after{left:30px;background:#fff}
+.arrange-row.off .arrange-name{color:var(--dim)}
+.arrange-row.sel{background:var(--accent);color:var(--on-accent)}
+.arrange-row.sel small,.arrange-row.sel .arrange-pos,.arrange-row.sel .arrange-grip{color:var(--on-accent-dim)}
+.arrange-row.sel .arrange-switch.on{background:var(--on-accent)}
+.arrange-row.moving{background:var(--accent2);box-shadow:0 8px 30px rgba(0,0,0,.45);transform:scale(1.02)}
+.arrange-row.action .arrange-name{color:var(--accent-text)}
+.arrange-row.action.sel .arrange-name{color:var(--on-accent)}
+
 /* ---------- The Movies and Shows home (vodhome.js): My media's look over the category list ---------- */
 #viewVod{position:relative}
 .vod-home{position:absolute;top:0;left:0;right:0;bottom:0;display:none;background:var(--ink);z-index:1;overflow:hidden}

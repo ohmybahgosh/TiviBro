@@ -62,13 +62,23 @@ function details(m, en, language) {
   out.releaseDate = str(m.release_date || en.release_date, 10);
   out.runtime = (m.runtime || en.runtime) > 0 ? Math.min(9999, m.runtime || en.runtime) + ' min' : '';
   out.poster = image(art(images.posters, language, m.poster_path || en.poster_path), 'w185');
-  out.backdrop = image(art(images.backdrops, language, m.backdrop_path || en.backdrop_path), 'w780');
-  out.backdropHd = image(art(images.backdrops, language, m.backdrop_path || en.backdrop_path), 'w1280');
+  // A backdrop without words on it first: one with the title printed on it repeats the title next to it.
+  var plain = (Array.isArray(images.backdrops) ? images.backdrops : []).filter(function (x) { return x && x.iso_639_1 === null && image(x.file_path, 'w185'); });
+  plain.sort(function (a, b) { return (b.vote_average || 0) - (a.vote_average || 0); });
+  var bd = plain.length ? plain[0].file_path : art(images.backdrops, language, m.backdrop_path || en.backdrop_path);
+  out.backdrop = image(bd, 'w780');
+  out.backdropHd = image(bd, 'w1280');
   // The title as artwork (Movies on now): in your language, else English; none is fine.
   var logos = (Array.isArray(images.logos) ? images.logos : []).filter(function (x) { return x && image(x.file_path, 'w500'); }), lg = null;
   [language, 'en'].some(function (l) { var f = logos.filter(function (x) { return x.iso_639_1 === l; }); f.sort(function (a, b) { return (b.vote_average || 0) - (a.vote_average || 0); }); lg = f[0]; return !!lg; });
   out.logo = lg ? image(lg.file_path, 'w500') : '';
   out.rating = (m.vote_average || en.vote_average) > 0 ? String(Math.round((m.vote_average || en.vote_average) * 10) / 10) : '';
+  // My media's Collections and Directors shelves: the franchise it belongs to, and who directed it.
+  var col = m.belongs_to_collection || en.belongs_to_collection;
+  if (col && /^[1-9][0-9]*$/.test(String(col.id))) out.collection = { id: 'tmdb:collection:' + col.id, name: str(col.name, 200) };
+  out.directors = ((m.credits || {}).crew || []).filter(function (c) { return c && c.job === 'Director'; }).slice(0, 3).map(function (c) { return str(c.name, 100); }).filter(Boolean);
+  out.cast = ((m.credits || {}).cast || []).slice(0, 6).map(function (c) { return str(c && c.name, 100); }).filter(Boolean).join(', ');
+  out.v = 2;                                   // details with these (Media.needsDetails looks again at older ones)
   out.fallbackFields = fallbackFields;
   return out;
 }
@@ -130,7 +140,7 @@ function create(opts) {
       });
       if (!/^tmdb:[1-9][0-9]*$/.test(id)) return cb(new Error('Choose a valid movie match.'));
       var path = '/movie/' + id.slice(5);
-      request(path + '?language=' + locale + '&append_to_response=images&include_image_language=' + language + ',en,null', function (e, m) {
+      request(path + '?language=' + locale + '&append_to_response=images,credits&include_image_language=' + language + ',en,null', function (e, m) {
         if (e) return cb(e);
         if (!m || !m.id) return cb(new Error('No movie details found.'));
         var needsEnglish = language !== 'en' && (!m.title || !m.overview || !m.genres || !m.genres.length);

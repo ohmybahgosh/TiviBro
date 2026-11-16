@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- **Arrange shelves with the remote.**  On My media and the Movies and Shows homes, OK picks a shelf up, Up and Down move it, OK puts it down, and Left or Right switches it on or off.  Saved as you go.
+- **My media only offers shelves that fit what you have.**  With only movies, no TV shows or TV lists in Arrange shelves, the web editor or Red.
+- **My media: new shelves.**  Pick of the day, Not watched yet, Highly rated you haven't seen, a shelf for each collection (every Toy Story you have, in order), each director you have three or more of, and each decade, 4K and HDR, Under 90 minutes and Long movies.  Each can be moved or switched off.  Movie options can mark a movie watched or not watched.
+- **My media: backdrops without the title printed on them.**  Your movies' details are refreshed once, quietly, for these and the collections and directors.
 - **Problem reports leave out a few more details of your connection.**
 
 ## 0.6.0 (alpha 142, 2026-11-15)
@@ -28,6 +32,10 @@ Pre-release: expect rough edges, and keep a backup before installing.
 ### In alpha 140
 
 - **A 1 GB TV with Network set to Direct no longer reads the whole guide while a channel plays (issue #93).**  With Direct, TiviBro reads the guide itself instead of the helper, and on a TV short of memory that is too much on top of the video: one closed at 59% of the guide.  Now that load waits until nothing plays (Reload guide still works at once), and the guide the helper saved while the network was on Automatic stays on screen meanwhile.
+- **Arrange shelves with the remote.**  On My media and the Movies and Shows homes, OK picks a shelf up, Up and Down move it, OK puts it down, and Left or Right switches it on or off.  Saved as you go.
+- **My media only offers shelves that fit what you have.**  With only movies, no TV shows or TV lists in Arrange shelves, the web editor or Red.
+- **My media: new shelves.**  Pick of the day, Not watched yet, Highly rated you haven't seen, a shelf for each collection (every Toy Story you have, in order), each director you have three or more of, and each decade, 4K and HDR, Under 90 minutes and Long movies.  Each can be moved or switched off.  Movie options can mark a movie watched or not watched.
+- **My media: backdrops without the title printed on them.**  Your movies' details are refreshed once, quietly, for these and the collections and directors.
 - **Problem reports leave out a few more details of your connection.**
 
 ### In alpha 139

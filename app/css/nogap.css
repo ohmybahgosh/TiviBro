@@ -33,6 +33,7 @@
 .nogap .tour-logo > * + *{margin-top:10px}
 .nogap .tour-remote-box > * + *{margin-left:56px}
 .nogap .media-shelf-title > * + *{margin-left:18px}
+.nogap .arrange-row > * + *{margin-left:18px}
 .nogap .on-meta > * + *{margin-left:14px}
 .nogap .on-track > * + *{margin-left:24px}
 .nogap .on-cap > * + *{margin-left:10px}
