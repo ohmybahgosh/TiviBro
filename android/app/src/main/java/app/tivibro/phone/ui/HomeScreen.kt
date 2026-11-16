@@ -128,6 +128,8 @@ fun HomeScreen(
     onBackups: (String) -> Unit,
     /** Sets a TV's address by hand: its id and what was typed. */
     onAddress: (String, String) -> Unit = { _, _ -> },
+    /** Turns a TV off (standby). */
+    onOff: (String) -> Unit = {},
     /** The last Bluetooth wake's log (ble/WakeLog.kt), and listening for a TV for 20 seconds into it. */
     bleLog: () -> String = { "" },
     onBleListen: (String) -> Unit = {},
@@ -215,7 +217,7 @@ fun HomeScreen(
                     // The App update tile goes on the first TV's card only (it is about this phone's app, not a TV).
                     val first = u.tv.id == tvs.first().tv.id
                     TvCard(u, isTile = tileTv == u.tv.id && tvs.size > 1, onEditor, onTab, onReminders, onOpen, onWake, onForget, onTile, onRepair, onBackups,
-                        bleLog = bleLog, onBleListen = onBleListen, onAddress = onAddress,
+                        bleLog = bleLog, onBleListen = onBleListen, onAddress = onAddress, onOff = onOff,
                         appUpdate = if (first && BuildConfig.SELF_UPDATE) AppUpdateTile(checking, rel != null && relHidden.not(), ::checkNow) else null)
                 }
             }
@@ -300,6 +302,7 @@ private fun TvCard(
     bleLog: () -> String = { "" }, onBleListen: (String) -> Unit = {},
     appUpdate: AppUpdateTile? = null,
     onAddress: (String, String) -> Unit = { _, _ -> },
+    onOff: (String) -> Unit = {},
 ) {
     var addressing by remember { mutableStateOf<String?>(null) }
     val tv = u.tv
@@ -335,6 +338,7 @@ private fun TvCard(
                     IconButton(onClick = { menu = true }) { Icon(Icons.Rounded.MoreVert, "More") }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         if (tv.canWake()) DropdownMenuItem(text = { Text("Turn on") }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) }, onClick = { menu = false; onWake(tv.id) })
+                        if (u.power == Power.ON) DropdownMenuItem(text = { Text("Turn off") }, leadingIcon = { Icon(Icons.Rounded.PowerSettingsNew, null) }, onClick = { menu = false; onOff(tv.id) })
                         if (u.power == Power.ON) DropdownMenuItem(text = { Text(if (u.tivibroOpen) "Show TiviBro on the TV" else "Open TiviBro on the TV") }, leadingIcon = { Icon(Icons.Rounded.PlayArrow, null) }, onClick = { menu = false; onOpen(tv.id) })
                         if (tv.bt.isNotBlank()) DropdownMenuItem(text = { Text("Bluetooth log") }, leadingIcon = { Icon(Icons.Rounded.Bluetooth, null) }, onClick = { menu = false; logText = bleLog() })
                         DropdownMenuItem(text = { Text("The TV's address") }, leadingIcon = { Icon(Icons.Rounded.Edit, null) }, onClick = { menu = false; addressing = tv.host + if (tv.port != 47810) ":" + tv.port else "" })

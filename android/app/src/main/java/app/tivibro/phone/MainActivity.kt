@@ -170,6 +170,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 onReminders = { id -> go(id, "reminders") },
                 onOpen = { model.openTiviBro(it) },
                 onWake = { turnOn(it) },
+                onOff = { model.turnOff(it) },
                 onForget = { model.forget(it) },
                 onAddress = { id, a -> model.setAddress(id, a) },
                 onTile = { model.tileTv = it; tile = it; model.say("The Quick Settings tile now opens TiviBro on this TV") },
@@ -267,6 +268,7 @@ private fun App(model: AppModel, link: MutableStateFlow<String?>, shared: Mutabl
                 onType = { inp, value, submit -> model.typeInto(id, inp.id, value, submit) },
                 startTab = startTab, startSec = startSec,
                 onGo = { where, page -> go(id, where, page) },
+                onPowerOff = { model.turnOff(id) },
             )
         }
         composable(

@@ -55,7 +55,8 @@ function unesc(s) {
      !         <new/>: a new episode;
      ~S2 E5    its season and episode, from <episode-num> (onscreen, or xmltv_ns counted from 0), else from
                the start of <desc> ("S04 E07 …"),
-   "m2011", "s!~S1 E3" or "" (nothing to say).  app/js/epg.js progFlag() makes the same from the same XML
+     ^         a sports programme shown before (<previously-shown>, not <new/> or <live/>): a game's replay,
+   "m2011", "s!~S1 E3", "s^" or "" (nothing to say).  app/js/epg.js progFlag() makes the same from the same XML
    (tests/unit/progflag.test.js) and readFlag() reads it back. */
 var MOVIE_CAT = /<category[^>]*>\s*(?:(?:tv |feature )?(?:movies?|films?)|spielfilm|película|cine|kino)\s*<\/category>/i;
 var KINDS = [
@@ -102,7 +103,7 @@ function movieFlag(body) {
     for (var i = 0; cats && i < KINDS.length; i++) if (KINDS[i][1].test(cats)) { k = KINDS[i][0]; break; }
   }
   var ep = episodeOf(body);
-  return k + (y ? y[1] : '') + (/<new\s*\/?>/i.test(body) ? '!' : '') + (ep ? '~' + ep : '');
+  return k + (y ? y[1] : '') + (/<new\s*\/?>/i.test(body) ? '!' : '') + (k === 's' && /<previously-shown\b/i.test(body) && !/<(?:new|live)\s*\/?>/i.test(body) ? '^' : '') + (ep ? '~' + ep : '');
 }
 function flat(s) { return String(s || '').replace(/[\t\r\n]+/g, ' '); }
 

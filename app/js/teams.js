@@ -397,7 +397,8 @@ var Teams = (function () {
         if (!g) return;
         p = { s: g.start, e: g.start + 3 * 3600e3, t: g.title, ev: 1 };
       }
-      if (!c || p.e <= now || p.s > far) return;
+      // A replay of a game already played (the guide says it was shown before) isn't the game.
+      if (!c || p.e <= now || p.s > far || p.rp) return;
       var ctx = c.n + ' | ' + (gname[c.g] || '');
       curTag = tagOf(p.t + ' | ' + ctx);
       var mineHits = playing(p.t, ctx, false);
@@ -408,7 +409,7 @@ var Teams = (function () {
     descHits(dwords).forEach(function (r) {
       var c = Library.find(r.key) || byEpg[r.key], p = r.p;
       if (c && Library.mixed && !Library.mixed(c, 'teams')) c = byEpg[r.key] || null;     // a playlist not mixed into My teams
-      if (!c || p.e <= now || p.s > to || !SPORTY.test(p.t) || /\breplay\b/i.test(p.t)) return;
+      if (!c || p.e <= now || p.s > to || p.rp || !SPORTY.test(p.t) || /\breplay\b/i.test(p.t)) return;
       // A description is loose talk: the team by its full name, or the league named ("NFL Football"), so a
       // college game between the Tigers and the Cardinals isn't the Detroit Tigers.
       var ctx = p.t + ' | ' + c.n + ' | ' + (gname[c.g] || '');

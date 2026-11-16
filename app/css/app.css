@@ -594,6 +594,8 @@ body.nav-open .hints{padding-left:400px}
 #clock.clock{position:absolute;top:22px;right:56px;z-index:4;margin:0;padding:0;font-size:26px;color:var(--muted);font-variant-numeric:tabular-nums}
 body.full #clock{display:none}
 .guide-detail{padding-right:170px}
+/* the title is level with the clock: it stops short of it (a long one is cut with … instead of running under it) */
+.guide-detail>b:first-child{margin-right:100px}
 /* background themes */
 body.theme-black{--ink:#000;--panel:#101418;--raised:#1b2229;--line:#262e37}
 body.theme-black .sidenav,body.theme-black.nav-open .sidenav{background:#000}

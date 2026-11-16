@@ -138,6 +138,17 @@ var companion = require('./companion').create({
     }
     lcall(A + (dir === 'up' ? 'volumeUp' : 'volumeDown'), {}, function (r) { if (r.returnValue === false) return cb(new Error(r.errorText || 'refused')); read(); });
   },
+  /* Turn the TV off, as its remote's power button does.  tvpower's powerOff first; where an app's helper
+     isn't let call it, the Homebrew Channel's root exec (a rooted TV) sends the same call. */
+  powerOff: function (cb) {
+    var P = 'luna://com.webos.service.tvpower/power/powerOff', args = { reason: 'remoteKey' };
+    lcall(P, args, function (r) {
+      if (r.returnValue !== false) return cb(null);
+      lcall('luna://org.webosbrew.hbchannel.service/exec', { command: 'luna-send -n 1 ' + P + ' \'' + JSON.stringify(args) + '\'' }, function (h) {
+        cb(h && h.returnValue !== false ? null : new Error(r.errorText || (h && h.errorText) || 'refused'));
+      });
+    });
+  },
   // Wake on BLE: the phone's made-up Bluetooth address, registered with the TV's asc service (blewake.js).
   blewake: require('./blewake').create({ call: lcall, log: function (o) { proxy.log(o); } }).handle,
   editor: function () { return relay ? relay.editor : null; },

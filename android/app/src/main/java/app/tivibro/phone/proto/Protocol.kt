@@ -306,6 +306,8 @@ class TvClient(private val tv: Tv, private val timeoutMs: Int = 8000) {
     fun action(a: String) { call("POST", "/v1/action", JSONObject().put("action", a)) }
     fun play(k: String) { call("POST", "/v1/play", JSONObject().put("k", k)) }
     fun text(t: String) { call("POST", "/v1/text", JSONObject().put("text", t)) }
+    /** Turns the TV off (standby), as its remote's power button does.  An older TiviBro answers 404. */
+    fun powerOff() { call("POST", "/v1/power", JSONObject()) }
     fun volume(dir: String): Volume? = call("POST", "/v1/volume", JSONObject().put("dir", dir)).optJSONObject("volume")?.let { Volume(it.optInt("level", -1), it.optBoolean("muted")) }
     /** What TiviBro shows.  With [wait], the TV answers when it changes (or after 20 seconds). */
     fun state(since: Int, wait: Boolean): NowState = NowState.from(call("GET", "/v1/state?since=$since" + if (wait) "&wait=1" else ""))

@@ -308,7 +308,7 @@ var Phone = (function () {
         if (hid || shown) { Library.hideChannels(change); Views.refreshLists(true); lineupAt = 0; sendLineup(); }
         return { msg: hid || shown ? [hid ? hid + ' hidden' : '', shown ? shown + ' shown' : ''].filter(Boolean).join(', ') + ' on the TV' : 'Nothing changed' };
       }
-      return { group: gid, title: Library.groupName(gid), rows: all.map(function (c) { return { k: c.k, n: Library.name(c), num: c.num || '', logo: Views.logoOf(c) || '', on: Library.isHidden(c.k) ? 0 : 1, g: Epg.hasData(c) ? 1 : 0 }; }) };
+      return { group: gid, title: Library.groupName(gid), rows: all.map(function (c) { return { k: c.k, n: Library.name(c), num: c.num || '', logo: Views.logoOf(c) || '', on: Library.isHidden(c.k) ? 0 : 1, g: Epg.hasData(c) ? 1 : 0 }; }), loading: Epg.loading ? 1 : 0 };
     },
     /* TiviBro's Settings on the phone, page by page (see Settings.phone): the list of pages, one page, or a
        change on it (op toggle, choice, cycle, action).  Locked with the TV's PIN when Settings is: the

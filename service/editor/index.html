@@ -1674,7 +1674,11 @@ var ddReady = false;
 function setupDropdowns() {
   if (ddReady) return; ddReady = true;
   dd($('cFilter'), { prefix: 'Show: ', value: 'all', options: [{ v: 'all', l: 'All channels' }, { v: 'shown', l: 'Shown only' }, { v: 'hidden', l: 'Hidden only' }, { v: 'noguide', l: 'Without guide data' }, { v: 'added', l: 'Copied or moved in' }],
-    onChange: function () { renderChannels(true); } });
+    onChange: function (v) {
+      renderChannels(true);
+      // Hiding these while the guide still loads would hide channels the public fill-in is about to give a guide.
+      if (v === 'noguide' && D.guide && D.guide.loading) toast('The TV is still loading the guide, public fill-in included.  Some of these will get one: wait before hiding them.');
+    } });
   dd($('cSort'), { prefix: 'Order: ', value: 'provider', options: [], onChange: function (v) {
     var id = curGroup, def = isCustom(id) ? 'custom' : 'provider';
     mut('Sort ' + groupLabel(id) + ': ' + SORT_LABEL[v], function () {

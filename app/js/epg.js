@@ -66,8 +66,8 @@ var Epg = (function () {
 
   /* What the guide says about a programme, as a few letters (the same as service/guide.js movieFlag, which
      the helper writes into titles.tsv): m movie with its year ("m2011"), s sports, n news, c kids,
-     d documentary, ! new, ~S2 E5 season and episode.  Made in the worker (injected as source) and read
-     back into the programme by readFlag: mv, y, k, n, ep. */
+     d documentary, ! new, ^ a game's replay (sports shown before), ~S2 E5 season and episode.  Made in the
+     worker (injected as source) and read back into the programme by readFlag: mv, y, k, n, rp, ep. */
   function progFlag(body) {
     var k = '', y = null;
     if (/<category[^>]*>\s*(?:(?:tv |feature )?(?:movies?|films?)|spielfilm|película|cine|kino)\s*<\/category>/i.test(body)) { k = 'm'; y = /<date[^>]*>\s*((?:19|20)\d\d)\s*<\/date>/.exec(body); }
@@ -92,15 +92,17 @@ var Epg = (function () {
     }
     // No <episode-num>: some guides start the description with it ("S04 E07 Love That Lets Go Lilly finally…").
     if (!ep) { var dse = /<desc[^>]*>\s*(?:<!\[CDATA\[)?\s*S(\d{1,3})\s*[.:\-]?\s*E(\d{1,4})\b/i.exec(body); if (dse) ep = 'S' + +dse[1] + ' E' + +dse[2]; }
-    return k + (y ? y[1] : '') + (/<new\s*\/?>/i.test(body) ? '!' : '') + (ep ? '~' + ep : '');
+    // ^: a sports programme shown before (<previously-shown>, not <new/> or <live/>): a replay of a game.
+    return k + (y ? y[1] : '') + (/<new\s*\/?>/i.test(body) ? '!' : '') + (k === 's' && /<previously-shown\b/i.test(body) && !/<(?:new|live)\s*\/?>/i.test(body) ? '^' : '') + (ep ? '~' + ep : '');
   }
   function readFlag(f, pg) {
-    var m = /^([mscnd]?)(\d{4})?(!?)(?:~(.*))?$/.exec(f || '');
+    var m = /^([mscnd]?)(\d{4})?(!?)(\^?)(?:~(.*))?$/.exec(f || '');
     if (!m) return pg;
     if (m[1] === 'm') pg.mv = 1; else if (m[1]) pg.k = m[1];
     if (m[2]) pg.y = m[2];
     if (m[3]) pg.n = 1;
-    if (m[4]) pg.ep = m[4];
+    if (m[4]) pg.rp = 1;
+    if (m[5]) pg.ep = m[5];
     return pg;
   }
 
@@ -125,7 +127,11 @@ var Epg = (function () {
   function live(id) { var x = cache.get(id), l = x && x.list; return !!(l && l.length && l[l.length - 1].e > Date.now()); }
   function epgId(ch) {
     var m = Store.edits.epgMap && Store.edits.epgMap[ch.k];
-    if (m) return m;
+    /* A guide channel you picked comes first, unless it has nothing from now on and the public guide has
+       the channel: 278 of 307 picks on a real playlist pointed at provider ids with no programmes, and the
+       fill-in passed them over (missing()). */
+    if (m && (PUB_ID.test(m) || !pubMatched[ch.k] || live(m))) return m;
+    if (m) return pubMatched[ch.k];
     var id = own(ch, matched[ch.k] || ch.epg || '');
     // Per-channel provider guide: an XMLTV source's listings that disagree with it give way to it (vote).
     if (id && votes[ch.k] && votes[ch.k][0] === 'p' && votes[ch.k][2] === id && shortAllowed(ch)) return '';
@@ -1047,16 +1053,19 @@ var Epg = (function () {
     if (typeof PubEpg === 'undefined' || !(Library.data && Library.data.channels.length)) return false;
     return (Store.loaded ? Store.loaded() : [P()]).some(function (p) { return PubEpg.conf(p).on; });
   }
+  // The guide id you picked for a channel by hand (not a public guide one), else ''.
+  function handId(ch) { var m = Store.edits.epgMap && Store.edits.epgMap[ch.k]; return m && !PUB_ID.test(m) ? m : ''; }
   // Channels nothing else has a guide for.  Per-channel provider guides can't be checked ahead, so
   // a channel the provider gives a guide id to counts as covered there.
   function missing() {
     var map = Store.edits.epgMap || {}, ev = typeof Events !== 'undefined', first = PubEpg.conf(P()).on;
     return Library.data.channels.filter(function (ch) {
-      if (map[ch.k] && !PUB_ID.test(map[ch.k])) return false;
+      // A guide channel you picked: left alone while it has something from now on.
+      if (map[ch.k] && !PUB_ID.test(map[ch.k]) && live(map[ch.k])) return false;
       if (Library.noGuide(ch)) return false;                    // no guide wanted
       if (ch.p && !PubEpg.conf(PL(ch)).on) return false;        // its playlist has public fill-in off
       if (!ch.p && !first) return false;
-      var id = own(ch, matched[ch.k] || ch.epg || '');
+      var id = handId(ch) || own(ch, matched[ch.k] || ch.epg || '');
       if (id && live(id)) return false;
       // Per-channel provider guides can't be checked ahead, except for app channels (Pluto TV), whose
       // own guide is the better one anyway.
@@ -1117,7 +1126,7 @@ var Epg = (function () {
     var p = P(), miss = pubPick(missing()), map = Store.edits.epgMap || {};
     var ccs = PubEpg.countriesFor(p, miss, Library.data);
     var gz = !!Net.active || typeof DecompressionStream !== 'undefined';
-    var apps = PubEpg.appFiles ? PubEpg.appFiles(miss, gz) : [];
+    var apps = PubEpg.appFiles ? PubEpg.appFiles(miss.map(function (c) { var h = handId(c); return h ? { epg: h } : c; }), gz) : [];
     // Sports guides: the sports channels too, guide or not, from the sports files first (helper only: the
     // files are big, and only the helper reads them as they come in).
     var sport = sportsChannels(miss), sfiles = sport.length >= 3 ? PubEpg.sportsFiles() : [];
@@ -1130,7 +1139,7 @@ var Epg = (function () {
        your own guide (one that failed, or loaded a moment later): with those in the signature the public
        guides (100 MB and a minute of the TV's time) were read again at almost every start. */
     // What you chose (the days kept, countries picked by hand, sports guides on or off) still makes it a new guide.
-    var ckey = 'epgpub:' + p.id, sig = U.hash(p.epgDays + '|' + PubEpg.conf(p).cc.join() + '|' + PubEpg.sportsOn(p) + '|es2');
+    var ckey = 'epgpub:' + p.id, sig = U.hash(p.epgDays + '|' + PubEpg.conf(p).cc.join() + '|' + PubEpg.sportsOn(p) + '|es3');
     var labels = files.map(function (s) { return s.prefix ? s.name + ' ' + s.cc : s.url; });
     function covers(c) {
       var had = {}; (c.report || []).forEach(function (r) { if (r.ok) had[r.url] = 1; });
@@ -1171,7 +1180,8 @@ var Epg = (function () {
         PubEpg.keys(Library.name(ch)).keys.forEach(function (x) { add(x[0]); });
         PubEpg.keys(ch.n).keys.forEach(function (x) { add(x[0]); });
         if (ch.epg) add('id:' + ch.epg);
-        var aid = PubEpg.appId ? PubEpg.appId(ch.epg) : '';          // "US_5ca5…" is "5ca5…" in Pluto's own guide
+        var hid = handId(ch); if (hid) add('id:' + hid);
+        var aid = PubEpg.appId ? PubEpg.appId(hid || ch.epg) : '';          // "US_5ca5…" is "5ca5…" in Pluto's own guide
         if (aid && !seen['id:' + aid]) { seen['id:' + aid] = 1; (pk['id:' + aid] || (pk['id:' + aid] = [])).push([ch.k, pd, '']); }
       });
       var started = Date.now(), g = guard('pub', sig, forced); if (!g) return;

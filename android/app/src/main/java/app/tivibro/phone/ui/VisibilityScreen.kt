@@ -101,7 +101,8 @@ fun VisibilityScreen(model: AppModel, id: String, group: String, k: String, onCl
                     LazyRow(Modifier.padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         item { AssistChip(onClick = { d.rows.forEach { on[it.key] = true } }, label = { Text("Show all") }) }
                         item { AssistChip(onClick = { d.rows.forEach { on[it.key] = false } }, label = { Text("Hide all") }) }
-                        item { AssistChip(onClick = { d.rows.forEach { if (!it.guide) on[it.key] = false } }, label = { Text("Hide ones with no guide") }) }
+                        // Not while the TV is still loading the guide: channels the public fill-in is about to cover would be hidden.
+                        item { AssistChip(enabled = !d.loading, onClick = { d.rows.forEach { if (!it.guide) on[it.key] = false } }, label = { Text(if (d.loading) "Guide still loading" else "Hide ones with no guide") }) }
                     }
                     Text("A hidden channel is hidden in every group on the TV.", color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 4.dp, 16.dp, 6.dp))
                     LazyColumn(Modifier.fillMaxSize()) {

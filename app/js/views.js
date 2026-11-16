@@ -1555,6 +1555,15 @@ var Views = (function () {
     chansVL.setItems(list, Math.max(0, i));
     hintsFor();
   }
+  /* "Hide channels with no guide information" waits for the whole guide, public fill-in included: while it
+     loads, channels it is about to fill have nothing yet and would be hidden for good. */
+  function noGuideHide(run) {
+    var busy = !!Epg.loading;
+    return { label: 'Hide channels with no guide information', sub: busy ? 'Once the guide has finished loading' : '', action: function () {
+      if (!Epg.loading) return run();
+      U.toast('The guide is still loading.  Try again when it has finished, so channels it fills in stay shown.');
+    } };
+  }
   function listVisAll(f) { chansVL.items.forEach(function (c) { var on = f(c); if (on != null) lvis.on[c.k] = on; }); chansVL.refresh(); listVisHead(); }
   function listVisKeys(a) {
     if (a === 'up') chansVL.move(-1, true);
@@ -1566,7 +1575,7 @@ var Views = (function () {
     else if (a === 'red' || a === 'hold') UI.menu('Show or hide channels', [
       { label: 'Show all', action: function () { listVisAll(function () { return true; }); } },
       { label: 'Hide all', action: function () { listVisAll(function () { return false; }); } },
-      { label: 'Hide channels with no guide information', action: function () { listVisAll(function (c) { return Epg.hasData(c) ? null : false; }); } },
+      noGuideHide(function () { listVisAll(function (c) { return Epg.hasData(c) ? null : false; }); }),
       { label: 'Save and finish', action: function () { endListVis(true); } },
       { label: 'Leave without saving', action: function () { endListVis(false); } }
     ]);
@@ -3129,7 +3138,7 @@ var Guide = (function () {
     else if (a === 'red' || a === 'hold') UI.menu('Show or hide channels', [
       { label: 'Show all', action: function () { visAll(function () { return true; }); } },
       { label: 'Hide all', action: function () { visAll(function () { return false; }); } },
-      { label: 'Hide channels with no guide information', action: function () { visAll(function (c) { return Epg.hasData(c) ? null : false; }); } },
+      noGuideHide(function () { visAll(function (c) { return Epg.hasData(c) ? null : false; }); }),
       { label: 'Save and finish', action: function () { endVis(true); } },
       { label: 'Leave without saving', action: function () { endVis(false); } }
     ]);

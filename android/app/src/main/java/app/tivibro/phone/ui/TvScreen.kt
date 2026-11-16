@@ -43,6 +43,7 @@ import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.FastRewind
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Info
+import androidx.compose.material.icons.rounded.PowerSettingsNew
 import androidx.compose.material.icons.rounded.Keyboard
 import androidx.compose.material.icons.rounded.KeyboardArrowDown
 import androidx.compose.material.icons.rounded.KeyboardArrowLeft
@@ -145,6 +146,8 @@ fun TvScreen(
     startSec: String? = null,
     /** Opens one of the phone's own screens: "reminders", "backups" or "editor" (with an editor page id, or ""). */
     onGo: (String, String) -> Unit = { _, _ -> },
+    /** Turns the TV off (the remote's power key, after asking). */
+    onPowerOff: () -> Unit = {},
 ) {
     var tab by rememberSaveable { mutableStateOf(startTab.ifBlank { "Remote" }) }
     var chanOptions by remember { mutableStateOf<Chan?>(null) }
@@ -202,7 +205,7 @@ fun TvScreen(
                 "Shows" -> VodTab(model, id, "series")
                 "My media" -> if ((state?.mediaLibraryVersion ?: 0) >= 2) MyMediaTab(model, id) else VodTab(model, id, "media")
                 "Settings" -> SettingsTab(model, id, startSec = if (startTab == "Settings") startSec else null, onGo = onGo)
-                else -> Remote(volume, onKey, onAction, onVolume, onType = { typing = true })
+                else -> Remote(volume, onKey, onAction, onVolume, onType = { typing = true }, onPowerOff = onPowerOff)
             }
         }
     }
@@ -290,13 +293,22 @@ private fun Key(icon: ImageVector?, label: String, onClick: () -> Unit, modifier
 }
 
 @Composable
-private fun Remote(volume: Volume?, onKey: (String) -> Unit, onAction: (String) -> Unit, onVolume: (String) -> Unit, onType: () -> Unit) {
+private fun Remote(volume: Volume?, onKey: (String) -> Unit, onAction: (String) -> Unit, onVolume: (String) -> Unit, onType: () -> Unit, onPowerOff: () -> Unit = {}) {
+    var askOff by remember { mutableStateOf(false) }
+    if (askOff) AlertDialog(
+        onDismissRequest = { askOff = false }, containerColor = Panel,
+        title = { Text("Turn the TV off?") },
+        text = { Text("Turn on brings it back.") },
+        confirmButton = { TextButton(onClick = { askOff = false; onPowerOff() }) { Text("Turn off") } },
+        dismissButton = { TextButton(onClick = { askOff = false }) { Text("Cancel") } },
+    )
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp, 16.dp, 20.dp, 28.dp), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Key(Icons.AutoMirrored.Rounded.ArrowBack, "Back", { onKey("back") })
             Key(Icons.Rounded.Home, "Channels", { onAction("live") })
             Key(Icons.Rounded.DateRange, "Guide", { onAction("guide") })
             Key(Icons.Rounded.Keyboard, "Type a search", onType)
+            Key(Icons.Rounded.PowerSettingsNew, "Turn off", { askOff = true }, tint = Bad)
         }
         Spacer(Modifier.height(26.dp))
         // The pad: arrows round OK.  Hold OK for options, as on the remote.

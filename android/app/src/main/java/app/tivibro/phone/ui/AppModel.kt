@@ -543,6 +543,19 @@ class AppModel(app: Application) : AndroidViewModel(app) {
         val tv = tv(id) ?: return
         presses.trySend { TvClient(tv, 5000).play(k); say("Playing $name on ${tv.name}") }
     }
+    /** Turn the TV off.  Turning it on again is Turn on (Wake-on-LAN or Bluetooth), as before. */
+    fun turnOff(id: String) {
+        val tv = tv(id) ?: return
+        presses.trySend {
+            try {
+                TvClient(tv, 5000).powerOff()
+                say("Turning ${tv.name} off")
+                setUi(id) { it.copy(power = Power.OFF, standby = true, tivibroOpen = false) }
+            } catch (e: TbException) {
+                say(if (e.code == "missing" || e.message == "not found") "Update TiviBro on ${tv.name} to turn it off from here." else e.message ?: "${tv.name} didn't turn off.")
+            }
+        }
+    }
     fun volume(id: String, dir: String) {
         val tv = tv(id) ?: return
         presses.trySend { _volume.value = TvClient(tv, 5000).volume(dir) }

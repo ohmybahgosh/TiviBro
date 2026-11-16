@@ -277,6 +277,7 @@ function create(opts) {
       tivibro: { open: !!app.open, visible: !!app.visible, editor: !!(ed && ed.status().running) },
       // The TV's power state (service.js): "Active" or "Screen Off" is on; anything else ("Active Standby") is off to the person.
       power: opts.power ? opts.power() || undefined : undefined,
+      off: !!opts.powerOff,                     // the phone can turn the TV off (POST /v1/power)
       phone: phoneView(p), now: Date.now()
     };
   }
@@ -404,6 +405,17 @@ function create(opts) {
     });
   }
 
+  // Turn the TV off (standby), like the remote's power button.  Turning it on is the phone's own job
+  // (Wake-on-LAN, Bluetooth): the helper isn't reachable while the TV is off.
+  function powerOff(p, reply) {
+    if (!opts.powerOff) return reply(501, { error: 'This TV can\'t be turned off from here.', code: 'power' });
+    log({ lv: 'info', event: 'companion: turn off', phone: p.name });
+    opts.powerOff(function (e) {
+      if (e) return reply(502, { error: 'The TV refused: ' + e.message, code: 'power' });
+      reply(200, { ok: true });
+    });
+  }
+
   // Wake on BLE: register, check or remove this phone's Bluetooth wake address (blewake.js).  TiviBro may be closed.
   function blewake(j, p, reply) {
     if (!opts.blewake) return reply(501, { error: 'This TV can\'t be turned on over Bluetooth from here.', code: 'blewake' });
@@ -442,6 +454,7 @@ function create(opts) {
         if (pathOnly === '/v1/lineup' && req.method === 'GET') return phoneLineup(u, reply);
         if (/^\/v1\/(key|action|play|text)$/.test(pathOnly) && req.method === 'POST') return phoneCommand(pathOnly, buf, p, reply);
         if (pathOnly === '/v1/volume' && req.method === 'POST') return volume((parse(buf) || {}).dir, reply);
+        if (pathOnly === '/v1/power' && req.method === 'POST') return powerOff(p, reply);
         if (pathOnly === '/v1/blewake' && req.method === 'POST') return blewake(parse(buf), p, reply);
         if (pathOnly === '/v1/forget' && req.method === 'POST') {
           st.phones = st.phones.filter(function (x) { return x.id !== p.id; }); save(); changed();

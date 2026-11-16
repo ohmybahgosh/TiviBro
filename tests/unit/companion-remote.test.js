@@ -9,10 +9,12 @@ let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined && !c ? '  ' + String(x).slice(0, 300) : '')); if (!c) fails++; };
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'tb-remote-'));
 const launched = [], vol = { level: 10, muted: false };
+let offs = 0;
 let open = false;
 const c = Companion.create({
   dir, version: 'test', log: () => {}, launch: (p, cb) => { launched.push(p); cb(null); }, sysinfo: (cb) => cb({ model: 'X', webos: '1', name: 'Den' }),
   app: () => ({ open }), editor: () => null,
+  powerOff: (cb) => { offs++; cb(null); },
   volume: (d, cb) => { if (d === 'up') vol.level++; else if (d === 'down') vol.level--; else vol.muted = !vol.muted; cb(null, Object.assign({}, vol)); },
 });
 function ctl(u, body) {
@@ -95,6 +97,8 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('mute', v.volume.muted === true);
   e = await C.call(cred, 'POST', '/v1/volume', { dir: 'max' }).catch((x) => x);
   ok('nothing else', e.code === 'bad');
+  const po = await C.call(cred, 'POST', '/v1/power', {});
+  ok('turn off: the TV is asked once', po.ok === true && offs === 1);
 
   // Unsigned: nothing.
   const raw = await C.call(Object.assign({}, cred, { key: Buffer.alloc(32).toString('base64') }), 'POST', '/v1/key', { key: 'ok' }, { raw: true });

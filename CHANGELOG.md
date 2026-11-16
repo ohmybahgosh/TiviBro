@@ -6,6 +6,11 @@
 - **My media only offers shelves that fit what you have.**  With only movies, no TV shows or TV lists in Arrange shelves, the web editor or Red.
 - **My media: new shelves.**  Pick of the day, Not watched yet, Highly rated you haven't seen, a shelf for each collection (every Toy Story you have, in order), each director you have three or more of, and each decade, 4K and HDR, Under 90 minutes and Long movies.  Each can be moved or switched off.  Movie options can mark a movie watched or not watched.
 - **My media: backdrops without the title printed on them.**  Your movies' details are refreshed once, quietly, for these and the collections and directors.
+- **Public guide fill-in now covers channels you pointed at a guide channel that has nothing scheduled.**  Before, picking a guide channel by hand (Assign guide, the web editor, Smart match) kept the fill-in away from that channel even when the pick had no programmes.  On one real playlist that was 278 channels, local stations among them.
+- **My teams leaves out replays.**  A game the guide says was shown before (a Tuesday morning replay of Saturday's game) is no longer listed as the next game.
+- **Hide channels with no guide information waits for the guide.**  While the guide is still loading, public fill-in included, it says so instead of hiding channels that are about to get a guide.  The phone app's Hide ones with no guide and the web editor's Without guide data filter say so too.
+- **Phone app: Turn off.**  The remote has a power key that turns the TV off (after asking), and the TV's menu on the home screen has Turn off when it is on.
+- **Guide: a long programme title no longer runs under the clock.**
 - **Problem reports leave out a few more details of your connection.**
 
 ## 0.6.0 (alpha 142, 2026-11-15)

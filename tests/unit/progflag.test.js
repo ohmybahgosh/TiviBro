@@ -28,6 +28,10 @@ const CASES = [
   ['<episode-num system="onscreen">S1 E3</episode-num><desc>S9 E9 other</desc>', '~S1 E3'],
   ['<desc>Season 4 of the show; S04 E07 later on</desc>', ''],
   ['<category>Drama</category><new/>', '!'],
+  ['<category>Football</category><date>20261114</date><previously-shown start="20261114000000" />', 's^'],
+  ['<category>Football</category><previously-shown/><live/>', 's'],
+  ['<category>Football</category><new/><previously-shown/>', 's!'],
+  ['<category>Drama</category><previously-shown/>', ''],
   ['<category>Series</category>', ''],
   ['<title>Plain</title>', '']
 ];
@@ -37,6 +41,8 @@ CASES.forEach(([xml, want]) => {
 });
 const r = readFlag('s!~S2 E5', {});
 ok('readFlag: kind, new, episode', r.k === 's' && r.n === 1 && r.ep === 'S2 E5' && !r.mv, JSON.stringify(r));
+const rp = readFlag('s^~S1 E2', {});
+ok('readFlag: a game\'s replay', rp.k === 's' && rp.rp === 1 && !rp.n && rp.ep === 'S1 E2', JSON.stringify(rp));
 const m = readFlag('m2011', {});
 ok('readFlag: a movie and its year, as before', m.mv === 1 && m.y === '2011' && !m.k, JSON.stringify(m));
 ok('readFlag: nothing from nothing, or from a flag it does not know', JSON.stringify(readFlag('', {})) === '{}' && JSON.stringify(readFlag('zz9', {})) === '{}');
