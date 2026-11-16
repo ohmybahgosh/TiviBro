@@ -6,13 +6,12 @@
      POST /media/trakt { op: 'revoke', token }                 -> {}
      POST /media/trakt { op: 'get'|'post', path, body, token } -> { data, headers } (path under /users, /sync, /movies,
                                                                   /shows, /lists, /search, /recommendations, /scrobble)
-   TiviBro's Trakt app signs in with its Client ID alone (Trakt issues no Client Secret for new apps), so
+   TiviBro's Trakt app (Production, app 271766) signs in with its Client ID alone (Trakt issues no Client Secret for new apps), so
    nothing secret lives here; the user's tokens stay on the TV (mediastore.js) and are never logged.
    ES5 / Node 0.12. */
 'use strict';
 var https = require('https');
-var CLIENT_ID = 's98wypm76isHUv6nmTgHtYaT6K8cR1EjaChOirtlycs';
-var REDIRECT = 'urn:ietf:wg:oauth:2.0:oob';
+var CLIENT_ID = 's4br48sLOBTcjifzdxAKb-7ld4L6xnBmyiaSukQzdy8';
 var PATHS = /^\/(users|sync|movies|shows|lists|search|recommendations|scrobble|calendars)(\/[A-Za-z0-9._~%:-]*)*(\?[A-Za-z0-9._~%&=,:+-]*)?$/;
 var UA = 'TiviBro (LG webOS; https://tivibro.app)';
 try { UA = 'TiviBro/' + require('../package.json').version + ' (LG webOS; https://tivibro.app)'; } catch (e) {}
@@ -61,11 +60,16 @@ function handle(q, cb) {
     if (r.status === 400 || r.status === 429) return cb({ pending: true });
     cb({ error: 'trakt', message: r.status === 410 ? 'The code expired.  Start again.' : r.status === 418 ? 'You chose not to connect.' : r.status === 409 ? 'That code was already used.' : why(r), stop: true });
   });
-  if (op === 'refresh') return call('POST', '/oauth/token', { refresh_token: str(q.refresh, 512), client_id: CLIENT_ID, redirect_uri: REDIRECT, grant_type: 'refresh_token' }, '', function (e, r) {
-    if (e) return cb({ error: 'trakt', message: e.message });
-    if (r.status === 200 && r.json && r.json.access_token) return cb({ token: tokenOf(r.json) });
-    cb({ error: 'trakt', message: why(r), signedOut: r.status === 400 || r.status === 401 });
-  });
+  // Refresh: device-code apps register no redirect address; older Trakt setups want the out-of-band one, so that is tried second.
+  if (op === 'refresh') {
+    var body = { refresh_token: str(q.refresh, 512), client_id: CLIENT_ID, grant_type: 'refresh_token' };
+    return call('POST', '/oauth/token', body, '', function again(e, r, tried) {
+      if (e) return cb({ error: 'trakt', message: e.message });
+      if (r.status === 200 && r.json && r.json.access_token) return cb({ token: tokenOf(r.json) });
+      if (!tried && (r.status === 400 || r.status === 401)) { body.redirect_uri = 'urn:ietf:wg:oauth:2.0:oob'; return call('POST', '/oauth/token', body, '', function (e2, r2) { again(e2, r2, true); }); }
+      cb({ error: 'trakt', message: why(r), signedOut: r.status === 400 || r.status === 401 });
+    });
+  }
   if (op === 'revoke') return call('POST', '/oauth/revoke', { token: token, client_id: CLIENT_ID }, '', function () { cb({}); });
   if (op === 'get' || op === 'post' || op === 'delete') {
     var path = str(q.path, 600);
