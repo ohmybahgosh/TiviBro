@@ -48,6 +48,17 @@ ok('unrelated subtitles score low', r.match < 0.4, JSON.stringify(r));
 
 // The helper's requests to OpenSubtitles, with https stubbed.
 const S = require('../../service/subtitles.js');
+{
+  // Results for another film (OpenSubtitles' loose text search) go after, or out when enough match.
+  const q = { query: 'Planes, Trains and Automobiles', year: '' };
+  const R = (title, release, year) => ({ title, release, year, season: 0, episode: 0 });
+  const got = S._test.rank([R('Jack and Jill', 'Jack.and.Jill.2011', 2011), R('Planes, Trains & Automobiles', '1hr 28mn 39s', 1987),
+    R('Withnail and I', 'Withnail.and.I', 1987), R('', 'Planes.Trains.And.Automobiles.1987.WS.DVDRip.XViD-NULL', 0), R('Planes, Trains and Automobiles', '720p.BRRip.x264-x0r', 1987)], q);
+  ok('subtitles for the asked film only, in their order', got.length === 3 && got.every((r) => !/Jack|Withnail/.test(r.title)), JSON.stringify(got.map((r) => r.title || r.release)));
+  const few = S._test.rank([R('Jack and Jill', 'x', 2011), R('Planes, Trains and Automobiles', 'y', 1987)], q);
+  ok('with only a few right ones, the rest stay, after them', few.length === 2 && few[0].title === 'Planes, Trains and Automobiles');
+  ok('the year counts: the right year beats a remake', S._test.score(R('Total Recall', 'a', 1990), { query: 'Total Recall', year: '1990' }) > S._test.score(R('Total Recall', 'b', 2012), { query: 'Total Recall', year: '1990' }));
+}
 const url = S._test.searchUrl({ query: 'The  Matrix', year: '1999', langs: ['es', 'EN', 'ea', 'bad lang!'], type: 'movie' });
 ok('search address: sorted parameters, lower case, + for spaces', url === 'https://api.opensubtitles.com/api/v1/subtitles?languages=ea,en,es&order_by=download_count&query=the+matrix&type=movie&year=1999', url);
 const calls = [];

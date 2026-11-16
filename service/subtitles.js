@@ -87,6 +87,36 @@ function shape(j) {
    English and Spanish together came back as 49 English and one Spanish.  Asked one language at a time,
    each gets its own 50 (40 are kept).  At most five languages, asked together. */
 var PER_LANG = 40;
+/* OpenSubtitles' text search is loose: "Planes, Trains and Automobiles" also brought back Jack and Jill and
+   Withnail and I among the most downloaded.  Each result is scored against what was asked (its film's
+   title, else its release name; the year; the season and episode), the ones for the asked film first, and
+   ones for another film left out when enough are for the right one. */
+function words(s) {
+  return String(s || '').toLowerCase().replace(/&/g, ' and ').replace(/['\u2019]/g, '').replace(/[^a-z0-9\u00c0-\u024f]+/g, ' ').trim()
+    .replace(/^(the|a|an) /, '');
+}
+function score(r, q) {
+  var want = words(q.query);
+  if (!want) return 1;
+  var ws = want.split(' '), t = words(r.title), rel = ' ' + words(r.release) + ' ', sc = 0;
+  if (t && t === want) sc = 4;
+  else if (t && ws.every(function (w) { return (' ' + t + ' ').indexOf(' ' + w + ' ') >= 0; })) sc = 3;
+  else if (rel.indexOf(' ' + want + ' ') >= 0) sc = 3;
+  else if (ws.length > 1 && ws.filter(function (w) { return w.length > 2; }).every(function (w) { return rel.indexOf(' ' + w + ' ') >= 0; })) sc = 2;
+  if (!sc) return 0;
+  var y = /^\d{4}$/.test(str(q.year)) ? +q.year : 0;
+  if (y && r.year) sc += Math.abs(r.year - y) <= 1 ? 1 : -2;
+  if (+q.season > 0 && r.season && r.season !== +q.season) sc -= 3;
+  if (+q.episode > 0 && r.episode && r.episode !== +q.episode) sc -= 3;
+  return Math.max(sc, 0);
+}
+function rank(list, q) {
+  list.forEach(function (r, i) { r._s = score(r, q); r._i = i; });
+  var good = list.filter(function (r) { return r._s > 0; });
+  if (good.length >= 3) list = good;
+  list.sort(function (a, b) { return b._s - a._s || a._i - b._i; });         // within a score, most downloaded first (as asked)
+  return list.map(function (r) { delete r._s; delete r._i; return r; });
+}
 function search(q, cb) {
   if (!keyOk(q)) return cb({ error: 'key', message: 'Add your OpenSubtitles API key first: Settings > Playback > Subtitles from OpenSubtitles.' });
   if (!str(q.query, 120).trim()) return cb({ error: 'query', message: 'Say what to look for.' });
@@ -98,7 +128,7 @@ function search(q, cb) {
   langs.forEach(function (l) {
     var one = {}; Object.keys(q).forEach(function (k) { one[k] = q[k]; }); one.langs = l ? [l] : [];
     call('GET', searchUrl(one), auth(q), null, function (e, j) {
-      if (e) errs.push(e); else { got[l] = shape(j).slice(0, PER_LANG); total += j && j.total_count || got[l].length; }
+      if (e) errs.push(e); else { got[l] = rank(shape(j), q).slice(0, PER_LANG); total += j && j.total_count || got[l].length; }
       if (--left) return;
       if (errs.length === langs.length) return cb({ error: 'search', message: errs[0].message });
       var out = [], counts = {};
@@ -136,4 +166,4 @@ function login(q, cb) {
     cb({ token: j.token, allowed: j.user && j.user.allowed_downloads || 0, level: j.user && str(j.user.level, 40) || '' });
   });
 }
-module.exports = { search: search, get: get, login: login, _test: { searchUrl: searchUrl, decode: decode, UA: UA } };
+module.exports = { search: search, get: get, login: login, _test: { searchUrl: searchUrl, decode: decode, UA: UA, score: score, rank: rank } };

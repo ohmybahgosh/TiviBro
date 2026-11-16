@@ -11,6 +11,7 @@
 - **Hide channels with no guide information waits for the guide.**  While the guide is still loading, public fill-in included, it says so instead of hiding channels that are about to get a guide.  The phone app's Hide ones with no guide and the web editor's Without guide data filter say so too.
 - **Phone app: Turn off.**  The remote has a power key that turns the TV off (after asking), and the TV's menu on the home screen has Turn off when it is on.
 - **Guide: a long programme title no longer runs under the clock.**
+- **OpenSubtitles search lists subtitles for the right film.**  Its search is loose, so Planes, Trains and Automobiles also brought back Jack and Jill and Withnail and I.  Results are now matched to the title (and the year, season and episode when known): the right film's first, other films' left out when there are enough.
 - **Problem reports leave out a few more details of your connection.**
 
 ## 0.6.0 (alpha 142, 2026-11-15)
