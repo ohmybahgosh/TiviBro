@@ -20,6 +20,7 @@ var Vod = (function () {
   var raw = { movie: null, series: null };   // without the helper: the whole list, so a language change needs no reload
   var info = new Map();
   var episodes = null, series = null;      // drill-down into a show
+  var homeMode = false, showFromHome = false, opens = 0;   // the home with poster shelves (vodhome.js) is on screen; a show was opened from it
   var playingMeta = null;
 
   var CW = '_cw', MY = '_my', ALL = '_all', LANGS = '_langs', NEW = '_new';
@@ -230,7 +231,7 @@ var Vod = (function () {
       catsVL.setItems(cl, at);
       var c = catsVL.current();
       if (c && c.id !== LANGS) itemsVL.setItems(itemsFor(c.id), 0);
-      onItem();
+      onItem(); homeChanged();
     }).catch(function (e) { U.toast('Could not reload the list: ' + (e && e.message || e), 4000); });
   }
   function langMenu() {
@@ -259,6 +260,7 @@ var Vod = (function () {
     var home = catHome(c.id), p = prefs(home.p), h = p.hide || (p.hide = {}), list = h[kind] || (h[kind] = []);
     var items = [];
     if (c.id !== CW && c.id !== MY && c.id !== ALL && c.id !== NEW && c.id !== LANGS) {
+      if (homeOn()) items.push({ label: 'Pin to the ' + (kind === 'series' ? 'Shows' : 'Movies') + ' home', sub: 'a shelf of its own on the home screen', action: function () { if (VodHome.pin(c.id)) U.toast(c.name + ' is a shelf on the home now'); else U.toast(c.name + ' is already on the home'); } });
       items.push({ label: 'Hide this category', sub: 'its titles leave All and Search too', action: function () { list.push(home.id); Store.upsertPlaylist(home.p); U.toast(c.name + ' hidden'); reshow(); } });
     }
     if (data[kind] && Object.keys(data[kind].langs).filter(Boolean).length > 1) items.push({ label: 'Languages…', action: langMenu });
@@ -374,11 +376,15 @@ var Vod = (function () {
   function sorted(list, dflt) {
     var how = Store.settings.vodSort || 'provider';
     if (how === 'provider') how = dflt || '';
-    if (how === 'added') return list.sort(function (a, b) { return (b.added || 0) - (a.added || 0); });
-    if (how === 'name') return list.sort(function (a, b) { return String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base', numeric: true }); });
-    if (how === 'rating') return list.sort(function (a, b) { return (+b.rating || 0) - (+a.rating || 0); });
+    if (how === 'added') list.sort(function (a, b) { return (b.added || 0) - (a.added || 0); });
+    else if (how === 'name') list.sort(function (a, b) { return String(a.name).localeCompare(String(b.name), undefined, { sensitivity: 'base', numeric: true }); });
+    else if (how === 'rating') list.sort(function (a, b) { return (+b.rating || 0) - (+a.rating || 0); });
+    else if (how === 'year') list.sort(function (a, b) { return yearOf(b) - yearOf(a); });
+    // Reverse the order (Settings > Movies and shows, or Red on the home): any of them turned round.
+    if (Store.settings.vodSortReverse) list.reverse();
     return list;
   }
+  function yearOf(it) { var m = /\((19|20)\d\d\)/.exec(it.name || ''); return +(it.year || (m ? m[0].slice(1, 5) : 0)) || 0; }
   // A title's category name, shown on its row in All, Recently added, My list and Continue watching (discussion #60).
   var catNames = null, catNamesFor = null;
   function catName(it) {
@@ -460,7 +466,7 @@ var Vod = (function () {
       var i = (r && r.info) || {};
       // The provider's trailer: a YouTube id, or a whole YouTube link.
       var yt = String(i.youtube_trailer || i.trailer || '').trim(), ym = /(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/.exec(yt);
-      info.set(key(it), { trailer: ym ? ym[1] : /^[A-Za-z0-9_-]{11}$/.test(yt) ? yt : '', plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', media: Caps.fromXtream(i) });
+      info.set(key(it), { trailer: ym ? ym[1] : /^[A-Za-z0-9_-]{11}$/.test(yt) ? yt : '', plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', backdrop: [].concat(i.backdrop_path || [])[0] || '', media: Caps.fromXtream(i) });
       if (itemsVL.current() === it) showInfo();
     }).catch(function () {});
   }
@@ -607,7 +613,7 @@ var Vod = (function () {
       !it.ep && { label: mine ? 'Remove from My list' : 'Add to My list', action: function () {
         var l = E().myList, k = key(it);
         if (mine) E().myList = l.filter(function (x) { return x !== k; }); else l.push(k);
-        Store.saveEdits(); itemsVL.refresh(); U.toast(mine ? 'Removed from My list' : 'Added to My list');
+        Store.saveEdits(); itemsVL.refresh(); homeChanged(); U.toast(mine ? 'Removed from My list' : 'Added to My list');
       } },
       // On a show (no file of its own) it only takes the show off Continue watching, as before.
       (playable ? r || !w : r) && { label: 'Mark as watched', action: function () { if (playable) mark(id, true); else { delete E().resume[id]; Store.saveEdits(); } relist(); } },
@@ -631,7 +637,9 @@ var Vod = (function () {
   }
 
   // After marking: Continue watching and its count follow (a title marked watched leaves it).
+  function homeChanged() { if (homeMode && typeof VodHome !== 'undefined') VodHome.changed(); }
   function relist() {
+    homeChanged();
     if (!episodes) {
       var was = catsVL.current(), cl = catList(), sel = itemsVL.sel;
       catsVL.setItems(cl, Math.max(0, cl.findIndex(function (c) { return was && c.id === was.id; })));
@@ -644,10 +652,10 @@ var Vod = (function () {
     if (episodes) return UI.hints([['', 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  all shows', 'back']]);
     if (zone === 'cats') {
       var c = catsVL && catsVL.current();
-      return UI.hints(c && c.id === LANGS ? [['', 'OK  pick languages'], ['', 'Back  menu bar', 'back'], ['green', 'Guide'], ['blue', 'Settings']]
-        : [['', 'OK  open'], ['', 'Hold OK  hide category', 'hold'], ['', 'Back  menu bar', 'back'], ['red', 'Hide category'], ['green', 'Guide'], ['blue', 'Settings']]);
+      return UI.hints(c && c.id === LANGS ? [['', 'OK  pick languages'], ['', homeOn() ? 'Back  home' : 'Back  menu bar', 'back'], ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]
+        : [['', 'OK  open'], ['', homeOn() ? 'Hold OK  pin or hide' : 'Hold OK  hide category', 'hold'], ['', homeOn() ? 'Back  home' : 'Back  menu bar', 'back'], ['red', homeOn() ? 'Pin or hide' : 'Hide category'], ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]);
     }
-    UI.hints([['', 'OK  ' + (kind === 'series' ? 'open' : 'play')], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu bar', 'back'], ['red', 'Options'], ['green', 'Guide'], ['blue', 'Settings']]);
+    UI.hints([['', 'OK  ' + (kind === 'series' ? 'open' : 'play')], ['', 'Hold OK  options', 'hold'], ['', episodes && showFromHome ? 'Back  home' : 'Back  categories', 'back'], ['red', 'Options'], ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]);
   }
 
   function keys(a) {
@@ -663,8 +671,8 @@ var Vod = (function () {
         if (c && c.adult && !adultOpen()) Parental.gate('channels', null, function () { adultUnlocked = true; go(); }); else go();
       }
       else if (a === 'red' || a === 'hold' || a === 'info') catMenu(catsVL.current());
-      else if (a === 'back' || a === 'left') Views.tabBar(restore);
-      else if (a === 'green') Views.switchTab('guide');
+      else if (a === 'back' || a === 'left') { if (homeOn()) toHome(); else Views.tabBar(restore); }
+      else if (a === 'green') { if (homeOn()) toHome(); else Views.switchTab('guide'); }
       else if (a === 'blue') Views.switchTab('settings');
       return true;
     }
@@ -672,33 +680,86 @@ var Vod = (function () {
     else if (a === 'down') itemsVL.move(1, true);
     else if (a === 'chup') itemsVL.page(-1);
     else if (a === 'chdown') itemsVL.page(1);
-    else if (a === 'left') { if (episodes) closeSeries(); else setZone('cats'); }
+    else if (a === 'left') { if (episodes) { closeSeries(); if (showFromHome) toHome(); } else setZone('cats'); }
     else if (a === 'ok') {
       var it = itemsVL.current();
       if (!it) return true;
       if (kind === 'series' && !it.ep) openSeries(it); else play(it, false);
     }
     else if (a === 'red' || a === 'hold' || a === 'info') itemMenu(itemsVL.current());
-    else if (a === 'back') { if (episodes) closeSeries(); else setZone('cats'); }
-    else if (a === 'green') Views.switchTab('guide');
+    else if (a === 'back') { if (episodes) { closeSeries(); if (showFromHome) toHome(); } else setZone('cats'); }
+    else if (a === 'green') { if (homeOn()) toHome(); else Views.switchTab('guide'); }
     else if (a === 'blue') Views.switchTab('settings');
     return true;
   }
   function restore() { UI.setHandler(keys); setZone(zone); }
+
+  /* ---------- the home (vodhome.js): poster shelves, the list above is All categories ---------- */
+  function homeOn() { return typeof VodHome !== 'undefined' && VodHome.on(); }
+  function progressOf(it) {
+    var r = resumeOf(idOf(it)), bar = kind === 'series' && !it.ep ? r && r.ep && resumeOf(r.ep) : r;
+    return bar && bar.dur ? Math.round(100 * bar.pos / bar.dur) : 0;
+  }
+  function whereOf(it) {
+    var r = resumeOf(idOf(it));
+    if (kind === 'series' && !it.ep) { var er = r && r.ep && resumeOf(r.ep); return er ? r.l + ': stopped at ' + Math.floor(er.pos / 60) + ' of ' + Math.floor(er.dur / 60) + ' min' : r && r.l ? 'Up next: ' + r.l : ''; }
+    return r && r.dur ? 'Stopped at ' + Math.floor(r.pos / 60) + ' of ' + Math.floor(r.dur / 60) + ' min' : isWatched(idOf(it)) ? '✓  Watched' : '';
+  }
+  // What the home's top shows: the provider's details for a movie (asked for once), TMDB's for a show.
+  function detailsOf(it, then) {
+    if (kind === 'series') {
+      var tv = typeof Series !== 'undefined' ? Series.show(it.name, it.year, 'strong') : null;
+      return { plot: it.plot && it.plot.length >= 40 ? it.plot : (tv && tv.plot) || it.plot || '', genre: tv && tv.genre, year: it.year || (tv && tv.year), rating: tv && tv.rating, backdrop: tv && (tv.backdropHd || tv.backdrop) || '', logo: tv && tv.logo || '', cast: tv && tv.cast };
+    }
+    var k = key(it), m = info.get(k);
+    if (m === undefined && then) {
+      info.set(k, null);
+      Source.vodInfo(it.id, plOf(it)).then(function (r) {
+        var i = (r && r.info) || {}, yt = String(i.youtube_trailer || i.trailer || '').trim(), ym = /(?:v=|youtu\.be\/|embed\/)([A-Za-z0-9_-]{11})/.exec(yt);
+        info.set(k, { trailer: ym ? ym[1] : /^[A-Za-z0-9_-]{11}$/.test(yt) ? yt : '', plot: i.plot || i.description || '', genre: i.genre || '', cast: i.cast || i.actors || '', director: i.director || '', dur: i.duration || '', year: (i.releasedate || i.release_date || '').slice(0, 4), poster: i.movie_image || i.cover_big || '', backdrop: [].concat(i.backdrop_path || [])[0] || '', media: Caps.fromXtream(i) });
+        then();
+      }).catch(function () {});
+    }
+    if (!m) return { plot: it.plot || '' };
+    return { plot: m.plot, genre: m.genre, cast: m.cast, director: m.director, dur: niceDur(m.dur), year: m.year, backdrop: m.backdrop, media: m.media ? Caps.label(m.media) : '' };
+  }
+  // Leave the home for the list: on a category (or All), on a title.
+  function toList(cid, it) {
+    homeMode = false; if (typeof VodHome !== 'undefined') VodHome.hide();
+    UI.setHandler(keys);
+    var cats = catList(), ci = cats.findIndex(function (c) { return c.id === (cid || ALL); });
+    if (ci < 0) ci = Math.max(0, cats.findIndex(function (c) { return c.id === ALL; }));
+    catsVL.setItems(cats, ci);
+    var list = itemsFor(cats[ci] ? cats[ci].id : ALL), at = it ? list.indexOf(it) : -1;
+    itemsVL.setItems(list, Math.max(0, at)); onItem();
+    setZone(it && at >= 0 ? 'items' : 'cats');
+  }
+  function toHome() { if (episodes) closeSeries(); showFromHome = false; homeMode = true; VodHome.show(kind, homeApi, false); }
+  var homeApi = {
+    CW: CW, MY: MY, NEW: NEW,
+    data: function () { return data[kind]; }, cats: function () { return catList(); }, items: function (id) { return itemsFor(id); },
+    key: function (it) { return key(it); }, adultOpen: function () { return adultOpen(); }, catName: function (it) { return catName(it); }, stars: function (it) { return stars(it.rating); },
+    progress: function (it) { return progressOf(it); }, where: function (it) { return whereOf(it); }, details: function (it, then) { return detailsOf(it, then); },
+    isMine: function (it) { return E().myList.indexOf(key(it)) >= 0; }, isWatched: function (it) { return isWatched(idOf(it)); },
+    open: function (it) { if (kind === 'series' && !it.ep) { toList(null, it); showFromHome = true; openSeries(it); setZone('items'); } else play(it, false); },
+    menu: function (it) { itemMenu(it); }, list: function (cid, it) { toList(cid, it); }
+  };
 
   function open(k, keepState) {
     if (!built) build();
     var changed = k !== kind;
     kind = k;
     UI.setHandler(keys);
+    if (homeOn() && keepState && homeMode && data[k] && !changed && !pending) { VodHome.show(k, homeApi, false); return; }
     if (changed) { episodes = null; series = null; }
     $('vodTitle').textContent = episodes && series ? series.name : (k === 'series' ? 'Shows' : 'Movies');
     if (keepState && data[k] && !changed && !pending) { var was = catsVL.current(), cl = catList(); catsVL.setItems(cl, Math.max(0, cl.findIndex(function (c) { return was && c.id === was.id; }))); itemsVL.refresh(); showInfo(); setZone(zone); return; }
     catsVL.setItems([], 0); itemsVL.setItems([], 0);
     itemsVL.empty = 'Loading…'; itemsVL.refresh();
     setZone('cats');
+    var mine = ++opens;                                       // only the latest opening sets up the screen
     load(k).then(function () {
-      if (kind !== k) return;
+      if (kind !== k || mine !== opens) return;
       var cats = catList();
       var first = Math.max(0, cats.findIndex(function (c) { return c.count > 0; }));   // skip an empty My list
       catsVL.setItems(cats, first);
@@ -706,6 +767,8 @@ var Vod = (function () {
       itemsVL.setItems(itemsFor(cats[first].id), 0);
       setZone('items');
       onItem();
+      if (homeOn() && !(pending && pending.kind === k)) { homeMode = true; showFromHome = false; VodHome.show(k, homeApi, true); }
+      else { homeMode = false; if (typeof VodHome !== 'undefined') VodHome.hide(); }
       openPending(k);
     }).catch(function (e) { itemsVL.empty = 'Could not load ' + (k === 'series' ? 'shows' : 'movies') + ': ' + (e.message || e); itemsVL.setItems([], 0); });
   }
@@ -801,5 +864,6 @@ var Vod = (function () {
     }
   };
 
-  return { _test: { catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, offered: offered, reset: function () { gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
+  function arrange(k) { U.toast('Loading ' + (k === 'series' ? 'shows' : 'movies') + '…'); load(k).then(function () { kind = k; VodHome.arrange(k, homeApi); }, function (e) { U.toast('Could not load the list: ' + (e && e.message || e), 5000); }); }
+  return { arrange: arrange, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, offered: offered, reset: function () { gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
 })();

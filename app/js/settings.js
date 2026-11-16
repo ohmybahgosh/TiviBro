@@ -918,9 +918,14 @@ var Settings = (function () {
   /* ---------- Movies and shows: the Movies and Shows screens, and TMDB details for them and the guide ---------- */
   function vodSettings() {
     var s = S(), out = [];
-    out.push(choice('Order movies and shows', 'In each category and My list.  All movies and All shows are newest first in the provider\'s order.  Recently added is always newest first.',
-      ['provider', 'added', 'name', 'rating'], ['The provider\'s order', 'Recently added first', 'Name (A–Z)', 'Rating (highest first)'],
-      function () { return s.vodSort || 'provider'; }, function (v) { s.vodSort = v; save(); }));
+    out.push(choice('Movies and Shows open on', 'Home: the title you\'re on large at the top, with poster shelves (Continue watching, My list, Recently added, TMDB\'s lists of your provider\'s titles, and the categories you pin).  Green there opens all categories.  Categories: the list of categories, as before.',
+      ['home', 'list'], ['Home', 'Categories'], function () { return s.vodHome === false ? 'list' : 'home'; }, function (v) { s.vodHome = v === 'home'; save(); }));
+    out.push(choice('Order movies and shows', 'In each category, My list and the home\'s category shelves.  All movies and All shows are newest first in the provider\'s order.  Recently added is always newest first.  Red on the home too.',
+      ['provider', 'added', 'name', 'year', 'rating'], ['The provider\'s order', 'Recently added first', 'Name (A–Z)', 'Release year (newest first)', 'Rating (highest first)'],
+      function () { return s.vodSort || 'provider'; }, function (v) { s.vodSort = v; save(); if (typeof VodHome !== 'undefined') VodHome.changed(); }));
+    out.push(toggle('Reverse the order', 'Turns the order round: Z to A, oldest, lowest or added longest ago first.', function () { return !!s.vodSortReverse; }, function (v) { s.vodSortReverse = v; save(); if (typeof VodHome !== 'undefined') VodHome.changed(); }));
+    out.push(action('Arrange the Movies home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Movies home too.', function () { Vod.arrange('movie'); }));
+    out.push(action('Arrange the Shows home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Shows home too.', function () { Vod.arrange('series'); }));
     out.push(toggle('Play next episode automatically', '', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); }));
     out.push(toggle('Hide spoilers', 'In the guide, new episodes and episodes or movies that haven\'t aired yet (not news or sport), and on the Shows screen, episodes you haven\'t started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode.',
       function () { return !!s.noSpoilers; }, function (v) { s.noSpoilers = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));

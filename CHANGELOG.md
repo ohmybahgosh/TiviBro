@@ -9,6 +9,8 @@
 - **My media: holiday lists.**  Christmas, Thanksgiving, Halloween, Fourth of July, Easter, St. Patrick's Day, Valentine's Day and New Year's movies, from a month before the day until a week after.
 - **My media: arrange the shelves.**  Red > **Arrange shelves** moves any shelf up or down and switches it off.  Also in Settings > My media and the web editor.
 - **My media: one tile per movie.**  The same movie on two sources is one tile, playing the copy you were watching, else your preferred source, else the best picture.  Movie options > **Choose a copy** picks another.  With more than one source, Red > **Show** narrows My media to one.
+- **Movies and Shows have a home, like My media.**  The title you're on large at the top over its backdrop, with its details, and poster shelves: Continue watching, My list, Recently added, TMDB's lists (Trending, Popular, Top rated, Airing today for shows; Now playing and Upcoming can be switched on) and holiday lists, showing only your provider's titles that are on them, and the categories you pin.  Green opens all categories (the list as before), where Hold OK pins one.  Red: the order, See all (a shelf as a wall of posters), Go to a shelf and Arrange shelves.  Settings > Movies and shows > **Movies and Shows open on** brings back the category list if you'd rather.  My media's lists and these are kept apart: each only shows its own titles.
+- **Movies and Shows: order by release year, and Reverse the order.**  In Settings > Movies and shows and Red on the home.
 - **The movie player's bar runs the full width.**  For My media, movies and catch-up.  My media movies show their name once, then the year, running time, genres and rating, with the poster.
 
 ## 0.6.0 (alpha 141, 2026-11-15)

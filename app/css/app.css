@@ -864,6 +864,18 @@ body.media-open:not(.full) #clock{text-shadow:0 2px 10px rgba(0,0,0,.85),0 0 2px
 .tmdb-credit{display:flex;align-items:center;padding:18px 24px;color:var(--muted);font-size:20px}
 .tmdb-credit img{flex:none;margin-right:24px;width:120px;height:auto}
 
+/* ---------- The Movies and Shows home (vodhome.js): My media's look over the category list ---------- */
+#viewVod{position:relative}
+.vod-home{position:absolute;top:0;left:0;right:0;bottom:0;display:none;background:var(--ink);z-index:1;overflow:hidden}
+#viewVod.home-on .vod-home{display:block}
+.vod-wall-head{position:absolute;left:152px;top:44px;right:56px;display:none}
+.vod-wall-head .media-title{font-size:52px;margin-bottom:6px}
+.vod-wall-box{position:absolute;left:152px;top:230px;right:0;bottom:0;overflow:hidden;display:none}
+.vod-wall{position:relative;transition:transform 200ms ease}
+.vod-home.wall .vod-wall-head,.vod-home.wall .vod-wall-box{display:block}
+.vod-home.wall .media-bd,.vod-home.wall .media-hero,.vod-home.wall .media-shelves{display:none}
+body.vod-home-open:not(.full) #clock{text-shadow:0 2px 10px rgba(0,0,0,.85),0 0 2px rgba(0,0,0,.9)}
+
 /* ---------- Movies on now (onnow.js): the focused movie large over its backdrop, big posters below ---------- */
 .view.onnow{position:relative;display:block;padding:0 0 0 152px;overflow:hidden}
 .on-hero{position:relative;height:470px;margin-left:-152px;padding:56px 56px 0 152px;overflow:hidden}

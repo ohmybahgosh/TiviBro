@@ -609,7 +609,8 @@ var Views = (function () {
     if (lvis && t !== 'live') endListVis(true);
     if (tab === 'media' && t !== 'media') Media.leave();
     if (tab === 'onnow' && t !== 'onnow') OnNow.leave();
-    document.body.classList.toggle('media-open', t === 'media');                 // the clock over a backdrop gets a shadow
+    document.body.classList.toggle('media-open', t === 'media');
+    if ((tab === 'movies' || tab === 'shows') && t !== 'movies' && t !== 'shows' && typeof VodHome !== 'undefined') VodHome.hide();                 // the clock over a backdrop gets a shadow
     if ((t === 'settings' || t === 'search') && (tab === 'guide' || tab === 'live')) pipFrom = tab;
     tab = t;
     Keymap.setContext(t === 'live' ? 'list' : t === 'guide' ? 'guide' : 'other');

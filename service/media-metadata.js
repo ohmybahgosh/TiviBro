@@ -90,14 +90,20 @@ function create(opts) {
        keyword (q.keyword, "christmas"), most popular first.  Nothing about the viewer's library is sent; the
        TV matches the IDs against what it has.  q.kind 'tv' for shows.  Never answered from the cache. */
     if (q.list) {
-      var tv = q.kind === 'tv', kind = tv ? 'tv' : 'movie', ids = [], pages = q.list === 'top_rated' || q.list === 'holiday' ? 5 : 3, path;
+      var tv = q.kind === 'tv', kind = tv ? 'tv' : 'movie', ids = [], items = [], pages = q.list === 'top_rated' || q.list === 'holiday' ? 5 : 3, path;
       var LISTS = { trending: '/trending/' + kind + '/week', popular: '/' + kind + '/popular', top_rated: '/' + kind + '/top_rated' };
       if (!tv) { LISTS.now_playing = '/movie/now_playing'; LISTS.upcoming = '/movie/upcoming'; } else LISTS.airing_today = '/tv/airing_today';
       var page = function (n) {
         request(path + (path.indexOf('?') < 0 ? '?' : '&') + 'language=' + locale + '&page=' + n, function (e, r) {
-          if (e) return ids.length ? cb(null, { ids: ids }) : cb(e);
-          (r && Array.isArray(r.results) ? r.results : []).forEach(function (x) { if (x && /^[1-9][0-9]*$/.test(String(x.id))) ids.push((tv ? 'tmdb:tv:' : 'tmdb:') + x.id); });
-          if (n < pages && r && r.total_pages > n) page(n + 1); else cb(null, { ids: ids });
+          if (e) return ids.length ? cb(null, { ids: ids, items: items }) : cb(e);
+          // With each ID, its title, original title and year: the provider's Movies and Shows (vodhome.js) have no
+          // TMDB IDs, so they match by name.
+          (r && Array.isArray(r.results) ? r.results : []).forEach(function (x) {
+            if (!x || !/^[1-9][0-9]*$/.test(String(x.id))) return;
+            ids.push((tv ? 'tmdb:tv:' : 'tmdb:') + x.id);
+            items.push({ id: (tv ? 'tmdb:tv:' : 'tmdb:') + x.id, t: str(x.title || x.name, 200), o: str(x.original_title || x.original_name, 200), y: str(x.release_date || x.first_air_date, 4) });
+          });
+          if (n < pages && r && r.total_pages > n) page(n + 1); else cb(null, { ids: ids, items: items });
         });
       };
       if (q.list !== 'holiday') {
@@ -109,7 +115,7 @@ function create(opts) {
       return request('/search/keyword?query=' + encodeURIComponent(word), function (e, r) {
         if (e) return cb(e);
         var hit = (r && Array.isArray(r.results) ? r.results : []).filter(function (k) { return k && String(k.name).toLowerCase() === word && /^[1-9][0-9]*$/.test(String(k.id)); })[0];
-        if (!hit) return cb(null, { ids: [] });
+        if (!hit) return cb(null, { ids: [], items: [] });
         path = '/discover/' + kind + '?with_keywords=' + hit.id + '&sort_by=popularity.desc&include_adult=false';
         page(1);
       });
