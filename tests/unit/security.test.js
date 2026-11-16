@@ -33,6 +33,9 @@ const get = (port, p, headers) => new Promise((res) => {
   const leaks = ['Authorization: Bearer sl.u.ABCDEFGHIJKLMNOP1234567890', 'token ' + jwt, '{"credential":"0123456789abcdef0123456789abcdef","x":1}', '{"refresh_token":"ABCDEFGH12345678"}'];
   for (const [who, f] of [['the helper', proxy.redact], ['the app', ctx.Log.redact]]) {
     const out = leaks.map((x) => f(x)).join(' | ');
+    // A Stalker portal's link inside the helper's link, percent-encoded (issue #91): no MAC, token or server.
+    const enc = f('http://127.0.0.1:47811/st/a/449.ts?stb=k&cmd=ffmpeg%20http%3A%2F%2Fmag.portal.example%3A80%2Fplay%2Flive.php%3Fmac%3D00%3A1A%3A79%3AD3%3A5C%3A20%26stream%3D449%26play_token%3D28sQIO2Iz6');
+    ok(who + ': a portal link inside a link loses its MAC, play token and server', !/D3|5C:20|28sQIO2Iz6|portal\.example/.test(enc) && /stream=449/.test(enc), enc);
     ok(who + ': Bearer tokens, JWTs and secret JSON fields are masked', !/ABCDEFGHIJKLMNOP|eyJhdWQ|0123456789abcdef0123|ABCDEFGH12345678/.test(out) && /"x":1/.test(out), out);
   }
 

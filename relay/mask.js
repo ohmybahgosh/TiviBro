@@ -6,8 +6,16 @@
    What goes: logins in query strings (username=, password=, token=, api_key= ...), user:pass@ in a link,
    the two login parts of Xtream stream links (/live/, /movie/, /series/, /timeshift/ and the short form)
    with the provider's server name, the helper's control key ("ctl" in the log), and server names in the
-   helper's network errors.  Plain ES module. */
-const QUERY = /([?&](?:username|user|password|pass|pwd|token|access_token|api_key|apikey|auth|sig|signature|key)=)[^&\s"'<>)\]]+/gi;
+   helper's network errors, and a box's MAC address and play tokens, also inside an encoded link.  Plain ES module. */
+const QUERY = /([?&](?:username|user|password|pass|pwd|token|access_token|api_key|apikey|auth|sig|signature|key|mac|play_token|stream_token|stb|sn|serial|device_id|hash)=)[^&\s"'<>)\]]+/gi;
+/* A box's MAC address (a Stalker portal's login): the first half stays, the rest goes.  Also as %3A. */
+const MAC = /\b([0-9A-F]{2}(?::|%3A|-)[0-9A-F]{2}(?::|%3A|-)[0-9A-F]{2})(?:(?::|%3A|-)[0-9A-F]{2}){3}\b/gi;
+/* A link inside a link, percent-encoded (the helper's cmd=ffmpeg%20http%3A%2F%2Fportal%2F...%3Fmac%3D...):
+   read as it is, so the rules below see its server, logins and MAC (issue #91). */
+const ENCODED = /(?:[A-Za-z0-9._~!*'()+-]|%[0-9A-Fa-f]{2})*%3[Aa]%2[Ff]%2[Ff](?:[A-Za-z0-9._~!*'()+-]|%[0-9A-Fa-f]{2})*/g;
+// A Stalker portal's server, when the link carries a MAC or play token.
+const PORTAL = /(\b[a-z][a-z0-9+.-]*:\/\/)([^/\s"'<>)\]]+)(\/[^\s"'<>)\]]*?[?&](?:mac|play_token)=)/gi;
+function decoded(m) { try { return decodeURIComponent(m); } catch (e) { return m; } }
 const USERINFO = /\/\/([^/\s:@"'<>]+):([^/\s@"'<>]+)@/g;
 const XTREAM = /(\b[a-z][a-z0-9+.-]*:\/\/)(<[a-z]+>(?::\d+)?|[^/\s"'<>)\]]+)\/(live|movie|series|timeshift)\/[^/\s"'<>)\]]+\/[^/\s"'<>)\]]+\//gi;
 const SHORT = /(\b[a-z][a-z0-9+.-]*:\/\/)(<[a-z]+>(?::\d+)?|[^/\s"'<>)\]]+)\/[^/\s"'<>?#)\]]+\/[^/\s"'<>?#)\]]+\/(\d+(?:\.[a-z0-9]{2,5})?)(?=[\s"'<>?#)\]]|$)/gim;
@@ -31,7 +39,10 @@ function host(h) { return KEEP.test(h) || h.charAt(0) === '<' ? h : '<provider>'
 
 export function maskSecrets(s, opt) {
   const out = String(s == null ? '' : s)
+    .replace(ENCODED, decoded)
+    .replace(PORTAL, (m, scheme, h, rest) => scheme + host(h) + rest)
     .replace(QUERY, '$1***')
+    .replace(MAC, '$1:**:**:**')
     .replace(USERINFO, '//***:***@')
     .replace(XTREAM, (m, scheme, h, kind) => scheme + host(h) + '/' + kind + '/***/***/')
     // The short form looks like plenty of ordinary links, so only one that looks like a stream: a port

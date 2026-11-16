@@ -94,7 +94,13 @@ function sameHost(h) {
 function redact(u) {
   var s = String(u);
   (Media.signedHosts || []).forEach(function (h) { s = s.replace(new RegExp('(' + escRx(h) + ')[/?][^\\s"\'<>\\\\]*', 'gi'), '$1/***'); });
-  return s.replace(/\/media-stream\/[a-f0-9]{48}/gi, '/media-stream/***').replace(/([?&](?:sig|signature|token|auth|key|expires|hash|stb|play_token|stream_token)=)[^&\s]*/gi, '$1***')
+  return s
+      // A link inside a link, percent-encoded (cmd=ffmpeg%20http%3A%2F%2F...%3Fmac%3D...): read as it is, so its
+      // MAC, tokens and server are masked too (issue #91).  The same rules as app/js/log.js.
+      .replace(/(?:[A-Za-z0-9._~!*'()+-]|%[0-9A-Fa-f]{2})*%3[Aa]%2[Ff]%2[Ff](?:[A-Za-z0-9._~!*'()+-]|%[0-9A-Fa-f]{2})*/g, function (m) { try { return decodeURIComponent(m); } catch (e) { return m; } })
+      .replace(/(\b[a-z][a-z0-9+.-]*:\/\/)([^\/\s"'<>]+)(\/[^\s"'<>]*?[?&](?:mac|play_token)=)/gi, function (m, a, h, b) { return /^(localhost|127\.)/.test(h) ? m : a + '<provider>' + b; })
+      .replace(/\b([0-9A-F]{2}[:-]){5}[0-9A-F]{2}\b/gi, function (m) { return m.slice(0, 8) + ':**:**:**'; })     // a box's MAC (Stalker portals)
+      .replace(/\/media-stream\/[a-f0-9]{48}/gi, '/media-stream/***').replace(/([?&](?:sig|signature|token|auth|key|expires|hash|stb|play_token|stream_token|mac|sn|serial|device_id)=)[^&\s]*/gi, '$1***')
       .replace(/((?:password|pass|pwd|api_key|access_token)=)[^&\s]*/gi, '$1***').replace(/(username=)([^&\s]{0,2})[^&\s]*/gi, '$1$2***')
       // Tokens in headers and JSON: "Bearer …", a JWT (TMDB's read token is one), and named fields.
       .replace(/(Bearer\s+)[A-Za-z0-9._~+\/-]{8,}=*/gi, '$1***').replace(/\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{4,}/g, 'eyJ***')

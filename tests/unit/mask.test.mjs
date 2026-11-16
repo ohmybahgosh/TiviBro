@@ -25,6 +25,10 @@ for (const keep of ['getaddrinfo ENOTFOUND <provider>', 'connect ECONNREFUSED 12
   same(keep, keep, 'left alone: ' + keep);
 for (const keep of ['https://github.com/ohmybahgosh/TiviBro/issues/25', 'https://raw.githubusercontent.com/a/b/refs/heads/master/list.m3u8', 'https://www.reddit.com/r/IPTV/12345', 'Fixed in 0.6.0-alpha.58, see #24', 'https://tivibro.app/apk/'])
   same(keep, keep, 'left alone: ' + keep);
+const enc = m('http://127.0.0.1:47811/st***/***/449.ts?stb=***&cmd=ffmpeg%20http%3A%2F%2Fmag.portal.example%3A80%2Fplay%2Flive.php%3Fmac%3D00%3A1A%3A79%3AD3%3A5C%3A20%26stream%3D449%26play_token%3D28sQIO2Iz6');
+ok('a Stalker portal link inside a link, percent-encoded: no MAC, play token or server (issue #91)', !/D3|5C|28sQIO2Iz6|portal\.example/.test(enc) && /stream=449/.test(enc), enc);
+same('http://mag.portal.example/play/live.php?mac=00:1A:79:D3:5C:20&stream=449', 'http://<provider>/play/live.php?mac=***&stream=449', 'a plain portal link: no MAC or server');
+same('MAC 00:1A:79:D3:5C:20 in a sentence', 'MAC 00:1A:79:**:**:** in a sentence', 'a MAC address on its own keeps only its first half');
 ok('masking twice changes nothing more', m(m('http://prov.example:80/u1/p1/5.ts')) === m('http://prov.example:80/u1/p1/5.ts'));
 console.log(fails ? fails + ' FAILED' : 'all masking checks passed');
 process.exit(fails ? 1 : 0);

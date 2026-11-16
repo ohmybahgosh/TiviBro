@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Problem reports leave out a few more details of your connection.**
+
 ## 0.6.0 (alpha 142, 2026-11-15)
 
 Pre-release: expect rough edges, and keep a backup before installing.
