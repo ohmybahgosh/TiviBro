@@ -79,12 +79,41 @@ function create(opts) {
     var headers = { Accept: 'application/json' }, url = BASE + path;
     if (/^[a-f0-9]{32}$/i.test(credential)) url += (url.indexOf('?') < 0 ? '?' : '&') + 'api_key=' + encodeURIComponent(credential);
     else headers.Authorization = 'Bearer ' + credential;
-    if(cancelled)return;var job=read(url,headers,function(e,r){if(!cancelled)cb(e,r);},opts.refresh || /\/configuration(?:\?|$)/.test(path));if(job&&job.cancel)jobs.push(job);return job;
+    if(cancelled)return;var job=read(url,headers,function(e,r){if(!cancelled)cb(e,r);},opts.refresh || /\/configuration(?:\?|$)/.test(path) || /^\/(trending|discover)\/|^\/(movie|tv)\/(popular|top_rated|now_playing|upcoming|airing_today)\b/.test(path));if(job&&job.cancel)jobs.push(job);return job;
   }
   function lookup(q, cb) {
     if (!credential) return cb(new Error('Add your TMDB API key or Read Access Token in Settings > My media.'));
     if (q.check) return request('/configuration', function (e) { cb(e, e ? null : { ok: true }); });
     var language = LOCALES[q.language] ? q.language : 'en', locale = LOCALES[language];
+    /* TMDB's lists for My media's shelves (q.list), only the IDs, best first: trending (this week), popular,
+       top_rated, now_playing, upcoming (movies), airing_today (TV), or holiday: movies tagged with a holiday's
+       keyword (q.keyword, "christmas"), most popular first.  Nothing about the viewer's library is sent; the
+       TV matches the IDs against what it has.  q.kind 'tv' for shows.  Never answered from the cache. */
+    if (q.list) {
+      var tv = q.kind === 'tv', kind = tv ? 'tv' : 'movie', ids = [], pages = q.list === 'top_rated' || q.list === 'holiday' ? 5 : 3, path;
+      var LISTS = { trending: '/trending/' + kind + '/week', popular: '/' + kind + '/popular', top_rated: '/' + kind + '/top_rated' };
+      if (!tv) { LISTS.now_playing = '/movie/now_playing'; LISTS.upcoming = '/movie/upcoming'; } else LISTS.airing_today = '/tv/airing_today';
+      var page = function (n) {
+        request(path + (path.indexOf('?') < 0 ? '?' : '&') + 'language=' + locale + '&page=' + n, function (e, r) {
+          if (e) return ids.length ? cb(null, { ids: ids }) : cb(e);
+          (r && Array.isArray(r.results) ? r.results : []).forEach(function (x) { if (x && /^[1-9][0-9]*$/.test(String(x.id))) ids.push((tv ? 'tmdb:tv:' : 'tmdb:') + x.id); });
+          if (n < pages && r && r.total_pages > n) page(n + 1); else cb(null, { ids: ids });
+        });
+      };
+      if (q.list !== 'holiday') {
+        if (!LISTS[q.list]) return cb(new Error('Choose a valid TMDB list.'));
+        path = LISTS[q.list]; return page(1);
+      }
+      var word = str(q.keyword, 60).trim().toLowerCase();
+      if (!word) return cb(new Error('Choose a holiday.'));
+      return request('/search/keyword?query=' + encodeURIComponent(word), function (e, r) {
+        if (e) return cb(e);
+        var hit = (r && Array.isArray(r.results) ? r.results : []).filter(function (k) { return k && String(k.name).toLowerCase() === word && /^[1-9][0-9]*$/.test(String(k.id)); })[0];
+        if (!hit) return cb(null, { ids: [] });
+        path = '/discover/' + kind + '?with_keywords=' + hit.id + '&sort_by=popularity.desc&include_adult=false';
+        page(1);
+      });
+    }
     function byId(id) {
       id = String(id || '');
       if (/^tt[0-9]+$/.test(id)) return request('/find/' + id + '?external_source=imdb_id&language=' + locale, function (e, r) {
@@ -327,6 +356,6 @@ function create(opts) {
     }
     ask(0);
   }
-  return { cancel:function(){cancelled=true;jobs.forEach(function(job){job.cancel();});jobs=[];}, lookup: function (q, cb) { return q && q.guide ? (q.kind === 'tv' ? guideTvLookup(q, cb) : guideLookup(q, cb)) : q && (q.kind === 'tv' || /^tmdb:tv:/.test(q.id || '')) ? tvLookup(q, cb) : lookup(q, cb); }, configured: function () { return !!credential; } };
+  return { cancel:function(){cancelled=true;jobs.forEach(function(job){job.cancel();});jobs=[];}, lookup: function (q, cb) { return q && q.list ? lookup(q, cb) : q && q.guide ? (q.kind === 'tv' ? guideTvLookup(q, cb) : guideLookup(q, cb)) : q && (q.kind === 'tv' || /^tmdb:tv:/.test(q.id || '')) ? tvLookup(q, cb) : lookup(q, cb); }, configured: function () { return !!credential; } };
 }
 module.exports = { lookup: function (q, cb) { return create({ credential: q.credential, refresh:!!q.refresh }).lookup(q, cb); }, create: create };

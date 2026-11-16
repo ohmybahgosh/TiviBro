@@ -388,7 +388,8 @@ var WebEdit = (function () {
   }
   var RUN = {
     mediaPreferences: function (a) {
-      function saved() { var data = a.language || a.sort || a.showSort ? Media.updatePreferences(a) : MediaStore.preferences(); Settings.live(); return { msg: 'My media preferences saved.', data: data }; }
+      var KEYS = ['language', 'sort', 'showSort', 'sortReverse', 'showSortReverse', 'favoritesInLists', 'shelfOrder', 'shelfOff', 'sourceFilter'];
+      function saved() { var data = KEYS.some(function (k) { return a[k] != null; }) ? Media.updatePreferences(a) : MediaStore.preferences(); data.shelves = Media.shelfList ? Media.shelfList() : []; Settings.live(); return { msg: 'My media preferences saved.', data: data }; }
       if (a.clearTmdbToken || (typeof a.tmdbToken === 'string' && a.tmdbToken.trim())) return Media.setTmdbToken(a.clearTmdbToken ? '' : a.tmdbToken).then(saved);
       return saved();
     },

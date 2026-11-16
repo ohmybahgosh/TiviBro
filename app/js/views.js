@@ -609,6 +609,7 @@ var Views = (function () {
     if (lvis && t !== 'live') endListVis(true);
     if (tab === 'media' && t !== 'media') Media.leave();
     if (tab === 'onnow' && t !== 'onnow') OnNow.leave();
+    document.body.classList.toggle('media-open', t === 'media');                 // the clock over a backdrop gets a shadow
     if ((t === 'settings' || t === 'search') && (tab === 'guide' || tab === 'live')) pipFrom = tab;
     tab = t;
     Keymap.setContext(t === 'live' ? 'list' : t === 'guide' ? 'guide' : 'other');
@@ -1014,7 +1015,9 @@ var Views = (function () {
 
   function osd(show, ch) {
     if (!full) return;
-    var o = $('osd');
+    var o = $('osd'), poster = $('osdPoster');
+    o.classList.toggle('vod', mode === 'vod' || mode === 'catchup');
+    if (poster) { var want = mode === 'vod' && vod && vod.meta.poster || ''; if ((poster.getAttribute('src') || '') !== want) { if (want) poster.src = want; else poster.removeAttribute('src'); } }
     if (mode === 'vod' && vod) {
       var m = vod.meta;
       $('osdNum').textContent = ''; $('osdName').textContent = m.title; $('osdGroup').textContent = m.sub || '';

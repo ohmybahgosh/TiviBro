@@ -59,11 +59,8 @@
 
   <!-- MY MEDIA -->
   <section id="viewMedia" class="view media-home hidden">
-    <div class="media-main">
-      <div class="media-heading"><span class="media-library-label">Your library</span><span class="media-eyebrow">MY MEDIA</span></div>
-      <div id="mediaInfo" class="media-hero" aria-live="polite"></div>
-      <div id="mediaItems" class="media-shelves"><div id="mediaShelfStage" class="media-shelf-stage"></div></div>
-    </div>
+    <div id="mediaInfo" class="media-hero" aria-live="polite"></div>
+    <div id="mediaItems" class="media-shelves"><div id="mediaShelfStage" class="media-shelf-stage"></div></div>
   </section>
 
   <!-- MOVIES ON NOW (onnow.js) -->
@@ -92,6 +89,7 @@
 
 <!-- Fullscreen OSD -->
 <div id="osd" class="osd hidden">
+  <img id="osdPoster" class="osd-poster" alt="">
   <div class="osd-top"><span id="osdNum" class="osd-num"></span><span id="osdName" class="osd-name"></span><span id="osdGroup" class="osd-group"></span></div>
   <div class="osd-prog"><div id="osdNow" class="osd-now"></div><div class="bar"><i id="osdBar"></i></div><div id="osdNext" class="osd-next"></div></div>
   <div id="osdKeys" class="osd-keys"></div>

@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- **My media, redone like Movies on now.**  The title you're on fills the top: its backdrop, its title logo, the year, running time, genres, TMDB rating and picture quality, the plot, and where you stopped.  Posters are bigger, and each shelf says what's in it and how it's sorted.
+- **My media: sort any way, and turn it round.**  Red > Sort: movies by title, release date, date added, rating or running time, TV shows by title, first aired, date added or rating, and **Reverse the order** for each.  Also in Settings > My media, the phone app and the web editor.
+- **My media: a shelf per genre, Recently added and Top rated.**  Red > **Go to a shelf** jumps to any of them.
+- **My media: TMDB's lists, with only what you can watch.**  Trending this week, Popular, Airing today and Top rated on TMDB (Now playing in theaters and Upcoming can be switched on), showing the movies and shows you have, and movies on your live channels now or soon (OK watches, or sets a reminder).  A list with nothing to watch stays out of the way, and movie lists only show if you have movies, TV lists only if you have shows.  Only TMDB's list comes to the TV; nothing about your library is sent.
+- **My media: holiday lists.**  Christmas, Thanksgiving, Halloween, Fourth of July, Easter, St. Patrick's Day, Valentine's Day and New Year's movies, from a month before the day until a week after.
+- **My media: arrange the shelves.**  Red > **Arrange shelves** moves any shelf up or down and switches it off.  Also in Settings > My media and the web editor.
+- **My media: one tile per movie.**  The same movie on two sources is one tile, playing the copy you were watching, else your preferred source, else the best picture.  Movie options > **Choose a copy** picks another.  With more than one source, Red > **Show** narrows My media to one.
+- **The movie player's bar runs the full width.**  For My media, movies and catch-up.  My media movies show their name once, then the year, running time, genres and rating, with the poster.
+
 ## 0.6.0 (alpha 141, 2026-11-15)
 
 Pre-release: expect rough edges, and keep a backup before installing.

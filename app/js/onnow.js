@@ -224,5 +224,5 @@ var OnNow = (function () {
   function leave() { open_ = false; clearInterval(timer); document.body.classList.remove('onnow-open'); }
   function changed() { if (open_ && Views.tab === 'onnow' && !Views.full && !UI.modalOpen) render(false); }
 
-  return { open: open, resume: resume, leave: leave, changed: changed, render: render, get rows() { return rows; } };
+  return { open: open, resume: resume, leave: leave, changed: changed, render: render, watch: watch, get rows() { return rows; } };
 })();

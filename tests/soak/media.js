@@ -43,13 +43,14 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   const b = await chromium.launch();
   const page = await (await b.newContext({ viewport: { width: 1920, height: 1080 } })).newPage();
   await page.route('**/mock-poster.svg', route => route.fulfill({ contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="185" height="278"><rect width="185" height="278" fill="blue"/></svg>' }));
-  const metadataRequests = [];
+  const metadataRequests = [], listRequests = [];
   await page.route('**/media/metadata', route => {
     const q = route.request().postDataJSON();
     if (q.check) return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ok: true }) });
     if (q.guide) return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ miss: true }) });   // Movies on now (movies.js), not My media
+    if (q.list) { listRequests.push(q); return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ ids: q.list === 'trending' && q.kind === 'movie' ? ['tmdb:999', 'tmdb:13'] : [] }) }); }   // TMDB's lists: only IDs
     metadataRequests.push(q);
-    return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ metadata: { provider: 'TMDB', id: q.id || 'tmdb:7', title: q.title || 'Localized movie', year: q.year || '2013', language: q.language, requestedLanguage: q.language, fallbackFields: [], plot: 'A mock movie description.', genre: 'Animation', poster: 'http://127.0.0.1:8088/mock-poster.svg', backdrop: 'http://127.0.0.1:8088/mock-poster.svg' } }) });
+    return route.fulfill({ contentType: 'application/json', body: JSON.stringify({ metadata: { provider: 'TMDB', id: q.id || 'tmdb:' + (7 + String(q.title || '').length), title: q.title || 'Localized movie', year: q.year || '2013', language: q.language, requestedLanguage: q.language, fallbackFields: [], plot: 'A mock movie description.', genre: 'Animation', poster: 'http://127.0.0.1:8088/mock-poster.svg', backdrop: 'http://127.0.0.1:8088/mock-poster.svg' } }) });
   });
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   const pl = Object.assign({}, R.SETTINGS.playlists[0], { server: MOCK });
@@ -137,7 +138,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   ok('sources and their counts are available in Settings', /FritzBox Server/.test(await text('#setBody')) && /2 movies/.test(await text('#setBody')));
   await ev(() => Views.switchTab('media')); await page.waitForTimeout(300);
   ok('movie details fill the header', /Frozen/.test(await text('#mediaInfo')));
-  ok('three movie sections are shown', /Continue watching/.test(list) && /Favorites/.test(list) && /Movies/.test(list));
+  ok('the Movies shelf is shown, and empty shelves are left out', /Movies/.test(list) && !/Continue watching/.test(list) && !/Favorites/.test(list), list);
   ok('large poster tiles replace list rows', await ev(() => !!document.querySelector('.media-tile.sel') && document.querySelector('.media-tile.sel .media-art').getBoundingClientRect().width > 200));
   await shot('media-list');
 
@@ -168,8 +169,11 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   ok('the panel says where it stopped', /Resume at 16 of 100 min/.test(await text('#mediaInfo')), await text('#mediaInfo'));
   ok('Movies did not get the position', await ev(() => Object.keys(Store.edits.resume).length === 0));
 
-  // Options.
+  // Red: sort, shelves; Hold OK: the movie's options.
   await ev(() => UI.press('red')); await page.waitForTimeout(400);
+  ok('Red offers sorting, a shelf to go to and arranging shelves', /Sort movies: Title, A to Z/.test(await text('#modal')) && /Go to a shelf/.test(await text('#modal')) && /Arrange shelves/.test(await text('#modal')), await text('#modal'));
+  await key('Escape', 300);
+  await ev(() => UI.press('hold')); await page.waitForTimeout(400);
   const opts = await text('#modal');
   ok('options offer Resume and starting over', /Resume/.test(opts) && /Play from beginning/.test(opts) && /Mark as watched/.test(opts), opts);
   await shot('media-options');
@@ -198,7 +202,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   ok('nothing plays after a restart in My media', await ev(() => !document.body.classList.contains('full')));
 
   ok('continue watching contains the stopped movie', await ev(() => MediaStore.sections(null)[0].movies.length === 1));
-  await ev(() => Media._test.focusItems()); await ev(() => UI.press('red')); await page.waitForTimeout(200);
+  await ev(() => Media._test.focusItems()); await ev(() => UI.press('hold')); await page.waitForTimeout(200);
   ok('movie options offer favorites', /Add to Favorites/.test(await text('#modal')));
   await key('Enter');
   ok('favorites section updates', await ev(() => MediaStore.sections(null)[1].movies.length === 1));
@@ -223,12 +227,17 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   ok('a rescan keeps matched details', await ev(() => MediaStore.movies(null).every(m => !!m.metadata)));
   ok('artwork appears on the poster shelves', await ev(() => !!document.querySelector('#mediaItems img.media-cover')));
   ok('the detail panel shows the plot', /A mock movie description/.test(await text('#mediaInfo')));
+  await ev(() => Media.open()); await page.waitForTimeout(800);
+  ok('TMDB lists send no titles, only the list and the token', listRequests.length > 0 && listRequests.every(q => Object.keys(q).every(k => ['list', 'kind', 'keyword', 'language', 'credential'].includes(k))), JSON.stringify(listRequests[0]));
+  await ev(() => Media._test.goShelf('tmdb:trending')); await page.waitForTimeout(200);
+  ok('Trending this week shows the movie you have, and nothing you don\'t', await ev(() => { const s = [...document.querySelectorAll('.media-shelf')].find(x => !x.classList.contains('hidden') && x.querySelector('h2').textContent === 'Trending this week'); return !!s && [...s.querySelectorAll('.media-tile')].filter(t => t.style.display !== 'none').length === 1 && /Frozen/.test(s.innerText); }));
 
   await ev(() => Media.updatePreferences({ language: 'nl' }));
   await page.waitForFunction(() => MediaStore.movies(null).every(m => m.metadata && m.metadata.requestedLanguage === 'nl'));
   ok('language change refreshes cached movie IDs', metadataRequests.slice(2).every(q => q.id && q.language === 'nl' && !q.title));
-  ok('hero backdrop is present', await ev(() => !!document.querySelector('#mediaInfo img.media-hero-art')));
-  await ev(() => { const m = MediaStore.movies(null)[0]; MediaStore.setMetadata(m.id, Object.assign({}, m.metadata, { title: 'Corrected movie title' })); Media.refresh(); });
+  await page.waitForTimeout(400);
+  ok('hero backdrop is present', await ev(() => !!(document.querySelector('#viewMedia img.media-hero-art') || {}).getAttribute && !!document.querySelector('#viewMedia img.media-hero-art').getAttribute('src')));
+  await ev(() => { const m = MediaStore.movies(null)[0]; MediaStore.setMetadata(m.id, Object.assign({}, m.metadata, { title: 'Corrected movie title' })); Media._test.goShelf('all'); Media.refresh(); });
   ok('correcting a match updates the tile title even with the same poster', /Corrected movie title/.test(await text('#mediaItems')));
   extra = true;
   await ev(() => UI.press('green'));
@@ -247,9 +256,10 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
     MediaStore.applyScan(id, { movies });
     const saved = MediaStore.movies(id);
     saved.slice(0, 16).forEach(m => { MediaStore.toggleFavorite(m.id); MediaStore.saveResume(m.id, 500, 6000); });
-    Media.refresh(); Media._test.focusItems();
-    for (let i = 0; i < 160; i++) UI.press('right');
+    Media.open();
   });
+  await page.waitForTimeout(400);
+  await ev(() => { for (let i = 0; i < 160; i++) UI.press('right'); });
   await page.waitForTimeout(400);
   ok('large libraries keep at most 21 poster elements', await ev(() => document.querySelectorAll('#mediaItems img').length <= 21));
   ok('selected tile stays inside the movie viewport', await ev(() => { const t = document.querySelector('.media-tile.sel').getBoundingClientRect(), v = document.getElementById('mediaItems').getBoundingClientRect(); return t.left >= v.left && t.right <= v.right && t.bottom <= v.bottom; }));

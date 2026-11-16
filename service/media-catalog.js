@@ -438,11 +438,15 @@ function queryShows(self, ctx, q, offset, limit) {
     if (s.sourceIds && s.sourceIds.length && s.sourceIds.every(function (id) { return disabled[id]; })) return false;
     return matches(s, q);
   });
-  // q.sort (Settings > My media > Sort TV shows by): name, release (first aired, newest first) or added (newest first).
+  // q.sort (Settings > My media > Sort TV shows by): name, release (first aired, newest first), added (newest first) or rating.
   function byName(a, b) { var x = String(a.title).toLowerCase(), y = String(b.title).toLowerCase(); return x < y ? -1 : x > y ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0; }
   function aired(s) { var m = s.metadata || {}; return String(m.releaseDate || m.year || ''); }
+  // q.sort rating: TMDB's rating, highest first.  q.reverse turns any of them round.
+  function rating(s) { return +((s.metadata || {}).rating) || 0; }
   list.sort(q.sort === 'release' ? function (a, b) { var x = aired(a), y = aired(b); return x < y ? 1 : x > y ? -1 : byName(a, b); }
-    : q.sort === 'added' ? function (a, b) { return ((b.createdAt || 0) - (a.createdAt || 0)) || byName(a, b); } : byName);
+    : q.sort === 'added' ? function (a, b) { return ((b.createdAt || 0) - (a.createdAt || 0)) || byName(a, b); }
+    : q.sort === 'rating' ? function (a, b) { return (rating(b) - rating(a)) || byName(a, b); } : byName);
+  if (q.reverse === true) list.reverse();
   list.forEach(function (s) {
     if (!afterFound) { if (s.id === q.after) afterFound = true; return; }
     if (total >= offset && rows.length < limit) { var item = project(s); item.revision = revision; rows.push(item); }

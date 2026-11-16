@@ -14,7 +14,7 @@ var Media = (function () {
 
   /* ---------- helper ---------- */
   function ask(route, body, ms) {
-    if(route==='library/query'&&body&&body.kind==='show'&&!body.sort)body.sort=MediaStore.preferences().showSort;   // Sort TV shows by
+    if(route==='library/query'&&body&&body.kind==='show'&&!body.sort){body.sort=MediaStore.preferences().showSort;body.reverse=!!MediaStore.preferences().showSortReverse;}   // Sort TV shows by
     if(route==='library/edit'&&!body.idempotencyKey)body.idempotencyKey='edit_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
     if (!Net.port) return Promise.reject(new Error('The TiviBro helper is not running.  Close TiviBro and open it again.'));
     var ctl = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -30,17 +30,23 @@ var Media = (function () {
 
   function why(e) { return (e && e.message) || 'That did not work.'; }
 
-  /* ---------- poster shelves ---------- */
+  /* ---------- the screen: the focused title large over its backdrop, poster shelves below ----------
+     Like Movies on now: the backdrop fills the top, with the title's logo (or its name), the facts and the
+     plot.  Shelves: Continue watching, holiday lists, Favorites, Recently added, TMDB's lists (what you
+     can watch of them), Movies and TV shows in the order you choose (Red sorts, and can turn it round), a
+     shelf per genre and Top rated; Red > Arrange shelves moves them and switches them off.  Long shelves draw only the posters on screen (TILE_POOL). */
   var seriesCards = [], reviewCards = [], continuingShows = [], favouriteShows = [], seriesLoading = false, seriesAgain = false;
-  var shelves = [], shelfAt = 2, shelfPos = {}, shelfViews = [], posterQueue = [], posterBusy = 0;
+  var shelves = [], shelfAt = 0, shelfPos = {}, shelfViews = [], posterQueue = [], posterBusy = 0, hero = null;
   // Opening My media focuses the first item on screen; shelves that fill in later (shows and episodes come
   // from the helper) still move it there, until the viewer presses a key.
   var followTop = true;
-  var TILE_STEP = 260, TILE_POOL = 7;
+  var TILE_STEP = 272, TILE_POOL = 7, ROW_H = 492;   // posters drawn only on the focused shelf and the ones next to it
   var itemsVL = { current: function () { var s = shelves[shelfAt]; return s && s.movies[shelfPos[s.id] || 0]; }, refresh: function () { refresh(); } };
   function label(m) { return (m.title || m.label || '') + (m.year ? ' (' + m.year + ')' : ''); }
+  function nameOf(m) { return m.metadata && m.metadata.title || m.title || m.label || ''; }
   function size(n) { return n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n >= 1e6 ? Math.round(n / 1e6) + ' MB' : ''; }
   function fileInfo(m) { return (m.info || []).concat(m.ext ? [String(m.ext).toUpperCase()] : []).join('   '); }
+  function wrap(url) { return typeof Net !== 'undefined' && Net.active && Net.wrap ? Net.wrap(url) : url; }
   function pumpPosters() {
     posterQueue = posterQueue.filter(function (q) { return !!q.img.parentNode; });
     while (posterBusy < 2 && posterQueue.length) {
@@ -50,85 +56,307 @@ var Media = (function () {
         var done = false;
         function finish(failed) { if (done) return; done = true; posterBusy--; job.img.onload = job.img.onerror = null; if (failed && job.img.parentNode) job.img.parentNode.removeChild(job.img); pumpPosters(); }
         job.img.onload = function () { finish(false); }; job.img.onerror = function () { finish(true); };
-        job.img.src = Net.active ? Net.wrap(job.url) : job.url;
+        job.img.src = wrap(job.url);
       })(q);
     }
   }
   function cover(slot, movie) {
     var poster = movie.metadata && movie.metadata.poster || '';
-    var key = movie.id + '|' + poster + '|' + (movie.metadata && movie.metadata.title || movie.title) + '|' + (movie.year || movie.metadata && movie.metadata.year || '');
+    var key = movie.id + '|' + (movie.kind === 'live' ? (movie.live.live ? 1 : 0) + '|' : '') + poster + '|' + nameOf(movie) + '|' + (movie.year || movie.metadata && movie.metadata.year || '');
     if (slot.key === key) return;
-    slot.key = key; slot.art.innerHTML = '';
-    slot.art.appendChild(U.el('span', 'media-monogram', movie.title.slice(0, 1).toUpperCase()));
+    slot.key = key; slot.art.innerHTML = ''; slot.art.appendChild(slot.bar); slot.art.appendChild(slot.tag);
+    slot.art.appendChild(U.el('span', 'media-monogram', String(nameOf(movie)).slice(0, 1).toUpperCase()));
     if (poster) {
-      var img = U.el('img', 'media-cover'); img.alt = ''; img.width = 185; img.height = 278;
+      var img = U.el('img', 'media-cover'); img.alt = ''; img.width = 240; img.height = 360;
       slot.art.appendChild(img); posterQueue.push({ img: img, url: poster });
     }
-    slot.title.textContent = movie.metadata && movie.metadata.title || movie.title;
-    slot.year.textContent = movie.year || movie.metadata && movie.metadata.year || '';
+    slot.title.textContent = nameOf(movie);
+    slot.year.textContent = movie.kind === 'live' ? liveLine(movie.live, true) : movie.continueEpisode && movie.label ? movie.label : movie.year || movie.metadata && movie.metadata.year || '';
+    slot.el.classList.toggle('media-live', movie.kind === 'live');
+    slot.tag.textContent = movie.kind === 'live' ? (movie.live.live ? 'LIVE' : U.hhmm(movie.live.p.s).toUpperCase()) : '';
+    slot.tag.classList.toggle('on', movie.kind === 'live' && movie.live.live);
+  }
+
+  /* Sorting.  Movies: Settings > My media > Sort movies by, or Red here.  TV shows: Sort TV shows by. */
+  var SORT = { name: 'Title, A to Z', release: 'Release date, newest first', added: 'Date added, newest first', rating: 'Rating, highest first', runtime: 'Running time, longest first' };
+  var SORT_REV = { name: 'Title, Z to A', release: 'Release date, oldest first', added: 'Date added, oldest first', rating: 'Rating, lowest first', runtime: 'Running time, shortest first' };
+  var SHOW_SORT = { name: 'Title, A to Z', release: 'First aired, newest first', added: 'Date added, newest first', rating: 'Rating, highest first' };
+  var SHOW_SORT_REV = { name: 'Title, Z to A', release: 'First aired, oldest first', added: 'Date added, oldest first', rating: 'Rating, lowest first' };
+  function sortName(kind) {
+    var p = MediaStore.preferences();
+    return kind === 'show' ? (p.showSortReverse ? SHOW_SORT_REV : SHOW_SORT)[p.showSort] || SHOW_SORT.name : (p.sortReverse ? SORT_REV : SORT)[p.sort] || SORT.name;
+  }
+  function sorted(list) { return MediaStore.sortList ? MediaStore.sortList(list) : list; }
+
+  /* TMDB's lists and holiday lists, matched against what you can watch: your library, and movies on your
+     live channels now or in the next three hours (Movies on now, movies.js).  Only IDs come from TMDB;
+     nothing about your library is sent.  Fetched with your token at most twice a day.  A movie list shows
+     only when you have movies, a TV list only when you have shows, and a list with nothing to watch is
+     left out. */
+  var LISTS = [
+    { key: 'tmdb:trending', title: 'Trending this week', list: 'trending', kinds: ['movie', 'tv'] },
+    { key: 'tmdb:popular-movie', title: 'Popular movies', list: 'popular', kinds: ['movie'] },
+    { key: 'tmdb:popular-tv', title: 'Popular TV shows', list: 'popular', kinds: ['tv'] },
+    { key: 'tmdb:airing', title: 'Airing today', list: 'airing_today', kinds: ['tv'] },
+    { key: 'tmdb:top-movie', title: 'Top rated movies on TMDB', list: 'top_rated', kinds: ['movie'] },
+    { key: 'tmdb:top-tv', title: 'Top rated TV on TMDB', list: 'top_rated', kinds: ['tv'] },
+    { key: 'tmdb:now', title: 'Now playing in theaters', list: 'now_playing', kinds: ['movie'], off: true },
+    { key: 'tmdb:upcoming', title: 'Upcoming movies', list: 'upcoming', kinds: ['movie'], off: true }];
+  // Holidays: shown from a month before the day until a week after, with TMDB's movies tagged for it.
+  function easter(y) { var a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451), mo = Math.floor((h + l - 7 * m + 114) / 31), da = ((h + l - 7 * m + 114) % 31) + 1; return new Date(y, mo - 1, da); }
+  function thanksgiving(y) { var d = new Date(y, 10, 1); return new Date(y, 10, 1 + (4 - d.getDay() + 7) % 7 + 21); }
+  var HOLIDAYS = [
+    { key: 'newyear', title: 'New Year\'s movies', words: ['new year\'s eve', 'new year'], day: function (y) { return new Date(y, 0, 1); } },
+    { key: 'valentine', title: 'Valentine\'s Day movies', words: ['valentine\'s day'], day: function (y) { return new Date(y, 1, 14); } },
+    { key: 'stpatrick', title: 'St. Patrick\'s Day movies', words: ['st. patrick\'s day', 'saint patrick\'s day'], day: function (y) { return new Date(y, 2, 17); } },
+    { key: 'easter', title: 'Easter movies', words: ['easter'], day: easter },
+    { key: 'july4', title: 'Fourth of July movies', words: ['independence day (usa)', 'fourth of july', '4th of july'], day: function (y) { return new Date(y, 6, 4); } },
+    { key: 'halloween', title: 'Halloween movies', words: ['halloween'], day: function (y) { return new Date(y, 9, 31); } },
+    { key: 'thanksgiving', title: 'Thanksgiving movies', words: ['thanksgiving'], day: thanksgiving },
+    { key: 'christmas', title: 'Christmas movies', words: ['christmas'], day: function (y) { return new Date(y, 11, 25); } }];
+  var DAY = 86400e3;
+  function holidaysNow(now) {
+    now = now || Date.now();
+    var y = new Date(now).getFullYear(), out = [];
+    HOLIDAYS.forEach(function (h) {
+      [y - 1, y, y + 1].forEach(function (yy) {
+        var d = h.day(yy).getTime();
+        if (now >= d - 30 * DAY && now < d + 8 * DAY) out.push({ h: h, day: d });
+      });
+    });
+    return out.sort(function (a, b) { return a.day - b.day; });
+  }
+  var TMDB_KEY = 'tivibro.media.lists', TMDB_AGE = 12 * 3600e3, tmdb = readLists(), tmdbBusy = false;
+  function readLists() { try { var o = JSON.parse(localStorage.getItem(TMDB_KEY) || 'null'); return o && o.ids ? o : { at: 0, ids: {} }; } catch (e) { return { at: 0, ids: {} }; } }
+  function token() { return MediaStore.tmdbToken ? MediaStore.tmdbToken() : ''; }
+  function listsSoon(force) {
+    if (tmdbBusy || !token() || (!force && Date.now() - (tmdb.at || 0) < TMDB_AGE)) return;
+    tmdbBusy = true;
+    var jobs = [], ids = {}, lang = MediaStore.preferences().language;
+    function one(name, q) { q.credential = token(); q.language = lang; return ask('metadata', q, 45000).then(function (r) { if (r && r.ids) ids[name] = r.ids; }, function () {}); }
+    LISTS.forEach(function (l) { l.kinds.forEach(function (k) { jobs.push(function () { return one(l.list + ':' + k, { list: l.list, kind: k }); }); }); });
+    holidaysNow().forEach(function (x) {
+      jobs.push(function () {
+        var i = 0;
+        function next() { var w = x.h.words[i++]; return w ? one('holiday:' + x.h.key, { list: 'holiday', keyword: w }).then(function () { if (!(ids['holiday:' + x.h.key] || []).length) return next(); }) : null; }
+        return next();
+      });
+    });
+    // One at a time: TMDB's rate limit, and an old TV's helper.
+    jobs.reduce(function (p, job) { return p.then(job); }, Promise.resolve()).then(function () {
+      tmdbBusy = false;
+      if (!Object.keys(ids).length) return;
+      tmdb = { at: Date.now(), ids: ids };
+      try { localStorage.setItem(TMDB_KEY, JSON.stringify(tmdb)); } catch (e) {}
+      refresh();
+    });
+  }
+  // Movies on your live channels now or soon, as tiles: OK watches (or offers a reminder), like Movies on now.
+  function liveMovies() {
+    if (typeof Movies === 'undefined' || !Movies.shelves || !Movies.on || !Movies.on()) return [];
+    var sh = Movies.shelves();
+    return sh.on.concat(sh.soon).map(function (g) {
+      var m = g.m;
+      return { id: 'live:' + m.id + (g.live ? ':on' : ':soon'), kind: 'live', live: g, title: m.title, year: m.year,
+        metadata: { id: m.id, title: m.title, year: m.year, poster: m.poster, backdrop: m.backdrop, backdropHd: m.backdropHd, logo: m.logo, plot: m.plot, genre: m.genre, runtime: m.runtime, rating: m.rating } };
+    });
+  }
+  function liveLine(g, short) {
+    var now = Date.now(), ch = typeof Library !== 'undefined' ? Library.name(g.c) : '', mins = function (ms) { var x = Math.max(1, Math.round(ms / 60000)); return x >= 60 ? Math.floor(x / 60) + ' h' + (x % 60 ? ' ' + x % 60 + ' min' : '') : x + ' min'; };
+    if (g.live) return (short ? ch : 'Playing now on ' + ch) + '  ·  ' + mins(g.p.e - now) + ' left';
+    return (short ? ch + '  ·  ' + U.hhmm(g.p.s) : 'Starts at ' + U.hhmm(g.p.s) + ' on ' + ch + '  ·  in ' + mins(g.p.s - now));
+  }
+  // A TMDB list's titles you can watch, in TMDB's order.  pool: { 'tmdb:123': item }.
+  function listItems(names, pool) {
+    var seen = {}, out = [];
+    names.forEach(function (n) { (tmdb.ids[n] || []).forEach(function (id, rank) { var m = pool[id]; if (m && !seen[id]) { seen[id] = 1; out.push({ m: m, r: rank }); } }); });
+    return out.sort(function (a, b) { return a.r - b.r; }).map(function (x) { return x.m; });
+  }
+
+  function genresOf(m) { return String(m.metadata && m.metadata.genre || '').split(/\s*,\s*/).filter(Boolean); }
+  function rating(m) { return +(m.metadata && m.metadata.rating) || 0; }
+  function count(n, one, many) { return n === 1 ? one : many.replace('{n}', n); }
+
+  /* Copies of one movie on several sources (or twice on one) are one tile: the copy you were watching,
+     else your preferred source, else the best picture.  Movie options lists every copy. */
+  var copyMap = {};
+  function quality(m) { var t = fileInfo(m) + ' ' + (m.file || ''); return /2160|4k|uhd/i.test(t) ? 3 : /1080/.test(t) ? 2 : /720/.test(t) ? 1 : 0; }
+  function copies(m) { return m && copyMap[m.id] || (m ? [m] : []); }
+  function mergeCopies(all) {
+    var by = {}, pref = MediaStore.preferredSource ? MediaStore.preferredSource() : null, rep = {};
+    copyMap = {};
+    all.forEach(function (m) { var id = m.metadata && m.metadata.provider === 'TMDB' && m.metadata.id; if (id) (by[id] = by[id] || []).push(m); });
+    Object.keys(by).forEach(function (id) {
+      var g = by[id]; if (g.length < 2) return;
+      var best = g.slice().sort(function (a, b) {
+        var ra = MediaStore.resume(a.id), rb = MediaStore.resume(b.id);
+        return ((rb && rb.at) || 0) - ((ra && ra.at) || 0) || (b.src === pref) - (a.src === pref) || quality(b) - quality(a);
+      })[0];
+      g.forEach(function (m) { copyMap[m.id] = g; rep[m.id] = best; });
+    });
+    return function (list) { var seen = {}, out = []; list.forEach(function (m) { var r = rep[m.id] || m; if (!seen[r.id]) { seen[r.id] = 1; out.push(r); } }); return out; };
+  }
+  /* The shelves and their order (Red > Arrange shelves, saved with the My media preferences).  Groups:
+     holidays (each holiday on now), genres (a shelf per genre).  Some lists start switched off. */
+  var ORDER = ['continue', 'holidays', 'favorites', 'recent', 'tmdb:trending', 'all', 'shows', 'tmdb:popular-movie', 'tmdb:popular-tv', 'tmdb:airing', 'tmdb:top-movie', 'tmdb:top-tv', 'genres', 'top', 'tmdb:now', 'tmdb:upcoming', 'review'];
+  var NAMES = { continue: 'Continue watching', holidays: 'Holiday lists', favorites: 'Favorites', recent: 'Recently added', all: 'Movies', shows: 'TV shows', genres: 'Genres', top: 'Top rated in your library', review: 'Needs review' };
+  LISTS.forEach(function (l) { NAMES[l.key] = l.title; });
+  function arrangement() {
+    var p = MediaStore.preferences(), saved = (p.shelfOrder || []).filter(function (k) { return ORDER.indexOf(k) >= 0; }), off = p.shelfOff || {};
+    ORDER.forEach(function (k, i) { if (saved.indexOf(k) < 0) saved.splice(Math.min(i, saved.length), 0, k); });
+    return { order: saved, off: function (k) { return off[k] != null ? !!off[k] : LISTS.some(function (l) { return l.key === k && l.off; }); } };
+  }
+  function shelvesNow(opts) {
+    opts = opts || {};
+    var p = MediaStore.preferences(), src = p.sourceFilter && MediaStore.source(p.sourceFilter) ? p.sourceFilter : '';
+    var mine = function (m) { return !src || m.src === src || (m.sourceIds || []).indexOf(src) >= 0 || m.sourceId === src; };
+    var base = MediaStore.sections(null), all = (MediaStore.movies ? MediaStore.movies(null) : base[2].movies.slice()).filter(mine);
+    var one = mergeCopies(all), shows = opts.phone ? [] : seriesCards.filter(mine), favShows = opts.phone ? [] : favouriteShows.filter(mine);
+    var hasMovies = all.length > 0, hasShows = shows.length + favShows.length > 0;
+    var built = {};
+    built['continue'] = { title: 'Continue watching', movies: one(base[0].movies.filter(mine)).concat(opts.phone ? [] : continuingShows.filter(mine)) };
+    built.favorites = { title: 'Favorites', movies: one(base[1].movies.filter(mine)).concat(favShows) };
+    var first = Infinity; all.forEach(function (m) { if ((m.addedAt || 0) < first) first = m.addedAt || 0; });
+    var recent = one(all.filter(function (m) { return (m.addedAt || 0) > first + 3600e3; }).sort(function (a, b) { return (b.addedAt || 0) - (a.addedAt || 0); })).slice(0, 40);
+    built.recent = { title: 'Recently added', sub: count(recent.length, '1 new title', '{n} new titles'), movies: recent };
+    var movies = one(p.favoritesInLists ? all : all.filter(function (m) { return !MediaStore.isFavorite(m.id); }));
+    built.all = { title: 'Movies', sub: count(movies.length, '1 movie', '{n} movies') + '  ·  ' + sortName('movie'), movies: movies };
+    built.shows = { title: 'TV shows', sub: count(shows.length, '1 show', '{n} shows') + '  ·  ' + sortName('show'), movies: shows };
+    var top = one(all.filter(function (m) { return rating(m) >= 7; }).sort(function (a, b) { return rating(b) - rating(a); })).slice(0, 40);
+    built.top = { title: 'Top rated in your library', sub: 'Rated 7 or more on TMDB, highest first', movies: top.length >= 3 ? top : [] };
+    built.review = { title: 'Needs review', sub: 'Files TiviBro could not place.  OK to sort them out.', movies: opts.phone || src ? [] : reviewCards };
+    // TMDB lists: your movies, your shows, and movies on your live channels.
+    var pool = {}, live = opts.phone ? [] : liveMovies();
+    live.forEach(function (m) { if (!pool[m.metadata.id]) pool[m.metadata.id] = m; });
+    one(all).forEach(function (m) { if (m.metadata && m.metadata.id) pool[m.metadata.id] = m; });
+    shows.concat(favShows).forEach(function (m) { if (m.metadata && m.metadata.id) pool[m.metadata.id] = m; });
+    LISTS.forEach(function (l) {
+      var kinds = l.kinds.filter(function (k) { return k === 'movie' ? hasMovies || live.length : hasShows; });
+      var items = listItems(kinds.map(function (k) { return l.list + ':' + k; }), pool);
+      built[l.key] = { title: l.title, sub: 'TMDB  ·  ' + count(items.length, '1 you can watch', '{n} you can watch'), movies: items };
+    });
+    var out = [], ar = arrangement();
+    ar.order.forEach(function (k) {
+      if (ar.off(k)) return;
+      if (k === 'holidays') return holidaysNow().forEach(function (x) {
+        var items = hasMovies || live.length ? listItems(['holiday:' + x.h.key], pool) : [];
+        var end = new Date(x.day + 7 * DAY);
+        out.push({ id: 'holiday:' + x.h.key, title: x.h.title, sub: 'Holiday  ·  until ' + end.toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) + '  ·  most popular first', movies: items });
+      });
+      if (k === 'genres') {
+        var by = {}, names = [];
+        all.forEach(function (m) { genresOf(m).forEach(function (g) { if (!by[g]) { by[g] = []; names.push(g); } by[g].push(m); }); });
+        return names.filter(function (g) { return by[g].length >= 2; }).sort(function (a, b) { return by[b].length - by[a].length || (a < b ? -1 : 1); }).forEach(function (g) {
+          var list = one(sorted(by[g].slice()));
+          out.push({ id: 'genre:' + g.toLowerCase(), title: g, sub: count(list.length, '1 movie', '{n} movies') + '  ·  ' + sortName('movie'), movies: list, genre: true });
+        });
+      }
+      var s = built[k]; if (s) { s.id = k; out.push(s); }
+    });
+    return out;
+  }
+  // The phone app's My media: Continue watching, Favorites and Movies first (their ids stay), then the rest.
+  function movieShelves() { return shelvesNow({ phone: true }).filter(function (s) { return s.movies.length || s.id === 'all'; }); }
+
+  /* The hero: backdrop, logo or title, facts, plot, and where it stopped. */
+  var bdTimer = null;
+  function backdrop(url) {
+    clearTimeout(bdTimer);
+    bdTimer = setTimeout(function () {
+      var img = hero && hero.img; if (!img || img._src === url) return;
+      img._src = url; img.classList.remove('on');
+      if (!url) { if (img.removeAttribute) img.removeAttribute('src'); return; }
+      img.onload = function () { if (img._src === url) img.classList.add('on'); }; img.onerror = function () { img.classList.remove('on'); };
+      img.src = wrap(url);
+    }, 140);
   }
   function showInfo() {
-    var m = itemsVL.current(), box = $('mediaInfo'); box.innerHTML = '';
+    var m = itemsVL.current(), box = $('mediaInfo'), s = shelves[shelfAt]; box.innerHTML = '';
     if (!m) {
-      box.appendChild(U.el('h1', '', 'Your media, your space'));
-      box.appendChild(U.el('p', 'media-summary', MediaStore.sources().length ? 'No movies in this source yet.  Press red for TV shows, or rescan from Settings › My media.' : 'Add a media server in Settings › My media to start your library.'));
+      backdrop('');
+      box.appendChild(U.el('h1', 'media-title', 'Your media, your space'));
+      box.appendChild(U.el('p', 'media-summary', MediaStore.sources().length ? 'Nothing in your sources yet.  Rescan with Green, or change what a source holds in Settings › My media.' : 'Add a media server in Settings › My media to start your library.'));
       return;
     }
-    var md = m.metadata || {}, src = MediaStore.source(m.src), r = MediaStore.resume(m.id);
-    if (md.backdrop) {
-      var backdrop = U.el('img', 'media-hero-art'); backdrop.alt = ''; backdrop.width = 780; backdrop.height = 439;
-      box.appendChild(backdrop); box.appendChild(U.el('div', 'media-hero-wash'));
-      posterQueue.push({ img: backdrop, url: md.backdrop });
-    }
-    box.appendChild(U.el('h1', '', md.title || m.title));
-    box.appendChild(U.el('div', 'media-facts', [m.year || md.year, md.genre, md.runtime, fileInfo(m), MediaStore.isFavorite(m.id) ? '★ Favorite' : ''].filter(Boolean).join('   ·   ')));
-    box.appendChild(U.el('p', 'media-summary', md.plot || 'Press OK to play.  Hold OK for movie details and favorites.'));
-    var bottom = (r ? 'Resume at ' + Math.floor(r.pos / 60) + ' of ' + Math.floor(r.dur / 60) + ' min' : 'Ready to watch') + (src ? '   ·   ' + src.name : '');
-    box.appendChild(U.el('div', 'media-caption', bottom));
+    var md = m.metadata || {}, src = m.kind === 'live' ? null : MediaStore.source(m.src || m.sourceId), r = m.kind === 'show' || m.kind === 'live' || m.continueEpisode ? null : MediaStore.resume(m.id), n = copies(m).length;
+    backdrop(md.backdropHd || md.backdrop || '');
+    if (s) box.appendChild(U.el('div', 'media-kicker', s.title));
+    var title = nameOf(m);
+    if (md.logo) {
+      var lg = U.el('img', 'media-logo'); lg.alt = title;
+      lg.onerror = function () { if (lg.parentNode) { lg.parentNode.insertBefore(U.el('h1', 'media-title', title), lg); lg.parentNode.removeChild(lg); } };
+      lg.src = wrap(md.logo); box.appendChild(lg);
+    } else box.appendChild(U.el('h1', 'media-title', title));
+    var seasons = Array.isArray(md.seasons) ? md.seasons.filter(function (x) { return x.number > 0; }).length : 0;
+    var facts = [m.kind === 'show' ? 'TV show' : '', m.year || md.year, md.runtime, seasons ? count(seasons, '1 season', '{n} seasons') : '', genresOf(m).slice(0, 3).join(', '), rating(m) ? '★ ' + md.rating : '', m.kind === 'live' ? '' : fileInfo(m), n > 1 ? n + ' copies' : '', (m.favourite || MediaStore.isFavorite(m.id)) ? '♥ Favorite' : ''];
+    box.appendChild(U.el('div', 'media-facts', facts.filter(Boolean).join('   ·   ')));
+    box.appendChild(U.el('p', 'media-summary', md.plot || (m.kind === 'show' ? 'Press OK for its seasons and episodes.' : 'Press OK to play.  Red for options.')));
+    var bottom = m.kind === 'live' ? liveLine(m.live) + '  ·  ' + (m.live.live ? 'OK to watch' : 'OK for a reminder') : m.continueEpisode ? 'Continue with ' + (m.label || 'the next episode') + (m.progressPercent ? ',  ' + m.progressPercent + '% watched' : '')
+      : r ? 'Resume at ' + Math.floor(r.pos / 60) + ' of ' + Math.floor(r.dur / 60) + ' min' : m.kind === 'show' ? 'OK for episodes' : 'Ready to watch';
+    box.appendChild(U.el('div', 'media-caption', bottom + (src ? '   ·   ' + src.name : '')));
     if (md.provider && ((md.fallbackFields || []).length || MediaStore.preferences().language !== (md.requestedLanguage || md.language || 'en'))) box.appendChild(U.el('span', 'media-language-note', (md.fallbackFields || []).length ? 'English fallback: ' + md.fallbackFields.join(', ') : 'Saved metadata language differs from your preference'));
+  }
+  function makeShelf() {
+    var el = U.el('section', 'media-shelf'), heading = U.el('h2'), count = U.el('span', 'media-shelf-count'), track = U.el('div', 'media-track'), empty = U.el('p', 'media-shelf-empty'), pool = [];
+    var title = U.el('div', 'media-shelf-title'); title.appendChild(heading); title.appendChild(count); el.appendChild(title); el.appendChild(track); el.appendChild(empty);
+    for (var i = 0; i < TILE_POOL; i++) {
+      var tile = U.el('div', 'media-tile'), art = U.el('div', 'media-art'), name = U.el('div', 'media-tile-title'), year = U.el('div', 'media-tile-year'), progress = U.el('i'), favorite = U.el('span', 'media-favorite');
+      tile.setAttribute('role', 'button'); var bar = U.el('div', 'media-progress'), tag = U.el('span', 'media-tag'); bar.appendChild(progress); tile.appendChild(favorite); tile.appendChild(art); tile.appendChild(name); tile.appendChild(year);
+      (function (node) {
+        function focus() { followTop = false; shelfAt = node._row; shelfPos[shelves[shelfAt].id] = node._at; drawShelves(); }
+        node.addEventListener('mousemove', function () { if (UI.pointer && (shelfAt !== node._row || (shelfPos[shelves[node._row].id] || 0) !== node._at)) focus(); });
+        node.addEventListener('click', function () { focus(); play(itemsVL.current(), false); });
+      })(tile);
+      track.appendChild(tile); pool.push({ el: tile, art: art, title: name, year: year, progress: progress, bar: bar, tag: tag, favorite: favorite, key: '' });
+    }
+    $('mediaShelfStage').appendChild(el);
+    return { el: el, heading: heading, count: count, pool: pool, empty: empty };
   }
   function drawShelves() {
     var y = 0, focusedY = 0;
-    shelves.forEach(function (s, row) {
-      var view = shelfViews[row], at = shelfPos[s.id] || 0;
-      var hiddenReview = s.id === 'review' && !s.movies.length;
-      view.el.classList.toggle('hidden', hiddenReview);
-      if (hiddenReview) return;
-      at = Math.max(0, Math.min(at, s.movies.length - 1)); shelfPos[s.id] = at;
+    while (shelfViews.length < shelves.length) shelfViews.push(makeShelf());
+    shelfViews.forEach(function (view, row) {
+      var s = shelves[row];
+      view.el.classList.toggle('hidden', !s);
+      if (!s) { view.pool.forEach(function (slot) { slot.el.style.display = 'none'; slot.art.innerHTML = ''; slot.key = ''; }); return; }
+      var at = Math.max(0, Math.min(shelfPos[s.id] || 0, s.movies.length - 1)); shelfPos[s.id] = at;
       if (row === shelfAt) focusedY = y;
       view.el.style.transform = 'translateY(' + y + 'px)';
-      view.heading.textContent = s.title; view.count.textContent = s.movies.length ? String(s.movies.length) : '';
-      view.empty.textContent = s.id === 'continue' ? 'Movies you start will be waiting here.' : s.id === 'favorites' ? 'Hold OK on a movie to add it to Favorites.' : s.id === 'shows' ? 'No TV shows yet.  In Settings › My media, set a source\'s Content to Movies and TV shows, then rescan.' : MediaStore.sources().length ? 'No movies in this source.' : 'Add your first server in Settings › My media.';
+      view.el.classList.toggle('active', row === shelfAt);
+      view.heading.textContent = s.title; view.count.textContent = s.sub || (s.movies.length ? String(s.movies.length) : '');
+      view.empty.textContent = MediaStore.sources().length ? 'Nothing here yet.  Green rescans your sources.' : 'Add your first server in Settings › My media.';
       view.empty.classList.toggle('hidden', s.movies.length > 0);
-      var start = Math.max(0, Math.min(at - 4, s.movies.length - 6)), used = {};
-      for (var i = start; i < Math.min(s.movies.length, start + TILE_POOL); i++) {
+      var near = Math.abs(row - shelfAt) <= 1;
+      var start = Math.max(0, Math.min(at - 1, s.movies.length - (TILE_POOL - 1))), used = {};
+      for (var i = start; near && i < Math.min(s.movies.length, start + TILE_POOL); i++) {
         var slot = view.pool[i % TILE_POOL], m = s.movies[i]; used[i % TILE_POOL] = true;
         slot.el.style.display = ''; slot.el.style.transform = 'translateX(' + (i - start) * TILE_STEP + 'px)';
         slot.el._at = i; slot.el._row = row; cover(slot, m);
         slot.el.classList.toggle('sel', row === shelfAt && i === at);
         slot.el.setAttribute('aria-label', label(m));
-        var r = MediaStore.resume(m.id); slot.progress.style.width = m.progressPercent != null ? m.progressPercent + '%' : r && r.dur ? Math.min(100, 100 * r.pos / r.dur) + '%' : '0%';
-        slot.favorite.textContent = (m.favourite || MediaStore.isFavorite(m.id)) ? '★' : '';
+        var r = MediaStore.resume(m.id), pc = m.progressPercent != null ? m.progressPercent : r && r.dur ? Math.min(100, 100 * r.pos / r.dur) : 0;
+        slot.progress.style.width = pc + '%'; slot.bar.classList.toggle('hidden', !pc);
+        slot.favorite.textContent = (m.favourite || MediaStore.isFavorite(m.id)) ? '♥' : '';
       }
       view.pool.forEach(function (slot, n) { if (!used[n]) { slot.el.style.display = 'none'; slot.art.innerHTML = ''; slot.key = ''; } });
-      y += s.movies.length ? 440 : 100;
+      y += s.movies.length ? ROW_H : 130;
     });
-    var height = $('mediaItems').clientHeight || 650;
-    $('mediaShelfStage').style.transform = 'translateY(-' + Math.max(0, Math.min(focusedY, y - height + 10)) + 'px)';
+    $('mediaShelfStage').style.transform = 'translateY(-' + focusedY + 'px)';
     showInfo(); pumpPosters();
   }
   function refresh() {
     if (typeof Settings !== 'undefined' && Settings.live) Settings.live();
     if (!built || $('viewMedia').classList.contains('hidden') || document.body.classList.contains('full')) return;
     var movie = itemsVL.current(), oldShelf = shelves[shelfAt] && shelves[shelfAt].id;
-    shelves = MediaStore.sections(null); shelves[0].movies = shelves[0].movies.concat(continuingShows);shelves[1].movies=shelves[1].movies.concat(favouriteShows);
-    shelves = shelves.concat([{id:'shows',title:'TV shows',movies:seriesCards},{id:'review',title:'Needs review',movies:reviewCards}]);
-    var top = shelves.findIndex(function (s) { return s.movies.length > 0; });
-    if (oldShelf) shelfAt = shelves.findIndex(function (s) { return s.id === oldShelf; });
-    if (followTop || shelfAt < 0 || !shelves[shelfAt].movies.length) shelfAt = top < 0 ? 2 : top;
+    var list = shelvesNow();
+    shelves = list.filter(function (s) { return s.movies.length; });
+    if (!shelves.length) shelves = list.filter(function (s) { return s.id === 'all'; });
+    if (!shelves.length) shelves = [{ id: 'all', title: 'Movies', movies: [] }];
+    if (oldShelf) shelfAt = shelves.map(function (s) { return s.id; }).indexOf(oldShelf);
+    if (followTop || shelfAt < 0) shelfAt = 0;
     var active = shelves[shelfAt];
     if (followTop) shelfPos[active.id] = 0;
-    else if (movie) { var at = active.movies.findIndex(function (m) { return m.id === movie.id; }); if (at >= 0) shelfPos[active.id] = at; }
+    else if (movie) { var i = active.movies.findIndex(function (m) { return m.id === movie.id; }); if (i >= 0) shelfPos[active.id] = i; }
     drawShelves(); hints();
   }
 
@@ -371,7 +599,7 @@ var Media = (function () {
   function updatePreferences(next) {
     var result = MediaStore.preferences(next);
     if (next && next.language) refreshMetadata().catch(function (e) { U.toast('Language saved.  Movie details could not be refreshed: ' + why(e), 6000); });
-    if (next && typeof next.favoritesInLists === 'boolean') refreshSeries();
+    if (next && (typeof next.favoritesInLists === 'boolean' || next.showSort || typeof next.showSortReverse === 'boolean' || next.sourceFilter != null)) refreshSeries();
     refresh(); return result;
   }
   // The phone app's Fetch details for one source (it asks first on the phone).
@@ -451,6 +679,7 @@ var Media = (function () {
   function play(m, fromStart) {
     if (!m) return;
     if (m.continueEpisode) return MediaSeries.resume(m);
+    if (m.kind === 'live') { if (typeof OnNow !== 'undefined' && OnNow.watch) OnNow.watch(m.live); else Views.startChannel(m.live.c, false, function () { Views.goFull(); }); return; }
     if (m.kind === 'show') return MediaSeries.showItem(m,restore);
     if (m.review && m.review.length) return MediaSeries.correct(m,restore);
     if (typeof MediaSeries !== 'undefined') MediaSeries.leave();
@@ -460,7 +689,9 @@ var Media = (function () {
     function go(url) {
       if (token !== playToken || !MediaStore.source(m.src) || $('viewMedia').classList.contains('hidden') || document.body.classList.contains('nav-open')) return;   // moved on while waiting: nothing starts by itself
       if(m.kind==='episode'){try{Log.hideLinksFrom(String(url).split('/')[2]);}catch(e){}}
-      playingMeta = { id: m.resumeKey || m.id, media: null, title: label(m), sub: m.year || '', item: m, local: true, lastPos:startAt,lastAt:Date.now(),continuous:0,session:Date.now()+'_'+token,startedAt:Date.now(),sequence:0 };
+      var md = m.metadata || {};
+      // The player's lines: the name once, then the year, running time, genres and rating (not the year twice).
+      playingMeta = { id: m.resumeKey || m.id, media: null, title: m.kind === 'episode' ? label(m) : nameOf(m), sub: m.kind === 'episode' ? m.year || '' : [m.year || md.year, md.runtime, genresOf(m).slice(0, 2).join(', '), rating(m) ? '★ ' + md.rating : ''].filter(Boolean).join('   ·   '), poster: md.poster ? wrap(md.poster) : '', item: m, local: true, lastPos:startAt,lastAt:Date.now(),continuous:0,session:Date.now()+'_'+token,startedAt:Date.now(),sequence:0 };
       m.playStartedAt=playingMeta.startedAt;
       clearInterval(progressTimer);
       if (m.kind === 'episode') progressTimer = setInterval(function () { checkpoint(true); if (playingMeta && !playingMeta.boundaryPending && playingMeta.item.endSec != null && Player.position >= playingMeta.item.endSec) boundary(); },1000);
@@ -549,7 +780,7 @@ var Media = (function () {
     cats: function () {
       if (!MediaStore.sources().length) return Promise.resolve({ none: true, cats: [] });
       return MediaStore.load().then(function () {
-        return { cats: MediaStore.sections(null).map(function (s) { return { id: s.id, n: s.title, count: s.movies.length, adult: 0, locked: 0 }; }) };
+        return { cats: movieShelves().map(function (s) { return { id: s.id, n: s.title, count: s.movies.length, adult: 0, locked: 0 }; }) };
       });
     },
     items: function (cid, q, off, lim) {
@@ -557,7 +788,7 @@ var Media = (function () {
         var list;
         q = String(q || '').trim().toLowerCase();
         if (q) list = MediaStore.movies(null).filter(function (m) { return phoneTitle(m).toLowerCase().indexOf(q) >= 0 || String(m.title).toLowerCase().indexOf(q) >= 0; });
-        else list = (MediaStore.sections(null).filter(function (s) { return s.id === (cid || 'all'); })[0] || { movies: [] }).movies;
+        else list = (movieShelves().filter(function (s) { return s.id === (cid || 'all'); })[0] || { movies: [] }).movies;
         off = Math.max(0, +off || 0); lim = Math.min(300, Math.max(1, +lim || 120));
         return { total: list.length, offset: off, items: list.slice(off, off + lim).map(phoneSlim) };
       });
@@ -587,6 +818,7 @@ var Media = (function () {
   function itemMenu(m) {
     if (!m) return;
     if (m.kind === 'show') return MediaSeries.showItem(m,restore);
+    if (m.kind === 'live') return play(m);
     if (m.review && m.review.length) return MediaSeries.correct(m,restore);
     var r = MediaStore.resume(m.id);
     UI.menu(RAW(label(m)), [
@@ -597,6 +829,7 @@ var Media = (function () {
       m.metadata && { label: 'Remove movie details', action: function () { MediaStore.setMetadata(m.id, null); refresh(); } },
       { label:'TV shows',action:function () { MediaSeries.open(); } },
       reviewCards.length > 0 && { label:'Needs review',action:function () { MediaSeries.review(); } },
+      copies(m).length > 1 && { label: 'Choose a copy', sub: copies(m).length + ' copies of this movie', action: function () { UI.menu('Play which copy?', copies(m).map(function (x) { var src = MediaStore.source(x.src); return { label: RAW((src ? src.name : 'Unknown source') + (fileInfo(x) ? '   ·   ' + fileInfo(x) : '')), sub: x.size ? size(x.size) : '', action: function () { play(x, false); } }; })); } },
       { label: 'File information', sub: fileInfo(m) + (m.size ? ' · ' + size(m.size) : ''), action: function () { UI.menu('File information', [{ label: RAW(m.file), sub: (MediaStore.source(m.src) || {}).name || '' }]); } },
       r && { label: 'Mark as watched', action: function () { MediaStore.clearResume(m.id); itemsVL.refresh(); showInfo(); } }
     ]);
@@ -605,58 +838,87 @@ var Media = (function () {
   /* ---------- remote and pointer navigation ---------- */
   function hints() {
     if (document.body.classList.contains('nav-open')) return;
-    UI.hints([['', 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Options'], ['green', 'Rescan'], ['yellow', 'Fetch details'], ['blue', 'Settings']]);
+    var m = itemsVL.current();
+    UI.hints([['', m && m.kind === 'live' ? 'OK  watch' : 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', 'Rescan'], ['yellow', 'Fetch details'], ['blue', 'Settings']]);
+  }
+  /* Red: sort, go to a shelf, arrange shelves, which source, and the focused title's options. */
+  function goShelf(id) { var i = shelves.map(function (s) { return s.id; }).indexOf(id); if (i >= 0) { shelfAt = i; drawShelves(); hints(); } }
+  function sortMenu(kind) {
+    var p = MediaStore.preferences(), show = kind === 'show', names = show ? SHOW_SORT : SORT, at = show ? p.showSort : p.sort;
+    UI.menu(show ? 'Sort TV shows' : 'Sort movies', Object.keys(names).map(function (k) {
+      return { label: (k === at ? '●  ' : '○  ') + names[k], current: k === at, action: function () { updatePreferences(show ? { showSort: k } : { sort: k }); } };
+    }).concat([{ label: 'Reverse the order: ' + ((show ? p.showSortReverse : p.sortReverse) ? 'On' : 'Off'), sub: show ? 'Z to A, oldest, lowest first' : 'Z to A, oldest, lowest, shortest first', action: function () { updatePreferences(show ? { showSortReverse: !p.showSortReverse } : { sortReverse: !p.sortReverse }); } },
+      { label: show ? 'Sort movies…' : 'Sort TV shows…', sub: sortName(show ? 'movie' : 'show'), action: function () { sortMenu(show ? 'movie' : 'show'); } }]));
+  }
+  function arrangeMenu(focus) {
+    var ar = arrangement(), p = MediaStore.preferences();
+    function save(order, off) { updatePreferences({ shelfOrder: order, shelfOff: off }); }
+    function label(k) { if (k !== 'holidays') return NAMES[k]; var on = holidaysNow().map(function (x) { return x.h.title.replace(/ movies$/, ''); }); return NAMES[k] + (on.length ? '  (now: ' + on.join(', ') + ')' : ''); }
+    UI.menu('Arrange shelves', ar.order.map(function (k, i) {
+      return { label: (ar.off(k) ? '○  ' : '●  ') + label(k), sub: ar.off(k) ? 'Off' : 'Shelf ' + (i + 1), current: k === focus, action: function () {
+        UI.menu(label(k), [
+          i > 0 && { label: 'Move up', action: function () { var o = ar.order.slice(); o.splice(i, 1); o.splice(i - 1, 0, k); save(o, p.shelfOff || {}); arrangeMenu(k); } },
+          i < ar.order.length - 1 && { label: 'Move down', action: function () { var o = ar.order.slice(); o.splice(i, 1); o.splice(i + 1, 0, k); save(o, p.shelfOff || {}); arrangeMenu(k); } },
+          i > 0 && { label: 'Move to the top', action: function () { var o = ar.order.slice(); o.splice(i, 1); o.unshift(k); save(o, p.shelfOff || {}); arrangeMenu(k); } },
+          { label: ar.off(k) ? 'Switch on' : 'Switch off', action: function () { var off = {}; Object.keys(p.shelfOff || {}).forEach(function (x) { off[x] = p.shelfOff[x]; }); off[k] = !ar.off(k); save(ar.order, off); arrangeMenu(k); } },
+          { label: 'Back', action: function () { arrangeMenu(k); } }
+        ].filter(Boolean));
+      } };
+    }).concat([{ label: 'Back to the way it was', sub: 'The first order, with Now playing and Upcoming off', action: function () { save([], {}); arrangeMenu(); } }]));
+  }
+  function sourceMenuPick() {
+    var p = MediaStore.preferences(), list = MediaStore.sources();
+    UI.menu('Show', [{ label: (p.sourceFilter ? '○  ' : '●  ') + 'All sources', current: !p.sourceFilter, action: function () { updatePreferences({ sourceFilter: '' }); } }].concat(list.map(function (x) {
+      return { label: (p.sourceFilter === x.id ? '●  ' : '○  ') + RAW(x.name), current: p.sourceFilter === x.id, action: function () { updatePreferences({ sourceFilter: x.id }); } };
+    })));
+  }
+  function mediaOptions() {
+    var m = itemsVL.current(), s = shelves[shelfAt], p = MediaStore.preferences(), show = s && s.id === 'shows', src = p.sourceFilter && MediaStore.source(p.sourceFilter);
+    UI.menu('My media', [
+      { label: (show ? 'Sort TV shows: ' : 'Sort movies: ') + sortName(show ? 'show' : 'movie'), action: function () { sortMenu(show ? 'show' : 'movie'); } },
+      { label: 'Go to a shelf', sub: count(shelves.length, '1 shelf', '{n} shelves'), action: function () { UI.menu('Go to a shelf', shelves.map(function (x) { return { label: RAW(x.title), sub: String(x.movies.length), current: x === s, action: function () { goShelf(x.id); } }; })); } },
+      { label: 'Arrange shelves', sub: 'Move shelves up or down, switch them off', action: function () { arrangeMenu(s && (s.id.indexOf('holiday:') === 0 ? 'holidays' : s.genre ? 'genres' : s.id)); } },
+      MediaStore.sources().length > 1 && { label: 'Show: ' + (src ? RAW(src.name) : 'All sources'), action: sourceMenuPick },
+      m && { label: m.kind === 'show' ? 'Show options' : m.kind === 'live' ? (m.live.live ? 'Watch now' : 'Remind me') : 'Movie options', action: function () { itemMenu(m); } },
+      { label: 'TV shows', action: function () { MediaSeries.open(); } },
+      reviewCards.length > 0 && { label: 'Needs review', action: function () { MediaSeries.review(); } }
+    ].filter(Boolean));
   }
   // Past the last shelf: back to the first, and Up on the first round to the last (one press, not held).
   function moveShelf(d) {
     var row = shelfAt + d;
-    while (row >= 0 && row < shelves.length && !shelves[row].movies.length) row += d;
-    if ((row < 0 || row >= shelves.length) && !UI.repeating && shelves.filter(function (x) { return x.movies.length; }).length > 2) {
-      row = d > 0 ? 0 : shelves.length - 1;
-      while (row >= 0 && row < shelves.length && !shelves[row].movies.length) row += d;
-    }
-    if (row >= 0 && row < shelves.length && row !== shelfAt) { shelfAt = row; drawShelves(); }
+    if ((row < 0 || row >= shelves.length) && !UI.repeating && shelves.length > 2) row = d > 0 ? 0 : shelves.length - 1;
+    if (row >= 0 && row < shelves.length && row !== shelfAt) { shelfAt = row; drawShelves(); hints(); }
   }
   function keys(a) {
     followTop = false;
     if (a !== 'ok') playToken++;
     if (a === 'green') { rescanAll(); return true; }
     if (a === 'yellow') { fetchMissingDetails(); return true; }
-    if (a === 'red') { if (itemsVL.current()) { itemMenu(itemsVL.current()); return true; } UI.menu('My media', [{label:'TV shows',action:function () { MediaSeries.open(); }},reviewCards.length > 0 && {label:'Needs review',action:function () { MediaSeries.review(); }}].filter(Boolean)); return true; }
+    if (a === 'red') { mediaOptions(); return true; }
     if (a === 'blue') { Views.switchTab('settings'); Settings.section('media'); return true; }
     var s = shelves[shelfAt], at = s && shelfPos[s.id] || 0;
     if (a === 'up') moveShelf(-1);
     else if (a === 'down') moveShelf(1);
     else if (a === 'back' || (a === 'left' && at === 0)) Views.tabBar(restore);
     else if (s && (a === 'left' || a === 'right' || a === 'chup' || a === 'chdown')) {
-      shelfPos[s.id] = Math.max(0, Math.min(s.movies.length - 1, at + (a === 'left' ? -1 : a === 'right' ? 1 : a === 'chup' ? -6 : 6))); drawShelves();
+      shelfPos[s.id] = Math.max(0, Math.min(s.movies.length - 1, at + (a === 'left' ? -1 : a === 'right' ? 1 : a === 'chup' ? -6 : 6))); drawShelves(); hints();
     } else if (a === 'ok') play(itemsVL.current(), false);
-    else if (a === 'red' || a === 'hold' || a === 'info') itemMenu(itemsVL.current());
+    else if (a === 'hold' || a === 'info') itemMenu(itemsVL.current());
     return true;
   }
   function restore() { UI.setHandler(keys);refreshSeries(); if (shelves.length) drawShelves(); hints(); }
   function build() {
-    ['continue', 'favorites', 'all', 'shows', 'review'].forEach(function () {
-      var el = U.el('section', 'media-shelf'), heading = U.el('h2'), count = U.el('span', 'media-shelf-count'), track = U.el('div', 'media-track'), empty = U.el('p', 'media-shelf-empty'), pool = [];
-      var title = U.el('div', 'media-shelf-title'); title.appendChild(heading); title.appendChild(count); el.appendChild(title); el.appendChild(track); el.appendChild(empty);
-      for (var i = 0; i < TILE_POOL; i++) {
-        var tile = U.el('div', 'media-tile'), art = U.el('div', 'media-art'), name = U.el('div', 'media-tile-title'), year = U.el('div', 'media-tile-year'), progress = U.el('i'), favorite = U.el('span', 'media-favorite');
-        tile.setAttribute('role', 'button'); var bar = U.el('div', 'media-progress'); bar.appendChild(progress); tile.appendChild(favorite); tile.appendChild(art); tile.appendChild(name); tile.appendChild(year); tile.appendChild(bar);
-        (function (node) {
-          function focus() { followTop = false; shelfAt = node._row; shelfPos[shelves[shelfAt].id] = node._at; drawShelves(); }
-          node.addEventListener('mousemove', function () { if (UI.pointer && (shelfAt !== node._row || (shelfPos[shelves[node._row].id] || 0) !== node._at)) focus(); });
-          node.addEventListener('click', function () { focus(); play(itemsVL.current(), false); });
-        })(tile);
-        track.appendChild(tile); pool.push({ el: tile, art: art, title: name, year: year, progress: progress, favorite: favorite, key: '' });
-      }
-      $('mediaShelfStage').appendChild(el); shelfViews.push({ el: el, heading: heading, count: count, pool: pool, empty: empty });
-    });
+    var v = $('viewMedia'), bd = U.el('div', 'media-bd'), img = U.el('img', 'media-hero-art'), fade = U.el('div', 'media-fade');
+    img.alt = ''; bd.appendChild(img); bd.appendChild(fade);
+    if (v.insertBefore && v.firstChild) v.insertBefore(bd, v.firstChild); else v.appendChild(bd);
+    hero = { img: img };
     built = true;
   }
   function refreshSeries() {
     if (seriesLoading) { seriesAgain = true; return; }   // asked again mid-load (a setting changed): load once more after
     seriesLoading = true; seriesAgain = false;
-    Promise.all([ask('library/query',MediaStore.preferences().favoritesInLists?{kind:'show',limit:60}:{kind:'show',favourite:false,limit:60},30000),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),ask('library/query',{kind:'show',favourite:true,limit:60},30000)]).then(function (results) {
+    Promise.all([ask('library/query',MediaStore.preferences().favoritesInLists?{kind:'show',limit:300}:{kind:'show',favourite:false,limit:300},30000),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),ask('library/query',{kind:'show',favourite:true,limit:300},30000)]).then(function (results) {
       seriesCards = (results[0].items || []).map(function (r) { r.id = r.handle; return r; });
       reviewCards = (results[1].items || []).map(function (r) { r.id = r.handle; return r; });
       continuingShows = (results[2].items || []).map(function(r){r.id=r.handle;return r;});
@@ -669,7 +931,7 @@ var Media = (function () {
     playToken++;
     if (!built) build(); UI.setHandler(keys);
     if (!keepState) { followTop = true; shelfPos = {}; }
-    refreshSeries();
+    refreshSeries(); listsSoon();
     if (keepState && loaded) { refresh(); restore(); return; }
     (loaded || (loaded = MediaStore.load())).then(function () {
       if ($('viewMedia').classList.contains('hidden')) return;
@@ -680,8 +942,8 @@ var Media = (function () {
   return {
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
     refreshShows:refreshSeries, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, signOut: signOut,
-    rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
+    rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, arrangeShelves: function () { arrangeMenu(); }, shelfList: function () { var ar = arrangement(); return ar.order.map(function (k) { return { key: k, name: NAMES[k], off: ar.off(k) }; }); }, holidaysNow: holidaysNow, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: play, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
-    _test: { addServer: addServer, addAddress: addAddress, addDropbox: addDropbox, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
+    _test: { goShelf: function (id) { followTop = false; goShelf(id); }, addServer: addServer, addAddress: addAddress, addDropbox: addDropbox, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };
 })();

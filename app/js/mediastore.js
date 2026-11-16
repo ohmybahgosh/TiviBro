@@ -20,11 +20,17 @@ var MediaStore = (function () {
   function preferences(next) {
     var p = state.preferences || (state.preferences = {}), changed = false;
     if (next && /^(en|nl|de|fr|es|it)$/.test(next.language)) { p.language = next.language; changed = true; }
-    if (next && /^(name|release|added)$/.test(next.sort)) { p.sort = next.sort; changed = true; }
-    if (next && /^(name|release|added)$/.test(next.showSort)) { p.showSort = next.showSort; changed = true; }
+    if (next && /^(name|release|added|rating|runtime)$/.test(next.sort)) { p.sort = next.sort; changed = true; }
+    if (next && /^(name|release|added|rating)$/.test(next.showSort)) { p.showSort = next.showSort; changed = true; }
+    if (next && typeof next.sortReverse === 'boolean') { p.sortReverse = next.sortReverse; changed = true; }
+    if (next && typeof next.showSortReverse === 'boolean') { p.showSortReverse = next.showSortReverse; changed = true; }
+    // My media's shelves (Red > Arrange shelves): their order and which are off, and which source to show ('' all).
+    if (next && Array.isArray(next.shelfOrder)) { p.shelfOrder = next.shelfOrder.filter(function (k) { return /^[a-z][a-z:-]{0,39}$/.test(k); }).slice(0, 40); changed = true; }
+    if (next && next.shelfOff && typeof next.shelfOff === 'object') { var off = {}; Object.keys(next.shelfOff).slice(0, 40).forEach(function (k) { if (/^[a-z][a-z:-]{0,39}$/.test(k)) off[k] = !!next.shelfOff[k]; }); p.shelfOff = off; changed = true; }
+    if (next && typeof next.sourceFilter === 'string' && (!next.sourceFilter || source(next.sourceFilter))) { p.sourceFilter = next.sourceFilter; changed = true; }
     if (next && typeof next.favoritesInLists === 'boolean') { p.favoritesInLists = next.favoritesInLists; changed = true; }
     if (changed) save();
-    return { language: p.language || 'en', sort: p.sort || 'name', showSort: p.showSort || 'name', favoritesInLists: p.favoritesInLists !== false, tmdbConfigured: !!state.tmdbToken };
+    return { language: p.language || 'en', sort: p.sort || 'name', showSort: p.showSort || 'name', sortReverse: !!p.sortReverse, showSortReverse: !!p.showSortReverse, shelfOrder: (p.shelfOrder || []).slice(), shelfOff: p.shelfOff || {}, sourceFilter: p.sourceFilter || '', favoritesInLists: p.favoritesInLists !== false, tmdbConfigured: !!state.tmdbToken };
   }
   function setTmdbToken(value) {
     value = String(value || '').trim();
@@ -143,14 +149,23 @@ var MediaStore = (function () {
   function flush() { if (later) { clearTimeout(later); later = null; return saveLib(); } return saving || Promise.resolve(); }
   function markMissed(id, batch) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.tmdbMiss = Date.now(); return batch ? saveSoon() : saveLib(); } return Promise.resolve(); }
   function setMetadata(id, metadata, batch) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { if (metadata) m.metadata = metadata; else delete m.metadata; return batch ? saveSoon() : saveLib(); } return Promise.resolve(); }
-  function movies(srcId) {
-    var list = lib.filter(function (m) { var s = source(m.src); return (!srcId || m.src === srcId) && (!s || s.contentMode !== 'shows'); }), sort = preferences().sort;
-    return list.sort(function (a, b) {
+  /* Sort movies by (Settings > My media, and Red on My media): name (A to Z), release, added, rating or
+     runtime (newest, highest, longest first), and Reverse turns any of them round. */
+  function rating(m) { return +(m.metadata && m.metadata.rating) || 0; }
+  function minutes(m) { return parseInt(m.metadata && m.metadata.runtime, 10) || 0; }
+  function compare(sort) {
+    return function (a, b) {
       var d = 0;
       if (sort === 'release') { var ad = a.metadata && a.metadata.releaseDate || a.year || '', bd = b.metadata && b.metadata.releaseDate || b.year || ''; d = ad < bd ? 1 : ad > bd ? -1 : 0; }
       else if (sort === 'added') d = (b.addedAt || 0) - (a.addedAt || 0);
+      else if (sort === 'rating') d = rating(b) - rating(a);
+      else if (sort === 'runtime') d = minutes(b) - minutes(a);
       return d || byTitle(a, b);
-    });
+    };
+  }
+  function sortList(list) { var p = preferences(); list.sort(compare(p.sort)); if (p.sortReverse) list.reverse(); return list; }
+  function movies(srcId) {
+    return sortList(lib.filter(function (m) { var s = source(m.src); return (!srcId || m.src === srcId) && (!s || s.contentMode !== 'shows'); }));
   }
   function load() {
     if (reading) return reading;
@@ -186,7 +201,7 @@ var MediaStore = (function () {
 
   return {
     preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
-    tmdbToken: function () { return state.tmdbToken || ''; }, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
+    tmdbToken: function () { return state.tmdbToken || ''; }, sortList: sortList, compare: compare, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
     resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, clearResume: clearResume
   };
 })();
