@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Info twice shows what's on in full (discussion #36).**  Watching a channel fullscreen, Info shows the short panel as before; Info again opens the programme's details under it: what it is (movie, series, sports), its year, season and episode, TMDB's line for a movie or series, and the summary.  Hide spoilers still applies.  Info a third time goes back to the short panel.
+
 ## 0.6.0 (alpha 144, 2026-11-16)
 
 Pre-release: expect rough edges, and keep a backup before installing.

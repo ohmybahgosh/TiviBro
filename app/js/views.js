@@ -806,7 +806,8 @@ var Views = (function () {
       case 'none': return;
       case 'list': if (full) openOverlay(); return;
       case 'panel': if (full) openPanel(); return;
-      case 'osd': if (full) osd(true); return;
+      // Info again while the panel is up (a live channel): what's on in full, then back to the short panel.
+      case 'osd': if (full) { var ob = $('osd'); if (mode !== 'vod' && mode !== 'catchup' && !ob.classList.contains('hidden') && !ob.classList.contains('more')) { ob.classList.add('more'); osdMore(); } else ob.classList.remove('more'); osd(true); } return;
       case 'menu': if (ctx === 'player') playerMenu(); else if (zone === 'groups') groupMenu(groupsVL.current()); else chanMenu(c, curGroup); return;
       case 'chnext': if (full) zap(1); else chansVL.move(1); return;
       case 'chprev': if (full) zap(-1); else chansVL.move(-1); return;
@@ -1014,6 +1015,25 @@ var Views = (function () {
 
   function fmtDur(s) { s = Math.max(0, Math.floor(s)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + U.pad(m) : m) + ':' + U.pad(x); }
 
+  /* The full details of what's on now (Info pressed twice): the programme's kind, year, season and episode,
+     TMDB's movie or series line, and the summary (the guide's, else TMDB's), with Hide spoilers kept. */
+  function osdMore() {
+    var box = $('osdMore'), c = playing; if (!box) return; box.innerHTML = '';
+    var nn = c && Epg.nowNext(c), p = nn && nn.now;
+    if (!p) { box.appendChild(U.el('p', 'om-desc', 'No guide information for this channel.')); return; }
+    var mv = typeof Movies !== 'undefined' ? Movies.of(c, p) : null, sh = !mv && typeof Series !== 'undefined' ? Series.of(c, p) : null;
+    var se = sh && p.ep ? Series.episode(sh, p.ep) : null, gd = Epg.desc(c, p) || '';
+    var meta = mv ? ['Movie', mv.year, mv.runtime, mv.genre, mv.rating ? '★ ' + mv.rating + ' TMDB' : '']
+      : sh ? ['Series', p.ep, se && se.t, sh.network, sh.genre, sh.rating ? '★ ' + sh.rating + ' TMDB' : '']
+      : [{ s: 'Sports', n: 'News', c: 'Kids', d: 'Documentary' }[p.k] || '', p.mv ? 'Movie' : '', p.y, p.ep, p.n ? 'New' : ''];
+    if ((!gd || gd.length < 60) && mv && mv.plot) gd = mv.plot;
+    if ((!gd || gd.length < 60) && sh) gd = (se && se.plot) || sh.plot || gd;
+    var now = Date.now(), spoil = Store.settings.noSpoilers && !p.up && (p.n || (p.s > now && !!(sh || mv || p.ep) && p.k !== 'n' && p.k !== 's'));
+    if (spoil && gd) gd = 'Summary hidden, a new episode (Hide spoilers is on).';
+    var line = meta.filter(Boolean).join('   ·   ');
+    if (line) box.appendChild(U.el('div', 'om-meta', line));
+    box.appendChild(U.el('p', 'om-desc', gd || 'The guide has no summary for this programme.'));
+  }
   function osd(show, ch) {
     if (!full) return;
     var o = $('osd'), poster = $('osdPoster');
@@ -1049,9 +1069,12 @@ var Views = (function () {
     }
     osdLegend();
     if (show) {
+      if (o.classList.contains('hidden')) o.classList.remove('more');     // shown afresh: the short panel first
       o.classList.remove('hidden');
       clearTimeout(osdT);
-      osdT = setTimeout(function () { o.classList.add('hidden'); }, (+Store.settings.osdTimeout || 5) * 1000);
+      // The full details stay up longer (there's a summary to read); they go with the panel.
+      if (ch && ch !== playing) o.classList.remove('more');
+      osdT = setTimeout(function () { o.classList.add('hidden'); o.classList.remove('more'); }, (+Store.settings.osdTimeout || 5) * (o.classList.contains('more') ? 3 : 1) * 1000);
     }
   }
 

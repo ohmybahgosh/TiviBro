@@ -112,6 +112,11 @@ body.full .vid-error{left:50%;right:auto;bottom:auto;top:40%;transform:translate
 .osd-prog{margin-top:14px}
 .osd-now{font-size:30px}
 .osd-next{font-size:24px;color:var(--muted);margin-top:8px}
+/* Info pressed again on a live channel: what's on, in full (discussion #36) */
+.osd-more{display:none;margin-top:14px;max-width:1500px}
+.osd.more .osd-more{display:block}
+.osd-more .om-meta{font-size:22px;color:var(--accent);margin-bottom:6px}
+.osd-more .om-desc{font-size:24px;line-height:1.4;color:var(--text);opacity:.9;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;overflow:hidden}
 .osd .bar{height:6px;background:rgba(255,255,255,.18);border-radius:3px;margin-top:12px;width:900px;overflow:hidden}
 .osd .bar i{display:block;height:100%;background:var(--accent2)}
 .osd.vod .bar{width:auto;height:8px;border-radius:4px}

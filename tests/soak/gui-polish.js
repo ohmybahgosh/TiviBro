@@ -70,6 +70,16 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     for (let i = 0; i < 12 && !asked; i++) { await page.waitForTimeout(250); asked = await ev(() => { const m = document.getElementById('modal'); return !!m && !m.classList.contains('hidden') && /Still starting/.test(m.innerText); }); }
     const ss = await ev(() => window.__slow);
     ok('a reconnect after playing does not ask "Still starting"', !asked && !ss.some((ms) => ms >= 20000), JSON.stringify({ asked, slow: ss.slice(0, 5) }));
+
+    // Info once: the short panel.  Info again: what's on in full (discussion #36).  Again: short.
+    const osdState = () => ev(() => { const o = document.getElementById('osd'); return { shown: !o.classList.contains('hidden'), more: o.classList.contains('more'), text: document.getElementById('osdMore').innerText }; });
+    await ev(() => { document.getElementById('osd').classList.add('hidden'); UI.press('info'); });
+    const o1 = await osdState();
+    await ev(() => UI.press('info'));
+    const o2 = await osdState();
+    await ev(() => UI.press('info'));
+    const o3 = await osdState();
+    ok('Info twice shows the programme in full, a third time goes back', o1.shown && !o1.more && o2.shown && o2.more && o2.text.length > 10 && o3.shown && !o3.more, JSON.stringify([o1, o2, o3]));
   } catch (e) { ok('harness: ' + e.message, false); }
   ok('no page errors', !errs.length, errs.join(' | '));
   await b.close(); hang.close();
