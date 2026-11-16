@@ -8,7 +8,7 @@ Channels marked **↺** keep recent programmes on your provider's servers.
 2. **OK** on a past programme replays it from the start.  **Hold OK** for more choices, including **Earlier programmes…** for a list by day.
 3. While replaying: **◀ ▶** skip 30 seconds (keep pressing and each press jumps further), **▲ ▼** skip 5 minutes, **⏪ ⏩** jump further, **❙❙** pauses, and **Yellow** or **Back** returns to live.
 
-From live TV, **From start** in the quick menu restarts the current programme.  Step sizes are under **Settings > Playback and buffering > Catch-up, movies and shows**.
+From live TV, **From start** in the quick menu restarts the current programme.  Step sizes are under **Settings > Playback > Catch-up and seeking**.
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/catchup.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/catchup.gif" width="100%" alt="Replaying a programme with catch-up"></a></p>
 <p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/catchup.mp4">Watch the MP4</a></sub></p>
@@ -24,4 +24,4 @@ From live TV, **From start** in the quick menu restarts the current programme.  
 
 ---
 
-← [Event channels: pay-per-view and sports passes](Event-channels-pay-per-view-and-sports-passes)  ·  [Home](Home)  ·  [Movies and shows](Movies-and-shows) →
+← [My teams](My-teams)  ·  [Home](Home)  ·  [Movies and shows](Movies-and-shows) →

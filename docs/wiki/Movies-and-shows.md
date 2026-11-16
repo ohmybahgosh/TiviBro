@@ -2,7 +2,7 @@
 
 *On the TV*
 
-If your Xtream provider offers video on demand, **Movies** and **Shows** appear in the menu.
+If your provider offers video on demand, **Movies** and **Shows** appear in the menu.  With an Xtream Codes login they come from the provider's movie and series lists.  With an M3U link they come from the list itself: its films (links to `/movie/` or to a video file) go to **Movies**, and its episodes (links to `/series/`, or named like "Show S01 E02") are gathered into shows in **Shows**, by season, instead of filling the channel list.  The list's groups become the categories.  The network helper keeps them on the TV, so a list with hundreds of thousands of titles still fits.
 
 - Categories on the left (**Continue watching**, **My list**, **All movies**, then your provider's), titles in the middle, details and poster on the right.
 - **OK** plays a movie or opens a show's seasons and episodes.  **Hold OK** adds a title to **My list**.
@@ -13,6 +13,7 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 - Running times read **1 h 25 min**, ratings **★ 7.6**.  On a TV, big libraries are downloaded and slimmed by the network helper, so even 160,000 movies stay light on memory.
 - While watching, **◀ ▶** skip 30 seconds.  Keep pressing and each press jumps further (twice, four, then eight times as far); the info panel shows where you'll land and when the movie will end, and playback jumps there once you stop pressing.  **Back** cancels a jump you haven't landed yet.  **▲ ▼** skip 10 minutes.
 - TiviBro remembers where you stopped and offers to resume.  The next episode can start by itself (**Play next episode automatically**).
+- A movie or episode you watched to the end gets a **✓** in the list, and one you stopped part-way shows how far you got.  A show you started shows the episode you're on ("S1 E5") and how far you got in it, and opens on that episode.  **Hold OK** marks a title as watched or unwatched by hand.
 
 <p align="center"><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/vod.mp4"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/vod.gif" width="100%" alt="Movies and shows"></a></p>
 <p align="center"><sub><a href="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/media/vod.mp4">Watch the MP4</a></sub></p>
@@ -27,4 +28,4 @@ If your Xtream provider offers video on demand, **Movies** and **Shows** appear 
 
 ---
 
-← [Catch-up](Catch-up)  ·  [Home](Home)  ·  [Search](Search) →
+← [Catch-up](Catch-up)  ·  [Home](Home)  ·  [Movies on now](Movies-on-now) →

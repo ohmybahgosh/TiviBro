@@ -7,10 +7,10 @@ Every change is a **draft** until you press **Send to TV** (or <kbd>Ctrl</kbd>+<
 - **Review** lists every change in plain words before sending.  **Send automatically** sends as you go.
 - <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redoes, even after sending.
 - **Restore points** live on the TV.  It makes one before applying each batch (keeps the last 15), and you can make named ones before big changes.  Restoring one is itself undoable.
-- **Changes and restore points** lists what hasn't reached the TV yet, this session's changes (each with **Go back**), your draft history, and the restore points.
+- **Your changes in this editor**, on the [Backups and restore points](Backups-and-restore-points) page, lists what hasn't reached the TV yet, this session's changes (each with **Go back to before this**), your draft history, and **Start over**.
 
 <p align="center">
-  <a href="https://tivibro.app/view/#editor-history"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-history.png" width="100%" alt="Changes and restore points"></a>
+  <a href="https://tivibro.app/view/#editor-history"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-history.png" width="100%" alt="Your changes in this editor"></a>
 </p>
 
 **You can't lose unsent work.**  An hour of clean-up shouldn't vanish because of a stray click, a refresh or a closed tab, so the editor saves your drafts twice:
@@ -25,7 +25,7 @@ Reload the page, close the tab, or open the editor on another computer or your p
   <a href="https://tivibro.app/view/#editor-drafts"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/editor-drafts.png" width="49%" alt="Draft history"></a>
 </p>
 
-**Draft history** (on **Changes and restore points**) keeps versions of your unsent work on the TV:
+**Draft history** (on **Backups and restore points**, under **Your changes in this editor**) keeps versions of your unsent work on the TV:
 
 - one every few minutes, or every 20 changes, while you work;
 - one just before you send, and one before you discard;
@@ -35,4 +35,4 @@ Reload the page, close the tab, or open the editor on another computer or your p
 
 ---
 
-← [Turning on the web editor](Turning-on-the-web-editor)  ·  [Home](Home)  ·  [Groups and channels](Groups-and-channels) →
+← [Turning on the web editor](Turning-on-the-web-editor)  ·  [Home](Home)  ·  [Channels and groups](Channels-and-groups) →

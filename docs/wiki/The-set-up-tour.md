@@ -27,7 +27,7 @@ The first screen counts your channels, groups, countries, event channels, East a
 | **Make it yours** | Accent colour, background, text size, start screen, turning on the last channel at launch, the preview in the list, and what happens when a channel stops working.  Colours change as you pick them. |
 | **All set** | How many channels and groups you keep and hide, **Your choices** (one line per screen, like "Detroit in Local channels, network groups hidden": **OK** on one goes back to that screen, and **Skip to the summary** comes back), **Apply and start watching**, and a few things worth knowing. |
 
-**Hidden, not gone.**  Everything the tour hides stays one press away in **Settings > Groups, sorting, hidden**, and Apply saves a restore point first.  Good to know about what hiding does:
+**Hidden, not gone.**  Everything the tour hides stays one press away in **Settings > Channels and groups**, and Apply saves a restore point first.  Good to know about what hiding does:
 
 - **Extra copies** you hide are still backups: if the copy you keep stops working, TiviBro switches to one of them by itself.  See [Other versions of a channel](Other-versions-of-a-channel).
 - **The other East or West feed** is not a backup, because it runs hours apart.
@@ -51,8 +51,8 @@ The first screen counts your channels, groups, countries, event channels, East a
   <a href="https://tivibro.app/view/#tv-tour-done"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-tour-done.png" width="32%" alt="All set"></a>
 </p>
 
-Everything the tour hides stays one press away: Settings > Groups, sorting, hidden, or hold **OK** on a channel.  Run it again any time from **Settings > Playlists and guide > your playlist > Set-up tour**.  It works on the same engine as the web editor's Smart clean-up, so both always agree.
+Everything the tour hides stays one press away: Settings > Channels and groups, or hold **OK** on a channel.  Run it again any time from **Settings > Playlists > your playlist > Set-up tour**.  It works on the same engine as the web editor's Smart clean-up, so both always agree.
 
 ---
 
-← [First start](First-start)  ·  [Home](Home)  ·  [Channel logos](Channel-logos) →
+← [Language](Language)  ·  [Home](Home)  ·  [Channel logos](Channel-logos) →

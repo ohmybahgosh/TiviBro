@@ -2,9 +2,9 @@
 
 *On the TV*
 
-The watchlist looks for shows, teams and names in the guide for you: "Yankees", "Bluey", "Premier League", "Gordon Ramsay".  When one is coming up in the next 24 hours (or 6, 12 or 48), TiviBro sets a reminder, and says so.  Matching is by whole words in programme titles, so "Cars" never finds "Oscars".  A reminder you cancel doesn't come back, and a busy word keeps at most five reminders waiting at a time.
+The watchlist looks for shows, teams and names in the guide for you: "Yankees", "Bluey", "Premier League", "Gordon Ramsay".  When one is coming up in the next 24 hours (or 6, 12 or 48), TiviBro sets a reminder, and says so.  While a movie or episode plays full screen, it says so afterwards instead ("While you watched: …"), so nothing covers the subtitles; **Settings > Reminders and watchlist > Hold notices during movies** turns that off.  Reminders you set still come up on time, and any notice in full screen shows near the top, away from the subtitles.  Matching is by whole words in programme titles, so "Cars" never finds "Oscars".  A reminder you cancel doesn't come back, and a busy word keeps at most five reminders waiting at a time.
 
-Add to it three ways: **Yellow** in Search (adds what you typed), **Hold OK > Add to watchlist** on a programme in the guide, or **Settings > Guide, start screen, reminders > Watchlist > Add a show, team or name…**.  That page lists your words, everything coming up (**OK** sets or cancels each reminder), and removes a word with the reminders it set.  The [web editor's](The-programme-guide) Guide page has the watchlist too, with a real keyboard.
+Add to it three ways: **Yellow** in Search (adds what you typed), **Hold OK > Add to watchlist** on a programme in the guide, or **Settings > Reminders and watchlist > Watchlist > Add a show, team or name…**.  That page lists your words, everything coming up (**OK** sets or cancels each reminder), and removes a word with the reminders it set.  The [web editor's](Reminders-and-watchlist) Reminders and watchlist page has the watchlist too, with a real keyboard.
 
 The watchlist needs the guide to know what's on: with an XMLTV guide it sees every channel; with only the provider's per-channel guide, it sees the channels you've looked at.
 
