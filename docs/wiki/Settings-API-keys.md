@@ -13,4 +13,4 @@ The keys stay on this TV, out of backups.
 
 ---
 
-← [Settings: My media](Settings-My-media)  ·  [Home](Home)  ·  [Settings: Remote and buttons](Settings-Remote-and-buttons) →
+← [Settings: Trakt](Settings-Trakt)  ·  [Home](Home)  ·  [Settings: Remote and buttons](Settings-Remote-and-buttons) →

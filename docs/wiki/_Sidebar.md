@@ -41,6 +41,7 @@
 - [Settings: Audio and subtitles](Settings-Audio-and-subtitles)
 - [Settings: Movies and shows](Settings-Movies-and-shows)
 - [Settings: My media](Settings-My-media)
+- [Settings: Trakt](Settings-Trakt)
 - [Settings: API keys](Settings-API-keys)
 - [Settings: Remote and buttons](Settings-Remote-and-buttons)
 - [Settings: Appearance and start screen](Settings-Appearance-and-start-screen)

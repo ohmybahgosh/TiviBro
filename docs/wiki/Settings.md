@@ -14,7 +14,8 @@
 | [**Playback**](Settings-Playback) | Buffer profile and buffer meter, player engine, MPEG-TS or HLS, network helper, HDR and Dolby Vision, aspect, switching channels and what happens when one stops working, catch-up skip steps |
 | [**Audio and subtitles**](Settings-Audio-and-subtitles) | Audio language, surround sound, converting sound the TV can't play, subtitles and captions and how they look, subtitles from OpenSubtitles |
 | [**Movies and shows**](Settings-Movies-and-shows) | The order of movies and shows, next episode, hiding spoilers, movie and series details from TMDB |
-| [**My media**](Settings-My-media) | Add media sources, rescan, fetch details, a link to the TMDB token, sort orders, metadata language, each source |
+| [**My media**](Settings-My-media) | Your libraries (each with its own page: what it holds, Show on Home, scan, unmatched movies with Fix match, remove), add a library, display and shelves, a link to the TMDB token |
+| [**Trakt**](Settings-Trakt) | Connect with a code, watched history both ways, Trakt lists as My media shelves (by link, NAME/LIST, search or chart) |
 | [**API keys**](Settings-API-keys) | The TMDB token and the OpenSubtitles key and sign-in, each with Test |
 | [**Remote and buttons**](Settings-Remote-and-buttons) | Remap buttons in the player and lists, quick menu buttons, learn a button, button tester |
 | [**Appearance and start screen**](Settings-Appearance-and-start-screen) | Settings shown, start screen, where lists open, last channel at launch, preview on the Channels screen, Back twice to exit, clock, theme (Black and white, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin, Solarized, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai, or your own mix), accent color (twelve presets or your own from a hue and brightness), background (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), focus style, text size, panel transparency, logos, clock, channel numbers |
