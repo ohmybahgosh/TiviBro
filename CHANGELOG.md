@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 145, 2026-11-16)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 145
 
 - **My media: Home, Movies and TV shows.**  With both movies and shows, My media has tabs at the top: Home, Movies, TV shows and Favorites, with counts.  Home mixes them: Continue watching, a Browse row with a card for each tab, holiday lists, recently added, Pick of the day and TMDB's Trending, each tile marked Movie or TV.  Movies has only movie shelves (collections, genres, decades, 4K and HDR and the rest), TV shows has Next up, every show and TMDB's TV lists, and Favorites has your favorite movies and shows.  Up from the first shelf reaches the tabs, Left and Right switch them.  Arrange shelves arranges the tab you're on.  With only movies or only shows there are no tabs, as before.
 - **My media matches even more on its own.**  Checked on a real library after alpha 144 (Minecraft, Moana and Superman found, 131 unmatched movies down to 15): a film TMDB dates by another release (The Evil Dead, 1981 in its folder and 1983 on TMDB) is found by the year it was asked for, and of two films of one name where only one has votes, that one is taken.  Shows: a country in the name ("Big Brother (US)", "Euphoria (US)") picks that country's show, "Murder" finds "Murders", and of two shows of one name the one written exactly as the folder has it.  What still had no match is looked up again.
 - **My media: the title, facts and summary stay readable over bright backdrops.**  The dark side of the backdrop reaches further, the text column is narrower, and the text has a soft shadow.
 - **Info twice shows what's on in full (discussion #36).**  Watching a channel fullscreen, Info shows the short panel as before; Info again opens the programme's details under it: what it is (movie, series, sports), its year, season and episode, TMDB's line for a movie or series, and the summary.  Hide spoilers still applies.  Info a third time goes back to the short panel.
 
-## 0.6.0 (alpha 144, 2026-11-16)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 144
+### In alpha 144
 
 - **My media matches more movies on its own.**  Folders named by Radarr or for Plex: a TMDB or IMDb ID in the folder or file name ("{tmdb-1061474}") is used as it is.  Otherwise the file's own name is tried too (Radarr names it for TMDB's title, so "Minecraft The Movie (2025)" holding "A Minecraft Movie (2025)" is found), a year off by one is accepted (Moana, 2026, in a 2025 folder), and of two films with one name and year the far better known one is taken (Superman, 2025).  Movies that found no match before are looked up again.
 - **TV shows match on their own more often too.**  Sonarr and Plex folder names like "Severance (2022)" are read as the name and its year (the year was being searched as part of the name), a TVDB, TMDB or IMDb ID in the name is used, a first airing a year off is accepted, and of shows sharing a name the far better known one is taken.  Shows that found no match before are looked up again.
