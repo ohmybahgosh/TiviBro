@@ -32,7 +32,7 @@ var MediaSeries = (function () {
       return Promise.resolve({skipped:true});
     }
     fetchingMetadata=true;metadataToken=token;metadataLanguage=language;
-    function finish(){fetchingMetadata=false;metadataToken='';Media.refreshShows();if(queuedMetadata){queuedMetadata=false;setTimeout(function(){fetchDetails(false);},350);}}
+    function finish(){if(Media.setBusy)Media.setBusy('shows',0);fetchingMetadata=false;metadataToken='';Media.refreshShows();if(queuedMetadata){queuedMetadata=false;setTimeout(function(){fetchDetails(false);},350);}}
     function active(){if(MediaStore.tmdbToken()!==token||MediaStore.preferences().language!==language)throw new Error('Show details stopped because the token or language changed.');}
     function call(route,q){
       try{active();}catch(e){return Promise.reject(e);}
@@ -73,6 +73,7 @@ var MediaSeries = (function () {
     function next(){
       var q={kind:'show',metadataPending:true,language:language,limit:1};if(force)q.metadataSince=started;
       return call('library/query',q).then(function(r){
+        if(Media.setBusy)Media.setBusy('shows',r.total||r.items.length);
         if(!r.items.length)return;
         if(r.items[0].handle===lastHandle)throw new Error('The media library changed while fetching details.  Try again after scanning finishes.');
         lastHandle=r.items[0].handle;

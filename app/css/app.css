@@ -251,6 +251,15 @@ body.pointer .set-preview{cursor:pointer}
 .opt.focus .ar{visibility:visible}
 .opt .sw{display:inline-block;width:26px;height:26px;border-radius:50%;margin-right:12px;vertical-align:-4px;border:2px solid rgba(255,255,255,.35)}
 .opt.head{min-height:56px;color:var(--muted);font-size:22px;padding-top:24px}
+/* Install the update (Settings > Updates): the theme's "go" colour (--ok), a tint and a NEW badge, filled in when focused */
+.opt.update-go{position:relative;box-shadow:inset 0 0 0 3px var(--ok);margin:6px 0}
+.opt.update-go::before{content:'';position:absolute;top:0;right:0;bottom:0;left:0;border-radius:10px;background:var(--ok);opacity:.14;pointer-events:none}
+.opt.update-go .ol{font-weight:700;color:var(--ok)}
+.opt.update-go .ov{color:var(--ink);background:var(--ok);font-weight:800;font-size:20px;letter-spacing:2px;padding:4px 14px;border-radius:999px}
+.opt.update-go.focus{background:var(--ok);box-shadow:0 0 0 4px var(--text)}
+.opt.update-go.focus::before{opacity:0}
+.opt.update-go.focus .ol,.opt.update-go.focus .ol small{color:var(--ink)}
+.opt.update-go.focus .ov{background:var(--ink);color:var(--ok)}
 .opt.dim{opacity:.45}
 .prev-table{padding:8px 24px 24px;font-size:22px}
 .prev-table div{display:flex;gap:18px;padding:4px 0}
@@ -851,6 +860,10 @@ video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;backgroun
 #viewMedia.split .media-title{font-size:56px}
 #viewMedia.split .media-shelves{top:500px}
 .media-section-card .media-tile-year{color:var(--accent-text)}
+/* Fetching details: N movies and N shows to go (media.js setBusy) */
+.media-busy{position:absolute;right:56px;top:66px;z-index:3;font-size:20px;color:var(--text);padding:6px 16px 6px 36px;border-radius:999px;background:rgba(0,0,0,.55);white-space:nowrap}
+.media-busy::before{content:'';position:absolute;left:14px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--ok);animation:tb-pulse 1.4s ease-in-out infinite}
+@keyframes tb-pulse{0%,100%{opacity:1}50%{opacity:.25}}
 .media-shelf-stage{position:relative;transition:transform 210ms ease;will-change:transform}
 .media-shelf{position:absolute;left:0;right:0;top:0;height:480px}
 .media-shelf-title{height:50px;display:flex;align-items:baseline;gap:18px;padding-left:4px;white-space:nowrap;overflow:hidden}

@@ -380,6 +380,25 @@ var Media = (function () {
     }
     return out;
   }
+  /* What's being looked up on TMDB right now (movies.js fetchDetails, media-series.js fetchDetails): how many
+     are left of each, shown on My media under the tabs and in Settings > My media. */
+  var busy = { movies: 0, shows: 0 };
+  function busyText() {
+    var b = [];
+    if (busy.movies) b.push(count(busy.movies, '1 movie', '{n} movies'));
+    if (busy.shows) b.push(count(busy.shows, '1 show', '{n} shows'));
+    return b.length ? 'Fetching details: ' + b.join(' and ') + ' to go' : '';
+  }
+  function setBusy(kind, left) {
+    left = Math.max(0, +left || 0);
+    if (busy[kind] === left) return;
+    busy[kind] = left; drawBusy();
+    if (typeof Settings !== 'undefined' && Settings.live) Settings.live();
+  }
+  function drawBusy() {
+    var el = typeof document !== 'undefined' && document.getElementById ? document.getElementById('mediaBusy') : null; if (!el) return;
+    var t = busyText(); el.textContent = t; el.classList.toggle('hidden', !t);
+  }
   function setSection(sec) {
     if (sec === section && !tabsFocus) return;
     section = sec; followTop = true; refresh();
@@ -726,7 +745,7 @@ var Media = (function () {
     var at = 0, found = 0, missed = 0;
     return new Promise(function (resolve) {
       function done(message, error) {
-        fetchingDetails = false; if (MediaStore.flush) MediaStore.flush(); refresh();
+        fetchingDetails = false; setBusy('movies', 0); if (MediaStore.flush) MediaStore.flush(); refresh();
         // On its own (autoDetails): a word only when something was found, or it stopped on an error.
         if (!quiet) U.toast(message, 7000);
         else if (error) note('warn', 'Automatic movie details stopped: ' + error);
@@ -739,6 +758,7 @@ var Media = (function () {
         var m = list[at++];
         if (!MediaStore.source(m.src)) return next();
         if (!quiet) U.toast('Movie details: ' + at + ' of ' + list.length);
+        setBusy('movies', list.length - at + 1);
         var id = m.metadata && m.metadata.id;
         var q = id && /^(tmdb:[1-9][0-9]*|tt[0-9]+)$/.test(id) ? { id: id } : namedIn(m);
         metadataRequest(q, language).then(function (r) {
@@ -829,19 +849,22 @@ var Media = (function () {
       if (at >= sources.length) return;
       return rescan(sources[at++].id).then(function (r) { if (r && r.error) failures++; if (r && r.kept) kept++; return next(); });
     }).then(function () {
-      scanningAll = false; refresh(); autoSoon(8000); U.toast(failures ? 'Rescan finished.  ' + failures + ' sources could not be read; their saved movies are kept.' : kept ? 'Media rescan finished.  The list stays as it was where scans found no movies.' : 'Media rescan finished.  Press Yellow to fetch missing movie details.', 6000);
+      scanningAll = false; refresh(); autoSoon(8000); U.toast(failures ? 'Rescan finished.  ' + failures + ' sources could not be read; their saved movies are kept.' : kept ? 'Media rescan finished.  The list stays as it was where scans found no movies.' : 'Media rescan finished.  Press Yellow to fetch missing details.', 6000);
     }, function (e) { scanningAll = false; U.toast('Could not finish the rescan: ' + why(e), 6000); });
   }
-  function fetchMissingDetails() {
+  /* Yellow: details for what this tab holds (kind 'movies' or 'shows'), or both on Home and from Settings. */
+  function detailsKindNow() { if (split) return section === 'shows' ? 'shows' : section === 'movies' ? 'movies' : ''; var h = has(); return h.shows && !h.movies ? 'shows' : !h.shows ? 'movies' : ''; }
+  function fetchMissingDetails(kind) {
     if (needToken()) return Promise.resolve();
     if (scanningAll || Object.keys(scanning).length) { U.toast('Wait for the media rescan to finish, then press Yellow.', 5000); return Promise.resolve(); }
+    if (kind === 'shows') { U.toast('Fetching TV show details…', 3000); return showDetails(true, null); }
     if (fetchingDetails) { U.toast('Movie details are already being fetched.'); return Promise.resolve(); }
     return MediaStore.load().then(function () {
       var language = MediaStore.preferences().language;
       var list = MediaStore.movies(null).filter(function (m) { return !m.metadata || m.metadata.provider !== 'TMDB' || (m.metadata.requestedLanguage || m.metadata.language) !== language; });
-      if (!list.length) return { updated: 0 };
+      if (!list.length) { if (kind === 'movies') U.toast('All movie details are up to date.', 4000); return { updated: 0 }; }
       return fetchDetails(list, language);
-    }).then(function(result){return showDetails(true,result);}).catch(function (e) { U.toast(why(e), 6000); });
+    }).then(function(result){return kind === 'movies' ? result : showDetails(true,result);}).catch(function (e) { U.toast(why(e), 6000); });
   }
   function sourceMenu(s) {
     if (!s) return;s=MediaStore.source(s.id)||s;
@@ -1024,8 +1047,8 @@ var Media = (function () {
     if (document.body.classList.contains('nav-open')) return;
     var m = itemsVL.current();
     if (tabsFocus) return UI.hints([['', '◀ ▶  Home, Movies, TV shows'], ['', '▼  shelves'], ['', 'Back  menu', 'back']]);
-    if (m && m.kind === 'section') return UI.hints([['', 'OK  open ' + m.title], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', 'Rescan'], ['yellow', 'Fetch details'], ['blue', 'Settings']]);
-    UI.hints([['', m && m.kind === 'live' ? 'OK  watch' : 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', 'Rescan'], ['yellow', 'Fetch details'], ['blue', 'Settings']]);
+    if (m && m.kind === 'section') return UI.hints([['', 'OK  open ' + m.title], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
+    UI.hints([['', m && m.kind === 'live' ? 'OK  watch' : 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
   }
   /* Red: sort, go to a shelf, arrange shelves, which source, and the focused title's options. */
   function goShelf(id) { var i = shelves.map(function (s) { return s.id; }).indexOf(id); if (i >= 0) { shelfAt = i; drawShelves(); hints(); } }
@@ -1039,13 +1062,14 @@ var Media = (function () {
   /* Arrange shelves: on the TV a board moved with the remote (arrange.js), from the phone app's Settings a
      menu.  Only the shelves that fit what you have (no TV lists with only movies); the others keep their
      place at the end. */
-  function arrangeMenu(focus) {
-    var ar = arrangement(), p = MediaStore.preferences(), h = has(), mine = ar.order.filter(function (k) { return fits(k, h) && (!split || section === 'favorites' || inSection(k, section)); });
+  function arrangeMenu(focus, sec) {
+    var h = has(), both = split || (h.movies && h.shows); sec = sec || (section === 'favorites' ? '' : section);
+    var ar = arrangement(), p = MediaStore.preferences(), mine = ar.order.filter(function (k) { return fits(k, h) && (!both || !sec || inSection(k, sec)); });
     function save(order, off) { var rest = ar.order.filter(function (k) { return order.indexOf(k) < 0; }); var o = {}; Object.keys(p.shelfOff || {}).forEach(function (x) { o[x] = p.shelfOff[x]; }); Object.keys(off).forEach(function (x) { o[x] = off[x]; }); updatePreferences({ shelfOrder: order.concat(rest), shelfOff: o }); p = MediaStore.preferences(); ar = arrangement(); }
     function label(k) { if (k !== 'holidays') return NAMES[k]; var on = holidaysNow().map(function (x) { return x.h.title.replace(/ movies$/, ''); }); return NAMES[k] + (on.length ? '  (now: ' + on.join(', ') + ')' : ''); }
     var phone = typeof Settings !== 'undefined' && Settings.capturing && Settings.capturing();
     if (!phone && typeof Arrange !== 'undefined') {
-      return Arrange.open({ title: split ? 'Arrange ' + (section === 'home' ? 'Home' : section === 'shows' ? 'TV shows' : section === 'favorites' ? 'My media' : 'Movies') : 'Arrange My media', focus: focus, rows: mine.map(function (k) { return { key: k, name: label(k), off: ar.off(k) }; }),
+      return Arrange.open({ title: both && sec ? 'Arrange ' + (sec === 'home' ? 'Home' : sec === 'shows' ? 'TV shows' : 'Movies') + ' shelves' : 'Arrange My media', focus: focus, rows: mine.map(function (k) { return { key: k, name: label(k), off: ar.off(k) }; }),
         save: function (order, off) { save(order, off); }, reset: function () { updatePreferences({ shelfOrder: [], shelfOff: {} }); },
         done: function () { if (Views.tab === 'media' && !$('viewMedia').classList.contains('hidden')) restore(); else if (typeof Settings !== 'undefined' && Settings.redraw) Settings.redraw(); } });
     }
@@ -1070,7 +1094,7 @@ var Media = (function () {
     })));
   }
   function mediaOptions() {
-    var m = itemsVL.current(), s = shelves[shelfAt], p = MediaStore.preferences(), show = s && s.id === 'shows', src = p.sourceFilter && MediaStore.source(p.sourceFilter);
+    var m = itemsVL.current(), s = shelves[shelfAt], p = MediaStore.preferences(), show = (s && s.id === 'shows') || (split && section === 'shows') || (!split && has().shows && !has().movies), src = p.sourceFilter && MediaStore.source(p.sourceFilter);
     UI.menu('My media', [
       { label: (show ? 'Sort TV shows: ' : 'Sort movies: ') + sortName(show ? 'show' : 'movie'), action: function () { sortMenu(show ? 'show' : 'movie'); } },
       { label: 'Go to a shelf', sub: count(shelves.length, '1 shelf', '{n} shelves'), action: function () { UI.menu('Go to a shelf', shelves.map(function (x) { return { label: RAW(x.title), sub: String(x.movies.length), current: x === s, action: function () { goShelf(x.id); } }; })); } },
@@ -1091,7 +1115,7 @@ var Media = (function () {
     followTop = false;
     if (a !== 'ok') playToken++;
     if (a === 'green') { rescanAll(); return true; }
-    if (a === 'yellow') { fetchMissingDetails(); return true; }
+    if (a === 'yellow') { fetchMissingDetails(detailsKindNow()); return true; }
     if (a === 'red') { mediaOptions(); return true; }
     if (a === 'blue') { Views.switchTab('settings'); Settings.section('media'); return true; }
     if (tabsFocus) {
@@ -1119,12 +1143,26 @@ var Media = (function () {
     if (v.insertBefore && v.firstChild) v.insertBefore(bd, v.firstChild); else v.appendChild(bd);
     hero = { img: img };
     var tabs = U.el('div', 'media-tabs hidden'); tabs.id = 'mediaTabs'; tabs.setAttribute('role', 'tablist'); v.appendChild(tabs);
+    var bz = U.el('div', 'media-busy hidden'); bz.id = 'mediaBusy'; bz.setAttribute('aria-live', 'polite'); v.appendChild(bz); drawBusy();
     built = true;
   }
   function refreshSeries() {
     if (seriesLoading) { seriesAgain = true; return; }   // asked again mid-load (a setting changed): load once more after
     seriesLoading = true; seriesAgain = false;
-    Promise.all([ask('library/query',MediaStore.preferences().favoritesInLists?{kind:'show',limit:300}:{kind:'show',favourite:false,limit:300},30000),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),ask('library/query',{kind:'show',favourite:true,limit:300},30000)]).then(function (results) {
+    // Every show, a page of 200 at a time (the helper's most for one answer): 735 shows were 200 before.
+    function every(q) {
+      var items = [];
+      function more(cursor) {
+        var qq = {}; Object.keys(q).forEach(function (k) { qq[k] = q[k]; }); qq.limit = 200; if (cursor) qq.cursor = cursor;
+        return ask('library/query', qq, 30000).then(function (r) {
+          if (r.error) { if (cursor) return { items: items }; throw new Error(r.message || r.error); }   // the library changed mid-way (details being saved): what came so far
+          items = items.concat(r.items || []);
+          return r.nextCursor && items.length < 5000 ? more(r.nextCursor) : { items: items, total: r.total };
+        });
+      }
+      return more(null);
+    }
+    Promise.all([every(MediaStore.preferences().favoritesInLists?{kind:'show'}:{kind:'show',favourite:false}),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),every({kind:'show',favourite:true})]).then(function (results) {
       seriesCards = (results[0].items || []).map(function (r) { r.id = r.handle; return r; });
       reviewCards = (results[1].items || []).map(function (r) { r.id = r.handle; return r; });
       continuingShows = (results[2].items || []).map(function(r){r.id=r.handle;return r;});
@@ -1148,7 +1186,9 @@ var Media = (function () {
   return {
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
     refreshShows:refreshSeries, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, signOut: signOut,
-    rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, arrangeShelves: function () { arrangeMenu(); }, shelfList: function () { var ar = arrangement(), h = has(); return ar.order.filter(function (k) { return fits(k, h); }).map(function (k) { return { key: k, name: NAMES[k], off: ar.off(k) }; }); }, holidaysNow: holidaysNow, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
+    rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, arrangeShelves: function (sec) { arrangeMenu(null, sec || 'home'); }, bothKinds: function () { var h = has(); return !!(h.movies && h.shows); }, busyText: busyText, setBusy: setBusy,
+    // The web editor's shelf list: with movies and shows, each shelf says which tab it's on (Continue watching: Home).
+    shelfList: function () { var ar = arrangement(), h = has(), both = h.movies && h.shows; return ar.order.filter(function (k) { return fits(k, h); }).map(function (k) { return { key: k, name: NAMES[k], off: ar.off(k), section: !both ? '' : k === 'continue' || inSection(k, 'home') ? 'home' : TV_ONLY[k] ? 'shows' : 'movies' }; }); }, holidaysNow: holidaysNow, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: play, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { namedIn: namedIn, section: function (x) { if (x) { tabsFocus = false; setSection(x); } return { section: section, split: split, tabs: tabsFocus }; }, goShelf: function (id) { followTop = false; goShelf(id); }, addServer: addServer, addAddress: addAddress, addDropbox: addDropbox, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };

@@ -49,8 +49,11 @@ const R = require('../../scripts/demo/record');
     // Reverse, Favorites also in lists, and the shelves: moved and switched off here, the TV follows.
     await ed.waitForFunction(() => document.querySelectorAll('#mediaShelves li').length > 10);
     await ed.check('#mediaSortReverse'); await ed.uncheck('#mediaFavInLists');
-    await ed.click('#mediaShelves li:nth-child(1) button:last-child');                 // Continue watching down one
-    await ed.uncheck('#mediaShelves li:nth-child(3) input');                            // and the third off
+    // Nothing added yet counts as movies and shows: the shelves are listed under Home, Movies and TV shows.
+    assert.deepEqual(await ed.$$eval('#mediaShelves li.shelf-tab', (l) => l.map((x) => x.textContent)), ['Home tab', 'Movies tab', 'TV shows tab']);
+    const rows = ed.locator('#mediaShelves li:not(.shelf-tab)');
+    await rows.nth(0).locator('button').last().click();                                  // Continue watching down one
+    await rows.nth(2).locator('input').uncheck();                                         // and the third off
     await ed.click('#mediaPreferences button[type="submit"]');
     await tv.waitForFunction(() => MediaStore.preferences().sortReverse === true);
     const pr = await tv.evaluate(() => MediaStore.preferences());

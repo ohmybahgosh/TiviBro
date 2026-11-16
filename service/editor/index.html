@@ -411,6 +411,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
 @media (hover:none){ .g .acts{display:flex} .g .grip{display:none} }
 .tried{margin-top:8px}.tried summary{cursor:pointer;color:var(--muted,#9aa3b8)}.tried pre{white-space:pre-wrap;word-break:break-all;font-size:12px;line-height:1.45;max-height:260px;overflow:auto;margin:6px 0 0;padding:8px;border-radius:6px;background:rgba(0,0,0,.25)}
 .shelf-list{list-style:none;padding:0;margin:8px 0 10px;max-width:560px}.shelf-list li{display:flex;align-items:center;gap:10px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.08)}.shelf-list li span{flex:1}.shelf-list li button{padding:4px 12px;min-width:0}
+.shelf-list li.shelf-tab{display:block;border-bottom:0;padding:14px 8px 4px;font-weight:700;color:var(--accent,#5b8cff);font-size:13px;letter-spacing:.06em;text-transform:uppercase}
 .f.chk{display:flex;align-items:center;gap:10px}
 </style>
 </head>
@@ -3440,7 +3441,7 @@ $('tEmpty').addEventListener('click', function (e) { if (e.target.id === 'emGo')
 
 /* ---------- My media: source management only ---------- */
 function loadMedia() {
-  command('mediaPreferences').then(function (r) { $('mediaLanguage').value = r.data.language; $('mediaSort').value = r.data.sort; $('mediaShowSort').value = r.data.showSort || 'name'; $('mediaSortReverse').checked = !!r.data.sortReverse; $('mediaShowSortReverse').checked = !!r.data.showSortReverse; $('mediaFavInLists').checked = r.data.favoritesInLists !== false; mediaShelves = (r.data.shelves || []).map(function (x) { return { key: x.key, name: x.name, off: !!x.off }; }); drawShelves(); $('mediaTokenLabel').textContent = r.data.tmdbConfigured ? 'TMDB API token saved on this TV' : 'Add TMDB API token'; $('mediaTmdbToken').placeholder = r.data.tmdbConfigured ? 'Paste a new token only to replace the saved one' : 'Paste your API key or Read Access Token'; $('mediaTokenStatus').textContent = r.data.tmdbConfigured ? 'Token saved on this TV.  Leave the field blank to keep it.' : 'No token saved yet.'; $('mediaTokenRemove').classList.toggle('hidden', !r.data.tmdbConfigured); $('mediaTokenTest').classList.toggle('hidden', !r.data.tmdbConfigured); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });
+  command('mediaPreferences').then(function (r) { $('mediaLanguage').value = r.data.language; $('mediaSort').value = r.data.sort; $('mediaShowSort').value = r.data.showSort || 'name'; $('mediaSortReverse').checked = !!r.data.sortReverse; $('mediaShowSortReverse').checked = !!r.data.showSortReverse; $('mediaFavInLists').checked = r.data.favoritesInLists !== false; mediaShelves = (r.data.shelves || []).map(function (x, i) { return { key: x.key, name: x.name, off: !!x.off, section: x.section || '', i: i }; }); var SO = { home: 0, movies: 1, shows: 2 }; mediaShelves.sort(function (a, b) { return (SO[a.section] || 0) - (SO[b.section] || 0) || a.i - b.i; }); drawShelves(); $('mediaTokenLabel').textContent = r.data.tmdbConfigured ? 'TMDB API token saved on this TV' : 'Add TMDB API token'; $('mediaTmdbToken').placeholder = r.data.tmdbConfigured ? 'Paste a new token only to replace the saved one' : 'Paste your API key or Read Access Token'; $('mediaTokenStatus').textContent = r.data.tmdbConfigured ? 'Token saved on this TV.  Leave the field blank to keep it.' : 'No token saved yet.'; $('mediaTokenRemove').classList.toggle('hidden', !r.data.tmdbConfigured); $('mediaTokenTest').classList.toggle('hidden', !r.data.tmdbConfigured); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });
   return command('mediaList').then(function (r) {
     var list = $('mediaList'); list.textContent = '';
     if (!(r.data || []).length) { var note = document.createElement('div'); note.className = 'note keep'; note.textContent = 'No media sources yet.  Add a WebDAV server below, or find a home media server (DLNA / UPnP) with Add media in the phone app (Settings > My media) or on the TV.'; list.appendChild(note); }
@@ -3503,12 +3504,15 @@ $('mediaLibraryCorrection').onsubmit=function(e){
 var mediaShelves = [];
 function drawShelves() {
   var ol = $('mediaShelves'); ol.innerHTML = '';
+  // With movies and shows, My media has a tab each (Home, Movies, TV shows): their shelves under a heading, moved within it.
+  var TABN = { home: 'Home', movies: 'Movies', shows: 'TV shows' };
   mediaShelves.forEach(function (x, i) {
+    if (x.section && (i === 0 || mediaShelves[i - 1].section !== x.section)) { var h = document.createElement('li'); h.className = 'shelf-tab'; h.textContent = TABN[x.section] + ' tab'; ol.appendChild(h); }
     var li = document.createElement('li'), on = document.createElement('input'), name = document.createElement('span'), up = document.createElement('button'), down = document.createElement('button');
     on.type = 'checkbox'; on.checked = !x.off; on.setAttribute('aria-label', 'Show ' + x.name); on.onchange = function () { x.off = !on.checked; };
     name.textContent = x.name; up.type = down.type = 'button'; up.className = down.className = 'ghost'; up.textContent = '↑'; down.textContent = '↓';
     up.setAttribute('aria-label', 'Move ' + x.name + ' up'); down.setAttribute('aria-label', 'Move ' + x.name + ' down');
-    up.disabled = i === 0; down.disabled = i === mediaShelves.length - 1;
+    up.disabled = i === 0 || mediaShelves[i - 1].section !== x.section; down.disabled = i === mediaShelves.length - 1 || mediaShelves[i + 1].section !== x.section;
     up.onclick = function () { mediaShelves.splice(i - 1, 0, mediaShelves.splice(i, 1)[0]); drawShelves(); };
     down.onclick = function () { mediaShelves.splice(i + 1, 0, mediaShelves.splice(i, 1)[0]); drawShelves(); };
     li.appendChild(on); li.appendChild(name); li.appendChild(up); li.appendChild(down); ol.appendChild(li);

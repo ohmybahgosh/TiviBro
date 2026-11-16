@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Install the update stands out.**  In Settings > Updates, **Install … now** is in your theme's "go" colour with a **NEW** badge, filled in when you're on it, so it isn't lost among the rows.
+- **Arrange each tab on its own.**  With movies and shows, Settings > My media has **Arrange Home shelves**, **Arrange Movies shelves** and **Arrange TV shows shelves**, and the web editor lists the shelves under each tab (moved within it).  Red > Arrange shelves on My media arranges the tab you're on.
+- **You can see when details are being fetched.**  While TMDB is looked up, My media shows "Fetching details: 120 movies and 340 shows to go" under the clock, and Settings > My media has the same line.
+- **Each tab says what it does.**  On the TV shows tab, Yellow is **Fetch show details** and looks up shows only; on Movies it is **Fetch movie details**; on Home it does both.  Red's sort on the TV shows tab sorts shows.
+- **My media: every TV show.**  Only the first 200 shows came through (735 on one library); now all of them do, and the TV shows tab counts them all.
+
 ## 0.6.0 (alpha 145, 2026-11-16)
 
 Pre-release: expect rough edges, and keep a backup before installing.

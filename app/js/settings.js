@@ -254,15 +254,20 @@ var Settings = (function () {
       tvOnly(action('Edit on a computer', 'Shows a code for a computer or phone browser: the web editor\'s My media page, for typing server logins and fixing TV show episodes.', function () { WebEdit.showJoin('media'); })),
       action('Rescan media sources', 'Look for movies and episodes.  Green on the My media screen.', heavy(function () { Media.rescanAll(); })),
       action('Fetch media details', 'Look up movies, shows and owned episodes.  Refresh outdated language details.  Yellow on My media.', heavy(function () { Media.fetchMissingDetails(); })),
+      (function () { var it = info('Fetching details now', ''); it.value = function () { return Media.busyText ? (Media.busyText().replace(/^Fetching details: /, '') || 'Nothing running') : ''; }; return it; })(),
       head('Preferences'), tmdbLink()].concat([
       choice('Sort movies by', 'Applies to Movies, Favorites and the genre shelves.  Continue watching stays ordered by recent playback.  Red on My media too.', ['name', 'release', 'added', 'rating', 'runtime'], ['Name (A–Z)', 'Release date (newest first)', 'Date added (newest first)', 'Rating (highest first)', 'Running time (longest first)'], function () { return MediaStore.preferences().sort; }, function (v) { Media.updatePreferences({ sort: v }); paint(); }),
       toggle('Reverse the movie order', 'Turns the movie order round: Z to A, oldest, lowest or shortest first.', function () { return MediaStore.preferences().sortReverse; }, function (v) { Media.updatePreferences({ sortReverse: v }); paint(); }),
       choice('Sort TV shows by', 'Applies to TV shows and favorite shows, on the TV and the phone.  Continue watching stays ordered by recent playback.', ['name', 'release', 'added', 'rating'], ['Name (A–Z)', 'First aired (newest first)', 'Date added (newest first)', 'Rating (highest first)'], function () { return MediaStore.preferences().showSort; }, function (v) { Media.updatePreferences({ showSort: v }); paint(); }),
       toggle('Reverse the TV show order', 'Turns the TV show order round: Z to A, oldest or lowest first.', function () { return MediaStore.preferences().showSortReverse; }, function (v) { Media.updatePreferences({ showSortReverse: v }); paint(); }),
-      action('Arrange shelves', 'Move My media\'s shelves up or down and switch off the ones you don\'t want: Continue watching, holiday lists, Favorites, Recently added, TMDB\'s lists, Movies, TV shows, genres and more.  Red on My media too.', function () { Media.arrangeShelves(); }, function () { var p = MediaStore.preferences(); return p.shelfOrder.length || Object.keys(p.shelfOff).length ? 'Your order' : 'As it comes'; }),
+      // With movies and shows, each tab is arranged on its own (its shelves are only on that tab).
+      Media.bothKinds && Media.bothKinds() ? action('Arrange Home shelves', 'Continue watching, Browse, holiday lists, Recently added, Pick of the day and Trending.  Red on My media too.', function () { Media.arrangeShelves('home'); }) : null,
+      Media.bothKinds && Media.bothKinds() ? action('Arrange Movies shelves', 'Recently added movies, collections, genres, decades, directors, 4K and HDR and TMDB\'s movie lists.', function () { Media.arrangeShelves('movies'); }) : null,
+      Media.bothKinds && Media.bothKinds() ? action('Arrange TV shows shelves', 'Next up, every show, Needs review and TMDB\'s TV lists.', function () { Media.arrangeShelves('shows'); }) : null,
+      Media.bothKinds && Media.bothKinds() ? null : action('Arrange shelves', 'Move My media\'s shelves up or down and switch off the ones you don\'t want: Continue watching, holiday lists, Favorites, Recently added, TMDB\'s lists, Movies, TV shows, genres and more.  Red on My media too.', function () { Media.arrangeShelves(); }, function () { var p = MediaStore.preferences(); return p.shelfOrder.length || Object.keys(p.shelfOff).length ? 'Your order' : 'As it comes'; }),
       toggle('Favorites also in lists', 'On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.', function () { return MediaStore.preferences().favoritesInLists; }, function (v) { Media.updatePreferences({ favoritesInLists: v }); paint(); }),
       choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); }),
-      head('Media sources')]);
+      head('Media sources')].filter(Boolean));
     MediaStore.publicSources().forEach(function (s) {
       var row = phoneDoes('media-source', action(I18n.raw(s.name), (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' : 'WebDAV') + ' · rescan, content, details or remove', function () { Media.sourceMenu(s); }, function () { return MediaStore.movies(s.id).length + ' movies'+(s.episodeFiles?' · '+s.episodeFiles+' episode files':''); }));
       row.sid = s.id; out.push(row);
@@ -1297,9 +1302,10 @@ var Settings = (function () {
       out.push(head('TiviBro ' + r.version + (r.pre ? '  (test version)' : '')));
       out.push(info('Released', (r.published ? when(Date.parse(r.published)) : '') + (r.size ? '   ' + (r.size / 1048576).toFixed(1) + ' MB' : '')));
       if (st.state === 'available') {
-        if (st.installer === 'hbchannel') out.push(action('Install ' + r.version + ' now', 'Downloads it, checks its fingerprint and installs it through the Homebrew Channel.  TiviBro then restarts by itself, with all your settings.', function () {
+        // The one thing to do here: in the theme's "go" colour, with a NEW badge, so it isn't missed among the rows.
+        if (st.installer === 'hbchannel') { var go = action('Install ' + r.version + ' now', 'Downloads it, checks its fingerprint and installs it through the Homebrew Channel.  TiviBro then restarts by itself, with all your settings.', function () {
           UI.confirm('Install TiviBro ' + r.version + '?', 'Install and restart', function () { Update.install().catch(function (e) { U.toast(e.message, 6000); }); });
-        }));
+        }, function () { return 'NEW'; }); go.cls = 'update-go'; out.push(go); }
         else if (st.installer === '') out.push(info('Install it from a computer or the Homebrew Channel', 'This TV can\'t install updates by itself (that needs a rooted TV with the Homebrew Channel).  The release page has the IPK and instructions: github.com/' + Update.REPO + '/releases'));
       }
       out.push(page('What\'s new', '', 'What\'s new in ' + r.version, function () {
@@ -1462,7 +1468,7 @@ var Settings = (function () {
     scrollEl._y = 0;
     rowEls = items.map(function (it, i) {
       if (it.preview) return it.el;
-      var d = U.el('div', 'opt' + (it.head ? ' head' : '') + (it.big ? ' big' : it.info ? ' dim' : ''));
+      var d = U.el('div', 'opt' + (it.head ? ' head' : '') + (it.big ? ' big' : it.info ? ' dim' : '') + (it.cls ? ' ' + it.cls : ''));
       var l = U.el('div', 'ol', it.raw ? it.label : T(it.label));
       if (it.sub) l.appendChild(U.el('small', '', it.raw ? it.sub : T(it.sub)));
       d.appendChild(l);
