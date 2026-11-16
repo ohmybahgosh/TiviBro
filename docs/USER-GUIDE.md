@@ -993,7 +993,7 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | **Add a Trakt chart** | | Trending, popular, most anticipated, box office and most watched, for movies or shows. |
 | **Add your watchlist or recommendations** | | Your Trakt watchlist, and the movies and shows Trakt recommends for you. |
 
-Lists refresh every 6 hours.  Trakt's free accounts have limits on lists and items; TiviBro says so when Trakt answers that one is reached.
+Lists refresh every 6 hours.  TiviBro uses Trakt but is not endorsed or certified by Trakt.  Trakt's free accounts have limits on lists and items; TiviBro says so when Trakt answers that one is reached.
 
 ### Settings: API keys
 

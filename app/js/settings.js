@@ -333,7 +333,7 @@ var Settings = (function () {
   function traktErr(e) { if (e && e.message !== 'Stopped.') U.toast(e.message || 'Trakt did not answer.', 7000); }
   function trakt() {
     if (typeof Trakt === 'undefined') return [info('Trakt is not available in this version.', '')];
-    var out = [info('Trakt keeps what you\'ve watched in step across TiviBro, your phone and other apps, and its lists (your watchlist, your own lists, anyone\'s public list, trending and popular) become shelves on My media that show only what you can watch.  Your Trakt sign-in stays on this TV.', '')];
+    var out = [info('Trakt keeps what you\'ve watched in step across TiviBro, your phone and other apps, and its lists (your watchlist, your own lists, anyone\'s public list, trending and popular) become shelves on My media that show only what you can watch.  Your Trakt sign-in stays on this TV.  TiviBro uses Trakt but is not endorsed or certified by Trakt.', '')];
     var code = Trakt.pendingCode();
     out.push(head('Account'));
     if (code) {
@@ -1467,6 +1467,8 @@ var Settings = (function () {
       head('Services and data, with thanks'),
       L2('TMDB', 'Movie and show details and posters'),
       info('This product uses the TMDB API but is not endorsed or certified by TMDB.', ''),
+      L2('Trakt', 'Watched history and lists'),
+      info('TiviBro uses Trakt but is not endorsed or certified by Trakt.', ''),
       L2('OpenSubtitles.com', 'Subtitles'),
       L2('tv-logo/tv-logos', 'Logos, CC BY-SA / BY-NC-SA'),
       L2('iptv-org/database', 'Logos, Unlicense'),

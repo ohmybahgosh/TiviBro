@@ -44,6 +44,7 @@ as a separate program.
 TiviBro talks to these services from your TV, with your own keys where one is needed.  Their own terms apply.
 
 - **TMDB**, movie and show details and posters.  This product uses the TMDB API but is not endorsed or certified by TMDB.
+- **Trakt**, watched history and lists as My media shelves.  TiviBro uses Trakt but is not endorsed or certified by Trakt.
 - **OpenSubtitles.com**, subtitles for Find subtitles.
 - **Channel logos**: [tv-logo/tv-logos](https://github.com/tv-logo/tv-logos) (Creative Commons BY-SA and BY-NC-SA,
   per logo) and [iptv-org/database](https://github.com/iptv-org/database) (Unlicense).  The logos themselves are
