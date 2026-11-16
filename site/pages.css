@@ -59,6 +59,10 @@
 .vcard span { display: block; padding: 12px 14px 4px; font-weight: 600; }
 .vcard small { display: block; padding: 0 14px 14px; color: var(--dim); }
 .player video { width: 100%; border-radius: 16px; border: 1px solid var(--line); background: #000; }
+.vthumb a:first-child { position: relative; display: block; }
+.vthumb .vplay { position: absolute; left: 50%; top: 50%; width: 84px; height: 84px; margin: -42px 0 0 -42px; border-radius: 50%; background: rgba(7, 9, 26, 0.72); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85); transition: transform .2s; }
+.vthumb .vplay::after { content: ''; position: absolute; left: 34px; top: 26px; border-style: solid; border-width: 16px 0 16px 26px; border-color: transparent transparent transparent #fff; }
+.vthumb a:first-child:hover .vplay { transform: scale(1.08); }
 .disclose { font-size: 14px; color: var(--dim); }
 @media (max-width: 760px) {
   .page { padding-top: 156px; }

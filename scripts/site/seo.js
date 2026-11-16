@@ -80,8 +80,18 @@ var urls = pages(out, '').filter(function (rel) {
   var mod = fs.existsSync(path.join('site', rel)) ? lastmod(rel) : lastmod('../scripts/site');
   return '  <url><loc>' + loc + '</loc>' + (mod ? '<lastmod>' + mod + '</lastmod>' : '') + '</url>';
 });
+// Each clip's watch page lists its video (Google's video sitemap), so it is indexed there.
+var VIDS = {}; try { require('./videos').forEach(function (v) { VIDS[ORIGIN + '/videos/' + v.id + '/'] = v; }); } catch (e) {}
+var xesc = function (s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); };
+urls = urls.map(function (u) {
+  var loc = /<loc>([^<]*)<\/loc>/.exec(u)[1], v = VIDS[loc];
+  if (!v) return u;
+  return u.replace('</url>', '<video:video><video:thumbnail_loc>' + ORIGIN + '/img/video/' + v.id + '.webp</video:thumbnail_loc><video:title>' + xesc(v.title) + '</video:title>' +
+    '<video:description>' + xesc(v.description) + '</video:description><video:content_loc>' + ORIGIN + '/media/' + v.id + '.mp4</video:content_loc>' +
+    '<video:duration>' + Math.round(v.seconds) + '</video:duration><video:family_friendly>yes</video:family_friendly></video:video></url>');
+});
 fs.writeFileSync(path.join(out, 'sitemap.xml'),
-  '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+  '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">\n' +
   urls.join('\n') + '\n</urlset>\n');
 console.log('sitemap.xml: ' + urls.length + ' pages');
 urls.forEach(function (u) { console.log(u); });

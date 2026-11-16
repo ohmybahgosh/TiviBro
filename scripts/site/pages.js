@@ -9,9 +9,11 @@ function fig(shot, alt, caption, w, h) {
     (caption ? '<figcaption>' + caption + '</figcaption>' : '') + '</figure>';
 }
 function pair(a, b) { return '<div class="pair">' + a + b + '</div>'; }
+// A clip on a page about something else: its poster, linking to its own watch page (/videos/<id>/), where it plays.
+// Only the watch page has the video itself, so that is the page search engines index it on.
 function clip(id, alt) {
-  return '<figure><video controls playsinline preload="none" poster="/img/video/' + id + '.webp" width="1920" height="1080"><source src="/media/' + id + '.mp4" type="video/mp4"></video>' +
-    '<figcaption>' + alt + '  <a href="/videos/' + id + '/">Open the video page</a></figcaption></figure>';
+  return '<figure class="vthumb"><a href="/videos/' + id + '/" aria-label="Watch: ' + alt.replace(/"/g, '&quot;') + '"><img loading="lazy" src="/img/video/' + id + '.webp" alt="" width="1920" height="1080"><span class="vplay" aria-hidden="true"></span></a>' +
+    '<figcaption>' + alt + '  <a href="/videos/' + id + '/">Watch the video</a></figcaption></figure>';
 }
 var REPO = '<div class="copy"><code>https://tivibro.app/repo</code><button type="button">Copy</button></div>';
 

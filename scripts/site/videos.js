@@ -3,6 +3,11 @@
 // site/img/video/<id>.webp (a frame of each clip).  seconds, width and height match the files.
 'use strict';
 module.exports = [
+  // The one-minute tour on the home page (docs/media/promo.mp4), with its own watch page so search engines index it there.
+  { id: 'promo', seconds: 61, width: 1280, height: 720, title: 'TiviBro in one minute: the IPTV player for LG TVs', short: 'The one-minute tour',
+    description: 'A one-minute tour of TiviBro, the free IPTV player for LG webOS TVs: the guide, My teams, themes, settings, the phone app and the web editor.',
+    long: 'A one-minute tour of TiviBro on an LG TV: the guide that opens like TiviMate\'s, My teams for your sports teams\' games, themes, settings, the phone app, and the web editor that tidies thousands of channels.',
+    disclose: 'Channel and programme names in the tour come from a made-up demo provider.' },
   { id: 'guide', seconds: 14.4, width: 1920, height: 1080, title: 'The TiviBro TV guide on an LG TV', short: 'Browse, preview, go fullscreen',
     description: 'Moving around the TiviBro programme guide on an LG webOS TV: browsing channels and time, previewing a channel in the window, and going fullscreen.',
     long: 'The guide is TiviBro\'s home screen, the way it is in TiviMate.  The channel you are on plays in the window at the top left with the programme details beside it.  The first <b>OK</b> on a channel previews it in the window, the second goes fullscreen, and <b>◀ ▶</b> move through time.',

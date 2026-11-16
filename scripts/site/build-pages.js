@@ -141,7 +141,8 @@ PAGES.forEach(function (p) {
       if (s[2]) st.image = ORIGIN + '/' + s[2]; return st; }) });
   if (p.itemList) graph.push({ '@type': 'ItemList', '@id': url + '#list', name: p.itemList.name, itemListOrder: 'https://schema.org/ItemListUnordered',
     itemListElement: p.itemList.items.map(function (it, i) { var li = { '@type': 'ListItem', position: i + 1, name: it[0] }; if (it[1]) li.url = it[1]; return li; }) });
-  if (p.videos) p.videos.forEach(function (id) { graph.push(videoLd(VIDEOS.filter(function (v) { return v.id === id; })[0])); });
+  // p.videos: clips this page links to.  Their VideoObject is only on their own watch page (/videos/<id>/), where
+  // the video is the main thing; a page that merely shows one is "Video isn't on a watch page" to Google.
 
   var body = '<main class="page' + (p.wide ? ' wide' : '') + '">\n<div class="wrap">\n' + cr.html +
     '<div class="page-head"><p class="kicker">' + esc(p.kicker) + '</p><h1>' + esc(p.h1) + '</h1><p class="lead">' + p.lead + '</p>' +
@@ -172,7 +173,7 @@ VIDEOS.forEach(function (v) {
     '<div class="player"><video controls playsinline preload="metadata" poster="/img/video/' + v.id + '.webp" width="' + v.width + '" height="' + v.height + '">' +
     '<source src="/media/' + v.id + '.mp4" type="video/mp4"></video></div>\n' +
     '<article class="prose">\n<p>' + v.long + '</p>\n' +
-    '<p class="disclose">Recorded on TiviBro running against a made-up demo provider, so every channel and programme name is invented.  The banner at the top right shows which remote button was pressed.</p>\n' +
+    '<p class="disclose">' + (v.disclose || 'Recorded on TiviBro running against a made-up demo provider, so every channel and programme name is invented.  The banner at the top right shows which remote button was pressed.') + '</p>\n' +
     (v.guide ? '<p>More in the user guide: <a href="https://github.com/ohmybahgosh/TiviBro/blob/main/docs/USER-GUIDE.md#' + v.guide + '">' + esc(v.guideName) + '</a>.</p>\n' : '') +
     '<h2>More videos</h2>\n<div class="vgrid">' + others.map(card).join('') + '</div>\n</article>\n' + cta() + '</div>\n</main>\n';
   write('videos/' + v.id, head(p, url, graph) + header() + body + footer());
@@ -190,7 +191,7 @@ function card(v) {
   var graph = [cr.ld, { '@type': 'CollectionPage', '@id': url, url: url, name: p.title, description: p.description, isPartOf: { '@id': ORIGIN + '/#website' }, about: APP,
     mainEntity: { '@type': 'ItemList', itemListElement: VIDEOS.map(function (v, i) { return { '@type': 'ListItem', position: i + 1, url: ORIGIN + '/videos/' + v.id + '/', name: v.title }; }) } }];
   var body = '<main class="page wide">\n<div class="wrap">\n' + cr.html +
-    '<div class="page-head"><p class="kicker">Videos</p><h1>' + esc(p.h1) + '</h1><p class="lead">Every clip is a real recording of TiviBro, driven with the remote, on a made-up demo provider.  ' + VIDEOS.length + ' clips, under a minute each.</p></div>\n' +
+    '<div class="page-head"><p class="kicker">Videos</p><h1>' + esc(p.h1) + '</h1><p class="lead">Every clip is a real recording of TiviBro, driven with the remote, on a made-up demo provider.  ' + VIDEOS.length + ' clips, most under a minute.</p></div>\n' +
     '<div class="vgrid">' + VIDEOS.map(card).join('') + '</div>\n' + cta() + '</div>\n</main>\n';
   write('videos', head(p, url, graph) + header() + body + footer());
 })();
