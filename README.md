@@ -21,6 +21,9 @@
   <a href="https://github.com/tolgakurtuluss/awesome-webos"><img alt="Listed in awesome-webos" src="https://img.shields.io/badge/listed%20in-awesome--webos-fc60a8?style=flat-square"></a>
 </p>
 
+> [!IMPORTANT]
+> **📱 TiviBro for Android is on Google Play, and it needs testers.**  Google won't publish it until enough people have kept it installed for 14 days.  [**Join the Play test**](https://tivibro.app/android-test/) in three steps: join the testers group with your Google account, opt in, install.  It's the same app as the APK, so it installs over it and keeps your paired TVs.  The APK on GitHub stays either way.
+
 <p align="center">
   <a href="https://tivibro.app"><b>tivibro.app</b></a> ·
   <a href="#what-no-other-iptv-player-does">What's different</a> ·

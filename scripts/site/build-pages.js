@@ -53,12 +53,14 @@ function head(p, url, graph) {
     '<meta name="twitter:card" content="summary_large_image">\n' +
     '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
     '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">\n' +
-    '<link rel="stylesheet" href="/style.css?v=7">\n<link rel="stylesheet" href="/pages.css?v=2">\n' +
+    '<link rel="stylesheet" href="/style.css?v=9">\n<link rel="stylesheet" href="/pages.css?v=3">\n' +
     ld({ '@context': 'https://schema.org', '@graph': graph }) + '\n</head>\n';
 }
 
-function header() {
-  return '<body>\n' + SPRITE + '\n<header class="top" id="top-bar">\n  <div class="wrap bar">\n' +
+// The Google Play test, at the top of every page (not on its own page).
+var PLAYBAR = '  <a class="playbar" href="/android-test/"><b>New: TiviBro for Android is on Google Play.</b>  Help us publish it: join the test in three steps and keep it 14 days. <span>Join the Play test &rarr;</span></a>\n';
+function header(slug) {
+  return '<body>\n' + SPRITE + '\n<header class="top" id="top-bar">\n' + (slug === 'android-test' ? '' : PLAYBAR) + '  <div class="wrap bar">\n' +
     '    <a class="brand" href="/" aria-label="TiviBro home"><img src="/img/wordmark.webp" alt="tiviBro" width="140" height="36"></a>\n' +
     '    <nav class="links" id="links" aria-label="Main">\n' +
     '      <a href="/features/">Features</a>\n      <a href="/tivimate-for-lg-tv/">TiviMate on LG</a>\n      <a href="/videos/">Videos</a>\n' +
@@ -146,7 +148,7 @@ PAGES.forEach(function (p) {
     '<p class="byline">By <a href="https://ohmybahgosh.dev/about/">OhMyBahGosh</a>, who builds TiviBro · Updated <time datetime="' + modified + '">' + modified + '</time></p></div>\n' +
     (p.answer ? '<div class="answer"><p>' + p.answer + '</p></div>\n' : '') +
     '<article class="prose">\n' + p.body + '\n' + (p.faq ? faqBlock(p.faq) : '') + (p.related ? related(p.related) : '') + '</article>\n' + cta() + '</div>\n</main>\n';
-  write(p.slug, head(p, url, graph) + header() + body + footer());
+  write(p.slug, head(p, url, graph) + header(p.slug) + body + footer());
 });
 
 // ---------- video pages ----------

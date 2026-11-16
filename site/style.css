@@ -24,6 +24,11 @@ code { font: 0.88em ui-monospace, "SF Mono", Consolas, monospace; background: #0
 .progress i { display: block; height: 100%; background: linear-gradient(90deg, var(--acc), var(--acc2), var(--violet)); transform-origin: 0 50%; transform: scaleX(0); }
 .top { position: fixed; inset: 0 0 auto; z-index: 20; transition: background .3s, border-color .3s; border-bottom: 1px solid transparent; }
 .top.scrolled { background: rgba(7, 9, 26, 0.72); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); border-bottom-color: rgba(45, 55, 96, 0.55); }
+.playbar { display: block; padding: 9px 16px; text-align: center; font-size: 14.5px; line-height: 1.4; color: #07091a; background: linear-gradient(90deg, #33E1FF, #3DDC97); text-decoration: none; }
+.playbar b { font-weight: 800; }
+.playbar span { font-weight: 800; text-decoration: underline; white-space: nowrap; margin-left: 6px; }
+.playbar:hover span { text-decoration: none; }
+.top.scrolled .playbar { display: none; }
 .bar { display: flex; align-items: center; justify-content: space-between; height: 72px; transition: height .3s; }
 .top.scrolled .bar { height: 62px; }
 .brand img { height: 34px; width: auto; }
@@ -53,7 +58,7 @@ code { font: 0.88em ui-monospace, "SF Mono", Consolas, monospace; background: #0
 .round:hover { border-color: var(--acc); transform: translateY(-2px); }
 
 /* ---------- hero ---------- */
-.hero { position: relative; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: 120px 0 90px; overflow: hidden; isolation: isolate; }
+.hero { position: relative; min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding: 156px 0 90px; overflow: hidden; isolation: isolate; }
 .aurora { position: absolute; inset: 0; z-index: -2; pointer-events: none; }
 .aurora i { position: absolute; border-radius: 50%; filter: blur(70px); opacity: .75; transform: translate3d(var(--mx, 0), calc(var(--my, 0px) + var(--sy, 0px)), 0); will-change: transform; }
 .aurora .a1 { width: 720px; height: 720px; left: -180px; top: -260px; background: radial-gradient(closest-side, rgba(91, 140, 255, .55), transparent); animation: drift1 18s ease-in-out infinite alternate; }
@@ -321,7 +326,7 @@ h3 { letter-spacing: -0.01em; }
   .menu-btn { display: block; }
   .top, .top.scrolled { background: rgba(7, 9, 26, 0.85); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
   .bar, .top.scrolled .bar { height: 62px; }
-  .hero { padding-top: 100px; min-height: auto; }
+  .hero { padding-top: 170px; min-height: auto; }
   .hero-grid, .split, .story { grid-template-columns: 1fr; gap: 50px; }
   .split.rev > :first-child { order: 0; }
   .hero-stage { min-height: 0; margin: 10px 14px 40px; }

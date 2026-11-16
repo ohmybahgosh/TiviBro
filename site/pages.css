@@ -1,7 +1,7 @@
 /* tivibro.app inner pages (guides, comparisons, videos), built by scripts/site/build-pages.js.
    Loads after style.css and uses its colours and buttons. */
 .top { background: rgba(7, 9, 26, 0.82); backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%); border-bottom-color: rgba(45, 55, 96, 0.55); }
-.page { padding: 112px 0 40px; }
+.page { padding: 148px 0 40px; }
 .page .wrap { max-width: 880px; }
 .page.wide .wrap { max-width: var(--max); }
 .crumbs { display: flex; flex-wrap: wrap; gap: 8px; font-size: 14px; color: var(--dim); margin: 0 0 22px; padding: 0; list-style: none; }
@@ -61,7 +61,7 @@
 .player video { width: 100%; border-radius: 16px; border: 1px solid var(--line); background: #000; }
 .disclose { font-size: 14px; color: var(--dim); }
 @media (max-width: 760px) {
-  .page { padding-top: 92px; }
+  .page { padding-top: 156px; }
   .prose .pair { flex-direction: column; }
   .vcard { max-width: 100%; }
   .links { display: none; }
