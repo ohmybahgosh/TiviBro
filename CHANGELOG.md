@@ -1,17 +1,17 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 144, 2026-11-16)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 144
 
 - **My media matches more movies on its own.**  Folders named by Radarr or for Plex: a TMDB or IMDb ID in the folder or file name ("{tmdb-1061474}") is used as it is.  Otherwise the file's own name is tried too (Radarr names it for TMDB's title, so "Minecraft The Movie (2025)" holding "A Minecraft Movie (2025)" is found), a year off by one is accepted (Moana, 2026, in a 2025 folder), and of two films with one name and year the far better known one is taken (Superman, 2025).  Movies that found no match before are looked up again.
 - **TV shows match on their own more often too.**  Sonarr and Plex folder names like "Severance (2022)" are read as the name and its year (the year was being searched as part of the name), a TVDB, TMDB or IMDb ID in the name is used, a first airing a year off is accepted, and of shows sharing a name the far better known one is taken.  Shows that found no match before are looked up again.
 - **My media shows 4K, Dolby Vision, HDR10 or HLG beside the year.**  Read from the movie file itself the first time you stop on it (a few small reads, not the movie), so it's right even when the file name doesn't say.  The 4K and HDR shelf uses it too.
 - **A TV shows only source offers Fetch show details** (on the TV and in the phone app), not Fetch movie details.  A source with both offers both.
 
-## 0.6.0 (alpha 143, 2026-11-16)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 143
+### In alpha 143
 
 - **Arrange shelves with the remote.**  On My media and the Movies and Shows homes, OK picks a shelf up, Up and Down move it, OK puts it down, and Left or Right switches it on or off.  Saved as you go.
 - **My media only offers shelves that fit what you have.**  With only movies, no TV shows or TV lists in Arrange shelves, the web editor or Red.
