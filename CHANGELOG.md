@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 143, 2026-11-16)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 143
 
 - **Arrange shelves with the remote.**  On My media and the Movies and Shows homes, OK picks a shelf up, Up and Down move it, OK puts it down, and Left or Right switches it on or off.  Saved as you go.
 - **My media only offers shelves that fit what you have.**  With only movies, no TV shows or TV lists in Arrange shelves, the web editor or Red.
@@ -14,11 +18,7 @@
 - **OpenSubtitles search lists subtitles for the right film.**  Its search is loose, so Planes, Trains and Automobiles also brought back Jack and Jill and Withnail and I.  Results are now matched to the title (and the year, season and episode when known): the right film's first, other films' left out when there are enough.
 - **Problem reports leave out a few more details of your connection.**
 
-## 0.6.0 (alpha 142, 2026-11-15)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 142
+### In alpha 142
 
 - **My media, redone like Movies on now.**  The title you're on fills the top: its backdrop, its title logo, the year, running time, genres, TMDB rating and picture quality, the plot, and where you stopped.  Posters are bigger, and each shelf says what's in it and how it's sorted.
 - **My media: sort any way, and turn it round.**  Red > Sort: movies by title, release date, date added, rating or running time, TV shows by title, first aired, date added or rating, and **Reverse the order** for each.  Also in Settings > My media, the phone app and the web editor.
