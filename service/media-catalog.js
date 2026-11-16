@@ -112,7 +112,8 @@ function textMatch(r, q) {
 function metadataPending(r, q) {
   var checked = r.metadataCheckedAt || 0, language = q.language || 'en';
   if (q.metadataSince) return !(checked >= q.metadataSince && r.metadataCheckLanguage === language);
-  return !(r.metadataCheckLanguage === language && ((r.metadataMissAt && Date.now() - r.metadataMissAt < 604800000) || (r.metadata && checked && checked >= (r.metadataScanAt || 0) && (r.metadata.requestedLanguage || r.metadata.language) === language)));
+  // A miss waits a week, unless it was missed by the matcher before Sonarr-style names ("Show (2019)") and IDs were read (metadataMissV 2).
+  return !(r.metadataCheckLanguage === language && ((r.metadataMissAt && r.metadataMissV === 2 && Date.now() - r.metadataMissAt < 604800000) || (r.metadata && checked && checked >= (r.metadataScanAt || 0) && (r.metadata.requestedLanguage || r.metadata.language) === language)));
 }
 // The filters every list shares.  kind and disabled sources are checked by the caller.
 function matches(r, q) {

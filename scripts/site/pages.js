@@ -383,7 +383,7 @@ module.exports = [
     '</ol>',
     '<h2>What to know</h2><ul>',
     '<li><b>Keep it installed for 14 days.</b>  That\'s what Google counts.  You don\'t have to use it every day.</li>',
-    '<li><b>Already using the APK from GitHub?</b>  The Play version is the same app, signed with the same key, so it installs over it and keeps your paired TVs.  The only difference is that updates then come from Google Play.</li>',
+    '<li><b>Already using the APK from GitHub?</b>  Google Play only installs and updates its own copy: with the APK on your phone it says the app didn\'t come from Google Play and offers Uninstall.  Uninstall the APK, then install TiviBro from Google Play and pair your TV again (on the TV: Settings &gt; Phone app and web editor).  Updates then come from Google Play.</li>',
     '<li><b>Found something?</b>  <a href="https://github.com/ohmybahgosh/TiviBro/issues/new/choose">Report it on GitHub</a>, or use <b>Report a problem</b> in TiviBro on the TV.</li>',
     '<li><b>Leaving the test</b> is the same page as step 2: choose <b>Leave the program</b>.</li>',
     '</ul>',

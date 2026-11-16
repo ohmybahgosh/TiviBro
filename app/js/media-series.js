@@ -6,6 +6,21 @@ var MediaSeries = (function () {
   var RAW = function (s) { return typeof I18n !== 'undefined' ? I18n.raw(s) : s; };
   var generation = 0, nextTimer = null, pageFocus = {};
   var fetchingMetadata = false, metadataToken = '', metadataLanguage = '', queuedMetadata = false;
+  /* What to look a show up by.  Sonarr and Plex name its folder "Show (2019)", sometimes with its IDs
+     ("{tvdb-361753}", "[tmdbid-95557]"): an ID is exact; else the name without the year, and the year. */
+  function showQuery(t){
+    t=String(t||'');
+    var m=/[{[(]\s*tmdb(?:id)?[-=: ]\s*([1-9][0-9]{0,9})\s*[}\])]/i.exec(t);
+    if(m)return {id:'tmdb:tv:'+m[1]};
+    var q={kind:'tv',auto:true};
+    m=/[{[(]\s*tvdb(?:id)?[-=: ]\s*([1-9][0-9]{0,9})\s*[}\])]/i.exec(t);if(m)q.tvdb=m[1];
+    m=/[{[(]\s*imdb(?:id)?[-=: ]\s*(tt[0-9]{5,10})\s*[}\])]/i.exec(t);if(m)q.imdb=m[1];
+    t=t.replace(/[{[][^}\]]*[}\]]/g,' ');
+    m=/^(.*?)[\s._-]*\(((?:19|20)\d\d)\)\s*$/.exec(t.trim());
+    if(m&&m[1].trim()){q.year=m[2];t=m[1];}
+    q.title=t.replace(/\s+/g,' ').trim()||String(arguments[0]||'');
+    return q;
+  }
   // Background work has its own lifetime: browsing seasons must not cancel it.
   function fetchDetails(force) {
     var token=MediaStore.tmdbToken(),language=MediaStore.preferences().language,started=Date.now(),updated=0,missed=0,lastHandle=null,streak=0;
@@ -33,9 +48,9 @@ var MediaSeries = (function () {
     function process(item){
       return detail(item.handle).then(function(show){
         var id=show.metadata&&show.metadata.id,handle=show.handle;
-        var q=id?{id:id}:{kind:'tv',title:show.title,auto:true};
+        var q=id?{id:id}:showQuery(show.title);
         return lookup(q).then(function(result){
-          if(!result.metadata){missed++;return save(handle,'markMetadataChecked',{language:language,startedAt:started,missed:true},id);}
+          if(!result.metadata){missed++;return save(handle,'markMetadataChecked',{language:language,startedAt:started,missed:true,missV:2},id);}
           return save(handle,'setMetadata',{metadata:result.metadata},id).then(function(saved){
             handle=saved.mergedInto||handle;id=result.metadata.id;
             return detail(handle);
@@ -70,7 +85,7 @@ var MediaSeries = (function () {
           if(++streak>=2)throw e;
           missed++;
           if(typeof Log!=='undefined'&&Log.warn)Log.warn('media','Show details for one show failed: '+(e&&e.message));
-          return detail(item.handle).then(function(show){return save(show.handle,'markMetadataChecked',{language:language,startedAt:started,missed:true},show.metadata&&show.metadata.id);});
+          return detail(item.handle).then(function(show){return save(show.handle,'markMetadataChecked',{language:language,startedAt:started,missed:true,missV:2},show.metadata&&show.metadata.id);});
         }).then(function(){return new Promise(function(resolve){setTimeout(resolve,350);});}).then(next);
       });
     }
@@ -366,5 +381,5 @@ var MediaSeries = (function () {
       });
     }
   };
-  return {fetchDetails:fetchDetails,excluded:excluded,resume:function(card){request('detail',{kind:'episode',handle:card.continueEpisode},function(ep){var v=ep.versions.filter(function(version){return version.handle===card.continueFile;})[0];if(v)playVersion(v,ep);else showEpisode(ep,open);});},showItem:show,correct:correct,recordCompletion:recordCompletion,phone:phone,open:open,review:review,completed:completed,leave:function () { generation++; if (Media.cancelPending) Media.cancelPending(); clearTimeout(nextTimer); nextTimer = null; }};
+  return {showQuery:showQuery,fetchDetails:fetchDetails,excluded:excluded,resume:function(card){request('detail',{kind:'episode',handle:card.continueEpisode},function(ep){var v=ep.versions.filter(function(version){return version.handle===card.continueFile;})[0];if(v)playVersion(v,ep);else showEpisode(ep,open);});},showItem:show,correct:correct,recordCompletion:recordCompletion,phone:phone,open:open,review:review,completed:completed,leave:function () { generation++; if (Media.cancelPending) Media.cancelPending(); clearTimeout(nextTimer); nextTimer = null; }};
 })();

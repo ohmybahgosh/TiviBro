@@ -22,7 +22,7 @@
 </p>
 
 > [!IMPORTANT]
-> **📱 TiviBro for Android is on Google Play, and it needs testers.**  Google won't publish it until enough people have kept it installed for 14 days.  [**Join the Play test**](https://tivibro.app/android-test/) in three steps: join the testers group with your Google account, opt in, install.  It's the same app as the APK, so it installs over it and keeps your paired TVs.  The APK on GitHub stays either way.
+> **📱 TiviBro for Android is on Google Play, and it needs testers.**  Google won't publish it until enough people have kept it installed for 14 days.  [**Join the Play test**](https://tivibro.app/android-test/) in three steps: join the testers group with your Google account, opt in, install.  Already using the APK?  Uninstall it first (Google Play only installs and updates its own copy), then pair your TV again.  The APK on GitHub stays either way.
 
 <p align="center">
   <a href="https://tivibro.app"><b>tivibro.app</b></a> ·
@@ -594,7 +594,7 @@ TiviBro checks for a new release every time it starts and every 6 hours while it
 2. On the TV, open **Settings > Phone app and web editor**, turn on **Phone app connection** and choose **Pair the TiviBro app…**.
 3. In the app, scan the QR code on the TV (or pick the TV from the list and type the code).
 
-**Rather get it from Google Play?**  The app is in a test there, and Google needs testers to keep it installed for 14 days before it can be published for everyone.  [Join the Play test](https://tivibro.app/android-test/) in three steps.  It's the same app, signed with the same key, so it installs over the APK and keeps your paired TVs.  The APK on GitHub isn't going anywhere.
+**Rather get it from Google Play?**  The app is in a test there, and Google needs testers to keep it installed for 14 days before it can be published for everyone.  [Join the Play test](https://tivibro.app/android-test/) in three steps.  Already using the APK?  Google Play only updates its own copy, so uninstall the APK first, install from Play, and pair your TV again.  The APK on GitHub isn't going anywhere.
 
 The app only talks to your TVs on your home network.  See [Settings: Phone app and web editor](docs/USER-GUIDE.md#settings-phone-app-and-web-editor) for the details.
 

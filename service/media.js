@@ -675,7 +675,7 @@ function handle(req, res, ALLOW, log) {
   var libraryRoute = /^\/media\/library\/(query|detail|edit|migrate|progress|continue|chapters|source|adopt|resolve|status)$/.exec(route);
   var subs = /^\/media\/subs\/(search|get|login)$/.exec(route);
   var dropbox = /^\/media\/dropbox\/(folders|account|revoke)$/.exec(route);
-  if (req.method !== 'POST' || (!libraryRoute && !subs && !dropbox && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/metadata')) return send(res, ALLOW, 404, { error: 'unknown media route' });
+  if (req.method !== 'POST' || (!libraryRoute && !subs && !dropbox && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/vformat' && route !== '/media/metadata')) return send(res, ALLOW, 404, { error: 'unknown media route' });
   var body = '', over = false, bodyBytes = 0, bodyLimit = libraryRoute ? 1048576 : 65536;
   if (req.setEncoding) req.setEncoding('utf8');
   req.on('data', function (c) { if (over) return; body += c; bodyBytes += Buffer.byteLength(c, 'utf8'); if (bodyBytes > bodyLimit) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
@@ -702,6 +702,15 @@ function handle(req, res, ALLOW, log) {
     if (route === '/media/discover') return discover(function (r) { log({ lv: 'info', event: 'media discover', servers: r.servers.length }); send(res, ALLOW, 200, r); });
     if (route === '/media/scan') return scanRequest(q, req, res, ALLOW, log);
     var host = hostOf(q.source);
+    // A movie's picture (2160p, HDR10, Dolby Vision) from its file's headers: media-vformat.js.
+    if (route === '/media/vformat') return resolve(q.source, q.path, function (r) {
+      if (r.error || !r.url) return send(res, ALLOW, 200, { error: r.error || 'resolve', message: r.message || 'Could not open that file.' });
+      if (r.url.indexOf('/media-stream/') === 0) r.url = 'http://127.0.0.1:' + req.connection.localPort + r.url;
+      require('./media-vformat').fromUrl(r.url, +q.size || 0, q.ext, function (e, f) {
+        log({ lv: e ? 'warn' : 'info', event: 'media format', host: host, range: f && f.range || null, error: e ? e.message : null });
+        send(res, ALLOW, 200, e ? { error: 'format', message: e.message } : f);
+      });
+    });
     resolve(q.source, q.path, function (r) {
       log({ lv: r.error ? 'warn' : 'info', event: 'media link', host: host, error: r.error || null });
       if (r.url && r.url.indexOf('/media-stream/') === 0) r.url = 'http://127.0.0.1:' + req.connection.localPort + r.url;

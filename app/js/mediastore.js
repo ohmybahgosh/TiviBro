@@ -147,7 +147,9 @@ var MediaStore = (function () {
   var later = null;
   function saveSoon() { if (!later) later = setTimeout(function () { later = null; saveLib(); }, 5000); return Promise.resolve(); }
   function flush() { if (later) { clearTimeout(later); later = null; return saveLib(); } return saving || Promise.resolve(); }
-  function markMissed(id, batch) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.tmdbMiss = Date.now(); return batch ? saveSoon() : saveLib(); } return Promise.resolve(); }
+  function markMissed(id, batch) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.tmdbMiss = Date.now(); m.missV = 2; return batch ? saveSoon() : saveLib(); } return Promise.resolve(); }
+  // A movie's picture read from its file (media-vformat.js): { h: height, r: 'DV'|'HDR10'|'HLG'|'SDR'|'' }, or { e: when it failed }.
+  function setFormat(id, vf) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { m.vf = vf; return saveSoon(); } return Promise.resolve(); }
   function setMetadata(id, metadata, batch) { var m = lib.filter(function (m) { return m.id === id; })[0]; if (m) { if (metadata) m.metadata = metadata; else delete m.metadata; return batch ? saveSoon() : saveLib(); } return Promise.resolve(); }
   /* Sort movies by (Settings > My media, and Red on My media): name (A to Z), release, added, rating or
      runtime (newest, highest, longest first), and Reverse turns any of them round. */
@@ -208,7 +210,7 @@ var MediaStore = (function () {
 
   return {
     preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
-    tmdbToken: function () { return state.tmdbToken || ''; }, sortList: sortList, compare: compare, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
+    tmdbToken: function () { return state.tmdbToken || ''; }, sortList: sortList, compare: compare, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, setFormat: setFormat, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
     resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, clearResume: clearResume, markWatched: markWatched, isWatched: isWatched
   };
 })();

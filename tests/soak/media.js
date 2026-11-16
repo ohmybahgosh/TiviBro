@@ -221,7 +221,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   await page.waitForTimeout(500);
   ok('Yellow then finds nothing left to fetch', metadataRequests.length === 2, metadataRequests.length);
   ok('source scraping saves details', await ev(() => MediaStore.movies(null).every(m => m.metadata.plot === 'A mock movie description.')));
-  ok('only titles and years go to the metadata service', metadataRequests.every(q => Object.keys(q).every(k => ['title', 'year', 'auto', 'language', 'credential'].includes(k))));
+  ok('only titles and years (of the folder and of the file) go to the metadata service', metadataRequests.every(q => Object.keys(q).every(k => ['title', 'year', 'alts', 'auto', 'language', 'credential'].includes(k)) && (q.alts || []).every(a => Object.keys(a).every(k => k === 'title' || k === 'year'))));
   await ev(() => Media._test.rescanCurrent()); await page.waitForTimeout(1000);
   await ev(() => Views.switchTab('media')); await page.waitForTimeout(400);
   ok('a rescan keeps matched details', await ev(() => MediaStore.movies(null).every(m => !!m.metadata)));

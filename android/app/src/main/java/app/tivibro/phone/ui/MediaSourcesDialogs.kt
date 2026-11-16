@@ -194,12 +194,16 @@ fun MediaSourceDialog(model: AppModel, id: String, sid: String, onDone: (changed
                         }
                     }
                     step == "remove" -> Text("Remove ${s.name} from My media?  Your files stay where they are.")
-                    step == "details" -> Text("Fetch movie details from TMDB?  Titles and years, or saved movie IDs, are sent to TMDB with the TV's token.  Your source logins are never sent.")
+                    step == "details" -> Text(when (s.mode) {
+                        "shows" -> "Fetch show details from TMDB?  Show names and years, or saved show IDs, are sent to TMDB with the TV's token.  Your source logins are never sent."
+                        "automatic" -> "Fetch movie and show details from TMDB?  Titles and years, or saved IDs, are sent to TMDB with the TV's token.  Your source logins are never sent."
+                        else -> "Fetch movie details from TMDB?  Titles and years, or saved movie IDs, are sent to TMDB with the TV's token.  Your source logins are never sent."
+                    })
                     else -> {
                         Choice("Rescan", "Look for added or removed movies and episodes") { run("Scanning ${s.name}…", JSONObject().put("op", "rescan")) }
                         Choice("Restart scan", "Start over from the top of the folder") { run("Scanning ${s.name} from the start…", JSONObject().put("op", "rescan").put("restart", true)) }
                         Choice("Content: " + (MODES.firstOrNull { it.first == s.mode }?.second ?: "Movies only"), "What to look for in this source") { step = "mode" }
-                        Choice("Fetch movie details", "TMDB, with the token saved on the TV") { step = "details" }
+                        Choice(when (s.mode) { "shows" -> "Fetch show details"; "automatic" -> "Fetch movie and show details"; else -> "Fetch movie details" }, "TMDB, with the token saved on the TV") { step = "details" }
                         Choice("Remove", "Your files stay where they are") { step = "remove" }
                     }
                 }

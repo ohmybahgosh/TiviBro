@@ -151,28 +151,96 @@ function create(opts) {
     if (q.id) return byId(q.id);
     var title = str(q.title, 200).trim(), year = /^\d{4}$/.test(q.year || '') ? String(q.year) : '';
     if (!title) return cb(new Error('Enter a movie title.'));
+    if (q.auto) return autoMatch(q, function (e, id, matches) { if (e) return cb(e); if (id) return byId(id); cb(null, { matches: matches || [] }); });
     request('/search/movie?query=' + encodeURIComponent(title) + '&language=' + locale + (year ? '&year=' + year : ''), function (e, r) {
       if (e) return cb(e);
-      var matches = (r && Array.isArray(r.results) ? r.results : []).filter(function (m) { return m && /^[1-9][0-9]*$/.test(String(m.id)); }).slice(0, 20).map(function (m) {
-        return { id: 'tmdb:' + m.id, title: str(m.title || m.original_title, 200), original: str(m.original_title, 200), year: str(m.release_date, 4) };
-      });
-      var exact = matches.filter(function (m) { return (normal(m.title) === normal(title) || normal(m.original) === normal(title)) && (!year || m.year === year); });
-      if (q.auto && exact.length === 1) return byId(exact[0].id);
-      cb(null, { matches: matches });
+      cb(null, { matches: shapeMatches(r) });
     });
+    function shapeMatches(r) {
+      return (r && Array.isArray(r.results) ? r.results : []).filter(function (m) { return m && /^[1-9][0-9]*$/.test(String(m.id)); }).slice(0, 20).map(function (m) {
+        return { id: 'tmdb:' + m.id, title: str(m.title || m.original_title, 200), original: str(m.original_title, 200), year: str(m.release_date, 4), votes: +m.vote_count || 0 };
+      });
+    }
+    /* Matching on its own (q.auto): every name the movie goes by (q.title and q.alts: a Radarr or Plex folder
+       is named for TMDB's title, its file sometimes for another, "Minecraft The Movie" holding "A Minecraft
+       Movie (2025)"), each searched with its year, then without.  Taken: one film of exactly that name and year,
+       else of that year give or take one (a folder's year and the film's release often differ by one), else the
+       same name without "A", "The" or "Movie".  Several: the far better known one (three times the votes). */
+    function autoMatch(q, done) {
+      var tries = [{ t: title, y: year }];
+      (Array.isArray(q.alts) ? q.alts : []).slice(0, 3).forEach(function (a) {
+        var t = str(a && a.title, 200).trim(), y = /^\d{4}$/.test(a && a.year || '') ? String(a.year) : '';
+        if (t && !tries.some(function (x) { return normal(x.t) === normal(t) && x.y === y; })) tries.push({ t: t, y: y });
+      });
+      var steps = [], first = null;
+      tries.forEach(function (x) { steps.push({ t: x.t, y: x.y, withYear: !!x.y }); });
+      tries.forEach(function (x) { if (x.y) steps.push({ t: x.t, y: x.y, withYear: false }); });
+      (function next(i) {
+        if (i >= steps.length) return done(null, null, first || []);
+        var s = steps[i];
+        request('/search/movie?query=' + encodeURIComponent(s.t) + '&language=' + locale + (s.withYear ? '&year=' + s.y : ''), function (e, r) {
+          if (e) return done(e);
+          var ms = shapeMatches(r);
+          if (!first) first = ms;
+          var id = pickMovie(ms, s.t, s.y);
+          if (id) return done(null, id);
+          next(i + 1);
+        });
+      })(0);
+    }
+  }
+  // Without "A", "An" or "The" in front and without "Movie"/"The Movie" ("A Minecraft Movie" and "Minecraft The Movie").
+  function loose(v) { return normal(str(v, 200).replace(/&/g, ' and ').replace(/^\s*(the|a|an)\s+/i, '').replace(/\b(the\s+)?movie\b/ig, ' ')); }
+  function pickMovie(ms, t, y) {
+    var n = normal(t), l = loose(t), yy = +y || 0;
+    function one(list) {
+      if (!list.length) return '';
+      if (list.length === 1) return list[0].id;
+      var s = list.slice().sort(function (a, b) { return b.votes - a.votes; });
+      return s[0].votes >= 20 && s[0].votes >= 3 * s[1].votes ? s[0].id : '';
+    }
+    var same = ms.filter(function (m) { return normal(m.title) === n || normal(m.original) === n; });
+    var near = function (list, d) { return list.filter(function (m) { return !yy || (m.year && Math.abs(+m.year - yy) <= d); }); };
+    var id = one(near(same, 0)) || one(near(same, 1));
+    if (id) return id;
+    if (!l || l.length < 3) return '';
+    var lo = ms.filter(function (m) { return loose(m.title) === l || loose(m.original) === l; });
+    return one(near(lo, 0)) || one(near(lo, 1));
   }
   function tvLookup(q, cb) {
     if (!credential) return cb(new Error('Add your TMDB token first.'));
     var language = LOCALES[q.language] ? q.language : 'en', locale = LOCALES[language];
     var match = /^tmdb:tv:([1-9][0-9]*)$/.exec(String(q.id || ''));
+    // A TVDB or IMDb ID in a Sonarr or Plex folder name: TMDB finds the show by it.
+    if (!match && q.auto && (/^[1-9][0-9]{0,9}$/.test(String(q.tvdb || '')) || /^tt[0-9]{5,10}$/.test(String(q.imdb || '')))) {
+      var ext = q.tvdb ? q.tvdb + '?external_source=tvdb_id' : q.imdb + '?external_source=imdb_id';
+      return request('/find/' + ext + '&language=' + locale, function (e, r) {
+        var hit = !e && r && Array.isArray(r.tv_results) && r.tv_results.length === 1 && /^[1-9][0-9]*$/.test(String(r.tv_results[0].id)) ? r.tv_results[0].id : 0;
+        var next = {}; Object.keys(q).forEach(function (k) { if (k !== 'tvdb' && k !== 'imdb') next[k] = q[k]; });
+        if (hit) next.id = 'tmdb:tv:' + hit;
+        tvLookup(next, cb);
+      });
+    }
     if (!match) {
       var query = str(q.title,200).trim();
       if (!query) return cb(new Error('Enter a show title.'));
-      return request('/search/tv?query='+encodeURIComponent(query)+'&language='+locale+(q.year ? '&first_air_date_year='+encodeURIComponent(q.year) : ''),function (e,r) {
+      return request('/search/tv?query='+encodeURIComponent(query)+'&language='+locale+(q.year && !q._noYear ? '&first_air_date_year='+encodeURIComponent(q.year) : ''),function (e,r) {
         if (e) return cb(e);
         var matches = (r && Array.isArray(r.results) ? r.results : []).filter(function (m) { return m && /^[1-9][0-9]*$/.test(String(m.id)); }).slice(0,20).map(function (m) { return {id:'tmdb:tv:'+m.id,title:str(m.name || m.original_name,200),original:str(m.original_name,200),year:str(m.first_air_date,4),poster:image(m.poster_path,'w185')}; });
-        var exact = matches.filter(function (m) { return (normal(m.title) === normal(query) || normal(m.original) === normal(query)) && (!q.year || m.year === String(q.year)); });
-        if (q.auto && exact.length === 1) { var next = {}; Object.keys(q).forEach(function (k) { next[k] = q[k]; }); next.id = exact[0].id; return tvLookup(next,cb); }
+        var votes = {}; (r && Array.isArray(r.results) ? r.results : []).forEach(function (m) { if (m) votes['tmdb:tv:' + m.id] = +m.vote_count || 0; });
+        // The name exactly (or as showName reads it: "The Office" is "Office"), in that year, else a year either side
+        // (a folder's year and the first airing can differ by one), else any year; of several, the far better known.
+        var named = matches.filter(function (m) { return normal(m.title) === normal(query) || normal(m.original) === normal(query) || (showName(m.title) && showName(m.title) === showName(query)); });
+        var yr = +q.year || 0, near = function (d) { return named.filter(function (m) { return !yr || (m.year && Math.abs(+m.year - yr) <= d); }); };
+        function one(list) {
+          if (list.length === 1) return list[0];
+          var s = list.slice().sort(function (a, b) { return (votes[b.id] || 0) - (votes[a.id] || 0); });
+          return s.length > 1 && (votes[s[0].id] || 0) >= 20 && (votes[s[0].id] || 0) >= 3 * (votes[s[1].id] || 0) ? s[0] : null;
+        }
+        var pick = q.auto ? (one(near(0)) || one(near(1)) || (yr ? null : one(named))) : null;
+        if (pick) { var next = {}; Object.keys(q).forEach(function (k) { next[k] = q[k]; }); next.id = pick.id; return tvLookup(next,cb); }
+        // Searched with the year and nothing came back: once more without it.
+        if (q.auto && q.year && !matches.length && !q._noYear) { var again = {}; Object.keys(q).forEach(function (k) { again[k] = q[k]; }); again._noYear = true; return tvLookup(again, cb); }
         cb(null,{matches:matches});
       });
     }

@@ -393,7 +393,7 @@ var Phone = (function () {
         if (['automatic', 'movies', 'shows'].indexOf(mode) < 0) throw new Error('Not one of the choices');
         return waitFor(Media.changeSourceMode(s2.id, mode).then(function () { return { msg: s2.name + ' updated.' }; }), s2.name + ' updated.  The TV is scanning it again.');
       }
-      if (op === 'details') { var s3 = src(); return waitFor(Media.sourceDetailsNow(s3.id).then(function (r) { return { msg: (r && r.updated || 0) + ' movies updated.' }; }), 'The TV is fetching the details.'); }
+      if (op === 'details') { var s3 = src(); return waitFor(Media.sourceDetailsNow(s3.id).then(function (r) { var k = s3.contentMode; return { msg: k === 'shows' ? (r && r.shows || 0) + ' shows updated.' : k === 'automatic' ? (r && r.movies || 0) + ' movies and ' + (r && r.shows || 0) + ' shows updated.' : (r && r.updated || 0) + ' movies updated.' }; }), 'The TV is fetching the details.'); }
       if (op === 'remove') return WebEdit.run('mediaRemove', { id: src().id }).then(function (r) { Settings.live(); return { msg: r.msg, sources: sources() }; });
       if (op === 'token') {
         var t = String(a.token || '').trim();

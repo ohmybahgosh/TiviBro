@@ -45,7 +45,7 @@ function run(c, q, cb) {
         else if (op === 'setFavourite') { target.favourite = !!q.favourite; changed = true; }
         else if (op === 'markMetadataChecked' && family === 'shows') {
           if (!/^(en|nl|de|fr|es|it)$/.test(q.language || '') || typeof q.startedAt !== 'number' || !isFinite(q.startedAt) || q.startedAt <= 0 || q.startedAt > Date.now()) return done(invalid('Choose a valid metadata check.'));
-          target.metadataCheckedAt = q.startedAt; target.metadataCheckLanguage = q.language; target.metadataMissAt = q.missed ? Date.now() : 0; changed = true;
+          target.metadataCheckedAt = q.startedAt; target.metadataCheckLanguage = q.language; target.metadataMissAt = q.missed ? Date.now() : 0; target.metadataMissV = q.missed && q.missV === 2 ? 2 : 0; changed = true;
         } else if (op === 'setPreferredVersion' && family === 'episodes') {
           if (!(target.fileIds || []).some(function (id) { return M.fileHandle(id) === q.version; })) return done(invalid('Choose a version belonging to this episode.'));
           target.preferredVersion = q.version; changed = true;
