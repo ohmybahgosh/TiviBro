@@ -67,17 +67,37 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
     await page.keyboard.press('Escape');await page.waitForTimeout(150);
     ok('a favourite show stays in the general show list',!/No items in this view/.test(await page.innerText('#modal')));
     await page.keyboard.press('Escape');
-    await page.waitForFunction(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?Math.max(1,[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length):0;})('Favorites')===1);
+    const shelfN=(t)=>page.evaluate((t)=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?Math.max(1,[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length):0;},t);
+    // Movies and shows: My media has tabs (Home, Movies, TV shows, Favorites), each with its own shelves.
+    ok('with movies and shows, My media has tabs',(await page.evaluate(()=>Media._test.section())).split);
+    // Favorites gets its tab once the favorite show is loaded.
+    await page.waitForFunction(()=>{if(Media._test.section().section!=='favorites')Media._test.section('favorites');return [...document.querySelectorAll('.media-shelf')].some(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent==='Favorite shows');},null,{polling:300,timeout:30000});
+    ok('the show is under Favorites',await shelfN('Favorite shows')===1);
+    await page.evaluate(()=>Media._test.section('shows'));await page.waitForTimeout(200);
     ok('show is in Favorites and still on the TV shows shelf',await page.evaluate(()=>[...document.querySelectorAll('.media-shelf')].some(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent==='TV shows'&&/^1 show/.test(x.querySelector('.media-shelf-count').textContent))));
-    await page.evaluate(()=>Media._test.goShelf('favorites'));await page.keyboard.press('Enter');await page.waitForTimeout(150);   // the show on Favorites
+    ok('the TV shows tab has no movie shelves',!(await page.evaluate(()=>[...document.querySelectorAll('.media-shelf')].some(x=>!x.classList.contains('hidden')&&/^(Movies|Recently added movies)$/.test(x.querySelector('h2').textContent)))));
+    await page.evaluate(()=>Media._test.section('favorites'));await page.waitForTimeout(150);
+    await page.evaluate(()=>Media._test.goShelf('favorites-shows'));await page.keyboard.press('Enter');await page.waitForTimeout(150);   // the show on Favorites
     await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForTimeout(150);
     await page.keyboard.press('Escape');
-    await page.waitForFunction(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?Math.max(1,[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length):0;})('Favorites')===0);
+    await page.waitForFunction(()=>![...document.querySelectorAll('.media-shelf')].some(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent==='Favorite shows'));
+    ok('the last favorite gone: back to Home',(await page.evaluate(()=>Media._test.section())).section==='home');
+    // Up from the first shelf reaches the tabs; Right goes to Movies; Down back to the shelves.
+    await page.evaluate(()=>Media._test.goShelf('continue')||0);
+    for(let i=0;i<8;i++){const st=await page.evaluate(()=>Media._test.section());if(st.tabs)break;await page.keyboard.press('ArrowUp');await page.waitForTimeout(60);}
+    const t1=await page.evaluate(()=>Media._test.section());
+    await page.keyboard.press('ArrowRight');await page.waitForTimeout(150);
+    const t2=await page.evaluate(()=>Media._test.section());
+    await page.keyboard.press('ArrowDown');await page.waitForTimeout(100);
+    const t3=await page.evaluate(()=>Media._test.section());
+    ok('Up reaches the tabs, Right opens Movies, Down goes back to its shelves',t1.tabs&&t2.section==='movies'&&t2.tabs&&!t3.tabs&&await page.evaluate(()=>document.querySelector('.media-tab.on').textContent.indexOf('Movies')===0),JSON.stringify([t1,t2,t3]));
+    await page.evaluate(()=>Media._test.section('home'));await page.waitForTimeout(100);
     ok('removing a favorite takes it off Favorites, and the empty shelf goes',true);
     ok('empty Needs review shelf is hidden',await page.evaluate(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?Math.max(1,[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length):0;})('Needs review')===0));
     await page.keyboard.press('m');await page.waitForTimeout(100);
     ok('empty Needs review is absent from options',!(await page.evaluate(()=>UI.menuLabels.join('|'))).includes('Needs review'));
     await page.keyboard.press('Escape');
+    await page.evaluate(()=>Media._test.section('shows'));   // Needs review is on the TV shows tab
     needsReview=true;await page.evaluate(()=>Media._test.rescanCurrent());
     await page.waitForFunction(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?Math.max(1,[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length):0;})('Needs review')>0);
     ok('Needs review appears when a conflicting file is discovered',true);
