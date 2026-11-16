@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 146, 2026-11-16)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 146
 
 - **Trakt.**  Settings > Trakt connects your Trakt account with a code you enter at trakt.tv/activate on your phone or computer (no password on the TV).  What you finish on My media goes on your Trakt history, and what you watched in other apps shows as watched here, so Next up and Not watched yet follow along.  Each is a switch, and Sync now does it at once.
 - **Trakt lists as My media shelves.**  Your watchlist, Trakt's charts (trending, popular, most anticipated, box office, most watched), its recommendations for you, and any public list, added the way Radarr and Sonarr take them: paste the list's link, type NAME/LIST, or search Trakt's lists by name.  Each list holds movies, TV shows or both, goes on the matching tab, shows only what you can watch, and has its place in Arrange shelves.  On the TV, in the phone app and in the web editor.
@@ -13,11 +17,7 @@
 - **My media: every TV show.**  Only the first 200 shows came through (735 on one library); now all of them do, and the TV shows tab counts them all.
 - **The phone app's My media no longer lists Browse**, the TV's row of tab cards, as a shelf.
 
-## 0.6.0 (alpha 145, 2026-11-16)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 145
+### In alpha 145
 
 - **My media: Home, Movies and TV shows.**  With both movies and shows, My media has tabs at the top: Home, Movies, TV shows and Favorites, with counts.  Home mixes them: Continue watching, a Browse row with a card for each tab, holiday lists, recently added, Pick of the day and TMDB's Trending, each tile marked Movie or TV.  Movies has only movie shelves (collections, genres, decades, 4K and HDR and the rest), TV shows has Next up, every show and TMDB's TV lists, and Favorites has your favorite movies and shows.  Up from the first shelf reaches the tabs, Left and Right switch them.  Arrange shelves arranges the tab you're on.  With only movies or only shows there are no tabs, as before.
 - **My media matches even more on its own.**  Checked on a real library after alpha 144 (Minecraft, Moana and Superman found, 131 unmatched movies down to 15): a film TMDB dates by another release (The Evil Dead, 1981 in its folder and 1983 on TMDB) is found by the year it was asked for, and of two films of one name where only one has votes, that one is taken.  Shows: a country in the name ("Big Brother (US)", "Euphoria (US)") picks that country's show, "Murder" finds "Murders", and of two shows of one name the one written exactly as the folder has it.  What still had no match is looked up again.
