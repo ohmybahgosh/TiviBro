@@ -522,6 +522,7 @@ var Vod = (function () {
 
   /* ---------- series drill-down ---------- */
   function openSeries(s, then) {
+    if (homeMode) { toList(null, s); showFromHome = true; setZone('items'); }   // from the home's menu: the episodes are in the list
     $('vodTitle').textContent = 'Loading ' + s.name;
     Source.seriesInfo(s.id, plOf(s)).then(function (r) {
       var eps = [], byS = (r && r.episodes) || {};
@@ -758,6 +759,8 @@ var Vod = (function () {
     itemsVL.empty = 'Loading…'; itemsVL.refresh();
     setZone('cats');
     var mine = ++opens;                                       // only the latest opening sets up the screen
+    // The home straight away (Loading… at the top), not the list first.
+    if (homeOn() && !(pending && pending.kind === k)) { homeMode = true; showFromHome = false; VodHome.show(k, homeApi, true); }
     load(k).then(function () {
       if (kind !== k || mine !== opens) return;
       var cats = catList();
@@ -770,7 +773,7 @@ var Vod = (function () {
       if (homeOn() && !(pending && pending.kind === k)) { homeMode = true; showFromHome = false; VodHome.show(k, homeApi, true); }
       else { homeMode = false; if (typeof VodHome !== 'undefined') VodHome.hide(); }
       openPending(k);
-    }).catch(function (e) { itemsVL.empty = 'Could not load ' + (k === 'series' ? 'shows' : 'movies') + ': ' + (e.message || e); itemsVL.setItems([], 0); });
+    }).catch(function (e) { itemsVL.empty = 'Could not load ' + (k === 'series' ? 'shows' : 'movies') + ': ' + (e.message || e); itemsVL.setItems([], 0); if (homeMode && mine === opens) { homeMode = false; VodHome.hide(); UI.setHandler(keys); } });
   }
 
   /* ---------- the phone app (app/js/phone.js) ----------

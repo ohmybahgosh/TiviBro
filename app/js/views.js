@@ -823,7 +823,7 @@ var Views = (function () {
       case 'editor': WebEdit.showJoin(); return;
       case 'movies': if (tabs.indexOf('movies') >= 0) leaveTo('movies'); return;
       case 'shows': if (tabs.indexOf('shows') >= 0) leaveTo('shows'); return;
-      case 'live': if (full && fullFrom === 'onnow') leaveTo('live'); else if (full) exitFull(); else switchTab('live'); return;
+      case 'live': if (full && (fullFrom === 'onnow' || fullFrom === 'media')) leaveTo('live'); else if (full) exitFull(); else switchTab('live'); return;
       case 'exit': if (full) exitFull(); return;
       case 'fav': if (c) { var on = L.toggleFav(c.k); if (on == null) return; U.toast(on ? 'Added to Favorites' : 'Removed from Favorites'); refreshLists(true); if (full) osd(true); } return;
       case 'favorites': openGroup(L.FAV); return;
@@ -957,7 +957,7 @@ var Views = (function () {
   function goFull() {
     // From another screen (Search...): Back goes to the start screen, the guide or Channels.  From Movies on
     // now, Back goes back to it, on the same movie.
-    if (!full) fullFrom = tab === 'live' || tab === 'guide' || tab === 'onnow' ? tab : home() === 'live' ? 'live' : 'guide';
+    if (!full) fullFrom = tab === 'live' || tab === 'guide' || tab === 'onnow' || tab === 'media' ? tab : home() === 'live' ? 'live' : 'guide';
     followPlaying();
     full = true;
     document.body.classList.add('full');
@@ -970,7 +970,7 @@ var Views = (function () {
   }
   /* away: leaving fullscreen for another screen (the side menu, a button for another screen), not Back. */
   function exitFull(away) {
-    if (fullFrom === 'onnow' && (away || tab !== 'onnow')) fullFrom = home() === 'live' ? 'live' : 'guide';
+    if ((fullFrom === 'onnow' || fullFrom === 'media') && (away || tab !== fullFrom)) fullFrom = home() === 'live' ? 'live' : 'guide';
     closePanel();
     peekUntil = 0; clearTimeout(peekT);
     full = false; overlay = false;
@@ -987,13 +987,13 @@ var Views = (function () {
       if (v && v.onExit) v.onExit();
       return;
     }
-    // Back to Movies on now: it has no window for the picture, so the channel stops, as when it opens.
-    if (fullFrom === 'onnow') {
+    // Back to Movies on now (or My media, after a movie on a live channel): no window for the picture, so the channel stops.
+    if (fullFrom === 'onnow' || fullFrom === 'media') {
       mode = 'live'; cu = null; Player.stop();
       if (playing) lastPlayed = playing;
       playing = null; stage.classList.add('off');
       Keymap.setContext('other');
-      OnNow.resume();
+      if (fullFrom === 'media') Media.open(true); else OnNow.resume();
       return;
     }
     if (mode === 'catchup' && playing) { mode = 'live'; cu = null; Player.play(playing, { preview: true }); }
@@ -1070,7 +1070,7 @@ var Views = (function () {
       if (g('left')) chip('left', '◀  ' + (Keymap.get('player', 'left') === 'rewind' && !(playing && playing.arch) ? 'Last channel' : g('left')));
       if (g('right')) chip('right', '▶  ' + g('right'));
       ['red', 'green', 'yellow', 'blue'].forEach(function (b) { if (g(b)) chip(b, g(b), b); });
-      chip('back', 'Back  ' + (fullFrom === 'live' ? 'Channels' : fullFrom === 'onnow' ? 'Movies on now' : 'Guide'));
+      chip('back', 'Back  ' + (fullFrom === 'live' ? 'Channels' : fullFrom === 'onnow' ? 'Movies on now' : fullFrom === 'media' ? 'My media' : 'Guide'));
     }
     var sig = JSON.stringify(items);
     var lg = typeof I18n !== 'undefined' ? I18n.lang() : '';

@@ -46,6 +46,18 @@ const R = require('../../scripts/demo/record');
     await ed.waitForFunction(() => document.getElementById('mediaTokenLabel').textContent === 'TMDB API token saved on this TV');
     assert((await ed.textContent('#mediaTokenStatus')).includes('Leave the field blank'));
     console.log('PASS language, sort and private user-token settings reach the TV, with clear saved status');
+    // Reverse, Favorites also in lists, and the shelves: moved and switched off here, the TV follows.
+    await ed.waitForFunction(() => document.querySelectorAll('#mediaShelves li').length > 10);
+    await ed.check('#mediaSortReverse'); await ed.uncheck('#mediaFavInLists');
+    await ed.click('#mediaShelves li:nth-child(1) button:last-child');                 // Continue watching down one
+    await ed.uncheck('#mediaShelves li:nth-child(3) input');                            // and the third off
+    await ed.click('#mediaPreferences button[type="submit"]');
+    await tv.waitForFunction(() => MediaStore.preferences().sortReverse === true);
+    const pr = await tv.evaluate(() => MediaStore.preferences());
+    assert.equal(pr.favoritesInLists, false);
+    assert.equal(pr.shelfOrder[1], 'continue', 'Continue watching moved down one');
+    assert.equal(pr.shelfOff[pr.shelfOrder[2]], true, 'the third shelf is off');
+    console.log('PASS reverse, favorites in lists and the shelves\' order reach the TV from the web editor');
     await ed.fill('#mediaAddress', 'https://example.invalid/');
     await ed.fill('#mediaUser', 'mock-customer'); await ed.fill('#mediaPass', 'mock-key');
     await ed.click('#mediaAdd button');
