@@ -829,13 +829,14 @@ video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;backgroun
 .media-bd{position:absolute;top:0;right:0;width:1340px;height:600px;background:var(--panel)}
 .media-hero-art{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .35s ease}
 .media-hero-art.on{opacity:1}
-.media-fade{position:absolute;top:0;right:0;bottom:0;left:-580px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 30%,rgba(0,0,0,0) 70%),linear-gradient(0deg,var(--ink) 0,rgba(0,0,0,0) 40%)}
-.media-hero{position:absolute;left:152px;top:48px;width:900px;height:410px;z-index:1}
+/* The text side stays dark well past where the words end (white text over a bright backdrop went unreadable) */
+.media-fade{position:absolute;top:0;right:0;bottom:0;left:-580px;background:linear-gradient(90deg,var(--ink) 0,var(--ink) 38%,rgba(0,0,0,.55) 58%,rgba(0,0,0,0) 80%),linear-gradient(0deg,var(--ink) 0,rgba(0,0,0,0) 40%)}
+.media-hero{position:absolute;left:152px;top:48px;width:780px;height:410px;z-index:1;text-shadow:0 2px 12px rgba(0,0,0,.85),0 0 3px rgba(0,0,0,.7)}
 .media-kicker{font-size:22px;letter-spacing:4px;text-transform:uppercase;color:var(--accent2);margin-bottom:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .media-logo{display:block;max-width:600px;max-height:150px;object-fit:contain;object-position:left bottom;margin-bottom:18px}
 .media-title{font-size:62px;line-height:1.05;font-weight:800;margin-bottom:14px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .media-facts{font-size:25px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.media-summary{font-size:24px;line-height:1.38;opacity:.88;margin-top:10px;max-width:880px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.media-summary{font-size:24px;line-height:1.38;opacity:.92;margin-top:10px;max-width:740px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .media-caption{font-size:23px;color:var(--accent-text);margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .media-language-note{display:block;font-size:18px;color:var(--dim);margin-top:6px}
 .media-shelves{position:absolute;left:152px;right:0;top:490px;bottom:0;overflow:hidden}

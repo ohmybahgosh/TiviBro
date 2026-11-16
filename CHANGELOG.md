@@ -3,6 +3,7 @@
 ## Unreleased
 
 - **My media matches even more on its own.**  Checked on a real library after alpha 144 (Minecraft, Moana and Superman found, 131 unmatched movies down to 15): a film TMDB dates by another release (The Evil Dead, 1981 in its folder and 1983 on TMDB) is found by the year it was asked for, and of two films of one name where only one has votes, that one is taken.  Shows: a country in the name ("Big Brother (US)", "Euphoria (US)") picks that country's show, "Murder" finds "Murders", and of two shows of one name the one written exactly as the folder has it.  What still had no match is looked up again.
+- **My media: the title, facts and summary stay readable over bright backdrops.**  The dark side of the backdrop reaches further, the text column is narrower, and the text has a soft shadow.
 - **Info twice shows what's on in full (discussion #36).**  Watching a channel fullscreen, Info shows the short panel as before; Info again opens the programme's details under it: what it is (movie, series, sports), its year, season and episode, TMDB's line for a movie or series, and the summary.  Hide spoilers still applies.  Info a third time goes back to the short panel.
 
 ## 0.6.0 (alpha 144, 2026-11-16)
