@@ -76,6 +76,9 @@ kbd{font:12px ui-monospace,Menlo,monospace;background:var(--raised);border:1px s
 /* Show sits inside the box's right end.  .login button is full width, so it is undone here (discussion #36: Show covered the box on a phone). */
 @media (max-width:700px){ #addSeg.addseg{display:none} }
 .card.pl.off{opacity:.7}
+.libbar{height:6px;border-radius:3px;background:var(--line,#333);overflow:hidden;margin:4px 0 10px}.libbar>i{display:block;height:100%;background:var(--accent2,#4c9)}
+.lib-unmatched{margin-top:10px;max-height:340px;overflow:auto}.lib-unmatched .um{padding:8px 0;border-top:1px solid var(--line,#333)}.lib-unmatched .um .row{gap:6px;flex-wrap:wrap}
+.trakt-code{font-size:28px;letter-spacing:4px;font-weight:700;color:var(--accent2)}.trakt-list{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 0;border-top:1px solid var(--line,#333)}.trakt-list .nm{flex:1;min-width:180px}
 .pwwrap{position:relative;margin-bottom:12px}.login .pwwrap input{padding-right:72px;margin-bottom:0}.login .pwshow,.pwshow{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:auto;padding:6px 10px;font-size:13px}
 .login button{width:100%;padding:11px}
 .err{color:#ff9a9d;min-height:22px;margin-top:10px}
@@ -698,9 +701,33 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
           </form>
           <div id="mediaCorrectionPreview"></div><div id="mediaLibraryMsg" aria-live="polite"></div>
         </div>
-        <h2 class="sech">Media sources</h2>
-        <p class="muted small" style="margin-top:-6px">The same sources as in Settings &gt; My media on the TV and in the phone app: a change in one place shows in the others.</p>
+        <h2 class="sech">Libraries</h2>
+        <p class="muted small" style="margin-top:-6px">Each library is one folder of movies or TV shows, like Plex's libraries.  The same ones as Settings &gt; My media on the TV and in the phone app: a change in one place shows in the others.  <b>Unmatched</b> lists the movies TMDB didn't recognise, with Fix match.</p>
         <div class="grid plgrid" id="mediaList"><div class="muted small">Loading media sources…</div></div>
+        <h2 class="sech" id="traktHead">Trakt</h2>
+        <div class="card" id="traktCard" style="max-width:760px">
+          <p>Trakt keeps what you've watched in step across TiviBro and your other apps, and its lists become shelves on My media that show only what you can watch.  The sign-in stays on the TV.</p>
+          <div id="traktAccount"></div>
+          <div class="form" style="margin-top:10px">
+            <label class="f full chk"><input id="traktWatchedOut" type="checkbox"> Mark as watched on Trakt when you finish a movie or episode</label>
+            <label class="f full chk"><input id="traktHistoryIn" type="checkbox"> Bring my Trakt history in (watched on other apps shows as watched here)</label>
+          </div>
+          <h3 style="margin-top:16px">Lists on My media</h3>
+          <div id="traktLists"></div>
+          <h3 style="margin-top:16px">Add a list</h3>
+          <form id="traktAdd" class="form">
+            <label class="f full">Trakt list link, or NAME/LIST<input id="traktInput" type="text" placeholder="https://trakt.tv/users/NAME/lists/LIST" autocomplete="off"></label>
+            <label class="f">Holds<select id="traktKind"><option value="both">Movies and TV shows (Home)</option><option value="movies">Movies (Movies tab)</option><option value="shows">TV shows (TV shows tab)</option></select></label>
+            <div class="f row" style="align-items:flex-end"><button type="submit" class="primary">Add list</button></div>
+            <div class="full muted small">Like Radarr and Sonarr: the list's link from trakt.tv, or the user name and list name.  The list must be public, or yours.</div>
+          </form>
+          <form id="traktFind" class="form" style="margin-top:8px">
+            <label class="f">Find a list<input id="traktQuery" type="search" placeholder="Search Trakt's public lists" autocomplete="off"></label>
+            <div class="f row" style="align-items:flex-end"><button type="submit">Search</button><select id="traktChart"><option value="">Add a Trakt chart…</option></select></div>
+          </form>
+          <div id="traktFound"></div>
+          <div id="traktMsg" aria-live="polite"></div>
+        </div>
         <div class="card" style="margin-top:18px;max-width:760px">
           <h3>Add a WebDAV server</h3>
           <p>Enter the WebDAV address of your media folder and the login from your storage service or server.  The TV checks the login and looks for movies and TV shows before saving it.</p>
@@ -1519,7 +1546,7 @@ function show(p, sub) {
   if (typeof navOpen === 'function') navOpen(false);
   document.querySelectorAll('.page').forEach(function (s) { s.classList.toggle('hidden', s.id !== 'p-' + p); });
   if (p === 'gc') renderChannels(); if (p === 'guide') renderGuide(); if (p === 'watch') { renderWatch(); loadReminders(); } if (p === 'names') renderNamesPage(); if (p === 'home') renderHome();
-  if (p === 'media' && !INAPP) loadMedia();
+  if (p === 'media' && !INAPP) { loadMedia(); loadTrakt(); }
   if (p === 'tools') renderTools(); if (p === 'backups') { renderHistory(); if (!INAPP && !(D && D.setup)) loadSnaps(); if (!(D && D.setup)) loadDrafts(); } if (p === 'help') renderHelp(sub); if (p === 'report') loadReport(false);
   if (p !== 'help' && sub) { var anchor = $('sec-' + sub); if (anchor) setTimeout(function () { anchor.scrollIntoView({ block: 'start' }); }, 0); }
   tips();
@@ -3446,29 +3473,121 @@ function loadMedia() {
     var list = $('mediaList'); list.textContent = '';
     if (!(r.data || []).length) { var note = document.createElement('div'); note.className = 'note keep'; note.textContent = 'No media sources yet.  Add a WebDAV server below, or find a home media server (DLNA / UPnP) with Add media in the phone app (Settings > My media) or on the TV.'; list.appendChild(note); }
     (r.data || []).forEach(function (s) {
-      var card = document.createElement('div'); card.className = 'card pl';
+      var card = document.createElement('div'); card.className = 'card pl' + (s.homeOff ? ' off' : '');
       var title = document.createElement('h3'); title.textContent = s.name; card.appendChild(title);
-      var detail = document.createElement('div'); detail.className = 'meta'; detail.textContent = (s.type === 'dlna' ? 'Home media server · DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' + (s.root ? ' · ' + s.root : '') : 'WebDAV server') + ' · ' + plural(s.count || 0, 'movie') + (s.episodeFiles ? ' · ' + plural(s.episodeFiles, 'episode file') : ''); card.appendChild(detail);
-      var actions = document.createElement('div'); actions.className = 'row'; card.appendChild(actions);
-      var mode=document.createElement('select');[['automatic','Movies and TV shows'],['movies','Movies only'],['shows','TV shows only']].forEach(function(option){var item=document.createElement('option');item.value=option[0];item.textContent=option[1];mode.appendChild(item);});mode.value=s.contentMode||'movies';mode.onchange=function(){mode.disabled=true;command('mediaSourceMode',{id:s.id,mode:mode.value},160000,cmdMsg('mediaMsg','Updating source…')).then(function(){loadMedia();},function(e){mode.disabled=false;msg('mediaMsg','bad',e.message);});};actions.appendChild(mode);
-      ['Rescan', 'Remove'].forEach(function (label) {
-        var b = document.createElement('button'); b.textContent = label; b.type = 'button';
-        if (label === 'Remove') b.className = 'ghost danger';
-        b.onclick = function () {
-          function run() {
-            b.disabled = true;
-            command(label === 'Rescan' ? 'mediaRescan' : 'mediaRemove', { id: s.id }, 160000, cmdMsg('mediaMsg', 'Working…')).then(function (r) {
-              msg('mediaMsg', 'ok', r.msg); loadMedia();
-            }).catch(function (e) { b.disabled = false; msg('mediaMsg', 'bad', e.message); });
-          }
-          if (label === 'Remove') ask('Remove this media source?', 'Your files stay where they are.', 'Remove', run); else run();
-        };
-        actions.appendChild(b);
-      });
+      var kind = s.contentMode === 'shows' ? 'TV shows' : s.contentMode === 'automatic' ? 'Movies and TV shows' : 'Movies';
+      var detail = document.createElement('div'); detail.className = 'meta';
+      detail.textContent = kind + ' · ' + (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' + (s.root ? ' · ' + s.root : '') : 'WebDAV') + (s.scanning ? ' · scanning…' : '');
+      card.appendChild(detail);
+      var counts = document.createElement('div'); counts.className = 'muted small';
+      var bits = [];
+      if (s.contentMode !== 'shows') bits.push(plural(s.count || 0, 'movie') + (s.fourK ? ' (' + s.fourK + ' in 4K)' : '') + ' · ' + (s.count - s.unmatched) + ' matched');
+      if (s.contentMode !== 'movies') bits.push(plural(s.shows || 0, 'show') + ' · ' + plural(s.episodeFiles || 0, 'episode file') + (s.unmatchedShows ? ' · ' + s.unmatchedShows + ' shows unmatched' : ''));
+      counts.textContent = bits.join('  ·  '); card.appendChild(counts);
+      if (s.contentMode !== 'shows' && s.count) { var bar = document.createElement('div'); bar.className = 'libbar'; var fill = document.createElement('i'); fill.style.width = Math.round(100 * (s.count - s.unmatched) / s.count) + '%'; bar.appendChild(fill); bar.title = (s.count - s.unmatched) + ' of ' + s.count + ' matched'; card.appendChild(bar); }
+      var actions = document.createElement('div'); actions.className = 'row'; actions.style.flexWrap = 'wrap'; card.appendChild(actions);
+      var mode=document.createElement('select');mode.title='What this library holds';[['movies','Movies'],['shows','TV shows'],['automatic','Movies and TV shows']].forEach(function(option){var item=document.createElement('option');item.value=option[0];item.textContent=option[1];mode.appendChild(item);});mode.value=s.contentMode||'movies';mode.onchange=function(){mode.disabled=true;command('mediaSourceMode',{id:s.id,mode:mode.value},160000,cmdMsg('mediaMsg','Updating library…')).then(function(){loadMedia();},function(e){mode.disabled=false;msg('mediaMsg','bad',e.message);});};actions.appendChild(mode);
+      var home = document.createElement('label'); home.className = 'chk small'; var hb = document.createElement('input'); hb.type = 'checkbox'; hb.checked = !s.homeOff; home.appendChild(hb); home.appendChild(document.createTextNode(' Show on Home'));
+      hb.onchange = function () { command('mediaSourceUpdate', { id: s.id, homeOff: !hb.checked }).then(function (r) { msg('mediaMsg', 'ok', r.msg); card.classList.toggle('off', !hb.checked); }, function (e) { hb.checked = !hb.checked; msg('mediaMsg', 'bad', e.message); }); };
+      actions.appendChild(home);
+      function btn(label, cls, fn) { var b = document.createElement('button'); b.type = 'button'; b.textContent = label; if (cls) b.className = cls; b.onclick = function () { fn(b); }; actions.appendChild(b); return b; }
+      btn('Rename', 'ghost', function () { var n = prompt('Library name', s.name); if (!n || !n.trim()) return; command('mediaSourceUpdate', { id: s.id, name: n.trim() }).then(function () { loadMedia(); }, function (e) { msg('mediaMsg', 'bad', e.message); }); });
+      btn('Scan now', '', function (b) { b.disabled = true; command('mediaRescan', { id: s.id }, 160000, cmdMsg('mediaMsg', 'Scanning…')).then(function (r) { msg('mediaMsg', 'ok', r.msg); loadMedia(); }).catch(function (e) { b.disabled = false; msg('mediaMsg', 'bad', e.message); }); });
+      btn('Fetch details', '', function () { command('mediaLibraryDetails', { id: s.id }).then(function (r) { msg('mediaMsg', 'ok', r.msg); }, function (e) { msg('mediaMsg', 'bad', e.message); }); });
+      var box = document.createElement('div'); box.className = 'lib-unmatched hidden';
+      if (s.unmatched) btn('Unmatched (' + s.unmatched + ')', '', function () { if (!box.classList.toggle('hidden')) unmatchedList(s, box); });
+      btn('Remove', 'ghost danger', function (b) { ask('Remove this library?', 'Your files stay where they are.', 'Remove', function () { b.disabled = true; command('mediaRemove', { id: s.id }, 160000, cmdMsg('mediaMsg', 'Working…')).then(function (r) { msg('mediaMsg', 'ok', r.msg); loadMedia(); }).catch(function (e) { b.disabled = false; msg('mediaMsg', 'bad', e.message); }); }, true); });
+      card.appendChild(box);
       list.appendChild(card);
     });
   }).catch(function (e) { msg('mediaMsg', 'bad', e.message); });
 }
+// A library's unmatched movies, each with Fix match: type a title, search TMDB, pick one.
+function unmatchedList(s, box) {
+  box.textContent = 'Loading…';
+  command('mediaUnmatched', { id: s.id }).then(function (r) {
+    box.textContent = '';
+    if (!r.data.length) { box.textContent = 'Everything in this library matched.'; return; }
+    r.data.forEach(function (m) {
+      var row = document.createElement('div'); row.className = 'um';
+      var name = document.createElement('div'); name.textContent = m.title + (m.year ? ' (' + m.year + ')' : ''); row.appendChild(name);
+      var file = document.createElement('div'); file.className = 'muted small'; file.textContent = m.file; row.appendChild(file);
+      var line = document.createElement('div'); line.className = 'row';
+      var q = document.createElement('input'); q.type = 'search'; q.value = m.title + (m.year ? ' ' + m.year : ''); q.style.flex = '1';
+      var go = document.createElement('button'); go.type = 'button'; go.textContent = 'Fix match';
+      var picks = document.createElement('div');
+      go.onclick = function () {
+        go.disabled = true; picks.textContent = 'Searching TMDB…';
+        command('mediaMatchSearch', { title: q.value }).then(function (found) {
+          go.disabled = false; picks.textContent = '';
+          if (!found.data.length) { picks.textContent = 'No matches.  Try other words, or leave the year out.'; return; }
+          found.data.forEach(function (x) {
+            var b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = x.title + (x.year ? ' (' + x.year + ')' : '');
+            b.onclick = function () { b.disabled = true; command('mediaMatchSave', { movie: m.id, tmdb: x.id }).then(function () { row.remove(); msg('mediaMsg', 'ok', 'Matched ' + m.title + ' to ' + x.title + '.'); }, function (e) { b.disabled = false; msg('mediaMsg', 'bad', e.message); }); };
+            picks.appendChild(b);
+          });
+        }, function (e) { go.disabled = false; picks.textContent = e.message; });
+      };
+      line.appendChild(q); line.appendChild(go); row.appendChild(line); row.appendChild(picks);
+      box.appendChild(row);
+    });
+  }, function (e) { box.textContent = e.message; });
+}
+/* ---------- Trakt ---------- */
+var traktTimer = null, traktCharts = false;
+var TRAKT_KINDS = [['both', 'Movies and TV shows (Home)'], ['movies', 'Movies (Movies tab)'], ['shows', 'TV shows (TV shows tab)']];
+function traktDo(op, args, then) { return command('trakt', Object.assign({ op: op }, args || {}), 60000).then(function (r) { if (r.msg) msg('traktMsg', 'ok', r.msg); if (r.data && r.data.lists) drawTrakt(r.data); if (then) then(r); return r; }, function (e) { msg('traktMsg', 'bad', e.message); }); }
+function drawTrakt(d) {
+  var acc = $('traktAccount'); acc.textContent = '';
+  clearTimeout(traktTimer);
+  function b(label, cls, fn) { var x = document.createElement('button'); x.type = 'button'; x.textContent = label; if (cls) x.className = cls; x.onclick = fn; return x; }
+  if (d.code) {
+    var p = document.createElement('p'); p.innerHTML = 'On this computer or your phone, open <a target="_blank" rel="noopener noreferrer"></a> and enter:'; p.querySelector('a').href = d.code.url; p.querySelector('a').textContent = d.code.url.replace(/^https?:\/\//, ''); acc.appendChild(p);
+    var c = document.createElement('div'); c.className = 'trakt-code'; c.textContent = d.code.user; acc.appendChild(c);
+    acc.appendChild(b('Stop connecting', 'ghost', function () { traktDo('cancel'); }));
+    traktTimer = setTimeout(function () { traktDo('status'); }, 5000);
+  } else if (!d.connected) {
+    acc.appendChild(b('Connect Trakt', 'primary', function () { msg('traktMsg', 'busy', 'Asking Trakt for a code…'); traktDo('connect'); }));
+  } else {
+    var who = document.createElement('p'); who.textContent = d.describe; acc.appendChild(who);
+    var row = document.createElement('div'); row.className = 'row';
+    row.appendChild(b('Sync now', '', function () { msg('traktMsg', 'busy', 'Syncing with Trakt…'); traktDo('sync'); }));
+    row.appendChild(b('Add your watchlist', 'ghost', function () { traktDo('addWatchlist'); }));
+    row.appendChild(b('Add recommended movies', 'ghost', function () { traktDo('addRecommended', { of: 'movies' }); }));
+    row.appendChild(b('Add recommended shows', 'ghost', function () { traktDo('addRecommended', { of: 'shows' }); }));
+    row.appendChild(b('Disconnect', 'ghost danger', function () { ask('Disconnect Trakt from the TV?', 'Your lists stay on My media without your private ones.', 'Disconnect', function () { traktDo('disconnect'); }, true); }));
+    acc.appendChild(row);
+  }
+  $('traktWatchedOut').checked = d.settings.watchedOut; $('traktHistoryIn').checked = d.settings.historyIn;
+  var ls = $('traktLists'); ls.textContent = '';
+  if (!d.lists.length) ls.textContent = 'No Trakt lists yet.  Add one below.';
+  d.lists.forEach(function (l) {
+    var row = document.createElement('div'); row.className = 'trakt-list';
+    var on = document.createElement('input'); on.type = 'checkbox'; on.checked = l.on; on.title = 'On My media'; on.onchange = function () { traktDo('update', { id: l.id, on: on.checked }); }; row.appendChild(on);
+    var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = l.name; var c = document.createElement('div'); c.className = 'muted small'; c.textContent = l.count + ' titles on Trakt' + (l.src && l.src.user ? ' · by ' + l.src.user : ''); nm.appendChild(c); row.appendChild(nm);
+    var k = document.createElement('select'); TRAKT_KINDS.forEach(function (o) { var x = document.createElement('option'); x.value = o[0]; x.textContent = o[1]; k.appendChild(x); }); k.value = l.kind; k.onchange = function () { traktDo('update', { id: l.id, kind: k.value }); }; row.appendChild(k);
+    row.appendChild(b('Remove', 'ghost danger', function () { traktDo('remove', { id: l.id }); }));
+    ls.appendChild(row);
+  });
+  if (!traktCharts) { traktCharts = true; d.charts.forEach(function (c, i) { var o = document.createElement('option'); o.value = i; o.textContent = c[2]; $('traktChart').appendChild(o); }); $('traktChart')._charts = d.charts; }
+}
+function loadTrakt() { command('trakt', { op: 'status' }).then(function (r) { $('traktCard').classList.remove('hidden'); drawTrakt(r.data); }, function () { $('traktCard').classList.add('hidden'); $('traktHead').classList.add('hidden'); }); }
+$('traktWatchedOut').onchange = $('traktHistoryIn').onchange = function () { traktDo('settings', { watchedOut: $('traktWatchedOut').checked, historyIn: $('traktHistoryIn').checked }); };
+$('traktAdd').onsubmit = function (e) { e.preventDefault(); var v = $('traktInput').value.trim(); if (!v) return; msg('traktMsg', 'busy', 'Looking up the list…'); traktDo('addTyped', { input: v, kind: $('traktKind').value }, function () { $('traktInput').value = ''; }); };
+$('traktFind').onsubmit = function (e) {
+  e.preventDefault(); var q = $('traktQuery').value.trim(); if (!q) return;
+  var out = $('traktFound'); out.textContent = 'Searching Trakt…';
+  command('trakt', { op: 'search', q: q }, 30000).then(function (r) {
+    out.textContent = ''; if (!r.data.length) { out.textContent = 'No lists found.  Try other words.'; return; }
+    r.data.forEach(function (x) {
+      var row = document.createElement('div'); row.className = 'trakt-list';
+      var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = x.name; var c = document.createElement('div'); c.className = 'muted small'; c.textContent = 'by ' + x.user + ' · ' + x.count + ' titles · ' + x.likes + ' likes'; nm.appendChild(c); row.appendChild(nm);
+      var add = document.createElement('button'); add.type = 'button'; add.textContent = 'Add'; add.onclick = function () { add.disabled = true; traktDo('addFound', { user: x.user, slug: x.slug, name: x.name, kind: $('traktKind').value }); }; row.appendChild(add);
+      out.appendChild(row);
+    });
+  }, function (e) { out.textContent = e.message; });
+};
+$('traktChart').onchange = function () { var c = ($('traktChart')._charts || [])[+$('traktChart').value]; $('traktChart').value = ''; if (c) traktDo('addChart', { chart: c[0], of: c[1] }); };
 var mediaLibraryPage=null,mediaLibraryCursor=null;
 function loadMediaLibrary(cursor){
   return command('mediaLibrary',{kind:$('mediaLibraryKind').value,cursor:cursor||null,limit:60}).then(function(r){

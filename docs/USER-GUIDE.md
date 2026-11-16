@@ -4,7 +4,7 @@ Everything TiviBro does, on the TV and from your computer.  Every picture here c
 
 **On the TV:** [First start](#first-start) · [The set-up tour](#the-set-up-tour) · [Channel logos](#channel-logos) · [The remote](#the-remote) · [The guide](#the-guide) · [Groups and the menu](#groups-and-the-menu) · [Watching fullscreen](#watching-fullscreen) · [Other versions of a channel](#other-versions-of-a-channel) · [Event channels](#event-channels-pay-per-view-and-sports-passes) · [My teams](#my-teams) · [Movies on now](#movies-on-now) · [My media](#my-media) · [Catch-up](#catch-up) · [Movies and shows](#movies-and-shows) · [Search](#search) · [Favorites, hiding and your own groups](#favorites-hiding-and-your-own-groups) · [Reminders](#reminders) · [Settings](#settings) · [Updates](#updates) · [Parental controls](#parental-controls)
 
-**Every setting:** [Playlists](#settings-playlists) · [Guide](#settings-guide) · [Channels and groups](#settings-channels-and-groups) · [Channel and group names](#settings-channel-and-group-names) · [Reminders and watchlist](#settings-reminders-and-watchlist) · [Playback](#settings-playback) · [My media](#settings-my-media) · [API keys](#settings-api-keys) · [Remote and buttons](#settings-remote-and-buttons) · [Appearance and start screen](#settings-appearance-and-start-screen) · [Parental controls](#settings-parental-controls) · [Backups and restore points](#settings-backups-and-restore-points) · [Phone app and web editor](#settings-phone-app-and-web-editor) · [Updates, about and diagnostics](#settings-updates-about-and-diagnostics)
+**Every setting:** [Playlists](#settings-playlists) · [Guide](#settings-guide) · [Channels and groups](#settings-channels-and-groups) · [Channel and group names](#settings-channel-and-group-names) · [Reminders and watchlist](#settings-reminders-and-watchlist) · [Playback](#settings-playback) · [My media](#settings-my-media) · [Trakt](#settings-trakt) · [API keys](#settings-api-keys) · [Remote and buttons](#settings-remote-and-buttons) · [Appearance and start screen](#settings-appearance-and-start-screen) · [Parental controls](#settings-parental-controls) · [Backups and restore points](#settings-backups-and-restore-points) · [Phone app and web editor](#settings-phone-app-and-web-editor) · [Updates, about and diagnostics](#settings-updates-about-and-diagnostics)
 
 **From your computer:** [Turning on the web editor](#turning-on-the-web-editor) · [Drafts and Send to TV](#drafts-and-send-to-tv) · [Channels and groups](#channels-and-groups) · [Smart clean-up](#smart-clean-up) · [Channel and group names](#channel-and-group-names) · [The programme guide](#the-programme-guide) · [Reminders and watchlist](#reminders-and-watchlist) · [Playlists](#playlists) · [My media in the editor](#my-media-in-the-editor) · [Backups and restore points](#backups-and-restore-points)
 
@@ -615,7 +615,8 @@ The watchlist needs the guide to know what's on: with an XMLTV guide it sees eve
 | [**Playback**](#settings-playback) | Buffer profile and buffer meter, player engine, MPEG-TS or HLS, network helper, HDR and Dolby Vision, aspect, switching channels and what happens when one stops working, catch-up skip steps |
 | [**Audio and subtitles**](#settings-audio-and-subtitles) | Audio language, surround sound, converting sound the TV can't play, subtitles and captions and how they look, subtitles from OpenSubtitles |
 | [**Movies and shows**](#settings-movies-and-shows) | The order of movies and shows, next episode, hiding spoilers, movie and series details from TMDB |
-| [**My media**](#settings-my-media) | Add media sources, rescan, fetch details, a link to the TMDB token, sort orders, metadata language, each source |
+| [**My media**](#settings-my-media) | Your libraries (each with its own page: what it holds, Show on Home, scan, unmatched movies with Fix match, remove), add a library, display and shelves, a link to the TMDB token |
+| [**Trakt**](#settings-trakt) | Connect with a code, watched history both ways, Trakt lists as My media shelves (by link, NAME/LIST, search or chart) |
 | [**API keys**](#settings-api-keys) | The TMDB token and the OpenSubtitles key and sign-in, each with Test |
 | [**Remote and buttons**](#settings-remote-and-buttons) | Remap buttons in the player and lists, quick menu buttons, learn a button, button tester |
 | [**Appearance and start screen**](#settings-appearance-and-start-screen) | Settings shown, start screen, where lists open, last channel at launch, preview on the Channels screen, Back twice to exit, clock, theme (Black and white, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin, Solarized, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai, or your own mix), accent color (twelve presets or your own from a hue and brightness), background (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), focus style, text size, panel transparency, logos, clock, channel numbers |
@@ -946,22 +947,53 @@ The Movies and Shows screens, and the TMDB details for them and the guide.
 
 ### Settings: My media
 
-Your own movie and TV show sources and their preferences.  The [My media](#my-media) screen keeps the shelves full-width; source setup stays here.  The phone app's **Settings > My media** does all of this too, with the typing on the phone.
+Your libraries, like Plex's: each one is a folder of movies or TV shows on a media server (DLNA / UPnP, WebDAV or Dropbox).  The [My media](#my-media) screen keeps the shelves full-width; managing libraries stays here.  The phone app's **Settings > My media** does all of this too, with the typing on the phone.
 
 <p align="center"><a href="https://tivibro.app/view/#tv-set-my-media"><img src="screenshots/tv-set-my-media.png" width="70%" alt="Settings: My media"></a></p>
 
 | Settings > My media | Default | What it does |
 |---|---|---|
-| **Add media** | | Find a DLNA / UPnP server, or enter the WebDAV address of your media folder and its login.  **Dropbox** is signed in from the phone app.  Subfolders are scanned too.  One folder per movie, named like **Frozen (2013)**, matches best.  In the phone app the server list and the WebDAV form are on the phone. |
-| **Edit on a computer** *(on the TV)* | | Shows a code for a computer or phone browser: the web editor's My media page, for typing server logins and fixing TV show episodes. |
-| **Rescan media sources** | | Same as Green on My media: scan every saved source for movies and episodes. |
-| **Fetch media details** | | Same as Yellow: look up details for movies, shows and the episodes you have, and refresh outdated language details. |
-| **TMDB API token ›** | | Under **Preferences**.  Opens [API keys](#settings-api-keys), the one place the token lives: add, test or remove it there. |
-| **Sort movies by** | **Name (A–Z)** | Name, release date (newest first), or date added (newest first).  Movies and Favorites follow this choice; Continue watching stays ordered by recent playback.  Rescans preserve the date first added. |
-| **Sort TV shows by** | **Name (A–Z)** | Name, first aired (newest first), or date added (newest first).  TV shows and favorite shows follow it, on the TV and in the phone app; Continue watching stays ordered by recent playback. |
-| **Favorites also in lists** | **On** | On: a favorite movie or show is in **Favorites** and also in **Movies** or **TV shows**.  Off: it is only in **Favorites**. |
-| **Metadata language** | **English** | Shared by the TV app and web editor.  Changing it refreshes saved movie and show matches in the selected language.  Only missing translated fields fall back to English, identified beside the details.  If a request fails, the previous details remain. |
-| *(each source)* | | Under **Media sources**, with how many movies and episode files it has.  **Content** (Movies only, Movies and TV shows, TV shows only), rescan, pause or restart a scan, fetch details, or remove the source. |
+| *(each library)* | | What it holds and where, with its counts: movies and how many are unmatched, shows and episode files, or **Scanning…**.  Opens the library's page (below). |
+| **Add a library** | | Find a DLNA / UPnP server, or enter the WebDAV address of your media folder and its login.  **Dropbox** is signed in from the phone app.  Subfolders are scanned too.  One folder per movie, named like **Frozen (2013)**, matches best.  In the phone app the server list and the WebDAV form are on the phone. |
+| **Scan all libraries** | | Same as Green on My media: scan every library for movies and episodes. |
+| **Fetch details for all** | | Same as Yellow: look up details for movies, shows and the episodes you have, and refresh outdated language details. |
+| **Edit on a computer** *(on the TV)* | | Shows a code for a computer or phone browser: the web editor's My media page, for typing server logins, fixing many matches at once and TV show episodes. |
+| **Display and shelves ›** | | Sorting (**Sort movies by**, **Sort TV shows by**, reversed or not), **Arrange shelves** (one per tab with movies and shows), **Favorites also in lists** and **Metadata language**. |
+| **Trakt ›** | | [Settings: Trakt](#settings-trakt). |
+| **TMDB API token ›** | | Opens [API keys](#settings-api-keys), the one place the token lives: add, test or remove it there. |
+
+**A library's page:**
+
+| Row | What it does |
+|---|---|
+| **Holds** | **Movies**, **TV shows**, or **Movies and TV shows** (each file sorted by its name).  Decides how files are read and which tab they go to. |
+| **Name** | What My media and Settings call it. |
+| **Show on Home** | On: its Recently added, Continue watching and favorites are on My media's Home.  Off: only on the Movies and TV shows tabs. |
+| **Scan now**, **Restart scan** | Look for added or removed files; Restart starts over from the first folder.  While it scans: **Pause scan**. |
+| **Fetch movie details** / **Fetch show details** | From TMDB, for this library. |
+| **More for this library** | Its folder, Dropbox sign-in, pause or restart a scan.  In the phone app: the phone's own form. |
+| **Unmatched movies ›** | The movies TMDB didn't recognise, each with **Fix match**: type the title, pick the right movie. |
+| **Shows that need review** | Episodes TiviBro couldn't place and shows without a match, on the TV shows tab. |
+| **Excluded files** | Trailers, extras and samples left out; include one back. |
+| **Remove library** | Takes it off My media.  Your files stay where they are. |
+
+### Settings: Trakt
+
+[Trakt](https://trakt.tv) keeps what you've watched in step across TiviBro, your phone and other apps, and its lists become shelves on My media that show only what you can watch.  Your Trakt sign-in stays on the TV, out of backups.
+
+| Settings > Trakt | Default | What it does |
+|---|---|---|
+| **Connect Trakt** | | Shows a code.  On your phone or computer, open **trakt.tv/activate**, sign in and enter it; the TV connects by itself.  In the phone app, select the link to open it.  No password is typed on the TV. |
+| **Sync now**, **Disconnect Trakt** | | Once connected: sync at once (it also syncs every few hours), or sign this TV out. |
+| **Mark as watched on Trakt** | **On** | A movie or episode you finish on My media goes on your Trakt history.  Kept and sent later when Trakt can't be reached. |
+| **Bring my Trakt history in** | **On** | What you watched in other apps shows as watched here, so Next up and Not watched yet follow along. |
+| *(each list)* | | Its page: **On My media**, **Holds** (movies, TV shows or both, and so its tab), its name, **Refresh now** and **Remove from My media**. |
+| **Add a list by its link** | | Like Radarr and Sonarr: paste a trakt.tv/users/NAME/lists/LIST link, or type NAME/LIST.  The list must be public, or yours. |
+| **Find a list** | | Search Trakt's public lists by name. |
+| **Add a Trakt chart** | | Trending, popular, most anticipated, box office and most watched, for movies or shows. |
+| **Add your watchlist or recommendations** | | Your Trakt watchlist, and the movies and shows Trakt recommends for you. |
+
+Lists refresh every 6 hours.  Trakt's free accounts have limits on lists and items; TiviBro says so when Trakt answers that one is reached.
 
 ### Settings: API keys
 
@@ -1396,7 +1428,9 @@ Add Xtream Codes, M3U or Stalker portal playlists (or paste the provider's **Ful
 
 ### My media in the editor
 
-The same sources as **Settings > My media** on the TV and in the phone app: a change in one place shows in the others.  Add a WebDAV server (address and login, checked by the TV before it's saved), rescan or remove a source, set the sort orders and metadata language, and paste, test or remove your TMDB token.  A home media server (DLNA / UPnP) is added from the phone app or the TV, which can look for it on your network.
+The same libraries as **Settings > My media** on the TV and in the phone app: a change in one place shows in the others.  Each library card shows what it holds, its counts and a matched bar, with **Show on Home**, **Rename**, **Scan now**, **Fetch details**, **Unmatched** (type a title, search TMDB and pick the right movie: the quickest way to fix many at once) and **Remove**.  Add a WebDAV server (address and login, checked by the TV before it's saved), set the sort orders, shelves and metadata language, and paste, test or remove your TMDB token.  A home media server (DLNA / UPnP) is added from the phone app or the TV, which can look for it on your network.
+
+**Trakt** has the same as Settings > Trakt: connect (the code shows here too), the two switches, your lists with what each holds, and adding a list by its link or NAME/LIST, by searching, or from Trakt's charts.
 
 **Fix TV show episodes** is for episode files that landed in the wrong show or the wrong season (not for movies: on the TV, hold OK on a movie in My media and choose **Find movie details** or **Change movie details**).  Load the files (**Needs review** shows the ones TiviBro wasn't sure about), tick the episodes to move, type the right show title and season number, then **Preview the changes**.  Episode numbers stay as they are.  Check the list and press **Save**; **Undo** puts them back.
 

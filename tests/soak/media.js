@@ -91,7 +91,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   await ev((id) => { MediaStore.removeSource(id); }, placeholder); await page.waitForTimeout(300);
   ok('and leaves the menu when the last source goes', await ev(() => !document.querySelector('.tab[data-tab="media"]')));
   await ev(() => Views.switchTab('settings')); await ev(() => Settings.section('media')); await page.waitForTimeout(300);
-  ok('My media is a settings section', /Add media/.test(await text('#setBody')) && /Metadata language/.test(await text('#setBody')));
+  ok('My media is a settings section', /Add a library/.test(await text('#setBody')) && /Display and shelves/.test(await text('#setBody')));
   await key('Enter');
   ok('Add media in Settings offers generic protocols', /DLNA \/ UPnP/.test(await text('#modal')) && /WebDAV/.test(await text('#modal')));
   await key('Escape');

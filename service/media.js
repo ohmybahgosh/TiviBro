@@ -675,7 +675,7 @@ function handle(req, res, ALLOW, log) {
   var libraryRoute = /^\/media\/library\/(query|detail|edit|migrate|progress|continue|chapters|source|adopt|resolve|status)$/.exec(route);
   var subs = /^\/media\/subs\/(search|get|login)$/.exec(route);
   var dropbox = /^\/media\/dropbox\/(folders|account|revoke)$/.exec(route);
-  if (req.method !== 'POST' || (!libraryRoute && !subs && !dropbox && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/vformat' && route !== '/media/metadata')) return send(res, ALLOW, 404, { error: 'unknown media route' });
+  if (req.method !== 'POST' || (!libraryRoute && !subs && !dropbox && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/vformat' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
   var body = '', over = false, bodyBytes = 0, bodyLimit = libraryRoute ? 1048576 : 65536;
   if (req.setEncoding) req.setEncoding('utf8');
   req.on('data', function (c) { if (over) return; body += c; bodyBytes += Buffer.byteLength(c, 'utf8'); if (bodyBytes > bodyLimit) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
@@ -699,6 +699,11 @@ function handle(req, res, ALLOW, log) {
       req.on('aborted', cancelMetadata); if (res.on) res.on('close', cancelMetadata);
       return metadataClient.lookup(q, function (e, r) { if (!metadataClosed) send(res, ALLOW, 200, e ? { error: 'metadata', message: e.message } : r); });
     }
+    // Trakt (service/trakt.js): what was asked and how it went, never a token or a code.
+    if (route === '/media/trakt') return require('./trakt').handle(q, function (r) {
+      log({ lv: r.error ? 'warn' : 'info', event: 'trakt ' + String(q.op || '').slice(0, 10), path: q.path ? String(q.path).split('/')[1] : undefined, error: r.error ? r.message : null });
+      send(res, ALLOW, 200, r);
+    });
     if (route === '/media/discover') return discover(function (r) { log({ lv: 'info', event: 'media discover', servers: r.servers.length }); send(res, ALLOW, 200, r); });
     if (route === '/media/scan') return scanRequest(q, req, res, ALLOW, log);
     var host = hostOf(q.source);

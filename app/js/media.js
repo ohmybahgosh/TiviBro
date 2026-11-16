@@ -239,7 +239,8 @@ var Media = (function () {
   var TV_ONLY = { shows: 1, 'tmdb:popular-tv': 1, 'tmdb:airing': 1, 'tmdb:top-tv': 1, review: 1 }, BOTH = { continue: 1, favorites: 1, 'tmdb:trending': 1 };
   function has() { var l = MediaStore.sources(); if (!l.length) return { movies: true, shows: true };   // nothing added yet: every shelf
     return { movies: l.some(function (s) { return s.contentMode !== 'shows'; }), shows: l.some(function (s) { return s.contentMode && s.contentMode !== 'movies'; }) }; }
-  function fits(k, h) { h = h || has(); return k === 'browse' ? h.movies && h.shows : BOTH[k] ? h.movies || h.shows : TV_ONLY[k] ? h.shows : h.movies; }
+  function traktOf(k) { return k.indexOf('trakt:') === 0 ? traktLists().filter(function (t) { return t.id === k; })[0] || { kind: 'both', tab: 'home' } : null; }
+  function fits(k, h) { h = h || has(); var tl = traktOf(k); if (tl) return tl.kind === 'shows' ? h.shows : tl.kind === 'movies' ? h.movies : h.movies || h.shows; return k === 'browse' ? h.movies && h.shows : BOTH[k] ? h.movies || h.shows : TV_ONLY[k] ? h.shows : h.movies; }
   /* Home, Movies, TV shows and Favorites: with both movies and shows, My media opens on a mixed Home (what
      you're watching, Browse, holiday lists, recently added, trending) and each tab has only its own shelves.
      With one kind there are no tabs: every shelf on one page, as before. */
@@ -248,6 +249,7 @@ var Media = (function () {
   var HOME = { continue: 1, browse: 1, recent: 1, pick: 1, 'tmdb:trending': 1 };
   function inSection(id, sec) {
     if (sec === 'favorites') return id === 'favorites';
+    var tl = traktOf(id); if (tl) return tl.tab === sec;
     if (id === 'continue') return true;
     if (id === 'favorites') return false;
     if (sec === 'home') return !!HOME[id] || id === 'holidays' || id.indexOf('holiday:') === 0;
@@ -255,9 +257,12 @@ var Media = (function () {
     return sec === 'shows' ? !!TV_ONLY[id] : !TV_ONLY[id];
   }
   function isShow(m) { return m && (m.kind === 'show' || !!m.continueEpisode); }
+  // Trakt's lists (trakt.js) are shelves too, each with its own key ('trakt:abcdefgh'), after TMDB's Trending.
+  function traktLists() { return typeof Trakt !== 'undefined' ? Trakt.shelves() : []; }
+  function orderAll() { var o = ORDER.slice(), at = o.indexOf('tmdb:trending') + 1; traktLists().forEach(function (t, i) { o.splice(at + i, 0, t.id); NAMES[t.id] = t.title + '  (Trakt)'; }); return o; }
   function arrangement() {
-    var p = MediaStore.preferences(), saved = (p.shelfOrder || []).filter(function (k) { return ORDER.indexOf(k) >= 0; }), off = p.shelfOff || {};
-    ORDER.forEach(function (k, i) { if (saved.indexOf(k) < 0) saved.splice(Math.min(i, saved.length), 0, k); });
+    var ORD = orderAll(), p = MediaStore.preferences(), saved = (p.shelfOrder || []).filter(function (k) { return ORD.indexOf(k) >= 0; }), off = p.shelfOff || {};
+    ORD.forEach(function (k, i) { if (saved.indexOf(k) < 0) saved.splice(Math.min(i, saved.length), 0, k); });
     return { order: saved, off: function (k) { return off[k] != null ? !!off[k] : LISTS.some(function (l) { return l.key === k && l.off; }); } };
   }
   function shelvesNow(opts) {
@@ -303,6 +308,12 @@ var Media = (function () {
     live.forEach(function (m) { if (!pool[m.metadata.id]) pool[m.metadata.id] = m; });
     one(all).forEach(function (m) { if (m.metadata && m.metadata.id) pool[m.metadata.id] = m; });
     shows.concat(favShows).forEach(function (m) { if (m.metadata && m.metadata.id) pool[m.metadata.id] = m; });
+    // Trakt's lists: only what you can watch, in the list's order.
+    traktLists().forEach(function (t) {
+      var seenK = {}, items = [];
+      t.keys.forEach(function (k) { if (pool[k] && !seenK[k]) { seenK[k] = 1; items.push(pool[k]); } });
+      built[t.id] = { title: t.title, sub: 'Trakt  ·  ' + count(items.length, '1 you can watch', '{n} you can watch'), movies: items };
+    });
     LISTS.forEach(function (l) {
       var kinds = l.kinds.filter(function (k) { return k === 'movie' ? hasMovies || live.length : hasShows; });
       var items = listItems(kinds.map(function (k) { return l.list + ':' + k; }), pool);
@@ -358,8 +369,13 @@ var Media = (function () {
       }
       var s = built[k]; if (s) { s.id = k; out.push(s); }
     });
-    if (opts.phone || opts.all) return out;
+    if (opts.phone) return out.filter(function (x) { return x.id !== 'browse'; });   // the tab cards are the TV's; the phone has its own
+    if (opts.all) return out;
     split = hasMovies && hasShows;
+    // A library with Show on Home off (Settings > My media > the library): its titles stay off Home.
+    var homeOff = {}; MediaStore.sources().forEach(function (x) { if (x.homeOff) homeOff[x.id] = 1; });
+    var onHome = function (m) { if (m.src && homeOff[m.src]) return false; var ids = m.sourceIds || (m.sourceId ? [m.sourceId] : []); return !ids.length || ids.some(function (i) { return !homeOff[i]; }); };
+    if ((opts.section || section) === 'home' && Object.keys(homeOff).length) out.forEach(function (x) { if (x.id !== 'browse') x.movies = x.movies.filter(onHome); });
     if (!split) return out.filter(function (x) { return x.id !== 'browse'; });
     if (section === 'favorites' && !counts.favorites) section = 'home';      // the last favorite went
     var sec = opts.section || section;
@@ -866,6 +882,17 @@ var Media = (function () {
       return fetchDetails(list, language);
     }).then(function(result){return kind === 'movies' ? result : showDetails(true,result);}).catch(function (e) { U.toast(why(e), 6000); });
   }
+  // Remove a library (source): asks first; your files stay; Undo puts it back (not Dropbox, which signs out).
+  function removeLibrary(s) {
+        UI.confirm('Remove ' + s.name + ' from My media?' + (s.type === 'dropbox' ? '  TiviBro signs out of Dropbox on this TV.' : ''), 'Remove', function () { MediaStore.load().then(function () { var gone = MediaStore.source(s.id); MediaStore.removeSource(s.id); signOut(gone); ask('library/source',{sourceId:s.id,action:'remove'},30000).then(function(){refresh();UI.menu(s.name+' removed',(gone && gone.type === 'dropbox' ? [] : [{label:'Undo removal',action:function(){if(MediaStore.restoreSource(s.id))ask('library/source',{sourceId:s.id,action:'activate'},30000).then(function(){refresh();rescan(s.id);});}}]).concat([{label:'Done'}]));},function(e){U.toast(why(e),6000);}); }); });
+  }
+  /* Settings > My media's libraries (settings.js): what each holds and how it's going. */
+  function libraryStats(id) {
+    var s = MediaStore.source(id) || {}, mv = MediaStore.movies(id), unmatched = mv.filter(function (m) { return !(m.metadata && m.metadata.id); });
+    var shows = seriesCards.concat(favouriteShows).filter(function (x) { return (x.sourceIds || []).indexOf(id) >= 0 || x.sourceId === id; });
+    return { movies: mv.length, unmatched: unmatched, shows: shows.length, unmatchedShows: shows.filter(function (x) { return !(x.metadata && x.metadata.id); }).length, episodes: (MediaStore.publicSources().filter(function (x) { return x.id === id; })[0] || {}).episodeFiles || 0,
+      scanning: !!scanning[id], kind: s.contentMode || 'movies', homeOff: !!s.homeOff, fourK: mv.filter(function (m) { return (m.vf && m.vf.h >= 1600) || /2160|\b4k\b|uhd/i.test(fileInfo(m) + ' ' + (m.file || '')); }).length };
+  }
   function sourceMenu(s) {
     if (!s) return;s=MediaStore.source(s.id)||s;
     UI.menu(RAW(s.name), [
@@ -876,9 +903,7 @@ var Media = (function () {
       { label:'Review excluded files',action:function(){MediaSeries.excluded();} },
       { label: 'TV shows', action: function () { MediaSeries.open(); } },
       { label: 'Rescan', sub: 'Look for added or removed movies and episodes', action: function () { rescan(s.id); } },
-      { label: 'Remove', sub: 'Your files stay where they are', action: function () {
-        UI.confirm('Remove ' + s.name + ' from My media?' + (s.type === 'dropbox' ? '  TiviBro signs out of Dropbox on this TV.' : ''), 'Remove', function () { MediaStore.load().then(function () { var gone = MediaStore.source(s.id); MediaStore.removeSource(s.id); signOut(gone); ask('library/source',{sourceId:s.id,action:'remove'},30000).then(function(){refresh();UI.menu(s.name+' removed',(gone && gone.type === 'dropbox' ? [] : [{label:'Undo removal',action:function(){if(MediaStore.restoreSource(s.id))ask('library/source',{sourceId:s.id,action:'activate'},30000).then(function(){refresh();rescan(s.id);});}}]).concat([{label:'Done'}]));},function(e){U.toast(why(e),6000);}); }); });
-      } }
+      { label: 'Remove', sub: 'Your files stay where they are', action: function () { removeLibrary(s); } }
     ]);
   }
 
@@ -967,6 +992,8 @@ var Media = (function () {
     Views.stopAll();
     open(true);
     if (eligible && typeof MediaSeries !== 'undefined') MediaSeries.completed(finished);
+    // Trakt (Settings > Trakt > Mark as watched on Trakt): what you finished.
+    if (finished && typeof Trakt !== 'undefined') { if (finished.kind === 'episode') { if (eligible) Trakt.watchedEpisode(finished.episodeHandle); } else Trakt.watchedMovie(finished.metadata && finished.metadata.id); }
   }
   /* ---------- the phone app (app/js/phone.js) ----------
      My media on the phone, in the same shape as Movies (Vod.phone): the shelves as categories, a page of
@@ -1186,9 +1213,12 @@ var Media = (function () {
   return {
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
     refreshShows:refreshSeries, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, signOut: signOut,
-    rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, arrangeShelves: function (sec) { arrangeMenu(null, sec || 'home'); }, bothKinds: function () { var h = has(); return !!(h.movies && h.shows); }, busyText: busyText, setBusy: setBusy,
+    rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
+    // The web editor's Fix match: search TMDB by a typed title, then save the one picked.
+    searchDetails: function (title) { if (!MediaStore.tmdbToken()) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },
+    applyDetails: function (movieId, tmdbId) { return metadataRequest({ id: tmdbId }).then(function (r) { if (!r.metadata) throw new Error('TMDB has no details for that.'); return MediaStore.setMetadata(movieId, r.metadata); }).then(function () { refresh(); }); }, findDetails: findDetails, libraryDetails: function (id) { var s = MediaStore.source(id); if (s) sourceDetails(s); }, detailsLabel: detailsLabel, arrangeShelves: function (sec) { arrangeMenu(null, sec || 'home'); }, bothKinds: function () { var h = has(); return !!(h.movies && h.shows); }, busyText: busyText, setBusy: setBusy,
     // The web editor's shelf list: with movies and shows, each shelf says which tab it's on (Continue watching: Home).
-    shelfList: function () { var ar = arrangement(), h = has(), both = h.movies && h.shows; return ar.order.filter(function (k) { return fits(k, h); }).map(function (k) { return { key: k, name: NAMES[k], off: ar.off(k), section: !both ? '' : k === 'continue' || inSection(k, 'home') ? 'home' : TV_ONLY[k] ? 'shows' : 'movies' }; }); }, holidaysNow: holidaysNow, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
+    shelfList: function () { var ar = arrangement(), h = has(), both = h.movies && h.shows; return ar.order.filter(function (k) { return fits(k, h); }).map(function (k) { return { key: k, name: NAMES[k], off: ar.off(k), section: !both ? '' : traktOf(k) ? traktOf(k).tab : k === 'continue' || inSection(k, 'home') ? 'home' : TV_ONLY[k] ? 'shows' : 'movies' }; }); }, holidaysNow: holidaysNow, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: play, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { namedIn: namedIn, section: function (x) { if (x) { tabsFocus = false; setSection(x); } return { section: section, split: split, tabs: tabsFocus }; }, goShelf: function (id) { followTop = false; goShelf(id); }, addServer: addServer, addAddress: addAddress, addDropbox: addDropbox, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };

@@ -82,7 +82,17 @@ const R = require('../../scripts/demo/record');
       await ed.setViewportSize({ width: 1280, height: 720 });
     }
     empty = true;
-    await ed.locator('#mediaList button', { hasText: 'Rescan' }).click();
+    // Trakt: not connected, a chart added from the editor shows as a list on the TV, and goes again.
+    await ed.waitForFunction(() => /Connect Trakt/.test(document.getElementById('traktAccount').textContent));
+    await ed.selectOption('#traktChart', '1');
+    await ed.waitForFunction(() => /Trending shows on Trakt/.test(document.getElementById('traktLists').textContent));
+    assert.equal(await tv.evaluate(() => Trakt.lists().map((l) => l.name).join()), 'Trending shows on Trakt');
+    await ed.locator('#traktLists button', { hasText: 'Remove' }).click();
+    await tv.waitForFunction(() => Trakt.lists().length === 0);
+    await ed.fill('#traktInput', 'not a list at all here'); await ed.click('#traktAdd button');
+    await ed.waitForFunction(() => /Paste a Trakt list link/.test(document.getElementById('traktMsg').textContent));
+    console.log('PASS Trakt lists from the editor: a chart added and removed, a wrong link explained');
+    await ed.locator('#mediaList button', { hasText: 'Scan now' }).click();
     await ed.waitForFunction(() => /list stays/.test(document.getElementById('mediaMsg').textContent));
     assert.equal(await tv.evaluate(() => MediaStore.movies(null).length), 1);
     console.log('PASS empty editor rescan keeps the library');

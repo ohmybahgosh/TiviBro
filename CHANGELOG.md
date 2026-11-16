@@ -2,11 +2,16 @@
 
 ## Unreleased
 
+- **Trakt.**  Settings > Trakt connects your Trakt account with a code you enter at trakt.tv/activate on your phone or computer (no password on the TV).  What you finish on My media goes on your Trakt history, and what you watched in other apps shows as watched here, so Next up and Not watched yet follow along.  Each is a switch, and Sync now does it at once.
+- **Trakt lists as My media shelves.**  Your watchlist, Trakt's charts (trending, popular, most anticipated, box office, most watched), its recommendations for you, and any public list, added the way Radarr and Sonarr take them: paste the list's link, type NAME/LIST, or search Trakt's lists by name.  Each list holds movies, TV shows or both, goes on the matching tab, shows only what you can watch, and has its place in Arrange shelves.  On the TV, in the phone app and in the web editor.
+- **My media libraries, like Plex.**  Settings > My media lists your libraries with what each holds, how many movies and shows, how many are unmatched and whether it's scanning.  Each library has its own page: Holds (movies, TV shows or both), its name, **Show on Home**, Scan now and Restart scan, fetch details, **Unmatched movies** with Fix match, shows that need review, excluded files, and Remove.  Sorting, arranging shelves and the details language moved to **Display and shelves**.
+- **The web editor's libraries.**  Each library card shows its counts with a matched bar, Show on Home, Rename, Scan now, Fetch details and **Unmatched**, a list where you type a title, search TMDB and pick the right movie: the quickest way to fix many at once.
 - **Install the update stands out.**  In Settings > Updates, **Install … now** is in your theme's "go" colour with a **NEW** badge, filled in when you're on it, so it isn't lost among the rows.
 - **Arrange each tab on its own.**  With movies and shows, Settings > My media has **Arrange Home shelves**, **Arrange Movies shelves** and **Arrange TV shows shelves**, and the web editor lists the shelves under each tab (moved within it).  Red > Arrange shelves on My media arranges the tab you're on.
 - **You can see when details are being fetched.**  While TMDB is looked up, My media shows "Fetching details: 120 movies and 340 shows to go" under the clock, and Settings > My media has the same line.
 - **Each tab says what it does.**  On the TV shows tab, Yellow is **Fetch show details** and looks up shows only; on Movies it is **Fetch movie details**; on Home it does both.  Red's sort on the TV shows tab sorts shows.
 - **My media: every TV show.**  Only the first 200 shows came through (735 on one library); now all of them do, and the TV shows tab counts them all.
+- **The phone app's My media no longer lists Browse**, the TV's row of tab cards, as a shelf.
 
 ## 0.6.0 (alpha 145, 2026-11-16)
 

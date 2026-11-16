@@ -32,6 +32,15 @@ var MediaStore = (function () {
     if (changed) save();
     return { language: p.language || 'en', sort: p.sort || 'name', showSort: p.showSort || 'name', sortReverse: !!p.sortReverse, showSortReverse: !!p.showSortReverse, shelfOrder: (p.shelfOrder || []).slice(), shelfOff: p.shelfOff || {}, sourceFilter: p.sourceFilter || '', favoritesInLists: p.favoritesInLists !== false, tmdbConfigured: !!state.tmdbToken };
   }
+  /* Trakt (app/js/trakt.js): the sign-in (tokens, kept like the TMDB token: on this TV, out of backups and
+     logs), who it is, what to sync, and the lists shown as shelves. */
+  function trakt() { return state.trakt || {}; }
+  function setTrakt(next) {
+    var t = state.trakt || (state.trakt = {});
+    Object.keys(next || {}).forEach(function (k) { if (next[k] === null) delete t[k]; else t[k] = next[k]; });
+    if (!save()) throw new Error('The TV could not save the Trakt settings.  Check its available storage.');
+    return t;
+  }
   function setTmdbToken(value) {
     value = String(value || '').trim();
     if (value && !/^[A-Za-z0-9._-]{24,2048}$/.test(value)) throw new Error('Enter a valid TMDB API key or API Read Access Token.');
@@ -99,6 +108,8 @@ var MediaStore = (function () {
   }
   // What a source is, in words: Settings, the phone app and the web editor say the same.
 
+  // A library's name and whether it shows on Home (Settings > My media > the library).
+  function sourceUpdate(id, next) { var s = source(id); if (!s) throw new Error('That library is gone.'); if (next && typeof next.name === 'string' && next.name.trim()) s.name = next.name.trim().slice(0, 60); if (next && typeof next.homeOff === 'boolean') s.homeOff = next.homeOff; if (!save()) throw new Error('The TV could not save it.'); return s; }
   function sourceMode(id, mode) { var s = source(id); if (!s || !/^(automatic|movies|shows)$/.test(mode)) throw new Error('Choose a valid source mode.'); s.contentMode = mode; save(); }
   function stamp(srcId, m) {
     var src = source(srcId), out = {};
@@ -210,7 +221,7 @@ var MediaStore = (function () {
 
   return {
     preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
-    tmdbToken: function () { return state.tmdbToken || ''; }, sortList: sortList, compare: compare, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, setFormat: setFormat, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
+    tmdbToken: function () { return state.tmdbToken || ''; }, trakt: trakt, setTrakt: setTrakt, sourceUpdate: sourceUpdate, sortList: sortList, compare: compare, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, setFormat: setFormat, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
     resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, clearResume: clearResume, markWatched: markWatched, isWatched: isWatched
   };
 })();

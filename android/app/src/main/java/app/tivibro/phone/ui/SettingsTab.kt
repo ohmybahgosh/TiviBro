@@ -48,6 +48,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -97,6 +98,7 @@ private fun pageOf(j: JSONObject) = SetPage(j.optString("title"), j.optJSONArray
 @Composable
 fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (String, String) -> Unit = { _, _ -> }) {
     val scope = rememberCoroutineScope()
+    val uri = LocalUriHandler.current
     var pin by remember { mutableStateOf("") }
     var askPin by remember { mutableStateOf<String?>(null) }
     var sections by remember { mutableStateOf<List<Pair<String, String>>?>(null) }
@@ -146,6 +148,7 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
         when {
             r.phone in NATIVE -> native = r
             r.phone == "log" -> showLog = true
+            r.phone == "open-url" && r.epage.startsWith("https://") -> runCatching { uri.openUri(r.epage) }.onFailure { change("action", r) }
             r.phone in SCREENS -> onGo(r.phone, r.epage)
             else -> change("action", r)
         }

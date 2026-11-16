@@ -399,7 +399,37 @@ var WebEdit = (function () {
     mediaLibraryEdit:function (a) { return Media.request('library/edit',a,30000).then(function (r) { if(r.error)throw new Error(r.message);if(a.operation==='setWatched'&&!a.watched&&Media.watchedReset)Media.watchedReset(a.handle,r.revision);return {msg:'Library updated.',data:r}; }); },
     mediaTokenTest: function () { return Media.testTmdbToken().then(function (m) { return { msg: m }; }); },
     mediaList: function () {
-      return MediaStore.load().then(function () { return { msg: 'Media sources', data: MediaStore.publicSources().map(function (s) { return { id: s.id, type: s.type, name: s.name, root: s.type === 'dropbox' ? s.root || '' : undefined, count: s.count,contentMode:s.contentMode||'movies',episodeFiles:s.episodeFiles||0 }; }) }; });
+      return MediaStore.load().then(function () { return { msg: 'Media sources', data: MediaStore.publicSources().map(function (s) { var st = Media.libraryStats ? Media.libraryStats(s.id) : null; return { id: s.id, type: s.type, name: s.name, root: s.type === 'dropbox' ? s.root || '' : undefined, count: s.count,contentMode:s.contentMode||'movies',episodeFiles:s.episodeFiles||0,
+        unmatched: st ? st.unmatched.length : 0, shows: st ? st.shows : 0, unmatchedShows: st ? st.unmatchedShows : 0, fourK: st ? st.fourK : 0, scanning: st ? st.scanning : false, homeOff: st ? st.homeOff : false }; }) }; });
+    },
+    // A library's name and Show on Home; its unmatched movies; Fix match (search, then save the pick).
+    mediaSourceUpdate: function (a) { var s = mediaSource(a), next = {}; if (typeof a.name === 'string') next.name = clean(a.name); if (typeof a.homeOff === 'boolean') next.homeOff = a.homeOff; MediaStore.sourceUpdate(s.id, next); Media.refresh(); Settings.live(); return { msg: 'Library saved.' }; },
+    mediaUnmatched: function (a) { var s = mediaSource(a); return { data: Media.libraryStats(s.id).unmatched.slice(0, 500).map(function (m) { return { id: m.id, title: m.title || '', year: m.year || '', file: m.file || m.path || '' }; }) }; },
+    mediaMatchSearch: function (a) { return Media.searchDetails(clean(a.title)).then(function (l) { return { data: l }; }); },
+    mediaMatchSave: function (a) { return Media.applyDetails(clean(a.movie), clean(a.tmdb)).then(function () { return { msg: 'Match saved.' }; }); },
+    mediaLibraryDetails: function (a) { var s = mediaSource(a); Media.libraryDetails(s.id); return { msg: 'Fetching details for ' + s.name + ' on the TV.' }; },
+    /* Trakt (app/js/trakt.js): the sign-in code, switches, lists added like Radarr and Sonarr take them. */
+    trakt: function (a) {
+      if (typeof Trakt === 'undefined') throw new Error('This TiviBro has no Trakt yet.');
+      var op = String(a.op || 'status'), kind = /^(both|movies|shows)$/.test(a.kind) ? a.kind : 'both';
+      function status(m) { var c = Trakt.pendingCode(); return { msg: m || '', data: { connected: Trakt.connected(), user: Trakt.user(), describe: Trakt.describe(), code: c ? { user: c.user, url: c.url } : null, settings: Trakt.settings(),
+        lists: Trakt.lists().map(function (l) { return { id: l.id, name: l.name, kind: l.kind, on: l.on !== false, count: Trakt.itemsOf(l.id).length, src: l.src }; }), charts: Trakt.CHARTS } }; }
+      function after(p, m) { return Promise.resolve(p).then(function () { Settings.live(); return status(m); }); }
+      if (op === 'status') return status();
+      if (op === 'connect') { var asked = new Promise(function (ok, no) { Trakt.connect(function () { ok(); }).then(function () { Settings.live(); }, function (e) { no(e); }); }); return asked.then(function () { return status(); }); }
+      if (op === 'cancel') { Trakt.cancel(); return status(); }
+      if (op === 'disconnect') { Trakt.disconnect(); return status('Trakt disconnected from this TV.'); }
+      if (op === 'sync') return Trakt.syncNow(true).then(function () { return status('Trakt is in step.'); });
+      if (op === 'settings') { Trakt.setSettings({ watchedOut: a.watchedOut, historyIn: a.historyIn }); return status('Saved.'); }
+      if (op === 'update') { var patch = {}; if (typeof a.on === 'boolean') patch.on = a.on; if (a.kind) patch.kind = kind; if (clean(a.name)) patch.name = clean(a.name).slice(0, 80); Trakt.update(String(a.id), patch); return after(0, 'Saved.'); }
+      if (op === 'remove') { Trakt.remove(String(a.id)); return after(0, 'List removed from My media.'); }
+      if (op === 'addTyped') return Trakt.addTyped(clean(a.input), kind).then(function (l) { return after(0, l.name + ' added to My media.'); });
+      if (op === 'search') return Trakt.search(clean(a.q)).then(function (l) { return { data: l }; });
+      if (op === 'addFound') return after(Trakt.addFound({ user: clean(a.user), slug: clean(a.slug), name: clean(a.name) || clean(a.slug) }, kind), 'List added to My media.');
+      if (op === 'addChart') return after(Trakt.addChart(String(a.chart), String(a.of)), 'Chart added to My media.');
+      if (op === 'addWatchlist') return after(Trakt.addWatchlist(), 'Your watchlist is on My media.');
+      if (op === 'addRecommended') return after(Trakt.addRecommended(a.of === 'shows' ? 'shows' : 'movies'), 'Recommendations added to My media.');
+      throw new Error('Unknown Trakt request.');
     },
     mediaAdd: function (a) {
       return Media.addAddress(clean(a.address), clean(a.user), clean(a.pass)).then(function (r) {

@@ -6,10 +6,10 @@ var Settings = (function () {
   function T(x) { return x && typeof x === 'string' && typeof I18n !== 'undefined' ? I18n.t(x) : x; }
   var nav = $('setNav'), body = $('setBody');
   var SECTIONS = [['language', 'Language'], ['playlists', 'Playlists'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['names', 'Channel and group names'], ['reminders', 'Reminders and watchlist'],
-    ['playback', 'Playback'], ['audio', 'Audio and subtitles'], ['vod', 'Movies and shows'], ['media', 'My media'], ['keys', 'API keys'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
+    ['playback', 'Playback'], ['audio', 'Audio and subtitles'], ['vod', 'Movies and shows'], ['media', 'My media'], ['trakt', 'Trakt'], ['keys', 'API keys'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
     ['backups', 'Backups and restore points'], ['connect', 'Phone app and web editor'], ['about', 'Updates, about and diagnostics']];
   // Old section ids (links in other screens, tests, older phone apps) still land somewhere sensible.
-  var ALIAS = { lang: 'language', groups: 'channels', updates: 'about', diag: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys', subtitles: 'audio', movies: 'vod', shows: 'vod' };
+  var ALIAS = { lang: 'language', groups: 'channels', updates: 'about', diag: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys', subtitles: 'audio', movies: 'vod', shows: 'vod', libraries: 'media' };
   var sec = 1, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
   // Phone app: test builds only while the Android app is in the works (release builds show the web editor alone).
   function phoneOK() { return /alpha|beta/i.test(TIVIBRO_VERSION); }
@@ -246,34 +246,154 @@ var Settings = (function () {
   var mediaLoaded = false;
   function media() {
     if (!mediaLoaded) { mediaLoaded = true; MediaStore.load().then(live); }
-    var names = { en: 'English', nl: 'Dutch', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian' };
-    var hasToken = MediaStore.preferences().tmdbConfigured;
-    var out = [head('Your media library'),
-      info('Movies and TV shows from your own media servers (DLNA / UPnP, a WebDAV folder, or Dropbox).  Files can be at the top level or in folders.  Choose what each source holds: movies, TV shows or both.  The phone app does all of this too, with the typing on the phone.', ''),
-      phoneDoes('media-add', action('Add media', 'Find a DLNA / UPnP server, or enter a WebDAV folder address and login.  Dropbox signs in from the phone app.  Subfolders are scanned too.', function () { Media.addMenu(); })),
-      tvOnly(action('Edit on a computer', 'Shows a code for a computer or phone browser: the web editor\'s My media page, for typing server logins and fixing TV show episodes.', function () { WebEdit.showJoin('media'); })),
-      action('Rescan media sources', 'Look for movies and episodes.  Green on the My media screen.', heavy(function () { Media.rescanAll(); })),
-      action('Fetch media details', 'Look up movies, shows and owned episodes.  Refresh outdated language details.  Yellow on My media.', heavy(function () { Media.fetchMissingDetails(); })),
+    var out = [head('Libraries'),
+      info('Each library is one folder on a media server (DLNA / UPnP, WebDAV or Dropbox) holding movies or TV shows, like Plex\'s libraries.  Select one to scan it, fix what didn\'t match, choose whether it shows on Home, or remove it.', '')];
+    MediaStore.publicSources().forEach(function (s) {
+      var row = page(I18n.raw(s.name), libraryLine(s), I18n.raw(s.name), function () { return library(s.id); }, function () { return libraryValue(s.id); });
+      row.sid = s.id; out.push(row);
+    });
+    if (!MediaStore.sources().length) out.push(info('No libraries yet', 'Choose Add a library below'));
+    out.push(phoneDoes('media-add', action('Add a library', 'Movies or TV shows from a DLNA / UPnP server, a WebDAV folder (address and login) or Dropbox (signs in from the phone app).  Subfolders are scanned too.', function () { Media.addMenu(); })));
+    out.push(head('All libraries'),
+      action('Scan all libraries', 'Look for added and removed movies and episodes.  Green on the My media screen.', heavy(function () { Media.rescanAll(); })),
+      action('Fetch details for all', 'Look up movies, shows and owned episodes on TMDB, and refresh details in another language.  Yellow on My media.', heavy(function () { Media.fetchMissingDetails(); })),
       (function () { var it = info('Fetching details now', ''); it.value = function () { return Media.busyText ? (Media.busyText().replace(/^Fetching details: /, '') || 'Nothing running') : ''; }; return it; })(),
-      head('Preferences'), tmdbLink()].concat([
+      tvOnly(action('Edit on a computer', 'Shows a code for a computer or phone browser: the web editor\'s My media page, for typing server logins, fixing many matches at once and TV show episodes.', function () { WebEdit.showJoin('media'); })),
+      page('Display and shelves', 'Sorting, arranging the shelves on each tab, favorites and the details language.', 'My media display', mediaDisplay),
+      page('Trakt', typeof Trakt !== 'undefined' ? Trakt.describe() : '', 'Trakt', trakt),
+      tmdbLink());
+    return out;
+  }
+  function kindName(k) { return k === 'shows' ? 'TV shows' : k === 'automatic' ? 'Movies and TV shows' : 'Movies'; }
+  function where(s) { return (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' : 'WebDAV') + (s.type === 'dropbox' ? (s.root ? '  ·  ' + s.root : '') : ''); }
+  function libraryLine(s) {
+    var st = Media.libraryStats ? Media.libraryStats(s.id) : null;
+    if (!st) return kindName(s.contentMode) + '  ·  ' + where(s);
+    var bits = [kindName(st.kind), where(s)];
+    if (st.homeOff) bits.push('not on Home');
+    return bits.join('  ·  ');
+  }
+  function libraryValue(id) {
+    var st = Media.libraryStats(id);
+    if (st.scanning) return 'Scanning…';
+    var parts = [];
+    if (st.kind !== 'shows') parts.push(st.movies + ' movies' + (st.unmatched.length ? ', ' + st.unmatched.length + ' unmatched' : ''));
+    if (st.kind !== 'movies') parts.push(st.shows + ' shows' + (st.episodes ? ', ' + st.episodes + ' files' : ''));
+    return parts.join('  ·  ');
+  }
+  // One library's page: what it holds, scanning, matching, Home and removing.
+  function library(id) {
+    var s = MediaStore.source(id);
+    if (!s) return [info('This library was removed.', '')];
+    var st = Media.libraryStats(id), pub = MediaStore.publicSources().filter(function (x) { return x.id === id; })[0] || {}, out = [];
+    out.push(info(where(pub) + (pub.address ? '  ·  ' + I18n.raw(String(pub.address).replace(/\/\/[^@\/]*@/, '//')) : ''), ''));
+    if (st.kind !== 'shows') out.push(info('Movies', st.movies + (st.fourK ? '  (' + st.fourK + ' in 4K)' : '') + '  ·  ' + (st.movies - st.unmatched.length) + ' matched'));
+    if (st.kind !== 'movies') out.push(info('TV shows', st.shows + ' shows  ·  ' + st.episodes + ' episode files' + (st.unmatchedShows ? '  ·  ' + st.unmatchedShows + ' unmatched' : '')));
+    out.push(head('Library'),
+      choice('Holds', 'Movies or TV shows decides how files are read and which tab they go to.  Movies and TV shows sorts each file by its name.', ['movies', 'shows', 'automatic'], ['Movies', 'TV shows', 'Movies and TV shows'], function () { return (MediaStore.source(id) || {}).contentMode || 'movies'; }, function (v) { Media.changeSourceMode(id, v).then(function () { live(); }, function (e) { U.toast(e.message, 6000); }); }),
+      action('Name', 'What My media and Settings call it.', function () { UI.prompt('Library name', s.name, function (n) { if (!n.trim()) return; try { MediaStore.sourceUpdate(id, { name: n }); Media.refresh(); build(); } catch (e) { U.toast(e.message, 6000); } }); }, function () { return I18n.raw((MediaStore.source(id) || {}).name || ''); }),
+      toggle('Show on Home', 'Its Recently added, Continue watching and favorites on My media\'s Home.  Off: only on the Movies and TV shows tabs.', function () { return !(MediaStore.source(id) || {}).homeOff; }, function (v) { try { MediaStore.sourceUpdate(id, { homeOff: !v }); Media.refresh(); paint(); } catch (e) { U.toast(e.message, 6000); } }),
+      Media.isScanning(id) ? action('Pause scan', 'Stops after the current request.', function () { Media.sourceMenu(s); }) : action('Scan now', 'Look for added or removed files.', heavy(function () { Media.rescan(id); U.toast('Scanning ' + s.name + '…'); })),
+      Media.isScanning(id) ? null : action('Restart scan', 'Starts over from the first folder.', heavy(function () { Media.rescan(id, true); })),
+      action(Media.detailsLabel(s), 'From TMDB, with your saved API token.', heavy(function () { Media.libraryDetails(id); })),
+      (function () { var c = phoneDoes('media-source', action('More for this library', 'Its folder, Dropbox sign-in, pause or restart a scan.  On the phone: its own form.', function () { Media.sourceMenu(s); })); c.sid = id; return c; })(),
+      head('Needs attention'));
+    if (st.kind !== 'shows') out.push(page('Unmatched movies', 'Movies TMDB didn\'t recognise.  Fix match searches by the title you type.', 'Unmatched in ' + I18n.raw(s.name), function () { return unmatched(id); }, function () { return String(Media.libraryStats(id).unmatched.length); }));
+    if (st.kind !== 'movies') out.push(action('Shows that need review', 'Episodes TiviBro couldn\'t place, and shows without a match.  Opens TV shows on My media.', function () { MediaSeries.review(); }, function () { return st.unmatchedShows ? String(st.unmatchedShows) : ''; }));
+    out.push(action('Excluded files', 'Trailers, extras and samples left out.  Include one back from here.', function () { MediaSeries.excluded(); }, function () { return '›'; }),
+      head('Remove'),
+      action('Remove library', 'Takes it off My media.  Your files stay where they are.', function () { Media.removeLibrary(s); }));
+    return out.filter(Boolean);
+  }
+  function unmatched(id) {
+    var list = Media.libraryStats(id).unmatched;
+    if (!list.length) return [info('Everything in this library matched.', '')];
+    return list.slice(0, 200).map(function (m) { return action(I18n.raw(m.title || m.file || '?'), I18n.raw(m.file || m.path || ''), function () { Media.findDetails(m); }, function () { return 'Fix match'; }); })
+      .concat(list.length > 200 ? [info(list.length - 200 + ' more', 'The web editor lists them all.')] : []);
+  }
+  function mediaDisplay() {
+    var names = { en: 'English', nl: 'Dutch', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian' };
+    return [
       choice('Sort movies by', 'Applies to Movies, Favorites and the genre shelves.  Continue watching stays ordered by recent playback.  Red on My media too.', ['name', 'release', 'added', 'rating', 'runtime'], ['Name (A–Z)', 'Release date (newest first)', 'Date added (newest first)', 'Rating (highest first)', 'Running time (longest first)'], function () { return MediaStore.preferences().sort; }, function (v) { Media.updatePreferences({ sort: v }); paint(); }),
       toggle('Reverse the movie order', 'Turns the movie order round: Z to A, oldest, lowest or shortest first.', function () { return MediaStore.preferences().sortReverse; }, function (v) { Media.updatePreferences({ sortReverse: v }); paint(); }),
       choice('Sort TV shows by', 'Applies to TV shows and favorite shows, on the TV and the phone.  Continue watching stays ordered by recent playback.', ['name', 'release', 'added', 'rating'], ['Name (A–Z)', 'First aired (newest first)', 'Date added (newest first)', 'Rating (highest first)'], function () { return MediaStore.preferences().showSort; }, function (v) { Media.updatePreferences({ showSort: v }); paint(); }),
       toggle('Reverse the TV show order', 'Turns the TV show order round: Z to A, oldest or lowest first.', function () { return MediaStore.preferences().showSortReverse; }, function (v) { Media.updatePreferences({ showSortReverse: v }); paint(); }),
       // With movies and shows, each tab is arranged on its own (its shelves are only on that tab).
-      Media.bothKinds && Media.bothKinds() ? action('Arrange Home shelves', 'Continue watching, Browse, holiday lists, Recently added, Pick of the day and Trending.  Red on My media too.', function () { Media.arrangeShelves('home'); }) : null,
-      Media.bothKinds && Media.bothKinds() ? action('Arrange Movies shelves', 'Recently added movies, collections, genres, decades, directors, 4K and HDR and TMDB\'s movie lists.', function () { Media.arrangeShelves('movies'); }) : null,
-      Media.bothKinds && Media.bothKinds() ? action('Arrange TV shows shelves', 'Next up, every show, Needs review and TMDB\'s TV lists.', function () { Media.arrangeShelves('shows'); }) : null,
-      Media.bothKinds && Media.bothKinds() ? null : action('Arrange shelves', 'Move My media\'s shelves up or down and switch off the ones you don\'t want: Continue watching, holiday lists, Favorites, Recently added, TMDB\'s lists, Movies, TV shows, genres and more.  Red on My media too.', function () { Media.arrangeShelves(); }, function () { var p = MediaStore.preferences(); return p.shelfOrder.length || Object.keys(p.shelfOff).length ? 'Your order' : 'As it comes'; }),
+      Media.bothKinds && Media.bothKinds() ? action('Arrange Home shelves', 'Continue watching, Browse, holiday lists, Recently added, Pick of the day, Trending and mixed Trakt lists.  Red on My media too.', function () { Media.arrangeShelves('home'); }) : null,
+      Media.bothKinds && Media.bothKinds() ? action('Arrange Movies shelves', 'Recently added movies, collections, genres, decades, directors, 4K and HDR, TMDB\'s and Trakt\'s movie lists.', function () { Media.arrangeShelves('movies'); }) : null,
+      Media.bothKinds && Media.bothKinds() ? action('Arrange TV shows shelves', 'Next up, every show, Needs review, TMDB\'s and Trakt\'s TV lists.', function () { Media.arrangeShelves('shows'); }) : null,
+      Media.bothKinds && Media.bothKinds() ? null : action('Arrange shelves', 'Move My media\'s shelves up or down and switch off the ones you don\'t want: Continue watching, holiday lists, Favorites, Recently added, TMDB\'s and Trakt\'s lists, Movies, TV shows, genres and more.  Red on My media too.', function () { Media.arrangeShelves(); }, function () { var p = MediaStore.preferences(); return p.shelfOrder.length || Object.keys(p.shelfOff).length ? 'Your order' : 'As it comes'; }),
       toggle('Favorites also in lists', 'On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.', function () { return MediaStore.preferences().favoritesInLists; }, function (v) { Media.updatePreferences({ favoritesInLists: v }); paint(); }),
-      choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); }),
-      head('Media sources')].filter(Boolean));
-    MediaStore.publicSources().forEach(function (s) {
-      var row = phoneDoes('media-source', action(I18n.raw(s.name), (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' : 'WebDAV') + ' · rescan, content, details or remove', function () { Media.sourceMenu(s); }, function () { return MediaStore.movies(s.id).length + ' movies'+(s.episodeFiles?' · '+s.episodeFiles+' episode files':''); }));
-      row.sid = s.id; out.push(row);
+      choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); })
+    ].filter(Boolean);
+  }
+
+  /* ---------- Trakt: watch history both ways, and its lists as My media shelves ---------- */
+  var KIND_V = ['both', 'movies', 'shows'], KIND_L = ['Movies and TV shows (Home)', 'Movies (Movies tab)', 'TV shows (TV shows tab)'];
+  function traktErr(e) { if (e && e.message !== 'Stopped.') U.toast(e.message || 'Trakt did not answer.', 7000); }
+  function trakt() {
+    if (typeof Trakt === 'undefined') return [info('Trakt is not available in this version.', '')];
+    var out = [info('Trakt keeps what you\'ve watched in step across TiviBro, your phone and other apps, and its lists (your watchlist, your own lists, anyone\'s public list, trending and popular) become shelves on My media that show only what you can watch.  Your Trakt sign-in stays on this TV.', '')];
+    var code = Trakt.pendingCode();
+    out.push(head('Account'));
+    if (code) {
+      var go = action('1.  On a phone or computer, open', 'Then sign in to Trakt.  In the phone app, select this to open it.', function () { U.toast('Open ' + code.url.replace(/^https?:\/\//, '') + ' and enter ' + code.user, 8000); }, function () { return code.url.replace(/^https?:\/\//, ''); });
+      go.phone = 'open-url'; go.epage = code.url; out.push(go);
+      out.push(info('2.  Enter this code', code.user), info('Waiting for Trakt…', 'This page updates by itself'),
+        action('Stop connecting', '', function () { Trakt.cancel(); build(); }));
+    } else if (!Trakt.connected()) {
+      out.push(action('Connect Trakt', 'Shows a code to enter at trakt.tv/activate on your phone or computer.  No password is typed on the TV.', function () {
+        U.toast('Asking Trakt for a code…');
+        Trakt.connect(function () { build(); }).then(function (u) { U.toast('Trakt connected as ' + u, 5000); build(); }, function (e) { traktErr(e); build(); });
+      }));
+    } else {
+      out.push(info('Connected as', Trakt.user()),
+        action('Sync now', 'Sends what you\'ve watched and brings in what you watched elsewhere.', function () { U.toast('Syncing with Trakt…'); Trakt.syncNow(true).then(function () { U.toast('Trakt is in step', 4000); paint(); }, traktErr); }, function () { return Trakt.describe().replace(/^Connected as [^·]*·?\s*/, ''); }),
+        action('Disconnect Trakt', 'Signs this TV out of Trakt.  Your lists stay on My media without your private ones.', function () { UI.confirm('Disconnect Trakt from this TV?', 'Disconnect', function () { Trakt.disconnect(); build(); }); }));
+    }
+    out.push(head('Watch history'),
+      toggle('Mark as watched on Trakt', 'When you finish a movie or episode on My media, it goes on your Trakt history.  Kept and sent later if Trakt can\'t be reached.', function () { return Trakt.settings().watchedOut; }, function (v) { Trakt.setSettings({ watchedOut: v }); paint(); }),
+      toggle('Bring my Trakt history in', 'What you watched on other apps shows as watched here, so Next up and Not watched yet follow along.', function () { return Trakt.settings().historyIn; }, function (v) { Trakt.setSettings({ historyIn: v }); paint(); }));
+    out.push(head('Lists on My media'));
+    var ls = Trakt.lists();
+    if (!ls.length) out.push(info('No Trakt lists yet.  Add one below.', ''));
+    ls.forEach(function (l) {
+      out.push(page(I18n.raw(l.name), (l.on === false ? 'Off  ·  ' : '') + KIND_L[Math.max(0, KIND_V.indexOf(l.kind))] + '  ·  ' + Trakt.itemsOf(l.id).length + ' titles on Trakt', I18n.raw(l.name), function () { return traktList(l.id); }));
     });
-    if (!MediaStore.sources().length) out.push(info('No media sources yet', 'Choose Add media above'));
-    return out;
+    out.push(head('Add a list'),
+      action('Add a list by its link', 'Like Radarr and Sonarr: paste a trakt.tv/users/NAME/lists/LIST link, or type NAME/LIST.  The list must be public, or yours.', function () {
+        UI.prompt('Trakt list link or NAME/LIST', '', function (v) { if (!v.trim()) return; askKind(function (k) { U.toast('Looking up the list…'); Trakt.addTyped(v, k).then(function (l) { U.toast(l.name + ' added to My media', 5000); build(); }, traktErr); }); }, 'For example trakt.tv/users/garycrawfordgc/lists/latest-releases.  Typing is easier from the phone app or the web editor.');
+      }),
+      action('Find a list', 'Search Trakt\'s public lists by name.', function () {
+        UI.prompt('Search Trakt lists', '', function (q) {
+          if (!q.trim()) return; U.toast('Searching Trakt…');
+          Trakt.search(q).then(function (found) {
+            if (!found.length) return U.toast('No lists found.  Try other words.', 5000);
+            UI.menu('Trakt lists', found.map(function (x) { return { label: I18n.raw(x.name), sub: I18n.raw('by ' + x.user + '  ·  ' + x.count + ' titles  ·  ' + x.likes + ' likes'), action: function () { askKind(function (k) { try { Trakt.addFound(x, k); U.toast(x.name + ' added to My media', 5000); build(); } catch (e) { traktErr(e); } }); } }; }));
+          }, traktErr);
+        });
+      }),
+      action('Add a Trakt chart', 'Trending, popular, most anticipated, box office and most watched.', function () {
+        UI.menu('Trakt charts', Trakt.CHARTS.map(function (c) { return { label: c[2], action: function () { try { Trakt.addChart(c[0], c[1]); build(); } catch (e) { traktErr(e); } } }; }));
+      }),
+      Trakt.connected() ? action('Add your watchlist or recommendations', 'Needs Trakt connected.', function () {
+        var add = function (fn) { return function () { try { fn(); build(); } catch (e) { traktErr(e); } }; };
+        UI.menu('From your Trakt account', [{ label: 'Your watchlist', action: add(function () { Trakt.addWatchlist(); }) }, { label: 'Movies Trakt recommends for you', action: add(function () { Trakt.addRecommended('movies'); }) }, { label: 'Shows Trakt recommends for you', action: add(function () { Trakt.addRecommended('shows'); }) }]);
+      }) : null);
+    return out.filter(Boolean);
+  }
+  function askKind(then) { UI.menu('What does the list hold?', KIND_V.map(function (k, i) { return { label: KIND_L[i], action: function () { then(k); } }; })); }
+  function traktList(id) {
+    var l = Trakt.lists().filter(function (x) { return x.id === id; })[0];
+    if (!l) return [info('This list was removed.', '')];
+    return [
+      toggle('On My media', 'Off keeps the list here without its shelf.', function () { var x = Trakt.lists().filter(function (y) { return y.id === id; })[0]; return !!x && x.on !== false; }, function (v) { Trakt.update(id, { on: v }); paint(); }),
+      choice('Holds', 'Which titles the shelf shows, and the tab it goes on.', KIND_V, KIND_L, function () { var x = Trakt.lists().filter(function (y) { return y.id === id; })[0]; return x ? x.kind : 'both'; }, function (v) { Trakt.update(id, { kind: v }); paint(); }),
+      action('Name', 'The shelf\'s title.', function () { UI.prompt('Shelf name', l.name, function (n) { if (n.trim()) { Trakt.update(id, { name: n.trim().slice(0, 80) }); build(); } }); }, function () { return I18n.raw(l.name); }),
+      info('On Trakt', Trakt.itemsOf(id).length + ' titles.  The shelf shows the ones you can watch.'),
+      action('Refresh now', 'Lists refresh by themselves every 6 hours.', function () { Trakt.itemsSoon(true); U.toast('Refreshing Trakt lists…'); }),
+      action('Remove from My media', 'The list stays on Trakt.', function () { Trakt.remove(id); pop(); })
+    ];
   }
 
   /* ---------- remote ---------- */
@@ -1455,7 +1575,7 @@ var Settings = (function () {
     return out;
   }
 
-  var BY_ID = { language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, audio: audioSubs, vod: vodSettings, media: media, keys: apiKeys, remote: remote, look: look, parental: parental, backups: backups, connect: connect, about: about };
+  var BY_ID = { language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, audio: audioSubs, vod: vodSettings, media: media, trakt: trakt, keys: apiKeys, remote: remote, look: look, parental: parental, backups: backups, connect: connect, about: about };
   var FNS = SECTIONS.map(function (x) { return BY_ID[x[0]]; });
   function build() {
     var top = stack[stack.length - 1];
