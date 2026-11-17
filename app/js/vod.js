@@ -742,7 +742,7 @@ var Vod = (function () {
   }
   function toHome() { if (episodes) closeSeries(); showFromHome = false; homeMode = true; VodHome.show(kind, homeApi, false); }
   var homeApi = {
-    CW: CW, MY: MY, NEW: NEW,
+    CW: CW, MY: MY, NEW: NEW, ALL: ALL,
     data: function () { return data[kind]; }, cats: function () { return catList(); }, items: function (id) { return itemsFor(id); },
     key: function (it) { return key(it); }, adultOpen: function () { return adultOpen(); }, catName: function (it) { return catName(it); }, stars: function (it) { return stars(it.rating); },
     progress: function (it) { return progressOf(it); }, where: function (it) { return whereOf(it); }, details: function (it, then) { return detailsOf(it, then); },

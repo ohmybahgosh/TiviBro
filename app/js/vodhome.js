@@ -107,7 +107,11 @@ var VodHome = (function () {
       else if (k.indexOf('tmdb:') === 0) { var l = listsFor().filter(function (x) { return x.key === k; })[0]; if (l) { var it = matched([l.list + ':' + (kind === 'series' ? 'tv' : 'movie')]); out.push({ id: k, title: l.title, sub: count(it.length, '1 in your provider\'s ' + word() + 's', '{n} in your provider\'s ' + word() + 's'), items: it }); } }
       else if (k.indexOf('cat:') === 0) { var c = cats[k.slice(4)]; if (c && !(c.adult && !A.adultOpen())) out.push({ id: k, cat: c.id, title: c.name, sub: 'Category  ·  ' + count(c.count, '1 ' + word(), '{n} ' + word() + 's') + '  ·  ' + sortName(), items: A.items(c.id) }); }
     });
-    return out.filter(function (s) { return s.items.length; });
+    out = out.filter(function (s) { return s.items.length; });
+    /* Nothing on any shelf (issue #110: a provider that doesn't say when titles were added has no Recently
+       added, and with no TMDB token, nothing watched and no pinned category, Home was empty): every title. */
+    if (!out.length && A.ALL) { var all = A.items(A.ALL); if (all.length) out.push({ id: 'all', title: kind === 'series' ? 'All shows' : 'All movies', sub: count(all.length, '1 ' + word(), '{n} ' + word() + 's') + '  ·  Green: All categories', items: all }); }
+    return out;
   }
 
   /* ---------- drawing ---------- */

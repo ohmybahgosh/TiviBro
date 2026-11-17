@@ -18,13 +18,13 @@ for (let i = 0; i < 3000; i++) MOVIES.push({ num: i, name: i % 3 ? 'SE - Film ' 
 const SERIES = [{ series_id: 9, name: '[SE] Nocturne', cover: 'c.jpg', plot: 'p'.repeat(1000), rating: '8', releaseDate: '2026-01-02', category_id: '7', last_modified: '1700000001', backdrop_path: ['a', 'b'], cast: 'x' }];
 
 (async () => {
-  let hits = 0, down = false;
+  let hits = 0, down = false, empty = false;
   const up = http.createServer((req, res) => {
     if (/get_vod_streams/.test(req.url)) hits++;
     if (down) { res.writeHead(503); return res.end(); }
     if (/categories/.test(req.url)) { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify([{ category_id: '5', category_name: 'Films' }, { category_id: '7', category_name: 'Shows' }])); }
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(/get_series/.test(req.url) ? SERIES : /get_vod_streams/.test(req.url) ? MOVIES : { user_info: {} }));
+    res.end(JSON.stringify(/get_series/.test(req.url) ? SERIES : /get_vod_streams/.test(req.url) ? (empty ? [] : MOVIES) : { user_info: {} }));
   });
   await new Promise(f => up.listen(0, '127.0.0.1', f));
   const U = '127.0.0.1:' + up.address().port;
@@ -69,6 +69,18 @@ const SERIES = [{ series_id: 9, name: '[SE] Nocturne', cover: 'c.jpg', plot: 'p'
   a = await post(B + '/vod/list', q({ pl: 'p9' }));
   ok('and with no copy, the reason', a.status === 502 && a.json.error, JSON.stringify(a.json));
   down = false;
+  // Issue #110: a provider mid-outage answers an empty list.
+  empty = true;
+  a = await post(B + '/vod/list', q({ sig: 's2', refresh: true }));
+  ok('an empty answer keeps the list that had movies', a.status === 200 && a.json.rows.length === 1000, a.json && a.json.rows.length);
+  a = await post(B + '/vod/list', q({ pl: 'p8', refresh: true }));
+  ok('with nothing kept, empty is empty', a.status === 200 && a.json.total === 0);
+  empty = false; down = true;
+  a = await post(B + '/vod/list', q({ pl: 'p8', refresh: true }));
+  ok('an empty copy kept and the provider down: the reason, not Nothing to show', a.status === 502 && a.json.error, JSON.stringify(a.json).slice(0, 120));
+  down = false;
+  a = await post(B + '/vod/list', q({ pl: 'p8', refresh: true }));
+  ok('and the provider back: the movies', a.status === 200 && a.json.total === 3000);
   a = await post(B + '/vod/list', q({ u: 'http://' + U + '/player_api.php' }));
   ok('/vod/list takes only relay addresses on this helper', a.status === 400);
   await post(B + '/vod/forget', { pl: 'p1' });

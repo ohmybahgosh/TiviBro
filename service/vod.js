@@ -197,8 +197,14 @@ function list(q, res, ALLOW, log, port) {
       if (e || !Array.isArray(j)) {
         var why = e ? e.message : 'the provider did not send a list';
         if (log) log({ lv: 'warn', event: 'vod list failed', kind: kind, e: why });
-        if (d) return send(res, ALLOW, 200, shown(kind, d, q));               // the copy kept here, however old
+        // The copy kept here, however old, unless it is empty: then the reason shows instead of "Nothing to show yet" (issue #110).
+        if (d && d.rows && d.rows.length) return send(res, ALLOW, 200, shown(kind, d, q));
         return send(res, ALLOW, 502, { error: why });
+      }
+      // An empty answer (a provider mid-outage) never replaces a list that had something: the next load tries again.
+      if (!j.length && d && d.rows && d.rows.length) {
+        if (log) log({ lv: 'warn', event: 'vod list empty, kept the last one', kind: kind, n: d.rows.length });
+        return send(res, ALLOW, 200, shown(kind, d, q));
       }
       var nd = { v: 2, at: Date.now(), sig: sig, rows: slim(kind, j),
         cats: (Array.isArray(cats) ? cats : []).map(function (x) { return { id: str(x && x.category_id), name: str(x && x.category_name) || 'Other' }; }) };
