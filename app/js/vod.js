@@ -20,6 +20,25 @@ var Vod = (function () {
   var raw = { movie: null, series: null };   // without the helper: the whole list, so a language change needs no reload
   var info = new Map();
   var episodes = null, series = null;      // drill-down into a show
+  /* A show's seasons take the categories' place on the left while it is open (issue #110's P.S.): Up and Down
+     there pick a season, the right lists its episodes.  savedCats: the categories to put back when it closes. */
+  var savedCats = null;
+  function seasonRows(eps) {
+    var by = {}, order = [];
+    eps.forEach(function (e) { if (!(e.season in by)) { by[e.season] = 0; order.push(e.season); } by[e.season]++; });
+    return order.map(function (sn) { return { id: 'season:' + sn, season: sn, name: +sn === 0 ? 'Specials' : 'Season ' + sn, count: by[sn] }; });
+  }
+  function seasonEps(sn) { return (episodes || []).filter(function (e) { return e.season === sn; }); }
+  // The season an episode is in, on the left, and its episodes on the right with that one picked.
+  function showSeason(ep) {
+    if (!episodes) return;
+    var rows = seasonRows(episodes), sn = ep ? ep.season : rows.length ? rows[0].season : 0;
+    if (!savedCats) savedCats = { items: catsVL.items, sel: catsVL.sel };
+    catsVL.setItems(rows, Math.max(0, rows.findIndex(function (r) { return r.season === sn; })));
+    var list = seasonEps(sn);
+    itemsVL.setItems(list, Math.max(0, ep ? list.indexOf(ep) : 0));
+  }
+  function restoreCats() { if (savedCats) { catsVL.setItems(savedCats.items, savedCats.sel); savedCats = null; } }
   var homeMode = false, showFromHome = false, opens = 0;   // the home with poster shelves (vodhome.js) is on screen; a show was opened from it
   var playingMeta = null;
 
@@ -445,13 +464,14 @@ var Vod = (function () {
     setZone('items'); onItem();
     if (k === 'series') openSeries(x.it, x.ep ? function (eps) {
       var e = eps.filter(function (y) { return String(y.id) === String(x.ep); })[0];
-      if (e) { itemsVL.setItems(eps, eps.indexOf(e)); onItem(); play(e, !!x.fromStart); }
+      if (e) { showSeason(e); onItem(); play(e, !!x.fromStart); }
     } : null);
     else play(x.it, !!x.fromStart);
   }
 
   var catDeb = U.debounce(function (c) {
-    if (!c || c.head || episodes) return;
+    if (episodes) { if (c && c.season != null) { itemsVL.setItems(seasonEps(c.season), 0); onItem(); } return; }
+    if (!c || c.head) return;
     var shut = c.adult && !adultOpen();
     itemsVL.empty = c.id === LANGS ? 'Press OK to pick which languages show' : shut ? 'Press OK and enter the PIN' : 'Nothing here';
     itemsVL.setItems(shut ? [] : itemsFor(c.id), 0); onItem();
@@ -541,7 +561,7 @@ var Vod = (function () {
       });
       series = s; episodes = eps;
       $('vodTitle').textContent = s.name + '   ' + eps.length + ' episodes';
-      itemsVL.setItems(eps, openAt(eps));
+      showSeason(eps[openAt(eps)] || null);
       onItem();
       hints();
       if (then) then(eps);
@@ -551,11 +571,12 @@ var Vod = (function () {
   function playEpisode(s, epId) {
     openSeries(s, function (eps) {
       var e = eps.filter(function (y) { return idOf(y) === epId; })[0];
-      if (e) { itemsVL.setItems(eps, eps.indexOf(e)); onItem(); play(e, false); }
+      if (e) { showSeason(e); onItem(); play(e, false); }
     });
   }
   function closeSeries() {
     var s = series; episodes = null; series = null;
+    restoreCats();
     var c = catsVL.current();
     var list = itemsFor(c ? c.id : ALL);
     itemsVL.setItems(list, Math.max(0, list.findIndex(function (x) { return x === s || (x.id === s.id && (x.pl || '') === (s.pl || '')); })));
@@ -598,7 +619,7 @@ var Vod = (function () {
     if (m && m.item && m.item.ep && episodes && Store.settings.autoNext !== false) {
       mark(m.id, true);
       var i = episodes.indexOf(m.item);
-      if (i >= 0 && episodes[i + 1]) { playingMeta = null; U.toast('Next episode'); play(episodes[i + 1], true); return; }
+      if (i >= 0 && episodes[i + 1]) { playingMeta = null; U.toast('Next episode'); if (episodes[i + 1].season !== m.item.season) showSeason(episodes[i + 1]); else itemsVL.setItems(itemsVL.items, Math.max(0, itemsVL.items.indexOf(episodes[i + 1]))); play(episodes[i + 1], true); return; }
     }
     stopped();
     Views.stopAll();
@@ -655,7 +676,7 @@ var Vod = (function () {
   }
   function setZone(z) { zone = z; catsVL.setActive(z === 'cats'); itemsVL.setActive(z === 'items'); hints(); }
   function hints() {
-    if (episodes) return UI.hints([['', 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  all shows', 'back']]);
+    if (episodes) return UI.hints(zone === 'cats' ? [['', 'Up/Down  season'], ['', 'OK  episodes'], ['', 'Back  all shows', 'back']] : [['', 'OK  play'], ['', 'Left  seasons'], ['', 'Hold OK  options', 'hold'], ['', 'Back  all shows', 'back']]);
     if (zone === 'cats') {
       var c = catsVL && catsVL.current();
       return UI.hints(c && c.id === LANGS ? [['', 'OK  pick languages'], ['', homeOn() ? 'Back  home' : 'Back  menu bar', 'back'], ['green', homeOn() ? 'Home' : 'Guide'], ['blue', 'Settings']]
@@ -665,6 +686,15 @@ var Vod = (function () {
   }
 
   function keys(a) {
+    if (zone === 'cats' && episodes) {
+      if (a === 'up') catsVL.move(-1, true);
+      else if (a === 'down') catsVL.move(1, true);
+      else if (a === 'right' || a === 'ok') { catDeb.cancel(); var sc = catsVL.current(); if (sc && sc.season != null && (!itemsVL.items.length || itemsVL.items[0].season !== sc.season)) itemsVL.setItems(seasonEps(sc.season), 0); onItem(); setZone('items'); }
+      else if (a === 'back' || a === 'left') { closeSeries(); setZone('items'); if (showFromHome) toHome(); }
+      else if (a === 'green') { if (homeOn()) toHome(); else Views.switchTab('guide'); }
+      else if (a === 'blue') Views.switchTab('settings');
+      return true;
+    }
     if (zone === 'cats') {
       if (a === 'up') catsVL.move(-1, true);
       else if (a === 'down') catsVL.move(1, true);
@@ -686,7 +716,7 @@ var Vod = (function () {
     else if (a === 'down') itemsVL.move(1, true);
     else if (a === 'chup') itemsVL.page(-1);
     else if (a === 'chdown') itemsVL.page(1);
-    else if (a === 'left') { if (episodes) { closeSeries(); if (showFromHome) toHome(); } else setZone('cats'); }
+    else if (a === 'left') setZone('cats');                   // a show's seasons, or the categories
     else if (a === 'ok') {
       var it = itemsVL.current();
       if (!it) return true;
@@ -757,8 +787,9 @@ var Vod = (function () {
     kind = k;
     UI.setHandler(keys);
     if (homeOn() && keepState && homeMode && data[k] && !changed && !pending) { VodHome.show(k, homeApi, false); return; }
-    if (changed) { episodes = null; series = null; }
+    if (changed) { episodes = null; series = null; restoreCats(); }
     $('vodTitle').textContent = episodes && series ? series.name : (k === 'series' ? 'Shows' : 'Movies');
+    if (keepState && data[k] && !changed && !pending && episodes) { itemsVL.refresh(); showInfo(); setZone(zone); return; }
     if (keepState && data[k] && !changed && !pending) { var was = catsVL.current(), cl = catList(); catsVL.setItems(cl, Math.max(0, cl.findIndex(function (c) { return was && c.id === was.id; }))); itemsVL.refresh(); showInfo(); setZone(zone); return; }
     catsVL.setItems([], 0); itemsVL.setItems([], 0);
     itemsVL.empty = 'Loading…'; itemsVL.refresh();

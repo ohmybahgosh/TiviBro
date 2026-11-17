@@ -105,7 +105,7 @@ const api = http.createServer((req, res) => {
   const sid = row && row.id;
   ok('the TV keeps the token with the source', await ev((t) => MediaStore.sources().some((x) => x.type === 'dropbox' && x.refresh === t), REFRESH));
   await ev(() => { Views.switchTab('settings'); Settings.section('media'); }); await page.waitForTimeout(400);
-  ok('Settings > My media shows it as Dropbox', /Dropbox · rescan, content, details or remove/.test(await page.innerText('#setBody')), await page.innerText('#setBody'));
+  ok('Settings > My media shows it as Dropbox', /Dropbox · \/Media/.test(await page.innerText('#setBody')), await page.innerText('#setBody'));
   for (let n = 0; n < 20 && !(await ev(() => MediaStore.movies(null).length)); n++) await page.waitForTimeout(300);
   ok('its movies are in My media', await ev(() => MediaStore.movies(null).map((m) => m.title).sort().join() === 'Frozen,Moana 2'));
   r = await mmKeep('sources');

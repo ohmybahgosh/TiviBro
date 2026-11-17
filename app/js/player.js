@@ -388,7 +388,8 @@ var Player = (function () {
       if (!d || d.pid !== -608 || !ccDec) return;
       var b = video && video.buffered, end = b && b.length ? b.end(b.length - 1) * 1000 : null, n = ccDec.realigned || 0;
       ccDec.feedAt(d.data, d.pts, end);
-      if ((ccDec.realigned || 0) > n) Log.info('player', 'Captions lined up with the picture again after a jump in the stream\'s clock');
+      // Said once a minute at most: a channel whose clock jumps all the time filled the log with it (issue #112).
+      if ((ccDec.realigned || 0) > n) { var now = Date.now(); if (!ccDec.saidAt || now - ccDec.saidAt > 60000) { Log.info('player', 'Captions lined up with the picture again after a jump in the stream\'s clock' + (ccDec.saidAt ? ' (' + (ccDec.realigned - (ccDec.saidN || 0)) + ' times in the last minute)' : '')); ccDec.saidAt = now; ccDec.saidN = ccDec.realigned; } }
     });
     m.attachMediaElement(video);
     m.load();

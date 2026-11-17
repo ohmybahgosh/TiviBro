@@ -14,7 +14,8 @@
 var Subs = (function () {
   'use strict';
   var KEY = 'tivibro.subs';
-  var EXTRA = [['ea', 'Spanish (Latin America)'], ['pt-br', 'Portuguese (Brazil)'], ['zh-tw', 'Chinese (traditional)']];
+  // Croatian, Serbian and Bosnian (discussion #109): one Ex-Yu viewer reads all three, so each can be picked.
+  var EXTRA = [['ea', 'Spanish (Latin America)'], ['pt-br', 'Portuguese (Brazil)'], ['zh-tw', 'Chinese (traditional)'], ['hr', 'Croatian'], ['sr', 'Serbian'], ['bs', 'Bosnian']];
   var state = read(), added = [], delay = 0, rate = 1, delayTimer = 0, lastFind = null, version = 0;
 
   function read() { try { var o = JSON.parse(localStorage.getItem(KEY) || 'null'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }

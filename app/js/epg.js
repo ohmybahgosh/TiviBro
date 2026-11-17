@@ -651,9 +651,14 @@ var Epg = (function () {
       tries = 0;
     }
     (guard.seen = guard.seen || {})[kind] = true;
-    if (tries >= 2) {
+    /* A TV short of memory (1 GB, or TiviBro closed while playing lately) pauses after the first such close:
+       the low-memory retry didn't help one with 19,000 channels, which closed four times in an hour (issue #112). */
+    var short = typeof Player !== 'undefined' && !!Player.memSafe;
+    if (tries >= 2 || (tries >= 1 && short)) {
       paused = { kind: kind, host: prev.host || '', at: Date.now() };
-      var why = 'TiviBro closed twice while loading the guide' + (prev.host ? ' (' + prev.host + ')' : '') + ', probably out of memory.  Guide loading is paused: remove a big guide source, then use Reload guide now.';
+      var why = 'TiviBro closed ' + (tries >= 2 ? 'twice' : '') + ' while loading the ' + (kind === 'pub' ? 'public guide' : 'guide') + (prev.host ? ' (' + prev.host + ')' : '') + ', probably out of memory.  ' +
+        (kind === 'pub' ? 'The public guide is paused: pick fewer countries for it, or turn it off, then use Look again now.' : 'Guide loading is paused: remove a big guide source, then use Reload guide now.');
+      why = why.replace('closed  while', 'closed while');
       Log.warn('epg', why);
       setProgress({ active: false, phase: 'error', error: why, at: Date.now() });
       U.toast(why, 8000);
@@ -1131,7 +1136,17 @@ var Epg = (function () {
     // files are big, and only the helper reads them as they come in).
     var sport = sportsChannels(miss), sfiles = sport.length >= 3 ? PubEpg.sportsFiles() : [];
     if (!sfiles.length) sport = [];
-    var files = sfiles.concat(PubEpg.files(ccs, !!Net.active, gz), apps);
+    var cfiles = PubEpg.files(ccs, !!Net.active, gz);
+    /* A TV short of memory reads at most 6 country files, the countries with the most channels with no guide
+       first, and no sports files: 14 files at once closed a 1 GB TV again and again (issue #112). */
+    if (typeof Player !== 'undefined' && Player.memSafe && sfiles.length + cfiles.length > 6) {
+      sfiles = []; sport = [];
+      if (cfiles.length > 6) {
+        Log.info('epg', 'Public guide: ' + cfiles.length + ' files is too many for this TV\'s memory; reading 6, for the countries with the most channels');
+        cfiles = cfiles.map(function (f, i) { return { f: f, i: i }; }).sort(function (x, y) { return (ccs.indexOf(x.f.cc) - ccs.indexOf(y.f.cc)) || (x.i - y.i); }).slice(0, 6).map(function (x) { return x.f; });
+      }
+    }
+    var files = sfiles.concat(cfiles, apps);
     miss = miss.concat(sport);
     var want = Object.keys(map).map(function (k) { return map[k]; }).filter(function (v) { return PUB_ID.test(v); });
     /* The stored public guide is still good when it read every file needed now (and they read fine).  The
@@ -1169,7 +1184,9 @@ var Epg = (function () {
       var forced = pubForce;
       if (pubForce) { pubForce = false; stale = true; }
       if (!stale) { runSet('pub', null); return; }
-      if (!forced && c && c.sig === sig && holdOff()) { holdBack('public guide'); runSet('pub', null); return; }
+      /* On a TV short of memory, a public guide nobody asked for waits until nothing plays, even the first time:
+         a 1 GB TV closed TiviBro reading its first one while playing (issue #112). */
+      if (!forced && holdOff()) { holdBack('public guide'); runSet('pub', null); return; }
       var pk = {}, days = +p.epgDays || 1, ctx = Tidy.make(Library.data);
       miss.forEach(function (ch) {
         // A channel with a known country only matches in that country's guides ("Mega" in a Greek

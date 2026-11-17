@@ -199,7 +199,8 @@ function unb64u(s) { try { return buf(String(s || '').replace(/-/g, '+').replace
          get_series|get_vod_info&vod_id=|get_series_info&series_id=  [&category_id=]
      GET /stalker/vod/<id>.<ext>?stb=<login>         a movie (its portal id) or an episode ("e<n>x<season cmd>")
      GET /stalker/archive/<channel id>.ts?stb=<login>&start=<unix s>&end=<unix s>   a programme of the archive */
-var vodMem = {}, VOD_FOR = 3 * 3600e3, PAGES_MAX = 700;
+// PAGES_MAX: a portal sends 10 to 20 titles a page; 700 pages left out most of a big portal's movies (issue #111).
+var vodMem = {}, VOD_FOR = 3 * 3600e3, PAGES_MAX = 4000;
 function vodOf(L) { var k = keyOf(L); return vodMem[k] || (vodMem[k] = { cats: null, catsAt: 0, lists: {}, cmd: {} }); }
 function when(s) { var t = Date.parse(String(s || '').replace(' ', 'T')); return isNaN(t) ? (+s || 0) : Math.floor(t / 1000); }
 function extOf(cmd) { var m = /\.(mp4|mkv|avi|m4v|mov|ts|m3u8|mpg)(?:[?\s]|$)/i.exec(String(cmd || '')); return m && !/mpg/i.test(m[1]) ? m[1].toLowerCase() : 'mp4'; }
@@ -225,13 +226,17 @@ function vodPages(L, cat, cb) {
   page(1, function (e, js) {
     if (e) return cb(e);
     var first = js && Array.isArray(js.data) ? js.data : [], total = +(js && js.total_items) || first.length, per = +(js && js.max_page_items) || first.length || 1;
-    var pages = Math.min(PAGES_MAX, Math.ceil(total / per)), got = {}, next = 2, running = 0, stop = false, finished = false;
+    var pages = Math.min(PAGES_MAX, Math.ceil(total / per)), got = {}, next = 2, running = 0, stop = false, finished = false, fails = 0;
     if (pages <= 1 || !first.length) return cb(null, first);
     (function pump() {
       while (running < 4 && next <= pages && !stop) {
         (function (n) {
           running++;
-          page(n, function (e2, j2) { running--; if (e2) stop = true; else got[n] = j2 && Array.isArray(j2.data) ? j2.data : []; pump(); });
+          // A page that fails is asked once more; only three failing in a row stop the rest (issue #111: one busy moment lost every title after it).
+          page(n, function (e2, j2) {
+            if (e2) return setTimeout(function () { page(n, function (e3, j3) { running--; if (e3) { if (++fails >= 3) stop = true; } else { fails = 0; got[n] = j3 && Array.isArray(j3.data) ? j3.data : []; } pump(); }); }, module.exports._retryMs || 1000);
+            running--; fails = 0; got[n] = j2 && Array.isArray(j2.data) ? j2.data : []; pump();
+          });
         })(next++);
       }
       if (running || finished || (next <= pages && !stop)) return;
