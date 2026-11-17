@@ -23,7 +23,7 @@ const c = { Promise, setTimeout, clearTimeout, console, document: { body: el('bo
   MediaStore: { load: () => Promise.resolve(), sources: () => [{ id: 's', name: 'Server' }], source: () => ({ id: 's', name: 'Server' }), resume: () => null,
     isFavorite: id => !!favorites[id], preferences: n => { if (n) Object.assign(prefs, n); return Object.assign({}, prefs); },
     sections: () => [{ id: 'continue', title: 'Continue watching', movies: [] }, { id: 'favorites', title: 'Favorites', movies: lib.filter(m => favorites[m.id]) }, { id: 'all', title: 'Movies', movies: lib.slice() }] },
-  fetch: (url, opts) => { const q = JSON.parse(opts.body); if (/library\/query$/.test(url) && q.kind === 'show' && q.favourite !== true) showQueries.push(q); return Promise.resolve({ json: () => Promise.resolve(/library\/continue$/.test(url) ? { items: continuing.slice() } : { items: [] }) }); }
+  fetch: (url, opts) => { const q = JSON.parse(opts.body); if (/library\/query$/.test(url) && q.kind === 'show' && q.favourite !== true && q.sort !== 'new' && q.sort !== 'aired') showQueries.push(q); return Promise.resolve({ json: () => Promise.resolve(/library\/continue$/.test(url) ? { items: continuing.slice() } : { items: [] }) }); }
 };
 vm.createContext(c); vm.runInContext(fs.readFileSync('app/js/media.js', 'utf8'), c);
 const settle = () => new Promise(r => setTimeout(r, 20));
