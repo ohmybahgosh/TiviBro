@@ -59,7 +59,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => { Views.switchTab('guide'); Guide.open(Library.MOVIES, Library.channels(Library.MOVIES)[0].k); }); await page.waitForTimeout(1200);
   const d = await ev(() => { const el = document.getElementById('guideDetail'); return { poster: !!el.querySelector('img.gd-poster'), movie: (el.querySelector('.gd-movie') || {}).textContent || '', has: el.classList.contains('has-poster') }; });
   ok('the details show the poster', d.poster && d.has, JSON.stringify(d));
-  ok('and a Movie line: year, runtime, genres, rating', /^Movie\s+·\s+2011\s+·\s+105 min\s+·\s+Comedy, Drama\s+·\s+★ 7\.4 TMDB$/.test(d.movie), d.movie);
+  ok('and a Movie line: year, runtime, genres, rating', /^Movie\s+·\s+2011\s+·\s+1 h 45 min\s+·\s+Comedy, Drama\s+·\s+★ 7\.4 TMDB$/.test(d.movie), d.movie);
   ok('the grid marks it Movie', await ev(() => !!document.querySelector('#guideBody .gp.mv')));
   await shot('tv-movies-on-now');
 

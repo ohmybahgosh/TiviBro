@@ -143,10 +143,15 @@ var Vod = (function () {
     if (Source.m3uVod(p)) return Promise.reject(new Error('Movies and shows from an M3U list need the network helper.'));
     return own(k, p);
   }
+  /* The playlist was loaded again from the provider (when TiviBro starts, on its schedule, or Reload channels
+     now): its movies and shows are fetched again too, once each.  Before, a playlist set to reload at every
+     start (or only when asked) kept the first movie list it ever got (issue #110). */
+  var freshAt = 0, freshDone = {};
+  function wantFresh(k, p) { var key = k + ':' + p.id; if (!freshAt || freshDone[key] >= freshAt) return false; freshDone[key] = freshAt; return true; }
   function fromHelper(k, p) {
-    var h = +p.plRefresh, t0 = Date.now();
+    var h = +p.plRefresh, t0 = Date.now(), again = wantFresh(k, p);
     var body = Source.m3uVod(p) ? { pl: p.id, sig: Source.sig(p), kind: k, m3u: 1, picked: prefs(p).langs, navLang: navigator.language, hidden: hiddenCats(k, p) } : {
-      pl: p.id, sig: Source.sig(p), kind: k, maxAge: h > 0 ? h * 3600e3 : 0,
+      pl: p.id, sig: Source.sig(p), kind: k, maxAge: h > 0 ? h * 3600e3 : 0, refresh: again,
       u: Net.wrap(Source.api(p, k === 'series' ? 'get_series' : 'get_vod_streams'), { pl: p }),
       uc: Net.wrap(Source.api(p, k === 'series' ? 'get_series_categories' : 'get_vod_categories'), { pl: p }),
       picked: prefs(p).langs, navLang: navigator.language, hidden: hiddenCats(k, p)
@@ -167,7 +172,7 @@ var Vod = (function () {
     var ck = cacheKey(k, p);
     function keepRaw(c) { (raw[k] || (raw[k] = {}))[p.id] = c; return view(k, c, p); }
     return Store.idbGet(ck).then(function (c) {
-      var h = +p.plRefresh, fresh = c && c.v === 3 && (h <= 0 || Date.now() - c.at < h * 3600e3);
+      var h = +p.plRefresh, fresh = c && c.v === 3 && !wantFresh(k, p) && (h <= 0 || Date.now() - c.at < h * 3600e3);
       if (c && fresh) return keepRaw(c);
       return Promise.all([Source.vodCats(k, p), fetchItems(k, p)]).then(function (r) {
         var cats = (r[0] || []).map(function (x) { return { id: String(x.category_id), name: x.category_name || 'Other' }; });
@@ -868,5 +873,5 @@ var Vod = (function () {
   };
 
   function arrange(k) { U.toast('Loading ' + (k === 'series' ? 'shows' : 'movies') + '…'); load(k).then(function () { kind = k; VodHome.arrange(k, homeApi); }, function (e) { U.toast('Could not load the list: ' + (e && e.message || e), 5000); }); }
-  return { arrange: arrange, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, offered: offered, reset: function () { gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
+  return { arrange: arrange, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; } };
 })();

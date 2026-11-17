@@ -590,7 +590,7 @@ var App = (function () {
       Source.setTz(data.tz); Events.setProviderTz(data.tz);
       Library.set(data);
       Logos.load(data);
-      if (data.vod) { Vod.reset(); if (noteVod(p, data)) Views.buildTabs(); }
+      if (data.vod) { Vod.reset(true); if (noteVod(p, data)) Views.buildTabs(); }   // the movie and show lists too (issue #110)
       Views.refreshLists(true);
       Settings.live();
       if (manual) U.toast(Library.count() + ' channels loaded');

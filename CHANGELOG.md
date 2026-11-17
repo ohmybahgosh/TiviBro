@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Movies and shows load again with the playlist (issue #110).**  A playlist set to reload when TiviBro starts (or only when asked) kept the first movie and show lists it ever got from the helper, so new movies never came in.  Now whenever the playlist loads again from your provider, its movies and shows are fetched again too.
+
 ## 0.6.0 (alpha 150, 2026-11-17)
 
 Pre-release: expect rough edges, and keep a backup before installing.
