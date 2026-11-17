@@ -218,7 +218,27 @@ function create(opts) {
     if (id) return id;
     if (!l || l.length < 3) return '';
     var lo = ms.filter(function (m) { return loose(m.title) === l || loose(m.original) === l; });
-    return one(near(lo, 0)) || one(near(lo, 1));
+    id = one(near(lo, 0)) || one(near(lo, 1));
+    if (id || same.length || lo.length) return id;
+    // Part of the name: a release's name with more ("A Marvel Television Special Presentation - The Punisher
+    // One Last Kill", "My Mom Jayne A Film by Mariska Hargitay") or less ("Borat Subsequent Moviefilm") than
+    // TMDB's, or TMDB's with a word more in it ("Titan The OceanGate Disaster").  Only when exactly one film
+    // of that year (give or take one) fits, and the shorter name has two words or more.
+    var part = ms.filter(function (m) { return partOf(t, m.title) || (m.original && partOf(t, m.original)); });
+    var p0 = near(part, 0), p1 = near(part, 1);
+    return p0.length === 1 ? p0[0].id : !p0.length && p1.length === 1 ? p1[0].id : '';
+  }
+  function nameWords(v) { return str(v, 200).replace(/&/g, ' and ').split(/[\s\-:,.|\/]+/).map(normal).filter(Boolean); }
+  function partOf(a, b) {
+    var x = nameWords(a), y = nameWords(b);
+    if (x.length < 2 || y.length < 2 || x.join(' ') === y.join(' ')) return false;
+    var s = x.length < y.length ? x : y, g = s === x ? y : x;
+    if (s.length < 2) return false;
+    var at = function (k) { return s.every(function (w, i) { return g[k + i] === w; }); };
+    if (at(0) || at(g.length - s.length)) return true;
+    // The shorter's words in order inside the longer, one word apart at most (three words or more).
+    if (s.length < 3 || g.length - s.length > 1) return false;
+    var j = 0; g.forEach(function (w) { if (j < s.length && w === s[j]) j++; }); return j === s.length;
   }
   function tvLookup(q, cb) {
     if (!credential) return cb(new Error('Add your TMDB token first.'));

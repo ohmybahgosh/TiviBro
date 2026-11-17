@@ -10,6 +10,12 @@ const DB = {
   superman: [{ id: 1061474, title: 'Superman', release_date: '2025-07-09', vote_count: 3000 }, { id: 9999, title: 'Superman', release_date: '2025-01-01', vote_count: 2 }, { id: 1924, title: 'Superman', release_date: '1978-12-14', vote_count: 4000 }],
   'the evil dead': [{ id: 764, title: 'The Evil Dead', release_date: '1983-04-15', vote_count: 4800, also: '1981' }],
   hag: [{ id: 2, title: 'Hag', release_date: '2025-05-01', vote_count: 8 }, { id: 3, title: 'HAG', release_date: '2025-01-01', vote_count: 0 }],
+  'a marvel television special presentation - the punisher one last kill': [{ id: 1439930, title: 'The Punisher: One Last Kill', release_date: '2026-05-12', vote_count: 2416 }],
+  'borat subsequent moviefilm': [{ id: 740985, title: 'Borat Subsequent Moviefilm: Delivery of Prodigious Bribe to American Regime for Make Benefit Once Glorious Nation of Kazakhstan', release_date: '2020-10-23', vote_count: 3000 }],
+  'paul mccartney man on the run': [{ id: 1260643, title: 'Man on the Run', release_date: '2026-02-19', vote_count: 39 }],
+  'titan the oceangate disaster': [{ id: 1426306, title: 'Titan: The OceanGate Submersible Disaster', release_date: '2025-06-11', vote_count: 206 }],
+  'unsinkable titanic untold': [{ id: 1159452, title: 'Unsinkable', release_date: '2024-03-01', vote_count: 16 }],
+  'blood brothers dragons embers': [{ id: 1278164, title: 'Blood Brothers: Bara Naga', release_date: '2025-03-01', vote_count: 24 }],
   twins: [{ id: 1, title: 'Twins', release_date: '1988-12-09', vote_count: 30 }, { id: 2, title: 'Twins', release_date: '1988-01-01', vote_count: 25 }]
 };
 const calls = [];
@@ -35,6 +41,16 @@ const client = M.create({ credential: 'demo', read: (url, h, cb) => {
   assert.equal(r.metadata && r.metadata.id, 'tmdb:2', 'the only one anyone has voted on');
   r = await lookup(client, { title: 'Twins', year: '1988', auto: true });
   assert(!r.metadata && r.matches.length === 2, 'two about as well known: chosen by hand');
+  // Part of the name: a release named with more, or less, than TMDB's title (one film of that year fits).
+  for (const [t, y, id] of [['A Marvel Television Special Presentation - The Punisher One Last Kill', '2026', 1439930], ['Borat Subsequent Moviefilm', '2020', 740985],
+    ['Paul McCartney Man on the Run', '2025', 1260643], ['Titan The OceanGate Disaster', '2025', 1426306]]) {
+    r = await lookup(client, { title: t, year: y, auto: true });
+    assert.equal(r.metadata && r.metadata.id, 'tmdb:' + id, t);
+  }
+  r = await lookup(client, { title: 'Unsinkable Titanic Untold', year: '2024', auto: true });
+  assert(!r.metadata, 'one word in common is not enough');
+  r = await lookup(client, { title: 'Blood Brothers Dragons Embers', year: '2025', auto: true });
+  assert(!r.metadata, 'the same first words, then a different film');
   // The app: IDs in a Radarr name are used as they are; else the file's title is a second name.
   const src = fs.readFileSync('app/js/media.js', 'utf8'), fn = /function namedIn\(m\) \{[\s\S]*?\n  \}\n/.exec(src)[0];
   const namedIn = vm.runInNewContext('(' + fn.replace('function namedIn', 'function') + ')');

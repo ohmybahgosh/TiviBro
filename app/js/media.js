@@ -902,7 +902,7 @@ var Media = (function () {
   function fetchDetails(list, language, quiet) {
     if (fetchingDetails) return Promise.resolve({ busy: true });
     fetchingDetails = true;
-    var at = 0, found = 0, missed = 0;
+    var at = 0, found = 0, missed = 0, failed = 0, inRow = 0, tries = 0;
     return new Promise(function (resolve) {
       function done(message, error) {
         fetchingDetails = false; setBusy('movies', 0); if (MediaStore.flush) MediaStore.flush(); refresh();
@@ -910,11 +910,11 @@ var Media = (function () {
         if (!quiet) U.toast(message, 7000);
         else if (error) note('warn', 'Automatic movie details stopped: ' + error);
         else if (found) U.toast('Movie details and posters added for ' + found + (found === 1 ? ' movie.' : ' movies.'), 5000);
-        resolve({ updated: found, missed: missed, error: error || '' });
+        resolve({ updated: found, missed: missed, failed: failed, error: error || '' });
         if (pendingLanguageRefresh) { pendingLanguageRefresh = false; refreshMetadata().catch(function (e) { U.toast(why(e), 6000); }); }
       }
       function next() {
-        if (at >= list.length) return done(found + ' movies updated.  ' + missed + ' need a manual match in movie options.');
+        if (at >= list.length) return done(found + ' movies updated.  ' + missed + ' need a manual match in movie options.' + (failed ? '  ' + failed + ' couldn\'t be looked up this time; they are tried again later.' : ''));
         var m = list[at++];
         if (!MediaStore.source(m.src)) return next();
         if (!quiet) U.toast('Movie details: ' + at + ' of ' + list.length);
@@ -928,7 +928,16 @@ var Media = (function () {
             found++; return MediaStore.setMetadata(m.id, r.metadata, true);
           } missed++;
           return MediaStore.markMissed(m.id, true);
-        }).then(function () { setTimeout(next, 350); }, function (e) { done('Stopped fetching details: ' + why(e) + '  Saved matches are kept.', why(e)); });
+        }).then(function () { inRow = 0; tries = 0; setTimeout(next, 350); }, function (e) {
+          /* One failed lookup (TMDB slow or busy, the network dropping for a moment) no longer ends the run, which
+             left the rest of a big library never looked up: the movie is asked again once, then skipped (tried
+             again later, not marked as a miss).  A wrong token, or five in a row failing, still stops it. */
+          var w = why(e);
+          if (/token|401|unauthori[sz]ed|invalid api key/i.test(w) || inRow >= 4) return done('Stopped fetching details: ' + w + '  Saved matches are kept.', w);
+          if (!tries) { tries = 1; at--; return setTimeout(next, 3000); }
+          tries = 0; inRow++; failed++; note('warn', 'Movie details: skipped ' + (m.title || m.file || '?') + ' for now: ' + w);
+          setTimeout(next, 2000);
+        });
       }
       next();
     });
@@ -1038,7 +1047,8 @@ var Media = (function () {
     if ((s.contentMode === 'shows' || s.contentMode === 'automatic') && !seriesLoaded && !seriesLoading) refreshSeries();
     var mv = MediaStore.movies(id), unmatched = mv.filter(function (m) { return !(m.metadata && m.metadata.id); });
     var shows = seriesCards.concat(favouriteShows).filter(function (x) { return (x.sourceIds || []).indexOf(id) >= 0 || x.sourceId === id; });
-    return { movies: mv.length, unmatched: unmatched, shows: shows.length, unmatchedShows: shows.filter(function (x) { return !(x.metadata && x.metadata.id); }).length, episodes: (MediaStore.publicSources().filter(function (x) { return x.id === id; })[0] || {}).episodeFiles || 0,
+    // waiting: never looked up on TMDB yet (no token then, or a run that stopped), not movies TMDB didn't know.
+    return { movies: mv.length, unmatched: unmatched, waiting: unmatched.filter(function (m) { return !m.tmdbMiss; }).length, shows: shows.length, unmatchedShows: shows.filter(function (x) { return !(x.metadata && x.metadata.id); }).length, episodes: (MediaStore.publicSources().filter(function (x) { return x.id === id; })[0] || {}).episodeFiles || 0,
       showsLoading: !seriesLoaded, scanning: !!scanning[id], kind: s.contentMode || 'movies', homeOff: !!s.homeOff, fourK: mv.filter(function (m) { return (m.vf && m.vf.h >= 1600) || /2160|\b4k\b|uhd/i.test(fileInfo(m) + ' ' + (m.file || '')); }).length };
   }
   function sourceMenu(s) {
@@ -1377,7 +1387,7 @@ var Media = (function () {
     rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
     // The web editor's Fix match: search TMDB by a typed title, then save the one picked.
     searchDetails: function (title) { if (!MediaStore.tmdbToken()) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },
-    applyDetails: function (movieId, tmdbId) { return metadataRequest({ id: tmdbId }).then(function (r) { if (!r.metadata) throw new Error('TMDB has no details for that.'); return MediaStore.setMetadata(movieId, r.metadata); }).then(function () { refresh(); }); }, findDetails: findDetails, libraryDetails: function (id) { var s = MediaStore.source(id); if (s) sourceDetails(s); }, detailsLabel: detailsLabel, arrangeShelves: function (sec) { arrangeMenu(null, sec || 'home'); }, bothKinds: function () { var h = has(); return !!(h.movies && h.shows); }, busyText: busyText, setBusy: setBusy,
+    applyDetails: function (movieId, tmdbId) { return metadataRequest({ id: tmdbId }).then(function (r) { if (!r.metadata) throw new Error('TMDB has no details for that.'); return MediaStore.setMetadata(movieId, r.metadata); }).then(function () { refresh(); }); }, findDetails: findDetails, libraryDetails: function (id) { var s = MediaStore.source(id); if (s) sourceDetails(s); }, lookUpWaiting: function (id) { if (needToken()) return; if (fetchingDetails) return U.toast('Movie details are already being fetched.'); MediaStore.load().then(function () { var list = MediaStore.movies(id).filter(function (m) { return !(m.metadata && m.metadata.id) && !m.tmdbMiss; }); if (!list.length) return U.toast('Every movie here has been looked up.', 4000); return fetchDetails(list, MediaStore.preferences().language); }).catch(function (e) { U.toast(why(e), 6000); }); }, detailsLabel: detailsLabel, arrangeShelves: function (sec) { arrangeMenu(null, sec || 'home'); }, bothKinds: function () { var h = has(); return !!(h.movies && h.shows); }, busyText: busyText, setBusy: setBusy,
     // The web editor's shelf list: with movies and shows, each shelf says which tab it's on (Continue watching: Home).
     shelfList: function () { var ar = arrangement(), h = has(), both = h.movies && h.shows; return ar.order.filter(function (k) { return fits(k, h); }).map(function (k) { return { key: k, name: NAMES[k], off: ar.off(k), section: !both ? '' : traktOf(k) ? traktOf(k).tab : k === 'continue' || inSection(k, 'home') ? 'home' : TV_ONLY[k] ? 'shows' : 'movies' }; }); }, holidaysNow: holidaysNow, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: play, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
