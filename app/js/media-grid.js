@@ -14,7 +14,7 @@ var MediaGrid = (function () {
   function md(m) { return (m && m.metadata) || {}; }
   function nameOf(m) { return String(md(m).title || m.title || ''); }
   function yearOf(m) { return String(m.year || md(m).year || (md(m).releaseDate || '').slice(0, 4) || ''); }
-  function key(m) { return nameOf(m).toLowerCase().replace(/^\s*(the|a|an)\s+(?=\S)/, '').replace(/\d+/g, function (n) { n = n.replace(/^0+(?=\d)/, ''); return '000000000'.slice(n.length) + n; }); }
+  function key(m) { return nameOf(m).toLowerCase().replace(/^[^a-z0-9]+(?=[a-z0-9])/, '').replace(/^(the|a|an)\s+(?=\S)/, '').replace(/^[^a-z0-9]+(?=[a-z0-9])/, '').replace(/\d+/g, function (n) { n = n.replace(/^0+(?=\d)/, ''); return '000000000'.slice(n.length) + n; }); }
   function letterOf(m) { var c = key(m).charAt(0).toUpperCase(); return c >= 'A' && c <= 'Z' ? c : '#'; }
   function watched(m) { return m.kind === 'show' ? false : !!(MediaStore.isWatched && MediaStore.isWatched(m.id)); }
   function added(m) { return m.newAt || m.createdAt || m.mt || m.addedAt || 0; }
@@ -99,7 +99,7 @@ var MediaGrid = (function () {
         var i = r * COLS + c; if (i >= n) break;
         (function (m, i) {
           var t = U.el('div', 'mgr-tile' + (g.zone === 'grid' && i === g.sel ? ' sel' : ''));
-          t.style.top = ((r - g.top) * ROW_H) + 'px'; t.style.left = (c * COL_W) + 'px';
+          t.style.top = ((r - g.top) * ROW_H + 12) + 'px';   // room for the focused one's grown border t.style.left = (c * COL_W) + 'px';
           var art = U.el('div', 'mgr-art'), pic = md(m).poster || m.poster;
           if (pic) art.appendChild(img(pic)); else art.appendChild(U.el('span', 'mshp-noart', RAW(nameOf(m))));
           if (watched(m)) art.appendChild(U.el('span', 'shp-done', '✓'));

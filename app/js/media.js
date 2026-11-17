@@ -1296,6 +1296,8 @@ var Media = (function () {
   /* ---------- remote and pointer navigation ---------- */
   function hints() {
     if (document.body.classList.contains('nav-open')) return;
+    // A title's page or the library grid on top has its own hints (a refresh behind it must not change them).
+    if ((typeof MediaMoviePage !== 'undefined' && MediaMoviePage.isOpen()) || (typeof MediaShowPage !== 'undefined' && MediaShowPage.isOpen()) || (typeof MediaGrid !== 'undefined' && MediaGrid.isOpen())) return;
     var m = itemsVL.current();
     if (tabsFocus) return UI.hints(searchTab || query ? [['', 'OK  search'], ['', '◀ ▶  Home, Movies, TV shows'], ['', 'Back  menu', 'back']] : [['', '◀ ▶  Home, Movies, TV shows, Search'], ['', '▼  shelves'], ['', 'Back  menu', 'back']]);
     if (m && m.kind === 'section') return UI.hints([['', 'OK  open ' + m.title], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', ({ shows: 'Rescan TV shows', movies: 'Rescan movies' })[detailsKindNow()] || 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);

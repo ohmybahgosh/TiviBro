@@ -75,7 +75,7 @@ var MediaStore = (function () {
   function sortKey(m) {
     var t = String(m.metadata && m.metadata.title || m.title || ''), k = keys[t];
     if (k === undefined) {
-      k = t.toLowerCase().replace(/^\s*(the|a|an)\s+(?=\S)/, '').replace(/\d+/g, function (n) { n = n.replace(/^0+(?=\d)/, ''); return '000000000'.slice(n.length) + n; });
+      k = t.toLowerCase().replace(/^[^a-z0-9]+(?=[a-z0-9])/, '').replace(/^(the|a|an)\s+(?=\S)/, '').replace(/^[^a-z0-9]+(?=[a-z0-9])/, '').replace(/\d+/g, function (n) { n = n.replace(/^0+(?=\d)/, ''); return '000000000'.slice(n.length) + n; });
       if (++keyCount > 20000) { keys = {}; keyCount = 1; }
       keys[t] = k;
     }

@@ -99,10 +99,10 @@ function countShard(shard) {
    shelves need no reading of every show: newAt, the newest file's date (the server's own date where it gives
    one, else when TiviBro first saw it) and newEp, its episode; airedOn, the latest TMDB air date of an episode
    you have, and airedEp.  sumV: summed up this way (older shows are summed up once, in the background). */
-var SUM_V = 1;
+var SUM_V = 2;   // 2: an air date still to come is not "aired"
 function epLabel(ep) { return ep.order === 'date' ? String(ep.airDate || '') : ep.order === 'absolute' ? 'Episode ' + ep.absoluteNumber : 'S' + ep.season + 'E' + ep.number; }
 function summarize(shard) {
-  var byId = {}, out = { newAt: 0, newEp: '', airedOn: '', airedEp: '' };
+  var byId = {}, out = { newAt: 0, newEp: '', airedOn: '', airedEp: '' }, today = new Date().toISOString().slice(0, 10);
   shard.episodes.forEach(function (ep) { if (!ep.orphaned) byId[ep.id] = ep; });
   shard.files.forEach(function (f) {
     if (f.kind !== 'episode' || f.availability === 'missing') return;
@@ -111,7 +111,7 @@ function summarize(shard) {
   });
   Object.keys(byId).forEach(function (id) {
     var ep = byId[id], d = ep.metadata && /^\d{4}-\d\d-\d\d$/.test(ep.metadata.airDate || '') ? ep.metadata.airDate : '';
-    if (d && (ep.fileIds || []).length && d > out.airedOn) { out.airedOn = d; out.airedEp = epLabel(ep); }
+    if (d && d <= today && (ep.fileIds || []).length && d > out.airedOn) { out.airedOn = d; out.airedEp = epLabel(ep); }
   });
   return out;
 }
@@ -490,7 +490,7 @@ Catalog.prototype.query = function (q, cb) {
 // A show's name for sorting, as My media sorts movies: without "The", "A" or "An", numbers by value ("9-1-1" and "24").
 function titleKey(s) {
   var t = String((s.metadata && s.metadata.title) || s.title || '');
-  return t.toLowerCase().replace(/^\s*(the|a|an)\s+(?=\S)/, '').replace(/\d+/g, function (n) { n = n.replace(/^0+(?=\d)/, ''); return '000000000'.slice(n.length) + n; });
+  return t.toLowerCase().replace(/^[^a-z0-9]+(?=[a-z0-9])/, '').replace(/^(the|a|an)\s+(?=\S)/, '').replace(/^[^a-z0-9]+(?=[a-z0-9])/, '').replace(/\d+/g, function (n) { n = n.replace(/^0+(?=\d)/, ''); return '000000000'.slice(n.length) + n; });
 }
 function queryShows(self, ctx, q, offset, limit) {
   var disabled = disabledSources(ctx.index, 'show'), revision = self.revision, afterFound = !q.after, rows = [], total = 0;
@@ -512,7 +512,7 @@ function queryShows(self, ctx, q, offset, limit) {
     : q.sort === 'aired' ? function (a, b) { var x = a.airedOn || '', y = b.airedOn || ''; return x < y ? 1 : x > y ? -1 : byName(a, b); } : byName);
   if ((q.sort === 'new' || q.sort === 'aired') && list.some(function (s) { return s.sumV !== SUM_V; })) self.summarizeOld();
   if (q.sort === 'new') list = list.filter(function (s) { return s.newAt > 0; });
-  if (q.sort === 'aired') { var since = new Date(Date.now() - (+q.days > 0 ? +q.days : 30) * 864e5).toISOString().slice(0, 10); list = list.filter(function (s) { return s.airedOn && s.airedOn >= since; }); }
+  if (q.sort === 'aired') { var since = new Date(Date.now() - (+q.days > 0 ? +q.days : 30) * 864e5).toISOString().slice(0, 10); var until = new Date().toISOString().slice(0, 10); list = list.filter(function (s) { return s.airedOn && s.airedOn >= since && s.airedOn <= until; }); }
   if (q.reverse === true) list.reverse();
   list.forEach(function (s) {
     if (!afterFound) { if (s.id === q.after) afterFound = true; return; }
@@ -531,7 +531,12 @@ function showEpisodes(self, shard, q, disabled, revision) {
     if (!matches(r, q)) continue;
     if (list.length >= EPISODE_CAP) return failure('Narrow this list to a season.', 'TOO_MANY');
     var slim = project(r);
-    if (slim.metadata) { var brief = {}; ['id','title','poster','still','year','runtime'].forEach(function (k) { if (slim.metadata[k] !== undefined) brief[k] = slim.metadata[k]; }); slim.metadata = brief; }
+    if (slim.metadata) {
+      // A list keeps episodes small; q.full (a show's page, the season's episodes) adds the air date and the summary.
+      var brief = {}; ['id','title','poster','still','year','runtime','airDate'].forEach(function (k) { if (slim.metadata[k] !== undefined) brief[k] = slim.metadata[k]; });
+      if (q.full && typeof slim.metadata.plot === 'string') brief.plot = slim.metadata.plot.slice(0, 700);
+      slim.metadata = brief;
+    }
     slim.revision = revision;
     slim._covered = !!(q.excludeFile && r.fileIds && r.fileIds.some(function (id) { return fileHandle(id) === q.excludeFile; }));
     list.push(slim);

@@ -14,11 +14,12 @@ var MediaShowPage = (function () {
     if (!b) { b = U.el('div', 'shp-page mshp'); b.id = 'mediaShow'; $('viewMedia').appendChild(b); }
     return b;
   }
+  // "Season 13" as Plex says it; TMDB's own name for it ("Murder House", "13") goes under it.
   function seasonName(show, b) {
-    if (b.title) return b.title;
     var aired = show.order === 'aired' && (!show.displayOrder || show.displayOrder === 'aired');
-    return aired ? (b.key === '0' ? 'Specials' : 'Season ' + b.key) : b.key;
+    return aired && /^\d+$/.test(b.key) ? (b.key === '0' ? 'Specials' : 'Season ' + b.key) : b.title || b.key;
   }
+  function seasonOwn(show, b) { var n = seasonName(show, b); return b.title && b.title !== n && !/^(season|specials)\b/i.test(b.title) ? b.title : ''; }
   function open(card, back) {
     pg = { card: card, show: null, seasons: [], at: 0, eps: [], sel: 0, level: 'seasons', loading: true, back: back };
     $('viewMedia').classList.add('mshp-on');
@@ -39,7 +40,7 @@ var MediaShowPage = (function () {
     if (!pg || !pg.seasons[i]) return;
     pg.at = i; pg.level = 'eps'; pg.eps = []; pg.sel = 0; pg.loading = true; draw();
     var want = pg;
-    MediaSeries.episodes({ kind: 'episode', show: pg.show.handle, bucket: pg.seasons[i].key, limit: 200 }, function (r) {
+    MediaSeries.episodes({ kind: 'episode', show: pg.show.handle, bucket: pg.seasons[i].key, limit: 200, full: true }, function (r) {
       if (pg !== want || pg.level !== 'eps') return;
       pg.eps = r.items || []; pg.loading = false;
       // On the first episode not watched yet.
@@ -71,7 +72,7 @@ var MediaShowPage = (function () {
     info.appendChild(U.el('div', 'media-kicker', cur ? RAW(m.title || s.title || '') : 'TV show'));
     info.appendChild(U.el('div', 'media-title', cur ? RAW(seasonName(s, cur)) : RAW(m.title || s.title || '')));
     var n = pg.seasons.filter(function (x) { return x.key !== '0'; }).length;
-    var facts = cur ? [cur.count + (cur.count === 1 ? ' episode' : ' episodes')]
+    var facts = cur ? [seasonOwn(s, cur), cur.count + (cur.count === 1 ? ' episode' : ' episodes')]
       : [m.year, n ? n + (n === 1 ? ' season' : ' seasons') : '', m.genre, m.rating ? '★ ' + m.rating : ''];
     facts = facts.filter(Boolean).join('   ·   ');
     if (facts) info.appendChild(U.el('div', 'media-facts', facts));
@@ -98,7 +99,7 @@ var MediaShowPage = (function () {
       else art.appendChild(U.el('span', 'mshp-noart', seasonName(s, x)));
       c.appendChild(art);
       c.appendChild(U.el('div', 'shp-name', RAW(seasonName(s, x))));
-      c.appendChild(U.el('div', 'shp-sub', x.count + (x.count === 1 ? ' episode' : ' episodes')));
+      c.appendChild(U.el('div', 'shp-sub', RAW((seasonOwn(s, x) ? seasonOwn(s, x) + '  ·  ' : '') + x.count + (x.count === 1 ? ' episode' : ' episodes'))));
       c.onclick = function () { pg.at = i; season(i); };
       track.appendChild(c);
     })(pg.seasons[i], i);
