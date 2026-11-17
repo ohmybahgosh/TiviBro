@@ -68,7 +68,10 @@ function classify(observation, options, overrides) {
     }
   }
   if (r.kind === 'movie' && c.season != null) { r.kind = 'unclassified'; r.showTitle = c.showTitle || null; r.season = c.season; r.review.push('missingEpisode'); }
-  if (/(?:^|[ ._-])(sample|trailer|teaser|featurette)(?:$|[ ._-])/i.test(stem)) { r.kind = 'extra'; note('filename', { kind: 'extra' }); }
+  // An extra says so at the end of its name ("Frozen (2013)-trailer", "x264-SAMPLE", "Trailer 2"), or a scene sample
+  // starts with it ("sample-frozen.2013"); a word in a title doesn't make one ("Trailer Park Boys - S01E01"), nor an
+  // episode's own title ("S02E05 - The Trailer").
+  if ((r.kind === 'episode' ? /[._-](sample|trailer|teaser|featurette)$/i : /(?:^|[ ._-])(sample|trailer|teaser|featurette)s?(?:[ ._-]*\d{1,2})?(?:[ ._-]+(?:\d{3,4}p|hd|sd|4k|uhd))*$/i).test(stem) || /^sample[._-]/i.test(stem)) { r.kind = 'extra'; note('filename', { kind: 'extra' }); }
   // Structured server fields are evidence, not arbitrary tags or an assumed season.
   if (o.server && o.server.validated === true) {
     var server = o.server;

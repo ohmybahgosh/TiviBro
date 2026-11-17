@@ -49,6 +49,12 @@ var U = (function () {
     h24Memo = { k: k, v: v };
     return v;
   }
+  // A running time in hours and minutes: "92 min" or 92 is "1 h 32 min"; under an hour stays "45 min".
+  function runtime(v) {
+    var n = typeof v === 'number' ? v : parseInt(String(v || ''), 10);
+    if (!(n > 0)) return typeof v === 'string' ? v : '';
+    return n >= 60 ? Math.floor(n / 60) + ' h' + (n % 60 ? ' ' + n % 60 + ' min' : '') : n + ' min';
+  }
   function hhmm(ts) {
     var d = new Date(ts);
     var h = d.getHours(), m = d.getMinutes();
@@ -268,6 +274,6 @@ var U = (function () {
   }
   return {
     lines: lines, notice: notice, hsl: hsl, luminance: luminance, onColor: onColor, mix: mix,
-    secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, day: day, LANGS: LANGS, lang: lang, hash: hash,
+    runtime: runtime, secretShape: secretShape, KEY: KEY, $: $, el: el, clamp: clamp, debounce: debounce, hhmm: hhmm, day: day, LANGS: LANGS, lang: lang, hash: hash,
     b64utf8: b64utf8, request: request, readJSON: readJSON, httpSays: httpSays, getJSON: getJSON, getText: getText, toast: toast, idle: idle, pad: pad, loc: loc };
 })();

@@ -166,7 +166,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   ok('Back leaves the player', await ev(() => !document.body.classList.contains('full')));
   ok('and shows the same movie', /Moana 2/.test(await text('#mediaInfo')));
   ok('the position is saved', await ev(() => { const m = MediaStore.movies(null).filter(x => x.title === 'Moana 2')[0]; return MediaStore.resume(m.id) && MediaStore.resume(m.id).pos === 1000; }));
-  ok('the panel says where it stopped', /Resume at 16 of 100 min/.test(await text('#mediaInfo')), await text('#mediaInfo'));
+  ok('the panel says where it stopped', /Resume at 16 min of 1 h 40 min/.test(await text('#mediaInfo')), await text('#mediaInfo'));
   ok('Movies did not get the position', await ev(() => Object.keys(Store.edits.resume).length === 0));
 
   // Red: sort, shelves; Hold OK: the movie's options.

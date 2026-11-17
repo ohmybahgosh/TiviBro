@@ -35,6 +35,13 @@ var FOLD = {};
 function normal(v) { return str(v, 200).toLowerCase().replace(/[^\x00-\x7f]/g, function (ch) { return FOLD[ch] || ''; }).replace(/[^a-z0-9]/g, ''); }
 // A show's name for comparing: also without "The" in front and with "&" read as "and" ("Big Bang Theory" is
 // "The Big Bang Theory" on TMDB, "Rubble and Crew" is "Rubble & Crew").
+// The words of a name in any order, without "the" and "and", digits standing in for letters read as letters
+// ("Gilgo Beach Killer - The House of Secrets" is "The Gilgo Beach Killer: House of Secrets", "PLUR1BUS" is "Pluribus").
+function wordSet(v) {
+  var w = str(v, 200).toLowerCase().replace(/&/g, ' and ').replace(/[^\x00-\x7f]/g, function (ch) { return FOLD[ch] || ''; }).split(/[^a-z0-9]+/).filter(function (x) { return x && x !== 'the' && x !== 'and' && x !== 'a'; })
+    .map(function (x) { return /[a-z]/.test(x) ? x.replace(/1/g, 'i').replace(/0/g, 'o').replace(/3/g, 'e').replace(/4/g, 'a') : x; });
+  return w.sort().join(' ');
+}
 function showName(v) { return normal(str(v, 200).replace(/&/g, ' and ').replace(/^\s*the\s+/i, '')); }
 function image(path, size) { return /^\/[a-zA-Z0-9._-]+$/.test(path || '') ? 'https://image.tmdb.org/t/p/' + size + path : ''; }
 function art(list, language, fallback) {
@@ -237,6 +244,7 @@ function create(opts) {
         // (a folder's year and the first airing can differ by one), else any year; of several, the far better known.
         var named = matches.filter(function (m) { return normal(m.title) === normal(query) || normal(m.original) === normal(query) || (showName(m.title) && showName(m.title) === showName(query)); });
         if (!named.length) { var pl = matches.filter(function (m) { return plain(m.title) && plain(m.title) === plain(query); }); if (pl.length === 1) named = pl; }
+        if (!named.length) { var ws = matches.filter(function (m) { return wordSet(m.title) && wordSet(m.title) === wordSet(query); }); if (ws.length === 1) named = ws; }
         // "Big Brother (US)": the one from that country.
         var cc = /^[A-Z]{2}$/.test(String(q.cc || '')) ? (q.cc === 'UK' ? 'GB' : q.cc) : '';
         if (cc && named.length > 1) { var inCc = named.filter(function (m) { return (ccs[m.id] || []).indexOf(cc) >= 0; }); if (inCc.length) named = inCc; }
@@ -252,6 +260,22 @@ function create(opts) {
         }
         var pick = q.auto ? (one(near(0)) || one(near(1)) || (yr ? null : one(named))) : null;
         if (pick) { var next = {}; Object.keys(q).forEach(function (k) { next[k] = q[k]; }); next.id = pick.id; return tvLookup(next,cb); }
+        // Several shows of that name and nothing to choose by: the one whose seasons hold the episodes you have
+        // ("Damaged", one season of 6, is the 2024 one), when only one does.
+        var have = q.auto && q.seasons && typeof q.seasons === 'object' ? Object.keys(q.seasons).filter(function (k) { return /^[0-9]{1,3}$/.test(k) && +k > 0 && +q.seasons[k] > 0; }) : [];
+        var pool = (yr ? near(1) : named).slice(0, 5);
+        if (have.length && pool.length > 1) {
+          var fits = [], left = pool.length;
+          return pool.forEach(function (m) {
+            request('/tv/' + m.id.split(':')[2] + '?language=' + locale, function (e2, d) {
+              var ss = {}; (d && Array.isArray(d.seasons) ? d.seasons : []).forEach(function (x) { ss[x.season_number] = +x.episode_count || 0; });
+              if (!e2 && have.every(function (k) { return ss[k] >= +q.seasons[k]; })) fits.push(m);
+              if (--left) return;
+              if (fits.length === 1) { var nx = {}; Object.keys(q).forEach(function (k) { nx[k] = q[k]; }); nx.id = fits[0].id; return tvLookup(nx, cb); }
+              cb(null, { matches: matches });
+            });
+          });
+        }
         // Searched with the year and nothing came back: once more without it.
         if (q.auto && q.year && !matches.length && !q._noYear) { var again = {}; Object.keys(q).forEach(function (k) { again[k] = q[k]; }); again._noYear = true; return tvLookup(again, cb); }
         cb(null,{matches:matches});

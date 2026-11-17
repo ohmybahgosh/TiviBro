@@ -1023,7 +1023,7 @@ var Views = (function () {
     if (!p) { box.appendChild(U.el('p', 'om-desc', 'No guide information for this channel.')); return; }
     var mv = typeof Movies !== 'undefined' ? Movies.of(c, p) : null, sh = !mv && typeof Series !== 'undefined' ? Series.of(c, p) : null;
     var se = sh && p.ep ? Series.episode(sh, p.ep) : null, gd = Epg.desc(c, p) || '';
-    var meta = mv ? ['Movie', mv.year, mv.runtime, mv.genre, mv.rating ? '★ ' + mv.rating + ' TMDB' : '']
+    var meta = mv ? ['Movie', mv.year, U.runtime(mv.runtime), mv.genre, mv.rating ? '★ ' + mv.rating + ' TMDB' : '']
       : sh ? ['Series', p.ep, se && se.t, sh.network, sh.genre, sh.rating ? '★ ' + sh.rating + ' TMDB' : '']
       : [{ s: 'Sports', n: 'News', c: 'Kids', d: 'Documentary' }[p.k] || '', p.mv ? 'Movie' : '', p.y, p.ep, p.n ? 'New' : ''];
     if ((!gd || gd.length < 60) && mv && mv.plot) gd = mv.plot;
@@ -2701,7 +2701,7 @@ var Guide = (function () {
     detail.classList.toggle('has-poster', !!(mv && mv.poster));
     if (mv) {
       var m3 = U.el('div', 'gd-meta gd-movie');
-      m3.textContent = ['Movie', mv.year, mv.runtime, mv.genre, mv.rating ? '★ ' + mv.rating + ' TMDB' : ''].filter(Boolean).join('   ·   ');
+      m3.textContent = ['Movie', mv.year, U.runtime(mv.runtime), mv.genre, mv.rating ? '★ ' + mv.rating + ' TMDB' : ''].filter(Boolean).join('   ·   ');
       detail.appendChild(m3);
       if (mv.poster) { var pim = U.el('img', 'gd-poster'); pim.src = mv.poster; pim.alt = ''; pim.onerror = function () { this.remove(); detail.classList.remove('has-poster'); }; detail.appendChild(pim); }
       if ((!gd || gd.length < 60) && mv.plot) gd = mv.plot;

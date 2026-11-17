@@ -165,18 +165,21 @@ var MediaStore = (function () {
   /* Sort movies by (Settings > My media, and Red on My media): name (A to Z), release, added, rating or
      runtime (newest, highest, longest first), and Reverse turns any of them round. */
   function rating(m) { return +(m.metadata && m.metadata.rating) || 0; }
+  // When a movie was added: when TiviBro first saw it, or for the library's first scan the file's own date.
+  var firstSeen = 0;
+  function added(m) { return m.mt > 0 && (m.addedAt || 0) <= firstSeen + 3600e3 ? m.mt : m.addedAt || 0; }
   function minutes(m) { return parseInt(m.metadata && m.metadata.runtime, 10) || 0; }
   function compare(sort) {
     return function (a, b) {
       var d = 0;
       if (sort === 'release') { var ad = a.metadata && a.metadata.releaseDate || a.year || '', bd = b.metadata && b.metadata.releaseDate || b.year || ''; d = ad < bd ? 1 : ad > bd ? -1 : 0; }
-      else if (sort === 'added') d = (b.addedAt || 0) - (a.addedAt || 0);
+      else if (sort === 'added') d = added(b) - added(a);
       else if (sort === 'rating') d = rating(b) - rating(a);
       else if (sort === 'runtime') d = minutes(b) - minutes(a);
       return d || byTitle(a, b);
     };
   }
-  function sortList(list) { var p = preferences(); list.sort(compare(p.sort)); if (p.sortReverse) list.reverse(); return list; }
+  function sortList(list) { var p = preferences(); if (p.sort === 'added') { firstSeen = Infinity; lib.forEach(function (m) { if ((m.addedAt || 0) < firstSeen) firstSeen = m.addedAt || 0; }); } list.sort(compare(p.sort)); if (p.sortReverse) list.reverse(); return list; }
   function movies(srcId) {
     return sortList(lib.filter(function (m) { var s = source(m.src); return (!srcId || m.src === srcId) && (!s || s.contentMode !== 'shows'); }));
   }
@@ -205,6 +208,12 @@ var MediaStore = (function () {
     else return;
     save();
   }
+  // Where you stopped elsewhere (Trakt): kept when it's newer than this TV's own and the movie isn't watched.
+  function importResume(id, pos, dur, at) {
+    if (!(pos > 30) || !(dur > pos + 60) || isWatched(id)) return false;
+    var cur = state.resume[id]; if (cur && cur.at >= at) return false;
+    state.resume[id] = { pos: pos, dur: dur, at: at }; save(); return true;
+  }
   function saveEpisodeResume(id, pos, dur) {
     if (!(pos >= 5) || !isFinite(pos) || !(dur > 0) || !isFinite(dur)) return;
     state.resume[id] = {pos:pos,dur:dur,at:Date.now()}; save();
@@ -222,6 +231,6 @@ var MediaStore = (function () {
   return {
     preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
     tmdbToken: function () { return state.tmdbToken || ''; }, trakt: trakt, setTrakt: setTrakt, sourceUpdate: sourceUpdate, sortList: sortList, compare: compare, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, setFormat: setFormat, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
-    resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, clearResume: clearResume, markWatched: markWatched, isWatched: isWatched
+    resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, importResume: importResume, clearResume: clearResume, markWatched: markWatched, isWatched: isWatched
   };
 })();

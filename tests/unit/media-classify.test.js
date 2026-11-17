@@ -31,6 +31,11 @@ check('invalid user coordinates remain reviewable', function () { var r = classi
 ["Title - 2001.mkv", "Ocean's Eleven - 2001.mkv", 'Up - 2009.mp4', 'Top Gun - Maverick - 2022.mkv', 'Back to the Future Part II - 1989.mkv'].forEach(function (file) { check('year is not an absolute number: ' + file, function () { var r = classify(file); assert.equal(r.kind, 'movie'); assert.equal(r.review.indexOf('uncertainAbsoluteOrder'), -1); assert.equal(r.absoluteNumber, undefined); }); });
 check('a year still counts in an absolute-order source', function () { assert.equal(classify('Moon Courier - 2001.mkv', [], { order: 'absolute' }).absoluteNumber, 2001); });
 check('absolute numbers that are not years still count', function () { assert.equal(classify('[Group] Moon Courier - 1850.mkv').absoluteNumber, 1850); });
+// A word in a show's or movie's title, or an episode's own title, is not an extra ("Trailer Park Boys").
+[['Trailer Park Boys - JAIL - S01E01 - Pilot WEBDL-1080p.mkv', 'episode'], ['Harbour S02E05 - The Trailer.mkv', 'episode'], ['The Sample (2020) Bluray-1080p.mkv', 'movie'],
+ ['Harbour.S01E02.1080p-sample.mkv', 'extra'], ['Frozen (2013)-trailer.mkv', 'extra'], ['Frozen.2013.1080p.BluRay.x264-SAMPLE.mkv', 'extra'], ['sample-frozen.2013.mkv', 'extra'], ['Trailer 2.mp4', 'extra']].forEach(function (x) {
+  check('extra or not: ' + x[0], function () { assert.equal(classify(x[0]).kind, x[1]); });
+});
 // NxNN takes a one or two digit season: a resolution is not season 720.
 ['Film 720x480.avi', 'Film.1920x1080.mkv', 'Clip 640x360.mp4'].forEach(function (file) { check('resolution is not an episode: ' + file, function () { var r = classify(file); assert.equal(r.kind, 'movie'); assert.equal(r.season, null); }); });
 check('12x05 is still an episode', function () { var r = classify('Harbour 12x05.mkv'); assert.equal(r.season, 12); assert.deepEqual(r.numbers, [5]); });

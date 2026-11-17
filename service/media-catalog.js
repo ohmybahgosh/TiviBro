@@ -113,7 +113,7 @@ function metadataPending(r, q) {
   var checked = r.metadataCheckedAt || 0, language = q.language || 'en';
   if (q.metadataSince) return !(checked >= q.metadataSince && r.metadataCheckLanguage === language);
   // A miss waits a week, unless it was missed by the matcher before Sonarr-style names ("Show (2019)") and IDs were read (metadataMissV 3: alpha 145 on).
-  return !(r.metadataCheckLanguage === language && ((r.metadataMissAt && r.metadataMissV === 3 && Date.now() - r.metadataMissAt < 604800000) || (r.metadata && checked && checked >= (r.metadataScanAt || 0) && (r.metadata.requestedLanguage || r.metadata.language) === language)));
+  return !(r.metadataCheckLanguage === language && ((r.metadataMissAt && r.metadataMissV === 4 && Date.now() - r.metadataMissAt < 604800000) || (r.metadata && checked && checked >= (r.metadataScanAt || 0) && (r.metadata.requestedLanguage || r.metadata.language) === language)));
 }
 // The filters every list shares.  kind and disabled sources are checked by the caller.
 function matches(r, q) {
@@ -737,7 +737,7 @@ Catalog.prototype.progress = function (q, cb) {
           if (loadError) return done(loadError);
           var previous = doc.p[file.id], now = Date.now();
           if (previous && ((previous.session === q.session && previous.sequence >= q.sequence) || (previous.session !== q.session && previous.startedAt > q.startedAt))) return done(null, { ignored: true, revision: self.revision });
-          self.progressStore.put(file.id, { id: file.id, handle: file.handle, sourceId: file.sourceId, session: q.session, sequence: q.sequence, startedAt: q.startedAt, position: q.position, duration: q.duration, at: now }, now);
+          self.progressStore.put(file.id, { id: file.id, handle: file.handle, sourceId: file.sourceId, session: q.session, sequence: q.sequence, startedAt: q.startedAt, position: q.position, duration: q.duration, at: isFinite(q.at) && q.at > 0 && q.at <= now ? q.at : now }, now);   // at: when it was paused (from Trakt), else now
           if (!q.final) return done(null, { revision: self.revision });
           self.progressStore.flush(function (flushError) { done(flushError, { revision: self.revision }); });
         });
@@ -777,6 +777,8 @@ Catalog.prototype.continuing = function (cb) {
     });
   }, cb);
 };
+// A file's saved playback, for resuming it (from this TV, the phone or Trakt): { pos, dur, at } or null.
+Catalog.prototype.progressOf = function (id, cb) { this.progressStore.load(function (e, doc) { var p = !e && doc.p[id]; cb(null, p && p.position >= 5 && p.position < p.duration - 1 ? { pos: p.position, dur: p.duration, at: p.at } : null); }); };
 // Whether a file has saved playback (relinking asks before replacing it).
 Catalog.prototype.hasProgress = function (id, cb) { this.progressStore.load(function (e, doc) { cb(e, !e && !!doc.p[id]); }); };
 

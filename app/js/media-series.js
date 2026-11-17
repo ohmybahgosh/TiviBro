@@ -16,7 +16,7 @@ var MediaSeries = (function () {
     m=/[{[(]\s*tvdb(?:id)?[-=: ]\s*([1-9][0-9]{0,9})\s*[}\])]/i.exec(t);if(m)q.tvdb=m[1];
     m=/[{[(]\s*imdb(?:id)?[-=: ]\s*(tt[0-9]{5,10})\s*[}\])]/i.exec(t);if(m)q.imdb=m[1];
     t=t.replace(/[{[][^}\]]*[}\]]/g,' ');
-    m=/^(.*?)\s*\((US|UK|GB|AU|CA|NZ|IE)\)\s*$/.exec(t.trim());if(m&&m[1].trim()){q.cc=m[2];t=m[1];}   // "Big Brother (US)"
+    m=/^(.*?)\s*\((US|UK|GB|AU|CA|NZ|IE)\)\s*$/.exec(t.trim())||/^(.*?)\s+(U\.? ?S|U\.? ?K)\.?\s*$/.exec(t.trim());if(m&&m[1].trim()){q.cc=m[2].replace(/[^A-Z]/g,'');t=m[1];}   // "Big Brother (US)", "Love on the Spectrum U S"
     m=/^(.*?)[\s._-]*\(((?:19|20)\d\d)\)\s*$/.exec(t.trim());
     if(m&&m[1].trim()){q.year=m[2];t=m[1];}
     q.title=t.replace(/\s+/g,' ').trim()||String(arguments[0]||'');
@@ -50,8 +50,9 @@ var MediaSeries = (function () {
       return detail(item.handle).then(function(show){
         var id=show.metadata&&show.metadata.id,handle=show.handle;
         var q=id?{id:id}:showQuery(show.title);
+        if(!id&&show.buckets){q.seasons={};show.buckets.forEach(function(b){if(/^[0-9]{1,3}$/.test(String(b.key))&&b.count>0)q.seasons[b.key]=b.count;});}   // to tell same-named shows apart
         return lookup(q).then(function(result){
-          if(!result.metadata){missed++;return save(handle,'markMetadataChecked',{language:language,startedAt:started,missed:true,missV:3},id);}
+          if(!result.metadata){missed++;return save(handle,'markMetadataChecked',{language:language,startedAt:started,missed:true,missV:4},id);}
           return save(handle,'setMetadata',{metadata:result.metadata},id).then(function(saved){
             handle=saved.mergedInto||handle;id=result.metadata.id;
             return detail(handle);
@@ -87,7 +88,7 @@ var MediaSeries = (function () {
           if(++streak>=2)throw e;
           missed++;
           if(typeof Log!=='undefined'&&Log.warn)Log.warn('media','Show details for one show failed: '+(e&&e.message));
-          return detail(item.handle).then(function(show){return save(show.handle,'markMetadataChecked',{language:language,startedAt:started,missed:true,missV:3},show.metadata&&show.metadata.id);});
+          return detail(item.handle).then(function(show){return save(show.handle,'markMetadataChecked',{language:language,startedAt:started,missed:true,missV:4},show.metadata&&show.metadata.id);});
         }).then(function(){return new Promise(function(resolve){setTimeout(resolve,350);});}).then(next);
       });
     }
@@ -235,7 +236,7 @@ var MediaSeries = (function () {
     if(episode.preferredVersion!==v.handle)Media.request('library/edit',{operation:'setPreferredVersion',handle:episode.handle,version:v.handle,expectedRevision:episode.revision},30000).catch(function(){});
     if (!src) { U.toast('This source was removed.'); return; }
     request('resolve',{handle:v.handle,source:src},function (r) {
-      Media.playFile({id:v.handle,resumeKey:r.resumeKey,returnTo:episode.originPage||origin(episode),title:episodeLabel(episode),file:v.label || v.title,src:v.sourceId,url:r.url,kind:'episode',episodeHandle:episode.handle,showId:episode.showId,season:episode.season,number:episode.number,order:episode.order,sequenceIntent:episode.watchState==='watched'?'sequential':'unwatched',libraryRevision:episode.revision,startSec:selectedRange ? selectedRange.startSec : 0,endSec:selectedRange ? selectedRange.endSec : null,segmented:!!selectedRange},false);
+      Media.playFile({id:v.handle,resumeKey:r.resumeKey,resumeAt:r.resumeAt,returnTo:episode.originPage||origin(episode),title:episodeLabel(episode),file:v.label || v.title,src:v.sourceId,url:r.url,kind:'episode',episodeHandle:episode.handle,showId:episode.showId,season:episode.season,number:episode.number,order:episode.order,sequenceIntent:episode.watchState==='watched'?'sequential':'unwatched',libraryRevision:episode.revision,startSec:selectedRange ? selectedRange.startSec : 0,endSec:selectedRange ? selectedRange.endSec : null,segmented:!!selectedRange},false);
     });
   }
   function boundaries(version, ep, back) {
@@ -377,7 +378,7 @@ var MediaSeries = (function () {
           if (expected !== generation) throw new Error('Playback was cancelled.');
           if (Views.tab !== 'media') Views.switchTab('media');
           if (Views.closeNav) Views.closeNav(); UI.close(); Media.open(true);
-          Media.playFile({id:v.handle,resumeKey:resolved.resumeKey,returnTo:origin(ep),title:episodeLabel(ep),file:v.label,src:v.sourceId,url:resolved.url,kind:'episode',episodeHandle:ep.handle,showId:ep.showId,season:ep.season,number:ep.number,order:ep.order,sequenceIntent:ep.watchState==='watched'?'sequential':'unwatched',libraryRevision:ep.revision},!!a.fromStart);
+          Media.playFile({id:v.handle,resumeKey:resolved.resumeKey,resumeAt:resolved.resumeAt,returnTo:origin(ep),title:episodeLabel(ep),file:v.label,src:v.sourceId,url:resolved.url,kind:'episode',episodeHandle:ep.handle,showId:ep.showId,season:ep.season,number:ep.number,order:ep.order,sequenceIntent:ep.watchState==='watched'?'sequential':'unwatched',libraryRevision:ep.revision},!!a.fromStart);
           return {title:episodeLabel(ep)};
         });
       });

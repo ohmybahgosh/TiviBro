@@ -13,7 +13,9 @@ var Arrange = (function () {
     var panel = el('div', 'arrange-panel');
     panel.appendChild(el('h2', 'arrange-title'));
     panel.appendChild(el('p', 'arrange-help'));
+    panel.appendChild(el('div', 'arrange-more up'));
     list = el('ol', 'arrange-list'); panel.appendChild(list);
+    panel.appendChild(el('div', 'arrange-more down'));   // "▼ 6 more below": a long list doesn't end at the panel's edge
     box.appendChild(panel);
     document.body.appendChild(box);
   }
@@ -26,6 +28,9 @@ var Arrange = (function () {
     box.querySelector('.arrange-title').textContent = opts.title;
     box.querySelector('.arrange-help').textContent = moving ? '▲ ▼  move it    OK  put it here' : 'OK  pick up to move    ◀ ▶  on or off    Back  done';
     if (at < top) top = at; if (at >= top + VISIBLE) top = at - VISIBLE + 1;
+    var above = top, below = Math.max(0, rows.length - top - VISIBLE), up = box.querySelector('.arrange-more.up'), dn = box.querySelector('.arrange-more.down');
+    up.textContent = above ? '▲  ' + above + ' more above' : ''; up.classList.toggle('on', !!above);
+    dn.textContent = below ? '▼  ' + below + ' more below' : ''; dn.classList.toggle('on', !!below);
     list.innerHTML = '';
     rows.slice(top, top + VISIBLE).forEach(function (r, n) {
       var i = top + n, li = el('li', 'arrange-row' + (i === at ? ' sel' : '') + (i === at && moving ? ' moving' : '') + (r.off ? ' off' : '') + (r.key ? '' : ' action'));

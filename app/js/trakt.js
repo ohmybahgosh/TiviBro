@@ -82,7 +82,7 @@ var Trakt = (function () {
       return get('/users/settings', true).then(function (s) {
         var u = s && s.user || {};
         MediaStore.setTrakt({ user: { name: String(u.username || u.name || 'you').slice(0, 60), vip: !!u.vip } });
-        if (!st().lists) MediaStore.setTrakt({ lists: defaults() });
+        if (!st().lists) MediaStore.setTrakt({ lists: defaults(), historyOffered: true });
         if (connecting === me) connecting = null;
         note('info', 'Connected');
         changed(); syncSoon(3000); itemsSoon(true);
@@ -103,18 +103,23 @@ var Trakt = (function () {
   function letters() { var s = ''; for (var i = 0; i < 8; i++) s += String.fromCharCode(97 + Math.floor(Math.random() * 26)); return s; }
   function tabFor(kind) { return kind === 'shows' ? 'shows' : kind === 'movies' ? 'movies' : 'home'; }
   function list(src, name, kind) { return { id: 'trakt:' + letters(), name: String(name).slice(0, 80), src: src, kind: kind, tab: tabFor(kind), on: true }; }
-  function defaults() { return [list({ type: 'watchlist' }, 'Your Trakt watchlist', 'both'), list({ type: 'chart', chart: 'trending', of: 'movies' }, 'Trending movies on Trakt', 'movies'), list({ type: 'chart', chart: 'trending', of: 'shows' }, 'Trending shows on Trakt', 'shows')]; }
+  function defaults() { return [list({ type: 'history' }, 'Recently watched', 'both'), list({ type: 'watchlist' }, 'Your Trakt watchlist', 'both'), list({ type: 'chart', chart: 'trending', of: 'movies' }, 'Trending movies on Trakt', 'movies'), list({ type: 'chart', chart: 'trending', of: 'shows' }, 'Trending shows on Trakt', 'shows')]; }
   function lists() { return (st().lists || []).slice(); }
   function saveLists(l) { MediaStore.setTrakt({ lists: l.slice(0, 30) }); changed(); if (typeof Media !== 'undefined' && Media.refresh) Media.refresh(); }
   function update(id, patch) { saveLists(lists().map(function (x) { if (x.id !== id) return x; var y = {}; Object.keys(x).forEach(function (k) { y[k] = x[k]; }); Object.keys(patch).forEach(function (k) { y[k] = patch[k]; }); if (patch.kind && !patch.tab) y.tab = tabFor(patch.kind); return y; })); if (patch.kind) itemsSoon(true); }
   function remove(id) { saveLists(lists().filter(function (x) { return x.id !== id; })); }
   function add(l) {
     var have = lists();
-    if (have.some(function (x) { return JSON.stringify(x.src) === JSON.stringify(l.src) && x.kind === l.kind; })) throw new Error('That list is already on My media.');
+    if (have.some(function (x) { return JSON.stringify(x.src) === JSON.stringify(l.src); })) throw new Error('That list is already on My media.');
     if (have.length >= 30) throw new Error('30 Trakt lists at most.');
     have.push(l); saveLists(have); itemsSoon(true); return l;
   }
+  // Whether a list is on My media already (the pickers mark it Added).
+  function has(src) { var k = JSON.stringify(src); return lists().some(function (x) { return JSON.stringify(x.src) === k; }); }
+  function hasChart(chart, of) { return has({ type: 'chart', chart: chart, of: of }); }
+  function hasFound(x) { return lists().some(function (l) { return l.src && l.src.type === 'list' && l.src.user === String(x.user).toLowerCase() && l.src.slug === String(x.slug).toLowerCase(); }); }
   function addChart(chart, of) { var c = CHARTS.filter(function (x) { return x[0] === chart && x[1] === of; })[0]; if (!c) throw new Error('Choose a Trakt chart.'); return add(list({ type: 'chart', chart: chart, of: of }, c[2], of)); }
+  function addHistory() { return add(list({ type: 'history' }, 'Recently watched', 'both')); }
   function addWatchlist() { return add(list({ type: 'watchlist' }, 'Your Trakt watchlist', 'both')); }
   function addRecommended(of) { return add(list({ type: 'recommended', of: of }, of === 'shows' ? 'Shows Trakt recommends for you' : 'Movies Trakt recommends for you', of)); }
   /* A list typed in the way Radarr and Sonarr take them: its link (trakt.tv/users/NAME/lists/LIST, or
@@ -128,6 +133,26 @@ var Trakt = (function () {
     if (/^users\/[^\/]+\/watchlist$/i.test(s)) { return { type: 'userwatchlist', user: s.split('/')[1].toLowerCase() }; }
     return null;
   }
+  // How many movies and shows a list holds (Trakt counts them for a one-item page): the list's tab follows.
+  function countOf(path) { var go = connected() ? token().then(function (a) { return req({ op: 'get', path: path + '?limit=1', token: a }); }) : req({ op: 'get', path: path + '?limit=1' }); return go.then(function (r) { return +((r.headers || {})['x-pagination-item-count']) || (r.data || []).length; }, function () { return 0; }); }
+  function itemsBase(src) { return src.type === 'list' ? '/users/' + encodeURIComponent(src.user) + '/lists/' + encodeURIComponent(src.slug) + '/items/' : src.type === 'official' ? '/lists/' + encodeURIComponent(src.id) + '/items/' : src.type === 'userwatchlist' ? '/users/' + encodeURIComponent(src.user) + '/watchlist/' : null; }
+  function kindsOf(src) {
+    var base = itemsBase(src); if (!base) return Promise.resolve({ movies: 0, shows: 0 });
+    var plural = src.type === 'userwatchlist';
+    return countOf(base + (plural ? 'movies' : 'movie')).then(function (mv) { return countOf(base + (plural ? 'shows' : 'show')).then(function (sh) { return { movies: mv, shows: sh }; }); });
+  }
+  function kindFor(c) { return c.movies && c.shows ? 'both' : c.shows ? 'shows' : 'movies'; }
+  function tabName(kind) { return kind === 'shows' ? 'the TV shows tab' : kind === 'movies' ? 'the Movies tab' : 'Home'; }
+  function holds(c) { return [c.movies ? c.movies + (c.movies === 1 ? ' movie' : ' movies') : '', c.shows ? c.shows + (c.shows === 1 ? ' show' : ' shows') : ''].filter(Boolean).join(', ') || 'empty'; }
+  // Added with its tab worked out from what it holds (or the one asked for): { list, counts, message }.
+  function addSrc(src, name, kind) {
+    if (has(src)) return Promise.reject(new Error(name + ' is already on My media.'));
+    return kindsOf(src).then(function (c) {
+      if (!kind || kind === 'auto') { if (!c.movies && !c.shows) throw new Error(name + ' has no movies or shows on Trakt.'); kind = kindFor(c); }
+      var l = add(list(src, name, kind));
+      return { list: l, counts: c, message: name + ' (' + holds(c) + ') is on ' + tabName(kind) + '.' };
+    });
+  }
   function addTyped(input, kind) {
     var src = parse(input);
     if (!src) return Promise.reject(new Error('Paste a Trakt list link (trakt.tv/users/NAME/lists/LIST), or type NAME/LIST.'));
@@ -135,20 +160,36 @@ var Trakt = (function () {
     var named = path ? get(path).then(function (l) { return l && l.name ? l.name : null; }) : Promise.resolve(src.user + '\'s watchlist');
     return named.then(function (name) {
       if (!name) throw new Error('Trakt has no such list.  Check the link: the list must be public.');
-      return add(list(src, name, kind || 'both'));
+      return addSrc(src, name, kind);
     });
   }
-  function search(q) {
+  function shapeList(l, likes) { var u = l.user && l.user.ids && l.user.ids.slug || ''; return { name: l.name || '', user: u, slug: l.ids && l.ids.slug || '', count: l.item_count || 0, likes: likes || l.likes || 0 }; }
+  // Lists found by name, or Trakt's popular and trending lists; each with what it holds when asked (withKinds).
+  function search(q, withKinds) {
     return get('/search/list?query=' + encodeURIComponent(String(q || '').slice(0, 80)) + '&limit=15').then(function (r) {
-      return (r || []).map(function (x) { var l = x.list || {}, u = l.user && l.user.ids && l.user.ids.slug || ''; return { name: l.name || '', user: u, slug: l.ids && l.ids.slug || '', count: l.item_count || 0, likes: l.likes || 0 }; })
-        .filter(function (x) { return x.user && x.slug; });
+      return withHolds((r || []).map(function (x) { return shapeList(x.list || {}); }).filter(function (x) { return x.user && x.slug; }), withKinds);
     });
   }
-  function addFound(x, kind) { if (!/^[A-Za-z0-9._-]{1,80}$/.test(x.user || '') || !/^[A-Za-z0-9._-]{1,120}$/.test(x.slug || '')) throw new Error('That is not a Trakt list.'); return add(list({ type: 'list', user: x.user, slug: x.slug }, x.name, kind || 'both')); }
+  function browse(which, withKinds) {
+    return get('/lists/' + (which === 'trending' ? 'trending' : 'popular') + '?limit=15').then(function (r) {
+      return withHolds((r || []).map(function (x) { return shapeList(x.list || {}, x.like_count); }).filter(function (x) { return x.user && x.slug; }), withKinds);
+    });
+  }
+  function withHolds(found, on) {
+    found.forEach(function (x) { x.added = hasFound(x); });
+    if (!on) return found;
+    return found.reduce(function (p, x) { return p.then(function () { return kindsOf({ type: 'list', user: x.user, slug: x.slug }).then(function (c) { x.movies = c.movies; x.shows = c.shows; x.kind = kindFor(c); x.holds = holds(c); }); }); }, Promise.resolve()).then(function () { return found; });
+  }
+  function addFound(x, kind) {
+    x = { user: String(x.user || '').toLowerCase(), slug: String(x.slug || '').toLowerCase(), name: x.name };
+    if (!/^[A-Za-z0-9._-]{1,80}$/.test(x.user || '') || !/^[A-Za-z0-9._-]{1,120}$/.test(x.slug || '')) return Promise.reject(new Error('That is not a Trakt list.'));
+    return addSrc({ type: 'list', user: x.user, slug: x.slug }, x.name || x.slug, kind);
+  }
 
   // A list's items: { k: 'movie'|'show', tmdb, title, year }.
   function pathsOf(l) {
     var s = l.src || {}, kinds = l.kind === 'movies' ? ['movies'] : l.kind === 'shows' ? ['shows'] : ['movies', 'shows'];
+    if (s.type === 'history') return [['/sync/history/movies?limit=60', 'movies', true], ['/sync/history/episodes?limit=200', 'shows', true]];
     if (s.type === 'watchlist') return kinds.map(function (k) { return ['/sync/watchlist/' + k, k, true, 4]; });
     if (s.type === 'userwatchlist') return kinds.map(function (k) { return ['/users/' + encodeURIComponent(s.user) + '/watchlist/' + k, k, false, 4]; });
     if (s.type === 'chart') return [['/' + s.of + '/' + s.chart + '?limit=100', s.of]];
@@ -162,7 +203,7 @@ var Trakt = (function () {
     (rows || []).forEach(function (r) {
       var x = r && (r.movie || r.show) || r, kind = r && r.show ? 'show' : r && r.movie ? 'movie' : k === 'shows' ? 'show' : 'movie';
       var id = x && x.ids && x.ids.tmdb;
-      if (id) out.push({ k: kind, tmdb: +id, title: String(x.title || '').slice(0, 120), year: x.year || 0 });
+      if (id && !out.some(function (o) { return o.k === kind && o.tmdb === +id; })) out.push({ k: kind, tmdb: +id, title: String(x.title || '').slice(0, 120), year: x.year || 0, at: r && r.watched_at || '' });
     });
     return out;
   }
@@ -186,6 +227,7 @@ var Trakt = (function () {
       }
       var l = due[i], got = [];
       Promise.all(pathsOf(l).map(function (p) { return (p[3] ? getAll(p[0], p[2], p[3]) : get(p[0], p[2])).then(function (rows) { got = got.concat(normalize(rows, p[1])); }); })).then(function () {
+        if (l.src && l.src.type === 'history') got.sort(function (a, b) { return a.at < b.at ? 1 : a.at > b.at ? -1 : 0; });   // newest first, movies and shows together
         cache.items[l.id] = got; cache.at[l.id] = Date.now();
       }, function (e) { note('warn', 'List "' + l.name + '": ' + e.message); cache.at[l.id] = Date.now() - ITEMS_AGE + 600e3; }).then(function () { setTimeout(function () { next(i + 1); }, 400); });
     })(0);
@@ -205,7 +247,7 @@ var Trakt = (function () {
     if (!q.length || !connected()) return Promise.resolve();
     var body = { movies: [], shows: [] };
     q.forEach(function (e) { if (e.movie) body.movies.push({ ids: { tmdb: e.movie }, watched_at: new Date(e.at).toISOString() }); else if (e.show) body.shows.push({ ids: { tmdb: e.show }, seasons: [{ number: e.season, episodes: [{ number: e.episode, watched_at: new Date(e.at).toISOString() }] }] }); });
-    return post('/sync/history', body).then(function () { MediaStore.setTrakt({ queue: [] }); note('info', 'Sent ' + q.length + ' watched to Trakt'); });
+    return post('/sync/history', body).then(function () { MediaStore.setTrakt({ queue: [] }); note('info', 'Sent ' + q.length + ' watched to Trakt'); setTimeout(historySoon, 5000); });
   }
   function watchedMovie(metadataId) {
     var m = /^tmdb:([0-9]+)$/.exec(String(metadataId || ''));
@@ -236,11 +278,15 @@ var Trakt = (function () {
       var jobs = [];
       if (settings().historyIn && (manual || mv !== before.movies)) jobs.push(moviesIn(res));
       if (settings().historyIn && (manual || ep !== before.episodes)) jobs.push(episodesIn(res, manual || !st().episodesSince));
-      return jobs.reduce(function (p, j) { return p.then(j); }, Promise.resolve()).then(function () { MediaStore.setTrakt({ lastActivities: { movies: mv, episodes: ep } }); });
+      var pb = (act && act.movies && act.movies.paused_at || '') + '|' + (act && act.episodes && act.episodes.paused_at || '');
+      if (settings().historyIn && (manual || pb !== before.paused)) jobs.push(playbackIn(res));
+      return jobs.reduce(function (p, j) { return p.then(j); }, Promise.resolve()).then(function () { MediaStore.setTrakt({ lastActivities: { movies: mv, episodes: ep, paused: (act && act.movies && act.movies.paused_at || '') + '|' + (act && act.episodes && act.episodes.paused_at || '') } }); });
     }).then(function () {
       syncing = false; lastSyncError = ''; status = ''; MediaStore.setTrakt({ lastSync: Date.now() });
-      if (res.movies || res.episodes) { note('info', 'From Trakt: ' + res.movies + ' movies and ' + res.episodes + ' episodes marked watched'); if (Media.refresh) Media.refresh(); }
-      changed(); return res;
+      if (res.movies || res.episodes) note('info', 'From Trakt: ' + res.movies + ' movies and ' + res.episodes + ' episodes marked watched');
+      if (res.resumed) note('info', 'From Trakt: ' + res.resumed + ' to continue watching');
+      if ((res.movies || res.episodes || res.resumed) && Media.refresh) { Media.refresh(); if (res.resumed && Media.refreshShows) Media.refreshShows(); }
+      changed(); if (res.movies || res.episodes) historySoon(); return res;
     }, function (e) { syncing = false; lastSyncError = e.message; status = ''; changed(); note('warn', 'Sync: ' + e.message); throw e; });
   }
   function moviesIn(res) {
@@ -292,9 +338,72 @@ var Trakt = (function () {
       });
     };
   }
+  /* Continue watching from other apps: where you paused a movie or episode (Trakt's playback), when it's
+     newer than where you stopped here.  Movies keep it on the TV; episodes in the library, so the TV shows
+     tab's Continue watching has them. */
+  function playbackIn(res) {
+    return function () {
+      res.resumed = res.resumed || 0;
+      return getAll('/sync/playback/movies?extended=full', true, 4).then(function (rows) {
+        var by = {}; (rows || []).forEach(function (r) { var id = r.movie && r.movie.ids && r.movie.ids.tmdb; if (id) by['tmdb:' + id] = r; });
+        MediaStore.movies(null).forEach(function (m) {
+          var r = m.metadata && by[m.metadata.id]; if (!r) return;
+          var mins = (r.movie && +r.movie.runtime) || parseInt(m.metadata.runtime, 10) || 0, cur = MediaStore.resume(m.id), dur = cur && cur.dur || mins * 60;
+          if (dur > 0 && MediaStore.importResume(m.id, dur * (+r.progress || 0) / 100, dur, Date.parse(r.paused_at) || Date.now())) res.resumed++;
+        });
+      }).then(function () { return getAll('/sync/playback/episodes?extended=full', true, 4); }).then(function (rows) {
+        var want = {};
+        (rows || []).forEach(function (r) { var id = r.show && r.show.ids && r.show.ids.tmdb; if (id && r.episode) (want['tmdb:tv:' + id] = want['tmdb:tv:' + id] || []).push(r); });
+        if (!Object.keys(want).length) return;
+        function shows(cursor) {
+          var q = { kind: 'show', limit: 200 }; if (cursor) q.cursor = cursor;
+          return Media.request('library/query', q, 30000).then(function (r) {
+            var mine = (r.items || []).filter(function (s) { return s.metadata && want[s.metadata.id]; });
+            return mine.reduce(function (p, s) {
+              return p.then(function () {
+                return Media.request('library/query', { kind: 'episode', show: s.handle, limit: 200 }, 30000).then(function (er) {
+                  return want[s.metadata.id].reduce(function (q2, pb) {
+                    var ep = (er.items || []).filter(function (e) { return e.season === pb.episode.season && e.number === pb.episode.number && e.watchState !== 'watched'; })[0];
+                    if (!ep) return q2;
+                    return q2.then(function () { return Media.request('library/detail', { kind: 'episode', handle: ep.handle }, 30000); }).then(function (d) {
+                      var v = d && d.versions && d.versions[0], dur = (+pb.episode.runtime || parseInt(ep.metadata && ep.metadata.runtime, 10) || 0) * 60, at = Date.parse(pb.paused_at) || Date.now();
+                      if (!v || !(dur > 0)) return;
+                      return Media.request('library/progress', { handle: v.handle, position: dur * (+pb.progress || 0) / 100, duration: dur, session: 'trakt', sequence: at, startedAt: at, at: at, final: true }, 30000).then(function (x) { if (x && !x.error && !x.ignored) res.resumed++; });
+                    });
+                  }, Promise.resolve());
+                });
+              });
+            }, Promise.resolve()).then(function () { return r.nextCursor ? shows(r.nextCursor) : null; });
+          });
+        }
+        return shows(null);
+      });
+    };
+  }
+  /* Where you stopped, out to Trakt (its playback, so other apps offer to continue): a movie or episode left
+     between 2% and 90% in. */
+  function paused(item, pct) {
+    if (!connected() || !settings().watchedOut || !item || !(pct >= 2 && pct <= 90)) return;
+    var send = function (body) { body.progress = Math.round(pct * 100) / 100; return post('/scrobble/pause', body).catch(function (e) { note('warn', 'Where you stopped not sent: ' + e.message); }); };
+    if (item.kind !== 'episode') { var m = /^tmdb:([0-9]+)$/.exec(String(item.metadata && item.metadata.id || '')); if (m) send({ movie: { ids: { tmdb: +m[1] } } }); return; }
+    if (!item.episodeHandle) return;
+    Media.request('library/detail', { kind: 'episode', handle: item.episodeHandle }, 30000).then(function (ep) {
+      if (!ep || ep.error || ep.season == null || !ep.number || !ep.showId) return;
+      return Media.request('library/detail', { kind: 'show', handle: ep.showId }, 30000).then(function (sh) {
+        var m = /^tmdb:tv:([0-9]+)$/.exec(String(sh && sh.metadata && sh.metadata.id || ''));
+        if (m) return send({ show: { ids: { tmdb: +m[1] } }, episode: { season: +ep.season, number: +ep.number } });
+      });
+    }).catch(function () {});
+  }
   var syncTimer = null;
   function syncSoon(ms) { clearTimeout(syncTimer); syncTimer = setTimeout(function () { syncNow(false).catch(function () {}); syncSoon(SYNC_EVERY); }, ms || 30000); }
-  function start() { if (connected()) { syncSoon(45000); } itemsSoon(false); }
+  // Recently watched follows what you watch: fetched again after a sync or something sent.
+  function historySoon() { lists().forEach(function (l) { if (l.src && l.src.type === 'history') cache.at[l.id] = 0; }); itemsSoon(false); }
+  function start() {
+    // Connected before Recently watched existed: it's added once, at the top.
+    if (connected() && !st().historyOffered) { MediaStore.setTrakt({ historyOffered: true }); if (!has({ type: 'history' })) { var l = lists(); l.unshift(list({ type: 'history' }, 'Recently watched', 'both')); saveLists(l); } }
+    if (connected()) { syncSoon(45000); } itemsSoon(false);
+  }
   function setSettings(next) { var s = settings(); Object.keys(next || {}).forEach(function (k) { if (k === 'watchedOut' || k === 'historyIn') s[k] = !!next[k]; }); MediaStore.setTrakt({ settings: s }); changed(); }
   function describe() {
     if (connecting && pendingCode()) return 'Waiting for you to enter ' + pendingCode().user + ' at ' + pendingCode().url.replace(/^https?:\/\//, '');
@@ -305,7 +414,7 @@ var Trakt = (function () {
   }
 
   return { connected: connected, user: user, settings: settings, setSettings: setSettings, connect: connect, cancel: cancel, pendingCode: pendingCode, disconnect: disconnect,
-    lists: lists, update: update, remove: remove, addChart: addChart, addWatchlist: addWatchlist, addRecommended: addRecommended, addTyped: addTyped, search: search, addFound: addFound, CHARTS: CHARTS,
-    itemsOf: itemsOf, itemsSoon: itemsSoon, shelves: shelves, watchedMovie: watchedMovie, watchedEpisode: watchedEpisode, syncNow: syncNow, start: start, describe: describe, onChange: onChange,
+    lists: lists, has: has, hasChart: hasChart, hasFound: hasFound, update: update, remove: remove, addChart: addChart, addWatchlist: addWatchlist, addHistory: addHistory, addRecommended: addRecommended, addTyped: addTyped, search: search, browse: browse, holds: holds, tabName: tabName, addFound: addFound, CHARTS: CHARTS,
+    itemsOf: itemsOf, itemsSoon: itemsSoon, shelves: shelves, watchedMovie: watchedMovie, watchedEpisode: watchedEpisode, paused: paused, syncNow: syncNow, start: start, describe: describe, onChange: onChange,
     get syncing() { return syncing; }, get busy() { return itemsBusy; }, _test: { parse: parse, normalize: normalize, pathsOf: pathsOf } };
 })();

@@ -411,9 +411,9 @@ var WebEdit = (function () {
     /* Trakt (app/js/trakt.js): the sign-in code, switches, lists added like Radarr and Sonarr take them. */
     trakt: function (a) {
       if (typeof Trakt === 'undefined') throw new Error('This TiviBro has no Trakt yet.');
-      var op = String(a.op || 'status'), kind = /^(both|movies|shows)$/.test(a.kind) ? a.kind : 'both';
+      var op = String(a.op || 'status'), kind = /^(both|movies|shows)$/.test(a.kind) ? a.kind : 'auto';
       function status(m) { var c = Trakt.pendingCode(); return { msg: m || '', data: { connected: Trakt.connected(), user: Trakt.user(), describe: Trakt.describe(), code: c ? { user: c.user, url: c.url } : null, settings: Trakt.settings(),
-        lists: Trakt.lists().map(function (l) { return { id: l.id, name: l.name, kind: l.kind, on: l.on !== false, count: Trakt.itemsOf(l.id).length, src: l.src }; }), charts: Trakt.CHARTS } }; }
+        lists: Trakt.lists().map(function (l) { return { id: l.id, name: l.name, kind: l.kind, on: l.on !== false, count: Trakt.itemsOf(l.id).length, src: l.src }; }), charts: Trakt.CHARTS.map(function (c) { return [c[0], c[1], c[2], Trakt.hasChart(c[0], c[1])]; }), has: { history: Trakt.has({ type: 'history' }), watchlist: Trakt.has({ type: 'watchlist' }), recMovies: Trakt.has({ type: 'recommended', of: 'movies' }), recShows: Trakt.has({ type: 'recommended', of: 'shows' }) } } }; }
       function after(p, m) { return Promise.resolve(p).then(function () { Settings.live(); return status(m); }); }
       if (op === 'status') return status();
       if (op === 'connect') { var asked = new Promise(function (ok, no) { Trakt.connect(function () { ok(); }).then(function () { Settings.live(); }, function (e) { no(e); }); }); return asked.then(function () { return status(); }); }
@@ -421,12 +421,14 @@ var WebEdit = (function () {
       if (op === 'disconnect') { Trakt.disconnect(); return status('Trakt disconnected from this TV.'); }
       if (op === 'sync') return Trakt.syncNow(true).then(function () { return status('Trakt is in step.'); });
       if (op === 'settings') { Trakt.setSettings({ watchedOut: a.watchedOut, historyIn: a.historyIn }); return status('Saved.'); }
-      if (op === 'update') { var patch = {}; if (typeof a.on === 'boolean') patch.on = a.on; if (a.kind) patch.kind = kind; if (clean(a.name)) patch.name = clean(a.name).slice(0, 80); Trakt.update(String(a.id), patch); return after(0, 'Saved.'); }
+      if (op === 'update') { var patch = {}; if (typeof a.on === 'boolean') patch.on = a.on; if (/^(both|movies|shows)$/.test(a.kind)) patch.kind = a.kind; if (clean(a.name)) patch.name = clean(a.name).slice(0, 80); Trakt.update(String(a.id), patch); return after(0, 'Saved.'); }
       if (op === 'remove') { Trakt.remove(String(a.id)); return after(0, 'List removed from My media.'); }
-      if (op === 'addTyped') return Trakt.addTyped(clean(a.input), kind).then(function (l) { return after(0, l.name + ' added to My media.'); });
-      if (op === 'search') return Trakt.search(clean(a.q)).then(function (l) { return { data: l }; });
-      if (op === 'addFound') return after(Trakt.addFound({ user: clean(a.user), slug: clean(a.slug), name: clean(a.name) || clean(a.slug) }, kind), 'List added to My media.');
+      if (op === 'addTyped') return Trakt.addTyped(clean(a.input), kind).then(function (x) { return after(0, x.message); });
+      if (op === 'search') return Trakt.search(clean(a.q), true).then(function (l) { return { data: l }; });
+      if (op === 'browse') return Trakt.browse(a.which === 'trending' ? 'trending' : 'popular', true).then(function (l) { return { data: l }; });
+      if (op === 'addFound') return Trakt.addFound({ user: clean(a.user), slug: clean(a.slug), name: clean(a.name) || clean(a.slug) }, kind).then(function (x) { return after(0, x.message); });
       if (op === 'addChart') return after(Trakt.addChart(String(a.chart), String(a.of)), 'Chart added to My media.');
+      if (op === 'addHistory') return after(Trakt.addHistory(), 'Recently watched is on My media.');
       if (op === 'addWatchlist') return after(Trakt.addWatchlist(), 'Your watchlist is on My media.');
       if (op === 'addRecommended') return after(Trakt.addRecommended(a.of === 'shows' ? 'shows' : 'movies'), 'Recommendations added to My media.');
       throw new Error('Unknown Trakt request.');

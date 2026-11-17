@@ -360,37 +360,53 @@ var Settings = (function () {
         action('Disconnect Trakt', 'Signs this TV out of Trakt.  Your lists stay on My media without your private ones.', function () { UI.confirm('Disconnect Trakt from this TV?', 'Disconnect', function () { Trakt.disconnect(); build(); }); }));
     }
     out.push(head('Watch history'),
-      toggle('Mark as watched on Trakt', 'When you finish a movie or episode on My media, it goes on your Trakt history.  Kept and sent later if Trakt can\'t be reached.', function () { return Trakt.settings().watchedOut; }, function (v) { Trakt.setSettings({ watchedOut: v }); paint(); }),
-      toggle('Bring my Trakt history in', 'What you watched on other apps shows as watched here, so Next up and Not watched yet follow along.', function () { return Trakt.settings().historyIn; }, function (v) { Trakt.setSettings({ historyIn: v }); paint(); }));
+      toggle('Mark as watched on Trakt', 'When you finish a movie or episode on My media, it goes on your Trakt history (kept and sent later if Trakt can\'t be reached).  Where you stop partway goes to Trakt too, so other apps can continue from there.', function () { return Trakt.settings().watchedOut; }, function (v) { Trakt.setSettings({ watchedOut: v }); paint(); }),
+      toggle('Bring my Trakt history in', 'What you watched on other apps shows as watched here, so Next up and Not watched yet follow along, and what you paused elsewhere is in Continue watching.', function () { return Trakt.settings().historyIn; }, function (v) { Trakt.setSettings({ historyIn: v }); paint(); }));
     out.push(head('Lists on My media'));
     var ls = Trakt.lists();
     if (!ls.length) out.push(info('No Trakt lists yet.  Add one below.', ''));
     ls.forEach(function (l) {
       out.push(page(I18n.raw(l.name), (l.on === false ? 'Off  ·  ' : '') + KIND_L[Math.max(0, KIND_V.indexOf(l.kind))] + '  ·  ' + Trakt.itemsOf(l.id).length + ' titles on Trakt', I18n.raw(l.name), function () { return traktList(l.id); }));
     });
-    out.push(head('Add a list'),
-      action('Add a list by its link', 'Like Radarr and Sonarr: paste a trakt.tv/users/NAME/lists/LIST link, or type NAME/LIST.  The list must be public, or yours.', function () {
-        UI.prompt('Trakt list link or NAME/LIST', '', function (v) { if (!v.trim()) return; askKind(function (k) { U.toast('Looking up the list…'); Trakt.addTyped(v, k).then(function (l) { U.toast(l.name + ' added to My media', 5000); build(); }, traktErr); }); }, 'For example trakt.tv/users/garycrawfordgc/lists/latest-releases.  Typing is easier from the phone app or the web editor.');
-      }),
-      action('Find a list', 'Search Trakt\'s public lists by name.', function () {
-        UI.prompt('Search Trakt lists', '', function (q) {
-          if (!q.trim()) return; U.toast('Searching Trakt…');
-          Trakt.search(q).then(function (found) {
-            if (!found.length) return U.toast('No lists found.  Try other words.', 5000);
-            UI.menu('Trakt lists', found.map(function (x) { return { label: I18n.raw(x.name), sub: I18n.raw('by ' + x.user + '  ·  ' + x.count + ' titles  ·  ' + x.likes + ' likes'), action: function () { askKind(function (k) { try { Trakt.addFound(x, k); U.toast(x.name + ' added to My media', 5000); build(); } catch (e) { traktErr(e); } }); } }; }));
-          }, traktErr);
-        });
-      }),
-      action('Add a Trakt chart', 'Trending, popular, most anticipated, box office and most watched.', function () {
-        UI.menu('Trakt charts', Trakt.CHARTS.map(function (c) { return { label: c[2], action: function () { try { Trakt.addChart(c[0], c[1]); build(); } catch (e) { traktErr(e); } } }; }));
-      }),
-      Trakt.connected() ? action('Add your watchlist or recommendations', 'Needs Trakt connected.', function () {
-        var add = function (fn) { return function () { try { fn(); build(); } catch (e) { traktErr(e); } }; };
-        UI.menu('From your Trakt account', [{ label: 'Your watchlist', action: add(function () { Trakt.addWatchlist(); }) }, { label: 'Movies Trakt recommends for you', action: add(function () { Trakt.addRecommended('movies'); }) }, { label: 'Shows Trakt recommends for you', action: add(function () { Trakt.addRecommended('shows'); }) }]);
-      }) : null);
+    out.push(page('Add a Trakt list', 'Your watchlist, Trakt\'s charts, popular lists, a search, or a list\'s link (like Radarr and Sonarr).  Each goes on the tab for what it holds.', 'Add a Trakt list', traktAdd));
     return out.filter(Boolean);
   }
-  function askKind(then) { UI.menu('What does the list hold?', KIND_V.map(function (k, i) { return { label: KIND_L[i], action: function () { then(k); } }; })); }
+  // Adding a list: everything in one place, what's on My media already marked, and the tab worked out for you.
+  function traktAdded(r) { U.toast(r.message, 6000); build(); }
+  function traktFoundMenu(title, found) {
+    if (!found.length) return U.toast('No lists found.  Try other words.', 5000);
+    UI.menu(title, found.map(function (x) {
+      return { label: I18n.raw((x.added ? '✓  ' : '') + x.name), sub: I18n.raw((x.added ? 'On My media  ·  ' : '') + (x.holds || x.count + ' titles') + '  ·  by ' + x.user + (x.kind && !x.added ? '  ·  goes on ' + Trakt.tabName(x.kind) : '')),
+        action: x.added ? function () { U.toast(x.name + ' is already on My media'); } : function () { U.toast('Adding ' + x.name + '…'); Trakt.addFound(x).then(traktAdded, traktErr); } };
+    }));
+  }
+  function traktLook(what, fn) { U.toast(what + '…', 8000); fn().then(function (found) { traktFoundMenu(what.replace(/^Looking (up|for) /, ''), found); }, traktErr); }
+  function traktAdd() {
+    if (typeof Trakt === 'undefined') return [];
+    var out = [info('A list goes on the tab for what it holds: movies on Movies, TV shows on TV shows, both on Home.  You can change that on the list\'s page.', '')];
+    var row = function (label, sub, on, fn) { return action((on ? '✓  ' : '') + label, on ? 'On My media' : sub, on ? function () { U.toast(label + ' is already on My media'); } : fn); };
+    if (Trakt.connected()) {
+      out.push(head('From your Trakt account'),
+        row('Recently watched', 'What you watched lately, here and in other apps, newest first.  Home.', Trakt.has({ type: 'history' }), function () { try { Trakt.addHistory(); U.toast('Recently watched is on Home'); build(); } catch (e) { traktErr(e); } }),
+        row('Your watchlist', 'Movies and shows you saved to watch.  Home.', Trakt.has({ type: 'watchlist' }), function () { try { Trakt.addWatchlist(); U.toast('Your watchlist is on Home'); build(); } catch (e) { traktErr(e); } }),
+        row('Movies Trakt recommends for you', 'Movies tab.', Trakt.has({ type: 'recommended', of: 'movies' }), function () { try { Trakt.addRecommended('movies'); build(); } catch (e) { traktErr(e); } }),
+        row('Shows Trakt recommends for you', 'TV shows tab.', Trakt.has({ type: 'recommended', of: 'shows' }), function () { try { Trakt.addRecommended('shows'); build(); } catch (e) { traktErr(e); } }));
+    }
+    ['movies', 'shows'].forEach(function (of) {
+      out.push(head(of === 'movies' ? 'Trakt charts: movies' : 'Trakt charts: TV shows'));
+      Trakt.CHARTS.filter(function (c) { return c[1] === of; }).forEach(function (c) {
+        out.push(row(c[2], of === 'movies' ? 'Movies tab.' : 'TV shows tab.', Trakt.hasChart(c[0], c[1]), function () { try { Trakt.addChart(c[0], c[1]); build(); } catch (e) { traktErr(e); } }));
+      });
+    });
+    out.push(head('Lists other people made'),
+      action('Search lists by name', 'Christmas, A24, Oscar winners, 80s horror…  Each result says what it holds.', function () { UI.prompt('Search Trakt lists', '', function (q) { if (q.trim()) traktLook('Looking for "' + q.trim() + '"', function () { return Trakt.search(q, true); }); }, 'Typing is easier from the phone app or the web editor.'); }),
+      action('Popular lists', 'The lists most liked on Trakt.', function () { traktLook('Looking up popular lists', function () { return Trakt.browse('popular', true); }); }),
+      action('Trending lists', 'Lists people are liking this week.', function () { traktLook('Looking up trending lists', function () { return Trakt.browse('trending', true); }); }),
+      action('Paste a list\'s link', 'Like Radarr and Sonarr: a trakt.tv/users/NAME/lists/LIST link, or NAME/LIST.  The list must be public, or yours.', function () {
+        UI.prompt('Trakt list link or NAME/LIST', '', function (v) { if (!v.trim()) return; U.toast('Looking up the list…'); Trakt.addTyped(v).then(traktAdded, traktErr); }, 'For example trakt.tv/users/garycrawfordgc/lists/latest-releases.  Typing is easier from the phone app or the web editor.');
+      }));
+    return out;
+  }
   function traktList(id) {
     var l = Trakt.lists().filter(function (x) { return x.id === id; })[0];
     if (!l) return [info('This list was removed.', '')];

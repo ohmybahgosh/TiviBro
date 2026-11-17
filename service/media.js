@@ -363,7 +363,7 @@ function scanWebdav(source, cb) {
           if (entry.kind !== 'movie' || source.contentMode === 'shows') return;
         }
         var t = titleOf(discovery(source) ? safeMovieFolder(c.name, files) : c.name, f.file);
-        movies.push({ id: 'w:' + f.path, title: t.title, year: t.year, file: f.file, size: f.size, ext: extOf(f.file), info: tokens(f.file), path: f.path });
+        movies.push({ id: 'w:' + f.path, title: t.title, year: t.year, file: f.file, size: f.size, ext: extOf(f.file), info: tokens(f.file), path: f.path, mt: Date.parse(f.modified) || undefined });
       });
       next();
     });
@@ -436,7 +436,7 @@ function dropboxResult(source, entries, partial, errors) {
         if (entry.kind !== 'movie' || source.contentMode === 'shows') return;
       }
       var t = titleOf(discovery(source) ? safeMovieFolder(g.name, g.files) : g.name, f.file);
-      movies.push({ id: f.id, title: t.title, year: t.year, file: f.file, size: f.size, ext: extOf(f.file), info: tokens(f.file), path: f.path });
+      movies.push({ id: f.id, title: t.title, year: t.year, file: f.file, size: f.size, ext: extOf(f.file), info: tokens(f.file), path: f.path, mt: Date.parse(f.modified) || undefined });   // the file's date: Recently added on a first scan
     });
   });
   return { movies: movies, files: discovery(source) ? discovered : undefined, partial: partial, errors: errors, skipped: skipped };
@@ -595,7 +595,7 @@ function libraryRequest(kind, q, req, res, ALLOW, log) {
       var local = function (r) { if (r.url && r.url.indexOf('/media-stream/') === 0) r.url = 'http://127.0.0.1:' + req.connection.localPort + r.url; return r; };
       var resolved = function (r) {
         local(r);
-        if (kind !== 'chapters' || r.error) { if (r.url) r.resumeKey = file.id; return answer(null, r); }
+        if (kind !== 'chapters' || r.error) { if (!r.url) return answer(null, r); r.resumeKey = file.id; return lib.progressOf ? lib.progressOf(file.id, function (e, p) { if (p) r.resumeAt = p; answer(null, r); }) : answer(null, r); }
         require('./media-chapter-request').inspect(r.url, file.size, file.ext, answer);
       };
       if (file.url) return resolved({ url: file.url });

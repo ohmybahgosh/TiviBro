@@ -190,7 +190,7 @@ var Phone = (function () {
       var m = typeof Movies !== 'undefined' ? Movies.of(c, p) : null, sh = !m && typeof Series !== 'undefined' ? (Series.known(c, p) || null) : null;
       var t = m || sh;
       if (t) {
-        x.tm = { k: m ? 'm' : 's', poster: t.poster || '', backdrop: t.backdropHd || t.backdrop || '', plot: t.plot || '', year: t.year || '', genre: t.genre || '', rating: t.rating || '', runtime: t.runtime || '', network: t.network || '' };
+        x.tm = { k: m ? 'm' : 's', poster: t.poster || '', backdrop: t.backdropHd || t.backdrop || '', plot: t.plot || '', year: t.year || '', genre: t.genre || '', rating: t.rating || '', runtime: U.runtime(t.runtime) || '', network: t.network || '' };
         var e = sh && p.ep && Series.episode ? Series.episode(sh, p.ep) : null;
         if (e) x.tm.ep = { t: e.t || '', plot: e.plot || '', still: e.still || '' };
       }
@@ -287,7 +287,7 @@ var Phone = (function () {
       function one(g) {
         var m = g.m;
         Movies.fill(m);
-        return { id: m.id, title: m.title, year: m.year || '', genre: m.genre || '', runtime: m.runtime || '', rating: m.rating || '', plot: m.plot || '',
+        return { id: m.id, title: m.title, year: m.year || '', genre: m.genre || '', runtime: U.runtime(m.runtime) || '', rating: m.rating || '', plot: m.plot || '',
           poster: m.poster || '', backdrop: m.backdropHd || m.backdrop || '', logo: m.logo || '', live: g.live ? 1 : 0,
           chans: g.list.map(function (x) { return { k: x.c.k, n: Library.name(x.c), logo: Views.logoOf(x.c) || '', s: x.p.s, e: x.p.e, r: hasReminder(x.c.k, x.p.s) ? 1 : 0 }; }) };
       }

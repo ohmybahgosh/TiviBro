@@ -45,6 +45,7 @@ var Media = (function () {
   function label(m) { return (m.title || m.label || '') + (m.year ? ' (' + m.year + ')' : ''); }
   function nameOf(m) { return m.metadata && m.metadata.title || m.title || m.label || ''; }
   function size(n) { return n >= 1e9 ? (n / 1e9).toFixed(1) + ' GB' : n >= 1e6 ? Math.round(n / 1e6) + ' MB' : ''; }
+  function RT(v) { return U.runtime ? U.runtime(v) : v; }   // "1 h 32 min"
   function fileInfo(m) { return (m.info || []).concat(m.ext ? [String(m.ext).toUpperCase()] : []).join('   '); }
   /* The picture first: 4K and Dolby Vision, HDR10 or HLG, from the file's own headers once it has been looked
      at (m.vf, below), else from its name ("2160p", "HDR", "DV").  Then the rest of what the name says. */
@@ -259,10 +260,16 @@ var Media = (function () {
   function isShow(m) { return m && (m.kind === 'show' || !!m.continueEpisode); }
   // Trakt's lists (trakt.js) are shelves too, each with its own key ('trakt:abcdefgh'), after TMDB's Trending.
   function traktLists() { return typeof Trakt !== 'undefined' ? Trakt.shelves() : []; }
-  function orderAll() { var o = ORDER.slice(), at = o.indexOf('tmdb:trending') + 1; traktLists().forEach(function (t, i) { o.splice(at + i, 0, t.id); NAMES[t.id] = t.title + '  (Trakt)'; }); return o; }
+  function orderAll() { var o = ORDER.slice(), at = o.indexOf('tmdb:trending');   // Trakt's lists before TMDB's
+  traktLists().forEach(function (t, i) { o.splice(at + i, 0, t.id); NAMES[t.id] = t.title + '  (Trakt)'; }); return o; }
   function arrangement() {
     var ORD = orderAll(), p = MediaStore.preferences(), saved = (p.shelfOrder || []).filter(function (k) { return ORD.indexOf(k) >= 0; }), off = p.shelfOff || {};
-    ORD.forEach(function (k, i) { if (saved.indexOf(k) < 0) saved.splice(Math.min(i, saved.length), 0, k); });
+    // A shelf new to your order goes where it would by default; a Trakt list just added goes above TMDB's lists.
+    ORD.forEach(function (k, i) {
+      if (saved.indexOf(k) >= 0) return;
+      var t = k.indexOf('trakt:') === 0 ? saved.filter(function (x) { return x.indexOf('tmdb:') === 0; })[0] : null;
+      saved.splice(t ? saved.indexOf(t) : Math.min(i, saved.length), 0, k);
+    });
     return { order: saved, off: function (k) { return off[k] != null ? !!off[k] : LISTS.some(function (l) { return l.key === k && l.off; }); } };
   }
   function shelvesNow(opts) {
@@ -275,8 +282,11 @@ var Media = (function () {
     var built = {};
     built['continue'] = { title: 'Continue watching', movies: one(base[0].movies.filter(mine)).concat(opts.phone ? [] : continuingShows.filter(mine)) };
     built.favorites = { title: 'Favorites', movies: one(base[1].movies.filter(mine)).concat(favShows) };
+    // Recently added: by the file's own date where the server gives one (Dropbox, WebDAV), so a library's first
+    // scan has it too; else by when TiviBro first saw it, leaving out that first scan.
     var first = Infinity; all.forEach(function (m) { if ((m.addedAt || 0) < first) first = m.addedAt || 0; });
-    var recent = one(all.filter(function (m) { return (m.addedAt || 0) > first + 3600e3; }).sort(function (a, b) { return (b.addedAt || 0) - (a.addedAt || 0); })).slice(0, 40);
+    var when = function (m) { return (m.addedAt || 0) > first + 3600e3 || !(m.mt > 0) ? m.addedAt || 0 : m.mt; };
+    var recent = one(all.filter(function (m) { return m.mt > 0 || (m.addedAt || 0) > first + 3600e3; }).sort(function (a, b) { return when(b) - when(a); })).slice(0, 40);
     built.recent = { title: 'Recently added', sub: count(recent.length, '1 new title', '{n} new titles'), movies: recent };
     var movies = one(p.favoritesInLists ? all : all.filter(function (m) { return !MediaStore.isFavorite(m.id); }));
     built.all = { title: 'Movies', sub: count(movies.length, '1 movie', '{n} movies') + '  ·  ' + sortName('movie'), movies: movies };
@@ -476,12 +486,12 @@ var Media = (function () {
       lg.src = wrap(md.logo); box.appendChild(lg);
     } else box.appendChild(U.el('h1', 'media-title', title));
     var seasons = Array.isArray(md.seasons) ? md.seasons.filter(function (x) { return x.number > 0; }).length : 0;
-    var facts = [m.kind === 'show' ? 'TV show' : '', m.year || md.year, md.runtime, seasons ? count(seasons, '1 season', '{n} seasons') : '', genresOf(m).slice(0, 3).join(', '), rating(m) ? '★ ' + md.rating : '', m.kind === 'live' ? '' : pictureInfo(m), n > 1 ? n + ' copies' : '', (m.favourite || MediaStore.isFavorite(m.id)) ? '♥ Favorite' : ''];
+    var facts = [m.kind === 'show' ? 'TV show' : '', m.year || md.year, RT(md.runtime), seasons ? count(seasons, '1 season', '{n} seasons') : '', genresOf(m).slice(0, 3).join(', '), rating(m) ? '★ ' + md.rating : '', m.kind === 'live' ? '' : pictureInfo(m), n > 1 ? n + ' copies' : '', (m.favourite || MediaStore.isFavorite(m.id)) ? '♥ Favorite' : ''];
     box.appendChild(U.el('div', 'media-facts', facts.filter(Boolean).join('   ·   ')));
     formatSoon(m, function (x) { if (itemsVL.current() === x) showInfo(); });
     box.appendChild(U.el('p', 'media-summary', md.plot || (m.kind === 'show' ? 'Press OK for its seasons and episodes.' : 'Press OK to play.  Red for options.')));
     var bottom = m.kind === 'live' ? liveLine(m.live) + '  ·  ' + (m.live.live ? 'OK to watch' : 'OK for a reminder') : m.continueEpisode ? 'Continue with ' + (m.label || 'the next episode') + (m.progressPercent ? ',  ' + m.progressPercent + '% watched' : '')
-      : r ? 'Resume at ' + Math.floor(r.pos / 60) + ' of ' + Math.floor(r.dur / 60) + ' min' : m.kind === 'show' ? 'OK for episodes' : 'Ready to watch';
+      : r ? 'Resume at ' + RT(Math.max(1, Math.floor(r.pos / 60))) + ' of ' + RT(Math.floor(r.dur / 60)) : m.kind === 'show' ? 'OK for episodes' : 'Ready to watch';
     box.appendChild(U.el('div', 'media-caption', bottom + (src ? '   ·   ' + src.name : '')));
     if (md.provider && ((md.fallbackFields || []).length || MediaStore.preferences().language !== (md.requestedLanguage || md.language || 'en'))) box.appendChild(U.el('span', 'media-language-note', (md.fallbackFields || []).length ? 'English fallback: ' + md.fallbackFields.join(', ') : 'Saved metadata language differs from your preference'));
   }
@@ -531,6 +541,7 @@ var Media = (function () {
       y += s.movies.length ? ROW_H : 130;
     });
     $('mediaShelfStage').style.transform = 'translateY(-' + focusedY + 'px)';
+    var box = $('mediaItems'); if (box && box.scrollTop) box.scrollTop = 0;   // moved only by the stage's transform: a stray scroll (a focus, an inspector) hid every shelf
     showInfo(); pumpPosters();
   }
   function refresh() {
@@ -919,6 +930,7 @@ var Media = (function () {
     if (m.review && m.review.length) return MediaSeries.correct(m,restore);
     if (typeof MediaSeries !== 'undefined') MediaSeries.leave();
     var token = ++playToken, r = MediaStore.resume(m.resumeKey || m.id);
+    if (m.resumeAt && m.resumeAt.pos > 0 && (!r || !(r.at >= m.resumeAt.at))) r = m.resumeAt;   // the library's (the phone's, Trakt's) is newer
     var startAt = !fromStart && r && r.pos > (m.kind === 'episode' ? 5 : 30) && r.pos < r.dur - (m.kind === 'episode' ? 1 : 60) ? Math.max(0,r.pos - 5) : 0;
     if (m.startSec != null && (startAt < m.startSec || (m.endSec != null && startAt >= m.endSec))) startAt = m.startSec;
     function go(url) {
@@ -926,7 +938,7 @@ var Media = (function () {
       if(m.kind==='episode'){try{Log.hideLinksFrom(String(url).split('/')[2]);}catch(e){}}
       var md = m.metadata || {};
       // The player's lines: the name once, then the year, running time, genres and rating (not the year twice).
-      playingMeta = { id: m.resumeKey || m.id, media: null, title: m.kind === 'episode' ? label(m) : nameOf(m), sub: m.kind === 'episode' ? m.year || '' : [m.year || md.year, md.runtime, genresOf(m).slice(0, 2).join(', '), rating(m) ? '★ ' + md.rating : ''].filter(Boolean).join('   ·   '), poster: md.poster ? wrap(md.poster) : '', item: m, local: true, lastPos:startAt,lastAt:Date.now(),continuous:0,session:Date.now()+'_'+token,startedAt:Date.now(),sequence:0 };
+      playingMeta = { id: m.resumeKey || m.id, media: null, title: m.kind === 'episode' ? label(m) : nameOf(m), sub: m.kind === 'episode' ? m.year || '' : [m.year || md.year, RT(md.runtime), genresOf(m).slice(0, 2).join(', '), rating(m) ? '★ ' + md.rating : ''].filter(Boolean).join('   ·   '), poster: md.poster ? wrap(md.poster) : '', item: m, local: true, lastPos:startAt,lastAt:Date.now(),continuous:0,session:Date.now()+'_'+token,startedAt:Date.now(),sequence:0 };
       m.playStartedAt=playingMeta.startedAt;
       clearInterval(progressTimer);
       if (m.kind === 'episode') progressTimer = setInterval(function () { checkpoint(true); if (playingMeta && !playingMeta.boundaryPending && playingMeta.item.endSec != null && Player.position >= playingMeta.item.endSec) boundary(); },1000);
@@ -982,7 +994,7 @@ var Media = (function () {
     var position = Player.position - (item.startSec || 0);
     if (item.kind === 'episode' && length > 0 && position >= length - Math.min(60,length * 0.1) && playingMeta.continuous >= Math.min(30,length * 0.1)) {
       if (typeof MediaSeries !== 'undefined') MediaSeries.recordCompletion(item);
-    }
+    } else if (length > 0 && typeof Trakt !== 'undefined' && Trakt.paused) Trakt.paused(item, 100 * position / length);   // other apps can continue from here
     playingMeta = null;
   }
   function ended() {
@@ -1034,7 +1046,7 @@ var Media = (function () {
       return MediaStore.load().then(function () {
         var m = phoneFind(id), md = m.metadata || {}, r = MediaStore.resume(m.id), src = MediaStore.source(m.src);
         return { id: m.id, n: phoneTitle(m), c: md.poster || '', plot: md.plot || '', genre: md.genre || '', cast: '', year: String(m.year || md.year || '').slice(0, 4),
-          dur: md.runtime || '', r: '', media: [fileInfo(m), m.size ? size(m.size) : '', src ? src.name : ''].filter(Boolean).join('   ·   '),
+          dur: RT(md.runtime) || '', r: '', media: [fileInfo(m), m.size ? size(m.size) : '', src ? src.name : ''].filter(Boolean).join('   ·   '),
           pos: r ? Math.round(r.pos) : 0, len: r ? Math.round(r.dur) : 0, fav: MediaStore.isFavorite(m.id) ? 1 : 0 };
       });
     },
@@ -1060,7 +1072,7 @@ var Media = (function () {
     var r = MediaStore.resume(m.id);
     UI.menu(RAW(label(m)), [
       { label: MediaStore.isFavorite(m.id) ? 'Remove from Favorites' : 'Add to Favorites', action: function () { MediaStore.toggleFavorite(m.id); refresh(); } },
-      r && { label: 'Resume', sub: Math.floor(r.pos / 60) + ' min', action: function () { play(m, false); } },
+      r && { label: 'Resume', sub: RT(Math.max(1, Math.floor(r.pos / 60))), action: function () { play(m, false); } },
       { label: r ? 'Play from beginning' : 'Play', action: function () { play(m, true); } },
       { label: m.metadata ? 'Change movie details' : 'Find movie details', sub: 'Search TMDB and choose the correct match', action: function () { findDetails(m); } },
       m.metadata && { label: 'Remove movie details', action: function () { MediaStore.setMetadata(m.id, null); refresh(); } },

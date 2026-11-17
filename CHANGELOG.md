@@ -1,16 +1,26 @@
 # Changelog
 
-## Unreleased
-
-- **Connecting Trakt shows a QR code.**  Scan it with your phone's camera: Trakt opens with the code already filled in, so you only sign in and choose Yes.  The code itself is larger too.
-- **All of your Trakt history comes in.**  Trakt now sends its watched lists a page at a time and without the episodes, so only your first 100 movies and none of your episodes were marked.  Now every page is read, and each of your shows that Trakt says you watched is asked for its episodes (on one TV: 249 more movies and 35 episodes).  Long Trakt lists and watchlists come in whole too.
-- **Settings > My media counts your TV shows straight away**, not 0 until My media was opened.
-
-## 0.6.0 (alpha 146, 2026-11-16)
+## 0.6.0 (alpha 147, 2026-11-16)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 146
+### New in alpha 147
+
+- **Connecting Trakt shows a QR code.**  Scan it with your phone's camera: Trakt opens with the code already filled in, so you only sign in and choose Yes.  The code itself is larger too.
+- **All of your Trakt history comes in.**  Trakt now sends its watched lists a page at a time and without the episodes, so only your first 100 movies and none of your episodes were marked.  Now every page is read, and each of your shows that Trakt says you watched is asked for its episodes (on one TV: 249 more movies and 35 episodes).  Long Trakt lists and watchlists come in whole too.
+- **Continue watching follows Trakt.**  What you paused in another app that uses Trakt is in My media's Continue watching, at the place you stopped, when it's newer than where you stopped here.  And where you stop partway here goes to Trakt, so other apps can carry on from there.  The TV shows tab's Continue watching, and the phone, resume from the library's place too.
+- **Trakt's lists sit above TMDB's.**  A Trakt list you add goes above TMDB's lists on its tab, even after you've arranged the shelves.
+- **Adding a Trakt list, all in one place.**  Settings > Trakt > Add a Trakt list has your watchlist and recommendations, Trakt's charts for movies and for TV shows, popular and trending lists, a search, and a list's link.  Each list says what it holds (12 movies, 3 shows), goes on the right tab by itself (movies on Movies, TV shows on TV shows, both on Home), and one already on My media is marked ✓.  The web editor has the same, with Popular and Trending lists buttons.
+- **Recently watched from Trakt.**  A shelf on Home of what you watched lately, here and in other apps, newest first.  It's added for you once and updates after each sync.
+- **Arrange shelves says when there's more.**  "▼ 6 more below" (and above) at the edge of a long list, so the shelves past the bottom aren't missed.
+- **Recently added on Home again.**  A library scanned all at once had every file "added" at the same moment, so Recently added was empty.  It now goes by the file's own date from Dropbox or WebDAV for that first scan (rescan the library once to read the dates), and Sort by date added does too.
+- **Running times in hours and minutes.**  "1 h 32 min", not "92 min", on My media, Movies on now, the guide's movie details, Resume and the phone.
+- **Trailer Park Boys is a TV show again.**  A file was taken for a trailer or sample when the word was anywhere in its name, so a show called "Trailer Park Boys" went to Excluded files.  Now only a name that ends that way is ("Frozen-trailer", "x264-SAMPLE"), and an episode called "The Trailer" stays an episode.  Rescan the library to bring them back.
+- **More TV shows match on their own.**  A name written differently ("Gilgo Beach Killer - The House of Secrets" for "The Gilgo Beach Killer: House of Secrets", "PLUR1BUS" for "Pluribus"), "Love on the Spectrum U S" as the US one, and of several shows with one name ("Damaged", "Victoria"), the only one whose seasons hold the episodes you have.  Shows that found no match before are looked up again.
+- **Settings > My media counts your TV shows straight away**, not 0 until My media was opened.
+- **My media's shelves can't slide out of view.**  If the shelf area was ever scrolled by itself, the shelves went blank under their titles; now it snaps back as you move.
+
+### In alpha 146
 
 - **Trakt.**  Settings > Trakt connects your Trakt account with a code you enter at trakt.tv/activate on your phone or computer (no password on the TV).  What you finish on My media goes on your Trakt history, and what you watched in other apps shows as watched here, so Next up and Not watched yet follow along.  Each is a switch, and Sync now does it at once.
 - **Trakt lists as My media shelves.**  Your watchlist, Trakt's charts (trending, popular, most anticipated, box office, most watched), its recommendations for you, and any public list, added the way Radarr and Sonarr take them: paste the list's link, type NAME/LIST, or search Trakt's lists by name.  Each list holds movies, TV shows or both, goes on the matching tab, shows only what you can watch, and has its place in Arrange shelves.  On the TV, in the phone app and in the web editor.

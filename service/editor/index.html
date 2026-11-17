@@ -709,21 +709,20 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
           <p>Trakt keeps what you've watched in step across TiviBro and your other apps, and its lists become shelves on My media that show only what you can watch.  The sign-in stays on the TV.</p>
           <div id="traktAccount"></div>
           <div class="form" style="margin-top:10px">
-            <label class="f full chk"><input id="traktWatchedOut" type="checkbox"> Mark as watched on Trakt when you finish a movie or episode</label>
-            <label class="f full chk"><input id="traktHistoryIn" type="checkbox"> Bring my Trakt history in (watched on other apps shows as watched here)</label>
+            <label class="f full chk"><input id="traktWatchedOut" type="checkbox"> Mark as watched on Trakt when you finish a movie or episode (and where you stop partway)</label>
+            <label class="f full chk"><input id="traktHistoryIn" type="checkbox"> Bring my Trakt history in (watched on other apps shows as watched here, paused ones in Continue watching)</label>
           </div>
           <h3 style="margin-top:16px">Lists on My media</h3>
           <div id="traktLists"></div>
           <h3 style="margin-top:16px">Add a list</h3>
           <form id="traktAdd" class="form">
             <label class="f full">Trakt list link, or NAME/LIST<input id="traktInput" type="text" placeholder="https://trakt.tv/users/NAME/lists/LIST" autocomplete="off"></label>
-            <label class="f">Holds<select id="traktKind"><option value="both">Movies and TV shows (Home)</option><option value="movies">Movies (Movies tab)</option><option value="shows">TV shows (TV shows tab)</option></select></label>
             <div class="f row" style="align-items:flex-end"><button type="submit" class="primary">Add list</button></div>
-            <div class="full muted small">Like Radarr and Sonarr: the list's link from trakt.tv, or the user name and list name.  The list must be public, or yours.</div>
+            <div class="full muted small">Like Radarr and Sonarr: the list's link from trakt.tv, or the user name and list name.  The list must be public, or yours.  It goes on the tab for what it holds (movies on Movies, TV shows on TV shows, both on Home); change that below once it's added.</div>
           </form>
           <form id="traktFind" class="form" style="margin-top:8px">
             <label class="f">Find a list<input id="traktQuery" type="search" placeholder="Search Trakt's public lists" autocomplete="off"></label>
-            <div class="f row" style="align-items:flex-end"><button type="submit">Search</button><select id="traktChart"><option value="">Add a Trakt chart…</option></select></div>
+            <div class="f row" style="align-items:flex-end;flex-wrap:wrap"><button type="submit">Search</button><button type="button" id="traktPopular" class="ghost">Popular lists</button><button type="button" id="traktTrending" class="ghost">Trending lists</button><select id="traktChart"><option value="">Add a Trakt chart…</option></select></div>
           </form>
           <div id="traktFound"></div>
           <div id="traktMsg" aria-live="polite"></div>
@@ -3535,7 +3534,7 @@ function unmatchedList(s, box) {
   }, function (e) { box.textContent = e.message; });
 }
 /* ---------- Trakt ---------- */
-var traktTimer = null, traktCharts = false;
+var traktTimer = null;
 var TRAKT_KINDS = [['both', 'Movies and TV shows (Home)'], ['movies', 'Movies (Movies tab)'], ['shows', 'TV shows (TV shows tab)']];
 function traktDo(op, args, then) { return command('trakt', Object.assign({ op: op }, args || {}), 60000).then(function (r) { if (r.msg) msg('traktMsg', 'ok', r.msg); if (r.data && r.data.lists) drawTrakt(r.data); if (then) then(r); return r; }, function (e) { msg('traktMsg', 'bad', e.message); }); }
 function drawTrakt(d) {
@@ -3553,9 +3552,11 @@ function drawTrakt(d) {
     var who = document.createElement('p'); who.textContent = d.describe; acc.appendChild(who);
     var row = document.createElement('div'); row.className = 'row';
     row.appendChild(b('Sync now', '', function () { msg('traktMsg', 'busy', 'Syncing with Trakt…'); traktDo('sync'); }));
-    row.appendChild(b('Add your watchlist', 'ghost', function () { traktDo('addWatchlist'); }));
-    row.appendChild(b('Add recommended movies', 'ghost', function () { traktDo('addRecommended', { of: 'movies' }); }));
-    row.appendChild(b('Add recommended shows', 'ghost', function () { traktDo('addRecommended', { of: 'shows' }); }));
+    var hv = d.has || {};
+    if (!hv.history) row.appendChild(b('Add recently watched', 'ghost', function () { traktDo('addHistory'); }));
+    if (!hv.watchlist) row.appendChild(b('Add your watchlist', 'ghost', function () { traktDo('addWatchlist'); }));
+    if (!hv.recMovies) row.appendChild(b('Add recommended movies', 'ghost', function () { traktDo('addRecommended', { of: 'movies' }); }));
+    if (!hv.recShows) row.appendChild(b('Add recommended shows', 'ghost', function () { traktDo('addRecommended', { of: 'shows' }); }));
     row.appendChild(b('Disconnect', 'ghost danger', function () { ask('Disconnect Trakt from the TV?', 'Your lists stay on My media without your private ones.', 'Disconnect', function () { traktDo('disconnect'); }, true); }));
     acc.appendChild(row);
   }
@@ -3570,24 +3571,27 @@ function drawTrakt(d) {
     row.appendChild(b('Remove', 'ghost danger', function () { traktDo('remove', { id: l.id }); }));
     ls.appendChild(row);
   });
-  if (!traktCharts) { traktCharts = true; d.charts.forEach(function (c, i) { var o = document.createElement('option'); o.value = i; o.textContent = c[2]; $('traktChart').appendChild(o); }); $('traktChart')._charts = d.charts; }
+  var sel = $('traktChart'); while (sel.options.length > 1) sel.remove(1);
+  d.charts.forEach(function (c, i) { var o = document.createElement('option'); o.value = i; o.textContent = c[2] + (c[3] ? '  (added)' : ''); o.disabled = !!c[3]; sel.appendChild(o); }); sel._charts = d.charts;
 }
 function loadTrakt() { command('trakt', { op: 'status' }).then(function (r) { $('traktCard').classList.remove('hidden'); drawTrakt(r.data); }, function () { $('traktCard').classList.add('hidden'); $('traktHead').classList.add('hidden'); }); }
 $('traktWatchedOut').onchange = $('traktHistoryIn').onchange = function () { traktDo('settings', { watchedOut: $('traktWatchedOut').checked, historyIn: $('traktHistoryIn').checked }); };
-$('traktAdd').onsubmit = function (e) { e.preventDefault(); var v = $('traktInput').value.trim(); if (!v) return; msg('traktMsg', 'busy', 'Looking up the list…'); traktDo('addTyped', { input: v, kind: $('traktKind').value }, function () { $('traktInput').value = ''; }); };
-$('traktFind').onsubmit = function (e) {
-  e.preventDefault(); var q = $('traktQuery').value.trim(); if (!q) return;
-  var out = $('traktFound'); out.textContent = 'Searching Trakt…';
-  command('trakt', { op: 'search', q: q }, 30000).then(function (r) {
+$('traktAdd').onsubmit = function (e) { e.preventDefault(); var v = $('traktInput').value.trim(); if (!v) return; msg('traktMsg', 'busy', 'Looking up the list…'); traktDo('addTyped', { input: v }, function () { $('traktInput').value = ''; }); };
+function traktFound(args, busy) {
+  var out = $('traktFound'); out.textContent = busy;
+  command('trakt', args, 90000).then(function (r) {
     out.textContent = ''; if (!r.data.length) { out.textContent = 'No lists found.  Try other words.'; return; }
     r.data.forEach(function (x) {
       var row = document.createElement('div'); row.className = 'trakt-list';
-      var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = x.name; var c = document.createElement('div'); c.className = 'muted small'; c.textContent = 'by ' + x.user + ' · ' + x.count + ' titles · ' + x.likes + ' likes'; nm.appendChild(c); row.appendChild(nm);
-      var add = document.createElement('button'); add.type = 'button'; add.textContent = 'Add'; add.onclick = function () { add.disabled = true; traktDo('addFound', { user: x.user, slug: x.slug, name: x.name, kind: $('traktKind').value }); }; row.appendChild(add);
+      var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = x.name; var c = document.createElement('div'); c.className = 'muted small'; c.textContent = (x.holds || x.count + ' titles') + ' · by ' + x.user + ' · ' + x.likes + ' likes' + (x.kind && !x.added ? ' · goes on ' + (x.kind === 'shows' ? 'TV shows' : x.kind === 'movies' ? 'Movies' : 'Home') : ''); nm.appendChild(c); row.appendChild(nm);
+      var add = document.createElement('button'); add.type = 'button'; add.textContent = x.added ? 'Added' : 'Add'; add.disabled = !!x.added; add.onclick = function () { add.disabled = true; add.textContent = 'Added'; traktDo('addFound', { user: x.user, slug: x.slug, name: x.name }); }; row.appendChild(add);
       out.appendChild(row);
     });
   }, function (e) { out.textContent = e.message; });
-};
+}
+$('traktFind').onsubmit = function (e) { e.preventDefault(); var q = $('traktQuery').value.trim(); if (q) traktFound({ op: 'search', q: q }, 'Searching Trakt…'); };
+$('traktPopular').onclick = function () { traktFound({ op: 'browse', which: 'popular' }, 'Looking up popular lists…'); };
+$('traktTrending').onclick = function () { traktFound({ op: 'browse', which: 'trending' }, 'Looking up trending lists…'); };
 $('traktChart').onchange = function () { var c = ($('traktChart')._charts || [])[+$('traktChart').value]; $('traktChart').value = ''; if (c) traktDo('addChart', { chart: c[0], of: c[1] }); };
 var mediaLibraryPage=null,mediaLibraryCursor=null;
 function loadMediaLibrary(cursor){
