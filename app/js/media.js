@@ -251,7 +251,7 @@ var Media = (function () {
   var HOME = { continue: 1, browse: 1, recent: 1, pick: 1, 'tmdb:trending': 1 };
   function inSection(id, sec) {
     if (sec === 'favorites') return id === 'favorites';
-    var tl = traktOf(id); if (tl) return tl.tab === sec;
+    var tl = traktOf(id); if (tl) return tl.history ? sec !== 'favorites' : tl.tab === sec;   // Recently watched: on every tab, with that tab's kind
     if (id === 'continue') return true;
     if (id === 'favorites') return false;
     if (sec === 'home') return !!HOME[id] || id === 'holidays' || id.indexOf('holiday:') === 0;
@@ -395,6 +395,7 @@ var Media = (function () {
       if (x.id === 'continue' && sec === 'movies') { x.movies = x.movies.filter(function (m) { return !isShow(m); }); }
       if (x.id === 'continue' && sec === 'shows') { x.movies = x.movies.filter(isShow); x.title = 'Next up'; x.sub = count(x.movies.length, '1 show you are watching', '{n} shows you are watching'); }
       if (x.id === 'recent' && sec === 'movies') x.title = 'Recently added movies';
+      var th = traktOf(x.id); if (th && th.history && sec !== 'home') { x.movies = x.movies.filter(function (m) { return sec === 'shows' ? isShow(m) : !isShow(m); }); x.sub = 'Trakt  ·  ' + count(x.movies.length, '1 you can watch', '{n} you can watch'); }
     });
     if (sec === 'favorites') {
       var f = out[0]; out = [];
@@ -426,6 +427,30 @@ var Media = (function () {
     var el = typeof document !== 'undefined' && document.getElementById ? document.getElementById('mediaBusy') : null; if (!el) return;
     var t = busyText(); el.textContent = t; el.classList.toggle('hidden', !t);
   }
+  /* Search My media: the Search tab (or Red > Search My media) asks for words; the results replace the shelves:
+     movies and TV shows whose name, original name, collection or director has them.  Back ends the search. */
+  var query = '', searchTab = false;
+  function words(t) { return String(t || '').toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9\u00c0-\u024f]+/g, ' ').trim(); }
+  function searchShelves() {
+    var q = words(query).split(' ').filter(Boolean), hit = function (m) {
+      var md = m.metadata || {}, hay = ' ' + words([m.title, md.title, md.originalTitle, md.collection, (md.directors || []).join(' '), m.year || md.year].join(' ')) + ' ';
+      return q.every(function (w) { return hay.indexOf(' ' + w) >= 0; });
+    };
+    var all = mergeCopies(MediaStore.movies(null))(MediaStore.movies(null)).filter(hit), shows = seriesCards.concat(favouriteShows).filter(hit);
+    var first = function (a, b) { var A = words(nameOf(a)).indexOf(q.join(' ')) === 0, B = words(nameOf(b)).indexOf(q.join(' ')) === 0; return A === B ? (nameOf(a) < nameOf(b) ? -1 : 1) : A ? -1 : 1; };
+    all.sort(first); shows.sort(first);
+    var out = [];
+    if (all.length) out.push({ id: 'search:movies', title: 'Movies matching "' + query + '"', sub: count(all.length, '1 movie', '{n} movies'), movies: all });
+    if (shows.length) out.push({ id: 'search:shows', title: 'TV shows matching "' + query + '"', sub: count(shows.length, '1 show', '{n} shows'), movies: shows });
+    if (!out.length) out.push({ id: 'search:none', title: 'Nothing matches "' + query + '"', sub: 'OK or Back to search again', movies: [] });
+    return out;
+  }
+  function askSearch() {
+    UI.prompt('Search My media', query, function (v) {
+      query = String(v || '').trim().slice(0, 60); searchTab = false; tabsFocus = false; followTop = true; shelfAt = 0; refresh();
+    }, 'A movie or show, a collection or a director.  The phone app types faster.');
+  }
+  function endSearch() { query = ''; followTop = true; shelfAt = 0; refresh(); }
   function setSection(sec) {
     if (sec === section && !tabsFocus) return;
     section = sec; followTop = true; refresh();
@@ -442,8 +467,12 @@ var Media = (function () {
       var t = U.el('div', 'media-tab' + (x[0] === section ? ' on' : ''), x[1]);
       if (n) t.appendChild(U.el('b', '', n.replace(/\B(?=(\d{3})+(?!\d))/g, ',')));
       t.addEventListener('click', function () { tabsFocus = false; setSection(x[0]); });
+      if (searchTab || query) t.classList.remove('on');
       bar.appendChild(t);
     });
+    var st = U.el('div', 'media-tab search' + (searchTab || query ? ' on' : ''), query ? '⌕  “' + query + '”' : '⌕  Search');
+    st.addEventListener('click', function () { searchTab = true; askSearch(); });
+    bar.appendChild(st);
   }
   // The phone app's My media: Continue watching, Favorites and Movies first (their ids stay), then the rest.
   function movieShelves() { return shelvesNow({ phone: true }).filter(function (s) { return s.movies.length || s.id === 'all'; }); }
@@ -530,7 +559,12 @@ var Media = (function () {
       var start = Math.max(0, Math.min(at - 1, s.movies.length - (TILE_POOL - 1))), used = {};
       for (var i = start; near && i < Math.min(s.movies.length, start + TILE_POOL); i++) {
         var slot = view.pool[i % TILE_POOL], m = s.movies[i]; used[i % TILE_POOL] = true;
+        // A tile reused for another title (it went off one end and comes back at the other) jumps there; only a
+        // tile keeping its title slides.  Otherwise it flew across the row behind the others when scrolling right.
+        var jump = slot.el._at !== i || slot.el._row !== row || slot.el.style.display === 'none';
+        if (jump) slot.el.style.transition = 'none';
         slot.el.style.display = ''; slot.el.style.transform = 'translateX(' + (i - start) * TILE_STEP + 'px)';
+        if (jump) { void slot.el.offsetWidth; slot.el.style.transition = ''; }
         slot.el._at = i; slot.el._row = row; cover(slot, m);
         slot.el.classList.toggle('sel', row === shelfAt && i === at);
         slot.el.setAttribute('aria-label', label(m));
@@ -549,8 +583,8 @@ var Media = (function () {
     if (typeof Settings !== 'undefined' && Settings.live) Settings.live();
     if (!built || $('viewMedia').classList.contains('hidden') || document.body.classList.contains('full')) return;
     var movie = itemsVL.current(), oldShelf = shelves[shelfAt] && shelves[shelfAt].id;
-    var list = shelvesNow();
-    shelves = list.filter(function (s) { return s.movies.length; });
+    var list = query ? searchShelves() : shelvesNow();
+    shelves = query ? list : list.filter(function (s) { return s.movies.length; });
     if (!shelves.length) shelves = list.filter(function (s) { return s.id === 'all'; });
     if (!shelves.length) shelves = [{ id: 'all', title: 'Movies', movies: [] }];
     if (!split) { section = 'home'; tabsFocus = false; }
@@ -583,19 +617,49 @@ var Media = (function () {
     var more = leftOut(res && res.skipped);
     U.toast((r.note || foundText(id, name, res && res.episodeFiles)) + more, r.note || more ? 8000 : 3000);
   }
-  function rescan(id,restart) {
+  /* New media, found by itself (like Plex): a small look at each library when TiviBro starts, when My media
+     opens and every 15 minutes (Settings > My media > Display and shelves), compared with the last look.  Only a
+     library that changed is scanned, quietly, and a toast says what came in.  Nothing is kept in memory but one
+     short answer per library; no scan while something plays. */
+  var checkTimer = null, lastCheck = 0, checking = false;
+  function newMediaSoon(ms) { clearTimeout(checkTimer); var every = MediaStore.preferences().checkEvery; if (!every && ms == null) return; checkTimer = setTimeout(newMedia, ms != null ? ms : every * 60000); }
+  function newMedia() {
+    var every = MediaStore.preferences().checkEvery;
+    if (checking || scanningAll || Object.keys(scanning).length || !Net.port) return newMediaSoon(every ? every * 60000 : null);
+    if (document.body.classList.contains('full') || document.hidden) return newMediaSoon(5 * 60000);   // watching: later
+    checking = true; lastCheck = Date.now();
+    var list = MediaStore.sources().slice();
+    (function next(i) {
+      if (i >= list.length) { checking = false; return newMediaSoon(); }
+      var s = MediaStore.source(list[i].id); if (!s) return next(i + 1);
+      ask('check', { source: s, token: s.check || '' }, 30000).then(function (r) {
+        if (!r || r.error || !r.token) return next(i + 1);
+        var first = !s.check; MediaStore.setCheck(s.id, r.token);
+        if (!r.changed || first) return next(i + 1);
+        note('info', 'New or removed media on ' + s.name + ': scanning it');
+        var before = MediaStore.movies(s.id).length, eps = (MediaStore.publicSources().filter(function (x) { return x.id === s.id; })[0] || {}).episodeFiles || 0;
+        return rescan(s.id, false, true).then(function () {
+          var after = MediaStore.movies(s.id).length, eps2 = (MediaStore.publicSources().filter(function (x) { return x.id === s.id; })[0] || {}).episodeFiles || 0;
+          var bits = [after > before ? count(after - before, '1 new movie', '{n} new movies') : '', eps2 > eps ? count(eps2 - eps, '1 new episode', '{n} new episodes') : ''].filter(Boolean);
+          if (bits.length) U.toast(bits.join(' and ') + ' on ' + s.name, 6000);
+          return next(i + 1);
+        });
+      }, function () { next(i + 1); });
+    })(0);
+  }
+  function rescan(id,restart,quiet) {
     var src = MediaStore.source(id);
     if (!src || scanning[id]) return Promise.resolve({ error: 'busy', message: !src ? 'That media source was removed.' : 'This source is already being scanned.' });
     scanning[id] = 1;pausedScans[id]=false; refresh();
-    U.toast('Looking for movies and shows on ' + src.name + '…');
+    if (!quiet) U.toast('Looking for movies and shows on ' + src.name + '…');
     function slice(first){return scanSource(src,first&&restart).then(function (res) {
       var r = MediaStore.applyScan(id, res);
-      if(res.resumable&&!res.error&&!pausedScans[id]&&!document.hidden&&MediaStore.source(id)){refreshSeries();refresh();U.toast('Scan saved.  Continuing '+src.name+'…');return new Promise(function(resolve){setTimeout(function(){resolve(slice(false));},500);});}
+      if(res.resumable&&!res.error&&!pausedScans[id]&&!document.hidden&&MediaStore.source(id)){refreshSeries();refresh();if(!quiet)U.toast('Scan saved.  Continuing '+src.name+'…');return new Promise(function(resolve){setTimeout(function(){resolve(slice(false));},500);});}
       delete scanning[id]; refreshSeries(); refresh();
-      found(id, src.name, r, res);
+      if (!quiet) found(id, src.name, r, res);
       if (!scanningAll) autoSoon();
       return { error: res.error || '', message: res.message || '', kept: r.kept, note: r.note, count: MediaStore.movies(id).length, episodes: res.episodeFiles || 0, text: foundText(id, src.name, res.episodeFiles), skipped: res.skipped || null };
-    }, function (e) { delete scanning[id]; refresh(); U.toast('Could not read ' + src.name + ': ' + why(e), 6000); return { error: 'helper' }; });}
+    }, function (e) { delete scanning[id]; refresh(); if (!quiet) U.toast('Could not read ' + src.name + ': ' + why(e), 6000); return { error: 'helper' }; });}
     var job=slice(true);scanRuns[id]=job;job.then(function(){if(scanRuns[id]===job)delete scanRuns[id];},function(){if(scanRuns[id]===job)delete scanRuns[id];});return job;
   }
   function changeSourceMode(id,mode){
@@ -1089,7 +1153,7 @@ var Media = (function () {
   function hints() {
     if (document.body.classList.contains('nav-open')) return;
     var m = itemsVL.current();
-    if (tabsFocus) return UI.hints([['', '◀ ▶  Home, Movies, TV shows'], ['', '▼  shelves'], ['', 'Back  menu', 'back']]);
+    if (tabsFocus) return UI.hints(searchTab || query ? [['', 'OK  search'], ['', '◀ ▶  Home, Movies, TV shows'], ['', 'Back  menu', 'back']] : [['', '◀ ▶  Home, Movies, TV shows, Search'], ['', '▼  shelves'], ['', 'Back  menu', 'back']]);
     if (m && m.kind === 'section') return UI.hints([['', 'OK  open ' + m.title], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
     UI.hints([['', m && m.kind === 'live' ? 'OK  watch' : 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
   }
@@ -1139,6 +1203,7 @@ var Media = (function () {
   function mediaOptions() {
     var m = itemsVL.current(), s = shelves[shelfAt], p = MediaStore.preferences(), show = (s && s.id === 'shows') || (split && section === 'shows') || (!split && has().shows && !has().movies), src = p.sourceFilter && MediaStore.source(p.sourceFilter);
     UI.menu('My media', [
+      { label: 'Search My media', sub: 'A movie or show, a collection or a director', action: askSearch },
       { label: (show ? 'Sort TV shows: ' : 'Sort movies: ') + sortName(show ? 'show' : 'movie'), action: function () { sortMenu(show ? 'show' : 'movie'); } },
       { label: 'Go to a shelf', sub: count(shelves.length, '1 shelf', '{n} shelves'), action: function () { UI.menu('Go to a shelf', shelves.map(function (x) { return { label: RAW(x.title), sub: String(x.movies.length), current: x === s, action: function () { goShelf(x.id); } }; })); } },
       { label: 'Arrange shelves', sub: 'Move shelves up or down, switch them off', action: function () { arrangeMenu(s && (s.id.indexOf('holiday:') === 0 ? 'holidays' : s.genre ? 'genres' : s.id)); } },
@@ -1162,8 +1227,14 @@ var Media = (function () {
     if (a === 'red') { mediaOptions(); return true; }
     if (a === 'blue') { Views.switchTab('settings'); Settings.section('media'); return true; }
     if (tabsFocus) {
-      var si = SECTIONS.map(function (x) { return x[0]; }).filter(function (k) { return k !== 'favorites' || counts.favorites; }), cur = si.indexOf(section);
-      if (a === 'left' || a === 'right') { setSection(si[(cur + (a === 'left' ? -1 : 1) + si.length) % si.length]); drawTabs(); hints(); }
+      var si = SECTIONS.map(function (x) { return x[0]; }).filter(function (k) { return k !== 'favorites' || counts.favorites; }).concat(['search']), cur = searchTab || query ? si.length - 1 : si.indexOf(section);
+      if (a === 'left' || a === 'right') {
+        var nx = si[(cur + (a === 'left' ? -1 : 1) + si.length) % si.length];
+        if (nx === 'search') { searchTab = true; drawTabs(); hints(); }
+        else { searchTab = false; if (query) { query = ''; section = ''; } setSection(nx); drawTabs(); hints(); }
+      }
+      else if ((a === 'ok' || a === 'down') && searchTab && !query) askSearch();
+      else if (a === 'ok' && query) askSearch();
       else if (a === 'down' || a === 'ok') { tabsFocus = false; drawTabs(); drawShelves(); hints(); }
       else if (a === 'back') { tabsFocus = false; drawTabs(); Views.tabBar(restore); }
       return true;
@@ -1172,10 +1243,12 @@ var Media = (function () {
     if (a === 'up' && split && shelfAt === 0) { tabsFocus = true; drawTabs(); drawShelves(); hints(); return true; }
     if (a === 'up') moveShelf(-1);
     else if (a === 'down') moveShelf(1);
+    else if (a === 'back' && query) endSearch();
     else if (a === 'back' || (a === 'left' && at === 0)) Views.tabBar(restore);
     else if (s && (a === 'left' || a === 'right' || a === 'chup' || a === 'chdown')) {
       shelfPos[s.id] = Math.max(0, Math.min(s.movies.length - 1, at + (a === 'left' ? -1 : a === 'right' ? 1 : a === 'chup' ? -6 : 6))); drawShelves(); hints();
-    } else if (a === 'ok') { var cm = itemsVL.current(); if (cm && cm.kind === 'section') { tabsFocus = false; setSection(cm.section); } else play(cm, false); }
+    } else if (a === 'ok' && s && s.id === 'search:none') askSearch();
+    else if (a === 'ok') { var cm = itemsVL.current(); if (cm && cm.kind === 'section') { tabsFocus = false; setSection(cm.section); } else play(cm, false); }
     else if (a === 'hold' || a === 'info') { var hm = itemsVL.current(); if (hm && hm.kind !== 'section') itemMenu(hm); }
     return true;
   }
@@ -1218,8 +1291,9 @@ var Media = (function () {
   function open(keepState) {
     playToken++;
     if (!built) build(); UI.setHandler(keys);
-    if (!keepState) { followTop = true; shelfPos = {}; section = 'home'; tabsFocus = false; }
+    if (!keepState) { followTop = true; shelfPos = {}; section = 'home'; tabsFocus = false; query = ''; searchTab = false; }
     refreshSeries(); listsSoon();
+    if (Date.now() - lastCheck > 5 * 60000 && !checking) newMediaSoon(4000);   // opening My media looks for new files
     if (keepState && loaded) { refresh(); restore(); return; }
     (loaded || (loaded = MediaStore.load())).then(function () {
       if ($('viewMedia').classList.contains('hidden')) return;
@@ -1230,7 +1304,7 @@ var Media = (function () {
   return {
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
     refreshShows:refreshSeries, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, signOut: signOut,
-    rescanAll: rescanAll, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
+    rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
     // The web editor's Fix match: search TMDB by a typed title, then save the one picked.
     searchDetails: function (title) { if (!MediaStore.tmdbToken()) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },
     applyDetails: function (movieId, tmdbId) { return metadataRequest({ id: tmdbId }).then(function (r) { if (!r.metadata) throw new Error('TMDB has no details for that.'); return MediaStore.setMetadata(movieId, r.metadata); }).then(function () { refresh(); }); }, findDetails: findDetails, libraryDetails: function (id) { var s = MediaStore.source(id); if (s) sourceDetails(s); }, detailsLabel: detailsLabel, arrangeShelves: function (sec) { arrangeMenu(null, sec || 'home'); }, bothKinds: function () { var h = has(); return !!(h.movies && h.shows); }, busyText: busyText, setBusy: setBusy,

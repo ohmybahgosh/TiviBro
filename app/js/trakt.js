@@ -235,7 +235,7 @@ var Trakt = (function () {
   // For My media (media.js shelvesNow): the shelves, with the keys its pool uses ('tmdb:ID', 'tmdb:tv:ID').
   function shelves() {
     return lists().filter(function (l) { return l.on !== false; }).map(function (l) {
-      return { id: l.id, title: l.name, tab: l.tab || tabFor(l.kind), kind: l.kind, keys: itemsOf(l.id).map(function (x) { return x.k === 'show' ? 'tmdb:tv:' + x.tmdb : 'tmdb:' + x.tmdb; }) };
+      return { id: l.id, title: l.name, tab: l.tab || tabFor(l.kind), kind: l.kind, history: !!(l.src && l.src.type === 'history'), keys: itemsOf(l.id).map(function (x) { return x.k === 'show' ? 'tmdb:tv:' + x.tmdb : 'tmdb:' + x.tmdb; }) };
     });
   }
 

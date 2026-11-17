@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **New media shows up by itself, like Plex.**  TiviBro takes a quick look at each library when it starts, when you open My media and every 15 minutes: one small request each (Dropbox's list of changes, a WebDAV folder's listing, a DLNA server's update number), nothing kept in memory but that one answer.  Only a library that changed is scanned, quietly, then "3 new movies on GD-M".  Not while something plays.  Settings > My media > Look for new files: every 15 minutes, every hour, every 6 hours, or only when you press Green.
+- **Search My media.**  A Search tab beside Home, Movies and TV shows (and Red > Search My media): type a few letters of a movie or show, a collection or a director, and the results take the shelves' place.  Back ends the search.
+- **Recently watched on every tab.**  The Trakt shelf of what you watched lately is on Movies (its movies) and TV shows (its shows) too, not only Home.
+- **The phone app's Settings shows a library's or list's name as its page title**, not code.
+- **Scrolling a shelf to the right is smooth.**  A tile reused for the next title slid across the whole row behind the others; now it appears in place.
+
 ## 0.6.0 (alpha 148, 2026-11-17)
 
 Pre-release: expect rough edges, and keep a backup before installing.

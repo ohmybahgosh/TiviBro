@@ -21,6 +21,7 @@ var MediaStore = (function () {
     var p = state.preferences || (state.preferences = {}), changed = false;
     if (next && /^(en|nl|de|fr|es|it)$/.test(next.language)) { p.language = next.language; changed = true; }
     if (next && /^(name|release|added|rating|runtime)$/.test(next.sort)) { p.sort = next.sort; changed = true; }
+    if (next && [0, 15, 60, 360].indexOf(next.checkEvery) >= 0) { p.checkEvery = next.checkEvery; changed = true; }
     if (next && /^(name|release|added|rating)$/.test(next.showSort)) { p.showSort = next.showSort; changed = true; }
     if (next && typeof next.sortReverse === 'boolean') { p.sortReverse = next.sortReverse; changed = true; }
     if (next && typeof next.showSortReverse === 'boolean') { p.showSortReverse = next.showSortReverse; changed = true; }
@@ -30,7 +31,7 @@ var MediaStore = (function () {
     if (next && typeof next.sourceFilter === 'string' && (!next.sourceFilter || source(next.sourceFilter))) { p.sourceFilter = next.sourceFilter; changed = true; }
     if (next && typeof next.favoritesInLists === 'boolean') { p.favoritesInLists = next.favoritesInLists; changed = true; }
     if (changed) save();
-    return { language: p.language || 'en', sort: p.sort || 'name', showSort: p.showSort || 'name', sortReverse: !!p.sortReverse, showSortReverse: !!p.showSortReverse, shelfOrder: (p.shelfOrder || []).slice(), shelfOff: p.shelfOff || {}, sourceFilter: p.sourceFilter || '', favoritesInLists: p.favoritesInLists !== false, tmdbConfigured: !!state.tmdbToken };
+    return { checkEvery: p.checkEvery != null ? p.checkEvery : 15, language: p.language || 'en', sort: p.sort || 'name', showSort: p.showSort || 'name', sortReverse: !!p.sortReverse, showSortReverse: !!p.showSortReverse, shelfOrder: (p.shelfOrder || []).slice(), shelfOff: p.shelfOff || {}, sourceFilter: p.sourceFilter || '', favoritesInLists: p.favoritesInLists !== false, tmdbConfigured: !!state.tmdbToken };
   }
   /* Trakt (app/js/trakt.js): the sign-in (tokens, kept like the TMDB token: on this TV, out of backups and
      logs), who it is, what to sync, and the lists shown as shelves. */
@@ -109,6 +110,8 @@ var MediaStore = (function () {
   // What a source is, in words: Settings, the phone app and the web editor say the same.
 
   // A library's name and whether it shows on Home (Settings > My media > the library).
+  // The last answer of the quick look for new media (media.js newMediaSoon): kept with the source.
+  function setCheck(id, token) { var s = source(id); if (s && s.check !== token) { s.check = token; save(); } }
   function sourceUpdate(id, next) { var s = source(id); if (!s) throw new Error('That library is gone.'); if (next && typeof next.name === 'string' && next.name.trim()) s.name = next.name.trim().slice(0, 60); if (next && typeof next.homeOff === 'boolean') s.homeOff = next.homeOff; if (!save()) throw new Error('The TV could not save it.'); return s; }
   function sourceMode(id, mode) { var s = source(id); if (!s || !/^(automatic|movies|shows)$/.test(mode)) throw new Error('Choose a valid source mode.'); s.contentMode = mode; save(); }
   function stamp(srcId, m) {
@@ -230,7 +233,7 @@ var MediaStore = (function () {
 
   return {
     preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
-    tmdbToken: function () { return state.tmdbToken || ''; }, trakt: trakt, setTrakt: setTrakt, sourceUpdate: sourceUpdate, sortList: sortList, compare: compare, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, setFormat: setFormat, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
+    tmdbToken: function () { return state.tmdbToken || ''; }, trakt: trakt, setTrakt: setTrakt, sourceUpdate: sourceUpdate, setCheck: setCheck, sortList: sortList, compare: compare, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, setFormat: setFormat, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
     resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, importResume: importResume, clearResume: clearResume, markWatched: markWatched, isWatched: isWatched
   };
 })();

@@ -197,13 +197,21 @@ function tempLink(source, path, cb) {
     cb(null, String(j.link));
   });
 }
+/* New media, cheaply: the cursor for "now" (one call), and what changed since a cursor (only the changes,
+   one page; a full rescan reads the rest).  cb(err, { cursor, entries, more }). */
+function latestCursor(source, cb) {
+  rpc(source.refresh, 'files/list_folder/get_latest_cursor', { path: folderPath(source.root), recursive: true, include_media_info: false, include_deleted: true }, function (e, j) { cb(e, e ? null : str(j.cursor)); });
+}
+function changesSince(source, cursor, cb) {
+  rpc(source.refresh, 'files/list_folder/continue', { cursor: cursor }, function (e, j) { cb(e, e ? null : { cursor: str(j.cursor), entries: (j.entries || []).map(slim), more: !!j.has_more }); });
+}
 /* Sign-out when a source is removed: best effort, and the caches go either way. */
 function revoke(refresh, cb) {
   rpc(refresh, 'auth/token/revoke', null, function (e) { forget(refresh); cb(e || null); });
 }
 
 module.exports = {
-  APP_KEY: APP_KEY, folderPath: folderPath, accessToken: accessToken, listPage: listPage, listAll: listAll, listFolder: listFolder, account: account, tempLink: tempLink, revoke: revoke, forget: forget,
+  APP_KEY: APP_KEY, folderPath: folderPath, accessToken: accessToken, listPage: listPage, listAll: listAll, listFolder: listFolder, latestCursor: latestCursor, changesSince: changesSince, account: account, tempLink: tempLink, revoke: revoke, forget: forget,
   // For tests: how long a 429 waits (ms in, ms out), and the caches.
   _wait: function (ms) { return ms; }, _tokens: tokens, _links: links, content: content
 };

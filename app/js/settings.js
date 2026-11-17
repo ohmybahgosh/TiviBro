@@ -257,6 +257,7 @@ var Settings = (function () {
     out.push(head('All libraries'),
       action('Scan all libraries', 'Look for added and removed movies and episodes.  Green on the My media screen.', heavy(function () { Media.rescanAll(); })),
       action('Fetch details for all', 'Look up movies, shows and owned episodes on TMDB, and refresh details in another language.  Yellow on My media.', heavy(function () { Media.fetchMissingDetails(); })),
+      choice('Look for new files', 'A quick look at each library for files added or removed, like Plex, scanning only one that changed.  Also when TiviBro starts and when My media opens.  Green on My media scans everything now.', [15, 60, 360, 0], ['Every 15 minutes', 'Every hour', 'Every 6 hours', 'Only when I press Green'], function () { return MediaStore.preferences().checkEvery; }, function (v) { Media.updatePreferences({ checkEvery: v }); Media.newMediaSoon(); paint(); }),
       (function () { var it = info('Fetching details now', ''); it.value = function () { return Media.busyText ? (Media.busyText().replace(/^Fetching details: /, '') || 'Nothing running') : ''; }; return it; })(),
       tvOnly(action('Edit on a computer', 'Shows a code for a computer or phone browser: the web editor\'s My media page, for typing server logins, fixing many matches at once and TV show episodes.', function () { WebEdit.showJoin('media'); })),
       page('Display and shelves', 'Sorting, arranging the shelves on each tab, favorites and the details language.', 'My media display', mediaDisplay),
@@ -1822,7 +1823,8 @@ var Settings = (function () {
       var it = list[n];
       var pg = it && (it.page || it.phonePage);
       if (!pg) throw new Error('That page has changed on the TV.  Go back and open it again.');
-      title = pg.title; trail.push(title); list = lean(pg.fn());
+      title = pg.title && typeof pg.title === 'object' && pg.title.s != null ? String(pg.title.s) : pg.title;   // a name kept as written (I18n.raw) is plain text for the phone
+      trail.push(title); list = lean(pg.fn());
     });
     return { title: title, trail: trail, list: list };
   }

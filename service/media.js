@@ -473,6 +473,49 @@ function resolveDropbox(source, path, cb) {
   });
 }
 
+/* ---------- has anything changed? ----------
+   A quick look for new media, like Plex's, without listing everything or keeping a copy of the tree in memory:
+   one small request per library, compared with the last answer (q.token).  cb({ token, changed }).
+     Dropbox  the changes since a cursor (Dropbox keeps them): only video files added, moved or deleted count.
+     WebDAV   the library folder and its folders, each name with its ETag and date (Nextcloud's ETags change
+              when anything inside does; others when a folder is added or renamed at the top).
+     DLNA     the server's SystemUpdateID, which goes up on any change (Plex, Jellyfin, Emby, MiniDLNA). */
+function fingerprint(lines) { return require('crypto').createHash('sha1').update(lines.sort().join('\n')).digest('hex').slice(0, 20); }
+function changeCheck(source, prev, cb) {
+  prev = str(prev);
+  var type = source && source.type;
+  function out(token, changed) { cb({ token: token, changed: !!(prev && token && token !== prev) || !!changed }); }
+  if (type === 'dropbox') {
+    if (!str(source.refresh)) return cb(failure('login', source));
+    if (prev.indexOf('dbx:') !== 0) return Dropbox.latestCursor(source, function (e, c) { if (e) return cb(dropboxFailure(e)); cb({ token: 'dbx:' + c, changed: false }); });
+    return Dropbox.changesSince(source, prev.slice(4), function (e, r) {
+      if (e && e.kind === 'reset') return Dropbox.latestCursor(source, function (e2, c) { if (e2) return cb(dropboxFailure(e2)); cb({ token: 'dbx:' + c, changed: true }); });
+      if (e) return cb(dropboxFailure(e));
+      var media = r.entries.some(function (x) { return x.tag === 'deleted' || (x.tag === 'file' && VIDEO.test(x.name)); });
+      cb({ token: 'dbx:' + r.cursor, changed: media || r.more, count: r.entries.filter(function (x) { return x.tag === 'file' && VIDEO.test(x.name); }).length });
+    });
+  }
+  if (type === 'webdav') {
+    var base = webdavBase(source);
+    if (!base) return cb(failure('address'));
+    return request({ url: base.origin + base.path, method: 'PROPFIND', secure: true, body: PROPFIND, headers: { Authorization: basic(source), Depth: '1', 'Content-Type': 'application/xml; charset="utf-8"', 'Content-Length': Buffer.byteLength(PROPFIND) } }, function (e, status, h, body) {
+      if (e) return cb(failure(errorKind(e)));
+      if (status === 401 || status === 403) return cb(failure('login'));
+      if (status !== 207) return cb(failure('unreachable'));
+      out('dav:' + fingerprint(parsePropfind(body).map(function (x) { return samePath(x.href) + '|' + x.etag + '|' + x.modified + '|' + (x.dir ? 'd' : x.size); })));
+    });
+  }
+  if (type === 'dlna') {
+    var soap = '<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:GetSystemUpdateID xmlns:u="urn:schemas-upnp-org:service:ContentDirectory:1"></u:GetSystemUpdateID></s:Body></s:Envelope>';
+    return request({ url: source.control, method: 'POST', body: soap, headers: { 'Content-Type': 'text/xml; charset="utf-8"', SOAPACTION: '"urn:schemas-upnp-org:service:ContentDirectory:1#GetSystemUpdateID"', 'Content-Length': Buffer.byteLength(soap) } }, function (e, status, h, body) {
+      var id = !e && status === 200 ? tag(body, 'Id') : '';
+      if (/^[0-9]+$/.test(id)) return out('upnp:' + id);
+      // A server without it: its top level, by name and update ID where it gives them.
+      browseAll(source.control, '0', function (e2, items) { if (e2) return cb(failure(errorKind(e2))); out('upnp0:' + fingerprint((items || []).map(function (x) { return x.id + '|' + x.title + '|' + (x.size || ''); }))); });
+    });
+  }
+  cb(failure('address'));
+}
 function scan(source, cb) {
   var type = source && source.type;
   if (type === 'dlna') return scanDlna(source, cb);
@@ -675,7 +718,7 @@ function handle(req, res, ALLOW, log) {
   var libraryRoute = /^\/media\/library\/(query|detail|edit|migrate|progress|continue|chapters|source|adopt|resolve|status)$/.exec(route);
   var subs = /^\/media\/subs\/(search|get|login)$/.exec(route);
   var dropbox = /^\/media\/dropbox\/(folders|account|revoke)$/.exec(route);
-  if (req.method !== 'POST' || (!libraryRoute && !subs && !dropbox && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/vformat' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
+  if (req.method !== 'POST' || (!libraryRoute && !subs && !dropbox && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/vformat' && route !== '/media/check' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
   var body = '', over = false, bodyBytes = 0, bodyLimit = libraryRoute ? 1048576 : 65536;
   if (req.setEncoding) req.setEncoding('utf8');
   req.on('data', function (c) { if (over) return; body += c; bodyBytes += Buffer.byteLength(c, 'utf8'); if (bodyBytes > bodyLimit) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
@@ -708,6 +751,10 @@ function handle(req, res, ALLOW, log) {
     if (route === '/media/scan') return scanRequest(q, req, res, ALLOW, log);
     var host = hostOf(q.source);
     // A movie's picture (2160p, HDR10, Dolby Vision) from its file's headers: media-vformat.js.
+    if (route === '/media/check') {
+      if (!q.source || typeof q.source !== 'object') return send(res, ALLOW, 400, { error: 'bad request' });
+      return changeCheck(q.source, q.token, function (r) { if (r.changed) log({ lv: 'info', event: 'media changed', host: hostOf(q.source), count: r.count }); send(res, ALLOW, 200, r); });
+    }
     if (route === '/media/vformat') return resolve(q.source, q.path, function (r) {
       if (r.error || !r.url) return send(res, ALLOW, 200, { error: r.error || 'resolve', message: r.message || 'Could not open that file.' });
       if (r.url.indexOf('/media-stream/') === 0) r.url = 'http://127.0.0.1:' + req.connection.localPort + r.url;
@@ -732,4 +779,4 @@ function hideLinksFrom(host) {
   host = str(host).toLowerCase();
   if (host && signedHosts.indexOf(host) < 0) { signedHosts.push(host); if (signedHosts.length > 50) signedHosts.splice(1, 1); }
 }
-module.exports = { catalog: catalog, scanResults: scanResults, originKey: originKey, samePath: samePath, moviesOf: moviesOf, skipFolder: skipFolder, newSkipped: newSkipped, signedHosts: signedHosts, hideLinksFrom: hideLinksFrom, handle: handle, scan: scan, resolve: resolve, discover: discover, titleOf: titleOf, isJunk: isJunk, tokens: tokens, parseBrowse: parseBrowse, parsePropfind: parsePropfind, parseDevice: parseDevice, errorKind: errorKind, failure: failure };
+module.exports = { changeCheck: changeCheck, catalog: catalog, scanResults: scanResults, originKey: originKey, samePath: samePath, moviesOf: moviesOf, skipFolder: skipFolder, newSkipped: newSkipped, signedHosts: signedHosts, hideLinksFrom: hideLinksFrom, handle: handle, scan: scan, resolve: resolve, discover: discover, titleOf: titleOf, isJunk: isJunk, tokens: tokens, parseBrowse: parseBrowse, parsePropfind: parsePropfind, parseDevice: parseDevice, errorKind: errorKind, failure: failure };
