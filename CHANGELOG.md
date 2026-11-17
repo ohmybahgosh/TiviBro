@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **A rescan no longer looks up every TV show again.**  Each rescan marked all of a library's shows as needing details, so Green (or a new file found by itself) started "Fetching details: 700 shows to go".  Now only a show the scan brought new episodes to is looked up.
+
 ## 0.6.0 (alpha 149, 2026-11-17)
 
 Pre-release: expect rough edges, and keep a backup before installing.

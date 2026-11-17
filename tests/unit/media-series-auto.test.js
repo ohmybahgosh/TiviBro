@@ -45,7 +45,9 @@ function file(title,n){return {id:'demo:/'+title+'/S01E'+n+'.mkv',file:title+'.S
     const beforeForce=lookups.length;await ctx.MediaSeries.fetchDetails(true);
     assert(lookups.slice(beforeForce).some(q=>q.title==='Unknown'),'explicit fetch retries ambiguous matches');
     await new Promise((resolve,reject)=>c.importScan('demo',{files:files.map(x=>({...x})),partial:false},e=>e?reject(e):resolve()));
-    assert.equal((await call(c,'query',{kind:'show',metadataPending:true,language:'nl'})).total,2,'new scans refresh owned episodes while misses keep their cooldown');
+    assert.equal((await call(c,'query',{kind:'show',metadataPending:true,language:'nl'})).total,0,'a rescan finding the same files looks nothing up again');
+    await new Promise((resolve,reject)=>c.importScan('demo',{files:files.map(x=>({...x})).concat([file('Harbour',2),file('Copper',2)]),partial:false},e=>e?reject(e):resolve()));
+    assert.equal((await call(c,'query',{kind:'show',metadataPending:true,language:'nl'})).total,2,'new episodes refresh their shows only, while misses keep their cooldown');
     cancel=true;const aborted=await ctx.MediaSeries.fetchDetails(false);assert(aborted.error&&/token/.test(aborted.error));
     assert.equal((await call(c,'detail',{kind:'show',handle:harbour.handle})).metadata.id,'tmdb:tv:1','token removal prevents late metadata writes');
     cancel=false;token='mock-token';failSeason=true;const failed=await ctx.MediaSeries.fetchDetails(false);assert(failed.error);

@@ -284,7 +284,7 @@ function watchFields(ep) { return { watchState: ep.watchState, watchRevision: ep
 /* Episodes of one show, from the files now in its shard.  Episode records are kept by id, so watch
    state, matches and order survive; ones no file covers any more stay as orphaned history. */
 function derive(ctx, sid, shard, plan) {
-  var now = Date.now(), show = ctx.shows[sid], existing = {}, coordIndex = {}, multi = {}, members = {}, live = 0, sourceIds = [], keys = [], folders = [];
+  var now = Date.now(), show = ctx.shows[sid], added = false, scanned = false, existing = {}, coordIndex = {}, multi = {}, members = {}, live = 0, sourceIds = [], keys = [], folders = [];
   shard.episodes.forEach(function (ep) {
     existing[ep.id] = ep;
     var normal = epId(sid, ep.order, episodeCoordinate(ep));
@@ -301,14 +301,14 @@ function derive(ctx, sid, shard, plan) {
     if (!f.showOverride) { show.title = c.showTitle; if (f.groupKey && keys.indexOf(f.groupKey) < 0) keys.push(f.groupKey); }
     if (sourceIds.indexOf(f.sourceId) < 0) sourceIds.push(f.sourceId);
     if (folders) { var folder = JSON.stringify(f.ancestors || []); if (folders.indexOf(folder) < 0) { if (folders.length >= 32) folders = null; else folders.push(folder); } }
-    if (plan && plan.scanSource === f.sourceId) show.metadataScanAt = now;
+    if (plan && plan.scanSource === f.sourceId) scanned = true;
     coords(c).forEach(function (coordinate, i) {
       var normal = epId(sid, c.order, coordinate), id = coordIndex[normal] || normal, candidate = previousIds[i];
       if (!members[id] && candidate && !multi[candidate] && showOfEpisode(candidate) === sid) { id = candidate; if (id !== normal) coordIndex[normal] = id; }
       var ep = members[id];
       if (!ep) {
         ep = existing[id];
-        if (!ep) { ep = existing[id] = { id: id, kind: 'episode', showId: sid, watchState: 'unwatched' }; shard.episodes.push(ep); }
+        if (!ep) { ep = existing[id] = { id: id, kind: 'episode', showId: sid, watchState: 'unwatched' }; shard.episodes.push(ep); added = true; }
         members[id] = ep;
         ep.showId = sid; ep.season = c.season; ep.number = c.numbers && c.numbers[i] || null; ep.airDate = c.airDate || null;
         ep.absoluteNumber = c.absoluteNumber || null; ep.absolutePart = c.absolutePart || null; ep.order = c.order; ep.title = c.title || f.title;
@@ -322,6 +322,9 @@ function derive(ctx, sid, shard, plan) {
   });
   shard.episodes.forEach(function (ep) { if (!members[ep.id]) ep.orphaned = true; });
   shard.episodes.sort(sortEpisodes);
+  // Details again only for a show a scan brought new episodes to (their titles and pictures), not every show of
+  // the library on every rescan: that looked up 700 shows each time.
+  if (show && scanned && added) show.metadataScanAt = now;
   if (show) {
     show.orphaned = !live;
     // keys: how files find this show again; folders: where its files are (a folder correction reads only these shows).
