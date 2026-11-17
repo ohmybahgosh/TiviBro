@@ -361,28 +361,38 @@ if (require.main === module) (async () => {
     await seedReminders();
     await open('Settings', 2400);
     const bottom = async () => { for (let i = 0; i < 60; i++) await quiet('ArrowDown', 50); await page.waitForTimeout(400); };
-    const S = [['Playlists', 'playlists'], ['Guide', 'guide'], ['Channels and groups', 'groups'], ['Channel and group names', 'names'], ['Reminders and watchlist', 'reminders'],
-      ['Playback', 'playback'], ['Remote and buttons', 'remote'], ['Appearance', 'look'], ['Parental controls', 'parental'], ['Backups and restore points', 'backups'],
-      ['Web editor', 'editor'], ['System', 'updates']];   // 'Web editor' is 'Phone app and web editor' in test builds
+    // The eleven sections (Advanced view off, as most people see them), then the pages inside them.
+    const S = [['Playlists and accounts', 'playlists'], ['Guide', 'guide'], ['Channels and groups', 'groups'], ['Reminders and watchlist', 'reminders'],
+      ['Playback', 'playback'], ['Movies and shows', 'vod'], ['My media', 'media'], ['Appearance', 'look'], ['Parental controls', 'parental'], ['System', 'updates']];
     for (const [name, id] of S) {
       await section(name, true, true);
-      await page.waitForTimeout(id === 'backups' ? 2000 : 300);
+      await page.waitForTimeout(300);
       await shot('tv-set-' + id);
       if (id === 'playback' || id === 'groups' || id === 'guide') { await bottom(); await shot('tv-set-' + id + '-2'); }
       if (id === 'look') { await row('Theme'); await page.waitForTimeout(400); await shot('tv-set-look-2'); }
       if (id === 'updates') { await row('Report a problem'); await page.waitForTimeout(400); await shot('tv-set-diag'); }
     }
     const sub = async (sec, rowLabel, name, more) => { await section(sec, true, true); await row(rowLabel); await quiet('Enter', 900); if (more) await more(); await shot(name); };
-    await sub('Remote and buttons', 'In the player', 'tv-set-remote-player');
-    await sub('Remote and buttons', 'Quick menu buttons', 'tv-set-quick-menu');
-    await sub('Playlists', 'Demo provider', 'tv-set-playlist');
-    await sub('Playlists', 'Demo provider', 'tv-set-playlist-2', bottom);
+    const phoneRow = async () => { try { await row('Phone app and web editor'); } catch (e) { await row('Web editor'); } };
+    await sub('Channels and groups', 'Channel and group names', 'tv-set-names');
+    await sub('Playback', 'Remote and buttons', 'tv-set-remote');
+    await sub('Playback', 'Audio and subtitles', 'tv-set-audio');
+    await section('System', true, true); await row('Backups and restore points'); await quiet('Enter', 2000); await shot('tv-set-backups');
+    await section('System', true, true); await row('Fix a problem'); await quiet('Enter', 900); await shot('tv-set-fix');
+    await section('Playlists and accounts', true, true); await phoneRow(); await quiet('Enter', 900); await shot('tv-set-editor');
+    await section('Playback', true, true); await row('Remote and buttons'); await quiet('Enter', 900); await row('In the player'); await quiet('Enter', 900); await shot('tv-set-remote-player');
+    await section('Playback', true, true); await row('Remote and buttons'); await quiet('Enter', 900); await row('Quick menu buttons'); await quiet('Enter', 900); await shot('tv-set-quick-menu');
+    await sub('Playlists and accounts', 'Demo provider', 'tv-set-playlist');
+    await sub('Playlists and accounts', 'Demo provider', 'tv-set-playlist-2', bottom);
     await sub('Channels and groups', 'Manage groups', 'tv-set-manage-groups');
+    // The rows behind Advanced, for the pictures of them.
+    await page.evaluate(() => { Store.settings.advView = true; });
     await sub('System', 'What this TV can play', 'tv-set-caps');
     await section('System', true, true); await row('Run connection test'); await quiet('Enter', 200); await page.waitForTimeout(7000); await shot('tv-set-diag-test'); await quiet('Escape', 600);
     await section('System', true, true); await row('View app log'); await quiet('Enter', 1200); await shot('tv-set-diag-log'); await quiet('Escape', 600);
+    await page.evaluate(() => { Store.settings.advView = false; });
     await page.evaluate(() => WebEdit.start()); await page.waitForTimeout(1500);
-    await section('Web editor', true, true); await page.waitForTimeout(800); await shot('tv-set-editor-on');
+    await section('Playlists and accounts', true, true); await phoneRow(); await quiet('Enter', 900); await page.waitForTimeout(800); await shot('tv-set-editor-on');
     await page.evaluate(() => WebEdit.stop()); await page.waitForTimeout(500);
   });
 

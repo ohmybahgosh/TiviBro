@@ -133,7 +133,7 @@ else echo "My media tab not on screen (scrolled away): skipped"; fi
 # The TV's settings on the phone.
 tap "Settings"
 shot 12b-settings 5
-tap "Appearance and start screen"
+tap "Appearance"
 shot 12c-settings-appearance 5
 [ -n "$(find_text "Show clock")" ] || { echo "Settings on the phone did not show the TV's page"; exit 1; }
 echo "The TV's settings show on the phone"
