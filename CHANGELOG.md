@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Live TV uses far less memory.**  Channels were taken apart for playback in a background worker, whose memory was only cleaned up every few minutes: on an LG C2, TiviBro climbed from 190 to 380 MB and back on an HLS channel, and 136 to 203 MB on a TS one.  Now that's done on the page, and it stays flat at 160 to 180 MB (HLS) and 145 to 155 MB (TS), with no dropped frames or stalls.  Less memory in use means fewer slowdowns and restarts on TVs with 1 or 2 GB.
 - **A rescan no longer looks up every TV show again.**  Each rescan marked all of a library's shows as needing details, so Green (or a new file found by itself) started "Fetching details: 700 shows to go".  Now only a show the scan brought new episodes to is looked up.
 
 ## 0.6.0 (alpha 149, 2026-11-17)

@@ -424,11 +424,12 @@ var Player = (function () {
     };
   }
 
-  // Blob workers should work in webOS apps; if one ever fails, demux on the main thread instead.
-  var workerOk = (function () {
-    try { var u = URL.createObjectURL(new Blob(['0'], { type: 'text/javascript' })); var w = new Worker(u); w.terminate(); URL.revokeObjectURL(u); return true; }
-    catch (e) { return false; }
-  })();
+  /* Live channels demux on the page itself, not in a worker.  Measured on an LG C2 (2 GB) on one 720p channel
+     for three minutes each: in a worker, the video data piled up in the worker's memory until it was cleaned
+     up now and then, so TiviBro grew from 190 to 380 MB and back (HLS) or 136 to 203 MB (TS); on the page it
+     stayed flat at 160 to 180 MB (HLS) and 145 to 153 MB (TS), with no dropped frames or stalls.  A segment's
+     demux is a few milliseconds of the page's time. */
+  var workerOk = false;
 
   function nativeEngine(url, tracks, conv) {
     // HTTPS on the TV's own player can fail on self-signed or unusual certificates, which IPTV
