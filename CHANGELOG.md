@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 154, 2026-11-17)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 154
 
 - **Settings, made easier to find your way around.**  Settings has 11 sections now, named for what's in them: Language, Playlists and accounts, Guide, Channels and groups, Playback, Movies and shows, My media, Reminders and watchlist, Parental controls, Appearance and System.  What used to be sections of their own are pages inside the section they belong to:
   - API keys, and Phone app and web editor, are in Playlists and accounts.
@@ -12,7 +16,7 @@
 - **Advanced view.**  It replaces Settings shown (Everyday or All), in Appearance.  Off, each page shows what most people change, and what people set once or only to fix a problem waits behind one Advanced row at the bottom of the page; on, every setting is in place.  If you had picked All, it starts on.
 - **Rows that look like what they are.**  On / Off settings have a switch, settings with choices show the choice as a pill, pages have an arrow, headings stand out, and tips and facts look different from settings.  Each row shows the first sentence of its note, and the whole note shows under the list when you're on it.
 - **An update you can't miss.**  When an update is ready, it's the first row of System, in green, and System has a green dot in the list of sections.
-- **Two new settings.**  Playback > Memory-safe playback (Automatic, Always on, Off) holds less video in memory on TVs with 1 or 2 GB; Automatic is how it worked until now.  System > Report a problem in the menu puts Report a problem in the menu bar on release builds too.
+- **Two new settings.**  Playback > Memory-safe playback (Automatic, Always on, Off; discussion #95) holds less video in memory on TVs with 1 or 2 GB; Automatic is how it worked until now.  System > Report a problem in the menu puts Report a problem in the menu bar on release builds too.
 - **The same Settings on the phone and in the web editor.**  The phone app shows the same sections, pages, switches and update banner, and the web editor has a Settings page of its own with every setting, the questions asked right there.
 - **Subtitles remembered for each movie and episode.**  Turn subtitles on (or off) while watching something in TiviBro, and the next time you play it they come back the same way, in the same language, whatever Subtitles automatically says.  The last 600 titles are remembered on the TV.
 - **Subtitle size and style from the player.**  OK > Subtitles > Size and style changes the size (Small to Extra large), the colour and the background (outline, see-through box or black box) right there, shown on the picture at once.  It's the same setting as Settings > Playback > Audio and subtitles.
@@ -25,14 +29,9 @@
 - **My media: every movie gets looked up, and more of them match.**  On a big library, one lookup that failed (TMDB slow for a moment, a network blip) ended the whole run, and the movies after it were never looked up and showed as unmatched, Ghostbusters and Top Gun among them.  Now a lookup that fails is tried again, then skipped for later, and the run goes on (a wrong token, or five failures in a row, still stops it).  A library's page says how many are Not looked up yet, apart from the Unmatched movies TMDB didn't know, and OK on it looks up just those.  Matching also takes a release named with more or less than TMDB's title when only one film of that year fits: "A Marvel Television Special Presentation - The Punisher One Last Kill", "Borat Subsequent Moviefilm", "Paul McCartney Man on the Run".
 - **Season tabs are just the season's name (issue #110).**  On a show's own page, the episode count next to each season made the tabs busy; the count is still in the corner by the episodes.  Thanks to abada89.
 - **The progress bar on live TV's quick panel spans the screen.**  It stopped at about half.
-
 - **Google Drive: the key once, then any folder.**  Once a Google Drive library is on the TV, its key is used again for the next one: on the TV, Settings > My media > Add a library > Google Drive picks the shared drive and folder right there with the remote, the web editor has Use the key on the TV, and the phone app offers it before asking for the .json file.  The key still never leaves the TV.
 
-## 0.6.0 (alpha 153, 2026-11-17)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 153
+### In alpha 153
 
 - **A show's own page, like TiviMate's.**  Opening a show on the Shows screen fills the screen: its backdrop, details and summary at the top, its seasons as tabs with their episode counts, and the season's episodes as wide cards with their picture, length, air date, progress and a ✓ once watched.  It opens on the episode you're up to.  ◀ ▶ move along the cards, Up goes to the seasons, OK plays, Hold OK has the episode's options, Back closes the show.  Hide spoilers is respected.  Thanks to abada89 for the idea and the mock-up (issue #110).
 - **Movies come back after a provider's outage (issue #110).**  A list the TiviBro service saved empty during an outage counted as current for good when the playlist only reloads when asked, so Movies stayed empty.  An empty saved list is never current now, and when the service has no movies at all, the app gets the list from the provider itself.  Thanks to abada89 for tracking it down and testing a fix.
