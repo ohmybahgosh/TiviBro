@@ -4,8 +4,8 @@
           BlockAdditionMapping ("dvcC"/"dvvC": Dolby Vision), from Tracks near the start or where SeekHead says.
      MP4  the moov box (at the start or the end): a dvcC/dvvC box or a dvh1/dvhe sample entry (Dolby Vision),
           a colr nclx box's transfer (16 or 18).
-   { height, width, range: 'DV'|'HDR10'|'HLG'|'HDR'|'SDR'|'' } ('' when the file doesn't say; HDR: a 10-bit 4K HEVC
-   picture whose header names no colour).  ES5 / Node 0.12. */
+   { height, width, range: 'DV'|'HDR10'|'HLG'|'SDR'|'' } ('' when the file doesn't say).  Without colour in the
+   container, an HEVC track's SPS says it (what the TV's decoder switches to HDR by).  ES5 / Node 0.12. */
 'use strict';
 var http = require('http'), https = require('https'), URL_ = require('url');
 
@@ -21,8 +21,71 @@ function num(b, p, keep) {
 function el(b, p) { var id = num(b, p, true), size = num(b, id.next, false); return { id: id.value, start: size.next, end: size.unknown ? b.length : size.next + size.value, unknown: size.unknown }; }
 function kids(b, a, z, visit) { z = Math.min(z, b.length); while (a < z) { var e = el(b, a); if (e.end <= a) break; visit(e); a = e.end; } }
 
-// An HEVC configuration record (hvcC: MKV CodecPrivate, or the MP4 box's body): 10 bits or more.
-function tenBit(b, a, z) { return z - a > 18 && b[a] === 1 && (b[a + 17] & 7) >= 2; }
+/* An HEVC configuration record (hvcC: MKV CodecPrivate, or the MP4 box's body): the transfer its SPS's VUI
+   names (16 PQ is HDR10, 18 HLG, 1 or others SDR), what the TV's decoder goes by; 0 when it doesn't say. */
+function hevcTransfer(b, a, z) {
+  try {
+    if (z - a < 23 || b[a] !== 1) return 0;
+    var p = a + 22, arrays = b[p++];
+    for (var i = 0; i < arrays && p + 3 <= z; i++) {
+      var type = b[p] & 0x3f, n = (b[p + 1] << 8) | b[p + 2]; p += 3;
+      for (var j = 0; j < n && p + 2 <= z; j++) {
+        var len = (b[p] << 8) | b[p + 1]; p += 2;
+        if (type === 33 && p + len <= z) return spsTransfer(b.slice(p, p + len));
+        p += len;
+      }
+    }
+  } catch (e) {}
+  return 0;
+}
+function spsTransfer(nal) {
+  var raw = [], zeros = 0;   // without emulation prevention bytes (00 00 03)
+  for (var k = 2; k < nal.length; k++) { var c = nal[k]; if (zeros >= 2 && c === 3) { zeros = 0; continue; } zeros = c === 0 ? zeros + 1 : 0; raw.push(c); }
+  var pos = 0;
+  function bit() { if (pos >= raw.length * 8) throw new Error('short'); var v = (raw[pos >> 3] >> (7 - (pos & 7))) & 1; pos++; return v; }
+  function bits(n) { var v = 0; while (n--) v = v * 2 + bit(); return v; }
+  function ue() { var z = 0; while (!bit()) { if (++z > 31) throw new Error('ue'); } return (Math.pow(2, z) - 1) + bits(z); }
+  function se() { var v = ue(); return v & 1 ? (v + 1) / 2 : -v / 2; }
+  bits(4); var maxSub = bits(3); bits(1);
+  bits(96);                                   // general profile, tier and level
+  var subP = [], subL = [];
+  for (var i = 0; i < maxSub; i++) { subP.push(bit()); subL.push(bit()); }
+  if (maxSub > 0) for (i = maxSub; i < 8; i++) bits(2);
+  for (i = 0; i < maxSub; i++) { if (subP[i]) bits(88); if (subL[i]) bits(8); }
+  ue(); var chroma = ue(); if (chroma === 3) bit();
+  ue(); ue();                                 // width, height
+  if (bit()) { ue(); ue(); ue(); ue(); }      // conformance window
+  ue(); ue();                                 // bit depths
+  var pocBits = ue() + 4, ordering = bit();
+  for (i = ordering ? 0 : maxSub; i <= maxSub; i++) { ue(); ue(); ue(); }
+  ue(); ue(); ue(); ue(); ue(); ue();
+  if (bit() && bit()) {                       // scaling list data
+    for (var size = 0; size < 4; size++) for (var m = 0; m < 6; m += size === 3 ? 3 : 1) {
+      if (!bit()) ue(); else { var coefs = Math.min(64, 1 << (4 + (size << 1))); if (size > 1) se(); for (var c2 = 0; c2 < coefs; c2++) se(); }
+    }
+  }
+  bit(); bit();                               // amp, sao
+  if (bit()) { bits(4); bits(4); ue(); ue(); bit(); }   // pcm
+  var sets = ue(), deltas = [];
+  for (i = 0; i < sets; i++) {                // short-term reference picture sets
+    var inter = i !== 0 ? bit() : 0;
+    if (inter) {
+      bit(); ue();                            // delta_rps_sign, abs_delta_rps_minus1 (delta_idx only in slice headers)
+      var refs = deltas[i - 1], count = 0;
+      for (var r = 0; r <= refs; r++) { var used = bit(); if (used || bit()) count++; }
+      deltas.push(count);
+    } else { var neg = ue(), posn = ue(); for (r = 0; r < neg + posn; r++) { ue(); bit(); } deltas.push(neg + posn); }
+  }
+  if (bit()) { var lt = ue(); for (i = 0; i < lt; i++) { bits(pocBits); bit(); } }
+  bit(); bit();                               // temporal mvp, strong intra smoothing
+  if (!bit()) return 0;                       // no VUI
+  if (bit()) { if (bits(8) === 255) bits(32); }
+  if (bit()) bit();
+  if (!bit()) return 0;                       // no video signal type
+  bits(3); bit();
+  if (!bit()) return 0;                       // no colour description
+  bits(8); return bits(8);                    // colour primaries, then transfer characteristics
+}
 // The MKV Tracks element's bytes: the first video track.
 function mkvTracks(b) {
   var out = { height: 0, width: 0, range: '' };
@@ -31,7 +94,7 @@ function mkvTracks(b) {
     var video = false, h = 0, w = 0, trc = 0, dv = false, mastering = false, deep = false;
     kids(b, t.start, t.end, function (f) {
       if (f.id === 0x83) video = uint(b, f.start, f.end) === 1;
-      if (f.id === 0x63a2) deep = tenBit(b, f.start, f.end);
+      if (f.id === 0x63a2) deep = hevcTransfer(b, f.start, f.end);
       if (f.id === 0x41e4) kids(b, f.start, f.end, function (g) { if (g.id === 0x41e7) { var v = uint(b, g.start, g.end); if (v === 0x64766343 || v === 0x64767643) dv = true; } });
       if (f.id === 0xe0) kids(b, f.start, f.end, function (g) {
         if (g.id === 0xba) h = uint(b, g.start, g.end);
@@ -41,8 +104,9 @@ function mkvTracks(b) {
     });
     if (!video) return;
     out.done = true; out.height = h; out.width = w;
-    // No colour in the track's header (many web releases keep it in the video stream): a 10-bit HEVC 4K picture is HDR.
-    out.range = dv ? 'DV' : trc === 16 || (mastering && trc !== 18) ? 'HDR10' : trc === 18 ? 'HLG' : trc ? 'SDR' : deep && (h >= 1600 || w >= 3200) ? 'HDR' : '';
+    // No colour in the track's header (many web releases keep it only in the video): the HEVC stream's own says.
+    if (!trc && deep) trc = deep;
+    out.range = dv ? 'DV' : trc === 16 || (mastering && trc !== 18) ? 'HDR10' : trc === 18 ? 'HLG' : trc ? 'SDR' : '';
   });
   delete out.done;
   return out;
@@ -50,12 +114,13 @@ function mkvTracks(b) {
 // The MP4 moov box's bytes, looked through for the boxes that tell.
 function mp4Moov(b) {
   var s = b.toString('binary'), out = { height: 0, width: 0, range: '' };
-  var dv = /dvcC|dvvC|dvh1|dvhe/.test(s), trc = 0, i = s.indexOf('colrnclx'), hv = s.indexOf('hvcC'), deep = hv >= 0 && tenBit(b, hv + 4, Math.min(b.length, hv + 40));
+  var dv = /dvcC|dvvC|dvh1|dvhe/.test(s), trc = 0, i = s.indexOf('colrnclx'), hv = s.indexOf('hvcC'), deep = hv >= 4 ? hevcTransfer(b, hv + 4, Math.min(b.length, hv - 4 + b.readUInt32BE(hv - 4))) : 0;
   if (i >= 0 && i + 12 <= b.length) trc = b.readUInt16BE(i + 10);
   // tkhd of the video track: its height is the last 4 bytes (16.16 fixed point); the tallest one is the picture.
   // tkhd: width and height are its last 8 bytes (16.16 fixed point), after 84 (version 0) or 96 (version 1) bytes.
   var at = 0; while ((at = s.indexOf('tkhd', at + 1)) >= 0) { var v = b[at + 4], end = at + 4 + (v === 1 ? 96 : 84); if (end <= b.length) { var hh = b.readUInt32BE(end - 4) >>> 16, ww = b.readUInt32BE(end - 8) >>> 16; if (hh > out.height) { out.height = hh; out.width = ww; } } }
-  out.range = dv ? 'DV' : trc === 16 ? 'HDR10' : trc === 18 ? 'HLG' : trc ? 'SDR' : deep && (out.height >= 1600 || out.width >= 3200) ? 'HDR' : '';
+  if (!trc && deep) trc = deep;
+  out.range = dv ? 'DV' : trc === 16 ? 'HDR10' : trc === 18 ? 'HLG' : trc ? 'SDR' : '';
   return out;
 }
 
@@ -123,4 +188,4 @@ function fromUrl(url, size, ext, cb) {
   if (!(size > 0)) return cb(new Error('File size is not known.'));
   inspect(read, size, String(ext || '').toLowerCase(), cb);
 }
-module.exports = { inspect: inspect, fromUrl: fromUrl, mkvTracks: mkvTracks, mp4Moov: mp4Moov };
+module.exports = { inspect: inspect, fromUrl: fromUrl, mkvTracks: mkvTracks, mp4Moov: mp4Moov, hevcTransfer: hevcTransfer };

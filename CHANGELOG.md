@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **HDR shows for more 4K movies.**  Many web releases keep HDR in the video itself, not the file's header, so only Dolby Vision showed.  A 10-bit 4K HEVC picture now shows HDR when the header says nothing.  Movies are looked at again once to pick this up.
+- **HDR10 and HLG are read from the video itself.**  Many web releases keep the colour setting only inside the video, not the file's header, so only Dolby Vision showed beside the year.  TiviBro now reads it where the TV's decoder does (the HEVC stream's own settings), so HDR10, HLG and SDR show as Plex shows them.  Movies are looked at again once to pick this up.
 - **Wide films say 1080p.**  A 1080p film in cinemascope is 1920 x 800, and was called 720p; the width counts now.  MP4 files read their height right too (they gave the width).
 - **Upcoming movies are new movies.**  TMDB lists re-releases in theaters (Dune, Spirited Away, Terminator 2) as upcoming; Upcoming movies and Now playing in theaters now leave out anything first released more than a month (or four months) ago.
 
