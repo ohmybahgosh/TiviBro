@@ -31,7 +31,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('the first start says it, and where to change it', /TiviBro está en Español.+Configuración > Idioma/.test(await ev(() => document.getElementById('toast').textContent)));
     await ev(() => { Views.switchTab('settings'); Settings.open(); }); await page.waitForTimeout(600);
     let nav = await navText();
-    ok('Settings opens on Playlists, with Language above it, also saying "Language"', /^Idioma\s+·\s+Language$/.test(nav[0]) && nav[1] === 'Listas de reproducción y cuentas' && /Listas/.test(await ev(() => document.querySelector('#setNav .on').textContent)), nav.join(' | '));
+    ok('Settings opens on Playlists, with Language above it, also saying "Language"', /^Idioma\s+·\s+Language$/.test(nav[0]) && nav[1] === 'Listas y cuentas' && /Listas/.test(await ev(() => document.querySelector('#setNav .on').textContent)), nav.join(' | '));
     await ev(() => Settings.section('language')); await page.waitForTimeout(500);
     let body = await ev(() => document.querySelector('.set-scroll').innerText);
     ok('the Language page: Automatic says the TV\'s, languages in their own names', /Automático: el idioma de la TV/.test(body) && /La TV está en Español/.test(body) && /Русский/.test(body) && /English/.test(body), body.slice(0, 400));

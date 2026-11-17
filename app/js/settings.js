@@ -1793,7 +1793,10 @@ var Settings = (function () {
   function brief(t) { t = String(t || ''); var i = t.indexOf('.  '); return i > 0 && i < t.length - 3 ? t.slice(0, i + 1) : t; }
   function help(e) {
     var h = document.getElementById('setHelp'); if (!h) return;
-    put(h, e && e._help && zone === 'body' ? e._help : '');
+    // Three lines at most (about 330 characters): a longer note ends with … rather than running under the hints.
+    var t = e && e._help && zone === 'body' ? e._help : '';
+    if (t.length > 330) t = t.slice(0, t.lastIndexOf(' ', 328)) + ' …';
+    put(h, t);
   }
   function rows() {
     rowEls.forEach(function (e, i) {

@@ -46,7 +46,7 @@ function scan() {
     for (let e = el, d = 0; e && e !== document.body && d < 3; e = e.parentElement, d++) {
       const s = getComputedStyle(e);
       if (e.scrollWidth > e.clientWidth + 2 && /hidden|clip/.test(s.overflowX) && s.textOverflow !== 'ellipsis' && !e.closest('.marquee,.mq,[data-marquee]') && !/marquee|scroll/.test(e.className)) { add('clipped', el); break; }
-      if (e.scrollHeight > e.clientHeight + 3 && /hidden|clip/.test(s.overflowY) && s.textOverflow !== 'ellipsis' && !/-webkit-box/.test(s.display) && e.clientHeight > 0 && e.clientHeight < 200) { add('clipped (height)', el); break; }
+      if (e.scrollHeight > e.clientHeight + 3 && /hidden|clip/.test(s.overflowY) && s.textOverflow !== 'ellipsis' && !/-webkit-box/.test(s.display) && !(s.webkitLineClamp && s.webkitLineClamp !== "none") && e.clientHeight > 0 && e.clientHeight < 200) { add('clipped (height)', el); break; }
     }
   });
   // Cut short with an ellipsis: meant, but a translation that loses its end where English shows whole is

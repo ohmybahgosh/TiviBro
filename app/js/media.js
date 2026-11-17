@@ -390,7 +390,7 @@ var Media = (function () {
       }
       var s = built[k]; if (s) { s.id = k; out.push(s); }
     });
-    if (opts.phone) return out.filter(function (x) { return x.id !== 'browse'; });   // the tab cards are the TV's; the phone has its own
+    if (opts.phone) return out.filter(function (x) { return x.id !== 'browse' && !/^library/.test(x.id); });   // the tab cards are the TV's; the phone has its own
     if (opts.all) return out;
     split = hasMovies && hasShows;
     // A library with Show on Home off (Settings > My media > the library): its titles stay off Home.
