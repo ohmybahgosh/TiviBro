@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **HDR shows for more 4K movies.**  Many web releases keep HDR in the video itself, not the file's header, so only Dolby Vision showed.  A 10-bit 4K HEVC picture now shows HDR when the header says nothing.  Movies are looked at again once to pick this up.
+- **Wide films say 1080p.**  A 1080p film in cinemascope is 1920 x 800, and was called 720p; the width counts now.  MP4 files read their height right too (they gave the width).
+- **Upcoming movies are new movies.**  TMDB lists re-releases in theaters (Dune, Spirited Away, Terminator 2) as upcoming; Upcoming movies and Now playing in theaters now leave out anything first released more than a month (or four months) ago.
+
 ## 0.6.0 (alpha 147, 2026-11-16)
 
 Pre-release: expect rough edges, and keep a backup before installing.

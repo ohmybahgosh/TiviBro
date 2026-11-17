@@ -49,10 +49,11 @@ var Media = (function () {
   function fileInfo(m) { return (m.info || []).concat(m.ext ? [String(m.ext).toUpperCase()] : []).join('   '); }
   /* The picture first: 4K and Dolby Vision, HDR10 or HLG, from the file's own headers once it has been looked
      at (m.vf, below), else from its name ("2160p", "HDR", "DV").  Then the rest of what the name says. */
-  var RANGE = { DV: 'Dolby Vision', HDR10: 'HDR10', HLG: 'HLG' };
+  var RANGE = { DV: 'Dolby Vision', HDR10: 'HDR10', HLG: 'HLG', HDR: 'HDR' };
   function pictureInfo(m) {
-    var info = m.info || [], vf = m.vf || {}, h = vf.h || 0, out = [];
-    var res = h >= 1600 ? '4K' : h >= 900 ? '1080p' : h >= 650 ? '720p' : h ? 'SD' : info.indexOf('2160p') >= 0 ? '4K' : info.indexOf('1080p') >= 0 ? '1080p' : info.indexOf('720p') >= 0 ? '720p' : '';
+    var info = m.info || [], vf = m.vf || {}, h = vf.h || 0, w = vf.w || 0, out = [];
+    // Wide films are short (1920 x 800 is 1080p): the width says it too.
+    var res = h >= 1600 || w >= 3200 ? '4K' : h >= 900 || w >= 1800 ? '1080p' : h >= 650 || w >= 1200 ? '720p' : h ? 'SD' : info.indexOf('2160p') >= 0 ? '4K' : info.indexOf('1080p') >= 0 ? '1080p' : info.indexOf('720p') >= 0 ? '720p' : '';
     if (res) out.push(res);
     var range = RANGE[vf.r] || (info.indexOf('Dolby Vision') >= 0 ? 'Dolby Vision' : info.indexOf('HDR') >= 0 ? 'HDR' : '');
     if (range) out.push(range);
@@ -64,12 +65,12 @@ var Media = (function () {
   var vfTimer = null, vfAsked = {};
   function formatSoon(m, redraw) {
     clearTimeout(vfTimer);
-    if (!m || m.vf || vfAsked[m.id] || m.kind === 'live' || m.kind === 'show' || m.kind === 'episode' || m.continueEpisode || !m.path || !(m.size > 0)) return;
+    if (!m || (m.vf && (m.vf.v === 2 || m.vf.e)) || vfAsked[m.id] || m.kind === 'live' || m.kind === 'show' || m.kind === 'episode' || m.continueEpisode || !m.path || !(m.size > 0)) return;
     var src = MediaStore.source(m.src); if (!src) return;
     vfTimer = setTimeout(function () {
       vfAsked[m.id] = 1;
       ask('vformat', { source: src, path: m.path, size: m.size, ext: m.ext || '' }, 20000).then(function (f) {
-        var vf = f && !f.error ? { h: +f.height || 0, r: f.range || '' } : { e: Date.now() };
+        var vf = f && !f.error ? { h: +f.height || 0, w: +f.width || 0, r: f.range || '', v: 2 } : { e: Date.now() };
         m.vf = vf; MediaStore.setFormat(m.id, vf);
         if (redraw) redraw(m);
       }, function () {});
@@ -158,7 +159,7 @@ var Media = (function () {
     });
     return out.sort(function (a, b) { return a.day - b.day; });
   }
-  var TMDB_KEY = 'tivibro.media.lists', TMDB_AGE = 12 * 3600e3, tmdb = readLists(), tmdbBusy = false;
+  var TMDB_KEY = 'tivibro.media.lists2', TMDB_AGE = 12 * 3600e3, tmdb = readLists(), tmdbBusy = false;
   function readLists() { try { var o = JSON.parse(localStorage.getItem(TMDB_KEY) || 'null'); return o && o.ids ? o : { at: 0, ids: {} }; } catch (e) { return { at: 0, ids: {} }; } }
   function token() { return MediaStore.tmdbToken ? MediaStore.tmdbToken() : ''; }
   function listsSoon(force) {
@@ -306,7 +307,7 @@ var Media = (function () {
     for (var pi = pool2.length - 1; pi > 0; pi--) { var pj = Math.floor(rnd() * (pi + 1)), pt = pool2[pi]; pool2[pi] = pool2[pj]; pool2[pj] = pt; }
     built.pick = { title: 'Pick of the day', sub: 'Unwatched, a new pick every day', movies: fresh.length >= 20 ? pool2.slice(0, 12) : [] };
     var hdrRx = /2160|\b4k\b|uhd|hdr|dolby ?vision|\bdv\b/i;
-    var sharp = one(all.filter(function (m) { return (m.vf && (m.vf.h >= 1600 || RANGE[m.vf.r])) || hdrRx.test(fileInfo(m) + ' ' + (m.file || '')); }));
+    var sharp = one(all.filter(function (m) { return (m.vf && (m.vf.h >= 1600 || m.vf.w >= 3200 || RANGE[m.vf.r])) || hdrRx.test(fileInfo(m) + ' ' + (m.file || '')); }));
     built.hdr = { title: '4K and HDR', sub: count(sharp.length, '1 movie', '{n} movies') + '  ·  ' + sortName('movie'), movies: sharp };
     var mins = function (m) { return parseInt(m.metadata && m.metadata.runtime, 10) || 0; };
     var shortL = one(all.filter(function (m) { return mins(m) > 0 && mins(m) < 90; }));

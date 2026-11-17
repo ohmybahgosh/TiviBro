@@ -117,6 +117,9 @@ function create(opts) {
           // TMDB IDs, so they match by name.
           (r && Array.isArray(r.results) ? r.results : []).forEach(function (x) {
             if (!x || !/^[1-9][0-9]*$/.test(String(x.id))) return;
+            // TMDB lists a re-release in theaters (Dune, Spirited Away) under Upcoming and Now playing: only films first
+            // out lately or still to come.
+            if (q.list === 'upcoming' || q.list === 'now_playing') { var rd = Date.parse(x.release_date || ''); if (!rd || rd < Date.now() - (q.list === 'upcoming' ? 30 : 120) * 86400e3) return; }
             ids.push((tv ? 'tmdb:tv:' : 'tmdb:') + x.id);
             items.push({ id: (tv ? 'tmdb:tv:' : 'tmdb:') + x.id, t: str(x.title || x.name, 200), o: str(x.original_title || x.original_name, 200), y: str(x.release_date || x.first_air_date, 4) });
           });

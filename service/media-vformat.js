@@ -4,7 +4,8 @@
           BlockAdditionMapping ("dvcC"/"dvvC": Dolby Vision), from Tracks near the start or where SeekHead says.
      MP4  the moov box (at the start or the end): a dvcC/dvvC box or a dvh1/dvhe sample entry (Dolby Vision),
           a colr nclx box's transfer (16 or 18).
-   { height, range: 'DV'|'HDR10'|'HLG'|'SDR'|'' } ('' when the file doesn't say).  ES5 / Node 0.12. */
+   { height, width, range: 'DV'|'HDR10'|'HLG'|'HDR'|'SDR'|'' } ('' when the file doesn't say; HDR: a 10-bit 4K HEVC
+   picture whose header names no colour).  ES5 / Node 0.12. */
 'use strict';
 var http = require('http'), https = require('https'), URL_ = require('url');
 
@@ -20,35 +21,41 @@ function num(b, p, keep) {
 function el(b, p) { var id = num(b, p, true), size = num(b, id.next, false); return { id: id.value, start: size.next, end: size.unknown ? b.length : size.next + size.value, unknown: size.unknown }; }
 function kids(b, a, z, visit) { z = Math.min(z, b.length); while (a < z) { var e = el(b, a); if (e.end <= a) break; visit(e); a = e.end; } }
 
+// An HEVC configuration record (hvcC: MKV CodecPrivate, or the MP4 box's body): 10 bits or more.
+function tenBit(b, a, z) { return z - a > 18 && b[a] === 1 && (b[a + 17] & 7) >= 2; }
 // The MKV Tracks element's bytes: the first video track.
 function mkvTracks(b) {
-  var out = { height: 0, range: '' };
+  var out = { height: 0, width: 0, range: '' };
   kids(b, 0, b.length, function (t) {
     if (t.id !== 0xae || out.done) return;
-    var video = false, h = 0, trc = 0, dv = false, mastering = false;
+    var video = false, h = 0, w = 0, trc = 0, dv = false, mastering = false, deep = false;
     kids(b, t.start, t.end, function (f) {
       if (f.id === 0x83) video = uint(b, f.start, f.end) === 1;
+      if (f.id === 0x63a2) deep = tenBit(b, f.start, f.end);
       if (f.id === 0x41e4) kids(b, f.start, f.end, function (g) { if (g.id === 0x41e7) { var v = uint(b, g.start, g.end); if (v === 0x64766343 || v === 0x64767643) dv = true; } });
       if (f.id === 0xe0) kids(b, f.start, f.end, function (g) {
         if (g.id === 0xba) h = uint(b, g.start, g.end);
+        if (g.id === 0xb0) w = uint(b, g.start, g.end);
         if (g.id === 0x55b0) kids(b, g.start, g.end, function (c) { if (c.id === 0x55ba) trc = uint(b, c.start, c.end); if (c.id === 0x55d0) mastering = true; });
       });
     });
     if (!video) return;
-    out.done = true; out.height = h;
-    out.range = dv ? 'DV' : trc === 16 || (mastering && trc !== 18) ? 'HDR10' : trc === 18 ? 'HLG' : trc ? 'SDR' : '';
+    out.done = true; out.height = h; out.width = w;
+    // No colour in the track's header (many web releases keep it in the video stream): a 10-bit HEVC 4K picture is HDR.
+    out.range = dv ? 'DV' : trc === 16 || (mastering && trc !== 18) ? 'HDR10' : trc === 18 ? 'HLG' : trc ? 'SDR' : deep && (h >= 1600 || w >= 3200) ? 'HDR' : '';
   });
   delete out.done;
   return out;
 }
 // The MP4 moov box's bytes, looked through for the boxes that tell.
 function mp4Moov(b) {
-  var s = b.toString('binary'), out = { height: 0, range: '' };
-  var dv = /dvcC|dvvC|dvh1|dvhe/.test(s), trc = 0, i = s.indexOf('colrnclx');
+  var s = b.toString('binary'), out = { height: 0, width: 0, range: '' };
+  var dv = /dvcC|dvvC|dvh1|dvhe/.test(s), trc = 0, i = s.indexOf('colrnclx'), hv = s.indexOf('hvcC'), deep = hv >= 0 && tenBit(b, hv + 4, Math.min(b.length, hv + 40));
   if (i >= 0 && i + 12 <= b.length) trc = b.readUInt16BE(i + 10);
   // tkhd of the video track: its height is the last 4 bytes (16.16 fixed point); the tallest one is the picture.
-  var at = 0; while ((at = s.indexOf('tkhd', at + 1)) >= 0) { var v = b[at + 4], end = at + 4 + (v === 1 ? 92 : 80); if (end <= b.length) { var hh = b.readUInt32BE(end - 4) >>> 16; if (hh > out.height) out.height = hh; } }
-  out.range = dv ? 'DV' : trc === 16 ? 'HDR10' : trc === 18 ? 'HLG' : trc ? 'SDR' : '';
+  // tkhd: width and height are its last 8 bytes (16.16 fixed point), after 84 (version 0) or 96 (version 1) bytes.
+  var at = 0; while ((at = s.indexOf('tkhd', at + 1)) >= 0) { var v = b[at + 4], end = at + 4 + (v === 1 ? 96 : 84); if (end <= b.length) { var hh = b.readUInt32BE(end - 4) >>> 16, ww = b.readUInt32BE(end - 8) >>> 16; if (hh > out.height) { out.height = hh; out.width = ww; } } }
+  out.range = dv ? 'DV' : trc === 16 ? 'HDR10' : trc === 18 ? 'HLG' : trc ? 'SDR' : deep && (out.height >= 1600 || out.width >= 3200) ? 'HDR' : '';
   return out;
 }
 
