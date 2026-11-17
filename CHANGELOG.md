@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **My media's Search tab shows a magnifier.**  It showed a crossed box on the TV (its fonts have no ⌕); the magnifier is drawn now.
+- **Green rescans what the tab holds.**  On the Movies tab it scans the libraries with movies ("Looking for new movies on GD-M"), on TV shows the ones with shows ("Looking for new episodes"), on Home all of them; the button says which.
+- **The Movies tab's Red menu has no Needs review.**  It opened TV episodes TiviBro couldn't place; it's on Home and the TV shows tab, called Episodes that need review.
+
 ## 0.6.0 (alpha 151, 2026-11-17)
 
 Pre-release: expect rough edges, and keep a backup before installing.

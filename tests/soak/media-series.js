@@ -102,7 +102,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
     await page.waitForFunction(()=>(t=>{const s=[...document.querySelectorAll('.media-shelf')].find(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent===t);return s?Math.max(1,[...s.querySelectorAll('.media-tile')].filter(x=>x.style.display!=='none').length):0;})('Needs review')>0);
     ok('Needs review appears when a conflicting file is discovered',true);
     await page.keyboard.press('m');await page.waitForTimeout(100);
-    ok('Needs review is offered in options for a nonempty queue',(await page.evaluate(()=>UI.menuLabels.join('|'))).includes('Needs review'),await page.evaluate(()=>UI.menuLabels));
+    ok('Episodes that need review are offered in options for a nonempty queue',(await page.evaluate(()=>UI.menuLabels.join('|'))).includes('need review'),await page.evaluate(()=>UI.menuLabels));
     await page.keyboard.press('Escape');
     await page.evaluate(async()=>{
       const r=await Media.request('library/query',{kind:'review',limit:1},30000),item=r.items[0];

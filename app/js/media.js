@@ -470,7 +470,10 @@ var Media = (function () {
       if (searchTab || query) t.classList.remove('on');
       bar.appendChild(t);
     });
-    var st = U.el('div', 'media-tab search' + (searchTab || query ? ' on' : ''), query ? '⌕  “' + query + '”' : '⌕  Search');
+    // The magnifier is drawn (the TV's fonts have no ⌕: it showed as a crossed box).
+    var st = U.el('div', 'media-tab search' + (searchTab || query ? ' on' : ''));
+    st.innerHTML = '<svg viewBox="0 0 24 24" class="mt-ico" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>';
+    st.appendChild(document.createTextNode(query ? '“' + query + '”' : 'Search'));
     st.addEventListener('click', function () { searchTab = true; askSearch(); });
     bar.appendChild(st);
   }
@@ -651,7 +654,7 @@ var Media = (function () {
     var src = MediaStore.source(id);
     if (!src || scanning[id]) return Promise.resolve({ error: 'busy', message: !src ? 'That media source was removed.' : 'This source is already being scanned.' });
     scanning[id] = 1;pausedScans[id]=false; refresh();
-    if (!quiet) U.toast('Looking for movies and shows on ' + src.name + '…');
+    if (!quiet) U.toast('Looking for new ' + (src.contentMode === 'shows' ? 'episodes' : src.contentMode === 'automatic' ? 'movies and episodes' : 'movies') + ' on ' + src.name + '…');
     function slice(first){return scanSource(src,first&&restart).then(function (res) {
       var r = MediaStore.applyScan(id, res);
       if(res.resumable&&!res.error&&!pausedScans[id]&&!document.hidden&&MediaStore.source(id)){refreshSeries();refresh();if(!quiet)U.toast('Scan saved.  Continuing '+src.name+'…');return new Promise(function(resolve){setTimeout(function(){resolve(slice(false));},500);});}
@@ -931,10 +934,11 @@ var Media = (function () {
   }
   function autoSoon(ms) { clearTimeout(autoTimer); autoTimer = setTimeout(function () { try { autoDetails(); } catch (e) { note('warn', 'Automatic movie details: ' + e.message); } }, ms || 3000); }
   var scanningAll = false;
-  function rescanAll() {
+  // Green: on the Movies tab the libraries with movies, on TV shows those with shows, elsewhere all of them.
+  function rescanAll(kind) {
     if (scanningAll || Object.keys(scanning).length) { U.toast('A media rescan is already running.'); return Promise.resolve(); }
-    var sources = MediaStore.sources();
-    if (!sources.length) { U.toast('Add a media source in Settings › My media first.', 5000); return Promise.resolve(); }
+    var sources = MediaStore.sources().filter(function (s) { var m = s.contentMode || 'movies'; return kind === 'movies' ? m !== 'shows' : kind === 'shows' ? m !== 'movies' : true; });
+    if (!sources.length) { U.toast(MediaStore.sources().length ? 'No library holds ' + (kind === 'shows' ? 'TV shows' : 'movies') + '.' : 'Add a media source in Settings › My media first.', 5000); return Promise.resolve(); }
     scanningAll = true;
     var at = 0, failures = 0, kept = 0;
     return MediaStore.load().then(function next() {
@@ -1154,8 +1158,8 @@ var Media = (function () {
     if (document.body.classList.contains('nav-open')) return;
     var m = itemsVL.current();
     if (tabsFocus) return UI.hints(searchTab || query ? [['', 'OK  search'], ['', '◀ ▶  Home, Movies, TV shows'], ['', 'Back  menu', 'back']] : [['', '◀ ▶  Home, Movies, TV shows, Search'], ['', '▼  shelves'], ['', 'Back  menu', 'back']]);
-    if (m && m.kind === 'section') return UI.hints([['', 'OK  open ' + m.title], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
-    UI.hints([['', m && m.kind === 'live' ? 'OK  watch' : 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
+    if (m && m.kind === 'section') return UI.hints([['', 'OK  open ' + m.title], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', ({ shows: 'Rescan TV shows', movies: 'Rescan movies' })[detailsKindNow()] || 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
+    UI.hints([['', m && m.kind === 'live' ? 'OK  watch' : 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', ({ shows: 'Rescan TV shows', movies: 'Rescan movies' })[detailsKindNow()] || 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
   }
   /* Red: sort, go to a shelf, arrange shelves, which source, and the focused title's options. */
   function goShelf(id) { var i = shelves.map(function (s) { return s.id; }).indexOf(id); if (i >= 0) { shelfAt = i; drawShelves(); hints(); } }
@@ -1209,8 +1213,9 @@ var Media = (function () {
       { label: 'Arrange shelves', sub: 'Move shelves up or down, switch them off', action: function () { arrangeMenu(s && (s.id.indexOf('holiday:') === 0 ? 'holidays' : s.genre ? 'genres' : s.id)); } },
       MediaStore.sources().length > 1 && { label: 'Show: ' + (src ? RAW(src.name) : 'All sources'), action: sourceMenuPick },
       m && { label: m.kind === 'show' ? 'Show options' : m.kind === 'live' ? (m.live.live ? 'Watch now' : 'Remind me') : 'Movie options', action: function () { itemMenu(m); } },
-      has().shows && { label: 'TV shows', action: function () { MediaSeries.open(); } },
-      reviewCards.length > 0 && { label: 'Needs review', action: function () { MediaSeries.review(); } }
+      has().shows && !(split && section === 'movies') && { label: 'TV shows', action: function () { MediaSeries.open(); } },
+      // Episodes TiviBro couldn't place: not on the Movies tab, where they aren't (only TV shows have them).
+      reviewCards.length > 0 && !(split && section === 'movies') && { label: 'Episodes that need review', action: function () { MediaSeries.review(); } }
     ].filter(Boolean));
   }
   // Past the last shelf: back to the first, and Up on the first round to the last (one press, not held).
@@ -1222,7 +1227,7 @@ var Media = (function () {
   function keys(a) {
     followTop = false;
     if (a !== 'ok') playToken++;
-    if (a === 'green') { rescanAll(); return true; }
+    if (a === 'green') { rescanAll(detailsKindNow()); return true; }
     if (a === 'yellow') { fetchMissingDetails(detailsKindNow()); return true; }
     if (a === 'red') { mediaOptions(); return true; }
     if (a === 'blue') { Views.switchTab('settings'); Settings.section('media'); return true; }

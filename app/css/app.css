@@ -856,6 +856,7 @@ video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;backgroun
 .media-tab{font-size:24px;font-weight:600;color:var(--muted);padding:9px 24px;border-radius:30px;background:rgba(255,255,255,.07);white-space:nowrap;cursor:pointer}
 .media-tab b{font-weight:500;font-size:20px;color:var(--dim);margin-left:8px}
 .media-tab.on{background:var(--text);color:var(--ink)}
+.media-tab .mt-ico{width:24px;height:24px;vertical-align:-5px;margin-right:10px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round}
 .media-tab.on b{color:var(--ink);opacity:.6}
 .media-tabs.focus .media-tab.on{box-shadow:0 0 0 4px var(--accent)}
 #viewMedia.split .media-hero{top:100px;height:390px}

@@ -89,7 +89,8 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('news is never looked up as a series', !(await ev(() => window.__asked)).some((a) => /World Tonight|Morning Briefing|Business Hour/.test(a)) && !(await ev(() => !!document.querySelector('#guideDetail .gd-movie'))));
 
     // ---- the Shows screen ----
-    await ev(() => Views.switchTab('shows')); await wait(1500);
+    // The Shows screen's categories and the info panel this checks (the Shows home, since alpha 140, has its own).
+    await ev(() => { Store.settings.vodHome = false; Views.switchTab('shows'); }); await wait(1500);
     await ev(() => { const r = [].slice.call(document.querySelectorAll('#vodItems .row')); }); 
     const findShow = async (name) => { for (let n = 0; n < 12; n++) { const t = await ev(() => (document.querySelector('#vodInfo h2') || {}).textContent || ''); if (t === name) return true; await page.keyboard.press('ArrowDown'); await wait(250); } return false; };
     await page.keyboard.press('ArrowRight'); await wait(300);
