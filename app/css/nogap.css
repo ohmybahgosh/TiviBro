@@ -35,6 +35,8 @@
 .nogap .tour-logo > * + *{margin-top:10px}
 .nogap .tour-remote-box > * + *{margin-left:56px}
 .nogap .media-tabs > * + *{margin-left:10px}
+.nogap .media-libart-icon > *{margin-right:8px;margin-bottom:8px}
+.nogap .media-libart-icon{margin-bottom:-8px}
 .nogap .media-shelf-title > * + *{margin-left:18px}
 .nogap .arrange-row > * + *{margin-left:18px}
 .nogap .on-meta > * + *{margin-left:14px}
@@ -44,5 +46,6 @@
 .nogap .shp-tabs > * + *{margin-left:14px}
 .nogap .shp-track > * + *{margin-left:26px}
 .nogap .mshp-seasons > * + *{margin-left:30px}
-.nogap .mmp-buttons > * + *{margin-left:18px}
+.nogap .mmp-buttons > * + *{margin-left:16px}
+.nogap .mmp-btn > * + *{margin-left:12px}
 .nogap .mmp-more > * + *{margin-left:22px}

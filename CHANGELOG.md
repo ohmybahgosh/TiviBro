@@ -1,10 +1,31 @@
 # Changelog
 
-## 0.6.0 (alpha 154, 2026-11-17)
+## 0.6.0 (alpha 155, 2026-11-17)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 154
+### New in alpha 155
+
+- **A warning before the TV runs out of memory.**  TiviBro weighs what it holds (channels, guide sources, movies and shows) against the TV's memory, and reads the browser's own memory gauge where the TV has one.  When it's a lot, it asks once to turn on Memory-safe playback, or, if that's already on, points to what helps most (Settings > System > Fix a problem).  It never asks over fullscreen video, Not now waits 30 days, and Memory-safe playback set to Off is respected.
+- **Search no longer loads every movie and show on a TV short of memory (issue #116).**  Opening Search loaded the provider's whole movie and show lists into the app, 41,000 titles on one 1 GB TV, and the TV closed TiviBro.  With Memory-safe playback on, the TiviBro service on the TV searches the lists it keeps and hands over only the matches.
+- **One big guide source no longer stops the whole guide (issues #114 and #115).**  On a TV short of memory, when TiviBro closes while reading a guide source, that source is left out from then on and the others load, with a message saying which one.  Reload guide now tries it again.  Guide sources on such a TV also keep a day and a half ahead instead of three days, which is most of what a giant guide file holds.
+- **Settings shows when a page goes on.**  A scroll bar down the right side, and "More below" (or "More above") with a fade where rows are out of view.
+- **Movies and Shows stay in the menu when the provider stumbles (issue #117).**  One odd answer from a busy panel (an error page instead of the list of categories) counted as "this provider has no movies", and the Movies tab left the menu.  Now an answer that isn't a list means "couldn't tell", and a tab goes only when two checks in a row find nothing.
+- **What's running in the background, on every screen.**  A small chip under the clock says what TiviBro is doing: loading the guide (from which source, how far), scanning a My media source, or fetching movie and show details from TMDB.  Several take turns.
+- **Trailers play inside TiviBro.**  Trailer on a movie's page plays it over the page, and Back returns to the movie, where you were.  Yellow opens it in the TV's YouTube app instead.
+- **Play a whole collection.**  Play the collection on a movie's page (or Red in a collection) plays its movies one after another, in order.  When one ends the next is offered, and starts after 10 seconds when Play the next one automatically is on (the setting that also plays the next episode, now in My media too).
+- **My media's Library, easier to find and use.**
+  - Movies and TV shows open on the Library shelf, at the top, instead of the shelf under it.
+  - All movies, Collections and All shows have tiles of their own, not one more movie's poster.
+  - Poster size in the library grid: Small, Medium, Large or Extra large (Red there, or Settings > My media > Library poster size).
+  - All shows says how many seasons you have of each show, and sorts by Most seasons too.
+  - Sort and filter in the grid showed its menu behind the posters, so choosing seemed to do nothing.  It's in front now, and the sort you pick is kept for next time.
+  - Collections sort by Title, Most movies, Newest movie or Most recently added.
+  - The focused poster in the first column is no longer cut off at the left.
+- **A movie's page has new buttons.**  Rounder and lighter: Play (with how much is left when you resume), From the start, Play the collection, Trailer, and round Favorite and More options buttons named underneath.
+- **My media's TV shows on the phone are posters.**  Shows and their seasons show as posters, like Movies, and a season's episodes as cards with their picture, air date, length and summary.
+
+### In alpha 154
 
 - **Settings, made easier to find your way around.**  Settings has 11 sections now, named for what's in them: Language, Playlists and accounts, Guide, Channels and groups, Playback, Movies and shows, My media, Reminders and watchlist, Parental controls, Appearance and System.  What used to be sections of their own are pages inside the section they belong to:
   - API keys, and Phone app and web editor, are in Playlists and accounts.

@@ -268,8 +268,10 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   await page.waitForTimeout(400);
   ok('large libraries keep at most 21 poster elements', await ev(() => document.querySelectorAll('#mediaItems img').length <= 21));
   ok('selected tile stays inside the movie viewport', await ev(() => { const t = document.querySelector('.media-tile.sel').getBoundingClientRect(), v = document.getElementById('mediaItems').getBoundingClientRect(); return t.left >= v.left && t.right <= v.right && t.bottom <= v.bottom; }));
-  // My media opens on the first shelf with anything (pull request #40): here Continue watching, so Down is Favorites.
-  ok('it starts on the top shelf, Continue watching', await ev(() => /Continue watching/.test(document.querySelector('.media-tile.sel').closest('.media-shelf').querySelector('h2').textContent)));
+  // My media opens on the top shelf: Library (All movies, Collections) in a big library, then Continue watching, then Favorites.
+  ok('it starts on the top shelf, Library', await ev(() => /Library/.test(document.querySelector('.media-tile.sel').closest('.media-shelf').querySelector('h2').textContent)));
+  await key('ArrowDown');
+  ok('Down: Continue watching', await ev(() => /Continue watching/.test(document.querySelector('.media-tile.sel').closest('.media-shelf').querySelector('h2').textContent)));
   await key('ArrowDown');
   ok('Down moves to the Favorites shelf', await ev(() => /Favorites/.test(document.querySelector('.media-tile.sel').closest('.media-shelf').querySelector('h2').textContent)));
   await shot('media-shelves');

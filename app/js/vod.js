@@ -279,23 +279,59 @@ var Vod = (function () {
   var freshAt = 0, freshDone = {};
   function wantFresh(k, p) { var key = k + ':' + p.id; if (!freshAt || freshDone[key] >= freshAt) return false; freshDone[key] = freshAt; return true; }
   function fromHelper(k, p) {
-    var h = +p.plRefresh, t0 = Date.now(), again = wantFresh(k, p);
-    var body = Source.m3uVod(p) ? { pl: p.id, sig: Source.sig(p), kind: k, m3u: 1, picked: prefs(p).langs, navLang: navigator.language, hidden: hiddenCats(k, p) } : {
+    var t0 = Date.now(), body = listBody(k, p, wantFresh(k, p));
+    return postJSON('http://127.0.0.1:' + Net.port + '/vod/list', body, 240000).then(function (j) {
+      return gotList(k, p, j, t0);
+    });
+  }
+  // What /vod/list and /vod/find are asked with: the playlist's list, and what of it shows.
+  function listBody(k, p, again) {
+    var h = +p.plRefresh;
+    return Source.m3uVod(p) ? { pl: p.id, sig: Source.sig(p), kind: k, m3u: 1, picked: prefs(p).langs, navLang: navigator.language, hidden: hiddenCats(k, p) } : {
       pl: p.id, sig: Source.sig(p), kind: k, maxAge: h > 0 ? h * 3600e3 : 0, refresh: again,
       u: Net.wrap(Source.api(p, k === 'series' ? 'get_series' : 'get_vod_streams'), { pl: p }),
       uc: Net.wrap(Source.api(p, k === 'series' ? 'get_series_categories' : 'get_vod_categories'), { pl: p }),
       picked: prefs(p).langs, navLang: navigator.language, hidden: hiddenCats(k, p)
     };
-    return postJSON('http://127.0.0.1:' + Net.port + '/vod/list', body, 240000).then(function (j) {
+  }
+  function rowItem(k, r) {
+    var base = k === 'series' ? 8 : 7, it = (k === 'series' ? seriesRow : movieRow)(r);
+    it.lang = r[base] || ''; if (r[base + 1]) it.q = r[base + 1]; if (r[base + 2]) it.adult = 1; if (r[base + 3]) it.p = r[base + 3];
+    return it;
+  }
+  function gotList(k, p, j, t0) {
       if (!j || !Array.isArray(j.rows)) throw new Error((j && j.error) || 'no list');
-      var base = k === 'series' ? 8 : 7, mk = k === 'series' ? seriesRow : movieRow;
-      var items = j.rows.map(function (r) {
-        var it = mk(r); it.lang = r[base] || ''; if (r[base + 1]) it.q = r[base + 1]; if (r[base + 2]) it.adult = 1; if (r[base + 3]) it.p = r[base + 3];
-        return it;
-      });
+      var items = j.rows.map(function (r) { return rowItem(k, r); });
       Log.info('vod', 'The helper gave ' + items.length + ' of ' + j.total + ' ' + (k === 'series' ? 'shows' : 'movies') + (p.id !== Store.playlist.id ? ' of ' + (p.name || 'another playlist') : '') + ' in ' + (Date.now() - t0) + ' ms');
       return { at: j.at, cats: j.cats, items: items, langs: j.langs, keep: j.keep, total: j.total, adultCat: j.adultCat };
-    });
+  }
+  /* Search on a TV short of memory (issue #116): the movie and show lists not loaded yet are searched by the
+     helper (/vod/find), which hands over only the titles with every word, instead of the app holding every
+     title (30,000 movies and 11,000 shows closed a 1 GB TV).  Lists already loaded are searched here. */
+  // How many titles each list has (Memwatch: lists big for the TV's memory), whether loaded here or only searched.
+  var sizes = {};
+  function titleCount() {
+    var n = 0;
+    ['movie', 'series'].forEach(function (k) { if (data[k]) n += data[k].items.length; else Object.keys(sizes).forEach(function (x) { if (x.indexOf(k + ':') === 0) n += sizes[x]; }); });
+    return n;
+  }
+  function lean() {
+    if (!(window.Player && Player.memSafe) || !(Net.info && Net.info.vod >= 3)) return false;
+    var ks = offered().filter(function (k) { return !data[k]; });
+    return ks.length > 0 && ks.every(function (k) { var ps = sources(k); return ps.length > 0 && ps.every(function (p) { return helped(p); }); });
+  }
+  function findRemote(text) {
+    var words = String(text || '').toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
+    var ks = offered().filter(function (k) { return !data[k]; }), out = [];
+    return Promise.all(ks.map(function (k) {
+      return Promise.all(sources(k).map(function (p, n) {
+        var body = listBody(k, p, false); body.words = words; body.max = 200;
+        return postJSON('http://127.0.0.1:' + Net.port + '/vod/find', body, 120000).then(function (j) {
+          if (j && j.of) sizes[k + ':' + p.id] = j.of;
+          (j && j.rows || []).forEach(function (r) { var it = rowItem(k, r); if (n) it.pl = p.id; out.push({ it: it, kind: k }); });
+        }, function (e) { Log.warn('vod', 'Search through the helper: ' + (e && e.message || e)); });
+      }));
+    })).then(function () { return out; });
   }
   // Without the helper: the full list is cached in the browser's storage and kept in memory.
   // force: ask the provider even when a copy is kept (the helper had none).  An empty copy is never kept as fresh.
@@ -557,7 +593,7 @@ var Vod = (function () {
     return preparing;
   }
   // For Search's empty message: 'none' (the provider has no movies or shows), 'loading' or 'ready'.
-  function searchState() { var o = offered(); return !o.length ? 'none' : o.some(function (k) { return !data[k]; }) ? (preparing ? 'loading' : 'none') : 'ready'; }
+  function searchState() { var o = offered(); return !o.length ? 'none' : lean() ? 'ready' : o.some(function (k) { return !data[k]; }) ? (preparing ? 'loading' : 'none') : 'ready'; }
   /* Open a movie or show found in Search the way the Movies or Shows screen would: that screen opens on
      All, on the title, then a movie plays (Back returns to it there) or a show lists its episodes. */
   var pending = null;
@@ -1021,5 +1057,5 @@ var Vod = (function () {
   };
 
   function arrange(k) { U.toast('Loading ' + (k === 'series' ? 'shows' : 'movies') + '…'); load(k).then(function () { kind = k; VodHome.arrange(k, homeApi); }, function (e) { U.toast('Could not load the list: ' + (e && e.message || e), 5000); }); }
-  return { arrange: arrange, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
+  return { arrange: arrange, homeApi: function () { return homeApi; }, _test: { homeApi: function () { return homeApi; }, catList: catList, itemsFor: itemsFor, catName: catName, trailerOf: trailerOf, tag: tag, view: view, done: done, mark: mark, isWatched: isWatched, openAt: openAt, renderItem: renderItem, itemMenu: itemMenu, markShow: markShow, withKind: withKind }, phone: ForPhone, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, allItems: allItems, openItem: openItem, prepare: prepare, lean: lean, findRemote: findRemote, titleCount: titleCount, get searchState() { return searchState(); }, offered: offered, reset: function (fresh) { if (fresh) freshAt = Date.now(); gen++; data = { movie: null, series: null }; raw = { movie: null, series: null }; sets = { movie: {}, series: {} }; asking = { movie: null, series: null }; info.clear(); episodes = null; series = null; seriesAsk++; spClose(); } };
 })();

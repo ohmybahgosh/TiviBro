@@ -3,11 +3,22 @@
    (▶ from the last column onto them, ▲ ▼ along them, OK or ◀ back to the posters); CH+ and CH− go a page at a
    time; Red sorts and filters (genre, decade, not watched yet, 4K); OK opens the title's page and Back comes
    back to the same place.  Collections open the same way: a grid of collections, then a collection's movies.
-   Only the rows on screen are drawn, so 10,000 titles scroll as fast as 10. */
+   Only the rows on screen are drawn, so 10,000 titles scroll as fast as 10.  Poster size (Red, or Settings >
+   My media > Library poster size): small (11 to a row), medium (9), large (7) or extra large (5). */
 var MediaGrid = (function () {
   'use strict';
   var $ = U.$, RAW = function (s) { return typeof I18n !== 'undefined' && I18n.raw ? I18n.raw(s) : s; };
-  var COLS = 9, ROW_H = 336, COL_W = 182, VISIBLE = 3, PAGE = 2;
+  var COLS = 9, ROW_H = 336, COL_W = 182, TILE_W = 164, ART_H = 246, VISIBLE = 3, PAGE = 2;
+  // The grid's room: 1628 px across (less 16 px each side for the focused poster's grown border), 894 down.
+  var WIDTH = 1596, HEIGHT = 894, PAD = 16;
+  var SIZES = [['small', 'Small', 11], ['medium', 'Medium', 9], ['large', 'Large', 7], ['xl', 'Extra large', 5]];
+  function sizeNow() { var v = typeof Store !== 'undefined' && Store.settings && Store.settings.mediaGridSize; return SIZES.some(function (x) { return x[0] === v; }) ? v : 'medium'; }
+  function layout() {
+    var sz = sizeNow(); COLS = SIZES.filter(function (x) { return x[0] === sz; })[0][2];
+    COL_W = Math.floor(WIDTH / COLS); TILE_W = COL_W - 18; ART_H = Math.round(TILE_W * 1.5);
+    ROW_H = ART_H + (sz === 'xl' ? 104 : 90); VISIBLE = Math.ceil(HEIGHT / ROW_H); PAGE = Math.max(1, VISIBLE - 1);
+    return sz;
+  }
   var LETTERS = ['#'].concat('ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''));
   var g = null;   // { title, all, list, sel, top, zone: 'grid' | 'letters', letter, sort, filter, kind, back, open }
 
@@ -24,13 +35,26 @@ var MediaGrid = (function () {
   function decade(m) { var y = +yearOf(m); return y ? (y < 1980 ? 'Before 1980' : Math.floor(y / 10) * 10 + 's') : ''; }
 
   var SORTS = [['title', 'Title, A to Z'], ['added', 'Date added, newest first'], ['release', 'Release date, newest first'], ['rating', 'Rating, highest first']];
+  var SHOW_SORTS = [['title', 'Title, A to Z'], ['added', 'Newest episode added first'], ['release', 'First aired, newest first'], ['rating', 'Rating, highest first'], ['seasons', 'Most seasons first']];
+  // Collections: their own sorts (a collection has no date or rating of its own: its movies do).
+  var COL_SORTS = [['title', 'Title, A to Z'], ['count', 'Most movies first'], ['newest', 'Newest movie first'], ['added', 'Movie added most recently first']];
+  function sorts() { return g.kind === 'collection' ? COL_SORTS : g.kind === 'show' ? SHOW_SORTS : SORTS; }
+  function newest(c, f) { var best = 0; (c.list || []).forEach(function (m) { var v = f(m); if (v > best) best = v; }); return best; }
   function sortList(list, by) {
     var k = {}; list.forEach(function (m, i) { k[i] = key(m); m._gi = i; });
     var t = function (a, b) { return k[a._gi] < k[b._gi] ? -1 : k[a._gi] > k[b._gi] ? 1 : 0; };
+    if (g.kind === 'collection') {
+      var v = {}; list.forEach(function (c) { v[c._gi] = by === 'count' ? c.count || 0 : by === 'newest' ? newest(c, function (m) { return +released(m).replace(/-/g, '') || 0; }) : by === 'added' ? newest(c, added) : 0; });
+      return list.sort(by === 'title' ? t : function (a, b) { return (v[b._gi] - v[a._gi]) || t(a, b); });
+    }
     return list.sort(by === 'added' ? function (a, b) { return (added(b) - added(a)) || t(a, b); }
       : by === 'release' ? function (a, b) { var x = released(a), y = released(b); return x < y ? 1 : x > y ? -1 : t(a, b); }
-        : by === 'rating' ? function (a, b) { return (rating(b) - rating(a)) || t(a, b); } : t);
+        : by === 'rating' ? function (a, b) { return (rating(b) - rating(a)) || t(a, b); }
+          : by === 'seasons' ? function (a, b) { return ((b.seasons || 0) - (a.seasons || 0)) || t(a, b); } : t);
   }
+  // The sort you chose stays for that kind of grid (All movies, All shows, Collections) until you change it.
+  function remembered(kind) { try { return (JSON.parse(localStorage.getItem('tivibro.gridSort') || '{}') || {})[kind] || 'title'; } catch (e) { return 'title'; } }
+  function remember(kind, by) { try { var o = JSON.parse(localStorage.getItem('tivibro.gridSort') || '{}') || {}; o[kind] = by; localStorage.setItem('tivibro.gridSort', JSON.stringify(o)); } catch (e) {} }
   function apply() {
     var f = g.filter, list = g.all.filter(function (m) {
       if (!f) return true;
@@ -40,6 +64,7 @@ var MediaGrid = (function () {
       if (f.type === 'decade') return decade(m) === f.value;
       return true;
     });
+    if (!sorts().some(function (x) { return x[0] === g.sort; })) g.sort = 'title';
     g.list = g.custom ? list : sortList(list, g.sort);
     g.sel = Math.min(g.sel, Math.max(0, g.list.length - 1));
   }
@@ -47,7 +72,7 @@ var MediaGrid = (function () {
   /* opts: { title, items, kind ('movie', 'show' or 'collection'), back, open(item, back), sort, custom (keep the
      order given: a collection in release order) } */
   function open(opts) {
-    g = { title: opts.title, all: (opts.items || []).slice(), kind: opts.kind || 'movie', back: opts.back, open: opts.open, sel: 0, top: 0, zone: 'grid', letter: 0, sort: opts.sort || 'title', filter: null, custom: !!opts.custom };
+    g = { title: opts.title, all: (opts.items || []).slice(), kind: opts.kind || 'movie', back: opts.back, open: opts.open, sel: 0, top: 0, zone: 'grid', letter: 0, sort: opts.sort || remembered(opts.kind || 'movie'), filter: null, custom: !!opts.custom, play: opts.play };
     apply();
     $('viewMedia').classList.add('mgr-on');
     UI.setHandler(keys); draw();
@@ -76,38 +101,43 @@ var MediaGrid = (function () {
   function img(src) { var i = U.el('img', 'mgr-pic'); i.decoding = 'async'; i.src = src; i.onerror = function () { if (!(typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this))) this.remove(); }; return i; }
   function hints() {
     if (g.zone === 'letters') return UI.hints([['', '▲ ▼  letters'], ['', 'OK  go there'], ['', 'Back  close', 'back']]);
-    UI.hints([['', 'OK  open'], ['', 'CH+ CH−  page'], g.custom ? null : ['', '▶ at the end  letters'], ['', 'Hold OK  options', 'hold'], ['red', 'Sort and filter'], ['', 'Back  close', 'back']].filter(Boolean));
+    UI.hints([['', 'OK  open'], ['', 'CH+ CH−  page'], g.custom || g.sort !== 'title' ? null : ['', '▶ at the end  letters'], g.kind === 'collection' ? null : ['', 'Hold OK  options', 'hold'], ['red', g.custom ? 'Options' : 'Sort, filter, poster size'], ['', 'Back  close', 'back']].filter(Boolean));
   }
   function present() { var have = {}; g.list.forEach(function (m) { have[letterOf(m)] = 1; }); return have; }
   function draw() {
     if (!g) return;
-    var b = box(), n = g.list.length, row = Math.floor(g.sel / COLS);
+    var sz = layout(), b = box(), n = g.list.length, row = Math.floor(g.sel / COLS);
     // The focused row stays in the middle once there is room above it.
     g.top = Math.max(0, Math.min(row - 1, Math.ceil(n / COLS) - 2));
     b.innerHTML = '';
     var head = U.el('div', 'mgr-head');
     head.appendChild(U.el('div', 'mgr-title', RAW(g.title)));
     var what = [n + (g.kind === 'collection' ? (n === 1 ? ' collection' : ' collections') : g.kind === 'show' ? (n === 1 ? ' show' : ' shows') : (n === 1 ? ' movie' : ' movies'))];
-    if (!g.custom) what.push(SORTS.filter(function (s) { return s[0] === g.sort; })[0][1]);
+    if (!g.custom) what.push(sorts().filter(function (s) { return s[0] === g.sort; })[0][1]);
     if (g.filter) what.push(g.filter.name);
     head.appendChild(U.el('div', 'mgr-sub', what.join('   ·   ')));
     b.appendChild(head);
     if (!n) { b.appendChild(U.el('div', 'shp-empty mgr-empty', g.filter ? 'Nothing here with that filter.  Red changes it.' : 'Nothing here yet.')); hints(); return; }
-    var grid = U.el('div', 'mgr-grid');
+    var grid = U.el('div', 'mgr-grid mgr-' + sz);
     for (var r = g.top; r < g.top + VISIBLE + 1; r++) {
       for (var c = 0; c < COLS; c++) {
         var i = r * COLS + c; if (i >= n) break;
         (function (m, i) {
           var t = U.el('div', 'mgr-tile' + (g.zone === 'grid' && i === g.sel ? ' sel' : ''));
           // 12 px of room above for the focused poster's grown border.
-          t.style.top = ((r - g.top) * ROW_H + 12) + 'px'; t.style.left = (c * COL_W) + 'px';
+          t.style.top = ((r - g.top) * ROW_H + 12) + 'px';
+          t.style.left = (c * COL_W + PAD) + 'px';   // and 16 px at the left, so the first column's border isn't cut off
+          t.style.width = TILE_W + 'px';
           var art = U.el('div', 'mgr-art'), pic = md(m).poster || m.poster;
+          art.style.width = TILE_W + 'px'; art.style.height = ART_H + 'px';
           if (pic) art.appendChild(img(pic)); else art.appendChild(U.el('span', 'mshp-noart', RAW(nameOf(m))));
           if (watched(m)) art.appendChild(U.el('span', 'shp-done', '✓'));
           if (g.kind === 'collection') art.appendChild(U.el('span', 'mgr-count', String(m.count)));
           t.appendChild(art);
           t.appendChild(U.el('div', 'mgr-name', RAW(nameOf(m))));
-          var sub = g.kind === 'collection' ? (m.count + (m.count === 1 ? ' movie' : ' movies')) : yearOf(m);
+          var sub = g.kind === 'collection' ? (m.count + (m.count === 1 ? ' movie' : ' movies'))
+            : g.kind === 'show' && m.seasons ? [yearOf(m), m.seasons + (m.seasons === 1 ? ' season' : ' seasons')].filter(Boolean).join('  ·  ') : yearOf(m);
+          if (g.kind === 'show' && m.seasons) art.appendChild(U.el('span', 'mgr-count', m.seasons + ' S'));
           if (sub) t.appendChild(U.el('div', 'mgr-year', sub));
           t.onclick = function () { g.zone = 'grid'; g.sel = i; choose(); };
           grid.appendChild(t);
@@ -138,7 +168,11 @@ var MediaGrid = (function () {
     g.all.forEach(function (m) { genres(m).forEach(function (x) { gs[x] = (gs[x] || 0) + 1; }); var d = decade(m); if (d) ds[d] = (ds[d] || 0) + 1; });
     var set = function (f) { return function () { state.filter = f; state.sel = 0; apply(); again(); }; };
     var items = [];
-    if (!g.custom) SORTS.forEach(function (s) { items.push({ label: (g.sort === s[0] ? '✓  ' : '') + 'Sort: ' + s[1], action: function () { state.sort = s[0]; state.sel = 0; apply(); again(); } }); });
+    if (state.play) items.push({ label: '▶  Play the whole collection', sub: 'One movie after another, in order', action: function () {
+      g = null; var bx = $('mediaGrid'); if (bx) bx.innerHTML = ''; $('viewMedia').classList.remove('mgr-on');
+      state.play(state.list, resume(state));
+    } });
+    if (!g.custom) sorts().forEach(function (s) { items.push({ label: (g.sort === s[0] ? '✓  ' : '') + 'Sort: ' + s[1], current: g.sort === s[0], action: function () { state.sort = s[0]; state.sel = 0; if (!state.custom) remember(state.kind, s[0]); apply(); again(); } }); });
     if (g.kind !== 'collection') {
       items.push({ label: (!g.filter ? '✓  ' : '') + 'Show all', action: set(null) });
       if (g.kind === 'movie') {
@@ -150,8 +184,13 @@ var MediaGrid = (function () {
       var dl = Object.keys(ds).sort().reverse();
       if (dl.length > 1) items.push({ label: 'Decade…', action: function () { UI.menu('Decade', dl.map(function (x) { return { label: x, sub: ds[x] + '', action: set({ type: 'decade', value: x, name: x }) }; }), again); } });
     }
-    if (!items.length) return;
-    UI.menu('Sort and filter', items, again);
+    var cur = SIZES.filter(function (x) { return x[0] === sizeNow(); })[0];
+    items.push({ label: 'Poster size: ' + cur[1] + '…', sub: 'Bigger posters, fewer to a row', action: function () {
+      UI.menu('Poster size', SIZES.map(function (x) { return { label: (x[0] === cur[0] ? '✓  ' : '') + x[1], sub: x[2] + ' to a row', current: x[0] === cur[0], action: function () {
+        var m = state.list[state.sel]; Store.settings.mediaGridSize = x[0]; Store.saveSettings(); if (m) state.sel = state.list.indexOf(m); again();
+      } }; }), again);
+    } });
+    UI.menu(g.custom ? 'Options' : 'Sort and filter', items, again);
   }
   function keys(a) {
     if (!g) return false;

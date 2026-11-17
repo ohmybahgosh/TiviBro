@@ -39,6 +39,9 @@ var Epg = (function () {
     // For the next start if TiviBro closes during a load (Log.unclean).
     Log.state('guide', p.active ? (p.phase === 'save' ? 'saving the guide' : 'loading the guide from ' + (p.host || 'a guide source') + (p.of > 1 ? ' (' + p.src + ' of ' + p.of + ')' : '') +
       (p.total ? ', ' + Math.min(99, Math.floor(100 * p.bytes / p.total)) + '%' : p.bytes ? ', ' + mb(p.bytes) : '')) : '');
+    // Under the clock on every screen (activity.js).
+    if (typeof Activity !== 'undefined') Activity.set('guide', p.active ? (p.phase === 'save' ? 'Saving the guide' : 'Loading the guide' + (p.host ? ' from ' + p.host : '') + (p.of > 1 ? ' (' + p.src + ' of ' + p.of + ')' : '') +
+      (p.total ? ',  ' + Math.min(99, Math.floor(100 * p.bytes / p.total)) + '%' : p.bytes ? ',  ' + mb(p.bytes) : '')) : '');
     for (var i = 0; i < progListeners.length; i++) { try { progListeners[i](p); } catch (e) {} }
     chip(p);
   }
@@ -654,7 +657,16 @@ var Epg = (function () {
     /* A TV short of memory (1 GB, or TiviBro closed while playing lately) pauses after the first such close:
        the low-memory retry didn't help one with 19,000 channels, which closed four times in an hour (issue #112). */
     var short = typeof Player !== 'undefined' && !!Player.memSafe;
-    if (tries >= 2 || (tries >= 1 && short)) {
+    if (force) skipSet(null);                                         // Reload guide now: every source again
+    /* That one source, not the whole guide: on a TV short of memory, the guide source TiviBro closed on is left
+       out from then on and the others load (issues #114 and #115: a 63 s download among four sources).  Reload
+       guide now tries it again. */
+    if (tries >= 1 && short && kind === 'main' && prev.key) {
+      var sk = skipGet(); sk[prev.key] = { host: prev.host || 'a guide source', at: Date.now() }; skipSet(sk);
+      var left = 'TiviBro closed while loading the guide from ' + (prev.host || 'a guide source') + ', probably out of memory.  That source is left out on this TV for now, and the others load.  Remove it, or use Reload guide now to try it again.';
+      Log.warn('epg', left); U.toast(left, 9000);
+      tries = 0;
+    } else if (tries >= 2 || (tries >= 1 && short)) {
       paused = { kind: kind, host: prev.host || '', at: Date.now() };
       var why = 'TiviBro closed ' + (tries >= 2 ? 'twice' : '') + ' while loading the ' + (kind === 'pub' ? 'public guide' : 'guide') + (prev.host ? ' (' + prev.host + ')' : '') + ', probably out of memory.  ' +
         (kind === 'pub' ? 'The public guide is paused: pick fewer countries for it, or turn it off, then use Look again now.' : 'Guide loading is paused: remove a big guide source, then use Reload guide now.');
@@ -666,8 +678,12 @@ var Epg = (function () {
     }
     if (tries === 1) Log.warn('epg', 'The last guide load did not finish (' + (prev.host || 'unknown source') + ').  Loading again with less memory.');
     runSet(kind, { sig: sig, tries: tries + 1, at: Date.now(), host: '' });
-    return { safe: tries >= 1, host: function (h) { var x = runGet(kind); if (x && x.host !== h) { x.host = h; runSet(kind, x); } }, done: function () { runSet(kind, null); } };
+    return { safe: tries >= 1 || short, force: !!force, host: function (h, key) { var x = runGet(kind); if (x && (x.host !== h || x.key !== key)) { x.host = h; x.key = key || ''; runSet(kind, x); } }, done: function () { runSet(kind, null); } };
   }
+  // Guide sources left out on this TV (by their address's hash): { key: { host, at } }.
+  var SKIP = 'tivibro.guideSkip';
+  function skipGet() { try { return JSON.parse(localStorage.getItem(SKIP) || '{}') || {}; } catch (e) { return {}; } }
+  function skipSet(m) { try { if (m && Object.keys(m).length) localStorage.setItem(SKIP, JSON.stringify(m)); else localStorage.removeItem(SKIP); } catch (e) {} }
   /* ---------- big guides kept by the helper (service/guide.js) ----------
      With the network helper running, the helper downloads and reads XMLTV guides and keeps them on
      the TV's storage.  The app holds only each programme's times and title (the grid, search, the
@@ -937,6 +953,12 @@ var Epg = (function () {
   // pl: whose guide (several playlists on): only that playlist's channels are looked for.
   function work(srcs, pub, g, sig, extra, pl) {
     pl = pl || P();
+    if (!pub && !(g && g.force)) {
+      var skip = skipGet(), keep = srcs.filter(function (s) { return !skip[U.hash(s.url)]; });
+      if (keep.length < srcs.length) Log.info('epg', (srcs.length - keep.length) + ' guide source' + (srcs.length - keep.length === 1 ? '' : 's') + ' left out on this TV (TiviBro closed while loading ' + (srcs.length - keep.length === 1 ? 'it' : 'them') + ')');
+      if (!keep.length) return Promise.resolve({ failed: 'the guide source TiviBro closed on is left out; use Reload guide now to try it again', map: {}, icons: {}, channels: [], matches: {}, pubMatch: {}, report: [] });
+      srcs = keep;
+    }
     var mine = pl.id === P().id ? '' : pl.id;
     // Past programmes are only reachable on catch-up channels, so only those keep past days
     // (up to their catch-up length); the rest keep the last few hours.  On big playlists, where
@@ -960,16 +982,20 @@ var Epg = (function () {
     var alikeFn = typeof PubEpg !== 'undefined' && PubEpg.alike ? PubEpg.alike : function () { return false; };
     var code = 'self.norm = ' + norm.toString() + ';\nself.alike = ' + alikeFn.toString() + ';\nself.pubKeys = ' + keysFn.toString() + ';\nself.progFlag = ' + progFlag.toString() + ';\nself.readFlag = ' + readFlag.toString() + ';\n(' + workerMain.toString() + ')();';
     var started = Date.now();
-    function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; if (g) g.host(p.host); setProgress(p); }
+    function keyAt(p) { var x = msg.sources[(p.src || 1) - 1]; return x ? x.key : ''; }
+    function onProg(p) { p.active = true; p.phase = 'download'; p.started = started; if (g) g.host(p.host, keyAt(p)); setProgress(p); }
     var k0 = msg.sources[0] ? msg.sources[0].known : 0;
     setProgress({ active: true, phase: 'download', src: 1, of: srcs.length, host: msg.sources[0] ? msg.sources[0].host : '', bytes: 0, total: k0 || 0, est: !!k0, programmes: 0, channels: 0, started: started });
     if (hMode) {
       // The helper reads it: relay addresses with /unz/<id>, so it unzips and counts as for the app.
       msg.sources.forEach(function (s) { var m = /\/unz\/([A-Za-z0-9_-]+)\//.exec(s.url); s.unz = m ? m[1] : ''; });
       msg.to = now + 3 * 86400e3;                                      // storage is cheap there: a day more ahead
+      // A TV short of memory keeps a day and a half ahead: most of a giant guide is days nobody opens, and every
+      // programme kept is read into the app (issue #115).
+      if (typeof Player !== 'undefined' && Player.memSafe) msg.to = now + 36 * 3600e3;
       return hRun(pub ? 'pub' : 'main', sig, msg, function (j, phase) {
         var x = { src: j.src || 1, of: j.of || srcs.length, host: j.host || '', bytes: j.bytes || 0, total: j.total || 0, est: !!j.est, programmes: j.programmes || 0, channels: j.channels || 0 };
-        if (phase === 'save') { if (g) g.host(x.host); return setProgress(Object.assign(x, { active: true, phase: 'save', started: started })); }
+        if (phase === 'save') { if (g) g.host(x.host, keyAt(x)); return setProgress(Object.assign(x, { active: true, phase: 'save', started: started })); }
         onProg(x);
       }, extra, pub ? '' : mine).catch(function (e) { var m = (e && e.message) || 'the guide did not load'; return { failed: m, map: {}, icons: {}, channels: [], matches: {}, pubMatch: {}, report: [{ ok: false, error: m }] }; });
     }

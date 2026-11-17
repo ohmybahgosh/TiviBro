@@ -863,7 +863,24 @@ video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;backgroun
 #viewMedia.split .media-title{font-size:56px}
 #viewMedia.split .media-shelves{top:500px}
 .media-section-card .media-tile-year{color:var(--accent-text)}
+/* Library's own tiles (All movies, Collections, All shows): not a movie's poster (media.js cover) */
+.media-libart{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;background:linear-gradient(160deg,#3a4f8f,#1d2547)}
+.media-libart.lib-shows{background:linear-gradient(160deg,#1f7a6c,#13324a)}
+.media-libart.lib-collections{background:linear-gradient(160deg,#8a4a8f,#2a1d47)}
+.media-libart-icon{width:120px;height:110px;display:flex;flex-wrap:wrap;gap:8px;align-content:center;justify-content:center;margin-bottom:22px}
+.media-libart-icon i{display:block;width:32px;height:46px;border-radius:5px;background:rgba(255,255,255,.88)}
+.lib-collections .media-libart-icon{position:relative}
+.lib-collections .media-libart-icon i{position:absolute;width:62px;height:90px;border-radius:7px;left:29px;top:10px;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.lib-collections .media-libart-icon i:nth-child(1){transform:translateX(-26px) rotate(-10deg);background:rgba(255,255,255,.55)}
+.lib-collections .media-libart-icon i:nth-child(2){transform:translateX(26px) rotate(10deg);background:rgba(255,255,255,.7)}
+.lib-collections .media-libart-icon i:nth-child(3){background:#fff}
+.media-libart-name{font-size:34px;font-weight:800;letter-spacing:2px;line-height:1.1;padding:0 12px}
+.media-libart-sub{font-size:21px;opacity:.85;margin-top:10px}
 /* Fetching details: N movies and N shows to go (media.js setBusy) */
+.activity{position:fixed;right:56px;top:66px;z-index:40;font-size:20px;color:var(--text);padding:6px 18px 6px 36px;border-radius:999px;background:rgba(0,0,0,.62);white-space:nowrap;max-width:760px;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.activity::before{content:'';position:absolute;left:14px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--ok);animation:tb-pulse 1.4s ease-in-out infinite}
+body.full .activity,body.mgr-open .activity{display:none}
+#viewMedia .media-busy{display:none}
 .media-busy{position:absolute;right:56px;top:66px;z-index:3;font-size:20px;color:var(--text);padding:6px 16px 6px 36px;border-radius:999px;background:rgba(0,0,0,.55);white-space:nowrap}
 .media-busy::before{content:'';position:absolute;left:14px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--ok);animation:tb-pulse 1.4s ease-in-out infinite}
 @keyframes tb-pulse{0%,100%{opacity:1}50%{opacity:.25}}
@@ -1143,7 +1160,7 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .set-body .opt.attn .ov{color:var(--ink);background:var(--ok);font-weight:800;font-size:20px;letter-spacing:2px;padding:4px 14px;border-radius:999px}
 .set-body .opt.attn.focus .ov{background:var(--ink);color:var(--ok)}
 /* My media: a show's own page (media-showpage.js), on the provider Shows page's look (shp-*). */
-#viewMedia.mshp-on .mshp{display:block;z-index:30}
+#viewMedia.mshp-on .mshp{display:block;z-index:28}
 .mshp-row{position:absolute;left:152px;top:440px;font-size:26px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
 .mshp-seasons{position:absolute;left:152px;top:494px;display:flex;gap:30px}
 .mshp-season{flex:none;width:210px;opacity:.82}
@@ -1152,30 +1169,36 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .mshp-season.sel .mshp-poster{border-color:var(--text);transform:scale(1.04)}
 .mshp-noart{font-size:28px;font-weight:700;color:var(--muted);text-align:center;padding:12px}
 /* My media: a movie's own page (media-moviepage.js), like a show's. */
-#viewMedia.mmp-on .mmp{display:block;z-index:31}
+#viewMedia.mmp-on .mmp{display:block;z-index:29}
 .mmp-logo{max-width:620px;max-height:170px;display:block;margin:6px 0 10px}
 .mmp-plot{-webkit-line-clamp:4}
 .mmp-who{font-size:23px;color:var(--muted);margin-top:12px;max-width:860px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mmp-buttons{position:absolute;left:152px;top:560px;display:flex;gap:18px}
-.mmp-btn{display:flex;flex-direction:column;justify-content:center;min-width:150px;height:84px;padding:0 28px;border-radius:14px;background:var(--raised);color:var(--text);font-size:26px;font-weight:600;border:4px solid transparent}
-.mmp-btn small{font-size:19px;font-weight:400;color:var(--muted);margin-top:2px}
-.mmp-btn.main{min-width:230px}
-.mmp-btn.sel{background:var(--accent);color:var(--on-accent);border-color:var(--text)}
-.mmp-btn.sel small{color:var(--on-accent);opacity:.85}
-.mmp-progress{position:absolute;left:152px;top:656px;width:230px;height:7px;border-radius:4px;background:rgba(255,255,255,.2);overflow:hidden}
-.mmp-progress i{display:block;height:100%;background:var(--accent)}
+.mmp-buttons{position:absolute;left:152px;top:566px;display:flex;align-items:center;gap:16px}
+.mmp-btn{position:relative;display:flex;align-items:baseline;gap:12px;height:64px;line-height:64px;padding:0 30px;border-radius:32px;background:rgba(255,255,255,.14);color:#fff;font-size:25px;font-weight:600;white-space:nowrap;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);transition:transform 140ms ease,background 140ms ease}
+.mmp-btn small{font-size:19px;font-weight:500;opacity:.7}
+.mmp-btn.main{background:rgba(255,255,255,.92);color:#111;box-shadow:none;padding:0 36px}
+.mmp-btn.round{width:64px;padding:0;justify-content:center;font-size:28px}
+.mmp-btn.sel{background:#fff;color:#111;transform:scale(1.08);box-shadow:0 8px 28px rgba(0,0,0,.45),0 0 0 3px var(--accent)}
+.mmp-btn.sel small{opacity:.65}
+.mmp-btn-bar{position:absolute;left:26px;right:26px;bottom:9px;height:4px;border-radius:2px;background:rgba(0,0,0,.18);overflow:hidden}
+.mmp-btn-bar i{display:block;height:100%;background:var(--accent)}
+.mmp-trailer{position:fixed;left:0;top:0;width:1920px;height:1080px;z-index:200;background:#000}
+.mmp-trailer iframe{width:100%;height:100%;border:0}
+.mmp-trailer-tip{position:absolute;left:50%;top:40px;transform:translateX(-50%);padding:12px 28px;border-radius:999px;background:rgba(0,0,0,.72);color:#fff;font-size:24px;white-space:pre;transition:opacity 600ms ease}
+.mmp-trailer-tip.fade{opacity:0}
+.mmp-btn-name{position:absolute;left:152px;top:646px;font-size:20px;color:var(--muted)}
 .mmp-more-title{top:704px}
 .mmp-more{position:absolute;left:152px;top:752px;display:flex;gap:22px}
 .mmp-poster{position:relative;flex:none;width:150px;height:225px;border-radius:12px;overflow:hidden;background:var(--raised);border:4px solid transparent;opacity:.8;display:flex;align-items:center;justify-content:center}
 .mmp-poster.this{opacity:1;box-shadow:0 0 0 2px var(--accent)}
 .mmp-poster.sel{opacity:1;border-color:var(--text);transform:scale(1.05)}
 /* My media's library grid (media-grid.js): the whole list as posters, letters down the right. */
-.mgr{position:absolute;top:0;left:0;right:0;bottom:0;display:none;background:var(--ink);z-index:32;overflow:hidden}
+.mgr{position:absolute;top:0;left:0;right:0;bottom:0;display:none;background:var(--ink);z-index:29;overflow:hidden}
 #viewMedia.mgr-on .mgr{display:block}
 .mgr-head{position:absolute;left:152px;top:44px;right:160px}
 .mgr-title{font-size:52px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mgr-sub{font-size:24px;color:var(--muted);margin-top:6px}
-.mgr-grid{position:absolute;left:152px;top:186px;right:140px;bottom:0;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 80%,transparent)}
+.mgr-grid{position:absolute;left:136px;top:186px;right:140px;bottom:0;overflow:hidden;-webkit-mask-image:linear-gradient(180deg,#000 80%,transparent)}
 .mgr-tile{position:absolute;width:164px;opacity:.85}
 .mgr-tile.sel{opacity:1}
 .mgr-art{position:relative;width:164px;height:246px;border-radius:12px;overflow:hidden;background:var(--raised);border:4px solid transparent;display:flex;align-items:center;justify-content:center}
@@ -1184,6 +1207,7 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .mgr-count{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.78);color:#fff;font-size:20px;font-weight:700;padding:2px 10px;border-radius:8px}
 .mgr-name{font-size:20px;font-weight:600;color:var(--text);margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mgr-year{font-size:19px;color:var(--muted);margin-top:2px}
+.mgr-xl .mgr-name{font-size:26px}.mgr-xl .mgr-year{font-size:23px}.mgr-large .mgr-name{font-size:22px}.mgr-small .mgr-name{font-size:18px}.mgr-small .mgr-year{font-size:17px}
 .mgr-letters{position:absolute;right:44px;top:120px;bottom:80px;width:56px;display:flex;flex-direction:column;justify-content:space-between;align-items:center}
 .mgr-letter{font-size:21px;font-weight:700;color:var(--text);width:40px;height:30px;line-height:30px;text-align:center;border-radius:8px}
 .mgr-letter.none{color:var(--muted);opacity:.35}
@@ -1196,3 +1220,11 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .burn-veil{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;opacity:0;pointer-events:none;z-index:9999;transition:opacity 2s}
 .burn-veil.on{opacity:.7}
 #app,#sidenav,#clock{transition:transform 3s linear}
+/* Settings: that a page goes on (settings.js scrollHint): a scroll bar, and More below / More above with a fade. */
+.set-sbar{position:absolute;top:8px;bottom:8px;right:2px;width:6px;border-radius:3px;background:rgba(255,255,255,.1);pointer-events:none}
+.set-sbar.hidden{display:none}
+.set-sbar i{position:absolute;left:0;top:0;width:6px;border-radius:3px;background:var(--accent);transition:transform .15s}
+.set-more{position:absolute;left:0;right:14px;height:44px;display:none;align-items:flex-end;justify-content:center;padding-bottom:6px;font-size:20px;font-weight:700;color:var(--accent-text);pointer-events:none}
+.set-more.on{display:flex}
+.set-more.below{bottom:0;background:linear-gradient(transparent,var(--ink) 75%)}
+.set-more.above{top:0;align-items:flex-start;padding:6px 0 0;background:linear-gradient(var(--ink) 25%,transparent)}

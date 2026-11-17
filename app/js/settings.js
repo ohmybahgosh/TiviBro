@@ -340,6 +340,11 @@ var Settings = (function () {
     return list.slice(0, 200).map(function (m) { return action(I18n.raw(m.title || m.file || '?'), I18n.raw(m.file || m.path || ''), function () { Media.findDetails(m); }, function () { return 'Fix match'; }); })
       .concat(list.length > 200 ? [info(list.length - 200 + ' more', 'The web editor lists them all.')] : []);
   }
+  // One setting, in Movies and shows and in My media: the next episode, or the next movie of a collection you play.
+  function autoNextRow() {
+    var s = S();
+    return toggle('Play the next one automatically', 'When an episode ends, the next one starts after 5 seconds; when a movie of a collection you play ends, the next movie after 10.  Back cancels it.', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); });
+  }
   function mediaDisplay() {
     var names = { en: 'English', nl: 'Dutch', de: 'German', fr: 'French', es: 'Spanish', it: 'Italian' };
     return [
@@ -352,6 +357,8 @@ var Settings = (function () {
       Media.bothKinds && Media.bothKinds() ? action('Arrange Movies shelves', 'Recently added movies, collections, genres, decades, directors, 4K and HDR, TMDB\'s and Trakt\'s movie lists.', function () { Media.arrangeShelves('movies'); }) : null,
       Media.bothKinds && Media.bothKinds() ? action('Arrange TV shows shelves', 'Next up, every show, Needs review, TMDB\'s and Trakt\'s TV lists.', function () { Media.arrangeShelves('shows'); }) : null,
       Media.bothKinds && Media.bothKinds() ? null : action('Arrange shelves', 'Move My media\'s shelves up or down and switch off the ones you don\'t want: Continue watching, holiday lists, Favorites, Recently added, TMDB\'s and Trakt\'s lists, Movies, TV shows, genres and more.  Red on My media too.', function () { Media.arrangeShelves(); }, function () { var p = MediaStore.preferences(); return p.shelfOrder.length || Object.keys(p.shelfOff).length ? 'Your order' : 'As it comes'; }),
+      choice('Library poster size', 'All movies, All shows and Collections: how big the posters are.  Red there too.', ['small', 'medium', 'large', 'xl'], ['Small (11 to a row)', 'Medium (9 to a row)', 'Large (7 to a row)', 'Extra large (5 to a row)'], function () { return S().mediaGridSize || 'medium'; }, function (v) { S().mediaGridSize = v; save(); }),
+      autoNextRow(),
       toggle('Favorites also in lists', 'On: a favorite movie or show is in Favorites and also in Movies or TV shows.  Off: only in Favorites.', function () { return MediaStore.preferences().favoritesInLists; }, function (v) { Media.updatePreferences({ favoritesInLists: v }); paint(); }),
       choice('Metadata language', 'Shared with the web editor.  Refreshes saved movie and show matches in this language.  Missing translations fall back to English.', Object.keys(names), Object.keys(names).map(function (k) { return names[k]; }), function () { return MediaStore.preferences().language; }, function (v) { Media.updatePreferences({ language: v }); paint(); })
     ].filter(Boolean);
@@ -1104,7 +1111,7 @@ var Settings = (function () {
     out.push(toggle('Reverse the order', 'Turns the order round: Z to A, oldest, lowest or added longest ago first.', function () { return !!s.vodSortReverse; }, function (v) { s.vodSortReverse = v; save(); if (typeof VodHome !== 'undefined') VodHome.changed(); }));
     out.push(action('Arrange the Movies home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Movies home too.', function () { Vod.arrange('movie'); }));
     out.push(action('Arrange the Shows home', 'Move its shelves up or down, switch them off, and pin categories.  Red on the Shows home too.', function () { Vod.arrange('series'); }));
-    out.push(toggle('Play next episode automatically', '', function () { return s.autoNext !== false; }, function (v) { s.autoNext = v; save(); }));
+    out.push(autoNextRow());
     out.push(toggle('Hide spoilers', 'In the guide, new episodes and episodes or movies that haven\'t aired yet (not news or sport), and on the Shows screen, episodes you haven\'t started, keep only their title, season and episode, and when they air: no summary, episode title or picture from the episode.',
       function () { return !!s.noSpoilers; }, function (v) { s.noSpoilers = v; save(); if (window.Guide && Guide.draw) Guide.draw(); }));
     out.push(head('Details from TMDB'));
@@ -1827,7 +1834,23 @@ var Settings = (function () {
     }
   }
   function scrollMin() { return Math.min(0, body.clientHeight - 24 - scrollEl.scrollHeight); }
-  function setScroll(y) { y = Math.max(scrollMin(), Math.min(0, y)); scrollEl._y = y; scrollEl.style.transform = 'translateY(' + y + 'px)'; }
+  function setScroll(y) { y = Math.max(scrollMin(), Math.min(0, y)); scrollEl._y = y; scrollEl.style.transform = 'translateY(' + y + 'px)'; scrollHint(y); }
+  /* That a page goes on (asked for after the overhaul): a scroll bar down the right side, and "More below" /
+     "More above" with a fade where rows are out of view. */
+  function scrollHint(y) {
+    var full = scrollEl.scrollHeight, h = body.clientHeight, min = scrollMin(), bar = body._bar;
+    if (!bar || bar.parentNode !== body) {
+      bar = body._bar = U.el('div', 'set-sbar'); bar.appendChild(U.el('i'));
+      body._below = U.el('div', 'set-more below'); body._above = U.el('div', 'set-more above');
+      body.appendChild(bar); body.appendChild(body._below); body.appendChild(body._above);
+    }
+    var long = min < -8;
+    bar.classList.toggle('hidden', !long); body._below.classList.toggle('on', long && y > min + 8); body._above.classList.toggle('on', long && y < -8);
+    put(body._below, '▼  ' + T('More below')); put(body._above, '▲  ' + T('More above'));
+    if (!long) return;
+    var th = Math.max(36, Math.round(h * h / full)), top = Math.round((h - th) * (y / min));
+    bar.firstChild.style.height = th + 'px'; bar.firstChild.style.transform = 'translateY(' + top + 'px)';
+  }
   function lastFocusable() { for (var i = items.length - 1; i >= 0; i--) if (focusable(i)) return i; return -1; }
   function focusable(i) { var it = items[i]; return !!(it && !it.head && !it.info && !it.preview); }
 

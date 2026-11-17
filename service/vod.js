@@ -220,8 +220,29 @@ function list(q, res, ALLOW, log, port) {
   }
 }
 
+/* POST /vod/find { the same as /vod/list, plus words: ['lord', 'rings'], max }  ->  { v: 2, kind, total, rows }
+   Search on a TV short of memory (issue #116): the helper looks through the list it keeps (fetching it first
+   like /vod/list when it has none) and hands the app only the titles that have every word, at most max (200),
+   instead of the app holding 30,000 movies and 11,000 shows to search them. */
+function fold(v) { return str(v).toLowerCase().replace(/[\u00e0-\u00e5]/g, 'a').replace(/[\u00e8-\u00eb]/g, 'e').replace(/[\u00ec-\u00ef]/g, 'i').replace(/[\u00f2-\u00f6]/g, 'o').replace(/[\u00f9-\u00fc]/g, 'u').replace(/\u00f1/g, 'n').replace(/\u00e7/g, 'c'); }
+function find(q, res, ALLOW, log, port) {
+  var words = (Array.isArray(q.words) ? q.words : []).map(fold).filter(Boolean).slice(0, 8), max = Math.min(Math.max(+q.max || 200, 1), 500);
+  if (!words.length) return send(res, ALLOW, 400, { error: 'nothing to look for' });
+  // The list as /vod/list would answer it (languages picked, hidden categories left out), caught on its way out.
+  var out = { writeHead: function (code) { this.code = code; }, end: function (body) {
+    var d; try { d = JSON.parse(body); } catch (e) { return send(res, ALLOW, 500, { error: 'bad list' }); }
+    if (this.code !== 200) return send(res, ALLOW, this.code, d);
+    body = null;
+    var hit = [];
+    (d.rows || []).forEach(function (r) { var n = fold(r[1]); for (var i = 0; i < words.length; i++) if (n.indexOf(words[i]) < 0) return; hit.push(r); });
+    send(res, ALLOW, 200, { v: 2, kind: d.kind, total: hit.length, of: (d.rows || []).length, rows: hit.slice(0, max) });
+  } };
+  list(q, out, ALLOW, log, port);
+}
+
 function handle(req, res, ALLOW, log, port) {
   var route = req.url.split('?')[0];
+  if (req.method === 'POST' && route === '/vod/find') return readBody(req, res, ALLOW, function (q) { find(q || {}, res, ALLOW, log, port); });
   if (req.method === 'POST' && route === '/vod/list') return readBody(req, res, ALLOW, function (q) { list(q || {}, res, ALLOW, log, port); });
   if (req.method === 'POST' && route === '/vod/m3u') return readBody(req, res, ALLOW, function (q) { m3u(q || {}, res, ALLOW); });
   if (req.method === 'POST' && route === '/vod/forget') return readBody(req, res, ALLOW, function (q) { if (q && q.pl) forget(str(q.pl)); send(res, ALLOW, 200, { ok: true }); });
@@ -258,4 +279,4 @@ function readBody(req, res, ALLOW, cb) {
   });
 }
 
-module.exports = { handle: handle, slim: slim, shown: shown, forget: forget, saveM3u: saveM3u };
+module.exports = { handle: handle, find: find, slim: slim, shown: shown, forget: forget, saveM3u: saveM3u };

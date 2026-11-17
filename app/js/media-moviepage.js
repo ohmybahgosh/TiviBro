@@ -1,7 +1,7 @@
 /* My media: a movie's own page (issue: "a full screen click-through for movies, instead of playing straight
    away").  OK on a movie opens it full screen, laid out like a show's page (media-showpage.js): its backdrop,
    title, details, summary, director and cast, and a row of buttons: Resume (or Play), From the start, Trailer
-   (TMDB's, in the TV's YouTube app), Favorite and More options.  Below them, the other movies of its
+   (TMDB's, played inside TiviBro), Favorite and More options.  Below them, the other movies of its
    collection you have.  ◀ ▶ move along a row, ▲ ▼ between the buttons and the collection, Back closes. */
 var MediaMoviePage = (function () {
   'use strict';
@@ -22,11 +22,13 @@ var MediaMoviePage = (function () {
 
   function buttons() {
     var m = pg.m, r = resumeOf(m), out = [];
-    out.push(r ? { id: 'resume', label: '▶  Resume', sub: 'from ' + hm(r.pos) } : { id: 'play', label: '▶  Play', sub: rt(md(m).runtime) });
-    if (r) out.push({ id: 'start', label: 'From the start' });
-    if (pg.trailer) out.push({ id: 'trailer', label: 'Trailer', sub: 'YouTube' });
-    out.push({ id: 'fav', label: MediaStore.isFavorite(m.id) ? '♥  Favorite' : '♡  Favorite' });
-    out.push({ id: 'more', label: 'More options' });
+    out.push(r ? { id: 'resume', label: '▶  Resume', sub: hm(r.dur - r.pos) + ' left' } : { id: 'play', label: '▶  Play', sub: rt(md(m).runtime) });
+    if (r) out.push({ id: 'start', label: '↺  From the start' });
+    if (pg.more.length > 1) out.push({ id: 'all', label: 'Play the collection', sub: pg.more.length + ' movies, in order' });
+    if (pg.trailer) out.push({ id: 'trailer', label: 'Trailer' });
+    // Favorite and More options: round buttons, named underneath when focused.
+    out.push({ id: 'fav', label: MediaStore.isFavorite(m.id) ? '♥' : '♡', round: true, name: MediaStore.isFavorite(m.id) ? 'In Favorites  ·  OK takes it out' : 'Add to Favorites' });
+    out.push({ id: 'more', label: '•••', round: true, name: 'More options' });
     return out;
   }
   // The other movies of its TMDB collection that you have (Mad Max, Mad Max 2, …), oldest first.
@@ -89,16 +91,18 @@ var MediaMoviePage = (function () {
     // The buttons.
     var row = U.el('div', 'mmp-buttons'), bs = buttons();
     pg.at = Math.min(pg.at, bs.length - 1);
+    var r = resumeOf(m);
     bs.forEach(function (x, i) {
-      var e = U.el('div', 'mmp-btn' + (pg.row === 'buttons' && i === pg.at ? ' sel' : '') + (i === 0 ? ' main' : ''));
+      var e = U.el('div', 'mmp-btn' + (pg.row === 'buttons' && i === pg.at ? ' sel' : '') + (i === 0 ? ' main' : '') + (x.round ? ' round' : ''));
       e.appendChild(U.el('span', '', x.label));
       if (x.sub) e.appendChild(U.el('small', '', x.sub));
+      if (i === 0 && r) { var bar = U.el('div', 'mmp-btn-bar'), f = U.el('i'); f.style.width = Math.min(100, Math.round(100 * r.pos / r.dur)) + '%'; bar.appendChild(f); e.appendChild(bar); }
       e.onclick = function () { pg.row = 'buttons'; pg.at = i; press(x.id); };
       row.appendChild(e);
     });
     b.appendChild(row);
-    var r = resumeOf(m);
-    if (r) { var bar = U.el('div', 'mmp-progress'), f = U.el('i'); f.style.width = Math.min(100, Math.round(100 * r.pos / r.dur)) + '%'; bar.appendChild(f); b.appendChild(bar); }
+    var on = pg.row === 'buttons' && bs[pg.at];
+    if (on && on.name) b.appendChild(U.el('div', 'mmp-btn-name', on.name));
     // The collection.
     if (pg.more.length > 1) {
       b.appendChild(U.el('div', 'mshp-row mmp-more-title', RAW((d.collection && d.collection.name) || 'The collection')));
@@ -118,12 +122,42 @@ var MediaMoviePage = (function () {
     // My media's own keys while the movie opens (Back cancels it), then the page again when it ends.
     if (id === 'resume' || id === 'play') { close(true); Media.restore(); Media.playFile(m, false, reopen(m, back)); }
     else if (id === 'start') { close(true); Media.restore(); Media.playFile(m, true, reopen(m, back)); }
+    else if (id === 'all') { var list = pg.more; close(true); Media.restore(); Media.playAll(list, reopen(m, back)); }
     else if (id === 'trailer') watchTrailer(pg.trailer);
     else if (id === 'fav') { MediaStore.toggleFavorite(m.id); if (Media.refresh) Media.refresh(); draw(); }
     else if (id === 'more') options();
   }
   function options() { var m = pg.m, back = pg.back; close(true); Media.optionsFor(m, reopen(m, back)); }
+  /* The trailer plays inside TiviBro, over the page, through the network helper's small page (YouTube's player
+     needs a page with an address: service/proxy.js /trailer).  Back closes it and you are on the movie's page
+     again; Yellow opens it in the TV's YouTube app instead.  Without the helper: the YouTube app. */
+  var tr = null;
   function watchTrailer(id) {
+    if (!(typeof Net !== 'undefined' && Net.port && Net.active)) return youtubeApp(id);
+    var box = U.el('div', 'mmp-trailer'), f = U.el('iframe');
+    f.src = 'http://127.0.0.1:' + Net.port + '/trailer?v=' + id; f.setAttribute('allow', 'autoplay; encrypted-media; fullscreen'); f.tabIndex = -1;
+    box.appendChild(f);
+    var tip = U.el('div', 'mmp-trailer-tip', 'Back  returns to the movie      Yellow  open in the YouTube app');
+    box.appendChild(tip);
+    document.body.appendChild(box);
+    // The keys stay with TiviBro (the player never takes the focus), so Back always works.
+    f.onload = function () { try { window.focus(); if (document.activeElement === f) f.blur(); } catch (e) {} };
+    setTimeout(function () { tip.classList.add('fade'); }, 6000);
+    var state = pg;
+    tr = { box: box };
+    UI.setHandler(function (a) {
+      if (a === 'back' || a === 'yellow' || a === 'stop') {
+        box.remove(); tr = null;
+        if (a === 'yellow') youtubeApp(id);
+        if (pg === state) { UI.setHandler(keys); hints(); }
+        return true;
+      }
+      tip.classList.remove('fade'); clearTimeout(tr && tr.t); if (tr) tr.t = setTimeout(function () { tip.classList.add('fade'); }, 4000);
+      return true;
+    });
+    UI.hints([['', 'Back  the movie\'s page', 'back'], ['yellow', 'YouTube app']]);
+  }
+  function youtubeApp(id) {
     try {
       var bridge = new PalmServiceBridge();
       bridge.onservicecallback = function (msg) { var r = {}; try { r = JSON.parse(msg); } catch (e) {} if (r.returnValue === false) U.toast('The TV\'s YouTube app didn\'t open'); };

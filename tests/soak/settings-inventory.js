@@ -16,7 +16,7 @@ const APP = process.env.APP || 'http://127.0.0.1:8078/index.html';
 const RELAY = 'http://127.0.0.1:47811';
 const FILE = path.join(__dirname, '../settings-inventory.json');
 // old label -> new label, for settings renamed in plain words.
-const RENAMED = { 'Settings shown': 'Advanced view' };
+const RENAMED = { 'Settings shown': 'Advanced view', 'Play next episode automatically': 'Play the next one automatically' };
 // old label -> why it is no longer a row (it must still be reachable another way).
 const GONE = {};
 let fails = 0;

@@ -152,7 +152,7 @@ I18n.add('es', {
   "Movies & Shows": "Películas y series", "Sort movies by": "Ordenar películas por", "Sort TV shows by": "Ordenar series por", "Name (A–Z)": "Nombre (A–Z)",
   "Date added (newest first)": "Fecha de incorporación (más recientes primero)", "Release date (newest first)": "Fecha de estreno (más recientes primero)",
   "First aired (newest first)": "Primera emisión (más recientes primero)", "Mark as watched": "Marcar como visto", "Mark unwatched": "Marcar como no visto",
-  "Play next episode automatically": "Reproducir el siguiente episodio automáticamente", "Open episodes": "Abrir episodios", "Return to episodes": "Volver a los episodios",
+  "Play the next one automatically": "Reproducir el siguiente automáticamente", "Play next episode automatically": "Reproducir el siguiente episodio automáticamente", "Open episodes": "Abrir episodios", "Return to episodes": "Volver a los episodios",
   "Other versions": "Otras versiones", "Other versions…": "Otras versiones…", "Switch to another version": "Cambiar a otra versión", "Media sources": "Fuentes de medios",
   "Add media": "Añadir medios", "Media servers": "Servidores de medios", "No media sources yet": "Todavía no hay fuentes de medios", "Rescan": "Volver a escanear",
   "Rescan media sources": "Volver a escanear las fuentes de medios", "Your media library": "Tu biblioteca de medios", "No items in this view": "No hay elementos en esta vista",
@@ -1279,5 +1279,6 @@ I18n.add('es', {
   "Fewer countries means less to read.": "Menos países, menos que leer.",
   "Fewer days of catch-up guide.": "Menos días de guía pasada.",
   "Off for the snappiest list on slow TVs.": "Desactivada para la lista más ágil en televisores lentos.",
-  "Sends this TV's details and log, logins taken out.": "Envía los datos y el registro de este televisor, sin los inicios de sesión."
+  "Sends this TV's details and log, logins taken out.": "Envía los datos y el registro de este televisor, sin los inicios de sesión.",
+  "More below": "Más abajo", "More above": "Más arriba"
 });

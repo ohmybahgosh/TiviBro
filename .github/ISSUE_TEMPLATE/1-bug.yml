@@ -18,7 +18,9 @@ body:
         - Channels list or groups
         - Watching fullscreen (quick menu, info panel, zapping)
         - Catch-up
-        - Movies and shows
+        - Movies and Shows from my provider (the Movies and Shows tabs)
+        - My media (my own files: a media server, NAS, Google Drive or Dropbox)
+        - The phone app (Android)
         - Search
         - Set-up tour
         - Settings

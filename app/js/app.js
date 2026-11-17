@@ -379,7 +379,7 @@ var App = (function () {
     Library.set(data);
     Logos.load(data);
     Vod.reset();
-    if (!ready) { Views.init(); Watch.start(); if (typeof Burnin !== 'undefined') Burnin.start(); Remind.start(); ready = true; if (typeof Media !== 'undefined' && Media.autoSoon) Media.autoSoon(45000); if (typeof Media !== 'undefined' && Media.newMediaSoon) Media.newMediaSoon(60000); if (typeof Movies !== 'undefined') Movies.start(); if (typeof Trakt !== 'undefined') MediaStore.load().then(function () { Trakt.start(); }).catch(function () {}); }   // movies still without details or posters
+    if (!ready) { Views.init(); Watch.start(); if (typeof Burnin !== 'undefined') Burnin.start(); if (typeof Memwatch !== 'undefined') Memwatch.start(); Remind.start(); ready = true; if (typeof Media !== 'undefined' && Media.autoSoon) Media.autoSoon(45000); if (typeof Media !== 'undefined' && Media.newMediaSoon) Media.newMediaSoon(60000); if (typeof Movies !== 'undefined') Movies.start(); if (typeof Trakt !== 'undefined') MediaStore.load().then(function () { Trakt.start(); }).catch(function () {}); }   // movies still without details or posters
     window.__tbBooted = true;              // compat.js shows an error screen if errors stop the start
     Views.stopAll();
     Views.reload(false);
@@ -416,7 +416,8 @@ var App = (function () {
     if (p.type !== 'xtream' && p.type !== 'stalker') return;
     if (p.type === 'stalker' && !(Net.active && Net.port)) return;       // a portal's titles come through the helper
     var list = function (action, extra) {
-      return U.getJSON(Source.api(p, action, extra || ''), extra ? 20000 : 90000).then(function (j) { return Array.isArray(j) ? j : []; }, function () { return null; });
+      // Not a list (an error page, a busy panel's {"user_info":...}): could not tell, not "none" (issue #117).
+      return U.getJSON(Source.api(p, action, extra || ''), extra ? 20000 : 90000).then(function (j) { return Array.isArray(j) ? j : null; }, function () { return null; });
     };
     function offered(cats, listAction) {
       if (cats === null) return Promise.resolve(null);
@@ -435,6 +436,14 @@ var App = (function () {
       return Promise.all([offered(c[0], 'get_vod_streams'), offered(c[1], 'get_series')]).then(function (r) {
         var old = p.vod || {};
         var v = { movies: r[0] === null ? !!old.movies : !!r[0], series: r[1] === null ? !!old.series : !!r[1], at: Date.now() };
+        /* A kind that was there goes only when two checks in a row find none: one odd answer from a busy
+           panel no longer takes Movies or Shows out of the menu (issue #117). */
+        var gone = { movies: old.movies && !v.movies, series: old.series && !v.series };
+        if (gone.movies || gone.series) {
+          var miss = (old.miss || 0) + 1;
+          if (miss < 2) { p.vod = Object.assign({}, old, { miss: miss }); Store.upsertPlaylist(p); Log.warn('app', 'The provider answered with no ' + (gone.movies ? 'movies' : 'shows') + ' once: kept in the menu until it says so again'); return; }
+        }
+        v.miss = 0;
         var say = function (cats, n) { return cats === null ? 'could not tell' : !cats.length ? 'no' : n ? 'yes (' + cats.length + ' categories)' : n === 0 ? 'no (' + cats.length + ' categories, all empty)' : 'could not tell'; };
         Log.info('app', 'Provider offers movies: ' + say(c[0], r[0]) + ', shows: ' + say(c[1], r[1]));
         if (old.movies === v.movies && old.series === v.series) return;

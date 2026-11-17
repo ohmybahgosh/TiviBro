@@ -97,7 +97,15 @@ var Media = (function () {
     var key = movie.id + '|' + kindTag + '|' + (movie.kind === 'live' ? (movie.live.live ? 1 : 0) + '|' : '') + poster + '|' + nameOf(movie) + '|' + (movie.year || movie.metadata && movie.metadata.year || '');
     if (slot.key === key) return;
     slot.key = key; slot.art.innerHTML = ''; slot.art.appendChild(slot.bar); slot.art.appendChild(slot.tag);
-    slot.art.appendChild(U.el('span', 'media-monogram', String(nameOf(movie)).slice(0, 1).toUpperCase()));
+    if (movie.libArt) {
+      // All movies, Collections, All shows: a tile of their own, so they don't look like one more movie.
+      var la = U.el('div', 'media-libart lib-' + movie.libArt);
+      var ic = U.el('div', 'media-libart-icon'); for (var k = 0; k < (movie.libArt === 'collections' ? 3 : 6); k++) ic.appendChild(U.el('i'));
+      la.appendChild(ic);
+      la.appendChild(U.el('div', 'media-libart-name', String(nameOf(movie)).toUpperCase()));
+      la.appendChild(U.el('div', 'media-libart-sub', String(movie.year || '')));
+      slot.art.appendChild(la);
+    } else slot.art.appendChild(U.el('span', 'media-monogram', String(nameOf(movie)).slice(0, 1).toUpperCase()));
     if (poster) {
       var img = U.el('img', 'media-cover'); img.alt = ''; img.width = 240; img.height = 360;
       slot.art.appendChild(img); posterQueue.push({ img: img, url: poster });
@@ -343,11 +351,12 @@ var Media = (function () {
     /* Library: the whole list as a poster grid (media-grid.js), for big libraries (25 titles or more; a smaller
        one fits on its shelf), and the collections. */
     var GRID_MIN = 25;
-    var gcard = function (id, title, sub, from, grid) { var c = card(id, title, sub, from); c.id = 'grid:' + id; c.grid = grid; return c; };
+    // Their tiles are drawn as their own (cover(): media-libart), not a movie's poster.
+    var gcard = function (id, title, sub, from, grid) { var c = card(id, title, sub, from); c.id = 'grid:' + id; c.grid = grid; c.libArt = id; c.metadata.poster = ''; return c; };
     var colCount = 0, cseen = {}; all.forEach(function (m) { var c = m.metadata && m.metadata.collection; if (c && c.id && !cseen[c.id]) { cseen[c.id] = 1; colCount++; } });
-    built.library = { title: 'Library', sub: 'Every movie as posters, A to Z, and your collections', movies: counts.movies < GRID_MIN ? [] : [gcard('movies', 'All movies', count(counts.movies, '1 movie', '{n} movies'), posterOf(movies), { type: 'movies' })]
+    built.library = { title: 'Library', sub: 'All your movies as posters, A to Z, and your collections', movies: counts.movies < GRID_MIN ? [] : [gcard('movies', 'All movies', count(counts.movies, '1 movie', '{n} movies'), posterOf(movies), { type: 'movies' })]
       .concat(colCount ? [gcard('collections', 'Collections', count(colCount, '1 collection', '{n} collections'), posterOf(all.filter(function (m) { return m.metadata && m.metadata.collection; })), { type: 'collections' })] : []) };
-    built['library-shows'] = { title: 'Library', sub: 'Every show as posters, A to Z', movies: opts.phone || counts.shows < GRID_MIN ? [] : [gcard('shows', 'All shows', count(counts.shows, '1 show', '{n} shows'), shP, { type: 'shows' })] };
+    built['library-shows'] = { title: 'Library', sub: 'All your shows as posters, A to Z', movies: opts.phone || counts.shows < GRID_MIN ? [] : [gcard('shows', 'All shows', count(counts.shows, '1 show', '{n} shows'), shP, { type: 'shows' })] };
     var out = [], ar = arrangement(), kinds = has();
     ar.order.forEach(function (k) {
       if (ar.off(k)) return;
@@ -436,6 +445,8 @@ var Media = (function () {
     if (typeof Settings !== 'undefined' && Settings.live) Settings.live();
   }
   function drawBusy() {
+    // On every screen too, under the clock (activity.js); My media's own chip is under its tabs.
+    if (typeof Activity !== 'undefined') Activity.set('details', busyText());
     var el = typeof document !== 'undefined' && document.getElementById ? document.getElementById('mediaBusy') : null; if (!el) return;
     var t = busyText(); el.textContent = t; el.classList.toggle('hidden', !t);
   }
@@ -613,8 +624,7 @@ var Media = (function () {
     drawTabs();
     if (oldShelf) shelfAt = shelves.map(function (s) { return s.id; }).indexOf(oldShelf);
     if (followTop || shelfAt < 0) shelfAt = 0;
-    // Opening on something to watch: Library (the grid's doorway) is one ▲ above it, not where you land.
-    if (followTop && shelves[0] && /^library/.test(shelves[0].id) && shelves.length > 1) shelfAt = 1;
+    // Library (All movies, Collections, All shows) is the first shelf, and where Movies and TV shows open.
     var active = shelves[shelfAt];
     if (followTop) shelfPos[active.id] = 0;
     else if (movie) { var i = active.movies.findIndex(function (m) { return m.id === movie.id; }); if (i >= 0) shelfPos[active.id] = i; }
@@ -675,6 +685,9 @@ var Media = (function () {
     var src = MediaStore.source(id);
     if (!src || scanning[id]) return Promise.resolve({ error: 'busy', message: !src ? 'That media source was removed.' : 'This source is already being scanned.' });
     scanning[id] = 1;pausedScans[id]=false; refresh();
+    var act = function (t) { if (typeof Activity !== 'undefined') Activity.set('scan:' + id, t); };
+    act('Scanning ' + src.name + ' for ' + (src.contentMode === 'shows' ? 'episodes' : src.contentMode === 'automatic' ? 'movies and episodes' : 'movies'));
+
     if (!quiet) U.toast('Looking for new ' + (src.contentMode === 'shows' ? 'episodes' : src.contentMode === 'automatic' ? 'movies and episodes' : 'movies') + ' on ' + src.name + '…');
     function slice(first){return scanSource(src,first&&restart).then(function (res) {
       var r = MediaStore.applyScan(id, res);
@@ -684,7 +697,7 @@ var Media = (function () {
       if (!scanningAll) autoSoon();
       return { error: res.error || '', message: res.message || '', kept: r.kept, note: r.note, count: MediaStore.movies(id).length, episodes: res.episodeFiles || 0, text: foundText(id, src.name, res.episodeFiles), skipped: res.skipped || null };
     }, function (e) { delete scanning[id]; refresh(); if (!quiet) U.toast('Could not read ' + src.name + ': ' + why(e), 6000); return { error: 'helper' }; });}
-    var job=slice(true);scanRuns[id]=job;job.then(function(){if(scanRuns[id]===job)delete scanRuns[id];},function(){if(scanRuns[id]===job)delete scanRuns[id];});return job;
+    var job=slice(true);scanRuns[id]=job;job.then(function(){act('');},function(){act('');});job.then(function(){if(scanRuns[id]===job)delete scanRuns[id];},function(){if(scanRuns[id]===job)delete scanRuns[id];});return job;
   }
   function changeSourceMode(id,mode){
     MediaStore.sourceMode(id,mode);pausedScans[id]=true;var old=scanRuns[id]||Promise.resolve();
@@ -1107,7 +1120,7 @@ var Media = (function () {
         x.list.sort(function (a, b) { var p = String(a.metadata.releaseDate || a.year || ''), q = String(b.metadata.releaseDate || b.year || ''); return p < q ? -1 : p > q ? 1 : 0; });
         return { id: id, kind: 'collection', title: x.title, count: x.list.length, list: x.list, metadata: { title: x.title, poster: (x.list.filter(function (m) { return m.metadata.poster; })[0] || { metadata: {} }).metadata.poster } };
       });
-      var openCol = function (c, back) { MediaGrid.open({ title: c.title, items: c.list, kind: 'movie', custom: true, back: back, open: title }); };
+      var openCol = function (c, back) { MediaGrid.open({ title: c.title, items: c.list, kind: 'movie', custom: true, back: back, open: title, play: function (list, again) { restore(); playAll(list, again); } }); };
       return MediaGrid.open({ title: 'Collections', items: items, kind: 'collection', back: restore, open: openCol });
     }
     if (spec.type === 'shelf') {
@@ -1127,6 +1140,30 @@ var Media = (function () {
     play(m, false);
   }
   // From a movie's page: play, and come back to the page when it ends or Back stops it.
+  /* A whole collection, one movie after another (Play the collection, on a movie's page or Red in a
+     collection): when one ends, the next is offered, and starts by itself after 10 seconds when Play the next
+     one automatically is on (Settings > Movies and shows).  Starting anything else ends the run. */
+  var queue = null, queueTimer = null;
+  function playAll(list, back) {
+    list = (list || []).filter(function (m) { return m && m.src; });
+    if (!list.length) return;
+    queue = { list: list, at: 0, back: back };
+    playQueued(0);
+  }
+  function playQueued(at) { var m = queue.list[at]; queue.at = at; queue.item = m; playFrom(m, false, queue.back); }
+  function queueNext(finished) {
+    clearTimeout(queueTimer); queueTimer = null;
+    if (!queue || queue.item !== finished) return;
+    var q = queue, next = q.list[q.at + 1];
+    if (!next) { queue = null; U.toast('That was the last movie of the collection.', 4000); return; }
+    var go = function () { clearTimeout(queueTimer); queueTimer = null; if (queue === q) playQueued(q.at + 1); };
+    var stop = function () { clearTimeout(queueTimer); queueTimer = null; if (queue === q) queue = null; };
+    UI.menu('Next in the collection', [{ label: 'Play ' + nameOf(next), sub: (q.at + 2) + ' of ' + q.list.length, action: go }, { label: 'Stop here', action: stop }], stop);
+    if (Store.settings.autoNext !== false) {
+      U.toast(nameOf(next) + ' in 10 seconds.  Back cancels.', 10000);
+      queueTimer = setTimeout(function () { queueTimer = null; if (queue !== q) return; UI.close(); go(); }, 10000);
+    }
+  }
   function playFrom(m, fromStart, back) {
     if (back) m.returnTo = function () { m.returnTo = null; back(); };
     play(m, fromStart);
@@ -1136,6 +1173,7 @@ var Media = (function () {
     if (m.continueEpisode) return MediaSeries.resume(m);
     if (m.kind === 'live') { if (typeof OnNow !== 'undefined' && OnNow.watch) OnNow.watch(m.live); else Views.startChannel(m.live.c, false, function () { Views.goFull(); }); return; }
     if (m.kind === 'show') return typeof MediaShowPage !== 'undefined' ? MediaShowPage.open(m, restore) : MediaSeries.showItem(m,restore);
+    if (queue && queue.item !== m) queue = null;   // something else: the collection run ends
     if (m.review && m.review.length) return MediaSeries.correct(m,restore);
     if (typeof MediaSeries !== 'undefined') MediaSeries.leave();
     var token = ++playToken, r = MediaStore.resume(m.resumeKey || m.id);
@@ -1216,6 +1254,7 @@ var Media = (function () {
     Views.stopAll();
     open(true);
     if (eligible && typeof MediaSeries !== 'undefined') MediaSeries.completed(finished);
+    if (finished && finished.kind !== 'episode') queueNext(finished);
     // Trakt (Settings > My media > Trakt > Mark as watched on Trakt): what you finished.
     if (finished && typeof Trakt !== 'undefined') { if (finished.kind === 'episode') { if (eligible) Trakt.watchedEpisode(finished.episodeHandle); } else Trakt.watchedMovie(finished.metadata && finished.metadata.id); }
   }
@@ -1460,7 +1499,7 @@ var Media = (function () {
     applyDetails: function (movieId, tmdbId) { return metadataRequest({ id: tmdbId }).then(function (r) { if (!r.metadata) throw new Error('TMDB has no details for that.'); return MediaStore.setMetadata(movieId, r.metadata); }).then(function () { refresh(); }); }, findDetails: findDetails, libraryDetails: function (id) { var s = MediaStore.source(id); if (s) sourceDetails(s); }, lookUpWaiting: function (id) { if (needToken()) return; if (fetchingDetails) return U.toast('Movie details are already being fetched.'); MediaStore.load().then(function () { var list = MediaStore.movies(id).filter(function (m) { return !(m.metadata && m.metadata.id) && !m.tmdbMiss; }); if (!list.length) return U.toast('Every movie here has been looked up.', 4000); return fetchDetails(list, MediaStore.preferences().language); }).catch(function (e) { U.toast(why(e), 6000); }); }, detailsLabel: detailsLabel, arrangeShelves: function (sec) { arrangeMenu(null, sec || 'home'); }, bothKinds: function () { var h = has(); return !!(h.movies && h.shows); }, busyText: busyText, setBusy: setBusy,
     // The web editor's shelf list: with movies and shows, each shelf says which tab it's on (Continue watching: Home).
     shelfList: function () { var ar = arrangement(), h = has(), both = h.movies && h.shows; return ar.order.filter(function (k) { return fits(k, h); }).map(function (k) { return { key: k, name: NAMES[k], off: ar.off(k), section: !both ? '' : traktOf(k) ? traktOf(k).tab : k === 'continue' || inSection(k, 'home') ? 'home' : TV_ONLY[k] ? 'shows' : 'movies' }; }); }, holidaysNow: holidaysNow, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
-    watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: function (m, fromStart, back) { if (back) playFrom(m, fromStart, back); else play(m, fromStart); }, openTitle: openTitle, optionsFor: itemMenu, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
+    watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playAll: playAll, playFile: function (m, fromStart, back) { if (back) playFrom(m, fromStart, back); else play(m, fromStart); }, openTitle: openTitle, optionsFor: itemMenu, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { namedIn: namedIn, section: function (x) { if (x) { tabsFocus = false; setSection(x); } return { section: section, split: split, tabs: tabsFocus }; }, goShelf: function (id) { followTop = false; goShelf(id); }, addServer: addServer, addAddress: addAddress, addDropbox: addDropbox, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };
 })();

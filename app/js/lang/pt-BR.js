@@ -490,7 +490,7 @@ I18n.add('pt-BR', {
   "First aired (newest first)": "Primeira exibição (mais recentes primeiro)",
   "Mark as watched": "Marcar como assistido",
   "Mark unwatched": "Marcar como não assistido",
-  "Play next episode automatically": "Reproduzir o próximo episódio automaticamente",
+  "Play the next one automatically": "Reproduzir o próximo automaticamente", "Play next episode automatically": "Reproduzir o próximo episódio automaticamente",
   "Open episodes": "Abrir episódios",
   "Return to episodes": "Voltar aos episódios",
   "Other versions": "Outras versões",
@@ -1795,5 +1795,6 @@ I18n.add('pt-BR', {
   "Fewer countries means less to read.": "Menos países, menos para ler.",
   "Fewer days of catch-up guide.": "Menos dias de guia passado.",
   "Off for the snappiest list on slow TVs.": "Desligada para a lista mais rápida em TVs lentas.",
-  "Sends this TV's details and log, logins taken out.": "Envia os dados e o registro desta TV, sem os logins."
+  "Sends this TV's details and log, logins taken out.": "Envia os dados e o registro desta TV, sem os logins.",
+  "More below": "Mais abaixo", "More above": "Mais acima"
 });

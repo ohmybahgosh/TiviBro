@@ -74,7 +74,7 @@ function sortEpisodes(a, b) {
 /* ---------- public shapes ---------- */
 function project(r) {
   var out = {};
-  ['sourceIds','displayOrder','mergedFrom','preferredVersion','orderPosition','watchRevision','watchOrigin','watchManualAt','boundaries','favourite','sourceId','kind','title','season','number','airDate','absoluteNumber','absolutePart','order','watchState','availability','metadata','addedAt','showId','newAt','newEp','airedOn','airedEp'].forEach(function (k) { if (r[k] !== undefined) out[k] = r[k]; });
+  ['sourceIds','displayOrder','mergedFrom','preferredVersion','orderPosition','watchRevision','watchOrigin','watchManualAt','boundaries','favourite','sourceId','kind','title','season','number','airDate','absoluteNumber','absolutePart','order','watchState','availability','metadata','addedAt','showId','newAt','newEp','airedOn','airedEp','seasons'].forEach(function (k) { if (r[k] !== undefined) out[k] = r[k]; });
   out.handle = r.handle || r.id; if (r.episodeIds) out.coveredEpisodes = r.episodeIds.slice();
   if (r.kind === 'episode') out.label = r.airDate || (r.absoluteNumber != null ? String(r.absoluteNumber) + (r.absolutePart ? '.' + r.absolutePart : '') : 'S' + r.season + 'E' + r.number);
   if (r.fileIds) out.versionCount = r.fileIds.length;
@@ -98,16 +98,17 @@ function countShard(shard) {
 /* A show's newest episodes, kept on the show (shows.json) so My media's Recently added and Recently aired
    shelves need no reading of every show: newAt, the newest file's date (the server's own date where it gives
    one, else when TiviBro first saw it) and newEp, its episode; airedOn, the latest TMDB air date of an episode
-   you have, and airedEp.  sumV: summed up this way (older shows are summed up once, in the background). */
-var SUM_V = 2;   // 2: an air date still to come is not "aired"
+   you have, and airedEp; seasons, how many seasons you have episodes of (specials not counted).  sumV: summed up this way (older shows are summed up once, in the background). */
+var SUM_V = 3;   // 2: an air date still to come is not "aired"; 3: seasons
 function epLabel(ep) { return ep.order === 'date' ? String(ep.airDate || '') : ep.order === 'absolute' ? 'Episode ' + ep.absoluteNumber : 'S' + ep.season + 'E' + ep.number; }
 function summarize(shard) {
-  var byId = {}, out = { newAt: 0, newEp: '', airedOn: '', airedEp: '' }, today = new Date().toISOString().slice(0, 10);
+  var byId = {}, out = { newAt: 0, newEp: '', airedOn: '', airedEp: '', seasons: 0 }, seen = {}, today = new Date().toISOString().slice(0, 10);
   shard.episodes.forEach(function (ep) { if (!ep.orphaned) byId[ep.id] = ep; });
   shard.files.forEach(function (f) {
     if (f.kind !== 'episode' || f.availability === 'missing') return;
     var t = Date.parse(f.modified || '') || +f.addedAt || 0, ep = byId[(f.episodeIds || [])[0]];
     if (ep && t > out.newAt) { out.newAt = t; out.newEp = epLabel(ep); }
+    if (ep && ep.order !== 'date' && ep.order !== 'absolute' && +ep.season > 0 && !seen[ep.season]) { seen[ep.season] = 1; out.seasons++; }
   });
   Object.keys(byId).forEach(function (id) {
     var ep = byId[id], d = ep.metadata && /^\d{4}-\d\d-\d\d$/.test(ep.metadata.airDate || '') ? ep.metadata.airDate : '';
@@ -510,7 +511,7 @@ function queryShows(self, ctx, q, offset, limit) {
     // My media's TV shows shelves: newest episode file first, latest episode aired first (only shows that have one).
     : q.sort === 'new' ? function (a, b) { return ((b.newAt || 0) - (a.newAt || 0)) || byName(a, b); }
     : q.sort === 'aired' ? function (a, b) { var x = a.airedOn || '', y = b.airedOn || ''; return x < y ? 1 : x > y ? -1 : byName(a, b); } : byName);
-  if ((q.sort === 'new' || q.sort === 'aired') && list.some(function (s) { return s.sumV !== SUM_V; })) self.summarizeOld();
+  if (list.some(function (s) { return s.sumV !== SUM_V; })) self.summarizeOld();
   if (q.sort === 'new') list = list.filter(function (s) { return s.newAt > 0; });
   if (q.sort === 'aired') { var since = new Date(Date.now() - (+q.days > 0 ? +q.days : 30) * 864e5).toISOString().slice(0, 10); var until = new Date().toISOString().slice(0, 10); list = list.filter(function (s) { return s.airedOn && s.airedOn >= since && s.airedOn <= until; }); }
   if (q.reverse === true) list.reverse();

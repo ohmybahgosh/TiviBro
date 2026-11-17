@@ -154,7 +154,7 @@ I18n.add('ru', {
   "Movies & Shows": "Фильмы и сериалы", "Sort movies by": "Сортировать фильмы по", "Sort TV shows by": "Сортировать сериалы по", "Name (A–Z)": "Названию (А–Я)",
   "Date added (newest first)": "Дате добавления (сначала новые)", "Release date (newest first)": "Дате выхода (сначала новые)",
   "First aired (newest first)": "Дате премьеры (сначала новые)", "Mark as watched": "Отметить как просмотренное", "Mark unwatched": "Отметить как непросмотренное",
-  "Play next episode automatically": "Автоматически включать следующую серию", "Open episodes": "Открыть серии", "Return to episodes": "Вернуться к сериям",
+  "Play the next one automatically": "Автоматически включать следующее", "Play next episode automatically": "Автоматически включать следующую серию", "Open episodes": "Открыть серии", "Return to episodes": "Вернуться к сериям",
   "Other versions": "Другие версии", "Other versions…": "Другие версии…", "Switch to another version": "Переключиться на другую версию", "Media sources": "Источники медиа",
   "Add media": "Добавить медиа", "Media servers": "Медиасерверы", "No media sources yet": "Источников медиа пока нет", "Rescan": "Пересканировать",
   "Rescan media sources": "Пересканировать источники медиа", "Your media library": "Ваша медиатека", "No items in this view": "Здесь пока ничего нет",
@@ -1282,5 +1282,6 @@ I18n.add('ru', {
   "Fewer countries means less to read.": "Меньше стран — меньше читать.",
   "Fewer days of catch-up guide.": "Меньше дней архива программы.",
   "Off for the snappiest list on slow TVs.": "Выключите для самого быстрого списка на медленных телевизорах.",
-  "Sends this TV's details and log, logins taken out.": "Отправляет данные и журнал этого телевизора, без логинов."
+  "Sends this TV's details and log, logins taken out.": "Отправляет данные и журнал этого телевизора, без логинов.",
+  "More below": "Ниже ещё", "More above": "Выше ещё"
 });

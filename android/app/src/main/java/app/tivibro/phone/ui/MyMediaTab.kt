@@ -1,11 +1,25 @@
-/* The helper's paginated My media shows.  Existing movie browsing stays compatible with older TVs. */
+/* The helper's paginated My media shows.  Existing movie browsing stays compatible with older TVs.
+   Shows and their seasons are posters, like the Movies tab and the TV; a season's episodes are wide cards
+   with their picture, air date, length and summary. */
 package app.tivibro.phone.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import coil.compose.AsyncImage
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -47,7 +61,7 @@ private fun MediaShows(model: AppModel, id: String) {
             val args = JSONObject().put("limit", 60)
             val what = when (screen.level) {
                 "show" -> { args.put("handle", screen.handle); "mediashow" }
-                "episodes" -> { args.put("show", screen.handle).put("bucket", screen.bucket); "mediaepisodes" }
+                "episodes" -> { args.put("show", screen.handle).put("bucket", screen.bucket).put("full", true); "mediaepisodes" }
                 "episode" -> { args.put("handle", screen.handle); "mediaepisode" }
                 else -> { args.put("kind", "show"); "medialibrary" }
             }
@@ -80,7 +94,54 @@ private fun MediaShows(model: AppModel, id: String) {
                 }) { Text(if (watched) "Mark unwatched" else "Mark watched") }
             }
         }
-        LazyColumn(Modifier.weight(1f)) {
+        val go: (JSONObject, String) -> Unit = { row, label ->
+            cursor = null
+            stack.add(when (screen.level) {
+                "shows" -> MediaScreen("show", row.optString("handle"), title = label)
+                "show" -> MediaScreen("episodes", screen.handle, row.optString("key"), label)
+                else -> MediaScreen("episode", row.optString("handle"), title = label)
+            })
+        }
+        if (screen.level == "shows" || screen.level == "show") {
+            LazyVerticalGrid(
+                columns = GridCells.Adaptive(108.dp), modifier = Modifier.weight(1f),
+                contentPadding = PaddingValues(0.dp, 8.dp, 0.dp, 32.dp), horizontalArrangement = Arrangement.spacedBy(10.dp), verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                items(rows) { row ->
+                    val md = row.optJSONObject("metadata")
+                    val label = if (screen.level == "show") seasonLabel(row) else str(md?.optString("title")).ifBlank { str(row.optString("title")) }
+                    val pic = if (screen.level == "show") str(row.optString("poster")).ifBlank { str(detail?.optJSONObject("metadata")?.optString("poster")) } else str(md?.optString("poster"))
+                    val sub = if (screen.level == "show") "${row.optInt("count")} episode${if (row.optInt("count") == 1) "" else "s"}" else str(md?.optString("year"))
+                    MediaPoster(label, pic, sub) { go(row, label) }
+                }
+                if (next != null) item(span = { GridItemSpan(maxLineSpan) }) { TextButton(onClick = { cursor = next }) { Text("Load more") } }
+                if (loading) item(span = { GridItemSpan(maxLineSpan) }) { CircularProgressIndicator(Modifier.padding(16.dp)) }
+            }
+        } else if (screen.level == "episodes") {
+            LazyColumn(Modifier.weight(1f)) {
+                items(rows) { row ->
+                    val md = row.optJSONObject("metadata")
+                    val num = str(row.optString("label")).ifBlank { "S${row.optInt("season")}E${row.optInt("number")}" }
+                    val title = str(md?.optString("title")).ifBlank { str(row.optString("title")) }
+                    val sub = listOf(str(md?.optString("airDate")), md?.optInt("runtime")?.takeIf { it > 0 }?.let { "$it min" }.orEmpty(), if (row.optString("watchState") == "watched") "✓ watched" else "").filter { it.isNotBlank() }.joinToString("  ·  ")
+                    Row(Modifier.fillMaxWidth().clickable { go(row, "$num $title".trim()) }.padding(vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Box(Modifier.width(150.dp).aspectRatio(16f / 9f).clip(RoundedCornerShape(10.dp)).background(Panel2), contentAlignment = Alignment.Center) {
+                            Text(num, color = Muted, style = MaterialTheme.typography.labelSmall)
+                            val still = str(md?.optString("still"))
+                            if (still.isNotBlank()) AsyncImage(model = still, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+                        }
+                        Column(Modifier.weight(1f)) {
+                            Text("$num  $title".trim(), style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                            if (sub.isNotBlank()) Text(sub, color = Muted, style = MaterialTheme.typography.labelSmall)
+                            val plot = str(md?.optString("plot"))
+                            if (plot.isNotBlank()) Text(plot, color = Muted, style = MaterialTheme.typography.labelSmall, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+                if (next != null) item { TextButton(onClick = { cursor = next }) { Text("Load more") } }
+                if (loading) item { CircularProgressIndicator(Modifier.padding(16.dp)) }
+            }
+        } else LazyColumn(Modifier.weight(1f)) {
             items(rows) { row ->
                 val label = when (screen.level) {
                     "show" -> row.optString("title").takeUnless { it.isBlank() || it == "null" } ?: if (row.optString("key") == "0") "Specials" else if (row.optString("key").length < 4 && row.optString("key").all { it.isDigit() }) "Season ${row.optString("key")}" else row.optString("key")
@@ -123,5 +184,26 @@ private fun MediaShows(model: AppModel, id: String) {
             if (next != null) item { TextButton(onClick = { cursor = next }) { Text("Load more") } }
             if (loading) item { CircularProgressIndicator(Modifier.padding(16.dp)) }
         }
+    }
+}
+
+// A JSON string that may be missing or the word null.
+private fun str(v: String?): String = if (v == null || v == "null") "" else v
+
+private fun seasonLabel(row: JSONObject): String {
+    val key = row.optString("key")
+    return if (key == "0") "Specials" else if (key.isNotEmpty() && key.length < 4 && key.all { it.isDigit() }) "Season $key" else str(row.optString("title")).ifBlank { key }
+}
+
+@Composable
+private fun MediaPoster(label: String, pic: String, sub: String, onClick: () -> Unit) {
+    Column(Modifier.clickable(onClick = onClick)) {
+        Box(Modifier.fillMaxWidth().aspectRatio(2f / 3f).clip(RoundedCornerShape(12.dp)).background(Panel2), contentAlignment = Alignment.Center) {
+            Text(label, color = Muted, style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.Center, maxLines = 4, modifier = Modifier.padding(8.dp))
+            if (pic.isNotBlank()) AsyncImage(model = pic, contentDescription = null, contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(label, style = MaterialTheme.typography.bodySmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        if (sub.isNotBlank()) Text(sub, color = Muted, style = MaterialTheme.typography.labelSmall)
     }
 }

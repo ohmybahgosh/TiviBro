@@ -171,6 +171,16 @@ var Search = (function () {
      carries it, a replay.  So "batman" shows Batman films before "24/7 Batman" channels, and "CNN"
      still shows the channel first. */
   var TYPE = { now: 0, vod: 1, channel: 2, later: 3, inname: 4, replay: 5 };
+  var remoteVod = { q: null, items: [] }, vodTimer = null;
+  function askVod(q) {
+    clearTimeout(vodTimer);
+    vodTimer = setTimeout(function () {
+      Vod.findRemote(q).then(function (items) {
+        remoteVod = { q: q, items: items };
+        if (input.value.trim().toLowerCase() === q) run();
+      });
+    }, 350);
+  }
   function run() {
     var q = input.value.trim().toLowerCase();
     if (q.length < 2) return history();
@@ -217,7 +227,10 @@ var Search = (function () {
     }
     if (filter === 'all' || filter === 'movies') {
       var vs = [];
-      Vod.allItems().forEach(function (x) {
+      // A TV short of memory: the helper's matches (they arrive a moment later), not every title.
+      var lean = Vod.lean && Vod.lean();
+      if (lean && remoteVod.q !== q) askVod(q);
+      (lean ? (remoteVod.q === q ? remoteVod.items : []) : Vod.allItems()).forEach(function (x) {
         var t = x.it.name || '', m = quality(t, q, word);
         if (m >= 0) vs.push({ x: x, m: m, len: t.length });
       });
@@ -380,7 +393,7 @@ var Search = (function () {
     if (zone === 'list' && !vl.items.length) zone = 'chips';
     paint();
     // Movies and shows load in the background; results update when they arrive.
-    Vod.prepare().then(function (got) { if (got && input.value.trim().length >= 2) run(); });
+    if (!(Vod.lean && Vod.lean())) Vod.prepare().then(function (got) { if (got && input.value.trim().length >= 2) run(); });
   }
 
   // Text typed on the phone: searches everything for it.
