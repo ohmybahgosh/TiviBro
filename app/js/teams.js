@@ -548,6 +548,10 @@ var Teams = (function () {
       if (found || g.team.id !== team.id || g.p.e <= now || Math.abs(g.p.s - r.s) >= SAME_GAME) return;
       if (matchup(g.p.t, g.c.n) === was) found = g;
     });
+    // Found where it already is (the guide names it two ways: "Michigan State Spartans at Tennessee Volunteers"
+    // and "NCAAB: College Basketball: Michigan State at Tennessee"): nothing moved.  It was "moved" there again
+    // every 10 minutes, with a line in the log each time.
+    if (found && c && found.c.k === c.k && found.p.s === r.s) return null;
     return found ? { c: found.c, p: { s: found.p.s, e: found.p.e, t: found.p.t } } : { gone: true, now: cur && cur.t };
   }
   // Mid-August to the end of the year: the season, conference championships and most bowls.

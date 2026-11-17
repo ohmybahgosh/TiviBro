@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- **Channel logos no longer flash over a channel that's starting.**  For a moment while a channel opened from Live TV, a column of channel logos could show on a blank screen.  The logos now hide with the rest of the screen.
+- **A team reminder no longer "moves" every 10 minutes.**  When the guide named a game two ways, its reminder was moved to the channel it was already on, with a line in the log each time.
+- **My media library grid:** ◀ from the first column opens the side menu.
+
 ## 0.6.0 (alpha 155, 2026-11-17)
 
 Pre-release: expect rough edges, and keep a backup before installing.

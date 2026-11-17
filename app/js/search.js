@@ -97,7 +97,7 @@ var Search = (function () {
     if (it.hist) { row._img.style.visibility = 'hidden'; row._n.textContent = it.hist; row._s.textContent = 'Recent search'; row._t.textContent = ''; return; }
     if (it.v) {
       var v = it.v, img = v.cover || '';
-      row._img.style.visibility = img ? 'visible' : 'hidden';
+      row._img.style.visibility = img ? '' : 'hidden';
       if (img && row._img.getAttribute('src') !== img) row._img.src = img;
       row._n.textContent = v.name;
       var rt = Math.round(parseFloat(v.rating) * 10) / 10;
@@ -106,7 +106,7 @@ var Search = (function () {
       return;
     }
     var c = it.c, lg = c.logo || Epg.icon(Epg.epgId(c));
-    row._img.style.visibility = lg ? 'visible' : 'hidden';
+    row._img.style.visibility = lg ? '' : 'hidden';
     if (lg && row._img.getAttribute('src') !== lg) row._img.src = lg;
     if (it.raw) {
       row._n.textContent = it.raw;

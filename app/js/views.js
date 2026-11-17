@@ -120,7 +120,9 @@ var Views = (function () {
     img._again = src;
     setTimeout(function () {
       if (img.src !== src || img.style.visibility !== 'hidden') return;   // the row shows another channel now
-      img.style.visibility = 'visible';
+      // '' (not 'visible'): back to the row's own, so it stays hidden with the rest of the screen in fullscreen.
+      // 'visible' drew the retried logos over the video, on their own (a column of logos over the picture).
+      img.style.visibility = '';
       img.removeAttribute('src');
       img.src = src;
     }, 60000);
@@ -149,7 +151,7 @@ var Views = (function () {
     var lg = logoOf(c);
     if (row._logo !== lg) {
       row._logo = lg;
-      row._img.style.visibility = lg ? 'visible' : 'hidden';
+      row._img.style.visibility = lg ? '' : 'hidden';
       if (lg) row._img.src = lg; else row._img.removeAttribute('src');
     }
     var locked = !Parental.blockedOk(c);
@@ -2544,7 +2546,7 @@ var Guide = (function () {
       r.dEl.style.display = dead ? '' : 'none';         // not playing lately (issue #37)
     }
     r.img._c = c;
-    if (r.img._src !== lg) { r.img._src = lg; r.img.style.visibility = lg ? 'visible' : 'hidden'; if (lg) r.img.src = lg; }
+    if (r.img._src !== lg) { r.img._src = lg; r.img.style.visibility = lg ? '' : 'hidden'; if (lg) r.img.src = lg; }
     var locked = !Parental.blockedOk(c);
     var l = locked ? [] : progsOf(c), t1 = t0 + WIN, n = 0, nowT = Date.now();
     var segs = [];

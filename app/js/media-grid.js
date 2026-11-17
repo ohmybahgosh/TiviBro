@@ -205,7 +205,7 @@ var MediaGrid = (function () {
     } else {
       if (!n) return true;
       if (a === 'left' && g.sel % COLS > 0) g.sel--;
-      // ◀ from the first column: the side menu, as everywhere else (Back or ▶ there comes back to the grid).
+      // ◀ from the first column: the side menu, as everywhere else (▶ on My media there comes back to the grid).
       else if (a === 'left') { var st = g; Views.tabBar(function () { if (g === st) { UI.setHandler(keys); draw(); } }); return true; }
       else if (a === 'right') {
         if (g.sel % COLS < COLS - 1 && g.sel < n - 1) g.sel++;
