@@ -9,7 +9,7 @@
   <a href="https://tivibro.app/view/#tv-my-media-all"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-my-media-all.png" width="49%" alt="My media: All movies"></a>
 </p>
 
-**In the phone app**, a **My media** tab shows the same shelves (Continue watching, Favorites, All movies) as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.  **Settings > My media** in the phone app adds sources too: **Add media** looks for servers on your network (the TV looks, you tap one), takes a WebDAV address and login typed on the phone, or signs in to **Dropbox** and lets you pick the folder.  Tap a source to rescan it, change its **Content**, fetch its movie details or remove it, and tap the TMDB token row to paste a token.  A scan that takes longer carries on on the TV.
+**In the phone app**, a **My media** tab shows the same shelves (Continue watching, Favorites, All movies) as a poster grid with search.  Tap a movie for its details, then **Resume on TV** or **Play on TV**: the TV opens My media and plays it.  **Settings > My media** in the phone app adds sources too: **Add media** looks for servers on your network (the TV looks, you tap one), takes a WebDAV address and login typed on the phone, signs in to **Dropbox** and lets you pick the folder, or takes a **Google Drive** service account key and lets you pick the drive and folder.  Tap a source to rescan it, change its **Content**, fetch its movie details or remove it, and tap the TMDB token row to paste a token.  A scan that takes longer carries on on the TV.
 
 <p align="center">
   <img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/app-my-media.png" width="30%" alt="My media in the phone app">
@@ -22,7 +22,7 @@ Use **Left** and **Right** to move between movies, and **Up** and **Down** to mo
 
 **Back** opens the standard main menu directly.  **Left** from the first movie does the same.  There is no separate source menu on the movie screen; all sources appear together and source management stays in Settings.
 
-**Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, or **Add a WebDAV server** and enter its WebDAV address and login.  Dropbox is added from the phone app (see below).  The phone app's **Settings > My media** does the same, with the typing on the phone.  Turn on media sharing on a home server first.  A playlist must already be set up.
+**Add media and preferences are in Settings > My media**, not in the movie shelves.  **Blue** from My media opens those settings directly.  Choose **Add media > Browse my network (DLNA / UPnP)** to find a home server, or **Add a WebDAV server** and enter its WebDAV address and login.  Dropbox is added from the phone app, and Google Drive from the web editor or the phone app (see below).  The phone app's **Settings > My media** does the same, with the typing on the phone.  Turn on media sharing on a home server first.  A playlist must already be set up.
 
 **Movies and TV shows.**  A new source finds both.  A source added before alpha 61 stays movies only until you open it in **Settings > My media** and set **Content** to **Movies and TV shows** (or **TV shows only**), then rescan.
 
@@ -54,6 +54,17 @@ TV/
 **Big libraries.**  A scan works in parts and carries on where it stopped, and the source's options have **Pause scan** and **Restart scan**.  A scan that fails or finds nothing keeps what you had.
 
 A WebDAV source is a WebDAV folder, not a normal website or HTTP directory.  Services such as premiumize use a customer ID and API key as the login.  TiviBro supports both signed file links and servers that serve files directly with HTTP Basic authentication.  For a file that needs a login, the helper streams it to the player and handles seeking and subtitle reads.  Your login is sent only to the server you added.
+
+**Google Drive.**  Shared drives and Drive folders work as libraries.  Google doesn't let TVs sign in to read Drive folders, so TiviBro uses a **service account**: a free robot account in Google Cloud that only sees what you share with it.  Set it up once (about 5 minutes):
+
+1. Open [Google Cloud](https://console.cloud.google.com/projectcreate) and create a project (any name, no billing needed).
+2. Turn on the [Google Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com) for it.
+3. In [Service accounts](https://console.cloud.google.com/iam-admin/serviceaccounts), create one (no roles needed), open it, then **Keys > Add key > Create new key > JSON**.  A .json file downloads.  Keep it private: it is the account's password.
+4. In Google Drive, share your shared drive (**Manage members**) or folder (**Share**) with the service account's email (it ends in iam.gserviceaccount.com), as a **Viewer**.
+
+Then in the web editor's **My media** page, **Add Google Drive**: choose the .json file, pick the shared drive or folder, open folders until you're in the one with your movies or shows, and **Add this folder**.  The phone app does the same: **Settings > My media > Add media > Google Drive**.  Add each folder you want as its own library (for example one for movies, one for TV shows), or the whole drive as one.  The same key works on any number of TVs, and anyone the folder is shared with can make their own.
+
+TiviBro only reads: it never changes or deletes anything.  The key stays on the TV like a password: never sent back to the web editor or the phone, and not in backups or problem reports.  Movies play through the TV, so seeking works.  New files show up on their own (a shared drive's list of changes, or a folder's top level).  Google limits how often one file can be downloaded in a day; a file played by many people may refuse for a while, and TiviBro says so.
 
 **Dropbox.**  Sign in with the TiviBro phone app: **Settings > My media > Add media > Dropbox**.  Sign in to Dropbox in the browser that opens, come back to the app, choose the folder your movies and shows are in (or the whole Dropbox) and tap **Use this folder**.  The TV keeps only the sign-in, never your Dropbox password, and it stays on the TV: not in backups, problem reports or the web editor.  Movies play straight from Dropbox.  Removing the source signs the TV out of Dropbox.  If Dropbox stops accepting the sign-in (you changed your password or removed TiviBro from your Dropbox apps), remove the source and add it again from the phone app.
 
