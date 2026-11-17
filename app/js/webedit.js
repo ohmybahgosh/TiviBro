@@ -399,7 +399,7 @@ var WebEdit = (function () {
     mediaLibraryEdit:function (a) { return Media.request('library/edit',a,30000).then(function (r) { if(r.error)throw new Error(r.message);if(a.operation==='setWatched'&&!a.watched&&Media.watchedReset)Media.watchedReset(a.handle,r.revision);return {msg:'Library updated.',data:r}; }); },
     mediaTokenTest: function () { return Media.testTmdbToken().then(function (m) { return { msg: m }; }); },
     mediaList: function () {
-      return MediaStore.load().then(function () { return { msg: 'Media sources', data: MediaStore.publicSources().map(function (s) { var st = Media.libraryStats ? Media.libraryStats(s.id) : null; return { id: s.id, type: s.type, name: s.name, root: s.type === 'dropbox' ? s.root || '' : undefined, count: s.count,contentMode:s.contentMode||'movies',episodeFiles:s.episodeFiles||0,
+      return MediaStore.load().then(function () { return { msg: 'Media sources', data: MediaStore.publicSources().map(function (s) { var st = Media.libraryStats ? Media.libraryStats(s.id) : null; return { id: s.id, type: s.type, name: s.name, root: s.type === 'dropbox' || s.type === 'gdrive' ? s.root || '' : undefined, count: s.count,contentMode:s.contentMode||'movies',episodeFiles:s.episodeFiles||0,
         unmatched: st ? st.unmatched.length : 0, shows: st ? st.shows : 0, unmatchedShows: st ? st.unmatchedShows : 0, fourK: st ? st.fourK : 0, scanning: st ? st.scanning : false, homeOff: st ? st.homeOff : false }; }) }; });
     },
     // A library's name and Show on Home; its unmatched movies; Fix match (search, then save the pick).
@@ -437,6 +437,20 @@ var WebEdit = (function () {
       return Media.addAddress(clean(a.address), clean(a.user), clean(a.pass)).then(function (r) {
         if (r.error) throw new Error(r.message || 'Could not add that media source.');
         return { msg: 'Media source added: ' + (r.movies || 0) + ' movies.' + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
+      });
+    },
+    /* Google Drive from the web editor: the service account's key with each ask, then the folder picked.
+       The key is never sent back to the page. */
+    mediaGdrivePlaces: function (a) {
+      return Media.gdrivePlaces(a.key).then(function (r) { if (r.error) throw new Error(r.message); return { msg: 'Signed in as ' + r.account, data: { account: r.account, places: r.places || [] } }; });
+    },
+    mediaGdriveFolders: function (a) {
+      return Media.gdriveFolders(a.key, clean(a.parent), clean(a.driveId)).then(function (r) { if (r.error) throw new Error(r.message); return { msg: '', data: r.folders || [] }; });
+    },
+    mediaGdriveAdd: function (a) {
+      return Media.addGdrive(a.key, clean(a.root), clean(a.driveId), clean(a.where), clean(a.name)).then(function (r) {
+        if (r.error) throw new Error(r.message || 'Could not add that folder.');
+        return { msg: 'Google Drive added: ' + (r.movies || 0) + ' movies and ' + (r.episodes || 0) + ' episodes.' + (Media.leftOut ? Media.leftOut(r.skipped) : '') };
       });
     },
     mediaRemove: function (a) {

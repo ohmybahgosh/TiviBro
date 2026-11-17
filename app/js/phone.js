@@ -348,7 +348,7 @@ var Phone = (function () {
       function sources() {
         return MediaStore.publicSources().map(function (s) {
           var row = { id: s.id, name: s.name, type: s.type, mode: s.contentMode || 'movies', movies: MediaStore.movies(s.id).length, episodes: s.episodeFiles || 0, scanning: Media.isScanning(s.id) ? 1 : 0 };
-          if (s.type === 'dropbox') { row.root = s.root || ''; row.account = s.account || ''; }
+          if (s.type === 'dropbox' || s.type === 'gdrive') { row.root = s.root || ''; row.account = s.account || ''; }
           return row;
         });
       }
@@ -386,6 +386,24 @@ var Phone = (function () {
           if (r && r.error === 'login') return { error: 'login', message: signIn };
           return r && !r.error ? { msg: 'Added: ' + plural(r.movies || 0, 'movie') + ' and ' + plural(r.episodes || 0, 'episode') + '.' + Media.leftOut(r.skipped) } : r;
         }), 'Signed in to Dropbox.  The TV is still looking through the folder.');
+      }
+      /* Google Drive: the service account's key comes with each ask (gdplaces: its email, shared drives and
+         shared folders; gdfolders: one folder's folders; addgdrive: the folder picked).  Never sent back. */
+      if (op === 'gdplaces' || op === 'gdfolders' || op === 'addgdrive') {
+        var gkey = Media.gdriveKey(a.key), gid = /^[A-Za-z0-9_-]{5,200}$/;
+        if (!gkey) throw new Error('That isn\'t a service account key.  Use the JSON key file Google Cloud gave you.');
+        if (op === 'gdplaces') return Media.gdrivePlaces(gkey).then(function (r) {
+          if (r.error) throw new Error(r.message || 'Google Drive didn\'t answer.  Try again.');
+          return { account: String(r.account || ''), places: (r.places || []).map(function (p) { return { name: String(p.name || ''), id: String(p.id || ''), driveId: String(p.driveId || ''), kind: p.kind === 'drive' ? 'drive' : 'folder' }; }) };
+        });
+        if (!gid.test(String(a.parent || a.root || '')) || (a.driveId && !gid.test(String(a.driveId)))) throw new Error('That isn\'t a Google Drive folder.');
+        if (op === 'gdfolders') return Media.gdriveFolders(gkey, String(a.parent), String(a.driveId || '')).then(function (r) {
+          if (r.error) throw new Error(r.message || 'Google Drive didn\'t answer.  Try again.');
+          return { folders: (r.folders || []).map(function (f) { return { name: String(f.name || ''), id: String(f.id || '') }; }) };
+        });
+        return waitFor(Media.addGdrive(gkey, String(a.root), String(a.driveId || ''), String(a.where || '').slice(0, 300), String(a.name || '').slice(0, 80)).then(function (r) {
+          return r && !r.error ? { msg: 'Added: ' + plural(r.movies || 0, 'movie') + ' and ' + plural(r.episodes || 0, 'episode') + '.' + Media.leftOut(r.skipped) } : r;
+        }), 'Google Drive accepted the key.  The TV is still looking through the folder.');
       }
       if (op === 'rescan') { var s1 = src(); return waitFor(Media.rescan(s1.id, !!a.restart).then(function (r) { return r && !r.error ? { msg: r.note || r.text || (r.count || 0) + ' movies on ' + s1.name + '.' } : r; }), 'Still scanning ' + s1.name + ' on the TV.'); }
       if (op === 'mode') {

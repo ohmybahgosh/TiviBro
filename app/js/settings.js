@@ -247,13 +247,13 @@ var Settings = (function () {
   function media() {
     if (!mediaLoaded) { mediaLoaded = true; MediaStore.load().then(live); }
     var out = [head('Libraries'),
-      info('Each library is one folder on a media server (DLNA / UPnP, WebDAV or Dropbox) holding movies or TV shows, like Plex\'s libraries.  Select one to scan it, fix what didn\'t match, choose whether it shows on Home, or remove it.', '')];
+      info('Each library is one folder on a media server (DLNA / UPnP, WebDAV, Dropbox or Google Drive) holding movies or TV shows, like Plex\'s libraries.  Select one to scan it, fix what didn\'t match, choose whether it shows on Home, or remove it.', '')];
     MediaStore.publicSources().forEach(function (s) {
       var row = page(I18n.raw(s.name), libraryLine(s), I18n.raw(s.name), function () { return library(s.id); }, function () { return libraryValue(s.id); });
       row.sid = s.id; out.push(row);
     });
     if (!MediaStore.sources().length) out.push(info('No libraries yet', 'Choose Add a library below'));
-    out.push(phoneDoes('media-add', action('Add a library', 'Movies or TV shows from a DLNA / UPnP server, a WebDAV folder (address and login) or Dropbox (signs in from the phone app).  Subfolders are scanned too.', function () { Media.addMenu(); })));
+    out.push(phoneDoes('media-add', action('Add a library', 'Movies or TV shows from a DLNA / UPnP server, a WebDAV folder (address and login), Dropbox (signs in from the phone app) or Google Drive (the web editor or the phone app).  Subfolders are scanned too.', function () { Media.addMenu(); })));
     out.push(head('All libraries'),
       action('Scan all libraries', 'Look for added and removed movies and episodes.  Green on the My media screen.', heavy(function () { Media.rescanAll(); })),
       action('Fetch details for all', 'Look up movies, shows and owned episodes on TMDB, and refresh details in another language.  Yellow on My media.', heavy(function () { Media.fetchMissingDetails(); })),
@@ -266,7 +266,7 @@ var Settings = (function () {
     return out;
   }
   function kindName(k) { return k === 'shows' ? 'TV shows' : k === 'automatic' ? 'Movies and TV shows' : 'Movies'; }
-  function where(s) { return (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' : 'WebDAV') + (s.type === 'dropbox' ? (s.root ? '  ·  ' + s.root : '') : ''); }
+  function where(s) { return (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' : s.type === 'gdrive' ? 'Google Drive' : 'WebDAV') + (s.type === 'dropbox' || s.type === 'gdrive' ? (s.root ? '  ·  ' + s.root : '') : ''); }
   function libraryLine(s) {
     var st = Media.libraryStats ? Media.libraryStats(s.id) : null;
     if (!st) return kindName(s.contentMode) + '  ·  ' + where(s);

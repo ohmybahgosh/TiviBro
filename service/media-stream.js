@@ -1,4 +1,4 @@
-/* Authenticated WebDAV files, streamed through localhost with Range/HEAD support.
+/* Authenticated WebDAV and Google Drive files, streamed through localhost with Range/HEAD support.
    The player gets a random, temporary address; credentials stay in bounded memory.
    Redirects keep the login only on its original origin.  TLS is always verified,
    including the bundled root fallback needed by Node 0.12 on older TVs. */
@@ -29,14 +29,25 @@ function handle(req, res, allow) {
   s.until = Date.now() + TTL;
   var up = null, stopped = false;
   res.on('close', function () { stopped = true; if (up) up.abort(); });
-  function open(url, left, withCa) {
+  /* The login for the source's own origin: a fixed header (WebDAV), or a function that gives a fresh one
+     (Google Drive's hour-long tokens: asked before each read, and once more, fresh, after a 401). */
+  function login(url, fresh, cb) {
+    var u; try { u = URL_.parse(url); } catch (e) { return cb(null); }
+    if (origin(u) !== s.origin) return cb(null);
+    if (typeof s.authorization !== 'function') return cb(s.authorization);
+    s.authorization(function (e, h) { cb(e ? null : h); }, fresh);
+  }
+  function open(url, left, withCa, fresh, retried) {
     if (stopped) return;
+    login(url, !!fresh, function (auth) { if (!stopped) send(url, left, withCa, auth, retried); });
+  }
+  function send(url, left, withCa, auth, retried) {
     var u; try { u = URL_.parse(url); } catch (e) { return end(502); }
     var tls = u.protocol === 'https:';
     if (!u.hostname || (!tls && u.protocol !== 'http:')) return end(502);
     if (u.port && (!/^\d+$/.test(u.port) || +u.port < 1 || +u.port > 65535)) return end(502);
     var headers = { Accept: '*/*', 'Accept-Encoding': 'identity' };
-    if (origin(u) === s.origin) headers.Authorization = s.authorization;
+    if (auth) headers.Authorization = auth;
     if (req.headers.range) headers.Range = req.headers.range;
     if (req.headers['if-range']) headers['If-Range'] = req.headers['if-range'];
     var opts = { hostname: u.hostname, port: u.port || (tls ? 443 : 80), path: u.path || '/', method: req.method, headers: headers, agent: false };
@@ -48,11 +59,12 @@ function handle(req, res, allow) {
       clearTimeout(waiting);
       if (stopped) { remote.destroy(); return; }
       var code = remote.statusCode;
+      if (code === 401 && typeof s.authorization === 'function' && !retried) { remote.resume(); return open(url, left, withCa, true, true); }
       if (code >= 300 && code < 400 && remote.headers.location) {
         remote.resume();
         if (!left) return end(502);
         var next; try { next = URL_.resolve(url, remote.headers.location); } catch (e) { return end(502); }
-        return open(next, left - 1, false);
+        return open(next, left - 1, false, false, retried);
       }
       var h = Object.assign({ 'Cache-Control': 'no-store' }, allow);
       PASS.forEach(function (k) { if (remote.headers[k] != null) h[k] = remote.headers[k]; });
@@ -64,7 +76,7 @@ function handle(req, res, allow) {
     attempt.on('error', function (e) {
       clearTimeout(waiting);
       if (stopped) return;
-      if (tls && !withCa && !res.headersSent && /CERT|UNABLE_TO_GET_ISSUER|UNABLE_TO_VERIFY|SELF_SIGNED|DEPTH_ZERO/i.test(e.code || '')) return open(url, left, true);
+      if (tls && !withCa && !res.headersSent && /CERT|UNABLE_TO_GET_ISSUER|UNABLE_TO_VERIFY|SELF_SIGNED|DEPTH_ZERO/i.test(e.code || '')) return send(url, left, true, auth, retried);
       end(502);
     });
     /* 20 s for the server to answer.  Only until it does: once the movie is streaming, a pause on the TV

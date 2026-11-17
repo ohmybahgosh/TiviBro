@@ -41,6 +41,7 @@ small{color:#7c85a3}
 
 <h2>The phone app</h2>
 <ul>
+<li><b>Google Drive</b>, if you add it to My media, is read with a Google Cloud service account that you make and share your drive or folder with.  It has read-only access (it can't change or delete anything) and sees only what you share with it.  Its key is kept on your TV only, outside backups and problem reports, and never shown in the phone app or the web editor.  The TV asks Google for short-lived access, lists your folders and files, and plays them through the TV itself.  To stop it, delete the key in Google Cloud or stop sharing the folder with the service account.</li>
 <li>The Android app talks to your TVs on your home network, and to Dropbox only while you sign in to it there (Settings &gt; My media &gt; Add media &gt; Dropbox).  It sends nothing to us and has no analytics.</li>
 <li>For the Dropbox sign-in, the phone opens Dropbox's own sign-in page in the browser, so your Dropbox password never reaches TiviBro.  The phone swaps Dropbox's one-time code for the sign-in, hands it to the TV encrypted, and forgets it.  Dropbox sends you back through tivibro.app/dropbox, a page that only opens the app and has no analytics.</li>
 <li>Pairing keys are kept in the phone's secure key storage.  Remove a phone on the TV and its key stops working at once.</li>

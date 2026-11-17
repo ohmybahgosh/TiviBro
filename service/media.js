@@ -24,6 +24,7 @@ var https = require('https');
 var URL_ = require('url');
 var CA = require('./media-ca');
 var Dropbox = require('./dropbox');
+var Gdrive = require('./gdrive');
 
 var REQUEST_MS = 8000, SCAN_MS = 120000, PAGE = 200, MAX_DEPTH = 12, MAX_FOLDERS = 3000, BODY_MAX = 16 * 1024 * 1024;
 var VIDEO = /\.(mkv|mp4|m4v|avi|mov|m2ts|ts|webm)$/i;
@@ -131,7 +132,18 @@ var DROPBOX_MESSAGES = {
   address: 'That Dropbox folder or file isn\'t there any more.  Check it in Dropbox, or add the source again from the phone app.',
   unreachable: 'Dropbox did not answer.  Check the TV\'s internet connection and try again.'
 };
-function failure(kind, source) { return { error: kind, message: (source && source.type === 'dropbox' && DROPBOX_MESSAGES[kind]) || MESSAGES[kind] }; }
+// Google Drive signs in with a service account's key, given in the web editor or the phone app.
+var GDRIVE_MESSAGES = {
+  login: 'Google Drive didn\'t accept the key, or the service account can\'t see this folder.  Share the drive or folder with the service account\'s email (Viewer is enough).',
+  address: 'That Google Drive folder or file isn\'t there any more, or isn\'t shared with the service account.',
+  quota: 'Google Drive says this file has been downloaded too much today.  Try again later.',
+  unreachable: 'Google Drive did not answer.  Check the TV\'s internet connection and try again.'
+};
+function failure(kind, source) {
+  var words = source && source.type === 'dropbox' ? DROPBOX_MESSAGES : source && source.type === 'gdrive' ? GDRIVE_MESSAGES : {};
+  return { error: kind, message: words[kind] || MESSAGES[kind] || MESSAGES.unreachable };
+}
+function gdriveFailure(e) { var k = e && e.kind; return failure(k === 'login' || k === 'address' || k === 'cert' || k === 'quota' ? k : 'unreachable', { type: 'gdrive' }); }
 function dropboxFailure(e) { var k = e && e.kind; return failure(k === 'login' || k === 'address' || k === 'cert' ? k : 'unreachable', { type: 'dropbox' }); }
 
 // opts: url, method, headers, body, secure (send the pinned certificates); cb(err, status, headers, bodyText)
@@ -373,6 +385,7 @@ function scanWebdav(source, cb) {
 // get a temporary localhost stream, shared by the player and subtitle Range reads.
 function resolve(source, path, cb) {
   if (source && source.type === 'dropbox') return resolveDropbox(source, path, cb);
+  if (source && source.type === 'gdrive') return resolveGdrive(source, path, cb);
   var base = webdavBase(source);
   if (!base || str(path).charAt(0) !== '/') return cb(failure('address'));
   var origin = base.origin;
@@ -407,7 +420,8 @@ function dropboxSegments(rootLower, rootDepth, e) {
   return segs.slice(rootDepth);
 }
 function dropboxResult(source, entries, partial, errors) {
-  var rootLower = Dropbox.folderPath(source.root).toLowerCase(), rootDepth = rootLower ? rootLower.split('/').length - 1 : 0;
+  var gd = source.type === 'gdrive';
+  var rootLower = gd ? '' : Dropbox.folderPath(source.root).toLowerCase(), rootDepth = rootLower ? rootLower.split('/').length - 1 : 0;
   var skipped = newSkipped(), folderSkip = {}, groups = {}, movies = [], discovered = [], deep = false, seen = {};
   entries.forEach(function (e) {
     if (e.tag !== 'file' || seen[e.path_lower]) return;
@@ -424,7 +438,8 @@ function dropboxResult(source, entries, partial, errors) {
     seen[e.path_lower] = true;
     var parent = ancestors.join('/').toLowerCase();
     if (!groups[parent]) groups[parent] = { name: ancestors.length ? ancestors[ancestors.length - 1] : '', ancestors: ancestors, files: [] };
-    groups[parent].files.push({ file: name, size: e.size || 0, id: 'x:' + e.path_lower, path: e.path_display, etag: e.rev, modified: e.modified });
+    // Google Drive: the file's id is what stays (names can repeat), and plays it: gd:<id>/<where it is>.
+    groups[parent].files.push({ file: name, size: e.size || 0, id: gd ? 'g:' + e.gid : 'x:' + e.path_lower, path: gd ? 'gd:' + e.gid + e.path_display : e.path_display, etag: e.rev, modified: e.modified });
   });
   if (deep) { partial = true; errors.push('depth limit reached'); }
   Object.keys(groups).sort().forEach(function (k) {
@@ -473,6 +488,42 @@ function resolveDropbox(source, path, cb) {
   });
 }
 
+/* ---------- Google Drive ----------
+   Listed by gdrive.js (one flat listing of a shared drive, or folder by folder), then the same rules as
+   Dropbox: folder names below the library's folder are the ancestors.  ids are g: + the file's id, and
+   paths gd:<id>/<where>, so a file plays by its id.  The listing's state goes in the checkpoint. */
+function scanGdrive(source, cb) {
+  if (!Gdrive.parseKey(source.key)) return cb(failure('login', source));
+  var saved = source._continuation || {}, deadline = Date.now() + SCAN_MS;
+  var budget = source.scanFolderBudget > 0 && source.scanFolderBudget <= MAX_FOLDERS ? source.scanFolderBudget : MAX_FOLDERS;
+  Gdrive.listAll(source, function (e, listed) {
+    var errors = [], partial = false;
+    if (e) {
+      if (e.kind === 'login' || !(listed && listed.entries.length)) return cb(gdriveFailure(e));
+      partial = true; errors.push('Google Drive: ' + gdriveFailure(e).message);
+    }
+    var r = dropboxResult(source, listed.entries, partial, errors);
+    if (!e && listed.more) {
+      r.partial = true; r.errors.push('stopped early, the library is very large');
+      r._continuation = { gdrive: listed.state };
+    }
+    cb(r);
+  }, {
+    state: saved.gdrive || null,
+    stop: function (pages) { return !!(source._control && source._control.paused) || Date.now() > deadline || pages >= budget; }
+  });
+}
+function resolveGdrive(source, path, cb) {
+  var id = Gdrive.idOf(path);
+  if (!id) return cb(failure('address', source));
+  if (!Gdrive.parseKey(source.key)) return cb(failure('login', source));
+  // A first token now, so a refused key says so here rather than as a stream that won't start.
+  Gdrive.accessToken(source.key, function (e) {
+    if (e) return cb(gdriveFailure(e));
+    cb({ url: require('./media-stream').create(Gdrive.fileUrl(id), Gdrive.authorizer(source.key), extOf(str(path).split('/').pop())) });
+  });
+}
+
 /* ---------- has anything changed? ----------
    A quick look for new media, like Plex's, without listing everything or keeping a copy of the tree in memory:
    one small request per library, compared with the last answer (q.token).  cb({ token, changed }).
@@ -493,6 +544,16 @@ function changeCheck(source, prev, cb) {
       if (e) return cb(dropboxFailure(e));
       var media = r.entries.some(function (x) { return x.tag === 'deleted' || (x.tag === 'file' && VIDEO.test(x.name)); });
       cb({ token: 'dbx:' + r.cursor, changed: media || r.more, count: r.entries.filter(function (x) { return x.tag === 'file' && VIDEO.test(x.name); }).length });
+    });
+  }
+  if (type === 'gdrive') {
+    if (!Gdrive.parseKey(source.key)) return cb(failure('login', source));
+    if (!source.driveId) return Gdrive.topFingerprint(source, function (e, f) { if (e) return cb(gdriveFailure(e)); out('gdt:' + f); });
+    if (prev.indexOf('gdc:') !== 0) return Gdrive.startToken(source, function (e, t) { if (e) return cb(gdriveFailure(e)); cb({ token: 'gdc:' + t, changed: false }); });
+    return Gdrive.changesSince(source, prev.slice(4), function (e, r) {
+      if (e && e.kind === 'reset') return Gdrive.startToken(source, function (e2, t) { if (e2) return cb(gdriveFailure(e2)); cb({ token: 'gdc:' + t, changed: true }); });
+      if (e) return cb(gdriveFailure(e));
+      cb({ token: 'gdc:' + r.token, changed: r.changed, count: r.count });
     });
   }
   if (type === 'webdav') {
@@ -521,6 +582,7 @@ function scan(source, cb) {
   if (type === 'dlna') return scanDlna(source, cb);
   if (type === 'webdav') return scanWebdav(source, cb);
   if (type === 'dropbox') return scanDropbox(source, cb);
+  if (type === 'gdrive') return scanGdrive(source, cb);
   cb(failure('address'));
 }
 
@@ -576,7 +638,7 @@ function send(res, ALLOW, code, obj) {
   res.writeHead(code, h);
   res.end(JSON.stringify(obj));
 }
-function hostOf(source) { if (source && source.type === 'dropbox') return 'dropbox'; try { return URL_.parse(str(source && (source.control || source.address))).hostname || ''; } catch (e) { return ''; } }
+function hostOf(source) { if (source && source.type === 'dropbox') return 'dropbox'; if (source && source.type === 'gdrive') return 'gdrive'; try { return URL_.parse(str(source && (source.control || source.address))).hostname || ''; } catch (e) { return ''; } }
 /* The catalogue opens once, on first use.  A failure is not remembered: the next request tries again. */
 var catalogOpening = null, openCatalog = null, scanResults = {}, activeScanControls = {};
 var SCAN_KEEP_MS = 300000, SCAN_KEEP = 2;
@@ -713,12 +775,30 @@ function dropboxRequest(kind, q, res, ALLOW, log) {
     Dropbox.account(refresh, function (e2, account) { answer(null, { folders: folders, account: e2 ? '' : account }); });
   });
 }
+/* Google Drive before a library exists: places (the account's email, its shared drives and the folders
+   shared with it) and folders (one folder's folders), for the folder pickers.  The key comes with each
+   ask and is never kept here or sent back. */
+function gdriveRequest(kind, q, res, ALLOW, log) {
+  var key = q.key;
+  function answer(e, out) {
+    log({ lv: e ? 'warn' : 'info', event: 'gdrive ' + kind, count: out && (out.places || out.folders) ? (out.places || out.folders).length : undefined, error: e ? e.kind || 'unreachable' : null });
+    send(res, ALLOW, 200, e ? gdriveFailure(e) : out);
+  }
+  if (!Gdrive.parseKey(key)) { var none = new Error('no key'); none.kind = 'login'; return answer(none); }
+  if (kind === 'places') return Gdrive.account(key, function (e, account) {
+    if (e) return answer(e);
+    Gdrive.places(key, function (e2, places) { answer(e2, { account: account, places: places }); });
+  });
+  if (!Gdrive.validId(q.parent) || (q.driveId && !Gdrive.validId(q.driveId))) { var bad = new Error('folder'); bad.kind = 'address'; return answer(bad); }
+  Gdrive.folders(key, str(q.parent), str(q.driveId), function (e, folders) { answer(e, { folders: folders }); });
+}
 function handle(req, res, ALLOW, log) {
   var route = req.url.split('?')[0];
   var libraryRoute = /^\/media\/library\/(query|detail|edit|migrate|progress|continue|chapters|source|adopt|resolve|status)$/.exec(route);
   var subs = /^\/media\/subs\/(search|get|login)$/.exec(route);
   var dropbox = /^\/media\/dropbox\/(folders|account|revoke)$/.exec(route);
-  if (req.method !== 'POST' || (!libraryRoute && !subs && !dropbox && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/vformat' && route !== '/media/check' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
+  var gdrive = /^\/media\/gdrive\/(places|folders)$/.exec(route);
+  if (req.method !== 'POST' || (!libraryRoute && !subs && !dropbox && !gdrive && route !== '/media/scan/control' && route !== '/media/discover' && route !== '/media/scan' && route !== '/media/resolve' && route !== '/media/vformat' && route !== '/media/check' && route !== '/media/metadata' && route !== '/media/trakt')) return send(res, ALLOW, 404, { error: 'unknown media route' });
   var body = '', over = false, bodyBytes = 0, bodyLimit = libraryRoute ? 1048576 : 65536;
   if (req.setEncoding) req.setEncoding('utf8');
   req.on('data', function (c) { if (over) return; body += c; bodyBytes += Buffer.byteLength(c, 'utf8'); if (bodyBytes > bodyLimit) { over = true; send(res, ALLOW, 413, { error: 'too large' }); } });
@@ -728,6 +808,7 @@ function handle(req, res, ALLOW, log) {
     if (!q || typeof q !== 'object' || Array.isArray(q)) return send(res, ALLOW, 400, { error: 'bad request' });
     if (libraryRoute) return libraryRequest(libraryRoute[1], q, req, res, ALLOW, log);
     if (dropbox) return dropboxRequest(dropbox[1], q, res, ALLOW, log);
+    if (gdrive) return gdriveRequest(gdrive[1], q, res, ALLOW, log);
     if (subs) return require('./subtitles')[subs[1]](q, function (r) {
       log({ lv: r.error ? 'warn' : 'info', event: 'subtitles ' + subs[1], results: r.results ? r.results.length : undefined, error: r.error || null });
       send(res, ALLOW, 200, r);

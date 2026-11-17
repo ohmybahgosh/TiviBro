@@ -83,6 +83,8 @@ var MediaStore = (function () {
     var row = { id: id, type: s.type, name: s.name, control: s.control, address: s.address, user: s.user, pass: s.pass, contentMode: s.contentMode || 'automatic' };
     // Dropbox: its folder, the account it was signed in with (display only) and the refresh token, a secret like pass.
     if (s.type === 'dropbox') { row.root = s.root || ''; row.account = s.account || ''; row.refresh = s.refresh; }
+    // Google Drive: the folder's id, its shared drive's, where it is in words, the service account's email (display only) and its key, a secret like pass.
+    if (s.type === 'gdrive') { row.root = s.root; row.driveId = s.driveId || ''; row.where = s.where || ''; row.account = s.account || ''; row.key = s.key; }
     state.sources.push(row);
     save(); menu();
     return id;
@@ -104,6 +106,7 @@ var MediaStore = (function () {
     return state.sources.map(function (s) {
       var out = { id: s.id, type: s.type, name: s.name, address: s.address || '', contentMode:s.contentMode||'movies',episodeFiles:state.sourceStats&&state.sourceStats[s.id]?state.sourceStats[s.id].episodeFiles:0, count: lib.filter(function (m) { return m.src === s.id; }).length };
       if (s.type === 'dropbox') { out.root = s.root || ''; out.account = s.account || ''; }
+      if (s.type === 'gdrive') { out.root = s.where || ''; out.account = s.account || ''; }
       return out;
     });
   }

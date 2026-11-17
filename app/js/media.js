@@ -730,6 +730,40 @@ var Media = (function () {
   function signOut(source) {
     if (source && source.type === 'dropbox' && source.refresh) ask('dropbox/revoke', { refresh: source.refresh }, 25000).catch(function () {});
   }
+  /* Google Drive, from the web editor or the phone app: a service account's JSON key (a secret, kept like a
+     WebDAV password: only the four fields signing needs) and the folder picked with it.  root is the
+     folder's id, driveId its shared drive's (a whole shared drive is both).  Checked by scanning before
+     anything is saved. */
+  function gdriveKey(key) {
+    var j = key;
+    if (typeof key === 'string') { try { j = JSON.parse(key.trim()); } catch (e) { j = null; } }
+    if (!j || typeof j !== 'object' || !j.client_email || !/PRIVATE KEY/.test(String(j.private_key || ''))) return '';
+    return JSON.stringify({ type: 'service_account', client_email: String(j.client_email), private_key_id: String(j.private_key_id || ''), private_key: String(j.private_key) });
+  }
+  var GD_ID = /^[A-Za-z0-9_-]{5,200}$/;
+  function gdrivePlaces(key) {
+    var k = gdriveKey(key);
+    if (!k) return Promise.reject(new Error('That isn\'t a service account key.  Use the JSON key file Google Cloud gave you.'));
+    return ask('gdrive/places', { key: k }, 30000);
+  }
+  function gdriveFolders(key, parent, driveId) {
+    var k = gdriveKey(key);
+    if (!k) return Promise.reject(new Error('That isn\'t a service account key.'));
+    return ask('gdrive/folders', { key: k, parent: String(parent || ''), driveId: String(driveId || '') }, 30000);
+  }
+  function addGdrive(key, root, driveId, where, name) {
+    var k = gdriveKey(key);
+    if (!k) { U.toast('That isn\'t a service account key.', 6000); return Promise.resolve({ error: 'login', message: 'That isn\'t a service account key.  Use the JSON key file Google Cloud gave you.' }); }
+    if (!GD_ID.test(String(root || '')) || (driveId && !GD_ID.test(String(driveId)))) return Promise.resolve({ error: 'address', message: 'Pick a Google Drive folder first.' });
+    var source = { contentMode: 'automatic', type: 'gdrive', key: k, root: String(root), driveId: String(driveId || ''), where: String(where || '').slice(0, 300), name: String(name || '').trim().slice(0, 80) || 'Google Drive' };
+    U.toast('Checking Google Drive…');
+    return ask('gdrive/places', { key: k }, 30000).then(function (a) {
+      if (a.error) { U.toast(a.message, 6000); return { error: a.error, message: a.message }; }
+      source.account = String(a.account || '');
+      return scanSource(source).then(function (res) { return addScanned(source, res); });
+    }).catch(function (e) { U.toast(why(e), 6000); return { error: 'helper', message: why(e) }; });
+  }
+  function gdriveHelp() { UI.menu('Google Drive', [{ label: 'Add it in the web editor (Settings > My media > Edit on a computer) or the TiviBro phone app (Settings > My media > Add media > Google Drive).' }, { label: 'It needs a Google Cloud service account that the drive or folder is shared with.  The web editor walks you through it.' }, { label: 'Done' }]); }
   function dropboxHelp() { UI.menu('Dropbox', [{ label: 'Sign in with the TiviBro phone app: Settings > My media > Add media > Dropbox.' }, { label: 'Done' }]); }
   function askAddress() {
     UI.prompt('WebDAV address of your media folder', '', function (address) {
@@ -743,7 +777,8 @@ var Media = (function () {
     UI.menu('Add media', [
       { label: 'Browse my network (DLNA / UPnP)', sub: 'Find a home media server with media sharing turned on', action: browseNetwork },
       { label: 'Add a WebDAV server', sub: 'Enter your media folder\'s address and login, or use the web editor', action: askAddress },
-      { label: 'Dropbox', sub: 'Sign in with the TiviBro phone app: Settings > My media > Add media > Dropbox.', action: dropboxHelp }
+      { label: 'Dropbox', sub: 'Sign in with the TiviBro phone app: Settings > My media > Add media > Dropbox.', action: dropboxHelp },
+      { label: 'Google Drive', sub: 'Shared drives and folders: add it in the web editor or the phone app', action: gdriveHelp }
     ]);
   }
   function metadataRequest(q, language) {
@@ -1308,7 +1343,7 @@ var Media = (function () {
 
   return {
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
-    refreshShows:refreshSeries, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, signOut: signOut,
+    refreshShows:refreshSeries, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
     rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
     // The web editor's Fix match: search TMDB by a typed title, then save the one picked.
     searchDetails: function (title) { if (!MediaStore.tmdbToken()) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },

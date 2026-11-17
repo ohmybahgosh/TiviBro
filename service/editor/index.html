@@ -740,6 +740,31 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
           </form>
           <div id="mediaMsg" aria-live="polite"></div>
         </div>
+        <div class="card" style="margin-top:18px;max-width:760px" id="gdCard">
+          <h3>Add Google Drive</h3>
+          <p>Shared drives and Drive folders, through a Google Cloud <b>service account</b>: a free robot account that only sees what you share with it.  Google doesn't let TVs sign in to read Drive folders any other way.</p>
+          <details class="muted small"><summary>Set up a service account (about 5 minutes, once)</summary>
+            <ol>
+              <li>Open <a href="https://console.cloud.google.com/projectcreate" target="_blank" rel="noopener noreferrer">Google Cloud</a> and create a project (any name, no billing needed).</li>
+              <li>Turn on the <a href="https://console.cloud.google.com/apis/library/drive.googleapis.com" target="_blank" rel="noopener noreferrer">Google Drive API</a> for it.</li>
+              <li>In <a href="https://console.cloud.google.com/iam-admin/serviceaccounts" target="_blank" rel="noopener noreferrer">Service accounts</a>, create one (no roles needed), open it, go to Keys, then Add key, Create new key, JSON.  A .json file downloads.</li>
+              <li>In Google Drive, share your shared drive (Manage members) or folder (Share) with the service account's email, as a Viewer.</li>
+              <li>Choose the .json file below.  TiviBro only reads: it never changes or deletes anything.</li>
+            </ol>
+          </details>
+          <form id="gdForm" class="form">
+            <label class="f full">Service account key (.json)<input id="gdKeyFile" type="file" accept=".json,application/json"></label>
+            <label class="f full">Or paste the key<textarea id="gdKeyText" rows="3" autocomplete="off" spellcheck="false" placeholder='{ "type": "service_account", ... }'></textarea></label>
+            <div class="full row"><button type="submit" class="primary">Show my drives and folders</button></div>
+          </form>
+          <div id="gdPick" class="hidden">
+            <div class="meta" id="gdWhere"></div>
+            <div id="gdFolders" class="row" style="flex-wrap:wrap;gap:6px;margin:8px 0"></div>
+            <div class="row"><button type="button" id="gdUp" class="ghost">Up</button><label class="f" style="flex:1">Library name<input id="gdName" type="text" maxlength="60"></label><button type="button" id="gdAdd" class="primary">Add this folder</button></div>
+          </div>
+          <div id="gdMsg" aria-live="polite"></div>
+          <p class="muted small">The key is kept on the TV like a password: never sent back to this page, logged or put in backups.  Google limits how much one file can be downloaded in a day; a busy shared file may say so for a while.</p>
+        </div>
         <p class="muted small">Rescan looks for added or removed movies and episodes.  Remove only takes a source out of TiviBro; your files stay where they are.  Saved logins are not sent back to this page or included in backups.</p>
         </div>
       </div>
@@ -3477,7 +3502,7 @@ function loadMedia() {
       var title = document.createElement('h3'); title.textContent = s.name; card.appendChild(title);
       var kind = s.contentMode === 'shows' ? 'TV shows' : s.contentMode === 'automatic' ? 'Movies and TV shows' : 'Movies';
       var detail = document.createElement('div'); detail.className = 'meta';
-      detail.textContent = kind + ' · ' + (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' + (s.root ? ' · ' + s.root : '') : 'WebDAV') + (s.scanning ? ' · scanning…' : '');
+      detail.textContent = kind + ' · ' + (s.type === 'dlna' ? 'DLNA / UPnP' : s.type === 'dropbox' ? 'Dropbox' + (s.root ? ' · ' + s.root : '') : s.type === 'gdrive' ? 'Google Drive' + (s.root ? ' · ' + s.root : '') : 'WebDAV') + (s.scanning ? ' · scanning…' : '');
       card.appendChild(detail);
       var counts = document.createElement('div'); counts.className = 'muted small';
       var bits = [];
@@ -3666,6 +3691,45 @@ $('mediaAdd').onsubmit = function (e) {
   command('mediaAdd', args, 160000, cmdMsg('mediaMsg', 'Checking the login and looking for movies and TV shows…')).then(function (r) {
     msg('mediaMsg', 'ok', r.msg); loadMedia();
   }).catch(function (e) { msg('mediaMsg', 'bad', e.message); }).then(function () { button.disabled = false; });
+};
+
+/* ---------- Google Drive: the key stays in this page's memory only until the folder is added ---------- */
+var gd = { key: '', trail: [] };   // trail: [{ name, id, driveId }] from the place picked down
+function gdKey() {
+  var t = $('gdKeyText').value.trim(), f = $('gdKeyFile').files && $('gdKeyFile').files[0];
+  if (t) return Promise.resolve(t);
+  if (!f) return Promise.reject(new Error('Choose the service account\'s .json key file, or paste it.'));
+  if (f.size > 20000) return Promise.reject(new Error('That file is too big to be a service account key.'));
+  return f.text ? f.text() : new Promise(function (ok, no) { var r = new FileReader(); r.onload = function () { ok(String(r.result)); }; r.onerror = function () { no(new Error('Could not read that file.')); }; r.readAsText(f); });
+}
+function gdButton(label, onclick) { var b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = label; b.onclick = onclick; return b; }
+function gdShow(list, kind) {
+  var box = $('gdFolders'); box.innerHTML = '';
+  var here = gd.trail[gd.trail.length - 1];
+  $('gdPick').classList.remove('hidden');
+  $('gdWhere').textContent = here ? gd.trail.map(function (x) { return x.name; }).join(' / ') : 'Signed in as ' + gd.account + '.  Pick a shared drive or folder:';
+  $('gdUp').classList.toggle('hidden', !here);
+  $('gdAdd').classList.toggle('hidden', !here);
+  if (here) $('gdName').value = here.name;
+  if (!list.length) box.innerHTML = '<span class="muted small">' + (here ? 'No folders inside.  Add this one, or go up.' : 'Nothing is shared with ' + esc(gd.account) + ' yet.  Share your drive or folder with that email as a Viewer, then try again.') + '</span>';
+  list.forEach(function (f) { box.appendChild(gdButton((kind === 'places' ? (f.kind === 'drive' ? 'Shared drive: ' : 'Folder: ') : '') + f.name, function () { gd.trail.push({ name: f.name, id: f.id, driveId: f.driveId || (here && here.driveId) || '' }); gdOpen(); })); });
+}
+function gdOpen() {
+  var here = gd.trail[gd.trail.length - 1];
+  if (!here) return command('mediaGdrivePlaces', { key: gd.key }, 45000, cmdMsg('gdMsg', 'Asking Google Drive…')).then(function (r) { gd.account = r.data.account; msg('gdMsg', 'ok', ''); gdShow(r.data.places, 'places'); }).catch(function (e) { msg('gdMsg', 'bad', e.message); });
+  return command('mediaGdriveFolders', { key: gd.key, parent: here.id, driveId: here.driveId }, 45000, cmdMsg('gdMsg', 'Opening ' + here.name + '…')).then(function (r) { msg('gdMsg', 'ok', ''); gdShow(r.data, 'folders'); }).catch(function (e) { msg('gdMsg', 'bad', e.message); gd.trail.pop(); });
+}
+$('gdForm').onsubmit = function (e) {
+  e.preventDefault();
+  gdKey().then(function (k) { gd.key = k; gd.trail = []; $('gdKeyText').value = ''; return gdOpen(); }).catch(function (e2) { msg('gdMsg', 'bad', e2.message); });
+};
+$('gdUp').onclick = function () { gd.trail.pop(); gdOpen(); };
+$('gdAdd').onclick = function () {
+  var here = gd.trail[gd.trail.length - 1]; if (!here) return;
+  var b = this; b.disabled = true;
+  command('mediaGdriveAdd', { key: gd.key, root: here.id, driveId: here.driveId, where: gd.trail.map(function (x) { return x.name; }).join(' / '), name: $('gdName').value || here.name }, 160000, cmdMsg('gdMsg', 'Checking the key and looking for movies and TV shows in ' + here.name + '…')).then(function (r) {
+    msg('gdMsg', 'ok', r.msg + '  Add another folder with the same key, or you\'re done.'); loadMedia();
+  }).catch(function (e) { msg('gdMsg', 'bad', e.message); }).then(function () { b.disabled = false; });
 };
 
 /* ---------- playlists ---------- */
