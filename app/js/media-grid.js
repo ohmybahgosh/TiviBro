@@ -99,7 +99,8 @@ var MediaGrid = (function () {
         var i = r * COLS + c; if (i >= n) break;
         (function (m, i) {
           var t = U.el('div', 'mgr-tile' + (g.zone === 'grid' && i === g.sel ? ' sel' : ''));
-          t.style.top = ((r - g.top) * ROW_H + 12) + 'px';   // room for the focused one's grown border t.style.left = (c * COL_W) + 'px';
+          // 12 px of room above for the focused poster's grown border.
+          t.style.top = ((r - g.top) * ROW_H + 12) + 'px'; t.style.left = (c * COL_W) + 'px';
           var art = U.el('div', 'mgr-art'), pic = md(m).poster || m.poster;
           if (pic) art.appendChild(img(pic)); else art.appendChild(U.el('span', 'mshp-noart', RAW(nameOf(m))));
           if (watched(m)) art.appendChild(U.el('span', 'shp-done', '✓'));
