@@ -107,6 +107,8 @@ var UI = (function () {
   document.addEventListener('visibilitychange', resetHeld);
 
   document.addEventListener('keydown', function (e) {
+    // Burn-in protection: the first key after the screen dimmed only wakes it.
+    if (typeof Burnin !== 'undefined' && Burnin.activity()) { e.preventDefault(); e.stopPropagation(); return; }
     keyMode();
     if (capture) { e.preventDefault(); var c = capture; capture = null; c(e.keyCode, action(e)); return; }
     var t = e.target;

@@ -1098,7 +1098,7 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .set-body .opt.focus{border-bottom-color:transparent}
 .set-body .opt .ol small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 /* Headings: a small capital title with a line, space above. */
-.set-body .opt.head{min-height:0;padding:30px 24px 10px;border-bottom:0;font-size:20px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent-text)}
+.set-body .opt.head{min-height:0;padding:30px 24px 10px;border-bottom:0;font-size:24px;font-weight:700;letter-spacing:.02em;color:var(--accent-text)}
 .set-body .opt.head .ol{border-bottom:2px solid rgba(255,255,255,.08);padding-bottom:8px}
 .set-body .opt.head:first-child{padding-top:6px}
 /* A choice: its value in a pill, ‹ › when focused. */
@@ -1191,3 +1191,8 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .mgr-letter.sel{background:var(--accent);color:var(--on-accent)}
 .mgr-pos{position:absolute;right:160px;top:72px;font-size:22px;color:var(--muted)}
 .mgr-empty{top:300px}
+/* Burn-in protection (burnin.js): the dimming veil over everything but fullscreen video, and the shift's
+   transitions slow enough not to be seen. */
+.burn-veil{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;opacity:0;pointer-events:none;z-index:9999;transition:opacity 2s}
+.burn-veil.on{opacity:.7}
+#app,#sidenav,#clock{transition:transform 3s linear}

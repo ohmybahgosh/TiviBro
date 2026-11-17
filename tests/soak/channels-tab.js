@@ -39,8 +39,9 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await ev(() => { TIVIBRO_VERSION = '0.6.0-alpha.99'; Settings.open(); Settings.section('connect'); }); await page.waitForTimeout(1200);
   const t = await ev(() => document.querySelector('.set-scroll').innerText);
   const nav = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
-  ok('one page for the phone app and the web editor', nav.indexOf('Phone app and web editor') >= 0 && !nav.some((x) => /^Edit on a phone/.test(x) || x === 'Phone app'), nav.join(', '));
-  ok('it says the two are different and work without each other', /Each works without the other/.test(t) && /TiviBro phone app/.test(t) && /Web editor/.test(t) && /does not pair the TiviBro app/.test(t), t.slice(0, 600));
+  const pl = await ev(() => Settings.phone.page('playlists', []).rows.map((r) => r.label));
+  ok('one page for the phone app and the web editor, in Playlists and accounts', pl.indexOf('Phone app and web editor') >= 0 && !nav.some((x) => /^Edit on a phone/.test(x) || x === 'Phone app'), pl.join(', '));
+  ok('it says the two are different and work without each other', /Each works without the other/.test(t) && /TiviBro phone app/i.test(t) && /Web editor/i.test(t) && (await ev(() => Settings.phone.page('connect', []).rows.some((r) => /does not pair the TiviBro app/.test(r.sub || '')))), t.slice(0, 600));
   ok('the old section names still lead there', await ev(() => Settings.section('editor') && Settings.section('phone')));
   await page.screenshot({ path: path.join(__dirname, '..', '.shots', 'settings-phone-and-editor.png') });
   ok('no page errors', !errs.length, errs.join(' | '));

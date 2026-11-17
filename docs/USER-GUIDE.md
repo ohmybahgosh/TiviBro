@@ -643,7 +643,7 @@ The sections, with the pages inside them.  Every option is explained, with its d
 | [**My media**](#settings-my-media) | Your libraries (each with its own page), add a library, look for new files, display and shelves.  Page: [**Trakt**](#settings-trakt) |
 | [**Reminders and watchlist**](#settings-reminders-and-watchlist) | When reminders come up, the watchlist, every reminder coming up, holding notices during movies |
 | [**Parental controls**](#settings-parental-controls) | Content filter, PIN, what it protects, blocked groups and channels |
-| [**Appearance**](#settings-appearance) | Advanced view, start screen and navigation, theme, accent colour, background, focus style, text size, panels over video, logos, clock, numbers |
+| [**Appearance**](#settings-appearance) | Advanced view, burn-in protection, start screen and navigation, theme, accent colour, background, focus style, text size, panels over video, logos, clock, numbers |
 | [**System**](#settings-system) | Fix a problem, your version and updates, about and licences, report a problem, connection and speed tests, logs, what this TV can play, status, provider status.  Page: [**Backups and restore points**](#settings-backups-and-restore-points) |
 
 The phone app's **Settings** tab and the web editor's **Settings** page show the same sections, pages and rows, drawn the same way.
@@ -1177,6 +1177,7 @@ Which screen TiviBro opens on, where the lists start, colours, sizes and what's 
 | Setting | Choices | What it does |
 |---|---|---|
 | **Advanced view** | On · **Off** | Off keeps each page short: the settings most people set once, or only to troubleshoot, wait behind an **Advanced** row at the bottom of the page.  On shows every setting in place.  Search finds them either way. |
+| **Burn-in protection** | **Pixel shift and dimming** · Pixel shift only · Off | For OLED TVs left on the guide or a menu: every 90 seconds the screen moves a few pixels (4 at most), and after 10 minutes without a key press it dims until you press one (that key only wakes it).  Fullscreen video is left alone. |
 | **Start screen** | **Guide** · Channels screen | Under **Start and navigation**.  What TiviBro opens on, and where **Back** from other screens leads. |
 | **Lists open on** | **Where I left off** · The first group · A group I pick | Where the selection is when TiviBro opens.  Where I left off is the group and channel you were on last; the other two start at the top of that group (unless a channel is already playing).  With **A group I pick**, **Group to open on** chooses it: any group, Favorites and All channels too. |
 | **Channels screen in the menu** | On · **Off** | The plain channel list (without the guide) in the side menu.  Off, **Green** in the guide still opens it.  Always there while TiviBro starts on it. |

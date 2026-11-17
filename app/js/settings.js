@@ -1197,6 +1197,8 @@ var Settings = (function () {
     var s = S(), out = [];
     out.push(toggle('Advanced view', 'Shows every setting in place.  Off keeps the menus short: what most people set once, or only to fix a problem, waits behind an Advanced row at the bottom of each page.',
       function () { return !!s.advView; }, function (v) { s.advView = v; save(true); }));
+    out.push(choice('Burn-in protection', 'For OLED TVs left on the guide or a menu: every 90 seconds the screen moves a few pixels, and after 10 minutes without a key press it dims until you press one.  Fullscreen video is left alone.',
+      ['on', 'shift', 'off'], ['Pixel shift and dimming', 'Pixel shift only', 'Off'], function () { return s.burnin === 'shift' || s.burnin === 'off' ? s.burnin : 'on'; }, function (v) { s.burnin = v; save(); if (typeof Burnin !== 'undefined') Burnin._tick(); }));
     out.push(head('Start and navigation'));
     out.push(choice('Start screen', 'What TiviBro opens on, and where Back from other screens leads.', ['guide', 'live'], ['Guide', 'Channels screen'],
       function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; save(); Views.buildTabs(); }));

@@ -132,7 +132,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   ok('holding Down for 3 seconds goes a long way', +moved - s0 > 60, moved);
 
   /* ---------- audio and subtitles ---------- */
-  await section('Audio and subtitles'); await H.row('Audio language'); await H.quiet('Enter', 600);
+  await section('Playback'); await H.row('Audio and subtitles'); await H.quiet('Enter', 600); await H.row('Audio language'); await H.quiet('Enter', 600);
   await H.pick('Spanish', '', 500);
   ok('audio language is saved', await ev(() => Store.settings.audioLang === 'es'));
   await H.row('Subtitles automatically'); await H.quiet('Enter', 600);

@@ -30,7 +30,7 @@ The sections, with the pages inside them.  Every option is explained, with its d
 | [**My media**](Settings-My-media) | Your libraries (each with its own page), add a library, look for new files, display and shelves.  Page: [**Trakt**](Settings-My-media#settings-trakt) |
 | [**Reminders and watchlist**](Settings-Reminders-and-watchlist) | When reminders come up, the watchlist, every reminder coming up, holding notices during movies |
 | [**Parental controls**](Settings-Parental-controls) | Content filter, PIN, what it protects, blocked groups and channels |
-| [**Appearance**](Settings-Appearance) | Advanced view, start screen and navigation, theme, accent colour, background, focus style, text size, panels over video, logos, clock, numbers |
+| [**Appearance**](Settings-Appearance) | Advanced view, burn-in protection, start screen and navigation, theme, accent colour, background, focus style, text size, panels over video, logos, clock, numbers |
 | [**System**](Settings-System) | Fix a problem, your version and updates, about and licences, report a problem, connection and speed tests, logs, what this TV can play, status, provider status.  Page: [**Backups and restore points**](Settings-System#settings-backups-and-restore-points) |
 
 The phone app's **Settings** tab and the web editor's **Settings** page show the same sections, pages and rows, drawn the same way.
