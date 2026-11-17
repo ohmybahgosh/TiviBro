@@ -81,6 +81,11 @@ const SERIES = [{ series_id: 9, name: '[SE] Nocturne', cover: 'c.jpg', plot: 'p'
   down = false;
   a = await post(B + '/vod/list', q({ pl: 'p8', refresh: true }));
   ok('and the provider back: the movies', a.status === 200 && a.json.total === 3000);
+  // An empty copy kept with no reload asked (maxAge 0: until asked) is never fresh: the provider is asked again.
+  empty = true; await post(B + '/vod/list', q({ pl: 'p7', maxAge: 0, refresh: true })); empty = false;
+  hits = 0;
+  a = await post(B + '/vod/list', q({ pl: 'p7', maxAge: 0 }));
+  ok('an empty copy is never kept as fresh (issue #110)', a.status === 200 && a.json.total === 3000 && hits === 1, hits + ' ' + (a.json && a.json.total));
   a = await post(B + '/vod/list', q({ u: 'http://' + U + '/player_api.php' }));
   ok('/vod/list takes only relay addresses on this helper', a.status === 400);
   await post(B + '/vod/forget', { pl: 'p1' });
@@ -256,6 +261,32 @@ const SERIES = [{ series_id: 9, name: '[SE] Nocturne', cover: 'c.jpg', plot: 'p'
     ok('all watched: the last one', T.openAt(eps) === 3);
     E.watched = {}; T.mark('e3', true);
     ok('an episode watched out of order still moves the start past it', T.openAt(eps) === 3);
+  }
+
+  // Issue #110 in the app: the helper has no movies at all (an empty list it kept), so the app gets the list itself.
+  {
+    const idb = {};
+    let helperTotal = 0, slims = 0;
+    const c = { window: {}, console, navigator: { language: 'en-US' }, Map, Promise, setTimeout, clearTimeout, JSON };
+    c.U = { $: () => null, debounce: (f) => { f.cancel = () => {}; return f; }, el: () => ({}) };
+    c.Log = { info() {}, warn() {} };
+    c.Store = { settings: {}, edits: { resume: {}, myList: [] }, playlist: { id: 'r1', type: 'xtream', plRefresh: 0, vod: { movies: true } },
+      idbGet: (k) => Promise.resolve(idb[k] ? JSON.parse(idb[k]) : null), idbSet: (k, v) => { idb[k] = JSON.stringify(v); } };
+    c.Net = { active: true, port: 1, info: { vod: 2 }, wrap: (x) => x };
+    c.Source = { sig: () => 's', m3uVod: () => false, api: (p, a) => 'http://relay/' + a, vodCats: () => Promise.resolve([{ category_id: '1', category_name: 'Films' }]) };
+    c.fetch = (u) => {
+      let v;
+      if (/\/vod\/list$/.test(u)) v = { v: 2, at: 1, rows: [], total: helperTotal, cats: [], langs: {}, keep: null };
+      else if (/\/vod\/slim$/.test(u)) { slims++; v = { rows: [[1, 'A Film', '', '', 'mp4', '1', 0], [2, 'Another', '', '', 'mp4', '1', 0]] }; }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(v) });
+    };
+    vm.createContext(c);
+    for (const f of ['names.js', 'vodview.js', 'vod.js']) vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js', f), 'utf8') + '\n;this.Vod = typeof Vod !== "undefined" ? Vod : this.Vod;', c, { filename: f });
+    await c.Vod.prepare();
+    ok('the helper with no movies at all: the app gets the list itself (issue #110)', c.Vod.allItems().length === 2 && slims === 1, c.Vod.allItems().length + ' ' + slims);
+    c.Vod.reset(); helperTotal = 50; slims = 0;
+    await c.Vod.prepare();
+    ok('a list the filters hide (total > 0) is left alone', c.Vod.allItems().length === 0 && slims === 0, c.Vod.allItems().length + ' ' + slims);
   }
 
   console.log(fail ? fail + ' failures' : 'all movie and show list tests passed');

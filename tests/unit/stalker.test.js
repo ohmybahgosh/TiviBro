@@ -80,6 +80,27 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   a = await req('GET', H + '/stalker/vod/' + eps['2'][1].id + '.mp4?stb=' + login);
   ok('an episode is its season\'s command with its number', a.status === 302 && m.seen.vodLinks.slice(-1)[0] === 'eyJzZWFzb24iOjJ9|2', m.seen.vodLinks.slice(-1)[0]);
 
+  // Issue #113: a portal with a shows module of its own, posters on the portal, and HTTP 429 when asked too fast.
+  S._wait = () => 5;
+  const m4 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', series: true, limit: 2 });
+  await new Promise((f) => m4.server.listen(0, '127.0.0.1', f));
+  const base4 = 'http://127.0.0.1:' + m4.server.address().port;
+  const login4 = b64({ portal: base4 + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+  const X4 = (q) => req('GET', H + '/stalker/xc/player_api.php?stb=' + login4 + '&action=' + q).then((r) => ({ status: r.status, j: JSON.parse(r.body || 'null') }));
+  x = await X4('get_series_categories');
+  ok('a shows module: its own categories', x.status === 200 && x.j.map((c) => c.category_name).join() === 'HINDI | TV SERIALS,URDU | TV SERIALS', JSON.stringify(x.j));
+  ok('HTTP 429: waited and asked again', m4.seen.limited === 2, m4.seen.limited);
+  x = await X4('get_series&category_id=70');
+  ok('every show in a category from the shows module, not the few the movie module marks', x.status === 200 && x.j.length === 30 && x.j[0].series_id === '901', x.j && x.j.length);
+  ok('a poster that is a path on the portal gets the portal\'s address', x.j[0].cover === base4 + '/stalker_portal/screenshots/1.jpg', x.j[0].cover);
+  x = await X4('get_series');
+  ok('all shows', x.j.length === 40, x.j.length);
+  x = await X4('get_series_info&series_id=931');
+  ok('a show from the shows module opens (no 404)', x.status === 200 && x.j.seasons.length === 1 && x.j.episodes['1'].length === 2, x.status + ' ' + JSON.stringify(x.j).slice(0, 200));
+  x = await X4('get_vod_streams');
+  ok('movies still come from the movie module', x.j.length === 28, x.j.length);
+  m4.server.close();
+
   // The guide asking for many channels at once on a portal it hasn't signed in to yet: one sign-in for all of
   // them, on a portal that keeps only the newest token.
   const m2 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', oneToken: true });

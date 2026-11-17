@@ -22,6 +22,11 @@ function create(o) {
   for (var v = 1; v <= 30; v++) vods.push({ id: String(500 + v), name: 'Portal Title ' + v, category_id: v <= 15 ? '10' : '11', cmd: v === 3 ? 'eyJ0eXBlIjoibW92aWUiLCJpZCI6NTAzfQ==' : '/media/file_' + (500 + v) + '.mpg',
     screenshot_uri: 'http://img.example/' + v + '.jpg', rating_imdb: '7.' + (v % 10), added: '2026-10-' + ('0' + (v % 28 + 1)).slice(-2) + ' 12:00:00', is_series: v === 5 || v === 20 ? '1' : '0',
     year: '2020', description: 'About title ' + v, director: 'A. Director', actors: 'Someone', genres_str: 'Drama', time: 95 });
+  /* o.series: a portal with a shows module of its own (type=series, issue #113): 40 shows in two categories,
+     posters as paths on the portal.  o.limit: answer HTTP 429 to that many requests after the sign-in. */
+  var shows = [];
+  for (var w = 1; w <= 40; w++) shows.push({ id: String(900 + w), name: 'Serial ' + w, category_id: w <= 30 ? '70' : '71', cmd: '', screenshot_uri: '/stalker_portal/screenshots/' + w + '.jpg', added: '2026-10-01 12:00:00', year: '2024', description: 'About serial ' + w });
+  var limit = +o.limit || 0;
   var now0 = Math.floor(Date.now() / 1000);
   function page(list, p, res) { var per = 14, pg = Math.max(1, +p || 1); seen.vodPages = (seen.vodPages || 0) + 1; js(res, { total_items: list.length, max_page_items: per, data: list.slice((pg - 1) * per, pg * per) }); }
   function js(res, v) { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ js: v })); }
@@ -38,6 +43,10 @@ function create(o) {
     if (q.action === 'get_genres') return js(res, [{ id: '*', title: 'All' }, { id: '1', title: 'News' }, { id: '2', title: 'Sports' }]);
     if (q.action === 'get_all_channels') return js(res, { total_items: chans.length, data: chans });
     if (q.type === 'vod' && q.action === 'get_categories') return js(res, [{ id: '*', title: 'All' }, { id: '10', title: 'Films' }, { id: '11', title: 'More films' }]);
+    if (limit > 0 && seen.profile && q.action !== 'handshake' && q.action !== 'get_profile') { limit--; seen.limited = (seen.limited || 0) + 1; res.writeHead(429, { 'Retry-After': '1' }); return res.end('slow down'); }
+    if (o.series && q.type === 'series' && q.action === 'get_categories') return js(res, [{ id: '*', title: 'All' }, { id: '70', title: 'HINDI | TV SERIALS' }, { id: '71', title: 'URDU | TV SERIALS' }]);
+    if (o.series && q.type === 'series' && q.action === 'get_ordered_list' && q.movie_id) return js(res, { total_items: 1, data: [{ id: q.movie_id + ':1', name: 'Season 1', series: [1, 2], cmd: 'c2Vhc29uMQ==' }] });
+    if (o.series && q.type === 'series' && q.action === 'get_ordered_list') { seen.seriesPages = (seen.seriesPages || 0) + 1; return page(shows.filter(function (x) { return q.category === '*' || !q.category || x.category_id === q.category; }), q.p, res); }
     if (q.type === 'vod' && q.action === 'get_ordered_list' && q.movie_id) {
       if (q.movie_id !== '505' && q.movie_id !== '520') return js(res, { total_items: 0, data: [] });
       return js(res, { total_items: 2, data: [{ id: q.movie_id + ':1', name: 'Season 1', series: [1, 2, 3], cmd: 'eyJzZWFzb24iOjF9' }, { id: q.movie_id + ':2', name: 'Season 2', series: [1, 2], cmd: 'eyJzZWFzb24iOjJ9' }] });

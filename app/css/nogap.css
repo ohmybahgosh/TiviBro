@@ -41,3 +41,5 @@
 .nogap .on-track > * + *{margin-left:24px}
 .nogap .on-cap > * + *{margin-left:10px}
 .nogap .gpv-idle > * + *{margin-top:10px}
+.nogap .shp-tabs > * + *{margin-left:14px}
+.nogap .shp-track > * + *{margin-left:26px}

@@ -99,18 +99,28 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const sv = await ev(() => { const b = document.getElementById('vodInfo'); return { img: (b.querySelector('img') || {}).src || '', meta: [].slice.call(b.querySelectorAll('.vod-meta')).map((x) => x.textContent).join(' | '), plot: (b.querySelector('.vod-plot') || {}).textContent || '' }; });
     ok('a show keeps the provider\'s cover and summary, and gets TMDB\'s genres, network and cast', /\/poster\/s0\.svg$/.test(sv.img) && /A small-town harbour/.test(sv.plot) && /Drama/.test(sv.meta) && /Coastline/.test(sv.meta) && /Cast: Mia Park/.test(sv.meta), JSON.stringify(sv));
     await shot('series-show');
+    // The show's page (issue #110's P.S.): its seasons as tabs and its episodes as cards; Right to episode 2.
     await page.keyboard.press('Enter'); await wait(1500);
-    await page.keyboard.press('ArrowDown'); await wait(1200);
-    const ep = await ev(() => { const b = document.getElementById('vodInfo'); return { h: (b.querySelector('h2') || {}).textContent || '', img: (b.querySelector('img') || {}).src || '', still: !!b.querySelector('img.still'), meta: [].slice.call(b.querySelectorAll('.vod-meta')).map((x) => x.textContent).join(' | '), plot: (b.querySelector('.vod-plot') || {}).textContent || '' }; });
-    ok('an episode keeps the provider\'s title, and gets TMDB\'s summary for a short one, its picture and air date', /New Neighbours/.test(ep.h) && !/TMDB episode/.test(ep.h) && /^From TMDB: what happens in episode 2 of season 1/.test(ep.plot) && ep.still && /aired Jan 11, 2019/.test(ep.meta), JSON.stringify(ep));
+    const pg = await ev(() => ({ on: document.getElementById('viewVod').classList.contains('show-on'), title: (document.querySelector('#vodShow .media-title') || {}).textContent || '', tabs: [].slice.call(document.querySelectorAll('#vodShow .shp-tab')).map((t) => t.textContent), cards: document.querySelectorAll('#vodShow .shp-card').length }));
+    ok('a show opens on its own page: title, season tabs with counts, episode cards', pg.on && pg.title === 'Harbor Street' && pg.tabs.length >= 2 && /^Season 1\d+$/.test(pg.tabs[0]) && pg.cards >= 2, JSON.stringify(pg));
+    await page.keyboard.press('ArrowRight'); await wait(1200);
+    const card = () => ev(() => { const c = document.querySelector('#vodShow .shp-card.sel'); return c ? { name: (c.querySelector('.shp-name') || {}).textContent || '', sub: (c.querySelector('.shp-sub') || {}).textContent || '', img: (c.querySelector('img') || {}).src || '', cover: !!c.querySelector('img.cover'), foot: (document.querySelector('#vodShow .shp-foot') || {}).textContent || '' } : null; });
+    const ep = await card();
+    ok('an episode card keeps the provider\'s title, with TMDB\'s picture and air date, its summary underneath', ep && /New Neighbours/.test(ep.name) && !/TMDB episode/.test(ep.name) && /^S1 E2\s+From TMDB: what happens in episode 2 of season 1/.test(ep.foot) && !ep.cover && /\/poster\/s1\.svg$/.test(ep.img) && /Jan 11, 2019/.test(ep.sub), JSON.stringify(ep));
     await shot('series-episode');
     // Hide spoilers (discussion #36): an episode you haven't started keeps its title and air date, without its
     // summary or a picture from it.
-    await ev(() => { Store.settings.noSpoilers = true; }); await page.keyboard.press('ArrowUp'); await wait(600); await page.keyboard.press('ArrowDown'); await wait(1200);
-    const sp = await ev(() => { const b = document.getElementById('vodInfo'); return { h: (b.querySelector('h2') || {}).textContent || '', still: !!b.querySelector('img.still'), meta: [].slice.call(b.querySelectorAll('.vod-meta')).map((x) => x.textContent).join(' | '), plot: (b.querySelector('.vod-plot') || {}).textContent || '' }; });
-    ok('Hide spoilers: an episode not started keeps its title and air date, no summary or picture from it', /New Neighbours/.test(sp.h) && /aired Jan 11, 2019/.test(sp.meta) && /^Summary hidden/.test(sp.plot) && !sp.still, JSON.stringify(sp));
+    await ev(() => { Store.settings.noSpoilers = true; }); await page.keyboard.press('ArrowLeft'); await wait(400); await page.keyboard.press('ArrowRight'); await wait(1000);
+    const sp = await card();
+    ok('Hide spoilers: an episode not started keeps its title and air date, no summary or picture from it', sp && /New Neighbours/.test(sp.name) && /Jan 11, 2019/.test(sp.sub) && /Summary hidden/.test(sp.foot) && sp.cover, JSON.stringify(sp));
     await shot('series-episode-nospoil');
     await ev(() => { Store.settings.noSpoilers = false; });
+    // Up to the seasons, Right to season 2: its episodes; Back closes the page.
+    await page.keyboard.press('ArrowUp'); await wait(300); await page.keyboard.press('ArrowRight'); await wait(800);
+    const s2 = await ev(() => ({ on: (document.querySelector('#vodShow .shp-tab.on') || {}).textContent || '', pos: (document.querySelector('#vodShow .shp-pos') || {}).textContent || '' }));
+    ok('Up then Right: season 2 and its episodes', /^Season 2/.test(s2.on) && /Season 2$/.test(s2.pos), JSON.stringify(s2));
+    await page.keyboard.press('Escape'); await wait(600);
+    ok('Back closes the show\'s page', await ev(() => !document.getElementById('viewVod').classList.contains('show-on')));
     ok('no page errors', !errs.length, errs.join(' | '));
   } catch (e) { ok('harness: ' + e.message, false); }
   await b.close();

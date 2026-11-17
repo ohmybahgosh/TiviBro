@@ -1,13 +1,19 @@
 # Changelog
 
-## 0.6.0 (alpha 152, 2026-11-17)
+## 0.6.0 (alpha 153, 2026-11-17)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 152
+### New in alpha 153
+
+- **A show's own page, like TiviMate's.**  Opening a show on the Shows screen fills the screen: its backdrop, details and summary at the top, its seasons as tabs with their episode counts, and the season's episodes as wide cards with their picture, length, air date, progress and a ✓ once watched.  It opens on the episode you're up to.  ◀ ▶ move along the cards, Up goes to the seasons, OK plays, Hold OK has the episode's options, Back closes the show.  Hide spoilers is respected.  Thanks to abada89 for the idea and the mock-up (issue #110).
+- **Movies come back after a provider's outage (issue #110).**  A list the TiviBro service saved empty during an outage counted as current for good when the playlist only reloads when asked, so Movies stayed empty.  An empty saved list is never current now, and when the service has no movies at all, the app gets the list from the provider itself.  Thanks to abada89 for tracking it down and testing a fix.
+- **Stalker portals: every show, with posters, and no more "too many requests" (issue #113).**  Many portals keep their shows in a shows section of their own, and TiviBro read only the few the movie section marks as series (58 of a category's thousand), and a show could open as "404".  It reads the shows section now (falling back to the old way on portals without one), with posters that are paths on the portal's own server.  TiviBro also asks a portal for at most 3 things at a time, waits and asks again when it answers HTTP 429, and goes one at a time for a minute after that, so the guide, lists and channels stop being refused.
+
+### In alpha 152
 
 - **Google Drive in My media.**  Add a shared drive, or a Drive folder, as a library: Settings > My media > Add a library > Google Drive points to the web editor and the phone app, which take a Google Cloud service account's key and let you pick the drive and folder (GD-M for movies, GD-T for shows, or the whole drive).  Google doesn't let TVs sign in to read Drive folders, so a service account (free, about 5 minutes once, steps in the web editor) is how it reads only what you share with it.  A shared drive is read in one quick listing, new files are found from Drive's own list of changes, and movies play through the TV with Range, so seeking works.  The key stays on the TV like a password: not in backups, logs or anything sent back.
-- **A show's episodes by season.**  Opening a show on the Shows screen puts its seasons on the left, where the categories were (Season 1, Season 2, Specials, each with its count) and that season's episodes on the right, starting on the season you're watching.  Left goes to the seasons, Up and Down pick one, Right or OK goes back to its episodes, and Back closes the show.  The next episode plays across seasons as before.  Thanks to abada89 for the idea (issue #110).
+- **A show's episodes by season.**  The seasons went on the left of the episode list (replaced by the show's own page in alpha 153).
 - **No more closing again and again while the guide loads on a 1 GB TV (issue #112).**  A TV with 1 GB and 19,000 channels closed TiviBro four times in an hour while it read 14 public guide files during playback.  On a TV short of memory, the public guide now waits until nothing plays (even the first time), reads at most 6 country files (the countries with the most channels with no guide) and no sports files, and a guide that closed TiviBro once is paused instead of tried again.  Also, "Captions lined up with the picture again" is logged once a minute at most, not several times a second.
 - **Stalker portals: every movie and show, not the first 10,000 (issue #111).**  Big portals send 10 to 20 titles a page, and TiviBro stopped at 700 pages.  It reads up to 4,000 now, and a page that fails is asked again instead of ending the list there.
 - **Croatian, Serbian and Bosnian subtitles (discussion #109).**  Settings > Subtitle languages has all three, for Find subtitles on OpenSubtitles.

@@ -63,23 +63,47 @@ function headersFor(L, s) {
   return h;
 }
 function get(url, headers, cb) {
-  var done = false, finish = function (e, t, code) { if (!done) { done = true; cb(e, t, code); } };
+  var done = false, finish = function (e, t, code, h) { if (!done) { done = true; cb(e, t, code, h); } };
   var u = URL_.parse(url), lib = u.protocol === 'https:' ? https : http;
   var req = lib.request({ protocol: u.protocol, hostname: u.hostname, port: u.port, path: u.path, method: 'GET', headers: headers, rejectUnauthorized: false }, function (res) {
     var parts = [], size = 0;
     res.on('data', function (c) { size += c.length; if (size > TEXT_MAX) { req.abort(); return finish(new Error('too big')); } parts.push(c); });
-    res.on('end', function () { finish(null, Buffer.concat(parts, size).toString('utf8'), res.statusCode); });
+    res.on('end', function () { finish(null, Buffer.concat(parts, size).toString('utf8'), res.statusCode, res.headers); });
     res.on('error', finish);
   });
   req.on('error', finish);
   req.setTimeout(30000, function () { req.abort(); finish(new Error('timed out')); });
   req.end();
 }
-// The portal's answer to one action: its "js" part, or an error saying what went wrong.
+/* Not too much at once (issue #113): a portal answers HTTP 429 when a box asks too fast, and then refuses
+   lists and channels too.  At most 3 requests at a time per portal (1 for a minute after a 429), and a 429 waits
+   (Retry-After, else 2, 4, 8 s) and asks again, three times at most. */
+var lanes = {}, LANE_MAX = 3, CALM_MS = 60000;
+function lane(L) { var k = L.portal; return lanes[k] || (lanes[k] = { busy: 0, queue: [], calmUntil: 0 }); }
+function pumpLane(ln) {
+  var max = Date.now() < ln.calmUntil ? 1 : LANE_MAX;
+  while (ln.busy < max && ln.queue.length) { ln.busy++; ln.queue.shift()(); }
+}
 function call(L, s, params, cb) {
+  var ln = lane(L), tries = 0;
+  function go() {
+    rawCall(L, s, params, function (e, js, wait) {
+      if (e && e.limited && tries < 3) {
+        tries++; ln.calmUntil = Date.now() + CALM_MS;
+        return setTimeout(go, module.exports._wait(wait || 1000 * Math.pow(2, tries)));
+      }
+      ln.busy--; pumpLane(ln);
+      cb(e, js);
+    });
+  }
+  ln.queue.push(go); pumpLane(ln);
+}
+// The portal's answer to one action: its "js" part, or an error saying what went wrong.
+function rawCall(L, s, params, cb) {
   var q = []; for (var k in params) q.push(k + '=' + encodeURIComponent(params[k]));
-  get(s.api + '?' + q.join('&') + '&JsHttpRequest=1-xml', headersFor(L, s), function (e, t, code) {
+  get(s.api + '?' + q.join('&') + '&JsHttpRequest=1-xml', headersFor(L, s), function (e, t, code, h) {
     if (e) return cb(e);
+    if (code === 429) { var x = new Error('the portal answered HTTP 429 (too many requests)'); x.limited = true; var ra = parseInt(h && h['retry-after'], 10); return cb(x, null, ra > 0 ? Math.min(30, ra) * 1000 : 0); }
     if (code === 401 || code === 403) return cb(err('the portal refused this box (HTTP ' + code + ')', true));
     if (code !== 200) return cb(new Error('the portal answered HTTP ' + code));
     var j; try { j = JSON.parse(t); } catch (x) { return cb(err(/authoriz/i.test(t) ? 'the portal refused this box' : 'the portal did not answer like a Stalker portal', /authoriz/i.test(t))); }
@@ -204,8 +228,15 @@ var vodMem = {}, VOD_FOR = 3 * 3600e3, PAGES_MAX = 4000;
 function vodOf(L) { var k = keyOf(L); return vodMem[k] || (vodMem[k] = { cats: null, catsAt: 0, lists: {}, cmd: {} }); }
 function when(s) { var t = Date.parse(String(s || '').replace(' ', 'T')); return isNaN(t) ? (+s || 0) : Math.floor(t / 1000); }
 function extOf(cmd) { var m = /\.(mp4|mkv|avi|m4v|mov|ts|m3u8|mpg)(?:[?\s]|$)/i.exec(String(cmd || '')); return m && !/mpg/i.test(m[1]) ? m[1].toLowerCase() : 'mp4'; }
-function slim(x) {
-  return { id: String(x.id), name: String(x.name || x.o_name || 'Untitled'), cover: /^https?:/i.test(x.screenshot_uri || '') ? x.screenshot_uri : /^https?:/i.test(x.cover || '') ? x.cover : '',
+// A poster: a whole address, or a path on the portal's own server ("/stalker_portal/screenshots/12.jpg", issue #113).
+function art(L, u) {
+  u = String(u || '');
+  if (/^https?:\/\//i.test(u)) return u;
+  if (L && /^\/[^\/]/.test(u)) { var m = /^(https?:\/\/[^\/]+)/i.exec(L.portal); return m ? m[1] + u : ''; }
+  return '';
+}
+function slim(x, L) {
+  return { id: String(x.id), name: String(x.name || x.o_name || 'Untitled'), cover: art(L, x.screenshot_uri) || art(L, x.cover) || art(L, x.screenshot) || '',
     rating: String(x.rating_imdb || x.rating_kinopoisk || x.rating || ''), cat: String(x.category_id || ''), added: when(x.added), series: +x.is_series === 1 || x.is_series === true,
     year: String(x.year || '').slice(0, 4), plot: String(x.description || '').slice(0, 1500), cmd: String(x.cmd || ''), director: String(x.director || ''), cast: String(x.actors || ''),
     genre: String(x.genres_str || x.genre || ''), mins: +x.time || 0 };
@@ -221,15 +252,15 @@ function vodCats(L, cb) {
   });
 }
 // A category's titles ('*': every one), page by page (a portal sends a dozen or so at a time), four at once.
-function vodPages(L, cat, cb) {
-  function page(n, then) { act(L, { type: 'vod', action: 'get_ordered_list', category: cat, genre: cat, sortby: 'added', fav: 0, p: n }, then); }
+function vodPages(L, cat, cb, type) {
+  function page(n, then) { act(L, { type: type || 'vod', action: 'get_ordered_list', category: cat, genre: cat, sortby: 'added', fav: 0, p: n }, then); }
   page(1, function (e, js) {
     if (e) return cb(e);
     var first = js && Array.isArray(js.data) ? js.data : [], total = +(js && js.total_items) || first.length, per = +(js && js.max_page_items) || first.length || 1;
     var pages = Math.min(PAGES_MAX, Math.ceil(total / per)), got = {}, next = 2, running = 0, stop = false, finished = false, fails = 0;
     if (pages <= 1 || !first.length) return cb(null, first);
     (function pump() {
-      while (running < 4 && next <= pages && !stop) {
+      while (running < 2 && next <= pages && !stop) {
         (function (n) {
           running++;
           // A page that fails is asked once more; only three failing in a row stop the rest (issue #111: one busy moment lost every title after it).
@@ -251,15 +282,48 @@ function vodItems(L, cat, cb) {
   if (hit && Date.now() - hit.at < VOD_FOR) return cb(null, hit.items);
   vodPages(L, key, function (e, list) {
     if (e) return cb(e);
-    var items = list.filter(function (x) { return x && x.id != null; }).map(slim);
+    var items = list.filter(function (x) { return x && x.id != null; }).map(function (x) { return slim(x, L); });
     items.forEach(function (x) { if (x.cmd) V.cmd[x.id] = x.cmd; });
     V.lists[key] = { at: Date.now(), items: items };
     cb(null, items);
   });
 }
-function findItem(L, id) {
-  var V = vodOf(L), hit = null;
-  Object.keys(V.lists).some(function (k) { return V.lists[k].items.some(function (x) { if (x.id === id) { hit = x; return true; } return false; }); });
+/* Shows.  Newer portals keep them in a module of their own (type=series, with its own categories): those are
+   the shows other players list, and the movie module has only a few marked as series (issue #113: 58 of a
+   category's thousand).  A portal without it (an error or nothing at all) keeps the movie module's shows. */
+function seriesOf(L) { var V = vodOf(L); return V.series || (V.series = { own: null, cats: null, catsAt: 0, lists: {} }); }
+function seriesCats(L, cb) {
+  var S = seriesOf(L);
+  if (S.own === false) return vodCats(L, cb);
+  if (S.cats && Date.now() - S.catsAt < VOD_FOR) return cb(null, S.cats);
+  act(L, { type: 'series', action: 'get_categories' }, function (e, js) {
+    var list = !e && Array.isArray(js) ? js.filter(function (c) { return c && c.id != null && String(c.id) !== '*'; }) : [];
+    if (!list.length) { if (!(e && e.auth)) S.own = false; return e && e.auth ? cb(e) : vodCats(L, cb); }
+    S.own = true;
+    S.cats = list.map(function (c) { return { category_id: String(c.id), category_name: String(c.title || c.name || 'Shows'), parent_id: 0 }; });
+    S.catsAt = Date.now(); cb(null, S.cats);
+  });
+}
+function showItems(L, cat, cb) {
+  var S = seriesOf(L);
+  function fromVod() { vodItems(L, cat, function (e, items) { cb(e, e ? null : items.filter(function (x) { return x.series; })); }); }
+  if (S.own === null) return seriesCats(L, function () { S.own === null ? fromVod() : showItems(L, cat, cb); });
+  if (!S.own) return fromVod();
+  var key = cat || '*', hit = S.lists[key];
+  if (hit && Date.now() - hit.at < VOD_FOR) return cb(null, hit.items);
+  vodPages(L, key, function (e, list) {
+    if (e) return cb(e);
+    var items = list.filter(function (x) { return x && x.id != null; }).map(function (x) { var y = slim(x, L); y.series = true; y.module = 'series'; return y; });
+    S.lists[key] = { at: Date.now(), items: items };
+    cb(null, items);
+  }, 'series');
+}
+function findItem(L, id, show) {
+  var V = vodOf(L), S = seriesOf(L), hit = null;
+  [show ? S.lists : null, V.lists, show ? null : S.lists].forEach(function (lists) {
+    if (hit || !lists) return;
+    Object.keys(lists).some(function (k) { return lists[k].items.some(function (x) { if (x.id === id && (!show || x.series)) { hit = x; return true; } return false; }); });
+  });
   return hit;
 }
 function asMovie(x) { return { stream_id: x.id, num: 0, name: x.name, stream_type: 'movie', stream_icon: x.cover, rating: x.rating, added: String(x.added || ''), category_id: x.cat, container_extension: extOf(x.cmd) }; }
@@ -270,7 +334,7 @@ function infoOf(x) {
 }
 // A show's seasons (get_ordered_list with its movie_id), as Xtream's get_series_info.
 function seasons(L, x, cb) {
-  act(L, { type: 'vod', action: 'get_ordered_list', movie_id: x.id, season_id: 0, episode_id: 0, category: x.cat || '*', fav: 0, p: 1 }, function (e, js) {
+  act(L, { type: x.module === 'series' ? 'series' : 'vod', action: 'get_ordered_list', movie_id: x.id, season_id: 0, episode_id: 0, category: x.cat || '*', fav: 0, p: 1 }, function (e, js) {
     if (e) return cb(e);
     var list = js && Array.isArray(js.data) ? js.data : [], eps = {}, out = [];
     list.forEach(function (sz, i) {
@@ -288,22 +352,24 @@ function seasons(L, x, cb) {
 function xc(L, q, res, ALLOW) {
   var a = String(q.action || ''), cat = q.category_id ? String(q.category_id) : '*';
   function fail(e) { send(res, ALLOW, e.auth ? 401 : 502, { error: e.message }); }
-  if (a === 'get_vod_categories' || a === 'get_series_categories') return vodCats(L, function (e, c) { e ? fail(e) : send(res, ALLOW, 200, c); });
-  if (a === 'get_vod_streams' || a === 'get_series') {
+  if (a === 'get_vod_categories') return vodCats(L, function (e, c) { e ? fail(e) : send(res, ALLOW, 200, c); });
+  if (a === 'get_series_categories') return seriesCats(L, function (e, c) { e ? fail(e) : send(res, ALLOW, 200, c); });
+  if (a === 'get_series') return showItems(L, cat, function (e, items) { e ? fail(e) : send(res, ALLOW, 200, items.map(asShow)); });
+  if (a === 'get_vod_streams') {
     return vodItems(L, cat, function (e, items) {
       if (e) return fail(e);
-      var show = a === 'get_series';
-      send(res, ALLOW, 200, items.filter(function (x) { return x.series === show; }).map(show ? asShow : asMovie));
+      send(res, ALLOW, 200, items.filter(function (x) { return !x.series; }).map(asMovie));
     });
   }
   if (a === 'get_vod_info' || a === 'get_series_info') {
-    var id = String(q.vod_id || q.series_id || ''), x = findItem(L, id);
+    var id = String(q.vod_id || q.series_id || ''), show = a === 'get_series_info', x = findItem(L, id, show);
     var answer = function (it) {
       if (a === 'get_vod_info') return send(res, ALLOW, 200, { info: infoOf(it), movie_data: { stream_id: it.id, name: it.name, container_extension: extOf(it.cmd), category_id: it.cat } });
       seasons(L, it, function (e, d) { e ? fail(e) : send(res, ALLOW, 200, d); });
     };
     if (x) return answer(x);
-    return vodItems(L, '*', function (e) { if (e) return fail(e); var y = findItem(L, id); y ? answer(y) : send(res, ALLOW, 404, { error: 'no such title' }); });
+    // Not in a list read since the helper started: every title (shows from their own module), then look again.
+    return (show ? showItems : vodItems)(L, '*', function (e) { if (e) return fail(e); var y = findItem(L, id, show); y ? answer(y) : send(res, ALLOW, 404, { error: 'no such title' }); });
   }
   send(res, ALLOW, 400, { error: 'not a Stalker action TiviBro knows' });
 }
@@ -422,4 +488,4 @@ function handle(req, res, ALLOW, log, port) {
   send(res, ALLOW, 404, { error: 'unknown stalker route' });
 }
 
-module.exports = { handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _fillStream: fillStream, _archDays: archDays, _isHlsLink: isHlsLink };
+module.exports = { _wait: function (ms) { return ms; }, handle: handle, _login: login, _apis: apis, _linkOf: linkOf, _fillStream: fillStream, _archDays: archDays, _isHlsLink: isHlsLink };

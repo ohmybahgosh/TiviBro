@@ -189,7 +189,8 @@ function list(q, res, ALLOW, log, port) {
   if (!pl || !mine.test(str(q.u)) || !mine.test(str(q.uc))) return send(res, ALLOW, 400, { error: 'not a relay address' });
   readList(pl, kind, function (d) { got(d && d.sig === sig ? d : null); });
   function got(d) {
-  var fresh = d && !q.refresh && (maxAge <= 0 || Date.now() - d.at < maxAge);
+  // An empty copy is never fresh: one saved during a provider's outage was kept for good (issue #110).
+  var fresh = d && d.rows && d.rows.length && !q.refresh && (maxAge <= 0 || Date.now() - d.at < maxAge);
   if (fresh) return send(res, ALLOW, 200, shown(kind, d, q));
   var t0 = Date.now();
   getJSON(str(q.uc), function (e1, cats) {
