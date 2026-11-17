@@ -360,7 +360,7 @@ var Phone = (function () {
           return { msg: r.msg || '', sources: sources() };
         });
       }
-      if (op === 'sources') return MediaStore.load().then(function () { return { sources: sources(), token: MediaStore.preferences().tmdbConfigured ? 1 : 0 }; });
+      if (op === 'sources') return MediaStore.load().then(function () { return { sources: sources(), token: MediaStore.preferences().tmdbConfigured ? 1 : 0, gdAccounts: MediaStore.gdriveAccounts() }; });
       if (op === 'discover') return Media.discover().then(function (list) { found = list; return { servers: list.map(function (x, i) { return { i: i, name: String(x.name || 'Media server').slice(0, 80) }; }) }; });
       if (op === 'adddlna') {
         var server = found[+a.i];
@@ -391,7 +391,7 @@ var Phone = (function () {
          shared folders; gdfolders: one folder's folders; addgdrive: the folder picked).  Never sent back. */
       if (op === 'gdplaces' || op === 'gdfolders' || op === 'addgdrive') {
         var gkey = Media.gdriveKey(a.key), gid = /^[A-Za-z0-9_-]{5,200}$/;
-        if (!gkey) throw new Error('That isn\'t a service account key.  Use the JSON key file Google Cloud gave you.');
+        if (!gkey) throw new Error(/^saved/.test(String(a.key || '')) ? 'No Google Drive key is on the TV yet.  Choose the .json key file.' : 'That isn\'t a service account key.  Use the JSON key file Google Cloud gave you.');
         if (op === 'gdplaces') return Media.gdrivePlaces(gkey).then(function (r) {
           if (r.error) throw new Error(r.message || 'Google Drive didn\'t answer.  Try again.');
           return { account: String(r.account || ''), places: (r.places || []).map(function (p) { return { name: String(p.name || ''), id: String(p.id || ''), driveId: String(p.driveId || ''), kind: p.kind === 'drive' ? 'drive' : 'folder' }; }) };

@@ -752,6 +752,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
               <li>Choose the .json file below.  TiviBro only reads: it never changes or deletes anything.</li>
             </ol>
           </details>
+          <div id="gdSaved" class="row hidden" style="flex-wrap:wrap;gap:8px;margin-bottom:10px"></div>
           <form id="gdForm" class="form">
             <label class="f full">Service account key (.json)<input id="gdKeyFile" type="file" accept=".json,application/json"></label>
             <label class="f full">Or paste the key<textarea id="gdKeyText" rows="3" autocomplete="off" spellcheck="false" placeholder='{ "type": "service_account", ... }'></textarea></label>
@@ -3495,6 +3496,10 @@ $('tEmpty').addEventListener('click', function (e) { if (e.target.id === 'emGo')
 function loadMedia() {
   command('mediaPreferences').then(function (r) { $('mediaLanguage').value = r.data.language; $('mediaSort').value = r.data.sort; $('mediaShowSort').value = r.data.showSort || 'name'; $('mediaSortReverse').checked = !!r.data.sortReverse; $('mediaShowSortReverse').checked = !!r.data.showSortReverse; $('mediaFavInLists').checked = r.data.favoritesInLists !== false; mediaShelves = (r.data.shelves || []).map(function (x, i) { return { key: x.key, name: x.name, off: !!x.off, section: x.section || '', i: i }; }); var SO = { home: 0, movies: 1, shows: 2 }; mediaShelves.sort(function (a, b) { return (SO[a.section] || 0) - (SO[b.section] || 0) || a.i - b.i; }); drawShelves(); $('mediaTokenLabel').textContent = r.data.tmdbConfigured ? 'TMDB API token saved on this TV' : 'Add TMDB API token'; $('mediaTmdbToken').placeholder = r.data.tmdbConfigured ? 'Paste a new token only to replace the saved one' : 'Paste your API key or Read Access Token'; $('mediaTokenStatus').textContent = r.data.tmdbConfigured ? 'Token saved on this TV.  Leave the field blank to keep it.' : 'No token saved yet.'; $('mediaTokenRemove').classList.toggle('hidden', !r.data.tmdbConfigured); $('mediaTokenTest').classList.toggle('hidden', !r.data.tmdbConfigured); }).catch(function (e) { msg('mediaPrefsMsg', 'bad', e.message); });
   return command('mediaList').then(function (r) {
+    // Google Drive keys already on the TV (its libraries' service accounts): a new folder needs no .json again.
+    var accts = []; (r.data || []).forEach(function (s) { if (s.type === 'gdrive' && s.account && accts.indexOf(s.account) < 0) accts.push(s.account); });
+    var sv = $('gdSaved'); sv.textContent = ''; sv.classList.toggle('hidden', !accts.length);
+    accts.forEach(function (a) { var b = document.createElement('button'); b.type = 'button'; b.className = 'primary'; b.textContent = 'Use the key on the TV (' + a + ')'; b.onclick = function () { gd.key = 'saved:' + a; gd.trail = []; gdOpen(); }; sv.appendChild(b); });
     var list = $('mediaList'); list.textContent = '';
     if (!(r.data || []).length) { var note = document.createElement('div'); note.className = 'note keep'; note.textContent = 'No media sources yet.  Add a WebDAV server below, or find a home media server (DLNA / UPnP) with Add media in the phone app (Settings > My media) or on the TV.'; list.appendChild(note); }
     (r.data || []).forEach(function (s) {

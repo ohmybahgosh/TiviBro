@@ -104,6 +104,8 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
     var gdTrail by remember { mutableStateOf(listOf<GdFolder>()) }
     var gdList by remember { mutableStateOf<List<GdFolder>?>(null) }
     var gdName by remember { mutableStateOf("") }
+    // Service accounts whose key is already on the TV (its Google Drive libraries): no .json needed again.
+    var gdSaved by remember { mutableStateOf(listOf<String>()) }
     val pickKey = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             val text = runCatching { ctx.contentResolver.openInputStream(uri)?.use { it.readBytes().takeIf { b -> b.size <= 20_000 }?.toString(Charsets.UTF_8) } }.getOrNull()
@@ -144,9 +146,16 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
                         Choice("Add a WebDAV folder", "Your media folder's address and login, typed here") { step = "webdav" }
                         // The sign-in carries on in the browser and comes back to DropboxDialog (MainActivity).
                         Choice("Dropbox", "Sign in to Dropbox, then pick the folder with your movies and shows") { openDropbox(ctx, model, model.dropboxStart(id)); onDone(false) }
-                        Choice("Google Drive", "Shared drives and folders, with a Google Cloud service account key") { step = "gdkey" }
+                        Choice("Google Drive", "Shared drives and folders, with a Google Cloud service account key") {
+                            step = "gdkey"
+                            run("Asking the TV…", JSONObject().put("op", "sources")) { r -> val a = r.optJSONArray("gdAccounts"); gdSaved = if (a == null) emptyList() else (0 until a.length()).map { a.optString(it) }.filter { it.isNotBlank() } }
+                        }
                     }
                     "gdkey" -> {
+                        gdSaved.forEach { acct ->
+                            Choice("Use the key already on the TV", acct) { gdKey = "saved:$acct"; gdOpen(emptyList()) }
+                        }
+                        if (gdSaved.isNotEmpty()) Spacer(Modifier.size(8.dp))
                         Text("Google doesn't let TVs sign in to read Drive folders, so TiviBro uses a service account: a free robot account that only sees what you share with it.",
                             color = Muted, style = MaterialTheme.typography.bodySmall)
                         Spacer(Modifier.size(6.dp))
@@ -217,8 +226,8 @@ fun MediaAddDialog(model: AppModel, id: String, onDone: (changed: Boolean) -> Un
                 when {
                     step == "pick" -> onDone(false)
                     step == "gdpick" && gdTrail.isNotEmpty() -> gdOpen(gdTrail.dropLast(1))
-                    step == "gdpick" -> step = "gdkey"
-                    else -> { step = "pick"; gdKey = "" }
+                    step == "gdpick" -> { step = "gdkey"; if (gdKey.startsWith("saved:")) gdKey = "" }
+                    else -> { step = "pick"; gdKey = ""; gdSaved = emptyList() }
                 }
             }) { Text(if (step == "pick") "Close" else if (step == "gdpick" && gdTrail.isNotEmpty()) "Up" else "Back") }
         },

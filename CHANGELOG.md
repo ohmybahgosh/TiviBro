@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Google Drive: the key once, then any folder.**  Once a Google Drive library is on the TV, its key is used again for the next one: on the TV, Settings > My media > Add a library > Google Drive picks the shared drive and folder right there with the remote, the web editor has Use the key on the TV, and the phone app offers it before asking for the .json file.  The key still never leaves the TV.
+
 ## 0.6.0 (alpha 153, 2026-11-17)
 
 Pre-release: expect rough edges, and keep a backup before installing.

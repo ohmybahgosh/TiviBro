@@ -734,7 +734,13 @@ var Media = (function () {
      WebDAV password: only the four fields signing needs) and the folder picked with it.  root is the
      folder's id, driveId its shared drive's (a whole shared drive is both).  Checked by scanning before
      anything is saved. */
+  /* A key as given (the .json text or object), or one already on this TV: 'saved' (the first one) or
+     'saved:<the service account's email>'. */
   function gdriveKey(key) {
+    if (typeof key === 'string' && /^saved(:|$)/.test(key.trim())) {
+      var who = key.trim().slice(6), keys = MediaStore.gdriveKeys(), hit = keys.filter(function (k) { return !who || k.account === who; })[0];
+      return hit ? hit.key : '';
+    }
     var j = key;
     if (typeof key === 'string') { try { j = JSON.parse(key.trim()); } catch (e) { j = null; } }
     if (!j || typeof j !== 'object' || !j.client_email || !/PRIVATE KEY/.test(String(j.private_key || ''))) return '';
@@ -743,7 +749,7 @@ var Media = (function () {
   var GD_ID = /^[A-Za-z0-9_-]{5,200}$/;
   function gdrivePlaces(key) {
     var k = gdriveKey(key);
-    if (!k) return Promise.reject(new Error('That isn\'t a service account key.  Use the JSON key file Google Cloud gave you.'));
+    if (!k) return Promise.reject(new Error(/^saved/.test(String(key || '')) ? 'No Google Drive key is on the TV yet.  Choose the .json key file.' : 'That isn\'t a service account key.  Use the JSON key file Google Cloud gave you.'));
     return ask('gdrive/places', { key: k }, 30000);
   }
   function gdriveFolders(key, parent, driveId) {
@@ -763,6 +769,30 @@ var Media = (function () {
       return scanSource(source).then(function (res) { return addScanned(source, res); });
     }).catch(function (e) { U.toast(why(e), 6000); return { error: 'helper', message: why(e) }; });
   }
+  /* Add media > Google Drive on the TV: with a key already on the TV (a Google Drive library added before),
+     the drives and folders are picked right here, with the remote; without one, where to add it. */
+  function gdriveAdd() {
+    var keys = MediaStore.gdriveKeys();
+    if (!keys.length) return gdriveHelp();
+    if (keys.length === 1) return gdrivePick(keys[0], []);
+    UI.menu('Google Drive: which service account?', keys.map(function (k) { return { label: k.account, action: function () { gdrivePick(k, []); } }; }));
+  }
+  // trail: the places and folders opened, from a shared drive (or shared folder) down.
+  function gdrivePick(k, trail) {
+    var here = trail[trail.length - 1];
+    U.toast(here ? 'Opening ' + here.name + '…' : 'Asking Google Drive…');
+    (here ? ask('gdrive/folders', { key: k.key, parent: here.id, driveId: here.driveId || '' }, 30000) : ask('gdrive/places', { key: k.key }, 30000)).then(function (r) {
+      if (r.error) { U.toast(r.message, 7000); return; }
+      var list = here ? r.folders || [] : r.places || [], items = [];
+      if (here) items.push({ label: 'Add ' + RAW(here.name), sub: trail.map(function (t) { return t.name; }).join(' / ') + '  ·  movies and TV shows in it and its folders', action: function () {
+        addGdrive(k.key, here.id, here.driveId || '', trail.map(function (t) { return t.name; }).join(' / '), here.name).then(function (res) { if (res && !res.error) U.toast(here.name + ' added: ' + (res.movies || 0) + ' movies and ' + (res.episodes || 0) + ' episodes so far.', 6000); });
+      } });
+      list.forEach(function (f) { items.push({ label: RAW(f.name), sub: here ? 'Open this folder' : f.kind === 'drive' ? 'Shared drive' : 'Folder shared with ' + k.account, action: function () { gdrivePick(k, trail.concat([{ name: f.name, id: f.id, driveId: f.driveId || (here && here.driveId) || '' }])); } }); });
+      if (!here && !list.length) items.push({ label: 'Nothing is shared with ' + k.account + ' yet', sub: 'Share your drive or folder with that email as a Viewer, then try again' });
+      if (here) items.push({ label: 'Up', action: function () { gdrivePick(k, trail.slice(0, -1)); } });
+      UI.menu(here ? RAW(here.name) : 'Google Drive', items);
+    }, function (e) { U.toast(why(e), 6000); });
+  }
   function gdriveHelp() { UI.menu('Google Drive', [{ label: 'Add it in the web editor (Settings > My media > Edit on a computer) or the TiviBro phone app (Settings > My media > Add media > Google Drive).' }, { label: 'It needs a Google Cloud service account that the drive or folder is shared with.  The web editor walks you through it.' }, { label: 'Done' }]); }
   function dropboxHelp() { UI.menu('Dropbox', [{ label: 'Sign in with the TiviBro phone app: Settings > My media > Add media > Dropbox.' }, { label: 'Done' }]); }
   function askAddress() {
@@ -778,7 +808,7 @@ var Media = (function () {
       { label: 'Browse my network (DLNA / UPnP)', sub: 'Find a home media server with media sharing turned on', action: browseNetwork },
       { label: 'Add a WebDAV server', sub: 'Enter your media folder\'s address and login, or use the web editor', action: askAddress },
       { label: 'Dropbox', sub: 'Sign in with the TiviBro phone app: Settings > My media > Add media > Dropbox.', action: dropboxHelp },
-      { label: 'Google Drive', sub: 'Shared drives and folders: add it in the web editor or the phone app', action: gdriveHelp }
+      { label: 'Google Drive', sub: MediaStore.gdriveKeys().length ? 'Pick a shared drive or folder with the key already on this TV' : 'Shared drives and folders: add the key in the web editor or the phone app', action: gdriveAdd }
     ]);
   }
   function metadataRequest(q, language) {

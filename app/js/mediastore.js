@@ -101,6 +101,13 @@ var MediaStore = (function () {
   }
   var undoable = {};
   function restoreSource(id) { var s = undoable[id]; if (!s || state.sources.length >= MAX_SOURCES) return false; state.sources.push(s); delete undoable[id]; save(); menu(); return true; }
+  /* Google Drive keys already on this TV, one per service account: a new library can use one without the
+     .json file again.  Only the TV reads the key; screens, the web editor and the phone get the email. */
+  function gdriveKeys() {
+    var seen = {}, out = [];
+    state.sources.forEach(function (s) { if (s.type === 'gdrive' && s.key && s.account && !seen[s.account]) { seen[s.account] = 1; out.push({ account: s.account, key: s.key }); } });
+    return out;
+  }
   // For screens and the web editor: no logins (no pass, no Dropbox refresh token).
   function publicSources() {
     return state.sources.map(function (s) {
@@ -235,6 +242,7 @@ var MediaStore = (function () {
   function isWatched(id) { return !!(state.watched && state.watched[id]); }
 
   return {
+    gdriveKeys: gdriveKeys, gdriveAccounts: function () { return gdriveKeys().map(function (k) { return k.account; }); },
     preferredSource: function () { return state.preferredMediaSource || null; }, sourcePreference: sourcePreference, migrationError: function () { return migrationError; }, sources: function () { return state.sources.slice(); }, source: source, sourceMode: sourceMode, publicSources: publicSources, addSource: addSource, removeSource: removeSource, restoreSource: restoreSource,
     tmdbToken: function () { return state.tmdbToken || ''; }, trakt: trakt, setTrakt: setTrakt, sourceUpdate: sourceUpdate, setCheck: setCheck, sortList: sortList, compare: compare, setTmdbToken: setTmdbToken, isFavorite: isFavorite, toggleFavorite: toggleFavorite, sections: sections, preferences: preferences, setMetadata: setMetadata, setFormat: setFormat, markMissed: markMissed, flush: flush, applyScan: applyScan, movies: movies, load: load,
     resume: function (id) { return state.resume[id] || null; }, saveResume: saveResume, saveEpisodeResume: saveEpisodeResume, importResume: importResume, clearResume: clearResume, markWatched: markWatched, isWatched: isWatched

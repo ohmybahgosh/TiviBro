@@ -27,6 +27,13 @@ const titles = l => Array.from(l).map(m => m.title);
   ok('a source gets an id', typeof a === 'string' && a.length > 0);
   ok('the same server is not added twice', M.addSource({ type: 'dlna', name: 'FritzBox again', control: 'http://f/ctl' }) === a && M.sources().length === 1);
   const b = M.addSource({ type: 'webdav', name: 'Cloud', address: 'https://w/', user: 'cust', pass: 'secretkey' });
+  // Google Drive: a key already on the TV can add another folder; only its email ever leaves the store.
+  const gk = JSON.stringify({ type: 'service_account', client_email: 'tb@p.iam.gserviceaccount.com', private_key_id: 'k1', private_key: '-----BEGIN PRIVATE KEY-----\nX\n-----END PRIVATE KEY-----\n' });
+  const g1 = M.addSource({ type: 'gdrive', name: 'GD-M', root: 'FOLDERM01', driveId: 'DRIVE0001', where: 'GD-SHARED / GD-M', account: 'tb@p.iam.gserviceaccount.com', key: gk });
+  M.addSource({ type: 'gdrive', name: 'GD-T', root: 'FOLDERT01', driveId: 'DRIVE0001', where: 'GD-SHARED / GD-T', account: 'tb@p.iam.gserviceaccount.com', key: gk });
+  ok('Google Drive keys on the TV: one per service account', M.gdriveKeys().length === 1 && M.gdriveKeys()[0].key === gk && JSON.stringify(M.gdriveAccounts()) === '["tb@p.iam.gserviceaccount.com"]');
+  ok('screens see the account and folder, never the key', JSON.stringify(M.publicSources()).indexOf('PRIVATE KEY') < 0 && M.publicSources().some((s) => s.root === 'GD-SHARED / GD-T' && s.account === 'tb@p.iam.gserviceaccount.com'));
+  M.removeSource(g1); M.removeSource(M.sources().filter((s) => s.type === 'gdrive')[0].id);
   for (let i = 0; i < 6; i++) M.addSource({ type: 'webdav', name: 'n' + i, address: 'https://w' + i + '/', user: 'u', pass: 'p' });
   let threw = false; try { M.addSource({ type: 'webdav', name: 'nine', address: 'https://z/', user: 'u', pass: 'p' }); } catch (e) { threw = true; }
   ok('at most 8 sources', threw && M.sources().length === 8);
