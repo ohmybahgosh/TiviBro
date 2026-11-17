@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 150, 2026-11-17)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 150
 
 - **Live TV uses far less memory.**  Channels were taken apart for playback in a background worker, whose memory was only cleaned up every few minutes: on an LG C2, TiviBro climbed from 190 to 380 MB and back on an HLS channel, and 136 to 203 MB on a TS one.  Now that's done on the page, and it stays flat at 160 to 180 MB (HLS) and 145 to 155 MB (TS), with no dropped frames or stalls.  Less memory in use means fewer slowdowns and restarts on TVs with 1 or 2 GB.
 - **A rescan no longer looks up every TV show again.**  Each rescan marked all of a library's shows as needing details, so Green (or a new file found by itself) started "Fetching details: 700 shows to go".  Now only a show the scan brought new episodes to is looked up.
 
-## 0.6.0 (alpha 149, 2026-11-17)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 149
+### In alpha 149
 
 - **New media shows up by itself, like Plex.**  TiviBro takes a quick look at each library when it starts, when you open My media and every 15 minutes: one small request each (Dropbox's list of changes, a WebDAV folder's listing, a DLNA server's update number), nothing kept in memory but that one answer.  Only a library that changed is scanned, quietly, then "3 new movies on GD-M".  Not while something plays.  Settings > My media > Look for new files: every 15 minutes, every hour, every 6 hours, or only when you press Green.
 - **Search My media.**  A Search tab beside Home, Movies and TV shows (and Red > Search My media): type a few letters of a movie or show, a collection or a director, and the results take the shelves' place.  Back ends the search.
