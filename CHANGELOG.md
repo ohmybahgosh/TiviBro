@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 148, 2026-11-17)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 148
 
 - **HDR10 and HLG are read from the video itself.**  Many web releases keep the colour setting only inside the video, not the file's header, so only Dolby Vision showed beside the year.  TiviBro now reads it where the TV's decoder does (the HEVC stream's own settings), so HDR10, HLG and SDR show as Plex shows them.  Movies are looked at again once to pick this up.
 - **Wide films say 1080p.**  A 1080p film in cinemascope is 1920 x 800, and was called 720p; the width counts now.  MP4 files read their height right too (they gave the width).
 - **Upcoming movies are new movies.**  TMDB lists re-releases in theaters (Dune, Spirited Away, Terminator 2) as upcoming; Upcoming movies and Now playing in theaters now leave out anything first released more than a month (or four months) ago.
 
-## 0.6.0 (alpha 147, 2026-11-16)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 147
+### In alpha 147
 
 - **Connecting Trakt shows a QR code.**  Scan it with your phone's camera: Trakt opens with the code already filled in, so you only sign in and choose Yes.  The code itself is larger too.
 - **All of your Trakt history comes in.**  Trakt now sends its watched lists a page at a time and without the episodes, so only your first 100 movies and none of your episodes were marked.  Now every page is read, and each of your shows that Trakt says you watched is asked for its episodes (on one TV: 249 more movies and 35 episodes).  Long Trakt lists and watchlists come in whole too.
