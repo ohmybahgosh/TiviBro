@@ -44,3 +44,5 @@
 .nogap .shp-tabs > * + *{margin-left:14px}
 .nogap .shp-track > * + *{margin-left:26px}
 .nogap .mshp-seasons > * + *{margin-left:30px}
+.nogap .mmp-buttons > * + *{margin-left:18px}
+.nogap .mmp-more > * + *{margin-left:22px}

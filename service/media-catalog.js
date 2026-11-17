@@ -487,6 +487,11 @@ Catalog.prototype.query = function (q, cb) {
     });
   }, cb);
 };
+// A show's name for sorting, as My media sorts movies: without "The", "A" or "An", numbers by value ("9-1-1" and "24").
+function titleKey(s) {
+  var t = String((s.metadata && s.metadata.title) || s.title || '');
+  return t.toLowerCase().replace(/^\s*(the|a|an)\s+(?=\S)/, '').replace(/\d+/g, function (n) { n = n.replace(/^0+(?=\d)/, ''); return '000000000'.slice(n.length) + n; });
+}
 function queryShows(self, ctx, q, offset, limit) {
   var disabled = disabledSources(ctx.index, 'show'), revision = self.revision, afterFound = !q.after, rows = [], total = 0;
   var list = Object.keys(ctx.shows).map(function (k) { return ctx.shows[k]; }).filter(function (s) {
@@ -495,7 +500,7 @@ function queryShows(self, ctx, q, offset, limit) {
     return matches(s, q);
   });
   // q.sort (Settings > My media > Sort TV shows by): name, release (first aired, newest first), added (newest first) or rating.
-  function byName(a, b) { var x = String(a.title).toLowerCase(), y = String(b.title).toLowerCase(); return x < y ? -1 : x > y ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0; }
+  function byName(a, b) { var x = titleKey(a), y = titleKey(b); return x < y ? -1 : x > y ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0; }
   function aired(s) { var m = s.metadata || {}; return String(m.releaseDate || m.year || ''); }
   // q.sort rating: TMDB's rating, highest first.  q.reverse turns any of them round.
   function rating(s) { return +((s.metadata || {}).rating) || 0; }

@@ -69,7 +69,18 @@ var MediaStore = (function () {
     job.then(function () { if (saving === job) saving = null; }, function () { if (saving === job) saving = null; });
     return job;
   }
-  function sortKey(m) { return String(m.metadata && m.metadata.title || m.title).toLowerCase() + ' ' + (m.year || ''); }
+  /* The way a library sorts by title: without "The", "A" or "An" in front, and numbers by their value
+     ("Canyon 2" before "Canyon 10"), as Plex does.  Kept per title (sorting 2,000 movies asks thousands of times). */
+  var keys = {}, keyCount = 0;
+  function sortKey(m) {
+    var t = String(m.metadata && m.metadata.title || m.title || ''), k = keys[t];
+    if (k === undefined) {
+      k = t.toLowerCase().replace(/^\s*(the|a|an)\s+(?=\S)/, '').replace(/\d+/g, function (n) { n = n.replace(/^0+(?=\d)/, ''); return '000000000'.slice(n.length) + n; });
+      if (++keyCount > 20000) { keys = {}; keyCount = 1; }
+      keys[t] = k;
+    }
+    return k + ' ' + (m.year || '');
+  }
   function byTitle(a, b) { var x = sortKey(a), y = sortKey(b); return x < y ? -1 : x > y ? 1 : 0; }
   function source(id) { return state.sources.filter(function (s) { return s.id === id; })[0] || null; }
 

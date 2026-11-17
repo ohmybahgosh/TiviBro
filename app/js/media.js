@@ -231,14 +231,14 @@ var Media = (function () {
   }
   /* The shelves and their order (Red > Arrange shelves, saved with the My media preferences).  Groups:
      holidays (each holiday on now), genres (a shelf per genre).  Some lists start switched off. */
-  var ORDER = ['continue', 'browse', 'holidays', 'favorites', 'pick', 'recent', 'new-episodes', 'aired', 'tmdb:trending', 'all', 'shows', 'unwatched', 'unseen-top', 'tmdb:popular-movie', 'tmdb:popular-tv', 'tmdb:airing', 'collections', 'genres', 'decades', 'directors', 'hdr', 'short', 'long', 'top', 'tmdb:top-movie', 'tmdb:top-tv', 'tmdb:now', 'tmdb:upcoming', 'review'];
-  var NAMES = { continue: 'Continue watching', browse: 'Browse (Movies, TV shows, Favorites)', holidays: 'Holiday lists', favorites: 'Favorites', pick: 'Pick of the day', recent: 'Recently added', 'new-episodes': 'Recently added episodes', aired: 'Recently aired', all: 'Movies', shows: 'TV shows',
+  var ORDER = ['library', 'library-shows', 'continue', 'browse', 'holidays', 'favorites', 'pick', 'recent', 'new-episodes', 'aired', 'tmdb:trending', 'all', 'shows', 'unwatched', 'unseen-top', 'tmdb:popular-movie', 'tmdb:popular-tv', 'tmdb:airing', 'collections', 'genres', 'decades', 'directors', 'hdr', 'short', 'long', 'top', 'tmdb:top-movie', 'tmdb:top-tv', 'tmdb:now', 'tmdb:upcoming', 'review'];
+  var NAMES = { continue: 'Continue watching', library: 'Library (all movies, collections)', 'library-shows': 'Library (all shows)', browse: 'Browse (Movies, TV shows, Favorites)', holidays: 'Holiday lists', favorites: 'Favorites', pick: 'Pick of the day', recent: 'Recently added', 'new-episodes': 'Recently added episodes', aired: 'Recently aired', all: 'Movies', shows: 'TV shows',
     unwatched: 'Not watched yet', 'unseen-top': 'Highly rated you haven\'t seen', collections: 'Collections (a shelf each)', genres: 'Genres (a shelf each)', decades: 'Decades (a shelf each)',
     directors: 'Directors (a shelf each)', hdr: '4K and HDR', short: 'Under 90 minutes', long: 'Long movies', top: 'Top rated in your library', review: 'Needs review' };
   LISTS.forEach(function (l) { NAMES[l.key] = l.title; });
   /* Which shelves fit what you have (Arrange shelves leaves the rest out): TV ones need a source with TV
      shows, the rest a source with movies. */
-  var TV_ONLY = { 'new-episodes': 1, aired: 1, shows: 1, 'tmdb:popular-tv': 1, 'tmdb:airing': 1, 'tmdb:top-tv': 1, review: 1 }, BOTH = { continue: 1, favorites: 1, 'tmdb:trending': 1 };
+  var TV_ONLY = { 'library-shows': 1, 'new-episodes': 1, aired: 1, shows: 1, 'tmdb:popular-tv': 1, 'tmdb:airing': 1, 'tmdb:top-tv': 1, review: 1 }, BOTH = { continue: 1, favorites: 1, 'tmdb:trending': 1 };
   function has() { var l = MediaStore.sources(); if (!l.length) return { movies: true, shows: true };   // nothing added yet: every shelf
     return { movies: l.some(function (s) { return s.contentMode !== 'shows'; }), shows: l.some(function (s) { return s.contentMode && s.contentMode !== 'movies'; }) }; }
   function traktOf(k) { return k.indexOf('trakt:') === 0 ? traktLists().filter(function (t) { return t.id === k; })[0] || { kind: 'both', tab: 'home' } : null; }
@@ -340,6 +340,12 @@ var Media = (function () {
     counts = { movies: one(all).length, shows: shows.length + favShows.length, favorites: favList.length };
     var card = function (sec, title, sub, from) { return { id: 'section:' + sec, kind: 'section', section: sec, title: title, year: sub, metadata: { title: title, poster: from && from.metadata.poster || '', backdrop: from && (from.metadata.backdropHd || from.metadata.backdrop) || '', plot: sub } }; };
     built.browse = { title: 'Browse', sub: 'OK opens it', movies: [card('movies', 'Movies', count(counts.movies, '1 movie', '{n} movies'), mvP), card('shows', 'TV shows', count(counts.shows, '1 show', '{n} shows'), shP)].concat(counts.favorites ? [card('favorites', 'Favorites', count(counts.favorites, '1 favorite', '{n} favorites'), fvP)] : []) };
+    /* Library: the whole list as a poster grid (media-grid.js), for big libraries, and the collections. */
+    var gcard = function (id, title, sub, from, grid) { var c = card(id, title, sub, from); c.id = 'grid:' + id; c.grid = grid; return c; };
+    var colCount = 0, cseen = {}; all.forEach(function (m) { var c = m.metadata && m.metadata.collection; if (c && c.id && !cseen[c.id]) { cseen[c.id] = 1; colCount++; } });
+    built.library = { title: 'Library', sub: 'Every movie as posters, A to Z, and your collections', movies: !counts.movies ? [] : [gcard('movies', 'All movies', count(counts.movies, '1 movie', '{n} movies'), posterOf(movies), { type: 'movies' })]
+      .concat(colCount ? [gcard('collections', 'Collections', count(colCount, '1 collection', '{n} collections'), posterOf(all.filter(function (m) { return m.metadata && m.metadata.collection; })), { type: 'collections' })] : []) };
+    built['library-shows'] = { title: 'Library', sub: 'Every show as posters, A to Z', movies: opts.phone || !counts.shows ? [] : [gcard('shows', 'All shows', count(counts.shows, '1 show', '{n} shows'), shP, { type: 'shows' })] };
     var out = [], ar = arrangement(), kinds = has();
     ar.order.forEach(function (k) {
       if (ar.off(k)) return;
@@ -509,6 +515,7 @@ var Media = (function () {
       box.appendChild(U.el('div', 'media-kicker', 'Browse'));
       box.appendChild(U.el('h1', 'media-title', m.title));
       box.appendChild(U.el('div', 'media-facts', m.year));
+      if (m.grid) { box.appendChild(U.el('p', 'media-summary', m.grid.type === 'collections' ? 'Every collection you have movies from, as posters.  OK on one shows its movies in order.' : m.grid.type === 'shelf' ? 'The whole list as posters, to scroll down through.' : 'Every title as posters, A to Z: scroll down, or jump to a letter on the right.  Red sorts and filters.')); return; }
       box.appendChild(U.el('p', 'media-summary', m.section === 'shows' ? 'Your shows: what to watch next, every show, and TMDB\'s TV lists.' : m.section === 'favorites' ? 'Your favorite movies and shows.' : 'Your movies: recently added, a pick for today, collections, genres, decades, 4K and HDR, and TMDB\'s lists.'));
       box.appendChild(U.el('div', 'media-caption', 'OK opens it   ·   or ▲ to the tabs'));
       return;
@@ -541,7 +548,7 @@ var Media = (function () {
       (function (node) {
         function focus() { followTop = false; shelfAt = node._row; shelfPos[shelves[shelfAt].id] = node._at; drawShelves(); }
         node.addEventListener('mousemove', function () { if (UI.pointer && (shelfAt !== node._row || (shelfPos[shelves[node._row].id] || 0) !== node._at)) focus(); });
-        node.addEventListener('click', function () { focus(); play(itemsVL.current(), false); });
+        node.addEventListener('click', function () { focus(); openTitle(itemsVL.current()); });
       })(tile);
       track.appendChild(tile); pool.push({ el: tile, art: art, title: name, year: year, progress: progress, bar: bar, tag: tag, favorite: favorite, key: '' });
     }
@@ -593,11 +600,19 @@ var Media = (function () {
     var list = query ? searchShelves() : shelvesNow();
     shelves = query ? list : list.filter(function (s) { return s.movies.length; });
     if (!shelves.length) shelves = list.filter(function (s) { return s.id === 'all'; });
+    // See all, at the end of a long shelf: the whole list as a poster grid (media-grid.js).
+    if (!query) shelves = shelves.map(function (sh) {
+      if (sh.movies.length < 12 || /^(browse|library)/.test(sh.id)) return sh;
+      var c = { id: 'seeall:' + sh.id, kind: 'section', grid: { type: 'shelf', id: sh.id }, title: 'See all', year: count(sh.movies.length, '1 title', '{n} titles'), metadata: { title: 'See all', poster: '' } };
+      var copy = {}; Object.keys(sh).forEach(function (k) { copy[k] = sh[k]; }); copy.movies = sh.movies.concat([c]); return copy;
+    });
     if (!shelves.length) shelves = [{ id: 'all', title: 'Movies', movies: [] }];
     if (!split) { section = 'home'; tabsFocus = false; }
     drawTabs();
     if (oldShelf) shelfAt = shelves.map(function (s) { return s.id; }).indexOf(oldShelf);
     if (followTop || shelfAt < 0) shelfAt = 0;
+    // Opening on something to watch: Library (the grid's doorway) is one ▲ above it, not where you land.
+    if (followTop && shelves[0] && /^library/.test(shelves[0].id) && shelves.length > 1) shelfAt = 1;
     var active = shelves[shelfAt];
     if (followTop) shelfPos[active.id] = 0;
     else if (movie) { var i = active.movies.findIndex(function (m) { return m.id === movie.id; }); if (i >= 0) shelfPos[active.id] = i; }
@@ -1070,6 +1085,50 @@ var Media = (function () {
   }
 
   /* ---------- playback ---------- */
+  /* The library grid (media-grid.js): every movie or show as posters, the collections, or a whole shelf (its See all). */
+  function openGrid(spec) {
+    if (typeof MediaGrid === 'undefined') return;
+    var p = MediaStore.preferences(), src = p.sourceFilter && MediaStore.source(p.sourceFilter) ? p.sourceFilter : '';
+    var mine = function (m) { return !src || m.src === src || (m.sourceIds || []).indexOf(src) >= 0 || m.sourceId === src; };
+    var movies = mergeCopies(MediaStore.movies(null).filter(mine))(MediaStore.movies(null).filter(mine));
+    var title = function (m, back) { if (m.kind === 'show') return MediaShowPage.open(m, back); if (typeof MediaMoviePage !== 'undefined') return MediaMoviePage.open(m, back); play(m, false); };
+    if (spec.type === 'movies') return MediaGrid.open({ title: 'All movies', items: movies, kind: 'movie', back: restore, open: title });
+    if (spec.type === 'shows') {
+      var seen = {}, shows = seriesCards.concat(favouriteShows).filter(function (x) { if (seen[x.id]) return false; seen[x.id] = 1; return mine(x); });
+      return MediaGrid.open({ title: 'All shows', items: shows, kind: 'show', back: restore, open: title });
+    }
+    if (spec.type === 'collections') {
+      var cols = {}, order = [];
+      movies.forEach(function (m) { var c = m.metadata && m.metadata.collection; if (!c || !c.id) return; if (!cols[c.id]) { cols[c.id] = { id: c.id, title: c.name || 'Collection', list: [] }; order.push(c.id); } cols[c.id].list.push(m); });
+      var items = order.map(function (id) {
+        var x = cols[id];
+        x.list.sort(function (a, b) { var p = String(a.metadata.releaseDate || a.year || ''), q = String(b.metadata.releaseDate || b.year || ''); return p < q ? -1 : p > q ? 1 : 0; });
+        return { id: id, kind: 'collection', title: x.title, count: x.list.length, list: x.list, metadata: { title: x.title, poster: (x.list.filter(function (m) { return m.metadata.poster; })[0] || { metadata: {} }).metadata.poster } };
+      });
+      var openCol = function (c, back) { MediaGrid.open({ title: c.title, items: c.list, kind: 'movie', custom: true, back: back, open: title }); };
+      return MediaGrid.open({ title: 'Collections', items: items, kind: 'collection', back: restore, open: openCol });
+    }
+    if (spec.type === 'shelf') {
+      var sh = shelves.filter(function (x) { return x.id === spec.id; })[0];
+      if (!sh) return;
+      var list = sh.movies.filter(function (m) { return m.kind !== 'section'; });
+      // A list with an order of its own (a collection in release order, Recently added, TMDB's and Trakt's) keeps it.
+      var custom = /^(collection:|recent|new-episodes|aired|continue|tmdb:|trakt:|holiday:|pick|top|unseen-top|director:)/.test(sh.id);
+      return MediaGrid.open({ title: sh.title, items: list, kind: list.every(function (m) { return m.kind === 'show'; }) ? 'show' : 'movie', custom: custom, back: restore, open: function (m, back) { if (m.continueEpisode || m.kind === 'live') return play(m, false); title(m, back); } });
+    }
+  }
+  /* OK on a title: a movie opens its own page (media-moviepage.js), a show its own (media-showpage.js); the rest
+     (an episode to continue, a live channel, a file to sort out) does what it did. */
+  function isMovie(m) { return m && !m.continueEpisode && !m.kind && !(m.review && m.review.length) && !!m.src; }
+  function openTitle(m) {
+    if (isMovie(m) && typeof MediaMoviePage !== 'undefined') { m.returnTo = null; return MediaMoviePage.open(m, restore); }
+    play(m, false);
+  }
+  // From a movie's page: play, and come back to the page when it ends or Back stops it.
+  function playFrom(m, fromStart, back) {
+    if (back) m.returnTo = function () { m.returnTo = null; back(); };
+    play(m, fromStart);
+  }
   function play(m, fromStart) {
     if (!m) return;
     if (m.continueEpisode) return MediaSeries.resume(m);
@@ -1212,9 +1271,9 @@ var Media = (function () {
     }
   };
 
-  function itemMenu(m) {
+  function itemMenu(m, back) {
     if (!m) return;
-    if (m.kind === 'show') return MediaSeries.showItem(m,restore);
+    if (m.kind === 'show') return MediaSeries.showItem(m, back || restore);
     if (m.kind === 'live') return play(m);
     if (m.review && m.review.length) return MediaSeries.correct(m,restore);
     var r = MediaStore.resume(m.id);
@@ -1228,8 +1287,8 @@ var Media = (function () {
       reviewCards.length > 0 && { label:'Needs review',action:function () { MediaSeries.review(); } },
       copies(m).length > 1 && { label: 'Choose a copy', sub: copies(m).length + ' copies of this movie', action: function () { UI.menu('Play which copy?', copies(m).map(function (x) { var src = MediaStore.source(x.src); return { label: RAW((src ? src.name : 'Unknown source') + (fileInfo(x) ? '   ·   ' + fileInfo(x) : '')), sub: x.size ? size(x.size) : '', action: function () { play(x, false); } }; })); } },
       { label: 'File information', sub: pictureInfo(m) + (m.size ? ' · ' + size(m.size) : ''), action: function () { UI.menu('File information', [{ label: RAW(m.file), sub: (MediaStore.source(m.src) || {}).name || '' }]); } },
-      !MediaStore.isWatched(m.id) ? { label: 'Mark as watched', action: function () { MediaStore.markWatched(m.id, true); refresh(); } } : { label: 'Mark as not watched', action: function () { MediaStore.markWatched(m.id, false); refresh(); } }
-    ]);
+      !MediaStore.isWatched(m.id) ? { label: 'Mark as watched', action: function () { MediaStore.markWatched(m.id, true); refresh(); if (back) back(); } } : { label: 'Mark as not watched', action: function () { MediaStore.markWatched(m.id, false); refresh(); if (back) back(); } }
+    ], back);
   }
 
   /* ---------- remote and pointer navigation ---------- */
@@ -1238,7 +1297,7 @@ var Media = (function () {
     var m = itemsVL.current();
     if (tabsFocus) return UI.hints(searchTab || query ? [['', 'OK  search'], ['', '◀ ▶  Home, Movies, TV shows'], ['', 'Back  menu', 'back']] : [['', '◀ ▶  Home, Movies, TV shows, Search'], ['', '▼  shelves'], ['', 'Back  menu', 'back']]);
     if (m && m.kind === 'section') return UI.hints([['', 'OK  open ' + m.title], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', ({ shows: 'Rescan TV shows', movies: 'Rescan movies' })[detailsKindNow()] || 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
-    UI.hints([['', m && m.kind === 'live' ? 'OK  watch' : 'OK  play'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', ({ shows: 'Rescan TV shows', movies: 'Rescan movies' })[detailsKindNow()] || 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
+    UI.hints([['', m && m.kind === 'live' ? 'OK  watch' : m && m.continueEpisode ? 'OK  play' : 'OK  open'], ['', 'Hold OK  options', 'hold'], ['', 'Back  menu', 'back'], ['red', 'Sort and shelves'], ['green', ({ shows: 'Rescan TV shows', movies: 'Rescan movies' })[detailsKindNow()] || 'Rescan'], ['yellow', ({ shows: 'Fetch show details', movies: 'Fetch movie details' })[detailsKindNow()] || 'Fetch details'], ['blue', 'Settings']]);
   }
   /* Red: sort, go to a shelf, arrange shelves, which source, and the focused title's options. */
   function goShelf(id) { var i = shelves.map(function (s) { return s.id; }).indexOf(id); if (i >= 0) { shelfAt = i; drawShelves(); hints(); } }
@@ -1332,7 +1391,7 @@ var Media = (function () {
     else if (s && (a === 'left' || a === 'right' || a === 'chup' || a === 'chdown')) {
       shelfPos[s.id] = Math.max(0, Math.min(s.movies.length - 1, at + (a === 'left' ? -1 : a === 'right' ? 1 : a === 'chup' ? -6 : 6))); drawShelves(); hints();
     } else if (a === 'ok' && s && s.id === 'search:none') askSearch();
-    else if (a === 'ok') { var cm = itemsVL.current(); if (cm && cm.kind === 'section') { tabsFocus = false; setSection(cm.section); } else play(cm, false); }
+    else if (a === 'ok') { var cm = itemsVL.current(); if (cm && cm.kind === 'section' && cm.grid) openGrid(cm.grid); else if (cm && cm.kind === 'section') { tabsFocus = false; setSection(cm.section); } else openTitle(cm); }
     else if (a === 'hold' || a === 'info') { var hm = itemsVL.current(); if (hm && hm.kind !== 'section') itemMenu(hm); }
     return true;
   }
@@ -1397,7 +1456,7 @@ var Media = (function () {
     applyDetails: function (movieId, tmdbId) { return metadataRequest({ id: tmdbId }).then(function (r) { if (!r.metadata) throw new Error('TMDB has no details for that.'); return MediaStore.setMetadata(movieId, r.metadata); }).then(function () { refresh(); }); }, findDetails: findDetails, libraryDetails: function (id) { var s = MediaStore.source(id); if (s) sourceDetails(s); }, lookUpWaiting: function (id) { if (needToken()) return; if (fetchingDetails) return U.toast('Movie details are already being fetched.'); MediaStore.load().then(function () { var list = MediaStore.movies(id).filter(function (m) { return !(m.metadata && m.metadata.id) && !m.tmdbMiss; }); if (!list.length) return U.toast('Every movie here has been looked up.', 4000); return fetchDetails(list, MediaStore.preferences().language); }).catch(function (e) { U.toast(why(e), 6000); }); }, detailsLabel: detailsLabel, arrangeShelves: function (sec) { arrangeMenu(null, sec || 'home'); }, bothKinds: function () { var h = has(); return !!(h.movies && h.shows); }, busyText: busyText, setBusy: setBusy,
     // The web editor's shelf list: with movies and shows, each shelf says which tab it's on (Continue watching: Home).
     shelfList: function () { var ar = arrangement(), h = has(), both = h.movies && h.shows; return ar.order.filter(function (k) { return fits(k, h); }).map(function (k) { return { key: k, name: NAMES[k], off: ar.off(k), section: !both ? '' : traktOf(k) ? traktOf(k).tab : k === 'continue' || inSection(k, 'home') ? 'home' : TV_ONLY[k] ? 'shows' : 'movies' }; }); }, holidaysNow: holidaysNow, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
-    watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: play, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
+    watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playFile: function (m, fromStart, back) { if (back) playFrom(m, fromStart, back); else play(m, fromStart); }, openTitle: openTitle, optionsFor: itemMenu, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { namedIn: namedIn, section: function (x) { if (x) { tabsFocus = false; setSection(x); } return { section: section, split: split, tabs: tabsFocus }; }, goShelf: function (id) { followTop = false; goShelf(id); }, addServer: addServer, addAddress: addAddress, addDropbox: addDropbox, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };
 })();

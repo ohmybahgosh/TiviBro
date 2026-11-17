@@ -102,6 +102,19 @@ function create(opts) {
     if (!credential) return cb(new Error('Add your TMDB API key or Read Access Token in Settings > My media.'));
     if (q.check) return request('/configuration', function (e) { cb(e, e ? null : { ok: true }); });
     var language = LOCALES[q.language] ? q.language : 'en', locale = LOCALES[language];
+    /* A movie's or show's trailer for its page in My media (q.videos with its TMDB id): TMDB's YouTube videos,
+       an official trailer in your language first, then English, then a teaser.  { trailer: YouTube id or '' }. */
+    if (q.videos) {
+      var vm = /^tmdb:(tv:)?([1-9][0-9]*)$/.exec(String(q.videos));
+      if (!vm) return cb(new Error('Choose a valid TMDB title.'));
+      return request('/' + (vm[1] ? 'tv' : 'movie') + '/' + vm[2] + '/videos?include_video_language=' + language + ',en,null', function (e, r) {
+        if (e) return cb(e);
+        var list = (r && Array.isArray(r.results) ? r.results : []).filter(function (v) { return v && v.site === 'YouTube' && /^[A-Za-z0-9_-]{11}$/.test(v.key || ''); });
+        var score = function (v) { return (v.type === 'Trailer' ? 8 : v.type === 'Teaser' ? 4 : 0) + (v.official ? 2 : 0) + (v.iso_639_1 === language ? 1 : 0); };
+        list.sort(function (a, b) { return score(b) - score(a); });
+        cb(null, { trailer: list.length && score(list[0]) >= 4 ? list[0].key : '' });
+      });
+    }
     /* TMDB's lists for My media's shelves (q.list), only the IDs, best first: trending (this week), popular,
        top_rated, now_playing, upcoming (movies), airing_today (TV), or holiday: movies tagged with a holiday's
        keyword (q.keyword, "christmas"), most popular first.  Nothing about the viewer's library is sent; the
