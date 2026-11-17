@@ -408,7 +408,7 @@ body.pointer .set-nav>div:hover{color:var(--text)}
 /* ---------- side menu ---------- */
 .sidenav{position:absolute;left:0;top:0;bottom:0;width:104px;z-index:4;display:flex;flex-direction:column;padding:36px 0 28px;
   background:linear-gradient(90deg,#080b16 0%,#080b16 70%,rgba(8,11,22,0) 100%);overflow:hidden}
-body.nav-open .sidenav{width:360px;background:#080b16}
+body.nav-open .sidenav{width:360px;background:#080b16;z-index:35}
 /* The groups column under the open menu: hidden, so a long group name doesn't peek out beside it. */
 body.nav-open #viewLive .col.groups{visibility:hidden}
 body.nav-hidden .sidenav,body.full .sidenav{visibility:hidden}

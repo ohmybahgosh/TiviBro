@@ -1,6 +1,7 @@
 /* My media's library grid (for big libraries): a whole list as posters, nine to a row, that you scroll down
    through, like Plex's library view.  The letters down the right side jump to the titles starting with one
-   (▶ from the last column onto them, ▲ ▼ along them, OK or ◀ back to the posters); CH+ and CH− go a page at a
+   (▶ from the last column onto them, ▲ ▼ along them, OK or ◀ back to the posters), ◀ from the first column opens
+   the side menu; CH+ and CH− go a page at a
    time; Red sorts and filters (genre, decade, not watched yet, 4K); OK opens the title's page and Back comes
    back to the same place.  Collections open the same way: a grid of collections, then a collection's movies.
    Only the rows on screen are drawn, so 10,000 titles scroll as fast as 10.  Poster size (Red, or Settings >
@@ -204,6 +205,8 @@ var MediaGrid = (function () {
     } else {
       if (!n) return true;
       if (a === 'left' && g.sel % COLS > 0) g.sel--;
+      // ◀ from the first column: the side menu, as everywhere else (Back or ▶ there comes back to the grid).
+      else if (a === 'left') { var st = g; Views.tabBar(function () { if (g === st) { UI.setHandler(keys); draw(); } }); return true; }
       else if (a === 'right') {
         if (g.sel % COLS < COLS - 1 && g.sel < n - 1) g.sel++;
         else if (!g.custom && g.sort === 'title') { g.zone = 'letters'; g.letter = Math.max(0, LETTERS.indexOf(letterOf(g.list[g.sel]))); }
@@ -216,5 +219,7 @@ var MediaGrid = (function () {
     }
     draw(); return true;
   }
-  return { open: open, isOpen: function () { return !!g; } };
+  // Another tab chosen from the side menu while the grid was open: it goes, without its Back (media.js open).
+  function dismiss() { g = null; var b = $('mediaGrid'); if (b) b.innerHTML = ''; $('viewMedia').classList.remove('mgr-on'); }
+  return { open: open, dismiss: dismiss, isOpen: function () { return !!g; } };
 })();

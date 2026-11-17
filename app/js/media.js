@@ -1479,6 +1479,7 @@ var Media = (function () {
   }
   function open(keepState) {
     playToken++;
+    if (typeof MediaGrid !== 'undefined' && MediaGrid.isOpen() && !keepState) MediaGrid.dismiss();
     if (!built) build(); UI.setHandler(keys);
     if (!keepState) { followTop = true; shelfPos = {}; section = 'home'; tabsFocus = false; query = ''; searchTab = false; }
     refreshSeries(); listsSoon();
