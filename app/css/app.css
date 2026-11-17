@@ -1075,7 +1075,6 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .shp-tab{padding:12px 24px;border-radius:999px;background:var(--raised);color:var(--muted);font-size:26px;font-weight:600;border:3px solid transparent}
 .shp-tab.on{background:var(--accent);color:var(--on-accent)}
 .shp-tab.sel{border-color:var(--text);box-shadow:0 0 0 3px var(--ink)}
-.shp-count{margin-left:12px;font-size:21px;opacity:.75}
 .shp-more{font-size:34px;color:var(--muted);padding:0 6px}
 .shp-track{position:absolute;left:152px;top:536px;display:flex;gap:26px}
 .shp-card{flex:none;width:400px;opacity:.82}

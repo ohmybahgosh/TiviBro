@@ -74,7 +74,6 @@ var Vod = (function () {
     var tabs = U.el('div', 'shp-tabs'), first = Math.max(0, Math.min(sp.at - 3, sp.rows.length - 7));
     sp.rows.slice(first, first + 7).forEach(function (r, i) {
       var t = U.el('div', 'shp-tab' + (first + i === sp.at ? ' on' : '') + (sp.zone === 'tabs' && first + i === sp.at ? ' sel' : ''), r.name);
-      t.appendChild(U.el('span', 'shp-count', String(r.count)));
       t.onclick = function () { spSeason(first + i); sp.zone = 'eps'; spDraw(); };
       tabs.appendChild(t);
     });

@@ -102,7 +102,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     // The show's page (issue #110's P.S.): its seasons as tabs and its episodes as cards; Right to episode 2.
     await page.keyboard.press('Enter'); await wait(1500);
     const pg = await ev(() => ({ on: document.getElementById('viewVod').classList.contains('show-on'), title: (document.querySelector('#vodShow .media-title') || {}).textContent || '', tabs: [].slice.call(document.querySelectorAll('#vodShow .shp-tab')).map((t) => t.textContent), cards: document.querySelectorAll('#vodShow .shp-card').length }));
-    ok('a show opens on its own page: title, season tabs with counts, episode cards', pg.on && pg.title === 'Harbor Street' && pg.tabs.length >= 2 && /^Season 1\d+$/.test(pg.tabs[0]) && pg.cards >= 2, JSON.stringify(pg));
+    ok('a show opens on its own page: title, season tabs (names only, issue #110), episode cards', pg.on && pg.title === 'Harbor Street' && pg.tabs.length >= 2 && /^Season 1$/.test(pg.tabs[0]) && pg.cards >= 2, JSON.stringify(pg));
     await page.keyboard.press('ArrowRight'); await wait(1200);
     const card = () => ev(() => { const c = document.querySelector('#vodShow .shp-card.sel'); return c ? { name: (c.querySelector('.shp-name') || {}).textContent || '', sub: (c.querySelector('.shp-sub') || {}).textContent || '', img: (c.querySelector('img') || {}).src || '', cover: !!c.querySelector('img.cover'), foot: (document.querySelector('#vodShow .shp-foot') || {}).textContent || '' } : null; });
     const ep = await card();
