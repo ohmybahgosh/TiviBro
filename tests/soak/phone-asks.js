@@ -142,12 +142,14 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   const md_mc = await ask('vodcats', { kind: 'media' });
   ok('My media on the phone: its shelves', md_mc.cats.map((c) => c.id).indexOf('browse') < 0 && md_mc.cats.filter((c) => c.id === 'all')[0].count === 2, JSON.stringify(md_mc));
   const md_mm = await ask('voditems', { kind: 'media', cat: 'all' });
-  ok('its movies', md_mm.total === 2 && md_mm.items[0].n === 'Moonlight Harbor' && md_mm.items[0].y === '2015', JSON.stringify(md_mm));
+  // A to Z without "The": The Glass Orchard, then Moonlight Harbor.
+  ok('its movies', md_mm.total === 2 && md_mm.items[0].n === 'The Glass Orchard' && md_mm.items[1].n === 'Moonlight Harbor' && md_mm.items[1].y === '2015', JSON.stringify(md_mm));
+  const moon = md_mm.items.filter((x) => x.n === 'Moonlight Harbor')[0] || md_mm.items[0];
   const md_mf = await ask('voditems', { kind: 'media', q: 'glass' });
   ok('searching My media', md_mf.items.length === 1 && md_mf.items[0].n === 'The Glass Orchard');
-  const md_mdi = await ask('vodinfo', { kind: 'media', id: md_mm.items[0].id });
+  const md_mdi = await ask('vodinfo', { kind: 'media', id: moon.id });
   ok('a movie\'s details, with its file and source', md_mdi.n === 'Moonlight Harbor' && /1080p/.test(md_mdi.media) && /Home server/.test(md_mdi.media), JSON.stringify(md_mdi));
-  await ask('vodplay', { kind: 'media', id: md_mm.items[0].id, fromStart: true });
+  await ask('vodplay', { kind: 'media', id: moon.id, fromStart: true });
   await page.waitForFunction(() => Views.mode === 'vod', null, { timeout: 15000 }).catch(() => {});
   const md_mp = await ev(() => ({ tab: Views.tab, title: Views.vod && Views.vod.meta && Views.vod.meta.title, local: !!(Views.vod && Views.vod.meta && Views.vod.meta.local) }));
   ok('a movie picked on the phone plays from My media on the TV', md_mp.tab === 'media' && md_mp.local && /Moonlight Harbor/.test(md_mp.title || ''), JSON.stringify(md_mp));
@@ -286,8 +288,9 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
   // Settings from the phone: every page, the same rows as on the TV, and changes that stick.
   const sa = (o) => ask('settings', o, { seal: true });
+  await ev(() => { Store.settings.advView = true; });   // every row in place (Advanced view), as the checks below expect
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length === 18, JSON.stringify(secs.sections));
+  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length === 11, JSON.stringify(secs.sections));
   let pg = await sa({ op: 'page', sec: 'look' });
   const clock = pg.rows.find((r) => r.label === 'Show clock'), nums = pg.rows.find((r) => r.label === 'Numbers');
   ok('a page comes as rows: toggles, choices with their options', clock && clock.kind === 'toggle' && nums && nums.kind === 'choice' && nums.options.length === 3, JSON.stringify(pg.rows.slice(0, 4)));
@@ -363,7 +366,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('a login with a field missing is turned down, with the reason', half.code === 'tv' && /server, username and password/.test(half.message), half.message);
   // Its connection changed from the phone (Settings > Playlists and accounts > the playlist > Connection): a row the phone does itself.
   const pid = await p2.evaluate(() => Store.settings.playlists.find((p) => p.name === 'Typed on the phone').id);
-  const rows = await p2.evaluate((id) => { const r = Settings.phone.page('playlists', []).rows; const i = r.findIndex((x) => x.kind === 'page' && /Typed on the phone/.test(x.label)); return i >= 0 ? Settings.phone.page('playlists', [r[i].i]).rows : []; }, pid);
+  const rows = await p2.evaluate((id) => { Store.settings.advView = true; const r = Settings.phone.page('playlists', []).rows; const i = r.findIndex((x) => x.kind === 'page' && /Typed on the phone/.test(x.label)); return i >= 0 ? Settings.phone.page('playlists', [r[i].i]).rows : []; }, pid);
   const conn = rows.find((r) => r.label === 'Connection');
   ok('Connection is a form on the phone, with the playlist and its type', conn && conn.phone === 'edit-playlist' && conn.sid === pid && conn.ptype === 'xtream', JSON.stringify(conn));
   const edited = await ask('playlist', { edit: pid, server: '', user: 'demo', pass: 'demo', name: 'Renamed on the phone' }, { seal: true });

@@ -77,7 +77,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
     ok('show is in Favorites and still on the TV shows shelf',await page.evaluate(()=>[...document.querySelectorAll('.media-shelf')].some(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent==='TV shows'&&/^1 show/.test(x.querySelector('.media-shelf-count').textContent))));
     ok('the TV shows tab has no movie shelves',!(await page.evaluate(()=>[...document.querySelectorAll('.media-shelf')].some(x=>!x.classList.contains('hidden')&&/^(Movies|Recently added movies)$/.test(x.querySelector('h2').textContent)))));
     await page.evaluate(()=>Media._test.section('favorites'));await page.waitForTimeout(150);
-    await page.evaluate(()=>Media._test.goShelf('favorites-shows'));await page.keyboard.press('Enter');await page.waitForTimeout(150);   // the show on Favorites
+    await page.evaluate(()=>Media._test.goShelf('favorites-shows'));await page.evaluate(()=>UI.press('hold'));await page.waitForTimeout(150);   // the show on Favorites: its options (OK opens its page)
     await page.keyboard.press('ArrowDown');await page.keyboard.press('Enter');await page.waitForTimeout(150);
     await page.keyboard.press('Escape');
     await page.waitForFunction(()=>![...document.querySelectorAll('.media-shelf')].some(x=>!x.classList.contains('hidden')&&x.querySelector('h2').textContent==='Favorite shows'));

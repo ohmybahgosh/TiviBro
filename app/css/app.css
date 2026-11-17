@@ -1093,7 +1093,7 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .shp-pos{position:absolute;right:56px;top:880px;font-size:22px;color:var(--muted)}
 
 /* ---------- Settings rows (the Settings overhaul): each kind its own look, so rows don't blend ---------- */
-.set-help{flex:none;height:92px;margin-top:8px;padding:12px 24px 0;border-top:1px solid rgba(255,255,255,.08);color:var(--text);opacity:.85;font-size:22px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+.set-help{flex:none;height:106px;margin-top:8px;padding:12px 24px 0;border-top:1px solid rgba(255,255,255,.08);color:var(--text);opacity:.85;font-size:22px;line-height:1.4;overflow:hidden}
 .set-body .opt{border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:2px}
 .set-body .opt.focus{border-bottom-color:transparent}
 .set-body .opt .ol small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}

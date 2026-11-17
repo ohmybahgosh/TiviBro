@@ -51,7 +51,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await key('ArrowUp', 40, 40);
   const clockTop = await ev(() => { const c = document.getElementById('clock').getBoundingClientRect(), r = document.querySelector('.set-scroll .opt.focus').getBoundingClientRect(); return r.top >= c.bottom; });
   ok('the top row clears the clock', clockTop);
-  await click('^System$');
+  await ev(() => { Store.settings.advView = true; }); await click('^System$');
   await click('^What this TV can play');
   ok('a page of facts draws no row as selected', await ev(() => !document.querySelector('.set-scroll .opt.focus')));
   const y0 = await ev(() => document.querySelector('.set-scroll')._y || 0);

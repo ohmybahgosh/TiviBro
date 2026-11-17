@@ -115,8 +115,9 @@ var MediaMoviePage = (function () {
   }
   function press(id) {
     var m = pg.m, back = pg.back;
-    if (id === 'resume' || id === 'play') { close(true); Media.playFile(m, false, reopen(m, back)); }
-    else if (id === 'start') { close(true); Media.playFile(m, true, reopen(m, back)); }
+    // My media's own keys while the movie opens (Back cancels it), then the page again when it ends.
+    if (id === 'resume' || id === 'play') { close(true); Media.restore(); Media.playFile(m, false, reopen(m, back)); }
+    else if (id === 'start') { close(true); Media.restore(); Media.playFile(m, true, reopen(m, back)); }
     else if (id === 'trailer') watchTrailer(pg.trailer);
     else if (id === 'fav') { MediaStore.toggleFavorite(m.id); if (Media.refresh) Media.refresh(); draw(); }
     else if (id === 'more') options();

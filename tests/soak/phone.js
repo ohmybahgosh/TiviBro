@@ -36,16 +36,20 @@ const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', heade
 
   ok('TiviBro tells the helper its version', (await ctl('/companion/status')).ownName === '' && (await (await fetch(RELAY + '/companion/status')).json()).on === false);
   await ev(() => { if (UI.modalOpen) UI.close(); Views.switchTab('settings'); Settings.open(); }); await page.waitForTimeout(600);
-  const navRel = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
-  ok('a release build has no phone app part yet: the page is the web editor', navRel.indexOf('Web editor') > 0 && !navRel.some((x) => /Phone app/.test(x)) && !(await ev(() => Settings.section('phone'))), navRel.join(', '));
+  const navRel = await ev(() => Settings.phone.page('playlists', []).rows.map((r) => r.label));
+  ok('a release build has no phone app part yet: the page is the web editor', navRel.indexOf('Web editor') >= 0 && !navRel.some((x) => /Phone app/.test(x)) && !(await ev(() => Settings.section('phone'))), navRel.join(', '));
   await ev(() => { TIVIBRO_VERSION = '0.6.0-alpha.99'; Settings.open(); Settings.section('phone'); }); await page.waitForTimeout(800);
-  const navTest = await ev(() => [].map.call(document.querySelectorAll('#setNav > div'), (d) => d.innerText.trim()));
-  ok('test builds have it, with the web editor on one page', navTest.indexOf('Phone app and web editor') > 0, navTest.join(', '));
+  const navTest = await ev(() => Settings.phone.page('playlists', []).rows.map((r) => r.label));
+  ok('test builds have it, with the web editor on one page', navTest.indexOf('Phone app and web editor') >= 0, navTest.join(', '));
+  // The connection switch, as the phone and the web editor see it (on the TV it is a switch).
+  const conn = () => ev(() => { const r = Settings.phone.page('connect', []).rows.filter((x) => x.label === 'Phone app connection')[0]; return r ? { on: r.on, sub: r.sub } : null; });
   let t = await text();
-  ok('Settings has a Phone app section, off at first', /Phone app/.test(t) && /Phone app connection[^‹]*‹Off›/.test(t) && /Turns the connection on/.test(t), t.slice(t.indexOf('Two ways'), t.indexOf('Two ways') + 400));
+  let cs = await conn();
+  ok('Settings has a Phone app section, off at first', /Phone app/.test(t) && cs && cs.on === false && /Pair the TiviBro app/.test(t), JSON.stringify(cs));
   await row(/^Phone app connection/); await page.waitForTimeout(1200);
   t = await text();
-  ok('switching it on shows Pair a phone, no phones yet, and the address', /Phone app connection[^‹]*‹On›/.test(t) && /Pair the TiviBro app/.test(t) && /none yet/.test(t) && /, port 47810/.test(t), t.slice(0, 600));
+  cs = await conn();
+  ok('switching it on shows Pair a phone, no phones yet, and the address', cs && cs.on === true && /Pair the TiviBro app/.test(t) && /none yet/.test(t) && /, port 47810/.test(t), t.slice(0, 600));
   const h0 = await C.hello({ host: '127.0.0.1', port: 47810 });
   ok('the TV answers on the network, with TiviBro\'s version', h0.app === 'TiviBro' && h0.version && h0.version !== 'dev', JSON.stringify(h0));
 
@@ -105,7 +109,7 @@ const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', heade
   await row(/^Phone app connection/); await page.waitForTimeout(1200);
   t = await text();
   e = await C.hello({ host: '127.0.0.1', port: 47810 }).catch((x) => x);
-  ok('switching it off: nothing answers on the network', /Phone app connection[^‹]*‹Off›/.test(t) && e instanceof Error, t.slice(0, 300));
+  ok('switching it off: nothing answers on the network', (await conn()).on === false && e instanceof Error, t.slice(0, 300));
   await ctl('/companion/set', { name: '' });
 
   ok('no page errors', !errs.length, errs.join(' | '));

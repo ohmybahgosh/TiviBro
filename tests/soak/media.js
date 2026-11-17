@@ -90,7 +90,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   await key('ArrowRight');
   await ev((id) => { MediaStore.removeSource(id); }, placeholder); await page.waitForTimeout(300);
   ok('and leaves the menu when the last source goes', await ev(() => !document.querySelector('.tab[data-tab="media"]')));
-  await ev(() => Views.switchTab('settings')); await ev(() => Settings.section('media')); await page.waitForTimeout(300);
+  await ev(() => { Store.settings.advView = true; Views.switchTab('settings'); }); await ev(() => Settings.section('media')); await page.waitForTimeout(300);
   ok('My media is a settings section', /Add a library/.test(await text('#setBody')) && /Display and shelves/.test(await text('#setBody')));
   await key('Enter');
   ok('Add media in Settings offers generic protocols', /DLNA \/ UPnP/.test(await text('#modal')) && /WebDAV/.test(await text('#modal')));
@@ -102,7 +102,7 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   await page.locator('#modal input').fill('mock-user-token-123456789012345'); await key('Enter');
   await page.waitForFunction(() => MediaStore.preferences().tmdbConfigured);
   await page.waitForFunction(() => /TMDB API token saved/.test(document.querySelector('#setBody').innerText));
-  ok('settings clearly show a saved token and replacement help', /Token saved on this TV/.test(await text('#setBody')) && /Select to replace it/.test(await text('#setBody')));
+  ok('settings clearly show a saved token and replacement help', /Token saved on this TV/.test(await text('#setBody')) && await ev(() => Settings.phone.page('keys', []).rows.some((r) => /Select to replace it/.test(r.sub || ''))));
   ok('token is private in settings responses', await ev(() => JSON.stringify(MediaStore.preferences()).indexOf('mock-user-token') < 0));
   await ev(() => Views.switchTab('media')); await page.waitForTimeout(300);
 
@@ -153,6 +153,8 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   const mediaRequests = [];
   page.on('request', r => { if (r.url().indexOf('/movie/demo/demo/Moana.2.2024.mp4') >= 0) mediaRequests.push(r.url()); });
   await ev(() => { var original = Player.play; Player.play = function (ch, opts) { window.__mediaPlay = opts; return original.apply(this, arguments); }; });
+  await key('Enter', 500);
+  ok('OK opens the movie\'s own page, with Play first', await ev(() => MediaMoviePage.isOpen() && /Play/.test(document.querySelector('#mediaMovie .mmp-btn.sel').textContent)));
   await key('Enter', 900);
   ok('OK opens the player', await ev(() => document.body.classList.contains('full')));
   ok('the DLNA address went to the movie player', await ev(() => window.__mediaPlay && /Moana\.2\.2024\.mp4/.test(window.__mediaPlay.url) && window.__mediaPlay.live === false && window.__mediaPlay.meta.local === true));
@@ -169,6 +171,9 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   ok('the panel says where it stopped', /Resume at 16 min of 1 h 40 min/.test(await text('#mediaInfo')), await text('#mediaInfo'));
   ok('Movies did not get the position', await ev(() => Object.keys(Store.edits.resume).length === 0));
 
+  // Back from the player lands on the movie's page again (as Plex does); Back once more for the shelves.
+  ok('stopping comes back to the movie\'s page', await ev(() => MediaMoviePage.isOpen()));
+  await key('Escape', 400);
   // Red: sort, shelves; Hold OK: the movie's options.
   await ev(() => UI.press('red')); await page.waitForTimeout(400);
   ok('Red offers sorting, a shelf to go to and arranging shelves', /Sort movies: Title, A to Z/.test(await text('#modal')) && /Go to a shelf/.test(await text('#modal')) && /Arrange shelves/.test(await text('#modal')), await text('#modal'));
@@ -275,10 +280,10 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
   const board = await ev(() => [...document.querySelectorAll('.arrange:not(.hidden) .arrange-name')].map(n => n.firstChild.textContent));
   ok('Arrange shelves opens as a board', board.length > 5, board);
   ok('with movies only, no TV shows or TV lists on it', !board.some(n => /TV shows|Popular TV|Airing today|Top rated TV/.test(n)), board);
-  const before = await ev(() => MediaStore.preferences().shelfOrder.slice(0, 2).join(','));
+  const before = await ev(() => Media.shelfList().slice(0, 2).map(x => x.key).join(','));
   await ev(() => { UI.press('ok'); UI.press('down'); UI.press('ok'); });
   const after = await ev(() => Media.shelfList().slice(0, 2).map(x => x.key).join(','));
-  ok('OK, Down, OK moves the first shelf down one, saved at once', after.split(',')[1] === 'continue' && after.split(',')[0] !== 'continue', before + ' -> ' + after);
+  ok('OK, Down, OK moves the first shelf down one, saved at once', after.split(',')[1] === before.split(',')[0] && after.split(',')[0] !== before.split(',')[0], before + ' -> ' + after);
   await ev(() => UI.press('right'));
   ok('Right switches the shelf it is on off', await ev(() => Media.shelfList()[1].off === true));
   await ev(() => UI.press('right'));
@@ -298,7 +303,8 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
     MediaStore.applyScan(id, { movies: [{ id: 'w:/slow.mp4', path: '/slow.mp4', title: 'Slow cloud movie', year: '2024', file: 'slow.mp4' }] });
     Media.refresh(); Media._test.focusItems();
   });
-  await key('Enter', 100);
+  await key('Enter', 300);   // its page
+  await key('Enter', 100);   // Play
   for (let i = 0; i < 30 && !delayedResolve; i++) await page.waitForTimeout(100);
   ok('cloud movie requested a fresh link', !!delayedResolve);
   await key('Escape', 100);

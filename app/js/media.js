@@ -340,12 +340,14 @@ var Media = (function () {
     counts = { movies: one(all).length, shows: shows.length + favShows.length, favorites: favList.length };
     var card = function (sec, title, sub, from) { return { id: 'section:' + sec, kind: 'section', section: sec, title: title, year: sub, metadata: { title: title, poster: from && from.metadata.poster || '', backdrop: from && (from.metadata.backdropHd || from.metadata.backdrop) || '', plot: sub } }; };
     built.browse = { title: 'Browse', sub: 'OK opens it', movies: [card('movies', 'Movies', count(counts.movies, '1 movie', '{n} movies'), mvP), card('shows', 'TV shows', count(counts.shows, '1 show', '{n} shows'), shP)].concat(counts.favorites ? [card('favorites', 'Favorites', count(counts.favorites, '1 favorite', '{n} favorites'), fvP)] : []) };
-    /* Library: the whole list as a poster grid (media-grid.js), for big libraries, and the collections. */
+    /* Library: the whole list as a poster grid (media-grid.js), for big libraries (25 titles or more; a smaller
+       one fits on its shelf), and the collections. */
+    var GRID_MIN = 25;
     var gcard = function (id, title, sub, from, grid) { var c = card(id, title, sub, from); c.id = 'grid:' + id; c.grid = grid; return c; };
     var colCount = 0, cseen = {}; all.forEach(function (m) { var c = m.metadata && m.metadata.collection; if (c && c.id && !cseen[c.id]) { cseen[c.id] = 1; colCount++; } });
-    built.library = { title: 'Library', sub: 'Every movie as posters, A to Z, and your collections', movies: !counts.movies ? [] : [gcard('movies', 'All movies', count(counts.movies, '1 movie', '{n} movies'), posterOf(movies), { type: 'movies' })]
+    built.library = { title: 'Library', sub: 'Every movie as posters, A to Z, and your collections', movies: counts.movies < GRID_MIN ? [] : [gcard('movies', 'All movies', count(counts.movies, '1 movie', '{n} movies'), posterOf(movies), { type: 'movies' })]
       .concat(colCount ? [gcard('collections', 'Collections', count(colCount, '1 collection', '{n} collections'), posterOf(all.filter(function (m) { return m.metadata && m.metadata.collection; })), { type: 'collections' })] : []) };
-    built['library-shows'] = { title: 'Library', sub: 'Every show as posters, A to Z', movies: opts.phone || !counts.shows ? [] : [gcard('shows', 'All shows', count(counts.shows, '1 show', '{n} shows'), shP, { type: 'shows' })] };
+    built['library-shows'] = { title: 'Library', sub: 'Every show as posters, A to Z', movies: opts.phone || counts.shows < GRID_MIN ? [] : [gcard('shows', 'All shows', count(counts.shows, '1 show', '{n} shows'), shP, { type: 'shows' })] };
     var out = [], ar = arrangement(), kinds = has();
     ar.order.forEach(function (k) {
       if (ar.off(k)) return;

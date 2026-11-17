@@ -1797,6 +1797,8 @@ var Settings = (function () {
     var t = e && e._help && zone === 'body' ? e._help : '';
     if (t.length > 330) t = t.slice(0, t.lastIndexOf(' ', 328)) + ' …';
     put(h, t);
+    // Longer words (Spanish, Russian) can still need a fourth line: shorten until it fits.
+    for (var n = 0; n < 8 && t && h.scrollHeight > h.clientHeight + 2; n++) { t = t.slice(0, t.lastIndexOf(' ', Math.floor(t.length * 0.85))) + ' …'; put(h, t); }
   }
   function rows() {
     rowEls.forEach(function (e, i) {
