@@ -18,6 +18,18 @@ vm.createContext(ctx);
 vm.runInContext(fs.readFileSync(path.join(__dirname, '../../app/js/subs.js'), 'utf8') + ';this.Subs = Subs;', ctx);
 const T = ctx.Subs._test;
 
+// Remembered per title: Off stays off, a language comes back on, whatever Subtitles automatically says.
+ctx.U.lang = (x) => /^en|english/i.test(String(x || '')) ? 'en' : /^es|spanish/i.test(String(x || '')) ? 'es' : '';
+ctx.Subs.remember({ id: 'm1' }, null); ctx.Subs.remember({ id: 'm2' }, { language: 'es', label: 'Spanish' });
+const en = { kind: 'subtitles', language: 'en', label: 'English' }, es = { kind: 'subtitles', language: 'es', label: 'Spanish' };
+ctx.Store.settings.autoSubs = true;
+ok('a movie watched with subtitles off: none turn on by themselves', !ctx.Subs.autoOn(en, { _subsMemo: ctx.Subs.memoFor({ id: 'm1' }) }));
+ctx.Store.settings.autoSubs = false;
+ok('one watched in Spanish: Spanish comes back on, English does not', ctx.Subs.autoOn(es, { _subsMemo: ctx.Subs.memoFor({ id: 'm2' }) }) && !ctx.Subs.autoOn(en, { _subsMemo: ctx.Subs.memoFor({ id: 'm2' }) }));
+ok('a title never chosen for: the setting decides', ctx.Subs.memoFor({ id: 'm3' }) === null && !ctx.Subs.autoOn(en, { _subsMemo: null }));
+ok('once chosen in this playback, the memory does not override it', !ctx.Subs.autoOn(es, { _subsMemo: ctx.Subs.memoFor({ id: 'm2' }), _subsChoice: true }));
+delete ctx.U.lang; ctx.Store.settings.autoSubs = false;
+
 // Files.
 const srt = '﻿1\r\n00:00:01,500 --> 00:00:03,000\r\n<font color="#fff">Hello <i>there</i></font>\r\n\r\n2\r\n00:00:04,000 --> 00:00:05,250\r\n{\\an8}Second\r\nline\r\n\r\n';
 let c = T.parse(srt);

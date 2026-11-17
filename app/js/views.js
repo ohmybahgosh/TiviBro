@@ -569,7 +569,7 @@ var Views = (function () {
       Store.edits.last = c.k; Store.saveEdits();
       stage.classList.remove('off');
       if (Store.settings.blackSwitch) stage.classList.add('blank');
-      video._subsChoice = false; video._subsWantKey = null; Subs.forget();           // a new playback: subtitles may turn on by themselves again
+      video._subsChoice = false; video._subsWantKey = null; video._subsMemo = null; Subs.forget();           // a new playback: subtitles may turn on by themselves again
       Player.play(c, { preview: preview, keepTrying: foSwitching === 'back' });
       chansVL.refreshWhere(function (x) { return x && (x.k === c.k || (lastPlayed && x.k === lastPlayed.k)); });
       if (then) then();
@@ -1286,7 +1286,7 @@ var Views = (function () {
       playing = c; mode = 'catchup';
       cu = { c: c, p: p, off: Math.max(0, offSec || 0), first: true, pending: null };
       stage.classList.remove('off');
-      video._subsChoice = false; video._subsWantKey = null; Subs.forget();
+      video._subsChoice = false; video._subsWantKey = null; video._subsMemo = null; Subs.forget();
       Player.play(c, { live: false, timeshift: true, urlFn: function () {
         if (!cu) return '';
         if (!cu.first) cu.off += Player.position;     // a reconnect continues from where playback reached
@@ -1370,6 +1370,7 @@ var Views = (function () {
     Subs.reset();
     stage.classList.remove('off');
     video._subsChoice = false; video._subsWantKey = null; Subs.forget();
+    video._subsMemo = Subs.memoFor ? Subs.memoFor(meta) : null;   // on or off, as last time for this title
     Player.play({ k: 'vod:' + meta.id, n: meta.title, num: '', p: meta.p || undefined }, { url: url, live: false, startAt: startAt || 0, meta: meta });
     Subs.restore(meta);           // subtitles downloaded for it in the last days (discussion #19)
     goFull();
@@ -1924,10 +1925,29 @@ var Views = (function () {
      Timing; Line up with another track), under a Settings heading, then what this video has under its
      own heading.  The settings stay at the top however many languages a file carries, and the menu
      opens on the subtitle that is on (or Off). */
+  /* Subtitle size, colour and background from the player (as in Settings > Playback > Audio and subtitles), the
+     change shown on the picture at once.  For every video, like the setting it is. */
+  var SUB_SIZE = [['s', 'Small'], ['m', 'Medium'], ['l', 'Large'], ['xl', 'Extra large']];
+  var SUB_COLOR = [['white', 'White'], ['yellow', 'Yellow'], ['gold', 'Gold'], ['cyan', 'Light blue'], ['green', 'Light green']];
+  var SUB_BACK = [['outline', 'Outline'], ['box', 'See-through box'], ['solid', 'Black box']];
+  function nameIn(list, v, d) { var x = list.filter(function (p) { return p[0] === v; })[0]; return (x || list.filter(function (p) { return p[0] === d; })[0])[1]; }
+  function subStyleLine() { var s = Store.settings; return [nameIn(SUB_SIZE, s.subSize, 'm'), nameIn(SUB_COLOR, s.subColor, 'white'), nameIn(SUB_BACK, s.subBack, 'outline')].join(', '); }
+  function subStyleMenu() {
+    var s = Store.settings;
+    function pick(title, list, key, d) {
+      UI.menu(title, list.map(function (p) { return { label: p[1], sub: (s[key] || d) === p[0] ? 'on' : '', current: (s[key] || d) === p[0], action: function () { s[key] = p[0]; applyLook(); Store.saveSettings(); Subs.refresh(); subStyleMenu(); } }; }), subStyleMenu);
+    }
+    UI.menu('Size and style', [
+      { label: 'Size', sub: nameIn(SUB_SIZE, s.subSize, 'm'), action: function () { pick('Subtitle size', SUB_SIZE, 'subSize', 'm'); } },
+      { label: 'Colour', sub: nameIn(SUB_COLOR, s.subColor, 'white'), action: function () { pick('Subtitle colour', SUB_COLOR, 'subColor', 'white'); } },
+      { label: 'Background', sub: nameIn(SUB_BACK, s.subBack, 'outline'), action: function () { pick('Subtitle background', SUB_BACK, 'subBack', 'outline'); } }
+    ], subtitleMenu);
+  }
   function subtitleMenu() {
     var tr = subtitleTracks().filter(function (t) { return mode === 'vod' || t.kind === 'subtitles'; });
     var settings = [], list = [];
     if (mode === 'vod' && vod) settings.push({ label: 'Find subtitles…', sub: Subs.configured ? 'OpenSubtitles, in ' + Subs.langs().map(Subs.langName).join(', ') : 'from OpenSubtitles, with your free API key', action: function () { Subs.find(vod.meta); } });
+    if (tr.length || mode === 'vod') settings.push({ label: 'Size and style', sub: subStyleLine(), action: subStyleMenu });
     if (tr.length) settings.push({ label: 'Timing', sub: Subs.timing, action: Subs.timingMenu });
     if (tr.length > 1) settings.push({ label: 'Line up with another track…', sub: 'match a subtitle that is already in time', action: function () { Subs.lineUpMenu(tr); } });
     if (!tr.length) {
@@ -1943,8 +1963,8 @@ var Views = (function () {
     } else {
       var none = tr.every(function (t) { return t.mode !== 'showing'; });
       // Any choice here (Off too) is the viewer's for the rest of this playback: see the addtrack handler.
-      list.push({ label: 'Off', sub: none ? 'on' : '', current: none, action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = null; video._subsWantKey = ''; tr.forEach(function (t) { t.mode = 'disabled'; }); } });
-      tr.forEach(function (t, i) { list.push({ label: RAW(t.label || t.language || 'Track ' + (i + 1)), sub: t.mode === 'showing' ? 'on' : '', current: t.mode === 'showing', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = t; video._subsWantKey = (t.label || '') + '|' + (t.language || ''); tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); } }); });
+      list.push({ label: 'Off', sub: none ? 'on' : '', current: none, action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = null; video._subsWantKey = ''; tr.forEach(function (t) { t.mode = 'disabled'; }); if (mode === 'vod' && vod && Subs.remember) Subs.remember(vod.meta, null); } });
+      tr.forEach(function (t, i) { list.push({ label: RAW(t.label || t.language || 'Track ' + (i + 1)), sub: t.mode === 'showing' ? 'on' : '', current: t.mode === 'showing', action: function () { video._subsChoice = true; video._subsRev = (video._subsRev || 0) + 1; video._subsWant = t; video._subsWantKey = (t.label || '') + '|' + (t.language || ''); tr.forEach(function (x) { x.mode = x === t ? 'showing' : 'disabled'; }); Subs.refresh(); if (mode === 'vod' && vod && Subs.remember) Subs.remember(vod.meta, t); } }); });
     }
     if (!settings.length) return UI.menu('Subtitles', list);
     var it = vod && vod.meta && vod.meta.item || {};

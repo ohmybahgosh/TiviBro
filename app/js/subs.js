@@ -578,12 +578,29 @@ var Subs = (function () {
   // Whether a track that just appeared turns on by itself (Settings > Playback > Audio and subtitles): not once the viewer
   // chose in the Subtitles menu during this playback (Off included), and never a forced track.
   function autoOn(t, v) {
-    var want = Store.settings.subsLang || '';
-    return !!(Store.settings.autoSubs && t && t.kind === 'subtitles' && !t._forced && !(v && v._subsChoice) &&
-      (!want || U.lang(t.language || t.label) === want));
+    var want = Store.settings.subsLang || '', memo = v && v._subsMemo;
+    if (!t || t.kind !== 'subtitles' || t._forced || (v && v._subsChoice)) return false;
+    // What you chose the last time you watched this movie or episode in TiviBro comes first: Off stays off,
+    // a language comes back on (the same track's language, else its name).
+    if (memo) return !!memo.on && (memo.lang ? U.lang(t.language || t.label) === memo.lang : !memo.label || String(t.label || '') === memo.label);
+    return !!(Store.settings.autoSubs && (!want || U.lang(t.language || t.label) === want));
+  }
+  /* Subtitles remembered per movie and episode: on (and in which language) or off, as last chosen in the
+     Subtitles menu while playing it.  The last 600, on this TV (localStorage). */
+  var MEMO = 'tivibro.subsMemo';
+  function memoAll() { try { var o = JSON.parse(localStorage.getItem(MEMO) || '{}'); return o && typeof o === 'object' ? o : {}; } catch (e) { return {}; } }
+  function memoKey(meta) { return meta ? String(meta.id || '') : ''; }
+  function memoFor(meta) { var k = memoKey(meta), m = k && memoAll()[k]; return m && typeof m === 'object' ? m : null; }
+  function remember(meta, track) {
+    var k = memoKey(meta); if (!k) return;
+    var all = memoAll();
+    all[k] = track ? { on: true, lang: U.lang(track.language || track.label) || '', label: String(track.label || '').slice(0, 80), at: Date.now() } : { on: false, at: Date.now() };
+    var keys = Object.keys(all);
+    if (keys.length > 600) keys.sort(function (a, b) { return (all[a].at || 0) - (all[b].at || 0); }).slice(0, keys.length - 600).forEach(function (x) { delete all[x]; });
+    try { localStorage.setItem(MEMO, JSON.stringify(all)); } catch (e) {}
   }
 
-  return { find: find, gone: gone, forget: forget, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, test: test, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
+  return { memoFor: memoFor, remember: remember, find: find, gone: gone, forget: forget, refresh: applyDelay, fresh: fresh, timingOf: timingOf, autoOn: autoOn, timingMenu: timingMenu, lineUpMenu: lineUpMenu, langMenu: langMenu, reset: reset, restore: restore, setup: setup, test: test, forgetKept: forgetKept, setKey: setKey, signIn: signIn, langs: langs, langName: langName,
     get delay() { return delay; }, get rate() { return rate; }, get timing() { return timingSummary(); }, setRate: setRate, draw: drawLines, get configured() { return !!state.key; }, get user() { return state.user || ''; }, get allowed() { return state.allowed || 0; },
     _test: { keepOn: keepOn, listed: listed, shortName: shortName, keep: keep, parse: parse, align: align, clean: clean, guess: guess, shift: shift, addTrack: addTrack, linesAt: linesAt, snapshot: snapshot, setRate: setRate, lineUp: lineUp, applyDelay: applyDelay } };
 })();
