@@ -483,7 +483,7 @@ Use **Left** and **Right** to move between movies, and **Up** and **Down** to mo
 
 **Movies and TV shows.**  A new source finds both.  A source added before alpha 61 stays movies only until you open it in **Settings > My media** and set **Content** to **Movies and TV shows** (or **TV shows only**), then rescan.
 
-Shows open into seasons and episodes.  **Red (Options)** has **TV shows** and, when something needs a look, **Needs review**.  **Favorites** shows your favourite movies and shows; they stay in the **Movies** and **TV shows** lists too, unless you turn off **Favorites also in lists** in **Settings > My media**.
+OK on a show opens its own page: its seasons as posters, then the season's episodes as cards with their picture, title, air date and summary (OK plays, **Hold OK** has the options, **Back** goes back a step).  The **TV shows** tab has **Recently added episodes** (shows with a new episode file) and **Recently aired** (an episode you have aired in the last 30 days).  **Red (Options)** has **TV shows** and, when something needs a look, **Needs review**.  **Favorites** shows your favourite movies and shows; they stay in the **Movies** and **TV shows** lists too, unless you turn off **Favorites also in lists** in **Settings > My media**.
 
 Name folders and files like this, and the rest takes care of itself:
 

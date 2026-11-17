@@ -1142,3 +1142,12 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .set-body .opt.jump .ov::after{content:'  ›'}
 .set-body .opt.attn .ov{color:var(--ink);background:var(--ok);font-weight:800;font-size:20px;letter-spacing:2px;padding:4px 14px;border-radius:999px}
 .set-body .opt.attn.focus .ov{background:var(--ink);color:var(--ok)}
+/* My media: a show's own page (media-showpage.js), on the provider Shows page's look (shp-*). */
+#viewMedia.mshp-on .mshp{display:block;z-index:30}
+.mshp-row{position:absolute;left:152px;top:440px;font-size:26px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+.mshp-seasons{position:absolute;left:152px;top:494px;display:flex;gap:30px}
+.mshp-season{flex:none;width:210px;opacity:.82}
+.mshp-season.sel{opacity:1}
+.mshp-poster{position:relative;width:210px;height:315px;border-radius:14px;overflow:hidden;background:var(--raised);border:4px solid transparent;display:flex;align-items:center;justify-content:center}
+.mshp-season.sel .mshp-poster{border-color:var(--text);transform:scale(1.04)}
+.mshp-noart{font-size:28px;font-weight:700;color:var(--muted);text-align:center;padding:12px}

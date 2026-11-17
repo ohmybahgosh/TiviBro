@@ -35,7 +35,7 @@ var Media = (function () {
      plot.  Shelves: Continue watching, holiday lists, Favorites, Recently added, TMDB's lists (what you
      can watch of them), Movies and TV shows in the order you choose (Red sorts, and can turn it round), a
      shelf per genre and Top rated; Red > Arrange shelves moves them and switches them off.  Long shelves draw only the posters on screen (TILE_POOL). */
-  var seriesLoaded = false, seriesCards = [], reviewCards = [], continuingShows = [], favouriteShows = [], seriesLoading = false, seriesAgain = false;
+  var seriesLoaded = false, seriesCards = [], reviewCards = [], continuingShows = [], favouriteShows = [], newShows = [], airedShows = [], seriesLoading = false, seriesAgain = false;
   var shelves = [], shelfAt = 0, shelfPos = {}, shelfViews = [], posterQueue = [], posterBusy = 0, hero = null;
   // Opening My media focuses the first item on screen; shelves that fill in later (shows and episodes come
   // from the helper) still move it there, until the viewer presses a key.
@@ -231,14 +231,14 @@ var Media = (function () {
   }
   /* The shelves and their order (Red > Arrange shelves, saved with the My media preferences).  Groups:
      holidays (each holiday on now), genres (a shelf per genre).  Some lists start switched off. */
-  var ORDER = ['continue', 'browse', 'holidays', 'favorites', 'pick', 'recent', 'tmdb:trending', 'all', 'shows', 'unwatched', 'unseen-top', 'tmdb:popular-movie', 'tmdb:popular-tv', 'tmdb:airing', 'collections', 'genres', 'decades', 'directors', 'hdr', 'short', 'long', 'top', 'tmdb:top-movie', 'tmdb:top-tv', 'tmdb:now', 'tmdb:upcoming', 'review'];
-  var NAMES = { continue: 'Continue watching', browse: 'Browse (Movies, TV shows, Favorites)', holidays: 'Holiday lists', favorites: 'Favorites', pick: 'Pick of the day', recent: 'Recently added', all: 'Movies', shows: 'TV shows',
+  var ORDER = ['continue', 'browse', 'holidays', 'favorites', 'pick', 'recent', 'new-episodes', 'aired', 'tmdb:trending', 'all', 'shows', 'unwatched', 'unseen-top', 'tmdb:popular-movie', 'tmdb:popular-tv', 'tmdb:airing', 'collections', 'genres', 'decades', 'directors', 'hdr', 'short', 'long', 'top', 'tmdb:top-movie', 'tmdb:top-tv', 'tmdb:now', 'tmdb:upcoming', 'review'];
+  var NAMES = { continue: 'Continue watching', browse: 'Browse (Movies, TV shows, Favorites)', holidays: 'Holiday lists', favorites: 'Favorites', pick: 'Pick of the day', recent: 'Recently added', 'new-episodes': 'Recently added episodes', aired: 'Recently aired', all: 'Movies', shows: 'TV shows',
     unwatched: 'Not watched yet', 'unseen-top': 'Highly rated you haven\'t seen', collections: 'Collections (a shelf each)', genres: 'Genres (a shelf each)', decades: 'Decades (a shelf each)',
     directors: 'Directors (a shelf each)', hdr: '4K and HDR', short: 'Under 90 minutes', long: 'Long movies', top: 'Top rated in your library', review: 'Needs review' };
   LISTS.forEach(function (l) { NAMES[l.key] = l.title; });
   /* Which shelves fit what you have (Arrange shelves leaves the rest out): TV ones need a source with TV
      shows, the rest a source with movies. */
-  var TV_ONLY = { shows: 1, 'tmdb:popular-tv': 1, 'tmdb:airing': 1, 'tmdb:top-tv': 1, review: 1 }, BOTH = { continue: 1, favorites: 1, 'tmdb:trending': 1 };
+  var TV_ONLY = { 'new-episodes': 1, aired: 1, shows: 1, 'tmdb:popular-tv': 1, 'tmdb:airing': 1, 'tmdb:top-tv': 1, review: 1 }, BOTH = { continue: 1, favorites: 1, 'tmdb:trending': 1 };
   function has() { var l = MediaStore.sources(); if (!l.length) return { movies: true, shows: true };   // nothing added yet: every shelf
     return { movies: l.some(function (s) { return s.contentMode !== 'shows'; }), shows: l.some(function (s) { return s.contentMode && s.contentMode !== 'movies'; }) }; }
   function traktOf(k) { return k.indexOf('trakt:') === 0 ? traktLists().filter(function (t) { return t.id === k; })[0] || { kind: 'both', tab: 'home' } : null; }
@@ -258,6 +258,8 @@ var Media = (function () {
     if (id === 'browse' || id === 'tmdb:trending' || id === 'holidays' || id.indexOf('holiday:') === 0) return false;
     return sec === 'shows' ? !!TV_ONLY[id] : !TV_ONLY[id];
   }
+  // When an episode came or aired, in words: today, yesterday, 3 days ago, Nov 2.
+  function dayWord(t) { if (!t) return ''; var days = Math.round((Date.now() - t) / 864e5); return days <= 0 ? 'today' : days === 1 ? 'yesterday' : days < 7 ? days + ' days ago' : new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
   function isShow(m) { return m && (m.kind === 'show' || !!m.continueEpisode); }
   // Trakt's lists (trakt.js) are shelves too, each with its own key ('trakt:abcdefgh'), after TMDB's Trending.
   function traktLists() { return typeof Trakt !== 'undefined' ? Trakt.shelves() : []; }
@@ -291,6 +293,8 @@ var Media = (function () {
     built.recent = { title: 'Recently added', sub: count(recent.length, '1 new title', '{n} new titles'), movies: recent };
     var movies = one(p.favoritesInLists ? all : all.filter(function (m) { return !MediaStore.isFavorite(m.id); }));
     built.all = { title: 'Movies', sub: count(movies.length, '1 movie', '{n} movies') + '  ·  ' + sortName('movie'), movies: movies };
+    built['new-episodes'] = { title: 'Recently added episodes', sub: count(newShows.filter(mine).length, '1 show with a new episode', '{n} shows with new episodes'), movies: opts.phone ? [] : newShows.filter(mine) };
+    built.aired = { title: 'Recently aired', sub: 'Episodes you have that aired in the last 30 days', movies: opts.phone ? [] : airedShows.filter(mine) };
     built.shows = { title: 'TV shows', sub: count(shows.length, '1 show', '{n} shows') + '  ·  ' + sortName('show'), movies: shows };
     var top = one(all.filter(function (m) { return rating(m) >= 7; }).sort(function (a, b) { return rating(b) - rating(a); })).slice(0, 40);
     built.top = { title: 'Top rated in your library', sub: 'Rated 7 or more on TMDB, highest first', movies: top.length >= 3 ? top : [] };
@@ -524,7 +528,7 @@ var Media = (function () {
     formatSoon(m, function (x) { if (itemsVL.current() === x) showInfo(); });
     box.appendChild(U.el('p', 'media-summary', md.plot || (m.kind === 'show' ? 'Press OK for its seasons and episodes.' : 'Press OK to play.  Red for options.')));
     var bottom = m.kind === 'live' ? liveLine(m.live) + '  ·  ' + (m.live.live ? 'OK to watch' : 'OK for a reminder') : m.continueEpisode ? 'Continue with ' + (m.label || 'the next episode') + (m.progressPercent ? ',  ' + m.progressPercent + '% watched' : '')
-      : r ? 'Resume at ' + RT(Math.max(1, Math.floor(r.pos / 60))) + ' of ' + RT(Math.floor(r.dur / 60)) : m.kind === 'show' ? 'OK for episodes' : 'Ready to watch';
+      : r ? 'Resume at ' + RT(Math.max(1, Math.floor(r.pos / 60))) + ' of ' + RT(Math.floor(r.dur / 60)) : m.kind === 'show' ? (m.newLine ? m.newLine + '  ·  ' : '') + 'OK for episodes' : 'Ready to watch';
     box.appendChild(U.el('div', 'media-caption', bottom + (src ? '   ·   ' + src.name : '')));
     if (md.provider && ((md.fallbackFields || []).length || MediaStore.preferences().language !== (md.requestedLanguage || md.language || 'en'))) box.appendChild(U.el('span', 'media-language-note', (md.fallbackFields || []).length ? 'English fallback: ' + md.fallbackFields.join(', ') : 'Saved metadata language differs from your preference'));
   }
@@ -1070,7 +1074,7 @@ var Media = (function () {
     if (!m) return;
     if (m.continueEpisode) return MediaSeries.resume(m);
     if (m.kind === 'live') { if (typeof OnNow !== 'undefined' && OnNow.watch) OnNow.watch(m.live); else Views.startChannel(m.live.c, false, function () { Views.goFull(); }); return; }
-    if (m.kind === 'show') return MediaSeries.showItem(m,restore);
+    if (m.kind === 'show') return typeof MediaShowPage !== 'undefined' ? MediaShowPage.open(m, restore) : MediaSeries.showItem(m,restore);
     if (m.review && m.review.length) return MediaSeries.correct(m,restore);
     if (typeof MediaSeries !== 'undefined') MediaSeries.leave();
     var token = ++playToken, r = MediaStore.resume(m.resumeKey || m.id);
@@ -1358,11 +1362,14 @@ var Media = (function () {
       }
       return more(null);
     }
-    Promise.all([every(MediaStore.preferences().favoritesInLists?{kind:'show'}:{kind:'show',favourite:false}),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),every({kind:'show',favourite:true})]).then(function (results) {
+    Promise.all([every(MediaStore.preferences().favoritesInLists?{kind:'show'}:{kind:'show',favourite:false}),ask('library/query',{kind:'review',limit:60},30000),ask('library/continue',{},30000),every({kind:'show',favourite:true}),ask('library/query',{kind:'show',sort:'new',limit:40},30000).catch(function(){return {items:[]};}),ask('library/query',{kind:'show',sort:'aired',days:30,limit:40},30000).catch(function(){return {items:[]};})]).then(function (results) {
       seriesCards = (results[0].items || []).map(function (r) { r.id = r.handle; return r; });
       reviewCards = (results[1].items || []).map(function (r) { r.id = r.handle; return r; });
       continuingShows = (results[2].items || []).map(function(r){r.id=r.handle;return r;});
       favouriteShows=(results[3].items||[]).map(function(r){r.id=r.handle;return r;});
+      // Recently added and Recently aired (TV shows): each show once, saying which episode is new.
+      newShows=(results[4].items||[]).map(function(r){r.id=r.handle;r.newLine=r.newEp?r.newEp+' added '+dayWord(r.newAt):'';return r;});
+      airedShows=(results[5].items||[]).map(function(r){r.id=r.handle;r.newLine=r.airedEp?r.airedEp+' aired '+dayWord(Date.parse(r.airedOn+'T12:00:00')):'';return r;});
       seriesLoading = false; seriesLoaded = true; refresh();
       if (typeof Settings !== 'undefined' && Settings.live) Settings.live();   // Settings > My media's show counts
       if (seriesAgain) refreshSeries();

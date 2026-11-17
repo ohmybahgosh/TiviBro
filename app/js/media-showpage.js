@@ -1,0 +1,166 @@
+/* My media: a show's own page, like Plex's.  OK on a show opens it full screen: its backdrop, details and
+   summary, and its seasons as posters.  OK on a season shows the season's episodes as wide cards with their
+   picture, title, air date, length and a ✓ once watched, and the focused one's summary underneath; OK plays
+   it.  A show with one season opens straight on its episodes.  Red or Hold OK has the show's options (on the
+   seasons) or the episode's (on an episode); Back goes from the episodes to the seasons, then closes.
+   It looks like the provider Shows page (vod.js, the shp-* classes), drawn here from the library's own data. */
+var MediaShowPage = (function () {
+  'use strict';
+  var $ = U.$, RAW = function (s) { return typeof I18n !== 'undefined' && I18n.raw ? I18n.raw(s) : s; };
+  var pg = null;   // { card, show, seasons, at, eps, sel, level: 'seasons' | 'eps', loading, back }
+
+  function box() {
+    var b = $('mediaShow');
+    if (!b) { b = U.el('div', 'shp-page mshp'); b.id = 'mediaShow'; $('viewMedia').appendChild(b); }
+    return b;
+  }
+  function seasonName(show, b) {
+    if (b.title) return b.title;
+    var aired = show.order === 'aired' && (!show.displayOrder || show.displayOrder === 'aired');
+    return aired ? (b.key === '0' ? 'Specials' : 'Season ' + b.key) : b.key;
+  }
+  function open(card, back) {
+    pg = { card: card, show: null, seasons: [], at: 0, eps: [], sel: 0, level: 'seasons', loading: true, back: back };
+    $('viewMedia').classList.add('mshp-on');
+    UI.setHandler(keys); draw();
+    MediaSeries.showDetail(card.handle || card.id, function (r) {
+      if (!pg || pg.card !== card) return;
+      pg.show = r; pg.loading = false;
+      // Specials last, as Plex lists them.
+      pg.seasons = (r.buckets || []).slice().sort(function (a, b) { return (a.key === '0') - (b.key === '0'); });
+      // On the season with the episode you're up to (Continue watching), else the first.
+      var want = card.continueSeason != null ? String(card.continueSeason) : null;
+      pg.at = Math.max(0, want ? pg.seasons.map(function (b) { return b.key; }).indexOf(want) : 0);
+      if (pg.seasons.length === 1) return season(0);
+      draw();
+    });
+  }
+  function season(i) {
+    if (!pg || !pg.seasons[i]) return;
+    pg.at = i; pg.level = 'eps'; pg.eps = []; pg.sel = 0; pg.loading = true; draw();
+    var want = pg;
+    MediaSeries.episodes({ kind: 'episode', show: pg.show.handle, bucket: pg.seasons[i].key, limit: 200 }, function (r) {
+      if (pg !== want || pg.level !== 'eps') return;
+      pg.eps = r.items || []; pg.loading = false;
+      // On the first episode not watched yet.
+      var k = 0; for (var j = 0; j < pg.eps.length; j++) { if (pg.eps[j].watchState !== 'watched') { k = j; break; } k = j; }
+      pg.sel = k; draw();
+    });
+  }
+  function close() {
+    var was = pg; pg = null;
+    var b = $('mediaShow'); if (b) b.innerHTML = '';
+    $('viewMedia').classList.remove('mshp-on');
+    if (was && was.back) was.back();
+  }
+  // Back here after an episode ends or its options close.
+  function reopen(state) { return function () { pg = state; $('viewMedia').classList.add('mshp-on'); UI.setHandler(keys); if (pg.level === 'eps') season(pg.at); else draw(); }; }
+
+  function md(x) { return (x && x.metadata) || {}; }
+  function niceDate(d) { var t = Date.parse(String(d || '') + 'T12:00:00'); return t ? new Date(t).toLocaleDateString(U.loc ? U.loc() : undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : ''; }
+  function img(src, cls) { var i = U.el('img', cls); i.decoding = 'async'; i.src = src; i.onerror = function () { if (!(typeof Net !== 'undefined' && Net.retryImage && Net.retryImage(this))) this.remove(); }; return i; }
+
+  function draw() {
+    if (!pg) return;
+    var b = box(), s = pg.show || pg.card, m = md(s), cm = md(pg.card);
+    b.innerHTML = '';
+    var bd = m.backdropHd || m.backdrop || cm.backdropHd || cm.backdrop || '';
+    if (bd) { var bg = U.el('div', 'shp-bd'); bg.style.backgroundImage = 'url("' + String(bd).replace(/"/g, '%22') + '")'; b.appendChild(bg); }
+    b.appendChild(U.el('div', 'shp-fade'));
+    var info = U.el('div', 'shp-info'), cur = pg.level === 'eps' ? pg.seasons[pg.at] : null;
+    info.appendChild(U.el('div', 'media-kicker', cur ? RAW(m.title || s.title || '') : 'TV show'));
+    info.appendChild(U.el('div', 'media-title', cur ? RAW(seasonName(s, cur)) : RAW(m.title || s.title || '')));
+    var n = pg.seasons.filter(function (x) { return x.key !== '0'; }).length;
+    var facts = cur ? [cur.count + (cur.count === 1 ? ' episode' : ' episodes')]
+      : [m.year, n ? n + (n === 1 ? ' season' : ' seasons') : '', m.genre, m.rating ? '★ ' + m.rating : ''];
+    facts = facts.filter(Boolean).join('   ·   ');
+    if (facts) info.appendChild(U.el('div', 'media-facts', facts));
+    var plot = cur ? cur.plot || m.plot : m.plot;
+    if (plot) info.appendChild(U.el('div', 'media-summary shp-plot', RAW(plot)));
+    b.appendChild(info);
+    hints();
+    if (pg.loading) { b.appendChild(U.el('div', 'shp-empty', pg.level === 'eps' ? 'Loading episodes…' : 'Loading seasons…')); return; }
+    if (pg.level === 'seasons') return drawSeasons(b, s, m);
+    drawEpisodes(b, s, m);
+  }
+  function hints() {
+    if (!pg) return;
+    UI.hints(pg.level === 'eps' ? [['', 'OK  play'], ['', '◀ ▶  episodes'], ['', 'Hold OK  episode options', 'hold'], ['', 'Back  ' + (pg.seasons.length > 1 ? 'seasons' : 'close'), 'back']]
+      : [['', 'OK  episodes'], ['', '◀ ▶  seasons'], ['', 'Hold OK  show options', 'hold'], ['', 'Back  close', 'back']]);
+  }
+  function drawSeasons(b, s, m) {
+    if (!pg.seasons.length) { b.appendChild(U.el('div', 'shp-empty', 'No episodes found for this show.')); return; }
+    b.appendChild(U.el('div', 'mshp-row', 'Seasons'));
+    var track = U.el('div', 'mshp-seasons'), from = Math.max(0, Math.min(pg.at - 2, pg.seasons.length - 7)), to = Math.min(pg.seasons.length, from + 7);
+    for (var i = from; i < to; i++) (function (x, i) {
+      var c = U.el('div', 'mshp-season' + (i === pg.at ? ' sel' : '')), art = U.el('div', 'mshp-poster'), pic = x.poster || m.poster;
+      if (pic) art.appendChild(img(pic, 'shp-pic'));
+      else art.appendChild(U.el('span', 'mshp-noart', seasonName(s, x)));
+      c.appendChild(art);
+      c.appendChild(U.el('div', 'shp-name', RAW(seasonName(s, x))));
+      c.appendChild(U.el('div', 'shp-sub', x.count + (x.count === 1 ? ' episode' : ' episodes')));
+      c.onclick = function () { pg.at = i; season(i); };
+      track.appendChild(c);
+    })(pg.seasons[i], i);
+    b.appendChild(track);
+    b.appendChild(U.el('div', 'shp-pos', (pg.at + 1) + ' of ' + pg.seasons.length));
+  }
+  function drawEpisodes(b, s, m) {
+    var list = pg.eps;
+    if (!list.length) { b.appendChild(U.el('div', 'shp-empty', 'No episodes in this season.')); return; }
+    var spoilers = typeof Store !== 'undefined' && Store.settings && Store.settings.noSpoilers;
+    var track = U.el('div', 'shp-track mshp-eps'), from = Math.max(0, pg.sel - 2), to = Math.min(list.length, from + 8);
+    for (var i = from; i < to; i++) (function (e, i) {
+      var em = md(e), w = e.watchState === 'watched', hide = spoilers && !w;
+      var c = U.el('div', 'shp-card' + (i === pg.sel ? ' sel' : '')), art = U.el('div', 'shp-art'), pic = !hide && em.still || em.poster || m.backdrop || m.poster;
+      if (pic) art.appendChild(img(pic, 'shp-pic' + (pic === em.still ? '' : ' cover')));
+      art.appendChild(U.el('span', 'shp-num', e.order === 'date' ? String(e.airDate || '') : 'E' + (e.number != null ? e.number : e.absoluteNumber || '?')));
+      if (w) art.appendChild(U.el('span', 'shp-done', '✓'));
+      c.appendChild(art);
+      c.appendChild(U.el('div', 'shp-name', RAW((!hide && em.title) || e.title || ('Episode ' + (e.number || '?')))));
+      var sub = [em.runtime ? em.runtime + ' min' : '', niceDate(em.airDate || e.airDate), e.versionCount > 1 ? e.versionCount + ' copies' : ''].filter(Boolean).join('   ·   ');
+      if (sub) c.appendChild(U.el('div', 'shp-sub', sub));
+      c.onclick = function () { pg.sel = i; play(); };
+      track.appendChild(c);
+    })(list[i], i);
+    b.appendChild(track);
+    var cur = list[pg.sel], cm = md(cur);
+    if (cur) {
+      var foot = U.el('div', 'shp-foot');
+      foot.appendChild(U.el('b', '', (cur.order === 'date' ? cur.airDate : 'S' + cur.season + ' E' + (cur.number || '?')) + '   '));
+      foot.appendChild(document.createTextNode(spoilers && cur.watchState !== 'watched' ? 'Summary hidden until you watch it (Hide spoilers is on).' : RAW(cm.plot || '')));
+      b.appendChild(foot);
+    }
+    b.appendChild(U.el('div', 'shp-pos', (pg.sel + 1) + ' of ' + list.length));
+  }
+  function play() {
+    var e = pg && pg.eps[pg.sel]; if (!e) return;
+    MediaSeries.playEpisode(e, reopen(pg));
+  }
+  function options() {
+    if (!pg || pg.loading) return;
+    var state = pg;
+    if (pg.level === 'eps') { var e = pg.eps[pg.sel]; if (e) MediaSeries.episodeMenu(e, reopen(state)); return; }
+    MediaSeries.showItem({ handle: pg.show.handle }, reopen(state));
+  }
+  function keys(a) {
+    if (!pg) return false;
+    if (a === 'back') { if (pg.level === 'eps' && pg.seasons.length > 1) { pg.level = 'seasons'; pg.loading = false; draw(); } else close(); return true; }
+    if (a === 'red' || a === 'hold' || a === 'info') { options(); return true; }
+    if (pg.loading) return true;
+    if (pg.level === 'seasons') {
+      if (a === 'left' && pg.at > 0) pg.at--;
+      else if (a === 'right' && pg.at < pg.seasons.length - 1) pg.at++;
+      else if (a === 'ok' || a === 'down') return season(pg.at), true;
+    } else {
+      var n = pg.eps.length;
+      if (a === 'left' && pg.sel > 0) pg.sel--;
+      else if (a === 'right' && pg.sel < n - 1) pg.sel++;
+      else if (a === 'chup' || a === 'chdown') pg.sel = Math.max(0, Math.min(n - 1, pg.sel + (a === 'chup' ? -5 : 5)));
+      else if (a === 'up' && pg.seasons.length > 1) { pg.level = 'seasons'; }
+      else if (a === 'ok') { play(); return true; }
+    }
+    draw(); return true;
+  }
+  return { open: open, close: close, isOpen: function () { return !!pg; } };
+})();

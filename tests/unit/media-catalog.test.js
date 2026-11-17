@@ -4,7 +4,7 @@ const assert = require('assert'), fs = require('fs'), os = require('os'), path =
 const Catalog = require('../../service/media-catalog').Catalog;
 const root = fs.mkdtempSync(path.join(os.tmpdir(),'tivibro-catalog-'));
 const call = (object, method, ...args) => new Promise((resolve,reject) => object[method](...args,(e,r) => e ? reject(e) : resolve(r)));
-function ep(n) { return {id:'w:/Harbour/S01E'+n+'.mkv',path:'/Harbour/S01E'+n+'.mkv',file:'Harbour.S01E'+n+'.mkv',kind:'episode',title:'Harbour',ancestors:['Harbour','Season 1'],classification:{showTitle:'Harbour',season:1,numbers:[n],order:'aired',title:'Harbour',review:[]}}; }
+function ep(n) { return {id:'w:/Harbour/S01E'+n+'.mkv',path:'/Harbour/S01E'+n+'.mkv',file:'Harbour.S01E'+n+'.mkv',kind:'episode',title:'Harbour',modified:new Date(Date.UTC(2026,0,n)).toISOString(),ancestors:['Harbour','Season 1'],classification:{showTitle:'Harbour',season:1,numbers:[n],order:'aired',title:'Harbour',review:[]}}; }
 (async function () {
  try {
   const catalog = new Catalog(root); await call(catalog,'open');
@@ -17,6 +17,9 @@ function ep(n) { return {id:'w:/Harbour/S01E'+n+'.mkv',path:'/Harbour/S01E'+n+'.
   assert.equal((await call(catalog,'query',{kind:'show'})).total,1,'complete catalogue still includes favorites for editing and matching');
   await call(catalog,'edit',{operation:'setFavourite',handle,expectedRevision:catalog.revision,favourite:false});
   assert.equal((await call(catalog,'query',{kind:'show',favourite:false})).items[0].handle,handle,'removing favorite restores the show');
+  // Recently added episodes: the show says which episode is newest, by the file's own date.
+  const fresh = await call(catalog,'query',{kind:'show',sort:'new'}); assert.equal(fresh.total,1); assert.equal(fresh.items[0].newEp,'S1E10','the newest file is S01E10'); assert(fresh.items[0].newAt > 0);
+  assert.equal((await call(catalog,'query',{kind:'show',sort:'aired'})).total,0,'no TMDB air dates yet: not on Recently aired');
   const detail = await call(catalog,'detail',{kind:'show',handle}); assert.equal(detail.buckets[0].count,2);
   const episodes = await call(catalog,'query',{kind:'episode',show:handle,limit:1}); assert.equal(episodes.items[0].number,2); assert(episodes.nextCursor);
   const episode = await call(catalog,'detail',{kind:'episode',handle:episodes.items[0].handle}); assert.equal(episode.versions.length,1);

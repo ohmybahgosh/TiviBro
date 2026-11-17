@@ -74,7 +74,7 @@ function sortEpisodes(a, b) {
 /* ---------- public shapes ---------- */
 function project(r) {
   var out = {};
-  ['sourceIds','displayOrder','mergedFrom','preferredVersion','orderPosition','watchRevision','watchOrigin','watchManualAt','boundaries','favourite','sourceId','kind','title','season','number','airDate','absoluteNumber','absolutePart','order','watchState','availability','metadata','addedAt','showId'].forEach(function (k) { if (r[k] !== undefined) out[k] = r[k]; });
+  ['sourceIds','displayOrder','mergedFrom','preferredVersion','orderPosition','watchRevision','watchOrigin','watchManualAt','boundaries','favourite','sourceId','kind','title','season','number','airDate','absoluteNumber','absolutePart','order','watchState','availability','metadata','addedAt','showId','newAt','newEp','airedOn','airedEp'].forEach(function (k) { if (r[k] !== undefined) out[k] = r[k]; });
   out.handle = r.handle || r.id; if (r.episodeIds) out.coveredEpisodes = r.episodeIds.slice();
   if (r.kind === 'episode') out.label = r.airDate || (r.absoluteNumber != null ? String(r.absoluteNumber) + (r.absolutePart ? '.' + r.absolutePart : '') : 'S' + r.season + 'E' + r.number);
   if (r.fileIds) out.versionCount = r.fileIds.length;
@@ -94,6 +94,31 @@ function countShard(shard) {
     c[0]++; if (needsReview(f)) c[1]++; if (f.kind === 'movie') c[2]++; if (f.kind === 'extra') c[3]++;
   });
   return any ? out : null;
+}
+/* A show's newest episodes, kept on the show (shows.json) so My media's Recently added and Recently aired
+   shelves need no reading of every show: newAt, the newest file's date (the server's own date where it gives
+   one, else when TiviBro first saw it) and newEp, its episode; airedOn, the latest TMDB air date of an episode
+   you have, and airedEp.  sumV: summed up this way (older shows are summed up once, in the background). */
+var SUM_V = 1;
+function epLabel(ep) { return ep.order === 'date' ? String(ep.airDate || '') : ep.order === 'absolute' ? 'Episode ' + ep.absoluteNumber : 'S' + ep.season + 'E' + ep.number; }
+function summarize(shard) {
+  var byId = {}, out = { newAt: 0, newEp: '', airedOn: '', airedEp: '' };
+  shard.episodes.forEach(function (ep) { if (!ep.orphaned) byId[ep.id] = ep; });
+  shard.files.forEach(function (f) {
+    if (f.kind !== 'episode' || f.availability === 'missing') return;
+    var t = Date.parse(f.modified || '') || +f.addedAt || 0, ep = byId[(f.episodeIds || [])[0]];
+    if (ep && t > out.newAt) { out.newAt = t; out.newEp = epLabel(ep); }
+  });
+  Object.keys(byId).forEach(function (id) {
+    var ep = byId[id], d = ep.metadata && /^\d{4}-\d\d-\d\d$/.test(ep.metadata.airDate || '') ? ep.metadata.airDate : '';
+    if (d && (ep.fileIds || []).length && d > out.airedOn) { out.airedOn = d; out.airedEp = epLabel(ep); }
+  });
+  return out;
+}
+function putSummary(show, sum) {
+  var changed = show.sumV !== SUM_V;
+  Object.keys(sum).forEach(function (k) { if (show[k] !== sum[k]) { show[k] = sum[k]; changed = true; } });
+  show.sumV = SUM_V; return changed;
 }
 function disabledSources(index, kind) {
   var d = {};
@@ -190,10 +215,37 @@ Catalog.prototype.readShard = function (name, cb, passing) {
 };
 Catalog.prototype.writeShard = function (ctx, name, shard, cb, passing) {
   var counts = countShard(shard);
+  if (isShowShard(name) && ctx.shows && ctx.shows[name] && putSummary(ctx.shows[name], summarize(shard))) ctx.dirtyShows = true;
   if (counts) ctx.index.counts[name] = counts; else delete ctx.index.counts[name];
   var empty = !shard.files.length && (isShowShard(name) ? !shard.episodes.length && !shard.merges.length : !shard.rules.length);
   if (empty) return this.store.remove(name + '.json', cb);
   this.store.write(name + '.json', shard, function (e) { cb(e); }, passing);
+};
+/* Shows from before newAt and airedOn were kept: summed up in the background, 40 at a time so My media
+   stays quick meanwhile; their shelves fill in as it goes (once per start, and a few minutes on a big library). */
+Catalog.prototype.summarizeOld = function () {
+  var self = this;
+  if (self._summarizing) return;
+  self._summarizing = true;
+  (function chunk() {
+    self.serial(function (done) {
+      self.context(function (e, ctx) {
+        if (e) return done(e);
+        var todo = Object.keys(ctx.shows).filter(function (k) { var x = ctx.shows[k]; return !x.orphaned && x.sumV !== SUM_V && isShowShard(k); }).slice(0, 40), changed = false;
+        series(todo, function (sid, next) {
+          self.readShard(sid, function (e2, shard) {
+            if (!e2 && putSummary(ctx.shows[sid], summarize(shard))) changed = true;
+            else if (e2) { ctx.shows[sid].sumV = SUM_V; changed = true; }   // unreadable: not tried again and again
+            self.store.relieve(); next();
+          }, true);
+        }, function () {
+          var more = todo.length === 40;
+          if (!changed && !todo.length) return done(null, more);
+          self.store.write(SHOWS, ctx.showsDoc, function () { done(null, more); });
+        });
+      });
+    }, function (e, more) { if (!e && more) setTimeout(chunk, 200); else self._summarizing = false; });
+  })();
 };
 /* What one job works on: a copy of the small index, and the show and handle maps (shared, in memory). */
 Catalog.prototype.context = function (cb) {
@@ -449,7 +501,13 @@ function queryShows(self, ctx, q, offset, limit) {
   function rating(s) { return +((s.metadata || {}).rating) || 0; }
   list.sort(q.sort === 'release' ? function (a, b) { var x = aired(a), y = aired(b); return x < y ? 1 : x > y ? -1 : byName(a, b); }
     : q.sort === 'added' ? function (a, b) { return ((b.createdAt || 0) - (a.createdAt || 0)) || byName(a, b); }
-    : q.sort === 'rating' ? function (a, b) { return (rating(b) - rating(a)) || byName(a, b); } : byName);
+    : q.sort === 'rating' ? function (a, b) { return (rating(b) - rating(a)) || byName(a, b); }
+    // My media's TV shows shelves: newest episode file first, latest episode aired first (only shows that have one).
+    : q.sort === 'new' ? function (a, b) { return ((b.newAt || 0) - (a.newAt || 0)) || byName(a, b); }
+    : q.sort === 'aired' ? function (a, b) { var x = a.airedOn || '', y = b.airedOn || ''; return x < y ? 1 : x > y ? -1 : byName(a, b); } : byName);
+  if ((q.sort === 'new' || q.sort === 'aired') && list.some(function (s) { return s.sumV !== SUM_V; })) self.summarizeOld();
+  if (q.sort === 'new') list = list.filter(function (s) { return s.newAt > 0; });
+  if (q.sort === 'aired') { var since = new Date(Date.now() - (+q.days > 0 ? +q.days : 30) * 864e5).toISOString().slice(0, 10); list = list.filter(function (s) { return s.airedOn && s.airedOn >= since; }); }
   if (q.reverse === true) list.reverse();
   list.forEach(function (s) {
     if (!afterFound) { if (s.id === q.after) afterFound = true; return; }
