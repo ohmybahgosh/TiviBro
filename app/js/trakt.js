@@ -2,7 +2,7 @@
    Trakt, bring your Trakt watched history in, and Trakt lists as My media shelves (your watchlist, Trakt's
    charts, your own lists and anyone's public list, added like in Radarr and Sonarr: a link, user and list
    name, or a search).  Calls go through the helper (service/trakt.js); the sign-in is kept by mediastore.js.
-   Settings > Trakt (settings.js), the phone app (it mirrors those rows) and the web editor (webedit.js).
+   Settings > My media > Trakt (settings.js), the phone app (it mirrors those rows) and the web editor (webedit.js).
    Chromium 53-compatible. */
 var Trakt = (function () {
   'use strict';
@@ -31,7 +31,7 @@ var Trakt = (function () {
   // A token good for at least a day more; refreshed (Trakt's last 7 days) when it isn't.
   function token() {
     var t = st().token;
-    if (!t || !t.access) return Promise.reject(new Error('Connect Trakt first: Settings > Trakt.'));
+    if (!t || !t.access) return Promise.reject(new Error('Connect Trakt first: Settings > My media > Trakt.'));
     if (t.expires - Date.now() > 86400e3) return Promise.resolve(t.access);
     return req({ op: 'refresh', refresh: t.refresh }).then(function (r) { MediaStore.setTrakt({ token: r.token }); return r.token.access; }, function (e) {
       if (e.signedOut) { MediaStore.setTrakt({ token: null }); changed(); }

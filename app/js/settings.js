@@ -5,31 +5,53 @@ var Settings = (function () {
   // Shown in the language chosen (app/js/i18n.js); the rows themselves are written in English.
   function T(x) { return x && typeof x === 'string' && typeof I18n !== 'undefined' ? I18n.t(x) : x; }
   var nav = $('setNav'), body = $('setBody');
-  var SECTIONS = [['language', 'Language'], ['playlists', 'Playlists'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['names', 'Channel and group names'], ['reminders', 'Reminders and watchlist'],
-    ['playback', 'Playback'], ['audio', 'Audio and subtitles'], ['vod', 'Movies and shows'], ['media', 'My media'], ['trakt', 'Trakt'], ['keys', 'API keys'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
-    ['backups', 'Backups and restore points'], ['connect', 'Phone app and web editor'], ['about', 'Updates, about and diagnostics']];
+  /* Eleven sections (the Settings overhaul): what used to be a section of its own is a page inside the one it
+     belongs to (API keys in Playlists and accounts, Audio and subtitles in Playback...).  PAGES: those old
+     sections, by id, with the section and the row that opens them, so links, older phone apps and tests still
+     land on them. */
+  var SECTIONS = [['language', 'Language'], ['playlists', 'Playlists and accounts'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['playback', 'Playback'],
+    ['vod', 'Movies and shows'], ['media', 'My media'], ['reminders', 'Reminders and watchlist'], ['parental', 'Parental controls'], ['look', 'Appearance'], ['about', 'System']];
+  var PAGES = { keys: ['playlists', 'API keys'], connect: ['playlists', 'Phone app and web editor'], names: ['channels', 'Channel and group names'], audio: ['playback', 'Audio and subtitles'],
+    remote: ['playback', 'Remote and buttons'], trakt: ['media', 'Trakt'], backups: ['about', 'Backups and restore points'] };
   // Old section ids (links in other screens, tests, older phone apps) still land somewhere sensible.
-  var ALIAS = { lang: 'language', groups: 'channels', updates: 'about', diag: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys', subtitles: 'audio', movies: 'vod', shows: 'vod', libraries: 'media' };
+  var ALIAS = { lang: 'language', groups: 'channels', updates: 'about', diag: 'about', system: 'about', phone: 'connect', editor: 'connect', watchlist: 'reminders', apikeys: 'keys', tokens: 'keys', subtitles: 'audio',
+    movies: 'vod', shows: 'vod', libraries: 'media', accounts: 'playlists', appearance: 'look' };
   var sec = 1, zone = 'nav', sel = 0, items = [], scrollEl = null, rowEls = [];
   // Phone app: test builds only while the Android app is in the works (release builds show the web editor alone).
   function phoneOK() { return /alpha|beta/i.test(TIVIBRO_VERSION); }
   function shown(i) { return !!SECTIONS[i]; }
-  /* Everyday or All (Appearance > Settings shown, discussion #36): Everyday leaves out what most people set
-     once, or only to troubleshoot.  A heading left with nothing under it goes too, and the page says how many
-     more there are in All.  The phone and the web editor see the same rows (rowsOf). */
+  /* Advanced view (Appearance > Advanced view; was Settings shown: Everyday or All, discussion #36): off, each page
+     shows what most people change, and the settings people set once or only to troubleshoot wait behind one
+     Advanced row at the bottom of the page; on, they are in place.  The phone and the web editor see the same
+     rows (rowsOf). */
   var ADV = ['Profile details', 'Start learning again', 'Start-up buffer', 'Read-ahead', 'Keep behind playhead', 'Freeze detection', 'Reconnect attempts',
-    'Player engine', 'Stream format', 'Channels with their own format', 'Network helper', 'Buffer meter', 'Buffer info on demand', 'When a channel stops working',
-    'HDR and Dolby Vision', 'Keep the picture while reconnecting', 'Black screen while switching', 'Show stream details in the info panel', 'Fallback audio language',
-    'Keep downloaded subtitles', 'OpenSubtitles key and sign-in', 'Learn a button', 'Button tester', 'Restore default buttons', 'Detailed logging', 'User-Agent'];
-  function lean(list) {
-    if (S().setLevel !== 'basic' || !list) return list;
-    var out = [], hid = 0;
-    list.forEach(function (it) { if (it && !it.head && !it.preview && ADV.indexOf(it.label) >= 0 && !it.keep) hid++; else out.push(it); });
-    out = out.filter(function (it, i) { if (!it || !it.head) return true; var nx = out[i + 1]; return !!(it.label === '' || (nx && !nx.head)); });
-    if (hid) out.push(info(I18n.t('{n} more in All settings', { n: hid }) , 'Appearance and start screen > Settings shown'));
+    'Player engine', 'Stream format', 'Channels with their own format', 'Connection', 'Network helper', 'Buffer meter', 'Buffer info on demand', 'When a channel stops working',
+    'HDR and Dolby Vision', 'Keep the picture while reconnecting', 'Black screen while switching', 'Show stream details in the info panel', 'Memory-safe playback', 'Fallback audio language',
+    'Keep downloaded subtitles', 'Audio converter', 'Learn a button', 'Button tester', 'Restore default buttons', 'Detailed logging', 'User-Agent', 'Provider guide time offset',
+    'Reset watch time', 'View network helper log', 'Clear log', 'What this TV can play', 'Report a problem in the menu', 'Count this TV in the install numbers'];
+  function advanced(it) { return !!(it && !it.head && !it.preview && !it.keep && ADV.indexOf(it.label) >= 0); }
+  // A page's rows as shown: with Advanced view off, its advanced rows behind one Advanced row at the bottom.
+  function shape(fn, where) {
+    var list = (fn() || []).filter(Boolean);
+    if (S().advView || fn.adv) return list;
+    var out = [], n = 0, names = [];
+    list.forEach(function (it) { if (advanced(it)) { n++; if (names.length < 3) names.push(T(it.label)); } else out.push(it); });
+    if (!n) return list;
+    // A heading left with nothing under it goes too.
+    out = out.filter(function (it, i) { if (!it.head) return true; var nx = out[i + 1]; return !!(it.label === '' || (nx && !nx.head)); });
+    var more = function () { return keepAdv(fn()); }; more.adv = true;
+    out.push(head(''));
+    var row = page('Advanced', I18n.raw(names.join(', ') + (n > names.length ? ', …' : '')), (where ? T(where) + '  ·  ' : '') + T('Advanced'), more, function () { return n + ' ' + T(n === 1 ? 'setting' : 'settings') + '  ›'; });
+    row.cls = 'adv-row'; out.push(row);
     return out;
   }
-  function title(sct) { return sct[0] === 'connect' && !phoneOK() ? 'Web editor' : sct[0] === 'about' && typeof Update !== 'undefined' && Update.state && Update.state.state === 'available' ? sct[1] + '  ·  update ready' : sct[1]; }
+  // Only the advanced rows, under the headings they had.
+  function keepAdv(list) {
+    var out = [], hd = null;
+    (list || []).filter(Boolean).forEach(function (it) { if (it.head) hd = it; else if (advanced(it)) { if (hd) { out.push(hd); hd = null; } out.push(it); } });
+    return out;
+  }
+  function title(sct) { return sct[0] === 'about' && typeof Update !== 'undefined' && Update.state && Update.state.state === 'available' ? sct[1] + '  ·  update ready' : sct[1]; }
   /* In the menu: the section's name in the language, and Language always says "Language" in English too,
      so whoever can't read the language TiviBro is in can still find it. */
   function navTitle(s) {
@@ -93,7 +115,7 @@ var Settings = (function () {
       out.push(choice('Reconnect attempts', 'Tries before giving up on a channel.  The budget resets after 30 seconds of clean playback.', [3, 5, 8, 12, 20, 50], ['3', '5', '8', '12', '20', '50'], function () { return +c.retries; }, function (v) { c.retries = v; save(); Views.pipRestart(); }));
     }
     out.push(choice('Buffer meter', 'Shows how many seconds of video are banked, in fullscreen.', ['auto', 'always', 'off'], ['When low', 'Always', 'Off'], function () { return s.meter; }, function (v) { s.meter = v; save(); }));
-    out.push(choice('Buffer info on demand', Keymap.bufferHint() + ' shows the buffer meter and stream info, even with the meter off.  Press again to hide it.  Any button can do this: Settings > Remote and buttons.',
+    out.push(choice('Buffer info on demand', Keymap.bufferHint() + ' shows the buffer meter and stream info, even with the meter off.  Press again to hide it.  Any button can do this: Settings > Playback > Remote and buttons.',
       [5, 10, 30, 0], ['5 seconds', '10 seconds', '30 seconds', 'Until pressed again'], function () { return s.meterPeek == null ? 10 : +s.meterPeek; }, function (v) { s.meterPeek = v; save(); }));
     out.push(head('Player'));
     out.push(choice('Player engine',
@@ -120,6 +142,9 @@ var Settings = (function () {
     out.push(choice('Skip step', 'For Left and Right while watching catch-up or a movie.', [10, 15, 30, 60, 120], ['10s', '15s', '30s', '1 min', '2 min'], function () { return +s.skip; }, function (v) { s.skip = v; save(); }));
     out.push(choice('Rewind / fast forward step', 'For the ◀◀ and ▶▶ buttons while watching catch-up or a movie.', [30, 60, 120, 300, 600], ['30s', '1 min', '2 min', '5 min', '10 min'], function () { return +s.ffStep || 120; }, function (v) { s.ffStep = v; save(); }));
     out.push(choice('◀ on a live channel with catch-up', 'Without catch-up, ◀ always goes to the last channel.', ['rewind', 'last'], ['Rewind', 'Last channel'], function () { return s.rewindLeft === false ? 'last' : 'rewind'; }, function (v) { s.rewindLeft = v === 'rewind'; save(); }));
+    // An idea from the GUI thread (discussion #36): the memory-safe mode set by hand, not only when TiviBro decides.
+    out.push(choice('Memory-safe playback', 'Holds less video in memory so TiviBro doesn\'t close on TVs with 1 or 2 GB.  Automatic turns it on for TVs with 1 GB and after TiviBro closed while playing.',
+      ['auto', 'on', 'off'], ['Automatic', 'Always on', 'Off'], function () { return s.memSafe || 'auto'; }, function (v) { s.memSafe = v; save(); }));
     out.push(head('Switching channels'));
     out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',
       ['auto', 'ask', 'off'], ['Switch to another version', 'Ask me', 'Keep retrying'], function () { return s.backups || 'auto'; }, function (v) { s.backups = v; save(); }));
@@ -157,7 +182,7 @@ var Settings = (function () {
     out.push(head('Subtitles from OpenSubtitles'));
     out.push(action('Subtitle languages', 'For Find subtitles (Subtitles in a movie or show\'s menu).  Several at once: English and Spanish (Latin America), say.', function () { Subs.langMenu(function () { build(); }); },
       function () { return Subs.langs().map(Subs.langName).join(', '); }));
-    // The key and sign-in are under Settings > API keys, with TMDB's token; here too, as a page.
+    // The key and sign-in are under Settings > Playlists and accounts > API keys, with TMDB's token; here too, as a page.
     out.push(page('OpenSubtitles key and sign-in', Subs.configured ? (Subs.user ? 'Key saved, signed in as ' + Subs.user : 'Key saved') : 'Not set up yet', 'API keys', apiKeys, function () { return Subs.configured ? 'Saved' : 'Not set up'; }));
     out.push(choice('Keep downloaded subtitles', 'A movie or episode you come back to gets its subtitles and timing again, without another download.  Kept on this TV only.', [0, 1, 3, 7], ['Off', '1 day', '3 days', 'A week'],
       function () { return s.keepSubs === 0 ? 0 : +s.keepSubs > 0 ? +s.keepSubs : 7; }, function (v) { s.keepSubs = v; if (!v) Subs.forgetKept(); save(); }));
@@ -221,14 +246,14 @@ var Settings = (function () {
     if (Subs.configured) out.push(action('Remove OpenSubtitles key', 'Downloaded subtitles stay where they are.', function () { Subs.setKey(''); Subs.signIn('', ''); U.toast('OpenSubtitles key removed'); build(); }));
     return out;
   }
-  /* Settings > API keys: every key you paste in one place (the TMDB token for posters and details, the
+  /* Settings > Playlists and accounts > API keys: every key you paste in one place (the TMDB token for posters and details, the
      OpenSubtitles key for Find subtitles), each with Test.  Typing them is easiest from the phone app. */
   function apiKeys() {
-    return [info('Paste these from the TiviBro phone app (Settings > API keys): a phone keyboard and copy and paste make it quick.', '')]
+    return [info('Paste these from the TiviBro phone app (Settings > Playlists and accounts > API keys): a phone keyboard and copy and paste make it quick.', '')]
       .concat([head('TMDB: movie and show details and posters')]).concat(tmdbRows().filter(Boolean))
       .concat([head('OpenSubtitles: subtitles for movies and shows')]).concat(osRows());
   }
-  /* Your TMDB token: in Settings > API keys, linked from My media and Movies and shows (Movies on now uses it too). */
+  /* Your TMDB token: in Settings > Playlists and accounts > API keys, linked from My media and Movies and shows (Movies on now uses it too). */
   function tmdbRows() {
     var hasToken = MediaStore.preferences().tmdbConfigured;
     return [
@@ -507,7 +532,7 @@ var Settings = (function () {
     return out;
   }
 
-  /* The DNS choices (Settings > Playlists > DNS, and the first setup screen, discussion #60). */
+  /* The DNS choices (Settings > Playlists and accounts > DNS, and the first setup screen, discussion #60). */
   var DNS_IDS = ['tv', 'cloudflare', 'google', 'quad9', 'controld', 'controld-uncensored', 'doh-cloudflare', 'doh-google', 'doh-controld', 'doh-controld-uncensored', 'custom'];
   var DNS_NAMES = ['The TV\'s own', 'Cloudflare (1.1.1.1, 1.0.0.1)', 'Google (8.8.8.8)', 'Quad9 (9.9.9.9)', 'ControlD Unfiltered (76.76.2.0)', 'ControlD Uncensored (76.76.2.5)', 'Cloudflare over HTTPS', 'Google over HTTPS', 'ControlD Unfiltered over HTTPS', 'ControlD Uncensored over HTTPS', 'A DNS server I type'];
   // after: what to redraw once it is saved (the settings page, or the setup screen).
@@ -899,7 +924,7 @@ var Settings = (function () {
       out.push(toggle('Show Recent channels', '', function () { return s.showRecent; }, function (v) { s.showRecent = v; apply(); }));
       out.push(choice('Recent channels kept', '', [10, 20, 30, 50], ['10', '20', '30', '50'], function () { return +s.recentCount; }, function (v) { s.recentCount = v; save(); }));
       out.push(toggle('Show Favorites group', '', function () { return s.showFav !== false; }, function (v) { s.showFav = v; apply(); }));
-      out.push(toggle('Show Movies on now', 'A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > API keys).',
+      out.push(toggle('Show Movies on now', 'A group of the movies on now, most left first, then the ones starting within the hour.  Needs a TMDB token (Settings > Playlists and accounts > API keys).',
         function () { return s.moviesGroup !== false; }, function (v) { s.moviesGroup = v; apply(); if (typeof Movies !== 'undefined') Movies.poke(); }));
       if (Events.onAny()) out.push(toggle('Show Events by time', 'The group of event channels on now or starting in the next two weeks, soonest first.  The same switch as in Event channels.',
         // Several playlists on: the same switch for each of them (each playlist's Event channels page has its own).
@@ -1167,8 +1192,8 @@ var Settings = (function () {
   }
   function look() {
     var s = S(), out = [];
-    out.push(choice('Settings shown', 'Everyday leaves out the settings most people set once, or only to troubleshoot (buffer details, the player engine, the network helper, learning buttons and the like).  All shows every one.',
-      ['all', 'basic'], ['All', 'Everyday'], function () { return s.setLevel === 'basic' ? 'basic' : 'all'; }, function (v) { s.setLevel = v; save(true); }));
+    out.push(toggle('Advanced view', 'Shows every setting in place.  Off keeps the menus short: what most people set once, or only to fix a problem, waits behind an Advanced row at the bottom of each page.',
+      function () { return !!s.advView; }, function (v) { s.advView = v; save(true); }));
     out.push(head('Start and navigation'));
     out.push(choice('Start screen', 'What TiviBro opens on, and where Back from other screens leads.', ['guide', 'live'], ['Guide', 'Channels screen'],
       function () { return s.startTab === 'live' ? 'live' : 'guide'; }, function (v) { s.startTab = v; save(); Views.buildTabs(); }));
@@ -1310,6 +1335,8 @@ var Settings = (function () {
     out.push(phoneDoes('log', action('View app log', 'This session.  The phone app shows it as text you can read and share.', function () { Diag.showLog(false); })));
     out.push(action('View app log with earlier sessions', 'Useful after a crash or restart.', function () { Diag.showLog(true); }));
     out.push(action('View network helper log', 'Every request the helper made: status, time, size, and the network error if any.', function () { Diag.showHelperLog(); }));
+    // Release builds: Report a problem in the menu bar too (test builds always have it).
+    if (!/alpha|beta/i.test(TIVIBRO_VERSION)) out.push(toggle('Report a problem in the menu', 'Puts Report a problem at the bottom of the menu bar, one press from anywhere.', function () { return !!S().reportInMenu; }, function (v) { S().reportInMenu = v; save(); Views.buildTabs(); }));
     out.push(toggle('Detailed logging', 'Also logs every request and buffer event.  Turn on while chasing a problem.', function () { return Log.verbose; }, function (v) { Log.verbose = v; paint(); }));
     out.push(action('Clear log', '', function () { Log.clear(); U.toast('Log cleared'); }));
     out.push(page('What this TV can play', 'Video, HDR and sound formats, for the built-in player and the TV player.', 'What this TV can play', function () {
@@ -1450,8 +1477,8 @@ var Settings = (function () {
         // The one thing to do here: in the theme's "go" colour, with a NEW badge, so it isn't missed among the rows.
         if (st.installer === 'hbchannel') { var go = action('Install ' + r.version + ' now', 'Downloads it, checks its fingerprint and installs it through the Homebrew Channel.  TiviBro then restarts by itself, with all your settings.', function () {
           UI.confirm('Install TiviBro ' + r.version + '?', 'Install and restart', function () { Update.install().catch(function (e) { U.toast(e.message, 6000); }); });
-        }, function () { return 'NEW'; }); go.cls = 'update-go'; out.push(go); }
-        else if (st.installer === '') out.push(info('Install it from a computer or the Homebrew Channel', 'This TV can\'t install updates by itself (that needs a rooted TV with the Homebrew Channel).  The release page has the IPK and instructions: github.com/' + Update.REPO + '/releases'));
+        }, function () { return 'NEW'; }); go.attn = true; out.push(go); }
+        else if (st.installer === '') out.push((function (x) { x.attn = true; return x; })(info('Install it from a computer or the Homebrew Channel', 'This TV can\'t install updates by itself (that needs a rooted TV with the Homebrew Channel).  The release page has the IPK and instructions: github.com/' + Update.REPO + '/releases')));
       }
       out.push(page('What\'s new', '', 'What\'s new in ' + r.version, function () {
         return (r.notes && r.notes.length ? r.notes : ['No notes for this release.']).map(function (n) { return info(n, ''); });
@@ -1566,7 +1593,7 @@ var Settings = (function () {
       it.raw = true;                  // "Español" stays "Español" whatever TiviBro is in
       out.push(it);
     });
-    out.push(info('Something reads wrong, or you\'d like TiviBro in your language?  Settings > Updates, about and diagnostics > Report a problem, or a discussion on GitHub.', ''));
+    out.push(info('Something reads wrong, or you\'d like TiviBro in your language?  Settings > System > Report a problem, or a discussion on GitHub.', ''));
     return out;
   }
 
@@ -1602,11 +1629,89 @@ var Settings = (function () {
     return out;
   }
 
+  /* Fix a problem (System, first row): the common problems in plain words, what to try first, and the
+     settings that matter for each, one press away (jump: the setting's own row, found like Search finds it). */
+  function jump(label, why) {
+    var it = action(label, why, function () { var r = findIndex().filter(function (x) { return x.label === label; })[0]; if (r) goFound(r); else U.toast(T('That setting isn\'t on this TV.')); }, function () { return '›'; });
+    it.cls = 'jump'; return it;
+  }
+  function tip(text) { return { label: text, info: true, cls: 'tip', value: function () { return ''; } }; }
+  function fixes() {
+    // Its rows are what to try, advanced or not: none goes behind an Advanced row here.
+    function prob(label, sub, rows) { var fn = function () { return rows(); }; fn.adv = true; return page(label, sub, label, fn); }
+    return [
+      prob('Channels freeze or buffer', 'Pictures stop, or the circle spins.', function () { return [
+        tip('Most freezes are the stream itself: try the same channel in another app, or another version of it (HD, FHD, backup).  Then the settings below, one at a time.'),
+        jump('Buffer profile', 'More buffer: fewer freezes, a little slower to start.'), jump('Stream format', 'HLS copes better with a weak connection, MPEG-TS switches faster.'),
+        jump('Memory-safe playback', 'On a TV with 1 or 2 GB, or when TiviBro closes while playing.'),
+        action('Speed test', 'Your internet and your provider\'s speed, and what that is enough for.', function () { Diag.speedTest(); }),
+        action('Run connection test', 'Checks the helper, the login, the channel list, a stream and the guide, step by step.', function () { Diag.run(); })]; }),
+      prob('A channel won\'t play', 'A black screen, an error, or it keeps reconnecting.', function () { return [
+        tip('If several channels fail at once, it is usually the provider: Provider status says so, and what to tell them.'),
+        jump('Provider status', 'Whether your provider answers, right now.'), jump('When a channel stops working', 'Switch to another version of the channel by itself.'),
+        jump('Player engine', 'The TV player plays some streams the built-in one can\'t, and the other way round.'), jump('Connection', 'Through the network helper (most providers) or straight from the TV.'),
+        action('Run connection test', 'Checks the helper, the login, the channel list, a stream and the guide, step by step.', function () { Diag.run(); })]; }),
+      prob('No guide, or the wrong programmes', 'Empty rows, or programmes from another channel or time.', function () { return [
+        tip('A channel with the wrong programmes: Hold OK on it in the Guide > Choose guide channel.  Every programme too early or late: the time offset below.'),
+        jump('Provider guide', 'Per channel, or the full file.'), jump('Guide sources', 'Add an XMLTV address when your provider has none.'), jump('Public guide fill-in', 'Free guides for channels nothing else covers.'),
+        jump('Provider guide time offset', 'When every programme is too early or too late.'), jump('Reload guide now', 'Read the guide again now.')]; }),
+      prob('No sound, or the wrong language', 'Silence, or another language than you want.', function () { return [
+        tip('In fullscreen, OK > Audio picks another track for what is playing.  Movies with DTS sound have no sound on many LG TVs: the converter below fixes that.'),
+        jump('Audio language', 'The language tried first.'), jump('Prefer surround sound', 'The 5.1 or Dolby track when there is one.'), jump('Convert audio the TV can\'t play', 'DTS and TrueHD on LG TVs.')]; }),
+      prob('Subtitles or captions', 'Missing, too small, or out of time.', function () { return [
+        tip('In fullscreen, OK > Subtitles picks a track, Find subtitles gets them from OpenSubtitles, and Timing moves them earlier or later.'),
+        jump('Subtitles automatically', 'On whenever a stream has them.'), jump('Closed captions', 'For live TV channels that send them.'), jump('Subtitle size', 'Bigger or smaller.'),
+        jump('OpenSubtitles key and sign-in', 'Needed for Find subtitles.')]; }),
+      prob('Movies or shows are missing', 'Movies and Shows, or My media, are empty or not all there.', function () { return [
+        tip('Movies and Shows come from your provider and load again with the playlist (Playlists and accounts > the playlist > Reload channels now).  My media scans your own libraries: Green on My media scans again.'),
+        jump('Movies and Shows open on', 'Home, or the list of categories.'), jump('Scan all libraries', 'Look for added and removed movies and episodes.'), jump('Fetch details for all', 'Posters and details from TMDB.')]; }),
+      prob('TiviBro closed by itself, or is slow', 'It quits while playing, or the screens are slow.', function () { return [
+        tip('TiviBro says what it was doing when it closed, and offers to send a report.  On TVs with 1 or 2 GB, these settings help most.'),
+        jump('Memory-safe playback', 'Holds less video in memory.'), jump('Public guide fill-in', 'Fewer countries means less to read.'), jump('Keep past days', 'Fewer days of catch-up guide.'),
+        jump('Preview on the Channels screen', 'Off for the snappiest list on slow TVs.'), jump('Report a problem', 'Sends this TV\'s details and log, logins taken out.')]; })
+    ];
+  }
+  /* The eleven sections, from the pages they hold (see SECTIONS and PAGES). */
+  function playlistsSection() {
+    return playlists().concat([head('Accounts and keys'),
+      page('API keys', 'TMDB for movie and show details and posters, OpenSubtitles for subtitles.', 'API keys', apiKeys, function () { return (MediaStore.tmdbToken() ? 'TMDB' : '') + (typeof Subs !== 'undefined' && Subs.configured ? (MediaStore.tmdbToken() ? ', ' : '') + 'OpenSubtitles' : '') + '  ›'; }),
+      page(phoneOK() ? 'Phone app and web editor' : 'Web editor', 'Use your phone as a remote, or edit groups, names and the guide from a computer.', phoneOK() ? 'Phone app and web editor' : 'Web editor', connect)]);
+  }
+  function channelsSection() {
+    return groups().concat([head('Names'), page('Channel and group names', 'Tidy how names read: "USA | ESPN HD" becomes "ESPN".  Your playlist isn\'t changed.', 'Channel and group names', names)]);
+  }
+  function playbackSection() {
+    return playback().concat([head('Sound, subtitles and the remote'),
+      page('Audio and subtitles', 'Audio language, surround, subtitles and captions, OpenSubtitles.', 'Audio and subtitles', audioSubs),
+      page('Remote and buttons', 'What each button does in the player, the guide and the lists.', 'Remote and buttons', remote)]);
+  }
+  function systemSection() {
+    // An update ready: first thing on the page, in the "go" colour, so it can't be missed (it was one row among many).
+    var st = typeof Update !== 'undefined' ? Update.state : null, top = [];
+    if (st && st.state === 'available' && st.latest) {
+      var v = st.latest.version, ready = st.installer === 'hbchannel'
+        ? action('TiviBro ' + v + ' is ready to install', 'Press OK to install it.  TiviBro restarts by itself, with all your settings.', function () { UI.confirm('Install TiviBro ' + v + '?', 'Install and restart', function () { Update.install().catch(function (e) { U.toast(e.message, 6000); }); }); }, function () { return 'NEW'; })
+        : info('TiviBro ' + v + ' is out', 'Install it from a computer or the Homebrew Channel');
+      ready.attn = true; ready.keep = true; top.push(ready);
+    }
+    return top.concat([page('Fix a problem', 'Channels freeze, no guide, no sound, TiviBro closed or is slow: what to try first.', 'Fix a problem', fixes)].concat(about(),
+      [head('Backups'), page('Backups and restore points', 'Everything saved, to put back on this TV or another one.', 'Backups and restore points', backups)]));
+  }
   var BY_ID = { language: language, playlists: playlists, guide: guide, channels: groups, names: names, reminders: reminders, playback: playback, audio: audioSubs, vod: vodSettings, media: media, trakt: trakt, keys: apiKeys, remote: remote, look: look, parental: parental, backups: backups, connect: connect, about: about };
-  var FNS = SECTIONS.map(function (x) { return BY_ID[x[0]]; });
+  var SEC_FNS = { playlists: playlistsSection, channels: channelsSection, playback: playbackSection, about: systemSection };
+  var FNS = SECTIONS.map(function (x) { return SEC_FNS[x[0]] || BY_ID[x[0]]; });
+  // An old section that is now a page: its section, and the row's place in it (or -1).
+  function pageOf(id) {
+    var p = PAGES[id]; if (!p) return null;
+    var i = -1; for (var x = 0; x < SECTIONS.length; x++) if (SECTIONS[x][0] === p[0]) i = x;
+    if (i < 0) return null;
+    var list = shape(FNS[i], SECTIONS[i][1]), n = -1;
+    for (var k = 0; k < list.length; k++) if (list[k] && list[k].page && (list[k].label === p[1] || (p[1] === 'Phone app and web editor' && list[k].label === 'Web editor'))) { n = k; break; }
+    return { i: i, n: n, it: list[n] };
+  }
   function build() {
     var top = stack[stack.length - 1];
-    items = top ? [head(stack.map(function (x) { return T(x.title); }).join('  ›  '))].concat(lean(top.fn())) : sec < 0 ? findPage() : lean(FNS[sec]());
+    items = top ? [head(stack.map(function (x) { return T(x.title); }).join('  ›  '))].concat(shape(top.fn, top.title)) : sec < 0 ? findPage() : shape(FNS[sec], SECTIONS[sec][1]);
     items = items.filter(Boolean);
     sel = U.clamp(sel, 0, Math.max(0, items.length - 1));
     if (!focusable(sel)) { var i = sel; while (i < items.length && !focusable(i)) i++; if (i >= items.length) { i = sel; while (i > 0 && !focusable(i)) i--; } sel = i; }
@@ -1615,15 +1720,18 @@ var Settings = (function () {
     scrollEl._y = 0;
     rowEls = items.map(function (it, i) {
       if (it.preview) return it.el;
-      var d = U.el('div', 'opt' + (it.head ? ' head' : '') + (it.big ? ' big' : it.info ? ' dim' : '') + (it.cls ? ' ' + it.cls : ''));
+      var d = U.el('div', 'opt k-' + kindOf(it) + (it.head ? ' head' : '') + (it.big ? ' big' : it.info ? ' dim' : '') + (it.attn ? ' attn' : '') + (it.cls ? ' ' + it.cls : ''));
       var l = U.el('div', 'ol', it.raw ? it.label : T(it.label));
-      if (it.sub) l.appendChild(U.el('small', '', it.raw ? it.sub : T(it.sub)));
+      // Under the name, its first sentence; the whole note shows in the help line when the row is focused.
+      if (it.sub) { var full = it.raw ? it.sub : T(it.sub), short = brief(full); l.appendChild(U.el('small', '', short)); d._help = short !== full ? full : ''; }
       d.appendChild(l);
       if (!it.head) {
         d._v = U.el('div', 'ov'); d.appendChild(d._v);
+        // On / Off as a switch.
+        if (it.toggle) { d._tg = U.el('span', 'tgl'); d._tg.appendChild(U.el('i', '')); d.appendChild(d._tg); }
         // A value you change with ◀ ▶ shows the arrows on the focused row, and with the Magic
         // Remote each arrow can be clicked.
-        if (it.cycle) {
+        if (it.cycle && !it.toggle) {
           d.classList.add('cyc');
           var al = U.el('span', 'ar', '‹'), ar = U.el('span', 'ar', '›');
           d._sw = U.el('i', 'sw hidden'); d._t = U.el('span', '');
@@ -1659,12 +1767,29 @@ var Settings = (function () {
     nav.appendChild(sn);
     SECTIONS.forEach(function (s, i) {
       if (!shown(i)) return;
-      var n = U.el('div', i === sec ? 'on' : '', navTitle(s));
+      var n = U.el('div', (i === sec ? 'on' : '') + (s[0] === 'about' && typeof Update !== 'undefined' && Update.state && Update.state.state === 'available' ? ' attn' : ''), navTitle(s));
       n.addEventListener('click', function () { stack = []; sec = i; sel = 0; zone = 'nav'; build(); });
       nav.appendChild(n);
     });
   }
   function put(el, s) { s = s == null ? '' : String(s); if (el.textContent !== s) el.textContent = s; }
+  /* What kind of row it is, for its look (and the phone's and the web editor's): a setting with choices, an On / Off
+     switch, a page, a button, a fact (status), a note or tip, or a heading. */
+  function kindOf(it) {
+    if (it.head) return 'head';
+    if (it.preview) return 'preview';
+    if (it.info) { var v = ''; try { v = it.value ? String(it.value() || '') : ''; } catch (e) {} return v && v !== '›' ? 'status' : 'note'; }
+    if (it.toggle) return 'toggle';
+    if (it.values || it.cycle) return 'choice';
+    if (it.page || it.phonePage) return 'page';
+    return 'action';
+  }
+  // A note's first sentence (sentences end with ".  "), for under the name.
+  function brief(t) { t = String(t || ''); var i = t.indexOf('.  '); return i > 0 && i < t.length - 3 ? t.slice(0, i + 1) : t; }
+  function help(e) {
+    var h = document.getElementById('setHelp'); if (!h) return;
+    put(h, e && e._help && zone === 'body' ? e._help : '');
+  }
   function rows() {
     rowEls.forEach(function (e, i) {
       var it = items[i];
@@ -1674,9 +1799,11 @@ var Settings = (function () {
         var sw = it.swatch && it.swatch();
         e._sw.classList.toggle('hidden', !sw);
         if (sw && e._swc !== sw) { e._sw.style.background = sw; e._swc = sw; }
-      } else if (e._v) put(e._v, it.value ? (it.raw ? it.value() : T(it.value())) : '');
+      } else if (e._tg) { var on = !!it.get(); e._tg.classList.toggle('on', on); put(e._v, T(on ? 'On' : 'Off')); }
+      else if (e._v) { var tv = it.value ? (it.raw ? it.value() : T(it.value())) : ''; if (it.page || it.cls === 'jump') tv = String(tv).replace(/\s*›$/, ''); put(e._v, tv); }
       e.classList.toggle('focus', zone === 'body' && i === sel && focusable(i));
     });
+    help(rowEls[sel]);
     var f = rowEls[sel];
     if (f && scrollEl) {
       var y = f.offsetTop, h = body.clientHeight, cur = scrollEl._y || 0;
@@ -1743,10 +1870,10 @@ var Settings = (function () {
         var own = typeof it.label === 'string' && (!I18n.known || I18n.known(it.label));
         if (own) out.push({ sec: secId, chain: chain, trail: trail, label: it.label, sub: it.sub || '' });
         // A page that is another section (API keys from My media) is found under that section, once.
-        if (it.page && depth < 3 && own && FNS.indexOf(it.page.fn) < 0) { var l2; try { l2 = lean(it.page.fn()); } catch (e) { l2 = null; } walk(secId, l2, chain.concat([it.page]), trail.concat([it.page.title]), depth + 1); }
+        if (it.page && depth < 3 && own && FNS.indexOf(it.page.fn) < 0) { var l2; try { l2 = it.page.fn(); } catch (e) { l2 = null; } walk(secId, l2, chain.concat([it.page]), trail.concat([it.page.title]), depth + 1); }
       });
     }
-    SECTIONS.forEach(function (x, i) { if (!shown(i)) return; var l; try { l = lean(FNS[i]()); } catch (e) { l = null; } walk(x[0], l, [], [title(x)], 0); });
+    SECTIONS.forEach(function (x, i) { if (!shown(i)) return; var l; try { l = FNS[i](); } catch (e) { l = null; } walk(x[0], l, [], [title(x)], 0); });
     findIx = out; findAt = Date.now();
     return out;
   }
@@ -1783,7 +1910,11 @@ var Settings = (function () {
   function goFound(r) {
     if (!section(r.sec)) return;
     r.chain.forEach(function (pg) { push(pg.title, pg.fn); });
-    for (var i = 0; i < items.length; i++) if (items[i] && items[i].label === r.label && focusable(i)) { sel = i; break; }
+    function at() { for (var i = 0; i < items.length; i++) if (items[i] && items[i].label === r.label && focusable(i)) return i; return -1; }
+    var n = at();
+    // An advanced setting with Advanced view off: into the page's Advanced row.
+    if (n < 0) for (var j = 0; j < items.length; j++) if (items[j] && items[j].cls === 'adv-row' && items[j].page) { push(items[j].page.title, items[j].page.fn); n = at(); break; }
+    if (n >= 0) sel = n;
     zone = 'body'; paint();
   }
 
@@ -1807,6 +1938,8 @@ var Settings = (function () {
   function section(id) {
     if (id === 'phone' && !phoneOK()) return false;
     if (ALIAS[id]) id = ALIAS[id];
+    var pg = pageOf(id);
+    if (pg && pg.it) { sec = pg.i; stack = []; sel = pg.n; zone = 'body'; push(pg.it.page.title, pg.it.page.fn); return true; }
     for (var i = 0; i < SECTIONS.length; i++) if (SECTIONS[i][0] === id && shown(i)) { sec = i; stack = []; sel = 0; zone = 'body'; build(); return true; } return false; }
 
   /* Settings from the phone app (ask "settings" in phone.js): the same pages, built by the same code, as
@@ -1816,15 +1949,17 @@ var Settings = (function () {
      page is built again and sent back, so rows that depend on others appear or go. */
   function rowsOf(secId, path) {
     if (ALIAS[secId]) secId = ALIAS[secId];
+    var pg0 = pageOf(secId);
+    if (pg0 && pg0.n >= 0) { secId = SECTIONS[pg0.i][0]; path = [pg0.n].concat(path || []); }
     var i = -1; for (var x = 0; x < SECTIONS.length; x++) if (SECTIONS[x][0] === secId) i = x;
     if (i < 0) throw new Error('No such settings page');
-    var list = lean(FNS[i]()), title = title0(SECTIONS[i]), trail = [title];
+    var list = shape(FNS[i], SECTIONS[i][1]), title = title0(SECTIONS[i]), trail = [title];
     (path || []).forEach(function (n) {
       var it = list[n];
       var pg = it && (it.page || it.phonePage);
       if (!pg) throw new Error('That page has changed on the TV.  Go back and open it again.');
       title = pg.title && typeof pg.title === 'object' && pg.title.s != null ? String(pg.title.s) : pg.title;   // a name kept as written (I18n.raw) is plain text for the phone
-      trail.push(title); list = lean(pg.fn());
+      trail.push(title); list = shape(pg.fn, title);
     });
     return { title: title, trail: trail, list: list };
   }
@@ -1844,6 +1979,11 @@ var Settings = (function () {
     if (it.swatch) try { r.swatch = it.swatch() || ''; } catch (e) {}
     if (it.phone) { r.phone = it.phone; if (it.sid) r.sid = it.sid; if (it.epage) r.epage = it.epage; if (it.ptype) r.ptype = it.ptype; }
     if (it.tv) r.tv = 1;
+    // The row's look (the Settings overhaul): its kind, whether it wants you, a tip or a jump, the first sentence.
+    r.look = kindOf(it);
+    if (it.attn) r.attn = 1;
+    if (it.cls === 'tip' || it.cls === 'jump' || it.cls === 'adv-row') r.style = it.cls;
+    if (r.sub) { var b1 = brief(r.sub); if (b1 !== r.sub) r.brief = b1; }
     return r;
   }
   /* A button pressed on the phone asks its questions on the phone.  While it runs (and for a while

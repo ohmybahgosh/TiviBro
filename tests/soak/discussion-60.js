@@ -35,7 +35,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     ok('CH+ after switching to a recent channel goes on from it', z.got === z.want, JSON.stringify(z));
     // Up and Down the other way round.
     const ud = await ev(() => { Views.runAction('exit', 'player'); Player.stop(); Views.switchTab('settings'); Settings.section('remote'); return document.getElementById('setBody').innerText; });
-    ok('Settings > Remote and buttons has Up and Down in fullscreen', /Up and Down in fullscreen/.test(ud), ud.slice(0, 300));
+    ok('Settings > Playback > Remote and buttons has Up and Down in fullscreen', /Up and Down in fullscreen/.test(ud), ud.slice(0, 300));
     const k = await ev(() => { const b0 = [Keymap.get('player', 'up'), Keymap.get('player', 'down')]; Keymap.set('player', 'up', 'chnext'); Keymap.set('player', 'down', 'chprev'); const b1 = [Keymap.get('player', 'up'), Keymap.get('player', 'down')]; Keymap.reset('player'); return { b0, b1 }; });
     ok('the default is Up to the channel above, and it swaps', k.b0.join() === 'chprev,chnext' && k.b1.join() === 'chnext,chprev', JSON.stringify(k));
     const st = await ev(() => { Settings.section('vod'); return document.getElementById('setBody').innerText; });

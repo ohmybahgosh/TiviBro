@@ -49,7 +49,7 @@
 | 🤖 **Building a feature with AI?** | [Download the knowledge base](https://tivibro.app/ai/tivibro-for-ai.md) for Claude, ChatGPT or Gemini |
 
 > [!WARNING]
-> **TiviBro is in alpha testing, getting ready for its first beta.**  It runs every day on real LG TVs, from a 2019 webOS 4 OLED to webOS 5, 22 and 25 sets, along with the Android phone app.  Expect some rough edges, and settings or features may still change between builds.  Keep a backup before updating (**Backups and restore points** in the phone app or the [web editor](#the-web-editor)).  Found a bug?  On the TV, **Settings > Updates, about and diagnostics > Report a problem** (also on the first screen) fills in a [GitHub issue](https://github.com/ohmybahgosh/TiviBro/issues) for you from your phone: see [Report a problem](#report-a-problem).
+> **TiviBro is in alpha testing, getting ready for its first beta.**  It runs every day on real LG TVs, from a 2019 webOS 4 OLED to webOS 5, 22 and 25 sets, along with the Android phone app.  Expect some rough edges, and settings or features may still change between builds.  Keep a backup before updating (**Backups and restore points** in the phone app or the [web editor](#the-web-editor)).  Found a bug?  On the TV, **Settings > System > Report a problem** (also on the first screen) fills in a [GitHub issue](https://github.com/ohmybahgosh/TiviBro/issues) for you from your phone: see [Report a problem](#report-a-problem).
 
 <p align="center"><a href="https://tivibro.app/media/promo.mp4"><img src="docs/media/promo-poster.jpg" width="100%" alt="TiviBro in a minute: play the promo video"></a></p>
 <p align="center"><sub><b><a href="https://tivibro.app/media/promo.mp4">▶ Watch TiviBro in a minute</a></b> (with sound): the guide, My teams, themes, settings, the phone app and the web editor.  Every picture here is clickable.</sub></p>
@@ -97,7 +97,7 @@ No typing logins with a remote.  The first screen shows a QR code: scan it with 
 | 🔊 **Sound the TV can't play** | LG TVs from 2020 to 2022 can't play DTS, and no LG TV plays Dolby TrueHD.  TiviBro picks another track in your language if the file has one, or converts the sound to Dolby Digital while you watch, picture untouched.  The converter comes with TiviBro: nothing to download or set up. |
 | 🖼️ **Logos for every channel** | Missing logos filled in from two open logo projects, matched by guide id, name, country and call sign.  Or one matching style for the whole list. |
 | 🖥️ **A real editor** | Hide, sort, rename, copy and match guides for hundreds of channels from any browser.  Drafts, undo and restore points. |
-| ⚙️ **Settings that keep playing** | The channel carries on in the corner of Settings, and Hold OK goes back to it in fullscreen.  **Search settings** (Yellow) finds any setting by a word, in your language or English.  The TV, the phone app and the web editor share one layout with the same names: Language, Playlists, Guide, Channels and groups, Channel and group names, Reminders and watchlist, Playback, Audio and subtitles, Movies and shows, My media, API keys, Remote and buttons, Appearance and start screen, Parental controls, Backups and restore points, Phone app and web editor, and Updates, about and diagnostics. |
+| ⚙️ **Settings that keep playing** | The channel carries on in the corner of Settings, and Hold OK goes back to it in fullscreen.  **Search settings** (Yellow) finds any setting by a word, in your language or English.  The TV, the phone app and the web editor share one layout with the same names: Language, Playlists, Guide, Channels and groups, Channel and group names, Reminders and watchlist, Playback, Audio and subtitles, Movies and shows, My media, API keys, Remote and buttons, Appearance, Parental controls, Backups and restore points, Phone app and web editor, and System. |
 | 🔒 **Locked backups** | Everything in one AES-256-GCM file.  Restore onto a brand-new TV straight from the first screen.  **Backups and restore points** keeps backups, the locked file and the TV's restore points in one place, on the TV, in the phone app and in the web editor. |
 | 🔁 **Backup versions** | Playlists often carry a channel in FHD, HD and SD.  TiviBro tags each copy, lets you switch between them, and if one dies it moves to the next by itself and tells you, even to copies you hid to tidy your lists. |
 | 🏟️ **Event channels** | Pay-per-view and sports passes that cram the whole listing into the channel name ("NCAAB 001 \| NORTH FLORIDA @ CHARLESTON SOUTHERN (M) \| 12.18 11:00 AM") show as **NCAAB 001**, with the game in the guide at its real time, in your time zone.  **Events by time** lists what's on next across all of them. |
@@ -319,7 +319,7 @@ The logo library matches your channels to [iptv-org](https://github.com/iptv-org
 
 ### Movies on now
 
-Save your own free TMDB token (**Settings > API keys**) and TiviBro finds the movies in your guide: the guide's Movie category, a year in the title, long programmes on movie channels, and other long programmes that TMDB knows well as films.  They get a poster, year, runtime, genres and rating in the guide, a **Movie** tag in the grid, and a **Movies on now** group: what's on (most left first), then what starts within the hour.  **Movies on now** in the menu shows them as big posters: **On now**, **Starting soon**, then a shelf for each genre (Action, Comedy, Family…).  Only titles go to TMDB, and answers are kept on the TV for 30 days.
+Save your own free TMDB token (**Settings > Playlists and accounts > API keys**) and TiviBro finds the movies in your guide: the guide's Movie category, a year in the title, long programmes on movie channels, and other long programmes that TMDB knows well as films.  They get a poster, year, runtime, genres and rating in the guide, a **Movie** tag in the grid, and a **Movies on now** group: what's on (most left first), then what starts within the hour.  **Movies on now** in the menu shows them as big posters: **On now**, **Starting soon**, then a shelf for each genre (Action, Comedy, Family…).  Only titles go to TMDB, and answers are kept on the TV for 30 days.
 
 TV series get the same in the guide: a poster, when the show started, its network, genres and rating, and the episode's own title and summary when the guide gives the season and episode.  **Info** on a series opens **About this show**, with its seasons, cast and next showings.
 
@@ -473,11 +473,11 @@ A backup holds every playlist with its login, your groups, favorites, names, gui
   <a href="https://tivibro.app/view/#tv-set-playback"><img src="docs/screenshots/tv-set-playback.png" width="32%" alt="Playback"></a>
   <a href="https://tivibro.app/view/#tv-set-my-media"><img src="docs/screenshots/tv-set-my-media.png" width="32%" alt="My media"></a>
   <a href="https://tivibro.app/view/#tv-set-remote"><img src="docs/screenshots/tv-set-remote.png" width="32%" alt="Remote and buttons"></a>
-  <a href="https://tivibro.app/view/#tv-set-look"><img src="docs/screenshots/tv-set-look.png" width="32%" alt="Appearance and start screen"></a>
+  <a href="https://tivibro.app/view/#tv-set-look"><img src="docs/screenshots/tv-set-look.png" width="32%" alt="Appearance"></a>
   <a href="https://tivibro.app/view/#tv-settings-parental"><img src="docs/screenshots/tv-settings-parental.png" width="32%" alt="Parental controls"></a>
   <a href="https://tivibro.app/view/#tv-set-backups"><img src="docs/screenshots/tv-set-backups.png" width="32%" alt="Backups and restore points"></a>
   <a href="https://tivibro.app/view/#tv-set-editor-on"><img src="docs/screenshots/tv-set-editor-on.png" width="32%" alt="Phone app and web editor"></a>
-  <a href="https://tivibro.app/view/#tv-set-updates"><img src="docs/screenshots/tv-set-updates.png" width="32%" alt="Updates, about and diagnostics"></a>
+  <a href="https://tivibro.app/view/#tv-set-updates"><img src="docs/screenshots/tv-set-updates.png" width="32%" alt="System"></a>
   <a href="https://tivibro.app/view/#tv-set-diag-test"><img src="docs/screenshots/tv-set-diag-test.png" width="32%" alt="Connection test"></a>
   <a href="https://tivibro.app/view/#tv-set-caps"><img src="docs/screenshots/tv-set-caps.png" width="32%" alt="What this TV can play"></a>
 </p>
@@ -513,7 +513,7 @@ The **[user guide](docs/USER-GUIDE.md)** (also on the [wiki](../../wiki)) covers
 
 Something broke?  Report it from the TV, no cables or log copying:
 
-1. On the TV: **Settings > Updates, about and diagnostics > Report a problem**.  On the first screen, when the login won't work, **Report a problem** sits beside **View log**.
+1. On the TV: **Settings > System > Report a problem**.  On the first screen, when the login won't work, **Report a problem** sits beside **View log**.
 2. Scan the QR code with your phone (or open the address on a computer).  The web editor opens on **Report a problem**, signed in.
 3. Say where the problem is and what happened.  The TV adds its TiviBro version, TV model and webOS, a few settings, and the app and network helper logs.  Everything that will be shared is shown on the page first.
 4. **Save the log file**, then **Open the GitHub form**: it is filled in with what you typed, the TV's details and the recent errors.  Drag the log file in and press **Create**.  You need a free GitHub account.
@@ -528,7 +528,7 @@ The easiest way on a rooted TV, with updates from the TV itself:
 
 1. Open the **Homebrew Channel**, go to **Settings**, and choose **Add repository**.
 2. Enter `https://tivibro.app/repo`
-3. TiviBro appears in the Homebrew Channel's app list.  Open it and choose **Install**.  New versions show up there as **Update** (and inside TiviBro under **Settings > Updates, about and diagnostics**).
+3. TiviBro appears in the Homebrew Channel's app list.  Open it and choose **Install**.  New versions show up there as **Update** (and inside TiviBro under **Settings > System**).
 4. Open TiviBro and scan the QR code on the first screen with your phone to add your playlist there.
 
 Want every test build as soon as it's out?  Add `https://tivibro.app/testing` instead.  Until the first full release, both addresses give you the newest test build.
@@ -582,7 +582,7 @@ If `scp` fails, pipe the file instead: `cat app.tivibro.tv_0.6.0_all.ipk | ssh r
 
 ### Updating
 
-TiviBro checks for a new release every time it starts and every 6 hours while it is open (**Settings > Updates, about and diagnostics**).  A new version found at start is offered right away with what's new in it: on a rooted TV with the Homebrew Channel, **Install and restart** downloads it, checks it and installs it, and TiviBro restarts on the new version with all your settings, then shows what changed.  On other TVs it shows the new version; install it the same way you installed TiviBro.
+TiviBro checks for a new release every time it starts and every 6 hours while it is open (**Settings > System**).  A new version found at start is offered right away with what's new in it: on a rooted TV with the Homebrew Channel, **Install and restart** downloads it, checks it and installs it, and TiviBro restarts on the new version with all your settings, then shows what changed.  On other TVs it shows the new version; install it the same way you installed TiviBro.
 
 ### The phone app
 
@@ -591,7 +591,7 @@ TiviBro checks for a new release every time it starts and every 6 hours while it
 <p align="center"><img src="docs/screenshots/app-my-media.png" width="30%" alt="My media in the phone app"> <img src="docs/screenshots/app-my-media-movie.png" width="30%" alt="Resume on TV"></p>
 
 1. [Download the newest APK](https://tivibro.app/apk/) on your phone and open it to install.  Android asks to allow installs from your browser the first time, and Google Play Protect checks the app each time you update it.
-2. On the TV, open **Settings > Phone app and web editor**, turn on **Phone app connection** and choose **Pair the TiviBro app…**.
+2. On the TV, open **Settings > Playlists and accounts > Phone app and web editor**, turn on **Phone app connection** and choose **Pair the TiviBro app…**.
 3. In the app, scan the QR code on the TV (or pick the TV from the list and type the code).
 
 **Rather get it from Google Play?**  The app is in a test there, and Google needs testers to keep it installed for 14 days before it can be published for everyone.  [Join the Play test](https://tivibro.app/android-test/) in three steps.  Already using the APK?  Google Play only updates its own copy, so uninstall the APK first, install from Play, and pair your TV again.  The APK on GitHub isn't going anywhere.
@@ -674,7 +674,7 @@ The [Release workflow](.github/workflows/release.yml) then runs the tests, build
 - The web editor is off at every start (except on a brand-new TV with no playlist, for the setup QR code), needs the password shown on the TV, and locks out after repeated wrong tries.
 - Backups are always encrypted with a passphrase you choose.  Without it the file cannot be opened.
 - Logs mask usernames and passwords.  **Report a problem** also replaces every provider, guide and unknown server name before anything leaves the TV, and nothing is sent until you choose to send it (on your phone, or **Send a report now** on the TV after a crash).
-- **Install numbers.**  Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has, and the install script says whether it installed or updated which version.  Nothing else: no address is kept (a network is counted once a day using a hash that is forgotten after two days), no ID, nothing about your channels or playlists.  Switch it off in **Settings > Updates, about and diagnostics > Count this TV in the install numbers**, or run the install script with `TIVIBRO_NO_COUNT=1`.
+- **Install numbers.**  Once a day TiviBro tells tivibro.app which version it is and which webOS the TV has, and the install script says whether it installed or updated which version.  Nothing else: no address is kept (a network is counted once a day using a hash that is forgotten after two days), no ID, nothing about your channels or playlists.  Switch it off in **Settings > System > Count this TV in the install numbers**, or run the install script with `TIVIBRO_NO_COUNT=1`.
 - **My media** contacts only the sources you add.  Their logins stay on the TV and out of backups and problem reports.  For Dropbox, the phone app signs in with Dropbox and hands the TV only the sign-in it needs to read your files; removing the source signs it out.  When movie details are fetched (by you, on their own for new movies once you've saved a token, or for the movies in your guide), only a title and year (or its TMDB id) and your language go to TMDB, with your own token.
 - The logo library, when you turn it on, downloads lists of logo addresses from tivibro.app, one per country in your playlist, then each logo from its project.  Only the country is in the request: no channel names, logins or anything else from your playlist.
 

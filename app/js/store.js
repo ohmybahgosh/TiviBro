@@ -167,7 +167,7 @@ var Store = (function () {
 
   /* ---------- several playlists at once ----------
      Every playlist that is on is used at the same time, like TiviMate.  The first playlist
-     (settings.active; Settings > Playlists > the playlist > "Make this the first playlist") loads
+     (settings.active; Settings > Playlists and accounts > the playlist > "Make this the first playlist") loads
      exactly as it always has: its channel keys and group ids are the provider's own ("x5761"), and its
      edits are `edits`, read from and saved to tivibro.edits.<its id> as before.  The other playlists'
      channel keys and group ids get their playlist id and a colon in front ("p1abc:x5761", see

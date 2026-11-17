@@ -439,7 +439,7 @@ private fun TvCard(
             title = { Text("The TV's address") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("The app finds the TV again by itself when your router gives it another address.  If it doesn't, type the new one here (the TV shows it in Settings > Phone app and web editor).  The pairing stays: nothing to pair again.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                    Text("The app finds the TV again by itself when your router gives it another address.  If it doesn't, type the new one here (the TV shows it in Settings > Playlists and accounts > Phone app and web editor).  The pairing stays: nothing to pair again.", style = MaterialTheme.typography.bodySmall, color = Muted)
                     OutlinedTextField(value = cur, onValueChange = { addressing = it }, singleLine = true, label = { Text("Address") },
                         keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Uri))
                 }
@@ -563,7 +563,7 @@ private fun AboutDialog(version: String, onDismiss: () -> Unit, onOpen: (String)
                     Text(lic, style = MaterialTheme.typography.bodySmall, color = Muted)
                 }
                 Spacer(Modifier.height(16.dp))
-                Text("The TV app's own list is on the TV: Settings > Updates, about and diagnostics > Open-source licenses and credits.  The full license texts are in the repository.", style = MaterialTheme.typography.bodySmall, color = Muted)
+                Text("The TV app's own list is on the TV: Settings > System > Open-source licenses and credits.  The full license texts are in the repository.", style = MaterialTheme.typography.bodySmall, color = Muted)
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("OK") } },

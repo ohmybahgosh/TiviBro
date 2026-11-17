@@ -67,7 +67,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   const st = await ev(() => { Views.switchTab('settings'); Settings.section('vod'); return document.getElementById('setBody').innerText; });
   ok('Settings > Movies and shows: Details from TMDB and the way to the token', /Details from TMDB/.test(st) && /Movie details from TMDB/.test(st) && /TMDB API token/.test(st), st.slice(0, 400));
   const kt = await ev(() => { Settings.section('keys'); return document.getElementById('setBody').innerText; });
-  ok('Settings > API keys: the token rows', /TMDB API token saved/.test(kt) && /Test TMDB token/.test(kt), kt.slice(0, 400));
+  ok('Settings > Playlists and accounts > API keys: the token rows', /TMDB API token saved/.test(kt) && /Test TMDB token/.test(kt), kt.slice(0, 400));
   const gs = await ev(() => Settings.phone.page('channels', []).rows.find((r) => r.label === 'Groups in the list'));
   const gl = gs && await ev((i) => Settings.phone.page('channels', [i]).rows.map((r) => r.label).join('|'), gs.i);
   ok('Settings > Channels and groups > Groups in the list: Show Movies on now', /Show Movies on now/.test(gl || ''), gl);

@@ -28,7 +28,7 @@ var Views = (function () {
   // The guide is home: the app opens on it and Back from any other screen comes back to it.
   function home() { return Store.settings.startTab === 'live' ? 'live' : 'guide'; }
   /* The plain channel list in the menu: most people browse with the guide, so it shows only when
-     switched on (Settings > Appearance and start screen) or when TiviBro starts on it.  Green in the
+     switched on (Settings > Appearance) or when TiviBro starts on it.  Green in the
      guide still opens it. */
   function channelsInMenu() { var s = Store.settings; return s.channelsTab === true || (s.channelsTab == null && s.startTab === 'live') || home() === 'live'; }
   var fullFrom = 'guide';
@@ -197,7 +197,7 @@ var Views = (function () {
     // clicking the picture shows or hides it.
     stage.addEventListener('click', function () { if (!full) { if (pipFull()) return; if (playing && mode === 'live') goFull(); return; } var o = $('osd'); if (o.classList.contains('hidden')) osd(true); else o.classList.add('hidden'); });
     document.addEventListener('mousemove', U.debounce(function () { if (full && UI.pointer && !overlay) osd(true); }, 120));
-    // Subtitles on automatically when a stream brings them (Settings > Audio and subtitles), in the chosen language,
+    // Subtitles on automatically when a stream brings them (Settings > Playback > Audio and subtitles), in the chosen language,
     // until the viewer picks in the Subtitles menu: a reconnect's tracks then keep that choice, Off too.
     // Tracks read from MKV and MP4 files (_embedded) are turned on by their reader (embedsubs.js),
     // which also undoes the browser's own pick.

@@ -268,7 +268,7 @@ function create(log) {
       log({ lv: 'error', event: 'editor listen failed', port: port, e: e.code || e.message });
       if (st.server === srv) st.server = null;
       try { srv.close(); } catch (x) {}
-      settled(new Error(e.code === 'EADDRINUSE' ? 'Port ' + port + ' is already in use by another app on the TV.  Pick another port in Settings, Phone app and web editor.' : e.message));
+      settled(new Error(e.code === 'EADDRINUSE' ? 'Port ' + port + ' is already in use by another app on the TV.  Pick another port in Settings > Playlists and accounts > Phone app and web editor.' : e.message));
     });
     srv.listen(port, '0.0.0.0', function () {
       st.server = srv; st.port = port;

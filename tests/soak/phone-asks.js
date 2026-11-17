@@ -287,7 +287,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   // Settings from the phone: every page, the same rows as on the TV, and changes that stick.
   const sa = (o) => ask('settings', o, { seal: true });
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance and start screen') && secs.sections.length === 18, JSON.stringify(secs.sections));
+  ok('the phone gets the TV\'s settings pages', secs.sections.some((x) => x.id === 'look' && x.title === 'Appearance') && secs.sections.length === 18, JSON.stringify(secs.sections));
   let pg = await sa({ op: 'page', sec: 'look' });
   const clock = pg.rows.find((r) => r.label === 'Show clock'), nums = pg.rows.find((r) => r.label === 'Numbers');
   ok('a page comes as rows: toggles, choices with their options', clock && clock.kind === 'toggle' && nums && nums.kind === 'choice' && nums.options.length === 3, JSON.stringify(pg.rows.slice(0, 4)));
@@ -361,7 +361,7 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
   ok('an Xtream Codes login typed on the phone adds a playlist', typed && /Added/.test(typed.msg) && await p2.evaluate(() => Store.settings.playlists.some((p) => p.name === 'Typed on the phone' && p.type === 'xtream')), JSON.stringify(typed));
   const half = await C.ask(cred, 'playlist', { type: 'xtream', server: 'http://127.0.0.1:8077', user: 'demo' }, { seal: true }).catch((e) => e);
   ok('a login with a field missing is turned down, with the reason', half.code === 'tv' && /server, username and password/.test(half.message), half.message);
-  // Its connection changed from the phone (Settings > Playlists > the playlist > Connection): a row the phone does itself.
+  // Its connection changed from the phone (Settings > Playlists and accounts > the playlist > Connection): a row the phone does itself.
   const pid = await p2.evaluate(() => Store.settings.playlists.find((p) => p.name === 'Typed on the phone').id);
   const rows = await p2.evaluate((id) => { const r = Settings.phone.page('playlists', []).rows; const i = r.findIndex((x) => x.kind === 'page' && /Typed on the phone/.test(x.label)); return i >= 0 ? Settings.phone.page('playlists', [r[i].i]).rows : []; }, pid);
   const conn = rows.find((r) => r.label === 'Connection');

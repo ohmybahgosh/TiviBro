@@ -1092,3 +1092,54 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .shp-sub{font-size:21px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .shp-foot{position:absolute;left:152px;right:300px;top:880px;font-size:24px;line-height:1.38;color:var(--text);opacity:.9;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
 .shp-pos{position:absolute;right:56px;top:880px;font-size:22px;color:var(--muted)}
+
+/* ---------- Settings rows (the Settings overhaul): each kind its own look, so rows don't blend ---------- */
+.set-help{flex:none;height:92px;margin-top:8px;padding:12px 24px 0;border-top:1px solid rgba(255,255,255,.08);color:var(--text);opacity:.85;font-size:22px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+.set-body .opt{border-bottom:1px solid rgba(255,255,255,.05);margin-bottom:2px}
+.set-body .opt.focus{border-bottom-color:transparent}
+.set-body .opt .ol small{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+/* Headings: a small capital title with a line, space above. */
+.set-body .opt.head{min-height:0;padding:30px 24px 10px;border-bottom:0;font-size:20px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent-text)}
+.set-body .opt.head .ol{border-bottom:2px solid rgba(255,255,255,.08);padding-bottom:8px}
+.set-body .opt.head:first-child{padding-top:6px}
+/* A choice: its value in a pill, ‹ › when focused. */
+.set-body .opt.k-choice .ov{background:var(--raised);border-radius:999px;padding:6px 8px 6px 14px;color:var(--text);font-weight:600}
+.set-body .opt.k-choice.focus .ov{background:var(--accent);color:var(--on-accent)}
+.set-body .opt.k-choice.focus .ov .ar{color:var(--on-accent)}
+/* On / Off: a switch, the word beside it. */
+.set-body .opt.k-toggle .ov{font-size:22px;color:var(--muted);min-width:44px}
+.tgl{flex:none;position:relative;width:76px;height:40px;border-radius:999px;background:rgba(255,255,255,.18);transition:background .15s}
+.tgl i{position:absolute;top:5px;left:5px;width:30px;height:30px;border-radius:50%;background:#fff;transition:left .15s}
+.tgl.on{background:var(--ok)}
+.tgl.on i{left:41px}
+.set-body .opt.k-toggle.focus .tgl{box-shadow:0 0 0 3px var(--text)}
+/* A page: a chevron. */
+.set-body .opt.k-page .ov{color:var(--muted)}
+.set-body .opt.k-page .ov::after{content:'  ›';font-size:34px;line-height:0;vertical-align:-2px;color:var(--text);opacity:.7}
+.set-body .opt.k-page.focus .ov::after{opacity:1}
+/* A button: its name in the accent colour with an arrow. */
+.set-body .opt.k-action .ol{color:var(--accent-text);font-weight:600}
+.set-body .opt.k-action .ol small{font-weight:400}
+.set-body .opt.k-action.focus .ol{color:var(--text)}
+/* A fact: quiet, no focus, value in the text colour. */
+.set-body .opt.k-status{opacity:1;min-height:52px;padding-top:6px;padding-bottom:6px;border-bottom:0;background:rgba(255,255,255,.035);border-radius:0;margin:0}
+.set-body .opt.k-status .ol{color:var(--muted);font-size:23px}
+.set-body .opt.k-status .ov{color:var(--text);font-size:23px}
+/* A note or tip: smaller, a bar on the left. */
+.set-body .opt.k-note{opacity:1;min-height:0;padding:10px 24px 14px 30px;border-bottom:0}
+.set-body .opt.k-note .ol{font-size:22px;line-height:1.45;color:var(--muted);border-left:4px solid rgba(255,255,255,.14);padding-left:18px}
+.set-body .opt.tip .ol{color:var(--text);border-left-color:var(--accent)}
+/* Something that wants you (an update ready, a problem): it stands out. */
+.set-body .opt.attn{position:relative;box-shadow:inset 0 0 0 3px var(--ok);margin:8px 0}
+.set-body .opt.attn::before{content:'';position:absolute;top:0;right:0;bottom:0;left:0;border-radius:10px;background:var(--ok);opacity:.14;pointer-events:none}
+.set-body .opt.attn.focus::before{opacity:0}
+.set-body .opt.attn .ol{color:var(--ok);font-weight:700}
+.set-body .opt.attn.focus{background:var(--ok);box-shadow:0 0 0 4px var(--text)}
+.set-body .opt.attn.focus .ol,.set-body .opt.attn.focus .ol small,.set-body .opt.attn.focus .ov{color:var(--ink)}
+.set-nav div.attn::after{content:'';display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--ok);margin-left:14px;vertical-align:2px}
+/* Advanced: the last row, set apart. */
+.set-body .opt.adv-row .ol{color:var(--text)}
+.set-body .opt.adv-row{border:1px dashed rgba(255,255,255,.18);border-radius:10px;margin-top:6px}
+.set-body .opt.jump .ov::after{content:'  ›'}
+.set-body .opt.attn .ov{color:var(--ink);background:var(--ok);font-weight:800;font-size:20px;letter-spacing:2px;padding:4px 14px;border-radius:999px}
+.set-body .opt.attn.focus .ov{background:var(--ink);color:var(--ok)}

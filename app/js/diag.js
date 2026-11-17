@@ -425,7 +425,7 @@ var Diag = (function () {
 
     chain.catch(function () {}).then(function () {
       push('');
-      push('Done.  OK or Red runs it again.  Settings > Updates, about and diagnostics shows the full app and helper logs.');
+      push('Done.  OK or Red runs it again.  Settings > System shows the full app and helper logs.');
       busy = false;
     });
   }
@@ -507,7 +507,7 @@ var Diag = (function () {
           push('   A live channel arrives about as fast as it plays, so this is the channel\'s own rate, not your full speed.');
           push('   ' + (r.mbps >= 4 ? 'It keeps up.' : 'Low: this channel may be SD, or the provider is busy right now.'));
         });
-      }).catch(function (e) { push('✗ Provider: ' + e.message + '.  The connection test (Settings > Updates, about and diagnostics) shows why.'); });
+      }).catch(function (e) { push('✗ Provider: ' + e.message + '.  The connection test (Settings > System) shows why.'); });
     }).then(function () {
       var net = rows.filter(function (r) { return r[0] === 'internet'; })[0], prov = rows.filter(function (r) { return r[0] === 'provider'; })[0];
       push('');

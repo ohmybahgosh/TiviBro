@@ -18,7 +18,7 @@
      - Dolby TrueHD: no LG TV decodes it.
      - FLAC with more than two channels does not play.
    Sound that can't play (unplayable()) can be converted to AC-3 by the helper (convert.js).
-   probe() asks the TV as well and keeps both answers, so Settings > Updates, about and diagnostics can show them. */
+   probe() asks the TV as well and keeps both answers, so Settings > System can show them. */
 var Caps = (function () {
   'use strict';
 
@@ -279,7 +279,7 @@ var Caps = (function () {
     rows.push(['webOS', c.webos ? String(c.webos) : 'not webOS'], ['TV model', c.model || 'unknown'], ['Model year', c.year ? String(c.year) : 'unknown']);
     VIDEO.concat(AUDIO).forEach(function (x) { rows.push([x[1], 'built-in ' + yn(c.mse[x[0]]) + '   TV player ' + yn(c.tv[x[0]])]); });
     CONTAINERS.forEach(function (x) { rows.push([x[1] + ' files', 'TV player ' + yn(c.containers[x[0]])]); });
-    // What the audio converter (Settings > Audio and subtitles) turns into Dolby Digital on this TV.
+    // What the audio converter (Settings > Playback > Audio and subtitles) turns into Dolby Digital on this TV.
     var conv = [unplayable('dts', 6, c), unplayable('truehd', 8, c), unplayable('flac', 6, c)].filter(Boolean);
     rows.push(['Converted sound', conv.length ? conv.join(', ') + ' become Dolby Digital (AC-3) through the audio converter, when it is on' : 'nothing needs converting']);
     return rows;

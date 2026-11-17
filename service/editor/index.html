@@ -110,6 +110,34 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;position
 .phead h1{margin:0;font-size:24px}
 .phead p{margin:4px 0 0;color:var(--muted)}
 .scroll{flex:1;overflow:auto;padding:0 28px 40px}
+.setwrap{display:flex;gap:20px;align-items:flex-start}
+.setsecs{flex:none;width:230px;display:flex;flex-direction:column;gap:2px;position:sticky;top:0}
+.setsecs button{text-align:left;background:none;border:0;padding:9px 12px;border-radius:10px;color:var(--text);font-size:14px}
+.setsecs button:hover{background:var(--raised)} .setsecs button.on{background:var(--accent);color:var(--accent-ink)}
+.setsecs button.attn::after{content:'';display:inline-block;width:9px;height:9px;border-radius:50%;background:#3ddc97;margin-left:8px}
+.setmain{flex:1;min-width:0;max-width:880px}
+.settrail{margin-bottom:10px;color:var(--muted)} .settrail button{font-weight:600}
+.srow{display:flex;align-items:center;gap:16px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.srow .sl{flex:1;min-width:0} .srow .sl b{display:block;font-weight:500} .srow .sl small{display:block;color:var(--muted);font-size:13px;margin-top:3px}
+.srow .sv{flex:none;color:var(--muted);text-align:right;max-width:45%}
+.srow.click{cursor:pointer} .srow.click:hover{background:var(--raised)}
+.srow.k-head{border:0;padding:22px 14px 6px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#7da2ff;border-bottom:1px solid var(--line)}
+.srow.k-head:empty{padding:6px 0;border:0}
+.srow.k-page .sv::after{content:'  ›';font-size:18px;color:var(--text)}
+.srow.k-action .sl b{color:#7da2ff;font-weight:600}
+.srow.k-status{background:rgba(255,255,255,.03);border-bottom:0;padding:7px 14px} .srow.k-status .sl b{color:var(--muted);font-weight:400} .srow.k-status .sv{color:var(--text)}
+.srow.k-note{border:0;padding:6px 14px} .srow.k-note .sl{border-left:3px solid var(--line);padding-left:12px} .srow.k-note .sl b{font-weight:400;color:var(--muted);font-size:14px}
+.srow.tip .sl{border-left-color:#7da2ff} .srow.tip .sl b{color:var(--text)}
+.srow.jump .sv::after{content:'  ›';font-size:18px;color:var(--text)}
+.srow.attn{border:2px solid #3ddc97;border-radius:12px;background:rgba(61,220,151,.1);margin:8px 0} .srow.attn .sl b{color:#3ddc97}
+.srow .badge{background:#3ddc97;color:#0b0e1a;font-weight:800;border-radius:999px;padding:3px 12px;font-size:12px;letter-spacing:.1em}
+.srow.adv-row{border:1px dashed var(--line);border-radius:12px;margin-top:8px}
+.srow .tvonly{font-style:italic}
+.srow select{min-width:180px}
+.sw{position:relative;display:inline-block;width:46px;height:26px} .sw input{opacity:0;width:0;height:0} .sw i{position:absolute;inset:0;border-radius:999px;background:var(--raised);transition:.15s;cursor:pointer}
+.sw i::before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s} .sw input:checked + i{background:#3ddc97} .sw input:checked + i::before{left:23px}
+.setmenu{display:flex;flex-direction:column;gap:4px;max-height:60vh;overflow:auto} .setmenu button{text-align:left;padding:10px 12px} .setmenu button small{display:block;color:var(--muted);font-weight:400;margin-top:2px} .setmenu button.on{outline:2px solid var(--accent)}
+@media (max-width:760px){.setwrap{flex-direction:column}.setsecs{position:static;width:100%;flex-direction:row;flex-wrap:wrap}.setsecs button{padding:6px 10px}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
 .card h3{margin:0 0 4px;font-size:16px}
 .card > p{margin:0 0 14px;color:var(--muted);font-size:14px}
@@ -448,6 +476,7 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
       <button data-page="media"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m10 8 6 4-6 4zM3 8h3M3 16h3M18 8h3M18 16h3"/></svg><span>My media</span></button>
       <button data-page="backups"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>Backups and restore points</span><em class="badge hidden" id="histBadge"></em></button>
       <button data-page="report"><svg viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.01"/></svg><span>Report a problem</span></button>
+      <button data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
       <button data-page="help"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/></svg><span>Help</span></button>
       <button class="mobonly" data-act="logout"><svg viewBox="0 0 24 24"><path d="M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10"/></svg><span>Log out</span></button>
     </nav>
@@ -898,6 +927,12 @@ td.r,th.r{text-align:right!important;white-space:nowrap}
     </section>
 
     <!-- HELP -->
+    <!-- SETTINGS: the TV's own Settings, page by page (Settings.phone), drawn here -->
+    <section class="page hidden" id="p-settings">
+      <div class="phead"><div><h1>Settings</h1><p>Everything in the TV's Settings, the same sections and pages.  Changes apply on the TV at once.</p></div></div>
+      <div class="scroll"><div class="setwrap"><nav id="setSecs" class="setsecs"></nav><div class="setmain"><div id="setTrail" class="settrail"></div><div id="setRows" class="setrows"><p class="muted">Loading…</p></div></div></div></div>
+    </section>
+
     <section class="page hidden" id="p-help">
       <div class="phead"><div><h1>Help</h1><p>How the editor works, page by page.</p></div></div>
       <div class="scroll"><div class="help" id="helpBody"></div></div>
@@ -1573,6 +1608,7 @@ function show(p, sub) {
   document.querySelectorAll('.page').forEach(function (s) { s.classList.toggle('hidden', s.id !== 'p-' + p); });
   if (p === 'gc') renderChannels(); if (p === 'guide') renderGuide(); if (p === 'watch') { renderWatch(); loadReminders(); } if (p === 'names') renderNamesPage(); if (p === 'home') renderHome();
   if (p === 'media' && !INAPP) { loadMedia(); loadTrakt(); }
+  if (p === 'settings') setOpen(sub);
   if (p === 'tools') renderTools(); if (p === 'backups') { renderHistory(); if (!INAPP && !(D && D.setup)) loadSnaps(); if (!(D && D.setup)) loadDrafts(); } if (p === 'help') renderHelp(sub); if (p === 'report') loadReport(false);
   if (p !== 'help' && sub) { var anchor = $('sec-' + sub); if (anchor) setTimeout(function () { anchor.scrollIntoView({ block: 'start' }); }, 0); }
   tips();
@@ -1704,6 +1740,74 @@ function promptBox(title, label, value, okLabel, onOk, hint) {
     var i = $('pbIn'); i.focus(); i.select();
     i.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); $('pbOk').click(); } });
   }, [['Cancel', 'ghost', closeModal], [okLabel || 'Save', 'primary', function () { var v = $('pbIn').value; closeModal(); onOk(v); }, 'pbOk']]);
+}
+
+/* ---------- Settings: the TV's own pages, drawn from its rows (Settings.phone, the same the phone app draws) ---------- */
+var ST = { sec: '', path: [], secs: null, busy: false };
+function setOpen(sub) {
+  var go = function () { if (sub && ST.secs.some(function (x) { return x.id === sub; })) { ST.sec = sub; ST.path = []; } if (!ST.sec) ST.sec = ST.secs[0].id; drawSecs(); setLoad(); };
+  if (ST.secs) return go();
+  command('setSections').then(function (r) { ST.secs = r.data || []; go(); }).catch(function (e) { $('setRows').innerHTML = '<p class="bad">' + esc(e.message) + '</p>'; });
+}
+function drawSecs() {
+  var n = $('setSecs'); n.innerHTML = '';
+  ST.secs.forEach(function (x) {
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = x.title; b.className = (x.id === ST.sec ? 'on' : '') + (/update ready/.test(x.title) ? ' attn' : '');
+    b.onclick = function () { ST.sec = x.id; ST.path = []; drawSecs(); setLoad(); history.replaceState(null, '', '#settings/' + x.id); };
+    n.appendChild(b);
+  });
+}
+function setLoad() { command('setPage', { sec: ST.sec, path: ST.path }, 30000).then(function (r) { setDraw(r.data); }).catch(function (e) { $('setRows').innerHTML = '<p class="bad">' + esc(e.message) + '</p>'; }); }
+function setChange(r, op, extra) {
+  if (ST.busy) return; ST.busy = true;
+  var a = Object.assign({ sec: ST.sec, path: ST.path, i: r.i, op: op }, extra || {});
+  command('setChange', a, 60000).then(function (x) { ST.busy = false; setAfter(x); }).catch(function (e) { ST.busy = false; toast(e.message); setLoad(); });
+}
+function setAfter(x) {
+  if (x.msg) toast(x.msg);
+  if (x.data && x.data.page) setDraw(x.data.page);
+  var d = x.data && x.data.dialog; if (d) setDialog(d);
+}
+// A question a button asked (a menu, a box to type in, an "are you sure"): here instead of on the TV.
+function setDialog(d) {
+  function answer(extra) { closeModal(); command('setChange', Object.assign({ sec: ST.sec, path: ST.path, i: 0, op: 'answer', dialog: d.id }, extra), 60000).then(setAfter).catch(function (e) { toast(e.message); setLoad(); }); }
+  if (d.kind === 'menu') {
+    modal(d.title || 'Choose', '<div class="setmenu">' + (d.items || []).map(function (it, n) { return '<button type="button" data-n="' + n + '"' + (it.current ? ' class="on"' : '') + '><b>' + esc(it.label) + '</b>' + (it.sub ? '<small>' + esc(it.sub) + '</small>' : '') + '</button>'; }).join('') + '</div>',
+      function (m) { m.querySelectorAll('.setmenu button').forEach(function (b) { b.onclick = function () { answer({ choice: +b.dataset.n }); }; }); }, [['Cancel', 'ghost', function () { answer({ cancel: true }); }]]);
+  } else if (d.kind === 'prompt') {
+    modal(d.title || 'Type', '<label class="f"><input id="sdIn" type="' + (d.secret ? 'password' : 'text') + '" value="' + esc(d.value || '') + '" autocomplete="off"></label>' + (d.hint ? '<p class="muted small">' + esc(d.hint) + '</p>' : ''),
+      function () { var i = $('sdIn'); i.focus(); i.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); answer({ value: i.value }); } }); },
+      [['Cancel', 'ghost', function () { answer({ cancel: true }); }], [d.ok || 'OK', 'primary', function () { answer({ value: $('sdIn').value }); }]]);
+  } else modal(d.title || 'Are you sure?', '', null, [['Cancel', 'ghost', function () { answer({ cancel: true }); }], [d.ok || 'OK', 'primary', function () { answer({}); }]]);
+}
+function setDraw(pg) {
+  var t = $('setTrail'); t.innerHTML = '';
+  (pg.trail || [pg.title]).forEach(function (name, n, all) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = name; b.disabled = n === all.length - 1;
+    b.onclick = function () { ST.path = ST.path.slice(0, n); setLoad(); };
+    t.appendChild(b); if (n < all.length - 1) t.appendChild(document.createTextNode(' › '));
+  });
+  var box = $('setRows'); box.innerHTML = '';
+  (pg.rows || []).forEach(function (r) {
+    var look = r.look || (r.kind === 'info' ? (r.value ? 'status' : 'note') : r.kind), d = document.createElement('div');
+    d.className = 'srow k-' + look + (r.attn ? ' attn' : '') + (r.style ? ' ' + r.style : '');
+    if (r.kind === 'head') { d.textContent = r.label; box.appendChild(d); return; }
+    var l = document.createElement('div'); l.className = 'sl';
+    l.innerHTML = '<b>' + esc(r.label) + '</b>' + (r.sub ? '<small>' + esc(r.sub) + '</small>' : '') + (r.tv ? '<small class="tvonly">On the TV: look at the TV\'s screen</small>' : '');
+    d.appendChild(l);
+    var v = document.createElement('div'); v.className = 'sv';
+    if (r.kind === 'info') v.textContent = r.value || '';
+    else if (r.kind === 'toggle') { var lab = document.createElement('label'); lab.className = 'sw'; lab.innerHTML = '<input type="checkbox"' + (r.on ? ' checked' : '') + '><i></i>'; lab.querySelector('input').onchange = function (e) { setChange(r, 'toggle', { on: e.target.checked }); }; v.appendChild(lab); }
+    else if (r.kind === 'choice') { var sel = document.createElement('select'); (r.options || []).forEach(function (o, n) { var op = document.createElement('option'); op.value = n; op.textContent = o; if (n === r.cur) op.selected = true; sel.appendChild(op); }); sel.onchange = function () { setChange(r, 'choice', { v: +sel.value }); }; v.appendChild(sel); }
+    else if (r.kind === 'cycle') { ['‹', '›'].forEach(function (c, n) { var b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = c; b.onclick = function () { setChange(r, 'cycle', { dir: n ? 1 : -1 }); }; v.appendChild(b); if (!n) { var sp = document.createElement('span'); sp.textContent = r.value || ''; v.appendChild(sp); } }); }
+    else if (r.kind === 'page') { v.textContent = String(r.value || '').replace(/\s*›$/, ''); d.classList.add('click'); d.onclick = function () { ST.path = ST.path.concat([r.i]); setLoad(); }; }
+    else if (r.kind === 'action') {
+      if (r.attn && r.value) { var bd = document.createElement('span'); bd.className = 'badge'; bd.textContent = r.value; v.appendChild(bd); } else v.textContent = String(r.value || '').replace(/\s*›$/, '');
+      d.classList.add('click');
+      d.onclick = function () { if (r.phone === 'editor' && r.epage && document.getElementById('p-' + r.epage)) show(r.epage); else setChange(r, 'action'); };
+    }
+    d.appendChild(v); box.appendChild(d);
+  });
 }
 
 /* ---------- keyboard ---------- */
@@ -2937,13 +3041,13 @@ var HELP = [
   ['playlists', 'Playlists', '<p>Add Xtream Codes or M3U playlists (or paste the provider\'s <b>Full link</b> and let TiviBro fill in the login), switch which one the TV uses, change reload schedules and the User-Agent, or change a login.  The TV tests a new login before saving it.  Logins never reach this editor; you only see server names.  Each playlist has its own groups, names and guide setup.</p>'],
   ['backup', 'Backups and restore points', '<p>A backup is one file with everything: settings, every playlist <b>with its login</b>, each playlist\'s groups, favorites, names and guide matches, and its restore points.  Channel lists and guides are not in it; they reload from your provider.  Restore points, on the same page, go back to an earlier setup of one playlist without a file (see <a href="#help/saving">Saving, undo and restore points</a>).</p>' +
     '<h3>Locked with your passphrase</h3><p>Because it holds logins, the backup is always locked.  You pick a passphrase when you download it (or press <b>Suggest one</b>).  The TV makes the backup and locks it with AES-256 before it leaves the TV, so the file that reaches your computer is unreadable without the passphrase.  Nobody can recover a forgotten passphrase, us included, so keep it in a password manager or with the file.</p>' +
-    '<h3>Restoring, even on a brand-new TV</h3><ol><li>Install TiviBro and open it.  On the first screen choose <b>Set up or restore from a phone or computer</b>.  (On a TV already set up: Settings > Phone app and web editor.)</li><li>Scan the code with your phone, or open the address shown on the TV in a browser and type the password shown there.</li><li>Choose <b>Restore a backup</b>, drop the file, type its passphrase and press <b>Unlock</b>.  The editor lists the playlists inside so you know it is the right file.</li><li>Press <b>Restore to the TV</b>.  TiviBro restarts with all your playlists, logins and settings, and this page reconnects by itself.</li></ol>' +
-    '<p>In the phone app, backups and restore points have a screen of their own (Settings > Backups and restore points).  Older backups made before locking existed still restore; download a new locked one afterwards and delete the old file.</p>'],
+    '<h3>Restoring, even on a brand-new TV</h3><ol><li>Install TiviBro and open it.  On the first screen choose <b>Set up or restore from a phone or computer</b>.  (On a TV already set up: Settings > Playlists and accounts > Phone app and web editor.)</li><li>Scan the code with your phone, or open the address shown on the TV in a browser and type the password shown there.</li><li>Choose <b>Restore a backup</b>, drop the file, type its passphrase and press <b>Unlock</b>.  The editor lists the playlists inside so you know it is the right file.</li><li>Press <b>Restore to the TV</b>.  TiviBro restarts with all your playlists, logins and settings, and this page reconnects by itself.</li></ol>' +
+    '<p>In the phone app, backups and restore points have a screen of their own (Settings > System > Backups and restore points).  Older backups made before locking existed still restore; download a new locked one afterwards and delete the old file.</p>'],
   ['keys', 'Keyboard shortcuts', '<ul><li><kbd>Ctrl</kbd>+<kbd>Z</kbd> undo, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> or <kbd>Ctrl</kbd>+<kbd>Y</kbd> redo</li><li><kbd>Ctrl</kbd>+<kbd>S</kbd> send to TV</li><li><kbd>/</kbd> jump to the search box</li><li><kbd>Esc</kbd> close a window or list</li><li>In lists: <kbd>↑</kbd> <kbd>↓</kbd> and <kbd>Enter</kbd>, or type to filter</li></ul><p>On a Mac use <kbd>⌘</kbd> instead of <kbd>Ctrl</kbd>.</p>'],
   ['trouble', 'Troubleshooting', '<ul><li><b>"Can\'t reach TiviBro on the TV"</b>: TiviBro was closed, or the TV went to sleep.  Open TiviBro; the editor reconnects by itself.  Your drafts are safe in this browser.</li>' +
     '<li><b>Changes don\'t show on the TV</b>: check the bar at the bottom.  If it still counts changes, press Send to TV.</li>' +
     '<li><b>The guide seems stuck</b>: look at the progress bar on the Guide page.  Big files take minutes on a TV.  If it stays at 0, Test the address; the server may be down.</li>' +
-    '<li><b>Wrong password</b>: it is shown on the TV under Settings > Phone app and web editor.  After five wrong tries, wait a minute.</li>' +
+    '<li><b>Wrong password</b>: it is shown on the TV under Settings > Playlists and accounts > Phone app and web editor.  After five wrong tries, wait a minute.</li>' +
     '<li><b>Times are off by an hour</b>: give that guide source an offset (60 or -60).</li>' +
     '<li><b>A tip you hid is needed again</b>: <a href="#" data-showtips>Show hidden tips</a> brings every one back.</li></ul>']
 ];

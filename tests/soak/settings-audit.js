@@ -16,9 +16,8 @@ let fails = 0;
 const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undefined && !c ? '  ' + String(x).slice(0, 400) : '')); if (!c) fails++; };
 const ctl = (u, body) => fetch(RELAY + u, { method: body ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined }).then((r) => r.json());
 
-const WANT = [['language', 'Language'], ['playlists', 'Playlists'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['names', 'Channel and group names'], ['reminders', 'Reminders and watchlist'],
-  ['playback', 'Playback'], ['audio', 'Audio and subtitles'], ['vod', 'Movies and shows'], ['media', 'My media'], ['trakt', 'Trakt'], ['keys', 'API keys'], ['remote', 'Remote and buttons'], ['look', 'Appearance and start screen'], ['parental', 'Parental controls'],
-  ['backups', 'Backups and restore points'], ['connect', 'Phone app and web editor'], ['about', 'Updates, about and diagnostics']];
+const WANT = [['language', 'Language'], ['playlists', 'Playlists and accounts'], ['guide', 'Guide'], ['channels', 'Channels and groups'], ['playback', 'Playback'],
+  ['vod', 'Movies and shows'], ['media', 'My media'], ['reminders', 'Reminders and watchlist'], ['parental', 'Parental controls'], ['look', 'Appearance'], ['about', 'System']];
 // Page names that are gone: nothing may still send people there.
 const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playlists and guide/, /Channel name editor/, /Settings > Channel names\b/, /Settings > Diagnostics/,
   /Changes and restore points/, /Playback and buffering/, /Settings > Remote control/, /Updates and about/, /movies only for now/, /> Network (set )?to Automatic/];
@@ -44,10 +43,10 @@ const OLD = [/Groups, sorting, hidden/, /Guide, start screen, reminders/, /Playl
 
   // 1. The sections, in order, on the TV and the phone.
   const nav = await ev(() => [].map.call(document.querySelectorAll('#setNav > div:not(.nav-find)'), (d) => d.innerText.trim()));
-  ok('the TV shows the 18 sections in order', nav.join('|') === WANT.map((w) => w[1]).join('|'), nav.join(' | '));
+  ok('the TV shows the 11 sections in order', nav.join('|') === WANT.map((w) => w[1]).join('|'), nav.join(' | '));
   const secs = await sa({ op: 'sections' });
-  ok('the phone gets the same 18, with their ids', JSON.stringify(secs.sections.map((x) => [x.id, x.title])) === JSON.stringify(WANT), JSON.stringify(secs.sections));
-  ok('old section ids still lead somewhere', await ev(() => ['groups', 'updates', 'diag', 'phone', 'editor'].every((id) => Settings.section(id))));
+  ok('the phone gets the same 11, with their ids', JSON.stringify(secs.sections.map((x) => [x.id, x.title])) === JSON.stringify(WANT), JSON.stringify(secs.sections));
+  ok('old section ids still lead somewhere', await ev(() => ['groups', 'updates', 'diag', 'phone', 'editor', 'keys', 'audio', 'remote', 'names', 'backups', 'trakt', 'connect'].every((id) => Settings.section(id))));
 
   // 2. Every page and the pages inside them, on the phone (the same code builds them for the TV).
   let pages = 0; const bad = [], stale = [], all = [];

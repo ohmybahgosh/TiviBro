@@ -1,4 +1,4 @@
-/* Add a playlist from the phone, all of it here (Settings > Playlists > Add playlist…): pick the playlist
+/* Add a playlist from the phone, all of it here (Settings > Playlists and accounts > Add playlist…): pick the playlist
    type, fill in the full link, an Xtream Codes login, an M3U address or a Stalker portal and MAC, and the TV tests and adds it the way
    the web editor's Add a playlist does.  The login is sealed on its way to the TV. */
 package app.tivibro.phone.ui
@@ -49,7 +49,7 @@ private val TYPES = listOf(
 @Composable
 fun AddPlaylistDialog(model: AppModel, id: String, onDone: (added: Boolean) -> Unit) = PlaylistDialog(model, id, null, "", "", onDone)
 
-/** A playlist's connection changed from the phone (Settings > Playlists > the playlist > Connection): its type stays,
+/** A playlist's connection changed from the phone (Settings > Playlists and accounts > the playlist > Connection): its type stays,
     and a field left blank keeps what the TV has.  [now]: the server, list or portal it uses now. */
 @Composable
 fun EditPlaylistDialog(model: AppModel, id: String, plId: String, plType: String, now: String, onDone: (changed: Boolean) -> Unit) = PlaylistDialog(model, id, plId, plType, now, onDone)

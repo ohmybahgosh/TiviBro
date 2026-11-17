@@ -193,7 +193,7 @@ var Library = (function () {
   }
   function dirty() { groupCache.clear(); evCache = null; newCache = null; inShown = null; mixCache = {}; offMemo = {}; if (typeof Teams !== 'undefined') Teams.dirty(); }
 
-  /* ---------- mixing playlists (Settings > Playlists > a playlist > Mix into the first playlist) ----------
+  /* ---------- mixing playlists (Settings > Playlists and accounts > a playlist > Mix into the first playlist) ----------
      With several playlists on, each other playlist's channels join the first playlist's All channels,
      Favorites and your groups, My teams, Events by time, Movies on now, Recently added and Search, unless that
      playlist's switch for it is off (playlist.mix[what] === false; on when not set, as before these switches).
@@ -293,7 +293,7 @@ var Library = (function () {
     if (c.p) return Names.cleanWith(namesOf(c.p), c.n) || '';       // another playlist's: its own name rules
     return Names.clean(c.n) || '';
   }
-  // Another playlist's name rules (Settings > Playlists > the playlist > Channel and group names).
+  // Another playlist's name rules (Settings > Playlists and accounts > the playlist > Channel and group names).
   function namesOf(id) { var p = Store.byId && Store.byId(id); return (p && p.names) || Names.defaults(); }
   function cleanGroupOf(gid, n) { var w = gid ? plOfKey(gid) : ''; return w ? Names.cleanGroupWith(namesOf(w), n) : cleanGroup(n); }
   /* Events by time: every shown event channel whose event is on now or in the next two weeks, soonest first.
@@ -545,7 +545,7 @@ var Library = (function () {
   // Copy, never move: the channel stays in its provider group too.
   function offToast(c) {
     var pl = Store.byId(c.p);
-    var msg = '"{x}" isn\'t mixed into Favorites and your groups.  Settings > Playlists > {x} > Mix into the first playlist.', v = { x: (pl && pl.name) || 'Playlist' };
+    var msg = '"{x}" isn\'t mixed into Favorites and your groups.  Settings > Playlists and accounts > {x} > Mix into the first playlist.', v = { x: (pl && pl.name) || 'Playlist' };
     if (typeof U !== 'undefined' && U.toast) U.toast(typeof I18n !== 'undefined' ? I18n.t(msg, v) : msg.replace(/\{x\}/g, v.x), 7000);
   }
   function copyTo(gid, keys) {

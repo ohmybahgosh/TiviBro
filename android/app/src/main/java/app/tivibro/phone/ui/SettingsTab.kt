@@ -10,6 +10,9 @@ package app.tivibro.phone.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -77,12 +80,21 @@ data class SetRow(
     val tv: Boolean = false,
     /** edit-playlist: the playlist's type (its id is [sid]). */
     val ptype: String = "",
+    /** The row's look on the TV (the Settings overhaul): head, choice, toggle, page, action, status, note.  Older TVs send none. */
+    val look: String = "",
+    /** It wants you: an update ready, a problem.  Drawn so it stands out. */
+    val attn: Boolean = false,
+    /** tip (a note to read first), jump (goes to a setting), adv-row (the page's Advanced settings). */
+    val style: String = "",
+    /** The note's first sentence, when it has more ([sub] is all of it). */
+    val brief: String = "",
 ) {
     companion object {
         fun from(j: JSONObject) = SetRow(
             j.optInt("i"), j.optString("kind"), j.optString("label"), j.optString("sub"), j.optString("value"),
             j.optBoolean("on"), j.optJSONArray("options")?.let { a -> (0 until a.length()).map { a.optString(it) } }.orEmpty(), j.optInt("cur", -1), j.optString("swatch"),
             j.optString("phone"), j.optString("sid"), j.optString("epage"), j.optInt("tv") == 1 || j.optBoolean("tv"), j.optString("ptype"),
+            j.optString("look"), j.optInt("attn") == 1, j.optString("style"), j.optString("brief"),
         )
     }
 }
@@ -256,47 +268,76 @@ fun SettingsTab(model: AppModel, id: String, startSec: String? = null, onGo: (St
     }
 }
 
+/* Each kind of row its own look, as on the TV (the Settings overhaul): headings as small capitals in the accent
+   colour, choices with their value in a pill, switches, pages with a chevron, buttons in the accent colour,
+   facts quiet on a darker band, notes with a bar beside them, and a row that wants you (an update ready) in
+   green so it can't be missed.  The note under a name is its first sentence; tap ⓘ for all of it. */
 @Composable
 private fun SettingRow(r: SetRow, onToggle: (Boolean) -> Unit, onPick: () -> Unit, onCycle: (Int) -> Unit, onOpen: () -> Unit, onAction: () -> Unit) {
-    when (r.kind) {
-        "head" -> Text(r.label, color = Accent2, style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(16.dp, 18.dp, 16.dp, 4.dp))
-        "info" -> {
-            if (r.value.isBlank()) Text(r.label, color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(16.dp, 8.dp))
-            else Row(Modifier.fillMaxWidth().padding(16.dp, 10.dp)) {
+    val look = r.look.ifBlank { if (r.kind == "info") (if (r.value.isBlank()) "note" else "status") else r.kind }
+    when {
+        r.kind == "head" -> {
+            if (r.label.isNotBlank()) Column(Modifier.fillMaxWidth().padding(16.dp, 22.dp, 16.dp, 6.dp)) {
+                Text(r.label.uppercase(), color = Accent2, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                HorizontalDivider(color = Line, thickness = 1.dp, modifier = Modifier.padding(top = 6.dp))
+            } else Spacer(Modifier.size(8.dp))
+            return
+        }
+        r.kind == "info" && !r.attn -> {
+            if (look == "status") Row(Modifier.fillMaxWidth().background(Panel2.copy(alpha = 0.55f)).padding(16.dp, 9.dp)) {
                 Text(r.label, color = Muted, modifier = Modifier.weight(1f))
                 Spacer(Modifier.width(12.dp))
                 Text(r.value, textAlign = TextAlign.End, modifier = Modifier.weight(1f))
+            } else Row(Modifier.fillMaxWidth().padding(16.dp, 8.dp)) {
+                Box(Modifier.width(3.dp).size(3.dp, 36.dp).background(if (r.style == "tip") Accent else Line))
+                Spacer(Modifier.width(12.dp))
+                Text(r.label, color = if (r.style == "tip") TextHi else Muted, style = MaterialTheme.typography.bodySmall)
             }
+            return
         }
-        else -> {
-            val click: (() -> Unit)? = when (r.kind) { "toggle" -> { { onToggle(!r.on) } }; "choice" -> onPick; "page" -> onOpen; "action" -> onAction; else -> null }
-            Row(Modifier.fillMaxWidth().let { if (click != null) it.clickable(onClick = click) else it }.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text(r.label, fontWeight = if (r.kind == "action") FontWeight.SemiBold else FontWeight.Normal, color = if (r.kind == "action") Accent else TextHi)
-                    if (r.sub.isNotBlank()) Text(r.sub, color = Muted, style = MaterialTheme.typography.bodySmall)
-                    if (r.tv) Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Rounded.Tv, null, tint = Muted, modifier = Modifier.size(14.dp))
-                        Spacer(Modifier.width(6.dp))
-                        Text("On the TV: look at the TV's screen", color = Muted, style = MaterialTheme.typography.labelSmall)
-                    }
-                    if (r.kind == "choice" || r.kind == "page" || r.kind == "action") if (r.value.isNotBlank()) Text(r.value, color = Accent, style = MaterialTheme.typography.bodyMedium)
-                }
-                if (r.swatch.isNotBlank()) {
-                    val col = runCatching { Color(android.graphics.Color.parseColor(r.swatch)) }.getOrNull()
-                    if (col != null) { Spacer(Modifier.width(8.dp)); Box(Modifier.size(18.dp).clip(CircleShape).background(col)) }
-                }
-                when (r.kind) {
-                    "toggle" -> Switch(checked = r.on, onCheckedChange = onToggle)
-                    "page" -> Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
-                    "action" -> if (r.phone == "log" || r.phone in SCREENS) Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
-                    "cycle" -> {
-                        IconButton(onClick = { onCycle(-1) }) { Icon(Icons.Rounded.ChevronLeft, "Previous") }
-                        Text(r.value)
-                        IconButton(onClick = { onCycle(1) }) { Icon(Icons.Rounded.ChevronRight, "Next") }
-                    }
-                }
+    }
+    val click: (() -> Unit)? = when (r.kind) { "toggle" -> { { onToggle(!r.on) } }; "choice" -> onPick; "page" -> onOpen; "action" -> onAction; else -> null }
+    var more by remember(r.i, r.label) { mutableStateOf(false) }
+    val box = when {
+        r.attn -> Modifier.padding(8.dp, 6.dp).clip(RoundedCornerShape(12.dp)).background(Good.copy(alpha = 0.16f)).border(2.dp, Good, RoundedCornerShape(12.dp))
+        r.style == "adv-row" -> Modifier.padding(8.dp, 8.dp).clip(RoundedCornerShape(12.dp)).border(1.dp, Line, RoundedCornerShape(12.dp))
+        else -> Modifier
+    }
+    Row(Modifier.fillMaxWidth().then(box).let { if (click != null) it.clickable(onClick = click) else it }.padding(16.dp, 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(r.label, fontWeight = if (r.kind == "action" || r.attn) FontWeight.SemiBold else FontWeight.Normal,
+                color = when { r.attn -> Good; r.kind == "action" && r.style != "jump" -> Accent; else -> TextHi })
+            val note = if (more || r.brief.isBlank()) r.sub else r.brief
+            if (note.isNotBlank()) Row(verticalAlignment = Alignment.Top) {
+                Text(note, color = Muted, style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f, fill = false), maxLines = if (more) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis)
+                if (r.brief.isNotBlank()) Text(if (more) "  less" else "  ⓘ more", color = Accent, style = MaterialTheme.typography.bodySmall, modifier = Modifier.clickable { more = !more })
+            }
+            if (r.tv) Row(Modifier.padding(top = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.Tv, null, tint = Muted, modifier = Modifier.size(14.dp))
+                Spacer(Modifier.width(6.dp))
+                Text("On the TV: look at the TV's screen", color = Muted, style = MaterialTheme.typography.labelSmall)
+            }
+            if ((r.kind == "page" || r.kind == "action") && !r.attn && r.value.isNotBlank() && r.value != "›") Text(r.value.removeSuffix("›").trim(), color = Muted, style = MaterialTheme.typography.bodyMedium)
+        }
+        if (r.swatch.isNotBlank()) {
+            val col = runCatching { Color(android.graphics.Color.parseColor(r.swatch)) }.getOrNull()
+            if (col != null) { Spacer(Modifier.width(8.dp)); Box(Modifier.size(18.dp).clip(CircleShape).background(col)) }
+        }
+        Spacer(Modifier.width(8.dp))
+        when {
+            r.attn && r.value.isNotBlank() -> Text(r.value, color = Ink, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(Good).padding(12.dp, 4.dp))
+            r.kind == "toggle" -> Switch(checked = r.on, onCheckedChange = onToggle)
+            r.kind == "choice" -> Text(r.value, color = TextHi, fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.clip(RoundedCornerShape(50)).background(Panel2).padding(14.dp, 6.dp))
+            r.kind == "page" || r.style == "jump" -> Icon(Icons.Rounded.ChevronRight, null, tint = TextHi)
+            r.kind == "action" -> if (r.phone == "log" || r.phone in SCREENS) Icon(Icons.Rounded.ChevronRight, null, tint = Muted)
+            r.kind == "cycle" -> {
+                IconButton(onClick = { onCycle(-1) }) { Icon(Icons.Rounded.ChevronLeft, "Previous") }
+                Text(r.value)
+                IconButton(onClick = { onCycle(1) }) { Icon(Icons.Rounded.ChevronRight, "Next") }
             }
         }
     }
-    if (r.kind != "head") HorizontalDivider(color = Line.copy(alpha = 0.35f), thickness = 0.5.dp, modifier = Modifier.padding(start = 16.dp))
+    if (!r.attn && r.style != "adv-row") HorizontalDivider(color = Line.copy(alpha = 0.35f), thickness = 0.5.dp, modifier = Modifier.padding(start = 16.dp))
 }

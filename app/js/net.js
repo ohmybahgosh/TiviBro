@@ -16,7 +16,7 @@ var Net = (function () {
       .then(function (j) { info = j || null; Log.info('net', 'Helper answered ping on port ' + p + ' (' + (Date.now() - t0) + 'ms after start)', j && j.node ? 'node ' + j.node : ''); return true; })
       .catch(function (e) { lastError = 'helper started but does not answer on port ' + p + ': ' + (e && e.message); Log.error('net', lastError); return false; });
   }
-  /* The DNS for providers (Settings > Playlists > DNS, service/dns.js): told to the helper when it starts, again
+  /* The DNS for providers (Settings > Playlists and accounts > DNS, service/dns.js): told to the helper when it starts, again
      after it restarts, and when the setting changes.  The TV's own needs nothing said, except after a change. */
   var dnsSaid = 'tv';
   function setDns() {
@@ -215,7 +215,7 @@ var Net = (function () {
     var unz = opts && opts.unzip ? '/unz/' + String(opts.unzip).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40) : '';
     return 'http://127.0.0.1:' + port + uaPrefix(opts && opts.ua ? String(opts.ua) : opts && opts.pl ? uaFor(opts.pl) : uaOfUrl(m[2])) + hdrPrefix(opts && opts.hdr) + unz + '/x/' + m[1].toLowerCase() + '/' + m[2] + rest;
   }
-  /* Playlist User-Agent (Settings > Playlists > the playlist): sent by the helper to the provider.
+  /* Playlist User-Agent (Settings > Playlists and accounts > the playlist): sent by the helper to the provider.
      With several playlists on, each sends its own: the player says which playlist a stream is from
      (opts.pl), and anything else goes by the address's host, the first playlist winning a tie.
      A channel whose M3U line gives its own ("|User-Agent=...", plshape.js) sends that one (opts.ua). */

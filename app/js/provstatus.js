@@ -2,7 +2,7 @@
    the player's streams): those to a playlist's own server count for that provider, any other answer (the guide
    sites, GitHub, logos) shows the TV's internet works.  When a provider's server keeps failing, a minute or more
    with nothing from it going through, TiviBro says so once, in plain words: what the error means, that the TV's
-   internet is fine, and a short message to send the provider.  Settings > Updates, about and diagnostics >
+   internet is fine, and a short message to send the provider.  Settings > System >
    Provider status has the same, any time, with a Check now.
    What happened to a provider: ProvStatus.of(host) -> { state, since, codes, last, text, tell } or null. */
 var ProvStatus = (function () {
@@ -88,7 +88,7 @@ var ProvStatus = (function () {
     told[h] = Date.now();
     var d = describe(h, s);
     if (typeof Log !== 'undefined') Log.warn('provider', d.title + ' (' + s.codes.join(', ') + ', ' + s.n + ' failed requests since ' + U.hhmm(s.since) + ')' + (d.netOk ? '; other sites answer, so the TV\'s internet works' : ''));
-    if (typeof U !== 'undefined' && U.toast) U.toast(T('Your provider has a problem, not TiviBro:') + '  ' + d.title + '.  ' + T('Settings > Updates, about and diagnostics > Provider status says what to tell them.'), 12000);
+    if (typeof U !== 'undefined' && U.toast) U.toast(T('Your provider has a problem, not TiviBro:') + '  ' + d.title + '.  ' + T('Settings > System > Provider status says what to tell them.'), 12000);
     emit();
   }
   function T(s) { return typeof I18n !== 'undefined' && I18n.t ? I18n.t(s) : s; }

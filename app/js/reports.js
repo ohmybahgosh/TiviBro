@@ -4,7 +4,7 @@
    and asks the relay now and then (GET /status, relay/worker.js) whether the developer has answered.  A
    new reply, or the report being closed, shows once: what the developer said, Update when the fix is in
    a newer version, Still happening (a comment with a fresh log, which reopens a closed report) and a code
-   to read the whole thread on a phone.  Settings > Updates, about and diagnostics > Your problem reports lists them all.
+   to read the whole thread on a phone.  Settings > System > Your problem reports lists them all.
    Nothing but the issue numbers leaves the TV when it asks. */
 var Reports = (function () {
   var KEY = 'tivibro.reports', MAX = 20, EVERY = 6 * 3600e3, FIRST = 90e3, KEEP_CLOSED = 60 * 86400e3;
@@ -108,7 +108,7 @@ var Reports = (function () {
     // Where to find it again, to read it or say it still happens later (discussion #36).
     var again = U.el('div', 'rep-again'), hint = U.el('b', '', '▲▼ scroll   ·   ');
     hint.style.display = 'none'; again.appendChild(hint);
-    again.appendChild(document.createTextNode('Read it again, or press Still happening later, in Settings > Updates, about and diagnostics > Your problem reports'));
+    again.appendChild(document.createTextNode('Read it again, or press Still happening later, in Settings > System > Your problem reports'));
     txt.appendChild(again);
     setTimeout(function () { var p = txt.querySelector('.pscroll'); if (p && p.scrollHeight > p.clientHeight + 2) hint.style.display = ''; }, 0);
     UI.panel('Your problem report #' + r.n, body, buttons, function () { showing = false; setTimeout(next, 1500); });

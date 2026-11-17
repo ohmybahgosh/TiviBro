@@ -248,7 +248,7 @@ var Phone = (function () {
     },
     fav: function (a) {
       var c = chan(a.k), want = a.on !== false;
-      if (Library.isFav(c.k) !== want && Library.toggleFav(c.k) == null) throw new Error('This playlist isn\'t mixed into Favorites and your groups.  On the TV: Settings > Playlists > the playlist > Mix into the first playlist.');
+      if (Library.isFav(c.k) !== want && Library.toggleFav(c.k) == null) throw new Error('This playlist isn\'t mixed into Favorites and your groups.  On the TV: Settings > Playlists and accounts > the playlist > Mix into the first playlist.');
       Views.refreshLists(true);
       lineupAt = 0; sendLineup();
       return { on: Library.isFav(c.k) };
@@ -265,10 +265,10 @@ var Phone = (function () {
       else if (op === 'group') {
         var g = Library.customGroups().filter(function (x) { return x.id === a.group; })[0];
         if (!g) throw new Error('That group isn\'t on the TV any more.');
-        if (a.on !== false) { if (!Library.canGroup(c)) throw new Error('This playlist isn\'t mixed into Favorites and your groups.  On the TV: Settings > Playlists > the playlist > Mix into the first playlist.'); Library.copyTo(g.id, [c.k]); msg = 'Added to ' + g.name; } else { Library.removeFrom(g.id, c.k); msg = 'Taken out of ' + g.name; }
+        if (a.on !== false) { if (!Library.canGroup(c)) throw new Error('This playlist isn\'t mixed into Favorites and your groups.  On the TV: Settings > Playlists and accounts > the playlist > Mix into the first playlist.'); Library.copyTo(g.id, [c.k]); msg = 'Added to ' + g.name; } else { Library.removeFrom(g.id, c.k); msg = 'Taken out of ' + g.name; }
       } else if (op === 'newgroup') {
         var nm = String(a.name || '').trim().slice(0, 80); if (!nm) throw new Error('Give the group a name.');
-        if (!Library.canGroup(c)) throw new Error('This playlist isn\'t mixed into Favorites and your groups.  On the TV: Settings > Playlists > the playlist > Mix into the first playlist.');
+        if (!Library.canGroup(c)) throw new Error('This playlist isn\'t mixed into Favorites and your groups.  On the TV: Settings > Playlists and accounts > the playlist > Mix into the first playlist.');
         var ng = Library.createGroup(nm); Library.copyTo(ng.id, [c.k]); msg = 'New group ' + nm + ', with this channel';
       } else if (op === 'follow') {
         var tm = Teams.ofChannel(c); if (!tm) throw new Error('That isn\'t a team\'s channel.');
@@ -282,7 +282,7 @@ var Phone = (function () {
     /* Movies on now (onnow.js on the TV): the movies on now and starting in the next three hours, each
        once with the channels showing it.  { off } when there's no TMDB token or it's switched off. */
     onnow: function () {
-      if (typeof Movies === 'undefined' || !Movies.on()) return { off: true, msg: 'Save a TMDB token (Settings > API keys) to see the movies on now.' };
+      if (typeof Movies === 'undefined' || !Movies.on()) return { off: true, msg: 'Save a TMDB token (Settings > Playlists and accounts > API keys) to see the movies on now.' };
       var sh = Movies.shelves();
       function one(g) {
         var m = g.m;
@@ -433,7 +433,7 @@ var Phone = (function () {
     // A provider link shared to the phone app: added like the web editor's Add a playlist.
     playlist: function (a) {
       // Typed in on the phone (Add playlist… in its Settings): the type and its fields as they are.
-      // Its connection changed from the phone (Settings > Playlists > the playlist > Connection): blank keeps what it has.
+      // Its connection changed from the phone (Settings > Playlists and accounts > the playlist > Connection): blank keeps what it has.
       if (a.edit) return WebEdit.run('updatePlaylist', { id: String(a.edit), name: String(a.name || '').slice(0, 60), server: String(a.server || '').trim(), user: String(a.user || '').trim(), pass: String(a.pass || ''),
         m3u: String(a.m3u || '').trim(), portal: String(a.portal || '').trim(), mac: String(a.mac || '').trim(), sn: String(a.sn || '').trim() });
       if (a.type === 'stalker') return WebEdit.run('addPlaylist', { type: 'stalker', name: String(a.name || '').slice(0, 60), portal: String(a.portal || '').trim(), mac: String(a.mac || '').trim(), sn: String(a.sn || '').trim(), epg: String(a.epg || ''), use: !!a.use });

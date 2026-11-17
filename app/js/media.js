@@ -1141,7 +1141,7 @@ var Media = (function () {
     Views.stopAll();
     open(true);
     if (eligible && typeof MediaSeries !== 'undefined') MediaSeries.completed(finished);
-    // Trakt (Settings > Trakt > Mark as watched on Trakt): what you finished.
+    // Trakt (Settings > My media > Trakt > Mark as watched on Trakt): what you finished.
     if (finished && typeof Trakt !== 'undefined') { if (finished.kind === 'episode') { if (eligible) Trakt.watchedEpisode(finished.episodeHandle); } else Trakt.watchedMovie(finished.metadata && finished.metadata.id); }
   }
   /* ---------- the phone app (app/js/phone.js) ----------

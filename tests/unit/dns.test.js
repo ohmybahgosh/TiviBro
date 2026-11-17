@@ -1,4 +1,4 @@
-// Settings > Playlists > DNS (service/dns.js, discussion #60): with a DNS picked, the helper finds providers' servers
+// Settings > Playlists and accounts > DNS (service/dns.js, discussion #60): with a DNS picked, the helper finds providers' servers
 // with it (every request, through dns.lookup), keeps the TV's DNS for addresses and local names, falls back to the
 // TV's DNS when the picked one can't answer, and only TiviBro may change it.
 'use strict';

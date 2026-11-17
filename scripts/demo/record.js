@@ -254,7 +254,7 @@ if (require.main === module) (async () => {
     await shot('tv-settings');
     await press('ArrowDown', 'The same sections on the TV, the phone and the web editor', 700);
     for (let i = 0; i < 4; i++) await press('ArrowDown', '', 600);
-    await section('Appearance and start screen', true);
+    await section('Appearance', true);
     await row('Accent color'); await press('ArrowRight', 'Accent color', 1200); await press('ArrowRight', '', 1200); await press('ArrowRight', '', 1400);
     await shot('tv-settings-look');
     await press('ArrowDown', 'Background', 900);
@@ -362,8 +362,8 @@ if (require.main === module) (async () => {
     await open('Settings', 2400);
     const bottom = async () => { for (let i = 0; i < 60; i++) await quiet('ArrowDown', 50); await page.waitForTimeout(400); };
     const S = [['Playlists', 'playlists'], ['Guide', 'guide'], ['Channels and groups', 'groups'], ['Channel and group names', 'names'], ['Reminders and watchlist', 'reminders'],
-      ['Playback', 'playback'], ['Remote and buttons', 'remote'], ['Appearance and start screen', 'look'], ['Parental controls', 'parental'], ['Backups and restore points', 'backups'],
-      ['Web editor', 'editor'], ['Updates, about and diagnostics', 'updates']];   // 'Web editor' is 'Phone app and web editor' in test builds
+      ['Playback', 'playback'], ['Remote and buttons', 'remote'], ['Appearance', 'look'], ['Parental controls', 'parental'], ['Backups and restore points', 'backups'],
+      ['Web editor', 'editor'], ['System', 'updates']];   // 'Web editor' is 'Phone app and web editor' in test builds
     for (const [name, id] of S) {
       await section(name, true, true);
       await page.waitForTimeout(id === 'backups' ? 2000 : 300);
@@ -378,9 +378,9 @@ if (require.main === module) (async () => {
     await sub('Playlists', 'Demo provider', 'tv-set-playlist');
     await sub('Playlists', 'Demo provider', 'tv-set-playlist-2', bottom);
     await sub('Channels and groups', 'Manage groups', 'tv-set-manage-groups');
-    await sub('Updates, about and diagnostics', 'What this TV can play', 'tv-set-caps');
-    await section('Updates, about and diagnostics', true, true); await row('Run connection test'); await quiet('Enter', 200); await page.waitForTimeout(7000); await shot('tv-set-diag-test'); await quiet('Escape', 600);
-    await section('Updates, about and diagnostics', true, true); await row('View app log'); await quiet('Enter', 1200); await shot('tv-set-diag-log'); await quiet('Escape', 600);
+    await sub('System', 'What this TV can play', 'tv-set-caps');
+    await section('System', true, true); await row('Run connection test'); await quiet('Enter', 200); await page.waitForTimeout(7000); await shot('tv-set-diag-test'); await quiet('Escape', 600);
+    await section('System', true, true); await row('View app log'); await quiet('Enter', 1200); await shot('tv-set-diag-log'); await quiet('Escape', 600);
     await page.evaluate(() => WebEdit.start()); await page.waitForTimeout(1500);
     await section('Web editor', true, true); await page.waitForTimeout(800); await shot('tv-set-editor-on');
     await page.evaluate(() => WebEdit.stop()); await page.waitForTimeout(500);

@@ -1,5 +1,5 @@
 /* Provider status: the provider's server goes down behind Cloudflare (522) while TiviBro runs.  TiviBro says it's
-   the provider, once; Settings > Updates, about and diagnostics > Provider status says what's wrong and what to
+   the provider, once; Settings > System > Provider status says what's wrong and what to
    tell them, with no login in it; the problem report carries it; and it clears when the server answers again.
      node tests/mock/mock_provider.js &
      npm run serve &
@@ -37,7 +37,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     const st = await ev(() => ({ now: ProvStatus.now(), toasts: window.__toasts.filter((t) => /not TiviBro/.test(t)) }));
     ok('it says it\'s the provider, once', st.toasts.length === 1 && st.now.length === 1, JSON.stringify(st).slice(0, 300));
     ok('Cloudflare, by its error code', /Cloudflare/.test((st.now[0] || {}).title || '') && /522/.test((st.now[0] || {}).text || ''), JSON.stringify(st.now[0] || {}).slice(0, 300));
-    // Settings > Updates, about and diagnostics > Provider status.
+    // Settings > System > Provider status.
     await ev(() => { Views.switchTab('settings'); Settings.open(); Settings.section('about'); }); await page.waitForTimeout(500);
     const row = await ev(() => { const r = Settings.phone.page('about', []).rows; const x = r.find((x) => x.label === 'Provider status'); return { i: x ? x.i : -1, v: x ? x.value : '' }; });
     ok('Settings has a Provider status row saying there\'s a problem', row.i >= 0 && row.v === 'Problem', JSON.stringify(row));

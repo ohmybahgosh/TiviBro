@@ -1,0 +1,1210 @@
+{
+ "About these guides": {
+  "kind": "action",
+  "where": "Guide > Public guide fill-in"
+ },
+ "Accent color": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "Add TMDB API token": {
+  "kind": "action",
+  "where": "Audio and subtitles > OpenSubtitles key and sign-in"
+ },
+ "Add a Trakt list": {
+  "kind": "page",
+  "where": "My media > Trakt"
+ },
+ "Add a group prefix…": {
+  "kind": "action",
+  "where": "Channel and group names"
+ },
+ "Add a group suffix…": {
+  "kind": "action",
+  "where": "Channel and group names"
+ },
+ "Add a library": {
+  "kind": "action",
+  "where": "My media"
+ },
+ "Add a prefix…": {
+  "kind": "action",
+  "where": "Channel and group names"
+ },
+ "Add a show, team or name…": {
+  "kind": "action",
+  "where": "Reminders and watchlist > Watchlist"
+ },
+ "Add a suffix…": {
+  "kind": "action",
+  "where": "Channel and group names"
+ },
+ "Add a word or call sign…": {
+  "kind": "action",
+  "where": "Parental controls"
+ },
+ "Add guide source…": {
+  "kind": "action",
+  "where": "Guide > Guide sources"
+ },
+ "Add playlist…": {
+  "kind": "action",
+  "where": "Playlists"
+ },
+ "All channels includes hidden groups": {
+  "kind": "toggle",
+  "where": "Channels and groups > Groups in the list"
+ },
+ "Any short bracketed tag at the ends": {
+  "kind": "toggle",
+  "where": "Channel and group names"
+ },
+ "Arrange Home shelves": {
+  "kind": "action",
+  "where": "My media > Display and shelves"
+ },
+ "Arrange Movies shelves": {
+  "kind": "action",
+  "where": "My media > Display and shelves"
+ },
+ "Arrange TV shows shelves": {
+  "kind": "action",
+  "where": "My media > Display and shelves"
+ },
+ "Arrange the Movies home": {
+  "kind": "action",
+  "where": "Movies and shows"
+ },
+ "Arrange the Shows home": {
+  "kind": "action",
+  "where": "Movies and shows"
+ },
+ "As a file, from the web editor": {
+  "kind": "action",
+  "where": "Backups and restore points"
+ },
+ "Ask when a channel is slow to start": {
+  "kind": "toggle",
+  "where": "Playback"
+ },
+ "Aspect": {
+  "kind": "choice",
+  "where": "Playback"
+ },
+ "Audio language": {
+  "kind": "action",
+  "where": "Audio and subtitles"
+ },
+ "Audio track": {
+  "kind": "toggle",
+  "where": "Remote and buttons > Quick menu buttons"
+ },
+ "Automatic: the TV's language": {
+  "kind": "action",
+  "where": "Language"
+ },
+ "Back": {
+  "kind": "action",
+  "where": "Channels and groups > Keep the countries you watch"
+ },
+ "Background": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "Black screen while switching": {
+  "kind": "toggle",
+  "where": "Playback"
+ },
+ "Blue": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Box office this weekend": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Bring my Trakt history in": {
+  "kind": "toggle",
+  "where": "My media > Trakt"
+ },
+ "Buffer info on demand": {
+  "kind": "choice",
+  "where": "Playback"
+ },
+ "Buffer meter": {
+  "kind": "choice",
+  "where": "Playback"
+ },
+ "Buffer profile": {
+  "kind": "choice",
+  "where": "Playback"
+ },
+ "Button tester": {
+  "kind": "action",
+  "where": "Remote and buttons"
+ },
+ "Caption size": {
+  "kind": "choice",
+  "where": "Audio and subtitles"
+ },
+ "Category and package prefixes": {
+  "kind": "toggle",
+  "where": "Channel and group names"
+ },
+ "Channel +": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Channel guide": {
+  "kind": "toggle",
+  "where": "Remote and buttons > Quick menu buttons"
+ },
+ "Channel logos": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "Channel names in the guide": {
+  "kind": "toggle",
+  "where": "Guide"
+ },
+ "Channel order": {
+  "kind": "choice",
+  "where": "Channels and groups"
+ },
+ "Channel −": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Channels screen in the menu": {
+  "kind": "toggle",
+  "where": "Appearance and start screen"
+ },
+ "Check automatically": {
+  "kind": "toggle",
+  "where": "Updates, about and diagnostics"
+ },
+ "Check for updates": {
+  "kind": "action",
+  "where": "Updates, about and diagnostics"
+ },
+ "Check now": {
+  "kind": "action",
+  "where": "Updates, about and diagnostics > Provider status"
+ },
+ "Cinéma": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Clean group names too": {
+  "kind": "toggle",
+  "where": "Channel and group names"
+ },
+ "Clean up channel names": {
+  "kind": "toggle",
+  "where": "Channel and group names"
+ },
+ "Clear all edits for this playlist": {
+  "kind": "action",
+  "where": "Channels and groups"
+ },
+ "Clear log": {
+  "kind": "action",
+  "where": "Updates, about and diagnostics"
+ },
+ "Clear the clutter": {
+  "kind": "page",
+  "where": "Channels and groups"
+ },
+ "Clock": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "Close without changes": {
+  "kind": "action",
+  "where": "Channels and groups > Keep the countries you watch"
+ },
+ "Closed captions": {
+  "kind": "toggle",
+  "where": "Audio and subtitles"
+ },
+ "Colour by category": {
+  "kind": "toggle",
+  "where": "Guide"
+ },
+ "Connect Trakt": {
+  "kind": "action",
+  "where": "My media > Trakt"
+ },
+ "Connection": {
+  "kind": "choice",
+  "where": "Playback"
+ },
+ "Convert audio the TV can't play": {
+  "kind": "choice",
+  "where": "Audio and subtitles"
+ },
+ "Count this TV in the install numbers": {
+  "kind": "toggle",
+  "where": "Updates, about and diagnostics"
+ },
+ "Countries": {
+  "kind": "action",
+  "where": "Guide > Public guide fill-in"
+ },
+ "Country and region prefixes": {
+  "kind": "toggle",
+  "where": "Channel and group names"
+ },
+ "Country codes and names at the end": {
+  "kind": "toggle",
+  "where": "Channel and group names"
+ },
+ "DNS": {
+  "kind": "choice",
+  "where": "Playlists"
+ },
+ "Decorative symbols": {
+  "kind": "toggle",
+  "where": "Channel and group names"
+ },
+ "Detailed logging": {
+  "kind": "toggle",
+  "where": "Updates, about and diagnostics"
+ },
+ "Dim past programmes": {
+  "kind": "toggle",
+  "where": "Guide"
+ },
+ "Display and shelves": {
+  "kind": "page",
+  "where": "My media"
+ },
+ "Documentary": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Down": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "East or West feeds": {
+  "kind": "page",
+  "where": "Channels and groups"
+ },
+ "Edit on a computer": {
+  "kind": "action",
+  "where": "My media"
+ },
+ "Enable recommended defaults": {
+  "kind": "action",
+  "where": "Channel and group names"
+ },
+ "English": {
+  "kind": "action",
+  "where": "Language"
+ },
+ "Entertainment": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Español": {
+  "kind": "action",
+  "where": "Language"
+ },
+ "Español (España)": {
+  "kind": "action",
+  "where": "Language"
+ },
+ "Event channels": {
+  "kind": "page",
+  "where": "Channels and groups"
+ },
+ "Events by time": {
+  "kind": "toggle",
+  "where": "Channels and groups > Event channels"
+ },
+ "Fallback audio language": {
+  "kind": "action",
+  "where": "Audio and subtitles"
+ },
+ "Fast forward": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Favorite": {
+  "kind": "toggle",
+  "where": "Remote and buttons > Quick menu buttons"
+ },
+ "Favorites": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Favorites also in lists": {
+  "kind": "toggle",
+  "where": "My media > Display and shelves"
+ },
+ "Fetch details for all": {
+  "kind": "action",
+  "where": "My media"
+ },
+ "Fill in from public guides": {
+  "kind": "toggle",
+  "where": "Guide > Public guide fill-in"
+ },
+ "Focus style": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "France": {
+  "kind": "toggle",
+  "where": "Channels and groups > Keep the countries you watch"
+ },
+ "Free streaming service prefixes": {
+  "kind": "toggle",
+  "where": "Channel and group names"
+ },
+ "Game Day": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Games starting within": {
+  "kind": "choice",
+  "where": "Channels and groups > My teams"
+ },
+ "Germany": {
+  "kind": "toggle",
+  "where": "Channels and groups > Keep the countries you watch"
+ },
+ "Green": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Group order": {
+  "kind": "choice",
+  "where": "Channels and groups"
+ },
+ "Groups in the list": {
+  "kind": "page",
+  "where": "Channels and groups"
+ },
+ "Groups the provider adds later": {
+  "kind": "choice",
+  "where": "Channels and groups > Clear the clutter"
+ },
+ "Groups with no country": {
+  "kind": "toggle",
+  "where": "Channels and groups > Keep the countries you watch"
+ },
+ "Groups your provider adds later": {
+  "kind": "choice",
+  "where": "Channels and groups > Groups in the list"
+ },
+ "Guide row size": {
+  "kind": "choice",
+  "where": "Guide"
+ },
+ "Guide sources": {
+  "kind": "page",
+  "where": "Guide"
+ },
+ "HDR and Dolby Vision": {
+  "kind": "choice",
+  "where": "Playback"
+ },
+ "Hidden channels": {
+  "kind": "page",
+  "where": "Channels and groups"
+ },
+ "Hidden groups": {
+  "kind": "page",
+  "where": "Channels and groups"
+ },
+ "Hide adult channels": {
+  "kind": "toggle",
+  "where": "Parental controls"
+ },
+ "Hide all groups": {
+  "kind": "action",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Hide channels with nothing on": {
+  "kind": "toggle",
+  "where": "Channel and group names"
+ },
+ "Hide empty groups": {
+  "kind": "toggle",
+  "where": "Channels and groups > Clear the clutter"
+ },
+ "Hide groups with these words…": {
+  "kind": "action",
+  "where": "Channels and groups > Clear the clutter"
+ },
+ "Hide spoilers": {
+  "kind": "toggle",
+  "where": "Movies and shows"
+ },
+ "Hold Blue": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Channel +": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Channel −": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Down": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Fast forward": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Green": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Info": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Left": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold OK": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Play / Pause": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Red": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Rewind": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Right": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Stop": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Up": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold Yellow": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Hold notices during movies": {
+  "kind": "toggle",
+  "where": "Reminders and watchlist"
+ },
+ "In the TiviBro phone app": {
+  "kind": "action",
+  "where": "Backups and restore points"
+ },
+ "In the guide": {
+  "kind": "page",
+  "where": "Remote and buttons"
+ },
+ "In the player": {
+  "kind": "page",
+  "where": "Remote and buttons"
+ },
+ "Include test versions": {
+  "kind": "toggle",
+  "where": "Updates, about and diagnostics"
+ },
+ "Info": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Info panel stays for": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "Info panel when switching channels": {
+  "kind": "toggle",
+  "where": "Playback"
+ },
+ "Inventory": {
+  "kind": "action",
+  "where": "Phone app and web editor"
+ },
+ "Keep downloaded subtitles": {
+  "kind": "choice",
+  "where": "Audio and subtitles"
+ },
+ "Keep every country": {
+  "kind": "action",
+  "where": "Channels and groups > Keep the countries you watch"
+ },
+ "Keep only USA": {
+  "kind": "action",
+  "where": "Channels and groups > Keep the countries you watch"
+ },
+ "Keep past days": {
+  "kind": "choice",
+  "where": "Guide"
+ },
+ "Keep the countries you watch": {
+  "kind": "page",
+  "where": "Channels and groups"
+ },
+ "Keep the picture while reconnecting": {
+  "kind": "toggle",
+  "where": "Playback"
+ },
+ "Kids": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Learn a button": {
+  "kind": "action",
+  "where": "Remote and buttons"
+ },
+ "Left": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Lists open on": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "Local": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Logo library": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "Look again now": {
+  "kind": "action",
+  "where": "Guide > Public guide fill-in"
+ },
+ "Look ahead": {
+  "kind": "choice",
+  "where": "Reminders and watchlist > Watchlist"
+ },
+ "Look for new files": {
+  "kind": "choice",
+  "where": "My media"
+ },
+ "Manage groups": {
+  "kind": "page",
+  "where": "Channels and groups"
+ },
+ "Mark as watched on Trakt": {
+  "kind": "toggle",
+  "where": "My media > Trakt"
+ },
+ "Mark catch-up channels": {
+  "kind": "toggle",
+  "where": "Guide"
+ },
+ "Mark what's on now": {
+  "kind": "choice",
+  "where": "Guide"
+ },
+ "Match guide by channel name": {
+  "kind": "toggle",
+  "where": "Guide"
+ },
+ "Metadata language": {
+  "kind": "choice",
+  "where": "My media > Display and shelves"
+ },
+ "Most anticipated movies": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Most anticipated shows": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Most watched movies this week": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Most watched shows this week": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Movie details from TMDB": {
+  "kind": "toggle",
+  "where": "Movies and shows"
+ },
+ "Movies": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Movies and Shows open on": {
+  "kind": "choice",
+  "where": "Movies and shows"
+ },
+ "Music": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "My teams": {
+  "kind": "page",
+  "where": "Channels and groups"
+ },
+ "New group…": {
+  "kind": "action",
+  "where": "Channels and groups"
+ },
+ "New password": {
+  "kind": "action",
+  "where": "Phone app and web editor"
+ },
+ "News": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Next": {
+  "kind": "action",
+  "where": "Channels and groups > Keep the countries you watch"
+ },
+ "Numbers": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "OK": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "OK on a channel in the Guide": {
+  "kind": "choice",
+  "where": "Guide"
+ },
+ "On the Channels screen": {
+  "kind": "page",
+  "where": "Remote and buttons"
+ },
+ "Open it in a phone's browser (QR code)": {
+  "kind": "action",
+  "where": "Phone app and web editor"
+ },
+ "Open-source licenses and credits": {
+  "kind": "page",
+  "where": "Updates, about and diagnostics"
+ },
+ "OpenSubtitles key and sign-in": {
+  "kind": "page",
+  "where": "Audio and subtitles"
+ },
+ "Order movies and shows": {
+  "kind": "choice",
+  "where": "Movies and shows"
+ },
+ "Other versions": {
+  "kind": "toggle",
+  "where": "Remote and buttons > Quick menu buttons"
+ },
+ "PPV EVENTS": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Pair the TiviBro app…": {
+  "kind": "action",
+  "where": "Phone app and web editor"
+ },
+ "Panels over video": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "Paste a comma separated list…": {
+  "kind": "action",
+  "where": "Channel and group names"
+ },
+ "Paste a list's link": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Phone app connection": {
+  "kind": "toggle",
+  "where": "Phone app and web editor"
+ },
+ "Play / Pause": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Play next episode automatically": {
+  "kind": "toggle",
+  "where": "Movies and shows"
+ },
+ "Player engine": {
+  "kind": "choice",
+  "where": "Playback"
+ },
+ "Popular lists": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Popular movies on Trakt": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Popular shows on Trakt": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Port": {
+  "kind": "choice",
+  "where": "Phone app and web editor"
+ },
+ "Português (Brasil)": {
+  "kind": "action",
+  "where": "Language"
+ },
+ "Português (Portugal)": {
+  "kind": "action",
+  "where": "Language"
+ },
+ "Prefer surround sound": {
+  "kind": "toggle",
+  "where": "Audio and subtitles"
+ },
+ "Press Back twice to exit": {
+  "kind": "toggle",
+  "where": "Appearance and start screen"
+ },
+ "Preview on the Channels screen": {
+  "kind": "toggle",
+  "where": "Appearance and start screen"
+ },
+ "Provider guide": {
+  "kind": "choice",
+  "where": "Guide"
+ },
+ "Provider guide time offset": {
+  "kind": "choice",
+  "where": "Guide"
+ },
+ "Provider status": {
+  "kind": "page",
+  "where": "Updates, about and diagnostics"
+ },
+ "Public guide fill-in": {
+  "kind": "page",
+  "where": "Guide"
+ },
+ "Quality and format tags at the end": {
+  "kind": "toggle",
+  "where": "Channel and group names"
+ },
+ "Quick menu buttons": {
+  "kind": "page",
+  "where": "Remote and buttons"
+ },
+ "Read events from channel names": {
+  "kind": "toggle",
+  "where": "Channels and groups > Event channels"
+ },
+ "Recent channels kept": {
+  "kind": "choice",
+  "where": "Channels and groups > Groups in the list"
+ },
+ "Recently added channels": {
+  "kind": "choice",
+  "where": "Channels and groups > Groups in the list"
+ },
+ "Reconnect": {
+  "kind": "toggle",
+  "where": "Remote and buttons > Quick menu buttons"
+ },
+ "Red": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Reload guide": {
+  "kind": "choice",
+  "where": "Guide"
+ },
+ "Reload guide now": {
+  "kind": "action",
+  "where": "Guide"
+ },
+ "Remind me before start": {
+  "kind": "choice",
+  "where": "Reminders and watchlist"
+ },
+ "Remind me before their games": {
+  "kind": "toggle",
+  "where": "Channels and groups > My teams"
+ },
+ "Reminder question stays for": {
+  "kind": "choice",
+  "where": "Reminders and watchlist"
+ },
+ "Report a problem": {
+  "kind": "action",
+  "where": "Updates, about and diagnostics"
+ },
+ "Reset watch time": {
+  "kind": "action",
+  "where": "Channels and groups"
+ },
+ "Restore default buttons": {
+  "kind": "action",
+  "where": "Remote and buttons"
+ },
+ "Restore defaults for this screen": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Reverse the TV show order": {
+  "kind": "toggle",
+  "where": "My media > Display and shelves"
+ },
+ "Reverse the movie order": {
+  "kind": "toggle",
+  "where": "My media > Display and shelves"
+ },
+ "Reverse the order": {
+  "kind": "toggle",
+  "where": "Movies and shows"
+ },
+ "Rewind": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Rewind / fast forward step": {
+  "kind": "choice",
+  "where": "Playback"
+ },
+ "Right": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Run connection test": {
+  "kind": "action",
+  "where": "Updates, about and diagnostics"
+ },
+ "Same channel more than once": {
+  "kind": "choice",
+  "where": "Channels and groups > Clear the clutter"
+ },
+ "Save a restore point now": {
+  "kind": "action",
+  "where": "Backups and restore points"
+ },
+ "Scan all libraries": {
+  "kind": "action",
+  "where": "My media"
+ },
+ "Search lists by name": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Series details from TMDB": {
+  "kind": "toggle",
+  "where": "Movies and shows"
+ },
+ "Set a PIN": {
+  "kind": "action",
+  "where": "Parental controls"
+ },
+ "Set up OpenSubtitles (step by step)": {
+  "kind": "action",
+  "where": "Audio and subtitles > OpenSubtitles key and sign-in"
+ },
+ "Settings shown": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "Short channel names": {
+  "kind": "toggle",
+  "where": "Channels and groups > Event channels"
+ },
+ "Show All channels": {
+  "kind": "toggle",
+  "where": "Channels and groups > Groups in the list"
+ },
+ "Show Events by time": {
+  "kind": "toggle",
+  "where": "Channels and groups > Groups in the list"
+ },
+ "Show Favorites group": {
+  "kind": "toggle",
+  "where": "Channels and groups > Groups in the list"
+ },
+ "Show Movies on now": {
+  "kind": "toggle",
+  "where": "Channels and groups > Groups in the list"
+ },
+ "Show Recent channels": {
+  "kind": "toggle",
+  "where": "Channels and groups > Groups in the list"
+ },
+ "Show all groups": {
+  "kind": "action",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Show channel numbers": {
+  "kind": "toggle",
+  "where": "Appearance and start screen"
+ },
+ "Show clock": {
+  "kind": "toggle",
+  "where": "Appearance and start screen"
+ },
+ "Show hidden items in lists": {
+  "kind": "toggle",
+  "where": "Channels and groups"
+ },
+ "Show stream details in the info panel": {
+  "kind": "toggle",
+  "where": "Playback"
+ },
+ "Show the My teams group": {
+  "kind": "toggle",
+  "where": "Channels and groups > My teams"
+ },
+ "Show the date with the clock": {
+  "kind": "toggle",
+  "where": "Appearance and start screen"
+ },
+ "Skip step": {
+  "kind": "choice",
+  "where": "Playback"
+ },
+ "Skip to the summary": {
+  "kind": "action",
+  "where": "Channels and groups > Keep the countries you watch"
+ },
+ "Sleep timer": {
+  "kind": "toggle",
+  "where": "Remote and buttons > Quick menu buttons"
+ },
+ "Sort TV shows by": {
+  "kind": "choice",
+  "where": "My media > Display and shelves"
+ },
+ "Sort movies by": {
+  "kind": "choice",
+  "where": "My media > Display and shelves"
+ },
+ "Spanish": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Speed test": {
+  "kind": "action",
+  "where": "Updates, about and diagnostics"
+ },
+ "Sport": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Sports": {
+  "kind": "toggle",
+  "where": "Channels and groups > Manage groups"
+ },
+ "Sports guides": {
+  "kind": "toggle",
+  "where": "Guide > Public guide fill-in"
+ },
+ "Start learning again": {
+  "kind": "action",
+  "where": "Playback"
+ },
+ "Start screen": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "Stop": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Stream format": {
+  "kind": "choice",
+  "where": "Playback"
+ },
+ "Stream info": {
+  "kind": "toggle",
+  "where": "Remote and buttons > Quick menu buttons"
+ },
+ "Subtitle background": {
+  "kind": "choice",
+  "where": "Audio and subtitles"
+ },
+ "Subtitle colour": {
+  "kind": "choice",
+  "where": "Audio and subtitles"
+ },
+ "Subtitle languages": {
+  "kind": "action",
+  "where": "Audio and subtitles"
+ },
+ "Subtitle size": {
+  "kind": "choice",
+  "where": "Audio and subtitles"
+ },
+ "Subtitles": {
+  "kind": "toggle",
+  "where": "Remote and buttons > Quick menu buttons"
+ },
+ "Subtitles automatically": {
+  "kind": "action",
+  "where": "Audio and subtitles"
+ },
+ "TMDB API token": {
+  "kind": "page",
+  "where": "Movies and shows"
+ },
+ "TV guide": {
+  "kind": "toggle",
+  "where": "Remote and buttons > Quick menu buttons"
+ },
+ "Text size": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "Theme": {
+  "kind": "choice",
+  "where": "Appearance and start screen"
+ },
+ "This TV's name": {
+  "kind": "action",
+  "where": "Phone app and web editor"
+ },
+ "Time zone feeds": {
+  "kind": "toggle",
+  "where": "Channel and group names"
+ },
+ "Times with no time zone are in": {
+  "kind": "choice",
+  "where": "Channels and groups > Event channels"
+ },
+ "Trakt": {
+  "kind": "page",
+  "where": "My media"
+ },
+ "Trending lists": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Trending movies on Trakt": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Trending shows on Trakt": {
+  "kind": "action",
+  "where": "My media > Trakt > Add a Trakt list"
+ },
+ "Turn all default rules off": {
+  "kind": "action",
+  "where": "Channel and group names"
+ },
+ "Turn on last channel at launch": {
+  "kind": "toggle",
+  "where": "Appearance and start screen"
+ },
+ "Two-line channel names": {
+  "kind": "toggle",
+  "where": "Guide"
+ },
+ "Two-line programmes": {
+  "kind": "toggle",
+  "where": "Guide"
+ },
+ "UK": {
+  "kind": "toggle",
+  "where": "Channels and groups > Keep the countries you watch"
+ },
+ "USA": {
+  "kind": "toggle",
+  "where": "Channels and groups > Keep the countries you watch"
+ },
+ "Up": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Up and Down in fullscreen": {
+  "kind": "choice",
+  "where": "Remote and buttons"
+ },
+ "Video quality": {
+  "kind": "toggle",
+  "where": "Remote and buttons > Quick menu buttons"
+ },
+ "View app log": {
+  "kind": "action",
+  "where": "Updates, about and diagnostics"
+ },
+ "View app log with earlier sessions": {
+  "kind": "action",
+  "where": "Updates, about and diagnostics"
+ },
+ "View network helper log": {
+  "kind": "action",
+  "where": "Updates, about and diagnostics"
+ },
+ "Watch from start": {
+  "kind": "toggle",
+  "where": "Remote and buttons > Quick menu buttons"
+ },
+ "Watchlist": {
+  "kind": "page",
+  "where": "Reminders and watchlist"
+ },
+ "Web editor for browsers": {
+  "kind": "toggle",
+  "where": "Phone app and web editor"
+ },
+ "What this TV can play": {
+  "kind": "page",
+  "where": "Updates, about and diagnostics"
+ },
+ "When a channel stops working": {
+  "kind": "choice",
+  "where": "Playback"
+ },
+ "When a reminder starts": {
+  "kind": "choice",
+  "where": "Reminders and watchlist"
+ },
+ "When something is found": {
+  "kind": "choice",
+  "where": "Reminders and watchlist > Watchlist"
+ },
+ "Yellow": {
+  "kind": "action",
+  "where": "Remote and buttons > In the player"
+ },
+ "Your groups": {
+  "kind": "page",
+  "where": "Channels and groups"
+ },
+ "Your groups first": {
+  "kind": "toggle",
+  "where": "Channels and groups"
+ },
+ "Your local channels": {
+  "kind": "page",
+  "where": "Channels and groups"
+ },
+ "Русский": {
+  "kind": "action",
+  "where": "Language"
+ },
+ "◀ on a live channel with catch-up": {
+  "kind": "choice",
+  "where": "Playback"
+ }
+}

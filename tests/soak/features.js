@@ -143,7 +143,7 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
   await shot('tv-set-audio');
 
   /* ---------- speed test ---------- */
-  await section('Updates, about and diagnostics'); await H.row('Speed test'); await H.quiet('Enter', 500);
+  await section('System'); await H.row('Speed test'); await H.quiet('Enter', 500);
   await page.waitForFunction(() => /Done\./.test((document.querySelector('.diag-body') || {}).innerText || ''), null, { timeout: 60000 }).catch(() => {});
   const sp = await page.innerText('.diag');
   ok('the speed test reports the provider\'s speed', /Provider: [\d.]+ Mbps|Live channel: [\d.]+ Mbps/.test(sp), sp.replace(/\s+/g, ' ').slice(0, 300));

@@ -387,6 +387,14 @@ var WebEdit = (function () {
     return s;
   }
   var RUN = {
+    /* Settings, the same pages the TV and the phone app show (Settings.phone): the sections, one page (sec and the
+       rows followed into it), and a change (toggle, choice, cycle, action, or the answer to a question it asked). */
+    setSections: function () { return { msg: '', data: Settings.phone.sections() }; },
+    setPage: function (a) { return Settings.phone.ready().then(function () { return { msg: '', data: Settings.phone.page(String(a.sec || ''), Array.isArray(a.path) ? a.path.map(Number) : []) }; }); },
+    setChange: function (a) {
+      var path = Array.isArray(a.path) ? a.path.map(Number) : [];
+      return Settings.phone.ready().then(function () { return Settings.phone.change(String(a.sec || ''), path, +a.i, String(a.op || ''), a); }).then(function (r) { return { msg: r.msg || '', data: { page: r.page, dialog: r.dialog || null } }; });
+    },
     mediaPreferences: function (a) {
       var KEYS = ['language', 'sort', 'showSort', 'sortReverse', 'showSortReverse', 'favoritesInLists', 'shelfOrder', 'shelfOff', 'sourceFilter', 'checkEvery'];
       function saved() { var data = KEYS.some(function (k) { return a[k] != null; }) ? Media.updatePreferences(a) : MediaStore.preferences(); data.shelves = Media.shelfList ? Media.shelfList() : []; Settings.live(); return { msg: 'My media preferences saved.', data: data }; }
@@ -848,7 +856,7 @@ var WebEdit = (function () {
       var body = U.el('div', 'edit-join'), qr = U.el('div', 'join-qr'), txt = U.el('div', 'join-txt'), wasOn = on;
       body.appendChild(qr); body.appendChild(txt);
       txt.appendChild(U.el('div', 'remote-s', 'Starting the editor…'));
-      var lead = U.el('p', 'edit-join-lead', opts.lead || ('Scan the code with your phone\'s camera, or open the address on a computer on the same network.  Rename, hide, sort and clean up with a real keyboard; changes show up here as you send them.' + (/alpha|beta/i.test(TIVIBRO_VERSION) ? '  Pairing the TiviBro app is different: Settings > Phone app and web editor > Pair the TiviBro app.' : '')));
+      var lead = U.el('p', 'edit-join-lead', opts.lead || ('Scan the code with your phone\'s camera, or open the address on a computer on the same network.  Rename, hide, sort and clean up with a real keyboard; changes show up here as you send them.' + (/alpha|beta/i.test(TIVIBRO_VERSION) ? '  Pairing the TiviBro app is different: Settings > Playlists and accounts > Phone app and web editor > Pair the TiviBro app.' : '')));
       var wrap = U.el('div'); wrap.appendChild(lead); wrap.appendChild(body);
       function show(s) { if (!wrap.parentNode) return; drawJoin(qr, txt, page || '', s, 'Waiting for a phone or computer…', 'Connected.  The editor keeps running until you turn it off or close TiviBro.'); }
       // keepOn: the screen underneath needs the editor (the first screen's own QR code), so no Turn off.

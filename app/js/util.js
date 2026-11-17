@@ -166,7 +166,7 @@ var U = (function () {
   function httpSays(status, who) {
     var n = +status || 0;
     if (who === 'helper') {
-      if (n === 403) return 'The network helper refused this request.  Close TiviBro and open it again; if it keeps happening, send a report from Settings > Updates, about and diagnostics.';
+      if (n === 403) return 'The network helper refused this request.  Close TiviBro and open it again; if it keeps happening, send a report from Settings > System.';
       if (n === 404) return 'The network helper doesn\'t know this request (HTTP 404).  Update TiviBro, then try again.';
       if (n === 413) return 'That was too big for the network helper to take.';
       if (n >= 500) return 'The network helper had a problem (HTTP ' + n + ').  Try again; if it keeps happening, send a report.';

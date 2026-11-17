@@ -2,7 +2,7 @@
    choosing how it looks, one screen at a time, with the remote.  Every step shows what your own
    playlist has (how many countries, East and West copies, local cities, event channels...), so it
    only asks about what applies.  Nothing changes until the last screen; a restore point is saved
-   first, so the web editor can undo it.  Run it again any time from Settings > Playlists >
+   first, so the web editor can undo it.  Run it again any time from Settings > Playlists and accounts >
    the playlist > Set-up tour.
    Steps: welcome, countries, channel names, East and West, local channels, event channels, clutter,
    logos, look, and a summary with tips.
@@ -128,7 +128,7 @@ var Tour = (function () {
       function () { return !!Filter.conf().adult; }, function (v) { Filter.setAdult(v); Views.filterChanged(); st.sv = survey(); st.planned = null; draw(); }, 'Yes, hide them', 'No, show them'));
     out.push(action('Tidy up here, step by step', 'About two minutes with the remote.  Nothing changes until the last screen.', function () { go(1); }, function () { return '›'; }));
     out.push(action('Tidy up on a phone or computer', 'Scan a code with your phone: Smart clean-up, renaming, sorting and backups with a real keyboard.', remote, function () { return '›'; }));
-    out.push(action('Skip, start watching', 'Run this again any time: Settings > Playlists > ' + (p.name || 'the playlist') + ' > Set-up tour.', function () { finish(false); }, function () { return ''; }));
+    out.push(action('Skip, start watching', 'Run this again any time: Settings > Playlists and accounts > ' + (p.name || 'the playlist') + ' > Set-up tour.', function () { finish(false); }, function () { return ''; }));
     return out;
   }
 
@@ -172,7 +172,7 @@ var Tour = (function () {
     }
     out.push(head('Your channels, before and after'));
     out.push(custom(preview()));
-    out.push(info('Your own prefixes and suffixes, TiviMate style, are under Settings > Channel and group names.', ''));
+    out.push(info('Your own prefixes and suffixes, TiviMate style, are under Settings > Channels and groups > Channel and group names.', ''));
     return out;
   }
 
@@ -330,7 +330,7 @@ var Tour = (function () {
       ['OK while watching', 'The quick menu: audio, subtitles, quality, picture, sleep timer, from start.'],
       ['Catch-up', 'Channels marked ↺ replay the last days: go back in the guide and press OK.'],
       ['The web editor', 'Edit on phone in the side menu: Smart clean-up, renaming, your own groups, guide matching, backups.'],
-      ['Run this again', 'Settings > Playlists > ' + (P().name || 'the playlist') + ' > Set-up tour.']].forEach(function (x) {
+      ['Run this again', 'Settings > Playlists and accounts > ' + (P().name || 'the playlist') + ' > Set-up tour.']].forEach(function (x) {
       var d = U.el('div', 'tour-tip'); d.appendChild(U.el('b', '', x[0])); d.appendChild(U.el('span', '', x[1])); tips.appendChild(d);
     });
     out.push(custom(tips));
@@ -663,7 +663,7 @@ var Tour = (function () {
 
   }
 
-  /* The tour from the phone app (issue: it only ran on the TV): Settings > Playlists > the playlist > Set-up
+  /* The tour from the phone app (issue: it only ran on the TV): Settings > Playlists and accounts > the playlist > Set-up
      tour opens it as a page of rows (Settings.phone).  The same steps and choices; nothing shows on the TV,
      and Apply does what it does there.  A box it asks (words to hide groups by) comes to the phone too. */
   var phoneDone = null;

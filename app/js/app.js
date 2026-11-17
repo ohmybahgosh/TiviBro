@@ -144,7 +144,7 @@ var App = (function () {
           : Net.port ? 'Automatic uses the network helper, a part of TiviBro that runs in the background on the TV and fetches your channels, guide and streams for the app.  Leave it on.'
           : 'The network helper (the part of TiviBro that talks to your provider) is not running: ' + (Net.lastError || 'no reason given') + '.  Restart TiviBro; if it keeps happening, press View log.'));
       /* DNS for finding the provider (discussion #60): here too, for a provider the TV's own DNS can't find
-         before there is any playlist (Settings > Playlists > DNS later).  Needs the network helper. */
+         before there is any playlist (Settings > Playlists and accounts > DNS later).  Needs the network helper. */
       if (!direct) {
         var dn = U.el('div', 'field'), dm = Store.settings.dns || 'tv', dk = Settings.dns.ids.indexOf(dm);
         dn.appendChild(U.el('label', '', dm === 'custom' ? 'DNS server' : 'DNS'));
@@ -502,7 +502,7 @@ var App = (function () {
     var now = Library.count() - ((Library.partOf(p.id) || { channels: [] }).channels.length);
     if (now + n <= multiMax()) return true;
     Log.warn('app', 'Left out ' + (p.name || 'a playlist') + ': with its ' + n + ' channels the playlists that are on would have ' + (now + n) + ', more than this TV holds (' + multiMax() + (memSafe() ? ', memory-safe' : '') + ')');
-    U.toast('"' + (p.name || 'A playlist') + '" is not shown: together the playlists that are on have too many channels for this TV.  Turn one off in Settings > Playlists.', 9000);
+    U.toast('"' + (p.name || 'A playlist') + '" is not shown: together the playlists that are on have too many channels for this TV.  Turn one off in Settings > Playlists and accounts.', 9000);
     return false;
   }
   function useOther(p, data) {
@@ -646,7 +646,7 @@ var App = (function () {
     if (window.Settings && Settings.live) Settings.live();
     return reloading;
   }
-  // Stop reloading (Settings > Playlists and guide, issue #25): the channels from the last load stay.
+  // Stop reloading (Settings > Playlists and accounts and guide, issue #25): the channels from the last load stay.
   function stopReload() { return !!reloading && Source.stop(Store.playlist.id); }
 
   /* ---------- a playlist that keeps closing TiviBro (issue #25) ----------
@@ -737,7 +737,7 @@ var App = (function () {
     if (n < BIG || p.bigNoted) return;
     Log.warn('app', 'This playlist has ' + n + ' channels, more than most TVs comfortably hold.  Reloading it is the hardest moment for the TV.');
     p.bigNoted = 1; Store.upsertPlaylist(p);
-    U.toast(n.toLocaleString() + ' channels is a very big playlist for a TV.  If TiviBro closes after reloading it, set Settings > Playlists > ' + (p.name || 'this playlist') + ' > Reload channel list to Only when I ask, or ask your provider for a smaller list.', 14000);
+    U.toast(n.toLocaleString() + ' channels is a very big playlist for a TV.  If TiviBro closes after reloading it, set Settings > Playlists and accounts > ' + (p.name || 'this playlist') + ' > Reload channel list to Only when I ask, or ask your provider for a smaller list.', 14000);
   }
 
   function open(p) {
@@ -861,7 +861,7 @@ var App = (function () {
       { label: 'Send a report now', sub: 'straight from the TV, with the log, logins and server names taken out', action: function () {
         U.toast('Sending the report…', 3000);
         Diag.sendNow(what, sub).then(function (j) { U.toast('Report sent, thank you.  It is issue #' + j.number + ' on GitHub.  TiviBro will tell you when the developer answers.', 8000); },
-          function (e) { U.toast('The report could not be sent (' + ((e && e.message) || 'no connection') + ').  Settings > Updates, about and diagnostics > Report a problem sends it from your phone.', 9000); });
+          function (e) { U.toast('The report could not be sent (' + ((e && e.message) || 'no connection') + ').  Settings > System > Report a problem sends it from your phone.', 9000); });
       } },
       { label: 'Report with my phone', sub: 'add what you were doing; scan a code with your phone', action: function () { Diag.openReport(); } },
       { label: 'Not now', sub: sub.length > 90 ? sub.slice(0, 88) + '…' : sub }

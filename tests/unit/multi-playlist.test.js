@@ -177,7 +177,7 @@ const lsTwo = () => ({ 'tivibro.settings': JSON.stringify({ playlists: [A, B], a
   ok('Clear all edits: the other playlist keeps its own', S.edits.hiddenChannels['pB:x7'] === 1);
 }
 
-// ---------- mixing: each other playlist's switches (Settings > Playlists > the playlist > Mix into the first playlist) ----------
+// ---------- mixing: each other playlist's switches (Settings > Playlists and accounts > the playlist > Mix into the first playlist) ----------
 {
   const ctx = sandbox(lsTwo());
   const S = ctx.Store, L = ctx.Library;

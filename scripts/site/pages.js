@@ -261,7 +261,7 @@ module.exports = [
     '<p>The easiest way, and the TV updates TiviBro by itself.</p>',
     '<ol class="steps-list">',
     '<li id="step-1"><b>Add the repository.</b>  Open the <b>Homebrew Channel</b>, go to <b>Settings</b>, choose <b>Add repository</b> and enter:' + REPO + '</li>',
-    '<li id="step-2"><b>Install.</b>  TiviBro appears in the app list.  Choose <b>Install</b>.  New versions show up as <b>Update</b>, and inside TiviBro under <b>Settings &gt; Updates, about and diagnostics</b>.</li>',
+    '<li id="step-2"><b>Install.</b>  TiviBro appears in the app list.  Choose <b>Install</b>.  New versions show up as <b>Update</b>, and inside TiviBro under <b>Settings &gt; System</b>.</li>',
     '<li id="step-3"><b>Open TiviBro and add your playlist.</b>  Scan the QR code on the first screen with your phone and add it there.</li>',
     '</ol>',
     '<p class="callout">Want every test build as soon as it\'s out?  Add <code>https://tivibro.app/testing</code> instead.  The <a href="https://ohmybahgosh.dev/#homebrew">ohmybahgosh.dev repository</a> also carries TiviBro, alongside LG-USB-2-ETH0, Entware and SSH Doctor.</p>',
@@ -292,7 +292,7 @@ module.exports = [
   faq: [
     ['Is TiviBro in the LG Content Store?', 'Not yet.  It installs as a homebrew app: the Homebrew Channel on a rooted TV, one command over SSH, or LG\'s Developer Mode without root.'],
     ['Do I need to root my LG TV?', 'No.  Root with the Homebrew Channel gives you updates on the TV itself, but TiviBro also installs in Developer Mode with LG\'s own tools.'],
-    ['How do I update TiviBro?', 'From the Homebrew Channel (it shows Update), from Settings, Updates, about and diagnostics inside TiviBro, or by running the install command again.'],
+    ['How do I update TiviBro?', 'From the Homebrew Channel (it shows Update), from Settings, System inside TiviBro, or by running the install command again.'],
     ['Which LG TVs does it run on?', 'LG TVs with webOS 4 (2018) and newer, up to webOS 26.  It is in use on real TVs from a 2019 OLED to a 2022 C2 on webOS 25.']
   ],
   related: ['xtream-codes-lg-tv', 'm3u-lg-tv', 'features']

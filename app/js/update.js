@@ -107,7 +107,7 @@ var Update = (function () {
         // Said once per version (issue #33: a TV that stays on never saw it); Settings marks it after that.
         var told = (load() || {}).told;
         if (quiet && atLaunch) { atLaunch = false; offerSoon(r); }
-        else if (quiet && told !== r.version) { U.toast('TiviBro ' + r.version + ' is available.  Settings > Updates, about and diagnostics.', 9000); told = r.version; }
+        else if (quiet && told !== r.version) { U.toast('TiviBro ' + r.version + ' is available.  Settings > System.', 9000); told = r.version; }
         keep({ checked: Date.now(), latest: r, told: told });
         Log.info('update', 'Update available: ' + r.version + ' (running ' + current() + ')');
         return st;
