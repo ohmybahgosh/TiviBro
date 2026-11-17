@@ -66,7 +66,7 @@ var Diag = (function () {
     }).catch(function (e) { show('Helper log', ['Could not read the helper log: ' + e.message]); });
   }
 
-  // The QR code to the web editor's Report a problem page (Settings > Diagnostics, the menu, after a crash).
+  // The QR code to the web editor's Report a problem page (Settings > System, the menu, after a crash).
   function openReport(keepOn) {
     WebEdit.showJoin('report', null, { keepOn: !!keepOn, title: 'Report a problem', lead: 'Scan the code with your phone\'s camera (or open the address on a computer).  Describe what happened there; the TV adds its version, model and log, with logins and server names taken out, and your phone opens a GitHub issue ready to send.' });
   }

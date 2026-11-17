@@ -20,4 +20,4 @@ The phone app's **Reminders** screen and the web editor's **Reminders and watchl
 
 ---
 
-← [Settings: Channel and group names](Settings-Channel-and-group-names)  ·  [Home](Home)  ·  [Settings: Playback](Settings-Playback) →
+← [Settings: My media](Settings-My-media)  ·  [Home](Home)  ·  [Settings: Parental controls](Settings-Parental-controls) →

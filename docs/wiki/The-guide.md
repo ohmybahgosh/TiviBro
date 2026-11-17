@@ -12,7 +12,7 @@ The guide is the home screen.  The channel you are on plays in the window at the
 - Programmes you can replay carry a **↺** catch-up mark.
 - **OK** on a future programme sets a reminder; on a past catch-up programme it replays it.
 - **Hold OK** opens: Watch fullscreen, Play in the window, Earlier programmes, Remind me, **Jump to…**, Jump to now, and Channel options (favorite, copy to group, hide, rename).  The channel and time are under its title.
-- **Jump to…** goes straight to tonight, late tonight, tomorrow morning or tomorrow night, or any later day the guide has (then a time: morning, midday, afternoon, evening, prime time or late night).  On a channel with catch-up it also lists earlier today and the days before.  It can be put on a button too (Settings > Remote and buttons).
+- **Jump to…** goes straight to tonight, late tonight, tomorrow morning or tomorrow night, or any later day the guide has (then a time: morning, midday, afternoon, evening, prime time or late night).  On a channel with catch-up it also lists earlier today and the days before.  It can be put on a button too (Settings > Playback > Remote and buttons).
 - The details above the guide show the season and episode, and **NEW**, **REMINDER** and the kind of programme (Sports, News, Kids) when your guide says so, or the title or channel makes it plain.  A title too long for its box scrolls across on the programme you are on.
 - **Colour by category** (Settings > Guide) gives movies, sports, news and kids' programmes a short coloured bar in the guide, with what each colour means at the top right.
 - **No guide for this channel** (in **Hold OK** on a channel with no guide) is for a channel that will never have one: a radio stream, a camera, an event slot.  It stops saying "No guide information" and guide matching and public fill-in leave it out.  **Look for a guide again**, in the same place, undoes it, and **Settings > Guide > Channels with no guide wanted** lists them all.
@@ -28,7 +28,7 @@ The guide is the home screen.  The channel you are on plays in the window at the
 </p>
 </details>
 
-Where the guide comes from (your provider, your own sources, public fill-in, and how channels are matched) is explained at the top of [Settings: Guide](Settings-Guide).  How it looks is under [Settings: Appearance and start screen](Settings-Appearance-and-start-screen): two-line programmes, dimming past programmes, how "now" is marked, logos only or names too, and catch-up marks.  Where your playlist has the same channel more than once, a small quality tag (**FHD**, **HD**, **SD**, **4K**) tells the copies apart.
+Where the guide comes from (your provider, your own sources, public fill-in, and how channels are matched) is explained at the top of [Settings: Guide](Settings-Guide).  How it looks is under [Settings: Appearance](Settings-Appearance): two-line programmes, dimming past programmes, how "now" is marked, logos only or names too, and catch-up marks.  Where your playlist has the same channel more than once, a small quality tag (**FHD**, **HD**, **SD**, **4K**) tells the copies apart.
 
 **Not playing lately.**  A channel whose last two tries both failed, while the playlist's other channels play, gets a small amber tag: **not playing** in the guide's channel column, **not playing lately** on the Channels screen and in the phone app.  It's usually the provider: the channel may be off air or moved.  The tag goes the moment the channel plays again, and after three days on its own.
 

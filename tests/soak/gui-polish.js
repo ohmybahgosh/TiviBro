@@ -1,5 +1,5 @@
 /* Discussion #36's screen polish in the real app: lists show whole rows (none cut by the button hints),
-   Settings shown: Everyday leaves out the rarely changed ones (the TV and the phone alike), and a channel slow
+   Advanced view off puts the rarely changed ones behind an Advanced row (the TV and the phone alike), and a channel slow
    to start asks what to do.
      npm run serve &
      node tests/soak/gui-polish.js */
@@ -32,17 +32,18 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await ev(() => { const i = document.querySelector('.search-input'); i.value = 'news'; i.dispatchEvent(new Event('input')); }); await page.waitForTimeout(1200);
     ok('Search: no row cut by the bottom of its list', (await cut()) === 0);
 
-    // Settings shown: Everyday.
+    // Advanced view off: the rarely changed settings wait behind one Advanced row.
     await ev(() => { Views.switchTab('settings'); Settings.open(); }); await page.waitForTimeout(400);
+    await ev(() => { delete Store.settings.setLevel; Store.settings.advView = true; });
     const all = await ev(() => Settings.phone.page('playback', []).rows.map((r) => r.label));
-    await ev(() => { Store.settings.setLevel = 'basic'; });
+    await ev(() => { Store.settings.advView = false; });
     const basic = await ev(() => Settings.phone.page('playback', []).rows.map((r) => r.label));
     const pl = await ev(() => { const r = Settings.phone.page('playlists', []).rows; const i = r.findIndex((x) => x.page || x.kind === 'page'); return i >= 0 ? Settings.phone.page('playlists', [i]).rows.map((x) => x.label) : []; });
-    ok('Everyday leaves out the player engine, the buffer details and the like', all.indexOf('Player engine') >= 0 && basic.indexOf('Player engine') < 0 && basic.indexOf('Read-ahead') < 0 && basic.indexOf('Buffer profile') >= 0, basic.join(', '));
-    ok('and says how many more there are in All', basic.some((l) => /^\d+ more in All settings$/.test(l)), basic.slice(-2).join(' | '));
-    ok('a playlist still shows its connection', pl.indexOf('Connection') >= 0, pl.join(', '));
-    ok('Appearance has the choice', (await ev(() => Settings.phone.page('look', []).rows.map((r) => r.label))).indexOf('Settings shown') >= 0);
-    await ev(() => { Store.settings.setLevel = 'all'; UI.close && UI.close(); });
+    ok('Advanced view off leaves out the player engine, the buffer details and the like', all.indexOf('Player engine') >= 0 && basic.indexOf('Player engine') < 0 && basic.indexOf('Read-ahead') < 0 && basic.indexOf('Buffer profile') >= 0, basic.join(', '));
+    ok('and puts them behind one Advanced row', basic.indexOf('Advanced') >= 0, basic.slice(-2).join(' | '));
+    ok('a playlist keeps its connection behind Advanced', pl.indexOf('Connection') >= 0 || pl.indexOf('Advanced') >= 0, pl.join(', '));
+    ok('Appearance has the switch', (await ev(() => Settings.phone.page('look', []).rows.map((r) => r.label))).indexOf('Advanced view') >= 0);
+    await ev(() => { Store.settings.advView = true; UI.close && UI.close(); });
 
     // A channel slow to start, fullscreen: after 20 s it asks.
     await ev((u) => { const c = Library.data.channels[2]; c.url = u; Views.startChannel(c, false, Views.goFull); }, 'http://127.0.0.1:' + hang.address().port + '/live/x/y/1.ts');

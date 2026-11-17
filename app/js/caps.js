@@ -272,7 +272,7 @@ var Caps = (function () {
     return '';
   }
 
-  // Rows for Settings > Diagnostics > What this TV can play.
+  // Rows for Settings > System > What this TV can play.
   function report() {
     var c = probe(), rows = [];
     function yn(b) { return b ? 'yes' : 'no'; }

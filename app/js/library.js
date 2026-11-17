@@ -175,7 +175,7 @@ var Library = (function () {
     }
     return !!growable[String(prefix)];
   }
-  // Groups the provider adds later can arrive hidden (Settings > Groups > Newly added groups),
+  // Groups the provider adds later can arrive hidden (Settings > Channels and groups > Newly added groups),
   // so a tidy "hide all, show a few" setup stays tidy after refreshes.
   function trackNewGroups(groups) {
     try {

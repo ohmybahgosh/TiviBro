@@ -4,7 +4,7 @@ Everything TiviBro does, on the TV and from your computer.  Every picture here c
 
 **On the TV:** [First start](#first-start) · [The set-up tour](#the-set-up-tour) · [Channel logos](#channel-logos) · [The remote](#the-remote) · [The guide](#the-guide) · [Groups and the menu](#groups-and-the-menu) · [Watching fullscreen](#watching-fullscreen) · [Other versions of a channel](#other-versions-of-a-channel) · [Event channels](#event-channels-pay-per-view-and-sports-passes) · [My teams](#my-teams) · [Movies on now](#movies-on-now) · [My media](#my-media) · [Catch-up](#catch-up) · [Movies and shows](#movies-and-shows) · [Search](#search) · [Favorites, hiding and your own groups](#favorites-hiding-and-your-own-groups) · [Reminders](#reminders) · [Settings](#settings) · [Updates](#updates) · [Parental controls](#parental-controls)
 
-**Every setting:** [Playlists](#settings-playlists) · [Guide](#settings-guide) · [Channels and groups](#settings-channels-and-groups) · [Channel and group names](#settings-channel-and-group-names) · [Reminders and watchlist](#settings-reminders-and-watchlist) · [Playback](#settings-playback) · [My media](#settings-my-media) · [Trakt](#settings-trakt) · [API keys](#settings-api-keys) · [Remote and buttons](#settings-remote-and-buttons) · [Appearance](#settings-appearance-and-start-screen) · [Parental controls](#settings-parental-controls) · [Backups and restore points](#settings-backups-and-restore-points) · [Phone app and web editor](#settings-phone-app-and-web-editor) · [System](#settings-updates-about-and-diagnostics)
+**Every setting:** [Playlists](#settings-playlists-and-accounts) · [Guide](#settings-guide) · [Channels and groups](#settings-channels-and-groups) · [Channel and group names](#settings-channel-and-group-names) · [Reminders and watchlist](#settings-reminders-and-watchlist) · [Playback](#settings-playback) · [My media](#settings-my-media) · [Trakt](#settings-trakt) · [API keys](#settings-api-keys) · [Remote and buttons](#settings-remote-and-buttons) · [Appearance](#settings-appearance) · [Parental controls](#settings-parental-controls) · [Backups and restore points](#settings-backups-and-restore-points) · [Phone app and web editor](#settings-phone-app-and-web-editor) · [System](#settings-system)
 
 **From your computer:** [Turning on the web editor](#turning-on-the-web-editor) · [Drafts and Send to TV](#drafts-and-send-to-tv) · [Channels and groups](#channels-and-groups) · [Smart clean-up](#smart-clean-up) · [Channel and group names](#channel-and-group-names) · [The programme guide](#the-programme-guide) · [Reminders and watchlist](#reminders-and-watchlist) · [Playlists](#playlists) · [My media in the editor](#my-media-in-the-editor) · [Backups and restore points](#backups-and-restore-points)
 
@@ -186,7 +186,7 @@ The guide is the home screen.  The channel you are on plays in the window at the
 </p>
 </details>
 
-Where the guide comes from (your provider, your own sources, public fill-in, and how channels are matched) is explained at the top of [Settings: Guide](#settings-guide).  How it looks is under [Settings: Appearance](#settings-appearance-and-start-screen): two-line programmes, dimming past programmes, how "now" is marked, logos only or names too, and catch-up marks.  Where your playlist has the same channel more than once, a small quality tag (**FHD**, **HD**, **SD**, **4K**) tells the copies apart.
+Where the guide comes from (your provider, your own sources, public fill-in, and how channels are matched) is explained at the top of [Settings: Guide](#settings-guide).  How it looks is under [Settings: Appearance](#settings-appearance): two-line programmes, dimming past programmes, how "now" is marked, logos only or names too, and catch-up marks.  Where your playlist has the same channel more than once, a small quality tag (**FHD**, **HD**, **SD**, **4K**) tells the copies apart.
 
 **Not playing lately.**  A channel whose last two tries both failed, while the playlist's other channels play, gets a small amber tag: **not playing** in the guide's channel column, **not playing lately** on the Channels screen and in the phone app.  It's usually the provider: the channel may be off air or moved.  The tag goes the moment the channel plays again, and after three days on its own.
 
@@ -615,27 +615,38 @@ The watchlist needs the guide to know what's on: with an XMLTV guide it sees eve
 
 ### Settings
 
-**Blue** in the guide, or **Settings** in the menu.  The channel you're watching keeps playing in the top corner, with what's on beside it, and the settings sit below it at full width.  **Hold OK** (or click the picture) goes back to it in fullscreen (on a TV short of memory it stops for a channel list or guide reload, and it always stops for the set-up screen, the tour and the speed test).  **Search settings** (the first row of the menu) or **Yellow** searches every setting: type a word ("subtitle", "clock", "DNS") and pick one to go straight to it.  On a row with a choice, the focused row shows **‹ ›**: **◀ ▶** change it.  Colour rows show a swatch of the colour.  Every option is explained, with its default, in [Every setting](#every-setting).  The sections:
+**Blue** in the guide, or **Settings** in the menu.  The channel you're watching keeps playing in the top corner, with what's on beside it, and the settings sit below it at full width.  **Hold OK** (or click the picture) goes back to it in fullscreen (on a TV short of memory it stops for a channel list or guide reload, and it always stops for the set-up screen, the tour and the speed test).
+
+**Finding a setting.**  **Search settings** (the first row of the menu) or **Yellow** searches every setting, advanced ones too: type a word ("subtitle", "freeze", "clock", "DNS") and pick one to go straight to it.  Something not working?  **Settings > System > Fix a problem** lists the common problems in plain words (channels freeze, a channel won't play, no guide, no sound, subtitles, movies missing, TiviBro closed or is slow), what to try first, and the settings that matter, one press away.
+
+**Reading the rows.**  Each kind of row looks different, so they don't blend together:
+
+- A **setting with choices** shows its value in a pill on the right; on the focused row **◀ ▶** change it (with the Magic Remote, click the **‹ ›**).
+- An **On / Off** setting is a switch: green is on.
+- A row that opens a **page** ends with **›**; a **button** (Reload guide now, Check for updates) has its name in the accent colour.
+- **Facts** (versions, when the guide loaded, status) sit quietly on a darker band, and **notes** have a bar beside them.
+- Something that **wants you**, like an update ready to install, is green with a **NEW** badge, at the top of its page, and its section has a green dot in the menu.
+- Under each name is its first sentence; the whole explanation shows at the bottom of the screen for the row you're on.
+
+**Advanced settings.**  Each page shows what most people change.  The ones people set once, or only to troubleshoot (buffer details, the player engine, stream format, the network helper, learning a button, detailed logging and so on), wait behind an **Advanced** row at the bottom of the page.  **Settings > Appearance > Advanced view** shows them all in place instead.  Nothing is hidden from Search.
+
+The sections, with the pages inside them.  Every option is explained, with its default, in [Every setting](#every-setting):
 
 | Section | What's in it |
 |---|---|
-| [**Playlists**](#settings-playlists) | Add and switch playlists, connection and User-Agent, channel list reloads, subscription expiry and connections, the set-up tour, and each playlist's own guide, names and event channels |
-| [**Guide**](#settings-guide) | How your guide is built, provider guide mode and offset, your own guide sources, reloads, public fill-in, guide coverage, assigning a guide, channels with no guide wanted, and how the guide looks (OK on a channel, row size, two-line programmes, what's on now, category colours, channel names, catch-up marks) |
-| [**Channels and groups**](#settings-channels-and-groups) | Manage groups, sort orders, your groups first, Recent and Favorites, My teams, Movies on now, event channels, recently added, your own groups, hidden groups and channels |
-| [**Channel and group names**](#settings-channel-and-group-names) | Name clean-up rules, hiding channels with nothing on, your prefixes and suffixes, group prefixes and suffixes, previews |
-| [**Reminders and watchlist**](#settings-reminders-and-watchlist) | When reminders come up and what they do, the watchlist, and every reminder coming up, with Cancel and Cancel all, and holding notices during movies |
-| [**Playback**](#settings-playback) | Buffer profile and buffer meter, player engine, MPEG-TS or HLS, network helper, HDR and Dolby Vision, aspect, switching channels and what happens when one stops working, catch-up skip steps |
-| [**Audio and subtitles**](#settings-audio-and-subtitles) | Audio language, surround sound, converting sound the TV can't play, subtitles and captions and how they look, subtitles from OpenSubtitles |
-| [**Movies and shows**](#settings-movies-and-shows) | The order of movies and shows, next episode, hiding spoilers, movie and series details from TMDB |
-| [**My media**](#settings-my-media) | Your libraries (each with its own page: what it holds, Show on Home, scan, unmatched movies with Fix match, remove), add a library, display and shelves, a link to the TMDB token |
-| [**Trakt**](#settings-trakt) | Connect with a code, watched history both ways, Trakt lists as My media shelves (by link, NAME/LIST, search or chart) |
-| [**API keys**](#settings-api-keys) | The TMDB token and the OpenSubtitles key and sign-in, each with Test |
-| [**Remote and buttons**](#settings-remote-and-buttons) | Remap buttons in the player and lists, quick menu buttons, learn a button, button tester |
-| [**Appearance**](#settings-appearance-and-start-screen) | Settings shown, start screen, where lists open, last channel at launch, preview on the Channels screen, Back twice to exit, clock, theme (Black and white, Tokyo Night, Dracula, Nord, Gruvbox, Catppuccin, Solarized, One Dark, Rosé Pine, Everforest, Kanagawa, Monokai, or your own mix), accent color (twelve presets or your own from a hue and brightness), background (Midnight, Black OLED, Slate, Ocean, Forest, Plum, Mocha, High contrast, Classic), focus style, text size, panel transparency, logos, clock, channel numbers |
+| [**Language**](#settings-language) | TiviBro's language |
+| [**Playlists and accounts**](#settings-playlists-and-accounts) | Add and switch playlists, connection and User-Agent, reloads, subscription expiry and connections, the set-up tour, each playlist's own guide, names and event channels, DNS.  Pages: [**API keys**](#settings-api-keys) (TMDB, OpenSubtitles) and [**Phone app and web editor**](#settings-phone-app-and-web-editor) |
+| [**Guide**](#settings-guide) | How your guide is built, provider guide mode and offset, your own guide sources, reloads, public fill-in, guide coverage, assigning a guide, and how the guide looks |
+| [**Channels and groups**](#settings-channels-and-groups) | Manage groups, sorting, which special groups show, My teams, event channels, your own groups, hidden groups and channels, tidy-up.  Page: [**Channel and group names**](#settings-channel-and-group-names) |
+| [**Playback**](#settings-playback) | Buffer, aspect, catch-up steps, switching channels and what happens when one stops working, memory-safe playback; advanced: player engine, stream format, connection, HDR.  Pages: [**Audio and subtitles**](#settings-audio-and-subtitles) and [**Remote and buttons**](#settings-remote-and-buttons) |
+| [**Movies and shows**](#settings-movies-and-shows) | Where they open, the order, next episode, hiding spoilers, details from TMDB |
+| [**My media**](#settings-my-media) | Your libraries (each with its own page), add a library, look for new files, display and shelves.  Page: [**Trakt**](#settings-trakt) |
+| [**Reminders and watchlist**](#settings-reminders-and-watchlist) | When reminders come up, the watchlist, every reminder coming up, holding notices during movies |
 | [**Parental controls**](#settings-parental-controls) | Content filter, PIN, what it protects, blocked groups and channels |
-| [**Backups and restore points**](#settings-backups-and-restore-points) | Where backups live (the phone app, or a locked file), the last backup, and the restore points on this TV |
-| [**Phone app and web editor**](#settings-phone-app-and-web-editor) | Pairing the TiviBro app, paired phones, and the web editor's switch, address, password and port |
-| [**System**](#settings-updates-about-and-diagnostics) | Your version, check for updates, install an update (rooted TVs), what's new, automatic checks, test versions, report a problem, connection and speed tests, logs, what this TV can play, status |
+| [**Appearance**](#settings-appearance) | Advanced view, start screen and navigation, theme, accent colour, background, focus style, text size, panels over video, logos, clock, numbers |
+| [**System**](#settings-system) | Fix a problem, your version and updates, about and licences, report a problem, connection and speed tests, logs, what this TV can play, status, provider status.  Page: [**Backups and restore points**](#settings-backups-and-restore-points) |
+
+The phone app's **Settings** tab and the web editor's **Settings** page show the same sections, pages and rows, drawn the same way.
 
 <p align="center"><a href="media/settings.mp4"><img src="media/settings.gif" width="100%" alt="Settings and appearance"></a></p>
 <p align="center"><sub><a href="media/settings.mp4">Watch the MP4</a></sub></p>
@@ -695,7 +706,7 @@ On a row with a choice, **◀ ▶** change it (with the Magic Remote, click the 
 
 See [Language](#language).
 
-### Settings: Playlists
+### Settings: Playlists and accounts
 
 Your playlists and how often their channel lists reload.  **OK** on a playlist opens its page.  The guide, names and channels of the first playlist have their own sections: [Guide](#settings-guide), [Channel and group names](#settings-channel-and-group-names) and [Channels and groups](#settings-channels-and-groups).
 
@@ -746,9 +757,87 @@ On a playlist's page:
 | **Event channels ›** | | This playlist's [event channels](#event-channels-pay-per-view-and-sports-passes) (see [Settings: Channels and groups](#settings-channels-and-groups)). |
 | **Delete this playlist** | | Removes the playlist with its groups, favorites, hidden items and cached data.  **Playlist on** (off) keeps them instead.  Your only playlist can be deleted too (an expired one, say): TiviBro then starts again on the screen that adds a playlist. |
 
+#### Settings: API keys
+
+Every key you paste, in one place.  Typing them from the TiviBro phone app (Settings > Playlists and accounts > API keys) is easiest: a phone keyboard and copy and paste.
+
+| Setting | Choices | What it does |
+|---|---|---|
+| **Add TMDB API token** | | Your free key or Read Access Token from themoviedb.org/settings/api, for movie and show details and posters (My media, Movies on now).  Then **Test TMDB token** and **Remove TMDB token**. |
+| **Set up OpenSubtitles (step by step)** | | The free key for Find subtitles, step by step (an account, the key and what to tick, paste it, checked straight away).  Once set up: **OpenSubtitles API key saved** to replace it, **Test OpenSubtitles key** (the key, and your sign-in if any), **Sign in** for more downloads, and **Remove OpenSubtitles key**. |
+
+The keys stay on this TV, out of backups.
+
+#### Settings: Phone app and web editor
+
+Two different ways to use a phone with TiviBro, on one page.  Each works without the other: the phone app doesn't need the web editor switched on.
+
+- **The TiviBro phone app** (Android) is a remote with the guide, On now, Movies, Shows, My media, reminders, backups and all of these settings.  Pair it once with **Pair the TiviBro app…**: that QR code is scanned inside the app, not with the phone's camera.
+- **The web editor** works in any browser, for bigger jobs: groups, channels, names, Smart clean-up, guide matching, reminders and backups.  **Open it in a phone's browser (QR code)** is for the phone's camera.  The phone app opens the editor by itself (**Edit channels**), so the switch below is only needed for a browser.
+
+In release builds, where the phone app isn't offered yet, this page is called **Web editor** and has only the web editor's rows.
+
+**The TiviBro phone app**
+
+The TiviBro app for Android is a remote and a second screen for this TV.  Pair a phone once and it stays paired.
+
+- **The home screen** has a card for each TV with a grid of shortcuts: **Remote**, **Guide**, **On now**, **Movies and Shows**, **My media**, **Reminders**, **Edit channels**, **Backups** and **Settings**.  Only the ones this TV can use show: On now needs a TMDB token on the TV, Movies and Shows a provider that has them, My media a media source.  While the TV is off the card offers **Turn on**, **Edit channels anyway** and **Backups**.  The card's **⋮** menu has **Turn on**, **Open TiviBro on the TV**, the Quick Settings tile and **Forget this TV**.
+- **Remote**: arrows round OK (hold OK for options), Back, channel and volume buttons, play and pause, the colour buttons and Info.
+- **Type on your phone**: whenever the TV shows a box to type in (setting up a playlist, Search, renaming a group), the same boxes show at the top of the app.  Type with the phone's keyboard and the TV fills in as you go.  Passwords travel encrypted and are never shown on the phone.
+- **Channels**: every channel as TiviBro shows it, by group, with what is on now.  Tap one to play it on the TV, and the star to add or remove it from your Favorites.  **Press and hold** a channel for its options: Favorites, your own groups (in or out, or a new group with it), **Rename…** and **Hide on the TV**.
+- **Guide**: pick a time (Now, or any hour in the next day and a half) and a group: each channel shows what is on then and what comes after.  Tap a channel for its schedule, day by day, with descriptions: **Watch on TV**, or the bell to set a reminder.  The ▶ on each row plays it on the TV straight away, and **press and hold** gives the same options as in Channels.  The bell at the top opens **Reminders**.  Reminders are the TV's own, so they pop up on the TV even while TiviBro is closed.
+- **Reminders**: every reminder waiting on the TV, soonest first: the time (or **Live** once it has started), the channel's logo, the programme, and the watchlist word or team that set it.  **✕** cancels one; **Cancel all** (it asks first) cancels every one, and your watchlist stays.
+- **Movies** and **Shows**: the TV's own lists (its languages, hidden categories and PIN) as posters.  Search, pick a category, and open a title: **Resume on TV**, **From the start**, or a show's season and episode.
+- **Settings**: every page of TiviBro's Settings on the TV, in the same 17 sections, changed on the TV at once.  When a button asks something (a box to type in, a menu to pick from, an "are you sure"), the question appears on the phone instead of the TV, and your answer goes back to the TV; a username then a password come one after the other.  Rows marked **On the TV** (**Learn a button**, **Button tester**, **Set-up tour**, **Pair the TiviBro app…**, the QR codes) happen on the TV's screen, so look there.  **Settings > My media** adds and manages sources on the phone itself: **Add media** (the TV looks for servers on your network, or type a WebDAV address and login), each source's rescan, content, details and remove, and the TMDB token.  **View app log**, and **TiviBro log** at the bottom of the section list, open the log on the phone.  When the TV's Settings are locked with a PIN, the phone asks for it.
+- **Edit channels**: the [web editor](#turning-on-the-web-editor) full screen, already signed in.  Its My media and Backups and restore points pages hand over to the app's own screens.
+- **Backups and restore points** (the **Backups** shortcut, also from Settings and the web editor): one screen with three parts.
+  - **Saved on this phone**: **Back up now**, and **Back up every week** (while TiviBro is open on the TV and the phone is on your Wi-Fi).  Backups stay on the phone, encrypted.  Put one back on this TV or another paired TV.  The newest 8 automatic backups are kept; named, copied and edited ones stay until you delete them.
+  - **Backup file**: **Save a file** makes a backup file on the phone's storage, locked with a passphrase you pick; **Restore a file** opens one.  The web editor's Backups and restore points page restores the same files on any TV.
+  - **Restore points on the TV**: the ones the TV keeps, with **Make a restore point**, going back to one (a restore point of how things are now is made first, and TiviBro restarts on the TV), and deleting one.
+- **Working on backups without the TV** (each backup's **⋮** menu).  Every one of these makes a new backup and leaves the one you started from alone:
+  - **Edit channels on the phone** opens the web editor on the phone with that backup: groups, names, hiding, Smart clean-up and guide matches, with draft history.  **Save** keeps your changes; leaving asks whether to **Keep** them as a new backup.  It uses the channel list the phone kept the last time you opened **Edit channels** with that TV, so open it with the TV once first: there's no setting for it, and after a few seconds the phone says "channel list saved".  It keeps one per playlist you open there (very big lists too), and each backup in the list says which of its playlists you can edit on the phone.  Adding playlists, guide sources and My media still need the TV.
+  - **Change settings**: start screen, text size, guide row size, clock, channel numbers, closed captions, hiding adult channels and more.
+  - **Name it**, **Duplicate**, **Add playlists from another backup** (the playlists, with their edits, that this one doesn't have) and **Save a copy as a file**.
+  - **Delete** asks twice.
+  - Then **Restore** the new backup on the TV when you're ready.
+- **Add a playlist from a link**: in your provider's email or message, choose **Share**, then **TiviBro**.  The app says what it found (the password stays hidden), you pick the TV, and the TV checks the login and loads the channels.  If it won't add, **What the TV tried** under the message shows the TV's log of each try, with logins masked.
+
+The app, the web editor and the TV share one colour scheme.  The app also turns the TV on (Wake-on-LAN and Bluetooth) and has a Quick Settings tile that opens TiviBro on the TV.
+
+To get it: [download the newest APK](https://tivibro.app/apk/) on your phone and open it to install (Android asks to allow installs from your browser the first time, and Google Play Protect checks each update).  After that the app updates itself: when a newer version is out, **Update now** on the home screen downloads it with a progress bar, checks it is the release GitHub describes and installs it (Android asks you to allow TiviBro to install apps the first time, and to confirm).  The **App update** tile on the first TV's card checks any time, and the first start of a new version shows what's new in it.  **Download** still opens the APK in the browser.  Then choose **Pair the TiviBro app…** (it turns on **Phone app connection** if it's off) and scan the code with the app.
+
+| Setting | Choices | What it does |
+|---|---|---|
+| **Phone app connection** | On · **Off** | Lets paired phones reach this TV on your network, also while TiviBro is closed or another app is on screen.  If webOS stops it, it comes back within 5 minutes, and after an install with the install script it's back right away.  Off: phones can't find or reach it (it asks first while phones are paired). |
+| **Pair the TiviBro app…** *(on the TV)* | | Turns the connection on if needed and shows a QR code and a 12-character code for the app, for 10 minutes or until a phone pairs.  Five wrong codes end that code. |
+| **Paired phones** | | Each phone, when it was added and last seen.  Select one to remove it; it can't connect again until you pair it again. |
+| **This TV's name** | | How phones show this TV. |
+| **Address** | (information) | This TV's network address and the port the app uses (47810). |
+
+To turn the TV on from the phone, switch on **Turn on via Wi-Fi** in the TV's own settings (General, Devices, External devices, or Connection, depending on the model).  The app learns the TV's Wi-Fi and wired addresses while the TV is on and wakes all of them, so it works whichever way the TV is connected.
+
+**Turn on** also wakes the TV over Bluetooth, the way LG's ThinQ app does, at the same time as over the network.  This helps when the network alone doesn't wake it.  It needs the phone's Bluetooth on, **Turn on via Bluetooth** on the TV where the TV has it (next to **Turn on via Wi-Fi**), and on Android 12 and later the **Nearby devices** permission, which the app asks for the first time you press **Turn on**.  There is nothing else to set up: the app registers itself with the TV the next time it finds the TV on, and **Forget this TV** removes it again.  The Quick Settings tile uses Bluetooth too once it is allowed (it never asks).  If Bluetooth is off on the phone, the app says so and wakes the TV over the network only.  Reading the TV's Bluetooth address needs a permission the TV only gives TiviBro on a rooted TV (installed with the Homebrew Channel or install.sh); on other TVs **Turn on** uses the network only.
+
+**The web editor**
+
+<p align="center">
+  <a href="https://tivibro.app/view/#tv-set-editor"><img src="screenshots/tv-set-editor.png" width="49%" alt="The web editor, off"></a>
+  <a href="https://tivibro.app/view/#tv-set-editor-on"><img src="screenshots/tv-set-editor-on.png" width="49%" alt="The web editor, on"></a>
+</p>
+
+| Setting | Choices | What it does |
+|---|---|---|
+| **Open it in a phone's browser (QR code)** *(on the TV)* | | Turns the editor on and shows the code for your phone's camera, the same as **Edit on phone** in the side menu.  It doesn't pair the TiviBro app. |
+| **Web editor for browsers** | On · **Off** | Starts the editor.  It switches off whenever TiviBro closes.  The phone app works either way. |
+| **Open this address**, **Password** | (information) | Shown while it runs: the address to open on a device on the same network, and the password to type. |
+| **Browsers connected** | (information) | How many browsers are using the editor now. |
+| **New password** | | Makes a new password and logs out every browser. |
+| **Port** | **8787** · 8080 · 8000 · 9090 · 18787 · 28787 · 38787 · 48787 · 58787 · 61787 · Random high port | Change it if another device on your network already uses this port, or if your network blocks it: the high ones often get through where the common ones don't.  A random port is picked once and kept, so a saved address keeps working. |
+| **New random port** | | Only with a random port: picks a different one.  Saved addresses and bookmarks stop working. |
+
 ### Settings: Guide
 
-Where the programme guide comes from, for the playlist in use, and how it looks.  Each playlist's page under [Playlists](#settings-playlists) has the same guide rows for that playlist.
+Where the programme guide comes from, for the playlist in use, and how it looks.  Each playlist's page under [Playlists](#settings-playlists-and-accounts) has the same guide rows for that playlist.
 
 **How your guide is built.**  The page starts with the order TiviBro builds your guide in:
 
@@ -825,7 +914,7 @@ Which groups show, in what order, the special groups (Recent, Favorites, My team
 | **Keep the countries you watch**, **East or West feeds**, **Your local channels**, **Clear the clutter** | | Under **Tidy up**: the set-up tour's clean-up steps, one at a time, whenever you like.  Each opens that step and its summary, and **Apply** hides only what that step says (after a restore point).  A step this playlist has nothing for says so.  In the phone app each is a page. |
 | **Clear all edits for this playlist** | | Under **Reset**.  Removes your groups, renames, guide assignments and hidden items for this playlist.  It asks first.  The web editor's **Backups and restore points > Start over** does the same, can be undone, and waits for **Send to TV**. |
 
-**Event channels.**  For pay-per-view, league passes and one-off games whose name carries the matchup, date and time (see [Event channels](#event-channels-pay-per-view-and-sports-passes)).  The same page is on each playlist's page under [Playlists](#settings-playlists).
+**Event channels.**  For pay-per-view, league passes and one-off games whose name carries the matchup, date and time (see [Event channels](#event-channels-pay-per-view-and-sports-passes)).  The same page is on each playlist's page under [Playlists](#settings-playlists-and-accounts).
 
 <p align="center"><a href="https://tivibro.app/view/#tv-set-events"><img src="screenshots/tv-set-events.png" width="60%" alt="Event channels"></a></p>
 
@@ -837,7 +926,7 @@ Which groups show, in what order, the special groups (Recent, Favorites, My team
 | **Times with no time zone are in** | **The provider's time zone** | For names without ET, PT, UK and so on.  US Eastern, Central, Mountain or Pacific, UK, Central Europe, UTC, or this TV's time.  Times always show in the TV's own time. |
 | *(list)* | | How many event channels the playlist has, and the next few events. |
 
-### Settings: Channel and group names
+#### Settings: Channel and group names
 
 Rules that strip clutter from every channel and group name at once, for the playlist in use (each playlist has its own rules, also on its page under **Playlists**).  Your provider's names are never changed: switch a rule off and the original comes back.  Names you set by hand stay.
 
@@ -863,27 +952,9 @@ Rules that strip clutter from every channel and group name at once, for the play
 | **Group prefixes** / **Group suffixes** | empty | The same, for group names only: words only groups carry, like `USA ` at the start or ` Channels` at the end.  Removed after the rules above (when **Clean group names too** is on), and even when it's off.  Same paste format. |
 | **Group preview** | | Your group names before and after, the ones that change first. |
 
-### Settings: Reminders and watchlist
-
-How reminders behave, the [watchlist](#watchlist), and every reminder waiting to come up.
-
-<p align="center"><a href="https://tivibro.app/view/#tv-set-reminders"><img src="screenshots/tv-set-reminders.png" width="60%" alt="Reminders and watchlist, with Coming up"></a></p>
-
-| Setting | Choices | What it does |
-|---|---|---|
-| **Remind me before start** | At start · 1 min · **2 min** · 5 min · 10 min | How early a reminder comes up. |
-| **When a reminder starts** | **Ask me** · Switch to the channel | *Ask me* shows **Watch** or **Dismiss**; *Switch* changes channel by itself. |
-| **Reminder question stays for** | 10 s · **20 s** · 30 s · 1 min | How long the reminder waits for an answer. |
-| **Hold notices during movies** | **On** · Off | Watchlist finds and the like wait while a movie or episode plays full screen, and show when you stop or leave full screen.  Reminders you set still come on time. |
-| **Watchlist ›** | | Shows, teams and names to look for in the guide; see [Watchlist](#watchlist).  Inside: **Add a show, team or name…**, **Look ahead** (6 hours · 12 hours · **24 hours** · 2 days), **When something is found** (**Set a reminder** · Just tell me), your words (**OK** to show one in Search or remove it with its reminders), and what's coming up for them (**OK** sets or cancels each reminder). |
-| **Coming up** | | Every reminder still to come, soonest first, with its day, time and channel, **on now** when it has started, and the watchlist word or team that set it.  **OK** on one (**Cancel**) asks, then cancels it.  With none: how to set one. |
-| **Cancel all reminders** | | With two or more: cancels every reminder, after asking.  Your watchlist stays and sets new ones as programmes come up. |
-
-The phone app's **Reminders** screen and the web editor's **Reminders and watchlist** page list the same reminders, with the same **Cancel** and **Cancel all**.
-
 ### Settings: Playback
 
-How channels start, how much video TiviBro holds, which player it uses, and what it does when a stream struggles.  Sound and subtitles have their own section, [Audio and subtitles](#settings-audio-and-subtitles).
+How channels start, how much video TiviBro holds, which player it uses, and what it does when a stream struggles.  The player engine, stream format, connection, HDR and the buffer's details are behind **Advanced** at the bottom of the page.  Sound and subtitles have their own page, [Audio and subtitles](#settings-audio-and-subtitles).
 
 <p align="center">
   <a href="https://tivibro.app/view/#tv-set-playback"><img src="screenshots/tv-set-playback.png" width="49%" alt="Playback, top"></a>
@@ -899,6 +970,7 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **Keep behind playhead** *(Custom only)* | 2 s to 30 s, **8 s** | Video kept behind what you are watching.  Lower saves TV memory on long sessions. |
 | **Freeze detection** *(Custom only)* | 3 s to 20 s, **6 s** | How long a frozen picture is tolerated before the player recovers it. |
 | **Reconnect attempts** *(Custom only)* | 3 to 50, **8** | Tries before the player gives up on a channel.  The count starts again after 30 seconds of clean playback. |
+| **Memory-safe playback** | **Automatic** · Always on · Off | Holds less video in memory so TiviBro doesn't close on TVs with 1 or 2 GB.  Automatic turns it on for TVs with 1 GB, and for a week after TiviBro closed while playing. |
 | **Buffer meter** | **When low** · Always · Off | A small gauge in fullscreen showing how many seconds of video are banked, written inside its bar, then the picture, the player in use and the most this channel has held (*most 34s*), then the speed.  Each part keeps its width, so the bar stays still while the numbers change. |
 | **Buffer info on demand** | 5 seconds · **10 seconds** · 30 seconds · Until pressed again | How long the gauge stays when you hold **Info** in fullscreen (the INFO button on LG's standard remote, or I on a keyboard), whatever the Buffer meter is set to.  Press again to hide it.  **Stream info** in the quick menu (**OK** in fullscreen) shows it too, along with the stream's details, and works on every remote.  Most Magic Remotes have no Info button: TiviBro notices and the hint here changes to match, and you can give any button **Show buffer info** or **Stream info and buffer** under **Settings > Playback > Remote and buttons > In the player**. |
 | **Player engine** | **Automatic** · Built-in demuxer · TV player | Under **Player**.  *Automatic* uses TiviBro's built-in player (fine buffer control, steady on sloppy streams) and moves to the TV's own player when a server blocks it or the stream needs it.  *TV player* uses the least CPU but ignores the buffer settings.  Every choice decodes in the TV's hardware. |
@@ -917,7 +989,7 @@ How channels start, how much video TiviBro holds, which player it uses, and what
 | **When a channel stops working** | **Switch to another version** · Ask me · Keep retrying | When a channel has run out of retries and your playlist has it more than once (another quality, another group, or a copy you hid), TiviBro switches to the next version, steadiest first: Full HD, HD, unmarked, 4K, then SD.  *Ask me* asks before switching.  See [Other versions of a channel](#other-versions-of-a-channel). |
 | **Ask when a channel is slow to start** | **On** · Off | After 20 seconds without a picture (fullscreen), TiviBro says what it has seen (nothing from the provider yet, an error from the provider, or video the TV shows no picture for, and which players it tried) and asks: **Keep trying** (asks again a minute later), **Start over**, **Other versions of this channel** or **Stop**.  It closes by itself if the channel starts. |
 
-### Settings: Audio and subtitles
+#### Settings: Audio and subtitles
 
 Which audio track plays, sound the TV can't play, subtitles and captions, and subtitles from OpenSubtitles.
 
@@ -943,6 +1015,50 @@ Which audio track plays, sound the TV can't play, subtitles and captions, and su
 **Subtitles in MKV and MP4 movies and episodes.**  Open **Subtitles** from the player menu to choose a language or **Off**.  The menu has two parts: **Settings** at the top (**Find subtitles…**, **Timing** and **Line up with another track…**), then the subtitles the video has, under **In this movie** or **In this episode** with how many there are.  It opens on the subtitle that is on, so switching language is a press or two even in a movie with dozens of languages.  The menu is available as soon as playback starts and shows **Finding subtitles…** while tracks are discovered.  The automatic subtitle language setting above also applies.  Supported embedded SRT, ASS/SSA and WebVTT tracks appear with their language names, and your selection survives seeking and reconnects.  Only the selected subtitle track is shown, even if another track becomes active while subtitles load.  ASS/SSA and WebVTT show as plain text.  My media uses the file's known type even when its signed playback link has no extension.  Files without supported tracks show an unavailable message; bitmap subtitles are not supported.  Some MKV files do not index their subtitle tracks and cannot expose them here.  **Find subtitles** offers another way to add them.
 
 **MP4 subtitles** work for the usual text kind (called tx3g or mov_text), shown as plain text without their colours or positions.  Not included: MP4 files made for streaming in pieces (fragmented MP4), image subtitles, and closed captions inside MP4.  TiviBro makes extra requests on the same link as the movie: a few when the movie starts, to find the subtitles, and then, while a subtitle is on, small reads of the lines a little ahead of where you are as the movie plays (how often depends on the file).  Some providers refuse those reads: one that allows only one connection at a time, or one whose links stop taking new requests after a while.  The movie keeps playing either way.  TiviBro waits a little, asks the movie's link for a new connection and carries on; if the provider keeps refusing, it stops asking for this movie and **Subtitles** shows **Subtitles unavailable**.
+
+#### Settings: Remote and buttons
+
+Remap any button, choose the quick menu's buttons, and teach TiviBro keys it doesn't know.
+
+<p align="center">
+  <a href="https://tivibro.app/view/#tv-set-remote"><img src="screenshots/tv-set-remote.png" width="32%" alt="Remote and buttons"></a>
+  <a href="https://tivibro.app/view/#tv-set-remote-player"><img src="screenshots/tv-set-remote-player.png" width="32%" alt="Buttons in the player"></a>
+  <a href="https://tivibro.app/view/#tv-set-quick-menu"><img src="screenshots/tv-set-quick-menu.png" width="32%" alt="Quick menu buttons"></a>
+</p>
+
+| Setting | What it does |
+|---|---|
+| **Up and Down in fullscreen** | Which way Up and Down change channel in fullscreen: **Up: the channel above** (the default) or Up: the channel below.  The same as setting Up and Down under **In the player**. |
+| **In the player ›** | What each button does while watching live TV fullscreen.  Every button has a press and a **Hold** action.  **OK** opens a list of actions to pick from. |
+| **In the guide ›** | The same for the guide: the colour buttons, **Play / Pause**, **Info**, **Stop** and **Hold OK**.  Give any of them **Watch fullscreen** if your remote has no Play button.  Arrows, **OK**, **Back**, **CH + / −** and ⏪ ⏩ stay fixed there. |
+| **On the Channels screen ›** | The same for the Channels screen.  Arrows, **OK**, **Back** and **CH + / −** stay fixed there. |
+| **Quick menu buttons ›** | Switch each quick menu button on or off: Channel guide, Watch from start, Favorite, TV guide, Other versions, Audio track, Subtitles, Closed captions, Video quality, Aspect, Sleep timer, Stream info, Reconnect.  All are on by default; a button only appears when it applies (Audio needs two or more tracks, for example). |
+| **Learn a button** *(on the TV)* | Under **Extra buttons**.  For keys TiviBro doesn't know yet (some LG remotes have extras).  Press this, then the button; it then appears in the button pages to assign.  Some buttons belong to the TV itself (Home, Live TV, the TV's own Guide, Input, Settings): webOS acts on them before TiviBro hears them, so they leave TiviBro and can't be learned. |
+| **Button tester** *(on the TV)* | Shows the key code the TV sends for the next button you press, and what it does in TiviBro. |
+| **Restore default buttons** | Puts every button back the way it came, after asking.  Each button page also has **Restore defaults for this screen**. |
+
+The buttons and their defaults:
+
+| Button | In the player | In the guide | On the Channels screen |
+|---|---|---|---|
+| **OK** | Quick menu | (fixed: watch) | (fixed) |
+| **Hold OK** | Channel guide over the video | Options menu | Options menu |
+| **▲ ▼** | Previous / next channel | (fixed) | (fixed) |
+| **◀** | Rewind (catch-up), else last channel | (fixed) | (fixed) |
+| **▶** | Show info panel | (fixed) | (fixed) |
+| **CH + / CH −** | Next / previous channel | (fixed) | (fixed) |
+| **Red** | Options menu | Options menu | Options menu |
+| **Green** | TV guide | Channels screen | TV guide |
+| **Yellow** | Last channel | Groups | Last channel |
+| **Blue** | Audio track | Settings | Settings |
+| **Play / Pause** | Play / pause | Watch fullscreen | Nothing |
+| **Stop** | Leave fullscreen | Stop the window | Nothing |
+| **⏪ Rewind** | Rewind (catch-up), else last channel | (fixed: a screen earlier) | Nothing |
+| **⏩ Fast forward** | Nothing | (fixed: a screen later) | Nothing |
+| **Info** | Show info panel | About this show (a series), else Options menu | Options menu |
+| **Back** | (fixed: leaves fullscreen) | (fixed) | (fixed) |
+
+Actions you can give a button in the player: nothing, quick menu, channel guide over the video, info panel, options menu, next, previous or last channel, rewind, watch from start, play/pause, TV guide, search, Settings, leave fullscreen, add or remove favorite, open Favorites, open Recent channels, change the aspect, audio track, closed captions on or off, sleep timer and reconnect.  In the guide: nothing, watch fullscreen (the channel in the window, else the highlighted one), options menu, about this show, groups, jump to now, jump to a day and time, last channel, stop the window, Channels screen, search, Settings, the web editor, favorite, open Favorites or Recent channels, Movies and Shows.  On the Channels screen: nothing, options menu, last channel, TV guide, search, Settings, favorite, open Favorites, open Recent channels, Movies, Shows and play/pause.  Catch-up and movie playback keep fixed seek buttons so they always behave the same.
 
 ### Settings: Movies and shows
 
@@ -989,7 +1105,7 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 | **Excluded files** | Trailers, extras and samples left out; include one back. |
 | **Remove library** | Takes it off My media.  Your files stay where they are. |
 
-### Settings: Trakt
+#### Settings: Trakt
 
 [Trakt](https://trakt.tv) keeps what you've watched in step across TiviBro, your phone and other apps, and its lists become shelves on My media that show only what you can watch.  Your Trakt sign-in stays on the TV, out of backups.
 
@@ -1007,60 +1123,46 @@ Your libraries, like Plex's: each one is a folder of movies or TV shows on a med
 
 Lists refresh every 6 hours.  TiviBro uses Trakt but is not endorsed or certified by Trakt.  Trakt's free accounts have limits on lists and items; TiviBro says so when Trakt answers that one is reached.
 
-### Settings: API keys
+### Settings: Reminders and watchlist
 
-Every key you paste, in one place.  Typing them from the TiviBro phone app (Settings > Playlists and accounts > API keys) is easiest: a phone keyboard and copy and paste.
+How reminders behave, the [watchlist](#watchlist), and every reminder waiting to come up.
+
+<p align="center"><a href="https://tivibro.app/view/#tv-set-reminders"><img src="screenshots/tv-set-reminders.png" width="60%" alt="Reminders and watchlist, with Coming up"></a></p>
 
 | Setting | Choices | What it does |
 |---|---|---|
-| **Add TMDB API token** | | Your free key or Read Access Token from themoviedb.org/settings/api, for movie and show details and posters (My media, Movies on now).  Then **Test TMDB token** and **Remove TMDB token**. |
-| **Set up OpenSubtitles (step by step)** | | The free key for Find subtitles, step by step (an account, the key and what to tick, paste it, checked straight away).  Once set up: **OpenSubtitles API key saved** to replace it, **Test OpenSubtitles key** (the key, and your sign-in if any), **Sign in** for more downloads, and **Remove OpenSubtitles key**. |
+| **Remind me before start** | At start · 1 min · **2 min** · 5 min · 10 min | How early a reminder comes up. |
+| **When a reminder starts** | **Ask me** · Switch to the channel | *Ask me* shows **Watch** or **Dismiss**; *Switch* changes channel by itself. |
+| **Reminder question stays for** | 10 s · **20 s** · 30 s · 1 min | How long the reminder waits for an answer. |
+| **Hold notices during movies** | **On** · Off | Watchlist finds and the like wait while a movie or episode plays full screen, and show when you stop or leave full screen.  Reminders you set still come on time. |
+| **Watchlist ›** | | Shows, teams and names to look for in the guide; see [Watchlist](#watchlist).  Inside: **Add a show, team or name…**, **Look ahead** (6 hours · 12 hours · **24 hours** · 2 days), **When something is found** (**Set a reminder** · Just tell me), your words (**OK** to show one in Search or remove it with its reminders), and what's coming up for them (**OK** sets or cancels each reminder). |
+| **Coming up** | | Every reminder still to come, soonest first, with its day, time and channel, **on now** when it has started, and the watchlist word or team that set it.  **OK** on one (**Cancel**) asks, then cancels it.  With none: how to set one. |
+| **Cancel all reminders** | | With two or more: cancels every reminder, after asking.  Your watchlist stays and sets new ones as programmes come up. |
 
-The keys stay on this TV, out of backups.
+The phone app's **Reminders** screen and the web editor's **Reminders and watchlist** page list the same reminders, with the same **Cancel** and **Cancel all**.
 
-### Settings: Remote and buttons
+### Settings: Parental controls
 
-Remap any button, choose the quick menu's buttons, and teach TiviBro keys it doesn't know.
+A content filter that needs no PIN, and a 4-digit PIN for blocked channels and groups, and optionally for Settings.  See [Parental controls](#parental-controls) for blocking.
 
 <p align="center">
-  <a href="https://tivibro.app/view/#tv-set-remote"><img src="screenshots/tv-set-remote.png" width="32%" alt="Remote and buttons"></a>
-  <a href="https://tivibro.app/view/#tv-set-remote-player"><img src="screenshots/tv-set-remote-player.png" width="32%" alt="Buttons in the player"></a>
-  <a href="https://tivibro.app/view/#tv-set-quick-menu"><img src="screenshots/tv-set-quick-menu.png" width="32%" alt="Quick menu buttons"></a>
+  <a href="https://tivibro.app/view/#tv-set-parental"><img src="screenshots/tv-set-parental.png" width="49%" alt="Parental controls before a PIN"></a>
+  <a href="https://tivibro.app/view/#tv-settings-parental"><img src="screenshots/tv-settings-parental.png" width="49%" alt="Parental controls with a PIN"></a>
 </p>
 
-| Setting | What it does |
-|---|---|
-| **Up and Down in fullscreen** | Which way Up and Down change channel in fullscreen: **Up: the channel above** (the default) or Up: the channel below.  The same as setting Up and Down under **In the player**. |
-| **In the player ›** | What each button does while watching live TV fullscreen.  Every button has a press and a **Hold** action.  **OK** opens a list of actions to pick from. |
-| **In the guide ›** | The same for the guide: the colour buttons, **Play / Pause**, **Info**, **Stop** and **Hold OK**.  Give any of them **Watch fullscreen** if your remote has no Play button.  Arrows, **OK**, **Back**, **CH + / −** and ⏪ ⏩ stay fixed there. |
-| **On the Channels screen ›** | The same for the Channels screen.  Arrows, **OK**, **Back** and **CH + / −** stay fixed there. |
-| **Quick menu buttons ›** | Switch each quick menu button on or off: Channel guide, Watch from start, Favorite, TV guide, Other versions, Audio track, Subtitles, Closed captions, Video quality, Aspect, Sleep timer, Stream info, Reconnect.  All are on by default; a button only appears when it applies (Audio needs two or more tracks, for example). |
-| **Learn a button** *(on the TV)* | Under **Extra buttons**.  For keys TiviBro doesn't know yet (some LG remotes have extras).  Press this, then the button; it then appears in the button pages to assign.  Some buttons belong to the TV itself (Home, Live TV, the TV's own Guide, Input, Settings): webOS acts on them before TiviBro hears them, so they leave TiviBro and can't be learned. |
-| **Button tester** *(on the TV)* | Shows the key code the TV sends for the next button you press, and what it does in TiviBro. |
-| **Restore default buttons** | Puts every button back the way it came, after asking.  Each button page also has **Restore defaults for this screen**. |
+| Setting | Choices | What it does |
+|---|---|---|
+| **Hide adult channels** | On · Off | Under **Content filter**.  Channels and groups with adult words in their names, in several languages, and those the provider marks adult, are left out of everything.  No PIN needed.  On for a new TV (the set-up tour asks). |
+| **Add a word or call sign…** | | Every channel and group with that whole word in its name.  Each word, and each channel or group hidden with the filter, is listed with **Remove**. |
+| **Left out of this playlist** | (information) | How many channels and groups the filter takes out. |
+| **Set a PIN** / **Change PIN** | | Under **PIN**.  Choose a 4-digit PIN (typed twice).  Changing it asks for the current one first.  Type with the number keys, or pick each digit with **▲ ▼**. |
+| **PIN required for** | **Blocked channels** · Settings · Both | What the PIN guards. |
+| **Stay unlocked until the app restarts** | **On** · Off | On: after the PIN once, it isn't asked again until TiviBro restarts.  Off: asked every time. |
+| **Lock now** | | Locks again straight away. |
+| **Blocked in this playlist** | | Every blocked group and channel.  **OK** unblocks one.  More than three: a page of their own, **Blocked groups and channels ›**. |
+| **Remove PIN** | | Turns parental controls off (asks for the PIN). |
 
-The buttons and their defaults:
-
-| Button | In the player | In the guide | On the Channels screen |
-|---|---|---|---|
-| **OK** | Quick menu | (fixed: watch) | (fixed) |
-| **Hold OK** | Channel guide over the video | Options menu | Options menu |
-| **▲ ▼** | Previous / next channel | (fixed) | (fixed) |
-| **◀** | Rewind (catch-up), else last channel | (fixed) | (fixed) |
-| **▶** | Show info panel | (fixed) | (fixed) |
-| **CH + / CH −** | Next / previous channel | (fixed) | (fixed) |
-| **Red** | Options menu | Options menu | Options menu |
-| **Green** | TV guide | Channels screen | TV guide |
-| **Yellow** | Last channel | Groups | Last channel |
-| **Blue** | Audio track | Settings | Settings |
-| **Play / Pause** | Play / pause | Watch fullscreen | Nothing |
-| **Stop** | Leave fullscreen | Stop the window | Nothing |
-| **⏪ Rewind** | Rewind (catch-up), else last channel | (fixed: a screen earlier) | Nothing |
-| **⏩ Fast forward** | Nothing | (fixed: a screen later) | Nothing |
-| **Info** | Show info panel | About this show (a series), else Options menu | Options menu |
-| **Back** | (fixed: leaves fullscreen) | (fixed) | (fixed) |
-
-Actions you can give a button in the player: nothing, quick menu, channel guide over the video, info panel, options menu, next, previous or last channel, rewind, watch from start, play/pause, TV guide, search, Settings, leave fullscreen, add or remove favorite, open Favorites, open Recent channels, change the aspect, audio track, closed captions on or off, sleep timer and reconnect.  In the guide: nothing, watch fullscreen (the channel in the window, else the highlighted one), options menu, about this show, groups, jump to now, jump to a day and time, last channel, stop the window, Channels screen, search, Settings, the web editor, favorite, open Favorites or Recent channels, Movies and Shows.  On the Channels screen: nothing, options menu, last channel, TV guide, search, Settings, favorite, open Favorites, open Recent channels, Movies, Shows and play/pause.  Catch-up and movie playback keep fixed seek buttons so they always behave the same.
+Five wrong PINs in a row lock the PIN for 30 seconds.
 
 ### Settings: Appearance
 
@@ -1074,7 +1176,7 @@ Which screen TiviBro opens on, where the lists start, colours, sizes and what's 
 
 | Setting | Choices | What it does |
 |---|---|---|
-| **Settings shown** | **All** · Everyday | Everyday leaves out what most people set once, or only to troubleshoot: the buffer details, the player engine and stream format, the network helper, the buffer meter, HDR routing, learning buttons, detailed logging and the like.  Each page then says how many more there are in All.  The phone app and the web editor show the same. |
+| **Advanced view** | On · **Off** | Off keeps each page short: the settings most people set once, or only to troubleshoot, wait behind an **Advanced** row at the bottom of the page.  On shows every setting in place.  Search finds them either way. |
 | **Start screen** | **Guide** · Channels screen | Under **Start and navigation**.  What TiviBro opens on, and where **Back** from other screens leads. |
 | **Lists open on** | **Where I left off** · The first group · A group I pick | Where the selection is when TiviBro opens.  Where I left off is the group and channel you were on last; the other two start at the top of that group (unless a channel is already playing).  With **A group I pick**, **Group to open on** chooses it: any group, Favorites and All channels too. |
 | **Channels screen in the menu** | On · **Off** | The plain channel list (without the guide) in the side menu.  Off, **Green** in the guide still opens it.  Always there while TiviBro starts on it. |
@@ -1100,118 +1202,11 @@ Which screen TiviBro opens on, where the lists start, colours, sizes and what's 
 | **Show channel numbers** | **On** · Off | Numbers beside channel names in lists and the guide. |
 | **Info panel stays for** | 3 s · **5 s** · 8 s · 12 s | How long the info panel stays up in fullscreen. |
 
-### Settings: Parental controls
-
-A content filter that needs no PIN, and a 4-digit PIN for blocked channels and groups, and optionally for Settings.  See [Parental controls](#parental-controls) for blocking.
-
-<p align="center">
-  <a href="https://tivibro.app/view/#tv-set-parental"><img src="screenshots/tv-set-parental.png" width="49%" alt="Parental controls before a PIN"></a>
-  <a href="https://tivibro.app/view/#tv-settings-parental"><img src="screenshots/tv-settings-parental.png" width="49%" alt="Parental controls with a PIN"></a>
-</p>
-
-| Setting | Choices | What it does |
-|---|---|---|
-| **Hide adult channels** | On · Off | Under **Content filter**.  Channels and groups with adult words in their names, in several languages, and those the provider marks adult, are left out of everything.  No PIN needed.  On for a new TV (the set-up tour asks). |
-| **Add a word or call sign…** | | Every channel and group with that whole word in its name.  Each word, and each channel or group hidden with the filter, is listed with **Remove**. |
-| **Left out of this playlist** | (information) | How many channels and groups the filter takes out. |
-| **Set a PIN** / **Change PIN** | | Under **PIN**.  Choose a 4-digit PIN (typed twice).  Changing it asks for the current one first.  Type with the number keys, or pick each digit with **▲ ▼**. |
-| **PIN required for** | **Blocked channels** · Settings · Both | What the PIN guards. |
-| **Stay unlocked until the app restarts** | **On** · Off | On: after the PIN once, it isn't asked again until TiviBro restarts.  Off: asked every time. |
-| **Lock now** | | Locks again straight away. |
-| **Blocked in this playlist** | | Every blocked group and channel.  **OK** unblocks one.  More than three: a page of their own, **Blocked groups and channels ›**. |
-| **Remove PIN** | | Turns parental controls off (asks for the PIN). |
-
-Five wrong PINs in a row lock the PIN for 30 seconds.
-
-### Settings: Backups and restore points
-
-Two kinds of safety net, on one page.
-
-<p align="center"><a href="https://tivibro.app/view/#tv-set-backups"><img src="screenshots/tv-set-backups.png" width="60%" alt="Backups and restore points"></a></p>
-
-- **A backup** holds everything: playlists with their logins, groups, favorites, names, guide matches and settings.  It lives off the TV: in the TiviBro phone app, or as a locked file from the web editor (or the phone app).
-- **A restore point** lives on this TV and puts back your channel edits for this playlist: groups, hidden items, names and guide matches.  Your playlists and logins stay as they are.  With several playlists on, a point belongs to the first playlist and covers every playlist that was on when it was made (the web editor lists them); restoring it leaves the others as they are.
-
-| Setting | What it does |
-|---|---|
-| **In the TiviBro phone app** | Under **Backups**.  **Backups > Back up now** in the app, or every week by itself; restore puts one back on this TV or a new one.  Pressed in the phone app, it opens the app's [Backups and restore points](#settings-phone-app-and-web-editor) screen. |
-| **As a file, from the web editor** | Shows the web editor's code; there, **Backups and restore points > Download a locked backup**, with a passphrase you choose.  In the phone app it opens that page in Edit channels, which hands over to the app's own Backups and restore points screen. |
-| **Last backup** | (information) When the last backup was made, or none yet. |
-| **Save a restore point now** | Under **Restore points on this TV**.  Asks for a name ("Before hiding sports").  TiviBro also saves one by itself before big changes: Smart clean-up, the set-up tour, and changes sent from the web editor. |
-| *(each restore point)* | Newest first, with its date and **saved by itself** for the automatic ones.  **OK** for **Restore it** (your current edits are saved as a restore point first, then it asks) or **Delete it**. |
-
-See also [Backups and restore points](#backups-and-restore-points) in the web editor.
-
-### Settings: Phone app and web editor
-
-Two different ways to use a phone with TiviBro, on one page.  Each works without the other: the phone app doesn't need the web editor switched on.
-
-- **The TiviBro phone app** (Android) is a remote with the guide, On now, Movies, Shows, My media, reminders, backups and all of these settings.  Pair it once with **Pair the TiviBro app…**: that QR code is scanned inside the app, not with the phone's camera.
-- **The web editor** works in any browser, for bigger jobs: groups, channels, names, Smart clean-up, guide matching, reminders and backups.  **Open it in a phone's browser (QR code)** is for the phone's camera.  The phone app opens the editor by itself (**Edit channels**), so the switch below is only needed for a browser.
-
-In release builds, where the phone app isn't offered yet, this page is called **Web editor** and has only the web editor's rows.
-
-**The TiviBro phone app**
-
-The TiviBro app for Android is a remote and a second screen for this TV.  Pair a phone once and it stays paired.
-
-- **The home screen** has a card for each TV with a grid of shortcuts: **Remote**, **Guide**, **On now**, **Movies and Shows**, **My media**, **Reminders**, **Edit channels**, **Backups** and **Settings**.  Only the ones this TV can use show: On now needs a TMDB token on the TV, Movies and Shows a provider that has them, My media a media source.  While the TV is off the card offers **Turn on**, **Edit channels anyway** and **Backups**.  The card's **⋮** menu has **Turn on**, **Open TiviBro on the TV**, the Quick Settings tile and **Forget this TV**.
-- **Remote**: arrows round OK (hold OK for options), Back, channel and volume buttons, play and pause, the colour buttons and Info.
-- **Type on your phone**: whenever the TV shows a box to type in (setting up a playlist, Search, renaming a group), the same boxes show at the top of the app.  Type with the phone's keyboard and the TV fills in as you go.  Passwords travel encrypted and are never shown on the phone.
-- **Channels**: every channel as TiviBro shows it, by group, with what is on now.  Tap one to play it on the TV, and the star to add or remove it from your Favorites.  **Press and hold** a channel for its options: Favorites, your own groups (in or out, or a new group with it), **Rename…** and **Hide on the TV**.
-- **Guide**: pick a time (Now, or any hour in the next day and a half) and a group: each channel shows what is on then and what comes after.  Tap a channel for its schedule, day by day, with descriptions: **Watch on TV**, or the bell to set a reminder.  The ▶ on each row plays it on the TV straight away, and **press and hold** gives the same options as in Channels.  The bell at the top opens **Reminders**.  Reminders are the TV's own, so they pop up on the TV even while TiviBro is closed.
-- **Reminders**: every reminder waiting on the TV, soonest first: the time (or **Live** once it has started), the channel's logo, the programme, and the watchlist word or team that set it.  **✕** cancels one; **Cancel all** (it asks first) cancels every one, and your watchlist stays.
-- **Movies** and **Shows**: the TV's own lists (its languages, hidden categories and PIN) as posters.  Search, pick a category, and open a title: **Resume on TV**, **From the start**, or a show's season and episode.
-- **Settings**: every page of TiviBro's Settings on the TV, in the same 17 sections, changed on the TV at once.  When a button asks something (a box to type in, a menu to pick from, an "are you sure"), the question appears on the phone instead of the TV, and your answer goes back to the TV; a username then a password come one after the other.  Rows marked **On the TV** (**Learn a button**, **Button tester**, **Set-up tour**, **Pair the TiviBro app…**, the QR codes) happen on the TV's screen, so look there.  **Settings > My media** adds and manages sources on the phone itself: **Add media** (the TV looks for servers on your network, or type a WebDAV address and login), each source's rescan, content, details and remove, and the TMDB token.  **View app log**, and **TiviBro log** at the bottom of the section list, open the log on the phone.  When the TV's Settings are locked with a PIN, the phone asks for it.
-- **Edit channels**: the [web editor](#turning-on-the-web-editor) full screen, already signed in.  Its My media and Backups and restore points pages hand over to the app's own screens.
-- **Backups and restore points** (the **Backups** shortcut, also from Settings and the web editor): one screen with three parts.
-  - **Saved on this phone**: **Back up now**, and **Back up every week** (while TiviBro is open on the TV and the phone is on your Wi-Fi).  Backups stay on the phone, encrypted.  Put one back on this TV or another paired TV.  The newest 8 automatic backups are kept; named, copied and edited ones stay until you delete them.
-  - **Backup file**: **Save a file** makes a backup file on the phone's storage, locked with a passphrase you pick; **Restore a file** opens one.  The web editor's Backups and restore points page restores the same files on any TV.
-  - **Restore points on the TV**: the ones the TV keeps, with **Make a restore point**, going back to one (a restore point of how things are now is made first, and TiviBro restarts on the TV), and deleting one.
-- **Working on backups without the TV** (each backup's **⋮** menu).  Every one of these makes a new backup and leaves the one you started from alone:
-  - **Edit channels on the phone** opens the web editor on the phone with that backup: groups, names, hiding, Smart clean-up and guide matches, with draft history.  **Save** keeps your changes; leaving asks whether to **Keep** them as a new backup.  It uses the channel list the phone kept the last time you opened **Edit channels** with that TV, so open it with the TV once first: there's no setting for it, and after a few seconds the phone says "channel list saved".  It keeps one per playlist you open there (very big lists too), and each backup in the list says which of its playlists you can edit on the phone.  Adding playlists, guide sources and My media still need the TV.
-  - **Change settings**: start screen, text size, guide row size, clock, channel numbers, closed captions, hiding adult channels and more.
-  - **Name it**, **Duplicate**, **Add playlists from another backup** (the playlists, with their edits, that this one doesn't have) and **Save a copy as a file**.
-  - **Delete** asks twice.
-  - Then **Restore** the new backup on the TV when you're ready.
-- **Add a playlist from a link**: in your provider's email or message, choose **Share**, then **TiviBro**.  The app says what it found (the password stays hidden), you pick the TV, and the TV checks the login and loads the channels.  If it won't add, **What the TV tried** under the message shows the TV's log of each try, with logins masked.
-
-The app, the web editor and the TV share one colour scheme.  The app also turns the TV on (Wake-on-LAN and Bluetooth) and has a Quick Settings tile that opens TiviBro on the TV.
-
-To get it: [download the newest APK](https://tivibro.app/apk/) on your phone and open it to install (Android asks to allow installs from your browser the first time, and Google Play Protect checks each update).  After that the app updates itself: when a newer version is out, **Update now** on the home screen downloads it with a progress bar, checks it is the release GitHub describes and installs it (Android asks you to allow TiviBro to install apps the first time, and to confirm).  The **App update** tile on the first TV's card checks any time, and the first start of a new version shows what's new in it.  **Download** still opens the APK in the browser.  Then choose **Pair the TiviBro app…** (it turns on **Phone app connection** if it's off) and scan the code with the app.
-
-| Setting | Choices | What it does |
-|---|---|---|
-| **Phone app connection** | On · **Off** | Lets paired phones reach this TV on your network, also while TiviBro is closed or another app is on screen.  If webOS stops it, it comes back within 5 minutes, and after an install with the install script it's back right away.  Off: phones can't find or reach it (it asks first while phones are paired). |
-| **Pair the TiviBro app…** *(on the TV)* | | Turns the connection on if needed and shows a QR code and a 12-character code for the app, for 10 minutes or until a phone pairs.  Five wrong codes end that code. |
-| **Paired phones** | | Each phone, when it was added and last seen.  Select one to remove it; it can't connect again until you pair it again. |
-| **This TV's name** | | How phones show this TV. |
-| **Address** | (information) | This TV's network address and the port the app uses (47810). |
-
-To turn the TV on from the phone, switch on **Turn on via Wi-Fi** in the TV's own settings (General, Devices, External devices, or Connection, depending on the model).  The app learns the TV's Wi-Fi and wired addresses while the TV is on and wakes all of them, so it works whichever way the TV is connected.
-
-**Turn on** also wakes the TV over Bluetooth, the way LG's ThinQ app does, at the same time as over the network.  This helps when the network alone doesn't wake it.  It needs the phone's Bluetooth on, **Turn on via Bluetooth** on the TV where the TV has it (next to **Turn on via Wi-Fi**), and on Android 12 and later the **Nearby devices** permission, which the app asks for the first time you press **Turn on**.  There is nothing else to set up: the app registers itself with the TV the next time it finds the TV on, and **Forget this TV** removes it again.  The Quick Settings tile uses Bluetooth too once it is allowed (it never asks).  If Bluetooth is off on the phone, the app says so and wakes the TV over the network only.  Reading the TV's Bluetooth address needs a permission the TV only gives TiviBro on a rooted TV (installed with the Homebrew Channel or install.sh); on other TVs **Turn on** uses the network only.
-
-**The web editor**
-
-<p align="center">
-  <a href="https://tivibro.app/view/#tv-set-editor"><img src="screenshots/tv-set-editor.png" width="49%" alt="The web editor, off"></a>
-  <a href="https://tivibro.app/view/#tv-set-editor-on"><img src="screenshots/tv-set-editor-on.png" width="49%" alt="The web editor, on"></a>
-</p>
-
-| Setting | Choices | What it does |
-|---|---|---|
-| **Open it in a phone's browser (QR code)** *(on the TV)* | | Turns the editor on and shows the code for your phone's camera, the same as **Edit on phone** in the side menu.  It doesn't pair the TiviBro app. |
-| **Web editor for browsers** | On · **Off** | Starts the editor.  It switches off whenever TiviBro closes.  The phone app works either way. |
-| **Open this address**, **Password** | (information) | Shown while it runs: the address to open on a device on the same network, and the password to type. |
-| **Browsers connected** | (information) | How many browsers are using the editor now. |
-| **New password** | | Makes a new password and logs out every browser. |
-| **Port** | **8787** · 8080 · 8000 · 9090 · 18787 · 28787 · 38787 · 48787 · 58787 · 61787 · Random high port | Change it if another device on your network already uses this port, or if your network blocks it: the high ones often get through where the common ones don't.  A random port is picked once and kept, so a saved address keeps working. |
-| **New random port** | | Only with a random port: picks a different one.  Saved addresses and bookmarks stop working. |
-
 ### Settings: System
 
-Your version, new versions from GitHub, and finding out what's wrong.  See [Updates](#updates).
+Your version, new versions from GitHub, and finding out what's wrong.  See [Updates](#updates).  When an update is ready it is the first row, in green with a **NEW** badge, and **System** has a green dot in the menu.
+
+**Fix a problem** (the first row) lists the common problems: channels freeze or buffer, a channel won't play, no guide or the wrong programmes, no sound or the wrong language, subtitles or captions, movies or shows missing, TiviBro closed by itself or is slow.  Each says what to try first, and lists the settings that matter for it: OK on one goes straight to that setting.
 
 <p align="center"><a href="https://tivibro.app/view/#tv-set-updates"><img src="screenshots/tv-set-updates.png" width="60%" alt="System"></a></p>
 
@@ -1248,6 +1243,7 @@ Your version, new versions from GitHub, and finding out what's wrong.  See [Upda
 | **View app log** | | What TiviBro did this session.  **▲ ▼** scroll, **CH + / −** page.  In the phone app it opens the log on the phone. |
 | **View app log with earlier sessions** | | Includes the sessions before, useful after a crash or restart. |
 | **View network helper log** | | Every request the helper made: status, time, size, and the network error if any. |
+| **Report a problem in the menu** | On · **Off** | Release versions: puts **Report a problem** at the bottom of the menu bar, one press from anywhere (test versions always have it). |
 | **Detailed logging** | On · **Off** | Also logs every request and buffer event.  Turn it on while chasing a problem.  It stays on until you turn it off. |
 | **Clear log** | | Empties the log. |
 | **What this TV can play ›** | | Every video, HDR and sound format, and which player handles it on this TV.  It combines the TV's own answers with what LG TVs are known to do (Dolby Vision and DTS aren't always reported correctly).  **Converted sound** says which formats the audio converter turns into Dolby Digital on this TV, and **Audio converter** whether it is there. |
@@ -1258,6 +1254,25 @@ Your version, new versions from GitHub, and finding out what's wrong.  See [Upda
 Logs always mask usernames and passwords.
 
 ---
+#### Settings: Backups and restore points
+
+Two kinds of safety net, on one page.
+
+<p align="center"><a href="https://tivibro.app/view/#tv-set-backups"><img src="screenshots/tv-set-backups.png" width="60%" alt="Backups and restore points"></a></p>
+
+- **A backup** holds everything: playlists with their logins, groups, favorites, names, guide matches and settings.  It lives off the TV: in the TiviBro phone app, or as a locked file from the web editor (or the phone app).
+- **A restore point** lives on this TV and puts back your channel edits for this playlist: groups, hidden items, names and guide matches.  Your playlists and logins stay as they are.  With several playlists on, a point belongs to the first playlist and covers every playlist that was on when it was made (the web editor lists them); restoring it leaves the others as they are.
+
+| Setting | What it does |
+|---|---|
+| **In the TiviBro phone app** | Under **Backups**.  **Backups > Back up now** in the app, or every week by itself; restore puts one back on this TV or a new one.  Pressed in the phone app, it opens the app's [Backups and restore points](#settings-phone-app-and-web-editor) screen. |
+| **As a file, from the web editor** | Shows the web editor's code; there, **Backups and restore points > Download a locked backup**, with a passphrase you choose.  In the phone app it opens that page in Edit channels, which hands over to the app's own Backups and restore points screen. |
+| **Last backup** | (information) When the last backup was made, or none yet. |
+| **Save a restore point now** | Under **Restore points on this TV**.  Asks for a name ("Before hiding sports").  TiviBro also saves one by itself before big changes: Smart clean-up, the set-up tour, and changes sent from the web editor. |
+| *(each restore point)* | Newest first, with its date and **saved by itself** for the automatic ones.  **OK** for **Restore it** (your current edits are saved as a restore point first, then it asks) or **Delete it**. |
+
+See also [Backups and restore points](#backups-and-restore-points) in the web editor.
+
 
 ## From your computer: the web editor
 
@@ -1432,7 +1447,7 @@ The same reminders are under **Settings > Reminders and watchlist** on the TV an
 
 ### Playlists
 
-Add Xtream Codes, M3U or Stalker portal playlists (or paste the provider's **Full link** and let TiviBro fill in the login), choose which one is first (every playlist that is on is used at once, see [Settings: Playlists](#settings-playlists)), turn them on and off, set reload schedules and the User-Agent, or change a login.  The TV tests every new login before saving.  **Logins never reach the editor**: it only ever sees server names.  Each playlist keeps its own groups, names and guide setup.  The editor's channel pages show every playlist that is on; names, guide matching and Smart clean-up rules are the first playlist's.
+Add Xtream Codes, M3U or Stalker portal playlists (or paste the provider's **Full link** and let TiviBro fill in the login), choose which one is first (every playlist that is on is used at once, see [Settings: Playlists](#settings-playlists-and-accounts)), turn them on and off, set reload schedules and the User-Agent, or change a login.  The TV tests every new login before saving.  **Logins never reach the editor**: it only ever sees server names.  Each playlist keeps its own groups, names and guide setup.  The editor's channel pages show every playlist that is on; names, guide matching and Smart clean-up rules are the first playlist's.
 
 <p align="center">
   <a href="https://tivibro.app/view/#editor-playlists"><img src="screenshots/editor-playlists.png" width="100%" alt="Playlists in the editor"></a>

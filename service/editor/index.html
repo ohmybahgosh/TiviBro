@@ -134,8 +134,8 @@ main{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0;position
 .srow.adv-row{border:1px dashed var(--line);border-radius:12px;margin-top:8px}
 .srow .tvonly{font-style:italic}
 .srow select{min-width:180px}
-.sw{position:relative;display:inline-block;width:46px;height:26px} .sw input{opacity:0;width:0;height:0} .sw i{position:absolute;inset:0;border-radius:999px;background:var(--raised);transition:.15s;cursor:pointer}
-.sw i::before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s} .sw input:checked + i{background:#3ddc97} .sw input:checked + i::before{left:23px}
+.ssw{position:relative;display:inline-block;width:46px;height:26px} .ssw input{opacity:0;width:0;height:0} .ssw i{position:absolute;inset:0;border-radius:999px;background:var(--raised);transition:.15s;cursor:pointer}
+.ssw i::before{content:'';position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.15s} .ssw input:checked + i{background:#3ddc97} .ssw input:checked + i::before{left:23px}
 .setmenu{display:flex;flex-direction:column;gap:4px;max-height:60vh;overflow:auto} .setmenu button{text-align:left;padding:10px 12px} .setmenu button small{display:block;color:var(--muted);font-weight:400;margin-top:2px} .setmenu button.on{outline:2px solid var(--accent)}
 @media (max-width:760px){.setwrap{flex-direction:column}.setsecs{position:static;width:100%;flex-direction:row;flex-wrap:wrap}.setsecs button{padding:6px 10px}}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px 20px}
@@ -1797,7 +1797,7 @@ function setDraw(pg) {
     d.appendChild(l);
     var v = document.createElement('div'); v.className = 'sv';
     if (r.kind === 'info') v.textContent = r.value || '';
-    else if (r.kind === 'toggle') { var lab = document.createElement('label'); lab.className = 'sw'; lab.innerHTML = '<input type="checkbox"' + (r.on ? ' checked' : '') + '><i></i>'; lab.querySelector('input').onchange = function (e) { setChange(r, 'toggle', { on: e.target.checked }); }; v.appendChild(lab); }
+    else if (r.kind === 'toggle') { var lab = document.createElement('label'); lab.className = 'ssw'; lab.innerHTML = '<input type="checkbox"' + (r.on ? ' checked' : '') + '><i></i>'; lab.querySelector('input').onchange = function (e) { setChange(r, 'toggle', { on: e.target.checked }); }; v.appendChild(lab); }
     else if (r.kind === 'choice') { var sel = document.createElement('select'); (r.options || []).forEach(function (o, n) { var op = document.createElement('option'); op.value = n; op.textContent = o; if (n === r.cur) op.selected = true; sel.appendChild(op); }); sel.onchange = function () { setChange(r, 'choice', { v: +sel.value }); }; v.appendChild(sel); }
     else if (r.kind === 'cycle') { ['‹', '›'].forEach(function (c, n) { var b = document.createElement('button'); b.type = 'button'; b.className = 'ghost'; b.textContent = c; b.onclick = function () { setChange(r, 'cycle', { dir: n ? 1 : -1 }); }; v.appendChild(b); if (!n) { var sp = document.createElement('span'); sp.textContent = r.value || ''; v.appendChild(sp); } }); }
     else if (r.kind === 'page') { v.textContent = String(r.value || '').replace(/\s*›$/, ''); d.classList.add('click'); d.onclick = function () { ST.path = ST.path.concat([r.i]); setLoad(); }; }

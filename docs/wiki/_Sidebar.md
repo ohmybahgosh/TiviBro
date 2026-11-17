@@ -32,23 +32,16 @@
 
 **Every setting**
 - [Settings: Language](Settings-Language)
-- [Settings: Playlists](Settings-Playlists)
+- [Settings: Playlists and accounts](Settings-Playlists-and-accounts)
 - [Settings: Guide](Settings-Guide)
 - [Settings: Channels and groups](Settings-Channels-and-groups)
-- [Settings: Channel and group names](Settings-Channel-and-group-names)
-- [Settings: Reminders and watchlist](Settings-Reminders-and-watchlist)
 - [Settings: Playback](Settings-Playback)
-- [Settings: Audio and subtitles](Settings-Audio-and-subtitles)
 - [Settings: Movies and shows](Settings-Movies-and-shows)
 - [Settings: My media](Settings-My-media)
-- [Settings: Trakt](Settings-Trakt)
-- [Settings: API keys](Settings-API-keys)
-- [Settings: Remote and buttons](Settings-Remote-and-buttons)
-- [Settings: Appearance and start screen](Settings-Appearance-and-start-screen)
+- [Settings: Reminders and watchlist](Settings-Reminders-and-watchlist)
 - [Settings: Parental controls](Settings-Parental-controls)
-- [Settings: Backups and restore points](Settings-Backups-and-restore-points)
-- [Settings: Phone app and web editor](Settings-Phone-app-and-web-editor)
-- [Settings: Updates, about and diagnostics](Settings-Updates-about-and-diagnostics)
+- [Settings: Appearance](Settings-Appearance)
+- [Settings: System](Settings-System)
 
 **Web editor**
 - [Turning on the web editor](Turning-on-the-web-editor)

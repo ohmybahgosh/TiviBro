@@ -114,7 +114,7 @@ var Reports = (function () {
     UI.panel('Your problem report #' + r.n, body, buttons, function () { showing = false; setTimeout(next, 1500); });
   }
 
-  // Update: straight to installing on a rooted TV, or to Settings > Updates and about otherwise.
+  // Update: straight to installing on a rooted TV, or to Settings > System otherwise.
   function update() {
     U.toast('Looking for the update…', 3000);
     Update.installer().then(function () { return Update.check(true); }).then(function (st) {

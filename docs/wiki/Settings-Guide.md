@@ -2,7 +2,7 @@
 
 *Every setting*
 
-Where the programme guide comes from, for the playlist in use, and how it looks.  Each playlist's page under [Playlists](Settings-Playlists) has the same guide rows for that playlist.
+Where the programme guide comes from, for the playlist in use, and how it looks.  Each playlist's page under [Playlists](Settings-Playlists-and-accounts) has the same guide rows for that playlist.
 
 **How your guide is built.**  The page starts with the order TiviBro builds your guide in:
 
@@ -45,4 +45,4 @@ With public guides on, if the provider guide fails, the guide status says it is 
 
 ---
 
-← [Settings: Playlists](Settings-Playlists)  ·  [Home](Home)  ·  [Settings: Channels and groups](Settings-Channels-and-groups) →
+← [Settings: Playlists and accounts](Settings-Playlists-and-accounts)  ·  [Home](Home)  ·  [Settings: Channels and groups](Settings-Channels-and-groups) →

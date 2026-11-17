@@ -51,7 +51,7 @@ The first screen counts your channels, groups, countries, event channels, East a
   <a href="https://tivibro.app/view/#tv-tour-done"><img src="https://github.com/ohmybahgosh/TiviBro/raw/main/docs/screenshots/tv-tour-done.png" width="32%" alt="All set"></a>
 </p>
 
-Everything the tour hides stays one press away: Settings > Channels and groups, or hold **OK** on a channel.  Run it again any time from **Settings > Playlists > your playlist > Set-up tour**.  It works on the same engine as the web editor's Smart clean-up, so both always agree.
+Everything the tour hides stays one press away: Settings > Channels and groups, or hold **OK** on a channel.  Run it again any time from **Settings > Playlists and accounts > your playlist > Set-up tour**.  It works on the same engine as the web editor's Smart clean-up, so both always agree.
 
 ---
 

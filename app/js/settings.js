@@ -33,6 +33,8 @@ var Settings = (function () {
   // A page's rows as shown: with Advanced view off, its advanced rows behind one Advanced row at the bottom.
   function shape(fn, where) {
     var list = (fn() || []).filter(Boolean);
+    // Someone who picked All under the old Settings shown keeps every row in place.
+    if (S().advView === undefined && S().setLevel === 'all') S().advView = true;
     if (S().advView || fn.adv) return list;
     var out = [], n = 0, names = [];
     list.forEach(function (it) { if (advanced(it)) { n++; if (names.length < 3) names.push(T(it.label)); } else out.push(it); });
@@ -313,7 +315,7 @@ var Settings = (function () {
     if (!s) return [info('This library was removed.', '')];
     var st = Media.libraryStats(id), pub = MediaStore.publicSources().filter(function (x) { return x.id === id; })[0] || {}, out = [];
     out.push(info(where(pub) + (pub.address ? '  ·  ' + I18n.raw(String(pub.address).replace(/\/\/[^@\/]*@/, '//')) : ''), ''));
-    if (st.kind !== 'shows') out.push(info('Movies', st.movies + (st.fourK ? '  (' + st.fourK + ' in 4K)' : '') + '  ·  ' + (st.movies - st.unmatched.length) + ' matched'));
+    if (st.kind !== 'shows') out.push(info('Movies', st.movies + (st.fourK ? '  (' + st.fourK + ' in 4K)' : '') + '  ·  ' + (st.movies - st.unmatched.length) + ' matched' + (st.waiting ? '  ·  ' + st.waiting + ' not looked up yet' : '')));
     if (st.kind !== 'movies') out.push(info('TV shows', st.shows + ' shows  ·  ' + st.episodes + ' episode files' + (st.unmatchedShows ? '  ·  ' + st.unmatchedShows + ' unmatched' : '')));
     out.push(head('Library'),
       choice('Holds', 'Movies or TV shows decides how files are read and which tab they go to.  Movies and TV shows sorts each file by its name.', ['movies', 'shows', 'automatic'], ['Movies', 'TV shows', 'Movies and TV shows'], function () { return (MediaStore.source(id) || {}).contentMode || 'movies'; }, function (v) { Media.changeSourceMode(id, v).then(function () { live(); }, function (e) { U.toast(e.message, 6000); }); }),
@@ -324,7 +326,8 @@ var Settings = (function () {
       action(Media.detailsLabel(s), 'From TMDB, with your saved API token.', heavy(function () { Media.libraryDetails(id); })),
       (function () { var c = phoneDoes('media-source', action('More for this library', 'Its folder, Dropbox sign-in, pause or restart a scan.  On the phone: its own form.', function () { Media.sourceMenu(s); })); c.sid = id; return c; })(),
       head('Needs attention'));
-    if (st.kind !== 'shows') out.push(page('Unmatched movies', 'Movies TMDB didn\'t recognise.  Fix match searches by the title you type.', 'Unmatched in ' + I18n.raw(s.name), function () { return unmatched(id); }, function () { return String(Media.libraryStats(id).unmatched.length); }));
+    if (st.kind !== 'shows' && st.waiting) out.push(action('Not looked up yet', 'Movies TMDB hasn\'t been asked about yet (a lookup that stopped, or no token then).  OK looks them up now; it also happens by itself.', heavy(function () { Media.lookUpWaiting(id); }), function () { return String(st.waiting); }));
+    if (st.kind !== 'shows') out.push(page('Unmatched movies', 'Movies TMDB didn\'t recognise.  Fix match searches by the title you type.', 'Unmatched in ' + I18n.raw(s.name), function () { return unmatched(id); }, function () { var x = Media.libraryStats(id); return String(x.unmatched.length - (x.waiting || 0)); }));
     if (st.kind !== 'movies') out.push(action('Shows that need review', 'Episodes TiviBro couldn\'t place, and shows without a match.  Opens TV shows on My media.', function () { MediaSeries.review(); }, function () { return st.unmatchedShows ? String(st.unmatchedShows) : ''; }));
     out.push(action('Excluded files', 'Trailers, extras and samples left out.  Include one back from here.', function () { MediaSeries.excluded(); }, function () { return '›'; }),
       head('Remove'),

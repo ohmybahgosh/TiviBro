@@ -58,7 +58,7 @@ var Views = (function () {
     // My media: in the menu once a media source is added (Settings > My media is the way in before that).
     if (typeof MediaStore !== 'undefined' && MediaStore.sources().length) tabs.push('media');
     tabs.push('search', 'editor', 'settings');
-    // Test builds: Report a problem one press away (it also stays in Settings > Diagnostics).
+    // Test builds: Report a problem one press away (it also stays in Settings > System).
     if (/alpha|beta/i.test(TIVIBRO_VERSION) || Store.settings.reportInMenu) tabs.push('report');
     var nav = document.querySelector('.tabs');
     nav.innerHTML = '';
@@ -1690,7 +1690,7 @@ var Views = (function () {
      Top: channel and what's on.  Row 1: quick actions.  Row 2: recent channels.
      ◀ ▶ move along a row, ▲ ▼ switch rows, OK picks, Back closes.  Clickable with the pointer. */
   var qp = null;                  // { row, col, rows: [[items]], timer }
-  // Quick menu buttons.  Each can be switched off in Settings > Remote control > Quick menu buttons.
+  // Quick menu buttons.  Each can be switched off in Settings > Playback > Remote and buttons > Quick menu buttons.
   var QP_BUTTONS = [['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['audio', 'Audio track'],
     ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Aspect'], ['sleep', 'Sleep timer'],
     ['info', 'Stream info'], ['reconnect', 'Reconnect']];
@@ -3212,7 +3212,7 @@ var Guide = (function () {
     else if (a === 'rew' || a === 'ff') { var tj = Date.now(); if (tj - jumpAt < 320) return true; jumpAt = tj; screenJump(a === 'ff' ? 1 : -1); }
     else if (a === 'ok') activate();
     else if (a !== 'back' && a.indexOf('num') !== 0) {
-      // Every other button does what Settings > Remote control > In the guide says.
+      // Every other button does what Settings > Playback > Remote and buttons > In the guide says.
       var act = Keymap.get('guide', a === 'hold' ? 'long:ok' : a);
       if (act) mapped(act);
     }

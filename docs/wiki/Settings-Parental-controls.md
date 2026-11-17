@@ -25,4 +25,4 @@ Five wrong PINs in a row lock the PIN for 30 seconds.
 
 ---
 
-← [Settings: Appearance and start screen](Settings-Appearance-and-start-screen)  ·  [Home](Home)  ·  [Settings: Backups and restore points](Settings-Backups-and-restore-points) →
+← [Settings: Reminders and watchlist](Settings-Reminders-and-watchlist)  ·  [Home](Home)  ·  [Settings: Appearance](Settings-Appearance) →

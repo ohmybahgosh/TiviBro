@@ -40,6 +40,8 @@ if (every && firstSetting) firstSetting.lines = every[1].trim().split('\n').conc
 const anchors = {};
 pages.forEach(p => { anchors[slug(p.title)] = p.name; });
 if (firstSetting) anchors['every-setting'] = firstSetting.name;
+// A "####" section (a page inside a Settings section, like API keys) is a heading on its page.
+pages.forEach(p => { p.lines.forEach(l => { const m = /^#### (.+)$/.exec(l); if (m && !anchors[slug(m[1])]) anchors[slug(m[1])] = p.name + '#' + slug(m[1]); }); });
 // Anchors inside a page (<a name="x"></a>) point at that page's own section.
 pages.forEach(p => { (p.lines.join('\n').match(/<a name="([\w-]+)"><\/a>/g) || []).forEach(t => { anchors[/name="([\w-]+)"/.exec(t)[1]] = p.name + '#' + /name="([\w-]+)"/.exec(t)[1]; }); });
 
@@ -53,6 +55,8 @@ function fix(md) {
 }
 
 let n = 0;
+const written = new Set();
+pages.forEach((p, i) => { written.add(p.name + '.md'); });
 pages.forEach((p, i) => {
   const prev = pages[i - 1], next = pages[i + 1];
   const nav = '\n\n---\n\n' + [prev && '← [' + prev.title + '](' + prev.name + ')', '[Home](Home)', next && '[' + next.title + '](' + next.name + ') →'].filter(Boolean).join('  ·  ');
@@ -70,4 +74,22 @@ Object.keys(groups).forEach(g => {
 });
 side += '- [FAQ](FAQ)\n- [Privacy and security](Privacy-and-security)\n\n**Project**\n- [Developing](Developing)\n- [Phone app protocol](Phone-app-protocol)\n- [Recording the demo media](Recording-the-demo-media)\n- [Releasing](Releasing)\n';
 fs.writeFileSync(path.join(OUT, '_Sidebar.md'), side);
-console.log('wiki: ' + n + ' pages from the user guide, plus the sidebar');
+
+/* A page the guide no longer has (a Settings section that became a page inside another, say): a short note
+   pointing at where it is now, so old links and bookmarks still lead somewhere. */
+let moved = 0;
+fs.readdirSync(OUT).forEach(f => {
+  if (!/\.md$/.test(f) || written.has(f) || f === '_Sidebar.md') return;
+  const old = fs.readFileSync(path.join(OUT, f), 'utf8');
+  if (old.indexOf(MARK) !== 0) return;                     // hand-written: left alone
+  const name = f.replace(/\.md$/, ''), title = name.replace(/-/g, ' ');
+  const OLD = { 'Settings-Updates-about-and-diagnostics': 'Settings-System', 'Settings-Updates-and-about': 'Settings-System', 'Settings-Diagnostics': 'Settings-System', 'Settings-Playlists': 'Settings-Playlists-and-accounts',
+    'Settings-Playlists-and-guide': 'Settings-Playlists-and-accounts', 'Settings-Appearance-and-start-screen': 'Settings-Appearance', 'Settings-Playback-and-buffering': 'Settings-Playback', 'Settings-Remote-control': 'Settings-Playback#settings-remote-and-buttons',
+    'Settings-Groups-sorting-hidden': 'Settings-Channels-and-groups', 'Settings-Phone-app': 'Settings-Playlists-and-accounts#settings-phone-app-and-web-editor', 'Settings-Edit-on-a-computer': 'Settings-Playlists-and-accounts#settings-phone-app-and-web-editor',
+    'Settings-Edit-on-a-phone-or-computer': 'Settings-Playlists-and-accounts#settings-phone-app-and-web-editor', 'Settings-Guide-start-screen-reminders': 'Settings-Guide' };
+  const to = OLD[name] || anchors[slug(title)] || anchors[slug(title.replace(/^Settings /, 'Settings: '))] || (/^Settings-/.test(name) ? 'Settings' : 'Home');
+  const body = MARK + '\n\n**This page has moved.**  It is now [here](' + to + ').\n';
+  if (old !== body) fs.writeFileSync(path.join(OUT, f), body);
+  moved++;
+});
+console.log('wiki: ' + n + ' pages from the user guide, plus the sidebar, and ' + moved + ' moved-page notes');

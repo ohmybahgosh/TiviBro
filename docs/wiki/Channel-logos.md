@@ -11,7 +11,7 @@ TiviBro hosts no logo images.  It downloads a small list of where the logos are,
 
 Channels are matched by their guide id ("CNN.us"), then by their cleaned name in their own country, then by a local station's call sign ("WXYZ") or, for a local station with no logo of its own, its network.  Event channels are left alone, since their names are games.  A provider logo that fails to load is replaced by the library's.
 
-Turn it on in the set-up tour or in **Settings > Appearance and start screen > Logo library**:
+Turn it on in the set-up tour or in **Settings > Appearance > Logo library**:
 
 - **Off**: only the playlist's and the guide's logos.
 - **Fill in missing logos**: the library's logo for channels that have none.

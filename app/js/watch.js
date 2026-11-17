@@ -23,7 +23,7 @@ var Watch = (function () {
         dup[k] = 1; r.w = w.q; out.push(r);
       });
     });
-    // Games of the teams you follow (Settings > Groups, sorting, hidden > My teams), when their reminders are on.
+    // Games of the teams you follow (Settings > Channels and groups > My teams), when their reminders are on.
     if (!q && typeof Teams !== 'undefined' && Teams.remindOn()) Teams.games(ahead(), true).forEach(function (g) {
       if (g.p.s <= now) return;
       var k = g.p.t.toLowerCase() + '|' + g.p.s;

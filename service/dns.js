@@ -1,4 +1,4 @@
-/* Finding the provider's server: the TV's own DNS (the default), or one picked in Settings > Playlists > DNS
+/* Finding the provider's server: the TV's own DNS (the default), or one picked in Settings > Playlists and accounts > DNS
    (discussion #60): a public DNS server (Cloudflare, Google, Quad9, ControlD or one you type), or DNS over HTTPS
    (Cloudflare, Google or ControlD; Quad9's answers only HTTP/2 there, which old Node can't speak), for a provider whose name the TV's DNS doesn't find or blocks.  Every request the helper makes looks
    names up through dns.lookup, so that is what is replaced; addresses, local names and IPv6-only asks go to the
