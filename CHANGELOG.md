@@ -1,23 +1,23 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 152, 2026-11-17)
 
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 152
+
+- **Google Drive in My media.**  Add a shared drive, or a Drive folder, as a library: Settings > My media > Add a library > Google Drive points to the web editor and the phone app, which take a Google Cloud service account's key and let you pick the drive and folder (GD-M for movies, GD-T for shows, or the whole drive).  Google doesn't let TVs sign in to read Drive folders, so a service account (free, about 5 minutes once, steps in the web editor) is how it reads only what you share with it.  A shared drive is read in one quick listing, new files are found from Drive's own list of changes, and movies play through the TV with Range, so seeking works.  The key stays on the TV like a password: not in backups, logs or anything sent back.
 - **A show's episodes by season.**  Opening a show on the Shows screen puts its seasons on the left, where the categories were (Season 1, Season 2, Specials, each with its count) and that season's episodes on the right, starting on the season you're watching.  Left goes to the seasons, Up and Down pick one, Right or OK goes back to its episodes, and Back closes the show.  The next episode plays across seasons as before.  Thanks to abada89 for the idea (issue #110).
 - **No more closing again and again while the guide loads on a 1 GB TV (issue #112).**  A TV with 1 GB and 19,000 channels closed TiviBro four times in an hour while it read 14 public guide files during playback.  On a TV short of memory, the public guide now waits until nothing plays (even the first time), reads at most 6 country files (the countries with the most channels with no guide) and no sports files, and a guide that closed TiviBro once is paused instead of tried again.  Also, "Captions lined up with the picture again" is logged once a minute at most, not several times a second.
 - **Stalker portals: every movie and show, not the first 10,000 (issue #111).**  Big portals send 10 to 20 titles a page, and TiviBro stopped at 700 pages.  It reads up to 4,000 now, and a page that fails is asked again instead of ending the list there.
 - **Croatian, Serbian and Bosnian subtitles (discussion #109).**  Settings > Subtitle languages has all three, for Find subtitles on OpenSubtitles.
 - **Movies and Shows Home is never empty when there are titles (issue #110).**  With a provider that doesn't say when titles were added, no TMDB token, nothing watched and no pinned category, every shelf was empty and Home said "Nothing to show yet".  It shows All movies (or All shows) then.
 - **A provider's empty answer no longer wipes the movie list.**  A provider mid-outage can answer with an empty list; that was saved over the one you had.  Now an empty answer keeps the last list, and when the provider can't be reached and there's nothing kept, you see why instead of an empty screen.
-- **Google Drive in My media.**  Add a shared drive, or a Drive folder, as a library: Settings > My media > Add a library > Google Drive points to the web editor and the phone app, which take a Google Cloud service account's key and let you pick the drive and folder (GD-M for movies, GD-T for shows, or the whole drive).  Google doesn't let TVs sign in to read Drive folders, so a service account (free, about 5 minutes once, steps in the web editor) is how it reads only what you share with it.  A shared drive is read in one quick listing, new files are found from Drive's own list of changes, and movies play through the TV with Range, so seeking works.  The key stays on the TV like a password: not in backups, logs or anything sent back.
 - **My media's Search tab shows a magnifier.**  It showed a crossed box on the TV (its fonts have no ⌕); the magnifier is drawn now.
 - **Green rescans what the tab holds.**  On the Movies tab it scans the libraries with movies ("Looking for new movies on GD-M"), on TV shows the ones with shows ("Looking for new episodes"), on Home all of them; the button says which.
 - **The Movies tab's Red menu has no Needs review.**  It opened TV episodes TiviBro couldn't place; it's on Home and the TV shows tab, called Episodes that need review.
 
-## 0.6.0 (alpha 151, 2026-11-17)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 151
+### In alpha 151
 
 - **Movies and shows load again with the playlist (issue #110).**  A playlist set to reload when TiviBro starts (or only when asked) kept the first movie and show lists it ever got from the helper, so new movies never came in.  Now whenever the playlist loads again from your provider, its movies and shows are fetched again too.
 
