@@ -178,6 +178,11 @@ var Log = (function () {
   });
   window.addEventListener('unhandledrejection', function (ev) {
     var r = ev.reason;
+    /* The MPEG-TS player's own reading, still finishing after the player was closed (it lets go of its event
+       sender first): "Cannot read properties of null (reading 'emit')", after a movie that couldn't play (issue #118).
+       Nothing of TiviBro's stopped, so it isn't an error worth a report. */
+    var msg = String(r && r.message || r || ''), stack = String(r && r.stack || '');
+    if (/null \(reading 'emit'\)|null is not an object \(evaluating '[^']*\.emit'\)/.test(msg) && (!stack || /mpegts|vendor/i.test(stack) || !/\/js\/(?!vendor)/.test(stack))) { add('warn', 'app', 'The MPEG-TS player finished reading after it was closed; TiviBro carried on'); return; }
     add('error', 'app', 'Unhandled promise rejection: ' + fmt(r));
   });
 

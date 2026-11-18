@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- A movie that couldn't play left an "Unhandled promise rejection" error in the log (issue #118): the MPEG-TS player finishing a read after it was closed.  It's noted as a warning now, since nothing stopped.
+
 ## 0.6.0 (alpha 162, 2026-11-18)
 
 Pre-release: expect rough edges, and keep a backup before installing.
