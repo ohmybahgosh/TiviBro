@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 164, 2026-11-18)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 164
 
 - **Stalker portals: movies that the portal has no link for under their own command** (issue #118).  Newer portals give a movie several files (qualities, languages), each with a command of its own, and the movie's own command gets "nothing to play".  TiviBro now asks for the movie's files, as other players do, and plays the first.
 - **Stalker portals: a movie with no link stops at once** with "The portal has no link for this video", instead of eight retries (issue #118).  Each retry asked the portal again, and the portal answered "too many requests" and then refused the TV for a while.  TiviBro also no longer checks a portal movie's sound before it plays, which was one more ask.
@@ -12,11 +16,7 @@
 - **The question for a channel slow to start comes after 12 seconds**, not 20 (discussion #36).
 - **Long channel numbers** (6 digits, like 103560) are drawn smaller in the channel list and guide, so they don't run into the logo (discussion #36).
 
-## 0.6.0 (alpha 163, 2026-11-18)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 163
+### In alpha 163
 
 - **Search finds names with accents typed without them**: "timothee" finds Timothée Chalamet, "beyonce" Beyoncé.
 - **A movie you're watching again has its progress bar, not a ✓,** in Continue watching.
