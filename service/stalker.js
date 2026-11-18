@@ -409,8 +409,13 @@ function xc(L, q, res, ALLOW) {
       seasons(L, it, function (e, d) { e ? fail(e) : send(res, ALLOW, 200, d); });
     };
     if (x) return answer(x);
-    // Not in a list read since the helper started: every title (shows from their own module), then look again.
-    return (show ? showItems : vodItems)(L, '*', function (e) { if (e) return fail(e); var y = findItem(L, id, show); y ? answer(y) : send(res, ALLOW, 404, { error: 'no such title' }); });
+    /* A show not in a list read since the helper started (webOS restarts it on a 1 GB TV; the app keeps its lists):
+       its seasons need only its id and module.  Before, every show was read to find it, which on a portal with
+       233,000 shows never finished (issue #118: "get_series_info" timed out, Shows empty). */
+    var stub = { id: id, name: '', cover: '', plot: '', rating: '', year: '', director: '', cast: '', genre: '', cmd: '', cat: '*', mins: 0, series: show };
+    if (show) return seriesCats(L, function () { stub.module = seriesOf(L).own ? 'series' : 'vod'; answer(stub); });
+    // A movie the same: its link comes from its own command when it plays (vodPlay), not from this.
+    answer(stub);
   }
   send(res, ALLOW, 400, { error: 'not a Stalker action TiviBro knows' });
 }
@@ -480,13 +485,26 @@ function vodPlay(L, id, res, ALLOW, log, port, ext) {
     if (own !== usual) tries.push(usual);
     // A portal built on an Xtream panel: its movies' commands are this, base64 (when the one from the list is gone).
     if (!own && /^\d+$/.test(id)) tries.push(b64('{"type":"movie","stream_id":"' + id + '","stream_source":null,"target_container":"[\\"' + (ext || 'mp4') + '\\"]"}'));
-    vodTry(L, tries, '', res, ALLOW, log, port, linkOf(own), ext);
+    vodTry(L, tries, '', res, ALLOW, log, port, linkOf(own), ext, /^\d+$/.test(id) ? id : '');
   });
 }
 // create_link with each command in turn until one gives a link; the command's own address as a last resort.
-function vodTry(L, tries, series, res, ALLOW, log, port, direct, asked) {
-  var i = 0, seen = [], lastE = null, lastJs = null;
+function vodTry(L, tries, series, res, ALLOW, log, port, direct, asked, movieId) {
+  var i = 0, seen = [], lastE = null, lastJs = null, filesAsked = false;
   (function next() {
+    /* Its files (issue #118): on newer portals a movie can have several files (qualities, languages), each with a
+       command of its own, and create_link with the movie's command answers nothing to play.  Other players ask
+       for the movie's files (get_ordered_list with its movie_id) and play the first.  Once, after the usual tries,
+       and only when the portal answered (not an error, a refusal or HTTP 429). */
+    if (i >= tries.length && movieId && !filesAsked && !lastE) {
+      filesAsked = true;
+      return act(L, { type: 'vod', action: 'get_ordered_list', movie_id: movieId, season_id: 0, episode_id: 0, category: '*', fav: 0, p: 1 }, function (e, js) {
+        var d = !e && js && Array.isArray(js.data) ? js.data : [], add = 0;
+        d.forEach(function (f) { if (add < 2 && f && f.cmd && !Array.isArray(f.series) && tries.indexOf(String(f.cmd)) < 0) { tries.push(String(f.cmd)); add++; } });
+        if (log) log({ lv: 'info', event: 'stalker movie files', n: d.length, using: add });
+        next();
+      });
+    }
     if (i >= tries.length) {
       if (direct && !/^https?:\/\/localhost[:\/]/i.test(direct)) return sendOn(res, ALLOW, port, direct);
       if (log) log({ lv: 'warn', event: 'stalker movie link failed', e: lastE ? lastE.message : 'no link', tried: seen.join(' '), got: shapeOf(lastJs) });
@@ -511,7 +529,8 @@ function vodTry(L, tries, series, res, ALLOW, log, port, direct, asked) {
       }
       if (to) return sendOn(res, ALLOW, port, to);
       lastE = e; lastJs = js;
-      if (e && e.auth) i = tries.length;
+      // Refused, or too many asks (HTTP 429): asking again only makes it worse.
+      if (e && (e.auth || /\b429\b/.test(e.message || ''))) i = tries.length;
       next();
     });
   })();

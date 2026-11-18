@@ -1542,6 +1542,7 @@ I18n.add('pt-BR', {
   "Trying the {x}": "Tentando com {x}",
   "Trying again ({n} of {m})": "Tentando de novo ({n} de {m})",
   "Trying again on the {x} ({n} of {m})": "Tentando de novo com {x} ({n} de {m})",
+  "The portal has no link for this video.  Press OK to try again.": "O portal não tem link para este vídeo.  Aperte OK para tentar de novo.",
   "The channel dropped: {x}.": "O canal caiu: {x}.",
   "This channel is having trouble starting: {x}.": "Este canal está com problemas para começar: {x}.",
   // Settings sections reorganised

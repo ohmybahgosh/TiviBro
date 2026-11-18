@@ -1026,6 +1026,7 @@ I18n.add('es', {
   "Trying the {x}": "Probando con {x}",
   "Trying again ({n} of {m})": "Probando otra vez ({n} de {m})",
   "Trying again on the {x} ({n} of {m})": "Probando otra vez con {x} ({n} de {m})",
+  "The portal has no link for this video.  Press OK to try again.": "El portal no tiene enlace para este vídeo.  Pulsa OK para intentarlo de nuevo.",
   "The channel dropped: {x}.": "El canal se cortó: {x}.",
   "This channel is having trouble starting: {x}.": "Este canal tiene problemas para empezar: {x}.",
   // Settings sections reorganised

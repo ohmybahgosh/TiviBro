@@ -83,7 +83,7 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
 
   // Issue #118: a portal built on an Xtream panel, whose movies play only from their own commands, after the helper started again.
   S._keepMs = 5;
-  const m5 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', xtreamVod: true });
+  const m5 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', xtreamVod: true, files: true });
   await new Promise((f) => m5.server.listen(0, '127.0.0.1', f));
   const login5 = b64({ portal: 'http://127.0.0.1:' + m5.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
   x = await req('GET', H + '/stalker/xc/player_api.php?stb=' + login5 + '&action=get_vod_streams').then((r) => ({ status: r.status, j: JSON.parse(r.body || 'null') }));
@@ -101,6 +101,8 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('with nothing kept: the usual command, then the Xtream panel\'s', a.status === 302 && /\/514\.mp4/.test(a.headers.location || '') && /^\/media\/file_514\.mpg/.test(m5.seen.vodLinks.slice(-2)[0]), a.status + ' ' + m5.seen.vodLinks.slice(-2));
   a = await req('GET', H + '/stalker/vod/525.mp4?stb=' + login5);
   ok('a movie the portal has no link for: 404 with its reason (the player stops at once)', a.status === 404 && /nothing_to_play/.test(a.body), a.status + ' ' + a.body);
+  a = await req('GET', H + '/stalker/vod/531.mp4?stb=' + login5);
+  ok('issue #118: a movie with no link from its own command plays from its file\'s (get_ordered_list movie_id)', a.status === 302 && /\/movie\/u\/p\/531\.mp4/.test(a.headers.location || '') && m5.seen.vodLinks.slice(-1)[0].indexOf('/media/file_9531.mpg') === 0, a.status + ' ' + m5.seen.vodLinks.slice(-3));
   ok('the answer\'s shape, for the log, without addresses', S._shapeOf({ id: 1, cmd: 'ffmpeg http://h.example/x.mp4?token=1', error: '' }) === '{id,cmd,error} cmd=ffmpeg <link>' && S._vodLinkOf({ cmd: 'ffmpeg http://localhost/ch/1' }) === '', S._shapeOf({ id: 1, cmd: 'ffmpeg http://h.example/x.mp4?token=1', error: '' }));
   m5.server.close();
 
@@ -140,6 +142,10 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('all shows', x.j.length === 40, x.j.length);
   x = await X4('get_series_info&series_id=931');
   ok('a show from the shows module opens (no 404)', x.status === 200 && x.j.seasons.length === 1 && x.j.episodes['1'].length === 2, x.status + ' ' + JSON.stringify(x.j).slice(0, 200));
+  S._reset();
+  const pages4 = m4.seen.seriesPages || 0;
+  x = await X4('get_series_info&series_id=935');
+  ok('issue #118: after the helper started again, a show opens without reading every show first', x.status === 200 && x.j.seasons.length === 1 && (m4.seen.seriesPages || 0) === pages4, x.status + ' pages ' + ((m4.seen.seriesPages || 0) - pages4));
   x = await X4('get_vod_streams');
   ok('movies still come from the movie module', x.j.length === 28, x.j.length);
   m4.server.close();

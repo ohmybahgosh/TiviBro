@@ -645,6 +645,15 @@ var Player = (function () {
         Log.info('player', cur.live ? 'The portal sends this channel as HLS; playing it that way' : 'The portal sends this movie as HLS; playing it that way, and its other movies too');
         useEngine('hls'); return start(myToken);
       }
+      /* A Stalker portal's movie or episode it has no link for (the helper answers 404 once the portal said so,
+         issue #118): every retry asks the portal again, and eight of them got the TV rate-limited (HTTP 429) and
+         then refused ("the portal refused this box").  Stop at once and say so. */
+      if (http === 404 && !st.started && isFile() && /\/stalker\/vod\//.test(cur.origUrl || cur.url)) {
+        Log.warn('player', 'The portal has no link for this ' + (/\/stalker\/vod\/e\d+x/.test(cur.origUrl || cur.url) ? 'episode' : 'movie') + '; not retrying');
+        state('error', T('The portal has no link for this video.  Press OK to try again.'));
+        cur.failed = true; teardown();
+        return;
+      }
       if ((http === 404 || http === 410) && !st.started && cur.live && !cur.timeshift && !cur.everPlayed) {
         cur.lastHttp = http; cur.tried = cur.tried || {};
         cur.tried.ts = cur.tried.native = 1;

@@ -175,7 +175,9 @@ var Diag = (function () {
       var earlier = (j.earlier || []).map(function (e) { return scrub(stamp(e.t) + '  ERROR  ' + e.event + (e.e ? '  ' + e.e : '')); });
       return ['Node ' + j.node + '   requests ' + j.stats.requests + '   errors ' + j.stats.errors].concat(earlier.length ? ['Helper errors kept on the TV (latest ' + earlier.length + '):'].concat(earlier, ['Recent requests:']) : []).concat(j.log.slice(-150).map(function (e) {
         var d = new Date(e.t), ts = U.pad(d.getHours()) + ':' + U.pad(d.getMinutes()) + ':' + U.pad(d.getSeconds());
-        return scrub(ts + '  ' + (e.event ? e.event + (e.e ? '  ' + e.e : '') : (e.s || '---') + '  ' + e.ms + 'ms  ' + e.u + (e.e ? '  ' + e.e : '')));
+        // An event's other details (what a portal answered: issue #118's "no link" never said what it tried or got).
+        var more = e.event ? Object.keys(e).filter(function (k) { return ['t', 'lv', 'event', 'e', 's', 'ms', 'u'].indexOf(k) < 0 && e[k] != null && e[k] !== ''; }).map(function (k) { return k + '=' + String(typeof e[k] === 'object' ? JSON.stringify(e[k]) : e[k]).slice(0, 120); }).join('  ') : '';
+        return scrub(ts + '  ' + (e.event ? e.event + (e.e ? '  ' + e.e : '') + (more ? '  [' + more + ']' : '') : (e.s || '---') + '  ' + e.ms + 'ms  ' + e.u + (e.e ? '  ' + e.e : '')));
       }));
     }, function (e) { return ['(could not read the helper log: ' + e.message + ')']; }).then(function (helper) {
       var text = '# TiviBro problem report, ' + new Date().toISOString() + '\n\n' + facts.map(function (f) { return f[0] + ': ' + f[1]; }).join('\n') +

@@ -140,9 +140,11 @@ var Convert = (function () {
         if (!bad && !hint) return null;
         return { offer: NAMES[bad ? known[0] : 'dts'] || 'DTS', guessed: !bad };
       }
-      /* A Stalker movie that comes as HLS (issue #118): a playlist has no sound to check, and the check took the
-         portal's one link, so the player's own was refused. */
-      if (/\.m3u8(\?|$)/i.test(o.url) || (typeof Player !== 'undefined' && Player.vodHls && Player.vodHls(o.url))) return null;
+      /* A Stalker portal's movie or episode (issue #118): each check is one more link from the portal, which may
+         allow one at a time (the player's own was then refused) and rate-limits (HTTP 429).  Not checked first;
+         a sound the TV can't play is still found once it plays (the player's late check).  A playlist has no
+         sound to check either. */
+      if (/\.m3u8(\?|$)/i.test(o.url) || /\/stalker\/vod\//.test(o.url)) return null;
       return within(probe(o.url), 12000).then(function (info) {
         var d = decide(info.audio, c, { lang: settings().audioLang === 'orig' ? '' : settings().audioLang || '' });
         /* Dolby Vision profile 7 (UHD Blu-ray remuxes): LG's player shows only its HDR10 base.  Through the

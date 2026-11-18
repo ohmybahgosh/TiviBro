@@ -1038,6 +1038,7 @@ I18n.add('ru', {
   "Trying the {x}": "Пробуем: {x}",
   "Trying again ({n} of {m})": "Пробуем снова ({n} из {m})",
   "Trying again on the {x} ({n} of {m})": "Пробуем снова: {x} ({n} из {m})",
+  "The portal has no link for this video.  Press OK to try again.": "У портала нет ссылки на это видео.  Нажмите OK, чтобы попробовать снова.",
   "The channel dropped: {x}.": "Канал прервался: {x}.",
   "This channel is having trouble starting: {x}.": "Канал не запускается: {x}.",
   // Settings sections reorganised

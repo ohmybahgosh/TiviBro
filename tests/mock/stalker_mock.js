@@ -50,6 +50,8 @@ function create(o) {
     /* o.genreStrict (issue #118): a category's shows only with genre=* (genre=<the category> finds none). */
     if (o.series && q.type === 'series' && q.action === 'get_ordered_list') { seen.seriesPages = (seen.seriesPages || 0) + 1; seen.seriesGenres = (seen.seriesGenres || []).concat([q.genre]); if (o.genreStrict && q.category !== '*' && q.genre !== '*') return page([], q.p, res); return page(shows.filter(function (x) { return q.category === '*' || !q.category || x.category_id === q.category; }), q.p, res); }
     if (q.type === 'vod' && q.action === 'get_ordered_list' && q.movie_id && q.movie_id !== '0') {
+      // o.files (issue #118): a movie past 525 plays only from its own file's command (newer portals).
+      if (o.files && +q.movie_id > 525) return js(res, { total_items: 1, data: [{ id: '9' + q.movie_id, name: 'HD', cmd: '/media/file_9' + q.movie_id + '.mpg' }] });
       if (q.movie_id !== '505' && q.movie_id !== '520') return js(res, { total_items: 0, data: [] });
       return js(res, { total_items: 2, data: [{ id: q.movie_id + ':1', name: 'Season 1', series: [1, 2, 3], cmd: 'eyJzZWFzb24iOjF9' }, { id: q.movie_id + ':2', name: 'Season 2', series: [1, 2], cmd: 'eyJzZWFzb24iOjJ9' }] });
     }
@@ -59,6 +61,8 @@ function create(o) {
     if (o.xtreamVod && q.type === 'vod' && q.action === 'create_link') {
       seen.vodLinks = (seen.vodLinks || []).concat([q.cmd + '|' + (q.series || '')]);
       var sid = ''; try { sid = String(JSON.parse(Buffer.from(String(q.cmd), 'base64').toString('utf8')).stream_id || ''); } catch (e) {}
+      var fm = /^\/media\/file_9(\d+)\.mpg$/.exec(String(q.cmd));
+      if (o.files && fm) return js(res, { id: 1, cmd: 'ffmpeg http://127.0.0.1:1/movie/u/p/' + fm[1] + '.mp4' });
       if (!sid || +sid > 520) return js(res, { id: 1, cmd: '/media/file_' + (sid || '0') + '.mpg', error: 'nothing_to_play' });
       return js(res, { id: 1, cmd: 'ffmpeg http://127.0.0.1:1/movie/u/p/' + sid + '.mp4' });
     }

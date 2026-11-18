@@ -843,5 +843,15 @@ ok('other files play directly, without subtitle extraction', mp4.calls.length ==
   ok('discussion #36: the spinner names the player on every retry', t.states.some(s => /Trying again on the built-in player \(MPEG-TS\) \(\d of 8\)/.test(s)) && t.states.some(s => /Trying the TV player/.test(s)), t.states.filter(s => /Trying/.test(s)).join(' | '));
 }
 
+
+// ---- issue #118: a Stalker movie the portal has no link for stops at once (eight retries got the TV rate-limited) ----
+{
+  const t = setup();
+  t.P.play({ n: 'No link', url: 'http://127.0.0.1:47811/stalker/vod/77.ts?stb=x' }, { live: false, startAt: 0 });
+  const n0 = t.made.length;
+  t.last().h.err('NetworkError', 'HttpStatusCodeInvalid', { code: 404 }); t.run(10000);
+  ok('issue #118: a Stalker movie with no link (404) is not retried', t.made.length === n0 && /^error: The portal has no link/.test(t.states[t.states.length - 1]), t.made.length - n0 + ' ' + t.states.slice(-1));
+}
+
 if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }
 console.log('all player tests passed');
