@@ -131,6 +131,12 @@ var Record = (function () {
   (function poll() { if (base()) { list().catch(function () {}); drives().catch(function () {}); } setTimeout(poll, 120000); })();
   setTimeout(function () { if (base()) { list().catch(function () {}); drives().catch(function () {}); } }, 8000);
 
-  return { now: now, schedule: schedule, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, menuItem: menuItem, of: of, urlFor: urlFor,
+  /* Live pause (views.js): the buffer on the drive (service/timeshift.js). */
+  function tsStart(ch) { return api('/record/ts/start', { url: urlFor(ch) }).then(function (r) { if (r.error && !r.id) throw new Error(r.error); return r; }); }
+  function tsPing(id) { return api('/record/ts/ping', { id: id }).catch(function (e) { if (/gone|HTTP 404/.test(e && e.message)) e.gone = true; throw e; }); }
+  function tsStop(id) { return api('/record/ts/stop', { id: id }).catch(function () {}); }
+  function canPause() { return !!base() && drive; }
+
+  return { now: now, schedule: schedule, tsStart: tsStart, tsPing: tsPing, tsStop: tsStop, canPause: canPause, base: base, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, menuItem: menuItem, of: of, urlFor: urlFor,
     get recs() { return last.recs; } };
 })();

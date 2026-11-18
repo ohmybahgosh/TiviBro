@@ -2326,5 +2326,13 @@ I18n.add('pt-BR', {
   "Playback stalled: {x}.": "A reprodução travou: {x}.",
   "This video is having trouble starting: {x}.": "Este vídeo está com problemas para começar: {x}.",
   "REC": "GRAVANDO",
-  "WILL RECORD": "SERÁ GRAVADO"
+  "WILL RECORD": "SERÁ GRAVADO",
+  "Paused": "Pausado",
+  "{ch}  \u00b7  since {t}": "{ch}  ·  desde {t}",
+  "OK or \u25b6  carry on from here  \u00b7  Back  live": "OK ou ▶  continuar daqui  ·  Voltar  ao vivo",
+  "Live pause stopped: {e}": "A pausa ao vivo parou: {e}",
+  "Getting the picture back\u2026": "Recuperando a imagem…",
+  "The paused copy didn't start; back to live": "A cópia pausada não começou; de volta ao vivo",
+  "Pause live TV to a USB drive": "Pausar a TV ao vivo num pendrive",
+  "Pause keeps the channel on the USB drive, and Play carries on from where you paused, with \u25c0 \u25b6 to go back and forth in it.  Needs a USB drive in the TV (and root, like recording).  Off: pause holds for as long as the player's buffer, then Play is live.": "Pausar guarda o canal no pendrive e Reproduzir continua de onde você pausou, com ◀ ▶ para voltar e avançar.  Precisa de um pendrive na TV (e root, como a gravação).  Desligado: a pausa dura o que o buffer do player aguenta e depois Reproduzir volta ao vivo."
 });

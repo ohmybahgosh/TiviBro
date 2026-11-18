@@ -290,7 +290,7 @@ function create(opts) {
     // without it, since the TV's player can't send one (they carry the login, and only reach the portal).
     if (req.url.indexOf('/stalker/') === 0 && req.method !== 'POST') return Stalker.handle(req, res, ALLOW, log, ownPort());
     // A recording's file, for the TV's player (which can't send the secret); the list and the controls need it.
-    if (req.url.indexOf('/record/file/') === 0) return require('./record').handle(req, res, ALLOW, log);
+    if (req.url.indexOf('/record/file/') === 0 || (req.url.indexOf('/record/ts/') === 0 && req.method !== 'POST')) return require('./record').handle(req, res, ALLOW, log);
     var ctlRoute = req.url.indexOf('/stalker/') === 0 ? 'stalker' : req.url.indexOf('/editor/') === 0 ? 'editor' : req.url.indexOf('/companion/') === 0 ? 'companion' : req.url.indexOf('/kv/') === 0 ? 'kv' : req.url.indexOf('/live/') === 0 ? 'live' : req.url.indexOf('/media/') === 0 ? 'media' : req.url.indexOf('/record/') === 0 ? 'record' :
       req.url.indexOf('/convert/') === 0 ? 'convert' : req.url.indexOf('/ffmpeg/') === 0 ? 'ffmpeg' : req.url.indexOf('/net/dns') === 0 ? 'dns' : '';
     if (ctlRoute) {

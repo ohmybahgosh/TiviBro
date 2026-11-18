@@ -1287,3 +1287,12 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .gp.recsch .gt b::before{border:2px solid #e5393b}
 .gd-badge.rec{background:#4a1416;color:#ff8a8c;padding-left:30px;position:relative}
 .gd-badge.rec::before{content:'';position:absolute;left:12px;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:#e5393b}
+
+/* Live pause to a USB drive: the card over the stage while the picture's let go. */
+.ts-card{position:absolute;top:0;right:0;bottom:0;left:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,#1b2230 0%,#0b0e14 70%);color:var(--text);text-align:center}
+.ts-card.hidden{display:none}
+.ts-card .ts-logo{max-width:220px;max-height:120px;object-fit:contain;margin-bottom:28px}
+.ts-card .ts-title{font-size:56px;font-weight:600;letter-spacing:.5px}
+.ts-card .ts-sub{font-size:26px;color:var(--muted);margin-top:12px}
+.ts-card .ts-hint{font-size:22px;color:var(--muted);margin-top:40px}
+.stage.preview .ts-card .ts-title{font-size:32px}.stage.preview .ts-card .ts-hint{display:none}

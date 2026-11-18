@@ -596,6 +596,7 @@ var Views = (function () {
     Parental.gate('channels', c, function () {
       if (!foSwitching) fo = null;            // picking a channel yourself ends a backup chain
       if (playing && playing.k !== c.k) lastPlayed = playing;
+      if (tsh && !tsh.keep) tsEnd();
       playing = c; mode = 'live'; cu = null; vod = null; lw = false;
       playStart = Date.now(); recentDone = false;
       Store.edits.last = c.k; Store.saveEdits();
@@ -875,6 +876,9 @@ var Views = (function () {
   // Play resumes, Pause pauses, a combined button toggles: Play on a playing stream never pauses it.
   function playPause() {
     var k = UI.playKey;
+    // Live pause: paused to the USB drive, Play carries on from there.
+    if (tsh && !Player.tshift) { if (k !== 'pause') tsResume(); return; }
+    if ((k === 'pause' || (k !== 'play' && !Player.paused)) && livePause()) return;
     if (k === 'play') Player.setPaused(false); else if (k === 'pause') Player.setPaused(true); else Player.togglePause();
     if (full) osd(true);
   }
@@ -1042,6 +1046,7 @@ var Views = (function () {
       if (v && v.onExit) v.onExit();
       return;
     }
+    if (tsh && mode === 'live') { var tpc = tsh.c; tsEnd(); if (playing && playing.k === tpc.k) startChannel(tpc, true); }
     // Back to Movies on now (or My media, after a movie on a live channel): no window for the picture, so the channel stops.
     if (fullFrom === 'onnow' || fullFrom === 'media') {
       mode = 'live'; cu = null; Player.stop();
@@ -1240,6 +1245,13 @@ var Views = (function () {
 
   function fullKeys(a) {
     if (overlay) return overlayKeys(a);
+    // Paused to the USB drive (the picture let go): OK or Play carries on, Back or Stop is live again.
+    if (tsh && !Player.tshift && mode === 'live') {
+      if (a === 'ok' || a === 'playpause') { if (a === 'ok' || UI.playKey !== 'pause') tsResume(); return true; }
+      if (a === 'back' || a === 'stop' || a === 'yellow') { var tc = tsh.c; tsEnd(); startChannel(tc, false, function () { osd(true); }); return true; }
+      if (a === 'chup' || a === 'chdown' || a === 'red' || a === 'hold' || a === 'info') tsEnd();
+      else return true;
+    }
     // The error message says "Press OK to try again", so OK does exactly that.
     if (a === 'ok' && !verr.classList.contains('hidden')) { Player.retryNow(); U.toast('Trying again'); return true; }
     var hidden = $('osd').classList.contains('hidden');
@@ -1352,12 +1364,90 @@ var Views = (function () {
   }
   function closeOverlay() { overlay = false; $('overlay').classList.add('hidden'); }
 
+  /* ---------- live pause (to a USB drive) ----------
+     Pause on a live channel, fullscreen, with a USB drive in (Settings > Playback > Pause live TV): the recording
+     agent starts keeping the channel on the drive (timeshift.js), the player lets go of its own connection (one
+     connection to the provider, as before), and Play picks up where it was paused from the drive's copy.  From
+     there it's like a channel with a window: ◀ ▶ move in what's been kept, pause holds, Back or ▶ to the end is
+     live.  Changing channel, catch-up, a movie or stopping lets the copy go (deleted). */
+  var tsh = null;
+  function tsOn() { return Store.settings.livePause !== false && typeof Record !== 'undefined' && Record.canPause(); }
+  function tsEnd() {
+    if (!tsh) return;
+    var t = tsh; tsh = null;
+    clearInterval(t.ping); clearTimeout(t.wait);
+    tsCard(null);
+    if (t.id) Record.tsStop(t.id);
+  }
+  function tsCard(c, text) {
+    var el = $('tsCard');
+    if (!c) { if (el) el.classList.add('hidden'); return; }
+    if (!el) { el = U.el('div', 'ts-card hidden'); el.id = 'tsCard'; stage.appendChild(el); }
+    var logo = logoOf(c);
+    el.innerHTML = '';
+    if (logo) { var im = U.el('img', 'ts-logo'); im.src = logo; im.onerror = function () { im.remove(); }; el.appendChild(im); }
+    el.appendChild(U.el('div', 'ts-title', T('Paused')));
+    el.appendChild(U.el('div', 'ts-sub', text || T('{ch}  ·  since {t}', { ch: L.name(c), t: U.hhmm(tsh ? tsh.at : Date.now()) })));
+    el.appendChild(U.el('div', 'ts-hint', T('OK or ▶  carry on from here  ·  Back  live')));
+    el.classList.remove('hidden');
+  }
+  function livePause() {
+    if (mode !== 'live' || !playing || !full || tsh || Player.tshift || !tsOn()) return false;
+    var c = playing;
+    Player.setPaused(true);
+    tsh = { c: c, at: Date.now(), id: null };
+    Record.tsStart(c).then(function (r) {
+      if (!tsh || tsh.c !== c) { Record.tsStop(r.id); return; }
+      tsh.id = r.id; tsh.url = Record.base() + r.playlist;
+      // The player's connection goes (the drive's copy has its own); the card stands in for the picture.
+      Player.stop();
+      tsCard(c);
+      tsh.ping = setInterval(function () {
+        if (!tsh) return;
+        Record.tsPing(tsh.id).then(function (st) { if (tsh && st && st.error) { U.toast(T('Live pause stopped: {e}', { e: st.error }), 6000); backFromPause(); } },
+          function (e) { if (tsh && e && e.gone) backFromPause(); });
+      }, 30000);
+      Log.info('player', 'Paused to the USB drive (' + L.name(c) + ')');
+      if (tsh.resume) tsResume();
+    }, function (e) {
+      // No drive or no agent: paused the way it always was (the connection goes after a while; Play is live).
+      if (tsh && tsh.c === c) tsh = null;
+      Log.warn('player', 'Live pause to the USB drive didn\'t start: ' + (e && e.message || e));
+    });
+    osd(true);
+    return true;
+  }
+  function backFromPause() { var c = tsh && tsh.c; tsEnd(); if (c && playing && playing.k === c.k) startChannel(c, !full, function () { osd(true); }); }
+  function tsResume() {
+    if (!tsh) return;
+    if (!tsh.id) { tsh.resume = true; return; }
+    var my = tsh;
+    // The first piece is a few seconds long: wait for it.
+    (function ready(n) {
+      if (tsh !== my) return;
+      Record.tsPing(my.id).then(function (st) {
+        if (tsh !== my) return;
+        if (st && st.ready) {
+          tsCard(null);
+          Player.play(my.c, { url: my.url, tshift: true, tsFrom: 0 });
+          lw = true; osd(true);
+          return;
+        }
+        if (st && st.error) { U.toast(T('Live pause stopped: {e}', { e: st.error }), 6000); return backFromPause(); }
+        if (n === 0) tsCard(my.c, T('Getting the picture back…'));
+        if (n > 40) { U.toast(T('The paused copy didn\'t start; back to live'), 5000); return backFromPause(); }
+        my.wait = setTimeout(function () { ready(n + 1); }, 500);
+      }, function () { backFromPause(); });
+    })(0);
+  }
+
   /* ---------- catch-up ---------- */
   function playCatchup(c, p, offSec) {
     if (!c.arch) { U.toast('This channel has no catch-up'); return; }
     if (p.s < Date.now() - c.arch * 86400e3) { U.toast('That programme is older than the archive'); return; }
     Parental.gate('channels', c, function () {
       if (playing && playing.k !== c.k) lastPlayed = playing;
+      tsEnd();
       playing = c; mode = 'catchup';
       cu = { c: c, p: p, off: Math.max(0, offSec || 0), first: true, pending: null };
       stage.classList.remove('off');
@@ -1440,6 +1530,7 @@ var Views = (function () {
   /* ---------- VOD playback (called by Vod) ---------- */
   function playVod(meta, url, startAt, onExit) {
     vodSeekCancel();
+    tsEnd();
     vod = { meta: meta, onExit: onExit, url: url };
     mode = 'vod'; cu = null; playing = null;
     Subs.reset();
@@ -2257,7 +2348,7 @@ var Views = (function () {
   }
   // The movie or episode is over (it ended, or Up next at the credits: skipper.js): My media's or the provider's next step.
   function endVod(force) { if (mode !== 'vod') return; if (vod && vod.meta.local) Media.ended(); else Vod.ended(force === true); }
-  function stopAll() { Subs.reset(); if (typeof SeekPrev !== 'undefined') SeekPrev.stop(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off');  if (pipTab()) pipUpdate(); }
+  function stopAll() { tsEnd(); Subs.reset(); if (typeof SeekPrev !== 'undefined') SeekPrev.stop(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off');  if (pipTab()) pipUpdate(); }
 
   return {
     endVod: endVod, get vodMeta() { return mode === 'vod' && vod ? vod.meta : null; },

@@ -164,7 +164,7 @@ var Player = (function () {
       xhrSetup: function (xhr, u) { xhr.open('GET', Net.wrap(u, pw), true); },
       debug: false, enableWorker: workerOk, lowLatencyMode: false, startFragPrefetch: true,
       liveSyncDurationCount: p.chase ? 2 : Math.round(U.clamp(p.prebuffer / 2 + 2, 3, 6)),
-      liveMaxLatencyDurationCount: p.chase ? 5 : Infinity,
+      liveMaxLatencyDurationCount: p.chase && !cur.tshift ? 5 : Infinity,     // live pause: never pulled to the end
       maxBufferLength: p.ahead, maxMaxBufferLength: p.ahead * 2, backBufferLength: p.back,
       // Memory-safe TVs (1 GB) keep less in memory here too.
       maxBufferSize: (memSafe() ? 40 : 80) * 1000 * 1000, maxBufferHole: 0.5, nudgeMaxRetry: 6, highBufferWatchdogPeriod: 2,
@@ -173,6 +173,8 @@ var Player = (function () {
       capLevelToPlayerSize: preview, capLevelOnFPSDrop: false,
       manifestLoadingMaxRetry: 4, levelLoadingMaxRetry: 6, fragLoadingMaxRetry: 8, fragLoadingRetryDelay: 400,
       manifestLoadingTimeOut: 12000, levelLoadingTimeOut: 10000, fragLoadingTimeOut: 20000,
+      // Live pause (timeshift.js): the buffer on the USB drive, started where it was paused (or at its live end).
+      startPosition: cur.tshift && cur.tsFrom >= 0 ? cur.tsFrom : -1,
       liveDurationInfinity: live, enableWebVTT: true, enableCEA708Captions: true, renderTextTracksNatively: true
     });
     // Media errors: recover, then recover with the audio codec swapped.  The count resets once
@@ -1093,13 +1095,15 @@ var Player = (function () {
     cur.boost = Math.min(capFor(p) - p.refill, before + Math.max(1.5, p.refill * 0.75));
     cur.boostAt = Date.now();
     if (cur.boost > before) Log.info('player', 'This channel keeps running dry; cushion raised to ' + refillGoal().toFixed(1) + 's');
-    if (cur.live && !cur.timeshift && window.PlayMemo) PlayMemo.boost(cur.ch, cur.boost);
+    if (cur.live && !cur.timeshift && !cur.tshift && window.PlayMemo) PlayMemo.boost(cur.ch, cur.boost);
   }
 
   function tick(myToken) {
     if (myToken !== token || !st || !video) return;
     var now = Date.now(), ahead = bufferedAhead(), t = video.currentTime;
     var p = cur.p;
+    // Live pause: a reconnect picks up where it was in the drive's copy, not where the pause began.
+    if (cur.tshift && st.started && t > 0 && !video.seeking) cur.tsFrom = t;
     // A converted movie: does the TV's player show the movie's own times, or count from the seek?
     if (cur.conv && st.started && !cur.conv.checked && t > 0) {
       cur.conv.checked = true; cur.conv.played = true;
@@ -1164,7 +1168,7 @@ var Player = (function () {
         lastPlay[plKey(cur && cur.ch)] = now;
         Log.info('player', 'Playing after ' + (now - st.at) + 'ms with ' + ahead.toFixed(1) + 's buffered' + (ahead < p.prebuffer ? ' (prebuffer timed out)' : '') + (video.videoHeight ? ', ' + video.videoWidth + 'x' + video.videoHeight : '') +
           (cur.dataMs ? ' (first data ' + cur.dataMs + 'ms, first picture ' + (cur.picMs || cur.dataMs) + 'ms)' : ''));
-        if (cur.live && !cur.timeshift && window.PlayMemo) { PlayMemo.worked(cur.ch, st.kind, cur.usual); PlayMemo.started(memoHost()); }
+        if (cur.live && !cur.timeshift && !cur.tshift && window.PlayMemo) { PlayMemo.worked(cur.ch, st.kind, cur.usual); PlayMemo.started(memoHost()); }
         if (bf.length && video.currentTime < first && !cur.startAt) { try { video.currentTime = first + 0.05; } catch (e) {} }
         st.growAt = now;
         if (!cur.live) { st.from = cur.startAt || cur.pos || 0; st.playMs = 0; }
@@ -1219,7 +1223,7 @@ var Player = (function () {
 
     // Live TV paused longer than the buffer can hold: let the connection go rather than have it
     // time out or overflow, and come back at the live edge on play.
-    if (st.userPaused && cur.live && !cur.timeshift && !st.parked && now - st.pausedAt > Math.max(30, p.ahead) * 1000) {
+    if (st.userPaused && cur.live && !cur.timeshift && !cur.tshift && !st.parked && now - st.pausedAt > Math.max(30, p.ahead) * 1000) {
       Log.info('player', 'Live TV paused for ' + Math.round((now - st.pausedAt) / 1000) + 's; closing the stream until play');
       st.parked = true;
       teardown();
@@ -1232,7 +1236,7 @@ var Player = (function () {
       // should never become a long wait just because the cushion grew.
       if (ahead >= goal || (ahead >= p.refill && now - st.refillSince > 4000) || now - st.refillSince > 6000 + goal * 1000) {
         st.refilling = false; st.lastMove = now;
-        if (eng && eng.edge && cur.live && !cur.timeshift) eng.edge();
+        if (eng && eng.edge && cur.live && !cur.timeshift && !cur.tshift) eng.edge();
         var pr2 = video.play(); if (pr2 && pr2.catch) pr2.catch(function () {});
         state('playing');
       } else if (now - st.refillSince > 3000 && now - (st.growAt || st.refillSince) > 4000) {
@@ -1264,14 +1268,14 @@ var Player = (function () {
       return reconnect(myToken, 'The stream slowed down, reconnecting before it runs out');
     }
     if (t !== st.lastT && !video.paused) {
-      if (cur.live && !cur.timeshift && window.PlayMemo && st.watchAt && now - st.watchAt < 2000) PlayMemo.watched(memoHost(), now - st.watchAt);
+      if (cur.live && !cur.timeshift && !cur.tshift && window.PlayMemo && st.watchAt && now - st.watchAt < 2000) PlayMemo.watched(memoHost(), now - st.watchAt);
       st.watchAt = now;
       st.lastT = t; st.lastMove = now;
       if (st.state !== 'playing') state('playing');
       if (!st.healthySince) st.healthySince = now;
       // 30s of clean playback earns the retry budget back; 3 clean minutes halve the extra cushion.
       if (now - st.healthySince > 30000 && (cur.retries || cur.slowSince)) { cur.retries = 0; cur.triedNative = false; cur.slowSince = 0; cur.late = null; cur.halfSwitched = false; }
-      if (cur.boost && now - st.healthySince > 180000 && now - (cur.boostAt || 0) > 180000) { cur.boost = Math.round(cur.boost * 5) / 10; cur.boostAt = now; if (cur.boost < 0.5) cur.boost = 0; Log.info('player', 'Clean for 3 minutes; extra cushion now ' + cur.boost + 's'); if (cur.live && !cur.timeshift && window.PlayMemo) PlayMemo.boost(cur.ch, cur.boost); }
+      if (cur.boost && now - st.healthySince > 180000 && now - (cur.boostAt || 0) > 180000) { cur.boost = Math.round(cur.boost * 5) / 10; cur.boostAt = now; if (cur.boost < 0.5) cur.boost = 0; Log.info('player', 'Clean for 3 minutes; extra cushion now ' + cur.boost + 's'); if (cur.live && !cur.timeshift && !cur.tshift && window.PlayMemo) PlayMemo.boost(cur.ch, cur.boost); }
       return;
     }
     if (video.paused && !st.refilling) {
@@ -1376,6 +1380,7 @@ var Player = (function () {
     cur = { ch: ch, url: url0, p: cfg(opts.preview, url0), preview: !!opts.preview, retries: 0, t0: Date.now(),
       forceNative: false, triedNative: false, live: opts.live !== false, startAt: opts.startAt || 0, meta: opts.meta || null,
       timeshift: !!opts.timeshift, urlFn: opts.urlFn || null, pos: opts.startAt || 0,
+      tshift: !!opts.tshift, tsFrom: opts.tsFrom != null ? opts.tsFrom : -1,
       media: opts.media || (opts.meta && opts.meta.media) || null, opts: opts };
     // keepTrying: a channel known to work here (back from its backups during an outage) retries
     // like one that has played, instead of giving up after the first round.
@@ -1386,15 +1391,16 @@ var Player = (function () {
     cur.usual = pickEngine(cur.url);
     // Stream format chosen for this channel (Hold OK > Stream format): HLS or MPEG-TS whatever the
     // playlist's setting, before what playback learnt.  The other pipelines stay as fallbacks.
-    var want = cur.live && !cur.timeshift ? streamFormat(ch) : '';
+    // Live pause plays the buffer's own playlist: none of what's chosen or learnt for the channel's address.
+    var want = cur.live && !cur.timeshift && !cur.tshift ? streamFormat(ch) : '';
     if (want === 'ts' && /\/live\/[^?]+\.m3u8(\?|$)/i.test(cur.url)) { cur.url = cur.url.replace(/\.m3u8(\?|$)/i, '.ts$1'); cur.usual = pickEngine(cur.url); }
     if (want) Log.info('player', 'Stream format for this channel: ' + (want === 'hls' ? 'HLS' : 'MPEG-TS') + ' (chosen for it)');
     if (want === 'hls' && !/\.m3u8(\?|$)/i.test(cur.url) && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) useEngine('hls');
     if (!cur.live && !cur.conv && vodHls(cur.url) && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) { Log.info('player', 'This portal sends its movies as HLS: playing it that way'); useEngine('hls'); }
-    else if (!want && cur.live && !cur.timeshift && preferHls[cur.url] && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) { Log.info('player', 'Using the HLS version of this channel, which played better earlier'); useEngine('hls'); }
+    else if (!want && cur.live && !cur.timeshift && !cur.tshift && preferHls[cur.url] && window.Hls && Hls.isSupported() && hlsVariant(cur.url)) { Log.info('player', 'Using the HLS version of this channel, which played better earlier'); useEngine('hls'); }
     // What this channel needed last time (playmemo.js): its pipeline (unless a format was chosen for it),
     // and the cushion it earned.
-    else if (cur.live && !cur.timeshift && window.PlayMemo && Store.settings.engine !== 'native') {
+    else if (cur.live && !cur.timeshift && !cur.tshift && window.PlayMemo && Store.settings.engine !== 'native') {
       var memo = PlayMemo.get(ch);
       if (!want && memo.engine && memo.engine !== cur.usual && engineOk(memo.engine)) { Log.info('player', 'Starting with the ' + (memo.engine === 'hls' ? 'HLS version' : ENGINE_NAMES[memo.engine]) + ', which played this channel last time'); useEngine(memo.engine); }
       if (memo.boost && !cur.preview) { cur.boost = memo.boost; cur.boostAt = Date.now(); }
@@ -1626,11 +1632,12 @@ var Player = (function () {
      it, at once and from the same connection, instead of asking the provider for a catch-up address (which many
      DASH providers answer with an error, or protect without saying how).  null when there's no such window. */
   function liveWindow() {
-    if (!video || !cur || !cur.live || cur.timeshift || !st || st.kind !== 'dash' || !playing()) return null;
+    // A DASH channel's own window, or live pause's buffer on the USB drive (HLS, from where it started).
+    if (!video || !cur || !cur.live || cur.timeshift || !st || !(st.kind === 'dash' || (cur.tshift && st.kind === 'hls')) || !playing()) return null;
     var r = video.seekable;
     if (!r || !r.length) return null;
     var a = r.start(0), b = r.end(r.length - 1);
-    if (!(b - a >= 30)) return null;
+    if (!(b - a >= (cur.tshift ? 2 : 30))) return null;
     return { start: a, end: b, at: video.currentTime, behind: Math.max(0, b - video.currentTime) };
   }
   function liveSeek(delta) {
@@ -1735,7 +1742,7 @@ var Player = (function () {
   return {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
     PRESETS: PRESETS, memorySafe: memorySafe, get converting() { return !!(cur && cur.conv); }, vodHls: function (u) { return vodHls(u); }, get userPaused() { return !!(st && st.userPaused); }, get memSafe() { return memSafe() ? (typeof Store !== 'undefined' && Store.settings && Store.settings.memSafe === 'on' ? 'turned on in Settings' : safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, get startStatus() { return startStatus(); }, on: on,
-    seek: seek, seekTo: seekTo, liveWindow: liveWindow, liveSeek: liveSeek, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
+    seek: seek, seekTo: seekTo, liveWindow: liveWindow, get tshift() { return !!(cur && cur.tshift); }, liveSeek: liveSeek, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; }, describeTrack: describeTrack,
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },
     qualityAuto: function () { return !!(eng && eng.auto && eng.auto()); },

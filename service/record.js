@@ -26,9 +26,10 @@
      POST /record/stop     { id }    (a scheduled one is cancelled)
      POST /record/delete   { id }    (its files too)
      GET  /record/file/<id>[?part=n]  the recording, with Range, for the player
+     /record/ts/...                           live pause (timeshift.js)
    Plain ES5 and callbacks for Node 0.12 (webOS 4). */
 'use strict';
-var http = require('http'), fs = require('fs'), path = require('path'), URL_ = require('url');
+var http = require('http'), fs = require('fs'), path = require('path'), URL_ = require('url'), TS = require('./timeshift');
 
 var ROOTS = process.env.TIVIBRO_USB_DIR ? [process.env.TIVIBRO_USB_DIR] : ['/tmp/usb'];
 var AGENT = process.env.TIVIBRO_REC_AGENT === '1', AGENT_PORT = +(process.env.TIVIBRO_REC_AGENT_PORT || 47820);
@@ -383,9 +384,22 @@ function handleHere(req, res, ALLOW) {
   if (req.method === 'GET' && p === '/record/list') { tick(); return send(res, ALLOW, 200, { recs: load().recs.map(pub) }); }
   var fm = /^\/record\/file\/([A-Za-z0-9]+)(?:\/[^\/]*)?$/.exec(p);       // "/rec.ts" after the id tells the player what it is
   if (fm && (req.method === 'GET' || req.method === 'HEAD')) { var fr = byId(fm[1]); return fr ? serveFile(req, res, ALLOW, fr, u.query.part != null ? +u.query.part : null) : send(res, ALLOW, 404, { error: 'no such recording' }); }
+  if (p.indexOf('/record/ts/') === 0 && req.method !== 'POST') { if (TS.route(req, res, ALLOW, p, u.query, send) !== null) return; return send(res, ALLOW, 404, { error: 'no such route' }); }
   if (req.method !== 'POST') return send(res, ALLOW, 404, { error: 'no such route' });
   body(req, function (e, q) {
     if (e) return send(res, ALLOW, 400, { error: 'bad request' });
+    // Live pause (timeshift.js): a buffer on the drive the player plays from.
+    if (p.indexOf('/record/ts/') === 0) {
+      TS.setup({ get: get, getText: getText, fetchAll: fetchAll, isPlaylist: isPlaylist, freeMB: function (d) { return require('./storage')._freeMB(d); }, log: logf });
+      if (p === '/record/ts/start') {
+        if (!okUrl(q.url)) return send(res, ALLOW, 400, { error: 'not a relayed address' });
+        var dv = drives(); if (!dv.length) return send(res, ALLOW, 409, { error: 'Plug in a USB drive to pause live TV.', code: 'nodrive' });
+        var tsr = TS.post(p, q, folderOn(dv[0].dir));
+        return send(res, ALLOW, tsr.error && !tsr.id ? 500 : 200, tsr);
+      }
+      var tr = TS.post(p, q);
+      return tr ? send(res, ALLOW, tr.gone ? 404 : 200, tr) : send(res, ALLOW, 404, { error: 'no such route' });
+    }
     if (p === '/record/start' || p === '/record/schedule') {
       if (!okUrl(q.url)) return send(res, ALLOW, 400, { error: 'not a relayed address' });
       if (!(+q.end > Date.now())) return send(res, ALLOW, 400, { error: 'it ends in the past' });
@@ -410,4 +424,4 @@ function handleHere(req, res, ALLOW) {
   });
 }
 
-module.exports = { handle: handle, start: start, drives: drives, setCall: setCall, _tick: tick, _reset: function () { Object.keys(run).forEach(function (k) { halt(byId(k) || { id: k }); }); state = null; }, _nameFor: nameFor };
+module.exports = { handle: handle, start: start, drives: drives, setCall: setCall, _tick: tick, _reset: function () { TS._stopAll(); Object.keys(run).forEach(function (k) { halt(byId(k) || { id: k }); }); state = null; }, _nameFor: nameFor };

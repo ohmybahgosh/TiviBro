@@ -13,7 +13,7 @@ var Record = require('./record');
 var CTL = process.env.TIVIBRO_REC_CTL || '', LOG = path.join(DIR, 'agent.log');
 function log(o) { o.t = Date.now(); try { fs.appendFileSync(LOG, JSON.stringify(o) + '\n'); } catch (e) {} }
 var server = http.createServer(function (req, res) {
-  var file = req.url.indexOf('/record/file/') === 0;
+  var file = req.url.indexOf('/record/file/') === 0 || (req.url.indexOf('/record/ts/') === 0 && req.method !== 'POST');
   if (!file && CTL && req.headers['x-tivibro-ctl'] !== CTL) { res.writeHead(403, { 'Content-Type': 'application/json' }); return res.end('{"error":"not allowed","code":"ctl"}'); }
   Record.handle(req, res, {}, log);
 });

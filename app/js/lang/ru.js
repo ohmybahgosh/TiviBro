@@ -1813,5 +1813,13 @@ I18n.add('ru', {
   "Playback stalled: {x}.": "Воспроизведение остановилось: {x}.",
   "This video is having trouble starting: {x}.": "Это видео не может начаться: {x}.",
   "REC": "ЗАПИСЬ",
-  "WILL RECORD": "БУДЕТ ЗАПИСАНО"
+  "WILL RECORD": "БУДЕТ ЗАПИСАНО",
+  "Paused": "Пауза",
+  "{ch}  \u00b7  since {t}": "{ch}  ·  с {t}",
+  "OK or \u25b6  carry on from here  \u00b7  Back  live": "OK или ▶  продолжить отсюда  ·  Назад  эфир",
+  "Live pause stopped: {e}": "Пауза эфира остановлена: {e}",
+  "Getting the picture back\u2026": "Возвращаем изображение…",
+  "The paused copy didn't start; back to live": "Копия с паузы не запустилась; возвращаемся в эфир",
+  "Pause live TV to a USB drive": "Пауза эфира на USB-накопитель",
+  "Pause keeps the channel on the USB drive, and Play carries on from where you paused, with \u25c0 \u25b6 to go back and forth in it.  Needs a USB drive in the TV (and root, like recording).  Off: pause holds for as long as the player's buffer, then Play is live.": "Пауза сохраняет канал на USB-накопитель, а Воспроизведение продолжает с места паузы, ◀ ▶ перемещают назад и вперёд.  Нужен USB-накопитель в телевизоре (и root, как для записи).  Выключено: пауза держится, пока хватает буфера плеера, затем Воспроизведение идёт в эфир."
 });

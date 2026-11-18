@@ -1810,5 +1810,13 @@ I18n.add('es', {
   "Playback stalled: {x}.": "La reproducción se detuvo: {x}.",
   "This video is having trouble starting: {x}.": "Este video tiene problemas para empezar: {x}.",
   "REC": "GRABANDO",
-  "WILL RECORD": "SE GRABARÁ"
+  "WILL RECORD": "SE GRABARÁ",
+  "Paused": "En pausa",
+  "{ch}  \u00b7  since {t}": "{ch}  ·  desde las {t}",
+  "OK or \u25b6  carry on from here  \u00b7  Back  live": "OK o ▶  seguir desde aquí  ·  Atrás  en vivo",
+  "Live pause stopped: {e}": "La pausa en vivo se detuvo: {e}",
+  "Getting the picture back\u2026": "Recuperando la imagen…",
+  "The paused copy didn't start; back to live": "La copia en pausa no empezó; de vuelta en vivo",
+  "Pause live TV to a USB drive": "Pausar la TV en vivo en una memoria USB",
+  "Pause keeps the channel on the USB drive, and Play carries on from where you paused, with \u25c0 \u25b6 to go back and forth in it.  Needs a USB drive in the TV (and root, like recording).  Off: pause holds for as long as the player's buffer, then Play is live.": "Pausa guarda el canal en la memoria USB y Reproducir sigue desde donde pausaste, con ◀ ▶ para ir atrás y adelante.  Necesita una memoria USB en la TV (y root, como grabar).  Desactivado: la pausa dura lo que el búfer del reproductor y luego Reproducir va en vivo."
 });
