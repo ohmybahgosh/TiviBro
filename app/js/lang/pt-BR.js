@@ -2237,5 +2237,12 @@ I18n.add('pt-BR', {
   "Hold OK  season options": "Segurar OK  opções da temporada",
   "▼  Chapters": "▼  Capítulos",
   "CH  Next chapter": "CH  Próximo capítulo",
-  "CH  Skip 10 min": "CH  Pular 10 min"
+  "CH  Skip 10 min": "CH  Pular 10 min",
+  "Dolby Vision 7 (UHD Blu-ray)": "Dolby Vision 7 (UHD Blu-ray)",
+  "A UHD Blu-ray remux's Dolby Vision (profile 7) shows only as HDR10 on LG TVs.  Automatic: played as profile 8.1 through the converter, in Dolby Vision (the base picture with its Dolby Vision brightness data, as dovi_tool makes it).  Off: HDR10, as before.": "O Dolby Vision de um remux de UHD Blu-ray (perfil 7) aparece só como HDR10 nas TVs LG.  Automático: reproduzido como perfil 8.1 pelo conversor, em Dolby Vision (a imagem base com os dados de brilho Dolby Vision, como o dovi_tool faz).  Desligado: HDR10, como antes.",
+  "Automatic, in Dolby Vision": "Automático, em Dolby Vision",
+  "Off, HDR10": "Desligado, HDR10",
+  "Dolby Vision 7 played as 8.1": "Dolby Vision 7 reproduzido como 8.1",
+  "Dolby Vision 7 plays as 8.1": "Dolby Vision 7 é reproduzido como 8.1",
+  "Dolby Vision 7 as 8.1, and {x} audio converted": "Dolby Vision 7 como 8.1, e áudio {x} convertido"
 });

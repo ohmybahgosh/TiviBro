@@ -71,5 +71,13 @@ ok('AAC at 96 kHz: AC-3 at 48 kHz, not copied', aa.args.join(' ') === '-c:a ac3 
 ok('AAC at 48 kHz: copied as before', C.audioArgs({ codec: 'aac', channels: 2, rate: 48000 }).args.join(' ') === '-c:a copy');
 ok('DTS at 96 kHz: AC-3 at 48 kHz too', /-ar 48000/.test(C.audioArgs({ codec: 'dts', channels: 6, rate: 96000 }).args.join(' ')));
 
+// Dolby Vision profile 7 (a UHD Blu-ray remux): the probe reads the profile, and the stream asks for 8.1 only then.
+const dvp = C.parseProbe('Input #0, matroska,webm, from \'x\':\n  Duration: 02:35:00.00, start: 0.000000, bitrate: 50000 kb/s\n  Stream #0:0: Video: hevc (Main 10), yuv420p10le(tv, bt2020nc/bt2020/smpte2084), 3840x2160, SAR 1:1 DAR 16:9, 23.98 fps\n      Side data:\n        DOVI configuration record: version: 1.0, profile: 7, level: 6, rpu flag: 1, el flag: 1, bl flag: 1, compatibility id: 6, compression: 0\n  Stream #0:1(eng): Audio: truehd, 48000 Hz, 7.1, s32 (24 bit) (default)\n');
+ok('the probe reads Dolby Vision profile 7', dvp.dv === 7 && dvp.video === 'hevc', JSON.stringify(dvp));
+ok('...and a file without it is 0', C.parseProbe('Input #0, matroska,webm, from \'x\':\n  Stream #0:0: Video: hevc (Main 10), yuv420p10le, 3840x2160\n').dv === 0);
+const p81 = C.args({ input: 'http://x/', t: 0, a: 0, fmt: 'mkv', p81: true }).join(' ');
+ok('profile 7 as 8.1: the dovi_rpu filter with p81, the video still copied', /-c:v copy -bsf:v dovi_rpu=p81=1/.test(p81), p81);
+ok('...and not otherwise', !/dovi_rpu/.test(C.args({ input: 'http://x/', t: 0, a: 0, fmt: 'mkv' }).join(' ')));
+
 console.log(fail ? fail + ' failed' : 'all passed');
 process.exit(fail ? 1 : 0);

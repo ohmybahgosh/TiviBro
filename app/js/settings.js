@@ -149,6 +149,8 @@ var Settings = (function () {
       ['auto', 'on', 'off'], ['Automatic', 'Always on', 'Off'], function () { return s.memSafe || 'auto'; }, function (v) { s.memSafe = v; save(); }));
     out.push(choice('Seek previews', 'A picture of the movie or episode where you\'re seeking to, over the bar, made on the TV from what plays (nothing of your library is read).  Automatic: with Memory-safe playback on, only for movies up to 1080p and nothing made ahead.  Red in the player too.',
       ['auto', 'on', 'off'], ['Automatic', 'On, 4K too', 'Off'], function () { return s.seekPreviews || 'auto'; }, function (v) { s.seekPreviews = v; save(); }));
+    out.push(choice('Dolby Vision 7 (UHD Blu-ray)', 'A UHD Blu-ray remux\'s Dolby Vision (profile 7) shows only as HDR10 on LG TVs.  Automatic: played as profile 8.1 through the converter, in Dolby Vision (the base picture with its Dolby Vision brightness data, as dovi_tool makes it).  Off: HDR10, as before.',
+      ['auto', 'off'], ['Automatic, in Dolby Vision', 'Off, HDR10'], function () { return s.dv7 === 'off' ? 'off' : 'auto'; }, function (v) { s.dv7 = v; save(); }));
     out.push(toggle('Skip intro and Up next', 'From the file\'s chapters: "Skip intro" while an intro or recap plays, and "Up next" when the credits start (the next episode, or the next movie of a collection you play).  OK does it, Back hides it.', function () { return s.skipIntro !== false; }, function (v) { s.skipIntro = v; save(); }));
     out.push(head('Switching channels'));
     out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',

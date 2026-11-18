@@ -52,7 +52,7 @@ function channelsOf(rest) {
 }
 function seconds(hms) { var m = /(\d+):(\d+):(\d+(?:\.\d+)?)/.exec(hms || ''); return m ? +m[1] * 3600 + +m[2] * 60 + +m[3] : 0; }
 function parseProbe(text) {
-  var out = { format: '', duration: 0, kbps: 0, video: '', audio: [], subs: 0 };
+  var out = { format: '', duration: 0, kbps: 0, video: '', audio: [], subs: 0, dv: 0 };
   var lines = String(text || '').split(/\r?\n/), last = null, input = false;
   for (var i = 0; i < lines.length; i++) {
     var line = lines[i];
@@ -75,6 +75,9 @@ function parseProbe(text) {
       } else if (s[3] === 'Subtitle') out.subs++;
       continue;
     }
+    // "DOVI configuration record: version: 1.0, profile: 7, level: 6, rpu flag: 1, el flag: 1, ..." (the video's side data)
+    var dv = /DOVI configuration record:.*\bprofile: (\d+)/.exec(line);
+    if (dv && !out.dv) { out.dv = +dv[1]; continue; }
     var t = /^\s+title\s*: (.*)$/.exec(line);
     if (t && last && !last.title) last.title = t[1].trim().slice(0, 80);
   }
@@ -110,6 +113,11 @@ function args(o) {
   // Live channels start at zero.
   if (o.fmt !== 'ts') a.push('-copyts', '-start_at_zero');
   a.push('-map', '0:v:0?', '-map', '0:a:' + (o.a | 0), '-c:v', 'copy');
+  /* Dolby Vision profile 7 (UHD Blu-ray remuxes), which LG's player shows only as its HDR10 base: as profile 8.1,
+     which it shows in Dolby Vision.  The enhancement layer goes and the RPU is rewritten (dovi_rpu's p81,
+     TiviBro's patch: scripts/ffmpeg/patches/dovi-rpu-p81.patch).  The picture is the base layer's, as dovi_tool's
+     "convert --discard" makes it; nothing is decoded. */
+  if (o.p81) a.push('-bsf:v', 'dovi_rpu=p81=1');
   a = a.concat(audioArgs(o.track).args);
   a.push('-sn', '-dn', '-max_muxing_queue_size', '1024');
   if (o.fmt === 'ts') a.push('-f', 'mpegts', 'pipe:1');
@@ -146,6 +154,17 @@ function remember(k, v) {
   probes[k] = v;
   while (probeOrder.length > 50) delete probes[probeOrder.shift()];
 }
+/* Can this converter turn profile 7 into 8.1 (ffmpeg-7.1-tb3 and later)?  Asked once. */
+var P81 = null;
+function canP81(cb) {
+  if (P81 !== null) return cb(P81);
+  var bin = Ffmpeg.binary(); if (!bin) return cb(false);
+  var out = '', p;
+  try { p = cp.spawn(bin, ['-hide_banner', '-h', 'bsf=dovi_rpu'], { stdio: ['ignore', 'pipe', 'ignore'] }); } catch (e) { return cb(false); }
+  p.stdout.on('data', function (d) { if (out.length < 20000) out += d; });
+  p.on('error', function () { cb(false); });
+  p.on('close', function () { P81 = /\bp81\b/.test(out); cb(P81); });
+}
 function probe(input, key, cb) {
   if (probes[key]) return cb(null, probes[key], true);
   var bin = Ffmpeg.binary();
@@ -164,6 +183,8 @@ function probe(input, key, cb) {
       return cb(new Error('could not read the file: ' + why));
     }
     remember(key, r);
+    // Profile 7: whether it can be played as 8.1 here (the stream asks for it with &dv=81).
+    if (r.dv === 7) return canP81(function (ok) { r.p81 = ok; cb(null, r, false); });
     cb(null, r, false);
   });
 }
@@ -340,7 +361,7 @@ function stream(req, res, ALLOW, log, port, redact) {
   var rg = /bytes=(\d+)-/.exec(req.headers.range || ''), from = rg ? +rg[1] : 0;
   var dir = pipe ? '' : spoolDir();
   var h = Object.assign({ 'Content-Type': fmt === 'ts' ? 'video/mp2t' : 'video/x-matroska', 'Cache-Control': 'no-store', 'Accept-Ranges': dir ? 'bytes' : 'none' }, ALLOW);
-  var key = [fmt, q.u, q.ua || '', t, a, q.c || ''].join('|');
+  var key = [fmt, q.u, q.ua || '', t, a, q.c || '', q.dv || ''].join('|');
   var S = session && session.key === key && !session.stopped ? session : null;
   log({ lv: 'info', event: 'convert request', range: req.headers.range || undefined, joins: S ? Math.round(S.written / 1048576) + ' MB converted' : undefined, method: req.method === 'HEAD' ? 'HEAD' : undefined });
   if (req.method === 'HEAD') { res.writeHead(200, h); return res.end(); }
@@ -366,7 +387,10 @@ function stream(req, res, ALLOW, log, port, redact) {
   // What the track is: from the probe, else as the app says (&c=dts&ch=6), else taken as 5.1 to convert.
   var info = probes[q.u + '|' + (q.ua || '')], track = info && info.audio[a];
   if (!track && /^[a-z0-9_]{1,20}$/i.test(q.c || '')) track = { codec: q.c.toLowerCase(), channels: Math.max(0, Math.min(16, +q.ch | 0)), rate: Math.max(0, Math.min(384000, +q.sr | 0)) };
-  var list = args({ input: input, pipe: pipe, t: t, a: a, fmt: fmt, track: track });
+  // &dv=81: the app wants profile 7 as 8.1 (a TV with Dolby Vision); only when the file is profile 7 and this converter can.
+  var p81 = q.dv === '81' && !!(info && info.dv === 7 && P81);
+  var list = args({ input: input, pipe: pipe, t: t, a: a, fmt: fmt, track: track, p81: p81 });
+  if (p81) log({ lv: 'info', event: 'convert dolby vision 7 to 8.1' });
   var p;
   try { p = spawn(bin, list); } catch (e) { res.writeHead(500, ALLOW); return res.end('could not start the converter'); }
   stats.started++;

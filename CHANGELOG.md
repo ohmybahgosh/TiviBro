@@ -10,6 +10,7 @@
 - **Seek previews ready when you seek right after starting.**  Pictures of the movie in eighths are made from a few seconds in (before, nothing for the first 20 seconds, and nothing at all on a TV short of memory), and while the picture for where you're seeking comes, the nearest one already made shows, dimmed, instead of an empty box.  Seeking fast to where you left off now shows pictures along the way.
 - **▲ ▼ don't seek in movies and episodes.**  People press Down by habit: ▲ ▼ now bring up the bar, and ▼ with the bar up opens the chapters when the file has them.  **CH+ CH−** still skip 10 minutes, or go from chapter to chapter.
 - **Sleeker buttons.**  Resume, From the start and the other buttons on a movie's page, and the tabs on My media and a show's page, are glass pills that turn solid white when picked, with no coloured ring.  The progress line in Resume is a hairline.
+- **Dolby Vision for UHD Blu-ray remuxes (profile 7).**  LG TVs show profile 7 only as HDR10.  TiviBro now plays it as profile 8.1 through the converter, which the TV shows in Dolby Vision: the enhancement layer is dropped and the Dolby Vision metadata rewritten as it copies the video (nothing decoded), as dovi_tool's convert does.  On a TV with Dolby Vision, with the new converter (downloaded once).  **Settings > Playback > Dolby Vision 7 (UHD Blu-ray)** turns it off.
 - Trakt lists named with Trakt already ("Trending movies on Trakt") no longer get "(Trakt)" again in Arrange shelves.
 
 ## 0.6.0 (alpha 159, 2026-11-18)

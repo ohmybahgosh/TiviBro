@@ -99,8 +99,10 @@ var Media = (function () {
     var panel = c.panel4k === false ? 1080 : 2160, res = Math.min(h >= 1600 || w >= 3200 ? 2160 : h >= 900 || w >= 1800 ? 1080 : h >= 650 ? 720 : h ? 480 : 0, panel);
     out.score = res;
     var range = vf.r || (/Dolby Vision/.test(fileInfo(m)) ? 'DV' : /HDR/.test(fileInfo(m)) ? 'HDR10' : '');
-    if (range === 'DV' && vf.p === 7) out.notes.push('Dolby Vision 7 plays as HDR10');
-    if (range === 'DV' && vf.p !== 7 && (tv.dv8 || tv.dv5)) out.score += 300; else if (range === 'DV' || range === 'HDR10' || range === 'HLG') out.score += 200;
+    // Profile 7 plays as 8.1 through the converter (convert.js dv81), unless Settings > Playback turns that off.
+    var dv7 = range === 'DV' && vf.p === 7, as81 = dv7 && tv.dv8 && !(Store.settings && Store.settings.dv7 === 'off');
+    if (dv7) out.notes.push(as81 ? 'Dolby Vision 7 plays as 8.1' : 'Dolby Vision 7 plays as HDR10');
+    if (range === 'DV' && (vf.p !== 7 || as81) && (tv.dv8 || tv.dv5)) out.score += 300; else if (range === 'DV' || range === 'HDR10' || range === 'HLG') out.score += 200;
     var src = MediaStore.source(m.src), net = src && /gdrive|dropbox/i.test(src.kind || src.type || ''), mb = bitrate(m);
     if (mb >= 60 && net) { out.score -= 400; out.notes.push('Heavy for an internet source: ' + mb + ' Mb/s'); }
     else if (mb >= 80) out.notes.push(mb + ' Mb/s');

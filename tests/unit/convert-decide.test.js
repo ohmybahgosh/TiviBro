@@ -111,6 +111,11 @@ Caps._model('OLED65C2PUA');
   ctx.Net.port = 0;
   r = await Convert.plan({ url: 'http://prov.invalid/movie/4.mkv', media: { audio: ['dts'] } });
   ok('plan: no network helper, nothing to do', r === null, r);
-  console.log(fail ? fail + ' failed' : 'all passed');
+  // Dolby Vision profile 7: as 8.1 through the converter on a TV with Dolby Vision, when the converter can.
+ok('profile 7, a converter that can, a TV with Dolby Vision: as 8.1', Convert._dv81({ dv: 7, p81: true }, { tv: { dv8: true } }));
+ok('...not with an older converter', !Convert._dv81({ dv: 7, p81: false }, { tv: { dv8: true } }));
+ok('...not on a TV without Dolby Vision', !Convert._dv81({ dv: 7, p81: true }, { tv: {} }));
+ok('...not for profile 8', !Convert._dv81({ dv: 8, p81: true }, { tv: { dv8: true } }));
+console.log(fail ? fail + ' failed' : 'all passed');
   process.exit(fail ? 1 : 0);
 })();

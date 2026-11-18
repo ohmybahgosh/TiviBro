@@ -31,6 +31,7 @@
 #   JOBS                               parallel make jobs (default: nproc)
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 FFMPEG_VERSION="${FFMPEG_VERSION:-7.1.1}"
 FFMPEG_SHA256="${FFMPEG_SHA256:-733984395e0dbbe5c046abda2dc49a5544e7e0e1e2366bba849222ae9e3a03b1}"
 MBEDTLS_VERSION="${MBEDTLS_VERSION:-3.6.5}"
@@ -198,14 +199,15 @@ build_mbedtls() {
 # Only what the helper needs.  Everything else stays disabled.
 FF_COMPONENTS=(
   --enable-protocol=file,pipe,tcp,http
-  --enable-demuxer=matroska,mov,mpegts,avi,flv
+  --enable-demuxer=matroska,mov,mpegts,avi,flv,hevc
   --enable-decoder=dca,truehd,mlp,flac,ac3,eac3,aac,mp3,mp3float,mp2,mp2float,opus,vorbis,'pcm_*'
   # Seek previews (service/seekprev.js): one keyframe decoded in software, made small, out as a JPEG.
   --enable-decoder=h264,hevc,mpeg2video,mpeg4
   --enable-encoder=ac3,eac3,aac,mjpeg
   --enable-parser=h264,hevc,av1,mpeg4video,mpegvideo,vp9,aac,aac_latm,ac3,dca,flac,mlp,mpegaudio,opus,vorbis
-  --enable-bsf=h264_mp4toannexb,hevc_mp4toannexb,aac_adtstoasc,extract_extradata,vp9_superframe,av1_frame_split
-  --enable-muxer=matroska,mpegts,mp4,adts,null,mjpeg,image2pipe
+  # dovi_rpu with TiviBro's p81 (patches/dovi-rpu-p81.patch): Dolby Vision profile 7 played as profile 8.1.
+  --enable-bsf=h264_mp4toannexb,hevc_mp4toannexb,aac_adtstoasc,extract_extradata,vp9_superframe,av1_frame_split,dovi_rpu
+  --enable-muxer=matroska,mpegts,mp4,adts,null,mjpeg,image2pipe,hevc
   --enable-filter=aresample,aformat,anull,pan,abuffer,abuffersink,atrim,asetpts,anullsink,buffer,buffersink,scale,format,null
 )
 
@@ -243,6 +245,13 @@ build_ffmpeg() {
   local src="$base/ffmpeg"
   rm -rf "$src" && mkdir -p "$src"
   tar xJf "$FF_TARBALL" -C "$src" --strip-components=1
+  # TiviBro's own changes to ffmpeg (each one described at the top of its file), applied in name order.
+  local pf
+  for pf in "$SCRIPT_DIR"/patches/*.patch; do
+    [ -f "$pf" ] || continue
+    log "Applying $(basename "$pf")"
+    ( cd "$src" && patch -p1 --forward --quiet < "$pf" ) || die "patch $(basename "$pf") failed"
+  done
 
   local configure=(
     ./configure
@@ -394,6 +403,8 @@ smoke_test() {
     grep -qE "^ V[^ ]* +$need " <<<"$decs" || { echo "  FAIL: decoder $need missing" >&2; fail=1; }
   done
   grep -qE "^ V[^ ]* +mjpeg " <<<"$encs" || { echo "  FAIL: encoder mjpeg missing" >&2; fail=1; }
+  # Dolby Vision profile 7 as 8.1 (convert.js): the dovi_rpu filter with TiviBro's p81 option.
+  "$q" "$bin" -hide_banner -h bsf=dovi_rpu 2>/dev/null | grep -q "p81" || { echo "  FAIL: dovi_rpu p81 missing" >&2; fail=1; }
   local want_protos=(http pipe tcp file)
   [ "$ENABLE_TLS" = 1 ] && want_protos+=(https)
   for need in "${want_protos[@]}"; do
@@ -404,6 +415,18 @@ smoke_test() {
   fi
   echo "  ok: components and license"
 
+  log "[$arch] Dolby Vision profile 7 -> 8.1: the enhancement layer gone, the RPU rewritten and still readable"
+  "${ff[@]}" -f hevc -i "$SCRIPT_DIR/fixtures/dv-p7.hevc" -c copy -bsf:v dovi_rpu=p81=1 -f hevc "$t/p81.hevc" || fail=1
+  python3 - "$SCRIPT_DIR/fixtures/dv-p7.hevc" "$t/p81.hevc" <<'PY' || fail=1
+import re, sys
+def kinds(f):
+    d = open(f, 'rb').read()
+    return [(d[m.end()] >> 1) & 0x3f for m in re.finditer(b'\x00\x00\x01', d) if m.end() < len(d)]
+a, b = kinds(sys.argv[1]), kinds(sys.argv[2])
+print('  in: EL %d RPU %d   out: EL %d RPU %d' % (a.count(63), a.count(62), b.count(63), b.count(62)))
+sys.exit(0 if a.count(63) > 0 and b.count(63) == 0 and b.count(62) == a.count(62) else 1)
+PY
+  "${ff[@]}" -xerror -f hevc -i "$t/p81.hevc" -f null - || { echo "  FAIL: the 8.1 stream does not decode" >&2; fail=1; }
   log "[$arch] seek preview: one keyframe at 6 s -> a 160 px JPEG"
   "${ff[@]}" -threads 1 -skip_frame nokey -noaccurate_seek -ss 6 -i "$fx/dts51.mkv" -map 0:v:0 -an -frames:v 1 -fps_mode passthrough \
     -vf scale=160:-2,format=yuvj420p -q:v 7 -f mjpeg pipe:1 > "$t/frame.jpg" || fail=1

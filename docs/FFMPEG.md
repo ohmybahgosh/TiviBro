@@ -173,3 +173,19 @@ nice -n 15 ffmpeg -hide_banner -nostdin -loglevel error -threads 1 -protocol_whi
 - **The piece cache** (`service/blockcache.js`, `/preview/<key>/src`): ffmpeg reads the movie through the helper, which keeps what was read in 128 KB pieces (16 MB at most, 4 MB on a TV short of memory) and answers at most 256 KB at a time; `-reconnect_at_eof` makes ffmpeg ask again from where it got to.  Every run reads the file's start and index again, and those now come from memory: from the second picture on, only the pieces around the keyframe are asked from the source (one or two requests instead of five to seven).  Without the 256 KB answers, the network buffers let one connection swallow many MB ffmpeg never used.
 - On a 2022 C2 (65", 2 GB), from Google Drive through the helper, before the piece cache: a 1080p H.264 MP4 picture in 2.2 to 3.1 s at about 30 MB of memory, a 4K HEVC MKV one in 4.6 to 4.8 s at about 68 MB.  A 4K frame takes over twice the memory, so with Memory-safe playback on the app asks only for movies up to 1080p (Settings > Playback > Seek previews, Automatic).
 - One ffmpeg at a time, the newest "now" request first, pictures kept in memory for the movie playing (up to 200, about 3 MB).
+
+## Dolby Vision profile 7 as 8.1
+
+UHD Blu-ray remuxes carry Dolby Vision profile 7: an HDR10 base layer, an enhancement layer (NAL units of type 63) and the RPU (type 62) with the Dolby Vision metadata.  LG's player shows profile 7 only as HDR10.  Profile 8.1 (base layer and RPU, no enhancement layer) it shows in Dolby Vision.
+
+The converter does what `dovi_tool convert --discard` (mode 2) does, while it copies the video, so nothing is decoded or encoded: `-bsf:v dovi_rpu=p81=1`.  `p81` is TiviBro's own option on ffmpeg's `dovi_rpu` filter (`scripts/ffmpeg/patches/dovi-rpu-p81.patch`, applied by `build.sh`):
+
+- the enhancement layer's NAL units are dropped;
+- each RPU is read with ffmpeg's own parser, then written again saying there is no enhancement layer (`disable_residual_flag`, no NLQ) with the identity reshaping, so the base layer is shown as it is, with the Dolby Vision brightness metadata (L1, L2, L5, L6, L8 and the rest) unchanged;
+- the stream's Dolby Vision configuration record says profile 8, compatibility id 1 (HDR10), no enhancement layer, so the MKV says 8.1.
+
+A full enhancement layer (FEL) adds detail the base layer doesn't have; that is lost, as with dovi_tool.  For the minimal enhancement layer most discs have, nothing is lost.
+
+`service/convert.js` reads the profile from the probe (`DOVI configuration record: ... profile: 7`), checks once that the converter has `p81` (`ffmpeg -h bsf=dovi_rpu`), and uses it when the app asks with `&dv=81`.  The app asks (`app/js/convert.js` `dv81`) for a profile 7 file on a TV with Dolby Vision, unless **Settings > Playback > Dolby Vision 7 (UHD Blu-ray)** is Off; the converted movie goes to the TV's own player as MKV, since the in-app player has no Dolby Vision.
+
+The smoke test runs the filter on `scripts/ffmpeg/fixtures/dv-p7.hevc`, a one-second clip shaped like profile 7 (made with `make-dv-p7.py` and `gen_p7.c`, ffmpeg's own RPU writer), and checks that the enhancement layer is gone, every RPU is still there, and the result decodes.

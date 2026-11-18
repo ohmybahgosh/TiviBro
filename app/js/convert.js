@@ -100,7 +100,7 @@ var Convert = (function () {
     var ua = typeof Net !== 'undefined' ? Net.ua : '';
     return base() + '/convert/' + key + '/movie.' + (conv.fmt === 'ts' ? 'ts' : 'mkv') + '?u=' + encodeURIComponent(conv.src) +
       '&t=' + (Math.round((conv.t || 0) * 1000) / 1000) + '&a=' + (conv.a | 0) +
-      (conv.codec ? '&c=' + encodeURIComponent(conv.codec) + '&ch=' + (conv.channels | 0) + (conv.rate ? '&sr=' + (conv.rate | 0) : '') : '') + (ua ? '&ua=' + encodeURIComponent(ua) : '');
+      (conv.codec ? '&c=' + encodeURIComponent(conv.codec) + '&ch=' + (conv.channels | 0) + (conv.rate ? '&sr=' + (conv.rate | 0) : '') : '') + (conv.dv === 81 ? '&dv=81' : '') + (ua ? '&ua=' + encodeURIComponent(ua) : '');
   }
   function probe(url) {
     var k = url + '|' + (typeof Net !== 'undefined' ? Net.ua : '');
@@ -142,6 +142,16 @@ var Convert = (function () {
       }
       return within(probe(o.url), 12000).then(function (info) {
         var d = decide(info.audio, c, { lang: settings().audioLang === 'orig' ? '' : settings().audioLang || '' });
+        /* Dolby Vision profile 7 (UHD Blu-ray remuxes): LG's player shows only its HDR10 base.  Through the
+           converter as profile 8.1 it shows in Dolby Vision (service/convert.js, p81): the sound converted only
+           if it needs it, the video copied.  For the TV's own player (MKV): the in-app player has no Dolby Vision. */
+        if (dv81(info, c)) {
+          var a81 = d.action === 'convert' || d.action === 'track' ? d.a : d.a != null ? d.a : 0, t81 = info.audio[a81] || {};
+          return ensureKey().then(function () {
+            return { conv: { src: o.url, a: a81, fmt: 'mkv', video: info.video || '', codec: t81.codec || '', channels: t81.channels || 0, rate: t81.rate || 0, tracks: info.audio, bad: d.bad, dur: info.duration || 0, dv: 81 },
+              notice: d.action === 'convert' ? 'Dolby Vision 7 as 8.1, and ' + (NAMES[d.codec] || d.codec.toUpperCase()) + ' audio converted' : 'Dolby Vision 7 played as 8.1' };
+          });
+        }
         if (d.action === 'play') return null;
         if (d.action === 'track') return { track: d.a, tracks: info.audio, bad: d.bad, dur: info.duration, video: info.video || '' };
         return ensureKey().then(function () {
@@ -151,6 +161,8 @@ var Convert = (function () {
       });
     }).catch(function (e) { if (typeof Log !== 'undefined') Log.warn('convert', 'Could not check the sound: ' + e.message); return null; });
   }
+  // Profile 7 as 8.1: the file is profile 7, the converter can (ffmpeg-7.1-tb3), the TV has Dolby Vision, and it isn't off.
+  function dv81(info, c) { return !!(info && info.dv === 7 && info.p81 && c && c.tv && c.tv.dv8 && settings().dv7 !== 'off'); }
   // A live channel whose sound turned out to be unplayable (Player's media callback).
   function planLive(url, codec, channels, rate) {
     if (!on() || !base()) return Promise.resolve(null);
@@ -190,5 +202,5 @@ var Convert = (function () {
   function noSound(what) { return what + ' sound, which this TV can\'t play.  Settings > Playback > Audio and subtitles can get the audio converter, or pick another audio track.'; }
 
   return { fmtFor: fmtFor, on: on, status: status, get: get, remove: remove, describe: describe, decide: decide, link: link, plan: plan, planLive: planLive, offer: offer, noSound: noSound,
-    probe: probe, ensureKey: ensureKey, NAMES: NAMES, get key() { return key; }, _reset: function () { key = ''; st = null; probes = {}; } };
+    probe: probe, ensureKey: ensureKey, NAMES: NAMES, _dv81: dv81, get key() { return key; }, _reset: function () { key = ''; st = null; probes = {}; } };
 })();
