@@ -182,6 +182,7 @@ The converter does what `dovi_tool convert --discard` (mode 2) does, while it co
 
 - the enhancement layer's NAL units are dropped;
 - each RPU is read with ffmpeg's own parser, then written again saying there is no enhancement layer (`disable_residual_flag`, no NLQ) with the identity reshaping, so the base layer is shown as it is, with the Dolby Vision brightness metadata (L1, L2, L5, L6, L8 and the rest) unchanged;
+- a remux cropped to the picture (wider than 16:9, like a 2.39:1 film as 3840x1604) gets its L5 active area set to none, as `dovi_tool --crop` does: the disc's RPU describes the letterbox bars of the full 2160-line frame, and an LG TV darkened bands of the picture itself where those bars would be;
 - the stream's Dolby Vision configuration record says profile 8, compatibility id 1 (HDR10), no enhancement layer, so the MKV says 8.1.
 
 A full enhancement layer (FEL) adds detail the base layer doesn't have; that is lost, as with dovi_tool.  For the minimal enhancement layer most discs have, nothing is lost.

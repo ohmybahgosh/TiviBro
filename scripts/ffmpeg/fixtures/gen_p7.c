@@ -34,8 +34,10 @@ int main(int argc, char **argv) {
         for (int i = 0; i < 9; i++) { c->ycc_to_rgb_matrix[i] = av_make_q(i % 4 == 0 ? 8192 : 0, 8192); c->rgb_to_lms_matrix[i] = av_make_q(i % 4 == 0 ? 16384 : 0, 16384); }
         for (int i = 0; i < 3; i++) c->ycc_to_rgb_offset[i] = av_make_q(1 << 28, 1 << 28);
         c->signal_eotf = 65535; c->signal_bit_depth = 12; c->signal_color_space = 0; c->signal_chroma_format = 0; c->source_min_pq = 62; c->source_max_pq = 3696; c->source_diagonal = 42;
-        m->num_ext_blocks = 1; m->ext_block_offset = m->ext_block_offset; /* allocated with room for ext blocks */
+        m->num_ext_blocks = 2; /* allocated with room for ext blocks */
         AVDOVIDmData *dm = av_dovi_get_ext(m, 0); dm->level = 1; dm->l1.min_pq = 10; dm->l1.max_pq = 2000 + f; dm->l1.avg_pq = 800;
+        /* L5: the letterbox of a full 2160-line frame (what a disc's RPU says, kept in a cropped remux) */
+        AVDOVIDmData *d5 = av_dovi_get_ext(m, 1); d5->level = 5; d5->l5.top_offset = 278; d5->l5.bottom_offset = 278;
         uint8_t *out; int size;
         if (ff_dovi_rpu_generate(&s, m, FF_DOVI_WRAP_NAL, &out, &size) < 0) { fprintf(stderr, "generate failed\n"); return 1; }
         unsigned char len[4] = { size >> 24, size >> 16, size >> 8, size }; fwrite(len, 1, 4, stdout); fwrite(out, 1, size, stdout);

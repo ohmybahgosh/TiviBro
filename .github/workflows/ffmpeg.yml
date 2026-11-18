@@ -10,7 +10,7 @@ on:
       tag:
         description: Release tag to create or update
         required: true
-        default: ffmpeg-7.1-tb3
+        default: ffmpeg-7.1-tb4
 
 permissions:
   contents: write

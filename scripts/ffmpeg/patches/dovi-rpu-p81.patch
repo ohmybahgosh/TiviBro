@@ -1,17 +1,18 @@
 --- a/libavcodec/bsf/dovi_rpu.c
 +++ b/libavcodec/bsf/dovi_rpu.c
-@@ -40,8 +40,40 @@
+@@ -40,8 +40,52 @@
  
      int strip;
      int compression;
 +    int p81;
++    int cropped;
  } DoviRpuContext;
  
 +/* TiviBro: profile 7 (UHD Blu-ray, base and enhancement layer) as profile 8.1, the way dovi_tool's
 + * "convert --discard" (mode 2) does: the enhancement layer is dropped, the RPU says there is none
 + * (disable_residual_flag), and its reshaping becomes the identity, so the base layer (HDR10) is shown with
 + * the Dolby Vision dynamic metadata (L1, L2, L5, L6, L8...) kept as it was. */
-+static void to_p81(AVDOVIMetadata *m)
++static void to_p81(AVDOVIMetadata *m, int cropped)
 +{
 +    AVDOVIRpuDataHeader *hdr = (AVDOVIRpuDataHeader *) av_dovi_get_header(m);
 +    AVDOVIDataMapping *map = (AVDOVIDataMapping *) av_dovi_get_mapping(m);
@@ -36,22 +37,33 @@
 +    map->num_y_partitions = 1;
 +    memset(map->nlq, 0, sizeof(map->nlq));
 +    map->nlq_pivots[0] = map->nlq_pivots[1] = 0;
++
++    /* A remux cropped to the picture (3840x1604 from a 3840x2160 disc) keeps the disc's L5 active area, the
++     * letterbox bars of the full frame: the TV then darkens bands of the picture itself.  As dovi_tool's
++     * --crop does, no bars then. */
++    if (cropped) {
++        for (int i = 0; i < m->num_ext_blocks; i++) {
++            AVDOVIDmData *dm = av_dovi_get_ext(m, i);
++            if (dm->level == 5)
++                dm->l5.left_offset = dm->l5.right_offset = dm->l5.top_offset = dm->l5.bottom_offset = 0;
++        }
++    }
 +}
 +
  static int update_rpu(AVBSFContext *bsf, const AVPacket *pkt, int flags,
                        const uint8_t *rpu, size_t rpu_size,
                        uint8_t **out_rpu, int *out_size)
-@@ -66,6 +98,9 @@
+@@ -66,6 +110,9 @@
          return ret;
      }
  
 +    if (s->p81)
-+        to_p81(metadata);
++        to_p81(metadata, s->cropped);
 +
      if (pkt && !(pkt->flags & AV_PKT_FLAG_KEY))
          flags |= FF_DOVI_COMPRESS_RPU;
      ret = ff_dovi_rpu_generate(&s->enc, metadata, flags, out_rpu, out_size);
-@@ -80,10 +115,18 @@
+@@ -80,10 +127,18 @@
                                           CodedBitstreamFragment *au)
  {
      DoviRpuContext *s = bsf->priv_data;
@@ -71,17 +83,21 @@
      if (!nal || nal->type != HEVC_NAL_UNSPEC62)
          return 0;
  
-@@ -192,6 +235,9 @@
+@@ -192,6 +247,13 @@
      s->dec.logctx = s->enc.logctx = bsf;
      s->enc.enable = 1;
  
-+    if (s->p81)
++    if (s->p81) {
 +        s->compression = AV_DOVI_COMPRESSION_NONE; /* profile 8.1 for TVs: uncompressed RPUs */
++        /* Wider than 16:9: the bars were cropped off (a 2.39:1 film as 3840x1604) */
++        s->cropped = bsf->par_in->width > 0 && bsf->par_in->height > 0 &&
++                     bsf->par_in->height * 16 < bsf->par_in->width * 9 - 16;
++    }
 +
      if (s->compression == AV_DOVI_COMPRESSION_RESERVED) {
          av_log(bsf, AV_LOG_ERROR, "Invalid compression level: %d\n", s->compression);
          return AVERROR(EINVAL);
-@@ -212,6 +258,17 @@
+@@ -212,6 +274,17 @@
              cfg = (AVDOVIDecoderConfigurationRecord *) sd->data;
              s->dec.cfg = *cfg;
  
@@ -99,7 +115,7 @@
              /* Update configuration record before setting to enc ctx */
              cfg->dv_md_compression = s->compression;
              if (s->compression && s->dec.cfg.dv_profile < 8) {
-@@ -256,6 +313,7 @@
+@@ -256,6 +329,7 @@
  #define FLAGS (AV_OPT_FLAG_VIDEO_PARAM|AV_OPT_FLAG_BSF_PARAM)
  static const AVOption dovi_rpu_options[] = {
      { "strip",          "Strip Dolby Vision metadata",  OFFSET(strip),       AV_OPT_TYPE_BOOL,  { .i64 = 0 }, 0, 1, FLAGS },
