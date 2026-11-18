@@ -141,7 +141,7 @@ var Convert = (function () {
         return { offer: NAMES[bad ? known[0] : 'dts'] || 'DTS', guessed: !bad };
       }
       return within(probe(o.url), 12000).then(function (info) {
-        var d = decide(info.audio, c, { lang: settings().audioLang || '' });
+        var d = decide(info.audio, c, { lang: settings().audioLang === 'orig' ? '' : settings().audioLang || '' });
         if (d.action === 'play') return null;
         if (d.action === 'track') return { track: d.a, tracks: info.audio, bad: d.bad, dur: info.duration, video: info.video || '' };
         return ensureKey().then(function () {

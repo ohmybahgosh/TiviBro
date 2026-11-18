@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- **Audio tracks, clearer and picked better.**  The player's Audio track list says each track's language, its sound (Dolby Digital 5.1, DTS-HD MA 7.1, AAC stereo) and its name in the file, with commentaries and described audio marked, for movies and episodes from files.  A commentary is never picked by itself, and a file that starts on one switches to the movie's own track.
+- **Audio language: Original language.**  Settings > Playback > Audio language has a new choice: each movie's own language (from its details on TMDB), never a dub or a commentary.  Without details (a provider's title), the file's own first track, which is the original in most files.
+- **Forced subtitles come on by themselves.**  A subtitle track flagged forced, or named Forced, Foreign parts or Signs, in the language you're hearing, comes on when no other subtitles are on: the lines for the parts spoken in another language.  Off in the Subtitles menu turns it off.
+- **Old subtitle files read right.**  Downloaded subtitles saved in their language's old Windows code page (Polish, Czech, Hungarian, Russian, Ukrainian, Bulgarian, Greek, Turkish, Hebrew, Arabic, Baltic) showed garbled letters.  They come out right now.
+
 ## 0.6.0 (alpha 156, 2026-11-17)
 
 Pre-release: expect rough edges, and keep a backup before installing.

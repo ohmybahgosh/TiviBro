@@ -868,10 +868,31 @@ var Views = (function () {
     Player.setAspect(nk, c);
     U.toast('Aspect: ' + Player.aspectName(nk) + (c ? (mode === 'vod' ? ' for this video' : ' for this channel') : ''));
   }
+  /* Audio track: each track with its language, its sound (Dolby Digital 5.1, DTS-HD MA 7.1, AAC stereo) and its
+     name in the file (Commentary, Descriptive audio), read by the TiviBro service for movies and episodes from files
+     (the TV's own list only has a language).  A commentary or a described track says so. */
+  var CODEC_NAMES = { ac3: 'Dolby Digital', eac3: 'Dolby Digital Plus', truehd: 'Dolby TrueHD', dts: 'DTS', aac: 'AAC', mp3: 'MP3', mp2: 'MP2', flac: 'FLAC', opus: 'Opus', vorbis: 'Vorbis', mlp: 'MLP' };
+  function chName(n) { return n >= 8 ? '7.1' : n === 7 ? '6.1' : n === 6 ? '5.1' : n === 2 ? 'stereo' : n === 1 ? 'mono' : n ? n + ' channels' : ''; }
   function audioMenu() {
     var tracks = Player.audioTracks();
     if (tracks.length < 2) { U.toast('This stream has one audio track'); return; }
-    UI.menu('Audio track', tracks.map(function (t) { return { label: t.label, sub: t.on ? 'playing' : '', action: function () { Player.setAudio(t.id); if (mode === 'vod' && vod && Subs.rememberAudio) Subs.rememberAudio(vod.meta, t); } }; }));
+    var show = function (info) {
+      var a = info && info.audio && info.audio.length === tracks.length ? info.audio : null;
+      UI.menu('Audio track', tracks.map(function (t, i) {
+        var x = a && a[i], d = Player.describeTrack ? Player.describeTrack({ label: (t.label || '') + ' ' + (x && x.title || ''), lang: t.lang, kind: t.kind, ch: x ? x.channels : t.ch }) : {};
+        var lang = Subs.langName ? Subs.langName(U.lang(x && x.lang || t.lang || t.label) || '') : '';
+        var sound = x ? [x.codec === 'dts' && /MA/i.test(x.profile) ? 'DTS-HD MA' : x.codec === 'dts' && /HD|X/i.test(x.profile) ? 'DTS-HD' : CODEC_NAMES[x.codec] || String(x.codec || '').toUpperCase(), chName(x.channels)].filter(Boolean).join(' ') : '';
+        var what = d.commentary ? 'Commentary' : d.ad ? 'Descriptive audio' : '';
+        var label = [lang || t.label, sound].filter(Boolean).join('  ·  ') || t.label;
+        var sub = [t.on ? 'playing' : '', what, x && x.title && !/^(stereo|surround|5\.1|7\.1|english|main)$/i.test(x.title) && x.title.toLowerCase() !== (lang || '').toLowerCase() ? x.title : ''].filter(Boolean).join('  ·  ');
+        return { label: label, sub: sub, current: t.on, action: function () { Player.setAudio(t.id); if (mode === 'vod' && vod && Subs.rememberAudio) Subs.rememberAudio(vod.meta, t); } };
+      }));
+    };
+    var src = mode === 'vod' && vod && typeof SeekPrev !== 'undefined' ? SeekPrev._source(vod.url) : '';
+    if (!src || typeof Convert === 'undefined' || !Convert.probe) return show(null);
+    // The file's own track list (cached after the first time), or the plain one if it takes more than 2 s.
+    var done = false, t0 = setTimeout(function () { if (!done) { done = true; show(null); } }, 2000);
+    Convert.probe(src).then(function (info) { if (done) return; done = true; clearTimeout(t0); show(info); }, function () { if (done) return; done = true; clearTimeout(t0); show(null); });
   }
   function sleepMenu() {
     UI.menu('Sleep timer', [15, 30, 45, 60, 90, 120].map(function (m) {

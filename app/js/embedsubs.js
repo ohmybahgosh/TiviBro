@@ -297,7 +297,8 @@ var EmbedSubs = (function () {
         trackEl.srclang = trackMeta[k].srclang;
         trackEl.track._embedded = true;
         trackEl.track._tbMkv = true;            // drawn here (and by the TV), not by Subs' own drawing (subs.js)
-        trackEl.track._forced = !!trackMeta[k].forced;
+        // Forced: flagged in the file, or named so ("Forced", "Foreign parts only", "Signs").
+        trackEl.track._forced = !!trackMeta[k].forced || /\bforced\b|foreign( parts)?( only)?|\bsigns\b|\bfpo\b/i.test(trackMeta[k].label || '');
         if (adapter.lazy) trackEl.track._embedLoad = loadFor(k);
         video.appendChild(trackEl);
         addedEls.push(trackEl);
@@ -316,6 +317,13 @@ var EmbedSubs = (function () {
       if (wantKey != null && !otherShowing()) intent = liveTracks.map(function (t) { return wantKey && keyOf(t) === wantKey ? 'showing' : 'disabled'; });
       if (intent.indexOf('showing') < 0 && !video._subsChoice && !otherShowing() && typeof Subs !== 'undefined' && Subs.autoOn) {
         for (var a = 0; a < liveTracks.length; a++) if (Subs.autoOn(liveTracks[a], video)) { intent[a] = 'showing'; break; }
+      }
+      /* No subtitles on: a forced track in the language being heard comes on by itself (the lines for the parts
+         spoken in another language, signs and letters), as on a disc player.  Off in the Subtitles menu turns it
+         off like any other. */
+      if (intent.indexOf('showing') < 0 && !video._subsChoice && !otherShowing() && typeof Player !== 'undefined' && Player.audioTracks) {
+        var heard = (Player.audioTracks().filter(function (t) { return t.on; })[0] || {}), hl = U.lang(heard.lang || heard.label || '') || U.lang(Store.settings.audioLang === 'orig' ? '' : Store.settings.audioLang || '');
+        for (var f = 0; f < liveTracks.length; f++) if (liveTracks[f]._forced && (!hl || U.lang(liveTracks[f].language || liveTracks[f].label) === hl)) { intent[f] = 'showing'; if (typeof Log !== 'undefined') Log.info('player', 'Forced subtitles on: "' + liveTracks[f].label + '"'); break; }
       }
       // A choice in the Subtitles menu meanwhile (views.js counts them in video._subsRev and keeps the
       // chosen track in video._subsWant, null for Off) is what gets put back instead.

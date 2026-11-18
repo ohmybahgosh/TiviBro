@@ -65,6 +65,7 @@ function details(m, en, language) {
   out.title = field('title', str(m.title, 200), str(en.title, 200));
   out.plot = field('plot', str(m.overview, 5000), str(en.overview, 5000));
   out.genre = field('genre', genres(m), genres(en));
+  out.originalLanguage = str(m.original_language || en.original_language, 8);   // for Audio language: Original (player.js)
   out.year = str(m.release_date || en.release_date, 4);
   out.releaseDate = str(m.release_date || en.release_date, 10);
   out.runtime = (m.runtime || en.runtime) > 0 ? Math.min(9999, m.runtime || en.runtime) + ' min' : '';

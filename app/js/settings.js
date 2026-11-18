@@ -165,7 +165,7 @@ var Settings = (function () {
   function audioSubs() {
     var s = S(), out = [];
     out.push(action('Audio language', 'Try this language first when a channel or movie has several audio tracks.  If it is missing, the fallback language below, else the stream\'s own track.  Track language labels must be supplied by the file or stream.', function () {
-      langMenu('Audio language', 'The stream\'s own choice', s.audioLang, function (v) { s.audioLang = v; save(); });
+      langMenu('Audio language', 'The stream\'s own choice', s.audioLang, function (v) { s.audioLang = v; save(); }, true);
     }, function () { return langName(s.audioLang, 'Stream\'s choice'); }));
     out.push(action('Fallback audio language', 'Used when your preferred audio language is missing.  Off keeps the stream\'s own track.', function () {
       langMenu('Fallback audio language', 'Off (the stream\'s own track)', s.audioFallback, function (v) { s.audioFallback = v; save(); });
@@ -1152,9 +1152,11 @@ var Settings = (function () {
     return out;
   }
 
-  function langName(code, none) { for (var i = 0; i < U.LANGS.length; i++) if (U.LANGS[i][0] === code) return U.LANGS[i][1]; return none || code || ''; }
-  function langMenu(title, noneLabel, cur, set) {
+  function langName(code, none) { if (code === 'orig') return 'Original language'; for (var i = 0; i < U.LANGS.length; i++) if (U.LANGS[i][0] === code) return U.LANGS[i][1]; return none || code || ''; }
+  // orig: also "Original language" (Audio language: each movie's own, never a dub or a commentary).
+  function langMenu(title, noneLabel, cur, set, orig) {
     UI.menu(title, [{ label: noneLabel, sub: !cur ? 'on' : '', action: function () { set(''); } }]
+      .concat(orig ? [{ label: 'Original language', sub: cur === 'orig' ? 'on' : 'the movie or show\'s own: no dub, no commentary', action: function () { set('orig'); } }] : [])
       .concat(U.LANGS.map(function (l) { return { label: l[1], sub: cur === l[0] ? 'on' : '', action: function () { set(l[0]); } }; })));
   }
   function watchlist() {

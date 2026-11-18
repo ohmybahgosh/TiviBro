@@ -23,7 +23,8 @@ var Subs = (function () {
   function langs() {
     var l = Store.settings.subLangs;
     if (Array.isArray(l) && l.length) return l;
-    return [Store.settings.subsLang || Store.settings.audioLang || 'en'];
+    var a = Store.settings.audioLang === 'orig' ? '' : Store.settings.audioLang;
+    return [Store.settings.subsLang || a || 'en'];
   }
   function langList() { return U.LANGS.map(function (l) { return [l[0], l[1]]; }).concat(EXTRA); }
   function langName(code) { var l = langList().filter(function (x) { return x[0] === code; })[0]; return l ? l[1] : code; }
@@ -480,7 +481,7 @@ var Subs = (function () {
   }
   function fetchOne(x) {
     U.toast('Downloading…', 3000);
-    token().then(function (tk) { return ask('get', { key: state.key, token: tk, id: x.id }); }).then(function (j) {
+    token().then(function (tk) { return ask('get', { key: state.key, token: tk, id: x.id, lang: x.lang || '' }); }).then(function (j) {
       var cues = parse(j.text);
       if (!cues.length) throw new Error('That file had no subtitles TiviBro can read.');
       addTrack(langName(x.lang) + ' (OpenSubtitles)', x.lang, cues);

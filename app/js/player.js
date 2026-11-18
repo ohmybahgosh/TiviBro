@@ -713,19 +713,26 @@ var Player = (function () {
      track picked by hand from the quick menu wins until the channel changes. */
   var SURROUND = /5\.1|7\.1|\b[68] ?ch\b|\bac-?3\b|e-?ac-?3|\bdd\+?|dolby|atmos|surround|dts/i;
   var DESCRIBED = /\b(ad|audio ?desc\w*|descriptive|description|visually impaired|vi)\b/i;
+  // A commentary (the director's, the cast's): never picked by itself, whatever its language.
+  var COMMENTARY = /comment|kommentar|commentaire|comentario|commento|коммент|director'?s|isolated score/i;
   function describeTrack(t) {
     var text = (t.label || '') + ' ' + (t.lang || '');
-    return { lang: U.lang(t.lang) || U.lang(t.label), surround: t.ch > 2 || SURROUND.test(text), ad: /desc/i.test(t.kind || '') || DESCRIBED.test(text) };
+    return { lang: U.lang(t.lang) || U.lang(t.label), surround: t.ch > 2 || SURROUND.test(text), ad: /desc/i.test(t.kind || '') || DESCRIBED.test(text), commentary: /commentary/i.test(t.kind || '') || COMMENTARY.test(text) };
   }
   function bestAudio(list, want, surround, fallback) {
     fallback = fallback || '';
-    if (!want && !surround) return null;
+    var onNow = list.filter(function (t) { return t.on; })[0], extra = onNow && (describeTrack(onNow).commentary || describeTrack(onNow).ad);
+    if (!want && !surround && !extra) return null;          // the stream's own track, unless that is a commentary or a described one
     var best = null, bestScore = -1e9;
     list.forEach(function (t) {
-      var d = describeTrack(t), sc = (want && d.lang === want ? 200 : want && fallback && d.lang === fallback ? 100 : 0) + (surround && d.surround ? 10 : 0) - (d.ad ? 50 : 0) + (t.on ? 1 : 0);
+      var d = describeTrack(t), sc = (want && d.lang === want ? 200 : want && fallback && d.lang === fallback ? 100 : 0) + (surround && d.surround ? 10 : 0) - (d.ad ? 50 : 0) - (d.commentary ? 300 : 0) + (t.on ? 1 : 0);
       if (sc > bestScore) { best = t; bestScore = sc; }
     });
     return best;
+  }
+  function originalLang(meta) {
+    var it = meta && meta.item, md = it && it.metadata || {};
+    return U.lang(md.originalLanguage || (meta && meta.originalLanguage) || '') || '';
   }
   function preferAudio() {
     if (!eng || !eng.audio || !cur || cur.userAudio || cur.conv) return;
@@ -740,7 +747,10 @@ var Player = (function () {
     if (cur.badTracks) list = list.filter(function (t) { return !cur.badTracks[t.id]; });
     // The language chosen for this movie or episode, or another episode of its show, comes first (subs.js).
     var memo = cur.meta && typeof Subs !== 'undefined' && Subs.audioFor ? Subs.audioFor(cur.meta) : '';
-    var b = bestAudio(list, memo || s.audioLang || '', !!s.audioSurround, memo ? s.audioLang || s.audioFallback || '' : s.audioFallback || '');
+    // Audio language Original: the title's own language (TMDB, My media's details), else the file's own choice
+    // (which, being the original's, is what most files carry first), never a commentary or a described track.
+    var pref = s.audioLang === 'orig' ? originalLang(cur.meta) : s.audioLang || '';
+    var b = bestAudio(list, memo || pref, !!s.audioSurround, memo ? pref || s.audioFallback || '' : s.audioFallback || '');
     if (b && !b.on) { Log.info('player', 'Audio: "' + b.label + '" (' + (memo ? 'as chosen for this ' + (Subs.showKey(cur.meta) ? 'show' : 'title') : 'preferred language') + (s.audioSurround ? ', surround' : '') + ')'); eng.setAudio(b.id); }
   }
 
@@ -1637,7 +1647,7 @@ var Player = (function () {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
     PRESETS: PRESETS, memorySafe: memorySafe, get memSafe() { return memSafe() ? (typeof Store !== 'undefined' && Store.settings && Store.settings.memSafe === 'on' ? 'turned on in Settings' : safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, get startStatus() { return startStatus(); }, on: on,
     seek: seek, seekTo: seekTo, liveWindow: liveWindow, liveSeek: liveSeek, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
-    audioTracks: function () { return eng && eng.audio ? eng.audio() : []; },
+    audioTracks: function () { return eng && eng.audio ? eng.audio() : []; }, describeTrack: describeTrack,
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },
     qualityAuto: function () { return !!(eng && eng.auto && eng.auto()); },
     setQuality: function (i) { if (eng && eng.setLevel) eng.setLevel(i); },
