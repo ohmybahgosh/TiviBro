@@ -221,6 +221,8 @@ function lastPts(b) {
 var SEGMENT_MAX = 64 * 1024 * 1024;
 
 function create(opts) {
+  // Recordings: scheduled ones start and running ones carry on when the helper starts (record.js).
+  setTimeout(function () { try { require('./record').start({ log: log }); } catch (e) { log({ lv: 'warn', event: 'recordings not started', e: e.message }); } }, 3000);
   var pace = Pace.create();            // image hosts that said 429 (pace.js)
   opts = opts || {};
   var stats = { requests: 0, errors: 0, active: 0 };
@@ -287,7 +289,9 @@ function create(opts) {
     // Stalker portals (stalker.js): the channel list with the secret like /live/; a channel's link and guide
     // without it, since the TV's player can't send one (they carry the login, and only reach the portal).
     if (req.url.indexOf('/stalker/') === 0 && req.method !== 'POST') return Stalker.handle(req, res, ALLOW, log, ownPort());
-    var ctlRoute = req.url.indexOf('/stalker/') === 0 ? 'stalker' : req.url.indexOf('/editor/') === 0 ? 'editor' : req.url.indexOf('/companion/') === 0 ? 'companion' : req.url.indexOf('/kv/') === 0 ? 'kv' : req.url.indexOf('/live/') === 0 ? 'live' : req.url.indexOf('/media/') === 0 ? 'media' :
+    // A recording's file, for the TV's player (which can't send the secret); the list and the controls need it.
+    if (req.url.indexOf('/record/file/') === 0) return require('./record').handle(req, res, ALLOW, log);
+    var ctlRoute = req.url.indexOf('/stalker/') === 0 ? 'stalker' : req.url.indexOf('/editor/') === 0 ? 'editor' : req.url.indexOf('/companion/') === 0 ? 'companion' : req.url.indexOf('/kv/') === 0 ? 'kv' : req.url.indexOf('/live/') === 0 ? 'live' : req.url.indexOf('/media/') === 0 ? 'media' : req.url.indexOf('/record/') === 0 ? 'record' :
       req.url.indexOf('/convert/') === 0 ? 'convert' : req.url.indexOf('/ffmpeg/') === 0 ? 'ffmpeg' : req.url.indexOf('/net/dns') === 0 ? 'dns' : '';
     if (ctlRoute) {
       res.setHeader('Access-Control-Allow-Origin', '*');
@@ -298,6 +302,7 @@ function create(opts) {
       if (ctlRoute === 'stalker') return Stalker.handle(req, res, ALLOW, log, ownPort());
       if (ctlRoute === 'dns') return require('./dns').handle(req, res, ALLOW, log);      // the DNS for providers (dns.js)
       if (ctlRoute === 'media') return Media.handle(req, res, ALLOW, log);
+      if (ctlRoute === 'record') return require('./record').handle(req, res, ALLOW, log);
       if (ctlRoute === 'convert') return Convert.control(req, res, ALLOW, log, ownPort(), redact);
       if (ctlRoute === 'ffmpeg') return Ffmpeg.handle(req, res, ALLOW);
       if (!opts.companion) { res.writeHead(404, { 'Content-Type': 'application/json' }); return res.end('{"error":"no phone app connection in this helper"}'); }

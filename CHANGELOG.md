@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Recording to a USB drive (first version, discussion #94).**  Hold OK on a programme in the guide > **Record**: one on now records from now until it ends, a later one is scheduled (two minutes before to five after).  In fullscreen, the quick menu has **Record** and **Stop recording**.  **Recordings…** (in the same menus) lists them to watch, stop or delete.  TiviBro's helper does it in the background, without decoding: it carries on with TiviBro closed or another app open, as long as the TV is on.  Recordings go in a "TiviBro Recordings" folder on the drive, split into 3.9 GB parts that play as one.  HLS channels are recorded piece by piece; encrypted HLS and DRM channels can't be recorded yet.  A recording uses its own connection to your provider.
 - **Try again and Start over keep the player a channel plays on**: a channel that plays as HLS (its chosen format, or it played better that way) went back to MPEG-TS, and some providers hang up on that within a minute.
 
 ## 0.6.0 (alpha 167, 2026-11-18)

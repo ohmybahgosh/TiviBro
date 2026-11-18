@@ -1756,11 +1756,12 @@ var Views = (function () {
   var qp = null;                  // { row, col, rows: [[items]], timer }
   // Quick menu buttons.  Each can be switched off in Settings > Playback > Remote and buttons > Quick menu buttons.
   var QP_BUTTONS = [['list', 'Channel guide'], ['start', 'Watch from start'], ['fav', 'Favorite'], ['guide', 'TV guide'], ['versions', 'Other versions'], ['audio', 'Audio track'],
-    ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Aspect'], ['sleep', 'Sleep timer'],
+    ['subs', 'Subtitles'], ['cc', 'Closed captions'], ['quality', 'Video quality'], ['picture', 'Aspect'], ['rec', 'Record'], ['sleep', 'Sleep timer'],
     ['info', 'Stream info'], ['reconnect', 'Reconnect']];
   // Line icons for the quick actions, drawn like the side menu's (24 x 24, stroked).
   var QP_ICONS = {
     list: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+    rec: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4" fill="currentColor"/>',
     start: '<path d="M6 5v14M19 5l-9 7 9 7z"/>',
     fav: '<path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.5 9.7l5.9-.9z"/>',
     faved: '<path class="fill" d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.5 9.7l5.9-.9z"/>',
@@ -1791,6 +1792,11 @@ var Views = (function () {
     if (mode !== 'vod') add('cc', { label: 'Captions', icon: 'cc', v: ccLabel(), run: function () { ccToggle(); renderPanel(); } });
     if (Player.qualities().length > 1) add('quality', { label: 'Quality', icon: 'quality', v: qualityLabel(), run: function () { closePanel(); qualityMenu(); } });
     add('picture', { label: 'Aspect', icon: 'picture', v: Player.aspectName(Player.displayFor(aspectTarget())), run: function () { closePanel(); pictureMenu(); } });
+    if (c && mode !== 'vod' && typeof Record !== 'undefined') {
+      var rn = Record.of(c, nn && nn.now), pnow = nn && nn.now && nn.now.s <= now && nn.now.e > now ? nn.now : null;
+      add('rec', rn && rn.status === 'recording' ? { label: 'Stop recording', icon: 'rec', v: 'since ' + U.hhmm(rn.startedAt || rn.start), run: function () { closePanel(); Record.stop(rn.id); } }
+        : { label: 'Record', icon: 'rec', v: pnow ? 'until ' + U.hhmm(pnow.e) : 'an hour', run: function () { closePanel(); Record.now(c, pnow); } });
+    }
     add('sleep', { label: 'Sleep timer', icon: 'sleep', v: sleepAt ? U.hhmm(sleepAt) : 'off', run: function () { closePanel(); sleepMenu(); } });
     add('info', { label: 'Stream info', icon: 'info', run: function () { closePanel(); streamInfo(); } });
     add('reconnect', { label: 'Reconnect', icon: 'reconnect', run: function () { closePanel(); Player.retryNow(); U.toast('Reconnecting'); } });
@@ -3105,6 +3111,10 @@ var Guide = (function () {
     if (!isPlaying(c)) items.push({ label: 'Play in the window', icon: 'window', action: function () { preview(c); } });
     if (h.p && h.p.s <= now && h.p.e > now && c.arch) items.push({ label: 'Watch from the start', icon: 'start', sub: 'catch-up', action: function () { Views.playCatchup(c, h.p, 0); } });
     if (c.arch) items.push({ label: 'Earlier programmes…', icon: 'history', sub: T('catch-up {n} days', { n: c.arch }), action: function () { Views.catchupList(c); } });
+    // Recording to a USB drive (record.js): the programme on now or later.
+    var recIt = typeof Record !== 'undefined' ? Record.menuItem(c, h.p) : null;
+    if (recIt) items.push(recIt);
+    if (typeof Record !== 'undefined' && Record.recs.length) items.push({ label: 'Recordings…', icon: 'film', sub: 'on the USB drive', action: function () { Record.open(); } });
     if (h.p && h.p.s > now) items.push(hasReminder(c, h.p) ? { label: 'Cancel reminder', icon: 'belloff', sub: U.hhmm(h.p.s), action: function () { toggleReminder(c, h.p); } }
       : { label: 'Remind me', icon: 'bell', sub: U.hhmm(h.p.s), action: function () { toggleReminder(c, h.p); } });
     if (h.p && h.p.t && !h.p.up && !h.p.ended) {

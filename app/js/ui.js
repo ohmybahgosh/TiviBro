@@ -205,6 +205,7 @@ var UI = (function () {
   /* Line icons for menu rows ({ icon: 'play' }), drawn like the side menu's: 24 x 24, stroked. */
   var MICONS = {
     play: '<path d="M8 5.5v13l10.5-6.5z"/>',
+    rec: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4" fill="currentColor"/>',
     full: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>',
     window: '<rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="6" rx="1"/>',
     start: '<path d="M6 5v14M19 5l-9 7 9 7z"/>',
