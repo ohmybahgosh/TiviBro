@@ -2324,5 +2324,7 @@ I18n.add('pt-BR', {
   "Episodes matching \"{x}\"": "Episódios que correspondem a “{x}”",
   "Episodes matching \"": "Episódios que correspondem a “",
   "Playback stalled: {x}.": "A reprodução travou: {x}.",
-  "This video is having trouble starting: {x}.": "Este vídeo está com problemas para começar: {x}."
+  "This video is having trouble starting: {x}.": "Este vídeo está com problemas para começar: {x}.",
+  "REC": "GRAVANDO",
+  "WILL RECORD": "SERÁ GRAVADO"
 });

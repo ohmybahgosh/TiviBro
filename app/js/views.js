@@ -41,7 +41,7 @@ var Views = (function () {
 
   // In the language chosen (app/js/i18n.js).
   function T(x, v) { return typeof I18n !== 'undefined' ? I18n.t(x, v) : v ? String(x).replace(/\{([a-z]+)\}/g, function (a, k) { return v[k] != null ? v[k] : a; }) : x; }
-  var TAB_LABELS = { live: 'Channels', guide: 'Guide', onnow: 'Movies on now', movies: 'Movies', shows: 'Shows', media: 'My media', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
+  var TAB_LABELS = { live: 'Channels', guide: 'Guide', onnow: 'Movies on now', movies: 'Movies', shows: 'Shows', media: 'My media', recordings: 'Recordings', search: 'Search', editor: 'Edit on phone', settings: 'Settings', report: 'Report a problem' };
   // The guide is home: the app opens on it and Back from any other screen comes back to it.
   function home() { return Store.settings.startTab === 'live' ? 'live' : 'guide'; }
   /* The plain channel list in the menu: most people browse with the guide, so it shows only when
@@ -59,6 +59,7 @@ var Views = (function () {
     shows: '<rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 3l4 4 4-4"/>',
     search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
     editor: '<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+    recordings: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/>',
     report: '<rect x="7" y="8" width="10" height="12" rx="5"/><path d="M9 8a3 3 0 0 1 6 0M12 12v8M3 13h4M17 13h4M4 7l3 2M20 7l-3 2M4 19l3-2M20 19l-3-2"/>',
     settings: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/>'
   };
@@ -78,6 +79,8 @@ var Views = (function () {
     if (vk.indexOf('series') >= 0) tabs.push('shows');
     // My media: in the menu once a media source is added (Settings > My media is the way in before that).
     if (typeof MediaStore !== 'undefined' && MediaStore.sources().length) tabs.push('media');
+    // Recordings: once a USB drive is in the TV, or something's been recorded (a shortcut, like Edit on phone).
+    if (typeof Record !== 'undefined' && Record.shown()) tabs.push('recordings');
     tabs.push('search', 'editor', 'settings');
     // Test builds: Report a problem one press away (it also stays in Settings > System).
     if (/alpha|beta/i.test(TIVIBRO_VERSION) || Store.settings.reportInMenu) tabs.push('report');
@@ -87,7 +90,7 @@ var Views = (function () {
       var s = U.el('div', 'tab' + (t === tab ? ' on' : '')); s.setAttribute('data-tab', t);
       s.innerHTML = '<svg viewBox="0 0 24 24" class="ico">' + ICONS[t] + '</svg>';
       s.appendChild(U.el('span', 'lbl', T(TAB_LABELS[t])));
-      s.addEventListener('click', function () { closeNav(); if (full) exitFull(true); UI.close(); if (t === 'editor') WebEdit.showJoin(); else if (t === 'report') Diag.openReport(); else switchTab(t); });
+      s.addEventListener('click', function () { closeNav(); if (full) exitFull(true); UI.close(); if (t === 'editor') WebEdit.showJoin(); else if (t === 'recordings') Record.open(); else if (t === 'report') Diag.openReport(); else switchTab(t); });
       s.addEventListener('mousemove', function () { if (UI.pointer && !document.body.classList.contains('nav-open') && !full) openNavFromPointer(); });
       nav.appendChild(s);
     });
@@ -710,6 +713,7 @@ var Views = (function () {
         // Edit on phone is a shortcut, not a screen: it shows the editor's QR code over the screen you are on.
         if (tabs[tabSel] === 'editor') { if (a === 'ok') { done(); onBack(); WebEdit.showJoin(); } }
         else if (tabs[tabSel] === 'report') { if (a === 'ok') { done(); onBack(); Diag.openReport(); } }
+        else if (tabs[tabSel] === 'recordings') { if (a === 'ok') { done(); onBack(); Record.open(); } }
         else { done(); if (tabs[tabSel] === tab) onBack(); else switchTab(tabs[tabSel]); }
       }
       else if (a === 'back') {
@@ -2602,6 +2606,8 @@ var Guide = (function () {
     }
     return kindCh[c.k];
   }
+  // Recording now (a red dot) or due to be (a red ring), from the helper's list (Record polls it).
+  function recCls(c, p) { var r = window.Record && !p.up && p.e > Date.now() && Record.of(c, p); return r ? (r.status === 'recording' ? ' rec' : ' recsch') : ''; }
   function hasReminder(c, p) { return Store.edits.reminders.some(function (r) { return r.k === c.k && r.s === p.s; }); }
   function isPlaying(c) { var p = Views.playing; return !!(p && c && p.k === c.k && Views.mode === 'live'); }
   function previewing() { var p = Views.playing; return p && Views.mode === 'live' && !Views.full ? p : null; }
@@ -2665,7 +2671,7 @@ var Guide = (function () {
       // My teams: a game on now stands out in the theme's sports colour; one still to come is quieter.
       if (gid === L.TEAMS) edge += p.up ? ' tm-soon' : now ? ' tm-live' : '';
       // A narrow one (a short filler) whose title won't fit on a line: the title gets both lines, without the times.
-      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (mv ? ' mv' : '') + (kind ? ' k-' + kind : '') + edge + (w < 240 && p.t.length * 12 > w - 40 ? ' nar' : ''), a, w,
+      cell(r, n++, 'gp' + (now ? ' now' : past ? ' past' : '') + (focus && p.s <= focusT && p.e > focusT ? ' focus' : '') + (mv ? ' mv' : '') + (kind ? ' k-' + kind : '') + edge + (w < 240 && p.t.length * 12 > w - 40 ? ' nar' : '') + recCls(c, p), a, w,
         (hasReminder(c, p) ? '◷ ' : '') + p.t, past && cuMark, p.up ? 'until ' + Events.when(p.e) : U.hhmm(p.s) + ' – ' + U.hhmm(p.e), now ? U.clamp(Math.round(w * (nowT - from) / Math.max(1, Math.min(p.e, t1) - from)), 0, w) : -1, p.s);
     });
     // Nothing to show: still loading (a soft shimmer), or no information (quiet, as TiviMate has it).
@@ -2787,6 +2793,8 @@ var Guide = (function () {
       meta.appendChild(U.el('span', 'gd-badge' + (live ? ' live' : past && c.arch ? ' cu' : ''), T(live ? 'LIVE' : past ? (c.arch ? 'CATCH-UP' : 'AIRED') : 'UPCOMING')));
       // What else the guide says (#9 in the ideas): a new episode, a reminder set, its kind, its episode.
       if (h.p.n && !past) meta.appendChild(U.el('span', 'gd-badge new', 'NEW'));
+      var rc = !past && window.Record && Record.of(c, h.p);
+      if (rc) meta.appendChild(U.el('span', 'gd-badge rec', T(rc.status === 'recording' ? 'REC' : 'WILL RECORD')));
       if (!past && hasReminder(c, h.p)) meta.appendChild(U.el('span', 'gd-badge rem', '◷ REMINDER'));
       var hk = kindOf(c, h.p), kn = { s: 'Sports', n: 'News', c: 'Kids' }[hk];
       if (kn) meta.appendChild(U.el('span', 'gd-badge kind k-' + hk, kn));

@@ -1280,3 +1280,10 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .set-more.on{display:flex}
 .set-more.below{bottom:0;background:linear-gradient(transparent,var(--ink) 75%)}
 .set-more.above{top:0;align-items:flex-start;padding:6px 0 0;background:linear-gradient(var(--ink) 25%,transparent)}
+
+/* Recording: a red dot before the title (recording now), a red ring (due to be). */
+.gp.rec .gt b::before,.gp.recsch .gt b::before{content:'';display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:9px;vertical-align:2px;box-sizing:border-box}
+.gp.rec .gt b::before{background:#e5393b}
+.gp.recsch .gt b::before{border:2px solid #e5393b}
+.gd-badge.rec{background:#4a1416;color:#ff8a8c;padding-left:30px;position:relative}
+.gd-badge.rec::before{content:'';position:absolute;left:12px;top:50%;width:9px;height:9px;margin-top:-4.5px;border-radius:50%;background:#e5393b}

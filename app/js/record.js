@@ -7,7 +7,7 @@ var Record = (function () {
   'use strict';
   var L = Library;
   var PAD_BEFORE = 2 * 60000, PAD_AFTER = 5 * 60000;
-  var last = { recs: [], at: 0 };
+  var last = { recs: [], at: 0 }, drive = false;
 
   function T(s, o) { var t = typeof I18n !== 'undefined' ? I18n.t(s) : s; return t.replace(/\{(\w+)\}/g, function (a, k) { return o && o[k] != null ? o[k] : a; }); }
   function base() { return Net.port ? 'http://127.0.0.1:' + Net.port : ''; }
@@ -26,8 +26,27 @@ var Record = (function () {
     var u = Source.streamUrl(ch, Store.settings.format);
     return Net.wrap(u, { pl: Store.plOf ? Store.plOf(ch) : Store.playlist, ua: ch.ua || '', hdr: ch.hdr || null, always: true });
   }
-  function list() { return api('/record/list').then(function (j) { last = { recs: j.recs || [], at: Date.now() }; return last.recs; }); }
-  function drives() { return api('/record/drives').then(function (j) { return j.drives || []; }); }
+  function sig(recs) { return recs.map(function (r) { return r.id + r.status + r.end; }).join(); }
+  function list() {
+    return api('/record/list').then(function (j) {
+      var was = sig(last.recs), had = shown();
+      last = { recs: j.recs || [], at: Date.now() };
+      // The guide marks what's recording, so it's redrawn when that changes.
+      if (shown() !== had && typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs();
+      if (sig(last.recs) !== was && typeof Guide !== 'undefined' && Guide.vis) try { Guide.draw(); } catch (e) {}
+      return last.recs;
+    });
+  }
+  function drives() {
+    return api('/record/drives').then(function (j) {
+      var d = j.drives || [], had = shown();
+      drive = d.length > 0;
+      if (shown() !== had && typeof Views !== 'undefined' && Views.buildTabs) Views.buildTabs();
+      return d;
+    });
+  }
+  // In the side menu once there's a drive to record to, or recordings to watch.
+  function shown() { return drive || last.recs.length > 0; }
   function explain(e) {
     if (e && e.code === 'nodrive') return 'Plug a USB drive into the TV to record to.  TiviBro keeps recordings in a "TiviBro Recordings" folder on it.';
     return 'Recording didn\'t start: ' + (e && e.message || 'no answer from the helper');
@@ -54,6 +73,7 @@ var Record = (function () {
 
   // What the guide knows: is this programme being recorded or due to be?
   function of(ch, p) {
+    if (!last.recs.length) return null;
     var name = L.name(ch);
     // A recording started partway through ("from now") starts after the programme does, so it covers the programme
     // when it began before the programme ends and runs to its end.
@@ -108,9 +128,9 @@ var Record = (function () {
   }
 
   // Known as TiviBro starts and every few minutes (the guide's menu and the quick menu say Record or Stop recording).
-  (function poll() { if (base()) list().catch(function () {}); setTimeout(poll, 120000); })();
-  setTimeout(function () { if (base()) list().catch(function () {}); }, 8000);
+  (function poll() { if (base()) { list().catch(function () {}); drives().catch(function () {}); } setTimeout(poll, 120000); })();
+  setTimeout(function () { if (base()) { list().catch(function () {}); drives().catch(function () {}); } }, 8000);
 
-  return { now: now, schedule: schedule, stop: stop, remove: remove, list: list, drives: drives, open: open, menuItem: menuItem, of: of, urlFor: urlFor,
+  return { now: now, schedule: schedule, stop: stop, remove: remove, list: list, drives: drives, open: open, shown: shown, menuItem: menuItem, of: of, urlFor: urlFor,
     get recs() { return last.recs; } };
 })();

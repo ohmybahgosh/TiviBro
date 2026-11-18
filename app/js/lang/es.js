@@ -1808,5 +1808,7 @@ I18n.add('es', {
   "Episodes matching \"{x}\"": "Episodios que coinciden con «{x}»",
   "Episodes matching \"": "Episodios que coinciden con «",
   "Playback stalled: {x}.": "La reproducción se detuvo: {x}.",
-  "This video is having trouble starting: {x}.": "Este video tiene problemas para empezar: {x}."
+  "This video is having trouble starting: {x}.": "Este video tiene problemas para empezar: {x}.",
+  "REC": "GRABANDO",
+  "WILL RECORD": "SE GRABARÁ"
 });

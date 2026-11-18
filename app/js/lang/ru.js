@@ -1811,5 +1811,7 @@ I18n.add('ru', {
   "Episodes matching \"{x}\"": "Серии по запросу «{x}»",
   "Episodes matching \"": "Серии по запросу «",
   "Playback stalled: {x}.": "Воспроизведение остановилось: {x}.",
-  "This video is having trouble starting: {x}.": "Это видео не может начаться: {x}."
+  "This video is having trouble starting: {x}.": "Это видео не может начаться: {x}.",
+  "REC": "ЗАПИСЬ",
+  "WILL RECORD": "БУДЕТ ЗАПИСАНО"
 });
