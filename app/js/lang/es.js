@@ -1705,5 +1705,21 @@ I18n.add('es', {
   "{x} of {y}": "{x} de {y}",
   "shows": "series",
   "Loading {x} from the portal": "Cargando {x} del portal",
-  "A big portal takes a few minutes the first time.": "Un portal grande tarda unos minutos la primera vez."
+  "A big portal takes a few minutes the first time.": "Un portal grande tarda unos minutos la primera vez.",
+  "Show options": "Opciones de la serie",
+  "Favorite, details, episode order and more": "Favorito, detalles, orden de episodios y más",
+  "Mark show as watched": "Marcar la serie como vista",
+  "Mark show as not watched": "Marcar la serie como no vista",
+  "Mark season as watched": "Marcar la temporada como vista",
+  "Mark season as not watched": "Marcar la temporada como no vista",
+  "{n} episodes marked as watched": ["{n} episodio marcado como visto", "{n} episodios marcados como vistos"],
+  "{n} episodes marked as not watched": ["{n} episodio marcado como no visto", "{n} episodios marcados como no vistos"],
+  "1 episode marked as watched": "1 episodio marcado como visto",
+  "1 episode marked as not watched": "1 episodio marcado como no visto",
+  "All watched already": "Ya está todo visto",
+  "None watched yet": "Aún no hay nada visto",
+  "Hold OK  season options": "Mantener OK  opciones de la temporada",
+  "▼  Chapters": "▼  Capítulos",
+  "CH  Next chapter": "CH  Capítulo siguiente",
+  "CH  Skip 10 min": "CH  Saltar 10 min"
 });

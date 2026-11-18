@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+- **Mark a season or a whole show watched, as on Plex.**  On a show's page, **Hold OK** on a season has **Mark season as watched** (or **not watched**), and a show's options (Hold OK on the show) have **Mark show as watched** and **not watched**.  Every episode of it changes at once.  Movies and episodes had it already, now worded the same way.
+- **Watched and not watched by hand go to Trakt too.**  With Trakt connected (and **Mark as watched on Trakt** on), marking a movie, an episode, a season or a show watched puts it on your Trakt history, and marking it not watched takes it off, as Plex's Trakt sync does.  Kept and sent later when Trakt can't be reached.
+- **Trakt's history marks every episode you watched.**  A show watched on Trakt (or another app) got only its first episode marked in My media: each episode after the first was refused because the library had just changed.  Now all of a show's episodes are marked in one go, and the next sync reads every show's history again once, so the ones missed before are marked too.
+- **What you watch elsewhere shows up soon.**  TiviBro looks at Trakt's latest activity when you open My media (if it last looked over 2 minutes ago) and every 30 minutes, not every 6 hours.  It reads more only when something changed there.  Next up and Continue watching follow along.
+- **Recently aired and Recently added episodes open on that episode.**  OK on a show there opens its page on the season, with that episode picked, as Plex does.  And the page no longer comes up empty: a movie page closed earlier stayed over it.
+- **Seek previews ready when you seek right after starting.**  Pictures of the movie in eighths are made from a few seconds in (before, nothing for the first 20 seconds, and nothing at all on a TV short of memory), and while the picture for where you're seeking comes, the nearest one already made shows, dimmed, instead of an empty box.  Seeking fast to where you left off now shows pictures along the way.
+- **▲ ▼ don't seek in movies and episodes.**  People press Down by habit: ▲ ▼ now bring up the bar, and ▼ with the bar up opens the chapters when the file has them.  **CH+ CH−** still skip 10 minutes, or go from chapter to chapter.
+- **Sleeker buttons.**  Resume, From the start and the other buttons on a movie's page, and the tabs on My media and a show's page, are glass pills that turn solid white when picked, with no coloured ring.  The progress line in Resume is a hairline.
+- Trakt lists named with Trakt already ("Trending movies on Trakt") no longer get "(Trakt)" again in Arrange shelves.
+
 ## 0.6.0 (alpha 159, 2026-11-18)
 
 Pre-release: expect rough edges, and keep a backup before installing.

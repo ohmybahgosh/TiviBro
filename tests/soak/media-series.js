@@ -54,9 +54,9 @@ const dav = http.createServer((req, res) => { res.writeHead(req.headers.authoriz
     await page.keyboard.press('Enter');await page.waitForTimeout(200);
     ok('episode page uses numeric label',/S1E2/.test(await page.innerText('#modal')));
     await page.keyboard.press('Enter');await page.waitForTimeout(200);
-    ok('episode offers source version and watched control',/Play: Demo source/.test(await page.innerText('#modal')) && /Mark watched/.test(await page.innerText('#modal')));
+    ok('episode offers source version and watched control',/Play: Demo source/.test(await page.innerText('#modal')) && /Mark as watched/.test(await page.innerText('#modal')));
     await page.keyboard.press('Escape');await page.waitForTimeout(150);
-    ok('Back returns one level to episode list',/S1E2/.test(await page.innerText('#modal')) && !/Mark watched/.test(await page.innerText('#modal')));
+    ok('Back returns one level to episode list',/S1E2/.test(await page.innerText('#modal')) && !/Mark as watched/.test(await page.innerText('#modal')));
     await page.keyboard.press('Escape');await page.waitForTimeout(150);
     ok('Back returns to season picker',/Season 1/.test(await page.innerText('#modal')));
     await page.keyboard.press('Escape');await page.waitForTimeout(150);

@@ -42,6 +42,28 @@ function run(c, q, cb) {
           changed = true;
         };
         if (op === 'setWatched' && family === 'episodes') { watch(target, !!q.watched); changed = true; }
+        /* A whole show, or one season of it (q.season: the season's key as the show page lists it, a year for shows
+           by date, "Episodes" for shows numbered straight through), as Plex marks them.  Answers which episodes
+           changed ([season, number]), for Trakt. */
+        else if (op === 'setWatched' && family === 'shows') {
+          var only = q.season == null ? null : String(q.season), want = !!q.watched, pick = null;
+          // q.episodes: just these [season, number] (Trakt's history, in: one write for a show, not one per episode).
+          if (Array.isArray(q.episodes)) { pick = {}; q.episodes.slice(0, 5000).forEach(function (x) { if (Array.isArray(x)) pick[x[0] + ':' + x[1]] = 1; }); }
+          var inBucket = function (ep) { return only === null || (ep.order === 'date' ? String(ep.airDate || '').slice(0, 4) === only : ep.order === 'absolute' ? only === 'Episodes' : String(ep.season) === only); };
+          return c.readShard(target.id, function (readError, showShard) {
+            if (readError) return done(readError);
+            var hits = [];
+            showShard.episodes.forEach(function (ep) {
+              if (ep.orphaned || !inBucket(ep) || (pick && !pick[ep.season + ':' + ep.number]) || (ep.watchState === 'watched') === want) return;
+              watch(ep, want); hits.push([ep.season, ep.number]);
+            });
+            if (!hits.length) return done(null, { revision: c.revision, episodes: [] });
+            c.writeShard(ctx, target.id, showShard, function (writeError) {
+              if (writeError) return done(writeError);
+              c.commit(ctx, function (commitError, newRevision) { done(commitError, { revision: newRevision, episodes: hits }); });
+            });
+          });
+        }
         else if (op === 'setFavourite') { target.favourite = !!q.favourite; changed = true; }
         else if (op === 'markMetadataChecked' && family === 'shows') {
           if (!/^(en|nl|de|fr|es|it)$/.test(q.language || '') || typeof q.startedAt !== 'number' || !isFinite(q.startedAt) || q.startedAt <= 0 || q.startedAt > Date.now()) return done(invalid('Choose a valid metadata check.'));

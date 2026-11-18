@@ -321,7 +321,7 @@ var Media = (function () {
   // Trakt's lists (trakt.js) are shelves too, each with its own key ('trakt:abcdefgh'), after TMDB's Trending.
   function traktLists() { return typeof Trakt !== 'undefined' ? Trakt.shelves() : []; }
   function orderAll() { var o = ORDER.slice(), at = o.indexOf('tmdb:trending');   // Trakt's lists before TMDB's
-  traktLists().forEach(function (t, i) { o.splice(at + i, 0, t.id); NAMES[t.id] = t.title + '  (Trakt)'; }); return o; }
+  traktLists().forEach(function (t, i) { o.splice(at + i, 0, t.id); NAMES[t.id] = /trakt/i.test(t.title) ? t.title : t.title + '  (Trakt)'; }); return o; }   // "Trending movies on Trakt" says so already
   function arrangement() {
     var ORD = orderAll(), p = MediaStore.preferences(), saved = (p.shelfOrder || []).filter(function (k) { return ORD.indexOf(k) >= 0; }), off = p.shelfOff || {};
     // A shelf new to your order goes where it would by default; a Trakt list just added goes above TMDB's lists.
@@ -1377,10 +1377,16 @@ var Media = (function () {
       reviewCards.length > 0 && { label:'Needs review',action:function () { MediaSeries.review(); } },
       copies(m).length > 1 && { label: 'Choose a copy', sub: copies(m).length + ' copies of this movie: the best one for this TV marked', action: function () { chooseCopy(m); } },
       { label: 'File information', sub: pictureInfo(m) + (m.size ? ' · ' + size(m.size) : ''), action: function () { UI.menu('File information', [{ label: RAW(m.file), sub: (MediaStore.source(m.src) || {}).name || '' }]); } },
-      !MediaStore.isWatched(m.id) ? { label: 'Mark as watched', action: function () { MediaStore.markWatched(m.id, true); refresh(); if (back) back(); } } : { label: 'Mark as not watched', action: function () { MediaStore.markWatched(m.id, false); refresh(); if (back) back(); } }
+      !MediaStore.isWatched(m.id) ? { label: 'Mark as watched', action: function () { markMovie(m, true); if (back) back(); } } : { label: 'Mark as not watched', action: function () { markMovie(m, false); if (back) back(); } }
     ], back);
   }
 
+  // Marked by hand: here, and on Trakt too (Settings > My media > Trakt > Mark as watched on Trakt), as Plex does.
+  function markMovie(m, on) {
+    MediaStore.markWatched(m.id, on);
+    if (typeof Trakt !== 'undefined' && Trakt.markMovie) Trakt.markMovie(m.metadata && m.metadata.id, on);
+    refresh();
+  }
   /* ---------- remote and pointer navigation ---------- */
   function hints() {
     if (document.body.classList.contains('nav-open')) return;
@@ -1519,8 +1525,8 @@ var Media = (function () {
       continuingShows = (results[2].items || []).map(function(r){r.id=r.handle;return r;});
       favouriteShows=(results[3].items||[]).map(function(r){r.id=r.handle;return r;});
       // Recently added and Recently aired (TV shows): each show once, saying which episode is new.
-      newShows=(results[4].items||[]).map(function(r){r.id=r.handle;r.newLine=r.newEp?r.newEp+' added '+dayWord(r.newAt):'';return r;});
-      airedShows=(results[5].items||[]).map(function(r){r.id=r.handle;r.newLine=r.airedEp?r.airedEp+' aired '+dayWord(Date.parse(r.airedOn+'T12:00:00')):'';return r;});
+      newShows=(results[4].items||[]).map(function(r){r.id=r.handle;r.newLine=r.newEp?r.newEp+' added '+dayWord(r.newAt):'';r.focusEp=r.newEp||'';return r;});
+      airedShows=(results[5].items||[]).map(function(r){r.id=r.handle;r.newLine=r.airedEp?r.airedEp+' aired '+dayWord(Date.parse(r.airedOn+'T12:00:00')):'';r.focusEp=r.airedEp||'';return r;});   // opens on that episode (media-showpage.js)
       seriesLoading = false; seriesLoaded = true; refresh();
       if (typeof Settings !== 'undefined' && Settings.live) Settings.live();   // Settings > My media's show counts
       if (seriesAgain) refreshSeries();
@@ -1532,6 +1538,7 @@ var Media = (function () {
     if (!built) build(); UI.setHandler(keys);
     if (!keepState) { followTop = true; shelfPos = {}; section = 'home'; tabsFocus = false; query = ''; searchTab = false; }
     refreshSeries(); listsSoon();
+    if (typeof Trakt !== 'undefined' && Trakt.syncIfStale) Trakt.syncIfStale(120000);   // what you watched elsewhere, soon (trakt.js)
     if (Date.now() - lastCheck > 5 * 60000 && !checking) newMediaSoon(4000);   // opening My media looks for new files
     if (keepState && loaded) { refresh(); restore(); return; }
     (loaded || (loaded = MediaStore.load())).then(function () {

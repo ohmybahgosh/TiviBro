@@ -1114,7 +1114,7 @@ var Views = (function () {
   function osdLegend() {
     var el = $('osdKeys'), items = [];
     function chip(key, label, color) { items.push([key, label, color]); }
-    if (mode === 'vod') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('up', '▲ ▼  Skip 10 min'); if (typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) chip('chup', 'CH  Chapters'); chip('red', 'Options', 'red'); chip('back', 'Back  Stop'); }
+    if (mode === 'vod') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); if (typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) { chip('down', '▼  Chapters'); chip('chup', 'CH  Next chapter'); } else chip('chup', 'CH  Skip 10 min'); chip('red', 'Options', 'red'); chip('back', 'Back  Stop'); }
     else if (mode === 'catchup') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('up', '▲ ▼  Skip 5 min'); chip('yellow', 'Back to live', 'yellow'); chip('red', 'Options', 'red'); }
     else {
       var g = function (b) { var a = Keymap.get('player', b); return a && a !== 'none' ? Keymap.SHORT[a] || Keymap.ACTIONS[a] : ''; };
@@ -1227,10 +1227,17 @@ var Views = (function () {
       else if (a === 'right') vodSeek(+Store.settings.skip, true);
       // CH+ CH−: the next or previous chapter in a file with chapters, else 10 minutes like ▲ ▼.
       else if ((a === 'chdown' || a === 'chup') && typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) { var ct = SeekPrev.chapterStep(a === 'chup' ? 1 : -1, vs.pending != null ? vs.pending : Player.position); if (ct >= 0) vodSeek(ct - (vs.pending != null ? vs.pending : Player.position)); }
-      else if (a === 'down' || a === 'chdown') vodSeek(-600);
+      /* ▲ ▼ don't seek (people press Down by habit, as on Plex): they bring up the bar, and Down with the bar up
+         opens the chapters when the file has them.  CH+ CH− still jump 10 minutes (or a chapter). */
+      else if (a === 'up' || a === 'down') {
+        if (vs.pending != null) return true;
+        if (a === 'down' && !hidden && typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) SeekPrev.openChapters(function (t) { vs.pending = t; vodSeekCommit(); }, function () { osd(true); });
+        else osd(true);
+      }
+      else if (a === 'chdown') vodSeek(-600);
       else if (a === 'rew') vodSeek(-(+Store.settings.ffStep || 120), true);
       else if (a === 'ff') vodSeek(+Store.settings.ffStep || 120, true);
-      else if (a === 'up' || a === 'chup') vodSeek(600);
+      else if (a === 'chup') vodSeek(600);
       else if (a === 'ok') { Player.togglePause(); osd(true); }
       else if (a === 'playpause') playPause();
       else if (a === 'red' || a === 'hold') playerMenu();

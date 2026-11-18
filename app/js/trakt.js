@@ -6,7 +6,10 @@
    Chromium 53-compatible. */
 var Trakt = (function () {
   'use strict';
-  var ITEMS_KEY = 'tivibro.trakt.items', ITEMS_AGE = 6 * 3600e3, SYNC_EVERY = 6 * 3600e3;
+  /* SYNC_EVERY: a look at Trakt's last activity (one small request) every 30 minutes; it reads more only when
+     something changed there.  Opening My media looks too, when the last look is 2 minutes old (syncIfStale), so
+     what you watched on your phone or another app shows here soon, as Plex does. */
+  var ITEMS_KEY = 'tivibro.trakt.items', ITEMS_AGE = 6 * 3600e3, SYNC_EVERY = 30 * 60e3;
   var CHARTS = [
     ['trending', 'movies', 'Trending movies on Trakt'], ['trending', 'shows', 'Trending shows on Trakt'],
     ['popular', 'movies', 'Popular movies on Trakt'], ['popular', 'shows', 'Popular shows on Trakt'],
@@ -241,13 +244,59 @@ var Trakt = (function () {
 
   /* ---------- watched, out and in ---------- */
   // Finished here: marked watched on Trakt (queued when Trakt can't be reached, sent with the next sync).
-  function queue(entry) { var q = (st().queue || []).slice(-199); q.push(entry); MediaStore.setTrakt({ queue: q }); }
+  /* Each entry is something watched ({ movie } or { show, season, episode }), or with rm: marked not watched, taken
+     off your Trakt history (/sync/history/remove).  The latest about a title wins: marking watched, then not
+     watched, before they're sent, sends only the "not watched". */
+  function entryKey(e) { return e.movie ? 'm' + e.movie : 's' + e.show + 'x' + e.season + 'x' + e.episode; }
+  function queue(entry) { var k = entryKey(entry), q = (st().queue || []).filter(function (x) { return entryKey(x) !== k; }).slice(-999); q.push(entry); MediaStore.setTrakt({ queue: q }); }
   function sendQueue() {
     var q = st().queue || [];
     if (!q.length || !connected()) return Promise.resolve();
-    var body = { movies: [], shows: [] };
-    q.forEach(function (e) { if (e.movie) body.movies.push({ ids: { tmdb: e.movie }, watched_at: new Date(e.at).toISOString() }); else if (e.show) body.shows.push({ ids: { tmdb: e.show }, seasons: [{ number: e.season, episodes: [{ number: e.episode, watched_at: new Date(e.at).toISOString() }] }] }); });
-    return post('/sync/history', body).then(function () { MediaStore.setTrakt({ queue: [] }); note('info', 'Sent ' + q.length + ' watched to Trakt'); setTimeout(historySoon, 5000); });
+    var adds = q.filter(function (e) { return !e.rm; }), rms = q.filter(function (e) { return e.rm; });
+    return (rms.length ? post('/sync/history/remove', bodyOf(rms, false)) : Promise.resolve()).then(function () {
+      if (rms.length) { drop(rms); note('info', 'Took ' + rms.length + ' off your Trakt history'); setTimeout(historySoon, 5000); }
+      if (!adds.length) return;
+      return sendAdds(adds);
+    });
+  }
+  // Episodes of one show go together, by season: { shows: [{ ids, seasons: [{ number, episodes: [{ number }] }] }] }.
+  function bodyOf(list, when) {
+    var body = { movies: [], shows: [] }, shows = {};
+    list.forEach(function (e) {
+      if (e.movie) { var mv = { ids: { tmdb: e.movie } }; if (when) mv.watched_at = new Date(e.at).toISOString(); body.movies.push(mv); return; }
+      var sh = shows[e.show] || (shows[e.show] = { ids: { tmdb: e.show }, seasons: [] }), se = sh.seasons.filter(function (x) { return x.number === e.season; })[0];
+      if (!se) { se = { number: e.season, episodes: [] }; sh.seasons.push(se); }
+      var ep = { number: e.episode }; if (when) ep.watched_at = new Date(e.at).toISOString(); se.episodes.push(ep);
+    });
+    for (var k in shows) body.shows.push(shows[k]);
+    return body;
+  }
+  // Take what was sent off the queue (anything queued meanwhile stays).
+  function drop(sent) { var k = {}; sent.forEach(function (e) { k[entryKey(e) + '@' + e.at + (e.rm ? 'r' : '')] = 1; }); MediaStore.setTrakt({ queue: (st().queue || []).filter(function (e) { return !k[entryKey(e) + '@' + e.at + (e.rm ? 'r' : '')]; }) }); }
+  function sendAdds(q) {
+    return post('/sync/history', bodyOf(q, true)).then(function () { drop(q); note('info', 'Sent ' + q.length + ' watched to Trakt'); setTimeout(historySoon, 5000); });
+  }
+  /* Marked by hand on My media (Hold OK > Mark as watched or not watched, on a movie, an episode, a season or a
+     show), as Plex does with its Trakt sync.  movie: 'tmdb:123'; show: 'tmdb:tv:456' with [[season, episode]...]. */
+  function markMovie(metadataId, on) {
+    var m = /^tmdb:([0-9]+)$/.exec(String(metadataId || ''));
+    if (!m || !connected() || !settings().watchedOut) return;
+    queue({ movie: +m[1], at: Date.now(), rm: !on || undefined }); sendQueue().catch(function (e) { note('warn', 'Not sent to Trakt yet: ' + e.message); });
+  }
+  function markEpisodes(showMetadataId, eps, on) {
+    var m = /^tmdb:tv:([0-9]+)$/.exec(String(showMetadataId || ''));
+    if (!m || !connected() || !settings().watchedOut || !eps || !eps.length) return;
+    var at = Date.now();
+    eps.forEach(function (x) { if (x && x[0] != null && x[1]) queue({ show: +m[1], season: +x[0], episode: +x[1], at: at, rm: !on || undefined }); });
+    sendQueue().catch(function (e) { note('warn', 'Not sent to Trakt yet: ' + e.message); });
+  }
+  // One episode by its library handle (the show's TMDB id from the library).
+  function markEpisode(episodeHandle, on) {
+    if (!connected() || !settings().watchedOut || !episodeHandle) return;
+    Media.request('library/detail', { kind: 'episode', handle: episodeHandle }, 30000).then(function (ep) {
+      if (!ep || ep.error || ep.season == null || !ep.number || !ep.showId) return;
+      return Media.request('library/detail', { kind: 'show', handle: ep.showId }, 30000).then(function (sh) { markEpisodes(sh && sh.metadata && sh.metadata.id, [[ep.season, ep.number]], on); });
+    }).catch(function (e) { note('warn', 'Not sent to Trakt yet: ' + e.message); });
   }
   function watchedMovie(metadataId) {
     var m = /^tmdb:([0-9]+)$/.exec(String(metadataId || ''));
@@ -277,7 +326,9 @@ var Trakt = (function () {
       var mv = act && act.movies && act.movies.watched_at || '', ep = act && act.episodes && act.episodes.watched_at || '';
       var jobs = [];
       if (settings().historyIn && (manual || mv !== before.movies)) jobs.push(moviesIn(res));
-      if (settings().historyIn && (manual || ep !== before.episodes)) jobs.push(episodesIn(res, manual || !st().episodesSince));
+      // fixed: 2 once every show's history was read again after the fix for one episode per show (alpha 160).
+      var full = manual || !st().episodesSince || st().episodesFixed !== 2;
+      if (settings().historyIn && (full || ep !== before.episodes)) jobs.push(episodesIn(res, full));
       var pb = (act && act.movies && act.movies.paused_at || '') + '|' + (act && act.episodes && act.episodes.paused_at || '');
       if (settings().historyIn && (manual || pb !== before.paused)) jobs.push(playbackIn(res));
       return jobs.reduce(function (p, j) { return p.then(j); }, Promise.resolve()).then(function () { MediaStore.setTrakt({ lastActivities: { movies: mv, episodes: ep, paused: (act && act.movies && act.movies.paused_at || '') + '|' + (act && act.episodes && act.episodes.paused_at || '') } }); });
@@ -310,7 +361,7 @@ var Trakt = (function () {
       return getAll('/sync/watched/shows', true).then(function (rows) {
         var by = {};
         (rows || []).forEach(function (r) { var ids = r.show && r.show.ids || {}; if (ids.tmdb && ids.trakt && (!since || String(r.last_watched_at || '') > since)) by['tmdb:tv:' + ids.tmdb] = ids.trakt; });
-        if (!Object.keys(by).length) return;
+        if (!Object.keys(by).length) { if (manual) MediaStore.setTrakt({ episodesFixed: 2 }); return; }
         var edits = 0, started = new Date().toISOString();
         function shows(cursor) {
           var q = { kind: 'show', limit: 200 }; if (cursor) q.cursor = cursor;
@@ -323,18 +374,26 @@ var Trakt = (function () {
                   var done = {};
                   ((pr && pr.seasons) || []).forEach(function (se) { (se.episodes || []).forEach(function (x) { if (x.completed) done[se.number + 'x' + x.number] = 1; }); });
                   if (!Object.keys(done).length) return;
-                  return Media.request('library/query', { kind: 'episode', show: s.handle, limit: 200 }, 30000).then(function (er) {
-                    var todo = (er.items || []).filter(function (e) { return e.watchState !== 'watched' && done[e.season + 'x' + e.number]; });
-                    return todo.reduce(function (q, e) {
-                      return q.then(function () { edits++; return Media.request('library/edit', { handle: e.handle, expectedRevision: e.revision, operation: 'setWatched', watched: true }, 30000).then(function (x) { if (!x.error) res.episodes++; }); });
-                    }, Promise.resolve());
-                  });
+                  /* All of the show's at once, with the library's revision now: one edit per episode, each with the
+                     revision from before the first, had every one after the first refused (the library had changed),
+                     so a show you'd watched on Trakt got one episode marked (St Denis Medical: 1 of 37).  Asked
+                     again once if the library changes meanwhile (a scan). */
+                  var eps = Object.keys(done).map(function (k) { var p2 = k.split('x'); return [+p2[0], +p2[1]]; });
+                  var mark = function (again) {
+                    return Media.request('library/status', {}, 30000).then(function (rq) {
+                      return Media.request('library/edit', { handle: s.handle, expectedRevision: rq.revision, operation: 'setWatched', watched: true, episodes: eps }, 30000);
+                    }).then(function (x) {
+                      if (x && x.error === 'CONFLICT' && !again) return mark(true);
+                      if (x && !x.error) { res.episodes += (x.episodes || []).length; edits += (x.episodes || []).length; }
+                    });
+                  };
+                  return mark(false);
                 }).then(function () { return new Promise(function (ok) { setTimeout(ok, 250); }); });
               });
             }, Promise.resolve()).then(function () { return r.nextCursor && edits < 3000 ? shows(r.nextCursor) : null; });
           });
         }
-        return shows(null).then(function () { MediaStore.setTrakt({ episodesSince: started }); });
+        return shows(null).then(function () { MediaStore.setTrakt({ episodesSince: started, episodesFixed: 2 }); });
       });
     };
   }
@@ -396,6 +455,10 @@ var Trakt = (function () {
     }).catch(function () {});
   }
   var syncTimer = null;
+  function syncIfStale(ms) {
+    if (!connected() || syncing || Date.now() - (+st().lastSync || 0) < (ms || 120000)) return;
+    syncNow(false).catch(function () {});
+  }
   function syncSoon(ms) { clearTimeout(syncTimer); syncTimer = setTimeout(function () { syncNow(false).catch(function () {}); syncSoon(SYNC_EVERY); }, ms || 30000); }
   // Recently watched follows what you watch: fetched again after a sync or something sent.
   function historySoon() { lists().forEach(function (l) { if (l.src && l.src.type === 'history') cache.at[l.id] = 0; }); itemsSoon(false); }
@@ -415,6 +478,6 @@ var Trakt = (function () {
 
   return { connected: connected, user: user, settings: settings, setSettings: setSettings, connect: connect, cancel: cancel, pendingCode: pendingCode, disconnect: disconnect,
     lists: lists, has: has, hasChart: hasChart, hasFound: hasFound, update: update, remove: remove, addChart: addChart, addWatchlist: addWatchlist, addHistory: addHistory, addRecommended: addRecommended, addTyped: addTyped, search: search, browse: browse, holds: holds, tabName: tabName, addFound: addFound, CHARTS: CHARTS,
-    itemsOf: itemsOf, itemsSoon: itemsSoon, shelves: shelves, watchedMovie: watchedMovie, watchedEpisode: watchedEpisode, paused: paused, syncNow: syncNow, start: start, describe: describe, onChange: onChange,
-    get syncing() { return syncing; }, get busy() { return itemsBusy; }, _test: { parse: parse, normalize: normalize, pathsOf: pathsOf } };
+    itemsOf: itemsOf, itemsSoon: itemsSoon, shelves: shelves, watchedMovie: watchedMovie, watchedEpisode: watchedEpisode, markMovie: markMovie, markEpisode: markEpisode, markEpisodes: markEpisodes, paused: paused, syncNow: syncNow, syncIfStale: syncIfStale, start: start, describe: describe, onChange: onChange,
+    get syncing() { return syncing; }, get busy() { return itemsBusy; }, _test: { parse: parse, normalize: normalize, pathsOf: pathsOf, bodyOf: bodyOf } };
 })();

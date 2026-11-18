@@ -1708,5 +1708,21 @@ I18n.add('ru', {
   "{x} of {y}": "{x} из {y}",
   "shows": "сериалы",
   "Loading {x} from the portal": "Загрузка с портала ({x})",
-  "A big portal takes a few minutes the first time.": "Большой портал в первый раз загружается несколько минут."
+  "A big portal takes a few minutes the first time.": "Большой портал в первый раз загружается несколько минут.",
+  "Show options": "Параметры сериала",
+  "Favorite, details, episode order and more": "Избранное, сведения, порядок серий и другое",
+  "Mark show as watched": "Отметить сериал как просмотренный",
+  "Mark show as not watched": "Отметить сериал как непросмотренный",
+  "Mark season as watched": "Отметить сезон как просмотренный",
+  "Mark season as not watched": "Отметить сезон как непросмотренный",
+  "{n} episodes marked as watched": ["{n} серия отмечена как просмотренная", "{n} серии отмечены как просмотренные", "{n} серий отмечены как просмотренные"],
+  "{n} episodes marked as not watched": ["{n} серия отмечена как непросмотренная", "{n} серии отмечены как непросмотренные", "{n} серий отмечены как непросмотренные"],
+  "1 episode marked as watched": "1 серия отмечена как просмотренная",
+  "1 episode marked as not watched": "1 серия отмечена как непросмотренная",
+  "All watched already": "Всё уже просмотрено",
+  "None watched yet": "Пока ничего не просмотрено",
+  "Hold OK  season options": "Удерживать OK  параметры сезона",
+  "▼  Chapters": "▼  Главы",
+  "CH  Next chapter": "CH  Следующая глава",
+  "CH  Skip 10 min": "CH  Перемотка на 10 мин"
 });

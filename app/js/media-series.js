@@ -267,7 +267,7 @@ var MediaSeries = (function () {
       r.originPage=item.originPage||back;r.beforePlay=item.beforePlay;
       var options = r.versions.map(function (v) { return {label:'Play: ' + ((MediaStore.source(v.sourceId) || {}).name || 'Source'),sub:v.label,action:function () { playVersion(v,r); }}; });
       r.versions.forEach(function (v) { options.push({label:'Episode start: '+((MediaStore.source(v.sourceId) || {}).name || 'Version'),action:function () { boundaries(v,r,function () { showEpisode(item,back); }); }}); });
-      options.push({label:r.watchState === 'watched' ? 'Mark unwatched' : 'Mark watched',action:function () { edit(r,'setWatched',{watched:r.watchState !== 'watched'},function () { showEpisode(item,back); }); }});
+      options.push({label:r.watchState === 'watched' ? 'Mark as not watched' : 'Mark as watched',action:function () { var on=r.watchState !== 'watched'; edit(r,'setWatched',{watched:on},function () { if (typeof Trakt !== 'undefined' && Trakt.markEpisode) Trakt.markEpisode(r.handle,on); afterMark(); showEpisode(item,back); }); }});
       options.push({label:'Back',action:back}); UI.menu(RAW(episodeLabel(r)),options,back);
     });
   }
@@ -293,10 +293,30 @@ var MediaSeries = (function () {
       }};}),back);
     },function(e){U.toast(e.message,6000);});
   }
+  /* Mark a whole show, or one season of it (bucket: its key on the show page), watched or not watched, as Plex
+     does: every episode of it in the library, and the same on Trakt.  then(changed) after. */
+  function markShow(r, bucket, on, then) {
+    request('edit',{operation:'setWatched',handle:r.handle,expectedRevision:r.revision,watched:on,season:bucket},function (res) {
+      var eps=res.episodes||[]; if (res.revision) r.revision=res.revision;
+      if (eps.length && typeof Trakt !== 'undefined' && Trakt.markEpisodes) Trakt.markEpisodes(r.metadata && r.metadata.id,eps,on);
+      U.toast(eps.length ? (eps.length === 1 ? '1 episode' : eps.length + ' episodes') + (on ? ' marked as watched' : ' marked as not watched') : on ? 'All watched already' : 'None watched yet');
+      afterMark(); if (then) then(eps.length);
+    });
+  }
+  // The choices for a show or a season (bucket): "Mark as watched" when some aren't, "Mark as not watched" when some are.
+  function markItems(r, bucket, counts) {
+    var what = bucket == null ? 'show' : 'season', out = [];
+    if (!counts || counts.unwatched) out.push({label:what === 'show' ? 'Mark show as watched' : 'Mark season as watched',action:function (then) { markShow(r,bucket,true,then); }});
+    if (!counts || counts.watched) out.push({label:what === 'show' ? 'Mark show as not watched' : 'Mark season as not watched',action:function (then) { markShow(r,bucket,false,then); }});
+    return out;
+  }
+  // Next up, Continue watching and the shelves follow at once.
+  function afterMark() { if (Media.refreshShows) Media.refreshShows(); if (Media.refresh) Media.refresh(); }
   function show(item, back) {
     request('detail',{kind:'show',handle:item.handle},function (r) {
       var options = r.buckets.map(function (bucket) { return {label:bucket.title || (r.order === 'aired' && (!r.displayOrder || r.displayOrder === 'aired') ? bucket.key === '0' ? 'Specials' : 'Season ' + bucket.key : bucket.key),sub:bucket.count + ' episodes',action:function () { page(r.title,{kind:'episode',show:r.handle,bucket:bucket.key,limit:60},showEpisode,function () { show(item,back); }); }}; });
       options.push({label:r.favourite ? 'Remove favourite' : 'Add favourite',action:function () { edit(r,'setFavourite',{favourite:!r.favourite},function () { show(item,back); }); }});
+      markItems(r,null).forEach(function (o) { options.push({label:o.label,action:function () { o.action(function () { show(item,back); }); }}); });
       options.push({label:'Merge with another show',action:function(){mergeShow(r,function(){show(item,back);});}});
       options.push({label:'Preferred source for every show',action:function(){UI.menu('Preferred source for every show',MediaStore.sources().map(function(source){return {label:source.name,action:function(){MediaStore.sourcePreference(source.id);show(item,back);}};}),function(){show(item,back);});}});
       options.push({label:'Episode order',action:function(){groupOrder(r,function(){show(item,back);});}});
@@ -384,5 +404,5 @@ var MediaSeries = (function () {
       });
     }
   };
-  return {showQuery:showQuery,fetchDetails:fetchDetails,excluded:excluded,resume:function(card){request('detail',{kind:'episode',handle:card.continueEpisode},function(ep){var v=ep.versions.filter(function(version){return version.handle===card.continueFile;})[0];if(v)playVersion(v,ep);else showEpisode(ep,open);});},showItem:show,correct:correct,playEpisode:function(item,back){request('detail',{kind:'episode',handle:item.handle},function(r){r.originPage=back;var v=preferredVersion(r);if(v)playVersion(v,r);else showEpisode(item,back);});},episodeMenu:showEpisode,showDetail:function(handle,done){request('detail',{kind:'show',handle:handle},done);},episodes:function(q,done){request('query',q,done);},recordCompletion:recordCompletion,phone:phone,open:open,review:review,completed:completed,leave:function () { generation++; if (Media.cancelPending) Media.cancelPending(); clearTimeout(nextTimer); nextTimer = null; }};
+  return {showQuery:showQuery,fetchDetails:fetchDetails,excluded:excluded,resume:function(card){request('detail',{kind:'episode',handle:card.continueEpisode},function(ep){var v=ep.versions.filter(function(version){return version.handle===card.continueFile;})[0];if(v)playVersion(v,ep);else showEpisode(ep,open);});},showItem:show,markItems:markItems,markShow:markShow,correct:correct,playEpisode:function(item,back){request('detail',{kind:'episode',handle:item.handle},function(r){r.originPage=back;var v=preferredVersion(r);if(v)playVersion(v,r);else showEpisode(item,back);});},episodeMenu:showEpisode,showDetail:function(handle,done){request('detail',{kind:'show',handle:handle},done);},episodes:function(q,done){request('query',q,done);},recordCompletion:recordCompletion,phone:phone,open:open,review:review,completed:completed,leave:function () { generation++; if (Media.cancelPending) Media.cancelPending(); clearTimeout(nextTimer); nextTimer = null; }};
 })();

@@ -32,9 +32,12 @@ var MediaShowPage = (function () {
       // Specials last, as Plex lists them.
       pg.seasons = (r.buckets || []).slice().sort(function (a, b) { return (a.key === '0') - (b.key === '0'); });
       // On the season with the episode you're up to (Continue watching), else the first.
-      var want = card.continueSeason != null ? String(card.continueSeason) : null;
+      /* From Recently aired or Recently added episodes: on that episode ("S1E5"), as Plex does. */
+      var fm = /^S(\d+)E(\d+)/i.exec(card.focusEp || ''); pg.focus = fm ? { s: +fm[1], e: +fm[2] } : null;
+      var want = pg.focus ? String(pg.focus.s) : card.continueSeason != null ? String(card.continueSeason) : null;
       pg.at = Math.max(0, want ? pg.seasons.map(function (b) { return b.key; }).indexOf(want) : 0);
       if (pg.seasons.length === 1) return season(0);
+      if (pg.focus) return season(pg.at);                // straight to that episode
       draw();
     });
   }
@@ -47,6 +50,8 @@ var MediaShowPage = (function () {
       pg.eps = r.items || []; pg.loading = false;
       // On the first episode not watched yet.
       var k = 0; for (var j = 0; j < pg.eps.length; j++) { if (pg.eps[j].watchState !== 'watched') { k = j; break; } k = j; }
+      // Or the episode it was opened for (Recently aired), once.
+      if (pg.focus) { for (var f = 0; f < pg.eps.length; f++) if (+pg.eps[f].season === pg.focus.s && +pg.eps[f].number === pg.focus.e) { k = f; break; } pg.focus = null; }
       pg.sel = k; draw();
     });
   }
@@ -89,7 +94,7 @@ var MediaShowPage = (function () {
   function hints() {
     if (!pg) return;
     UI.hints(pg.level === 'eps' ? [['', 'OK  play'], ['', '◀ ▶  episodes'], ['', 'Hold OK  episode options', 'hold'], ['', 'Back  ' + (pg.seasons.length > 1 ? 'seasons' : 'close'), 'back']]
-      : [['', 'OK  episodes'], ['', '◀ ▶  seasons'], ['', 'Hold OK  show options', 'hold'], ['', 'Back  close', 'back']]);
+      : [['', 'OK  episodes'], ['', '◀ ▶  seasons'], ['', 'Hold OK  season options', 'hold'], ['', 'Back  close', 'back']]);
   }
   function drawSeasons(b, s, m) {
     if (!pg.seasons.length) { b.appendChild(tel('div', 'shp-empty', 'No episodes found for this show.')); return; }
@@ -144,7 +149,16 @@ var MediaShowPage = (function () {
     if (!pg || pg.loading) return;
     var state = pg;
     if (pg.level === 'eps') { var e = pg.eps[pg.sel]; if (e) MediaSeries.episodeMenu(e, reopen(state)); return; }
-    MediaSeries.showItem({ handle: pg.show.handle }, reopen(state));
+    /* On a season (Plex's Hold OK on a season): mark it watched or not watched, or the show's own options. */
+    var b = pg.seasons[pg.at], sh = pg.show;
+    if (!b) return MediaSeries.showItem({ handle: sh.handle }, reopen(state));
+    MediaSeries.episodes({ kind: 'episode', show: sh.handle, bucket: b.key, limit: 200 }, function (r) {
+      if (pg !== state) return;
+      var items = r.items || [], w = items.filter(function (x) { return x.watchState === 'watched'; }).length;
+      var menu = MediaSeries.markItems(sh, b.key, { watched: w, unwatched: items.length - w }).map(function (o) { return { label: o.label, action: function () { o.action(function () { reopen(state)(); }); } }; });
+      menu.push({ label: 'Show options', sub: 'Favorite, details, episode order and more', action: function () { MediaSeries.showItem({ handle: sh.handle }, reopen(state)); } });
+      UI.menu(seasonName(sh, b), menu, reopen(state));
+    });
   }
   function keys(a) {
     if (!pg) return false;

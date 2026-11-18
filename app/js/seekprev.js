@@ -18,6 +18,9 @@ var SeekPrev = (function () {
   function tel(tag, cls, text) { return U.el(tag, cls, text == null || typeof I18n === 'undefined' ? text : I18n.t(text)); }
   var STEP = 10, W = 320;
   var key = '', ok = null, movie = null, box = null, img = null, label = null, shownT = -1, wantT = -1, t0 = 0, timer = null, fill = null, made = {};
+  /* Pictures this TV has (an object URL each, kept for the movie), the ones being fetched, and the one fetched for
+     "now" (one at a time: presses in a row ask for where they stop, once the last one is in). */
+  var ready = {}, readyN = 0, asking = {}, nowBusy = false;
 
   function setting() { var v = typeof Store !== 'undefined' && Store.settings && Store.settings.seekPreviews; return v === 'on' || v === 'off' ? v : 'auto'; }
   function lean() { return !!(typeof Player !== 'undefined' && Player.memSafe); }
@@ -58,20 +61,18 @@ var SeekPrev = (function () {
       if (setting() === 'off') return false;
       if (ok !== null) return ok;
       return fetch(base() + '/preview/' + key + '/status', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) { ok = !!j.ok; if (!ok) Log.info('player', 'Seek previews need the newer converter on this TV: it comes with the next TiviBro update'); return ok; });
-    }).then(function () { if (movie === m) fillSoon(20000); }, function () {});
+    }).then(function () { if (movie === m) fillSoon(4000); }, function () {});
   }
-  function stop() { if (sheet) { sheet.el.remove(); sheet = null; } movie = null; made = {}; clearTimeout(fill); fill = null; hide(); marksFor = null; if (marksEl) marksEl.innerHTML = ''; if (typeof Skipper !== 'undefined') Skipper.chapters([]); }
+  function stop() { if (sheet) { sheet.el.remove(); sheet = null; } movie = null; made = {}; for (var k in ready) URL.revokeObjectURL(ready[k]); ready = {}; tried = {}; readyN = 0; asking = {}; nowBusy = false; if (img) img._t = null; clearTimeout(fill); fill = null; hide(); marksFor = null; if (marksEl) marksEl.innerHTML = ''; if (typeof Skipper !== 'undefined') Skipper.chapters([]); }
 
   function build() {
     if (box) return box;
     var prog = document.querySelector('#osd .osd-prog'); if (!prog) return null;
     box = tel('div', 'seekprev hidden'); img = tel('img', 'seekprev-pic'); img.alt = ''; label = tel('div', 'seekprev-time');
-    img.onload = function () { box.classList.remove('wait'); box.classList.add('has'); };
-    img.onerror = function () { box.classList.remove('wait'); };
     box.appendChild(img); box.appendChild(label); prog.appendChild(box);
     return box;
   }
-  function hide() { if (box) { box.classList.add('hidden'); box.classList.remove('has', 'wait'); } shownT = -1; wantT = -1; clearTimeout(timer); }
+  function hide() { if (box) { box.classList.add('hidden'); box.classList.remove('has', 'wait'); } shownT = -1; wantT = -1; clearTimeout(timer); if (movie && !fill) fillSoon(2000); }
   function fmt(s) { s = Math.max(0, Math.floor(s)); var h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ':' + (m < 10 ? '0' : '') : '') + m + ':' + (x < 10 ? '0' : '') + x; }
 
   // The chapter a time is in (its title), or null.
@@ -113,49 +114,97 @@ var SeekPrev = (function () {
     label.textContent = (c && movie.chapters.length > 1 ? chapterName(c, ci) + '  ·  ' : '') + fmt(t);
     var b = bucket(t);
     if (b === wantT) return;
-    wantT = b; t0 = Date.now();
-    if (made[b]) { img.src = link(b); shownT = b; return; }
-    box.classList.add('wait');
-    // A short wait: presses in a row ask only for where they stop (each asks for one, the service drops the rest).
+    wantT = b; t0 = Date.now(); shownT = b;
+    // Its own picture if this TV has it, else the nearest one it has (dimmed) until its own comes.
+    if (ready[b]) { paint(b, true); return; }
+    var n = nearest(b);
+    if (n >= 0) paint(n, false); else { box.classList.remove('has'); box.classList.add('wait'); }
+    // A short wait: presses in a row ask only for where they stop.
     clearTimeout(timer);
     timer = setTimeout(function () {
       if (wantT !== b || !movie) return;
-      img.src = link(b); shownT = b; made[b] = 1;
+      askNow();
       // The next two presses the way it's going, asked ahead (not on a TV short of memory).
       if (dir && !lean()) for (var i = 1; i <= 2; i++) ahead(b + dir * i * STEP * Math.max(1, Math.round(Math.abs((+Store.settings.skip || 10) / STEP))), d);
-    }, made[b] ? 0 : 140);
+    }, 140);
   }
   function ahead(t, d) {
-    if (t < 0 || t > d || made[t]) return;
-    made[t] = 1;
-    var i = new Image(); i.src = link(bucket(t), true);
+    t = bucket(t);
+    if (t < 0 || t > d || ready[t] || asking[t]) return;
+    get(t, true);
+  }
+  /* One picture into ready[t] (fetched, kept as an object URL).  cb(ok).  A picture that didn't come (the service
+     was busy with another, or there is none) isn't marked made, so it can be asked again. */
+  function get(t, isAhead, cb) {
+    var m = movie;
+    if (!m || ready[t]) { if (cb) cb(!!ready[t]); return; }
+    if (asking[t]) { asking[t].push(cb); return; }
+    asking[t] = [cb];
+    fetch(link(t, isAhead), { cache: 'force-cache' }).then(function (r) { return r.status === 200 ? r.blob() : null; }).then(function (b) {
+      var w = asking[t] || []; delete asking[t];
+      if (movie !== m) return;
+      if (b && b.size > 200) {
+        ready[t] = URL.createObjectURL(b); readyN++; made[t] = 1;
+        // Kept for the movie: at most 200 (80 on a TV short of memory), the ones farthest from here go first.
+        var cap = lean() ? 80 : 200;
+        if (readyN > cap) { var v = video(), here = v ? v.currentTime : 0, far = Object.keys(ready).map(Number).sort(function (a, b2) { return Math.abs(b2 - here) - Math.abs(a - here); })[0]; if (far !== t) { URL.revokeObjectURL(ready[far]); delete ready[far]; readyN--; } }
+      }
+      w.forEach(function (f) { if (f) f(!!ready[t]); });
+    }, function () { var w = asking[t] || []; delete asking[t]; w.forEach(function (f) { if (f) f(false); }); });
+  }
+  // The nearest picture this TV has to t, while t's own comes: better than an empty box.
+  function nearest(t) {
+    var best = -1, bd = Infinity;
+    for (var k in ready) { var dd = Math.abs(+k - t); if (dd < bd) { bd = dd; best = +k; } }
+    return best;
+  }
+  function paint(t, exact) {
+    if (!img || ready[t] == null) return;
+    if (img._t !== t) { img.src = ready[t]; img._t = t; }
+    box.classList.add('has'); box.classList.toggle('wait', !exact);
+  }
+  // "Now": the picture where the seek stops, one fetch at a time; when it's in and the seek has moved on, the latest.
+  function askNow() {
+    if (nowBusy || !movie || wantT < 0) return;
+    var b = wantT;
+    if (ready[b]) return paint(b, true);
+    nowBusy = true;
+    get(b, false, function () {
+      nowBusy = false;
+      if (!movie) return;
+      if (wantT === b) { if (ready[b]) paint(b, true); else box.classList.remove('wait'); }
+      else if (wantT >= 0) { var n = nearest(wantT); if (n >= 0) paint(n, n === wantT); askNow(); }
+    });
   }
 
   /* Pictures made ahead one at a time, where the next presses would land and spread over the movie: only while it
      plays with plenty buffered (20 s and more) or sits paused, never with Memory-safe on (Automatic), and not while
      seeking (that one's own pictures first). */
-  var SPREAD = 48;
+  var SPREAD = 48, tried = {};
   function fillSoon(ms) { clearTimeout(fill); fill = setTimeout(fillOne, ms); }
   function fillOne() {
     fill = null;
-    if (!movie || !allowed() || (setting() === 'auto' && lean())) return;
+    if (!movie || !allowed()) return;
     var v = video(), d = v && v.duration;
-    if (!d || !isFinite(d)) return fillSoon(10000);
+    if (!d || !isFinite(d)) return fillSoon(5000);
     var buf = 0; try { for (var i = 0; i < v.buffered.length; i++) if (v.buffered.start(i) <= v.currentTime + 1 && v.buffered.end(i) > v.currentTime) buf = v.buffered.end(i) - v.currentTime; } catch (e) {}
-    if (wantT >= 0 || (!v.paused && buf < 20)) return fillSoon(8000);
-    // The next spot not made yet: first where the next presses land from here (◀ ▶ and the 10-minute jumps), then
-    // halves (1/2, then 1/4 and 3/4, ...), so the movie is covered coarsely soon.
+    /* From a few seconds after the start, not 20 s and plenty buffered as before: you seek back to where you left
+       off right away, and every picture was still missing then.  Not while seeking (its own pictures first), and
+       not while the movie is short of what it has buffered (8 s). */
+    if (wantT >= 0 || nowBusy || (!v.paused && buf < 8)) return fillSoon(3000);
+    /* The next spot not made yet: first the movie in eighths (a long jump, back to where you left off, lands near
+       one at once), then where the next presses land from here (◀ ▶ and the 10-minute jumps), each chapter, and
+       finer halves after that. */
     var spots = [], seen = {}, here = v.currentTime, skip = +Store.settings.skip || 30;
+    for (var e8 = 1; e8 < 8; e8++) { var t8 = bucket(d * e8 / 8); if (!seen[t8]) { seen[t8] = 1; spots.push(t8); } }
     [1, 2, -1, 3, 4, -2].forEach(function (k) { var t = bucket(here + k * skip); if (t > 0 && t < d - 5 && !seen[t]) { seen[t] = 1; spots.push(t); } });
     [600, -600].forEach(function (k) { var t = bucket(here + k); if (t > 0 && t < d - 5 && !seen[t]) { seen[t] = 1; spots.push(t); } });
     (movie.chapters || []).forEach(function (c) { var t = picTime(c); if (!seen[t]) { seen[t] = 1; spots.push(t); } });   // each chapter's picture
-    for (var s = 1; s < SPREAD; s <<= 1) for (var j = 1; j < 2 * s; j += 2) { var t = bucket(d * j / (2 * s)); if (!seen[t]) { seen[t] = 1; spots.push(t); } }
-    var next = spots.filter(function (x) { return !made[x]; })[0];
+    for (var s = 1; s < (lean() ? 24 : SPREAD); s <<= 1) for (var j = 1; j < 2 * s; j += 2) { var t = bucket(d * j / (2 * s)); if (!seen[t]) { seen[t] = 1; spots.push(t); } }
+    var next = spots.filter(function (x) { return !ready[x] && !asking[x] && !tried[x]; })[0];
     if (next == null) return;
-    made[next] = 1;
-    var im = new Image(), m = movie;
-    im.onload = im.onerror = function () { if (movie === m) fillSoon(1500); };
-    im.src = link(next, true);
+    var m = movie;
+    get(next, true, function (got) { if (!got) tried[next] = 1; if (movie === m) fillSoon(lean() ? 2500 : 1200); });
   }
 
   /* Chapters with their pictures (Red > Chapters in the player, or CH+ CH− there): a strip of the movie's chapters,
