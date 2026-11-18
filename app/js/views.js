@@ -1128,6 +1128,12 @@ var Views = (function () {
         $('osdBar').style.width = nn.now.up || nn.now.ended ? '0' : Math.round(100 * (Date.now() - nn.now.s) / (nn.now.e - nn.now.s)) + '%';
       } else { $('osdNow').textContent = Search.extra(c) || (nn && !Library.noGuide(c) ? 'No guide information' : ''); $('osdBar').style.width = '0'; }
       $('osdNext').textContent = nn && nn.next ? T('Next') + '  ' + U.hhmm(nn.next.s) + '  ' + nn.next.t : '';
+      // Behind live (live pause's copy on the drive, or a channel's own window): how far, and where in what's kept.
+      var win = behindLive();
+      if (win) {
+        $('osdNow').textContent = T('{t} behind live', { t: fmtDur(win.behind) }) + (Player.paused ? '   ·   ' + T('paused') : '') + (nn && nn.now ? '   ·   ' + nn.now.t : '');
+        $('osdBar').style.width = Math.round(100 * U.clamp((win.at - win.start) / Math.max(1, win.end - win.start), 0, 1)) + '%';
+      }
     }
     osdLegend();
     if (show) {
@@ -1142,10 +1148,12 @@ var Views = (function () {
 
   /* What every button does right now, at the bottom of the info panel.  Follows the remote map,
      and each chip can be clicked with the Magic Remote pointer. */
+  function behindLive() { if (mode !== 'live' || !(lw || Player.tshift)) return null; var w = Player.liveWindow(); return w && w.behind > 4 ? w : null; }
   function osdLegend() {
     var el = $('osdKeys'), items = [];
     function chip(key, label, color) { items.push([key, label, color]); }
     if (mode === 'vod') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); if (typeof SeekPrev !== 'undefined' && SeekPrev.chapters.length > 1) { chip('down', '▼  Chapters'); chip('chup', 'CH  Next chapter'); } else chip('chup', 'CH  Skip 10 min'); chip('red', 'Options', 'red'); chip('back', 'Back  Stop'); }
+    else if (behindLive()) { chip('ok', 'OK  ' + (Player.paused ? 'Play' : 'Pause')); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('back', 'Back  Live'); chip('red', 'Options', 'red'); }
     else if (mode === 'catchup') { chip('ok', 'Pause'); chip('left', '◀ ▶  Skip ' + Store.settings.skip + 's'); chip('up', '▲ ▼  Skip 5 min'); chip('yellow', 'Back to live', 'yellow'); chip('red', 'Options', 'red'); }
     else {
       var g = function (b) { var a = Keymap.get('player', b); return a && a !== 'none' ? Keymap.SHORT[a] || Keymap.ACTIONS[a] : ''; };
