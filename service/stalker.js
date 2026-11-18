@@ -225,7 +225,7 @@ function unb64u(s) { try { return buf(String(s || '').replace(/-/g, '+').replace
      GET /stalker/archive/<channel id>.ts?stb=<login>&start=<unix s>&end=<unix s>   a programme of the archive */
 // PAGES_MAX: a portal sends 10 to 20 titles a page; 700 pages left out most of a big portal's movies (issue #111).
 var vodMem = {}, VOD_FOR = 3 * 3600e3, PAGES_MAX = 4000;
-function vodOf(L) { var k = keyOf(L); return vodMem[k] || (vodMem[k] = { cats: null, catsAt: 0, lists: {}, cmd: {} }); }
+function vodOf(L) { var k = keyOf(L); return vodMem[k] || (vodMem[k] = { cats: null, catsAt: 0, lists: {}, cmd: {}, tmp: {}, staticAt: {}, seasonOf: {} }); }
 function when(s) { var t = Date.parse(String(s || '').replace(' ', 'T')); return isNaN(t) ? (+s || 0) : Math.floor(t / 1000); }
 function extOf(cmd) { var m = /\.(mp4|mkv|avi|m4v|mov|ts|m3u8|mpg)(?:[?\s]|$)/i.exec(String(cmd || '')); return m && !/mpg/i.test(m[1]) ? m[1].toLowerCase() : 'mp4'; }
 // A poster: a whole address, or a path on the portal's own server ("/stalker_portal/screenshots/12.jpg", issue #113).
@@ -239,7 +239,14 @@ function slim(x, L) {
   return { id: String(x.id), name: String(x.name || x.o_name || 'Untitled'), cover: art(L, x.screenshot_uri) || art(L, x.cover) || art(L, x.screenshot) || '',
     rating: String(x.rating_imdb || x.rating_kinopoisk || x.rating || ''), cat: String(x.category_id || ''), added: when(x.added), series: +x.is_series === 1 || x.is_series === true,
     year: String(x.year || '').slice(0, 4), plot: String(x.description || '').slice(0, 1500), cmd: String(x.cmd || ''), director: String(x.director || ''), cast: String(x.actors || ''),
-    genre: String(x.genres_str || x.genre || ''), mins: +x.time || 0 };
+    genre: String(x.genres_str || x.genre || ''), mins: +x.time || 0, tmp: tmpOf(x) };
+}
+/* Whether a title needs a temporary link from the portal (use_http_tmp_link or use_load_balancing set): 1 yes, 0 no
+   (both flags there and off), -1 not said.  The portal's own player calls create_link only for 1. */
+function tmpOf(x) {
+  if (!x || !('use_http_tmp_link' in x) && !('use_load_balancing' in x)) return -1;
+  var on = function (v) { return v === true || v === 1 || v === '1'; };
+  return on(x.use_http_tmp_link) || on(x.use_load_balancing) ? 1 : 0;
 }
 function vodCats(L, cb) {
   var V = vodOf(L);
@@ -314,7 +321,7 @@ function vodItems(L, cat, cb, max) {
   shared(keyOf(L) + '|vod|' + key, cb, function (cb) { vodPages(L, cat || '*', function (e, list) {
     if (e) return cb(e);
     var items = list.filter(function (x) { return x && x.id != null; }).map(function (x) { return slim(x, L); });
-    items.forEach(function (x) { if (x.cmd) V.cmd[x.id] = x.cmd; });
+    items.forEach(function (x) { if (x.cmd) V.cmd[x.id] = x.cmd; if (x.tmp !== -1) V.tmp[x.id] = x.tmp; });
     keepCmds(L);
     V.lists[key] = { at: Date.now(), items: items };
     cb(null, items);
@@ -374,6 +381,8 @@ function seasons(L, x, cb) {
       if (!sz || !sz.cmd) return;
       var n = +((/(\d+)/.exec(String(sz.name || '')) || [])[1]) || i + 1, nums = Array.isArray(sz.series) ? sz.series : [];
       out.push({ season_number: n, name: String(sz.name || 'Season ' + n), cover: x.cover });
+      // Where this season is, for an episode its command gives no link for (vodTry: by coordinates).
+      vodOf(L).seasonOf[String(sz.cmd)] = { type: x.module === 'series' ? 'series' : 'vod', video: String(sz.video_id || x.id), season: String(sz.id || '') };
       eps[n] = nums.map(function (en) {
         en = +en;
         return { id: 'e' + en + 'x' + b64u(sz.cmd), episode_num: en, title: 'Episode ' + en, container_extension: extOf(sz.cmd), season: n, info: {} };
@@ -480,8 +489,17 @@ function vodLinkOf(js) {
 }
 function vodPlay(L, id, res, ALLOW, log, port, ext) {
   var em = /^e(\d+)x([A-Za-z0-9_-]+)$/.exec(id);
-  if (em) return vodTry(L, [unb64u(em[2])], em[1], res, ALLOW, log, port, '', ext);
+  if (em) { var sc = unb64u(em[2]); return vodTry(L, [sc], em[1], res, ALLOW, log, port, '', ext, '', vodOf(L).seasonOf[sc]); }
   cmdOf(L, id, function (own) {
+    /* A title the portal says needs no temporary link (both flags there and off) plays from the address in its list,
+       as the portal's own player and IPTVnator do: no create_link, one ask less of the portal.  Only on the first
+       try: asked again within two minutes (it didn't play), the portal makes the link. */
+    var V = vodOf(L), st = linkOf(own), now = Date.now();
+    if (V.tmp[id] === 0 && st && !/^https?:\/\/(localhost|127\.)/i.test(st) && !(now - (V.staticAt[id] || 0) < 120000)) {
+      V.staticAt[id] = now;
+      if (log) log({ lv: 'info', event: 'stalker movie from its list address (no temporary link needed)' });
+      return deliver(res, ALLOW, port, st, ext, log);
+    }
     /* Without its own command: "/media/<id>.mpg" is the movie by its id; "/media/file_<id>.mpg" is a FILE by that id
        (stalker_portal's createLink), right only where the two ids match, as on portals built on other panels. */
     var usual = '/media/file_' + id + '.mpg', byId = '/media/' + id + '.mpg', tries = [];
@@ -493,10 +511,47 @@ function vodPlay(L, id, res, ALLOW, log, port, ext) {
     vodTry(L, tries, '', res, ALLOW, log, port, linkOf(own), ext, /^\d+$/.test(id) ? id : '');
   });
 }
+// A movie's link to the player: as HLS when it is a playlist and the player asked for a file (415, below).
+function deliver(res, ALLOW, port, to, asked, log) {
+  if (asked && asked !== 'm3u8' && isHlsLink(to)) {
+    if (log) log({ lv: 'info', event: 'stalker movie link is HLS; the player asked for ' + asked });
+    var h415 = { 'Content-Type': 'text/plain', 'X-TiviBro-Format': 'm3u8' }; for (var k in ALLOW) h415[k] = ALLOW[k];
+    res.writeHead(415, h415); return res.end('hls');
+  }
+  sendOn(res, ALLOW, port, to);
+}
+// One episode's file commands by its coordinates (show, season, episode), as IPTVnator does: the episode's own command, else its files.
+function episodeCmds(L, ctx, n, cb) {
+  act(L, { type: ctx.type, action: 'get_ordered_list', movie_id: ctx.video, season_id: ctx.season, episode_id: 0, category: '*', fav: 0, p: 1 }, function (e, js) {
+    var eps = !e && js && Array.isArray(js.data) ? js.data : [], ep = null, out = [];
+    eps.forEach(function (x) { if (!ep && x && (+x.series_number === n || +((/(\d+)/.exec(String(x.name || '')) || [])[1]) === n)) ep = x; });
+    if (!ep && eps[n - 1]) ep = eps[n - 1];
+    if (!ep) return cb(out);
+    if (ep.cmd) out.push(String(ep.cmd));
+    if (ep.id == null) return cb(out);
+    act(L, { type: ctx.type, action: 'get_ordered_list', movie_id: ctx.video, season_id: ctx.season, episode_id: ep.id, category: '*', fav: 0, p: 1 }, function (e2, j2) {
+      (!e2 && j2 && Array.isArray(j2.data) ? j2.data : []).forEach(function (f) {
+        if (!f || !f.cmd || /\.(srt|vtt|sub|ass|ssa)(\?|$)/i.test(String(f.cmd))) return;
+        var c = f.protocol === 'custom' && /^\d+$/.test(String(f.id)) ? '/media/file_' + f.id + '.mpg' : String(f.cmd);
+        if (out.indexOf(c) < 0 && out.length < 3) out.push(c);
+      });
+      cb(out);
+    });
+  });
+}
 // create_link with each command in turn until one gives a link; the command's own address as a last resort.
-function vodTry(L, tries, series, res, ALLOW, log, port, direct, asked, movieId) {
-  var i = 0, seen = [], lastE = null, lastJs = null, filesAsked = false;
+function vodTry(L, tries, series, res, ALLOW, log, port, direct, asked, movieId, epCtx) {
+  var i = 0, seen = [], lastE = null, lastJs = null, filesAsked = false, epAsked = false, plain = {};
   (function next() {
+    /* An episode its season's command gives no link for: by its coordinates (issue #118), once, without series=. */
+    if (i >= tries.length && epCtx && epCtx.season && !epAsked && !lastE) {
+      epAsked = true;
+      return episodeCmds(L, epCtx, +series, function (cmds) {
+        cmds.forEach(function (c) { if (tries.indexOf(c) < 0) { tries.push(c); plain[c] = 1; } });
+        if (log) log({ lv: 'info', event: 'stalker episode by its coordinates', using: cmds.length });
+        next();
+      });
+    }
     /* Its files (issue #118): on newer portals a movie can have several files (qualities, languages), each with a
        command of its own, and create_link with the movie's command answers nothing to play.  Other players ask
        for the movie's files (get_ordered_list with its movie_id) and play the first.  Once, after the usual tries,
@@ -517,7 +572,7 @@ function vodTry(L, tries, series, res, ALLOW, log, port, direct, asked, movieId)
       });
     }
     if (i >= tries.length) {
-      if (direct && !/^https?:\/\/localhost[:\/]/i.test(direct)) return sendOn(res, ALLOW, port, direct);
+      if (direct && !/^https?:\/\/localhost[:\/]/i.test(direct)) return deliver(res, ALLOW, port, direct, asked, log);
       if (log) log({ lv: 'warn', event: 'stalker movie link failed', e: lastE ? lastE.message : 'no link', tried: seen.join(' '), got: shapeOf(lastJs) });
       if (lastE && lastE.auth) return linkFail(res, ALLOW, null, lastE, 'movie link');
       // The portal answered, without a link: it has nothing to play there, and asking again gets the same (404, the player stops).
@@ -532,17 +587,12 @@ function vodTry(L, tries, series, res, ALLOW, log, port, direct, asked, movieId)
        only the storage named in forced_storage when it isn't empty, so "undefined" left none and every movie on
        the portal's own storage answered nothing_to_play; a movie with a custom address skipped that check, which
        is why some portals played.  With ads on, the answer is a list (the ad, then the movie). */
-    act(L, { type: 'vod', action: 'create_link', cmd: cmd, series: series, forced_storage: '', disable_ad: 1, download: 0 }, function (e, js) {
+    act(L, { type: 'vod', action: 'create_link', cmd: cmd, series: plain[cmd] ? '' : series, forced_storage: '', disable_ad: 1, download: 0 }, function (e, js) {
       var to = e ? '' : vodLinkOf(js);
       /* Issue #118: a portal whose movie links are HLS playlists (".../playlist.m3u8?token=...") while the player
          asked for the file (".mp4"): the TV's player and the MPEG-TS one both failed on a playlist.  As for
          channels (issue #88), 415 tells the player to ask again for the .m3u8 and play it as HLS. */
-      if (to && asked && asked !== 'm3u8' && isHlsLink(to)) {
-        if (log) log({ lv: 'info', event: 'stalker movie link is HLS; the player asked for ' + asked });
-        var h415 = { 'Content-Type': 'text/plain', 'X-TiviBro-Format': 'm3u8' }; for (var k415 in ALLOW) h415[k415] = ALLOW[k415];
-        res.writeHead(415, h415); return res.end('hls');
-      }
-      if (to) return sendOn(res, ALLOW, port, to);
+      if (to) return deliver(res, ALLOW, port, to, asked, log);
       lastE = e; lastJs = js;
       // Refused, or too many asks (HTTP 429): asking again only makes it worse.
       if (e && (e.auth || /\b429\b/.test(e.message || ''))) i = tries.length;

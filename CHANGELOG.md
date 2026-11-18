@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Stalker portals: a movie that needs no temporary link plays from its own address** (issue #118), as the portal's own player and IPTVnator do.  A portal marks each title; for the ones it doesn't mark, TiviBro no longer asks the portal for a link, which is one ask less each time.  If that address doesn't play, the next try asks the portal as before.
+- **Stalker portals: an episode the season's command has no link for plays from its own file** (issue #118), found by its show, season and episode, the way the portal's own player finds it.
+
 ## 0.6.0 (alpha 164, 2026-11-18)
 
 Pre-release: expect rough edges, and keep a backup before installing.

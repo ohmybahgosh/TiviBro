@@ -161,6 +161,34 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
     m9.server.close();
   }
 
+  // Issue #118: as the portal's own player and IPTVnator, a title that needs no temporary link plays from its list address.
+  {
+    const ms = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', staticVod: true });
+    await new Promise((f) => ms.server.listen(0, '127.0.0.1', f));
+    const logins = b64({ portal: 'http://127.0.0.1:' + ms.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+    await req('GET', H + '/stalker/xc/player_api.php?stb=' + logins + '&action=get_vod_streams');
+    const n0 = (ms.seen.vodLinks || []).length;
+    let r = await req('GET', H + '/stalker/vod/501.mp4?stb=' + logins);
+    ok('issue #118: a title without temporary links plays from its own address, no create_link', r.status === 302 && /cdn\.example\/movie\/501\.mp4/.test(r.headers.location || '') && (ms.seen.vodLinks || []).length === n0, r.status + ' ' + (r.headers.location || ''));
+    r = await req('GET', H + '/stalker/vod/501.mp4?stb=' + logins);
+    ok('issue #118: asked again soon after (it didn\'t play): the portal makes the link', (ms.seen.vodLinks || []).length === n0 + 1, (ms.seen.vodLinks || []).length - n0);
+    r = await req('GET', H + '/stalker/vod/502.mp4?stb=' + logins);
+    ok('issue #118: a title that needs a temporary link still asks the portal', (ms.seen.vodLinks || []).length === n0 + 2, (ms.seen.vodLinks || []).length - n0);
+    ms.server.close();
+  }
+  // Issue #118: an episode its season's command gives no link for plays from its own file, found by its coordinates.
+  {
+    const me = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', series: true, epCoords: true });
+    await new Promise((f) => me.server.listen(0, '127.0.0.1', f));
+    const logine = b64({ portal: 'http://127.0.0.1:' + me.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+    const XE = (q) => req('GET', H + '/stalker/xc/player_api.php?stb=' + logine + '&action=' + q).then((r) => ({ status: r.status, j: JSON.parse(r.body || 'null') }));
+    const info = await XE('get_series_info&series_id=903');
+    const ep = info.j && info.j.episodes && info.j.episodes['1'] && info.j.episodes['1'][1];
+    const r = ep ? await req('GET', H + '/stalker/vod/' + ep.id + '.mp4?stb=' + logine) : { status: 0 };
+    ok('issue #118: an episode plays by show, season and episode when its season\'s command has no link', r.status === 302 && /\/ep\/2\.mp4/.test(r.headers.location || '') && (me.seen.vodLinks || []).slice(-1)[0] === '/media/file_772.mpg|', r.status + ' ' + (me.seen.vodLinks || []).join(' '));
+    me.server.close();
+  }
+
   // Issue #118: a portal whose categories need genre=*, and whose movie links are HLS playlists.
   const m8 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', series: true, genreStrict: true, vodHls: true });
   await new Promise((f) => m8.server.listen(0, '127.0.0.1', f));

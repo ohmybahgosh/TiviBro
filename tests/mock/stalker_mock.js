@@ -22,6 +22,9 @@ function create(o) {
   for (var v = 1; v <= (+o.titles || 30); v++) vods.push({ id: String(500 + v), name: 'Portal Title ' + v, category_id: v <= 15 ? '10' : '11', cmd: o.xtreamVod ? Buffer.from('{"type":"movie","stream_id":"' + (500 + v) + '","stream_source":null}').toString('base64') : v === 3 ? 'eyJ0eXBlIjoibW92aWUiLCJpZCI6NTAzfQ==' : '/media/file_' + (500 + v) + '.mpg',
     screenshot_uri: 'http://img.example/' + v + '.jpg', rating_imdb: '7.' + (v % 10), added: '2026-10-' + ('0' + (v % 28 + 1)).slice(-2) + ' 12:00:00', is_series: v === 5 || v === 20 ? '1' : '0',
     year: '2020', description: 'About title ' + v, director: 'A. Director', actors: 'Someone', genres_str: 'Drama', time: 95 });
+  /* o.staticVod: rows that say they need no temporary link (both flags '0') with an address of their own; title 2
+     needs one (use_http_tmp_link '1'). */
+  if (o.staticVod) vods.forEach(function (x, i) { x.use_http_tmp_link = i === 1 ? '1' : '0'; x.use_load_balancing = '0'; x.cmd = 'ffmpeg http://cdn.example/movie/' + x.id + '.mp4'; });
   /* o.series: a portal with a shows module of its own (type=series, issue #113): 40 shows in two categories,
      posters as paths on the portal.  o.limit: answer HTTP 429 to that many requests after the sign-in. */
   var shows = [];
@@ -46,6 +49,16 @@ function create(o) {
     if (q.type === 'vod' && q.action === 'get_categories') return js(res, [{ id: '*', title: 'All' }, { id: '10', title: 'Films' }, { id: '11', title: 'More films' }]);
     if (limit > 0 && seen.profile && q.action !== 'handshake' && q.action !== 'get_profile') { limit--; seen.limited = (seen.limited || 0) + 1; res.writeHead(429, { 'Retry-After': '1' }); return res.end('slow down'); }
     if (o.series && q.type === 'series' && q.action === 'get_categories') return js(res, [{ id: '*', title: 'All' }, { id: '70', title: 'HINDI | TV SERIALS' }, { id: '71', title: 'URDU | TV SERIALS' }]);
+    /* o.epCoords: an episode plays only from its own file (by show, season and episode), not from the season's command with series=. */
+    if (o.series && o.epCoords && q.type === 'series' && q.action === 'get_ordered_list' && q.movie_id && q.movie_id !== '0' && q.season_id && q.season_id !== '0') {
+      if (q.episode_id && q.episode_id !== '0') return js(res, { total_items: 1, data: [{ id: '77' + String(q.episode_id).replace(/\D/g, ''), name: 'HD', protocol: 'custom', cmd: 'http://raw.example/ep.mkv' }] });
+      return js(res, { total_items: 2, data: [{ id: 'ep1', series_number: '1', name: 'Episode 1', cmd: '' }, { id: 'ep2', series_number: '2', name: 'Episode 2', cmd: '' }] });
+    }
+    if (o.epCoords && q.type === 'vod' && q.action === 'create_link') {
+      seen.vodLinks = (seen.vodLinks || []).concat([q.cmd + '|' + (q.series || '')]);
+      if (/^\/media\/file_772\.mpg$/.test(String(q.cmd)) && !q.series) return js(res, { id: 1, cmd: 'ffmpeg http://127.0.0.1:1/ep/2.mp4' });
+      return js(res, { id: 1, cmd: '', error: 'nothing_to_play' });
+    }
     if (o.series && q.type === 'series' && q.action === 'get_ordered_list' && q.movie_id && q.movie_id !== '0') return js(res, { total_items: 1, data: [{ id: q.movie_id + ':1', name: 'Season 1', series: [1, 2], cmd: 'c2Vhc29uMQ==' }] });
     /* o.genreStrict (issue #118): a category's shows only with genre=* (genre=<the category> finds none). */
     if (o.series && q.type === 'series' && q.action === 'get_ordered_list') { seen.seriesPages = (seen.seriesPages || 0) + 1; seen.seriesGenres = (seen.seriesGenres || []).concat([q.genre]); if (o.genreStrict && q.category !== '*' && q.genre !== '*') return page([], q.p, res); return page(shows.filter(function (x) { return q.category === '*' || !q.category || x.category_id === q.category; }), q.p, res); }
