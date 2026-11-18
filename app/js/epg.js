@@ -39,9 +39,6 @@ var Epg = (function () {
     // For the next start if TiviBro closes during a load (Log.unclean).
     Log.state('guide', p.active ? (p.phase === 'save' ? 'saving the guide' : 'loading the guide from ' + (p.host || 'a guide source') + (p.of > 1 ? ' (' + p.src + ' of ' + p.of + ')' : '') +
       (p.total ? ', ' + Math.min(99, Math.floor(100 * p.bytes / p.total)) + '%' : p.bytes ? ', ' + mb(p.bytes) : '')) : '');
-    // Under the clock on every screen (activity.js).
-    if (typeof Activity !== 'undefined') Activity.set('guide', p.active ? (p.phase === 'save' ? 'Saving the guide' : 'Loading the guide' + (p.host ? ' from ' + p.host : '') + (p.of > 1 ? ' (' + p.src + ' of ' + p.of + ')' : '') +
-      (p.total ? ',  ' + Math.min(99, Math.floor(100 * p.bytes / p.total)) + '%' : p.bytes ? ',  ' + mb(p.bytes) : '')) : '');
     for (var i = 0; i < progListeners.length; i++) { try { progListeners[i](p); } catch (e) {} }
     chip(p);
   }

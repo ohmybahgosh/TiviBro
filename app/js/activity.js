@@ -1,6 +1,6 @@
-/* What TiviBro is doing in the background, in a small chip under the clock on every screen (not over
-   fullscreen video): loading the guide, scanning a My media source, fetching movie and show details from
-   TMDB.  Several at once take turns every 4 seconds.  Each part says what it is doing with
+/* What TiviBro is doing in the background, in a small chip in the bottom right corner on every screen (not
+   over fullscreen video), like the guide's own loading chip (epg.js) and just above it while that one shows:
+   scanning a My media source, fetching movie and show details from TMDB.  Several at once take turns every 4 seconds.  Each part says what it is doing with
    Activity.set(id, text), and Activity.set(id, '') when it is done. */
 var Activity = (function () {
   'use strict';
@@ -13,15 +13,24 @@ var Activity = (function () {
     var b = box(); if (!b) return;
     if (!order.length) { b.classList.add('hidden'); b.textContent = ''; return; }
     at = at % order.length;
-    b.textContent = items[order[at]] + (order.length > 1 ? '   (' + (at + 1) + ' of ' + order.length + ')' : '');
+    // "Fetching details: 120 movies to go": the first part bold, as the guide's chip says "Loading guide 14%".
+    var t = items[order[at]], c = t.indexOf(': ');
+    b.innerHTML = '';
+    b.appendChild(U.el('b', '', c > 0 ? t.slice(0, c) : t));
+    if (c > 0) b.appendChild(document.createTextNode(t.slice(c + 2)));
+    if (order.length > 1) b.appendChild(U.el('small', '', '  ' + (at + 1) + '/' + order.length));
+    b.appendChild(U.el('i', 'indet'));
+    var g = document.getElementById('epgProg');
+    b.classList.toggle('above', !!(g && !g.classList.contains('hidden') && g.offsetHeight));
     b.classList.remove('hidden');
   }
   function set(id, text) {
     text = String(text || '');
     if (text) { if (!items[id]) order.push(id); items[id] = text; }
     else if (items[id]) { delete items[id]; order.splice(order.indexOf(id), 1); }
-    if (order.length > 1 && !timer) timer = setInterval(function () { at++; draw(); }, 4000);
-    if (order.length < 2 && timer) { clearInterval(timer); timer = null; at = 0; }
+    // Every 4 s: the next one's turn, and the place (above the guide's chip while it shows).
+    if (order.length && !timer) timer = setInterval(function () { at++; draw(); }, 4000);
+    if (!order.length && timer) { clearInterval(timer); timer = null; at = 0; }
     draw();
   }
   function list() { return order.map(function (k) { return items[k]; }); }

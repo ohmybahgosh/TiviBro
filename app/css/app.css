@@ -111,7 +111,7 @@ body.full .vid-error{left:50%;right:auto;bottom:auto;top:40%;transform:translate
 .osd-group{font-size:24px;color:var(--muted)}
 .osd-prog{margin-top:14px;position:relative}
 /* Seek previews (seekprev.js): the movie at the time being sought, over the bar */
-.seekprev{position:absolute;bottom:34px;width:328px;transform:translateX(-50%);padding:4px;border-radius:14px;background:rgba(7,9,18,.92);box-shadow:0 10px 30px rgba(0,0,0,.6);pointer-events:none;z-index:2}
+.seekprev{position:absolute;bottom:200px;width:328px;transform:translateX(-50%);padding:4px;border-radius:14px;background:rgba(7,9,18,.92);box-shadow:0 10px 30px rgba(0,0,0,.6);pointer-events:none;z-index:2}
 .seekprev-pic{display:block;width:320px;height:180px;object-fit:cover;border-radius:10px;background:#000;opacity:0;transition:opacity 160ms ease}
 .seekprev.has .seekprev-pic{opacity:1}
 .seekprev.wait.has .seekprev-pic{opacity:.45}
@@ -883,8 +883,11 @@ video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;backgroun
 .media-libart-name{font-size:34px;font-weight:800;letter-spacing:2px;line-height:1.1;padding:0 12px}
 .media-libart-sub{font-size:21px;opacity:.85;margin-top:10px}
 /* Fetching details: N movies and N shows to go (media.js setBusy) */
-.activity{position:fixed;right:56px;top:66px;z-index:40;font-size:20px;color:var(--text);padding:6px 18px 6px 36px;border-radius:999px;background:rgba(0,0,0,.62);white-space:nowrap;max-width:760px;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
-.activity::before{content:'';position:absolute;left:14px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--ok);animation:tb-pulse 1.4s ease-in-out infinite}
+.activity{position:fixed;right:40px;bottom:36px;z-index:39;background:rgba(20,26,46,.95);border:2px solid var(--line);border-radius:14px;padding:12px 20px 16px;font-size:20px;color:var(--text);min-width:300px;max-width:760px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+.activity.above{bottom:112px}
+.activity b{color:var(--accent-text);margin-right:8px}
+.activity small{color:var(--muted);font-size:17px}
+.activity i{position:absolute;left:0;bottom:0;height:5px;width:30%;background:var(--accent2);animation:epgind 1.4s ease-in-out infinite}
 body.full .activity,body.mgr-open .activity{display:none}
 #viewMedia .media-busy{display:none}
 .media-busy{position:absolute;right:56px;top:66px;z-index:3;font-size:20px;color:var(--text);padding:6px 16px 6px 36px;border-radius:999px;background:rgba(0,0,0,.55);white-space:nowrap}

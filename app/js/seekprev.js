@@ -96,8 +96,9 @@ var SeekPrev = (function () {
     var i = new Image(); i.src = link(bucket(t), true);
   }
 
-  /* Pictures spread over the movie, made ahead one at a time: only while it plays with plenty buffered (20 s and
-     more) or sits paused, never with Memory-safe on (Automatic), and stopped by seeking. */
+  /* Pictures made ahead one at a time, where the next presses would land and spread over the movie: only while it
+     plays with plenty buffered (20 s and more) or sits paused, never with Memory-safe on (Automatic), and not while
+     seeking (that one's own pictures first). */
   var SPREAD = 48;
   function fillSoon(ms) { clearTimeout(fill); fill = setTimeout(fillOne, ms); }
   function fillOne() {
@@ -107,8 +108,11 @@ var SeekPrev = (function () {
     if (!d || !isFinite(d)) return fillSoon(10000);
     var buf = 0; try { for (var i = 0; i < v.buffered.length; i++) if (v.buffered.start(i) <= v.currentTime + 1 && v.buffered.end(i) > v.currentTime) buf = v.buffered.end(i) - v.currentTime; } catch (e) {}
     if (wantT >= 0 || (!v.paused && buf < 20)) return fillSoon(8000);
-    // The next spot not made yet: halves first (1/2, then 1/4 and 3/4, ...), so the movie is covered coarsely soon.
-    var spots = [], seen = {};
+    // The next spot not made yet: first where the next presses land from here (◀ ▶ and the 10-minute jumps), then
+    // halves (1/2, then 1/4 and 3/4, ...), so the movie is covered coarsely soon.
+    var spots = [], seen = {}, here = v.currentTime, skip = +Store.settings.skip || 30;
+    [1, 2, -1, 3, 4, -2].forEach(function (k) { var t = bucket(here + k * skip); if (t > 0 && t < d - 5 && !seen[t]) { seen[t] = 1; spots.push(t); } });
+    [600, -600].forEach(function (k) { var t = bucket(here + k); if (t > 0 && t < d - 5 && !seen[t]) { seen[t] = 1; spots.push(t); } });
     for (var s = 1; s < SPREAD; s <<= 1) for (var j = 1; j < 2 * s; j += 2) { var t = bucket(d * j / (2 * s)); if (!seen[t]) { seen[t] = 1; spots.push(t); } }
     var next = spots.filter(function (x) { return !made[x]; })[0];
     if (next == null) return;
