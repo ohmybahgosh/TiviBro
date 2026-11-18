@@ -35,7 +35,7 @@ server.listen(0, '127.0.0.1', async () => {
   ok('64-bit Node: aarch64', F.arch('arm64', 'aarch64') === 'aarch64');
   ok('a computer: none', F.arch('x64', 'x86_64') === '');
   ok('the release hashes are real SHA-256s', ['armv7', 'aarch64'].every((a) => /^[0-9a-f]{64}$/.test(F.SHA256[a])));
-  ok('the tag is in the download address', F.BASE === 'https://github.com/ohmybahgosh/TiviBro/releases/download/' + F.TAG + '/' && F.TAG === 'ffmpeg-7.1-tb1');
+  ok('the tag is in the download address', F.BASE === 'https://github.com/ohmybahgosh/TiviBro/releases/download/' + F.TAG + '/' && F.TAG === 'ffmpeg-7.1-tb2');
 
   F._config({ arch: 'armv7' });
   let st = await status();
@@ -54,7 +54,7 @@ server.listen(0, '127.0.0.1', async () => {
 
   // An older version and a leftover are cleared once the new one is in place.
   fs.writeFileSync(path.join(bin(), 'ffmpeg-7.0-tb0-armv7'), 'old');
-  fs.writeFileSync(path.join(bin(), 'ffmpeg-7.1-tb1-armv7.part'), 'half');
+  fs.writeFileSync(path.join(bin(), 'ffmpeg-7.1-tb2-armv7.part'), 'half');
   hits = [];
   F._config({ base: base + '/moved/', sums: { armv7: sum } });
   const progress = [];
@@ -67,11 +67,11 @@ server.listen(0, '127.0.0.1', async () => {
   ok('status said downloading meanwhile', progress[0] === 'downloading', progress);
   ok('version from -version', r.st.version === '7.1.1-tb', r.st);
   ok('size and where', r.st.size === fake.length && r.st.where === 'set by TIVIBRO_KV_DIR', r.st);
-  const f = path.join(bin(), 'ffmpeg-7.1-tb1-armv7');
+  const f = path.join(bin(), 'ffmpeg-7.1-tb2-armv7');
   ok('named with its version, in the storage folder\'s bin', F.binary() === f && fs.existsSync(f), F.binary());
   ok('chmod 700', (fs.statSync(f).mode & 0o777) === 0o700, (fs.statSync(f).mode & 0o777).toString(8));
   ok('unpacked (the binary, not the .gz)', fs.readFileSync(f, 'utf8') === fake);
-  ok('older version and leftovers removed', fs.readdirSync(bin()).join(',') === 'ffmpeg-7.1-tb1-armv7', fs.readdirSync(bin()));
+  ok('older version and leftovers removed', fs.readdirSync(bin()).join(',') === 'ffmpeg-7.1-tb2-armv7', fs.readdirSync(bin()));
   st = await status();
   ok('status: ready afterwards', st.state === 'ready' && st.path === f, st);
 

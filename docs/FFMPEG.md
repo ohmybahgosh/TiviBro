@@ -1,4 +1,4 @@
-# ffmpeg for audio conversion
+# ffmpeg for audio conversion and seek previews
 
 TiviBro carries a tiny, fully static ffmpeg in its package (or, in a build without it, downloads it to the TV) and use it to convert audio the TV can't decode.  Video is always stream-copied, never decoded or re-encoded, so the TV's hardware video decoder still does the heavy lifting and the CPU cost stays low.
 
@@ -20,12 +20,14 @@ It is cut down to what the helper needs, to stay small:
 | Demuxers | Matroska/WebM, MP4/MOV, MPEG-TS, AVI, FLV |
 | Audio decoders | `dca` (DTS, including the core of DTS-HD), `truehd`, `mlp`, `flac`, `ac3`, `eac3`, `aac`, `mp3`, `mp2`, `opus`, `vorbis`, all `pcm_*` |
 | Audio encoders | `ac3`, `eac3`, `aac` (native) |
+| Video decoders | `h264`, `hevc`, `mpeg2video`, `mpeg4`: only for seek previews, one keyframe at a time (`service/seekprev.js`).  Playing video is never decoded here. |
+| Video encoders | `mjpeg` (the seek preview pictures) |
 | Parsers | `h264`, `hevc`, `av1`, `mpeg4video`, `mpegvideo`, `vp9`, plus the audio parsers MPEG-TS and Matroska need |
 | Bitstream filters | `h264_mp4toannexb`, `hevc_mp4toannexb`, `aac_adtstoasc`, `extract_extradata`, `vp9_superframe`, `av1_frame_split` |
 | Muxers | Matroska, MPEG-TS, MP4 (fragmented), ADTS, `null` |
-| Filters | `aresample`, `aformat`, `anull`, `pan`, `atrim`, `asetpts` and the internal ones the ffmpeg CLI needs |
+| Filters | `aresample`, `aformat`, `anull`, `pan`, `atrim`, `asetpts`, `scale`, `format`, `null` and the internal ones the ffmpeg CLI needs |
 
-There are no video decoders or encoders, no `ffprobe` or `ffplay`, no devices, no network servers, no zlib (so `Content-Encoding: gzip` responses and zlib-compressed Matroska tracks are not supported).  For stream information, run `ffmpeg -hide_banner -i <url>` and parse stderr.
+There is no video encoder besides `mjpeg`, no `ffprobe` or `ffplay`, no devices, no network servers, no zlib (so `Content-Encoding: gzip` responses and zlib-compressed Matroska tracks are not supported).  For stream information, run `ffmpeg -hide_banner -i <url>` and parse stderr.
 
 `mp2` decoding and the `null` muxer are small additions beyond the original list: MP2 is common in MPEG-TS channel streams, and `-f null -` is handy for timing tests on the TV.
 
@@ -57,11 +59,11 @@ DNS comes from musl's resolver, which reads `/etc/resolv.conf` directly.  If a T
 
 `service/ffmpeg.js` finds or fetches the binary; `service/convert.js` probes and converts; `app/js/convert.js` decides when (see the user guide's "Sound the TV can't play").
 
-**Finding it.**  `TIVIBRO_FFMPEG=<path>` uses that program (tests, the dev helper on a computer).  Otherwise it is `Storage.sub('bin')/ffmpeg-7.1-tb1-<arch>`: the helper's private folder on the TV's big app storage (exec allowed, `nosuid`), never memory (`/tmp`).  The arch is `armv7` unless the helper's own Node is a 64-bit ARM program (`process.arch === 'arm64'`); `uname -m` only confirms the TV is ARM, since a C2 reports `aarch64` with a 32-bit userland.
+**Finding it.**  `TIVIBRO_FFMPEG=<path>` uses that program (tests, the dev helper on a computer).  Otherwise it is `Storage.sub('bin')/ffmpeg-7.1-tb2-<arch>`: the helper's private folder on the TV's big app storage (exec allowed, `nosuid`), never memory (`/tmp`).  The arch is `armv7` unless the helper's own Node is a 64-bit ARM program (`process.arch === 'arm64'`); `uname -m` only confirms the TV is ARM, since a C2 reports `aarch64` with a 32-bit userland.
 
 **Getting it.**  Release packages carry both `.gz` builds in `service/ffmpeg-bundle/` (`scripts/ffmpeg/bundle.sh`, run by `scripts/build.sh`, downloads them from the release in `TAG`, checks them against `SHA256` and adds the licences and `SOURCE.txt`; `TIVIBRO_NO_FFMPEG_BUNDLE=1` leaves them out).  Five seconds after the helper starts it unpacks the one for this TV the same way a download is handled below, with no question asked.  Without a bundle, on first need (the app asks) or from **Settings > Playback > Get the converter now**, the helper downloads `tivibro-ffmpeg-<arch>.gz` (following GitHub's redirect, retrying once with the bundled root certificates on old TVs), checks its SHA-256 against the constant in `service/ffmpeg.js`, unpacks it with Node's zlib, `chmod 700`s it, runs `-version`, and only then renames it into place and deletes older `ffmpeg-*` files.  A hash that doesn't match, or a placeholder hash, means nothing is unpacked or run.
 
-**The release constants** live in one place, at the top of `service/ffmpeg.js`: `TAG` (`ffmpeg-7.1-tb1`) and `SHA256.armv7` / `SHA256.aarch64` (the SHA-256 of the `.gz` files, as in `SHA256SUMS`).  Until they are filled in they read `TODO-SHA256-ARMV7` and `TODO-SHA256-AARCH64`, and the helper refuses to download.  A new `tbN` tag means updating `TAG` and both hashes together.
+**The release constants** live in one place, at the top of `service/ffmpeg.js`: `TAG` (`ffmpeg-7.1-tb2`) and `SHA256.armv7` / `SHA256.aarch64` (the SHA-256 of the `.gz` files, as in `SHA256SUMS`).  Until they are filled in they read `TODO-SHA256-ARMV7` and `TODO-SHA256-AARCH64`, and the helper refuses to download.  A new `tbN` tag means updating `TAG` and both hashes together.
 
 **Routes** (on the helper, behind TiviBro's secret like the other control routes): `GET /ffmpeg/status` (`none`, `downloading` with `percent`, `ready` with `version`, `size`, `where`, or `failed` with `error`), `POST /ffmpeg/get`, `POST /ffmpeg/remove`, `GET /convert/key`, and `GET /convert/probe?u=<url>`, which runs `ffmpeg -hide_banner -i <url>` and parses stderr into audio tracks (codec, channels, language, default, title), video codec and duration, kept per link while the helper runs.
 
@@ -79,7 +81,7 @@ nice -n 10 ffmpeg -hide_banner -nostdin -loglevel error -stats -stats_period 5 -
 
 ## Binaries and downloads
 
-Release tag `ffmpeg-7.1-tb1` (a pre-release, never marked latest), titled "ffmpeg for TiviBro (audio conversion)":
+Release tag `ffmpeg-7.1-tb2` (a pre-release, never marked latest), titled "ffmpeg for TiviBro (audio conversion)":
 
 | Asset | Contents |
 | --- | --- |
@@ -92,9 +94,9 @@ Release tag `ffmpeg-7.1-tb1` (a pre-release, never marked latest), titled "ffmpe
 Download URLs follow the usual GitHub pattern:
 
 ```
-https://github.com/ohmybahgosh/TiviBro/releases/download/ffmpeg-7.1-tb1/tivibro-ffmpeg-armv7.gz
-https://github.com/ohmybahgosh/TiviBro/releases/download/ffmpeg-7.1-tb1/tivibro-ffmpeg-aarch64.gz
-https://github.com/ohmybahgosh/TiviBro/releases/download/ffmpeg-7.1-tb1/SHA256SUMS
+https://github.com/ohmybahgosh/TiviBro/releases/download/ffmpeg-7.1-tb2/tivibro-ffmpeg-armv7.gz
+https://github.com/ohmybahgosh/TiviBro/releases/download/ffmpeg-7.1-tb2/tivibro-ffmpeg-aarch64.gz
+https://github.com/ohmybahgosh/TiviBro/releases/download/ffmpeg-7.1-tb2/SHA256SUMS
 ```
 
 Pick the binary by the userland, not the kernel: `uname -m` says `aarch64` on a C2, but its userland is 32-bit.  The helper checks its own process (`process.arch` in Node: `arm` means armv7, `arm64` means aarch64), checks the `.gz` against the SHA-256 in `service/ffmpeg.js`, unpacks it into app storage, `chmod 700`s it and runs it from there (app storage is mounted `nosuid` but allows exec).  See "How the helper uses it" above.
@@ -105,8 +107,10 @@ Built with ffmpeg 7.1.1 and mbedTLS 3.6.5, stripped:
 
 | Binary | Unpacked | Gzipped |
 | --- | --- | --- |
-| `tivibro-ffmpeg-armv7` | about 3.0 MB | about 1.6 MB |
-| `tivibro-ffmpeg-aarch64` | about 3.0 MB | about 1.6 MB |
+| `tivibro-ffmpeg-armv7` | about 4.8 MB | about 2.4 MB |
+| `tivibro-ffmpeg-aarch64` | about 4.8 MB | about 2.4 MB |
+
+(tb1, audio only, was about 3.0 MB, 1.6 MB gzipped.)
 
 Building with `ENABLE_TLS=0` drops https and saves roughly 0.3 MB; the helper would then fetch https itself and pipe it to `-i pipe:0`.
 
@@ -123,12 +127,12 @@ It is published as its own release, with its licenses and `SOURCE.txt`, and Tivi
 
 ### On GitHub
 
-Actions > **ffmpeg** > Run workflow, and enter a tag (default `ffmpeg-7.1-tb1`).  The workflow builds both architectures, strips them, runs the smoke test under qemu-user, then creates the release or updates its assets in place.  Bump the `tbN` suffix when the binary changes in a way the helper should notice, and update `TAG` and both `SHA256` values in `service/ffmpeg.js` to match (copy them from the release's `SHA256SUMS`).
+Actions > **ffmpeg** > Run workflow, and enter a tag (default `ffmpeg-7.1-tb2`).  The workflow builds both architectures, strips them, runs the smoke test under qemu-user, then creates the release or updates its assets in place.  Bump the `tbN` suffix when the binary changes in a way the helper should notice, and update `TAG` and both `SHA256` values in `service/ffmpeg.js` to match (copy them from the release's `SHA256SUMS`).
 
 ### Locally (x86_64 Linux)
 
 ```sh
-sudo apt-get install binutils-arm-linux-gnueabihf binutils-aarch64-linux-gnu qemu-user-static ffmpeg
+sudo apt-get install binutils-arm-linux-gnueabihf binutils-aarch64-linux-gnu qemu-user ffmpeg
 bash scripts/ffmpeg/build.sh all             # builds both, about 3 to 5 minutes each
 bash scripts/ffmpeg/build.sh test all        # qemu smoke test
 ```
@@ -151,3 +155,21 @@ Set `FFMPEG_VERSION` and `FFMPEG_SHA256` at the top of `scripts/ffmpeg/build.sh`
 - makes a 10 second DTS 5.1 + H.264 MKV with the host ffmpeg (`-c:a dca -strict -2`), plus a TrueHD 5.1 one;
 - converts DTS to AC-3 in MKV from a file, DTS from stdin to E-AC-3 in MPEG-TS, DTS over HTTP to AC-3 in fragmented MP4 on stdout, TrueHD to E-AC-3, and a stereo `pan` downmix to AAC;
 - checks every output with the host `ffprobe`: audio codec, 6 channels, copied video codec, 10 second duration.
+
+## Seek previews
+
+`service/seekprev.js` (`GET /preview/<key>/frame.jpg?u=<movie>&t=<seconds>&w=<width>`, the converter's key) makes one small picture of the movie playing:
+
+```sh
+nice -n 15 ffmpeg -hide_banner -nostdin -loglevel error -threads 1 -protocol_whitelist http,tcp,file \
+  -probesize 2000000 -analyzeduration 0 -skip_frame nokey -noaccurate_seek -ss $T -i "$RELAYED_URL" \
+  -map 0:v:0 -an -sn -dn -frames:v 1 -fps_mode passthrough -vf scale=320:-2:flags=fast_bilinear,format=yuvj420p \
+  -q:v 5 -f mjpeg pipe:1
+```
+
+- `-ss` before `-i` uses the file's own index (Matroska Cues, the MP4 sample table): ffmpeg reads the header, the index and the keyframe at or before `$T`, not the movie.
+- `-skip_frame nokey` decodes keyframes only; `-fps_mode passthrough` keeps that keyframe even when it lies well before `$T`.
+- `format=yuvj420p`: the JPEG encoder wants full-range YUV.
+- On a 2022 C2 (65", 2 GB), from Google Drive through the helper: a 1080p H.264 MP4 picture in 2.2 to 3.1 s at about 30 MB of memory, a 4K HEVC MKV one in 4.6 to 4.8 s at about 68 MB.  The time is mostly Drive's: each picture reads the file's header and index again.  A 4K frame takes over twice the memory, so with Memory-safe playback on, the app asks only for movies up to 1080p (Settings > Playback > Seek previews, Automatic).
+- One ffmpeg at a time, the newest "now" request first, pictures kept in memory for the movie playing (up to 200, about 3 MB).
+

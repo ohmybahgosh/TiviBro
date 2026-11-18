@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- **Seek previews.**  While you seek in a movie or an episode (◀ ▶, the jumps, or the Magic Remote over the bar), a picture of the movie at that time shows over the bar, so you can see where you'll land.  The TV makes the pictures from the movie playing, one frame at a time: nothing of your library is read.  It's on by itself (Settings > Playback > Seek previews, or Red in the player); on a TV short of memory it skips 4K movies.  The audio converter on the TV is updated with it.
 - **Channel logos no longer flash over a channel that's starting.**  For a moment while a channel opened from Live TV, a column of channel logos could show on a blank screen.  The logos now hide with the rest of the screen.
 - **A team reminder no longer "moves" every 10 minutes.**  When the guide named a game two ways, its reminder was moved to the channel it was already on, with a line in the log each time.
 - **My media library grid:** ◀ from the first column opens the side menu.

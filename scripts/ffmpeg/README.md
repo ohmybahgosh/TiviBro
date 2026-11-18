@@ -35,4 +35,4 @@ The component lists are the `FF_COMPONENTS` and `FF_BASE` arrays near the middle
 
 ## Publishing
 
-Run the **ffmpeg** workflow (`.github/workflows/ffmpeg.yml`) from the Actions tab with a tag such as `ffmpeg-7.1-tb1`.  It builds both architectures, runs the smoke test, and creates or updates a pre-release with `tivibro-ffmpeg-armv7.gz`, `tivibro-ffmpeg-aarch64.gz`, `SHA256SUMS`, `SOURCE.txt` and the license files.
+Run the **ffmpeg** workflow (`.github/workflows/ffmpeg.yml`) from the Actions tab with a tag such as `ffmpeg-7.1-tb2`.  It builds both architectures, runs the smoke test, and creates or updates a pre-release with `tivibro-ffmpeg-armv7.gz`, `tivibro-ffmpeg-aarch64.gz`, `SHA256SUMS`, `SOURCE.txt` and the license files.

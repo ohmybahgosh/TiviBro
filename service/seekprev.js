@@ -53,7 +53,7 @@ function args(input, t, w) {
   return ['-hide_banner', '-nostdin', '-loglevel', 'error', '-threads', '1', '-protocol_whitelist', 'http,tcp,file',
     '-probesize', '2000000', '-analyzeduration', '0', '-skip_frame', 'nokey', '-noaccurate_seek', '-ss', String(t), '-i', input,
     '-map', '0:v:0', '-an', '-sn', '-dn', '-frames:v', '1', '-fps_mode', 'passthrough', '-vf', 'scale=' + w + ':-2:flags=fast_bilinear,format=yuvj420p',
-    '-q:v', '7', '-f', 'mjpeg', 'pipe:1'];
+    '-q:v', '5', '-f', 'mjpeg', 'pipe:1'];
 }
 
 function next() {
