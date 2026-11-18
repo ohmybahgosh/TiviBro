@@ -1,15 +1,15 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 165, 2026-11-18)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 165
 
 - **Stalker portals: a movie that needs no temporary link plays from its own address** (issue #118), as the portal's own player and IPTVnator do.  A portal marks each title; for the ones it doesn't mark, TiviBro no longer asks the portal for a link, which is one ask less each time.  If that address doesn't play, the next try asks the portal as before.
 - **Stalker portals: an episode the season's command has no link for plays from its own file** (issue #118), found by its show, season and episode, the way the portal's own player finds it.
 
-## 0.6.0 (alpha 164, 2026-11-18)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 164
+### In alpha 164
 
 - **Stalker portals: movies and catch-up on portals that keep them on their own storage** (issue #118).  TiviBro asked for a movie's link with a storage named "undefined", and a standard Ministra portal then looks only on a storage of that name, finds none, and answers "nothing to play".  Movies with an outside address skipped that check, which is why some portals played and others never did.  TiviBro now leaves the storage empty, asks without the portal's ads (an answer with an ad first is understood too), and, when a movie's own command is missing, asks for it by its id.
 - **Stalker portals: movies that the portal has no link for under their own command** (issue #118).  Newer portals give a movie several files (qualities, languages), each with a command of its own, and the movie's own command gets "nothing to play".  TiviBro now asks for the movie's files, as other players do, and plays the first.
