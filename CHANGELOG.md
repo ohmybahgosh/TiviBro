@@ -1,10 +1,15 @@
 # Changelog
 
-## 0.6.0 (alpha 165, 2026-11-18)
+## 0.6.0 (alpha 166, 2026-11-18)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 165
+### New in alpha 166
+
+- **Fixed: alphas 164 and 165 didn't open the playlist** and went to adding one ("numLen is not defined").  The smaller long channel numbers were drawn by a part of the guide that couldn't reach the code that sizes them.  Nothing was lost: your playlist and settings were kept, and open again with this update.
+- Fixed: in the guide, Show or hide channels > Hide channels with no guide information stopped with an error, for the same reason.
+
+### In alpha 165
 
 - **Stalker portals: a movie that needs no temporary link plays from its own address** (issue #118), as the portal's own player and IPTVnator do.  A portal marks each title; for the ones it doesn't mark, TiviBro no longer asks the portal for a link, which is one ask less each time.  If that address doesn't play, the next try asks the portal as before.
 - **Stalker portals: an episode the season's command has no link for plays from its own file** (issue #118), found by its show, season and episode, the way the portal's own player finds it.

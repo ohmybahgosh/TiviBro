@@ -5,6 +5,23 @@
    - Zapping in fullscreen updates the OSD instantly but commits the stream after
      300ms, so CH+ CH+ CH+ opens one stream, not three.
    - Guide data is requested only for rows on screen. */
+/* A long channel number ("103560") is drawn smaller so it stays out of the logo (discussion #36).  Shared by the
+   channel list (Views) and the guide (Guide), which are separate modules: alpha 164 had it only in the first, and
+   opening the playlist stopped with "numLen is not defined" in the guide. */
+function chanNumLen(el) { var n = String(el.textContent || '').length, l = n >= 6 ? '6' : n === 5 ? '5' : ''; if ((el.getAttribute('data-l') || '') !== l) { if (l) el.setAttribute('data-l', l); else el.removeAttribute('data-l'); } }
+
+/* "Hide channels with no guide information" waits for the whole guide, public fill-in included: while it
+   loads, channels it is about to fill have nothing yet and would be hidden for good.  Shared by the channel
+   list (Views) and the guide (Guide): it was inside Views, and the guide's Show or hide channels menu
+   stopped with "noGuideHide is not defined". */
+function noGuideHide(run) {
+  var busy = !!Epg.loading;
+  return { label: 'Hide channels with no guide information', sub: busy ? 'Once the guide has finished loading' : '', action: function () {
+    if (!Epg.loading) return run();
+    U.toast('The guide is still loading.  Try again when it has finished, so channels it fills in stay shown.');
+  } };
+}
+
 var Views = (function () {
   'use strict';
   // A name, never translated (app/js/i18n.js); plain text where there's no I18n (unit tests).
@@ -134,8 +151,6 @@ var Views = (function () {
   }
 
   // Only what changed: writing the same words again still makes the TV lay the row out again.
-  // A long channel number ("103560") is drawn smaller so it stays out of the logo (discussion #36).
-  function numLen(el) { var n = String(el.textContent || '').length, l = n >= 6 ? '6' : n === 5 ? '5' : ''; if ((el.getAttribute('data-l') || '') !== l) { if (l) el.setAttribute('data-l', l); else el.removeAttribute('data-l'); } }
   function txt(el, s) { s = s == null ? '' : String(s); if (el.textContent !== s) el.textContent = s; }
   function renderChan(row, c) {
     if (!row._n) {
@@ -152,7 +167,7 @@ var Views = (function () {
       row.appendChild(U.el('span', 'vbox'));
     }
     var showNum = Store.settings.showNumbers;
-    txt(row._num, showNum ? c.num : ''); numLen(row._num);
+    txt(row._num, showNum ? c.num : ''); chanNumLen(row._num);
     row._num.style.display = showNum ? '' : 'none';
     row._c = c;
     var lg = logoOf(c);
@@ -1636,15 +1651,6 @@ var Views = (function () {
     chansVL.setItems(list, Math.max(0, i));
     hintsFor();
   }
-  /* "Hide channels with no guide information" waits for the whole guide, public fill-in included: while it
-     loads, channels it is about to fill have nothing yet and would be hidden for good. */
-  function noGuideHide(run) {
-    var busy = !!Epg.loading;
-    return { label: 'Hide channels with no guide information', sub: busy ? 'Once the guide has finished loading' : '', action: function () {
-      if (!Epg.loading) return run();
-      U.toast('The guide is still loading.  Try again when it has finished, so channels it fills in stay shown.');
-    } };
-  }
   function listVisAll(f) { chansVL.items.forEach(function (c) { var on = f(c); if (on != null) lvis.on[c.k] = on; }); chansVL.refresh(); listVisHead(); }
   function listVisKeys(a) {
     if (a === 'up') chansVL.move(-1, true);
@@ -2611,7 +2617,7 @@ var Guide = (function () {
     var head = (Store.settings.showNumbers ? c.num : '') + '|' + L.name(c) + '|' + (cuMark ? c.arch : '') + '|' + qt + '|' + dead;
     if (r.head !== head) {
       r.head = head;
-      r.ch.children[0].textContent = Store.settings.showNumbers ? c.num : ''; numLen(r.ch.children[0]);
+      r.ch.children[0].textContent = Store.settings.showNumbers ? c.num : ''; chanNumLen(r.ch.children[0]);
       r.ch.children[2].textContent = L.name(c);
       // Catch-up is just the mark here; the days are in the details above the guide.
       r.cuEl.textContent = cuMark ? '↺' : '';
