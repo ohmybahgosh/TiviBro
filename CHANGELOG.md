@@ -1,16 +1,16 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 159, 2026-11-18)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 159
 
 - **Stalker portals: movies play after TiviBro's helper starts again** (issue #118).  A portal built on an Xtream panel plays a movie only from the command its list gave, and the helper forgot those whenever webOS restarted it (on a TV short of memory, often), while Movies still showed every title from the copy kept on the TV: every movie then failed with no link.  The commands are now kept on the TV with the lists, and a movie whose command is missing tries the usual one and then the Xtream panel's.  When the portal really has no link for a movie, the player says so at once instead of retrying for half a minute, and the problem report shows what the portal answered.
 - **Movies and Shows on a big portal: there at once, and it says how far it has come** (issue #118).  A Stalker portal sends a dozen titles at a time, so one with tens of thousands takes minutes to list the first time, longer than TiviBro waited: a fresh install showed no Movies or Shows tab until a later check, and nothing said anything was loading.  A provider with movie or show categories now gets its tabs at once (they still go if two checks in a row find nothing in them), TiviBro waits as long as the portal keeps sending, and the Movies or Shows screen and the corner chip say "Loading movies from the portal: 4,200 of 34,384" until they're in.  Asking again meanwhile (the phone app, opening Movies twice) waits for the same reading instead of starting the portal's pages over.  After that first time the list is kept on the TV and opens at once.
 - **Categories keep their language when the name rules would make them the same** (issue #118).  The name rules take "HINDI | " off "HINDI | UPCOMING MOVIES", which left several categories all called "UPCOMING MOVIES".  When cleaning would give two categories the same name, they keep the provider's own.
 
-## 0.6.0 (alpha 158, 2026-11-17)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 158
+### In alpha 158
 
 - **The newer screens in Spanish, Portuguese and Russian.**  Everything added to My media, the player and Settings in the last few alphas now shows in your language: the Library shelf and its All movies, All shows and Collections pages (sorting, poster sizes, season counts), the movie and show pages and their buttons, Trakt and its lists, libraries, holiday shelves, arranging the shelves, seek previews, chapters, Skip intro and Up next, the copy picker, the subtitle position, brightness and weight, burn-in protection, and the background activity chip.  About 400 texts in each language.
 
