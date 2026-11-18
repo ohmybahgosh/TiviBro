@@ -70,11 +70,20 @@ function stop(S, why) {
   setTimeout(function () { rmrf(S.dir); }, 1500);       // after a read in flight
 }
 function total(S) { var t = 0; S.pieces.forEach(function (p) { t += p.dur; }); return t; }
+/* Asked again, slower each time (2, 4, 8 ... 30 s) until a piece arrives: a provider that refused (HTTP 4xx) is
+   given 5 s at least.  Every 2 s made Bob's provider block the account for a while. */
+function backoff(X, why) {
+  X.fails = (X.fails || 0) + 1;
+  var ms = Math.min(30000, RETRY_MS * Math.pow(2, X.fails - 1));
+  if (/HTTP 4\d\d/.test(why || '')) ms = Math.max(ms, Math.min(30000, 5 * RETRY_MS));
+  return ms;
+}
 function again(S, why) {
   if (S.stopped) return;
   S.cutDisc = true; S.gaps = (S.gaps || 0) + 1;
-  if (S.gaps === 1 || S.gaps % 10 === 0) note('warn', 'timeshift reconnecting', { id: S.id, e: why, gaps: S.gaps });
-  S.retry = setTimeout(function () { connect(S); }, RETRY_MS);
+  var ms = backoff(S, why);
+  if (S.gaps === 1 || S.gaps % 5 === 0) note('warn', 'timeshift reconnecting', { id: S.id, e: why, gaps: S.gaps, inMs: ms });
+  S.retry = setTimeout(function () { connect(S); }, ms);
 }
 function connect(S) {
   if (S.stopped) return;
@@ -92,6 +101,7 @@ function connect(S) {
 
 /* A finished piece: listed, and the oldest dropped past the limit or when the drive is nearly full. */
 function added(S, p) {
+  S.fails = 0;
   if (S.cutDisc && S.pieces.length) { p.disc = true; S.cutDisc = false; }
   S.pieces.push(p);
   // Room on the drive, looked at every 30 s (df is a process).

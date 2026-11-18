@@ -1394,14 +1394,15 @@ var Views = (function () {
   function livePause() {
     if (mode !== 'live' || !playing || !full || tsh || Player.tshift || !tsOn()) return false;
     var c = playing;
-    Player.setPaused(true);
+    /* The player's connection goes first, then the drive's copy opens its own: a provider that allows one connection
+       refuses a second (HTTP 418 on Bob's), and the card stands in for the picture meanwhile. */
+    Player.stop();
     tsh = { c: c, at: Date.now(), id: null };
+    tsCard(c);
+    $('osd').classList.add('hidden');
     Record.tsStart(c).then(function (r) {
       if (!tsh || tsh.c !== c) { Record.tsStop(r.id); return; }
       tsh.id = r.id; tsh.url = Record.base() + r.playlist;
-      // The player's connection goes (the drive's copy has its own); the card stands in for the picture.
-      Player.stop();
-      tsCard(c);
       tsh.ping = setInterval(function () {
         if (!tsh) return;
         Record.tsPing(tsh.id).then(function (st) { if (tsh && st && st.error) { U.toast(T('Live pause stopped: {e}', { e: st.error }), 6000); backFromPause(); } },
@@ -1410,11 +1411,10 @@ var Views = (function () {
       Log.info('player', 'Paused to the USB drive (' + L.name(c) + ')');
       if (tsh.resume) tsResume();
     }, function (e) {
-      // No drive or no agent: paused the way it always was (the connection goes after a while; Play is live).
-      if (tsh && tsh.c === c) tsh = null;
+      // It didn't start: back to the channel, live, with why.
       Log.warn('player', 'Live pause to the USB drive didn\'t start: ' + (e && e.message || e));
+      if (tsh && tsh.c === c) { tsEnd(); U.toast(T('Couldn\'t pause to the USB drive: {e}', { e: e && e.message || '' }), 5000); if (playing && playing.k === c.k) startChannel(c, false, function () { osd(true); }); }
     });
-    osd(true);
     return true;
   }
   function backFromPause() { var c = tsh && tsh.c; tsEnd(); if (c && playing && playing.k === c.k) startChannel(c, !full, function () { osd(true); }); }

@@ -147,7 +147,7 @@ function openPart(r, R) {
 function write(r, R, buf) {
   if (!R.out || R.stopped) return true;
   if (R.partBytes + buf.length > PART_MAX && R.partBytes > 0) openPart(r, R);
-  R.partBytes += buf.length; r.bytes = (r.bytes || 0) + buf.length;
+  R.partBytes += buf.length; r.bytes = (r.bytes || 0) + buf.length; R.fails = 0;
   return R.out.write(buf);
 }
 
@@ -180,8 +180,11 @@ function again(r, R, why) {
   if (R.stopped) return;
   if (Date.now() >= r.end) return finish(r);
   r.gaps = (r.gaps || 0) + 1;
-  if (r.gaps === 1 || r.gaps % 10 === 0) note('warn', 'recording reconnecting', { title: r.title, e: why, gaps: r.gaps });
-  R.retry = setTimeout(function () { connect(r, R); }, RETRY_MS);
+  // Slower each time until data arrives again (3, 6, 12 ... 30 s): a provider blocks an account that asks every few seconds.
+  R.fails = (R.fails || 0) + 1;
+  var ms = Math.min(30000, RETRY_MS * Math.pow(2, R.fails - 1));
+  if (r.gaps === 1 || r.gaps % 10 === 0) note('warn', 'recording reconnecting', { title: r.title, e: why, gaps: r.gaps, inMs: ms });
+  R.retry = setTimeout(function () { connect(r, R); }, ms);
 }
 /* HLS: the playlist, again and again; each new piece once, in order. */
 function hls(r, R, u) {
