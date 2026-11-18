@@ -426,7 +426,8 @@ a, b = kinds(sys.argv[1]), kinds(sys.argv[2])
 print('  in: EL %d RPU %d   out: EL %d RPU %d' % (a.count(63), a.count(62), b.count(63), b.count(62)))
 sys.exit(0 if a.count(63) > 0 and b.count(63) == 0 and b.count(62) == a.count(62) else 1)
 PY
-  "${ff[@]}" -xerror -f hevc -i "$t/p81.hevc" -f null - || { echo "  FAIL: the 8.1 stream does not decode" >&2; fail=1; }
+  # Every frame decoded (made tiny JPEGs: this build has no rawvideo encoder for the null muxer).
+  "${ff[@]}" -xerror -f hevc -i "$t/p81.hevc" -vf scale=32:-2,format=yuvj420p -c:v mjpeg -f mjpeg "$t/p81.mjpeg" || { echo "  FAIL: the 8.1 stream does not decode" >&2; fail=1; }
   log "[$arch] seek preview: one keyframe at 6 s -> a 160 px JPEG"
   "${ff[@]}" -threads 1 -skip_frame nokey -noaccurate_seek -ss 6 -i "$fx/dts51.mkv" -map 0:v:0 -an -frames:v 1 -fps_mode passthrough \
     -vf scale=160:-2,format=yuvj420p -q:v 7 -f mjpeg pipe:1 > "$t/frame.jpg" || fail=1
