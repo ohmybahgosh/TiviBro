@@ -73,7 +73,8 @@ var SeekPrev = (function () {
 
   // The chapter a time is in (its title), or null.
   function chapterAt(t) { var c = movie && movie.chapters || []; for (var i = 0; i < c.length; i++) if (t >= c[i].s && t < c[i].e) return c[i]; return null; }
-  function chapterName(c, i) { return c && (c.t && !/^chapter\s*\d+$/i.test(c.t) ? c.t : 'Chapter ' + (i + 1)); }
+  // A chapter's own name, or "Chapter 3" for the ones named only by number or time ("Chapter 03", "00:08:43.648").
+  function chapterName(c, i) { var t = c && String(c.t || '').trim(); return t && !/^(chapter|chap\.?|part|kapitel|chapitre|cap[ií]tulo)?\s*[\d:.]+$/i.test(t) ? t : 'Chapter ' + (i + 1); }
   // The chapters as small marks on the bar (each chapter's start), drawn again only when the movie or its length changes.
   var marksEl = null, marksFor = null;
   function marks(d) {

@@ -128,7 +128,7 @@ body.full .vid-error{left:50%;right:auto;bottom:auto;top:40%;transform:translate
 .chapsheet-track{display:flex;gap:26px}
 .chapcard{width:320px;flex:none;opacity:.75;transition:transform 140ms ease,opacity 140ms ease}
 .chapcard.sel{opacity:1;transform:scale(1.06)}
-.chapcard-pic{display:block;width:320px;height:180px;object-fit:cover;border-radius:12px;background:#000;border:4px solid transparent;opacity:0}
+.chapcard-pic{display:block;width:320px;height:180px;object-fit:cover;border-radius:12px;background:#000;border:4px solid transparent;opacity:.35}
 .chapcard.has .chapcard-pic{opacity:1}
 .chapcard.sel .chapcard-pic{border-color:#fff}
 .chapcard.nopic{padding:18px 20px;border-radius:12px;background:rgba(255,255,255,.08);border:3px solid transparent}
