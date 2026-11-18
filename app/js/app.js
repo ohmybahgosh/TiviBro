@@ -422,6 +422,9 @@ var App = (function () {
     function offered(cats, listAction) {
       if (cats === null) return Promise.resolve(null);
       if (!cats.length) return Promise.resolve(0);
+      /* A portal: how many it has, from its first page.  Reading the whole list here (233,000 shows on one, issue
+         #118) kept the portal and the helper busy for hours. */
+      if (p.type === 'stalker') return U.getJSON(Source.api(p, 'count', '&kind=' + (listAction === 'get_series' ? 'series' : 'movie')), 30000).then(function (j) { return j && typeof j.total === 'number' ? j.total : null; }, function () { return null; });
       var picks = [cats[0], cats[Math.floor(cats.length / 2)], cats[cats.length - 1]].filter(function (c, i, a) { return c && a.indexOf(c) === i; });
       var i = 0;
       function next() {

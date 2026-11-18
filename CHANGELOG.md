@@ -1,6 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 160, 2026-11-18)
+
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 160
 
 - **Mark a season or a whole show watched, as on Plex.**  On a show's page, **Hold OK** on a season has **Mark season as watched** (or **not watched**), and a show's options (Hold OK on the show) have **Mark show as watched** and **not watched**.  Every episode of it changes at once.  Movies and episodes had it already, now worded the same way.
 - **Watched and not watched by hand go to Trakt too.**  With Trakt connected (and **Mark as watched on Trakt** on), marking a movie, an episode, a season or a show watched puts it on your Trakt history, and marking it not watched takes it off, as Plex's Trakt sync does.  Kept and sent later when Trakt can't be reached.
@@ -11,13 +15,12 @@
 - **▲ ▼ don't seek in movies and episodes.**  People press Down by habit: ▲ ▼ now bring up the bar, and ▼ with the bar up opens the chapters when the file has them.  **CH+ CH−** still skip 10 minutes, or go from chapter to chapter.
 - **Sleeker buttons.**  Resume, From the start and the other buttons on a movie's page, and the tabs on My media and a show's page, are glass pills that turn solid white when picked, with no coloured ring.  The progress line in Resume is a hairline.
 - **Dolby Vision for UHD Blu-ray remuxes (profile 7).**  LG TVs show profile 7 only as HDR10.  TiviBro now plays it as profile 8.1 through the converter, which the TV shows in Dolby Vision: the enhancement layer is dropped and the Dolby Vision metadata rewritten as it copies the video (nothing decoded), as dovi_tool's convert does.  On a TV with Dolby Vision, with the new converter (downloaded once).  **Settings > Playback > Dolby Vision 7 (UHD Blu-ray)** turns it off.
+- **Huge portals browsed by category** (issue #118).  A Stalker portal with hundreds of thousands of titles (one has 233,000 shows) would take hours to read whole, a dozen at a time, and more memory than a TV has.  Over 40,000 titles (20,000 with Memory-safe playback), Movies or Shows now opens at once with the newest titles and every category, and a category's titles come when you open it (its newest 2,000), the way other players do it.  The background check for whether a portal has movies and shows no longer reads its whole list either.
+- **▶ plays straight away, as on Plex.**  The Play button on a poster plays it: a movie from where you stopped, a show its next episode (on its page, ▶ on a season plays its first episode not watched).  From All movies or All shows, you come back to the grid after.
+- **A movie you're part-way through has both Mark as watched and Mark as not watched** (which also forgets where you stopped), and **Remove from Continue watching**, as on Plex.
 - Trakt lists named with Trakt already ("Trending movies on Trakt") no longer get "(Trakt)" again in Arrange shelves.
 
-## 0.6.0 (alpha 159, 2026-11-18)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 159
+### In alpha 159
 
 - **Stalker portals: movies play after TiviBro's helper starts again** (issue #118).  A portal built on an Xtream panel plays a movie only from the command its list gave, and the helper forgot those whenever webOS restarted it (on a TV short of memory, often), while Movies still showed every title from the copy kept on the TV: every movie then failed with no link.  The commands are now kept on the TV with the lists, and a movie whose command is missing tries the usual one and then the Xtream panel's.  When the portal really has no link for a movie, the player says so at once instead of retrying for half a minute, and the problem report shows what the portal answered.
 - **Movies and Shows on a big portal: there at once, and it says how far it has come** (issue #118).  A Stalker portal sends a dozen titles at a time, so one with tens of thousands takes minutes to list the first time, longer than TiviBro waited: a fresh install showed no Movies or Shows tab until a later check, and nothing said anything was loading.  A provider with movie or show categories now gets its tabs at once (they still go if two checks in a row find nothing in them), TiviBro waits as long as the portal keeps sending, and the Movies or Shows screen and the corner chip say "Loading movies from the portal: 4,200 of 34,384" until they're in.  Asking again meanwhile (the phone app, opening Movies twice) waits for the same reading instead of starting the portal's pages over.  After that first time the list is kept on the TV and opens at once.

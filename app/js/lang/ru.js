@@ -1731,5 +1731,12 @@ I18n.add('ru', {
   "Off, HDR10": "Выкл., HDR10",
   "Dolby Vision 7 played as 8.1": "Dolby Vision 7 воспроизводится как 8.1",
   "Dolby Vision 7 plays as 8.1": "Dolby Vision 7 воспроизводится как 8.1",
-  "Dolby Vision 7 as 8.1, and {x} audio converted": "Dolby Vision 7 как 8.1, звук {x} преобразован"
+  "Dolby Vision 7 as 8.1, and {x} audio converted": "Dolby Vision 7 как 8.1, звук {x} преобразован",
+  "▶  play next": "▶  смотреть следующую",
+  "Remove from Continue watching": "Убрать из «Продолжить просмотр»",
+  "Starts from the beginning next time": "В следующий раз начнётся сначала",
+  "Newest shows": "Новые сериалы",
+  "Newest movies": "Новые фильмы",
+  "Loading this category from the portal…": "Загрузка категории с портала…",
+  "Could not load this category: {x}": "Не удалось загрузить категорию: {x}"
 });

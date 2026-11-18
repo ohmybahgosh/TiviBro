@@ -91,6 +91,19 @@ const ok = (n, c, x) => { console.log((c ? 'PASS ' : 'FAIL ') + n + (x !== undef
     await page.waitForFunction(() => !/Loading movies from the portal/.test(Activity.list().join(' ')), null, { timeout: 60000 }).catch(() => {});
     const after = await ev(() => ({ chip: Activity.list().join(' | '), n: (document.querySelectorAll('#vodItems .row, #vodHome .vh-card').length) }));
     ok('...and the chip goes when they are in', !/Loading movies from the portal/.test(after.chip), JSON.stringify(after));
+    // ...and a portal too big to read whole: browsed by category (issue #118; 420 titles count as big here).
+    await ev(() => { Store.settings.portalBrowseOver = 100; Store.settings.playlists.forEach((x) => { if (x.name !== 'Big portal') Store.detach(x.id); }); Vod.reset && Vod.reset(); });
+    const srcs = await ev(() => (Store.loaded ? Store.loaded() : []).map((x) => x.name + ':' + x.type + ':' + JSON.stringify(x.vod || {})));
+    console.log('  sources ' + srcs.join(' | '));
+    await ev(() => Views.switchTab('settings')); await page.waitForTimeout(300);
+    await ev(() => Views.switchTab('movies')); await page.waitForTimeout(2500);
+    await page.waitForFunction(() => /Newest movies/.test(document.getElementById('viewVod').innerText) || /Newest movies/.test(document.body.innerText), null, { timeout: 30000 }).catch(() => {});
+    const cats = await ev(() => document.body.innerText);
+    ok('a big portal: browsed by category (Newest movies, then its categories)', /Newest movies/.test(cats) && /Films/.test(cats), cats.slice(0, 400));
+    const first = await ev(() => Vod._test.withKind ? Vod._test.withKind('movie', () => Vod._test.itemsFor('11').length) : -1);
+    await page.waitForFunction(() => Vod._test.withKind('movie', () => Vod._test.itemsFor('11').length) > 100, null, { timeout: 40000 }).catch(() => {});
+    const later = await ev(() => Vod._test.withKind('movie', () => Vod._test.itemsFor('11').length));
+    ok('...a category\'s titles come when it is opened', first === 0 && later > 100, first + ' then ' + later);
     m2.server.close();
 
     const logs = await ev(() => Log.lines().map((l) => l.msg || l).join('\n'));

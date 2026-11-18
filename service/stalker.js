@@ -257,17 +257,20 @@ function vodCats(L, cb) {
 var progress = {};
 function progOf(L, type) { var k = keyOf(L); return (progress[k] || (progress[k] = {}))[type === 'series' ? 'series' : 'movie'] || null; }
 function setProg(L, type, v) { var k = keyOf(L); (progress[k] || (progress[k] = {}))[type === 'series' ? 'series' : 'movie'] = v; }
-function vodPages(L, cat, cb0, type) {
+function vodPages(L, cat, cb0, type, max) {
   function page(n, then) { act(L, { type: type || 'vod', action: 'get_ordered_list', category: cat, genre: cat, sortby: 'added', fav: 0, p: n }, then); }
-  var whole = cat === '*', P = whole ? { got: 0, total: 0, at: Date.now() } : null;
-  if (whole) setProg(L, type, P);
+  // Any list being read (the whole one, or a category's on a big portal): the newest one says how far it has come.
+  var whole = true, P = { got: 0, total: 0, at: Date.now(), cat: cat };
+  setProg(L, type, P);
   function cb(e, list) { if (whole) { P.done = true; P.failed = !!e; P.got = list ? list.length : P.got; } cb0(e, list); }
   function count(d) { if (P && d) P.got += d.length; }
   page(1, function (e, js) {
     if (e) return cb(e);
     var first = js && Array.isArray(js.data) ? js.data : [], total = +(js && js.total_items) || first.length, per = +(js && js.max_page_items) || first.length || 1;
     if (P) { P.total = total; count(first); }
-    var pages = Math.min(PAGES_MAX, Math.ceil(total / per)), got = {}, next = 2, running = 0, stop = false, finished = false, fails = 0;
+    // max: only the newest max titles (a big portal's Recently added, or one category of it, issue #118).
+    var pages = Math.min(PAGES_MAX, Math.ceil(total / per), max > 0 ? Math.ceil(max / per) : Infinity), got = {}, next = 2, running = 0, stop = false, finished = false, fails = 0;
+    if (P && max > 0) P.total = Math.min(total, pages * per);
     if (pages <= 1 || !first.length) return cb(null, first);
     (function pump() {
       while (running < 2 && next <= pages && !stop) {
@@ -295,17 +298,18 @@ function shared(k, cb, start) {
   reading[k] = [cb];
   start(function (e, v) { var l = reading[k] || []; delete reading[k]; l.forEach(function (f) { f(e, v); }); });
 }
-function vodItems(L, cat, cb) {
-  var V = vodOf(L), key = cat || '*', hit = V.lists[key];
+function vodItems(L, cat, cb, max) {
+  var V = vodOf(L), key = (cat || '*') + (max > 0 ? '~' + max : ''), hit = V.lists[key];
   if (hit && Date.now() - hit.at < VOD_FOR) return cb(null, hit.items);
-  shared(keyOf(L) + '|vod|' + key, cb, function (cb) { vodPages(L, key, function (e, list) {
+  if (max > 0 && V.lists[cat || '*'] && Date.now() - V.lists[cat || '*'].at < VOD_FOR) return cb(null, V.lists[cat || '*'].items.slice(0, max));
+  shared(keyOf(L) + '|vod|' + key, cb, function (cb) { vodPages(L, cat || '*', function (e, list) {
     if (e) return cb(e);
     var items = list.filter(function (x) { return x && x.id != null; }).map(function (x) { return slim(x, L); });
     items.forEach(function (x) { if (x.cmd) V.cmd[x.id] = x.cmd; });
     keepCmds(L);
     V.lists[key] = { at: Date.now(), items: items };
     cb(null, items);
-  }); });
+  }, 'vod', max); });
 }
 /* Shows.  Newer portals keep them in a module of their own (type=series, with its own categories): those are
    the shows other players list, and the movie module has only a few marked as series (issue #113: 58 of a
@@ -323,19 +327,20 @@ function seriesCats(L, cb) {
     S.catsAt = Date.now(); cb(null, S.cats);
   });
 }
-function showItems(L, cat, cb) {
+function showItems(L, cat, cb, max) {
   var S = seriesOf(L);
-  function fromVod() { vodItems(L, cat, function (e, items) { cb(e, e ? null : items.filter(function (x) { return x.series; })); }); }
-  if (S.own === null) return seriesCats(L, function () { S.own === null ? fromVod() : showItems(L, cat, cb); });
+  function fromVod() { vodItems(L, cat, function (e, items) { cb(e, e ? null : items.filter(function (x) { return x.series; })); }, max); }
+  if (S.own === null) return seriesCats(L, function () { S.own === null ? fromVod() : showItems(L, cat, cb, max); });
   if (!S.own) return fromVod();
-  var key = cat || '*', hit = S.lists[key];
+  var key = (cat || '*') + (max > 0 ? '~' + max : ''), hit = S.lists[key];
   if (hit && Date.now() - hit.at < VOD_FOR) return cb(null, hit.items);
-  shared(keyOf(L) + '|series|' + key, cb, function (cb) { vodPages(L, key, function (e, list) {
+  if (max > 0 && S.lists[cat || '*'] && Date.now() - S.lists[cat || '*'].at < VOD_FOR) return cb(null, S.lists[cat || '*'].items.slice(0, max));
+  shared(keyOf(L) + '|series|' + key, cb, function (cb) { vodPages(L, cat || '*', function (e, list) {
     if (e) return cb(e);
     var items = list.filter(function (x) { return x && x.id != null; }).map(function (x) { var y = slim(x, L); y.series = true; y.module = 'series'; return y; });
     S.lists[key] = { at: Date.now(), items: items };
     cb(null, items);
-  }, 'series'); });
+  }, 'series', max); });
 }
 function findItem(L, id, show) {
   var V = vodOf(L), S = seriesOf(L), hit = null;
@@ -369,16 +374,24 @@ function seasons(L, x, cb) {
   });
 }
 function xc(L, q, res, ALLOW) {
-  var a = String(q.action || ''), cat = q.category_id ? String(q.category_id) : '*';
+  var a = String(q.action || ''), cat = q.category_id ? String(q.category_id) : '*', max = Math.max(0, Math.min(50000, +q.max | 0));
   function fail(e) { send(res, ALLOW, e.auth ? 401 : 502, { error: e.message }); }
   if (a === 'get_vod_categories') return vodCats(L, function (e, c) { e ? fail(e) : send(res, ALLOW, 200, c); });
   if (a === 'get_series_categories') return seriesCats(L, function (e, c) { e ? fail(e) : send(res, ALLOW, 200, c); });
-  if (a === 'get_series') return showItems(L, cat, function (e, items) { e ? fail(e) : send(res, ALLOW, 200, items.map(asShow)); });
+  if (a === 'get_series') return showItems(L, cat, function (e, items) { e ? fail(e) : send(res, ALLOW, 200, items.map(asShow)); }, max);
   if (a === 'get_vod_streams') {
     return vodItems(L, cat, function (e, items) {
       if (e) return fail(e);
       send(res, ALLOW, 200, items.filter(function (x) { return !x.series; }).map(asMovie));
-    });
+    }, max);
+  }
+  /* How many titles the portal has (its first page says): a big one (233,000 shows, issue #118) is browsed by
+     category instead of read whole (app/js/vod.js). */
+  if (a === 'count') {
+    var kind = q.kind === 'series' ? 'series' : 'vod';
+    var one = function (type) { act(L, { type: type, action: 'get_ordered_list', category: '*', genre: '*', sortby: 'added', fav: 0, p: 1 }, function (e, js) { e ? fail(e) : send(res, ALLOW, 200, { total: +(js && js.total_items) || 0 }); }); };
+    if (kind === 'vod') return one('vod');
+    return seriesCats(L, function () { one(seriesOf(L).own ? 'series' : 'vod'); });
   }
   if (a === 'get_vod_info' || a === 'get_series_info') {
     var id = String(q.vod_id || q.series_id || ''), show = a === 'get_series_info', x = findItem(L, id, show);

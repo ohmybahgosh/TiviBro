@@ -217,6 +217,8 @@ var MediaGrid = (function () {
       else if (a === 'down') { if (g.sel + COLS < n) g.sel += COLS; else if (Math.floor(g.sel / COLS) < Math.floor((n - 1) / COLS)) g.sel = n - 1; }
       else if (a === 'chup' || a === 'chdown') g.sel = Math.max(0, Math.min(n - 1, g.sel + (a === 'chup' ? -1 : 1) * COLS * PAGE));
       else if (a === 'ok') { choose(); return true; }
+      // ▶: straight to playing it (Plex), coming back here after, not to its page.
+      else if (a === 'playpause' && g.kind !== 'collection' && Media.playNow) { var pm = g.list[g.sel], st2 = g; g = null; var gb = $('mediaGrid'); if (gb) gb.innerHTML = ''; $('viewMedia').classList.remove('mgr-on'); var back2 = resume(st2); pm.returnTo = function () { pm.returnTo = null; back2(); }; Media.playNow(pm); return true; }
       else if (a === 'hold' || a === 'info') { var m = g.list[g.sel], state = g; if (m && g.kind !== 'collection' && Media.optionsFor) { Media.optionsFor(m, function () { if (g === state) { UI.setHandler(keys); draw(); } }); } return true; }
     }
     draw(); return true;

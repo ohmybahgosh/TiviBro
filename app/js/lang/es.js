@@ -1728,5 +1728,12 @@ I18n.add('es', {
   "Off, HDR10": "Desactivado, HDR10",
   "Dolby Vision 7 played as 8.1": "Dolby Vision 7 reproducido como 8.1",
   "Dolby Vision 7 plays as 8.1": "Dolby Vision 7 se reproduce como 8.1",
-  "Dolby Vision 7 as 8.1, and {x} audio converted": "Dolby Vision 7 como 8.1, y audio {x} convertido"
+  "Dolby Vision 7 as 8.1, and {x} audio converted": "Dolby Vision 7 como 8.1, y audio {x} convertido",
+  "▶  play next": "▶  reproducir el siguiente",
+  "Remove from Continue watching": "Quitar de Seguir viendo",
+  "Starts from the beginning next time": "La próxima vez empieza desde el principio",
+  "Newest shows": "Series más nuevas",
+  "Newest movies": "Películas más nuevas",
+  "Loading this category from the portal…": "Cargando esta categoría del portal…",
+  "Could not load this category: {x}": "No se pudo cargar esta categoría: {x}"
 });

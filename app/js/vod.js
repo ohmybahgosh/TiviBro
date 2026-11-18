@@ -251,8 +251,18 @@ var Vod = (function () {
   function loadOne(k, p, again) {
     var old = sets[k][p.id];
     if (old && !again) return Promise.resolve(old);
+    if (old && old.browse) return Promise.resolve(old);          // a big portal browsed by category stays so
     var rk = raw[k] && raw[k][p.id];
     if (rk && again) return Promise.resolve(view(k, rk, p));
+    // A Stalker portal: how big first.  Over BIG titles it's browsed by category, not read whole (issue #118).
+    if (p.type === 'stalker' && helped(p) && sources(k).length <= 1) {
+      return U.getJSON(Source.api(p, 'count', '&kind=' + k), 30000).then(function (j) {
+        var n = +(j && j.total) || 0;
+        return n > bigPortal() ? browse(k, p, n) : full();
+      }, function () { return full(); });
+    }
+    return full();
+    function full() {
     if (helped(p)) {
       return fromHelper(k, p).then(function (d) {
         /* None at all from the helper (before any filter): get the list here once instead, as without the helper.
@@ -273,6 +283,63 @@ var Vod = (function () {
     }
     if (Source.m3uVod(p)) return Promise.reject(new Error('Movies and shows from an M3U list need the network helper.'));
     return own(k, p);
+    }
+  }
+  /* ---------- a big portal, browsed by category (issue #118) ----------
+     A Stalker portal sends a dozen titles a page: 233,000 shows would take hours to read and more memory than a
+     TV has.  So, as other players do: its categories at once, the newest titles (Recently added, the home),
+     and a category's titles when you open it (its newest CAT_MAX), kept while you browse. */
+  var RECENT_MAX = 300, CAT_MAX = 2000;
+  function bigPortal() { return +Store.settings.portalBrowseOver || (window.Player && Player.memSafe ? 20000 : 40000); }   // the setting: tests only
+  function browse(k, p, total) {
+    var action = k === 'series' ? 'get_series' : 'get_vod_streams';
+    Log.info('vod', 'A big portal: ' + total + ' ' + (k === 'series' ? 'shows' : 'movies') + ', so they are browsed by category');
+    var stop = watchPortal(k, p);
+    return Promise.all([Source.vodCats(k, p), U.getJSON(Source.api(p, action, '&max=' + RECENT_MAX), 10 * 60000)]).then(function (r) {
+      stop();
+      var cats = (r[0] || []).map(function (x) { return { id: String(x.category_id), name: x.category_name || 'Other' }; });
+      var adultCat = {}; cats.forEach(function (c) { if (VodView.ADULT.test(c.name)) adultCat[c.id] = 1; });
+      var items = rowsOf(k, r[1] || [], adultCat);
+      return { browse: true, p: p, at: Date.now(), cats: cats, items: items, recent: items.slice(), langs: {}, keep: null, total: total, adultCat: adultCat, catItems: {}, catOrder: [] };
+    }, function (e) { stop(); throw e; });
+  }
+  // Xtream-shaped titles from the helper to the app's own items.
+  function rowsOf(k, list, adultCat) {
+    return (list || []).map(function (x) {
+      var it = k === 'series'
+        ? seriesRow([x.series_id, x.name || '', x.cover || '', String(x.plot || '').slice(0, 300), x.rating || '', (x.releaseDate || x.release_date || '').slice(0, 4), String(x.category_id), +x.last_modified || 0])
+        : movieRow([x.stream_id, x.name || '', x.stream_icon || '', x.rating || '', x.container_extension || 'mp4', String(x.category_id), +x.added || 0]);
+      if (adultCat && adultCat[it.cat]) it.adult = 1;
+      return it;
+    });
+  }
+  // A category's titles, once (the newest CAT_MAX); shown when they come if it's still the one picked.
+  function browseCat(d, k, cid) {
+    if (d.catItems[cid] || d.catItems[cid] === null) return;
+    d.catItems[cid] = null;                                   // being read
+    var stop = watchPortal(k, d.p);
+    U.getJSON(Source.api(d.p, k === 'series' ? 'get_series' : 'get_vod_streams', '&category_id=' + encodeURIComponent(cid) + '&max=' + CAT_MAX), 15 * 60000).then(function (list) {
+      stop();
+      var items = rowsOf(k, list, d.adultCat);
+      d.catItems[cid] = items; d.catOrder.push(cid);
+      // Kept for My list, Continue watching and Search too, within what this TV holds (the oldest category read goes first).
+      var have = {}; d.items.forEach(function (it) { have[it.id] = 1; });
+      items.forEach(function (it) { if (!have[it.id]) d.items.push(it); });
+      while (d.items.length > vodMax() && d.catOrder.length > 1) {
+        var gone = d.catOrder.shift(), drop = {}; (d.catItems[gone] || []).forEach(function (it) { drop[it.id] = 1; });
+        delete d.catItems[gone];
+        d.items = d.items.filter(function (it) { return !drop[it.id] || d.recent.indexOf(it) >= 0; });
+      }
+      Log.info('vod', 'Category ' + cid + ': ' + items.length + (items.length >= CAT_MAX ? ' (the newest ' + CAT_MAX + ')' : '') + ' ' + (k === 'series' ? 'shows' : 'movies'));
+      if (kind === k && data[k] === d && catsVL) {
+        var c = catsVL.current(), cl = catList();
+        catsVL.setItems(cl, Math.max(0, cl.findIndex(function (x) { return c && x.id === c.id; })));
+        if (c && c.id === cid && zone !== 'items') { itemsVL.empty = 'Nothing here'; itemsVL.setItems(itemsFor(cid), 0); onItem(); }
+      }
+    }, function (e) {
+      stop(); delete d.catItems[cid];
+      if (kind === k && data[k] === d) { itemsVL.empty = 'Could not load this category: ' + (e && e.message || e); itemsVL.refresh(); }
+    });
   }
   /* The playlist was loaded again from the provider (when TiviBro starts, on its schedule, or Reload channels
      now): its movies and shows are fetched again too, once each.  Before, a playlist set to reload at every
@@ -297,7 +364,7 @@ var Vod = (function () {
     function say(t, short) {
       loadingNow[k] = t;
       if (typeof Activity !== 'undefined') Activity.set(id, short || '');
-      if (kind === k && !data[k]) {
+      if (kind === k && (!data[k] || (data[k].browse && !itemsVL.items.length))) {
         if (itemsVL) { itemsVL.empty = t || 'Loading…'; itemsVL.refresh(); }
         var sum = document.querySelector('#vodHomeInfo .media-summary'); if (sum) sum.textContent = t || I18n.t('Loading…');
       }
@@ -349,7 +416,7 @@ var Vod = (function () {
   function lean() {
     if (!(window.Player && Player.memSafe) || !(Net.info && Net.info.vod >= 3)) return false;
     var ks = offered().filter(function (k) { return !data[k]; });
-    return ks.length > 0 && ks.every(function (k) { var ps = sources(k); return ps.length > 0 && ps.every(function (p) { return helped(p); }); });
+    return ks.length > 0 && ks.every(function (k) { var ps = sources(k); return ps.length > 0 && ps.every(function (p) { return helped(p) && p.type !== 'stalker'; }); });   // a portal: loaded (or browsed by category, issue #118), never read whole to search
   }
   function findRemote(text) {
     var words = String(text || '').toLowerCase().split(/\s+/).filter(Boolean).slice(0, 8);
@@ -544,7 +611,8 @@ var Vod = (function () {
     }
     if (cw) out.push({ id: CW, name: 'Continue watching', count: cw });
     out.push({ id: MY, name: 'My list', count: mine });
-    out.push({ id: ALL, name: kind === 'series' ? 'All shows' : 'All movies', count: d.items.filter(function (it) { return !it.adult; }).length });
+    if (d.browse) out.push({ id: ALL, name: kind === 'series' ? 'Newest shows' : 'Newest movies', count: d.recent.filter(function (it) { return !it.adult; }).length });
+    else out.push({ id: ALL, name: kind === 'series' ? 'All shows' : 'All movies', count: d.items.filter(function (it) { return !it.adult; }).length });
     // Recently added (discussion #60): the newest titles across every category, when the provider says when each was added.
     var fresh = recentList().length;
     if (fresh) out.push({ id: NEW, name: 'Recently added', count: fresh });
@@ -554,9 +622,11 @@ var Vod = (function () {
        times, one per language (issue #118).  Names that would come out the same keep the provider's own. */
     var labels = catLabels(d);
     d.cats.forEach(function (c) {
-      if (!counts[c.id] || hid[c.id]) return;
+      if ((!counts[c.id] && !d.browse) || hid[c.id]) return;
       var name = labels[c.id];
-      var adult = !!(d.adultCat && d.adultCat[c.id]), row = { id: c.id, name: name, count: counts[c.id], adult: adult, pl: c.pl || '' };
+      // A big portal browsed by category: every category, its count once it's been opened.
+      var n = d.browse ? (d.catItems[c.id] ? d.catItems[c.id].length : '') : counts[c.id];
+      var adult = !!(d.adultCat && d.adultCat[c.id]), row = { id: c.id, name: name, count: n, adult: adult, pl: c.pl || '' };
       if (adult) { later.push(row); return; }
       // Several playlists: a heading with the playlist's name above its categories.
       if (d.multi && (c.pl || '') !== section) { section = c.pl || ''; var pp = section ? Store.byId(section) : Store.playlist; out.push({ id: '@' + (section || 'first'), head: true, name: (pp && pp.name) || 'Playlist' }); }
@@ -578,7 +648,13 @@ var Vod = (function () {
     if (cid === LANGS) return [];
     if (cid === NEW) return recentList();
     if (cid === MY) { var m = E().myList; return sorted(d.items.filter(function (it) { return m.indexOf(key(it)) >= 0; })); }
-    if (cid === ALL) return sorted(d.items.filter(function (it) { return !it.adult; }), 'added');
+    if (cid === ALL) return sorted((d.browse ? d.recent : d.items).filter(function (it) { return !it.adult; }), 'added');
+    if (d.browse) {
+      if (d.catItems[cid]) return sorted(d.catItems[cid].slice());
+      browseCat(d, kind, cid);
+      itemsVL.empty = 'Loading this category from the portal…';
+      return [];
+    }
     return sorted(d.items.filter(function (it) { return it.cat === cid; }));
   }
   // The newest 100 titles, newest first: what Recently added shows.

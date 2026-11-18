@@ -1223,7 +1223,7 @@ var Media = (function () {
     if (!m) return;
     if (m.continueEpisode) return MediaSeries.resume(m);
     if (m.kind === 'live') { if (typeof OnNow !== 'undefined' && OnNow.watch) OnNow.watch(m.live); else Views.startChannel(m.live.c, false, function () { Views.goFull(); }); return; }
-    if (m.kind === 'show') return typeof MediaShowPage !== 'undefined' ? MediaShowPage.open(m, restore) : MediaSeries.showItem(m,restore);
+    if (m.kind === 'show') return typeof MediaShowPage !== 'undefined' ? MediaShowPage.open(m, restore, fromStart === 'next' ? { play: true } : null) : MediaSeries.showItem(m,restore);
     if (queue && queue.item !== m) queue = null;   // something else: the collection run ends
     if (m.review && m.review.length) return MediaSeries.correct(m,restore);
     if (typeof MediaSeries !== 'undefined') MediaSeries.leave();
@@ -1379,7 +1379,10 @@ var Media = (function () {
       reviewCards.length > 0 && { label:'Needs review',action:function () { MediaSeries.review(); } },
       copies(m).length > 1 && { label: 'Choose a copy', sub: copies(m).length + ' copies of this movie: the best one for this TV marked', action: function () { chooseCopy(m); } },
       { label: 'File information', sub: pictureInfo(m) + (m.size ? ' · ' + size(m.size) : ''), action: function () { UI.menu('File information', [{ label: RAW(m.file), sub: (MediaStore.source(m.src) || {}).name || '' }]); } },
-      !MediaStore.isWatched(m.id) ? { label: 'Mark as watched', action: function () { markMovie(m, true); if (back) back(); } } : { label: 'Mark as not watched', action: function () { markMovie(m, false); if (back) back(); } }
+      !MediaStore.isWatched(m.id) && { label: 'Mark as watched', action: function () { markMovie(m, true); if (back) back(); } },
+      r && { label: 'Remove from Continue watching', action: function () { MediaStore.clearResume(m.id); refresh(); if (back) back(); } },
+      // Both for one you're part-way through, as Plex has: not watched also forgets where you stopped.
+      (MediaStore.isWatched(m.id) || r) && { label: 'Mark as not watched', sub: r && !MediaStore.isWatched(m.id) ? 'Starts from the beginning next time' : '', action: function () { MediaStore.clearResume(m.id); markMovie(m, false); if (back) back(); } }
     ], back);
   }
 
@@ -1493,8 +1496,11 @@ var Media = (function () {
     } else if (a === 'ok' && s && s.id === 'search:none') askSearch();
     else if (a === 'ok') { var cm = itemsVL.current(); if (cm && cm.kind === 'section' && cm.grid) openGrid(cm.grid); else if (cm && cm.kind === 'section') { tabsFocus = false; setSection(cm.section); } else openTitle(cm); }
     else if (a === 'hold' || a === 'info') { var hm = itemsVL.current(); if (hm && hm.kind !== 'section') itemMenu(hm); }
+    // ▶ (Play) on a poster plays it straight away, as on Plex: a movie from where you stopped, a show its next episode.
+    else if (a === 'playpause') { var pm = itemsVL.current(); if (pm && pm.kind !== 'section') playNow(pm); }
     return true;
   }
+  function playNow(m) { if (m.kind === 'show') return play(m, 'next'); play(m, false); }
   function restore() { UI.setHandler(keys);refreshSeries(); if (shelves.length) drawShelves(); hints(); }
   function build() {
     var v = $('viewMedia'), bd = U.el('div', 'media-bd'), img = U.el('img', 'media-hero-art'), fade = U.el('div', 'media-fade');
@@ -1551,7 +1557,7 @@ var Media = (function () {
 
   return {
     reviewCount: function () { return reviewCards.length; },      // how many need a look (the show options offer Needs review)
-    refreshShows:refreshSeries, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
+    refreshShows:refreshSeries, playNow: function (m) { playNow(m); }, foundText: foundText, discover: discover, addServer: addServer, sourceDetailsNow: sourceDetailsNow, isScanning: function (id) { return !!scanning[id]; }, changeSourceMode:changeSourceMode, pauseScans:function(){Object.keys(scanning).forEach(function(id){pausedScans[id]=true;ask('scan/control',{sourceId:id},15000).catch(function(){});});}, leave: function () { playToken++; stopped(); if (typeof MediaSeries !== 'undefined') MediaSeries.leave(); }, scanSource: scanSource, open: open, stopped: stopped, checkpoint: checkpoint, ended: ended, rescan: rescan, addAddress: addAddress, addDropbox: addDropbox, dropboxFolders: dropboxFolders, addGdrive: addGdrive, gdrivePlaces: gdrivePlaces, gdriveFolders: gdriveFolders, gdriveKey: gdriveKey, signOut: signOut,
     rescanAll: rescanAll, newMedia: newMedia, newMediaSoon: newMediaSoon, guideLookup: guideLookup, movieById: movieById, tvByName: tvByName, tvSeason: tvSeason, autoDetails: autoDetails, autoSoon: autoSoon, testTmdbToken: testTmdbToken, fetchMissingDetails: fetchMissingDetails, setTmdbToken: setTmdbToken, updatePreferences: updatePreferences, libraryStats: libraryStats, removeLibrary: removeLibrary,
     // The web editor's Fix match: search TMDB by a typed title, then save the one picked.
     searchDetails: function (title) { if (!MediaStore.tmdbToken()) return Promise.reject(new Error('Add a TMDB API token first.')); return metadataRequest({ title: String(title || '').slice(0, 200) }).then(function (r) { return (r.matches || []).slice(0, 10).map(function (x) { return { id: x.id, title: x.title, year: x.year || '' }; }); }); },

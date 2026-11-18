@@ -112,6 +112,15 @@ const req = (method, u, body, headers) => new Promise((res, rej) => {
   ok('two askers at once: one reading of the portal\'s pages, both answered', both.every((r) => r.status === 200 && JSON.parse(r.body).length === 28) && m6.seen.vodPages === 3, m6.seen.vodPages);
   const pr = JSON.parse((await req('GET', H + '/stalker/progress?stb=' + login6)).body);
   ok('progress: the whole list read, of how many', pr.movie && pr.movie.done && pr.movie.got === 30 && pr.movie.total === 30 && pr.series === null, JSON.stringify(pr));
+  // A big portal (issue #118): how many titles it has from its first page, and only the newest few read.
+  const cnt = JSON.parse((await req('GET', H + '/stalker/xc/player_api.php?stb=' + login6 + '&action=count&kind=movie')).body);
+  ok('count: the portal\'s total from one page', cnt.total === 30, JSON.stringify(cnt));
+  const m7 = Mock.create({ stream: 'http://127.0.0.1:1/live/stream.ts', titles: 300 });
+  await new Promise((f) => m7.server.listen(0, '127.0.0.1', f));
+  const login7 = b64({ portal: 'http://127.0.0.1:' + m7.server.address().port + '/stalker_portal/c/', mac: '00:1a:79:00:00:01' });
+  const newest = await req('GET', H + '/stalker/xc/player_api.php?stb=' + login7 + '&action=get_vod_streams&max=40');
+  ok('max=40: about 40 of 300, three pages read, not 22', JSON.parse(newest.body).length >= 38 && JSON.parse(newest.body).length <= 42 && m7.seen.vodPages === 3, JSON.parse(newest.body).length + ' ' + m7.seen.vodPages);
+  m7.server.close();
   m6.server.close();
 
   // Issue #113: a portal with a shows module of its own, posters on the portal, and HTTP 429 when asked too fast.

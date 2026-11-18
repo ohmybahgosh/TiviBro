@@ -22,8 +22,10 @@ var MediaShowPage = (function () {
     return aired && /^\d+$/.test(b.key) ? (b.key === '0' ? 'Specials' : 'Season ' + b.key) : b.title || b.key;
   }
   function seasonOwn(show, b) { var n = seasonName(show, b); return b.title && b.title !== n && !/^(season|specials)\b/i.test(b.title) ? b.title : ''; }
-  function open(card, back) {
-    pg = { card: card, show: null, seasons: [], at: 0, eps: [], sel: 0, level: 'seasons', loading: true, back: back };
+  /* opts.play: straight to the next episode (▶ on a show's poster, as on Plex): the season you're up to, its first
+     episode not watched, played. */
+  function open(card, back, opts) {
+    pg = { card: card, show: null, seasons: [], at: 0, eps: [], sel: 0, level: 'seasons', loading: true, back: back, autoplay: !!(opts && opts.play) };
     $('viewMedia').classList.add('mshp-on');
     UI.setHandler(keys); draw();
     MediaSeries.showDetail(card.handle || card.id, function (r) {
@@ -36,7 +38,10 @@ var MediaShowPage = (function () {
       var fm = /^S(\d+)E(\d+)/i.exec(card.focusEp || ''); pg.focus = fm ? { s: +fm[1], e: +fm[2] } : null;
       var want = pg.focus ? String(pg.focus.s) : card.continueSeason != null ? String(card.continueSeason) : null;
       pg.at = Math.max(0, want ? pg.seasons.map(function (b) { return b.key; }).indexOf(want) : 0);
+      // ▶: the first season with an episode not watched (Specials last), unless Continue watching says which.
+      if (pg.autoplay && card.continueSeason == null) { var un = pg.seasons.map(function (b, i) { return { b: b, i: i }; }).filter(function (x) { return x.b.key !== '0' && (x.b.watched == null || x.b.watched < x.b.count); })[0]; if (un) pg.at = un.i; }
       if (pg.seasons.length === 1) return season(0);
+      if (pg.autoplay) return season(pg.at);
       if (pg.focus) return season(pg.at);                // straight to that episode
       draw();
     });
@@ -53,6 +58,7 @@ var MediaShowPage = (function () {
       // Or the episode it was opened for (Recently aired), once.
       if (pg.focus) { for (var f = 0; f < pg.eps.length; f++) if (+pg.eps[f].season === pg.focus.s && +pg.eps[f].number === pg.focus.e) { k = f; break; } pg.focus = null; }
       pg.sel = k; draw();
+      if (pg.autoplay) { pg.autoplay = false; if (pg.eps.length) play(); }
     });
   }
   function close() {
@@ -94,7 +100,7 @@ var MediaShowPage = (function () {
   function hints() {
     if (!pg) return;
     UI.hints(pg.level === 'eps' ? [['', 'OK  play'], ['', '◀ ▶  episodes'], ['', 'Hold OK  episode options', 'hold'], ['', 'Back  ' + (pg.seasons.length > 1 ? 'seasons' : 'close'), 'back']]
-      : [['', 'OK  episodes'], ['', '◀ ▶  seasons'], ['', 'Hold OK  season options', 'hold'], ['', 'Back  close', 'back']]);
+      : [['', 'OK  episodes'], ['', '▶  play next'], ['', '◀ ▶  seasons'], ['', 'Hold OK  season options', 'hold'], ['', 'Back  close', 'back']]);
   }
   function drawSeasons(b, s, m) {
     if (!pg.seasons.length) { b.appendChild(tel('div', 'shp-empty', 'No episodes found for this show.')); return; }
@@ -175,8 +181,10 @@ var MediaShowPage = (function () {
       else if (a === 'right' && pg.sel < n - 1) pg.sel++;
       else if (a === 'chup' || a === 'chdown') pg.sel = Math.max(0, Math.min(n - 1, pg.sel + (a === 'chup' ? -5 : 5)));
       else if (a === 'up' && pg.seasons.length > 1) { pg.level = 'seasons'; }
-      else if (a === 'ok') { play(); return true; }
+      else if (a === 'ok' || a === 'playpause') { play(); return true; }
     }
+    // ▶ on a season: its first episode not watched, played.
+    if (a === 'playpause' && pg.level === 'seasons') { pg.autoplay = true; return season(pg.at), true; }
     draw(); return true;
   }
   return { open: open, close: close, isOpen: function () { return !!pg; } };
