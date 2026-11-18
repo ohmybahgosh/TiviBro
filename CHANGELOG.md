@@ -1,17 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.6.0 (alpha 157, 2026-11-17)
 
+Pre-release: expect rough edges, and keep a backup before installing.
+
+### New in alpha 157
+
+- **The best copy for this TV.**  A movie you have more than once (a 4K remux and a 1080p, on two sources) plays the copy this TV shows best: one it can't play (AV1 on a TV without it) never, then the best picture (4K, Dolby Vision where the TV has it, HDR10), with a copy too heavy for an internet source (over 60 Mb/s from Google Drive or Dropbox) a step down.  The copy you were watching still comes first.  "N copies" on a movie's page (and Choose a copy in its options) lists them with what each is, where and how big, the best one marked, and says when a copy can't play here or is Dolby Vision 7 (UHD Blu-ray remuxes, which LG TVs play as HDR10).
 - **Audio tracks, clearer and picked better.**  The player's Audio track list says each track's language, its sound (Dolby Digital 5.1, DTS-HD MA 7.1, AAC stereo) and its name in the file, with commentaries and described audio marked, for movies and episodes from files.  A commentary is never picked by itself, and a file that starts on one switches to the movie's own track.
 - **Audio language: Original language.**  Settings > Playback > Audio language has a new choice: each movie's own language (from its details on TMDB), never a dub or a commentary.  Without details (a provider's title), the file's own first track, which is the original in most files.
 - **Forced subtitles come on by themselves.**  A subtitle track flagged forced, or named Forced, Foreign parts or Signs, in the language you're hearing, comes on when no other subtitles are on: the lines for the parts spoken in another language.  Off in the Subtitles menu turns it off.
 - **Old subtitle files read right.**  Downloaded subtitles saved in their language's old Windows code page (Polish, Czech, Hungarian, Russian, Ukrainian, Bulgarian, Greek, Turkish, Hebrew, Arabic, Baltic) showed garbled letters.  They come out right now.
 
-## 0.6.0 (alpha 156, 2026-11-17)
-
-Pre-release: expect rough edges, and keep a backup before installing.
-
-### New in alpha 156
+### In alpha 156
 
 - **Seek previews.**  While you seek in a movie or an episode (◀ ▶, the jumps, or the Magic Remote over the bar), a picture of the movie at that time shows over the bar, so you can see where you'll land.  The TV makes the pictures from the movie playing, one frame at a time: nothing of your library is read.  It's on by itself (Settings > Playback > Seek previews, or Red in the player); on a TV short of memory it skips 4K movies.  The audio converter on the TV is updated with it.  After the first picture, the TV keeps the movie's start and index in memory (16 MB at most, 4 MB on a TV short of memory), so the next pictures read only around their own frame.
 - **Chapters on the bar, Skip intro and Up next.**  A movie or episode file with chapters shows them as marks on the progress bar, and their names as you seek.  Red > Chapters lists them with a picture of each, and CH+ CH− go from one chapter to the next.  Where the file marks an intro or a recap, "Skip intro" shows while it plays, and where it marks the end credits, "Up next" offers the next episode (or the next movie of a collection you play).  OK does it, Back hides it.  Nothing is guessed: a file without those chapters shows neither.  Settings > Playback > Skip intro and Up next.

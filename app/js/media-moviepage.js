@@ -24,6 +24,9 @@ var MediaMoviePage = (function () {
     var m = pg.m, r = resumeOf(m), out = [];
     out.push(r ? { id: 'resume', label: '▶  Resume', sub: hm(r.dur - r.pos) + ' left' } : { id: 'play', label: '▶  Play', sub: rt(md(m).runtime) });
     if (r) out.push({ id: 'start', label: '↺  From the start' });
+    // Several copies (a 4K remux and a 1080p, on two sources): pick one, the best for this TV marked (media.js).
+    var nc = Media.copyCount ? Media.copyCount(m) : 1;
+    if (nc > 1) out.push({ id: 'copies', label: nc + ' copies' });
     if (pg.more.length > 1) out.push({ id: 'all', label: 'Play the collection', sub: pg.more.length + ' movies, in order' });
     if (pg.trailer) out.push({ id: 'trailer', label: 'Trailer' });
     // Favorite and More options: round buttons, named underneath when focused.
@@ -122,6 +125,7 @@ var MediaMoviePage = (function () {
     // My media's own keys while the movie opens (Back cancels it), then the page again when it ends.
     if (id === 'resume' || id === 'play') { close(true); Media.restore(); Media.playFile(m, false, reopen(m, back)); }
     else if (id === 'start') { close(true); Media.restore(); Media.playFile(m, true, reopen(m, back)); }
+    else if (id === 'copies') { close(true); Media.restore(); Media.chooseCopy(m, reopen(m, back)); }
     else if (id === 'all') { var list = pg.more; close(true); Media.restore(); Media.playAll(list, reopen(m, back)); }
     else if (id === 'trailer') watchTrailer(pg.trailer);
     else if (id === 'fav') { MediaStore.toggleFavorite(m.id); if (Media.refresh) Media.refresh(); draw(); }

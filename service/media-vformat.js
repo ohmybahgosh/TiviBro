@@ -4,7 +4,9 @@
           BlockAdditionMapping ("dvcC"/"dvvC": Dolby Vision), from Tracks near the start or where SeekHead says.
      MP4  the moov box (at the start or the end): a dvcC/dvvC box or a dvh1/dvhe sample entry (Dolby Vision),
           a colr nclx box's transfer (16 or 18).
-   { height, width, range: 'DV'|'HDR10'|'HLG'|'SDR'|'' } ('' when the file doesn't say).  Without colour in the
+   { height, width, range: 'DV'|'HDR10'|'HLG'|'SDR'|'', codec: 'h264'|'hevc'|'av1'|'vp9'|'mpeg2'|'mpeg4'|'', dvProfile } ('' and 0
+   when the file doesn't say): the codec and the Dolby Vision profile for My media's copy picker (which copy this TV
+   plays best: AV1 needs a 2020 or later LG, Dolby Vision profile 7 plays as its HDR10 base).  Without colour in the
    container, an HEVC track's SPS says it (what the TV's decoder switches to HDR by).  ES5 / Node 0.12. */
 'use strict';
 var http = require('http'), https = require('https'), URL_ = require('url');
@@ -87,15 +89,19 @@ function spsTransfer(nal) {
   bits(8); return bits(8);                    // colour primaries, then transfer characteristics
 }
 // The MKV Tracks element's bytes: the first video track.
+var MKV_CODEC = { 'V_MPEG4/ISO/AVC': 'h264', 'V_MPEGH/ISO/HEVC': 'hevc', V_AV1: 'av1', V_VP9: 'vp9', V_VP8: 'vp8', 'V_MPEG2': 'mpeg2', 'V_MPEG4/ISO/ASP': 'mpeg4', 'V_MS/VFW/FOURCC': 'vfw' };
+// A Dolby Vision configuration record (dvcC / dvvC body): its profile (7 bits after the version bytes).
+function dvProfileOf(b, a) { return a + 3 <= b.length ? (b[a + 2] >> 1) & 0x7f : 0; }
 function mkvTracks(b) {
-  var out = { height: 0, width: 0, range: '' };
+  var out = { height: 0, width: 0, range: '', codec: '', dvProfile: 0 };
   kids(b, 0, b.length, function (t) {
     if (t.id !== 0xae || out.done) return;
-    var video = false, h = 0, w = 0, trc = 0, dv = false, mastering = false, deep = false;
+    var video = false, h = 0, w = 0, trc = 0, dv = false, mastering = false, deep = false, codec = '', dvp = 0;
     kids(b, t.start, t.end, function (f) {
       if (f.id === 0x83) video = uint(b, f.start, f.end) === 1;
+      if (f.id === 0x86) { var cid = b.toString('binary', f.start, f.end).replace(/\0+$/, ''); codec = MKV_CODEC[cid] || (/^V_MPEG2/.test(cid) ? 'mpeg2' : ''); }
       if (f.id === 0x63a2) deep = hevcTransfer(b, f.start, f.end);
-      if (f.id === 0x41e4) kids(b, f.start, f.end, function (g) { if (g.id === 0x41e7) { var v = uint(b, g.start, g.end); if (v === 0x64766343 || v === 0x64767643) dv = true; } });
+      if (f.id === 0x41e4) { var isDv = false, extra = -1; kids(b, f.start, f.end, function (g) { if (g.id === 0x41e7) { var v = uint(b, g.start, g.end); if (v === 0x64766343 || v === 0x64767643) { dv = true; isDv = true; } } if (g.id === 0x41ed) extra = g.start; }); if (isDv && extra >= 0) dvp = dvProfileOf(b, extra); }
       if (f.id === 0xe0) kids(b, f.start, f.end, function (g) {
         if (g.id === 0xba) h = uint(b, g.start, g.end);
         if (g.id === 0xb0) w = uint(b, g.start, g.end);
@@ -103,7 +109,7 @@ function mkvTracks(b) {
       });
     });
     if (!video) return;
-    out.done = true; out.height = h; out.width = w;
+    out.done = true; out.height = h; out.width = w; out.codec = codec; out.dvProfile = dvp;
     // No colour in the track's header (many web releases keep it only in the video): the HEVC stream's own says.
     if (!trc && deep) trc = deep;
     out.range = dv ? 'DV' : trc === 16 || (mastering && trc !== 18) ? 'HDR10' : trc === 18 ? 'HLG' : trc ? 'SDR' : '';
@@ -113,7 +119,10 @@ function mkvTracks(b) {
 }
 // The MP4 moov box's bytes, looked through for the boxes that tell.
 function mp4Moov(b) {
-  var s = b.toString('binary'), out = { height: 0, width: 0, range: '' };
+  var s = b.toString('binary'), out = { height: 0, width: 0, range: '', codec: '', dvProfile: 0 };
+  // The video sample entry names the codec (dvh1/dvhe: HEVC with Dolby Vision), dvcC/dvvC its profile.
+  out.codec = /av01/.test(s) ? 'av1' : /vp09/.test(s) ? 'vp9' : /hvc1|hev1|dvh1|dvhe/.test(s) ? 'hevc' : /avc1|avc3|dva1|dvav/.test(s) ? 'h264' : /mp4v/.test(s) ? 'mpeg4' : '';
+  var dc = s.search(/dvcC|dvvC/); if (dc >= 0) out.dvProfile = dvProfileOf(b, dc + 4);
   var dv = /dvcC|dvvC|dvh1|dvhe/.test(s), trc = 0, i = s.indexOf('colrnclx'), hv = s.indexOf('hvcC'), deep = hv >= 4 ? hevcTransfer(b, hv + 4, Math.min(b.length, hv - 4 + b.readUInt32BE(hv - 4))) : 0;
   if (i >= 0 && i + 12 <= b.length) trc = b.readUInt16BE(i + 10);
   // tkhd of the video track: its height is the last 4 bytes (16.16 fixed point); the tallest one is the picture.

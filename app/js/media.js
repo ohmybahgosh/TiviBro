@@ -65,16 +65,64 @@ var Media = (function () {
   var vfTimer = null, vfAsked = {};
   function formatSoon(m, redraw) {
     clearTimeout(vfTimer);
-    if (!m || (m.vf && (m.vf.v === 2 || m.vf.e)) || vfAsked[m.id] || m.kind === 'live' || m.kind === 'show' || m.kind === 'episode' || m.continueEpisode || !m.path || !(m.size > 0)) return;
+    if (!m || (m.vf && (m.vf.v === 3 || m.vf.e)) || vfAsked[m.id] || m.kind === 'live' || m.kind === 'show' || m.kind === 'episode' || m.continueEpisode || !m.path || !(m.size > 0)) return;
     var src = MediaStore.source(m.src); if (!src) return;
     vfTimer = setTimeout(function () {
       vfAsked[m.id] = 1;
       ask('vformat', { source: src, path: m.path, size: m.size, ext: m.ext || '' }, 20000).then(function (f) {
-        var vf = f && !f.error ? { h: +f.height || 0, w: +f.width || 0, r: f.range || '', v: 2 } : { e: Date.now() };
+        var vf = vfOf(f);
         m.vf = vf; MediaStore.setFormat(m.id, vf);
         if (redraw) redraw(m);
       }, function () {});
     }, 700);
+  }
+  // The file's picture as kept on the movie: height, width, range, codec (c) and Dolby Vision profile (p).  v 3.
+  function vfOf(f) { return f && !f.error ? { h: +f.height || 0, w: +f.width || 0, r: f.range || '', c: f.codec || '', p: +f.dvProfile || 0, v: 3 } : { e: Date.now() }; }
+  function lookFormat(m) {
+    var src = MediaStore.source(m.src);
+    if (!src || !m.path || (m.vf && m.vf.v === 3)) return Promise.resolve(m.vf);
+    return ask('vformat', { source: src, path: m.path, size: m.size, ext: m.ext || '' }, 20000).then(function (f) { var vf = vfOf(f); m.vf = vf; MediaStore.setFormat(m.id, vf); return vf; }, function () { return m.vf; });
+  }
+
+  /* Which copy of a movie this TV plays best (Choose a copy, and the one OK plays): what it can't play at all goes
+     last (AV1 on a TV without it, VP9), then the best picture this TV shows (4K on a 4K panel, Dolby Vision where
+     the TV has it, else HDR10), and a copy far heavier than an internet source carries well (over 60 Mb/s from
+     Google Drive or Dropbox) a step down.  Dolby Vision profile 7 (UHD Blu-ray remuxes) plays as its HDR10 base on
+     LG TVs, so it counts as HDR10. */
+  function bitrate(m) { var md = m.metadata || {}, min = parseInt(md.runtime, 10); return m.size > 0 && min > 0 ? Math.round(m.size * 8 / (min * 60) / 1e6) : 0; }
+  function copyVerdict(m) {
+    var c = typeof Caps !== 'undefined' ? Caps.probe() : { tv: {}, mse: {} }, vf = m.vf || {}, codec = vf.c || (/\bav1\b/i.test(m.file || '') ? 'av1' : /\bvp9\b/i.test(m.file || '') ? 'vp9' : '');
+    var tv = c.tv || {}, out = { ok: true, why: '', score: 0, notes: [] };
+    if (codec === 'av1' && !(tv.av1 || (c.mse || {}).av1)) { out.ok = false; out.why = 'Can\'t play on this TV (AV1)'; }
+    if (codec === 'vp9' && !(tv.vp9 || (c.mse || {}).vp9)) { out.ok = false; out.why = 'Can\'t play on this TV (VP9)'; }
+    var h = vf.h || (quality(m) === 3 ? 2160 : quality(m) === 2 ? 1080 : quality(m) === 1 ? 720 : 0), w = vf.w || 0;
+    var panel = c.panel4k === false ? 1080 : 2160, res = Math.min(h >= 1600 || w >= 3200 ? 2160 : h >= 900 || w >= 1800 ? 1080 : h >= 650 ? 720 : h ? 480 : 0, panel);
+    out.score = res;
+    var range = vf.r || (/Dolby Vision/.test(fileInfo(m)) ? 'DV' : /HDR/.test(fileInfo(m)) ? 'HDR10' : '');
+    if (range === 'DV' && vf.p === 7) out.notes.push('Dolby Vision 7 plays as HDR10');
+    if (range === 'DV' && vf.p !== 7 && (tv.dv8 || tv.dv5)) out.score += 300; else if (range === 'DV' || range === 'HDR10' || range === 'HLG') out.score += 200;
+    var src = MediaStore.source(m.src), net = src && /gdrive|dropbox/i.test(src.kind || src.type || ''), mb = bitrate(m);
+    if (mb >= 60 && net) { out.score -= 400; out.notes.push('Heavy for an internet source: ' + mb + ' Mb/s'); }
+    else if (mb >= 80) out.notes.push(mb + ' Mb/s');
+    if (!out.ok) out.score = -1e6;
+    return out;
+  }
+  function bestCopy(list) { return list.slice().sort(function (a, b) { return copyVerdict(b).score - copyVerdict(a).score; })[0]; }
+  /* Choose a copy: every copy with what it is, where it is and how big, the one this TV plays best first and marked,
+     each one's file looked at once (its codec and Dolby Vision profile) before the list shows. */
+  function chooseCopy(m, back, fromStart) {
+    var list = copies(m);
+    if (list.length < 2) return play(m, !!fromStart);
+    var need = list.filter(function (x) { return !(x.vf && x.vf.v === 3); });
+    if (need.length) U.toast('Looking at the copies…', 4000);
+    Promise.all(need.slice(0, 6).map(lookFormat)).then(function () {
+      var best = bestCopy(list);
+      UI.menu('Play which copy?', list.slice().sort(function (a, b) { return copyVerdict(b).score - copyVerdict(a).score; }).map(function (x) {
+        var v = copyVerdict(x), src = MediaStore.source(x.src);
+        var sub = [x === best ? '★ Best for this TV' : '', v.why].concat(v.notes).concat([src ? src.name : '', x.size ? size(x.size) : '']).filter(Boolean).join('   ·   ');
+        return { label: RAW(pictureInfo(x) || fileInfo(x) || x.file || 'Copy'), sub: sub, current: x === best, action: function () { if (back) playFrom(x, !!fromStart, back); else play(x, !!fromStart); } };
+      }), back);
+    });
   }
   function wrap(url) { return typeof Net !== 'undefined' && Net.active && Net.wrap ? Net.wrap(url) : url; }
   function pumpPosters() {
@@ -231,7 +279,8 @@ var Media = (function () {
       var g = by[id]; if (g.length < 2) return;
       var best = g.slice().sort(function (a, b) {
         var ra = MediaStore.resume(a.id), rb = MediaStore.resume(b.id);
-        return ((rb && rb.at) || 0) - ((ra && ra.at) || 0) || (b.src === pref) - (a.src === pref) || quality(b) - quality(a);
+        // The copy being watched first, then the preferred source, then the one this TV plays best (copyVerdict).
+        return ((rb && rb.at) || 0) - ((ra && ra.at) || 0) || (b.src === pref) - (a.src === pref) || copyVerdict(b).score - copyVerdict(a).score || quality(b) - quality(a);
       })[0];
       g.forEach(function (m) { copyMap[m.id] = g; rep[m.id] = best; });
     });
@@ -1326,7 +1375,7 @@ var Media = (function () {
       m.metadata && { label: 'Remove movie details', action: function () { MediaStore.setMetadata(m.id, null); refresh(); } },
       { label:'TV shows',action:function () { MediaSeries.open(); } },
       reviewCards.length > 0 && { label:'Needs review',action:function () { MediaSeries.review(); } },
-      copies(m).length > 1 && { label: 'Choose a copy', sub: copies(m).length + ' copies of this movie', action: function () { UI.menu('Play which copy?', copies(m).map(function (x) { var src = MediaStore.source(x.src); return { label: RAW((src ? src.name : 'Unknown source') + (fileInfo(x) ? '   ·   ' + fileInfo(x) : '')), sub: x.size ? size(x.size) : '', action: function () { play(x, false); } }; })); } },
+      copies(m).length > 1 && { label: 'Choose a copy', sub: copies(m).length + ' copies of this movie: the best one for this TV marked', action: function () { chooseCopy(m); } },
       { label: 'File information', sub: pictureInfo(m) + (m.size ? ' · ' + size(m.size) : ''), action: function () { UI.menu('File information', [{ label: RAW(m.file), sub: (MediaStore.source(m.src) || {}).name || '' }]); } },
       !MediaStore.isWatched(m.id) ? { label: 'Mark as watched', action: function () { MediaStore.markWatched(m.id, true); refresh(); if (back) back(); } } : { label: 'Mark as not watched', action: function () { MediaStore.markWatched(m.id, false); refresh(); if (back) back(); } }
     ], back);
@@ -1500,7 +1549,7 @@ var Media = (function () {
     applyDetails: function (movieId, tmdbId) { return metadataRequest({ id: tmdbId }).then(function (r) { if (!r.metadata) throw new Error('TMDB has no details for that.'); return MediaStore.setMetadata(movieId, r.metadata); }).then(function () { refresh(); }); }, findDetails: findDetails, libraryDetails: function (id) { var s = MediaStore.source(id); if (s) sourceDetails(s); }, lookUpWaiting: function (id) { if (needToken()) return; if (fetchingDetails) return U.toast('Movie details are already being fetched.'); MediaStore.load().then(function () { var list = MediaStore.movies(id).filter(function (m) { return !(m.metadata && m.metadata.id) && !m.tmdbMiss; }); if (!list.length) return U.toast('Every movie here has been looked up.', 4000); return fetchDetails(list, MediaStore.preferences().language); }).catch(function (e) { U.toast(why(e), 6000); }); }, detailsLabel: detailsLabel, arrangeShelves: function (sec) { arrangeMenu(null, sec || 'home'); }, bothKinds: function () { var h = has(); return !!(h.movies && h.shows); }, busyText: busyText, setBusy: setBusy,
     // The web editor's shelf list: with movies and shows, each shelf says which tab it's on (Continue watching: Home).
     shelfList: function () { var ar = arrangement(), h = has(), both = h.movies && h.shows; return ar.order.filter(function (k) { return fits(k, h); }).map(function (k) { return { key: k, name: NAMES[k], off: ar.off(k), section: !both ? '' : traktOf(k) ? traktOf(k).tab : k === 'continue' || inSection(k, 'home') ? 'home' : TV_ONLY[k] ? 'shows' : 'movies' }; }); }, holidaysNow: holidaysNow, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
-    watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playAll: playAll, upNext: function () { var it = playingMeta && playingMeta.item; if (!it) return ''; if (queue && queue.item === it && queue.list[queue.at + 1]) return 'collection'; return it.kind === 'episode' ? 'episode' : ''; }, playFile: function (m, fromStart, back) { if (back) playFrom(m, fromStart, back); else play(m, fromStart); }, openTitle: openTitle, optionsFor: itemMenu, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
+    watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playAll: playAll, chooseCopy: chooseCopy, copyCount: function (m) { return copies(m).length; }, upNext: function () { var it = playingMeta && playingMeta.item; if (!it) return ''; if (queue && queue.item === it && queue.list[queue.at + 1]) return 'collection'; return it.kind === 'episode' ? 'episode' : ''; }, playFile: function (m, fromStart, back) { if (back) playFrom(m, fromStart, back); else play(m, fromStart); }, openTitle: openTitle, optionsFor: itemMenu, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
     _test: { namedIn: namedIn, section: function (x) { if (x) { tabsFocus = false; setSection(x); } return { section: section, split: split, tabs: tabsFocus }; }, goShelf: function (id) { followTop = false; goShelf(id); }, addServer: addServer, addAddress: addAddress, addDropbox: addDropbox, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };
 })();
