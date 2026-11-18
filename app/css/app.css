@@ -109,7 +109,13 @@ body.full .vid-error{left:50%;right:auto;bottom:auto;top:40%;transform:translate
 .osd-num{font-size:40px;color:var(--accent-text);font-variant-numeric:tabular-nums}
 .osd-name{font-size:44px;font-weight:700}
 .osd-group{font-size:24px;color:var(--muted)}
-.osd-prog{margin-top:14px}
+.osd-prog{margin-top:14px;position:relative}
+/* Seek previews (seekprev.js): the movie at the time being sought, over the bar */
+.seekprev{position:absolute;bottom:34px;width:328px;transform:translateX(-50%);padding:4px;border-radius:14px;background:rgba(7,9,18,.92);box-shadow:0 10px 30px rgba(0,0,0,.6);pointer-events:none;z-index:2}
+.seekprev-pic{display:block;width:320px;height:180px;object-fit:cover;border-radius:10px;background:#000;opacity:0;transition:opacity 160ms ease}
+.seekprev.has .seekprev-pic{opacity:1}
+.seekprev.wait.has .seekprev-pic{opacity:.45}
+.seekprev-time{text-align:center;font-size:24px;font-weight:700;color:#fff;padding:6px 0 2px;font-variant-numeric:tabular-nums}
 .osd-now{font-size:30px}
 .osd-next{font-size:24px;color:var(--muted);margin-top:8px}
 /* Info pressed again on a live channel: what's on, in full (discussion #36) */

@@ -1038,6 +1038,7 @@ var Views = (function () {
   }
   function osd(show, ch) {
     if (!full) return;
+    if (mode !== 'vod' && typeof SeekPrev !== 'undefined') SeekPrev.hide();
     var o = $('osd'), poster = $('osdPoster');
     o.classList.toggle('vod', mode === 'vod' || mode === 'catchup');
     if (poster) { var want = mode === 'vod' && vod && vod.meta.poster || ''; if ((poster.getAttribute('src') || '') !== want) { if (want) poster.src = want; else poster.removeAttribute('src'); } }
@@ -1048,6 +1049,8 @@ var Views = (function () {
       $('osdNow').textContent = fmtDur(pos) + ' / ' + (d ? fmtDur(d) : '--:--') + (vs.pending != null ? '   (' + (jump < 0 ? '−' : '+') + fmtDur(Math.abs(jump)) + ')' : Player.paused ? '   paused' : '') + (d ? '   ends ' + U.hhmm(Date.now() + (d - pos) * 1000) : '');
       $('osdBar').style.width = d ? Math.round(100 * pos / d) + '%' : '0';
       $('osdNext').textContent = [Player.media, 'Keep pressing ◀ ▶ to jump further'].filter(Boolean).join('    ');
+      // A picture of the movie where the seek will land (seekprev.js).
+      if (typeof SeekPrev !== 'undefined') SeekPrev.show(vs.pending != null ? vs.pending : hoverT, d, vs.pending != null ? vs.dir : 0);
     } else if (mode === 'catchup' && cu) {
       var c0 = cu.c, dur = (cu.p.e - cu.p.s) / 1000, at = cu.pending != null ? cu.pending : cu.off + Player.position;
       $('osdNum').textContent = Store.settings.showNumbers ? c0.num : ''; $('osdName').textContent = L.name(c0); $('osdGroup').textContent = 'Catch-up';
@@ -1169,7 +1172,13 @@ var Views = (function () {
   }
   function vodSeekCommit() { clearTimeout(vs.t); if (vs.pending == null) return; var t = vs.pending; vs.pending = null; if (vod && vod.meta.local && Media.seeking) Media.seeking(t); Player.seekTo(t); osd(true); }
   function vodSeekCancel() { clearTimeout(vs.t); vs.pending = null; vs.n = 0; osd(true); }
-  // Magic Remote: click anywhere on the progress bar to jump there.
+  // Magic Remote: over the bar, the picture where a click would land (seekprev.js); click anywhere on it to jump there.
+  var hoverT = null;
+  $('osdBar').parentNode.addEventListener('mousemove', function (e) {
+    if (mode !== 'vod' || !Player.duration) return;
+    var r = this.getBoundingClientRect(); hoverT = U.clamp((e.clientX - r.left) / r.width, 0, 1) * Player.duration; osd(true);
+  });
+  $('osdBar').parentNode.addEventListener('mouseleave', function () { if (hoverT != null) { hoverT = null; osd(true); } });
   $('osdBar').parentNode.addEventListener('click', function (e) {
     e.stopPropagation();
     var r = this.getBoundingClientRect(), f = U.clamp((e.clientX - r.left) / r.width, 0, 1);
@@ -1367,13 +1376,14 @@ var Views = (function () {
   /* ---------- VOD playback (called by Vod) ---------- */
   function playVod(meta, url, startAt, onExit) {
     vodSeekCancel();
-    vod = { meta: meta, onExit: onExit };
+    vod = { meta: meta, onExit: onExit, url: url };
     mode = 'vod'; cu = null; playing = null;
     Subs.reset();
     stage.classList.remove('off');
     video._subsChoice = false; video._subsWantKey = null; Subs.forget();
     video._subsMemo = Subs.memoFor ? Subs.memoFor(meta) : null;   // on or off, as last time for this title
     Player.play({ k: 'vod:' + meta.id, n: meta.title, num: '', p: meta.p || undefined }, { url: url, live: false, startAt: startAt || 0, meta: meta });
+    if (typeof SeekPrev !== 'undefined') SeekPrev.start(meta, url);
     Subs.restore(meta);           // subtitles downloaded for it in the last days (discussion #19)
     goFull();
   }
@@ -2017,6 +2027,7 @@ var Views = (function () {
     if (tracks.length > 1) items.push({ label: 'Audio track', sub: (tracks.filter(function (t) { return t.on; })[0] || {}).label, action: audioMenu });
     items.push({ label: 'Aspect', sub: Player.aspectName(Player.displayFor(aspectTarget())), action: pictureMenu });
     if (Player.qualities().length > 1) items.push({ label: 'Video quality', sub: qualityLabel(), action: qualityMenu });
+    if (mode === 'vod' && typeof SeekPrev !== 'undefined') items.push({ label: 'Seek previews', sub: ({ auto: 'Automatic', on: 'On', off: 'Off' })[SeekPrev.setting()] + (SeekPrev.available === false ? '  ·  needs the TiviBro update with the new converter' : ''), action: seekPrevMenu });
     if (mode === 'vod' || mode === 'catchup') items.push({ label: 'Playback speed', sub: Player.rate === 1 ? 'Normal' : Player.rate + '×', action: speedMenu });
     // Live captions (CEA-608) have their own switch; Subtitles is for real subtitle tracks.
     var subs = subtitleTracks().filter(function (t) { return mode === 'vod' || t.kind === 'subtitles'; });
@@ -2167,7 +2178,16 @@ var Views = (function () {
   }
   setInterval(function () { if (pipTab()) try { pipUpdate(); } catch (e) {} }, 15000);
 
-  function stopAll() { Subs.reset(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off');  if (pipTab()) pipUpdate(); }
+  // Red > Seek previews in the player: the same choice as Settings > Playback > Seek previews.
+  function seekPrevMenu() {
+    var cur = SeekPrev.setting(), set = function (v) { return function () { Store.settings.seekPreviews = v; Store.saveSettings(); if (v !== 'off' && vod) SeekPrev.start(vod.meta, vod.url); else SeekPrev.stop(); U.toast('Seek previews: ' + ({ auto: 'Automatic', on: 'On', off: 'Off' })[v]); }; };
+    UI.menu('Seek previews', [
+      { label: (cur === 'auto' ? '✓  ' : '') + 'Automatic', sub: 'A picture of the movie as you seek.  On a TV short of memory, only for movies up to 1080p.', current: cur === 'auto', action: set('auto') },
+      { label: (cur === 'on' ? '✓  ' : '') + 'On', sub: 'Always, 4K movies too.', current: cur === 'on', action: set('on') },
+      { label: (cur === 'off' ? '✓  ' : '') + 'Off', current: cur === 'off', action: set('off') }
+    ]);
+  }
+  function stopAll() { Subs.reset(); if (typeof SeekPrev !== 'undefined') SeekPrev.stop(); if (full) { full = false; document.body.classList.remove('full'); stage.classList.remove('full'); stage.classList.add('preview'); } Player.stop(); playing = null; mode = 'live'; cu = null; vod = null; stage.classList.add('off');  if (pipTab()) pipUpdate(); }
 
   return {
     pipUpdate: pipUpdate, pipStop: pipStop, pipFull: pipFull, pipRestart: pipRestart, get pipOn() { return pipOn(); },

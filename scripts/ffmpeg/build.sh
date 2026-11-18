@@ -200,11 +200,13 @@ FF_COMPONENTS=(
   --enable-protocol=file,pipe,tcp,http
   --enable-demuxer=matroska,mov,mpegts,avi,flv
   --enable-decoder=dca,truehd,mlp,flac,ac3,eac3,aac,mp3,mp3float,mp2,mp2float,opus,vorbis,'pcm_*'
-  --enable-encoder=ac3,eac3,aac
+  # Seek previews (service/seekprev.js): one keyframe decoded in software, made small, out as a JPEG.
+  --enable-decoder=h264,hevc,mpeg2video,mpeg4
+  --enable-encoder=ac3,eac3,aac,mjpeg
   --enable-parser=h264,hevc,av1,mpeg4video,mpegvideo,vp9,aac,aac_latm,ac3,dca,flac,mlp,mpegaudio,opus,vorbis
   --enable-bsf=h264_mp4toannexb,hevc_mp4toannexb,aac_adtstoasc,extract_extradata,vp9_superframe,av1_frame_split
-  --enable-muxer=matroska,mpegts,mp4,adts,null
-  --enable-filter=aresample,aformat,anull,pan,abuffer,abuffersink,atrim,asetpts,anullsink
+  --enable-muxer=matroska,mpegts,mp4,adts,null,mjpeg,image2pipe
+  --enable-filter=aresample,aformat,anull,pan,abuffer,abuffersink,atrim,asetpts,anullsink,buffer,buffersink,scale,format,null
 )
 
 FF_BASE=(
@@ -213,7 +215,7 @@ FF_BASE=(
   --disable-programs --enable-ffmpeg
   --disable-doc --disable-debug
   --enable-static --disable-shared
-  --disable-avdevice --disable-swscale --disable-postproc
+  --disable-avdevice --enable-swscale --disable-postproc
   --enable-avcodec --enable-avformat --enable-avfilter --enable-swresample
   --enable-network
   --disable-iconv --disable-zlib --disable-bzlib --disable-lzma
@@ -387,6 +389,11 @@ smoke_test() {
   for need in ac3 eac3 aac; do
     grep -qE "^ A[^ ]* +$need " <<<"$encs" || { echo "  FAIL: encoder $need missing" >&2; fail=1; }
   done
+  # Seek previews: the video decoders and the JPEG encoder.
+  for need in h264 hevc mpeg2video mpeg4; do
+    grep -qE "^ V[^ ]* +$need " <<<"$decs" || { echo "  FAIL: decoder $need missing" >&2; fail=1; }
+  done
+  grep -qE "^ V[^ ]* +mjpeg " <<<"$encs" || { echo "  FAIL: encoder mjpeg missing" >&2; fail=1; }
   local want_protos=(http pipe tcp file)
   [ "$ENABLE_TLS" = 1 ] && want_protos+=(https)
   for need in "${want_protos[@]}"; do
@@ -396,6 +403,12 @@ smoke_test() {
     echo "  FAIL: GPL or nonfree enabled" >&2; fail=1
   fi
   echo "  ok: components and license"
+
+  log "[$arch] seek preview: one keyframe at 6 s -> a 160 px JPEG"
+  "${ff[@]}" -threads 1 -skip_frame nokey -noaccurate_seek -ss 6 -i "$fx/dts51.mkv" -map 0:v:0 -an -frames:v 1 -fps_mode passthrough \
+    -vf scale=160:-2,format=yuvj420p -q:v 7 -f mjpeg pipe:1 > "$t/frame.jpg" || fail=1
+  expect "frame.jpg codec" "$(probe "$t/frame.jpg" v:0 codec_name)" mjpeg || fail=1
+  expect "frame.jpg width" "$(probe "$t/frame.jpg" v:0 width)" 160 || fail=1
 
   log "[$arch] DTS 5.1 MKV -> AC-3 5.1 MKV (file)"
   "${ff[@]}" -i "$fx/dts51.mkv" -map 0 -c:v copy -c:a ac3 -b:a 640k "$t/ac3.mkv" || fail=1

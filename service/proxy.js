@@ -27,6 +27,7 @@ var Live = require('./live');
 var Stalker = require('./stalker');
 var Media = require('./media');
 var Convert = require('./convert');
+var SeekPrev = require('./seekprev');
 var Ffmpeg = require('./ffmpeg');
 var Pace = require('./pace');
 
@@ -268,6 +269,8 @@ function create(opts) {
     if (req.url.indexOf('/media-stream/') === 0) return require('./media-stream').handle(req, res, ALLOW);
     // Converted sound (convert.js): the link carries its own key, since the TV's player can't send the secret.
     if (Convert.isStream(req.url)) return Convert.stream(req, res, ALLOW, log, ownPort(), redact);
+    // Seek previews (seekprev.js): pictures of the movie playing, with the converter's key in the link like its stream.
+    if (SeekPrev.isRoute(req.url)) return SeekPrev.handle(req, res, ALLOW, log, ownPort());
     /* A movie's trailer inside TiviBro (media-moviepage.js): YouTube's player refuses a page without an address
        (TiviBro's own is a file on the TV, "Error 153"), so the helper hands over this small page that holds
        it.  Only an 11-character YouTube id goes in; nothing else is fetched here. */
@@ -277,7 +280,7 @@ function create(opts) {
       return res.end('<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;height:100%;background:#000;overflow:hidden}iframe{position:fixed;left:0;top:0;width:100%;height:100%;border:0}</style></head><body>' +
         '<iframe src="https://www.youtube.com/embed/' + tm[1] + '?autoplay=1&rel=0&modestbranding=1&playsinline=1&iv_load_policy=3" allow="autoplay; encrypted-media; fullscreen" referrerpolicy="strict-origin-when-cross-origin" tabindex="-1"></iframe></body></html>');
     }
-    if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, key: ctlTag, node: process.version, stats: stats, guide: 2, vod: 3, kv: 1, live: 1, convert: 1, sys: sys(), store: require('./storage').info() })); }
+    if (req.url === '/ping') { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json' }, ALLOW)); return res.end(JSON.stringify({ ok: true, key: ctlTag, node: process.version, stats: stats, guide: 2, vod: 3, kv: 1, live: 1, convert: 1, preview: 1, sys: sys(), store: require('./storage').info() })); }
     /* The web editor and the phone app connection are switched on and off from TiviBro only.  On the
        TV the helper hands TiviBro a secret with its start reply (service.js, over luna, which only
        TiviBro may call); without it, a web page in the TV's browser could reach these over localhost. */

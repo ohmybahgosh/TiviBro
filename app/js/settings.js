@@ -147,6 +147,8 @@ var Settings = (function () {
     // An idea from the GUI thread (discussion #36): the memory-safe mode set by hand, not only when TiviBro decides.
     out.push(choice('Memory-safe playback', 'Holds less video in memory so TiviBro doesn\'t close on TVs with 1 or 2 GB.  Automatic turns it on for TVs with 1 GB and after TiviBro closed while playing.',
       ['auto', 'on', 'off'], ['Automatic', 'Always on', 'Off'], function () { return s.memSafe || 'auto'; }, function (v) { s.memSafe = v; save(); }));
+    out.push(choice('Seek previews', 'A picture of the movie or episode where you\'re seeking to, over the bar, made on the TV from what plays (nothing of your library is read).  Automatic: with Memory-safe playback on, only for movies up to 1080p and nothing made ahead.  Red in the player too.',
+      ['auto', 'on', 'off'], ['Automatic', 'On, 4K too', 'Off'], function () { return s.seekPreviews || 'auto'; }, function (v) { s.seekPreviews = v; save(); }));
     out.push(head('Switching channels'));
     out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',
       ['auto', 'ask', 'off'], ['Switch to another version', 'Ask me', 'Keep retrying'], function () { return s.backups || 'auto'; }, function (v) { s.backups = v; save(); }));
@@ -1679,7 +1681,7 @@ var Settings = (function () {
         jump('Movies and Shows open on', 'Home, or the list of categories.'), jump('Scan all libraries', 'Look for added and removed movies and episodes.'), jump('Fetch details for all', 'Posters and details from TMDB.')]; }),
       prob('TiviBro closed by itself, or is slow', 'It quits while playing, or the screens are slow.', function () { return [
         tip('TiviBro says what it was doing when it closed, and offers to send a report.  On TVs with 1 or 2 GB, these settings help most.'),
-        jump('Memory-safe playback', 'Holds less video in memory.'), jump('Public guide fill-in', 'Fewer countries means less to read.'), jump('Keep past days', 'Fewer days of catch-up guide.'),
+        jump('Memory-safe playback', 'Holds less video in memory.'), jump('Seek previews', 'Off frees the memory a 4K movie\'s pictures take.'), jump('Public guide fill-in', 'Fewer countries means less to read.'), jump('Keep past days', 'Fewer days of catch-up guide.'),
         jump('Preview on the Channels screen', 'Off for the snappiest list on slow TVs.'), jump('Report a problem', 'Sends this TV\'s details and log, logins taken out.')]; })
     ];
   }
