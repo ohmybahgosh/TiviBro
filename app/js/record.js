@@ -5,6 +5,7 @@
    portal's links all apply.  A recording uses its own connection to the provider. */
 var Record = (function () {
   'use strict';
+  var L = Library;
   var PAD_BEFORE = 2 * 60000, PAD_AFTER = 5 * 60000;
   var last = { recs: [], at: 0 };
 
