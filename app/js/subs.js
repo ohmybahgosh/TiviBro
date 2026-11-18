@@ -130,6 +130,14 @@ var Subs = (function () {
   }
   function guess(meta) {
     var it = meta && meta.item || {}, q = { type: 'movie', query: '', year: '', season: 0, episode: 0 };
+    /* An episode from My media: the show's name, its season and number (the search said "S1E2 Episode 2", which no
+       subtitle site knows).  The name from the library, else from the file's ("Cunk on Cinema - S01E02 - ..."). */
+    if (it.kind === 'episode' && it.showId && !it.ep) {
+      var fm = /^(.*?)[\s._-]+\(?(?:19|20)?\d{0,2}\)?[\s._-]*S\d{1,2}E\d{1,3}/i.exec(String(it.file || ''));
+      q.type = 'episode'; q.season = +it.season || 0; q.episode = +it.number || 0;
+      q.query = clean((typeof Media !== 'undefined' && Media.showTitle && Media.showTitle(it.showId)) || (fm ? fm[1].replace(/[._]/g, ' ') : '') || String(meta.title || ''));
+      return q;
+    }
     if (it.ep) { q.type = 'episode'; q.query = clean(String(meta.title || '').split(/\s{3}/)[0]); q.season = +it.season || 0; q.episode = +it.num || 0; }
     else { q.query = clean(it.name || it.title || meta && meta.title); q.year = String(it.year || meta && meta.sub || '').slice(0, 4); }
     if (!/^\d{4}$/.test(q.year)) { var y = /\b(19|20)\d\d\b/.exec(it.name || it.title || meta && meta.title || ''); q.year = y ? y[0] : ''; }

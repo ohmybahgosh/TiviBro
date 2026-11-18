@@ -319,6 +319,15 @@ var Media = (function () {
   }
   // When an episode came or aired, in words: today, yesterday, 3 days ago, Nov 2.
   function dayWord(t) { if (!t) return ''; var days = Math.round((Date.now() - t) / 864e5); return days <= 0 ? 'today' : days === 1 ? 'yesterday' : days < 7 ? days + ' days ago' : new Date(t).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
+  /* A show's progress bar on every shelf, not only Next up: the episode part-way through (here, or on Plex through
+     Trakt) is known for the shows in Next up; Recently watched (Trakt) and the rest showed the same show without it. */
+  var goingAt = {};
+  function progressOf(m) {
+    if (!m) return null;
+    if (m.progressPercent != null) return m.progressPercent;
+    var c = isShow(m) ? goingAt[m.handle || m.id] : null;
+    return c && c.progressPercent != null ? c.progressPercent : null;
+  }
   function isShow(m) { return m && (m.kind === 'show' || !!m.continueEpisode); }
   /* New since your last visit, quietly (no toast, no banner): what came in after your last visit to My media
      and you haven't opened or watched.  It gets a small dot by its name and its own shelf, and the dot goes as
@@ -398,7 +407,12 @@ var Media = (function () {
     var one = mergeCopies(all), shows = opts.phone ? [] : seriesCards.filter(mine), favShows = opts.phone ? [] : favouriteShows.filter(mine);
     var hasMovies = all.length > 0, hasShows = shows.length + favShows.length > 0;
     var built = {};
-    built['continue'] = { title: 'Continue watching', movies: one(base[0].movies.filter(mine)).concat(opts.phone ? [] : continuingShows.filter(mine)) };
+    /* Movies and shows together, the one watched last first.  Shows used to follow every movie, so an episode just
+       paused on Plex (Trakt) sat at the end of Home's row and showed only on the TV shows tab. */
+    var lastAt = function (m) { if (isShow(m)) return +m.at || 0; var r = MediaStore.resume(m.id); return r && +r.at || 0; };
+    var resumeRow = one(base[0].movies.filter(mine)).concat(opts.phone ? [] : continuingShows.filter(mine))
+      .map(function (m, i) { return [lastAt(m), i, m]; }).sort(function (a, b) { return b[0] - a[0] || a[1] - b[1]; }).map(function (x) { return x[2]; });
+    built['continue'] = { title: 'Continue watching', movies: resumeRow };
     built.favorites = { title: 'Favorites', movies: one(base[1].movies.filter(mine)).concat(favShows) };
     // Recently added: by the file's own date where the server gives one (Dropbox, WebDAV), so a library's first
     // scan has it too; else by when TiviBro first saw it, leaving out that first scan.
@@ -758,7 +772,7 @@ var Media = (function () {
         slot.title.classList.toggle('is-new', isNew(m));
         slot.el.classList.toggle('sel', row === shelfAt && i === at);
         slot.el.setAttribute('aria-label', label(m));
-        var r = MediaStore.resume(m.id), pc = m.progressPercent != null ? m.progressPercent : r && r.dur ? Math.min(100, 100 * r.pos / r.dur) : 0;
+        var r = MediaStore.resume(m.id), pc = progressOf(m) != null ? progressOf(m) : r && r.dur ? Math.min(100, 100 * r.pos / r.dur) : 0;
         slot.progress.style.width = pc + '%'; slot.bar.classList.toggle('hidden', !pc);
         slot.favorite.textContent = (m.favourite || MediaStore.isFavorite(m.id)) ? '♥' : '';
       }
@@ -1684,6 +1698,7 @@ var Media = (function () {
       seriesCards = (results[0].items || []).map(function (r) { r.id = r.handle; return r; });
       reviewCards = (results[1].items || []).map(function (r) { r.id = r.handle; return r; });
       continuingShows = (results[2].items || []).map(function(r){r.id=r.handle;return r;});
+      goingAt = {}; continuingShows.forEach(function (c) { goingAt[c.handle] = c; });
       favouriteShows=(results[3].items||[]).map(function(r){r.id=r.handle;return r;});
       // Recently added and Recently aired (TV shows): each show once, saying which episode is new.
       // A whole season that came at once reads as that season, and opens on it (its first episode not watched).
@@ -1724,6 +1739,8 @@ var Media = (function () {
     // The web editor's shelf list: with movies and shows, each shelf says which tab it's on (Continue watching: Home).
     shelfList: function () { var ar = arrangement(), h = has(), both = h.movies && h.shows; return ar.order.filter(function (k) { return fits(k, h); }).map(function (k) { return { key: k, name: NAMES[k], off: ar.off(k), section: !both ? '' : traktOf(k) ? traktOf(k).tab : k === 'continue' || inSection(k, 'home') ? 'home' : TV_ONLY[k] ? 'shows' : 'movies' }; }); }, holidaysNow: holidaysNow, refreshMetadata: refreshMetadata, addMenu: addMenu, sourceMenu: sourceMenu,
     watchedReset:function(handle,revision){if(playingMeta&&playingMeta.item.episodeHandle===handle){playingMeta.continuous=0;playingMeta.lastPos=Player.position;playingMeta.lastAt=Date.now();playingMeta.item.libraryRevision=revision;playingMeta.item.playStartedAt=Date.now();}}, seeking: function (target) { if (playingMeta) { playingMeta.continuous = 0; playingMeta.lastPos = target; playingMeta.lastAt = Date.now(); } }, currentFile: function () { return playingMeta && playingMeta.item.id; }, cancelPending: function () { playToken++; }, request: ask, playAll: playAll, chooseCopy: chooseCopy, copyCount: function (m) { return copies(m).length; }, upNext: function () { var it = playingMeta && playingMeta.item; if (!it) return ''; if (queue && queue.item === it && queue.list[queue.at + 1]) return 'collection'; return it.kind === 'episode' ? 'episode' : ''; }, playFile: function (m, fromStart, back) { if (back) playFrom(m, fromStart, back); else play(m, fromStart); }, openTitle: openTitle, optionsFor: itemMenu, restore: restore, refresh: refresh, leftOut: leftOut, phone: ForPhone,
+    // A show's name by its library handle (Find subtitles for an episode searches the show, subs.js).
+    showTitle: function (h) { var all = seriesCards.concat(favouriteShows, continuingShows); for (var i = 0; i < all.length; i++) if ((all[i].handle || all[i].id) === h) return nameOf(all[i]); return ''; },
     isNew: isNew, posterMark: posterMark, addedLine: addedLine, addedAt: addedAt, pictureInfo: pictureInfo, sources: function () { return MediaStore.sources(); },
     _test: { askSearch: askSearch, setSection: setSection, stampNew: stampNew, visit: function (v) { if (v !== undefined) { visit = v; visitSave(); } return visitLoad(); }, visitEnd: visitEnd, categories: categories, namedIn: namedIn, section: function (x) { if (x) { tabsFocus = false; setSection(x); } return { section: section, split: split, tabs: tabsFocus }; }, goShelf: function (id) { followTop = false; goShelf(id); }, addServer: addServer, addAddress: addAddress, addDropbox: addDropbox, focusItems: function () { restore(); }, rescanCurrent: function () { var s = MediaStore.sources()[0]; return s ? rescan(s.id) : Promise.resolve(); } }
   };

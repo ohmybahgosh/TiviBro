@@ -405,7 +405,7 @@ var Settings = (function () {
       }));
     } else {
       out.push(info('Connected as', Trakt.user()),
-        action('Sync now', 'Sends what you\'ve watched and brings in what you watched elsewhere.', function () { U.toast('Syncing with Trakt…'); Trakt.syncNow(true).then(function () { U.toast('Trakt is in step', 4000); paint(); }, traktErr); }, function () { return Trakt.describe().replace(/^Connected as [^·]*·?\s*/, ''); }),
+        action('Sync now', 'Sends what you\'ve watched and brings in what you watched elsewhere.', function () { U.toast('Syncing with Trakt…'); Trakt.syncNow(true).then(function () { U.toast('Synced with Trakt', 4000); paint(); }, traktErr); }, function () { return Trakt.describe().replace(/^Connected as [^·]*·?\s*/, ''); }),
         action('Disconnect Trakt', 'Signs this TV out of Trakt.  Your lists stay on My media without your private ones.', function () { UI.confirm('Disconnect Trakt from this TV?', 'Disconnect', function () { Trakt.disconnect(); build(); }); }));
     }
     out.push(head('Watch history'),

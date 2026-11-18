@@ -45,6 +45,10 @@ ok('a movie: the title without tags and the year', JSON.stringify(T.guess({ titl
   JSON.stringify(T.guess({ title: 'EN - The Matrix (1999) [4K]', item: { name: 'EN - The Matrix (1999) 4K' } })));
 const ep = T.guess({ title: '|US| Breaking Bad   S2 E5   Breakage', item: { ep: true, season: 2, num: 5 } });
 ok('an episode: the show, season and episode', ep.type === 'episode' && ep.query === 'Breaking Bad' && ep.season === 2 && ep.episode === 5, JSON.stringify(ep));
+{
+  const e2 = T.guess({ title: 'S1E2 Episode 2', item: { kind: 'episode', showId: 'show_x', season: 1, number: 2, file: 'Cunk on Cinema - S01E02 - Episode 2 WEBDL-1080p.mkv' } });
+  ok('My media episode: the show from its file, season and number (not "S1E2 Episode 2")', e2.type === 'episode' && e2.query === 'Cunk on Cinema' && e2.season === 1 && e2.episode === 2, JSON.stringify(e2));
+}
 ok('My media: title and year', T.guess({ title: 'Heat (1995)', sub: '1995', item: { title: 'Heat', year: 1995 } }).year === '1995');
 
 // Lining up: a subtitle 2.4 s late, and one made for 25 fps against a 23.976 fps video.

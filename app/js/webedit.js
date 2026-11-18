@@ -427,7 +427,7 @@ var WebEdit = (function () {
       if (op === 'connect') { var asked = new Promise(function (ok, no) { Trakt.connect(function () { ok(); }).then(function () { Settings.live(); }, function (e) { no(e); }); }); return asked.then(function () { return status(); }); }
       if (op === 'cancel') { Trakt.cancel(); return status(); }
       if (op === 'disconnect') { Trakt.disconnect(); return status('Trakt disconnected from this TV.'); }
-      if (op === 'sync') return Trakt.syncNow(true).then(function () { return status('Trakt is in step.'); });
+      if (op === 'sync') return Trakt.syncNow(true).then(function () { return status('Synced with Trakt.'); });
       if (op === 'settings') { Trakt.setSettings({ watchedOut: a.watchedOut, historyIn: a.historyIn }); return status('Saved.'); }
       if (op === 'update') { var patch = {}; if (typeof a.on === 'boolean') patch.on = a.on; if (/^(both|movies|shows)$/.test(a.kind)) patch.kind = a.kind; if (clean(a.name)) patch.name = clean(a.name).slice(0, 80); Trakt.update(String(a.id), patch); return after(0, 'Saved.'); }
       if (op === 'remove') { Trakt.remove(String(a.id)); return after(0, 'List removed from My media.'); }
