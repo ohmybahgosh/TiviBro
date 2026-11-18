@@ -293,13 +293,18 @@ var UI = (function () {
     };
   }
 
-  function prompt(title, value, done, hint, secret, okLabel) {
+  /* typing(value, setHint): called as you type (My media's search shows results behind the box as you go). */
+  function prompt(title, value, done, hint, secret, okLabel, typing) {
     heading(title);
     mBody.innerHTML = '';
     var inp = U.el('input');
     inp.type = secret ? 'password' : 'text'; inp.value = value || ''; inp.spellcheck = false;
     mBody.appendChild(inp);
     if (hint) mBody.appendChild(U.el('div', 'mi', T(hint)));
+    if (typing) {
+      var live = U.el('div', 'mi prompt-live'); mBody.appendChild(live);
+      inp.addEventListener('input', function () { typing(inp.value, function (t) { live.textContent = t ? T(t) : ''; }); });
+    }
     var ok = U.el('div', 'mi', T(okLabel || 'Save')), cancel = U.el('div', 'mi', T('Cancel'));
     ok.addEventListener('click', function () { var v = inp.value; close(); done(v); });
     cancel.addEventListener('click', function () { close(); });

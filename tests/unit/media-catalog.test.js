@@ -20,6 +20,12 @@ function ep(n) { return {id:'w:/Harbour/S01E'+n+'.mkv',path:'/Harbour/S01E'+n+'.
   // Recently added episodes: the show says which episode is newest, by the file's own date.
   const fresh = await call(catalog,'query',{kind:'show',sort:'new'}); assert.equal(fresh.total,1); assert.equal(fresh.items[0].newEp,'S1E10','the newest file is S01E10'); assert(fresh.items[0].newAt > 0);
   assert.equal((await call(catalog,'query',{kind:'show',sort:'aired'})).total,0,'no TMDB air dates yet: not on Recently aired');
+  // The poster's count and the season that came at once: S01E02 (Jan 2) and S01E10 (Jan 10) came days apart.
+  assert.equal(fresh.items[0].eps,2,'two episodes'); assert.equal(fresh.items[0].seen,0,'none watched'); assert.equal(fresh.items[0].newCount,1,'only E10 came with the newest'); assert.equal(fresh.items[0].newSeason,null);
+  await call(catalog,'edit',{operation:'setWatched',handle,expectedRevision:catalog.revision,watched:true,season:'1'});
+  const marked=(await call(catalog,'query',{kind:'show'})).items[0]; assert.equal(marked.seen,2,'marking the season counts both'); assert(marked.seenAt>0,'when last watched');
+  await call(catalog,'edit',{operation:'setWatched',handle,expectedRevision:catalog.revision,watched:false,season:'1'});
+  assert.equal((await call(catalog,'query',{kind:'show'})).items[0].seen,0,'and back');
   const detail = await call(catalog,'detail',{kind:'show',handle}); assert.equal(detail.buckets[0].count,2);
   const episodes = await call(catalog,'query',{kind:'episode',show:handle,limit:1}); assert.equal(episodes.items[0].number,2); assert(episodes.nextCursor);
   const episode = await call(catalog,'detail',{kind:'episode',handle:episodes.items[0].handle}); assert.equal(episode.versions.length,1);
@@ -37,6 +43,10 @@ function ep(n) { return {id:'w:/Harbour/S01E'+n+'.mkv',path:'/Harbour/S01E'+n+'.
   const details=await call(restarted,'detail',{kind:'episode',handle:selected.handle});
   await call(restarted,'edit',{operation:'classifyFile',handle:details.versions[0].handle,expectedRevision:details.revision,fields:{kind:'episode',showTitle:'Harbour',order:'aired',season:1,numbers:[3]}});
   const corrected=await call(restarted,'detail',{kind:'episode',handle:selected.handle});assert.equal(corrected.number,3);assert.equal(corrected.watchState,'watched','correcting number preserves episode identity and watch state');
+  // A whole season added at once (all within 12 hours): Season 2, 3 episodes.
+  const s2=function(n){const e=ep(n);e.id='w:/Harbour/S02E'+n+'.mkv';e.path='/Harbour/S02E'+n+'.mkv';e.file='Harbour.S02E'+n+'.mkv';e.modified=new Date(Date.UTC(2026,5,1,n)).toISOString();e.classification=Object.assign({},e.classification,{season:2});return e;};
+  await call(restarted,'importScan','demo',{files:[ep(2),ep(3),s2(1),s2(2),s2(3)],partial:false});
+  const whole=(await call(restarted,'query',{kind:'show',sort:'new'})).items[0]; assert.equal(whole.newSeason,2,'season 2 came at once'); assert.equal(whole.newCount,3);
   console.log('PASS durable scan import, stable grouping, numeric ordering, public projections, partial/empty protection and restart');
  } finally { fs.rmSync(root,{recursive:true,force:true}); }
 })().catch(e => {console.error(e); process.exitCode=1;});

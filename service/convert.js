@@ -255,11 +255,13 @@ function isStream(url) { return /^\/convert\/[a-f0-9]{32}\/movie\.(mkv|ts)(\?|$)
    from where it got to (Range: bytes=N-).  So a conversion is a session that outlives one request: ffmpeg's
    output goes into a spool on the TV's big storage (Storage.sub('convert'), 16 MB pieces), and every
    request is answered from the spool, from whatever byte it asks for, waiting for bytes not converted
-   yet.  ffmpeg pauses when it is far ahead of the player (AHEAD), and pieces far behind it are deleted
+   yet.  ffmpeg pauses when it is far ahead of the player (AHEAD, 160 MB: about 20 seconds of a 4K remux.  It was
+   384 MB, and filling that at 4x speed kept the helper busy relaying the source for the first 40 seconds, so
+   the player itself got its bytes too slowly and ran dry: Dune, part way in), and pieces far behind it are deleted
    (BEHIND), so a long movie never fills the storage.  A session ends when another starts, or a minute
    after the player last hung up.  The same link (movie, start, track) joins the running session.
    Without storage (the helper only has memory) the output is piped straight to one request, as before. */
-var SEG = 16 * 1048576, AHEAD = 384 * 1048576, BEHIND = 128 * 1048576, IDLE_MS = 60000, WAIT_MS = 30000;
+var SEG = 16 * 1048576, AHEAD = 160 * 1048576, BEHIND = 128 * 1048576, IDLE_MS = 60000, WAIT_MS = 30000;
 var session = null;
 
 function spoolDir() { try { var Storage = require('./storage'); if (Storage.memory()) return ''; return Storage.sub('convert'); } catch (e) { return ''; } }

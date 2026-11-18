@@ -74,7 +74,7 @@ function sortEpisodes(a, b) {
 /* ---------- public shapes ---------- */
 function project(r) {
   var out = {};
-  ['sourceIds','displayOrder','mergedFrom','preferredVersion','orderPosition','watchRevision','watchOrigin','watchManualAt','boundaries','favourite','sourceId','kind','title','season','number','airDate','absoluteNumber','absolutePart','order','watchState','availability','metadata','addedAt','showId','newAt','newEp','airedOn','airedEp','seasons'].forEach(function (k) { if (r[k] !== undefined) out[k] = r[k]; });
+  ['sourceIds','displayOrder','mergedFrom','preferredVersion','orderPosition','watchRevision','watchOrigin','watchManualAt','boundaries','favourite','sourceId','kind','title','season','number','airDate','absoluteNumber','absolutePart','order','watchState','availability','metadata','addedAt','showId','newAt','newEp','airedOn','airedEp','seasons','eps','seen','seenAt','newCount','newSeason','createdAt'].forEach(function (k) { if (r[k] !== undefined) out[k] = r[k]; });
   out.handle = r.handle || r.id; if (r.episodeIds) out.coveredEpisodes = r.episodeIds.slice();
   if (r.kind === 'episode') out.label = r.airDate || (r.absoluteNumber != null ? String(r.absoluteNumber) + (r.absolutePart ? '.' + r.absolutePart : '') : 'S' + r.season + 'E' + r.number);
   if (r.fileIds) out.versionCount = r.fileIds.length;
@@ -98,18 +98,34 @@ function countShard(shard) {
 /* A show's newest episodes, kept on the show (shows.json) so My media's Recently added and Recently aired
    shelves need no reading of every show: newAt, the newest file's date (the server's own date where it gives
    one, else when TiviBro first saw it) and newEp, its episode; airedOn, the latest TMDB air date of an episode
-   you have, and airedEp; seasons, how many seasons you have episodes of (specials not counted).  sumV: summed up this way (older shows are summed up once, in the background). */
-var SUM_V = 3;   // 2: an air date still to come is not "aired"; 3: seasons
+   you have, and airedEp; seasons, how many seasons you have episodes of (specials not counted).  sumV: summed up this way (older shows are summed up once, in the background).
+   eps and seen: episodes you have files for and how many of them are watched (specials not counted), for the
+   unwatched count on a show's poster; seenAt: when one was last watched (Rediscover); newCount and newSeason: how
+   many episodes came in with the newest one (within 12 hours of it) and their season when they share one, so a
+   whole season added at once reads as that season, not as its last episode. */
+var SUM_V = 4;   // 2: an air date still to come is not "aired"; 3: seasons; 4: eps, seen, seenAt, newCount, newSeason
 function epLabel(ep) { return ep.order === 'date' ? String(ep.airDate || '') : ep.order === 'absolute' ? 'Episode ' + ep.absoluteNumber : 'S' + ep.season + 'E' + ep.number; }
 function summarize(shard) {
-  var byId = {}, out = { newAt: 0, newEp: '', airedOn: '', airedEp: '', seasons: 0 }, seen = {}, today = new Date().toISOString().slice(0, 10);
+  var byId = {}, out = { newAt: 0, newEp: '', airedOn: '', airedEp: '', seasons: 0, eps: 0, seen: 0, seenAt: 0, newCount: 0, newSeason: null }, seen = {}, today = new Date().toISOString().slice(0, 10);
+  var have = {}, came = {};
   shard.episodes.forEach(function (ep) { if (!ep.orphaned) byId[ep.id] = ep; });
   shard.files.forEach(function (f) {
     if (f.kind !== 'episode' || f.availability === 'missing') return;
     var t = Date.parse(f.modified || '') || +f.addedAt || 0, ep = byId[(f.episodeIds || [])[0]];
     if (ep && t > out.newAt) { out.newAt = t; out.newEp = epLabel(ep); }
     if (ep && ep.order !== 'date' && ep.order !== 'absolute' && +ep.season > 0 && !seen[ep.season]) { seen[ep.season] = 1; out.seasons++; }
+    (f.episodeIds || []).forEach(function (id) { var e = byId[id]; if (e) { have[id] = e; if (t > (came[id] || 0)) came[id] = t; } });
   });
+  var batch = [];
+  Object.keys(have).forEach(function (id) {
+    var ep = have[id];
+    if (ep.watchState === 'watched' && +ep.completedAt > out.seenAt) out.seenAt = +ep.completedAt;
+    if (came[id] >= out.newAt - 12 * 3600e3) batch.push(ep);
+    if (ep.order !== 'date' && ep.order !== 'absolute' && !(+ep.season > 0)) return;   // specials
+    out.eps++; if (ep.watchState === 'watched') out.seen++;
+  });
+  out.newCount = batch.length;
+  if (batch.length > 1 && batch.every(function (e) { return e.order !== 'date' && e.order !== 'absolute' && e.season === batch[0].season; })) out.newSeason = batch[0].season;
   Object.keys(byId).forEach(function (id) {
     var ep = byId[id], d = ep.metadata && /^\d{4}-\d\d-\d\d$/.test(ep.metadata.airDate || '') ? ep.metadata.airDate : '';
     if (d && d <= today && (ep.fileIds || []).length && d > out.airedOn) { out.airedOn = d; out.airedEp = epLabel(ep); }

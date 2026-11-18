@@ -897,6 +897,8 @@ video.mkv-captions-active::cue,video.subs-drawn::cue{color:transparent;backgroun
 .media-libart{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;background:linear-gradient(160deg,#3a4f8f,#1d2547)}
 .media-libart.lib-shows{background:linear-gradient(160deg,#1f7a6c,#13324a)}
 .media-libart.lib-collections{background:linear-gradient(160deg,#8a4a8f,#2a1d47)}
+.media-libart.lib-categories,.media-libart.lib-categories-shows{background:linear-gradient(160deg,#a8673a,#3b2015)}
+.lib-categories .media-libart-icon i,.lib-categories-shows .media-libart-icon i{width:50px;height:34px;border-radius:6px}
 .media-libart-icon{width:120px;height:110px;display:flex;flex-wrap:wrap;gap:8px;align-content:center;justify-content:center;margin-bottom:22px}
 .media-libart-icon i{display:block;width:32px;height:46px;border-radius:5px;background:rgba(255,255,255,.88)}
 .lib-collections .media-libart-icon{position:relative}
@@ -935,7 +937,13 @@ body.focus-ring .media-tile.sel .media-art{box-shadow:0 0 0 5px var(--accent),0 
 .media-tile.sel .media-tile-title{color:var(--text)}
 .media-tile-year{font-size:19px;color:var(--dim);padding:0 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .media-live .media-tile-year{color:var(--accent-text)}
-.media-favorite{position:absolute;top:10px;right:14px;color:#ff6b8a;font-size:26px;z-index:3}
+.media-favorite{position:absolute;top:322px;right:12px;color:#ff6b8a;font-size:26px;z-index:3;text-shadow:0 1px 4px rgba(0,0,0,.7)}
+/* Plex's corner: a show's episodes not watched yet, or ✓ on what's watched.  Flush with the poster's corner, small, quiet. */
+.media-mark{position:absolute;top:0;right:0;z-index:3;min-width:38px;height:38px;padding:0 9px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;background:rgba(10,10,12,.86);color:#fff;font-size:20px;font-weight:700;border-bottom-left-radius:10px}
+.media-mark:empty{display:none}
+.media-mark.done{color:var(--accent-text);font-size:19px}
+/* New since your last visit: a small dot by the name, nothing on the picture. */
+.media-tile-title.is-new::before,.mgr-name.is-new::before{content:'';display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--accent);margin-right:9px;vertical-align:middle;position:relative;top:-2px}
 .media-progress{height:7px;position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:3}
 .media-progress i{display:block;height:100%;background:var(--accent)}
 .media-tag{position:absolute;top:12px;left:12px;z-index:3;padding:2px 10px;border-radius:8px;font-size:18px;font-weight:700;background:rgba(0,0,0,.72);color:var(--text);white-space:nowrap}
@@ -1242,7 +1250,14 @@ body.pal-terminal .opt.focus .ol,body.pal-terminal .set-nav.active div.on,body.p
 .mgr-pic{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover}
 .mgr-count{position:absolute;right:8px;bottom:8px;background:rgba(0,0,0,.78);color:#fff;font-size:20px;font-weight:700;padding:2px 10px;border-radius:8px}
 .mgr-name{font-size:20px;font-weight:600;color:var(--text);margin-top:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.mgr-year{font-size:19px;color:var(--muted);margin-top:2px}
+.mgr-year{font-size:19px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mgr-art .media-mark{min-width:30px;height:30px;font-size:17px;padding:0 7px;border-bottom-left-radius:8px}
+/* Categories, as Plex's: the genre's name over a tinted picture from it. */
+.mgr-cat .mgr-pic{opacity:.45;filter:saturate(.7)}
+.mgr-cat{background:linear-gradient(160deg,#3a4f8f,#1d2547)}
+.mgr-cat + .mgr-year{margin-top:12px}
+.mgr-cat-name{position:absolute;left:8px;right:8px;top:50%;transform:translateY(-50%);text-align:center;color:#fff;font-size:24px;font-weight:800;line-height:1.15;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+.mgr-xl .mgr-cat-name{font-size:30px}.mgr-small .mgr-cat-name{font-size:19px}
 .mgr-xl .mgr-name{font-size:26px}.mgr-xl .mgr-year{font-size:23px}.mgr-large .mgr-name{font-size:22px}.mgr-small .mgr-name{font-size:18px}.mgr-small .mgr-year{font-size:17px}
 .mgr-letters{position:absolute;right:44px;top:120px;bottom:80px;width:56px;display:flex;flex-direction:column;justify-content:space-between;align-items:center}
 .mgr-letter{font-size:21px;font-weight:700;color:var(--text);width:40px;height:30px;line-height:30px;text-align:center;border-radius:8px}

@@ -805,6 +805,8 @@ var Player = (function () {
     var problem = String(cur.lastWhy).replace(/,?\s*(?:retrying|reconnecting|trying again)\.?$/i, '').replace(/\s+$/, '');
     problem = (problem.charAt(0).toLowerCase() + problem.slice(1)).replace(/\.$/, '');
     var doing = kind !== cur.usual ? T('Trying the {x}', { x: ENGINE_NAMES[kind] || kind }) : T('Trying again ({n} of {m})', { n: Math.max(1, cur.retries || 1), m: cur.p.retries });
+    // A movie or episode is not a channel: say so (it read "The channel dropped" on Dune).
+    if (isFile() || cur.conv) return (cur.everPlayed ? T('Playback stalled: {x}.', { x: problem }) : T('This video is having trouble starting: {x}.', { x: problem })) + '\n' + doing + '…';
     return (cur.everPlayed ? T('The channel dropped: {x}.', { x: problem }) : T('This channel is having trouble starting: {x}.', { x: problem })) + '\n' + doing + '…';
   }
   function T(s, o) { var t = typeof I18n !== 'undefined' ? I18n.t(s) : s; return t.replace(/\{(\w+)\}/g, function (a, k) { return o && o[k] != null ? o[k] : a; }); }
@@ -1645,7 +1647,7 @@ var Player = (function () {
 
   return {
     _test: { reconnect: function (why) { reconnect(token, why || 'test'); }, get holding() { return holding; }, get kind() { return st && st.kind; } },
-    PRESETS: PRESETS, memorySafe: memorySafe, get memSafe() { return memSafe() ? (typeof Store !== 'undefined' && Store.settings && Store.settings.memSafe === 'on' ? 'turned on in Settings' : safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, get startStatus() { return startStatus(); }, on: on,
+    PRESETS: PRESETS, memorySafe: memorySafe, get converting() { return !!(cur && cur.conv); }, get userPaused() { return !!(st && st.userPaused); }, get memSafe() { return memSafe() ? (typeof Store !== 'undefined' && Store.settings && Store.settings.memSafe === 'on' ? 'turned on in Settings' : safeWhy || (navigator.deviceMemory ? 'this TV has 1 GB of memory or less' : 'an HD or Full HD TV, with about 1 GB of memory')) : ''; }, bind: bind, play: play, _dashProtection: dashProtection, heardAudio: heardAudio, stop: stop, upgrade: upgrade, togglePause: togglePause, setPaused: setPaused, retryNow: retryNow, get startStatus() { return startStatus(); }, on: on,
     seek: seek, seekTo: seekTo, liveWindow: liveWindow, liveSeek: liveSeek, applyDisplay: applyDisplay, suspend: suspend, resume: resume,
     audioTracks: function () { return eng && eng.audio ? eng.audio() : []; }, describeTrack: describeTrack,
     qualities: function () { return eng && eng.levels ? eng.levels() : []; },

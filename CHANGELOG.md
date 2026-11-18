@@ -1,10 +1,24 @@
 # Changelog
 
-## 0.6.0 (alpha 160, 2026-11-18)
+## 0.6.0 (alpha 161, 2026-11-18)
 
 Pre-release: expect rough edges, and keep a backup before installing.
 
-### New in alpha 160
+### New in alpha 161
+
+- **What's watched, on the poster, as on Plex.**  A show's poster has the number of its episodes you haven't watched in its corner, and a ✓ once you've seen them all; a movie you've watched has a ✓.  On shelves and in All movies and All shows.  **Settings > My media > Watched marks on posters** turns them off.
+- **New since your last visit.**  What came into your libraries since you were last in My media (your downloads, Sonarr and Radarr) gets a small dot by its name and a shelf of its own near the top, newest first.  No pop-ups: the dot goes once you open it, and a visit only counts once you've stayed a minute or opened something.  A library you've just added isn't all "new".  **Settings > My media > Mark what's new** turns it off.
+- **When it came, under the poster.**  Recently added says when each one came ("2026 · 2 days ago"), and Recently added episodes says which episode or season ("S5E3 · today").  All movies sorted by date added does too, as Plex's library does.
+- **A whole season reads as a season.**  When a season comes in at once, Recently added episodes says "Season 3, 10 episodes, added today" instead of only its last episode, and OK opens on that season at its first episode you haven't watched.
+- **Start watching and Rediscover.**  On TV shows: the shows you haven't begun (newest first), and the ones you started and left over 45 days ago, as Plex has them.
+- **Filters for big libraries.**  Red in All movies or All shows has **Filter**, with Plex's choices: not watched, in progress, watched, added this week or month, 4K, HDR, Dolby Vision, more than one copy, rated 7 or 8 and up, and by genre, year, decade, director, actor and library.  Several at once (the heading says which), **Clear filters** to start over.  Not started and Started work for shows now (Not watched yet did nothing there).
+- **Categories.**  The Library shelf (Movies and TV shows) has a Categories tile: every genre and decade as a coloured tile, and OK opens its titles in the grid, with sorting and filters.
+- **Search finds more, as you type.**  Search My media matches actors, genres, directors, networks and collections as well as titles (titles first), and the results appear behind the box as you type, with how many so far.  Episode names are searched too once you press Search.
+- **My media opens where you left it.**  The tab you were on, and All movies or All shows (with its sort and filters) if it was open when you went elsewhere.  **Settings > My media > Open where you left off** turns it off.
+- **4K and converted movies don't stall part way in.**  Dune (a Dolby Vision 7 remux) froze and stuttered after a seek: the seek-preview pictures being made in the background each decode a 4K frame on the TV's processor.  For 4K movies and anything through the converter they're now made ahead only while you pause (a seek still gets its own picture at once), and the converter keeps less ahead of the player at the start so the player gets its bytes first.  The spinner says "Playback stalled", not "The channel dropped", for a movie or an episode.
+- **Dolby Vision 7: no faint bars inside the picture.**  A remux already cropped to the film (3840x1604) kept the disc's letterbox in its Dolby Vision metadata, which some TVs drew as faint dark bands over the picture.  The converter (updated, downloaded once) now drops it for cropped files.
+
+### In alpha 160
 
 - **Mark a season or a whole show watched, as on Plex.**  On a show's page, **Hold OK** on a season has **Mark season as watched** (or **not watched**), and a show's options (Hold OK on the show) have **Mark show as watched** and **not watched**.  Every episode of it changes at once.  Movies and episodes had it already, now worded the same way.
 - **Watched and not watched by hand go to Trakt too.**  With Trakt connected (and **Mark as watched on Trakt** on), marking a movie, an episode, a season or a show watched puts it on your Trakt history, and marking it not watched takes it off, as Plex's Trakt sync does.  Kept and sent later when Trakt can't be reached.

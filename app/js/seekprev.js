@@ -192,6 +192,13 @@ var SeekPrev = (function () {
        off right away, and every picture was still missing then.  Not while seeking (its own pictures first), and
        not while the movie is short of what it has buffered (8 s). */
     if (wantT >= 0 || nowBusy || (!v.paused && buf < 8)) return fillSoon(3000);
+    /* A 4K movie, or one coming through the converter (Dolby Vision 7, TrueHD): pictures made ahead only while
+       it is paused.  Each one decodes a 4K frame on the TV's processor, and making them while it played (Dune,
+       halfway through) starved the playback until the picture froze and stuttered.  Paused by you, that is:
+       the player pauses itself to refill, and pictures made then made the refill slower.  A seek still gets
+       its own picture straight away. */
+    var heavy = v.videoHeight > 1088 || (typeof Player !== 'undefined' && Player.converting);
+    if (heavy && !(v.paused && typeof Player !== 'undefined' && Player.userPaused)) return fillSoon(5000);   // paused by you, not refilling
     /* The next spot not made yet: first the movie in eighths (a long jump, back to where you left off, lands near
        one at once), then where the next presses land from here (◀ ▶ and the 10-minute jumps), each chapter, and
        finer halves after that. */
