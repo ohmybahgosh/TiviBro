@@ -162,14 +162,14 @@ Set `FFMPEG_VERSION` and `FFMPEG_SHA256` at the top of `scripts/ffmpeg/build.sh`
 
 ```sh
 nice -n 15 ffmpeg -hide_banner -nostdin -loglevel error -threads 1 -protocol_whitelist http,tcp,file \
-  -probesize 2000000 -analyzeduration 0 -skip_frame nokey -noaccurate_seek -ss $T -i "$RELAYED_URL" \
+  -probesize 2000000 -analyzeduration 0 -reconnect 1 -reconnect_at_eof 1 -reconnect_delay_max 0 \
+  -noaccurate_seek -ss $T -i "http://127.0.0.1:$PORT/preview/$KEY/src?u=$MOVIE" \
   -map 0:v:0 -an -sn -dn -frames:v 1 -fps_mode passthrough -vf scale=320:-2:flags=fast_bilinear,format=yuvj420p \
   -q:v 5 -f mjpeg pipe:1
 ```
 
-- `-ss` before `-i` uses the file's own index (Matroska Cues, the MP4 sample table): ffmpeg reads the header, the index and the keyframe at or before `$T`, not the movie.
-- `-skip_frame nokey` decodes keyframes only; `-fps_mode passthrough` keeps that keyframe even when it lies well before `$T`.
-- `format=yuvj420p`: the JPEG encoder wants full-range YUV.
-- On a 2022 C2 (65", 2 GB), from Google Drive through the helper: a 1080p H.264 MP4 picture in 2.2 to 3.1 s at about 30 MB of memory, a 4K HEVC MKV one in 4.6 to 4.8 s at about 68 MB.  The time is mostly Drive's: each picture reads the file's header and index again.  A 4K frame takes over twice the memory, so with Memory-safe playback on, the app asks only for movies up to 1080p (Settings > Playback > Seek previews, Automatic).
+- `-ss` before `-i` uses the file's own index (Matroska Cues, the MP4 sample table): ffmpeg reads the header, the index and the keyframe at or before `$T`, not the movie.  The first frame decoded from there is that keyframe, so nothing past it is needed (`-skip_frame nokey` was dropped: with it, the decoder waited for the next keyframes and read megabytes more).
+- `-fps_mode passthrough` keeps that keyframe even when it lies well before `$T`; `format=yuvj420p`: the JPEG encoder wants full-range YUV.
+- **The piece cache** (`service/blockcache.js`, `/preview/<key>/src`): ffmpeg reads the movie through the helper, which keeps what was read in 128 KB pieces (16 MB at most, 4 MB on a TV short of memory) and answers at most 256 KB at a time; `-reconnect_at_eof` makes ffmpeg ask again from where it got to.  Every run reads the file's start and index again, and those now come from memory: from the second picture on, only the pieces around the keyframe are asked from the source (one or two requests instead of five to seven).  Without the 256 KB answers, the network buffers let one connection swallow many MB ffmpeg never used.
+- On a 2022 C2 (65", 2 GB), from Google Drive through the helper, before the piece cache: a 1080p H.264 MP4 picture in 2.2 to 3.1 s at about 30 MB of memory, a 4K HEVC MKV one in 4.6 to 4.8 s at about 68 MB.  A 4K frame takes over twice the memory, so with Memory-safe playback on the app asks only for movies up to 1080p (Settings > Playback > Seek previews, Automatic).
 - One ffmpeg at a time, the newest "now" request first, pictures kept in memory for the movie playing (up to 200, about 3 MB).
-

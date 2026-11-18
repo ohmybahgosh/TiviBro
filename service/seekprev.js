@@ -1,6 +1,6 @@
 /* Seek previews: a small picture of the movie at the time you are seeking to, made on the TV from the movie
    playing now (never the library).  ffmpeg jumps to the keyframe at or before that time (the file's own index:
-   Matroska Cues, an MP4's sample table), decodes that one frame in software, makes it small and sends it as a
+   Matroska Cues, an MP4's sample table), decodes the first frame from there (that keyframe) in software, makes it small and sends it as a
    JPEG.  Only the frame's own bytes and the index are read, not the movie.
 
      GET /preview/<key>/frame.jpg?u=<movie link>&t=<seconds>&w=<width>[&ua=<User-Agent>][&p=1]
@@ -21,6 +21,7 @@
 var cp = require('child_process');
 var Ffmpeg = require('./ffmpeg');
 var Convert = require('./convert');
+var BlockCache = require('./blockcache');
 
 var MAX_KEEP = 200, MAX_WAIT = 6, TIMEOUT = 20000;
 var cache = {}, order = [], movie = '', queue = [], running = null, made = 0, can = null, canCbs = [];
@@ -54,9 +55,12 @@ function query(url) {
 }
 function args(input, t, w) {
   return ['-hide_banner', '-nostdin', '-loglevel', 'error', '-threads', '1', '-protocol_whitelist', 'http,tcp,file',
-    '-probesize', '2000000', '-analyzeduration', '0', '-skip_frame', 'nokey', '-noaccurate_seek', '-ss', String(t), '-i', input,
+    '-probesize', '2000000', '-analyzeduration', '0'].concat(
+    // Through the piece cache (blockcache.js), whose answers are 256 KB at most: ask again from there, at once.
+    input.indexOf('/preview/') >= 0 ? ['-reconnect', '1', '-reconnect_at_eof', '1', '-reconnect_delay_max', '0'] : [],
+    ['-noaccurate_seek', '-ss', String(t), '-i', input,
     '-map', '0:v:0', '-an', '-sn', '-dn', '-frames:v', '1', '-fps_mode', 'passthrough', '-vf', 'scale=' + w + ':-2:flags=fast_bilinear,format=yuvj420p',
-    '-q:v', '5', '-f', 'mjpeg', 'pipe:1'];
+    '-q:v', '5', '-f', 'mjpeg', 'pipe:1']);
 }
 
 /* ---------- chapters ---------- */
@@ -127,22 +131,27 @@ function picture(input, t, w, ahead, cb) {
 }
 
 function handle(req, res, ALLOW, log, port) {
-  var m = /^\/preview\/([a-f0-9]{32})\/(frame\.jpg|status|chapters)/.exec(req.url);
+  var m = /^\/preview\/([a-f0-9]{32})\/(frame\.jpg|status|chapters|src)/.exec(req.url);
   if (!m || m[1] !== Convert.key) { res.writeHead(403, ALLOW); return res.end(); }
   if (m[2] === 'status') return capable(function (ok) { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, ALLOW)); res.end(JSON.stringify({ ok: ok, made: made, cached: order.length })); });
   var q = query(req.url), t = Math.max(0, Math.round(+q.t || 0)), w = Math.max(96, Math.min(640, +q.w | 0 || 320));
   var input = Convert.inputFor(q.u, q.ua || '', port);
   if (!input) { res.writeHead(400, ALLOW); return res.end('not a web address'); }
+  var lean = q.l === '1', cap = lean ? 4 << 20 : 16 << 20;
+  // What ffmpeg reads for a picture: the movie through the piece cache (blockcache.js).
+  if (m[2] === 'src') return BlockCache.serve(req, res, input, cap);
   if (m[2] === 'chapters') return chapters(input, function (c) { res.writeHead(200, Object.assign({ 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }, ALLOW)); res.end(JSON.stringify({ chapters: c })); });
   capable(function (ok) {
     if (!ok) { res.writeHead(204, ALLOW); return res.end(); }
     // Another movie: the last one's pictures go.
-    if (q.u !== movie) { movie = q.u; cache = {}; order = []; queue.forEach(function (x) { x.cbs.forEach(function (f) { f(null); }); }); queue = []; if (running) stopProc(running.p); }
+    if (q.u !== movie) { movie = q.u; cache = {}; order = []; BlockCache._reset(); queue.forEach(function (x) { x.cbs.forEach(function (f) { f(null); }); }); queue = []; if (running) stopProc(running.p); }
     var gone = false; req.on('close', function () { gone = true; });
-    picture(input, t, w, q.p === '1', function (buf, ms, hit) {
+    // ffmpeg reads the movie through the piece cache, so the start and the index are fetched once, not per picture.
+    var via = BlockCache.noRange ? input : 'http://127.0.0.1:' + port + '/preview/' + m[1] + '/src?u=' + encodeURIComponent(q.u) + (q.ua ? '&ua=' + encodeURIComponent(q.ua) : '') + (lean ? '&l=1' : '');
+    picture(via, t, w, q.p === '1', function (buf, ms, hit) {
       if (gone) return;
       if (!buf) { res.writeHead(204, ALLOW); return res.end(); }
-      if (!hit && log) log({ lv: 'debug', event: 'seek preview', t: t, ms: ms, b: buf.length });
+      if (!hit && log) log({ lv: 'debug', event: 'seek preview', t: t, ms: ms, b: buf.length, cache: BlockCache.stats() });
       res.writeHead(200, Object.assign({ 'Content-Type': 'image/jpeg', 'Content-Length': buf.length, 'Cache-Control': 'max-age=3600' }, ALLOW));
       res.end(buf);
     });

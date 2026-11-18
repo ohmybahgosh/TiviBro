@@ -37,7 +37,8 @@ var SeekPrev = (function () {
     if (setting() === 'auto' && lean()) { var v = video(); if (v && v.videoHeight > 1088) return false; }
     return true;
   }
-  function link(t, ahead) { return base() + '/preview/' + key + '/frame.jpg?u=' + encodeURIComponent(movie.u) + '&t=' + t + '&w=' + W + (movie.ua ? '&ua=' + encodeURIComponent(movie.ua) : '') + (ahead ? '&p=1' : ''); }
+  // &l=1: a TV short of memory, so the service keeps less of the movie for the pictures (service/blockcache.js).
+  function link(t, ahead) { return base() + '/preview/' + key + '/frame.jpg?u=' + encodeURIComponent(movie.u) + '&t=' + t + '&w=' + W + (movie.ua ? '&ua=' + encodeURIComponent(movie.ua) : '') + (ahead ? '&p=1' : '') + (lean() ? '&l=1' : ''); }
   function bucket(t) { return Math.max(0, Math.round(t / STEP) * STEP); }
 
   // A movie starts (views.js playVod): its link, and whether this TV's service can make pictures.

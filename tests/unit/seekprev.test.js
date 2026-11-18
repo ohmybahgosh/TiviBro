@@ -63,6 +63,16 @@ const dims = (buf) => { const f = path.join(tmp, 'p.jpg'); fs.writeFileSync(f, b
   ok('small (under 40 KB)', r.body.length < 40000, r.body.length);
   const before = reads; t0 = Date.now(); const again = await get(hp, '/preview/' + key + '/frame.jpg?u=' + u + '&t=37&w=320');
   ok('the same picture again comes from memory: nothing read from the source', again.status === 200 && reads === before && Date.now() - t0 < 300, { reads: reads - before });
+  // The piece cache: a second picture elsewhere reads only around its keyframe, not the start and the index again.
+  const BC = require('../../service/blockcache.js');
+  const r0 = reads; t0 = Date.now();
+  const second = await get(hp, '/preview/' + key + '/frame.jpg?u=' + u + '&t=12&w=320');
+  const st2 = BC.stats();
+  ok('a second picture: a JPEG, with the movie read through the piece cache', second.status === 200 && second.body[0] === 0xff && st2.pieces > 0 && st2.reads > 0, st2);
+  ok('...asking the source only a few times (' + (reads - r0) + ')', reads - r0 <= 3, reads - r0);
+  ok('...and keeping no more than 16 MB', st2.bytes <= 16 << 20, st2.bytes);
+  const lean = await get(hp, '/preview/' + key + '/frame.jpg?u=' + u + '&t=50&w=320&l=1');
+  ok('a TV short of memory: the cache shrinks to 4 MB at most', lean.status === 200 && BC.stats().bytes <= 4 << 20, BC.stats());
   const miss = await get(hp, '/preview/' + key + '/frame.jpg?u=' + encodeURIComponent('http://127.0.0.1:' + sp + '/none.mkv') + '&t=5');
   ok('a file that isn\'t there: no picture (204)', miss.status === 204, miss.status);
   console.log('  (first picture in ' + ms + ' ms)');
