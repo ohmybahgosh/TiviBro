@@ -134,6 +134,8 @@ var Views = (function () {
   }
 
   // Only what changed: writing the same words again still makes the TV lay the row out again.
+  // A long channel number ("103560") is drawn smaller so it stays out of the logo (discussion #36).
+  function numLen(el) { var n = String(el.textContent || '').length, l = n >= 6 ? '6' : n === 5 ? '5' : ''; if ((el.getAttribute('data-l') || '') !== l) { if (l) el.setAttribute('data-l', l); else el.removeAttribute('data-l'); } }
   function txt(el, s) { s = s == null ? '' : String(s); if (el.textContent !== s) el.textContent = s; }
   function renderChan(row, c) {
     if (!row._n) {
@@ -150,7 +152,7 @@ var Views = (function () {
       row.appendChild(U.el('span', 'vbox'));
     }
     var showNum = Store.settings.showNumbers;
-    txt(row._num, showNum ? c.num : '');
+    txt(row._num, showNum ? c.num : ''); numLen(row._num);
     row._num.style.display = showNum ? '' : 'none';
     row._c = c;
     var lg = logoOf(c);
@@ -357,14 +359,14 @@ var Views = (function () {
   }
 
   // Watch time, recents, reminders and the sleep timer share one slow timer.
-  /* A channel taking longer than usual to start, fullscreen (discussion #36): after 20 seconds without a
+  /* A channel taking longer than usual to start, fullscreen (discussion #36): after 12 seconds without a
      picture, say what TiviBro has seen and ask: keep trying, start over, its other versions, or stop.  Once per
      start, then again a while after "Keep trying".  Off in Settings > Playback > Ask when a channel is slow. */
   var slowAt = { k: '', next: 0 }, slowOpen = null;
   function slowAsk() {
     if (mode !== 'live' || !playing || UI.modalOpen || Store.settings.slowAsk === false) return;
     var s = Player.startStatus, now = Date.now();
-    if (!s || s.ms < 20000) return;
+    if (!s || s.ms < 12000) return;
     var key = playing.k + '|' + (now - s.ms);           // this start of this channel
     if (slowAt.k === key && now < slowAt.next) return;
     if (slowAt.k !== key) { slowAt.k = key; slowAt.next = 0; }
@@ -2609,7 +2611,7 @@ var Guide = (function () {
     var head = (Store.settings.showNumbers ? c.num : '') + '|' + L.name(c) + '|' + (cuMark ? c.arch : '') + '|' + qt + '|' + dead;
     if (r.head !== head) {
       r.head = head;
-      r.ch.children[0].textContent = Store.settings.showNumbers ? c.num : '';
+      r.ch.children[0].textContent = Store.settings.showNumbers ? c.num : ''; numLen(r.ch.children[0]);
       r.ch.children[2].textContent = L.name(c);
       // Catch-up is just the mark here; the days are in the details above the guide.
       r.cuEl.textContent = cuMark ? '↺' : '';

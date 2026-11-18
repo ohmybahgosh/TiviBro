@@ -798,5 +798,50 @@ ok('other files play directly, without subtitle extraction', mp4.calls.length ==
   ok('issue #76: but not without limit', t.last().held === 1);
 }
 
+
+// ---- issue #121: memory-safe holds an amount of video, not a flat 20 s ----
+{
+  let t = setup({ settings: { buffer: 'stable' } });
+  t.nav.deviceMemory = 1;
+  t.P.play({ n: 'Light', url: 'http://p/live/u/p/121.ts' });
+  t.feed(0, 30); t.run(2000);
+  t.last().statisticsInfo = { speed: 375 };            // 3 Mbps
+  t.run(12000);
+  ok('issue #121: memory-safe gives a light channel its profile\'s read-ahead', t.logs.some(l => /Memory-safe: holding up to 45s ahead of this 3\.0 Mbps/.test(l)), t.logs.filter(l => /Memory-safe/.test(l)).join(' | '));
+  t.last().statisticsInfo = { speed: 2500 };           // 20 Mbps
+  t.run(12000);
+  ok('issue #121: and a heavy one less than 20 s', t.logs.some(l => /Memory-safe: holding up to 10s ahead of this 20\.0 Mbps/.test(l)), t.logs.filter(l => /Memory-safe/.test(l)).join(' | '));
+  t = setup({ settings: { buffer: 'stable' } });
+  t.nav.deviceMemory = 4;
+  t.P.play({ n: 'Big', url: 'http://p/live/u/p/122.ts' });
+  t.feed(0, 30); t.last().statisticsInfo = { speed: 375 }; t.run(14000);
+  ok('issue #121: a TV with more memory is left alone', !t.logs.some(l => /Memory-safe/.test(l)));
+}
+
+// ---- issue #121: MP3 sound that the built-in player drops goes to the TV player, remembered ----
+{
+  const ls = {};
+  let t = setup({ memo: ls });
+  t.P.play({ n: 'Radio', url: 'http://p/live/u/p/130.ts' });
+  t.last().h.mi({ videoCodec: 'avc1.640028', audioCodec: 'mp3', height: 720 });
+  t.last().h.err('MediaError', 'MediaMSEError', { msg: 'Failed to execute \'appendBuffer\' on \'SourceBuffer\': This SourceBuffer has been removed' });
+  ok('issue #121: an MP3 SourceBuffer failure is remembered for this TV', ls['tivibro.mp3Native'] === '1');
+  t = setup({ memo: ls });
+  t.P.play({ n: 'Radio 2', url: 'http://p/live/u/p/131.ts' });
+  t.last().h.mi({ videoCodec: 'avc1.640028', audioCodec: 'mp3', height: 720 });
+  t.run(500);
+  ok('issue #121: the next MP3 channel goes to the TV player at once', t.logs.some(l => /^Start "Radio 2" with native engine/.test(l)), t.logs.slice(-6).join(' | '));
+}
+
+// ---- discussion #36: the other player halfway through the retries, and the spinner names each ----
+{
+  let t = setup();
+  t.P.play({ n: 'Plain', url: 'http://p/stream/140.ts' });
+  t.feed(0, 30); t.run(3000);
+  for (let i = 0; i < 4; i++) { t.last().h.err('NetworkError', 'EarlyEof', {}); t.run(6000); }
+  ok('discussion #36: halfway through the retries the TV player gets a turn', t.logs.some(l => /Halfway through the retries; trying the TV player/.test(l)) && /^Start "Plain" with native engine/.test(t.logs.filter(l => /^Start/.test(l)).pop()), t.logs.filter(l => /^Start|^Reconnect|Halfway/.test(l)).join(' | '));
+  ok('discussion #36: the spinner names the player on every retry', t.states.some(s => /Trying again on the built-in player \(MPEG-TS\) \(\d of 8\)/.test(s)) && t.states.some(s => /Trying the TV player/.test(s)), t.states.filter(s => /Trying/.test(s)).join(' | '));
+}
+
 if (fail) { console.log(fail + ' player test(s) failed'); process.exit(1); }
 console.log('all player tests passed');

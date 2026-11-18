@@ -55,7 +55,8 @@ body.nums-mono,body.nums-mono input{font-family:"TiviBro Mono Digits","LG Smart 
 .vlist.active .row.sel .sub,.vlist.active .row.sel .num{color:var(--on-accent-dim)}
 .vlist.active .row.sel .pbar{background:rgba(0,0,0,.18)}
 .vlist.active .row.sel .pbar i{background:var(--on-accent)}
-.row .num{width:64px;color:var(--dim);font-variant-numeric:tabular-nums;text-align:right;flex:none}
+.row .num{width:64px;color:var(--dim);font-variant-numeric:tabular-nums;text-align:right;flex:none;white-space:nowrap;overflow:hidden}
+.row .num[data-l="5"],.gch .num[data-l="5"]{font-size:.78em;letter-spacing:-.5px}.row .num[data-l="6"],.gch .num[data-l="6"]{font-size:.64em;letter-spacing:-.5px}
 .row .logo{width:84px;height:52px;flex:none;object-fit:contain}
 .row .txt{min-width:0;flex:1;display:flex;flex-direction:column}
 .row .name{overflow:hidden;text-overflow:ellipsis}
@@ -183,7 +184,7 @@ body:not(.full) .meter{top:auto;bottom:24px;right:auto}
 .guide-body{flex:1;position:relative;overflow:hidden;contain:strict}
 .grow{position:absolute;left:0;right:0;height:var(--grow);display:flex;will-change:transform}
 .gch{width:420px;flex:none;display:flex;align-items:center;gap:14px;padding:0 16px;border-radius:10px;white-space:nowrap;overflow:hidden}
-.gch .num{width:56px;text-align:right;color:var(--dim);flex:none}
+.gch .num{width:56px;text-align:right;color:var(--dim);flex:none;white-space:nowrap;overflow:hidden}
 .gch .logo{width:70px;height:44px;object-fit:contain;flex:none}
 .gch span.n{overflow:hidden;text-overflow:ellipsis}
 .grow.moving .gch::before{box-shadow:inset 0 0 0 3px var(--accent)}

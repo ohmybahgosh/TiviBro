@@ -683,19 +683,21 @@ var App = (function () {
       Log.state('playlist', '');
     }, after || 0);
   }
-  /* Closed while playing (issues #42, #46): for a week after, playback holds less video in memory
-     (player.js, memory-safe).  Each new close while playing starts the week again. */
+  /* Closed while playing (issues #42, #46): for a while after, playback holds less video in memory (player.js,
+     memory-safe).  Three days after one close (a TV turned off mid-channel can look the same), a week once it
+     happens again in that time. */
   var PLAYSAFE = 'tivibro.playSafe';
   function playSafe(gone) {
     var ps = null;
     try { ps = JSON.parse(localStorage.getItem(PLAYSAFE) || 'null'); } catch (e) {}
     var now = Date.now(), live = ps && ps.until > now;
     if (gone && gone.doing && gone.doing.player) {
-      ps = { until: now + 7 * 86400e3, n: (live ? ps.n : 0) + 1 };
+      var n = (live ? ps.n : 0) + 1;
+      ps = { until: now + (n > 1 ? 7 : 3) * 86400e3, n: n };
       try { localStorage.setItem(PLAYSAFE, JSON.stringify(ps)); } catch (e) {}
       live = true;
     }
-    if (live) Player.memorySafe('TiviBro closed while playing ' + (ps.n > 1 ? ps.n + ' times' : 'once') + ' this week');
+    if (live) Player.memorySafe('TiviBro closed while playing ' + (ps.n > 1 ? ps.n + ' times this week' : 'once lately'));
   }
   function crashGuard(gone) {
     var busy = null, tries = null;

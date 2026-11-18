@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- **Memory-safe playback holds an amount of video, not a flat 20 seconds** (issue #121).  On TVs with 1 GB, or for a while after TiviBro closed while playing, every buffer profile used to hold at most 20 s ahead, so Balanced, Smooth and Rock solid all behaved about the same.  It now holds about 24 MB: once a channel's bitrate is known, a 3 Mbps channel gets its profile's full read-ahead and a heavy 4K one less than before.  Settings > Playback shows when memory-safe is on and why, under the buffer profile.  One close while playing now turns it on for three days, not a week (a TV switched off mid-channel can look the same); a second close makes it a week.
+- **MP3 channels that the built-in player can't play go to the TV player at once** (issue #121).  Some TVs say they play MP3 sound there, then drop it ("SourceBuffer has been removed").  Each such channel failed once before the TV player took over; the first failure is now remembered for the TV.
+- **While a channel retries, the spinner says which player it's on**: "Trying again on the built-in player (MPEG-TS) (2 of 8)", "Trying the TV player" (discussion #36).  Halfway through the retries the next player gets its turn, instead of only after every retry on the first one had failed.
+- **The question for a channel slow to start comes after 12 seconds**, not 20 (discussion #36).
+- **Long channel numbers** (6 digits, like 103560) are drawn smaller in the channel list and guide, so they don't run into the logo (discussion #36).
+
 ## 0.6.0 (alpha 163, 2026-11-18)
 
 Pre-release: expect rough edges, and keep a backup before installing.

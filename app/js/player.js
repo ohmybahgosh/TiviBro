@@ -71,11 +71,28 @@ var Player = (function () {
     // memory or less, the video held in memory is capped whatever the profile asks.  On a small TV,
     // a minute of 1080p read ahead plus a big cushion, and a reconnect building a new player while the
     // old one's memory is still being freed, was enough for webOS to close TiviBro.
+    // The cap is an amount of video, not a time (memFit): 20 s until the stream's bitrate is known, then what fits.
     if (memSafe()) {
+      p.full = p.ahead;
       p.ahead = Math.min(p.ahead, 20); p.back = Math.min(p.back, 4); p.stash = Math.min(p.stash, 384);
       p.label += ', memory-safe';
     }
     return p;
+  }
+  /* Memory-safe holds about MEM_MB of video ahead, not a fixed 20 s: a flat 20 s made every profile the same on these
+     TVs (issue #121), though 20 s of a 3 Mbps SD channel is 7 MB and of a 20 Mbps 4K one 50 MB.  Once the stream's
+     bitrate is known, read-ahead becomes what fits: the profile's own (up to 60 s) for a light channel, less for a
+     heavy one.  HLS also keeps its byte cap (maxBufferSize). */
+  var MEM_MB = 24;
+  function memFit(p) {
+    if (!p.full || !eng || !eng.info) return;
+    var kbps = parseInt(eng.info(), 10);
+    if (!(kbps > 300 && kbps < 100000)) return;
+    var s = Math.round(U.clamp(MEM_MB * 8000 / kbps, Math.min(8, p.full), p.full));
+    if (Math.abs(s - p.ahead) < 3) return;
+    p.ahead = s;
+    if (eng.setAhead) eng.setAhead(s);
+    Log.info('player', 'Memory-safe: holding up to ' + s + 's ahead of this ' + (kbps / 1000).toFixed(1) + ' Mbps stream (about ' + MEM_MB + ' MB)');
   }
   var safeWhy = '';
   function lowMemory() {
@@ -231,6 +248,7 @@ var Player = (function () {
       audio: function () { return (h.audioTracks || []).map(function (t, i) { return { id: i, label: t.name || t.lang || ('Track ' + (i + 1)), lang: t.lang || '', ch: +(t.attrs && t.attrs.CHANNELS || '').split('/')[0] || 0, on: i === h.audioTrack }; }); },
       setAudio: function (i) { h.audioTrack = i; },
       // Video quality (TiviMate's "Video tracks"): the HLS variants, or Automatic.
+      setAhead: function (s) { try { h.config.maxBufferLength = s; h.config.maxMaxBufferLength = s * 2; } catch (e) {} },
       levels: function () { return (h.levels || []).map(function (l, i) { return { id: i, label: (l.height ? l.height + 'p' : 'Level ' + (i + 1)) + (l.bitrate ? '  ' + (l.bitrate / 1e6).toFixed(1) + ' Mbps' : ''), on: !h.autoLevelEnabled && i === h.currentLevel }; }); },
       auto: function () { return h.autoLevelEnabled; },
       setLevel: function (i) { h.currentLevel = i; },
@@ -310,6 +328,7 @@ var Player = (function () {
       levels: function () { try { var q = pl.getQualityFor('video'), auto = pl.getSettings().streaming.abr.autoSwitchBitrate.video; return pl.getBitrateInfoListFor('video').map(function (l, i) { return { id: i, label: (l.height ? l.height + 'p' : 'Level ' + (i + 1)) + (l.bitrate ? '  ' + (l.bitrate / 1e6).toFixed(1) + ' Mbps' : ''), on: !auto && i === q }; }); } catch (e) { return []; } },
       auto: function () { try { return pl.getSettings().streaming.abr.autoSwitchBitrate.video; } catch (e) { return true; } },
       setLevel: function (i) { try { if (i < 0) pl.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: true } } } }); else { pl.updateSettings({ streaming: { abr: { autoSwitchBitrate: { video: false } } } }); pl.setQualityFor('video', i); } } catch (e) {} },
+      setAhead: function (s) { try { if (pl) pl.updateSettings({ streaming: { buffer: { bufferTimeAtTopQuality: s, bufferTimeAtTopQualityLongForm: s } } }); } catch (e) {} },
       destroy: function () { dead = true; if (pl) { try { pl.reset(); } catch (e) {} pl = null; } }
     };
     var prot = drm ? dashProtection(drm, pw) : null;
@@ -379,6 +398,7 @@ var Player = (function () {
       // TV player.  An HTTP error before data is usually the provider's connection limit while
       // the last channel hangs up, and a reconnect a moment later fixes it.
       var net = type === mpegts.ErrorTypes.NETWORK_ERROR;
+      if (!net && /SourceBuffer/.test(String(detail) + ' ' + (info && info.msg || '')) && cur.media && (cur.media.audio || []).indexOf('mp3') >= 0) mp3Native(true);
       fail(net ? 'net' : 'media', detail + (info && info.code ? ' (HTTP ' + info.code + ')' : '') + (info && info.msg ? ' (' + info.msg + ')' : ''), !gotData && net && detail === 'Exception', false, !gotData && info && info.code >= 400 ? info.code : 0);
     });
     // Live TS that "completes" means the server hung up.  Reconnect right away.
@@ -432,6 +452,18 @@ var Player = (function () {
      stayed flat at 160 to 180 MB (HLS) and 145 to 153 MB (TS), with no dropped frames or stalls.  A segment's
      demux is a few milliseconds of the page's time. */
   var workerOk = false;
+
+  /* MP3 sound on the built-in player (issue #121): a TV whose browser says it plays MP3 there, and then drops the
+     sound buffer ("SourceBuffer has been removed", "reached the limit of SourceBuffer objects").  Each MP3 channel
+     failed once before the TV player played it.  Remembered for this TV: MP3 channels go to the TV player at once. */
+  var MP3_KEY = 'tivibro.mp3Native';
+  function mp3Native(set) {
+    if (set) {
+      try { if (!localStorage.getItem(MP3_KEY)) Log.info('player', 'MP3 sound failed on the built-in player; MP3 channels use the TV player on this TV from now on'); localStorage.setItem(MP3_KEY, '1'); } catch (e) {}
+      return true;
+    }
+    try { return localStorage.getItem(MP3_KEY) === '1'; } catch (e) { return false; }
+  }
 
   function nativeEngine(url, tracks, conv) {
     // HTTPS on the TV's own player can fail on self-signed or unusual certificates, which IPTV
@@ -663,6 +695,7 @@ var Player = (function () {
       if (conv) return;                                  // the converter's output: AC-3, known
       cur.media = merge(cur.media, m);
       var r = Caps.route(cur.media, hdrPolicy());
+      if (r.engine !== 'native' && kind === 'ts' && mp3Native() && (cur.media.audio || []).indexOf('mp3') >= 0) { r.engine = 'native'; r.reason = 'MP3 sound plays through the TV player on this TV'; }
       // A live channel whose sound this TV can't play: the converter, if it's on.
       if (r.unplayable && cur.live && !cur.timeshift && !cur.convTried && window.Convert && Convert.on()) {
         cur.convTried = true;
@@ -770,6 +803,7 @@ var Player = (function () {
      (native, decodes AC-3 and raw TS), and for Xtream live channels the provider's HLS version
      of the same channel.  Once all have failed there is no point in eight reconnects. */
   var ENGINE_NAMES = { ts: 'built-in demuxer', native: 'TV player', hls: 'HLS version of this channel', dash: 'DASH player' };
+  var SPIN_NAMES = { ts: 'built-in player (MPEG-TS)', native: 'TV player', hls: 'HLS version', dash: 'DASH player' };
   // A live channel's HLS address: Xtream's /live/.../1.ts as 1.m3u8, and a Stalker channel's (the helper asks the portal either way).
   function hlsVariant(url) {
     if (cur && cur.live && !cur.timeshift && /\/(?:live|stalker\/play)\/[^?]+\.ts(\?|$)/i.test(url)) return url.replace(/\.ts(\?|$)/i, '.m3u8$1');
@@ -823,7 +857,12 @@ var Player = (function () {
     if (!cur || !cur.lastWhy) return '';
     var problem = String(cur.lastWhy).replace(/,?\s*(?:retrying|reconnecting|trying again)\.?$/i, '').replace(/\s+$/, '');
     problem = (problem.charAt(0).toLowerCase() + problem.slice(1)).replace(/\.$/, '');
-    var doing = kind !== cur.usual ? T('Trying the {x}', { x: ENGINE_NAMES[kind] || kind }) : T('Trying again ({n} of {m})', { n: Math.max(1, cur.retries || 1), m: cur.p.retries });
+    /* Always which player this try is on (discussion #36: a switch between the TV player, MPEG-TS and HLS while
+       retrying wasn't visible): its name when it changes, and on every try after. */
+    var name = SPIN_NAMES[kind] || kind, fresh = cur.spinKind !== kind;
+    cur.spinKind = kind;
+    var doing = fresh && (kind !== cur.usual || cur.spunOnce) ? T('Trying the {x}', { x: name }) : T('Trying again on the {x} ({n} of {m})', { x: name, n: Math.max(1, cur.retries || 1), m: cur.p.retries });
+    cur.spunOnce = true;
     // A movie or episode is not a channel: say so (it read "The channel dropped" on Dune).
     if (isFile() || cur.conv) return (cur.everPlayed ? T('Playback stalled: {x}.', { x: problem }) : T('This video is having trouble starting: {x}.', { x: problem })) + '\n' + doing + '…';
     return (cur.everPlayed ? T('The channel dropped: {x}.', { x: problem }) : T('This channel is having trouble starting: {x}.', { x: problem })) + '\n' + doing + '…';
@@ -964,6 +1003,18 @@ var Player = (function () {
     cur.retries++;
     Log.warn('player', 'Reconnect ' + cur.retries + '/' + cur.p.retries + ': ' + why);
     var delay;
+    /* Halfway through the retries the next player in line gets its turn (discussion #36): before, every retry went
+       to the same player and another was only tried once all of them failed, most of a minute later.  Once per
+       trouble: a player that then shows nothing goes back to the one that had played (swapFrom). */
+    if (cur.retries === Math.max(2, Math.ceil(cur.p.retries / 2)) && cur.retries < cur.p.retries && !cur.halfSwitched && !cur.slow && !cur.lastFailHttp && st && !cur.noSwap) {
+      cur.halfSwitched = true;
+      var half = lateEngine(st.kind);
+      if (half && half !== st.kind) {
+        Log.info('player', 'Halfway through the retries; trying the ' + ENGINE_NAMES[half]);
+        if (cur.live && !cur.timeshift && cur.everPlayed) { cur.swapFrom = st.kind; cur.swapPlayed = false; }
+        useEngine(half);
+      }
+    }
     if (cur.retries > cur.p.retries) {
       var alt = cur.slow || cur.lastFailHttp ? null : lateEngine(st ? st.kind : '');
       if (alt) {
@@ -1060,6 +1111,7 @@ var Player = (function () {
     // The most this stream has held: a live channel only banks what the provider sends ahead of real time
     // (often well under the profile's read-ahead), so buffer info shows what this one really reaches.
     if (st.started && ahead > (st.most || 0)) st.most = ahead;
+    if (p.full && st.started && now - (st.fitAt || 0) > 10000) { st.fitAt = now; memFit(p); }
     /* Far more buffered than any live channel sends ahead (issue #76): the stream comes faster than real time.  Stop
        reading, play what is buffered, and reconnect when it runs low, the same as when the provider hangs up. */
     if (cur.live && !cur.timeshift && st.started && !st.pendingReconnect && !st.held && eng && eng.hold && ahead > aheadLimit(p)) {
@@ -1209,7 +1261,7 @@ var Player = (function () {
       if (st.state !== 'playing') state('playing');
       if (!st.healthySince) st.healthySince = now;
       // 30s of clean playback earns the retry budget back; 3 clean minutes halve the extra cushion.
-      if (now - st.healthySince > 30000 && (cur.retries || cur.slowSince)) { cur.retries = 0; cur.triedNative = false; cur.slowSince = 0; cur.late = null; }
+      if (now - st.healthySince > 30000 && (cur.retries || cur.slowSince)) { cur.retries = 0; cur.triedNative = false; cur.slowSince = 0; cur.late = null; cur.halfSwitched = false; }
       if (cur.boost && now - st.healthySince > 180000 && now - (cur.boostAt || 0) > 180000) { cur.boost = Math.round(cur.boost * 5) / 10; cur.boostAt = now; if (cur.boost < 0.5) cur.boost = 0; Log.info('player', 'Clean for 3 minutes; extra cushion now ' + cur.boost + 's'); if (cur.live && !cur.timeshift && window.PlayMemo) PlayMemo.boost(cur.ch, cur.boost); }
       return;
     }
@@ -1628,7 +1680,7 @@ var Player = (function () {
     if (!cur) return;
     cur.t0 = Date.now();
     if (cur.origUrl) cur.url = cur.origUrl;
-    cur.retries = 0; cur.triedNative = false; cur.failed = false; cur.slowSince = 0; cur.slow = ''; cur.lastWhy = ''; cur.deadCounted = false;   // a try of its own
+    cur.retries = 0; cur.triedNative = false; cur.failed = false; cur.slowSince = 0; cur.slow = ''; cur.lastWhy = ''; cur.deadCounted = false; cur.halfSwitched = false; cur.spinKind = null; cur.spunOnce = false;   // a try of its own
     cur.tried = null; cur.late = null; cur.forceKind = null; cur.forceNative = false; cur.routed = false; cur.httpFails = 0; cur.lastHttp = 0;
     if (isFile() && !cur.startAt && cur.pos > 5) cur.startAt = cur.pos;      // a movie tries again where it was
     start(token);

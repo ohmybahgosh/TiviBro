@@ -108,6 +108,8 @@ var Settings = (function () {
       out.push(action('Start learning again', 'Forget what TiviBro learned about your providers and channels: how steady each provider is, the cushion each channel earned, and which player each channel needs.', function () { PlayMemo.reset(); U.toast('TiviBro will learn your providers again'); build(); }));
     }
     if (cur) out.push(info('Profile details', 'starts at ' + cur.prebuffer + 's, holds up to ' + cur.ahead + 's, refills to ' + Math.max(2, cur.prebuffer * 1.5) + 's'));
+    // Memory-safe changes what a profile can hold: say so here, where the profiles are picked (issue #121).
+    if (Player.memSafe) out.push(info('Memory-safe playback is on', Player.memSafe + '.  Each channel holds about 24 MB of video ahead: the full profile on most channels, less on a heavy 4K one.  Settings > Playback > Memory-safe playback.'));
     if (s.buffer === 'custom') {
       var c = s.custom;
       out.push(choice('Start-up buffer', 'Seconds buffered before a channel starts playing.', [0.5, 1, 2, 3, 4, 6, 8, 10, 15], ['0.5s', '1s', '2s', '3s', '4s', '6s', '8s', '10s', '15s'], function () { return +c.prebuffer; }, function (v) { c.prebuffer = v; save(); Views.pipRestart(); }));
@@ -145,7 +147,7 @@ var Settings = (function () {
     out.push(choice('Rewind / fast forward step', 'For the ◀◀ and ▶▶ buttons while watching catch-up or a movie.', [30, 60, 120, 300, 600], ['30s', '1 min', '2 min', '5 min', '10 min'], function () { return +s.ffStep || 120; }, function (v) { s.ffStep = v; save(); }));
     out.push(choice('◀ on a live channel with catch-up', 'Without catch-up, ◀ always goes to the last channel.', ['rewind', 'last'], ['Rewind', 'Last channel'], function () { return s.rewindLeft === false ? 'last' : 'rewind'; }, function (v) { s.rewindLeft = v === 'rewind'; save(); }));
     // An idea from the GUI thread (discussion #36): the memory-safe mode set by hand, not only when TiviBro decides.
-    out.push(choice('Memory-safe playback', 'Holds less video in memory so TiviBro doesn\'t close on TVs with 1 or 2 GB.  Automatic turns it on for TVs with 1 GB and after TiviBro closed while playing.',
+    out.push(choice('Memory-safe playback', 'Holds at most about 24 MB of video ahead (the full buffer profile on most channels, less on a heavy 4K one) so TiviBro doesn\'t close on TVs with 1 or 2 GB.  Automatic turns it on for TVs with 1 GB, and for a few days after TiviBro closed while playing.',
       ['auto', 'on', 'off'], ['Automatic', 'Always on', 'Off'], function () { return s.memSafe || 'auto'; }, function (v) { s.memSafe = v; save(); }));
     out.push(choice('Seek previews', 'A picture of the movie or episode where you\'re seeking to, over the bar, made on the TV from what plays (nothing of your library is read).  Automatic: with Memory-safe playback on, only for movies up to 1080p and nothing made ahead.  Red in the player too.',
       ['auto', 'on', 'off'], ['Automatic', 'On, 4K too', 'Off'], function () { return s.seekPreviews || 'auto'; }, function (v) { s.seekPreviews = v; save(); }));
@@ -155,7 +157,7 @@ var Settings = (function () {
     out.push(head('Switching channels'));
     out.push(choice('When a channel stops working', 'Switches to another version of the same channel, such as the HD copy of a Full HD channel, or one you hid.  It only happens once the player has run out of retries.',
       ['auto', 'ask', 'off'], ['Switch to another version', 'Ask me', 'Keep retrying'], function () { return s.backups || 'auto'; }, function (v) { s.backups = v; save(); }));
-    out.push(toggle('Ask when a channel is slow to start', 'After 20 seconds without a picture: says what TiviBro has seen, and asks whether to keep trying, start over, try another version or stop.', function () { return s.slowAsk !== false; }, function (v) { s.slowAsk = v; save(); }));
+    out.push(toggle('Ask when a channel is slow to start', 'After 12 seconds without a picture: says what TiviBro has seen, and asks whether to keep trying, start over, try another version or stop.', function () { return s.slowAsk !== false; }, function (v) { s.slowAsk = v; save(); }));
     out.push(toggle('Info panel when switching channels', 'Off shows just the number and name.', function () { return s.osdOnZap !== false; }, function (v) { s.osdOnZap = v; save(); }));
     out.push(toggle('Show stream details in the info panel', 'Resolution and which player is in use.', function () { return s.osdMedia !== false; }, function (v) { s.osdMedia = v; save(); }));
     out.push(toggle('Keep the picture while reconnecting', 'When a channel drops for a moment, the last picture stays on screen with a small Reconnecting notice instead of going black.  Not every stream allows it (the TV player draws some itself).', function () { return s.holdFrame !== false; }, function (v) { s.holdFrame = v; save(); }));
